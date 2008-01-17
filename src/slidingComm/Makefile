@@ -1,0 +1,108 @@
+#      ******************************************************************
+#      *                                                                *
+#      * File:          Makefile                                        *
+#      * Author:        Edwin van der Weide                             *
+#      * Starting date: 09-26-2003                                      *
+#      * Last modified: 02-24-2006                                      *
+#      *                                                                *
+#      ******************************************************************
+
+#      ******************************************************************
+#      *                                                                *
+#      * Description: Makefile to create the object files of this       *
+#      * directory.                                                     *
+#      *                                                                *
+#      ******************************************************************
+
+#      ==================================================================
+
+#      ******************************************************************
+#      *                                                                *
+#      * Include the settings for the entire code.                      *
+#      *                                                                *
+#      ******************************************************************
+
+SUMB_DIR = ../..
+SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
+SUMB_RULES_FILE  = $(SUMB_DIR)/rulesSources.mk
+include ${SUMB_COMMON_FILE}
+include ${SUMB_RULES_FILE}
+
+#      ******************************************************************
+#      *                                                                *
+#      * Names of the Fortran object files to be created.               *
+#      * These are split in sets, such that no dependencies are present *
+#      * within a set. This guarantees that parallel make works         *
+#      * correctly.                                                     *
+#      *                                                                *
+#      ******************************************************************
+
+vpath %.o $(SUMB_OBJDIR)
+FF90_OBJECTS_1 = localSubfaces.o\
+		 mixingData.o\
+		 thisSlide.o\
+		 tmpSliding.o\
+		 updateComm.o
+
+FF90_OBJECTS_2 = bsearchSortedDonorCommType.o\
+		 cumulativeNSendReceives.o\
+		 cylCoorNodesOnBlockFace.o\
+		 determineNSlices.o\
+		 determineRotationMatrices.o\
+		 determineSections.o\
+		 haloType.o\
+		 initMemMixingPlane.o\
+		 initMemSliding.o\
+		 initThisSlide.o\
+		 interpolateSlide.o\
+		 localNodesAndQuads.o\
+		 localSurfaceGrids.o\
+		 mixingDonorInterpol.o\
+		 mixingHaloInterpol.o\
+		 mixingIntervals.o\
+		 mixingPlaneComm.o\
+		 mixingPlaneInterpol.o\
+		 mySubfacesSlide.o\
+		 nLocalNodesAndQuads.o\
+		 procSliding.o\
+		 qsortMixingIntervalType.o\
+		 qsortSortedDonorCommType.o\
+		 releaseMemSliding.o\
+		 slidingComm.o\
+		 slidingIntersections.o\
+		 slidingMesh.o\
+		 slidingMeshGroups.o\
+		 updateExternalCommSlide.o\
+		 updateInterpolSendBuf.o\
+		 updateLocalCommSlide.o\
+		 updateRotationInfo.o\
+		 updateSlidingAllLevels.o\
+		 updateSlidingCommPattern.o\
+		 volumeInterpol.o
+
+#      ******************************************************************
+#      *                                                                *
+#      * Targets for make.                                              *
+#      *                                                                *
+#      ******************************************************************
+
+default: all
+
+all:
+	$(MAKE) src_1
+	$(MAKE) src_2
+
+clean:
+	@echo "        Making clean in slidingComm... "
+	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+#      ******************************************************************
+#      *                                                                *
+#      * Rules to make the individual parts; these are introduced to    *
+#      * have parallel make function correctly. The objects of src_1    *
+#      * are independent; the ones of src_2 depend on src_1.            *
+#      *                                                                *
+#      ******************************************************************
+
+src_1:  $(FF90_OBJECTS_1)
+src_2:  $(FF90_OBJECTS_2)
