@@ -2,10 +2,10 @@
 !     ******************************************************************
 !     *                                                                *
 !     * File:          allocMemADjoint.f90                             *
-!     * Author:        Andre C. Marta ,                                *
+!     * Author:        Andre C. Marta , C.A.(Sandy) Mader              *
 !     *                Seongim Choi                                    *
 !     * Starting date: 07-20-2006                                      *
-!     * Last modified: 11-18-2007                                      *
+!     * Last modified: 02-01-2008                                      *
 !     *                                                                *
 !     ******************************************************************
 !
@@ -20,9 +20,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-!s      use BCTypes
       use blockPointers
-!      use indices ! nw
       use section ! secID
       use inputtimespectral
       use flowVarRefState
@@ -48,17 +46,7 @@
 
       domainsLoop: do nn=1,nDom
 
-        ! Easier storage of some variables, which are independent
-        ! of the time instance.
-
-        ib = flowDoms(nn,level,1)%ib
-        jb = flowDoms(nn,level,1)%jb
-        kb = flowDoms(nn,level,1)%kb
-
-        ie = flowDoms(nn,level,1)%ie
-        je = flowDoms(nn,level,1)%je
-        ke = flowDoms(nn,level,1)%ke
-
+ 
 !
 !       ****************************************************************
 !       *                                                              *
@@ -76,12 +64,17 @@
 !
         secID = flowDoms(nn,level,1)%sectionID
         nTime = nTimeIntervalsSpectral!sections(secID)%nTimeInstances
-        print *,'Shape',shape(flowdoms)
+
         spectralLoop: do sps = 1, nTime
-           print *,' inspectral', nn,level,sps,ib,jb,kb
+
+           ! Easier storage of some variables, which are independent
+           ! of the time instance.
+
+           call setPointers(nn,level,sps)
+           
            allocate(flowDoms(nn,level,sps)%globalCell(0:ib,0:jb,0:kb), &
                     stat=ierr)
-           print *,'error',ierr
+
            if(ierr /= 0)                       &
                 call terminate("allocMemADjoint", &
                                "Memory allocation failure for globalCell")
