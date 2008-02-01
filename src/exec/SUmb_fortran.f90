@@ -33,6 +33,10 @@
 
        character(len=lenExec),  intent(in) :: execName
        character(len=lenParam), intent(in) :: paramName
+
+       ! variable for timing
+       real(kind=realType) :: timer(10)
+
 !
 !      ******************************************************************
 !      *                                                                *
@@ -42,6 +46,11 @@
 !
        ! Test if the program was called correctly and store the name of
        ! the parameter file.
+
+       !set reference time
+       print *, 'Set reference time ....'
+       call cpu_time(timer(1))
+ 
 
        call initExec(execName, lenExec, paramName, lenParam, &
                      nArgs, sizeC_int)
@@ -66,6 +75,15 @@
 
        call solver
 
+       call cpu_time(timer(2))
+       print *, "       time to end of solver = ", timer(2)-timer(1) 
+
+       ! Solve ADjoint
+
+       call solverADjoint
+       
+       call cpu_time(timer(3))
+       print *, "       time for adjoint = ", timer(3)-timer(2) 
        ! First part to release the memory.
 
        call releaseMemoryPart1

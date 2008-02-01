@@ -1,9 +1,9 @@
 #      ******************************************************************
 #      *                                                                *
 #      * File:          Makefile                                        *
-#      * Author:        Edwin van der Weide, Seonghyeon Hahn            *
-#      * Starting date: 12-10-2002                                      *
-#      * Last modified: 03-02-2006                                      *
+#      * Author:        Andre C. Marta, C.A.(Sandy) Mader               *
+#      * Starting date: 01-14-2008                                      *
+#      * Last modified: 01-14-2008                                      *
 #      *                                                                *
 #      ******************************************************************
 
@@ -30,44 +30,73 @@ include ${SUMB_RULES_FILE}
 
 #      ******************************************************************
 #      *                                                                *
-#      * Names of the Fortran object files to be created.               *
-#      * These are split in sets, such that no dependencies are present *
-#      * within a set. This guarantees that parallel make works         *
-#      * correctly.                                                     *
+#      * Names of the Fortran and C object files to be created.         *
 #      *                                                                *
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS_1 = precision.o\
-		 su_cgns.o
 
-FF90_OBJECTS_2 = bleedFlows.o\
-		 constants.o\
-		 coolingModelLevel0.o\
-		 killSignals.o
+FF90_MODULES = 
 
-FF90_OBJECTS_3 = ADjointPETSc.o\
-		 ADjointVars.o\
-		 block.o\
-		 IOModule.o
+FF90_OBJECTS = allocMemADjoint.o        \
+	       assertionsADjoint.o      \
+               computeAeroCoef.o        \
+	       haloIndexCommunication.o \
+	       indexHalo.o              \
+	       indexHalo1to1.o          \
+	       preprocessingADjoint.o   \
+	       setGlobalCellsAndNodes.o \
+               solverADjoint.o 
+#FF90_OBJECTS = allocMemADjoint.o\
+#	       assertionsADjoint.o\
+#	       computeADjointGradientExtra.o\
+#               computeADjointGradientSpatial.o\
+#	       computeAeroCoef.o\
+#	       convertDegToRad.o\
+#	       convertRadToDeg.o\
+#	       copyADjointStencil.o\
+#	       copyLocalIndexHalo.o\
+#	       createPETScKsp.o\
+#	       createPETScMat.o\
+#	       createPETScVars.o\
+#	       createPETScVec.o\
+#	       designExport.o\
+#	       designImport.o\
+#	       designInit.o\
+#	       designWrite.o\
+#	       destroyPETScVars.o\
+#               destroyPETScKSP.o\
+#	       finalizePETSc.o\
+#	       getDirAngle.o\
+#	       getDirVector.o\
+#	       haloIndexCommunication.o\
+#	       initializePETSc.o\
+#	       preprocessingADjoint.o\
+#	       getGlobalNodes.o\
+#	       releaseMemADjoint.o\
+#	       sendIndexHalo.o\
+#	       setGlobalNodes.o\
+#	       setPointersAdj.o\
+#	       setupADjointMatrix.o\
+#	       setupADjointRHSAeroCoeff.o\
+#	       setupADjointRHS.o\
+#	       setupGradientMatrixExtra.o\
+#              setupGradientMatrixSpatial.o\
+#	       setupGradientRHSExtra.o\
+#               setupGradientRHSSpatial.o\
+#	       solveADjointPETSc.o\
+#	       solverADjoint.o\
+#	       storeReceivedIndexHalo.o\
+#	       vectorRotation.o\
+#	       verifydRdW.o\
+#	       verifydRdx.o\
+#	       verifyRAdj.o\
+#	       writeADjoint.o\
+#	       writeADjointGradient.o\
+#	       writeADjointHistory.o\
+#	       writeADjointSol.o
 
-FF90_OBJECTS_4 = BCTypes.o\
-		 blockPointers.o\
-		 cgnsGrid.o\
-		 cgnsNames.o\
-		 commMixing.o\
-		 commSliding.o\
-		 communication.o\
-		 couplerParam.o\
-		 CpCurveFits.o\
-		 extraOutput.o\
-		 flowVarRefState.o\
-		 inputParam.o\
-		 interfaceGroups.o\
-		 iteration.o\
-		 monitor.o\
-		 paramTurb.o\
-		 section.o
+CC_OBJECTS   = #initPETScWrap.o
 
 #      ******************************************************************
 #      *                                                                *
@@ -78,25 +107,19 @@ FF90_OBJECTS_4 = BCTypes.o\
 default: all
 
 all:
-	$(MAKE) src_1
-	$(MAKE) src_2
-	$(MAKE) src_3
-	$(MAKE) src_4
-	cp -f *.mod $(SUMB_MODDIR)
+	$(MAKE) mod
+#	cp -f *.mod $(SUMB_MODDIR)
+	$(MAKE) src
 
 clean:
-	@echo "        Making clean in modules... "
+	@echo "        Making clean in adjoint... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
 
 #      ******************************************************************
 #      *                                                                *
-#      * Rules to make the individual parts; these are introduced to    *
-#      * have parallel make function correctly. The objects of src_1    *
-#      * are independent; the ones of src_2 depend on src_1, etc.       *
+#      * Rule to make the src part.                                     *
 #      *                                                                *
 #      ******************************************************************
 
-src_1:	$(FF90_OBJECTS_1)
-src_2:	$(FF90_OBJECTS_2)
-src_3:	$(FF90_OBJECTS_3)
-src_4:	$(FF90_OBJECTS_4)
+mod:	$(FF90_MODULES)
+src:	$(FF90_OBJECTS) $(CC_OBJECTS)
