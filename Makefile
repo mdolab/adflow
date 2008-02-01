@@ -25,6 +25,7 @@
 #      ******************************************************************
 
 SUBDIR_SRC    = src/modules       \
+		src/adjoint       \
 		src/bcdata        \
 	        src/initFlow      \
 	        src/inputParam    \

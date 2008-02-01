@@ -666,6 +666,23 @@
          integer(kind=intType) :: iBegOr, iEndOr, jBegOr, jEndOr
          integer(kind=intType) :: kBegOr, kEndOr
 
+!
+!        ****************************************************************
+!        *                                                              *
+!        * Adjoint solver variables.                                    *
+!        *                                                              *
+!        ****************************************************************
+!
+         ! globalNode(ib:ie,jb:je,kb:ke):  Global node numbering.
+         ! globalCell(0:ib,0:jb,0:kb):     Global cell numbering.
+         ! psiAdj(ib:ie,jb:je,kb:ke,1:nw): The adjoint variables.
+         !                                 Correspond to the flow field
+         !                                 variables w(i,j,k,1:nw).
+      
+         integer(kind=intType), dimension(:,:,:), pointer :: globalNode
+         integer(kind=intType), dimension(:,:,:), allocatable :: globalCell
+         real(kind=realType), dimension(:,:,:,:), pointer :: psiAdj
+
        end type blockType
 !
 !      ******************************************************************
