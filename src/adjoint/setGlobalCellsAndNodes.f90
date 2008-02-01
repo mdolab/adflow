@@ -72,6 +72,7 @@
                                   * flowDoms(nn,level,sps)%je &
                                   * flowDoms(nn,level,sps)%ke
       enddo
+      print *,'local cells counted'
 
       ! Reduce the number of cells in all processors: add up nCellsLocal
       ! into nCellsGlobal and sends the result to all processors.
@@ -96,6 +97,7 @@
       call mpi_gather(nNodesLocal, 1, sumb_integer, nNodes, 1, &
                       sumb_integer, 0, SUmb_comm_world, ierr)
 
+      print *,' local nodes gathered'
 
       ! Determine the global cell number offset for each processor.
 
@@ -112,6 +114,8 @@
 
       call mpi_scatter(nCellOffset, 1, sumb_integer, nCellOffsetLocal, 1, &
                       sumb_integer, 0, SUmb_comm_world, ierr)
+      
+      print *,'scatter'
 
       ! Determine the global cell number offset for each local block.
 
@@ -122,6 +126,7 @@
                          * flowDoms(nn-1,level,sps)%jl &
                          * flowDoms(nn-1,level,sps)%kl
       enddo
+      print *,'global cell offsets determined'
 
       ! Repeat for nodes.
 
@@ -137,14 +142,17 @@
                          * flowDoms(nn-1,level,sps)%jl &
                          * flowDoms(nn-1,level,sps)%kl
       enddo
+      print *,'global node offsets determined'
 
+     
       ! Determine the global block row index for each (i,j,k) cell in
       ! each local block.
 
       do nn=1,nDom
-        il = flowDoms(nn,level,sps)%il
-        jl = flowDoms(nn,level,sps)%jl
-        kl = flowDoms(nn,level,sps)%kl
+         call setPointers(nn,level,sps)
+!        il = flowDoms(nn,level,sps)%il
+!        jl = flowDoms(nn,level,sps)%jl
+!        kl = flowDoms(nn,level,sps)%kl
         do k=2,kl
           do j=2,jl
             do i=2,il
@@ -154,14 +162,17 @@
           enddo
         enddo
       enddo
+      print *,'global cell bock row determined'
+     
 
       ! Determine the global block row index for each (i,j,k) node in
       ! each local block.
 
       do nn=1,nDom
-        ie = flowDoms(nn,level,sps)%ie
-        je = flowDoms(nn,level,sps)%je
-        ke = flowDoms(nn,level,sps)%ke
+         call setPointers(nn,level,sps)
+!        ie = flowDoms(nn,level,sps)%ie
+!        je = flowDoms(nn,level,sps)%je
+!        ke = flowDoms(nn,level,sps)%ke
         do k=1,ke
           do j=1,je
             do i=1,ie
@@ -171,6 +182,7 @@
           enddo
         enddo
       enddo
+      print *,'end'
 
       ! Synchronize the processors, just to be sure.
 

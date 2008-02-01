@@ -133,7 +133,7 @@
       ! Assertion testing, memory allocation and global number indexing.
 
       call preprocessingADjoint(level)
-
+stop
 !!$
 !!$      ! Determine the number of design variables, initialize the arrays
 !!$      ! that store the cost functions (values,names,gradients) and

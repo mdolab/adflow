@@ -22,7 +22,8 @@
 !     ******************************************************************
 !
       use BCTypes
-      use block
+      !use block
+      use blockpointers
       use flowVarRefState     ! viscous
       use inputDiscretization ! orderFlow
       use inputPhysics        ! equationMode
@@ -56,7 +57,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      print *,'checking problem'
+
       ! Assert that it is a steady problem.
 
       if( equationMode == unsteady ) &
@@ -75,7 +76,7 @@
         call terminate("assertionsADjoint", &
                        "Cannot handle overset grids yet.")
 
-      print *,'problem ok'
+ 
 !
 !     ******************************************************************
 !     *                                                                *
@@ -110,45 +111,48 @@
       !
      
      
-      print *,'checking boundary conditions'
       ! Loop over the local domains.
 
       domainLoop: do nn=1,nDom
-         print *,'indomain',nn,level
-         secID = flowDoms(nn,level,1)%sectionID
-         nTime = nTimeIntervalsSpectral!sections(secID)%nTimeInstances
+         !print *,'indomain',nn,level
+         nTime = nTimeIntervalsSpectral
 
          spectralLoop: do sps = 1, nTime
-            print *,'timeinstance',sps,ntime            
-!!$            ! Loop over the subfaces.
-!!$            
-!!$            subfaceLoop: do mm=1,flowDoms(nn,level,sps)%nSubface
-!!$               
-!!$               ! Verify ADjoint support for the boundary condition type
-!!$               ! (check adjoint/residualInput/penaltyStateBCsAdj.f90)
-!!$               print *,'subface',mm,flowDoms(nn,level,sps)%BCType!(mm)
-!!$!               boundary = flowDoms(nn,level,sps)%BCType(mm)
-!!$!               print *,'boundary',boundary
-!!$               if( boundary == SymmPolar        .or. &
-!!$                    boundary == NSWallAdiabatic  .or. &
-!!$                    boundary == NSWallIsothermal .or. &
-!!$                    boundary == SubsonicInflow   .or. &
-!!$                    boundary == SubsonicOutflow  .or. &
-!!$                    boundary == MassBleedInflow  .or. &
-!!$                    boundary == MassBleedOutflow .or. &
-!!$                    boundary == mDot             .or. &
-!!$                    boundary == Thrust           .or. &
-!!$                    boundary == Extrap           .or. &
-!!$                    boundary == DomainInterfaceAll  .or. &
-!!$                    boundary == SupersonicInflow ) then
-!!$                  write(errorMessage,99) "Cannot handle specified BC type (",&
-!!$                       boundary, &
-!!$                       ") yet."
-!!$                  call terminate("assertionsADjoint", errorMessage)
-!!$               endif
-!!$               
-!!$               
-!!$            enddo subfaceLoop
+            !print *,'timeinstance',sps,ntime            
+           
+            !set the correct block
+
+            call setPointers(nn,level,sps)
+
+            ! Loop over the subfaces.
+            
+            !subfaceLoop: do mm=1,flowDoms(nn,level,sps)%nSubface
+            subfaceLoop: do mm=1,nSubface
+
+               ! Verify ADjoint support for the boundary condition type
+               ! (check adjoint/residualInput/ApplyBCsAdj.f90)
+              
+               boundary = BCType(mm)
+               
+               if( boundary == SymmPolar        .or. &
+                    boundary == NSWallAdiabatic  .or. &
+                    boundary == NSWallIsothermal .or. &
+                    boundary == SubsonicInflow   .or. &
+                    boundary == SubsonicOutflow  .or. &
+                    boundary == MassBleedInflow  .or. &
+                    boundary == MassBleedOutflow .or. &
+                    boundary == mDot             .or. &
+                    boundary == Thrust           .or. &
+                    boundary == Extrap           .or. &
+                    boundary == DomainInterfaceAll  .or. &
+                    boundary == SupersonicInflow ) then
+                  write(errorMessage,99) "Cannot handle specified BC type (",&
+                       boundary, &
+                       ") yet."
+                  call terminate("assertionsADjoint", errorMessage)
+               endif
+               
+            enddo subfaceLoop
             
          enddo spectralLoop
        
