@@ -14,11 +14,11 @@
 !     ******************************************************************
 !     *                                                                *
 !     * This subroutine is the main driver for the discrete adjoint    *
-!     *  solver for SUmbVertex.  The approach to the setup and         *
+!     *  solver for SUmb.  The approach to the setup and               *
 !     *  solution of the adjoint problem is based on the use of        *
 !     *  automatic differentiation techniques (Tapenade from INRIA)    *
 !     *  applied to a version of the residual computation for a single *
-!     *  node in the SUmb mesh.  This residual computation is meant to *
+!     *  cell in the SUmb mesh.  This residual computation is meant to *
 !     *  be in all ways identical to that performed by the actual flow *
 !     *  solver (no approximations), including all flux routines,      *
 !     *  limiters (if used) and all boundary conditions.               *
@@ -40,13 +40,13 @@
 !     *  for the time being as the approach has the potential to be    *
 !     *  used, exactly, for governing equations as complex as entire   *
 !     *  multiple equation turbulence models and even complex MHD      *
-!     *  MHD formulations.                                             *
+!     *  formulations.                                                 *
 !     *                                                                *
 !     * The resulting linear system is solved using Krylov subspace    *
 !     *  methods embedded in the PETSc toolkit from Argonne National   *
 !     *  laboratories.                                                 *
 !     *                                                                *
-!     * This is an implementation on the vertex-centered version of    *
+!     * This is an implementation on the cell-centered version of      *
 !     *  the SUmb solver.  It is not intended to be comprehensive.     *
 !     *  The intent is to support the entire SUmb vertex solver once   *
 !     *  it is completed and operational.                              *
@@ -133,32 +133,35 @@
       ! Assertion testing, memory allocation and global number indexing.
 
       call preprocessingADjoint(level)
+
+
+      ! Determine the number of design variables, initialize the arrays
+      ! that store the cost functions (values,names,gradients) and
+      ! design variables (values,names,lower and upper bounds).
+
+      call designInit
+
+
+      ! Initialize PETSc.
+
+      call initializePETSc
+      print *,'petscInitialized'
+
+      ! Create all the necessary PETSc objects.
+
+      call createPETScVars
+      print *,'petscvars created'
+
+
+      ! Perform some verifications if in DEBUG mode.
+      !moved after PETSc initialization because PETsc now included in debugging...
+
+!      if( debug ) then
+
+        ! Verify the node-based residual routine.
+
+        !call verifyRAdj(level,sps)
 stop
-!!$
-!!$      ! Determine the number of design variables, initialize the arrays
-!!$      ! that store the cost functions (values,names,gradients) and
-!!$      ! design variables (values,names,lower and upper bounds).
-!!$
-!!$      call designInit
-!!$
-!!$      ! Initialize PETSc.
-!!$
-!!$      call initializePETSc
-!!$
-!!$      ! Create all the necessary PETSc objects.
-!!$
-!!$      call createPETScVars
-!!$
-!!$
-!!$      ! Perform some verifications if in DEBUG mode.
-!!$      !moved after PETSc initialization because PETsc now included in debugging...
-!!$
-!!$!      if( debug ) then
-!!$
-!!$        ! Verify the node-based residual routine.
-!!$
-!!$!        call verifyRAdj(level,sps)
-!!$
 !!$        ! Verify the node-based ADjoint residual routine.
 !!$
 !!$!        call verifydRdW(level,sps)

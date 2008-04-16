@@ -85,6 +85,7 @@ FF90_OBJECTS = bsearchIntegers.o\
 	       writeVarsToBuffer.o
 
 CC_OBJECTS   = myIsNaNC.o\
+	       f77flush.o
 
 #      ******************************************************************
 #      *                                                                *

@@ -57,6 +57,7 @@
        standAloneMode  = .true.
        deforming_Grid  = .false.
        SUmb_comm_world = mpi_comm_world
+       SUmb_comm_self = mpi_comm_self
 
        ! Determine the rank and number of processors inside the group
        ! defined by SUmb_comm_world.

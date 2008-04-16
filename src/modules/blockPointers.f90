@@ -177,5 +177,9 @@
        real(kind=realType), dimension(:,:,:), pointer :: bvti1, bvti2
        real(kind=realType), dimension(:,:,:), pointer :: bvtj1, bvtj2
        real(kind=realType), dimension(:,:,:), pointer :: bvtk1, bvtk2
-
+       
+       integer(kind=intType), dimension(:,:,:), pointer :: globalNode
+       integer(kind=intType), dimension(:,:,:), pointer :: globalCell
+       real(kind=realType), dimension(:,:,:,:), pointer :: psiAdj
+       
        end module blockPointers
