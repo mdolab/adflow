@@ -680,7 +680,7 @@
          !                                 variables w(i,j,k,1:nw).
       
          integer(kind=intType), dimension(:,:,:), pointer :: globalNode
-         integer(kind=intType), dimension(:,:,:), allocatable :: globalCell
+         integer(kind=intType), dimension(:,:,:), pointer :: globalCell
          real(kind=realType), dimension(:,:,:,:), pointer :: psiAdj
 
        end type blockType

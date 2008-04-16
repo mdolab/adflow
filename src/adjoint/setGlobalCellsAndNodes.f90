@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine setGlobalCellsAndNodes(level,sps)
+      subroutine setGlobalCellsAndNodes(level)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -34,17 +34,18 @@
 !     ******************************************************************
 !
       use ADjointVars ! nNodesGlobal, nNodesLocal, nOffsetLocal
-      use block
+!      use block
+      use blockpointers
       use communication
       implicit none
 !
 !     Subroutine arguments.
 !
-      integer(kind=intType), intent(in) :: level, sps
+      integer(kind=intType), intent(in) :: level
 !
 !     Local variables.
 !
-      integer(kind=intType) :: nn, i, j, k, il, jl, kl, ie, je, ke
+      integer(kind=intType) :: nn, i, j, k, sps!, il, jl, kl, ie, je, ke
       integer :: ierr, nHalo
 
       integer(kind=intType), dimension(nProc) :: nNodes, nCells, nCellOffset, nNodeOffset
@@ -59,20 +60,23 @@
 !     *                                                                *
 !     ******************************************************************
 !
+      !set spectral level to 1
+
+      sps=1
+
       ! Determine the number of nodes and cells owned by each processor
       ! by looping over the local block domains.
 
       nCellsLocal = 0
       nNodesLocal = 0
+      
       do nn=1,nDom
-        nCellsLocal = nCellsLocal + flowDoms(nn,level,sps)%il &
-                                  * flowDoms(nn,level,sps)%jl &
-                                  * flowDoms(nn,level,sps)%kl
-        nNodesLocal = nNodesLocal + flowDoms(nn,level,sps)%ie &
-                                  * flowDoms(nn,level,sps)%je &
-                                  * flowDoms(nn,level,sps)%ke
+         call setPointers(nn,level,sps)
+
+        nCellsLocal = nCellsLocal + nx*ny*nz
+ 
+        nNodesLocal = nNodesLocal + il  *jl * kl
       enddo
-      print *,'local cells counted'
 
       ! Reduce the number of cells in all processors: add up nCellsLocal
       ! into nCellsGlobal and sends the result to all processors.
@@ -121,10 +125,9 @@
 
       nCellBlockOffset(1) = nCellOffsetLocal
       do nn=2,nDom
+         call setPointers(nn-1,level,sps)
         nCellBlockOffset(nn) = nCellBlockOffset(nn-1)          &
-                         + flowDoms(nn-1,level,sps)%il &
-                         * flowDoms(nn-1,level,sps)%jl &
-                         * flowDoms(nn-1,level,sps)%kl
+                         + nx*ny*nz
       enddo
       print *,'global cell offsets determined'
 
@@ -137,10 +140,9 @@
 
       nNodeBlockOffset(1) = nNodeOffsetLocal
       do nn=2,nDom
+         call setPointers(nn-1,level,sps)
         nNodeBlockOffset(nn) = nNodeBLockOffset(nn-1)          &
-                         + flowDoms(nn-1,level,sps)%il &
-                         * flowDoms(nn-1,level,sps)%jl &
-                         * flowDoms(nn-1,level,sps)%kl
+                         + il *jl * kl
       enddo
       print *,'global node offsets determined'
 
@@ -150,14 +152,13 @@
 
       do nn=1,nDom
          call setPointers(nn,level,sps)
-!        il = flowDoms(nn,level,sps)%il
-!        jl = flowDoms(nn,level,sps)%jl
-!        kl = flowDoms(nn,level,sps)%kl
         do k=2,kl
           do j=2,jl
             do i=2,il
+!              flowDoms(nn,level,sps)%globalCell(i,j,k) &
+!                = nCellBLockOffset(nn) +(i-2) +(j-2)*il +(k-2)*il*jl
               flowDoms(nn,level,sps)%globalCell(i,j,k) &
-                = nCellBLockOffset(nn) +(i-2) +(j-2)*il +(k-2)*il*jl
+                = nCellBLockOffset(nn) +(i-2) +(j-2)*nx +(k-2)*nx*ny
             enddo
           enddo
         enddo
@@ -170,9 +171,6 @@
 
       do nn=1,nDom
          call setPointers(nn,level,sps)
-!        ie = flowDoms(nn,level,sps)%ie
-!        je = flowDoms(nn,level,sps)%je
-!        ke = flowDoms(nn,level,sps)%ke
         do k=1,ke
           do j=1,je
             do i=1,ie

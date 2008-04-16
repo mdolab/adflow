@@ -41,7 +41,12 @@ FF90_MODULES =
 FF90_OBJECTS = allocMemADjoint.o        \
 	       assertionsADjoint.o      \
                computeAeroCoef.o        \
+	       createPETScMat.o         \
+	       createPETScVars.o        \
+	       createPETScVec.o         \
+	       designInit.o             \
 	       haloIndexCommunication.o \
+	       initializePETSc.o        \
 	       indexHalo.o              \
 	       indexHalo1to1.o          \
 	       preprocessingADjoint.o   \
@@ -96,7 +101,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 #	       writeADjointHistory.o\
 #	       writeADjointSol.o
 
-CC_OBJECTS   = #initPETScWrap.o
+CC_OBJECTS   = initPETScWrap.o
 
 #      ******************************************************************
 #      *                                                                *
