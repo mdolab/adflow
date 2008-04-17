@@ -39,19 +39,28 @@ vpath %.o $(SUMB_OBJDIR)
 FF90_MODULES = 
 
 FF90_OBJECTS = allocMemADjoint.o        \
+	       applyAllBCAdj.o          \
 	       assertionsADjoint.o      \
+	       bcSymmAdj.o              \
                computeAeroCoef.o        \
+	       computePressureAdj.o     \
+	       computeRAdj.o            \
+	       copyADjointStencil.o     \
 	       createPETScMat.o         \
 	       createPETScVars.o        \
 	       createPETScVec.o         \
 	       designInit.o             \
+	       extractBCStatesAdj.o     \
 	       haloIndexCommunication.o \
 	       initializePETSc.o        \
 	       indexHalo.o              \
 	       indexHalo1to1.o          \
 	       preprocessingADjoint.o   \
+	       replaceBCStatesAdj.o     \
 	       setGlobalCellsAndNodes.o \
-               solverADjoint.o 
+	       setPointersAdj.o         \
+               solverADjoint.o          \
+	       verifyRAdj.o
 #FF90_OBJECTS = allocMemADjoint.o\
 #	       assertionsADjoint.o\
 #	       computeADjointGradientExtra.o\

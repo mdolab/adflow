@@ -9,20 +9,30 @@
 !      ******************************************************************
 !
 
-subroutine computeRAdjoint()
-
+subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
+                          iCell, jCell,  kCell, &
+                          nn, correctForK,secondHalo)
+  
 !      Set Use Modules
-
+  use blockPointers
+  use flowVarRefState
 
 
 
 !      Set Passed in Variables
 
+  integer(kind=intType), intent(in) :: iCell, jCell, kCell
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
+       intent(in) :: wAdj
+  real(kind=realType), dimension(-3:2,-3:2,-3:2,3), &
+       intent(in) :: xAdj
 
-
+  logical :: secondHalo, correctForK
 
 !      Set Local Variables
 
+  real(kind=realType), dimension(-2:2,-2:2,-2:2) :: pAdj
+  real(kind=realType), dimension(nBocos,-2:2,-2:2,3) :: normAdj
 
 
 
@@ -51,13 +61,18 @@ subroutine computeRAdjoint()
 
        ! Apply all boundary conditions of the mean flow.
 
-       call applyAllBCAdj(secondHalo)
+       call applyAllBCAdj(wAdj, pAdj, &
+            siAdj, sjAdj, skAdj, volAdj, normAdj, &
+            iCell, jCell, kCell,secondHalo)
 
-       ! If case this routine is called in full mg mode call the mean
-       ! flow boundary conditions again such that the normal momentum
-       ! boundary condition is treated correctly.
-
-       if(.not. corrections) call applyAllBCAdj(secondHalo)
+!!#Shouldn't neet this section for derivatives...
+!!$       ! In case this routine is called in full mg mode call the mean
+!!$       ! flow boundary conditions again such that the normal momentum
+!!$       ! boundary condition is treated correctly.
+!!$
+!!$       if(.not. corrections) call applyAllBCAdj(wAdj, pAdj, &
+!!$                              siAdj, sjAdj, skAdj, volAdj, normAdj, &
+!!$                              iCell, jCell, kCell,secondHalo)
 
        !Leave out State exchanges for now. If there are discrepancies 
        !Later, this may be a source...
@@ -76,53 +91,53 @@ subroutine computeRAdjoint()
        ! boundary conditions must be applied one more time and the
        ! solution must be exchanged again.
 
-       if(.not. corrections) then
-         call BCDataMassBleedOutflowAdj(.true., .true.)
-         call applyAllBCAdj(secondHalo)
-
-       !Leave out State exchanges for now. If there are discrepancies 
-       !Later, this may be a source...
+!!$       if(.not. corrections) then
+!!$         call BCDataMassBleedOutflowAdj(.true., .true.)
+!!$         call applyAllBCAdj(secondHalo)
 !!$
-!!$         if( secondHalo ) then
-!!$           call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-!!$                       .true., .true.)
-!!$         else
-!!$           call whalo1(currentLevel, 1_intType, nVarInt, .true., &
-!!$                       .true., .true.)
-!!$         endif
-       endif
+!!$       !Leave out State exchanges for now. If there are discrepancies 
+!!$       !Later, this may be a source...
 
-
-
-       ! Reset the values of rkStage and currentLevel, such that
-       ! they correspond to a new iteration.
-
-       rkStage = 0
-       currentLevel = groundLevel
-
-       ! Compute the latest values of the skin friction velocity.
-       ! The currently stored values are of the previous iteration.
-
-       call computeUtauAdj
-
-       ! Apply an iteration to the turbulent transport equations in
-       ! case these must be solved segregatedly.
-
-       if( turbSegregated ) call turbSolveSegregatedAdj
-
-       ! Compute the time step.
-
-       call timeStepAdj(.false.)
-
-       ! Compute the residual of the new solution on the ground level.
-
-       if( turbCoupled ) then
-         call initresAdj(nt1MG, nMGVar)
-         call turbResidualAdj
-       endif
-
-       call initresAdj(1_intType, nwf)
-       call residualAdj
+!!$!         if( secondHalo ) then
+!!$!           call whalo2(currentLevel, 1_intType, nVarInt, .true., &
+!!$!                       .true., .true.)
+!!$!         else
+!!!$           call whalo1(currentLevel, 1_intType, nVarInt, .true., &
+!!!$                       .true., .true.)
+!!!$         endif
+!!$       endif
+!!$
+!!$
+!!$
+!!$       ! Reset the values of rkStage and currentLevel, such that
+!!$       ! they correspond to a new iteration.
+!!$
+!!$       rkStage = 0
+!!$       currentLevel = groundLevel
+!!$
+!!$       ! Compute the latest values of the skin friction velocity.
+!!$       ! The currently stored values are of the previous iteration.
+!!$
+!!$       call computeUtauAdj
+!!$
+!!$       ! Apply an iteration to the turbulent transport equations in
+!!$       ! case these must be solved segregatedly.
+!!$
+!!$       if( turbSegregated ) call turbSolveSegregatedAdj
+!!$
+!!$       ! Compute the time step.
+!!$
+!!$       call timeStepAdj(.false.)
+!!$
+!!$       ! Compute the residual of the new solution on the ground level.
+!!$
+!!$       if( turbCoupled ) then
+!!$         call initresAdj(nt1MG, nMGVar)
+!!$         call turbResidualAdj
+!!$       endif
+!!$
+!!$       call initresAdj(1_intType, nwf)
+!!$       call residualAdj
 
 
 
