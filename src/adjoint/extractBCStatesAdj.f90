@@ -74,6 +74,10 @@
        iSBeg = iCell - 2; iSEnd = iCell + 2
        jSBeg = jCell - 2; jSEnd = jCell + 2
        kSBeg = kCell - 2; kSEnd = kCell + 2
+
+       iOffset = zero
+       jOffset = zero
+       kOffset = zero
 !!$
 !!$       ! Loop over the number of physical boundary subfaces of the block.
 !!$

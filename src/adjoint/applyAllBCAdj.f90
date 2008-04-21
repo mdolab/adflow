@@ -150,10 +150,12 @@
 !!$       
 !!$       call bcExtrap(secondHalo, correctForK)
 !!$       
-!!$       ! Inviscid wall boundary conditions.
-!!$       
-!!$       call bcEulerWall(secondHalo, correctForK)
-!!$       
+       ! Inviscid wall boundary conditions.
+       print *,'indicies',icell,jcell,kcell
+       call bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
+            siAdj, sjAdj, skAdj, normAdj,iCell,jCell,kCell)
+       print *,'leavinv eulerWall bc'
+       
 !!$       ! Domain-interface boundary conditions,
 !!$       ! when coupled with other solvers.
 !!$       

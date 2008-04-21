@@ -69,6 +69,12 @@
 !     *                                                                *
 !     ******************************************************************
 !
+      ! Get the initial time.
+
+      call mpi_barrier(SUmb_comm_world, ierr)
+      if(myID == 0) call cpu_time(time(1))
+
+
       if(myID == 0) then
         write(*,*) "Running verifyRAdj..."
         write(*,*) "proc block  i   j   k  sum(dwAdj)", &
@@ -170,6 +176,12 @@
       call initres(1_intType, nwf)
       call residual
 
+      ! Get the final time for original routines.
+      call mpi_barrier(SUmb_comm_world, ierr)
+      if(myID == 0) then
+        call cpu_time(time(2))
+        timeOri = time(2)-time(1)
+      endif
 
 !
 !     ******************************************************************
@@ -223,10 +235,11 @@
 !!$                            sum(dwAdj(:)), sum(dw(iCell,jCell,kCell,:)), &
 !!$                            differ
                      
-                     if( differ > 1e-14 ) &
+                     !if( differ > 1e-14 ) &
+                     if( abs(differ) > 1e-14 ) &
                           write(*,10) myID, nn, iCell, jCell, kCell,               &
                           sum(dwAdj(:)), sum(dw(iCell,jCell,kCell,:)), &
-                          differ
+                          differ,(dwAdj(1)), (dw(iCell,jCell,kCell,1))
 
                      ! Store difference to output to volume solution file.
                      ! (resrho, resmom, resrhoe) have to be added to the volume
@@ -251,6 +264,7 @@
       ! Output elapsed time for the adjoint and FD computations.
 
       if( myID==0 ) then
+        ! print *,'times',time
         print *, "====================================================="
         print *, " Time for original   residual =", timeOri
         print *, " Time for node-based residual =", timeAdj
@@ -280,7 +294,7 @@
 
       ! > write residual to file.
 
-      call writeSol
+      !call writeSol
 
       ! > restore original filenames.
 
@@ -289,7 +303,7 @@
 
       ! Output formats.
 
-  10  format(1x,i3,2x,i3,2x,i3,1x,i3,1x,i3,2x,e10.3,1x,e10.3,1x,e10.3)
+  10  format(1x,i3,2x,i3,2x,i3,1x,i3,1x,i3,2x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3)
   99  format(2a)
 
       end subroutine verifyRAdj

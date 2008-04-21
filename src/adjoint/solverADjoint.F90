@@ -160,7 +160,7 @@
 
         ! Verify the node-based residual routine.
 
-   	call verifyRAdj(level,sps)
+   	call verifyRAdj(level)
 stop
 !!$        ! Verify the node-based ADjoint residual routine.
 !!$
