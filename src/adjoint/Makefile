@@ -42,6 +42,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       applyAllBCAdj.o          \
 	       assertionsADjoint.o      \
 	       bcSymmAdj.o              \
+	       bcEulerWallAdj.o         \
                computeAeroCoef.o        \
 	       computePressureAdj.o     \
 	       computeRAdj.o            \
@@ -51,12 +52,20 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       createPETScVec.o         \
 	       designInit.o             \
 	       extractBCStatesAdj.o     \
+	       extrapolate2ndHaloAdj.o  \
 	       haloIndexCommunication.o \
 	       initializePETSc.o        \
+	       initresAdj.o             \
 	       indexHalo.o              \
 	       indexHalo1to1.o          \
+	       inviscidCentralFluxAdj.o \
+	       inviscidUpwindFluxAdj.o  \
+	       leftRightStateAdj.o      \
+	       metricAdj.o              \
 	       preprocessingADjoint.o   \
 	       replaceBCStatesAdj.o     \
+	       residualAdj.o            \
+	       riemannFluxAdj.o         \
 	       setGlobalCellsAndNodes.o \
 	       setPointersAdj.o         \
                solverADjoint.o          \

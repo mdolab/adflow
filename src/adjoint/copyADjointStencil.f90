@@ -64,9 +64,9 @@
 
       ! Initialize the auxiliary array xAdj 
       do l=1,3
-        do kk=-2,3
-          do jj=-2,3
-            do ii=-2,3
+        do kk=-3,2
+          do jj=-3,2
+            do ii=-3,2
               xAdj(ii,jj,kk,l) = 0.0
             enddo
           enddo
@@ -87,9 +87,13 @@
 
       ! Copy xAdj from x
 
-      iStart=-2; iEnd=3
-      jStart=-2; jEnd=3
-      kStart=-2; kEnd=3
+!!$      iStart=-2; iEnd=3
+!!$      jStart=-2; jEnd=3
+!!$      kStart=-2; kEnd=3
+
+      iStart=-3; iEnd=2
+      jStart=-3; jEnd=2
+      kStart=-3; kEnd=2
 
 !!$      ! Special care needs to be done for subfaces. 
 !!$      ! There're no points for -3 and 2 indices

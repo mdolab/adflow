@@ -27,18 +27,73 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
   real(kind=realType), dimension(-3:2,-3:2,-3:2,3), &
        intent(in) :: xAdj
 
+  real(kind=realType), dimension(nw)                :: dwAdj
+
   logical :: secondHalo, correctForK
 
 !      Set Local Variables
 
+  !variables for test loops
+  integer(kind=intType)::i,j,k,ii,jj,kk
+
   real(kind=realType), dimension(-2:2,-2:2,-2:2) :: pAdj
   real(kind=realType), dimension(nBocos,-2:2,-2:2,3) :: normAdj
-
+  real(kind=realType):: volAdj
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,3) :: siAdj, sjAdj, skAdj
 
 
 ! *************************************************************************
 !      Begin Execution
 ! *************************************************************************
+  
+
+!      Call the metric routines to generate the areas, volumes and surface normals for the stencil.
+       !print *,'metric in'!,xAdj,siAdj,sjAdj,skAdj,volAdj,normAdj, &
+            !iCell,jCell,kCell
+       call metricAdj(xAdj,siAdj,sjAdj,skAdj,volAdj,normAdj, &
+            iCell,jCell,kCell)
+       
+!!$       kStart=-2; kEnd=2
+!!$       jStart=-2; jEnd=2
+!!$       iStart=-2; iEnd=2
+!!$       
+!!$       if(iCell==il) iEnd=1
+!!$       
+!!$       if(jCell==2)  jStart=-1
+!!$       if(jCell==jl) jEnd=1 
+!!$       
+!!$       if(kCell==2) kStart=-1
+!!$       if(kCell==kl) kEnd=1
+!!$       
+!!$       do kk=kStart,kEnd !-2,2
+!!$          do jj=jStart,jEnd !-2,2
+!!$             do ii=iStart,iEnd !-2,2
+!!$!!!$       do kk = -2,2
+!!$!!!$          do jj = -2,2
+!!$!!!$             do ii = -2,2
+!!$                i = ii+iCell
+!!$                j = jj+jCell
+!!$                k = kk+kCell
+!!$                if (abs(siAdj(ii,jj,kk,1)-si(i,j,k,1))> 0.0) then
+!!$                   print *,'areasi',ii,jj,kk,i,j,k,siAdj(ii,jj,kk,1),si(i,j,k,1)!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
+!!$                endif
+!!$                if (abs(sjAdj(ii,jj,kk,1)-sj(i,j,k,1))> 0.0) then
+!!$                   print *,'areasj',ii,jj,kk,i,j,k,sjAdj(ii,jj,kk,1),sj(i,j,k,1)!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
+!!$                endif
+!!$                if (abs(skAdj(ii,jj,kk,1)-sk(i,j,k,1))> 0.0) then
+!!$                   print *,'areask',ii,jj,kk,i,j,k,skAdj(ii,jj,kk,1),sk(i,j,k,1)!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
+!!$                endif
+!!$             enddo
+!!$          enddo
+!!$       enddo
+!!$       if (abs(volAdj-vol(icell,jcell,kcell))> 0.0) then
+!!$          print *,'vol',icell,jcell,kcell,volAdj,vol(iCell,jCell,kCell),abs(volAdj-vol(i,j,k))!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
+!!$       endif
+!!$!       STOP
+
+       !print *,'leaving metric',siAdj,sjAdj,skAdj,volAdj
+       !stop
+
 
 
 !      Mimic the Residual calculation in the main code
@@ -65,7 +120,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
             siAdj, sjAdj, skAdj, volAdj, normAdj, &
             iCell, jCell, kCell,secondHalo)
 
-!!#Shouldn't neet this section for derivatives...
+!!#Shouldn't need this section for derivatives...
 !!$       ! In case this routine is called in full mg mode call the mean
 !!$       ! flow boundary conditions again such that the normal momentum
 !!$       ! boundary condition is treated correctly.
@@ -87,6 +142,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
 !!$                     .true., .true.)
 !!$       endif
 
+!Again this shou;d not be required, so leave out for now...
        ! For full multigrid mode the bleeds must be determined, the
        ! boundary conditions must be applied one more time and the
        ! solution must be exchanged again.
@@ -136,8 +192,10 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
 !!$         call turbResidualAdj
 !!$       endif
 !!$
-!!$       call initresAdj(1_intType, nwf)
-!!$       call residualAdj
+       call initresAdj(1_intType, nwf,sps,dwAdj)
+       call residualAdj(wAdj,siAdj,sjAdj,skAdj,volAdj,normAdj,&
+                              dwAdj, iCell, jCell, kCell,  &  
+                              correctForK)
 
 
 

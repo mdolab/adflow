@@ -190,7 +190,7 @@
              call replaceBCStatesAdj(nn,  wAdj0,wAdj1, wAdj2, wAdj3,&
                   pAdj0,pAdj1, pAdj2, pAdj3,rlvAdj1, rlvAdj2,revAdj1, revAdj2,&
                   iCell, jCell,kCell,&
-                  wAdj,pAdj,rlvAdj,revAdj)
+                  wAdj,pAdj,rlvAdj,revAdj,secondHalo)
 
           endif symmetry
        enddo bocos
