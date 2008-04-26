@@ -3,15 +3,15 @@
 !      *                                                                *
 !      * File:          inviscidUpwindFluxAdj.f90                       *
 !      * Author:        Edwin van der Weide                             *
-!      *                Seongim Choi                                    *
+!      *                Seongim Choi,C.A.(Sandy)Mader                   *
 !      * Starting date: 03-20-2006                                      *
-!      * Last modified: 11-21-2007                                      *
+!      * Last modified: 04-25-2008                                      *
 !      *                                                                *
 !      ******************************************************************
 !
        subroutine inviscidUpwindFluxAdj(wAdj,  pAdj,  dwAdj, &
                                         siAdj, sjAdj, skAdj, &
-                                        iCell, jCell, kCell)
+                                        iCell, jCell, kCell,finegrid)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -47,14 +47,14 @@
        integer(kind=intType) :: nwInt
        integer(kind=intType) :: i, j, k, ii, jj, kk
 
-       real(kind=realType) :: sx, sy, sz, omk, opk, gammaFace
+       real(kind=realType) :: sx, sy, sz, omk, opk, gammaFace,gammaface2
        real(kind=realType) :: factMinmod, sFace, fact
 
        real(kind=realType), dimension(nw)  :: left, right
        real(kind=realType), dimension(nw)  :: du1, du2, du3
        real(kind=realType), dimension(nwf) :: flux
 
-       logical :: firstOrderK, correctForK
+       logical :: firstOrderK, correctForK,finegrid
 
 !
 !      ******************************************************************
@@ -110,6 +110,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       
        orderTest: if(limiter == firstOrder) then
 !
 !        ****************************************************************
@@ -156,11 +157,14 @@
            ! Constant gamma for now.
 
            gammaFace = gammaConstant
+           gammaFace2 = half*(gamma(i,j,k) + gamma(i+1,j,k))
+           !print *,'gammaface',gammaface,gammaface2
 
            ! Compute the dissipative flux across the interface
            ! and them to dwAdj.
 
-           call riemannFluxAdj(left,right,flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
+!           call riemannFluxAdj(left,right,flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
+            call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid)
 
            dwAdj(irho)  = dwAdj(irho)  + fact*flux(irho)
            dwAdj(imx)   = dwAdj(imx)   + fact*flux(imx)
@@ -216,7 +220,8 @@
            ! Compute the dissipative flux across the interface
            ! and them to dwAdj.
 
-           call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
+!           call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
+            call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid)
 
            dwAdj(irho)  = dwAdj(irho)  + fact*flux(irho)
            dwAdj(imx)   = dwAdj(imx)   + fact*flux(imx)
@@ -271,8 +276,9 @@
 
            ! Compute the dissipative flux across the interface
            ! and them to dwAdj.
-
-           call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
+           
+           !call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
+            call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid)
 
            dwAdj(irho)  = dwAdj(irho)  + fact*flux(irho)
            dwAdj(imx)   = dwAdj(imx)   + fact*flux(imx)
@@ -290,7 +296,7 @@
 !      ==================================================================
 
        else orderTest
-
+          !PRINT *,'limiter',limiter
 !      ==================================================================
 !
 !        ****************************************************************
@@ -336,7 +342,8 @@
            du1(irhoE) = pAdj(ii,  0,0) - pAdj(ii-1,0,0)
            du2(irhoE) = pAdj(ii+1,0,0) - pAdj(ii,  0,0)
            du3(irhoE) = pAdj(ii+2,0,0) - pAdj(ii+1,0,0)
-
+           
+!!$           print *,'pAdj',p(i,  j,k) - p(i-1,j,k),pAdj(ii,  0,0) - pAdj(ii-1,0,0),p(i,  j,k),p(i-1,j,k),pAdj(ii,  0,0), pAdj(ii-1,0,0),p(i,  j,k) -pAdj(ii,  0,0),p(i,  j,k) - p(i-1,j,k)-(pAdj(ii,  0,0) - pAdj(ii-1,0,0))
            if( correctForK ) then
              du1(itu1) = wAdj(ii,  0,0,itu1) - wAdj(ii-1,0,0,itu1)
              du2(itu1) = wAdj(ii+1,0,0,itu1) - wAdj(ii,  0,0,itu1)
@@ -346,7 +353,7 @@
            ! Compute the differences from the first order scheme.
 
            call leftRightStateAdj(du1, du2, du3, left, right,nwInt,omk,opk,factminmod,firstOrderK)
-
+           !print *,'leftrightadj',left,right,icell,jcell,kcell
            ! Add the first order part to the currently stored
            ! differences, such that the correct state vector
            ! is stored.
@@ -379,12 +386,15 @@
            ! Constant gamma for now.
 
            gammaFace = gammaConstant
+           gammaFace2 = half*(gamma(i,j,k) + gamma(i+1,j,k))
+           !print *,'gammaface',gammaface,gammaface2
 
            ! Compute the dissipative flux across the interface
            ! and them to dwAdj.
-
-           call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
-
+           !print *,'leftrightadj',left,right
+!           call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
+           call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid)
+           !print *,'fluxadj',flux,icell,jcell,kcell
            dwAdj(irho)  = dwAdj(irho)  + fact*flux(irho)
            dwAdj(imx)   = dwAdj(imx)   + fact*flux(imx)
            dwAdj(imy)   = dwAdj(imy)   + fact*flux(imy)
@@ -477,7 +487,8 @@
            ! Compute the dissipative flux across the interface
            ! and them to dwAdj.
 
-           call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
+           !call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
+            call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid)
 
            dwAdj(irho)  = dwAdj(irho)  + fact*flux(irho)
            dwAdj(imx)   = dwAdj(imx)   + fact*flux(imx)
@@ -571,7 +582,8 @@
            ! Compute the dissipative flux across the interface
            ! and them to dwAdj.
 
-           call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
+!           call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
+           call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid)
 
            dwAdj(irho)  = dwAdj(irho)  + fact*flux(irho)
            dwAdj(imx)   = dwAdj(imx)   + fact*flux(imx)

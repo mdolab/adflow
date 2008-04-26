@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine residualAdj(wAdj,siAdj,sjAdj,skAdj,volAdj,normAdj,&
+       subroutine residualAdj(wAdj,pAdj,siAdj,sjAdj,skAdj,volAdj,normAdj,&
                               dwAdj, iCell, jCell, kCell,  &  
                               correctForK)
 !
@@ -36,10 +36,11 @@
        real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
                                                  intent(inout) :: wAdj
        real(kind=realType), dimension(nw), intent(inout) :: dwAdj
+       real(kind=realType),dimension(nw):: dwAdj2
        !integer(kind=intType), intent(in) :: discr
        logical, intent(in) :: correctForK
 
-       real(kind=realType), dimension(-2:2,-2:2,-2:2) :: pAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2),intent(in) :: pAdj
         real(kind=realType), dimension(nw) :: fwAdj
 !
 !      Local variables.
@@ -87,7 +88,7 @@
 
        fineGrid = .false.
        if(currentLevel == groundLevel) fineGrid = .true.
-
+       !print *,'in residual',rfil,discr,finegrid,currentlevel
 !moved outside...
 !!$
 !!$       ! Loop over the number of spectral solutions and local
@@ -100,10 +101,36 @@
 !!$           ! inviscid flux.
 !!$
 !!$           call setPointers(nn, currentLevel, sps)
-
+!********************
            call inviscidCentralFluxAdj(wAdj,  pAdj,  dwAdj,         &
                                          siAdj, sjAdj, skAdj, volAdj, &
                                          iCell, jCell, kCell)
+!!$           
+!!$!           call inviscidCentralFluxAdj2(wAdj,  pAdj,  dwAdj2, &
+!!$!                                         iCell, jCell, kCell)
+!!$           call inviscidCentralFluxAdj2(w(icell-2:icell+2,jcell-2:jcell+2,kcell-2:kcell+2,:), p(icell-2:icell+2,jcell-2:jcell+2,kcell-2:kcell+2) ,  dwAdj2, &
+!!$                                         iCell, jCell, kCell)
+!!$!           call inviscidCentralFluxAdj2(wAdj, pAdj ,  dwAdj2, &
+!!$!                                         iCell, jCell, kCell)
+           
+!           dw(:,:,:,:) = 0.0
+
+!           call inviscidCentralFlux
+
+!!$           do i = 1,nw
+!!$              !if (abs(dwAdj(i)-dwAdj2(i))>0.0) then
+!!$              if (abs(dwAdj(i)-dw(icell,jcell,kcell,i))>0.0) then
+!!$                 !if (1.0>0.0) then
+!!$                 print *,abs(dwAdj(i)-dw(icell,jcell,kcell,i)),'dwadjcen',dwAdj(i),'cen2',dwAdj2(i),i,icell,jcell,kcell,dw(icell,jcell,kcell,i)
+!!$              endif
+!!$           enddo
+           
+!!$           
+!!$           do i = 1,nw
+!!$              if (abs(dwAdj(i)-dwAdj2(i))>1e-15) then
+!!$                 print *,abs(dwAdj(i)-dwAdj2(i)),'dwadj',dwAdj(i),'2',dwAdj2(i),i,icell,jcell,kcell,p(icell,jcell,kcell),pAdj(0,0,0)!,w(icell,jcell,kcell,:),wAdj(0,0,0,:)
+!!$              endif
+!!$           enddo
 
            ! Compute the artificial dissipation fluxes.
            ! This depends on the parameter discr.
@@ -148,10 +175,36 @@
 
              case (upwind) ! Dissipation via an upwind scheme.
 
-               call inviscidUpwindFluxAdj(wAdj,  pAdj,  dwAdj, &
+               call inviscidUpwindFluxAdj(wAdj,  p(icell-2:icell+2,jcell-2:jcell+2,kcell-2:kcell+2),  dwAdj, &
                                         siAdj, sjAdj, skAdj, &
-                                        iCell, jCell, kCell)
+                                        iCell, jCell, kCell,finegrid)
+!               call inviscidUpwindFluxAdj2(wAdj,  pAdj,  dwAdj2, &
+!                                        iCell, jCell, kCell,finegrid)
+!!$               call inviscidUpwindFluxAdj2(w(icell-2:icell+2,jcell-2:jcell+2,kcell-2:kcell+2,:), p(icell-2:icell+2,jcell-2:jcell+2,kcell-2:kcell+2),  dwAdj2, &
+!!$                                        iCell, jCell, kCell,finegrid)
+!!$               
+!!$               fw(:,:,:,:) = 0.0
+!!$
+!!$               call inviscidUpwindFlux(fineGrid)
 
+!!$               do l=1,nwf
+!!$                  do k=2,kl
+!!$                     do j=2,jl
+!!$                        do i=2,il
+!!$                           dw(i,j,k,l) = (dw(i,j,k,l) + fw(i,j,k,l)) &
+!!$                                * real(iblank(i,j,k), realType)
+!!$                        enddo
+!!$                     enddo
+!!$                  enddo
+!!$               enddo
+
+!!$               do i = 1,nw
+!!$                  !if (abs(dwAdj(i)-dwAdj2(i))>0.0) then
+!!$                  if (abs(dwAdj(i)-fw(icell,jcell,kcell,i))>0.0) then
+!!$                  !if (1.0>0.0) then
+!!$                     print *,abs(dwAdj(i)-fw(icell,jcell,kcell,i)),'dwadjup',dwAdj(i),'up2',dwAdj2(i),i,icell,jcell,kcell,fw(icell,jcell,kcell,i)
+!!$                  endif
+!!$               enddo
            end select
 
 !come back to later
@@ -177,8 +230,8 @@
 
 
            do l=1,nwf
-              dw(i,j,k,l) = (dwAdj(l) + fwAdj(l)) &
-                               * real(iblank(iCell,jCell,kCell), realType)
+              dwAdj(l) =dwAdj(l)! (dwAdj(l) + fwAdj(l)) &
+                               !* real(iblank(iCell,jCell,kCell), realType)
            enddo
 
 

@@ -25,6 +25,7 @@
        use blockPointers, only : ie, ib, je, jb, ke, kb, nBocos, &
                                   BCFaceID, BCType, BCData
        use flowVarRefState
+       use inputDiscretization !precond,choimerkle, etc...
        implicit none
 
 !!$       use blockPointers
@@ -107,22 +108,27 @@
 !!$       ! differs when preconditioning is used. Make that distinction
 !!$       ! and call the appropriate routine.
 !!$       
-!!$       select case (precond)
-!!$          
-!!$       case (noPrecond)
-!!$          call bcFarfield(secondHalo, correctForK)
-!!$          
-!!$       case (Turkel)
-!!$          call terminate("applyAllBC", &
-!!$               "Farfield boundary conditions for Turkel &
-!!$               &preconditioner not implemented")
-!!$          
-!!$       case (ChoiMerkle)
-!!$          call terminate("applyAllBC", &
-!!$               "Farfield boundary conditions for Choi and &
-!!$               &Merkle preconditioner not implemented")
-!!$
-!!$       end select
+       !print *,'bcfarfield'
+       select case (precond)
+          
+       case (noPrecond)
+          print *,'nopreconditioner'
+          call bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
+               siAdj, sjAdj, skAdj, normAdj,iCell,jCell,kCell)
+          !(secondHalo, correctForK)
+          
+       case (Turkel)
+          call terminate("applyAllBC", &
+               "Farfield boundary conditions for Turkel &
+               &preconditioner not implemented")
+          
+       case (ChoiMerkle)
+          call terminate("applyAllBC", &
+               "Farfield boundary conditions for Choi and &
+               &Merkle preconditioner not implemented")
+
+       end select
+       !print *,'bcfarfield applied'
 !!$
 !!$       ! Subsonic outflow and bleed outflow boundaries.
 !!$       
@@ -151,10 +157,10 @@
 !!$       call bcExtrap(secondHalo, correctForK)
 !!$       
        ! Inviscid wall boundary conditions.
-       print *,'indicies',icell,jcell,kcell
+       !print *,'indicies',icell,jcell,kcell
        call bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
             siAdj, sjAdj, skAdj, normAdj,iCell,jCell,kCell)
-       print *,'leavinv eulerWall bc'
+       !print *,'leavinv eulerWall bc'
        
 !!$       ! Domain-interface boundary conditions,
 !!$       ! when coupled with other solvers.

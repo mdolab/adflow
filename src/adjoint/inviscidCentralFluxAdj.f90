@@ -56,6 +56,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+
        ! Initialize sFace to zero. This value will be used if the
        ! block is not moving.
 
@@ -68,6 +69,7 @@
 !      ******************************************************************
 !
        i    = iCell-1; j = jCell; k = kCell
+       
        fact = -one
 
        ! Loop over the two faces which contribute to the residual of
@@ -88,6 +90,7 @@
          vnm = wAdj(ii,  0,0,ivx)*sIAdj(ii,0,0,1) &
              + wAdj(ii,  0,0,ivy)*sIAdj(ii,0,0,2) &
              + wAdj(ii,  0,0,ivz)*sIAdj(ii,0,0,3)
+
 
          ! Set the values of the porosities for this face.
          ! porVel defines the porosity w.r.t. velocity;
@@ -126,7 +129,7 @@
          ! the average pressure.
           
          pa = porFlux*(pAdj(ii+1,0,0) + pAdj(ii,0,0))
-          
+         
          ! Compute the fluxes through this face.
           
          fs = rqsp + rqsm
