@@ -34,8 +34,8 @@
 !
        integer(kind=intType), intent(in) :: nn!, offset
        integer(kind=intType), intent(in) ::iCell, jCell,kCell
-       integer(kind=intType), intent(out) ::isbeg,jsbeg,ksbeg,isend,jsend,ksend
-       integer(kind=intType), intent(out) ::ibbeg,jbbeg,kbbeg,ibend,jbend,kbend
+       integer(kind=intType), intent(in) ::isbeg,jsbeg,ksbeg,isend,jsend,ksend
+       integer(kind=intType), intent(in) ::ibbeg,jbbeg,kbbeg,ibend,jbend,kbend
        integer(kind=intType), intent(out) ::icbeg,jcbeg,icend,jcend
        integer(kind=intType) ::irbeg,jrbeg,krbeg,irend,jrend,krend
 
@@ -69,81 +69,86 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       ! Determine the range of the stencil for the given cell.
-
-       iSBeg = iCell - 2; iSEnd = iCell + 2
-       jSBeg = jCell - 2; jSEnd = jCell + 2
-       kSBeg = kCell - 2; kSEnd = kCell + 2
-
-       iOffset = zero
-       jOffset = zero
-       kOffset = zero
+!!$       ! Determine the range of the stencil for the given cell.
 !!$
-!!$       ! Loop over the number of physical boundary subfaces of the block.
+!!$       iSBeg = iCell - 2; iSEnd = iCell + 2
+!!$       jSBeg = jCell - 2; jSEnd = jCell + 2
+!!$       kSBeg = kCell - 2; kSEnd = kCell + 2
 !!$
-!!$       do nn=1,nBocos
+!!$       iOffset = zero
+!!$       jOffset = zero
+!!$       kOffset = zero
+!!$
 
-       ! Determine the range of halo cells which this boundary subface
-       ! will change.
-       
-       select case (BCFaceID(nn))
-       case (iMin)
-          iBBeg = 0;                iBEnd = 1
-          jBBeg = BCData(nn)%icBeg; jBEnd = BCData(nn)%icEnd
-          kBBeg = BCData(nn)%jcBeg; kBEnd = BCData(nn)%jcEnd
-          
-          !=============================================================
-          
-       case (iMax)
-          iBBeg = ie;               iBEnd = ib
-          jBBeg = BCData(nn)%icBeg; jBEnd = BCData(nn)%icEnd
-          kBBeg = BCData(nn)%jcBeg; kBEnd = BCData(nn)%jcEnd
-          
-          !=============================================================
-          
-       case (jMin)
-          iBBeg = BCData(nn)%icBeg; iBEnd = BCData(nn)%icEnd
-          jBBeg = 0;                jBEnd = 1
-          kBBeg = BCData(nn)%jcBeg; kBEnd = BCData(nn)%jcEnd
-          
-          !=============================================================
-          
-       case (jMax)
-          iBBeg = BCData(nn)%icBeg; iBEnd = BCData(nn)%icEnd
-          jBBeg = je;               jBEnd = jb
-          kBBeg = BCData(nn)%jcBeg; kBEnd = BCData(nn)%jcEnd
-          
-          !=============================================================
-          
-       case (kMin)
-          iBBeg = BCData(nn)%icBeg; iBEnd = BCData(nn)%icEnd
-          jBBeg = BCData(nn)%jcBeg; jBEnd = BCData(nn)%jcEnd
-          kBBeg = 0;                kBEnd = 1
-          
-          !=============================================================
-          
-       case (kMax)
-          iBBeg = BCData(nn)%icBeg; iBEnd = BCData(nn)%icEnd
-          jBBeg = BCData(nn)%jcBeg; jBEnd = BCData(nn)%jcEnd
-          kBBeg = ke;               kBEnd = kb
-          
-       end select
+!       ! Loop over the number of physical boundary subfaces of the block.
+!
+!       do nn=1,nBocos
+!!$
+!!$       ! Determine the range of halo cells which this boundary subface
+!!$       ! will change.
+!!$
+!!$       !print *,'in extract states',icell,jcell,kcell,nn,isbeg,jsbeg,ksbeg
+!!$       
+!!$       select case (BCFaceID(nn))
+!!$       case (iMin)
+!!$          iBBeg = 0;                iBEnd = 1
+!!$          jBBeg = BCData(nn)%icBeg; jBEnd = BCData(nn)%icEnd
+!!$          kBBeg = BCData(nn)%jcBeg; kBEnd = BCData(nn)%jcEnd
+!!$          
+!!$          !=============================================================
+!!$          
+!!$       case (iMax)
+!!$          iBBeg = ie;               iBEnd = ib
+!!$          jBBeg = BCData(nn)%icBeg; jBEnd = BCData(nn)%icEnd
+!!$          kBBeg = BCData(nn)%jcBeg; kBEnd = BCData(nn)%jcEnd
+!!$          
+!!$          !=============================================================
+!!$          
+!!$       case (jMin)
+!!$          iBBeg = BCData(nn)%icBeg; iBEnd = BCData(nn)%icEnd
+!!$          jBBeg = 0;                jBEnd = 1
+!!$          kBBeg = BCData(nn)%jcBeg; kBEnd = BCData(nn)%jcEnd
+!!$          
+!!$          !=============================================================
+!!$          
+!!$       case (jMax)
+!!$          iBBeg = BCData(nn)%icBeg; iBEnd = BCData(nn)%icEnd
+!!$          jBBeg = je;               jBEnd = jb
+!!$          kBBeg = BCData(nn)%jcBeg; kBEnd = BCData(nn)%jcEnd
+!!$          
+!!$          !=============================================================
+!!$          
+!!$       case (kMin)
+!!$          iBBeg = BCData(nn)%icBeg; iBEnd = BCData(nn)%icEnd
+!!$          jBBeg = BCData(nn)%jcBeg; jBEnd = BCData(nn)%jcEnd
+!!$          kBBeg = 0;                kBEnd = 1
+!!$          
+!!$          !=============================================================
+!!$          
+!!$       case (kMax)
+!!$          iBBeg = BCData(nn)%icBeg; iBEnd = BCData(nn)%icEnd
+!!$          jBBeg = BCData(nn)%jcBeg; jBEnd = BCData(nn)%jcEnd
+!!$          kBBeg = ke;               kBEnd = kb
+!!$          
+!!$       end select
+!!$
+!!$       !print *,'MID extract states',icell,jcell,kcell,nn,ibbeg,jbbeg,kbbeg,ibend,jbend,kbend,icbeg,jcbeg,icend,jcend
+!!$       ! Check for an overlap between the stencil range and the
+!!$       ! halo cells influenced by this boundary subface.
+!!$       
+!!$       iOverlap = .false.
+!!$       if(iSBeg <= iBEnd .and. iSEnd >= iBBeg) iOverlap = .true.
+!!$
+!!$       jOverlap = .false.
+!!$       if(jSBeg <= jBEnd .and. jSEnd >= jBBeg) jOverlap = .true.
+!!$       
+!!$       kOverlap = .false.
+!!$       if(kSBeg <= kBEnd .and. kSEnd >= kBBeg) kOverlap = .true.
+!!$
+!!$       !print *,'overlap?',ioverlap,joverlap,koverlap
 
-
-       ! Check for an overlap between the stencil range and the
-       ! halo cells influenced by this boundary subface.
-       
-       iOverlap = .false.
-       if(iSBeg <= iBEnd .and. iSEnd >= iBBeg) iOverlap = .true.
-
-       jOverlap = .false.
-       if(jSBeg <= jBEnd .and. jSEnd >= jBBeg) jOverlap = .true.
-       
-       kOverlap = .false.
-       if(kSBeg <= kBEnd .and. kSEnd >= kBBeg) kOverlap = .true.
-       
-       checkOverlap: if(iOverlap .and. jOverlap .and. kOverlap) then
-          
+!       checkOverlap: if(iOverlap .and. jOverlap .and. kOverlap) then
+          !print *,'in overlap'
           ! There is an overlap between the two ranges.
           ! Determine the actual overlap region.
           
@@ -530,8 +535,9 @@
           end select
           
           
-       end if checkOverlap
+   !    end if checkOverlap
        
+       !print *,'end extract states',icell,jcell,kcell,nn,isbeg,jsbeg,ksbeg
   !  enddo
     
      end subroutine extractBCStatesAdj

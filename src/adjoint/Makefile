@@ -43,6 +43,8 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       assertionsADjoint.o      \
 	       bcSymmAdj.o              \
 	       bcEulerWallAdj.o         \
+	       bcFarfieldAdj.o          \
+	       checkOverlapAdj.o        \
                computeAeroCoef.o        \
 	       computePressureAdj.o     \
 	       computeRAdj.o            \
@@ -51,6 +53,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       createPETScVars.o        \
 	       createPETScVec.o         \
 	       designInit.o             \
+	       etotArrayAdj.o           \
 	       extractBCStatesAdj.o     \
 	       extrapolate2ndHaloAdj.o  \
 	       haloIndexCommunication.o \

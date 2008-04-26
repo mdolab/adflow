@@ -115,6 +115,7 @@
       else
          secondHalo = .false.
       endif
+      
 !
 !     ******************************************************************
 !     *                                                                *
@@ -206,7 +207,7 @@
  
             !===============================================================
             ! Compute the residual for each cell.
-            
+
             do kCell=2,kl
                do jCell=2,jl
                   do iCell=2,il
@@ -218,13 +219,14 @@
                      
                      ! Compute the total residual.
                      ! This includes inviscid and viscous fluxes, artificial
-                     ! dissipation, and boundary conditions.
+                     ! dissipation, and boundary conditions.                   
 
                      call computeRAdjoint(wAdj,        &
                           xAdj,                       &
                           dwAdj,                      &
                           iCell, jCell,  kCell,       &
                           nn, correctForK,secondHalo)
+
 
                      ! Output the result sum(dw(:)) to debug.
 
@@ -236,7 +238,8 @@
 !!$                            differ
                      
                      !if( differ > 1e-14 ) &
-                     if( abs(differ) > 1e-14 ) &
+                     !if( abs(differ) > 1e-14 ) &
+                     if( 1.0 > 1e-14 ) &
                           write(*,10) myID, nn, iCell, jCell, kCell,               &
                           sum(dwAdj(:)), sum(dw(iCell,jCell,kCell,:)), &
                           differ,(dwAdj(1)), (dw(iCell,jCell,kCell,1))
