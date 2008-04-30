@@ -42,7 +42,6 @@
 !
        real(kind=realType), dimension(-2:3,-2:3,-2:3,3), intent(in) :: xAdj
        real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(out) :: siAdj, sjAdj, skAdj
-       !real(kind=realType), dimension(0:0,0:0,0:0), intent(out) :: volAdj
        real(kind=realType), intent(out) :: volAdj
        real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(out) :: normAdj
        integer(kind=intType), intent(in) :: iCell, jCell, kCell
@@ -85,18 +84,11 @@
 !      *                                                                *
 !      ******************************************************************
 
-!       print *,'in metric',xAdj,siAdj,sjAdj,skAdj,volAdj,normAdj, &
-!            iCell,jCell,kCell
-
        ! Some initialization for siAdj,sjAdj,skAdj,normAdj 
        ! Volume needs only one stencil so it does not need initialization
 
        siAdj = zero; sjAdj = zero; skAdj = zero
        normAdj = zero
-
-       ! print *,'in metric',xAdj, &!,siAdj,sjAdj,skAdj,volAdj,normAdj, &
-       !     iCell,jCell,kCell
-       
 
 !
 !
@@ -132,7 +124,7 @@
             +         xAdj(i,m,n,3) + xAdj(i,j,n,3) &
             +         xAdj(l,j,k,3) + xAdj(l,m,k,3) &
             +         xAdj(l,m,n,3) + xAdj(l,j,n,3))
-       !print *,'xp',xp,yp,zp
+
        ! Compute the volumes of the 6 sub pyramids. The
        ! arguments of volpym must be such that for a (regular)
        ! right handed hexahedron all volumes are positive.
@@ -171,9 +163,9 @@
        ! pyramid. Remember that volpym computes 6 times the
        ! volume.
        
-!       volAdj(i,j,k) = sixth*(vp1 + vp2 + vp3 + vp4 + vp5 + vp6)
+
        volAdj = sixth*(vp1 + vp2 + vp3 + vp4 + vp5 + vp6)
-       !print *,'VolAdj',volAdj,checkAll
+       
        ! Check the volume and update the number of positive
        ! and negative volumes if needed.
        
@@ -183,8 +175,7 @@
           ! volumes. Negative volumes should only occur for left
           ! handed blocks. This is checked later.
           ! Set the logical volumeIsNeg accordingly.
-          
-          !if(volAdj(i,j,k) < zero) then
+               
           if(volAdj < zero) then
              volumeIsNeg = .true.
           else
@@ -198,24 +189,12 @@
 
           ! Set the threshold for the volume quality.
           
-          !fact = thresVolume*abs(voladj(i,j,k))
           fact = thresVolume*abs(voladj)
           
           ! Check the quality of the volume.
           
           badVolume = .false.
-!!$          if(vp1*volAdj(i,j,k) < zero .and. &
-!!$               abs(vp1)       > fact) badVolume = .true.
-!!$          if(vp2*volAdj(i,j,k) < zero .and. &
-!!$               abs(vp2)       > fact) badVolume = .true.
-!!$          if(vp3*volAdj(i,j,k) < zero .and. &
-!!$               abs(vp3)       > fact) badVolume = .true.
-!!$          if(vp4*volAdj(i,j,k) < zero .and. &
-!!$               abs(vp4)       > fact) badVolume = .true.
-!!$          if(vp5*volAdj(i,j,k) < zero .and. &
-!!$               abs(vp5)       > fact) badVolume = .true.
-!!$          if(vp6*volAdj(i,j,k) < zero .and. &
-!!$               abs(vp6)       > fact) badVolume = .true.
+
           if(vp1*volAdj < zero .and. &
                abs(vp1)       > fact) badVolume = .true.
           if(vp2*volAdj < zero .and. &
@@ -239,9 +218,8 @@
        end if
           ! Set the volume to the absolute value.
           
-       !volAdj(i,j,k) = abs(volAdj(i,j,k))
+       
        volAdj = abs(volAdj)
-       !print *,'absvol',volAdj
           
 !!$           ! Some additional safety stuff for halo volumes.
 !!$
@@ -367,7 +345,7 @@
                  sjAdj(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
                  sjAdj(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
                  sjAdj(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
- 
+                 
                enddo
              enddo
            enddo

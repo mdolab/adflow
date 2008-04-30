@@ -208,8 +208,8 @@
             !===============================================================
             ! Compute the residual for each cell.
 
-            do kCell=2,kl
-               do jCell=2,jl
+            do kCell=2,kl!2,kl
+               do jCell=2,jl!2,jl
                   do iCell=2,il
                      
                      ! Transfer the state w to the auxiliar array wAdj
@@ -238,8 +238,7 @@
 !!$                            differ
                      
                      !if( differ > 1e-14 ) &
-                     !if( abs(differ) > 1e-14 ) &
-                     if( 1.0 > 1e-14 ) &
+                     if( abs(differ) > 1e-14 ) &
                           write(*,10) myID, nn, iCell, jCell, kCell,               &
                           sum(dwAdj(:)), sum(dw(iCell,jCell,kCell,:)), &
                           differ,(dwAdj(1)), (dw(iCell,jCell,kCell,1))
