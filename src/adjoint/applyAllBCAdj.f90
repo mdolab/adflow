@@ -22,8 +22,8 @@
 !      ******************************************************************
 !
        use BCTypes
-       use blockPointers, only : ie, ib, je, jb, ke, kb, nBocos, &
-                                  BCFaceID, BCType, BCData
+       use blockPointers!, only : ie, ib, je, jb, ke, kb, nBocos, &
+                         !         BCFaceID, BCType, BCData,p,w
        use flowVarRefState
        use inputDiscretization !precond,choimerkle, etc...
        implicit none
@@ -47,13 +47,16 @@
                                                    intent(inout) :: pAdj
        real(kind=realType), dimension(-2:2,-2:2,-2:2,3), &
                                                    intent(in) :: siAdj, sjAdj, skAdj
-       real(kind=realType), dimension(0:0,0:0,0:0), intent(in) :: volAdj
+       !real(kind=realType), dimension(0:0,0:0,0:0), intent(in) :: volAdj
+       real(kind=realType), intent(in) :: volAdj
        real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(in) :: normAdj
 
 !
 !      Local variables.
 !
        integer(kind=intType) :: nn, sps
+       integer(kind=intType)::i,j,k,ii,jj,kk,l
+       integer(kind=intType) :: iStart,iEnd,jStart,jEnd,kStart,kEnd
 
        logical :: correctForK
 !
@@ -93,8 +96,10 @@
 !!$           ! Apply all the boundary conditions. The order is important.
 
            ! The symmetry boundary conditions.
+       
 
        call bcSymmAdj(wAdj,pAdj,normAdj,secondHalo)
+
 !###       call bcSymmPolar(secondHalo)
 
 !!$       ! call bcEulerWall(secondHalo, correctForK)
@@ -108,15 +113,14 @@
 !!$       ! differs when preconditioning is used. Make that distinction
 !!$       ! and call the appropriate routine.
 !!$       
-       !print *,'bcfarfield'
+
        select case (precond)
           
        case (noPrecond)
-          print *,'nopreconditioner'
+
           call bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
                siAdj, sjAdj, skAdj, normAdj,iCell,jCell,kCell)
-          !(secondHalo, correctForK)
-          
+
        case (Turkel)
           call terminate("applyAllBC", &
                "Farfield boundary conditions for Turkel &
@@ -128,7 +132,7 @@
                &Merkle preconditioner not implemented")
 
        end select
-       !print *,'bcfarfield applied'
+       
 !!$
 !!$       ! Subsonic outflow and bleed outflow boundaries.
 !!$       
@@ -157,10 +161,9 @@
 !!$       call bcExtrap(secondHalo, correctForK)
 !!$       
        ! Inviscid wall boundary conditions.
-       !print *,'indicies',icell,jcell,kcell
+ 
        call bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
             siAdj, sjAdj, skAdj, normAdj,iCell,jCell,kCell)
-       !print *,'leavinv eulerWall bc'
        
 !!$       ! Domain-interface boundary conditions,
 !!$       ! when coupled with other solvers.

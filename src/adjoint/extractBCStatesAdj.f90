@@ -8,11 +8,12 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine extractBCStatesAdj(nn,wAdj,pAdj, wAdj1, wAdj2, pAdj1, pAdj2,&
+       subroutine extractBCStatesAdj(nn,wAdj,pAdj,wAdj0, wAdj1, wAdj2,wAdj3,&
+            pAdj0,pAdj1, pAdj2,pAdj3,&
             rlvAdj, revAdj,rlvAdj1, rlvAdj2,revAdj1, revAdj2,iOffset,&
             jOffset, kOffset,iCell, jCell,kCell,&
             isbeg,jsbeg,ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,&
-            jbend,kbend,icbeg,jcbeg,icend,jcend)
+            jbend,kbend,icbeg,jcbeg,icend,jcend,secondHalo)
 
 !      ******************************************************************
 !      *                                                                *
@@ -45,10 +46,6 @@
                    intent(in) :: wAdj
        real(kind=realType), dimension(-2:2,-2:2,-2:2),intent(in) :: pAdj
        
-!!$       real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
-!!$       real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
-!!$       real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
-!!$       real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
 
        real(kind=realType), dimension(-2:2,-2:2,nw) :: wAdj0, wAdj1
        real(kind=realType), dimension(-2:2,-2:2,nw) :: wAdj2, wAdj3
@@ -59,7 +56,8 @@
        real(kind=realType), dimension(-2:2,-2:2)::rlvAdj1, rlvAdj2
        real(kind=realType), dimension(-2:2,-2:2)::revAdj1, revAdj2
        
-       logical :: iOverlap, jOverlap, kOverlap, secondHalo
+       logical :: iOverlap, jOverlap, kOverlap
+       logical,intent(inout) :: secondHalo
        
 
 !
@@ -148,7 +146,7 @@
 !!$       !print *,'overlap?',ioverlap,joverlap,koverlap
 
 !       checkOverlap: if(iOverlap .and. jOverlap .and. kOverlap) then
-          !print *,'in overlap'
+
           ! There is an overlap between the two ranges.
           ! Determine the actual overlap region.
           
@@ -203,7 +201,7 @@
              
              secondHalo = .true.
              if(iRBeg == iREnd) secondHalo = .false.
-             
+        
              if( secondHalo ) then
                 wAdj0(-2:2,-2:2,1:nw) = wAdj(-2,-2:2,-2:2,1:nw)
                 wAdj1(-2:2,-2:2,1:nw) = wAdj(-1,-2:2,-2:2,1:nw)
@@ -536,8 +534,7 @@
           
           
    !    end if checkOverlap
-       
-       !print *,'end extract states',icell,jcell,kcell,nn,isbeg,jsbeg,ksbeg
+ 
   !  enddo
     
      end subroutine extractBCStatesAdj

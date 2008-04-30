@@ -53,8 +53,6 @@
 
        ! Determine the range of halo cells which this boundary subface
        ! will change.
-
-       !print *,'in extract states',icell,jcell,kcell,nn,isbeg,jsbeg,ksbeg
        
        select case (BCFaceID(nn))
        case (iMin)
@@ -112,8 +110,8 @@
        computeBC = .false.
        checkOverlap: if(iOverlap .and. jOverlap .and. kOverlap) then
           computeBC = .true.
-          !print *,'computeBC',computeBC
+     
        endif checkOverlap
-
-
+       
+       
      end subroutine checkOverlapAdj

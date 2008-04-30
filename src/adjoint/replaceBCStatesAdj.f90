@@ -29,7 +29,7 @@
        real(kind=realType), dimension(-2:2,-2:2,-2:2,nw),intent(inout) :: wAdj
        real(kind=realType), dimension(-2:2,-2:2,-2:2),intent(inout) :: pAdj
        
-       integer(kind=intType) ::iCell, jCell,kCell
+       integer(kind=intType) ::iCell, jCell,kCell,i,j,k,l
        real(kind=realType), dimension(-2:2,-2:2,-2:2)::rlvAdj, revAdj
        real(kind=realType), dimension(-2:2,-2:2)::rlvAdj1, rlvAdj2
        real(kind=realType), dimension(-2:2,-2:2)::revAdj1, revAdj2
@@ -42,6 +42,7 @@
        case (iMin)
           
           if( secondHalo ) then
+
              wAdj(-2,-2:2,-2:2,1:nw) = wAdj0(-2:2,-2:2,1:nw) 
              wAdj(-1,-2:2,-2:2,1:nw) = wAdj1(-2:2,-2:2,1:nw)
              
@@ -66,6 +67,7 @@
        case (iMax)
           
           if( secondHalo ) then
+
              wAdj( 2,-2:2,-2:2,1:nw) = wAdj0(-2:2,-2:2,1:nw)
              wAdj( 1,-2:2,-2:2,1:nw) = wAdj1(-2:2,-2:2,1:nw)
              

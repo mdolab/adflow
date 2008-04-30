@@ -2,9 +2,9 @@
 !      ******************************************************************
 !      *                                                                *
 !      * File:          residual.f90                                    *
-!      * Author:        Edwin van der Weide, Steve Repsher (blanking)   *
+!      * Author:        C.A.(Sandy) Mader                               *
 !      * Starting date: 04-21-2008                                      *
-!      * Last modified: 04-21-2008                                      *
+!      * Last modified: 04-28-2008                                      *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -88,7 +88,7 @@
 
        fineGrid = .false.
        if(currentLevel == groundLevel) fineGrid = .true.
-       !print *,'in residual',rfil,discr,finegrid,currentlevel
+
 !moved outside...
 !!$
 !!$       ! Loop over the number of spectral solutions and local
@@ -105,32 +105,7 @@
            call inviscidCentralFluxAdj(wAdj,  pAdj,  dwAdj,         &
                                          siAdj, sjAdj, skAdj, volAdj, &
                                          iCell, jCell, kCell)
-!!$           
-!!$!           call inviscidCentralFluxAdj2(wAdj,  pAdj,  dwAdj2, &
-!!$!                                         iCell, jCell, kCell)
-!!$           call inviscidCentralFluxAdj2(w(icell-2:icell+2,jcell-2:jcell+2,kcell-2:kcell+2,:), p(icell-2:icell+2,jcell-2:jcell+2,kcell-2:kcell+2) ,  dwAdj2, &
-!!$                                         iCell, jCell, kCell)
-!!$!           call inviscidCentralFluxAdj2(wAdj, pAdj ,  dwAdj2, &
-!!$!                                         iCell, jCell, kCell)
-           
-!           dw(:,:,:,:) = 0.0
 
-!           call inviscidCentralFlux
-
-!!$           do i = 1,nw
-!!$              !if (abs(dwAdj(i)-dwAdj2(i))>0.0) then
-!!$              if (abs(dwAdj(i)-dw(icell,jcell,kcell,i))>0.0) then
-!!$                 !if (1.0>0.0) then
-!!$                 print *,abs(dwAdj(i)-dw(icell,jcell,kcell,i)),'dwadjcen',dwAdj(i),'cen2',dwAdj2(i),i,icell,jcell,kcell,dw(icell,jcell,kcell,i)
-!!$              endif
-!!$           enddo
-           
-!!$           
-!!$           do i = 1,nw
-!!$              if (abs(dwAdj(i)-dwAdj2(i))>1e-15) then
-!!$                 print *,abs(dwAdj(i)-dwAdj2(i)),'dwadj',dwAdj(i),'2',dwAdj2(i),i,icell,jcell,kcell,p(icell,jcell,kcell),pAdj(0,0,0)!,w(icell,jcell,kcell,:),wAdj(0,0,0,:)
-!!$              endif
-!!$           enddo
 
            ! Compute the artificial dissipation fluxes.
            ! This depends on the parameter discr.
@@ -175,7 +150,7 @@
 
              case (upwind) ! Dissipation via an upwind scheme.
 
-               call inviscidUpwindFluxAdj(wAdj,  p(icell-2:icell+2,jcell-2:jcell+2,kcell-2:kcell+2),  dwAdj, &
+               call inviscidUpwindFluxAdj(wAdj,  pAdj,  dwAdj, &
                                         siAdj, sjAdj, skAdj, &
                                         iCell, jCell, kCell,finegrid)
 !               call inviscidUpwindFluxAdj2(wAdj,  pAdj,  dwAdj2, &

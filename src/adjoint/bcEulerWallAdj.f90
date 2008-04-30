@@ -98,8 +98,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
   ! Loop over the boundary condition subfaces of this block.
 
   bocos: do nn=1,nBocos
-     !print *,'nn bocos',nn,icell,jcell,kcell
-
+     
      call checkOverlapAdj(nn,icell,jcell,kcell,isbeg,jsbeg,&
           ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,jbend,kbend,&
           computeBC)
@@ -117,17 +116,15 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
            !!?norm  => BCData(nn)%norm
            !!?rface => BCData(nn)%rface
 
-
-           !print *,'extracting states' 
+          
            !Copy the states and other parameters to subfaces
-           call extractBCStatesAdj(nn,wAdj,pAdj, wAdj1, wAdj2, pAdj1, pAdj2,&
-                rlvAdj, revAdj,rlvAdj1, rlvAdj2,revAdj1, revAdj2,iOffset,&
-                jOffset, kOffset,iCell, jCell,kCell,&
-                isbeg,jsbeg,ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,&
-                jbend,kbend,icbeg,jcbeg,icend,jcend)
-           !print *,'ic',icbeg,jcbeg,icend,jcend,iOffset,&
-           !     jOffset, kOffset
-           !print *,'indicies',icell,jcell,kcell
+           call extractBCStatesAdj(nn,wAdj,pAdj,wAdj0, wAdj1, wAdj2,wAdj3,&
+            pAdj0,pAdj1, pAdj2,pAdj3,&
+            rlvAdj, revAdj,rlvAdj1, rlvAdj2,revAdj1, revAdj2,iOffset,&
+            jOffset, kOffset,iCell, jCell,kCell,&
+            isbeg,jsbeg,ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,&
+            jbend,kbend,icbeg,jcbeg,icend,jcend,secondHalo)
+
            ! Some initialization
            ssi = zero
            ssj = zero
@@ -142,13 +139,13 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
            ! Determine the boundary condition treatment and compute the
            ! undivided pressure gradient accordingly. This gradient is
            ! temporarily stored in the halo pressure.
-           !print *,'bctreatment',wallBCTreatment,constantPressure,linExtrapolPressure
+
            BCTreatment: select case (wallBCTreatment)
 
            case (constantPressure)
 
               ! Constant pressure. Set the gradient to zero.
-
+                            
               do j=jcBeg, jcEnd
                  do i=icBeg, icEnd
                     ii = i - iOffset
@@ -160,14 +157,14 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
               !===============================================================
 
            case (linExtrapolPressure)
-              !print *,'linear extrapolation of pressure',icbeg,jcbeg,icend,jcend
+              
               ! Linear extrapolation. Compute the gradient.
-              !print *,'indicies',icell,jcell,kcell
+              
               do j=jcBeg, jcEnd
                  do i=icBeg, icEnd
                     ii = i - iOffset
                     jj = j - jOffset
-                    !print *, 'linExtrapolPressure', ii, jj
+                    
                     pAdj1(ii,jj) = pAdj3(ii,jj) - pAdj2(ii,jj)
                  enddo
               enddo
@@ -423,7 +420,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
 
            ! Determine the state in the halo cell. Again loop over
            ! the cell range for this subface.
-           !print *,' applying bc treatment'
+           
            do j=jcBeg, jcEnd
               do i=icBeg, icEnd
                  ii = i - iOffset
@@ -472,28 +469,25 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
               enddo
            enddo
 
-           !print *,'bc applied'
+ 
            ! Extrapolate the state vectors in case a second halo
            ! is needed.
 
-           !print *,'applying second halo'
+           
            if( secondHalo )                                             &
                 call extrapolate2ndHaloAdj(nn,icBeg, icEnd, jcBeg, jcEnd,  &
                 iOffset, jOffset, wAdj0, wAdj1, &
                 wAdj2, pAdj0, pAdj1, pAdj2)
-           !print *,'replaceing corrected states'
+           
            call replaceBCStatesAdj(nn,  wAdj0,wAdj1, wAdj2, wAdj3,&
                 pAdj0,pAdj1, pAdj2, pAdj3,rlvAdj1, rlvAdj2,revAdj1, revAdj2,&
                 iCell, jCell,kCell,&
                 wAdj,pAdj,rlvAdj,revAdj,secondHalo)
-           !print *,'states replaced'
+           
         endif invWall
 
      endif
-!!$     if (kcell ==6) then
-!!$        !stop
-!!$        print *,'stopping'
-!!$     endif
+
      enddo bocos
 
    end subroutine bcEulerWallAdj

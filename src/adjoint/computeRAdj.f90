@@ -35,11 +35,14 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
 
   !variables for test loops
   integer(kind=intType)::i,j,k,ii,jj,kk
+  integer(kind=intType) :: iStart,iEnd,jStart,jEnd,kStart,kEnd
 
   real(kind=realType), dimension(-2:2,-2:2,-2:2) :: pAdj
   real(kind=realType), dimension(nBocos,-2:2,-2:2,3) :: normAdj
   real(kind=realType):: volAdj
   real(kind=realType), dimension(-2:2,-2:2,-2:2,3) :: siAdj, sjAdj, skAdj
+
+  
 
 
 ! *************************************************************************
@@ -48,54 +51,10 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
   
 
 !      Call the metric routines to generate the areas, volumes and surface normals for the stencil.
-       !print *,'metric in'!,xAdj,siAdj,sjAdj,skAdj,volAdj,normAdj, &
-            !iCell,jCell,kCell
+       
        call metricAdj(xAdj,siAdj,sjAdj,skAdj,volAdj,normAdj, &
             iCell,jCell,kCell)
-       
-!!$       kStart=-2; kEnd=2
-!!$       jStart=-2; jEnd=2
-!!$       iStart=-2; iEnd=2
-!!$       
-!!$       if(iCell==il) iEnd=1
-!!$       
-!!$       if(jCell==2)  jStart=-1
-!!$       if(jCell==jl) jEnd=1 
-!!$       
-!!$       if(kCell==2) kStart=-1
-!!$       if(kCell==kl) kEnd=1
-!!$       
-!!$       do kk=kStart,kEnd !-2,2
-!!$          do jj=jStart,jEnd !-2,2
-!!$             do ii=iStart,iEnd !-2,2
-!!$!!!$       do kk = -2,2
-!!$!!!$          do jj = -2,2
-!!$!!!$             do ii = -2,2
-!!$                i = ii+iCell
-!!$                j = jj+jCell
-!!$                k = kk+kCell
-!!$                if (abs(siAdj(ii,jj,kk,1)-si(i,j,k,1))> 0.0) then
-!!$                   print *,'areasi',ii,jj,kk,i,j,k,siAdj(ii,jj,kk,1),si(i,j,k,1)!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
-!!$                endif
-!!$                if (abs(sjAdj(ii,jj,kk,1)-sj(i,j,k,1))> 0.0) then
-!!$                   print *,'areasj',ii,jj,kk,i,j,k,sjAdj(ii,jj,kk,1),sj(i,j,k,1)!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
-!!$                endif
-!!$                if (abs(skAdj(ii,jj,kk,1)-sk(i,j,k,1))> 0.0) then
-!!$                   print *,'areask',ii,jj,kk,i,j,k,skAdj(ii,jj,kk,1),sk(i,j,k,1)!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
-!!$                endif
-!!$             enddo
-!!$          enddo
-!!$       enddo
-!!$       if (abs(volAdj-vol(icell,jcell,kcell))> 0.0) then
-!!$          print *,'vol',icell,jcell,kcell,volAdj,vol(iCell,jCell,kCell),abs(volAdj-vol(i,j,k))!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
-!!$       endif
-!!$!       STOP
-
-       !print *,'leaving metric',siAdj,sjAdj,skAdj,volAdj
-       !stop
-
-
-
+      
 !      Mimic the Residual calculation in the main code
 
        !Compute the Pressure in the stencil based on the current 
@@ -104,44 +63,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
        ! replace with Compute Pressure Adjoint!
        call computePressureAdj(wAdj, pAdj)
        
-       kStart=-2; kEnd=2
-       jStart=-2; jEnd=2
-       iStart=-2; iEnd=2
-       
-!!$       if(iCell==il) iEnd=1
-!!$       
-!!$       if(jCell==2)  jStart=-1
-!!$       if(jCell==jl) jEnd=1 
-!!$       
-!!$       if(kCell==2) kStart=-1
-!!$       if(kCell==kl) kEnd=1
-       
-       do kk=kStart,kEnd !-2,2
-          do jj=jStart,jEnd !-2,2
-             do ii=iStart,iEnd !-2,2
-!!!$       do kk = -2,2
-!!!$          do jj = -2,2
-!!!$             do ii = -2,2
-                i = ii+iCell
-                j = jj+jCell
-                k = kk+kCell
-                if (abs(wAdj(ii,jj,kk,1)-w(i,j,k,1))> 0.0) then
-                   print *,'statesi',ii,jj,kk,i,j,k,wAdj(ii,jj,kk,1),w(i,j,k,1)!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
-                endif
-!!$                if (abs(sjAdj(ii,jj,kk,1)-sj(i,j,k,1))> 0.0) then
-!!$                   print *,'areasj',ii,jj,kk,i,j,k,sjAdj(ii,jj,kk,1),sj(i,j,k,1)!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
-!!$                endif
-!!$                if (abs(skAdj(ii,jj,kk,1)-sk(i,j,k,1))> 0.0) then
-!!$                   print *,'areask',ii,jj,kk,i,j,k,skAdj(ii,jj,kk,1),sk(i,j,k,1)!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
-!!$                endif
-             enddo
-          enddo
-       enddo
-!!$       if (abs(volAdj-vol(icell,jcell,kcell))> 0.0) then
-!!$          print *,'vol',icell,jcell,kcell,volAdj,vol(iCell,jCell,kCell),abs(volAdj-vol(i,j,k))!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
-!!$       endif
-       !STOP
-
+      
        ! Apply all boundary conditions to stencil.
        ! In case of a full mg mode, and a segegated turbulent solver,
        ! first call the turbulent boundary conditions, such that the
@@ -153,50 +75,10 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
 
        ! Apply all boundary conditions of the mean flow.
 
-!!$       call applyAllBCAdj(wAdj, pAdj, &
-!!$            siAdj, sjAdj, skAdj, volAdj, normAdj, &
-!!$            iCell, jCell, kCell,secondHalo)
+       call applyAllBCAdj(wAdj, pAdj, &
+            siAdj, sjAdj, skAdj, volAdj, normAdj, &
+            iCell, jCell, kCell,secondHalo)
 
-       call applyAllBC(secondHalo)
-
-       kStart=-2; kEnd=2
-       jStart=-2; jEnd=2
-       iStart=-2; iEnd=2
-       
-!!$       if(iCell==il) iEnd=1
-!!$       
-!!$       if(jCell==2)  jStart=-1
-!!$       if(jCell==jl) jEnd=1 
-!!$       
-!!$       if(kCell==2) kStart=-1
-!!$       if(kCell==kl) kEnd=1
-       
-       do kk=kStart,kEnd !-2,2
-          do jj=jStart,jEnd !-2,2
-             do ii=iStart,iEnd !-2,2
-!!!$       do kk = -2,2
-!!!$          do jj = -2,2
-!!!$             do ii = -2,2
-                i = ii+iCell
-                j = jj+jCell
-                k = kk+kCell
-                if (abs(wAdj(ii,jj,kk,1)-w(i,j,k,1))> 0.0) then
-                   print *,'statesi',ii,jj,kk,i,j,k,wAdj(ii,jj,kk,1),w(i,j,k,1)!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
-                endif
-                if (abs(pAdj(ii,jj,kk)-p(i,j,k))> 1e-15) then
-                   print *,'pressurei',abs(pAdj(ii,jj,kk)-p(i,j,k)),ii,jj,kk,i,j,k,pAdj(ii,jj,kk),p(i,j,k)!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
-                endif
-!!$                if (abs(sjAdj(ii,jj,kk,1)-sj(i,j,k,1))> 0.0) then
-!!$                   print *,'areasj',ii,jj,kk,i,j,k,sjAdj(ii,jj,kk,1),sj(i,j,k,1)!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
-!!$                endif
-!!$                if (abs(skAdj(ii,jj,kk,1)-sk(i,j,k,1))> 0.0) then
-!!$                   print *,'areask',ii,jj,kk,i,j,k,skAdj(ii,jj,kk,1),sk(i,j,k,1)!,siAdj(ii,jj,kk,2),si(i,j,k,2),siAdj(ii,jj,kk,3),si(i,j,k,3)
-!!$                endif
-             enddo
-          enddo
-       enddo
-!       stop
-       !print *,'wadj',wAdj
 !!#Shouldn't need this section for derivatives...
 !!$       ! In case this routine is called in full mg mode call the mean
 !!$       ! flow boundary conditions again such that the normal momentum
@@ -271,7 +153,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
 !!$
 
        call initresAdj(1_intType, nwf,sps,dwAdj)
-       !print *,'dwAdj',dwAdj
+       
        call residualAdj(wAdj,pAdj,siAdj,sjAdj,skAdj,volAdj,normAdj,&
                               dwAdj, iCell, jCell, kCell,  &  
                               correctForK)

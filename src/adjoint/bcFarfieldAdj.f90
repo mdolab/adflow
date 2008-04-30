@@ -11,10 +11,7 @@
 !
 subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
      siAdj, sjAdj, skAdj, normAdj,iCell,jCell,kCell)
-  !(nn,icBeg, icEnd, jcBeg, jcEnd, &
-  !                                iOffset, jOffset, secondHalo,  &
-  !                                wAdj0, wAdj1, wAdj2, &
-  !                                pAdj0, pAdj1, pAdj2, normAdj)
+
   !
   !      ******************************************************************
   !      *                                                                *
@@ -24,7 +21,7 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
   !      *                                                                *
   !      ******************************************************************
   !
-  use blockPointers, only : BCData,nBocos,BCType
+  use blockPointers, only : BCData,nBocos,BCType,bcfaceid,gamma,il,jl,kl,w,p
   use constants         ! irho,ivx,ivy,ivz
   use flowVarRefState   ! gammaInf, wInf, pInfCorr
   use BCTypes
@@ -75,7 +72,15 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
   real(kind=realType) :: re, ue, ve, we, qne, ce
   real(kind=realType) :: qnf, cf, uf, vf, wf, sf, cc, qq
 
+
+
   logical :: computeBC
+!
+!      Interfaces
+!
+
+
+
   !
   !      ******************************************************************
   !      *                                                                *
@@ -101,9 +106,9 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
   s0  = wInf(irho)**gammaInf/pInfCorr
 
   ! Loop over the boundary condition subfaces of this block.
-  !print *,'in bcfarfield',nbocos
-  bocos: do nn=1,nBocos
 
+  bocos: do nn=1,nBocos
+     
      call checkOverlapAdj(nn,icell,jcell,kcell,isbeg,jsbeg,&
           ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,jbend,kbend,&
           computeBC)
@@ -112,33 +117,35 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
      if (computeBC) then
 
         ! Check for farfield boundary conditions.
-        !print *,'bocos',nn,BCType(nn), FarField
+        
 
         testFarfield: if(BCType(nn) == FarField) then
 
-
-           call extractBCStatesAdj(nn,wAdj,pAdj, wAdj1, wAdj2, pAdj1, pAdj2,&
-                rlvAdj, revAdj,rlvAdj1, rlvAdj2,revAdj1, revAdj2,iOffset,&
-                jOffset, kOffset,iCell, jCell,kCell,&
-                isbeg,jsbeg,ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,&
-                jbend,kbend,icbeg,jcbeg,icend,jcend)
+           
+           call extractBCStatesAdj(nn,wAdj,pAdj,wAdj0, wAdj1, wAdj2,wAdj3,&
+            pAdj0,pAdj1, pAdj2,pAdj3,&
+            rlvAdj, revAdj,rlvAdj1, rlvAdj2,revAdj1, revAdj2,iOffset,&
+            jOffset, kOffset,iCell, jCell,kCell,&
+            isbeg,jsbeg,ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,&
+            jbend,kbend,icbeg,jcbeg,icend,jcend,secondHalo)
+          
 
            ! Loop over the generic subface to set the state in the
            ! halo cells.
 
            do j=jcBeg, jcEnd
               do i=icBeg, icEnd
-
+          
                  ii = i - iOffset
                  jj = j - jOffset
-
+             
                  ! Store the three components of the unit normal a
                  ! bit easier.
 
                  nnx = normAdj(nn,ii,jj,1)
                  nny = normAdj(nn,ii,jj,2)
                  nnz = normAdj(nn,ii,jj,3)
-
+                                  
                  ! Compute the normal velocity of the free stream and
                  ! substract the normal velocity of the mesh.
 
@@ -149,19 +156,12 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
                  ! velocity and the speed of sound of the current state
                  ! in the internal cell.
 
-                 !print *, ii, jj
                  re  = one/wAdj2(ii,jj,irho)
-                 !print *,'re',re
                  ue  = wAdj2(ii,jj,ivx)
                  ve  = wAdj2(ii,jj,ivy)
                  we  = wAdj2(ii,jj,ivz)
                  qne = ue*nnx + ve*nny + we*nnz
                  ce  = sqrt(gammaInf*pAdj2(ii,jj)*re)
-                 if (isnan(qne))then
-                    print *,'qne',ue,nnx,ve,nny, we,nnz
-                    print *,'ce',gammaInf,pAdj2(ii,jj),re
-                    print *,'wAdj2',wAdj2(ii,jj,ivx),wAdj2(ii,jj,ivy),wAdj2(ii,jj,ivz),wAdj2(ii,jj,irho)
-                 endif
 
                  ! Compute the new values of the riemann invariants in
                  ! the halo cell. Either the value in the internal cell
@@ -182,12 +182,8 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
                  endif
 
                  qnf = half*  (ac1 + ac2)
-                 if (isnan(qnf))then
-                    print *,'qnf',half,ac1,ac2!,(vn0 > -c0),(vn0 > c0)
-                    print *,'ac+',qn0, two,ovgm1,c0,qne,ce
-                 endif
                  cf  = fourth*(ac1 - ac2)*gm1
-
+                
                  if(vn0 > zero) then            ! Outflow.
 
                     uf = ue + (qnf - qne)*nnx
@@ -206,10 +202,7 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
                     vf = v0 + (qnf - qn0)*nny
                     wf = w0 + (qnf - qn0)*nnz
                     sf = s0
-                    if (isnan(uf)) then
-                       print *,'uf',uf,vf,wf,sf
-                       print *,'u0',u0,qnf,qn0,nnx
-                    endif
+                  
                     do l=nt1MG,nt2MG
                        wAdj1(ii,jj,l) = wInf(l)
                     enddo
@@ -221,17 +214,14 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
 
                  cc = cf*cf/gammaInf
                  qq = uf*uf + vf*vf + wf*wf
-                 if (isnan(cc)) then
-                    print *,'cc',cc,'qq',qq,ii,jj!,wadj1(ii,jj,:),padj1(ii,jj),ii,jj
-                    print *,'cc comp',cc,cf,gammaInf
-                    print *,'qqcomp',qq,uf*uf, vf*vf, wf*wf
-                 endif
+               
                  wAdj1(ii,jj,irho) = (sf*cc)**ovgm1
                  wAdj1(ii,jj,ivx)  = uf
                  wAdj1(ii,jj,ivy)  = vf
                  wAdj1(ii,jj,ivz)  = wf
                  pAdj1(ii,jj)      = wAdj1(ii,jj,irho)*cc
-
+                 
+ 
                  ! Compute the total energy.
 
                  wAdj1(ii,jj,irhoE) = ovgm1*pAdj1(ii,jj)     &
@@ -250,7 +240,6 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
               enddo
            enddo
 
-           !print *,"w's",wadj1!,wadj1,wadj2,wadj3
            ! Extrapolate the state vectors in case a second halo
            ! is needed.
 
@@ -259,19 +248,15 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
                 iOffset, jOffset, wAdj0, wAdj1, &
                 wAdj2, pAdj0, pAdj1, pAdj2)
 
-           !print *,'replaceing corrected states'
            call replaceBCStatesAdj(nn,  wAdj0,wAdj1, wAdj2, wAdj3,&
                 pAdj0,pAdj1, pAdj2, pAdj3,rlvAdj1, rlvAdj2,revAdj1, revAdj2,&
                 iCell, jCell,kCell,&
                 wAdj,pAdj,rlvAdj,revAdj,secondHalo)
-           !print *,'states replaced'
+           
         endif testFarfield
     
      endif
-!!$     if (kcell ==6) then
-!!$        !stop
-!!$        print *,'stopping'
-!!$     endif
+
  enddo bocos
 
        end subroutine bcFarfieldAdj
