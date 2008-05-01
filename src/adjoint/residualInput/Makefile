@@ -22,7 +22,7 @@
 #      *                                                                *
 #      ******************************************************************
 
-SUMB_DIR = ../..
+SUMB_DIR = ../../..
 SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
 SUMB_RULES_FILE  = $(SUMB_DIR)/rulesSources.mk
 include ${SUMB_COMMON_FILE}
@@ -38,23 +38,25 @@ vpath %.o $(SUMB_OBJDIR)
 
 FF90_MODULES = 
 
-FF90_OBJECTS = allocMemADjoint.o        \
-	       assertionsADjoint.o      \
-               computeAeroCoef.o        \
-	       copyADjointStencil.o     \
-	       createPETScMat.o         \
-	       createPETScVars.o        \
-	       createPETScVec.o         \
-	       designInit.o             \
-	       haloIndexCommunication.o \
-	       initializePETSc.o        \
-	       indexHalo.o              \
-	       indexHalo1to1.o          \
-	       preprocessingADjoint.o   \
-	       setGlobalCellsAndNodes.o \
-	       setPointersAdj.o         \
-               solverADjoint.o          \
-	       verifyRAdj.o
+FF90_OBJECTS = applyAllBCAdj.o          \
+	       bcSymmAdj.o              \
+	       bcEulerWallAdj.o         \
+	       bcFarfieldAdj.o          \
+	       checkOverlapAdj.o        \
+	       computePressureAdj.o     \
+	       computeRAdj.o            \
+	       etotArrayAdj.o           \
+	       extractBCStatesAdj.o     \
+	       extrapolate2ndHaloAdj.o  \
+	       initresAdj.o             \
+	       inviscidCentralFluxAdj.o \
+	       inviscidUpwindFluxAdj.o  \
+	       leftRightStateAdj.o      \
+	       metricAdj.o              \
+	       replaceBCStatesAdj.o     \
+	       residualAdj.o            \
+	       riemannFluxAdj.o         \
+
 #FF90_OBJECTS = allocMemADjoint.o\
 #	       assertionsADjoint.o\
 #	       computeADjointGradientExtra.o\
@@ -104,7 +106,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 #	       writeADjointHistory.o\
 #	       writeADjointSol.o
 
-CC_OBJECTS   = initPETScWrap.o
+CC_OBJECTS   = 
 
 #      ******************************************************************
 #      *                                                                *

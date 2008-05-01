@@ -25,7 +25,6 @@
 #      ******************************************************************
 
 SUBDIR_SRC    = src/modules       \
-		src/adjoint       \
 		src/bcdata        \
 	        src/initFlow      \
 	        src/inputParam    \
@@ -41,12 +40,16 @@ SUBDIR_SRC    = src/modules       \
 	        src/utils         \
 	        src/wallDistance
 
+SUBDIR_ADJOINT = src/adjoint\
+		 src/adjoint/residualInput
+
 SUBDIR_EXEC   = src/exec
 SUBDIR_PYTHON = src/python/fortran
 SUBDIR_PV3    = src/pv3Interface
 
 #SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR)
-SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR) $(SUBDIR_PYTHON)
+SUMB_SUBDIRS       = $(SUBDIR_SRC) $(SUBDIR_ADJOINT) $(PV3_INT_SRC_DIR)\
+		     $(SUBDIR_PYTHON)
 SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC) $(SUBDIR_PYTHON) $(SUBDIR_PV3) \
 		     $(SUBDIR_EXEC)
 
