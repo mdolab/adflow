@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine bcSymmAdj(wAdj,pAdj,normAdj,secondHalo)
+subroutine bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -102,8 +102,11 @@ subroutine bcSymmAdj(wAdj,pAdj,normAdj,secondHalo)
      bocos: do nn=1,nBocos
 
         call checkOverlapAdj(nn,icell,jcell,kcell,isbeg,jsbeg,&
-             ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,jbend,kbend,&
-             computeBC)
+            ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,jbend,kbend,&
+            computeBC)
+        !(nn,icell,jcell,kcell,isbeg,jsbeg,&
+        !     ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,jbend,kbend,&
+        !     computeBC)
 
 
         if (computeBC) then
@@ -121,11 +124,17 @@ subroutine bcSymmAdj(wAdj,pAdj,normAdj,secondHalo)
 !!$                                rev1, rev2, mm)
 
               !Copy the states and other parameters to subfaces
-              call extractBCStatesAdj(nn,wAdj,pAdj, wAdj1, wAdj2, pAdj1, pAdj2,&
+              call extractBCStatesAdj(nn,wAdj,pAdj,wAdj0, wAdj1, wAdj2,wAdj3,&
+                   pAdj0,pAdj1, pAdj2,pAdj3,&
                    rlvAdj, revAdj,rlvAdj1, rlvAdj2,revAdj1, revAdj2,iOffset,&
                    jOffset, kOffset,iCell, jCell,kCell,&
                    isbeg,jsbeg,ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,&
-                   jbend,kbend,icbeg,jcbeg,icend,jcend)
+                   jbend,kbend,icbeg,jcbeg,icend,jcend,secondHalo)
+              !(nn,wAdj,pAdj, wAdj1, wAdj2, pAdj1, pAdj2,&
+              !     rlvAdj, revAdj,rlvAdj1, rlvAdj2,revAdj1, revAdj2,iOffset,&
+              !     jOffset, kOffset,iCell, jCell,kCell,&
+              !     isbeg,jsbeg,ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,&
+              !     jbend,kbend,icbeg,jcbeg,icend,jcend)
 
 
 

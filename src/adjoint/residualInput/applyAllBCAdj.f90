@@ -98,7 +98,7 @@
            ! The symmetry boundary conditions.
        
 
-       call bcSymmAdj(wAdj,pAdj,normAdj,secondHalo)
+       call bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
 
 !###       call bcSymmPolar(secondHalo)
 
@@ -122,14 +122,10 @@
                siAdj, sjAdj, skAdj, normAdj,iCell,jCell,kCell)
 
        case (Turkel)
-          call terminate("applyAllBC", &
-               "Farfield boundary conditions for Turkel &
-               &preconditioner not implemented")
+          call terminate("applyAllBC", "Farfield boundary conditions for Turkel preconditioner not implemented")
           
        case (ChoiMerkle)
-          call terminate("applyAllBC", &
-               "Farfield boundary conditions for Choi and &
-               &Merkle preconditioner not implemented")
+          call terminate("applyAllBC", "Farfield boundary conditions for Choi and Merkle preconditioner not implemented")
 
        end select
        

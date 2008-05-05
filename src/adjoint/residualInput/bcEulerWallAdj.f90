@@ -24,8 +24,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
   use BCTypes
   !       use blockPointers, only : il, jl, kl, BCData, BCFaceID, &
   !                                 si, sj, sk, s, addGridVelocities
-  use blockPointers, only : il, jl, kl, BCData, BCFaceID, &
-       s, addGridVelocities, nBocos, BCType
+  use blockPointers, only : il, jl, kl, BCData, BCFaceID,s, addGridVelocities, nBocos, BCType
   use constants
   use flowVarRefState
   use inputDiscretization
@@ -56,11 +55,9 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
   real(kind=realType), dimension(-2:2,-2:2)::revAdj1, revAdj2
 
 
-  real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(in) :: &
-       siAdj, sjAdj, skAdj
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(in) ::siAdj, sjAdj, skAdj
   real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(in) :: normAdj
-  real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
-       intent(in) :: wAdj
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,nw),intent(in) :: wAdj
   real(kind=realType), dimension(-2:2,-2:2,-2:2),intent(in) :: pAdj
 
   !
@@ -77,7 +74,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
   real(kind=realType) :: ux, uy, uz, ovgm1, gm53, factK
 
   real(kind=realType), dimension(-2:2,-2:2,3) :: ssi, ssj, ssk
-  real(kind=realType), dimension(:,:,:), pointer :: ss
+!  real(kind=realType), dimension(:,:,:), pointer :: ss
   logical :: computeBC
   !
 
@@ -176,11 +173,9 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
 
               ! Quadratic extrapolation. Does not fit within the
               ! current data structures.
-
-              call terminate("bcEulerWallAdj", &
-                   "Quadratic extrapolation does not fit &
-                   &within the current data structure for &
-                   &the boundary stuff.")
+              
+              !call terminate("bcEulerWallAdj", "Quadratic extrapolation does not fit within the current data structure for the boundary stuff")
+              call terminate("bcEulerWallAdj", "Quadratic")
               !print *, "bcEulerWallAdj: quadExtrapolPressure: STOP"
 
               !===============================================================
@@ -211,7 +206,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                     ssj(:,:,:) = sjAdj(-1,:,:,:)
                     ssk(:,:,:) = skAdj(-1,:,:,:)                   
                  end if
-                 if( addGridVelocities ) ss => s(2,:,:,:)
+                 !if( addGridVelocities ) ss => s(2,:,:,:)
 
                  !===========================================================
 
@@ -226,7 +221,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                     ssk(:,:,:) = skAdj(1,:,:,:)
                  end if
 
-                 if( addGridVelocities ) ss => s(il,:,:,:)
+                 !if( addGridVelocities ) ss => s(il,:,:,:)
 
                  !===========================================================
 
@@ -242,7 +237,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                  end if
 
 
-                 if( addGridVelocities ) ss => s(:,2,:,:)
+                 !if( addGridVelocities ) ss => s(:,2,:,:)
 
                  !===========================================================
 
@@ -257,7 +252,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                     ssk(:,:,:) = skAdj(:,1,:,:)
                  end if
 
-                 if( addGridVelocities ) ss => s(:,jl,:,:)
+                 !if( addGridVelocities ) ss => s(:,jl,:,:)
 
                  !===========================================================
 
@@ -272,7 +267,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                     ssk(:,:,:) = sjAdj(:,:,-1,:)
                  end if
 
-                 if( addGridVelocities ) ss => s(:,:,2,:)
+                 !if( addGridVelocities ) ss => s(:,:,2,:)
 
                  !===========================================================
 
@@ -287,7 +282,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                     ssk(:,:,:) = sjAdj(:,:,1,:)
                  end if
 
-                 if( addGridVelocities ) ss => s(:,:,kl,:)
+                 !if( addGridVelocities ) ss => s(:,:,kl,:)
 
               end select
 
@@ -391,11 +386,11 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                     uy = wAdj2(jj,kk,ivy)
                     uz = wAdj2(jj,kk,ivz)
 
-                    if( addGridVelocities ) then
-                       ux = ux - ss(j,k,1)
-                       uy = uy - ss(j,k,2)
-                       uz = uz - ss(j,k,3)
-                    endif
+                    !if( addGridVelocities ) then
+                    !   ux = ux - ss(j,k,1)
+                    !   uy = uy - ss(j,k,2)
+                    !   uz = uz - ss(j,k,3)
+                    !endif
 
                     ! Compute the velocity components in j and
                     ! k-direction.
