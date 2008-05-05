@@ -155,8 +155,10 @@
                  ptmp(1) = left(irhoE)
                  ptmp(2) = right(irhoE)
 
+!                 call etotArrayAdj(rhotmp, utmp, vtmp, wtmp, ptmp, ktmp, &
+!                                Etmp, correctForK, 2_intType)
                  call etotArrayAdj(rhotmp, utmp, vtmp, wtmp, ptmp, ktmp, &
-                                Etmp, correctForK, 2_intType)
+                                Etmp, correctForK, 2)
 
                  Etl = Etmp(1)
                  Etr = Etmp(2)
@@ -280,24 +282,18 @@
       !          flux(irhoE) = -porFlux*(tmp*drE)
 
                case (Turkel)
-                 call terminate("riemannFlux", &
-                                "Turkel preconditioner not &
-                                &implemented yet")
+                 call terminate("riemannFlux", "Turkel preconditioner not implemented yet")
 
                case (ChoiMerkle)
-                 call terminate("riemannFlux", &
-                                "choi merkle preconditioner not &
-                                &implemented yet")
+                 call terminate("riemannFlux", "choi merkle preconditioner not implemented yet")
 
              end select
 
            case (vanLeer)
-             call terminate("riemannFlux", &
-                            "van leer fvs not implemented yet")
+             call terminate("riemannFlux", "van leer fvs not implemented yet")
 
            case (ausmdv)
-             call terminate("riemannFlux", &
-                            "ausmdv fvs not implemented yet")
+             call terminate("riemannFlux", "ausmdv fvs not implemented yet")
 
          end select
          !print *,'riemanflux complete'

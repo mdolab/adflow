@@ -11,7 +11,7 @@
 
 subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
                           iCell, jCell,  kCell, &
-                          nn, correctForK,secondHalo)
+                          nn,sps, correctForK,secondHalo)
   
 !      Set Use Modules
   use blockPointers
@@ -21,7 +21,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
 
 !      Set Passed in Variables
 
-  integer(kind=intType), intent(in) :: iCell, jCell, kCell
+  integer(kind=intType), intent(in) :: iCell, jCell, kCell,nn,sps
   real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
        intent(in) :: wAdj
   real(kind=realType), dimension(-3:2,-3:2,-3:2,3), &
@@ -75,9 +75,9 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
 
        ! Apply all boundary conditions of the mean flow.
 
-       call applyAllBCAdj(wAdj, pAdj, &
-            siAdj, sjAdj, skAdj, volAdj, normAdj, &
-            iCell, jCell, kCell,secondHalo)
+!!$       call applyAllBCAdj(wAdj, pAdj, &
+!!$            siAdj, sjAdj, skAdj, volAdj, normAdj, &
+!!$            iCell, jCell, kCell,secondHalo)
 
 !!#Shouldn't need this section for derivatives...
 !!$       ! In case this routine is called in full mg mode call the mean
@@ -152,7 +152,8 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
 !!$       endif
 !!$
 
-       call initresAdj(1_intType, nwf,sps,dwAdj)
+       !call initresAdj(1_intType, nwf,sps,dwAdj)
+       call initresAdj(1, nwf,sps,dwAdj)
        
        call residualAdj(wAdj,pAdj,siAdj,sjAdj,skAdj,volAdj,normAdj,&
                               dwAdj, iCell, jCell, kCell,  &  

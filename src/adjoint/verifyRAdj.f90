@@ -225,7 +225,7 @@
                           xAdj,                       &
                           dwAdj,                      &
                           iCell, jCell,  kCell,       &
-                          nn, correctForK,secondHalo)
+                          nn,sps, correctForK,secondHalo)
 
 
                      ! Output the result sum(dw(:)) to debug.
