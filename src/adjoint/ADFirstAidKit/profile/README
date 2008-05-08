@@ -1,0 +1,23 @@
+Usage: profile tapenade.prof output.csv
+
+This program parse the tapenade.prof file and generate and ouput.csv file
+that you can load in any spreadsheet to explore, sort, compute other datas.
+
+There is an example output.csv from a run of ifremer-opa.
+
+Columns meanings: 
+
+name : name of the function
+call_count: number of call to this function
+snap_count: number of snap before calling this function
+taping: summation of all the memory used in the fwd part of a function (only positive for jointly differentiated function)
+snapshoting: summation of all the memory consumed in snapshots
+fwdtime: summation of all the time spend in the fwd part of a function (same remark than for taping) 
+         less the time spend in subcalls.
+totaltime: summations of all the time spend in a function less the time spend in subcalls
+totalsize: summation of all the memory used in this function
+snapshottime: summation of all the time used by snapshots for this function
+
+Units:
+	size units are bytes, and times unit are cpu cycles on x86, 
+        and not implemented on other platforms.

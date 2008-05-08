@@ -255,5 +255,7 @@
        bvtk1 => flowDoms(nn,1,1)%bvtk1
        bvtk2 => flowDoms(nn,1,1)%bvtk2
 
+       globalCell =>flowDoms(nn,mm,ll)%globalCell
+
      end subroutine setPointersAdj
        

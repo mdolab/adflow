@@ -97,9 +97,9 @@
 
            ! The symmetry boundary conditions.
        
-
-       call bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
-
+!*************************
+!       call bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
+!**************************
 !###       call bcSymmPolar(secondHalo)
 
 !!$       ! call bcEulerWall(secondHalo, correctForK)
@@ -114,6 +114,7 @@
 !!$       ! and call the appropriate routine.
 !!$       
 
+!!$!*******************************
        select case (precond)
           
        case (noPrecond)
@@ -128,6 +129,8 @@
           call terminate("applyAllBC", "Farfield boundary conditions for Choi and Merkle preconditioner not implemented")
 
        end select
+!!$!******************************8
+
        
 !!$
 !!$       ! Subsonic outflow and bleed outflow boundaries.

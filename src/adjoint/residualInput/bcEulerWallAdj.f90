@@ -72,6 +72,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
   real(kind=realType) :: rxj, ryj, rzj, rxk, ryk, rzk
   real(kind=realType) :: dpj, dpk, ri, rj, rk, qj, qk, vn
   real(kind=realType) :: ux, uy, uz, ovgm1, gm53, factK
+  real(kind=realType) :: rface
 
   real(kind=realType), dimension(-2:2,-2:2,3) :: ssi, ssj, ssk
 !  real(kind=realType), dimension(:,:,:), pointer :: ss
@@ -165,19 +166,19 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                     pAdj1(ii,jj) = pAdj3(ii,jj) - pAdj2(ii,jj)
                  enddo
               enddo
-
-
-              !===============================================================
-
-           case (quadExtrapolPressure)
-
-              ! Quadratic extrapolation. Does not fit within the
-              ! current data structures.
-              
-              !call terminate("bcEulerWallAdj", "Quadratic extrapolation does not fit within the current data structure for the boundary stuff")
-              call terminate("bcEulerWallAdj", "Quadratic")
-              !print *, "bcEulerWallAdj: quadExtrapolPressure: STOP"
-
+!!$
+!!$
+!!$              !===============================================================
+!!$
+!!$           case (quadExtrapolPressure)
+!!$
+!!$              ! Quadratic extrapolation. Does not fit within the
+!!$              ! current data structures.
+!!$              
+!!$              !call terminate("bcEulerWallAdj", "Quadratic extrapolation does not fit within the current data structure for the boundary stuff")
+!!$              call terminate("bcEulerWallAdj", "Quadratic")
+!!$              !print *, "bcEulerWallAdj: quadExtrapolPressure: STOP"
+!!$
               !===============================================================
 
            case (normalMomentum)
@@ -420,6 +421,8 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
               do i=icBeg, icEnd
                  ii = i - iOffset
                  jj = j - jOffset
+                 
+                 rface = BCData(nn)%rface(i,j)
 
                  ! Compute the pressure density and velocity in the
                  ! halo cell. Note that rface is the grid velocity
@@ -427,9 +430,13 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                  ! pointing.
 
                  pAdj1(ii,jj) = max(zero, pAdj2(ii,jj)-pAdj1(ii,jj) )
-
-                 vn = two*(BCData(nn)%rface(i,j)              &
-                      - wAdj2(ii,jj,ivx)*normAdj(nn,ii,jj,1) &
+!!$
+!!$!                 vn = two*(BCData(nn)%rface(i,j)              &
+!!$!                      - wAdj2(ii,jj,ivx)*normAdj(nn,ii,jj,1) &
+!!$!                      - wAdj2(ii,jj,ivy)*normAdj(nn,ii,jj,2) &
+!!$ !                     - wAdj2(ii,jj,ivz)*normAdj(nn,ii,jj,3))
+!!$
+                 vn = two*(rface - wAdj2(ii,jj,ivx)*normAdj(nn,ii,jj,1) &
                       - wAdj2(ii,jj,ivy)*normAdj(nn,ii,jj,2) &
                       - wAdj2(ii,jj,ivz)*normAdj(nn,ii,jj,3))
 
