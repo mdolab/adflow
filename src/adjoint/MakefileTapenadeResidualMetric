@@ -88,9 +88,10 @@
 
 #JAVA_HOME = /nfs/opal/home/mader/jdk1.5.0_06
 #JAVA_HOME = /home/guysmiley/acmarta/software/tapenade/jre1.5.0_07
-
+JAVA_HOME =/home/mader/UTIAS/SRC/jdk1.6.0_06
 #TAPENADE_HOME = /nfs/opal/home/mader/SRC/Tapenade/tapenade2.2
 #TAPENADE_HOME = /home/guysmiley/acmarta/software/tapenade/tapenade2.2
+TAPENADE_HOME = /home/mader/UTIAS/SRC/tapenade2.2.4
 
 #SOLVER_DIRSRC = /nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src
 #SOLVER_DIRSRC = /home/guysmiley/acmarta/SVN/SUmbVertex/src
@@ -184,8 +185,8 @@ TAPENADE_MOD = $(TAPENADE_DIRSRC_RES)/block.f90 \
 	       $(TAPENADE_DIRSRC_RES)/communication.f90 \
 	       $(TAPENADE_DIRMOD)/section.f90\
 	       $(TAPENADE_DIRSRC_RES)/CpCurveFits.f90\
-	       $(TAPENADE_DIRSRC_RES)/su_mpi.f90\
-	       $(TAPENADE_DIRSRC_RES)/terminate.f90
+	       $(TAPENADE_DIRSRC_RES)/su_mpi.f90
+#	       $(TAPENADE_DIRSRC_RES)/terminate.f90
 
 #	       $(TAPENADE_DIRSRC_RES)/inputParam.f90 \
 

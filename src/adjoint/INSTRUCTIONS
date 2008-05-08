@@ -1,0 +1,58 @@
+Procedure to run the Automatic Differentiation software and obtain the AD routines:
+
+#---------------------------------------------------------------------------------------#
+1) edit the re-engineered routines that compute the residual R and
+   aerodynamic forces in directories:
+      adjoint/forcesInput/...
+      adjoint/residualInput/...
+
+#---------------------------------------------------------------------------------------#
+2) edit the makefiles of Tapenade in this directory:
+      MakefileTapendadeForces
+      MakefileTapendadeResidualMetric
+
+#---------------------------------------------------------------------------------------#
+3) clear the old Tapenade intermediate output files:
+      make -f MakefileTapendadeForces clean
+      make -f MakefileTapendadeResidualMetric clean
+
+#---------------------------------------------------------------------------------------#
+4) run Tapenade:
+   4.1) ./runTapenadeForces
+     The automatically generated routines are placed in ./forcesTapenade
+   4.1) ./runTapenadeResidualMetric
+     The automatically generated routines are placed in ./residualTapenade
+   This automatically calls a python script that edits the generated routines
+   and places the edited files are placed in ./forcesOutput and ./residualOutput
+
+#---------------------------------------------------------------------------------------#
+5) manually correct the files to remove compilation errors:
+   5.1) cd forcesOutput
+
+emacs forcesandmomentsadj_b.f90 > remove "lrefb = 0.0"
+                                         "pinfb = 0.0"
+                                         "gammainfb = 0.0" from the end
+
+   5.2) cd residualOutput
+
+emacs computepressureadj_b.f90        >remove "gammaconstantb = 0.0" from the end
+
+emacs eintarray_b.f90               > remove "gammaconstantb = 0.0 " from the end
+
+emacs inviscidupwindfluxadj_b.f90        >remove "gammaconstantb = 0.0" from the end
+emacs residualadj_b.f90        > remove " cgnsdomsb(:)%rotrate(1:3) = 0.0
+                                          kappacoefb = 0.0" from the end
+
+emacs riemannfluxadj_b.f90        > remove "rfilb = 0.0" from end.
+
+#---------------------------------------------------------------------------------------#
+6) edit the appropriate Makefiles to be used by SUmbVertex in directories
+    adjoint/forcesInput 
+    adjoint/forcesOutput
+    adjoint/metricInput 
+    adjoint/residualInput 
+    adjoint/residualOutput
+
+  and add these directories to the main Makefile
+
+#---------------------------------------------------------------------------------------#

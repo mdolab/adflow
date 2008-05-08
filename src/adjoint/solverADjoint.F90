@@ -161,19 +161,22 @@
         ! Verify the node-based residual routine.
 
    	call verifyRAdj(level)
+
+        ! Verify the node-based ADjoint residual routine.
+
+!	call verifydRdW(level,sps)
+
+
+        ! Verify the dRdx routine
+
+!        call verifydRdx(level,sps)
+
+
+        ! Verify the ADjoint routine for the forces
+
+        call verifyForcesAdj(level,sps) 
+	print *,'finished forces'
 stop
-!!$        ! Verify the node-based ADjoint residual routine.
-!!$
-!!$!        call verifydRdW(level,sps)
-!!$
-!!$        ! Verify the dRdx routine
-!!$
-!!$!        call verifydRdx(level,sps)
-!!$
-!!$        ! Verify the ADjoint routine for the forces
-!!$
-!!$!       call verifyForcesAdj(level,sps) 
-!!$
 !!$        ! Verify the force derivatives
 !!$
 !!$!        call verifydCfdx(level,sps)

@@ -71,6 +71,7 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
   real(kind=realType) :: r0, u0, v0, w0, qn0, vn0, c0, s0
   real(kind=realType) :: re, ue, ve, we, qne, ce
   real(kind=realType) :: qnf, cf, uf, vf, wf, sf, cc, qq
+  real(kind=realType) :: rface
 
 
 
@@ -139,6 +140,8 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
                  ii = i - iOffset
                  jj = j - jOffset
              
+                 rface = BCData(nn)%rface(i,j)
+                 
                  ! Store the three components of the unit normal a
                  ! bit easier.
 
@@ -150,7 +153,7 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
                  ! substract the normal velocity of the mesh.
 
                  qn0 = u0*nnx + v0*nny + w0*nnz
-                 vn0 = qn0 - BCData(nn)%rface(i,j)
+                 vn0 = qn0 - rface
 
                  ! Compute the three velocity components, the normal
                  ! velocity and the speed of sound of the current state

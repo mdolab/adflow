@@ -26,9 +26,12 @@
 !
 !      Subroutine arguments.
 !
-       real(kind=realType), dimension(*), intent(in)  :: rho, p, k
-       real(kind=realType), dimension(*), intent(in)  :: u, v, w
-       real(kind=realType), dimension(*), intent(out) :: etot
+!!$       real(kind=realType), dimension(*), intent(in)  :: rho, p, k
+!!$       real(kind=realType), dimension(*), intent(in)  :: u, v, w
+!!$       real(kind=realType), dimension(*), intent(out) :: etot
+       real(kind=realType), dimension(kk), intent(in)  :: rho, p, k
+       real(kind=realType), dimension(kk), intent(in)  :: u, v, w
+       real(kind=realType), dimension(kk), intent(out) :: etot
        logical, intent(in)                             :: correctForK
        integer(kind=intType), intent(in)              :: kk
 !
@@ -79,8 +82,10 @@
 !
 !      Subroutine arguments.
 !
-       real(kind=realType), dimension(*), intent(in)  :: rho, p, k
-       real(kind=realType), dimension(*), intent(out) :: eint
+       real(kind=realType), dimension(kk), intent(in)  :: rho, p, k
+       real(kind=realType), dimension(kk), intent(out) :: eint
+!!$       real(kind=realType), dimension(*), intent(in)  :: rho, p, k
+!!$       real(kind=realType), dimension(*), intent(out) :: eint
        logical, intent(in)                             :: correctForK
        integer(kind=intType), intent(in)              :: kk
 !
@@ -141,97 +146,97 @@
 
            scale = RGas/Tref
 
-           ! Loop over the number of elements of the array
-
-           do i=1,kk
-
-             ! Compute the dimensional temperature.
-
-             pp = p(i)
-             if( correctForK ) pp = pp - twoThird*rho(i)*k(i)
-             t = Tref*pp/(RGas*rho(i))
-
-             ! Determine the case we are having here.
-
-             if(t <= cpTrange(0)) then
-
-               ! Temperature is less than the smallest temperature
-               ! in the curve fits. Use extrapolation using
-               ! constant cv.
-
-               eint(i) = scale*(cpEint(0) + cv0*(t - cpTrange(0)))
-
-             else if(t >= cpTrange(cpNparts)) then
-
-               ! Temperature is larger than the largest temperature
-               ! in the curve fits. Use extrapolation using
-               ! constant cv.
-
-               eint(i) = scale*(cpEint(cpNparts) &
-                       +        cvn*(t - cpTrange(cpNparts)))
-
-             else
-
-               ! Temperature is in the curve fit range.
-               ! First find the valid range.
-
-               ii    = cpNparts
-               start = 1
-               interval: do
-
-                 ! Next guess for the interval.
-
-                 nn = start + ii/2
-
-                 ! Determine the situation we are having here.
-
-                 if(t > cpTrange(nn)) then
-
-                   ! Temperature is larger than the upper boundary of
-                   ! the current interval. Update the lower boundary.
-
-                   start = nn + 1
-                   ii    = ii - 1
-
-                 else if(t >= cpTrange(nn-1)) then
-
-                   ! This is the correct range. Exit the do-loop.
-
-                   exit
-
-                 endif
-
-                 ! Modify ii for the next branch to search.
-
-                 ii = ii/2
-
-               enddo interval
-
-               ! Nn contains the correct curve fit interval.
-               ! Integrate cv to compute eint.
-
-               eint(i) = cpTempFit(nn)%eint0 - t
-               do ii=1,cpTempFit(nn)%nterm
-                 if(cpTempFit(nn)%exponents(ii) == -1_intType) then
-                   eint(i) = eint(i) &
-                           + cpTempFit(nn)%constants(ii)*log(t)
-                 else
-                   mm   = cpTempFit(nn)%exponents(ii) + 1
-                   t2   = t**mm
-                   eint(i) = eint(i) &
-                           + cpTempFit(nn)%constants(ii)*t2/mm
-                 endif
-               enddo
-
-               eint(i) = scale*eint(i)
-
-             endif
-
-             ! Add the turbulent energy if needed.
-
-             if( correctForK ) eint(i) = eint(i) + k(i)
-
-           enddo
+!!$           ! Loop over the number of elements of the array
+!!$
+!!$           do i=1,kk
+!!$
+!!$             ! Compute the dimensional temperature.
+!!$
+!!$             pp = p(i)
+!!$             if( correctForK ) pp = pp - twoThird*rho(i)*k(i)
+!!$             t = Tref*pp/(RGas*rho(i))
+!!$
+!!$             ! Determine the case we are having here.
+!!$
+!!$             if(t <= cpTrange(0)) then
+!!$
+!!$               ! Temperature is less than the smallest temperature
+!!$               ! in the curve fits. Use extrapolation using
+!!$               ! constant cv.
+!!$
+!!$               eint(i) = scale*(cpEint(0) + cv0*(t - cpTrange(0)))
+!!$
+!!$             else if(t >= cpTrange(cpNparts)) then
+!!$
+!!$               ! Temperature is larger than the largest temperature
+!!$               ! in the curve fits. Use extrapolation using
+!!$               ! constant cv.
+!!$
+!!$               eint(i) = scale*(cpEint(cpNparts) &
+!!$                       +        cvn*(t - cpTrange(cpNparts)))
+!!$
+!!$             else
+!!$
+!!$               ! Temperature is in the curve fit range.
+!!$               ! First find the valid range.
+!!$
+!!$               ii    = cpNparts
+!!$               start = 1
+!!$               interval: do
+!!$
+!!$                 ! Next guess for the interval.
+!!$
+!!$                 nn = start + ii/2
+!!$
+!!$                 ! Determine the situation we are having here.
+!!$
+!!$                 if(t > cpTrange(nn)) then
+!!$
+!!$                   ! Temperature is larger than the upper boundary of
+!!$                   ! the current interval. Update the lower boundary.
+!!$
+!!$                   start = nn + 1
+!!$                   ii    = ii - 1
+!!$
+!!$                 else if(t >= cpTrange(nn-1)) then
+!!$
+!!$                   ! This is the correct range. Exit the do-loop.
+!!$
+!!$                   exit
+!!$
+!!$                 endif
+!!$
+!!$                 ! Modify ii for the next branch to search.
+!!$
+!!$                 ii = ii/2
+!!$
+!!$               enddo interval
+!!$
+!!$               ! Nn contains the correct curve fit interval.
+!!$               ! Integrate cv to compute eint.
+!!$
+!!$               eint(i) = cpTempFit(nn)%eint0 - t
+!!$               do ii=1,cpTempFit(nn)%nterm
+!!$                 if(cpTempFit(nn)%exponents(ii) == -1_intType) then
+!!$                   eint(i) = eint(i) &
+!!$                           + cpTempFit(nn)%constants(ii)*log(t)
+!!$                 else
+!!$                   mm   = cpTempFit(nn)%exponents(ii) + 1
+!!$                   t2   = t**mm
+!!$                   eint(i) = eint(i) &
+!!$                           + cpTempFit(nn)%constants(ii)*t2/mm
+!!$                 endif
+!!$               enddo
+!!$
+!!$               eint(i) = scale*eint(i)
+!!$
+!!$             endif
+!!$
+!!$             ! Add the turbulent energy if needed.
+!!$
+!!$             if( correctForK ) eint(i) = eint(i) + k(i)
+!!$
+!!$           enddo
 
        end select
 

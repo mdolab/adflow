@@ -40,8 +40,11 @@ SUBDIR_SRC    = src/modules       \
 	        src/utils         \
 	        src/wallDistance
 
-SUBDIR_ADJOINT = src/adjoint\
-		 src/adjoint/residualInput
+SUBDIR_ADJOINT = src/adjoint               \
+		 src/adjoint/ADFirstAidKit \
+		 src/adjoint/residualInput \
+		 src/adjoint/residualOutput\
+		 src/adjoint/forcesInput
 
 SUBDIR_EXEC   = src/exec
 SUBDIR_PYTHON = src/python/fortran
