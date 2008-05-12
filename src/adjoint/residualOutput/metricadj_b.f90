@@ -47,8 +47,9 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
 !
 !      Subroutine arguments.
 !
-  REAL(KIND=REALTYPE), DIMENSION(-2:3, -2:3, -2:3, 3) :: xadj
-  REAL(KIND=REALTYPE), DIMENSION(-2:3, -2:3, -2:3, 3) :: xadjb
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: xadj
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: xadjb
+!       real(kind=realType), dimension(-2:3,-2:3,-2:3,3), intent(in) :: xAdj
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadj, sjadj, &
 &  skadj
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadjb, sjadjb&
@@ -897,7 +898,7 @@ bocoloop:DO mm=1,nbocos
       CALL POPINTEGER4(ist)
     END IF
   END DO
-  xadjb(-2:3, -2:3, -2:3, :) = 0.0
+  xadjb(-3:2, -3:2, -3:2, :) = 0.0
   v1b(:) = 0.0
   v2b(:) = 0.0
   DO k=kend,kstart,-1

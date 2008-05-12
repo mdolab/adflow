@@ -3,7 +3,7 @@
 #      * File:          Makefile                                        *
 #      * Author:        C.A.(Sandy) Mader                               *
 #      * Starting date: 01-15-2007                                      *
-#      * Last modified: 02-19-2007                                      *
+#      * Last modified: 05-08-2008                                      *
 #      *                                                                *
 #      ******************************************************************
 
@@ -36,13 +36,10 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS = getSurfaceNormalsAdj.o\
-	       computeForcesPressureAdj.o\
-	       copyADjointForcesStencil.o\
-	       forcesAndMomentsAdj.o\
-	       computeForcesAdj.o\
-	       verifydCfdx.o\
-	       verifyForcesAdj.o
+FF90_OBJECTS = getsurfacenormalsadj_b.o\
+	       computeforcespressureadj_b.o\
+	       forcesandmomentsadj_b.o\
+	       computeforcesadj_b.o
 
 #CC_OBJECTS   = connect_signals.o
 

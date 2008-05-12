@@ -34,7 +34,9 @@
       integer(kind=intType), intent(in) :: iCell, jCell, kCell
       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
                                                      intent(out) :: wAdj
-      real(kind=realType), dimension(-2:3,-2:3,-2:3,3), &
+!      real(kind=realType), dimension(-2:3,-2:3,-2:3,3), &
+!                                                     intent(out) :: xAdj
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3), &
                                                      intent(out) :: xAdj
 
 !
@@ -95,12 +97,12 @@
       jStart=-3; jEnd=2
       kStart=-3; kEnd=2
 
-!!$      ! Special care needs to be done for subfaces. 
-!!$      ! There're no points for -3 and 2 indices
-!!$
-!!$      if(iCell==2) iStart=-2; if(iCell==il) iEnd=1
-!!$      if(jCell==2) jStart=-2; if(jCell==jl) jEnd=1
-!!$      if(kCell==2) kStart=-2; if(kCell==kl) kEnd=1
+      ! Special care needs to be done for subfaces. 
+      ! There're no points for -3 and 2 indices
+
+      if(iCell==2) iStart=-2; if(iCell==il) iEnd=1
+      if(jCell==2) jStart=-2; if(jCell==jl) jEnd=1
+      if(kCell==2) kStart=-2; if(kCell==kl) kEnd=1
 
       do l=1,3
         do kk=kStart,kEnd
