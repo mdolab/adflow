@@ -10,7 +10,7 @@
 !      ******************************************************************
 !
        subroutine getSurfaceNormalsAdj(xAdj,siAdj,sjAdj,skAdj,normAdj, &
-           iiBeg,iiEnd,jjBeg,jjEnd,mm,level,nn,sps)
+           iiBeg,iiEnd,jjBeg,jjEnd,mm,level,nn,sps,righthanded)
 !
 !
 !      ******************************************************************
@@ -53,6 +53,8 @@
        real(kind=realType)   :: mult,xp,yp,zp,fact
        real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,3) :: ss
        real(kind=realType), dimension(3)   :: v1, v2,v12,v22
+       
+       logical ,intent(in)::righthanded
 !
 !      ******************************************************************
 !      *                                                                *
@@ -83,7 +85,7 @@
       ! and fact is used to correct this for a left handed block,
       ! as well as the scaling factor of 0.5
 
-       if( flowDoms(nn,level,sps)%rightHanded ) then
+       if( rightHanded ) then
           fact =  half
        else
           fact = -half

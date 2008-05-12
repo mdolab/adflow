@@ -44,7 +44,9 @@
       
 
       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdj
-      real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xAdj
+      !real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xAdj
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdj
+
 
       real(kind=realType), dimension(nw)                :: dwAdj
 
@@ -220,7 +222,7 @@
                      ! Compute the total residual.
                      ! This includes inviscid and viscous fluxes, artificial
                      ! dissipation, and boundary conditions.                   
-
+                     print *,'Calling compute ADjoint'
                      call computeRAdjoint(wAdj,        &
                           xAdj,                       &
                           dwAdj,                      &

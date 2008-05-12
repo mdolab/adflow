@@ -40,7 +40,8 @@
 !
 !      Subroutine arguments.
 !
-       real(kind=realType), dimension(-2:3,-2:3,-2:3,3), intent(in) :: xAdj
+       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) :: xAdj
+!       real(kind=realType), dimension(-2:3,-2:3,-2:3,3), intent(in) :: xAdj
        real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(out) :: siAdj, sjAdj, skAdj
        real(kind=realType), intent(out) :: volAdj
        real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(out) :: normAdj

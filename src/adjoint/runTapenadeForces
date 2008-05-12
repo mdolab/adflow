@@ -1,0 +1,26 @@
+# ------------------------------------------------------ #
+# Run the makefile that clears Tapenade output directory #
+# ------------------------------------------------------ #
+
+#make -f MakefileTapenadeForces clean
+
+# ------------------------------------------------------ #
+#         Run the makefile that calls Tapenade           #
+# ------------------------------------------------------ #
+
+# Differentiate the full grid force computation routines
+
+make -f MakefileTapenadeForces
+
+# Run python script that automatically edits the tapenade 
+# output files, discard module files and renaming module
+# names in subroutines
+
+python forcesTapenade/autoEdit.py
+
+echo "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+echo "Refer to INSTRUCTIONS file for subsequent steps..."
+echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+
+# Created by    : Andre C. Marta
+# Last modified : Apr.10, 2007

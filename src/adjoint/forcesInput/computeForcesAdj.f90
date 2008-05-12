@@ -13,7 +13,7 @@
                        iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
                        mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
                        yplusMax,refPoint,CLAdj,CDAdj,  &
-                       nn,level,sps,cFpAdj,cMpAdj)
+                       nn,level,sps,cFpAdj,cMpAdj,righthanded)
         !(xAdj, &
         !         iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
         !         mm,cFxAdj,cFyAdj,cFzAdj, &
@@ -71,6 +71,8 @@
       real(kind=realType), dimension(3):: cFpAdjOut, cFvAdjOut
       real(kind=realType), dimension(3):: cMpAdjOut, cMvAdjOut
 
+      logical, intent(in)::righthanded
+
       integer(kind=intType):: i,j,k,l,kk
 !
 !     ******************************************************************
@@ -89,7 +91,7 @@
 
           
       call getSurfaceNormalsAdj(xAdj,siAdj,sjAdj,skAdj,normAdj, &
-           iiBeg,iiEnd,jjBeg,jjEnd,mm,level,nn,sps)
+           iiBeg,iiEnd,jjBeg,jjEnd,mm,level,nn,sps,righthanded)
 
       call computeForcesPressureAdj(wAdj, pAdj)
 

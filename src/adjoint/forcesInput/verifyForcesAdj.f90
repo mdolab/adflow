@@ -74,7 +74,7 @@
 
       real(kind=realType) :: fact!temporary
 
-      logical :: contributeToForce, viscousSubface,secondhalo
+      logical :: contributeToForce, viscousSubface,secondhalo, righthanded
 
       integer :: ierr
 
@@ -177,31 +177,31 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
       
       nmonsum = 8
 
-      monLoc(1) = Cl
-      monLoc(2) = Cd
-      monLoc(3) = cfx
-      monLoc(4) = cfy
-      monLoc(5) = cfz
-      monLoc(6) = cmx
-      monLoc(7) = cmy
-      monLoc(8) = cmz
+      monLoc1(1) = Cl
+      monLoc1(2) = Cd
+      monLoc1(3) = cfx
+      monLoc1(4) = cfy
+      monLoc1(5) = cfz
+      monLoc1(6) = cmx
+      monLoc1(7) = cmy
+      monLoc1(8) = cmz
 
       ! Determine the global sum of the summation monitoring
       ! variables. The sum is made known to all processors.
-!      print *,'reducing'
-      call mpi_allreduce(monLoc, monGlob, nMonSum, sumb_real, &
+      print *,'reducing'
+      call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
                          mpi_sum, SUmb_comm_world, ierr)
 
       ! Transfer the cost function values to output arguments.
 
-      CL  = monGlob(1)
-      CD  = monGlob(2)
-      Cfx = monGlob(3)
-      Cfy = monGlob(4)
-      Cfz = monGlob(5) 
-      CMx = monGlob(6)
-      CMy = monGlob(7)
-      CMz = monGlob(8)
+      CL  = monGlob1(1)
+      CD  = monGlob1(2)
+      Cfx = monGlob1(3)
+      Cfy = monGlob1(4)
+      Cfz = monGlob1(5) 
+      CMx = monGlob1(6)
+      CMy = monGlob1(7)
+      CMz = monGlob1(8)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -248,7 +248,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
   !          print *,'setting pointers'
             ! Set some pointers to make the code more readable.
             call setPointersAdj(nn,groundlevel,sps)
-   !         print *,'allocating'
+            !print *,'allocating'
             allocate(xAdj(0:ie,0:je,0:ke,3), stat=ierr)
             if(ierr /= 0)                              &
                  call terminate("Memory allocation failure for xAdj.")
@@ -262,7 +262,9 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
             if(ierr /= 0)                              &
                  call terminate("Memory allocation failure for pAdj.")
 
-    !        print *,'copying stencil'
+            righthanded = flowDoms(nn,level,sps)%righthanded
+
+            !print *,'copying stencil'
             ! Copy the coordinates into xAdj and
             ! Compute the face normals on the subfaces
             call copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
@@ -273,7 +275,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !s               invForce: if(BCType(mm) == EulerWall        .or. &
 !s                            BCType(mm) == NSWallAdiabatic .or.  &
 !s                            BCType(mm) == NSWallIsothermal) then
-     !          print *,'setting indicies'
+               !print *,'setting indicies'
                   ! Determine the range of cell indices of the owned cells
                   ! Notice these are not the node indices
                   iiBeg = BCData(mm)%icBeg
@@ -306,12 +308,12 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !                       cMxAdj,cMyAdj,cMzAdj,yplusMax,refPoint,CLAdj,CDAdj,  &
 !                       cFpAdj,cMpAdj,cFvAdj,cMvAdj,nn,level,sps, &
 !                       cFpAdjOut,cMpAdjOut)
-      !            print *,'calling computeforces'
+                  !print *,'calling computeforces'
                   call computeForcesAdj(xAdj,wAdj,pAdj, &
                        iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
                        mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
                        yplusMax,refPoint,CLAdj,CDAdj,  &
-                       nn,level,sps,cFpAdj,cMpAdj)
+                       nn,level,sps,cFpAdj,cMpAdj,righthanded)
 
 
 !                  deallocate(normAdj,siAdj,sjAdj,skAdj)
@@ -325,7 +327,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
             deallocate(wAdj)
          !   print *,'deallocating x'
             deallocate(xAdj)
-          !  print *,'deallocation finished'
+            print *,'deallocation finished'
 !            deallocate(wAdj)
       
 
