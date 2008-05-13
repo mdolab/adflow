@@ -4,11 +4,11 @@
 !     * File:          verifydCfdx.f90                                 *
 !     * Author:        Andre C. Marta, C.A.(Sandy) Mader               *
 !     * Starting date: 01-15-2007                                      *
-!     * Last modified: 05-08-2008                                      *
+!     * Last modified: 05-13-2008                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine verifydCfdx(level)
+subroutine verifydCfdw(level)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -39,7 +39,7 @@ subroutine verifydCfdx(level)
 !     Local variables.
 !
       integer(kind=intType) :: discr, nHalo, sps
-      integer(kind=intType) :: inode, jnode, knode, mm, nn, m, n
+      integer(kind=intType) :: icell, jcell, kcell, mm, nn, m, n
       integer(kind=intType) :: ii, jj, kk, i1, j1, k1, i2, j2, k2
 
       integer(kind=intType) ::  i2Beg,  i2End,  j2Beg,  j2End
@@ -51,8 +51,8 @@ subroutine verifydCfdx(level)
       real(kind=realType) :: Cl,Cd,Cfx,Cfy,Cfz,Cmx,Cmy,Cmz
       real(kind=realType) :: ClAdj,CdAdj,CfxAdj,CfyAdj,CfzAdj,&
                              &CmxAdj,CmyAdj,CmzAdj  
-      real(kind=realType) :: CLAdjP,CLAdjM,CDAdjP,CDAdjM,dCLdxFD,dCDdxFD,&
-                             &dCmxdxFD,CmxAdjP,CmxAdjM
+      real(kind=realType) :: CLAdjP,CLAdjM,CDAdjP,CDAdjM,dCLdwFD,dCDdwFD,&
+                             &dCmxdwFD,CmxAdjP,CmxAdjM
       real(kind=realType) :: ClAdjB,CdAdjB,CfxAdjB,CfyAdjB,CfzAdjB,&
                              &CmxAdjB,CmyAdjB,CmzAdjB 
 
@@ -87,9 +87,9 @@ subroutine verifydCfdx(level)
       real(kind=realType), dimension(:,:,:,:,:), allocatable :: dCLer, &
            dCDer,dCmxer
 
-      real(kind=realType), parameter :: deltax = 1.e-8_realType
+      real(kind=realType), parameter :: deltaw = 1.e-8_realType
 
-      real(kind=realType) :: xAdjRef, wDonorAdjRef,xref
+      real(kind=realType) :: wAdjRef, wref
 
       real(kind=realType), dimension(:,:,:), pointer :: norm
       real(kind=realType), dimension(:,:,:),allocatable:: normAdj
@@ -107,11 +107,11 @@ subroutine verifydCfdx(level)
       integer :: unit = 8,ierror
       character(len = 10)::outfile
       
-      outfile = "dcfdx.txt"
+      outfile = "dcfdw.txt"
       
       open (UNIT=unit,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
-           call terminate("verifydCfdx", &
+           call terminate("verifydCfdw", &
            "Something wrong when &
            &calling open")
 !
@@ -121,7 +121,7 @@ subroutine verifydCfdx(level)
 !     *                                                                *
 !     ******************************************************************
 !
-      print *,'in verifydcfdx'
+      print *,'in verifydcfdw'
  !     if( myID==0 ) write(*,*) "Running verifydCfdx...",sps
 
       ! Set the grid level of the current MG cycle, the value of the
@@ -142,17 +142,17 @@ subroutine verifydCfdx(level)
 
       ! Allocate memory for the temporary arrays.
 
-      ie = maxval(flowDoms(:,currentLevel,1)%ie)
-      je = maxval(flowDoms(:,currentLevel,1)%je)
-      ke = maxval(flowDoms(:,currentLevel,1)%ke)
+      ib = maxval(flowDoms(:,currentLevel,1)%ib)
+      jb = maxval(flowDoms(:,currentLevel,1)%jb)
+      kb = maxval(flowDoms(:,currentLevel,1)%kb)
 
-      allocate(dCL(nDom,0:ie,0:je,0:ke,3), dCLfd(nDom,0:ie,0:je,0:ke,3))
-      allocate(dCD(nDom,0:ie,0:je,0:ke,3), dCDfd(nDom,0:ie,0:je,0:ke,3))
-      allocate(dCmx(nDom,0:ie,0:je,0:ke,3), dCmxfd(nDom,0:ie,0:je,0:ke,3))
+      allocate(dCL(nDom,0:ib,0:jb,0:kb,nw), dCLfd(nDom,0:ib,0:jb,0:kb,nw))
+      allocate(dCD(nDom,0:ib,0:jb,0:kb,nw), dCDfd(nDom,0:ib,0:jb,0:kb,nw))
+      allocate(dCmx(nDom,0:ib,0:jb,0:kb,nw), dCmxfd(nDom,0:ib,0:jb,0:kb,nw))
        
-      allocate(dCLer(nDom,0:ie,0:je,0:ke,3))
-      allocate(dCDer(nDom,0:ie,0:je,0:ke,3))
-      allocate(dCmxer(nDom,0:ie,0:je,0:ke,3))
+      allocate(dCLer(nDom,0:ib,0:jb,0:kb,nw))
+      allocate(dCDer(nDom,0:ib,0:jb,0:kb,nw))
+      allocate(dCmxer(nDom,0:ib,0:jb,0:kb,nw))
 
       
       nmonsum1 = 8
@@ -311,7 +311,7 @@ subroutine verifydCfdx(level)
 !!$
 !!$        !Copy the values of x to the Stencil
 !!$        call copyADjointForcesStencil(xAdj,level,nn,sps)
-
+ 
         ! Copy the coordinates into xAdj and
         ! Compute the face normals on the subfaces
         call copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
@@ -379,7 +379,7 @@ subroutine verifydCfdx(level)
 !!$           jjEnd = min(j2End, flowDoms(nn,level,1)%BCData(mm)%jEnd)
 !!$
 !!$           
-!!$           !Allocate the vector of cell normals in the full grid stencil
+!!$           !Allocate the vector of node normals in the full grid stencil
 !!$           allocate(normAdj(iiBeg:iiEnd,jjBeg:jjEnd,3), stat=ierr)
 !!$           if(ierr /= 0)                              &
 !!$                call terminate("verifydCfdx", &
@@ -396,6 +396,7 @@ subroutine verifydCfdx(level)
 !!$        CfzAdjB = 0
            
            xAdjB(:,:,:,:) = zero ! > return dCf/dx
+           wAdjB(:,:,:,:) = zero ! > return dCf/dW
            
            !===============================================================
            !           
@@ -416,14 +417,14 @@ subroutine verifydCfdx(level)
            
            
            !loop over cells to store the jacobian
-           do k = 0,ke
-              do j = 0,je
-                 do i = 0,ie
+           do k = 0,kb
+              do j = 0,jb
+                 do i = 0,ib
                     
                     ! Store the dervatives for comparison.
                    
                     dCL(nn,i,j,k,:)=dCL(nn,i,j,k,:)+& 
-                         & xAdjB( i,j,k,:)
+                         & wAdjB( i,j,k,:)
 
 
                  enddo
@@ -442,6 +443,7 @@ subroutine verifydCfdx(level)
 !!$        CfzAdjB = 0
        
            xAdjB(:,:,:,:) = zero ! > return dCf/dx
+           wAdjB(:,:,:,:) = zero ! > return dCf/dW
 
            !===============================================================
            !           
@@ -462,14 +464,14 @@ subroutine verifydCfdx(level)
            
            
            !loop over cells to store the jacobian
-           do k = 0,ke
-              do j = 0,je
-                 do i = 0,ie
+           do k = 0,kb
+              do j = 0,jb
+                 do i = 0,ib
                     
                     ! Store the derivatives for comparison.
                     
                     dCD(nn,i,j,k,:)=dCD(nn,i,j,k,:)+& 
-                         & xAdjB( i,j,k,:)
+                         & wAdjB( i,j,k,:)
 
                  enddo
               enddo
@@ -487,6 +489,8 @@ subroutine verifydCfdx(level)
  !       CfzAdjB = 0
        
            xAdjB(:,:,:,:) = zero ! > return dCf/dx
+           wAdjB(:,:,:,:) = zero ! > return dCf/dW
+
 
            !===============================================================
            !           
@@ -507,15 +511,15 @@ subroutine verifydCfdx(level)
 !!$           
            
            !loop over cells to store the jacobian
-           do k = 0,ke
-              do j = 0,je
-                 do i = 0,ie
+           do k = 0,kb
+              do j = 0,jb
+                 do i = 0,ib
                     
                     ! Store the derivatives for comparison.
                    
 
                     dCMx(nn,i,j,k,:)=dCMx(nn,i,j,k,:)+& 
-                         & xAdjB( i,j,k,:)
+                         & wAdjB( i,j,k,:)
                     
                  enddo
               enddo
@@ -594,13 +598,13 @@ subroutine verifydCfdx(level)
 
          !loop over all points
 
-         do i = 0,ie
-            do j = 0,je
-               do k = 0,ke
-                  do l = 1,3
-                     xref = x(i,j,k,l)
+         do i = 0,ib
+            do j = 0,jb
+               do k = 0,kb
+                  do l = 1,nw
+                     wref = w(i,j,k,l)
 
-                     x(i,j,k,l) = xref+deltax
+                     w(i,j,k,l) = wref+deltaw
 
                      !*************************************************************
                      !Original force and metric calculation....
@@ -613,7 +617,7 @@ subroutine verifydCfdx(level)
                      !
  
                      call metric(level)
-                     
+                     call computeForcesPressureAdj(w, p)
                      call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
                      
                      Cl = (cfp(1) + cfv(1))*liftDirection(1) &
@@ -693,7 +697,7 @@ subroutine verifydCfdx(level)
                      
                      !*********************
                      !Now calculate other perturbation
-                     x(i,j,k,l) = xref-deltax
+                     w(i,j,k,l) = wref-deltaw
                      
                      !*************************************************************
                      !Original force and metric calculation....
@@ -706,7 +710,7 @@ subroutine verifydCfdx(level)
                      !
   
                      call metric(level)
-                     
+                     call computeForcesPressureAdj(w, p)
                      call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
                      
                      Cl = (cfp(1) + cfv(1))*liftDirection(1) &
@@ -784,19 +788,19 @@ subroutine verifydCfdx(level)
                      CMzm = monGlob2(8)
                      
                      
-                     x(i,j,k,l) = xref
+                     w(i,j,k,l) = wref
                   
 
-                     dCLdxFD = (CLP-CLM)/(two*deltax)  
-                    dCDdxFD = (CDP-CDM)/(two*deltax) 
-                    dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
+                     dCLdwFD = (CLP-CLM)/(two*deltaw)  
+                    dCDdwFD = (CDP-CDM)/(two*deltaw) 
+                    dCmxdwFD = (CmxP-CmxM)/(two*deltaw) 
 
-                    dCLFD(nn,i,j,k,l)=dCLdxFD
+                    dCLFD(nn,i,j,k,l)=dCLdwFD
 
-                    dCDFD(nn,i,j,k,l)=dCDdxFD
+                    dCDFD(nn,i,j,k,l)=dCDdwFD
                     
-                    dCmxFD(nn,i,j,k,l)=dCmxdxFD
-                    write (unit,*) dCLdxFD,i,j,k,l
+                    dCmxFD(nn,i,j,k,l)=dCmxdwFD
+                    write (unit,*) dCLdwFD,i,j,k,l
                     
                     enddo
                  enddo
@@ -916,7 +920,7 @@ subroutine verifydCfdx(level)
 !!$                       end select
 !!$                       
 !!$
-!!$                       ! Determine the nodal range of the owned nodes. Due to block
+!!$                       ! Determine the nodal range of the owned cells. Due to block
 !!$                       ! splitting iBeg and jBeg may correspond to a halo.
 !!$!!!$                       iiBeg = max(i2Beg, 1_intType)
 !!$!!!$                       jjBeg = max(j2Beg, 1_intType)
@@ -993,7 +997,7 @@ subroutine verifydCfdx(level)
 !!$                          if(j2End == jl) j2End = min(jl+1,je)
 !!$                       end select
 !!$    
-!!$                       ! Determine the nodal range of the owned nodes. Due to block
+!!$                       ! Determine the nodal range of the owned cells. Due to block
 !!$                       ! splitting iBeg and jBeg may correspond to a halo.
 !!$!!!$                       iiBeg = max(i2Beg, 1_intType)
 !!$!!!$                       jjBeg = max(j2Beg, 1_intType)
@@ -1081,41 +1085,41 @@ subroutine verifydCfdx(level)
 !!$        jl = flowDoms(nn,currentLevel,1)%jl
 !!$        kl = flowDoms(nn,currentLevel,1)%kl
 
-        ! Loop over the location of the output node.
+        ! Loop over the location of the output cell.
 
-        do kNode=0,ke
-          do jNode=0,je
-            do iNode=0,ie
+        do kCell=0,kb
+          do jCell=0,jb
+            do iCell=0,ib
 
               ! Relative error
 
-              do n=1,3
+              do n=1,nw
 
-                 if ( dCL(nn,iNode,jNode,kNode,n) < 1e-10 ) then
-                    dCLer(nn,iNode,jNode,kNode,n)  = zero
+                 if ( dCL(nn,iCell,jCell,kCell,n) < 1e-10 ) then
+                    dCLer(nn,iCell,jCell,kCell,n)  = zero
                  else
-                    dCLer(nn,iNode,jNode,kNode,n)  =                   &
-                         (  dCL(nn,iNode,jNode,kNode,n)      &
-                         - dCLfd(nn,iNode,jNode,kNode,n) )  &
-                         /  dCL(nn,iNode,jNode,kNode,n)
+                    dCLer(nn,iCell,jCell,kCell,n)  =                   &
+                         (  dCL(nn,iCell,jCell,kCell,n)      &
+                         - dCLfd(nn,iCell,jCell,kCell,n) )  &
+                         /  dCL(nn,iCell,jCell,kCell,n)
                  endif
                  
-                 if ( dCD(nn,iNode,jNode,kNode,n) < 1e-10 ) then
-                    dCDer(nn,iNode,jNode,kNode,n)  = zero
+                 if ( dCD(nn,iCell,jCell,kCell,n) < 1e-10 ) then
+                    dCDer(nn,iCell,jCell,kCell,n)  = zero
                  else
-                    dCDer(nn,iNode,jNode,kNode,n)  =                   &
-                         (  dCD(nn,iNode,jNode,kNode,n)      &
-                         - dCDfd(nn,iNode,jNode,kNode,n) )  &
-                         /  dCD(nn,iNode,jNode,kNode,n)
+                    dCDer(nn,iCell,jCell,kCell,n)  =                   &
+                         (  dCD(nn,iCell,jCell,kCell,n)      &
+                         - dCDfd(nn,iCell,jCell,kCell,n) )  &
+                         /  dCD(nn,iCell,jCell,kCell,n)
                  endif
                  
-                 if ( dCmxer(nn,iNode,jNode,kNode,n) < 1e-10 ) then
-                    dCmxer(nn,iNode,jNode,kNode,n)  = zero
+                 if ( dCmxer(nn,iCell,jCell,kCell,n) < 1e-10 ) then
+                    dCmxer(nn,iCell,jCell,kCell,n)  = zero
                  else
-                    dCmxer(nn,iNode,jNode,kNode,n)  =                   &
-                         (  dCmx(nn,iNode,jNode,kNode,n)      &
-                         - dCmxfd(nn,iNode,jNode,kNode,n) )  &
-                         /  dCmx(nn,iNode,jNode,kNode,n)
+                    dCmxer(nn,iCell,jCell,kCell,n)  =                   &
+                         (  dCmx(nn,iCell,jCell,kCell,n)      &
+                         - dCmxfd(nn,iCell,jCell,kCell,n) )  &
+                         /  dCmx(nn,iCell,jCell,kCell,n)
                  endif
                  
               enddo
@@ -1123,29 +1127,29 @@ subroutine verifydCfdx(level)
               ! Output if error
 
               write(*,10) "Jacobian dCLer,dCL,dCLfd @ proc/block", &
-                    myID, nn, "for node", iNode,jNode,kNode
-              do m=1,3
-                if (dCLer(nn,iNode,jNode,kNode,m)/=0)          &
-                  write(*,20) (dCLer(nn,iNode,jNode,kNode,m)), &
-                              (dCL(nn,iNode,jNode,kNode,m)),   &
-                              (dCLfd(nn,iNode,jNode,kNode,m))
+                    myID, nn, "for cell", iCell,jCell,kCell
+              do m=1,nw
+                if (dCLer(nn,iCell,jCell,kCell,m)/=0)          &
+                  write(*,20) (dCLer(nn,iCell,jCell,kCell,m)), &
+                              (dCL(nn,iCell,jCell,kCell,m)),   &
+                              (dCLfd(nn,iCell,jCell,kCell,m))
               enddo
               write(*,10) "Jacobian dCDer,dCD,dCDfd @ proc/block", &
-                   myID, nn, "for node", iNode,jNode,kNode
-              do m=1,3
-                 if (dCDer(nn,iNode,jNode,kNode,m)/=0)          &
-                      write(*,20) (dCDer(nn,iNode,jNode,kNode,m)), &
-                      (dCD(nn,iNode,jNode,kNode,m)),   &
-                      (dCDfd(nn,iNode,jNode,kNode,m))
+                   myID, nn, "for cell", iCell,jCell,kCell
+              do m=1,nw
+                 if (dCDer(nn,iCell,jCell,kCell,m)/=0)          &
+                      write(*,20) (dCDer(nn,iCell,jCell,kCell,m)), &
+                      (dCD(nn,iCell,jCell,kCell,m)),   &
+                      (dCDfd(nn,iCell,jCell,kCell,m))
               enddo
               
               write(*,10) "Jacobian dCmxer,dCmx,dCmxfd @ proc/block", &
-                   myID, nn, "for node", iNode,jNode,kNode
-              do m=1,3
-                 if (dCmxer(nn,iNode,jNode,kNode,m)/=0)          &
-                      write(*,20) (dCmxer(nn,iNode,jNode,kNode,m)), &
-                      (dCmx(nn,iNode,jNode,kNode,m)),   &
-                      (dCmxfd(nn,iNode,jNode,kNode,m))
+                   myID, nn, "for cell", iCell,jCell,kCell
+              do m=1,nw
+                 if (dCmxer(nn,iCell,jCell,kCell,m)/=0)          &
+                      write(*,20) (dCmxer(nn,iCell,jCell,kCell,m)), &
+                      (dCmx(nn,iCell,jCell,kCell,m)),   &
+                      (dCmxfd(nn,iCell,jCell,kCell,m))
               enddo
               
            enddo
@@ -1208,4 +1212,4 @@ subroutine verifydCfdx(level)
   20  format(1x,(e18.6),2x,(e18.6),2x,(e18.6))
   30  format(1x,a,1x,i3,2x,e13.6,1x,5(i2,1x),3x,e13.6,1x,5(i2,1x))
 
-    end subroutine verifydCfdx
+    end subroutine verifydCfdw

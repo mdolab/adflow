@@ -42,6 +42,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       assertionsADjoint.o      \
                computeAeroCoef.o        \
 	       copyADjointStencil.o     \
+	       createPETScKsp.o         \
 	       createPETScMat.o         \
 	       createPETScVars.o        \
 	       createPETScVec.o         \
@@ -53,6 +54,10 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       preprocessingADjoint.o   \
 	       setGlobalCellsAndNodes.o \
 	       setPointersAdj.o         \
+	       setupADjointMatrix.o     \
+	       setupADjointRHS.o        \
+	       setupADjointRHSAeroCoeff.o\
+	       solveADjointPETSc.o      \
                solverADjoint.o          \
 	       verifydRdw.o             \
 	       verifydRdx.o             \
