@@ -42,6 +42,7 @@ FF90_OBJECTS = getSurfaceNormalsAdj.o\
 	       forcesAndMomentsAdj.o\
 	       computeForcesAdj.o\
 	       verifydCfdx.o\
+	       verifydCfdw.o\
 	       verifyForcesAdj.o
 
 #CC_OBJECTS   = connect_signals.o

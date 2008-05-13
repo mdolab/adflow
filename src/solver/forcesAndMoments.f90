@@ -195,7 +195,7 @@
 
            do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
              do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
-
+                
                ! Compute the average pressure minus 1 and the coordinates
                ! of the centroid of the face relative from from the
                ! moment reference point. Due to the usage of pointers for

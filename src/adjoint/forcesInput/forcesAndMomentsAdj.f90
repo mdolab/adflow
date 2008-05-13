@@ -92,6 +92,7 @@
 
        real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd)   :: pp2, pp1
        real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd)   :: rho2, rho1
+!       real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,3) :: xx
        real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,3) :: xx
        real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,3) :: ss
 
@@ -134,7 +135,9 @@
                rho1(:,:) = wAdj(1,iiBeg:iiEnd,jjBeg:jjEnd,irho)
                ss(:,:,:) = siAdj(1,iiBeg:iiEnd,jjBeg:jjEnd,:)
 !               xx(:,:,:)   = xAdj(1,iiBeg-1:iiEnd,jjBeg-1:jjEnd,:)
-               xx(:,:,:)   = xAdj(1,iiBeg-1:iiEnd,jjBeg-1:jjEnd,:)
+!               print *,'shape',shape(xx),shape(xAdj)
+               xx(:,:,:)   = xAdj(1,iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,:)
+!               xx(:,:,:)   = xAdj(1,:,:,:)
                fact = -one
 
 !v               if(equations == RANSEquations) dd2Wall => d2Wall(2,:,:)
@@ -152,7 +155,8 @@
                rho1(:,:) = wAdj(ie,iiBeg:iiEnd,jjBeg:jjEnd,irho)
                ss(:,:,:)   = siAdj(2,iiBeg:iiEnd,jjBeg:jjEnd,:) 
 !               xx(:,:,:)   = xAdj(il,iiBeg-1:iiEnd,jjBeg-1:jjEnd,:)
-               xx(:,:,:)   = xAdj(il,iiBeg-1:iiEnd,jjBeg-1:jjEnd,:)
+               xx(:,:,:)   = xAdj(il,iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,:)
+!               xx(:,:,:)   = xAdj(il,:,:,:)
                fact = one
 
 !v               if(equations == RANSEquations) dd2Wall => d2Wall(il,:,:)
@@ -177,8 +181,13 @@
                rho1(:,:) = wAdj(iiBeg:iiEnd,1,jjBeg:jjEnd,irho)
                ss(:,:,:)   = sjAdj(iiBeg:iiEnd,1,jjBeg:jjEnd,:);
 !               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,1,jjBeg-1:jjEnd,:)
-               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,1,jjBeg-1:jjEnd,:)
-
+!               print *,'indices',iibeg,i2beg,iiend,i2end
+!               print *,'shape',shape(xx),shape(xAdj(iiBeg-1:iiEnd,1,jjBeg-1:jjEnd,:))
+               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,1,jjBeg-1:jjEnd-1,:)
+               !xx(:,:,:)   = xAdj(:,1,:,:)
+!               print *,'xxjmin',xx(1,1,1),xadj(1,1,1,1),xx(1,2,1),xadj(1,1,2,1)
+!               print *,'shape2',shape(xx),shape(xAdj(iiBeg-1:iiEnd,1,jjBeg-1:jjEnd,:))
+!               stop
 !               print *,'xx',xx(1,1,1),xx2(1,1,1),xAdj(0,0,0,1),x(0,0,0,1),x(1,1,1,1)
 !               stop
                fact = -one
@@ -202,7 +211,9 @@
                rho1(:,:) = wAdj(iiBeg:iiEnd,je,jjBeg:jjEnd,irho)
                ss(:,:,:)   = sjAdj(iiBeg:iiEnd,2,jjBeg:jjEnd,:) 
 !               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,jl,jjBeg-1:jjEnd,:)
-               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,jl,jjBeg-1:jjEnd,:)
+               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,jl,jjBeg-1:jjEnd-1,:)
+!               xx(:,:,:)   = xAdj(:,jl,:,:)
+
                fact = one
 
 !v               if(equations == RANSEquations) dd2Wall => d2Wall(:,jl,:)
@@ -224,7 +235,8 @@
                rho1(:,:) = wAdj(iiBeg:iiEnd,jjBeg:jjEnd,1,irho)
                ss(:,:,:)   = skAdj(iiBeg:iiEnd,jjBeg:jjEnd,1,:); 
 !               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,jjBeg-1:jjEnd,1,:)
-               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,jjBeg-1:jjEnd,1,:)
+               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,1,:)
+!               xx(:,:,:)   = xAdj(:,:,1,:)
                fact = -one
 
 !v               if(equations == RANSEquations) dd2Wall => d2Wall(:,:,2)
@@ -246,7 +258,8 @@
                rho1(:,:) = wAdj(iiBeg:iiEnd,jjBeg:jjEnd,ke,irho)
                ss(:,:,:)   = skAdj(iiBeg:iiEnd,jjBeg:jjEnd,2,:)
 !               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,jjBeg-1:jjEnd,kl,:)
-               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,jjBeg-1:jjEnd,kl,:)
+               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,kl,:)
+!               xx(:,:,:)   = xAdj(:,:,kl,:)
                fact = one
 
 !v               if(equations == RANSEquations) dd2Wall => d2Wall(:,:,kl)
@@ -259,10 +272,10 @@
            ! Loop over the quadrilateral faces of the subface. 
            ! Note that +1 to Beg, and -1 to End to have ranges for the owned cell.
 
-
+           !print *,'indicies',i2beg,i2end,iiend,j2beg,j2end!,shape(xx)
            do j=j2Beg,j2End
              do i=i2Beg,i2End
-
+                !print *,'indices',i,j,xx(i,j,1),xAdj(i-1,1,j-1,1),x(i-1,1,j-1,1)
                ! Compute the average pressure minus 1 and the coordinates
                ! of the centroid of the face relative from from the
                ! moment reference point. Due to the usage of pointers for

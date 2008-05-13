@@ -44,7 +44,8 @@ SUBDIR_ADJOINT = src/adjoint               \
 		 src/adjoint/ADFirstAidKit \
 		 src/adjoint/residualInput \
 		 src/adjoint/residualOutput\
-		 src/adjoint/forcesInput
+		 src/adjoint/forcesInput\
+	         src/adjoint/forcesOutput
 
 SUBDIR_EXEC   = src/exec
 SUBDIR_PYTHON = src/python/fortran
