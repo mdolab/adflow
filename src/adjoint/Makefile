@@ -41,23 +41,30 @@ FF90_MODULES =
 FF90_OBJECTS = allocMemADjoint.o        \
 	       assertionsADjoint.o      \
                computeAeroCoef.o        \
+	       computeADjointGradientSpatial.o\
 	       copyADjointStencil.o     \
 	       createPETScKsp.o         \
 	       createPETScMat.o         \
 	       createPETScVars.o        \
 	       createPETScVec.o         \
 	       designInit.o             \
+	       destroyPETScKSP.o        \
+	       destroyPETScVars.o       \
+               finalizePETSc.o          \
 	       haloIndexCommunication.o \
 	       initializePETSc.o        \
 	       indexHalo.o              \
 	       indexHalo1to1.o          \
 	       preprocessingADjoint.o   \
+	       releaseMemADjoint.o      \
 	       setGlobalCellsAndNodes.o \
 	       setPointersAdj.o         \
 	       setupADjointMatrix.o     \
 	       setupADjointRHS.o        \
 	       setupADjointRHSAeroCoeff.o\
 	       solveADjointPETSc.o      \
+	       setupGradientMatrixSpatial.o\
+	       setupGradientRHSSpatial.o\
                solverADjoint.o          \
 	       verifydRdw.o             \
 	       verifydRdx.o             \

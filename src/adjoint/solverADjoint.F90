@@ -227,7 +227,7 @@
 
 !!$      call setupGradientMatrixExtra(level,sps)
 !!$
-!!$      call setupGradientMatrixSpatial(level,sps)
+      call setupGradientMatrixSpatial(level)
 !!$!
 !!$!     ******************************************************************
 !!$!     *                                                                *
@@ -263,7 +263,7 @@
 !!$
 !!$        call setupGradientRHSExtra(level,sps,costFunction)
 !!$
-!!$        call setupGradientRHSSpatial(level,sps,costFunction) 
+        call setupGradientRHSSpatial(level,costFunction) 
 !!$  
 !!$
 !!$        ! Compute the total sensitivity dIda(nDesignExtra) and
@@ -272,11 +272,11 @@
 !!$
 !!$        call computeADjointGradientExtra(costFunction)
 !!$
-!!$	! Compute the total sensitivity dIdx(ndesignSpatial) store in
-!!$	! it in the array spatialGrad(nCostFunc,nDesignSpatial) for the 
-!!$	! spatial design variables
-!!$
-!!$        call computeADjointGradientSpatial(costFunction)
+	! Compute the total sensitivity dIdx(ndesignSpatial) store in
+	! it in the array spatialGrad(nCostFunc,nDesignSpatial) for the 
+	! spatial design variables
+
+        call computeADjointGradientSpatial(costFunction)
 !!$
 !!$        ! Write the adjoint field solution, the convergence history and
 !!$        ! the cost function total sensitivity to file/screen.
@@ -284,33 +284,33 @@
 !!$        call writeADjoint(level,sps,costFunction)
 !!$
       enddo functionLoop
-!!$!
-!!$!     ******************************************************************
-!!$!
-!!$	
-!!$      ! Destroy all the PETSc objects.
-!!$
-!!$      call destroyPETScVars
-!!$      
-!!$      ! Finalize PETSc.
-!!$
-!!$      call finalizePETSc
-!!$      
-!!$      ! Release memory allocated in initDesign.
-!!$
-!!$      if(allocated(functionName )) deallocate(functionName )
-!!$      if(allocated(functionValue)) deallocate(functionValue)
-!!$      if(allocated(functionGrad )) deallocate(functionGrad )
-!!$
-!!$      if(allocated(xDesignVarName )) deallocate(xDesignVarName )
-!!$      if(allocated(xDesignVar     )) deallocate(xDesignVar     )
-!!$      if(allocated(xDesignVarLower)) deallocate(xDesignVarLower)
-!!$      if(allocated(xDesignVarUpper)) deallocate(xDesignVarUpper)
-!!$   
-!!$      ! Release the memory of the adjoint variables.
-!!$
-!!$      !this function causes segmentation fault in block splitting mode
-!!$      call releaseMemADjoint(level,sps)
+!
+!     ******************************************************************
+!
+	
+      ! Destroy all the PETSc objects.
+
+      call destroyPETScVars
+      
+      ! Finalize PETSc.
+
+      call finalizePETSc
+      
+      ! Release memory allocated in initDesign.
+
+      if(allocated(functionName )) deallocate(functionName )
+      if(allocated(functionValue)) deallocate(functionValue)
+      if(allocated(functionGrad )) deallocate(functionGrad )
+
+      if(allocated(xDesignVarName )) deallocate(xDesignVarName )
+      if(allocated(xDesignVar     )) deallocate(xDesignVar     )
+      if(allocated(xDesignVarLower)) deallocate(xDesignVarLower)
+      if(allocated(xDesignVarUpper)) deallocate(xDesignVarUpper)
+   
+      ! Release the memory of the adjoint variables.
+
+      !this function causes segmentation fault in block splitting mode
+      call releaseMemADjoint(level,sps)
       
       ! Output formats.
 
