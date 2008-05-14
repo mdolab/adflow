@@ -217,37 +217,34 @@
          ! Loop over the number of time instances for this block.
 
          spectralLoop: do sps=1,nTimeIntervalsSpectral
-  !          print *,'Setting Pointers'
+
             call setPointersAdj(nn,level,sps)
 
             ! Loop over location of output (R) cell of residual
             do kCell = 2, kl
                do jCell = 2, jl
                   do iCell = 2, il
- !                    print *,'indices',icell,jcell,kcell
+
                      ! Copy the state w to the wAdj array in the stencil
                      call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
-!                     print *,'Stencil Copied'
 
-                     mLoop: do m = 1, nw           ! Loop over output cell residuals (R)
-!                        print *,'initializing variables'
+
+                     mLoop: do m = 1, nw       
+                        ! Loop over output cell residuals (R)
+
                         ! Initialize the seed for the reverse mode
                         dwAdjb(:) = 0.; dwAdjb(m) = 1.
                         dwAdj(:)  = 0.
                         wAdjb(:,:,:,:)  = 0.  !dR(m)/dw
                         xAdjb(:,:,:,:)  = 0.  !dR(m)/dx
-                        
-
-  !                      print *,'calling reverse mode'
-!                        print *,'secondhalo',secondhalo
-                        
+                                                
                         ! Call reverse mode of residual computation
                         call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
                              dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
                              correctfork, secondhalo)
                         
                         ! Store the block Jacobians (by rows).
- !                       print *,'entering storage loop'
+
                         do ii=-2,2!1,il-1
                            do jj = -2,2!1,jl-1
                               do kk = -2,2!1,kl-1
