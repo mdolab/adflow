@@ -565,6 +565,7 @@ SUBROUTINE RIEMANNFLUXADJ_B(left, leftb, right, rightb, flux, fluxb, por&
       etmpb(2) = etrb
       etmpb(1) = etmpb(1) + etlb
       CALL POPREAL8ARRAY(etmp, 2)
+      ptmpb(:) = 0.0
       CALL ETOTARRAYADJ_B(rhotmp, rhotmpb, utmp, utmpb, vtmp, vtmpb, &
 &                    wtmp, wtmpb, ptmp, ptmpb, ktmp, ktmpb, etmp, etmpb&
 &                    , correctfork, 2)

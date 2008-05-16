@@ -37,7 +37,7 @@
        integer(kind=intType), intent(in) ::iCell, jCell,kCell
        integer(kind=intType), intent(in) ::isbeg,jsbeg,ksbeg,isend,jsend,ksend
        integer(kind=intType), intent(in) ::ibbeg,jbbeg,kbbeg,ibend,jbend,kbend
-       integer(kind=intType), intent(out) ::icbeg,jcbeg,icend,jcend
+       integer(kind=intType) ::icbeg,jcbeg,icend,jcend
        integer(kind=intType) ::irbeg,jrbeg,krbeg,irend,jrend,krend
 
        integer(kind=intType) :: iOffset, jOffset, kOffset

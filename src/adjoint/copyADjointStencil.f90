@@ -9,7 +9,11 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)
+      subroutine copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+           machCoefAdj,iCell, jCell, kCell,prefAdj,&
+                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -27,6 +31,7 @@
       use blockPointers   ! w, il, jl, kl
 !      use indices         ! nw
       use flowVarRefState
+      use inputPhysics
       implicit none
 !
 !     Subroutine arguments.
@@ -38,6 +43,13 @@
 !                                                     intent(out) :: xAdj
       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), &
                                                      intent(out) :: xAdj
+
+      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,MachCoefAdj
+      REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
+      REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
+      REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
+      REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
+
 
 !
 !     Local variables.
@@ -113,5 +125,22 @@
           enddo
         enddo
       enddo
+
+      MachAdj = Mach
+      MachCoefAdj = MachCoef
+
+      call getDirAngle(velDirFreestream(1), velDirFreestream(2),&
+           velDirFreestream(3), alphaAdj, betaAdj)
+
+      prefAdj = pRef
+      rhorefAdj = rhoref
+      pinfdimAdj = pinfdim
+      rhoinfdimAdj = rhoinfdim
+      rhoinfAdj = rhoinf
+      pinfAdj = pInf
+      murefAdj = muref
+      timerefAdj = timeref
+      pInfCorrAdj = pInfCorr
+
 
     end subroutine copyADjointStencil

@@ -2,8 +2,8 @@
 !  Tapenade 2.2.4 (r2308) - 03/04/2008 10:03
 !  
 !  Differentiation of etotarrayadj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: k p u v w rho
-!   of linear combination of output variables: etot
+!   gradient, with respect to input variables: k p u v w etot rho
+!   of linear combination of output variables: p etot
 !
 !      ******************************************************************
 !      *                                                                *

@@ -2,7 +2,8 @@
 !  Tapenade 2.2.4 (r2308) - 03/04/2008 10:03
 !  
 !  Differentiation of computeradjoint in reverse (adjoint) mode:
-!   gradient, with respect to input variables: xadj dwadj wadj
+!   gradient, with respect to input variables: machadj alphaadj
+!                xadj dwadj wadj betaadj
 !   of linear combination of output variables: dwadj
 !
 !      ******************************************************************
@@ -15,7 +16,10 @@
 !      ******************************************************************
 !
 SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-&  icell, jcell, kcell, nn, sps, correctfork, secondhalo)
+&  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
+&  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
+&  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+&  murefadj, timerefadj, pinfcorradj)
   USE blockpointers
   USE flowvarrefstate
   IMPLICIT NONE
@@ -43,9 +47,43 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 &  skadj
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadjb, sjadjb&
 &  , skadjb
+  REAL(KIND=REALTYPE), DIMENSION(3) :: veldirfreestreamadj
+  REAL(KIND=REALTYPE), DIMENSION(3) :: veldirfreestreamadjb
+  REAL(KIND=REALTYPE), DIMENSION(3) :: liftdirectionadj
+  REAL(KIND=REALTYPE), DIMENSION(3) :: dragdirectionadj
+  REAL(KIND=REALTYPE) :: machadj, machcoefadj, uinfadj, pinfcorradj
+  REAL(KIND=REALTYPE) :: machadjb, uinfadjb, pinfcorradjb
+  REAL(KIND=REALTYPE), DIMENSION(nw) :: winfadj
+  REAL(KIND=REALTYPE), DIMENSION(nw) :: winfadjb
+  REAL(KIND=REALTYPE) :: prefadj, rhorefadj
+  REAL(KIND=REALTYPE) :: pinfdimadj, rhoinfdimadj
+  REAL(KIND=REALTYPE) :: rhoinfadj, pinfadj
+  REAL(KIND=REALTYPE) :: murefadj, timerefadj
+  REAL(KIND=REALTYPE) :: alphaadj, betaadj
+  REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
 ! *************************************************************************
 !      Begin Execution
 ! *************************************************************************
+!      call the initialization routines to calculate the effect of Mach and alpha
+  CALL ADJUSTINFLOWANGLEADJ(alphaadj, betaadj, veldirfreestreamadj, &
+&                      liftdirectionadj, dragdirectionadj)
+  CALL PUSHREAL8ARRAY(veldirfreestreamadj, 3)
+  CALL CHECKINPUTPARAMADJ(veldirfreestreamadj, liftdirectionadj, &
+&                    dragdirectionadj, machadj, machcoefadj)
+  CALL PUSHREAL8(rhorefadj)
+  CALL PUSHREAL8(prefadj)
+  CALL REFERENCESTATEADJ(veldirfreestreamadj, liftdirectionadj, &
+&                   dragdirectionadj, machadj, machcoefadj, uinfadj, &
+&                   prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, &
+&                   rhoinfadj, pinfadj, murefadj, timerefadj)
+  CALL PUSHREAL8ARRAY(winfadj, nw)
+!(velDirFreestreamAdj,liftDirectionAdj,&
+!     dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj)
+  CALL SETFLOWINFINITYSTATEADJ(veldirfreestreamadj, liftdirectionadj, &
+&                         dragdirectionadj, machadj, machcoefadj, &
+&                         uinfadj, winfadj, prefadj, rhorefadj, &
+&                         pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+&                         murefadj, timerefadj, pinfcorradj)
 !      Call the metric routines to generate the areas, volumes and surface normals for the stencil.
   CALL METRICADJ(xadj, siadj, sjadj, skadj, voladj, normadj, icell, &
 &           jcell, kcell)
@@ -66,8 +104,8 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 !###!         call applyAllTurbBCAdj(secondHalo)
 ! Apply all boundary conditions of the mean flow.
 !******************************************
-  CALL APPLYALLBCADJ(wadj, padj, siadj, sjadj, skadj, voladj, normadj, &
-&               icell, jcell, kcell, secondhalo)
+  CALL APPLYALLBCADJ(winfadj, pinfcorradj, wadj, padj, siadj, sjadj, &
+&               skadj, voladj, normadj, icell, jcell, kcell, secondhalo)
 !!#Shouldn't need this section for derivatives...
 !!$       ! In case this routine is called in full mg mode call the mean
 !!$       ! flow boundary conditions again such that the normal momentum
@@ -144,11 +182,34 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
   CALL POPREAL8ARRAY(wadj, 5**3*nw)
   CALL POPREAL8ARRAY(padj, 5**3)
   CALL POPBOOLEAN(secondhalo)
-  CALL APPLYALLBCADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, sjadj, &
-&                 sjadjb, skadj, skadjb, voladj, normadj, normadjb, &
-&                 icell, jcell, kcell, secondhalo)
+  CALL APPLYALLBCADJ_B(winfadj, winfadjb, pinfcorradj, pinfcorradjb, &
+&                 wadj, wadjb, padj, padjb, siadj, siadjb, sjadj, sjadjb&
+&                 , skadj, skadjb, voladj, normadj, normadjb, icell, &
+&                 jcell, kcell, secondhalo)
   CALL COMPUTEPRESSUREADJ_B(wadj, wadjb, padj, padjb)
   CALL METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj, &
 &             skadjb, voladj, voladjb, normadj, normadjb, icell, jcell, &
 &             kcell)
+  CALL POPREAL8ARRAY(winfadj, nw)
+  CALL SETFLOWINFINITYSTATEADJ_B(veldirfreestreamadj, &
+&                           veldirfreestreamadjb, liftdirectionadj, &
+&                           dragdirectionadj, machadj, machcoefadj, &
+&                           uinfadj, uinfadjb, winfadj, winfadjb, &
+&                           prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
+&                           , rhoinfadj, pinfadj, murefadj, timerefadj, &
+&                           pinfcorradj, pinfcorradjb)
+  CALL POPREAL8(prefadj)
+  CALL POPREAL8(rhorefadj)
+  CALL REFERENCESTATEADJ_B(veldirfreestreamadj, liftdirectionadj, &
+&                     dragdirectionadj, machadj, machadjb, machcoefadj, &
+&                     uinfadj, uinfadjb, prefadj, rhorefadj, pinfdimadj&
+&                     , rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+&                     timerefadj)
+  CALL POPREAL8ARRAY(veldirfreestreamadj, 3)
+  CALL CHECKINPUTPARAMADJ_B(veldirfreestreamadj, veldirfreestreamadjb, &
+&                      liftdirectionadj, dragdirectionadj, machadj, &
+&                      machcoefadj)
+  CALL ADJUSTINFLOWANGLEADJ_B(alphaadj, alphaadjb, betaadj, betaadjb, &
+&                        veldirfreestreamadj, veldirfreestreamadjb, &
+&                        liftdirectionadj, dragdirectionadj)
 END SUBROUTINE COMPUTERADJOINT_B

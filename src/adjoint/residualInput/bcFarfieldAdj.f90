@@ -9,7 +9,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
+subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
      siAdj, sjAdj, skAdj, normAdj,iCell,jCell,kCell)
 
   !
@@ -44,6 +44,8 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
   real(kind=realType), dimension(-2:2,-2:2)::rlvAdj1, rlvAdj2
   real(kind=realType), dimension(-2:2,-2:2)::revAdj1, revAdj2
 
+  real(kind=realType), dimension(nw),intent(in)::wInfAdj
+
 
   real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(in) :: &
        siAdj, sjAdj, skAdj
@@ -51,7 +53,7 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
   real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
        intent(in) :: wAdj
   real(kind=realType), dimension(-2:2,-2:2,-2:2),intent(in) :: pAdj
-
+  real(kind=realType)::pInfCorrAdj
 
   logical, intent(in) :: secondHalo
 
@@ -99,12 +101,12 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
   ! Compute the three velocity components, the speed of sound and
   ! the entropy of the free stream.
 
-  r0  = one/wInf(irho)
-  u0  = wInf(ivx)
-  v0  = wInf(ivy)
-  w0  = wInf(ivz)
-  c0  = sqrt(gammaInf*pInfCorr*r0)
-  s0  = wInf(irho)**gammaInf/pInfCorr
+  r0  = one/wInfAdj(irho)
+  u0  = wInfAdj(ivx)
+  v0  = wInfAdj(ivy)
+  w0  = wInfAdj(ivz)
+  c0  = sqrt(gammaInf*pInfCorrAdj*r0)
+  s0  = wInfAdj(irho)**gammaInf/pInfCorrAdj
 
   ! Loop over the boundary condition subfaces of this block.
 
@@ -207,7 +209,7 @@ subroutine bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
                     sf = s0
                   
                     do l=nt1MG,nt2MG
-                       wAdj1(ii,jj,l) = wInf(l)
+                       wAdj1(ii,jj,l) = wInfAdj(l)
                     enddo
 
                  endif

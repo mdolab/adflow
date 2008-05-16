@@ -50,12 +50,11 @@
 
       real(kind=realType), dimension(nw)                :: dwAdj
 
-      real(kind=realType) :: factI, factJ, factK, tmp
-
-      integer(kind=intType) :: metricmm
-      real(kind=realType)   :: metricfactI, metricfactJ, metricfactK
-      real(kind=realType), parameter :: factMax = 1.e-4_realType
-      real(kind=realType), parameter :: factMin = 1.e-5_realType
+      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj
+      REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
+      REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
+      REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
+      REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
 
       real(kind=realType), dimension(4) :: time
       real(kind=realType)               :: timeAdj, timeOri
@@ -217,17 +216,30 @@
                      ! Transfer the state w to the auxiliar array wAdj
                      ! and the coordinates x to the auxiliar array xAdj.
 
-                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)
+                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,&
+                          MachAdj,MachCoefAdj,iCell, jCell, kCell,prefAdj,&
+                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj)
+                     !(wAdj, xAdj, iCell, jCell, kCell)
                      
                      ! Compute the total residual.
                      ! This includes inviscid and viscous fluxes, artificial
                      ! dissipation, and boundary conditions.                   
-                     print *,'Calling compute ADjoint'
-                     call computeRAdjoint(wAdj,        &
-                          xAdj,                       &
-                          dwAdj,                      &
-                          iCell, jCell,  kCell,       &
-                          nn,sps, correctForK,secondHalo)
+                     !print *,'Calling compute ADjoint'
+                     call computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,&
+                          betaAdj,MachAdj, MachCoefAdj,&
+                          iCell, jCell,  kCell, &
+                          nn,sps, correctForK,secondHalo,prefAdj,&
+                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj)
+                     
+!!$                     call computeRAdjoint(wAdj,        &
+!!$                          xAdj,                       &
+!!$                          dwAdj,                      &
+!!$                          iCell, jCell,  kCell,       &
+!!$                          nn,sps, correctForK,secondHalo)
 
 
                      ! Output the result sum(dw(:)) to debug.
@@ -240,7 +252,8 @@
 !!$                            differ
                      
                      !if( differ > 1e-14 ) &
-                     if( abs(differ) > 1e-14 ) &
+!                     if( abs(differ) > 1e-14 ) &
+                     if( abs(1) > 1e-14 ) &
                           write(*,10) myID, nn, iCell, jCell, kCell,               &
                           sum(dwAdj(:)), sum(dw(iCell,jCell,kCell,:)), &
                           differ,(dwAdj(1)), (dw(iCell,jCell,kCell,1))

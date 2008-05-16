@@ -164,8 +164,8 @@
 
         ! Verify the node-based ADjoint residual routine.
 
-!	call verifydRdW(level,sps)
-
+	call verifydRdW(level,sps)
+stop
 
         ! Verify the dRdx routine
 

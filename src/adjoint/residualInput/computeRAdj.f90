@@ -9,9 +9,12 @@
 !      ******************************************************************
 !
 
-subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
-                          iCell, jCell,  kCell, &
-                          nn,sps, correctForK,secondHalo)
+subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
+                          MachCoefAdj,iCell, jCell,  kCell, &
+                          nn,sps, correctForK,secondHalo,prefAdj,&
+                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj)
   
 !      Set Use Modules
   use blockPointers
@@ -42,13 +45,42 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
   real(kind=realType):: volAdj
   real(kind=realType), dimension(-2:2,-2:2,-2:2,3) :: siAdj, sjAdj, skAdj
 
-  
+  real(kind=realType), dimension(3) :: velDirFreestreamAdj
+  real(kind=realType), dimension(3) :: liftDirectionAdj
+  real(kind=realType), dimension(3) :: dragDirectionAdj
+  real(kind=realType) :: MachAdj,MachCoefAdj,uInfAdj,pInfCorrAdj
+  real(kind=realType), dimension(nw)::wInfAdj 
+  REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj
+  REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
+  REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
+  REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
+
+  real(kind=realType) :: alphaAdj, betaAdj
 
 
 ! *************************************************************************
 !      Begin Execution
 ! *************************************************************************
   
+!      call the initialization routines to calculate the effect of Mach and alpha
+       call adjustInflowAngleAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
+            liftDirectionAdj,dragDirectionAdj)
+  
+       call checkInputParamAdj(velDirFreestreamAdj,liftDirectionAdj,&
+            dragDirectionAdj, Machadj, MachCoefAdj)
+
+       call referenceStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
+            dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,prefAdj,&
+            rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
+            murefAdj, timerefAdj)
+       !(velDirFreestreamAdj,liftDirectionAdj,&
+       !     dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj)
+
+       call setFlowInfinityStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
+            dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,wInfAdj,prefAdj,&
+            rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
+            murefAdj, timerefAdj,pInfCorrAdj)
+
 
 !      Call the metric routines to generate the areas, volumes and surface normals for the stencil.
        
@@ -75,7 +107,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,   &
 
        ! Apply all boundary conditions of the mean flow.
 !******************************************
-       call applyAllBCAdj(wAdj, pAdj, &
+       call applyAllBCAdj(wInfAdj,pInfCorrAdj,wAdj, pAdj, &
             siAdj, sjAdj, skAdj, volAdj, normAdj, &
             iCell, jCell, kCell,secondHalo)
 
