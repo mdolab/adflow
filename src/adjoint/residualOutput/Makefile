@@ -38,23 +38,29 @@ vpath %.o $(SUMB_OBJDIR)
 
 FF90_MODULES = 
 
-FF90_OBJECTS = applyallbcadj_b.o          \
+FF90_OBJECTS = adjustinflowangleadj_b.o   \
+	       applyallbcadj_b.o          \
 	       bceulerwalladj_b.o         \
 	       bcfarfieldadj_b.o          \
+	       checkinputparamadj_b.o     \
                computepressureadj_b.o     \
 	       computeradjoint_b.o        \
 	       eintarrayadj_b.o           \
 	       etotarrayadj_b.o           \
                extractbcstatesadj_b.o     \
 	       extrapolate2ndhaloadj_b.o  \
+	       getdirvector_b.o           \
                initresadj_b.o             \
                inviscidcentralfluxadj_b.o \
 	       inviscidupwindfluxadj_b.o  \
                leftrightstateadj_b.o      \
                metricadj_b.o              \
+	       referencestateadj_b.o      \
 	       replacebcstatesadj_b.o     \
                residualadj_b.o            \
                riemannfluxadj_b.o         \
+	       setflowinfinitystateadj_b.o\
+	       vectorrotation_b.o         \
                volpym2_b.o
 
 #FF90_OBJECTS = applyAllBCAdj.o          \

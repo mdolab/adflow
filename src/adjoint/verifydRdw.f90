@@ -51,6 +51,16 @@
       real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xAdjb
       real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xFD
 
+      REAL(KIND=REALTYPE) :: machadj, machcoefadj, pinfcorradj
+      REAL(KIND=REALTYPE) :: machadjb, machcoefadjb, pinfcorradjb
+      REAL(KIND=REALTYPE) :: prefadj, rhorefadj
+      REAL(KIND=REALTYPE) :: pinfdimadj, rhoinfdimadj
+      REAL(KIND=REALTYPE) :: rhoinfadj, pinfadj
+      REAL(KIND=REALTYPE) :: rhoinfadjb
+      REAL(KIND=REALTYPE) :: murefadj, timerefadj
+      REAL(KIND=REALTYPE) :: alphaadj, betaadj
+      REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
+
       character fileName*32, dataName*32
       real(kind=realType), dimension(nw) :: dwAdj,dwAdjb,dwAdjRef
       real(kind=realType), dimension(nw) :: dwAdjP, dwAdjM
@@ -226,7 +236,12 @@
                   do iCell = 2, il
  !                    print *,'indices',icell,jcell,kcell
                      ! Copy the state w to the wAdj array in the stencil
-                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
+!                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
+                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,&
+                          MachAdj,MachCoefAdj,iCell, jCell, kCell,prefAdj,&
+                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj)
 !                     print *,'Stencil Copied'
 
                      mLoop: do m = 1, nw           ! Loop over output cell residuals (R)
@@ -241,9 +256,14 @@
 !                        print *,'secondhalo',secondhalo
                         
                         ! Call reverse mode of residual computation
-                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
-                             dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
-                             correctfork, secondhalo)
+                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
+                             &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
+                             &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
+                             &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+                             &  murefadj, timerefadj, pinfcorradj)
+                       ! call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
+                       !      dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
+                       !      correctfork, secondhalo)
                         
                         ! Store the block Jacobians (by rows).
  !                       print *,'entering storage loop'
@@ -325,7 +345,12 @@
 !                           print *,'indices',icell,jcell,kcell,m
                         ! Copy the state in the stencil
                         ! actually no need to call again, but ...
-                           call copyADjointStencil(wAdj,xAdj, iCell, jCell, kCell)
+!                           call copyADjointStencil(wAdj,xAdj, iCell, jCell, kCell)
+                           call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,&
+                          MachAdj,MachCoefAdj,iCell, jCell, kCell,prefAdj,&
+                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj)
 !                           print *,'stencil copied'
                            ! Loop over the inputs (w) 
                            !print *,'secondhalo',secondhalo
@@ -341,14 +366,28 @@
                                        if (ii==0 .or. jj==0 .or. kk==0) then
                                           wAdjRef = wAdj(ii,jj,kk,n)
                                           wAdj(ii,jj,kk,n) = wAdjRef + deltaw
-                                          call computeRAdjoint(wAdj,xAdj,dwAdjP,   &
+                                          call computeRAdjoint(wAdj,xAdj,dwAdjP,alphaAdj,&
+                                               betaAdj,MachAdj, MachCoefAdj,&
                                                iCell, jCell,  kCell, &
-                                               nn,sps, correctForK,secondHalo)
+                                               nn,sps, correctForK,secondHalo,prefAdj,&
+                                               rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                                               rhoinfAdj, pinfAdj,&
+                                               murefAdj, timerefAdj,pInfCorrAdj)
+                                          !call computeRAdjoint(wAdj,xAdj,dwAdjP,   &
+                                          !     iCell, jCell,  kCell, &
+                                          !     nn,sps, correctForK,secondHalo)
                                           
                                           wAdj(ii,jj,kk,n) = wAdjRef - deltaw
-                                          call computeRAdjoint(wAdj,xAdj,dwAdjM,   &
+                                          call computeRAdjoint(wAdj,xAdj,dwAdjM,alphaAdj,&
+                                               betaAdj,MachAdj, MachCoefAdj,&
                                                iCell, jCell,  kCell, &
-                                               nn,sps, correctForK,secondHalo)
+                                               nn,sps, correctForK,secondHalo,prefAdj,&
+                                               rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                                               rhoinfAdj, pinfAdj,&
+                                               murefAdj, timerefAdj,pInfCorrAdj)
+                                          !call computeRAdjoint(wAdj,xAdj,dwAdjM,   &
+                                          !     iCell, jCell,  kCell, &
+                                          !     nn,sps, correctForK,secondHalo)
 
                                           
                                           wFD(ii,jj,kk,n) = (dwAdjP(m)-dwAdjM(m))/(2.0*deltaw)

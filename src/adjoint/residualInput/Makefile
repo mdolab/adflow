@@ -38,24 +38,32 @@ vpath %.o $(SUMB_OBJDIR)
 
 FF90_MODULES = 
 
-FF90_OBJECTS = applyAllBCAdj.o          \
+FF90_OBJECTS = adjustInflowAngleAdj.o   \
+               applyAllBCAdj.o          \
 	       bcSymmAdj.o              \
 	       bcEulerWallAdj.o         \
 	       bcFarfieldAdj.o          \
+	       checkInputParamAdj.o     \
 	       checkOverlapAdj.o        \
+	       computeGammaAdj.o        \
 	       computePressureAdj.o     \
 	       computeRAdj.o            \
 	       etotArrayAdj.o           \
 	       extractBCStatesAdj.o     \
 	       extrapolate2ndHaloAdj.o  \
+	       getDirAngle.o            \
+	       getDirVector.o           \
 	       initresAdj.o             \
 	       inviscidCentralFluxAdj.o \
 	       inviscidUpwindFluxAdj.o  \
 	       leftRightStateAdj.o      \
 	       metricAdj.o              \
+	       referenceStateAdj.o      \
 	       replaceBCStatesAdj.o     \
 	       residualAdj.o            \
 	       riemannFluxAdj.o         \
+	       setFlowInfinityStateAdj.o\
+	       vectorRotation.o
 
 #FF90_OBJECTS = allocMemADjoint.o\
 #	       assertionsADjoint.o\

@@ -2,8 +2,8 @@
 !  Tapenade 2.2.4 (r2308) - 03/04/2008 10:03
 !  
 !  Differentiation of applyallbcadj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: padj wadj skadj
-!                sjadj siadj normadj
+!   gradient, with respect to input variables: winfadj padj pinfcorradj
+!                wadj skadj sjadj siadj normadj
 !   of linear combination of output variables: padj wadj skadj
 !                sjadj siadj
 !
@@ -17,9 +17,9 @@
 !      *                                                                *
 !      ******************************************************************
 !
-SUBROUTINE APPLYALLBCADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, &
-&  sjadj, sjadjb, skadj, skadjb, voladj, normadj, normadjb, icell, jcell&
-&  , kcell, secondhalo)
+SUBROUTINE APPLYALLBCADJ_B(winfadj, winfadjb, pinfcorradj, pinfcorradjb&
+&  , wadj, wadjb, padj, padjb, siadj, siadjb, sjadj, sjadjb, skadj, &
+&  skadjb, voladj, normadj, normadjb, icell, jcell, kcell, secondhalo)
   USE blockpointers
   USE bctypes
   USE inputdiscretization
@@ -67,9 +67,12 @@ SUBROUTINE APPLYALLBCADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, &
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadjb, sjadjb&
 &  , skadjb
 !real(kind=realType), dimension(0:0,0:0,0:0), intent(in) :: volAdj
-  REAL(KIND=REALTYPE), INTENT(IN) :: voladj
+  REAL(KIND=REALTYPE) :: voladj, pinfcorradj
+  REAL(KIND=REALTYPE) :: pinfcorradjb
   REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3) :: normadj
   REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3) :: normadjb
+  REAL(KIND=REALTYPE), DIMENSION(nw) :: winfadj
+  REAL(KIND=REALTYPE), DIMENSION(nw) :: winfadjb
 !
 !      Local variables.
 !
@@ -134,13 +137,13 @@ SUBROUTINE APPLYALLBCADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, &
     CALL PUSHREAL8ARRAY(padj, 5**3)
     CALL PUSHREAL8ARRAY(wadj, 5**3*nw)
     CALL PUSHBOOLEAN(secondhalo)
-    CALL BCFARFIELDADJ(secondhalo, wadj, padj, siadj, sjadj, skadj, &
-&                 normadj, icell, jcell, kcell)
+    CALL BCFARFIELDADJ(secondhalo, winfadj, pinfcorradj, wadj, padj, &
+&                 siadj, sjadj, skadj, normadj, icell, jcell, kcell)
     CALL PUSHINTEGER4(1)
   CASE (turkel) 
-    CALL PUSHINTEGER4(0)
+    CALL PUSHINTEGER4(2)
   CASE (choimerkle) 
-    CALL PUSHINTEGER4(0)
+    CALL PUSHINTEGER4(3)
   CASE DEFAULT
     CALL PUSHINTEGER4(0)
   END SELECT
@@ -148,12 +151,24 @@ SUBROUTINE APPLYALLBCADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, &
 &                  siadjb, sjadj, sjadjb, skadj, skadjb, normadj, &
 &                  normadjb, icell, jcell, kcell)
   CALL POPINTEGER4(branch)
-  IF (.NOT.branch .LT. 1) THEN
-    CALL POPBOOLEAN(secondhalo)
-    CALL POPREAL8ARRAY(wadj, 5**3*nw)
-    CALL POPREAL8ARRAY(padj, 5**3)
-    CALL BCFARFIELDADJ_B(secondhalo, wadj, wadjb, padj, padjb, siadj, &
-&                   sjadj, skadj, normadj, normadjb, icell, jcell, kcell&
-&                  )
+  IF (branch .LT. 2) THEN
+    IF (branch .LT. 1) THEN
+      winfadjb(:) = 0.0
+      pinfcorradjb = 0.0
+    ELSE
+      CALL POPBOOLEAN(secondhalo)
+      CALL POPREAL8ARRAY(wadj, 5**3*nw)
+      CALL POPREAL8ARRAY(padj, 5**3)
+      CALL BCFARFIELDADJ_B(secondhalo, winfadj, winfadjb, pinfcorradj, &
+&                     pinfcorradjb, wadj, wadjb, padj, padjb, siadj, &
+&                     sjadj, skadj, normadj, normadjb, icell, jcell, &
+&                     kcell)
+    END IF
+  ELSE IF (branch .LT. 3) THEN
+    winfadjb(:) = 0.0
+    pinfcorradjb = 0.0
+  ELSE
+    winfadjb(:) = 0.0
+    pinfcorradjb = 0.0
   END IF
 END SUBROUTINE APPLYALLBCADJ_B

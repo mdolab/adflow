@@ -25,8 +25,8 @@
 
        integer(kind=intType), intent(in) :: nn!, offset
        integer(kind=intType), intent(in) ::iCell, jCell,kCell
-       integer(kind=intType), intent(out) ::isbeg,jsbeg,ksbeg,isend,jsend,ksend
-       integer(kind=intType), intent(out) ::ibbeg,jbbeg,kbbeg,ibend,jbend,kbend
+       integer(kind=intType) ::isbeg,jsbeg,ksbeg,isend,jsend,ksend
+       integer(kind=intType) ::ibbeg,jbbeg,kbbeg,ibend,jbend,kbend
        logical, intent(out) :: computeBC
          
 

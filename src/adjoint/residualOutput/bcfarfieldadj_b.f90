@@ -2,7 +2,8 @@
 !  Tapenade 2.2.4 (r2308) - 03/04/2008 10:03
 !  
 !  Differentiation of bcfarfieldadj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: padj wadj normadj
+!   gradient, with respect to input variables: winfadj padj pinfcorradj
+!                wadj normadj
 !   of linear combination of output variables: padj wadj normadj
 !
 !      ******************************************************************
@@ -15,8 +16,9 @@
 !      *                                                                *
 !      ******************************************************************
 !
-SUBROUTINE BCFARFIELDADJ_B(secondhalo, wadj, wadjb, padj, padjb, siadj, &
-&  sjadj, skadj, normadj, normadjb, icell, jcell, kcell)
+SUBROUTINE BCFARFIELDADJ_B(secondhalo, winfadj, winfadjb, pinfcorradj, &
+&  pinfcorradjb, wadj, wadjb, padj, padjb, siadj, sjadj, skadj, normadj&
+&  , normadjb, icell, jcell, kcell)
   USE blockpointers, ONLY : bcdata, nbocos, bctype, bcfaceid, gamma, &
 &  il, jl, kl, w, p
   USE bctypes
@@ -50,6 +52,8 @@ SUBROUTINE BCFARFIELDADJ_B(secondhalo, wadj, wadjb, padj, padjb, siadj, &
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2) :: rlvadj, revadj
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2) :: rlvadj1, rlvadj2
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2) :: revadj1, revadj2
+  REAL(KIND=REALTYPE), DIMENSION(nw) :: winfadj
+  REAL(KIND=REALTYPE), DIMENSION(nw) :: winfadjb
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3), INTENT(IN) :: &
 &  siadj, sjadj, skadj
   REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3) :: normadj
@@ -58,6 +62,8 @@ SUBROUTINE BCFARFIELDADJ_B(secondhalo, wadj, wadjb, padj, padjb, siadj, &
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw) :: wadjb
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2) :: padj
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2) :: padjb
+  REAL(KIND=REALTYPE) :: pinfcorradj
+  REAL(KIND=REALTYPE) :: pinfcorradjb
   LOGICAL, INTENT(IN) :: secondhalo
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, nw) :: wadj0, wadj1
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, nw) :: wadj0b, wadj1b
@@ -77,7 +83,7 @@ SUBROUTINE BCFARFIELDADJ_B(secondhalo, wadj, wadjb, padj, padjb, siadj, &
   REAL(KIND=REALTYPE) :: gm1, ovgm1, gm53, factk, ac1, ac2
   REAL(KIND=REALTYPE) :: ac1b, ac2b
   REAL(KIND=REALTYPE) :: r0, u0, v0, w0, qn0, vn0, c0, s0
-  REAL(KIND=REALTYPE) :: qn0b
+  REAL(KIND=REALTYPE) :: r0b, u0b, v0b, w0b, qn0b, c0b, s0b
   REAL(KIND=REALTYPE) :: re, ue, ve, we, qne, ce
   REAL(KIND=REALTYPE) :: reb, ueb, veb, web, qneb, ceb
   REAL(KIND=REALTYPE) :: qnf, cf, uf, vf, wf, sf, cc, qq
@@ -93,6 +99,7 @@ SUBROUTINE BCFARFIELDADJ_B(secondhalo, wadj, wadjb, padj, padjb, siadj, &
   INTEGER :: ad_to
   INTEGER :: ad_from0
   INTEGER :: ad_to0
+  REAL(KIND=REALTYPE) :: tempb4
   REAL(KIND=REALTYPE) :: tempb3
   REAL(KIND=REALTYPE) :: tempb2
   REAL(KIND=REALTYPE) :: tempb1
@@ -116,12 +123,12 @@ SUBROUTINE BCFARFIELDADJ_B(secondhalo, wadj, wadjb, padj, padjb, siadj, &
   factk = -(ovgm1*gm53)
 ! Compute the three velocity components, the speed of sound and
 ! the entropy of the free stream.
-  r0 = one/winf(irho)
-  u0 = winf(ivx)
-  v0 = winf(ivy)
-  w0 = winf(ivz)
-  c0 = SQRT(gammainf*pinfcorr*r0)
-  s0 = winf(irho)**gammainf/pinfcorr
+  r0 = one/winfadj(irho)
+  u0 = winfadj(ivx)
+  v0 = winfadj(ivy)
+  w0 = winfadj(ivz)
+  c0 = SQRT(gammainf*pinfcorradj*r0)
+  s0 = winfadj(irho)**gammainf/pinfcorradj
 ! Loop over the boundary condition subfaces of this block.
 bocos:DO nn=1,nbocos
     CALL PUSHINTEGER4(kbend)
@@ -253,7 +260,7 @@ bocos:DO nn=1,nbocos
               sf = s0
               DO l=nt1mg,nt2mg
                 CALL PUSHREAL8(wadj1(ii, jj, l))
-                wadj1(ii, jj, l) = winf(l)
+                wadj1(ii, jj, l) = winfadj(l)
               END DO
               CALL PUSHINTEGER4(1)
             END IF
@@ -318,12 +325,18 @@ bocos:DO nn=1,nbocos
       CALL PUSHINTEGER4(1)
     END IF
   END DO bocos
+  winfadjb(:) = 0.0
+  v0b = 0.0
+  s0b = 0.0
   padj0b(-2:2, -2:2) = 0.0
   padj1b(-2:2, -2:2) = 0.0
   padj2b(-2:2, -2:2) = 0.0
+  c0b = 0.0
+  w0b = 0.0
   wadj0b(-2:2, -2:2, :) = 0.0
   wadj1b(-2:2, -2:2, :) = 0.0
   wadj2b(-2:2, -2:2, :) = 0.0
+  u0b = 0.0
   DO nn=nbocos,1,-1
     CALL POPINTEGER4(branch)
     IF (.NOT.branch .LT. 3) THEN
@@ -361,29 +374,29 @@ bocos:DO nn=1,nbocos
           CALL POPREAL8(wadj1(ii, jj, irhoe))
           tmpb = wadj1b(ii, jj, irhoe)
           wadj1b(ii, jj, irhoe) = 0.0
-          tempb2 = half*wadj1(ii, jj, irho)*tmpb
+          tempb3 = half*wadj1(ii, jj, irho)*tmpb
           padj1b(ii, jj) = padj1b(ii, jj) + ovgm1*tmpb
           wadj1b(ii, jj, irho) = wadj1b(ii, jj, irho) + cc*padj1b(ii, jj&
 &            ) + half*(uf**2+vf**2+wf**2)*tmpb
-          wfb = wadj1b(ii, jj, ivz) + 2*wf*tempb2
+          wfb = wadj1b(ii, jj, ivz) + 2*wf*tempb3
           wadj1b(ii, jj, ivz) = 0.0
-          vfb = wadj1b(ii, jj, ivy) + 2*vf*tempb2
+          vfb = wadj1b(ii, jj, ivy) + 2*vf*tempb3
           wadj1b(ii, jj, ivy) = 0.0
-          ufb = wadj1b(ii, jj, ivx) + 2*uf*tempb2
+          ufb = wadj1b(ii, jj, ivx) + 2*uf*tempb3
           wadj1b(ii, jj, ivx) = 0.0
           IF (sf*cc .LE. 0.0 .AND. (ovgm1 .EQ. 0.0 .OR. ovgm1 .NE. INT(&
 &              ovgm1))) THEN
-            tempb3 = 0.0
+            tempb4 = 0.0
           ELSE
-            tempb3 = ovgm1*(sf*cc)**(ovgm1-1)*wadj1b(ii, jj, irho)
+            tempb4 = ovgm1*(sf*cc)**(ovgm1-1)*wadj1b(ii, jj, irho)
           END IF
-          ccb = sf*tempb3 + wadj1(ii, jj, irho)*padj1b(ii, jj)
+          ccb = sf*tempb4 + wadj1(ii, jj, irho)*padj1b(ii, jj)
           padj1b(ii, jj) = 0.0
           CALL POPREAL8(wadj1(ii, jj, ivz))
           CALL POPREAL8(wadj1(ii, jj, ivy))
           CALL POPREAL8(wadj1(ii, jj, ivx))
           CALL POPREAL8(wadj1(ii, jj, irho))
-          sfb = cc*tempb3
+          sfb = cc*tempb4
           wadj1b(ii, jj, irho) = 0.0
           CALL POPREAL8(cc)
           cfb = 2*cf*ccb/gammainf
@@ -395,13 +408,13 @@ bocos:DO nn=1,nbocos
               wadj1b(ii, jj, l) = 0.0
             END DO
             CALL POPREAL8(sf)
-            tempb1 = sfb/padj2(ii, jj)
+            tempb2 = sfb/padj2(ii, jj)
             IF (.NOT.(wadj2(ii, jj, irho) .LE. 0.0 .AND. (gammainf .EQ. &
 &                0.0 .OR. gammainf .NE. INT(gammainf)))) wadj2b(ii, jj, &
 &              irho) = wadj2b(ii, jj, irho) + gammainf*wadj2(ii, jj, &
-&                irho)**(gammainf-1)*tempb1
+&                irho)**(gammainf-1)*tempb2
             padj2b(ii, jj) = padj2b(ii, jj) - wadj2(ii, jj, irho)**&
-&              gammainf*tempb1/padj2(ii, jj)
+&              gammainf*tempb2/padj2(ii, jj)
             CALL POPREAL8(wf)
             web = wfb
             qnfb = nny*vfb + nnx*ufb + nnz*wfb
@@ -417,16 +430,21 @@ bocos:DO nn=1,nbocos
           ELSE
             DO l=nt2mg,nt1mg,-1
               CALL POPREAL8(wadj1(ii, jj, l))
+              winfadjb(l) = winfadjb(l) + wadj1b(ii, jj, l)
               wadj1b(ii, jj, l) = 0.0
             END DO
             CALL POPREAL8(sf)
+            s0b = s0b + sfb
             CALL POPREAL8(wf)
+            w0b = w0b + wfb
             qnfb = nny*vfb + nnx*ufb + nnz*wfb
             qn0b = -(nny*vfb) - nnx*ufb - nnz*wfb
             nnzb = (qnf-qn0)*wfb
             CALL POPREAL8(vf)
+            v0b = v0b + vfb
             nnyb = (qnf-qn0)*vfb
             CALL POPREAL8(uf)
+            u0b = u0b + ufb
             nnxb = (qnf-qn0)*ufb
             qneb = 0.0
             ueb = 0.0
@@ -434,9 +452,9 @@ bocos:DO nn=1,nbocos
             web = 0.0
           END IF
           CALL POPREAL8(cf)
-          tempb0 = fourth*gm1*cfb
-          ac1b = half*qnfb + tempb0
-          ac2b = half*qnfb - tempb0
+          tempb1 = fourth*gm1*cfb
+          ac1b = half*qnfb + tempb1
+          ac2b = half*qnfb - tempb1
           CALL POPREAL8(qnf)
           CALL POPINTEGER4(branch)
           IF (branch .LT. 1) THEN
@@ -444,6 +462,7 @@ bocos:DO nn=1,nbocos
             ceb = -(two*ovgm1*ac2b)
           ELSE
             qn0b = qn0b + ac2b
+            c0b = c0b - two*ovgm1*ac2b
             ceb = 0.0
           END IF
           CALL POPINTEGER4(branch)
@@ -452,14 +471,16 @@ bocos:DO nn=1,nbocos
             ceb = ceb + two*ovgm1*ac1b
           ELSE
             qn0b = qn0b + ac1b
+            c0b = c0b + two*ovgm1*ac1b
           END IF
           IF (gammainf*(padj2(ii, jj)*re) .EQ. 0.0) THEN
-            tempb = 0.0
+            tempb0 = 0.0
           ELSE
-            tempb = gammainf*ceb/(2.0*SQRT(gammainf*(padj2(ii, jj)*re)))
+            tempb0 = gammainf*ceb/(2.0*SQRT(gammainf*(padj2(ii, jj)*re))&
+&              )
           END IF
-          padj2b(ii, jj) = padj2b(ii, jj) + re*tempb
-          reb = padj2(ii, jj)*tempb
+          padj2b(ii, jj) = padj2b(ii, jj) + re*tempb0
+          reb = padj2(ii, jj)*tempb0
           CALL POPREAL8(qne)
           ueb = ueb + nnx*qneb
           nnxb = nnxb + u0*qn0b + ue*qneb
@@ -477,6 +498,9 @@ bocos:DO nn=1,nbocos
           wadj2b(ii, jj, irho) = wadj2b(ii, jj, irho) - one*reb/wadj2(ii&
 &            , jj, irho)**2
           CALL POPREAL8(qn0)
+          u0b = u0b + nnx*qn0b
+          v0b = v0b + nny*qn0b
+          w0b = w0b + nnz*qn0b
           CALL POPREAL8(nnz)
           normadjb(nn, ii, jj, 3) = normadjb(nn, ii, jj, 3) + nnzb
           CALL POPREAL8(nny)
@@ -522,4 +546,18 @@ bocos:DO nn=1,nbocos
     CALL POPINTEGER4(jbend)
     CALL POPINTEGER4(kbend)
   END DO
+  IF (.NOT.(winfadj(irho) .LE. 0.0 .AND. (gammainf .EQ. 0.0 .OR. &
+&      gammainf .NE. INT(gammainf)))) winfadjb(irho) = winfadjb(irho) + &
+&      gammainf*winfadj(irho)**(gammainf-1)*s0b/pinfcorradj
+  IF (gammainf*(pinfcorradj*r0) .EQ. 0.0) THEN
+    tempb = 0.0
+  ELSE
+    tempb = gammainf*c0b/(2.0*SQRT(gammainf*(pinfcorradj*r0)))
+  END IF
+  pinfcorradjb = r0*tempb - winfadj(irho)**gammainf*s0b/pinfcorradj**2
+  r0b = pinfcorradj*tempb
+  winfadjb(ivz) = winfadjb(ivz) + w0b
+  winfadjb(ivy) = winfadjb(ivy) + v0b
+  winfadjb(ivx) = winfadjb(ivx) + u0b
+  winfadjb(irho) = winfadjb(irho) - one*r0b/winfadj(irho)**2
 END SUBROUTINE BCFARFIELDADJ_B

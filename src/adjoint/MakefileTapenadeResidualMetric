@@ -112,7 +112,8 @@ TAPENADE_OUTVARS = "dwadj"
 
 # Independent input variables (separator: white space, default: all)
 
-TAPENADE_VARS = "xadj wadj"
+#TAPENADE_VARS = "xadj wadj alphaadj machadj"
+TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj"
 
 # Name of the top routine
 
@@ -171,7 +172,18 @@ TAPENADE_SRC_SOLVER = $(TAPENADE_DIRSRC_RES)/applyAllBCAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/metricAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/replaceBCStatesAdj.f90\
 	       $(TAPENADE_DIRSRC_RES)/riemannFluxAdj.f90\
-	       $(TAPENADE_DIRSRC_RES)/bcEulerWallAdj.f90 
+	       $(TAPENADE_DIRSRC_RES)/bcEulerWallAdj.f90 \
+	       $(TAPENADE_DIRSRC_RES)/adjustInflowAngleAdj.f90 \
+	       $(TAPENADE_DIRSRC_RES)/checkInputParamAdj.f90 \
+	       $(TAPENADE_DIRSRC_RES)/referenceStateAdj.f90 \
+	       $(TAPENADE_DIRSRC_RES)/setFlowInfinityStateAdj.f90 \
+	       $(TAPENADE_DIRSRC_RES)/getDirVector.f90 \
+	       $(TAPENADE_DIRSRC_RES)/computeGammaAdj.f90 \
+	       $(TAPENADE_DIRSRC_RES)/vectorRotation.f90
+
+	
+
+
 
 TAPENADE_MOD = $(TAPENADE_DIRSRC_RES)/block.f90 \
 	       $(TAPENADE_DIRSRC_RES)/constants.f90 \

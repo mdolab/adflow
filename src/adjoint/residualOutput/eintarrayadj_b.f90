@@ -3,8 +3,8 @@
 !  
 !  Differentiation of eintarrayadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: gammaconstant k
-!                p rho
-!   of linear combination of output variables: eint rho
+!                p eint rho
+!   of linear combination of output variables: p eint rho
 !      ==================================================================
 SUBROUTINE EINTARRAYADJ_B(rho, rhob, p, pb, k, kb, eint, eintb, &
 &  correctfork, kk)
@@ -161,7 +161,6 @@ SUBROUTINE EINTARRAYADJ_B(rho, rhob, p, pb, k, kb, eint, eintb, &
     ELSE
       kb(:) = 0.0
     END IF
-    pb(:) = 0.0
     DO i=kk,1,-1
       tempb = ovgm1*eintb(i)/rho(i)
       pb(i) = pb(i) + tempb
@@ -170,10 +169,8 @@ SUBROUTINE EINTARRAYADJ_B(rho, rhob, p, pb, k, kb, eint, eintb, &
     END DO
   CASE (cptempcurvefits) 
     kb(:) = 0.0
-    pb(:) = 0.0
   CASE DEFAULT
     kb(:) = 0.0
-    pb(:) = 0.0
   END SELECT
 !  gammaconstantb = 0.0
 END SUBROUTINE EINTARRAYADJ_B

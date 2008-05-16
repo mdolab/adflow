@@ -40,10 +40,14 @@ emacs computepressureadj_b.f90        >remove "gammaconstantb = 0.0" from the en
 emacs eintarray_b.f90               > remove "gammaconstantb = 0.0 " from the end
 
 emacs inviscidupwindfluxadj_b.f90        >remove "gammaconstantb = 0.0" from the end
-emacs residualadj_b.f90        > remove " cgnsdomsb(:)%rotrate(1:3) = 0.0
+emacs residualadj_b.f90        > remove "  cdisrkb(:) = 0.0
                                           kappacoefb = 0.0" from the end
 
 emacs riemannfluxadj_b.f90        > remove "rfilb = 0.0" from end.
+
+emacs referencestateadj_b.f90     > remove "    gammaconstantb = 0.0
+					    rgasdimb = 0.0
+					    tempfreestreamb = 0.0" from end
 
 #---------------------------------------------------------------------------------------#
 6) edit the appropriate Makefiles to be used by SUmbVertex in directories

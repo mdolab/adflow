@@ -9,7 +9,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine applyAllBCAdj(wAdj, pAdj, &
+       subroutine applyAllBCAdj(wInfAdj,pInfCorrAdj,wAdj, pAdj, &
                               siAdj, sjAdj, skAdj, volAdj, normAdj, &
                               iCell, jCell, kCell,secondHalo)
 !
@@ -48,8 +48,9 @@
        real(kind=realType), dimension(-2:2,-2:2,-2:2,3), &
                                                    intent(in) :: siAdj, sjAdj, skAdj
        !real(kind=realType), dimension(0:0,0:0,0:0), intent(in) :: volAdj
-       real(kind=realType), intent(in) :: volAdj
+       real(kind=realType), intent(in) :: volAdj,pInfCorrAdj
        real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(in) :: normAdj
+       real(kind=realType), dimension(nw),intent(in)::wInfAdj
 
 !
 !      Local variables.
@@ -119,7 +120,7 @@
           
        case (noPrecond)
 
-          call bcFarfieldAdj(secondHalo, wAdj,pAdj,      &
+          call bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
                siAdj, sjAdj, skAdj, normAdj,iCell,jCell,kCell)
 
        case (Turkel)

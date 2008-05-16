@@ -49,7 +49,7 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
 &  , ksend
   INTEGER(KIND=INTTYPE), INTENT(IN) :: ibbeg, jbbeg, kbbeg, ibend, jbend&
 &  , kbend
-  INTEGER(KIND=INTTYPE), INTENT(OUT) :: icbeg, jcbeg, icend, jcend
+  INTEGER(KIND=INTTYPE) :: icbeg, jcbeg, icend, jcend
   INTEGER(KIND=INTTYPE) :: irbeg, jrbeg, krbeg, irend, jrend, krend
   INTEGER(KIND=INTTYPE) :: ioffset, joffset, koffset
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw) :: wadj
