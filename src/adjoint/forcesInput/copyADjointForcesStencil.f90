@@ -9,7 +9,9 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
+      subroutine copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
+           MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+           rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps)
 
 !
 !     ******************************************************************
@@ -27,6 +29,7 @@
       use blockPointers   ! w,il,jl,kl,ie,je,ke
       use communication   ! myID for debug
       use flowvarrefstate ! nw
+      use inputPhysics    ! Mach,veldirfreestream
       implicit none
 !
 !     Subroutine arguments.
@@ -34,6 +37,13 @@
       integer(kind=intType), intent(in) :: nn,level,sps    
       real(kind=realType), dimension(0:ie,0:je,0:ke,3), intent(out) :: xAdj
       real(kind=realType), dimension(0:ib,0:jb,0:kb,1:nw), intent(out) :: wAdj
+
+      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,MachCoefAdj
+      REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
+      REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
+      REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
+      REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
+
 
 !
 !     Local variables.
@@ -93,5 +103,21 @@
             enddo
          enddo
       enddo
+
+      MachAdj = Mach
+      MachCoefAdj = MachCoef
+
+      call getDirAngle(velDirFreestream(1), velDirFreestream(2),&
+           velDirFreestream(3), alphaAdj, betaAdj)
+
+      prefAdj = pRef
+      rhorefAdj = rhoref
+      pinfdimAdj = pinfdim
+      rhoinfdimAdj = rhoinfdim
+      rhoinfAdj = rhoinf
+      pinfAdj = pInf
+      murefAdj = muref
+      timerefAdj = timeref
+      pInfCorrAdj = pInfCorr
       
       end subroutine copyADjointForcesStencil

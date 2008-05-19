@@ -13,7 +13,10 @@
                        iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
                        mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
                        yplusMax,refPoint,CLAdj,CDAdj,  &
-                       nn,level,sps,cFpAdj,cMpAdj,righthanded)
+                       nn,level,sps,cFpAdj,cMpAdj,righthanded,&
+                       alphaAdj,betaAdj,machAdj,machcoefAdj,prefAdj,&
+                       rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                       rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj)
         !(xAdj, &
         !         iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
         !         mm,cFxAdj,cFyAdj,cFzAdj, &
@@ -49,7 +52,7 @@
 
       real(kind=realType), dimension(3) :: refPoint
       real(kind=realType) :: yplusMax
-      real(kind=realType),dimension(3) :: cFpAdj, cMpAdj !, cFvAdj, cMvAdj 
+      real(kind=realType),dimension(3) :: cFpAdj, cMpAdj , cFvAdj, cMvAdj 
       real(kind=realType), dimension(0:ie,0:je,0:ke,3), intent(in) :: xAdj
       real(kind=realType), dimension(0:ib,0:jb,0:kb,nw), intent(in) :: wAdj
       real(kind=realType), dimension(0:ib,0:jb,0:kb), intent(in) :: pAdj
@@ -57,6 +60,19 @@
       real(kind=realType), dimension(nTimeIntervalsSpectral)::       &
                              ClAdj,CdAdj,CfxAdj,CfyAdj,CfzAdj,   &
                              CmxAdj,CmyAdj,CmzAdj
+      real(kind=realType), dimension(3) :: velDirFreestreamAdj
+      real(kind=realType), dimension(3) :: liftDirectionAdj
+      real(kind=realType), dimension(3) :: dragDirectionAdj
+      real(kind=realType) :: MachAdj,MachCoefAdj,uInfAdj,pInfCorrAdj
+      real(kind=realType), dimension(nw)::wInfAdj 
+      REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj
+      REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
+      REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
+      REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
+      
+      real(kind=realType) :: alphaAdj, betaAdj
+
+
 !
 !     Local variables.
 !
@@ -84,6 +100,26 @@
       
       !===============================================================
       ! Compute the forces.
+
+!      call the initialization routines to calculate the effect of Mach and alpha
+      call adjustInflowAngleAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
+           liftDirectionAdj,dragDirectionAdj)
+      
+      call checkInputParamAdj(velDirFreestreamAdj,liftDirectionAdj,&
+           dragDirectionAdj, Machadj, MachCoefAdj)
+      
+      call referenceStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
+           dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,prefAdj,&
+           rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
+           murefAdj, timerefAdj)
+      !(velDirFreestreamAdj,liftDirectionAdj,&
+      !     dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj)
+      
+      call setFlowInfinityStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
+           dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,wInfAdj,prefAdj,&
+           rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
+           murefAdj, timerefAdj,pInfCorrAdj)
+
       
       ! Compute the surface normals (normAdj which is used only in 
       ! visous force computation) for the stencil
@@ -97,24 +133,29 @@
 
       
       ! Integrate force components along the given subface
-      call forcesAndMomentsAdj(cFpAdj,cMpAdj, &
-           cFpAdjOut,cMpAdjOut, &
+      call forcesAndMomentsAdj(cFpAdj,cMpAdj,cFvAdj,cMvAdj, &
+           cFpAdjOut,cMpAdjOut, cFvAdjOut,cMvAdjOut, &
            yplusMax,refPoint,siAdj,sjAdj,skAdj,normAdj,xAdj,pAdj,wAdj,&
            iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
-           level,mm,nn)
+           level,mm,nn,machCoefAdj)
+      !(cFpAdj,cMpAdj, &
+      !     cFpAdjOut,cMpAdjOut, &
+      !     yplusMax,refPoint,siAdj,sjAdj,skAdj,normAdj,xAdj,pAdj,wAdj,&
+      !     iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
+      !     level,mm,nn,machCoefAdj)
       
 
       !end if invForce
          
       ! Compute the force components for the current block subface
     
-      CLAdj(sps) = (cfpAdjOut(1) + cfvAdjOut(1))*liftDirection(1) &
-                 + (cfpAdjOut(2) + cfvAdjOut(2))*liftDirection(2) &
-                 + (cfpAdjOut(3) + cfvAdjOut(3))*liftDirection(3)
+      CLAdj(sps) = (cfpAdjOut(1) + cfvAdjOut(1))*liftDirectionAdj(1) &
+                 + (cfpAdjOut(2) + cfvAdjOut(2))*liftDirectionAdj(2) &
+                 + (cfpAdjOut(3) + cfvAdjOut(3))*liftDirectionAdj(3)
       
-      CDAdj(sps) = (cfpAdjOut(1) + cfvAdjOut(1))*dragDirection(1) &
-                 + (cfpAdjOut(2) + cfvAdjOut(2))*dragDirection(2) &
-                 + (cfpAdjOut(3) + cfvAdjOut(3))*dragDirection(3)
+      CDAdj(sps) = (cfpAdjOut(1) + cfvAdjOut(1))*dragDirectionAdj(1) &
+                 + (cfpAdjOut(2) + cfvAdjOut(2))*dragDirectionAdj(2) &
+                 + (cfpAdjOut(3) + cfvAdjOut(3))*dragDirectionAdj(3)
 
       
       CfxAdj(sps) = cfpAdjOut(1) + cfvAdjOut(1)

@@ -9,11 +9,11 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine forcesAndMomentsAdj(cFpAdj,cMpAdj, &
-           cFpAdjOut,cMpAdjOut, &
+       subroutine forcesAndMomentsAdj(cFpAdj,cMpAdj,cFvAdj,cMvAdj, &
+           cFpAdjOut,cMpAdjOut, cFvAdjOut,cMvAdjOut, &
            yplusMax,refPoint,siAdj,sjAdj,skAdj,normAdj,xAdj,pAdj,wAdj,&
            iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
-           level,mm,nn)
+           level,mm,nn,machCoefAdj)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -60,11 +60,11 @@
        integer(kind=intType) :: i2Beg,i2End,j2Beg,j2End
        integer(kind=intType) :: mm, level, nn
 
-       real(kind=realType), dimension(3),intent(inout) :: cFpAdj !, cFvAdj
-       real(kind=realType), dimension(3),intent(inout) :: cMpAdj !, cMvAdj
+       real(kind=realType), dimension(3),intent(inout) :: cFpAdj , cFvAdj
+       real(kind=realType), dimension(3),intent(inout) :: cMpAdj , cMvAdj
        !add to allow for scaling!
-       real(kind=realType), dimension(3), intent(out) :: cFpAdjOut !, cFvAdjOut
-       real(kind=realType), dimension(3),intent(out) :: cMpAdjOut !, cMvAdjOut
+       real(kind=realType), dimension(3), intent(out) :: cFpAdjOut , cFvAdjOut
+       real(kind=realType), dimension(3),intent(out) :: cMpAdjOut , cMvAdjOut
        real(kind=realType), dimension(3),intent(in) :: refPoint
        real(kind=realType),intent(in) :: yplusMax
 
@@ -77,7 +77,7 @@
        real(kind=realType), dimension(0:ie,0:je,0:ke,3),intent(in) :: xAdj
        real(kind=realType), dimension(0:ib,0:jb,0:kb,nw),intent(in) :: wAdj
        real(kind=realType), dimension(0:ib,0:jb,0:kb),intent(in) :: pAdj
-
+       real(kind=realType) :: machCoefAdj
 !
 !      Local variables.
 !
@@ -450,21 +450,31 @@
 
            endif visForce
         endif invForce
+        !temporary
+        cFvAdj(:) = 0.0
+        cMvAdj(:) = 0.0
        ! Currently the coefficients only contain the surface integral
        ! of the pressure tensor. These values must be scaled to
        ! obtain the correct coefficients.
 
-       fact = two/(gammaInf*pInf*MachCoef*MachCoef &
+       fact = two/(gammaInf*pInf*MachCoefAdj*MachCoefAdj &
             *      surfaceRef*LRef*LRef)
        cFpAdjOut(1) = cFpAdj(1)*fact; 
        cFpAdjOut(2) = cFpAdj(2)*fact; 
        cFpAdjOut(3) = cFpAdj(3)*fact
+       cFvAdjOut(1) = cFvAdj(1)*fact; 
+       cFvAdjOut(2) = cFvAdj(2)*fact; 
+       cFvAdjOut(3) = cFvAdj(3)*fact
 !s       cFv(1) = cFv(1)*fact; cFv(2) = cFv(2)*fact; cFv(3) = cFv(3)*fact
 
        fact = fact/(lengthRef*LRef)
        cMpAdjOut(1) = cMpAdj(1)*fact; 
        cMpAdjOut(2) = cMpAdj(2)*fact; 
        cMpAdjOut(3) = cMpAdj(3)*fact
+       cMvAdjOut(1) = cMvAdj(1)*fact; 
+       cMvAdjOut(2) = cMvAdj(2)*fact; 
+       cMvAdjOut(3) = cMvAdj(3)*fact
+       
 !s       cMv(1) = cMv(1)*fact; cMv(2) = cMv(2)*fact; cMv(3) = cMv(3)*fact
 
        end subroutine forcesAndMomentsAdj

@@ -68,6 +68,12 @@
       real(kind=realType), dimension(3) :: refPoint
       real(kind=realType) :: yplusMax
 
+      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj
+      REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
+      REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
+      REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
+      REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
+
       integer(kind=intType) :: nmonsum2 ,i
       real(kind=realType),  dimension(:), allocatable :: monLoc1, monGlob1
       real(kind=realType),  dimension(:), allocatable :: monLoc2, monGlob2
@@ -267,7 +273,10 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
             !print *,'copying stencil'
             ! Copy the coordinates into xAdj and
             ! Compute the face normals on the subfaces
-            call copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
+            call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
+           MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+           rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps)
+            !call copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
 
             bocoLoop: do mm=1,nBocos
                ! Check if this BC needs force integration (Either EulerWall or NSWall)
@@ -309,11 +318,20 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !                       cFpAdj,cMpAdj,cFvAdj,cMvAdj,nn,level,sps, &
 !                       cFpAdjOut,cMpAdjOut)
                   !print *,'calling computeforces'
+
                   call computeForcesAdj(xAdj,wAdj,pAdj, &
                        iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
                        mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
                        yplusMax,refPoint,CLAdj,CDAdj,  &
-                       nn,level,sps,cFpAdj,cMpAdj,righthanded)
+                       nn,level,sps,cFpAdj,cMpAdj,righthanded,&
+                       alphaAdj,betaAdj,machAdj,machcoefAdj,prefAdj,&
+                       rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                       rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj)
+!                  call computeForcesAdj(xAdj,wAdj,pAdj, &
+!                       iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
+!                       mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
+!                       yplusMax,refPoint,CLAdj,CDAdj,  &
+!                       nn,level,sps,cFpAdj,cMpAdj,righthanded)
 
 
 !                  deallocate(normAdj,siAdj,sjAdj,skAdj)

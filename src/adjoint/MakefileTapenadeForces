@@ -113,7 +113,7 @@ TAPENADE_OUTVARS = "CLAdj CDAdj CmxAdj CmyAdj CmzAdj"
 
 # Independent input variables (separator: white space, default: all)
 
-TAPENADE_VARS = "xadj wAdj"
+TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj"
 
 # Name of the top routine
 
@@ -157,7 +157,15 @@ TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
 TAPENADE_SRC = $(TAPENADE_DIRSRC3)/getSurfaceNormalsAdj.f90 \
 	       $(TAPENADE_DIRSRC3)/computeForcesPressureAdj.f90\
 	       $(TAPENADE_DIRSRC3)/computeForcesAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/forcesAndMomentsAdj.f90
+	       $(TAPENADE_DIRSRC3)/forcesAndMomentsAdj.f90 \
+	       $(TAPENADE_DIRSRC1)/etotArrayAdj.f90 \
+	       $(TAPENADE_DIRSRC1)/adjustInflowAngleAdj.f90 \
+	       $(TAPENADE_DIRSRC1)/checkInputParamAdj.f90 \
+	       $(TAPENADE_DIRSRC1)/referenceStateAdj.f90 \
+	       $(TAPENADE_DIRSRC1)/setFlowInfinityStateAdj.f90 \
+	       $(TAPENADE_DIRSRC1)/getDirVector.f90 \
+	       $(TAPENADE_DIRSRC1)/computeGammaAdj.f90 \
+	       $(TAPENADE_DIRSRC1)/vectorRotation.f90
 
 TAPENADE_MOD = $(TAPENADE_DIRSRC1)/BCTypes.f90 \
 	       $(TAPENADE_DIRSRC1)/block.f90 \
@@ -191,7 +199,7 @@ TAPENADE_SRC_ALL = $(TAPENADE_SRC) $(TAPENADE_MOD)
 
 default:
 	@echo "TAPENADE - parsing and generating differentiated code"
-	$(TAPENADE_HOME)/bin/tapenade -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30 -debug 30 -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
+	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30 -debug 30 -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
 	@echo "deleting some unnecessary files..."
 	@rm -f $(TAPENADE_OUTDIR)/*__.f90 $(TAPENADE_OUTDIR)/*~
 
