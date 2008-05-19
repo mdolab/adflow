@@ -61,6 +61,14 @@
 
       real(kind=realType), dimension(nw) :: dwAdj, dwAdjB
 
+      REAL(KIND=REALTYPE) :: machadj, machcoefadj, uinfadj, pinfcorradj
+      REAL(KIND=REALTYPE) :: machadjb, machcoefadjb
+      REAL(KIND=REALTYPE) :: prefadj, rhorefadj
+      REAL(KIND=REALTYPE) :: pinfdimadj, rhoinfdimadj
+      REAL(KIND=REALTYPE) :: rhoinfadj, pinfadj
+      REAL(KIND=REALTYPE) :: murefadj, timerefadj
+      REAL(KIND=REALTYPE) :: alphaadj, betaadj
+      REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
 
       integer(kind=intType), dimension(0:nProc-1) :: offsetRecv
 
@@ -358,7 +366,12 @@
                   do iCell = 2, il
 		     iNode = iCell-1
                      ! Copy the state w to the wAdj array in the stencil
-                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
+                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+                          machCoefAdj,iCell, jCell, kCell,prefAdj,&
+                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj)
+!copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
 
 
                      mLoop: do m = 1, nw       
@@ -371,9 +384,14 @@
                         xAdjb(:,:,:,:)  = 0.  !dR(m)/dx
                                                 
                         ! Call reverse mode of residual computation
-                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
-                             dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
-                             correctfork, secondhalo)
+                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
+                          &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
+                          &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
+                          &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+                          &  murefadj, timerefadj, pinfcorradj)
+!COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
+!                             dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
+!                             correctfork, secondhalo)
 
                 ! Store the block Jacobians (by rows).
 

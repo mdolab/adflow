@@ -72,6 +72,15 @@
       real(kind=realType), dimension(:,:,:,:), allocatable :: wAdj,wAdjB
       real(kind=realType), dimension(:,:,:), allocatable :: pAdj
 
+      REAL(KIND=REALTYPE) :: machadj, machcoefadj, uinfadj, pinfcorradj
+      REAL(KIND=REALTYPE) :: machadjb, machcoefadjb
+      REAL(KIND=REALTYPE) :: prefadj, rhorefadj
+      REAL(KIND=REALTYPE) :: pinfdimadj, rhoinfdimadj
+      REAL(KIND=REALTYPE) :: rhoinfadj, pinfadj
+      REAL(KIND=REALTYPE) :: murefadj, timerefadj
+      REAL(KIND=REALTYPE) :: alphaadj, betaadj
+      REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
+
       logical :: contributeToForce, viscousSubface,secondHalo,righthanded
 
       ! dJ/dw row block
@@ -157,7 +166,10 @@
             
             ! Copy the coordinates into xAdj and
             ! Compute the face normals on the subfaces
-            call copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
+            call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
+              MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+              rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps)
+!copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
         
             bocoLoop: do mm=1,nBocos
 	    
@@ -263,10 +275,17 @@
                !print *,'cladjb',cladjb
                
                call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-                    &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-                    &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-                    &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-                    &  cmpadj, righthanded)
+&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
+&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
+&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
+!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!                    &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!                    &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!                    &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!                    &  cmpadj, righthanded)
 
 		!print *,'CL',cladj,cladjb,p(1,1,1),wadj(1,1,1,1)
            

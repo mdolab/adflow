@@ -3,8 +3,9 @@
 !  
 !  Differentiation of forcesandmomentsadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: padj xadj skadj
-!                sjadj siadj
-!   of linear combination of output variables: cfpadjout cmpadjout
+!                machcoefadj sjadj siadj
+!   of linear combination of output variables: cfpadjout cmvadjout
+!                cmpadjout cfvadjout
 !
 !      ******************************************************************
 !      *                                                                *
@@ -16,10 +17,12 @@
 !      *                                                                *
 !      ******************************************************************
 !
-SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfpadjout, cfpadjoutb, &
-&  cmpadjout, cmpadjoutb, yplusmax, refpoint, siadj, siadjb, sjadj, &
+SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
+&  cfpadjout, cfpadjoutb, cmpadjout, cmpadjoutb, cfvadjout, cfvadjoutb, &
+&  cmvadjout, cmvadjoutb, yplusmax, refpoint, siadj, siadjb, sjadj, &
 &  sjadjb, skadj, skadjb, normadj, xadj, xadjb, padj, padjb, wadj, iibeg&
-&  , iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, level, mm, nn)
+&  , iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, level, mm, nn, &
+&  machcoefadj, machcoefadjb)
   USE blockpointers
   USE bctypes
   USE inputphysics
@@ -74,19 +77,15 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfpadjout, cfpadjoutb, &
   INTEGER(KIND=INTTYPE) :: iibeg, iiend, jjbeg, jjend
   INTEGER(KIND=INTTYPE) :: i2beg, i2end, j2beg, j2end
   INTEGER(KIND=INTTYPE) :: mm, level, nn
-!, cFvAdj
-  REAL(KIND=REALTYPE), DIMENSION(3) :: cfpadj
+  REAL(KIND=REALTYPE), DIMENSION(3) :: cfpadj, cfvadj
   REAL(KIND=REALTYPE), DIMENSION(3) :: cfpadjb
-!, cMvAdj
-  REAL(KIND=REALTYPE), DIMENSION(3) :: cmpadj
+  REAL(KIND=REALTYPE), DIMENSION(3) :: cmpadj, cmvadj
   REAL(KIND=REALTYPE), DIMENSION(3) :: cmpadjb
 !add to allow for scaling!
-!, cFvAdjOut
-  REAL(KIND=REALTYPE), DIMENSION(3) :: cfpadjout
-  REAL(KIND=REALTYPE), DIMENSION(3) :: cfpadjoutb
-!, cMvAdjOut
-  REAL(KIND=REALTYPE), DIMENSION(3) :: cmpadjout
-  REAL(KIND=REALTYPE), DIMENSION(3) :: cmpadjoutb
+  REAL(KIND=REALTYPE), DIMENSION(3) :: cfpadjout, cfvadjout
+  REAL(KIND=REALTYPE), DIMENSION(3) :: cfpadjoutb, cfvadjoutb
+  REAL(KIND=REALTYPE), DIMENSION(3) :: cmpadjout, cmvadjout
+  REAL(KIND=REALTYPE), DIMENSION(3) :: cmpadjoutb, cmvadjoutb
   REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: refpoint
   REAL(KIND=REALTYPE), INTENT(IN) :: yplusmax
   REAL(KIND=REALTYPE), DIMENSION(2, iibeg:iiend, jjbeg:jjend, 3) :: &
@@ -110,6 +109,8 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfpadjout, cfpadjoutb, &
 &  wadj
   REAL(KIND=REALTYPE), DIMENSION(0:ib, 0:jb, 0:kb) :: padj
   REAL(KIND=REALTYPE), DIMENSION(0:ib, 0:jb, 0:kb) :: padjb
+  REAL(KIND=REALTYPE) :: machcoefadj
+  REAL(KIND=REALTYPE) :: machcoefadjb
 !
 !      Local variables.
 !
@@ -119,6 +120,7 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfpadjout, cfpadjoutb, &
   REAL(KIND=REALTYPE) :: xc, yc, zc
   REAL(KIND=REALTYPE) :: xcb, ycb, zcb
   REAL(KIND=REALTYPE) :: fact, dwall
+  REAL(KIND=REALTYPE) :: factb
 !v       real(kind=realType) :: tauxx, tauyy, tauzz
 !v       real(kind=realType) :: tauxy, tauxz, tauyz
   REAL(KIND=REALTYPE), DIMENSION(iibeg:iiend, jjbeg:jjend) :: pp2, pp1
@@ -133,6 +135,8 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfpadjout, cfpadjoutb, &
 !v       real(kind=realType), dimension(:,:),   pointer :: dd2Wall
 !v       real(kind=realType), dimension(:,:,:), pointer :: ss, xx
   LOGICAL :: viscoussubface
+  REAL(KIND=REALTYPE) :: temp
+  REAL(KIND=REALTYPE) :: temp0
   INTEGER :: branch
   REAL(KIND=REALTYPE) :: tempb2
   REAL(KIND=REALTYPE) :: tempb1
@@ -322,13 +326,18 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfpadjout, cfpadjoutb, &
 !!$
 !!$               !print *,'fx comparison',fx,fx2
 ! Update the inviscid force and moment coefficients.
+        cfpadj(1) = cfpadj(1) + fx
+        cfpadj(2) = cfpadj(2) + fy
+        cfpadj(3) = cfpadj(3) + fz
+        cmpadj(1) = cmpadj(1) + yc*fz - zc*fy
+        cmpadj(2) = cmpadj(2) + zc*fx - xc*fz
+        cmpadj(3) = cmpadj(3) + xc*fy - yc*fx
       END DO
     END DO
     CALL PUSHINTEGER4(1)
   ELSE
     CALL PUSHINTEGER4(0)
   END IF
-  CALL PUSHREAL8(fact)
 ! It hasn't been implemented yet. 
 !!$               ! Initialize dwall for the laminar case and set the pointer
 !!$             ! for the unit normals.
@@ -420,27 +429,49 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfpadjout, cfpadjoutb, &
 !!$
 !!$               enddo
 !!$             enddo
+!temporary
+  cfvadj(:) = 0.0
+  cmvadj(:) = 0.0
+  CALL PUSHREAL8(fact)
 ! Currently the coefficients only contain the surface integral
 ! of the pressure tensor. These values must be scaled to
 ! obtain the correct coefficients.
-  fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref)
+  fact = two/(gammainf*pinf*machcoefadj*machcoefadj*surfaceref*lref*lref&
+&    )
   CALL PUSHREAL8(fact)
 !s       cFv(1) = cFv(1)*fact; cFv(2) = cFv(2)*fact; cFv(3) = cFv(3)*fact
   fact = fact/(lengthref*lref)
+  factb = cmvadj(3)*cmvadjoutb(3)
+  cmvadjoutb(3) = 0.0
+  factb = factb + cmvadj(2)*cmvadjoutb(2)
+  cmvadjoutb(2) = 0.0
+  factb = factb + cmpadj(3)*cmpadjoutb(3) + cmvadj(1)*cmvadjoutb(1)
   cmpadjb(:) = 0.0
   cmpadjb(3) = fact*cmpadjoutb(3)
   cmpadjoutb(3) = 0.0
   cmpadjb(2) = cmpadjb(2) + fact*cmpadjoutb(2)
+  factb = factb + cmpadj(2)*cmpadjoutb(2)
   cmpadjoutb(2) = 0.0
   cmpadjb(1) = cmpadjb(1) + fact*cmpadjoutb(1)
+  factb = factb + cmpadj(1)*cmpadjoutb(1)
   CALL POPREAL8(fact)
+  factb = cfvadj(3)*cfvadjoutb(3) + factb/(lengthref*lref)
+  cfvadjoutb(3) = 0.0
+  factb = factb + cfvadj(2)*cfvadjoutb(2)
+  cfvadjoutb(2) = 0.0
+  factb = factb + cfpadj(3)*cfpadjoutb(3) + cfvadj(1)*cfvadjoutb(1)
   cfpadjb(:) = 0.0
   cfpadjb(3) = fact*cfpadjoutb(3)
   cfpadjoutb(3) = 0.0
   cfpadjb(2) = cfpadjb(2) + fact*cfpadjoutb(2)
+  factb = factb + cfpadj(2)*cfpadjoutb(2)
   cfpadjoutb(2) = 0.0
   cfpadjb(1) = cfpadjb(1) + fact*cfpadjoutb(1)
+  factb = factb + cfpadj(1)*cfpadjoutb(1)
   CALL POPREAL8(fact)
+  temp0 = gammainf*pinf*surfaceref*lref**2
+  temp = temp0*machcoefadj**2
+  machcoefadjb = -(two*temp0*2*machcoefadj*factb/temp**2)
   CALL POPINTEGER4(branch)
   IF (branch .LT. 1) THEN
     padjb(:, :, :) = 0.0
