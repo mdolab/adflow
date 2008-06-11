@@ -16,10 +16,13 @@
 !      *                                                                *
 !      ******************************************************************
 !
-SUBROUTINE REFERENCESTATEADJ_B(veldirfreestreamadj, liftdirectionadj, &
-&  dragdirectionadj, machadj, machadjb, machcoefadj, uinfadj, uinfadjb, &
-&  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-&  murefadj, timerefadj)
+!       subroutine referenceStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
+!            dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,prefAdj,&
+!            rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
+!            murefAdj, timerefAdj)
+SUBROUTINE REFERENCESTATEADJ_B(machadj, machadjb, machcoefadj, uinfadj, &
+&  uinfadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, &
+&  pinfadj, murefadj, timerefadj)
   USE inputphysics
   USE constants
   USE flowvarrefstate
@@ -100,10 +103,9 @@ SUBROUTINE REFERENCESTATEADJ_B(veldirfreestreamadj, liftdirectionadj, &
 !
 !      subroutine Variables
 !
-  REAL(KIND=REALTYPE), DIMENSION(3), INTENT(INOUT) :: &
-&  veldirfreestreamadj
-  REAL(KIND=REALTYPE), DIMENSION(3), INTENT(INOUT) :: liftdirectionadj
-  REAL(KIND=REALTYPE), DIMENSION(3), INTENT(INOUT) :: dragdirectionadj
+!       real(kind=realType), dimension(3), intent(inout) :: velDirFreestreamAdj
+!       real(kind=realType), dimension(3), intent(inout) :: liftDirectionAdj
+!       real(kind=realType), dimension(3), intent(inout) :: dragDirectionAdj
   REAL(KIND=REALTYPE) :: machadj, machcoefadj, uinfadj
   REAL(KIND=REALTYPE) :: machadjb, uinfadjb
   REAL(KIND=REALTYPE) :: prefadj, rhorefadj
@@ -407,8 +409,8 @@ SUBROUTINE REFERENCESTATEADJ_B(veldirfreestreamadj, liftdirectionadj, &
     pinfadj = pinfdim/prefadj
     rhoinfadj = rhoinfdimadj/rhorefadj
     machadjb = SQRT(gammainf*pinfadj/rhoinfadj)*uinfadjb
-!    gammaconstantb = 0.0
+ !   gammaconstantb = 0.0
 !    rgasdimb = 0.0
-!    tempfreestreamb = 0.0
+ !   tempfreestreamb = 0.0
   END IF
 END SUBROUTINE REFERENCESTATEADJ_B

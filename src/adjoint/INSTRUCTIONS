@@ -28,10 +28,7 @@ Procedure to run the Automatic Differentiation software and obtain the AD routin
 #---------------------------------------------------------------------------------------#
 5) manually correct the files to remove compilation errors:
    5.1) cd forcesOutput
-
-emacs forcesandmomentsadj_b.f90 > remove "lrefb = 0.0"
-                                         "pinfb = 0.0"
-                                         "gammainfb = 0.0" from the end
+emacs eintarrayforcesadj_b.f90     >remove "gammaconstantb = 0.0" from the end
 
    5.2) cd residualOutput
 

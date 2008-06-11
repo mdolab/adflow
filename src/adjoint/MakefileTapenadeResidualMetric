@@ -113,7 +113,7 @@ TAPENADE_OUTVARS = "dwadj"
 # Independent input variables (separator: white space, default: all)
 
 #TAPENADE_VARS = "xadj wadj alphaadj machadj"
-TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj"
+TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj machcoefadj"
 
 # Name of the top routine
 

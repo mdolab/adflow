@@ -72,11 +72,14 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 &                    dragdirectionadj, machadj, machcoefadj)
   CALL PUSHREAL8(rhorefadj)
   CALL PUSHREAL8(prefadj)
-  CALL REFERENCESTATEADJ(veldirfreestreamadj, liftdirectionadj, &
-&                   dragdirectionadj, machadj, machcoefadj, uinfadj, &
-&                   prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, &
-&                   rhoinfadj, pinfadj, murefadj, timerefadj)
+  CALL REFERENCESTATEADJ(machadj, machcoefadj, uinfadj, prefadj, &
+&                   rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, &
+&                   pinfadj, murefadj, timerefadj)
   CALL PUSHREAL8ARRAY(winfadj, nw)
+!call referenceStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
+!     dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,prefAdj,&
+!     rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
+!     murefAdj, timerefAdj)
 !(velDirFreestreamAdj,liftDirectionAdj,&
 !     dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj)
   CALL SETFLOWINFINITYSTATEADJ(veldirfreestreamadj, liftdirectionadj, &
@@ -200,10 +203,9 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 &                           pinfcorradj, pinfcorradjb)
   CALL POPREAL8(prefadj)
   CALL POPREAL8(rhorefadj)
-  CALL REFERENCESTATEADJ_B(veldirfreestreamadj, liftdirectionadj, &
-&                     dragdirectionadj, machadj, machadjb, machcoefadj, &
-&                     uinfadj, uinfadjb, prefadj, rhorefadj, pinfdimadj&
-&                     , rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+  CALL REFERENCESTATEADJ_B(machadj, machadjb, machcoefadj, uinfadj, &
+&                     uinfadjb, prefadj, rhorefadj, pinfdimadj, &
+&                     rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
 &                     timerefadj)
   CALL POPREAL8ARRAY(veldirfreestreamadj, 3)
   CALL CHECKINPUTPARAMADJ_B(veldirfreestreamadj, veldirfreestreamadjb, &

@@ -63,7 +63,6 @@
       use ADjointVars
       use ADjointPETSc    !petsc_comm_world,petsc_rank
       use communication   ! myID, nProc
-  !    use flowVarRefState ! magnetic
       use iteration       ! groundLevel
       implicit none
 !
@@ -145,67 +144,67 @@
       ! Initialize PETSc.
 
       call initializePETSc
-      print *,'petscInitialized'
-
+    
       ! Create all the necessary PETSc objects.
 
       call createPETScVars
-      print *,'petscvars created'
-
-
+ 
       ! Perform some verifications if in DEBUG mode.
       !moved after PETSc initialization because PETsc now included in debugging...
 
-!      if( debug ) then
+      if( debug ) then
 
         ! Verify the node-based residual routine.
 
-   	!call verifyRAdj(level)
+  	!call verifyRAdj(level)
+	!call verifyResiduals(level)
 
         ! Verify the node-based ADjoint residual routine.
 
-!	call verifydRdW(level,sps)
-!stop
+	!call verifydRdW(level,sps)
+
 
         ! Verify the dRdx routine
 
- !       call verifydRdx(level,sps)
+        !call verifydRdx(level,sps)
+
+	!call verifydRdExtra(level)
 
 
         ! Verify the ADjoint routine for the forces
 
-        call verifyForcesAdj(level,sps) 
-	!print *,'finished forces'
-	!stop
-        ! Verify the force derivatives
+	!call verifyForcesAdj(level,sps) 
+	
+        
+	! Verify the force derivatives
 
-	print *,'calling verifydCfdx'
+	
         !call verifydCfdx(level)
-!stop
-!!$	! Verify the force derivatives
-!!$
-!        call verifydCfdw(level)
-!stop
-!!$ !       return
-!!$
-!!$ !     endif
-!!$
-!!$
-!!$!
-!!$!     ******************************************************************
-!!$!     *                                                                *
-!!$!     * Set up the ADjoint matrix dR/dW using Tapenade AD routines.    *
-!!$!     * => dRdW(il,jl,kl,nw,nw)                                        *
-!!$!     *                                                                *
-!!$!     ******************************************************************
-!!$!
-      call setupADjointMatrix(level,sps)
 
-!!$
-!!$      ! Reordered for ASM preconditioner
-!!$      ! Create the Krylov subspace linear solver context,
-!!$      ! the preconditioner context, and set their various options.
-!!$
+	! Verify the force derivatives
+
+        !call verifydCfdw(level)
+
+        return
+
+      endif
+
+
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Set up the ADjoint matrix dR/dW using Tapenade AD routines.    *
+!     * => dRdW(il,jl,kl,nw,nw)                                        *
+!     *                                                                *
+!     ******************************************************************
+!
+      call setupADjointMatrix(level)
+
+
+      ! Reordered for ASM preconditioner
+      ! Create the Krylov subspace linear solver context,
+      ! the preconditioner context, and set their various options.
+
       call createPETScKsp
 
       ! Flush the output buffer and synchronize the processors.
@@ -225,17 +224,18 @@
 !     ******************************************************************
 !
 
-!!$      call setupGradientMatrixExtra(level,sps)
-!!$
+      call setupGradientMatrixExtra(level)
+
       call setupGradientMatrixSpatial(level)
-!!$!
-!!$!     ******************************************************************
-!!$!     *                                                                *
-!!$!     * Compute the sensitivity of each cost function J.               *
-!!$!     *                                                                *
-!!$!     ******************************************************************
-!!$!
-      functionLoop: do costFunction = 1, nCostFunction
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Compute the sensitivity of each cost function J.               *
+!     *                                                                *
+!     ******************************************************************
+!
+
+      functionLoop: do costFunction = 1, 2!nCostFunction
 
         !***************************************************************
         !                                                              *
@@ -247,31 +247,30 @@
 
         call setupADjointRHS(level,sps,costFunction)
 
-
         ! Solve the discrete ADjoint problem using PETSc's Krylov
         ! solver and preconditioner.
         ! => psi
 
         call solveADjointPETSc
 
-!!$        !***************************************************************
-!!$        !                                                              *
-!!$        ! Set up the cost function sensitivity w.r.t. design variables.*
-!!$        ! => dJ/da(nDesign)                                            *
-!!$        !                                                              *
-!!$        !***************************************************************
-!!$
-!!$        call setupGradientRHSExtra(level,sps,costFunction)
-!!$
+        !***************************************************************
+        !                                                              *
+        ! Set up the cost function sensitivity w.r.t. design variables.*
+        ! => dJ/da(nDesign)                                            *
+        !                                                              *
+        !***************************************************************
+
+        call setupGradientRHSExtra(level,costFunction)
+
         call setupGradientRHSSpatial(level,costFunction) 
-!!$  
-!!$
-!!$        ! Compute the total sensitivity dIda(nDesignExtra) and
-!!$        ! store it in the array functionGrad(nCostFunc,nDesignExtra)
-!!$        ! for the extra design variables in the root processor.
-!!$
-!!$        call computeADjointGradientExtra(costFunction)
-!!$
+  
+
+        ! Compute the total sensitivity dIda(nDesignExtra) and
+        ! store it in the array functionGrad(nCostFunc,nDesignExtra)
+        ! for the extra design variables in the root processor.
+
+        call computeADjointGradientExtra(costFunction)
+
 	! Compute the total sensitivity dIdx(ndesignSpatial) store in
 	! it in the array spatialGrad(nCostFunc,nDesignSpatial) for the 
 	! spatial design variables
@@ -284,6 +283,7 @@
 !!$        call writeADjoint(level,sps,costFunction)
 !!$
       enddo functionLoop
+
 !
 !     ******************************************************************
 !

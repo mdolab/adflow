@@ -3,7 +3,8 @@
 !  
 !  Differentiation of computeforcesadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: cdadj cladj machadj
-!                alphaadj xadj wadj betaadj cmzadj cmyadj cmxadj
+!                alphaadj xadj wadj betaadj cmzadj cmyadj machcoefadj
+!                cmxadj
 !   of linear combination of output variables: cdadj cladj cmzadj
 !                cmyadj cmxadj
 !
@@ -21,9 +22,10 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
-&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
-&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
+&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+&  timerefadj, pinfcorradj)
   USE blockpointers
   USE inputtimespectral
   USE bctypes
@@ -82,8 +84,9 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
   REAL(KIND=REALTYPE), DIMENSION(3) :: dragdirectionadj
   REAL(KIND=REALTYPE), DIMENSION(3) :: dragdirectionadjb
   REAL(KIND=REALTYPE) :: machadj, machcoefadj, uinfadj, pinfcorradj
-  REAL(KIND=REALTYPE) :: machadjb, machcoefadjb
+  REAL(KIND=REALTYPE) :: machadjb, machcoefadjb, uinfadjb, pinfcorradjb
   REAL(KIND=REALTYPE), DIMENSION(nw) :: winfadj
+  REAL(KIND=REALTYPE), DIMENSION(nw) :: winfadjb
   REAL(KIND=REALTYPE) :: prefadj, rhorefadj
   REAL(KIND=REALTYPE) :: pinfdimadj, rhoinfdimadj
   REAL(KIND=REALTYPE) :: rhoinfadj, pinfadj
@@ -108,12 +111,14 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
   REAL(KIND=REALTYPE), DIMENSION(iibeg:iiend, jjbeg:jjend, 2, 3) :: &
 &  skadjb
   REAL(KIND=REALTYPE), DIMENSION(iibeg:iiend, jjbeg:jjend, 3) :: normadj
+  REAL(KIND=REALTYPE), DIMENSION(iibeg:iiend, jjbeg:jjend, 3) :: &
+&  normadjb
 !add to allow for scaling!
   REAL(KIND=REALTYPE), DIMENSION(3) :: cfpadjout, cfvadjout
   REAL(KIND=REALTYPE), DIMENSION(3) :: cfpadjoutb, cfvadjoutb
   REAL(KIND=REALTYPE), DIMENSION(3) :: cmpadjout, cmvadjout
   REAL(KIND=REALTYPE), DIMENSION(3) :: cmpadjoutb, cmvadjoutb
-  LOGICAL, INTENT(IN) :: righthanded
+  LOGICAL, INTENT(IN) :: righthanded, secondhalo
   INTEGER(KIND=INTTYPE) :: i, j, k, l, kk
 !
 !     ******************************************************************
@@ -125,28 +130,51 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 !===============================================================
 ! Compute the forces.
 !      call the initialization routines to calculate the effect of Mach and alpha
-  CALL ADJUSTINFLOWANGLEADJ(alphaadj, betaadj, veldirfreestreamadj, &
-&                      liftdirectionadj, dragdirectionadj)
+  CALL ADJUSTINFLOWANGLEFORCESADJ(alphaadj, betaadj, veldirfreestreamadj&
+&                            , liftdirectionadj, dragdirectionadj)
   CALL PUSHREAL8(machcoefadj)
   CALL PUSHREAL8ARRAY(liftdirectionadj, 3)
   CALL PUSHREAL8ARRAY(veldirfreestreamadj, 3)
-  CALL CHECKINPUTPARAMADJ(veldirfreestreamadj, liftdirectionadj, &
-&                    dragdirectionadj, machadj, machcoefadj)
-  CALL REFERENCESTATEADJ(veldirfreestreamadj, liftdirectionadj, &
-&                   dragdirectionadj, machadj, machcoefadj, uinfadj, &
-&                   prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, &
-&                   rhoinfadj, pinfadj, murefadj, timerefadj)
+  CALL CHECKINPUTPARAMFORCESADJ(veldirfreestreamadj, liftdirectionadj, &
+&                          dragdirectionadj, machadj, machcoefadj)
+  CALL PUSHREAL8(rhorefadj)
+  CALL PUSHREAL8(prefadj)
+  CALL REFERENCESTATEFORCESADJ(machadj, machcoefadj, uinfadj, prefadj, &
+&                         rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
+&                         , pinfadj, murefadj, timerefadj)
+!referenceStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
+!      dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,prefAdj,&
+!      rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
+!      murefAdj, timerefAdj)
 !(velDirFreestreamAdj,liftDirectionAdj,&
 !     dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj)
+  CALL SETFLOWINFINITYSTATEFORCESADJ(veldirfreestreamadj, &
+&                               liftdirectionadj, dragdirectionadj, &
+&                               machadj, machcoefadj, uinfadj, winfadj, &
+&                               prefadj, rhorefadj, pinfdimadj, &
+&                               rhoinfdimadj, rhoinfadj, pinfadj, &
+&                               murefadj, timerefadj, pinfcorradj)
+  CALL PUSHREAL8ARRAY(skadj, (iiend-iibeg+1)*(jjend-jjbeg+1)*2*3)
+  CALL PUSHREAL8ARRAY(sjadj, (iiend-iibeg+1)*2*(jjend-jjbeg+1)*3)
+  CALL PUSHREAL8ARRAY(siadj, 2*(iiend-iibeg+1)*(jjend-jjbeg+1)*3)
 ! Compute the surface normals (normAdj which is used only in 
 ! visous force computation) for the stencil
 ! Get siAdj,sjAdj,skAdj,normAdj
+!      print *,'getting surface normals'
   CALL GETSURFACENORMALSADJ(xadj, siadj, sjadj, skadj, normadj, iibeg, &
 &                      iiend, jjbeg, jjend, mm, level, nn, sps, &
 &                      righthanded)
+!     print *,'computing pressures'
   CALL COMPUTEFORCESPRESSUREADJ(wadj, padj)
+  CALL PUSHREAL8ARRAY(padj, (ib+1)*(jb+1)*(kb+1))
+  CALL PUSHREAL8ARRAY(wadj, (ib+1)*(jb+1)*(kb+1)*nw)
+!    print *,'applyingbcs'
+  CALL APPLYALLBCFORCESADJ(winfadj, pinfcorradj, wadj, padj, siadj, &
+&                     sjadj, skadj, normadj, iibeg, iiend, jjbeg, jjend&
+&                     , i2beg, i2end, j2beg, j2end, secondhalo, mm)
   CALL PUSHREAL8ARRAY(cmpadj, 3)
   CALL PUSHREAL8ARRAY(cfpadj, 3)
+!   print *,'integrating forces'
 ! Integrate force components along the given subface
   CALL FORCESANDMOMENTSADJ(cfpadj, cmpadj, cfvadj, cmvadj, cfpadjout, &
 &                     cmpadjout, cfvadjout, cmvadjout, yplusmax, &
@@ -205,19 +233,45 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &                       , iibeg, iiend, jjbeg, jjend, i2beg, i2end, &
 &                       j2beg, j2end, level, mm, nn, machcoefadj, &
 &                       machcoefadjb)
+  CALL POPREAL8ARRAY(wadj, (ib+1)*(jb+1)*(kb+1)*nw)
+  CALL POPREAL8ARRAY(padj, (ib+1)*(jb+1)*(kb+1))
+  CALL APPLYALLBCFORCESADJ_B(winfadj, winfadjb, pinfcorradj, &
+&                       pinfcorradjb, wadj, wadjb, padj, padjb, siadj, &
+&                       siadjb, sjadj, sjadjb, skadj, skadjb, normadj, &
+&                       normadjb, iibeg, iiend, jjbeg, jjend, i2beg, &
+&                       i2end, j2beg, j2end, secondhalo, mm)
   CALL COMPUTEFORCESPRESSUREADJ_B(wadj, wadjb, padj, padjb)
+  CALL POPREAL8ARRAY(siadj, 2*(iiend-iibeg+1)*(jjend-jjbeg+1)*3)
+  CALL POPREAL8ARRAY(sjadj, (iiend-iibeg+1)*2*(jjend-jjbeg+1)*3)
+  CALL POPREAL8ARRAY(skadj, (iiend-iibeg+1)*(jjend-jjbeg+1)*2*3)
   CALL GETSURFACENORMALSADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb&
-&                        , skadj, skadjb, normadj, iibeg, iiend, jjbeg, &
-&                        jjend, mm, level, nn, sps, righthanded)
+&                        , skadj, skadjb, normadj, normadjb, iibeg, &
+&                        iiend, jjbeg, jjend, mm, level, nn, sps, &
+&                        righthanded)
+  CALL SETFLOWINFINITYSTATEFORCESADJ_B(veldirfreestreamadj, &
+&                                 veldirfreestreamadjb, liftdirectionadj&
+&                                 , dragdirectionadj, machadj, &
+&                                 machcoefadj, uinfadj, uinfadjb, &
+&                                 winfadj, winfadjb, prefadj, rhorefadj&
+&                                 , pinfdimadj, rhoinfdimadj, rhoinfadj&
+&                                 , pinfadj, murefadj, timerefadj, &
+&                                 pinfcorradj, pinfcorradjb)
+  CALL POPREAL8(prefadj)
+  CALL POPREAL8(rhorefadj)
+  CALL REFERENCESTATEFORCESADJ_B(machadj, machadjb, machcoefadj, uinfadj&
+&                           , uinfadjb, prefadj, rhorefadj, pinfdimadj, &
+&                           rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+&                           timerefadj)
   CALL POPREAL8ARRAY(veldirfreestreamadj, 3)
   CALL POPREAL8ARRAY(liftdirectionadj, 3)
   CALL POPREAL8(machcoefadj)
-  CALL CHECKINPUTPARAMADJ_B(veldirfreestreamadj, veldirfreestreamadjb, &
-&                      liftdirectionadj, liftdirectionadjb, &
-&                      dragdirectionadj, dragdirectionadjb, machadj, &
-&                      machadjb, machcoefadj, machcoefadjb)
-  CALL ADJUSTINFLOWANGLEADJ_B(alphaadj, alphaadjb, betaadj, betaadjb, &
-&                        veldirfreestreamadj, veldirfreestreamadjb, &
-&                        liftdirectionadj, liftdirectionadjb, &
-&                        dragdirectionadj)
+  CALL CHECKINPUTPARAMFORCESADJ_B(veldirfreestreamadj, &
+&                            veldirfreestreamadjb, liftdirectionadj, &
+&                            liftdirectionadjb, dragdirectionadj, &
+&                            dragdirectionadjb, machadj, machadjb, &
+&                            machcoefadj, machcoefadjb)
+  CALL ADJUSTINFLOWANGLEFORCESADJ_B(alphaadj, alphaadjb, betaadj, &
+&                              betaadjb, veldirfreestreamadj, &
+&                              veldirfreestreamadjb, liftdirectionadj, &
+&                              liftdirectionadjb, dragdirectionadj)
 END SUBROUTINE COMPUTEFORCESADJ_B

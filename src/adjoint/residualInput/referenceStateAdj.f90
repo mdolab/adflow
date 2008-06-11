@@ -9,8 +9,11 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine referenceStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
-            dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,prefAdj,&
+!       subroutine referenceStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
+!            dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,prefAdj,&
+!            rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
+!            murefAdj, timerefAdj)
+       subroutine referenceStateAdj(Machadj, MachCoefAdj,uInfAdj,prefAdj,&
             rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
             murefAdj, timerefAdj)
 !
@@ -44,9 +47,9 @@
 !      subroutine Variables
 !
        
-       real(kind=realType), dimension(3), intent(inout) :: velDirFreestreamAdj
-       real(kind=realType), dimension(3), intent(inout) :: liftDirectionAdj
-       real(kind=realType), dimension(3), intent(inout) :: dragDirectionAdj
+!       real(kind=realType), dimension(3), intent(inout) :: velDirFreestreamAdj
+!       real(kind=realType), dimension(3), intent(inout) :: liftDirectionAdj
+!       real(kind=realType), dimension(3), intent(inout) :: dragDirectionAdj
        real(kind=realType), intent(inout) :: MachAdj,MachCoefAdj,uInfAdj
        REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj
        REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj

@@ -205,7 +205,11 @@
 
       !scalars for addition
 
-      
+      !Varibles for accessing the array psi and psidir
+       
+      PetscScalar x_array(1)
+
+      PetscOffset i_x
 
 #endif
 

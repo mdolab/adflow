@@ -270,7 +270,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 
             righthanded = flowDoms(nn,level,sps)%righthanded
 
-            !print *,'copying stencil'
+            print *,'copying stencil'
             ! Copy the coordinates into xAdj and
             ! Compute the face normals on the subfaces
             call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
@@ -317,16 +317,17 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !                       cMxAdj,cMyAdj,cMzAdj,yplusMax,refPoint,CLAdj,CDAdj,  &
 !                       cFpAdj,cMpAdj,cFvAdj,cMvAdj,nn,level,sps, &
 !                       cFpAdjOut,cMpAdjOut)
-                  !print *,'calling computeforces'
+                  print *,'calling computeforces'
 
                   call computeForcesAdj(xAdj,wAdj,pAdj, &
                        iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
                        mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
                        yplusMax,refPoint,CLAdj,CDAdj,  &
-                       nn,level,sps,cFpAdj,cMpAdj,righthanded,&
+                       nn,level,sps,cFpAdj,cMpAdj,righthanded,secondhalo,&
                        alphaAdj,betaAdj,machAdj,machcoefAdj,prefAdj,&
                        rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                        rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj)
+                  print *,'forces computed'
 !                  call computeForcesAdj(xAdj,wAdj,pAdj, &
 !                       iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
 !                       mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
@@ -339,11 +340,11 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 
 
             end do bocoLoop
-       !     print *,'deallocating p'
+            print *,'deallocating p'
             deallocate(pAdj)
-        !    print *,'deallocating w'
+            print *,'deallocating w'
             deallocate(wAdj)
-         !   print *,'deallocating x'
+            print *,'deallocating x'
             deallocate(xAdj)
             print *,'deallocation finished'
 !            deallocate(wAdj)

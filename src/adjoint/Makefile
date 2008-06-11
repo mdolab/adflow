@@ -41,6 +41,7 @@ FF90_MODULES =
 FF90_OBJECTS = allocMemADjoint.o        \
 	       assertionsADjoint.o      \
                computeAeroCoef.o        \
+	       computeADjointGradientExtra.o\
 	       computeADjointGradientSpatial.o\
 	       copyADjointStencil.o     \
 	       createPETScKsp.o         \
@@ -63,12 +64,19 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       setupADjointRHS.o        \
 	       setupADjointRHSAeroCoeff.o\
 	       solveADjointPETSc.o      \
+	       solveDirectPETSc.o       \
+	       setupGradientMatrixExtra.o\
 	       setupGradientMatrixSpatial.o\
+	       setupGradientRHSExtra.o\
 	       setupGradientRHSSpatial.o\
                solverADjoint.o          \
 	       verifydRdw.o             \
 	       verifydRdx.o             \
-	       verifyRAdj.o
+	       verifydRdExtra.o         \
+	       verifyRAdj.o\
+	       verifyResiduals.o\
+	       writeCGNSMesh.o\
+               writeCGNSData.o
 #FF90_OBJECTS = allocMemADjoint.o\
 #	       assertionsADjoint.o\
 #	       computeADjointGradientExtra.o\
