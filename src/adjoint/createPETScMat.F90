@@ -19,7 +19,7 @@
 !     ******************************************************************
 !
       use ADjointPETSc
-      use ADjointVars     ! nNodesLocal, nDesignExtra
+      use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
       use communication   ! myID, nProc
       use flowVarRefState ! 
       implicit none
@@ -53,10 +53,10 @@
 #define MATMPIDENSE        "mpidense"
 
       ! Define matrix dRdW local size, taking into account the total
-      ! number of nodes owned by the processor and the number of 
+      ! number of Cells owned by the processor and the number of 
       ! equations.
 
-      nDimW = nw * nCellsLocal
+      nDimW = nw * nCellsLocal     
 
       ! Define matrix dRdx local size (number of columns) for the
       ! spatial derivatives.
@@ -83,8 +83,8 @@
 
       nzDiagonalX = 25 ! 1 + 6 + 6 + 12 Check
 
-      ! Average number of penalty contributions per node
-      ! (average number of donor nodes that come from other processor)
+      ! Average number of off processor contributions per Cell
+      ! (average number of donor cells that come from other processor)
 
       nzOffDiag  = 3
 !
@@ -102,6 +102,7 @@
       !                 Only works for block up to size 7...
 
       if( nw <= 7 ) then
+!      if( nw == 7 ) then
 
          PETScBlockMatrix = .true.
 
@@ -158,7 +159,7 @@
         !
         ! See .../petsc/docs/manualpages/Mat/MatCreateMPIBAIJ.html
   
-        allocate( nnzDiagonal(nNodesLocal), nnzOffDiag(nNodesLocal) )
+        allocate( nnzDiagonal(nCellsLocal), nnzOffDiag(nCellsLocal) )
 
         nnzDiagonal = nzDiagonalW
         nnzOffDiag  = nzOffDiag

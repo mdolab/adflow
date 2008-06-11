@@ -19,6 +19,8 @@ subroutine verifydCfdw(level)
 !     *                                                                *
 !     ******************************************************************
 !
+      use adjointpetsc        !djdw
+      use adjointVars         !nCellsGlobal
       use blockPointers
       use cgnsGrid            ! cgnsDoms
       use communication       ! procHalo(currentLevel)%nProcSend, myID
@@ -71,7 +73,7 @@ subroutine verifydCfdw(level)
 
 
       real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj
-      real(kind=realType) :: alphaAdjb, betaAdjb,MachAdjb
+      real(kind=realType) :: alphaAdjb, betaAdjb,MachAdjb,machCoefAdjb
       REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
       REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
@@ -96,7 +98,7 @@ subroutine verifydCfdw(level)
 
       real(kind=realType), parameter :: deltaw = 1.e-8_realType
 
-      real(kind=realType) :: wAdjRef, wref
+      real(kind=realType) :: wAdjRef, wref,test
 
       real(kind=realType), dimension(:,:,:), pointer :: norm
       real(kind=realType), dimension(:,:,:),allocatable:: normAdj
@@ -108,7 +110,14 @@ subroutine verifydCfdw(level)
 
       logical :: contributeToForce, viscousSubface,secondHalo,righthanded
 
-      integer :: ierr,nmonsum1,nmonsum2
+      integer :: ierr,nmonsum1,nmonsum2,idxmgb
+
+      character(len=2*maxStringLen) :: errorMessage
+
+      ! dJ/dw row block
+      
+      real(kind=realType), dimension(nw) :: dJdWlocal
+	
 
 !File Parameters
       integer :: unit = 8,ierror
@@ -407,21 +416,91 @@ subroutine verifydCfdw(level)
            
            xAdjB(:,:,:,:) = zero ! > return dCf/dx
            wAdjB(:,:,:,:) = zero ! > return dCf/dW
-           
+           !print *,'calling adjoint forces_b'
            !===============================================================
            !           
 !           print *,'Initial Parameters Calculated,Computing Lift Partials...'
            
            !===============================================================
            ! Compute the force derivatives
-                     
            call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
-&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
-&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
+&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+&  timerefadj, pinfcorradj)
+           print *,'output',xadj, xadjb, wadj, wadjb, padj, iibeg, &
+&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+&  timerefadj, pinfcorradj
+           
+           
+           do k = 0,kb
+              do j = 0,jb
+                 do i = 0,ib
+                    !do l = 1,nw
+                       idxmgb = globalCell(i,j,k)
+                       
+                       !test = wadjb(i,j,k,l)
+                       test = sum(wadjb(i,j,k,:))
+                       dJdWlocal(:) = wAdjB(i,j,k,:)
+                       !print *,'test',wAdjB(i,j,k,:)!test
+                       if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
+                          
+                          !idxmgb = globalCell(i,j,k)*nw+l-1  !L minus 1 not 1 minus 1
+                          !call VecSetValues(dJdW, 1, idxmgb, test, &
+                          !  ADD_VALUES, PETScIerr)
+                          call VecSetValuesBlocked(dJdW, 1, idxmgb, dJdWlocal, &
+                               ADD_VALUES, PETScIerr)
+                          
+                          if( PETScIerr/=0 ) then
+                             write(errorMessage,99) &
+                                  "Error in VecSetValuesBlocked for global node", &
+                                  idxmgb
+                             call terminate("setupADjointRHSAeroCoeff", &
+                                  errorMessage)
+                          endif
+                       endif
+                    !enddo
+                 enddo
+              enddo
+           enddo
+       !COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
+!&  , machadjb, machcoefadj, machcoefadjb, prefadj, rhorefadj, pinfdimadj&
+!&  , rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
+!           call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&!  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&!  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
+!&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
+!&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
+
+!!$           print *,'setup',xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!!$&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!!$&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!!$&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!!$&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
+!!$&  , machadjb, machcoefadj, machcoefadjb, prefadj, rhorefadj, pinfdimadj&
+!!$&  , rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj
+!xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
+!&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
+!&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj
+
            !COMPUTEFORCESADJ_B(xadj, xadjb, wadj, padj, iibeg, iiend, &
 !&  jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, cfzadj&
 !&  , cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
@@ -453,8 +532,18 @@ subroutine verifydCfdw(level)
                  enddo
               enddo
            enddo
+        enddo bocoLoop
+        bocoLoop2: do mm=1,nBocos
 
-
+           ! Determine the range of cell indices of the owned cells
+           ! Notice these are not the node indices
+           iiBeg = BCData(mm)%icBeg
+           iiEnd = BCData(mm)%icEnd
+           jjBeg = BCData(mm)%jcBeg
+           jjEnd = BCData(mm)%jcEnd
+           
+           i2Beg= BCData(mm)%inBeg+1; i2End = BCData(mm)%inEnd
+           j2Beg= BCData(mm)%jnBeg+1; j2End = BCData(mm)%jnEnd
            ! Initialize the seed for reverse mode. Cd second
            ClAdjB = 0
            CDAdjB = 1
@@ -474,14 +563,29 @@ subroutine verifydCfdw(level)
            
            !===============================================================
            ! Compute the force derivatives
-           
+            
            call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
-&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
-&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
+&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+&  timerefadj, pinfcorradj)
+!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
+!&  , machadjb, machcoefadj, machcoefadjb, prefadj, rhorefadj, pinfdimadj&
+!&  , rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
+!           call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
+!&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
+!&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
            !COMPUTEFORCESADJ_B(xadj, xadjb, wadj, padj, iibeg, iiend, &
 !&  jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, cfzadj&
 !&  , cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
@@ -512,8 +616,19 @@ subroutine verifydCfdw(level)
                  enddo
               enddo
            enddo
+        enddo bocoLoop2
+        
+        bocoLoop3: do mm=1,nBocos
 
-
+           ! Determine the range of cell indices of the owned cells
+           ! Notice these are not the node indices
+           iiBeg = BCData(mm)%icBeg
+           iiEnd = BCData(mm)%icEnd
+           jjBeg = BCData(mm)%jcBeg
+           jjEnd = BCData(mm)%jcEnd
+           
+           i2Beg= BCData(mm)%inBeg+1; i2End = BCData(mm)%inEnd
+           j2Beg= BCData(mm)%jnBeg+1; j2End = BCData(mm)%jnEnd
            ! Initialize the seed for reverse mode. Cmx third
            ClAdjB = 0
            CDAdjB = 0
@@ -534,14 +649,28 @@ subroutine verifydCfdw(level)
            
            !===============================================================
            ! Compute the force derivatives
-           
            call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
-&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
-&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
+&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+&  timerefadj, pinfcorradj)
+!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
+!&  , machadjb, machcoefadj, machcoefadjb, prefadj, rhorefadj, pinfdimadj&
+!&  , rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)          
+!           call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
+!&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
+!&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
            !COMPUTEFORCESADJ_B(xadj, xadjb, wadj, padj, iibeg, iiend, &
 !&  jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, cfzadj&
 !&  , cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
@@ -579,11 +708,11 @@ subroutine verifydCfdw(level)
 !!$                call terminate("verifydCfdx", &
 !!$                "Deallocation failure for normAdj.") 
            
-        enddo bocoLoop
+        enddo bocoLoop3
         
         !===============================================================
         
-        print *,' deallocating'
+        !print *,' deallocating'
         ! Deallocate the xAdj.
         deallocate(pAdj, stat=ierr)
         if(ierr /= 0)                              &
@@ -610,13 +739,14 @@ subroutine verifydCfdw(level)
         if(ierr /= 0)                              &
              call terminate("verifydCfdx", &
              "Deallocation failure for xAdj.") 
-        print *,'finishhed deallocating'
+        !print *,'finishhed deallocating'
        
       enddo domainLoopAD
 
    enddo spectralLoopAdj
       
    print *,'AD loop finished'
+   !stop
       ! Get new time and compute the elapsed AD time.
 
       call mpi_barrier(SUmb_comm_world, ierr)
@@ -648,6 +778,7 @@ subroutine verifydCfdw(level)
          !loop over all points
 
          do i = 0,ib
+            !print *,'i=',i
             do j = 0,jb
                do k = 0,kb
                   do l = 1,nw
@@ -667,6 +798,7 @@ subroutine verifydCfdw(level)
  
                      call metric(level)
                      call computeForcesPressureAdj(w, p)
+                     call applyAllBC(secondHalo)
                      call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
                      
                      Cl = (cfp(1) + cfv(1))*liftDirection(1) &
@@ -760,6 +892,7 @@ subroutine verifydCfdw(level)
   
                      call metric(level)
                      call computeForcesPressureAdj(w, p)
+                     call applyAllBC(secondHalo)
                      call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
                      
                      Cl = (cfp(1) + cfv(1))*liftDirection(1) &
@@ -850,14 +983,93 @@ subroutine verifydCfdw(level)
                     
                     dCmxFD(nn,i,j,k,l)=dCmxdwFD
                     write (unit,*) dCLdwFD,i,j,k,l
+
+                    dJdWlocal(l) = dCLdwFD
                     
+!!$                    idxmgb = globalCell(i,j,k)
+!!$                    
+!!$                    test = dCLdwFD
+!!$                    !print *,'test',test
+!!$                    if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
+!!$                      
+!!$                       idxmgb = globalCell(i,j,k)*nw+l-1  !L minus 1 not 1 minus 1
+!!$                       call VecSetValues(dJdW, 1, idxmgb, dCLdwFD, &
+!!$                                                ADD_VALUES, PETScIerr)
+!!$       !                 call VecSetValuesBlocked(dJdW, 1, idxmgb, dJdWlocal, &
+!!$       !                      ADD_VALUES, PETScIerr)
+!!$            
+!!$                        if( PETScIerr/=0 ) then
+!!$                           write(errorMessage,99) &
+!!$                                "Error in VecSetValuesBlocked for global node", &
+!!$                                idxmgb
+!!$                           call terminate("setupADjointRHSAeroCoeff", &
+!!$                                errorMessage)
+!!$                        endif
+!!$                     endif
+
                     enddo
+                    
+!!$                    idxmgb = globalCell(i,j,k)
+!!$                    
+!!$                    test = sum(dJdWlocal(:))
+!!$                    if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
+!!$                      
+!!$                       call VecSetValuesBlocked(dJdW, 1, idxmgb, dJdWlocal, &
+!!$                            ADD_VALUES, PETScIerr)
+!!$            
+!!$                        if( PETScIerr/=0 ) then
+!!$                           write(errorMessage,99) &
+!!$                                "Error in VecSetValuesBlocked for global node", &
+!!$                                idxmgb
+!!$                           call terminate("setupADjointRHSAeroCoeff", &
+!!$                                errorMessage)
+!!$                        endif
+!!$                     endif
                  enddo
               enddo
            enddo
         enddo domainForcesLoopFDorig
+        print *,'finished fd'
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Complete the PETSc vector assembly process.                    *
+!     *                                                                *
+!     ******************************************************************
+!
+      call VecAssemblyBegin(dJdW,PETScIerr)
 
+      if( PETScIerr/=0 ) &
+        call terminate("setupASjointRHS", "Error in VecAssemblyBegin")
 
+      call VecAssemblyEnd  (dJdW,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("setupADjointRHS", "Error in VecAssemblyEnd")
+
+!!$      ! Get new time and compute the elapsed time.
+!!$
+!!$      call cpu_time(time(2))
+!!$      time(3) = time(2)-time(1)
+!!$
+!!$      ! Determine the maximum time using MPI reduce
+!!$      ! with operation mpi_max.
+!!$
+!!$      call mpi_reduce(time(3), timeAdj, 1, sumb_real, &
+!!$                      mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
+      print *,'n'
+      if( PETScRank==0 ) &
+        write(*,25) "Assembling ADjoint RHS vector..."
+      if( PETScRank==0 ) &
+        write(*,25) "Assembling ADjoint RHS vector time (s) = ", timeAdj
+25    format(a,1x,f8.2)
+      !if( debug ) then
+	!call VecView(dJdW,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+	call VecView(dJdW,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+        if( PETScIerr/=0 ) &
+          call terminate("setupADjointRHS", "Error in VecView")
+        !pause
+      !endif
 !!$      !from ForcesAndMoments.f90
 !!$       ! Determine the reference point for the moment computation in
 !!$       ! meters.
@@ -1127,7 +1339,7 @@ subroutine verifydCfdw(level)
         ! Set the variables, which are related to the dimensions of the
         ! block. In this way the dimensions of the automatic arrays used
         ! in the flux routines are set a bit easier.
-         print *,'setting pointers',nn,level,sps
+         !print *,'setting pointers',nn,level,sps
          call setPointers(nn,level,sps)
 !!$
 !!$        il = flowDoms(nn,currentLevel,1)%il
@@ -1144,13 +1356,14 @@ subroutine verifydCfdw(level)
 
               do n=1,nw
 
-                 if ( dCL(nn,iCell,jCell,kCell,n) < 1e-10 ) then
+                 !if ( dCL(nn,iCell,jCell,kCell,n) < 1e-10 ) then
+                 if ( dCLfd(nn,iCell,jCell,kCell,n) < 1e-10 ) then
                     dCLer(nn,iCell,jCell,kCell,n)  = zero
                  else
                     dCLer(nn,iCell,jCell,kCell,n)  =                   &
                          (  dCL(nn,iCell,jCell,kCell,n)      &
                          - dCLfd(nn,iCell,jCell,kCell,n) )  &
-                         /  dCL(nn,iCell,jCell,kCell,n)
+                         /  dCLfd(nn,iCell,jCell,kCell,n)
                  endif
                  
                  if ( dCD(nn,iCell,jCell,kCell,n) < 1e-10 ) then
@@ -1173,33 +1386,33 @@ subroutine verifydCfdw(level)
                  
               enddo
               
-              ! Output if error
-
-              write(*,10) "Jacobian dCLer,dCL,dCLfd @ proc/block", &
-                    myID, nn, "for cell", iCell,jCell,kCell
-              do m=1,nw
-                 if (dCLer(nn,iCell,jCell,kCell,m)/=0)          &
-                  write(*,20) (dCLer(nn,iCell,jCell,kCell,m)), &
-                              (dCL(nn,iCell,jCell,kCell,m)),   &
-                              (dCLfd(nn,iCell,jCell,kCell,m))
-              enddo
-              write(*,10) "Jacobian dCDer,dCD,dCDfd @ proc/block", &
-                   myID, nn, "for cell", iCell,jCell,kCell
-              do m=1,nw
-                 if (dCDer(nn,iCell,jCell,kCell,m)/=0)          &
-                      write(*,20) (dCDer(nn,iCell,jCell,kCell,m)), &
-                      (dCD(nn,iCell,jCell,kCell,m)),   &
-                      (dCDfd(nn,iCell,jCell,kCell,m))
-              enddo
-              
-              write(*,10) "Jacobian dCmxer,dCmx,dCmxfd @ proc/block", &
-                   myID, nn, "for cell", iCell,jCell,kCell
-              do m=1,nw
-                 if (dCmxer(nn,iCell,jCell,kCell,m)/=0)          &
-                      write(*,20) (dCmxer(nn,iCell,jCell,kCell,m)), &
-                      (dCmx(nn,iCell,jCell,kCell,m)),   &
-                      (dCmxfd(nn,iCell,jCell,kCell,m))
-              enddo
+!!$              ! Output if error
+!!$
+!!$              write(*,10) "Jacobian dCLer,dCL,dCLfd @ proc/block", &
+!!$                    myID, nn, "for cell", iCell,jCell,kCell
+!!$              do m=1,nw
+!!$                 if (dCLer(nn,iCell,jCell,kCell,m)/=0)          &
+!!$                  write(*,20) (dCLer(nn,iCell,jCell,kCell,m)), &
+!!$                              (dCL(nn,iCell,jCell,kCell,m)),   &
+!!$                              (dCLfd(nn,iCell,jCell,kCell,m))
+!!$              enddo
+!!$              write(*,10) "Jacobian dCDer,dCD,dCDfd @ proc/block", &
+!!$                   myID, nn, "for cell", iCell,jCell,kCell
+!!$              do m=1,nw
+!!$                 if (dCDer(nn,iCell,jCell,kCell,m)/=0)          &
+!!$                      write(*,20) (dCDer(nn,iCell,jCell,kCell,m)), &
+!!$                      (dCD(nn,iCell,jCell,kCell,m)),   &
+!!$                      (dCDfd(nn,iCell,jCell,kCell,m))
+!!$              enddo
+!!$              
+!!$              write(*,10) "Jacobian dCmxer,dCmx,dCmxfd @ proc/block", &
+!!$                   myID, nn, "for cell", iCell,jCell,kCell
+!!$              do m=1,nw
+!!$                 if (dCmxer(nn,iCell,jCell,kCell,m)/=0)          &
+!!$                      write(*,20) (dCmxer(nn,iCell,jCell,kCell,m)), &
+!!$                      (dCmx(nn,iCell,jCell,kCell,m)),   &
+!!$                      (dCmxfd(nn,iCell,jCell,kCell,m))
+!!$              enddo
               
            enddo
         enddo
@@ -1221,7 +1434,8 @@ subroutine verifydCfdw(level)
      print *, " Factor                      =", timeFD/timeAdj
      print *, "====================================================="
   endif
-  !
+
+!
 !     ******************************************************************
 !     *                                                                *
 !     * Compute the errors in dCf/dx.                                   *
@@ -1249,16 +1463,16 @@ subroutine verifydCfdw(level)
 
       
       ! Deallocate memory for the temporary arrays.
-      print *,'deallocating dcl'
+      !print *,'deallocating dcl'
       deallocate(dCl,  dCLfd,  dCLer)
       deallocate(dCD,  dCDfd,  dCDer)
       deallocate(dCmx, dCmxfd, dCmxer)
-      print *,'finished deallocating dcl'
+      !print *,'finished deallocating dcl'
   
       ! Output formats.
 
   10  format(1x,a,1x,i3,1x,i3,1x,a,1x,i3,1x,i3,1x,i3)           
   20  format(1x,(e18.6),2x,(e18.6),2x,(e18.6))
   30  format(1x,a,1x,i3,2x,e13.6,1x,5(i2,1x),3x,e13.6,1x,5(i2,1x))
-
+  99  format(a,1x,i6)
     end subroutine verifydCfdw

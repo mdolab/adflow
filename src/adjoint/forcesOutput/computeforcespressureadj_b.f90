@@ -3,7 +3,7 @@
 !  
 !  Differentiation of computeforcespressureadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: wadj
-!   of linear combination of output variables: padj
+!   of linear combination of output variables: padj wadj
 !
 !      ******************************************************************
 !      *                                                                *
@@ -63,7 +63,6 @@ SUBROUTINE COMPUTEFORCESPRESSUREADJ_B(wadj, wadjb, padj, padjb)
         END DO
       END DO
     END DO
-    wadjb(:, :, :, :) = 0.0
     DO k=kb,0,-1
       DO j=jb,0,-1
         DO i=ib,0,-1
@@ -97,7 +96,6 @@ SUBROUTINE COMPUTEFORCESPRESSUREADJ_B(wadj, wadjb, padj, padjb)
         END DO
       END DO
     END DO
-    wadjb(:, :, :, :) = 0.0
     DO k=kb,0,-1
       DO j=jb,0,-1
         DO i=ib,0,-1

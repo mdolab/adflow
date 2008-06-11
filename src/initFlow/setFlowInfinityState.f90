@@ -48,6 +48,8 @@
        uInf2 = MachCoef*MachCoef*gammaInf*pInf/rhoInf
 
        ! Allocate the memory for wInf.
+       
+       if( allocated(wInf)) deallocate(wInf)
 
        allocate(wInf(nw), stat=ierr)
        if(ierr /= 0)                             &

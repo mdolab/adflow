@@ -4,11 +4,11 @@
 !     * File:          setupADjointMatrix.F90                          *
 !     * Author:        Andre C. Marta, C.A.(Sandy) Mader               *
 !     * Starting date: 07-27-2006                                      *
-!     * Last modified: 05-12-2008                                      *
+!     * Last modified: 06-09-2008                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine setupADjointMatrix(level,sps)
+      subroutine setupADjointMatrix(level)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -25,17 +25,19 @@
 !     ******************************************************************
 !
       use ADjointPETSc
+      use ADjointVars ! nCellsGlobal, nCellsLocal, nOffsetLocal
       use blockPointers       ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
       use cgnsGrid            ! cgnsDoms
       use communication       ! procHalo(currentLevel)%nProcSend
       use inputDiscretization ! spaceDiscr
       use iteration           ! overset, currentLevel
       use flowVarRefState     ! nw
+      use inputTimeSpectral ! spaceDiscr	
       implicit none
 !
 !     Subroutine arguments.
 !
-      integer(kind=intType), intent(in) :: level, sps
+      integer(kind=intType), intent(in) :: level
 !
 !     Local variables.
 !
@@ -47,7 +49,7 @@
       logical :: fineGrid, correctForK, exchangeTurb,secondhalo
 
       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdj, wAdjB
-      real(kind=realType), dimension(-2:2,-2:2,-2:2,3)  :: xAdj, xAdjB
+      real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xAdj, xAdjB
 
       real(kind=realType), dimension(nw) :: dwAdj, dwAdjB
 
@@ -73,7 +75,7 @@
       ! idxmgb - global block row index
       ! idxngb - global block column index
 
-      integer(kind=intType) :: idxmgb, idxngb
+      integer(kind=intType) :: idxmgb, idxngb,ierr, sps
 
       ! idxmgb - array of global row indices
       ! idxngb - array of global column indices
@@ -92,14 +94,23 @@
       ! discretization and the logical correctForK.
 
       currentLevel = level
-      discr        = spaceDiscr
+      !discr        = spaceDiscr
       fineGrid     = .true.
 
       ! Determine whether or not the total energy must be corrected
       ! for the presence of the turbulent kinetic energy and whether
       ! or not turbulence variables should be exchanged.
 
-      correctForK  = .false.
+      if( kPresent ) then
+         if((currentLevel <= groundLevel) .or. turbCoupled) then
+            correctForK = .true.
+         else
+            correctForK = .false.
+         endif
+      else
+         correctForK = .false.
+      endif
+
       exchangeTurb = .false.
 
       ! Set the value of secondHalo, depending on the situation.
@@ -130,7 +141,7 @@
            .false., .false.)
       
       ! Apply all boundary conditions to all blocks on this level.
-      
+     
       call applyAllBC(secondHalo)
       
       ! Exchange the solution. Either whalo1 or whalo2
@@ -144,6 +155,12 @@
               .true., .true.)
       endif
 
+      ! Reset the values of rkStage and currentLevel, such that
+      ! they correspond to a new iteration.
+
+      rkStage = 0
+      currentLevel = groundLevel
+ 
 !
 !     ******************************************************************
 !     *                                                                *
@@ -158,22 +175,22 @@
 !
       ! Send some feedback to screen.
 
-      if( PETScRank==0 ) &
-        write(*,10) "Assembling ADjoint matrix..."
+      !if( PETScRank==0 ) &
+      !  write(*,10) "Assembling ADjoint matrix..."
+ 
+      call mpi_barrier(SUmb_comm_world, ierr)
+      if( myID==0 ) call cpu_time(time(1))
+      
+      !print *,'Entering Domain loop'
+      domainLoopAD: do nn=1,nDom
+         
+         ! Loop over the number of time instances for this block.
 
-      ! Get the initial time.
-
-      call cpu_time(time(1))
-
-      ! Loop over the number of local blocks.
-
-      domainLoop: do nn=1,nDom
-
-        ! Set some pointers to make the code more readable.
-
-        call setPointersAdj(nn,level,sps)
-
-        do kCell = 2, kl
+         spectralLoop: do sps=1,nTimeIntervalsSpectral
+         !print *,'Setting Pointers',nn,level,sps
+         call setPointersAdj(nn,level,sps)
+		
+         do kCell = 2, kl
            do jCell = 2, jl
               do iCell = 2, il
                  ! Copy the state w to the wAdj array in the stencil
@@ -183,14 +200,33 @@
                           rhoinfAdj, pinfAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj)
 		!call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)
+		!print *,'wAdj',wadj
 
-                 mLoop: do m = 1, nw           ! Loop over output cell residuals (R)
+	        Aad(:,:)  = zero
+                Bad(:,:)  = zero
+                BBad(:,:) = zero
+                Cad(:,:)  = zero
+                CCad(:,:) = zero
+                Dad(:,:)  = zero
+                DDad(:,:) = zero
+                Ead(:,:)  = zero
+                EEad(:,:) = zero
+                Fad(:,:)  = zero
+                FFad(:,:) = zero
+                Gad(:,:)  = zero
+                GGad(:,:) = zero
+
+                 mLoop: do m = 1, nw      ! Loop over output cell residuals (R)
 !                   print *,'initializing variables'
                     ! Initialize the seed for the reverse mode
-                    dwAdjb(:) = 0.; dwAdjb(m) = 1.
+                    dwAdjb(:) = 0.
+		    dwAdjb(m) = 1.
                     dwAdj(:)  = 0.
                     wAdjb(:,:,:,:)  = 0.  !dR(m)/dw
-     
+		    alphaadjb = 0.
+	            betaadjb = 0.
+		    machadjb = 0.
+!                    print *,'dwadjb',dwadjb,'wadjb',wadjb(0,0,0,:)
   !                 print *,'calling reverse mode'
 !                   print *,'secondhalo',secondhalo
 
@@ -199,18 +235,16 @@
                 !                          dR(iCell,jCell,kCell,l)
                 ! wAdjb(ii,jj,kk,n) = --------------------------------
                 !                     dW(iCell+ii,jCell+jj,kCell+kk,n)
-                       
-                    ! Call reverse mode of residual computation
-                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                          &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                          &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
-                          &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-                          &  murefadj, timerefadj, pinfcorradj)
-!call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
-!                             dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
-!                             correctfork, secondhalo)
 
-                ! Store the block Jacobians (by rows).
+                    ! Call reverse mode of residual computation
+                    call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj,&
+			  &  dwadjb, alphaadj, alphaadjb, betaadj, betaadjb,&
+	                  &  machadj, machadjb, machcoefadj, icell, jcell,&
+                          &  kcell, nn, sps, correctfork, secondhalo, prefadj,&
+                          &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj,&
+                          &  pinfadj, murefadj, timerefadj, pinfcorradj)
+
+                    ! Store the block Jacobians (by rows).
 
                 Aad(m,:)  = wAdjB( 0, 0, 0,:)
                 Bad(m,:)  = wAdjB(-1, 0, 0,:)
@@ -227,7 +261,7 @@
                 GGad(m,:) = wAdjB( 0, 0, 2,:)
 
                enddo mLoop
-
+	
               !*********************************************************
               !                                                        *
               ! Transfer the block Jacobians to the PETSc matrix.      *
@@ -298,146 +332,162 @@
                 ! for that since it starts at node 0.
 
                 idxmgb = globalCell(iCell,jCell,kCell)
-
+		!print *,'globalcell',idxmgb,globalCell(iCell,jCell,kCell)
                 ! >>> center block A < W(i,j,k)
 
                 idxngb = idxmgb
-
+		!print *,'indicies0',idxmgb,idxngb
                 call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
                                          Aad, INSERT_VALUES,PETScIerr)
                 if( PETScIerr/=0 ) &
                   call errAssemb("MatSetValuesBlocked", "Aad")
 
                 ! >>> west block B < W(i-1,j,k)
-
-                if( (iCell-1) >= ib ) then
+	
+                if( (iCell-1) >= 0 ) then
                   idxngb = globalCell(iCell-1,jCell,kCell)
-
-                  call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
+	          if (idxngb >=0 .and. idxngb.ne.-5) then
+		     !print *,'indiciesi-1',idxmgb,idxngb
+                     call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
                                            Bad, INSERT_VALUES,PETScIerr)
-                  if( PETScIerr/=0 ) &
-                    call errAssemb("MatSetValuesBlocked", "Bad")
+                     if( PETScIerr/=0 ) &
+                        call errAssemb("MatSetValuesBlocked", "Bad")
+		  endif
                 endif
 
                 ! far west block BB < W(i-2,j,k)
 
-                if( (iCell-2) >= ib ) then
+                if( (iCell-2) >= 0 ) then
                   idxngb = globalCell(iCell-2,jCell,kCell)
-
-                  call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                           BBad,INSERT_VALUES,PETScIerr)
-                  if( PETScIerr/=0 ) &
-                    call errAssemb("MatSetValuesBlocked", "BBad")
+		  if (idxngb >=0 .and. idxngb.ne.-5) then
+		     !print *,'indiciesi-2',idxmgb,idxngb
+                     call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
+                                              BBad,INSERT_VALUES,PETScIerr)
+                     if( PETScIerr/=0 ) &
+                       call errAssemb("MatSetValuesBlocked", "BBad")
+                  endif
                 end if
 
                 ! >>> east block C < W(i+1,j,k)
 
-                if( (iCell+1) <= ie ) then
+                if( (iCell+1) <= ib ) then
                   idxngb = globalCell(iCell+1,jCell,kCell)
-
-                  call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                           Cad, INSERT_VALUES,PETScIerr)
-                  if( PETScIerr/=0 ) &
-                    call errAssemb("MatSetValuesBlocked", "Cad")
+		  !print *,'ncellsglobal',ncellsglobal,globalcell(13,5,5)
+		  !stop
+		  if (idxngb<nCellsGlobal .and. idxngb.ne.-5) then
+                      call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
+                                              Cad, INSERT_VALUES,PETScIerr)
+                      if( PETScIerr/=0 ) &
+                        call errAssemb("MatSetValuesBlocked", "Cad")
+		  endif
                 end if
 
                 ! >>> far east block CC < W(i+2,j,k)
 
-                if( (iCell+2) <= ie ) then
+                if( (iCell+2) <= ib ) then
                   idxngb = globalCell(iCell+2,jCell,kCell)
-
-                  call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                           CCad,INSERT_VALUES,PETScIerr)
-                  if( PETScIerr/=0 ) &
-                    call errAssemb("MatSetValuesBlocked", "CCad")
+	          if (idxngb<nCellsGlobal .and. idxngb.ne.-5) then
+                     call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
+                                              CCad,INSERT_VALUES,PETScIerr)
+                     if( PETScIerr/=0 ) &
+                        call errAssemb("MatSetValuesBlocked", "CCad")
+		  endif
                 end if
 
                 ! >>> south block D < W(i,j-1,k)
 
-                if( (jCell-1) >= jb ) then
+                if( (jCell-1) >= 0 ) then
                   idxngb = globalCell(iCell,jCell-1,kCell)
-
-                  call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                           Dad, INSERT_VALUES,PETScIerr)
-                  if( PETScIerr/=0 ) &
-                    call errAssemb("MatSetValuesBlocked", "Dad")
+		  if (idxngb>=0 .and. idxngb.ne.-5) then
+                      call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
+                                               Dad, INSERT_VALUES,PETScIerr)
+                      if( PETScIerr/=0 ) &
+                         call errAssemb("MatSetValuesBlocked", "Dad")
+	  	  endif
                 endif
 
                 ! >>> far south block DD < W(i,j-2,k)
 
-                if( (jCell-2) >= jb ) then
+                if( (jCell-2) >= 0 ) then
                   idxngb = globalCell(iCell,jCell-2,kCell)
-
-                  call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                           DDad,INSERT_VALUES,PETScIerr)
-                  if( PETScIerr/=0 ) &
-                    call errAssemb("MatSetValuesBlocked", "DDad")
+		  if (idxngb>=0 .and. idxngb.ne.-5) then
+                     call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
+                                              DDad,INSERT_VALUES,PETScIerr)
+                     if( PETScIerr/=0 ) &
+                       call errAssemb("MatSetValuesBlocked", "DDad")
+	 	  endif
                 end if
 
                 ! >>> north block E < W(i,j+1,k)
 
-                if( (jCell+1) <= je ) then
+                if( (jCell+1) <= jb ) then
                   idxngb = globalCell(iCell,jCell+1,kCell)
-
-                  call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                           Ead, INSERT_VALUES,PETScIerr)
-                  if( PETScIerr/=0 ) &
-                    call errAssemb("MatSetValuesBlocked", "Ead")
+                  if (idxngb<nCellsGlobal .and. idxngb.ne.-5) then
+                     call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
+                                              Ead, INSERT_VALUES,PETScIerr)
+                     if( PETScIerr/=0 ) &
+                       call errAssemb("MatSetValuesBlocked", "Ead")
+		  endif
                 end if
 
                 ! >>> far north block EE < W(i,j+2,k)
 
-                if( (jCell+2) <= je ) then
+                if( (jCell+2) <= jb ) then
                   idxngb = globalCell(iCell,jCell+2,kCell)
-
-                  call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                           EEad,INSERT_VALUES,PETScIerr)
-                  if( PETScIerr/=0 ) &
-                    call errAssemb("MatSetValuesBlocked", "EEad")
+		  if (idxngb<nCellsGlobal .and. idxngb.ne.-5) then
+                     call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
+                                              EEad,INSERT_VALUES,PETScIerr)
+                     if( PETScIerr/=0 ) &
+                       call errAssemb("MatSetValuesBlocked", "EEad")
+	          endif
                 end if
 
                 ! >>> back block F < W(i,j,k-1)
 
-                if( (kCell-1) >= kb ) then
+                if( (kCell-1) >= 0 ) then
                   idxngb = globalCell(iCell,jCell,kCell-1)
-
-                  call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                           Fad, INSERT_VALUES,PETScIerr)
-                  if( PETScIerr/=0 ) &
-                    call errAssemb("MatSetValuesBlocked", "Fad")
+                  if (idxngb>=0 .and. idxngb.ne.-5) then
+                     call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
+                                              Fad, INSERT_VALUES,PETScIerr)
+                     if( PETScIerr/=0 ) &
+                       call errAssemb("MatSetValuesBlocked", "Fad")
+		  endif
                 endif
 
                 ! >>> far back block FF < W(i,j,k-2)
 
-                if( (kCell-2) >= kb ) then
+                if( (kCell-2) >= 0 ) then
                   idxngb = globalCell(iCell,jCell,kCell-2)
-
-                  call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                           FFad,INSERT_VALUES,PETScIerr)
-                  if( PETScIerr/=0 ) &
-                    call errAssemb("MatSetValuesBlocked", "FFad")
+		  if (idxngb>=0 .and. idxngb.ne.-5) then
+                     call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
+                                              FFad,INSERT_VALUES,PETScIerr)
+                     if( PETScIerr/=0 ) &
+                       call errAssemb("MatSetValuesBlocked", "FFad")
+		  endif
                 end if
 
                 ! >>> front block G < W(i,j,k+1)
 
-                if( (kCell+1) <= ke ) then
+                if( (kCell+1) <= kb ) then
                   idxngb = globalCell(iCell,jCell,kCell+1)
-
-                  call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                           Gad, INSERT_VALUES,PETScIerr)
-                  if( PETScIerr/=0 ) &
-                    call errAssemb("MatSetValuesBlocked", "Gad")
+ 		  if (idxngb<nCellsGlobal .and. idxngb.ne.-5) then
+                     call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
+                                              Gad, INSERT_VALUES,PETScIerr)
+                     if( PETScIerr/=0 ) &
+                       call errAssemb("MatSetValuesBlocked", "Gad")
+		  endif
                 end if
 
                 ! >>> far front block GG < W(i,j,k+2)
 
-                if( (kCell+2) <= ke ) then
+                if( (kCell+2) <= kb ) then
                   idxngb = globalCell(iCell,jCell,kCell+2)
-
-                  call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                           GGad,INSERT_VALUES,PETScIerr)
-                  if( PETScIerr/=0 ) &
-                    call errAssemb("MatSetValuesBlocked", "GGad")
+		  if (idxngb<nCellsGlobal .and. idxngb.ne.-5) then
+                     call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
+                                              GGad,INSERT_VALUES,PETScIerr)
+                     if( PETScIerr/=0 ) &
+                       call errAssemb("MatSetValuesBlocked", "GGad")
+		  endif
                 end if
 
 
@@ -492,7 +542,7 @@
               !*********************************************************
 
               else ! PETScBlockMatrix
-
+		stop
                 ! Global matrix block row mgb function of node indices.
                 !
                 ! MatSetValues() uses 0-based row and column 
@@ -660,14 +710,15 @@
 
               endif ! PETScBlockMatrix
 
-
+	
             enddo
           enddo 
         enddo 
 
+      enddo spectralLoop
         !===============================================================
 
-      enddo domainLoop
+      enddo domainLoopad
 !
 !     ******************************************************************
 !     *                                                                *
@@ -769,8 +820,8 @@
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
                       mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
 
-      if( PETScRank==0 ) &
-        write(*,20) "Assembling ADjoint matrix time (s) = ", timeAdj
+      !if( PETScRank==0 ) &
+      !  write(*,20) "Assembling ADjoint matrix time (s) = ", timeAdj
 !
 !     ******************************************************************
 !     *                                                                *
@@ -809,8 +860,8 @@
         call MatView(dRdW,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
         if( PETScIerr/=0 ) &
           call terminate("setupADjointMatrix", "Error in MatView")
-       ! pause
-     endif
+        !pause
+      endif
 
       ! Flush the output buffer and synchronize the processors.
 

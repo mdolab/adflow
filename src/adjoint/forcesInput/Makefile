@@ -36,11 +36,25 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS = getSurfaceNormalsAdj.o\
-	       computeForcesPressureAdj.o\
-	       copyADjointForcesStencil.o\
-	       forcesAndMomentsAdj.o\
+FF90_OBJECTS = adjustInflowAngleForcesAdj.o\
+	       applyAllBCForcesAdj.o\
+               bcEulerWallForcesAdj.o\
+               bcFarfieldForcesAdj.o\
+	       bcSymmForcesAdj.o\
+	       checkInputParamForcesAdj.o\
 	       computeForcesAdj.o\
+	       computeForcesPressureAdj.o\
+               copyADjointForcesStencil.o\
+               etotArrayForcesAdj.o \
+	       extractBCStatesForcesAdj.o\
+               extrapolate2ndHaloForcesAdj.o\
+               forcesAndMomentsAdj.o\
+	       getDirVectorForces.o\
+	       getSurfaceNormalsAdj.o\
+               referenceStateForcesAdj.o\
+	       replaceBCStatesForcesAdj.o\
+               setFlowInfinityStateForcesAdj.o\
+	       vectorRotationForces.o\
 	       verifydCfdx.o\
 	       verifydCfdw.o\
 	       verifyForcesAdj.o

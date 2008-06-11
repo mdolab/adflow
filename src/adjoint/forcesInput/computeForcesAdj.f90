@@ -13,7 +13,7 @@
                        iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
                        mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
                        yplusMax,refPoint,CLAdj,CDAdj,  &
-                       nn,level,sps,cFpAdj,cMpAdj,righthanded,&
+                       nn,level,sps,cFpAdj,cMpAdj,righthanded,secondhalo,&
                        alphaAdj,betaAdj,machAdj,machcoefAdj,prefAdj,&
                        rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                        rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj)
@@ -87,7 +87,7 @@
       real(kind=realType), dimension(3):: cFpAdjOut, cFvAdjOut
       real(kind=realType), dimension(3):: cMpAdjOut, cMvAdjOut
 
-      logical, intent(in)::righthanded
+      logical, intent(in)::righthanded,secondhalo
 
       integer(kind=intType):: i,j,k,l,kk
 !
@@ -102,20 +102,23 @@
       ! Compute the forces.
 
 !      call the initialization routines to calculate the effect of Mach and alpha
-      call adjustInflowAngleAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
+      call adjustInflowAngleForcesAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
            liftDirectionAdj,dragDirectionAdj)
       
-      call checkInputParamAdj(velDirFreestreamAdj,liftDirectionAdj,&
+      call checkInputParamForcesAdj(velDirFreestreamAdj,liftDirectionAdj,&
            dragDirectionAdj, Machadj, MachCoefAdj)
       
-      call referenceStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
-           dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,prefAdj,&
-           rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
-           murefAdj, timerefAdj)
+      call referenceStateForcesAdj(Machadj, MachCoefAdj,uInfAdj,prefAdj,&
+            rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
+            murefAdj, timerefAdj)
+      !referenceStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
+      !      dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,prefAdj,&
+      !      rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
+      !      murefAdj, timerefAdj)
       !(velDirFreestreamAdj,liftDirectionAdj,&
       !     dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj)
       
-      call setFlowInfinityStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
+      call setFlowInfinityStateForcesAdj(velDirFreestreamAdj,liftDirectionAdj,&
            dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,wInfAdj,prefAdj,&
            rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
            murefAdj, timerefAdj,pInfCorrAdj)
@@ -125,13 +128,20 @@
       ! visous force computation) for the stencil
       ! Get siAdj,sjAdj,skAdj,normAdj
 
-          
+!      print *,'getting surface normals'
       call getSurfaceNormalsAdj(xAdj,siAdj,sjAdj,skAdj,normAdj, &
            iiBeg,iiEnd,jjBeg,jjEnd,mm,level,nn,sps,righthanded)
-
-      call computeForcesPressureAdj(wAdj, pAdj)
-
       
+ !     print *,'computing pressures'
+      call computeForcesPressureAdj(wAdj, pAdj)
+      
+  !    print *,'applyingbcs'
+      call applyAllBCForcesAdj(wInfAdj,pInfCorrAdj,wAdj, pAdj, &
+                              siAdj, sjAdj, skAdj, normAdj, &
+                              iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End,&
+                              secondHalo,mm)
+
+   !   print *,'integrating forces'
       ! Integrate force components along the given subface
       call forcesAndMomentsAdj(cFpAdj,cMpAdj,cFvAdj,cMvAdj, &
            cFpAdjOut,cMpAdjOut, cFvAdjOut,cMvAdjOut, &

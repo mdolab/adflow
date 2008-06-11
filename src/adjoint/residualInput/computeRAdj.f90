@@ -69,10 +69,13 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
        call checkInputParamAdj(velDirFreestreamAdj,liftDirectionAdj,&
             dragDirectionAdj, Machadj, MachCoefAdj)
 
-       call referenceStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
-            dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,prefAdj,&
+       call referenceStateAdj(Machadj, MachCoefAdj,uInfAdj,prefAdj,&
             rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
             murefAdj, timerefAdj)
+       !call referenceStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
+       !     dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,prefAdj,&
+       !     rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
+       !     murefAdj, timerefAdj)
        !(velDirFreestreamAdj,liftDirectionAdj,&
        !     dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj)
 

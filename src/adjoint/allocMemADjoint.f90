@@ -86,8 +86,8 @@
                                 "Memory allocation failure for globalNode")
 
            ! initialization of globalCell
-           flowDoms(nn,level,sps)%globalCell(0:ib,0:jb,0:kb) = 0           
-           flowDoms(nn,level,sps)%globalNode(0:ib,0:jb,0:kb) = 0
+           flowDoms(nn,level,sps)%globalCell(0:ib,0:jb,0:kb) = -5           
+           flowDoms(nn,level,sps)%globalNode(0:ib,0:jb,0:kb) = -5
 
            allocate(flowDoms(nn,level,sps)%psiAdj(0:ib,0:jb,0:kb,1:nw),&
                     stat=ierr)

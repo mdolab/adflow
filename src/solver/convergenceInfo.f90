@@ -289,7 +289,7 @@
 
              ! Write the convergence info to stdout.
 
-             write(*,"(e12.5,1x)",advance="no") monGlob(mm)
+             write(*,"(e20.12,1x)",advance="no") monGlob(mm)
 
            enddo
 

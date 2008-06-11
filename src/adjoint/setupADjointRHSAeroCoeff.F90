@@ -2,9 +2,9 @@
 !     ******************************************************************
 !     *                                                                *
 !     * File:          setupADjointRHSAeroCoeff.F90                    *
-!     * Author:        Andre C. Marta                                  *
+!     * Author:        Andre C. Marta,C.A.(Sandy) Mader                *
 !     * Starting date: 10-04-2006                                      *
-!     * Last modified: 02-05-2007                                      *
+!     * Last modified: 06-09-2008                                      *
 !     *                                                                *
 !     ******************************************************************
 !
@@ -102,6 +102,9 @@
       !     *                                                                *
       !     ******************************************************************
       !
+
+      !Specify the existence of a second halo.
+      secondhalo = .true.
 #ifndef USE_NO_PETSC
 
       ! Determine the reference point for the moment computation in
@@ -274,13 +277,47 @@
                j2Beg= BCData(mm)%jnBeg+1; j2End = BCData(mm)%jnEnd
                !print *,'cladjb',cladjb
                
-               call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+	       call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
-&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
-&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
+&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+&  timerefadj, pinfcorradj)
+
+!		print *,'output',xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+!&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+!&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+!&  timerefadj, pinfcorradj
+
+!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
+!&  , machadjb, machcoefadj, machcoefadjb, prefadj, rhorefadj, pinfdimadj&
+!&  , rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
+!               call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
+!&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
+!&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
+
+!		print *,'setup',xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
+!&  , machadjb, machcoefadj, machcoefadjb, prefadj, rhorefadj, pinfdimadj&
+!&  , rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj
+
 !COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 !                    &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 !                    &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
@@ -344,36 +381,30 @@
             ! global node numbering already accounts for that since
             ! it starts at node 0.
 
-            do icell = 0,ib
+            do kcell = 0,kb
                do jcell = 0,jb
-                  do kcell = 0,kb
-                     
+                  do icell = 0,ib  
                      idxmgb = globalCell(icell,jcell,kcell)
                      
                      test = sum(wAdjB(icell,jcell,kcell,:))
-                     !print *,'test',test
-                     if (idxmgb<0 .or. idxmgb>nCellsGlobal) then
-			 cycle
-  		     endif
+                     !print *,'test',wAdjB(icell,jcell,kcell,:)!test
+                     if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
+	                !print *,'setting PETSc Vector',sum(wAdjB(icell,jcell,kcell,:))
+                       dJdWlocal(:) = wAdjB(icell,jcell,kcell,:)
                      
-                     if (test == 0) then
-                        cycle
-		     endif
-		     !print *,'setting PETSc Vector',sum(wAdjB(icell,jcell,kcell,:))
-                     dJdWlocal(:) = wAdjB(icell,jcell,kcell,:)
-                     
-    !                call VecSetValuesBlocked(dJdW, 1, idxmgb, dJdWlocal, &
-    !                                         INSERT_VALUES, PETScIerr)
-                     call VecSetValuesBlocked(dJdW, 1, idxmgb, dJdWlocal, &
-                          ADD_VALUES, PETScIerr)
+                       call VecSetValuesBlocked(dJdW, 1, idxmgb, dJdWlocal, &
+                                                ADD_VALUES, PETScIerr)
+       !                 call VecSetValuesBlocked(dJdW, 1, idxmgb, dJdWlocal, &
+       !                      ADD_VALUES, PETScIerr)
             
-                     if( PETScIerr/=0 ) then
-                        write(errorMessage,99) &
-                             "Error in VecSetValuesBlocked for global node", &
-                             idxmgb
-                        call terminate("setupADjointRHSAeroCoeff", &
-                             errorMessage)
-                     endif
+                        if( PETScIerr/=0 ) then
+                           write(errorMessage,99) &
+                                "Error in VecSetValuesBlocked for global node", &
+                                idxmgb
+                           call terminate("setupADjointRHSAeroCoeff", &
+                                errorMessage)
+                        endif
+		     endif
                   enddo
                enddo
             enddo

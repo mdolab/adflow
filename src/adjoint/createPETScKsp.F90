@@ -55,7 +55,7 @@
       integer(kind=intType), dimension(:,:), pointer :: ind1,   ind2
 
       logical :: ASM =.False.!.True.!.False.
-      logical :: BJACOBI =.True.!.False.
+      logical :: BJACOBI =.False.!.True.!.False.!
 
       logical :: GMRES =.True.!.False.
       logical :: FGMRES =.False.!.True.!.False.
@@ -102,6 +102,10 @@
 #define PCLU 'lu'
 #define KSPFGMRES     "fgmres"
 #define MATORDERING_NATURAL       "natural"
+#define MATORDERING_ND        "nd"
+#define MATORDERING_1WD       "1wd"
+#define MATORDERING_RCM       "rcm"
+#define MATORDERING_QMD       "qmd"
 
 !
 !     ******************************************************************
@@ -1019,7 +1023,7 @@
       call PCBJacobiSetLocalBlocks(pc,Nsub,length,PETScIerr)
 
       !Setup KSP context before calling local subdomain ksp contexts
-      call KSPSetUp(ksp, PETScIerr);
+      call KSPSetUp(ksp, PETScIerr)
 
       !Setup local subcontexts
       call PCBJacobiGetSubKSP(pc,nlocal,first,subksp,PETScIerr)
@@ -1054,8 +1058,12 @@
 
       call KSPMonitorSet(ksp,KSPMonitorDefault, PETSC_NULL_OBJECT, &
                          PETSC_NULL_FUNCTION, PETScIerr)
+!*********************
+! Single Processor ILU
+!*********************
 
       else
+      print *,'inpcliu'
       !Set basic ILU (for single processor only!)
 
       !Set the convergence monitor
@@ -1066,12 +1074,14 @@
 
       !Set preconditioner type
       call PCSetType(pc, PCILU, PETScIerr)
+      !call PCSetType(pc, PCLU, PETScIerr)
    
       !Set ILU Levels
       call PCFactorSetLevels(pc, ILULevels, PETScIerr)
    
       !Set matrix ordering
-      call PCFactorSetMatOrderingtype(pc,MATORDERING_RCM, PETScIerr)
+      !!call PCFactorSetMatOrderingtype(pc,MATORDERING_RCM, PETScIerr)
+      call PCFactorSetMatOrderingtype(pc,MATORDERING_ND, PETScIerr)
 
       endif !pctype
 
