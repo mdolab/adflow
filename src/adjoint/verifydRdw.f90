@@ -267,7 +267,7 @@
                           rhoinfAdj, pinfAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj)
 !                     print *,'Stencil Copied'
-                     print *,'wadj',wadj
+!                     print *,'wadj',wadj
                      mLoop: do m = 1, nw           ! Loop over output cell residuals (R)
 !                        print *,'initializing variables'
                         ! Initialize the seed for the reverse mode
@@ -277,7 +277,7 @@
                         alphaadjb = 0.
                         betaadjb = 0.
                         machadjb = 0.
-                        print *,'dwadjb',dwadjb,'wadjb',wadjb(0,0,0,:)
+!                        print *,'dwadjb',dwadjb,'wadjb',wadjb(0,0,0,:)
 
   !                      print *,'calling reverse mode'
 !                        print *,'secondhalo',secondhalo
@@ -286,11 +286,11 @@
                 !                          dR(iCell,jCell,kCell,l)
                 ! wAdjb(ii,jj,kk,n) = --------------------------------
                 !                     dW(iCell+ii,jCell+jj,kCell+kk,n)
-                        print *,'input',wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                             &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                             &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
-                             &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-                             &  murefadj, timerefadj, pinfcorradj   
+ !                       print *,'input',wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
+ !                            &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
+ !                            &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
+ !                            &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+ !                            &  murefadj, timerefadj, pinfcorradj   
                         
                         ! Call reverse mode of residual computation
                         call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
@@ -301,7 +301,7 @@
                        ! call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
                        !      dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
                        !      correctfork, secondhalo)
-                        print *,'wadjb',wAdjB( 0, 0, 0,:)
+                        !print *,'wadjb',wAdjB( 0, 0, 0,:)
                         ! Store the block Jacobians (by rows).
  !                       print *,'entering storage loop'
                         do ii=-2,2!1,il-1
@@ -337,7 +337,7 @@
                         enddo !ii
                         
                      end do mLoop
-                     stop
+                     !stop
                   end do !iCell
                end do !jCell
             end do! kCell
@@ -688,8 +688,8 @@
                         if( idxres>=0 .and. idxstate>=0) then
                            dRdwErr(idxres, idxstate, 1, 1) = dRdwAdj(idxres, idxstate, 1, 1) - dRdwFD1(idxres, idxstate, 1, 1)
 !                           if(dRdwFD(idxres,idxstate,1,1).ne.0 .and. dRdwErr(idxres, idxstate, 1, 1)>1e-10.and.dRdwAdj(idxres, idxstate, 1, 1)==0) then
-!                           if(dRdwFD(idxres,idxstate,1,1).ne.0 .and. dRdwErr(idxres, idxstate, 1, 1)>1e-10) then
-                           if(dRdwFD1(idxres,idxstate,1,1).ne.0 .and. dRdwAdj(idxres, idxstate, 1, 1)==0.0) then
+                           if(dRdwFD1(idxres,idxstate,1,1).ne.0 .and. dRdwErr(idxres, idxstate, 1, 1)>1e-8) then
+!                           if(dRdwFD1(idxres,idxstate,1,1).ne.0 .and. dRdwAdj(idxres, idxstate, 1, 1)==0.0) then
                            !if(dRdwFD(idxres,idxstate,1,1).ne.0) then
                            !if(dRdwFD(idxres,idxstate,1,1)>1e-12) then
                               !if((ii.ne.zero .and.jj.ne.zero).and.(ii.ne.zero .and.kk.ne.zero).and.(kk.ne.zero .and.jj.ne.zero))then

@@ -66,7 +66,7 @@ subroutine setupGradientRHSExtra(level,costFunction)
 
   ! idxmg - global row index
 
-  integer(kind=intType) :: idxmg
+  integer(kind=intType) :: idxmg,liftIndex
 
   ! auxiliar variables to compute dJ/dalpha and dJ/dbeta
   real(kind=realType), dimension(3) :: cFp, cFv
@@ -196,7 +196,7 @@ subroutine setupGradientRHSExtra(level,costFunction)
        
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
              MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-             rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps)
+             rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
  
         wAdjB(:,:,:,:) = zero ! > return dCf/dw
         xAdjB(:,:,:,:) = zero ! > return dCf/dx
@@ -275,7 +275,7 @@ subroutine setupGradientRHSExtra(level,costFunction)
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
 &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj)
+&  timerefadj, pinfcorradj,liftIndex)
 
 
 	   enddo bocoLoop

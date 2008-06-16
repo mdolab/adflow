@@ -110,7 +110,8 @@
            ! The symmetry boundary conditions.
        
 !*************************
-!       call bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
+       call bcSymmForcesAdj(secondHalo, wAdj,pAdj,normAdj,mm,&
+            iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End)
 !**************************
 !###       call bcSymmPolar(secondHalo)
 

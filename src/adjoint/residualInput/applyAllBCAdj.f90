@@ -99,7 +99,7 @@
            ! The symmetry boundary conditions.
        
 !*************************
-!       call bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
+       call bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
 !**************************
 !###       call bcSymmPolar(secondHalo)
 

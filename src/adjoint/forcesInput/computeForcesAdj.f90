@@ -16,7 +16,8 @@
                        nn,level,sps,cFpAdj,cMpAdj,righthanded,secondhalo,&
                        alphaAdj,betaAdj,machAdj,machcoefAdj,prefAdj,&
                        rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                       rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj)
+                       rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,&
+                       liftIndex)
         !(xAdj, &
         !         iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
         !         mm,cFxAdj,cFyAdj,cFzAdj, &
@@ -49,6 +50,8 @@
       integer(kind=intType), intent(in) :: mm,nn,level, sps
       integer(kind=intType), intent(in) :: iiBeg,iiEnd,jjBeg,jjEnd
       integer(kind=intType), intent(in) :: i2Beg,i2End,j2Beg,j2End
+      
+      integer(kind=intType)::liftIndex
 
       real(kind=realType), dimension(3) :: refPoint
       real(kind=realType) :: yplusMax
@@ -103,7 +106,7 @@
 
 !      call the initialization routines to calculate the effect of Mach and alpha
       call adjustInflowAngleForcesAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
-           liftDirectionAdj,dragDirectionAdj)
+           liftDirectionAdj,dragDirectionAdj,liftIndex)
       
       call checkInputParamForcesAdj(velDirFreestreamAdj,liftDirectionAdj,&
            dragDirectionAdj, Machadj, MachCoefAdj)
@@ -162,6 +165,7 @@
       CLAdj(sps) = (cfpAdjOut(1) + cfvAdjOut(1))*liftDirectionAdj(1) &
                  + (cfpAdjOut(2) + cfvAdjOut(2))*liftDirectionAdj(2) &
                  + (cfpAdjOut(3) + cfvAdjOut(3))*liftDirectionAdj(3)
+      !print *,'cfpadjout',cfpadjout,liftdirectionadj
       
       CDAdj(sps) = (cfpAdjOut(1) + cfvAdjOut(1))*dragDirectionAdj(1) &
                  + (cfpAdjOut(2) + cfvAdjOut(2))*dragDirectionAdj(2) &

@@ -431,14 +431,14 @@ subroutine verifydCfdw(level)
 &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
 &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
 &  timerefadj, pinfcorradj)
-           print *,'output',xadj, xadjb, wadj, wadjb, padj, iibeg, &
-&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
-&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj
+!!$           print *,'output',xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!!$&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!!$&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!!$&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!!$&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+!!$&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+!!$&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+!!$&  timerefadj, pinfcorradj
            
            
            do k = 0,kb
@@ -778,9 +778,10 @@ subroutine verifydCfdw(level)
          !loop over all points
 
          do i = 0,ib
-            !print *,'i=',i
+            print *,'i=',i
             do j = 0,jb
                do k = 0,kb
+                  !print *,'k',k
                   do l = 1,nw
                      wref = w(i,j,k,l)
 
@@ -1386,33 +1387,33 @@ subroutine verifydCfdw(level)
                  
               enddo
               
-!!$              ! Output if error
-!!$
-!!$              write(*,10) "Jacobian dCLer,dCL,dCLfd @ proc/block", &
-!!$                    myID, nn, "for cell", iCell,jCell,kCell
-!!$              do m=1,nw
-!!$                 if (dCLer(nn,iCell,jCell,kCell,m)/=0)          &
-!!$                  write(*,20) (dCLer(nn,iCell,jCell,kCell,m)), &
-!!$                              (dCL(nn,iCell,jCell,kCell,m)),   &
-!!$                              (dCLfd(nn,iCell,jCell,kCell,m))
-!!$              enddo
-!!$              write(*,10) "Jacobian dCDer,dCD,dCDfd @ proc/block", &
-!!$                   myID, nn, "for cell", iCell,jCell,kCell
-!!$              do m=1,nw
-!!$                 if (dCDer(nn,iCell,jCell,kCell,m)/=0)          &
-!!$                      write(*,20) (dCDer(nn,iCell,jCell,kCell,m)), &
-!!$                      (dCD(nn,iCell,jCell,kCell,m)),   &
-!!$                      (dCDfd(nn,iCell,jCell,kCell,m))
-!!$              enddo
-!!$              
-!!$              write(*,10) "Jacobian dCmxer,dCmx,dCmxfd @ proc/block", &
-!!$                   myID, nn, "for cell", iCell,jCell,kCell
-!!$              do m=1,nw
-!!$                 if (dCmxer(nn,iCell,jCell,kCell,m)/=0)          &
-!!$                      write(*,20) (dCmxer(nn,iCell,jCell,kCell,m)), &
-!!$                      (dCmx(nn,iCell,jCell,kCell,m)),   &
-!!$                      (dCmxfd(nn,iCell,jCell,kCell,m))
-!!$              enddo
+              ! Output if error
+
+              write(*,10) "Jacobian dCLer,dCL,dCLfd @ proc/block", &
+                    myID, nn, "for cell", iCell,jCell,kCell
+              do m=1,nw
+                 if (dCLer(nn,iCell,jCell,kCell,m)/=0)          &
+                  write(*,20) (dCLer(nn,iCell,jCell,kCell,m)), &
+                              (dCL(nn,iCell,jCell,kCell,m)),   &
+                              (dCLfd(nn,iCell,jCell,kCell,m))
+              enddo
+              write(*,10) "Jacobian dCDer,dCD,dCDfd @ proc/block", &
+                   myID, nn, "for cell", iCell,jCell,kCell
+              do m=1,nw
+                 if (dCDer(nn,iCell,jCell,kCell,m)/=0)          &
+                      write(*,20) (dCDer(nn,iCell,jCell,kCell,m)), &
+                      (dCD(nn,iCell,jCell,kCell,m)),   &
+                      (dCDfd(nn,iCell,jCell,kCell,m))
+              enddo
+              
+              write(*,10) "Jacobian dCmxer,dCmx,dCmxfd @ proc/block", &
+                   myID, nn, "for cell", iCell,jCell,kCell
+              do m=1,nw
+                 if (dCmxer(nn,iCell,jCell,kCell,m)/=0)          &
+                      write(*,20) (dCmxer(nn,iCell,jCell,kCell,m)), &
+                      (dCmx(nn,iCell,jCell,kCell,m)),   &
+                      (dCmxfd(nn,iCell,jCell,kCell,m))
+              enddo
               
            enddo
         enddo

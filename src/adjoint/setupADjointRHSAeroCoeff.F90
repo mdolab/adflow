@@ -52,7 +52,7 @@
       real(kind=realType), dimension(3) :: cFpAdj, cFvAdj
       real(kind=realType), dimension(3) :: cMpAdj, cMvAdj
 
-      integer(kind=intType) :: nn, mm, i, j
+      integer(kind=intType) :: nn, mm, i, j,liftIndex
       integer(kind=intType) :: iiBeg, iiEnd, jjBeg, jjEnd
       integer(kind=intType) ::  i2Beg,  i2End,  j2Beg,  j2End
 
@@ -171,7 +171,7 @@
             ! Compute the face normals on the subfaces
             call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
               MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-              rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps)
+              rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
 !copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
         
             bocoLoop: do mm=1,nBocos
@@ -275,8 +275,8 @@
                
                i2Beg= BCData(mm)%inBeg+1; i2End = BCData(mm)%inEnd
                j2Beg= BCData(mm)%jnBeg+1; j2End = BCData(mm)%jnEnd
-               !print *,'cladjb',cladjb
-               
+               !print *,'cladjb',cladjb,cdadjb
+               !print *,'before',sum(wadjb)
 	       call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
@@ -284,7 +284,16 @@
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
 &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj)
+&  timerefadj, pinfcorradj, liftindex)
+!(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+!&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+!&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+!&  timerefadj, pinfcorradj)
+	       !print *,'after',sum(wadjb)
 
 !		print *,'output',xadj, xadjb, wadj, wadjb, padj, iibeg, &
 !&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
@@ -387,8 +396,9 @@
                      idxmgb = globalCell(icell,jcell,kcell)
                      
                      test = sum(wAdjB(icell,jcell,kcell,:))
-                     !print *,'test',wAdjB(icell,jcell,kcell,:)!test
+                     !print *,'test',test,idxmgb
                      if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
+			!print *,'test',test,idxmgb
 	                !print *,'setting PETSc Vector',sum(wAdjB(icell,jcell,kcell,:))
                        dJdWlocal(:) = wAdjB(icell,jcell,kcell,:)
                      

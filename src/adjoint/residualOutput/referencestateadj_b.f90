@@ -409,8 +409,8 @@ SUBROUTINE REFERENCESTATEADJ_B(machadj, machadjb, machcoefadj, uinfadj, &
     pinfadj = pinfdim/prefadj
     rhoinfadj = rhoinfdimadj/rhorefadj
     machadjb = SQRT(gammainf*pinfadj/rhoinfadj)*uinfadjb
- !   gammaconstantb = 0.0
+!    gammaconstantb = 0.0
 !    rgasdimb = 0.0
- !   tempfreestreamb = 0.0
+!    tempfreestreamb = 0.0
   END IF
 END SUBROUTINE REFERENCESTATEADJ_B

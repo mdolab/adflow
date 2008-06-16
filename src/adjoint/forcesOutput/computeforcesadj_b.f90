@@ -25,7 +25,7 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
 &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj)
+&  timerefadj, pinfcorradj, liftindex)
   USE blockpointers
   USE inputtimespectral
   USE bctypes
@@ -63,6 +63,7 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
   INTEGER(KIND=INTTYPE), INTENT(IN) :: mm, nn, level, sps
   INTEGER(KIND=INTTYPE), INTENT(IN) :: iibeg, iiend, jjbeg, jjend
   INTEGER(KIND=INTTYPE), INTENT(IN) :: i2beg, i2end, j2beg, j2end
+  INTEGER(KIND=INTTYPE) :: liftindex
   REAL(KIND=REALTYPE), DIMENSION(3) :: refpoint
   REAL(KIND=REALTYPE) :: yplusmax
   REAL(KIND=REALTYPE), DIMENSION(3) :: cfpadj, cmpadj, cfvadj, cmvadj
@@ -131,7 +132,8 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 ! Compute the forces.
 !      call the initialization routines to calculate the effect of Mach and alpha
   CALL ADJUSTINFLOWANGLEFORCESADJ(alphaadj, betaadj, veldirfreestreamadj&
-&                            , liftdirectionadj, dragdirectionadj)
+&                            , liftdirectionadj, dragdirectionadj, &
+&                            liftindex)
   CALL PUSHREAL8(machcoefadj)
   CALL PUSHREAL8ARRAY(liftdirectionadj, 3)
   CALL PUSHREAL8ARRAY(veldirfreestreamadj, 3)
@@ -188,6 +190,7 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 !     level,mm,nn,machCoefAdj)
 !end if invForce
 ! Compute the force components for the current block subface
+!print *,'cfpadjout',cfpadjout,liftdirectionadj
   cmvadjoutb(:) = 0.0
   cmpadjoutb(:) = 0.0
   cmpadjoutb(3) = cmzadjb(sps)
@@ -273,5 +276,6 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
   CALL ADJUSTINFLOWANGLEFORCESADJ_B(alphaadj, alphaadjb, betaadj, &
 &                              betaadjb, veldirfreestreamadj, &
 &                              veldirfreestreamadjb, liftdirectionadj, &
-&                              liftdirectionadjb, dragdirectionadj)
+&                              liftdirectionadjb, dragdirectionadj, &
+&                              liftindex)
 END SUBROUTINE COMPUTEFORCESADJ_B

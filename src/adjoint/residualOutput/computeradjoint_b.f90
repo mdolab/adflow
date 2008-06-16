@@ -19,7 +19,7 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
 &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
 &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-&  murefadj, timerefadj, pinfcorradj)
+&  murefadj, timerefadj, pinfcorradj, liftindex)
   USE blockpointers
   USE flowvarrefstate
   IMPLICIT NONE
@@ -35,7 +35,7 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
   LOGICAL :: secondhalo, correctfork
 !      Set Local Variables
 !variables for test loops
-  INTEGER(KIND=INTTYPE) :: i, j, k, ii, jj, kk
+  INTEGER(KIND=INTTYPE) :: i, j, k, ii, jj, kk, liftindex
   INTEGER(KIND=INTTYPE) :: istart, iend, jstart, jend, kstart, kend
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2) :: padj
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2) :: padjb
@@ -66,7 +66,7 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 ! *************************************************************************
 !      call the initialization routines to calculate the effect of Mach and alpha
   CALL ADJUSTINFLOWANGLEADJ(alphaadj, betaadj, veldirfreestreamadj, &
-&                      liftdirectionadj, dragdirectionadj)
+&                      liftdirectionadj, dragdirectionadj, liftindex)
   CALL PUSHREAL8ARRAY(veldirfreestreamadj, 3)
   CALL CHECKINPUTPARAMADJ(veldirfreestreamadj, liftdirectionadj, &
 &                    dragdirectionadj, machadj, machcoefadj)
@@ -213,5 +213,5 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 &                      machcoefadj)
   CALL ADJUSTINFLOWANGLEADJ_B(alphaadj, alphaadjb, betaadj, betaadjb, &
 &                        veldirfreestreamadj, veldirfreestreamadjb, &
-&                        liftdirectionadj, dragdirectionadj)
+&                        liftdirectionadj, dragdirectionadj, liftindex)
 END SUBROUTINE COMPUTERADJOINT_B

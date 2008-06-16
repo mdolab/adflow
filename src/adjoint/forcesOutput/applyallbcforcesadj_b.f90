@@ -105,6 +105,8 @@ SUBROUTINE APPLYALLBCFORCESADJ_B(winfadj, winfadjb, pinfcorradj, &
   LOGICAL :: correctfork
   EXTERNAL TERMINATE
   INTEGER :: branch
+  CALL PUSHREAL8ARRAY(padj, (ib+1)*(jb+1)*(kb+1))
+  CALL PUSHREAL8ARRAY(wadj, (ib+1)*(jb+1)*(kb+1)*nw)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -140,7 +142,8 @@ SUBROUTINE APPLYALLBCFORCESADJ_B(winfadj, winfadjb, pinfcorradj, &
 !!$           ! Apply all the boundary conditions. The order is important.
 ! The symmetry boundary conditions.
 !*************************
-!       call bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
+  CALL BCSYMMFORCESADJ(secondhalo, wadj, padj, normadj, mm, iibeg, iiend&
+&                 , jjbeg, jjend, i2beg, i2end, j2beg, j2end)
 !**************************
 !###       call bcSymmPolar(secondHalo)
 !!$       ! call bcEulerWall(secondHalo, correctForK)
@@ -196,4 +199,9 @@ SUBROUTINE APPLYALLBCFORCESADJ_B(winfadj, winfadjb, pinfcorradj, &
     winfadjb(:) = 0.0
     pinfcorradjb = 0.0
   END IF
+  CALL POPREAL8ARRAY(wadj, (ib+1)*(jb+1)*(kb+1)*nw)
+  CALL POPREAL8ARRAY(padj, (ib+1)*(jb+1)*(kb+1))
+  CALL BCSYMMFORCESADJ_B(secondhalo, wadj, wadjb, padj, padjb, normadj, &
+&                   normadjb, mm, iibeg, iiend, jjbeg, jjend, i2beg, &
+&                   i2end, j2beg, j2end)
 END SUBROUTINE APPLYALLBCFORCESADJ_B

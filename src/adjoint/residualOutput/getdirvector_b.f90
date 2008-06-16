@@ -3,7 +3,7 @@
 !  
 !  Differentiation of getdirvector in reverse (adjoint) mode:
 !   gradient, with respect to input variables: alpha beta
-!   of linear combination of output variables: zw xw yw
+!   of linear combination of output variables: winddirection
 !
 !     ******************************************************************
 !     *                                                                *
@@ -14,10 +14,11 @@
 !     *                                                                *
 !     ******************************************************************
 !
-SUBROUTINE GETDIRVECTOR_B(xb, yb, zb, alpha, alphab, beta, betab, xw, &
-&  xwb, yw, ywb, zw, zwb)
+SUBROUTINE GETDIRVECTOR_B(refdirection, alpha, alphab, beta, betab, &
+&  winddirection, winddirectionb, liftindex)
   USE constants
   IMPLICIT NONE
+!(xb,yb,zb,alpha,beta,xw,yw,zw)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -26,35 +27,40 @@ SUBROUTINE GETDIRVECTOR_B(xb, yb, zb, alpha, alphab, beta, betab, xw, &
 !     * computed given the direction angles in radians and the body    *
 !     * direction by performing two rotations on the original          *
 !     * direction vector:                                              *
-!     *   1) Rotation about the yb-axis: alpha clockwise (CW)          *
+!     *   1) Rotation about the zb or yb-axis: alpha clockwise (CW)    *
 !     *      (xb,yb,zb) -> (x1,y1,z1)                                  *
 !     *                                                                *
-!     *   2) Rotation about the z1-axis: beta counter-clockwise (CCW)  *
-!     *      (x1,y1,z1) -> (xw,yw,zw)                                  *
+!     *   2) Rotation about the yl or z1-axis: beta counter-clockwise  *
+!     *      (CCW)  (x1,y1,z1) -> (xw,yw,zw)                           *
 !     *                                                                *
 !     *    input arguments:                                            *
 !     *       alpha    = angle of attack in radians                    *
 !     *       beta     = side slip angle in radians                    *
+!     *       refDirection = reference direction vector                *
 !     *    output arguments:                                           *
-!     *       xw,yw,zw = unit wind vector in body axes                 *
+!     *       windDirection = unit wind vector in body axes            *
 !     *                                                                *
 !     ******************************************************************
 !
 !
 !     Subroutine arguments.
 !
-  REAL(KIND=REALTYPE), INTENT(IN) :: xb, yb, zb
+  REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: refdirection
   REAL(KIND=REALTYPE) :: alpha, beta
   REAL(KIND=REALTYPE) :: alphab, betab
-  REAL(KIND=REALTYPE) :: xw, yw, zw
-  REAL(KIND=REALTYPE) :: xwb, ywb, zwb
+  REAL(KIND=REALTYPE), DIMENSION(3) :: winddirection
+  REAL(KIND=REALTYPE), DIMENSION(3) :: winddirectionb
+  INTEGER(KIND=INTTYPE) :: liftindex
 !
 !     Local variables.
 !
-  REAL(KIND=REALTYPE) :: rnorm, xbn, ybn, zbn, x1, y1, z1
-  REAL(KIND=REALTYPE) :: xbnb, ybnb, zbnb, x1b, y1b, z1b
+  REAL(KIND=REALTYPE) :: rnorm, x1, y1, z1, xbn, ybn, zbn, xw, yw, zw
+  REAL(KIND=REALTYPE) :: x1b, y1b, z1b, xbnb, ybnb, zbnb, xwb, ywb, zwb
+  REAL(KIND=REALTYPE), DIMENSION(3) :: refdirectionnorm
+  EXTERNAL TERMINATE
   REAL(KIND=REALTYPE) :: arg1
   REAL(KIND=REALTYPE) :: arg1b
+  INTEGER :: branch
   INTRINSIC SQRT
 !
 !     ******************************************************************
@@ -64,10 +70,11 @@ SUBROUTINE GETDIRVECTOR_B(xb, yb, zb, alpha, alphab, beta, betab, xw, &
 !     ******************************************************************
 !
 ! Normalize the input vector.
-  rnorm = SQRT(xb**2 + yb**2 + zb**2)
-  xbn = xb/rnorm
-  ybn = yb/rnorm
-  zbn = zb/rnorm
+  rnorm = SQRT(refdirection(1)**2 + refdirection(2)**2 + refdirection(3)&
+&    **2)
+  xbn = refdirection(1)/rnorm
+  ybn = refdirection(2)/rnorm
+  zbn = refdirection(3)/rnorm
 !!$      ! Compute the wind direction vector.
 !!$
 !!$      ! 1) rotate alpha radians cw about y-axis
@@ -79,20 +86,51 @@ SUBROUTINE GETDIRVECTOR_B(xb, yb, zb, alpha, alphab, beta, betab, xw, &
 !!$      !    ( <=> rotate z-axis -beta radians ccw)
 !!$
 !!$      call vectorRotation(xw, yw, zw, 3, -beta, x1, y1, z1)
+  IF (liftindex .EQ. 2) THEN
 ! Compute the wind direction vector.Aerosurf axes different!!
 ! 1) rotate alpha radians cw about z-axis
 !    ( <=> rotate z-axis alpha radians ccw)
-  arg1 = -alpha
-  CALL VECTORROTATION(x1, y1, z1, 3, arg1, xbn, ybn, zbn)
-  CALL PUSHREAL8(arg1)
+    arg1 = -alpha
+    CALL VECTORROTATION(x1, y1, z1, 3, arg1, xbn, ybn, zbn)
+    CALL PUSHREAL8(arg1)
 ! 2) rotate beta radians ccw about y-axis
 !    ( <=> rotate z-axis -beta radians ccw)
-  arg1 = -beta
-  CALL VECTORROTATION_B(xw, xwb, yw, ywb, zw, zwb, 2, arg1, arg1b, x1, &
-&                  x1b, y1, y1b, z1, z1b)
-  CALL POPREAL8(arg1)
-  betab = -arg1b
-  CALL VECTORROTATION_B(x1, x1b, y1, y1b, z1, z1b, 3, arg1, arg1b, xbn, &
-&                  xbnb, ybn, ybnb, zbn, zbnb)
-  alphab = -arg1b
+    arg1 = -beta
+    CALL PUSHINTEGER4(0)
+  ELSE IF (liftindex .EQ. 3) THEN
+! Compute the wind direction vector.Aerosurf axes different!!
+! 1) rotate alpha radians cw about z-axis
+!    ( <=> rotate z-axis alpha radians ccw)
+    CALL VECTORROTATION(x1, y1, z1, 2, alpha, xbn, ybn, zbn)
+! 2) rotate beta radians ccw about y-axis
+!    ( <=> rotate z-axis -beta radians ccw)
+    CALL PUSHINTEGER4(1)
+  ELSE
+    CALL PUSHINTEGER4(2)
+  END IF
+  zwb = winddirectionb(3)
+  winddirectionb(3) = 0.0
+  ywb = winddirectionb(2)
+  winddirectionb(2) = 0.0
+  xwb = winddirectionb(1)
+  CALL POPINTEGER4(branch)
+  IF (branch .LT. 2) THEN
+    IF (branch .LT. 1) THEN
+      CALL VECTORROTATION_B(xw, xwb, yw, ywb, zw, zwb, 2, arg1, arg1b, &
+&                      x1, x1b, y1, y1b, z1, z1b)
+      CALL POPREAL8(arg1)
+      betab = -arg1b
+      CALL VECTORROTATION_B(x1, x1b, y1, y1b, z1, z1b, 3, arg1, arg1b, &
+&                      xbn, xbnb, ybn, ybnb, zbn, zbnb)
+      alphab = -arg1b
+    ELSE
+      CALL VECTORROTATION_B(xw, xwb, yw, ywb, zw, zwb, 3, beta, betab, &
+&                      x1, x1b, y1, y1b, z1, z1b)
+      CALL VECTORROTATION_B(x1, x1b, y1, y1b, z1, z1b, 2, alpha, alphab&
+&                      , xbn, xbnb, ybn, ybnb, zbn, zbnb)
+    END IF
+  ELSE
+    alphab = 0.0
+    betab = 0.0
+  END IF
 END SUBROUTINE GETDIRVECTOR_B

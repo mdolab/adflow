@@ -82,6 +82,9 @@ SUBROUTINE APPLYALLBCADJ_B(winfadj, winfadjb, pinfcorradj, pinfcorradjb&
   LOGICAL :: correctfork
   EXTERNAL TERMINATE
   INTEGER :: branch
+  CALL PUSHBOOLEAN(secondhalo)
+  CALL PUSHREAL8ARRAY(padj, 5**3)
+  CALL PUSHREAL8ARRAY(wadj, 5**3*nw)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -117,7 +120,7 @@ SUBROUTINE APPLYALLBCADJ_B(winfadj, winfadjb, pinfcorradj, pinfcorradjb&
 !!$           ! Apply all the boundary conditions. The order is important.
 ! The symmetry boundary conditions.
 !*************************
-!       call bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
+  CALL BCSYMMADJ(wadj, padj, normadj, icell, jcell, kcell, secondhalo)
 !**************************
 !###       call bcSymmPolar(secondHalo)
 !!$       ! call bcEulerWall(secondHalo, correctForK)
@@ -171,4 +174,9 @@ SUBROUTINE APPLYALLBCADJ_B(winfadj, winfadjb, pinfcorradj, pinfcorradjb&
     winfadjb(:) = 0.0
     pinfcorradjb = 0.0
   END IF
+  CALL POPREAL8ARRAY(wadj, 5**3*nw)
+  CALL POPREAL8ARRAY(padj, 5**3)
+  CALL POPBOOLEAN(secondhalo)
+  CALL BCSYMMADJ_B(wadj, wadjb, padj, padjb, normadj, normadjb, icell, &
+&             jcell, kcell, secondhalo)
 END SUBROUTINE APPLYALLBCADJ_B

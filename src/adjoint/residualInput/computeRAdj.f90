@@ -14,7 +14,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
                           nn,sps, correctForK,secondHalo,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj)
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
   
 !      Set Use Modules
   use blockPointers
@@ -37,7 +37,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
 !      Set Local Variables
 
   !variables for test loops
-  integer(kind=intType)::i,j,k,ii,jj,kk
+  integer(kind=intType)::i,j,k,ii,jj,kk,liftIndex
   integer(kind=intType) :: iStart,iEnd,jStart,jEnd,kStart,kEnd
 
   real(kind=realType), dimension(-2:2,-2:2,-2:2) :: pAdj
@@ -64,7 +64,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
   
 !      call the initialization routines to calculate the effect of Mach and alpha
        call adjustInflowAngleAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
-            liftDirectionAdj,dragDirectionAdj)
+            liftDirectionAdj,dragDirectionAdj,liftIndex)
   
        call checkInputParamAdj(velDirFreestreamAdj,liftDirectionAdj,&
             dragDirectionAdj, Machadj, MachCoefAdj)

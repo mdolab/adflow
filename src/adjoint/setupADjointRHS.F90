@@ -1,3 +1,4 @@
+
 !
 !     ******************************************************************
 !     *                                                                *
@@ -209,11 +210,11 @@
       ! or PETSc users manual, pp.36,148
 
       if( debug ) then
-	!call VecView(dJdW,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-	call VecView(dJdW,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+	call VecView(dJdW,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+	!call VecView(dJdW,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
         if( PETScIerr/=0 ) &
           call terminate("setupADjointRHS", "Error in VecView")
-        !pause
+        pause
       endif
 
       ! Flush the output buffer and synchronize the processors.

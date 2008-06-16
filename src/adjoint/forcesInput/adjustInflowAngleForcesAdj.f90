@@ -9,7 +9,7 @@
 !      ******************************************************************
 !
 subroutine adjustInflowAngleForcesAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
-     liftDirectionAdj,dragDirectionAdj)
+     liftDirectionAdj,dragDirectionAdj,liftIndex)
 
   use constants
   implicit none
@@ -20,11 +20,13 @@ subroutine adjustInflowAngleForcesAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
    real(kind=realType), dimension(3) :: dragDirectionAdj
 
    real(kind=realType) :: alphaAdj, betaAdj
-
+   integer(kind=intType)::liftIndex
 
 !Local Vars
    
+   
    real(kind=realType) ::temp1, temp2, temp3
+   real(kind=realType), dimension(3) :: refDirection
 
 !Begin Execution
 
@@ -42,14 +44,18 @@ subroutine adjustInflowAngleForcesAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
 !                        velDirFreestreamAdj(1), &
 !                        velDirFreestreamAdj(2), &
 !                        velDirFreestreamAdj(3))
-      call getDirVectorForces(one, zero, zero, alphaAdj, betaAdj, &
-           temp1, &
-           temp2, &
-           temp3)
+      refDirection(:) = zero
+      refDirection(1) = one
+      call getDirVectorForces(refDirection, alphaAdj, betaAdj,&
+           velDirFreestreamAdj,liftIndex)
+!      call getDirVectorForces(one, zero, zero, alphaAdj, betaAdj, &
+!           temp1, &
+!!           temp2, &
+!           temp3)
       
-      velDirFreestreamAdj(1) = temp1
-      velDirFreestreamAdj(2) = temp2
-      velDirFreestreamAdj(3) = temp3
+!!      velDirFreestreamAdj(1) = temp1
+!      velDirFreestreamAdj(2) = temp2
+!      velDirFreestreamAdj(3) = temp3
 
       ! Drag direction given by the rotation of a unit vector
       ! initially aligned along the positive x-direction (1,0,0)
@@ -63,15 +69,18 @@ subroutine adjustInflowAngleForcesAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
       !temp1 = dragDirectionAdj(1)
       !temp2 = dragDirectionAdj(2)
       !temp3 = dragDirectionAdj(3)
-
-      call getDirVectorForces(one, zero, zero, alphaAdj, betaAdj, &
-           temp1, &
-           temp2, &
-           temp3)
-
-      dragDirectionAdj(1)= temp1
-      dragDirectionAdj(2)= temp2
-      dragDirectionAdj(3)= temp3
+      refDirection(:) = zero
+      refDirection(1) = one
+      call getDirVectorForces(refDirection, alphaAdj, betaAdj, dragDirectionAdj(1), &
+           liftIndex)
+!      call getDirVectorForces(one, zero, zero, alphaAdj, betaAdj, &
+!           temp1, &
+!           temp2, &
+!           temp3)!
+!
+!      dragDirectionAdj(1)= temp1
+!      dragDirectionAdj(2)= temp2
+!      dragDirectionAdj(3)= temp3
 
       ! Lift direction given by the rotation of a unit vector
       ! initially aligned along the positive z-direction (0,0,1)
@@ -85,14 +94,18 @@ subroutine adjustInflowAngleForcesAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
       !temp1 = liftDirectionAdj(1)
       !temp2 = liftDirectionAdj(2)
       !temp3 = liftDirectionAdj(3)
+      refDirection(:) = zero
+      refDirection(liftIndex) = one
+      
+      call getDirVectorForces(refDirection, alphaAdj, betaAdj,liftDirectionAdj, &
+           liftIndex)
+!!      call getDirVectorForces(zero, one, zero, alphaAdj, betaAdj, &
+!           temp1, &
+!           temp2, &
+!           temp3!)
 
-      call getDirVectorForces(zero, one, zero, alphaAdj, betaAdj, &
-           temp1, &
-           temp2, &
-           temp3)
-
-      liftDirectionAdj(1)= temp1
-      liftDirectionAdj(2)= temp2
-      liftDirectionAdj(3)= temp3
+!      liftDirectionAdj(1)= temp1
+!      liftDirectionAdj(2)= temp2
+!      liftDirectionAdj(3)= temp3
 
     end subroutine adjustInflowAngleForcesAdj
