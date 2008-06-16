@@ -42,6 +42,7 @@ FF90_OBJECTS = adjustinflowangleadj_b.o   \
 	       applyallbcadj_b.o          \
 	       bceulerwalladj_b.o         \
 	       bcfarfieldadj_b.o          \
+	       bcsymmadj_b.o              \
 	       checkinputparamadj_b.o     \
                computepressureadj_b.o     \
 	       computeradjoint_b.o        \

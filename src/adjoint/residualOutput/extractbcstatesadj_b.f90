@@ -3,9 +3,9 @@
 !  
 !  Differentiation of extractbcstatesadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: padj0 padj1 padj2
-!                padj padj3 wadj wadj0 wadj1 wadj2
+!                padj padj3 wadj wadj0 wadj1 wadj2 wadj3
 !   of linear combination of output variables: padj0 padj1 padj2
-!                padj padj3 wadj wadj0 wadj1 wadj2
+!                padj padj3 wadj wadj0 wadj1 wadj2 wadj3
 !
 !      ******************************************************************
 !      *                                                                *
@@ -17,11 +17,11 @@
 !      ******************************************************************
 !
 SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
-&  wadj0b, wadj1, wadj1b, wadj2, wadj2b, wadj3, padj0, padj0b, padj1, &
-&  padj1b, padj2, padj2b, padj3, padj3b, rlvadj, revadj, rlvadj1, &
-&  rlvadj2, revadj1, revadj2, ioffset, joffset, koffset, icell, jcell, &
-&  kcell, isbeg, jsbeg, ksbeg, isend, jsend, ksend, ibbeg, jbbeg, kbbeg&
-&  , ibend, jbend, kbend, icbeg, jcbeg, icend, jcend, secondhalo)
+&  wadj0b, wadj1, wadj1b, wadj2, wadj2b, wadj3, wadj3b, padj0, padj0b, &
+&  padj1, padj1b, padj2, padj2b, padj3, padj3b, rlvadj, revadj, rlvadj1&
+&  , rlvadj2, revadj1, revadj2, ioffset, joffset, koffset, icell, jcell&
+&  , kcell, isbeg, jsbeg, ksbeg, isend, jsend, ksend, ibbeg, jbbeg, &
+&  kbbeg, ibend, jbend, kbend, icbeg, jcbeg, icend, jcend, secondhalo)
   USE blockpointers, ONLY : ie, ib, je, jb, ke, kb, nbocos, bcfaceid, &
 &  bctype, bcdata
   USE bctypes
@@ -29,6 +29,7 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
   IMPLICIT NONE
 !    end if checkOverlap
 !  enddo
+!          print *,'offsets',ioffset,joffset
 !      ******************************************************************
 !      *                                                                *
 !      * copyBCStatesAdj copies the states needed for the boundary      *
@@ -59,7 +60,7 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, nw) :: wadj0, wadj1
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, nw) :: wadj0b, wadj1b
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, nw) :: wadj2, wadj3
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, nw) :: wadj2b
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, nw) :: wadj2b, wadj3b
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2) :: padj0, padj1
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2) :: padj0b, padj1b
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2) :: padj2, padj3
@@ -117,6 +118,9 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       padj1b(-2:2, -2:2) = 0.0
       padjb(-2, -2:2, -2:2) = padjb(-2, -2:2, -2:2) + padj0b(-2:2, -2:2)
       padj0b(-2:2, -2:2) = 0.0
+      wadjb(1, -2:2, -2:2, 1:nw) = wadjb(1, -2:2, -2:2, 1:nw) + wadj3b(-&
+&        2:2, -2:2, 1:nw)
+      wadj3b(-2:2, -2:2, :) = 0.0
       wadjb(0, -2:2, -2:2, 1:nw) = wadjb(0, -2:2, -2:2, 1:nw) + wadj2b(-&
 &        2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, :) = 0.0
@@ -133,6 +137,9 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       padj2b(-2:2, -2:2) = 0.0
       padjb(-2, -2:2, -2:2) = padjb(-2, -2:2, -2:2) + padj1b(-2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
+      wadjb(0, -2:2, -2:2, 1:nw) = wadjb(0, -2:2, -2:2, 1:nw) + wadj3b(-&
+&        2:2, -2:2, 1:nw)
+      wadj3b(-2:2, -2:2, :) = 0.0
       wadjb(-1, -2:2, -2:2, 1:nw) = wadjb(-1, -2:2, -2:2, 1:nw) + wadj2b&
 &        (-2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, :) = 0.0
@@ -155,6 +162,9 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       padj1b(-2:2, -2:2) = 0.0
       padjb(2, -2:2, -2:2) = padjb(2, -2:2, -2:2) + padj0b(-2:2, -2:2)
       padj0b(-2:2, -2:2) = 0.0
+      wadjb(-1, -2:2, -2:2, 1:nw) = wadjb(-1, -2:2, -2:2, 1:nw) + wadj3b&
+&        (-2:2, -2:2, 1:nw)
+      wadj3b(-2:2, -2:2, :) = 0.0
       wadjb(0, -2:2, -2:2, 1:nw) = wadjb(0, -2:2, -2:2, 1:nw) + wadj2b(-&
 &        2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, :) = 0.0
@@ -171,6 +181,9 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       padj2b(-2:2, -2:2) = 0.0
       padjb(2, -2:2, -2:2) = padjb(2, -2:2, -2:2) + padj1b(-2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
+      wadjb(0, -2:2, -2:2, 1:nw) = wadjb(0, -2:2, -2:2, 1:nw) + wadj3b(-&
+&        2:2, -2:2, 1:nw)
+      wadj3b(-2:2, -2:2, :) = 0.0
       wadjb(1, -2:2, -2:2, 1:nw) = wadjb(1, -2:2, -2:2, 1:nw) + wadj2b(-&
 &        2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, :) = 0.0
@@ -193,6 +206,9 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       padj1b(-2:2, -2:2) = 0.0
       padjb(-2:2, -2, -2:2) = padjb(-2:2, -2, -2:2) + padj0b(-2:2, -2:2)
       padj0b(-2:2, -2:2) = 0.0
+      wadjb(-2:2, 1, -2:2, 1:nw) = wadjb(-2:2, 1, -2:2, 1:nw) + wadj3b(-&
+&        2:2, -2:2, 1:nw)
+      wadj3b(-2:2, -2:2, :) = 0.0
       wadjb(-2:2, 0, -2:2, 1:nw) = wadjb(-2:2, 0, -2:2, 1:nw) + wadj2b(-&
 &        2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, :) = 0.0
@@ -209,6 +225,9 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       padj2b(-2:2, -2:2) = 0.0
       padjb(-2:2, -2, -2:2) = padjb(-2:2, -2, -2:2) + padj1b(-2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
+      wadjb(-2:2, 0, -2:2, 1:nw) = wadjb(-2:2, 0, -2:2, 1:nw) + wadj3b(-&
+&        2:2, -2:2, 1:nw)
+      wadj3b(-2:2, -2:2, :) = 0.0
       wadjb(-2:2, -1, -2:2, 1:nw) = wadjb(-2:2, -1, -2:2, 1:nw) + wadj2b&
 &        (-2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, :) = 0.0
@@ -231,6 +250,9 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       padj1b(-2:2, -2:2) = 0.0
       padjb(-2:2, 2, -2:2) = padjb(-2:2, 2, -2:2) + padj0b(-2:2, -2:2)
       padj0b(-2:2, -2:2) = 0.0
+      wadjb(-2:2, -1, -2:2, 1:nw) = wadjb(-2:2, -1, -2:2, 1:nw) + wadj3b&
+&        (-2:2, -2:2, 1:nw)
+      wadj3b(-2:2, -2:2, :) = 0.0
       wadjb(-2:2, 0, -2:2, 1:nw) = wadjb(-2:2, 0, -2:2, 1:nw) + wadj2b(-&
 &        2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, :) = 0.0
@@ -247,6 +269,9 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       padj2b(-2:2, -2:2) = 0.0
       padjb(-2:2, 2, -2:2) = padjb(-2:2, 2, -2:2) + padj1b(-2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
+      wadjb(-2:2, 0, -2:2, 1:nw) = wadjb(-2:2, 0, -2:2, 1:nw) + wadj3b(-&
+&        2:2, -2:2, 1:nw)
+      wadj3b(-2:2, -2:2, :) = 0.0
       wadjb(-2:2, 1, -2:2, 1:nw) = wadjb(-2:2, 1, -2:2, 1:nw) + wadj2b(-&
 &        2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, :) = 0.0
@@ -269,6 +294,9 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       padj1b(-2:2, -2:2) = 0.0
       padjb(-2:2, -2:2, -2) = padjb(-2:2, -2:2, -2) + padj0b(-2:2, -2:2)
       padj0b(-2:2, -2:2) = 0.0
+      wadjb(-2:2, -2:2, 1, 1:nw) = wadjb(-2:2, -2:2, 1, 1:nw) + wadj3b(-&
+&        2:2, -2:2, 1:nw)
+      wadj3b(-2:2, -2:2, :) = 0.0
       wadjb(-2:2, -2:2, 0, 1:nw) = wadjb(-2:2, -2:2, 0, 1:nw) + wadj2b(-&
 &        2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, :) = 0.0
@@ -285,6 +313,9 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       padj2b(-2:2, -2:2) = 0.0
       padjb(-2:2, -2:2, -2) = padjb(-2:2, -2:2, -2) + padj1b(-2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
+      wadjb(-2:2, -2:2, 0, 1:nw) = wadjb(-2:2, -2:2, 0, 1:nw) + wadj3b(-&
+&        2:2, -2:2, 1:nw)
+      wadj3b(-2:2, -2:2, :) = 0.0
       wadjb(-2:2, -2:2, -1, 1:nw) = wadjb(-2:2, -2:2, -1, 1:nw) + wadj2b&
 &        (-2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, :) = 0.0
@@ -307,6 +338,9 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       padj1b(-2:2, -2:2) = 0.0
       padjb(-2:2, -2:2, 2) = padjb(-2:2, -2:2, 2) + padj0b(-2:2, -2:2)
       padj0b(-2:2, -2:2) = 0.0
+      wadjb(-2:2, -2:2, -1, 1:nw) = wadjb(-2:2, -2:2, -1, 1:nw) + wadj3b&
+&        (-2:2, -2:2, 1:nw)
+      wadj3b(-2:2, -2:2, :) = 0.0
       wadjb(-2:2, -2:2, 0, 1:nw) = wadjb(-2:2, -2:2, 0, 1:nw) + wadj2b(-&
 &        2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, :) = 0.0
@@ -323,6 +357,9 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       padj2b(-2:2, -2:2) = 0.0
       padjb(-2:2, -2:2, 2) = padjb(-2:2, -2:2, 2) + padj1b(-2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
+      wadjb(-2:2, -2:2, 0, 1:nw) = wadjb(-2:2, -2:2, 0, 1:nw) + wadj3b(-&
+&        2:2, -2:2, 1:nw)
+      wadj3b(-2:2, -2:2, :) = 0.0
       wadjb(-2:2, -2:2, 1, 1:nw) = wadjb(-2:2, -2:2, 1, 1:nw) + wadj2b(-&
 &        2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, :) = 0.0

@@ -4,7 +4,7 @@
 !  Differentiation of extractbcstatesforcesadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: padj wadj
 !   of linear combination of output variables: padj0 padj1 padj2
-!                padj padj3 wadj wadj0 wadj1 wadj2
+!                padj padj3 wadj wadj0 wadj1 wadj2 wadj3
 !
 !      ******************************************************************
 !      *                                                                *
@@ -16,9 +16,10 @@
 !      ******************************************************************
 !
 SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
-&  wadj0, wadj0b, wadj1, wadj1b, wadj2, wadj2b, wadj3, padj0, padj0b, &
-&  padj1, padj1b, padj2, padj2b, padj3, padj3b, rlvadj, revadj, rlvadj1&
-&  , rlvadj2, revadj1, revadj2, icbeg, jcbeg, icend, jcend, secondhalo)
+&  wadj0, wadj0b, wadj1, wadj1b, wadj2, wadj2b, wadj3, wadj3b, padj0, &
+&  padj0b, padj1, padj1b, padj2, padj2b, padj3, padj3b, rlvadj, revadj, &
+&  rlvadj1, rlvadj2, revadj1, revadj2, icbeg, jcbeg, icend, jcend, &
+&  secondhalo)
   USE blockpointers, ONLY : ie, ib, je, jb, ke, kb, nbocos, bcfaceid, &
 &  bctype, bcdata
   USE bctypes
@@ -51,7 +52,8 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &  , wadj1b
   REAL(KIND=REALTYPE), DIMENSION(icbeg:icend, jcbeg:jcend, nw) :: wadj2&
 &  , wadj3
-  REAL(KIND=REALTYPE), DIMENSION(icbeg:icend, jcbeg:jcend, nw) :: wadj2b
+  REAL(KIND=REALTYPE), DIMENSION(icbeg:icend, jcbeg:jcend, nw) :: wadj2b&
+&  , wadj3b
   REAL(KIND=REALTYPE), DIMENSION(icbeg:icend, jcbeg:jcend) :: padj0, &
 &  padj1
   REAL(KIND=REALTYPE), DIMENSION(icbeg:icend, jcbeg:jcend) :: padj0b, &
@@ -96,6 +98,8 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcend) + padj1b(icbeg:icend, jcbeg:jcend)
       padjb(0, icbeg:icend, jcbeg:jcend) = padjb(0, icbeg:icend, jcbeg:&
 &        jcend) + padj0b(icbeg:icend, jcbeg:jcend)
+      wadjb(3, icbeg:icend, jcbeg:jcend, 1:nw) = wadjb(3, icbeg:icend, &
+&        jcbeg:jcend, 1:nw) + wadj3b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(2, icbeg:icend, jcbeg:jcend, 1:nw) = wadjb(2, icbeg:icend, &
 &        jcbeg:jcend, 1:nw) + wadj2b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(0, icbeg:icend, jcbeg:jcend, 1:nw) = wadjb(0, icbeg:icend, &
@@ -108,6 +112,8 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcend) + padj2b(icbeg:icend, jcbeg:jcend)
       padjb(0, icbeg:icend, jcbeg:jcend) = padjb(0, icbeg:icend, jcbeg:&
 &        jcend) + padj1b(icbeg:icend, jcbeg:jcend)
+      wadjb(2, icbeg:icend, jcbeg:jcend, 1:nw) = wadjb(2, icbeg:icend, &
+&        jcbeg:jcend, 1:nw) + wadj3b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(1, icbeg:icend, jcbeg:jcend, 1:nw) = wadjb(1, icbeg:icend, &
 &        jcbeg:jcend, 1:nw) + wadj2b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(0, icbeg:icend, jcbeg:jcend, 1:nw) = wadjb(0, icbeg:icend, &
@@ -138,6 +144,9 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcbeg:jcend) + padj1b(icbeg:icend, jcbeg:jcend)
       padjb(ib, icbeg:icend, jcbeg:jcend) = padjb(ib, icbeg:icend, jcbeg&
 &        :jcend) + padj0b(icbeg:icend, jcbeg:jcend)
+      wadjb(ib-3, icbeg:icend, jcbeg:jcend, 1:nw) = wadjb(ib-3, icbeg:&
+&        icend, jcbeg:jcend, 1:nw) + wadj3b(icbeg:icend, jcbeg:jcend, 1:&
+&        nw)
       wadjb(ib-2, icbeg:icend, jcbeg:jcend, 1:nw) = wadjb(ib-2, icbeg:&
 &        icend, jcbeg:jcend, 1:nw) + wadj2b(icbeg:icend, jcbeg:jcend, 1:&
 &        nw)
@@ -153,6 +162,9 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcbeg:jcend) + padj2b(icbeg:icend, jcbeg:jcend)
       padjb(ib, icbeg:icend, jcbeg:jcend) = padjb(ib, icbeg:icend, jcbeg&
 &        :jcend) + padj1b(icbeg:icend, jcbeg:jcend)
+      wadjb(ib-2, icbeg:icend, jcbeg:jcend, 1:nw) = wadjb(ib-2, icbeg:&
+&        icend, jcbeg:jcend, 1:nw) + wadj3b(icbeg:icend, jcbeg:jcend, 1:&
+&        nw)
       wadjb(ib-1, icbeg:icend, jcbeg:jcend, 1:nw) = wadjb(ib-1, icbeg:&
 &        icend, jcbeg:jcend, 1:nw) + wadj2b(icbeg:icend, jcbeg:jcend, 1:&
 &        nw)
@@ -184,6 +196,8 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcend) + padj1b(icbeg:icend, jcbeg:jcend)
       padjb(icbeg:icend, 0, jcbeg:jcend) = padjb(icbeg:icend, 0, jcbeg:&
 &        jcend) + padj0b(icbeg:icend, jcbeg:jcend)
+      wadjb(icbeg:icend, 3, jcbeg:jcend, 1:nw) = wadjb(icbeg:icend, 3, &
+&        jcbeg:jcend, 1:nw) + wadj3b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(icbeg:icend, 2, jcbeg:jcend, 1:nw) = wadjb(icbeg:icend, 2, &
 &        jcbeg:jcend, 1:nw) + wadj2b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(icbeg:icend, 1, jcbeg:jcend, 1:nw) = wadjb(icbeg:icend, 1, &
@@ -197,6 +211,8 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcend) + padj2b(icbeg:icend, jcbeg:jcend)
       padjb(icbeg:icend, 0, jcbeg:jcend) = padjb(icbeg:icend, 0, jcbeg:&
 &        jcend) + padj1b(icbeg:icend, jcbeg:jcend)
+      wadjb(icbeg:icend, 2, jcbeg:jcend, 1:nw) = wadjb(icbeg:icend, 2, &
+&        jcbeg:jcend, 1:nw) + wadj3b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(icbeg:icend, 1, jcbeg:jcend, 1:nw) = wadjb(icbeg:icend, 1, &
 &        jcbeg:jcend, 1:nw) + wadj2b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(icbeg:icend, 0, jcbeg:jcend, 1:nw) = wadjb(icbeg:icend, 0, &
@@ -226,6 +242,9 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcbeg:jcend) + padj1b(icbeg:icend, jcbeg:jcend)
       padjb(icbeg:icend, jb, jcbeg:jcend) = padjb(icbeg:icend, jb, jcbeg&
 &        :jcend) + padj0b(icbeg:icend, jcbeg:jcend)
+      wadjb(icbeg:icend, jb-3, jcbeg:jcend, 1:nw) = wadjb(icbeg:icend, &
+&        jb-3, jcbeg:jcend, 1:nw) + wadj3b(icbeg:icend, jcbeg:jcend, 1:&
+&        nw)
       wadjb(icbeg:icend, jb-2, jcbeg:jcend, 1:nw) = wadjb(icbeg:icend, &
 &        jb-2, jcbeg:jcend, 1:nw) + wadj2b(icbeg:icend, jcbeg:jcend, 1:&
 &        nw)
@@ -241,6 +260,9 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcbeg:jcend) + padj2b(icbeg:icend, jcbeg:jcend)
       padjb(icbeg:icend, jb, jcbeg:jcend) = padjb(icbeg:icend, jb, jcbeg&
 &        :jcend) + padj1b(icbeg:icend, jcbeg:jcend)
+      wadjb(icbeg:icend, jb-2, jcbeg:jcend, 1:nw) = wadjb(icbeg:icend, &
+&        jb-2, jcbeg:jcend, 1:nw) + wadj3b(icbeg:icend, jcbeg:jcend, 1:&
+&        nw)
       wadjb(icbeg:icend, jb-1, jcbeg:jcend, 1:nw) = wadjb(icbeg:icend, &
 &        jb-1, jcbeg:jcend, 1:nw) + wadj2b(icbeg:icend, jcbeg:jcend, 1:&
 &        nw)
@@ -269,6 +291,8 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcend, 1) + padj1b(icbeg:icend, jcbeg:jcend)
       padjb(icbeg:icend, jcbeg:jcend, 0) = padjb(icbeg:icend, jcbeg:&
 &        jcend, 0) + padj0b(icbeg:icend, jcbeg:jcend)
+      wadjb(icbeg:icend, jcbeg:jcend, 3, 1:nw) = wadjb(icbeg:icend, &
+&        jcbeg:jcend, 3, 1:nw) + wadj3b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(icbeg:icend, jcbeg:jcend, 2, 1:nw) = wadjb(icbeg:icend, &
 &        jcbeg:jcend, 2, 1:nw) + wadj2b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(icbeg:icend, jcbeg:jcend, 1, 1:nw) = wadjb(icbeg:icend, &
@@ -282,6 +306,8 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcend, 1) + padj2b(icbeg:icend, jcbeg:jcend)
       padjb(icbeg:icend, jcbeg:jcend, 0) = padjb(icbeg:icend, jcbeg:&
 &        jcend, 0) + padj1b(icbeg:icend, jcbeg:jcend)
+      wadjb(icbeg:icend, jcbeg:jcend, 2, 1:nw) = wadjb(icbeg:icend, &
+&        jcbeg:jcend, 2, 1:nw) + wadj3b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(icbeg:icend, jcbeg:jcend, 1, 1:nw) = wadjb(icbeg:icend, &
 &        jcbeg:jcend, 1, 1:nw) + wadj2b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(icbeg:icend, jcbeg:jcend, 0, 1:nw) = wadjb(icbeg:icend, &
@@ -309,6 +335,9 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcend, kb-1) + padj1b(icbeg:icend, jcbeg:jcend)
       padjb(icbeg:icend, jcbeg:jcend, kb) = padjb(icbeg:icend, jcbeg:&
 &        jcend, kb) + padj0b(icbeg:icend, jcbeg:jcend)
+      wadjb(icbeg:icend, jcbeg:jcend, kb-3, 1:nw) = wadjb(icbeg:icend, &
+&        jcbeg:jcend, kb-3, 1:nw) + wadj3b(icbeg:icend, jcbeg:jcend, 1:&
+&        nw)
       wadjb(icbeg:icend, jcbeg:jcend, kb-2, 1:nw) = wadjb(icbeg:icend, &
 &        jcbeg:jcend, kb-2, 1:nw) + wadj2b(icbeg:icend, jcbeg:jcend, 1:&
 &        nw)
@@ -324,6 +353,9 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcend, kb-1) + padj2b(icbeg:icend, jcbeg:jcend)
       padjb(icbeg:icend, jcbeg:jcend, kb) = padjb(icbeg:icend, jcbeg:&
 &        jcend, kb) + padj1b(icbeg:icend, jcbeg:jcend)
+      wadjb(icbeg:icend, jcbeg:jcend, kb-2, 1:nw) = wadjb(icbeg:icend, &
+&        jcbeg:jcend, kb-2, 1:nw) + wadj3b(icbeg:icend, jcbeg:jcend, 1:&
+&        nw)
       wadjb(icbeg:icend, jcbeg:jcend, kb-1, 1:nw) = wadjb(icbeg:icend, &
 &        jcbeg:jcend, kb-1, 1:nw) + wadj2b(icbeg:icend, jcbeg:jcend, 1:&
 &        nw)

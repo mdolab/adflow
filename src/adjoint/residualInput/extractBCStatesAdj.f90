@@ -153,7 +153,7 @@
           iRBeg = max(iSBeg, iBBeg); iREnd = min(iSEnd, iBEnd)
           jRBeg = max(jSBeg, jBBeg); jREnd = min(jSEnd, jBEnd)
           kRBeg = max(kSBeg, kBBeg); kREnd = min(kSEnd, kBEnd)
-          
+!          print *,'stencil',kSBeg, kBBeg,krbeg,kSEnd, kBEnd,krend
           ! Determine the offset values to be used in the computation
           ! of the halo cells. Either the cells with index -2 or with
           ! -1 corresponds to the starting cell ID of the subrange
@@ -536,6 +536,7 @@
    !    end if checkOverlap
  
   !  enddo
+!          print *,'offsets',ioffset,joffset
     
      end subroutine extractBCStatesAdj
   

@@ -68,7 +68,7 @@ SUBROUTINE BCFARFIELDADJ_B(secondhalo, winfadj, winfadjb, pinfcorradj, &
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, nw) :: wadj0, wadj1
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, nw) :: wadj0b, wadj1b
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, nw) :: wadj2, wadj3
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, nw) :: wadj2b
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, nw) :: wadj2b, wadj3b
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2) :: padj0, padj1
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2) :: padj0b, padj1b
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2) :: padj2, padj3
@@ -312,7 +312,6 @@ bocos:DO nn=1,nbocos
         ELSE
           CALL PUSHINTEGER4(0)
         END IF
-        CALL PUSHREAL8ARRAY(wadj, 5**3*nw)
         CALL REPLACEBCSTATESADJ(nn, wadj0, wadj1, wadj2, wadj3, padj0, &
 &                          padj1, padj2, padj3, rlvadj1, rlvadj2, &
 &                          revadj1, revadj2, icell, jcell, kcell, wadj, &
@@ -340,7 +339,6 @@ bocos:DO nn=1,nbocos
   DO nn=nbocos,1,-1
     CALL POPINTEGER4(branch)
     IF (.NOT.branch .LT. 3) THEN
-      CALL POPREAL8ARRAY(wadj, 5**3*nw)
       CALL REPLACEBCSTATESADJ_B(nn, wadj0, wadj0b, wadj1, wadj1b, wadj2&
 &                          , wadj3, padj0, padj0b, padj1, padj1b, padj2&
 &                          , padj3, rlvadj1, rlvadj2, revadj1, revadj2, &
@@ -523,15 +521,16 @@ bocos:DO nn=1,nbocos
       CALL POPINTEGER4(jcend)
       CALL POPBOOLEAN(secondhalo)
       padj3b(:, :) = 0.0
+      wadj3b(:, :, :) = 0.0
       CALL EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
 &                          wadj0b, wadj1, wadj1b, wadj2, wadj2b, wadj3, &
-&                          padj0, padj0b, padj1, padj1b, padj2, padj2b, &
-&                          padj3, padj3b, rlvadj, revadj, rlvadj1, &
-&                          rlvadj2, revadj1, revadj2, ioffset, joffset, &
-&                          koffset, icell, jcell, kcell, isbeg, jsbeg, &
-&                          ksbeg, isend, jsend, ksend, ibbeg, jbbeg, &
-&                          kbbeg, ibend, jbend, kbend, icbeg, jcbeg, &
-&                          icend, jcend, secondhalo)
+&                          wadj3b, padj0, padj0b, padj1, padj1b, padj2, &
+&                          padj2b, padj3, padj3b, rlvadj, revadj, &
+&                          rlvadj1, rlvadj2, revadj1, revadj2, ioffset, &
+&                          joffset, koffset, icell, jcell, kcell, isbeg&
+&                          , jsbeg, ksbeg, isend, jsend, ksend, ibbeg, &
+&                          jbbeg, kbbeg, ibend, jbend, kbend, icbeg, &
+&                          jcbeg, icend, jcend, secondhalo)
     END IF
     CALL POPINTEGER4(isbeg)
     CALL POPINTEGER4(jsbeg)

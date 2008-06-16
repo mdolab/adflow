@@ -40,6 +40,7 @@ FF90_OBJECTS = adjustinflowangleforcesadj_b.o\
 	       applyallbcforcesadj_b.o \
                bceulerwallforcesadj_b.o \
                bcfarfieldforcesadj_b.o \
+	       bcsymmforcesadj_b.o \
 	       checkinputparamforcesadj_b.o\
 	       computeforcesadj_b.o\
 	       computeforcespressureadj_b.o\

@@ -37,7 +37,7 @@
 !     Local variables.
 !
       integer(kind=intType) :: iCell, jCell, kCell
-      integer(kind=intType) :: mm, nn, ii,sps
+      integer(kind=intType) :: mm, nn, ii,sps,liftIndex
 
       logical :: fineGrid, correctForK, exchangeTurb
       logical :: secondHalo!, correctForK
@@ -215,12 +215,12 @@
                      
                      ! Transfer the state w to the auxiliar array wAdj
                      ! and the coordinates x to the auxiliar array xAdj.
-
+                     !print *,'copying Adjoint'
                      call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,&
                           MachAdj,MachCoefAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj)
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
                      !(wAdj, xAdj, iCell, jCell, kCell)
                      
                      ! Compute the total residual.
@@ -233,7 +233,7 @@
                           nn,sps, correctForK,secondHalo,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj)
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
                      
 !!$                     call computeRAdjoint(wAdj,        &
 !!$                          xAdj,                       &

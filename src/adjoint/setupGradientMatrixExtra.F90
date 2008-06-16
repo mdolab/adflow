@@ -48,7 +48,7 @@
 !     Local variables.
 !
       integer(kind=intType) :: iCell, jCell, kCell,sps
-      integer(kind=intType) :: nn, m, n
+      integer(kind=intType) :: nn, m, n,liftIndex
 
       real(kind=realType), dimension(2) :: time
       real(kind=realType)               :: timeAdjLocal, timeAdj
@@ -169,10 +169,6 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      ! Send some feedback to screen.
-
-      if( PETScRank==0 ) &
-        write(*,10) "Assembling dR/dx matrix..."
 
       ! Get the initial time.
 
@@ -196,7 +192,7 @@
                           machCoefAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj)
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
 !copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
 
 
@@ -219,7 +215,7 @@
                              icell, jcell, kcell, nn, sps, correctfork,&
                              secondhalo, prefadj, rhorefadj, pinfdimadj,&
                              rhoinfdimadj, rhoinfadj, pinfadj, &
-                             murefadj, timerefadj, pinfcorradj)
+                             murefadj, timerefadj, pinfcorradj,liftIndex)
 
                         dRdaLocal(m,nDesignAOA) =alphaAdjb
                         dRdaLocal(m,nDesignSSA) =betaAdjb

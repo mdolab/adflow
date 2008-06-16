@@ -17,9 +17,16 @@
 !
 SUBROUTINE ADJUSTINFLOWANGLEFORCESADJ_B(alphaadj, alphaadjb, betaadj, &
 &  betaadjb, veldirfreestreamadj, veldirfreestreamadjb, liftdirectionadj&
-&  , liftdirectionadjb, dragdirectionadj)
+&  , liftdirectionadjb, dragdirectionadj, liftindex)
   USE constants
   IMPLICIT NONE
+!!      call getDirVectorForces(zero, one, zero, alphaAdj, betaAdj, &
+!           temp1, &
+!           temp2, &
+!           temp3!)
+!      liftDirectionAdj(1)= temp1
+!      liftDirectionAdj(2)= temp2
+!      liftDirectionAdj(3)= temp3
 !Subroutine Vars
   REAL(KIND=REALTYPE), DIMENSION(3) :: veldirfreestreamadj
   REAL(KIND=REALTYPE), DIMENSION(3) :: veldirfreestreamadjb
@@ -28,8 +35,10 @@ SUBROUTINE ADJUSTINFLOWANGLEFORCESADJ_B(alphaadj, alphaadjb, betaadj, &
   REAL(KIND=REALTYPE), DIMENSION(3) :: dragdirectionadj
   REAL(KIND=REALTYPE) :: alphaadj, betaadj
   REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
+  INTEGER(KIND=INTTYPE) :: liftindex
 !Local Vars
   REAL(KIND=REALTYPE) :: temp1, temp2, temp3
+  REAL(KIND=REALTYPE), DIMENSION(3) :: refdirection
 !Begin Execution
 ! Velocity direction given by the rotation of a unit vector
 ! initially aligned along the positive x-direction (1,0,0)
@@ -42,6 +51,16 @@ SUBROUTINE ADJUSTINFLOWANGLEFORCESADJ_B(alphaadj, alphaadjb, betaadj, &
 !                        velDirFreestreamAdj(1), &
 !                        velDirFreestreamAdj(2), &
 !                        velDirFreestreamAdj(3))
+  refdirection(:) = zero
+  refdirection(1) = one
+  CALL PUSHREAL8ARRAY(refdirection, 3)
+!      call getDirVectorForces(one, zero, zero, alphaAdj, betaAdj, &
+!           temp1, &
+!!           temp2, &
+!           temp3)
+!!      velDirFreestreamAdj(1) = temp1
+!      velDirFreestreamAdj(2) = temp2
+!      velDirFreestreamAdj(3) = temp3
 ! Drag direction given by the rotation of a unit vector
 ! initially aligned along the positive x-direction (1,0,0)
 ! 1) rotate alpha radians cw about z-axis
@@ -52,6 +71,17 @@ SUBROUTINE ADJUSTINFLOWANGLEFORCESADJ_B(alphaadj, alphaadjb, betaadj, &
 !temp1 = dragDirectionAdj(1)
 !temp2 = dragDirectionAdj(2)
 !temp3 = dragDirectionAdj(3)
+  refdirection(:) = zero
+  refdirection(1) = one
+  CALL PUSHREAL8ARRAY(refdirection, 3)
+!      call getDirVectorForces(one, zero, zero, alphaAdj, betaAdj, &
+!           temp1, &
+!           temp2, &
+!           temp3)!
+!
+!      dragDirectionAdj(1)= temp1
+!      dragDirectionAdj(2)= temp2
+!      dragDirectionAdj(3)= temp3
 ! Lift direction given by the rotation of a unit vector
 ! initially aligned along the positive z-direction (0,0,1)
 ! 1) rotate alpha radians cw about z-axis
@@ -62,23 +92,16 @@ SUBROUTINE ADJUSTINFLOWANGLEFORCESADJ_B(alphaadj, alphaadjb, betaadj, &
 !temp1 = liftDirectionAdj(1)
 !temp2 = liftDirectionAdj(2)
 !temp3 = liftDirectionAdj(3)
-  REAL(KIND=REALTYPE) :: temp1b, temp2b, temp3b
-  temp3b = liftdirectionadjb(3)
-  liftdirectionadjb(3) = 0.0
-  temp2b = liftdirectionadjb(2)
-  liftdirectionadjb(2) = 0.0
-  temp1b = liftdirectionadjb(1)
+  refdirection(:) = zero
+  refdirection(liftindex) = one
   betaadjb = 0.0
   alphaadjb = 0.0
-  CALL GETDIRVECTORFORCES_B(zero, one, zero, alphaadj, alphaadjb, &
-&                      betaadj, betaadjb, temp1, temp1b, temp2, temp2b, &
-&                      temp3, temp3b)
-  temp3b = veldirfreestreamadjb(3)
-  veldirfreestreamadjb(3) = 0.0
-  temp2b = veldirfreestreamadjb(2)
-  veldirfreestreamadjb(2) = 0.0
-  temp1b = veldirfreestreamadjb(1)
-  CALL GETDIRVECTORFORCES_B(one, zero, zero, alphaadj, alphaadjb, &
-&                      betaadj, betaadjb, temp1, temp1b, temp2, temp2b, &
-&                      temp3, temp3b)
+  CALL GETDIRVECTORFORCES_B(refdirection, alphaadj, alphaadjb, betaadj, &
+&                      betaadjb, liftdirectionadj, liftdirectionadjb, &
+&                      liftindex)
+  CALL POPREAL8ARRAY(refdirection, 3)
+  CALL POPREAL8ARRAY(refdirection, 3)
+  CALL GETDIRVECTORFORCES_B(refdirection, alphaadj, alphaadjb, betaadj, &
+&                      betaadjb, veldirfreestreamadj, &
+&                      veldirfreestreamadjb, liftindex)
 END SUBROUTINE ADJUSTINFLOWANGLEFORCESADJ_B

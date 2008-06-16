@@ -11,7 +11,7 @@
 !
       subroutine copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
            MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps)
+           rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
 
 !
 !     ******************************************************************
@@ -43,7 +43,7 @@
       REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
       REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
-
+      integer(kind=intType)::liftIndex
 
 !
 !     Local variables.
@@ -106,9 +106,10 @@
 
       MachAdj = Mach
       MachCoefAdj = MachCoef
-
-      call getDirAngle(velDirFreestream(1), velDirFreestream(2),&
-           velDirFreestream(3), alphaAdj, betaAdj)
+      
+      call getDirAngle(velDirFreestream,LiftDirection,liftIndex,alphaAdj,betaAdj)
+      !call getDirAngle(velDirFreestream(1), velDirFreestream(2),&
+      !     velDirFreestream(3), alphaAdj, betaAdj)
 
       prefAdj = pRef
       rhorefAdj = rhoref

@@ -44,7 +44,7 @@
       integer(kind=intType) :: discr, nHalo
       integer(kind=intType) :: iCell, jCell, kCell
       integer(kind=intType) :: mm, nn, m, n
-      integer(kind=intType) :: ii, jj, kk, i, j, k
+      integer(kind=intType) :: ii, jj, kk, i, j, k,liftIndex
 
       logical :: fineGrid, correctForK, exchangeTurb,secondhalo
 
@@ -175,8 +175,8 @@
 !
       ! Send some feedback to screen.
 
-      !if( PETScRank==0 ) &
-      !  write(*,10) "Assembling ADjoint matrix..."
+      if( PETScRank==0 ) &
+        write(*,10) "Assembling ADjoint matrix..."
  
       call mpi_barrier(SUmb_comm_world, ierr)
       if( myID==0 ) call cpu_time(time(1))
@@ -198,7 +198,7 @@
                           machCoefAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj)
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
 		!call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)
 		!print *,'wAdj',wadj
 
@@ -237,12 +237,18 @@
                 !                     dW(iCell+ii,jCell+jj,kCell+kk,n)
 
                     ! Call reverse mode of residual computation
-                    call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj,&
-			  &  dwadjb, alphaadj, alphaadjb, betaadj, betaadjb,&
-	                  &  machadj, machadjb, machcoefadj, icell, jcell,&
-                          &  kcell, nn, sps, correctfork, secondhalo, prefadj,&
-                          &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj,&
-                          &  pinfadj, murefadj, timerefadj, pinfcorradj)
+                    call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
+&  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &	
+&  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
+&  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+&  murefadj, timerefadj, pinfcorradj, liftindex)
+!(wadj, wadjb, xadj, xadjb, dwadj,&
+!			  &  dwadjb, alphaadj, alphaadjb, betaadj, betaadjb,&
+!	                  &  machadj, machadjb, machcoefadj, icell, jcell,&
+!                          &  kcell, nn, sps, correctfork, secondhalo, prefadj,&
+!                          &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj,&
+!                          &  pinfadj, murefadj, timerefadj, pinfcorradj,&
+!			  &liftIndex)
 
                     ! Store the block Jacobians (by rows).
 
@@ -820,8 +826,8 @@
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
                       mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
 
-      !if( PETScRank==0 ) &
-      !  write(*,20) "Assembling ADjoint matrix time (s) = ", timeAdj
+      if( PETScRank==0 ) &
+        write(*,20) "Assembling ADjoint matrix time (s) = ", timeAdj
 !
 !     ******************************************************************
 !     *                                                                *
@@ -856,11 +862,11 @@
       ! or PETSc users manual, pp.57,148
 
       if( debug ) then
-        !call MatView(dRdW,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-        call MatView(dRdW,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+        call MatView(dRdW,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+        !call MatView(dRdW,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
         if( PETScIerr/=0 ) &
           call terminate("setupADjointMatrix", "Error in MatView")
-        !pause
+        pause
       endif
 
       ! Flush the output buffer and synchronize the processors.

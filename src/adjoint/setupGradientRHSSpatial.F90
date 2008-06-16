@@ -57,7 +57,7 @@
 
       integer(kind=intType) ::  i2Beg,  i2End,  j2Beg,  j2End
       integer(kind=intType) :: iiBeg, iiEnd, jjBeg, jjEnd
-      integer(kind=intType) :: i,j,k,l
+      integer(kind=intType) :: i,j,k,l,liftIndex
 
       logical :: correctForK
 
@@ -396,7 +396,7 @@
         ! Compute the face normals on the subfaces
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
               MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-              rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps)
+              rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps, liftIndex)
 !call copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
 
                 
@@ -452,7 +452,7 @@
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
 &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj)
+&  timerefadj, pinfcorradj,liftIndex)
 	          
 !           call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 !&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &

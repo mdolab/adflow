@@ -51,7 +51,7 @@
       integer(kind=intType) :: discr, nHalo ,sps     
       integer(kind=intType) :: iNode, jNode, kNode
       integer(kind=intType) :: iCell, jCell, kCell
-      integer(kind=intType) :: nn, m, n,mm
+      integer(kind=intType) :: nn, m, n,mm,liftIndex
       integer(kind=intType) :: ii, jj, kk, i, j, k,xn
 
       logical :: fineGrid, correctForK, exchangeTurb, secondHalo
@@ -370,7 +370,7 @@
                           machCoefAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj)
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
 !copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
 
 
@@ -388,7 +388,7 @@
                           &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
                           &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
                           &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-                          &  murefadj, timerefadj, pinfcorradj)
+                          &  murefadj, timerefadj, pinfcorradj,liftIndex)
 !COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
 !                             dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
 !                             correctfork, secondhalo)

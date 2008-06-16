@@ -11,9 +11,9 @@
 !
       subroutine copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
            machCoefAdj,iCell, jCell, kCell,prefAdj,&
-                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj)
+           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+           rhoinfAdj, pinfAdj,&
+           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -33,6 +33,7 @@
       use flowVarRefState
       use inputPhysics
       implicit none
+
 !
 !     Subroutine arguments.
 !
@@ -49,6 +50,7 @@
       REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
       REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
+      integer(kind=intType)::liftIndex
 
 
 !
@@ -128,9 +130,11 @@
 
       MachAdj = Mach
       MachCoefAdj = MachCoef
-
-      call getDirAngle(velDirFreestream(1), velDirFreestream(2),&
-           velDirFreestream(3), alphaAdj, betaAdj)
+      !print *,'getting angle',liftDirection,shape(liftDirection)
+      call getDirAngle(velDirFreestream,liftDirection,liftIndex,alphaAdj,betaAdj)
+!      call getDirAngle(velDirFreestream,velDirFreestream,liftIndex,alphaAdj,betaAdj)
+      !call getDirAngle(velDirFreestream(1), velDirFreestream(2),&
+      !     velDirFreestream(3), alphaAdj, betaAdj)
 
       prefAdj = pRef
       rhorefAdj = rhoref

@@ -76,7 +76,8 @@ SUBROUTINE BCEULERWALLFORCESADJ_B(secondhalo, wadj, wadjb, padj, padjb, &
 &  , wadj1b
   REAL(KIND=REALTYPE), DIMENSION(iibeg:iiend, jjbeg:jjend, nw) :: wadj2&
 &  , wadj3
-  REAL(KIND=REALTYPE), DIMENSION(iibeg:iiend, jjbeg:jjend, nw) :: wadj2b
+  REAL(KIND=REALTYPE), DIMENSION(iibeg:iiend, jjbeg:jjend, nw) :: wadj2b&
+&  , wadj3b
   REAL(KIND=REALTYPE), DIMENSION(iibeg:iiend, jjbeg:jjend) :: padj0, &
 &  padj1
   REAL(KIND=REALTYPE), DIMENSION(iibeg:iiend, jjbeg:jjend) :: padj0b, &
@@ -801,15 +802,16 @@ SUBROUTINE BCEULERWALLFORCESADJ_B(secondhalo, wadj, wadjb, padj, padjb, &
       END IF
       padj3b(:, :) = 0.0
     END IF
+    wadj3b(:, :, :) = 0.0
     wadj1b(:, :, :) = 0.0
     wadj0b(:, :, :) = 0.0
     wadjb(:, :, :, :) = 0.0
     CALL EXTRACTBCSTATESFORCESADJ_B(mm, wadj, wadjb, padj, padjb, wadj0&
 &                              , wadj0b, wadj1, wadj1b, wadj2, wadj2b, &
-&                              wadj3, padj0, padj0b, padj1, padj1b, &
-&                              padj2, padj2b, padj3, padj3b, rlvadj, &
-&                              revadj, rlvadj1, rlvadj2, revadj1, &
-&                              revadj2, iibeg, jjbeg, iiend, jjend, &
+&                              wadj3, wadj3b, padj0, padj0b, padj1, &
+&                              padj1b, padj2, padj2b, padj3, padj3b, &
+&                              rlvadj, revadj, rlvadj1, rlvadj2, revadj1&
+&                              , revadj2, iibeg, jjbeg, iiend, jjend, &
 &                              secondhalo)
   ELSE
     wadjb(:, :, :, :) = 0.0

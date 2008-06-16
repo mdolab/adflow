@@ -152,17 +152,18 @@
       ! Perform some verifications if in DEBUG mode.
       !moved after PETSc initialization because PETsc now included in debugging...
 
-      if( debug ) then
+!      if( debug ) then
 
         ! Verify the node-based residual routine.
 
-  	!call verifyRAdj(level)
+!  	call verifyRAdj(level)
+!stop
 	!call verifyResiduals(level)
 
         ! Verify the node-based ADjoint residual routine.
 
 	!call verifydRdW(level,sps)
-
+!stop
 
         ! Verify the dRdx routine
 
@@ -174,7 +175,7 @@
         ! Verify the ADjoint routine for the forces
 
 	!call verifyForcesAdj(level,sps) 
-	
+!stop	
         
 	! Verify the force derivatives
 
@@ -184,10 +185,10 @@
 	! Verify the force derivatives
 
         !call verifydCfdw(level)
+!stop
+        !return
 
-        return
-
-      endif
+!      endif
 
 
 !
@@ -198,6 +199,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
+      print *,'calling setupADjointMatrix'
       call setupADjointMatrix(level)
 
 
