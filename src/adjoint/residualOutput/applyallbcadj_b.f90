@@ -62,9 +62,11 @@ SUBROUTINE APPLYALLBCADJ_B(winfadj, winfadjb, pinfcorradj, pinfcorradjb&
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw) :: wadjb
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2) :: padj
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2) :: padjb
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadj, sjadj, &
+!       real(kind=realType), dimension(-2:2,-2:2,-2:2,3), &
+!                                                   intent(in) :: siAdj, sjAdj, skAdj
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: siadj, sjadj, &
 &  skadj
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadjb, sjadjb&
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: siadjb, sjadjb&
 &  , skadjb
 !real(kind=realType), dimension(0:0,0:0,0:0), intent(in) :: volAdj
   REAL(KIND=REALTYPE) :: voladj, pinfcorradj

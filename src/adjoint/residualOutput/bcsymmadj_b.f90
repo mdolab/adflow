@@ -24,6 +24,7 @@ SUBROUTINE BCSYMMADJ_B(wadj, wadjb, padj, padjb, normadj, normadjb, &
   USE flowvarrefstate
   IMPLICIT NONE
 !  enddo nHalo
+!stop
 !
 !      ******************************************************************
 !      *                                                                *
@@ -183,6 +184,8 @@ bocos:DO nn=1,nbocos
 ! halo cells.
 !!$             do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
 !!$               do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+! print *,'offsets',ioffset,joffset,icbeg,icend,icbeg,icend
+! stop
         DO j=ad_from,jcend
           ad_from0 = icbeg
           DO i=ad_from0,icend
@@ -203,6 +206,15 @@ bocos:DO nn=1,nbocos
 !BCData(nn)%norm(i,j,3)
             nnz = normadj(nn, ii, jj, 3)
             CALL PUSHREAL8(vn)
+!!$                    nnx = BCData(nn)%norm(i,j,1)
+!!$                    nny = BCData(nn)%norm(i,j,2)
+!!$                    nnz = BCData(nn)%norm(i,j,3)
+!!$                    if (normAdj(nn,ii,jj,2)-BCData(nn)%norm(i,j,2)>1e-12)then
+!!$                    print *,'norm',normAdj(nn,ii,jj,2)-BCData(nn)%norm(i,j,2),normAdj(nn,ii,jj,2),BCData(nn)%norm(i,j,2),i,j,i
+!i,jj,ioffset,joffset
+!                   print *,'norm',normAdj(nn,ii,jj,:)-BCData(nn)%norm(i,j,:),normAdj(nn,ii,jj,:),BCData(nn)%norm(i,j,:),i,j,ii,j
+!j,ioffset,joffset
+!!$                    endif
 ! Determine twice the normal velocity component,
 ! which must be substracted from the donor velocity
 ! to obtain the halo velocity.
