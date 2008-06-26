@@ -37,9 +37,9 @@ SUBROUTINE RESIDUALADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, sjadj&
 !
 !       Subroutine Variables
   INTEGER(KIND=INTTYPE) :: icell, jcell, kcell
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadj, sjadj, &
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: siadj, sjadj, &
 &  skadj
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadjb, sjadjb&
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: siadjb, sjadjb&
 &  , skadjb
   REAL(KIND=REALTYPE), DIMENSION(0:0, 0:0, 0:0) :: voladj
   REAL(KIND=REALTYPE), DIMENSION(0:0, 0:0, 0:0) :: voladjb
@@ -144,9 +144,9 @@ SUBROUTINE RESIDUALADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, sjadj&
   IF (branch .LT. 1) THEN
     padjb(-2:2, -2:2, -2:2) = 0.0
     wadjb(-2:2, -2:2, -2:2, :) = 0.0
-    skadjb(-2:2, -2:2, -2:2, :) = 0.0
-    sjadjb(-2:2, -2:2, -2:2, :) = 0.0
-    siadjb(-2:2, -2:2, -2:2, :) = 0.0
+    skadjb(-3:2, -3:2, -3:2, :) = 0.0
+    sjadjb(-3:2, -3:2, -3:2, :) = 0.0
+    siadjb(-3:2, -3:2, -3:2, :) = 0.0
   ELSE
     CALL INVISCIDUPWINDFLUXADJ_B(wadj, wadjb, padj, padjb, dwadj, dwadjb&
 &                           , siadj, siadjb, sjadj, sjadjb, skadj, &

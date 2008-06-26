@@ -50,9 +50,9 @@ SUBROUTINE INVISCIDCENTRALFLUXADJ_B(wadj, wadjb, padj, padjb, dwadj, &
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2) :: padjb
   REAL(KIND=REALTYPE), DIMENSION(nw) :: dwadj
   REAL(KIND=REALTYPE), DIMENSION(nw) :: dwadjb
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadj, sjadj, &
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: siadj, sjadj, &
 &  skadj
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadjb, sjadjb&
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: siadjb, sjadjb&
 &  , skadjb
   REAL(KIND=REALTYPE), DIMENSION(0:0, 0:0, 0:0) :: voladj
   REAL(KIND=REALTYPE), DIMENSION(0:0, 0:0, 0:0) :: voladjb

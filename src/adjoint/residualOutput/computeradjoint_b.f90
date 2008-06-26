@@ -43,9 +43,10 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
   REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3) :: normadjb
   REAL(KIND=REALTYPE) :: voladj
   REAL(KIND=REALTYPE) :: voladjb
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadj, sjadj, &
+!  real(kind=realType), dimension(-2:2,-2:2,-2:2,3) :: siAdj, sjAdj, skAdj
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: siadj, sjadj, &
 &  skadj
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadjb, sjadjb&
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: siadjb, sjadjb&
 &  , skadjb
   REAL(KIND=REALTYPE), DIMENSION(3) :: veldirfreestreamadj
   REAL(KIND=REALTYPE), DIMENSION(3) :: veldirfreestreamadjb

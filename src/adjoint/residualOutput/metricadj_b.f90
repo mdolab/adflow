@@ -50,9 +50,10 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
   REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: xadj
   REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: xadjb
 !       real(kind=realType), dimension(-2:3,-2:3,-2:3,3), intent(in) :: xAdj
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadj, sjadj, &
+!       real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(out) :: siAdj, sjAdj, skAdj
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: siadj, sjadj, &
 &  skadj
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadjb, sjadjb&
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: siadjb, sjadjb&
 &  , skadjb
   REAL(KIND=REALTYPE) :: voladj
   REAL(KIND=REALTYPE) :: voladjb
@@ -276,9 +277,10 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
   kend = 2
   jstart = -2
   jend = 2
-  istart = -2
+  istart = -3
   iend = 2
   IF (icell .EQ. il) iend = 1
+  IF (icell .EQ. 2) istart = -2
   IF (jcell .EQ. 2) jstart = -1
   IF (jcell .EQ. jl) jend = 1
   IF (kcell .EQ. 2) kstart = -1
@@ -330,13 +332,14 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
 ! Projected areas of cell faces in the j direction.
   kstart = -2
   kend = 2
-  jstart = -2
+  jstart = -3
   jend = 2
   istart = -2
   iend = 2
   IF (icell .EQ. 2) istart = -1
   IF (icell .EQ. il) iend = 1
   IF (jcell .EQ. jl) jend = 1
+  IF (jcell .EQ. 2) jstart = -2
   IF (kcell .EQ. 2) kstart = -1
   IF (kcell .EQ. kl) kend = 1
   ad_from2 = kstart
@@ -382,9 +385,10 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
   END DO
   CALL PUSHINTEGER4(k - 1)
   CALL PUSHINTEGER4(ad_from2)
+!print *,'sj2', sjAdj(i,j,k,2),sj(icell+i,jcell+j,kcell+k,2),i,j,k,icell+i,jcell+j,kcell+k
 ! Projected areas of cell faces in the k direction.
 ! Projected areas of cell faces in the j direction.
-  kstart = -2
+  kstart = -3
   kend = 2
   jstart = -2
   jend = 2
@@ -395,6 +399,7 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
   IF (jcell .EQ. 2) jstart = -1
   IF (jcell .EQ. jl) jend = 1
   IF (kcell .EQ. kl) kend = 1
+  IF (kcell .EQ. 2) kstart = -2
 !-2,2
   DO k=kstart,kend
     CALL PUSHINTEGER4(j)

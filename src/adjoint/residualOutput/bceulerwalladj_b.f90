@@ -63,9 +63,10 @@ SUBROUTINE BCEULERWALLADJ_B(secondhalo, wadj, wadjb, padj, padjb, siadj&
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2) :: rlvadj, revadj
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2) :: rlvadj1, rlvadj2
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2) :: revadj1, revadj2
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadj, sjadj, &
+!  real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(in) ::siAdj, sjAdj, skAdj
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: siadj, sjadj, &
 &  skadj
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadjb, sjadjb&
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: siadjb, sjadjb&
 &  , skadjb
   REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3) :: normadj
   REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3) :: normadjb
@@ -90,8 +91,9 @@ SUBROUTINE BCEULERWALLADJ_B(secondhalo, wadj, wadjb, padj, padjb, siadj&
   REAL(KIND=REALTYPE) :: ux, uy, uz, ovgm1, gm53, factk
   REAL(KIND=REALTYPE) :: uxb, uyb, uzb
   REAL(KIND=REALTYPE) :: rface
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, 3) :: ssi, ssj, ssk
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, 3) :: ssib, ssjb, sskb
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, 3) :: ssi, ssj, ssk
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, 3) :: ssib, ssjb, sskb
+!  real(kind=realType), dimension(-2:2,-2:2,3) :: ssi, ssj, ssk
 !  real(kind=realType), dimension(:,:,:), pointer :: ss
   LOGICAL :: computebc
 !
@@ -753,9 +755,9 @@ bocos:DO nn=1,nbocos
           END DO
         END DO
       ELSE
-        ssib(-2:2, -2:2, :) = 0.0
-        ssjb(-2:2, -2:2, :) = 0.0
-        sskb(-2:2, -2:2, :) = 0.0
+        ssib(-3:2, -3:2, :) = 0.0
+        ssjb(-3:2, -3:2, :) = 0.0
+        sskb(-3:2, -3:2, :) = 0.0
         CALL POPINTEGER4(ad_from3)
         CALL POPINTEGER4(ad_to3)
         DO k=ad_to3,ad_from3,-1

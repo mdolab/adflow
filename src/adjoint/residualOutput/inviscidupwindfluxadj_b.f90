@@ -47,9 +47,9 @@ SUBROUTINE INVISCIDUPWINDFLUXADJ_B(wadj, wadjb, padj, padjb, dwadj, &
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2) :: padjb
   REAL(KIND=REALTYPE), DIMENSION(nw) :: dwadj
   REAL(KIND=REALTYPE), DIMENSION(nw) :: dwadjb
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadj, sjadj, &
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: siadj, sjadj, &
 &  skadj
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3) :: siadjb, sjadjb&
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3) :: siadjb, sjadjb&
 &  , skadjb
 !
 !      Local variables.
@@ -347,7 +347,7 @@ SUBROUTINE INVISCIDUPWINDFLUXADJ_B(wadj, wadjb, padj, padjb, dwadj, &
     END DO
     padjb(-2:2, -2:2, -2:2) = 0.0
     wadjb(-2:2, -2:2, -2:2, :) = 0.0
-    skadjb(-2:2, -2:2, -2:2, :) = 0.0
+    skadjb(-3:2, -3:2, -3:2, :) = 0.0
     fluxb(:) = 0.0
     leftb(:) = 0.0
     rightb(:) = 0.0
@@ -414,7 +414,7 @@ SUBROUTINE INVISCIDUPWINDFLUXADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       CALL POPREAL8(sx)
       skadjb(0, 0, kk, 1) = skadjb(0, 0, kk, 1) + sxb
     END DO
-    sjadjb(-2:2, -2:2, -2:2, :) = 0.0
+    sjadjb(-3:2, -3:2, -3:2, :) = 0.0
     DO jj=0,-1,-1
       CALL POPREAL8(fact)
       fluxb(irhoe) = fluxb(irhoe) + fact*dwadjb(irhoe)
@@ -478,7 +478,7 @@ SUBROUTINE INVISCIDUPWINDFLUXADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       CALL POPREAL8(sx)
       sjadjb(0, jj, 0, 1) = sjadjb(0, jj, 0, 1) + sxb
     END DO
-    siadjb(-2:2, -2:2, -2:2, :) = 0.0
+    siadjb(-3:2, -3:2, -3:2, :) = 0.0
     DO ii=0,-1,-1
       CALL POPREAL8(fact)
       fluxb(irhoe) = fluxb(irhoe) + fact*dwadjb(irhoe)
@@ -881,7 +881,7 @@ SUBROUTINE INVISCIDUPWINDFLUXADJ_B(wadj, wadjb, padj, padjb, dwadj, &
     END DO
     padjb(-2:2, -2:2, -2:2) = 0.0
     wadjb(-2:2, -2:2, -2:2, :) = 0.0
-    skadjb(-2:2, -2:2, -2:2, :) = 0.0
+    skadjb(-3:2, -3:2, -3:2, :) = 0.0
     fluxb(:) = 0.0
     leftb(:) = 0.0
     rightb(:) = 0.0
@@ -1002,7 +1002,7 @@ SUBROUTINE INVISCIDUPWINDFLUXADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       wadjb(0, 0, kk-1, irho) = wadjb(0, 0, kk-1, irho) - du1b(irho)
       du1b(irho) = 0.0
     END DO
-    sjadjb(-2:2, -2:2, -2:2, :) = 0.0
+    sjadjb(-3:2, -3:2, -3:2, :) = 0.0
     DO jj=0,-1,-1
       CALL POPREAL8(fact)
       fluxb(irhoe) = fluxb(irhoe) + fact*dwadjb(irhoe)
@@ -1117,7 +1117,7 @@ SUBROUTINE INVISCIDUPWINDFLUXADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       wadjb(0, jj-1, 0, irho) = wadjb(0, jj-1, 0, irho) - du1b(irho)
       du1b(irho) = 0.0
     END DO
-    siadjb(-2:2, -2:2, -2:2, :) = 0.0
+    siadjb(-3:2, -3:2, -3:2, :) = 0.0
     DO ii=0,-1,-1
       CALL POPREAL8(fact)
       fluxb(irhoe) = fluxb(irhoe) + fact*dwadjb(irhoe)

@@ -54,7 +54,9 @@ SUBROUTINE BCFARFIELDADJ_B(secondhalo, winfadj, winfadjb, pinfcorradj, &
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2) :: revadj1, revadj2
   REAL(KIND=REALTYPE), DIMENSION(nw) :: winfadj
   REAL(KIND=REALTYPE), DIMENSION(nw) :: winfadjb
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3), INTENT(IN) :: &
+!  real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(in) :: &
+!       siAdj, sjAdj, skAdj
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
 &  siadj, sjadj, skadj
   REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3) :: normadj
   REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3) :: normadjb
