@@ -185,6 +185,8 @@ subroutine bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
 
 !!$             do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
 !!$               do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+             ! print *,'offsets',ioffset,joffset,icbeg,icend,icbeg,icend
+             ! stop
               do j=jcBeg,jcEnd
                  do i=icBeg,icEnd
                     ii = i - iOffset
@@ -197,7 +199,14 @@ subroutine bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
                     nnx = normAdj(nn,ii,jj,1)!BCData(nn)%norm(i,j,1)
                     nny = normAdj(nn,ii,jj,2)!BCData(nn)%norm(i,j,2)
                     nnz = normAdj(nn,ii,jj,3)!BCData(nn)%norm(i,j,3)
-
+!!$                    nnx = BCData(nn)%norm(i,j,1)
+!!$                    nny = BCData(nn)%norm(i,j,2)
+!!$                    nnz = BCData(nn)%norm(i,j,3)
+                    
+!!$                    if (normAdj(nn,ii,jj,2)-BCData(nn)%norm(i,j,2)>1e-12)then
+!!$                    print *,'norm',normAdj(nn,ii,jj,2)-BCData(nn)%norm(i,j,2),normAdj(nn,ii,jj,2),BCData(nn)%norm(i,j,2),i,j,ii,jj,ioffset,joffset
+ !                   print *,'norm',normAdj(nn,ii,jj,:)-BCData(nn)%norm(i,j,:),normAdj(nn,ii,jj,:),BCData(nn)%norm(i,j,:),i,j,ii,jj,ioffset,joffset
+!!$                    endif
                     ! Determine twice the normal velocity component,
                     ! which must be substracted from the donor velocity
                     ! to obtain the halo velocity.
@@ -274,5 +283,5 @@ subroutine bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
         endif
      enddo bocos
 !  enddo nHalo
-
+!stop
 end subroutine bcSymmAdj

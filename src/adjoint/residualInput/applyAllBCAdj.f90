@@ -45,7 +45,9 @@
                                                    intent(inout) :: wAdj
        real(kind=realType), dimension(-2:2,-2:2,-2:2),    &
                                                    intent(inout) :: pAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2,3), &
+!       real(kind=realType), dimension(-2:2,-2:2,-2:2,3), &
+!                                                   intent(in) :: siAdj, sjAdj, skAdj
+       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), &
                                                    intent(in) :: siAdj, sjAdj, skAdj
        !real(kind=realType), dimension(0:0,0:0,0:0), intent(in) :: volAdj
        real(kind=realType), intent(in) :: volAdj,pInfCorrAdj

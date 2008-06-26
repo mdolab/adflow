@@ -47,7 +47,9 @@ subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
   real(kind=realType), dimension(nw),intent(in)::wInfAdj
 
 
-  real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(in) :: &
+!  real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(in) :: &
+!       siAdj, sjAdj, skAdj
+  real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) :: &
        siAdj, sjAdj, skAdj
   real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(in) :: normAdj
   real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &

@@ -38,7 +38,7 @@
        real(kind=realType), dimension(-2:2,-2:2,-2:2),    &
                                                       intent(in) :: pAdj
        real(kind=realType), dimension(nw), intent(inout) :: dwAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(in) :: siAdj, sjAdj, skAdj
+       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) :: siAdj, sjAdj, skAdj
 !
 !      Local variables.
 !

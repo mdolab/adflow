@@ -156,10 +156,10 @@
 
         ! Verify the node-based residual routine.
 
-!  	call verifyRAdj(level)
+  	call verifyRAdj(level)
 !stop
-	!call verifyResiduals(level)
-
+!	call verifyResiduals(level)
+!stop
         ! Verify the node-based ADjoint residual routine.
 
 	!call verifydRdW(level,sps)
@@ -167,8 +167,8 @@
 
         ! Verify the dRdx routine
 
-        !call verifydRdx(level,sps)
-
+        call verifydRdx(level,sps)
+stop
 	!call verifydRdExtra(level)
 
 
@@ -181,7 +181,7 @@
 
 	
         !call verifydCfdx(level)
-
+!stop
 	! Verify the force derivatives
 
         !call verifydCfdw(level)
@@ -217,6 +217,9 @@
       if( PETScRank==0 ) &
         print "(a)", "# ... Krylov subspace created;"
 
+
+      call solveDirectPETSc
+stop
 !
 !     ******************************************************************
 !     *                                                                *

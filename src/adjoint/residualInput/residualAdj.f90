@@ -30,7 +30,7 @@
        
 !       Subroutine Variables
        integer(kind=intType) :: iCell, jCell, kCell
-       real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(inout) :: siAdj, sjAdj, skAdj
+       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(inout) :: siAdj, sjAdj, skAdj
        real(kind=realType), dimension(0:0,0:0,0:0), intent(inout) :: volAdj
        real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(inout) :: normAdj
        real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &

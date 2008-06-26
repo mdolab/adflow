@@ -47,7 +47,7 @@
 !     Local variables 
 !
       integer(kind=intType) :: i, j, k, n
-      integer(kind=intType) :: iCell,jCell,kCell
+      integer(kind=intType) :: iCell,jCell,kCell,liftIndex
       real(kind=realType), dimension(nw) :: dwL2
       real(kind=realType), dimension(nx, ny, nz, nw) :: dwerr
       real(kind=realType), dimension(10) :: time
@@ -57,9 +57,13 @@
       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdj
       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdjb
       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wFD
-      real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xAdj
-      real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xAdjb
-      real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xFD
+!!$      real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xAdj
+!!$      real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xAdjb
+!!$      real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xFD
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdj
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdjb
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xFD
+
 
       REAL(KIND=REALTYPE) :: machadj, machcoefadj, pinfcorradj
       REAL(KIND=REALTYPE) :: machadjb, machcoefadjb, pinfcorradjb
@@ -265,7 +269,7 @@
                           MachAdj,MachCoefAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj)
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
 !                     print *,'Stencil Copied'
 !                     print *,'wadj',wadj
                      mLoop: do m = 1, nw           ! Loop over output cell residuals (R)
@@ -297,7 +301,12 @@
                              &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
                              &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
                              &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-                             &  murefadj, timerefadj, pinfcorradj)
+                             &  murefadj, timerefadj, pinfcorradj,liftIndex)
+                        !COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
+                        !     &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
+                        !     &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
+                        !     &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+                        !     &  murefadj, timerefadj, pinfcorradj)
                        ! call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
                        !      dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
                        !      correctfork, secondhalo)
@@ -597,7 +606,7 @@
                           MachAdj,MachCoefAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj)
+                          murefAdj, timerefAdj,pInfCorrAdj,liftindex)
 !                           print *,'stencil copied'
                            ! Loop over the inputs (w) 
                            !print *,'secondhalo',secondhalo
@@ -619,7 +628,7 @@
                                                nn,sps, correctForK,secondHalo,prefAdj,&
                                                rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                                                rhoinfAdj, pinfAdj,&
-                                               murefAdj, timerefAdj,pInfCorrAdj)
+                                               murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
                                           !call computeRAdjoint(wAdj,xAdj,dwAdjP,   &
                                           !     iCell, jCell,  kCell, &
                                           !     nn,sps, correctForK,secondHalo)
@@ -631,7 +640,7 @@
                                                nn,sps, correctForK,secondHalo,prefAdj,&
                                                rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                                                rhoinfAdj, pinfAdj,&
-                                               murefAdj, timerefAdj,pInfCorrAdj)
+                                               murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
                                           !call computeRAdjoint(wAdj,xAdj,dwAdjM,   &
                                           !     iCell, jCell,  kCell, &
                                           !     nn,sps, correctForK,secondHalo)

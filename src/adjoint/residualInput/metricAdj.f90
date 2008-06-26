@@ -42,7 +42,8 @@
 !
        real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) :: xAdj
 !       real(kind=realType), dimension(-2:3,-2:3,-2:3,3), intent(in) :: xAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(out) :: siAdj, sjAdj, skAdj
+!       real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(out) :: siAdj, sjAdj, skAdj
+       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(out) :: siAdj, sjAdj, skAdj
        real(kind=realType) :: volAdj
        real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(out) :: normAdj
        integer(kind=intType), intent(in) :: iCell, jCell, kCell
@@ -272,9 +273,10 @@
 
           kStart=-2; kEnd=2
           jStart=-2; jEnd=2
-          iStart=-2; iEnd=2
+          iStart=-3; iEnd=2
 
           if(iCell==il) iEnd=1
+          if(iCell==2) iStart=-2
 
           if(jCell==2)  jStart=-1
           if(jCell==jl) jEnd=1 
@@ -312,13 +314,14 @@
            
            ! Projected areas of cell faces in the j direction.
           kStart=-2; kEnd=2
-          jStart=-2; jEnd=2
+          jStart=-3; jEnd=2
           iStart=-2; iEnd=2
 
           if(iCell==2)  iStart=-1
           if(iCell==il) iEnd=1
 
           if(jCell==jl) jEnd=1 
+          if(jCell==2) jStart=-2
 
           if(kCell==2) kStart=-1
           if(kCell==kl) kEnd=1
@@ -347,13 +350,16 @@
                  sjAdj(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
                  sjAdj(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
                  
+                 !print *,'sj2', sjAdj(i,j,k,2),sj(icell+i,jcell+j,kcell+k,2),i,j,k,icell+i,jcell+j,kcell+k
+
+
                enddo
              enddo
            enddo
-
+           
            ! Projected areas of cell faces in the k direction.
            ! Projected areas of cell faces in the j direction.
-          kStart=-2; kEnd=2
+          kStart=-3; kEnd=2
           jStart=-2; jEnd=2
           iStart=-2; iEnd=2
 
@@ -364,6 +370,7 @@
           if(jCell==jl) jEnd=1 
 
           if(kCell==kl) kEnd=1
+          if(kCell==2)  kStart=-2
 
            do k=kStart,kEnd !-2,2
              do j=jStart,jEnd !-2,2
@@ -644,6 +651,7 @@
               v1(1) = abs(v1(1)*fact)
               v1(2) = abs(v1(2)*fact)
               v1(3) = abs(v1(3)*fact)
+             
               
               ! Check if the control volume is closed.
               
