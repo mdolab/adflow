@@ -183,18 +183,19 @@
 
                endif fineLevelTest
 
-               ! Set the unit normals to the unit normal of the entire
-               ! plane. All the cells, also possible halo's, are treated.
-
-               do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
-                 do i=BCData(mm)%icBeg, BCData(mm)%icEnd
-
-                   BCData(mm)%norm(i,j,1) = faceNorm(1)
-                   BCData(mm)%norm(i,j,2) = faceNorm(2)
-                   BCData(mm)%norm(i,j,3) = faceNorm(3)
-
-                 enddo
-               enddo
+               !removed as this would cause issues with the ADjoint
+!!$               ! Set the unit normals to the unit normal of the entire
+!!$               ! plane. All the cells, also possible halo's, are treated.
+!!$
+!!$               do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
+!!$                 do i=BCData(mm)%icBeg, BCData(mm)%icEnd
+!!$
+!!$                   BCData(mm)%norm(i,j,1) = faceNorm(1)
+!!$                   BCData(mm)%norm(i,j,2) = faceNorm(2)
+!!$                   BCData(mm)%norm(i,j,3) = faceNorm(3)
+!!$
+!!$                 enddo
+!!$               enddo
 
              endif symmetry
            enddo bocos

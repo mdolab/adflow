@@ -57,7 +57,7 @@
 !
 !     Local variables
 !
-      integer(kind=intType) :: i, j, k,q,sps=1
+      integer(kind=intType) :: i, j, k,q,sps=1,liftIndex
       real(kind=realType), dimension(nw) :: dwL2
      ! real(kind=realType), dimension(0:nx,0:ny,0:nz, nw) :: dwerr
       real(kind=realType), dimension(nx, ny, nz, nw) :: dwerr
@@ -65,6 +65,7 @@
       real(kind=realType), dimension(0:ib,0:jb,0:kb, 1:nw) :: wtemp,wtemp2,dwref
       real(kind=realType), dimension(0:ib,0:jb,0:kb) :: ptemp,ptemp2
       real(kind=realType), dimension(-2:2,-2:2,-2:2) :: pAdjtemp
+      real(kind=realType), dimension(0:ie,0:je,0:ke, 1:3) :: xtemp,xtemp2
 !*******
       real(kind=realType), dimension(10) :: time
       real(kind=realType) :: timeRes,machref
@@ -259,7 +260,7 @@ write(*,*) 'in verify residuals'
 !Baseline residual calculation
 
        !dw(:,:,:, :) =0.0
-
+       xtemp(:,:,:,:) = x(:,:,:,:)
        wtemp(:,:,:,:) = w(:,:,:,:)
        ptemp(:,:,:) = p(:,:,:)
        call residual
@@ -270,20 +271,23 @@ write(*,*) 'in verify residuals'
 !!$       j = 2
 !!$       k = 12
 
-       i = 12
-       j = 4
-       k = 3
-
-       w(i,j,k,:) = w(i,j,k,:)+0.005
+       i = 1!5
+       j = 1!4
+       k = 1!3
+       
+       x(i,j,k,:) = x(i,j,k,:)+0.05
+       w(i,j,k,:) = w(i,j,k,:)!+0.005
      !  machref = mach
       ! mach = machref+0.005
        wtemp2(:,:,:,:) = w(:,:,:,:)
-
+       xtemp2(:,:,:,:) = x(:,:,:,:)
        
 
       ! call referenceState
        
       ! call setFlowInfinityState
+       
+       call metric(level)
 
        call computePressureAdj(w(i-2:i+2, j-2:j+2, k-2:k+2,:), pAdjtemp)
 
@@ -330,7 +334,7 @@ write(*,*) 'in verify residuals'
 !!$          enddo
 !!$       enddo
 
-
+       print *,'secondHalo',secondHalo
        call applyAllBC(secondHalo)
 
 !!$       write(unit3,*)'applybcs'
@@ -462,6 +466,7 @@ write(*,*) 'in verify residuals'
        p(:,:,:) = ptemp(:,:,:)
 
        w(:,:,:,:) = wtemp2(:,:,:,:)
+       x(:,:,:,:) = xtemp2(:,:,:,:)
        print *, "reset State =", w(i,j,k,1),w(5,1,5,1),w(i,j,k,1)-w(5,1,5,1)
 
 !***********************************
@@ -479,7 +484,7 @@ write(*,*) 'in verify residuals'
                     MachAdj,MachCoefAdj,i, j, k,prefAdj,&
                     rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                     rhoinfAdj, pinfAdj,&
-                    murefAdj, timerefAdj,pInfCorrAdj)
+                    murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
                !(wAdj, xAdj, iCell, jCell, kCell)
                
                ! Compute the total residual.
@@ -492,7 +497,7 @@ write(*,*) 'in verify residuals'
                     nn,sps, correctForK,secondHalo,prefAdj,&
                     rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                     rhoinfAdj, pinfAdj,&
-                    murefAdj, timerefAdj,pInfCorrAdj)
+                    murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
                
                !wAdj(-2:2,-2:2,-2:2,1:nw) = &
                !     w(i-2:i+2, j-2:j+2, k-2:k+2, 1:nw)               
@@ -539,7 +544,7 @@ write(*,*) 'in verify residuals'
       end do
 
       w(:,:,:,:) = wtemp(:,:,:,:)
-
+      x(:,:,:,:) = xtemp(:,:,:,:)
       !mach = machref
 
       call cpu_time(time(2))

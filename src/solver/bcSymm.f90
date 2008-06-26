@@ -73,7 +73,7 @@
 
        kk = 0
        if( secondHalo ) kk = 1
-
+      
        ! Loop over the number of times the halo computation must be done.
 
        nHalo: do mm=0,kk
@@ -124,7 +124,7 @@
                  nnx = BCData(nn)%norm(i,j,1)
                  nny = BCData(nn)%norm(i,j,2)
                  nnz = BCData(nn)%norm(i,j,3)
-
+                
                  ! Determine twice the normal velocity component,
                  ! which must be substracted from the donor velocity
                  ! to obtain the halo velocity.
@@ -162,5 +162,5 @@
            endif symmetry
          enddo bocos
        enddo nHalo
-
+   
        end subroutine bcSymm

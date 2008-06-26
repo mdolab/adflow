@@ -43,7 +43,8 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
   real(kind=realType), dimension(-2:2,-2:2,-2:2) :: pAdj
   real(kind=realType), dimension(nBocos,-2:2,-2:2,3) :: normAdj
   real(kind=realType):: volAdj
-  real(kind=realType), dimension(-2:2,-2:2,-2:2,3) :: siAdj, sjAdj, skAdj
+!  real(kind=realType), dimension(-2:2,-2:2,-2:2,3) :: siAdj, sjAdj, skAdj
+  real(kind=realType), dimension(-3:2,-3:2,-3:2,3) :: siAdj, sjAdj, skAdj
 
   real(kind=realType), dimension(3) :: velDirFreestreamAdj
   real(kind=realType), dimension(3) :: liftDirectionAdj

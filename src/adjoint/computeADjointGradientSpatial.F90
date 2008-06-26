@@ -222,7 +222,7 @@
       !   then nDesignLocal = 0 and nothing is actually sent to the
       !   processor.
 
-      !print *,'costfunction',costFunction,nDisplsGlobal,'shapes',shape(functionGradSpatial),shape(functionGradLocal)
+      print *,'costfunction',costFunction,nDisplsGlobal,'shapes',shape(functionGradSpatial),shape(functionGradLocal)
 
 !      call mpi_gatherv(functionGradLocal, nDesignLocal, sumb_real, &
 !                       functionGradSpatial(costFunction,:), nDesignGlobal,&
@@ -239,24 +239,27 @@
 !
 !      globalNode =>flowdoms(7,1,1)%globalNode
 !!      globalNode =>flowdoms(3,1,1)%globalNode
-!!###      globalNode =>flowdoms(1,1,1)%globalNode
+!!&	print *,'setting global nodes'
+!!&      globalNode =>flowdoms(1,1,1)%globalNode
 !=======
 !********************************************************
       !use to print out values to chack accuracy in multiblock cases 
 !      globalNode =>flowdoms(1,1,1)%globalNode 
       !idxlocal = globalNode(4,10,10)*3+3 !Obliquewing coarse block 7
 !      idxlocal = globalNode(3,9,3)*3+3 !Obliquewing 20k coarse block 30
-      !print *, 'globalnode',idxlocal,petscrank
+!!&      print *,' setting indexlocal'
+!!&      idxlocal = globalNode(1,1,1)*3+3 !Coarse bump
+!!&      print *, 'globalnode',idxlocal,petscrank
       
-      call mpi_gather(idxLocal, 1, sumb_integer, &
-                      idxGlobal, 1, sumb_integer, &
-                      0, PETSC_COMM_WORLD, PETScIerr)
-
-     ! if(PetscRank == 0)then
-!	 do i =1,petscsize
-!         print *,'costfunction derivative',idxglobal(i),functionGradSpatial(costFunction,idxglobal(i)),functionGradSpatial(costFunction,46485),i
-!	 enddo
-!      endif
+!!&      call mpi_gather(idxLocal, 1, sumb_integer, &
+!!&                      idxGlobal, 1, sumb_integer, &
+!!&                      0, PETSC_COMM_WORLD, PETScIerr)
+!!&      print *,'printing result',petscsize
+!!&      if(PetscRank == 0)then
+!!&	 do i =1,petscsize
+!!&         print *,'costfunction derivative',idxglobal(i),functionGradSpatial(costFunction,idxglobal(i)),functionGradSpatial(costFunction,46485),i
+!!&	 enddo
+!!&      endif
 !**********************************************************
 
 !***********  
@@ -264,14 +267,15 @@
 !***************
 !      globalNode =>flowdoms(7,1,1)%globalNode !Obliquewing coarse block 7
 !      globalNode =>flowdoms(8,1,1)%globalNode !Obliquewing coarse block 8
-!      globalNode =>flowdoms(1,1,1)%globalNode !infinite wing
+      globalNode =>flowdoms(1,1,1)%globalNode !infinite wing
 !>>>>>>> .r625
 !      idx = globalNode(2,7,13)*3+3 !(location times 3 for xyzdof + 3 for current node
 !      idx = globalNode(10,1,3)*3+3 !infinite wing block 1
 !      idx = globalNode(4,10,10)*3+3 !Obliquewing coarse block 7
 !      idx = globalNode(4,1,10)*3+3 !Obliquewing coarse block 8
+      idx = globalNode(1,1,1)*3+3 !Coarse bump
 
-!      print *,'costfunction derivative',idx,functionGradSpatial(costFunction,idx)
+      print *,'costfunction derivative',idx,functionGradSpatial(costFunction,idx)
 !****************
 
 

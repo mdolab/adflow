@@ -76,8 +76,11 @@
         nCellsLocal = nCellsLocal + nx*ny*nz
  
         nNodesLocal = nNodesLocal + il  *jl * kl
+        !print *,'nnodeslocal',nnodeslocal
+        !print *,'nnodes local',il,jl,kl,il  *jl * kl,shape(x),nx,ny,nz,nx*ny*nz
       enddo
-
+      !print *,'x',x(:,:,:,1)
+!stop
       ! Reduce the number of cells in all processors: add up nCellsLocal
       ! into nCellsGlobal and sends the result to all processors.
       ! (use mpi sum operation)
@@ -101,7 +104,7 @@
       call mpi_gather(nNodesLocal, 1, sumb_integer, nNodes, 1, &
                       sumb_integer, 0, SUmb_comm_world, ierr)
 
-      print *,' local nodes gathered'
+      !print *,' local nodes gathered'
 
       ! Determine the global cell number offset for each processor.
 
@@ -111,6 +114,7 @@
         do nn=2,nProc
           nCellOffset(nn) = nCellOffset(nn-1) + nCells(nn-1)
           nNodeOffset(nn) = nNodeOffset(nn-1) + nNodes(nn-1)
+          !print *,'offset',nnodeoffset
         enddo
       endif rootProc
 
@@ -119,7 +123,7 @@
       call mpi_scatter(nCellOffset, 1, sumb_integer, nCellOffsetLocal, 1, &
                       sumb_integer, 0, SUmb_comm_world, ierr)
       
-      print *,'scatter'
+!      print *,'scatter'
 
       ! Determine the global cell number offset for each local block.
 
@@ -129,7 +133,7 @@
         nCellBlockOffset(nn) = nCellBlockOffset(nn-1)          &
                          + nx*ny*nz
       enddo
-      print *,'global cell offsets determined'
+ !     print *,'global cell offsets determined'
 
       ! Repeat for nodes.
 
@@ -144,7 +148,7 @@
         nNodeBlockOffset(nn) = nNodeBLockOffset(nn-1)          &
                          + il *jl * kl
       enddo
-      print *,'global node offsets determined'
+  !    print *,'global node offsets determined', nNodeBlockOffset
 
      
       ! Determine the global block row index for each (i,j,k) cell in
@@ -171,17 +175,18 @@
 
       do nn=1,nDom
          call setPointers(nn,level,sps)
-        do k=1,ke
-          do j=1,je
-            do i=1,ie
+        do k=1,kl
+          do j=1,jl
+            do i=1,il
               flowDoms(nn,level,sps)%globalNode(i,j,k) &
                 = nNodeBLockOffset(nn) +(i-1) +(j-1)*il +(k-1)*il*jl
+!              print *,'globalnode',flowDoms(nn,level,sps)%globalNode(i,j,k),i,j,k
             enddo
           enddo
         enddo
       enddo
-      print *,'end'
-
+!      print *,'end'
+!stop
       ! Synchronize the processors, just to be sure.
 
       call mpi_barrier(SUmb_comm_world, ierr)
@@ -196,6 +201,6 @@
 
       call haloIndexCommunication(level, nHalo)
 
-     
+!stop     
 
     end subroutine setGlobalCellsAndNodes

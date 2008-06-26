@@ -71,7 +71,7 @@ subroutine verifydCfdx(level)
 
 
       real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj
-      real(kind=realType) :: alphaAdjb, betaAdjb,MachAdjb
+      real(kind=realType) :: alphaAdjb, betaAdjb,MachAdjb,machCoefAdjb
       REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
       REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
@@ -96,7 +96,7 @@ subroutine verifydCfdx(level)
 
       real(kind=realType), parameter :: deltax = 1.e-8_realType
 
-      real(kind=realType) :: xAdjRef, wDonorAdjRef,xref
+      real(kind=realType) :: xAdjRef,xref
 
       real(kind=realType), dimension(:,:,:), pointer :: norm
       real(kind=realType), dimension(:,:,:),allocatable:: normAdj
@@ -108,7 +108,7 @@ subroutine verifydCfdx(level)
 
       logical :: contributeToForce, viscousSubface,secondHalo,righthanded
 
-      integer :: ierr,nmonsum1,nmonsum2
+      integer :: ierr,nmonsum1,nmonsum2,liftindex
 
 !File Parameters
       integer :: unit = 8,ierror
@@ -323,7 +323,10 @@ subroutine verifydCfdx(level)
         ! Compute the face normals on the subfaces
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
            MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps)
+           rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
+        !copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
+        !   MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+        !   rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps)
         !copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
         
         bocoLoop: do mm=1,nBocos
@@ -418,9 +421,17 @@ subroutine verifydCfdx(level)
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
-&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
-&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
+&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+&  timerefadj, pinfcorradj, liftindex)
+!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
+!&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
+!&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
 !COMPUTEFORCESADJ_B(xadj, xadjb, wadj, padj, iibeg, iiend, &
 !&  jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, cfzadj&
 !&  , cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
@@ -453,6 +464,19 @@ subroutine verifydCfdx(level)
               enddo
            enddo
 
+        end do bocoLoop
+        
+        bocoLoop2: do mm=1,nBocos
+
+           ! Determine the range of cell indices of the owned cells
+           ! Notice these are not the node indices
+           iiBeg = BCData(mm)%icBeg
+           iiEnd = BCData(mm)%icEnd
+           jjBeg = BCData(mm)%jcBeg
+           jjEnd = BCData(mm)%jcEnd
+           
+           i2Beg= BCData(mm)%inBeg+1; i2End = BCData(mm)%inEnd
+           j2Beg= BCData(mm)%jnBeg+1; j2End = BCData(mm)%jnEnd
 
            ! Initialize the seed for reverse mode. Cd second
            ClAdjB = 0
@@ -477,9 +501,17 @@ subroutine verifydCfdx(level)
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
-&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
-&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
+&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+&  timerefadj, pinfcorradj, liftindex)
+!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
+!&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
+!&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
            !COMPUTEFORCESADJ_B(xadj, xadjb, wadj, padj, iibeg, iiend, &
 !&  jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, cfzadj&
 !&  , cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
@@ -510,7 +542,20 @@ subroutine verifydCfdx(level)
                  enddo
               enddo
            enddo
+           
+        enddo bocoLoop2
 
+        bocoLoop3: do mm=1,nBocos
+
+           ! Determine the range of cell indices of the owned cells
+           ! Notice these are not the node indices
+           iiBeg = BCData(mm)%icBeg
+           iiEnd = BCData(mm)%icEnd
+           jjBeg = BCData(mm)%jcBeg
+           jjEnd = BCData(mm)%jcEnd
+           
+           i2Beg= BCData(mm)%inBeg+1; i2End = BCData(mm)%inEnd
+           j2Beg= BCData(mm)%jnBeg+1; j2End = BCData(mm)%jnEnd
 
            ! Initialize the seed for reverse mode. Cmx third
            ClAdjB = 0
@@ -535,9 +580,17 @@ subroutine verifydCfdx(level)
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
-&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
-&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
+&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+&  timerefadj, pinfcorradj, liftindex)
+!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
+!&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
+!&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
 !COMPUTEFORCESADJ_B(xadj, xadjb, wadj, padj, iibeg, iiend, &
 !&  jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, cfzadj&
 !&  , cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
@@ -575,7 +628,7 @@ subroutine verifydCfdx(level)
 !!$                call terminate("verifydCfdx", &
 !!$                "Deallocation failure for normAdj.") 
            
-        enddo bocoLoop
+        enddo bocoLoop3
         
         !===============================================================
         
@@ -662,7 +715,9 @@ subroutine verifydCfdx(level)
                      !
  
                      call metric(level)
-                     
+                     call computeForcesPressureAdj(w,p)
+                     call applyAllBC(secondHalo)
+
                      call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
                      
                      Cl = (cfp(1) + cfv(1))*liftDirection(1) &
@@ -755,7 +810,9 @@ subroutine verifydCfdx(level)
                      !
   
                      call metric(level)
-                     
+                     call computeForcesPressureAdj(w,p)
+                     call applyAllBC(secondHalo)
+
                      call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
                      
                      Cl = (cfp(1) + cfv(1))*liftDirection(1) &

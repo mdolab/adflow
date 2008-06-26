@@ -309,11 +309,15 @@
              ! At most the halo's of nearest neighbors enter the
              ! stencil. Make sure to limit properly.
              
-             icBeg = max(iRBeg,iCell-1)
-             icEnd = min(iREnd,iCell+1)
-             jcBeg = max(kRBeg,kCell-1)
-             jcEnd = min(kREnd,kCell+1)
-             
+             !icBeg = max(iRBeg,iCell-1)
+             !icEnd = min(iREnd,iCell+1)
+             !jcBeg = max(kRBeg,kCell-1)
+             !jcEnd = min(kREnd,kCell+1)
+
+             icBeg = max(iRBeg,iCell-2)
+             icEnd = min(iREnd,iCell+2)
+             jcBeg = max(kRBeg,kCell-2)
+             jcEnd = min(kREnd,kCell+2)
              ! Other straightforward stuff.
              
              jOffset = kOffset

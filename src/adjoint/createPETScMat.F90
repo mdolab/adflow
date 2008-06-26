@@ -1071,6 +1071,126 @@
                     "; #rows =", nDimW,                 &
                     "; ownership =", iLow, "to", iHigh-1
       endif
+!***********************
+! Create dRdxFD
+!***********************
+
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Create matrix dRdx that is used to compute the total cost /    *
+!     * constraint function sensitivity with respect to the spatial    *
+!     * design variables 'x' as dIdx = dJdx - psi^T dRdx.              *
+!     *                                                                *
+!     * Matrix dRdx has size [nDimW,nDimX] and is generally            *
+!     * sparse for the coordinate design variables.                    *
+!     *                                                                *
+!     * The local dimensions are specified so that the spatial         *
+!     * coordinates x (a) are placed in the local processor. This has  *
+!     * to be consistent with the vectors dIdx and dJdx.               *
+!     *                                                                *
+!     ******************************************************************
+!
+      allocate( nnzDiagonal(nDimW), nnzOffDiag(nDimW) )
+
+      nnzDiagonal = nzDiagonalX * 3
+      nnzOffDiag  = nzOffDiag   * 3
+
+      ! Create the matrix dRdx.
+
+      call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+                           nDimW, nDimX,                     &
+                           PETSC_DETERMINE, PETSC_DETERMINE, &
+                           nzDiagonalX, nnzDiagonal,         &
+                           nzOffDiag, nnzOffDiag,            &
+                           dRdxFD, PETScIerr)
+
+      if( PETScIerr/=0 ) then
+        write(errorMessage,99) &
+                     "Could not create matrix dRdxFD of local size", nDimW
+        call terminate("createPETScMat", errorMessage)
+      endif
+
+      deallocate( nnzDiagonal, nnzOffDiag )
+
+      ! MatSetFromOptions - Creates a matrix where the type is
+      !   determined from the options database. Generates a parallel
+      !   MPI matrix if the communicator has more than one processor.
+      !   The default matrix type is AIJ, using the routines
+      !   MatCreateSeqAIJ() and MatCreateMPIAIJ() if you do not select
+      !   a type in the options database.
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h"
+      ! call MatSetFromOptions(Mat B, PetscErrorCode ierr)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameter
+      !   A - the matrix
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatSetFromOptions.html
+
+      call MatSetFromOptions(dRdxFD, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", &
+                       "Error in MatSetFromOptions dRdxFD")
+
+      ! Set column major order for the matrix dRdxFD.
+
+      call MatSetOption(dRdxFD, MAT_COLUMN_ORIENTED, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", &
+                       "Error in MatSetOption dRdxFD")
+
+      ! Extract info from the global matrix (only processor 0).
+
+      if( PETScRank==0 .and. debug ) then
+
+        ! Get the global number of rows and columns.
+
+        call MatGetSize(dRdxFD, matRows, matCols, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", &
+                         "Error in MatGetSize dRdxFD")
+
+        write(*,20) "# MATRIX: dRdxFD global size =", &
+                    matRows, " x ", matCols
+
+        ! Gets the matrix type as a string from the matrix object.
+
+        call MatGetType(dRdxFD, matTypeStr, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", &
+                         "Error in MatGetType dRdxFD")
+
+        write(*,30) "# MATRIX: dRdx type        =", matTypeStr
+
+      endif
+
+      ! Query about the ownership range.
+
+      if( debug ) then
+        call MatGetOwnershipRange(dRdxFD, iLow, iHigh, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", &
+                         "Error in MatGetOwnershipRange dRdxFD")
+
+        write(*,40) "# MATRIX: dRdxFD Proc", PETScRank,   &
+                    "; #rows =", nDimW,                 &
+                    "; ownership =", iLow, "to", iHigh-1
+      endif
+
+!********************
+! end create dRdxFD
+!********************
+
 !
 !     ******************************************************************
 !

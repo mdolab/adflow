@@ -55,7 +55,7 @@
       integer(kind=intType), dimension(:,:), pointer :: ind1,   ind2
 
       logical :: ASM =.False.!.True.!.False.
-      logical :: BJACOBI =.False.!.True.!.False.!
+      logical :: BJACOBI =.True.!.False.!
 
       logical :: GMRES =.True.!.False.
       logical :: FGMRES =.False.!.True.!.False.
