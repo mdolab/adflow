@@ -49,7 +49,7 @@
       logical :: fineGrid, correctForK, exchangeTurb,secondhalo
 
       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdj, wAdjB
-      real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xAdj, xAdjB
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdj, xAdjB
 
       real(kind=realType), dimension(nw) :: dwAdj, dwAdjB
 

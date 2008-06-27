@@ -65,7 +65,7 @@
       ! auxiliar variables to compute dR/dalpha and dR/dbeta
 
       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdj, wAdjB
-      real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xAdj, xAdjB
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdj, xAdjB
 
       real(kind=realType), dimension(nw) :: dwAdj, dwAdjB
 
