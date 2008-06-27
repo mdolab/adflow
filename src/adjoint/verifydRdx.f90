@@ -306,11 +306,11 @@
  !                            &  murefadj, timerefadj, pinfcorradj   
                         
                         ! Call reverse mode of residual computation
-!!$                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-!!$                             &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-!!$                             &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
-!!$                             &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-!!$                             &  murefadj, timerefadj, pinfcorradj,liftIndex)
+                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
+                             &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
+                             &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
+                             &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+                             &  murefadj, timerefadj, pinfcorradj,liftIndex)
                        ! call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
                        !      dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
                        !      correctfork, secondhalo)
@@ -370,7 +370,7 @@
 !     Compute d(dw)/d(x) using central finite differences
 !_______________________________________________________
        
-       deltax = 1.d-5
+       deltax = 1.d-7
        print *, "deltax=", deltax
        xFD2(:,:,:,:) = 0. 
        call cpu_time(time(3))
@@ -627,7 +627,7 @@
       if(myID == 0) call cpu_time(time(3))
 
 
-      deltax = 1.d-6
+      deltax = 1.d-7
       xFD(:,:,:,:) = 0. 
       call cpu_time(time(3))
 
@@ -754,13 +754,14 @@
                        
                         if( idxres>=0 .and. idxnode>=0) then
                            !write(*,*) iCell,jCell,kCell,m,ii,jj,kk,n,idxnode,idxres
-!                           dRdxErr(idxres, idxnode, 1, 1) = dRdxAdj(idxres, idxnode, 1, 1) - dRdxFD1(idxres, idxnode, 1, 1)
-                           dRdxErr(idxres, idxnode, 1, 1) = dRdxFD2(idxres, idxnode, 1, 1) - dRdxFD1(idxres, idxnode, 1, 1)
+                           dRdxErr(idxres, idxnode, 1, 1) = dRdxAdj(idxres, idxnode, 1, 1) - dRdxFD1(idxres, idxnode, 1, 1)
+                           !dRdxErr(idxres, idxnode, 1, 1) = dRdxFD2(idxres, idxnode, 1, 1) - dRdxFD1(idxres, idxnode, 1, 1)
 !                           if(dRdxFD(idxres,idxnode,1,1).ne.0 .and. dRdxErr(idxres, idxnode, 1, 1)>1e-10.and.dRdxAdj(idxres, idxnode, 1, 1)==0) then
 !                           if(dRdxFD1(idxres,idxnode,1,1).ne.0 .and. dRdxErr(idxres, idxnode, 1, 1)>1e-10) then
-                           if(dRdxErr(idxres, idxnode, 1, 1)>1e-10) then
+                           !if(dRdxErr(idxres, idxnode, 1, 1)>1e-10) then
                            !if(dRdxFD1(idxres,idxnode,1,1).ne.0 .and. dRdxErr(idxres, idxnode, 1, 1).ne.0) then
                            !if(dRdxFD1(idxres,idxnode,1,1).ne.0 .and. dRdxAdj(idxres, idxnode, 1, 1)==0.0) then
+                           if(dRdxAdj(idxres,idxnode,1,1).ne.0) then
                            !if(dRdxFD1(idxres,idxnode,1,1).ne.0) then
                            !if(dRdxFD(idxres,idxnode,1,1)>1e-12) then
                               !if((ii.ne.zero .and.jj.ne.zero).and.(ii.ne.zero .and.kk.ne.zero).and.(kk.ne.zero .and.jj.ne.zero))then

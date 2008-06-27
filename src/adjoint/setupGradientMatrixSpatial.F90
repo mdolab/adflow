@@ -52,12 +52,12 @@
       integer(kind=intType) :: iNode, jNode, kNode
       integer(kind=intType) :: iCell, jCell, kCell
       integer(kind=intType) :: nn, m, n,mm,liftIndex
-      integer(kind=intType) :: ii, jj, kk, i, j, k,xn
+      integer(kind=intType) :: ii, jj, kk, i, j, k,xn,l,idxnode,idxres
 
       logical :: fineGrid, correctForK, exchangeTurb, secondHalo
 
       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdj, wAdjB
-      real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xAdj, xAdjB
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdj, xAdjB
 
       real(kind=realType), dimension(nw) :: dwAdj, dwAdjB
 
@@ -88,6 +88,12 @@
       real(kind=realType), dimension(nw,3) :: DFad, DGad, EFad, EGad, &
                                               BFad, BGad, CFad, CGad, &
                                               BDad, BEad, CDad, CEad
+
+      real(kind=realType), dimension(nw,3) :: BEFad, BEGad, CEFad, CEGad, &
+                                              BDGad, BDFad, CDGad, CDFad
+ 
+      real(kind=realType), dimension(nw,3) :: BEEFad, BEEGad, CEEFad, CEEGad, &
+                                              BDDGad, BDDFad, CDDGad, CDDFad
 
       ! idxmgb - global block row index
       ! idxngb - global block column index
@@ -360,11 +366,11 @@
 
             ! Loop over location of output (R) cell of residual
             do kCell = 2, kl
-		kNode = kCell-1
+		kNode = kCell!-1
                do jCell = 2, jl
-		  jNode = jCell-1
+		  jNode = jCell!-1
                   do iCell = 2, il
-		     iNode = iCell-1
+		     iNode = iCell!-1
                      ! Copy the state w to the wAdj array in the stencil
                      call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
                           machCoefAdj,iCell, jCell, kCell,prefAdj,&
@@ -393,6 +399,47 @@
 !                             dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
 !                             correctfork, secondhalo)
 
+                         do ii=-3,2!1,il-1
+                           do jj = -3,2!1,jl-1
+                              do kk = -3,2!1,kl-1
+                                 do l = 1,3
+                                    i = iCell + ii
+                                    j = jCell + jj
+                                    k = kCell + kk
+                                    !print *,'secondaryindicies',i,j,k,ii,jj,kk
+                                    if(i>zero .and. j>zero .and. k>zero .and. i<=ie .and. j<=je .and. k<=ke)then
+                                       idxnode = globalNode(i,j,k)*3+l
+                                       idxres   = globalCell(iCell,jCell,kCell)*nw+m
+                                       if (xAdjb(ii,jj,kk,l).ne.0.0)then
+                                          call MatSetValues(dRdx, 1, idxres-1, 1, idxnode-1,   &
+                                               xAdjb(ii,jj,kk,l), INSERT_VALUES, PETScIerr)
+                                          if( PETScIerr/=0 ) &
+                                               print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                                       endif
+                                    endif
+                                 enddo
+!!$                                    Aad(m,:)= xAdjB( ii, jj, kk,:)
+!!$                                    if(i>zero .and. j>zero .and. k>zero .and. i<=ie .and. j<=je .and. k<=ke)then
+!!$                                       idxmgb = globalCell(iCell,jCell,kCell)
+!!$                                       call blockIndices(idxmgb, nw, idxmg)
+!!$                                   !    !if( (jNode-2) >= 0 ) then
+!!$                                       idxngb = globalNode(i,j,k)
+!!$                                       if (idxngb>=0 .and. idxngb<nNodesGlobal)then
+!!$                                          call blockIndices(idxngb, 3, idxng)
+!!$                                          if (any(Aad .ne.0.0)) then
+!!$                                             call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                                  Aad, INSERT_VALUES, PETScIerr)
+!!$                                             if( PETScIerr/=0 ) &
+!!$                                                  call errAssemb("MatSetValues", "DDad")
+!!$                                          endif
+!!$                                       endif
+!!$                                    end if
+                        
+                                  
+                               enddo
+                            enddo
+                         enddo
+                            
                 ! Store the block Jacobians (by rows).
 
                 Aad(m,:)  = xAdjB( 0, 0, 0,:)
@@ -426,6 +473,26 @@
                 BEad(m,:) = xAdjB(-1, 1, 0,:)
                 CDad(m,:) = xAdjB( 1,-1, 0,:)
                 CEad(m,:) = xAdjB( 1, 1, 0,:)
+
+		BEFad(m,:) = xAdjB(-1, 1,-1,:)
+                BEGad(m,:) = xAdjB(-1, 1, 1,:)
+                CEFad(m,:) = xAdjB( 1, 1,-1,:)
+                CEGad(m,:) = xAdjB( 1, 1, 1,:)
+
+                BDGad(m,:) = xAdjB(-1,-1, 1,:)
+                BDFad(m,:) = xAdjB(-1,-1,-1,:)
+                CDGad(m,:) = xAdjB( 1,-1, 1,:)
+                CDFad(m,:) = xAdjB( 1,-1,-1,:)
+
+		BEEFad(m,:) = xAdjB(-1, 2,-1,:)
+                BEEGad(m,:) = xAdjB(-1, 2, 1,:)
+                CEEFad(m,:) = xAdjB( 1, 2,-1,:)
+                CEEGad(m,:) = xAdjB( 1, 2, 1,:)
+
+                BDDGad(m,:) = xAdjB(-1,-2, 1,:)
+                BDDFad(m,:) = xAdjB(-1,-2,-1,:)
+                CDDGad(m,:) = xAdjB( 1,-2, 1,:)
+                CDDFad(m,:) = xAdjB( 1,-2,-1,:)
 
               enddo mLoop
 	
@@ -482,371 +549,605 @@
               !
               !*********************************************************
 
-              ! Global matrix block row mgb function of node indices.
-              !
-              ! MatSetValues() uses 0-based row and column 
-              ! numbers but the global node numbering already accounts
-              ! for that since it starts at node 0.
-
-              idxmgb = globalCell(iCell,jCell,kCell)
-              call blockIndices(idxmgb, nw, idxmg)
-
-              ! >>> center block A < W(i,j,k)
-
-              idxngb = idxmgb
-              call blockIndices(idxngb, 3, idxng)
-
-              call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
-                                Aad, INSERT_VALUES, PETScIerr)
-              if( PETScIerr/=0 ) &
-                call errAssemb("MatSetValues", "Aad")
-
-              ! far west block BB < W(i-2,j,k)
-
-              if( (iNode-2) >= 0 ) then
-                idxngb = globalNode(iNode-2,jNode,kNode)
-		if (idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
-                                  BBad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "BBad")
-	        endif
-              end if
-
-              ! >>> west block B < W(i-1,j,k)
-
-              if( (iNode-1) >= 0 ) then
-                idxngb = globalNode(iNode-1,jNode,kNode)
-		if (idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
-                                     Bad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "Bad")
-		endif
-              endif
-
-              ! >>> east block C < W(i+1,j,k)
-
-              if( (iNode+1) <= ie ) then
-                idxngb = globalNode(iNode+1,jNode,kNode)
-		if (idxngb<nNodesGlobal)then
-                   call blockIndices(idxngb, 3, idxng)
- 
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
-                                     Cad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "Cad")
-		endif
-              end if
-
-              ! >>> far east block CC < W(i+2,j,k)
-
-              if( (iNode+2) <= ie ) then
-                idxngb = globalNode(iNode+2,jNode,kNode)
-		if (idxngb<nNodesGlobal)then
-                   call blockIndices(idxngb, 3, idxng)
-   
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
-                                     CCad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "CCad")
-		endif
-              end if
-
-              ! -----------------------------------
-
-              ! >>> far south block DD < W(i,j-2,k)
-
-              if( (jNode-2) >= 0 ) then
-                idxngb = globalNode(iNode,jNode-2,kNode)
-		if (idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
-                                     DDad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "DDad")
-		endif
-              end if
-
-              ! >>> south block D < W(i,j-1,k)
-
-              if( (jNode-1) >= 0 ) then
-                idxngb = globalNode(iNode,jNode-1,kNode)
-                if (idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
-                                  Dad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "Dad")
-		endif
-              endif
-
-              ! >>> north block E < W(i,j+1,k)
-
-              if( (jNode+1) <= je ) then
-                idxngb = globalNode(iNode,jNode+1,kNode)
-		if (idxngb<nNodesGlobal)then
-                   call blockIndices(idxngb, 3, idxng)
-
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
-                                     Ead, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "Ead")
-		endif
-              end if
-
-              ! >>> far north block EE < W(i,j+2,k)
-
-              if( (jNode+2) <= je ) then
-                idxngb = globalNode(iNode,jNode+2,kNode)
-		if (idxngb<nNodesGlobal)then
-	           call blockIndices(idxngb, 3, idxng)
-
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
-                                     EEad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "EEad")
-		endif
-              end if
-
-              ! -----------------------------------
-
-              ! >>> far back block FF < W(i,j,k-2)
-
-              if( (kNode-2) >= 0 ) then
-                idxngb = globalNode(iNode,jNode,kNode-2)
-		if (idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-   
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
-                                     FFad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "FFad")
-		endif
-              end if
-
-              ! >>> back block F < W(i,j,k-1)
-
-              if( (kNode-1) >= 0 ) then
-                idxngb = globalNode(iNode,jNode,kNode-1)
-		if (idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-   
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
-                                     Fad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                      call errAssemb("MatSetValues", "Fad")
-		endif
-              endif
-
-              ! >>> front block G < W(i,j,k+1)
-
-              if( (kNode+1) <= ke ) then
-                idxngb = globalNode(iNode,jNode,kNode+1)
-		if (idxngb<nNodesGlobal)then
-                   call blockIndices(idxngb, 3, idxng)
-    
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
-                                     Gad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "Gad")
-		endif
-              end if
-
-              ! >>> far front block GG < W(i,j,k+2)
-
-              if( (kNode+2) <= ke ) then
-                idxngb = globalNode(iNode,jNode,kNode+2)
-		if (idxngb<nNodesGlobal)then
-		   
-                   call blockIndices(idxngb, 3, idxng)
-   	           
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
-                                     GGad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "GGad")
-		endif
-              end if
-
-              ! -----------------------------------
-
-              ! >>> block DF < X(i,j-1,k-1)
-
-              if( (jNode-1) >= 0 .and. (kNode-1) >= 0 ) then
-                idxngb = globalNode(iNode,jNode-1,kNode-1)
-		if (idxngb<nNodesGlobal.and.idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-   
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
-                                     DFad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "DFad")
-		endif
-              end if
-
-              ! >>> block DG < X(i,j-1,k+1)
-
-              if( (jNode-1) >= 0 .and. (kNode+1) <= ke ) then
-                idxngb = globalNode(iNode,jNode-1,kNode+1)
-		if (idxngb<nNodesGlobal.and.idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-   
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
-                                     DGad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "DGad")
-		endif
-              endif
-
-              ! >>> block EF < X(i,j+1,k-1)
-
-              if( (jNode+1) <= je .and. (kNode-1) >= 0 ) then
-                idxngb = globalNode(iNode,jNode+1,kNode-1)
-		if (idxngb<nNodesGlobal.and.idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-   
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
-                                     EFad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "EFad")
-		endif
-              end if
-
-              ! >>> block EG < X(i,j+1,k+1)
-
-              if( (jNode+1) <= je .and. (kNode+1) <= ke ) then
-                idxngb = globalNode(iNode,jNode+1,kNode+1)
-		if (idxngb<nNodesGlobal.and.idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-   
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
-                                     EGad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "EGad")
-		endif
-              end if
-
-              ! -----------------------------------
-
-              ! >>> block BF < X(i-1,j,k-1)
-
-              if( (iNode-1) >= 0 .and. (kNode-1) >= 0 ) then
-                idxngb = globalNode(iNode-1,jNode,kNode-1)
-		if (idxngb<nNodesGlobal.and.idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-   
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
-                                     BFad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "BFad")
-		endif
-              end if
-
-              ! >>> block BG < X(i-1,j,k+1)
-
-              if( (iNode-1) >= 0 .and. (kNode+1) <= ke ) then
-                idxngb = globalNode(iNode-1,jNode,kNode+1)
-		if (idxngb<nNodesGlobal.and.idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-  
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
-                                     BGad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "BGad")
-		endif
-              endif
-
-              ! >>> block CF < X(i+1,j,k-1)
-
-              if( (iNode+1) <= ie .and. (kNode-1) >= 0 ) then
-                idxngb = globalNode(iNode+1,jNode,kNode-1)
-		if (idxngb<nNodesGlobal.and.idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-   
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
-                                     CFad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "CFad")
-		endif
-              end if
-
-              ! >>> block CG < X(i+1,j,k+1)
-
-              if( (iNode+1) <= ie .and. (kNode+1) <= ke ) then
-                idxngb = globalNode(iNode+1,jNode,kNode+1)
-		if (idxngb<nNodesGlobal.and.idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-   
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
-                                     CGad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "CGad")
-		endif
-              end if
-
-              ! -----------------------------------
-
-              ! >>> block BD < X(i-1,j-1,k)
-
-              if( (iNode-1) >= 0 .and. (jNode-1) >= 0 ) then
-                idxngb = globalNode(iNode-1,jNode-1,kNode)
-		if (idxngb<nNodesGlobal.and.idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-    
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
-                                     BDad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "BDad")
-		endif
-              end if
-
-              ! >>> block BE < X(i-1,j+1,k)
-
-              if( (iNode-1) >= 0 .and. (jNode+1) <= je ) then
-                idxngb = globalNode(iNode-1,jNode+1,kNode)
-		if (idxngb<nNodesGlobal.and.idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-   
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
-                                     BEad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "BEad")
-		endif
-              endif
-
-              ! >>> block CD < X(i+1,j-1,k)
-
-              if( (iNode+1) <= ie .and. (jNode-1) >= 0 ) then
-                idxngb = globalNode(iNode+1,jNode-1,kNode)
-  		if (idxngb<nNodesGlobal.and.idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-   
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
-                                     CDad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "CDad")
-		endif
-              end if
-
-              ! >>> block CE < X(i+1,j+1,k)
-
-              if( (iNode+1) <= ie .and. (jNode+1) <= je ) then
-                idxngb = globalNode(iNode+1,jNode+1,kNode)
-		if (idxngb<nNodesGlobal.and.idxngb>=0)then
-                   call blockIndices(idxngb, 3, idxng)
-   
-                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
-                                     CEad, INSERT_VALUES, PETScIerr)
-                   if( PETScIerr/=0 ) &
-                     call errAssemb("MatSetValues", "CEad")
-		endif
-              end if
+!!$              ! Global matrix block row mgb function of node indices.
+!!$              !
+!!$              ! MatSetValues() uses 0-based row and column 
+!!$              ! numbers but the global node numbering already accounts
+!!$              ! for that since it starts at node 0.
+!!$
+!!$              idxmgb = globalCell(iCell,jCell,kCell)
+!!$              call blockIndices(idxmgb, nw, idxmg)
+!!$
+!!$              ! >>> center block A < x(i,j,k)
+!!$
+!!$              idxngb = idxmgb
+!!$              call blockIndices(idxngb, 3, idxng)
+!!$
+!!$              if sum(Aad .ne.0.0) then
+!!$
+!!$                 call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
+!!$                      Aad, INSERT_VALUES, PETScIerr)
+!!$                 if( PETScIerr/=0 ) &
+!!$                      call errAssemb("MatSetValues", "Aad")
+!!$              endif
+!!$              ! far west block BB < x(i-2,j,k)
+!!$
+!!$              if( (iNode-2) >= 0 ) then
+!!$                idxngb = globalNode(iNode-2,jNode,kNode)
+!!$		if (idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$                   if sum(BBad .ne.0.0) then
+!!$                      call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                           BBad, INSERT_VALUES, PETScIerr)
+!!$                      if( PETScIerr/=0 ) &
+!!$                           call errAssemb("MatSetValues", "BBad")
+!!$                   end if
+!!$	        endif
+!!$              end if
+!!$
+!!$              ! >>> west block B < x(i-1,j,k)
+!!$
+!!$              if( (iNode-1) >= 0 ) then
+!!$                idxngb = globalNode(iNode-1,jNode,kNode)
+!!$		if (idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$                   if sum(Bad .ne.0.0) then
+!!$                      call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
+!!$                           Bad, INSERT_VALUES, PETScIerr)
+!!$                      if( PETScIerr/=0 ) &
+!!$                           call errAssemb("MatSetValues", "Bad")
+!!$                   endif
+!!$		endif
+!!$              endif
+!!$
+!!$              ! >>> east block C < x(i+1,j,k)
+!!$
+!!$              if( (iNode+1) <= ie ) then
+!!$                idxngb = globalNode(iNode+1,jNode,kNode)
+!!$		if (idxngb<nNodesGlobal)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$                   if sum(Cad .ne.0.0) then
+!!$                      call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
+!!$                           Cad, INSERT_VALUES, PETScIerr)
+!!$                      if( PETScIerr/=0 ) &
+!!$                           call errAssemb("MatSetValues", "Cad")
+!!$                   endif
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> far east block CC < x(i+2,j,k)
+!!$
+!!$              if( (iNode+2) <= ie ) then
+!!$                idxngb = globalNode(iNode+2,jNode,kNode)
+!!$		if (idxngb<nNodesGlobal)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$                   if sum(CCad .ne.0.0) then
+!!$                      call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                           CCad, INSERT_VALUES, PETScIerr)
+!!$                      if( PETScIerr/=0 ) &
+!!$                           call errAssemb("MatSetValues", "CCad")
+!!$                   end if
+!!$		endif
+!!$              end if
+!!$
+!!$              ! -----------------------------------
+!!$
+!!$              ! >>> far south block DD < x(i,j-2,k)
+!!$
+!!$              if( (jNode-2) >= 0 ) then
+!!$                idxngb = globalNode(iNode,jNode-2,kNode)
+!!$		if (idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$                   if sum(DDad .ne.0.0) then
+!!$                      call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                           DDad, INSERT_VALUES, PETScIerr)
+!!$                      if( PETScIerr/=0 ) &
+!!$                           call errAssemb("MatSetValues", "DDad")
+!!$                   endif
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> south block D < x(i,j-1,k)
+!!$
+!!$              if( (jNode-1) >= 0 ) then
+!!$                idxngb = globalNode(iNode,jNode-1,kNode)
+!!$                if (idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
+!!$                                  Dad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "Dad")
+!!$		endif
+!!$              endif
+!!$
+!!$              ! >>> north block E < x(i,j+1,k)
+!!$
+!!$              if( (jNode+1) <= je ) then
+!!$                idxngb = globalNode(iNode,jNode+1,kNode)
+!!$		if (idxngb<nNodesGlobal)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
+!!$                                     Ead, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "Ead")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> far north block EE < x(i,j+2,k)
+!!$
+!!$              if( (jNode+2) <= je ) then
+!!$                idxngb = globalNode(iNode,jNode+2,kNode)
+!!$		if (idxngb<nNodesGlobal)then
+!!$	           call blockIndices(idxngb, 3, idxng)
+!!$
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     EEad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "EEad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! -----------------------------------
+!!$
+!!$              ! >>> far back block FF < x(i,j,k-2)
+!!$
+!!$              if( (kNode-2) >= 0 ) then
+!!$                idxngb = globalNode(iNode,jNode,kNode-2)
+!!$		if (idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     FFad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "FFad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> back block F < x(i,j,k-1)
+!!$
+!!$              if( (kNode-1) >= 0 ) then
+!!$                idxngb = globalNode(iNode,jNode,kNode-1)
+!!$		if (idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
+!!$                                     Fad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                      call errAssemb("MatSetValues", "Fad")
+!!$		endif
+!!$              endif
+!!$
+!!$              ! >>> front block G < x(i,j,k+1)
+!!$
+!!$              if( (kNode+1) <= ke ) then
+!!$                idxngb = globalNode(iNode,jNode,kNode+1)
+!!$		if (idxngb<nNodesGlobal)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$    
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
+!!$                                     Gad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "Gad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> far front block GG < x(i,j,k+2)
+!!$
+!!$              if( (kNode+2) <= ke ) then
+!!$                idxngb = globalNode(iNode,jNode,kNode+2)
+!!$		if (idxngb<nNodesGlobal)then
+!!$		   
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   	           
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     GGad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "GGad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! -----------------------------------
+!!$
+!!$              ! >>> block DF < X(i,j-1,k-1)
+!!$
+!!$              if( (jNode-1) >= 0 .and. (kNode-1) >= 0 ) then
+!!$                idxngb = globalNode(iNode,jNode-1,kNode-1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     DFad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "DFad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block DG < X(i,j-1,k+1)
+!!$
+!!$              if( (jNode-1) >= 0 .and. (kNode+1) <= ke ) then
+!!$                idxngb = globalNode(iNode,jNode-1,kNode+1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
+!!$                                     DGad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "DGad")
+!!$		endif
+!!$              endif
+!!$
+!!$              ! >>> block EF < X(i,j+1,k-1)
+!!$
+!!$              if( (jNode+1) <= je .and. (kNode-1) >= 0 ) then
+!!$                idxngb = globalNode(iNode,jNode+1,kNode-1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
+!!$                                     EFad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "EFad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block EG < X(i,j+1,k+1)
+!!$
+!!$              if( (jNode+1) <= je .and. (kNode+1) <= ke ) then
+!!$                idxngb = globalNode(iNode,jNode+1,kNode+1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     EGad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "EGad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! -----------------------------------
+!!$
+!!$              ! >>> block BF < X(i-1,j,k-1)
+!!$
+!!$              if( (iNode-1) >= 0 .and. (kNode-1) >= 0 ) then
+!!$                idxngb = globalNode(iNode-1,jNode,kNode-1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     BFad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "BFad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block BG < X(i-1,j,k+1)
+!!$
+!!$              if( (iNode-1) >= 0 .and. (kNode+1) <= ke ) then
+!!$                idxngb = globalNode(iNode-1,jNode,kNode+1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$  
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
+!!$                                     BGad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "BGad")
+!!$		endif
+!!$              endif
+!!$
+!!$              ! >>> block CF < X(i+1,j,k-1)
+!!$
+!!$              if( (iNode+1) <= ie .and. (kNode-1) >= 0 ) then
+!!$                idxngb = globalNode(iNode+1,jNode,kNode-1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
+!!$                                     CFad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CFad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block CG < X(i+1,j,k+1)
+!!$
+!!$              if( (iNode+1) <= ie .and. (kNode+1) <= ke ) then
+!!$                idxngb = globalNode(iNode+1,jNode,kNode+1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     CGad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CGad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! -----------------------------------
+!!$
+!!$              ! >>> block BD < X(i-1,j-1,k)
+!!$
+!!$              if( (iNode-1) >= 0 .and. (jNode-1) >= 0 ) then
+!!$                idxngb = globalNode(iNode-1,jNode-1,kNode)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$    
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     BDad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "BDad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block BE < X(i-1,j+1,k)
+!!$
+!!$              if( (iNode-1) >= 0 .and. (jNode+1) <= je ) then
+!!$                idxngb = globalNode(iNode-1,jNode+1,kNode)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
+!!$                                     BEad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "BEad")
+!!$		endif
+!!$              endif
+!!$
+!!$              ! >>> block CD < X(i+1,j-1,k)
+!!$
+!!$              if( (iNode+1) <= ie .and. (jNode-1) >= 0 ) then
+!!$                idxngb = globalNode(iNode+1,jNode-1,kNode)
+!!$  		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,  &
+!!$                                     CDad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CDad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block CE < X(i+1,j+1,k)
+!!$
+!!$              if( (iNode+1) <= ie .and. (jNode+1) <= je ) then
+!!$                idxngb = globalNode(iNode+1,jNode+1,kNode)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     CEad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$
+!!$
+!!$              ! >>> block BEF < X(i-1,j+1,k-1)
+!!$
+!!$              if( (iNode-1) >= 0 .and. (jNode+1) <= je .and. (kNode-1) >= 0 ) then
+!!$                idxngb = globalNode(iNode-1,jNode+1,kNode-1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     BEFad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block BEG < X(i-1,j+1,k+1)!
+!!$
+!!$              if( (iNode-1) >= 0 .and. (jNode+1) <= je .and. (kNode+1)<=ke ) then
+!!$                idxngb = globalNode(iNode-1,jNode+1,kNode+1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     BEGad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block CEF < X(i+1,j+1,k-1)!
+!!$
+!!$              if( (iNode+1) <= ie .and. (jNode+1) <= je .and.ke>=0 ) then
+!!$                idxngb = globalNode(iNode+1,jNode+1,kNode-1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$  
+!!$                  call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     CEFad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block CEG < X(i+1,j+1,k+1)
+!!$
+!!$              if( (iNode+1) <= ie .and. (jNode+1) <= je .and. (kNode+1)<=ke) then
+!!$                idxngb = globalNode(iNode+1,jNode+1,kNode+1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     CEGad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block BDG < X(i-1,j-1,k+1)
+!!$
+!!$              if( (iNode-1) >= 0 .and. (jNode-1) >= 0 .and. (kNode+1)<=ke) then
+!!$                idxngb = globalNode(iNode-1,jNode-1,kNode+1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     BDGad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$	      ! >>> block BDF < X(i-1,j-1,k-1)
+!!$
+!!$              if( (iNode-1) >= 0 .and. (jNode-1) >= 0 .and. (kNode-1)>=0) then
+!!$                idxngb = globalNode(iNode-1,jNode-1,kNode-1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     BDFad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block CDG < X(i+1,j-1,k+1)
+!!$
+!!$              if( (iNode+1) <= ie .and. (jNode-1) >= 0 .and. (kNode+1)<=ke) then
+!!$                idxngb = globalNode(iNode+1,jNode-1,kNode+1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     CDGad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block CDF < X(i+1,j-1,k-1)
+!!$
+!!$              if( (iNode+1) <= ie .and. (jNode-1) >= 0 .and. (kNode-1)>=0) then
+!!$                idxngb = globalNode(iNode+1,jNode-1,kNode-1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     CDFad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$
+!!$             ! >>> block BEEF < X(i-1,j+2,k-1)
+!!$
+!!$              if( (iNode-1) >= 0 .and. (jNode+2) <= je .and. (kNode-1) >= 0 ) then
+!!$                idxngb = globalNode(iNode-1,jNode+2,kNode-1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     BEEFad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block BEEG < X(i-1,j+2,k+1)!
+!!$
+!!$              if( (iNode-1) >= 0 .and. (jNode+2) <= je .and. (kNode+1)<=ke ) then
+!!$                idxngb = globalNode(iNode-1,jNode+2,kNode+1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     BEEGad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block CEEF < X(i+1,j+2,k-1)!
+!!$
+!!$              if( (iNode+1) <= ie .and. (jNode+2) <= je .and.ke>=0 ) then
+!!$                idxngb = globalNode(iNode+1,jNode+2,kNode-1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$  
+!!$                  call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     CEEFad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block CEEG < X(i+1,j+2,k+1)
+!!$
+!!$              if( (iNode+1) <= ie .and. (jNode+2) <= je .and. (kNode+1)<=ke) then
+!!$                idxngb = globalNode(iNode+1,jNode+2,kNode+1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     CEEGad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block BDDG < X(i-1,j-2,k+1)
+!!$
+!!$              if( (iNode-1) >= 0 .and. (jNode-2) >= 0 .and. (kNode+1)<=ke) then
+!!$                idxngb = globalNode(iNode-1,jNode-2,kNode+1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     BDDGad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$	      ! >>> block BDDF < X(i-1,j-2,k-1)
+!!$
+!!$              if( (iNode-1) >= 0 .and. (jNode-2) >= 0 .and. (kNode-1)>=0) then
+!!$                idxngb = globalNode(iNode-1,jNode-2,kNode-1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     BDDFad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block CDDG < X(i+1,j-2,k+1)
+!!$
+!!$              if( (iNode+1) <= ie .and. (jNode-2) >= 0 .and. (kNode+1)<=ke) then
+!!$                idxngb = globalNode(iNode+1,jNode-2,kNode+1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     CDDGad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
+!!$
+!!$              ! >>> block CDDF < X(i+1,j-2,k-1)
+!!$
+!!$              if( (iNode+1) <= ie .and. (jNode-2) >= 0 .and. (kNode-1)>=0) then
+!!$                idxngb = globalNode(iNode+1,jNode-2,kNode-1)
+!!$		if (idxngb<nNodesGlobal.and.idxngb>=0)then
+!!$                   call blockIndices(idxngb, 3, idxng)
+!!$   
+!!$                   call MatSetValues(dRdx, nw, idxmg, 3, idxng,   &
+!!$                                     CDDFad, INSERT_VALUES, PETScIerr)
+!!$                   if( PETScIerr/=0 ) &
+!!$                     call errAssemb("MatSetValues", "CEad")
+!!$		endif
+!!$              end if
 
             enddo 
           enddo 
@@ -999,10 +1300,11 @@
       ! or PETSc users manual, pp.57,148
 
       if( debug ) then
-        call MatView(dRdx,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+        !call MatView(dRdx,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+        call MatView(dRdx,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
         if( PETScIerr/=0 ) &
           call terminate("setupGradientMatrixSpatial", "Error in MatView")
-        pause
+        !pause
       endif
 
       ! Flush the output buffer and synchronize the processors.

@@ -59,9 +59,9 @@
       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdj
       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdjb
       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wFD
-      real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xAdj
-      real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xAdjb
-      real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xFD
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdj
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdjb
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xFD
 
       REAL(KIND=REALTYPE) :: machadj, machcoefadj, pinfcorradj
       REAL(KIND=REALTYPE) :: machadjb, machcoefadjb, pinfcorradjb

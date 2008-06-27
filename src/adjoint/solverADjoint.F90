@@ -156,7 +156,7 @@
 
         ! Verify the node-based residual routine.
 
-  	call verifyRAdj(level)
+  	!call verifyRAdj(level)
 !stop
 !	call verifyResiduals(level)
 !stop
@@ -218,8 +218,8 @@ stop
         print "(a)", "# ... Krylov subspace created;"
 
 
-      call solveDirectPETSc
-stop
+      !call solveDirectPETSc
+!stop
 !
 !     ******************************************************************
 !     *                                                                *
