@@ -50,6 +50,10 @@
        call indexHalo1to1(level, commPatternCell_1st,  &
                       internalCell_1st)
 
+       ! Exchange the 1 to 1 matching 1st level Node halo's.
+
+       call indexHaloNode1to1(level)
+
        ! Exchange the sliding mesh 1st level cell halo's.
 
 !!$       !!! NOT Implemented Yet

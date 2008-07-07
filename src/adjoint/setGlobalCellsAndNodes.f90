@@ -114,7 +114,7 @@
         do nn=2,nProc
           nCellOffset(nn) = nCellOffset(nn-1) + nCells(nn-1)
           nNodeOffset(nn) = nNodeOffset(nn-1) + nNodes(nn-1)
-          !print *,'offset',nnodeoffset
+          print *,'offset',nnodeoffset
         enddo
       endif rootProc
 
@@ -140,14 +140,16 @@
       call mpi_scatter(nNodeOffset, 1, sumb_integer, nNodeOffsetLocal, 1, &
                       sumb_integer, 0, SUmb_comm_world, ierr)
 
-      ! Determine the global cell number offset for each local block.
+      ! Determine the global node number offset for each local block.
 
       nNodeBlockOffset(1) = nNodeOffsetLocal
       do nn=2,nDom
          call setPointers(nn-1,level,sps)
         nNodeBlockOffset(nn) = nNodeBLockOffset(nn-1)          &
                          + il *jl * kl
+        !print *,' block offset',nNodeBlockOffset(nn),nn, il *jl * kl
       enddo
+!      stop
   !    print *,'global node offsets determined', nNodeBlockOffset
 
      
@@ -180,12 +182,12 @@
             do i=1,il
               flowDoms(nn,level,sps)%globalNode(i,j,k) &
                 = nNodeBLockOffset(nn) +(i-1) +(j-1)*il +(k-1)*il*jl
-!              print *,'globalnode',flowDoms(nn,level,sps)%globalNode(i,j,k),i,j,k
+              !print *,'globalnode',flowDoms(nn,level,sps)%globalNode(i,j,k),i,j,k
             enddo
           enddo
         enddo
       enddo
-!      print *,'end'
+      !print *,'end'
 !stop
       ! Synchronize the processors, just to be sure.
 
