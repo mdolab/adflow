@@ -63,7 +63,7 @@
       ! Send some feedback to screen.
 
       if( PETScRank==0 ) &
-        write(*,10) "Solving ADjoint with PETSc..."
+        write(*,10) "Solving Direct with PETSc..."
 
       ! Get the initial time.
 

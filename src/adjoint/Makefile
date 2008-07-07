@@ -56,6 +56,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       initializePETSc.o        \
 	       indexHalo.o              \
 	       indexHalo1to1.o          \
+	       indexHaloNode1to1.o      \
 	       preprocessingADjoint.o   \
 	       releaseMemADjoint.o      \
 	       setGlobalCellsAndNodes.o \

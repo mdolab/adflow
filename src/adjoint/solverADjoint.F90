@@ -167,8 +167,8 @@
 
         ! Verify the dRdx routine
 
-        call verifydRdx(level,sps)
-stop
+        !call verifydRdx(level,sps)
+!stop
 	!call verifydRdExtra(level)
 
 
@@ -218,7 +218,7 @@ stop
         print "(a)", "# ... Krylov subspace created;"
 
 
-      !call solveDirectPETSc
+!      call solveDirectPETSc
 !stop
 !
 !     ******************************************************************
