@@ -199,7 +199,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      print *,'calling setupADjointMatrix'
+      !print *,'calling setupADjointMatrix'
       call setupADjointMatrix(level)
 
 

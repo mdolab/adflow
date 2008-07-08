@@ -353,7 +353,7 @@
 
       spectralLoopAdj: do sps=1,nTimeIntervalsSpectral
          
-         print *,'zeroing force output'
+         !print *,'zeroing force output'
          !zero the force components
          cFpAdj(1) = zero; cFpAdj(2) = zero; cFpAdj(3) = zero
          cFvAdj(1) = zero; cFvAdj(2) = zero; cFvAdj(3) = zero

@@ -1014,7 +1014,7 @@
 !**************************
 ! block jacobi
 !********************
-      print *,' entering block jacobi'
+      !print *,' entering block jacobi'
       !Set preconditioner type
       call PCSetType( pc, PCBJACOBI, PETScIerr)
 
@@ -1053,11 +1053,11 @@
      ! call KSPMonitorSet(ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
      !                    PETSC_NULL_FUNCTION, PETScIerr)
 
-     ! call KSPSetMonitor(ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
-     !                    PETSC_NULL_FUNCTION, PETScIerr)
-
-      call KSPMonitorSet(ksp,KSPMonitorDefault, PETSC_NULL_OBJECT, &
+      call KSPMonitorSet(ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
                          PETSC_NULL_FUNCTION, PETScIerr)
+
+     ! call KSPMonitorSet(ksp,KSPMonitorDefault, PETSC_NULL_OBJECT, &
+     !                    PETSC_NULL_FUNCTION, PETScIerr)
 !*********************
 ! Single Processor ILU
 !*********************

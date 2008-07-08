@@ -114,7 +114,7 @@
         do nn=2,nProc
           nCellOffset(nn) = nCellOffset(nn-1) + nCells(nn-1)
           nNodeOffset(nn) = nNodeOffset(nn-1) + nNodes(nn-1)
-          print *,'offset',nnodeoffset
+          !print *,'offset',nnodeoffset(nn)
         enddo
       endif rootProc
 
@@ -149,7 +149,8 @@
                          + il *jl * kl
         !print *,' block offset',nNodeBlockOffset(nn),nn, il *jl * kl
       enddo
-!      stop
+      ! call mpi_barrier(SUmb_comm_world, ierr)
+      !stop
   !    print *,'global node offsets determined', nNodeBlockOffset
 
      
@@ -169,7 +170,7 @@
           enddo
         enddo
       enddo
-      print *,'global cell bock row determined'
+      !print *,'global cell bock row determined'
      
 
       ! Determine the global block row index for each (i,j,k) node in

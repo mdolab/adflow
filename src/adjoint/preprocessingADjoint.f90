@@ -36,21 +36,21 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      print *,' in preprocessing adjoint'
+      !print *,' in preprocessing adjoint'
       ! Test the discrete adjoint solver assertions.
 
       call assertionsADjoint(level)
-      print *,'assertions called'
+      !print *,'assertions called'
       ! Allocate the memory for the global cell indexing of the
       ! computational mesh, later used to assemble the global
       ! adjoint system of equations.
 
       call allocMemADjoint(level)
-      print *,'memory allocated'
+      !print *,'memory allocated'
       ! Determine the global cell and Node numbering.
 
       call setGlobalCellsAndNodes(level)
-      print *,'global node indices set'
+      !print *,'global node indices set'
       ! Synchronize the processors.
 
       call mpi_barrier(SUmb_comm_world, ierr)
