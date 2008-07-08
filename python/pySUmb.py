@@ -121,7 +121,13 @@ class SUMB(AeroSolver):
 		#	#Lift,Drag,CL,CD,CDi,CDp,CDw,Distribs,etc...
 		#	arguments=args, **kwargs)
 		
-		
+		return
+
+	def _adjoint(self,*args,**kwargs):
+
+		print 'running adjoint'
+
+		return
 		
 	def _on_setOption(self, name, value):
 		
