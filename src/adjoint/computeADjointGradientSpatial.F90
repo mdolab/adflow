@@ -244,12 +244,13 @@
 !=======
 !********************************************************
       !use to print out values to chack accuracy in multiblock cases 
-!      globalNode =>flowdoms(1,1,1)%globalNode 
-!      idxlocal = globalNode(4,10,10)*3+3 !Obliquewing coarse block 7
+      !globalNode =>flowdoms(1,1,1)%globalNode 
+      !idxlocal = globalNode(4,10,10)*3+3 !Obliquewing coarse block 7
 !      idxlocal = globalNode(3,9,3)*3+3 !Obliquewing 20k coarse block 30
 !!&      print *,' setting indexlocal'
 !!&      idxlocal = globalNode(1,1,1)*3+3 !Coarse bump
-!!&      print *, 'globalnode',idxlocal,petscrank
+	!idxlocal = globalNode(1,4,4)*3+3 !Coarse bump
+      !print *, 'globalnode',idxlocal,petscrank
       
 !      call mpi_gather(idxLocal, 1, sumb_integer, &
 !                      idxGlobal, 1, sumb_integer, &
@@ -266,20 +267,20 @@
 !***********  
 !original single block verification code.   
 !***************
-      globalNode =>flowdoms(7,1,1)%globalNode !Obliquewing coarse block 7
+!      globalNode =>flowdoms(7,1,1)%globalNode !Obliquewing coarse block 7
 !      globalNode =>flowdoms(8,1,1)%globalNode !Obliquewing coarse block 8
      ! globalNode =>flowdoms(1,1,1)%globalNode !infinite wing
 !>>>>>>> .r625
 !      idx = globalNode(2,7,13)*3+3 !(location times 3 for xyzdof + 3 for current node
 !      idx = globalNode(10,1,3)*3+3 !infinite wing block 1
-      idx = globalNode(4,10,10)*3+3 !Obliquewing coarse block 7
+!      idx = globalNode(4,10,10)*3+3 !Obliquewing coarse block 7
 !      idx = globalNode(4,1,10)*3+3 !Obliquewing coarse block 8
       !idx = globalNode(11,1,1)*3+3 !Coarse bump
       !idx = globalNode(4,4,4)*3+3 !Coarse bump
       !idx = globalNode(1,4,4)*3+3 !Coarse bump
       !idx = globalNode(3,3,3)*3+3 !Coarse bump
 
-      print *,'costfunction derivative',idx,functionGradSpatial(costFunction,idx)
+!      print *,'costfunction derivative',idx,functionGradSpatial(costFunction,idx)
 !****************
 
 

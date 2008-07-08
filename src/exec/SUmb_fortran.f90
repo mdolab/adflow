@@ -24,6 +24,7 @@
 !
        use inputPhysics
        use inputTimeSpectral
+       use communication
        implicit none
 !
 !      Subroutine arguments
@@ -48,9 +49,10 @@
        ! the parameter file.
 
        !set reference time
-       print *, 'Set reference time ....'
+!!$       if(myID==0)then
+!!$          print *, 'Set reference time ....'
        call cpu_time(timer(1))
- 
+!!$       endif
 
        call initExec(execName, lenExec, paramName, lenParam, &
                      nArgs, sizeC_int)
@@ -75,15 +77,19 @@
 
        call solver
 
-       call cpu_time(timer(2))
-       print *, "       time to end of solver = ", timer(2)-timer(1) 
+       if(myID==0)then
+          call cpu_time(timer(2))
+          print *, "       time to end of solver = ", timer(2)-timer(1) 
+       endif
 
        ! Solve ADjoint
 
        call solverADjoint
-       
-       call cpu_time(timer(3))
-       print *, "       time for adjoint = ", timer(3)-timer(2) 
+
+       if(myID==0)then
+          call cpu_time(timer(3))
+          print *, "       time for adjoint = ", timer(3)-timer(2)
+       endif
        ! First part to release the memory.
 
        call releaseMemoryPart1

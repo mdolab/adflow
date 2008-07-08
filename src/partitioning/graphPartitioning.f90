@@ -93,7 +93,7 @@
 !
        ! Check whether part is allocated from a previous call. If so,
        ! release the memory.
-
+!       print *,'allocating part'
        if( allocated(part) ) then
          deallocate(part, stat=ierr)
          if(ierr /= 0)                       &
@@ -103,7 +103,7 @@
 
        ! Determine the number of edges in the graph and the maximum
        ! number for a vertex in the graph.
-
+   !    print *,' determining edges'
        nEdges = 0
        nEdgesMax = 0
        do i=1,nBlocks
@@ -124,7 +124,7 @@
        options  = 0
 
        !  Allocate the memory to store/build the graph.
-
+!       print *,'allocating graph memory'
        allocate(xadj(0:nVertex), vwgt(nCon,nVertex), adjncy(nEdges), &
                 adjwgt(nEdges), part(nVertex), tmp(nEdgesMax), stat=ierr)
        if(ierr /= 0)                         &
@@ -139,7 +139,7 @@
        adjwgt  = 0
 
        ! Loop over the number of blocks to build the graph.
-
+ !      print *,'looping blocks'
        graphVertex: do i=1,nBlocks
 
          ! Store the both vertex weights.
@@ -242,7 +242,7 @@
          enddo EdgesOverset
 
        enddo graphVertex
-
+     !  print *,'end graphvertex'
        ! Metis has problems when the total number of cells or faces
        ! used in the weights exceeds 2Gb. Therefore the sum of these
        ! values is determined and an appropriate weight factor is 
@@ -274,20 +274,23 @@
        ! normally gives a valid partitioning.
        ! Initialize commNeglected to .false. This will change if in
        ! the loop below the first call to metis is not successful.
-
+ !      print *,'starting metis'
        commNeglected = .false.
        attemptLoop: do ii=1,2
 
          ! Call the graph partitioner.
-
+!!$          print *,'calling metis',nVertex, nCon, xadj, adjncy, vwgt, &
+!!$                             adjwgt, wgtflag, numflag, nParts,  &
+!!$                             ubvec, options, edgecut, part
          call metisInterface(nVertex, nCon, xadj, adjncy, vwgt, &
                              adjwgt, wgtflag, numflag, nParts,  &
                              ubvec, options, edgecut, part)
 
          ! Determine the number of blocks per processor.
-
+         !print *,'nblocks',nblocks
          nBlockPerProc = 0
          do i=1,nBlocks
+          !  print *,'nblocksperproc',nBlockPerProc(part(i)) 
            nBlockPerProc(part(i)) = nBlockPerProc(part(i)) + 1
          enddo
 
@@ -311,7 +314,7 @@
          xadj          = 0
 
        enddo attemptLoop
-
+       !print *,'ending metis'
        ! Deallocate the memory for the graph except part.
 
        deallocate(xadj, vwgt, adjncy, adjwgt, tmp, stat=ierr)

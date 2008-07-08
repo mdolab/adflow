@@ -225,8 +225,7 @@ subroutine setupGradientRHSExtra(level,costFunction)
               
  
            case (costFuncDragCoef)
-              print *,'computing drag derivatives'
-
+              
               CDAdjB = 1
 
            case (costFuncForceXCoef)
