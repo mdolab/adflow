@@ -74,7 +74,7 @@ python module sumb ! in
             use killsignals
             use iteration
             use monitor
-            real(kind=realtype) :: su_wtime
+            !real(kind=realtype) :: su_wtime
             logical :: eulerwallspresent
         end subroutine solver
 
@@ -133,10 +133,10 @@ python module sumb ! in
             logical :: eulerwallspresent
         end function eulerwallspresent
 
-        function su_wtime() ! in :sumb:../../../../SU_MPI/src/su_wtime.F90
-            use su_mpi
-            double precision :: su_wtime
-        end function su_wtime
+!        function su_wtime() ! in :sumb:../../../../SU_MPI/src/su_wtime.F90
+!            use su_mpi
+!            double precision :: su_wtime
+!        end function su_wtime
 
 !       subroutine initializepv3 ! in :sumb:../../pv3Interface/pv3Routines.f90
 !           use block
@@ -150,13 +150,13 @@ python module sumb ! in
         subroutine solversteady ! in :sumb:../../solver/solverSteady.f90
         end subroutine solver_steady
 
-        subroutine solverunsteady ! in :sumb:../../solver/solverUnsteady.F90
-            use inputiteration
-            use inputunsteady
-            use iteration
-            use killsignals
-            use monitor
-        end subroutine solverunsteady
+!!$        subroutine solverunsteady ! in :sumb:../../solver/solverUnsteady.F90
+!!$            use inputiteration
+!!$            use inputunsteady
+!!$            use iteration
+!!$            use killsignals
+!!$            use monitor
+!!$        end subroutine solverunsteady
 
         subroutine transfertofinegrid(corrections) ! in :sumb:../../solver/transferToFineGrid.f90
             use bctypes
@@ -243,6 +243,12 @@ python module sumb ! in
             integer allocatable,dimension(:) :: recvrequests
         end module communication
 
+        module constants ! in :sumb:../../modules/constants.F90
+            use precision
+            integer parameter,optional :: maxstringlen   = 256
+            integer parameter,optional :: maxcgnsnamelen =  32
+        end module constants
+
         module accuracy ! in :sumb:../../modules/inputParam.f90
             use precision
             integer(kind=inttype) parameter,optional :: firstorder=1_inttype
@@ -293,20 +299,46 @@ python module sumb ! in
 
         module inputio ! in :sumb:../../modules/inputParam.f90
             use constants
-            integer(kind=inttype) :: fileformat
-            character(len=256) :: paramfile
-            character(len=256) :: gridfile
-            character(len=256) :: newgridfile
-            character(len=256) :: restartfile
-            character(len=256) :: solfile
-            character(len=256) :: surfacesolfile
-            character(len=256) :: cpfile
-            logical :: storerindlayer
+            integer(kind=inttype) parameter,optional :: noformat=0
+            character(len=maxstringlen) :: solfile
+            integer(kind=inttype) parameter,optional :: precisiondouble=2
+            character(len=maxstringlen) :: surfacesolfile
+            character(len=maxstringlen) :: cpfile
+            logical :: writecoormeter
+            integer(kind=inttype) :: precisionsol
+            integer(kind=inttype) :: precisiongrid
+            integer(kind=inttype) parameter,optional :: cgnsformat=1
+            character(len=maxstringlen) :: newgridfile
+            character(len=maxstringlen) :: restartfile
             logical :: restart
+            character(len=maxstringlen) :: plot3dconnfile
+            integer(kind=inttype) :: fileformatread
+            character(len=maxstringlen) :: gridfile
+            logical :: storeconvinneriter
+            logical :: storerindlayer
             logical :: checkrestartsol
             logical :: autoparameterupdate
-            logical :: writecoormeter
-            logical :: storeconvinneriter
+            integer(kind=inttype) parameter,optional :: precisionsingle=1
+            logical optional :: firstwrite=.true.
+            integer(kind=inttype) :: fileformatwrite
+            integer(kind=inttype) parameter,optional :: plot3dformat=2
+            character(len=maxstringlen) :: paramfile
+
+            !use constants
+ !           integer(kind=inttype) :: fileformat
+ !           character(len=256) :: paramfile
+ !           character(len=256) :: gridfile
+ !           character(len=256) :: newgridfile
+ !           character(len=256) :: restartfile
+ !           character(len=256) :: solfile
+ !           character(len=256) :: surfacesolfile
+ !           character(len=256) :: cpfile
+ !           logical :: storerindlayer
+ !           logical :: restart
+ !           logical :: checkrestartsol
+ !           logical :: autoparameterupdate
+ !           logical :: writecoormeter
+ !           logical :: storeconvinneriter
         end module inputio
 
         module inputiteration ! in :sumb:../../modules/inputParam.f90
@@ -743,185 +775,206 @@ python module sumb ! in
         module couplerparam ! in :sumb:../../modules/couplerParam.f90 
             use precision
             use constants
-            real(kind=realtype) :: machini
-            real(kind=realtype) :: pini
-            real(kind=realtype) :: rhoini
-            real(kind=realtype) dimension(3) :: veldirini
-            character(len=80) :: codename
-            logical :: cplgetcoarsesol
-            integer(kind=inttype) :: ninterfacesg
-            integer(kind=inttype) :: ninterfacesl
-            character(len=80) allocatable,dimension(:) :: interfacenamesg
-            character(len=80) allocatable,dimension(:) :: interfacenamesl
-            integer(kind=inttype) allocatable,dimension(:) :: l2gmap
-            integer(kind=inttype) allocatable,dimension(:,:) :: iiddomg
-            integer(kind=inttype) allocatable,dimension(:,:) :: iiddoml
-            integer(kind=inttype) :: ninterfacexyzs
-            integer(kind=inttype) :: ninterfacexyzsalloc
-            integer(kind=inttype) allocatable,dimension(:) :: interfaceid
-            integer(kind=inttype) :: ntetra
-            integer(kind=inttype) :: npyra
-            integer(kind=inttype) :: nprisms
-            integer(kind=inttype) :: nhexa
-            integer(kind=inttype) :: nnodes
+            character(len=80) allocatable,dimension(:) :: datanamessumb
+            integer(kind=inttype) :: nnodestrue
             integer(kind=inttype) :: ntetraalloc
             integer(kind=inttype) :: npyraalloc
-            integer(kind=inttype) :: nprismsalloc
-            integer(kind=inttype) :: nhexaalloc
+            integer(kind=inttype) allocatable,dimension(:) :: iwsumb
+            integer(kind=inttype) :: npyratrue
+            integer(kind=inttype) :: ndatasumb
+            integer(kind=inttype) :: nprismtrue
+            real(kind=realtype) :: pini
+            integer(kind=inttype) :: nprismalloc
+            real(kind=realtype) dimension(3) :: veldirini
             integer(kind=inttype) :: nnodesalloc
-            integer(kind=inttype) :: ninterfacesf
-            integer(kind=inttype) :: nfieldsmaxg
-            integer(kind=inttype) allocatable, dimension(:) :: nfieldsg
-            character(len=80) allocatable, dimension(:,:) :: fieldnamesg
-            integer(kind=inttype) allocatable, dimension(:,:) :: iwmap
-            integer(kind=inttype) :: nfieldssumb
-            character(len=80) allocatable, dimension(:) :: fieldnamessumb
-            integer(kind=inttype) allocatable, dimension(:) :: iwsumb
-            integer(kind=inttype) :: nfieldsreq
-            character(len=80) allocatable, dimension(:) :: fieldnamesreq
+            integer(kind=inttype) :: nhexatrue
+            real(kind=realtype) :: rhoini
+            integer(kind=inttype) :: ntetratrue
+            integer parameter,optional :: maxcplnamelen=80
+            logical :: cplgetcoarsesol
+            integer(kind=inttype) :: nhexaalloc
+            character(len=80) :: codename
+            real(kind=realtype) :: machini
+
+!            real(kind=realtype) :: machini
+!            real(kind=realtype) :: pini
+!            real(kind=realtype) :: rhoini
+!            real(kind=realtype) dimension(3) :: veldirini
+!            character(len=80) :: codename
+!            logical :: cplgetcoarsesol
+!            integer(kind=inttype) :: ninterfacesg
+!            integer(kind=inttype) :: ninterfacesl
+!            character(len=80) allocatable,dimension(:) :: interfacenamesg
+!            character(len=80) allocatable,dimension(:) :: interfacenamesl
+!            integer(kind=inttype) allocatable,dimension(:) :: l2gmap
+!            integer(kind=inttype) allocatable,dimension(:,:) :: iiddomg
+!            integer(kind=inttype) allocatable,dimension(:,:) :: iiddoml
+!            integer(kind=inttype) :: ninterfacexyzs
+!            integer(kind=inttype) :: ninterfacexyzsalloc
+!            integer(kind=inttype) allocatable,dimension(:) :: interfaceid
+ !           integer(kind=inttype) :: ntetra
+!            integer(kind=inttype) :: npyra
+ !           integer(kind=inttype) :: nprisms
+!            integer(kind=inttype) :: nhexa
+ !           integer(kind=inttype) :: nnodes
+ !           integer(kind=inttype) :: ntetraalloc
+!            integer(kind=inttype) :: npyraalloc
+ !           integer(kind=inttype) :: nprismsalloc
+ !           integer(kind=inttype) :: nhexaalloc
+ !           integer(kind=inttype) :: nnodesalloc
+ !!           integer(kind=inttype) :: ninterfacesf
+ !           integer(kind=inttype) :: nfieldsmaxg
+ !           integer(kind=inttype) allocatable, dimension(:) :: nfieldsg
+ !           character(len=80) allocatable, dimension(:,:) :: fieldnamesg
+ !           integer(kind=inttype) allocatable, dimension(:,:) :: iwmap
+ !           integer(kind=inttype) :: nfieldssumb
+ !           character(len=80) allocatable, dimension(:) :: fieldnamessumb
+ !           integer(kind=inttype) allocatable, dimension(:) :: iwsumb
+ !           integer(kind=inttype) :: nfieldsreq
+ !           character(len=80) allocatable, dimension(:) :: fieldnamesreq
         end module couplerparam
+!!$
+!!$        subroutine get_field_info(nifpy,nfmaxpy,nfpy,fnamespy) ! in :sumb:../fortran/couplerAPI/get_field_info.f90
+!!$            use bctypes
+!!$            use block
+!!$            use blockpointers
+!!$            use communication
+!!$            use constants
+!!$            use couplerparam
+!!$            use cgnsnames
+!!$            use flowvarrefstate
+!!$            use inputphysics
+!!$            integer(kind=inttype) intent(in) :: nifpy
+!!$            integer(kind=inttype) intent(in) :: nfmaxpy
+!!$            integer(kind=inttype) dimension(nifpy),depend(nifpy),intent(out) :: nfpy
+!!$            character(len=80*nfmaxpy*nifpy),depend(nfmaxpy,nifpy),intent(out) :: fnamespy
+!!$        end subroutine get_field_info
 
-        subroutine get_field_info(nifpy,nfmaxpy,nfpy,fnamespy) ! in :sumb:../fortran/couplerAPI/get_field_info.f90
-            use bctypes
-            use block
-            use blockpointers
-            use communication
-            use constants
-            use couplerparam
-            use cgnsnames
-            use flowvarrefstate
-            use inputphysics
-            integer(kind=inttype) intent(in) :: nifpy
-            integer(kind=inttype) intent(in) :: nfmaxpy
-            integer(kind=inttype) dimension(nifpy),depend(nifpy),intent(out) :: nfpy
-            character(len=80*nfmaxpy*nifpy),depend(nfmaxpy,nifpy),intent(out) :: fnamespy
-        end subroutine get_field_info
+!!$        subroutine get_interface_names(nigpy,inamesgpy) ! in :sumb:../fortran/couplerAPI/get_interface_names.f90
+!!$            use bctypes
+!!$            use block
+!!$            use blockpointers
+!!$            use couplerparam
+!!$            use cgnsgrid
+!!$            integer(kind=inttype) intent(in) :: nigpy
+!!$            character(len=100000) intent(in) :: inamesgpy
+!!$        end subroutine get_interface_names
+!!$
+!!$        subroutine get_local_interface_names(nilpy,inameslpy,l2gmappy) ! in :sumb:../fortran/couplerAPI/get_local_interface_names.f90
+!!$            use bctypes
+!!$            use block
+!!$            use blockpointers
+!!$            use communication
+!!$            use couplerparam
+!!$            use cgnsgrid
+!!$            integer(kind=inttype) intent(in) :: nilpy
+!!$            character(len=100000) intent(in) :: inameslpy
+!!$            integer(kind=inttype) dimension(nilpy),depend(nilpy),intent(in) :: l2gmappy
+!!$        end subroutine get_local_interface_names
 
-        subroutine get_interface_names(nigpy,inamesgpy) ! in :sumb:../fortran/couplerAPI/get_interface_names.f90
-            use bctypes
-            use block
-            use blockpointers
-            use couplerparam
-            use cgnsgrid
-            integer(kind=inttype) intent(in) :: nigpy
-            character(len=100000) intent(in) :: inamesgpy
-        end subroutine get_interface_names
+!!$        subroutine get_local_num_interfaces(nilpy) ! in :sumb:../fortran/couplerAPI/get_local_num_interfaces.f90
+!!$            use couplerparam
+!!$            use cgnsgrid
+!!$            integer(kind=inttype) intent(out) :: nilpy
+!!$        end subroutine get_local_num_interfaces
+!!$
+!!$        subroutine get_max_no_of_fields(nfmaxpy) ! in :sumb:../fortran/couplerAPI/get_max_no_of_fields.f90
+!!$            use bctypes
+!!$            use block
+!!$            use blockpointers
+!!$            use couplerparam
+!!$            use flowvarrefstate
+!!$            use inputphysics
+!!$            integer(kind=inttype) intent(inout) :: nfmaxpy
+!!$        end subroutine get_max_no_of_fields
 
-        subroutine get_local_interface_names(nilpy,inameslpy,l2gmappy) ! in :sumb:../fortran/couplerAPI/get_local_interface_names.f90
-            use bctypes
-            use block
-            use blockpointers
-            use communication
-            use couplerparam
-            use cgnsgrid
-            integer(kind=inttype) intent(in) :: nilpy
-            character(len=100000) intent(in) :: inameslpy
-            integer(kind=inttype) dimension(nilpy),depend(nilpy),intent(in) :: l2gmappy
-        end subroutine get_local_interface_names
+!!$        subroutine interface_xyzs(nixyzspy,xyzpy,iidpy) ! in :sumb:../fortran/couplerAPI/interface_xyzs.f90
+!!$            use bctypes
+!!$            use block
+!!$            use blockpointers
+!!$            use constants
+!!$            use communication
+!!$            use couplerparam
+!!$            integer(kind=inttype) intent(in) :: nixyzspy
+!!$            real(kind=realtype) dimension(3,nixyzspy),depend(nixyzspy),intent(out) :: xyzpy
+!!$            integer(kind=inttype) dimension(nixyzspy),depend(nixyzspy),intent(out) :: iidpy
+!!$        end subroutine interface_xyzs
 
-        subroutine get_local_num_interfaces(nilpy) ! in :sumb:../fortran/couplerAPI/get_local_num_interfaces.f90
-            use couplerparam
-            use cgnsgrid
-            integer(kind=inttype) intent(out) :: nilpy
-        end subroutine get_local_num_interfaces
+!!$        subroutine localdomain(ntetraalcpy,npyraalcpy,nprismsalcpy,nhexaalcpy,nnodesalcpy,tetraconn,pyraconn,prismsconn,hexaconn,coor) ! in :sumb:../fortran/couplerAPI/localdomain.f90
+!!$            use block
+!!$            use blockpointers
+!!$            use couplerparam
+!!$            integer(kind=inttype) intent(in) :: ntetraalcpy
+!!$            integer(kind=inttype) intent(in) :: npyraalcpy
+!!$            integer(kind=inttype) intent(in) :: nprismsalcpy
+!!$            integer(kind=inttype) intent(in) :: nhexaalcpy
+!!$            integer(kind=inttype) intent(in) :: nnodesalcpy
+!!$            real(kind=realtype) dimension(3,nnodesalcpy),depend(nnodesalcpy),intent(out) :: coor
+!!$            integer(kind=inttype) dimension(4,ntetraalcpy),depend(ntetraalcpy),intent(out) :: tetraconn
+!!$            integer(kind=inttype) dimension(5,npyraalcpy),depend(npyraalcpy),intent(out) :: pyraconn
+!!$            integer(kind=inttype) dimension(6,nprismsalcpy),depend(nprismsalcpy),intent(out) :: prismsconn
+!!$            integer(kind=inttype) dimension(8,nhexaalcpy),depend(nhexaalcpy),intent(out) :: hexaconn
+!!$        end subroutine localdomain
+!!$
+!!$        subroutine localsolution(nfreqpy,nnodesalcpy,localsol) ! in :sumb:../fortran/couplerAPI/localsolution.f90
+!!$            use block
+!!$            use blockpointers
+!!$            use communication
+!!$            use constants
+!!$            use couplerparam
+!!$            use cgnsnames
+!!$            use flowvarrefstate
+!!$            use inputphysics
+!!$            integer(kind=inttype) intent(in) :: nfreqpy
+!!$            integer(kind=inttype) intent(in) :: nnodesalcpy
+!!$            real(kind=realtype) dimension(nfreqpy,nnodesalcpy),depend(nfreqpy,nnodesalcpy),intent(out) :: localsol
+!!$        end subroutine localsolution
 
-        subroutine get_max_no_of_fields(nfmaxpy) ! in :sumb:../fortran/couplerAPI/get_max_no_of_fields.f90
-            use bctypes
-            use block
-            use blockpointers
-            use couplerparam
-            use flowvarrefstate
-            use inputphysics
-            integer(kind=inttype) intent(inout) :: nfmaxpy
-        end subroutine get_max_no_of_fields
+!!$        subroutine mesh_dimensions(ntetrapy,npyrapy,nprismspy,nhexapy,nnodespy) ! :sumb:../fortran/couplerAPI/mesh_dimensions.f90
+!!$            use block
+!!$            use blockpointers
+!!$            use couplerparam
+!!$            integer(kind=inttype) intent(out) :: ntetrapy
+!!$            integer(kind=inttype) intent(out) :: npyrapy
+!!$            integer(kind=inttype) intent(out) :: nprismspy
+!!$            integer(kind=inttype) intent(out) :: nhexapy
+!!$            integer(kind=inttype) intent(out) :: nnodespy
+!!$        end subroutine mesh_dimensions
+!!$
+!!$        subroutine number_of_points_in_interface(nopiipy) ! in :sumb:../fortran/couplerAPI/number_of_points_in_interface.f90
+!!$            use bctypes
+!!$            use block
+!!$            use blockpointers
+!!$            use couplerparam
+!!$            integer(kind=inttype),intent(inout) :: nopiipy
+!!$        end subroutine number_of_points_in_interface
+!!$
+!!$        subroutine set_interface_data(nfmaxpy,nixyzspy,interpsol) ! in :sumb:../fortran/couplerAPI/set_interface_data.f90
+!!$            use bctypes
+!!$            use block
+!!$            use blockpointers
+!!$            use cgnsnames
+!!$            use constants
+!!$            use couplerparam
+!!$            use flowvarrefstate
+!!$            use inputiteration
+!!$            use inputphysics
+!!$            use iteration
+!!$            integer(kind=inttype) intent(in) :: nfmaxpy
+!!$            integer(kind=inttype) intent(in) :: nixyzspy
+!!$            real(kind=realtype) dimension(nfmaxpy,nixyzspy),depend(nfmaxpy,nixyzspy),intent(in) :: interpsol
+!!$        end subroutine set_interface_data
 
-        subroutine interface_xyzs(nixyzspy,xyzpy,iidpy) ! in :sumb:../fortran/couplerAPI/interface_xyzs.f90
-            use bctypes
-            use block
-            use blockpointers
-            use constants
-            use communication
-            use couplerparam
-            integer(kind=inttype) intent(in) :: nixyzspy
-            real(kind=realtype) dimension(3,nixyzspy),depend(nixyzspy),intent(out) :: xyzpy
-            integer(kind=inttype) dimension(nixyzspy),depend(nixyzspy),intent(out) :: iidpy
-        end subroutine interface_xyzs
-
-        subroutine localdomain(ntetraalcpy,npyraalcpy,nprismsalcpy,nhexaalcpy,nnodesalcpy,tetraconn,pyraconn,prismsconn,hexaconn,coor) ! in :sumb:../fortran/couplerAPI/localdomain.f90
-            use block
-            use blockpointers
-            use couplerparam
-            integer(kind=inttype) intent(in) :: ntetraalcpy
-            integer(kind=inttype) intent(in) :: npyraalcpy
-            integer(kind=inttype) intent(in) :: nprismsalcpy
-            integer(kind=inttype) intent(in) :: nhexaalcpy
-            integer(kind=inttype) intent(in) :: nnodesalcpy
-            real(kind=realtype) dimension(3,nnodesalcpy),depend(nnodesalcpy),intent(out) :: coor
-            integer(kind=inttype) dimension(4,ntetraalcpy),depend(ntetraalcpy),intent(out) :: tetraconn
-            integer(kind=inttype) dimension(5,npyraalcpy),depend(npyraalcpy),intent(out) :: pyraconn
-            integer(kind=inttype) dimension(6,nprismsalcpy),depend(nprismsalcpy),intent(out) :: prismsconn
-            integer(kind=inttype) dimension(8,nhexaalcpy),depend(nhexaalcpy),intent(out) :: hexaconn
-        end subroutine localdomain
-
-        subroutine localsolution(nfreqpy,nnodesalcpy,localsol) ! in :sumb:../fortran/couplerAPI/localsolution.f90
-            use block
-            use blockpointers
-            use communication
-            use constants
-            use couplerparam
-            use cgnsnames
-            use flowvarrefstate
-            use inputphysics
-            integer(kind=inttype) intent(in) :: nfreqpy
-            integer(kind=inttype) intent(in) :: nnodesalcpy
-            real(kind=realtype) dimension(nfreqpy,nnodesalcpy),depend(nfreqpy,nnodesalcpy),intent(out) :: localsol
-        end subroutine localsolution
-
-        subroutine mesh_dimensions(ntetrapy,npyrapy,nprismspy,nhexapy,nnodespy) ! :sumb:../fortran/couplerAPI/mesh_dimensions.f90
-            use block
-            use blockpointers
-            use couplerparam
-            integer(kind=inttype) intent(out) :: ntetrapy
-            integer(kind=inttype) intent(out) :: npyrapy
-            integer(kind=inttype) intent(out) :: nprismspy
-            integer(kind=inttype) intent(out) :: nhexapy
-            integer(kind=inttype) intent(out) :: nnodespy
-        end subroutine mesh_dimensions
-
-        subroutine number_of_points_in_interface(nopiipy) ! in :sumb:../fortran/couplerAPI/number_of_points_in_interface.f90
-            use bctypes
-            use block
-            use blockpointers
-            use couplerparam
-            integer(kind=inttype),intent(inout) :: nopiipy
-        end subroutine number_of_points_in_interface
-
-        subroutine set_interface_data(nfmaxpy,nixyzspy,interpsol) ! in :sumb:../fortran/couplerAPI/set_interface_data.f90
-            use bctypes
-            use block
-            use blockpointers
-            use cgnsnames
-            use constants
-            use couplerparam
-            use flowvarrefstate
-            use inputiteration
-            use inputphysics
-            use iteration
-            integer(kind=inttype) intent(in) :: nfmaxpy
-            integer(kind=inttype) intent(in) :: nixyzspy
-            real(kind=realtype) dimension(nfmaxpy,nixyzspy),depend(nfmaxpy,nixyzspy),intent(in) :: interpsol
-        end subroutine set_interface_data
-
-        subroutine set_requested_fields(nfreqpy,fnamesreqpy) ! in :sumb:../fortran/couplerAPI/set_requested_fields.f90
-            use couplerparam
-            integer(kind=inttype) intent(in) :: nfreqpy
-            character(len=100000) intent(in) :: fnamesreqpy
-        end subroutine set_requested_fields
-
-        subroutine solver_name(solname) ! in :sumb:../fortran/couplerAPI/solver_name.f90
-            use couplerparam
-            character(len=80),intent(inout) :: solname
-        end subroutine solver_name
+!!$        subroutine set_requested_fields(nfreqpy,fnamesreqpy) ! in :sumb:../fortran/couplerAPI/set_requested_fields.f90
+!!$            use couplerparam
+!!$            integer(kind=inttype) intent(in) :: nfreqpy
+!!$            character(len=100000) intent(in) :: fnamesreqpy
+!!$        end subroutine set_requested_fields
+!!$
+!!$        subroutine solver_name(solname) ! in :sumb:../fortran/couplerAPI/solver_name.f90
+!!$            use couplerparam
+!!$            character(len=80),intent(inout) :: solname
+!!$        end subroutine solver_name
 
         subroutine computettot(rho,u,v,w,p,ttot,kk) ! in :sumb:../../utils/computeTtot.f90
             use cpcurvefits
@@ -949,6 +1002,16 @@ python module sumb ! in
             real(kind=realtype) dimension(kk),depend(kk),intent(out) :: ptot
         end subroutine computeptot
 
+        subroutine sumb_init ! in :sumb:../../utils/SUmb_init.f90
+          use communication
+          implicit none
+        end subroutine SUmb_init
+        
+        subroutine sumb_finalize ! in :sumb:../../utils/SUmb_finalize.f90
+          use communication
+          implicit none
+        end subroutine SUmb_finalize
+ 
 ! ############################################################################
 ! SUGGAR (Overset Assembly Software) Interface Routines
 ! ############################################################################

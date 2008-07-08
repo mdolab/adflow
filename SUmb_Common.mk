@@ -24,7 +24,7 @@
 #      * must be set in the Makefiles that include this common file.    *
 #      *                                                                *
 #      ******************************************************************
-
+#SUMB_DIR = ./
 SU_MPI_DIR = $(SUMB_DIR)/externals/SU_MPI
 ADT_DIR    = $(SUMB_DIR)/externals/ADT
 

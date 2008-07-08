@@ -75,6 +75,8 @@ FF90_OBJECTS = bsearchIntegers.o\
 	       siTurb.o\
 	       siVelocity.o\
 	       spectralInterpolCoef.o\
+	       SUmb_finalize.o\
+	       SUmb_init.o\
 	       tempMemory.o\
 	       terminate.o\
 	       whalo1to1.o\
