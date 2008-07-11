@@ -104,9 +104,9 @@ class SUMB(AeroSolver):
 		# Run Solver
 		
 		# get flow and ref from aero_problem
-		
+		#print 'niterations',niterations
 		t0 = time.time()
-		self.sumb.RunIterations(niterations)
+		self.sumb.RunIterations(0,niterations)
 		sol_time = time.time() - t0
 		
 		
@@ -123,9 +123,31 @@ class SUMB(AeroSolver):
 		
 		return
 
-	def _adjoint(self,*args,**kwargs):
+	def initAdjoint(self, *args, **kwargs):
+		'''
+		Initialize the Ajoint problem for this test case
+		in SUMB
+		'''
+		self.sumb.initializeADjoint()
 
-		print 'running adjoint'
+		return
+
+	def setupAdjointMatrix(self, *args, **kwargs):
+		'''
+		Setup the adjoint matrix for the current solution
+		'''
+		self.sumb.setupADjointMatrix()
+
+		return
+		
+
+	def _on_adjoint(self,objective,*args,**kwargs):
+
+		#print 'running adjoint',objective
+
+		self.sumb.setupADjointRHS(objective)
+
+		self.sumb.solveADjointPETSc()
 
 		return
 		
