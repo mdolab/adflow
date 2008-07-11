@@ -541,9 +541,12 @@ python module sumb ! in
             integer :: nmon
             real(kind=realtype) allocatable,dimension(:) :: monloc
             real(kind=realtype) allocatable,dimension(:) :: monglob
+            real(kind=realType) allocatable,dimension(:) :: monRef
             character(len=32) allocatable,dimension(:) :: monnames
             logical :: monmachorhmax
             logical :: showcpu
+            logical :: monMassSliding
+            logical :: monMassFamilies
             integer :: niterold
             integer :: nitercur
             real(kind=realtype) allocatable,dimension(:,:,:) :: convarray
@@ -608,6 +611,124 @@ python module sumb ! in
             integer(kind=inttype) :: localsignal
             integer(kind=inttype) :: globalsignal
         end module killsignals
+
+        module adjointpetsc ! in :sumb:ADjointPETSc.F90
+          use constants
+          real(kind=realtype) parameter,optional :: adjreltol=1.0e-12_realtype
+          real(kind=realtype) parameter,optional :: adjabstol=1.0e-25_realtype
+          integer(kind=inttype) parameter,optional :: adjrestart=100
+          integer(kind=inttype) parameter,optional :: adjmonstep=10
+          real(kind=realtype) parameter,optional :: adjdivtol=1.0e+5_realtype
+          real(kind=realtype) allocatable,dimension(:) :: adjreshist
+          logical :: petscblockmatrix
+          integer(kind=inttype) :: adjconvits
+          integer(kind=inttype) parameter,optional :: adjmaxiter=500
+        end module adjointpetsc
+      
+           module adjointvars ! in :sumb:ADjointVars.F90
+            use constants
+            integer(kind=inttype) :: nnodesglobal
+            integer(kind=inttype) parameter,optional :: costfuncforcezcoef=5
+            real(kind=realtype) allocatable,dimension(:) :: xdesignvarupper
+            integer(kind=inttype) parameter,optional :: ndesignssa=2
+            integer(kind=inttype) parameter,optional :: costfuncmomzcoef=8
+            character(len=maxstringlen) parameter,optional :: costfuncnamemomz="momzcoef"
+            integer(kind=inttype) :: ncellsglobal
+            integer(kind=inttype) :: ncelloffsetlocal
+            integer(kind=inttype) :: nnodeslocal
+            character(len=maxstringlen) parameter,optional :: varnamessa="sideslipangle"
+            character(len=maxstringlen) parameter,optional :: costfuncnameforcey="forceycoef"
+            character(len=maxstringlen) parameter,optional :: costfuncnameforcex="forcexcoef"
+            character(len=maxstringlen) parameter,optional :: costfuncnameforcez="forcezcoef"
+            integer(kind=inttype) :: ndesign
+            real(kind=realtype) allocatable,dimension(:) :: xdesignvarlower
+            integer(kind=inttype) parameter,optional :: ndesignmach=3
+            real(kind=realtype) allocatable,dimension(:) :: functionvalue
+            real(kind=realtype) parameter,optional :: adjrelfd=1.0e-5_realtype
+            real(kind=realtype) allocatable,dimension(:,:) :: functiongradspatial
+            character(len=maxstringlen) allocatable,dimension(:) :: functionname
+            real(kind=realtype) allocatable,dimension(:,:) :: functiongrad
+            character(len=maxstringlen) parameter,optional :: costfuncnamemomx="momxcoef"
+            real(kind=realtype) parameter,optional :: adjepsfd=1.0e-4_realtype
+            integer(kind=inttype) :: ndesignextra
+            real(kind=realtype) parameter,optional :: adjabsfd=1.0e-5_realtype
+            integer(kind=inttype) :: ncellslocal
+            integer(kind=inttype) parameter,optional :: costfuncmomxcoef=6
+            character(len=maxstringlen) parameter,optional :: costfuncnamemomy="momycoef"
+            character(len=maxstringlen) parameter,optional :: costfuncnamelift="liftcoef"
+            integer(kind=inttype) :: nnodeoffsetlocal
+            integer(kind=inttype) parameter,optional :: costfuncliftcoef=1
+            character(len=maxstringlen) allocatable,dimension(:) :: xdesignvarname
+            integer(kind=inttype) parameter,optional :: costfuncdragcoef=2
+            character(len=maxstringlen) parameter,optional :: varnameaoa="angleofattack"
+            integer(kind=inttype) :: ndesignspatial
+            integer(kind=inttype) parameter,optional :: ndesignaoa=1
+            integer(kind=inttype) parameter,optional :: ncostfunction=8
+            integer(kind=inttype) parameter,optional :: costfuncforcexcoef=3
+            integer(kind=inttype) parameter,optional :: costfuncforceycoef=4
+            character(len=maxstringlen) parameter,optional :: costfuncnamedrag="dragcoef"
+            real(kind=realtype) allocatable,dimension(:) :: xdesignvar
+            integer(kind=inttype) parameter,optional :: costfuncmomycoef=7
+        end module adjointvars
+
+! ############################################################################
+! ADjoint Routines
+! ############################################################################
+
+       subroutine preprocessingadjoint(level) ! in :sumb:../../adjoint/preprocessingADjoint.f90
+            use communication
+            use precision
+            integer(kind=inttype) intent(in) :: level
+        end subroutine preprocessingadjoint
+
+        subroutine designinit ! in :sumb:../../adjoint/designInit.f90
+            use adjointvars
+            use communication
+            use flowvarrefstate
+        end subroutine designinit
+
+        subroutine initializepetsc ! in :sumb:../../adjoint/initializePETSc.F90
+          use adjointpetsc
+          use communication
+        end subroutine initializepetsc
+        
+        subroutine createpetscksp ! in :sumb:../../adjoint/createPETScVars.F90
+          use adjointpetsc
+          use adjointvars
+          use blockpointers
+          use flowvarrefstate         ! nw
+          implicit none
+        end subroutine createpetscksp
+
+        subroutine createpetscvars ! in :sumb:../../adjoint/createPETScVars.F90
+          use adjointpetsc
+        end subroutine createpetscvars
+
+        subroutine setupadjointmatrix(level) ! in :sumb:../../adjoint/setupADjointMatrix.F90
+            use adjointpetsc
+            use adjointvars
+            use blockpointers
+            use cgnsgrid
+            use communication
+            use inputdiscretization
+            use iteration
+            use flowvarrefstate
+            use inputtimespectral
+            integer(kind=inttype) intent(in) :: level
+        end subroutine setupadjointmatrix
+        
+        subroutine setupadjointrhs(level,sps,costfunction) ! in :sumb:../../adjoint/setupADjointRHS.F90
+            use adjointpetsc
+            use adjointvars
+            implicit none
+            integer(kind=inttype) intent(in) :: level
+            integer(kind=inttype) intent(in) :: sps
+            integer(kind=inttype) intent(in) :: costfunction
+        end subroutine setupadjointrhs
+
+        subroutine solveadjointpetsc ! in :sumb:../../adjoint/solveADjointPETSc.F90
+            use adjointpetsc
+        end subroutine solveadjointpetsc
 
 ! ############################################################################
 ! Aeroelastic / Multi-Disciplinary Routines

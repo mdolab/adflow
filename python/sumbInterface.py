@@ -440,6 +440,9 @@ class SUmbInterface(object):
         self.Mesh.nmeshblocks = self.sumb_comm_world.Allreduce(
         			     sumb.block.ndom,mpi.SUM)
 
+        #Set flags for ADjoint initialization
+        self.adjointInitialized = False
+        
         return
 
     def generateInputFile(self,aero_problem,sol_type,grid_file,file_type='cgns',eqn_type='Euler',*args,**kwargs):
@@ -870,7 +873,7 @@ class SUmbInterface(object):
         autofile.write("-------------------------------------------------------------------------------\n")
         autofile.write( "     Monitoring and output variables\n")
         autofile.write( "-------------------------------------------------------------------------------\n")
-        autofile.write( "                Monitoring variables: resrho_cl_cd\n")
+        autofile.write( "                Monitoring variables: resrho_cl_cd_cmx\n")
         autofile.write( " Monitor massflow sliding interfaces: no\n")
         autofile.write( "            Surface output variables: rho_cp_vx_vy_vz_mach\n")
         autofile.write( "           Volume output variables: ptloss_resrho\n")
@@ -979,7 +982,9 @@ class SUmbInterface(object):
                    has not been called before
 
         """
-
+        # print ncycles,sumb.monitor.niterold, sumb.monitor.nitercur, sumb.iteration.itertot ,'storeconv',sumb.inputio.storeconvinneriter,True,False
+        #sumb.inputio.storeconvinneriter=True#False
+        
         if (sumb.monitor.niterold == 0 and
             sumb.monitor.nitercur == 0 and
             sumb.iteration.itertot == 0):
@@ -999,8 +1004,12 @@ class SUmbInterface(object):
                     sumb.monitor.timedataarray = None
                     sumb.alloctimearrays(sumb.inputunsteady.ntimestepsfine)
                     if (sumb.inputio.storeconvinneriter):
+                        nn = sumb.inputiteration.nsgstartup+sumb.inputiteration.ncycles
+                        if (sumb.inputphysics.equationmode==2):#2 is unsteady
+                            nn=sumb.inputunsteady.ntimestepsfine*sumb.inputiteration.ncycles
+                        #endif
                         sumb.monitor.convarray = None
-                        sumb.allocconvarrays(sumb.inputunsteady.ntimestepsfine*sumb.inputiteration.ncycles)
+                        sumb.allocconvarrays(nn)
 
         elif (sumb.monitor.nitercur == 0 and
               sumb.iteration.itertot == 0):
@@ -1048,6 +1057,7 @@ class SUmbInterface(object):
                   
         else:
             # More Time Steps / Iterations in the same session
+            #print 'more cycles',ncycles[0],ncycles[1]
             if (ncycles):
                 # Set new value of unsteady physical time steps to run
                 if (ncycles[0] != sumb.inputunsteady.ntimestepsfine):
@@ -1055,34 +1065,61 @@ class SUmbInterface(object):
                 # Set new value of MG cycles ro run
                 if (len(ncycles) > 1):
                     if (ncycles[1] != sumb.inputiteration.ncycles):
+                        # print 'sumb cycles',sumb.inputiteration.ncycles
                         sumb.inputiteration.ncycles = ncycles[1]
+                        #print sumb.inputiteration.ncycles
 
             # Reallocate convergence history array and
             # time array with new size, storing old values from previous runs
             if (self.myid == 0):
-                # store previous time history and deallocate arrays
-                temp_t = copy.deepcopy(sumb.monitor.timearray)
-                sumb.monitor.timearray = None
-                temp_td = copy.deepcopy(sumb.monitor.timedataarray)
-                sumb.monitor.timedataarray = None
-                # allocate time history arrays with new extended size
-                sumb.alloctimearrays(temp_td.shape[0]+sumb.inputunsteady.ntimestepsfine)
-                # recover values from previous runs and deallocate temporary arrays
-                sumb.monitor.timearray[:temp_td.shape[0]] = temp_t
-                sumb.monitor.timedataarray[:temp_td.shape[0],:temp_td.shape[1]] = temp_td
-                temp_t = None
-                temp_td = None
+                #print 'equation mode',sumb.inputphysics.equationmode
+                if (sumb.inputphysics.equationmode==2):#2 is unsteady
+                    #print 'unsteady'
+                    #print 'checking time array'
+                    # store previous time history and deallocate arrays
+                    temp_t = copy.deepcopy(sumb.monitor.timearray)
+                    #print 'deallocating time array',sumb.monitor.timearray
+                    sumb.monitor.timearray = None
+                    #print 'checking time data array',sumb.monitor.timedataarray
+                    temp_td = copy.deepcopy(sumb.monitor.timedataarray)
+                    #print 'deallocating timedata array'
+                    sumb.monitor.timedataarray = None
+                    #print 'allocating new time array'
+                    # allocate time history arrays with new extended size
+                    sumb.alloctimearrays(temp_td.shape[0]+sumb.inputunsteady.ntimestepsfine)
+                    # recover values from previous runs and deallocate temporary arrays
+                    sumb.monitor.timearray[:temp_td.shape[0]] = temp_t
+                    sumb.monitor.timedataarray[:temp_td.shape[0],:temp_td.shape[1]] = temp_td
+                    temp_t = None
+                    temp_td = None
 
                 if (sumb.inputio.storeconvinneriter):
+                    #print 'store conv?',sumb.inputio.storeconvinneriter,sumb.inputiteration.ncycles-1
+                    #print 'conv, arreay',sumb.monitor.convarray[:,0,1]
+                    #sdfg
                     # store previous convergence history and deallocate array
-                    temp = copy.deepcopy(sumb.monitor.convarray)
+                    temp = sumb.monitor.convarray
+                    #temp = copy.deepcopy(sumb.monitor.convarray)
+                    #print 'conv, arreay',sumb.monitor.convarray
                     sumb.monitor.convarray = None
+                    #print 'allocating convergence arrays for new size',sumb.monitor.convarray,temp.shape[0],sumb.inputunsteady.ntimestepsfine,sumb.inputiteration.ncycles,sumb.inputiteration.ncycles-1
+                    
+                    #print 'testing',temp.shape[0]
                     # allocate convergence history array with new extended size
-                    sumb.allocconvarrays(temp.shape[0]
-                                         +sumb.inputunsteady.ntimestepsfine
-                                         *sumb.inputiteration.ncycles-1)
+                    nn = sumb.inputiteration.nsgstartup+sumb.inputiteration.ncycles
+                    if (sumb.inputphysics.equationmode==2):#2 is unsteady
+                        nn=sumb.inputunsteady.ntimestepsfine*sumb.inputiteration.ncycles
+                    #endif
+                    sumb.allocconvarrays(temp.shape[0]+nn-1)
+                    #print 'convergence shape',sumb.monitor.convarray.shape,temp.shape, sumb.monitor.convarray[:temp.shape[0],:].shape,temp[:,0,:].shape
                     # recover values from previous runs and deallocate temporary array
-                    sumb.monitor.convarray[:temp.shape[0],:temp.shape[1]] = temp
+                    sumb.monitor.convarray[:temp.shape[0],:] = temp
+##                     # allocate convergence history array with new extended size
+##                     sumb.allocconvarrays(temp.shape[0]
+##                                          +sumb.inputunsteady.ntimestepsfine
+##                                          *sumb.inputiteration.ncycles-1)
+##                     # recover values from previous runs and deallocate temporary array
+##                     sumb.monitor.convarray[:temp.shape[0],:temp.shape[1]] = temp
                     temp = None
 
             # re-initialize iteration variables
@@ -1342,3 +1379,89 @@ class SUmbInterface(object):
 
         """
         return self.monnames.keys()
+
+    ###########################
+    #ADjoint routines
+    ###########################
+
+    def initializeADjoint(self):
+        '''
+        Initialize the Ajoint problem for this test case
+        in SUMB
+        '''
+	#Check to see if initialization has already been performed
+        if(self.adjointInitialized):
+            return
+        
+        #Set the mesh level and timespectral instance for this
+        #computation
+        self.level = 1
+        self.sps = 1
+        
+        sumb.iteration.currentlevel=1
+        sumb.iteration.groundlevel=1
+        
+        #Run the preprocessing routine. Sets the node numbering and
+        #allocates memory.
+        sumb.preprocessingadjoint(self.level)
+        
+        #Initialize the design variable and function storage
+        sumb.designinit()
+
+        #initalize PETSc
+        sumb.initializepetsc()
+
+        #create the neccesary PETSc objects
+        sumb.createpetscvars()
+
+        #mark the ADjoint as initialized
+        self.adjointInitialized=True
+        if(self.myid==0):
+            print 'ADjoint Initialized Succesfully...'
+        #endif
+
+
+        return
+
+    def setupADjointMatrix(self):
+        '''
+        Setup the ADjoint dRdw matrix and create the PETSc
+        Solution KSP object
+        '''
+        sumb.setupadjointmatrix(self.level)
+
+        sumb.createpetscksp()
+
+        return
+
+    def setupADjointRHS(self,objective):
+        '''
+        setup the RHS vector for a given cost function
+        '''
+        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
+                             'cd':sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             }
+
+        if self.myid==0:
+            print 'Analyzing ADjoint for costfuntion: ',objective
+            print 'SUmb index:',SUmbCostfunctions[objective]
+    
+        #print SUmbCostfunctions[objective]
+
+        sumb.setupadjointrhs(self.level,self.sps,SUmbCostfunctions[objective])
+
+        return
+
+    def solveADjointPETSc(self):
+        '''
+        Solve the ADjoint system using PETSc
+        '''
+        sumb.solveadjointpetsc()
+
+        return
