@@ -153,7 +153,7 @@
                  ! planar.
 
                  if(dotMin < tolDotmin) then
-
+                    
                    ! Determine the corresponding angle in degrees of
                    ! dotmin.
 
