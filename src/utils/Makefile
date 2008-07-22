@@ -46,6 +46,7 @@ FF90_OBJECTS = bsearchIntegers.o\
 	       convertToLowerCase.o\
 	       delta.o\
 	       derivativeRigidRotAngle.o\
+	       getBlockData.o\
 	       initExec.o\
 	       myIsNAN.o\
 	       nullifyCGNSDomPointers.o\

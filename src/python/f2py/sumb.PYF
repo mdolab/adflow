@@ -45,6 +45,107 @@ python module sumb ! in
             use iteration
         end subroutine updatemetricsalllevels
 
+!Functions in prewarp directory
+        subroutine getnblockslocal(nBlocks)
+          use blockpointers
+          implicit none
+          integer(kind=inttype), intent(out) :: nBlocks
+        end subroutine getnblockslocal
+        
+        subroutine getblockdims(blocknum,imax,jmax,kmax)
+          use blockpointers
+          implicit none
+          
+          integer(kind=inttype), intent(in) :: blocknum
+          integer(kind=inttype), intent(out) :: imax,jmax,kmax
+          
+        end subroutine getblockdims
+        
+        subroutine getblockcoords(blocknum,imax,jmax,kmax,xyz)
+          
+          use blockPointers
+          implicit none
+          integer(kind=inttype), intent(in) :: blocknum
+          integer(kind=inttype), intent(in):: imax,jmax,kmax
+          !real(kind=realType), dimension(imax,jmax,kmax,3),check(rank(xyz)==3),depend(imax,jmax,kmax),check(shape(xyz,3)==imax,shape(xyz,2)==jmax,shape(xyz,1)==kmax,shape(xyz,0)==3),intent(out) :: xyz
+          real(kind=realtype), dimension(3,imax,jmax,kmax), intent(out) :: xyz
+          
+        end subroutine getblockcoords
+
+        subroutine setblockcoords(blocknum,imax,jmax,kmax,xyz)
+          use blockpointers
+          implicit none
+          
+          integer(kind=inttype), intent(in) :: blocknum
+          integer(kind=inttype), intent(in):: imax,jmax,kmax
+          real(kind=realtype), dimension(3,imax,jmax,kmax), intent(in),depend(imax,jmax,kmax) :: xyz
+        end subroutine setblockcoords
+            
+        subroutine getblockcgnsid(blocknum,cgns_block_id)
+          use blockpointers
+          integer(kind=inttype), intent(in) :: blocknum
+          integer(kind=inttype), intent(out) :: cgns_block_id
+          
+        end subroutine getblockcgnsid
+
+              subroutine getnsubfacesblock(blocknum,nsubfaces, n1to1internals, n1to1s, nnonmatchs, numbocos)
+         use blockpointers
+         implicit none
+         
+         integer(kind=inttype), intent(in)::blocknum
+         integer(kind=inttype), intent(out)::nsubfaces, n1to1internals, n1to1s, nnonmatchs, numbocos
+
+       end subroutine getnsubfacesblock
+       
+!!$       subroutine getndonornonmatch(blocknum,nnon,ndonor)
+!!$         use blockpointers
+!!$         implicit none
+!!$         
+!!$         !Subroutine Variables
+!!$         integer(kind=inttype), intent(in)::blocknum,nnon
+!!$         integer(kind=intType),dimension(nnon),intent(out):: ndonor
+!!$         integer(kind=intType):: i
+!!$         
+!!$       end subroutine getndonornonmatch
+
+       subroutine getblockcommunicationinfo(blocknum,nSub,,nOne,nNon,i1,i2,j1,j2,k1,k2,&
+            di1,di2,dj1,dj2,dk1,dk2,neighbourBlock,neighbourProc,trans1,&
+            trans2,trans3,bcinfo,faceinfo)
+         
+         use blockpointers
+         implicit none
+         
+         !Subroutine Variables
+         integer(kind=inttype),intent(in)::blocknum,nSub,nNon,nOne
+         
+         integer(kind=inttype),dimension(nSub),intent(out)::i1,i2,j1,j2,k1,k2
+         integer(kind=inttype),dimension(nSub),intent(out)::di1,di2,dj1,dj2,dk1,dk2
+         integer(kind=inttype),dimension(nSub),intent(out):: neighbourBlock,&
+              &neighbourProc
+         integer(kind=inttype),dimension(nSub),intent(out):: trans1,trans2,trans3
+         integer(kind=inttype),dimension(nSub),intent(out)::bcinfo,faceinfo
+
+                  
+!!$         !Local Variables
+!!$         integer(kind=inttype):: i
+       end subroutine getblockcommunicationinfo
+       
+!!$       subroutine getnonmatchingsubfaceinfo(blocknum,nNon,nDonor,blocks,proc,faceid)
+!!$         !get donor block info for nonmatching subfaces
+!!$         use blockpointers
+!!$         implicit none
+!!$         
+!!$         !Subroutine Variables
+!!$         integer(kind=inttype),intent(in)::blocknum,nNon,nDonor
+!!$         integer(kind=inttype),dimension(nNon,nDonor),intent(out)::blocks,proc,faceid
+!!$         !Local Variables
+!!$         
+!!$         integer(kind=intType)::i,j
+!!$         
+!!$       end subroutine getnonmatchingsubfaceinfo
+        
+!preprocessing
+        
         subroutine initflow ! in :sumb:../../initFlow/initFlow.f90
             use block
             use inputio
@@ -888,6 +989,80 @@ python module sumb ! in
             use communication
             use mddata
         end subroutine mdcreatenpatch
+
+!       ################################################################
+!       Aeroelastic / Multi-Disciplinary Routines Local
+!       ################################################################
+
+        module mddatalocal ! in :sumb:../../python/fortran/aeroElastic/mdData.f90
+            use constants
+            integer(kind=inttype) :: mdnfamilieslocal
+            character(len=32) allocatable,dimension(:) :: mdfamilynameslocal
+            integer(kind=inttype) allocatable,dimension(:) :: mdnsurfnodeslocal
+            integer(kind=inttype) allocatable,dimension(:,:) :: mdnsurfpatcheslocal
+            integer(kind=inttype) allocatable,dimension(:,:) :: mdpatchdimensionslocal
+            integer(kind=inttype) allocatable,dimension(:,:) :: mdsurfindlocal
+            real(kind=realtype) allocatable,dimension(:,:) :: mdsurfxxlocal
+            real(kind=realtype) allocatable,dimension(:,:) :: mdsurfforcelocal
+            real(kind=realtype) allocatable,dimension(:) :: mdsurfvallocal
+        end module mddatalocal
+
+        subroutine mdcreatensurfnodeslocal ! in :sumb:../../python/fortran/aeroElastic/mdNSurfNodes.f90
+            use bctypes
+            use blockpointers
+            use cgnsgrid
+            use communication
+            use mddatalocal
+        end subroutine mdcreatensurfnodeslocal
+!!$
+        subroutine mddeletensurfnodeslocal ! in :sumb:../../python/fortran/aeroElastic/mdNSurfNodes.f90
+            use mddatalocal
+        end subroutine mddeletensurfnodeslocal
+
+        subroutine mdcreatesurfcoorlistlocal(sps,famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfCoorList.f90
+            use bctypes
+            use blockpointers
+            use cgnsgrid
+            use communication
+            use mddatalocal
+            integer(kind=inttype) intent(in) :: sps
+            integer(kind=inttype) intent(in) :: famid
+            integer(kind=inttype) intent(out) :: startind
+            integer(kind=inttype) intent(out) :: endind
+        end subroutine mdcreatesurfcoorlistlocal
+
+        subroutine mddeletesurfcoorlistlocal ! in :sumb:../../python/fortran/aeroElastic/mdSurfCoorList.f90
+            use mddatalocal
+        end subroutine mddeletesurfcoorlistlocal
+
+        subroutine mdcreatesurfindlistlocal(famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfIndList.f90
+          use bctypes
+          use blockpointers
+          use cgnsgrid
+          use communication
+          use mddatalocal
+          integer(kind=inttype) intent(in) :: famid
+          integer(kind=inttype) intent(out) :: startind
+          integer(kind=inttype) intent(out) :: endind
+        end subroutine mdcreatesurfindlistlocal
+
+        subroutine mddeletesurfindlistlocal ! in :sumb:../../python/fortran/aeroElastic/mdSurfIndList.f90
+            use mddatalocal
+        end subroutine mddeletesurfindlistlocal
+! ############################################################################
+! pyAero Adaptation Routines
+! ############################################################################
+        subroutine adjustinflowangleadj(alphaadj,betaadj,veldirfreestreamadj,liftdirectionadj,dragdirectionadj,liftindex) ! in :sumb :adjustInflowAngleAdj.f90
+            use constants
+            real(kind=realtype) intent(in) :: alphaadj
+            real(kind=realtype) intent(in):: betaadj
+            real(kind=realtype) dimension(3),intent(out) :: veldirfreestreamadj
+            real(kind=realtype) dimension(3),intent(out) :: liftdirectionadj
+            real(kind=realtype) dimension(3),intent(out) :: dragdirectionadj
+            integer(kind=inttype) intent(in) :: liftindex
+        end subroutine adjustinflowangleadj
+
+
 
 ! ############################################################################
 ! Coupler API Routines
