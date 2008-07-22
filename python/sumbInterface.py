@@ -9,15 +9,17 @@ __version__ = "1.0"
 
 # =============================================================================
 # Standard Python modules
-
+# =============================================================================
 import sys
 import os
 import copy
 import string
 import types
+from math import pi
 
 # =============================================================================
 # Extension modules
+# =============================================================================
 
 import numpy
 
@@ -53,10 +55,6 @@ else:
     except ImportError:
         print "Error: Failed to import sequential version of SUmb."
 
-
-def CheckIfParallel():
-    """Return true if we are running with MPI."""
-    return _parallel
 
 # =============================================================================
 
@@ -99,9 +97,43 @@ class SUmbMesh(object):
                     [start_ind,end_ind] = sumb.mdcreatesurfcoorlist(sps,n+1)
             return sumb.mddata.mdsurfxx
 
+    def GetSurfaceCoordinatesLocal(self, family=None, sps=1):
+        """Return surface coordinates for this processor only.
+        
+        Keyword arguments:
+        
+        family -- optional string specifying the return of surface coordinates
+                  only for the specified family.
+        sps    -- spectral time step (optional, default is set to 1).
+                  (sps=1 for usual steady or unsteady models)
+
+        """
+        
+        if(family):
+            try:
+                index = self.families[family]
+            except KeyError:
+                print "Error: No such family '%s'" % family
+                return None
+            [start_ind,end_ind] = sumb.mdcreatesurfcoorlistlocal(sps,index)
+            return sumb.mddatalocal.mdsurfxxlocal[:,start_ind-1:end_ind]
+        else:
+            nfamilies = len(self.families)
+            if (nfamilies == 0):
+                [start_ind,end_ind] = sumb.mdcreatesurfcoorlistlocal(sps,0) 
+            else:
+                for n in range(nfamilies): 
+                    [start_ind,end_ind] = sumb.mdcreatesurfcoorlistlocal(sps,n+1)
+            return sumb.mddatalocal.mdsurfxxlocal
+
     def DeallocateSurfaceCoordinates(self):
         """Deallocate memory used for the surface coordinates."""
         sumb.mddeletesurfcoorlist()
+
+          
+    def DeallocateSurfaceCoordinatesLocal(self):
+        """Deallocate memory used for the surface coordinates."""
+        sumb.mddeletesurfcoorlistlocal()
 
     def GetSurfacePatchDimensions(self, family=None):
         """Return surface patch dimensions.
@@ -160,10 +192,42 @@ class SUmbMesh(object):
                 for n in range(nfamilies):
                     [start_ind,end_ind] = sumb.mdcreatesurfindlist(n+1)
             return sumb.mddata.mdsurfind
+
+    def GetSurfaceIndicesLocal(self, family=None):
+        """Return CGNS block IDs and indices.  This is a 2-D array, dimensions
+        (4,npoints).  The first 3 indices are the i,j,k and the fourth is the
+        CGNS block ID.
+                                             
+        Keyword arguments:
+                                             
+        family -- optional string specifying the return of indices only for the
+                  specified family.
+                                             
+        """
+        if(family):
+            try:
+                index = self.families[family]
+            except KeyError:
+                print "Error: No such family '%s'" % family
+                return None
+            [start_ind,end_ind] = sumb.mdcreatesurfindlistlocal(index)
+            return sumb.mddata.mdsurfindlocal[:,start_ind-1:end_ind]
+        else:
+            nfamilies = len(self.families)
+            if (nfamilies == 0):
+                [start_ind,end_ind] = sumb.mdcreatesurfindlistlocal(0)
+            else:
+                for n in range(nfamilies):
+                    [start_ind,end_ind] = sumb.mdcreatesurfindlistlocal(n+1)
+            return sumb.mddatalocal.mdsurfindlocal
                                              
     def DeallocateSurfaceIndices(self):
         """Deallocate memory used for the surface indices."""
         sumb.mddeletesurfindlist()
+
+    def DeallocateSurfaceIndicesLocal(self):
+        """Deallocate memory used for the surface indices."""
+        sumb.mddeletesurfindlistlocal()
 
     def WriteMeshFile(self,*filename):
         """Write the current state of the mesh to a CGNS file.
@@ -212,6 +276,24 @@ class SUmbMesh(object):
         """
         sumb.iteration.groundlevel = 1
         sumb.mdsetcoor(sps,blocknums,ranges,xyz)
+        self._update_geom_info = True
+
+    def SetCoordinatesLocal(self, blocknum,il,jl,kl,xyz, sps=1):
+        """Set the coordinates for a given block or sub-blocks.
+                                                                                
+        Keyword arguments:
+                                                                                
+        blocknums -- the block number for each sub-block, dimension (nsubblocks)
+        ranges -- the ijk ranges for each sub-block, dimension (3,2,nsubblocks)
+        xyz -- the new xyz coordinates, dimension (3,npts)
+        sps    -- spectral time step (optional, default is set to 1).
+                  (sps=1 for usual steady or unsteady models)
+                                                                                
+        """
+        sumb.iteration.groundlevel = 1
+        #sumb.mdsetcoor(sps,blocknums,ranges,xyz.real)#only the real part needs to be set in SUmbVertex
+        sumb.setblockcoords(blocknum,il,jl,kl,xyz.real)
+        #sumb.mdsetcoor(sps,blocknums,ranges,xyz)
         self._update_geom_info = True
 
     def _UpdateGeometryInfo(self):
@@ -313,6 +395,26 @@ class SUmbMesh(object):
         # Wait for all zone files to be written before returning since the
         # next step will be to run SUGGAR.
         self.sumb_comm_world.barrier
+
+    def getBlockDimensions(self,blocknum):
+        """ Get the i,j,k dimensions of block blocknum"""
+        return  sumb.getblockdims(blocknum)
+
+    def getBlockCoordinates(self,blocknum,il,jl,kl):
+        """get the xyz coordinates from blockblocknum"""
+        return sumb.getblockcoords(blocknum,il,jl,kl)
+    def getBlockCGNSID(self,blocknum):
+        """ Get original CGNS blockID for block blocknum"""
+        return sumb.getblockcgnsid(blocknum)
+    def getNSubfacesBlock(self,blocknum):
+        """ get subface infor for block: blocknum"""
+        return sumb.getnsubfacesblock(blocknum)
+    def getBlockCommunicationInfo(self,blocknum,nSubface,n1to1,nNonMatch):
+        """Get all fo the relevant MPI communication ifo for this block"""
+        return sumb.getblockcommunicationinfo(blocknum,nSubface,n1to1,nNonMatch)
+    def getNBlocksLocal(self):
+        """ get the number of blocks present on the local processor"""
+        return sumb.getnblockslocal()
 
 
 # =============================================================================
@@ -450,6 +552,9 @@ class SUmbInterface(object):
         print 'generating input file'
         print 'flow',aero_problem._flows
 
+        #Convert alpha and beta to a freestream vector
+        [velDir,liftDir,dragDir]= sumb.adjustinflowangleadj((aero_problem._flows.alpha*(pi/180.0)),(aero_problem._flows.beta*(pi/180.0)),aero_problem._flows.liftIndex)
+        
         autofile = open("autogen.input",'w')
 
         # Write the header of the file
@@ -588,8 +693,10 @@ class SUmbInterface(object):
         autofile.write(  "                          # Default is Mach\n")
         autofile.write(  "#                         Reynolds: 100000\n")
         autofile.write(  "       Reynolds length (in meter): 1.0\n")
-        autofile.write(  "   Free stream velocity direction: 1.0 0.0 0.0\n")
-        autofile.write(  "                   Lift direction: 0.0 1.0 0.0\n")
+        #autofile.write(  "   Free stream velocity direction: 1.0 0.05 0.0\n")
+        #autofile.write(  "                   Lift direction: -0.05 1.0 0.0\n")
+        autofile.write(  "   Free stream velocity direction: %4.2f %4.2f %4.2f\n"%(velDir[0],velDir[1],velDir[2]))
+        autofile.write(  "                   Lift direction: %4.2f %4.2f %4.2f\n"%(liftDir[0],liftDir[1],liftDir[2]))
         autofile.write(  "     # Default is normal to free stream without y-component\n")
         autofile.write(  "   Free stream temperature (in K): 288.15\n")
         autofile.write(  " Free stream eddy viscosity ratio: 0.01\n")
@@ -806,7 +913,7 @@ class SUmbInterface(object):
         autofile.write(  " Treatment boundary multigrid corrections: Zero Dirichlet\n")
         autofile.write(  "            Restriction relaxation factor: 1.0\n")
         autofile.write(  "#                    Multigrid start level:  # Default is coarsest MG level\n")
-        autofile.write(  "                 Multigrid cycle strategy: sg\n")
+        autofile.write(  "                 Multigrid cycle strategy: 2v\n")
         autofile.write( "\n")
 
         #! Write the keywords and default values for the parallel, i.e.
@@ -1232,6 +1339,10 @@ class SUmbInterface(object):
 ## # end of solver.F90
 ## ################################################################
 
+    def CheckIfParallel(self):
+        """Return true if we are running with MPI."""
+        return _parallel,mpi
+        
     def WriteVolumeSolutionFile(self,*filename):
         """Write the current state of the volume flow solution to a CGNS file.
  
@@ -1247,6 +1358,7 @@ class SUmbInterface(object):
             sumb.monitor.writegrid=True
 	else:
             sumb.monitor.writegrid=False
+        sumb.monitor.writegrid=True
         sumb.monitor.writevolume=True
         sumb.monitor.writesurface=False
         sumb.writesol()
