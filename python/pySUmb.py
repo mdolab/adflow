@@ -82,9 +82,13 @@ class SUMB(AeroSolver):
 		informs = {
 		}
 		AeroSolver.__init__(self, name, category, def_opts, informs, *args, **kwargs)
+			
 		self.sumb = SUmbInterface()
+		self.Mesh = self.sumb.Mesh
+		self.myid = self.sumb.myid
+		self.callCounter = 0
 
-	def __solve__(self, aero_problem, sol_type,reinitialize=False, updategeometry=False,niterations = 1,grid_file='default', *args, **kwargs):
+	def __solve__(self, aero_problem, sol_type,grid_file='default', *args, **kwargs):
 		
 		'''
 		Run Analyzer (Analyzer Specific Routine)
@@ -93,13 +97,25 @@ class SUMB(AeroSolver):
 		'''
 		
 		# Pre-Processing
-		if reinitialize:
-			self.sumb.initializeFlow(aero_problem,sol_type,grid_file)
-		#endif
+		try:  kwargs['reinitialize']
+		except KeyError:
+			test=1
+		else:
+			if kwargs['reinitialize']:
+				self.sumb.initializeFlow(aero_problem,sol_type,grid_file)
+				self.filename=grid_file
+			#endif
+		#endtry
+		try:  kwargs['niterations']
+		except KeyError:
+			test=1
+		else:
+			niterations= kwargs['niterations']
+		#endtry
 
-		if updategeometry:
-			self.sumb.updateGeometry(geometry)
-		#endif
+		#if updategeometry:
+		#	self.sumb.updateGeometry(geometry)
+		##endif
 		
 		# Run Solver
 		
@@ -111,6 +127,12 @@ class SUMB(AeroSolver):
 		
 		
 		# Post-Processing
+		#Write solutions
+		volname=self.filename+'%d'%(self.callCounter)+'vol.cgns'
+		surfname=self.filename+'%d'%(self.callCounter)+'surf.cgns'
+		print volname,surfname
+		self.sumb.WriteVolumeSolutionFile(volname)
+		self.sumb.WriteSurfaceSolutionFile(surfname)
 		
 		# get forces? from SUmb attributes
 		
@@ -120,7 +142,96 @@ class SUMB(AeroSolver):
 		#	sol_geom, sol_flows, sol_options, display_opts=disp_opts,
 		#	#Lift,Drag,CL,CD,CDi,CDp,CDw,Distribs,etc...
 		#	arguments=args, **kwargs)
+		self.callCounter+=1
+		return
+
+	def updateMesh(self,xyz,conn,elemtype,mapping={},meshwarping={}, *args, **kwargs):
+		'''
+		Take in a new surface and update the mesh
+		'''
+		# Compute the new CFD coordinates for each set of local CFD
+		# Surface points
+		if mapping.cfd_surf_orig.shape[1]!=0:
+			new_cfd_surf = mapping.getMappedSurface(xyz)
+		#endif
+
+		indices = self.Mesh.GetSurfaceIndicesLocal()
+                #print 'surface indices',indices.shape,MPI.rank
+
+		## # Translate new coordinates into perturbations
+## 		if self.xyz_cfd_orig.shape[1]!=0:
+## 			cfd_dispts = xyz_cfd_new - self.xyz_cfd_orig
+## 		else:
+## 			cfd_dispts = 0.0*self.xyz_cfd_orig
+##                 #endif
+##                 # what about case where initial block has no surface points but
+##                 # association with another block causes perturbations? Handled
+##                 # in warp!
+
+##                 #return from perturbations to actual coordinates
+## 	        cfd_xyz = self.xyz_cfd_orig + cfd_dispts
+## 	        #print 'cfd',cfd_xyz
+## 		# do we need this, can't we just pass the coordinates?
+		[_parallel,mpi]=self.sumb.CheckIfParallel()
 		
+		if _parallel :
+			# Update the Local blocks based on the perturbed points
+			# on the local processor
+			if mapping.cfd_surf_orig.shape[1]!=0:
+			    meshwarping.updateLocalBlockFaces(new_cfd_surf,indices)
+		        #endif
+			mpi.WORLD.Barrier()
+	            
+			# Propogate perturbations to all blocks based on
+			# flow solver information
+			meshwarping.synchronizeBlockFaces()
+			
+                        #print 'Block faces synchronized...'
+			#Update the local blocks with the fortran routine WARPBLK
+			meshwarping.updateLocalBlockCoords()
+
+##	            #repeat
+##             self.meshwarping.synchronizeBlockFaces()
+
+##             print 'Block faces synchronized...'
+##             #Update the local blocks with the fortran routine WARPBLK
+##             self.meshwarping.updateLocalBlockCoords()
+	
+
+		else:
+			ijk_blnum = self.Mesh.GetSurfaceIndices()
+			print mpi.rank, "Done with self.Mesh.GetSurfaceIndices('')"
+			if mpi.rank == 0:
+				print "calling self.meshwarping.Warp ...."
+				meshwarping.Warp(new_cfd_surf, ijk_blnum[3,:], ijk_blnum[0:3,:])
+				print "done with self.meshwarping.Warp"
+				
+				for n in range(1, self.Mesh.GetNumberBlocks()+1):
+					#print "In n loop:", mpi.rank, n
+				 
+					if mpi.rank == 0:
+						# Get the new coordinates from warp
+						[blocknum,ijkrange,xyz_new] = self.meshwarping.GetCoordinates(n)
+					# end if
+				
+					if mpi.rank != 0:
+						blocknum = None
+						ijkrange = None
+						xyz_new = None
+					# end if
+				
+					blocknum = self.comm_world.bcast(blocknum) 
+					ijkrange = self.comm_world.bcast(ijkrange) 
+					xyz_new = self.comm_world.bcast(xyz_new) 
+                    
+					# Set new mesh coordinates in SUmb
+					self.Mesh.SetCoordinates(blocknum, ijkrange, xyz_new.real)	
+				# end for
+			#endif
+		#endif
+		if self.myid==0: 
+			print " New coordinates set in SUmb ... \n"
+		#endif
 		return
 
 	def initAdjoint(self, *args, **kwargs):
