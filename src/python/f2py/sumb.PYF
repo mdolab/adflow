@@ -772,6 +772,12 @@ python module sumb ! in
             integer(kind=inttype) parameter,optional :: costfuncmomycoef=7
         end module adjointvars
 
+        subroutine getsolution ! in :sumb:../../adjoint/designExport.f90
+            use adjointvars
+            use flowvarrefstate
+            use inputphysics
+        end subroutine getsolution
+
 ! ############################################################################
 ! ADjoint Routines
 ! ############################################################################
@@ -831,6 +837,71 @@ python module sumb ! in
             use adjointpetsc
         end subroutine solveadjointpetsc
 
+       subroutine setupgradientrhsspatial(level,costFunction)! in :sumb:../../adjoint/computeADjointGradientSpatial.F90
+            use adjointpetsc
+            use adjointvars
+            use blockpointers       
+            use cgnsgrid            
+            use communication                    
+            use inputphysics        
+            use flowvarrefstate     
+            use inputdiscretization 
+            use inputtimespectral
+            use iteration           
+            use section
+            use bctypes  
+            integer(kind=inttype), intent(in) :: level
+            integer(kind=inttype), intent(in) :: costFunction
+         end subroutine setupgradientrhsspatial
+
+        subroutine setupgradientmatrixspatial(level)! in :sumb:../../adjoint/setupGradientMatrixSpatial.F90
+            use adjointpetsc
+            use adjointvars
+            use blockpointers
+            use cgnsgrid
+            use communication
+            use flowvarrefstate
+            use inputdiscretization
+            use inputtimespectral
+            use iteration
+            integer(kind=inttype) intent(in) :: level
+        end subroutine setupgradientmatrixspatial
+
+        subroutine computeadjointgradientspatial(costfunction)
+          use adjointpetsc
+          use adjointvars
+          use blockpointers !globalnode
+          integer(kind=inttype), intent(in) :: costfunction
+        end subroutine computeadjointgradientspatial
+
+        subroutine setupgradientmatrixextra(level)! in :sumb:../../adjoint/setupGradientMatrixSpatial.F90
+            use adjointpetsc
+            use adjointvars
+            use blockpointers
+            use communication
+            use flowvarrefstate
+            use inputdiscretization
+            use inputtimespectral
+            use iteration
+            integer(kind=inttype) intent(in) :: level
+          end subroutine setupgradientmatrixextra
+
+        subroutine computeadjointgradientextra(costfunction)
+          use adjointpetsc
+          use adjointvars
+          integer(kind=inttype), intent(in) :: costfunction
+        end subroutine computeadjointgradientextra
+
+        subroutine getglobalnodes(blocknum,idim,jdim,kdim,nodenumbers) ! in :sumb:../../adjoint/getGlobalNodes.f90
+          use blockpointers
+          use communication
+          use adjointvars
+          integer(kind=inttype) intent(in) :: blocknum
+          integer(kind=inttype) intent(in) :: idim
+          integer(kind=inttype) intent(in) :: jdim
+          integer(kind=inttype) intent(in) :: kdim
+          integer(kind=inttype) dimension(idim,jdim,kdim),intent(out),depend(idim,jdim,kdim) :: nodenumbers
+        end subroutine getglobalnodes
 ! ############################################################################
 ! Aeroelastic / Multi-Disciplinary Routines
 ! ############################################################################
