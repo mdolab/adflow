@@ -39,6 +39,7 @@ except ImportError:
 import os, sys
 import pdb
 import time
+import copy
 
 # =============================================================================
 # External Python modules
@@ -145,7 +146,7 @@ class SUMB(AeroSolver):
 		self.callCounter+=1
 		return
 
-	def updateMesh(self,xyz,conn,elemtype,mapping={},meshwarping={}, *args, **kwargs):
+	def updateMesh(self,xyz,mapping={},meshwarping={}, *args, **kwargs):
 		'''
 		Take in a new surface and update the mesh
 		'''
@@ -261,6 +262,151 @@ class SUMB(AeroSolver):
 		self.sumb.solveADjointPETSc()
 
 		return
+
+	def computeFlowDerivatives(self,objective,flowMatrixInitialized, *args, **kwargs):
+		''' compute derivatives with respect to flow variables like alpha,Mach, beta....
+		'''
+		#Setup the partial derivative of the objective in sumb
+		self.sumb.setupGradientRHSFlow(objective)
+
+		#setup the partial derivative of the volume coords. in sumb
+		if not flowMatrixInitialized:
+			self.sumb.setupGradientMatrixFlow()
+		#endif
+
+		#compute and store the volume derivatives
+		self.sumb.computeTotalFlowDerivative(objective)
+
+		#Retrieve a vector of the volume derivatives
+		flowDerivative=self.sumb.getTotalFlowDerivatives()
+
+		return flowDerivative
+
+	def computeSurfaceDerivative(self, objective,volumeMatrixInitialized,surface={},mapping={},meshwarping={}, *args, **kwargs):
+		'''
+		Compute the derivative of the objective function wrt the
+		surface.
+		'''
+		#Setup the partial derivative of the objective in sumb
+		self.sumb.setupGradientRHSVolume(objective)
+
+		#setup the partial derivative of the volume coords. in sumb
+		if not volumeMatrixInitialized:
+			self.sumb.setupGradientMatrixVolume()
+		#endif
+
+		#compute and store the volume derivatives
+		self.sumb.computeTotalVolumeDerivative(objective)
+
+		#Retrieve a vector of the volume derivatives
+		volumeDerivative=self.sumb.getTotalVolumeDerivatives(objective)
+
+		[xyz,conn,elemtype] = surface.getSurface()
+		#now determine the surface derivatives using CS
+		xyzref = copy.deepcopy(xyz)
+
+		#initialize vector for the surface derivatives
+		dIdxyz = numpy.zeros([len(xyzref[:,0]),len(xyzref[0,:])],'d')
+
+		#Setup Complex dummy array for the surface
+		xyz_comp = numpy.zeros([len(xyz[:,0]),len(xyz[0,:])],'D')
+
+		#Get the global node ordering
+		self.getGlobalNodeOrder(meshwarping)
+
+		for i in xrange(len(xyzref[:,0])):
+			for j in xrange(len(xyzref[0,:])):
+				#set stepsize
+				deltax = 1e-20j
+				
+				#store reference design variables
+				xref = xyz[i,j]
+
+                                #Copy design variables over to complex array
+				xyz_comp[:,:] = xyz[:,:]
+
+			        #perturb design variables
+				xyz_comp[i,j] = xyz[i,j]+deltax
+
+                                #Warp the mesh
+				self.updateMesh(xyz_comp,mapping,meshwarping)
+
+  			        #get the new Coordinates
+				newMesh = meshwarping.getMeshCoordinates()
+
+ 	                        #compute derivative
+				newMeshDerivative = (newMesh.imag)/deltax.imag
+
+				for k in xrange(len(newMeshDerivative)):
+					dIdxyz[i,j]=dIdxyz[i,j]+newMeshDerivative[j]*\
+					   volumeDerivative[j]
+			        #endfor
+
+			        #restore reference design variables
+				xyz[i,j] = xref
+			#endfor
+		#endfor				
+
+		return dIdxyz
+
+	def getGlobalNodeOrder(self,meshwarping={}, *args, **kwargs):
+
+		[_parallel,mpi]=self.sumb.CheckIfParallel()
+		
+		if _parallel:
+			#loop over the local blocks
+			n = meshwarping.nBlocksLocal
+			for i in xrange(n):
+                                #retrieve the global node numbers from SUmb and store them in the meshwarping blocks
+				ijk = meshwarping.blockList[i].ijk
+				meshwarping.blockList[i].globalNode = self.sumb.getGlobalNodesLocal(i+1,ijk[0],ijk[1],ijk[2])
+			
+                               
+                        #endfor
+			
+		else:
+			if MPI.rank == 0:
+				#assumes single processor is being used
+
+                                #initialize size array and retrieve all block sizes
+        
+				ijkmax = numpy.zeros([3,self.sumb.Mesh.GetNumberBlocks()+1],'i')
+				
+				for n in xrange(1, self.sumb.Mesh.GetNumberBlocks()+1):
+					ijkmax[:,n] = meshwarping.GetBlockDimensions(n)
+				#endfor
+            
+                                #initialize the global node array
+				ijkmax[0,0] = max(ijkmax[0,:])
+				ijkmax[1,0] = max(ijkmax[1,:])
+				ijkmax[2,0] = max(ijkmax[2,:])
+                
+                                #initialize the global node array
+        
+				self.globalNodes = numpy.zeros([ijkmax[0,0]+1,ijkmax[1,0]+1,ijkmax[2,0]+1,\
+								self.sumb.Mesh.GetNumberBlocks()+1],'i')
+            
+				for n in xrange(1, self.sumb.Mesh.GetNumberBlocks()+1):
+					q = int(ijkmax[0,n])
+                                        
+					self.sumb.getGlobalNodes(n,ijkmax[0,n],ijkmax[1,n],ijkmax[2,n],\
+								 self.globalNodes)
+                                        
+                                #endfor
+                        #endif
+		#endif
+		return
+
+	def getSolution(self):
+		'''
+		retrieve the solution variables from the solver.
+		'''
+		#print 'getting solution'
+		solution = self.sumb.getFunctionValues()
+		#print solution
+		
+		return solution
+
 		
 	def _on_setOption(self, name, value):
 		
@@ -302,11 +448,11 @@ class SUMB(AeroSolver):
 
 
 #==============================================================================
-# VORLIN Analysis Test
+# SUmb Analysis Test
 #==============================================================================
 if __name__ == '__main__':
 	
-	# Test VORLIN
+	# Test SUmb
 	print 'Testing ...'
 	sumb = SUMB()
 	print sumb

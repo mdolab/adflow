@@ -291,7 +291,7 @@ class SUmbMesh(object):
                                                                                 
         """
         sumb.iteration.groundlevel = 1
-        #sumb.mdsetcoor(sps,blocknums,ranges,xyz.real)#only the real part needs to be set in SUmbVertex
+        #sumb.mdsetcoor(sps,blocknums,ranges,xyz.real)#only the real part needs to be set in SUmb
         sumb.setblockcoords(blocknum,il,jl,kl,xyz.real)
         #sumb.mdsetcoor(sps,blocknums,ranges,xyz)
         self._update_geom_info = True
@@ -480,6 +480,9 @@ class SUmbInterface(object):
 
         # Write the intro message
         sumb.writeintromessage()
+
+        #Initialize the design variable and function storage
+        sumb.designinit()
 
         return
 
@@ -1518,7 +1521,7 @@ class SUmbInterface(object):
         sumb.preprocessingadjoint(self.level)
         
         #Initialize the design variable and function storage
-        sumb.designinit()
+        #sumb.designinit()
 
         #initalize PETSc
         sumb.initializepetsc()
@@ -1532,6 +1535,7 @@ class SUmbInterface(object):
             print 'ADjoint Initialized Succesfully...'
         #endif
 
+        self.nSpatial = sumb.adjointvars.ndesignspatial
 
         return
 
@@ -1577,3 +1581,156 @@ class SUmbInterface(object):
         sumb.solveadjointpetsc()
 
         return
+
+    def setupGradientRHSVolume(self,objective):
+        '''
+        setup the rhs partial for the mesh derivatives
+        '''
+        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
+                             'cd':sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             }
+
+        possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
+				       'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+				       'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+				       'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+				       'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+				       'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+				       'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+				       }
+        
+        for item in objective:
+            if self.myid==0:
+                print 'Computing RHS Partial for costfuntion: ',possibleObjectives[item]#item#objective[item]
+                print 'SUmb index:',SUmbCostfunctions[possibleObjectives[item]]
+            #endif
+        
+            sumb.setupgradientrhsspatial(self.level,SUmbCostfunctions[possibleObjectives[item]])
+        #endfor
+
+        return
+        
+    def setupGradientMatrixVolume(self):
+
+        """Set up the residual sensitivity w.r.t. spatial design variables."""
+
+        sumb.setupgradientmatrixspatial(self.level)
+
+	if (self.myid == 0):
+            print "ADjoint: Spatial residual sensitivity set up successfully."
+
+        return
+
+    def setupGradientMatrixFlow(self):
+
+        """Set up the residual sensitivity w.r.t. spatial design variables."""
+
+        sumb.setupgradientmatrixextra(self.level)
+
+	if (self.myid == 0):
+            print "ADjoint: Extra Vars residual sensitivity set up successfully."
+
+        return
+    
+    def computeTotalVolumeDerivative(self,objective):
+        '''
+        compute the total mesh derivatives
+        '''
+        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
+                             'cd':sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             }
+
+        possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
+				       'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+				       'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+				       'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+				       'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+				       'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+				       'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+				       }
+        
+        for item in objective:
+            if self.myid==0:
+                print 'Computing total mesh derivative for costfuntion: ',possibleObjectives[item]#item#objective[item]
+                print 'SUmb index:',SUmbCostfunctions[possibleObjectives[item]]
+            #endif
+        
+            sumb.computeadjointgradientspatial(SUmbCostfunctions[possibleObjectives[item]])
+        #endfor
+        
+    def getTotalVolumeDerivatives(self,objective):
+
+        """
+        Get the  sensitivities from SUmb.
+                
+	"""
+        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
+                             'cd':sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             }
+        
+        possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
+                               'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+                               'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+                               'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+                               'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+                               'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+                               'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+                               'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               }
+        
+        grad = numpy.zeros((sumb.adjointvars.ndesignspatial),float)
+        for item in objective:
+            for i in xrange(sumb.adjointvars.ndesignspatial):
+                grad[i] = sumb.adjointvars.functiongradspatial[SUmbCostfunctions[possibleObjectives[item]],i]
+            #endfor
+        #endfor
+        
+        return grad
+    
+    def getGlobalNodesLocal(self,blocknum,il,jl,kl):
+        #get global node ordering from sumb
+        globalNodes = sumb.getglobalnodes(blocknum,il,jl,kl)
+        
+        return globalNodes
+
+    def getFunctionValues(self):
+        '''
+        retrieve the solution values from SUmb
+        '''
+        #print 'interface getting solution'
+        # Map cost functions
+        sumb.getsolution()
+
+        #print 'solution mapped'
+        SUmbsolutions = {'cl':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncliftcoef-1],\
+                         'cd':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncdragcoef-1],\
+                         'cFx':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncforcexcoef-1],\
+                         'cFy':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncforceycoef-1],\
+                         'cFz':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncforcezcoef-1],\
+                         'cMx':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncmomxcoef-1],\
+                         'cMy':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncmomycoef-1],\
+                         'cMz':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncmomzcoef-1],\
+                         }
+
+        return SUmbsolutions
+    
