@@ -278,7 +278,7 @@ class SUMB(AeroSolver):
 		self.sumb.computeTotalFlowDerivative(objective)
 
 		#Retrieve a vector of the volume derivatives
-		flowDerivative=self.sumb.getTotalFlowDerivatives()
+		flowDerivative=self.sumb.getTotalFlowDerivatives(objective)
 
 		return flowDerivative
 
@@ -300,54 +300,99 @@ class SUMB(AeroSolver):
 
 		#Retrieve a vector of the volume derivatives
 		volumeDerivative=self.sumb.getTotalVolumeDerivatives(objective)
+		#print volumeDerivative
+		#stop
+
+		#Get the global node ordering
+		self.getGlobalNodeOrder(meshwarping)
 
 		[xyz,conn,elemtype] = surface.getSurface()
 		#now determine the surface derivatives using CS
 		xyzref = copy.deepcopy(xyz)
 
 		#initialize vector for the surface derivatives
-		dIdxyz = numpy.zeros([len(xyzref[:,0]),len(xyzref[0,:])],'d')
+		self.dIdxyz = numpy.zeros([len(xyzref[:,0]),len(xyzref[0,:])],'d')
 
-		#Setup Complex dummy array for the surface
-		xyz_comp = numpy.zeros([len(xyz[:,0]),len(xyz[0,:])],'D')
+		try: self.meshDerivatives
+		except:
+			self.meshDerivatives = []
+		else:
+			print 'meshDerivatives exists'
+		#endif
 
-		#Get the global node ordering
-		self.getGlobalNodeOrder(meshwarping)
+		if (self.meshDerivatives == []):
+			#it is necessary to compute the mesh derivatives
 
+			#Setup Complex dummy array for the surface
+			xyz_comp = numpy.zeros([len(xyz[:,0]),len(xyz[0,:])],'D')
+		
+			
+			for i in xrange(len(xyzref[:,0])):
+				if self.myid ==0:
+					print "Coordinate %d of %d...."%(i,len(xyzref[:,0]))
+				#endif
+
+				#setup an empty list for this row
+				rowDerivatives = []
+				for j in xrange(len(xyzref[0,:])):
+					
+					#set stepsize
+					deltax = 1e-20j
+					
+ 				        #store reference design variables
+					xref = xyz[i,j]
+				
+					#Copy design variables over to complex array
+					xyz_comp[:,:] = xyz[:,:]
+				
+   			                #perturb design variables
+					xyz_comp[i,j] = xyz[i,j]+deltax
+					#print 'xyz',xyz,'xyz_comp',xyz_comp
+
+                                        #Warp the mesh
+					self.updateMesh(xyz_comp,mapping,meshwarping)
+					#get the new Coordinates
+					newMesh = meshwarping.getMeshCoordinates()
+ 	                                #compute derivative
+					newMeshDerivative = (newMesh.imag)/deltax.imag
+					#print 'newMeshDerivative',newMeshDerivative
+					#append to mesh derivative list
+					rowDerivatives.append(newMeshDerivative)
+
+					#restore reference design variables
+					xyz[i,j] = xref
+
+				#endfor
+				#append to mesh derivative list
+				self.meshDerivatives.append(rowDerivatives)
+
+			#endfor
+		#endif
 		for i in xrange(len(xyzref[:,0])):
 			for j in xrange(len(xyzref[0,:])):
-				#set stepsize
-				deltax = 1e-20j
-				
-				#store reference design variables
-				xref = xyz[i,j]
-
-                                #Copy design variables over to complex array
-				xyz_comp[:,:] = xyz[:,:]
-
-			        #perturb design variables
-				xyz_comp[i,j] = xyz[i,j]+deltax
-
-                                #Warp the mesh
-				self.updateMesh(xyz_comp,mapping,meshwarping)
-
-  			        #get the new Coordinates
-				newMesh = meshwarping.getMeshCoordinates()
-
- 	                        #compute derivative
-				newMeshDerivative = (newMesh.imag)/deltax.imag
-
-				for k in xrange(len(newMeshDerivative)):
-					dIdxyz[i,j]=dIdxyz[i,j]+newMeshDerivative[j]*\
-					   volumeDerivative[j]
+				for k in xrange(len(volumeDerivative)):#self.meshDerivatives[i][j][:])):
+					#print 'mesh derivatives',self.meshDerivatives[i][j][k],volumeDerivative[k]
+					self.dIdxyz[i,j]=self.dIdxyz[i,j]+self.meshDerivatives[i][j][k]*\
+					   volumeDerivative[k]
 			        #endfor
 
-			        #restore reference design variables
-				xyz[i,j] = xref
+			        
 			#endfor
 		#endfor				
 
-		return dIdxyz
+		return self.dIdxyz
+
+	def finalizeAdjoint(self):
+		'''
+		destroy the PESTcKSP context
+		'''
+		self.meshDerivatives =[]
+		
+		self.sumb.releaseAdjointMemeory()
+		
+		return
+
+
 
 	def getGlobalNodeOrder(self,meshwarping={}, *args, **kwargs):
 

@@ -481,8 +481,6 @@ class SUmbInterface(object):
         # Write the intro message
         sumb.writeintromessage()
 
-        #Initialize the design variable and function storage
-        sumb.designinit()
 
         return
 
@@ -1119,7 +1117,10 @@ class SUmbInterface(object):
                             nn=sumb.inputunsteady.ntimestepsfine*sumb.inputiteration.ncycles
                         #endif
                         sumb.monitor.convarray = None
+                        print 'nn',nn
                         sumb.allocconvarrays(nn)
+                        print 'convarray',sumb.monitor.convarray
+                        stop
 
         elif (sumb.monitor.nitercur == 0 and
               sumb.iteration.itertot == 0):
@@ -1167,7 +1168,8 @@ class SUmbInterface(object):
                   
         else:
             # More Time Steps / Iterations in the same session
-            #print 'more cycles',ncycles[0],ncycles[1]
+            print 'more cycles',ncycles[0],ncycles[1],sumb.monitor.convarray
+            stop
             if (ncycles):
                 # Set new value of unsteady physical time steps to run
                 if (ncycles[0] != sumb.inputunsteady.ntimestepsfine):
@@ -1181,7 +1183,7 @@ class SUmbInterface(object):
 
             # Reallocate convergence history array and
             # time array with new size, storing old values from previous runs
-            if (self.myid == 0):
+            if (self.myid == self.myid):
                 #print 'equation mode',sumb.inputphysics.equationmode
                 if (sumb.inputphysics.equationmode==2):#2 is unsteady
                     #print 'unsteady'
@@ -1204,11 +1206,11 @@ class SUmbInterface(object):
                     temp_td = None
 
                 if (sumb.inputio.storeconvinneriter):
-                    #print 'store conv?',sumb.inputio.storeconvinneriter,sumb.inputiteration.ncycles-1
-                    #print 'conv, arreay',sumb.monitor.convarray[:,0,1]
+                    print 'store conv?',sumb.inputio.storeconvinneriter,sumb.inputiteration.ncycles-1
+                    print 'conv, arreay',sumb.monitor.convarray[:,0,1]
                     #sdfg
                     # store previous convergence history and deallocate array
-                    temp = sumb.monitor.convarray
+                    temp = copy.deepcopy(sumb.monitor.convarray)
                     #temp = copy.deepcopy(sumb.monitor.convarray)
                     #print 'conv, arreay',sumb.monitor.convarray
                     sumb.monitor.convarray = None
@@ -1223,7 +1225,7 @@ class SUmbInterface(object):
                     sumb.allocconvarrays(temp.shape[0]+nn-1)
                     #print 'convergence shape',sumb.monitor.convarray.shape,temp.shape, sumb.monitor.convarray[:temp.shape[0],:].shape,temp[:,0,:].shape
                     # recover values from previous runs and deallocate temporary array
-                    sumb.monitor.convarray[:temp.shape[0],:] = temp
+                    sumb.monitor.convarray[:temp.shape[0],:] = copy.deepcopy(temp)
 ##                     # allocate convergence history array with new extended size
 ##                     sumb.allocconvarrays(temp.shape[0]
 ##                                          +sumb.inputunsteady.ntimestepsfine
@@ -1521,7 +1523,7 @@ class SUmbInterface(object):
         sumb.preprocessingadjoint(self.level)
         
         #Initialize the design variable and function storage
-        #sumb.designinit()
+        sumb.designinit()
 
         #initalize PETSc
         sumb.initializepetsc()
@@ -1547,6 +1549,14 @@ class SUmbInterface(object):
         sumb.setupadjointmatrix(self.level)
 
         sumb.createpetscksp()
+
+        return
+
+    def releaseAdjointMemeory(self):
+        '''
+        release the KSP memory...
+        '''
+        sumb.destroypetscksp()
 
         return
 
@@ -1606,16 +1616,53 @@ class SUmbInterface(object):
 				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
 				       }
         
-        for item in objective:
-            if self.myid==0:
-                print 'Computing RHS Partial for costfuntion: ',possibleObjectives[item]#item#objective[item]
-                print 'SUmb index:',SUmbCostfunctions[possibleObjectives[item]]
-            #endif
+        #for item in objective:
+        if self.myid==0:
+            print 'Computing RHS Partial for costfuntion: ',possibleObjectives[objective]#item#objective[item]
+            print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
+        #endif
         
-            sumb.setupgradientrhsspatial(self.level,SUmbCostfunctions[possibleObjectives[item]])
+        sumb.setupgradientrhsspatial(self.level,SUmbCostfunctions[possibleObjectives[objective]])
         #endfor
 
         return
+
+    
+    def setupGradientRHSFlow(self,objective):
+        '''
+        setup the rhs partial for the mesh derivatives
+        '''
+        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
+                             'cd':sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             }
+
+        possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
+				       'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+				       'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+				       'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+				       'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+				       'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+				       'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+				       }
+        
+        #for item in objective:
+        if self.myid==0:
+            print 'Computing RHS Partial for costfuntion: ',possibleObjectives[objective]#item#objective[item]
+            print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
+        #endif
+        
+        sumb.setupgradientrhsextra(self.level,SUmbCostfunctions[possibleObjectives[objective]])
+        #endfor
+
+        return
+    
         
     def setupGradientMatrixVolume(self):
 
@@ -1663,14 +1710,16 @@ class SUmbInterface(object):
 				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
 				       }
         
-        for item in objective:
-            if self.myid==0:
-                print 'Computing total mesh derivative for costfuntion: ',possibleObjectives[item]#item#objective[item]
-                print 'SUmb index:',SUmbCostfunctions[possibleObjectives[item]]
-            #endif
+        #for item in objective:
+        if self.myid==0:
+            print 'Computing total mesh derivative for costfuntion: ',possibleObjectives[objective]#item#objective[item]
+            print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
+        #endif
         
-            sumb.computeadjointgradientspatial(SUmbCostfunctions[possibleObjectives[item]])
+        sumb.computeadjointgradientspatial(SUmbCostfunctions[possibleObjectives[objective]])
         #endfor
+
+        return
         
     def getTotalVolumeDerivatives(self,objective):
 
@@ -1699,10 +1748,81 @@ class SUmbInterface(object):
                                }
         
         grad = numpy.zeros((sumb.adjointvars.ndesignspatial),float)
-        for item in objective:
-            for i in xrange(sumb.adjointvars.ndesignspatial):
-                grad[i] = sumb.adjointvars.functiongradspatial[SUmbCostfunctions[possibleObjectives[item]],i]
-            #endfor
+        #for item in objective:
+        for i in xrange(sumb.adjointvars.ndesignspatial):
+            grad[i] = sumb.adjointvars.functiongradspatial[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
+            
+        #endfor
+        #endfor
+        
+        return grad
+
+    def computeTotalFlowDerivative(self,objective):
+        '''
+        compute the total mesh derivatives
+        '''
+        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
+                             'cd':sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             }
+
+        possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
+				       'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+				       'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+				       'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+				       'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+				       'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+				       'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+				       }
+        
+        #for item in objective:
+        if self.myid==0:
+            print 'Computing total flow derivative for costfuntion: ',possibleObjectives[objective]#item#objective[item]
+            print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
+        #endif
+        
+        sumb.computeadjointgradientextra(SUmbCostfunctions[possibleObjectives[objective]])
+        #endfor
+
+        return
+
+    def getTotalFlowDerivatives(self,objective):
+
+        """
+        Get the  sensitivities from SUmb.
+                
+	"""
+        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
+                             'cd':sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             }
+        
+        possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
+                               'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+                               'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+                               'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+                               'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+                               'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+                               'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+                               'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               }
+        
+        grad = numpy.zeros((sumb.adjointvars.ndesignextra),float)
+        #for item in objective:
+        for i in xrange(sumb.adjointvars.ndesignextra):
+            grad[i] = sumb.adjointvars.functiongrad[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
+        #endfor
         #endfor
         
         return grad
