@@ -884,7 +884,20 @@ python module sumb ! in
             use inputtimespectral
             use iteration
             integer(kind=inttype) intent(in) :: level
-          end subroutine setupgradientmatrixextra
+        end subroutine setupgradientmatrixextra
+
+        subroutine setupgradientrhsextra(level,costfunction) ! in :sumb:../../adjoint/setupGradientRHSExtra.F90
+            use adjointpetsc
+            use adjointvars
+            use blockpointers
+            use communication
+            use inputphysics
+            use flowvarrefstate
+            use inputtimespectral
+            integer(kind=inttype) intent(in) :: level
+            integer(kind=inttype) intent(in) :: costfunction
+        end subroutine setupgradientrhsextra
+
 
         subroutine computeadjointgradientextra(costfunction)
           use adjointpetsc
@@ -902,6 +915,12 @@ python module sumb ! in
           integer(kind=inttype) intent(in) :: kdim
           integer(kind=inttype) dimension(idim,jdim,kdim),intent(out),depend(idim,jdim,kdim) :: nodenumbers
         end subroutine getglobalnodes
+
+        subroutine destroypetscksp ! in :sumb:../../adjoint/destroyPETScKSP.F90
+            use adjointpetsc
+            use communication
+            use flowvarrefstate
+        end subroutine destroypetscksp
 ! ############################################################################
 ! Aeroelastic / Multi-Disciplinary Routines
 ! ############################################################################

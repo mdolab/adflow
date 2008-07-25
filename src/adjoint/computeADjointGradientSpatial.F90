@@ -151,8 +151,8 @@
 
       call VecGetOwnershipRange(dIdx, iLow, iHigh, PETScIerr)
 	
-   !   print *,'irange',ilow,ihigh,petscrank
-   !   print *,'irange',iLow,iHigh
+!      print *,'irange',ilow,ihigh,petscrank
+!      print *,'irange',iLow,iHigh
 
       if( PETScIerr/=0 ) &
         call terminate("computeADjointGradientSpatial", &
@@ -165,6 +165,7 @@
       ! Note: it might result in a zero-size array but it's ok!
 
       nDesignLocal = dim(iHigh,iLow)
+	
       allocate( functionGradLocal(nDesignLocal) )
 
       ! VecGetValues - Gets values from certain locations of a vector.
@@ -222,16 +223,30 @@
       !   then nDesignLocal = 0 and nothing is actually sent to the
       !   processor.
 
-      !print *,'costfunction',costFunction,nDisplsGlobal,'shapes',shape(functionGradSpatial),shape(functionGradLocal)
+!      print *,'costfunction',costFunction,nDisplsGlobal,'shapes',shape(functionGradSpatial),'s2',shape(functionGradLocal)
+!	call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)	
+!	stop
 
 !      call mpi_gatherv(functionGradLocal, nDesignLocal, sumb_real, &
 !                       functionGradSpatial(costFunction,:), nDesignGlobal,&
 !                       nDisplsGlobal, sumb_real, &
 !                       0, PETSC_COMM_WORLD, PETScIerr)
+
+!	if (PETScRank==0) then
+!  		print *,'gathering solution',functionGradLocal, nDesignLocal, sumb_real, &
+!                       functionGradSpatial(costFunction,:), nDesignGlobal,&
+!                       nDisplsGlobal, sumb_real, &
+!                        PETSC_COMM_WORLD, PETScIerr
+!	endif
+
+
        call mpi_allgatherv(functionGradLocal, nDesignLocal, sumb_real, &
                        functionGradSpatial(costFunction,:), nDesignGlobal,&
                        nDisplsGlobal, sumb_real, &
                         PETSC_COMM_WORLD, PETScIerr)
+!	if (PETScRank==0) then
+!	     print *,'spatial function',functionGradSpatial(costFunction,:) 
+!        endif
 !      globalNode => flowdoms(3,1,1)%globalNode
 !      idx = globalnode(2,7,13)*3+3 
 
