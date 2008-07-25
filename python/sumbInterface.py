@@ -891,7 +891,7 @@ class SUmbInterface(object):
             autofile.write(  "                     Alpha turbulent DD-ADI: 0.8\n")
             autofile.write(  "                      Beta turbulent DD-ADI: -1  # Same as alpha\n")
         #endif
-        autofile.write(  "           Relative L2 norm for convergence: 1.e-6\n")
+        autofile.write(  "           Relative L2 norm for convergence: 1.e-12\n")
         autofile.write( "\n")
 
         autofile.write(  "-------------------------------------------------------------------------------\n")
@@ -1120,7 +1120,7 @@ class SUmbInterface(object):
                         print 'nn',nn
                         sumb.allocconvarrays(nn)
                         print 'convarray',sumb.monitor.convarray
-                        stop
+                        
 
         elif (sumb.monitor.nitercur == 0 and
               sumb.iteration.itertot == 0):
@@ -1168,8 +1168,8 @@ class SUmbInterface(object):
                   
         else:
             # More Time Steps / Iterations in the same session
-            print 'more cycles',ncycles[0],ncycles[1],sumb.monitor.convarray
-            stop
+            print 'more cycles',ncycles[0],ncycles[1],sumb.monitor.convarray,self.myid
+            
             if (ncycles):
                 # Set new value of unsteady physical time steps to run
                 if (ncycles[0] != sumb.inputunsteady.ntimestepsfine):
@@ -1183,7 +1183,9 @@ class SUmbInterface(object):
 
             # Reallocate convergence history array and
             # time array with new size, storing old values from previous runs
-            if (self.myid == self.myid):
+            if (self.myid == 0):
+                print 'more cycles',ncycles[0],ncycles[1],sumb.monitor.convarray
+                
                 #print 'equation mode',sumb.inputphysics.equationmode
                 if (sumb.inputphysics.equationmode==2):#2 is unsteady
                     #print 'unsteady'
@@ -1250,6 +1252,8 @@ class SUmbInterface(object):
             # re-initialize time run
             sumb.monitor.timeunsteady = 0.0
 
+        #endif
+        print 'calling solver'
         self.GetMesh()._UpdateGeometryInfo()
         sumb.solver()
 ## ################################################################
