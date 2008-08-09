@@ -452,6 +452,119 @@ class SUMB(AeroSolver):
 		
 		return solution
 
+	#====================
+	#MD Coupling routines
+	#=====================
+
+	def getOMLForces(self,mapping={}):
+		'''
+		Compute the forces on the nodes and transfer them to the OML
+		'''
+		cfd_loads = self.sumb.GetSurfaceLoadsLocal()
+
+		print 'shape',mapping.oml_surf_orig.shape
+		oml_loads_local = numpy.zeros((3, len(mapping.oml_surf_orig[1])),'d')
+
+		
+		for icfd in range(cfd_loads.shape[1]):	
+			ielem = mapping.nearest_ele[icfd] - 1
+			for i in range(mapping.conn_oml.shape[0]):
+				inode = int(mapping.conn_oml[i, ielem]) - 1
+				weightm = mapping.weightt[:,:,i,icfd] + mapping.weightr[:,:,i,icfd]
+				oml_loads_local[:,inode] = oml_loads_local[:,inode] + numpy.dot(numpy.transpose(weightm[:,:]), cfd_loads[:,icfd])
+			#endfor
+		#endfor
+		#print 'local',oml_loads_local
+		oml_loads = self.sumb.AccumulateLoads(oml_loads_local)
+		#print 'global',oml_loads
+		return oml_loads
+
+	def setOMLDisplacements(self,oml_disp,mapping={},meshwarping={}):
+		'''
+		Compute the forces on the nodes and transfer them to the OML
+		'''
+		cfd_dispts = numpy.zeros((3, mapping.cfd_surf_orig.shape[1]), 'd')
+
+		for icfd in range(cfd_dispts.shape[1]):	
+			ielem = mapping.nearest_ele[icfd] - 1
+			for i in range(mapping.conn_oml.shape[0]):
+				inode = int(mapping.conn_oml[i, ielem]) - 1
+				weightm = mapping.weightt[:,:,i,icfd] + mapping.weightr[:,:,i,icfd]
+				cfd_dispts[:,icfd] = cfd_dispts[:,icfd] + numpy.dot(weightm[:,:], oml_disp[:,inode])
+			#endfor
+		#endfor
+
+		#get the current surface mesh
+		new_cfd_surf = self.Mesh.GetSurfaceCoordinatesLocal()
+
+		#add the displacements
+		new_cfd_surf = new_cfd_surf+cfd_dispts
+
+		#get the indices of the surface nodes on this block
+		indices = self.Mesh.GetSurfaceIndicesLocal()
+		
+		[_parallel,mpi]=self.sumb.CheckIfParallel()
+		print 'meshwarping',meshwarping
+		
+		if _parallel :
+			# Update the Local blocks based on the perturbed points
+			# on the local processor
+			if mapping.cfd_surf_orig.shape[1]!=0:
+				meshwarping.updateLocalBlockFaces(new_cfd_surf,indices)
+		        #endif
+			mpi.WORLD.Barrier()
+			
+			# Propogate perturbations to all blocks based on
+			# flow solver information
+			meshwarping.synchronizeBlockFaces()
+			
+                        #print 'Block faces synchronized...'
+			#Update the local blocks with the fortran routine WARPBLK
+			meshwarping.updateLocalBlockCoords()
+
+##	            #repeat
+##             self.meshwarping.synchronizeBlockFaces()
+
+##             print 'Block faces synchronized...'
+##             #Update the local blocks with the fortran routine WARPBLK
+##             self.meshwarping.updateLocalBlockCoords()
+	
+
+		else:
+			ijk_blnum = self.Mesh.GetSurfaceIndices()
+			print mpi.rank, "Done with self.Mesh.GetSurfaceIndices('')"
+			if mpi.rank == 0:
+				print "calling self.meshwarping.Warp ...."
+				meshwarping.Warp(new_cfd_surf, ijk_blnum[3,:], ijk_blnum[0:3,:])
+				print "done with self.meshwarping.Warp"
+				
+				for n in range(1, self.Mesh.GetNumberBlocks()+1):
+					#print "In n loop:", mpi.rank, n
+				 
+					if mpi.rank == 0:
+						# Get the new coordinates from warp
+						[blocknum,ijkrange,xyz_new] = self.meshwarping.GetCoordinates(n)
+					# end if
+				
+					if mpi.rank != 0:
+						blocknum = None
+						ijkrange = None
+						xyz_new = None
+					# end if
+				
+					blocknum = self.comm_world.bcast(blocknum) 
+					ijkrange = self.comm_world.bcast(ijkrange) 
+					xyz_new = self.comm_world.bcast(xyz_new) 
+                    
+					# Set new mesh coordinates in SUmb
+					self.Mesh.SetCoordinates(blocknum, ijkrange, xyz_new.real)	
+				# end for
+			#endif
+		#endif
+		if self.myid==0: 
+			print " Displacements set in SUmb ... \n"
+		#endif
+		return 
 		
 	def _on_setOption(self, name, value):
 		
