@@ -1425,6 +1425,52 @@ class SUmbInterface(object):
         """Deallocate memory used for the surface loads."""
         sumb.mddeletesurfforcelist()
 
+    def GetSurfaceLoadsLocal(self, family=None, sps=1):
+        """Return an array of the surface forces.
+         
+        Keyword arguments:
+         
+        family -- optional string specifying the return of forces
+                  only for the specified family.
+        sps    -- spectral time step (optional, default is set to 1).
+                  (sps=1 for usual steady or unsteady models)
+                                   
+        """
+#        if(sumb.flovarrefstate.viscous):
+#            sumb.iteration.rfil = 1.
+#            for i in range(sumb.block.ndom):
+#                sumb.setpointers(i,1)
+#                sumb.viscousflux() 
+        if(family):
+            try:
+                index = self.Mesh.families[family]
+            except KeyError:
+                print "Error: No such family '%s'" % family
+                return None
+            [start_ind,end_ind] = sumb.mdcreatesurfforcelistlocal(sps,index)
+            return sumb.mddatalocal.mdsurfforcelocal[:,start_ind-1:end_ind]
+        else:
+            nfamilies = len(self.Mesh.families)
+            if (nfamilies == 0):
+                [start_ind,end_ind] = sumb.mdcreatesurfforcelistlocal(sps,0)
+            else:
+                for n in range(nfamilies):
+                    [start_ind,end_ind] = sumb.mdcreatesurfforcelistlocal(sps,n+1)
+            return sumb.mddatalocal.mdsurfforcelocal
+
+    def DeallocateSurfaceLoadsLocal(self):
+        """Deallocate memory used for the surface loads."""
+        sumb.mddeletesurfforcelistlocal()
+
+    def AccumulateLoads(self,oml_loads_local):
+        '''
+        Sum up all of the local loads to get the total force on the oml
+        '''
+        oml_loads = self.sumb_comm_world.Allreduce(oml_loads_local,mpi.SUM)
+
+        return oml_loads
+
+
     def GetSurfaceCp(self, family=None, sps=1):
         """Return an array of the surface pressure coefficients.
 
