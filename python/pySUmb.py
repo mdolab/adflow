@@ -487,7 +487,7 @@ class SUMB(AeroSolver):
 		mapping._WriteVectorsTecplot("cfd_forces.dat", mapping.cfd_surf_orig, cfdloads2, 1.E-4)
 		return oml_loads
 
-	def setOMLDisplacements(self,oml_disp,mapping={},meshwarping={}):
+	def setOMLDisplacements(self,oml_disp,mapping={},meshwarping={},surface={}):
 		'''
 		Compute the forces on the nodes and transfer them to the OML
 		'''
@@ -503,7 +503,9 @@ class SUMB(AeroSolver):
 		#endfor
 
 		#get the original surface mesh
-		new_cfd_surf = copy.deepcopy(mapping.cfd_surf_orig)
+		[oml_surf,oml_conn,oml_elemtype]= surface.getSurface()
+		new_cfd_surf = mapping.getMappedSurface(oml_surf)
+		#new_cfd_surf = copy.deepcopy(mapping.cfd_surf_orig)
 
 		#add the displacements
 		new_cfd_surf = new_cfd_surf+cfd_dispts
