@@ -548,6 +548,17 @@ class SUmbInterface(object):
         
         return
 
+    def setInflowAngle(self,aero_problem):
+        '''
+        Set the alpha and beta fromthe desiggn variables
+        '''
+        [velDir,liftDir,dragDir]= sumb.adjustinflowangleadj((aero_problem._flows.alpha*(pi/180.0)),(aero_problem._flows.beta*(pi/180.0)),aero_problem._flows.liftIndex)
+        sumb.inputphysics.veldirfreestream = velDir
+        sumb.inputphysics.liftdirection = liftDir
+        sumb.inputphysics.dragdirection = dragDir
+
+        return
+        
     def generateInputFile(self,aero_problem,sol_type,grid_file,file_type='cgns',eqn_type='Euler',*args,**kwargs):
         ''' Code to generate an SUmb Input File on the fly'''
         print 'generating input file'
@@ -1117,9 +1128,9 @@ class SUmbInterface(object):
                             nn=sumb.inputunsteady.ntimestepsfine*sumb.inputiteration.ncycles
                         #endif
                         sumb.monitor.convarray = None
-                        print 'nn',nn
+                        #print 'nn',nn
                         sumb.allocconvarrays(nn)
-                        print 'convarray',sumb.monitor.convarray
+                        #print 'convarray',sumb.monitor.convarray
                         
 
         elif (sumb.monitor.nitercur == 0 and
@@ -1168,7 +1179,7 @@ class SUmbInterface(object):
                   
         else:
             # More Time Steps / Iterations in the same session
-            print 'more cycles',ncycles[0],ncycles[1],sumb.monitor.convarray,self.myid
+            #print 'more cycles',ncycles[0],ncycles[1],sumb.monitor.convarray,self.myid
             
             if (ncycles):
                 # Set new value of unsteady physical time steps to run
@@ -1184,7 +1195,7 @@ class SUmbInterface(object):
             # Reallocate convergence history array and
             # time array with new size, storing old values from previous runs
             if (self.myid == 0):
-                print 'more cycles',ncycles[0],ncycles[1],sumb.monitor.convarray
+                #print 'more cycles',ncycles[0],ncycles[1],sumb.monitor.convarray
                 
                 #print 'equation mode',sumb.inputphysics.equationmode
                 if (sumb.inputphysics.equationmode==2):#2 is unsteady
@@ -1208,8 +1219,8 @@ class SUmbInterface(object):
                     temp_td = None
 
                 if (sumb.inputio.storeconvinneriter):
-                    print 'store conv?',sumb.inputio.storeconvinneriter,sumb.inputiteration.ncycles-1
-                    print 'conv, arreay',sumb.monitor.convarray[:,0,1]
+                    #print 'store conv?',sumb.inputio.storeconvinneriter,sumb.inputiteration.ncycles-1
+                    #print 'conv, arreay',sumb.monitor.convarray[:,0,1]
                     #sdfg
                     # store previous convergence history and deallocate array
                     temp = copy.deepcopy(sumb.monitor.convarray)
