@@ -117,6 +117,9 @@ class SUMB(AeroSolver):
 		#if updategeometry:
 		#	self.sumb.updateGeometry(geometry)
 		##endif
+
+		#set inflow angle
+		self.sumb.setInflowAngle(aero_problem)
 		
 		# Run Solver
 		
@@ -461,7 +464,9 @@ class SUMB(AeroSolver):
 		Compute the forces on the nodes and transfer them to the OML
 		'''
 		cfd_loads = self.sumb.GetSurfaceLoadsLocal()
+		cfdloads2 = self.sumb.GetSurfaceLoads()
 
+		self.cfdloads2 = cfdloads2
 		print 'shape',mapping.oml_surf_orig.shape
 		oml_loads_local = numpy.zeros((3, len(mapping.oml_surf_orig[1])),'d')
 
@@ -477,6 +482,9 @@ class SUMB(AeroSolver):
 		#print 'local',oml_loads_local
 		oml_loads = self.sumb.AccumulateLoads(oml_loads_local)
 		#print 'global',oml_loads
+		
+                mapping._WriteVectorsTecplot("oml_forces.dat", mapping.oml_surf_orig, oml_loads, 1.E-4)
+		mapping._WriteVectorsTecplot("cfd_forces.dat", mapping.cfd_surf_orig, cfdloads2, 1.E-4)
 		return oml_loads
 
 	def setOMLDisplacements(self,oml_disp,mapping={},meshwarping={}):
@@ -494,8 +502,8 @@ class SUMB(AeroSolver):
 			#endfor
 		#endfor
 
-		#get the current surface mesh
-		new_cfd_surf = self.Mesh.GetSurfaceCoordinatesLocal()
+		#get the original surface mesh
+		new_cfd_surf = copy.deepcopy(mapping.cfd_surf_orig)
 
 		#add the displacements
 		new_cfd_surf = new_cfd_surf+cfd_dispts

@@ -1139,6 +1139,24 @@ python module sumb ! in
         subroutine mddeletesurfindlistlocal ! in :sumb:../../python/fortran/aeroElastic/mdSurfIndList.f90
             use mddatalocal
         end subroutine mddeletesurfindlistlocal
+
+        subroutine mdcreatesurfforcelistlocal(sps,famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfForceList.f90
+            use bctypes
+            use blockpointers
+            use cgnsgrid
+            use communication
+            use flowvarrefstate
+            use mddatalocal
+            integer(kind=inttype) intent(in) :: sps
+            integer(kind=inttype) intent(in) :: famid
+            integer(kind=inttype) intent(out) :: startind
+            integer(kind=inttype) intent(out) :: endind
+          end subroutine mdcreatesurfforcelistlocal
+
+          subroutine mddeletesurfforcelistlocal ! in :sumb:../../python/fortran/aeroElastic/mdSurfForceList.f90
+            use mddatalocal
+        end subroutine mddeletesurfforcelistlocal
+
 ! ############################################################################
 ! pyAero Adaptation Routines
 ! ############################################################################

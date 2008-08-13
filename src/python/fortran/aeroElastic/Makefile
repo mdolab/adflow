@@ -48,6 +48,7 @@ FF90_OBJECTS_2 = mdFamilyNames.o\
 		 mdSurfCoorList.o\
 		 mdSurfCoorListLocal.o\
 		 mdSurfForceList.o\
+	      	 mdSurfForceListLocal.o\
 		 mdSurfIndList.o\
 		 mdSurfIndListLocal.o\
 		 mdSurfVarList.o\

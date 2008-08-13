@@ -319,10 +319,10 @@
                ! converged is set to .false. if the density residual
                ! has not converged yet.
 
-                print *,'convergence....',convArray(iConv,sps,1),L2ConvThisLevel*convArray(0,sps,1),converged,L2ConvThisLevel,convArray(0,sps,1)
+                !print *,'convergence....',convArray(iConv,sps,1),L2ConvThisLevel*convArray(0,sps,1),converged,L2ConvThisLevel,convArray(0,sps,1)
                if(convArray(iConv,sps,1) > &
                  L2ConvThisLevel*convArray(0,sps,1)) converged = .false.
-               print *,'convergence....',converged
+               !print *,'convergence....',converged
              !===========================================================
 
              case (unsteady)
