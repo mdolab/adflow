@@ -504,11 +504,13 @@ class SUMB(AeroSolver):
 
 		#get the original surface mesh
 		[oml_surf,oml_conn,oml_elemtype]= surface.getSurface()
-		new_cfd_surf = mapping.getMappedSurface(oml_surf)
-		#new_cfd_surf = copy.deepcopy(mapping.cfd_surf_orig)
-
-		#add the displacements
-		new_cfd_surf = new_cfd_surf+cfd_dispts
+		if mapping.cfd_surf_orig.shape[1]!=0:
+			new_cfd_surf = mapping.getMappedSurface(oml_surf)
+		        #new_cfd_surf = copy.deepcopy(mapping.cfd_surf_orig)
+		
+                	#add the displacements
+			new_cfd_surf = new_cfd_surf+cfd_dispts
+		#endif
 
 		#get the indices of the surface nodes on this block
 		indices = self.Mesh.GetSurfaceIndicesLocal()
