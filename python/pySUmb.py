@@ -45,7 +45,7 @@ import copy
 # External Python modules
 # =============================================================================
 import numpy
-
+from numpy import real
 # =============================================================================
 # Extension modules
 # =============================================================================
@@ -465,6 +465,12 @@ class SUMB(AeroSolver):
 		'''
 		cfd_loads = self.sumb.GetSurfaceLoadsLocal()
 		cfdloads2 = self.sumb.GetSurfaceLoads()
+
+#		print 'cfd_loads:'
+#		for i in xrange(cfd_loads.shape[0]):
+#			for j in xrange(cfd_loads.shape[1]):
+#				print cfd_loads[i][j]
+
 
 		self.cfdloads2 = cfdloads2
 		print 'shape',mapping.oml_surf_orig.shape
