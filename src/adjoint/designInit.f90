@@ -81,6 +81,7 @@
       allocate(functionValue(nCostFunction))
       allocate(functionGrad (nCostFunction,nDesignExtra))
       allocate(functionGradSpatial(nCostFunction,nDesignSpatial))
+      allocate(functionGradCoupling(nCostFunction,nDesignSpatial))
       !print *,'function storage allocated'
 
       ! Set the cost function names.
