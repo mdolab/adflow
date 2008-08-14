@@ -385,6 +385,26 @@ class SUMB(AeroSolver):
 
 		return self.dIdxyz
 
+	def computeAeroCoupling(self, objective,volumeMatrixInitialized,surface={},mapping={},meshwarping={}, *args, **kwargs):
+
+		#setup the partial derivative of the volume coords. in sumb
+		if not volumeMatrixInitialized:
+			self.sumb.setupGradientMatrixVolume()
+		#endif
+
+		#compute and store the volume derivatives
+		self.sumb.computeAeroCouplingDerivative(objective)
+
+		#Retrieve a vector of the volume derivatives
+		couplingDerivative=self.sumb.getAeroCouplingDerivatives(objective)
+		#print volumeDerivative
+		#stop
+
+		#Get the global node ordering
+		self.getGlobalNodeOrder(meshwarping)
+
+		return couplingDerivative
+
 	def finalizeAdjoint(self):
 		'''
 		destroy the PESTcKSP context

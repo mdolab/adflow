@@ -747,6 +747,7 @@ python module sumb ! in
             real(kind=realtype) allocatable,dimension(:) :: functionvalue
             real(kind=realtype) parameter,optional :: adjrelfd=1.0e-5_realtype
             real(kind=realtype) allocatable,dimension(:,:) :: functiongradspatial
+            real(kind=realtype) allocatable,dimension(:,:) :: functiongradcoupling
             character(len=maxstringlen) allocatable,dimension(:) :: functionname
             real(kind=realtype) allocatable,dimension(:,:) :: functiongrad
             character(len=maxstringlen) parameter,optional :: costfuncnamemomx="momxcoef"
@@ -873,6 +874,13 @@ python module sumb ! in
           use blockpointers !globalnode
           integer(kind=inttype), intent(in) :: costfunction
         end subroutine computeadjointgradientspatial
+
+        subroutine computeaerocoupling(costfunction)
+          use adjointpetsc
+          use adjointvars
+          use blockpointers !globalnode
+          integer(kind=inttype), intent(in) :: costfunction
+        end subroutine computeaerocoupling
 
         subroutine setupgradientmatrixextra(level)! in :sumb:../../adjoint/setupGradientMatrixSpatial.F90
             use adjointpetsc

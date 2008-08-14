@@ -1887,6 +1887,77 @@ class SUmbInterface(object):
         #endfor
         
         return grad
+
+    def computeAeroCouplingDerivative(self,objective):
+        '''
+        compute the total mesh derivatives
+        '''
+        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
+                             'cd':sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             }
+
+        possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
+				       'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+				       'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+				       'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+				       'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+				       'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+				       'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+				       }
+        
+        #for item in objective:
+        if self.myid==0:
+            print 'Computing Aero Coupling derivative for costfuntion: ',possibleObjectives[objective]#item#objective[item]
+            print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
+        #endif
+        
+        sumb.computeaerocoupling(SUmbCostfunctions[possibleObjectives[objective]])
+        #endfor
+
+        return
+        
+    def getAeroCouplingDerivatives(self,objective):
+
+        """
+        Get the  sensitivities from SUmb.
+                
+	"""
+        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
+                             'cd':sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             }
+        
+        possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
+                               'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+                               'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+                               'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+                               'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+                               'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+                               'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+                               'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               }
+        
+        grad = numpy.zeros((sumb.adjointvars.ndesignspatial),float)
+        #for item in objective:
+        for i in xrange(sumb.adjointvars.ndesignspatial):
+            grad[i] = sumb.adjointvars.functiongradcoupling[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
+            
+        #endfor
+        #endfor
+        
+        return grad
     
     def getGlobalNodesLocal(self,blocknum,il,jl,kl):
         #get global node ordering from sumb
