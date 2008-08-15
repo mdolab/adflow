@@ -70,6 +70,7 @@
       real(kind=realType), allocatable, dimension(:,:) :: functionGrad
       real(kind=realType), allocatable, dimension(:,:) :: functionGradSpatial
       real(kind=realType), allocatable, dimension(:,:) :: functionGradCoupling
+      real(kind=realType), allocatable, dimension(:,:) :: functionGradCouplingExp
 !
 !     ******************************************************************
 !     *                                                                *
