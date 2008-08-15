@@ -42,6 +42,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       assertionsADjoint.o      \
                computeAeroCoef.o        \
 	       computeAeroCoupling.o    \
+	       computeAeroExpCoupling.o  \
 	       computeADjointGradientExtra.o\
 	       computeADjointGradientSpatial.o\
 	       copyADjointStencil.o     \
