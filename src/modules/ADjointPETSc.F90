@@ -98,9 +98,13 @@
       ! pvr   Residual vector (r=Ax-b) used to verify the adjoint 
       !       vector solution ( residual = [dRdW]^T {psi} - {dJdw} ).
       !       Size[nNodes*nw].
+      ! phic  Structural adjoint vector cast through the mapping onto
+      !        the CFD surface. Size [nSurfNodes*3]...Possible changes to 
+      !       this defintion in the future
+	
 
       Mat     dRdW ,dRdWFD
-      Vec     psi, dJdW, pvr
+      Vec     psi, dJdW, pvr,phic,dJcdW
 
       ! ksp   Linear solver (Krylov subspace method) context
       ! pc    Preconditioner context
@@ -128,7 +132,7 @@
       !       Size[nNodes*nw,nDesign],where nDesign is the number
       !       of design variables.
 
-      Mat     dRda, dRdsigma, dRdx,dRdxFD, dRdy, dRdz
+      Mat     dRda, dRdsigma, dRdx,dRdxFD, dRdy, dRdz,dSdw,dSdx
 
 !###      ! Variables for the insertion of dRdx
 !###      ! row           Row number

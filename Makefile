@@ -45,7 +45,9 @@ SUBDIR_ADJOINT = src/adjoint               \
 		 src/adjoint/residualInput \
 		 src/adjoint/residualOutput\
 		 src/adjoint/forcesInput\
-	         src/adjoint/forcesOutput
+	         src/adjoint/forcesOutput\
+		 src/adjoint/couplingInput\
+	         src/adjoint/couplingOutput
 
 SUBDIR_EXEC   = src/exec
 SUBDIR_PYTHON = src/python/fortran
