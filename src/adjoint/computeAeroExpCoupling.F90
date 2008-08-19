@@ -138,7 +138,7 @@
       ! Send some feedback to screen.
 
       if( PETScRank==0 ) &
-        write(*,10) "Assembling dJ/dx vector..."
+        write(*,10) "Assembling dJ/dx Coupling vector..."
 
       ! Get the initial time.
 

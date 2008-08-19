@@ -73,14 +73,13 @@
 !
       ! Allocate memory to store the function names, their values
       ! and gradients.
-
       allocate(functionName(nCostFunction),stat=ierr)
       if(ierr /= 0)                       &
            call terminate("designInit", &
            "Memory allocation failure for functionName")
       allocate(functionValue(nCostFunction))
       allocate(functionGrad (nCostFunction,nDesignExtra))
-      allocate(functionGrad (nCostFunction,nw * nNodesGlobal))
+      allocate(adjoint(nCostFunction,nw * nNodesGlobal))
       allocate(functionGradSpatial(nCostFunction,nDesignSpatial))
       allocate(functionGradCoupling(nCostFunction,nDesignSpatial))
       allocate(functionGradCouplingExp(nCostFunction,nDesignSpatial))

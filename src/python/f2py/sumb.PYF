@@ -952,6 +952,8 @@ python module sumb ! in
         subroutine setupadjointrhsstruct(lenadjoint,structadjoint) ! in :sumb:setupADjointRHSStruct.f90
             use adjointpetsc
             use adjointvars
+            use mdData
+            use communication
             integer(kind=inttype) optional,intent(in),check(shape(structadjoint,1)==lenadjoint),depend(structadjoint) :: lenadjoint=shape(structadjoint,1)
             real(kind=realtype) dimension(3,lenadjoint),intent(in) :: structadjoint
         end subroutine setupadjointrhsstruct
@@ -966,6 +968,7 @@ python module sumb ! in
             use inputdiscretization
             use iteration
             use mddatalocal
+            use mddata
             use inputtimespectral
             use inputphysics
             use adjointvars

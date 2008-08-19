@@ -31,6 +31,7 @@ subroutine setupCouplingMatrixStruct(level)
       use monitor             ! monLoc, MonGlob, nMonSum
       use bcTypes             !imin,imax,jmin,jmax,kmin,kmax
       use mdDataLocal
+      use mdData              !mdNSurfNodes
       implicit none
 !
 !     Subroutine arguments.
@@ -118,7 +119,7 @@ subroutine setupCouplingMatrixStruct(level)
 
 !      !determine the number of surface nodes for coupling matrix
 !      call mdCreateNSurfNodesLocal
-!      modFamID = max(0, 1_intType)
+      modFamID = max(0, 1_intType)
 !      nSurfNodesLocal = mdNSurfNodesLocal(modFamID)
 
       allocate(forceLoc(3,nSurfNodesLocal), stat=ierr)
@@ -268,7 +269,7 @@ subroutine setupCouplingMatrixStruct(level)
                  do i = 0,ib
                     do l = 1,nw
                
-                       idxSurf = (m-1)*3+n
+                       idxSurf = (m-1)*3+n + mdNsurfNodes(myID,modFamID)
                        idxres   = globalCell(i,j,k)*nw+l
                        if (wAdjb(i,j,k,l).ne.0.0)then
                           !print *,'wadjb',wadjb(i,j,k,l),i,j,k,l
