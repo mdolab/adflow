@@ -81,6 +81,7 @@
       allocate(functionGrad (nCostFunction,nDesignExtra))
       allocate(adjoint(nCostFunction,nw * nNodesGlobal))
       allocate(functionGradSpatial(nCostFunction,nDesignSpatial))
+      allocate(functionGradStruct(nCostFunction,nDesignSpatial))
       allocate(functionGradCoupling(nCostFunction,nDesignSpatial))
       allocate(functionGradCouplingExp(nCostFunction,nDesignSpatial))
       
