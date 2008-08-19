@@ -21,11 +21,15 @@
 !
       use ADjointPETSc
       use ADjointVars
+      use mdData              !mdNSurfNodes
+      use communication       ! procHalo(currentLevel)%nProcSend, myID
+
       implicit none
 !
 !     Subroutine arguments.
 !
       integer(kind=intType),intent(in)::lenadjoint
+      integer(kind=intType) :: modFamID
       real(kind=realType), intent(in),dimension(3,lenadjoint) :: structAdjoint
 !      real(kind=realType), intent(in),dimension(3,nSurfNodesLocal) :: structAdjoint
 !
@@ -43,6 +47,10 @@
 !     ******************************************************************
 !
 !#ifndef USE_NO_PETSC
+!      !determine the number of surface nodes for coupling matrix
+!      call mdCreateNSurfNodesLocal
+      modFamID = max(0, 1_intType)
+
 
       ! Send some feedback to screen.
 
@@ -57,7 +65,7 @@
       do m=1,nSurfNodesLocal
          do n=1,3
                  
-            idxSurf = (m-1)*3+n
+            idxSurf = (m-1)*3+n + mdNsurfNodes(myID,modFamID)
 
             if (structAdjoint(n,m).ne.0.0)then
                call VecSetValues(phic, 1, idxSurf-1,  &

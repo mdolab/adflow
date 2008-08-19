@@ -1581,15 +1581,19 @@ class SUmbInterface(object):
         
         #Run the preprocessing routine. Sets the node numbering and
         #allocates memory.
+        print 'preprocessing adjoint'
         sumb.preprocessingadjoint(self.level)
         
         #Initialize the design variable and function storage
+        print 'Before design init'
         sumb.designinit()
 
         #initalize PETSc
+        print 'before petsc'
         sumb.initializepetsc()
 
         #create the neccesary PETSc objects
+        print 'before createpetsecars'
         sumb.createpetscvars()
 
         #mark the ADjoint as initialized
@@ -1597,7 +1601,7 @@ class SUmbInterface(object):
         if(self.myid==0):
             print 'ADjoint Initialized Succesfully...'
         #endif
-
+        print 'before nspatial'
         self.nSpatial = sumb.adjointvars.ndesignspatial
 
         return
