@@ -750,6 +750,7 @@ python module sumb ! in
             real(kind=realtype) allocatable,dimension(:) :: functionvalue
             real(kind=realtype) parameter,optional :: adjrelfd=1.0e-5_realtype
             real(kind=realtype) allocatable,dimension(:,:) :: functiongradspatial
+            real(kind=realtype) allocatable,dimension(:,:) :: functiongradstruct
             character(len=maxstringlen) allocatable,dimension(:) :: functionname
             real(kind=realtype) allocatable,dimension(:,:) :: functiongrad
             character(len=maxstringlen) parameter,optional :: costfuncnamemomx="momxcoef"
@@ -983,6 +984,35 @@ python module sumb ! in
             use adjointvars
             integer(kind=inttype) intent(in) :: costfunction
         end subroutine getadjoint
+
+        subroutine setupcouplingtotalstruct(level) ! in :sumb:setupCouplingTotalStruct.f90
+            use blockpointers
+            use adjointpetsc
+            use bctypes
+            use monitor
+            use communication
+            use section
+            use inputdiscretization
+            use iteration
+            use mddatalocal
+            use inputtimespectral
+            use inputphysics
+            use adjointvars
+            use mddata
+            use cgnsgrid
+            use flowvarrefstate
+            integer(kind=inttype) intent(in) :: level
+        end subroutine setupcouplingtotalstruct
+
+        subroutine setupadjointtotalstruct(lenadjoint,structadjoint,costfunction) ! in :sumb:setupADjointTotalStruct.f90
+            use communication
+            use adjointpetsc
+            use adjointvars
+            use mddata
+            integer(kind=inttype) optional,intent(in),check(shape(structadjoint,1)==lenadjoint),depend(structadjoint) :: lenadjoint=shape(structadjoint,1)
+            real(kind=realtype) dimension(3,lenadjoint),intent(in) :: structadjoint
+            integer(kind=inttype) intent(in) :: costfunction
+        end subroutine setupadjointtotalstruct
 ! ############################################################################
 ! Aeroelastic / Multi-Disciplinary Routines
 ! ############################################################################

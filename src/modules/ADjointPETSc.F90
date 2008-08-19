@@ -153,7 +153,7 @@
       !       Size[nDesign].
 
       Vec     dJda, dIda 
-      Vec     dJdx, dJdy, dJdz, dIdx, dIdy, dIdz
+      Vec     dJdx, dJcdx,dJdy, dJdz, dIdx, dIdy, dIdz
 
       ! Some useful real constants
 

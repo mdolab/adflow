@@ -1,60 +1,51 @@
+
 !
 !     ******************************************************************
 !     *                                                                *
-!     * File:          computeAeroCoupling.F90                         *
+!     * File:          setupADjointTotalStruct.f90                       *
 !     * Author:        C.A.(Sandy) Mader                               *
-!     * Starting date: 08-14-2008                                      *
-!     * Last modified: 08-14-2008                                      *
+!     * Starting date: 08-19-2008                                      *
+!     * Last modified: 08-19-2008                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine computeAeroCoupling(costFunction)
+subroutine setupADjointTotalStruct(lenadjoint,structAdjoint,costfunction)
 !
 !     ******************************************************************
 !     *                                                                *
-!     * Computes the coupling derivative of the objective function J   *
-!     * with respect to the volume mesh coordinates.                   *
-!     * This result is passed back to python where it is combined with *
-!     * the other half of the coupling derivative.                     *
-!     * Compute the coupling cost/constraint function sensitivity as   *
-!     * dIdx = psi^T dRdx, where                                       *
+!     * Compute the right hand side Augmentation of the adjoint problem*
+!     * contributed by the structures.                                 *
 !     *                                                                *
-!     *  dIdx [3*nNodesGlobal] is the total gradient of the cost       *
-!     *            function with respect to the design variables,      *
-!     *                                                                *
-!     *                                                                *
-!     *  psi [nDim] is the adjoint solution,                           *
-!     *                                                                *
-!     *  dRdx [nDim,3*nNodesGlobal] is the partial gradient of the     *
-!     *             residual with respect to the design variables,     *
-!     *                                                                *
-!     *  with                                                          *
-!     *    nNodesGlobal = number of grid nodes                         *
-!     *    nDim    = global number of grid nodes X number of equations *
 !     *                                                                *
 !     ******************************************************************
 !
       use ADjointPETSc
       use ADjointVars
-
-      use blockpointers !globalnode
+      use mdData              !mdNSurfNodes
+      use communication       ! procHalo(currentLevel)%nProcSend, myID
 
       implicit none
 !
 !     Subroutine arguments.
 !
+      integer(kind=intType),intent(in)::lenadjoint
+      integer(kind=intType) :: modFamID
+      real(kind=realType), intent(in),dimension(3,lenadjoint) :: structAdjoint
       integer(kind=intType), intent(in) :: costFunction
+            
+!      real(kind=realType), intent(in),dimension(3,nSurfNodesLocal) :: structAdjoint
 !
 !     Local variables.
 !
       real(kind=realType), dimension(2) :: time
       real(kind=realType)               :: timeAdjLocal, timeAdj
 
+      integer(kind=intType)::n,m,idxsurf
 !      integer(kind=intType) :: idx!tmp for fd
 
       character(len=2*maxStringLen) :: errorMessage
 
-      integer(kind=intType) :: idxmg, iLow, iHigh, n 		
+      integer(kind=intType) :: idxmg, iLow, iHigh
       integer(kind=intType) :: nDesignLocal, nDisplsLocal 		
       integer(kind=intType), dimension(:),allocatable :: & 		
            nDesignGlobal, nDisplsGlobal 		
@@ -72,26 +63,84 @@
 !     *                                                                *
 !     ******************************************************************
 !
-#ifndef USE_NO_PETSC
+!#ifndef USE_NO_PETSC
+!      !determine the number of surface nodes for coupling matrix
+!      call mdCreateNSurfNodesLocal
+      modFamID = max(0, 1_intType)
+
 
       ! Send some feedback to screen.
 
       if( PETScRank==0 ) &
-        write(*,10) "Computing Aero Coupling sensitivity..."
+        write(*,10) "Assembling ADjoint Struct Totals vector..."
 
       ! Get the initial time.
 
       call cpu_time(time(1))
 
-      ! Compute the second contribution term psi^T dRdx, which requires
-      ! a matrix-vector multiplication.
 
-      call MatMultTranspose(dRdx,psi,dIdx,PETScIerr)
+      do m=1,nSurfNodesLocal
+         do n=1,3
+                 
+            idxSurf = (m-1)*3+n + mdNsurfNodes(myID,modFamID)
+
+            if (structAdjoint(n,m).ne.0.0)then
+               call VecSetValues(phic, 1, idxSurf-1,  &
+                    structAdjoint(n,m), INSERT_VALUES, PETScIerr)
+               if( PETScIerr/=0 ) &
+                    print *,'matrix setting error'
+               
+            endif
+         enddo
+      enddo
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Complete the PETSc vector assembly process.                    *
+!     *                                                                *
+!     ******************************************************************
+!
+      ! VecAssemblyBegin - Begins assembling the vector. This routine
+      ! should be called after completing all calls to VecSetValues().
+      !
+      ! Synopsis
+      !
+      ! #include "petscvec.h" 
+      ! call VecAssemblyBegin(Vec vec, PetscErrorCode ierr)
+      !
+      ! Collective on Vec
+      !
+      ! Input Parameter
+      !   vec -the vector 
+      !
+      ! see .../petsc/docs/manualpages/Vec/VecAssemblyBegin.html
+
+      call VecAssemblyBegin(phic,PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("computeAeroCoupling", &
-                       "Error in MatMultTranspose X")
-     ! Get new time and compute the elapsed time.
+        call terminate("setupADjointTotalStruct", "Error in VecAssemblyBegin")
+
+      ! VecAssemblyEnd - Completes assembling the vector. This routine
+      ! should be called after VecAssemblyBegin().
+      !
+      ! Synopsis
+      !
+      ! #include "petscvec.h" 
+      ! call VecAssemblyEnd(Vec vec, PetscErrorCode ierr)
+      !
+      ! Collective on Vec
+      !
+      ! Input Parameter
+      !   vec -the vector 
+      !
+      ! see .../petsc/docs/manualpages/Vec/VecAssemblyEnd.html
+
+      call VecAssemblyEnd  (phic,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("setupADjointTotalStruct", "Error in VecAssemblyEnd")
+
+      ! Get new time and compute the elapsed time.
 
       call cpu_time(time(2))
       timeAdjLocal = time(2)-time(1)
@@ -103,28 +152,62 @@
                       mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
 
       if( PETScRank==0 ) &
-        write(*,20) "Computing Aero Coupling sensitivity time (s) =", &
-                    timeAdj
+        write(*,20) "Assembling ADjoint Total Struct vector time (s) = ", timeAdj
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Visualize the assembled vector.                                *
+!     *                                                                *
+!     ******************************************************************
+!
+      ! VecView - Views a vector object.
+      !
+      ! Synopsis
+      !
+      ! #include "petscvec.h" 
+      ! PetscErrorCode PETSCVEC_DLLEXPORT VecView(Vec vec, &
+      !                                              PetscViewer viewer)
+      !
+      ! Collective on Vec
+      !
+      ! Input Parameters
+      !   v      - the vector
+      !   viewer - an optional visualization context
+      !
+      ! Notes
+      ! The available visualization contexts include
+      !   PETSC_VIEWER_STDOUT_SELF  - standard output (default)
+      !   PETSC_VIEWER_STDOUT_WORLD - synchronized standard output where
+      !    only the first processor opens the file. All other processors
+      !    send their data to the first processor to print.
+      !
+      ! see .../petsc/docs/manualpages/Vec/VecView.html
+      ! or PETSc users manual, pp.36,148
 
-      ! View the solution vector dIdx.
- 
-     if(  debug ) then
-
-        if( PETScRank==0 ) then
-          write(*,*) "# ============================ "
-          write(*,*) "#  dIdx Coupling gradient vector  "
-          write(*,*) "# ============================ "
-        endif
-
-        call VecView(dIdx,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
-!        call VecView(dIdx,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-
+      if( debug ) then
+	call VecView(phic,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+	!call VecView(phic,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
         if( PETScIerr/=0 ) &
-          call terminate("computeAeroCoupling", &
-                         "Error in VecView")
-	pause
-
+          call terminate("setupADjointTotalStruct", "Error in VecView")
+        pause
       endif
+
+      ! Flush the output buffer and synchronize the processors.
+
+      call f77flush()
+      call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
+
+      !now multiply with the dSdw derivatives
+      
+      ! Compute the second contribution term phic^T dSdw, which requires
+      ! a matrix-vector multiplication.
+
+      call MatMultTranspose(dSdx,phic,dJcdx,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("SetupADjointTotalStruct", &
+                       "Error in MatMultTranspose X")
+
 !
 !     ******************************************************************
 !     *                                                                *
@@ -136,11 +219,11 @@
       ! Query about the ownership range.
       ! iHigh is one more than the last element stored locally.
 
-      call VecGetOwnershipRange(dIdx, iLow, iHigh, PETScIerr)
+      call VecGetOwnershipRange(dJcdx, iLow, iHigh, PETScIerr)
 	
       if( PETScIerr/=0 ) &
-        call terminate("computeAeroCoupling", &
-                       "Error in VecGetOwnershipRange dIdx")
+        call terminate("setupADjointTotalStruct", &
+                       "Error in VecGetOwnershipRange dJcdx")
 
       ! Determine the number of variables stores in the local processor.
       ! Allocate memory to store the local function gradient values.
@@ -161,13 +244,13 @@
         n = n + 1
         designVarPresent = .true.
 
-        call VecGetValues(dIdx, 1, idxmg, &
+        call VecGetValues(dJcdx, 1, idxmg, &
                           functionGradLocal(n), PETScIerr)
 
         if( PETScIerr/=0 ) then
           write(errorMessage,99) &
                 "Error in VecGetValues for global node", idxmg
-          call terminate("computeAeroCoupling", errorMessage)
+          call terminate("setupADjointTotalStruct", errorMessage)
         endif
 
       enddo
@@ -210,7 +293,7 @@
 
 
        call mpi_allgatherv(functionGradLocal, nDesignLocal, sumb_real, &
-                       functionGradCoupling(costFunction,:), nDesignGlobal,&
+                       functionGradStruct(costFunction,:), nDesignGlobal,&
                        nDisplsGlobal, sumb_real, &
                         PETSC_COMM_WORLD, PETScIerr)
 
@@ -225,13 +308,11 @@
 
       call f77flush()
       call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
-
-      ! Output format.
+      ! Output formats.
 
    10 format(a)
    20 format(a,1x,f8.2)
    99 format(a,1x,i6)
+!#endif
 
-#endif
-
-    end subroutine computeAeroCoupling
+    end subroutine setupADjointTotalStruct

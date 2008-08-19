@@ -578,10 +578,136 @@ class SUMB(AeroSolver):
 
 		return self.dIcdxyz
 
-	def solveCoupledAdjoint(self,objective,structsolver={},*args,**kwargs):
+	def aeroComputeTotalDerivatveStruct(self,objective,structAdjoint={}):
+		'''
+		compute the force portion of the total structural derivative
+		based on the coupled structural adjoint
+		'''
 
+		sumb.setupcouplingtotalstruct(1)
+
+		SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
+				     'cd':sumb.adjointvars.costfuncdragcoef,\
+				     'cFx':sumb.adjointvars.costfuncforcexcoef,\
+				     'cFy':sumb.adjointvars.costfuncforceycoef,\
+				     'cFz':sumb.adjointvars.costfuncforcezcoef,\
+				     'cMx':sumb.adjointvars.costfuncmomxcoef,\
+				     'cMy':sumb.adjointvars.costfuncmomycoef,\
+				     'cMz':sumb.adjointvars.costfuncmomzcoef,\
+				     }
+		
+		possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
+				       'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+				       'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+				       'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+				       'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+				       'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+				       'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+				       }
+		try:
+			#for item in objective:
+			if self.myid==0:
+				print 'Computing Aero Coupling derivative for costfuntion: ',possibleObjectives[objective]#item#objective[item]
+				print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
+			#endif
+			
+			sumb.setupadjointtotalstruct(structAdjoint,SUmbCostfunctions[possibleObjectives[objective]])
+		except:
+			print 'not an aerodynamic cost function'
+                #end
 
 		return
+
+	def getTotalDerivativeStruct(self,objective):
+		#Retrieve a vector of the volume derivatives
+		structDerivative=self.sumb.getTotalStructDerivatives(objective)
+		#print volumeDerivative
+		#stop
+
+		#Get the global node ordering
+		self.getGlobalNodeOrder(meshwarping)
+
+		[xyz,conn,elemtype] = surface.getSurface()
+		#now determine the surface derivatives using CS
+		xyzref = copy.deepcopy(xyz)
+
+		#initialize vector for the surface derivatives
+		self.dStdxyz = numpy.zeros([len(xyzref[:,0]),len(xyzref[0,:])],'d')
+
+		try: self.meshDerivatives
+		except:
+			self.meshDerivatives = []
+		else:
+			print 'meshDerivatives exists'
+		#endif
+
+		if (self.meshDerivatives == []):
+			#it is necessary to compute the mesh derivatives
+
+			#Setup Complex dummy array for the surface
+			xyz_comp = numpy.zeros([len(xyz[:,0]),len(xyz[0,:])],'D')
+		
+			
+			for i in xrange(len(xyzref[:,0])):
+				if self.myid ==0:
+					print "Coordinate %d of %d...."%(i,len(xyzref[:,0]))
+				#endif
+
+				#setup an empty list for this row
+				rowDerivatives = []
+				for j in xrange(len(xyzref[0,:])):
+					
+					#set stepsize
+					deltax = 1e-20j
+					
+ 				        #store reference design variables
+					xref = xyz[i,j]
+				
+					#Copy design variables over to complex array
+					xyz_comp[:,:] = xyz[:,:]
+				
+   			                #perturb design variables
+					xyz_comp[i,j] = xyz[i,j]+deltax
+					#print 'xyz',xyz,'xyz_comp',xyz_comp
+
+                                        #Warp the mesh
+					self.updateMesh(xyz_comp,mapping,meshwarping)
+					#get the new Coordinates
+					newMesh = meshwarping.getMeshCoordinates()
+ 	                                #compute derivative
+					newMeshDerivative = (newMesh.imag)/deltax.imag
+					#print 'newMeshDerivative',newMeshDerivative
+					#append to mesh derivative list
+					rowDerivatives.append(newMeshDerivative)
+
+					#restore reference design variables
+					xyz[i,j] = xref
+
+				#endfor
+				#append to mesh derivative list
+				self.meshDerivatives.append(rowDerivatives)
+
+			#endfor
+		#endif
+		for i in xrange(len(xyzref[:,0])):
+			for j in xrange(len(xyzref[0,:])):
+				for k in xrange(len(structDerivative)):#self.meshDerivatives[i][j][:])):
+					#print 'mesh derivatives',self.meshDerivatives[i][j][k],volumeDerivative[k]
+					self.dStdxyz[i,j]=self.dStdxyz[i,j]+self.meshDerivatives[i][j][k]*\
+					   structDerivative[k]
+			        #endfor
+				
+			#endfor
+		#endfor				
+
+		return self.dStdxyz     
+
+
+#	def solveCoupledAdjoint(self,objective,structsolver={},*args,**kwargs):
+#
+#
+#		return
 	
 	def finalizeAdjoint(self):
 		'''

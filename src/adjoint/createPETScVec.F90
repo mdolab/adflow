@@ -562,6 +562,12 @@
         call terminate("createPETScVec", &
                        "Error in VecDuplicate dJdx->dIdx")
 
+      call VecDuplicate(dJdx, dJcdx, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScVec", &
+                       "Error in VecDuplicate dJdx->dJcdx")
+
      !
 !     ******************************************************************
 !     *                                                                *
