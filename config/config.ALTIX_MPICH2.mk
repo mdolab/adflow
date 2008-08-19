@@ -56,8 +56,8 @@ CC   = /opt/mpich2-icc10/bin/mpicc
 #CGNS_INCLUDE_FLAGS = -DUSE_NO_CGNS
 #CGNS_INCLUDE_FLAGS = -I/usr/local/include
 #CGNS_LINKER_FLAGS  = -L/usr/local/lib64 -lcgns.intel
-CGNS_INCLUDE_FLAGS = -I/nfs/basalt/home/mdo/mader/SRC/cgnslib_2.4
-CGNS_LINKER_FLAGS  = -L/nfs/basalt/home/mdo/mader/SRC/cgnslib_2.4/LINUX -lcgns
+CGNS_INCLUDE_FLAGS = -I$(HOME)/SRC/cgnslib_2.4
+CGNS_LINKER_FLAGS  = -L$(HOME)/SRC/cgnslib_2.4/LINUX -lcgns
 
 
 #      ******************************************************************

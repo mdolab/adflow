@@ -44,7 +44,6 @@ FF90_OBJECTS = adjustInflowAngleForceCouplingAdj.o\
 	       checkInputParamForceCouplingAdj.o\
 	       computeForceCouplingAdj.o\
 	       computeForceCouplingPressureAdj.o\
-               copyADjointForceCouplingStencil.o\
                etotArrayForceCouplingAdj.o \
 	       extractBCStatesForceCouplingAdj.o\
                extrapolate2ndHaloForceCouplingAdj.o\
