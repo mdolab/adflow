@@ -88,6 +88,7 @@ class SUMB(AeroSolver):
 		self.Mesh = self.sumb.Mesh
 		self.myid = self.sumb.myid
 		self.callCounter = 0
+		self.volumeMatrixInitialized = False
 
 	def __solve__(self, aero_problem, sol_type,grid_file='default', *args, **kwargs):
 		
@@ -292,7 +293,7 @@ class SUMB(AeroSolver):
 
 		return flowDerivative
 
-	def computeSurfaceDerivative(self, objective,volumeMatrixInitialized,surface={},mapping={},meshwarping={}, *args, **kwargs):
+	def computeSurfaceDerivative(self, objective,surface={},mapping={},meshwarping={}, *args, **kwargs):
 		'''
 		Compute the derivative of the objective function wrt the
 		surface.
@@ -301,8 +302,9 @@ class SUMB(AeroSolver):
 		self.sumb.setupGradientRHSVolume(objective)
 
 		#setup the partial derivative of the volume coords. in sumb
-		if not volumeMatrixInitialized:
+		if not self.volumeMatrixInitialized:
 			self.sumb.setupGradientMatrixVolume()
+			self.volumeMatrixInitialized = True
 		#endif
 
 		#compute and store the volume derivatives
@@ -392,11 +394,12 @@ class SUMB(AeroSolver):
 
 		return self.dIdxyz
 
-	def computeAeroImplicitCoupling(self, objective,volumeMatrixInitialized,surface={},mapping={},meshwarping={}, *args, **kwargs):
+	def computeAeroImplicitCoupling(self, objective,surface={},mapping={},meshwarping={}, *args, **kwargs):
 
 		#setup the partial derivative of the volume coords. in sumb
-		if not volumeMatrixInitialized:
+		if not self.volumeMatrixInitialized:
 			self.sumb.setupGradientMatrixVolume()
+			self.volumeMatrixInitialized = True
 		#endif
 
 		#compute and store the volume derivatives
@@ -486,7 +489,7 @@ class SUMB(AeroSolver):
 
 		return self.dJcdxyz
 
-	def computeAeroExplicitCoupling(self, objective,volumeMatrixInitialized,surface={},mapping={},meshwarping={}, *args, **kwargs):
+	def computeAeroExplicitCoupling(self, objective,surface={},mapping={},meshwarping={}, *args, **kwargs):
 
 		#compute and store the volume derivatives
 		self.sumb.computeAeroExplicitCouplingDerivative(objective)
@@ -678,6 +681,10 @@ class SUMB(AeroSolver):
 				inode = int(mapping.conn_oml[i, ielem]) - 1
 				weightm = mapping.weightt[:,:,i,icfd] + mapping.weightr[:,:,i,icfd]
 				oml_loads_local[:,inode] = oml_loads_local[:,inode] + numpy.dot(numpy.transpose(weightm[:,:]), cfd_loads[:,icfd])
+				#for k in xrange(weightm.shape[0]):
+				#	for l in xrange(weightm.shape[1]):
+				#		print real(weightm[k,l])
+						
 			#endfor
 		#endfor
 		#print 'local',oml_loads_local
