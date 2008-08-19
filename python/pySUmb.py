@@ -262,6 +262,13 @@ class SUMB(AeroSolver):
 
 		self.sumb.setupADjointRHS(objective)
 
+		try:  kwargs['structAdjoint']
+		except KeyError:
+			test=1
+		else:
+			self.sumb.augmentADjointRHS(objective,kwargs['structAdjoint'])
+		#endtry
+
 		self.sumb.solveADjointPETSc()
 
 		return
