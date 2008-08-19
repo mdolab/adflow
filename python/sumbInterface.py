@@ -2112,7 +2112,7 @@ class SUmbInterface(object):
 
         return adjoint
 
-       def getTotalStructDerivatives(self,objective):
+    def getTotalStructDerivatives(self,objective):
 
         """
         Get the  sensitivities from SUmb.
