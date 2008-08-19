@@ -37,6 +37,7 @@
 !      use block
       use blockpointers
       use communication
+      use mddatalocal
       implicit none
 !
 !     Subroutine arguments.
@@ -45,7 +46,7 @@
 !
 !     Local variables.
 !
-      integer(kind=intType) :: nn, i, j, k, sps!, il, jl, kl, ie, je, ke
+      integer(kind=intType) :: nn, i, j, k, sps,modFamID!, il, jl, kl, ie, je, ke
       integer :: ierr, nHalo
 
       integer(kind=intType), dimension(nProc) :: nNodes, nCells, nCellOffset, nNodeOffset
@@ -63,6 +64,12 @@
       !set spectral level to 1
 
       sps=1
+
+      !determine the number of surface nodes for coupling matrix
+      call mdCreateNSurfNodesLocal
+      modFamID = max(0, 1_intType)
+      nSurfNodesLocal = mdNSurfNodesLocal(modFamID)
+
 
       ! Determine the number of nodes and cells owned by each processor
       ! by looping over the local block domains.

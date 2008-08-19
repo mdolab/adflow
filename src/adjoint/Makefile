@@ -68,6 +68,8 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       setupADjointMatrix.o     \
 	       setupADjointRHS.o        \
 	       setupADjointRHSAeroCoeff.o\
+	       setupADjointRHSStruct.o  \
+	       setupCouplingMatrixStruct.o\
 	       solveADjointPETSc.o      \
 	       solveDirectPETSc.o       \
 	       setupGradientMatrixExtra.o\

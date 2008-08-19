@@ -5,16 +5,19 @@ Procedure to run the Automatic Differentiation software and obtain the AD routin
    aerodynamic forces in directories:
       adjoint/forcesInput/...
       adjoint/residualInput/...
+      adjoint/couplingInput/...	
 
 #---------------------------------------------------------------------------------------#
 2) edit the makefiles of Tapenade in this directory:
-      MakefileTapendadeForces
-      MakefileTapendadeResidualMetric
+      MakefileTapenadeForces
+      MakefileTapenadeResidualMetric
+      MakefileTapenadeCoupling
 
 #---------------------------------------------------------------------------------------#
 3) clear the old Tapenade intermediate output files:
       make -f MakefileTapendadeForces clean
       make -f MakefileTapendadeResidualMetric clean
+      make -f MakefileTapendadeCoupling clean
 
 #---------------------------------------------------------------------------------------#
 4) run Tapenade:
@@ -22,8 +25,9 @@ Procedure to run the Automatic Differentiation software and obtain the AD routin
      The automatically generated routines are placed in ./forcesTapenade
    4.1) ./runTapenadeResidualMetric
      The automatically generated routines are placed in ./residualTapenade
+   4.1) ./runTapenadeCoupling
    This automatically calls a python script that edits the generated routines
-   and places the edited files are placed in ./forcesOutput and ./residualOutput
+   and places the edited files are placed in ./forcesOutput and ./residualOutput and ./couplingOutput
 
 #---------------------------------------------------------------------------------------#
 5) manually correct the files to remove compilation errors:
@@ -46,6 +50,10 @@ emacs referencestateadj_b.f90     > remove "    gammaconstantb = 0.0
 					    rgasdimb = 0.0
 					    tempfreestreamb = 0.0" from end
 
+   5.3) cd couplingOutput
+	emacs eintarrayforcesadj_b.f90     >remove "gammaconstantb = 0.0" from the end
+
+
 #---------------------------------------------------------------------------------------#
 6) edit the appropriate Makefiles to be used by SUmbVertex in directories
     adjoint/forcesInput 
@@ -53,6 +61,8 @@ emacs referencestateadj_b.f90     > remove "    gammaconstantb = 0.0
     adjoint/metricInput 
     adjoint/residualInput 
     adjoint/residualOutput
+    adjoint/couplingInput
+    adjoint/couplingOutput
 
   and add these directories to the main Makefile
 

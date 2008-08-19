@@ -81,7 +81,7 @@
 
        modFamID = max(famID, 1_intType)
        nSurfNodesLoc = mdNSurfNodesLocal(modFamID)
-
+       !print *,'nSurfNodesLoc',nSurfNodesLoc
        allocate(forceLoc(3,nSurfNodesLoc), stat=ierr)
        if(ierr /= 0)                             &
          call terminate("mdCreateSurfForceList", &
@@ -99,17 +99,20 @@
        ! account to obtain the forces in SI-units, i.e. Newton.
 
        ii = 0
+       !print *,'ndoms',ndom
+       
        domains: do nn=1,nDom
-
+          !print *,'ndoms',ndom
+       
          ! Have the pointers in blockPointers point to this block
          ! on the finest mg level.
 
          call setPointers(nn,1_intType,sps)
 
          ! Loop over the number of boundary subfaces of this block.
-
          bocos: do mm=1,nBocos
-
+            !print *,'bocos',nn,mm,BCType(mm)
+            !stop
            ! Check if the data of this subface must be stored.
 
            storeSubface = .false.
@@ -198,26 +201,32 @@
                  fy = pp*ss(i,j,2)
                  fz = pp*ss(i,j,3)
 
+                 !print *,'forces',fx,fy,fz,pp
+
                  ! Distribute the force to the 4 nodes of the quad.
                  ! Note that the averaging factor 1/4 has already been
                  ! taken into account in pp.
 
                  jj = ii + (j-jBeg)*(iEnd-iBeg+2) + i-iBeg + 1
+                 !print *,'jj1',jj
                  forceLoc(1,jj) = forceLoc(1,jj) + fx
                  forceLoc(2,jj) = forceLoc(2,jj) + fy
                  forceLoc(3,jj) = forceLoc(3,jj) + fz
 
                  jj = jj + 1
+                 !print *,'jj2',jj
                  forceLoc(1,jj) = forceLoc(1,jj) + fx
                  forceLoc(2,jj) = forceLoc(2,jj) + fy
                  forceLoc(3,jj) = forceLoc(3,jj) + fz
 
                  jj = jj + iEnd - iBeg + 1
+                 !print *,'jj3',jj
                  forceLoc(1,jj) = forceLoc(1,jj) + fx
                  forceLoc(2,jj) = forceLoc(2,jj) + fy
                  forceLoc(3,jj) = forceLoc(3,jj) + fz
 
                  jj = jj + 1
+                 !print *,'jj4',jj
                  forceLoc(1,jj) = forceLoc(1,jj) + fx
                  forceLoc(2,jj) = forceLoc(2,jj) + fy
                  forceLoc(3,jj) = forceLoc(3,jj) + fz
