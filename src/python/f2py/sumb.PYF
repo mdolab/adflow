@@ -725,8 +725,8 @@ python module sumb ! in
           integer(kind=inttype) :: adjconvits
           integer(kind=inttype) parameter,optional :: adjmaxiter=500
         end module adjointpetsc
-      
-           module adjointvars ! in :sumb:ADjointVars.F90
+
+        module adjointvars ! in :sumb:ADjointVars.F90
             use constants
             integer(kind=inttype) :: nnodesglobal
             integer(kind=inttype) parameter,optional :: costfuncforcezcoef=5
@@ -738,18 +738,18 @@ python module sumb ! in
             integer(kind=inttype) :: ncelloffsetlocal
             integer(kind=inttype) :: nnodeslocal
             character(len=maxstringlen) parameter,optional :: varnamessa="sideslipangle"
+            real(kind=realtype) allocatable,dimension(:,:) :: adjoint
             character(len=maxstringlen) parameter,optional :: costfuncnameforcey="forceycoef"
             character(len=maxstringlen) parameter,optional :: costfuncnameforcex="forcexcoef"
             character(len=maxstringlen) parameter,optional :: costfuncnameforcez="forcezcoef"
             integer(kind=inttype) :: ndesign
             real(kind=realtype) allocatable,dimension(:) :: xdesignvarlower
+            real(kind=realtype) allocatable,dimension(:,:) :: functiongradcoupling
             integer(kind=inttype) parameter,optional :: ndesignmach=3
+            real(kind=realtype) allocatable,dimension(:,:) :: functiongradcouplingexp
             real(kind=realtype) allocatable,dimension(:) :: functionvalue
             real(kind=realtype) parameter,optional :: adjrelfd=1.0e-5_realtype
             real(kind=realtype) allocatable,dimension(:,:) :: functiongradspatial
-            real(kind=realtype) allocatable,dimension(:,:) :: functiongradcoupling
-            real(kind=realtype) allocatable,dimension(:,:) :: functiongradcouplingexp
-
             character(len=maxstringlen) allocatable,dimension(:) :: functionname
             real(kind=realtype) allocatable,dimension(:,:) :: functiongrad
             character(len=maxstringlen) parameter,optional :: costfuncnamemomx="momxcoef"
@@ -769,11 +769,13 @@ python module sumb ! in
             integer(kind=inttype) parameter,optional :: ndesignaoa=1
             integer(kind=inttype) parameter,optional :: ncostfunction=8
             integer(kind=inttype) parameter,optional :: costfuncforcexcoef=3
+            integer(kind=inttype) :: nsurfnodesglobal
             integer(kind=inttype) parameter,optional :: costfuncforceycoef=4
             character(len=maxstringlen) parameter,optional :: costfuncnamedrag="dragcoef"
             real(kind=realtype) allocatable,dimension(:) :: xdesignvar
             integer(kind=inttype) parameter,optional :: costfuncmomycoef=7
-        end module adjointvars
+            integer(kind=inttype) :: nsurfnodeslocal
+          end module adjointvars
 
         subroutine getsolution ! in :sumb:../../adjoint/designExport.f90
             use adjointvars
@@ -946,6 +948,38 @@ python module sumb ! in
             use communication
             use flowvarrefstate
         end subroutine destroypetscksp
+        
+        subroutine setupadjointrhsstruct(lenadjoint,structadjoint) ! in :sumb:setupADjointRHSStruct.f90
+            use adjointpetsc
+            use adjointvars
+            integer(kind=inttype) optional,intent(in),check(shape(structadjoint,1)==lenadjoint),depend(structadjoint) :: lenadjoint=shape(structadjoint,1)
+            real(kind=realtype) dimension(3,lenadjoint),intent(in) :: structadjoint
+        end subroutine setupadjointrhsstruct
+     
+        subroutine setupcouplingmatrixstruct(level) ! in :sumb:setupCouplingMatrixStruct.f90
+            use blockpointers
+            use adjointpetsc
+            use bctypes
+            use monitor
+            use communication
+            use section
+            use inputdiscretization
+            use iteration
+            use mddatalocal
+            use inputtimespectral
+            use inputphysics
+            use adjointvars
+            use cgnsgrid
+            use flowvarrefstate
+            integer(kind=inttype) intent(in) :: level
+        end subroutine setupcouplingmatrixstruct
+
+        subroutine getadjoint(costfunction) ! in :sumb:getADjoint.f90
+            use blockpointers
+            use adjointpetsc
+            use adjointvars
+            integer(kind=inttype) intent(in) :: costfunction
+        end subroutine getadjoint
 ! ############################################################################
 ! Aeroelastic / Multi-Disciplinary Routines
 ! ############################################################################

@@ -9,7 +9,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine setupADjointRHSStruct(structAdjoint)
+      subroutine setupADjointRHSStruct(lenadjoint,structAdjoint)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -25,7 +25,9 @@
 !
 !     Subroutine arguments.
 !
-      real(kind=realType), intent(in),dimension(3,nSurfNodesLocal) :: structAdjoint
+      integer(kind=intType),intent(in)::lenadjoint
+      real(kind=realType), intent(in),dimension(3,lenadjoint) :: structAdjoint
+!      real(kind=realType), intent(in),dimension(3,nSurfNodesLocal) :: structAdjoint
 !
 !     Local variables.
 !

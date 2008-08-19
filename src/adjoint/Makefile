@@ -56,6 +56,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
                finalizePETSc.o          \
 	       getGlobalNodes.o         \
 	       getSolution.o            \
+	       getADjoint.o             \
 	       haloIndexCommunication.o \
 	       initializePETSc.o        \
 	       indexHalo.o              \
