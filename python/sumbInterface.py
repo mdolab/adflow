@@ -2102,11 +2102,13 @@ class SUmbInterface(object):
                                'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
                                }
 
+        sumb.getadjoint(SUmbCostfunctions[possibleObjectives[objective]])
         nstate = sumb.flowvarrefstate.nw*sumb.adjointvars.nnodesglobal
         adjoint = numpy.zeros((nstate),float)
         #for item in objective:
         for i in xrange(nstate):
             adjoint[i] = sumb.adjointvars.adjoint[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
+#            adjoint[:] = sumb.adjointvars.adjoint[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
             
         #endfor
 
@@ -2147,4 +2149,45 @@ class SUmbInterface(object):
         
 
         return grad
+    
+    def aeroComputeTotalDerivatveStruct(self,objective,structAdjoint={}):
+        '''
+        compute the force portion of the total structural derivative
+        based on the coupled structural adjoint
+        '''
+        
+        sumb.setupcouplingtotalstruct(1)
+        
+        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
+                             'cd':sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             }
+        
+        possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
+                               'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+                               'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+                               'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+                               'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+                               'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+                               'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+                               'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               }
+        try:
+            #for item in objective:
+            if self.myid==0:
+                print 'Computing Aero Coupling derivative for costfuntion: ',possibleObjectives[objective]#item#objective[item]
+                print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
+            #endif
+                
+            sumb.setupadjointtotalstruct(structAdjoint,SUmbCostfunctions[possibleObjectives[objective]])
+        except:
+            print 'not an aerodynamic cost function'
+        #end
+
+        return
     
