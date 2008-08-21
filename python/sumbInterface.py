@@ -2112,7 +2112,8 @@ class SUmbInterface(object):
 #            adjoint[:] = sumb.adjointvars.adjoint[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
             
         #endfor
-
+        print 'sumbInterface: adjoint'
+        print adjoint
         return adjoint
 
     def getTotalStructDerivatives(self,objective):

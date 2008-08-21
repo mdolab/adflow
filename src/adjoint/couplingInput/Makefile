@@ -36,27 +36,27 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS = adjustInflowAngleForceCouplingAdj.o\
-	       applyAllBCForceCouplingAdj.o\
-               bcEulerWallForceCouplingAdj.o\
-               bcFarfieldForceCouplingAdj.o\
-	       bcSymmForceCouplingAdj.o\
-	       checkInputParamForceCouplingAdj.o\
-	       computeForceCouplingAdj.o\
-	       computeForceCouplingPressureAdj.o\
-               etotArrayForceCouplingAdj.o \
-	       extractBCStatesForceCouplingAdj.o\
-               extrapolate2ndHaloForceCouplingAdj.o\
-               forceCouplingAdj.o\
-	       getDirVectorForceCoupling.o\
-	       getSurfaceNormalsCouplingAdj.o\
-               referenceStateForceCouplingAdj.o\
-	       replaceBCStatesForceCouplingAdj.o\
-               setFlowInfinityStateForceCouplingAdj.o\
-	       vectorRotationForceCoupling.o\
-	       verifydSdx.o\
-	       verifydSdw.o\
-	       verifyForceCouplingAdj.o
+FF90_OBJECTS = 	adjustInflowAngleForceCouplingAdj.o\
+				applyAllBCForceCouplingAdj.o\
+				bcEulerWallForceCouplingAdj.o\
+				bcFarfieldForceCouplingAdj.o\
+				bcSymmForceCouplingAdj.o\
+				checkInputParamForceCouplingAdj.o\
+				computeForceCouplingAdj.o\
+				computeForceCouplingPressureAdj.o\
+				etotArrayForceCouplingAdj.o \
+				extractBCStatesForceCouplingAdj.o\
+				extrapolate2ndHaloForceCouplingAdj.o\
+				forceCouplingAdj.o\
+				getDirVectorForceCoupling.o\
+				getSurfaceNormalsCouplingAdj.o\
+				referenceStateForceCouplingAdj.o\
+				replaceBCStatesForceCouplingAdj.o\
+				setFlowInfinityStateForceCouplingAdj.o\
+				vectorRotationForceCoupling.o\
+				verifydSdx.o\
+				verifydSdw.o\
+				verifyForceCouplingAdj.o
 
 #CC_OBJECTS   = connect_signals.o
 
