@@ -113,7 +113,7 @@
 
       ! View the solution vector dIda.
  
-      if(  debug ) then
+      !if(  debug ) then
 
         if( PETScRank==0 ) then
           write(*,*) "# ============================ "
@@ -139,7 +139,7 @@
           call terminate("computeADjointGradientExtra", &
                          "Error in VecView")
 
-      endif
+      !endif
 !
 !     ******************************************************************
 !     *                                                                *

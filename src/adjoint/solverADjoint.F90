@@ -190,7 +190,7 @@
 	!verify the coupling derivatives
 	!	call verifyForceCouplingAdj(level)
 	!call verifydSdw(level)
-stop
+!stop
 
 !      endif
 

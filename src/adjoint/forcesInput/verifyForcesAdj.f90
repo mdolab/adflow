@@ -162,41 +162,59 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !     *                                                                *
 !     ******************************************************************
 !
-!      print *,' Calling original routines',level
+      !print *,' Calling original routines',level
       call metric(level) 
+      spectralLoop: do sps=1,nTimeIntervalsSpectral
 
-      call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+         ! Initialize the local monitoring variables to zero.
+         
+         monLoc1 = zero
 
-      Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-         + (cfp(2) + cfv(2))*liftDirection(2) &
-         + (cfp(3) + cfv(3))*liftDirection(3)
-      
-      Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-         + (cfp(2) + cfv(2))*dragDirection(2) &
-         + (cfp(3) + cfv(3))*dragDirection(3)
-      
-      Cfx = cfp(1) + cfv(1)
-      Cfy = cfp(2) + cfv(2)
-      Cfz = cfp(3) + cfv(3)
+         ! Loop over the blocks.
 
-      Cmx = cmp(1) + cmv(1)
-      Cmy = cmp(2) + cmv(2)
-      Cmz = cmp(3) + cmv(3)
-      
-      nmonsum = 8
+         domains: do nn=1,nDom
 
-      monLoc1(1) = Cl
-      monLoc1(2) = Cd
-      monLoc1(3) = cfx
-      monLoc1(4) = cfy
-      monLoc1(5) = cfz
-      monLoc1(6) = cmx
-      monLoc1(7) = cmy
-      monLoc1(8) = cmz
+           ! Set the pointers for this block.
 
+           call setPointers(nn, groundLevel, sps)
+
+           ! Compute the forces and moments for this block.
+
+           call forcesAndMoments(cfp, cfv, cmp, cmv, yplusMax)
+
+           
+           Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+                + (cfp(2) + cfv(2))*liftDirection(2) &
+                + (cfp(3) + cfv(3))*liftDirection(3)
+           
+           Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+                + (cfp(2) + cfv(2))*dragDirection(2) &
+                + (cfp(3) + cfv(3))*dragDirection(3)
+           
+           Cfx = cfp(1) + cfv(1)
+           Cfy = cfp(2) + cfv(2)
+           Cfz = cfp(3) + cfv(3)
+           
+           Cmx = cmp(1) + cmv(1)
+           Cmy = cmp(2) + cmv(2)
+           Cmz = cmp(3) + cmv(3)
+           
+           nmonsum = 8
+           
+           monLoc1(1) = monLoc1(1)+ Cl
+           monLoc1(2) = monLoc1(2)+ Cd
+           monLoc1(3) = monLoc1(3)+ cfx
+           monLoc1(4) = monLoc1(4)+ cfy
+           monLoc1(5) = monLoc1(5)+ cfz
+           monLoc1(6) = monLoc1(6)+ cmx
+           monLoc1(7) = monLoc1(7)+ cmy
+           monLoc1(8) = monLoc1(8)+ cmz
+
+        enddo domains
+           
       ! Determine the global sum of the summation monitoring
       ! variables. The sum is made known to all processors.
-      print *,'reducing'
+      !print *,'reducing'
       call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
                          mpi_sum, SUmb_comm_world, ierr)
 
@@ -210,6 +228,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
       CMx = monGlob1(6)
       CMy = monGlob1(7)
       CMz = monGlob1(8)
+   enddo spectralLoop
 !
 !     ******************************************************************
 !     *                                                                *
@@ -370,7 +389,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
          ! Determine the global sum of the summation monitoring
          ! variables. The sum is made known to all processors.
 !         write(*,*)'adj ',myID,monLoc2(1)
-        ! write(*,*)'nmonsum',nMonSum
+         !write(*,*)'nmonsum',nMonSum
          call mpi_allreduce(monLoc2, monGlob2, nMonSum2, sumb_real, &
               mpi_sum, SUmb_comm_world, ierr)
          
@@ -390,18 +409,18 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
       call mpi_barrier(SUmb_comm_world, ierr)
       ! Root processor outputs results.
       !print *,'printing results'
-         do sps=1,nTimeIntervalsSpectral
-            if(myID == 0) then
-               write(*,*)  "sps ", sps 
-               write(*,20) "Original", CL,    CD,    Cfx,    Cmx
-               write(*,20) "Adjoint ", CLAdj(sps), CDAdj(sps), CfxAdj(sps), CmxAdj(sps)
-            endif
-         end do
+      do sps=1,nTimeIntervalsSpectral
+         if(myID == 0) then
+            write(*,*)  "sps ", sps 
+            write(*,20) "Original", CL,    CD,    Cfx,    Cmx
+            write(*,20) "Adjoint ", CLAdj(sps), CDAdj(sps), CfxAdj(sps), CmxAdj(sps)
+         endif
+      end do
        
-         !print *,'finished computing forces'
+      !print *,'finished computing forces'
       ! Flush the output buffer and synchronize the processors.
        
-!      call f77flush()
+      call f77flush()
 
        
       ! Output format.

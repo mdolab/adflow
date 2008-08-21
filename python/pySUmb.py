@@ -89,6 +89,7 @@ class SUMB(AeroSolver):
 		self.myid = self.sumb.myid
 		self.callCounter = 0
 		self.volumeMatrixInitialized = False
+		self.flowMatrixInitialized=False
 
 	def __solve__(self, aero_problem, sol_type,grid_file='default', *args, **kwargs):
 		
@@ -274,15 +275,16 @@ class SUMB(AeroSolver):
 
 		return
 
-	def computeFlowDerivatives(self,objective,flowMatrixInitialized, *args, **kwargs):
+	def computeFlowDerivatives(self,objective, *args, **kwargs):
 		''' compute derivatives with respect to flow variables like alpha,Mach, beta....
 		'''
 		#Setup the partial derivative of the objective in sumb
 		self.sumb.setupGradientRHSFlow(objective)
 
 		#setup the partial derivative of the volume coords. in sumb
-		if not flowMatrixInitialized:
+		if not self.flowMatrixInitialized:
 			self.sumb.setupGradientMatrixFlow()
+			self.flowMatrixInitialized=True
 		#endif
 
 		#compute and store the volume derivatives
