@@ -338,13 +338,17 @@ subroutine verifydSdw(level)
                        idxSurf = (i-1)*3+j
                        idxres   = globalCell(i,j,k)*nw+l
                        if (wAdjb(i,j,k,l).ne.0.0)then
-                          print *,'wadjb',wadjb(i,j,k,l),i,j,k,l
+                          if (m == 3) then
+                             print *,'wadjb',wadjb(i,j,k,l),i,j,k,l
+                          end if
                           call MatSetValues(dSdw, 1, idxSurf-1, 1, idxres-1,   &
                                wAdjb(i,j,k,l), INSERT_VALUES, PETScIerr)
                           if( PETScIerr/=0 ) &
                                print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
                           dSdwAD(n,m,i,j,k,l) = wAdjb(i,j,k,l)
-                          print *,'dSdwAD',dSdwAD(n,m,i,j,k,l)
+                          if (m==3) then
+                             print *,'dSdwAD',dSdwAD(n,m,i,j,k,l)
+                          end if
                        endif
 
                        !dSdwAD(n,m,i,j,k,l) = wAdjb(i,j,k,l)
@@ -622,53 +626,66 @@ subroutine verifydSdw(level)
 !     ******************************************************************
 !
       ! Output debug information.
-
+      print *,'Output debug information'
       domainDebugLoop: do nn=1,nDom
 
         ! Set the variables, which are related to the dimensions of the
         ! block. In this way the dimensions of the automatic arrays used
         ! in the flux routines are set a bit easier.
-         !print *,'setting pointers',nn,level,sps
+         print *,'setting pointers',nn,level,sps
          call setPointers(nn,level,sps)
+         print *,'done pointers'
 !!$
 !!$        il = flowDoms(nn,currentLevel,1)%il
 !!$        jl = flowDoms(nn,currentLevel,1)%jl
 !!$        kl = flowDoms(nn,currentLevel,1)%kl
 
         ! Loop over the location of the output cell.
-         do n=1,3
-            do m=1,nSurfNodesLocal
-               do k=0,kb
-                  do j=0,jb
-                     do i=0,ib
-                        
-                        !write(*,10) "Jacobian dSdwer,dSdwAD,dSdwfd @ proc/block", &
-                        !     myID, nn, "for cell", i,j,k, 'for node',m,n
-                        !  error
-                        
-                        do l=1,nw
-                 
-                           if ( dSdwfd(n,m,i,j,k,l) < 1e-10 ) then
-                              dSdwer(n,m,i,j,k,l)  = zero
-                           else
-                              dSdwer(n,m,i,j,k,l)  =                   &
-                                   (  dSdwAD(n,m,i,j,k,l)      &
-                                   - dSdwfd(n,m,i,j,k,l) ) 
-                           endif
-                 
-                           ! Output if error
-                        
-                           if (dSdwer(n,m,i,j,k,l)/=0)          &
-                                write(*,20) (dSdwer(n,m,i,j,k,l)), &
-                                (dSdwAD(n,m,i,j,k,l)),   &
-                                (dSdwfd(n,m,i,j,k,l)),i,j,k,l,m,n
-                        enddo
-                     enddo
-                  enddo
-               enddo
-            enddo
-         enddo
-     
+         if (myID == 0) then
+         print *,'shapes:',shape(dSdwfd),shape(dSdwAD),shape(dSdwer)
+         print *,'NsurfNodesLocal',nSurfNodesLocal
+         print *,'kb:',kb
+         print *,'jb:',jb
+         print *,'ib:',ib
+         print *,'nw:',nw
+      end if
+         
+         
+!!$         do n=1,3
+!!$            do m=1,nSurfNodesLocal
+!!$               do k=0,kb
+!!$                  do j=0,jb
+!!$                     do i=0,ib
+!!$                        
+!!$                        !write(*,10) "Jacobian dSdwer,dSdwAD,dSdwfd @ proc/block", &
+!!$                        !     myID, nn, "for cell", i,j,k, 'for node',m,n
+!!$                        !  error
+!!$                       
+!!$                        do l=1,nw
+!!$                         
+!!$                          
+!!$                           if ( dSdwfd(n,m,i,j,k,l) < 1e-10 ) then
+!!$                              dSdwer(n,m,i,j,k,l)  = zero
+!!$                           else
+!!$                              dSdwer(n,m,i,j,k,l)  =                   &
+!!$                                   (  dSdwAD(n,m,i,j,k,l)      &
+!!$                                   - dSdwfd(n,m,i,j,k,l) ) 
+!!$                           endif
+!!$                 
+!!$                           ! Output if error
+!!$                        
+!!$                           if (dSdwer(n,m,i,j,k,l)/=0)          &
+!!$                           write(*,20) (dSdwer(n,m,i,j,k,l)), &
+!!$                                (dSdwAD(n,m,i,j,k,l)),   &
+!!$                                (dSdwfd(n,m,i,j,k,l)),i,j,k,l,m,n
+!!$                           print *, 'nn,n,m,k,j,i,l',nn,n,m,k,j,i,l
+!!$                        enddo
+!!$                     enddo
+!!$                  enddo
+!!$               enddo
+!!$            enddo
+!!$         enddo
+!!$     
       enddo domainDebugLoop
   
   ! Flush the output buffer and synchronize the processors.
@@ -693,10 +710,10 @@ subroutine verifydSdw(level)
 !     *                                                                *
 !     ******************************************************************
 !
-      write(*,*)
-      write(*,30) "dSdwer : proc, min/loc, max/loc =", myID,          &
-                 minval(dSdwer(:,:,:,:,:,:)), minloc(dSdwer(:,:,:,:,:,:)), &
-                 maxval(dSdwer(:,:,:,:,:,:)), maxloc(dSdwer(:,:,:,:,:,:))
+!      write(*,*)
+!      write(*,30) "dSdwer : proc, min/loc, max/loc =", myID,          &
+!                 minval(dSdwer(:,:,:,:,:,:)), minloc(dSdwer(:,:,:,:,:,:)), &
+!                 maxval(dSdwer(:,:,:,:,:,:)), maxloc(dSdwer(:,:,:,:,:,:))
  
 
       ! Flush the output buffer and synchronize the processors.

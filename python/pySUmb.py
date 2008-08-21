@@ -260,7 +260,7 @@ class SUMB(AeroSolver):
 
 	def _on_adjoint(self,objective,*args,**kwargs):
 
-		#print 'running adjoint',objective
+		print 'running cfd adjoint',objective
 
 		self.sumb.setupADjointRHS(objective)
 

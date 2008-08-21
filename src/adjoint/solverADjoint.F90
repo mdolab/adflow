@@ -114,7 +114,7 @@
         write(*,*) "Cost function values:"
         write(*,*) " CL  =", CL
         write(*,*) " CD  =", CD
-	write(*,*) " CFx =", CFx   
+    	write(*,*) " CFx =", CFx   
         write(*,*) " CFy =", CFy
         write(*,*) " CFz =", CFz
         write(*,*) " CMx =", CMx
@@ -151,8 +151,8 @@
  
       ! Perform some verifications if in DEBUG mode.
       !moved after PETSc initialization because PETsc now included in debugging...
-
-!      if( debug ) then
+	 
+      !if( debug ) then
 
         ! Verify the node-based residual routine.
 
@@ -167,8 +167,8 @@
 
         ! Verify the dRdx routine
 
-        !call verifydRdx(level,sps)
-!stop
+    	!	call verifydRdx(level,sps)
+	!stop	
 	!call verifydRdExtra(level)
 
 
@@ -190,9 +190,22 @@
 	!verify the coupling derivatives
 	!	call verifyForceCouplingAdj(level)
 	!call verifydSdw(level)
+
+!stop
+	print *,'Going to call verifydSdx'
+	call verifydSdx(level)
+	print *,'Done VerifydSdx'
+	stop
+	print *,'Going to call verifydWdx'
+	call verifydSdw(level)
+	print *,'Done VerifydWdx'
+	stop
+=======
 !stop
 
-!      endif
+
+
+  !    endif
 
 
 !
