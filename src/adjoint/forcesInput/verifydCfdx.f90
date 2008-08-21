@@ -30,6 +30,7 @@ subroutine verifydCfdx(level)
       use section
       use monitor             ! monLoc, MonGlob, nMonSum
       use bcTypes             !imin,imax,jmin,jmax,kmin,kmax
+      use adjointvars         !ndesignaoa,ndesignmach
       implicit none
 !
 !     Subroutine arguments.
@@ -94,9 +95,9 @@ subroutine verifydCfdx(level)
       real(kind=realType), dimension(:,:,:,:,:), allocatable :: dCLer, &
            dCDer,dCmxer
 
-      real(kind=realType), parameter :: deltax = 1.e-8_realType
+      real(kind=realType), parameter :: deltax = 1.e-6_realType
 
-      real(kind=realType) :: xAdjRef,xref
+      real(kind=realType) :: xAdjRef,xref,alpharef,machref,alpha,beta,machcoefref
 
       real(kind=realType), dimension(:,:,:), pointer :: norm
       real(kind=realType), dimension(:,:,:),allocatable:: normAdj
@@ -107,6 +108,8 @@ subroutine verifydCfdx(level)
       real(kind=realType),  dimension(:), allocatable :: monLoc2, monGlob2
 
       logical :: contributeToForce, viscousSubface,secondHalo,righthanded
+      real(kind=realType), dimension(3) :: dCldextra,dcddextra,dCldextraFD,dcddextraFD,&
+           dCldextraerror,dcddextraerror, dCldextralocal,dcddextralocal
 
       integer :: ierr,nmonsum1,nmonsum2,liftindex
 
@@ -173,6 +176,8 @@ subroutine verifydCfdx(level)
       dCL   = zero; dCLfd   = zero; dCLer   = zero;
       dCD   = zero; dCDfd   = zero; dCDer   = zero;
       dCmx  = zero; dCmxfd  = zero; dCmxer  = zero;
+      dCldextra=zero
+      dcddextra=zero
 
      ! Exchange the pressure if the pressure must be exchanged early.
       ! Only the first halo's are needed, thus whalo1 is called.
@@ -254,9 +259,9 @@ subroutine verifydCfdx(level)
       domainLoopAD: do nn=1,nDom
 
         ! Set some pointers to make the code more readable.
-         print *,'setting pointers'
+         !print *,'setting pointers'
         call setPointersAdj(nn,level,sps)
-        print *,'allocating memory'
+        !print *,'allocating memory'
         allocate(xAdj(0:ie,0:je,0:ke,3), stat=ierr)
         if(ierr /= 0)                              &
              call terminate("Memory allocation failure for xAdj.")
@@ -277,7 +282,7 @@ subroutine verifydCfdx(level)
         if(ierr /= 0)                              &
              call terminate("Memory allocation failure for pAdj.")
         
-        print *,'finished allocating',nn,level,sps
+        !print *,'finished allocating',nn,level,sps
         righthanded = flowDoms(nn,level,sps)%righthanded
         
 
@@ -328,7 +333,10 @@ subroutine verifydCfdx(level)
         !   MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
         !   rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps)
         !copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
-        
+        machadjb=zero
+        machcoefadjb=zero
+        alphaadjb=zero
+        betaadjb=zero
         bocoLoop: do mm=1,nBocos
 
            ! Determine the range of cell indices of the owned cells
@@ -410,6 +418,7 @@ subroutine verifydCfdx(level)
            
            xAdjB(:,:,:,:) = zero ! > return dCf/dx
            
+           
            !===============================================================
            !           
 !           print *,'Initial Parameters Calculated,Computing Lift Partials...'
@@ -464,8 +473,20 @@ subroutine verifydCfdx(level)
               enddo
            enddo
 
+          
         end do bocoLoop
-        
+        dCldextralocal(ndesignmach) =dCldextralocal(ndesignmach)+ machadjb+machcoefadjb
+        dCldextralocal(ndesignaoa) = dCldextralocal(ndesignaoa)+alphaadjb
+        dCldextra(ndesignssa) = dCldextra(ndesignssa)+betaadjb
+        !dCldextra(ndesignmach) = machadjb+machcoefadjb
+        !!dCldextra(ndesignmach) = dCldextra(ndesignmach)+machadjb+machcoefadjb
+        !print *,'ADcdldmach2', dCldextra(ndesignmach),machadjb,machcoefadjb
+        !dCldextra(ndesignaoa) = dCldextra(ndesignaoa)+alphaadjb
+        !dCldextra(ndesignssa) = dCldextra(ndesignssa)+betaadjb
+        machadjb=zero
+        machcoefadjb=zero
+        alphaadjb=zero
+        betaadjb=zero
         bocoLoop2: do mm=1,nBocos
 
            ! Determine the range of cell indices of the owned cells
@@ -489,7 +510,7 @@ subroutine verifydCfdx(level)
 !!$        CfzAdjB = 0
        
            xAdjB(:,:,:,:) = zero ! > return dCf/dx
-
+           
            !===============================================================
            !           
 !           print *,'Calculating Drag Partials...'
@@ -543,8 +564,15 @@ subroutine verifydCfdx(level)
               enddo
            enddo
            
-        enddo bocoLoop2
 
+        enddo bocoLoop2
+        dCddextra(ndesignmach) = dCddextra(ndesignmach)+machadjb+machcoefadjb
+        dCddextra(ndesignaoa) = dCddextra(ndesignaoa)+alphaadjb
+        dCddextra(ndesignssa) = dCddextra(ndesignssa)+betaadjb
+        machadjb=zero
+        machcoefadjb=zero
+        alphaadjb=zero
+        betaadjb=zero
         bocoLoop3: do mm=1,nBocos
 
            ! Determine the range of cell indices of the owned cells
@@ -568,7 +596,7 @@ subroutine verifydCfdx(level)
  !       CfzAdjB = 0
        
            xAdjB(:,:,:,:) = zero ! > return dCf/dx
-
+           
            !===============================================================
            !           
 !           print *,'Calculating MomX Partials...'
@@ -632,7 +660,7 @@ subroutine verifydCfdx(level)
         
         !===============================================================
         
-        print *,' deallocating'
+        !print *,' deallocating'
         ! Deallocate the xAdj.
         deallocate(pAdj, stat=ierr)
         if(ierr /= 0)                              &
@@ -659,9 +687,37 @@ subroutine verifydCfdx(level)
         if(ierr /= 0)                              &
              call terminate("verifydCfdx", &
              "Deallocation failure for xAdj.") 
-        print *,'finishhed deallocating'
+        !print *,'finishhed deallocating'
        
       enddo domainLoopAD
+      
+      print *,'dcldextralocal',dcldextralocal(1),dcldextralocal(2),dcldextralocal(3)
+      monLoc2(1) = dcldextralocal(1)
+      monLoc2(2) = dcldextralocal(2)
+      monLoc2(3) = dcldextralocal(3)
+      monLoc2(4) = 1
+      monLoc2(5) = 1
+      monLoc2(6) = 1
+      monLoc2(7) = 1
+      monLoc2(8) = 1
+         
+         ! Determine the global sum of the summation monitoring
+         ! variables. The sum is made known to all processors.
+!         write(*,*)'adj ',myID,monLoc2(1)
+         !write(*,*)'nmonsum',nMonSum
+         call mpi_allreduce(monLoc2, monGlob2, nMonSum2, sumb_real, &
+              mpi_sum, SUmb_comm_world, ierr)
+         
+         ! Transfer the cost function values to output arguments.
+         
+         dcldextra(1) = monGlob2(1)
+         dcldextra(2) = monGlob2(2)
+         dcldextra(3) = monGlob2(3)
+         dcddextra(1) = monGlob2(4)
+         dcddextra(1) = monGlob2(5) 
+         dcddextra(1) = monGlob2(6)
+         dcddextra(1) = monGlob2(7)
+         dcddextra(1) = monGlob2(8)
 
    enddo spectralLoopAdj
       
@@ -690,8 +746,9 @@ subroutine verifydCfdx(level)
       
       sps=1
       print *,'starting FD loop',sps
-      domainForcesLoopFDorig: do nn=1,nDom   
-         
+      domainForcesLoopFDorig: do nn=8,8!1,1!nDom   
+         print *,'fd in domain',nn
+         !cycle
          call setPointers(nn,level,sps)
 
          !loop over all points
@@ -715,9 +772,10 @@ subroutine verifydCfdx(level)
                      !
  
                      call metric(level)
+                     call setPointers(nn,level,sps)
                      call computeForcesPressureAdj(w,p)
                      call applyAllBC(secondHalo)
-
+                     call setPointers(nn,level,sps)
                      call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
                      
                      Cl = (cfp(1) + cfv(1))*liftDirection(1) &
@@ -810,9 +868,10 @@ subroutine verifydCfdx(level)
                      !
   
                      call metric(level)
+                     call setPointers(nn,level,sps)
                      call computeForcesPressureAdj(w,p)
                      call applyAllBC(secondHalo)
-
+                     call setPointers(nn,level,sps)
                      call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
                      
                      Cl = (cfp(1) + cfv(1))*liftDirection(1) &
@@ -909,6 +968,321 @@ subroutine verifydCfdx(level)
               enddo
            enddo
         enddo domainForcesLoopFDorig
+
+      ! Loop over the number of local blocks.
+      
+        monloc1=0.0
+        monloc2=0.0
+      sps=1
+      print *,'starting FD loop',sps
+      domainMachLoopFDorig: do nn=1,nDom   
+         
+         call setPointers(nn,level,sps)
+
+         !loop over all points
+         
+         machref = mach
+         machcoefref=machcoef
+         !print *,'mach before',mach,machcoef
+         mach= machref+deltax
+         machcoef = machcoefref+deltax
+         !print *,'mach after',mach,machcoef
+         !*************************************************************
+         !Original force and metric calculation....
+         !     ******************************************************************
+         !     *                                                                *
+         !     * Update the force coefficients using the usual flow solver      *
+         !     * routine.                                                       *
+         !     *                                                                *
+         !     ******************************************************************
+         !
+ 
+         call metric(level)
+         call setPointers(nn,level,sps)
+         call computeForcesPressureAdj(w,p)
+         call applyAllBC(secondHalo)
+         call setPointers(nn,level,sps)
+         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+         
+         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+              + (cfp(2) + cfv(2))*liftDirection(2) &
+              + (cfp(3) + cfv(3))*liftDirection(3)
+         
+         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+              + (cfp(2) + cfv(2))*dragDirection(2) &
+              + (cfp(3) + cfv(3))*dragDirection(3)
+         
+         Cfx = cfp(1) + cfv(1)
+         Cfy = cfp(2) + cfv(2)
+         Cfz = cfp(3) + cfv(3)
+         
+         Cmx = cmp(1) + cmv(1)
+         Cmy = cmp(2) + cmv(2)
+         Cmz = cmp(3) + cmv(3)
+         
+         nmonsum = 8
+         
+         monLoc1(1) =monLoc1(1) + Cl
+         monLoc1(2) =monLoc1(2)+ Cd
+         monLoc1(3) =monLoc1(3)+ cfx
+         monLoc1(4) =monLoc1(4) +cfy
+         monLoc1(5) =monLoc1(5) +cfz
+         monLoc1(6) =monLoc1(6) +cmx
+         monLoc1(7) = monLoc1(7)+ cmy
+         monLoc1(8) = monLoc1(8)+cmz
+         
+         
+         ! Determine the global sum of the summation monitoring
+         ! variables. The sum is made known to all processors.
+         
+         call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
+              mpi_sum, SUmb_comm_world, ierr)
+         
+         ! Transfer the cost function values to output arguments.
+         
+         CLp  = monGlob1(1)
+         CDp  = monGlob1(2)
+         Cfxp = monGlob1(3)
+         Cfyp = monGlob1(4)
+         Cfzp = monGlob1(5) 
+         CMxp = monGlob1(6)
+         CMyp = monGlob1(7)
+         CMzp = monGlob1(8)
+         
+         
+         !*********************
+         !Now calculate other perturbation
+         mach = machref-deltax
+         machcoef = machcoefref-deltax
+         !*************************************************************
+         !Original force and metric calculation....
+         !     ******************************************************************
+         !     *                                                                *
+         !     * Update the force coefficients using the usual flow solver      *
+         !     * routine.                                                       *
+         !     *                                                                *
+         !     ******************************************************************
+         !
+         
+         call metric(level)
+         call setPointers(nn,level,sps)
+         call computeForcesPressureAdj(w,p)
+         call applyAllBC(secondHalo)
+         call setPointers(nn,level,sps)
+         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+                     
+         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+              + (cfp(2) + cfv(2))*liftDirection(2) &
+              + (cfp(3) + cfv(3))*liftDirection(3)
+         
+         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+              + (cfp(2) + cfv(2))*dragDirection(2) &
+              + (cfp(3) + cfv(3))*dragDirection(3)
+         
+         Cfx = cfp(1) + cfv(1)
+         Cfy = cfp(2) + cfv(2)
+         Cfz = cfp(3) + cfv(3)
+         
+         Cmx = cmp(1) + cmv(1)
+         Cmy = cmp(2) + cmv(2)
+         Cmz = cmp(3) + cmv(3)
+         
+         nmonsum = 8
+         
+         monLoc2(1) = monLoc2(1)+Cl
+         monLoc2(2) = monLoc2(2)+Cd
+         monLoc2(3) = monLoc2(3)+cfx
+         monLoc2(4) = monLoc2(4)+cfy
+         monLoc2(5) = monLoc2(5)+cfz
+         monLoc2(6) = monLoc2(6)+cmx
+         monLoc2(7) = monLoc2(7)+cmy
+         monLoc2(8) = monLoc2(8)+cmz
+         
+         ! Determine the global sum of the summation monitoring
+         ! variables. The sum is made known to all processors.
+         
+         call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
+              mpi_sum, SUmb_comm_world, ierr)
+         
+         ! Transfer the cost function values to output arguments.
+         
+         CLm  = monGlob2(1)
+         CDm  = monGlob2(2)
+         Cfxm = monGlob2(3)
+         Cfym = monGlob2(4)
+         Cfzm = monGlob2(5) 
+         CMxm = monGlob2(6)
+         CMym = monGlob2(7)
+         CMzm = monGlob2(8)
+         
+         
+         mach = machref
+         machcoef = machcoefref
+         !print *,'clp',CLP,CLM,CLP-CLM
+         dCLdextraFD(ndesignmach) = (CLP-CLM)/(two*deltax)  
+         dCDdextraFD(ndesignmach) = (CDP-CDM)/(two*deltax) 
+         !dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
+        
+      enddo domainMachLoopFDorig
+     
+
+      !get reference conditions
+      call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+      monloc1=0.0
+      monloc2=0.0
+      
+      sps=1
+      print *,'starting FD loop',sps
+      domainalphaLoopFDorig: do nn=1,nDom   
+         
+         call setPointers(nn,level,sps)
+
+         !loop over all points
+         alpharef = alpha
+         
+         alpha = alpharef+deltax
+         
+         !*************************************************************
+         !Original force and metric calculation....
+         !     ******************************************************************
+         !     *                                                                *
+         !     * Update the force coefficients using the usual flow solver      *
+         !     * routine.                                                       *
+         !     *                                                                *
+         !     ******************************************************************
+         !
+         call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+         call metric(level)
+         call setPointers(nn,level,sps)
+         call computeForcesPressureAdj(w,p)
+         call applyAllBC(secondHalo)
+         call setPointers(nn,level,sps)
+         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+         
+         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+              + (cfp(2) + cfv(2))*liftDirection(2) &
+              + (cfp(3) + cfv(3))*liftDirection(3)
+         
+         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+              + (cfp(2) + cfv(2))*dragDirection(2) &
+              + (cfp(3) + cfv(3))*dragDirection(3)
+         
+         Cfx = cfp(1) + cfv(1)
+         Cfy = cfp(2) + cfv(2)
+         Cfz = cfp(3) + cfv(3)
+         
+         Cmx = cmp(1) + cmv(1)
+         Cmy = cmp(2) + cmv(2)
+         Cmz = cmp(3) + cmv(3)
+         
+         nmonsum = 8
+         
+         monLoc1(1) = monLoc1(1)+Cl
+         monLoc1(2) = monLoc1(2)+Cd
+         monLoc1(3) = monLoc1(3)+ cfx
+         monLoc1(4) = monLoc1(4)+ cfy
+         monLoc1(5) = monLoc1(5)+ cfz
+         monLoc1(6) = monLoc1(6)+cmx
+         monLoc1(7) = monLoc1(7)+cmy
+         monLoc1(8) = monLoc1(8)+cmz
+         
+         
+         ! Determine the global sum of the summation monitoring
+         ! variables. The sum is made known to all processors.
+         
+         call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
+              mpi_sum, SUmb_comm_world, ierr)
+         
+         ! Transfer the cost function values to output arguments.
+         
+         CLp  = monGlob1(1)
+         CDp  = monGlob1(2)
+         Cfxp = monGlob1(3)
+         Cfyp = monGlob1(4)
+         Cfzp = monGlob1(5) 
+         CMxp = monGlob1(6)
+         CMyp = monGlob1(7)
+         CMzp = monGlob1(8)
+                     
+         
+         !*********************
+         !Now calculate other perturbation
+         alpha = alpharef-deltax
+                     
+         !*************************************************************
+         !Original force and metric calculation....
+         !     ******************************************************************
+         !     *                                                                *
+         !     * Update the force coefficients using the usual flow solver      *
+         !     * routine.                                                       *
+         !     *                                                                *
+         !     ******************************************************************
+         !
+         
+         call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+         call metric(level)
+         call setPointers(nn,level,sps)
+         call computeForcesPressureAdj(w,p)
+         call applyAllBC(secondHalo)
+         call setPointers(nn,level,sps)
+         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+         
+         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+              + (cfp(2) + cfv(2))*liftDirection(2) &
+              + (cfp(3) + cfv(3))*liftDirection(3)
+         
+         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+              + (cfp(2) + cfv(2))*dragDirection(2) &
+              + (cfp(3) + cfv(3))*dragDirection(3)
+         
+         Cfx = cfp(1) + cfv(1)
+         Cfy = cfp(2) + cfv(2)
+         Cfz = cfp(3) + cfv(3)
+         
+         Cmx = cmp(1) + cmv(1)
+         Cmy = cmp(2) + cmv(2)
+         Cmz = cmp(3) + cmv(3)
+         
+         nmonsum = 8
+         
+         monLoc2(1) = monLoc2(1)+Cl
+         monLoc2(2) = monLoc2(2)+Cd
+         monLoc2(3) = monLoc2(3)+cfx
+         monLoc2(4) = monLoc2(4)+ cfy
+         monLoc2(5) = monLoc2(5)+cfz
+         monLoc2(6) =monLoc2(6) +cmx
+         monLoc2(7) =monLoc2(7) +cmy
+         monLoc2(8) = monLoc2(8)+cmz
+         
+         ! Determine the global sum of the summation monitoring
+         ! variables. The sum is made known to all processors.
+         
+         call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
+              mpi_sum, SUmb_comm_world, ierr)
+         
+         ! Transfer the cost function values to output arguments.
+         
+         CLm  = monGlob2(1)
+         CDm  = monGlob2(2)
+         Cfxm = monGlob2(3)
+         Cfym = monGlob2(4)
+         Cfzm = monGlob2(5) 
+         CMxm = monGlob2(6)
+         CMym = monGlob2(7)
+         CMzm = monGlob2(8)
+         
+         
+         alpha = alpharef
+                  
+         call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+
+         dCLdextraFD(ndesignaoa) = (CLP-CLM)/(two*deltax)  
+         dCDdextraFD(ndesignaoa) = (CDP-CDM)/(two*deltax) 
+         !dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
+
+      enddo domainalphaLoopFDorig
+
+
 
 
 !!$      !from ForcesAndMoments.f90
@@ -1175,7 +1549,7 @@ subroutine verifydCfdx(level)
 !
       ! Output debug information.
 
-      domainDebugLoop: do nn=1,nDom
+      domainDebugLoop: do nn=8,8!1,nDom
 
         ! Set the variables, which are related to the dimensions of the
         ! block. In this way the dimensions of the automatic arrays used
@@ -1228,32 +1602,41 @@ subroutine verifydCfdx(level)
               
               ! Output if error
 
-              write(*,10) "Jacobian dCLer,dCL,dCLfd @ proc/block", &
-                    myID, nn, "for node", iNode,jNode,kNode
-              do m=1,3
-                if (dCLer(nn,iNode,jNode,kNode,m)/=0)          &
-                  write(*,20) (dCLer(nn,iNode,jNode,kNode,m)), &
-                              (dCL(nn,iNode,jNode,kNode,m)),   &
-                              (dCLfd(nn,iNode,jNode,kNode,m))
-              enddo
-              write(*,10) "Jacobian dCDer,dCD,dCDfd @ proc/block", &
-                   myID, nn, "for node", iNode,jNode,kNode
-              do m=1,3
-                 if (dCDer(nn,iNode,jNode,kNode,m)/=0)          &
-                      write(*,20) (dCDer(nn,iNode,jNode,kNode,m)), &
-                      (dCD(nn,iNode,jNode,kNode,m)),   &
-                      (dCDfd(nn,iNode,jNode,kNode,m))
-              enddo
-              
-              write(*,10) "Jacobian dCmxer,dCmx,dCmxfd @ proc/block", &
-                   myID, nn, "for node", iNode,jNode,kNode
-              do m=1,3
-                 if (dCmxer(nn,iNode,jNode,kNode,m)/=0)          &
-                      write(*,20) (dCmxer(nn,iNode,jNode,kNode,m)), &
-                      (dCmx(nn,iNode,jNode,kNode,m)),   &
-                      (dCmxfd(nn,iNode,jNode,kNode,m))
-              enddo
-              
+              !if(sum(dCLer(nn,iNode,jNode,kNode,:))/=0)then
+              if(sum(dCL(nn,iNode,jNode,kNode,:))/=0)then
+                 write(*,10) "Jacobian dCLer,dCL,dCLfd @ proc/block", &
+                      myID, nn, "for node", iNode,jNode,kNode
+                 do m=1,3
+                    !if (dCLer(nn,iNode,jNode,kNode,m)/=0)          &
+                    !     write(*,20) (dCLer(nn,iNode,jNode,kNode,m)), &
+                    !     (dCL(nn,iNode,jNode,kNode,m)),   &
+                    !     (dCLfd(nn,iNode,jNode,kNode,m))
+                    if (dCL(nn,iNode,jNode,kNode,m)/=0)          &
+                         write(*,20) (dCLer(nn,iNode,jNode,kNode,m)), &
+                         (dCL(nn,iNode,jNode,kNode,m)),   &
+                         (dCLfd(nn,iNode,jNode,kNode,m))
+                 enddo
+              endif
+              if(sum(dCder(nn,iNode,jNode,kNode,:))/=0)then 
+                 write(*,10) "Jacobian dCDer,dCD,dCDfd @ proc/block", &
+                      myID, nn, "for node", iNode,jNode,kNode
+                 do m=1,3
+                    if (dCDer(nn,iNode,jNode,kNode,m)/=0)          &
+                         write(*,20) (dCDer(nn,iNode,jNode,kNode,m)), &
+                         (dCD(nn,iNode,jNode,kNode,m)),   &
+                         (dCDfd(nn,iNode,jNode,kNode,m))
+                 enddo
+              end if
+              if(sum(dCmxer(nn,iNode,jNode,kNode,:))/=0)then 
+                 write(*,10) "Jacobian dCmxer,dCmx,dCmxfd @ proc/block", &
+                      myID, nn, "for node", iNode,jNode,kNode
+                 do m=1,3
+                    if (dCmxer(nn,iNode,jNode,kNode,m)/=0)          &
+                         write(*,20) (dCmxer(nn,iNode,jNode,kNode,m)), &
+                         (dCmx(nn,iNode,jNode,kNode,m)),   &
+                         (dCmxfd(nn,iNode,jNode,kNode,m))
+                 enddo
+              endif
            enddo
         enddo
      enddo
@@ -1294,6 +1677,15 @@ subroutine verifydCfdx(level)
 
       ! Flush the output buffer and synchronize the processors.
 
+      dcldextraerror= dcldextra- dcldextraFD
+      dcddextraerror= dcddextra- dcddextraFD
+      
+      do i=1,3
+         print *,'dcldextra',dcldextraerror(i), dcldextra(i), dcldextraFD(i)
+         print *,'dcddextra',dcddextraerror(i), dcddextra(i), dcddextraFD(i)
+      end do
+
+      
       call f77flush()
       call mpi_barrier(SUmb_comm_world, ierr)
 !

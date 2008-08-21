@@ -284,7 +284,7 @@
 !***************
 !      globalNode =>flowdoms(7,1,1)%globalNode !Obliquewing coarse block 7
 !      globalNode =>flowdoms(8,1,1)%globalNode !Obliquewing coarse block 8
-     ! globalNode =>flowdoms(1,1,1)%globalNode !infinite wing
+      !globalNode =>flowdoms(1,1,1)%globalNode !infinite wing
 !>>>>>>> .r625
 !      idx = globalNode(2,7,13)*3+3 !(location times 3 for xyzdof + 3 for current node
 !      idx = globalNode(10,1,3)*3+3 !infinite wing block 1
@@ -294,8 +294,10 @@
       !idx = globalNode(4,4,4)*3+3 !Coarse bump
       !idx = globalNode(1,4,4)*3+3 !Coarse bump
       !idx = globalNode(3,3,3)*3+3 !Coarse bump
-
-!      print *,'costfunction derivative',idx,functionGradSpatial(costFunction,idx)
+       !idx = globalNode(1,1,1)*3+3 !mdawing
+       !globalNode =>flowdoms(7,1,1)%globalNode 		
+       !idx = globalNode(3,9,3)*3+3 !mdawing
+      !print *,'costfunction derivative',idx,functionGradSpatial(costFunction,idx)
 !****************
 
 

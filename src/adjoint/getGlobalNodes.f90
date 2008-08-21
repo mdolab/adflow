@@ -31,7 +31,7 @@
 !     ******************************************************************
 !
       use ADjointVars ! nNodesGlobal, nNodesLocal, nOffsetLocal
-      use blockpointers
+      use blockpointers !globalnode
       use communication
       implicit none
 !
@@ -58,9 +58,18 @@
       !print *,'in getGlobalNodes'
       call setPointersAdj(blocknum,level,sps)
 
-      !print *,'shapes',blocknum,shape(nodenumbers),shape(globalnode),'i',ie,ib,il,'j',je,jb,jl,'k',ke,kb,kl
-      nodenumbers(:,:,:) = globalNode(:,:,:)
-      
+      !print *,'shapes',blocknum,shape(nodenumbers),shape(globalnode),'i',ie,ib,il,'j',je,jb,jl,'k',ke,kb,kl,shape(x)
+      nodenumbers(:,:,:) = globalNode(1:il,1:jl,1:kl)
+      !stop
+!!$      do i = 0,ie
+!!$         do j = 0,je
+!!$            do k = 0,ke
+!!$               !print *,'xfer',x(i,j,k,2), globalNode(i,j,k),i,j,k
+!!$               x(i,j,k,2)= globalNode(i,j,k)
+!!$            enddo
+!!$         enddo
+!!$      enddo
+
 !!$      do i = 1,idim
 !!$         do j = 1,jdim
 !!$            do k = 1,kdim

@@ -603,7 +603,7 @@ class SUmbInterface(object):
             autofile.write("       Check nondimensionalization: yes\n\n")
             autofile.write("                     New grid file: %s_NewGrid.cgns\n\n"%(grid_file))
             autofile.write("                     Solution file: %s_SolSUmb.cgns\n"%(grid_file))
-            autofile.write("             Surface solution file: %s_SolSUmb_surface.cgns"%(grid_file))
+            autofile.write("             Surface solution file: %s_SolSUmb_surface.cgns\n"%(grid_file))
             
         elif file_type == 'plot3d':
             autofile.write("                         Grid file: %s.mesh \n"%(grid_file))
@@ -2040,6 +2040,7 @@ class SUmbInterface(object):
     
     def getGlobalNodesLocal(self,blocknum,il,jl,kl):
         #get global node ordering from sumb
+        print 'in sumbInterface'
         globalNodes = sumb.getglobalnodes(blocknum,il,jl,kl)
         
         return globalNodes
