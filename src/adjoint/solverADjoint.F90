@@ -188,10 +188,11 @@
 !stop
         !return
 	!verify the coupling derivatives
-	!	call verifyForceCouplingAdj(level)
+	!call verifyForceCouplingAdj(level)
 	!call verifydSdw(level)
+	call verifydSdx(level)
 
-!stop
+stop
 	print *,'Going to call verifydSdx'
 	call verifydSdx(level)
 	print *,'Done VerifydSdx'
@@ -200,7 +201,7 @@
 	call verifydSdw(level)
 	print *,'Done VerifydWdx'
 	stop
-=======
+
 !stop
 
 

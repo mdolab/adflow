@@ -98,7 +98,7 @@ subroutine setupCouplingTotalStruct(level)
 !     ******************************************************************
 !
       !print *,'in verifydSdw...'
-      if( myID==0 ) write(*,*) "Running verifydSdx..."
+      if( myID==0 ) write(*,*) "Running setupCouplingTotalStruct..."
 
       ! Set the grid level of the current MG cycle, the value of the
       ! discretization and the logical correctForK.
@@ -269,7 +269,7 @@ subroutine setupCouplingTotalStruct(level)
                  do i = 0,ib
                     do l = 1,3
                
-                       idxSurf = (m-1)*3+n + mdNsurfNodes(myID,modFamID)
+                       idxSurf = (m-1)*3+n +( mdNsurfNodes(myID,modFamID)*3)
                        idxres   = globalnode(i,j,k)*3+l
                        if (xAdjb(i,j,k,l).ne.0.0)then
                           !print *,'wadjb',wadjb(i,j,k,l),i,j,k,l
@@ -289,8 +289,11 @@ subroutine setupCouplingTotalStruct(level)
      enddo
      !from forceCouplingadj.f90
      ! Update the counter ii.
-     
-     ii = ii + (j2End-j2Beg+2)*(i2End-i2Beg+2)
+     if(BCType(mm) == EulerWall       .or. &
+                BCType(mm) == NSWallAdiabatic .or. &
+                BCType(mm) == NSWallIsothermal) then
+        ii = ii + (j2End-j2Beg+2)*(i2End-i2Beg+2)
+     endif
   enddo bocoLoop
           !===============================================================
         

@@ -33,6 +33,7 @@ subroutine verifydSdx(level)
       use monitor             ! monLoc, MonGlob, nMonSum
       use bcTypes             !imin,imax,jmin,jmax,kmin,kmax
       use mdDataLocal
+      use mdData
       implicit none
 !
 !     Subroutine arguments.
@@ -76,14 +77,14 @@ subroutine verifydSdx(level)
 
       ! > derivative output
 
-      real(kind=realType), dimension(:,:,:,:,:,:), allocatable ::dSdxAD, &
+      real(kind=realType), dimension(:,:,:,:,:,:,:), allocatable ::dSdxAD, &
            dSDxFD,dSdxer
 !      real(kind=realType), dimension(:,:,:,:,:), allocatable :: dCLfd, &
 !           dCDfd,dCmxfd
 !      real(kind=realType), dimension(:,:,:,:,:), allocatable :: dCLer, &
 !           dCDer,dCmxer
 
-      real(kind=realType), parameter :: deltax = 1.e-8_realType
+      real(kind=realType), parameter :: deltax = 1.e-2_realType
 
       real(kind=realType) :: xAdjRef, xref,test
 
@@ -94,13 +95,14 @@ subroutine verifydSdx(level)
 
       logical :: contributeToForce, viscousSubface,secondHalo,righthanded
 
-      integer :: ierr,nmonsum1,nmonsum2,idxmgb,idxres,idxsurf
+      integer :: ierr,nmonsum1,nmonsum2,idxmgb,idxres,idxsurf,idxnode
 
       character(len=2*maxStringLen) :: errorMessage
 
       ! dJ/dx row block
       !Fix this!
       real(kind=realType), dimension(3) :: dJdXlocal
+      integer(kind=intType)::nSurfNodes
 	
 
 !File Parameters
@@ -148,13 +150,16 @@ subroutine verifydSdx(level)
 
       !determine the number of surface nodes for coupling matrix
       call mdCreateNSurfNodesLocal
+      call mdCreateNSurfNodes
       modFamID = max(0, 1_intType)
       nSurfNodesLocal = mdNSurfNodesLocal(modFamID)
+      nSurfNodes=maxval(mdNSurfNodes(:,:))
 
-      allocate(dSdxAD(3,nsurfnodeslocal,0:ib,0:jb,0:kb,3), dSdxfd(3,nSurfNodesLocal,0:ib,0:jb,0:kb,3))
+      !allocate(dSdxAD(ndom,3,nsurfnodeslocal,0:ie,0:je,0:ke,3), dSdxfd(ndom,3,nSurfNodesLocal,0:ie,0:je,0:ke,3))
+      allocate(dSdxAD(ndom,3,nsurfnodeslocal,0:ie,0:je,0:ke,3), dSdxfd(ndom,3,nSurfNodes,0:ie,0:je,0:ke,3))
   
        
-      allocate(dSdxer(3,nSurfNodesLocal,0:ib,0:jb,0:kb,3))
+      allocate(dSdxer(ndom,3,nSurfNodesLocal,0:ie,0:je,0:ke,3))
             
       allocate(forceLoc(3,nSurfNodesLocal), stat=ierr)
       if(ierr /= 0)                             &
@@ -166,12 +171,21 @@ subroutine verifydSdx(level)
            call terminate("verifyForceCoupling", &
            "Memory allocation failure for forceLocb")
 
-      allocate(forceLocp(3,nSurfNodesLocal), stat=ierr)
+!!$      allocate(forceLocp(3,nSurfNodesLocal), stat=ierr)
+!!$      if(ierr /= 0)                             &
+!!$           call terminate("verifyForceCoupling", &
+!!$           "Memory allocation failure for forceLocp")
+!!$
+!!$      allocate(forceLocm(3,nSurfNodesLocal), stat=ierr)
+!!$      if(ierr /= 0)                             &
+!!$           call terminate("verifyForceCoupling", &
+!!$           "Memory allocation failure for forceLocm")
+      allocate(forceLocp(3,nSurfNodes), stat=ierr)
       if(ierr /= 0)                             &
            call terminate("verifyForceCoupling", &
            "Memory allocation failure for forceLocp")
 
-      allocate(forceLocm(3,nSurfNodesLocal), stat=ierr)
+      allocate(forceLocm(3,nSurfNodes), stat=ierr)
       if(ierr /= 0)                             &
            call terminate("verifyForceCoupling", &
            "Memory allocation failure for forceLocm")
@@ -305,14 +319,14 @@ subroutine verifydSdx(level)
                  forcelocb(n,m) = 1
                  
                  xAdjB(:,:,:,:) = zero ! > return dS/dx
-!                 wAdjB(:,:,:,:) = zero ! > return dS/dx
+                 wAdjB(:,:,:,:) = zero ! > return dS/dW
                  !print *,'calling adjoint forces_b'
                  !===========================================================
                  !           
                  !print *,'Initial Parameters Calculated,Computing Lift Partials...'
                  !=========================================================
                  ! Compute the force derivatives
-                 call COMPUTEFORCECOUPLINGADJ_B(xadj, xadjb, wadj, wadjb, padj, &
+           call COMPUTEFORCECOUPLINGADJ_B(xadj, xadjb, wadj, wadjb, padj, &
 &  iibeg, iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, yplusmax&
 &  , refpoint, nsurfnodeslocal, forceloc, forcelocb, nn, level, sps, &
 &  righthanded, secondhalo, alphaadj, alphaadjb, betaadj, betaadjb, &
@@ -322,31 +336,48 @@ subroutine verifydSdx(level)
           
            !print *,'wadjb',wadjb
            !print *,'xadjb',xadjb
-           !stop
-           do k = 0,kb
-              do j = 0,jb
-                 do i = 0,ib
+!!$            do k = 0,ke
+!!$               do j = 0,je
+!!$                  do i = 0,ie
+!!$                     do l = 1,3
+!!$                        if (xAdjb(i,j,k,l).ne.0.0)then
+!!$                           print *,'xadjb',xAdjb(i,j,k,l),i,j,k,l
+!!$                           dSdxAD(nn,n,m,i,j,k,l) = xAdjb(i,j,k,l)
+!!$                           print *,'dSdxAD',dSdxAD(nn,n,m,i,j,k,l),nn
+!!$                        endif
+!!$                     enddo
+!!$                  enddo
+!!$               enddo
+!!$            enddo
+            !stop
+           do k = 0,ke
+              do j = 0,je
+                 do i = 0,ie
                     do l = 1,3
                        idxmgb = globalCell(i,j,k)
                     
                        !test = wadjb(i,j,k,l)
-                       test = sum(wadjb(i,j,k,:))
-                       dJdXlocal(:) = xAdjB(i,j,k,:)
+                       !test = sum(wadjb(i,j,k,:))
+                       !dJdXlocal(:) = xAdjB(i,j,k,:)
                     
                        !print *,'secondaryindicies',i,j,k,ii,jj,kk
                        !if(i>zero .and. j>zero .and. k>zero .and. i<=ie .and. j<=je .and. k<=ke)then
-                       !idxnode = globalNode(i,j,k)*3+l
-                       idxSurf = (i-1)*3+j
-                       idxres   = globalCell(i,j,k)*3+l
-                       if (wAdjb(i,j,k,l).ne.0.0)then
+                       idxnode = globalNode(i,j,k)*3+l
+                       idxSurf = (m-1)*3+n+ (mdNsurfNodes(myID,modFamID)*3)
+                       !print *,'index',idxSurf,idxnode,mdNsurfNodes(myID,modFamID)
+                       !idxres   = globalCell(i,j,k)*3+l
+!!$                       if (k==1) then
+!!$                          print *,'xadjb',xadjb(i,j,k,l),wadjb(i,j,k,l),i,j,k,l
+!!$                       endif
+                       if (xAdjb(i,j,k,l).ne.0.0)then
                           !if (k==1) then
-                          !   print *,'xadjb',xadjb(i,j,k,l),i,j,k,l
+                          !   print *,'xadjb',xadjb(i,j,k,l),wadjb(i,j,k,l),i,j,k,l
                           !endif
-                          call MatSetValues(dSdx, 1, idxSurf-1, 1, idxres-1,   &
+                          call MatSetValues(dSdx, 1, idxSurf-1, 1, idxnode-1,   &
                                xAdjb(i,j,k,l), INSERT_VALUES, PETScIerr)
                           if( PETScIerr/=0 ) &
                                print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdx")
-                          dSdxAD(n,m,i,j,k,l) = xAdjb(i,j,k,l)
+                          dSdxAD(nn,n,m,i,j,k,l) = xAdjb(i,j,k,l)
                           !if (k==1) then
                           !   print *,'dSdxAD',dSdxAD(n,m,i,j,k,l)
                           !end if
@@ -360,13 +391,20 @@ subroutine verifydSdx(level)
            enddo
            
         enddo
+        
      enddo
-     print *,'ii1',ii
-     ! Update the counter ii.
-     
-     ii = ii + (j2End-j2Beg+2)*(i2End-i2Beg+2)
-     print *,'ii',ii
+     if(BCType(mm) == EulerWall       .or. &
+                BCType(mm) == NSWallAdiabatic .or. &
+                BCType(mm) == NSWallIsothermal) then
+        print *,'ii1',ii
+        ! Update the counter ii.
+        
+        ii = ii + (j2End-j2Beg+2)*(i2End-i2Beg+2)
+        print *,'ii',ii
+     endif
   enddo bocoLoop
+  
+
           !===============================================================
         
         print *,' deallocating'
@@ -403,7 +441,7 @@ subroutine verifydSdx(level)
         print *,'finishhed deallocating'
        
       enddo domainLoopAD
-
+      
    enddo spectralLoopAdj
 
 !
@@ -513,7 +551,46 @@ subroutine verifydSdx(level)
 !!$
 !!$      if( PETScRank==0 ) &
 !!$        write(*,20) "Assembling dS/dx matrix time (s) =", timeAdj
-      
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Visualize the assembled matrix.                                *
+!     *                                                                *
+!     ******************************************************************
+!
+      ! MatView - Visualizes a matrix object.
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h" 
+      ! PetscErrorCode PETSCMAT_DLLEXPORT MatView(Mat mat, &
+      !                                              PetscViewer viewer)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   mat    - the matrix
+      !   viewer - visualization context
+      !
+      ! Notes
+      ! The available visualization contexts include
+      !  PETSC_VIEWER_STDOUT_SELF  - standard output (default)
+      !  PETSC_VIEWER_STDOUT_WORLD - synchronized standard output where
+      !                         only the first processor opens the file.
+      !                         All other processors send their data to
+      !                         the first processor to print.
+      !  PETSC_VIEWER_DRAW_WORLD- graphical display of nonzero structure
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatView.html
+      ! or PETSc users manual, pp.57,148
+
+      !if( debug ) then
+        call MatView(dSdx,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+        !call MatView(dSdx,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+        if( PETScIerr/=0 ) &
+          call terminate("setupADjointMatrix", "Error in MatView")
+        pause
+      !endif      
    print *,'AD loop finished'
    !stop
       ! Get new time and compute the elapsed AD time.
@@ -542,17 +619,17 @@ subroutine verifydSdx(level)
       print *,'starting FD loop',sps
       domainForcesLoopFDorig: do nn=1,nDom   
          
-         call setPointers(nn,level,sps)
+         call setPointersadj(nn,level,sps)
 
          !loop over all points
 
-         do i = 0,ib
+         do i = 0,ie
             print *,'i=',i
-            do j = 0,jb
-               do k = 0,kb
+            do j = 0,je
+               do k = 0,ke
                   !print *,'k',k
                   do l = 1,3
-                     xref = w(i,j,k,l)
+                     xref = x(i,j,k,l)
 
                      x(i,j,k,l) = xref+deltax
 
@@ -567,13 +644,17 @@ subroutine verifydSdx(level)
                      !
  
                      call metric(level)
+                     call setPointersadj(nn,level,sps)
                      call computeForcesPressureAdj(w, p)
                      call applyAllBC(secondHalo)
-                     call mdCreateSurfForceListLocal(sps,famID,startInd,endInd)
-
+                     call setPointersadj(nn,level,sps)
+                     call mdCreateSurfForceListLocal(sps,0,startInd,endInd)
+                     call mdCreateSurfForceList(sps,0,startInd,endInd)
+                    
  
-                     forceLocp = mdSurfForcelocal
-                     
+                     !forceLocp = mdSurfForcelocal
+                     forceLocp = mdSurfForce
+                     call setPointersadj(nn,level,sps)
                      
                      
                      !*********************
@@ -591,31 +672,201 @@ subroutine verifydSdx(level)
                      !
   
                      call metric(level)
+                     call setPointersadj(nn,level,sps)
                      call computeForcesPressureAdj(w, p)
                      call applyAllBC(secondHalo)
-                     call mdCreateSurfForceListLocal(sps,famID,startInd,endInd)
-
- 
-                     forceLocm = mdSurfForcelocal
-
-
+                     call setPointersadj(nn,level,sps)
+                     call mdCreateSurfForceListLocal(sps,0,startInd,endInd)
+                     !print *,'startInd,endInd1',startInd,endInd
+                     call mdCreateSurfForceList(sps,0,startInd,endInd)
+                     !print *,'startInd,endInd2',startInd,endInd
+                     !forceLocm = mdSurfForcelocal
+                     forceLocm = mdSurfForce
+                     call setPointersadj(nn,level,sps)
+                     !print *,'forces',mdSurfForce,'local',mdSurfForcelocal
+                     !stop
                      
                      x(i,j,k,l) = xref
                      
                      do n=1,3
-                        do m=1,nSurfNodesLocal
-                           dSdxFD(n,m,i,j,k,l) = (forcelocp(n,m)-forcelocm(n,m))/(two*deltax)
+                        !do m=1,nSurfNodesLocal
+                        do m=1,nSurfNodes
+
+                           dSdxFD(nn,n,m,i,j,k,l) = (forcelocp(n,m)-forcelocm(n,m))/(two*deltax)
+                           !print*,'derivative',dSdxFD(nn,n,m,i,j,k,l),forcelocp(n,m),forcelocm(n,m),forcelocp(n,m)-forcelocm(n,m)
+                           idxnode = globalNode(i,j,k)*3+l
+                           idxSurf = (m-1)*3+n
+                           !idxres   = globalCell(i,j,k)*3+l
+                          
+                           if ( dSdxFD(nn,n,m,i,j,k,l).ne.0.0)then
+                           print *,'index',idxSurf,idxnode,nSurfNodes,i,j,k,n,m,nn,dSdxFD(nn,n,m,i,j,k,l)
+                           
+                              call MatSetValues(dSdxFD2, 1, idxSurf-1, 1, idxnode-1,   &
+                                    dSdxFD(nn,n,m,i,j,k,l), INSERT_VALUES, PETScIerr)
+                              if( PETScIerr/=0 ) &
+                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdx")
+                              
+                             
+                           endif
                      
                         enddo
                      enddo
+                     !stop
                   enddo
                enddo
             enddo
          enddo
       enddo domainForcesLoopFDorig
          print *,'finished fd'
+!stop
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Complete the PETSc matrix assembly process.                    *
+!     *                                                                *
+!     ******************************************************************
+!
+      ! MatAssemblyBegin - Begins assembling the matrix. This routine
+      !  should be called after completing all calls to MatSetValues().
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h" 
+      ! PetscErrorCode PETSCMAT_DLLEXPORT MatAssemblyBegin(Mat mat, &
+      !                                            MatAssemblyType type)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   mat  - the matrix
+      !   type - type of assembly, either MAT_FLUSH_ASSEMBLY or
+      !          MAT_FINAL_ASSEMBLY
+      ! Notes
+      ! MatSetValues() generally caches the values. The matrix is ready
+      !  to use only after MatAssemblyBegin() and MatAssemblyEnd() have
+      !  been called. Use MAT_FLUSH_ASSEMBLY when switching between
+      !  ADD_VALUES and INSERT_VALUES in MatSetValues(); use
+      !  MAT_FINAL_ASSEMBLY for the final assembly before using the
+      !  matrix.
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatAssemblyBegin.html
 
+      print *,'Begin MatAssemblyBegin'
+      call MatAssemblyBegin(dSdxFD2,MAT_FINAL_ASSEMBLY,PETScIerr)
 
+      if( PETScIerr/=0 ) &
+        call terminate("verifydSdx", &
+                       "Error in MatAssemblyBegin X")
+
+      ! MatAssemblyEnd - Completes assembling the matrix. This routine
+      !                  should be called after MatAssemblyBegin().
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h" 
+      ! PetscErrorCode PETSCMAT_DLLEXPORT MatAssemblyEnd(Mat mat,&
+      !                                            MatAssemblyType type)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   mat  - the matrix
+      !   type - type of assembly, either MAT_FLUSH_ASSEMBLY or
+      !          MAT_FINAL_ASSEMBLY
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatAssemblyEnd.html
+
+      call MatAssemblyEnd  (dSdxFD2,MAT_FINAL_ASSEMBLY,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("verifydSdx", &
+                       "Error in MatAssemblyEnd S")
+
+      ! Let PETSc know that the dRda matrix retains the same nonzero 
+      ! pattern, in case the matrix is assembled again, as for a new
+      ! point in the design space.
+
+      ! MatSetOption - Sets a parameter option for a matrix.
+      !   Some options may be specific to certain storage formats.
+      !   Some options determine how values will be inserted (or added).
+      !   Sorted,row-oriented input will generally assemble the fastest.
+      !   The default is row-oriented, nonsorted input.
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h" 
+      ! call MatSetOption(Mat mat,MatOption op,PetscErrorCode ierr)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   mat    - the matrix
+      !   option - the option, one of those listed below (and possibly
+      !     others), e.g., MAT_ROWS_SORTED, MAT_NEW_NONZERO_LOCATION_ERR
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
+      ! or PETSc users manual, pp.52
+
+      call MatSetOption(dSdxFD2,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("verifydSdx", &
+                       "Error in MatSetOption X")
+
+      ! Get new time and compute the elapsed time.
+
+!!$      call cpu_time(time(2))
+!!$      timeAdjLocal = time(2)-time(1)
+!!$
+!!$      ! Determine the maximum time using MPI reduce
+!!$      ! with operation mpi_max.
+!!$
+!!$      call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
+!!$                      mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
+!!$
+!!$      if( PETScRank==0 ) &
+!!$        write(*,20) "Assembling dS/dx matrix time (s) =", timeAdj
+
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Visualize the assembled matrix.                                *
+!     *                                                                *
+!     ******************************************************************
+!
+      ! MatView - Visualizes a matrix object.
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h" 
+      ! PetscErrorCode PETSCMAT_DLLEXPORT MatView(Mat mat, &
+      !                                              PetscViewer viewer)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   mat    - the matrix
+      !   viewer - visualization context
+      !
+      ! Notes
+      ! The available visualization contexts include
+      !  PETSC_VIEWER_STDOUT_SELF  - standard output (default)
+      !  PETSC_VIEWER_STDOUT_WORLD - synchronized standard output where
+      !                         only the first processor opens the file.
+      !                         All other processors send their data to
+      !                         the first processor to print.
+      !  PETSC_VIEWER_DRAW_WORLD- graphical display of nonzero structure
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatView.html
+      ! or PETSc users manual, pp.57,148
+
+      !if( debug ) then
+        call MatView(dSdxFD2,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+        !call MatView(dSdxFD2,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+        if( PETScIerr/=0 ) &
+          call terminate("setupADjointMatrix", "Error in MatView")
+        pause
+      !endif
   
       ! Get new time and compute the elapsed FD time.
 
@@ -646,39 +897,39 @@ subroutine verifydSdx(level)
 !!$        kl = flowDoms(nn,currentLevel,1)%kl
 
         ! Loop over the location of the output cell.
-!!$         do n=1,3
-!!$            do m=1,nSurfNodesLocal
-!!$               do k=0,kb
-!!$                  do j=0,jb
-!!$                     do i=0,ib
-!!$                        
-!!$                        !write(*,10) "Jacobian dSdxer,dSdxAD,dSdxfd @ proc/block", &
-!!$                        !     myID, nn, "for cell", i,j,k, 'for node',m,n
-!!$                        !  error
-!!$                        
-!!$                        do l=1,3
-!!$                 
-!!$                           if ( dSdxfd(n,m,i,j,k,l) < 1e-10 ) then
-!!$                              dSdxer(n,m,i,j,k,l)  = zero
-!!$                           else
-!!$                              dSdxer(n,m,i,j,k,l)  =                   &
-!!$                                   (  dSdxAD(n,m,i,j,k,l)      &
-!!$                                   - dSdxfd(n,m,i,j,k,l) ) 
-!!$                           endif
-!!$                 
-!!$                           ! Output if error
-!!$                        
-!!$                           if (dSdxer(n,m,i,j,k,l)/=0)          &
-!!$                                write(*,20) (dSdxer(n,m,i,j,k,l)), &
-!!$                                (dSdxAD(n,m,i,j,k,l)),   &
-!!$                                (dSdxfd(n,m,i,j,k,l)),i,j,k,l,m,n
-!!$                        enddo
-!!$                     enddo
-!!$                  enddo
-!!$               enddo
-!!$            enddo
-!!$         enddo
-!!$     
+         do n=1,3
+            do m=1,nSurfNodesLocal
+               do k=0,ke
+                  do j=0,je
+                     do i=0,ie
+                        
+                        !write(*,10) "Jacobian dSdxer,dSdxAD,dSdxfd @ proc/block", &
+                        !     myID, nn, "for cell", i,j,k, 'for node',m,n
+                        !  error
+                        
+                        do l=1,3
+                 
+                           if ( dSdxfd(nn,n,m,i,j,k,l) < 1e-10.and. dSdxad(nn,n,m,i,j,k,l) < 1e-10 ) then
+                              dSdxer(nn,n,m,i,j,k,l)  = zero
+                           else
+                              dSdxer(nn,n,m,i,j,k,l)  =                   &
+                                   (  dSdxAD(nn,n,m,i,j,k,l)      &
+                                   - dSdxfd(nn,n,m,i,j,k,l) ) 
+                           endif
+                 
+                           ! Output if error
+                        
+                           if (dSdxer(nn,n,m,i,j,k,l)/=0)          &
+                                write(*,20) (dSdxer(nn,n,m,i,j,k,l)), &
+                                (dSdxAD(nn,n,m,i,j,k,l)),   &
+                                (dSdxfd(nn,n,m,i,j,k,l)),i,j,k,l,m,n,nn
+                        enddo
+                     enddo
+                  enddo
+               enddo
+            enddo
+         enddo
+     
       enddo domainDebugLoop
   
   ! Flush the output buffer and synchronize the processors.
@@ -705,8 +956,8 @@ subroutine verifydSdx(level)
 !
       write(*,*)
       write(*,30) "dSdxer : proc, min/loc, max/loc =", myID,          &
-                 minval(dSdxer(:,:,:,:,:,:)), minloc(dSdxer(:,:,:,:,:,:)), &
-                 maxval(dSdxer(:,:,:,:,:,:)), maxloc(dSdxer(:,:,:,:,:,:))
+                 minval(dSdxer(:,:,:,:,:,:,:)), minloc(dSdxer(:,:,:,:,:,:,:)), &
+                 maxval(dSdxer(:,:,:,:,:,:,:)), maxloc(dSdxer(:,:,:,:,:,:,:))
  
 
       ! Flush the output buffer and synchronize the processors.
@@ -729,7 +980,7 @@ subroutine verifydSdx(level)
       ! Output formats.
 
   10  format(1x,a,1x,i3,1x,i3,1x,a,1x,i3,1x,i3,1x,i3)           
-  20  format(1x,(e18.6),2x,(e18.6),2x,(e18.6),1x,i3,1x,i3,1x,i3,1x,i3,1x,i3,1x,i3)
+  20  format(1x,(e18.6),2x,(e18.6),2x,(e18.6),1x,i3,1x,i3,1x,i3,1x,i3,1x,i3,1x,i3,1x,i3)
   30  format(1x,a,1x,i3,2x,e13.6,1x,5(i2,1x),3x,e13.6,1x,5(i2,1x))
   99  format(a,1x,i6)
       print *,' Finished verifydSdx'

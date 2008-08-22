@@ -33,6 +33,7 @@ subroutine verifydSdw(level)
       use monitor             ! monLoc, MonGlob, nMonSum
       use bcTypes             !imin,imax,jmin,jmax,kmin,kmax
       use mdDataLocal
+      use mdData
       implicit none
 !
 !     Subroutine arguments.
@@ -335,20 +336,20 @@ subroutine verifydSdw(level)
                        !print *,'secondaryindicies',i,j,k,ii,jj,kk
                        !if(i>zero .and. j>zero .and. k>zero .and. i<=ie .and. j<=je .and. k<=ke)then
                        !idxnode = globalNode(i,j,k)*3+l
-                       idxSurf = (i-1)*3+j
+                       idxSurf = (m-1)*3+n+ (mdNsurfNodes(myID,modFamID)*3)
                        idxres   = globalCell(i,j,k)*nw+l
                        if (wAdjb(i,j,k,l).ne.0.0)then
-                          if (m == 3) then
-                             print *,'wadjb',wadjb(i,j,k,l),i,j,k,l
-                          end if
+!!$                          if (m == 3) then
+!!$                             print *,'wadjb',wadjb(i,j,k,l),i,j,k,l
+!!$                          end if
                           call MatSetValues(dSdw, 1, idxSurf-1, 1, idxres-1,   &
                                wAdjb(i,j,k,l), INSERT_VALUES, PETScIerr)
                           if( PETScIerr/=0 ) &
                                print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
                           dSdwAD(n,m,i,j,k,l) = wAdjb(i,j,k,l)
-                          if (m==3) then
-                             print *,'dSdwAD',dSdwAD(n,m,i,j,k,l)
-                          end if
+!!$                          if (m==3) then
+!!$                             print *,'dSdwAD',dSdwAD(n,m,i,j,k,l)
+!!$                          end if
                        endif
 
                        !dSdwAD(n,m,i,j,k,l) = wAdjb(i,j,k,l)
@@ -360,11 +361,11 @@ subroutine verifydSdw(level)
            
         enddo
      enddo
-     print *,'ii1',ii
+     !print *,'ii1',ii
      ! Update the counter ii.
      
      ii = ii + (j2End-j2Beg+2)*(i2End-i2Beg+2)
-     print *,'ii',ii
+     !print *,'ii',ii
   enddo bocoLoop
           !===============================================================
         
@@ -561,8 +562,10 @@ subroutine verifydSdw(level)
                      !
  
                      call metric(level)
+                     call setPointers(nn,level,sps)
                      call computeForcesPressureAdj(w, p)
                      call applyAllBC(secondHalo)
+                     call setPointers(nn,level,sps)
                      call mdCreateSurfForceListLocal(sps,famID,startInd,endInd)
 
  
@@ -585,8 +588,10 @@ subroutine verifydSdw(level)
                      !
   
                      call metric(level)
+                     call setPointers(nn,level,sps)
                      call computeForcesPressureAdj(w, p)
                      call applyAllBC(secondHalo)
+                     call setPointers(nn,level,sps)
                      call mdCreateSurfForceListLocal(sps,famID,startInd,endInd)
 
  
@@ -640,52 +645,52 @@ subroutine verifydSdw(level)
 !!$        jl = flowDoms(nn,currentLevel,1)%jl
 !!$        kl = flowDoms(nn,currentLevel,1)%kl
 
-        ! Loop over the location of the output cell.
-         if (myID == 0) then
-         print *,'shapes:',shape(dSdwfd),shape(dSdwAD),shape(dSdwer)
-         print *,'NsurfNodesLocal',nSurfNodesLocal
-         print *,'kb:',kb
-         print *,'jb:',jb
-         print *,'ib:',ib
-         print *,'nw:',nw
-      end if
+!!$        ! Loop over the location of the output cell.
+!!$         if (myID == 0) then
+!!$         print *,'shapes:',shape(dSdwfd),shape(dSdwAD),shape(dSdwer)
+!!$         print *,'NsurfNodesLocal',nSurfNodesLocal
+!!$         print *,'kb:',kb
+!!$         print *,'jb:',jb
+!!$         print *,'ib:',ib
+!!$         print *,'nw:',nw
+!!$      end if
          
          
-!!$         do n=1,3
-!!$            do m=1,nSurfNodesLocal
-!!$               do k=0,kb
-!!$                  do j=0,jb
-!!$                     do i=0,ib
-!!$                        
-!!$                        !write(*,10) "Jacobian dSdwer,dSdwAD,dSdwfd @ proc/block", &
-!!$                        !     myID, nn, "for cell", i,j,k, 'for node',m,n
-!!$                        !  error
-!!$                       
-!!$                        do l=1,nw
-!!$                         
-!!$                          
-!!$                           if ( dSdwfd(n,m,i,j,k,l) < 1e-10 ) then
-!!$                              dSdwer(n,m,i,j,k,l)  = zero
-!!$                           else
-!!$                              dSdwer(n,m,i,j,k,l)  =                   &
-!!$                                   (  dSdwAD(n,m,i,j,k,l)      &
-!!$                                   - dSdwfd(n,m,i,j,k,l) ) 
-!!$                           endif
-!!$                 
-!!$                           ! Output if error
-!!$                        
-!!$                           if (dSdwer(n,m,i,j,k,l)/=0)          &
-!!$                           write(*,20) (dSdwer(n,m,i,j,k,l)), &
-!!$                                (dSdwAD(n,m,i,j,k,l)),   &
-!!$                                (dSdwfd(n,m,i,j,k,l)),i,j,k,l,m,n
-!!$                           print *, 'nn,n,m,k,j,i,l',nn,n,m,k,j,i,l
-!!$                        enddo
-!!$                     enddo
-!!$                  enddo
-!!$               enddo
-!!$            enddo
-!!$         enddo
-!!$     
+         do n=1,3
+            do m=1,nSurfNodesLocal
+               do k=0,kb
+                  do j=0,jb
+                     do i=0,ib
+                        
+                        !write(*,10) "Jacobian dSdwer,dSdwAD,dSdwfd @ proc/block", &
+                        !     myID, nn, "for cell", i,j,k, 'for node',m,n
+                        !  error
+                       
+                        do l=1,nw
+                         
+                          
+                           if ( dSdwfd(n,m,i,j,k,l) < 1e-10 ) then
+                              dSdwer(n,m,i,j,k,l)  = zero
+                           else
+                              dSdwer(n,m,i,j,k,l)  =                   &
+                                   (  dSdwAD(n,m,i,j,k,l)      &
+                                   - dSdwfd(n,m,i,j,k,l) ) /dSdwfd(n,m,i,j,k,l)
+                           endif
+                 
+                           ! Output if error
+                        
+                           if (dSdwer(n,m,i,j,k,l)/=0)          &
+                           write(*,20) (dSdwer(n,m,i,j,k,l)), &
+                                (dSdwAD(n,m,i,j,k,l)),   &
+                                (dSdwfd(n,m,i,j,k,l)),i,j,k,l,m,n
+                           !print *, 'nn,n,m,k,j,i,l',nn,n,m,k,j,i,l
+                        enddo
+                     enddo
+                  enddo
+               enddo
+            enddo
+         enddo
+     
       enddo domainDebugLoop
   
   ! Flush the output buffer and synchronize the processors.

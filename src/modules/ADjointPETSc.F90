@@ -132,7 +132,7 @@
       !       Size[nNodes*nw,nDesign],where nDesign is the number
       !       of design variables.
 
-      Mat     dRda, dRdsigma, dRdx,dRdxFD, dRdy, dRdz,dSdw,dSdx
+      Mat     dRda, dRdsigma, dRdx,dRdxFD, dRdy, dRdz,dSdw,dSdx,dSdxfd2
 
 !###      ! Variables for the insertion of dRdx
 !###      ! row           Row number
