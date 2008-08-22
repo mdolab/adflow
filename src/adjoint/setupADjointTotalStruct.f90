@@ -82,7 +82,7 @@ subroutine setupADjointTotalStruct(lenadjoint,structAdjoint,costfunction)
       do m=1,nSurfNodesLocal
          do n=1,3
                  
-            idxSurf = (m-1)*3+n + mdNsurfNodes(myID,modFamID)
+            idxSurf = (m-1)*3+n + (mdNsurfNodes(myID,modFamID)*3)
 
             if (structAdjoint(n,m).ne.0.0)then
                call VecSetValues(phic, 1, idxSurf-1,  &

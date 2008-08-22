@@ -1,4 +1,4 @@
-!
+
 !     ******************************************************************
 !     *                                                                *
 !     * File:          createPETScMat.F90                              *
@@ -1314,6 +1314,138 @@
                     "; #rows =", nDimW,                 &
                     "; ownership =", iLow, "to", iHigh-1
       endif
+!**************
+!
+!dsdxfd for debug
+!
+!**************
+
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Create matrix dSdxfd that is used to compute the coupling        *
+!     * with the structures                                            *
+!     *                                                                *
+!     *                                                                *
+!     * Matrix dRdx has size [nDimS,nDimX] and is generally            *
+!     * sparse for the coordinate design variables.                    *
+!     *                                                                *
+!     * The local dimensions are specified so that the spatial         *
+!     * coordinates x (a) are placed in the local processor. This has  *
+!     * to be consistent with the vectors dIdx and dJdx.               *
+!     *                                                                *
+!     ******************************************************************
+!
+      allocate( nnzDiagonal(nDimS), nnzOffDiag(nDimS) )
+
+      nnzDiagonal = nzDiagonalX * 3
+      nnzOffDiag  = nzOffDiag   * 3
+
+      ! Create the matrix dSdxfd.
+
+      call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+                           nDimS, nDimX,                     &
+                           PETSC_DETERMINE, PETSC_DETERMINE, &
+                           nzDiagonalX, nnzDiagonal,         &
+                           nzOffDiag, nnzOffDiag,            &
+                           dSdxfd2, PETScIerr)
+
+      if( PETScIerr/=0 ) then
+        write(errorMessage,99) &
+                     "Could not create matrix dSdxfd of local size", nDimX
+        call terminate("createPETScMat", errorMessage)
+      endif
+
+      deallocate( nnzDiagonal, nnzOffDiag )
+
+      ! S(# rows): Set the local size (PETSc determine the global size)
+      ! x(# columns): Set the local size (PETSc determine the global size)
+      !
+      ! This is done for x sensitivity (volume). Any additional
+      ! design variable can be appended to the root processor later on.
+      ! It has to be consistent with vector dJdx local size...
+
+      ! MatSetFromOptions - Creates a matrix where the type is
+      !   determined from the options database. Generates a parallel
+      !   MPI matrix if the communicator has more than one processor.
+      !   The default matrix type is AIJ, using the routines
+      !   MatCreateSeqAIJ() and MatCreateMPIAIJ() if you do not select
+      !   a type in the options database.
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h"
+      ! call MatSetFromOptions(Mat B, PetscErrorCode ierr)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameter
+      !   A - the matrix
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatSetFromOptions.html
+
+      call MatSetFromOptions(dSdxfd2, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", &
+                       "Error in MatSetFromOptions dSdxfd")
+
+      ! Set column major order for the matrix dSdx.
+
+      call MatSetOption(dSdxfd2, MAT_COLUMN_ORIENTED, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", &
+                       "Error in MatSetOption dSdxfd")
+
+      ! Extract info from the global matrix (only processor 0).
+
+      if( PETScRank==0 .and. debug ) then
+
+        ! Get the global number of rows and columns.
+
+        call MatGetSize(dSdxfd2, matRows, matCols, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", &
+                         "Error in MatGetSize dSdxfd")
+
+        write(*,20) "# MATRIX: dSdxfd global size =", &
+                    matRows, " x ", matCols
+
+        ! Gets the matrix type as a string from the matrix object.
+
+        call MatGetType(dSdxfd2, matTypeStr, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", &
+                         "Error in MatGetType dSdxfd")
+
+        write(*,30) "# MATRIX: dSdxfd type        =", matTypeStr
+
+      endif
+
+      ! Query about the ownership range.
+
+      if( debug ) then
+        call MatGetOwnershipRange(dSdxfd2, iLow, iHigh, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", &
+                         "Error in MatGetOwnershipRange dSdxfD")
+
+        write(*,40) "# MATRIX: dSdxFD Proc", PETScRank,   &
+                    "; #rows =", nDimS,                 &
+                    "; ownership =", iLow, "to", iHigh-1
+      endif
+
+!*************
+!
+! end dsdxfd
+!
+!************
+
+
 !
 !     ******************************************************************
 !     *                                                                *

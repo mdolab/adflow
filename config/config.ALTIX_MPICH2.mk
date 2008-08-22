@@ -153,7 +153,7 @@ CC_GEN_FLAGS   =
 FF90_OPTFLAGS   = -O2 -axW -unroll -ip -fPIC
 CC_OPTFLAGS     = -O -fPIC
 
-#FF90_DEBUGFLAGS = -g -CB -implicitnone -DDEBUG_MODE
+FF90_DEBUGFLAGS = #-g -check all#-CB -implicitnone -DDEBUG_MODE
 #CC_DEBUGFLAGS   = -g -Wall -pedantic -DDEBUG_MODE
 
 FF90_FLAGS = $(FF90_GEN_FLAGS) $(FF90_OPTFLAGS) $(FF90_DEBUGFLAGS)

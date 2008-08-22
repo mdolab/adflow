@@ -269,7 +269,7 @@ subroutine setupCouplingMatrixStruct(level)
                  do i = 0,ib
                     do l = 1,nw
                
-                       idxSurf = (m-1)*3+n + mdNsurfNodes(myID,modFamID)
+                       idxSurf = (m-1)*3+n + (mdNsurfNodes(myID,modFamID)*3)
                        idxres   = globalCell(i,j,k)*nw+l
                        if (wAdjb(i,j,k,l).ne.0.0)then
                           !print *,'wadjb',wadjb(i,j,k,l),i,j,k,l
@@ -289,8 +289,11 @@ subroutine setupCouplingMatrixStruct(level)
      enddo
      !from forceCouplingadj.f90
      ! Update the counter ii.
-     
-     ii = ii + (j2End-j2Beg+2)*(i2End-i2Beg+2)
+     if(BCType(mm) == EulerWall       .or. &
+                BCType(mm) == NSWallAdiabatic .or. &
+                BCType(mm) == NSWallIsothermal) then
+        ii = ii + (j2End-j2Beg+2)*(i2End-i2Beg+2)
+     endif
   enddo bocoLoop
           !===============================================================
         
