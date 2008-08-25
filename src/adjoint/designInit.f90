@@ -79,7 +79,7 @@
            "Memory allocation failure for functionName")
       allocate(functionValue(nCostFunction))
       allocate(functionGrad (nCostFunction,nDesignExtra))
-      allocate(adjoint(nCostFunction,nw * nNodesGlobal))
+      allocate(adjoint(nCostFunction,nw * nCellsGlobal))
       allocate(functionGradSpatial(nCostFunction,nDesignSpatial))
       allocate(functionGradStruct(nCostFunction,nDesignSpatial))
       allocate(functionGradCoupling(nCostFunction,nDesignSpatial))
