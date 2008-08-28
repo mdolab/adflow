@@ -1264,7 +1264,7 @@ class SUmbInterface(object):
             sumb.monitor.timeunsteady = 0.0
 
         #endif
-        print 'calling solver'
+        if self.myid ==0: print 'calling solver'
         self.GetMesh()._UpdateGeometryInfo()
         sumb.solver()
 ## ################################################################
@@ -1813,10 +1813,12 @@ class SUmbInterface(object):
                                }
         
         grad = numpy.zeros((sumb.adjointvars.ndesignspatial),float)
+        grad[:] = sumb.adjointvars.functiongradspatial[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
         #for item in objective:
-        for i in xrange(sumb.adjointvars.ndesignspatial):
-            grad[i] = sumb.adjointvars.functiongradspatial[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
-            
+        
+        #for i in xrange(sumb.adjointvars.ndesignspatial):
+            #grad[i] = sumb.adjointvars.functiongradspatial[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
+           
         #endfor
         #endfor
         
@@ -1884,9 +1886,10 @@ class SUmbInterface(object):
                                }
         
         grad = numpy.zeros((sumb.adjointvars.ndesignextra),float)
+        grad[:] = sumb.adjointvars.functiongrad[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
         #for item in objective:
-        for i in xrange(sumb.adjointvars.ndesignextra):
-            grad[i] = sumb.adjointvars.functiongrad[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
+        #for i in xrange(sumb.adjointvars.ndesignextra):
+            #grad[i] = sumb.adjointvars.functiongrad[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
         #endfor
         #endfor
         
@@ -1955,8 +1958,9 @@ class SUmbInterface(object):
         
         grad = numpy.zeros((sumb.adjointvars.ndesignspatial),float)
         #for item in objective:
-        for i in xrange(sumb.adjointvars.ndesignspatial):
-            grad[i] = sumb.adjointvars.functiongradcoupling[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
+        grad[:] = sumb.adjointvars.functiongradcoupling[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
+        #for i in xrange(sumb.adjointvars.ndesignspatial):
+            #grad[i] = sumb.adjointvars.functiongradcoupling[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
             
         #endfor
         #endfor
@@ -2029,8 +2033,9 @@ class SUmbInterface(object):
         grad = numpy.zeros((sumb.adjointvars.ndesignspatial),float)
         #for item in objective:
         try:
-            for i in xrange(sumb.adjointvars.ndesignspatial):
-                grad[i] = sumb.adjointvars.functiongradexpcoupling[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
+            grad[:] = sumb.adjointvars.functiongradexpcoupling[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
+            #for i in xrange(sumb.adjointvars.ndesignspatial):
+                #grad[i] = sumb.adjointvars.functiongradexpcoupling[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
             #endfor
         except:
             print 'not an aerodynamic cost function'
@@ -2104,16 +2109,15 @@ class SUmbInterface(object):
                                }
 
         sumb.getadjoint(SUmbCostfunctions[possibleObjectives[objective]])
-        nstate = sumb.flowvarrefstate.nw*sumb.adjointvars.nnodesglobal
+        nstate = sumb.flowvarrefstate.nw*sumb.adjointvars.ncellsglobal
         adjoint = numpy.zeros((nstate),float)
         #for item in objective:
-        for i in xrange(nstate):
-            adjoint[i] = sumb.adjointvars.adjoint[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
-#            adjoint[:] = sumb.adjointvars.adjoint[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
-            
+        #This should work
+        adjoint[:] = sumb.adjointvars.adjoint[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
+        #for i in xrange(nstate):
+            # adjoint[i] = sumb.adjointvars.adjoint[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
         #endfor
-        print 'sumbInterface: adjoint'
-        print adjoint
+       
         return adjoint
 
     def getTotalStructDerivatives(self,objective):
@@ -2144,12 +2148,11 @@ class SUmbInterface(object):
         
         grad = numpy.zeros((sumb.adjointvars.ndesignspatial),float)
         #for item in objective:
-        for i in xrange(sumb.adjointvars.ndesignspatial):
-            grad[i] = sumb.adjointvars.functiongradstruct[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
-            
+        grad[:] = sumb.adjointvars.functiongradstruct[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
+        #for i in xrange(sumb.adjointvars.ndesignspatial):
+            #grad[i] = sumb.adjointvars.functiongradstruct[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
         #endfor
         
-
         return grad
     
     def aeroComputeTotalDerivatveStruct(self,objective,structAdjoint={}):
