@@ -40,6 +40,7 @@ import os, sys
 import pdb
 import time
 import copy
+import pickle
 
 # =============================================================================
 # External Python modules
@@ -382,18 +383,17 @@ class SUMB(AeroSolver):
 
 			#endfor
 		#endif
+		timeA = time.time()
 		for i in xrange(len(xyzref[:,0])):
 			for j in xrange(len(xyzref[0,:])):
-				for k in xrange(len(volumeDerivative)):#self.meshDerivatives[i][j][:])):
-					#print 'mesh derivatives',self.meshDerivatives[i][j][k],volumeDerivative[k]
-					self.dIdxyz[i,j]=self.dIdxyz[i,j]+self.meshDerivatives[i][j][k]*\
-					   volumeDerivative[k]
-			        #endfor
-
+				#for k in xrange(len(volumeDerivative)):#self.meshDerivatives[i][j][:])):
+				#print 'mesh derivatives',self.meshDerivatives[i][j][k],volumeDerivative[k]
+				self.dIdxyz[i,j]= numpy.dot(self.meshDerivatives[i][j][:],volumeDerivative[:])
+		        #endfor
 			        
 			#endfor
 		#endfor				
-
+		print 'Numpy dot products take:',time.time()-timeA,' seconds'
 		return self.dIdxyz
 
 	def computeAeroImplicitCoupling(self, objective,surface={},mapping={},meshwarping={}, *args, **kwargs):
@@ -421,14 +421,27 @@ class SUMB(AeroSolver):
 
 		#initialize vector for the surface derivatives
 		self.dJcdxyz = numpy.zeros([len(xyzref[:,0]),len(xyzref[0,:])],'d')
-
+		print 'computeAeroImplicitCoupling'
 		try: self.meshDerivatives
 		except:
 			self.meshDerivatives = []
 		else:
 			print 'meshDerivatives exists'
 		#endif
-
+		if self.meshDerivatives == []:
+			filename = 'meshDerivatives+%04d'%self.myid+'.dat'
+			try: 
+				print 'trying to load mesh file:',filename
+				pkl_file = open(filename, 'r')
+				data = pickle.load(pkl_file)
+				self.meshDerivatives= data['meshDerivatives']
+			except:
+				pass
+			#end
+		#end 
+		#
+	
+	
 		if (self.meshDerivatives == []):
 			#it is necessary to compute the mesh derivatives
 
@@ -436,9 +449,9 @@ class SUMB(AeroSolver):
 			xyz_comp = numpy.zeros([len(xyz[:,0]),len(xyz[0,:])],'D')
 		
 			
-			for i in xrange(len(xyzref[:,0])):
+			for i in xrange(xyzref.shape[0]):
 				if self.myid ==0:
-					print "Coordinate %d of %d...."%(i,len(xyzref[:,0]))
+					print "Coordinate %d of %d...."%(i,xyzref.shape[0])
 				#endif
 
 				#setup an empty list for this row
@@ -476,17 +489,21 @@ class SUMB(AeroSolver):
 				self.meshDerivatives.append(rowDerivatives)
 
 			#endfor
+			filename = 'meshDerivatives+%04d'%self.myid+'.dat'
+			data_save = {'meshDerivatives':self.meshDerivatives}
+			pck_file = open(filename,'w')
+			pickle.dump(data_save, pck_file)
+		#end if 
 		#endif
+		
+		
 		for i in xrange(len(xyzref[:,0])):
 			for j in xrange(len(xyzref[0,:])):
-				for k in xrange(len(couplingDerivative)):#self.meshDerivatives[i][j][:])):
-					#print 'mesh derivatives',self.meshDerivatives[i][j][k],volumeDerivative[k]
-					self.dJcdxyz[i,j]=self.dJcdxyz[i,j]+self.meshDerivatives[i][j][k]*\
-					   couplingDerivative[k]
-			        #endfor
-
-			        
-			#endfor
+				self.dJcdxyz[i,j] = numpy.dot(self.meshDerivatives[i][j][:],couplingDerivative[:])
+				#print 'mesh derivatives',self.meshDerivatives[i][j][k],volumeDerivative[k]
+				#self.dJcdxyz[i,j]=self.dJcdxyz[i,j]+self.meshDerivatives[i][j][k]*\
+				# couplingDerivative[k]
+			#end for
 		#endfor				
 
 		return self.dJcdxyz
@@ -566,17 +583,12 @@ class SUMB(AeroSolver):
 
 			#endfor
 		#endif
+		
 		for i in xrange(len(xyzref[:,0])):
 			for j in xrange(len(xyzref[0,:])):
-				for k in xrange(len(couplingDerivative)):#self.meshDerivatives[i][j][:])):
-					#print 'mesh derivatives',self.meshDerivatives[i][j][k],volumeDerivative[k]
-					self.dIcdxyz[i,j]=self.dIcdxyz[i,j]+self.meshDerivatives[i][j][k]*\
-					   couplingDerivative[k]
-			        #endfor
-
-			        
+				self.dIcdxyz[i,j]=numpy.dot(self.meshDerivatives[i][j][:],couplingDerivative[:])
 			#endfor
-		#endfor				
+    		#endfor				
 
 		return self.dIcdxyz
 
@@ -663,12 +675,7 @@ class SUMB(AeroSolver):
 		#endif
 		for i in xrange(len(xyzref[:,0])):
 			for j in xrange(len(xyzref[0,:])):
-				for k in xrange(len(structDerivative)):#self.meshDerivatives[i][j][:])):
-					#print 'mesh derivatives',self.meshDerivatives[i][j][k],volumeDerivative[k]
-					self.dStdxyz[i,j]=self.dStdxyz[i,j]+self.meshDerivatives[i][j][k]*\
-					      structDerivative[k]
-			        #endfor
-				
+				self.dStdxyz[i,j] = numpy.dot(self.meshDerivatives[i][j][:],structDerivative[:])
 			#endfor
 		#endfor				
 
@@ -768,7 +775,7 @@ class SUMB(AeroSolver):
 
 
 		self.cfdloads2 = cfdloads2
-		print 'shape',mapping.oml_surf_orig.shape
+		if self.myid == 0: 'OML Surface Shape',mapping.oml_surf_orig.shape
 		oml_loads_local = numpy.zeros((3, len(mapping.oml_surf_orig[1])),'d')
 
 		
@@ -821,8 +828,7 @@ class SUMB(AeroSolver):
 		indices = self.Mesh.GetSurfaceIndicesLocal()
 		
 		[_parallel,mpi]=self.sumb.CheckIfParallel()
-		print 'meshwarping',meshwarping
-		
+			
 		if _parallel :
 			# Update the Local blocks based on the perturbed points
 			# on the local processor
