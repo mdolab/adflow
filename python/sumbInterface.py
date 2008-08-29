@@ -292,7 +292,9 @@ class SUmbMesh(object):
         """
         sumb.iteration.groundlevel = 1
         #sumb.mdsetcoor(sps,blocknums,ranges,xyz.real)#only the real part needs to be set in SUmb
+        print 'setting block coords',il,jl,kl,xyz.real.shape
         sumb.setblockcoords(blocknum,il,jl,kl,xyz.real)
+        print 'bloock coords set'
         #sumb.mdsetcoor(sps,blocknums,ranges,xyz)
         self._update_geom_info = True
 
@@ -700,8 +702,8 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Free Stream Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "                             Mach: %3.3e\n"%(aero_problem._flows.mach))
-        autofile.write(  "            Mach for coefficients: %3.3e\n"%(aero_problem._flows.mach))
+        autofile.write(  "                             Mach: %12.12e\n"%(aero_problem._flows.mach))
+        autofile.write(  "            Mach for coefficients: %12.12e\n"%(aero_problem._flows.mach))
         autofile.write(  "                          # Default is Mach\n")
         autofile.write(  "#                         Reynolds: 100000\n")
         autofile.write(  "       Reynolds length (in meter): 1.0\n")
@@ -902,7 +904,7 @@ class SUmbInterface(object):
             autofile.write(  "                     Alpha turbulent DD-ADI: 0.8\n")
             autofile.write(  "                      Beta turbulent DD-ADI: -1  # Same as alpha\n")
         #endif
-        autofile.write(  "           Relative L2 norm for convergence: 1.e-12\n")
+        autofile.write(  "           Relative L2 norm for convergence: 1.e-13\n")
         autofile.write( "\n")
 
         autofile.write(  "-------------------------------------------------------------------------------\n")

@@ -190,17 +190,17 @@
 	!verify the coupling derivatives
 	!call verifyForceCouplingAdj(level)
 	!call verifydSdw(level)
-	call verifydSdx(level)
+	!call verifydSdx(level)
 
-stop
-	print *,'Going to call verifydSdx'
-	call verifydSdx(level)
-	print *,'Done VerifydSdx'
-	stop
-	print *,'Going to call verifydWdx'
-	call verifydSdw(level)
-	print *,'Done VerifydWdx'
-	stop
+!stop
+	!print *,'Going to call verifydSdx'
+	!call verifydSdx(level)
+	!print *,'Done VerifydSdx'
+	!stop
+	!print *,'Going to call verifydWdx'
+	!call verifydSdw(level)
+	!print *,'Done VerifydWdx'
+	!stop
 
 !stop
 
