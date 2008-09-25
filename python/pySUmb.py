@@ -163,7 +163,7 @@ class SUMB(AeroSolver):
 		#endif
 
 		indices = self.Mesh.GetSurfaceIndicesLocal()
-                #print 'surface indices',indices.shape,MPI.rank
+                #print 'surface indices',indices.shape,indices
 
 		## # Translate new coordinates into perturbations
 ## 		if self.xyz_cfd_orig.shape[1]!=0:

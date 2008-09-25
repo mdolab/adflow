@@ -292,9 +292,9 @@ class SUmbMesh(object):
         """
         sumb.iteration.groundlevel = 1
         #sumb.mdsetcoor(sps,blocknums,ranges,xyz.real)#only the real part needs to be set in SUmb
-        print 'setting block coords',il,jl,kl,xyz.real.shape
+        #print 'setting block coords',il,jl,kl,xyz.real.shape
         sumb.setblockcoords(blocknum,il,jl,kl,xyz.real)
-        print 'bloock coords set'
+        #print 'bloock coords set'
         #sumb.mdsetcoor(sps,blocknums,ranges,xyz)
         self._update_geom_info = True
 

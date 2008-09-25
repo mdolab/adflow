@@ -119,18 +119,18 @@
 !
          integer(kind=inttype) :: i, j, k, count,n
 !
-         print *,'coords',blocknum,imax,jmax,kmax
+         !print *,'coords',blocknum,imax,jmax,kmax
          call setPointers(blocknum,1,1) !(Blocknumber,MG level,Sectral Solution)
-         print *,'fortran compare',xyz(1,1,1,1)
+         !print *,'fortran compare',xyz(1,1,1,1)
          do K=1,kmax
             do J=1,jmax
                do I=1,imax
                   do N = 1,3
-                     print *,'ijk',i,j,k,n
+                     !print *,'ijk',i,j,k,n
                      !print *,'xyz',XYZ(i,j,k,n)
                      !print *,'x',X(i,j,k,n)
                      X(i,j,k,n) = xyz(n,I,J,K)
-                     print *,'xyz',XYZ(i,j,k,n)!,globalnode(i,j,k),i,j,k,n
+                     !print *,'xyz',XYZ(i,j,k,n)!,globalnode(i,j,k),i,j,k,n
                   enddo
                enddo
             enddo
