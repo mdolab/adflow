@@ -86,6 +86,10 @@
       integer(kind=intType) :: sps, nTime, max_nTime, nHalo, nn, discr
       real(kind=realType), allocatable, dimension(:,:,:,:) :: dRdwAdj,dRdwFD1,dRdwFD2,dRdwErr
 
+      REAL(KIND=REALTYPE), DIMENSION(3) :: rotcenteradj
+      REAL(KIND=REALTYPE), DIMENSION(3):: rotrateadj
+      REAL(KIND=REALTYPE) :: rotrateadjb(3)
+
       integer :: ierr
       logical :: fineGrid, correctForK, exchangeTurb,secondHalo
 
@@ -154,6 +158,7 @@
       enddo
       idx = maxval(maxglobalcell(:))
       print *,'allocating',idx,nw*(idx+1),nw*(idx+1),ndom,max_nTime
+      
       allocate(dRdwErr(nw*(idx+1),nw*(idx+1),ndom,max_nTime), &
                dRdwAdj(nw*(idx+1),nw*(idx+1),ndom,max_nTime), &
                dRdwFD1(nw*(idx+1),nw*(idx+1),ndom,max_nTime), &
@@ -265,11 +270,12 @@
  !                    print *,'indices',icell,jcell,kcell
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
-                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,&
-                          MachAdj,MachCoefAdj,iCell, jCell, kCell,prefAdj,&
+                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+                          machCoefAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,&
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+
 !                     print *,'Stencil Copied'
 !                     print *,'wadj',wadj
                      mLoop: do m = 1, nw           ! Loop over output cell residuals (R)
@@ -301,12 +307,9 @@
                              &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
                              &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
                              &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-                             &  murefadj, timerefadj, pinfcorradj,liftIndex)
-                        !COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                        !     &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                        !     &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
-                        !     &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-                        !     &  murefadj, timerefadj, pinfcorradj)
+                             &  rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj, &
+                             &  pinfcorradj, liftindex)
+
                        ! call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
                        !      dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
                        !      correctfork, secondhalo)
@@ -602,11 +605,16 @@
                         ! Copy the state in the stencil
                         ! actually no need to call again, but ...
 !                           call copyADjointStencil(wAdj,xAdj, iCell, jCell, kCell)
-                           call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,&
-                          MachAdj,MachCoefAdj,iCell, jCell, kCell,prefAdj,&
-                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj,liftindex)
+                           call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+                                machCoefAdj,iCell, jCell, kCell,prefAdj,&
+                                rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                                rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                                murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+!                           copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,&
+!                                MachAdj,MachCoefAdj,iCell, jCell, kCell,prefAdj,&
+!                                rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+!                                rhoinfAdj, pinfAdj,&
+!                                murefAdj, timerefAdj,pInfCorrAdj,liftindex)
 !                           print *,'stencil copied'
                            ! Loop over the inputs (w) 
                            !print *,'secondhalo',secondhalo
@@ -622,25 +630,22 @@
                                        if (ii==0 .or. jj==0 .or. kk==0) then
                                           wAdjRef = wAdj(ii,jj,kk,n)
                                           wAdj(ii,jj,kk,n) = wAdjRef + deltaw
-                                          call computeRAdjoint(wAdj,xAdj,dwAdjP,alphaAdj,&
-                                               betaAdj,MachAdj, MachCoefAdj,&
-                                               iCell, jCell,  kCell, &
+                                          call computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
+                                               MachCoefAdj,iCell, jCell,  kCell, &
                                                nn,sps, correctForK,secondHalo,prefAdj,&
                                                rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                                               rhoinfAdj, pinfAdj,&
+                                               rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                                                murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-                                          !call computeRAdjoint(wAdj,xAdj,dwAdjP,   &
-                                          !     iCell, jCell,  kCell, &
-                                          !     nn,sps, correctForK,secondHalo)
+
                                           
                                           wAdj(ii,jj,kk,n) = wAdjRef - deltaw
-                                          call computeRAdjoint(wAdj,xAdj,dwAdjM,alphaAdj,&
-                                               betaAdj,MachAdj, MachCoefAdj,&
-                                               iCell, jCell,  kCell, &
+                                          call computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
+                                               MachCoefAdj,iCell, jCell,  kCell, &
                                                nn,sps, correctForK,secondHalo,prefAdj,&
                                                rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                                               rhoinfAdj, pinfAdj,&
+                                               rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                                                murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+
                                           !call computeRAdjoint(wAdj,xAdj,dwAdjM,   &
                                           !     iCell, jCell,  kCell, &
                                           !     nn,sps, correctForK,secondHalo)

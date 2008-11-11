@@ -9,9 +9,9 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine applyAllBCAdj(wInfAdj,pInfCorrAdj,wAdj, pAdj, &
+       subroutine applyAllBCAdj(wInfAdj,pInfCorrAdj,wAdj, pAdj,sAdj, &
                               siAdj, sjAdj, skAdj, volAdj, normAdj, &
-                              iCell, jCell, kCell,secondHalo)
+                              rFaceAdj,iCell, jCell, kCell,secondHalo)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -45,6 +45,7 @@
                                                    intent(inout) :: wAdj
        real(kind=realType), dimension(-2:2,-2:2,-2:2),    &
                                                    intent(inout) :: pAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,3),intent(in) :: sAdj
 !       real(kind=realType), dimension(-2:2,-2:2,-2:2,3), &
 !                                                   intent(in) :: siAdj, sjAdj, skAdj
        real(kind=realType), dimension(-3:2,-3:2,-3:2,3), &
@@ -52,6 +53,7 @@
        !real(kind=realType), dimension(0:0,0:0,0:0), intent(in) :: volAdj
        real(kind=realType), intent(in) :: volAdj,pInfCorrAdj
        real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(in) :: normAdj
+       real(kind=realType), dimension(nBocos,-2:2,-2:2), intent(in) ::rFaceAdj
        real(kind=realType), dimension(nw),intent(in)::wInfAdj
 
 !
@@ -99,7 +101,7 @@
 !!$           ! Apply all the boundary conditions. The order is important.
 
            ! The symmetry boundary conditions.
-       
+       !print *,'bcSymm'
 !*************************
        call bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
 !**************************
@@ -121,9 +123,9 @@
        select case (precond)
           
        case (noPrecond)
-
+          !print *,'bcFarfield'
           call bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
-               siAdj, sjAdj, skAdj, normAdj,iCell,jCell,kCell)
+               siAdj, sjAdj, skAdj, normAdj,rFaceAdj,iCell,jCell,kCell)
 
        case (Turkel)
           call terminate("applyAllBC", "Farfield boundary conditions for Turkel preconditioner not implemented")
@@ -163,9 +165,9 @@
 !!$       call bcExtrap(secondHalo, correctForK)
 !!$       
        ! Inviscid wall boundary conditions.
- 
-       call bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
-            siAdj, sjAdj, skAdj, normAdj,iCell,jCell,kCell)
+       !print *,'bceulerwall'
+       call bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
+            siAdj, sjAdj, skAdj, normAdj,rFaceAdj,iCell,jCell,kCell)
        
 !!$       ! Domain-interface boundary conditions,
 !!$       ! when coupled with other solvers.

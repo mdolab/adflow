@@ -33,6 +33,20 @@ Procedure to run the Automatic Differentiation software and obtain the AD routin
 5) manually correct the files to remove compilation errors:
    5.1) cd forcesOutput
 emacs eintarrayforcesadj_b.f90     >remove "gammaconstantb = 0.0" from the end
+emacs gridvelocitiesfinelevelforcesadj_b.f90 >remove   
+coscoeffourzrotb(:) = 0.0
+  sincoeffourxrotb(:) = 0.0
+  sincoeffouryrotb(:) = 0.0
+  sincoeffourzrotb(:) = 0.0
+  omegafourxrotb = 0.0
+  coefpolxrotb(:) = 0.0
+  omegafouryrotb = 0.0
+  coefpolyrotb(:) = 0.0
+  omegafourzrotb = 0.0
+  coefpolzrotb(:) = 0.0
+  coscoeffourxrotb(:) = 0.0
+  coscoeffouryrotb(:) = 0.0
+from the end
 
    5.2) cd residualOutput
 
@@ -41,14 +55,27 @@ emacs computepressureadj_b.f90        >remove "gammaconstantb = 0.0" from the en
 emacs eintarray_b.f90               > remove "gammaconstantb = 0.0 " from the end
 
 emacs inviscidupwindfluxadj_b.f90        >remove "gammaconstantb = 0.0" from the end
-emacs residualadj_b.f90        > remove "  cdisrkb(:) = 0.0
+emacs residualadj_b.f90        > remove "  cdisrkb(:) = 0.0 fixed
                                           kappacoefb = 0.0" from the end
 
-emacs riemannfluxadj_b.f90        > remove "rfilb = 0.0" from end.
+emacs riemannfluxadj_b.f90        > remove "rfilb = 0.0" from end. fixed
 
 emacs referencestateadj_b.f90     > remove "    gammaconstantb = 0.0
 					    rgasdimb = 0.0
 					    tempfreestreamb = 0.0" from end
+emacs gridvelocitiesfineleveladj_b.f90 >remove   coscoeffourzrotb(:) = 0.0
+  sincoeffourxrotb(:) = 0.0
+  sincoeffouryrotb(:) = 0.0
+  sincoeffourzrotb(:) = 0.0
+  omegafourxrotb = 0.0
+  coefpolxrotb(:) = 0.0
+  omegafouryrotb = 0.0
+  coefpolyrotb(:) = 0.0
+  omegafourzrotb = 0.0
+  coefpolzrotb(:) = 0.0
+  coscoeffourxrotb(:) = 0.0
+  coscoeffouryrotb(:) = 0.0
+from end
 
    5.3) cd couplingOutput
 	emacs eintarrayforcesadj_b.f90     >remove "gammaconstantb = 0.0" from the end

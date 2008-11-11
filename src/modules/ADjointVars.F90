@@ -91,6 +91,9 @@
       integer(kind=intType), parameter :: nDesignAOA     = 1_intType
       integer(kind=intType), parameter :: nDesignSSA     = 2_intType
       integer(kind=intType), parameter :: nDesignMach     = 3_intType
+      integer(kind=intType), parameter :: nDesignRotX     = 4_intType
+      integer(kind=intType), parameter :: nDesignRotY     = 5_intType	
+      integer(kind=intType), parameter :: nDesignRotZ     = 6_intType
       integer(kind=intType)            :: nDesignExtra
       integer(kind=intType)	       :: nDesignSpatial 
       integer(kind=intType)            :: nDesign

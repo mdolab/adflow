@@ -55,6 +55,7 @@
       REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
       REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
+      real(kind=realType), dimension(3) ::rotRateAdj,rotCenterAdj
 
       real(kind=realType), dimension(4) :: time
       real(kind=realType)               :: timeAdj, timeOri
@@ -219,20 +220,28 @@
                      call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,&
                           MachAdj,MachCoefAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,&
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+                     !print *,'rotrateadj,rotcenteradj',rotRateAdj,rotCenterAdj
                      !(wAdj, xAdj, iCell, jCell, kCell)
                      
                      ! Compute the total residual.
                      ! This includes inviscid and viscous fluxes, artificial
                      ! dissipation, and boundary conditions.                   
-                     !print *,'Calling compute ADjoint'
+                     !print *,'Calling compute ADjoint',wadj(:,:,:,irho)!,wAdj,xAdj,dwAdj,alphaAdj,&
+
+!                          betaAdj,MachAdj, MachCoefAdj,&
+!                          iCell, jCell,  kCell, &
+!                          nn,sps, correctForK,secondHalo,prefAdj,&
+!                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+!                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+!                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex
                      call computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,&
                           betaAdj,MachAdj, MachCoefAdj,&
                           iCell, jCell,  kCell, &
                           nn,sps, correctForK,secondHalo,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,&
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
                      
 !!$                     call computeRAdjoint(wAdj,        &
@@ -251,12 +260,12 @@
 !!$                            sum(dwAdj(:)), sum(dw(iCell,jCell,kCell,:)), &
 !!$                            differ
                      
-                     !if( differ > 1e-14 ) &
+                     if( differ > 1e-14 ) &
 !                     if( abs(differ) > 1e-14 ) &
-                     if( abs(1) > 1e-14 ) &
+!                     if( abs(1) > 1e-14 ) &
                           write(*,10) myID, nn, iCell, jCell, kCell,               &
                           sum(dwAdj(:)), sum(dw(iCell,jCell,kCell,:)), &
-                          differ,(dwAdj(1)), (dw(iCell,jCell,kCell,1))
+                          differ,(dwAdj(2)), (dw(iCell,jCell,kCell,2)),(dwAdj(2))-(dw(iCell,jCell,kCell,2))
 
                      ! Store difference to output to volume solution file.
                      ! (resrho, resmom, resrhoe) have to be added to the volume
@@ -320,7 +329,7 @@
 
       ! Output formats.
 
-  10  format(1x,i3,2x,i3,2x,i3,1x,i3,1x,i3,2x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3)
+  10  format(1x,i3,2x,i3,2x,i3,1x,i3,1x,i3,2x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3)
   99  format(2a)
 
       end subroutine verifyRAdj

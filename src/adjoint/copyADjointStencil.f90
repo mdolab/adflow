@@ -12,7 +12,7 @@
       subroutine copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
            machCoefAdj,iCell, jCell, kCell,prefAdj,&
            rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,&
+           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
            murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
 !
 !     ******************************************************************
@@ -30,8 +30,9 @@
 !
       use blockPointers   ! w, il, jl, kl
 !      use indices         ! nw
-      use flowVarRefState
+      use flowVarRefState  !timeref,nw
       use inputPhysics
+      use cgnsgrid    !cgnsdoms
       implicit none
 
 !
@@ -52,11 +53,13 @@
       REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
       integer(kind=intType)::liftIndex
 
+      real(kind=realType), dimension(3),intent(out) ::rotRateAdj,rotCenterAdj
+
 
 !
 !     Local variables.
 !
-      integer(kind=intType) :: ii, jj, kk, i1, j1, k1, i2, j2, k2, l
+      integer(kind=intType) :: ii, jj, kk, i1, j1, k1, i2, j2, k2, l,j
       integer(kind=intType) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
 
 !
@@ -146,5 +149,16 @@
       timerefAdj = timeref
       pInfCorrAdj = pInfCorr
 
+      
+      ! Store the rotation center and determine the
+      ! nonDimensional rotation rate of this block. As the
+      ! reference length is 1 timeRef == 1/uRef and at the end
+      ! the nonDimensional velocity is computed.
+
+      j = nbkGlobal
+      
+      rotCenterAdj = cgnsDoms(j)%rotCenter
+      rotRateAdj   = timeRef*cgnsDoms(j)%rotRate
+!      rotRateAdj   = cgnsDoms(j)%rotRate
 
     end subroutine copyADjointStencil

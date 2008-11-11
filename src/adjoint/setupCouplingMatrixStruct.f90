@@ -98,7 +98,7 @@ subroutine setupCouplingMatrixStruct(level)
 !     ******************************************************************
 !
       !print *,'in verifydSdw...'
-      if( myID==0 ) write(*,*) "Running verifydSdx..."
+      if( myID==0 ) write(*,*) "Running setupCouplingMatrix_Struct..."
 
       ! Set the grid level of the current MG cycle, the value of the
       ! discretization and the logical correctForK.

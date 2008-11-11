@@ -77,6 +77,8 @@
       REAL(KIND=REALTYPE) :: murefadj, timerefadj
       REAL(KIND=REALTYPE) :: alphaadj, betaadj
       REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
+      real(kind=realType), dimension(3) ::rotRateAdj,rotCenterAdj,rotrateadjb
+
 
       logical :: secondHalo,exchangeTurb,correctfork,finegrid
       integer(kind=intType):: discr
@@ -191,10 +193,8 @@
                      call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
                           machCoefAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-!copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
-
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)         
 
                      mLoop: do m = 1, nw       
                         ! Loop over output cell residuals (R)
@@ -207,29 +207,33 @@
                         alphaAdjb = 0.
                         betaAdjb = 0.
                         MachAdjb = 0.
+		        rotrateadjb(:)=0.
 
                         ! Call reverse mode of residual computation
-                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
-                             dwadj, dwadjb, alphaadj, alphaadjb, betaadj,&
-                             betaadjb, machadj, machadjb, machcoefadj,&
-                             icell, jcell, kcell, nn, sps, correctfork,&
-                             secondhalo, prefadj, rhorefadj, pinfdimadj,&
-                             rhoinfdimadj, rhoinfadj, pinfadj, &
-                             murefadj, timerefadj, pinfcorradj,liftIndex)
+                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
+                             &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
+                             &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
+                             &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+                             &  rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj, &
+                             &  pinfcorradj, liftindex)
 
                         dRdaLocal(m,nDesignAOA) =alphaAdjb
                         dRdaLocal(m,nDesignSSA) =betaAdjb
                         dRdaLocal(m,nDesignMach) =machAdjb
+			dRdaLocal(m,nDesignRotX) =rotrateadjb(1)
+			dRdaLocal(m,nDesignRotY) =rotrateadjb(2)
+			dRdaLocal(m,nDesignRotZ) =rotrateadjb(3)
                         
                      enddo mLoop
 
-                                   ! Transfer the block Jacobians to the global [dR/da]
+              ! Transfer the block Jacobians to the global [dR/da]
               ! matrix by setting the corresponding block entries of
               ! the PETSc matrix dRda.
               !
-              ! Global matrix column idxng function of node indices.
+              ! Global matrix column idxmg function of node indices.
               ! (note: index displaced by previous design variables)
 
+   	      !Angle of Attack
               do m=1,nw
                 idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
               enddo
@@ -274,6 +278,51 @@
                 call terminate("setupGradientMatrixExtra", errorMessage)
               endif
 
+	      !X Rotation
+              do m=1,nw
+                idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+              enddo
+              idxng = nDesignRotX - 1
+
+              call MatSetValues(dRda, nw, idxmg, 1, idxng, &
+                                dRdaLocal(:,nDesignRotX), INSERT_VALUES, PETScIerr)
+
+              if( PETScIerr/=0 ) then
+                write(errorMessage,99) &
+                      "Error in MatSetValues for global column", idxng
+                call terminate("setupGradientMatrixExtra", errorMessage)
+              endif
+
+              !Y Rotation
+              do m=1,nw
+                idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+              enddo
+              idxng = nDesignRotY - 1
+
+              call MatSetValues(dRda, nw, idxmg, 1, idxng, &
+                                dRdaLocal(:,nDesignRotY), INSERT_VALUES, PETScIerr)
+
+              if( PETScIerr/=0 ) then
+                write(errorMessage,99) &
+                      "Error in MatSetValues for global column", idxng
+                call terminate("setupGradientMatrixExtra", errorMessage)
+              endif
+
+	      !Z Rotation
+              do m=1,nw
+                idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+              enddo
+              idxng = nDesignRotZ - 1
+
+              call MatSetValues(dRda, nw, idxmg, 1, idxng, &
+                                dRdaLocal(:,nDesignRotZ), INSERT_VALUES, PETScIerr)
+
+              if( PETScIerr/=0 ) then
+                write(errorMessage,99) &
+                      "Error in MatSetValues for global column", idxng
+                call terminate("setupGradientMatrixExtra", errorMessage)
+              endif
+
            enddo
         enddo
      enddo
@@ -300,7 +349,7 @@ enddo domainLoop
       ! MatAssemblyEnd - Completes assembling the matrix. This routine
       !                  should be called after MatAssemblyBegin().
 
-      call MatAssemblyEnd  (dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
+      call MatAssemblyEnd(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("setupGradientMatrixExtra", &

@@ -48,20 +48,25 @@ FF90_OBJECTS = adjustInflowAngleAdj.o   \
 	       computeGammaAdj.o        \
 	       computePressureAdj.o     \
 	       computeRAdj.o            \
+               derivativeRigidRotAngleAdj.o\
+	       derivativeRotMatrixRigidAdj.o\
 	       etotArrayAdj.o           \
 	       extractBCStatesAdj.o     \
 	       extrapolate2ndHaloAdj.o  \
 	       getDirAngle.o            \
 	       getDirVector.o           \
+	       gridVelocitiesFineLevelAdj.o \
 	       initresAdj.o             \
 	       inviscidCentralFluxAdj.o \
 	       inviscidUpwindFluxAdj.o  \
 	       leftRightStateAdj.o      \
 	       metricAdj.o              \
+	       normalVelocitiesAdj.o    \
 	       referenceStateAdj.o      \
 	       replaceBCStatesAdj.o     \
 	       residualAdj.o            \
 	       riemannFluxAdj.o         \
+	       rigidRotAngleAdj.o       \
 	       setFlowInfinityStateAdj.o\
 	       vectorRotation.o
 

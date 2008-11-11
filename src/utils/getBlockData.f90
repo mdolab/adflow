@@ -409,3 +409,47 @@
 !!$
 !!$         return
 !!$       end subroutine getGlobalNodeNumbering
+
+
+       subroutine setSingleState(blocknum,i,j,k,l,state)
+         
+         use blockpointers
+         implicit none
+         
+         !Subroutine Variables
+         integer(kind=intType),intent(in)::blocknum,i,j,k,l
+
+         real(kind=realType),intent(in)::state
+         
+         !Local Variables
+         
+
+         !begin Execution
+
+         call setPointersAdj(blocknum,1,1)
+
+         w(i,j,k,l)=state
+
+       end subroutine setSingleState
+
+
+       subroutine getSingleState(blocknum,i,j,k,l,state)
+         
+         use blockpointers
+         implicit none
+         
+         !Subroutine Variables
+         integer(kind=intType),intent(in)::blocknum,i,j,k,l
+
+         real(kind=realType),intent(out)::state
+         
+         !Local Variables
+         
+
+         !begin Execution
+
+         call setPointersAdj(blocknum,1,1)
+
+         state= w(i,j,k,l)
+         
+       end subroutine getSingleState

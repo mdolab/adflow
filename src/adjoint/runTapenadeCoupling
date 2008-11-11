@@ -2,7 +2,7 @@
 # Run the makefile that clears Tapenade output directory #
 # ------------------------------------------------------ #
 
-make -f MakefileTapenadeCoupling clean
+#make -f MakefileTapenadeCoupling clean
 
 # ------------------------------------------------------ #
 #         Run the makefile that calls Tapenade           #

@@ -61,6 +61,9 @@
       REAL(KIND=REALTYPE) :: murefadj, timerefadj
       REAL(KIND=REALTYPE) :: alphaadj, betaadj
       REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
+      REAL(KIND=REALTYPE), DIMENSION(3) :: rotcenteradj
+      REAL(KIND=REALTYPE), DIMENSION(3) :: rotrateadj
+      REAL(KIND=REALTYPE) :: rotrateadjb(3)
 
       integer(kind=intType), dimension(0:nProc-1) :: offsetRecv
 
@@ -195,12 +198,11 @@
               do iCell = 2, il
                  ! Copy the state w to the wAdj array in the stencil
                  call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
-                          machCoefAdj,iCell, jCell, kCell,prefAdj,&
-                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-		!call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)
-		!print *,'wAdj',wadj
+                      machCoefAdj,iCell, jCell, kCell,prefAdj,&
+                      rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                      rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                      murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+
 
 	        Aad(:,:)  = zero
                 Bad(:,:)  = zero
@@ -226,6 +228,7 @@
 		    alphaadjb = 0.
 	            betaadjb = 0.
 		    machadjb = 0.
+		    rotrateadjb(:)=0.
 !                    print *,'dwadjb',dwadjb,'wadjb',wadjb(0,0,0,:)
   !                 print *,'calling reverse mode'
 !                   print *,'secondhalo',secondhalo
@@ -238,17 +241,12 @@
 
                     ! Call reverse mode of residual computation
                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-&  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &	
-&  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
-&  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-&  murefadj, timerefadj, pinfcorradj, liftindex)
-!(wadj, wadjb, xadj, xadjb, dwadj,&
-!			  &  dwadjb, alphaadj, alphaadjb, betaadj, betaadjb,&
-!	                  &  machadj, machadjb, machcoefadj, icell, jcell,&
-!                          &  kcell, nn, sps, correctfork, secondhalo, prefadj,&
-!                          &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj,&
-!                          &  pinfadj, murefadj, timerefadj, pinfcorradj,&
-!			  &liftIndex)
+                         &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
+                         &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
+                         &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+                         &  rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj, &
+                         &  pinfcorradj, liftindex)
+
 
                     ! Store the block Jacobians (by rows).
 

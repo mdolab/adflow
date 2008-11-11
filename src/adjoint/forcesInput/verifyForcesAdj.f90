@@ -51,6 +51,8 @@
       real(kind=realType), dimension(:,:,:), allocatable :: pAdj
 !      real(kind=realType), dimension(:,:,:,:), allocatable :: siAdj, sjAdj, skAdj
 
+      real(kind=realType), dimension(3) ::rotRateAdj,rotCenterAdj
+      
       integer(kind=intType) :: i2Beg, i2End, j2Beg, j2End
       integer(kind=intType) :: iiBeg, iiEnd, jjBeg, jjEnd
 
@@ -162,7 +164,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !     *                                                                *
 !     ******************************************************************
 !
-      !print *,' Calling original routines',level
+!      print *,' Calling original routines',level
       call metric(level) 
       spectralLoop: do sps=1,nTimeIntervalsSpectral
 
@@ -241,7 +243,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !     * Determine the reference point for the moment computation in    *
 !     * meters.                                                        *
 !     ******************************************************************
- !     print *,' starting Tapenade routines'
+     ! print *,' starting Tapenade routines'
       refPoint(1) = LRef*pointRef(1)
       refPoint(2) = LRef*pointRef(2)
       refPoint(3) = LRef*pointRef(3)
@@ -296,8 +298,12 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
             ! Compute the face normals on the subfaces
             call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
            MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps,&
-           liftIndex)
+           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
+           pInfCorrAdj,nn,level,sps,liftIndex)
+            !copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
+           !MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+           !rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps,&
+           !liftIndex)
             !call copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
 
             bocoLoop: do mm=1,nBocos
@@ -334,11 +340,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !                       call terminate("Memory allocation failure for skAdj.")
                   
 
-!                  call computeForcesAdj(xAdj, &
-!                       iiBeg,iiEnd,jjBeg,jjEnd,mm,cFxAdj,cFyAdj,cFzAdj, &
-!                       cMxAdj,cMyAdj,cMzAdj,yplusMax,refPoint,CLAdj,CDAdj,  &
-!                       cFpAdj,cMpAdj,cFvAdj,cMvAdj,nn,level,sps, &
-!                       cFpAdjOut,cMpAdjOut)
+
                   !print *,'calling computeforces'
 
                   call computeForcesAdj(xAdj,wAdj,pAdj, &
@@ -349,14 +351,18 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
                        alphaAdj,betaAdj,machAdj,machcoefAdj,prefAdj,&
                        rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                        rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,&
-                       liftIndex)
+                       rotCenterAdj, rotRateAdj,liftIndex)
+!!$                  computeForcesAdj(xAdj,wAdj,pAdj, &
+!!$                       iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
+!!$                       mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
+!!$                       yplusMax,refPoint,CLAdj,CDAdj,  &
+!!$                       nn,level,sps,cFpAdj,cMpAdj,righthanded,secondhalo,&
+!!$                       alphaAdj,betaAdj,machAdj,machcoefAdj,prefAdj,&
+!!$                       rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+!!$                       rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,&
+!!$                       liftIndex)
                   !print *,'forces computed'
                   !print *,'cfpadj',cfpadj,cmpadj,'cladj',cladj,'cdadj',cdadj
-!                  call computeForcesAdj(xAdj,wAdj,pAdj, &
-!                       iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
-!                       mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
-!                       yplusMax,refPoint,CLAdj,CDAdj,  &
-!                       nn,level,sps,cFpAdj,cMpAdj,righthanded)
 
 
 !                  deallocate(normAdj,siAdj,sjAdj,skAdj)

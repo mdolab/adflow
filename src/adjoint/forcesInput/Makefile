@@ -45,14 +45,19 @@ FF90_OBJECTS = adjustInflowAngleForcesAdj.o\
 	       computeForcesAdj.o\
 	       computeForcesPressureAdj.o\
                copyADjointForcesStencil.o\
+	       derivativeRotMatrixRigidForcesAdj.o\
+	       derivativeRigidRotAngleForcesAdj.o\
                etotArrayForcesAdj.o \
 	       extractBCStatesForcesAdj.o\
                extrapolate2ndHaloForcesAdj.o\
                forcesAndMomentsAdj.o\
 	       getDirVectorForces.o\
 	       getSurfaceNormalsAdj.o\
+	       gridVelocitiesFineLevelForcesAdj.o\
+	       normalVelocitiesForcesAdj.o\
                referenceStateForcesAdj.o\
 	       replaceBCStatesForcesAdj.o\
+	       rigidRotAngleForcesAdj.o\
                setFlowInfinityStateForcesAdj.o\
 	       vectorRotationForces.o\
 	       verifydCfdx.o\

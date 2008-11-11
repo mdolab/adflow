@@ -81,7 +81,8 @@
       REAL(KIND=REALTYPE) :: murefadj, timerefadj
       REAL(KIND=REALTYPE) :: alphaadj, betaadj
       REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
- 
+      REAL(KIND=REALTYPE) :: rotcenteradj(3), rotrateadj(3), rotrateadjb(3)
+
       real(kind=realType), dimension(3) :: cFpAdj, cFvAdj
       real(kind=realType), dimension(3) :: cMpAdj, cMvAdj
 
@@ -395,9 +396,9 @@
         ! Copy the coordinates into xAdj and
         ! Compute the face normals on the subfaces
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-              MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-              rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps, liftIndex)
-!call copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
+           MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
+           pInfCorrAdj,nn,level,sps,liftIndex)
 
                 
         bocoLoop: do mm=1,nBocos
@@ -445,27 +446,15 @@
            !===============================================================
            ! Compute the force derivatives
            
-            call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+           call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
 &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj,liftIndex)
-	          
-!           call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
-!&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
-!&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
-!call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-!                &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-!                &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-!                &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-!                &  cmpadj, righthanded) 
+&  timerefadj, pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, &
+&  liftindex)
  
 
           ! Loop over cells to store the jacobian

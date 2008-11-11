@@ -40,6 +40,7 @@
 !
       use ADjointPETSc
       use ADjointVars
+      use flowvarrefstate !Timeref
       implicit none
 !
 !     Subroutine arguments.
@@ -227,6 +228,16 @@
 
       if (allocated(nDesignGlobal))     deallocate(nDesignGlobal)
       if (allocated(nDisplsGlobal))     deallocate(nDisplsGlobal)
+
+      !Divide Timeref out of the solution for the rotational derivatives
+      functionGrad(costFunction,nDesignRotX:nDesignRotZ) = functionGrad(costFunction,nDesignRotX:nDesignRotZ)*timeref
+
+      if( PETScRank==0 ) then	
+	print *,'Corrected rotational derivatives...'
+	print *,'Rotx:',functionGrad(costFunction,nDesignRotX)
+	print *,'RotY:',functionGrad(costFunction,nDesignRotY)
+	print *,'RotZ:',functionGrad(costFunction,nDesignRotZ)
+      endif
 
       ! Flush the output buffer and synchronize the processors.
 

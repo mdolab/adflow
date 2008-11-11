@@ -85,9 +85,10 @@ class SUMB(AeroSolver):
 		}
 		AeroSolver.__init__(self, name, category, def_opts, informs, *args, **kwargs)
 			
-		self.sumb = SUmbInterface()
-		self.Mesh = self.sumb.Mesh
-		self.myid = self.sumb.myid
+		#self.sumb = SUmbInterface()
+		self.interface = SUmbInterface()
+		self.Mesh = self.interface.Mesh
+		self.myid = self.interface.myid
 		self.callCounter = 0
 		self.volumeMatrixInitialized = False
 		self.flowMatrixInitialized=False
@@ -106,7 +107,7 @@ class SUMB(AeroSolver):
 			test=1
 		else:
 			if kwargs['reinitialize']:
-				self.sumb.initializeFlow(aero_problem,sol_type,grid_file)
+				self.interface.initializeFlow(aero_problem,sol_type,grid_file)
 				self.filename=grid_file
 			#endif
 		#endtry
@@ -118,18 +119,18 @@ class SUMB(AeroSolver):
 		#endtry
 
 		#if updategeometry:
-		#	self.sumb.updateGeometry(geometry)
+		#	self.interface.updateGeometry(geometry)
 		##endif
 
 		#set inflow angle
-		self.sumb.setInflowAngle(aero_problem)
+		self.interface.setInflowAngle(aero_problem)
 		
 		# Run Solver
 		
 		# get flow and ref from aero_problem
 		#print 'niterations',niterations
 		t0 = time.time()
-		self.sumb.RunIterations(0,niterations)
+		self.interface.RunIterations(0,niterations)
 		sol_time = time.time() - t0
 		
 		
@@ -138,8 +139,8 @@ class SUMB(AeroSolver):
 		volname=self.filename+'%d'%(self.callCounter)+'vol.cgns'
 		surfname=self.filename+'%d'%(self.callCounter)+'surf.cgns'
 		print volname,surfname
-		self.sumb.WriteVolumeSolutionFile(volname)
-		self.sumb.WriteSurfaceSolutionFile(surfname)
+		self.interface.WriteVolumeSolutionFile(volname)
+		self.interface.WriteSurfaceSolutionFile(surfname)
 		
 		# get forces? from SUmb attributes
 		
@@ -179,7 +180,7 @@ class SUMB(AeroSolver):
 ## 	        cfd_xyz = self.xyz_cfd_orig + cfd_dispts
 ## 	        #print 'cfd',cfd_xyz
 ## 		# do we need this, can't we just pass the coordinates?
-		[_parallel,mpi]=self.sumb.CheckIfParallel()
+		[_parallel,mpi]=self.interface.CheckIfParallel()
 		
 		if _parallel :
 			# Update the Local blocks based on the perturbed points
@@ -246,7 +247,7 @@ class SUMB(AeroSolver):
 		Initialize the Ajoint problem for this test case
 		in SUMB
 		'''
-		self.sumb.initializeADjoint()
+		self.interface.initializeADjoint()
 
 		return
 
@@ -254,7 +255,7 @@ class SUMB(AeroSolver):
 		'''
 		Setup the adjoint matrix for the current solution
 		'''
-		self.sumb.setupADjointMatrix()
+		self.interface.setupADjointMatrix()
 
 		return
 		
@@ -263,58 +264,58 @@ class SUMB(AeroSolver):
 
 		print 'running cfd adjoint',objective
 
-		self.sumb.setupADjointRHS(objective)
+		self.interface.setupADjointRHS(objective)
 
 		try:  kwargs['structAdjoint']
 		except KeyError:
 			test=1
 		else:
-			self.sumb.augmentADjointRHS(objective,kwargs['structAdjoint'])
+			self.interface.augmentADjointRHS(objective,kwargs['structAdjoint'])
 		#endtry
 
-		self.sumb.solveADjointPETSc()
+		self.interface.solveADjointPETSc()
 
 		return
 
-	def computeFlowDerivatives(self,objective, *args, **kwargs):
+	def computeTotalFlowDerivatives(self,objective, *args, **kwargs):
 		''' compute derivatives with respect to flow variables like alpha,Mach, beta....
 		'''
 		#Setup the partial derivative of the objective in sumb
-		self.sumb.setupGradientRHSFlow(objective)
+		self.interface.setupGradientRHSFlow(objective)
 
 		#setup the partial derivative of the volume coords. in sumb
 		if not self.flowMatrixInitialized:
-			self.sumb.setupGradientMatrixFlow()
+			self.interface.setupGradientMatrixFlow()
 			self.flowMatrixInitialized=True
 		#endif
 
 		#compute and store the volume derivatives
-		self.sumb.computeTotalFlowDerivative(objective)
+		self.interface.computeTotalFlowDerivative(objective)
 
 		#Retrieve a vector of the volume derivatives
-		flowDerivative=self.sumb.getTotalFlowDerivatives(objective)
+		flowDerivative=self.interface.getTotalFlowDerivatives(objective)
 
 		return flowDerivative
 
-	def computeSurfaceDerivative(self, objective,surface={},mapping={},meshwarping={}, *args, **kwargs):
+	def computeTotalSurfaceDerivative(self, objective,surface={},mapping={},meshwarping={}, *args, **kwargs):
 		'''
 		Compute the derivative of the objective function wrt the
 		surface.
 		'''
 		#Setup the partial derivative of the objective in sumb
-		self.sumb.setupGradientRHSVolume(objective)
+		self.interface.setupGradientRHSVolume(objective)
 
 		#setup the partial derivative of the volume coords. in sumb
 		if not self.volumeMatrixInitialized:
-			self.sumb.setupGradientMatrixVolume()
+			self.interface.setupGradientMatrixVolume()
 			self.volumeMatrixInitialized = True
 		#endif
 
 		#compute and store the volume derivatives
-		self.sumb.computeTotalVolumeDerivative(objective)
+		self.interface.computeTotalVolumeDerivative(objective)
 
 		#Retrieve a vector of the volume derivatives
-		volumeDerivative=self.sumb.getTotalVolumeDerivatives(objective)
+		volumeDerivative=self.interface.getTotalVolumeDerivatives(objective)
 		#print volumeDerivative
 		#stop
 
@@ -400,15 +401,15 @@ class SUMB(AeroSolver):
 
 		#setup the partial derivative of the volume coords. in sumb
 		if not self.volumeMatrixInitialized:
-			self.sumb.setupGradientMatrixVolume()
+			self.interface.setupGradientMatrixVolume()
 			self.volumeMatrixInitialized = True
 		#endif
 
 		#compute and store the volume derivatives
-		self.sumb.computeAeroCouplingDerivative(objective)
+		self.interface.computeAeroCouplingDerivative(objective)
 
 		#Retrieve a vector of the volume derivatives
-		couplingDerivative=self.sumb.getAeroCouplingDerivatives(objective)
+		couplingDerivative=self.interface.getAeroCouplingDerivatives(objective)
 		#print volumeDerivative
 		#stop
 
@@ -511,10 +512,10 @@ class SUMB(AeroSolver):
 	def computeAeroExplicitCoupling(self, objective,surface={},mapping={},meshwarping={}, *args, **kwargs):
 
 		#compute and store the volume derivatives
-		self.sumb.computeAeroExplicitCouplingDerivative(objective)
+		self.interface.computeAeroExplicitCouplingDerivative(objective)
 
 		#Retrieve a vector of the volume derivatives
-		couplingDerivative=self.sumb.getAeroExplicitCouplingDerivatives(objective)
+		couplingDerivative=self.interface.getAeroExplicitCouplingDerivatives(objective)
 		#print volumeDerivative
 		#stop
 
@@ -598,13 +599,13 @@ class SUMB(AeroSolver):
 		based on the coupled structural adjoint
 		'''
 
-		self.sumb.aeroComputeTotalDerivatveStruct(objective,structAdjoint=structAdjoint)
+		self.interface.aeroComputeTotalDerivatveStruct(objective,structAdjoint=structAdjoint)
 		
 		return
 
 	def getTotalDerivativeStruct(self,objective,meshwarping={},mapping={},surface={}):
 		#Retrieve a vector of the volume derivatives
-		structDerivative=self.sumb.getTotalStructDerivatives(objective)
+		structDerivative=self.interface.getTotalStructDerivatives(objective)
 		#print volumeDerivative
 		#stop
 
@@ -693,7 +694,7 @@ class SUMB(AeroSolver):
 		'''
 		self.meshDerivatives =[]
 		
-		self.sumb.releaseAdjointMemeory()
+		self.interface.releaseAdjointMemeory()
 		
 		return
 
@@ -701,7 +702,7 @@ class SUMB(AeroSolver):
 
 	def getGlobalNodeOrder(self,meshwarping={}, *args, **kwargs):
 
-		[_parallel,mpi]=self.sumb.CheckIfParallel()
+		[_parallel,mpi]=self.interface.CheckIfParallel()
 		
 		if _parallel:
 			#loop over the local blocks
@@ -709,7 +710,7 @@ class SUMB(AeroSolver):
 			for i in xrange(n):
                                 #retrieve the global node numbers from SUmb and store them in the meshwarping blocks
 				ijk = meshwarping.blockList[i].ijk
-				meshwarping.blockList[i].globalNode = self.sumb.getGlobalNodesLocal(i+1,ijk[0],ijk[1],ijk[2])
+				meshwarping.blockList[i].globalNode = self.interface.getGlobalNodesLocal(i+1,ijk[0],ijk[1],ijk[2])
 			
                                
                         #endfor
@@ -720,9 +721,9 @@ class SUMB(AeroSolver):
 
                                 #initialize size array and retrieve all block sizes
         
-				ijkmax = numpy.zeros([3,self.sumb.Mesh.GetNumberBlocks()+1],'i')
+				ijkmax = numpy.zeros([3,self.interface.Mesh.GetNumberBlocks()+1],'i')
 				
-				for n in xrange(1, self.sumb.Mesh.GetNumberBlocks()+1):
+				for n in xrange(1, self.interface.Mesh.GetNumberBlocks()+1):
 					ijkmax[:,n] = meshwarping.GetBlockDimensions(n)
 				#endfor
             
@@ -734,12 +735,12 @@ class SUMB(AeroSolver):
                                 #initialize the global node array
         
 				self.globalNodes = numpy.zeros([ijkmax[0,0]+1,ijkmax[1,0]+1,ijkmax[2,0]+1,\
-								self.sumb.Mesh.GetNumberBlocks()+1],'i')
+								self.interface.Mesh.GetNumberBlocks()+1],'i')
             
-				for n in xrange(1, self.sumb.Mesh.GetNumberBlocks()+1):
+				for n in xrange(1, self.interface.Mesh.GetNumberBlocks()+1):
 					q = int(ijkmax[0,n])
                                         
-					self.sumb.getGlobalNodes(n,ijkmax[0,n],ijkmax[1,n],ijkmax[2,n],\
+					self.interface.getGlobalNodes(n,ijkmax[0,n],ijkmax[1,n],ijkmax[2,n],\
 								 self.globalNodes)
                                         
                                 #endfor
@@ -752,7 +753,7 @@ class SUMB(AeroSolver):
 		retrieve the solution variables from the solver.
 		'''
 		#print 'getting solution'
-		solution = self.sumb.getFunctionValues()
+		solution = self.interface.getFunctionValues()
 		#print solution
 		
 		return solution
@@ -765,8 +766,8 @@ class SUMB(AeroSolver):
 		'''
 		Compute the forces on the nodes and transfer them to the OML
 		'''
-		cfd_loads = self.sumb.GetSurfaceLoadsLocal()
-		cfdloads2 = self.sumb.GetSurfaceLoads()
+		cfd_loads = self.interface.GetSurfaceLoadsLocal()
+		cfdloads2 = self.interface.GetSurfaceLoads()
 
 #		print 'cfd_loads:'
 #		for i in xrange(cfd_loads.shape[0]):
@@ -774,7 +775,8 @@ class SUMB(AeroSolver):
 #				print cfd_loads[i][j]
 
 
-		self.cfdloads2 = cfdloads2
+#               self.cfdloads2 = cfdloads2
+		self.cfdloads2 = cfd_loads
 		if self.myid == 0: 'OML Surface Shape',mapping.oml_surf_orig.shape
 		oml_loads_local = numpy.zeros((3, len(mapping.oml_surf_orig[1])),'d')
 
@@ -792,7 +794,7 @@ class SUMB(AeroSolver):
 			#endfor
 		#endfor
 		#print 'local',oml_loads_local
-		oml_loads = self.sumb.AccumulateLoads(oml_loads_local)
+		oml_loads = self.interface.AccumulateLoads(oml_loads_local)
 		#print 'global',oml_loads
 		
                 mapping._WriteVectorsTecplot("oml_forces.dat", mapping.oml_surf_orig, oml_loads, 1.E-4)
@@ -814,6 +816,7 @@ class SUMB(AeroSolver):
 			#endfor
 		#endfor
 
+		self.cfd_dispts= cfd_dispts
 		#get the original surface mesh
 		[oml_surf,oml_conn,oml_elemtype]= surface.getSurface()
 		if mapping.cfd_surf_orig.shape[1]!=0:
@@ -827,7 +830,7 @@ class SUMB(AeroSolver):
 		#get the indices of the surface nodes on this block
 		indices = self.Mesh.GetSurfaceIndicesLocal()
 		
-		[_parallel,mpi]=self.sumb.CheckIfParallel()
+		[_parallel,mpi]=self.interface.CheckIfParallel()
 			
 		if _parallel :
 			# Update the Local blocks based on the perturbed points

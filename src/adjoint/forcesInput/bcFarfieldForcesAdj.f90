@@ -10,7 +10,7 @@
 !      ******************************************************************
 !
 subroutine bcFarfieldForcesAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,&
-     siAdj, sjAdj, skAdj, normAdj,mm,&
+     siAdj, sjAdj, skAdj, normAdj,rfaceAdj,mm,&
      iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End)
 
   !
@@ -51,6 +51,7 @@ subroutine bcFarfieldForcesAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,&
   ! notice the range of z dim is set 1:2 which corresponds to 1/kl
   real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,1:2,3) :: skAdj
   real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,3) :: normAdj
+  real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd) :: rFaceAdj
 
 !!$   integer(kind=intType) ::isbeg,jsbeg,ksbeg,isend,jsend,ksend
 !!$  integer(kind=intType) ::ibbeg,jbbeg,kbbeg,ibend,jbend,kbend
@@ -148,7 +149,7 @@ subroutine bcFarfieldForcesAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,&
            ii = i 
            jj = j 
            
-           rface = BCData(mm)%rface(i,j)
+           rface = rFaceAdj(ii,jj)!BCData(mm)%rface(i,j)
            
            ! Store the three components of the unit normal a
            ! bit easier.

@@ -2,15 +2,15 @@
 !      ******************************************************************
 !      *                                                                *
 !      * File:          bcEulerWallAdj.f90                              *
-!      * Author:        Edwin van der Weide                             *
+!      * Author:        Edwin van der Weide,C.A.(sandy)Mader            *
 !      *                Seongim Choi                                    *
 !      * Starting date: 03-21-2006                                      *
-!      * Last modified: 12-17-2007                                      *
+!      * Last modified: 10-22-2008                                      *
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
-     siAdj, sjAdj, skAdj, normAdj,iCell,jCell,kCell)
+subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
+     siAdj, sjAdj, skAdj, normAdj,rfaceAdj,iCell,jCell,kCell)
 
   !
   !      ******************************************************************
@@ -24,7 +24,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
   use BCTypes
   !       use blockPointers, only : il, jl, kl, BCData, BCFaceID, &
   !                                 si, sj, sk, s, addGridVelocities
-  use blockPointers, only : il, jl, kl, BCData, BCFaceID,s, addGridVelocities, nBocos, BCType
+  use blockPointers, only : il, jl, kl, BCData, BCFaceID, addGridVelocities, nBocos, BCType
   use constants
   use flowVarRefState
   use inputDiscretization
@@ -58,8 +58,10 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
 !  real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(in) ::siAdj, sjAdj, skAdj
   real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) ::siAdj, sjAdj, skAdj
   real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(in) :: normAdj
+  real(kind=realType), dimension(nBocos,-2:2,-2:2), intent(in) ::rFaceAdj
   real(kind=realType), dimension(-2:2,-2:2,-2:2,nw),intent(in) :: wAdj
   real(kind=realType), dimension(-2:2,-2:2,-2:2),intent(in) :: pAdj
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,3),intent(in) :: sAdj
 
   !
   !      Local variables.
@@ -76,6 +78,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
   real(kind=realType) :: rface
 
   real(kind=realType), dimension(-3:2,-3:2,3) :: ssi, ssj, ssk
+  real(kind=realType), dimension(-2:2,-2:2,3) :: ssAdj
 !  real(kind=realType), dimension(-2:2,-2:2,3) :: ssi, ssj, ssk
 !  real(kind=realType), dimension(:,:,:), pointer :: ss
   logical :: computeBC
@@ -204,12 +207,14 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                     ssi(:,:,:) = siAdj(-1,:,:,:)
                     ssj(:,:,:) = sjAdj(0,:,:,:)
                     ssk(:,:,:) = skAdj(0,:,:,:)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(0,:,:,:)
                  else
                     ssi(:,:,:) = siAdj(-2,:,:,:)
                     ssj(:,:,:) = sjAdj(-1,:,:,:)
-                    ssk(:,:,:) = skAdj(-1,:,:,:)                   
+                    ssk(:,:,:) = skAdj(-1,:,:,:) 
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(-1,:,:,:)  
                  end if
-                 !if( addGridVelocities ) ss => s(2,:,:,:)
+                 
 
                  !===========================================================
 
@@ -218,13 +223,13 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                     ssi(:,:,:) = siAdj(0,:,:,:)
                     ssj(:,:,:) = sjAdj(0,:,:,:)
                     ssk(:,:,:) = skAdj(0,:,:,:)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(0,:,:,:)
                  else
                     ssi(:,:,:) = siAdj(1,:,:,:)
                     ssj(:,:,:) = sjAdj(1,:,:,:)
                     ssk(:,:,:) = skAdj(1,:,:,:)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(1,:,:,:)
                  end if
-
-                 !if( addGridVelocities ) ss => s(il,:,:,:)
 
                  !===========================================================
 
@@ -233,14 +238,16 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                     ssi(:,:,:) = sjAdj(:,-1,:,:)
                     ssj(:,:,:) = siAdj(:,0,:,:)
                     ssk(:,:,:) = skAdj(:,0,:,:)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,0,:,:)
                  else
                     ssi(:,:,:) = sjAdj(:,-2,:,:)
                     ssj(:,:,:) = siAdj(:,-1,:,:)
                     ssk(:,:,:) = skAdj(:,-1,:,:)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,-1,:,:)
                  end if
 
 
-                 !if( addGridVelocities ) ss => s(:,2,:,:)
+                
 
                  !===========================================================
 
@@ -249,13 +256,15 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                     ssi(:,:,:) = sjAdj(:,0,:,:)
                     ssj(:,:,:) = siAdj(:,0,:,:)
                     ssk(:,:,:) = skAdj(:,0,:,:)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,0,:,:)
                  else
                     ssi(:,:,:) = sjAdj(:,1,:,:)
                     ssj(:,:,:) = siAdj(:,1,:,:)
                     ssk(:,:,:) = skAdj(:,1,:,:)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,1,:,:)
                  end if
 
-                 !if( addGridVelocities ) ss => s(:,jl,:,:)
+                 
 
                  !===========================================================
 
@@ -264,13 +273,15 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                     ssi(:,:,:) = skAdj(:,:,-1,:)
                     ssj(:,:,:) = siAdj(:,:,0,:)
                     ssk(:,:,:) = sjAdj(:,:,0,:)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,:,0,:)
                  else
                     ssi(:,:,:) = skAdj(:,:,-2,:)
                     ssj(:,:,:) = siAdj(:,:,-1,:)
                     ssk(:,:,:) = sjAdj(:,:,-1,:)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,:,-1,:)
                  end if
 
-                 !if( addGridVelocities ) ss => s(:,:,2,:)
+                 
 
                  !===========================================================
 
@@ -279,14 +290,15 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                     ssi(:,:,:) = skAdj(:,:,0,:)
                     ssj(:,:,:) = siAdj(:,:,0,:)
                     ssk(:,:,:) = sjAdj(:,:,0,:)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,:,0,:)
                  else
                     ssi(:,:,:) = skAdj(:,:,1,:)
                     ssj(:,:,:) = siAdj(:,:,1,:)
                     ssk(:,:,:) = sjAdj(:,:,1,:)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,:,1,:)
                  end if
 
-                 !if( addGridVelocities ) ss => s(:,:,kl,:)
-
+                 
               end select
 
               ! Loop over the faces of the generic subface.
@@ -389,11 +401,11 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                     uy = wAdj2(jj,kk,ivy)
                     uz = wAdj2(jj,kk,ivz)
 
-                    !if( addGridVelocities ) then
-                    !   ux = ux - ss(j,k,1)
-                    !   uy = uy - ss(j,k,2)
-                    !   uz = uz - ss(j,k,3)
-                    !endif
+                    if( addGridVelocities ) then
+                       ux = ux - ssAdj(jj,kk,1)
+                       uy = uy - ssAdj(jj,kk,2)
+                       uz = uz - ssAdj(jj,kk,3)
+                    endif
 
                     ! Compute the velocity components in j and
                     ! k-direction.
@@ -424,7 +436,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,      &
                  ii = i - iOffset
                  jj = j - jOffset
                  
-                 rface = BCData(nn)%rface(i,j)
+                 rface = rFaceAdj(nn,ii,jj)!BCData(nn)%rface(i,j)
 
                  ! Compute the pressure density and velocity in the
                  ! halo cell. Note that rface is the grid velocity

@@ -40,7 +40,7 @@ subroutine verifydCfdx(level)
 !     Local variables.
 !
       integer(kind=intType) :: discr, nHalo, sps
-      integer(kind=intType) :: inode, jnode, knode, mm, nn, m, n
+      integer(kind=intType) :: inode, jnode, knode, mm, nn, m, n,ll
       integer(kind=intType) :: ii, jj, kk, i1, j1, k1, i2, j2, k2
 
       integer(kind=intType) ::  i2Beg,  i2End,  j2Beg,  j2End
@@ -97,7 +97,7 @@ subroutine verifydCfdx(level)
 
       real(kind=realType), parameter :: deltax = 1.e-6_realType
 
-      real(kind=realType) :: xAdjRef,xref,alpharef,machref,alpha,beta,machcoefref
+      real(kind=realType) :: xAdjRef,xref,alpharef,machref,alpha,beta,machcoefref,rotratexref
 
       real(kind=realType), dimension(:,:,:), pointer :: norm
       real(kind=realType), dimension(:,:,:),allocatable:: normAdj
@@ -108,8 +108,13 @@ subroutine verifydCfdx(level)
       real(kind=realType),  dimension(:), allocatable :: monLoc2, monGlob2
 
       logical :: contributeToForce, viscousSubface,secondHalo,righthanded
-      real(kind=realType), dimension(3) :: dCldextra,dcddextra,dCldextraFD,dcddextraFD,&
-           dCldextraerror,dcddextraerror, dCldextralocal,dcddextralocal
+      real(kind=realType), dimension(6) :: dCldextra,dcddextra,dCldextraFD,dcddextraFD,&
+           dCldextraerror,dcddextraerror, dCldextralocal,dcddextralocal,dcmdextra,&
+           dcmdextraFD,dcmdextralocal,dcmdextraerror
+
+      REAL(KIND=REALTYPE) :: rotcenteradj(3), rotrateadj(3), rotrateadjb(3)
+
+      real(kind=realType), dimension(nSections) :: t
 
       integer :: ierr,nmonsum1,nmonsum2,liftindex
 
@@ -246,7 +251,7 @@ subroutine verifydCfdx(level)
 !***********************************
        print *,' computing adjoint derivatives'
        
-   spectralLoopAdj: do sps=1,nTimeIntervalsSpectral
+   spectralLoop1Adj: do sps=1,nTimeIntervalsSpectral
       
       print *,'zeroing force output'
       !zero the force components
@@ -256,7 +261,7 @@ subroutine verifydCfdx(level)
       cMvAdj(1) = zero; cMvAdj(2) = zero; cMvAdj(3) = zero
       ! Loop over the number of local blocks.
       print *,'starting domain loop'
-      domainLoopAD: do nn=1,nDom
+      domainLoop1AD: do nn=1,nDom
 
         ! Set some pointers to make the code more readable.
          !print *,'setting pointers'
@@ -327,16 +332,15 @@ subroutine verifydCfdx(level)
         ! Copy the coordinates into xAdj and
         ! Compute the face normals on the subfaces
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-           MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
-        !copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-        !   MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-        !   rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps)
-        !copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
+             MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+             rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
+             pInfCorrAdj,nn,level,sps,liftIndex)
+
         machadjb=zero
         machcoefadjb=zero
         alphaadjb=zero
         betaadjb=zero
+        rotrateadjb=zero
         bocoLoop: do mm=1,nBocos
 
            ! Determine the range of cell indices of the owned cells
@@ -433,29 +437,9 @@ subroutine verifydCfdx(level)
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
 &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj, liftindex)
-!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
-!&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
-!&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
-!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, padj, iibeg, iiend, &
-!&  jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, cfzadj&
-!&  , cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
-!&  , machadjb, machcoefadj)
-           !COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-           !     &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-           !     &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-           !     &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-           !     &  cmpadj, righthanded)
-!!$COMPUTEFORCESADJ_B(level, i2beg, j2beg, i2end, j2end, iibeg, &
-!!$                &  jjbeg, iiend, jjend, xadj, xadjb, mm, cfxadj, cfyadj, cfzadj, cmxadj&
-!!$                &  , cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, refpoint, sps&
-!!$                &  , cladj, cladjb, cdadj, cdadjb, nn, cfpadj, cmpadj, cfvadj, cmvadj)
+&  timerefadj, pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, &
+&  liftindex)
+
            
            
            !loop over cells to store the jacobian
@@ -477,16 +461,189 @@ subroutine verifydCfdx(level)
         end do bocoLoop
         dCldextralocal(ndesignmach) =dCldextralocal(ndesignmach)+ machadjb+machcoefadjb
         dCldextralocal(ndesignaoa) = dCldextralocal(ndesignaoa)+alphaadjb
-        dCldextra(ndesignssa) = dCldextra(ndesignssa)+betaadjb
+        dCldextralocal(ndesignssa) = dCldextralocal(ndesignssa)+betaadjb
+        dCldextralocal(ndesignrotx) = dCldextralocal(ndesignrotx)+rotrateadjb(1)
+        dCldextralocal(ndesignroty) = dCldextralocal(ndesignroty)+rotrateadjb(2)
+        dCldextralocal(ndesignrotz) = dCldextralocal(ndesignrotz)+rotrateadjb(3)
         !dCldextra(ndesignmach) = machadjb+machcoefadjb
         !!dCldextra(ndesignmach) = dCldextra(ndesignmach)+machadjb+machcoefadjb
         !print *,'ADcdldmach2', dCldextra(ndesignmach),machadjb,machcoefadjb
         !dCldextra(ndesignaoa) = dCldextra(ndesignaoa)+alphaadjb
         !dCldextra(ndesignssa) = dCldextra(ndesignssa)+betaadjb
+
+       !===============================================================
+        
+        !print *,' deallocating'
+        ! Deallocate the xAdj.
+        deallocate(pAdj, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for xAdj.")
+             
+        ! Deallocate the xAdj.
+        deallocate(wAdj, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for xAdj.") 
+
+         deallocate(wAdjB, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for xAdj.") 
+        ! Deallocate the xAdj.
+        deallocate(xAdj, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for xAdj.") 
+
+         deallocate(xAdjB, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for xAdj.") 
+        !print *,'finishhed deallocating'
+       
+     enddo domainLoop1AD
+      
+      print *,'dcldextralocal',dcldextralocal(1),dcldextralocal(2),dcldextralocal(3)
+      monLoc2(1) = dcldextralocal(1)
+      monLoc2(2) = dcldextralocal(2)
+      monLoc2(3) = dcldextralocal(3)
+      monLoc2(4) = dcldextralocal(4)
+      monLoc2(5) = dcldextralocal(5)
+      monLoc2(6) = dcldextralocal(6)
+      monLoc2(7) = 1!dcddextralocal(1)
+      monLoc2(8) = 1!dcddextralocal(2)
+         
+         ! Determine the global sum of the summation monitoring
+         ! variables. The sum is made known to all processors.
+!         write(*,*)'adj ',myID,monLoc2(1)
+         !write(*,*)'nmonsum',nMonSum
+         call mpi_allreduce(monLoc2, monGlob2, nMonSum2, sumb_real, &
+              mpi_sum, SUmb_comm_world, ierr)
+         
+         ! Transfer the cost function values to output arguments.
+         
+         dcldextra(1) = monGlob2(1)
+         dcldextra(2) = monGlob2(2)
+         dcldextra(3) = monGlob2(3)
+         dcldextra(4) = monGlob2(4)
+         dcldextra(5) = monGlob2(5) 
+         dcldextra(6) = monGlob2(6)
+         !dcddextra(1) = monGlob2(7)
+         !dcddextra(2) = monGlob2(8)
+
+      enddo spectralLoop1Adj
+
+!****************************
+!Drag loop
+!*************************
+       print *,'zeroing output'
+       ClAdj = zero
+       CDAdj = zero
+       CmxAdj = zero 
+       CmyAdj = zero
+       CmzAdj = zero
+       CfxAdj = zero
+       CfyAdj = zero
+       CfzAdj = zero
+
+       yplusMax = zero
+
+   !    print *,'Adjoint forces initialized'
+!
+!***********************************
+       print *,' computing adjoint derivatives'
+       
+   spectralLoopAdj2: do sps=1,nTimeIntervalsSpectral
+      
+      print *,'zeroing force output'
+      !zero the force components
+      cFpAdj(1) = zero; cFpAdj(2) = zero; cFpAdj(3) = zero
+      cFvAdj(1) = zero; cFvAdj(2) = zero; cFvAdj(3) = zero
+      cMpAdj(1) = zero; cMpAdj(2) = zero; cMpAdj(3) = zero
+      cMvAdj(1) = zero; cMvAdj(2) = zero; cMvAdj(3) = zero
+      ! Loop over the number of local blocks.
+      print *,'starting domain loop'
+      domainLoopAD2: do nn=1,nDom
+
+        ! Set some pointers to make the code more readable.
+         !print *,'setting pointers'
+        call setPointersAdj(nn,level,sps)
+        !print *,'allocating memory'
+        allocate(xAdj(0:ie,0:je,0:ke,3), stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("Memory allocation failure for xAdj.")
+
+        allocate(xAdjB(0:ie,0:je,0:ke,3), stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("Memory allocation failure for xAdjB.")
+        
+        allocate(wAdj(0:ib,0:jb,0:kb,nw), stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("Memory allocation failure for wAdj.")
+
+        allocate(wAdjB(0:ib,0:jb,0:kb,nw), stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("Memory allocation failure for wAdjB.")
+        
+        allocate(pAdj(0:ib,0:jb,0:kb), stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("Memory allocation failure for pAdj.")
+        
+        !print *,'finished allocating',nn,level,sps
+        righthanded = flowDoms(nn,level,sps)%righthanded
+        
+
+        
+!!$        nViscBocos = flowDoms(nn,groundLevel,sps)%nViscBocos
+!!$        nInvBocos  = flowDoms(nn,groundLevel,sps)%nInvBocos
+!!$        
+!!$        BCFaceID => flowDoms(nn,groundLevel,  1)%BCFaceID
+!!$        groupNum => flowDoms(nn,groundLevel,  1)%groupNum
+!!$
+!!$        d2Wall   => flowDoms(nn,groundLevel,sps)%d2Wall
+!!$        muLam    => flowDoms(nn,groundLevel,sps)%muLam
+           
+!!$        ! Determine the number of time instances for this block and
+!!$        ! store the block dimensions a bit easier.
+!!$        
+!!$        sectionID = flowDoms(nn,level,1)%sectionID
+!!$        nTime     = sections(sectionID)%nTimeInstances
+!!$
+!!$        print *,'Pointers set',sectionID,nTime
+!!$        stop
+!!$        
+!!$        il = flowDoms(nn,level,1)%il
+!!$        jl = flowDoms(nn,level,1)%jl
+!!$        kl = flowDoms(nn,level,1)%kl
+!!$
+!!$        
+!!$        !Allocate the full grid stencil for the x
+!!$        allocate(xAdj(ib:ie,jb:jE,kb:ke,3), stat=ierr)
+!!$        if(ierr /= 0)                              &
+!!$             call terminate("verifydCfdx", &
+!!$             "Memory allocation failure for xAdj.")
+!!$
+!!$        allocate(xAdjB(ib:ie,jb:jE,kb:ke,3), stat=ierr)
+!!$        if(ierr /= 0)                              &
+!!$             call terminate("verifydCfdx", &
+!!$             "Memory allocation failure for xAdjB.")  
+!!$
+!!$        !Copy the values of x to the Stencil
+!!$        call copyADjointForcesStencil(xAdj,level,nn,sps)
+
+        ! Copy the coordinates into xAdj and
+        ! Compute the face normals on the subfaces
+        call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
+             MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+             rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
+             pInfCorrAdj,nn,level,sps,liftIndex)
+
         machadjb=zero
         machcoefadjb=zero
         alphaadjb=zero
         betaadjb=zero
+        rotrateadjb=zero
         bocoLoop2: do mm=1,nBocos
 
            ! Determine the range of cell indices of the owned cells
@@ -525,29 +682,8 @@ subroutine verifydCfdx(level)
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
 &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj, liftindex)
-!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
-!&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
-!&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
-           !COMPUTEFORCESADJ_B(xadj, xadjb, wadj, padj, iibeg, iiend, &
-!&  jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, cfzadj&
-!&  , cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
-!&  , machadjb, machcoefadj)
-           !COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-           !     &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-           !     &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-           !     &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-           !     &  cmpadj, righthanded)
-!!$COMPUTEFORCESADJ_B(level, i2beg, j2beg, i2end, j2end, iibeg, &
-!!$                &  jjbeg, iiend, jjend, xadj, xadjb, mm, cfxadj, cfyadj, cfzadj, cmxadj&
-!!$                &  , cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, refpoint, sps&
-!!$                &  , cladj, cladjb, cdadj, cdadjb, nn, cfpadj, cmpadj, cfvadj, cmvadj)
+&  timerefadj, pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, &
+&  liftindex)
            
            
            !loop over cells to store the jacobian
@@ -566,13 +702,149 @@ subroutine verifydCfdx(level)
            
 
         enddo bocoLoop2
-        dCddextra(ndesignmach) = dCddextra(ndesignmach)+machadjb+machcoefadjb
-        dCddextra(ndesignaoa) = dCddextra(ndesignaoa)+alphaadjb
-        dCddextra(ndesignssa) = dCddextra(ndesignssa)+betaadjb
+        dCddextralocal(ndesignmach) = dCddextralocal(ndesignmach)+machadjb+machcoefadjb
+        dCddextralocal(ndesignaoa) = dCddextralocal(ndesignaoa)+alphaadjb
+        dCddextralocal(ndesignssa) = dCddextralocal(ndesignssa)+betaadjb
+        dCddextralocal(ndesignrotx) = dCddextralocal(ndesignrotx)+rotrateadjb(1)
+        dCddextralocal(ndesignroty) = dCddextralocal(ndesignroty)+rotrateadjb(2)
+        dCddextralocal(ndesignrotz) = dCddextralocal(ndesignrotz)+rotrateadjb(3)
+
+       !===============================================================
+        
+        !print *,' deallocating'
+        ! Deallocate the xAdj.
+        deallocate(pAdj, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for xAdj.")
+             
+        ! Deallocate the xAdj.
+        deallocate(wAdj, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for xAdj.") 
+
+         deallocate(wAdjB, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for xAdj.") 
+        ! Deallocate the xAdj.
+        deallocate(xAdj, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for xAdj.") 
+
+         deallocate(xAdjB, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for xAdj.") 
+        !print *,'finishhed deallocating'
+       
+     enddo domainLoopAD2
+      
+      print *,'dcddextralocal',dcddextralocal(1),dcddextralocal(2),dcddextralocal(3)
+      monLoc2(1) = dcddextralocal(1)
+      monLoc2(2) = dcddextralocal(2)
+      monLoc2(3) = dcddextralocal(3)
+      monLoc2(4) = dcddextralocal(4)
+      monLoc2(5) = dcddextralocal(5)
+      monLoc2(6) = dcddextralocal(6)
+      monLoc2(7) = 1!dcddextralocal(1)
+      monLoc2(8) = 1!dcddextralocal(2)
+         
+         ! Determine the global sum of the summation monitoring
+         ! variables. The sum is made known to all processors.
+!         write(*,*)'adj ',myID,monLoc2(1)
+         !write(*,*)'nmonsum',nMonSum
+         call mpi_allreduce(monLoc2, monGlob2, nMonSum2, sumb_real, &
+              mpi_sum, SUmb_comm_world, ierr)
+         
+         ! Transfer the cost function values to output arguments.
+         
+         dcddextra(1) = monGlob2(1)
+         dcddextra(2) = monGlob2(2)
+         dcddextra(3) = monGlob2(3)
+         dcddextra(4) = monGlob2(4)
+         dcddextra(5) = monGlob2(5) 
+         dcddextra(6) = monGlob2(6)
+         !dcddextra(1) = monGlob2(7)
+         !dcddextra(2) = monGlob2(8)
+
+      enddo spectralLoopAdj2
+
+
+!*******************
+!cmxloop
+!*******************
+
+       print *,'zeroing output'
+       ClAdj = zero
+       CDAdj = zero
+       CmxAdj = zero 
+       CmyAdj = zero
+       CmzAdj = zero
+       CfxAdj = zero
+       CfyAdj = zero
+       CfzAdj = zero
+
+       yplusMax = zero
+
+   !    print *,'Adjoint forces initialized'
+!
+!***********************************
+       print *,' computing adjoint derivatives'
+       
+   spectralLoopAdj3: do sps=1,nTimeIntervalsSpectral
+      
+      print *,'zeroing force output'
+      !zero the force components
+      cFpAdj(1) = zero; cFpAdj(2) = zero; cFpAdj(3) = zero
+      cFvAdj(1) = zero; cFvAdj(2) = zero; cFvAdj(3) = zero
+      cMpAdj(1) = zero; cMpAdj(2) = zero; cMpAdj(3) = zero
+      cMvAdj(1) = zero; cMvAdj(2) = zero; cMvAdj(3) = zero
+      ! Loop over the number of local blocks.
+      print *,'starting domain loop'
+      domainLoopAD3: do nn=1,nDom
+
+        ! Set some pointers to make the code more readable.
+         !print *,'setting pointers'
+        call setPointersAdj(nn,level,sps)
+        !print *,'allocating memory'
+        allocate(xAdj(0:ie,0:je,0:ke,3), stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("Memory allocation failure for xAdj.")
+
+        allocate(xAdjB(0:ie,0:je,0:ke,3), stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("Memory allocation failure for xAdjB.")
+        
+        allocate(wAdj(0:ib,0:jb,0:kb,nw), stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("Memory allocation failure for wAdj.")
+
+        allocate(wAdjB(0:ib,0:jb,0:kb,nw), stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("Memory allocation failure for wAdjB.")
+        
+        allocate(pAdj(0:ib,0:jb,0:kb), stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("Memory allocation failure for pAdj.")
+        
+        !print *,'finished allocating',nn,level,sps
+        righthanded = flowDoms(nn,level,sps)%righthanded
+
+        ! Copy the coordinates into xAdj and
+        ! Compute the face normals on the subfaces
+        call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
+             MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+             rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
+             pInfCorrAdj,nn,level,sps,liftIndex)
+
         machadjb=zero
         machcoefadjb=zero
         alphaadjb=zero
         betaadjb=zero
+        rotrateadjb=zero
         bocoLoop3: do mm=1,nBocos
 
            ! Determine the range of cell indices of the owned cells
@@ -611,30 +883,10 @@ subroutine verifydCfdx(level)
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
 &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj, liftindex)
-!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
-!&  , machadjb, machcoefadj, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj&
-!&  , rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj)
-!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, padj, iibeg, iiend, &
-!&  jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, cfzadj&
-!&  , cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-!&  cmpadj, righthanded, alphaadj, alphaadjb, betaadj, betaadjb, machadj&
-!&  , machadjb, machcoefadj)
-           !COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-           !     &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-           !     &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-           !     &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-           !     &  cmpadj, righthanded)
-!!$           call COMPUTEFORCESADJ_B(level, i2beg, j2beg, i2end, j2end, iibeg, &
-!!$                &  jjbeg, iiend, jjend, xadj, xadjb, mm, cfxadj, cfyadj, cfzadj, cmxadj&
-!!$                &  , cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, refpoint, sps&
-!!$                &  , cladj, cladjb, cdadj, cdadjb, nn, cfpadj, cmpadj, cfvadj, cmvadj)
-!!$           
+&  timerefadj, pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, &
+&  liftindex)
+
+
            
            !loop over cells to store the jacobian
            do k = 0,ke
@@ -657,6 +909,12 @@ subroutine verifydCfdx(level)
 !!$                "Deallocation failure for normAdj.") 
            
         enddo bocoLoop3
+        dCmdextralocal(ndesignmach) = dCmdextralocal(ndesignmach)+machadjb+machcoefadjb
+        dCmdextralocal(ndesignaoa) = dCmdextralocal(ndesignaoa)+alphaadjb
+        dCmdextralocal(ndesignssa) = dCmdextralocal(ndesignssa)+betaadjb
+        dCmdextralocal(ndesignrotx) = dCmdextralocal(ndesignrotx)+rotrateadjb(1)
+        dCmdextralocal(ndesignroty) = dCmdextralocal(ndesignroty)+rotrateadjb(2)
+        dCmdextralocal(ndesignrotz) = dCmdextralocal(ndesignrotz)+rotrateadjb(3)
         
         !===============================================================
         
@@ -689,17 +947,17 @@ subroutine verifydCfdx(level)
              "Deallocation failure for xAdj.") 
         !print *,'finishhed deallocating'
        
-      enddo domainLoopAD
+     enddo domainLoopAD3
       
-      print *,'dcldextralocal',dcldextralocal(1),dcldextralocal(2),dcldextralocal(3)
-      monLoc2(1) = dcldextralocal(1)
-      monLoc2(2) = dcldextralocal(2)
-      monLoc2(3) = dcldextralocal(3)
-      monLoc2(4) = 1
-      monLoc2(5) = 1
-      monLoc2(6) = 1
-      monLoc2(7) = 1
-      monLoc2(8) = 1
+      print *,'dcldextralocal',dcmdextralocal(1),dcmdextralocal(2),dcmdextralocal(3)
+      monLoc2(1) = dcmdextralocal(1)
+      monLoc2(2) = dcmdextralocal(2)
+      monLoc2(3) = dcmdextralocal(3)
+      monLoc2(4) = dcmdextralocal(4)
+      monLoc2(5) = dcmdextralocal(5)
+      monLoc2(6) = dcmdextralocal(6)
+      monLoc2(7) = 1!dcddextralocal(1)
+      monLoc2(8) = 1!dcddextralocal(2)
          
          ! Determine the global sum of the summation monitoring
          ! variables. The sum is made known to all processors.
@@ -710,16 +968,18 @@ subroutine verifydCfdx(level)
          
          ! Transfer the cost function values to output arguments.
          
-         dcldextra(1) = monGlob2(1)
-         dcldextra(2) = monGlob2(2)
-         dcldextra(3) = monGlob2(3)
-         dcddextra(1) = monGlob2(4)
-         dcddextra(1) = monGlob2(5) 
-         dcddextra(1) = monGlob2(6)
-         dcddextra(1) = monGlob2(7)
-         dcddextra(1) = monGlob2(8)
+         dcmdextra(1) = monGlob2(1)
+         dcmdextra(2) = monGlob2(2)
+         dcmdextra(3) = monGlob2(3)
+         dcmdextra(4) = monGlob2(4)
+         dcmdextra(5) = monGlob2(5) 
+         dcmdextra(6) = monGlob2(6)
+         !dcmdextra(1) = monGlob2(7)
+         !dcmdextra(2) = monGlob2(8)
 
-   enddo spectralLoopAdj
+      enddo spectralLoopAdj3
+
+
       
    print *,'AD loop finished'
       ! Get new time and compute the elapsed AD time.
@@ -746,7 +1006,7 @@ subroutine verifydCfdx(level)
       
       sps=1
       print *,'starting FD loop',sps
-      domainForcesLoopFDorig: do nn=8,8!1,1!nDom   
+      domainForcesLoopFDorig: do nn=1,nDom   
          print *,'fd in domain',nn
          !cycle
          call setPointers(nn,level,sps)
@@ -754,6 +1014,7 @@ subroutine verifydCfdx(level)
          !loop over all points
 
          do i = 0,ie
+            print *,'i',i
             do j = 0,je
                do k = 0,ke
                   do l = 1,3
@@ -805,35 +1066,35 @@ subroutine verifydCfdx(level)
                      monLoc1(7) = cmy
                      monLoc1(8) = cmz
                      
-!!$                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sps)
-!!$                     
-!!$                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-!!$                          + (cfp(2) + cfv(2))*liftDirection(2) &
-!!$                          + (cfp(3) + cfv(3))*liftDirection(3)
-!!$                     
-!!$                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-!!$                          + (cfp(2) + cfv(2))*dragDirection(2) &
-!!$                          + (cfp(3) + cfv(3))*dragDirection(3)
-!!$                     
-!!$                     Cfx = cfp(1) + cfv(1)
-!!$                     Cfy = cfp(2) + cfv(2)
-!!$                     Cfz = cfp(3) + cfv(3)
-!!$                     
-!!$                     Cmx = cmp(1) + cmv(1)
-!!$                     Cmy = cmp(2) + cmv(2)
-!!$                     Cmz = cmp(3) + cmv(3)
-!!$                     
-!!$                     nmonsum = 8
-!!$                     
-!!$                     monLoc(1) = Cl
-!!$                     monLoc(2) = Cd
-!!$                     monLoc(3) = cfx
-!!$                     monLoc(4) = cfy
-!!$                     monLoc(5) = cfz
-!!$                     monLoc(6) = cmx
-!!$                     monLoc(7) = cmy
-!!$                     monLoc(8) = cmz
-!!$                     
+!!$!                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sps)
+!!$!                     
+!!$!                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+!!$!                          + (cfp(2) + cfv(2))*liftDirection(2) &
+!!$!                          + (cfp(3) + cfv(3))*liftDirection(3)
+!!$!                     
+!!$!                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+!!$!                          + (cfp(2) + cfv(2))*dragDirection(2) &
+!!$!                          + (cfp(3) + cfv(3))*dragDirection(3)
+!!$!                     
+!!$!                     Cfx = cfp(1) + cfv(1)
+!!$!                     Cfy = cfp(2) + cfv(2)
+!!$!                     Cfz = cfp(3) + cfv(3)
+!!$!                     
+!!$!                     Cmx = cmp(1) + cmv(1)
+!!$!                     Cmy = cmp(2) + cmv(2)
+!!$!                     Cmz = cmp(3) + cmv(3)
+!!$!                     
+!!$!                     nmonsum = 8
+!!$!                     
+!!$!                     monLoc(1) = Cl
+!!$!                     monLoc(2) = Cd
+!!$!                     monLoc(3) = cfx
+!!$!                     monLoc(4) = cfy
+!!$!                     monLoc(5) = cfz
+!!$!                     monLoc(6) = cmx
+!!$!                     monLoc(7) = cmy
+!!$!                     monLoc(8) = cmz
+!!$!                     
                      
                      ! Determine the global sum of the summation monitoring
                      ! variables. The sum is made known to all processors.
@@ -901,34 +1162,34 @@ subroutine verifydCfdx(level)
                      monLoc2(7) = cmy
                      monLoc2(8) = cmz
                   
-!!$                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sps)
-!!$                     
-!!$                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-!!$                          + (cfp(2) + cfv(2))*liftDirection(2) &
-!!$                          + (cfp(3) + cfv(3))*liftDirection(3)
-!!$                     
-!!$                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-!!$                          + (cfp(2) + cfv(2))*dragDirection(2) &
-!!$                          + (cfp(3) + cfv(3))*dragDirection(3)
-!!$                     
-!!$                     Cfx = cfp(1) + cfv(1)
-!!$                     Cfy = cfp(2) + cfv(2)
-!!$                     Cfz = cfp(3) + cfv(3)
-!!$                     
-!!$                     Cmx = cmp(1) + cmv(1)
-!!$                     Cmy = cmp(2) + cmv(2)
-!!$                     Cmz = cmp(3) + cmv(3)
-!!$                     
-!!$                     nmonsum = 8
-!!$                     
-!!$                     monLoc(1) = Cl
-!!$                     monLoc(2) = Cd
-!!$                     monLoc(3) = cfx
-!!$                     monLoc(4) = cfy
-!!$                     monLoc(5) = cfz
-!!$                     monLoc(6) = cmx
-!!$                     monLoc(7) = cmy
-!!$                     monLoc(8) = cmz
+!!$!                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sps)
+!!$!                     
+!!$!                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+!!$!                          + (cfp(2) + cfv(2))*liftDirection(2) &
+!!$!                          + (cfp(3) + cfv(3))*liftDirection(3)
+!!$!                     
+!!$!                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+!!$!                          + (cfp(2) + cfv(2))*dragDirection(2) &
+!!$!                          + (cfp(3) + cfv(3))*dragDirection(3)
+!!$!                     
+!!$!                     Cfx = cfp(1) + cfv(1)
+!!$!                     Cfy = cfp(2) + cfv(2)
+!!$!                     Cfz = cfp(3) + cfv(3)
+!!$!                     
+!!$!                     Cmx = cmp(1) + cmv(1)
+!!$!                     Cmy = cmp(2) + cmv(2)
+!!$!                     Cmz = cmp(3) + cmv(3)
+!!$!                     
+!!$!                     nmonsum = 8
+!!$!                     
+!!$!                     monLoc(1) = Cl
+!!$!                     monLoc(2) = Cd
+!!$!                     monLoc(3) = cfx
+!!$!                     monLoc(4) = cfy
+!!$!                     monLoc(5) = cfz
+!!$!                     monLoc(6) = cmx
+!!$!                     monLoc(7) = cmy
+!!$!                     monLoc(8) = cmz
                      
                      
                      ! Determine the global sum of the summation monitoring
@@ -1121,6 +1382,7 @@ subroutine verifydCfdx(level)
          !print *,'clp',CLP,CLM,CLP-CLM
          dCLdextraFD(ndesignmach) = (CLP-CLM)/(two*deltax)  
          dCDdextraFD(ndesignmach) = (CDP-CDM)/(two*deltax) 
+         dcmdextrafd(ndesignmach) = (cmxp-cmxm)/(two*deltax)
          !dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
         
       enddo domainMachLoopFDorig
@@ -1278,12 +1540,221 @@ subroutine verifydCfdx(level)
 
          dCLdextraFD(ndesignaoa) = (CLP-CLM)/(two*deltax)  
          dCDdextraFD(ndesignaoa) = (CDP-CDM)/(two*deltax) 
+         dcmdextrafd(ndesignaoa) = (cmxp-cmxm)/(two*deltax)
          !dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
 
       enddo domainalphaLoopFDorig
 
 
+      ! Loop over the number of local blocks.
+      
+        monloc1=0.0
+        monloc2=0.0
+      sps=1
+      print *,'starting FD loop',sps
+      domainrotxLoopFDorig: do nn=1,nDom   
+         
+         call setPointers(nn,level,sps)
 
+         !loop over all points
+         
+         rotratexref = rotrateadj(1)
+              
+         
+         !print *,'mach before',mach,machcoef
+         rotrateadj(1)= rotratexref+deltax
+        
+         cgnsDoms(nbkglobal)%rotRate(1) = RotRateAdj(1)/timeRef
+         !print *,'mach after',mach,machcoef
+         !*************************************************************
+         !Original force and metric calculation....
+         !     ******************************************************************
+         !     *                                                                *
+         !     * Update the force coefficients using the usual flow solver      *
+         !     * routine.                                                       *
+         !     *                                                                *
+         !     ******************************************************************
+         !
+ 
+         call metric(level)
+         do mm=1,nTimeIntervalsSpectral
+            
+            ! Compute the time, which corresponds to this spectral solution.
+            ! For steady and unsteady mode this is simply the restart time;
+            ! for the spectral mode the periodic time must be taken into
+            ! account, which can be different for every section.
+            
+            t = timeUnsteadyRestart
+            
+            if(equationMode == timeSpectral) then
+               do ll=1,nSections
+                  t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
+                       /         real(nTimeIntervalsSpectral,realType)
+               enddo
+            endif
+            
+            call gridVelocitiesFineLevel(.false., t, mm)
+            call gridVelocitiesCoarseLevels(mm)
+            call normalVelocitiesAllLevels(mm)
+            
+            call slipVelocitiesFineLevel(.false., t, mm)
+            call slipVelocitiesCoarseLevels(mm)
+            
+         enddo
+         call setPointers(nn,level,sps)
+         call computeForcesPressureAdj(w,p)
+         call applyAllBC(secondHalo)
+         call setPointers(nn,level,sps)
+         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+         
+         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+              + (cfp(2) + cfv(2))*liftDirection(2) &
+              + (cfp(3) + cfv(3))*liftDirection(3)
+         
+         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+              + (cfp(2) + cfv(2))*dragDirection(2) &
+              + (cfp(3) + cfv(3))*dragDirection(3)
+         
+         Cfx = cfp(1) + cfv(1)
+         Cfy = cfp(2) + cfv(2)
+         Cfz = cfp(3) + cfv(3)
+         
+         Cmx = cmp(1) + cmv(1)
+         Cmy = cmp(2) + cmv(2)
+         Cmz = cmp(3) + cmv(3)
+         
+         nmonsum = 8
+         
+         monLoc1(1) =monLoc1(1) + Cl
+         monLoc1(2) =monLoc1(2)+ Cd
+         monLoc1(3) =monLoc1(3)+ cfx
+         monLoc1(4) =monLoc1(4) +cfy
+         monLoc1(5) =monLoc1(5) +cfz
+         monLoc1(6) =monLoc1(6) +cmx
+         monLoc1(7) = monLoc1(7)+ cmy
+         monLoc1(8) = monLoc1(8)+cmz
+         
+         
+         ! Determine the global sum of the summation monitoring
+         ! variables. The sum is made known to all processors.
+         
+         call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
+              mpi_sum, SUmb_comm_world, ierr)
+         
+         ! Transfer the cost function values to output arguments.
+         
+         CLp  = monGlob1(1)
+         CDp  = monGlob1(2)
+         Cfxp = monGlob1(3)
+         Cfyp = monGlob1(4)
+         Cfzp = monGlob1(5) 
+         CMxp = monGlob1(6)
+         CMyp = monGlob1(7)
+         CMzp = monGlob1(8)
+         
+         
+         !*********************
+         !Now calculate other perturbation
+         rotrateadj(1)= rotratexref-deltax
+        
+         cgnsDoms(nbkglobal)%rotRate(1) = RotRateAdj(1)/timeRef
+        
+         !*************************************************************
+         !Original force and metric calculation....
+         !     ******************************************************************
+         !     *                                                                *
+         !     * Update the force coefficients using the usual flow solver      *
+         !     * routine.                                                       *
+         !     *                                                                *
+         !     ******************************************************************
+         !
+         
+         call metric(level)
+         do mm=1,nTimeIntervalsSpectral
+            
+            ! Compute the time, which corresponds to this spectral solution.
+            ! For steady and unsteady mode this is simply the restart time;
+            ! for the spectral mode the periodic time must be taken into
+            ! account, which can be different for every section.
+            
+            t = timeUnsteadyRestart
+            
+            if(equationMode == timeSpectral) then
+               do ll=1,nSections
+                  t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
+                       /         real(nTimeIntervalsSpectral,realType)
+               enddo
+            endif
+            
+            call gridVelocitiesFineLevel(.false., t, mm)
+            call gridVelocitiesCoarseLevels(mm)
+            call normalVelocitiesAllLevels(mm)
+            
+            call slipVelocitiesFineLevel(.false., t, mm)
+            call slipVelocitiesCoarseLevels(mm)
+            
+         enddo
+         call setPointers(nn,level,sps)
+         call computeForcesPressureAdj(w,p)
+         call applyAllBC(secondHalo)
+         call setPointers(nn,level,sps)
+         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+                     
+         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+              + (cfp(2) + cfv(2))*liftDirection(2) &
+              + (cfp(3) + cfv(3))*liftDirection(3)
+         
+         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+              + (cfp(2) + cfv(2))*dragDirection(2) &
+              + (cfp(3) + cfv(3))*dragDirection(3)
+         
+         Cfx = cfp(1) + cfv(1)
+         Cfy = cfp(2) + cfv(2)
+         Cfz = cfp(3) + cfv(3)
+         
+         Cmx = cmp(1) + cmv(1)
+         Cmy = cmp(2) + cmv(2)
+         Cmz = cmp(3) + cmv(3)
+         
+         nmonsum = 8
+         
+         monLoc2(1) = monLoc2(1)+Cl
+         monLoc2(2) = monLoc2(2)+Cd
+         monLoc2(3) = monLoc2(3)+cfx
+         monLoc2(4) = monLoc2(4)+cfy
+         monLoc2(5) = monLoc2(5)+cfz
+         monLoc2(6) = monLoc2(6)+cmx
+         monLoc2(7) = monLoc2(7)+cmy
+         monLoc2(8) = monLoc2(8)+cmz
+         
+         ! Determine the global sum of the summation monitoring
+         ! variables. The sum is made known to all processors.
+         
+         call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
+              mpi_sum, SUmb_comm_world, ierr)
+         
+         ! Transfer the cost function values to output arguments.
+         
+         CLm  = monGlob2(1)
+         CDm  = monGlob2(2)
+         Cfxm = monGlob2(3)
+         Cfym = monGlob2(4)
+         Cfzm = monGlob2(5) 
+         CMxm = monGlob2(6)
+         CMym = monGlob2(7)
+         CMzm = monGlob2(8)
+         
+         rotrateadj(1)= rotratexref
+         
+         cgnsDoms(nbkglobal)%rotRate(1) = RotRateAdj(1)/timeRef
+         
+         !print *,'clp',CLP,CLM,CLP-CLM
+         dCLdextraFD(ndesignrotx) = (CLP-CLM)/(two*deltax)  
+         dCDdextraFD(ndesignrotx) = (CDP-CDM)/(two*deltax) 
+         dcmdextrafd(ndesignrotx) = (cmxp-cmxm)/(two*deltax)
+         !dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
+        
+      enddo domainrotxLoopFDorig
 
 !!$      !from ForcesAndMoments.f90
 !!$       ! Determine the reference point for the moment computation in
@@ -1549,7 +2020,7 @@ subroutine verifydCfdx(level)
 !
       ! Output debug information.
 
-      domainDebugLoop: do nn=8,8!1,nDom
+      domainDebugLoop: do nn=1,nDom
 
         ! Set the variables, which are related to the dimensions of the
         ! block. In this way the dimensions of the automatic arrays used
@@ -1679,10 +2150,12 @@ subroutine verifydCfdx(level)
 
       dcldextraerror= dcldextra- dcldextraFD
       dcddextraerror= dcddextra- dcddextraFD
+      dcmdextraerror= dcmdextra- dcmdextraFD
       
-      do i=1,3
-         print *,'dcldextra',dcldextraerror(i), dcldextra(i), dcldextraFD(i)
-         print *,'dcddextra',dcddextraerror(i), dcddextra(i), dcddextraFD(i)
+      do i=1,6
+         print *,'dcldextra',i,dcldextraerror(i), dcldextra(i), dcldextraFD(i)
+         print *,'dcddextra',i,dcddextraerror(i), dcddextra(i), dcddextraFD(i)
+         print *,'dcmdextra',i,dcmdextraerror(i), dcmdextra(i), dcmdextraFD(i)
       end do
 
       
