@@ -9,8 +9,8 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine applyAllBCForcesAdj(wInfAdj,pInfCorrAdj,wAdj, pAdj, &
-                              siAdj, sjAdj, skAdj, normAdj, &
+       subroutine applyAllBCForcesAdj(wInfAdj,pInfCorrAdj,wAdj, pAdj,sAdj, &
+                              siAdj, sjAdj, skAdj, normAdj,rFaceAdj, &
                               iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End,&
                               secondHalo,mm)
 !
@@ -54,12 +54,16 @@
        !                                            intent(in) :: siAdj, sjAdj, skAdj
        !real(kind=realType), dimension(0:0,0:0,0:0), intent(in) :: volAdj
        real(kind=realType), intent(in) ::pInfCorrAdj
+       !area multiplied by normal
        real(kind=realType), dimension(1:2,iiBeg:iiEnd,jjBeg:jjEnd,3) :: siAdj 
        ! notice the range of y dim is set 1:2 which corresponds to 1/jl
        real(kind=realType), dimension(iiBeg:iiEnd,1:2,jjBeg:jjEnd,3) :: sjAdj
        ! notice the range of z dim is set 1:2 which corresponds to 1/kl
        real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,1:2,3) :: skAdj
+       !Cell center velocity...
+       real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,0:2,3) :: sAdj
        real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,3) :: normAdj
+       real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd) ::rFaceAdj
        !real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(in) :: normAdj
        real(kind=realType), dimension(nw),intent(in)::wInfAdj
 
@@ -133,7 +137,7 @@
        case (noPrecond)
           !print *,'applying farfield'
           call bcFarfieldForcesAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,&
-               siAdj, sjAdj, skAdj, normAdj,mm,&
+               siAdj, sjAdj, skAdj, normAdj,rfaceAdj,mm,&
                iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End)
 
        case (Turkel)
@@ -175,8 +179,8 @@
 !!$       
        ! Inviscid wall boundary conditions.
        !print *,'applying eulerwall'
-       call bcEulerWallForcesAdj(secondHalo, wAdj,pAdj,      &
-            siAdj, sjAdj, skAdj, normAdj,mm,&
+       call bcEulerWallForcesAdj(secondHalo, wAdj,pAdj,sAdj,    &
+            siAdj, sjAdj, skAdj, normAdj,rFaceAdj,mm,&
             iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End)
        !print *,'eulerwall applied'
        

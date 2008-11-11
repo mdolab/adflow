@@ -69,6 +69,9 @@
       REAL(KIND=REALTYPE) :: murefadj, timerefadj
       REAL(KIND=REALTYPE) :: alphaadj, betaadj
       REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
+      REAL(KIND=REALTYPE), DIMENSION(3) :: rotcenteradj
+      REAL(KIND=REALTYPE), DIMENSION(3) :: rotrateadj
+      REAL(KIND=REALTYPE) :: rotrateadjb(3)
 
       integer(kind=intType), dimension(0:nProc-1) :: offsetRecv
 
@@ -373,11 +376,12 @@
 		     iNode = iCell!-1
                      ! Copy the state w to the wAdj array in the stencil
                      call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
-                          machCoefAdj,iCell, jCell, kCell,prefAdj,&
-                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,&
+	        	  machCoefAdj,iCell, jCell, kCell,prefAdj,&
+	       	   	  rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-!copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
+
+                     !copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)   
 
 
                      mLoop: do m = 1, nw       
@@ -391,13 +395,12 @@
                                                 
                         ! Call reverse mode of residual computation
                         call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                          &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                          &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
-                          &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-                          &  murefadj, timerefadj, pinfcorradj,liftIndex)
-!COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
-!                             dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
-!                             correctfork, secondhalo)
+                             &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
+                             &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
+                             &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+                             &  rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj, &
+                             &  pinfcorradj, liftindex)
+
 
                          do ii=-3,2!1,il-1
                            do jj = -3,2!1,jl-1

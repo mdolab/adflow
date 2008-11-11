@@ -10,7 +10,7 @@
 !      ******************************************************************
 !
 subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
-     siAdj, sjAdj, skAdj, normAdj,iCell,jCell,kCell)
+     siAdj, sjAdj, skAdj, normAdj,rFaceAdj,iCell,jCell,kCell)
 
   !
   !      ******************************************************************
@@ -52,6 +52,7 @@ subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
   real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) :: &
        siAdj, sjAdj, skAdj
   real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(in) :: normAdj
+  real(kind=realType), dimension(nBocos,-2:2,-2:2), intent(in) :: rFaceAdj
   real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
        intent(in) :: wAdj
   real(kind=realType), dimension(-2:2,-2:2,-2:2),intent(in) :: pAdj
@@ -144,7 +145,7 @@ subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
                  ii = i - iOffset
                  jj = j - jOffset
              
-                 rface = BCData(nn)%rface(i,j)
+                 rface = rFaceAdj(nn,ii,jj)!BCData(nn)%rface(i,j)
                  
                  ! Store the three components of the unit normal a
                  ! bit easier.

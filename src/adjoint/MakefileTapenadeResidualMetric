@@ -88,15 +88,16 @@
 
 #JAVA_HOME = /nfs/opal/home/mader/jdk1.5.0_06
 #JAVA_HOME = /home/guysmiley/acmarta/software/tapenade/jre1.5.0_07
-JAVA_HOME =/home/mader/UTIAS/SRC/jdk1.6.0_06
+#JAVA_HOME =/home/mader/UTIAS/SRC/jdk1.6.0_06
 #TAPENADE_HOME = /nfs/opal/home/mader/SRC/Tapenade/tapenade2.2
 #TAPENADE_HOME = /home/guysmiley/acmarta/software/tapenade/tapenade2.2
-TAPENADE_HOME = /home/mader/UTIAS/SRC/tapenade2.2.4
+#TAPENADE_HOME = /home/mader/UTIAS/SRC/tapenade2.2.4
 
 #SOLVER_DIRSRC = /nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src
 #SOLVER_DIRSRC = /home/guysmiley/acmarta/SVN/SUmbVertex/src
 #SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/SUmbVertex/trunk/src
-SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
+#SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
+SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
 
 #     ******************************************************************
 #     *                                                                *
@@ -113,7 +114,7 @@ TAPENADE_OUTVARS = "dwadj"
 # Independent input variables (separator: white space, default: all)
 
 #TAPENADE_VARS = "xadj wadj alphaadj machadj"
-TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj machcoefadj"
+TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj machcoefadj rotRateAdj"
 
 # Name of the top routine
 
@@ -162,16 +163,21 @@ TAPENADE_SRC_SOLVER = $(TAPENADE_DIRSRC_RES)/applyAllBCAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/bcSymmAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/checkOverlapAdj.f90\
 	       $(TAPENADE_DIRSRC_RES)/computePressureAdj.f90 \
+               $(TAPENADE_DIRSRC_RES)/derivativeRigidRotAngleAdj.f90\
+               $(TAPENADE_DIRSRC_RES)/derivativeRotMatrixRigidAdj.f90\
 	       $(TAPENADE_DIRSRC_RES)/etotArrayAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/extractBCStatesAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/extrapolate2ndHaloAdj.f90 \
+               $(TAPENADE_DIRSRC_RES)/gridVelocitiesFineLevelAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/initresAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/inviscidCentralFluxAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/inviscidUpwindFluxAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/leftRightStateAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/metricAdj.f90 \
+               $(TAPENADE_DIRSRC_RES)/normalVelocitiesAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/replaceBCStatesAdj.f90\
 	       $(TAPENADE_DIRSRC_RES)/riemannFluxAdj.f90\
+               $(TAPENADE_DIRSRC_RES)/rigidRotAngleAdj.f90      \
 	       $(TAPENADE_DIRSRC_RES)/bcEulerWallAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/adjustInflowAngleAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/checkInputParamAdj.f90 \

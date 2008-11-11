@@ -11,6 +11,7 @@
 !
        subroutine inviscidUpwindFluxAdj(wAdj,  pAdj,  dwAdj, &
                                         siAdj, sjAdj, skAdj, &
+                                        sFaceIAdj,sFaceJAdj,sFaceKAdj,&
                                         iCell, jCell, kCell,finegrid)
 !
 !      ******************************************************************
@@ -39,6 +40,7 @@
                                                       intent(in) :: pAdj
        real(kind=realType), dimension(nw), intent(inout) :: dwAdj
        real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) :: siAdj, sjAdj, skAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2), intent(in) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
 !
 !      Local variables.
 !
@@ -135,7 +137,7 @@
 
            sx = siAdj(ii,0,0,1); sy = siAdj(ii,0,0,2); sz = siAdj(ii,0,0,3)
            por = porI(i,j,k)
-           if( addGridVelocities ) sFace = sFaceI(i,j,k)
+           if( addGridVelocities ) sFace = sFaceIAdj(ii,0,0)
 
            ! Determine the left and right state.
 
@@ -194,7 +196,7 @@
 
            sx = sjAdj(0,jj,0,1); sy = sjAdj(0,jj,0,2); sz = sjAdj(0,jj,0,3)
            por = porJ(i,j,k)
-           if( addGridVelocities ) sFace = sFaceJ(i,j,k)
+           if( addGridVelocities ) sFace = sFaceJAdj(0,jj,0)
 
            ! Determine the left and right state.
 
@@ -251,7 +253,7 @@
 
            sx = skAdj(0,0,kk,1); sy = skAdj(0,0,kk,2); sz = skAdj(0,0,kk,3)
            por = porK(i,j,k)
-           if( addGridVelocities ) sFace = sFaceK(i,j,k)
+           if( addGridVelocities ) sFace = sFaceKAdj(0,0,kk)
 
            ! Determine the left and right state.
 
@@ -359,6 +361,7 @@
            ! is stored.
 
            left(irho)  = left(irho)  + wAdj(ii,0,0,irho)
+           !print *,'left',left(irho),wAdj(ii,0,0,irho)
            left(ivx)   = left(ivx)   + wAdj(ii,0,0,ivx)
            left(ivy)   = left(ivy)   + wAdj(ii,0,0,ivy)
            left(ivz)   = left(ivz)   + wAdj(ii,0,0,ivz)
@@ -380,7 +383,7 @@
 
            sx = siAdj(ii,0,0,1); sy = siAdj(ii,0,0,2); sz = siAdj(ii,0,0,3)
            por = porI(i,j,k)
-           if( addGridVelocities ) sFace = sFaceI(i,j,k)
+           if( addGridVelocities ) sFace = sFaceIAdj(ii,0,0)
 
            ! Compute the value of gamma on the face.
            ! Constant gamma for now.
@@ -391,10 +394,12 @@
 
            ! Compute the dissipative flux across the interface
            ! and them to dwAdj.
-           !print *,'leftrightadj',left,right
+!           print *,'leftrightadj',left,right
+!stop
 !           call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
+ !          print *,'riemanninputI',left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid
            call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid)
-           !print *,'fluxadj',flux,icell,jcell,kcell
+  !         print *,'fluxadjI',flux,icell,jcell,kcell
            dwAdj(irho)  = dwAdj(irho)  + fact*flux(irho)
            dwAdj(imx)   = dwAdj(imx)   + fact*flux(imx)
            dwAdj(imy)   = dwAdj(imy)   + fact*flux(imy)
@@ -477,7 +482,7 @@
 
            sx = sjAdj(0,jj,0,1); sy = sjAdj(0,jj,0,2); sz = sjAdj(0,jj,0,3)
            por = porJ(i,j,k)
-           if( addGridVelocities ) sFace = sFaceJ(i,j,k)
+           if( addGridVelocities ) sFace = sFaceJAdj(0,jj,0)
 
            ! Compute the value of gamma on the face.
            ! Constant gamma for now.
@@ -572,7 +577,7 @@
 
            sx = skAdj(0,0,kk,1); sy = skAdj(0,0,kk,2); sz = skAdj(0,0,kk,3)
            por = porK(i,j,k)
-           if( addGridVelocities ) sFace = sFaceK(i,j,k)
+           if( addGridVelocities ) sFace = sFaceKAdj(0,0,kk)
 
            ! Compute the value of gamma on the face.
            ! Constant gamma for now.
@@ -583,6 +588,7 @@
            ! and them to dwAdj.
 
 !           call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
+!           print *,'riemanninputk',left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid
            call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid)
 
            dwAdj(irho)  = dwAdj(irho)  + fact*flux(irho)
@@ -590,6 +596,8 @@
            dwAdj(imy)   = dwAdj(imy)   + fact*flux(imy)
            dwAdj(imz)   = dwAdj(imz)   + fact*flux(imz)
            dwAdj(irhoE) = dwAdj(irhoE) + fact*flux(irhoE)
+
+           !print *,'dwupwind',dwadj,'fact',fact,'flux',flux
 
            ! Update k and set fact to 1 for the second face.
 

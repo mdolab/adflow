@@ -51,6 +51,7 @@ FF90_OBJECTS = adjustinflowangleforcesadj_b.o\
 	       forcesandmomentsadj_b.o\
 	       getdirvectorforces_b.o\
                getsurfacenormalsadj_b.o\
+               gridvelocitiesfinelevelforcesadj_b.o\
 	       referencestateforcesadj_b.o \
 	       replacebcstatesforcesadj_b.o \
                setflowinfinitystateforcesadj_b.o\

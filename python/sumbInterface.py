@@ -418,6 +418,20 @@ class SUmbMesh(object):
         """ get the number of blocks present on the local processor"""
         return sumb.getnblockslocal()
 
+    def getSingleState(self,blocknum,i,j,k,l):
+        '''
+        get the requested state value
+        '''
+        return sumb.getsinglestate(blocknum,i,j,k,l)
+
+    def setSingleState(self,blocknum,i,j,k,l,state):
+        '''
+        set the requested state value
+        '''
+        sumb.setsinglestate(blocknum,i,j,k,l,state)
+        
+        return 
+
 
 # =============================================================================
 
@@ -483,7 +497,7 @@ class SUmbInterface(object):
         # Write the intro message
         sumb.writeintromessage()
 
-
+        self.nw =sumb.flowvarrefstate.nw
         return
 
     def initializeFlow(self,aero_problem,sol_type,grid_file,*args,**kwargs):

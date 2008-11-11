@@ -358,7 +358,7 @@
            enddo
            
            ! Projected areas of cell faces in the k direction.
-           ! Projected areas of cell faces in the j direction.
+           
           kStart=-3; kEnd=2
           jStart=-2; jEnd=2
           iStart=-2; iEnd=2

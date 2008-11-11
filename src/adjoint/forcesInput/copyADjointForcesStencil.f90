@@ -11,7 +11,8 @@
 !
       subroutine copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
            MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
+           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
+           pInfCorrAdj,nn,level,sps,liftIndex)
 
 !
 !     ******************************************************************
@@ -30,6 +31,7 @@
       use communication   ! myID for debug
       use flowvarrefstate ! nw
       use inputPhysics    ! Mach,veldirfreestream
+      use cgnsgrid        ! cgnsdoms
       implicit none
 !
 !     Subroutine arguments.
@@ -44,6 +46,8 @@
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
       REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
       integer(kind=intType)::liftIndex
+
+      real(kind=realType), dimension(3),intent(out) ::rotRateAdj,rotCenterAdj
 
 !
 !     Local variables.
@@ -120,5 +124,15 @@
       murefAdj = muref
       timerefAdj = timeref
       pInfCorrAdj = pInfCorr
+
+      ! Store the rotation center and determine the
+      ! nonDimensional rotation rate of this block. As the
+      ! reference length is 1 timeRef == 1/uRef and at the end
+      ! the nonDimensional velocity is computed.
+
+      j = nbkGlobal
+      
+      rotCenterAdj = cgnsDoms(j)%rotCenter
+      rotRateAdj   = timeRef*cgnsDoms(j)%rotRate
       
       end subroutine copyADjointForcesStencil

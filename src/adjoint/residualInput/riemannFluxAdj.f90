@@ -104,6 +104,7 @@
                  z1l = sqrt(left(irho))
                  z1r = sqrt(right(irho))
                  tmp = one/(z1l + z1r)
+                 !print *,'tmp',one,z1l , z1r
 
                  ! Compute some variables depending whether or not a
                  ! k-equation is present.
@@ -175,13 +176,13 @@
                  ! Compute the Roe average variables, which can be
                  ! computed directly from the average Roe vector.
 
-                 rAvg = fourth*(z1r + z1l)**2
+                 !rAvg = fourth*(z1r + z1l)**2 deadend code!
                  uAvg = tmp*(z1l*left(ivx) + z1r*right(ivx))
                  vAvg = tmp*(z1l*left(ivy) + z1r*right(ivy))
                  wAvg = tmp*(z1l*left(ivz) + z1r*right(ivz))
                  hAvg = tmp*((Etl+left(irhoE)) /z1l &
                       +      (Etr+right(irhoE))/z1r)
-
+                 !print *,'uavg',tmp,z1l,left(ivx),z1r,right(ivx)
                  ! Compute the unit vector and store the area of the
                  ! normal. Also compute the unit normal velocity of the face.
 
@@ -199,6 +200,7 @@
                  a2Avg    = abs(gm1*(hAvg - alphaAvg) - gm53*kAvg)
                  aAvg     = sqrt(a2Avg)
                  unAvg    = uAvg*sx + vAvg*sy + wAvg*sz
+                 !print *,'unavg',uAvg,sx,vAvg,sy,wAvg,sz
 
                  ovaAvg  = one/aAvg
                  ova2Avg = one/a2Avg
@@ -230,7 +232,8 @@
                  lam1 = abs(unAvg - rFace + aAvg)
                  lam2 = abs(unAvg - rFace - aAvg)
                  lam3 = abs(unAvg - rFace)
-
+                 
+                 !print *,'lam3',unAvg, rFace
                  ! Apply the entropy correction to the eigenvalues.
 
                  tmp = two*eta
@@ -257,11 +260,14 @@
                  abv5 = sx*dru + sy*drv + sz*drw - unAvg*dr
 
                  abv6 = abv3*abv4*ova2Avg + abv2*abv5*ovaAvg
+                 !print *,'abv6',abv3,abv4,ova2Avg,abv2,abv5,ovaAvg
                  abv7 = abv2*abv4*ovaAvg  + abv3*abv5
 
                  ! Compute the dissipation term, -|a| (wr - wl), which is
                  ! multiplied by porFlux. Note that porFlux is either
                  ! 0.0 or 0.5*rFil.
+
+                 !print *,'inriemannend',-porFlux,lam3,dr, abv6
 
                  flux(irho)  = -porFlux*(lam3*dr  + abv6)
                  flux(imx)   = -porFlux*(lam3*dru + uAvg*abv6 &

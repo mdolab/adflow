@@ -129,6 +129,26 @@ python module sumb ! in
 !!$         !Local Variables
 !!$         integer(kind=inttype):: i
        end subroutine getblockcommunicationinfo
+
+       subroutine setsinglestate(blocknum,i,j,k,l,state) ! in :sumb:getBlockData.f90
+            use blockpointers
+            integer(kind=inttype) intent(in) :: blocknum
+            integer(kind=inttype) intent(in) :: i
+            integer(kind=inttype) intent(in) :: j
+            integer(kind=inttype) intent(in) :: k
+            integer(kind=inttype) intent(in) :: l
+            real(kind=realtype) intent(in) :: state
+       end subroutine setsinglestate
+       subroutine getsinglestate(blocknum,i,j,k,l,state) ! in :sumb:getBlockData.f90
+            use blockpointers
+            integer(kind=inttype) intent(in) :: blocknum
+            integer(kind=inttype) intent(in) :: i
+            integer(kind=inttype) intent(in) :: j
+            integer(kind=inttype) intent(in) :: k
+            integer(kind=inttype) intent(in) :: l
+            real(kind=realtype) intent(out) :: state
+       end subroutine getsinglestate
+
        
 !!$       subroutine getnonmatchingsubfaceinfo(blocknum,nNon,nDonor,blocks,proc,faceid)
 !!$         !get donor block info for nonmatching subfaces

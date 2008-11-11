@@ -1497,7 +1497,7 @@
          ! Read the i-th coefficient from the string.
 
          read(string,*) coef(i)
-
+         print *,'coef',coef(i)
          ! Remove this coefficient from the string.
 
          pos = index(string, " ")

@@ -51,11 +51,12 @@ FF90_OBJECTS = adjustinflowangleadj_b.o   \
                extractbcstatesadj_b.o     \
 	       extrapolate2ndhaloadj_b.o  \
 	       getdirvector_b.o           \
-               initresadj_b.o             \
+	       gridvelocitiesfineleveladj_b.o \
                inviscidcentralfluxadj_b.o \
 	       inviscidupwindfluxadj_b.o  \
                leftrightstateadj_b.o      \
                metricadj_b.o              \
+               normalvelocitiesalllevelsadj_b.o\
 	       referencestateadj_b.o      \
 	       replacebcstatesadj_b.o     \
                residualadj_b.o            \

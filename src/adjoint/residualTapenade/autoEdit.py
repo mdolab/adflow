@@ -29,8 +29,10 @@ EXT = '.f90'
 #DIR_MOD = '/nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src/adjoint/residualOutput'
 #DIR_ORI = '/nfs/basalt/home/mdo/mader/svn/SUmbVertex/trunk/src/adjoint/residualTapenade'
 #DIR_MOD = '/nfs/basalt/home/mdo/mader/svn/SUmbVertex/trunk/src/adjoint/residualOutput'
-DIR_ORI = '/home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src/adjoint/residualTapenade'
-DIR_MOD = '/home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src/adjoint/residualOutput'
+#DIR_ORI = '/home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src/adjoint/residualTapenade'
+#DIR_MOD = '/home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src/adjoint/residualOutput'
+DIR_ORI = '/nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src/adjoint/residualTapenade'
+DIR_MOD = '/nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src/adjoint/residualOutput'
 # Specify line identifier
 
 FILE_EXCL = 'MODULE'

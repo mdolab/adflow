@@ -125,7 +125,7 @@
 
                      ! Compute the normal velocity based on the outward
                      ! pointing unit normal.
-
+                     
                      BCData(mm)%rFace(i,j) = weight*sFace(i,j)
 
                    enddo
@@ -148,5 +148,5 @@
          enddo domains
 
        enddo levelLoop
-
+     
        end subroutine normalVelocitiesAllLevels

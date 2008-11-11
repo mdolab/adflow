@@ -13,7 +13,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
                           MachCoefAdj,iCell, jCell,  kCell, &
                           nn,sps, correctForK,secondHalo,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,&
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
   
 !      Set Use Modules
@@ -31,8 +31,9 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
        intent(in) :: xAdj
 
   real(kind=realType), dimension(nw)                :: dwAdj
+  real(kind=realType), dimension(3),intent(in) ::rotRateAdj,rotCenterAdj
 
-  logical :: secondHalo, correctForK
+  logical :: secondHalo, correctForK,useOldCoor=.false.
 
 !      Set Local Variables
 
@@ -41,10 +42,13 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
   integer(kind=intType) :: iStart,iEnd,jStart,jEnd,kStart,kEnd
 
   real(kind=realType), dimension(-2:2,-2:2,-2:2) :: pAdj
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,3) :: sAdj
   real(kind=realType), dimension(nBocos,-2:2,-2:2,3) :: normAdj
+  real(kind=realType), dimension(nBocos,-2:2,-2:2) ::rFaceAdj
   real(kind=realType):: volAdj
 !  real(kind=realType), dimension(-2:2,-2:2,-2:2,3) :: siAdj, sjAdj, skAdj
   real(kind=realType), dimension(-3:2,-3:2,-3:2,3) :: siAdj, sjAdj, skAdj
+  real(kind=realType), dimension(-2:2,-2:2,-2:2) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
 
   real(kind=realType), dimension(3) :: velDirFreestreamAdj
   real(kind=realType), dimension(3) :: liftDirectionAdj
@@ -62,7 +66,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
 ! *************************************************************************
 !      Begin Execution
 ! *************************************************************************
-  
+  !print *,'in computeRadj',wadj(:,:,:,irho)!
 !      call the initialization routines to calculate the effect of Mach and alpha
        call adjustInflowAngleAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
             liftDirectionAdj,dragDirectionAdj,liftIndex)
@@ -91,11 +95,28 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
        call metricAdj(xAdj,siAdj,sjAdj,skAdj,volAdj,normAdj, &
             iCell,jCell,kCell)
       
+!call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
+
+       !first two arguments needed for time spectral.just set to initial values for the current steady case...
+       !print *,'grid velocities'
+       call gridVelocitiesFineLevelAdj(.false., zero, sps,xAdj,&
+            siAdj, sjAdj, skAdj,rotCenterAdj, rotRateAdj,sAdj,sFaceIAdj,&
+            sFaceJAdj,sFaceKAdj, iCell, jCell, kCell)
+       
+       !print *,'normalVelocities'
+
+       call normalVelocitiesAllLevelsAdj(sps,iCell, jCell, kCell,sFaceIAdj,&
+            sFaceJAdj,sFaceKAdj,siAdj, sjAdj, skAdj,rFaceAdj)
+ 
+       !needed for uSlip in Viscous Calculations
+       !call slipVelocitiesFineLevel(.false., t, mm)
+
 !      Mimic the Residual calculation in the main code
 
        !Compute the Pressure in the stencil based on the current 
        !States
-
+       
+       !print *,'Calling computepressure',wadj(:,:,:,irho)!
        ! replace with Compute Pressure Adjoint!
        call computePressureAdj(wAdj, pAdj)
        
@@ -110,10 +131,11 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
 !###!         call applyAllTurbBCAdj(secondHalo)
 
        ! Apply all boundary conditions of the mean flow.
+      ! print *,'applying bcs'
 !******************************************
-       call applyAllBCAdj(wInfAdj,pInfCorrAdj,wAdj, pAdj, &
+       call applyAllBCAdj(wInfAdj,pInfCorrAdj,wAdj, pAdj,sAdj, &
             siAdj, sjAdj, skAdj, volAdj, normAdj, &
-            iCell, jCell, kCell,secondHalo)
+            rFaceAdj,iCell, jCell, kCell,secondHalo)
 
 !!#Shouldn't need this section for derivatives...
 !!$       ! In case this routine is called in full mg mode call the mean
@@ -137,7 +159,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
 !!$                     .true., .true.)
 !!$       endif
 
-!Again this shou;d not be required, so leave out for now...
+!Again this should not be required, so leave out for now...
        ! For full multigrid mode the bleeds must be determined, the
        ! boundary conditions must be applied one more time and the
        ! solution must be exchanged again.
@@ -188,13 +210,15 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
 !!$       endif
 !!$
 
+       !print *,'calculating residuals'
        !call initresAdj(1_intType, nwf,sps,dwAdj)
        call initresAdj(1, nwf,sps,dwAdj)
        
        call residualAdj(wAdj,pAdj,siAdj,sjAdj,skAdj,volAdj,normAdj,&
+                              sFaceIAdj,sFaceJAdj,sFaceKAdj,&
                               dwAdj, iCell, jCell, kCell,  &  
-                              correctForK)
+                              rotRateAdj,correctForK)
 
-
+!stop
 
      end subroutine computeRAdjoint

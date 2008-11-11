@@ -2,15 +2,17 @@
 !      ******************************************************************
 !      *                                                                *
 !      * File:          inviscidCentralFluxAdj.f90                      *
-!      * Author:        Edwin van der Weide                             *
+!      * Author:        Edwin van der Weide, C.A.(Sandy) Mader          *
 !      *                Seongim Choi                                    *
 !      * Starting date: 11-21-2007                                      *
-!      * Last modified: 12-17-2007                                      *
+!      * Last modified: 10-22-2008                                      *
 !      *                                                                *
 !      ******************************************************************
 !
        subroutine inviscidCentralFluxAdj(wAdj,  pAdj,  dwAdj,         &
                                          siAdj, sjAdj, skAdj, volAdj, &
+                                         sFaceIAdj,sFaceJAdj,sFaceKAdj,&
+                                         rotRateAdj,                  &
                                          iCell, jCell, kCell)
 !
 !      ******************************************************************
@@ -39,7 +41,9 @@
                                                       intent(in) :: pAdj
        real(kind=realType), dimension(nw), intent(inout) :: dwAdj
        real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) :: siAdj, sjAdj, skAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2), intent(in) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
        real(kind=realType), dimension(0:0,0:0,0:0), intent(in) :: volAdj
+       real(kind=realType), dimension(3),intent(in) ::rotRateAdj
 !
 !      Local variables.
 !
@@ -48,6 +52,9 @@
        real(kind=realType) :: qsp, qsm, rqsp, rqsm, porVel, porFlux
        real(kind=realType) :: pa, fs, sFace, vnp, vnm, fact
        real(kind=realType) :: wx, wy, wz, rvol
+
+!     testing vars
+       real(kind=realType) :: wx2, wy2, wz2, rvol2
 
 !
 !      ******************************************************************
@@ -80,7 +87,7 @@
          ! Set the dot product of the grid velocity and the
          ! normal in i-direction for a moving face.
           
-         if( addGridVelocities ) sFace = sFaceI(i,j,k)
+         if( addGridVelocities ) sFace = sFaceIAdj(ii,0,0)
 
          ! Compute the normal velocities of the left and right state.
 
@@ -176,7 +183,7 @@
          ! Set the dot product of the grid velocity and the
          ! normal in j-direction for a moving face.
           
-         if( addGridVelocities ) sFace = sFaceJ(i,j,k)
+         if( addGridVelocities ) sFace = sFaceJAdj(0,jj,0)
 
          ! Compute the normal velocities of the left and right state.
 
@@ -271,7 +278,7 @@
          ! Set the dot product of the grid velocity and the
          ! normal in k-direction for a moving face.
           
-         if( addGridVelocities ) sFace = sFaceK(i,j,k)
+         if( addGridVelocities ) sFace = sFaceKAdj(0,0,kk)
 
          ! Compute the normal velocities of the left and right state.
 
@@ -354,15 +361,19 @@
        ! the equations are solved in the inertial frame and not
        ! in the moving frame, the form is different than what you
        ! normally find in a text book.
-
+       
        rotation: if(blockIsMoving .and. equationMode == steady) then
 
-          wx = timeRef*cgnsDoms(nbkGlobal)%rotRate(1)
-          wy = timeRef*cgnsDoms(nbkGlobal)%rotRate(2)
-          wz = timeRef*cgnsDoms(nbkGlobal)%rotRate(3)
+!          wx = timeRef*rotRateAdj(1)
+!          wy = timeRef*rotRateAdj(2)
+!          wz = timeRef*rotRateAdj(3)
+          !timeref is taken into account in copyAdjointStencil...
+          wx = rotRateAdj(1)
+          wy = rotRateAdj(2)
+          wz = rotRateAdj(3)
 
           rvol = wAdj(0,0,0,irho)*volAdj(0,0,0)
-          
+         
           dwAdj(imx) = dwAdj(imx) &
                + rvol*(wy*wAdj(0,0,0,ivz) - wz*wAdj(0,0,0,ivy))
           dwAdj(imy) = dwAdj(imy) &

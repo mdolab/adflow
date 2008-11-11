@@ -156,19 +156,19 @@
 
         ! Verify the node-based residual routine.
 
-  	!call verifyRAdj(level)
+!  	call verifyRAdj(level)
 !stop
 !	call verifyResiduals(level)
 !stop
         ! Verify the node-based ADjoint residual routine.
 
-	!call verifydRdW(level,sps)
+!	call verifydRdW(level,sps)
 !stop
 
         ! Verify the dRdx routine
 
-    	!	call verifydRdx(level,sps)
-	!stop	
+! 	call verifydRdx(level,sps)
+!stop	
 	!call verifydRdExtra(level)
 
 
@@ -180,7 +180,7 @@
 	! Verify the force derivatives
 
 	
-        !call verifydCfdx(level)
+!        call verifydCfdx(level)
 !stop
 	! Verify the force derivatives
 

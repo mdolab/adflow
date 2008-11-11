@@ -72,6 +72,10 @@
       REAL(KIND=REALTYPE) :: alphaadj, betaadj
       REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
 
+      REAL(KIND=REALTYPE), DIMENSION(3) :: rotcenteradj
+      REAL(KIND=REALTYPE), DIMENSION(3) :: rotrateadj
+      REAL(KIND=REALTYPE) :: rotrateadjb(3)
+
       character fileName*32, dataName*32
       real(kind=realType), dimension(nw) :: dwAdj,dwAdjb,dwAdjRef
       real(kind=realType), dimension(nw) :: dwAdjP, dwAdjM
@@ -165,12 +169,12 @@
       enddo
       idx = maxval(maxglobalcell(:))
       idxnode = maxval(maxglobalnode(:))
-!!$      print *,'allocating',idx,nw*(idx+1),3*(idxnode+1),ndom,max_nTime
-!!$       allocate(dRdxErr(nw*(idx+1),3*(idxnode+1),1,max_nTime), &
-!!$               dRdxAdj(nw*(idx+1),3*(idxnode+1),1,max_nTime), &
-!!$               dRdxFD1(nw*(idx+1),3*(idxnode+1),1,max_nTime), &
-!!$               dRdxFD2(nw*(idx+1),3*(idxnode+1),1,max_nTime))
-!!$      print *,' allocated'
+      print *,'allocating',idx,nw*(idx+1),3*(idxnode+1),ndom,max_nTime
+       allocate(dRdxErr(nw*(idx+1),3*(idxnode+1),1,max_nTime), &
+               dRdxAdj(nw*(idx+1),3*(idxnode+1),1,max_nTime), &
+               dRdxFD1(nw*(idx+1),3*(idxnode+1),1,max_nTime), &
+               dRdxFD2(nw*(idx+1),3*(idxnode+1),1,max_nTime))
+      print *,' allocated'
 
 !           if(ierr /= 0)                       &
 !                call terminate("memory?") 
@@ -278,11 +282,12 @@
  !                    print *,'indices',icell,jcell,kcell
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
-                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,&
-                          MachAdj,MachCoefAdj,iCell, jCell, kCell,prefAdj,&
+                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+                          machCoefAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,&
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+
 !                     print *,'Stencil Copied'
 !                     print *,'wadj',wadj
                      mLoop: do m = 1, nw           ! Loop over output cell residuals (R)
@@ -315,7 +320,8 @@
                              &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
                              &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
                              &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-                             &  murefadj, timerefadj, pinfcorradj,liftIndex)
+                             &  rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj, &
+                             &  pinfcorradj, liftindex)
                        ! call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
                        !      dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
                        !      correctfork, secondhalo)
@@ -336,7 +342,7 @@
                                        !print *,'globalindices',idxstate,idxres,shape(dRdwAdj)
                                        if( idxres>=0 .and. idxnode>=0) then
                                           !dRdxAdj(idxres,idxnode,nn,sps) = xAdjb(ii,jj,kk,l)
-                                          !!@dRdxAdj(idxres,idxnode,1,1) = xAdjb(ii,jj,kk,l)
+                                          dRdxAdj(idxres,idxnode,1,1) = xAdjb(ii,jj,kk,l)
 !!$                                          if (icell==13.and.jcell==5.and.kcell==5.and.ii==0.and.jj==-1.and.kk==0)then
 !!$                                             print *,'xAdjb', xAdjb(ii,jj,kk,l),icell,jcell,kcell,m,ii,jj,kk,l,i,j,k
 !!$                                             stop
@@ -533,7 +539,7 @@
                                         if (xFD2(iCell-1, jCell-1, kCell-1, iRes).ne. zero) then
                                            !print *,'xFD2',xFD2(iCell-1, jCell-1, kCell-1, iRes),icell,jcell,kcell
                                            !dRdxFD1(idxres,idxnode,nn,sps) = xFD2(iCell-1, jCell-1, kCell-1, iRes)
-                                           !!@dRdxFD1(idxres,idxnode,1,1) = xFD2(iCell-1, jCell-1, kCell-1, iRes)
+                                           dRdxFD1(idxres,idxnode,1,1) = xFD2(iCell-1, jCell-1, kCell-1, iRes)
                                            !if( istate ==1 .and. jstate==4 .and. kstate ==4 .and. n==3 .and. nn==1) then
                                            if(idxnode==flowdoms(1,1,1)%globalNode(1,4,4)*3+3) then
 !                                           if( istate ==1 .and. jstate==1 .and. kstate ==1 .and. n==3 .and. nn==1) then
@@ -818,20 +824,20 @@
                        
                         if( idxres>=0 .and. idxnode>=0) then
                            !write(*,*) iCell,jCell,kCell,m,ii,jj,kk,n,idxnode,idxres
-                           !!@dRdxErr(idxres, idxnode, 1, 1) = dRdxAdj(idxres, idxnode, 1, 1) - dRdxFD1(idxres, idxnode, 1, 1)
+                           dRdxErr(idxres, idxnode, 1, 1) = dRdxAdj(idxres, idxnode, 1, 1) - dRdxFD1(idxres, idxnode, 1, 1)
                            !dRdxErr(idxres, idxnode, 1, 1) = dRdxFD2(idxres, idxnode, 1, 1) - dRdxFD1(idxres, idxnode, 1, 1)
 !                           if(dRdxFD(idxres,idxnode,1,1).ne.0 .and. dRdxErr(idxres, idxnode, 1, 1)>1e-10.and.dRdxAdj(idxres, idxnode, 1, 1)==0) then
 !                           if(dRdxFD1(idxres,idxnode,1,1).ne.0 .and. dRdxErr(idxres, idxnode, 1, 1)>1e-10) then
-                           !if(dRdxErr(idxres, idxnode, 1, 1)>1e-9) then
+                           if(dRdxErr(idxres, idxnode, 1, 1)>1e-9) then
                            !if(dRdxFD1(idxres,idxnode,1,1).ne.0 .and. dRdxErr(idxres, idxnode, 1, 1).ne.0) then
                            !if(dRdxFD1(idxres,idxnode,1,1).ne.0 .and. dRdxAdj(idxres, idxnode, 1, 1)==0.0) then
                            !if(dRdxAdj(idxres,idxnode,1,1).ne.0) then
-                           if(dRdxFD1(idxres,idxnode,1,1).ne.0) then
+                           !if(dRdxFD1(idxres,idxnode,1,1).ne.0) then
                            !if(dRdxFD(idxres,idxnode,1,1)>1e-12) then
                               !if((ii.ne.zero .and.jj.ne.zero).and.(ii.ne.zero .and.kk.ne.zero).and.(kk.ne.zero .and.jj.ne.zero))then
                               !print *,'test',(ii.ne.zero .and.jj.ne.zero).and.(ii.ne.zero .and.kk.ne.zero).and.(kk.ne.zero .and.jj.ne.zero),(ii.ne.zero .and.jj.ne.zero),(ii.ne.zero .and.kk.ne.zero),(kk.ne.zero .and.jj.ne.zero)
-                           !!@      write(*,*) nn,iCell,jCell,kCell,m,ii,jj,kk,n, idxres,idxnode,&
-                           !!@           dRdxAdj(idxres,idxnode,1,1), dRdxFD1(idxres,idxnode,1,1), dRdxErr(idxres,idxnode,1,1),dRdxFD2(idxres,idxnode,1,1)
+                                 write(*,*) nn,iCell,jCell,kCell,m,ii,jj,kk,n, idxres,idxnode,&
+                                      dRdxAdj(idxres,idxnode,1,1), dRdxFD1(idxres,idxnode,1,1), dRdxErr(idxres,idxnode,1,1),dRdxFD2(idxres,idxnode,1,1)
                               !endif
                               !endif
                            end if

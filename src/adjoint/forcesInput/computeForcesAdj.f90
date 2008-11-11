@@ -17,7 +17,7 @@
                        alphaAdj,betaAdj,machAdj,machcoefAdj,prefAdj,&
                        rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                        rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,&
-                       liftIndex)
+                       rotCenterAdj, rotRateAdj,liftIndex)
         !(xAdj, &
         !         iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
         !         mm,cFxAdj,cFyAdj,cFzAdj, &
@@ -75,6 +75,8 @@
       
       real(kind=realType) :: alphaAdj, betaAdj
 
+      real(kind=realType), dimension(3) :: rotCenterAdj, rotRateAdj
+
 
 !
 !     Local variables.
@@ -85,6 +87,15 @@
       ! notice the range of z dim is set 1:2 which corresponds to 1/kl
       real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,1:2,3) :: skAdj
       real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,3) :: normAdj
+      real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd) :: rFaceAdj
+      real(kind=realType), dimension(0:ie,0:je,0:ke,3) :: sAdj
+
+       real(kind=realType), dimension(1:2,iiBeg:iiEnd,jjBeg:jjEnd,3) :: sFaceiAdj
+       real(kind=realType), dimension(iiBeg:iiEnd,1:2,jjBeg:jjEnd,3) :: sFacejAdj
+       real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,1:2,3) :: sFacekAdj
+      
+      
+
 
       !add to allow for scaling!
       real(kind=realType), dimension(3):: cFpAdjOut, cFvAdjOut
@@ -131,20 +142,38 @@
       ! visous force computation) for the stencil
       ! Get siAdj,sjAdj,skAdj,normAdj
 
-!      print *,'getting surface normals'
+ !     print *,'getting surface normals'
       call getSurfaceNormalsAdj(xAdj,siAdj,sjAdj,skAdj,normAdj, &
            iiBeg,iiEnd,jjBeg,jjEnd,mm,level,nn,sps,righthanded)
+
+!call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
+
+       !first two arguments needed for time spectral.just set to initial values for the current steady case...
+!       print *,'calling gridvelocities',mm
+       call gridVelocitiesFineLevelForcesAdj(.false., zero, sps,xAdj,sAdj,&
+            iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End,mm,&
+            sFaceIAdj,sFaceJAdj,sFaceKAdj,&
+            rotCenterAdj, rotRateAdj,siAdj,sjAdj,skAdj)
+
+!       print *,'calling normal velocities'
+       call normalVelocitiesAllLevelsForcesAdj(sps,mm,sFaceIAdj,&
+            iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End,&
+            sFaceJAdj,sFaceKAdj,siAdj, sjAdj, skAdj,rFaceAdj)
+ 
+       !needed for uSlip in Viscous Calculations
+       !call slipVelocitiesFineLevel(.false., t, mm)
+
       
  !     print *,'computing pressures'
       call computeForcesPressureAdj(wAdj, pAdj)
       
-  !    print *,'applyingbcs'
-      call applyAllBCForcesAdj(wInfAdj,pInfCorrAdj,wAdj, pAdj, &
-                              siAdj, sjAdj, skAdj, normAdj, &
+ !     print *,'applyingbcs'
+      call applyAllBCForcesAdj(wInfAdj,pInfCorrAdj,wAdj, pAdj,sAdj, &
+                              siAdj, sjAdj, skAdj, normAdj,rFaceAdj ,&
                               iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End,&
                               secondHalo,mm)
 
-   !   print *,'integrating forces'
+!      print *,'integrating forces'
       ! Integrate force components along the given subface
       call forcesAndMomentsAdj(cFpAdj,cMpAdj,cFvAdj,cMvAdj, &
            cFpAdjOut,cMpAdjOut, cFvAdjOut,cMvAdjOut, &

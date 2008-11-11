@@ -101,6 +101,7 @@ subroutine setupGradientRHSExtra(level,costFunction)
   REAL(KIND=REALTYPE) :: murefadj, timerefadj
   REAL(KIND=REALTYPE) :: alphaadj, betaadj
   REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
+  REAL(KIND=REALTYPE) :: rotcenteradj(3), rotrateadj(3), rotrateadjb(3)
 
   logical :: secondHalo,exchangeTurb,correctfork,finegrid,righthanded
   integer(kind=intType):: discr
@@ -195,8 +196,10 @@ subroutine setupGradientRHSExtra(level,costFunction)
         ! Copy the coordinates into xAdj 
        
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-             MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-             rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
+           MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
+           pInfCorrAdj,nn,level,sps,liftIndex)
+
  
         wAdjB(:,:,:,:) = zero ! > return dCf/dw
         xAdjB(:,:,:,:) = zero ! > return dCf/dx
@@ -204,6 +207,7 @@ subroutine setupGradientRHSExtra(level,costFunction)
         betaadjb = zero
         machadjb = zero
 	machcoefadjb = zero	
+	rotrateadjb(:)=zero
 
 	bocoLoop: do mm=1,nBocos
 	   ! Initialize the seed for reverse mode. Select case based on
@@ -274,7 +278,8 @@ subroutine setupGradientRHSExtra(level,costFunction)
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
 &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj,liftIndex)
+&  timerefadj, pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, &
+&  liftindex)
 
 
 	   enddo bocoLoop
@@ -339,6 +344,87 @@ subroutine setupGradientRHSExtra(level,costFunction)
            !
 
            dJdaLocal = machadjb+machcoefadjb
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignMach - 1
+
+           ! Transfer data to PETSc vector
+
+           call VecSetValue(dJda, idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in VecSetValue for global node", idxmg
+              call terminate("setupGradientRHSExtra", errorMessage)
+           endif
+
+	   ! 
+           !     ******************************************************************
+           !     *                                                                *
+           !     * Rot X derivative.                                              *
+           !     *                                                                *
+           !     ******************************************************************
+           !
+
+           dJdaLocal = rotrateadjb(1)
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignRotX - 1
+
+           ! Transfer data to PETSc vector
+
+           call VecSetValue(dJda, idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in VecSetValue for global node", idxmg
+              call terminate("setupGradientRHSExtra", errorMessage)
+           endif
+
+           !
+           !     ******************************************************************
+           !     *                                                                *
+           !     * Rot Y derivative.                                              *
+           !     *                                                                *
+           !     ******************************************************************
+           !
+
+           dJdaLocal = rotrateadjb(2)
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignRotY - 1
+
+           ! Transfer data to PETSc vector
+
+           call VecSetValue(dJda, idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in VecSetValue for global node", idxmg
+              call terminate("setupGradientRHSExtra", errorMessage)
+           endif
+ 
+           !
+           !     ******************************************************************
+           !     *                                                                *
+           !     * Rot Z derivative.                                              *
+           !     *                                                                *
+           !     ******************************************************************
+           !
+
+           dJdaLocal = rotrateadjb(3)
 	   
            ! Set the corresponding single entry of the PETSc vector dJda.
 

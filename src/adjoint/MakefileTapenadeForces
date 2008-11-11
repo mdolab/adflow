@@ -4,7 +4,7 @@
 #     * Author:        Andre C. Marta, Sandy Mader                     *
 #     *                Seongim Choi                                    *
 #     * Starting date: 12-22-2007                                      *
-#     * Last modified: 05-08-2008                                      *
+#     * Last modified: 10-29-2008                                      *
 #     *                                                                *
 #     ******************************************************************
 
@@ -88,16 +88,17 @@
 
 #JAVA_HOME = /nfs/opal/home/mader/jdk1.5.0_06
 #JAVA_HOME = /home/guysmiley/acmarta/software/tapenade/jre1.5.0_07
-JAVA_HOME =/home/mader/UTIAS/SRC/jdk1.6.0_06
+#JAVA_HOME =/home/mader/UTIAS/SRC/jdk1.6.0_06
 
 #TAPENADE_HOME = /nfs/opal/home/mader/SRC/Tapenade/tapenade2.2
 #TAPENADE_HOME = /home/guysmiley/acmarta/software/tapenade/tapenade2.2
-TAPENADE_HOME = /home/mader/UTIAS/SRC/tapenade2.2.4
+#TAPENADE_HOME = /home/mader/UTIAS/SRC/tapenade2.2.4
 
 #SOLVER_DIRSRC = /nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src
 #SOLVER_DIRSRC = /usr/people/sichoi/SUmbADJ_NS_NEW/src/
 #SOLVER_DIRSRC = /home/guysmiley/acmarta/SVN/SUmbVertex/src
-SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
+#SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
+SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
 
 #     ******************************************************************
 #     *                                                                *
@@ -113,7 +114,7 @@ TAPENADE_OUTVARS = "CLAdj CDAdj CmxAdj CmyAdj CmzAdj"
 
 # Independent input variables (separator: white space, default: all)
 
-TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj machcoefadj"
+TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj machcoefadj rotrateadj"
 
 # Name of the top routine
 
@@ -172,7 +173,12 @@ TAPENADE_SRC = $(TAPENADE_DIRSRC3)/applyAllBCForcesAdj.f90 \
 	       $(TAPENADE_DIRSRC3)/setFlowInfinityStateForcesAdj.f90 \
 	       $(TAPENADE_DIRSRC3)/getDirVectorForces.f90 \
 	       $(TAPENADE_DIRSRC1)/computeGammaAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/vectorRotationForces.f90
+	       $(TAPENADE_DIRSRC3)/vectorRotationForces.f90\
+	       $(TAPENADE_DIRSRC3)/normalVelocitiesForcesAdj.f90\
+	       $(TAPENADE_DIRSRC3)/gridVelocitiesFineLevelForcesAdj.f90\
+	       $(TAPENADE_DIRSRC3)/derivativeRigidRotAngleForcesAdj.f90\
+	       $(TAPENADE_DIRSRC3)/derivativeRotMatrixRigidForcesAdj.f90\
+               $(TAPENADE_DIRSRC3)/rigidRotAngleForcesAdj.f90
 
 TAPENADE_MOD = $(TAPENADE_DIRSRC1)/BCTypes.f90 \
 	       $(TAPENADE_DIRSRC1)/block.f90 \
@@ -207,7 +213,7 @@ TAPENADE_SRC_ALL = $(TAPENADE_SRC) $(TAPENADE_MOD)
 
 default:
 	@echo "TAPENADE - parsing and generating differentiated code"
-	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30 -debug 30 -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
+	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30  -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
 	@echo "deleting some unnecessary files..."
 	@rm -f $(TAPENADE_OUTDIR)/*__.f90 $(TAPENADE_OUTDIR)/*~
 

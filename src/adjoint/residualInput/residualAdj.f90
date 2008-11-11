@@ -9,8 +9,9 @@
 !      ******************************************************************
 !
        subroutine residualAdj(wAdj,pAdj,siAdj,sjAdj,skAdj,volAdj,normAdj,&
+                              sFaceIAdj,sFaceJAdj,sFaceKAdj,&
                               dwAdj, iCell, jCell, kCell,  &  
-                              correctForK)
+                              rotRateAdj, correctForK)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -31,6 +32,8 @@
 !       Subroutine Variables
        integer(kind=intType) :: iCell, jCell, kCell
        real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(inout) :: siAdj, sjAdj, skAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2), intent(in) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
+       real(kind=realType), dimension(3),intent(in) ::rotRateAdj
        real(kind=realType), dimension(0:0,0:0,0:0), intent(inout) :: volAdj
        real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(inout) :: normAdj
        real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
@@ -102,10 +105,14 @@
 !!$
 !!$           call setPointers(nn, currentLevel, sps)
 !********************
+       !print *,'before central',wAdj(:,:,:,irho)!
            call inviscidCentralFluxAdj(wAdj,  pAdj,  dwAdj,         &
                                          siAdj, sjAdj, skAdj, volAdj, &
+                                         sFaceIAdj,sFaceJAdj,sFaceKAdj,&
+                                         rotRateAdj,                  &
                                          iCell, jCell, kCell)
 
+           !print *,'after inviscid central',dwadj
 
            ! Compute the artificial dissipation fluxes.
            ! This depends on the parameter discr.
@@ -150,9 +157,16 @@
 
              case (upwind) ! Dissipation via an upwind scheme.
 
+                !print *,'before upwind',wAdj(:,:,:,irho)!,  pAdj,  dwAdj, &
+                                       ! siAdj, sjAdj, skAdj, &
+                                       ! sFaceIAdj,sFaceJAdj,sFaceKAdj,&
+                                       ! iCell, jCell, kCell,finegrid
                call inviscidUpwindFluxAdj(wAdj,  pAdj,  dwAdj, &
                                         siAdj, sjAdj, skAdj, &
+                                        sFaceIAdj,sFaceJAdj,sFaceKAdj,&
                                         iCell, jCell, kCell,finegrid)
+
+               !print *,'After inviscid upwind',dwAdj
 !               call inviscidUpwindFluxAdj2(wAdj,  pAdj,  dwAdj2, &
 !                                        iCell, jCell, kCell,finegrid)
 !!$               call inviscidUpwindFluxAdj2(w(icell-2:icell+2,jcell-2:jcell+2,kcell-2:kcell+2,:), p(icell-2:icell+2,jcell-2:jcell+2,kcell-2:kcell+2),  dwAdj2, &
