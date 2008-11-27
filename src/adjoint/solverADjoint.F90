@@ -258,7 +258,7 @@
 !     ******************************************************************
 !
 
-      functionLoop: do costFunction = 1,1! nCostFunction
+      functionLoop: do costFunction = 1, nCostFunction
 
         !***************************************************************
         !                                                              *
