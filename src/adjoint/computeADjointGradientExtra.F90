@@ -41,6 +41,7 @@
       use ADjointPETSc
       use ADjointVars
       use flowvarrefstate !Timeref
+      use constants
       implicit none
 !
 !     Subroutine arguments.
@@ -231,6 +232,7 @@
 
       !Divide Timeref out of the solution for the rotational derivatives
       functionGrad(costFunction,nDesignRotX:nDesignRotZ) = functionGrad(costFunction,nDesignRotX:nDesignRotZ)*timeref
+      functionGrad(costFunction,nDesignAOA:nDesignSSA) = functionGrad(costFunction,nDesignAOA:nDesignSSA)*(pi/180.0_realType)
 
       if( PETScRank==0 ) then	
 	print *,'Other Derivatives'
