@@ -115,7 +115,7 @@
 
       ! View the solution vector dIda.
  
-      !if(  debug ) then
+      if(  debug ) then
 
         if( PETScRank==0 ) then
           write(*,*) "# ============================ "
@@ -141,7 +141,7 @@
           call terminate("computeADjointGradientExtra", &
                          "Error in VecView")
 
-      !endif
+      endif
 !
 !     ******************************************************************
 !     *                                                                *
@@ -232,6 +232,7 @@
 
       !Divide Timeref out of the solution for the rotational derivatives
       functionGrad(costFunction,nDesignRotX:nDesignRotZ) = functionGrad(costFunction,nDesignRotX:nDesignRotZ)*timeref
+      !Convert radians to degrees to match design variables
       functionGrad(costFunction,nDesignAOA:nDesignSSA) = functionGrad(costFunction,nDesignAOA:nDesignSSA)*(pi/180.0_realType)
 
       if( PETScRank==0 ) then	
