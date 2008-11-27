@@ -32,6 +32,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
   IMPLICIT NONE
 !           enddo loopDirection
 !      enddo domains
+! print *,'finished grid velocities'
   INTEGER(KIND=INTTYPE) :: i2beg, i2end, j2beg, j2end
   INTEGER(KIND=INTTYPE) :: iibeg, iiend, jjbeg, jjend
   INTEGER(KIND=INTTYPE) :: mm

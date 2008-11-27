@@ -120,7 +120,7 @@
 !     *                                                                *
 !     ******************************************************************
 
-      !if( myID==0 ) write(*,*) "Running verifydRdW..."
+      if( myID==0 ) write(*,*) "Running verifydRdExtra..."
 
       currentLevel = level
       !discr        = spaceDiscr
@@ -1240,7 +1240,7 @@
                         dRdExtraAdj(idxres,nDesignSSA,1,1), dRdextraFD(idxres,nDesignSSA,1,1), dRdextraErr(idxres,nDesignSSA,1,1)
                    
                 end if
-                if(dRdExtraFD(idxres,nDesignMach,1,1)>1e-12) then
+                if(dRdExtraFD(idxres,nDesignRotX,1,1)>1e-12) then
                    
                    write(*,*) 'RotX',iCell,jCell,kCell, &
                         dRdExtraAdj(idxres,nDesignRotx,1,1), dRdextraFD(idxres,nDesignRotx,1,1), dRdextraErr(idxres,nDesignRotx,1,1)

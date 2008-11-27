@@ -260,7 +260,7 @@ subroutine verifydCfdx(level)
       cMpAdj(1) = zero; cMpAdj(2) = zero; cMpAdj(3) = zero
       cMvAdj(1) = zero; cMvAdj(2) = zero; cMvAdj(3) = zero
       ! Loop over the number of local blocks.
-      print *,'starting domain loop'
+      print *,'starting domain loop',ndom
       domainLoop1AD: do nn=1,nDom
 
         ! Set some pointers to make the code more readable.
@@ -336,11 +336,12 @@ subroutine verifydCfdx(level)
              rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
              pInfCorrAdj,nn,level,sps,liftIndex)
 
-        machadjb=zero
-        machcoefadjb=zero
+        !machadjb=zero
+        !machcoefadjb=zero
         alphaadjb=zero
         betaadjb=zero
         rotrateadjb=zero
+        xAdjB(:,:,:,:) = zero ! > return dCf/dx
         bocoLoop: do mm=1,nBocos
 
            ! Determine the range of cell indices of the owned cells
@@ -420,7 +421,7 @@ subroutine verifydCfdx(level)
 !!$        CfyAdjB = 0
 !!$        CfzAdjB = 0
            
-           xAdjB(:,:,:,:) = zero ! > return dCf/dx
+          
            
            
            !===============================================================
@@ -429,7 +430,7 @@ subroutine verifydCfdx(level)
            
            !===============================================================
            ! Compute the force derivatives
-                     
+           print *,'input',machadjb, machcoefadjb,alphaadjb,betaadjb,mm         
            call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
@@ -439,6 +440,7 @@ subroutine verifydCfdx(level)
 &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
 &  timerefadj, pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, &
 &  liftindex)
+           print *,'output',machadjb, machcoefadjb,alphaadjb,betaadjb,mm
 
            
            
@@ -459,12 +461,19 @@ subroutine verifydCfdx(level)
 
           
         end do bocoLoop
-        dCldextralocal(ndesignmach) =dCldextralocal(ndesignmach)+ machadjb+machcoefadjb
-        dCldextralocal(ndesignaoa) = dCldextralocal(ndesignaoa)+alphaadjb
-        dCldextralocal(ndesignssa) = dCldextralocal(ndesignssa)+betaadjb
-        dCldextralocal(ndesignrotx) = dCldextralocal(ndesignrotx)+rotrateadjb(1)
-        dCldextralocal(ndesignroty) = dCldextralocal(ndesignroty)+rotrateadjb(2)
-        dCldextralocal(ndesignrotz) = dCldextralocal(ndesignrotz)+rotrateadjb(3)
+!!$        dCldextralocal(ndesignmach) =dCldextralocal(ndesignmach)+ machadjb+machcoefadjb
+!!$        dCldextralocal(ndesignaoa) = dCldextralocal(ndesignaoa)+alphaadjb
+!!$        dCldextralocal(ndesignssa) = dCldextralocal(ndesignssa)+betaadjb
+!!$        dCldextralocal(ndesignrotx) = dCldextralocal(ndesignrotx)+rotrateadjb(1)
+!!$        dCldextralocal(ndesignroty) = dCldextralocal(ndesignroty)+rotrateadjb(2)
+!!$        dCldextralocal(ndesignrotz) = dCldextralocal(ndesignrotz)+rotrateadjb(3)
+        dCldextralocal(ndesignmach) = machadjb+machcoefadjb
+        dCldextralocal(ndesignaoa) = alphaadjb
+        dCldextralocal(ndesignssa) = betaadjb
+        dCldextralocal(ndesignrotx) = rotrateadjb(1)
+        dCldextralocal(ndesignroty) = rotrateadjb(2)
+        dCldextralocal(ndesignrotz) = rotrateadjb(3)
+        print *,'nn',nn,'dcldextralocal',dcldextralocal(1),dcldextralocal(2),dcldextralocal(3), machadjb,machcoefadjb
         !dCldextra(ndesignmach) = machadjb+machcoefadjb
         !!dCldextra(ndesignmach) = dCldextra(ndesignmach)+machadjb+machcoefadjb
         !print *,'ADcdldmach2', dCldextra(ndesignmach),machadjb,machcoefadjb
@@ -702,12 +711,18 @@ subroutine verifydCfdx(level)
            
 
         enddo bocoLoop2
-        dCddextralocal(ndesignmach) = dCddextralocal(ndesignmach)+machadjb+machcoefadjb
-        dCddextralocal(ndesignaoa) = dCddextralocal(ndesignaoa)+alphaadjb
-        dCddextralocal(ndesignssa) = dCddextralocal(ndesignssa)+betaadjb
-        dCddextralocal(ndesignrotx) = dCddextralocal(ndesignrotx)+rotrateadjb(1)
-        dCddextralocal(ndesignroty) = dCddextralocal(ndesignroty)+rotrateadjb(2)
-        dCddextralocal(ndesignrotz) = dCddextralocal(ndesignrotz)+rotrateadjb(3)
+!!$        dCddextralocal(ndesignmach) = dCddextralocal(ndesignmach)+machadjb+machcoefadjb
+!!$        dCddextralocal(ndesignaoa) = dCddextralocal(ndesignaoa)+alphaadjb
+!!$        dCddextralocal(ndesignssa) = dCddextralocal(ndesignssa)+betaadjb
+!!$        dCddextralocal(ndesignrotx) = dCddextralocal(ndesignrotx)+rotrateadjb(1)
+!!$        dCddextralocal(ndesignroty) = dCddextralocal(ndesignroty)+rotrateadjb(2)
+!!$        dCddextralocal(ndesignrotz) = dCddextralocal(ndesignrotz)+rotrateadjb(3)
+        dCddextralocal(ndesignmach) = machadjb+machcoefadjb
+        dCddextralocal(ndesignaoa) = alphaadjb
+        dCddextralocal(ndesignssa) = betaadjb
+        dCddextralocal(ndesignrotx) = rotrateadjb(1)
+        dCddextralocal(ndesignroty) = rotrateadjb(2)
+        dCddextralocal(ndesignrotz) = rotrateadjb(3)
 
        !===============================================================
         
@@ -909,12 +924,18 @@ subroutine verifydCfdx(level)
 !!$                "Deallocation failure for normAdj.") 
            
         enddo bocoLoop3
-        dCmdextralocal(ndesignmach) = dCmdextralocal(ndesignmach)+machadjb+machcoefadjb
-        dCmdextralocal(ndesignaoa) = dCmdextralocal(ndesignaoa)+alphaadjb
-        dCmdextralocal(ndesignssa) = dCmdextralocal(ndesignssa)+betaadjb
-        dCmdextralocal(ndesignrotx) = dCmdextralocal(ndesignrotx)+rotrateadjb(1)
-        dCmdextralocal(ndesignroty) = dCmdextralocal(ndesignroty)+rotrateadjb(2)
-        dCmdextralocal(ndesignrotz) = dCmdextralocal(ndesignrotz)+rotrateadjb(3)
+!!$        dCmdextralocal(ndesignmach) = dCmdextralocal(ndesignmach)+machadjb+machcoefadjb
+!!$        dCmdextralocal(ndesignaoa) = dCmdextralocal(ndesignaoa)+alphaadjb
+!!$        dCmdextralocal(ndesignssa) = dCmdextralocal(ndesignssa)+betaadjb
+!!$        dCmdextralocal(ndesignrotx) = dCmdextralocal(ndesignrotx)+rotrateadjb(1)
+!!$        dCmdextralocal(ndesignroty) = dCmdextralocal(ndesignroty)+rotrateadjb(2)
+!!$        dCmdextralocal(ndesignrotz) = dCmdextralocal(ndesignrotz)+rotrateadjb(3)
+        dCmdextralocal(ndesignmach) = machadjb+machcoefadjb
+        dCmdextralocal(ndesignaoa) = alphaadjb
+        dCmdextralocal(ndesignssa) = betaadjb
+        dCmdextralocal(ndesignrotx) = rotrateadjb(1)
+        dCmdextralocal(ndesignroty) = rotrateadjb(2)
+        dCmdextralocal(ndesignrotz) = rotrateadjb(3)
         
         !===============================================================
         
@@ -949,7 +970,7 @@ subroutine verifydCfdx(level)
        
      enddo domainLoopAD3
       
-      print *,'dcldextralocal',dcmdextralocal(1),dcmdextralocal(2),dcmdextralocal(3)
+      print *,'dcmdextralocal',dcmdextralocal(1),dcmdextralocal(2),dcmdextralocal(3)
       monLoc2(1) = dcmdextralocal(1)
       monLoc2(2) = dcmdextralocal(2)
       monLoc2(3) = dcmdextralocal(3)
@@ -1002,233 +1023,233 @@ subroutine verifydCfdx(level)
       if(myID == 0) call cpu_time(time(3))
 
 !version using original routines!
-      ! Loop over the number of local blocks.
-      
-      sps=1
-      print *,'starting FD loop',sps
-      domainForcesLoopFDorig: do nn=1,nDom   
-         print *,'fd in domain',nn
-         !cycle
-         call setPointers(nn,level,sps)
-
-         !loop over all points
-
-         do i = 0,ie
-            print *,'i',i
-            do j = 0,je
-               do k = 0,ke
-                  do l = 1,3
-                     xref = x(i,j,k,l)
-
-                     x(i,j,k,l) = xref+deltax
-
-                     !*************************************************************
-                     !Original force and metric calculation....
-                     !     ******************************************************************
-                     !     *                                                                *
-                     !     * Update the force coefficients using the usual flow solver      *
-                     !     * routine.                                                       *
-                     !     *                                                                *
-                     !     ******************************************************************
-                     !
- 
-                     call metric(level)
-                     call setPointers(nn,level,sps)
-                     call computeForcesPressureAdj(w,p)
-                     call applyAllBC(secondHalo)
-                     call setPointers(nn,level,sps)
-                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
-                     
-                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-                          + (cfp(2) + cfv(2))*liftDirection(2) &
-                          + (cfp(3) + cfv(3))*liftDirection(3)
-                     
-                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-                          + (cfp(2) + cfv(2))*dragDirection(2) &
-                          + (cfp(3) + cfv(3))*dragDirection(3)
-                     
-                     Cfx = cfp(1) + cfv(1)
-                     Cfy = cfp(2) + cfv(2)
-                     Cfz = cfp(3) + cfv(3)
-                     
-                     Cmx = cmp(1) + cmv(1)
-                     Cmy = cmp(2) + cmv(2)
-                     Cmz = cmp(3) + cmv(3)
-                     
-                     nmonsum = 8
-                     
-                     monLoc1(1) = Cl
-                     monLoc1(2) = Cd
-                     monLoc1(3) = cfx
-                     monLoc1(4) = cfy
-                     monLoc1(5) = cfz
-                     monLoc1(6) = cmx
-                     monLoc1(7) = cmy
-                     monLoc1(8) = cmz
-                     
-!!$!                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sps)
-!!$!                     
-!!$!                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-!!$!                          + (cfp(2) + cfv(2))*liftDirection(2) &
-!!$!                          + (cfp(3) + cfv(3))*liftDirection(3)
-!!$!                     
-!!$!                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-!!$!                          + (cfp(2) + cfv(2))*dragDirection(2) &
-!!$!                          + (cfp(3) + cfv(3))*dragDirection(3)
-!!$!                     
-!!$!                     Cfx = cfp(1) + cfv(1)
-!!$!                     Cfy = cfp(2) + cfv(2)
-!!$!                     Cfz = cfp(3) + cfv(3)
-!!$!                     
-!!$!                     Cmx = cmp(1) + cmv(1)
-!!$!                     Cmy = cmp(2) + cmv(2)
-!!$!                     Cmz = cmp(3) + cmv(3)
-!!$!                     
-!!$!                     nmonsum = 8
-!!$!                     
-!!$!                     monLoc(1) = Cl
-!!$!                     monLoc(2) = Cd
-!!$!                     monLoc(3) = cfx
-!!$!                     monLoc(4) = cfy
-!!$!                     monLoc(5) = cfz
-!!$!                     monLoc(6) = cmx
-!!$!                     monLoc(7) = cmy
-!!$!                     monLoc(8) = cmz
-!!$!                     
-                     
-                     ! Determine the global sum of the summation monitoring
-                     ! variables. The sum is made known to all processors.
-                     
-                     call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
-                          mpi_sum, SUmb_comm_world, ierr)
-                     
-                     ! Transfer the cost function values to output arguments.
-                     
-                     CLp  = monGlob1(1)
-                     CDp  = monGlob1(2)
-                     Cfxp = monGlob1(3)
-                     Cfyp = monGlob1(4)
-                     Cfzp = monGlob1(5) 
-                     CMxp = monGlob1(6)
-                     CMyp = monGlob1(7)
-                     CMzp = monGlob1(8)
-                     
-                     
-                     !*********************
-                     !Now calculate other perturbation
-                     x(i,j,k,l) = xref-deltax
-                     
-                     !*************************************************************
-                     !Original force and metric calculation....
-                     !     ******************************************************************
-                     !     *                                                                *
-                     !     * Update the force coefficients using the usual flow solver      *
-                     !     * routine.                                                       *
-                     !     *                                                                *
-                     !     ******************************************************************
-                     !
-  
-                     call metric(level)
-                     call setPointers(nn,level,sps)
-                     call computeForcesPressureAdj(w,p)
-                     call applyAllBC(secondHalo)
-                     call setPointers(nn,level,sps)
-                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
-                     
-                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-                          + (cfp(2) + cfv(2))*liftDirection(2) &
-                          + (cfp(3) + cfv(3))*liftDirection(3)
-                     
-                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-                          + (cfp(2) + cfv(2))*dragDirection(2) &
-                          + (cfp(3) + cfv(3))*dragDirection(3)
-                     
-                     Cfx = cfp(1) + cfv(1)
-                     Cfy = cfp(2) + cfv(2)
-                     Cfz = cfp(3) + cfv(3)
-                     
-                     Cmx = cmp(1) + cmv(1)
-                     Cmy = cmp(2) + cmv(2)
-                     Cmz = cmp(3) + cmv(3)
-                     
-                     nmonsum = 8
-                     
-                     monLoc2(1) = Cl
-                     monLoc2(2) = Cd
-                     monLoc2(3) = cfx
-                     monLoc2(4) = cfy
-                     monLoc2(5) = cfz
-                     monLoc2(6) = cmx
-                     monLoc2(7) = cmy
-                     monLoc2(8) = cmz
-                  
-!!$!                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sps)
-!!$!                     
-!!$!                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-!!$!                          + (cfp(2) + cfv(2))*liftDirection(2) &
-!!$!                          + (cfp(3) + cfv(3))*liftDirection(3)
-!!$!                     
-!!$!                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-!!$!                          + (cfp(2) + cfv(2))*dragDirection(2) &
-!!$!                          + (cfp(3) + cfv(3))*dragDirection(3)
-!!$!                     
-!!$!                     Cfx = cfp(1) + cfv(1)
-!!$!                     Cfy = cfp(2) + cfv(2)
-!!$!                     Cfz = cfp(3) + cfv(3)
-!!$!                     
-!!$!                     Cmx = cmp(1) + cmv(1)
-!!$!                     Cmy = cmp(2) + cmv(2)
-!!$!                     Cmz = cmp(3) + cmv(3)
-!!$!                     
-!!$!                     nmonsum = 8
-!!$!                     
-!!$!                     monLoc(1) = Cl
-!!$!                     monLoc(2) = Cd
-!!$!                     monLoc(3) = cfx
-!!$!                     monLoc(4) = cfy
-!!$!                     monLoc(5) = cfz
-!!$!                     monLoc(6) = cmx
-!!$!                     monLoc(7) = cmy
-!!$!                     monLoc(8) = cmz
-                     
-                     
-                     ! Determine the global sum of the summation monitoring
-                     ! variables. The sum is made known to all processors.
-                     
-                     call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
-                          mpi_sum, SUmb_comm_world, ierr)
-                     
-                     ! Transfer the cost function values to output arguments.
-                     
-                     CLm  = monGlob2(1)
-                     CDm  = monGlob2(2)
-                     Cfxm = monGlob2(3)
-                     Cfym = monGlob2(4)
-                     Cfzm = monGlob2(5) 
-                     CMxm = monGlob2(6)
-                     CMym = monGlob2(7)
-                     CMzm = monGlob2(8)
-                     
-                     
-                     x(i,j,k,l) = xref
-                  
-
-                     dCLdxFD = (CLP-CLM)/(two*deltax)  
-                    dCDdxFD = (CDP-CDM)/(two*deltax) 
-                    dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
-
-                    dCLFD(nn,i,j,k,l)=dCLdxFD
-
-                    dCDFD(nn,i,j,k,l)=dCDdxFD
-                    
-                    dCmxFD(nn,i,j,k,l)=dCmxdxFD
-                    write (unit,*) dCLdxFD,i,j,k,l
-                    
-                    enddo
-                 enddo
-              enddo
-           enddo
-        enddo domainForcesLoopFDorig
+!!$      ! Loop over the number of local blocks.
+!!$      
+!!$      sps=1
+!!$      print *,'starting FD loop',sps
+!!$      domainForcesLoopFDorig: do nn=1,nDom   
+!!$         print *,'fd in domain',nn
+!!$         !cycle
+!!$         call setPointers(nn,level,sps)
+!!$
+!!$         !loop over all points
+!!$
+!!$         do i = 0,ie
+!!$            print *,'i',i
+!!$            do j = 0,je
+!!$               do k = 0,ke
+!!$                  do l = 1,3
+!!$                     xref = x(i,j,k,l)
+!!$
+!!$                     x(i,j,k,l) = xref+deltax
+!!$
+!!$                     !*************************************************************
+!!$                     !Original force and metric calculation....
+!!$                     !     ******************************************************************
+!!$                     !     *                                                                *
+!!$                     !     * Update the force coefficients using the usual flow solver      *
+!!$                     !     * routine.                                                       *
+!!$                     !     *                                                                *
+!!$                     !     ******************************************************************
+!!$                     !
+!!$ 
+!!$                     call metric(level)
+!!$                     call setPointers(nn,level,sps)
+!!$                     call computeForcesPressureAdj(w,p)
+!!$                     call applyAllBC(secondHalo)
+!!$                     call setPointers(nn,level,sps)
+!!$                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+!!$                     
+!!$                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+!!$                          + (cfp(2) + cfv(2))*liftDirection(2) &
+!!$                          + (cfp(3) + cfv(3))*liftDirection(3)
+!!$                     
+!!$                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+!!$                          + (cfp(2) + cfv(2))*dragDirection(2) &
+!!$                          + (cfp(3) + cfv(3))*dragDirection(3)
+!!$                     
+!!$                     Cfx = cfp(1) + cfv(1)
+!!$                     Cfy = cfp(2) + cfv(2)
+!!$                     Cfz = cfp(3) + cfv(3)
+!!$                     
+!!$                     Cmx = cmp(1) + cmv(1)
+!!$                     Cmy = cmp(2) + cmv(2)
+!!$                     Cmz = cmp(3) + cmv(3)
+!!$                     
+!!$                     nmonsum = 8
+!!$                     
+!!$                     monLoc1(1) = Cl
+!!$                     monLoc1(2) = Cd
+!!$                     monLoc1(3) = cfx
+!!$                     monLoc1(4) = cfy
+!!$                     monLoc1(5) = cfz
+!!$                     monLoc1(6) = cmx
+!!$                     monLoc1(7) = cmy
+!!$                     monLoc1(8) = cmz
+!!$                     
+!                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sps)
+!                     
+!                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+!                          + (cfp(2) + cfv(2))*liftDirection(2) &
+!                          + (cfp(3) + cfv(3))*liftDirection(3)
+!                     
+!                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+!                          + (cfp(2) + cfv(2))*dragDirection(2) &
+!                          + (cfp(3) + cfv(3))*dragDirection(3)
+!                     
+!                     Cfx = cfp(1) + cfv(1)
+!                     Cfy = cfp(2) + cfv(2)
+!                     Cfz = cfp(3) + cfv(3)
+!                     
+!                     Cmx = cmp(1) + cmv(1)
+!                     Cmy = cmp(2) + cmv(2)
+!                     Cmz = cmp(3) + cmv(3)
+!                     
+!                     nmonsum = 8
+!                     
+!                     monLoc(1) = Cl
+!                     monLoc(2) = Cd
+!                     monLoc(3) = cfx
+!                     monLoc(4) = cfy
+!                     monLoc(5) = cfz
+!                     monLoc(6) = cmx
+!                     monLoc(7) = cmy
+!                     monLoc(8) = cmz
+!                     
+!!$                     
+!!$                     ! Determine the global sum of the summation monitoring
+!!$                     ! variables. The sum is made known to all processors.
+!!$                     
+!!$                     call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
+!!$                          mpi_sum, SUmb_comm_world, ierr)
+!!$                     
+!!$                     ! Transfer the cost function values to output arguments.
+!!$                     
+!!$                     CLp  = monGlob1(1)
+!!$                     CDp  = monGlob1(2)
+!!$                     Cfxp = monGlob1(3)
+!!$                     Cfyp = monGlob1(4)
+!!$                     Cfzp = monGlob1(5) 
+!!$                     CMxp = monGlob1(6)
+!!$                     CMyp = monGlob1(7)
+!!$                     CMzp = monGlob1(8)
+!!$                     
+!!$                     
+!!$                     !*********************
+!!$                     !Now calculate other perturbation
+!!$                     x(i,j,k,l) = xref-deltax
+!!$                     
+!!$                     !*************************************************************
+!!$                     !Original force and metric calculation....
+!!$                     !     ******************************************************************
+!!$                     !     *                                                                *
+!!$                     !     * Update the force coefficients using the usual flow solver      *
+!!$                     !     * routine.                                                       *
+!!$                     !     *                                                                *
+!!$                     !     ******************************************************************
+!!$                     !
+!!$  
+!!$                     call metric(level)
+!!$                     call setPointers(nn,level,sps)
+!!$                     call computeForcesPressureAdj(w,p)
+!!$                     call applyAllBC(secondHalo)
+!!$                     call setPointers(nn,level,sps)
+!!$                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+!!$                     
+!!$                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+!!$                          + (cfp(2) + cfv(2))*liftDirection(2) &
+!!$                          + (cfp(3) + cfv(3))*liftDirection(3)
+!!$                     
+!!$                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+!!$                          + (cfp(2) + cfv(2))*dragDirection(2) &
+!!$                          + (cfp(3) + cfv(3))*dragDirection(3)
+!!$                     
+!!$                     Cfx = cfp(1) + cfv(1)
+!!$                     Cfy = cfp(2) + cfv(2)
+!!$                     Cfz = cfp(3) + cfv(3)
+!!$                     
+!!$                     Cmx = cmp(1) + cmv(1)
+!!$                     Cmy = cmp(2) + cmv(2)
+!!$                     Cmz = cmp(3) + cmv(3)
+!!$                     
+!!$                     nmonsum = 8
+!!$                     
+!!$                     monLoc2(1) = Cl
+!!$                     monLoc2(2) = Cd
+!!$                     monLoc2(3) = cfx
+!!$                     monLoc2(4) = cfy
+!!$                     monLoc2(5) = cfz
+!!$                     monLoc2(6) = cmx
+!!$                     monLoc2(7) = cmy
+!!$                     monLoc2(8) = cmz
+!!$                  
+!                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sps)
+!                     
+!                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+!                          + (cfp(2) + cfv(2))*liftDirection(2) &
+!                          + (cfp(3) + cfv(3))*liftDirection(3)
+!                     
+!                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+!                          + (cfp(2) + cfv(2))*dragDirection(2) &
+!                          + (cfp(3) + cfv(3))*dragDirection(3)
+!                     
+!                     Cfx = cfp(1) + cfv(1)
+!                     Cfy = cfp(2) + cfv(2)
+!                     Cfz = cfp(3) + cfv(3)
+!                     
+!                     Cmx = cmp(1) + cmv(1)
+!                     Cmy = cmp(2) + cmv(2)
+!                     Cmz = cmp(3) + cmv(3)
+!                     
+!                     nmonsum = 8
+!                     
+!                     monLoc(1) = Cl
+!                     monLoc(2) = Cd
+!                     monLoc(3) = cfx
+!                     monLoc(4) = cfy
+!                     monLoc(5) = cfz
+!                     monLoc(6) = cmx
+!                     monLoc(7) = cmy
+!                     monLoc(8) = cmz
+!!$                     
+!!$                     
+!!$                     ! Determine the global sum of the summation monitoring
+!!$                     ! variables. The sum is made known to all processors.
+!!$                     
+!!$                     call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
+!!$                          mpi_sum, SUmb_comm_world, ierr)
+!!$                     
+!!$                     ! Transfer the cost function values to output arguments.
+!!$                     
+!!$                     CLm  = monGlob2(1)
+!!$                     CDm  = monGlob2(2)
+!!$                     Cfxm = monGlob2(3)
+!!$                     Cfym = monGlob2(4)
+!!$                     Cfzm = monGlob2(5) 
+!!$                     CMxm = monGlob2(6)
+!!$                     CMym = monGlob2(7)
+!!$                     CMzm = monGlob2(8)
+!!$                     
+!!$                     
+!!$                     x(i,j,k,l) = xref
+!!$                  
+!!$
+!!$                     dCLdxFD = (CLP-CLM)/(two*deltax)  
+!!$                    dCDdxFD = (CDP-CDM)/(two*deltax) 
+!!$                    dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
+!!$
+!!$                    dCLFD(nn,i,j,k,l)=dCLdxFD
+!!$
+!!$                    dCDFD(nn,i,j,k,l)=dCDdxFD
+!!$                    
+!!$                    dCmxFD(nn,i,j,k,l)=dCmxdxFD
+!!$                    write (unit,*) dCLdxFD,i,j,k,l
+!!$                    
+!!$                    enddo
+!!$                 enddo
+!!$              enddo
+!!$           enddo
+!!$        enddo domainForcesLoopFDorig
 
       ! Loop over the number of local blocks.
       
@@ -2018,102 +2039,102 @@ subroutine verifydCfdx(level)
 !     *                                                                *
 !     ******************************************************************
 !
-      ! Output debug information.
-
-      domainDebugLoop: do nn=1,nDom
-
-        ! Set the variables, which are related to the dimensions of the
-        ! block. In this way the dimensions of the automatic arrays used
-        ! in the flux routines are set a bit easier.
-         print *,'setting pointers',nn,level,sps
-         call setPointers(nn,level,sps)
+!!$      ! Output debug information.
 !!$
-!!$        il = flowDoms(nn,currentLevel,1)%il
-!!$        jl = flowDoms(nn,currentLevel,1)%jl
-!!$        kl = flowDoms(nn,currentLevel,1)%kl
+!!$      domainDebugLoop: do nn=1,nDom
+!!$
+!!$        ! Set the variables, which are related to the dimensions of the
+!!$        ! block. In this way the dimensions of the automatic arrays used
+!!$        ! in the flux routines are set a bit easier.
+!!$         print *,'setting pointers',nn,level,sps
+!!$         call setPointers(nn,level,sps)
+!!$
+!!!$        il = flowDoms(nn,currentLevel,1)%il
+!!!$        jl = flowDoms(nn,currentLevel,1)%jl
+!!!$        kl = flowDoms(nn,currentLevel,1)%kl
 
-        ! Loop over the location of the output node.
-
-        do kNode=0,ke
-          do jNode=0,je
-            do iNode=0,ie
-
-              ! Relative error
-
-              do n=1,3
-
-                 if ( dCL(nn,iNode,jNode,kNode,n) < 1e-10 ) then
-                    dCLer(nn,iNode,jNode,kNode,n)  = zero
-                 else
-                    dCLer(nn,iNode,jNode,kNode,n)  =                   &
-                         (  dCL(nn,iNode,jNode,kNode,n)      &
-                         - dCLfd(nn,iNode,jNode,kNode,n) )  &
-                         /  dCL(nn,iNode,jNode,kNode,n)
-                 endif
-                 
-                 if ( dCD(nn,iNode,jNode,kNode,n) < 1e-10 ) then
-                    dCDer(nn,iNode,jNode,kNode,n)  = zero
-                 else
-                    dCDer(nn,iNode,jNode,kNode,n)  =                   &
-                         (  dCD(nn,iNode,jNode,kNode,n)      &
-                         - dCDfd(nn,iNode,jNode,kNode,n) )  &
-                         /  dCD(nn,iNode,jNode,kNode,n)
-                 endif
-                 
-                 if ( dCmxer(nn,iNode,jNode,kNode,n) < 1e-10 ) then
-                    dCmxer(nn,iNode,jNode,kNode,n)  = zero
-                 else
-                    dCmxer(nn,iNode,jNode,kNode,n)  =                   &
-                         (  dCmx(nn,iNode,jNode,kNode,n)      &
-                         - dCmxfd(nn,iNode,jNode,kNode,n) )  &
-                         /  dCmx(nn,iNode,jNode,kNode,n)
-                 endif
-                 
-              enddo
-              
-              ! Output if error
-
-              !if(sum(dCLer(nn,iNode,jNode,kNode,:))/=0)then
-              if(sum(dCL(nn,iNode,jNode,kNode,:))/=0)then
-                 write(*,10) "Jacobian dCLer,dCL,dCLfd @ proc/block", &
-                      myID, nn, "for node", iNode,jNode,kNode
-                 do m=1,3
-                    !if (dCLer(nn,iNode,jNode,kNode,m)/=0)          &
-                    !     write(*,20) (dCLer(nn,iNode,jNode,kNode,m)), &
-                    !     (dCL(nn,iNode,jNode,kNode,m)),   &
-                    !     (dCLfd(nn,iNode,jNode,kNode,m))
-                    if (dCL(nn,iNode,jNode,kNode,m)/=0)          &
-                         write(*,20) (dCLer(nn,iNode,jNode,kNode,m)), &
-                         (dCL(nn,iNode,jNode,kNode,m)),   &
-                         (dCLfd(nn,iNode,jNode,kNode,m))
-                 enddo
-              endif
-              if(sum(dCder(nn,iNode,jNode,kNode,:))/=0)then 
-                 write(*,10) "Jacobian dCDer,dCD,dCDfd @ proc/block", &
-                      myID, nn, "for node", iNode,jNode,kNode
-                 do m=1,3
-                    if (dCDer(nn,iNode,jNode,kNode,m)/=0)          &
-                         write(*,20) (dCDer(nn,iNode,jNode,kNode,m)), &
-                         (dCD(nn,iNode,jNode,kNode,m)),   &
-                         (dCDfd(nn,iNode,jNode,kNode,m))
-                 enddo
-              end if
-              if(sum(dCmxer(nn,iNode,jNode,kNode,:))/=0)then 
-                 write(*,10) "Jacobian dCmxer,dCmx,dCmxfd @ proc/block", &
-                      myID, nn, "for node", iNode,jNode,kNode
-                 do m=1,3
-                    if (dCmxer(nn,iNode,jNode,kNode,m)/=0)          &
-                         write(*,20) (dCmxer(nn,iNode,jNode,kNode,m)), &
-                         (dCmx(nn,iNode,jNode,kNode,m)),   &
-                         (dCmxfd(nn,iNode,jNode,kNode,m))
-                 enddo
-              endif
-           enddo
-        enddo
-     enddo
-     
-  enddo domainDebugLoop
-  
+!!$        ! Loop over the location of the output node.
+!!$
+!!$        do kNode=0,ke
+!!$          do jNode=0,je
+!!$            do iNode=0,ie
+!!$
+!!$              ! Relative error
+!!$
+!!$              do n=1,3
+!!$
+!!$                 if ( dCL(nn,iNode,jNode,kNode,n) < 1e-10 ) then
+!!$                    dCLer(nn,iNode,jNode,kNode,n)  = zero
+!!$                 else
+!!$                    dCLer(nn,iNode,jNode,kNode,n)  =                   &
+!!$                         (  dCL(nn,iNode,jNode,kNode,n)      &
+!!$                         - dCLfd(nn,iNode,jNode,kNode,n) )  &
+!!$                         /  dCL(nn,iNode,jNode,kNode,n)
+!!$                 endif
+!!$                 
+!!$                 if ( dCD(nn,iNode,jNode,kNode,n) < 1e-10 ) then
+!!$                    dCDer(nn,iNode,jNode,kNode,n)  = zero
+!!$                 else
+!!$                    dCDer(nn,iNode,jNode,kNode,n)  =                   &
+!!$                         (  dCD(nn,iNode,jNode,kNode,n)      &
+!!$                         - dCDfd(nn,iNode,jNode,kNode,n) )  &
+!!$                         /  dCD(nn,iNode,jNode,kNode,n)
+!!$                 endif
+!!$                 
+!!$                 if ( dCmxer(nn,iNode,jNode,kNode,n) < 1e-10 ) then
+!!$                    dCmxer(nn,iNode,jNode,kNode,n)  = zero
+!!$                 else
+!!$                    dCmxer(nn,iNode,jNode,kNode,n)  =                   &
+!!$                         (  dCmx(nn,iNode,jNode,kNode,n)      &
+!!$                         - dCmxfd(nn,iNode,jNode,kNode,n) )  &
+!!$                         /  dCmx(nn,iNode,jNode,kNode,n)
+!!$                 endif
+!!$                 
+!!$              enddo
+!!$              
+!!$              ! Output if error
+!!$
+!!$              !if(sum(dCLer(nn,iNode,jNode,kNode,:))/=0)then
+!!$              if(sum(dCL(nn,iNode,jNode,kNode,:))/=0)then
+!!$                 write(*,10) "Jacobian dCLer,dCL,dCLfd @ proc/block", &
+!!$                      myID, nn, "for node", iNode,jNode,kNode
+!!$                 do m=1,3
+!!$                    !if (dCLer(nn,iNode,jNode,kNode,m)/=0)          &
+!!$                    !     write(*,20) (dCLer(nn,iNode,jNode,kNode,m)), &
+!!$                    !     (dCL(nn,iNode,jNode,kNode,m)),   &
+!!$                    !     (dCLfd(nn,iNode,jNode,kNode,m))
+!!$                    if (dCL(nn,iNode,jNode,kNode,m)/=0)          &
+!!$                         write(*,20) (dCLer(nn,iNode,jNode,kNode,m)), &
+!!$                         (dCL(nn,iNode,jNode,kNode,m)),   &
+!!$                         (dCLfd(nn,iNode,jNode,kNode,m))
+!!$                 enddo
+!!$              endif
+!!$              if(sum(dCder(nn,iNode,jNode,kNode,:))/=0)then 
+!!$                 write(*,10) "Jacobian dCDer,dCD,dCDfd @ proc/block", &
+!!$                      myID, nn, "for node", iNode,jNode,kNode
+!!$                 do m=1,3
+!!$                    if (dCDer(nn,iNode,jNode,kNode,m)/=0)          &
+!!$                         write(*,20) (dCDer(nn,iNode,jNode,kNode,m)), &
+!!$                         (dCD(nn,iNode,jNode,kNode,m)),   &
+!!$                         (dCDfd(nn,iNode,jNode,kNode,m))
+!!$                 enddo
+!!$              end if
+!!$              if(sum(dCmxer(nn,iNode,jNode,kNode,:))/=0)then 
+!!$                 write(*,10) "Jacobian dCmxer,dCmx,dCmxfd @ proc/block", &
+!!$                      myID, nn, "for node", iNode,jNode,kNode
+!!$                 do m=1,3
+!!$                    if (dCmxer(nn,iNode,jNode,kNode,m)/=0)          &
+!!$                         write(*,20) (dCmxer(nn,iNode,jNode,kNode,m)), &
+!!$                         (dCmx(nn,iNode,jNode,kNode,m)),   &
+!!$                         (dCmxfd(nn,iNode,jNode,kNode,m))
+!!$                 enddo
+!!$              endif
+!!$           enddo
+!!$        enddo
+!!$     enddo
+!!$     
+!!$  enddo domainDebugLoop
+!!$  
   ! Flush the output buffer and synchronize the processors.
   
   call f77flush()

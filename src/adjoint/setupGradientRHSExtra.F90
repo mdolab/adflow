@@ -203,11 +203,11 @@ subroutine setupGradientRHSExtra(level,costFunction)
  
         wAdjB(:,:,:,:) = zero ! > return dCf/dw
         xAdjB(:,:,:,:) = zero ! > return dCf/dx
-        alphaadjb = zero
-        betaadjb = zero
-        machadjb = zero
-	machcoefadjb = zero	
-	rotrateadjb(:)=zero
+        !alphaadjb = zero
+        !betaadjb = zero
+        !machadjb = zero
+	!machcoefadjb = zero	
+	!rotrateadjb(:)=zero
 
 	bocoLoop: do mm=1,nBocos
 	   ! Initialize the seed for reverse mode. Select case based on
@@ -298,8 +298,10 @@ subroutine setupGradientRHSExtra(level,costFunction)
 
            ! Transfer data to PETSc vector
 
-           call VecSetValue(dJda, idxmg, dJdaLocal, &
-                ADD_VALUES, PETScIerr)
+           !call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !     ADD_VALUES, PETScIerr)
+	   call VecSetValue(dJda, idxmg, dJdaLocal, &
+                INSERT_VALUES, PETScIerr)
 
            if( PETScIerr/=0 ) then
               write(errorMessage,99) &
@@ -326,8 +328,10 @@ subroutine setupGradientRHSExtra(level,costFunction)
 
            ! Transfer data to PETSc vector
 
-           call VecSetValue(dJda, idxmg, dJdaLocal, &
-                ADD_VALUES, PETScIerr)
+           !call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !     ADD_VALUES, PETScIerr)
+	   call VecSetValue(dJda, idxmg, dJdaLocal, &
+                INSERT_VALUES, PETScIerr)
 
            if( PETScIerr/=0 ) then
               write(errorMessage,99) &
@@ -353,8 +357,10 @@ subroutine setupGradientRHSExtra(level,costFunction)
 
            ! Transfer data to PETSc vector
 
-           call VecSetValue(dJda, idxmg, dJdaLocal, &
-                ADD_VALUES, PETScIerr)
+           !call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !     ADD_VALUES, PETScIerr)
+	   call VecSetValue(dJda, idxmg, dJdaLocal, &
+                INSERT_VALUES, PETScIerr)
 
            if( PETScIerr/=0 ) then
               write(errorMessage,99) &
@@ -380,8 +386,10 @@ subroutine setupGradientRHSExtra(level,costFunction)
 
            ! Transfer data to PETSc vector
 
-           call VecSetValue(dJda, idxmg, dJdaLocal, &
-                ADD_VALUES, PETScIerr)
+           !call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !     ADD_VALUES, PETScIerr)
+	   call VecSetValue(dJda, idxmg, dJdaLocal, &
+                INSERT_VALUES, PETScIerr)
 
            if( PETScIerr/=0 ) then
               write(errorMessage,99) &
@@ -407,8 +415,10 @@ subroutine setupGradientRHSExtra(level,costFunction)
 
            ! Transfer data to PETSc vector
 
+           !call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !     ADD_VALUES, PETScIerr)
            call VecSetValue(dJda, idxmg, dJdaLocal, &
-                ADD_VALUES, PETScIerr)
+                INSERT_VALUES, PETScIerr)
 
            if( PETScIerr/=0 ) then
               write(errorMessage,99) &
@@ -434,8 +444,10 @@ subroutine setupGradientRHSExtra(level,costFunction)
 
            ! Transfer data to PETSc vector
 
+           !call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !     ADD_VALUES, PETScIerr)
            call VecSetValue(dJda, idxmg, dJdaLocal, &
-                ADD_VALUES, PETScIerr)
+                INSERT_VALUES, PETScIerr)
 
            if( PETScIerr/=0 ) then
               write(errorMessage,99) &

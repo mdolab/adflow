@@ -142,20 +142,20 @@
       ! visous force computation) for the stencil
       ! Get siAdj,sjAdj,skAdj,normAdj
 
- !     print *,'getting surface normals'
+     ! print *,'getting surface normals'
       call getSurfaceNormalsAdj(xAdj,siAdj,sjAdj,skAdj,normAdj, &
            iiBeg,iiEnd,jjBeg,jjEnd,mm,level,nn,sps,righthanded)
 
 !call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
 
        !first two arguments needed for time spectral.just set to initial values for the current steady case...
-!       print *,'calling gridvelocities',mm
+     !  print *,'calling gridvelocities',mm
        call gridVelocitiesFineLevelForcesAdj(.false., zero, sps,xAdj,sAdj,&
             iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End,mm,&
             sFaceIAdj,sFaceJAdj,sFaceKAdj,&
             rotCenterAdj, rotRateAdj,siAdj,sjAdj,skAdj)
 
-!       print *,'calling normal velocities'
+   !    print *,'calling normal velocities'
        call normalVelocitiesAllLevelsForcesAdj(sps,mm,sFaceIAdj,&
             iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End,&
             sFaceJAdj,sFaceKAdj,siAdj, sjAdj, skAdj,rFaceAdj)

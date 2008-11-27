@@ -60,8 +60,7 @@
          call terminate("readFamilyInfo", &
                         "Something wrong when calling cg_nfamilies_f")
        cgnsNFamilies = nn
-
-
+	
        ! Allocate the memory for cgnsFamilies.
 
        allocate(cgnsFamilies(nn), stat=ierr)

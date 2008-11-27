@@ -30,6 +30,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
   USE inputunsteady
   USE iteration
   IMPLICIT NONE
+!      enddo domains
   INTEGER(KIND=INTTYPE), INTENT(IN) :: icell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: jcell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: kcell
@@ -71,7 +72,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
   REAL(KIND=REALTYPE) :: sc(3), scb(3), tempb, tempb0, tempb1, tempb2, &
 &  tempb3, tempb4, xc(3), xcb(3), xxc(3), xxcb(3)
   REAL(KIND=REALTYPE), DIMENSION(:, :, :, :), POINTER :: xxold
-  EXTERNAL SETPOINTERSADJ, TERMINATE
+  EXTERNAL TERMINATE
 !
 !      ******************************************************************
 !      *                                                                *
@@ -118,15 +119,20 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 ! the grid is only specified if there is only 1 section present.
   CALL DERIVATIVEROTMATRIXRIGIDADJ(rotationmatrixadj, rotationpointadj, &
 &                             rotpointadj, t(1))
-! Loop over the number of local blocks.
-domains:DO nn=1,ndom
-! Set the pointers for this block.
+!!$!       ! Loop over the number of local blocks.
+!!$!
+!!$!       domains: do nn=1,nDom!
+!!$!
+!!$!         ! Set the pointers for this block.!
+!!$
+!!$!         call setPointersAdj(nn, groundLevel, sps)!
+!!$!
 ! Check for a moving block.
-    IF (blockismoving) THEN
+  IF (blockismoving) THEN
 ! Determine the situation we are having here.
-      IF (useoldcoor) THEN
-        CALL PUSHINTEGER4(2)
-      ELSE
+    IF (useoldcoor) THEN
+      xadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
+    ELSE
 !
 !            ************************************************************
 !            *                                                          *
@@ -154,38 +160,156 @@ domains:DO nn=1,ndom
 !            ************************************************************
 !
 ! Loop over the cells, including the 1st level halo's.
+      kstart = -2
+      kend = 2
+      jstart = -2
+      jend = 2
+      istart = -2
+      iend = 2
+      ad_from = kstart
+!-2,2
+      DO k=ad_from,kend
+        ad_from0 = jstart
+!-2,2
+        DO j=ad_from0,jend
+          ad_from1 = istart
+!-2,2
+          DO i=ad_from1,iend
+!!$             do k=1,ke
+!!$               do j=1,je
+!!$                 do i=1,ie
+! Determine the coordinates of the cell center,
+! which are stored in xc.
+            xc(1) = eighth*(xadj(i-1, j-1, k-1, 1)+xadj(i, j-1, k-1, 1)+&
+&              xadj(i-1, j, k-1, 1)+xadj(i, j, k-1, 1)+xadj(i-1, j-1, k&
+&              , 1)+xadj(i, j-1, k, 1)+xadj(i-1, j, k, 1)+xadj(i, j, k, &
+&              1))
+            xc(2) = eighth*(xadj(i-1, j-1, k-1, 2)+xadj(i, j-1, k-1, 2)+&
+&              xadj(i-1, j, k-1, 2)+xadj(i, j, k-1, 2)+xadj(i-1, j-1, k&
+&              , 2)+xadj(i, j-1, k, 2)+xadj(i-1, j, k, 2)+xadj(i, j, k, &
+&              2))
+            xc(3) = eighth*(xadj(i-1, j-1, k-1, 3)+xadj(i, j-1, k-1, 3)+&
+&              xadj(i-1, j, k-1, 3)+xadj(i, j, k-1, 3)+xadj(i-1, j-1, k&
+&              , 3)+xadj(i, j-1, k, 3)+xadj(i-1, j, k, 3)+xadj(i, j, k, &
+&              3))
+            CALL PUSHREAL8(xxc(1))
+! Determine the coordinates relative to the
+! center of rotation.
+            xxc(1) = xc(1) - rotcenteradj(1)
+            CALL PUSHREAL8(xxc(2))
+            xxc(2) = xc(2) - rotcenteradj(2)
+            CALL PUSHREAL8(xxc(3))
+            xxc(3) = xc(3) - rotcenteradj(3)
+! Determine the rotation speed of the cell center,
+! which is omega*r.
+            sc(1) = rotrateadj(2)*xxc(3) - rotrateadj(3)*xxc(2)
+            sc(2) = rotrateadj(3)*xxc(1) - rotrateadj(1)*xxc(3)
+            sc(3) = rotrateadj(1)*xxc(2) - rotrateadj(2)*xxc(1)
+            CALL PUSHREAL8(xxc(1))
+! Determine the coordinates relative to the
+! rigid body rotation point.
+            xxc(1) = xc(1) - rotationpointadj(1)
+            CALL PUSHREAL8(xxc(2))
+            xxc(2) = xc(2) - rotationpointadj(2)
+            CALL PUSHREAL8(xxc(3))
+            xxc(3) = xc(3) - rotationpointadj(3)
+! Determine the total velocity of the cell center.
+! This is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from1)
+        END DO
+        CALL PUSHINTEGER4(j - 1)
+        CALL PUSHINTEGER4(ad_from0)
+      END DO
+      CALL PUSHINTEGER4(k - 1)
+      CALL PUSHINTEGER4(ad_from)
+!
+!            ************************************************************
+!            *                                                          *
+!            * Normal grid velocities of the faces.                     *
+!            *                                                          *
+!            ************************************************************
+!
+! Loop over the three directions.
+loopdirection:DO mm=1,3
         kstart = -2
         kend = 2
         jstart = -2
         jend = 2
         istart = -2
         iend = 2
-        ad_from = kstart
-!-2,2
-        DO k=ad_from,kend
-          ad_from0 = jstart
-!-2,2
-          DO j=ad_from0,jend
-            ad_from1 = istart
-!-2,2
-            DO i=ad_from1,iend
-!!$             do k=1,ke
-!!$               do j=1,je
-!!$                 do i=1,ie
-! Determine the coordinates of the cell center,
+!if(iCell==2)  iStart=-1
+!if(iCell==il) iEnd=1
+!if(jCell==2)  jStart=-1
+!if(jCell==jl) jEnd=1 
+!if(kCell==kl) kEnd=1
+!if(kCell==2)  kStart=-2
+! Set the upper boundaries depending on the direction.
+        ad_from2 = istart
+!
+!              **********************************************************
+!              *                                                        *
+!              * Normal grid velocities in generalized i-direction.     *
+!              * mm == 1: i-direction                                   *
+!              * mm == 2: j-direction                                   *
+!              * mm == 3: k-direction                                   *
+!              *                                                        *
+!              **********************************************************
+!
+!do i=0,iie
+        DO i=ad_from2,iend
+! Set the pointers for the coordinates, normals and
+! normal velocities for this generalized i-plane.
+! This depends on the value of mm.
+          SELECT CASE  (mm) 
+          CASE (1_intType) 
+! normals in i-direction
+            xxadj = xadj(i, :, :, :)
+            CALL PUSHREAL8ARRAY(ssadj, 6**2*3)
+            ssadj = siadj(i, :, :, :)
+            CALL PUSHINTEGER4(1)
+          CASE (2_intType) 
+! normals in j-direction
+            xxadj = xadj(:, i, :, :)
+            CALL PUSHREAL8ARRAY(ssadj, 6**2*3)
+            ssadj = sjadj(:, i, :, :)
+            CALL PUSHINTEGER4(2)
+          CASE (3_intType) 
+! normals in k-direction
+            xxadj = xadj(:, :, i, :)
+            CALL PUSHREAL8ARRAY(ssadj, 6**2*3)
+            ssadj = skadj(:, :, i, :)
+            CALL PUSHINTEGER4(3)
+          CASE DEFAULT
+            CALL PUSHINTEGER4(0)
+          END SELECT
+          ad_from3 = kstart
+! Loop over the k and j-direction of this generalized
+! i-face. Note that due to the usage of the pointer
+! xx an offset of +1 must be used in the coordinate
+! array, because x originally starts at 0 for the
+! i, j and k indices.
+!do k=1,kke
+! do j=1,jje
+          DO k=ad_from3,kend
+            ad_from4 = jstart
+            DO j=ad_from4,jend
+! Determine the coordinates of the face center,
 ! which are stored in xc.
-              xc(1) = eighth*(xadj(i-1, j-1, k-1, 1)+xadj(i, j-1, k-1, 1&
-&                )+xadj(i-1, j, k-1, 1)+xadj(i, j, k-1, 1)+xadj(i-1, j-1&
-&                , k, 1)+xadj(i, j-1, k, 1)+xadj(i-1, j, k, 1)+xadj(i, j&
-&                , k, 1))
-              xc(2) = eighth*(xadj(i-1, j-1, k-1, 2)+xadj(i, j-1, k-1, 2&
-&                )+xadj(i-1, j, k-1, 2)+xadj(i, j, k-1, 2)+xadj(i-1, j-1&
-&                , k, 2)+xadj(i, j-1, k, 2)+xadj(i-1, j, k, 2)+xadj(i, j&
-&                , k, 2))
-              xc(3) = eighth*(xadj(i-1, j-1, k-1, 3)+xadj(i, j-1, k-1, 3&
-&                )+xadj(i-1, j, k-1, 3)+xadj(i, j, k-1, 3)+xadj(i-1, j-1&
-&                , k, 3)+xadj(i, j-1, k, 3)+xadj(i-1, j, k, 3)+xadj(i, j&
-&                , k, 3))
+!xc(1) = fourth*(xxAdj(j+1,k+1,1) + xxAdj(j,k+1,1) &
+!      +         xxAdj(j+1,k,  1) + xxAdj(j,k,  1))
+!xc(2) = fourth*(xxAdj(j+1,k+1,2) + xxAdj(j,k+1,2) &
+!      +         xxAdj(j+1,k,  2) + xxAdj(j,k,  2))
+!xc(3) = fourth*(xxAdj(j+1,k+1,3) + xxAdj(j,k+1,3) &
+!      +         xxAdj(j+1,k,  3) + xxAdj(j,k,  3))
+              xc(1) = fourth*(xxadj(j, k, 1)+xxadj(j-1, k, 1)+xxadj(j, k&
+&                -1, 1)+xxadj(j-1, k-1, 1))
+              xc(2) = fourth*(xxadj(j, k, 2)+xxadj(j-1, k, 2)+xxadj(j, k&
+&                -1, 2)+xxadj(j-1, k-1, 2))
+              xc(3) = fourth*(xxadj(j, k, 3)+xxadj(j-1, k, 3)+xxadj(j, k&
+&                -1, 3)+xxadj(j-1, k-1, 3))
               CALL PUSHREAL8(xxc(1))
 ! Determine the coordinates relative to the
 ! center of rotation.
@@ -195,7 +319,7 @@ domains:DO nn=1,ndom
               CALL PUSHREAL8(xxc(3))
               xxc(3) = xc(3) - rotcenteradj(3)
               CALL PUSHREAL8(sc(1))
-! Determine the rotation speed of the cell center,
+! Determine the rotation speed of the face center,
 ! which is omega*r.
               sc(1) = rotrateadj(2)*xxc(3) - rotrateadj(3)*xxc(2)
               CALL PUSHREAL8(sc(2))
@@ -210,180 +334,50 @@ domains:DO nn=1,ndom
               xxc(2) = xc(2) - rotationpointadj(2)
               CALL PUSHREAL8(xxc(3))
               xxc(3) = xc(3) - rotationpointadj(3)
-! Determine the total velocity of the cell center.
-! This is a combination of rotation speed of this
-! block and the entire rigid body rotation.
-            END DO
-            CALL PUSHINTEGER4(i - 1)
-            CALL PUSHINTEGER4(ad_from1)
-          END DO
-          CALL PUSHINTEGER4(j - 1)
-          CALL PUSHINTEGER4(ad_from0)
-        END DO
-        CALL PUSHINTEGER4(k - 1)
-        CALL PUSHINTEGER4(ad_from)
-!
-!            ************************************************************
-!            *                                                          *
-!            * Normal grid velocities of the faces.                     *
-!            *                                                          *
-!            ************************************************************
-!
-! Loop over the three directions.
-loopdirection:DO mm=1,3
-          kstart = -2
-          kend = 2
-          jstart = -2
-          jend = 2
-          istart = -2
-          iend = 2
-!if(iCell==2)  iStart=-1
-!if(iCell==il) iEnd=1
-!if(jCell==2)  jStart=-1
-!if(jCell==jl) jEnd=1 
-!if(kCell==kl) kEnd=1
-!if(kCell==2)  kStart=-2
-! Set the upper boundaries depending on the direction.
-          ad_from2 = istart
-!
-!              **********************************************************
-!              *                                                        *
-!              * Normal grid velocities in generalized i-direction.     *
-!              * mm == 1: i-direction                                   *
-!              * mm == 2: j-direction                                   *
-!              * mm == 3: k-direction                                   *
-!              *                                                        *
-!              **********************************************************
-!
-!do i=0,iie
-          DO i=ad_from2,iend
-! Set the pointers for the coordinates, normals and
-! normal velocities for this generalized i-plane.
-! This depends on the value of mm.
-            SELECT CASE  (mm) 
-            CASE (1_intType) 
-! normals in i-direction
-              xxadj = xadj(i, :, :, :)
-              CALL PUSHREAL8ARRAY(ssadj, 6**2*3)
-              ssadj = siadj(i, :, :, :)
-              CALL PUSHINTEGER4(1)
-            CASE (2_intType) 
-! normals in j-direction
-              xxadj = xadj(:, i, :, :)
-              CALL PUSHREAL8ARRAY(ssadj, 6**2*3)
-              ssadj = sjadj(:, i, :, :)
-              CALL PUSHINTEGER4(2)
-            CASE (3_intType) 
-! normals in k-direction
-              xxadj = xadj(:, :, i, :)
-              CALL PUSHREAL8ARRAY(ssadj, 6**2*3)
-              ssadj = skadj(:, :, i, :)
-              CALL PUSHINTEGER4(3)
-            CASE DEFAULT
-              CALL PUSHINTEGER4(0)
-            END SELECT
-            ad_from3 = kstart
-! Loop over the k and j-direction of this generalized
-! i-face. Note that due to the usage of the pointer
-! xx an offset of +1 must be used in the coordinate
-! array, because x originally starts at 0 for the
-! i, j and k indices.
-!do k=1,kke
-! do j=1,jje
-            DO k=ad_from3,kend
-              ad_from4 = jstart
-              DO j=ad_from4,jend
-! Determine the coordinates of the face center,
-! which are stored in xc.
-!xc(1) = fourth*(xxAdj(j+1,k+1,1) + xxAdj(j,k+1,1) &
-!      +         xxAdj(j+1,k,  1) + xxAdj(j,k,  1))
-!xc(2) = fourth*(xxAdj(j+1,k+1,2) + xxAdj(j,k+1,2) &
-!      +         xxAdj(j+1,k,  2) + xxAdj(j,k,  2))
-!xc(3) = fourth*(xxAdj(j+1,k+1,3) + xxAdj(j,k+1,3) &
-!      +         xxAdj(j+1,k,  3) + xxAdj(j,k,  3))
-                xc(1) = fourth*(xxadj(j, k, 1)+xxadj(j-1, k, 1)+xxadj(j&
-&                  , k-1, 1)+xxadj(j-1, k-1, 1))
-                xc(2) = fourth*(xxadj(j, k, 2)+xxadj(j-1, k, 2)+xxadj(j&
-&                  , k-1, 2)+xxadj(j-1, k-1, 2))
-                xc(3) = fourth*(xxadj(j, k, 3)+xxadj(j-1, k, 3)+xxadj(j&
-&                  , k-1, 3)+xxadj(j-1, k-1, 3))
-                CALL PUSHREAL8(xxc(1))
-! Determine the coordinates relative to the
-! center of rotation.
-                xxc(1) = xc(1) - rotcenteradj(1)
-                CALL PUSHREAL8(xxc(2))
-                xxc(2) = xc(2) - rotcenteradj(2)
-                CALL PUSHREAL8(xxc(3))
-                xxc(3) = xc(3) - rotcenteradj(3)
-                CALL PUSHREAL8(sc(1))
-! Determine the rotation speed of the face center,
-! which is omega*r.
-                sc(1) = rotrateadj(2)*xxc(3) - rotrateadj(3)*xxc(2)
-                CALL PUSHREAL8(sc(2))
-                sc(2) = rotrateadj(3)*xxc(1) - rotrateadj(1)*xxc(3)
-                CALL PUSHREAL8(sc(3))
-                sc(3) = rotrateadj(1)*xxc(2) - rotrateadj(2)*xxc(1)
-                CALL PUSHREAL8(xxc(1))
-! Determine the coordinates relative to the
-! rigid body rotation point.
-                xxc(1) = xc(1) - rotationpointadj(1)
-                CALL PUSHREAL8(xxc(2))
-                xxc(2) = xc(2) - rotationpointadj(2)
-                CALL PUSHREAL8(xxc(3))
-                xxc(3) = xc(3) - rotationpointadj(3)
-                CALL PUSHREAL8(sc(1))
+              CALL PUSHREAL8(sc(1))
 ! Determine the total velocity of the cell face.
 ! This is a combination of rotation speed of this
 ! block and the entire rigid body rotation.
-                sc(1) = sc(1) + velxgrid + rotationmatrixadj(1, 1)*xxc(1&
-&                  ) + rotationmatrixadj(1, 2)*xxc(2) + &
-&                  rotationmatrixadj(1, 3)*xxc(3)
-                CALL PUSHREAL8(sc(2))
-                sc(2) = sc(2) + velygrid + rotationmatrixadj(2, 1)*xxc(1&
-&                  ) + rotationmatrixadj(2, 2)*xxc(2) + &
-&                  rotationmatrixadj(2, 3)*xxc(3)
-                CALL PUSHREAL8(sc(3))
-                sc(3) = sc(3) + velzgrid + rotationmatrixadj(3, 1)*xxc(1&
-&                  ) + rotationmatrixadj(3, 2)*xxc(2) + &
-&                  rotationmatrixadj(3, 3)*xxc(3)
+              sc(1) = sc(1) + velxgrid + rotationmatrixadj(1, 1)*xxc(1) &
+&                + rotationmatrixadj(1, 2)*xxc(2) + rotationmatrixadj(1&
+&                , 3)*xxc(3)
+              CALL PUSHREAL8(sc(2))
+              sc(2) = sc(2) + velygrid + rotationmatrixadj(2, 1)*xxc(1) &
+&                + rotationmatrixadj(2, 2)*xxc(2) + rotationmatrixadj(2&
+&                , 3)*xxc(3)
+              CALL PUSHREAL8(sc(3))
+              sc(3) = sc(3) + velzgrid + rotationmatrixadj(3, 1)*xxc(1) &
+&                + rotationmatrixadj(3, 2)*xxc(2) + rotationmatrixadj(3&
+&                , 3)*xxc(3)
 ! Store the dot product of grid velocity sc and
 ! the normal ss in sFace.
-              END DO
-              CALL PUSHINTEGER4(j - 1)
-              CALL PUSHINTEGER4(ad_from4)
             END DO
-            CALL PUSHINTEGER4(k - 1)
-            CALL PUSHINTEGER4(ad_from3)
-            SELECT CASE  (mm) 
-            CASE (1_intType) 
-              CALL PUSHINTEGER4(2)
-            CASE (2_intType) 
-              CALL PUSHINTEGER4(3)
-            CASE (3_intType) 
-              CALL PUSHINTEGER4(4)
-            CASE DEFAULT
-              CALL PUSHINTEGER4(1)
-            END SELECT
+            CALL PUSHINTEGER4(j - 1)
+            CALL PUSHINTEGER4(ad_from4)
           END DO
-          CALL PUSHINTEGER4(i - 1)
-          CALL PUSHINTEGER4(ad_from2)
-        END DO loopdirection
-        CALL PUSHINTEGER4(3)
-      END IF
-    ELSE
-      CALL PUSHINTEGER4(1)
-    END IF
-  END DO domains
-  xadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
-  ssadjb(-3:2, -3:2, 1:3) = 0.0
-  xcb(1:3) = 0.0
-  xxcb(1:3) = 0.0
-  xxadjb(-3:2, -3:2, 1:3) = 0.0
-  scb(1:3) = 0.0
-  sfaceadjb(-2:2, -2:2) = 0.0
-  DO nn=ndom,1,-1
-    CALL POPINTEGER4(branch)
-    IF (.NOT.branch .LT. 3) THEN
+          CALL PUSHINTEGER4(k - 1)
+          CALL PUSHINTEGER4(ad_from3)
+          SELECT CASE  (mm) 
+          CASE (1_intType) 
+            CALL PUSHINTEGER4(2)
+          CASE (2_intType) 
+            CALL PUSHINTEGER4(3)
+          CASE (3_intType) 
+            CALL PUSHINTEGER4(4)
+          CASE DEFAULT
+            CALL PUSHINTEGER4(1)
+          END SELECT
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from2)
+      END DO loopdirection
+      xadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
+      ssadjb(-3:2, -3:2, 1:3) = 0.0
+      xcb(1:3) = 0.0
+      xxcb(1:3) = 0.0
+      xxadjb(-3:2, -3:2, 1:3) = 0.0
+      scb(1:3) = 0.0
+      sfaceadjb(-2:2, -2:2) = 0.0
       DO mm=3,1,-1
         CALL POPINTEGER4(ad_from2)
         CALL POPINTEGER4(ad_to2)
@@ -548,19 +542,16 @@ loopdirection:DO mm=1,3
             CALL POPREAL8(xxc(1))
             xcb(1) = xcb(1) + xxcb(1)
             xxcb(1) = 0.0
-            CALL POPREAL8(sc(3))
             rotrateadjb(1) = rotrateadjb(1) + xxc(2)*scb(3)
             xxcb(2) = xxcb(2) + rotrateadj(1)*scb(3)
             rotrateadjb(2) = rotrateadjb(2) - xxc(1)*scb(3)
             xxcb(1) = xxcb(1) - rotrateadj(2)*scb(3)
             scb(3) = 0.0
-            CALL POPREAL8(sc(2))
             rotrateadjb(3) = rotrateadjb(3) + xxc(1)*scb(2)
             xxcb(1) = xxcb(1) + rotrateadj(3)*scb(2)
             rotrateadjb(1) = rotrateadjb(1) - xxc(3)*scb(2)
             xxcb(3) = xxcb(3) - rotrateadj(1)*scb(2)
             scb(2) = 0.0
-            CALL POPREAL8(sc(1))
             rotrateadjb(2) = rotrateadjb(2) + xxc(3)*scb(1)
             xxcb(3) = xxcb(3) + rotrateadj(2)*scb(1)
             rotrateadjb(3) = rotrateadjb(3) - xxc(2)*scb(1)
@@ -609,7 +600,9 @@ loopdirection:DO mm=1,3
         END DO
       END DO
     END IF
-  END DO
+  ELSE
+    xadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
+  END IF
 !!$  coscoeffourzrotb(:) = 0.0
 !!$  sincoeffourxrotb(:) = 0.0
 !!$  sincoeffouryrotb(:) = 0.0

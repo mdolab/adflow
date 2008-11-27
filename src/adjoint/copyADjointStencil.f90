@@ -97,6 +97,7 @@
         do kk=-2,2
           do jj=-2,2
             do ii=-2,2
+              !print *,'wadj',wAdj(ii,jj,kk,l), iCell+ii, jCell+jj, kCell+kk
               wAdj(ii,jj,kk,l) = w(iCell+ii, jCell+jj, kCell+kk,l)
             enddo
           enddo

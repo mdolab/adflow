@@ -88,8 +88,8 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
   LOGICAL :: viscoussubface
   REAL(KIND=REALTYPE) :: tempb, tempb0, tempb1, xc, xcb, yc, ycb, zc, &
 &  zcb
-  REAL(KIND=REALTYPE) :: xx(iibeg:iiend, jjbeg:jjend, 3), xxb(iibeg:&
-&  iiend, jjbeg:jjend, 3)
+  REAL(KIND=REALTYPE) :: xx(i2beg:i2end+1, j2beg:j2end+1, 3), xxb(i2beg:&
+&  i2end+1, j2beg:j2end+1, 3)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -132,6 +132,7 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
 !v       real(kind=realType) :: tauxx, tauyy, tauzz
 !v       real(kind=realType) :: tauxy, tauxz, tauyz
 !       real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,3) :: xx
+!real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,3) :: xx
 !v       real(kind=realType), dimension(:,:),   pointer :: rlv2, rlv1
 !v       real(kind=realType), dimension(:,:),   pointer :: dd2Wall
 !v       real(kind=realType), dimension(:,:,:), pointer :: ss, xx
@@ -160,7 +161,8 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
       ss(:, :, :) = siadj(1, iibeg:iiend, jjbeg:jjend, :)
 !               xx(:,:,:)   = xAdj(1,iiBeg-1:iiEnd,jjBeg-1:jjEnd,:)
 !               print *,'shape',shape(xx),shape(xAdj)
-      xx(:, :, :) = xadj(1, iibeg-1:iiend-1, jjbeg-1:jjend-1, :)
+!!xx(:,:,:)   = xAdj(1,iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,:)
+      xx(:, :, :) = xadj(1, i2beg-1:i2end, j2beg-1:j2end, :)
 !               xx(:,:,:)   = xAdj(1,:,:,:)
       fact = -one
       CALL PUSHINTEGER4(1)
@@ -175,7 +177,8 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
       pp1(:, :) = padj(ie, iibeg:iiend, jjbeg:jjend)
       ss(:, :, :) = siadj(2, iibeg:iiend, jjbeg:jjend, :)
 !               xx(:,:,:)   = xAdj(il,iiBeg-1:iiEnd,jjBeg-1:jjEnd,:)
-      xx(:, :, :) = xadj(il, iibeg-1:iiend-1, jjbeg-1:jjend-1, :)
+!!xx(:,:,:)   = xAdj(il,iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,:)
+      xx(:, :, :) = xadj(il, i2beg-1:i2end, j2beg-1:j2end, :)
 !               xx(:,:,:)   = xAdj(il,:,:,:)
       fact = one
       CALL PUSHINTEGER4(2)
@@ -198,7 +201,8 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
 !               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,1,jjBeg-1:jjEnd,:)
 !               print *,'indices',iibeg,i2beg,iiend,i2end
 !               print *,'shape',shape(xx),shape(xAdj(iiBeg-1:iiEnd,1,jjBeg-1:jjEnd,:))
-      xx(:, :, :) = xadj(iibeg-1:iiend-1, 1, jjbeg-1:jjend-1, :)
+!xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,1,jjBeg-1:jjEnd-1,:)
+      xx(:, :, :) = xadj(i2beg-1:i2end, 1, j2beg-1:j2end, :)
 !xx(:,:,:)   = xAdj(:,1,:,:)
 !               print *,'xxjmin',xx(1,1,1),xadj(1,1,1,1),xx(1,2,1),xadj(1,1,2,1)
 !               print *,'shape2',shape(xx),shape(xAdj(iiBeg-1:iiEnd,1,jjBeg-1:jjEnd,:))
@@ -213,14 +217,15 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
 !v                 rlv2 => rlv(1:,2,1:); rlv1 => rlv(1:,1,1:)
 !v               endif
 !===========================================================
-!                print *,'jmax'
+!               print *,'jmax'
       pp2(:, :) = padj(iibeg:iiend, jl, jjbeg:jjend)
       pp1(:, :) = padj(iibeg:iiend, je, jjbeg:jjend)
 !!$               pp4  => p(1:,jl,1:);      pp3  => p(1:,je,1:)
 !!$               ss2   => sj(:,jl,:,:);     xx2   => x(:,jl,:,:)
       ss(:, :, :) = sjadj(iibeg:iiend, 2, jjbeg:jjend, :)
 !               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,jl,jjBeg-1:jjEnd,:)
-      xx(:, :, :) = xadj(iibeg-1:iiend-1, jl, jjbeg-1:jjend-1, :)
+!xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,jl,jjBeg-1:jjEnd-1,:)
+      xx(:, :, :) = xadj(i2beg-1:i2end, jl, j2beg-1:j2end, :)
 !               xx(:,:,:)   = xAdj(:,jl,:,:)
       fact = one
       CALL PUSHINTEGER4(4)
@@ -237,7 +242,8 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
 !!$               ss2   => sk(:,:,1,:);     xx2   => x(:,:,1,:)
       ss(:, :, :) = skadj(iibeg:iiend, jjbeg:jjend, 1, :)
 !               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,jjBeg-1:jjEnd,1,:)
-      xx(:, :, :) = xadj(iibeg-1:iiend-1, jjbeg-1:jjend-1, 1, :)
+!xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,1,:)
+      xx(:, :, :) = xadj(i2beg-1:i2end, jjbeg-1:j2end, 1, :)
 !               xx(:,:,:)   = xAdj(:,:,1,:)
       fact = -one
       CALL PUSHINTEGER4(5)
@@ -254,7 +260,8 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
 !!$               ss2   => sk(:,:,kl,:);     xx2   => x(:,:,kl,:)
       ss(:, :, :) = skadj(iibeg:iiend, jjbeg:jjend, 2, :)
 !               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,jjBeg-1:jjEnd,kl,:)
-      xx(:, :, :) = xadj(iibeg-1:iiend-1, jjbeg-1:jjend-1, kl, :)
+!xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,kl,:)
+      xx(:, :, :) = xadj(i2beg-1:i2end, j2beg-1:j2end, kl, :)
 !               xx(:,:,:)   = xAdj(:,:,kl,:)
       fact = one
       CALL PUSHINTEGER4(6)
@@ -267,7 +274,8 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
     DO j=j2beg,j2end
       DO i=i2beg,i2end
         CALL PUSHREAL8(pm1)
-!print *,'indices',i,j,xx(i,j,1),xAdj(i-1,1,j-1,1),x(i-1,1,j-1,1)
+!print *,'indices',i,j,xx(i+1,j+1,1),xx(i,j,1),xAdj(il,i-1,j-1,1),x(il,i-1,j-1,1),i2beg,i2end,iibeg,iiend,ie
+!xAdj(i-1,1,j-1,1),x(i-1,1,j-1,1),i2beg,i2end,iibeg,iiend,ie
 ! Compute the average pressure minus 1 and the coordinates
 ! of the centroid of the face relative from from the
 ! moment reference point. Due to the usage of pointers for
@@ -473,7 +481,7 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
     sjadjb(iibeg:iiend, 1:2, jjbeg:jjend, 1:3) = 0.0
     siadjb(1:2, iibeg:iiend, jjbeg:jjend, 1:3) = 0.0
   ELSE
-    xxb(iibeg:iiend, jjbeg:jjend, 1:3) = 0.0
+    xxb(i2beg:i2end+1, j2beg:j2end+1, 1:3) = 0.0
     pp1b(iibeg:iiend, jjbeg:jjend) = 0.0
     pp2b(iibeg:iiend, jjbeg:jjend) = 0.0
     ssb(iibeg:iiend, jjbeg:jjend, 1:3) = 0.0
@@ -527,7 +535,7 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
           siadjb(1:2, iibeg:iiend, jjbeg:jjend, 1:3) = 0.0
         ELSE
           xadjb(0:ie, 0:je, 0:ke, 1:3) = 0.0
-          xadjb(1, iibeg-1:iiend-1, jjbeg-1:jjend-1, :) = xxb(:, :, :)
+          xadjb(1, i2beg-1:i2end, j2beg-1:j2end, :) = xxb(:, :, :)
           siadjb(1:2, iibeg:iiend, jjbeg:jjend, 1:3) = 0.0
           siadjb(1, iibeg:iiend, jjbeg:jjend, :) = ssb(:, :, :)
           padjb(0:ib, 0:jb, 0:kb) = 0.0
@@ -539,7 +547,7 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
         END IF
       ELSE IF (branch .LT. 3) THEN
         xadjb(0:ie, 0:je, 0:ke, 1:3) = 0.0
-        xadjb(il, iibeg-1:iiend-1, jjbeg-1:jjend-1, :) = xxb(:, :, :)
+        xadjb(il, i2beg-1:i2end, j2beg-1:j2end, :) = xxb(:, :, :)
         siadjb(1:2, iibeg:iiend, jjbeg:jjend, 1:3) = 0.0
         siadjb(2, iibeg:iiend, jjbeg:jjend, :) = ssb(:, :, :)
         padjb(0:ib, 0:jb, 0:kb) = 0.0
@@ -550,7 +558,7 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
         sjadjb(iibeg:iiend, 1:2, jjbeg:jjend, 1:3) = 0.0
       ELSE
         xadjb(0:ie, 0:je, 0:ke, 1:3) = 0.0
-        xadjb(iibeg-1:iiend-1, 1, jjbeg-1:jjend-1, :) = xxb(:, :, :)
+        xadjb(i2beg-1:i2end, 1, j2beg-1:j2end, :) = xxb(:, :, :)
         sjadjb(iibeg:iiend, 1:2, jjbeg:jjend, 1:3) = 0.0
         sjadjb(iibeg:iiend, 1, jjbeg:jjend, :) = ssb(:, :, :)
         padjb(0:ib, 0:jb, 0:kb) = 0.0
@@ -563,7 +571,7 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
     ELSE IF (branch .LT. 6) THEN
       IF (branch .LT. 5) THEN
         xadjb(0:ie, 0:je, 0:ke, 1:3) = 0.0
-        xadjb(iibeg-1:iiend-1, jl, jjbeg-1:jjend-1, :) = xxb(:, :, :)
+        xadjb(i2beg-1:i2end, jl, j2beg-1:j2end, :) = xxb(:, :, :)
         sjadjb(iibeg:iiend, 1:2, jjbeg:jjend, 1:3) = 0.0
         sjadjb(iibeg:iiend, 2, jjbeg:jjend, :) = ssb(:, :, :)
         padjb(0:ib, 0:jb, 0:kb) = 0.0
@@ -574,7 +582,7 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
         siadjb(1:2, iibeg:iiend, jjbeg:jjend, 1:3) = 0.0
       ELSE
         xadjb(0:ie, 0:je, 0:ke, 1:3) = 0.0
-        xadjb(iibeg-1:iiend-1, jjbeg-1:jjend-1, 1, :) = xxb(:, :, :)
+        xadjb(i2beg-1:i2end, jjbeg-1:j2end, 1, :) = xxb(:, :, :)
         skadjb(iibeg:iiend, jjbeg:jjend, 1:2, 1:3) = 0.0
         skadjb(iibeg:iiend, jjbeg:jjend, 1, :) = ssb(:, :, :)
         padjb(0:ib, 0:jb, 0:kb) = 0.0
@@ -586,7 +594,7 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
       END IF
     ELSE
       xadjb(0:ie, 0:je, 0:ke, 1:3) = 0.0
-      xadjb(iibeg-1:iiend-1, jjbeg-1:jjend-1, kl, :) = xxb(:, :, :)
+      xadjb(i2beg-1:i2end, j2beg-1:j2end, kl, :) = xxb(:, :, :)
       skadjb(iibeg:iiend, jjbeg:jjend, 1:2, 1:3) = 0.0
       skadjb(iibeg:iiend, jjbeg:jjend, 2, :) = ssb(:, :, :)
       padjb(0:ib, 0:jb, 0:kb) = 0.0

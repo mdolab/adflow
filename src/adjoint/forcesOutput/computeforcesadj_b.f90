@@ -176,19 +176,16 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 ! Compute the surface normals (normAdj which is used only in 
 ! visous force computation) for the stencil
 ! Get siAdj,sjAdj,skAdj,normAdj
-!     print *,'getting surface normals'
   CALL GETSURFACENORMALSADJ(xadj, siadj, sjadj, skadj, normadj, iibeg, &
 &                      iiend, jjbeg, jjend, mm, level, nn, sps, &
 &                      righthanded)
 !call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
 !first two arguments needed for time spectral.just set to initial values for the current steady case...
-!       print *,'calling gridvelocities',mm
   CALL GRIDVELOCITIESFINELEVELFORCESADJ(.false., zero, sps, xadj, sadj, &
 &                                  iibeg, iiend, jjbeg, jjend, i2beg, &
 &                                  i2end, j2beg, j2end, mm, sfaceiadj, &
 &                                  sfacejadj, sfacekadj, rotcenteradj, &
 &                                  rotrateadj, siadj, sjadj, skadj)
-!       print *,'calling normal velocities'
   CALL NORMALVELOCITIESALLLEVELSFORCESADJ(sps, mm, sfaceiadj, iibeg, &
 &                                    iiend, jjbeg, jjend, i2beg, i2end, &
 &                                    j2beg, j2end, sfacejadj, sfacekadj&

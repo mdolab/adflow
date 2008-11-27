@@ -98,12 +98,12 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
 !call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
 
        !first two arguments needed for time spectral.just set to initial values for the current steady case...
-       !print *,'grid velocities'
+       !print *,'grid velocities',il,jl,kl
        call gridVelocitiesFineLevelAdj(.false., zero, sps,xAdj,&
             siAdj, sjAdj, skAdj,rotCenterAdj, rotRateAdj,sAdj,sFaceIAdj,&
             sFaceJAdj,sFaceKAdj, iCell, jCell, kCell)
        
-       !print *,'normalVelocities'
+       !print *,'normalVelocities',il,jl,kl
 
        call normalVelocitiesAllLevelsAdj(sps,iCell, jCell, kCell,sFaceIAdj,&
             sFaceJAdj,sFaceKAdj,siAdj, sjAdj, skAdj,rFaceAdj)
@@ -116,7 +116,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
        !Compute the Pressure in the stencil based on the current 
        !States
        
-       !print *,'Calling computepressure',wadj(:,:,:,irho)!
+       !print *,'Calling computepressure',il,jl,kl!,wadj(:,:,:,irho)!
        ! replace with Compute Pressure Adjoint!
        call computePressureAdj(wAdj, pAdj)
        

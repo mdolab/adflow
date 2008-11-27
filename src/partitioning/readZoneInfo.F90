@@ -70,6 +70,8 @@
 !      *                                                                *
 !      ******************************************************************
 !
+	
+
        ! Set the cgns ID for the "master" file and read the size
        ! of the block as well as the zone name.
 
@@ -115,6 +117,7 @@
        do nn=2,nGridsRead
          call cg_zone_read_f(fileIDs(nn), cgnsBase, nZone, &
                              familyName, sizesBlock, ierr)
+	print *,'nn',nn,familyName
          if(ierr /= all_ok)               &
            call terminate("readZoneInfo", &
                           "Something wrong when calling cg_nZones_f")
@@ -162,7 +165,7 @@
          nn = cgnsNFamilies
 	
 	print *,'family name ',familyName, sortedFamName(1:nn)
-
+	
          ii = bsearchStrings(familyName, sortedFamName, nn)
          if(ii == 0) then
 

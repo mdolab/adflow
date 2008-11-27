@@ -112,5 +112,5 @@ SUBROUTINE COMPUTEPRESSUREADJ_B(wadj, wadjb, padj, padjb)
       END DO
     END DO
   END IF
-  !gammaconstantb = 0.0
+ ! gammaconstantb = 0.0
 END SUBROUTINE COMPUTEPRESSUREADJ_B
