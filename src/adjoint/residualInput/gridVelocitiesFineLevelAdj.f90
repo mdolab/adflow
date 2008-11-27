@@ -102,14 +102,14 @@
 
        call derivativeRotMatrixRigidAdj(rotationMatrixAdj, rotationPointAdj,rotPointAdj, t(1))
 
-       ! Loop over the number of local blocks.
-
-       domains: do nn=1,nDom
-
-         ! Set the pointers for this block.
-
-         call setPointersAdj(nn, groundLevel, sps)
-
+!!$!       ! Loop over the number of local blocks.
+!!$!
+!!$!       domains: do nn=1,nDom!
+!!$!
+!!$!         ! Set the pointers for this block.!
+!!$
+!!$!         call setPointersAdj(nn, groundLevel, sps)!
+!!$!
          ! Check for a moving block.
 
          testMoving: if( blockIsMoving ) then
@@ -597,6 +597,6 @@
              enddo loopDirection
            endif testUseOldCoor
          endif testMoving
-       enddo domains
+ !      enddo domains
 
      end subroutine gridVelocitiesFineLevelAdj

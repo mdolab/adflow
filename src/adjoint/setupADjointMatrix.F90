@@ -230,7 +230,7 @@
 		    machadjb = 0.
 		    rotrateadjb(:)=0.
 !                    print *,'dwadjb',dwadjb,'wadjb',wadjb(0,0,0,:)
-  !                 print *,'calling reverse mode'
+!                    print *,'calling reverse mode'
 !                   print *,'secondhalo',secondhalo
 
 	        ! Call the reverse mode of residual computation.

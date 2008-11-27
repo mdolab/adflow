@@ -468,16 +468,16 @@
                  ! Set the pointers for the coordinates, normals and
                  ! normal velocities for this generalized i-plane.
                  ! This depends on the value of mm.
-
+                 !print *,'xindices',iibeg,iiend,0,ie
                  select case (BCFaceID(mm))
                  case (imin,imax)       ! normals in i-direction
-                     ! print *,'case1',i,shape(xxadj),shape(xadj)
+                      !print *,'case1',i,shape(xxadj),shape(xadj)
                      !xxAdj =  xAdj(i,:,:,:)
                      xxAdj(iiBeg-1:iiEnd,jjBeg-1:jjEnd,:)=xAdj(i,iiBeg-1:iiEnd,jjBeg-1:jjEnd,:)
                      ssAdj = siAdj(ii,:,:,:)!;  sFaceAdj = sFaceIAdj(i,:,:)
 
                   case (jmin,jmax)      ! normals in j-direction
-                     ! print *,'i2',i,shape(xxadj),shape(xadj)
+                      !print *,'i2',i,shape(xxadj),shape(xadj)
                      xxAdj(iiBeg-1:iiEnd,jjBeg-1:jjEnd,:) =  xAdj(iiBeg-1:iiEnd,i,jjBeg-1:jjEnd,:)
                      !print *,'indices',iiBeg,iiEnd,jjBeg,jjEnd
                      ssAdj = sjAdj(:,ii,:,:)!;  sFaceAdj = sFaceJAdj(:,i,:)
@@ -495,9 +495,9 @@
                  ! array, because x originally starts at 0 for the
                  ! i, j and k indices.
 
-                 do k=1,kke
-                   do j=1,jje
-                     ! print *,'j',j,jje,'k',k,kke
+                 do k=jjBeg,jjEnd!1,kke
+                   do j=iiBeg,iiEnd!1,jje
+                      !print *,'j',j,jje,'k',k,kke
                      ! Determine the coordinates of the face center,
                      ! which are stored in xc.
 
@@ -579,5 +579,5 @@
            endif testUseOldCoor
          endif testMoving
  !      enddo domains
-
+        ! print *,'finished grid velocities'
        end subroutine gridVelocitiesFineLevelForcesAdj

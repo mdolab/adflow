@@ -93,7 +93,8 @@
        real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd)   :: pp2, pp1
        real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd)   :: rho2, rho1
 !       real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,3) :: xx
-       real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,3) :: xx
+       !real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,3) :: xx
+       real(kind=realType), dimension(i2Beg:i2End+1,j2Beg:j2End+1,3) :: xx
        real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,3) :: ss
 
 !v       real(kind=realType), dimension(:,:),   pointer :: rlv2, rlv1
@@ -136,7 +137,8 @@
                ss(:,:,:) = siAdj(1,iiBeg:iiEnd,jjBeg:jjEnd,:)
 !               xx(:,:,:)   = xAdj(1,iiBeg-1:iiEnd,jjBeg-1:jjEnd,:)
 !               print *,'shape',shape(xx),shape(xAdj)
-               xx(:,:,:)   = xAdj(1,iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,:)
+               !!xx(:,:,:)   = xAdj(1,iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,:)
+               xx(:,:,:)   = xAdj(1,i2Beg-1:i2End,j2Beg-1:j2End,:)
 !               xx(:,:,:)   = xAdj(1,:,:,:)
                fact = -one
 
@@ -155,7 +157,8 @@
                rho1(:,:) = wAdj(ie,iiBeg:iiEnd,jjBeg:jjEnd,irho)
                ss(:,:,:)   = siAdj(2,iiBeg:iiEnd,jjBeg:jjEnd,:) 
 !               xx(:,:,:)   = xAdj(il,iiBeg-1:iiEnd,jjBeg-1:jjEnd,:)
-               xx(:,:,:)   = xAdj(il,iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,:)
+               !!xx(:,:,:)   = xAdj(il,iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,:)
+               xx(:,:,:)   = xAdj(il,i2Beg-1:i2End,j2Beg-1:j2End,:)
 !               xx(:,:,:)   = xAdj(il,:,:,:)
                fact = one
 
@@ -183,7 +186,8 @@
 !               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,1,jjBeg-1:jjEnd,:)
 !               print *,'indices',iibeg,i2beg,iiend,i2end
 !               print *,'shape',shape(xx),shape(xAdj(iiBeg-1:iiEnd,1,jjBeg-1:jjEnd,:))
-               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,1,jjBeg-1:jjEnd-1,:)
+               !xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,1,jjBeg-1:jjEnd-1,:)
+               xx(:,:,:)   = xAdj(i2Beg-1:i2End,1,j2Beg-1:j2End,:)
                !xx(:,:,:)   = xAdj(:,1,:,:)
 !               print *,'xxjmin',xx(1,1,1),xadj(1,1,1,1),xx(1,2,1),xadj(1,1,2,1)
 !               print *,'shape2',shape(xx),shape(xAdj(iiBeg-1:iiEnd,1,jjBeg-1:jjEnd,:))
@@ -200,7 +204,7 @@
              !===========================================================
 
              case (jMax)
-!                print *,'jmax'
+!               print *,'jmax'
                pp2(:,:)  = pAdj(iiBeg:iiEnd,jl,jjBeg:jjEnd) 
                pp1(:,:)  = pAdj(iiBeg:iiEnd,je,jjBeg:jjEnd)
 
@@ -211,7 +215,8 @@
                rho1(:,:) = wAdj(iiBeg:iiEnd,je,jjBeg:jjEnd,irho)
                ss(:,:,:)   = sjAdj(iiBeg:iiEnd,2,jjBeg:jjEnd,:) 
 !               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,jl,jjBeg-1:jjEnd,:)
-               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,jl,jjBeg-1:jjEnd-1,:)
+               !xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,jl,jjBeg-1:jjEnd-1,:)
+               xx(:,:,:)   = xAdj(i2Beg-1:i2End,jl,j2Beg-1:j2End,:)
 !               xx(:,:,:)   = xAdj(:,jl,:,:)
 
                fact = one
@@ -235,7 +240,8 @@
                rho1(:,:) = wAdj(iiBeg:iiEnd,jjBeg:jjEnd,1,irho)
                ss(:,:,:)   = skAdj(iiBeg:iiEnd,jjBeg:jjEnd,1,:); 
 !               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,jjBeg-1:jjEnd,1,:)
-               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,1,:)
+               !xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,1,:)
+               xx(:,:,:)   = xAdj(i2Beg-1:i2End,jjBeg-1:j2End,1,:)
 !               xx(:,:,:)   = xAdj(:,:,1,:)
                fact = -one
 
@@ -258,7 +264,8 @@
                rho1(:,:) = wAdj(iiBeg:iiEnd,jjBeg:jjEnd,ke,irho)
                ss(:,:,:)   = skAdj(iiBeg:iiEnd,jjBeg:jjEnd,2,:)
 !               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,jjBeg-1:jjEnd,kl,:)
-               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,kl,:)
+               !xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,kl,:)
+               xx(:,:,:)   = xAdj(i2Beg-1:i2End,j2Beg-1:j2End,kl,:)
 !               xx(:,:,:)   = xAdj(:,:,kl,:)
                fact = one
 
@@ -275,7 +282,8 @@
            !print *,'indicies',i2beg,i2end,iiend,j2beg,j2end!,shape(xx)
            do j=j2Beg,j2End
              do i=i2Beg,i2End
-                !print *,'indices',i,j,xx(i,j,1),xAdj(i-1,1,j-1,1),x(i-1,1,j-1,1)
+                !print *,'indices',i,j,xx(i+1,j+1,1),xx(i,j,1),xAdj(il,i-1,j-1,1),x(il,i-1,j-1,1),i2beg,i2end,iibeg,iiend,ie
+                !xAdj(i-1,1,j-1,1),x(i-1,1,j-1,1),i2beg,i2end,iibeg,iiend,ie
                ! Compute the average pressure minus 1 and the coordinates
                ! of the centroid of the face relative from from the
                ! moment reference point. Due to the usage of pointers for
@@ -449,6 +457,7 @@
 !!$             enddo
 
            endif visForce
+           
         endif invForce
         !temporary
         cFvAdj(:) = 0.0

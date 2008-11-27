@@ -55,9 +55,8 @@ SUBROUTINE RIEMANNFLUXADJ_B(left, leftb, right, rightb, flux, fluxb, por&
   REAL(KIND=REALTYPE) :: temp3b2, temp3b3, temp3b4, temp3b5, temp3b6
   REAL(KIND=REALTYPE) :: a2avg, a2avgb, aavg, aavgb, alphaavg, alphaavgb&
 &  , temp1b1, unavg, unavgb
-  REAL(KIND=REALTYPE) :: havg, havgb, kavg, kavgb, ravg, ravgb, temp1b0&
-&  , tempb0, tempb2, tempb3, tempb4, tempb5, uavg, uavgb, vavg, vavgb, &
-&  wavg, wavgb
+  REAL(KIND=REALTYPE) :: havg, havgb, kavg, kavgb, ravg, temp1b0, tempb0&
+&  , tempb2, tempb3, tempb4, uavg, uavgb, vavg, vavgb, wavg, wavgb
   REAL(KIND=REALTYPE) :: rhotmp(2), rhotmpb(2), utmp(2), utmpb(2), vtmp(&
 &  2), vtmpb(2), wtmp(2), wtmpb(2)
   REAL(KIND=REALTYPE) :: abs2, abs2b, x2, x2b
@@ -175,6 +174,7 @@ SUBROUTINE RIEMANNFLUXADJ_B(left, leftb, right, rightb, flux, fluxb, por&
       dre = etr - etl
 ! Compute the Roe average variables, which can be
 ! computed directly from the average Roe vector.
+!rAvg = fourth*(z1r + z1l)**2 deadend code!
       uavg = tmp*(z1l*left(ivx)+z1r*right(ivx))
       vavg = tmp*(z1l*left(ivy)+z1r*right(ivy))
       wavg = tmp*(z1l*left(ivz)+z1r*right(ivz))
@@ -517,7 +517,6 @@ SUBROUTINE RIEMANNFLUXADJ_B(left, leftb, right, rightb, flux, fluxb, por&
       rightb(ivy) = rightb(ivy) + z1r*tempb3
       leftb(ivx) = leftb(ivx) + z1l*tempb4
       rightb(ivx) = rightb(ivx) + z1r*tempb4
-!      tempb5 = fourth*2*(z1r+z1l)*ravgb
       rightb(irho) = rightb(irho) + right(ivz)*drwb
       rightb(ivz) = rightb(ivz) + right(irho)*drwb
       leftb(irho) = leftb(irho) - left(ivz)*drwb

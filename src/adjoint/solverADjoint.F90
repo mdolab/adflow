@@ -156,7 +156,7 @@
 
         ! Verify the node-based residual routine.
 
-!  	call verifyRAdj(level)
+  	!call verifyRAdj(level)
 !stop
 !	call verifyResiduals(level)
 !stop
@@ -180,7 +180,7 @@
 	! Verify the force derivatives
 
 	
-!        call verifydCfdx(level)
+        !call verifydCfdx(level)
 !stop
 	! Verify the force derivatives
 
@@ -258,7 +258,7 @@
 !     ******************************************************************
 !
 
-      functionLoop: do costFunction = 1, 2!nCostFunction
+      functionLoop: do costFunction = 1,1! nCostFunction
 
         !***************************************************************
         !                                                              *

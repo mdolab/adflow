@@ -233,6 +233,10 @@
       functionGrad(costFunction,nDesignRotX:nDesignRotZ) = functionGrad(costFunction,nDesignRotX:nDesignRotZ)*timeref
 
       if( PETScRank==0 ) then	
+	print *,'Other Derivatives'
+	print *,'Alpha',functionGrad(costFunction,nDesignAoA)
+	print *,'Beta',functionGrad(costFunction,nDesignSSA)
+	print *,'Mach',functionGrad(costFunction,nDesignMach)
 	print *,'Corrected rotational derivatives...'
 	print *,'Rotx:',functionGrad(costFunction,nDesignRotX)
 	print *,'RotY:',functionGrad(costFunction,nDesignRotY)

@@ -48,6 +48,8 @@ coscoeffourzrotb(:) = 0.0
   coscoeffouryrotb(:) = 0.0
 from the end
 
+emacs bceulerwallforcesadj_b.f90 and comment out + ovgm1*tmpb (approx line 591)
+
    5.2) cd residualOutput
 
 emacs computepressureadj_b.f90        >remove "gammaconstantb = 0.0" from the end
@@ -56,7 +58,7 @@ emacs eintarray_b.f90               > remove "gammaconstantb = 0.0 " from the en
 
 emacs inviscidupwindfluxadj_b.f90        >remove "gammaconstantb = 0.0" from the end
 emacs residualadj_b.f90        > remove "  cdisrkb(:) = 0.0 fixed
-                                          kappacoefb = 0.0" from the end
+                                          kappacoefb = 0.0" from the end 
 
 emacs riemannfluxadj_b.f90        > remove "rfilb = 0.0" from end. fixed
 

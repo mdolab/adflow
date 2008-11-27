@@ -108,12 +108,12 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 &           jcell, kcell)
 !call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
 !first two arguments needed for time spectral.just set to initial values for the current steady case...
-!print *,'grid velocities'
+!print *,'grid velocities',il,jl,kl
   CALL GRIDVELOCITIESFINELEVELADJ(.false., zero, sps, xadj, siadj, sjadj&
 &                            , skadj, rotcenteradj, rotrateadj, sadj, &
 &                            sfaceiadj, sfacejadj, sfacekadj, icell, &
 &                            jcell, kcell)
-!print *,'normalVelocities'
+!print *,'normalVelocities',il,jl,kl
   CALL NORMALVELOCITIESALLLEVELSADJ(sps, icell, jcell, kcell, sfaceiadj&
 &                              , sfacejadj, sfacekadj, siadj, sjadj, &
 &                              skadj, rfaceadj)
@@ -122,7 +122,7 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 !      Mimic the Residual calculation in the main code
 !Compute the Pressure in the stencil based on the current 
 !States
-!print *,'Calling computepressure',wadj(:,:,:,irho)!
+!print *,'Calling computepressure',il,jl,kl!,wadj(:,:,:,irho)!
 ! replace with Compute Pressure Adjoint!
   CALL COMPUTEPRESSUREADJ(wadj, padj)
   CALL PUSHBOOLEAN(secondhalo)

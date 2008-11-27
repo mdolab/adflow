@@ -186,7 +186,7 @@
           
           ! terminate if negative volume is located
           if(volumeIsNeg) &
-               write(*,*)"VOLUME NEGATIVE"
+               write(*,*)"VOLUME NEGATIVE",voladj,nbkglobal,iCell,jCell,kCell
 !            call terminate("negative volume located")
 
           ! Set the threshold for the volume quality.

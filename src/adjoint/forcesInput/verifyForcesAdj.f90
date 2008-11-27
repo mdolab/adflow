@@ -127,7 +127,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
       ! allocate monLoc2, monGlob2
 
       nmonsum2 = 8
-!      print *,'allocating monsum'
+ !     print *,'allocating monsum'
       allocate(monLoc1(nmonsum2), monGlob1(nmonsum2))
       allocate(monLoc2(nmonsum2), monGlob2(nmonsum2))
 
@@ -164,7 +164,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !     *                                                                *
 !     ******************************************************************
 !
-!      print *,' Calling original routines',level
+  !    print *,' Calling original routines',level
       call metric(level) 
       spectralLoop: do sps=1,nTimeIntervalsSpectral
 
@@ -216,7 +216,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
            
       ! Determine the global sum of the summation monitoring
       ! variables. The sum is made known to all processors.
-      !print *,'reducing'
+!      print *,'reducing'
       call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
                          mpi_sum, SUmb_comm_world, ierr)
 
@@ -243,7 +243,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !     * Determine the reference point for the moment computation in    *
 !     * meters.                                                        *
 !     ******************************************************************
-     ! print *,' starting Tapenade routines'
+ !     print *,' starting Tapenade routines'
       refPoint(1) = LRef*pointRef(1)
       refPoint(2) = LRef*pointRef(2)
       refPoint(3) = LRef*pointRef(3)
@@ -274,10 +274,10 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
          ! Loop over the number of local blocks.
          
          domainForcesLoop: do nn=1,nDom
-  !          print *,'setting pointers'
+         !   print *,'setting pointers'
             ! Set some pointers to make the code more readable.
             call setPointersAdj(nn,groundlevel,sps)
-            !print *,'allocating'
+          !  print *,'allocating'
             allocate(xAdj(0:ie,0:je,0:ke,3), stat=ierr)
             if(ierr /= 0)                              &
                  call terminate("Memory allocation failure for xAdj.")
@@ -293,7 +293,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 
             righthanded = flowDoms(nn,level,sps)%righthanded
 
-            !print *,'copying stencil'
+          !  print *,'copying stencil'
             ! Copy the coordinates into xAdj and
             ! Compute the face normals on the subfaces
             call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
@@ -312,7 +312,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !s               invForce: if(BCType(mm) == EulerWall        .or. &
 !s                            BCType(mm) == NSWallAdiabatic .or.  &
 !s                            BCType(mm) == NSWallIsothermal) then
-               !print *,'setting indicies'
+           !    print *,'setting indicies'
                   ! Determine the range of cell indices of the owned cells
                   ! Notice these are not the node indices
                   iiBeg = BCData(mm)%icBeg
@@ -341,7 +341,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
                   
 
 
-                  !print *,'calling computeforces'
+               !   print *,'calling computeforces',mm,nn
 
                   call computeForcesAdj(xAdj,wAdj,pAdj, &
                        iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
@@ -381,7 +381,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
       
 
          end do domainForcesLoop
-        ! print *,'finished domain loop'
+     !    print *,'finished domain loop'
 !write(*,'(a5,2i5,7g)')'adj',myID,sps,ClAdj(sps),cfpadjout(1),cfpadjout(2),cfpadjout(3),cmpadjout(1),cmpadjout(2),cmpadjout(3)      
          monLoc2(1) = CLAdj(sps)
          monLoc2(2) = CDAdj(sps)
@@ -395,12 +395,12 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
          ! Determine the global sum of the summation monitoring
          ! variables. The sum is made known to all processors.
 !         write(*,*)'adj ',myID,monLoc2(1)
-         !write(*,*)'nmonsum',nMonSum
+     !    write(*,*)'nmonsum',nMonSum
          call mpi_allreduce(monLoc2, monGlob2, nMonSum2, sumb_real, &
               mpi_sum, SUmb_comm_world, ierr)
-         
+     !    print *,'reduction complete'
          ! Transfer the cost function values to output arguments.
-         
+     !     print *,'assigning results'
          CLAdj(sps)  = monGlob2(1)
          CDAdj(sps)  = monGlob2(2)
          CfxAdj(sps) = monGlob2(3)
@@ -414,7 +414,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 
       call mpi_barrier(SUmb_comm_world, ierr)
       ! Root processor outputs results.
-      !print *,'printing results'
+ !     print *,'printing results'
       do sps=1,nTimeIntervalsSpectral
          if(myID == 0) then
             write(*,*)  "sps ", sps 
