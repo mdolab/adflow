@@ -284,34 +284,63 @@ subroutine setupGradientRHSExtra(level,costFunction)
 
 	   enddo bocoLoop
 
- 	   print *,'partials',alphaadjb,betaadjb,machadjb,machcoefadjb,rotrateadjb
+        ! Deallocate the xAdj.
+        deallocate(pAdj, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for xAdj.")
+
+        ! Deallocate the xAdj.
+        deallocate(wAdj, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for xAdj.") 
+
+        deallocate(wAdjB, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for xAdj.") 
+        ! Deallocate the xAdj.
+        deallocate(xAdj, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for xAdj.") 
+
+        deallocate(xAdjB, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for xAdj.") 
+        
+
+     enddo domainLoopAD
+
+  enddo spectralLoopAdj
 	
            !***************************************************
            !        set angle of of attack (AOA) derivative
            !***********************************************
 
-           !!@dJdaLocal = alphaadjb
+           dJdaLocal = alphaadjb
            
            ! Set the corresponding single entry of the PETSc vector dJda.
 
            ! Global vector row idxmg function of design variable index.
 
-           !!@idxmg = nDesignAOA - 1
+           idxmg = nDesignAOA - 1
 
            ! Transfer data to PETSc vector
 
-           !!@call VecSetValue(dJda, idxmg, dJdaLocal, &
-           !!@     ADD_VALUES, PETScIerr)
-	   !!@print *,'setting alpha',dJda, idxmg, dJdaLocal
+           call VecSetValue(dJda, idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+	   !print *,'setting alpha',dJda, idxmg, dJdaLocal
 	   !call VecSetValue(dJda, idxmg, dJdaLocal, &
            !     INSERT_VALUES, PETScIerr)
 
-           !!@if( PETScIerr/=0 ) then
-           !!@   write(errorMessage,99) &
-           !!@        "Error in VecSetValue for global node", idxmg
-           !!@   call terminate("setupGradientRHSExtra", errorMessage)
-           !!@endif
-
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in VecSetValue for global node", idxmg
+              call terminate("setupGradientRHSExtra", errorMessage)
+           endif
 
            !
            !     ******************************************************************
@@ -321,28 +350,28 @@ subroutine setupGradientRHSExtra(level,costFunction)
            !     ******************************************************************
            !
 
-           !!@dJdaLocal = betaadjb
+           dJdaLocal = betaadjb
 	   
            ! Set the corresponding single entry of the PETSc vector dJda.
 
            ! Global vector row idxmg function of design variable index.
 
-           !!@idxmg = nDesignSSA - 1
+           idxmg = nDesignSSA - 1
 
            ! Transfer data to PETSc vector
 
-           !!@call VecSetValue(dJda, idxmg, dJdaLocal, &
-           !!@     ADD_VALUES, PETScIerr)
+           call VecSetValue(dJda, idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
 	   !call VecSetValue(dJda, idxmg, dJdaLocal, &
            !     INSERT_VALUES, PETScIerr)
 
-           !!@if( PETScIerr/=0 ) then
-           !!@   write(errorMessage,99) &
-           !!@        "Error in VecSetValue for global node", idxmg
-           !!@   call terminate("setupGradientRHSExtra", errorMessage)
-           !!@endif
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in VecSetValue for global node", idxmg
+              call terminate("setupGradientRHSExtra", errorMessage)
+           endif
 
-           !
+       	   !
            !     ******************************************************************
            !     *                                                                *
            !     * Mach Number derivative.                                        *
@@ -360,19 +389,19 @@ subroutine setupGradientRHSExtra(level,costFunction)
 
            ! Transfer data to PETSc vector
 
-           !call VecSetValue(dJda, idxmg, dJdaLocal, &
-           !     ADD_VALUES, PETScIerr)
+           call VecSetValue(dJda, idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
 	   !print *,'setting vector',dJda, idxmg, dJdaLocal
 	   !call VecSetValue(dJda, idxmg, dJdaLocal, &
            !     INSERT_VALUES, PETScIerr)
 
-           !if( PETScIerr/=0 ) then
-           !   write(errorMessage,99) &
-           !        "Error in VecSetValue for global node", idxmg
-           !   call terminate("setupGradientRHSExtra", errorMessage)
-           !endif
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in VecSetValue for global node", idxmg
+              call terminate("setupGradientRHSExtra", errorMessage)
+           endif
 
-	   ! 
+		   ! 
            !     ******************************************************************
            !     *                                                                *
            !     * Rot X derivative.                                              *
@@ -451,123 +480,6 @@ subroutine setupGradientRHSExtra(level,costFunction)
            call VecSetValue(dJda, idxmg, dJdaLocal, &
                 ADD_VALUES, PETScIerr)
            !call VecSetValue(dJda, idxmg, dJdaLocal, &
-           !     INSERT_VALUES, PETScIerr)
-
-           if( PETScIerr/=0 ) then
-              write(errorMessage,99) &
-                   "Error in VecSetValue for global node", idxmg
-              call terminate("setupGradientRHSExtra", errorMessage)
-           endif
-
-        ! Deallocate the xAdj.
-        deallocate(pAdj, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.")
-
-        ! Deallocate the xAdj.
-        deallocate(wAdj, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-
-        deallocate(wAdjB, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-        ! Deallocate the xAdj.
-        deallocate(xAdj, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-
-        deallocate(xAdjB, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-        
-
-     enddo domainLoopAD
-
-  enddo spectralLoopAdj
-	
-           !***************************************************
-           !        set angle of of attack (AOA) derivative
-           !***********************************************
-
-           dJdaLocal = alphaadjb
-           
-           ! Set the corresponding single entry of the PETSc vector dJda.
-
-           ! Global vector row idxmg function of design variable index.
-
-           idxmg = nDesignAOA - 1
-
-           ! Transfer data to PETSc vector
-
-           call VecSetValue(dJda, idxmg, dJdaLocal, &
-                ADD_VALUES, PETScIerr)
-	   print *,'setting alpha',dJda, idxmg, dJdaLocal
-	   !call VecSetValue(dJda, idxmg, dJdaLocal, &
-           !     INSERT_VALUES, PETScIerr)
-
-           if( PETScIerr/=0 ) then
-              write(errorMessage,99) &
-                   "Error in VecSetValue for global node", idxmg
-              call terminate("setupGradientRHSExtra", errorMessage)
-           endif
-
-           !
-           !     ******************************************************************
-           !     *                                                                *
-           !     * Side slip angle > beta.                                        *
-           !     *                                                                *
-           !     ******************************************************************
-           !
-
-           dJdaLocal = betaadjb
-	   
-           ! Set the corresponding single entry of the PETSc vector dJda.
-
-           ! Global vector row idxmg function of design variable index.
-
-           idxmg = nDesignSSA - 1
-
-           ! Transfer data to PETSc vector
-
-           call VecSetValue(dJda, idxmg, dJdaLocal, &
-                ADD_VALUES, PETScIerr)
-	   !call VecSetValue(dJda, idxmg, dJdaLocal, &
-           !     INSERT_VALUES, PETScIerr)
-
-           if( PETScIerr/=0 ) then
-              write(errorMessage,99) &
-                   "Error in VecSetValue for global node", idxmg
-              call terminate("setupGradientRHSExtra", errorMessage)
-           endif
-
-       	   !
-           !     ******************************************************************
-           !     *                                                                *
-           !     * Mach Number derivative.                                        *
-           !     *                                                                *
-           !     ******************************************************************
-           !
-
-           dJdaLocal = machadjb+machcoefadjb
-	   
-           ! Set the corresponding single entry of the PETSc vector dJda.
-
-           ! Global vector row idxmg function of design variable index.
-
-           idxmg = nDesignMach - 1
-
-           ! Transfer data to PETSc vector
-
-           call VecSetValue(dJda, idxmg, dJdaLocal, &
-                ADD_VALUES, PETScIerr)
-	   print *,'setting vector',dJda, idxmg, dJdaLocal
-	   !call VecSetValue(dJda, idxmg, dJdaLocal, &
            !     INSERT_VALUES, PETScIerr)
 
            if( PETScIerr/=0 ) then
