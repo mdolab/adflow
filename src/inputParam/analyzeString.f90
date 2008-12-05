@@ -904,6 +904,9 @@
 
          case ("mach for coefficients")
            read(value,*) MachCoef
+        
+         case ("mach for mesh velocity")
+            read(value,*) MachGrid
 
          case ("reynolds")
            read(value,*) Reynolds

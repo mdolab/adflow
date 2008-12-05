@@ -10,7 +10,7 @@
 !     ******************************************************************
 !
       subroutine copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
-           machCoefAdj,iCell, jCell, kCell,prefAdj,&
+           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
            rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
            rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
            murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
@@ -46,7 +46,7 @@
       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), &
                                                      intent(out) :: xAdj
 
-      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,MachCoefAdj
+      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,MachCoefAdj,machGridAdj
       REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
       REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
@@ -134,6 +134,7 @@
 
       MachAdj = Mach
       MachCoefAdj = MachCoef
+      MachGridAdj = MachGrid
       !print *,'getting angle',liftDirection,shape(liftDirection)
       call getDirAngle(velDirFreestream,liftDirection,liftIndex,alphaAdj,betaAdj)
 !      call getDirAngle(velDirFreestream,velDirFreestream,liftIndex,alphaAdj,betaAdj)

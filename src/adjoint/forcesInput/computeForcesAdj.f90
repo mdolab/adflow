@@ -14,8 +14,8 @@
                        mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
                        yplusMax,refPoint,CLAdj,CDAdj,  &
                        nn,level,sps,cFpAdj,cMpAdj,righthanded,secondhalo,&
-                       alphaAdj,betaAdj,machAdj,machcoefAdj,prefAdj,&
-                       rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                       alphaAdj,betaAdj,machAdj,machcoefAdj,machGridAdj,&
+                       prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                        rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,&
                        rotCenterAdj, rotRateAdj,liftIndex)
         !(xAdj, &
@@ -66,7 +66,7 @@
       real(kind=realType), dimension(3) :: velDirFreestreamAdj
       real(kind=realType), dimension(3) :: liftDirectionAdj
       real(kind=realType), dimension(3) :: dragDirectionAdj
-      real(kind=realType) :: MachAdj,MachCoefAdj,uInfAdj,pInfCorrAdj
+      real(kind=realType) :: MachAdj,MachCoefAdj,uInfAdj,pInfCorrAdj,machGridAdj
       real(kind=realType), dimension(nw)::wInfAdj 
       REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj
       REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
@@ -150,9 +150,10 @@
 
        !first two arguments needed for time spectral.just set to initial values for the current steady case...
      !  print *,'calling gridvelocities',mm
-       call gridVelocitiesFineLevelForcesAdj(.false., zero, sps,xAdj,sAdj,&
+       call gridVelocitiesFineLevelForcesAdj(.false.,zero, sps,xAdj,sAdj,&
             iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End,mm,&
             sFaceIAdj,sFaceJAdj,sFaceKAdj,&
+            machGridAdj,velDirFreestreamAdj,&
             rotCenterAdj, rotRateAdj,siAdj,sjAdj,skAdj)
 
    !    print *,'calling normal velocities'

@@ -537,6 +537,10 @@
        ! Mach:                Free stream Mach number.
        ! MachCoef:            Mach number used to compute coefficients;
        !                      only relevant for translating geometries.
+       ! MachGrid:            Mach number of the Mesh. Used in stability 
+       !                      derivative calculations. Specified as the
+       !                      negative of the desired freestream Mach number.
+       !                      When this option is set, set Mach = 0.0...
        ! velDirFreestream(3): Direction of the free-stream velocity.
        !                      Internally this vector is scaled to a unit
        !                      vector, so there is no need to specify a
@@ -571,7 +575,7 @@
 
        logical :: wallFunctions, wallDistanceNeeded
 
-       real(kind=realType) :: Mach, MachCoef
+       real(kind=realType) :: Mach, MachCoef,MachGrid
        real(kind=realType) :: Reynolds, ReynoldsLength
        real(kind=realType) :: tempFreestream, gammaConstant, RGasDim
        real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset

@@ -3,10 +3,10 @@
 !  
 !  Differentiation of gridvelocitiesfinelevelforcesadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: rotrateadj xadj
-!                coscoeffouryrot coscoeffourxrot coefpolzrot omegafourzrot
-!                coefpolyrot omegafouryrot coefpolxrot omegafourxrot
-!                sincoeffourzrot sincoeffouryrot sincoeffourxrot
-!                coscoeffourzrot
+!                veldirfreestreamadj coscoeffouryrot coscoeffourxrot
+!                coefpolzrot omegafourzrot coefpolyrot omegafouryrot
+!                coefpolxrot omegafourxrot sincoeffourzrot sincoeffouryrot
+!                sincoeffourxrot coscoeffourzrot
 !   of linear combination of output variables: xadj sadj
 !
 !      ******************************************************************
@@ -20,8 +20,9 @@
 !
 SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
 &  xadjb, sadj, sadjb, iibeg, iiend, jjbeg, jjend, i2beg, i2end, j2beg, &
-&  j2end, mm, sfaceiadj, sfacejadj, sfacekadj, rotcenteradj, rotrateadj&
-&  , rotrateadjb, siadj, sjadj, skadj)
+&  j2end, mm, sfaceiadj, sfacejadj, sfacekadj, machgridadj, &
+&  veldirfreestreamadj, veldirfreestreamadjb, rotcenteradj, rotrateadj, &
+&  rotrateadjb, siadj, sjadj, skadj)
   USE bctypes
   USE blockpointers
   USE cgnsgrid
@@ -35,6 +36,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
 ! print *,'finished grid velocities'
   INTEGER(KIND=INTTYPE) :: i2beg, i2end, j2beg, j2end
   INTEGER(KIND=INTTYPE) :: iibeg, iiend, jjbeg, jjend
+  REAL(KIND=REALTYPE), INTENT(IN) :: machgridadj
   INTEGER(KIND=INTTYPE) :: mm
   REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: rotcenteradj
   REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: rotrateadj
@@ -53,6 +55,8 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
   INTEGER(KIND=INTTYPE), INTENT(IN) :: sps
   REAL(KIND=REALTYPE), DIMENSION(*), INTENT(IN) :: t
   LOGICAL, INTENT(IN) :: useoldcoor
+  REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: veldirfreestreamadj
+  REAL(KIND=REALTYPE) :: veldirfreestreamadjb(3)
   REAL(KIND=REALTYPE), DIMENSION(0:ie, 0:je, 0:ke, 3), INTENT(IN) :: &
 &  xadj
   REAL(KIND=REALTYPE) :: xadjb(0:ie, 0:je, 0:ke, 3)
@@ -63,10 +67,12 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
   REAL(KIND=REALTYPE) :: rotationpointadj(3), rotpointadj(3)
   REAL(KIND=REALTYPE) :: sfaceadj(iibeg:iiend, jjbeg:jjend)
   REAL(KIND=REALTYPE) :: ssadj(iibeg:iiend, jjbeg:jjend, 3)
-  REAL(KIND=REALTYPE) :: velxgrid, velygrid, velzgrid
+  REAL(KIND=REALTYPE) :: ainf, velxgrid, velxgridb, velygrid, velygridb&
+&  , velzgrid, velzgridb
   REAL(KIND=REALTYPE) :: sc(3), scb(3), tempb, tempb0, tempb1, xc(3), &
 &  xcb(3), xxc(3), xxcb(3)
   REAL(KIND=REALTYPE) :: xxadj(iibeg-1:iiend, jjbeg-1:jjend, 3)
+  INTRINSIC SQRT
   EXTERNAL TERMINATE
 !
 !      ******************************************************************
@@ -105,6 +111,10 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
 !  velxGrid = aInf*MachGrid(1)
 !  velyGrid = aInf*MachGrid(2)
 !  velzGrid = aInf*MachGrid(3)
+! velxGrid = zero
+! velyGrid = zero
+! velzGrid = zero
+  ainf = SQRT(gammainf*pinf/rhoinf)
 ! Compute the derivative of the rotation matrix and the rotation
 ! point; needed for velocity due to the rigid body rotation of
 ! the entire grid. It is assumed that the rigid body motion of
@@ -124,25 +134,10 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
 ! Determine the situation we are having here.
     IF (useoldcoor) THEN
       rotrateadjb(1:3) = 0.0
+      velygridb = 0.0
+      velzgridb = 0.0
+      velxgridb = 0.0
     ELSE
-!
-!            ************************************************************
-!            *                                                          *
-!            * The velocities must be determined analytically.          *
-!            *                                                          *
-!            ************************************************************
-!
-!!! Pass these in, set them in copyADjointStencil.f90
-!!$
-!!$             ! Store the rotation center and determine the
-!!$             ! nonDimensional rotation rate of this block. As the
-!!$             ! reference length is 1 timeRef == 1/uRef and at the end
-!!$             ! the nonDimensional velocity is computed.
-!!$
-!!$             j = nbkGlobal
-!!$
-!!$             rotCenter = cgnsDoms(j)%rotCenter
-!!$             rotRate   = timeRef*cgnsDoms(j)%rotRate
 !
 !            ************************************************************
 !            *                                                          *
@@ -195,13 +190,17 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
         END DO
       END DO
       rotrateadjb(1:3) = 0.0
+      velygridb = 0.0
       xcb(1:3) = 0.0
       xxcb(1:3) = 0.0
+      velzgridb = 0.0
       scb(1:3) = 0.0
+      velxgridb = 0.0
       DO k=ke,1,-1
         DO j=je,1,-1
           DO i=ie,1,-1
             scb(3) = scb(3) + sadjb(i, j, k, 3)
+            velzgridb = velzgridb + sadjb(i, j, k, 3)
             xxcb(1) = xxcb(1) + rotationmatrixadj(3, 1)*sadjb(i, j, k, 3&
 &              )
             xxcb(2) = xxcb(2) + rotationmatrixadj(3, 2)*sadjb(i, j, k, 3&
@@ -210,6 +209,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
 &              )
             sadjb(i, j, k, 3) = 0.0
             scb(2) = scb(2) + sadjb(i, j, k, 2)
+            velygridb = velygridb + sadjb(i, j, k, 2)
             xxcb(1) = xxcb(1) + rotationmatrixadj(2, 1)*sadjb(i, j, k, 2&
 &              )
             xxcb(2) = xxcb(2) + rotationmatrixadj(2, 2)*sadjb(i, j, k, 2&
@@ -218,6 +218,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
 &              )
             sadjb(i, j, k, 2) = 0.0
             scb(1) = scb(1) + sadjb(i, j, k, 1)
+            velxgridb = velxgridb + sadjb(i, j, k, 1)
             xxcb(1) = xxcb(1) + rotationmatrixadj(1, 1)*sadjb(i, j, k, 1&
 &              )
             xxcb(2) = xxcb(2) + rotationmatrixadj(1, 2)*sadjb(i, j, k, 1&
@@ -291,10 +292,25 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
           END DO
         END DO
       END DO
+      rotrateadjb(1) = rotrateadjb(1) + rotcenteradj(2)*velzgridb
+      rotrateadjb(2) = rotrateadjb(2) - rotcenteradj(1)*velzgridb
+      rotrateadjb(3) = rotrateadjb(3) + rotcenteradj(1)*velygridb
+      rotrateadjb(1) = rotrateadjb(1) - rotcenteradj(3)*velygridb
+      rotrateadjb(2) = rotrateadjb(2) + rotcenteradj(3)*velxgridb
+      rotrateadjb(3) = rotrateadjb(3) - rotcenteradj(2)*velxgridb
     END IF
   ELSE
     rotrateadjb(1:3) = 0.0
+    velygridb = 0.0
+    velzgridb = 0.0
+    velxgridb = 0.0
   END IF
+  veldirfreestreamadjb(1:3) = 0.0
+  veldirfreestreamadjb(3) = -(ainf*machgridadj*velzgridb)
+  veldirfreestreamadjb(2) = veldirfreestreamadjb(2) - ainf*machgridadj*&
+&    velygridb
+  veldirfreestreamadjb(1) = veldirfreestreamadjb(1) - ainf*machgridadj*&
+&    velxgridb
 !!$  coscoeffourzrotb(:) = 0.0
 !!$  sincoeffourxrotb(:) = 0.0
 !!$  sincoeffouryrotb(:) = 0.0

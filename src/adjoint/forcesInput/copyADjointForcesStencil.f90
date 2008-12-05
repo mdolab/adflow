@@ -10,9 +10,9 @@
 !     ******************************************************************
 !
       subroutine copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-           MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
-           pInfCorrAdj,nn,level,sps,liftIndex)
+           MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
+           rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
+           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
 
 !
 !     ******************************************************************
@@ -40,7 +40,7 @@
       real(kind=realType), dimension(0:ie,0:je,0:ke,3), intent(out) :: xAdj
       real(kind=realType), dimension(0:ib,0:jb,0:kb,1:nw), intent(out) :: wAdj
 
-      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,MachCoefAdj
+      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,MachCoefAdj,MachGridAdj
       REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
       REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
@@ -110,7 +110,7 @@
 
       MachAdj = Mach
       MachCoefAdj = MachCoef
-      
+      MachGridAdj = MachGrid
       call getDirAngle(velDirFreestream,LiftDirection,liftIndex,alphaAdj,betaAdj)
       !call getDirAngle(velDirFreestream(1), velDirFreestream(2),&
       !     velDirFreestream(3), alphaAdj, betaAdj)

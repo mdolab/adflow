@@ -94,7 +94,7 @@ subroutine setupGradientRHSExtra(level,costFunction)
   real(kind=realType), dimension(:,:,:), allocatable :: pAdj
   
   REAL(KIND=REALTYPE) :: machadj, machcoefadj, uinfadj, pinfcorradj
-  REAL(KIND=REALTYPE) :: machadjb, machcoefadjb
+  REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadj
   REAL(KIND=REALTYPE) :: prefadj, rhorefadj
   REAL(KIND=REALTYPE) :: pinfdimadj, rhoinfdimadj
   REAL(KIND=REALTYPE) :: rhoinfadj, pinfadj
@@ -196,9 +196,9 @@ subroutine setupGradientRHSExtra(level,costFunction)
         ! Copy the coordinates into xAdj 
        
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-           MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
-           pInfCorrAdj,nn,level,sps,liftIndex)
+           MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
+           rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
+           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
 
  
         wAdjB(:,:,:,:) = zero ! > return dCf/dw
@@ -276,11 +276,10 @@ subroutine setupGradientRHSExtra(level,costFunction)
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
-&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, &
-&  liftindex)
-
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
+&  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+&  murefadj, timerefadj, pinfcorradj, rotcenteradj, rotrateadj, &
+&  rotrateadjb, liftindex)
 
 	   enddo bocoLoop
 

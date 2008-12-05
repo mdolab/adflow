@@ -70,7 +70,7 @@
       real(kind=realType), dimension(nw) :: dwAdj, dwAdjB
 
       REAL(KIND=REALTYPE) :: machadj, machcoefadj, uinfadj, pinfcorradj
-      REAL(KIND=REALTYPE) :: machadjb, machcoefadjb
+      REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadj
       REAL(KIND=REALTYPE) :: prefadj, rhorefadj
       REAL(KIND=REALTYPE) :: pinfdimadj, rhoinfdimadj
       REAL(KIND=REALTYPE) :: rhoinfadj, pinfadj
@@ -191,11 +191,10 @@
                   do iCell = 2, il
                      ! Copy the state w to the wAdj array in the stencil
                      call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
-                          machCoefAdj,iCell, jCell, kCell,prefAdj,&
-                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)         
-
+           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
+           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
                      mLoop: do m = 1, nw       
                         ! Loop over output cell residuals (R)
 
@@ -211,11 +210,11 @@
 
                         ! Call reverse mode of residual computation
                         call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                             &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                             &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
-                             &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-                             &  rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj, &
-                             &  pinfcorradj, liftindex)
+&  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
+&  machcoefadj, machgridadj, icell, jcell, kcell, nn, sps, correctfork, &
+&  secondhalo, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, &
+&  pinfadj, rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj&
+&  , pinfcorradj, liftindex)
 
                         dRdaLocal(m,nDesignAOA) =alphaAdjb
                         dRdaLocal(m,nDesignSSA) =betaAdjb
