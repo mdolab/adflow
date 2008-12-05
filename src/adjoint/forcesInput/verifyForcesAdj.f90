@@ -72,7 +72,7 @@
       real(kind=realType), dimension(3) :: refPoint
       real(kind=realType) :: yplusMax
 
-      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj
+      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj,machGridAdj
       REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
       REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
@@ -296,14 +296,11 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
           !  print *,'copying stencil'
             ! Copy the coordinates into xAdj and
             ! Compute the face normals on the subfaces
-            call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-           MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
-           pInfCorrAdj,nn,level,sps,liftIndex)
-            !copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-           !MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           !rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps,&
-           !liftIndex)
+            call  copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
+           MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
+           rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
+           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
+
             !call copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
 
             bocoLoop: do mm=1,nBocos
@@ -348,19 +345,10 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
                        mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
                        yplusMax,refPoint,CLAdj,CDAdj,  &
                        nn,level,sps,cFpAdj,cMpAdj,righthanded,secondhalo,&
-                       alphaAdj,betaAdj,machAdj,machcoefAdj,prefAdj,&
-                       rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                       alphaAdj,betaAdj,machAdj,machcoefAdj,machGridAdj,&
+                       prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                        rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,&
                        rotCenterAdj, rotRateAdj,liftIndex)
-!!$                  computeForcesAdj(xAdj,wAdj,pAdj, &
-!!$                       iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
-!!$                       mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
-!!$                       yplusMax,refPoint,CLAdj,CDAdj,  &
-!!$                       nn,level,sps,cFpAdj,cMpAdj,righthanded,secondhalo,&
-!!$                       alphaAdj,betaAdj,machAdj,machcoefAdj,prefAdj,&
-!!$                       rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-!!$                       rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,&
-!!$                       liftIndex)
                   !print *,'forces computed'
                   !print *,'cfpadj',cfpadj,cmpadj,'cladj',cladj,'cdadj',cdadj
 

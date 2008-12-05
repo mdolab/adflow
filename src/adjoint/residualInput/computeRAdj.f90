@@ -10,7 +10,7 @@
 !
 
 subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
-                          MachCoefAdj,iCell, jCell,  kCell, &
+                          MachCoefAdj,machGridAdj,iCell, jCell,  kCell, &
                           nn,sps, correctForK,secondHalo,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
@@ -53,7 +53,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
   real(kind=realType), dimension(3) :: velDirFreestreamAdj
   real(kind=realType), dimension(3) :: liftDirectionAdj
   real(kind=realType), dimension(3) :: dragDirectionAdj
-  real(kind=realType) :: MachAdj,MachCoefAdj,uInfAdj,pInfCorrAdj
+  real(kind=realType) :: MachAdj,MachCoefAdj,uInfAdj,pInfCorrAdj,machGridAdj
   real(kind=realType), dimension(nw)::wInfAdj 
   REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj
   REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
@@ -101,7 +101,8 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
        !print *,'grid velocities',il,jl,kl
        call gridVelocitiesFineLevelAdj(.false., zero, sps,xAdj,&
             siAdj, sjAdj, skAdj,rotCenterAdj, rotRateAdj,sAdj,sFaceIAdj,&
-            sFaceJAdj,sFaceKAdj, iCell, jCell, kCell)
+            sFaceJAdj,sFaceKAdj,machGridAdj,velDirFreestreamAdj,&
+            iCell, jCell, kCell)
        
        !print *,'normalVelocities',il,jl,kl
 

@@ -4,6 +4,7 @@
 !  Differentiation of setflowinfinitystateforcesadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: uinfadj veldirfreestreamadj
 !   of linear combination of output variables: winfadj pinfcorradj
+!                veldirfreestreamadj
 !
 !      ******************************************************************
 !      *                                                                *
@@ -127,9 +128,9 @@ SUBROUTINE SETFLOWINFINITYSTATEFORCESADJ_B(veldirfreestreamadj, &
   CALL POPINTEGER4(branch)
   IF (.NOT.branch .LT. 1) winfadjb(itu1) = winfadjb(itu1) + two*third*&
 &      rhoinfadj*pinfcorradjb
-  veldirfreestreamadjb(1:3) = 0.0
   uinfadjb = uinfadjb + veldirfreestreamadj(3)*winfadjb(ivz)
-  veldirfreestreamadjb(3) = uinfadj*winfadjb(ivz)
+  veldirfreestreamadjb(3) = veldirfreestreamadjb(3) + uinfadj*winfadjb(&
+&    ivz)
   winfadjb(ivz) = 0.0
   uinfadjb = uinfadjb + veldirfreestreamadj(2)*winfadjb(ivy)
   veldirfreestreamadjb(2) = veldirfreestreamadjb(2) + uinfadj*winfadjb(&

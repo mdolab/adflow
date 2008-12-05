@@ -29,6 +29,7 @@
        use inputMotion
        use inputUnsteady
        use iteration
+       use inputPhysics
        implicit none
 !
 !      Subroutine arguments.
@@ -44,7 +45,7 @@
        integer(kind=intType) :: i, j, k, ii, iie, jje, kke
 
        real(kind=realType) :: oneOver4dt, oneOver8dt
-       real(kind=realType) :: velxGrid, velyGrid, velzGrid
+       real(kind=realType) :: velxGrid, velyGrid, velzGrid,ainf
 
        real(kind=realType), dimension(3) :: sc, xc, xxc
        real(kind=realType), dimension(3) :: rotCenter, rotRate
@@ -70,9 +71,16 @@
     !  velyGrid = aInf*MachGrid(2)
     !  velzGrid = aInf*MachGrid(3)
 
-       velxGrid = zero
-       velyGrid = zero
-       velzGrid = zero
+       !print *,'machgrid',machgrid
+       !stop
+       !velxGrid = zero
+       !velyGrid = zero
+       !velzGrid = zero
+
+       aInf = sqrt(gammaInf*pInf/rhoInf)
+       velxGrid = aInf*machgrid*-velDirFreestream(1)
+       velyGrid = aInf*machgrid*-velDirFreestream(2) 
+       velzGrid = aInf*machgrid*-velDirFreestream(3) 
 
        ! Compute the derivative of the rotation matrix and the rotation
        ! point; needed for velocity due to the rigid body rotation of
@@ -317,6 +325,14 @@
 
              rotCenter = cgnsDoms(j)%rotCenter
              rotRate   = timeRef*cgnsDoms(j)%rotRate
+
+             !subtract off the rotational velocity of the center of the grid
+             ! to account for the added overall velocity.
+             velxGrid =velxgrid+ 1*(rotRate(2)*rotCenter(3) - rotRate(3)*rotCenter(2))
+             velyGrid =velygrid+ 1*(rotRate(3)*rotCenter(1) - rotRate(1)*rotCenter(3))
+             velzGrid =velzgrid+ 1*(rotRate(1)*rotCenter(2) - rotRate(2)*rotCenter(1))
+             !print *,'velgrid',velxGrid,velyGrid , velzGrid
+
 !
 !            ************************************************************
 !            *                                                          *

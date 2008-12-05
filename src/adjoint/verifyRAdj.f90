@@ -50,7 +50,7 @@
 
       real(kind=realType), dimension(nw)                :: dwAdj
 
-      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj
+      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj,machGridAdj
       REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
       REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
@@ -219,8 +219,8 @@
                      ! Transfer the state w to the auxiliar array wAdj
                      ! and the coordinates x to the auxiliar array xAdj.
                      !print *,'copying Adjoint',nn,icell,il,jcell,jl,kcell,kl,shape(w)
-                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,&
-                          MachAdj,MachCoefAdj,iCell, jCell, kCell,prefAdj,&
+                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+                          machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
@@ -238,13 +238,13 @@
 !                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
 !                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
 !                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex
-                     call computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,&
-                          betaAdj,MachAdj, MachCoefAdj,&
-                          iCell, jCell,  kCell, &
+                     call computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
+                          MachCoefAdj,machGridAdj,iCell, jCell,  kCell, &
                           nn,sps, correctForK,secondHalo,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+
                      !print *,'interior4 il,jl,kl',il,jl,kl,nn!,shape(w)
 
 !!$                     call computeRAdjoint(wAdj,        &

@@ -10,7 +10,8 @@
 !
        subroutine gridVelocitiesFineLevelAdj(useOldCoor, t, sps,xAdj,&
             siAdj, sjAdj, skAdj,rotCenterAdj, rotRateAdj,sAdj,sFaceIAdj,&
-            sFaceJAdj,sFaceKAdj, iCell, jCell, kCell)
+            sFaceJAdj,sFaceKAdj,machGridAdj,velDirFreestreamAdj,&
+            iCell, jCell, kCell)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -51,6 +52,8 @@
        real(kind=realType), dimension(-3:2,-3:2,3)::xxAdj,ssAdj
        !real(kind=realType) :: volAdj
        !real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(out) :: normAdj
+       real(kind=realType),intent(in):: machGridAdj
+       real(kind=realType),dimension(3),intent(in):: velDirFreestreamAdj
        integer(kind=intType), intent(in) :: iCell, jCell, kCell
 !
 !      Local variables.
@@ -60,7 +63,7 @@
        integer(kind=intType) :: iStart,iEnd,jStart,jEnd,kStart,kEnd
 
        real(kind=realType) :: oneOver4dt, oneOver8dt
-       real(kind=realType) :: velxGrid, velyGrid, velzGrid
+       real(kind=realType) :: velxGrid, velyGrid, velzGrid,aInf
 
        real(kind=realType), dimension(3) :: sc, xc, xxc
        
@@ -91,9 +94,14 @@
     !  velyGrid = aInf*MachGrid(2)
     !  velzGrid = aInf*MachGrid(3)
 
-       velxGrid = zero
-       velyGrid = zero
-       velzGrid = zero
+       !velxGrid = zero
+       !velyGrid = zero
+       !velzGrid = zero
+
+       aInf = sqrt(gammaInf*pInf/rhoInf)
+       velxGrid = aInf*machgridAdj*-velDirFreestreamAdj(1)
+       velyGrid = aInf*machgridAdj*-velDirFreestreamAdj(2) 
+       velzGrid = aInf*machgridAdj*-velDirFreestreamAdj(3) 
 
        ! Compute the derivative of the rotation matrix and the rotation
        ! point; needed for velocity due to the rigid body rotation of
@@ -344,6 +352,12 @@
 !!$
 !!$             rotCenter = cgnsDoms(j)%rotCenter
 !!$             rotRate   = timeRef*cgnsDoms(j)%rotRate
+
+             !subtract off the rotational velocity of the center of the grid
+             ! to account for the added overall velocity.
+             velxGrid =velxgrid+ 1*(rotRateAdj(2)*rotCenterAdj(3) - rotRateAdj(3)*rotCenterAdj(2))
+             velyGrid =velygrid+ 1*(rotRateAdj(3)*rotCenterAdj(1) - rotRateAdj(1)*rotCenterAdj(3))
+             velzGrid =velzgrid+ 1*(rotRateAdj(1)*rotCenterAdj(2) - rotRateAdj(2)*rotCenterAdj(1))
 
 !
 !            ************************************************************
