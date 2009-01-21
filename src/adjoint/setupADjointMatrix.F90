@@ -182,7 +182,8 @@
         write(*,10) "Assembling ADjoint matrix..."
  
       call mpi_barrier(SUmb_comm_world, ierr)
-      if( myID==0 ) call cpu_time(time(1))
+      !if( myID==0 ) call cpu_time(time(1))
+      call cpu_time(time(1))
       
       !print *,'Entering Domain loop'
       domainLoopAD: do nn=1,nDom
