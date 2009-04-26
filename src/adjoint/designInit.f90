@@ -52,11 +52,11 @@
       ! Determine the number of extra variables. This includes:
       ! - angle of attack
       ! - side-slip angle
-      ! - Mach Number
+      ! - Mach Number,mach NumberGrid
       ! - Rotational Rate (3)
       ! - will eventually include Flight Dynamic Derivatives.
 
-      nDesignExtra = 6
+      nDesignExtra = 7
   
       ! Determine the total number of design variables.
       !   + nDesignSpatial (= 3 * nNodesGlobal)

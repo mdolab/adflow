@@ -236,7 +236,7 @@
                       else
                          mult = one
                          ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,1,:)
-                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceKAdj(iSt:iEn,jSt:jEn,0)
+                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceKAdj(iSt:iEn,jSt:jEn,1)
                       end if
                       
                    end select

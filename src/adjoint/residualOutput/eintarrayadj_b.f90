@@ -172,5 +172,5 @@ SUBROUTINE EINTARRAYADJ_B(rho, rhob, p, pb, k, kb, eint, eintb, &
   CASE DEFAULT
     kb(1:kk) = 0.0
   END SELECT
- ! gammaconstantb = 0.0
+!  gammaconstantb = 0.0
 END SUBROUTINE EINTARRAYADJ_B

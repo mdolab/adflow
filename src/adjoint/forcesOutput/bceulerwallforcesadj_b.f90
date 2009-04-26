@@ -588,7 +588,7 @@ SUBROUTINE BCEULERWALLFORCESADJ_B(secondhalo, wadj, wadjb, padj, padjb, &
     DO j=jcend,jcbeg,-1
       DO i=icend,icbeg,-1
         CALL POPINTEGER4(branch)
-        padj1b(ii, jj) = padj1b(ii, jj)! + ovgm1*tmpb
+        padj1b(ii, jj) = padj1b(ii, jj) + ovgm1*tmpb
         l = nt1mg - 1
         CALL POPINTEGER4(branch)
         IF (branch .LT. 1) THEN

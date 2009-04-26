@@ -97,8 +97,8 @@
 #SOLVER_DIRSRC = /nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src
 #SOLVER_DIRSRC = /usr/people/sichoi/SUmbADJ_NS_NEW/src/
 #SOLVER_DIRSRC = /home/guysmiley/acmarta/SVN/SUmbVertex/src
-#SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
-SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
+SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
+#SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
 
 #     ******************************************************************
 #     *                                                                *
@@ -114,7 +114,7 @@ TAPENADE_OUTVARS = "CLAdj CDAdj CmxAdj CmyAdj CmzAdj"
 
 # Independent input variables (separator: white space, default: all)
 
-TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj machcoefadj rotrateadj"
+TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj machcoefadj machGridAdj rotrateadj"
 
 # Name of the top routine
 

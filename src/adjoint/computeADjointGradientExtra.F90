@@ -240,6 +240,7 @@
 	print *,'Alpha',functionGrad(costFunction,nDesignAoA)
 	print *,'Beta',functionGrad(costFunction,nDesignSSA)
 	print *,'Mach',functionGrad(costFunction,nDesignMach)
+	print *,'MachGrid',functionGrad(costFunction,nDesignMachGrid)	
 	print *,'Corrected rotational derivatives...'
 	print *,'Rotx:',functionGrad(costFunction,nDesignRotX)
 	print *,'RotY:',functionGrad(costFunction,nDesignRotY)

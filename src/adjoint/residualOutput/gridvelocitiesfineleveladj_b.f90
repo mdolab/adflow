@@ -3,10 +3,11 @@
 !  
 !  Differentiation of gridvelocitiesfineleveladj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: rotrateadj xadj
-!                skadj sjadj veldirfreestreamadj siadj coscoeffouryrot
-!                coscoeffourxrot coefpolzrot omegafourzrot coefpolyrot
-!                omegafouryrot coefpolxrot omegafourxrot sincoeffourzrot
-!                sincoeffouryrot sincoeffourxrot coscoeffourzrot
+!                machgridadj skadj sjadj veldirfreestreamadj siadj
+!                coscoeffouryrot coscoeffourxrot coefpolzrot omegafourzrot
+!                coefpolyrot omegafouryrot coefpolxrot omegafourxrot
+!                sincoeffourzrot sincoeffouryrot sincoeffourxrot
+!                coscoeffourzrot
 !   of linear combination of output variables: rotrateadj sfacekadj
 !                skadj sfacejadj sjadj sfaceiadj sadj siadj
 !
@@ -23,7 +24,8 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 &  , siadj, siadjb, sjadj, sjadjb, skadj, skadjb, rotcenteradj, &
 &  rotrateadj, rotrateadjb, sadj, sadjb, sfaceiadj, sfaceiadjb, &
 &  sfacejadj, sfacejadjb, sfacekadj, sfacekadjb, machgridadj, &
-&  veldirfreestreamadj, veldirfreestreamadjb, icell, jcell, kcell)
+&  machgridadjb, veldirfreestreamadj, veldirfreestreamadjb, icell, jcell&
+&  , kcell)
   USE blockpointers
   USE cgnsgrid
   USE flowvarrefstate
@@ -36,6 +38,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
   INTEGER(KIND=INTTYPE), INTENT(IN) :: jcell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: kcell
   REAL(KIND=REALTYPE), INTENT(IN) :: machgridadj
+  REAL(KIND=REALTYPE) :: machgridadjb
   REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: rotcenteradj
   REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: rotrateadj
   REAL(KIND=REALTYPE) :: rotrateadjb(3)
@@ -643,6 +646,9 @@ loopdirection:DO mm=1,3
     velxgridb = 0.0
   END IF
   veldirfreestreamadjb(1:3) = 0.0
+  machgridadjb = -(ainf*veldirfreestreamadj(1)*velxgridb) - ainf*&
+&    veldirfreestreamadj(2)*velygridb - ainf*veldirfreestreamadj(3)*&
+&    velzgridb
   veldirfreestreamadjb(3) = -(ainf*machgridadj*velzgridb)
   veldirfreestreamadjb(2) = veldirfreestreamadjb(2) - ainf*machgridadj*&
 &    velygridb
