@@ -61,8 +61,9 @@
 
          ! Solve the state for the current time step and 
          ! update nOldSolAvail.
-
+	
          call solveState
+	
          nOldSolAvail = nOldSolAvail + 1
 
          ! Update PV3 solution if PV3 support is required.

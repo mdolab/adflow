@@ -148,6 +148,7 @@
        ! grid level.
 
        x    => flowDoms(nn,mm,ll)%x
+       xInit=> flowDoms(nn,1,ll)%xInit
        xOld => flowDoms(nn,1,ll)%xOld
 
        si     => flowDoms(nn,mm,ll)%si

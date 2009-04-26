@@ -108,7 +108,7 @@ python module sumb ! in
 !!$         
 !!$       end subroutine getndonornonmatch
 
-       subroutine getblockcommunicationinfo(blocknum,nSub,,nOne,nNon,i1,i2,j1,j2,k1,k2,&
+       subroutine getblockcommunicationinfo(blocknum,nSub,nOne,nNon,i1,i2,j1,j2,k1,k2,&
             di1,di2,dj1,dj2,dk1,dk2,neighbourBlock,neighbourProc,trans1,&
             trans2,trans3,bcinfo,faceinfo)
          
@@ -149,6 +149,16 @@ python module sumb ! in
             real(kind=realtype) intent(out) :: state
        end subroutine getsinglestate
 
+! *********************
+! Integrated warping
+! *********************
+
+       subroutine integratedwarp(ncoords,xyzface,indices) ! in :sumb:integratedWarp.f90
+         use blockpointers
+         integer(kind=inttype) optional,check(shape(xyzface,1)==ncoords),depend(xyzface) :: ncoords=shape(xyzface,1)
+         real(kind=realtype) dimension(3,ncoords) :: xyzface
+         integer(kind=inttype) dimension(4,ncoords),depend(ncoords) :: indices
+       end subroutine integratedwarp
        
 !!$       subroutine getnonmatchingsubfaceinfo(blocknum,nNon,nDonor,blocks,proc,faceid)
 !!$         !get donor block info for nonmatching subfaces

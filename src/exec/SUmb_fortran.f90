@@ -73,6 +73,11 @@
 
        call initFlow
 
+       !!!!!!!!!!!temporary
+       !test the integrated warping algoritm
+       !call testwarping
+       !!!!!!!!!!!!!!!!!!!1
+       !stop
        ! Solve the equations.
 
        call solver

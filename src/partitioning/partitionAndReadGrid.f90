@@ -117,6 +117,10 @@
                              &and blockFormatGrids")
        end select
 
+       !Store the initial mesh as required for the integrated meshwarping
+       !routine.
+       call storeReferenceMesh
+
        ! Determine the number of colors of the sliding mesh interfaces,
        ! such that the computation of the communication pattern of the
        ! sliding meshes is as load balanced as possible.

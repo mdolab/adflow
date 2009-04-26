@@ -1,0 +1,26 @@
+# ------------------------------------------------------ #
+# Run the makefile that clears Tapenade output directory #
+# ------------------------------------------------------ #
+
+make -f MakefileTapenadeWarping clean
+
+# ------------------------------------------------------ #
+#         Run the makefile that calls Tapenade           #
+# ------------------------------------------------------ #
+
+# Differentiate the local block warping routines
+
+make -f MakefileTapenadeWarping
+
+# Run python script that automatically edits the tapenade 
+# output files, discard module files and renaming module
+# names in subroutines
+
+#python residualTapenade/autoEdit.py
+
+echo "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+echo "Refer to INSTRUCTIONS file for subsequent steps..."
+echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+
+# Created by    : C.A.(Sandy) Mader
+# Last modified : Dec.07, 2008

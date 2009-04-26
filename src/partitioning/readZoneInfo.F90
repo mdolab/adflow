@@ -113,11 +113,11 @@
        ! Check the size of this zone for the other grids to be read.
        ! They should be equal. Note that familyName is only used as
        ! a dummy in this call.
-
+       !print *,'nGrids Read',nGridsRead
        do nn=2,nGridsRead
          call cg_zone_read_f(fileIDs(nn), cgnsBase, nZone, &
                              familyName, sizesBlock, ierr)
-	print *,'nn',nn,familyName
+	 !print *,'nn',nn,familyName
          if(ierr /= all_ok)               &
            call terminate("readZoneInfo", &
                           "Something wrong when calling cg_nZones_f")
@@ -136,7 +136,7 @@
        enddo
 
        ! Goto this zone.
-
+       print *,'zoneIndex',nZone
        call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, "end")
        if(ierr /= all_ok)               &
          call terminate("readZoneInfo", &
