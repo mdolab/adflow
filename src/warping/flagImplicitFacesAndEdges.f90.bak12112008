@@ -1,0 +1,370 @@
+!
+! ***********************************
+! *  File: flagImplicitEdgesAndFaces.f90
+! *  Author: C.A.(Sandy) Mader
+! *  Started: 12-11-2008
+! *  Modified: 12-11-2008
+! ***********************************
+
+subroutine flagImplicitEdgesAndFaces()
+
+!*****************************************************
+!
+!  This routine identifies what edges and faces are explicitly and 
+!  implicitly perturbed for a give block. Converted from python...
+!
+!*****************************************************
+
+use blockPointers
+implicit none
+
+!Subroutine Arguments
+
+
+
+!Local Variables
+integer(kind=intType)::nn,mm,ll,ii,jj,kk
+integer(kind=intType),dimension(3)::ijk_num
+logical::cornerPoint,on_edge,on_face
+real(kind=realType):: local,local0,eps
+
+integer(kind=intType),dimension(3,8)::relatedFaces,relatedEdges
+integer(kind=intType),dimension(2,12)::edgeRelatedFaces
+integer(kind=intType),dimension(6,12)::searchPattern
+
+!loop through blocks and faces checking faces
+do nn=1,nDom
+   call setPointer(nn,level,sps)
+      !set the lists for this block to zero
+   IFACEPTB[:]=0
+   IEDGEPTB[:]=0
+   do mm= 1,nSubface
+      do ii=inbeg(mm),inend(mm)+incrementI(mm),incrementI(mm)
+         do jj=jbeg,jend+incrementJ(mm),incrementJ(mm)
+            do kk=kbeg,kend+incrementK(mm),incrementK(mm)
+               !check whether this point has moved
+               do ll=1,3
+                  local = x(ii,jj,kk,nn)
+                  local0 = xInit(ii,jj,kk,nn)
+                  eps = 1.0e-12
+                  if (abs(local -local0)/max(abs(local0),abs(local),eps)>1e-12)then
+                     !#print 'ifcheck movement',abs(local.real -local0.real)/max(abs(local0.real),abs(local.real),eps)>1e-12,abs(local.real -local0.real),max(abs(local0.real),abs(local.real),eps),abs(local.real -local0.real)/max(abs(local0.real),abs(local.real),eps), abs(local.imag -local0.imag)/max(abs(local0.imag),abs(local.imag),eps)>1e-12
+                     !point has moved
+                     !set the index for this point
+                     IJK_NUM = (ii,jj,kk)
+                     !check the location of this point
+                     cornerPoint = IS_CORNER(IJK_NUM)
+                     edgePoint = ON_EDGE(IJK_NUM)
+                     facePoint = ON_FACE(IJK_NUM)
+                     
+                     ! Flag the explicitly perturbed faces
+                     if ((.not. cornerPoint) .and. (.not. edgePoint) .and.&
+                          facePoint)then
+                        if (IJK_NUM(1) == 1) then
+                           IFACEPTB(1) = 2
+                           exit!break
+                        elseif (IJK_NUM(1) == ijk(1)) then
+                           IFACEPTB(2) = 2
+                           exit!break
+                        elseif (IJK_NUM(2) == 1) then
+                           IFACEPTB(3) = 2
+                           exit!break
+                        elseif (IJK_NUM(2) == ijk(2)) then
+                           IFACEPTB(4) = 2
+                           exit!break
+                        elseif (IJK_NUM(3) == 1) then
+                           IFACEPTB(5) = 2
+                           exit!break
+                        elseif (IJK_NUM(3) == ijk(3)) then
+                           IFACEPTB(6) = 2
+                           exit!break
+                        END IF
+                     elseif (.not. facePoint)then
+                        print *,'WARNING - ILLEGAL PERTURBATION!  PERTURBATION PASSED TO '
+                        print *,'WARP IS IN THE INTERIOR OF THE BLOCK, RATHER THAN ON A'
+                        print *,'BLOCK FACE AS IT SHOULD BE - WARP WILL LIKELY FAIL'
+                        print *,'ILLEGAL BLOCK PERTURBATION OF A INTERIOR POINT IN A BLOCK'
+                        stop
+                     endif
+                  endif
+               end do
+            end do
+         end do
+      end do
+   end do
+end do
+
+                        
+!identify perturbed corners on each block
+do nn=1,nDom
+   call setPointer(nn,level,sps)
+   counter = 0
+   do k=1,ijk(3),ijk(3)!jump corner to corner
+      do j=1,ijk(2),ijk(2)
+         do i=1,ijk(1),ijk(1)
+            do n =1,3
+               local = x(i,j,k,n)
+               local0 = xInit(i,j,k,)
+               eps = 1.0e-12
+!#             if (abs(local.real -local0.real)/max(abs(local0.real),abs(local.real),eps)>1e-6 or abs(local.imag -local0.imag)/max(abs(local0.imag),abs(local.imag),eps)>1e-6):
+               if (abs(local -local0)/max(abs(local0),abs(local),eps)>1e-12)then
+                  perturbedCorner[counter] = .True.
+                  exit!break
+               else
+                  perturbedCorner[counter] = .False.
+               endif
+            end do
+            counter+=1
+         end do
+      end do
+   end do
+end do
+
+!get the Block relations for the next part of the algorithm
+call blockRelations(relatedFaces,relatedEdges,edgeRelatedFaces,&
+     searchPattern)
+
+!identify the edges of the block
+
+! Flag the edges and faces  connected with each
+! perturbed corner as implicitly perturbed
+do nn=1,nDom
+   call setPointer(nn,level,sps)
+   do i = 1,(len(perturbedCorner))
+      if (perturbedCorner(i)) then
+         do n =1,3
+            edge = relatedEdges(n,i)
+            IEDGEPTB(edge)= 1
+            face = relatedFaces(n,i)
+            if (.not. IFACEPTB(face)==2) then
+               IFACEPTB(face)=1
+            endif
+         end do
+      endif
+   end do
+end do
+        
+! Flag the explicitly perturbed edges
+do nn=1,nDom
+   call setPointer(nn,level,sps)
+   do mm = 1,len(searchPattern)!Loop over edges
+      do i=searchPattern(mm,1),searchPattern(mm,2)
+         do j=searchPattern(mm,3),searchPattern(mm,4)
+            do k=searchPattern(mm,5),searchPattern(mm,6)
+               do n=1,3
+                  local = x(i,j,k,n)
+                  local0 = xInit(i,j,k,n)
+                  eps = 1.0e-12
+!#if (abs(local.real -local0.real)/max(abs(local0.real),abs(local.real),eps)>1e-6 or abs(local.imag -local0.imag)/max(abs(local0.imag),abs(local.imag),eps)>1e-6):
+                  if (abs(local -local0)/max(abs(local0),abs(local),eps)>1e-12 )then
+                     IEDGEPTB(mm) = 2
+                     do m=1,2
+                        face = edgeRelatedFaces(m,mm)
+                        if (.not. IFACEPTB(face)==2)then
+                           IFACEPTB(face)=1
+                        endif
+                     end do
+                     exit!break
+                  else
+                     IEDGEPTB(mm) = IEDGEPTB(mm) 
+                  endif
+               end do
+            end do
+         end do
+      end do
+   end do
+end do
+
+end subroutine flagImplicitEdgesAndFaces
+
+      # Create storage for corner perturbation info
+        self.perturbedCorner = [False,False,False,False,False,False,False,False]
+        
+        #Setup remaining Variables Needed for WARPBLK
+        self.dFaceI = numpy.zeros((3,self.ijk[1]+2,self.ijk[2]+2,2,4),numpy.complex)
+        self.dFaceJ = numpy.zeros((3,self.ijk[0]+2,self.ijk[2]+2,2,4),numpy.complex)
+        self.dFaceK = numpy.zeros((3,self.ijk[0]+2,self.ijk[1]+2,2,4),numpy.complex)
+        self.IFACEPTB = numpy.zeros((6),numpy.int)
+        self.IEDGEPTB = numpy.zeros((12),numpy.int)
+        self.s0 = numpy.zeros((3,self.ijk[0]+2, self.ijk[1]+2, self.ijk[2]+2),numpy.complex)
+        self.secondTime = False
+        
+        #get the global numbering scheme
+        #cant be run until setGlobal nodes has been run in initAdjoint()
+        self.globalNode = numpy.zeros((3,self.ijk[0]+2,self.ijk[1]+2,self.ijk[2]+2),numpy.complex)
+        #self.globalNodes=sumb.getglobalnodes(blocknum,self.ijk[0],self.ijk[1],self.ijk[2])
+        #print 'globalnodes',globalNodes
+        
+        return
+
+    def IS_CORNER(self, IJK):
+        
+#
+#      ******************************************************************
+#      *                                                                *
+#      * DETERMINES WHETHER OR NOT THE POINT ASSOCIATED WITH THE GIVEN  *
+#      * I,J,K VALUES IS A CORNER OF THIS BLOCK                         *
+#      *                                                                *
+#      ******************************************************************
+#         
+        IMAX = self.ijk[0]#self.iend-1
+        JMAX = self.ijk[1]#self.jend-1
+        KMAX = self.ijk[2]#self.kend-1
+#
+#      ******************************************************************
+#      *                                                                *
+#      * BEGIN EXECUTION                                                *
+#      *                                                                *
+#      ******************************************************************
+#      
+        IS_CORNER = False
+        
+        # CHECKS THE EIGHT POSSIBILITIES TO SEE IF THE POINT IS A CORNER
+        if IJK[0] == 1 and IJK[1] == 1 and IJK[2] == 1: 
+            IS_CORNER = True
+        elif IJK[0] == IMAX and IJK[1] == 1 and IJK[2] == 1:
+            IS_CORNER = True
+        elif IJK[0] == 1 and IJK[1] == JMAX and IJK[2] == 1:
+            IS_CORNER = True
+        elif IJK[0] == IMAX and IJK[1] == JMAX and IJK[2] == 1:
+            IS_CORNER = True
+        elif IJK[0] == 1 and IJK[1] == 1 and IJK[2] == KMAX:
+            IS_CORNER = True
+        elif IJK[0] == IMAX and IJK[1] == 1 and IJK[2] == KMAX:
+            IS_CORNER = True
+        elif IJK[0] == 1 and IJK[1] == JMAX and IJK[2] == KMAX :
+            IS_CORNER = True
+        elif IJK[0] == IMAX and IJK[1] == JMAX and IJK[2] == KMAX:
+            IS_CORNER = True
+        #endif
+          
+        return IS_CORNER
+   
+    def ON_FACE(self, IJK):
+#
+#      ******************************************************************
+#      *                                                                *
+#      * DETERMINES WHETHER OR NOT THE POINT ASSOCIATED WITH THE GIVEN  *
+#      * I,J,K VALUES IS ON A FACE OF THIS BLOCK                        *
+#      *                                                                *
+#      ******************************************************************
+#         
+#         
+        IMAX = self.ijk[0]#self.iend-1
+        JMAX = self.ijk[1]#self.jend-1
+        KMAX = self.ijk[2]#self.kend-1
+#
+#      ******************************************************************
+#      *                                                                *
+#      * BEGIN EXECUTION                                                *
+#      *                                                                *
+#      ******************************************************************
+#      
+        ON_FACE = False
+
+        if ((IJK[0] == 1) or (IJK[0] == IMAX) or \
+            (IJK[1] == 1) or (IJK[1] == JMAX) or \
+            (IJK[2] == 1) or (IJK[2] == KMAX)):
+            ON_FACE = True
+        #endif
+          
+        return ON_FACE
+
+
+    def ON_EDGE(self,IJK):
+#
+#      ******************************************************************
+#      *                                                                *
+#      * DETERMINES WHETHER OR NOT THE POINT ASSOCIATED WITH THE GIVEN  *
+#      * BLOCK NUMBER AND I,J,K VALUES IS ON AN EDGE OF THAT BLOCK      *
+#      *                                                                *
+#      ******************************************************************
+#         
+        IMAX = self.ijk[0]#self.iend-1
+        JMAX = self.ijk[1]#self.jend-1
+        KMAX = self.ijk[2]#self.kend-1
+#
+#      ******************************************************************
+#      *                                                                *
+#      * BEGIN EXECUTION                                                *
+#      *                                                                *
+#      ******************************************************************
+#      
+        ON_EDGE = False
+
+ 
+        if IJK[0] == 1 and IJK[1] == 1:
+            ON_EDGE = True
+        elif IJK[0] == IMAX and IJK[1] == 1 : 
+            ON_EDGE = True
+        elif IJK[0] == 1 and IJK[1] == JMAX : 
+            ON_EDGE = True
+        elif IJK[0] == IMAX and IJK[1] == JMAX : 
+            ON_EDGE = True
+        elif IJK[0] == 1 and IJK[2] == 1 : 
+            ON_EDGE = True
+        elif IJK[0] == IMAX and IJK[2] == 1 : 
+            ON_EDGE = True
+        elif IJK[0] == 1 and IJK[2] == KMAX : 
+            ON_EDGE = True
+        elif IJK[0] == IMAX and IJK[2] == KMAX : 
+            ON_EDGE = True
+        elif IJK[1] == 1 and IJK[2] == 1 : 
+            ON_EDGE = True
+        elif IJK[1] == JMAX and IJK[2] == 1 : 
+            ON_EDGE = True
+        elif IJK[1] == 1 and IJK[2] == KMAX : 
+            ON_EDGE = True
+        elif IJK[1] == JMAX and IJK[2] == KMAX : 
+            ON_EDGE = True   
+        #END IF
+          
+        return ON_EDGE
+
+      #Set up increments to handle block faces that have reverse numbering
+        self.incrementI = numpy.zeros((self.nSubface),numpy.int)
+        self.incrementJ = numpy.zeros((self.nSubface),numpy.int)
+        self.incrementK = numpy.zeros((self.nSubface),numpy.int)
+        self.incrementdI = numpy.zeros((self.nSubface),numpy.int)
+        self.incrementdJ = numpy.zeros((self.nSubface),numpy.int)
+        self.incrementdK = numpy.zeros((self.nSubface),numpy.int)
+        
+        for i in xrange(self.nSubface):
+            #check for +ve vs -ve increment
+            if self.iend[i] >=self.ibeg[i] :
+                self.incrementI[i] = 1
+            else:
+                self.incrementI[i] = -1
+            #endif
+                
+            if self.jend[i] >=self.jbeg[i]:
+                self.incrementJ[i] = 1
+            else:
+                self.incrementJ[i] = -1
+            #endif
+            
+            if self.kend[i] >=self.kbeg[i]:
+                self.incrementK[i] = 1
+            else:
+                self.incrementK[i] = -1
+            #endif
+
+                         #check for +ve vs -ve increment on neighbouring block
+            if self.diend[i] >=self.dibeg[i]:
+                self.incrementdI[i] = 1
+            else:
+                self.incrementdI[i] = -1
+            #endif
+                
+            if self.djend[i] >=self.djbeg[i] :
+                self.incrementdJ[i] = 1
+            else:
+                self.incrementdJ[i] = -1
+            #endif
+                
+            if self.dkend[i] >=self.dkbeg[i] :
+                self.incrementdK[i] = 1
+            else:
+                self.incrementdK[i] = -1
+            #endif
+        #endfor

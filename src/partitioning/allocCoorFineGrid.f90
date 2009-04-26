@@ -66,6 +66,14 @@
            if(ierr /= 0)                         &
              call terminate("allocCoorFineGrid", &
                             "Memory allocation failure for flowDoms%x")
+           !for the first grid also allocate xInit for the mesh warping
+           if (mm ==1) then
+              allocate(flowDoms(nn,1,mm)%xInit(0:ie,0:je,0:ke,3), stat=ierr)
+              if(ierr /= 0)                         &
+                   call terminate("allocCoorFineGrid", &
+                   "Memory allocation failure for flowDoms%xInit")
+           end if
+           
          enddo
 
          ! For a time accurate computation on deforming meshes, allocate

@@ -67,7 +67,7 @@
        rkStage = 0
        currentLevel = groundLevel
        call timeStep(.false.)
-
+	
        if(turbSegregated .or. turbCoupled) then
          call computeUtau
          call initres(nt1MG, nMGVar)
