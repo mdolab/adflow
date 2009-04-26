@@ -243,7 +243,7 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
       ss(:, :, :) = skadj(iibeg:iiend, jjbeg:jjend, 1, :)
 !               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,jjBeg-1:jjEnd,1,:)
 !xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,1,:)
-      xx(:, :, :) = xadj(i2beg-1:i2end, jjbeg-1:j2end, 1, :)
+      xx(:, :, :) = xadj(i2beg-1:i2end, j2beg-1:j2end, 1, :)
 !               xx(:,:,:)   = xAdj(:,:,1,:)
       fact = -one
       CALL PUSHINTEGER4(5)
@@ -582,7 +582,7 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
         siadjb(1:2, iibeg:iiend, jjbeg:jjend, 1:3) = 0.0
       ELSE
         xadjb(0:ie, 0:je, 0:ke, 1:3) = 0.0
-        xadjb(i2beg-1:i2end, jjbeg-1:j2end, 1, :) = xxb(:, :, :)
+        xadjb(i2beg-1:i2end, j2beg-1:j2end, 1, :) = xxb(:, :, :)
         skadjb(iibeg:iiend, jjbeg:jjend, 1:2, 1:3) = 0.0
         skadjb(iibeg:iiend, jjbeg:jjend, 1, :) = ssb(:, :, :)
         padjb(0:ib, 0:jb, 0:kb) = 0.0

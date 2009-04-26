@@ -73,7 +73,7 @@
       real(kind=realType), dimension(:,:,:), allocatable :: pAdj
 
       REAL(KIND=REALTYPE) :: machadj, machcoefadj, uinfadj, pinfcorradj
-      REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadj
+      REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadj, machgridadjb
       REAL(KIND=REALTYPE) :: prefadj, rhorefadj
       REAL(KIND=REALTYPE) :: pinfdimadj, rhoinfdimadj
       REAL(KIND=REALTYPE) :: rhoinfadj, pinfadj
@@ -285,9 +285,18 @@
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
-&  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-&  murefadj, timerefadj, pinfcorradj, rotcenteradj, rotrateadj, &
-&  rotrateadjb, liftindex)
+&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
+&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
+&  rotrateadj, rotrateadjb, liftindex)
+!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+!&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
+!&  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+!&  murefadj, timerefadj, pinfcorradj, rotcenteradj, rotrateadj, &
+!&  rotrateadjb, liftindex)
 
 
 

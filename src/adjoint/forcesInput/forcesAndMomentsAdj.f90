@@ -241,7 +241,7 @@
                ss(:,:,:)   = skAdj(iiBeg:iiEnd,jjBeg:jjEnd,1,:); 
 !               xx(:,:,:)   = xAdj(iiBeg-1:iiEnd,jjBeg-1:jjEnd,1,:)
                !xx(:,:,:)   = xAdj(iiBeg-1:iiEnd-1,jjBeg-1:jjEnd-1,1,:)
-               xx(:,:,:)   = xAdj(i2Beg-1:i2End,jjBeg-1:j2End,1,:)
+               xx(:,:,:)   = xAdj(i2Beg-1:i2End,j2Beg-1:j2End,1,:)
 !               xx(:,:,:)   = xAdj(:,:,1,:)
                fact = -one
 

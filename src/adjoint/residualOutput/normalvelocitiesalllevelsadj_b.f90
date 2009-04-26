@@ -505,7 +505,7 @@ bocoloop:DO mm=1,nbocos
               ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, 1, :)
               CALL PUSHREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1&
 &                            )*(jen-jst+1))
-              sfaceadj(ist:ien, jst:jen) = sfacekadj(ist:ien, jst:jen, 0&
+              sfaceadj(ist:ien, jst:jen) = sfacekadj(ist:ien, jst:jen, 1&
 &                )
               CALL PUSHINTEGER4(12)
             END IF
@@ -756,8 +756,8 @@ bocoloop:DO mm=1,nbocos
             ELSE
               CALL POPREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1)&
 &                           *(jen-jst+1))
-              sfacekadjb(ist:ien, jst:jen, 0) = sfacekadjb(ist:ien, jst:&
-&                jen, 0) + sfaceadjb(ist:ien, jst:jen)
+              sfacekadjb(ist:ien, jst:jen, 1) = sfacekadjb(ist:ien, jst:&
+&                jen, 1) + sfaceadjb(ist:ien, jst:jen)
               sfaceadjb(ist:ien, jst:jen) = 0.0
               CALL POPREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                           jen-jst+1)*3)

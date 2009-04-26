@@ -3,7 +3,7 @@
 !  
 !  Differentiation of computeradjoint in reverse (adjoint) mode:
 !   gradient, with respect to input variables: rotrateadj machadj
-!                alphaadj xadj dwadj wadj betaadj
+!                alphaadj xadj dwadj wadj betaadj machgridadj
 !   of linear combination of output variables: dwadj
 !
 !      ******************************************************************
@@ -17,10 +17,10 @@
 !
 SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-&  machcoefadj, machgridadj, icell, jcell, kcell, nn, sps, correctfork, &
-&  secondhalo, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, &
-&  pinfadj, rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj&
-&  , pinfcorradj, liftindex)
+&  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
+&  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
+&  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
+&  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
   USE blockpointers
   USE flowvarrefstate
   IMPLICIT NONE
@@ -33,7 +33,7 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
   INTEGER(KIND=INTTYPE), INTENT(IN) :: kcell
   INTEGER(KIND=INTTYPE) :: liftindex
   REAL(KIND=REALTYPE) :: machadj, machadjb, machcoefadj, machgridadj, &
-&  pinfcorradj
+&  machgridadjb, pinfcorradj
   REAL(KIND=REALTYPE) :: murefadj, timerefadj
   INTEGER(KIND=INTTYPE), INTENT(IN) :: nn
   REAL(KIND=REALTYPE) :: pinfdimadj, rhoinfdimadj
@@ -239,8 +239,9 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 &                              rotrateadjb, sadj, sadjb, sfaceiadj, &
 &                              sfaceiadjb, sfacejadj, sfacejadjb, &
 &                              sfacekadj, sfacekadjb, machgridadj, &
-&                              veldirfreestreamadj, veldirfreestreamadjb&
-&                              , icell, jcell, kcell)
+&                              machgridadjb, veldirfreestreamadj, &
+&                              veldirfreestreamadjb, icell, jcell, kcell&
+&                             )
   CALL METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj, &
 &             skadjb, voladj, voladjb, normadj, normadjb, icell, jcell, &
 &             kcell)

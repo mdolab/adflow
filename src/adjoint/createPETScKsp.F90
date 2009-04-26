@@ -652,7 +652,7 @@
       ! or PETSc users manual, pp.67
 
       call KSPSetTolerances(ksp, adjRelTol, adjAbsTol, adjDivTol, &
-                            adjMaxIter, PETScIerr)
+                            2*adjMaxIter, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScKsp", "Error in KSPSetTolerances")
@@ -1033,8 +1033,8 @@
       call PCSetType( subpc, PCILU, PETScIerr )
  
       !Set the matrix ordering
-      !!call PCFactorSetMatOrderingtype( subpc, MATORDERING_RCM, PETScIerr )
-      call PCFactorSetMatOrderingtype( subpc,  MATORDERING_NATURAL, PETScIerr )
+      call PCFactorSetMatOrderingtype( subpc, MATORDERING_RCM, PETScIerr )
+      !call PCFactorSetMatOrderingtype( subpc,  MATORDERING_NATURAL, PETScIerr )
 
       !Set ILU parameters
       call PCFactorSetLevels( subpc, 2 , PETScIerr)!  set 1 level of fill

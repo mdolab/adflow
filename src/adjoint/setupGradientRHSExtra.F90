@@ -94,7 +94,7 @@ subroutine setupGradientRHSExtra(level,costFunction)
   real(kind=realType), dimension(:,:,:), allocatable :: pAdj
   
   REAL(KIND=REALTYPE) :: machadj, machcoefadj, uinfadj, pinfcorradj
-  REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadj
+  REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadj, machgridadjb
   REAL(KIND=REALTYPE) :: prefadj, rhorefadj
   REAL(KIND=REALTYPE) :: pinfdimadj, rhoinfdimadj
   REAL(KIND=REALTYPE) :: rhoinfadj, pinfadj
@@ -277,9 +277,10 @@ subroutine setupGradientRHSExtra(level,costFunction)
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
-&  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-&  murefadj, timerefadj, pinfcorradj, rotcenteradj, rotrateadj, &
-&  rotrateadjb, liftindex)
+&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
+&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
+&  rotrateadj, rotrateadjb, liftindex)
+
 
 	   enddo bocoLoop
 
@@ -400,7 +401,38 @@ subroutine setupGradientRHSExtra(level,costFunction)
               call terminate("setupGradientRHSExtra", errorMessage)
            endif
 
-		   ! 
+	       	   !
+           !     ******************************************************************
+           !     *                                                                *
+           !     * Mach Number Grid derivative.                                   *
+           !     *                                                                *
+           !     ******************************************************************
+           !
+
+           dJdaLocal = machcoefadjb+machgridadjb
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignMachGrid - 1
+
+           ! Transfer data to PETSc vector
+
+           call VecSetValue(dJda, idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+	   !print *,'setting vector',dJda, idxmg, dJdaLocal
+	   !call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !     INSERT_VALUES, PETScIerr)
+
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in VecSetValue for global node", idxmg
+              call terminate("setupGradientRHSExtra", errorMessage)
+           endif
+
+
+	   ! 
            !     ******************************************************************
            !     *                                                                *
            !     * Rot X derivative.                                              *

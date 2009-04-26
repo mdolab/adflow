@@ -72,14 +72,16 @@ subroutine verifydCfdw(level)
       real(kind=realType), dimension(3) :: cMp, cMv
 
 
-      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj
+      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj,machgridadj
       real(kind=realType) :: alphaAdjb, betaAdjb,MachAdjb,machCoefAdjb
       REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
       REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
       REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
+      REAL(KIND=REALTYPE) :: rotcenteradj(3), rotrateadj(3), rotrateadjb(3)
 
-
+      INTEGER(KIND=INTTYPE) :: liftindex
+ 
       real(kind=realType) :: factI, factJ, factK, tmp
 
       integer(kind=intType), dimension(0:nProc-1) :: offsetRecv
@@ -331,8 +333,12 @@ subroutine verifydCfdw(level)
         ! Copy the coordinates into xAdj and
         ! Compute the face normals on the subfaces
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-           MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps)
+           MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
+           rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
+           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
+        !copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
+        !   MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+        !   rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps)
         !call copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
         
         bocoLoop: do mm=1,nBocos
@@ -423,14 +429,23 @@ subroutine verifydCfdw(level)
            
            !===============================================================
            ! Compute the force derivatives
-           call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+           call  COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
-&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj)
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
+&  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+&  murefadj, timerefadj, pinfcorradj, rotcenteradj, rotrateadj, &
+&  rotrateadjb, liftindex)
+!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+!&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+!&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+!&  timerefadj, pinfcorradj)
 !!$           print *,'output',xadj, xadjb, wadj, wadjb, padj, iibeg, &
 !!$&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 !!$&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
@@ -564,14 +579,23 @@ subroutine verifydCfdw(level)
            !===============================================================
            ! Compute the force derivatives
             
-           call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+           call  COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
-&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj)
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
+&  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+&  murefadj, timerefadj, pinfcorradj, rotcenteradj, rotrateadj, &
+&  rotrateadjb, liftindex)
+!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+!&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+!&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+!&  timerefadj, pinfcorradj)
 !COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 !&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 !&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
@@ -649,14 +673,23 @@ subroutine verifydCfdw(level)
            
            !===============================================================
            ! Compute the force derivatives
-           call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+           call  COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
-&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj)
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
+&  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+&  murefadj, timerefadj, pinfcorradj, rotcenteradj, rotrateadj, &
+&  rotrateadjb, liftindex)
+!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+!&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+!&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+!&  timerefadj, pinfcorradj)
 !COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 !&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
 !&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
@@ -772,13 +805,13 @@ subroutine verifydCfdw(level)
       sps=1
       print *,'starting FD loop',sps
       domainForcesLoopFDorig: do nn=1,nDom   
-         
+         print *,'Domain: ',nn,nDom
          call setPointers(nn,level,sps)
 
          !loop over all points
 
          do i = 0,ib
-            print *,'i=',i
+            print *,'i=',i,ib
             do j = 0,jb
                do k = 0,kb
                   !print *,'k',k

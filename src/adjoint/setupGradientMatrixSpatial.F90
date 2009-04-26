@@ -62,7 +62,7 @@
       real(kind=realType), dimension(nw) :: dwAdj, dwAdjB
 
       REAL(KIND=REALTYPE) :: machadj, machcoefadj, uinfadj, pinfcorradj
-      REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadj
+      REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadj, machgridadjb
       REAL(KIND=REALTYPE) :: prefadj, rhorefadj
       REAL(KIND=REALTYPE) :: pinfdimadj, rhoinfdimadj
       REAL(KIND=REALTYPE) :: rhoinfadj, pinfadj
@@ -396,10 +396,16 @@
                         ! Call reverse mode of residual computation
                         call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-&  machcoefadj, machgridadj, icell, jcell, kcell, nn, sps, correctfork, &
-&  secondhalo, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, &
-&  pinfadj, rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj&
-&  , pinfcorradj, liftindex)
+&  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
+&  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
+&  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
+&  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+!COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
+!&  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
+!&  machcoefadj, machgridadj, icell, jcell, kcell, nn, sps, correctfork, &
+!&  secondhalo, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, &
+!&  pinfadj, rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj&
+!&  , pinfcorradj, liftindex)
 
                          do ii=-3,2!1,il-1
                            do jj = -3,2!1,jl-1

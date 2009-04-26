@@ -70,7 +70,7 @@
       real(kind=realType), dimension(nw) :: dwAdj, dwAdjB
 
       REAL(KIND=REALTYPE) :: machadj, machcoefadj, uinfadj, pinfcorradj
-      REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadj
+      REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadj, machgridadjb
       REAL(KIND=REALTYPE) :: prefadj, rhorefadj
       REAL(KIND=REALTYPE) :: pinfdimadj, rhoinfdimadj
       REAL(KIND=REALTYPE) :: rhoinfadj, pinfadj
@@ -206,19 +206,27 @@
                         alphaAdjb = 0.
                         betaAdjb = 0.
                         MachAdjb = 0.
+                        MachgridAdjb = 0.
 		        rotrateadjb(:)=0.
 
                         ! Call reverse mode of residual computation
                         call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-&  machcoefadj, machgridadj, icell, jcell, kcell, nn, sps, correctfork, &
-&  secondhalo, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, &
-&  pinfadj, rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj&
-&  , pinfcorradj, liftindex)
+&  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
+&  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
+&  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
+&  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+!COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
+!&  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
+!&  machcoefadj, machgridadj, icell, jcell, kcell, nn, sps, correctfork, &
+!&  secondhalo, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, &
+!&  pinfadj, rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj&
+!&  , pinfcorradj, liftindex)
 
                         dRdaLocal(m,nDesignAOA) =alphaAdjb
                         dRdaLocal(m,nDesignSSA) =betaAdjb
                         dRdaLocal(m,nDesignMach) =machAdjb
+                        dRdaLocal(m,nDesignMachGrid) =machgridAdjb
 			dRdaLocal(m,nDesignRotX) =rotrateadjb(1)
 			dRdaLocal(m,nDesignRotY) =rotrateadjb(2)
 			dRdaLocal(m,nDesignRotZ) =rotrateadjb(3)
@@ -270,6 +278,21 @@
 
               call MatSetValues(dRda, nw, idxmg, 1, idxng, &
                                 dRdaLocal(:,nDesignMach), INSERT_VALUES, PETScIerr)
+
+              if( PETScIerr/=0 ) then
+                write(errorMessage,99) &
+                      "Error in MatSetValues for global column", idxng
+                call terminate("setupGradientMatrixExtra", errorMessage)
+              endif
+
+	      !Mach Number Grid
+              do m=1,nw
+                idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+              enddo
+              idxng = nDesignMachGrid - 1
+
+              call MatSetValues(dRda, nw, idxmg, 1, idxng, &
+                                dRdaLocal(:,nDesignMachGrid), INSERT_VALUES, PETScIerr)
 
               if( PETScIerr/=0 ) then
                 write(errorMessage,99) &

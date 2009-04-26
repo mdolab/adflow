@@ -3,8 +3,8 @@
 !  
 !  Differentiation of computeforcesadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: cdadj rotrateadj
-!                cladj machadj alphaadj xadj wadj betaadj cmzadj
-!                cmyadj machcoefadj cmxadj
+!                cladj machadj alphaadj xadj wadj betaadj machgridadj
+!                cmzadj cmyadj machcoefadj cmxadj
 !   of linear combination of output variables: cdadj cladj cmzadj
 !                cmyadj cmxadj
 !
@@ -24,9 +24,9 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
-&  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-&  murefadj, timerefadj, pinfcorradj, rotcenteradj, rotrateadj, &
-&  rotrateadjb, liftindex)
+&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
+&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
+&  rotrateadj, rotrateadjb, liftindex)
   USE bctypes
   USE blockpointers
   USE communication
@@ -55,7 +55,7 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
   INTEGER(KIND=INTTYPE), INTENT(IN) :: level
   INTEGER(KIND=INTTYPE) :: liftindex
   REAL(KIND=REALTYPE) :: machadj, machadjb, machcoefadj, machcoefadjb, &
-&  machgridadj, pinfcorradj
+&  machgridadj, machgridadjb, pinfcorradj
   INTEGER(KIND=INTTYPE), INTENT(IN) :: mm
   REAL(KIND=REALTYPE) :: murefadj, timerefadj
   INTEGER(KIND=INTTYPE), INTENT(IN) :: nn
@@ -280,7 +280,7 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &                                    jjbeg, jjend, i2beg, i2end, j2beg, &
 &                                    j2end, mm, sfaceiadj, sfacejadj, &
 &                                    sfacekadj, machgridadj, &
-&                                    veldirfreestreamadj, &
+&                                    machgridadjb, veldirfreestreamadj, &
 &                                    veldirfreestreamadjb, rotcenteradj&
 &                                    , rotrateadj, rotrateadjb, siadj, &
 &                                    sjadj, skadj)
