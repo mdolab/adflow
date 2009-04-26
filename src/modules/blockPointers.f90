@@ -65,6 +65,7 @@
 
        integer(kind=intType), dimension(:), pointer :: BCType
        integer(kind=intType), dimension(:), pointer :: BCFaceID
+       integer(kind=intType), dimension(:), pointer :: nNodesSubface
        integer(kind=intType), dimension(:), pointer :: cgnsSubface
 
        integer(kind=intType), dimension(:), pointer :: inBeg, inEnd
@@ -106,7 +107,7 @@
        integer(kind=intType), dimension(:,:), pointer :: viscKMinPointer
        integer(kind=intType), dimension(:,:), pointer :: viscKMaxPointer
 
-       real(kind=realType), dimension(:,:,:,:),   pointer :: x
+       real(kind=realType), dimension(:,:,:,:),   pointer :: x,xInit
        real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
 
        real(kind=realType), dimension(:,:,:,:), pointer :: sI, sJ, sK
@@ -181,5 +182,11 @@
        integer(kind=intType), dimension(:,:,:), pointer :: globalNode
        integer(kind=intType), dimension(:,:,:), pointer :: globalCell
        real(kind=realType), dimension(:,:,:,:), pointer :: psiAdj
+
+       TYPE(warp_comm_type), DIMENSION(:),pointer :: warp_comm
+       !INTEGER(KIND=INTTYPE),dimension(:),pointer :: incrementI,&
+       !       IncrementJ,incrementK
+       !INTEGER(KIND=INTTYPE),dimension(:),pointer :: incrementdI,&
+       !       IncrementdJ,incrementdK
        
        end module blockPointers
