@@ -139,6 +139,29 @@
          real(kind=realType), dimension(:,:), pointer :: ps
 
        end type BCDataType
+
+!
+!        ****************************************************************
+!        *                                                              *
+!        * Communication Data Type for the integrated warping algorithm *
+!        * Located her because it contains data for each block locally  *
+!        *                                                              *
+!        ****************************************************************
+!
+       type warp_comm_type
+          
+          ! sendBuffer:      array to hold face data for MPI send
+          ! recvBuffer:      array to receive face data for MPI recv
+          ! 
+          ! recvreq:         value to indicate that face recv is finished
+          ! sendreq:         value to indicate that face send is finished
+          
+          real(KIND=REALTYPE), DIMENSION(:),allocatable  :: sendBuffer,recvBuffer
+          integer(kind=inttype)::recvreq,sendreq
+          
+          
+       end type warp_comm_type
+
 !
 !      ******************************************************************
 !      *                                                                *
@@ -190,6 +213,9 @@
          !                         possible values are: iMin, iMax, jMin,
          !                         jMax, kMin, kMax. see also module
          !                         BCTypes.
+         !  nNodesSubface        - Total nuber of nodes on this subface.
+         !                         Added for the integrated warping
+         !                         algorithm(used in synchronizeFaces)
          !  cgnsSubface(:)       - The subface in the corresponding cgns
          !                         block. As cgns distinguishes between
          !                         boundary and internal boundaries, the
@@ -241,6 +267,8 @@
 
          integer(kind=intType), dimension(:), pointer :: BCType
          integer(kind=intType), dimension(:), pointer :: BCFaceID
+         integer(kind=intType), dimension(:), pointer :: nNodesSubface
+         !integer(kind=intType), dimension(:), allocatable :: nNodesSubface
          integer(kind=intType), dimension(:), pointer :: cgnsSubface
 
          integer(kind=intType), dimension(:), pointer :: inBeg, inEnd
@@ -259,6 +287,8 @@
          integer(kind=intType), dimension(:), pointer :: neighProc
          integer(kind=intType), dimension(:), pointer :: l1, l2, l3
          integer(kind=intType), dimension(:), pointer :: groupNum
+
+
 !
 !        ****************************************************************
 !        *                                                              *
@@ -350,6 +380,8 @@
 !        ****************************************************************
 !
          !  x(0:ie,0:je,0:ke,3)  - xyz locations of grid points in block.
+         !  xInit(0:ie,0:je,0:ke,3) - initial xyz locations of grid points
+         !                         in block. Used in mesh warping.
          !  xOld(nOld,:,:,:,:)   - Coordinates on older time levels;
          !                         only needed for unsteady problems on
          !                         deforming grids. Only allocated on
@@ -414,7 +446,7 @@
          !  sFaceJ(ie,0:je,ke) - Idem in j-direction.
          !  sFaceK(ie,je,0:ke) - Idem in k-direction.
 
-         real(kind=realType), dimension(:,:,:,:),   pointer :: x
+         real(kind=realType), dimension(:,:,:,:),   pointer :: x,xInit
          real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
 
          real(kind=realType), dimension(:,:,:,:), pointer :: sI, sJ, sK
@@ -683,7 +715,31 @@
          integer(kind=intType), dimension(:,:,:), pointer :: globalCell
          real(kind=realType), dimension(:,:,:,:), pointer :: psiAdj
 
+!
+!        ****************************************************************
+!        *                                                              *
+!        * Integrated warping variables                                 *
+!        *                                                              *
+!        ****************************************************************
+!
+         !incrementI,J,K(nSubface): Indicator for the direction of indices
+         !                          for this subface
+         !incrementdI,dJ,dK(nSubface): Indicator for the direction of indices
+         !                          for the donor to this subface
+
+         ! warp_comm(nSubface):  Subface comm storage for warp
+
+                  
+         !INTEGER(KIND=INTTYPE),dimension(:),allocatable :: incrementI,&
+          !    IncrementJ,incrementK
+         !INTEGER(KIND=INTTYPE),dimension(:),allocatable :: incrementdI,&
+          !    IncrementdJ,incrementdK
+         TYPE(warp_comm_type), ALLOCATABLE, DIMENSION(:) :: warp_comm
+
+
        end type blockType
+
+
 !
 !      ******************************************************************
 !      *                                                                *
