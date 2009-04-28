@@ -263,8 +263,8 @@
 !!$                            sum(dwAdj(:)), sum(dw(iCell,jCell,kCell,:)), &
 !!$                            differ
                      
-                     if( differ > 1e-14 ) &
-!                     if( abs(differ) > 1e-14 ) &
+!                     if( differ > 1e-14 ) &
+                     if( abs(differ) > 1e-14 ) &
 !                     if( abs(1) > 1e-14 ) &
                           write(*,10) myID, nn, iCell, jCell, kCell,               &
                           sum(dwAdj(:)), sum(dw(iCell,jCell,kCell,:)), &

@@ -57,7 +57,7 @@
 !
 !     Local variables
 !
-      integer(kind=intType) :: i, j, k,q,sps=1,liftIndex
+      integer(kind=intType) :: i, j, k,q,sps=1,liftIndex,domain = 1
       real(kind=realType), dimension(nw) :: dwL2
      ! real(kind=realType), dimension(0:nx,0:ny,0:nz, nw) :: dwerr
       real(kind=realType), dimension(nx, ny, nz, nw) :: dwerr
@@ -74,11 +74,12 @@
       real(kind=realType), dimension(nw) :: dwAdjRef
       character fileName*32, dataName*32
 
-      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj
+      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj,machGridAdj
       REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
       REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
       REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
+      real(kind=realType), dimension(3) ::rotRateAdj,rotCenterAdj,rotrateadjb
 
       !********************************
       logical :: secondHalo =.true.! .false.!.true.
@@ -175,69 +176,75 @@
          secondHalo = .false.
       endif
       
-!!$!
-!!$!     ******************************************************************
-!!$!     *                                                                *
-!!$!     * Exchange halo data to make sure it is up-to-date.              *
-!!$!     * (originally called inside "rungeKuttaSmoother" subroutine).    *
-!!$!     *                                                                *
-!!$!     ******************************************************************
-!!$!
-!!$      ! Exchange the pressure if the pressure must be exchanged early.
-!!$      ! Only the first halo's are needed, thus whalo1 is called.
-!!$      ! Only on the fine grid.
-!!$      
-!!$      if(exchangePressureEarly .and. currentLevel <= groundLevel) &
-!!$           call whalo1(currentLevel, 1_intType, 0_intType, .true.,&
-!!$           .false., .false.)
-!!$      
-!!$      ! Apply all boundary conditions to all blocks on this level.
-!!$      
-!!$      call applyAllBC(secondHalo)
-!!$      
-!!$      ! Exchange the solution. Either whalo1 or whalo2
-!!$      ! must be called.
-!!$      
-!!$      if( secondHalo ) then
-!!$         call whalo2(currentLevel, 1_intType, nMGVar, .true., &
-!!$              .true., .true.)
-!!$      else
-!!$         call whalo1(currentLevel, 1_intType, nMGVar, .true., &
-!!$              .true., .true.)
-!!$      endif
-!!$      
-!!$      ! Reset the values of rkStage and currentLevel, such that
-!!$      ! they correspond to a new iteration.
-!!$
-!!$      rkStage = 0
-!!$      currentLevel = groundLevel
-!!$
-!!$      ! Compute the latest values of the skin friction velocity.
-!!$      ! The currently stored values are of the previous iteration.
-!!$      
-!!$      call computeUtau
-!!$      
-!!$      ! Apply an iteration to the turbulent transport equations in
-!!$      ! case these must be solved segregatedly.
-!!$      
-!!$      if( turbSegregated ) call turbSolveSegregated
-!!$
-!!$      ! Compute the time step.
-!!$      
-!!$      call timeStep(.false.)
-!!$      
-!!$      ! Compute the residual of the new solution on the ground level.
-!!$      
-!!$      if( turbCoupled ) then
-!!$         call initres(nt1MG, nMGVar)
-!!$         call turbResidual
-!!$      endif
-!!$
-!!$      call initres(1_intType, nwf)
-!!$      call residual
-!!$
-!!$    ! Get the final time for original routines.
-!!$      call mpi_barrier(SUmb_comm_world, ierr)
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Exchange halo data to make sure it is up-to-date.              *
+!     * (originally called inside "rungeKuttaSmoother" subroutine).    *
+!     *                                                                *
+!     ******************************************************************
+!
+      ! Exchange the pressure if the pressure must be exchanged early.
+      ! Only the first halo's are needed, thus whalo1 is called.
+      ! Only on the fine grid.
+      
+      if(exchangePressureEarly .and. currentLevel <= groundLevel) &
+           call whalo1(currentLevel, 1_intType, 0_intType, .true.,&
+           .false., .false.)
+      
+      ! Apply all boundary conditions to all blocks on this level.
+      
+      call applyAllBC(secondHalo)
+      
+      ! If case this routine is called in full mg mode call the mean
+      ! flow boundary conditions again such that the normal momentum
+      ! boundary condition is treated correctly.
+      
+      if(.not. corrections) call applyAllBC(secondHalo)
+      
+      ! Exchange the solution. Either whalo1 or whalo2
+      ! must be called.
+      
+      if( secondHalo ) then
+         call whalo2(currentLevel, 1_intType, nMGVar, .true., &
+              .true., .true.)
+      else
+         call whalo1(currentLevel, 1_intType, nMGVar, .true., &
+              .true., .true.)
+      endif
+      
+      ! Reset the values of rkStage and currentLevel, such that
+      ! they correspond to a new iteration.
+
+      rkStage = 0
+      currentLevel = groundLevel
+
+      ! Compute the latest values of the skin friction velocity.
+      ! The currently stored values are of the previous iteration.
+      
+      call computeUtau
+      
+      ! Apply an iteration to the turbulent transport equations in
+      ! case these must be solved segregatedly.
+      
+      if( turbSegregated ) call turbSolveSegregated
+
+      ! Compute the time step.
+      
+      call timeStep(.false.)
+      
+      ! Compute the residual of the new solution on the ground level.
+      
+      if( turbCoupled ) then
+         call initres(nt1MG, nMGVar)
+         call turbResidual
+      endif
+
+      call initres(1_intType, nwf)
+      call residual
+
+    ! Get the final time for original routines.
+      call mpi_barrier(SUmb_comm_world, ierr)
 
 
 !------------------------
@@ -258,12 +265,15 @@ write(*,*) 'in verify residuals'
 !     Compute difference in residuals
 
 !Baseline residual calculation
-
+!call setpointers(nn,level,sps)
+call setpointers(domain ,level,sps)
        !dw(:,:,:, :) =0.0
        xtemp(:,:,:,:) = x(:,:,:,:)
        wtemp(:,:,:,:) = w(:,:,:,:)
        ptemp(:,:,:) = p(:,:,:)
+       call initres(1_intType, nwf)
        call residual
+       call setpointers(domain ,level,sps)
        dwref(:,:,:,:) = dw(:,:,:,:)
 
       ! w(15,2,5,:) = w(15,2,5,:)+0.005
@@ -275,23 +285,23 @@ write(*,*) 'in verify residuals'
        j = 1!4
        k = 1!3
        
-       x(i,j,k,:) = x(i,j,k,:)+0.05
+       x(i,j,k,:) = x(i,j,k,:)!+0.05
        w(i,j,k,:) = w(i,j,k,:)!+0.005
-     !  machref = mach
-      ! mach = machref+0.005
+       machref = mach
+       mach = machref!+0.005
        wtemp2(:,:,:,:) = w(:,:,:,:)
        xtemp2(:,:,:,:) = x(:,:,:,:)
        
 
-      ! call referenceState
+       call referenceState
        
-      ! call setFlowInfinityState
+       call setFlowInfinityState
        
        call metric(level)
+       call setpointers(domain ,level,sps)
+       !call computePressureAdj(w(i-2:i+2, j-2:j+2, k-2:k+2,:), pAdjtemp)
 
-       call computePressureAdj(w(i-2:i+2, j-2:j+2, k-2:k+2,:), pAdjtemp)
-
-       p(i, j, k) = pAdjtemp(0,0,0)
+       !p(i, j, k) = pAdjtemp(0,0,0)
        !wtemp(:,:,:,:) = w(:,:,:,:)
 
        write(unit,*)'States0'
@@ -299,7 +309,11 @@ write(*,*) 'in verify residuals'
        do kk= 0,kb
           do jj= 0,jb
              do ii= 0,ib
+                write(unit,23) p(ii,jj,kk),ii,jj,kk
+                write(unit1,23) ptemp(ii,jj,kk),ii,jj,kk
+23              format(1x,'p ',f18.10,4I4)
                 do nn = 1,5
+                  
                    write(unit,21) w(ii,jj,kk,nn),ii,jj,kk,nn
                    write(unit1,21) wtemp(ii,jj,kk,nn),ii,jj,kk,nn
 !21                format(1x,'w ',f18.10,4I4)
@@ -336,7 +350,7 @@ write(*,*) 'in verify residuals'
 
        print *,'secondHalo',secondHalo
        call applyAllBC(secondHalo)
-
+   
 !!$       write(unit3,*)'applybcs'
 !!$       do kk= -2,2
 !!$          do jj= -2,2
@@ -350,7 +364,7 @@ write(*,*) 'in verify residuals'
 !!$             enddo
 !!$          enddo
 !!$       enddo
-
+       call setpointers(domain,level,sps)
        write(unit,*)'applybcs'
        write(unit1,*)'applybcs'
        do kk= 0,kb
@@ -393,7 +407,7 @@ write(*,*) 'in verify residuals'
 !!$             enddo
 !!$          enddo
 !!$       enddo
-
+       call setpointers(domain ,level,sps)
        write(unit,*)'whalo'
        write(unit1,*)'whalo'
        do kk= 0,kb
@@ -413,6 +427,7 @@ write(*,*) 'in verify residuals'
       print *, "Calling Residual ="
 
        call initres(1_intType, nwf)
+       call setpointers(domain ,level,sps)
        write(unit,*)'initres0'
        write(unit1,*)'initres0'
        do kk= 0,kb
@@ -445,12 +460,14 @@ write(*,*) 'in verify residuals'
              enddo
           enddo
        enddo
-
+       call setpointers(domain ,level,sps)
        write(unit,*)'resStates'
        write(unit1,*)'resStates'
        do kk= 0,kb
           do jj= 0,jb
              do ii= 0,ib
+                write(unit,23) p(ii,jj,kk),ii,jj,kk
+                write(unit1,23) ptemp(ii,jj,kk),ii,jj,kk
                 do nn = 1,5
                    write(unit,21) w(ii,jj,kk,nn),ii,jj,kk,nn
                    write(unit1,21) wtemp(ii,jj,kk,nn),ii,jj,kk,nn
@@ -474,30 +491,41 @@ write(*,*) 'in verify residuals'
       dwL2(:) = 0.
       dwerr(:,:,:,:) = 0.
       call cpu_time(time(1))
-      call setPointersAdj(1,level,sps)
+      call setPointersAdj(domain ,level,sps)
       
       do k= 2, kl
          do j= 2, jl
             do i= 2, il
                !write(*,*)'adj loop'
-               call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,&
-                    MachAdj,MachCoefAdj,i, j, k,prefAdj,&
-                    rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                    rhoinfAdj, pinfAdj,&
-                    murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+               call  copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
+           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+!copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,&
+!                    MachAdj,MachCoefAdj,i, j, k,prefAdj,&
+!                    rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+!                    rhoinfAdj, pinfAdj,&!
+!                    murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
                !(wAdj, xAdj, iCell, jCell, kCell)
                
                ! Compute the total residual.
                ! This includes inviscid and viscous fluxes, artificial
                ! dissipation, and boundary conditions.                   
                !print *,'Calling compute ADjoint'
-               call computeRAdjoint(wAdj,xAdj,dwAdjRef,alphaAdj,&
-                    betaAdj,MachAdj, MachCoefAdj,&
-                    i, j,  k, &
-                    nn,sps, correctForK,secondHalo,prefAdj,&
-                    rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                    rhoinfAdj, pinfAdj,&
-                    murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+               call computeRAdjoint(wAdj,xAdj,dwAdjref,alphaAdj,betaAdj,MachAdj, &
+                          MachCoefAdj,machGridAdj,iCell, jCell,  kCell, &
+                          nn,sps, correctForK,secondHalo,prefAdj,&
+                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+!computeRAdjoint(wAdj,xAdj,dwAdjRef,alphaAdj,&
+!                    betaAdj,MachAdj, MachCoefAdj,&
+!                    i, j,  k, &
+!                    nn,sps, correctForK,secondHalo,prefAdj,&
+!                    rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+!                    rhoinfAdj, pinfAdj,&
+!                    murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
                
                !wAdj(-2:2,-2:2,-2:2,1:nw) = &
                !     w(i-2:i+2, j-2:j+2, k-2:k+2, 1:nw)               
@@ -545,7 +573,7 @@ write(*,*) 'in verify residuals'
 
       w(:,:,:,:) = wtemp(:,:,:,:)
       x(:,:,:,:) = xtemp(:,:,:,:)
-      !mach = machref
+      mach = machref
 
       call cpu_time(time(2))
       timeRes = (time(2)-time(1))/(nx*ny*nz)

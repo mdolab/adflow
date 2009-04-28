@@ -259,8 +259,10 @@
 
                      !BCData(mm)%rFace(i,j) = weight*sFace(i,j)
                      rFaceAdj(mm,ii,jj) = weight*sFaceAdj(ii,jj)
-                     !print *,'indices',mm,ii,jj,l,m
-                     !print *,'rface',BCData(mm)%rFace(l+ii,m+jj),rFaceAdj(mm,ii,jj)
+!!$                     if (abs(BCData(mm)%rFace(l+ii,m+jj)-rFaceAdj(mm,ii,jj))>1e-16)then
+!!$                        print *,'indices',mm,ii,jj,l,m
+!!$                        print *,'rface',BCData(mm)%rFace(l+ii,m+jj),rFaceAdj(mm,ii,jj),BCData(mm)%rFace(l+ii,m+jj)-rFaceAdj(mm,ii,jj)
+!!$                     endif
 
                    enddo
                  enddo

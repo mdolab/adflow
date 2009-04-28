@@ -28,7 +28,6 @@ subroutine adjustInflowAngleAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
    real(kind=realType), dimension(3) :: refDirection
 !Begin Execution
 
-
       ! Velocity direction given by the rotation of a unit vector
       ! initially aligned along the positive x-direction (1,0,0)
       ! 1) rotate alpha radians cw about y or z-axis

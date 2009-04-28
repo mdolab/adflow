@@ -66,8 +66,8 @@
       real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdjb
       real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xFD
 
-      REAL(KIND=REALTYPE) :: machadj, machcoefadj, pinfcorradj
-      REAL(KIND=REALTYPE) :: machadjb, machcoefadjb, pinfcorradjb
+      REAL(KIND=REALTYPE) :: machadj, machcoefadj,machGridAdj, pinfcorradj
+      REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadjb, pinfcorradjb
       REAL(KIND=REALTYPE) :: prefadj, rhorefadj
       REAL(KIND=REALTYPE) :: pinfdimadj, rhoinfdimadj
       REAL(KIND=REALTYPE) :: rhoinfadj, pinfadj
@@ -76,6 +76,9 @@
       REAL(KIND=REALTYPE) :: alphaadj, betaadj
       REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
       real(kind=realType), dimension(3) ::rotRateAdj,rotCenterAdj,rotrateadjb
+      real(kind=realType), dimension(3) :: velDirFreestreamAdj
+      real(kind=realType), dimension(3) :: liftDirectionAdj
+      real(kind=realType), dimension(3) :: dragDirectionAdj
 
       character fileName*32, dataName*32
       real(kind=realType), dimension(nw) :: dwAdj,dwAdjb,dwAdjRef
@@ -112,6 +115,41 @@
       
       real(kind=realType), dimension(nw) :: pvrlocal
       character(len=2*maxStringLen) :: errorMessage
+     !File Parameters
+      integer :: unitM = 8,unitAoA = 30,unitSSA = 12,unitRotx = 13,ierror
+      character(len = 16)::outfile
+      
+      outfile = "CSMachfile.txt"
+      
+      open (UNIT=unitM,File=outfile,status='replace',action='write',iostat=ierror)
+      if(ierror /= 0)                        &
+           call terminate("verifydRdExtraCS", &
+           "Something wrong when &
+           &calling open")
+
+      outfile = "CSAOAfile.txt"
+      
+      open (UNIT=unitAoA,File=outfile,status='replace',action='write',iostat=ierror)
+      if(ierror /= 0)                        &
+           call terminate("verifydRdExtraCS", &
+           "Something wrong when &
+           &calling open")
+      
+      outfile = "CSSSAfile.txt"
+      
+      open (UNIT=unitSSA,File=outfile,status='replace',action='write',iostat=ierror)
+      if(ierror /= 0)                        &
+           call terminate("verifydRdExtraCS", &
+           "Something wrong when &
+           &calling open")
+
+      outfile = "CSRotxfile.txt"
+      
+      open (UNIT=unitrotx,File=outfile,status='replace',action='write',iostat=ierror)
+      if(ierror /= 0)                        &
+           call terminate("verifydRdExtraCS", &
+           "Something wrong when &
+           &calling open")
 
 
 !     ******************************************************************
@@ -165,9 +203,12 @@
       enddo
       idx = maxval(maxglobalcell(:))
       !print *,'allocating',idx,nw*(idx+1),nw*(idx+1),ndom,max_nTime
-      allocate(dRdExtraErr(nw*(idx+1),nDesignExtra,ndom,max_nTime), &
-               dRdExtraAdj(nw*(idx+1),nDesignExtra,ndom,max_nTime), &
-               dRdExtraFD(nw*(idx+1),nDesignExtra,ndom,max_nTime))
+      !allocate(dRdExtraErr(nw*(idx+1),nDesignExtra,ndom,max_nTime), &
+      !         dRdExtraAdj(nw*(idx+1),nDesignExtra,ndom,max_nTime), &
+      !         dRdExtraFD(nw*(idx+1),nDesignExtra,ndom,max_nTime))
+      allocate(dRdExtraErr(nw*(idx+1),nDesignExtra,1,max_nTime), &
+           dRdExtraAdj(nw*(idx+1),nDesignExtra,1,max_nTime), &
+           dRdExtraFD(nw*(idx+1),nDesignExtra,1,max_nTime))
       !print *,' allocated'
 
 !           if(ierr /= 0)                       &
@@ -260,7 +301,7 @@
       if( myID==0 ) call cpu_time(time(1))
       
       !print *,'Entering Domain loop'
-      domainLoopAD: do nn=1,nDom
+      domainLoopAD: do nn=1,nDom!97,97!1,1!nDom
          
          ! Loop over the number of time instances for this block.
 
@@ -276,10 +317,15 @@
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
                      call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
-                          machCoefAdj,iCell, jCell, kCell,prefAdj,&
-                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
+           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+!copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+!                          machCoefAdj,iCell, jCell, kCell,prefAdj,&
+!                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+!                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+!                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
 !                     print *,'Stencil Copied'
 
                      mLoop: do m = 1, nw           ! Loop over output cell residuals (R)
@@ -296,11 +342,18 @@
                         
                         ! Call reverse mode of residual computation
                         call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                             &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                             &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
-                             &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-                             &  rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj, &
-                             &  pinfcorradj, liftindex)
+&  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
+&  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
+&  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
+&  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
+&  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+
+!COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
+!                             &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
+!                             &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
+!                             &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
+!                             &  rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj, &
+!                             &  pinfcorradj, liftindex)
 !!$                        COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 !!$                             &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
 !!$                             &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
@@ -311,13 +364,30 @@
                         idxres   = globalCell(iCell,jCell,kCell)*nw+m
                         !print *,'globalindices',idxstate,idxres,shape(dRdwAdj)
                         if( idxres>=0) then
-                           dRdExtraAdj(idxres,nDesignMach,nn,sps) = machadjb
+!!$                           dRdExtraAdj(idxres,nDesignMach,nn,sps) = machadjb
+!!$                           pvrlocal(m) = machadjb
+!!$                           dRdExtraAdj(idxres,nDesignAOA,nn,sps) = alphaadjb
+!!$                           dRdExtraAdj(idxres,nDesignSSA,nn,sps) = betaadjb
+!!$                           !print *,'results',machadjb,rotrateadjb,idxres,nDesignRotX,nn,sps
+!!$                           dRdExtraAdj(idxres,nDesignRotX,nn,sps) = rotrateadjb(1)!*timeref
+!!$                           dRdExtraAdj(idxres,nDesignRotY,nn,sps) = rotrateadjb(2)
+!!$                           dRdExtraAdj(idxres,nDesignRotZ,nn,sps) = rotrateadjb(3)
+                           dRdExtraAdj(idxres,nDesignMach,1,sps) = machadjb
+                           write(unitM,10) machadjb,nn,icell,jcell,kcell,m,idxres
+10                         format(1x,'Mach ',f18.10,6I8)
                            pvrlocal(m) = machadjb
-                           dRdExtraAdj(idxres,nDesignAOA,nn,sps) = alphaadjb
-                           dRdExtraAdj(idxres,nDesignSSA,nn,sps) = betaadjb
-                           dRdExtraAdj(idxres,nDesignRotX,nn,sps) = rotrateadjb(1)
-                           dRdExtraAdj(idxres,nDesignRotY,nn,sps) = rotrateadjb(2)
-                           dRdExtraAdj(idxres,nDesignRotZ,nn,sps) = rotrateadjb(3)
+                           dRdExtraAdj(idxres,nDesignAOA,1,sps) = alphaadjb
+                           write(unitAoA,11) alphaadjb,nn,icell,jcell,kcell,m,idxres
+11                         format(1x,'AoA ',f18.10,6I8)
+                           dRdExtraAdj(idxres,nDesignSSA,1,sps) = betaadjb
+                           write(unitSSA,12) betaadjb,nn,icell,jcell,kcell,m,idxres
+12                         format(1x,'SSA ',f18.10,6I8)
+                           !print *,'results',machadjb,rotrateadjb,idxres,nDesignRotX,nn,sps
+                           dRdExtraAdj(idxres,nDesignRotX,1,sps) = rotrateadjb(1)!*timeref
+                           write(unitRotx,13) rotrateadjb(1),nn,icell,jcell,kcell,m,idxres
+13                         format(1x,'Rotx ',f18.10,6I8)
+                           dRdExtraAdj(idxres,nDesignRotY,1,sps) = rotrateadjb(2)
+                           dRdExtraAdj(idxres,nDesignRotZ,1,sps) = rotrateadjb(3)
                         endif
                                        
                      end do mLoop
@@ -356,901 +426,1099 @@
          timeAdj = time(2)-time(1)
       endif
 
-!
-!     Compute d(dw)/d(w) using central finite differences
-!_______________________________________________________
-       
-       deltaw = 1.d-5
-       !print *, "deltaw=", deltaw
-       wFD2(:,:,:,:) = 0. 
-       call cpu_time(time(3))
-       
-       groundLevel = 1
-       sps = 1
-       nn=1
-       
-       ! if (istate==icell .or. jstate==jcell .or. kstate==kcell) then
-       !Remember current values
-       dwtemp(:,:,:,:) = dw(:,:,:,:)
-       wtemp(:,:,:,:) = w(:,:,:,:)
-       ptemp(:,:,:) = p(:,:,:)
-       ExtraAdjRef = mach
-       
-       Mach = ExtraAdjRef + deltaw
-       
-       !call checkInputParam
-       
-       call referenceState
-       
-       call setFlowInfinityState
-       
-!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
-!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
-!       call computePressureAdj(wAdjtemp, pAdjtemp)
-!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
-       
-       !print *, "Calling Residual ="
-       call initres(1_intType, nwf)
-       
-       call applyAllBC(secondHalo)
-       
-       ! Exchange the solution. Either whalo1 or whalo2
-       ! must be called.
-       if( secondHalo ) then
-          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       else
-          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       endif
-       !if( secondHalo ) then
-       !   !  write(*,*)'2ndHalo..........'
-       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !else
-       !   ! write(*,*)'1stHalo..........'
-       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !endif
-       
-       call residual
-       !print *, "Called Residual =", dw(istate,jstate,kstate,n)
-       
-       dwp(:,:,:,:) = dw(:,:,:,:)
-       dw(:,:,:,:) = dwtemp(:,:,:,:)
-       
-       Mach = ExtraAdjRef - deltaw
-       
-       !call checkInputParam
-       
-       call referenceState
-       
-       call setFlowInfinityState
-       
-!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
-!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
-!       call computePressureAdj(wAdjtemp, pAdjtemp)
-       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
-!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
-       
-       !print *, "Calling Residual ="
-       call initres(1_intType, nwf)
-       
-       call applyAllBC(secondHalo)
-       
-       ! Exchange the solution. Either whalo1 or whalo2
-       ! must be called.
-       if( secondHalo ) then
-          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       else
-          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       endif
-       !if( secondHalo ) then
-       !   !write(*,*)'2ndHalo..........'
-       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !else
-       !   !write(*,*)'1stHalo..........'
-       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !endif
-       
-       call residual
-       !print *, "Called Residual 2 =", dw(istate,jstate,kstate,n)
-       dwm(:,:,:,:) = dw(:,:,:,:)
-       dw(:,:,:,:) = dwtemp(:,:,:,:)
-       
-       !                             end if
-       
-       
-       !                   ival = 0
-       do kCell = 2, kl
-          do jCell = 2, jl
-             do iCell = 2, il
-                do iRes = 1, nw           ! Loop over output cell residuals (R)
-                   ! Loop over location of output (R) cell of residual
-                   
-                   !column = (n-1) +(istate-2)*nw +(jstate-2)*nw*nx +(kstate-2)*nw*nx*ny
-                   wFD2(iCell-1, jCell-1, kCell-1, iRes) = (dwp(iCell,jCell,kCell,iRes)-dwm(iCell,jCell,kCell,iRes))/(2.0*deltaw)
-                   
-                   idxres   = globalCell(iCell,jCell,kCell)*nw+ires
-                   !print *,'globalindices',idxstate,idxres,shape(dRdwAdj)
-                   if( idxres>=0) then
-                      if (wFD2(iCell-1, jCell-1, kCell-1, iRes).ne. zero) then
-                         dRdExtraFD(idxres,nDesignMach,nn,sps) = wFD2(iCell-1, jCell-1, kCell-1, iRes)
-                         !Aad(m,:)  = wFD2(iCell-1, jCell-1, kCell-1, iRes)wAdjB( 0, 0, 0,:)
-                         !print *,'setting',dRdW, PETScOne, idxres, PETScOne, idxstate,   &
-                         !     dRdwFD(idxres,idxstate,nn,sps)
-!!$                         call MatSetValues(dRda, 1, idxres-1, 1, nDesignMach-1,   &
-!!$                              dRdExtraFD(idxres,nDesignMach,nn,sps), INSERT_VALUES, PETScIerr)
-!!$                         if( PETScIerr/=0 ) &
-!!$                              print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
-                      end if
-                   endif
-                end do
-!!                idxmgb = globalCell(icell,jcell,kcell)
-                
-!!$                test = sum(wFD2(iCell-1, jCell-1, kCell-1,:))
-!!$                !print *,'test',test
-!!$                if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
-!!$                   !print *,'setting PETSc Vector',sum(wAdjB(icell,jcell,kcell,:))
-!!$                   pvrlocal(:) = wFD2(iCell-1, jCell-1, kCell-1,:)
-!!$                   
-!!$                   !                call VecSetValuesBlocked(dJdW, 1, idxmgb, dJdWlocal, &
-!!$                   !                                         INSERT_VALUES, PETScIerr)
-!!$                   call VecSetValuesBlocked(pvr, 1, idxmgb, pvrlocal, &
-!!$                        INSERT_VALUES, PETScIerr)
-!!$                   
-!!$                   if( PETScIerr/=0 ) then
-!!$                      write(errorMessage,99) &
-!!$                           "Error in VecSetValuesBlocked for global node", &
-!!$                           idxmgb
-!!$                      call terminate("setupADjointRHSAeroCoeff", &
-!!$                           errorMessage)
-!!$                   endif
-!!$                endif
-                !idxmgb = globalCell(iCell,jCell,kCell)
-                !print *,'globalcell',idxmgb,globalCell(iCell,jCell,kCell)
-                ! >>> center block A < W(i,j,k)
-                
-                !idxngb = idxmgb
-                !print *,'indicies0',idxmgb,idxngb
-                !call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                !     Aad, INSERT_VALUES,PETScIerr)
-                !if( PETScIerr/=0 ) &
-                !      print *,'matrix setting error'!call errAssemb("MatSetValuesBlocked", "Aad")
-                
-                ! if ( wAdjb(ii,jj,kk,l).ne. 0.0) then
-                !    print *,'wAdjb', wAdjb(ii,jj,kk,l),i,j,k,l
-                ! endif
-                !end if
-                
-             end do
-          end do
-       end do
-!       w(istate,jstate,kstate,n) = wAdjRef
-       dw(:,:,:,:) = dwtemp(:,:,:,:)
-       w(:,:,:,:) = wtemp(:,:,:,:)
-       p(:,:,:) = ptemp(:,:,:)
-       mach = ExtraAdjRef
-
-!!$       call MatAssemblyBegin(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
-!!$
-!!$       if( PETScIerr/=0 ) &
-!!$            call terminate("setupADjointMatrix","Error in MatAssemblyBegin")
+!!$!
+!!$!     Compute d(dw)/d(w) using central finite differences
+!!$!_______________________________________________________
 !!$       
-!!$
-!!$       call MatAssemblyEnd  (dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
+!!$       deltaw = 1.d-5
+!!$       !print *, "deltaw=", deltaw
+!!$       wFD2(:,:,:,:) = 0. 
+!!$       call cpu_time(time(3))
 !!$       
-!!$       if( PETScIerr/=0 ) &
-!!$            call terminate("setupADjointMatrix","Error in MatAssemblyEnd")
-!!$
-!!$       !if( debug ) then
-!!$          call MatView(dRda,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-!!$          !call MatView(dRdW,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
-!!$          if( PETScIerr/=0 ) &
-!!$               call terminate("setupADjointMatrix", "Error in MatView")
-!!$          !pause
+!!$       groundLevel = 1
+!!$       sps = 1
+!!$       nn=97
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       ! if (istate==icell .or. jstate==jcell .or. kstate==kcell) then
+!!$       !Remember current values
+!!$       dwtemp(:,:,:,:) = dw(:,:,:,:)
+!!$       wtemp(:,:,:,:) = w(:,:,:,:)
+!!$       ptemp(:,:,:) = p(:,:,:)
+!!$       ExtraAdjRef = mach
+!!$       
+!!$       Mach = ExtraAdjRef + deltaw
+!!$       
+!!$       !call checkInputParam
+!!$       
+!!$       call referenceState
+!!$       
+!!$       call setFlowInfinityState
+!!$       
+!!$!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
+!!$!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
+!!$!       call computePressureAdj(wAdjtemp, pAdjtemp)
+!!$!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
+!!$       
+!!$       !print *, "Calling Residual ="
+!!$       call initres(1_intType, nwf)
+!!$       
+!!$       call applyAllBC(secondHalo)
+!!$       
+!!$       ! Exchange the solution. Either whalo1 or whalo2
+!!$       ! must be called.
+!!$       if( secondHalo ) then
+!!$          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       else
+!!$          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       endif
+!!$       !if( secondHalo ) then
+!!$       !   !  write(*,*)'2ndHalo..........'
+!!$       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
+!!$       !else
+!!$       !   ! write(*,*)'1stHalo..........'
+!!$       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
 !!$       !endif
-       call VecAssemblyBegin(pvr,PETScIerr)
-       
-       if( PETScIerr/=0 ) &
-            call terminate("setupASjointRHS", "Error in VecAssemblyBegin")  
-       
-       call VecAssemblyEnd  (pvr,PETScIerr)
-       
-       if( PETScIerr/=0 ) &
-            call terminate("setupADjointRHS", "Error in VecAssemblyEnd")
-       
-       if( debug ) then
-          call VecView(pvr,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-          !call VecView(pvr,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
-          if( PETScIerr/=0 ) &
-               call terminate("setupADjointRHS", "Error in VecView")
-          pause
-       endif
-       
-       call cpu_time(time(4))
-       timeFD = time(4)-time(3)
-
-!     ******************************************************************
-!     *                                                                *
-!     *  Compute d(dw)/d(w) using central finite differences           *
-!     *                                                                *
-!     ******************************************************************
-
-!!$      ! Get the initial FD time.
-!!$      print *,'starting FD calculation'
-!!$      call mpi_barrier(SUmb_comm_world, ierr)
-!!$      if(myID == 0) call cpu_time(time(3))
+!!$       
+!!$       call residual
+!!$       !print *, "Called Residual =", dw(istate,jstate,kstate,n)
+!!$       nn=97
+!!$       groundlevel = 1
+!!$       sps = 1
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       dwp(:,:,:,:) = dw(:,:,:,:)
+!!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
+!!$       
+!!$       Mach = ExtraAdjRef - deltaw
+!!$       
+!!$       !call checkInputParam
+!!$       
+!!$       call referenceState
+!!$       
+!!$       call setFlowInfinityState
+!!$       
+!!$!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
+!!$!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
+!!$!       call computePressureAdj(wAdjtemp, pAdjtemp)
+!!$       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
+!!$!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
+!!$       
+!!$       !print *, "Calling Residual ="
+!!$       call initres(1_intType, nwf)
+!!$       
+!!$       call applyAllBC(secondHalo)
+!!$       
+!!$       ! Exchange the solution. Either whalo1 or whalo2
+!!$       ! must be called.
+!!$       if( secondHalo ) then
+!!$          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       else
+!!$          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       endif
+!!$       !if( secondHalo ) then
+!!$       !   !write(*,*)'2ndHalo..........'
+!!$       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
+!!$       !else
+!!$       !   !write(*,*)'1stHalo..........'
+!!$       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
+!!$       !endif
+!!$       
+!!$       call residual
+!!$       !print *, "Called Residual 2 =", dw(istate,jstate,kstate,n)
+!!$       nn=97
+!!$       groundlevel = 1
+!!$       sps = 1
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       dwm(:,:,:,:) = dw(:,:,:,:)
+!!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
+!!$       
+!!$       !                             end if
+!!$       
+!!$       
+!!$       !                   ival = 0
+!!$       do kCell = 2, kl
+!!$          do jCell = 2, jl
+!!$             do iCell = 2, il
+!!$                do iRes = 1, nw           ! Loop over output cell residuals (R)
+!!$                   ! Loop over location of output (R) cell of residual
+!!$                   
+!!$                   !column = (n-1) +(istate-2)*nw +(jstate-2)*nw*nx +(kstate-2)*nw*nx*ny
+!!$                   wFD2(iCell-1, jCell-1, kCell-1, iRes) = (dwp(iCell,jCell,kCell,iRes)-dwm(iCell,jCell,kCell,iRes))/(2.0*deltaw)
+!!$                   
+!!$                   idxres   = globalCell(iCell,jCell,kCell)*nw+ires
+!!$                   !print *,'globalindices',idxstate,idxres,shape(dRdwAdj)
+!!$                   if( idxres>=0) then
+!!$                      if (wFD2(iCell-1, jCell-1, kCell-1, iRes).ne. zero) then
+!!$                         !dRdExtraFD(idxres,nDesignMach,nn,sps) = wFD2(iCell-1, jCell-1, kCell-1, iRes)
+!!$                         dRdExtraFD(idxres,nDesignMach,1,sps) = wFD2(iCell-1, jCell-1, kCell-1, iRes)
+!!$                         !Aad(m,:)  = wFD2(iCell-1, jCell-1, kCell-1, iRes)wAdjB( 0, 0, 0,:)
+!!$                         !print *,'setting',dRdW, PETScOne, idxres, PETScOne, idxstate,   &
+!!$                         !     dRdwFD(idxres,idxstate,nn,sps)
+!                         call MatSetValues(dRda, 1, idxres-1, 1, nDesignMach-1,   &
+!                              dRdExtraFD(idxres,nDesignMach,nn,sps), INSERT_VALUES, PETScIerr)
+!                         if( PETScIerr/=0 ) &
+!                              print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+!!$                      end if
+!!$                   endif
+!!$                end do
+!!$!!                idxmgb = globalCell(icell,jcell,kcell)
+!!$                
+!                test = sum(wFD2(iCell-1, jCell-1, kCell-1,:))
+!                !print *,'test',test
+!                if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
+!                   !print *,'setting PETSc Vector',sum(wAdjB(icell,jcell,kcell,:))
+!                   pvrlocal(:) = wFD2(iCell-1, jCell-1, kCell-1,:)
+!                   
+!                   !                call VecSetValuesBlocked(dJdW, 1, idxmgb, dJdWlocal, &
+!                   !                                         INSERT_VALUES, PETScIerr)
+!                   call VecSetValuesBlocked(pvr, 1, idxmgb, pvrlocal, &
+!                        INSERT_VALUES, PETScIerr)
+!                   
+!                   if( PETScIerr/=0 ) then
+!                      write(errorMessage,99) &
+!                           "Error in VecSetValuesBlocked for global node", &
+!                           idxmgb
+!                      call terminate("setupADjointRHSAeroCoeff", &
+!                           errorMessage)
+!                   endif
+!                endif
+!!$                !idxmgb = globalCell(iCell,jCell,kCell)
+!!$                !print *,'globalcell',idxmgb,globalCell(iCell,jCell,kCell)
+!!$                ! >>> center block A < W(i,j,k)
+!!$                
+!!$                !idxngb = idxmgb
+!!$                !print *,'indicies0',idxmgb,idxngb
+!!$                !call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
+!!$                !     Aad, INSERT_VALUES,PETScIerr)
+!!$                !if( PETScIerr/=0 ) &
+!!$                !      print *,'matrix setting error'!call errAssemb("MatSetValuesBlocked", "Aad")
+!!$                
+!!$                ! if ( wAdjb(ii,jj,kk,l).ne. 0.0) then
+!!$                !    print *,'wAdjb', wAdjb(ii,jj,kk,l),i,j,k,l
+!!$                ! endif
+!!$                !end if
+!!$                
+!!$             end do
+!!$          end do
+!!$       end do
+!!$!       w(istate,jstate,kstate,n) = wAdjRef
+!!$       nn=97
+!!$       groundlevel = 1
+!!$       sps = 1
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
+!!$       w(:,:,:,:) = wtemp(:,:,:,:)
+!!$       p(:,:,:) = ptemp(:,:,:)
+!!$       mach = ExtraAdjRef
 !!$
+!       call MatAssemblyBegin(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)!!
+!
+!       if( PETScIerr/=0 ) &
+!            call terminate("setupADjointMatrix","Error in MatAssemblyBegin")
+!       !!
+!
+!       call MatAssemblyEnd  (dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
+!       
+!       if( PETScIerr/=0 ) &
+!            call terminate("setupADjointMatrix","Error in MatAssemblyEnd")!
+!
+!       !if( debug ) then
+!          call MatView(dRda,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+!          !call MatView(dRdW,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+!          if( PETScIerr/=0 ) &
+!               call terminate("setupADjointMatrix", "Error in MatView")
+!          !pause
+!       !endif
+!!$       call VecAssemblyBegin(pvr,PETScIerr)
+!!$       
+!!$       if( PETScIerr/=0 ) &
+!!$            call terminate("setupASjointRHS", "Error in VecAssemblyBegin")  
+!!$       
+!!$       call VecAssemblyEnd  (pvr,PETScIerr)
+!!$       
+!!$       if( PETScIerr/=0 ) &
+!!$            call terminate("setupADjointRHS", "Error in VecAssemblyEnd")
+!!$       
+!!$       if( debug ) then
+!!$          call VecView(pvr,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+!!$          !call VecView(pvr,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+!!$          if( PETScIerr/=0 ) &
+!!$               call terminate("setupADjointRHS", "Error in VecView")
+!!$          pause
+!!$       endif
+!!$       
+!!$       call cpu_time(time(4))
+!!$       timeFD = time(4)-time(3)
 !!$
-!!$      deltaw = 1.d-6
-!!$      wFD(:,:,:,:) = 0. 
-!!$      call cpu_time(time(3))
+!!$!     ******************************************************************
+!!$!     *                                                                *
+!!$!     *  Compute d(dw)/d(w) using central finite differences           *
+!!$!     *                                                                *
+!!$!     ******************************************************************
 !!$
-!!$      print *,'entering FD loop'
-!!$      domainResidualLoopFDorig: do nn=1,nDom         
+!      ! Get the initial FD time.
+!      print *,'starting FD calculation'
+!      call mpi_barrier(SUmb_comm_world, ierr)
+!      if(myID == 0) call cpu_time(time(3))
+!!
+!
+!      deltaw = 1.d-6
+!      wFD(:,:,:,:) = 0. 
+!      call cpu_time(time(3))!
+!
+!      print *,'entering FD loop'
+!      domainResidualLoopFDorig: do nn=1,nDom         
+!
+!         ! Determine the number of time instances for this block
+!        
+!         nTime     = nTimeIntervalsSpectral!
+!
+!         ! Loop over the number of time instances for this block.!!
+!
+!         spectralLoop2: do sps=1,nTime
+!!            print *,'setting Pointers'
+!            call setPointersAdj(nn,level,sps)!
+!
+!
+!               ! Loop over location of output (R) cell of residual
+!               do kCell = 2, kl
+!                  !print *, "iRes, kCell =", iRes, kCell
+!                  do jCell = 2, jl
+!                     do iCell = 2, il
+!                        
+!                        do m = 1, nw           ! Loop over output cell residuals (R)
+!!                           print *,'indices',icell,jcell,kcell,m
+!                        ! Copy the state in the stencil
+!                        ! actually no need to call again, but ...
+!!                           call copyADjointStencil(wAdj,xAdj, iCell, jCell, kCell)
+!                           call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,&
+!                          MachAdj,MachCoefAdj,iCell, jCell, kCell,prefAdj,&
+!                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+!                          rhoinfAdj, pinfAdj,&
+!                          murefAdj, timerefAdj,pInfCorrAdj)
+!!                           print *,'stencil copied'
+!                           ! Loop over the inputs (w) 
+!                           !print *,'secondhalo',secondhalo
+!                        
+!                           do ii = -2, 2
+!                              do jj = -2, 2
+!                                 do kk = -2, 2
+!                                    do n = 1, nw
+!                                       i = iCell+ii
+!                                       j = jCell+jj
+!                                       k = kCell+kk
+! !                                      print *,'secondary FD indices',i,j,k,n,ii,jj,kk
+!                                       if (ii==0 .or. jj==0 .or. kk==0) then
+!                                          wAdjRef = wAdj(ii,jj,kk,n)
+!                                          wAdj(ii,jj,kk,n) = wAdjRef + deltaw
+!                                          call computeRAdjoint(wAdj,xAdj,dwAdjP,alphaAdj,&
+!                                               betaAdj,MachAdj, MachCoefAdj,&
+!                                               iCell, jCell,  kCell, &
+!                                               nn,sps, correctForK,secondHalo,prefAdj,&
+ !                                              rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+ !                                              rhoinfAdj, pinfAdj,&
+ !                                              murefAdj, timerefAdj,pInfCorrAdj)
+ !                                         !call computeRAdjoint(wAdj,xAdj,dwAdjP,   &
+ !                                         !     iCell, jCell,  kCell, &
+!                                          !     nn,sps, correctForK,secondHalo)
+!                                          
+!                                          wAdj(ii,jj,kk,n) = wAdjRef - deltaw
+!                                          call computeRAdjoint(wAdj,xAdj,dwAdjM,alphaAdj,&
+!                                               betaAdj,MachAdj, MachCoefAdj,&
+!                                               iCell, jCell,  kCell, &
+!                                               nn,sps, correctForK,secondHalo,prefAdj,&
+!                                               rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+!                                               rhoinfAdj, pinfAdj,&
+!                                               murefAdj, timerefAdj,pInfCorrAdj)
+!                                          !call computeRAdjoint(wAdj,xAdj,dwAdjM,   &
+!                                          !     iCell, jCell,  kCell, &
+!                                          !     nn,sps, correctForK,secondHalo)!!!
+!
+!                                          
+!                                          wFD(ii,jj,kk,n) = (dwAdjP(m)-dwAdjM(m))/(2.0*deltaw)
+!                                          wAdj(ii,jj,kk,n) = wAdjRef!
+!
+!                                          if(i>zero .and. j>zero .and. k>zero .and. i<il .and. j<jl .and. k<kl)then
+!!                                             print *,'global FD indicies',idxstate,idxres
+!                                             idxstate = globalCell(i,j,k)*nw+n
+!                                             idxres   = globalCell(iCell,jCell,kCell)*nw+m
+!                                             if( idxres>=0 .and. idxstate>=0) then
+!                                                dRdwFD(idxres,idxstate,nn,sps) = wFD(ii,jj,kk,n)!
+!                                             endif
+!                                          end if
+!                                       end if
+!                                    end do ! n
+!                                 end do ! ii
+!                              end do !jj
+!                           end do !kk
+!                        
+!                        !print 111, iRes, iCell-1, jCell-1, kCell-1, dRdw(iCell-1, jCell-1, kCell-1, iRes), dRdwFD(iCell-1, jCell-1, kCell-1, iRes)
+!                     end do !iRes
+!                  end do !iCell
+!               end do !jCell
+!            end do !kCell
+!         end do spectralLoop2
+!      end do domainResidualLoopFDorig
+!      
+!      call cpu_time(time(4))
+!      timeFD = time(4)-time(3)
 !!$
-!!$         ! Determine the number of time instances for this block
-!!$        
-!!$         nTime     = nTimeIntervalsSpectral
+!!$!*******************************************
+!!$!Now repeat for Alpha
+!!$!*******************************************
 !!$
-!!$         ! Loop over the number of time instances for this block.
+!!$!
+!!$!     Compute d(dw)/d(w) using central finite differences
+!!$!_______________________________________________________
+!!$       
+!!$       deltaw = 1.d-5
+!!$       !print *, "deltaw=", deltaw
+!!$       wFD2(:,:,:,:) = 0. 
+!!$       call cpu_time(time(3))
+!!$       
+!!$       groundLevel = 1
+!!$       sps = 1
+!!$       nn=97
 !!$
-!!$         spectralLoop2: do sps=1,nTime
-!!$!            print *,'setting Pointers'
-!!$            call setPointersAdj(nn,level,sps)
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       ! if (istate==icell .or. jstate==jcell .or. kstate==kcell) then
+!!$       !Remember current values
+!!$       dwtemp(:,:,:,:) = dw(:,:,:,:)
+!!$       wtemp(:,:,:,:) = w(:,:,:,:)
+!!$       ptemp(:,:,:) = p(:,:,:)
+!!$       ExtraAdjRef = alphaadj
+!!$       
+!!$       alphaadj = ExtraAdjRef + deltaw
+!!$       
+!!$       call adjustInflowAngleAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
+!!$     liftDirectionAdj,dragDirectionAdj,liftIndex)
+!!$       
+!!$       liftDirection = liftDirectionAdj
+!!$       !print *,'liftdirection 1',liftindex,liftDirection
+!!$       veldirfreestream = veldirfreestreamAdj
+!!$       dragdirection = dragdirectionAdj
+!!$       !call checkInputParam
+!!$       
+!!$       call referenceState
+!!$       
+!!$       call setFlowInfinityState
 !!$
+!!$       do mm=1,nTimeIntervalsSpectral
+!!$          
+!!$          ! Compute the time, which corresponds to this spectral solution.
+!!$          ! For steady and unsteady mode this is simply the restart time;
+!!$          ! for the spectral mode the periodic time must be taken into
+!!$          ! account, which can be different for every section.
+!!$          
+!!$          t = timeUnsteadyRestart
+!!$          
+!!$          if(equationMode == timeSpectral) then
+!!$             do nn=1,nSections
+!!$                t(nn) = t(nn) + (mm-1)*sections(nn)%timePeriod &
+!!$                     /         real(nTimeIntervalsSpectral,realType)
+!!$             enddo
+!!$          endif
+!!$          
+!!$          call gridVelocitiesFineLevel(.false., t, mm)
+!!$          call gridVelocitiesCoarseLevels(mm)
+!!$          call normalVelocitiesAllLevels(mm)
+!!$          
+!!$          call slipVelocitiesFineLevel(.false., t, mm)
+!!$          call slipVelocitiesCoarseLevels(mm)
+!!$          
+!!$       enddo
+!!$       
+!!$!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
+!!$!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
+!!$!       call computePressureAdj(wAdjtemp, pAdjtemp)
+!!$!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
+!!$       
 !!$
-!!$               ! Loop over location of output (R) cell of residual
-!!$               do kCell = 2, kl
-!!$                  !print *, "iRes, kCell =", iRes, kCell
-!!$                  do jCell = 2, jl
-!!$                     do iCell = 2, il
-!!$                        
-!!$                        do m = 1, nw           ! Loop over output cell residuals (R)
-!!$!                           print *,'indices',icell,jcell,kcell,m
-!!$                        ! Copy the state in the stencil
-!!$                        ! actually no need to call again, but ...
-!!$!                           call copyADjointStencil(wAdj,xAdj, iCell, jCell, kCell)
-!!$                           call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,&
-!!$                          MachAdj,MachCoefAdj,iCell, jCell, kCell,prefAdj,&
-!!$                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-!!$                          rhoinfAdj, pinfAdj,&
-!!$                          murefAdj, timerefAdj,pInfCorrAdj)
-!!$!                           print *,'stencil copied'
-!!$                           ! Loop over the inputs (w) 
-!!$                           !print *,'secondhalo',secondhalo
-!!$                        
-!!$                           do ii = -2, 2
-!!$                              do jj = -2, 2
-!!$                                 do kk = -2, 2
-!!$                                    do n = 1, nw
-!!$                                       i = iCell+ii
-!!$                                       j = jCell+jj
-!!$                                       k = kCell+kk
-!!$ !                                      print *,'secondary FD indices',i,j,k,n,ii,jj,kk
-!!$                                       if (ii==0 .or. jj==0 .or. kk==0) then
-!!$                                          wAdjRef = wAdj(ii,jj,kk,n)
-!!$                                          wAdj(ii,jj,kk,n) = wAdjRef + deltaw
-!!$                                          call computeRAdjoint(wAdj,xAdj,dwAdjP,alphaAdj,&
-!!$                                               betaAdj,MachAdj, MachCoefAdj,&
-!!$                                               iCell, jCell,  kCell, &
-!!$                                               nn,sps, correctForK,secondHalo,prefAdj,&
-!!$                                               rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-!!$                                               rhoinfAdj, pinfAdj,&
-!!$                                               murefAdj, timerefAdj,pInfCorrAdj)
-!!$                                          !call computeRAdjoint(wAdj,xAdj,dwAdjP,   &
-!!$                                          !     iCell, jCell,  kCell, &
-!!$                                          !     nn,sps, correctForK,secondHalo)
-!!$                                          
-!!$                                          wAdj(ii,jj,kk,n) = wAdjRef - deltaw
-!!$                                          call computeRAdjoint(wAdj,xAdj,dwAdjM,alphaAdj,&
-!!$                                               betaAdj,MachAdj, MachCoefAdj,&
-!!$                                               iCell, jCell,  kCell, &
-!!$                                               nn,sps, correctForK,secondHalo,prefAdj,&
-!!$                                               rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-!!$                                               rhoinfAdj, pinfAdj,&
-!!$                                               murefAdj, timerefAdj,pInfCorrAdj)
-!!$                                          !call computeRAdjoint(wAdj,xAdj,dwAdjM,   &
-!!$                                          !     iCell, jCell,  kCell, &
-!!$                                          !     nn,sps, correctForK,secondHalo)
+!!$       call applyAllBC(secondHalo)
+!!$       
+!!$       ! Exchange the solution. Either whalo1 or whalo2
+!!$       ! must be called.
+!!$       if( secondHalo ) then
+!!$          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       else
+!!$          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       endif
+!!$       !if( secondHalo ) then
+!!$       !   !  write(*,*)'2ndHalo..........'
+!!$       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
+!!$       !else
+!!$       !   ! write(*,*)'1stHalo..........'
+!!$       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
+!!$       !endif
 !!$
-!!$                                          
-!!$                                          wFD(ii,jj,kk,n) = (dwAdjP(m)-dwAdjM(m))/(2.0*deltaw)
-!!$                                          wAdj(ii,jj,kk,n) = wAdjRef
+!!$       !print *, "Calling Residual ="
+!!$       call initres(1_intType, nwf)
+!!$       
+!!$       call residual
+!!$       !print *, "Called Residual =", dw(istate,jstate,kstate,n)
+!!$       groundLevel = 1
+!!$       sps = 1
+!!$       nn=97
 !!$
-!!$                                          if(i>zero .and. j>zero .and. k>zero .and. i<il .and. j<jl .and. k<kl)then
-!!$!                                             print *,'global FD indicies',idxstate,idxres
-!!$                                             idxstate = globalCell(i,j,k)*nw+n
-!!$                                             idxres   = globalCell(iCell,jCell,kCell)*nw+m
-!!$                                             if( idxres>=0 .and. idxstate>=0) then
-!!$                                                dRdwFD(idxres,idxstate,nn,sps) = wFD(ii,jj,kk,n)
-!!$                                             endif
-!!$                                          end if
-!!$                                       end if
-!!$                                    end do ! n
-!!$                                 end do ! ii
-!!$                              end do !jj
-!!$                           end do !kk
-!!$                        
-!!$                        !print 111, iRes, iCell-1, jCell-1, kCell-1, dRdw(iCell-1, jCell-1, kCell-1, iRes), dRdwFD(iCell-1, jCell-1, kCell-1, iRes)
-!!$                     end do !iRes
-!!$                  end do !iCell
-!!$               end do !jCell
-!!$            end do !kCell
-!!$         end do spectralLoop2
-!!$      end do domainResidualLoopFDorig
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       dwp(:,:,:,:) = dw(:,:,:,:)
+!!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
+!!$       
+!!$       alphaadj = ExtraAdjRef - deltaw
+!!$       
+!!$       call adjustInflowAngleAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
+!!$            liftDirectionAdj,dragDirectionAdj,liftIndex)
+!!$       
+!!$       liftDirection = liftDirectionAdj
+!!$       !print *,'liftdirection 2',liftindex,liftDirection
+!!$       veldirfreestream = veldirfreestreamAdj
+!!$       dragdirection = dragdirectionAdj
+!!$       !call checkInputParam
+!!$       
+!!$       call referenceState
+!!$       
+!!$       call setFlowInfinityState
+!!$
+!!$       do mm=1,nTimeIntervalsSpectral
+!!$          
+!!$          ! Compute the time, which corresponds to this spectral solution.
+!!$          ! For steady and unsteady mode this is simply the restart time;
+!!$          ! for the spectral mode the periodic time must be taken into
+!!$          ! account, which can be different for every section.
+!!$          
+!!$          t = timeUnsteadyRestart
+!!$          
+!!$          if(equationMode == timeSpectral) then
+!!$             do nn=1,nSections
+!!$                t(nn) = t(nn) + (mm-1)*sections(nn)%timePeriod &
+!!$                     /         real(nTimeIntervalsSpectral,realType)
+!!$             enddo
+!!$          endif
+!!$          
+!!$          call gridVelocitiesFineLevel(.false., t, mm)
+!!$          call gridVelocitiesCoarseLevels(mm)
+!!$          call normalVelocitiesAllLevels(mm)
+!!$          
+!!$          call slipVelocitiesFineLevel(.false., t, mm)
+!!$          call slipVelocitiesCoarseLevels(mm)
+!!$          
+!!$       enddo
+!!$       
+!!$!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
+!!$!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
+!!$!       call computePressureAdj(wAdjtemp, pAdjtemp)
+!!$       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
+!!$!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
+!!$       
 !!$      
-!!$      call cpu_time(time(4))
-!!$      timeFD = time(4)-time(3)
-
-!*******************************************
-!Now repeat for Alpha
-!*******************************************
-
-!
-!     Compute d(dw)/d(w) using central finite differences
-!_______________________________________________________
-       
-       deltaw = 1.d-5
-       !print *, "deltaw=", deltaw
-       wFD2(:,:,:,:) = 0. 
-       call cpu_time(time(3))
-       
-       groundLevel = 1
-       sps = 1
-       nn=1
-       
-       ! if (istate==icell .or. jstate==jcell .or. kstate==kcell) then
-       !Remember current values
-       dwtemp(:,:,:,:) = dw(:,:,:,:)
-       wtemp(:,:,:,:) = w(:,:,:,:)
-       ptemp(:,:,:) = p(:,:,:)
-       ExtraAdjRef = alphaadj
-       
-       alphaadj = ExtraAdjRef + deltaw
-       
-       !call checkInputParam
-       
-       call referenceState
-       
-       call setFlowInfinityState
-       
-!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
-!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
-!       call computePressureAdj(wAdjtemp, pAdjtemp)
-!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
-       
-       !print *, "Calling Residual ="
-       call initres(1_intType, nwf)
-       
-       call applyAllBC(secondHalo)
-       
-       ! Exchange the solution. Either whalo1 or whalo2
-       ! must be called.
-       if( secondHalo ) then
-          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       else
-          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       endif
-       !if( secondHalo ) then
-       !   !  write(*,*)'2ndHalo..........'
-       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !else
-       !   ! write(*,*)'1stHalo..........'
-       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !endif
-       
-       call residual
-       !print *, "Called Residual =", dw(istate,jstate,kstate,n)
-       
-       dwp(:,:,:,:) = dw(:,:,:,:)
-       dw(:,:,:,:) = dwtemp(:,:,:,:)
-       
-       alphaadj = ExtraAdjRef - deltaw
-       
-       !call checkInputParam
-       
-       call referenceState
-       
-       call setFlowInfinityState
-       
-!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
-!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
-!       call computePressureAdj(wAdjtemp, pAdjtemp)
-       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
-!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
-       
-       !print *, "Calling Residual ="
-       call initres(1_intType, nwf)
-       
-       call applyAllBC(secondHalo)
-       
-       ! Exchange the solution. Either whalo1 or whalo2
-       ! must be called.
-       if( secondHalo ) then
-          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       else
-          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       endif
-       !if( secondHalo ) then
-       !   !write(*,*)'2ndHalo..........'
-       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !else
-       !   !write(*,*)'1stHalo..........'
-       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !endif
-       
-       call residual
-       !print *, "Called Residual 2 =", dw(istate,jstate,kstate,n)
-       dwm(:,:,:,:) = dw(:,:,:,:)
-       dw(:,:,:,:) = dwtemp(:,:,:,:)
-       
-       !                             end if
-       
-       
-       !                   ival = 0
-       do kCell = 2, kl
-          do jCell = 2, jl
-             do iCell = 2, il
-                do iRes = 1, nw           
-                   ! Loop over location of output (R) cell of residual
-                                 
-                   wFD2(iCell-1, jCell-1, kCell-1, iRes) = (dwp(iCell,jCell,kCell,iRes)-dwm(iCell,jCell,kCell,iRes))/(2.0*deltaw)
-                   
-                   idxres   = globalCell(iCell,jCell,kCell)*nw+ires
-                   !print *,'globalindices',idxstate,idxres,shape(dRdwAdj)
-                   if( idxres>=0) then
-                      if (wFD2(iCell-1, jCell-1, kCell-1, iRes).ne. zero) then
-                         dRdExtraFD(idxres,nDesignAOA,nn,sps) = wFD2(iCell-1, jCell-1, kCell-1, iRes)
-!!$                         call MatSetValues(dRda, 1, idxres-1, 1, nDesignMach-1,   &
-!!$                              dRdExtraFD(idxres,nDesignMach,nn,sps), INSERT_VALUES, PETScIerr)
-!!$                         if( PETScIerr/=0 ) &
-!!$                              print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
-                      end if
-                   endif
-                end do
-
-                
-             end do
-          end do
-       end do
-!       w(istate,jstate,kstate,n) = wAdjRef
-       dw(:,:,:,:) = dwtemp(:,:,:,:)
-       w(:,:,:,:) = wtemp(:,:,:,:)
-       p(:,:,:) = ptemp(:,:,:)
-       alphaAdj = ExtraAdjRef
-
-
-
-!******************************************
-!Now Repeat for Beta
-!******************************************
-!
-!     Compute d(dw)/d(w) using central finite differences
-!_______________________________________________________
-       
-       deltaw = 1.d-5
-       !print *, "deltaw=", deltaw
-       wFD2(:,:,:,:) = 0. 
-       call cpu_time(time(3))
-       
-       groundLevel = 1
-       sps = 1
-       nn=1
-       
-       ! if (istate==icell .or. jstate==jcell .or. kstate==kcell) then
-       !Remember current values
-       dwtemp(:,:,:,:) = dw(:,:,:,:)
-       wtemp(:,:,:,:) = w(:,:,:,:)
-       ptemp(:,:,:) = p(:,:,:)
-       ExtraAdjRef = betaadj
-       
-       betaadj = ExtraAdjRef + deltaw
-       
-       !call checkInputParam
-       
-       call referenceState
-       
-       call setFlowInfinityState
-       
-!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
-!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
-!       call computePressureAdj(wAdjtemp, pAdjtemp)
-!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
-       
-       !print *, "Calling Residual ="
-       call initres(1_intType, nwf)
-       
-       call applyAllBC(secondHalo)
-       
-       ! Exchange the solution. Either whalo1 or whalo2
-       ! must be called.
-       if( secondHalo ) then
-          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       else
-          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       endif
-       !if( secondHalo ) then
-       !   !  write(*,*)'2ndHalo..........'
-       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !else
-       !   ! write(*,*)'1stHalo..........'
-       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !endif
-       
-       call residual
-       !print *, "Called Residual =", dw(istate,jstate,kstate,n)
-       
-       dwp(:,:,:,:) = dw(:,:,:,:)
-       dw(:,:,:,:) = dwtemp(:,:,:,:)
-       
-       betaadj = ExtraAdjRef - deltaw
-       
-       !call checkInputParam
-       
-       call referenceState
-       
-       call setFlowInfinityState
-       
-!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
-!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
-!       call computePressureAdj(wAdjtemp, pAdjtemp)
-       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
-!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
-       
-       !print *, "Calling Residual ="
-       call initres(1_intType, nwf)
-       
-       call applyAllBC(secondHalo)
-       
-       ! Exchange the solution. Either whalo1 or whalo2
-       ! must be called.
-       if( secondHalo ) then
-          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       else
-          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       endif
-       !if( secondHalo ) then
-       !   !write(*,*)'2ndHalo..........'
-       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !else
-       !   !write(*,*)'1stHalo..........'
-       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !endif
-       
-       call residual
-       !print *, "Called Residual 2 =", dw(istate,jstate,kstate,n)
-       dwm(:,:,:,:) = dw(:,:,:,:)
-       dw(:,:,:,:) = dwtemp(:,:,:,:)
-       
-       !                             end if
-       
-       
-       !                   ival = 0
-       do kCell = 2, kl
-          do jCell = 2, jl
-             do iCell = 2, il
-                do iRes = 1, nw   
-                   ! Loop over location of output (R) cell of residual
-       
-                   wFD2(iCell-1, jCell-1, kCell-1, iRes) = (dwp(iCell,jCell,kCell,iRes)-dwm(iCell,jCell,kCell,iRes))/(2.0*deltaw)
-                   
-                   idxres   = globalCell(iCell,jCell,kCell)*nw+ires
-                   !print *,'globalindices',idxstate,idxres,shape(dRdwAdj)
-                   if( idxres>=0) then
-                      if (wFD2(iCell-1, jCell-1, kCell-1, iRes).ne. zero) then
-                         dRdExtraFD(idxres,nDesignSSA,nn,sps) = wFD2(iCell-1, jCell-1, kCell-1, iRes)
-
-!!$                         call MatSetValues(dRda, 1, idxres-1, 1, nDesignMach-1,   &
-!!$                              dRdExtraFD(idxres,nDesignMach,nn,sps), INSERT_VALUES, PETScIerr)
-!!$                         if( PETScIerr/=0 ) &
-!!$                              print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
-                      end if
-                   endif
-                end do
-
-                
-             end do
-          end do
-       end do
-!       w(istate,jstate,kstate,n) = wAdjRef
-       dw(:,:,:,:) = dwtemp(:,:,:,:)
-       w(:,:,:,:) = wtemp(:,:,:,:)
-       p(:,:,:) = ptemp(:,:,:)
-       betaadj = ExtraAdjRef
-
-!*************************
-!Now repeat for RotRate
-!*************************
-
-!
-!     Compute d(dw)/d(w) using central finite differences
-!_______________________________________________________
-       
-       deltaw = 1.d-6*timeref
-
-       !print *, "deltaw=", deltaw
-       wFD2(:,:,:,:) = 0. 
-       call cpu_time(time(3))
-       
-       groundLevel = 1
-       sps = 1
-       nn=1
-       
-       ! if (istate==icell .or. jstate==jcell .or. kstate==kcell) then
-       !Remember current values
-       dwtemp(:,:,:,:) = dw(:,:,:,:)
-       wtemp(:,:,:,:) = w(:,:,:,:)
-       ptemp(:,:,:) = p(:,:,:)
-       ExtraAdjRef = RotRateAdj(1)
-       
-       RotRateAdj(1) = ExtraAdjRef + deltaw
-
-       do nn=1,nDom
-          
-          ! Set the pointers for this block.
-          
-          call setPointers(nn, groundLevel, sps)
-       
-          cgnsDoms(nbkglobal)%rotRate(1) = RotRateAdj(1)/timeRef
-       enddo 
-       nn=1
-       !call checkInputParam
-       
-       call referenceState
-       
-       call setFlowInfinityState
-
-       do mm=1,nTimeIntervalsSpectral
-
-         ! Compute the time, which corresponds to this spectral solution.
-         ! For steady and unsteady mode this is simply the restart time;
-         ! for the spectral mode the periodic time must be taken into
-         ! account, which can be different for every section.
-
-         t = timeUnsteadyRestart
-
-         if(equationMode == timeSpectral) then
-           do nn=1,nSections
-             t(nn) = t(nn) + (mm-1)*sections(nn)%timePeriod &
-                   /         real(nTimeIntervalsSpectral,realType)
-           enddo
-         endif
-
-         call gridVelocitiesFineLevel(.false., t, mm)
-         call gridVelocitiesCoarseLevels(mm)
-         call normalVelocitiesAllLevels(mm)
-
-         call slipVelocitiesFineLevel(.false., t, mm)
-         call slipVelocitiesCoarseLevels(mm)
-
-       enddo
-       
-       
-!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
-!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
-!       call computePressureAdj(wAdjtemp, pAdjtemp)
-!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
-       
-       !print *, "Calling Residual ="
-       call initres(1_intType, nwf)
-       
-       call applyAllBC(secondHalo)
-       
-       ! Exchange the solution. Either whalo1 or whalo2
-       ! must be called.
-       if( secondHalo ) then
-          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       else
-          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       endif
-       !if( secondHalo ) then
-       !   !  write(*,*)'2ndHalo..........'
-       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !else
-       !   ! write(*,*)'1stHalo..........'
-       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !endif
-       
-       call residual
-       !print *, "Called Residual =", dw(istate,jstate,kstate,n)
-       
-       dwp(:,:,:,:) = dw(:,:,:,:)
-       dw(:,:,:,:) = dwtemp(:,:,:,:)
-       
-       RotRateAdj(1) = ExtraAdjRef - deltaw
-       
-       do nn=1,nDom
-          
-          ! Set the pointers for this block.
-          
-          call setPointers(nn, groundLevel, sps)
-       
-          cgnsDoms(nbkglobal)%rotRate(1) = RotRateAdj(1)/timeRef
-       enddo 
-       nn=1
-       !call checkInputParam
-       
-       call referenceState
-       
-       call setFlowInfinityState
-       
-       do mm=1,nTimeIntervalsSpectral
-
-         ! Compute the time, which corresponds to this spectral solution.
-         ! For steady and unsteady mode this is simply the restart time;
-         ! for the spectral mode the periodic time must be taken into
-         ! account, which can be different for every section.
-
-         t = timeUnsteadyRestart
-
-         if(equationMode == timeSpectral) then
-           do nn=1,nSections
-             t(nn) = t(nn) + (mm-1)*sections(nn)%timePeriod &
-                   /         real(nTimeIntervalsSpectral,realType)
-           enddo
-         endif
-
-         call gridVelocitiesFineLevel(.false., t, mm)
-         call gridVelocitiesCoarseLevels(mm)
-         call normalVelocitiesAllLevels(mm)
-
-         call slipVelocitiesFineLevel(.false., t, mm)
-         call slipVelocitiesCoarseLevels(mm)
-
-      enddo
-
-!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
-!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
-!       call computePressureAdj(wAdjtemp, pAdjtemp)
-       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
-!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
-      
-       !print *, "Calling Residual ="
-       call initres(1_intType, nwf)
-       
-       call applyAllBC(secondHalo)
-       
-       ! Exchange the solution. Either whalo1 or whalo2
-       ! must be called.
-       if( secondHalo ) then
-          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       else
-          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
-               .true., .true.)
-       endif
-       !if( secondHalo ) then
-       !   !write(*,*)'2ndHalo..........'
-       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !else
-       !   !write(*,*)'1stHalo..........'
-       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
-       !        .true., .true.)
-       !endif
-       
-       call residual
-       !print *, "Called Residual 2 =", dw(istate,jstate,kstate,n)
-       dwm(:,:,:,:) = dw(:,:,:,:)
-       dw(:,:,:,:) = dwtemp(:,:,:,:)
-       
-
-       do kCell = 2, kl
-          do jCell = 2, jl
-             do iCell = 2, il
-                do iRes = 1, nw         
-                   ! Loop over location of output (R) cell of residual
-                   
-                   wFD2(iCell-1, jCell-1, kCell-1, iRes) = (dwp(iCell,jCell,kCell,iRes)-dwm(iCell,jCell,kCell,iRes))/(2.0*deltaw)
-                   
-                   idxres   = globalCell(iCell,jCell,kCell)*nw+ires
-                   !print *,'globalindices',idxstate,idxres,shape(dRdwAdj)
-                   if( idxres>=0) then
-                      if (wFD2(iCell-1, jCell-1, kCell-1, iRes).ne. zero) then
-                         dRdExtraFD(idxres,nDesignRotX,nn,sps) = wFD2(iCell-1, jCell-1, kCell-1, iRes)
-
-!!$                         call MatSetValues(dRda, 1, idxres-1, 1, nDesignMach-1,   &
-!!$                              dRdExtraFD(idxres,nDesignMach,nn,sps), INSERT_VALUES, PETScIerr)
-!!$                         if( PETScIerr/=0 ) &
-!!$                              print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
-                      end if
-                   endif
-                end do
-
-                
-             end do
-          end do
-       end do
-!       w(istate,jstate,kstate,n) = wAdjRef
-       dw(:,:,:,:) = dwtemp(:,:,:,:)
-       w(:,:,:,:) = wtemp(:,:,:,:)
-       p(:,:,:) = ptemp(:,:,:)
-       rotRateAdj(1) = ExtraAdjRef
-
-       do nn=1,nDom
-          
-          ! Set the pointers for this block.
-          
-          call setPointers(nn, groundLevel, sps)
-       
-          cgnsDoms(nbkglobal)%rotRate(1) = RotRateAdj(1)/timeRef
-       enddo
-       nn=1
-!_______________________________________________________
-!
-!     Compute the errors in dR/dw
-!_______________________________________________________
-
-      !print *, "Computing the the error..."
-
-    do m=1,nw
-      do iCell=2,il
-        do jCell=2,jl
-          do kCell=2,kl
-             idxres   = globalCell(iCell,jCell,kCell)*nw+m
-             if( idxres>=0) then
-                dRdExtraErr(idxres, ndesignMach, 1, 1) = dRdExtraAdj(idxres, nDesignMach, 1, 1) - dRdExtraFD(idxres, nDesignMach, 1, 1)
-                dRdExtraErr(idxres, ndesignAOA, 1, 1) = dRdExtraAdj(idxres, nDesignAOA, 1, 1) - dRdExtraFD(idxres, nDesignAOA, 1, 1)
-                dRdExtraErr(idxres, ndesignSSA, 1, 1) = dRdExtraAdj(idxres, nDesignSSA, 1, 1) - dRdExtraFD(idxres, nDesignSSA, 1, 1)
-                dRdExtraErr(idxres, ndesignRotX, 1, 1) = dRdExtraAdj(idxres, nDesignRotX, 1, 1) - dRdExtraFD(idxres, nDesignRotX, 1, 1)
-                !dRdExtraErr(idxres, ndesignRotY, 1, 1) = dRdExtraAdj(idxres, nDesignMach, 1, 1) - dRdExtraFD(idxres, nDesignMach, 1, 1)
-                !                           if(dRdwFD(idxres,idxstate,1,1).ne.0) then
-                if(dRdExtraFD(idxres,nDesignMach,1,1)>1e-10) then
-                   !if((ii.ne.zero .and.jj.ne.zero).and.(ii.ne.zero .and.kk.ne.zero).and.(kk.ne.zero .and.jj.ne.zero))then
-                   !print *,'test',(ii.ne.zero .and.jj.ne.zero).and.(ii.ne.zero .and.kk.ne.zero).and.(kk.ne.zero .and.jj.ne.zero),(ii.ne.zero .and.jj.ne.zero),(ii.ne.zero .and.kk.ne.zero),(kk.ne.zero .and.jj.ne.zero)
-                   write(*,*) 'mach',iCell,jCell,kCell, &
-                        dRdExtraAdj(idxres,nDesignMach,1,1), dRdextraFD(idxres,nDesignMach,1,1), dRdextraErr(idxres,nDesignMach,1,1)
-                   !endif
-                end if
-                if(dRdExtraFD(idxres,nDesignAOA,1,1)>1e-12) then
-                   
-                   write(*,*) 'AOA',iCell,jCell,kCell, &
-                        dRdExtraAdj(idxres,nDesignAOA,1,1), dRdextraFD(idxres,nDesignAOA,1,1), dRdextraErr(idxres,nDesignAOA,1,1)
-                   
-                end if
-                if(dRdExtraFD(idxres,nDesignSSA,1,1)>1e-12) then
-                   
-                   write(*,*) 'SSA',iCell,jCell,kCell, &
-                        dRdExtraAdj(idxres,nDesignSSA,1,1), dRdextraFD(idxres,nDesignSSA,1,1), dRdextraErr(idxres,nDesignSSA,1,1)
-                   
-                end if
-                if(dRdExtraFD(idxres,nDesignRotX,1,1)>1e-12) then
-                   
-                   write(*,*) 'RotX',iCell,jCell,kCell, &
-                        dRdExtraAdj(idxres,nDesignRotx,1,1), dRdextraFD(idxres,nDesignRotx,1,1), dRdextraErr(idxres,nDesignRotx,1,1)
-                   
-                end if
-             end if
-          enddo
-       end do
-    end do
- end do
+!!$       call applyAllBC(secondHalo)
+!!$       
+!!$       ! Exchange the solution. Either whalo1 or whalo2
+!!$       ! must be called.
+!!$       if( secondHalo ) then
+!!$          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       else
+!!$          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       endif
+!!$       !if( secondHalo ) then
+!!$       !   !write(*,*)'2ndHalo..........'
+!!$       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
+!!$       !else
+!!$       !   !write(*,*)'1stHalo..........'
+!!$       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
+!!$       !endif
+!!$       
+!!$       !print *, "Calling Residual ="
+!!$       call initres(1_intType, nwf)
+!!$       call residual
+!!$       !print *, "Called Residual 2 =", dw(istate,jstate,kstate,n)
+!!$       groundLevel = 1
+!!$       sps = 1
+!!$       nn=97
+!!$
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       dwm(:,:,:,:) = dw(:,:,:,:)
+!!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
+!!$       
+!!$       !                             end if
+!!$       
+!!$       
+!!$       !                   ival = 0
+!!$       do kCell = 2, kl
+!!$          do jCell = 2, jl
+!!$             do iCell = 2, il
+!!$                do iRes = 1, nw           
+!!$                   ! Loop over location of output (R) cell of residual
+!!$                                 
+!!$                   wFD2(iCell-1, jCell-1, kCell-1, iRes) = (dwp(iCell,jCell,kCell,iRes)-dwm(iCell,jCell,kCell,iRes))/(2.0*deltaw)
+!!$                   
+!!$                   idxres   = globalCell(iCell,jCell,kCell)*nw+ires
+!!$                   !print *,'globalindices',idxstate,idxres,shape(dRdwAdj)
+!!$                   if( idxres>=0) then
+!!$                      !print *,'fdresultaoa',wfd2(iCell-1, jCell-1, kCell-1, iRes),iCell-1, jCell-1, kCell-1, iRes
+!!$                      if (wFD2(iCell-1, jCell-1, kCell-1, iRes).ne. zero) then
+!!$                         !dRdExtraFD(idxres,nDesignAOA,nn,sps) = wFD2(iCell-1, jCell-1, kCell-1, iRes)
+!!$                         dRdExtraFD(idxres,nDesignAOA,1,sps) = wFD2(iCell-1, jCell-1, kCell-1, iRes)
+!                         call MatSetValues(dRda, 1, idxres-1, 1, nDesignMach-1,   &
+!                              dRdExtraFD(idxres,nDesignMach,nn,sps), INSERT_VALUES, PETScIerr)
+!                         if( PETScIerr/=0 ) &
+!                              print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+!!$                      end if
+!!$                   endif
+!!$                end do
+!!$
+!!$                
+!!$             end do
+!!$          end do
+!!$       end do
+!!$!       w(istate,jstate,kstate,n) = wAdjRef
+!!$       groundLevel = 1
+!!$       sps = 1
+!!$       nn=97
+!!$
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
+!!$       w(:,:,:,:) = wtemp(:,:,:,:)
+!!$       p(:,:,:) = ptemp(:,:,:)
+!!$       alphaAdj = ExtraAdjRef
+!!$
+!!$       call adjustInflowAngleAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
+!!$            liftDirectionAdj,dragDirectionAdj,liftIndex)
+!!$       
+!!$       liftDirection = liftDirectionAdj
+!!$       veldirfreestream = veldirfreestreamAdj
+!!$       dragdirection = dragdirectionAdj
+!!$
+!!$!******************************************
+!!$!Now Repeat for Beta
+!!$!******************************************
+!!$!
+!!$!     Compute d(dw)/d(w) using central finite differences
+!!$!_______________________________________________________
+!!$       
+!!$       deltaw = 1.d-5
+!!$       !print *, "deltaw=", deltaw
+!!$       wFD2(:,:,:,:) = 0. 
+!!$       call cpu_time(time(3))
+!!$       
+!!$       groundLevel = 1
+!!$       sps = 1
+!!$       nn=97
+!!$       
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       ! if (istate==icell .or. jstate==jcell .or. kstate==kcell) then
+!!$       !Remember current values
+!!$       dwtemp(:,:,:,:) = dw(:,:,:,:)
+!!$       wtemp(:,:,:,:) = w(:,:,:,:)
+!!$       ptemp(:,:,:) = p(:,:,:)
+!!$       ExtraAdjRef = betaadj
+!!$       
+!!$       betaadj = ExtraAdjRef + deltaw
+!!$       
+!!$       !call checkInputParam
+!!$       call adjustInflowAngleAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
+!!$            liftDirectionAdj,dragDirectionAdj,liftIndex)
+!!$       
+!!$       liftDirection = liftDirectionAdj
+!!$       veldirfreestream = veldirfreestreamAdj
+!!$       dragdirection = dragdirectionAdj
+!!$       call referenceState
+!!$       
+!!$       call setFlowInfinityState
+!!$              do mm=1,nTimeIntervalsSpectral
+!!$          
+!!$          ! Compute the time, which corresponds to this spectral solution.
+!!$          ! For steady and unsteady mode this is simply the restart time;
+!!$          ! for the spectral mode the periodic time must be taken into
+!!$          ! account, which can be different for every section.
+!!$          
+!!$          t = timeUnsteadyRestart
+!!$          
+!!$          if(equationMode == timeSpectral) then
+!!$             do nn=1,nSections
+!!$                t(nn) = t(nn) + (mm-1)*sections(nn)%timePeriod &
+!!$                     /         real(nTimeIntervalsSpectral,realType)
+!!$             enddo
+!!$          endif
+!!$          
+!!$          call gridVelocitiesFineLevel(.false., t, mm)
+!!$          call gridVelocitiesCoarseLevels(mm)
+!!$          call normalVelocitiesAllLevels(mm)
+!!$          
+!!$          call slipVelocitiesFineLevel(.false., t, mm)
+!!$          call slipVelocitiesCoarseLevels(mm)
+!!$          
+!!$       enddo
+!!$!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
+!!$!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
+!!$!       call computePressureAdj(wAdjtemp, pAdjtemp)
+!!$!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
+!!$       
+!!$       !print *, "Calling Residual ="
+!!$       call initres(1_intType, nwf)
+!!$       
+!!$       call applyAllBC(secondHalo)
+!!$       
+!!$       ! Exchange the solution. Either whalo1 or whalo2
+!!$       ! must be called.
+!!$       if( secondHalo ) then
+!!$          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       else
+!!$          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       endif
+!!$       !if( secondHalo ) then
+!!$       !   !  write(*,*)'2ndHalo..........'
+!!$       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
+!!$       !else
+!!$       !   ! write(*,*)'1stHalo..........'
+!!$       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
+!!$       !endif
+!!$       
+!!$       call residual
+!!$       !print *, "Called Residual =", dw(istate,jstate,kstate,n)
+!!$       groundLevel = 1
+!!$       sps = 1
+!!$       nn=97
+!!$
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       dwp(:,:,:,:) = dw(:,:,:,:)
+!!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
+!!$       
+!!$       betaadj = ExtraAdjRef - deltaw
+!!$       
+!!$       !call checkInputParam
+!!$       call adjustInflowAngleAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
+!!$            liftDirectionAdj,dragDirectionAdj,liftIndex)
+!!$       
+!!$       liftDirection = liftDirectionAdj
+!!$       veldirfreestream = veldirfreestreamAdj
+!!$       dragdirection = dragdirectionAdj
+!!$       
+!!$       call referenceState
+!!$       
+!!$       call setFlowInfinityState
+!!$             do mm=1,nTimeIntervalsSpectral
+!!$          
+!!$          ! Compute the time, which corresponds to this spectral solution.
+!!$          ! For steady and unsteady mode this is simply the restart time;
+!!$          ! for the spectral mode the periodic time must be taken into
+!!$          ! account, which can be different for every section.
+!!$          
+!!$          t = timeUnsteadyRestart
+!!$          
+!!$          if(equationMode == timeSpectral) then
+!!$             do nn=1,nSections
+!!$                t(nn) = t(nn) + (mm-1)*sections(nn)%timePeriod &
+!!$                     /         real(nTimeIntervalsSpectral,realType)
+!!$             enddo
+!!$          endif
+!!$          
+!!$          call gridVelocitiesFineLevel(.false., t, mm)
+!!$          call gridVelocitiesCoarseLevels(mm)
+!!$          call normalVelocitiesAllLevels(mm)
+!!$          
+!!$          call slipVelocitiesFineLevel(.false., t, mm)
+!!$          call slipVelocitiesCoarseLevels(mm)
+!!$          
+!!$       enddo 
+!!$!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
+!!$!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
+!!$!       call computePressureAdj(wAdjtemp, pAdjtemp)
+!!$       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
+!!$!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
+!!$       
+!!$       !print *, "Calling Residual ="
+!!$       call initres(1_intType, nwf)
+!!$       
+!!$       call applyAllBC(secondHalo)
+!!$       
+!!$       ! Exchange the solution. Either whalo1 or whalo2
+!!$       ! must be called.
+!!$       if( secondHalo ) then
+!!$          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       else
+!!$          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       endif
+!!$       !if( secondHalo ) then
+!!$       !   !write(*,*)'2ndHalo..........'
+!!$       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
+!!$       !else
+!!$       !   !write(*,*)'1stHalo..........'
+!!$       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
+!!$       !endif
+!!$       
+!!$       call residual
+!!$       !print *, "Called Residual 2 =", dw(istate,jstate,kstate,n)
+!!$       groundLevel = 1
+!!$       sps = 1
+!!$       nn=97
+!!$
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       dwm(:,:,:,:) = dw(:,:,:,:)
+!!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
+!!$       
+!!$       !                             end if
+!!$       
+!!$       
+!!$       !                   ival = 0
+!!$       do kCell = 2, kl
+!!$          do jCell = 2, jl
+!!$             do iCell = 2, il
+!!$                do iRes = 1, nw   
+!!$                   ! Loop over location of output (R) cell of residual
+!!$       
+!!$                   wFD2(iCell-1, jCell-1, kCell-1, iRes) = (dwp(iCell,jCell,kCell,iRes)-dwm(iCell,jCell,kCell,iRes))/(2.0*deltaw)
+!!$                   
+!!$                   idxres   = globalCell(iCell,jCell,kCell)*nw+ires
+!!$                   !print *,'globalindices',idxstate,idxres,shape(dRdwAdj)
+!!$                   if( idxres>=0) then
+!!$                      if (wFD2(iCell-1, jCell-1, kCell-1, iRes).ne. zero) then
+!!$                         !dRdExtraFD(idxres,nDesignSSA,nn,sps) = wFD2(iCell-1, jCell-1, kCell-1, iRes)
+!!$                         dRdExtraFD(idxres,nDesignSSA,1,sps) = wFD2(iCell-1, jCell-1, kCell-1, iRes)
+!!$
+!                         call MatSetValues(dRda, 1, idxres-1, 1, nDesignMach-1,   &
+!                              dRdExtraFD(idxres,nDesignMach,nn,sps), INSERT_VALUES, PETScIerr)
+!                         if( PETScIerr/=0 ) &
+!                              print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+!!$                      end if
+!!$                   endif
+!!$                end do
+!!$
+!!$                
+!!$             end do
+!!$          end do
+!!$       end do
+!!$!       w(istate,jstate,kstate,n) = wAdjRef
+!!$       groundLevel = 1
+!!$       sps = 1
+!!$       nn=97
+!!$
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
+!!$       w(:,:,:,:) = wtemp(:,:,:,:)
+!!$       p(:,:,:) = ptemp(:,:,:)
+!!$       betaadj = ExtraAdjRef
+!!$       call adjustInflowAngleAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
+!!$            liftDirectionAdj,dragDirectionAdj,liftIndex)
+!!$       
+!!$       liftDirection = liftDirectionAdj
+!!$       veldirfreestream = veldirfreestreamAdj
+!!$       dragdirection = dragdirectionAdj
+!!$!*************************
+!!$!Now repeat for RotRate
+!!$!*************************
+!!$
+!!$!
+!!$!     Compute d(dw)/d(w) using central finite differences
+!!$!_______________________________________________________
+!!$       
+!!$       deltaw = 1.d-5*timeref
+!!$
+!!$       !print *, "deltaw=", deltaw
+!!$       wFD2(:,:,:,:) = 0. 
+!!$       call cpu_time(time(3))
+!!$       
+!!$       groundLevel = 1
+!!$       sps = 1
+!!$       nn=97
+!!$      
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       ! if (istate==icell .or. jstate==jcell .or. kstate==kcell) then
+!!$       !Remember current values
+!!$       dwtemp(:,:,:,:) = dw(:,:,:,:)
+!!$       wtemp(:,:,:,:) = w(:,:,:,:)
+!!$       ptemp(:,:,:) = p(:,:,:)
+!!$       ExtraAdjRef = RotRateAdj(1)
+!!$       
+!!$       RotRateAdj(1) = ExtraAdjRef + deltaw
+!!$
+!!$       do nn=1,nDom
+!!$          
+!!$          ! Set the pointers for this block.
+!!$          
+!!$          call setPointers(nn, groundLevel, sps)
+!!$       
+!!$          cgnsDoms(nbkglobal)%rotRate(1) = RotRateAdj(1)/timeRef
+!!$       enddo 
+!!$       nn=97
+!!$       !call checkInputParam
+!!$       
+!!$       call referenceState
+!!$       
+!!$       call setFlowInfinityState
+!!$
+!!$       do mm=1,nTimeIntervalsSpectral
+!!$
+!!$         ! Compute the time, which corresponds to this spectral solution.
+!!$         ! For steady and unsteady mode this is simply the restart time;
+!!$         ! for the spectral mode the periodic time must be taken into
+!!$         ! account, which can be different for every section.
+!!$
+!!$         t = timeUnsteadyRestart
+!!$
+!!$         if(equationMode == timeSpectral) then
+!!$           do nn=1,nSections
+!!$             t(nn) = t(nn) + (mm-1)*sections(nn)%timePeriod &
+!!$                   /         real(nTimeIntervalsSpectral,realType)
+!!$           enddo
+!!$         endif
+!!$
+!!$         call gridVelocitiesFineLevel(.false., t, mm)
+!!$         call gridVelocitiesCoarseLevels(mm)
+!!$         call normalVelocitiesAllLevels(mm)
+!!$
+!!$         call slipVelocitiesFineLevel(.false., t, mm)
+!!$         call slipVelocitiesCoarseLevels(mm)
+!!$
+!!$       enddo
+!!$       
+!!$       
+!!$!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
+!!$!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
+!!$!       call computePressureAdj(wAdjtemp, pAdjtemp)
+!!$!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
+!!$       
+!!$       !print *, "Calling Residual ="
+!!$       call initres(1_intType, nwf)
+!!$       
+!!$       call applyAllBC(secondHalo)
+!!$       
+!!$       ! Exchange the solution. Either whalo1 or whalo2
+!!$       ! must be called.
+!!$       if( secondHalo ) then
+!!$          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       else
+!!$          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       endif
+!!$       !if( secondHalo ) then
+!!$       !   !  write(*,*)'2ndHalo..........'
+!!$       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
+!!$       !else
+!!$       !   ! write(*,*)'1stHalo..........'
+!!$       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
+!!$       !endif
+!!$       
+!!$       call residual
+!!$       !print *, "Called Residual =", dw(istate,jstate,kstate,n)
+!!$       groundLevel = 1
+!!$       sps = 1
+!!$       nn=97
+!!$
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       dwp(:,:,:,:) = dw(:,:,:,:)
+!!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
+!!$       
+!!$       RotRateAdj(1) = ExtraAdjRef - deltaw
+!!$       
+!!$       do nn=1,nDom
+!!$          
+!!$          ! Set the pointers for this block.
+!!$          
+!!$          call setPointers(nn, groundLevel, sps)
+!!$       
+!!$          cgnsDoms(nbkglobal)%rotRate(1) = RotRateAdj(1)/timeRef
+!!$       enddo 
+!!$       nn=97
+!!$       !call checkInputParam
+!!$       
+!!$       call referenceState
+!!$       
+!!$       call setFlowInfinityState
+!!$       
+!!$       do mm=1,nTimeIntervalsSpectral
+!!$
+!!$         ! Compute the time, which corresponds to this spectral solution.
+!!$         ! For steady and unsteady mode this is simply the restart time;
+!!$         ! for the spectral mode the periodic time must be taken into
+!!$         ! account, which can be different for every section.
+!!$
+!!$         t = timeUnsteadyRestart
+!!$
+!!$         if(equationMode == timeSpectral) then
+!!$           do nn=1,nSections
+!!$             t(nn) = t(nn) + (mm-1)*sections(nn)%timePeriod &
+!!$                   /         real(nTimeIntervalsSpectral,realType)
+!!$           enddo
+!!$         endif
+!!$
+!!$         call gridVelocitiesFineLevel(.false., t, mm)
+!!$         call gridVelocitiesCoarseLevels(mm)
+!!$         call normalVelocitiesAllLevels(mm)
+!!$
+!!$         call slipVelocitiesFineLevel(.false., t, mm)
+!!$         call slipVelocitiesCoarseLevels(mm)
+!!$
+!!$      enddo
+!!$
+!!$!       wAdjtemp = w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:)
+!!$!       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
+!!$!       call computePressureAdj(wAdjtemp, pAdjtemp)
+!!$       !                   call computePressureAdj(w(istate-2:istate+2, jstate-2:jstate+2, kstate-2:kstate+2,:), pAdjtemp)
+!!$!       p(istate, jstate, kstate) = pAdjtemp(0,0,0)
+!!$      
+!!$       !print *, "Calling Residual ="
+!!$       call initres(1_intType, nwf)
+!!$       
+!!$       call applyAllBC(secondHalo)
+!!$       
+!!$       ! Exchange the solution. Either whalo1 or whalo2
+!!$       ! must be called.
+!!$       if( secondHalo ) then
+!!$          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       else
+!!$          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
+!!$               .true., .true.)
+!!$       endif
+!!$       !if( secondHalo ) then
+!!$       !   !write(*,*)'2ndHalo..........'
+!!$       !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
+!!$       !else
+!!$       !   !write(*,*)'1stHalo..........'
+!!$       !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
+!!$       !        .true., .true.)
+!!$       !endif
+!!$       
+!!$       call residual
+!!$       !print *, "Called Residual 2 =", dw(istate,jstate,kstate,n)
+!!$       groundLevel = 1
+!!$       sps = 1
+!!$       nn=97
+!!$
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       dwm(:,:,:,:) = dw(:,:,:,:)
+!!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
+!!$       
+!!$
+!!$       do kCell = 2, kl
+!!$          do jCell = 2, jl
+!!$             do iCell = 2, il
+!!$                do iRes = 1, nw         
+!!$                   ! Loop over location of output (R) cell of residual
+!!$                   
+!!$                   wFD2(iCell-1, jCell-1, kCell-1, iRes) = (dwp(iCell,jCell,kCell,iRes)-dwm(iCell,jCell,kCell,iRes))/(2.0*deltaw)
+!!$                   
+!!$                   idxres   = globalCell(iCell,jCell,kCell)*nw+ires
+!!$                   !print *,'globalindices',idxstate,idxres,shape(dRdwAdj)
+!!$                   if( idxres>=0) then
+!!$                      if (wFD2(iCell-1, jCell-1, kCell-1, iRes).ne. zero) then
+!!$                         !dRdExtraFD(idxres,nDesignRotX,nn,sps) = wFD2(iCell-1, jCell-1, kCell-1, iRes)
+!!$                         dRdExtraFD(idxres,nDesignRotX,1,sps) = wFD2(iCell-1, jCell-1, kCell-1, iRes)
+!!$
+!                         call MatSetValues(dRda, 1, idxres-1, 1, nDesignMach-1,   &
+!                              dRdExtraFD(idxres,nDesignMach,nn,sps), INSERT_VALUES, PETScIerr)
+!                         if( PETScIerr/=0 ) &
+!                              print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+!!$                      end if
+!!$                   endif
+!!$                end do
+!!$
+!!$                
+!!$             end do
+!!$          end do
+!!$       end do
+!!$!       w(istate,jstate,kstate,n) = wAdjRef
+!!$       groundLevel = 1
+!!$       sps = 1
+!!$       nn=97
+!!$
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
+!!$       w(:,:,:,:) = wtemp(:,:,:,:)
+!!$       p(:,:,:) = ptemp(:,:,:)
+!!$       rotRateAdj(1) = ExtraAdjRef
+!!$
+!!$       do nn=1,nDom
+!!$          
+!!$          ! Set the pointers for this block.
+!!$          
+!!$          call setPointers(nn, groundLevel, sps)
+!!$       
+!!$          cgnsDoms(nbkglobal)%rotRate(1) = RotRateAdj(1)/timeRef
+!!$       enddo
+!!$       nn=97
+!!$!_______________________________________________________
+!!$!
+!!$!     Compute the errors in dR/dw
+!!$!_______________________________________________________
+!!$
+!!$      !print *, "Computing the the error..."
+!!$       groundLevel = 1
+!!$       sps = 1
+!!$       nn=97
+!!$       
+!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$    do m=1,nw
+!!$      do iCell=2,il
+!!$        do jCell=2,jl
+!!$          do kCell=2,kl
+!!$             idxres   = globalCell(iCell,jCell,kCell)*nw+m
+!!$             if( idxres>=0) then
+!!$                dRdExtraErr(idxres, ndesignMach, 1, 1) = dRdExtraAdj(idxres, nDesignMach, 1, 1) - dRdExtraFD(idxres, nDesignMach, 1, 1)
+!!$                dRdExtraErr(idxres, ndesignAOA, 1, 1) = dRdExtraAdj(idxres, nDesignAOA, 1, 1) - dRdExtraFD(idxres, nDesignAOA, 1, 1)
+!!$                dRdExtraErr(idxres, ndesignSSA, 1, 1) = dRdExtraAdj(idxres, nDesignSSA, 1, 1) - dRdExtraFD(idxres, nDesignSSA, 1, 1)
+!!$                dRdExtraErr(idxres, ndesignRotX, 1, 1) = dRdExtraAdj(idxres, nDesignRotX, 1, 1) - dRdExtraFD(idxres, nDesignRotX, 1, 1)
+!!$                !dRdExtraErr(idxres, ndesignRotY, 1, 1) = dRdExtraAdj(idxres, nDesignMach, 1, 1) - dRdExtraFD(idxres, nDesignMach, 1, 1)
+!!$                !                           if(dRdwFD(idxres,idxstate,1,1).ne.0) then
+!!$                if(abs(dRdExtraFD(idxres,nDesignMach,1,1))>1e-10) then
+!!$                   !if((ii.ne.zero .and.jj.ne.zero).and.(ii.ne.zero .and.kk.ne.zero).and.(kk.ne.zero .and.jj.ne.zero))then
+!!$                   !print *,'test',(ii.ne.zero .and.jj.ne.zero).and.(ii.ne.zero .and.kk.ne.zero).and.(kk.ne.zero .and.jj.ne.zero),(ii.ne.zero .and.jj.ne.zero),(ii.ne.zero .and.kk.ne.zero),(kk.ne.zero .and.jj.ne.zero)
+!!$                   if (abs(drdextraerr(idxres,nDesignMach,1,1))>1.e-9)then
+!!$                      write(*,*) 'mach',iCell,jCell,kCell, &
+!!$                           dRdExtraAdj(idxres,nDesignMach,1,1), dRdextraFD(idxres,nDesignMach,1,1), dRdextraErr(idxres,nDesignMach,1,1)
+!!$                   endif
+!!$                end if
+!!$                if(abs(dRdExtraFD(idxres,nDesignAOA,1,1))>1e-12) then
+!!$                   if (abs(drdextraerr(idxres,nDesignAoA,1,1)/dRdExtraFD(idxres,nDesignAoA,1,1))>1.e-2)then
+!!$                      write(*,*) 'AOA',m,iCell,jCell,kCell, &
+!!$                           dRdExtraAdj(idxres,nDesignAOA,1,1), dRdextraFD(idxres,nDesignAOA,1,1), dRdextraErr(idxres,nDesignAOA,1,1)/dRdExtraFD(idxres,nDesignAoA,1,1)
+!!$                   endif
+!!$                end if
+!!$                if(abs(dRdExtraFD(idxres,nDesignSSA,1,1))>1e-12) then
+!!$                   if (abs(drdextraerr(idxres,nDesignSSA,1,1)/dRdExtraFD(idxres,nDesignSSA,1,1))>1.e-2)then
+!!$                      write(*,*) 'SSA',m,iCell,jCell,kCell, &
+!!$                           dRdExtraAdj(idxres,nDesignSSA,1,1), dRdextraFD(idxres,nDesignSSA,1,1), dRdextraErr(idxres,nDesignSSA,1,1)/dRdExtraFD(idxres,nDesignSSA,1,1)
+!!$                   endif
+!!$                end if
+!!$                if(abs(dRdExtraFD(idxres,nDesignRotX,1,1))>1e-12) then
+!!$                   if (abs(drdextraerr(idxres,nDesignRotx,1,1)/dRdExtraFD(idxres,nDesignRotX,1,1))>1.e-2)then
+!!$                      write(*,*) 'RotX',m,iCell,jCell,kCell, &
+!!$                           dRdExtraAdj(idxres,nDesignRotx,1,1), dRdextraFD(idxres,nDesignRotx,1,1), dRdextraErr(idxres,nDesignRotx,1,1)/dRdExtraFD(idxres,nDesignRotX,1,1)!, dRdExtraAdj(idxres,nDesignRotx,1,1)/dRdextraFD(idxres,nDesignRotx,1,1),timeref
+!!$                   endif
+!!$                end if
+!!$             end if
+!!$          enddo
+!!$       end do
+!!$    end do
+!!$ end do
 
 !      dRdwErrRel_1(:, :, :, :) = abs(dRdwErr_q(:, :, :, :)/dRdw_q(:,:,:,:))
 !      print *

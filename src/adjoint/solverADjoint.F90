@@ -158,7 +158,7 @@
 
   	!call verifyRAdj(level)
 !stop
-!	call verifyResiduals(level)
+	!call verifyResiduals(level)
 !stop
         ! Verify the node-based ADjoint residual routine.
 
@@ -174,8 +174,8 @@
 
         ! Verify the ADjoint routine for the forces
 
-	!call verifyForcesAdj(level,sps) 
-!stop	
+	call verifyForcesAdj(level,sps) 
+stop	
         
 	! Verify the force derivatives
 
