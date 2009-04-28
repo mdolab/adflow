@@ -406,8 +406,8 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
       do sps=1,nTimeIntervalsSpectral
          if(myID == 0) then
             write(*,*)  "sps ", sps 
-            write(*,20) "Original", CL,    CD,    Cfx,    Cmx
-            write(*,20) "Adjoint ", CLAdj(sps), CDAdj(sps), CfxAdj(sps), CmxAdj(sps)
+            write(*,20) "Original", CL,    CD,    Cfx,cfy,cfz,cmx,cmy,cmz
+            write(*,20) "Adjoint ", CLAdj(sps), CDAdj(sps), CfxAdj(sps), CfyAdj(sps), CfzAdj(sps), CmxAdj(sps), CmyAdj(sps), CmzAdj(sps)
          endif
       end do
        
@@ -420,7 +420,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
       ! Output format.
        
 10    format(1x,4a14)
-20    format(1x,a,4(1x,e13.6))
+20    format(1x,a,8(1x,e13.6))
 
       end subroutine verifyForcesAdj
      
