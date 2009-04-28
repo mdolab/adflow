@@ -72,16 +72,16 @@ subroutine verifydCfdw(level)
       real(kind=realType), dimension(3) :: cMp, cMv
 
 
-      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj,machgridadj
-      real(kind=realType) :: alphaAdjb, betaAdjb,MachAdjb,machCoefAdjb
+
+      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj,MachGridAdj
+      real(kind=realType) :: alphaAdjb, betaAdjb,MachAdjb,machCoefAdjb,MachGridAdjb
       REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
       REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
       REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
-      REAL(KIND=REALTYPE) :: rotcenteradj(3), rotrateadj(3), rotrateadjb(3)
-
-      INTEGER(KIND=INTTYPE) :: liftindex
- 
+      integer(kind=intType)::liftIndex
+      real(kind=realType), dimension(3) ::rotRateAdj,rotCenterAdj,rotrateadjb
+      
       real(kind=realType) :: factI, factJ, factK, tmp
 
       integer(kind=intType), dimension(0:nProc-1) :: offsetRecv
@@ -330,16 +330,13 @@ subroutine verifydCfdw(level)
 !!$        !Copy the values of x to the Stencil
 !!$        call copyADjointForcesStencil(xAdj,level,nn,sps)
  
+        print *,'copying stencil'
         ! Copy the coordinates into xAdj and
         ! Compute the face normals on the subfaces
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
            MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
            rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
            timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
-        !copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-        !   MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-        !   rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,nn,level,sps)
-        !call copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
         
         bocoLoop: do mm=1,nBocos
 
@@ -425,7 +422,7 @@ subroutine verifydCfdw(level)
            !print *,'calling adjoint forces_b'
            !===============================================================
            !           
-!           print *,'Initial Parameters Calculated,Computing Lift Partials...'
+           print *,'Initial Parameters Calculated,Computing Lift Partials...'
            
            !===============================================================
            ! Compute the force derivatives
