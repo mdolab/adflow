@@ -102,7 +102,7 @@
        velxGrid = aInf*machgridAdj*-velDirFreestreamAdj(1)
        velyGrid = aInf*machgridAdj*-velDirFreestreamAdj(2) 
        velzGrid = aInf*machgridAdj*-velDirFreestreamAdj(3) 
-
+ 
        ! Compute the derivative of the rotation matrix and the rotation
        ! point; needed for velocity due to the rigid body rotation of
        ! the entire grid. It is assumed that the rigid body motion of
