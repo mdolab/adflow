@@ -184,7 +184,7 @@
 !stop
 	! Verify the force derivatives
 	call verifydCfdwfile(level)	
-        !call verifydCfdw(level)
+        call verifydCfdw(level)
 stop
         !return
 	!verify the coupling derivatives

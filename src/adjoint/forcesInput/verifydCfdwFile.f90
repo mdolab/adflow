@@ -62,7 +62,7 @@ subroutine verifydCfdwfile(level)
                              &CfxP,CfxM,CfyP,CfyM,CfzP,CfzM
 
       real(kind=realType), dimension(:,:,:,:), allocatable :: xAdj,xAdjB
-      real(kind=realType), dimension(:,:,:,:), allocatable :: wAdj,wAdjB
+      real(kind=realType), dimension(:,:,:,:), allocatable :: wAdj,wAdjB,wadjb2
       real(kind=realType), dimension(:,:,:), allocatable :: pAdj
 
       real(kind=realType), dimension(3) :: cFpAdj, cFvAdj
@@ -273,6 +273,9 @@ subroutine verifydCfdwfile(level)
         allocate(wAdjB(0:ib,0:jb,0:kb,nw), stat=ierr)
         if(ierr /= 0)                              &
              call terminate("Memory allocation failure for wAdjB.")
+        allocate(wAdjB2(0:ib,0:jb,0:kb,nw), stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("Memory allocation failure for wAdjB2.")
         
         allocate(pAdj(0:ib,0:jb,0:kb), stat=ierr)
         if(ierr /= 0)                              &
@@ -288,7 +291,8 @@ subroutine verifydCfdwfile(level)
            MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
            rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
            timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
-        
+        wAdjB(:,:,:,:) = zero 
+        wAdjB2(:,:,:,:) = zero 
         bocoLoop: do mm=1,nBocos
 
            ! Determine the range of cell indices of the owned cells
@@ -331,6 +335,7 @@ subroutine verifydCfdwfile(level)
 &  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
 &  rotrateadj, rotrateadjb, liftindex)
 
+           wadjb2 = wadjb2+wadjb
 
 
         enddo bocoLoop
@@ -344,9 +349,9 @@ subroutine verifydCfdwfile(level)
                     
                     if( idxmgb>=0) then
                        !if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
-                       
+                       !print *,'globalcell',idxmgb,wadjb(i,j,k,l),wadjb2(i,j,k,l)
                        !idxmgb = globalCell(i,j,k)*nw+l-1  !L minus 1 not 1 minus 1
-                       write(unitwcl,10) wadjb(i,j,k,l),nn,i,j,k,l,idxmgb
+                       write(unitwcl,10) wadjb2(i,j,k,l),nn,i,j,k,l,idxmgb
 10                     format(1x,'wcl ',f18.10,7I8)
                     endif
                  enddo
@@ -356,6 +361,7 @@ subroutine verifydCfdwfile(level)
 
         xAdjB(:,:,:,:) = zero ! > return dCf/dx
         wAdjB(:,:,:,:) = zero ! > return dCf/dW
+        wAdjB2(:,:,:,:) = zero
         bocoLoop2: do mm=1,nBocos
            
            ! Determine the range of cell indices of the owned cells
@@ -396,7 +402,7 @@ subroutine verifydCfdwfile(level)
 &  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
 &  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
 &  rotrateadj, rotrateadjb, liftindex)
-           
+           wadjb2 = wadjb2+wadjb  
         enddo bocoLoop2
         do k = 0,kb
            do j = 0,jb
@@ -410,7 +416,7 @@ subroutine verifydCfdwfile(level)
                        !if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
                        
                        !idxmgb = globalCell(i,j,k)*nw+l-1  !L minus 1 not 1 minus 1
-                       write(unitwcd,11) wadjb(i,j,k,l),nn,i,j,k,l,idxmgb
+                       write(unitwcd,11) wadjb2(i,j,k,l),nn,i,j,k,l,idxmgb
 11                     format(1x,'wcd ',f18.10,7I8)
                     endif
                  enddo
@@ -419,6 +425,7 @@ subroutine verifydCfdwfile(level)
         enddo
         xAdjB(:,:,:,:) = zero ! > return dCf/dx
         wAdjB(:,:,:,:) = zero ! > return dCf/dW
+        wAdjB2(:,:,:,:) = zero ! > return dCf/dW
         bocoLoop3: do mm=1,nBocos
 
            ! Determine the range of cell indices of the owned cells
@@ -459,7 +466,7 @@ subroutine verifydCfdwfile(level)
 &  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
 &  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
 &  rotrateadj, rotrateadjb, liftindex)
-
+           wadjb2 = wadjb2+wadjb
            
         enddo bocoLoop3
                 do k = 0,kb
@@ -474,7 +481,7 @@ subroutine verifydCfdwfile(level)
                        !if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
                        
                        !idxmgb = globalCell(i,j,k)*nw+l-1  !L minus 1 not 1 minus 1
-                       write(unitwcm,12) wadjb(i,j,k,l),nn,i,j,k,l,idxmgb
+                       write(unitwcm,12) wadjb2(i,j,k,l),nn,i,j,k,l,idxmgb
 12                     format(1x,'wcm ',f18.10,7I8)
                     endif
                  enddo
@@ -496,12 +503,16 @@ subroutine verifydCfdwfile(level)
         deallocate(wAdj, stat=ierr)
         if(ierr /= 0)                              &
              call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
+             "Deallocation failure for wAdj.") 
 
          deallocate(wAdjB, stat=ierr)
         if(ierr /= 0)                              &
              call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
+             "Deallocation failure for wAdjb.") 
+        deallocate(wAdjB2, stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("verifydCfdx", &
+             "Deallocation failure for wAdjb.") 
         ! Deallocate the xAdj.
         deallocate(xAdj, stat=ierr)
         if(ierr /= 0)                              &
@@ -511,7 +522,7 @@ subroutine verifydCfdwfile(level)
          deallocate(xAdjB, stat=ierr)
         if(ierr /= 0)                              &
              call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
+             "Deallocation failure for xAdjb.") 
         !print *,'finishhed deallocating'
        
       enddo domainLoopAD
