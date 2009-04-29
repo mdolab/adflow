@@ -62,6 +62,7 @@ FF90_OBJECTS = adjustInflowAngleForcesAdj.o\
 	       vectorRotationForces.o\
 	       verifydCfdx.o\
 	       verifydCfdw.o\
+               verifydCfdwFile.o\
 	       verifyForcesAdj.o
 
 #CC_OBJECTS   = connect_signals.o

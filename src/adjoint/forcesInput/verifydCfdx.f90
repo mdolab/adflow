@@ -71,8 +71,8 @@ subroutine verifydCfdx(level)
       real(kind=realType), dimension(3) :: cMp, cMv
 
 
-      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj
-      real(kind=realType) :: alphaAdjb, betaAdjb,MachAdjb,machCoefAdjb
+      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj,machgridAdj
+      real(kind=realType) :: alphaAdjb, betaAdjb,MachAdjb,machCoefAdjb,machgridadjb
       REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
       REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
@@ -108,7 +108,7 @@ subroutine verifydCfdx(level)
       real(kind=realType),  dimension(:), allocatable :: monLoc2, monGlob2
 
       logical :: contributeToForce, viscousSubface,secondHalo,righthanded
-      real(kind=realType), dimension(6) :: dCldextra,dcddextra,dCldextraFD,dcddextraFD,&
+      real(kind=realType), dimension(7) :: dCldextra,dcddextra,dCldextraFD,dcddextraFD,&
            dCldextraerror,dcddextraerror, dCldextralocal,dcddextralocal,dcmdextra,&
            dcmdextraFD,dcmdextralocal,dcmdextraerror
 
@@ -332,12 +332,16 @@ subroutine verifydCfdx(level)
         ! Copy the coordinates into xAdj and
         ! Compute the face normals on the subfaces
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-             MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-             rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
-             pInfCorrAdj,nn,level,sps,liftIndex)
+           MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
+           rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
+           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
+        !copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
+        !     MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+        !     rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
+        !     pInfCorrAdj,nn,level,sps,liftIndex)
 
-        !machadjb=zero
-        !machcoefadjb=zero
+        machadjb=zero
+        machcoefadjb=zero
         alphaadjb=zero
         betaadjb=zero
         rotrateadjb=zero
@@ -436,10 +440,19 @@ subroutine verifydCfdx(level)
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
-&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, &
-&  liftindex)
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
+&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
+&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
+&  rotrateadj, rotrateadjb, liftindex)
+!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+!&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+!&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+!&  timerefadj, pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, &
+!&  liftindex)
            print *,'output',machadjb, machcoefadjb,alphaadjb,betaadjb,mm
 
            
@@ -468,6 +481,7 @@ subroutine verifydCfdx(level)
 !!$        dCldextralocal(ndesignroty) = dCldextralocal(ndesignroty)+rotrateadjb(2)
 !!$        dCldextralocal(ndesignrotz) = dCldextralocal(ndesignrotz)+rotrateadjb(3)
         dCldextralocal(ndesignmach) = machadjb+machcoefadjb
+        dCldextralocal(ndesignmachgrid) = machgridadjb+machcoefadjb
         dCldextralocal(ndesignaoa) = alphaadjb
         dCldextralocal(ndesignssa) = betaadjb
         dCldextralocal(ndesignrotx) = rotrateadjb(1)
@@ -520,7 +534,7 @@ subroutine verifydCfdx(level)
       monLoc2(4) = dcldextralocal(4)
       monLoc2(5) = dcldextralocal(5)
       monLoc2(6) = dcldextralocal(6)
-      monLoc2(7) = 1!dcddextralocal(1)
+      monLoc2(7) = dcldextralocal(7)
       monLoc2(8) = 1!dcddextralocal(2)
          
          ! Determine the global sum of the summation monitoring
@@ -538,7 +552,7 @@ subroutine verifydCfdx(level)
          dcldextra(4) = monGlob2(4)
          dcldextra(5) = monGlob2(5) 
          dcldextra(6) = monGlob2(6)
-         !dcddextra(1) = monGlob2(7)
+         dcldextra(7) = monGlob2(7)
          !dcddextra(2) = monGlob2(8)
 
       enddo spectralLoop1Adj
@@ -644,9 +658,13 @@ subroutine verifydCfdx(level)
         ! Copy the coordinates into xAdj and
         ! Compute the face normals on the subfaces
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-             MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-             rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
-             pInfCorrAdj,nn,level,sps,liftIndex)
+           MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
+           rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
+           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
+        !copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
+        !     MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+        !     rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
+        !     pInfCorrAdj,nn,level,sps,liftIndex)
 
         machadjb=zero
         machcoefadjb=zero
@@ -689,10 +707,19 @@ subroutine verifydCfdx(level)
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
-&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, &
-&  liftindex)
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
+&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
+&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
+&  rotrateadj, rotrateadjb, liftindex)
+!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+!&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+!&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+!&  timerefadj, pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, &
+!&  liftindex)
            
            
            !loop over cells to store the jacobian
@@ -718,6 +745,7 @@ subroutine verifydCfdx(level)
 !!$        dCddextralocal(ndesignroty) = dCddextralocal(ndesignroty)+rotrateadjb(2)
 !!$        dCddextralocal(ndesignrotz) = dCddextralocal(ndesignrotz)+rotrateadjb(3)
         dCddextralocal(ndesignmach) = machadjb+machcoefadjb
+        dCddextralocal(ndesignmachgrid) = machgridadjb+machcoefadjb
         dCddextralocal(ndesignaoa) = alphaadjb
         dCddextralocal(ndesignssa) = betaadjb
         dCddextralocal(ndesignrotx) = rotrateadjb(1)
@@ -764,7 +792,7 @@ subroutine verifydCfdx(level)
       monLoc2(4) = dcddextralocal(4)
       monLoc2(5) = dcddextralocal(5)
       monLoc2(6) = dcddextralocal(6)
-      monLoc2(7) = 1!dcddextralocal(1)
+      monLoc2(7) = dcddextralocal(7)
       monLoc2(8) = 1!dcddextralocal(2)
          
          ! Determine the global sum of the summation monitoring
@@ -782,7 +810,7 @@ subroutine verifydCfdx(level)
          dcddextra(4) = monGlob2(4)
          dcddextra(5) = monGlob2(5) 
          dcddextra(6) = monGlob2(6)
-         !dcddextra(1) = monGlob2(7)
+         dcddextra(7) = monGlob2(7)
          !dcddextra(2) = monGlob2(8)
 
       enddo spectralLoopAdj2
@@ -851,9 +879,13 @@ subroutine verifydCfdx(level)
         ! Copy the coordinates into xAdj and
         ! Compute the face normals on the subfaces
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-             MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-             rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
-             pInfCorrAdj,nn,level,sps,liftIndex)
+           MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
+           rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
+           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
+        !copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
+        !     MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+        !     rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
+        !     pInfCorrAdj,nn,level,sps,liftIndex)
 
         machadjb=zero
         machcoefadjb=zero
@@ -896,10 +928,19 @@ subroutine verifydCfdx(level)
 &  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
 &  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
 &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
-&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
-&  timerefadj, pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, &
-&  liftindex)
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
+&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
+&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
+&  rotrateadj, rotrateadjb, liftindex)
+!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
+!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
+!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+!&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+!&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, prefadj, &
+!&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
+!&  timerefadj, pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, &
+!&  liftindex)
 
 
            
@@ -931,6 +972,7 @@ subroutine verifydCfdx(level)
 !!$        dCmdextralocal(ndesignroty) = dCmdextralocal(ndesignroty)+rotrateadjb(2)
 !!$        dCmdextralocal(ndesignrotz) = dCmdextralocal(ndesignrotz)+rotrateadjb(3)
         dCmdextralocal(ndesignmach) = machadjb+machcoefadjb
+        dCmdextralocal(ndesignmachgrid) = machgridadjb+machcoefadjb
         dCmdextralocal(ndesignaoa) = alphaadjb
         dCmdextralocal(ndesignssa) = betaadjb
         dCmdextralocal(ndesignrotx) = rotrateadjb(1)
@@ -977,7 +1019,7 @@ subroutine verifydCfdx(level)
       monLoc2(4) = dcmdextralocal(4)
       monLoc2(5) = dcmdextralocal(5)
       monLoc2(6) = dcmdextralocal(6)
-      monLoc2(7) = 1!dcddextralocal(1)
+      monLoc2(7) = dcmdextralocal(7)
       monLoc2(8) = 1!dcddextralocal(2)
          
          ! Determine the global sum of the summation monitoring
@@ -995,7 +1037,7 @@ subroutine verifydCfdx(level)
          dcmdextra(4) = monGlob2(4)
          dcmdextra(5) = monGlob2(5) 
          dcmdextra(6) = monGlob2(6)
-         !dcmdextra(1) = monGlob2(7)
+         dcmdextra(7) = monGlob2(7)
          !dcmdextra(2) = monGlob2(8)
 
       enddo spectralLoopAdj3
@@ -1408,14 +1450,16 @@ subroutine verifydCfdx(level)
         
       enddo domainMachLoopFDorig
      
-
+      call f77flush()
+      call mpi_barrier(SUmb_comm_world, ierr)
+      !barrier
       !get reference conditions
       call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
       monloc1=0.0
       monloc2=0.0
       
       sps=1
-      print *,'starting FD loop',sps
+      print *,'starting alpha FD loop',sps
       domainalphaLoopFDorig: do nn=1,nDom   
          
          call setPointers(nn,level,sps)
@@ -1435,6 +1479,30 @@ subroutine verifydCfdx(level)
          !     ******************************************************************
          !
          call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+              do mm=1,nTimeIntervalsSpectral
+            
+            ! Compute the time, which corresponds to this spectral solution.
+            ! For steady and unsteady mode this is simply the restart time;
+            ! for the spectral mode the periodic time must be taken into
+            ! account, which can be different for every section.
+            
+            t = timeUnsteadyRestart
+            
+            if(equationMode == timeSpectral) then
+               do ll=1,nSections
+                  t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
+                       /         real(nTimeIntervalsSpectral,realType)
+               enddo
+            endif
+            
+            call gridVelocitiesFineLevel(.false., t, mm)
+            call gridVelocitiesCoarseLevels(mm)
+            call normalVelocitiesAllLevels(mm)
+            
+            call slipVelocitiesFineLevel(.false., t, mm)
+            call slipVelocitiesCoarseLevels(mm)
+            
+         enddo
          call metric(level)
          call setPointers(nn,level,sps)
          call computeForcesPressureAdj(w,p)
@@ -1503,6 +1571,30 @@ subroutine verifydCfdx(level)
          !
          
          call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+              do mm=1,nTimeIntervalsSpectral
+            
+            ! Compute the time, which corresponds to this spectral solution.
+            ! For steady and unsteady mode this is simply the restart time;
+            ! for the spectral mode the periodic time must be taken into
+            ! account, which can be different for every section.
+            
+            t = timeUnsteadyRestart
+            
+            if(equationMode == timeSpectral) then
+               do ll=1,nSections
+                  t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
+                       /         real(nTimeIntervalsSpectral,realType)
+               enddo
+            endif
+            
+            call gridVelocitiesFineLevel(.false., t, mm)
+            call gridVelocitiesCoarseLevels(mm)
+            call normalVelocitiesAllLevels(mm)
+            
+            call slipVelocitiesFineLevel(.false., t, mm)
+            call slipVelocitiesCoarseLevels(mm)
+            
+         enddo
          call metric(level)
          call setPointers(nn,level,sps)
          call computeForcesPressureAdj(w,p)
@@ -1566,13 +1658,15 @@ subroutine verifydCfdx(level)
 
       enddo domainalphaLoopFDorig
 
-
+      
+      call f77flush()
+      call mpi_barrier(SUmb_comm_world, ierr)
       ! Loop over the number of local blocks.
       
         monloc1=0.0
         monloc2=0.0
       sps=1
-      print *,'starting FD loop',sps
+      print *,'starting rotx FD loop',sps
       domainrotxLoopFDorig: do nn=1,nDom   
          
          call setPointers(nn,level,sps)
@@ -2173,7 +2267,8 @@ subroutine verifydCfdx(level)
       dcddextraerror= dcddextra- dcddextraFD
       dcmdextraerror= dcmdextra- dcmdextraFD
       
-      do i=1,6
+      do i=1,7
+         print *,'i',i
          print *,'dcldextra',i,dcldextraerror(i), dcldextra(i), dcldextraFD(i)
          print *,'dcddextra',i,dcddextraerror(i), dcddextra(i), dcddextraFD(i)
          print *,'dcmdextra',i,dcmdextraerror(i), dcmdextra(i), dcmdextraFD(i)
