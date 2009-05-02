@@ -231,7 +231,8 @@
                      ! This includes inviscid and viscous fluxes, artificial
                      ! dissipation, and boundary conditions.                   
                      !print *,'Calling compute ADjoint'!,wadj(:,:,:,irho)!,wAdj,xAdj,dwAdj,alphaAdj,&
-
+                     ! rotrateadj = rotrateAdj+1e-5
+                     !rotCenteradj = rotcenterAdj+0
 !                          betaAdj,MachAdj, MachCoefAdj,&
 !                          iCell, jCell,  kCell, &
 !                          nn,sps, correctForK,secondHalo,prefAdj,&
@@ -256,7 +257,8 @@
 
                      ! Output the result sum(dw(:)) to debug.
 
-                     differ = sum(dwAdj(:))-sum(dw(iCell,jCell,kCell,:))
+                     !differ = sum(dwAdj(:))-sum(dw(iCell,jCell,kCell,:))
+                     differ = (sum(dwAdj(:))-sum(dw(iCell,jCell,kCell,:)))/sum(dw(iCell,jCell,kCell,:))
 
 !!$              if( differ > L2Conv ) &
 !!$                write(*,10) myID, nn, iCell, jCell, kCell,               &
@@ -268,7 +270,7 @@
 !                     if( abs(1) > 1e-14 ) &
                           write(*,10) myID, nn, iCell, jCell, kCell,               &
                           sum(dwAdj(:)), sum(dw(iCell,jCell,kCell,:)), &
-                          differ,(dwAdj(2)), (dw(iCell,jCell,kCell,2)),(dwAdj(2))-(dw(iCell,jCell,kCell,2))
+                          differ,(dwAdj(2)), (dw(iCell,jCell,kCell,2)),(dwAdj(1))-(dw(iCell,jCell,kCell,1)),(dwAdj(2))-(dw(iCell,jCell,kCell,2)),(dwAdj(3))-(dw(iCell,jCell,kCell,3)),(dwAdj(4))-(dw(iCell,jCell,kCell,4)),(dwAdj(5))-(dw(iCell,jCell,kCell,5))
 
                      ! Store difference to output to volume solution file.
                      ! (resrho, resmom, resrhoe) have to be added to the volume
@@ -332,7 +334,7 @@
 
       ! Output formats.
 
-  10  format(1x,i3,2x,i3,2x,i3,1x,i3,1x,i3,2x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3)
+  10  format(1x,i3,2x,i3,2x,i3,1x,i3,1x,i3,2x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3)
   99  format(2a)
 
       end subroutine verifyRAdj

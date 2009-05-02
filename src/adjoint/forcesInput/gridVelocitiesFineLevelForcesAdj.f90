@@ -69,6 +69,7 @@
 
        real(kind=realType) :: oneOver4dt, oneOver8dt
        real(kind=realType) :: velxGrid, velyGrid, velzGrid,aInf
+       real(kind=realType) :: velxGrid0, velyGrid0, velzGrid0
 
        real(kind=realType), dimension(3) :: sc, xc, xxc
 
@@ -104,9 +105,9 @@
       ! velzGrid = zero
 
        aInf = sqrt(gammaInf*pInf/rhoInf)
-       velxGrid = aInf*machgridAdj*-velDirFreestreamAdj(1)
-       velyGrid = aInf*machgridAdj*-velDirFreestreamAdj(2) 
-       velzGrid = aInf*machgridAdj*-velDirFreestreamAdj(3) 
+       velxGrid0 = aInf*machgridAdj*-velDirFreestreamAdj(1)
+       velyGrid0 = aInf*machgridAdj*-velDirFreestreamAdj(2) 
+       velzGrid0 = aInf*machgridAdj*-velDirFreestreamAdj(3) 
 
 
        ! Compute the derivative of the rotation matrix and the rotation
@@ -362,9 +363,9 @@
 
              !subtract off the rotational velocity of the center of the grid
              ! to account for the added overall velocity.
-             velxGrid =velxgrid+ 1*(rotRateAdj(2)*rotCenterAdj(3) - rotRateAdj(3)*rotCenterAdj(2))
-             velyGrid =velygrid+ 1*(rotRateAdj(3)*rotCenterAdj(1) - rotRateAdj(1)*rotCenterAdj(3))
-             velzGrid =velzgrid+ 1*(rotRateAdj(1)*rotCenterAdj(2) - rotRateAdj(2)*rotCenterAdj(1))
+             velxGrid =velxgrid0+ 1*(rotRateAdj(2)*rotCenterAdj(3) - rotRateAdj(3)*rotCenterAdj(2))
+             velyGrid =velygrid0+ 1*(rotRateAdj(3)*rotCenterAdj(1) - rotRateAdj(1)*rotCenterAdj(3))
+             velzGrid =velzgrid0+ 1*(rotRateAdj(1)*rotCenterAdj(2) - rotRateAdj(2)*rotCenterAdj(1))
 
 
 !

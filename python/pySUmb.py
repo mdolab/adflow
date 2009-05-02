@@ -297,7 +297,8 @@ class SUMB(AeroSolver):
 
 		return flowDerivative
 
-	def computeTotalSurfaceDerivative(self, objective,surface={},mapping={},meshwarping={}, *args, **kwargs):
+	def computeSurfaceDerivative(self, objective,surface={},mapping={},meshwarping={}, *args, **kwargs):
+		#def computeTotalSurfaceDerivative(self, objective,surface={},mapping={},meshwarping={}, *args, **kwargs):
 		'''
 		Compute the derivative of the objective function wrt the
 		surface.
@@ -351,7 +352,9 @@ class SUMB(AeroSolver):
 				#setup an empty list for this row
 				rowDerivatives = []
 				for j in xrange(len(xyzref[0,:])):
-					
+					if self.myid ==0:
+						print 'j',j,'of',len(xyzref[0,:])
+					#endif
 					#set stepsize
 					deltax = 1e-20j
 					

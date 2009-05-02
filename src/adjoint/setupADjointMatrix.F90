@@ -184,7 +184,13 @@
       call mpi_barrier(SUmb_comm_world, ierr)
       !if( myID==0 ) call cpu_time(time(1))
       call cpu_time(time(1))
-      
+
+      !zero the matrix for dRdW Insert call
+      call MatZeroEntries(dRdw,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("setupADjointMatrix", "Error in MatZeroEntries drdw")
+	
       !print *,'Entering Domain loop'
       domainLoopAD: do nn=1,nDom
          
@@ -350,7 +356,7 @@
                 idxngb = idxmgb
 		!print *,'indicies0',idxmgb,idxngb
                 call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                         Aad, INSERT_VALUES,PETScIerr)
+                                         Aad, ADD_VALUES,PETScIerr)
                 if( PETScIerr/=0 ) &
                   call errAssemb("MatSetValuesBlocked", "Aad")
 
@@ -361,7 +367,7 @@
 	          if (idxngb >=0 .and. idxngb.ne.-5) then
 		     !print *,'indiciesi-1',idxmgb,idxngb
                      call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                           Bad, INSERT_VALUES,PETScIerr)
+                                           Bad, ADD_VALUES,PETScIerr)
                      if( PETScIerr/=0 ) &
                         call errAssemb("MatSetValuesBlocked", "Bad")
 		  endif
@@ -374,7 +380,7 @@
 		  if (idxngb >=0 .and. idxngb.ne.-5) then
 		     !print *,'indiciesi-2',idxmgb,idxngb
                      call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                              BBad,INSERT_VALUES,PETScIerr)
+                                              BBad,ADD_VALUES,PETScIerr)
                      if( PETScIerr/=0 ) &
                        call errAssemb("MatSetValuesBlocked", "BBad")
                   endif
@@ -388,7 +394,7 @@
 		  !stop
 		  if (idxngb<nCellsGlobal .and. idxngb.ne.-5) then
                       call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                              Cad, INSERT_VALUES,PETScIerr)
+                                              Cad, ADD_VALUES,PETScIerr)
                       if( PETScIerr/=0 ) &
                         call errAssemb("MatSetValuesBlocked", "Cad")
 		  endif
@@ -400,7 +406,7 @@
                   idxngb = globalCell(iCell+2,jCell,kCell)
 	          if (idxngb<nCellsGlobal .and. idxngb.ne.-5) then
                      call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                              CCad,INSERT_VALUES,PETScIerr)
+                                              CCad,ADD_VALUES,PETScIerr)
                      if( PETScIerr/=0 ) &
                         call errAssemb("MatSetValuesBlocked", "CCad")
 		  endif
@@ -412,7 +418,7 @@
                   idxngb = globalCell(iCell,jCell-1,kCell)
 		  if (idxngb>=0 .and. idxngb.ne.-5) then
                       call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                               Dad, INSERT_VALUES,PETScIerr)
+                                               Dad, ADD_VALUES,PETScIerr)
                       if( PETScIerr/=0 ) &
                          call errAssemb("MatSetValuesBlocked", "Dad")
 	  	  endif
@@ -424,7 +430,7 @@
                   idxngb = globalCell(iCell,jCell-2,kCell)
 		  if (idxngb>=0 .and. idxngb.ne.-5) then
                      call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                              DDad,INSERT_VALUES,PETScIerr)
+                                              DDad,ADD_VALUES,PETScIerr)
                      if( PETScIerr/=0 ) &
                        call errAssemb("MatSetValuesBlocked", "DDad")
 	 	  endif
@@ -436,7 +442,7 @@
                   idxngb = globalCell(iCell,jCell+1,kCell)
                   if (idxngb<nCellsGlobal .and. idxngb.ne.-5) then
                      call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                              Ead, INSERT_VALUES,PETScIerr)
+                                              Ead, ADD_VALUES,PETScIerr)
                      if( PETScIerr/=0 ) &
                        call errAssemb("MatSetValuesBlocked", "Ead")
 		  endif
@@ -448,7 +454,7 @@
                   idxngb = globalCell(iCell,jCell+2,kCell)
 		  if (idxngb<nCellsGlobal .and. idxngb.ne.-5) then
                      call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                              EEad,INSERT_VALUES,PETScIerr)
+                                              EEad,ADD_VALUES,PETScIerr)
                      if( PETScIerr/=0 ) &
                        call errAssemb("MatSetValuesBlocked", "EEad")
 	          endif
@@ -460,7 +466,7 @@
                   idxngb = globalCell(iCell,jCell,kCell-1)
                   if (idxngb>=0 .and. idxngb.ne.-5) then
                      call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                              Fad, INSERT_VALUES,PETScIerr)
+                                              Fad, ADD_VALUES,PETScIerr)
                      if( PETScIerr/=0 ) &
                        call errAssemb("MatSetValuesBlocked", "Fad")
 		  endif
@@ -472,7 +478,7 @@
                   idxngb = globalCell(iCell,jCell,kCell-2)
 		  if (idxngb>=0 .and. idxngb.ne.-5) then
                      call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                              FFad,INSERT_VALUES,PETScIerr)
+                                              FFad,ADD_VALUES,PETScIerr)
                      if( PETScIerr/=0 ) &
                        call errAssemb("MatSetValuesBlocked", "FFad")
 		  endif
@@ -484,7 +490,7 @@
                   idxngb = globalCell(iCell,jCell,kCell+1)
  		  if (idxngb<nCellsGlobal .and. idxngb.ne.-5) then
                      call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                              Gad, INSERT_VALUES,PETScIerr)
+                                              Gad, ADD_VALUES,PETScIerr)
                      if( PETScIerr/=0 ) &
                        call errAssemb("MatSetValuesBlocked", "Gad")
 		  endif
@@ -496,7 +502,7 @@
                   idxngb = globalCell(iCell,jCell,kCell+2)
 		  if (idxngb<nCellsGlobal .and. idxngb.ne.-5) then
                      call MatSetValuesBlocked(dRdW, 1, idxmgb, 1, idxngb, &
-                                              GGad,INSERT_VALUES,PETScIerr)
+                                              GGad,ADD_VALUES,PETScIerr)
                      if( PETScIerr/=0 ) &
                        call errAssemb("MatSetValuesBlocked", "GGad")
 		  endif
@@ -570,7 +576,7 @@
                 call blockIndices(idxngb, idxng)
 
                 call MatSetValues(dRdW, nw, idxmg, nw, idxng,  &
-                                  Aad, INSERT_VALUES, PETScIerr)
+                                  Aad, ADD_VALUES, PETScIerr)
                 if( PETScIerr/=0 ) &
                   call errAssemb("MatSetValues", "Aad")
 
@@ -581,7 +587,7 @@
                   call blockIndices(idxngb, idxng)
 
                   call MatSetValues(dRdW, nw, idxmg, nw, idxng,  &
-                                    Bad, INSERT_VALUES, PETScIerr)
+                                    Bad, ADD_VALUES, PETScIerr)
                   if( PETScIerr/=0 ) &
                     call errAssemb("MatSetValues", "Bad")
                 endif
@@ -593,7 +599,7 @@
                   call blockIndices(idxngb, idxng)
 
                   call MatSetValues(dRdW, nw, idxmg, nw, idxng,   &
-                                    BBad, INSERT_VALUES, PETScIerr)
+                                    BBad, ADD_VALUES, PETScIerr)
                   if( PETScIerr/=0 ) &
                     call errAssemb("MatSetValues", "BBad")
                 end if
@@ -605,7 +611,7 @@
                   call blockIndices(idxngb, idxng)
 
                   call MatSetValues(dRdW, nw, idxmg, nw, idxng,  &
-                                    Cad, INSERT_VALUES, PETScIerr)
+                                    Cad, ADD_VALUES, PETScIerr)
                   if( PETScIerr/=0 ) &
                     call errAssemb("MatSetValues", "Cad")
                 end if
@@ -617,7 +623,7 @@
                   call blockIndices(idxngb, idxng)
 
                   call MatSetValues(dRdW, nw, idxmg, nw, idxng,   &
-                                    CCad, INSERT_VALUES, PETScIerr)
+                                    CCad, ADD_VALUES, PETScIerr)
                   if( PETScIerr/=0 ) &
                     call errAssemb("MatSetValues", "CCad")
                 end if
@@ -629,7 +635,7 @@
                   call blockIndices(idxngb, idxng)
 
                   call MatSetValues(dRdW, nw, idxmg, nw, idxng,  &
-                                    Dad, INSERT_VALUES, PETScIerr)
+                                    Dad, ADD_VALUES, PETScIerr)
                   if( PETScIerr/=0 ) &
                     call errAssemb("MatSetValues", "Dad")
                 endif
@@ -641,7 +647,7 @@
                   call blockIndices(idxngb, idxng)
 
                   call MatSetValues(dRdW, nw, idxmg, nw, idxng,   &
-                                    DDad, INSERT_VALUES, PETScIerr)
+                                    DDad, ADD_VALUES, PETScIerr)
                   if( PETScIerr/=0 ) &
                     call errAssemb("MatSetValues", "DDad")
                 end if
@@ -653,7 +659,7 @@
                   call blockIndices(idxngb, idxng)
 
                   call MatSetValues(dRdW, nw, idxmg, nw, idxng,  &
-                                    Ead, INSERT_VALUES, PETScIerr)
+                                    Ead, ADD_VALUES, PETScIerr)
                   if( PETScIerr/=0 ) &
                     call errAssemb("MatSetValues", "Ead")
                 end if
@@ -665,7 +671,7 @@
                   call blockIndices(idxngb, idxng)
 
                   call MatSetValues(dRdW, nw, idxmg, nw, idxng,   &
-                                    EEad, INSERT_VALUES, PETScIerr)
+                                    EEad, ADD_VALUES, PETScIerr)
                   if( PETScIerr/=0 ) &
                     call errAssemb("MatSetValues", "EEad")
                 end if
@@ -677,7 +683,7 @@
                   call blockIndices(idxngb, idxng)
 
                   call MatSetValues(dRdW, nw, idxmg, nw, idxng,  &
-                                    Fad, INSERT_VALUES, PETScIerr)
+                                    Fad, ADD_VALUES, PETScIerr)
                   if( PETScIerr/=0 ) &
                     call errAssemb("MatSetValues", "Fad")
                 endif
@@ -689,7 +695,7 @@
                   call blockIndices(idxngb, idxng)
 
                   call MatSetValues(dRdW, nw, idxmg, nw, idxng,   &
-                                    FFad, INSERT_VALUES, PETScIerr)
+                                    FFad, ADD_VALUES, PETScIerr)
                   if( PETScIerr/=0 ) &
                     call errAssemb("MatSetValues", "FFad")
                 end if
@@ -701,7 +707,7 @@
                   call blockIndices(idxngb, idxng)
 
                   call MatSetValues(dRdW, nw, idxmg, nw, idxng,  &
-                                    Gad, INSERT_VALUES, PETScIerr)
+                                    Gad, ADD_VALUES, PETScIerr)
                   if( PETScIerr/=0 ) &
                     call errAssemb("MatSetValues", "Gad")
                 end if
@@ -713,7 +719,7 @@
                   call blockIndices(idxngb, idxng)
 
                   call MatSetValues(dRdW, nw, idxmg, nw, idxng,   &
-                                    GGad, INSERT_VALUES, PETScIerr)
+                                    GGad, ADD_VALUES, PETScIerr)
                   if( PETScIerr/=0 ) &
                     call errAssemb("MatSetValues", "GGad")
                 end if

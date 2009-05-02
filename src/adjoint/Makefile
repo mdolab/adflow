@@ -80,9 +80,11 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       setupGradientRHSExtra.o\
 	       setupGradientRHSSpatial.o\
                solverADjoint.o          \
+	       updateFlow.o             \
 	       verifydRdw.o             \
 	       verifydRdx.o             \
 	       verifydRdExtra.o         \
+               verifydRdExtraFDAD.o         \
 	       verifyRAdj.o\
 	       verifyResiduals.o\
 	       writeCGNSMesh.o\

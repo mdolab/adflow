@@ -108,6 +108,11 @@
       secondhalo = .true.
 #ifndef USE_NO_PETSC
 
+      !zero the vector
+      call VecSet(dJdW,PETScZero,PETScIerr)
+ 
+      if( PETScIerr/=0 ) &
+        call terminate("setupADjointRRHSAeroCoeff", "Error in VecSet X")
       ! Determine the reference point for the moment computation in
       ! meters.
 

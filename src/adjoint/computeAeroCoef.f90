@@ -52,7 +52,10 @@
 !     *                                                                *
 !     ******************************************************************
 !
+
       groundLevel = level
+      !Reset the local storage to zero
+      coefLoc(:) = 0
       domains: do nn=1,nDom
 
          ! Set the pointers for this block.

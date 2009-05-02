@@ -26,6 +26,8 @@
       use ADjointPETSc 
       use ADjointVars
       use flowVarRefState !nw
+      use blockPointers   !il,jl,kl,globalcell
+      use communication
       implicit none
 !
 !     Local variables.
@@ -40,15 +42,33 @@
       character(len=2*maxStringLen) :: errorMessage
 
       integer       :: nDimW
-      integer(kind=intType) :: i, j, k, iw
+      integer(kind=intType) :: i, j, k, iw,idxres,nn,ierr,localoffset
       integer(kind=intType) :: iFile = 8
-      write(*,*)'In write complex.....'
+      character*32:: testfile,file1
+      write(*,*)'In solveDirect Petsc.....'
 !________________________________________________________________________
 !
 !     Begin execution
 !________________________________________________________________________
            
       open(unit=iFile,file='ADw.txt',status='replace',action='write')
+      !open(unit=iFile+1,file='ADw2.txt',status='replace',action='write')
+
+      call mpi_barrier(SUmb_comm_world, ierr)
+
+      write(testfile,100) myid!12
+!100   format ('testfile',i5)  
+100   format (i5)  
+      !testfile = 'testfile'
+      print *,'file: ',testfile
+      testfile=adjustl(testfile)
+      print *,'file2: ',testfile
+      write(file1,101) trim(testfile)!testfile
+101   format("testfile",a,".out")
+      print *,'file3: ',file1!trim(testfile)!testfile
+      open(unit=iFile+1+myID,file=file1,status='replace',action='write')
+      call mpi_barrier(SUmb_comm_world, ierr)
+
 
       nDimW = nw * nCellsLocal
 !
@@ -229,10 +249,15 @@
 !     *                                                               *
 !     *****************************************************************
 
-      !Access solution and write to afile for comparison
+      !Access solution and write to a file for comparison
+
+      !Get local processor offset for global index
+      call setPointersAdj(1,1,1)
+      localoffset = globalcell(2,2,2)
 
       call VecGetArray(psi,x_array,i_x, PETScIerr)
 
+      print *,'ix',myID,shape(x_array),i_x,localoffset
       !  Access first local entry in vector with
 
       do i = 1,nDimW
@@ -242,11 +267,32 @@
 11        format(1x,'',f20.7)
       enddo
 
+      do nn=1,nDom
+         call setPointersAdj(nn,1,1)
+         do k= 2, kl
+            do j= 2, jl
+               do i= 2, il
+                  do iw = 1, nw
+		    
+                     idxres   = (globalCell(i,j,k)-localoffset)*nw+iw
+!                     print *,'index',i,j,k,iw,nn,i_x + idxres,i_x,idxres
+	             vecval = x_array(i_x + idxres)
+                    ! write(iFile+1, 12) -vecval ,nn,i,j,k,iw,idxres
+                     write(iFile+1+myID, 12) -vecval ,nn,i,j,k,iw,idxres+localoffset*nw
+                  end do
+               end do
+            end do
+         end do
+      enddo
+12        format(1x,'drdx',f20.9,6I8)
+
+
+
       ! ...... other code
 
       call VecRestoreArray(psi,x_array,i_x, PETScIerr)
       close(iFile)
-
+      close(iFile+1+myID)
 
       call VecDot(psi,dJdw,PETScScalarV,PETScIerr)
 

@@ -1043,6 +1043,10 @@ python module sumb ! in
             real(kind=realtype) dimension(3,lenadjoint),intent(in) :: structadjoint
             integer(kind=inttype) intent(in) :: costfunction
         end subroutine setupadjointtotalstruct
+        
+        subroutine updateflow
+          implicit none
+        end subroutine updateflow
 ! ############################################################################
 ! Aeroelastic / Multi-Disciplinary Routines
 ! ############################################################################
