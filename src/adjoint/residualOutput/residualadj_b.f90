@@ -192,5 +192,5 @@ SUBROUTINE RESIDUALADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, sjadj&
 &                          kcell)
   CALL POPINTEGER4(branch)
   CALL POPINTEGER4(branch)
-!  kappacoefb = 0.0
+ ! kappacoefb = 0.0
 END SUBROUTINE RESIDUALADJ_B

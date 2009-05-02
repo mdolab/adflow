@@ -573,6 +573,8 @@ class SUmbInterface(object):
         sumb.inputphysics.liftdirection = liftDir
         sumb.inputphysics.dragdirection = dragDir
 
+        #update the flow vars
+        sumb.updateflow()
         return
         
     def generateInputFile(self,aero_problem,sol_type,grid_file,file_type='cgns',eqn_type='Euler',*args,**kwargs):
@@ -918,7 +920,7 @@ class SUmbInterface(object):
             autofile.write(  "                     Alpha turbulent DD-ADI: 0.8\n")
             autofile.write(  "                      Beta turbulent DD-ADI: -1  # Same as alpha\n")
         #endif
-        autofile.write(  "           Relative L2 norm for convergence: 1.e-13\n")
+        autofile.write(  "           Relative L2 norm for convergence: 1.e-10\n")
         autofile.write( "\n")
 
         autofile.write(  "-------------------------------------------------------------------------------\n")

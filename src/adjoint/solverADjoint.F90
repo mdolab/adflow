@@ -170,9 +170,10 @@
 ! 	call verifydRdx(level,sps)
 !stop	
 	!call verifydRdExtra(level)
-
+	!call verifydRdExtraFDAD(level)	
 
         ! Verify the ADjoint routine for the forces
+
 
 	!call verifyForcesAdj(level,sps) 
 !stop	
@@ -183,9 +184,9 @@
  	!call verifydCfdx(level)
 !stop
 	! Verify the force derivatives
-	call verifydCfdwfile(level)	
-        call verifydCfdw(level)
-stop
+!	call verifydCfdwfile(level)	
+!        call verifydCfdw(level)
+!stop
         !return
 	!verify the coupling derivatives
 	!call verifyForceCouplingAdj(level)

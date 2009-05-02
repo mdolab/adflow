@@ -115,6 +115,9 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 &                            sfaceiadj, sfacejadj, sfacekadj, &
 &                            machgridadj, veldirfreestreamadj, icell, &
 &                            jcell, kcell)
+!for debugging intermediate stages      
+!       dwadj(1:3) = sAdj(0,0,0,:)
+!       return
 !print *,'normalVelocities',il,jl,kl
   CALL NORMALVELOCITIESALLLEVELSADJ(sps, icell, jcell, kcell, sfaceiadj&
 &                              , sfacejadj, sfacekadj, siadj, sjadj, &

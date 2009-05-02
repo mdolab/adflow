@@ -111,6 +111,7 @@
            select case (BCFaceID(nn))
 
              case (iMin)
+                 !print *,'imin'
                pp2  => p(2,1:,1:);      pp1  => p(1,1:,1:)
                rho2 => w(2,1:,1:,irho); rho1 => w(1,1:,1:,irho)
                ss   => si(1,:,:,:);     xx   => x(1,:,:,:)
@@ -124,6 +125,7 @@
              !===========================================================
 
              case (iMax)
+                !print *,'imax'
                pp2  => p(il,1:,1:);      pp1  => p(ie,1:,1:)
                rho2 => w(il,1:,1:,irho); rho1 => w(ie,1:,1:,irho)
                ss   => si(il,:,:,:);     xx   => x(il,:,:,:)
@@ -137,6 +139,7 @@
              !===========================================================
 
              case (jMin)
+                  !print *,'jmin'
                pp2  => p(1:,2,1:);      pp1  => p(1:,1,1:)
                rho2 => w(1:,2,1:,irho); rho1 => w(1:,1,1:,irho)
                ss   => sj(:,1,:,:);     xx   => x(:,1,:,:)
@@ -150,6 +153,7 @@
              !===========================================================
 
              case (jMax)
+                !print *,'jmax'
                pp2  => p(1:,jl,1:);      pp1  => p(1:,je,1:)
                rho2 => w(1:,jl,1:,irho); rho1 => w(1:,je,1:,irho)
                ss   => sj(:,jl,:,:);     xx   => x(:,jl,:,:)
@@ -163,6 +167,7 @@
              !===========================================================
 
              case (kMin)
+                !   print *,'kmin'
                pp2  => p(1:,1:,2);      pp1  => p(1:,1:,1)
                rho2 => w(1:,1:,2,irho); rho1 => w(1:,1:,1,irho)
                ss   => sk(:,:,1,:);     xx   => x(:,:,1,:)
@@ -176,6 +181,7 @@
              !===========================================================
 
              case (kMax)
+                ! print *,'kmax'
                pp2  => p(1:,1:,kl);      pp1  => p(1:,1:,ke)
                rho2 => w(1:,1:,kl,irho); rho1 => w(1:,1:,ke,irho)
                ss   => sk(:,:,kl,:);     xx   => x(:,:,kl,:)
@@ -213,7 +219,7 @@
                   +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
                zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
                   +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
-
+               !print *,'xc',nn,i,j,xc,yc,zc
                ! Compute the force components.
 
                fx = pm1*ss(i,j,1)

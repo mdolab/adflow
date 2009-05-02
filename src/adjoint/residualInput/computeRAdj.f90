@@ -103,11 +103,17 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
             siAdj, sjAdj, skAdj,rotCenterAdj, rotRateAdj,sAdj,sFaceIAdj,&
             sFaceJAdj,sFaceKAdj,machGridAdj,velDirFreestreamAdj,&
             iCell, jCell, kCell)
-       
+
+!for debugging intermediate stages      
+!       dwadj(1:3) = sAdj(0,0,0,:)
+!       return
+
        !print *,'normalVelocities',il,jl,kl
 
        call normalVelocitiesAllLevelsAdj(sps,iCell, jCell, kCell,sFaceIAdj,&
             sFaceJAdj,sFaceKAdj,siAdj, sjAdj, skAdj,rFaceAdj)
+
+      
  
        !needed for uSlip in Viscous Calculations
        !call slipVelocitiesFineLevel(.false., t, mm)

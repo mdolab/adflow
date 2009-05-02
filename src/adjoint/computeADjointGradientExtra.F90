@@ -232,6 +232,7 @@
 
       !Divide Timeref out of the solution for the rotational derivatives
       functionGrad(costFunction,nDesignRotX:nDesignRotZ) = functionGrad(costFunction,nDesignRotX:nDesignRotZ)*timeref
+!      print *,'timeref',timeref
       !Convert radians to degrees to match design variables
       functionGrad(costFunction,nDesignAOA:nDesignSSA) = functionGrad(costFunction,nDesignAOA:nDesignSSA)*(pi/180.0_realType)
 

@@ -290,8 +290,8 @@
       ! see .../petsc/docs/manualpages/KSP/KSPGMRESSetRestart.html
       ! or PETSc users manual, pp.65
 
-      !call KSPGMRESSetRestart(ksp, adjRestart, PETScIerr)
-      call KSPGMRESSetRestart(ksp, 500, PETScIerr)
+      call KSPGMRESSetRestart(ksp, adjRestart, PETScIerr)
+      !call KSPGMRESSetRestart(ksp, 500, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScKsp", "Error in KSPGMRESSetRestart")

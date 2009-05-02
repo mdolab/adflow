@@ -116,26 +116,43 @@
       real(kind=realType), dimension(nw) :: pvrlocal
       character(len=2*maxStringLen) :: errorMessage
      !File Parameters
-      integer :: unitM = 8,unitAoA = 30,unitSSA = 12,unitRotx = 13,ierror
-      character(len = 16)::outfile
-      
-      outfile = "CSMachfile.txt"
+      integer :: unitM = 8,unitAoA = 30,unitSSA = 12,unitRotx = 13,ierror,unitRoty,unitRotz
+      character(len = 16)::outfile,testfile
+
+      write(testfile,100) myid!12
+100   format (i5)  
+      testfile=adjustl(testfile)
+      write(outfile,101) trim(testfile)!testfile
+101   format("CSMachfile",a,".out")
+      !outfile = "CSMachfile.txt"
+      unitM = 8+myID
+      !outfile = "CSMachfile.txt"
       
       open (UNIT=unitM,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
            call terminate("verifydRdExtraCS", &
            "Something wrong when &
            &calling open")
-
-      outfile = "CSAOAfile.txt"
+      write(testfile,102) myid!12
+102   format (i5)  
+      testfile=adjustl(testfile)
+      write(outfile,103) trim(testfile)!testfile
+103   format("CSAoAfile",a,".out")
+      unitAoA = 8+myID+nproc*1
+      !outfile = "CSAOAfile.txt"
       
       open (UNIT=unitAoA,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
            call terminate("verifydRdExtraCS", &
            "Something wrong when &
            &calling open")
-      
-      outfile = "CSSSAfile.txt"
+      write(testfile,104) myid!12
+104   format (i5)  
+      testfile=adjustl(testfile)
+      write(outfile,105) trim(testfile)!testfile
+105   format("CSSSAfile",a,".out")
+      unitSSA = 8+myID+nproc*2
+      !outfile = "CSSSAfile.txt"
       
       open (UNIT=unitSSA,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
@@ -143,9 +160,43 @@
            "Something wrong when &
            &calling open")
 
-      outfile = "CSRotxfile.txt"
+      write(testfile,106) myid!12
+106   format (i5)  
+      testfile=adjustl(testfile)
+      write(outfile,107) trim(testfile)!testfile
+107   format("CSRotxfile",a,".out")
+      unitrotx = 8+myID+nproc*3
+      !outfile = "CSRotxfile.txt"
       
       open (UNIT=unitrotx,File=outfile,status='replace',action='write',iostat=ierror)
+      if(ierror /= 0)                        &
+           call terminate("verifydRdExtraCS", &
+           "Something wrong when &
+           &calling open")
+
+      write(testfile,108) myid!12
+108   format (i5)  
+      testfile=adjustl(testfile)
+      write(outfile,109) trim(testfile)!testfile
+109   format("CSRotyfile",a,".out")
+      unitroty = 8+myID+nproc*4
+      !outfile = "CSRotxfile.txt"
+      
+      open (UNIT=unitroty,File=outfile,status='replace',action='write',iostat=ierror)
+      if(ierror /= 0)                        &
+           call terminate("verifydRdExtraCS", &
+           "Something wrong when &
+           &calling open")
+
+      write(testfile,110) myid!12
+110   format (i5)  
+      testfile=adjustl(testfile)
+      write(outfile,111) trim(testfile)!testfile
+111   format("CSRotzfile",a,".out")
+      unitrotz = 8+myID+nproc*5
+      !outfile = "CSRotxfile.txt"
+      
+      open (UNIT=unitrotz,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
            call terminate("verifydRdExtraCS", &
            "Something wrong when &
@@ -321,6 +372,7 @@
            rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
            rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
            murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+                     !print *,'rotcenteradj',nn,icell,jcell,kcell,rotcenteradj
 !copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
 !                          machCoefAdj,iCell, jCell, kCell,prefAdj,&
 !                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
@@ -373,9 +425,11 @@
 !!$                           dRdExtraAdj(idxres,nDesignRotY,nn,sps) = rotrateadjb(2)
 !!$                           dRdExtraAdj(idxres,nDesignRotZ,nn,sps) = rotrateadjb(3)
                            dRdExtraAdj(idxres,nDesignMach,1,sps) = machadjb
+                           !pvrlocal(m) = machadjb
                            write(unitM,10) machadjb,nn,icell,jcell,kcell,m,idxres
 10                         format(1x,'Mach ',f18.10,6I8)
-                           pvrlocal(m) = machadjb
+                           dRdExtraAdj(idxres,nDesignMachGrid,1,sps) = machgridadjb
+                           !pvrlocal(m) = machGridadjb
                            dRdExtraAdj(idxres,nDesignAOA,1,sps) = alphaadjb
                            write(unitAoA,11) alphaadjb,nn,icell,jcell,kcell,m,idxres
 11                         format(1x,'AoA ',f18.10,6I8)
@@ -384,10 +438,16 @@
 12                         format(1x,'SSA ',f18.10,6I8)
                            !print *,'results',machadjb,rotrateadjb,idxres,nDesignRotX,nn,sps
                            dRdExtraAdj(idxres,nDesignRotX,1,sps) = rotrateadjb(1)!*timeref
+                           !pvrlocal(m) = rotrateadjb(1)*timeref
                            write(unitRotx,13) rotrateadjb(1),nn,icell,jcell,kcell,m,idxres
 13                         format(1x,'Rotx ',f18.10,6I8)
+                           write(unitRoty,14) rotrateadjb(2),nn,icell,jcell,kcell,m,idxres
+14                         format(1x,'Roty ',f18.10,6I8)
+                           write(unitRotz,15) rotrateadjb(3),nn,icell,jcell,kcell,m,idxres
+15                         format(1x,'Rotz ',f18.10,6I8)
                            dRdExtraAdj(idxres,nDesignRotY,1,sps) = rotrateadjb(2)
                            dRdExtraAdj(idxres,nDesignRotZ,1,sps) = rotrateadjb(3)
+                           pvrlocal(m) = rotrateadjb(3)*timeref
                         endif
                                        
                      end do mLoop
@@ -636,27 +696,27 @@
 !               call terminate("setupADjointMatrix", "Error in MatView")
 !          !pause
 !       !endif
-!!$       call VecAssemblyBegin(pvr,PETScIerr)
-!!$       
-!!$       if( PETScIerr/=0 ) &
-!!$            call terminate("setupASjointRHS", "Error in VecAssemblyBegin")  
-!!$       
-!!$       call VecAssemblyEnd  (pvr,PETScIerr)
-!!$       
-!!$       if( PETScIerr/=0 ) &
-!!$            call terminate("setupADjointRHS", "Error in VecAssemblyEnd")
-!!$       
-!!$       if( debug ) then
-!!$          call VecView(pvr,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-!!$          !call VecView(pvr,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
-!!$          if( PETScIerr/=0 ) &
-!!$               call terminate("setupADjointRHS", "Error in VecView")
-!!$          pause
-!!$       endif
-!!$       
-!!$       call cpu_time(time(4))
-!!$       timeFD = time(4)-time(3)
-!!$
+       call VecAssemblyBegin(pvr,PETScIerr)
+       
+       if( PETScIerr/=0 ) &
+            call terminate("setupASjointRHS", "Error in VecAssemblyBegin")  
+       
+       call VecAssemblyEnd  (pvr,PETScIerr)
+       
+       if( PETScIerr/=0 ) &
+            call terminate("setupADjointRHS", "Error in VecAssemblyEnd")
+       
+       if( debug ) then
+          call VecView(pvr,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+          !call VecView(pvr,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+          if( PETScIerr/=0 ) &
+               call terminate("setupADjointRHS", "Error in VecView")
+          pause
+       endif
+       
+       call cpu_time(time(4))
+       timeFD = time(4)-time(3)
+
 !!$!     ******************************************************************
 !!$!     *                                                                *
 !!$!     *  Compute d(dw)/d(w) using central finite differences           *
@@ -1527,12 +1587,16 @@
 !      print *
 
 
-
-
+       close(unitM)
+       close(unitAoA)
+       close(unitSSA)
+       close(unitRotx)
+       close(unitRoty)
+       close(unitRotz)
       ! Output format.
 
 99    format(a,1x,i6)
-111   format(4I4, 3ES22.14)
+!111   format(4I4, 3ES22.14)
 
 
 

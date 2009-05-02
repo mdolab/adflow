@@ -357,6 +357,12 @@
 
       call cpu_time(time(1))
 
+      !zero the matrix for dRdx ADD call
+      call MatZeroEntries(dRdx,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("setupGradientMatrixSpatial", "Error in MatZeroEntries drdx")
+
       ! Loop over the number of local blocks.
 
       domainLoop: do nn=1,nDom
@@ -420,7 +426,7 @@
                                        idxres   = globalCell(iCell,jCell,kCell)*nw+m
                                        if (xAdjb(ii,jj,kk,l).ne.0.0)then
                                           call MatSetValues(dRdx, 1, idxres-1, 1, idxnode-1,   &
-                                               xAdjb(ii,jj,kk,l), INSERT_VALUES, PETScIerr)
+                                               xAdjb(ii,jj,kk,l), ADD_VALUES, PETScIerr)
                                           if( PETScIerr/=0 ) &
                                                print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
                                        endif

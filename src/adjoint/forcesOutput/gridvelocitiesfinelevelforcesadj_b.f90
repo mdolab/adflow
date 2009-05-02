@@ -70,6 +70,8 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
   REAL(KIND=REALTYPE) :: ssadj(iibeg:iiend, jjbeg:jjend, 3)
   REAL(KIND=REALTYPE) :: ainf, velxgrid, velxgridb, velygrid, velygridb&
 &  , velzgrid, velzgridb
+  REAL(KIND=REALTYPE) :: velxgrid0, velxgrid0b, velygrid0, velygrid0b, &
+&  velzgrid0, velzgrid0b
   REAL(KIND=REALTYPE) :: sc(3), scb(3), tempb, tempb0, tempb1, xc(3), &
 &  xcb(3), xxc(3), xxcb(3)
   REAL(KIND=REALTYPE) :: xxadj(iibeg-1:iiend, jjbeg-1:jjend, 3)
@@ -135,9 +137,9 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
 ! Determine the situation we are having here.
     IF (useoldcoor) THEN
       rotrateadjb(1:3) = 0.0
-      velygridb = 0.0
-      velzgridb = 0.0
-      velxgridb = 0.0
+      velxgrid0b = 0.0
+      velzgrid0b = 0.0
+      velygrid0b = 0.0
     ELSE
 !
 !            ************************************************************
@@ -293,28 +295,31 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
           END DO
         END DO
       END DO
+      velzgrid0b = velzgridb
       rotrateadjb(1) = rotrateadjb(1) + rotcenteradj(2)*velzgridb
       rotrateadjb(2) = rotrateadjb(2) - rotcenteradj(1)*velzgridb
+      velygrid0b = velygridb
       rotrateadjb(3) = rotrateadjb(3) + rotcenteradj(1)*velygridb
       rotrateadjb(1) = rotrateadjb(1) - rotcenteradj(3)*velygridb
+      velxgrid0b = velxgridb
       rotrateadjb(2) = rotrateadjb(2) + rotcenteradj(3)*velxgridb
       rotrateadjb(3) = rotrateadjb(3) - rotcenteradj(2)*velxgridb
     END IF
   ELSE
     rotrateadjb(1:3) = 0.0
-    velygridb = 0.0
-    velzgridb = 0.0
-    velxgridb = 0.0
+    velxgrid0b = 0.0
+    velzgrid0b = 0.0
+    velygrid0b = 0.0
   END IF
   veldirfreestreamadjb(1:3) = 0.0
-  machgridadjb = -(ainf*veldirfreestreamadj(1)*velxgridb) - ainf*&
-&    veldirfreestreamadj(2)*velygridb - ainf*veldirfreestreamadj(3)*&
-&    velzgridb
-  veldirfreestreamadjb(3) = -(ainf*machgridadj*velzgridb)
+  machgridadjb = -(ainf*veldirfreestreamadj(1)*velxgrid0b) - ainf*&
+&    veldirfreestreamadj(2)*velygrid0b - ainf*veldirfreestreamadj(3)*&
+&    velzgrid0b
+  veldirfreestreamadjb(3) = -(ainf*machgridadj*velzgrid0b)
   veldirfreestreamadjb(2) = veldirfreestreamadjb(2) - ainf*machgridadj*&
-&    velygridb
+&    velygrid0b
   veldirfreestreamadjb(1) = veldirfreestreamadjb(1) - ainf*machgridadj*&
-&    velxgridb
+&    velxgrid0b
 !!$  coscoeffourzrotb(:) = 0.0
 !!$  sincoeffourxrotb(:) = 0.0
 !!$  sincoeffouryrotb(:) = 0.0
