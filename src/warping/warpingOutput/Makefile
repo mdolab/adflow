@@ -22,7 +22,7 @@
 #      *                                                                *
 #      ******************************************************************
 
-SUMB_DIR = ../..
+SUMB_DIR = ../../..
 SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
 SUMB_RULES_FILE  = $(SUMB_DIR)/rulesSources.mk
 include ${SUMB_COMMON_FILE}
@@ -38,21 +38,10 @@ vpath %.o $(SUMB_OBJDIR)
 
 FF90_MODULES = 
 
-FF90_OBJECTS = warp_local.o        \
-	       warp-mb.o      \
-               integratedWarp.o\
-               integratedWarpDeriv.o \
-               integratedWarpDerivFD.o \
-               updateFaces.o\
-	       flagImplicitFacesAndEdges.o\
-	       flagImplicitFacesAndEdgesDeriv.o\
-	       blockRelations.o\
-	       blockLogicalFunctions.o\
-               storeGlobalSurfaceIndices.o\
-               synchronizeFaces.o\
-               synchronizeIndices.o\
-               synchronizeSurfaceIndices.o\
-	       testwarping.o
+FF90_OBJECTS = delq3dm_d.o \
+               warp_local_d.o        \
+	       warpblk_d.o  \
+               warpq3dm_d.o 
 
 
 CC_OBJECTS   = 
