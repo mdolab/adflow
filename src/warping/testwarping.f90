@@ -16,7 +16,7 @@ implicit none
 
 ! Local Arguments
 
-integer(kind=intType)::ncoords,nn
+integer(kind=intType)::ncoords,nn,ierr
 real(kind=realType), dimension(3,1)::xyzface
 integer(kind=intType),dimension(4,1)::indices
 real(kind=realType)::dx
@@ -65,4 +65,14 @@ print *,'warping parameters3',ncoords,xyzface,indices
 call integratedWarpDerivFD(ncoords,xyzface,indices)
 print *,'testing global index creation'
 call synchronizeIndices
+print *,'synchronizing done'
+
+!initialize Petsc
+call initializePETSc
+print *,'petscInitialized'
+call warpingInitializePETSc
+print *,'warpingPETSc initialized'
+call integratedWarpDerivParallel
+call mpi_barrier(sumb_comm_world, ierr)
+print *,'parallel derivatives done'
 end subroutine testwarping
