@@ -40,8 +40,8 @@ integer(kind=intType)::level=1,sps=1,nn,i,j,k,ierr,counter
 
 !Allocate storage for counter tracking the number of global surface 
 !nodes on each processor
-  if(.not. allocated(mdNSurfNodesGlobal) ) then
-     allocate(mdNSurfNodesGlobal(nProc), stat=ierr)
+  if(.not. allocated(mdNGlobalSurfNodesLocal) ) then
+     allocate(mdNGlobalSurfNodeslocal(nProc), stat=ierr)
      if(ierr /= 0)                          &
           call terminate("storeGlobalSurfaceIndices", &
           "Memory allocation failure for mdNSurfNodesGlobal")
@@ -65,9 +65,9 @@ end DO
 
 !Collect this info on all processors
 call mpi_allgather(counter, 1, sumb_integer, &
-     mdNSurfNodesGlobal,1, sumb_integer, &
+     mdNGlobalSurfNodesLocal,1, sumb_integer, &
      SUmb_comm_world, ierr)
-
+print *,'N Global Surface nodes',myID,counter,mdNGlobalSurfNodesLocal
 !Allocate storage for counter tracking the number of global surface 
 !nodes on each processor
   if(.not. allocated(mdSurfGlobalIndLocal) ) then
