@@ -64,19 +64,19 @@ subroutine synchronizeBlockFaces(level,sps)
   
   notSynchronized = .True.
   count = 0
-  print *,'starting loop'
+  !print *,'starting loop'
   do while (notSynchronized)
      ! Set state to synchronized and the check for truth at the end of the 
      ! loop.
      notSynchronized = .False.
 
-     print *,'looping over blocks'
+   !  print *,'looping over blocks'
      !loop over blocks and subfaces
      do i=1,nDom
-        print *,'setting pointers'
+    !    print *,'setting pointers'
         call setPointers(i,level,sps)
 
-        print *,'checkking for allocation of nNodesSubface'
+     !   print *,'checkking for allocation of nNodesSubface'
         ! Check to see if the memory is allocated to store the total number
         ! of nodes on each subface. If not, allocate.
         !if(.not. allocated(nNodesSubface)) then
@@ -311,6 +311,7 @@ subroutine synchronizeBlockFaces(level,sps)
 
                              elseif ((abs(neighbour -local)/max(abs(local),abs(neighbour),eps2)>1e-12 ) .and.   (abs(local -local0)/max(abs(local0),abs(local),eps2)>1e-12) .and. (abs(neighbour -local0)/max(abs(local0),abs(neighbour),eps2)>1e-12 )) then
 
+                                !print *,'neighbour',neighbour, local,local0
                                 !#average new and current
                                 print *,'not matching int!!!', myid!MPI.rank
                                 call setPointers(neighbourindex,level,sps)     

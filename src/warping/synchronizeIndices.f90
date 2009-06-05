@@ -26,9 +26,10 @@ integer(kind=intType)::level=1,sps=1,nn,mm,i,j,k
 !Begin Execution
 
 famID  = 0
+print *,'creating global list'
 call mdCreateSurfIndList(famID,startInd,endInd)
 
-
+print *,'creating local list'
 call mdCreateSurfIndListLocal(famID,startInd,endInd)
 print *,'local indices',mdNSurfNodesLocal,'global',mdNSurfNodes!(nn)
 

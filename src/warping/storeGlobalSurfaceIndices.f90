@@ -57,6 +57,7 @@ do nn=1,nDom
          DO K=1,kl!KMAX
             if (X(I,J,K,1) /= -5)then
                counter = counter+1
+               !print *,'counter',counter
             endif
          end DO
       end DO
@@ -83,11 +84,12 @@ do nn=1,nDom
       DO J=1,jl!JMAX
          DO K=1,kl!KMAX
             if (X(I,J,K,1) /= -5)then
-               mdSurfGlobalIndLocal(1,counter) = i
-               mdSurfGlobalIndLocal(2,counter) = j
-               mdSurfGlobalIndLocal(3,counter) = k
-               mdSurfGlobalIndLocal(4,counter) = nn
-               mdSurfGlobalIndLocal(5,counter) = X(i,j,k,1)
+               mdSurfGlobalIndLocal(1,counter+1) = i
+               mdSurfGlobalIndLocal(2,counter+1) = j
+               mdSurfGlobalIndLocal(3,counter+1) = k
+               mdSurfGlobalIndLocal(4,counter+1) = nn
+               mdSurfGlobalIndLocal(5,counter+1) = X(i,j,k,1)-1
+               !print *,'global index', mdSurfGlobalIndLocal(5,counter+1),counter,counter+1
                counter = counter+1
             endif
          end DO

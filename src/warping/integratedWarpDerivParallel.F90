@@ -15,7 +15,7 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
   use communication
   use mdDataLocal
   use warpingPETSc
-!  use ADjointPETSc
+  use ADjointPETSc, only: PETScOne, value
   implicit none
   !Subroutine Arguments
 !  integer(kind=intType)::ncoords
@@ -34,23 +34,23 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
   real(kind=realType), dimension(2) :: time
   real(kind=realType)               :: timeAdjLocal, timeAdj
 
-!!$  integer :: unitWarp = 8,ierror
-!!$  character(len = 20)::outfile,testfile
-!!$  
-!!$  write(testfile,100) myid!12
-!!$100 format (i5)  
-!!$  testfile=adjustl(testfile)
-!!$  write(outfile,101) trim(testfile)!testfile
-!!$101 format("ADParaWarpfile",a,".out")
-!!$  !outfile = "CSMachfile.txt"
-!!$  unitWarp = 8+myID
-!!$  !outfile = "CSMachfile.txt"
-!!$  
-!!$  open (UNIT=unitWarp,File=outfile,status='replace',action='write',iostat=ierror)
-!!$  if(ierror /= 0)                        &
-!!$       call terminate("integradtedWarpDeriv", &
-!!$       "Something wrong when &
-!!$       &calling open")
+  integer :: unitWarp = 8,ierror
+  character(len = 20)::outfile,testfile
+  !real(kind=realType)::xderiv
+  write(testfile,100) myid!12
+100 format (i5)  
+  testfile=adjustl(testfile)
+  write(outfile,101) trim(testfile)!testfile
+101 format("ADParaWarpfile",a,".out")
+  !outfile = "CSMachfile.txt"
+  unitWarp = 8+myID
+  !outfile = "CSMachfile.txt"
+  
+  open (UNIT=unitWarp,File=outfile,status='replace',action='write',iostat=ierror)
+  if(ierror /= 0)                        &
+       call terminate("integradtedWarpDeriv", &
+       "Something wrong when &
+       &calling open")
 
 #ifndef USE_NO_PETSC  
   
@@ -72,7 +72,7 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
   !loop over the Global surface points on this process to calculate the derivatives 
   !loop over domains
   do nn = 1,nDom
-     call setPointers(nn,1,sps)
+     call setPointersAdj(nn,1,sps)
    
 
  !    print *,'derivative sizes',IMAX+1,JMAX+1,KMAX+1,3,ndom,ncoords,3
@@ -127,10 +127,13 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
                     DO K=1,KMAX
                        do n = 1,3
                           idxvol = globalNode(i,j,k)*3+n
-                          idxsurf= mdSurfGlobalIndLocal(5,mm)*3+11
+                          idxsurf= mdSurfGlobalIndLocal(5,mm)*3+ll!1
+                          print *,'indices',idxvol,'surf',idxsurf,xyznewd(n,I,J,K)
                           if (xyznewd(n,I,J,K).ne.0.0)then
                              call MatSetValues(dXvdXs, 1, idxvol-1, 1, idxsurf-1,   &
                                                xyznewd(n,I,J,K), ADD_VALUES, PETScIerr)
+                             !call MatSetValues(dXvdXs, 1, idxvol-1, 1, idxsurf-1,   &
+                             !                 idxvol , ADD_VALUES, PETScIerr)
                              if( PETScIerr/=0 ) &
                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
                           endif
@@ -250,7 +253,7 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
                       mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
 
       if( PETScRank==0 ) &
-        write(*,20) "Assembling dR/dx matrix time (s) =", timeAdj
+        write(*,20) "Assembling dXv/dXs matrix time (s) =", timeAdj
 !
 !     ******************************************************************
 !     *                                                                *
@@ -284,24 +287,59 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
       ! see .../petsc/docs/manualpages/Mat/MatView.html
       ! or PETSc users manual, pp.57,148
 
-      if( debug ) then
+      !if( debug ) then
         !call MatView(dXvdXs,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
         call MatView(dXvdXs,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
         if( PETScIerr/=0 ) &
           call terminate("integratedWarpDerivParallel", "Error in MatView")
         !pause
-      endif
+      !endif
 
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
       call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
 
-
+      
 !      !now extract and write to a file
-!                          write(unitWarp,13) XYZNEWd(n,I,J,K),i,j,k,n,nnn,nn,mm,ll
-!13                        format(1x,'WarpSurf',f18.10,8I8)
-!
+
+      do nn = 1,nDom
+         call setPointersAdj(nn,1,sps)
+         do mm = 1,2 !mdNSurfNodesLocal(1)
+            !Check to see that coordinate is in this block. if so, update
+            if( mdSurfIndLocal(4,mm)==nn)then
+               do ll = 1,3
+                  do nnn = 1,ndom
+                     call setPointersAdj(nnn,1,sps)
+                     DO I=1,IMAX
+                        DO J=1,JMAX
+                           DO K=1,KMAX
+                              do n = 1,3
+                                 !allocate(idxvola(1,1),idxSurfa(1,1),xderiva(1,1)
+                                 idxvol = globalNode(i,j,k)*3+n
+                                 idxsurf= (mdSurfIndLocal(5,mm)-1)*3+ll!1
+                                 !print *,'index',nn,mm,ll,nnn,i,j,k,n,idxvol,idxsurf
+			         !print *,'index',idxvol,idxsurf
+                                 !call MatGetValues(dXvdXs,PETScOne,idxvol-1,PETScOne,idxsurf-1,xderiv,PETScIerr)
+                                 call MatGetValues(dXvdXs,1,idxvol-1,1,idxsurf-1,value,PETScIerr)
+                                 !print *,'xderiv',value(1)!xderiv
+                                 !if(value.ne.0)then
+                                 if(value>1e-10)then
+                                   !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
+ 12                                format(1x,'Face',6I2,'edge',12I2)
+                                   write(unitWarp,13) idxsurf,idxvol,mdSurfGlobalIndLocal(5,mm)*3+ll,i,j,k,n,nnn,nn,mm,ll,value
+                                 !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
+13                               format(1x,'WarpSurf',11I8,f18.10)
+				endif
+                              enddo
+                           END DO
+                        END DO
+                     END DO
+                  end do
+               end do
+            endif
+         end do
+      end do
 
 
       ! Output formats.

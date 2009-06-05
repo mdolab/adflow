@@ -16,7 +16,7 @@ subroutine integratedWarp(ncoords,xyzface,indices)
   !Subroutine Arguments
   integer(kind=intType)::ncoords
   real(kind=realType), dimension(3,ncoords)::xyzface
-  integer(kind=intType),dimension(4,ncoords)::indices
+  integer(kind=intType),dimension(5,ncoords)::indices
   
   ! Local Arguments
   
@@ -26,19 +26,19 @@ subroutine integratedWarp(ncoords,xyzface,indices)
   integer(kind=intType),dimension(6)::IFACEPTB
   integer(kind=intType),dimension(12)::IEDGEPTB
   
-  !reset the mesh coordinates to initial values
-  do nn=1,nDom
-     call setPointers(nn,level,sps)
-     DO I=1,il!IMAX
-        DO J=1,jl!JMAX
-           DO K=1,kl!KMAX
-              X(I,J,K,1) = Xinit(I,J,K,1)
-              X(I,J,K,2) = Xinit(I,J,K,2)
-              X(I,J,K,3) = Xinit(I,J,K,3)
-           END DO
-        END DO
-     END DO
-  enddo
+!!$  !reset the mesh coordinates to initial values
+!!$  do nn=1,nDom
+!!$     call setPointers(nn,level,sps)
+!!$     DO I=1,il!IMAX
+!!$        DO J=1,jl!JMAX
+!!$           DO K=1,kl!KMAX
+!!$              X(I,J,K,1) = Xinit(I,J,K,1)
+!!$              X(I,J,K,2) = Xinit(I,J,K,2)
+!!$              X(I,J,K,3) = Xinit(I,J,K,3)
+!!$           END DO
+!!$        END DO
+!!$     END DO
+!!$  enddo
 
 
   !update the faces based on the new surface
