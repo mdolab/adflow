@@ -83,12 +83,12 @@ do mm= 1,nSubface
             !check whether this point has moved
             
             do ll=1,3
-               !local = x(ii,jj,kk,ll)
-               !local0 = xInit(ii,jj,kk,ll)
-               !tolerance = 1.0e-12
-               !if (abs(local -local0)/max(abs(local0),abs(local),tolerance)>1e-12.and. abs(local -local0)>tolerance )then
+               local = x(ii,jj,kk,ll)
+               local0 = xInit(ii,jj,kk,ll)
+               tolerance = 1.0e-12
+               if( (abs(local -local0)/max(abs(local0),abs(local),tolerance)>1e-12.and. abs(local -local0)>tolerance ).or.(xyznewd(ll,ii,jj,kk)/=0))then
                
-               if(xyznewd(ll,ii,jj,kk)/=0)then  
+!!$               if(xyznewd(ll,ii,jj,kk)/=0)then  
                   !print *,'corner',ii,jj,kk,ll,xyznewd(ll,ii,jj,kk)
                   !point has moved
                   !set the index for this point
@@ -144,7 +144,12 @@ do k=1,kl,kl-1!ijk(3),ijk(3)!jump corner to corner
    do j=1,jl,jl-1!ijk(2),ijk(2)
       do i=1,il,il-1!ijk(1),ijk(1)
          do n =1,3
-            if (xyznewd(n,i,j,k)/=0)then
+            local = x(i,j,k,n)
+            local0 = xInit(i,j,k,n)
+            tolerance = 1.0e-12
+            if( (abs(local -local0)/max(abs(local0),abs(local),tolerance)>1e-12.and. abs(local -local0)>tolerance).or.(xyznewd(n,i,j,k)/=0))then
+!!$            if (xyznewd(n,i,j,k)/=0)then
+
                !print *,'corner perturbed',i,j,k,n,xyznewd(n,i,j,k)
                perturbedCorner(counter) = .True.
                exit!break
@@ -193,8 +198,12 @@ do mm = 1,12!len(searchPattern)!Loop over edges
          do k=searchPattern(mm,5),searchPattern(mm,6)
             !print *,'i,j,k',i,j,k
             do n=1,3
-               if(xyznewd(n,i,j,k)/=0)then
-                  print *,'edgeperturbed',i,j,k,local,local0!,n,mm
+               local = x(i,j,k,n)
+               local0 = xInit(i,j,k,n)
+               tolerance = 1.0e-12
+               if ((abs(local -local0)/max(abs(local0),abs(local),tolerance)>1e-12.and. abs(local -local0)>tolerance ).or.(xyznewd(n,i,j,k)/=0))then
+!!$               if(xyznewd(n,i,j,k)/=0)then
+                  print *,'edgeperturbed',i,j,k!,local,local0!,n,mm
                   IEDGEPTB(mm) = 2
                   do m=1,2
                      face = edgeRelatedFaces(m,mm)

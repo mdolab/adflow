@@ -45,6 +45,7 @@ FF90_OBJECTS = warp_local.o        \
                integratedWarpDerivParallel.o \
                integratedWarpDerivFD.o \
                updateFaces.o\
+               createWarpingPETScMat.o\
 	       flagImplicitFacesAndEdges.o\
 	       flagImplicitFacesAndEdgesDeriv.o\
 	       blockRelations.o\

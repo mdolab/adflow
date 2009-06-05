@@ -14,7 +14,7 @@ subroutine updateFaces(ncoords,xyz_new,indices_new)
   !Subroutine Arguments
   integer(kind=intType)::ncoords
   real(kind=realType), dimension(3,ncoords)::xyz_new
-  integer(kind=intType),dimension(4,ncoords)::indices_new
+  integer(kind=intType),dimension(5,ncoords)::indices_new
 
   !Local variables
 

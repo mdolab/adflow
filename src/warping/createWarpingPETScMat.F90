@@ -23,6 +23,7 @@
       use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
       use communication   ! myID, nProc
       use flowVarRefState ! 
+      use mdData          !mdNSurfNodes
       implicit none
 !
 !     Local variables.
@@ -36,7 +37,7 @@
       integer       :: matBlockSize, matRows, matCols
       character(15) :: matTypeStr
 
-      integer   :: nzDiagonalW, nzDiagonalX, nzOffDiag
+      integer   ::  nzDiagonalXs, nzOffDiag
       integer, dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
 
       character(len=2*maxStringLen) :: errorMessage
@@ -54,40 +55,32 @@
 #define MATMPIDENSE        "mpidense"
    
 
-      ! Define matrix dRdx local size (number of columns) for the
-      ! spatial derivatives.
+      ! Define matrix dXvdXs local size (number of columns) for the mesh
+      ! volume coordinates.
 
       nDimX = 3 * nNodesLocal
 
-      ! Define matrix dSdx local size (number of Rows) for the
-      ! Coupling derivatives.
+      ! Define matrix dXvdXs global size (number of Rows) for the
+      ! surface coordinates.
 
-      nDimS = 3 * nSurfNodesLocal
+      nDimS = 3 * mdNSurfNodes(nProc,1)
 
       ! Number of non-zero blocks per residual row in dRdW
       ! >>> This depends on the stencil being used R=R(W)
       !     1st order stencil ->  7 cells
       !     2nd order stencil -> 13 cells
 
-      ! Stencil of W
-      ! 1  - center cell
-      ! 6  - 1st level cells along directions i,j,k
-      ! 6  - 2nd level cells along directions i,j,k
+      ! Stencil of Xs
+      ! 1  - corner node
+      
 
-      nzDiagonalW = 13 ! 1 + 6 + 6  check!!!
+      nzDiagonalXs = 1!13 ! 1 + 6 + 6  check!!!
 
-      ! Stencil of X
-      ! 1  - center node
-      ! 6  - 1st level nodes along directions i,j,k
-      ! 6  - 2nd level nodes along directions i,j,k
-      ! 12 - 1st level nodes along diagonals (i,j),(i,k),(j,k) 
-
-      nzDiagonalX = 25 ! 1 + 6 + 6 + 12 Check
 
       ! Average number of off processor contributions per Cell
       ! (average number of donor cells that come from other processor)
 
-      nzOffDiag  = 3
+      nzOffDiag  = 1!3
 !
 !     ******************************************************************
 !     *                                                                *
@@ -180,20 +173,35 @@
         !
         ! See .../petsc/docs/manualpages/Mat/MatCreateMPIAIJ.html
 
-        nzDiagonalW = nzDiagonalW * nw
-        nzOffDiag   = nzOffDiag   * nw
+        nzDiagonalXs = nzDiagonalXs * 3
+        nzOffDiag   = nzOffDiag   * 3
 
-        allocate( nnzDiagonal(nDimW), nnzOffDiag(nDimW) )
+        allocate( nnzDiagonal(nDimX), nnzOffDiag(nDimX) )
 
-        nnzDiagonal = nzDiagonalW
+        nnzDiagonal = nzDiagonalXs
         nnzOffDiag  = nzOffDiag
 
+	print *,'petscnull',PETSC_NULL
+
+        !call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+        !                     nDimX, nDimS,                     &
+        !                     PETSC_DETERMINE, PETSC_DETERMINE, &
+        !                     nzDiagonalW, nnzDiagonal,         &
+        !                     nzOffDiag, nnzOffDiag,            &
+        !                     dXvdXs, PETScIerr)
+        !call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+        !                     nDimX,PETSC_DECIDE,        &
+	!	             PETSC_DETERMINE, nDimS,                     &
+        !                     0,PETSC_NULL,         &
+        !                     0, PETSC_NULL,            &
+        !                     dXvdXs, PETScIerr)
         call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
-                             nDimX, nDimS,                     &
-                             PETSC_DETERMINE, PETSC_DETERMINE, &
-                             nzDiagonalW, nnzDiagonal,         &
+                             nDimX,PETSC_DECIDE,               &
+		             PETSC_DETERMINE, nDimS,           &
+                             nzDiagonalXs, nnzDiagonal,         &
                              nzOffDiag, nnzOffDiag,            &
                              dXvdXs, PETScIerr)
+
 
       deallocate( nnzDiagonal, nnzOffDiag )
 
@@ -351,18 +359,24 @@
         !
         ! See .../petsc/docs/manualpages/Mat/MatCreateMPIAIJ.html
 
-        nzDiagonalW = nzDiagonalW * nw
-        nzOffDiag   = nzOffDiag   * nw
+        nzDiagonalXs = nzDiagonalXs * 3
+        nzOffDiag   = nzOffDiag   * 3
 
         allocate( nnzDiagonal(nDimX), nnzOffDiag(nDimX) )
 
-        nnzDiagonal = nzDiagonalW
+        nnzDiagonal = nzDiagonalXs
         nnzOffDiag  = nzOffDiag
-
-        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
-                             nDimX, nDimS,                     &
-                             PETSC_DETERMINE, PETSC_DETERMINE, &
-                             nzDiagonalW, nnzDiagonal,         &
+        print *,'petscnull 2',PETSC_NULL	
+        !call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+        !                     nDimX, nDimS,                     &
+        !                     PETSC_DETERMINE, PETSC_DETERMINE, &
+        !                     nzDiagonalW, nnzDiagonal,         &
+        !                     nzOffDiag, nnzOffDiag,            &
+        !                     dXvdXsFD, PETScIerr)
+	call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+                             nDimX,PETSC_DECIDE,        &
+		             PETSC_DETERMINE, nDimS,                     &
+                             nzDiagonalXs, nnzDiagonal,         &
                              nzOffDiag, nnzOffDiag,            &
                              dXvdXsFD, PETScIerr)
 
@@ -567,7 +581,7 @@
                          "Error in MatGetOwnershipRange dXvdXs")
 
         write(*,40) "# MATRIX: dXvdXs Proc", PETScRank, "; #rows =", &
-                    nDimW, "; ownership =", iLow, "to", iHigh-1
+                    nDimX, "; ownership =", iLow, "to", iHigh-1
 
       endif
 
@@ -582,4 +596,4 @@
 
 #endif
 
-      end subroutine createPETScMat
+      end subroutine createWarpingPETScMat

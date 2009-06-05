@@ -7,7 +7,7 @@ python module sumb ! in
             use blockpointers
             integer(kind=inttype) optional,check(shape(xyzface,1)==ncoords),depend(xyzface) :: ncoords=shape(xyzface,1)
             real(kind=realtype) dimension(3,ncoords) :: xyzface
-            integer(kind=inttype) dimension(4,ncoords),depend(ncoords) :: indices
+            integer(kind=inttype) dimension(5,ncoords),depend(ncoords) :: indices
         end subroutine integratedwarp
     end interface 
 end python module sumb

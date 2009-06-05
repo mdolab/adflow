@@ -59,19 +59,19 @@ subroutine synchronizeSurfaceIndices(level,sps)
   
   notSynchronized = .True.
   count = 0
-  print *,'starting loop'
+  !print *,'starting loop'
   do while (notSynchronized)
      ! Set state to synchronized and the check for truth at the end of the 
      ! loop.
      notSynchronized = .False.
 
-     print *,'looping over blocks'
+   !  print *,'looping over blocks'
      !loop over blocks and subfaces
      do i=1,nDom
-        print *,'setting pointers',i
+    !    print *,'setting pointers',i
         call setPointers(i,level,sps)
 
-        print *,'checkking for allocation of nNodesSubface'
+     !   print *,'checkking for allocation of nNodesSubface'
         ! Check to see if the memory is allocated to store the total number
         ! of nodes on each subface. If not, allocate.
         !if(.not. allocated(nNodesSubface)) then
