@@ -219,7 +219,7 @@
                   +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
                zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
                   +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
-               !print *,'xc',nn,i,j,xc,yc,zc
+
                ! Compute the force components.
 
                fx = pm1*ss(i,j,1)
