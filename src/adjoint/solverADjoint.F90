@@ -156,8 +156,8 @@
 
         ! Verify the node-based residual routine.
 
-  	!call verifyRAdj(level)
-!stop
+  	call verifyRAdj(level)
+stop
 	!call verifyResiduals(level)
 !stop
         ! Verify the node-based ADjoint residual routine.
