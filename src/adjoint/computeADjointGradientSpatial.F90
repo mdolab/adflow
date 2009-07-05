@@ -247,6 +247,9 @@
 !	if (PETScRank==0) then
 !	     print *,'spatial function',functionGradSpatial(costFunction,:) 
 !        endif
+      !Indices for sgs_wing_cmesh_500k
+      !globalNode => flowdoms(8,1,1)%globalNode
+      !idx = globalnode(10,1,10)*3+3 
 !      globalNode => flowdoms(3,1,1)%globalNode
 !      idx = globalnode(2,7,13)*3+3 
 
@@ -297,7 +300,7 @@
        !idx = globalNode(1,1,1)*3+3 !mdawing
        !globalNode =>flowdoms(7,1,1)%globalNode 		
 !       idx = globalNode(3,9,3)*3+3 !mdawing
-!      print *,'costfunction derivative',idx,functionGradSpatial(costFunction,idx)
+      !print *,'costfunction derivative',idx,functionGradSpatial(costFunction,idx)
 !****************
 
 

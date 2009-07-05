@@ -151,7 +151,7 @@ FF90_GEN_FLAGS = -DHAS_ISNAN
 CC_GEN_FLAGS   =
 
 FF90_OPTFLAGS   = -O2 -axW -unroll -ip -fPIC
-CC_OPTFLAGS     = -O -fPIC
+CC_OPTFLAGS     = #-O -fPIC
 
 FF90_DEBUGFLAGS = #-g -check all#-CB -implicitnone -DDEBUG_MODE
 #CC_DEBUGFLAGS   = -g -Wall -pedantic -DDEBUG_MODE
@@ -197,7 +197,8 @@ X11_DIR    = /usr/X11R6/lib
 #PETSC_ARCH = linux-gnu-c-real-debug
 #PETSC_DIR  = /opt/petsc-2.3.1-p16-opt
 PETSC_DIR  = /opt/petsc-2.3.3-p7-mpich2-icc10
-PETSC_ARCH = linux-gnu-c-opt#linux-gnu-c-real-opt
+#PETSC_ARCH = linux-gnu-c-opt#linux-gnu-c-real-opt
+PETSC_ARCH = linux-gnu-c-debug
 #PETSC_INCLUDE_FLAGS = -DUSE_NO_PETSC
 PETSC_INCLUDE_FLAGS = -I$(PETSC_DIR) -I$(PETSC_DIR)/bmake/$(PETSC_ARCH) -I$(PETSC_DIR)/include -I$(PETSC_DIR)/include/mpiuni
 PETSC_LINKER_FLAGS  = -L$(PETSC_DIR)/lib/$(PETSC_ARCH) -lpetscksp -lpetscdm -lpetscmat -lpetscvec -lpetsc -L$(X11_DIR) -lX11 -L$(PETSC_DIR)/externalpackages/fblaslapack/$(PETSC_ARCH) -lflapack -lfblas -lm

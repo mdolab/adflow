@@ -4,8 +4,8 @@
 !  Differentiation of residualadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: rotrateadj voladj
 !                padj wadj sfacekadj skadj sfacejadj sjadj sfaceiadj
-!                siadj kappacoef
-!   of linear combination of output variables: dwadj
+!                siadj vis2 vis4 kappacoef cdisrk
+!   of linear combination of output variables: dwadj massflowfamilydiss
 !
 !      ******************************************************************
 !      *                                                                *
@@ -57,6 +57,43 @@ SUBROUTINE RESIDUALADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, sjadj&
   LOGICAL :: finegrid
   REAL(KIND=REALTYPE) :: fwadj(nw)
   INTEGER(KIND=INTTYPE) :: i, j, k, l
+  EXTERNAL TERMINATE
+!
+!      ******************************************************************
+!      *                                                                *
+!      * residual computes the residual of the mean flow equations on   *
+!      * the current MG level.                                          *
+!      *                                                                *
+!      ******************************************************************
+!
+!       Subroutine Variables
+!integer(kind=intType), intent(in) :: discr
+!
+!      Local variables.
+!
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Begin execution                                                *
+!      *                                                                *
+!      ******************************************************************
+!
+!   Come back to this later....
+!!$       ! Add the source terms from the level 0 cooling model.
+!!$
+!!$       call level0CoolingModel
+! Set the value of rFil, which controls the fraction of the old
+! dissipation residual to be used. This is only for the runge-kutta
+! schemes; for other smoothers rFil is simply set to 1.0.
+! Note the index rkStage+1 for cdisRK. The reason is that the
+! residual computation is performed before rkStage is incremented.
+  IF (smoother .EQ. rungekutta) THEN
+    rfil = cdisrk(rkstage+1)
+    CALL PUSHINTEGER4(0)
+  ELSE
+    rfil = one
+    CALL PUSHINTEGER4(1)
+  END IF
 ! Initialize the local arrays to monitor the massflows to zero.
 ! Set the value of the discretization, depending on the grid level,
 ! and the logical fineGrid, which indicates whether or not this
@@ -124,15 +161,30 @@ SUBROUTINE RESIDUALADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, sjadj&
 ! Compute the artificial dissipation fluxes.
 ! This depends on the parameter discr.
   SELECT CASE  (discr) 
+  CASE (dissscalar) 
+! Standard scalar dissipation scheme.
+    IF (finegrid) THEN
+      CALL PUSHREAL8ARRAY(wadj, 5**3*nw)
+!print *,'calling dissipation!'
+!stop
+!fw(:,:,:,:) = 0.0
+!call inviscidDissFluxScalar()
+      CALL INVISCIDDISSFLUXSCALARADJ(wadj, padj, dwadj, icell, jcell, &
+&                               kcell)
+!!$               do i = 1,nw
+!!$                  !if (abs(dwAdj(i)-dwAdj2(i))>0.0) then
+!!$                  !if (abs(dwAdj(i)-fw(icell,jcell,kcell,i))>1e-16) then
+!!$                  !if (1.0>0.0) then
+!!$                     print *,abs(dwAdj(i)-fw(icell,jcell,kcell,i)),'dwadjscalar',dwAdj(i),'scalar2',i,icell,jcell,kcell,fw(ice
+!ll,jcell,kcell,i)
+!!$                  !endif
+!!$               enddo
+!stop
+      CALL PUSHINTEGER4(1)
+    ELSE
+      CALL PUSHINTEGER4(2)
+    END IF
   CASE (upwind) 
-!!$             case (dissScalar) ! Standard scalar dissipation scheme.
-!!$               if( fineGrid ) then
-!!$                 call inviscidDissFluxScalarAdj()
-!!$               else
-!!$                  call terminate("residualAdj", &
-!!$                        "ADjoint does not function on coarse grid level")
-!!$                  !call inviscidDissFluxScalarCoarse
-!!$               endif
 !===========================================================
 !!$             case (dissMatrix) ! Matrix dissipation scheme.
 !!$
@@ -162,35 +214,56 @@ SUBROUTINE RESIDUALADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, sjadj&
     CALL INVISCIDUPWINDFLUXADJ(wadj, padj, dwadj, siadj, sjadj, skadj, &
 &                         sfaceiadj, sfacejadj, sfacekadj, icell, jcell&
 &                         , kcell, finegrid)
-    CALL PUSHINTEGER4(1)
+    CALL PUSHINTEGER4(3)
   CASE DEFAULT
     CALL PUSHINTEGER4(0)
   END SELECT
   l = 0
   CALL POPINTEGER4(branch)
-  IF (branch .LT. 1) THEN
+  IF (branch .LT. 2) THEN
+    IF (branch .LT. 1) THEN
+      padjb(-2:2, -2:2, -2:2) = 0.0
+      wadjb(-2:2, -2:2, -2:2, 1:nw) = 0.0
+      sfacekadjb(-2:2, -2:2, -2:2) = 0.0
+      skadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
+      sfacejadjb(-2:2, -2:2, -2:2) = 0.0
+      sjadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
+      sfaceiadjb(-2:2, -2:2, -2:2) = 0.0
+      siadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
+      GOTO 100
+    ELSE
+      CALL POPREAL8ARRAY(wadj, 5**3*nw)
+      CALL INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
+&                                 dwadjb, icell, jcell, kcell)
+    END IF
+  ELSE IF (branch .LT. 3) THEN
     padjb(-2:2, -2:2, -2:2) = 0.0
     wadjb(-2:2, -2:2, -2:2, 1:nw) = 0.0
-    sfacekadjb(-2:2, -2:2, -2:2) = 0.0
-    skadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
-    sfacejadjb(-2:2, -2:2, -2:2) = 0.0
-    sjadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
-    sfaceiadjb(-2:2, -2:2, -2:2) = 0.0
-    siadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
   ELSE
     CALL INVISCIDUPWINDFLUXADJ_B(wadj, wadjb, padj, padjb, dwadj, dwadjb&
 &                           , siadj, siadjb, sjadj, sjadjb, skadj, &
 &                           skadjb, sfaceiadj, sfaceiadjb, sfacejadj, &
 &                           sfacejadjb, sfacekadj, sfacekadjb, icell, &
 &                           jcell, kcell, finegrid)
+    GOTO 100
   END IF
-  CALL INVISCIDCENTRALFLUXADJ_B(wadj, wadjb, padj, padjb, dwadj, dwadjb&
-&                          , siadj, siadjb, sjadj, sjadjb, skadj, skadjb&
-&                          , voladj, voladjb, sfaceiadj, sfaceiadjb, &
-&                          sfacejadj, sfacejadjb, sfacekadj, sfacekadjb&
-&                          , rotrateadj, rotrateadjb, icell, jcell, &
-&                          kcell)
+  sfacekadjb(-2:2, -2:2, -2:2) = 0.0
+  skadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
+  sfacejadjb(-2:2, -2:2, -2:2) = 0.0
+  sjadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
+  sfaceiadjb(-2:2, -2:2, -2:2) = 0.0
+  siadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
+ 100 CALL INVISCIDCENTRALFLUXADJ_B(wadj, wadjb, padj, padjb, dwadj, &
+&                             dwadjb, siadj, siadjb, sjadj, sjadjb, &
+&                             skadj, skadjb, voladj, voladjb, sfaceiadj&
+&                             , sfaceiadjb, sfacejadj, sfacejadjb, &
+&                             sfacekadj, sfacekadjb, rotrateadj, &
+&                             rotrateadjb, icell, jcell, kcell)
   CALL POPINTEGER4(branch)
   CALL POPINTEGER4(branch)
- ! kappacoefb = 0.0
+  CALL POPINTEGER4(branch)
+!!$  cdisrkb(:) = 0.0
+!!$  kappacoefb = 0.0
+!!$  vis4b = 0.0
+!!$  vis2b = 0.0
 END SUBROUTINE RESIDUALADJ_B

@@ -28,6 +28,7 @@
        use cgnsGrid
        use communication
        use mdDataLocal
+       use mdData
        implicit none
 !
 !      Subroutine arguments.
@@ -43,7 +44,7 @@
        integer(kind=intType) :: ii, jj, mm, nn, i, j, k
        integer(kind=intType) :: iBeg, jBeg, kBeg, iEnd, jEnd, kEnd
        integer(kind=intType) :: nSurfNodesLoc, modFamID
-
+       integer(kind=intType),dimension(0:nProc) ::nSurfNodes
        integer(kind=intType), dimension(:,:), allocatable :: indLoc
 
        logical :: storeSubface
@@ -69,14 +70,17 @@
        ! information is not available.
 
        if(.not. allocated(mdNSurfNodesLocal)) call mdCreateNSurfNodesLocal
+       if(.not. allocated(mdNSurfNodes)) call mdCreateNSurfNodes
 
        ! Allocate the memory for the local surface ID's. ModFamID is
        ! introduced to take famID == 0 into account.
 
        modFamID = max(famID, 1_intType)
+       print *,'modFamiID',modfamID,famid
        nSurfNodesLoc = mdNSurfNodesLocal(modFamID) 
+       nSurfNodes = mdNSurfNodes(:,modFamID) 
 
-       allocate(indLoc(4,nSurfNodesLoc), stat=ierr)
+       allocate(indLoc(5,nSurfNodesLoc), stat=ierr)
        if(ierr /= 0)                               &
          call terminate("mdCreateSurfIndListLocal", &
                         "Memory allocation failure for indLoc")
@@ -85,8 +89,9 @@
        ! given family ID.
 
        ii = 0
+       !print *,'entering domain loop'
        domains: do nn=1,nDom
-
+          !print *,'domain',nn,ndom
          ! Have the pointers in blockPointers point to the 1st
          ! spectral solution of this block on the finest mg level.
          ! There is no need to distinguish between the different
@@ -96,9 +101,9 @@
          call setPointers(nn,1_intType,1_intType)
 
          ! Loop over the number of boundary subfaces of this block.
-
+         !print *,'entering bocos loop'
          bocos: do mm=1,nBocos
-
+            !print *,'bocos',mm,nbocos
            ! Check if the data of this subface must be stored.
 
            storeSubface = .false.
@@ -173,6 +178,8 @@
                    indLoc(2,ii) = j! - 1 + jBegor
                    indLoc(3,ii) = k! - 1 + kBegor
                    indLoc(4,ii) = nn
+                   indLoc(5,ii) = ii+nSurfNodes(myID)
+                   !print *,'globalindex',ii,indLoc(5,ii)
                  enddo
                enddo
              enddo
@@ -187,14 +194,14 @@
        if(.not. allocated(mdSurfIndLocal) ) then
 
          jj = mdNSurfNodesLocal(max(cgnsNfamilies,1_intType))
-         allocate(mdSurfIndLocal(4,jj), stat=ierr)
+         allocate(mdSurfIndLocal(5,jj), stat=ierr)
          if(ierr /= 0)                           &
            call terminate("mdCreateSurfIndListLocal", &
                           "Memory allocation failure for mdSurfIndLocal")
        endif
 
  
-       size = 4*nSurfNodesLoc
+       size = 5*nSurfNodesLoc
        mdSurfIndLocal(:,:) = indLoc(:,:)
 
        ! Release the memory of indLoc.
@@ -209,7 +216,7 @@
        ! is stored.
 
        startInd = mdNSurfNodesLocal(modFamID) + 1
-       endInd   = mdNSurfNodesLocal(modFamID+1)
+       endInd   = mdNSurfNodesLocal(modFamID) + nSurfNodesLoc!mdNSurfNodesLocal(modFamID+1)
 
      end subroutine mdCreateSurfIndListLocal
 

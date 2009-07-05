@@ -739,7 +739,7 @@ class SUmbInterface(object):
         autofile.write(  "            Reference pressure (in Pa): 101325.0\n")
         autofile.write(  "         Reference density (in kg/m^3): 1.25\n")
         autofile.write(  "          Reference temperature (in K): 273.15\n")
-        autofile.write(  " Conversion factor grid units to meter: 1.0\n")
+        autofile.write(  " Conversion factor grid units to meter: %6.4f\n"%(kwargs['MetricConversion']))
         autofile.write( "\n")
         
         autofile.write(  "-------------------------------------------------------------------------------\n")
@@ -911,7 +911,7 @@ class SUmbInterface(object):
         autofile.write(  "   Number of single grid startup iterations: 0\n")
         autofile.write(  "                                 Save every: 0\n")
         autofile.write(  "                         Save surface every: 0\n")
-        autofile.write(  "                                 CFL number: 1.5\n")
+        autofile.write(  "                                 CFL number: %2.1f\n"%(kwargs['CFL']))
         autofile.write( "\n")
         if eqn_type=='RANS':
             autofile.write(  "                       Turbulent relaxation: Explixit\n")
@@ -920,13 +920,13 @@ class SUmbInterface(object):
             autofile.write(  "                     Alpha turbulent DD-ADI: 0.8\n")
             autofile.write(  "                      Beta turbulent DD-ADI: -1  # Same as alpha\n")
         #endif
-        autofile.write(  "           Relative L2 norm for convergence: 1.e-10\n")
+        autofile.write(  "           Relative L2 norm for convergence: %3.2e\n"%(kwargs['L2Convergence']))
         autofile.write( "\n")
 
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Multigrid Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "      Number of multigrid cycles coarse grid:  -1  # Means same as on fine grid\n")
+        autofile.write(  "      Number of multigrid cycles coarse grid:  2  # Means same as on fine grid\n")
         autofile.write(  "                      CFL number coarse grid: -1.0  # Means same as on fine grid\n")
         autofile.write(  "Relative L2 norm for convergence coarse grid: 1.e-2\n")
         autofile.write( "\n")
@@ -943,7 +943,7 @@ class SUmbInterface(object):
         autofile.write(  " Treatment boundary multigrid corrections: Zero Dirichlet\n")
         autofile.write(  "            Restriction relaxation factor: 1.0\n")
         autofile.write(  "#                    Multigrid start level:  # Default is coarsest MG level\n")
-        autofile.write(  "                 Multigrid cycle strategy: 2v\n")
+        autofile.write(  "                 Multigrid cycle strategy: %s\n"%(kwargs['MGCycle']))
         autofile.write( "\n")
 
         #! Write the keywords and default values for the parallel, i.e.

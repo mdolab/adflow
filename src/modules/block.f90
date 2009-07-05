@@ -382,6 +382,10 @@
          !  x(0:ie,0:je,0:ke,3)  - xyz locations of grid points in block.
          !  xInit(0:ie,0:je,0:ke,3) - initial xyz locations of grid points
          !                         in block. Used in mesh warping.
+         !  xplus(0:ie,0:je,0:ke,3) - temporary block arrays for warping FD
+         !                         Used in mesh warping.
+         !  xminus(0:ie,0:je,0:ke,3) - temporary block arrays for warping FD
+         !                         Used in mesh warping.
          !  xOld(nOld,:,:,:,:)   - Coordinates on older time levels;
          !                         only needed for unsteady problems on
          !                         deforming grids. Only allocated on
@@ -447,6 +451,7 @@
          !  sFaceK(ie,je,0:ke) - Idem in k-direction.
 
          real(kind=realType), dimension(:,:,:,:),   pointer :: x,xInit
+         real(kind=realType), dimension(:,:,:,:),   pointer :: xplus,xminus
          real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
 
          real(kind=realType), dimension(:,:,:,:), pointer :: sI, sJ, sK

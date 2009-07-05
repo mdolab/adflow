@@ -136,7 +136,7 @@
        enddo
 
        ! Goto this zone.
-       print *,'zoneIndex',nZone
+       !print *,'zoneIndex',nZone
        call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, "end")
        if(ierr /= all_ok)               &
          call terminate("readZoneInfo", &

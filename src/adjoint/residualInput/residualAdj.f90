@@ -119,15 +119,30 @@
 
            select case (discr)
 
-!!$             case (dissScalar) ! Standard scalar dissipation scheme.
+             case (dissScalar) ! Standard scalar dissipation scheme.
 
-!!$               if( fineGrid ) then
-!!$                 call inviscidDissFluxScalarAdj()
-!!$               else
-!!$                  call terminate("residualAdj", &
-!!$                        "ADjoint does not function on coarse grid level")
-!!$                  !call inviscidDissFluxScalarCoarse
-!!$               endif
+               if( fineGrid ) then
+                  !print *,'calling dissipation!'
+                  !stop
+                  !fw(:,:,:,:) = 0.0
+                  
+                  !call inviscidDissFluxScalar()
+                  call inviscidDissFluxScalarAdj(wAdj,  pAdj,  dwadj,   &
+                                                iCell, jCell, kCell)
+
+!!$               do i = 1,nw
+!!$                  !if (abs(dwAdj(i)-dwAdj2(i))>0.0) then
+!!$                  !if (abs(dwAdj(i)-fw(icell,jcell,kcell,i))>1e-16) then
+!!$                  !if (1.0>0.0) then
+!!$                     print *,abs(dwAdj(i)-fw(icell,jcell,kcell,i)),'dwadjscalar',dwAdj(i),'scalar2',i,icell,jcell,kcell,fw(icell,jcell,kcell,i)
+!!$                  !endif
+!!$               enddo
+               !stop
+               else
+                  call terminate("residualAdj", &
+                        "ADjoint does not function on coarse grid level")
+                  !call inviscidDissFluxScalarCoarse
+               endif
 
              !===========================================================
 
@@ -219,7 +234,7 @@
 
 
            do l=1,nwf
-              dwAdj(l) =dwAdj(l)+ fwAdj(l)! (dwAdj(l) + fwAdj(l)) &
+              dwAdj(l) =dwAdj(l)! (dwAdj(l) + fwAdj(l)) &
                                !* real(iblank(iCell,jCell,kCell), realType)
            enddo
 

@@ -172,6 +172,7 @@ TAPENADE_SRC_SOLVER = $(TAPENADE_DIRSRC_RES)/applyAllBCAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/initresAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/inviscidCentralFluxAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/inviscidUpwindFluxAdj.f90 \
+	       $(TAPENADE_DIRSRC_RES)/inviscidDissFluxScalarAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/leftRightStateAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/metricAdj.f90 \
                $(TAPENADE_DIRSRC_RES)/normalVelocitiesAdj.f90 \
