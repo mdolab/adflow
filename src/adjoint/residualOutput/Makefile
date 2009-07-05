@@ -54,6 +54,7 @@ FF90_OBJECTS = adjustinflowangleadj_b.o   \
 	       gridvelocitiesfineleveladj_b.o \
                inviscidcentralfluxadj_b.o \
 	       inviscidupwindfluxadj_b.o  \
+	       invisciddissfluxscalaradj_b.o  \
                leftrightstateadj_b.o      \
                metricadj_b.o              \
                normalvelocitiesalllevelsadj_b.o\

@@ -156,20 +156,21 @@
 
         ! Verify the node-based residual routine.
 
-  	call verifyRAdj(level)
-stop
+  	!call verifyRAdj(level)
+!stop
 	!call verifyResiduals(level)
 !stop
         ! Verify the node-based ADjoint residual routine.
 
 !	call verifydRdW(level,sps)
+	call verifydRdWFile(level,sps)
 !stop
 
         ! Verify the dRdx routine
 
 ! 	call verifydRdx(level,sps)
 !stop	
-	!call verifydRdExtra(level)
+!	call verifydRdExtra(level)
 	!call verifydRdExtraFDAD(level)	
 
         ! Verify the ADjoint routine for the forces
@@ -220,7 +221,7 @@ stop
 !
       !print *,'calling setupADjointMatrix'
       call setupADjointMatrix(level)
-
+stop
 
       ! Reordered for ASM preconditioner
       ! Create the Krylov subspace linear solver context,

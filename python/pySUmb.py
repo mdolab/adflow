@@ -107,7 +107,7 @@ class SUMB(AeroSolver):
 			test=1
 		else:
 			if kwargs['reinitialize']:
-				self.interface.initializeFlow(aero_problem,sol_type,grid_file)
+				self.interface.initializeFlow(aero_problem,sol_type,grid_file, *args, **kwargs)
 				self.filename=grid_file
 			#endif
 		#endtry
@@ -194,7 +194,7 @@ class SUMB(AeroSolver):
 			# flow solver information
 			meshwarping.synchronizeBlockFaces()
 			
-                        #print 'Block faces synchronized...'
+                        print 'Block faces synchronized...'
 			#Update the local blocks with the fortran routine WARPBLK
 			meshwarping.updateLocalBlockCoords()
 
@@ -374,7 +374,7 @@ class SUMB(AeroSolver):
 					newMesh = meshwarping.getMeshCoordinates()
  	                                #compute derivative
 					newMeshDerivative = (newMesh.imag)/deltax.imag
-					#print 'newMeshDerivative',newMeshDerivative
+					print 'newMeshDerivative',newMeshDerivative
 					#append to mesh derivative list
 					rowDerivatives.append(newMeshDerivative)
 

@@ -120,7 +120,7 @@
            ! Store the data of this subface, if needed.
 
            storeSubfaceTest: if( storeSubface ) then
-
+            
              ! Subface must be stored. 
 
              select case (BCFaceID(mm))
@@ -153,7 +153,7 @@
 
              ! Loop over the nodes of the subface and store its
              ! coordinates in xxLoc.
-
+            
              do k=kBeg,kEnd
                do j=jBeg,jEnd
                  do i=iBeg,iEnd
@@ -161,10 +161,11 @@
                    xxLoc(1,ii) = x(i,j,k,1)
                    xxLoc(2,ii) = x(i,j,k,2)
                    xxLoc(3,ii) = x(i,j,k,3)
+                   
                  enddo
                enddo
              enddo
-
+            
            endif storeSubfaceTest
          enddo bocos
        enddo domains
@@ -195,7 +196,7 @@
        ! is stored.
 
        startInd = mdNSurfNodesLocal(modFamID) + 1
-       endInd   = mdNSurfNodesLocal(modFamID+1)
+       endInd   = mdNSurfNodesLocal(modFamID) + nSurfNodesLoc!mdNSurfNodesLocal(modFamID+1)
 
      end subroutine mdCreateSurfCoorListLocal
 

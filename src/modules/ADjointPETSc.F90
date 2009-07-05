@@ -194,7 +194,7 @@
       !              It has a high impact on the required memory!
       ! adjMonStep   Convergence monitor step
 
-      real(kind=realType),   parameter :: adjRelTol  = 1.0e-14_realType
+      real(kind=realType),   parameter :: adjRelTol  = 1.0e-7_realType
       real(kind=realType),   parameter :: adjAbsTol  = 1.0e-25_realType
       real(kind=realType),   parameter :: adjDivTol  = 1.0e+5_realType
       integer(kind=intType), parameter :: adjMaxIter = 500_intType!128_intType

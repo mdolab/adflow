@@ -4,7 +4,7 @@
 !      * File:          mdDataLocal.f90                                 *
 !      * Author:        C.A.(Sandy) Mader, Edwin van der Weide          *
 !      * Starting date: 10-24-2007                                      *
-!      * Last modified: 10-24-2007                                      *
+!      * Last modified: 05-20-2009                                      *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -31,12 +31,13 @@
        character(len=maxCGNSNameLen), dimension(:), allocatable :: &
                                                          mdFamilyNamesLocal
 
-       ! mdNSurfNodes(0:nProc,mdNFamilies): Number of surface nodes
+       ! mdNSurfNodes(mdNFamilies): Number of surface nodes
        !                                    per processor per family.
-       !                                    Stored in cumulative
+       !                                    Stored in cumulative and incremental
        !                                    storage format.
 
        integer(kind=intType), dimension(:), allocatable :: mdNSurfNodesLocal
+       integer(kind=intType), dimension(:), allocatable :: mdNGlobalSurfNodesLocal
 
        ! mdNSurfPatches(0:nProc,mdNFamilies): Number of surface patches
        !                                      per processor per family
@@ -50,8 +51,16 @@
        integer(kind=intType), dimension(:,:), allocatable :: &
                                                      mdPatchDimensionsLocal
 
-       ! mdSurfInd(4,mdNSurfNodes):   Surface indices of all nodes on the
-       !                              surface; index 4 is the block ID.
+       ! mdSurfIndLocal(5,mdNSurfNodes):   Surface indices of all nodes on the
+       !                              surface; index 4 is the block ID,
+       !                              index 5 is the initial global surface index.
+       ! mdSurfGlobalIndLocal(5,mdNSurfNodes):   Surface indices of all nodes on the
+       !                              surface and in connecting blocks those
+       !                              associated through synchronization for
+       !                              this processor only;
+       !                              index 4 is the block ID,
+       !                              index 5 is the global surface index
+       !                              after synchronization.
        ! mdSurfxx(3,mdNSurfNodes):    Surface coordinates of all
        !                              these nodes.
        ! mdSurfForce(3,mdNSurfNodes): Aerodynamic forces in these nodes.
@@ -59,6 +68,7 @@
        !                              scalar variable at the surface.
 
        integer(kind=intType), dimension(:,:), allocatable :: mdSurfIndLocal
+       integer(kind=intType), dimension(:,:), allocatable :: mdSurfGlobalIndLocal
 
        real(kind=realType), dimension(:,:), allocatable :: mdSurfxxLocal
        real(kind=realType), dimension(:,:), allocatable :: mdSurfForceLocal

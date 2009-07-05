@@ -8,9 +8,8 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine inviscidDissFluxScalarAdj(wAdj,  pAdj,  fwAdj,         &
-                                         siAdj, sjAdj, skAdj, volAdj, &
-                                         iCell, jCell, kCell)
+       subroutine inviscidDissFluxScalarAdj(wAdj,  pAdj,  dwadj,   &
+                                            iCell, jCell, kCell)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -36,11 +35,11 @@
        integer(kind=intType) :: iCell, jCell, kCell
 
        real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
-                                                      intent(in) :: wAdj
+                                                      intent(inout) :: wAdj
        real(kind=realType), dimension(-2:2,-2:2,-2:2),    &
                                                       intent(in) :: pAdj
 
-       real(kind=realType), dimension(nw), intent(inout) :: fwAdj
+       real(kind=realType), dimension(nw), intent(inout) :: dwadj
 
 !
 !      Local parameter.
@@ -50,11 +49,13 @@
 !      Local variables.
 !
        integer(kind=intType) :: i, j, k, ind
+       integer(kind=intType) :: ii, jj, kk
 
        real(kind=realType) :: sslim, rhoi
        real(kind=realType) :: sfil, fis2, fis4
        real(kind=realType) :: ppor, rrad, dis2, dis4
        real(kind=realType) :: dss1, dss2, ddw, fs
+       real(kind=realType) :: fact
 
        !real(kind=realType), dimension(0:ib,0:jb,0:kb) :: ss
        real(kind=realType), dimension(-2:2,-2:2,-2:2) :: ss
@@ -65,10 +66,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       !set some indices for use later
-       i    = iCell-1; j = jCell; k = kCell
-
-
+ 
        ! Check if rFil == 0. If so, the dissipative flux needs not to
        ! be computed.
 
@@ -118,7 +116,7 @@
          case (NSEquations, RANSEquations)
 
             print *,'NSEquations and RANSEquations not yet supported'
-            exit
+            stop
 
 !!$           ! Viscous case. Pressure switch is based on the entropy.
 !!$           ! Also set the value of sslim. To be fully consistent this
@@ -173,10 +171,10 @@
        do k=-2,2!0,kb
          do j=-2,2!2,jl
            do i=-2,2!2,il
-             w(i,j,k,ivx)   = w(i,j,k,irho)*w(i,j,k,ivx)
-             w(i,j,k,ivy)   = w(i,j,k,irho)*w(i,j,k,ivy)
-             w(i,j,k,ivz)   = w(i,j,k,irho)*w(i,j,k,ivz)
-             w(i,j,k,irhoE) = w(i,j,k,irhoE) + p(i,j,k)
+             wAdj(i,j,k,ivx)   = wAdj(i,j,k,irho)*wAdj(i,j,k,ivx)
+             wAdj(i,j,k,ivy)   = wAdj(i,j,k,irho)*wAdj(i,j,k,ivy)
+             wAdj(i,j,k,ivz)   = wAdj(i,j,k,irho)*wAdj(i,j,k,ivz)
+             wAdj(i,j,k,irhoE) = wAdj(i,j,k,irhoE) + pAdj(i,j,k)
            enddo
          enddo
        enddo
@@ -229,21 +227,25 @@
 !!$         enddo
 !!$       enddo
 
-       ! Initialize the dissipative residual to a certain times,
-       ! possibly zero, the previously stored value. Owned cells
-       ! only, because the halo values do not matter.
 
-!       do k=2,kl
-!         do j=2,jl
-!           do i=2,il
-             fw(irho)  = sfil*fw(irho)
-             fw(imx)   = sfil*fw(imx)
-             fw(imy)   = sfil*fw(imy)
-             fw(imz)   = sfil*fw(imz)
-             fw(irhoE) = sfil*fw(irhoE)
- !          enddo
- !        enddo
- !      enddo
+!Following method in the upwind scheme, take the residual onto dwAdj instead 
+!of a separate fw. If it needs to be switched back, fw is dissiptive, dw is
+!inviscid...
+!!$       ! Initialize the dissipative residual to a certain times,
+!!$       ! possibly zero, the previously stored value. Owned cells
+!!$       ! only, because the halo values do not matter.
+!!$
+!!$!       do k=2,kl
+!!$!         do j=2,jl
+!!$!           do i=2,il
+!!$             fw(irho)  = sfil*fw(irho)
+!!$             fw(imx)   = sfil*fw(imx)
+!!$             fw(imy)   = sfil*fw(imy)
+!!$             fw(imz)   = sfil*fw(imz)
+!!$             fw(irhoE) = sfil*fw(irhoE)
+!!$ !          enddo
+!!$ !        enddo
+!!$ !      enddo
 !
 !      ******************************************************************
 !      *                                                                *
@@ -251,9 +253,10 @@
 !      *                                                                *
 !      ******************************************************************
 ! 
-       
+             !set some indices for use later
+       i    = iCell-1; j = jCell; k = kCell
 
-       fact = -one
+       fact = one
        
        !do k=2,kl
        !  do j=2,jl
@@ -261,19 +264,21 @@
            ! Compute the pressure sensor in the first cell, which
            ! is a halo cell.
 
-           dss1 = abs((ss(2,j,k) - two*ss(1,j,k) + ss(0,j,k)) &
-                /     (ss(2,j,k) + two*ss(1,j,k) + ss(0,j,k) + sslim))
+           !!dss1 = abs((ss(2,j,k) - two*ss(1,j,k) + ss(0,j,k)) &
+           !!     /     (ss(2,j,k) + two*ss(1,j,k) + ss(0,j,k) + sslim))
 
            ! Loop in i-direction.
            do ii=-1,0
               !do i=1,il
-
+              dss1 = abs((ss(ii+1,0,0) - two*ss(ii,0,0) + ss(ii-1,0,0)) &
+                   /     (ss(ii+1,0,0) + two*ss(ii,0,0) + ss(ii-1,0,0) + sslim))
+             ! print *,'dss1',dss1
              ! Compute the pressure sensor in the cell to the right
              ! of the face.
 
-             dss2 = abs((ss(i+2,j,k) - two*ss(i+1,j,k) + ss(i,j,k)) &
-                  /     (ss(i+2,j,k) + two*ss(i+1,j,k) + ss(i,j,k) + sslim))
-
+             dss2 = abs((ss(ii+2,0,0) - two*ss(ii+1,0,0) + ss(ii,0,0)) &
+                  /     (ss(ii+2,0,0) + two*ss(ii+1,0,0) + ss(ii,0,0) + sslim))
+             !print *,'dss2',dss2
              ! Compute the dissipation coefficients for this face.
 
              ppor = zero
@@ -281,19 +286,25 @@
              rrad = ppor*(radI(i,j,k) + radI(i+1,j,k))
 
              dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
-             dis4 = dim(fis4*rrad, dis2)
+             !dis4 = dim(fis4*rrad, dis2)
+             if ((fis4*rrad- dis2)>0.0)then
+                dis4 =fis4*rrad- dis2
+             else
+                dis4 =0.0
+             endif
+             
 
              ! Compute and scatter the dissipative flux.
              ! Density. Store it in the mass flow of the
              ! appropriate sliding mesh interface.
 
-             ddw = w(i+1,j,k,irho) - w(i,j,k,irho)
+             ddw = wAdj(ii+1,0,0,irho) - wAdj(ii,0,0,irho)
              fs  = dis2*ddw &
-                 - dis4*(w(i+2,j,k,irho) - w(i-1,j,k,irho) - three*ddw)
+                 - dis4*(wAdj(ii+2,0,0,irho) - wAdj(ii-1,0,0,irho) - three*ddw)
 
              !fw(i+1,j,k,irho) = fw(i+1,j,k,irho) + fs
              !fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
-             fwAdj(irho) = fwAdj(irho) + fact*fs
+             dwadj(irho) = dwadj(irho) + fact*fs
 
              ind = indFamilyI(i,j,k)
              massFlowFamilyDiss(ind,spectralSol) =       &
@@ -302,47 +313,51 @@
 
              ! X-momentum.
 
-             ddw = w(i+1,j,k,ivx) - w(i,j,k,ivx)
+             ddw = wAdj(ii+1,0,0,ivx) - wAdj(ii,0,0,ivx)
              fs  = dis2*ddw &
-                 - dis4*(w(i+2,j,k,ivx) - w(i-1,j,k,ivx) - three*ddw)
+                 - dis4*(wAdj(ii+2,0,0,ivx) - wAdj(ii-1,0,0,ivx) - three*ddw)
 
              !fw(i+1,j,k,imx) = fw(i+1,j,k,imx) + fs
              !fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
-             fwAdj(imx) = fwAdj(imx) + fact*fs
+             dwadj(imx) = dwadj(imx) + fact*fs
 
              ! Y-momentum.
 
-             ddw = w(i+1,j,k,ivy) - w(i,j,k,ivy)
+             ddw = wAdj(ii+1,0,0,ivy) - wAdj(ii,0,0,ivy)
              fs  = dis2*ddw &
-                 - dis4*(w(i+2,j,k,ivy) - w(i-1,j,k,ivy) - three*ddw)
+                 - dis4*(wAdj(ii+2,0,0,ivy) - wAdj(ii-1,0,0,ivy) - three*ddw)
 
              !fw(i+1,j,k,imy) = fw(i+1,j,k,imy) + fs
              !fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
-             fwAdj(imy) = fwAdj(imy) + fact*fs
+             dwadj(imy) = dwadj(imy) + fact*fs
 
              ! Z-momentum.
 
-             ddw = w(i+1,j,k,ivz) - w(i,j,k,ivz)
+             ddw = wAdj(ii+1,0,0,ivz) - wAdj(ii,0,0,ivz)
              fs  = dis2*ddw &
-                 - dis4*(w(i+2,j,k,ivz) - w(i-1,j,k,ivz) - three*ddw)
+                 - dis4*(wAdj(ii+2,0,0,ivz) - wAdj(ii-1,0,0,ivz) - three*ddw)
 
              !fw(i+1,j,k,imz) = fw(i+1,j,k,imz) + fs
              !fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
-             fwAdj(imz) = fwAdj(imz) + fact*fs
+             dwadj(imz) = dwadj(imz) + fact*fs
 
              ! Energy.
 
-             ddw = w(i+1,j,k,irhoE) - w(i,j,k,irhoE)
+             ddw = wAdj(ii+1,0,0,irhoE) - wAdj(ii,0,0,irhoE)
              fs  = dis2*ddw &
-                 - dis4*(w(i+2,j,k,irhoE) - w(i-1,j,k,irhoE) - three*ddw)
+                 - dis4*(wAdj(ii+2,0,0,irhoE) - wAdj(ii-1,0,0,irhoE) - three*ddw)
 
              !fw(i+1,j,k,irhoE) = fw(i+1,j,k,irhoE) + fs
              !fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
-             fwAdj(irhoE) = fwAdj(irhoE) + fact*fs
+             dwadj(irhoE) = dwadj(irhoE) + fact*fs
 
-             ! Set dss1 to dss2 for the next face.
+             ! Update i and set fact to 1 for the second face.
 
-             dss1 = dss2
+             i    = i + 1
+             fact = -one
+             !!! Set dss1 to dss2 for the next face.
+             !!
+             !!dss1 = dss2
 
            enddo
 !         enddo
@@ -355,24 +370,31 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       do k=2,kl
-         do i=2,il
+      ! do k=2,kl
+      !   do i=2,il
 
-           ! Compute the pressure sensor in the first cell, which
-           ! is a halo cell.
+         i    = iCell; j = jCell-1; k = kCell
+         fact = one
 
-           dss1 = abs((ss(i,2,k) - two*ss(i,1,k) + ss(i,0,k)) &
-                /     (ss(i,2,k) + two*ss(i,1,k) + ss(i,0,k) + sslim))
+         ! Loop over the two faces which contribute to the residual of
+         ! the cell considered.
 
-           ! Loop in j-direction.
+         do jj=-1,0
+!!           ! Compute the pressure sensor in the first cell, which
+!!           ! is a halo cell.!
+!!
+           dss1 = abs((ss(0,jj+1,0) - two*ss(0,jj,0) + ss(0,jj-1,0)) &
+                /     (ss(0,jj+1,0) + two*ss(0,jj,0) + ss(0,jj-1,0) + sslim))
 
-           do j=1,jl
+!           ! Loop in j-direction.
+!
+!           do j=1,jl
 
              ! Compute the pressure sensor in the cell to the right
              ! of the face.
 
-             dss2 = abs((ss(i,j+2,k) - two*ss(i,j+1,k) + ss(i,j,k)) &
-                  /     (ss(i,j+2,k) + two*ss(i,j+1,k) + ss(i,j,k) + sslim))
+             dss2 = abs((ss(0,jj+2,0) - two*ss(0,jj+1,0) + ss(0,jj,0)) &
+                  /     (ss(0,jj+2,0) + two*ss(0,jj+1,0) + ss(0,jj,0) + sslim))
 
              ! Compute the dissipation coefficients for this face.
 
@@ -381,19 +403,24 @@
              rrad = ppor*(radJ(i,j,k) + radJ(i,j+1,k))
 
              dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
-             dis4 = dim(fis4*rrad, dis2)
-
+             !dis4 = dim(fis4*rrad, dis2)
+             if ((fis4*rrad- dis2)>0.0)then
+                dis4 =fis4*rrad- dis2
+             else
+                dis4 =0.0
+             endif
              ! Compute and scatter the dissipative flux.
              ! Density. Store it in the mass flow of the
              ! appropriate sliding mesh interface.
 
-             ddw = w(i,j+1,k,irho) - w(i,j,k,irho)
+             ddw = wAdj(0,jj+1,0,irho) - wAdj(0,jj,0,irho)
              fs  = dis2*ddw &
-                 - dis4*(w(i,j+2,k,irho) - w(i,j-1,k,irho) - three*ddw)
+                 - dis4*(wAdj(0,jj+2,0,irho) - wAdj(0,jj-1,0,irho) - three*ddw)
 
-             fw(i,j+1,k,irho) = fw(i,j+1,k,irho) + fs
-             fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
-
+             !fw(i,j+1,k,irho) = fw(i,j+1,k,irho) + fs
+             !fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
+             dwadj(irho) = dwadj(irho) + fact*fs
+             
              ind = indFamilyJ(i,j,k)
              massFlowFamilyDiss(ind,spectralSol) =       &
                      massFlowFamilyDiss(ind,spectralSol) &
@@ -401,72 +428,88 @@
 
              ! X-momentum.
 
-             ddw = w(i,j+1,k,ivx) - w(i,j,k,ivx)
+             ddw = wAdj(0,jj+1,0,ivx) - wAdj(0,jj,0,ivx)
              fs  = dis2*ddw &
-                 - dis4*(w(i,j+2,k,ivx) - w(i,j-1,k,ivx) - three*ddw)
+                 - dis4*(wAdj(0,jj+2,0,ivx) - wAdj(0,jj-1,0,ivx) - three*ddw)
 
-             fw(i,j+1,k,imx) = fw(i,j+1,k,imx) + fs
-             fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
-
+             !fw(i,j+1,k,imx) = fw(i,j+1,k,imx) + fs
+             !fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
+             dwadj(imx) = dwadj(imx) + fact*fs
+             
              ! Y-momentum.
 
-             ddw = w(i,j+1,k,ivy) - w(i,j,k,ivy)
+             ddw = wAdj(0,jj+1,0,ivy) - wAdj(0,jj,0,ivy)
              fs  = dis2*ddw &
-                 - dis4*(w(i,j+2,k,ivy) - w(i,j-1,k,ivy) - three*ddw)
+                 - dis4*(wAdj(0,jj+2,0,ivy) - wAdj(0,jj-1,0,ivy) - three*ddw)
 
-             fw(i,j+1,k,imy) = fw(i,j+1,k,imy) + fs
-             fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
-
+             !fw(i,j+1,k,imy) = fw(i,j+1,k,imy) + fs
+             !fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
+             dwadj(imy) = dwadj(imy) + fact*fs
+             
              ! Z-momentum.
 
-             ddw = w(i,j+1,k,ivz) - w(i,j,k,ivz)
+             ddw = wAdj(0,jj+1,0,ivz) - wAdj(0,jj,0,ivz)
              fs  = dis2*ddw &
-                 - dis4*(w(i,j+2,k,ivz) - w(i,j-1,k,ivz) - three*ddw)
+                 - dis4*(wAdj(0,jj+2,0,ivz) - wAdj(0,jj-1,0,ivz) - three*ddw)
 
-             fw(i,j+1,k,imz) = fw(i,j+1,k,imz) + fs
-             fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
-
+             !fw(i,j+1,k,imz) = fw(i,j+1,k,imz) + fs
+             !fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
+             dwadj(imz) = dwadj(imz) + fact*fs
+             
              ! Energy.
 
-             ddw = w(i,j+1,k,irhoE) - w(i,j,k,irhoE)
+             ddw = wAdj(0,jj+1,0,irhoE) - wAdj(0,jj,0,irhoE)
              fs  = dis2*ddw &
-                 - dis4*(w(i,j+2,k,irhoE) - w(i,j-1,k,irhoE) - three*ddw)
+                 - dis4*(wAdj(0,jj+2,0,irhoE) - wAdj(0,jj-1,0,irhoE) - three*ddw)
 
-             fw(i,j+1,k,irhoE) = fw(i,j+1,k,irhoE) + fs
-             fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
-
-             ! Set dss1 to dss2 for the next face.
-
-             dss1 = dss2
+             !fw(i,j+1,k,irhoE) = fw(i,j+1,k,irhoE) + fs
+             !fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
+             dwadj(irhoE) = dwadj(irhoE) + fact*fs
+             
+             ! Update j and set fact to 1 for the second face.
+             
+             j    = j + 1
+             fact = -one
+             !!! Set dss1 to dss2 for the next face.
+             !!
+             !!dss1 = dss2
 
            enddo
-         enddo
-       enddo
+        !enddo
+       !enddo
 !
 !      ******************************************************************
 !      *                                                                *
 !      * Dissipative fluxes in the k-direction.                         *
 !      *                                                                *
 !      ******************************************************************
-!
-       do j=2,jl
-         do i=2,il
+!    
 
+       ! Fluxes in k-direction.
+
+       i    = iCell; j = jCell; k = kCell-1
+       fact = one
+!       do j=2,jl
+!         do i=2,il
+       ! Loop over the two faces which contribute to the residual of
+       ! the cell considered.
+
+       do kk=-1,0
            ! Compute the pressure sensor in the first cell, which
            ! is a halo cell.
 
-           dss1 = abs((ss(i,j,2) - two*ss(i,j,1) + ss(i,j,0)) &
-                /     (ss(i,j,2) + two*ss(i,j,1) + ss(i,j,0) + sslim))
+           dss1 = abs((ss(0,0,kk+1) - two*ss(0,0,kk) + ss(0,0,kk-1)) &
+                /     (ss(0,0,kk+1) + two*ss(0,0,kk) + ss(0,0,kk-1) + sslim))
 
-           ! Loop in k-direction.
-
-           do k=1,kl
+           !!! Loop in k-direction.
+           !!
+           !!do k=1,kl
 
              ! Compute the pressure sensor in the cell to the right
              ! of the face.
 
-             dss2 = abs((ss(i,j,k+2) - two*ss(i,j,k+1) + ss(i,j,k)) &
-                  /     (ss(i,j,k+2) + two*ss(i,j,k+1) + ss(i,j,k) + sslim))
+           dss2 = abs((ss(0,0,kk+2) - two*ss(0,0,kk+1) + ss(0,0,kk)) &
+                  /     (ss(0,0,kk+2) + two*ss(0,0,kk+1) + ss(0,0,kk) + sslim))
 
              ! Compute the dissipation coefficients for this face.
 
@@ -475,19 +518,24 @@
              rrad = ppor*(radK(i,j,k) + radK(i,j,k+1))
 
              dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
-             dis4 = dim(fis4*rrad, dis2)
-
+             !dis4 = dim(fis4*rrad, dis2)
+             if ((fis4*rrad- dis2)>0.0)then
+                dis4 =fis4*rrad- dis2
+             else
+                dis4 =0.0
+             endif
              ! Compute and scatter the dissipative flux.
              ! Density. Store it in the mass flow of the
              ! appropriate sliding mesh interface.
 
-             ddw = w(i,j,k+1,irho) - w(i,j,k,irho)
+             ddw = wAdj(0,0,kk+1,irho) - wAdj(0,0,kk,irho)
              fs  = dis2*ddw &
-                 - dis4*(w(i,j,k+2,irho) - w(i,j,k-1,irho) - three*ddw)
+                 - dis4*(wAdj(0,0,kk+2,irho) - wAdj(0,0,kk-1,irho) - three*ddw)
 
-             fw(i,j,k+1,irho) = fw(i,j,k+1,irho) + fs
-             fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
-
+             !fw(i,j,k+1,irho) = fw(i,j,k+1,irho) + fs
+             !fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
+             dwadj(irho) = dwadj(irho) + fact*fs
+             
              ind = indFamilyK(i,j,k)
              massFlowFamilyDiss(ind,spectralSol) =       &
                      massFlowFamilyDiss(ind,spectralSol) &
@@ -495,47 +543,55 @@
 
              ! X-momentum.
 
-             ddw = w(i,j,k+1,ivx) - w(i,j,k,ivx)
+             ddw = wAdj(0,0,kk+1,ivx) - wAdj(0,0,kk,ivx)
              fs  = dis2*ddw &
-                 - dis4*(w(i,j,k+2,ivx) - w(i,j,k-1,ivx) - three*ddw)
+                 - dis4*(wAdj(0,0,kk+2,ivx) - wAdj(0,0,kk-1,ivx) - three*ddw)
 
-             fw(i,j,k+1,imx) = fw(i,j,k+1,imx) + fs
-             fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
+             !fw(i,j,k+1,imx) = fw(i,j,k+1,imx) + fs
+             !fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
+             dwadj(imx) = dwadj(imx) + fact*fs
 
              ! Y-momentum.
 
-             ddw = w(i,j,k+1,ivy) - w(i,j,k,ivy)
+             ddw = wAdj(0,0,kk+1,ivy) - wAdj(0,0,kk,ivy)
              fs  = dis2*ddw &
-                 - dis4*(w(i,j,k+2,ivy) - w(i,j,k-1,ivy) - three*ddw)
+                 - dis4*(wAdj(0,0,kk+2,ivy) - wAdj(0,0,kk-1,ivy) - three*ddw)
 
-             fw(i,j,k+1,imy) = fw(i,j,k+1,imy) + fs
-             fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
+             !fw(i,j,k+1,imy) = fw(i,j,k+1,imy) + fs
+             !fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
+             dwadj(imy) = dwadj(imy) + fact*fs
 
              ! Z-momentum.
 
-             ddw = w(i,j,k+1,ivz) - w(i,j,k,ivz)
+             ddw = wAdj(0,0,kk+1,ivz) - wAdj(0,0,kk,ivz)
              fs  = dis2*ddw &
-                 - dis4*(w(i,j,k+2,ivz) - w(i,j,k-1,ivz) - three*ddw)
+                 - dis4*(wAdj(0,0,kk+2,ivz) - wAdj(0,0,kk-1,ivz) - three*ddw)
 
-             fw(i,j,k+1,imz) = fw(i,j,k+1,imz) + fs
-             fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
-
+             !fw(i,j,k+1,imz) = fw(i,j,k+1,imz) + fs
+             !fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
+             dwadj(imz) = dwadj(imz) + fact*fs
+             
              ! Energy.
 
-             ddw = w(i,j,k+1,irhoE) - w(i,j,k,irhoE)
+             ddw = wAdj(0,0,kk+1,irhoE) - wAdj(0,0,kk,irhoE)
              fs  = dis2*ddw &
-                 - dis4*(w(i,j,k+2,irhoE) - w(i,j,k-1,irhoE) - three*ddw)
+                 - dis4*(wAdj(0,0,kk+2,irhoE) - wAdj(0,0,kk-1,irhoE) - three*ddw)
 
-             fw(i,j,k+1,irhoE) = fw(i,j,k+1,irhoE) + fs
-             fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
+             !fw(i,j,k+1,irhoE) = fw(i,j,k+1,irhoE) + fs
+             !fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
+             dwadj(irhoE) = dwadj(irhoE) + fact*fs
 
-             ! Set dss1 to dss2 for the next face.
-
-             dss1 = dss2
+             ! Update k and set fact to 1 for the second face.
+             
+             k    = k + 1
+             fact = -one
+             !!! Set dss1 to dss2 for the next face.
+             !!
+             !dss1 = dss2
 
            enddo
-         enddo
-       enddo
+         !enddo
+       !enddo
 
        ! Replace rho times the total enthalpy by the total energy and
        ! store the velocities again instead of the momentum. Only for
@@ -547,11 +603,11 @@
        do k=-2,2!0,kb
          do j=-2,2!2,jl
            do i=-2,2!2,il
-             rhoi           = one/w(i,j,k,irho)
-             w(i,j,k,ivx)   = w(i,j,k,ivx)*rhoi
-             w(i,j,k,ivy)   = w(i,j,k,ivy)*rhoi
-             w(i,j,k,ivz)   = w(i,j,k,ivz)*rhoi
-             w(i,j,k,irhoE) = w(i,j,k,irhoE) - p(i,j,k)
+             rhoi           = one/wAdj(i,j,k,irho)
+             wAdj(i,j,k,ivx)   = wAdj(i,j,k,ivx)*rhoi
+             wAdj(i,j,k,ivy)   = wAdj(i,j,k,ivy)*rhoi
+             wAdj(i,j,k,ivz)   = wAdj(i,j,k,ivz)*rhoi
+             wAdj(i,j,k,irhoE) = wAdj(i,j,k,irhoE) - pAdj(i,j,k)
            enddo
          enddo
        enddo

@@ -105,6 +105,10 @@
 
        size = max(cgnsNfamilies,1_intType)
       
+!!$       call mpi_allgather(nNodesLoc, size, sumb_integer, &
+!!$                          nNodes,    size, sumb_integer, &
+!!$                          SUmb_comm_world, ierr)
+
        ! Test if the memory of mdNSurfNodes has already been allocated.
        ! If not, allocate it.
 
@@ -121,7 +125,14 @@
        ! different families.
 
        do nn=1,size
+          print *,'size',nn,size,nNodesLoc(nn)
           mdNSurfNodesLocal(nn) =  nNodesLoc(nn)
+!!$          if (nn==1) then
+!!$             mdNSurfNodesLocal(2,nn) =  0
+!!$          else
+!!$             mdNSurfNodesLocal(2,nn) =  mdNSurfNodesLocal(2,nn-1)+&
+!!$                  nNodesLoc(nn-1)
+!!$          endif
        enddo
 
      end subroutine mdCreateNsurfNodesLocal

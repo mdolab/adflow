@@ -149,6 +149,8 @@
 
        x    => flowDoms(nn,mm,ll)%x
        xInit=> flowDoms(nn,1,ll)%xInit
+       xplus=> flowDoms(nn,1,ll)%xplus
+       xminus=> flowDoms(nn,1,ll)%xminus
        xOld => flowDoms(nn,1,ll)%xOld
 
        si     => flowDoms(nn,mm,ll)%si
