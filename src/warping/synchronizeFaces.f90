@@ -48,11 +48,13 @@ subroutine synchronizeBlockFaces(level,sps)
   real(KIND=REALTYPE)    :: eps2,realbuf,imagbuf
   integer(kind=inttype) :: destblock,index,neighbourindex
   logical ::test
-  complex(KIND=REALTYPE), dimension(3)::coords
-  integer(kind=inttype),dimension(3)::indices
+  real(KIND=REALTYPE), dimension(3)::coords
+  integer(kind=inttype),dimension(3)::indices,ijk
   integer(kind=intType),dimension(:),allocatable::incrementI,&
      incrementJ,incrementK,  incrementdI,&
      incrementdJ,incrementdK  
+  integer(kind=inttype) ::local_on_surface, neighbour_on_surface
+  integer:: on_wall_surface
   !complex, allocatable, dimension(:) :: sendBuffer
   !complex, allocatable, dimension(:) :: recvBuffer
 
@@ -64,6 +66,19 @@ subroutine synchronizeBlockFaces(level,sps)
   
   notSynchronized = .True.
   count = 0
+
+  print *,'allocating warpcomm storage, faces'
+  !allocate warp_comm storage
+  do i=1,nDom
+     !    print *,'setting pointers',i
+     call setPointers(i,level,sps)
+     !allocate the memory for the block face communicators
+     
+     allocate(flowdoms(i,1,1)%warp_comm(nsubface), stat=ierr)
+     !print *,'shape',shape(flowdoms(i,1,1)%warp_comm(nsubface)),nsubface
+          
+  end do
+
   !print *,'starting loop'
   do while (notSynchronized)
      ! Set state to synchronized and the check for truth at the end of the 
@@ -73,10 +88,10 @@ subroutine synchronizeBlockFaces(level,sps)
    !  print *,'looping over blocks'
      !loop over blocks and subfaces
      do i=1,nDom
-    !    print *,'setting pointers'
+        !print *,'setting pointers',i
         call setPointers(i,level,sps)
 
-     !   print *,'checkking for allocation of nNodesSubface'
+        !print *,'checkking for allocation of nNodesSubface'
         ! Check to see if the memory is allocated to store the total number
         ! of nodes on each subface. If not, allocate.
         !if(.not. allocated(nNodesSubface)) then
@@ -85,9 +100,11 @@ subroutine synchronizeBlockFaces(level,sps)
         endif
 
         !allocate the memory for the block face communicators
-        if (.not. associated(warp_comm)) &
-                allocate(warp_comm(nsubface))
-
+        !if (.not. associated(warp_comm)) &
+        !        allocate(warp_comm(nsubface), stat=ierr)
+        !!if (.not. associated(flowdoms(i,1,1)%warp_comm)) &
+        !!     allocate(flowdoms(i,1,1)%warp_comm(nsubface), stat=ierr)
+        !print *,'ierr',ierr,shape(warp_comm),nsubface
         !allocate the memory for the block increments
         allocate(incrementI(nsubface),incrementJ(nsubface),incrementK(nsubface))
         allocate(incrementdI(nsubface),incrementdJ(nsubface),incrementdK(nsubface))
@@ -137,17 +154,19 @@ subroutine synchronizeBlockFaces(level,sps)
            endif
 
            ! Set the length for the communication buffer 3 coords + 3 indices + 1 blocknum
-           length = 7*nNodesSubface(j)
+           length = 8*nNodesSubface(j)
            
            !print *,'checking allocation of buffers'
            !allocate the communicators for this subface
            !Generate the receive buffer
            ! Dimension 1-3 are coords., 4-6 are indices, 7 is remote block number
+           !call setPointers(i,level,sps)
+           !print *,'shape',shape(warp_comm)
            if (.not. allocated(warp_comm(j)%recvBuffer)) &
                 allocate(warp_comm(j)%recvBuffer(length))
            if (.not. allocated(warp_comm(j)%sendBuffer)) &
                 allocate(warp_comm(j)%sendBuffer(length))
-           !print *,'buffers allocated',shape(meshblocks(i)%comm(j)%sendBuffer),shape(meshblocks(i)%comm(j)%recvBuffer)
+           !print *,'buffers allocated',shape(warp_comm(j)%recvBuffer),shape(warp_comm(j)%sendBuffer)
            
            !print *,'synchronizing faces'
            
@@ -207,6 +226,12 @@ subroutine synchronizeBlockFaces(level,sps)
                           !print *,'counterJ'
                           counterK =dknbeg(j)+step(abs(l3(j)))*incrementdK(j)
                           !print *,'counters',counterI,counterJ,counterK
+                          ijk(1) = counterI
+                          ijk(2) = counterJ
+                          ijk(3) = counterK
+                          !Check to see whether this point is on a wall...
+                          neighbour_on_surface = on_wall_surface(ijk)
+
                           !#set the value in the send buffer
                           !print *,'meshblocks',meshblocks(i)%x(1,l,m,n)
                           warp_comm(j)%sendBuffer(counter)=x(l,m,n,1)
@@ -218,10 +243,11 @@ subroutine synchronizeBlockFaces(level,sps)
                           warp_comm(j)%sendBuffer(counter+4)=float(counterJ)
                           warp_comm(j)%sendBuffer(counter+5)=float(counterK)
                           warp_comm(j)%sendBuffer(counter+6)=float(neighblock(j))!-1
+                          warp_comm(j)%sendBuffer(counter+7)=float(neighbour_on_surface)
                           !print *,'counter',counter,counter+6,shape(meshblocks(i)%comm(j)%sendBuffer)
                           !print *,'sendbuffer',meshblocks(i)%comm(j)%sendBuffer(counter:counter+7)
                                                                
-                          counter=counter+7
+                          counter=counter+8
                        enddo
                     enddo
                  enddo
@@ -270,7 +296,7 @@ subroutine synchronizeBlockFaces(level,sps)
                           counterI =dinbeg(j)+step(abs(l1(j)))*incrementdI(j)
                           counterJ =djnbeg(j)+step(abs(l2(j)))*incrementdJ(j)
                           counterK =dknbeg(j)+step(abs(l3(j)))*incrementdK(j)
-                          !print *,'indices',ii,jj,kk,counterI,counterJ,counterK
+                          !print *,'indices',ii,jj,kk,counterI,counterJ,counterK                        
                           do nn=1,3
                              neighbourindex = neighblock(j)
                              !reset pointers and get neighbour data
@@ -279,16 +305,32 @@ subroutine synchronizeBlockFaces(level,sps)
                              neighbour = x(counterI,counterJ,counterK,nn)
                              !neighbour0 = meshblocks(meshblocks(i).neigh_block(j)).xInit(nn,counterI,counterJ,counterK)
                              neighbour0 = xInit(counterI,counterJ,counterK,nn)
+                             !Check to see whether neighbour point is on a wall...
+                             ijk(1) = counterI
+                             ijk(2) = counterJ
+                             ijk(3) = counterK
+                             neighbour_on_surface = on_wall_surface(ijk)
                              !Reset pointers to the local block.
                              call setpointers(i,level,sps)
                              local = x(ii,jj,kk,nn)
                              local0 = xInit(ii,jj,kk,nn)
+                             ijk(1) = ii
+                             ijk(2) = jj
+                             ijk(3) = kk
+                             !Check to see whether local point is on a wall...
+                             local_on_surface = on_wall_surface(ijk)
                              eps2 = 1.0e-12
                              !print *,'coordcheck',neighbour0,local0
                              !print *,'neighbours',neighbour,neighbour0,abs(neighbour -neighbour0),max(abs(neighbour0),abs(neighbour),eps2)
                              !print *,'locals',local,local0
                              !check the various options and act accordingly
-                             if( abs(neighbour -neighbour0)/max(abs(neighbour0),abs(neighbour),eps2)<1e-12) then
+                             if(local_on_surface ==1 .and. neighbour_on_surface==1)then
+                                !if both donor and recipient are on surfaces,
+                                ! they do not need to be synchronized.
+                                !Both nodes will be updated by their respective
+                                !surface nodes. Therefore do nothing
+                                a=1 
+                             elseif( abs(neighbour -neighbour0)/max(abs(neighbour0),abs(neighbour),eps2)<1e-12) then
                                 !#Then do nothing
                                 !#print 'No Change in donor Block'
                                 a=1
@@ -312,6 +354,7 @@ subroutine synchronizeBlockFaces(level,sps)
                              elseif ((abs(neighbour -local)/max(abs(local),abs(neighbour),eps2)>1e-12 ) .and.   (abs(local -local0)/max(abs(local0),abs(local),eps2)>1e-12) .and. (abs(neighbour -local0)/max(abs(local0),abs(neighbour),eps2)>1e-12 )) then
 
                                 !print *,'neighbour',neighbour, local,local0
+                                !print *,'logical',(abs(neighbour -local)/max(abs(local),abs(neighbour),eps2)>1e-12 ) .and.   (abs(local -local0)/max(abs(local0),abs(local),eps2)>1e-12) .and. (abs(neighbour -local0)/max(abs(local0),abs(neighbour),eps2)>1e-12 ),(abs(neighbour -local)/max(abs(local),abs(neighbour),eps2) ),(abs(local -local0)/max(abs(local0),abs(local),eps2)),(abs(neighbour -local0)/max(abs(local0),abs(neighbour),eps2) )
                                 !#average new and current
                                 print *,'not matching int!!!', myid!MPI.rank
                                 call setPointers(neighbourindex,level,sps)     
@@ -389,14 +432,21 @@ subroutine synchronizeBlockFaces(level,sps)
                  !#need communication with blocks on another processor   
                  length = nNodesSubface(m)!shape(meshblocks(l)%comm(m)%recvbuffer(:))
                  do i=1,int(length)
-                    index = 1+(i-1)*7
+                    index = 1+(i-1)*8
                     destblock = int(warp_comm(m)%recvbuffer(index+6))
                     !print *,'destblock',destblock
                     coords(:) =  warp_comm(m)%recvbuffer(index:index+2)
                     indices(:) = int(warp_comm(m)%recvbuffer(index+3:index+5))
+                    neighbour_on_surface = int(warp_comm(m)%recvbuffer(index+7))
                     !print *,'indices',indices,l,m,i
                     !Set pointers for the given destblock
                     call setPointers(destblock,level,sps)
+                    
+                    ijk(1) = indices(1)
+                    ijk(2) = indices(2)
+                    ijk(3) = indices(3)
+                    !Check to see whether local point is on a wall...
+                    local_on_surface = on_wall_surface(ijk)
                     
                     do nn=1,3
                       
@@ -405,7 +455,13 @@ subroutine synchronizeBlockFaces(level,sps)
                        eps2 = 1.0e-12
                        realbuf = real(coords(nn))
                        !if (abs(local-local0)/max(abs(local0),abs(local),eps2)>1e-12) print*,'local',local,local0,realbuf
-                       if ( abs(realbuf -local)/max(abs(local),abs(realbuf),eps2)<1e-12 )then
+                       if(local_on_surface ==1 .and. neighbour_on_surface==1)then
+                          !if both donor and recipient are on surfaces,
+                          ! they do not need to be synchronized.
+                          !Both nodes will be updated by their respective
+                          !surface nodes. Therefore do nothing
+                          a=1 
+                       elseif ( abs(realbuf -local)/max(abs(local),abs(realbuf),eps2)<1e-12 )then
                           
                           !do nothing
                           !print *,'no perturbation'
@@ -480,7 +536,16 @@ subroutine synchronizeBlockFaces(level,sps)
      count=count+1
      !endif
   end do !do while
-       
+     
+  !deallocate warp_comm storage
+  do i=1,nDom
+     !    print *,'setting pointers',i
+     call setPointers(i,level,sps)
+     !allocate the memory for the block face communicators
+     
+     deallocate(flowdoms(i,1,1)%warp_comm, stat=ierr)
+     
+  end do
   !stop
 
   contains

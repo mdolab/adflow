@@ -39,7 +39,7 @@ SUBROUTINE WARP_LOCAL_D(xyznew, xyznewd, xyz0, ifaceptb, iedgeptb, imax&
 ! SAVE DFACE VALUES TO BE PASSED TO WARPBLK
 !          ALLOCATE(DFACEI(3,0:JMAX+1,0:KMAX+1,2,4),DFACEJ(3,0:IMAX+1,0:KMAX+1,2,4),&
 !               DFACEK(3,0:IMAX+1,0:JMAX+1,2,4))
-  PRINT*, 'allocating dface'
+  !PRINT*, 'allocating dface'
   ALLOCATE(dfaceid(3, 1:jmax, 1:kmax, 2, 4))
   ALLOCATE(dfacei(3, 1:jmax, 1:kmax, 2, 4))
   ALLOCATE(dfacejd(3, 1:imax, 1:kmax, 2, 4))
@@ -106,23 +106,23 @@ SUBROUTINE WARP_LOCAL_D(xyznew, xyznewd, xyz0, ifaceptb, iedgeptb, imax&
   dfacekd(3, 1:imax, 1:jmax, 2, 1) = xyznewd(3, 1:imax, 1:jmax, kmax)
   dfacek(3, 1:imax, 1:jmax, 2, 1) = xyznew(3, 1:imax, 1:jmax, kmax) - &
 &    xyz0(3, 1:imax, 1:jmax, kmax)
-  PRINT*, 'allocating s0'
+  !PRINT*, 'allocating s0'
   ALLOCATE(s0d(3, 0:imax+1, 0:jmax+1, 0:kmax+1))
   ALLOCATE(s0(3, 0:imax+1, 0:jmax+1, 0:kmax+1))
   s0d = 0.0
   s0 = 0.0
 ! CALL WARPBLK FOR THE CURRENT BLOCK IF ANY OF THE FACES OR EDGES IN THAT 
 ! BLOCK ARE IMPLICITLY OR EXPLICITLY PERTURBED
-  PRINT*, 'if maxval', ifaceptb, 'edge', iedgeptb
+!  PRINT*, 'if maxval', ifaceptb, 'edge', iedgeptb
   result1 = MAXVAL(ifaceptb(1:6))
   result2 = MAXVAL(iedgeptb(1:12))
   IF (result1 .GE. 1 .OR. result2 .GE. 1) THEN
-    PRINT*, 'calling warpblk'
+ !   PRINT*, 'calling warpblk'
     CALL WARPBLK_D(ifaceptb(1:6), iedgeptb(1:12), -3, 0, 1, imax, jmax, &
 &             kmax, xyz0, s0, dfacei, dfaceid, dfacej, dfacejd, dfacek, &
 &             dfacekd, xyznew, xyznewd)
   END IF
-  PRINT*, 'deallocating'
+!  PRINT*, 'deallocating'
   DEALLOCATE(s0)
   DEALLOCATE(dfacei)
   DEALLOCATE(dfacej)

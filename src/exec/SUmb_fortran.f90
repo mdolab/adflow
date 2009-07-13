@@ -75,9 +75,9 @@
 
        !!!!!!!!!!!temporary
        !test the integrated warping algoritm
-       !call testwarping
+       call testwarping
        !!!!!!!!!!!!!!!!!!!1
-       !stop
+       stop
        ! Solve the equations.
 
        call solver

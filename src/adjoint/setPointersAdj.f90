@@ -152,6 +152,9 @@
        xplus=> flowDoms(nn,1,ll)%xplus
        xminus=> flowDoms(nn,1,ll)%xminus
        xOld => flowDoms(nn,1,ll)%xOld
+       xInit => flowDoms(nn,1,ll)%xInit
+       xPlus => flowDoms(nn,1,ll)%xPlus
+       xMinus => flowDoms(nn,1,ll)%xMinus
 
        si     => flowDoms(nn,mm,ll)%si
        sj     => flowDoms(nn,mm,ll)%sj
@@ -261,5 +264,7 @@
        globalCell =>flowDoms(nn,mm,ll)%globalCell
        globalNode =>flowDoms(nn,mm,ll)%globalNode
 
+       !Add warp_comm to pointers
+       warp_comm  =>flowDoms(nn,1,1)%warp_comm
      end subroutine setPointersAdj
        

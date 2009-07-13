@@ -85,7 +85,6 @@ FF90_OBJECTS = allocMemADjoint.o        \
                verifydRdwFile.o             \
 	       verifydRdx.o             \
 	       verifydRdExtra.o         \
-               verifydRdExtraFDAD.o         \
 	       verifyRAdj.o\
 	       verifyResiduals.o\
 	       writeCGNSMesh.o\

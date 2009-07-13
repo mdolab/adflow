@@ -50,7 +50,7 @@
       ! Determine the global cell and Node numbering.
 
       call setGlobalCellsAndNodes(level)
-      !print *,'global node indices set'
+      print *,'global node indices set'
       ! Synchronize the processors.
 
       call mpi_barrier(SUmb_comm_world, ierr)

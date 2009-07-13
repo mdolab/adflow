@@ -43,13 +43,12 @@ subroutine synchronizeSurfaceIndices(level,sps)
   real(KIND=REALTYPE)    :: eps2,realbuf,imagbuf
   integer(kind=inttype) :: destblock,index,neighbourindex
   logical ::test
-  complex(KIND=REALTYPE), dimension(3)::coords
+  real(KIND=REALTYPE), dimension(3)::coords
   integer(kind=inttype),dimension(3)::indices
   integer(kind=intType),dimension(:),allocatable::incrementI,&
      incrementJ,incrementK,  incrementdI,&
      incrementdJ,incrementdK  
-  !complex, allocatable, dimension(:) :: sendBuffer
-  !complex, allocatable, dimension(:) :: recvBuffer
+ 
 
   !************************
   ! Begin Execution
@@ -59,42 +58,45 @@ subroutine synchronizeSurfaceIndices(level,sps)
   
   notSynchronized = .True.
   count = 0
-  !print *,'starting loop'
+
+  !allocate warp_comm storage
+  do i=1,nDom
+     call setPointers(i,level,sps)
+
+     !allocate the memory for the block face communicators
+     
+     allocate(flowdoms(i,1,1)%warp_comm(nsubface), stat=ierr)
+       
+  end do
+
   do while (notSynchronized)
      ! Set state to synchronized and the check for truth at the end of the 
      ! loop.
      notSynchronized = .False.
 
-   !  print *,'looping over blocks'
      !loop over blocks and subfaces
      do i=1,nDom
-    !    print *,'setting pointers',i
+    
         call setPointers(i,level,sps)
 
-     !   print *,'checkking for allocation of nNodesSubface'
         ! Check to see if the memory is allocated to store the total number
         ! of nodes on each subface. If not, allocate.
-        !if(.not. allocated(nNodesSubface)) then
         if(.not. associated(nNodesSubface)) then
            allocate(nNodesSubface(nsubface), stat=ierr)
         endif
 
-        !allocate the memory for the block face communicators
-        if (.not. associated(warp_comm)) &
-                allocate(warp_comm(nsubface))
 
         !allocate the memory for the block increments
         allocate(incrementI(nsubface),incrementJ(nsubface),incrementK(nsubface))
         allocate(incrementdI(nsubface),incrementdJ(nsubface),incrementdK(nsubface))
-        !print *,'i',i
+        !get the increment size and direction for each face
         call getIncrement(nSubface)
-        !print *,'iinter',i
+        ! and its donor
         call getIncrementD(nSubface)
-        !print *,'iafter',i,incrementI,'j',incrementJ,'k',incrementK
-
-        !print *,'looping over subfaces'
+        
+        !Loop over the subfaces
         do j=1,nSubface
-           !print *,'bcfaceID',bcfaceid(j)
+           
            ! determine the number of nodes on this subface
            ! Determine which face is active for this subface
            if (BCFaceID(j)== imin) then !imin
@@ -134,7 +136,6 @@ subroutine synchronizeSurfaceIndices(level,sps)
            ! Set the length for the communication buffer 3 coords + 3 indices + 1 blocknum
            length = 7*nNodesSubface(j)
            
-           !print *,'checking allocation of buffers'
            !allocate the communicators for this subface
            !Generate the receive buffer
            ! Dimension 1-3 are coords., 4-6 are indices, 7 is remote block number
@@ -142,103 +143,62 @@ subroutine synchronizeSurfaceIndices(level,sps)
                 allocate(warp_comm(j)%recvBuffer(length))
            if (.not. allocated(warp_comm(j)%sendBuffer)) &
                 allocate(warp_comm(j)%sendBuffer(length))
-           !print *,'buffers allocated',shape(meshblocks(i)%comm(j)%sendBuffer),shape(meshblocks(i)%comm(j)%recvBuffer)
-           
-           !print *,'synchronizing faces'
-           
-           !         #Check for one to one matching internal faces
-           !print *,'ifs',meshblocks(i)%BCType(j),meshblocks(i)%neigh_proc(j),meshblocks(i)%neigh_block(j)
-           !stop
+                      
+           !Check for one to one matching internal faces
            if(BCType(j) == B2BMatch)then
-           !if(meshblocks(i)%BCType(j) == -16)then
-              !print *,'boundary match',i,j
-              !      #Check that face requires interprocessor communication
+              !Check that face requires interprocessor communication
               if(neighproc(j) /= myid)then
-                 !#need communication with blocks on another processor
-                           
-                 !#post non blocking recieves for face communicator
+                 !need communication with blocks on another processor
+                          
+                 !post non blocking recieves for face communicator
                 
                  !Generate a unique tag for this subface
                  recvtag = 10000*neighproc(j)+100*neighblock(j)+i
-                 !recvtag = 10000*meshblocks(i)%neigh_proc(j)+100*meshblocks(i)%neigh_block(j)+i+1
-                 !print *,'recvtag',recvtag,myid
-                 
-                 !call mpi_irecv(recvBuffer(ii), size, sumb_real, procID, &
-                 !     myID, SUmb_comm_world, recvRequests(i), ierr)
-                 
+                                  
                  !post the non blocking recv
-                 !print *,'posting receive'
                  call mpi_irecv(warp_comm(j)%recvBuffer(1), length, sumb_real,&
                       neighproc(j), recvtag, sumb_comm_world, &
                       warp_comm(j)%recvreq, ierr)
-                 !recvreq = MPI.WORLD.Irecv( test, meshblocks(i).neigh_proc(j), recvtag)
-                                                  
-                 !#set a placement counter for the send buffer
+                                                                   
+                 !set a placement counter for the send buffer
                  counter=1
-                 
-                 !print *,'i',imin,imax+meshblocks(i)%incrementI(j),meshblocks(i)%incrementI(j)
-                 !print *,'j',jmin,jmax+meshblocks(i)%incrementJ(j),meshblocks(i)%incrementJ(j)
-                 !print *,'k',kmin,kmax+meshblocks(i)%incrementK(j),meshblocks(i)%incrementK(j)
-                 
-                 !print *,'looping over local indices'
-                 !#Loop over the local indices
+                                                   
+                 !Loop over the local indices
                  do l =inmin,inmax,incrementI(j)
                     do m =jnmin,jnmax,incrementJ(j)
                        do n=knmin,knmax,incrementK(j)
-!!$ do l =imin,imax+meshblocks(i)%incrementI(j),meshblocks(i)%incrementI(j)
-!!$                    do m =jmin,jmax+meshblocks(i)%incrementJ(j),meshblocks(i)%incrementJ(j)
-!!$                       do n=kmin,kmax+meshblocks(i)%incrementK(j),meshblocks(i)%incrementK(j)
-                          !#Set the counter step based on the coordinate transformation for the face
+                          !Set the counter step based on the coordinate transformation for the face
                           step(1) = (abs(l-inmin))
                           step(2) = (abs(m-jnmin))
                           step(3) = (abs(n-knmin))
-                          !print *,'step',step(:),l,m,n
-                          !print *,'di',meshblocks(i)%dibeg(j),meshblocks(i)%djbeg(j),meshblocks(i)%dkbeg(j)
-                          !print *,'increment',meshblocks(i)%incrementdI(j),meshblocks(i)%incrementdJ(j),meshblocks(i)%incrementdK(j)
-                          !print *,'abs(meshblocks(i)%l1(j))-1',abs(meshblocks(i)%l1(j)),abs(meshblocks(i)%l2(j)),abs(meshblocks(i)%l3(j))
+                          
+                          !Determine the indices in the recieving block
                           counterI =dinbeg(j)+step(abs(l1(j)))*incrementdI(j)
-                          !print *,'counterI'
                           counterJ =djnbeg(j)+step(abs(l2(j)))*incrementdJ(j)
-                          !print *,'counterJ'
                           counterK =dknbeg(j)+step(abs(l3(j)))*incrementdK(j)
-                          !print *,'counters',counterI,counterJ,counterK
+                          
                           !#set the value in the send buffer
-                          !print *,'meshblocks',meshblocks(i)%x(1,l,m,n)
                           warp_comm(j)%sendBuffer(counter)=x(l,m,n,1)
-                          !print *,'meshblockx'
-                          warp_comm(j)%sendBuffer(counter+1)=x(l,m,n,2)
+                          warp_comm(j)%sendBuffer(counter+1)=float(flowDoms(i,1,1)%cgnsBlockID)!x(l,m,n,2)
                           warp_comm(j)%sendBuffer(counter+2)=x(l,m,n,3)
-                          !print *,'setting counters'
                           warp_comm(j)%sendBuffer(counter+3)=float(counterI)
                           warp_comm(j)%sendBuffer(counter+4)=float(counterJ)
                           warp_comm(j)%sendBuffer(counter+5)=float(counterK)
                           warp_comm(j)%sendBuffer(counter+6)=float(neighblock(j))!-1
-                          !print *,'counter',counter,counter+6,shape(meshblocks(i)%comm(j)%sendBuffer)
-                          !print *,'sendbuffer',meshblocks(i)%comm(j)%sendBuffer(counter:counter+7)
-                                                               
+                          
                           counter=counter+7
                        enddo
                     enddo
                  enddo
                  
-                 !#Determine the number of elements in the send buffer
-                 !length = len(sbuf(:,0))*len(sbuf(0,:))
-                            
-                 !#Generate the send buffer
-                 !test = MPI.Buffer(sbuf, length, datatype)
-                 
-                 !#Post the buffer send
+                 !Post the buffer send
                  sendtag = 10000*myid+100*(i)+neighblock(j)
-                 !sendtag = 10000*myid+100*(i+1)+meshblocks(i)%neigh_block(j)
-                 !print *,'sendtag',sendtag,myid        
-                 !sendreq = MPI.WORLD.Isend( test, meshblocks(i).neigh_proc(j),sendtag)
+                
                  call mpi_isend(warp_comm(j)%sendBuffer(1), length,sumb_real,&
                       neighproc(j),sendtag, sumb_comm_world, &
                       warp_comm(j)%sendreq, ierr)
                  
-                 !#Save the request for later checking
-                 !reqList.append(sendreq)
-                        
+                                      
               else              
                  
                  !internal communication
@@ -286,8 +246,32 @@ subroutine synchronizeSurfaceIndices(level,sps)
                                    a=1
                                 endif
                              else
-                                ! I am a surface point, keep current index
-                                local = local
+                                ! I am a surface point
+                                if(int(neighbour)==-5)then
+                                   !neighbour is not a surface,
+                                   !keep current index
+                                   local = local
+                                  
+                                else
+                                   !neighbour is on a surface,
+                                   !set both indices to lower value 
+                                   if (local==int(neighbour))then
+                                      !Both have correct index
+                                      !do nothing
+                                      a=1
+                                   elseif (local<int(neighbour))then
+                                      !I am the correct index
+                                      ! other index will be corrected
+                                      local = local
+                                      notSynchronized = .True.
+                                  
+                                   else
+                                      !neighbour block is lower
+                                      x(ii,jj,kk,nn) = neighbour
+                                  
+                                      notSynchronized = .True.
+                                   endif
+                                end if
                              endif
                              
                           end do
@@ -311,28 +295,26 @@ subroutine synchronizeSurfaceIndices(level,sps)
      
      call mpi_barrier(sumb_comm_world, ierr)
        
-     !print *,'waiting for communication to finish...', myid!MPI.rank
-     !stop
+ 
      !loop over blocks and subfaces
      do i=1,nDom
         call setPointers(i,level,sps)
-     !do i=1,nmeshblocks!nBlocksLocal
+ 
         do j=1,nSubface 
            !only check for receives on procesors that posted them
-           !if(BCType(j) == -16)then
            if(BCType(j) == B2BMatch)then
               !      #Check that face requires interprocessor communication
               if(neighproc(j) /= myid)then
                  !#need communication with blocks on another processor
-                 !print *,'i',i,j,meshblocks(i)%comm(j)%recvreq,myid
                  call mpi_wait(warp_comm(j)%recvreq,MPI_STATUS_IGNORE,ierr)
               endif
            endif
         enddo
      enddo
+     
      call mpi_barrier(sumb_comm_world, ierr)
-     !stop
 
+     
 !            #Wait for all of the faces to be comunicated
 !            MPI.Request.Waitall(reqList)
             
@@ -349,66 +331,100 @@ subroutine synchronizeSurfaceIndices(level,sps)
            if(BCType(m) == B2BMatch)then
               !#Check that face requires interprocessor communication
               if(neighproc(m) /= myid)then
+
                  !#need communication with blocks on another processor   
-                 length = nNodesSubface(m)!shape(meshblocks(l)%comm(m)%recvbuffer(:))
+                 length = nNodesSubface(m)
+                 
                  do i=1,int(length)
                     index = 1+(i-1)*7
+                    !Set the destination block index
                     destblock = int(warp_comm(m)%recvbuffer(index+6))
-                    !print *,'destblock',destblock
-                    coords(:) =  warp_comm(m)%recvbuffer(index:index+2)
+                    
+                    !get the surface indices (coord(1)) and location 
+                    !(indices(:)) from the receive buffer
+                    coords(:) =  warp_comm(m)%recvbuffer(index:index+2)        
                     indices(:) = int(warp_comm(m)%recvbuffer(index+3:index+5))
-                   
+                    
                     !Set pointers for the given destblock
                     call setPointers(destblock,level,sps)
-                    !need only the first coordinate because this is only index communication
+                    !need only the first coordinate because this 
+                    !is only index communication
+                    
                     do nn=1,1
                       
                        local = x(indices(1),indices(2),indices(3),nn)
-                       realbuf = real(coords(nn))
+                       realbuf = coords(nn)!real(coords(nn))
+                       
                        !check the various options and act accordingly
                        if( int(local) ==-5 )then
                           !#Then local face is not on surface
-                          
                           !check if neighbour is...
                           if (int(realbuf)/=-5)then
-                             !neighbout is on surface, update my Global index.
-                             x(ii,jj,kk,nn) = neighbour
+                             !neighbour is on surface, update my Global index.
+                             x(indices(1),indices(2),indices(3),nn) = realbuf!neighbour
                              notSynchronized = .True.
+                             
                           else
                              !neither point is on surface, cycle
                              a=1
                           endif
                        else
-                          ! I am a surface point, keep current index
-                          local = local
+                          ! I am a surface point
+                          if(int(realbuf)==-5)then
+                             !neighbour is not a surface,
+                             !keep current index
+                             local = local
+                             notSynchronized = .True.
+                             
+                          else
+                             !neighbour is on a surface,
+                             !set both indices to value of
+                             !lower numbered block
+                             if (int(local)==int(realbuf))then
+                               !Both have correct index
+                                !do nothing
+                                a=1
+                             elseif (int(local)<int(realbuf))then
+                                !I am the correct index
+                                ! other index will be corrected
+                                local = local
+                                notSynchronized = .True.
+
+                             else
+                                !neighbour block is lower
+                                x(indices(1),indices(2),indices(3),nn) = int(realbuf)!neighbour
+                                notSynchronized = .True.
+                     
+                             endif
+                          end if
                        endif
+                    
                     end do
                     !return pointers to normal
                     call setPointers(l,level,sps)
+                    
                  end do
               end if
            endif
         end do
      end do
-     
+
      call mpi_barrier(sumb_comm_world, ierr)
-     !call mpi_allreduce(notSynchronized,test,1,MPI_INTEGER,MPI_SUM,warp_comm_world,ierr)
+     !Collect logicals for synchronization check.
      call mpi_allreduce(notSynchronized,test,1,MPI_LOGICAL,MPI_LOR,sumb_comm_world,ierr)
-     !test = MPI.WORLD.Allreduce(notSynchronized,MPI.SUM)
+     
      if (myid ==0) then !myid
         print *,'Synchronization test',test
      endif
-     !notSynchronized = .True.
-!!$     if( test>0) then
-!!$        notSynchronized = .True.
-!!$     endif
+
+     !if synchrinized then set logical to break loop...
      if( test) then
         notSynchronized = .True.
      else
         notSynchronized = .false.
      endif
+     !loop limiter...
      if (count >6)then
-        !if (count >1)then
         print *,'count',count
         exit!break
      endif
@@ -419,8 +435,16 @@ subroutine synchronizeSurfaceIndices(level,sps)
      count=count+1
      !endif
   end do !do while
-       
-  !stop
+  
+  !deallocate warp_comm storage
+  do i=1,nDom
+     
+     call setPointers(i,level,sps)
+     !allocate the memory for the block face communicators
+     
+     deallocate(flowdoms(i,1,1)%warp_comm, stat=ierr)
+     
+  end do
 
   contains
     

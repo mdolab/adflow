@@ -34,8 +34,11 @@
        !                                    per processor per family.
        !                                    Stored in cumulative
        !                                    storage format.
+       !  mdNSurfNodesCompact             : Total number of global surface 
+       !                                    nodes for warping derivatives
 
        integer(kind=intType), dimension(:,:), allocatable :: mdNSurfNodes
+       integer(kind=intType):: mdNSurfNodesCompact
 
        ! mdNSurfPatches(0:nProc,mdNFamilies): Number of surface patches
        !                                      per processor per family

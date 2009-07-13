@@ -258,4 +258,7 @@
        bvtk1 => flowDoms(nn,1,1)%bvtk1
        bvtk2 => flowDoms(nn,1,1)%bvtk2
 
+       !Add warp_comm to pointers
+       warp_comm  =>flowDoms(nn,1,1)%warp_comm
+
        end subroutine setPointers

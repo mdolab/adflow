@@ -11,6 +11,7 @@ subroutine synchronizeIndices
 use blockPointers
 use mdData
 use mdDataLocal
+use communication !myid
 
 implicit none
 
@@ -49,12 +50,13 @@ do nn = 1,nDom
       !Check to see that coordinate is in this block. if so, update
       if(mdSurfIndLocal(4,mm)==nn)then
          x(mdSurfIndLocal(1,mm),mdSurfIndLocal(2,mm),mdSurfIndLocal(3,mm),1) = mdSurfIndLocal(5,mm)
+         !print *,'localblock',flowdoms(nn,level,sps)%cgnsblockid,myid,mdSurfIndLocal(1,mm),mdSurfIndLocal(2,mm),mdSurfIndLocal(3,mm),mdSurfIndLocal(5,mm)
       endif
    end do
 end do
-
+!stop
 !run syncronize faces
-
+!what about duplicate nodes at split surface boundaries? Use sychronization to set common nodes to the lower of the two index values.
 call synchronizeSurfaceIndices(level,sps)
 print *,'indices synchronized'
 
@@ -66,7 +68,7 @@ print *,'indices stored'
 
 
 !to differentiate loop through local list, storing values in column corresponding to global index
-!what about duplicate nodes at split surface boundaries? same surface different blocks/processors? Keep original indices
+
 
 !reset the mesh coordinates to initial values to prepare for warp
 do nn=1,nDom
