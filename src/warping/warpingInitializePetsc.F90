@@ -37,7 +37,7 @@
       ! Send some feedback to screen.
 
       if( PETScRank==0 ) &
-        write(*,10) "Initializing PETSc..."
+        write(*,10) "Warping Initializing PETSc..."
 
       ! Flush the output buffer and synchronize the processors.
 

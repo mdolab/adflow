@@ -739,8 +739,8 @@
           !    IncrementJ,incrementK
          !INTEGER(KIND=INTTYPE),dimension(:),allocatable :: incrementdI,&
           !    IncrementdJ,incrementdK
-         TYPE(warp_comm_type), ALLOCATABLE, DIMENSION(:) :: warp_comm
-
+         !TYPE(warp_comm_type), ALLOCATABLE, DIMENSION(:) :: warp_comm
+         TYPE(warp_comm_type), DIMENSION(:),pointer :: warp_comm
 
        end type blockType
 

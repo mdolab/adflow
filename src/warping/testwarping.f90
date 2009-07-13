@@ -38,9 +38,16 @@ call mdCreateSurfCoorListLocal(sps,famid,startInd,endInd)
 print *,'getting local indices'
 call mdCreateSurfIndListLocal(famID,startInd,endInd)
 
-do i = 1,mdNSurfNodesLocal(1)
-   print *,'index',mdSurfxxLocal(1,i),mdSurfIndLocal(5,i)
-end do
+print *,'count total number of nodes'
+call mdCreateNsurfNodes
+
+!stop
+print *,'testing global index creation'
+call synchronizeIndices
+print *,'synchronizing done'
+!do i = 1,mdNSurfNodesLocal(1)
+!   print *,'index',mdSurfxxLocal(1,i),mdSurfIndLocal(5,i)
+!end do
 ! Assertion testing, memory allocation and global number indexing.
 print *,'setting up global volume numbering'
 call preprocessingADjoint(level)
@@ -51,7 +58,7 @@ call warpingInitializePETSc
 print *,'warpingPETSc initialized'
 call createWarpingPETScMat
 print *,'Warping PETSC Mat Created'
-print *,'mdNSurfNodesLocal',mdNSurfNodesLocal(1),'whole',mdNSurfNodesLocal
+!print *,'mdNSurfNodesLocal',mdNSurfNodesLocal(1),'whole',mdNSurfNodesLocal
 allocate(xyzface(3,mdNSurfNodesLocal(1)),indices(5,mdNSurfNodesLocal(1)))
 
 
@@ -84,7 +91,7 @@ writeGrid = .true.
 writeVolume  = .true.
 if(writeGrid .or. writeVolume .or. writeSurface) &
      call writeSol
-print *,'warping parameters',ncoords,xyzface,indices
+print *,'warping parameters',ncoords!,xyzface,indices
 call integratedWarp(ncoords,xyzface,indices)
 
 newgridfile = 'testwarpafter.cgns'
@@ -93,17 +100,18 @@ writeVolume  = .true.
 if(writeGrid .or. writeVolume .or. writeSurface) &
      call writeSol
 
-!stop
-print *,'testing global index creation'
-call synchronizeIndices
-print *,'synchronizing done'
-!stop
-print *,'warping parameters3',ncoords,xyzface,indices
-call integratedWarpDerivFD(ncoords,xyzface,indices)
 
-print *,'warping parameters2',ncoords,xyzface,indices
+!stop
+print *,'warping parameters3',ncoords!,xyzface,indices
+call integratedWarpDerivFD(ncoords,xyzface,indices)
+print *,'FD Derivatives done',myID
+
+call mpi_barrier(sumb_comm_world, ierr)
+
+print *,'warping parameters2',ncoords!,xyzface,indices
 call integratedWarpDeriv(ncoords,xyzface,indices)
-stop
+print *,'AD Derivatives done',myID
+!stop
 call integratedWarpDerivParallel
 call mpi_barrier(sumb_comm_world, ierr)
 print *,'parallel derivatives done'

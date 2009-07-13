@@ -234,6 +234,7 @@
 
 
            do l=1,nwf
+
               dwAdj(l) =dwAdj(l)! (dwAdj(l) + fwAdj(l)) &
                                !* real(iblank(iCell,jCell,kCell), realType)
            enddo

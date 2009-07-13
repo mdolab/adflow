@@ -14,6 +14,7 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
   use blockpointers
   use communication
   use mdDataLocal
+  use mdData, only: mdNSurfNodesCompact
   use warpingPETSc
   use ADjointPETSc, only: PETScOne, value
   implicit none
@@ -33,6 +34,7 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
 
   real(kind=realType), dimension(2) :: time
   real(kind=realType)               :: timeAdjLocal, timeAdj
+  real(kind=realType)::xref 
 
   integer :: unitWarp = 8,ierror
   character(len = 20)::outfile,testfile
@@ -57,14 +59,14 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
   ! Send some feedback to screen.
 
   if( PETScRank==0 ) &
-       write(*,10) "Assembling dXv/dXs matrix..."
+       write(*,10) "Assembling dXv/dXs Parallel matrix..."
   
   ! Get the initial time.
   
   call cpu_time(time(1))
   
-  !zero the matrix for dXvdXs ADD call
-  call MatZeroEntries(dXvdXs,PETScIerr)
+  !zero the matrix for dXvdXsPara ADD call
+  call MatZeroEntries(dXvdXsPara,PETScIerr)
   
   if( PETScIerr/=0 ) &
        call terminate("integratedWarpDerivParallel", "Error in MatZeroEntries dXvdXs")
@@ -79,11 +81,11 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
  !    allocate(xyzderiv(0:IMAX+1,0:JMAX+1,0:KMAX+1,3,ndom,ncoords,3))
      
      !loop over new coordinates array
-     print *,'number of local surface nodes',myID,mdNGlobalSurfNodesLocal(myID+1)
+     !print *,'number of local surface nodes',myID,mdNGlobalSurfNodesLocal(myID+1)
      do mm = 1,mdNGlobalSurfNodesLocal(myID+1)
         !Check to see that coordinate is in this block. if so, update
         if( mdSurfGlobalIndLocal(4,mm)==nn)then
-           print *,'getting sensitivites for surface point:',mm,'on Process',myID
+           !print *,'getting sensitivites for surface point:',mm,'on Process',myID
            
            !only local block needs to be perturbed. Index sychronization will take care of the rest
            
@@ -92,7 +94,7 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
            KMAX = KL
            ! SAVE NEW AND INITIAL XYZ VALUES TO BE PASSED TO WARPBLK
            
-           print *,'allocate xyz0'
+           !print *,'allocate xyz0'
            ALLOCATE(XYZ0(3,0:IMAX+1,0:JMAX+1,0:KMAX+1),XYZNEW(3,0:IMAX+1,0:JMAX+1,0:KMAX+1),XYZNEWd(3,0:IMAX+1,0:JMAX+1,0:KMAX+1))
            
            
@@ -107,20 +109,25 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
               XYZNEW(1,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,1)
               XYZNEW(2,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,2)
               XYZNEW(3,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,3)
-              print *,'call warp local'
+              !print *,'call warp local'
               
               xyznewd(:,:,:,:)  = 0.0
+	
               xyznewd(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm)) = 1.0
-              print *,'perturbed node?', xyznewd(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm)), ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm)
+              xref = xyznew(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm))
+              xyznew(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm)) = xref+ 1.0e-12
+            
+!  print *,'perturbed node?', xyznewd(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm)), ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm)
               !determine the explicitly and implicitly perturbed faces and edges
               !call flagImplicitEdgesAndFaces(ifaceptb,iedgeptb)
               call flagImplicitEdgesAndFacesDeriv(xyznewd,ifaceptb,iedgeptb)
               
-              print*,'warpingblock',nn,ll!,indices_new(1,mm),indices_new(2,mm),indices_new(3,mm)
+            !  print*,'warpingblock',nn,ll!,indices_new(1,mm),indices_new(2,mm),indices_new(3,mm)
               call WARP_LOCAL_D(xyznew, xyznewd, xyz0, ifaceptb, iedgeptb, imax&
                    &  , jmax, kmax)
               
-              print *,'assign derivatives'
+              xyznew(ll,mdSurfGlobalIndLocal(1,mm),mdSurfGlobalIndLocal(2,mm),mdSurfGlobalIndLocal(3,mm)) = xref
+             ! print *,'assign derivatives'
               ! ASSIGN THESE derivative values
               DO I=1,IMAX
                  DO J=1,JMAX
@@ -128,9 +135,10 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
                        do n = 1,3
                           idxvol = globalNode(i,j,k)*3+n
                           idxsurf= mdSurfGlobalIndLocal(5,mm)*3+ll!1
-                          print *,'indices',idxvol,'surf',idxsurf,xyznewd(n,I,J,K)
+                          !print *,'indices',idxvol,'surf',idxsurf,xyznewd(n,I,J,K)
                           if (xyznewd(n,I,J,K).ne.0.0)then
-                             call MatSetValues(dXvdXs, 1, idxvol-1, 1, idxsurf-1,   &
+		!print *,'indices',idxvol,'surf',idxsurf,xyznewd(n,I,J,K),mdSurfGlobalIndLocal(5,mm)
+                             call MatSetValues(dXvdXsPara, 1, idxvol-1, 1, idxsurf-1,   &
                                                xyznewd(n,I,J,K), ADD_VALUES, PETScIerr)
                              !call MatSetValues(dXvdXs, 1, idxvol-1, 1, idxsurf-1,   &
                              !                 idxvol , ADD_VALUES, PETScIerr)
@@ -180,7 +188,7 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
       !
       ! see .../petsc/docs/manualpages/Mat/MatAssemblyBegin.html
 
-      call MatAssemblyBegin(dXvdXs,MAT_FINAL_ASSEMBLY,PETScIerr)
+      call MatAssemblyBegin(dXvdXsPara,MAT_FINAL_ASSEMBLY,PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("integratedWarpDerivParallel", &
@@ -204,7 +212,7 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
       !
       ! see .../petsc/docs/manualpages/Mat/MatAssemblyEnd.html
 
-      call MatAssemblyEnd  (dXvdXs,MAT_FINAL_ASSEMBLY,PETScIerr)
+      call MatAssemblyEnd  (dXvdXsPara,MAT_FINAL_ASSEMBLY,PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("integratedWarpDerivParallel", &
@@ -235,7 +243,7 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
       ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
       ! or PETSc users manual, pp.52
 
-      call MatSetOption(dXvdXs,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
+      call MatSetOption(dXvdXsPara,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("integratedWarpDerivParallel", &
@@ -253,7 +261,7 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
                       mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
 
       if( PETScRank==0 ) &
-        write(*,20) "Assembling dXv/dXs matrix time (s) =", timeAdj
+        write(*,20) "Assembling dXv/dXs Parallel matrix time (s) =", timeAdj
 !
 !     ******************************************************************
 !     *                                                                *
@@ -287,13 +295,13 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
       ! see .../petsc/docs/manualpages/Mat/MatView.html
       ! or PETSc users manual, pp.57,148
 
-      !if( debug ) then
-        !call MatView(dXvdXs,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-        call MatView(dXvdXs,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+      if( debug ) then
+	call MatView(dXvdXsPara,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+        !call MatView(dXvdXsPara,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
         if( PETScIerr/=0 ) &
           call terminate("integratedWarpDerivParallel", "Error in MatView")
         !pause
-      !endif
+      endif
 
       ! Flush the output buffer and synchronize the processors.
 
@@ -303,11 +311,13 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
       
 !      !now extract and write to a file
 
-      do nn = 1,nDom
-         call setPointersAdj(nn,1,sps)
-         do mm = 1,2 !mdNSurfNodesLocal(1)
-            !Check to see that coordinate is in this block. if so, update
-            if( mdSurfIndLocal(4,mm)==nn)then
+!      do nn = 1,nDom
+!         call setPointersAdj(nn,1,sps)
+         !print *,'mdNGlobal...',mdNGlobalSurfNodesLocal(myID+1),myID
+         !do mm = 1,mdNGlobalSurfNodesLocal(myID+1)!mdNSurfNodesLocal(1)
+         do mm = 1,mdNSurfNodesCompact
+            !!@!Check to see that coordinate is in this block. if so, update
+            !!@if( mdSurfGlobalIndLocal(4,mm)==nn)then
                do ll = 1,3
                   do nnn = 1,ndom
                      call setPointersAdj(nnn,1,sps)
@@ -317,19 +327,23 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
                               do n = 1,3
                                  !allocate(idxvola(1,1),idxSurfa(1,1),xderiva(1,1)
                                  idxvol = globalNode(i,j,k)*3+n
-                                 idxsurf= (mdSurfIndLocal(5,mm)-1)*3+ll!1
+                                 !idxsurf= (mdSurfGlobalIndLocal(5,mm))*3+ll!1
+	                         idxsurf= (mm-1)*3+ll!1
                                  !print *,'index',nn,mm,ll,nnn,i,j,k,n,idxvol,idxsurf
 			         !print *,'index',idxvol,idxsurf
-                                 !call MatGetValues(dXvdXs,PETScOne,idxvol-1,PETScOne,idxsurf-1,xderiv,PETScIerr)
-                                 call MatGetValues(dXvdXs,1,idxvol-1,1,idxsurf-1,value,PETScIerr)
+                                 !call MatGetValues(dXvdXsPara,PETScOne,idxvol-1,PETScOne,idxsurf-1,xderiv,PETScIerr)
+                                 call MatGetValues(dXvdXsPara,1,idxvol-1,1,idxsurf-1,value,PETScIerr)
                                  !print *,'xderiv',value(1)!xderiv
                                  !if(value.ne.0)then
                                  if(value>1e-10)then
+                                   !print *,'index',idxvol,idxsurf,(mdSurfGlobalIndLocal(5,mm))
                                    !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
  12                                format(1x,'Face',6I2,'edge',12I2)
-                                   write(unitWarp,13) idxsurf,idxvol,mdSurfGlobalIndLocal(5,mm)*3+ll,i,j,k,n,nnn,nn,mm,ll,value
+	                          write(unitWarp,13) idxsurf,idxvol,i,j,k,n,nnn,mm,ll,value
+13                                format(1x,'WarpSurf',9I8,f18.10)
+!                                   write(unitWarp,13) idxsurf,idxvol,mdSurfGlobalIndLocal(5,mm)*3+ll,i,j,k,n,nnn,nn,mm,ll,value
                                  !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
-13                               format(1x,'WarpSurf',11I8,f18.10)
+!13                               format(1x,'WarpSurf',11I8,f18.10)
 				endif
                               enddo
                            END DO
@@ -337,9 +351,9 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
                      END DO
                   end do
                end do
-            endif
+            !endif
          end do
-      end do
+!      end do
 
 
       ! Output formats.

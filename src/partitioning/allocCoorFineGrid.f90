@@ -72,6 +72,14 @@
               if(ierr /= 0)                         &
                    call terminate("allocCoorFineGrid", &
                    "Memory allocation failure for flowDoms%xInit")
+              allocate(flowDoms(nn,1,mm)%xPlus(0:ie,0:je,0:ke,3), stat=ierr)
+              if(ierr /= 0)                         &
+                   call terminate("allocCoorFineGrid", &
+                   "Memory allocation failure for flowDoms%xPlus")
+              allocate(flowDoms(nn,1,mm)%xMinus(0:ie,0:je,0:ke,3), stat=ierr)
+              if(ierr /= 0)                         &
+                   call terminate("allocCoorFineGrid", &
+                   "Memory allocation failure for flowDoms%xMinus")
            end if
            
          enddo

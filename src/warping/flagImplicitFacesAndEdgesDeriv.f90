@@ -162,7 +162,7 @@ do k=1,kl,kl-1!ijk(3),ijk(3)!jump corner to corner
    end do
 end do
 !end do
-print *,'perturbedCorner',perturbedCorner
+!print *,'perturbedCorner',perturbedCorner
 !get the Block relations for the next part of the algorithm
 call blockRelations(relatedFaces,relatedEdges,edgeRelatedFaces,&
      searchPattern)
@@ -175,13 +175,13 @@ call blockRelations(relatedFaces,relatedEdges,edgeRelatedFaces,&
 !   call setPointer(nn,level,sps)
 do i = 1,8!(len(perturbedCorner))
    if (perturbedCorner(i)) then
-      print *,'corner perturbed',i
+      !print *,'corner perturbed',i
       do n =1,3
          edge = relatedEdges(n,i)
-         print *,'edge',edge
+         !print *,'edge',edge
          IEDGEPTB(edge)= 1
          face = relatedFaces(n,i)
-         print *,'face',face
+         !print *,'face',face
          if (.not. IFACEPTB(face)==2) then
             IFACEPTB(face)=1
          endif
@@ -189,7 +189,7 @@ do i = 1,8!(len(perturbedCorner))
    endif
 end do
 !end do
-print *,'ifaceptb',ifaceptb,iedgeptb        
+!print *,'ifaceptb',ifaceptb,iedgeptb        
 ! Flag the explicitly perturbed edges
 
 do mm = 1,12!len(searchPattern)!Loop over edges
@@ -203,7 +203,7 @@ do mm = 1,12!len(searchPattern)!Loop over edges
                tolerance = 1.0e-12
                if ((abs(local -local0)/max(abs(local0),abs(local),tolerance)>1e-12.and. abs(local -local0)>tolerance ).or.(xyznewd(n,i,j,k)/=0))then
 !!$               if(xyznewd(n,i,j,k)/=0)then
-                  print *,'edgeperturbed',i,j,k!,local,local0!,n,mm
+                  !print *,'edgeperturbed',i,j,k!,local,local0!,n,mm
                   IEDGEPTB(mm) = 2
                   do m=1,2
                      face = edgeRelatedFaces(m,mm)

@@ -39,6 +39,7 @@
        integer(kind=intType), dimension(:), allocatable :: mdNSurfNodesLocal
        integer(kind=intType), dimension(:), allocatable :: mdNGlobalSurfNodesLocal
 
+
        ! mdNSurfPatches(0:nProc,mdNFamilies): Number of surface patches
        !                                      per processor per family
        !                                      in cumulative storage

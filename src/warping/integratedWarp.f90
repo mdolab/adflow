@@ -42,21 +42,22 @@ subroutine integratedWarp(ncoords,xyzface,indices)
 
 
   !update the faces based on the new surface
-  print *,'update faces'
+  !print *,'update faces'
   call updateFaces(ncoords,xyzFace,indices)
   
-  print *,'exchangecoordinates'
+  !print *,'exchangecoordinates'
   !Syncronize the faces to propogate the pertbation to adjacent blocks
 !  call exchangeCoor(level)
+!  print *,'entering synchronize'
   call synchronizeBlockFaces(level,1)
   
    ! Now warp the blocks based on new face coordinates
   
   do nn=1,nDom
-     print*,'warpingblock',nn
+     !print*,'warpingblock',nn
      call setPointers(nn,level,sps)     
      
-     print *,'flag implicites'
+     !print *,'flag implicites'
      !determine the explicitly and implicitly perturbed faces and edges
      call flagImplicitEdgesAndFaces(ifaceptb,iedgeptb)
 
@@ -66,7 +67,7 @@ subroutine integratedWarp(ncoords,xyzface,indices)
      IMAX = IL
      JMAX = JL
      KMAX = KL
-     print *,'allocate xyz0'
+     !print *,'allocate xyz0'
      ALLOCATE(XYZ0(3,0:IMAX+1,0:JMAX+1,0:KMAX+1),XYZNEW(3,0:IMAX+1,0:JMAX+1,0:KMAX+1))
      xyz0 = 0
      xyznew = 0
@@ -77,10 +78,10 @@ subroutine integratedWarp(ncoords,xyzface,indices)
      XYZNEW(1,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,1)
      XYZNEW(2,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,2)
      XYZNEW(3,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,3)
-     print *,'call warp local'
+     !print *,'call warp local'
      call warp_local(xyznew,xyz0,ifaceptb,iedgeptb,imax,jmax,kmax)
      
-     print *,'update coordinates'
+     !print *,'update coordinates'
      ! ASSIGN THESE NEW XYZ VALUES TO THE MESH ITSELF
      DO I=1,IMAX
         DO J=1,JMAX

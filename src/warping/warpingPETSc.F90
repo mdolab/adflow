@@ -88,7 +88,7 @@
       !       nodes.
       !
  
-      Mat     dXvdXs ,dXvdXsFD
+      Mat     dXvdXs ,dXvdXsFD,dXvdXsPara
 
 #endif
 
