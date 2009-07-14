@@ -85,4 +85,9 @@ do nn=1,nDom
 enddo
 
 
+!Now generate the list for interfacing with python
+call generateReducedSurfaceList
+print *,'surface list generated'
+!stop
+
 end subroutine synchronizeIndices

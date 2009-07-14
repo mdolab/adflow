@@ -13,6 +13,7 @@ use communication
 use monitor
 use inputIO
 use mdDataLocal
+use mdData
 implicit none
 
 ! Local Arguments
@@ -27,6 +28,9 @@ real(kind=realType)::dx,dx1
 !real(kind=realType), dimension(3,ncoords)::xyzface
 !integer(kind=intType),dimension(4,ncoords)::indices
 
+!derivative variables
+real(kind=realType), dimension(:,:),allocatable::surfacePoints,surfacePointsRef
+integer(kind=intType)::j,k,nnn,index
 !
 ! Begin execution
 !
@@ -62,6 +66,17 @@ print *,'Warping PETSC Mat Created'
 allocate(xyzface(3,mdNSurfNodesLocal(1)),indices(5,mdNSurfNodesLocal(1)))
 
 
+!allocate temporary storage for the Surface points
+allocate(surfacePoints(3,mdNSurfNodesCompact),surfacePointsRef(3,mdNSurfNodesCompact), stat=ierr)
+if(ierr /= 0)                         &
+     call terminate("verifyWarpDerivFD", &
+     "Memory allocation failure for surfacePoints")
+
+call mdCreateGlobalReducedSurfaceList
+
+surfacePoints=mdGlobalSurfxx
+
+
 !do nn = 1,ndom
 !   call setPointers(nn,1,1)
 
@@ -91,21 +106,47 @@ writeGrid = .true.
 writeVolume  = .true.
 if(writeGrid .or. writeVolume .or. writeSurface) &
      call writeSol
-print *,'warping parameters',ncoords!,xyzface,indices
-call integratedWarp(ncoords,xyzface,indices)
+!new warping method
+do nnn=1,nDom
+   call setpointersadj(nnn,level,sps)
+   !print *,'xplus2',xplus(1,1,1,1)
+   DO I=1,il!IMAX
+      DO J=1,jl!JMAX
+         DO K=1,kl!KMAX
+            X(I,J,K,1) = Xinit(I,J,K,1)
+            X(I,J,K,2) = Xinit(I,J,K,2)
+            X(I,J,K,3) = Xinit(I,J,K,3)
+         END DO
+      END DO
+   END DO
+enddo
+
+!Store the current Face
+surfacePointsRef = Surfacepoints
+index = 20
+dx =-0.0
+surfacePoints(1,index) = surfacePointsRef(1,index)+dx
+surfacePoints(2,index) = surfacePointsRef(2,index)+dx
+surfacePoints(3,index) = surfacePointsRef(3,index)+dx
+call updateFacesGlobal(mdNSurfNodesCompact,surfacePoints)
+!now warp the domain
+call warpMesh
+
+!print *,'warping parameters',ncoords!,xyzface,indices
+!call integratedWarp(ncoords,xyzface,indices)
 
 newgridfile = 'testwarpafter.cgns'
 writeGrid = .true.
 writeVolume  = .true.
 if(writeGrid .or. writeVolume .or. writeSurface) &
      call writeSol
-
-
+!stop
+call verifyWarpDerivFD
 !stop
 print *,'warping parameters3',ncoords!,xyzface,indices
 call integratedWarpDerivFD(ncoords,xyzface,indices)
 print *,'FD Derivatives done',myID
-
+stop
 call mpi_barrier(sumb_comm_world, ierr)
 
 print *,'warping parameters2',ncoords!,xyzface,indices
