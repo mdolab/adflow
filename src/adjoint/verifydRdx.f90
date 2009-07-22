@@ -98,7 +98,7 @@
 !!$!      real(kind=realType), dimension(0:ib,0:jb,0:kb,1:nw) :: wtemp
 !!$      real(kind=realType), dimension(0:ie,0:je,0:ke,1:3) :: xtemp
 !!$      real(kind=realType), dimension(0:ib,0:jb,0:kb) :: ptemp
-      real(kind=realtype),allocatable, dimension(:,:,:,:)::dwp,dwm,dwtemp
+      !real(kind=realtype),allocatable, dimension(:,:,:,:)::dwp,dwm,dwtemp
 !      real(kind=realType), dimension(0:ib,0:jb,0:kb,1:nw) :: wtemp
       real(kind=realType),allocatable, dimension(:,:,:,:) :: xtemp
       real(kind=realType),allocatable, dimension(:,:,:) :: ptemp
@@ -184,6 +184,17 @@
       dRdxAdj = 0
       dRdxFD1  = 0
       dRdxFD2  = 0
+
+    !allocate memory for FD
+      allocatedomains: do nn = 1,ndom
+         print *,'domain',nn
+         groundLevel = 1
+         sps = 1
+         call setPointersAdj(nn,1,sps)
+         allocate(flowDoms(nn,level,sps)%dwp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+         allocate(flowDoms(nn,level,sps)%dwm(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+         allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+      end do allocatedomains
 
 
 !
@@ -852,6 +863,16 @@
    end do
 end do
 enddo outputDomainLoop
+
+   deallocatedomains: do nn = 1,ndom
+         print *,'domain',nn
+         groundLevel = 1
+         sps = 1
+         call setPointersAdj(nn,1,sps)
+         deallocate(flowDoms(nn,level,sps)%dwp)
+         deallocate(flowDoms(nn,level,sps)%dwm)
+         deallocate(flowDoms(nn,level,sps)%dwtemp)
+      end do deallocatedomains
 
 !      dRdwErrRel_1(:, :, :, :) = abs(dRdwErr_q(:, :, :, :)/dRdw_q(:,:,:,:))
 !      print *

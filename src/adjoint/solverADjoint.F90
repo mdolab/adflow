@@ -148,6 +148,9 @@
       ! Create all the necessary PETSc objects.
 
       call createPETScVars
+
+      !initializeWarping
+      call initializeWarping
  
       ! Perform some verifications if in DEBUG mode.
       !moved after PETSc initialization because PETsc now included in debugging...
@@ -163,7 +166,10 @@
         ! Verify the node-based ADjoint residual routine.
 
 !	call verifydRdW(level,sps)
-	call verifydRdWFile(level,sps)
+!	call verifydRdWFile(level,sps)
+!      call verifydRdxFile(level,sps)
+!      call verifydRdxsFile
+!      call verifydRdxFileFD(level)
 !stop
 
         ! Verify the dRdx routine
@@ -221,7 +227,7 @@
 !
       !print *,'calling setupADjointMatrix'
       call setupADjointMatrix(level)
-stop
+!stop
 
       ! Reordered for ASM preconditioner
       ! Create the Krylov subspace linear solver context,
@@ -252,6 +258,8 @@ stop
       call setupGradientMatrixExtra(level)
 
       call setupGradientMatrixSpatial(level)
+
+      call setupVolumeSurfaceDerivatives
 !
 !     ******************************************************************
 !     *                                                                *
@@ -301,6 +309,8 @@ stop
 	! spatial design variables
 
         call computeADjointGradientSpatial(costFunction)
+
+        call computeADjointGradientSurface(costFunction)
 !!$
 !!$        ! Write the adjoint field solution, the convergence history and
 !!$        ! the cost function total sensitivity to file/screen.

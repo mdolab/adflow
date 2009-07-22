@@ -86,20 +86,20 @@
       integer(kind=intType), dimension(nw) :: idxmg, idxng
 
       integer :: unitdRdw = 8,ierror,idxstate, idxres,nnn
-      character(len = 20)::outfile,testfile
-      write(testfile,100) myid!12
-100   format (i5)  
-      testfile=adjustl(testfile)
-      write(outfile,101) trim(testfile)!testfile
-101   format("AD1dRdWfile",a,".out")
-      unitdrdw = 8+myID
-
-      
-      open (UNIT=unitdRdw,File=outfile,status='replace',action='write',iostat=ierror)
-      if(ierror /= 0)                        &
-           call terminate("verifydRdwFile", &
-           "Something wrong when &
-           &calling open")
+!!$      character(len = 20)::outfile,testfile
+!!$      write(testfile,100) myid!12
+!!$100   format (i5)  
+!!$      testfile=adjustl(testfile)
+!!$      write(outfile,101) trim(testfile)!testfile
+!!$101   format("AD1dRdWfile",a,".out")
+!!$      unitdrdw = 8+myID
+!!$
+!!$      
+!!$      open (UNIT=unitdRdw,File=outfile,status='replace',action='write',iostat=ierror)
+!!$      if(ierror /= 0)                        &
+!!$           call terminate("verifydRdwFile", &
+!!$           "Something wrong when &
+!!$           &calling open")
 !
 !     ******************************************************************
 !     *                                                                *
@@ -896,43 +896,43 @@
           call terminate("setupADjointMatrix", "Error in MatView")
         pause
       endif
-!      !now extract and write to a file
-       sps = 1
-       do nn = 1,nDom
-          call setPointersAdj(nn,1,sps)
-          do kCell = 2, kl
-             do jCell = 2, jl
-                do iCell = 2, il
-                   do m = 1, nw
-                     idxstate   = globalCell(iCell,jCell,kCell)*nw+m 
-                     do nnn = 1,ndom
-                        call setPointersAdj(nnn,1,sps)
-                        DO I=2,Il
-                           DO J=2,Jl
-                              DO K=2,Kl
-                                 do n = 1,nw
-                                    idxres = globalCell(i,j,k)*nw+n
-                                    call MatGetValues(drdw,1,idxres-1,1,idxstate-1,value,PETScIerr)
-                                    !if(value.ne.0)then
-                                    if(value>1e-10)then
-                                       !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
-!12                                     format(1x,'Face',6I2,'edge',12I2)
-                                       write(unitdrdw,13) idxstate,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value
-                                       !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
-13                                     format(1x,'drdw',12I8,f18.10)
-                                    endif
-                                 enddo
-                              END DO
-                           END DO
-                        END DO
-                     end do
-                  end do
-               enddo
-            end do
-         end do
-      enddo
-!Print *,'barriercall',myID
-call mpi_barrier(SUmb_comm_world, ierr)
+!!$!      !now extract and write to a file
+!!$       sps = 1
+!!$       do nn = 1,nDom
+!!$          call setPointersAdj(nn,1,sps)
+!!$          do kCell = 2, kl
+!!$             do jCell = 2, jl
+!!$                do iCell = 2, il
+!!$                   do m = 1, nw
+!!$                     idxstate   = globalCell(iCell,jCell,kCell)*nw+m 
+!!$                     do nnn = 1,ndom
+!!$                        call setPointersAdj(nnn,1,sps)
+!!$                        DO I=2,Il
+!!$                           DO J=2,Jl
+!!$                              DO K=2,Kl
+!!$                                 do n = 1,nw
+!!$                                    idxres = globalCell(i,j,k)*nw+n
+!!$                                    call MatGetValues(drdw,1,idxres-1,1,idxstate-1,value,PETScIerr)
+!!$                                    !if(value.ne.0)then
+!!$                                    if(value>1e-10)then
+!!$                                       !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
+!!$!12                                     format(1x,'Face',6I2,'edge',12I2)
+!!$                                       write(unitdrdw,13) idxstate,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value
+!!$                                       !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
+!!$13                                     format(1x,'drdw',12I8,f18.10)
+!!$                                    endif
+!!$                                 enddo
+!!$                              END DO
+!!$                           END DO
+!!$                        END DO
+!!$                     end do
+!!$                  end do
+!!$               enddo
+!!$            end do
+!!$         end do
+!!$      enddo
+!!$!Print *,'barriercall',myID
+!!$call mpi_barrier(SUmb_comm_world, ierr)
 
  close(unitdrdw)
       ! Flush the output buffer and synchronize the processors.

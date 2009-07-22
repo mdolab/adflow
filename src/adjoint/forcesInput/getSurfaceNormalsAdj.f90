@@ -362,15 +362,30 @@
 
              
              xp = ss(i,j,1);  yp = ss(i,j,2);  zp = ss(i,j,3)
-             fact = sqrt(xp*xp + yp*yp + zp*zp)
-             if(fact > zero) fact = mult/fact
+!!$             fact = sqrt(xp*xp + yp*yp + zp*zp)
+!!$             if(fact > zero) fact = mult/fact
+!!$             
+!!$             ! Compute the unit normal.
+!!$             
+!!$             normAdj(i,j,1) = fact*xp
+!!$             normAdj(i,j,2) = fact*yp
+!!$             normAdj(i,j,3) = fact*zp
              
-             ! Compute the unit normal.
-             
-             normAdj(i,j,1) = fact*xp
-             normAdj(i,j,2) = fact*yp
-             normAdj(i,j,3) = fact*zp
-             
+             !alternate form to allow inclusion of degenrate halos???
+             if( xp>zero .or. yp>zero .or. zp>zero)then
+                !if (fact > zero)then
+                !compute length
+                fact = sqrt(xp*xp + yp*yp + zp*zp)
+                !set factor to 1/length
+                fact = mult/fact
+                !compute unit normal...
+                normAdj(i,j,1) = fact*xp
+                normAdj(i,j,2) = fact*yp
+                normAdj(i,j,3) = fact*zp
+             else
+                !Length is zero
+                normAdj(i,j,:) = zero
+             endif
           enddo
        enddo
        

@@ -418,39 +418,57 @@ SUBROUTINE GETSURFACENORMALSADJ_B(xadj, xadjb, siadj, siadjb, sjadj, &
       yp = ss(i, j, 2)
       CALL PUSHREAL8(zp)
       zp = ss(i, j, 3)
-      CALL PUSHREAL8(fact)
-      fact = SQRT(xp*xp + yp*yp + zp*zp)
-      IF (fact .GT. zero) THEN
+!!$             fact = sqrt(xp*xp + yp*yp + zp*zp)
+!!$             if(fact > zero) fact = mult/fact
+!!$             
+!!$             ! Compute the unit normal.
+!!$             
+!!$             normAdj(i,j,1) = fact*xp
+!!$             normAdj(i,j,2) = fact*yp
+!!$             normAdj(i,j,3) = fact*zp
+!alternate form to allow inclusion of degenrate halos???
+      IF (xp .GT. zero .OR. yp .GT. zero .OR. zp .GT. zero) THEN
         CALL PUSHREAL8(fact)
+!if (fact > zero)then
+!compute length
+        fact = SQRT(xp*xp + yp*yp + zp*zp)
+        CALL PUSHREAL8(fact)
+!set factor to 1/length
         fact = mult/fact
+!compute unit normal...
         CALL PUSHINTEGER4(1)
       ELSE
-        CALL PUSHINTEGER4(0)
+        CALL PUSHINTEGER4(2)
       END IF
     END DO
   END DO
   ssb(iibeg:iiend, jjbeg:jjend, 1:3) = 0.0
   DO j=jjend,jjbeg,-1
     DO i=iiend,iibeg,-1
-      factb = zp*normadjb(i, j, 3)
-      zpb = fact*normadjb(i, j, 3)
-      normadjb(i, j, 3) = 0.0
-      factb = factb + yp*normadjb(i, j, 2)
-      ypb = fact*normadjb(i, j, 2)
-      normadjb(i, j, 2) = 0.0
-      factb = factb + xp*normadjb(i, j, 1)
-      xpb = fact*normadjb(i, j, 1)
-      normadjb(i, j, 1) = 0.0
       CALL POPINTEGER4(branch)
-      IF (.NOT.branch .LT. 1) THEN
+      IF (branch .LT. 2) THEN
+        factb = zp*normadjb(i, j, 3)
+        zpb = fact*normadjb(i, j, 3)
+        normadjb(i, j, 3) = 0.0
+        factb = factb + yp*normadjb(i, j, 2)
+        ypb = fact*normadjb(i, j, 2)
+        normadjb(i, j, 2) = 0.0
+        factb = factb + xp*normadjb(i, j, 1)
+        xpb = fact*normadjb(i, j, 1)
+        normadjb(i, j, 1) = 0.0
         CALL POPREAL8(fact)
         factb = -(mult*factb/fact**2)
+        CALL POPREAL8(fact)
+        tempb17 = factb/(2.0*SQRT(xp**2+yp**2+zp**2))
+        xpb = xpb + 2*xp*tempb17
+        ypb = ypb + 2*yp*tempb17
+        zpb = zpb + 2*zp*tempb17
+      ELSE
+        normadjb(i, j, :) = 0.0
+        xpb = 0.0
+        ypb = 0.0
+        zpb = 0.0
       END IF
-      CALL POPREAL8(fact)
-      tempb17 = factb/(2.0*SQRT(xp**2+yp**2+zp**2))
-      xpb = xpb + 2*xp*tempb17
-      ypb = ypb + 2*yp*tempb17
-      zpb = zpb + 2*zp*tempb17
       CALL POPREAL8(zp)
       ssb(i, j, 3) = ssb(i, j, 3) + zpb
       CALL POPREAL8(yp)

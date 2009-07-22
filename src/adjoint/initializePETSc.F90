@@ -120,7 +120,9 @@
 
       ! Allocate memory for the convergence residual history.
 
-      allocate(adjResHist(adjMaxIter))
+      if (.not. allocated(adjResHist))then
+         allocate(adjResHist(adjMaxIter))
+      endif
 
       ! Flush the output buffer and synchronize the processors.
 

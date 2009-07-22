@@ -659,16 +659,16 @@ loopdirection:DO mm=1,3
 &    velygrid0b
   veldirfreestreamadjb(1) = veldirfreestreamadjb(1) - ainf*machgridadj*&
 &    velxgrid0b
-!!$  coscoeffourzrotb(:) = 0.0
-!!$  sincoeffourxrotb(:) = 0.0
-!!$  sincoeffouryrotb(:) = 0.0
-!!$  sincoeffourzrotb(:) = 0.0
-!!$  omegafourxrotb = 0.0
-!!$  coefpolxrotb(:) = 0.0
-!!$  omegafouryrotb = 0.0
-!!$  coefpolyrotb(:) = 0.0
-!!$  omegafourzrotb = 0.0
-!!$  coefpolzrotb(:) = 0.0
-!!$  coscoeffourxrotb(:) = 0.0
-!!$  coscoeffouryrotb(:) = 0.0
+!  coscoeffourzrotb(:) = 0.0
+!  sincoeffourxrotb(:) = 0.0
+!  sincoeffouryrotb(:) = 0.0
+!  sincoeffourzrotb(:) = 0.0
+!  omegafourxrotb = 0.0
+!  coefpolxrotb(:) = 0.0
+!  omegafouryrotb = 0.0
+!  coefpolyrotb(:) = 0.0
+!  omegafourzrotb = 0.0
+!  coefpolzrotb(:) = 0.0
+!  coscoeffourxrotb(:) = 0.0
+!  coscoeffouryrotb(:) = 0.0
 END SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B

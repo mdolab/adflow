@@ -262,8 +262,8 @@ SUBROUTINE RESIDUALADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, sjadj&
   CALL POPINTEGER4(branch)
   CALL POPINTEGER4(branch)
   CALL POPINTEGER4(branch)
-!!$  cdisrkb(:) = 0.0
-!!$  kappacoefb = 0.0
-!!$  vis4b = 0.0
-!!$  vis2b = 0.0
+!  cdisrkb(:) = 0.0
+!  kappacoefb = 0.0
+!  vis4b = 0.0
+!  vis2b = 0.0
 END SUBROUTINE RESIDUALADJ_B

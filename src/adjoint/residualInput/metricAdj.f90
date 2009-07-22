@@ -91,7 +91,15 @@
 
        siAdj = zero; sjAdj = zero; skAdj = zero
        normAdj = zero
-
+!!$       do n = 1,3
+!!$          do i = -3,2
+!!$             do j = -3,2
+!!$                do k = -3,2
+!!$                   print *,'xadj',xadj(i,j,k,n),i,j,k,n
+!!$                enddo
+!!$             enddo
+!!$          end do
+!!$       end do
 !
 !
 !      **************************************************************
@@ -387,7 +395,8 @@
                  v2(1) = xAdj(l,j,k,1) - xAdj(i,m,k,1)
                  v2(2) = xAdj(l,j,k,2) - xAdj(i,m,k,2)
                  v2(3) = xAdj(l,j,k,3) - xAdj(i,m,k,3)
-
+                 !print *,'in metric',v2,'x',xAdj(l,j,k,:),xAdj(i,m,k,:)
+                 !print *,'indices',l,j,k,i,m,k
                  ! The face normal, which is the cross product of the two
                  ! diagonal vectors times fact; remember that fact is
                  ! either -0.5 or 0.5.
@@ -579,15 +588,30 @@
                        ! and possibly correct for inward pointing.
                        
                        xp = ss(jj,kk,1);  yp = ss(jj,kk,2);  zp = ss(jj,kk,3)
-                       fact = sqrt(xp*xp + yp*yp + zp*zp)
-                       if(fact > zero) fact = mult/fact
-                       
-                       ! Compute the unit normal.
-                       
-                       normAdj(mm,jj,kk,1) = fact*xp
-                       normAdj(mm,jj,kk,2) = fact*yp
-                       normAdj(mm,jj,kk,3) = fact*zp
-                       
+!!$                       fact = sqrt(xp*xp + yp*yp + zp*zp)
+!!$                       if(fact > zero) fact = mult/fact
+!!$                       
+!!$                       ! Compute the unit normal.
+!!$                       
+!!$                       normAdj(mm,jj,kk,1) = fact*xp
+!!$                       normAdj(mm,jj,kk,2) = fact*yp
+!!$                       normAdj(mm,jj,kk,3) = fact*zp
+
+                       !alternate form to allow inclusion of degenrate halos???
+                       if( xp>zero .or. yp>zero .or. zp>zero)then
+                          !if (fact > zero)then
+                          !compute length
+                          fact = sqrt(xp*xp + yp*yp + zp*zp)
+                          !set factor to 1/length
+                          fact = mult/fact
+                          !compute unit normal...
+                          normAdj(mm,jj,kk,1) = fact*xp
+                          normAdj(mm,jj,kk,2) = fact*yp
+                          normAdj(mm,jj,kk,3) = fact*zp
+                       else
+                          !Length is zero
+                          normAdj(mm,jj,kk,:) = zero
+                       endif
                     enddo
                  enddo
 

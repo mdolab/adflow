@@ -96,8 +96,8 @@
 #SOLVER_DIRSRC = /nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src
 #SOLVER_DIRSRC = /home/guysmiley/acmarta/SVN/SUmbVertex/src
 #SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/SUmbVertex/trunk/src
-#SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
-SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
+SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
+#SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
 
 #     ******************************************************************
 #     *                                                                *
