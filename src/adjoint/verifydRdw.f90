@@ -97,7 +97,7 @@
       
       !real(kind=realType), dimension(nx, ny, nz, nw,nx) :: dRdwErr, dRdwErrRel
       real(kind=realType), dimension(nw) :: dRdwL2, dRdwL2Rel
-      real(kind=realtype), dimension(0:ib,0:jb,0:kb,1:nw)::dwp,dwm,dwtemp
+      !real(kind=realtype), dimension(0:ib,0:jb,0:kb,1:nw)::dwp,dwm,dwtemp
       real(kind=realType), dimension(0:ib,0:jb,0:kb,1:nw) :: wtemp
       real(kind=realType), dimension(0:ib,0:jb,0:kb) :: ptemp
       integer(kind=intType) :: istate, jstate, kstate,ires
@@ -173,7 +173,16 @@
       dRdwAdj = 0
       dRdwFD1  = 0
 
-
+      !allocate memory for FD
+      allocatedomains: do nn = 1,ndom
+         print *,'domain',nn
+         groundLevel = 1
+         sps = 1
+         call setPointersAdj(nn,1,sps)
+         allocate(flowDoms(nn,level,sps)%dwp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+         allocate(flowDoms(nn,level,sps)%dwm(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+         allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+      end do allocatedomains
 !
 !     ******************************************************************
 !     *                                                                *
@@ -723,6 +732,16 @@
       end do
      end do
     end do
+
+      deallocatedomains: do nn = 1,ndom
+         print *,'domain',nn
+         groundLevel = 1
+         sps = 1
+         call setPointersAdj(nn,1,sps)
+         deallocate(flowDoms(nn,level,sps)%dwp)
+         deallocate(flowDoms(nn,level,sps)%dwm)
+         deallocate(flowDoms(nn,level,sps)%dwtemp)                  
+      end do deallocatedomains
 
 
 !      dRdwErrRel_1(:, :, :, :) = abs(dRdwErr_q(:, :, :, :)/dRdw_q(:,:,:,:))

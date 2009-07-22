@@ -195,8 +195,9 @@
         call terminate("solveADjointPETSc", &
                        "Error in KSPSolveTranspose.")
 
-      !call VecView(psi,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-      !pause
+!      call VecView(psi,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+     ! call VecView(psi,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+     ! pause
       ! Get new time and compute the elapsed time.
 
       call cpu_time(time(2))

@@ -104,6 +104,15 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
   siadj = zero
   sjadj = zero
   skadj = zero
+!!$       do n = 1,3
+!!$          do i = -3,2
+!!$             do j = -3,2
+!!$                do k = -3,2
+!!$                   print *,'xadj',xadj(i,j,k,n),i,j,k,n
+!!$                enddo
+!!$             enddo
+!!$          end do
+!!$       end do
 !
 !
 !      **************************************************************
@@ -457,6 +466,8 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
         v2(2) = xadj(l, j, k, 2) - xadj(i, m, k, 2)
         CALL PUSHREAL8(v2(3))
         v2(3) = xadj(l, j, k, 3) - xadj(i, m, k, 3)
+!print *,'in metric',v2,'x',xAdj(l,j,k,:),xAdj(i,m,k,:)
+!print *,'indices',l,j,k,i,m,k
 ! The face normal, which is the cross product of the two
 ! diagonal vectors times fact; remember that fact is
 ! either -0.5 or 0.5.
@@ -894,14 +905,27 @@ bocoloop:DO mm=1,nbocos
           yp = ss(jj, kk, 2)
           CALL PUSHREAL8(zp)
           zp = ss(jj, kk, 3)
-          CALL PUSHREAL8(fact)
-          fact = SQRT(xp*xp + yp*yp + zp*zp)
-          IF (fact .GT. zero) THEN
+!!$                       fact = sqrt(xp*xp + yp*yp + zp*zp)
+!!$                       if(fact > zero) fact = mult/fact
+!!$                       
+!!$                       ! Compute the unit normal.
+!!$                       
+!!$                       normAdj(mm,jj,kk,1) = fact*xp
+!!$                       normAdj(mm,jj,kk,2) = fact*yp
+!!$                       normAdj(mm,jj,kk,3) = fact*zp
+!alternate form to allow inclusion of degenrate halos???
+          IF (xp .GT. zero .OR. yp .GT. zero .OR. zp .GT. zero) THEN
             CALL PUSHREAL8(fact)
+!if (fact > zero)then
+!compute length
+            fact = SQRT(xp*xp + yp*yp + zp*zp)
+            CALL PUSHREAL8(fact)
+!set factor to 1/length
             fact = mult/fact
+!compute unit normal...
             CALL PUSHINTEGER4(1)
           ELSE
-            CALL PUSHINTEGER4(0)
+            CALL PUSHINTEGER4(2)
           END IF
         END DO
         CALL PUSHINTEGER4(jj - 1)
@@ -983,25 +1007,30 @@ bocoloop:DO mm=1,nbocos
         CALL POPINTEGER4(ad_from6)
         CALL POPINTEGER4(ad_to6)
         DO jj=ad_to6,ad_from6,-1
-          factb = zp*normadjb(mm, jj, kk, 3)
-          zpb = fact*normadjb(mm, jj, kk, 3)
-          normadjb(mm, jj, kk, 3) = 0.0
-          factb = factb + yp*normadjb(mm, jj, kk, 2)
-          ypb = fact*normadjb(mm, jj, kk, 2)
-          normadjb(mm, jj, kk, 2) = 0.0
-          factb = factb + xp*normadjb(mm, jj, kk, 1)
-          xpb = fact*normadjb(mm, jj, kk, 1)
-          normadjb(mm, jj, kk, 1) = 0.0
           CALL POPINTEGER4(branch)
-          IF (.NOT.branch .LT. 1) THEN
+          IF (branch .LT. 2) THEN
+            factb = zp*normadjb(mm, jj, kk, 3)
+            zpb = fact*normadjb(mm, jj, kk, 3)
+            normadjb(mm, jj, kk, 3) = 0.0
+            factb = factb + yp*normadjb(mm, jj, kk, 2)
+            ypb = fact*normadjb(mm, jj, kk, 2)
+            normadjb(mm, jj, kk, 2) = 0.0
+            factb = factb + xp*normadjb(mm, jj, kk, 1)
+            xpb = fact*normadjb(mm, jj, kk, 1)
+            normadjb(mm, jj, kk, 1) = 0.0
             CALL POPREAL8(fact)
             factb = -(mult*factb/fact**2)
+            CALL POPREAL8(fact)
+            tempb12 = factb/(2.0*SQRT(xp**2+yp**2+zp**2))
+            xpb = xpb + 2*xp*tempb12
+            ypb = ypb + 2*yp*tempb12
+            zpb = zpb + 2*zp*tempb12
+          ELSE
+            normadjb(mm, jj, kk, :) = 0.0
+            xpb = 0.0
+            ypb = 0.0
+            zpb = 0.0
           END IF
-          CALL POPREAL8(fact)
-          tempb12 = factb/(2.0*SQRT(xp**2+yp**2+zp**2))
-          xpb = xpb + 2*xp*tempb12
-          ypb = ypb + 2*yp*tempb12
-          zpb = zpb + 2*zp*tempb12
           CALL POPREAL8(zp)
           ssb(jj, kk, 3) = ssb(jj, kk, 3) + zpb
           CALL POPREAL8(yp)

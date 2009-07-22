@@ -121,22 +121,22 @@
 
       ! View the solution vector dIdx.
  
-     if(  debug ) then
-
-        if( PETScRank==0 ) then
-          write(*,*) "# ============================ "
-          write(*,*) "#  dIdx total gradient vector  "
-          write(*,*) "# ============================ "
-        endif
-
-        call VecView(dIdx,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
-!        call VecView(dIdx,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-
-        if( PETScIerr/=0 ) &
-          call terminate("computeADjointGradientSpatial", &
-                         "Error in VecView")
-	pause
-
+      if(  debug ) then
+         
+         if( PETScRank==0 ) then
+            write(*,*) "# ============================ "
+            write(*,*) "#  dIdx total gradient vector  "
+            write(*,*) "# ============================ "
+         endif
+         
+         call VecView(dIdx,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+         !        call VecView(dIdx,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+         
+         if( PETScIerr/=0 ) &
+              call terminate("computeADjointGradientSpatial", &
+              "Error in VecView")
+         pause
+         
       endif
 !
 !     ******************************************************************
@@ -244,6 +244,14 @@
                        functionGradSpatial(costFunction,:), nDesignGlobal,&
                        nDisplsGlobal, sumb_real, &
                         PETSC_COMM_WORLD, PETScIerr)
+
+if (PETScRank==0) then
+   do i = 1,size(functionGradSpatial(costFunction,:) )
+      if (functionGradSpatial(costFunction,i).ne. 0.0)then
+         print *,'vol.deriv:',functionGradSpatial(costFunction,i),i
+      endif
+   end do
+end if
 !	if (PETScRank==0) then
 !	     print *,'spatial function',functionGradSpatial(costFunction,:) 
 !        endif

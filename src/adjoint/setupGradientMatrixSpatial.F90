@@ -335,7 +335,11 @@
               .true., .true.)
       endif
 
+     ! Reset the values of rkStage and currentLevel, such that
+      ! they correspond to a new iteration.
 
+      rkStage = 0
+      currentLevel = groundLevel
 !
 !     ******************************************************************
 !     *                                                                *
@@ -398,7 +402,11 @@
                         dwAdj(:)  = 0.
                         wAdjb(:,:,:,:)  = 0.  !dR(m)/dw
                         xAdjb(:,:,:,:)  = 0.  !dR(m)/dx
-                                                
+                        alphaadjb = 0.
+                        betaadjb = 0.
+                        machadjb = 0.   
+                        machgridadjb = 0.
+                        rotrateadjb=0.
                         ! Call reverse mode of residual computation
                         call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
@@ -425,6 +433,8 @@
                                        idxnode = globalNode(i,j,k)*3+l
                                        idxres   = globalCell(iCell,jCell,kCell)*nw+m
                                        if (xAdjb(ii,jj,kk,l).ne.0.0)then
+                                          !print 13,idxnode,idxres,l,i,j,k,nn,m,kcell,jcell,icell,xAdjb(ii,jj,kk,l)
+!13                                        format(1x,'drdx',11I8,f18.10)
                                           call MatSetValues(dRdx, 1, idxres-1, 1, idxnode-1,   &
                                                xAdjb(ii,jj,kk,l), ADD_VALUES, PETScIerr)
                                           if( PETScIerr/=0 ) &

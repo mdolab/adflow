@@ -226,8 +226,8 @@ SUBROUTINE REFERENCESTATEADJ_B(machadj, machadjb, machcoefadj, uinfadj, &
     CALL POPINTEGER4(branch)
     CALL POPINTEGER4(branch)
     CALL POPINTEGER4(branch)
-!!$    gammaconstantb = 0.0
-!!$    rgasdimb = 0.0
-!!$    tempfreestreamb = 0.0
+!    gammaconstantb = 0.0
+!    rgasdimb = 0.0
+!    tempfreestreamb = 0.0
   END IF
 END SUBROUTINE REFERENCESTATEADJ_B

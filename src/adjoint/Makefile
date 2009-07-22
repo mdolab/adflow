@@ -45,6 +45,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       computeAeroExpCoupling.o  \
 	       computeADjointGradientExtra.o\
 	       computeADjointGradientSpatial.o\
+	       computeADjointGradientSurface.o\
 	       copyADjointStencil.o     \
 	       createPETScKsp.o         \
 	       createPETScMat.o         \
@@ -85,6 +86,9 @@ FF90_OBJECTS = allocMemADjoint.o        \
                verifydRdwFile.o             \
 	       verifydRdx.o             \
 	       verifydRdExtra.o         \
+	       verifydRdxFile.o             \
+               verifydRdxsFile.o             \
+	       verifydRdxFileFD.o             \
 	       verifyRAdj.o\
 	       verifyResiduals.o\
 	       writeCGNSMesh.o\

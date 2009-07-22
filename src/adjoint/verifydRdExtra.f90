@@ -98,7 +98,7 @@
       
       !real(kind=realType), dimension(nx, ny, nz, nw,nx) :: dRdwErr, dRdwErrRel
       real(kind=realType), dimension(nw) :: dRdwL2, dRdwL2Rel
-      real(kind=realtype), dimension(0:ib,0:jb,0:kb,1:nw)::dwp,dwm,dwtemp
+      !real(kind=realtype), dimension(0:ib,0:jb,0:kb,1:nw)::dwp,dwm,dwtemp
       real(kind=realType), dimension(0:ib,0:jb,0:kb,1:nw) :: wtemp
       real(kind=realType), dimension(0:ib,0:jb,0:kb) :: ptemp
 !      integer(kind=intType) :: istate, jstate, kstate,ires
@@ -261,6 +261,18 @@
            dRdExtraAdj(nw*(idx+1),nDesignExtra,1,max_nTime), &
            dRdExtraFD(nw*(idx+1),nDesignExtra,1,max_nTime))
       !print *,' allocated'
+
+    !allocate memory for FD
+      allocatedomains: do nn = 1,ndom
+         print *,'domain',nn
+         groundLevel = 1
+         sps = 1
+         call setPointersAdj(nn,1,sps)
+         allocate(flowDoms(nn,level,sps)%dwp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+         allocate(flowDoms(nn,level,sps)%dwm(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+         allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+      end do allocatedomains
+
 
 !           if(ierr /= 0)                       &
 !                call terminate("memory?") 
@@ -1585,6 +1597,17 @@
 !      print *, "max, min of dRdExtraErr =", maxval(dRdExtraErr(:,:,1,1)), minval(dRdExtraErr(:,:,1,1))
 !      print *, "max, min of dRdwErrRel =", maxval(dRdwErrRel_q(:,:,:,1)), minval(dRdwErrRel_q(:,:,:,1))
 !      print *
+
+           !deallocate memory for FD
+      deallocatedomains: do nn = 1,ndom
+         print *,'domain',nn
+         groundLevel = 1
+         sps = 1
+         call setPointersAdj(nn,1,sps)
+         deallocate(flowDoms(nn,level,sps)%dwp)
+         deallocate(flowDoms(nn,level,sps)%dwm)
+         deallocate(flowDoms(nn,level,sps)%dwtemp)
+      end do deallocatedomains
 
 
        close(unitM)
