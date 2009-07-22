@@ -49,8 +49,9 @@ SUBDIR_ADJOINT = src/adjoint               \
 		 src/adjoint/couplingInput\
 	         src/adjoint/couplingOutput
 
+
 SUBDIR_WARPING = src/warping \
-                 src/warping/warpingOutput
+		 src/warping/warpingOutput
 
 SUBDIR_EXEC   = src/exec
 SUBDIR_PYTHON = src/python/fortran
@@ -60,8 +61,9 @@ SUBDIR_PV3    = src/pv3Interface
 SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR)\
 		     $(SUBDIR_PYTHON) $(SUBDIR_ADJOINT)\
                      $(SUBDIR_WARPING)
+
 SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC) $(SUBDIR_PYTHON) $(SUBDIR_PV3) \
-		     $(SUBDIR_EXEC)
+		     $(SUBDIR_EXEC) $(SUBDIR_WARPING) $(SUBDIR_ADJOINT)
 
 #      ******************************************************************
 #      *                                                                *
