@@ -159,7 +159,74 @@ python module sumb ! in
          real(kind=realtype) dimension(3,ncoords) :: xyzface
          integer(kind=inttype) dimension(4,ncoords),depend(ncoords) :: indices
        end subroutine integratedwarp
+
+       subroutine initializewarping
+         
+         use blockpointers
+         use communication
+         use monitor
+         use inputio
+         use mddatalocal
+         use mddata
+         implicit none
+         
+       end subroutine initializewarping
        
+       subroutine updatefacesglobal(ncoords,xyz_new)
+         
+         use blockpointers
+         use mddatalocal   !mdSurfGlobalIndLocal
+         implicit none
+         
+         !Subroutine Arguments
+         !integer(kind=intType)::ncoords
+         integer(kind=inttype) optional,check(shape(xyz_new,1)==ncoords),depend(xyz_new) :: ncoords=shape(xyz_new,1)
+         real(kind=realtype), dimension(3,ncoords)::xyz_new
+         
+       end subroutine updatefacesglobal
+
+       subroutine warpmesh
+         
+         ! Warp the current mesh to take into acccout updates from
+         ! updateGlobalFaces
+         
+         use blockpointers
+         implicit none
+       end subroutine warpmesh
+
+       subroutine setupvolumesurfacederivatives
+
+         ! Find the derivatives of the mesh wrt the surface at the current point
+         
+         use blockpointers
+         use communication
+         use mddatalocal
+         use mddata, only: mdnsurfnodescompact
+         use warpingpetscc
+         !use adjointpetsc, only: petscone, value
+         implicit none
+       end subroutine setupvolumesurfacederivatives
+
+!!$       subroutine computeadjointgradientsurface(costFunction)
+!!$         use adjointpetsc
+!!$         use adjointvars
+!!$         !use warpingPETSc
+!!$         !use warpingpetsc, only:dxvdxs
+!!$         use mddata, only: mdnsurfnodescompact
+!!$         use blockpointers !globalnode
+!!$         implicit none
+!!$         !     Subroutine arguments.
+!!$         !
+!!$         integer(kind=inttype), intent(in) :: costfunction
+!!$       end subroutine computeadjointgradientsurface
+       subroutine computeadjointgradientsurface(costfunction) ! in :warpingPETSc:../adjoint/computeADjointGradientSurface.F90
+         use blockpointers
+         use adjointpetsc
+         use warpingpetsc,,only: dxvdxs
+         use adjointvars
+         use mddata,,only: mdnsurfnodescompact
+         integer(kind=inttype) intent(in) :: costfunction
+       end subroutine computeadjointgradientsurface
 !!$       subroutine getnonmatchingsubfaceinfo(blocknum,nNon,nDonor,blocks,proc,faceid)
 !!$         !get donor block info for nonmatching subfaces
 !!$         use blockpointers
@@ -780,6 +847,7 @@ python module sumb ! in
             real(kind=realtype) allocatable,dimension(:) :: functionvalue
             real(kind=realtype) parameter,optional :: adjrelfd=1.0e-5_realtype
             real(kind=realtype) allocatable,dimension(:,:) :: functiongradspatial
+            real(kind=realtype) allocatable,dimension(:,:) :: functiongradsurface
             real(kind=realtype) allocatable,dimension(:,:) :: functiongradstruct
             character(len=maxstringlen) allocatable,dimension(:) :: functionname
             real(kind=realtype) allocatable,dimension(:,:) :: functiongrad
@@ -1056,10 +1124,12 @@ python module sumb ! in
             integer(kind=inttype) :: mdnfamilies
             character(len=32) allocatable,dimension(:) :: mdfamilynames
             integer(kind=inttype) allocatable,dimension(:,:) :: mdnsurfnodes
+            integer(kind=intType):: mdnsurfnodescompact
             integer(kind=inttype) allocatable,dimension(:,:) :: mdnsurfpatches
             integer(kind=inttype) allocatable,dimension(:,:) :: mdpatchdimensions
             integer(kind=inttype) allocatable,dimension(:,:) :: mdsurfind
             real(kind=realtype) allocatable,dimension(:,:) :: mdsurfxx
+            real(kind=realtype) allocatable,dimension(:,:):: mdglobalsurfxx
             real(kind=realtype) allocatable,dimension(:,:) :: mdsurfforce
             real(kind=realtype) allocatable,dimension(:) :: mdsurfval
         end module mddata
@@ -1215,9 +1285,11 @@ python module sumb ! in
             integer(kind=inttype) :: mdnfamilieslocal
             character(len=32) allocatable,dimension(:) :: mdfamilynameslocal
             integer(kind=inttype) allocatable,dimension(:) :: mdnsurfnodeslocal
+            integer(kind=intType) allocatable,dimension(:) :: mdnglobalsurfnodeslocal
             integer(kind=inttype) allocatable,dimension(:,:) :: mdnsurfpatcheslocal
             integer(kind=inttype) allocatable,dimension(:,:) :: mdpatchdimensionslocal
             integer(kind=inttype) allocatable,dimension(:,:) :: mdsurfindlocal
+            integer(kind=intType) allocatable, dimension(:,:) :: mdsurfglobalindlocal
             real(kind=realtype) allocatable,dimension(:,:) :: mdsurfxxlocal
             real(kind=realtype) allocatable,dimension(:,:) :: mdsurfforcelocal
             real(kind=realtype) allocatable,dimension(:) :: mdsurfvallocal

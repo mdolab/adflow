@@ -36,32 +36,32 @@ integer(kind=intType)::j,k,nnn,index
 !
 
 
-
-print *,'getting local surface'
-call mdCreateSurfCoorListLocal(sps,famid,startInd,endInd)
-print *,'getting local indices'
-call mdCreateSurfIndListLocal(famID,startInd,endInd)
-
-print *,'count total number of nodes'
-call mdCreateNsurfNodes
-
-!stop
-print *,'testing global index creation'
-call synchronizeIndices
-print *,'synchronizing done'
-!do i = 1,mdNSurfNodesLocal(1)
-!   print *,'index',mdSurfxxLocal(1,i),mdSurfIndLocal(5,i)
-!end do
-! Assertion testing, memory allocation and global number indexing.
-print *,'setting up global volume numbering'
-call preprocessingADjoint(level)
-!initialize Petsc
-call initializePETSc
-print *,'petscInitialized'
-call warpingInitializePETSc
-print *,'warpingPETSc initialized'
-call createWarpingPETScMat
-print *,'Warping PETSC Mat Created'
+call initializeWarping
+!!$print *,'getting local surface'
+!!$call mdCreateSurfCoorListLocal(sps,famid,startInd,endInd)
+!!$print *,'getting local indices'
+!!$call mdCreateSurfIndListLocal(famID,startInd,endInd)
+!!$
+!!$print *,'count total number of nodes'
+!!$call mdCreateNsurfNodes
+!!$
+!!$!stop
+!!$print *,'testing global index creation'
+!!$call synchronizeIndices
+!!$print *,'synchronizing done'
+!!$!do i = 1,mdNSurfNodesLocal(1)
+!!$!   print *,'index',mdSurfxxLocal(1,i),mdSurfIndLocal(5,i)
+!!$!end do
+!!$! Assertion testing, memory allocation and global number indexing.
+!!$print *,'setting up global volume numbering'
+!!$call preprocessingADjoint(level)
+!!$!initialize Petsc
+!!$call initializePETSc
+!!$print *,'petscInitialized'
+!!$call warpingInitializePETSc
+!!$print *,'warpingPETSc initialized'
+!!$call createWarpingPETScMat
+!!$print *,'Warping PETSC Mat Created'
 !print *,'mdNSurfNodesLocal',mdNSurfNodesLocal(1),'whole',mdNSurfNodesLocal
 allocate(xyzface(3,mdNSurfNodesLocal(1)),indices(5,mdNSurfNodesLocal(1)))
 
@@ -72,7 +72,7 @@ if(ierr /= 0)                         &
      call terminate("verifyWarpDerivFD", &
      "Memory allocation failure for surfacePoints")
 
-call mdCreateGlobalReducedSurfaceList
+!!$call mdCreateGlobalReducedSurfaceList
 
 surfacePoints=mdGlobalSurfxx
 
@@ -146,7 +146,7 @@ call verifyWarpDerivFD
 print *,'warping parameters3',ncoords!,xyzface,indices
 call integratedWarpDerivFD(ncoords,xyzface,indices)
 print *,'FD Derivatives done',myID
-stop
+!stop
 call mpi_barrier(sumb_comm_world, ierr)
 
 print *,'warping parameters2',ncoords!,xyzface,indices

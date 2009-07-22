@@ -1,16 +1,18 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module sumb ! in 
-    interface  ! in :sumb
-        subroutine integratedwarp(ncoords,xyzface,indices) ! in :sumb:integratedWarp.f90
+python module warpingPETSc ! in 
+    interface  ! in :warpingPETSc
+        subroutine computeadjointgradientsurface(costfunction) ! in :warpingPETSc:../adjoint/computeADjointGradientSurface.F90
             use blockpointers
-            integer(kind=inttype) optional,check(shape(xyzface,1)==ncoords),depend(xyzface) :: ncoords=shape(xyzface,1)
-            real(kind=realtype) dimension(3,ncoords) :: xyzface
-            integer(kind=inttype) dimension(5,ncoords),depend(ncoords) :: indices
-        end subroutine integratedwarp
+            use adjointpetsc
+            use warpingpetsc,,only: dxvdxs
+            use adjointvars
+            use mddata,,only: mdnsurfnodescompact
+            integer(kind=inttype) intent(in) :: costfunction
+        end subroutine computeadjointgradientsurface
     end interface 
-end python module sumb
+end python module warpingPETSc
 
 ! This file was auto-generated with f2py (version:2_4422).
 ! See http://cens.ioc.ee/projects/f2py2e/

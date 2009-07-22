@@ -178,14 +178,14 @@
                    v1(1) = x1(i+1,j+1,1) - x1(i,j,1)
                    v1(2) = x1(i+1,j+1,2) - x1(i,j,2)
                    v1(3) = x1(i+1,j+1,3) - x1(i,j,3)
-
+                   
                    ! And the vector from the upper left corner to the
                    ! lower right corner.
 
                    v2(1) = x1(i+1,j,1) - x1(i,j+1,1)
                    v2(2) = x1(i+1,j,2) - x1(i,j+1,2)
                    v2(3) = x1(i+1,j,3) - x1(i,j+1,3)
-
+                   
                    ! Determine the normal of the face by taking the cross
                    ! product of v1 and v2 and add it to norm.
 

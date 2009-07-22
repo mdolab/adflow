@@ -50,9 +50,9 @@ do i = 1,mdNSurfNodesCompact
    call mpi_barrier(sumb_comm_world, ierr)
    
 enddo
-if (myID==0) then
-   print *,'global reduced surface coordinates: x',mdGlobalSurfxx(1,:),'y',mdGlobalSurfxx(2,:),'z',mdGlobalSurfxx(3,:)
-endif
+!if (myID==0) then
+!   print *,'global reduced surface coordinates: x',mdGlobalSurfxx(1,:),'y',mdGlobalSurfxx(2,:),'z',mdGlobalSurfxx(3,:)
+!endif
 
 
 

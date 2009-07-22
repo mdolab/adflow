@@ -86,7 +86,7 @@ enddo
 
 
 !Now generate the list for interfacing with python
-call generateReducedSurfaceList
+call mdCreateGlobalReducedSurfaceList
 print *,'surface list generated'
 !stop
 

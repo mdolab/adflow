@@ -564,7 +564,7 @@
          !                               at least for the flow variables.
 
          real(kind=realType), dimension(:,:,:),     pointer :: p1
-         real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw
+         real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw,dwp,dwm,dwtemp
          real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
          real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
 
