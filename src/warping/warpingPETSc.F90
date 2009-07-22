@@ -88,8 +88,9 @@
       !       nodes.
       !
  
-      Mat     dXvdXs ,dXvdXsFD,dXvdXsPara
+      Mat     dXvdXs ,dXvdXsFD,dXvdXsPara,dRdXs
 
+      Vec     dIdxs2,dJdxs2
 #endif
 
       end module warpingPETSc

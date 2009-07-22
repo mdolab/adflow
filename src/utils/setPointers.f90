@@ -200,6 +200,8 @@
        ! finest grid entry, the multigrid variables to their own level.
 
        dw => flowDoms(nn,1,ll)%dw
+       dwp => flowDoms(nn,1,ll)%dwp
+       dwm => flowDoms(nn,1,ll)%dwm
        fw => flowDoms(nn,1,ll)%fw
 
        dwOldRK => flowDoms(nn,1,ll)%dwOldRK

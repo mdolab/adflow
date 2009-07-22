@@ -20,9 +20,16 @@ subroutine updateFacesGlobal(ncoords,xyz_new)
 
   !Local variables
 
-  integer(kind=intType)::level=1,sps=1,i,j,k
+  integer(kind=intType)::level=1,sps=1,i,j,k,nn
 
-    
+ !reset block values
+  do nn = 1,ndom
+     call setPointers(nn,1,1)
+     x = xInit
+  enddo
+
+
+    !print *,'ncoords',ncoords,shape(xyz_new),xyz_new
   ! update working block coordinates with new coords
   !loop over the incomping coordinates
   do i =1 ,ncoords

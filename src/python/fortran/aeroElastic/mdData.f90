@@ -63,6 +63,7 @@
        integer(kind=intType), dimension(:,:), allocatable :: mdSurfInd
 
        real(kind=realType), dimension(:,:), allocatable :: mdSurfxx
+       real(kind=realtype),dimension(:,:),allocatable:: mdGlobalSurfxx
        real(kind=realType), dimension(:,:), allocatable :: mdSurfForce
        real(kind=realType), dimension(:),   allocatable :: mdSurfVal
 

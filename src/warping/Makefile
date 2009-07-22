@@ -45,6 +45,7 @@ FF90_OBJECTS = warp_local.o        \
                integratedWarpDeriv.o \
                integratedWarpDerivParallel.o \
                integratedWarpDerivFD.o \
+               initializeWarping.o\
                updateFaces.o\
                updateFacesGlobal.o\
                createWarpingPETScMat.o\
@@ -57,6 +58,7 @@ FF90_OBJECTS = warp_local.o        \
                synchronizeFaces.o\
                synchronizeIndices.o\
                synchronizeSurfaceIndices.o\
+	       setupVolumeSurfaceDerivative.o\
                warpingInitializePetsc.o\
 	       testwarping.o\
 	       verifyWarpDerivFD.o
