@@ -241,7 +241,7 @@ class SUmbMesh(object):
             sumb.inputio.newgridfile[:] = ''
             sumb.inputio.newgridfile[0:len(filename[0])] = filename[0]
         sumb.monitor.writegrid=True
-        sumb.monitor.writevolume=False
+        sumb.monitor.writevolume=True#False
         sumb.monitor.writesurface=False
         sumb.writesol()
 
@@ -301,9 +301,13 @@ class SUmbMesh(object):
     def _UpdateGeometryInfo(self):
         """Update the SUmb internal geometry info, if necessary."""
         if (self._update_geom_info):
-            sumb.updatecoordinatesalllevels()        
+            print 'updatecoords'
+            sumb.updatecoordinatesalllevels()
+            print 'update_wall'
             sumb.updatewalldistancealllevels()
+            print 'update sliding'
             sumb.updateslidingalllevels()
+            print 'update metrics'
             sumb.updatemetricsalllevels()
             self._update_geom_info = False
 
@@ -431,7 +435,56 @@ class SUmbMesh(object):
         sumb.setsinglestate(blocknum,i,j,k,l,state)
         
         return 
+##     def internalWarping(self,new_cfd_surf,indices):
+##         '''
+##         Call the integrated warping routines...
+##         '''
+##         sumb.integratedwarp(new_cfd_surf,indices)
 
+##         return
+
+    def initializeInternalWarping(self):
+        '''
+        Initialize the required variables for the internal
+        Meshwarping and derivatives
+        '''
+        sumb.initializewarping()
+
+        return
+
+    def SetGlobalSurfaceCoordinates(self,xyz):
+        """Set the surface coordinates for the mesh                                                                                
+        Keyword arguments:
+                                                                                
+        xyz -- the new xyz coordinates, dimension (3,ncoords)
+                                                                                        
+        """
+        sumb.iteration.groundlevel = 1
+        #ncoords = xyz.shape[1]
+        #print 'ncoords',ncoords,xyz.shape
+        #sys.exit(0)
+        #sumb.updatefacesglobal(ncoords,xyz)
+        sumb.updatefacesglobal(xyz)
+    
+        self._update_geom_info = True
+
+        return
+
+    def GetGlobalSurfaceCoordinates(self):
+        """
+        Get the surface coordinates for the mesh    
+        """
+         
+        return sumb.mddata.mdglobalsurfxx
+
+    def warpMesh(self):
+        '''
+        run the internal meshwarping scheme
+        '''
+
+        sumb.warpmesh()
+
+        return
 
 # =============================================================================
 
@@ -526,16 +579,16 @@ class SUmbInterface(object):
         self.startfile = startfile
         
         sumb.inputio.paramfile[0:len(startfile)] = startfile
-        
+        print 'readparamfile'
         # Read the parameter file
         sumb.readparamfile()
 
         # Partition the blocks and read the grid
         sumb.partitionandreadgrid()
-        
+        print 'preprocessing'
         # Perform the preprocessing task
         sumb.preprocessing()
-        
+        print 'initializing flow'
         # Initialize the flow variables
         sumb.initflow()
 
@@ -1119,7 +1172,7 @@ class SUmbInterface(object):
                    has not been called before
 
         """
-        # print ncycles,sumb.monitor.niterold, sumb.monitor.nitercur, sumb.iteration.itertot ,'storeconv',sumb.inputio.storeconvinneriter,True,False
+        #print ncycles,sumb.monitor.niterold, sumb.monitor.nitercur, sumb.iteration.itertot ,'storeconv',sumb.inputio.storeconvinneriter,True,False,sumb.inputunsteady.ntimestepsfine,sumb.inputiteration.ncycles
         #sumb.inputio.storeconvinneriter=True#False
         
         if (sumb.monitor.niterold == 0 and
@@ -1133,11 +1186,14 @@ class SUmbInterface(object):
                 # Set new value of MG cycles
                 if (len(ncycles) > 1):
                   if (ncycles[1] != sumb.inputiteration.ncycles):
+                      print 'setting ncycles'
                       sumb.inputiteration.ncycles = ncycles[1]
                 # Reallocate convergence history array and
                 # time array with new size
                 if (self.myid == 0):
+                    #print 'sumb.monitor.timearray'#,sumb.monitor.timearray 
                     sumb.monitor.timearray = None
+                    #print 'sumb.monitor.timearray',sumb.monitor.timearray 
                     sumb.monitor.timedataarray = None
                     sumb.alloctimearrays(sumb.inputunsteady.ntimestepsfine)
                     if (sumb.inputio.storeconvinneriter):
@@ -1282,9 +1338,15 @@ class SUmbInterface(object):
             sumb.monitor.timeunsteady = 0.0
 
         #endif
+        print 'setupfinished'
+        self.Mesh.WriteMeshFile('newmesh.cgns')
         if self.myid ==0: print 'calling solver'
         self.GetMesh()._UpdateGeometryInfo()
+        print 'mesh info updated'
+        self.Mesh.WriteMeshFile('newmesh0.cgns')
+        print 'new file written'
         sumb.solver()
+        print 'solver called'
 ## ################################################################
 ## # The code below reproduces solver.F90 in python
 ## # See file solver.F90
@@ -1768,6 +1830,52 @@ class SUmbInterface(object):
             print "ADjoint: Extra Vars residual sensitivity set up successfully."
 
         return
+
+    def setupVolumeSurfaceDerivatives(self):
+        """Set up the derivative of the volume mesh  w.r.t. the
+        CFD Surface...(meshwarpingderivatives)"""
+        
+        sumb.setupvolumesurfacederivatives()
+        
+	if (self.myid == 0):
+            print "Meshwarping derivatives set up successfully."
+        #endif
+        return
+    
+    def computeTotalSurfaceDerivative(self,objective):
+        '''
+        compute the total mesh derivatives
+        '''
+        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
+                             'cd':sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             }
+
+        possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
+				       'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+				       'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+				       'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+				       'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+				       'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+				       'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+				       }
+        
+        #for item in objective:
+        if self.myid==0:
+            print 'Computing total Surface mesh derivative for costfuntion: ',possibleObjectives[objective]#item#objective[item]
+            print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
+        #endif
+        
+        sumb.computeadjointgradientsurface(SUmbCostfunctions[possibleObjectives[objective]])
+        #endfor
+
+        return
     
     def computeTotalVolumeDerivative(self,objective):
         '''
@@ -1839,6 +1947,37 @@ class SUmbInterface(object):
            
         #endfor
         #endfor
+        
+        return grad
+    def getTotalSurfaceDerivatives(self,objective):
+
+        """
+        Get the  sensitivities from SUmb.
+                
+	"""
+        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
+                             'cd':sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             }
+        
+        possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
+                               'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+                               'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+                               'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+                               'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+                               'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+                               'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+                               'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               }
+        
+        grad = numpy.zeros((3*sumb.mddata.mdnsurfnodescompact),float)
+        grad[:] = sumb.adjointvars.functiongradsurface[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
+   
         
         return grad
 
