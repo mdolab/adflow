@@ -133,12 +133,13 @@ do i = 1,mdNSurfNodes(nProc,1)!maximum number of possible surface nodes??counter
    call mpi_barrier(sumb_comm_world, ierr)
    !if the current I index is found on any processor, 
    !identify index as having been found.
-   call mpi_allreduce(indexFound,indexFound,1,MPI_LOGICAL,MPI_LOR,sumb_comm_world,ierr)
+   !call mpi_allreduce(indexFound,indexFound,1,MPI_LOGICAL,MPI_LOR,sumb_comm_world,ierr)
+   call mpi_allreduce(indexFound,test,1,MPI_LOGICAL,MPI_LOR,sumb_comm_world,ierr)
    !print *,'indexfound after',myID, indexFound
    call mpi_barrier(sumb_comm_world, ierr)
    !if the index was found (and hence replaced), increment the index counter
-   if (indexfound)then
-   !if(test) then
+   !if (indexfound)then
+   if(test) then
       compresscounter = compresscounter+1
    endif
 enddo

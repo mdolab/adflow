@@ -84,7 +84,8 @@ class SUMB(AeroSolver):
 		informs = {
 		}
 		AeroSolver.__init__(self, name, category, def_opts, informs, *args, **kwargs)
-			
+
+		
 		#self.sumb = SUmbInterface()
 		self.interface = SUmbInterface()
 		self.Mesh = self.interface.Mesh
@@ -93,6 +94,8 @@ class SUMB(AeroSolver):
 		self.volumeMatrixInitialized = False
 		self.flowMatrixInitialized=False
 		self.meshWarpingInitialized=False
+
+	
 
 	def __solve__(self, aero_problem, sol_type,grid_file='default', *args, **kwargs):
 		
@@ -122,6 +125,7 @@ class SUMB(AeroSolver):
 
 		#check if meshwarping is initialize. If not, do so
 		if (not self.meshWarpingInitialized):
+			print 'initializing Internal Warping'
 			self.interface.Mesh.initializeInternalWarping()
 			self.meshWarpingInitialized=True
 		#endif
@@ -347,11 +351,11 @@ class SUMB(AeroSolver):
 
 		#Retrieve a vector of the volume derivatives
 		surfaceDerivative=self.interface.getTotalSurfaceDerivatives(objective)
-		print surfaceDerivative.shape
-		for i in xrange(len(surfaceDerivative[:])):
-			print 'surfaceDerivative:',i,surfaceDerivative[i],i/3
-			#endfor
-		#endfor
+	## 	print surfaceDerivative.shape
+## 		for i in xrange(len(surfaceDerivative[:])):
+## 			print 'surfaceDerivative:',i,surfaceDerivative[i],i/3
+## 			#endfor
+## 		#endfor
 		#print surfaceDerivative
 		#stop
 		#sys.exit(0)
@@ -441,6 +445,7 @@ class SUMB(AeroSolver):
 ## 					print 'newMeshDerivative',newMeshDerivative
 ## 					#append to mesh derivative list
 ## 					rowDerivatives.append(newMeshDerivative)
+
 
 ## 					#restore reference design variables
 ## 					xyz[i,j] = xref

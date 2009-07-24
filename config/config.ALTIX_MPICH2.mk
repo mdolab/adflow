@@ -26,7 +26,14 @@
 #      * Possibly overrule the make command to allow for parallel make. *
 #      *                                                                *
 #      ******************************************************************
+SHELL      = /bin/bash
 
+RM         = /bin/rm -rf
+MV         = /bin/mv -f
+SYM_LINK   = ln -sf
+#MAKE       = make
+MAKE_CLEAN = make
+#MAKE = make -j 2
 MAKE = make -j 8
 
 #      ******************************************************************
@@ -151,7 +158,7 @@ FF90_GEN_FLAGS = -DHAS_ISNAN
 CC_GEN_FLAGS   =
 
 FF90_OPTFLAGS   = -O2 -axW -unroll -ip -fPIC
-CC_OPTFLAGS     = #-O -fPIC
+CC_OPTFLAGS     = -O -fPIC
 
 FF90_DEBUGFLAGS = #-g -check all#-CB -implicitnone -DDEBUG_MODE
 #CC_DEBUGFLAGS   = -g -Wall -pedantic -DDEBUG_MODE
