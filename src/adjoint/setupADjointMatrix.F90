@@ -934,7 +934,7 @@
 !!$!Print *,'barriercall',myID
 !!$call mpi_barrier(SUmb_comm_world, ierr)
 
- close(unitdrdw)
+! close(unitdrdw)
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()

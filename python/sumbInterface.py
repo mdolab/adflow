@@ -450,6 +450,7 @@ class SUmbMesh(object):
         '''
         sumb.initializewarping()
 
+        self.nGlobalSurfNodes = sumb.mddata.mdnsurfnodescompact
         return
 
     def SetGlobalSurfaceCoordinates(self,xyz):
@@ -626,6 +627,7 @@ class SUmbInterface(object):
         sumb.inputphysics.liftdirection = liftDir
         sumb.inputphysics.dragdirection = dragDir
 
+        #print 'Alpha',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha,velDir,liftDir,dragDir
         #update the flow vars
         sumb.updateflow()
         return
