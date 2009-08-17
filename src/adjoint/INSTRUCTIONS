@@ -58,7 +58,9 @@ emacs eintarray_b.f90               > remove "gammaconstantb = 0.0 " from the en
 
 emacs inviscidupwindfluxadj_b.f90        >remove "gammaconstantb = 0.0" from the end
 emacs residualadj_b.f90        > remove "  cdisrkb(:) = 0.0 
-                                          kappacoefb = 0.0" from the end 
+                                          kappacoefb = 0.0
+					  vis4b = 0.0
+					  vis2b = 0.0" from the end 
 
 emacs riemannfluxadj_b.f90        > remove "rfilb = 0.0" from end. fixed
 
@@ -78,6 +80,8 @@ emacs gridvelocitiesfineleveladj_b.f90 >remove   coscoeffourzrotb(:) = 0.0
   coscoeffourxrotb(:) = 0.0
   coscoeffouryrotb(:) = 0.0
 from end
+
+emacs timestepadj_b.f90 > remove     "adisb = 0.0" from end
 
    5.3) cd couplingOutput
 	emacs eintarrayforcesadj_b.f90     >remove "gammaconstantb = 0.0" from the end

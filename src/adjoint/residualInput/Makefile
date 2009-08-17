@@ -45,6 +45,7 @@ FF90_OBJECTS = adjustInflowAngleAdj.o   \
 	       bcFarfieldAdj.o          \
 	       checkInputParamAdj.o     \
 	       checkOverlapAdj.o        \
+               checkXOverlapAdj.o       \
 	       computeGammaAdj.o        \
 	       computePressureAdj.o     \
 	       computeRAdj.o            \
@@ -69,7 +70,9 @@ FF90_OBJECTS = adjustInflowAngleAdj.o   \
 	       riemannFluxAdj.o         \
 	       rigidRotAngleAdj.o       \
 	       setFlowInfinityStateAdj.o\
-	       vectorRotation.o
+	       timeStepAdj.o            \
+	       vectorRotation.o         \
+	       xhaloAdj.o
 
 #FF90_OBJECTS = allocMemADjoint.o\
 #	       assertionsADjoint.o\

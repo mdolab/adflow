@@ -137,14 +137,14 @@
        real(kind=realType), dimension(:,:,:), pointer :: sFaceJ
        real(kind=realType), dimension(:,:,:), pointer :: sFaceK
 
-       real(kind=realType), dimension(:,:,:,:),   pointer :: w
+       real(kind=realType), dimension(:,:,:,:),   pointer :: w,wtmp
        real(kind=realType), dimension(:,:,:,:,:), pointer :: wOld
-       real(kind=realType), dimension(:,:,:),     pointer :: p, gamma
+       real(kind=realType), dimension(:,:,:),     pointer :: p,ptmp, gamma
        real(kind=realType), dimension(:,:,:),     pointer :: rlv, rev
        real(kind=realType), dimension(:,:,:,:),   pointer :: s
 
        real(kind=realType), dimension(:,:,:),     pointer :: p1
-       real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw,dwp,dwm,dwtemp
+       real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw,dwp,dwm,dwtemp,dwtmp
        real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
        real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
 

@@ -4,7 +4,8 @@
 !  Differentiation of bcfarfieldadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: winfadj padj pinfcorradj
 !                wadj normadj
-!   of linear combination of output variables: padj wadj normadj
+!   of linear combination of output variables: padj pinfcorradj
+!                wadj normadj
 !
 !      ******************************************************************
 !      *                                                                *
@@ -541,7 +542,8 @@ bocos:DO nn=1,nbocos
 &      winfadjb(irho) + gammainf*winfadj(irho)**(gammainf-1)*s0b/&
 &      pinfcorradj
   tempb = gammainf*c0b/(2.0*SQRT(gammainf*(pinfcorradj*r0)))
-  pinfcorradjb = r0*tempb - winfadj(irho)**gammainf*s0b/pinfcorradj**2
+  pinfcorradjb = pinfcorradjb + r0*tempb - winfadj(irho)**gammainf*s0b/&
+&    pinfcorradj**2
   r0b = pinfcorradj*tempb
   winfadjb(ivz) = winfadjb(ivz) + w0b
   winfadjb(ivy) = winfadjb(ivy) + v0b

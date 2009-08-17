@@ -44,7 +44,7 @@
       integer(kind=intType) :: discr, nHalo
       integer(kind=intType) :: iCell, jCell, kCell
       integer(kind=intType) :: mm, nn, m, n
-      integer(kind=intType) :: ii, jj, kk, i, j, k,liftIndex
+      integer(kind=intType) :: ii, jj, kk, i, j, k,liftIndex,l
 
       logical :: fineGrid, correctForK, exchangeTurb,secondhalo
 
@@ -64,6 +64,8 @@
       REAL(KIND=REALTYPE), DIMENSION(3) :: rotcenteradj
       REAL(KIND=REALTYPE), DIMENSION(3) :: rotrateadj
       REAL(KIND=REALTYPE) :: rotrateadjb(3)
+      REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3), xblockcorneradjb(2&
+           &  , 2, 2, 3)
 
       integer(kind=intType), dimension(0:nProc-1) :: offsetRecv
 
@@ -91,7 +93,7 @@
 !!$100   format (i5)  
 !!$      testfile=adjustl(testfile)
 !!$      write(outfile,101) trim(testfile)!testfile
-!!$101   format("AD1dRdWfile",a,".out")
+!!$101   format("AD1dRdWfile2",a,".out")
 !!$      unitdrdw = 8+myID
 !!$
 !!$      
@@ -213,46 +215,50 @@
          ! Loop over the number of time instances for this block.
 
          spectralLoop: do sps=1,nTimeIntervalsSpectral
-         !print *,'Setting Pointers',nn,level,sps
-         call setPointersAdj(nn,level,sps)
-		
-         do kCell = 2, kl
-           do jCell = 2, jl
-              do iCell = 2, il
-                 ! Copy the state w to the wAdj array in the stencil
-                 call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
-                       machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
-                       rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                       rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-                       murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-  
+            !print *,'Setting Pointers',nn,level,sps
+            call setPointersAdj(nn,level,sps)
 
+            ! Loop over location of output (R) cell of residual
+	
+            do kCell = 2, kl
+               do jCell = 2, jl
+                  do iCell = 2, il
+                     ! Copy the state w to the wAdj array in the stencil
+                     call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
+                          betaAdj,MachAdj,&
+                          machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
+                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+                     
 
-	        Aad(:,:)  = zero
-                Bad(:,:)  = zero
-                BBad(:,:) = zero
-                Cad(:,:)  = zero
-                CCad(:,:) = zero
-                Dad(:,:)  = zero
-                DDad(:,:) = zero
-                Ead(:,:)  = zero
-                EEad(:,:) = zero
-                Fad(:,:)  = zero
-                FFad(:,:) = zero
-                Gad(:,:)  = zero
-                GGad(:,:) = zero
-
-                 mLoop: do m = 1, nw      ! Loop over output cell residuals (R)
-!                   print *,'initializing variables'
-                    ! Initialize the seed for the reverse mode
-                    dwAdjb(:) = 0.
-		    dwAdjb(m) = 1.
-                    dwAdj(:)  = 0.
-                    wAdjb(:,:,:,:)  = 0.  !dR(m)/dw
-		    alphaadjb = 0.
-	            betaadjb = 0.
-		    machadjb = 0.
-		    rotrateadjb(:)=0.
+                     
+                     Aad(:,:)  = zero
+                     Bad(:,:)  = zero
+                     BBad(:,:) = zero
+                     Cad(:,:)  = zero
+                     CCad(:,:) = zero
+                     Dad(:,:)  = zero
+                     DDad(:,:) = zero
+                     Ead(:,:)  = zero
+                     EEad(:,:) = zero
+                     Fad(:,:)  = zero
+                     FFad(:,:) = zero
+                     Gad(:,:)  = zero
+                     GGad(:,:) = zero
+                     
+                     mLoop: do m = 1, nw      ! Loop over output cell residuals (R)
+                        !                   print *,'initializing variables'
+                        ! Initialize the seed for the reverse mode
+                        dwAdjb(:) = 0.
+                        dwAdjb(m) = 1.
+                        dwAdj(:)  = 0.
+                        wAdjb(:,:,:,:)  = 0.  !dR(m)/dw
+                        xadjb = 0.
+                        alphaadjb = 0.
+                        betaadjb = 0.
+                        machadjb = 0.
+                        rotrateadjb(:)=0.
 !                    print *,'dwadjb',dwadjb,'wadjb',wadjb(0,0,0,:)
 !                    print *,'calling reverse mode'
 !                   print *,'secondhalo',secondhalo
@@ -263,38 +269,61 @@
                 ! wAdjb(ii,jj,kk,n) = --------------------------------
                 !                     dW(iCell+ii,jCell+jj,kCell+kk,n)
 
-                    ! Call reverse mode of residual computation
-                    call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
- &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
- &  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
- &  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
- &  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
- &  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
-!COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-!&  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-!&  machcoefadj, machgridadj, icell, jcell, kcell, nn, sps, correctfork, &
-!&  secondhalo, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, &
-!&  pinfadj, rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj&
-!&  , pinfcorradj, liftindex)
+                        ! Call reverse mode of residual computation
+                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+&  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+&  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+&  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+&  liftindex)
 
-
-                    ! Store the block Jacobians (by rows).
-
-                Aad(m,:)  = wAdjB( 0, 0, 0,:)
-                Bad(m,:)  = wAdjB(-1, 0, 0,:)
-                BBad(m,:) = wAdjB(-2, 0, 0,:)
-                Cad(m,:)  = wAdjB( 1, 0, 0,:)
-                CCad(m,:) = wAdjB( 2, 0, 0,:)
-                Dad(m,:)  = wAdjB( 0,-1, 0,:)
-                DDad(m,:) = wAdjB( 0,-2, 0,:)
-                Ead(m,:)  = wAdjB( 0, 1, 0,:)
-                EEad(m,:) = wAdjB( 0, 2, 0,:)
-                Fad(m,:)  = wAdjB( 0, 0,-1,:)
-                FFad(m,:) = wAdjB( 0, 0,-2,:)
-                Gad(m,:)  = wAdjB( 0, 0, 1,:)
-                GGad(m,:) = wAdjB( 0, 0, 2,:)
-
-               enddo mLoop
+                        ! Store the block Jacobians (by rows).
+                        
+                        Aad(m,:)  = wAdjB( 0, 0, 0,:)
+                        Bad(m,:)  = wAdjB(-1, 0, 0,:)
+                        BBad(m,:) = wAdjB(-2, 0, 0,:)
+                        Cad(m,:)  = wAdjB( 1, 0, 0,:)
+                        CCad(m,:) = wAdjB( 2, 0, 0,:)
+                        Dad(m,:)  = wAdjB( 0,-1, 0,:)
+                        DDad(m,:) = wAdjB( 0,-2, 0,:)
+                        Ead(m,:)  = wAdjB( 0, 1, 0,:)
+                        EEad(m,:) = wAdjB( 0, 2, 0,:)
+                        Fad(m,:)  = wAdjB( 0, 0,-1,:)
+                        FFad(m,:) = wAdjB( 0, 0,-2,:)
+                        Gad(m,:)  = wAdjB( 0, 0, 1,:)
+                        GGad(m,:) = wAdjB( 0, 0, 2,:)
+                        
+!!$                        do ii=-2,2!1,il-1
+!!$                           do jj = -2,2!1,jl-1
+!!$                              do kk = -2,2!1,kl-1
+!!$                                 do l = 1,nw
+!!$                                    i = iCell + ii
+!!$                                    j = jCell + jj
+!!$                                    k = kCell + kk
+!!$                                    
+!!$                                    
+!!$                                    if(i>zero .and. j>zero .and. k>zero .and. i<=il .and. j<=jl .and. k<=kl)then
+!!$                                       idxstate = globalCell(i,j,k)*nw+l
+!!$                                       idxres   = globalCell(iCell,jCell,kCell)*nw+m
+!!$                                       if( idxres-1>=0 .and. idxstate-1>=0) then
+!!$                                       !if( idxres>=0 .and. idxstate>=0) then
+!!$                                          
+!!$                                          call MatSetValues(drdw, 1, idxres-1, 1, idxstate-1,   &
+!!$                                               wAdjb(ii,jj,kk,l), ADD_VALUES, PETScIerr)
+!!$                                          if( PETScIerr/=0 ) &
+!!$                                               print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+!!$                                       endif
+!!$                                    endif
+!!$                                    
+!!$                                    
+!!$                                 enddo !l
+!!$                              enddo !kk
+!!$                           enddo !jj
+!!$                        enddo !ii
+                        
+                        
+                     enddo mLoop
 	
               !*********************************************************
               !                                                        *
@@ -890,49 +919,52 @@
       ! or PETSc users manual, pp.57,148
 
       if( debug ) then
-        call MatView(dRdW,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-        !call MatView(dRdW,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+        !call MatView(dRdW,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+      print *,'viewing drdw'
+        call MatView(dRdW,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
         if( PETScIerr/=0 ) &
           call terminate("setupADjointMatrix", "Error in MatView")
-        pause
-      endif
-!!$!      !now extract and write to a file
-!!$       sps = 1
-!!$       do nn = 1,nDom
-!!$          call setPointersAdj(nn,1,sps)
-!!$          do kCell = 2, kl
-!!$             do jCell = 2, jl
-!!$                do iCell = 2, il
-!!$                   do m = 1, nw
-!!$                     idxstate   = globalCell(iCell,jCell,kCell)*nw+m 
-!!$                     do nnn = 1,ndom
-!!$                        call setPointersAdj(nnn,1,sps)
-!!$                        DO I=2,Il
-!!$                           DO J=2,Jl
-!!$                              DO K=2,Kl
-!!$                                 do n = 1,nw
-!!$                                    idxres = globalCell(i,j,k)*nw+n
-!!$                                    call MatGetValues(drdw,1,idxres-1,1,idxstate-1,value,PETScIerr)
-!!$                                    !if(value.ne.0)then
-!!$                                    if(value>1e-10)then
-!!$                                       !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
-!!$!12                                     format(1x,'Face',6I2,'edge',12I2)
-!!$                                       write(unitdrdw,13) idxstate,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value
-!!$                                       !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
-!!$13                                     format(1x,'drdw',12I8,f18.10)
-!!$                                    endif
-!!$                                 enddo
-!!$                              END DO
-!!$                           END DO
-!!$                        END DO
-!!$                     end do
-!!$                  end do
-!!$               enddo
-!!$            end do
-!!$         end do
-!!$      enddo
-!!$!Print *,'barriercall',myID
-!!$call mpi_barrier(SUmb_comm_world, ierr)
+        !pause
+      !endif
+!      !now extract and write to a file
+       sps = 1
+       do nn = 1,nDom
+          call setPointersAdj(nn,1,sps)
+          do kCell = 2, kl
+             do jCell = 2, jl
+                do iCell = 2, il
+                   do m = 1, nw
+                     idxstate   = globalCell(iCell,jCell,kCell)*nw+m 
+                     do nnn = 1,ndom
+                        call setPointersAdj(nnn,1,sps)
+                        DO I=2,Il
+                           DO J=2,Jl
+                              DO K=2,Kl
+                                 do n = 1,nw
+                                    idxres = globalCell(i,j,k)*nw+n
+                                    call MatGetValues(drdw,1,idxres-1,1,idxstate-1,value,PETScIerr)
+                                    !if(value.ne.0)then
+                                    if(abs(value)>1e-10)then
+                                       !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
+!12                                     format(1x,'Face',6I2,'edge',12I2)
+                                       write(unitdrdw,13) idxstate,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value
+                                       !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
+13                                     format(1x,'drdw',12I8,f18.10)
+                                    endif
+                                 enddo
+                              END DO
+                           END DO
+                        END DO
+                     end do
+                  end do
+               enddo
+            end do
+         end do
+      enddo
+
+   endif
+!Print *,'barriercall',myID
+call mpi_barrier(SUmb_comm_world, ierr)
 
 ! close(unitdrdw)
       ! Flush the output buffer and synchronize the processors.

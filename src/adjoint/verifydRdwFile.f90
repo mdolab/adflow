@@ -268,16 +268,16 @@
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
                      call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
-           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
-           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+                          machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
+                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
                      
-
-!                     print *,'Stencil Copied'
-!                     print *,'wadj',wadj
+                     
+                     !                     print *,'Stencil Copied'
+                     !                     print *,'wadj',wadj
                      mLoop: do m = 1, nw           ! Loop over output cell residuals (R)
-!                        print *,'initializing variables'
+                        !                        print *,'initializing variables'
                         ! Initialize the seed for the reverse mode
                         dwAdjb(:) = 0.; dwAdjb(m) = 1.
                         dwAdj(:)  = 0.
@@ -294,27 +294,17 @@
                 !                          dR(iCell,jCell,kCell,l)
                 ! wAdjb(ii,jj,kk,n) = --------------------------------
                 !                     dW(iCell+ii,jCell+jj,kCell+kk,n)
- !                       print *,'input',wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
- !                            &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
- !                            &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
- !                            &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
- !                            &  murefadj, timerefadj, pinfcorradj   
-                        
+
                         ! Call reverse mode of residual computation
                         call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-&  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-&  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-&  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-&  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-&  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
-
-
-                       ! call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
-                       !      dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
-                       !      correctfork, secondhalo)
-                        !print *,'wadjb',wAdjB( 0, 0, 0,:)
+                             &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
+                             &  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
+                             &  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
+                             &  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
+                             &  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+                        
                         ! Store the block Jacobians (by rows).
- !                       print *,'entering storage loop'
+                        !                       print *,'entering storage loop'
                         do ii=-2,2!1,il-1
                            do jj = -2,2!1,jl-1
                               do kk = -2,2!1,kl-1
@@ -337,12 +327,14 @@
                                        idxstate = globalCell(i,j,k)*nw+l
                                        idxres   = globalCell(iCell,jCell,kCell)*nw+m
                                        if( idxres>=0 .and. idxstate>=0) then
-                                      
-                                          call MatSetValues(drdwfd, 1, idxres-1, 1, idxstate-1,   &
-                                               wAdjb(ii,jj,kk,l), ADD_VALUES, PETScIerr)
-                                          if( PETScIerr/=0 ) &
-                                               print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
-                                       endif
+                                          if (wAdjb(ii,jj,kk,l)/=0)then
+                                             call MatSetValues(drdwfd, 1, idxres-1, 1, idxstate-1,   &
+                                                  wAdjb(ii,jj,kk,l), ADD_VALUES, PETScIerr)
+                                             if( PETScIerr/=0 ) &
+                                                  print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+
+                                          endif
+                                       end if
                                     endif
                                     
                                     
@@ -408,7 +400,7 @@
                                     idxres = globalCell(i,j,k)*nw+n
                                     call MatGetValues(drdwfd,1,idxres-1,1,idxstate-1,value,PETScIerr)
                                     !if(value.ne.0)then
-                                    if(value>1e-10)then
+                                    if(abs(value)>1e-10)then
                                        !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
 !12                                     format(1x,'Face',6I2,'edge',12I2)
                                        write(unitdrdw,13) idxstate,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value

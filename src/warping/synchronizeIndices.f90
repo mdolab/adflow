@@ -83,7 +83,7 @@ do nn=1,nDom
       END DO
    END DO
 enddo
-
+call xhalo(level)
 
 !Now generate the list for interfacing with python
 call mdCreateGlobalReducedSurfaceList

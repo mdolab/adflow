@@ -63,8 +63,10 @@ FF90_OBJECTS = adjustinflowangleadj_b.o   \
                residualadj_b.o            \
                riemannfluxadj_b.o         \
 	       setflowinfinitystateadj_b.o\
+               timestepadj_b.o            \
 	       vectorrotation_b.o         \
-               volpym2_b.o
+               volpym2_b.o\
+               xhaloadj_b.o
 
 #FF90_OBJECTS = applyAllBCAdj.o          \
 #	       bcSymmAdj.o              \

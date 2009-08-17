@@ -3,7 +3,8 @@
 !  
 !  Differentiation of computeradjoint in reverse (adjoint) mode:
 !   gradient, with respect to input variables: rotrateadj machadj
-!                alphaadj xadj dwadj wadj betaadj machgridadj
+!                alphaadj xadj xblockcorneradj dwadj wadj betaadj
+!                machgridadj
 !   of linear combination of output variables: dwadj
 !
 !      ******************************************************************
@@ -15,12 +16,13 @@
 !      *                                                                *
 !      ******************************************************************
 !
-SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-&  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-&  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-&  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-&  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-&  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+&  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+&  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+&  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+&  liftindex)
   USE blockpointers
   USE flowvarrefstate
   IMPLICIT NONE
@@ -49,6 +51,8 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
   REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
 &  xadj
   REAL(KIND=REALTYPE) :: xadjb(-3:2, -3:2, -3:2, 3)
+  REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3), xblockcorneradjb(2&
+&  , 2, 2, 3)
   REAL(KIND=REALTYPE) :: dragdirectionadj(3)
   INTEGER(KIND=INTTYPE) :: i, ii, j, jj, k, kk
   INTEGER(KIND=INTTYPE) :: iend, istart, jend, jstart, kend, kstart
@@ -56,6 +60,9 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
   REAL(KIND=REALTYPE) :: normadj(nbocos, -2:2, -2:2, 3), normadjb(nbocos&
 &  , -2:2, -2:2, 3)
   REAL(KIND=REALTYPE) :: padj(-2:2, -2:2, -2:2), padjb(-2:2, -2:2, -2:2)
+  REAL(KIND=REALTYPE) :: radiadj(-1:1, -1:1, -1:1), radiadjb(-1:1, -1:1&
+&  , -1:1), radjadj(-1:1, -1:1, -1:1), radjadjb(-1:1, -1:1, -1:1), &
+&  radkadj(-1:1, -1:1, -1:1), radkadjb(-1:1, -1:1, -1:1)
   REAL(KIND=REALTYPE) :: rfaceadj(nbocos, -2:2, -2:2), rfaceadjb(nbocos&
 &  , -2:2, -2:2)
   REAL(KIND=REALTYPE) :: sadj(-2:2, -2:2, -2:2, 3), sadjb(-2:2, -2:2, -2&
@@ -104,7 +111,12 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 &                         uinfadj, winfadj, prefadj, rhorefadj, &
 &                         pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
 &                         murefadj, timerefadj, pinfcorradj)
+  CALL PUSHINTEGER4(kcell)
+  CALL PUSHINTEGER4(jcell)
+  CALL PUSHINTEGER4(icell)
+  CALL PUSHREAL8ARRAY(xadj, 6**3*3)
 !      Call the metric routines to generate the areas, volumes and surface normals for the stencil.
+  CALL XHALOADJ(xadj, xblockcorneradj, icell, jcell, kcell)
   CALL METRICADJ(xadj, siadj, sjadj, skadj, voladj, normadj, icell, &
 &           jcell, kcell)
 !call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
@@ -146,6 +158,9 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
   CALL APPLYALLBCADJ(winfadj, pinfcorradj, wadj, padj, sadj, siadj, &
 &               sjadj, skadj, voladj, normadj, rfaceadj, icell, jcell, &
 &               kcell, secondhalo)
+  CALL PUSHREAL8ARRAY(radkadj, 3**3)
+  CALL PUSHREAL8ARRAY(radjadj, 3**3)
+  CALL PUSHREAL8ARRAY(radiadj, 3**3)
 !!#Shouldn't need this section for derivatives...
 !!$       ! In case this routine is called in full mg mode call the mean
 !!$       ! flow boundary conditions again such that the normal momentum
@@ -203,9 +218,11 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
 !!$
 !!$       if( turbSegregated ) call turbSolveSegregatedAdj
 !!$
-!!$       ! Compute the time step.
-!!$
-!!$       call timeStepAdj(.false.)
+! Compute the time step.
+!call timeStepAdj(.false.)
+  CALL TIMESTEPADJ(.true., wadj, padj, siadj, sjadj, skadj, sfaceiadj, &
+&             sfacejadj, sfacekadj, radiadj, radjadj, radkadj, icell, &
+&             jcell, kcell, pinfcorradj, rhoinfadj)
 !!$
 !!$       ! Compute the residual of the new solution on the ground level.
 !!$
@@ -220,8 +237,17 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
   CALL RESIDUALADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, sjadj, &
 &               sjadjb, skadj, skadjb, voladj, voladjb, normadj, &
 &               sfaceiadj, sfaceiadjb, sfacejadj, sfacejadjb, sfacekadj&
-&               , sfacekadjb, dwadj, dwadjb, icell, jcell, kcell, &
+&               , sfacekadjb, radiadj, radiadjb, radjadj, radjadjb, &
+&               radkadj, radkadjb, dwadj, dwadjb, icell, jcell, kcell, &
 &               rotrateadj, rotrateadjb, correctfork)
+  CALL POPREAL8ARRAY(radiadj, 3**3)
+  CALL POPREAL8ARRAY(radjadj, 3**3)
+  CALL POPREAL8ARRAY(radkadj, 3**3)
+  CALL TIMESTEPADJ_B(.true., wadj, wadjb, padj, padjb, siadj, siadjb, &
+&               sjadj, sjadjb, skadj, skadjb, sfaceiadj, sfaceiadjb, &
+&               sfacejadj, sfacejadjb, sfacekadj, sfacekadjb, radiadj, &
+&               radiadjb, radjadj, radjadjb, radkadj, radkadjb, icell, &
+&               jcell, kcell, pinfcorradj, pinfcorradjb, rhoinfadj)
   CALL POPREAL8ARRAY(wadj, 5**3*nw)
   CALL POPREAL8ARRAY(padj, 5**3)
   CALL POPBOOLEAN(secondhalo)
@@ -248,6 +274,12 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
   CALL METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj, &
 &             skadjb, voladj, voladjb, normadj, normadjb, icell, jcell, &
 &             kcell)
+  CALL POPREAL8ARRAY(xadj, 6**3*3)
+  CALL POPINTEGER4(icell)
+  CALL POPINTEGER4(jcell)
+  CALL POPINTEGER4(kcell)
+  CALL XHALOADJ_B(xadj, xadjb, xblockcorneradj, xblockcorneradjb, icell&
+&            , jcell, kcell)
   CALL POPREAL8ARRAY(winfadj, nw)
   CALL SETFLOWINFINITYSTATEADJ_B(veldirfreestreamadj, &
 &                           veldirfreestreamadjb, liftdirectionadj, &

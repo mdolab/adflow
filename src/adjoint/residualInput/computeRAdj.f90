@@ -9,7 +9,8 @@
 !      ******************************************************************
 !
 
-subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
+subroutine computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
+                          betaAdj,MachAdj, &
                           MachCoefAdj,machGridAdj,iCell, jCell,  kCell, &
                           nn,sps, correctForK,secondHalo,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
@@ -20,6 +21,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
   use blockPointers
   use flowVarRefState
 
+  implicit none
 
 
 !      Set Passed in Variables
@@ -32,6 +34,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
 
   real(kind=realType), dimension(nw)                :: dwAdj
   real(kind=realType), dimension(3),intent(in) ::rotRateAdj,rotCenterAdj
+  real(kind=realType), dimension(2,2,2,3) ::xBlockCornerAdj
 
   logical :: secondHalo, correctForK,useOldCoor=.false.
 
@@ -47,6 +50,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
   real(kind=realType), dimension(nBocos,-2:2,-2:2) ::rFaceAdj
   real(kind=realType):: volAdj
 !  real(kind=realType), dimension(-2:2,-2:2,-2:2,3) :: siAdj, sjAdj, skAdj
+  real(kind=realType), dimension(-1:1,-1:1,-1:1) :: radIAdj,radJAdj,radKAdj
   real(kind=realType), dimension(-3:2,-3:2,-3:2,3) :: siAdj, sjAdj, skAdj
   real(kind=realType), dimension(-2:2,-2:2,-2:2) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
 
@@ -91,6 +95,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
 
 
 !      Call the metric routines to generate the areas, volumes and surface normals for the stencil.
+       call xhaloAdj(xAdj,xBlockCornerAdj,icell,jcell,kcell)
        
        call metricAdj(xAdj,siAdj,sjAdj,skAdj,volAdj,normAdj, &
             iCell,jCell,kCell)
@@ -205,9 +210,13 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
 !!$
 !!$       if( turbSegregated ) call turbSolveSegregatedAdj
 !!$
-!!$       ! Compute the time step.
-!!$
-!!$       call timeStepAdj(.false.)
+       ! Compute the time step.
+
+       !call timeStepAdj(.false.)
+       
+       call timeStepAdj(.true.,wAdj,pAdj,siAdj, sjAdj, skAdj,&
+            sFaceIAdj,sFaceJAdj,sFaceKAdj,radIAdj,radJAdj,radKAdj,&
+            iCell, jCell, kCell,pInfCorrAdj,rhoInfAdj)
 !!$
 !!$       ! Compute the residual of the new solution on the ground level.
 !!$
@@ -223,6 +232,7 @@ subroutine computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
        
        call residualAdj(wAdj,pAdj,siAdj,sjAdj,skAdj,volAdj,normAdj,&
                               sFaceIAdj,sFaceJAdj,sFaceKAdj,&
+                              radIAdj,radJAdj,radKAdj,&
                               dwAdj, iCell, jCell, kCell,  &  
                               rotRateAdj,correctForK)
 

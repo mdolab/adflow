@@ -78,12 +78,18 @@
       REAL(KIND=REALTYPE) :: alphaadj, betaadj
       REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
       real(kind=realType), dimension(3) ::rotRateAdj,rotCenterAdj,rotrateadjb
-
+      REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3), xblockcorneradjb(2&
+           &  , 2, 2, 3)
 
       logical :: secondHalo,exchangeTurb,correctfork,finegrid
       integer(kind=intType):: discr
 
       character(len=2*maxStringLen) :: errorMessage
+
+      ! pvr row block
+      real(kind=realType), dimension(nw) :: pvrlocal
+      real(kind=realType) ::test
+      integer(kind=intType) ::idxmgb
 !
 !     ******************************************************************
 !     *                                                                *
@@ -190,11 +196,13 @@
                do jCell = 2, jl
                   do iCell = 2, il
                      ! Copy the state w to the wAdj array in the stencil
-                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
-           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
-           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+                     call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
+                          betaAdj,MachAdj,&
+                          machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
+                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+
                      mLoop: do m = 1, nw       
                         ! Loop over output cell residuals (R)
 
@@ -210,18 +218,14 @@
 		        rotrateadjb(:)=0.
 
                         ! Call reverse mode of residual computation
-                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-&  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-&  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-&  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-&  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-&  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
-!COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-!&  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-!&  machcoefadj, machgridadj, icell, jcell, kcell, nn, sps, correctfork, &
-!&  secondhalo, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, &
-!&  pinfadj, rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj&
-!&  , pinfcorradj, liftindex)
+                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+&  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+&  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+&  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+&  liftindex)
+
 
                         dRdaLocal(m,nDesignAOA) =alphaAdjb
                         dRdaLocal(m,nDesignSSA) =betaAdjb
@@ -230,9 +234,32 @@
 			dRdaLocal(m,nDesignRotX) =rotrateadjb(1)
 			dRdaLocal(m,nDesignRotY) =rotrateadjb(2)
 			dRdaLocal(m,nDesignRotZ) =rotrateadjb(3)
-                        
+                        pvrlocal(m) = machAdjb!rotrateadjb(3)*timeref
                      enddo mLoop
 
+!temporary code to setup Direct solve
+                     idxmgb = globalCell(icell,jcell,kcell)
+                     
+!!$                     test = sum(pvrlocal(:))
+!!$                     !print *,'test',test
+!!$                     if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
+!!$                        !print *,'setting PETSc Vector',sum(wAdjB(icell,jcell,kcell,:))
+!!$                        !pvrlocal(:) = wFD2(iCell-1, jCell-1, kCell-1,:)
+!!$                        
+!!$                        !                call VecSetValuesBlocked(dJdW, 1, idxmgb, dJdWlocal, &
+!!$                        !                                         INSERT_VALUES, PETScIerr)
+!!$                        call VecSetValuesBlocked(pvr, 1, idxmgb, pvrlocal, &
+!!$                             INSERT_VALUES, PETScIerr)
+!!$                        
+!!$                        if( PETScIerr/=0 ) then
+!!$                           write(errorMessage,99) &
+!!$                                "Error in VecSetValuesBlocked for global node", &
+!!$                           idxmgb
+!!$                           call terminate("setupADjointRHSAeroCoeff", &
+!!$                                errorMessage)
+!!$                        endif
+!!$                     endif
+!!$
               ! Transfer the block Jacobians to the global [dR/da]
               ! matrix by setting the corresponding block entries of
               ! the PETSc matrix dRda.
@@ -353,6 +380,25 @@
 enddo domainLoop
 
 
+!!$call VecAssemblyBegin(pvr,PETScIerr)
+!!$
+!!$if( PETScIerr/=0 ) &
+!!$     call terminate("setupASjointRHS", "Error in VecAssemblyBegin")  
+!!$
+!!$call VecAssemblyEnd  (pvr,PETScIerr)
+!!$
+!!$if( PETScIerr/=0 ) &
+!!$     call terminate("setupADjointRHS", "Error in VecAssemblyEnd")
+!!$
+!!$if( debug ) then
+!!$   call VecView(pvr,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+!!$   !call VecView(pvr,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+!!$   if( PETScIerr/=0 ) &
+!!$        call terminate("setupADjointRHS", "Error in VecView")
+!!$   pause
+!!$endif
+
+!
 !     ******************************************************************
 !     *                                                                *
 !     * Complete the PETSc matrix assembly process.                    *

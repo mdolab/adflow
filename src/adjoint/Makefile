@@ -83,7 +83,8 @@ FF90_OBJECTS = allocMemADjoint.o        \
                solverADjoint.o          \
 	       updateFlow.o             \
 	       verifydRdw.o             \
-               verifydRdwFile.o             \
+               verifydRdwFile.o         \
+               verifydRdwFileFD.o       \
 	       verifydRdx.o             \
 	       verifydRdExtra.o         \
 	       verifydRdxFile.o             \
