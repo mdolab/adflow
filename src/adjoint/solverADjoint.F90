@@ -159,19 +159,21 @@
 
         ! Verify the node-based residual routine.
 
-  	!call verifyRAdj(level)
+      !call verifyRAdj(level)
 !stop
-	!call verifyResiduals(level)
+!	call verifyResiduals(level)
+!return
 !stop
         ! Verify the node-based ADjoint residual routine.
 
 !	call verifydRdW(level,sps)
 !	call verifydRdWFile(level,sps)
-!      call verifydRdxFile(level,sps)
+!        call verifydRdwFileFD(level)
+!      call verifydRdxFile(level)
 !      call verifydRdxsFile
 !      call verifydRdxFileFD(level)
 !stop
-
+!return
         ! Verify the dRdx routine
 
 ! 	call verifydRdx(level,sps)
@@ -225,7 +227,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      !print *,'calling setupADjointMatrix'
+      print *,'calling setupADjointMatrix'
       call setupADjointMatrix(level)
 !stop
 
@@ -244,8 +246,7 @@
         print "(a)", "# ... Krylov subspace created;"
 
 
-!      call solveDirectPETSc
-!stop
+
 !
 !     ******************************************************************
 !     *                                                                *
@@ -260,6 +261,10 @@
       call setupGradientMatrixSpatial(level)
 
       call setupVolumeSurfaceDerivatives
+
+
+!      call solveDirectPETSc
+!stop
 !
 !     ******************************************************************
 !     *                                                                *

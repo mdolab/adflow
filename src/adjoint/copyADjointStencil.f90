@@ -9,7 +9,8 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+      subroutine copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
+           betaAdj,MachAdj,&
            machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
            rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
            rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
@@ -54,7 +55,7 @@
       integer(kind=intType)::liftIndex
 
       real(kind=realType), dimension(3),intent(out) ::rotRateAdj,rotCenterAdj
-
+      real(kind=realType), dimension(2,2,2,3),intent(out) ::xBlockCornerAdj
 
 !
 !     Local variables.
@@ -131,6 +132,17 @@
           enddo
         enddo
       enddo
+
+      
+      xBlockCornerAdj(1,1,1,:) = x(1, 1, 1,:)
+      xBlockCornerAdj(2,1,1,:) = x(il, 1, 1,:)
+      xBlockCornerAdj(1,2,1,:) = x(1,jl,1,:)
+      xBlockCornerAdj(2,2,1,:) = x(il,jl,1,:)
+      xBlockCornerAdj(1,2,2,:) = x(1,jl,kl,:)
+      xBlockCornerAdj(2,2,2,:) = x(il,jl,kl,:)
+      xBlockCornerAdj(1,1,2,:) = x(1, 1,kl,:)
+      xBlockCornerAdj(2,1,2,:) = x(il, 1,kl,:)
+      
 
       MachAdj = Mach
       MachCoefAdj = MachCoef

@@ -51,7 +51,7 @@
 !     Begin execution
 !________________________________________________________________________
            
-      open(unit=iFile,file='ADw.txt',status='replace',action='write')
+      open(unit=iFile,file='directdwdx.txt',status='replace',action='write')
       !open(unit=iFile+1,file='ADw2.txt',status='replace',action='write')
 
       call mpi_barrier(SUmb_comm_world, ierr)
@@ -64,7 +64,7 @@
       testfile=adjustl(testfile)
       print *,'file2: ',testfile
       write(file1,101) trim(testfile)!testfile
-101   format("testfile",a,".out")
+101   format("directdwdx2",a,".out")
       print *,'file3: ',file1!trim(testfile)!testfile
       open(unit=iFile+1+myID,file=file1,status='replace',action='write')
       call mpi_barrier(SUmb_comm_world, ierr)
@@ -284,7 +284,7 @@
             end do
          end do
       enddo
-12        format(1x,'drdx',f20.9,6I8)
+12        format(1x,'dwdx',f20.9,6I8)
 
 
 

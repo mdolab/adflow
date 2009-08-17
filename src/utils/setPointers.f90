@@ -189,8 +189,10 @@
        ! its values are obtained from the fine grid level.
 
        w     => flowDoms(nn,mm,ll)%w
+       wtmp     => flowDoms(nn,1,ll)%wtmp
        wOld  => flowDoms(nn,1, ll)%wOld
        p     => flowDoms(nn,mm,ll)%p
+       ptmp     => flowDoms(nn,mm,ll)%ptmp
        gamma => flowDoms(nn,1, ll)%gamma
        rlv   => flowDoms(nn,1, ll)%rlv
        rev   => flowDoms(nn,mm,ll)%rev
@@ -200,6 +202,7 @@
        ! finest grid entry, the multigrid variables to their own level.
 
        dw => flowDoms(nn,1,ll)%dw
+       dwtmp => flowDoms(nn,1,ll)%dwtmp
        dwp => flowDoms(nn,1,ll)%dwp
        dwm => flowDoms(nn,1,ll)%dwm
        fw => flowDoms(nn,1,ll)%fw

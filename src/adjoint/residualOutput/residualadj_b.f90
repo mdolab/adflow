@@ -3,8 +3,9 @@
 !  
 !  Differentiation of residualadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: rotrateadj voladj
-!                padj wadj sfacekadj skadj sfacejadj sjadj sfaceiadj
-!                siadj vis2 vis4 kappacoef cdisrk
+!                padj radkadj radjadj wadj radiadj sfacekadj skadj
+!                sfacejadj sjadj sfaceiadj siadj vis2 vis4 kappacoef
+!                cdisrk
 !   of linear combination of output variables: dwadj massflowfamilydiss
 !
 !      ******************************************************************
@@ -18,8 +19,9 @@
 !
 SUBROUTINE RESIDUALADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, sjadj&
 &  , sjadjb, skadj, skadjb, voladj, voladjb, normadj, sfaceiadj, &
-&  sfaceiadjb, sfacejadj, sfacejadjb, sfacekadj, sfacekadjb, dwadj, &
-&  dwadjb, icell, jcell, kcell, rotrateadj, rotrateadjb, correctfork)
+&  sfaceiadjb, sfacejadj, sfacejadjb, sfacekadj, sfacekadjb, radiadj, &
+&  radiadjb, radjadj, radjadjb, radkadj, radkadjb, dwadj, dwadjb, icell&
+&  , jcell, kcell, rotrateadj, rotrateadjb, correctfork)
   USE blockpointers
   USE cgnsgrid
   USE flowvarrefstate
@@ -35,6 +37,9 @@ SUBROUTINE RESIDUALADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, sjadj&
   REAL(KIND=REALTYPE) :: normadj(nbocos, -2:2, -2:2, 3)
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2), INTENT(IN) :: padj
   REAL(KIND=REALTYPE) :: padjb(-2:2, -2:2, -2:2)
+  REAL(KIND=REALTYPE) :: radiadj(-1:1, -1:1, -1:1), radiadjb(-1:1, -1:1&
+&  , -1:1), radjadj(-1:1, -1:1, -1:1), radjadjb(-1:1, -1:1, -1:1), &
+&  radkadj(-1:1, -1:1, -1:1), radkadjb(-1:1, -1:1, -1:1)
   REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: rotrateadj
   REAL(KIND=REALTYPE) :: rotrateadjb(3)
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2), INTENT(IN) :: &
@@ -169,8 +174,8 @@ SUBROUTINE RESIDUALADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, sjadj&
 !stop
 !fw(:,:,:,:) = 0.0
 !call inviscidDissFluxScalar()
-      CALL INVISCIDDISSFLUXSCALARADJ(wadj, padj, dwadj, icell, jcell, &
-&                               kcell)
+      CALL INVISCIDDISSFLUXSCALARADJ(wadj, padj, dwadj, radiadj, radjadj&
+&                               , radkadj, icell, jcell, kcell)
 !!$               do i = 1,nw
 !!$                  !if (abs(dwAdj(i)-dwAdj2(i))>0.0) then
 !!$                  !if (abs(dwAdj(i)-fw(icell,jcell,kcell,i))>1e-16) then
@@ -223,7 +228,10 @@ SUBROUTINE RESIDUALADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, sjadj&
   IF (branch .LT. 2) THEN
     IF (branch .LT. 1) THEN
       padjb(-2:2, -2:2, -2:2) = 0.0
+      radkadjb(-1:1, -1:1, -1:1) = 0.0
+      radjadjb(-1:1, -1:1, -1:1) = 0.0
       wadjb(-2:2, -2:2, -2:2, 1:nw) = 0.0
+      radiadjb(-1:1, -1:1, -1:1) = 0.0
       sfacekadjb(-2:2, -2:2, -2:2) = 0.0
       skadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
       sfacejadjb(-2:2, -2:2, -2:2) = 0.0
@@ -234,17 +242,25 @@ SUBROUTINE RESIDUALADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, sjadj&
     ELSE
       CALL POPREAL8ARRAY(wadj, 5**3*nw)
       CALL INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
-&                                 dwadjb, icell, jcell, kcell)
+&                                 dwadjb, radiadj, radiadjb, radjadj, &
+&                                 radjadjb, radkadj, radkadjb, icell, &
+&                                 jcell, kcell)
     END IF
   ELSE IF (branch .LT. 3) THEN
     padjb(-2:2, -2:2, -2:2) = 0.0
+    radkadjb(-1:1, -1:1, -1:1) = 0.0
+    radjadjb(-1:1, -1:1, -1:1) = 0.0
     wadjb(-2:2, -2:2, -2:2, 1:nw) = 0.0
+    radiadjb(-1:1, -1:1, -1:1) = 0.0
   ELSE
     CALL INVISCIDUPWINDFLUXADJ_B(wadj, wadjb, padj, padjb, dwadj, dwadjb&
 &                           , siadj, siadjb, sjadj, sjadjb, skadj, &
 &                           skadjb, sfaceiadj, sfaceiadjb, sfacejadj, &
 &                           sfacejadjb, sfacekadj, sfacekadjb, icell, &
 &                           jcell, kcell, finegrid)
+    radkadjb(-1:1, -1:1, -1:1) = 0.0
+    radjadjb(-1:1, -1:1, -1:1) = 0.0
+    radiadjb(-1:1, -1:1, -1:1) = 0.0
     GOTO 100
   END IF
   sfacekadjb(-2:2, -2:2, -2:2) = 0.0

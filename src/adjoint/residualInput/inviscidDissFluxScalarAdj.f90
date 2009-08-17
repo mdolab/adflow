@@ -9,6 +9,7 @@
 !      ******************************************************************
 !
        subroutine inviscidDissFluxScalarAdj(wAdj,  pAdj,  dwadj,   &
+                                            radIAdj,radJAdj,radKAdj, &
                                             iCell, jCell, kCell)
 !
 !      ******************************************************************
@@ -38,7 +39,7 @@
                                                       intent(inout) :: wAdj
        real(kind=realType), dimension(-2:2,-2:2,-2:2),    &
                                                       intent(in) :: pAdj
-
+       real(kind=realType), dimension(-1:1,-1:1,-1:1) :: radIAdj,radJAdj,radKAdj
        real(kind=realType), dimension(nw), intent(inout) :: dwadj
 
 !
@@ -283,8 +284,9 @@
 
              ppor = zero
              if(porI(i,j,k) == normalFlux) ppor = half
-             rrad = ppor*(radI(i,j,k) + radI(i+1,j,k))
-
+             !rrad = ppor*(radI(i,j,k) + radI(i+1,j,k))
+             rrad = ppor*(radIAdj(ii,0,0) + radIAdj(ii+1,0,0))
+             !print *,'radI',radIAdj(ii,0,0),radI(icell+ii,jcell,kcell),icell,jcell,kcell,radIAdj(ii+1,0,0),radI(icell+ii+1,jcell,kcell)
              dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
              !dis4 = dim(fis4*rrad, dis2)
              if ((fis4*rrad- dis2)>0.0)then
@@ -400,7 +402,8 @@
 
              ppor = zero
              if(porJ(i,j,k) == normalFlux) ppor = half
-             rrad = ppor*(radJ(i,j,k) + radJ(i,j+1,k))
+             !rrad = ppor*(radJ(i,j,k) + radJ(i,j+1,k))
+             rrad = ppor*(radJAdj(0,jj,0) + radJAdj(0,jj+1,0))
 
              dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
              !dis4 = dim(fis4*rrad, dis2)
@@ -515,7 +518,8 @@
 
              ppor = zero
              if(porK(i,j,k) == normalFlux) ppor = half
-             rrad = ppor*(radK(i,j,k) + radK(i,j,k+1))
+             !rrad = ppor*(radK(i,j,k) + radK(i,j,k+1))
+             rrad = ppor*(radKAdj(0,0,kk) + radKAdj(0,0,kk+1))
 
              dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
              !dis4 = dim(fis4*rrad, dis2)

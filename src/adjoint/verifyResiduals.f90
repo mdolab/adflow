@@ -57,7 +57,7 @@
 !
 !     Local variables
 !
-      integer(kind=intType) :: i, j, k,q,sps=1,liftIndex,domain = 1
+      integer(kind=intType) :: i, j, k,n,sps=1,liftIndex,nnn
       real(kind=realType), dimension(nw) :: dwL2
      ! real(kind=realType), dimension(0:nx,0:ny,0:nz, nw) :: dwerr
       real(kind=realType), dimension(nx, ny, nz, nw) :: dwerr
@@ -69,9 +69,10 @@
 !*******
       real(kind=realType), dimension(10) :: time
       real(kind=realType) :: timeRes,machref
+      real(kind=realType),dimension(3)::xref,deltax
       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdj
       real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdj
-      real(kind=realType), dimension(nw) :: dwAdjRef
+      real(kind=realType), dimension(nw) :: dwAdj
       character fileName*32, dataName*32
 
       real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj,machGridAdj
@@ -80,6 +81,7 @@
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
       REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
       real(kind=realType), dimension(3) ::rotRateAdj,rotCenterAdj,rotrateadjb
+      real(kind=realType), dimension(2,2,2,3)::xBlockCornerAdj
 
       !********************************
       logical :: secondHalo =.true.! .false.!.true.
@@ -94,40 +96,42 @@
 
 
 !File Parameters
-      integer :: unit = 8,unit1 = 30,unit3 = 12,unit4 = 13,ierror
-      character(len = 9)::outfile
+      integer :: unitRes = 8,unitresAD = 30,unitx = 12,unitxAD = 13,ierror
+      integer ::iii,iiii,jjj,jjjj,kkk,kkkk,nnnn,istart,jstart,kstart,iend,jend,kend
+      character(len = 16)::outfile
       
-      outfile = "oldres.txt"
+      outfile = "originalres.txt"
       
-      open (UNIT=unit,File=outfile,status='replace',action='write',iostat=ierror)
+      open (UNIT=unitRes,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
            call terminate("verifyResiduals", &
            "Something wrong when &
            &calling open")
       
-      outfile = "newres.txt"
+      outfile = "ADres.txt"
       
-      open (UNIT=unit1,File=outfile,status='replace',action='write',iostat=ierror)
+      open (UNIT=unitresAD,File=outfile,status='replace',action='write',iostat=ierror)
        if(ierror /= 0)                        &
             call terminate("verifyResiduals", &
             "Something wrong when &
             &calling open2")
 
-  outfile = "oldw.txt"
+  outfile = "xoriginal.txt"
       
-      open (UNIT=unit3,File=outfile,status='replace',action='write',iostat=ierror)
+      open (UNIT=unitx,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
            call terminate("verifyResiduals", &
            "Something wrong when &
            &calling open")
       
-!!$      outfile = "neww.txt"
-!!$      
-!!$      open (UNIT=unit4,File=outfile,status='replace',action='write',iostat=ierror)
-!!$       if(ierror /= 0)                        &
-!!$            call terminate("verifyResiduals", &
-!!$            "Something wrong when &
-!!$            &calling open2")
+      outfile = "xAD.txt"
+      
+      open (UNIT=unitxAD,File=outfile,status='replace',action='write',iostat=ierror)
+       if(ierror /= 0)                        &
+            call terminate("verifyResiduals", &
+            "Something wrong when &
+            &calling open2")
+
 
 
 
@@ -250,7 +254,17 @@
 !------------------------
 ! reference residual
 !------------------------
-
+      print *,'storing reference states'
+      groundLevel = 1
+      sps = 1
+      !Store current state values and residuals
+      do nn=1,ndom
+         !print *,'domains 1',nn
+         call setPointersAdj(nn,level,sps)
+         wtmp = w
+         ptmp = p
+         dwtmp = dw
+      end do
        
       nVarInt = nw
       if( corrections ) nVarInt = nMGVar
@@ -259,338 +273,221 @@
 !     Begin execution
 !________________________________________________________________________
 
-write(*,*) 'in verify residuals'
+      write(*,*) 'in verify residuals'
 
 !
 !     Compute difference in residuals
-
-!Baseline residual calculation
-!call setpointers(nn,level,sps)
-call setpointers(domain ,level,sps)
-       !dw(:,:,:, :) =0.0
-       xtemp(:,:,:,:) = x(:,:,:,:)
-       wtemp(:,:,:,:) = w(:,:,:,:)
-       ptemp(:,:,:) = p(:,:,:)
-       call initres(1_intType, nwf)
-       call residual
-       call setpointers(domain ,level,sps)
-       dwref(:,:,:,:) = dw(:,:,:,:)
-
-      ! w(15,2,5,:) = w(15,2,5,:)+0.005
-!!$       i = 33
-!!$       j = 2
-!!$       k = 12
-
-       i = 1!5
-       j = 1!4
-       k = 1!3
-       
-       x(i,j,k,:) = x(i,j,k,:)!+0.05
-       w(i,j,k,:) = w(i,j,k,:)!+0.005
+      deltax(:) = 0.05
+      deltax(3) = 0
+       ii = 11!1!5
+       jj = 6!1!4
+       kk = 6!1!3
+       nn = 1
+       call setPointers(nn,level,sps)
+       xref = x(ii,jj,kk,:)
+       x(ii,jj,kk,:) = xref+deltax
+!!$       x(ii,jj,kk,1) = xref(1)+deltax
+!!$       x(ii,jj,kk,2) = xref(2)+deltax
+!!$       x(ii,jj,kk,3) = xref(3)+deltax
+       w(ii,jj,kk,:) = w(ii,jj,kk,:)!+0.005
        machref = mach
        mach = machref!+0.005
-       wtemp2(:,:,:,:) = w(:,:,:,:)
-       xtemp2(:,:,:,:) = x(:,:,:,:)
        
-
        call referenceState
        
        call setFlowInfinityState
-       
+
+       call xhalo(level)
        call metric(level)
-       call setpointers(domain ,level,sps)
-       !call computePressureAdj(w(i-2:i+2, j-2:j+2, k-2:k+2,:), pAdjtemp)
-
-       !p(i, j, k) = pAdjtemp(0,0,0)
-       !wtemp(:,:,:,:) = w(:,:,:,:)
-
-       write(unit,*)'States0'
-       write(unit1,*)'States0'
-       do kk= 0,kb
-          do jj= 0,jb
-             do ii= 0,ib
-                write(unit,23) p(ii,jj,kk),ii,jj,kk
-                write(unit1,23) ptemp(ii,jj,kk),ii,jj,kk
-23              format(1x,'p ',f18.10,4I4)
-                do nn = 1,5
-                  
-                   write(unit,21) w(ii,jj,kk,nn),ii,jj,kk,nn
-                   write(unit1,21) wtemp(ii,jj,kk,nn),ii,jj,kk,nn
-!21                format(1x,'w ',f18.10,4I4)
+       call checkSymmetry(level)
+       !print out x
+       do nnnn=1,ndom
+          call setPointersAdj(nnnn,1,sps)
+          do iii = 2,il
+             do jjj = 2,jl
+                do kkk = 2,kl
+                   istart = -3
+                   jstart = -3
+                   kstart = -3
+                   iend = 2
+                   jend = 2
+                   kend = 2
+                   if(iii==2) istart=-2
+                   if(jjj==2) jstart=-2
+                   if(kkk==2) kstart=-2
+                   if(iii==il) iend=1
+                   if(jjj==jl) jend=1
+                   if(kkk==kl) kend=1
+                   do iiii = istart,iend
+                      do jjjj = jstart,jend
+                         do kkkk = kstart,kend
+                            do n = 1,3
+                               i = iii+iiii
+                               j = jjj+jjjj
+                               k = kkk+kkkk
+                               write(unitx,10) i,j,k,n,nn,x(i,j,k,n)
+                            enddo
+                         enddo
+                      enddo
+                   enddo
                 enddo
              enddo
           enddo
        enddo
-       write(unit,*)'doneStates0'
-       write(unit1,*)'doneStates0'
-
-      ! Exchange the pressure if the pressure must be exchanged early.
-      ! Only the first halo's are needed, thus whalo1 is called.
-      ! Only on the fine grid.
-      
-      if(exchangePressureEarly .and. currentLevel <= groundLevel) &
-           call whalo1(currentLevel, 1_intType, 0_intType, .true.,&
-           .false., .false.)
-       groundLevel = 1
-
- 
-!!$       write(unit3,*)'initres'
-!!$       do kk= -2,2
-!!$          do jj= -2,2
-!!$             do ii= -2,2
-!!$                do nn = 1,5
-!!$                   icell = i+ii
-!!$                   jcell = j+jj
-!!$                   kcell = k+kk
-!!$                   write(unit3,22)w(icell,jcell,kcell,nn),icell,jcell,kcell,nn
-!!$                enddo
-!!$             enddo
-!!$          enddo
-!!$       enddo
-
-       print *,'secondHalo',secondHalo
+       
+       do nnn=1,ndom
+          call setPointersAdj(nnn,1,sps)
+          call computeForcesPressureAdj(w,p)
+       end do
+       call setPointersAdj(nn,1,sps)
+           
+       ! Exchange the pressure if the pressure must be exchanged early.
+       ! Only the first halo's are needed, thus whalo1 is called.
+       ! Only on the fine grid.                
+       
+       if(exchangePressureEarly .and. currentLevel <= groundLevel) &
+            call whalo1(currentLevel, 1_intType, 0_intType, .true.,&
+            .false., .false.)
+       
+       
        call applyAllBC(secondHalo)
-   
-!!$       write(unit3,*)'applybcs'
-!!$       do kk= -2,2
-!!$          do jj= -2,2
-!!$             do ii= -2,2
-!!$                do nn = 1,5
-!!$                   icell = i+ii
-!!$                   jcell = j+jj
-!!$                   kcell = k+kk
-!!$                   write(unit3,22)w(icell,jcell,kcell,nn),icell,jcell,kcell,nn
-!!$                enddo
-!!$             enddo
-!!$          enddo
-!!$       enddo
-       call setpointers(domain,level,sps)
-       write(unit,*)'applybcs'
-       write(unit1,*)'applybcs'
-       do kk= 0,kb
-          do jj= 0,jb
-             do ii= 0,ib
-                do nn = 1,5
-                   write(unit,21) w(ii,jj,kk,nn),ii,jj,kk,nn
-                   write(unit1,21) wtemp(ii,jj,kk,nn),ii,jj,kk,nn
-!21                format(1x,'w ',f18.10,4I4)
-                enddo
-             enddo
-          enddo
-       enddo
-       write(unit,*)'doneStates0'
-       write(unit1,*)'doneStates0'
-
+       
        ! Exchange the solution. Either whalo1 or whalo2
        ! must be called.
-
        if( secondHalo ) then
-         write(*,*)'2ndHalo..........'
-         call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-                     .true., .true.)
+          call whalo2(currentLevel, 1_intType, nMGVar, .true., &
+               .true., .true.)
        else
-          write(*,*)'1stHalo..........'
-         call whalo1(currentLevel, 1_intType, nVarInt, .true., &
-                     .true., .true.)
+          call whalo1(currentLevel, 1_intType, nMGVar, .true., &
+               .true., .true.)
        endif
 
-!!$       write(unit3,*)'whalo'
-!!$       do kk= -2,2
-!!$          do jj= -2,2
-!!$             do ii= -2,2
-!!$                do nn = 1,5
-!!$                   icell = i+ii
-!!$                   jcell = j+jj
-!!$                   kcell = k+kk
-!!$                   write(unit3,22)w(icell,jcell,kcell,nn),icell,jcell,kcell,nn
-!!$                enddo
-!!$             enddo
-!!$          enddo
-!!$       enddo
-       call setpointers(domain ,level,sps)
-       write(unit,*)'whalo'
-       write(unit1,*)'whalo'
-       do kk= 0,kb
-          do jj= 0,jb
-             do ii= 0,ib
-                do nn = 1,5
-                   write(unit,21) w(ii,jj,kk,nn),ii,jj,kk,nn
-                   write(unit1,21) wtemp(ii,jj,kk,nn),ii,jj,kk,nn
-!21                format(1x,'w ',f18.10,4I4)
-                enddo
-             enddo
-          enddo
-       enddo
-       write(unit,*)'doneStates0'
-       write(unit1,*)'doneStates0'
-
-      print *, "Calling Residual ="
-
+       print *, "Calling Residual ="
+       call timeStep(.false.)
+       
        call initres(1_intType, nwf)
-       call setpointers(domain ,level,sps)
-       write(unit,*)'initres0'
-       write(unit1,*)'initres0'
-       do kk= 0,kb
-          do jj= 0,jb
-             do ii= 0,ib
-                do nn = 1,5
-                   write(unit,21) w(ii,jj,kk,nn),ii,jj,kk,nn
-                   write(unit1,21) wtemp(ii,jj,kk,nn),ii,jj,kk,nn
-!21                format(1x,'w ',f18.10,4I4)
-                enddo
-             enddo
-          enddo
-       enddo
-       write(unit,*)'doneStates0'
-       write(unit1,*)'doneStates0'
-
+       if( turbCoupled ) then
+          call initres(nt1MG, nMGVar)
+          call turbResidual
+       endif
+       
+       call initres(1_intType, nwf)
        call residual
-       print *, "Called Residual =", w(i,j,k,1),w(4,3,3,1),w(i,j,k,1)-w(4,3,3,1)
        
-       write(unit3,*)'residual'
-       do kk= -2,2
-          do jj= -2,2
-             do ii= -2,2
-                do nn = 1,5
-                   icell = i+ii
-                   jcell = j+jj
-                   kcell = k+kk
-                   write(unit3,22)w(icell,jcell,kcell,nn),icell,jcell,kcell,nn
+
+       !print dw
+       do nn =1,ndom
+          call setPointers(nn,level,sps)
+          do i = 2,il
+             do j = 2,jl
+                do k = 2,kl
+                   do n = 1,nw
+                      write(unitRes,10) i,j,k,n,nn,dw(i,j,k,n)
+10                    format(1x,'res',5I8,f20.14)
+                   enddo
                 enddo
-             enddo
-          enddo
-       enddo
-       call setpointers(domain ,level,sps)
-       write(unit,*)'resStates'
-       write(unit1,*)'resStates'
-       do kk= 0,kb
-          do jj= 0,jb
-             do ii= 0,ib
-                write(unit,23) p(ii,jj,kk),ii,jj,kk
-                write(unit1,23) ptemp(ii,jj,kk),ii,jj,kk
-                do nn = 1,5
-                   write(unit,21) w(ii,jj,kk,nn),ii,jj,kk,nn
-                   write(unit1,21) wtemp(ii,jj,kk,nn),ii,jj,kk,nn
-21                format(1x,'w ',f18.10,4I4)
-                enddo
-             enddo
-          enddo
-       enddo
-       write(unit,*)'doneStates'
-       write(unit1,*)'doneStates'
+             end do
+          end do
+       end do
+       do nnn=1,ndom
+          !print *,'domains reset',nnn
+          call setPointersAdj(nnn,1,sps)
+          w = wtmp
+          p = ptmp
+          dw = dwtmp
+       end do
+   
+       nn = 1
+       call setPointers(nn,level,sps)
        
-       ptemp2(:,:,:) = p(:,:,:)
-       p(:,:,:) = ptemp(:,:,:)
+       x(ii,jj,kk,:) = xref
+       call xhalo(level)
+       call metric(level)
+       call checkSymmetry(level)
 
-       w(:,:,:,:) = wtemp2(:,:,:,:)
-       x(:,:,:,:) = xtemp2(:,:,:,:)
-       print *, "reset State =", w(i,j,k,1),w(5,1,5,1),w(i,j,k,1)-w(5,1,5,1)
-
+       x(ii,jj,kk,:) = xref+deltax
 !***********************************
-                 
-      dwL2(:) = 0.
-      dwerr(:,:,:,:) = 0.
+!Now compute residuals using ADjoint routines
+!***********************************
       call cpu_time(time(1))
-      call setPointersAdj(domain ,level,sps)
-      
-      do k= 2, kl
-         do j= 2, jl
-            do i= 2, il
-               !write(*,*)'adj loop'
-               call  copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
-           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
-           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-!copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,&
-!                    MachAdj,MachCoefAdj,i, j, k,prefAdj,&
-!                    rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-!                    rhoinfAdj, pinfAdj,&!
-!                    murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-               !(wAdj, xAdj, iCell, jCell, kCell)
-               
-               ! Compute the total residual.
-               ! This includes inviscid and viscous fluxes, artificial
-               ! dissipation, and boundary conditions.                   
-               !print *,'Calling compute ADjoint'
-               call computeRAdjoint(wAdj,xAdj,dwAdjref,alphaAdj,betaAdj,MachAdj, &
+
+      do nn = 1,ndom
+         call setPointersAdj(nn ,level,sps)
+         print *,'in AD loop',nn
+         do icell= 2, il
+            do jcell= 2, jl
+               do kcell= 2, kl
+                  !print *,'index',i,j,k
+                  call  copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
+                       betaAdj,MachAdj,&
+                       machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
+                       rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                       rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                       murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+
+                 
+                  
+                  ! Compute the total residual.
+                  ! This includes inviscid and viscous fluxes, artificial
+                  ! dissipation, and boundary conditions.                   
+                  !print *,'Calling compute ADjoint'
+                  call computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
+                          betaAdj,MachAdj, &
                           MachCoefAdj,machGridAdj,iCell, jCell,  kCell, &
                           nn,sps, correctForK,secondHalo,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-!computeRAdjoint(wAdj,xAdj,dwAdjRef,alphaAdj,&
-!                    betaAdj,MachAdj, MachCoefAdj,&
-!                    i, j,  k, &
-!                    nn,sps, correctForK,secondHalo,prefAdj,&
-!                    rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-!                    rhoinfAdj, pinfAdj,&
-!                    murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-               
-               !wAdj(-2:2,-2:2,-2:2,1:nw) = &
-               !     w(i-2:i+2, j-2:j+2, k-2:k+2, 1:nw)               
-               !call residualAdj(wAdj, dwAdjRef, i, j ,k)               
-               dwerr(i-1, j-1, k-1, :) = (dwAdjRef(:) - dw(i, j, k, :))
-!!$       if ((i==33).and.(j == 2).and.(k == 12))then
-!!$          print *,'testing'
-!!$
-!!$       write(unit4,*)'residual'
-!!$       do kk= -2,2
-!!$          do jj= -2,2
-!!$             do ii= -2,2
-!!$                do nn = 1,5
-!!$                   icell = i+ii
-!!$                   jcell = j+jj
-!!$                   kcell = k+kk
-!!$                   write(unit4,22)wadj(ii,jj,kk,nn),icell,jcell,kcell,nn
-!!$                enddo
-!!$             enddo
-!!$          enddo
-!!$       enddo
-!!$       endif
 
-
-!!$               !dwerr(:, :,:, :) = 0.0
-!!$               dwerr(i-1, j-1, k-1, :) = 0.0
-!!$               !if ((k == 13).or.(j==5).or.(i==2))then
-!!$               if ((i==14))then
-!!$                  dwerr(i-1, j-1, k-1, :) = 25
-!!$               end if
-!----------------------------------------------
-               
-               do q = 1,nw
-                  !write errors one by one to a file for xx diff
-                  write(unit,20) dw(i,j,k,q),ptemp2(i,j,k),i,j,k,q
-!                  write(unit1,20) dwref(i,j,k,q),ptemp2(i,j,k),i,j,k,q
-                  write(unit1,20) dwAdjRef(q), p(i,j,k),i,j,k,q
-20                format(1x,'dw ',f18.10,' p ',f18.10,4I4)
+                  !print out xAdj
+                  istart = -3
+                  jstart = -3
+                  kstart = -3
+                  iend = 2
+                  jend = 2
+                  kend = 2
+                  if(icell==2) istart=-2
+                  if(jcell==2) jstart=-2
+                  if(kcell==2) kstart=-2
+                  if(icell==il) iend=1
+                  if(jcell==jl) jend=1
+                  if(kcell==kl) kend=1
+                  do iiii = istart,iend
+                     do jjjj = jstart,jend
+                        do kkkk = kstart,kend
+                           do n = 1,3
+                              i = icell+iiii
+                              j = jcell+jjjj
+                              k = kcell+kkkk
+                              write(unitxAD,10) i,j,k,n,nn,xAdj(iiii,jjjj,kkkk,n)
+                           enddo
+                        enddo
+                     enddo
+                  enddo
+        
+                  !----------------------------------------------
+                  
+                  do n = 1,nw
+                     !print *,'dwadj',dwadj(n)
+                     write(unitResAD,10) icell,jcell,kcell,n,nn,dwAdj(n)
+!10                    format(1x,'drdx',5I8,f18.10) 
+                  end do
+                  !----------------------------------------------
+                  
                end do
-!----------------------------------------------
-               dwL2(:) = dwL2(:) + dwerr(i-1, j-1, k-1, :)**2 
             end do
          end do
       end do
 
-      w(:,:,:,:) = wtemp(:,:,:,:)
-      x(:,:,:,:) = xtemp(:,:,:,:)
-      mach = machref
-
+      x(ii,jj,kk,:) = xref
       call cpu_time(time(2))
-      timeRes = (time(2)-time(1))/(nx*ny*nz)
-      print *, "Average time for each cell residual calculation =", timeRes
-      dwL2(:) = sqrt(dwL2(:))
-      print *, "L-2 norm of differences ="
-      print *, dwL2(:)
+ !     timeRes = (time(2)-time(1))/(nx*ny*nz)
+ !     print *, "Average time for each cell residual calculation =", timeRes
+      close(unitx)
+      close(unitxAD)
+      close(unitResAD)
+      close(unitRes)
+ 
 
-      write(*,*)'shape', shape(dwerr)
-!
-!     Write residuals to the CGNS file
-!
-      fileName = "bump_residual_errors.cgns"
-      call writeCGNSMesh(fileName)    
-      dataName = "ResErr"
-      call writeCGNSData(fileName, dataName, dwerr(:,:,:,:))
 
-22    format(1x,'w ',f18.10,4I4)
-
-      end subroutine verifyResiduals
+    end subroutine verifyResiduals

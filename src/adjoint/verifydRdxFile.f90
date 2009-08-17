@@ -90,6 +90,9 @@
       REAL(KIND=REALTYPE), DIMENSION(3):: rotrateadj
       REAL(KIND=REALTYPE) :: rotrateadjb(3)
 
+      REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3), xblockcorneradjb(2&
+           &  , 2, 2, 3)
+
       integer :: ierr, testnode
       logical :: fineGrid, correctForK, exchangeTurb,secondHalo
       REAL(KIND=REALTYPE) ::value
@@ -267,11 +270,13 @@
  !                    print *,'indices',icell,jcell,kcell
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
-                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
-           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
-           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+                     call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
+                          betaAdj,MachAdj,&
+                          machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
+                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+
                      
 
 !                     print *,'Stencil Copied'
@@ -283,7 +288,7 @@
                         dwAdj(:)  = 0.
                         wAdjb(:,:,:,:)  = 0.  !dR(m)/dw
                         xAdjb(:,:,:,:)  = 0.  !dR(m)/dw
-                        
+                        xblockcorneradjb  = 0.
                         alphaadjb = 0.
                         betaadjb = 0.
                         machadjb = 0.
@@ -303,18 +308,14 @@
  !                            &  murefadj, timerefadj, pinfcorradj   
                         
                         ! Call reverse mode of residual computation
-                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-&  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-&  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-&  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-&  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-&  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+&  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+&  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+&  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+&  liftindex)
 
-
-                       ! call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb,&
-                       !      dwadj, dwadjb, icell, jcell, kcell, nn, sps,&
-                       !      correctfork, secondhalo)
-                        !print *,'wadjb',wAdjB( 0, 0, 0,:)
                         ! Store the block Jacobians (by rows).
  !                       print *,'entering storage loop'
                         do ii=-3,2!1,il-1
@@ -356,6 +357,68 @@
                            enddo !jj
                         enddo !ii
                         
+                        !set values for symmtery plane normal derivatives
+                        do l = 1,3
+                           if (xblockcorneradjb(1,1,1,l).ne.0.0)then
+                              idxnode = globalnode(1,1,1)*3+l
+                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
+                                   xblockcorneradjb(1,1,1,l), ADD_VALUES, PETScIerr)
+                              if( PETScIerr/=0 ) &
+                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                           endif
+                           if (xblockcorneradjb(2,1,1,l).ne.0.0)then
+                              idxnode = globalnode(il,1,1)*3+l
+                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
+                                   xblockcorneradjb(2,1,1,l), ADD_VALUES, PETScIerr)
+                              if( PETScIerr/=0 ) &
+                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                           endif
+                           if (xblockcorneradjb(1,2,1,l).ne.0.0)then
+                              idxnode = globalnode(1,jl,1)*3+l
+                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
+                                   xblockcorneradjb(1,2,1,l), ADD_VALUES, PETScIerr)
+                              if( PETScIerr/=0 ) &
+                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                           endif
+                           if (xblockcorneradjb(2,2,1,l).ne.0.0)then
+                              idxnode = globalnode(il,jl,1)*3+l
+                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
+                                   xblockcorneradjb(2,2,1,l), ADD_VALUES, PETScIerr)
+                              if( PETScIerr/=0 ) &
+                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                           endif
+                           if (xblockcorneradjb(1,1,2,l).ne.0.0)then
+                              idxnode = globalnode(1,1,kl)*3+l
+                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
+                                   xblockcorneradjb(1,1,2,l), ADD_VALUES, PETScIerr)
+                              if( PETScIerr/=0 ) &
+                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                           endif
+                           if (xblockcorneradjb(1,2,2,l).ne.0.0)then
+                              idxnode = globalnode(1,jl,kl)*3+l
+                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
+                                   xblockcorneradjb(1,2,2,l), ADD_VALUES, PETScIerr)
+                              if( PETScIerr/=0 ) &
+                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                           endif
+                           if (xblockcorneradjb(2,1,2,l).ne.0.0)then
+                              idxnode = globalnode(il,1,kl)*3+l
+                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
+                                   xblockcorneradjb(2,1,2,l), ADD_VALUES, PETScIerr)
+                              if( PETScIerr/=0 ) &
+                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                           endif
+                           if (xblockcorneradjb(2,2,2,l).ne.0.0)then
+                              idxnode = globalnode(il,jl,kl)*3+l
+                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
+                                   xblockcorneradjb(2,2,2,l), ADD_VALUES, PETScIerr)
+                              if( PETScIerr/=0 ) &
+                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                           endif
+                        enddo
+
+                        
+
                      end do mLoop
                      !stop
                   end do !iCell

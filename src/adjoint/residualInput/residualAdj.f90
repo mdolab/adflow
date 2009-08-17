@@ -10,6 +10,7 @@
 !
        subroutine residualAdj(wAdj,pAdj,siAdj,sjAdj,skAdj,volAdj,normAdj,&
                               sFaceIAdj,sFaceJAdj,sFaceKAdj,&
+                              radIAdj,radJAdj,radKAdj,&
                               dwAdj, iCell, jCell, kCell,  &  
                               rotRateAdj, correctForK)
 !
@@ -38,6 +39,7 @@
        real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(inout) :: normAdj
        real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
                                                  intent(inout) :: wAdj
+       real(kind=realType), dimension(-1:1,-1:1,-1:1) :: radIAdj,radJAdj,radKAdj
        real(kind=realType), dimension(nw), intent(inout) :: dwAdj
        real(kind=realType),dimension(nw):: dwAdj2
        !integer(kind=intType), intent(in) :: discr
@@ -127,7 +129,8 @@
                   !fw(:,:,:,:) = 0.0
                   
                   !call inviscidDissFluxScalar()
-                  call inviscidDissFluxScalarAdj(wAdj,  pAdj,  dwadj,   &
+                  call inviscidDissFluxScalarAdj(wAdj,  pAdj,  dwadj,&
+                                                radIAdj,radJAdj,radKAdj, &
                                                 iCell, jCell, kCell)
 
 !!$               do i = 1,nw

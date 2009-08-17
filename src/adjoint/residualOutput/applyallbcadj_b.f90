@@ -4,8 +4,8 @@
 !  Differentiation of applyallbcadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: winfadj padj pinfcorradj
 !                wadj rfaceadj skadj sjadj sadj siadj normadj
-!   of linear combination of output variables: padj wadj skadj
-!                sjadj siadj
+!   of linear combination of output variables: padj pinfcorradj
+!                wadj skadj sjadj siadj
 !
 !      ******************************************************************
 !      *                                                                *
@@ -174,7 +174,6 @@ SUBROUTINE APPLYALLBCADJ_B(winfadj, winfadjb, pinfcorradj, pinfcorradjb&
   IF (branch .LT. 2) THEN
     IF (branch .LT. 1) THEN
       winfadjb(1:nw) = 0.0
-      pinfcorradjb = 0.0
     ELSE
       CALL POPBOOLEAN(secondhalo)
       CALL POPREAL8ARRAY(wadj, 5**3*nw)
@@ -186,10 +185,8 @@ SUBROUTINE APPLYALLBCADJ_B(winfadj, winfadjb, pinfcorradj, pinfcorradjb&
     END IF
   ELSE IF (branch .LT. 3) THEN
     winfadjb(1:nw) = 0.0
-    pinfcorradjb = 0.0
   ELSE
     winfadjb(1:nw) = 0.0
-    pinfcorradjb = 0.0
   END IF
   CALL POPREAL8ARRAY(wadj, 5**3*nw)
   CALL POPBOOLEAN(secondhalo)

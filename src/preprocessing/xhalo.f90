@@ -2,9 +2,9 @@
 !      ******************************************************************
 !      *                                                                *
 !      * File:          xhalo.f90                                       *
-!      * Author:        Edwin van der Weide                             *
+!      * Author:        Edwin van der Weide,C.A.(Sandy) Mader            *
 !      * Starting date: 02-23-2003                                      *
-!      * Last modified: 03-24-2005                                      *
+!      * Last modified: 08-12-2009                                      *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -32,8 +32,9 @@
 !
 !      Local variables.
 !
-       integer(kind=intType) :: nn, mm, sps, i, j, k
+       integer(kind=intType) :: nn, mm, sps, i, j, k,ii,jj
        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iiMax, jjMax
+       !integer(kind=intType) :: iBeg2, iEnd2, jBeg2, jEnd2
 
        real(kind=realType), dimension(:,:,:), pointer :: x0, x1, x2
 
@@ -159,102 +160,189 @@
                    jBeg = jnBeg(mm); jEnd = jnEnd(mm); jjMax = jl
                    x0 => x(:,:,ke,:); x1 => x(:,:,kl,:); x2 => x(:,:,nz,:)
                end select
+               
+!CAM commented out on Aug. 11, 2009 by C.A.Mader. Computation modified to fit 
+!CAM into a single residual stencil...
+!!$
+!!$               ! Determine the sum of all face normals and store this
+!!$               ! in norm. The sum of all faces is taken instead of the
+!!$               ! cross product of the diagonals, because for some c-type
+!!$               ! grids the diagonals of the subface are aligned.
+!!$
+!!$               norm = zero
+!!$
+!!$               do j=(jBeg+1),jEnd
+!!$                 do i=(iBeg+1),iEnd
+!!$
+!!$                   ! Determine the vector from the lower left corner to
+!!$                   ! the upper right corner. Due to the usage of pointers
+!!$                   ! an offset of +1 must be used, because the original
+!!$                   ! array x start at 0.
+!!$
+!!$                   v1(1) = x1(i+1,j+1,1) - x1(i,j,1)
+!!$                   v1(2) = x1(i+1,j+1,2) - x1(i,j,2)
+!!$                   v1(3) = x1(i+1,j+1,3) - x1(i,j,3)
+!!$                   
+!!$                   ! And the vector from the upper left corner to the
+!!$                   ! lower right corner.
+!!$
+!!$                   v2(1) = x1(i+1,j,1) - x1(i,j+1,1)
+!!$                   v2(2) = x1(i+1,j,2) - x1(i,j+1,2)
+!!$                   v2(3) = x1(i+1,j,3) - x1(i,j+1,3)
+!!$                   
+!!$                   ! Determine the normal of the face by taking the cross
+!!$                   ! product of v1 and v2 and add it to norm.
+!!$
+!!$                   norm(1) = norm(1) + v1(2)*v2(3) - v1(3)*v2(2)
+!!$                   norm(2) = norm(2) + v1(3)*v2(1) - v1(1)*v2(3)
+!!$                   norm(3) = norm(3) + v1(1)*v2(2) - v1(2)*v2(1)
+!!$                   print *,'norm', x1(i+1,j+1,1) ,x1(i,j,1) ,norm(1),norm(2),norm(3),i,j,BCFaceID(mm)
+!!$                 enddo
+!!$               enddo
+!!$
+!!$               ! Compute the length of the normal and test if this is
+!!$               ! larger than eps. If this is the case this means that
+!!$               ! it is a nonsingular subface and the coordinates are
+!!$               ! corrected.
+!!$
+!!$               length = sqrt(norm(1)**2 + norm(2)**2 + norm(3)**2)
+!!$
+!!$               testSingular: if(length > eps) then
+!!$
+!!$                 ! Compute the unit normal of the subface.
+!!$
+!!$                 norm(1) = norm(1)/length
+!!$                 norm(2) = norm(2)/length
+!!$                 norm(3) = norm(3)/length
+!!$
+!!$                 ! Add an overlap to the symmetry subface if the
+!!$                 ! boundaries coincide with the block boundaries.
+!!$                 ! This way the indirect halo's are treated properly.
+!!$
+!!$                 if(iBeg == 1)     iBeg = 0
+!!$                 if(iEnd == iiMax) iEnd = iiMax + 1
+!!$
+!!$                 if(jBeg == 1)     jBeg = 0
+!!$                 if(jEnd == jjMax) jEnd = jjMax + 1
+!!$
+!!$                 ! Loop over the nodes of the subface and set the
+!!$                 ! corresponding halo coordinates.
+!!$
+!!$                 do j=jBeg,jEnd
+!!$                   do i=iBeg,iEnd
+!!$
+!!$                     ! Determine the vector from the internal node to the
+!!$                     ! node on the face. Again an offset of +1 must be
+!!$                     ! used, due to the usage of pointers.
+!!$
+!!$                     v1(1) = x1(i+1,j+1,1) - x2(i+1,j+1,1)
+!!$                     v1(2) = x1(i+1,j+1,2) - x2(i+1,j+1,2)
+!!$                     v1(3) = x1(i+1,j+1,3) - x2(i+1,j+1,3)
+!!$
+!!$                     ! Determine two times the normal component of this
+!!$                     ! vector; this vector must be added to the
+!!$                     ! coordinates of the internal node to obtain the
+!!$                     ! halo coordinates. Again the offset of +1.
+!!$
+!!$                     dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
+!!$                         +      v1(3)*norm(3))
+!!$
+!!$                     x0(i+1,j+1,1) = x2(i+1,j+1,1) + dot*norm(1)
+!!$                     x0(i+1,j+1,2) = x2(i+1,j+1,2) + dot*norm(2)
+!!$                     x0(i+1,j+1,3) = x2(i+1,j+1,3) + dot*norm(3)
+!!$                     print *,'xhalo', x0(i+1,j+1,1) ,x2(i+1,j+1,1) , dot,norm(1),i,j,BCFaceID(mm)
+!!$
+!!$                   enddo
+!!$                 enddo
+!!$
+!!$                endif testSingular
+               !compute a norm from the 4 corners of the subface. This
+               ! will serve to check the subface for singularity and
+               !reduce the number of points to be dealt with in the derivatives
 
-               ! Determine the sum of all face normals and store this
-               ! in norm. The sum of all faces is taken instead of the
-               ! cross product of the diagonals, because for some c-type
-               ! grids the diagonals of the subface are aligned.
-
-               norm = zero
-
-               do j=(jBeg+1),jEnd
-                 do i=(iBeg+1),iEnd
-
-                   ! Determine the vector from the lower left corner to
-                   ! the upper right corner. Due to the usage of pointers
-                   ! an offset of +1 must be used, because the original
-                   ! array x start at 0.
-
-                   v1(1) = x1(i+1,j+1,1) - x1(i,j,1)
-                   v1(2) = x1(i+1,j+1,2) - x1(i,j,2)
-                   v1(3) = x1(i+1,j+1,3) - x1(i,j,3)
-                   
-                   ! And the vector from the upper left corner to the
-                   ! lower right corner.
-
-                   v2(1) = x1(i+1,j,1) - x1(i,j+1,1)
-                   v2(2) = x1(i+1,j,2) - x1(i,j+1,2)
-                   v2(3) = x1(i+1,j,3) - x1(i,j+1,3)
-                   
-                   ! Determine the normal of the face by taking the cross
-                   ! product of v1 and v2 and add it to norm.
-
-                   norm(1) = norm(1) + v1(2)*v2(3) - v1(3)*v2(2)
-                   norm(2) = norm(2) + v1(3)*v2(1) - v1(1)*v2(3)
-                   norm(3) = norm(3) + v1(1)*v2(2) - v1(2)*v2(1)
-
-                 enddo
-               enddo
+               ! Determine the vector from the lower left corner to
+               ! the upper right corner. Due to the usage of pointers
+               ! an offset of +1 must be used, because the original
+               ! array x start at 0.
+               
+               v1(1) = x1(iimax+1,jjmax+1,1) - x1(1+1,1+1,1)
+               v1(2) = x1(iimax+1,jjmax+1,2) - x1(1+1,1+1,2)
+               v1(3) = x1(iimax+1,jjmax+1,3) - x1(1+1,1+1,3)
+               !print *,'v1',v1,x1(iimax+1,jjmax+1,1), x1(1+1,1+1,1),iimax,jjmax
+               ! And the vector from the upper left corner to the
+               ! lower right corner.
+               
+               v2(1) = x1(iimax+1,1+1,1) - x1(1+1,jjmax+1,1)
+               v2(2) = x1(iimax+1,1+1,2) - x1(1+1,jjmax+1,2)
+               v2(3) = x1(iimax+1,1+1,3) - x1(1+1,jjmax+1,3)
+               !print *,'v2',v2
+               ! Determine the normal of the face by taking the cross
+               ! product of v1 and v2 and add it to norm.
+                           
+               norm(1) = v1(2)*v2(3) - v1(3)*v2(2)
+               norm(2) = v1(3)*v2(1) - v1(1)*v2(3)
+               norm(3) = v1(1)*v2(2) - v1(2)*v2(1)
+               !print *,'norm',norm
 
                ! Compute the length of the normal and test if this is
                ! larger than eps. If this is the case this means that
                ! it is a nonsingular subface and the coordinates are
                ! corrected.
-
+               
                length = sqrt(norm(1)**2 + norm(2)**2 + norm(3)**2)
-
+               
                testSingular: if(length > eps) then
+                  
+                  ! Compute the unit normal of the subface.
+                  
+                  norm(1) = norm(1)/length
+                  norm(2) = norm(2)/length
+                  norm(3) = norm(3)/length
 
-                 ! Compute the unit normal of the subface.
-
-                 norm(1) = norm(1)/length
-                 norm(2) = norm(2)/length
-                 norm(3) = norm(3)/length
-
-                 ! Add an overlap to the symmetry subface if the
-                 ! boundaries coincide with the block boundaries.
-                 ! This way the indirect halo's are treated properly.
-
-                 if(iBeg == 1)     iBeg = 0
-                 if(iEnd == iiMax) iEnd = iiMax + 1
-
-                 if(jBeg == 1)     jBeg = 0
-                 if(jEnd == jjMax) jEnd = jjMax + 1
-
-                 ! Loop over the nodes of the subface and set the
-                 ! corresponding halo coordinates.
-
-                 do j=jBeg,jEnd
-                   do i=iBeg,iEnd
-
-                     ! Determine the vector from the internal node to the
-                     ! node on the face. Again an offset of +1 must be
-                     ! used, due to the usage of pointers.
-
-                     v1(1) = x1(i+1,j+1,1) - x2(i+1,j+1,1)
-                     v1(2) = x1(i+1,j+1,2) - x2(i+1,j+1,2)
-                     v1(3) = x1(i+1,j+1,3) - x2(i+1,j+1,3)
-
-                     ! Determine two times the normal component of this
-                     ! vector; this vector must be added to the
-                     ! coordinates of the internal node to obtain the
-                     ! halo coordinates. Again the offset of +1.
-
-                     dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
-                         +      v1(3)*norm(3))
-
-                     x0(i+1,j+1,1) = x2(i+1,j+1,1) + dot*norm(1)
-                     x0(i+1,j+1,2) = x2(i+1,j+1,2) + dot*norm(2)
-                     x0(i+1,j+1,3) = x2(i+1,j+1,3) + dot*norm(3)
-
-                   enddo
-                 enddo
-
-                endif testSingular
-             endif testSymmetry
-           enddo loopBocos
-         enddo domains
-       enddo spectralLoop
+                  ! Add an overlap to the symmetry subface if the
+                  ! boundaries coincide with the block boundaries.
+                  ! This way the indirect halo's are treated properly.
+                  
+                  if(iBeg == 1)     iBeg = 0
+                  if(iEnd == iiMax) iEnd = iiMax + 1
+                  
+                  if(jBeg == 1)     jBeg = 0
+                  if(jEnd == jjMax) jEnd = jjMax + 1
+                  
+                  ! Loop over the nodes of the subface and set the
+                  ! corresponding halo coordinates.
+                  
+                  do j=jBeg,jEnd
+                     do i=iBeg,iEnd
+                        
+                        ! Determine the vector from the internal node to the
+                        ! node on the face. Again an offset of +1 must be
+                        ! used, due to the usage of pointers.
+                        
+                        v1(1) = x1(i+1,j+1,1) - x2(i+1,j+1,1)
+                        v1(2) = x1(i+1,j+1,2) - x2(i+1,j+1,2)
+                        v1(3) = x1(i+1,j+1,3) - x2(i+1,j+1,3)
+                        
+                        ! Determine two times the normal component of this
+                        ! vector; this vector must be added to the
+                        ! coordinates of the internal node to obtain the
+                        ! halo coordinates. Again the offset of +1.
+                        
+                        dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
+                             +      v1(3)*norm(3))
+                        
+                        x0(i+1,j+1,1) = x2(i+1,j+1,1) + dot*norm(1)
+                        x0(i+1,j+1,2) = x2(i+1,j+1,2) + dot*norm(2)
+                        x0(i+1,j+1,3) = x2(i+1,j+1,3) + dot*norm(3)
+                        !print *,'xhalo', x0(i+1,j+1,1) ,x2(i+1,j+1,1) , dot,norm(1),i,j,BCFaceID(mm)
+                        
+                     enddo
+                  enddo
+               endif testSingular
+            endif testSymmetry
+         enddo loopBocos
+      enddo domains
+   enddo spectralLoop
 !
 !      ******************************************************************
 !      *                                                                *
@@ -262,6 +350,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       call exchangeCoor(level)
-
-       end subroutine xhalo
+   call exchangeCoor(level)
+   
+ end subroutine xhalo

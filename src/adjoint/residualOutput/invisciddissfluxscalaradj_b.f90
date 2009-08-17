@@ -2,7 +2,8 @@
 !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
 !  
 !  Differentiation of invisciddissfluxscalaradj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: padj dwadj wadj
+!   gradient, with respect to input variables: padj radkadj radjadj
+!                dwadj wadj radiadj
 !   of linear combination of output variables: dwadj
 !
 !      ******************************************************************
@@ -15,7 +16,8 @@
 !      ******************************************************************
 !
 SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
-&  dwadjb, icell, jcell, kcell)
+&  dwadjb, radiadj, radiadjb, radjadj, radjadjb, radkadj, radkadjb, &
+&  icell, jcell, kcell)
   USE blockpointers
   USE cgnsgrid
   USE constants
@@ -83,11 +85,13 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
   INTEGER(KIND=INTTYPE) :: icell, jcell, kcell
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2), INTENT(IN) :: padj
   REAL(KIND=REALTYPE) :: padjb(-2:2, -2:2, -2:2)
+  REAL(KIND=REALTYPE) :: radiadj(-1:1, -1:1, -1:1), radiadjb(-1:1, -1:1&
+&  , -1:1), radjadj(-1:1, -1:1, -1:1), radjadjb(-1:1, -1:1, -1:1), &
+&  radkadj(-1:1, -1:1, -1:1), radkadjb(-1:1, -1:1, -1:1)
   REAL(KIND=REALTYPE) :: wadj(-2:2, -2:2, -2:2, nw), wadjb(-2:2, -2:2, -&
 &  2:2, nw)
   REAL(KIND=REALTYPE), PARAMETER :: dssmax=0.25_realType
   INTEGER :: branch
-  REAL(KIND=REALTYPE) :: dis2, dis2b, dis4, dis4b, ppor, rrad
   REAL(KIND=REALTYPE) :: ddw, ddwb, dss1, dss1b, dss2, dss2b, fs, fsb, &
 &  temp1b0, temp1b1, temp1b2, temp1b3, temp1b4, temp3b0, temp3b1, &
 &  temp3b2, temp3b3, temp3b4, temp5b0, temp5b1, temp5b2, temp5b3, &
@@ -95,6 +99,7 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
   REAL(KIND=REALTYPE) :: fact
   INTEGER(KIND=INTTYPE) :: i, ind, j, k
   INTEGER(KIND=INTTYPE) :: ii, jj, kk
+  REAL(KIND=REALTYPE) :: dis2, dis2b, dis4, dis4b, ppor, rrad, rradb
   REAL(KIND=REALTYPE) :: fis2, fis4, sfil
   REAL(KIND=REALTYPE) :: rhoi, sslim, temp, temp0, temp0b0, temp1, &
 &  temp1b5, temp2, temp2b0, temp3, temp3b5, temp4, temp4b0, tempb
@@ -136,7 +141,10 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
 ! be computed.
   IF (rfil .EQ. zero) THEN
     padjb(-2:2, -2:2, -2:2) = 0.0
+    radkadjb(-1:1, -1:1, -1:1) = 0.0
+    radjadjb(-1:1, -1:1, -1:1) = 0.0
     wadjb(-2:2, -2:2, -2:2, 1:nw) = 0.0
+    radiadjb(-1:1, -1:1, -1:1) = 0.0
   ELSE
 !!$           ! Viscous case. Pressure switch is based on the entropy.
 !!$           ! Also set the value of sslim. To be fully consistent this
@@ -330,6 +338,7 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         dss2 = -x2
         CALL PUSHINTEGER4(0)
       END IF
+      CALL PUSHREAL8(ppor)
 !print *,'dss2',dss2
 ! Compute the dissipation coefficients for this face.
       ppor = zero
@@ -340,7 +349,8 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         CALL PUSHINTEGER4(0)
       END IF
       CALL PUSHREAL8(rrad)
-      rrad = ppor*(radi(i, j, k)+radi(i+1, j, k))
+!rrad = ppor*(radI(i,j,k) + radI(i+1,j,k))
+      rrad = ppor*(radiadj(ii, 0, 0)+radiadj(ii+1, 0, 0))
       IF (dss1 .LT. dss2) THEN
         y1 = dss2
         CALL PUSHINTEGER4(1)
@@ -349,13 +359,16 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         CALL PUSHINTEGER4(0)
       END IF
       IF (dssmax .GT. y1) THEN
+        CALL PUSHREAL8(min1)
         min1 = y1
         CALL PUSHINTEGER4(0)
       ELSE
+        CALL PUSHREAL8(min1)
         min1 = dssmax
         CALL PUSHINTEGER4(1)
       END IF
       CALL PUSHREAL8(dis2)
+!print *,'radI',radIAdj(ii,0,0),radI(icell+ii,jcell,kcell),icell,jcell,kcell,radIAdj(ii+1,0,0),radI(icell+ii+1,jcell,kcell)
       dis2 = fis2*rrad*min1
 !dis4 = dim(fis4*rrad, dis2)
       IF (fis4*rrad - dis2 .GT. 0.0) THEN
@@ -438,6 +451,7 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         dss2 = -x4
         CALL PUSHINTEGER4(0)
       END IF
+      CALL PUSHREAL8(ppor)
 ! Compute the dissipation coefficients for this face.
       ppor = zero
       IF (porj(i, j, k) .EQ. normalflux) THEN
@@ -447,7 +461,8 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         CALL PUSHINTEGER4(0)
       END IF
       CALL PUSHREAL8(rrad)
-      rrad = ppor*(radj(i, j, k)+radj(i, j+1, k))
+!rrad = ppor*(radJ(i,j,k) + radJ(i,j+1,k))
+      rrad = ppor*(radjadj(0, jj, 0)+radjadj(0, jj+1, 0))
       IF (dss1 .LT. dss2) THEN
         y2 = dss2
         CALL PUSHINTEGER4(1)
@@ -456,9 +471,11 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         CALL PUSHINTEGER4(0)
       END IF
       IF (dssmax .GT. y2) THEN
+        CALL PUSHREAL8(min2)
         min2 = y2
         CALL PUSHINTEGER4(0)
       ELSE
+        CALL PUSHREAL8(min2)
         min2 = dssmax
         CALL PUSHINTEGER4(1)
       END IF
@@ -546,6 +563,7 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         dss2 = -x6
         CALL PUSHINTEGER4(0)
       END IF
+      CALL PUSHREAL8(ppor)
 ! Compute the dissipation coefficients for this face.
       ppor = zero
       IF (pork(i, j, k) .EQ. normalflux) THEN
@@ -555,7 +573,8 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         CALL PUSHINTEGER4(0)
       END IF
       CALL PUSHREAL8(rrad)
-      rrad = ppor*(radk(i, j, k)+radk(i, j, k+1))
+!rrad = ppor*(radK(i,j,k) + radK(i,j,k+1))
+      rrad = ppor*(radkadj(0, 0, kk)+radkadj(0, 0, kk+1))
       IF (dss1 .LT. dss2) THEN
         y3 = dss2
         CALL PUSHINTEGER4(1)
@@ -564,9 +583,11 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         CALL PUSHINTEGER4(0)
       END IF
       IF (dssmax .GT. y3) THEN
+        CALL PUSHREAL8(min3)
         min3 = y3
         CALL PUSHINTEGER4(0)
       ELSE
+        CALL PUSHREAL8(min3)
         min3 = dssmax
         CALL PUSHINTEGER4(1)
       END IF
@@ -614,6 +635,7 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       CALL PUSHREAL8(fact)
       fact = -one
     END DO
+    radkadjb(-1:1, -1:1, -1:1) = 0.0
     wadjb(-2:2, -2:2, -2:2, 1:nw) = 0.0
     ssb(-2:2, -2:2, -2:2) = 0.0
     DO kk=0,-1,-1
@@ -676,16 +698,21 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
         CALL POPREAL8(dis4)
+        rradb = 0.0
       ELSE
         CALL POPREAL8(dis4)
+        rradb = fis4*dis4b
         dis2b = dis2b - dis4b
       END IF
       CALL POPREAL8(dis2)
+      rradb = rradb + fis2*min3*dis2b
       min3b = fis2*rrad*dis2b
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
+        CALL POPREAL8(min3)
         y3b = min3b
       ELSE
+        CALL POPREAL8(min3)
         y3b = 0.0
       END IF
       CALL POPINTEGER4(branch)
@@ -697,7 +724,10 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         dss1b = 0.0
       END IF
       CALL POPREAL8(rrad)
+      radkadjb(0, 0, kk) = radkadjb(0, 0, kk) + ppor*rradb
+      radkadjb(0, 0, kk+1) = radkadjb(0, 0, kk+1) + ppor*rradb
       CALL POPINTEGER4(branch)
+      CALL POPREAL8(ppor)
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
         x6b = -dss2b
@@ -725,6 +755,7 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       ssb(0, 0, kk) = ssb(0, 0, kk) + two*temp3b5 - two*temp4b
       ssb(0, 0, kk-1) = ssb(0, 0, kk-1) + temp3b5 + temp4b
     END DO
+    radjadjb(-1:1, -1:1, -1:1) = 0.0
     DO jj=0,-1,-1
       CALL POPREAL8(fact)
       fsb = fact*dwadjb(irhoe)
@@ -785,16 +816,21 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
         CALL POPREAL8(dis4)
+        rradb = 0.0
       ELSE
         CALL POPREAL8(dis4)
+        rradb = fis4*dis4b
         dis2b = dis2b - dis4b
       END IF
       CALL POPREAL8(dis2)
+      rradb = rradb + fis2*min2*dis2b
       min2b = fis2*rrad*dis2b
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
+        CALL POPREAL8(min2)
         y2b = min2b
       ELSE
+        CALL POPREAL8(min2)
         y2b = 0.0
       END IF
       CALL POPINTEGER4(branch)
@@ -806,7 +842,10 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         dss1b = 0.0
       END IF
       CALL POPREAL8(rrad)
+      radjadjb(0, jj, 0) = radjadjb(0, jj, 0) + ppor*rradb
+      radjadjb(0, jj+1, 0) = radjadjb(0, jj+1, 0) + ppor*rradb
       CALL POPINTEGER4(branch)
+      CALL POPREAL8(ppor)
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
         x4b = -dss2b
@@ -834,6 +873,7 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       ssb(0, jj, 0) = ssb(0, jj, 0) + two*temp1b5 - two*temp2b
       ssb(0, jj-1, 0) = ssb(0, jj-1, 0) + temp1b5 + temp2b
     END DO
+    radiadjb(-1:1, -1:1, -1:1) = 0.0
     DO ii=0,-1,-1
       CALL POPREAL8(fact)
       fsb = fact*dwadjb(irhoe)
@@ -894,16 +934,21 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
         CALL POPREAL8(dis4)
+        rradb = 0.0
       ELSE
         CALL POPREAL8(dis4)
+        rradb = fis4*dis4b
         dis2b = dis2b - dis4b
       END IF
       CALL POPREAL8(dis2)
+      rradb = rradb + fis2*min1*dis2b
       min1b = fis2*rrad*dis2b
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
+        CALL POPREAL8(min1)
         y1b = min1b
       ELSE
+        CALL POPREAL8(min1)
         y1b = 0.0
       END IF
       CALL POPINTEGER4(branch)
@@ -915,7 +960,10 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         dss1b = 0.0
       END IF
       CALL POPREAL8(rrad)
+      radiadjb(ii, 0, 0) = radiadjb(ii, 0, 0) + ppor*rradb
+      radiadjb(ii+1, 0, 0) = radiadjb(ii+1, 0, 0) + ppor*rradb
       CALL POPINTEGER4(branch)
+      CALL POPREAL8(ppor)
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
         x2b = -dss2b
