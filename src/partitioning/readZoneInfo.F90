@@ -164,7 +164,7 @@
 
          nn = cgnsNFamilies
 	
-	!print *,'family name ',familyName, sortedFamName(1:nn)
+         !print *,'family name ',familyName, sortedFamName(1:nn)
 	
          ii = bsearchStrings(familyName, sortedFamName, nn)
          if(ii == 0) then

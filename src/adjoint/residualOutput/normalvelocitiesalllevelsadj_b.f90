@@ -517,19 +517,29 @@ bocoloop:DO mm=1,nbocos
           DO jj=ad_from,jen
             ad_from0 = ist
             DO ii=ad_from0,ien
-              CALL PUSHREAL8(weight)
 !do j=jcBeg, jcEnd
 !  do i=icBeg, icEnd
 ! Compute the inverse of the length of the normal
 ! vector and possibly correct for inward pointing.
-              weight = SQRT(ss(ii, jj, 1)**2 + ss(ii, jj, 2)**2 + ss(ii&
-&                , jj, 3)**2)
-              IF (weight .GT. zero) THEN
+              IF (ss(ii, jj, 1) .GT. zero .OR. ss(ii, jj, 2) .GT. zero &
+&                  .OR. ss(ii, jj, 3) .GT. zero) THEN
                 CALL PUSHREAL8(weight)
+                weight = SQRT(ss(ii, jj, 1)**2 + ss(ii, jj, 2)**2 + ss(&
+&                  ii, jj, 3)**2)
+                CALL PUSHREAL8(weight)
+!if(weight > zero) weight = mult/weight
                 weight = mult/weight
+! Compute the normal velocity based on the outward
+! pointing unit normal.
+!BCData(mm)%rFace(i,j) = weight*sFace(i,j)
+!!$                     if (abs(BCData(mm)%rFace(l+ii,m+jj)-rFaceAdj(mm,ii,jj))>1e-16)then
+!!$                        print *,'indices',mm,ii,jj,l,m
+!!$                        print *,'rface',BCData(mm)%rFace(l+ii,m+jj),rFaceAdj(mm,ii,jj),BCData(mm)%rFace(l+ii,m+jj)-rFaceAdj(mm
+!,ii,jj)
+!!$                     endif
                 CALL PUSHINTEGER4(1)
               ELSE
-                CALL PUSHINTEGER4(0)
+                CALL PUSHINTEGER4(2)
               END IF
             END DO
             CALL PUSHINTEGER4(ii - 1)
@@ -558,21 +568,23 @@ bocoloop:DO mm=1,nbocos
           CALL POPINTEGER4(ad_from0)
           CALL POPINTEGER4(ad_to0)
           DO ii=ad_to0,ad_from0,-1
-            weightb = sfaceadj(ii, jj)*rfaceadjb(mm, ii, jj)
-            sfaceadjb(ii, jj) = sfaceadjb(ii, jj) + weight*rfaceadjb(mm&
-&              , ii, jj)
-            rfaceadjb(mm, ii, jj) = 0.0
             CALL POPINTEGER4(branch)
-            IF (.NOT.branch .LT. 1) THEN
+            IF (branch .LT. 2) THEN
+              weightb = sfaceadj(ii, jj)*rfaceadjb(mm, ii, jj)
+              sfaceadjb(ii, jj) = sfaceadjb(ii, jj) + weight*rfaceadjb(&
+&                mm, ii, jj)
+              rfaceadjb(mm, ii, jj) = 0.0
               CALL POPREAL8(weight)
               weightb = -(mult*weightb/weight**2)
+              CALL POPREAL8(weight)
+              tempb = weightb/(2.0*SQRT(ss(ii, jj, 1)**2+ss(ii, jj, 2)**&
+&                2+ss(ii, jj, 3)**2))
+              ssb(ii, jj, 1) = ssb(ii, jj, 1) + 2*ss(ii, jj, 1)*tempb
+              ssb(ii, jj, 2) = ssb(ii, jj, 2) + 2*ss(ii, jj, 2)*tempb
+              ssb(ii, jj, 3) = ssb(ii, jj, 3) + 2*ss(ii, jj, 3)*tempb
+            ELSE
+              rfaceadjb(mm, ii, jj) = 0.0
             END IF
-            CALL POPREAL8(weight)
-            tempb = weightb/(2.0*SQRT(ss(ii, jj, 1)**2+ss(ii, jj, 2)**2+&
-&              ss(ii, jj, 3)**2))
-            ssb(ii, jj, 1) = ssb(ii, jj, 1) + 2*ss(ii, jj, 1)*tempb
-            ssb(ii, jj, 2) = ssb(ii, jj, 2) + 2*ss(ii, jj, 2)*tempb
-            ssb(ii, jj, 3) = ssb(ii, jj, 3) + 2*ss(ii, jj, 3)*tempb
           END DO
         END DO
         CALL POPINTEGER4(branch)

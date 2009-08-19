@@ -467,7 +467,7 @@ subroutine verifydCfdx(level)
                     dCL(nn,i,j,k,:)=dCL(nn,i,j,k,:)+& 
                          & xAdjB( i,j,k,:)
 
-
+                    write(unit,*) xAdjB( i,j,k,:)
                  enddo
               enddo
            enddo

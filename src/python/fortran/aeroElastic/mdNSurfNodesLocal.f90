@@ -48,7 +48,7 @@
 
        nNodesLoc = 0
        domains: do nn=1,nDom
-
+          !print *,'ndoms',nn
          ! Have the pointers in blockPointers point to the 1st spectral
          ! solution of this block on the finest mg level. As the number
          ! of surface nodes is the same for all spectral modes, this
@@ -59,47 +59,59 @@
          ! Loop over the number of boundary subfaces of this block.
 
          bocos: do mm=1,nBocos
+            !print *,'bocos',mm
+            !check to see whether family boundary conditions are present
+            if (cgnsDoms(nbkGlobal)%BCFamilies==.true.)then
+               !BC families are present
+               
+               ! Determine the family id of the subface and check if
+               ! it is a positive integer. In that case it belongs to
+               ! a family.
+               
+               jj = cgnsSubface(mm)
+               jj = cgnsDoms(nbkGlobal)%bocoInfo(jj)%familyID
+               
+               familyTest: if(jj > 0) then
+                  
+                  ! Determine the number of nodes in every coordinate
+                  ! direction and update mdNSurfNodesLoc.
+                  
+                  nni = inEnd(mm) - inBeg(mm) + 1
+                  nnj = jnEnd(mm) - jnBeg(mm) + 1
+                  nnk = knEnd(mm) - knBeg(mm) + 1
+                  
+                  nNodesLoc(jj) = nNodesLoc(jj) + nni*nnj*nnk
 
-           ! Determine the family id of the subface and check if
-           ! it is a positive integer. In that case it belongs to
-           ! a family.
+               else familyTest
+                  if(myID == 0)                            &
+                       call terminate("mdCreateSurfCoorList", &
+                       "Family ID 0 is only allowed when no family &
+                       &info is present in the grid")
+               endif familyTest
+            else
+               ! Subface does not belong to a family. It is possible that
+               ! no family info is present in the grid. In that case all
+               ! solid wall boundary points are accumulated.
 
-           jj = cgnsSubface(mm)
-           jj = cgnsDoms(nbkGlobal)%bocoInfo(jj)%familyID
-
-           familyTest: if(jj > 0) then
-
-             ! Determine the number of nodes in every coordinate
-             ! direction and update mdNSurfNodesLoc.
-
-             nni = inEnd(mm) - inBeg(mm) + 1
-             nnj = jnEnd(mm) - jnBeg(mm) + 1
-             nnk = knEnd(mm) - knBeg(mm) + 1
-
-             nNodesLoc(jj) = nNodesLoc(jj) + nni*nnj*nnk
-
-           else familyTest
-
-             ! Subface does not belong to a family. It is possible that
-             ! no family info is present in the grid. In that case all
-             ! solid wall boundary points are accumulated.
-
-             if(cgnsNfamilies == 0 .and.            &
-                (BCType(mm) == EulerWall       .or. &
+               if((BCType(mm) == EulerWall       .or. &
                  BCType(mm) == NSWallAdiabatic .or. &
-                 BCType(mm) == NSWallIsothermal)) then
+                 BCType(mm) == NSWallIsothermal)) then          
+!!$               if(cgnsNfamilies == 0 .and.            &
+!!$                (BCType(mm) == EulerWall       .or. &
+!!$                 BCType(mm) == NSWallAdiabatic .or. &
+!!$                 BCType(mm) == NSWallIsothermal)) then
 
-                nni = inEnd(mm) - inBeg(mm) + 1
-                nnj = jnEnd(mm) - jnBeg(mm) + 1
-                nnk = knEnd(mm) - knBeg(mm) + 1
-                
-                nNodesLoc(1) = nNodesLoc(1) + nni*nnj*nnk
+                  nni = inEnd(mm) - inBeg(mm) + 1
+                  nnj = jnEnd(mm) - jnBeg(mm) + 1
+                  nnk = knEnd(mm) - knBeg(mm) + 1
+                  
+                  nNodesLoc(1) = nNodesLoc(1) + nni*nnj*nnk
+                  
+               endif
 
-             endif
-
-           endif familyTest
+            endif
          enddo bocos
-       enddo domains
+      enddo domains
 
        ! Gather the number of surface nodes on all processors.
 
@@ -125,7 +137,7 @@
        ! different families.
 
        do nn=1,size
-          print *,'size',nn,size,nNodesLoc(nn)
+          !print *,'size',nn,size,nNodesLoc(nn)
           mdNSurfNodesLocal(nn) =  nNodesLoc(nn)
 !!$          if (nn==1) then
 !!$             mdNSurfNodesLocal(2,nn) =  0

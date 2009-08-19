@@ -63,12 +63,13 @@
       use ADjointVars
       use ADjointPETSc    !petsc_comm_world,petsc_rank
       use communication   ! myID, nProc
+      use cgnsGrid        ! cgnsNFamilies
       use iteration       ! groundLevel
       implicit none
 !
 !     Local variables.
 !
-      integer(kind=intType) :: level, sps ,ierr
+      integer(kind=intType) :: level, sps ,ierr,famID
       integer(kind=intType) :: costFunction
 
       real(kind=realType)   :: CL, CD, Cfx,Cfy,Cfz, CMx, CMy, CMz
@@ -150,8 +151,14 @@
       call createPETScVars
 
       !initializeWarping
-      call initializeWarping
- 
+      !begin execution
+      if(cgnsNfamilies > 0) then
+         famID = 1
+      else
+         famID = 0
+      endif
+      call initializeWarping(famID)
+
       ! Perform some verifications if in DEBUG mode.
       !moved after PETSc initialization because PETsc now included in debugging...
 	 
@@ -167,7 +174,7 @@
         ! Verify the node-based ADjoint residual routine.
 
 !	call verifydRdW(level,sps)
-!	call verifydRdWFile(level,sps)
+      !call verifydRdWFile(level,sps)
 !        call verifydRdwFileFD(level)
 !      call verifydRdxFile(level)
 !      call verifydRdxsFile
@@ -190,10 +197,11 @@
 	! Verify the force derivatives
 
 	
- 	!call verifydCfdx(level)
+       ! call verifydCfdx(level)
+
 !stop
 	! Verify the force derivatives
-!	call verifydCfdwfile(level)	
+	!call verifydCfdwfile(level)	
 !        call verifydCfdw(level)
 !stop
         !return

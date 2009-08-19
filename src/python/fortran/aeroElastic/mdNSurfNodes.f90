@@ -59,44 +59,58 @@
 
          bocos: do mm=1,nBocos
 
-           ! Determine the family id of the subface and check if
-           ! it is a positive integer. In that case it belongs to
-           ! a family.
+            !check to see whether family boundary conditions are present
+            if (cgnsDoms(nbkGlobal)%BCFamilies==.true.)then
+               !BC families are present
 
-           jj = cgnsSubface(mm)
-           jj = cgnsDoms(nbkGlobal)%bocoInfo(jj)%familyID
+               ! Determine the family id of the subface and check if
+               ! it is a positive integer. In that case it belongs to
+               ! a family.
+               
+               jj = cgnsSubface(mm)
+               jj = cgnsDoms(nbkGlobal)%bocoInfo(jj)%familyID
+               !print *,'familyID',jj,mm
+               familyTest: if(jj > 0) then
+                  
+                  ! Determine the number of nodes in every coordinate
+                  ! direction and update mdNSurfNodesLoc.
+                  
+                  nni = inEnd(mm) - inBeg(mm) + 1
+                  nnj = jnEnd(mm) - jnBeg(mm) + 1
+                  nnk = knEnd(mm) - knBeg(mm) + 1
+                  
+                  nNodesLoc(jj) = nNodesLoc(jj) + nni*nnj*nnk
+                  !print *,'familyNodes',nNodesLoc(jj)
+               else familyTest
+                  if(myID == 0)                            &
+                       call terminate("mdCreateSurfCoorListLocal", &
+                       "Family ID 0 is only allowed when no family &
+                       &info is present in the grid")
+               endif familyTest
+            else 
+               !no BC Families present, use the BCTypes to determine surface
 
-           familyTest: if(jj > 0) then
-
-             ! Determine the number of nodes in every coordinate
-             ! direction and update mdNSurfNodesLoc.
-
-             nni = inEnd(mm) - inBeg(mm) + 1
-             nnj = jnEnd(mm) - jnBeg(mm) + 1
-             nnk = knEnd(mm) - knBeg(mm) + 1
-
-             nNodesLoc(jj) = nNodesLoc(jj) + nni*nnj*nnk
-
-           else familyTest
-
-             ! Subface does not belong to a family. It is possible that
-             ! no family info is present in the grid. In that case all
-             ! solid wall boundary points are accumulated.
-
-             if(cgnsNfamilies == 0 .and.            &
-                (BCType(mm) == EulerWall       .or. &
+               ! Subface does not belong to a family. It is possible that
+               ! no family info is present in the grid. In that case all
+               ! solid wall boundary points are accumulated.
+               
+             if((BCType(mm) == EulerWall       .or. &
                  BCType(mm) == NSWallAdiabatic .or. &
                  BCType(mm) == NSWallIsothermal)) then
+!!$             if(cgnsNfamilies == 0 .and.            &
+!!$                (BCType(mm) == EulerWall       .or. &
+!!$                 BCType(mm) == NSWallAdiabatic .or. &
+!!$                 BCType(mm) == NSWallIsothermal)) then
 
-               nni = inEnd(mm) - inBeg(mm) + 1
-               nnj = jnEnd(mm) - jnBeg(mm) + 1
-               nnk = knEnd(mm) - knBeg(mm) + 1
-
-               nNodesLoc(1) = nNodesLoc(1) + nni*nnj*nnk
-
+                nni = inEnd(mm) - inBeg(mm) + 1
+                nnj = jnEnd(mm) - jnBeg(mm) + 1
+                nnk = knEnd(mm) - knBeg(mm) + 1
+                
+                nNodesLoc(1) = nNodesLoc(1) + nni*nnj*nnk
+                !print *,'surfacenodes',nNodesLoc(1)
              endif
 
-           endif familyTest
+          endif
          enddo bocos
        enddo domains
 

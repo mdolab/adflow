@@ -448,7 +448,13 @@ class SUmbMesh(object):
         Initialize the required variables for the internal
         Meshwarping and derivatives
         '''
-        sumb.initializewarping()
+        if(sumb.cgnsgrid.cgnsnfamilies>0):
+            famID = 1
+        else:
+            famID = 0
+        #endif
+        
+        sumb.initializewarping(famID)
 
         self.nGlobalSurfNodes = sumb.mddata.mdnsurfnodescompact
         return
@@ -465,6 +471,7 @@ class SUmbMesh(object):
         #print 'ncoords',ncoords,xyz.shape
         #sys.exit(0)
         #sumb.updatefacesglobal(ncoords,xyz)
+        xyz = self.metricConversion*xyz
         sumb.updatefacesglobal(xyz)
     
         self._update_geom_info = True
@@ -476,7 +483,7 @@ class SUmbMesh(object):
         Get the surface coordinates for the mesh    
         """
          
-        return sumb.mddata.mdglobalsurfxx
+        return sumb.mddata.mdglobalsurfxx/self.metricConversion
 
     def warpMesh(self):
         '''
@@ -795,6 +802,7 @@ class SUmbInterface(object):
         autofile.write(  "         Reference density (in kg/m^3): 1.25\n")
         autofile.write(  "          Reference temperature (in K): 273.15\n")
         autofile.write(  " Conversion factor grid units to meter: %6.4f\n"%(kwargs['MetricConversion']))
+        self.Mesh.metricConversion = kwargs['MetricConversion']
         autofile.write( "\n")
         
         autofile.write(  "-------------------------------------------------------------------------------\n")
@@ -814,7 +822,7 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Fine Grid Discretization Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "       Discretization scheme: Upwind\n")
+        autofile.write(  "       Discretization scheme: %s\n"%(kwargs['Discretization']))
         autofile.write(  "             # Possibilities: Central plus scalar dissipation\n")
         autofile.write(  "             #              : Central plus matrix dissipation\n")
         autofile.write(  "             #              : Central plus CUSP dissipation\n")

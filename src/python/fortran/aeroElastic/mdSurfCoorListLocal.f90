@@ -55,18 +55,18 @@
 !
        ! Perform a check to see if this routine is called correctly.
        ! If not, terminate the program.
-
-       if(famID == 0 .and. cgnsNfamilies > 0) then
-         if(myID == 0)                            &
-           call terminate("mdCreateSurfCoorList", &
-                          "Family ID 0 is only allowed when no family &
-                          &info is present in the grid")
-         call mpi_barrier(SUmb_comm_world, ierr)
-       endif
+!!$       print *,'ncgnsfamilies',cgnsNfamilies
+!!$       if(famID == 0 .and. cgnsNfamilies > 0) then
+!!$         if(myID == 0)                            &
+!!$           call terminate("mdCreateSurfCoorListLocal", &
+!!$                          "Family ID 0 is only allowed when no family &
+!!$                          &info is present in the grid")
+!!$         call mpi_barrier(SUmb_comm_world, ierr)
+!!$       endif
 
        ! Determine the number of surface nodes per family if this
        ! information is not available.
-
+       print *,'creating Nsurfnodes local'
        if(.not. allocated(mdNSurfNodesLocal)) call mdCreateNSurfNodesLocal
 
        ! Allocate the memory for the local surface coordinates.
@@ -74,7 +74,7 @@
 
        modFamID = max(famID, 1_intType)
        nSurfNodesLoc = mdNSurfNodesLocal(modFamID) 
-
+       print *,'allocating xxloc',nsurfnodesloc
        allocate(xxLoc(3,nSurfNodesLoc), stat=ierr)
        if(ierr /= 0)                                &
          call terminate("mdCreateSurfCoorList", &
@@ -97,24 +97,27 @@
            ! Check if the data of this subface must be stored.
 
            storeSubface = .false.
+           !check to see whether family boundary conditions are present
+           if (cgnsDoms(nbkGlobal)%BCFamilies==.true.)then
+              !BC families are present
 
-           if(famID == 0) then
-
-             ! No family info present; all solid wall points are stored.
-
-             if(BCType(mm) == EulerWall       .or. &
-                BCType(mm) == NSWallAdiabatic .or. &
-                BCType(mm) == NSWallIsothermal) storeSubface = .true.
+              ! Family info is present. Check if this subface belongs
+              ! to the given familyID.
+              
+              jj = cgnsSubface(mm)
+              jj = cgnsDoms(nbkGlobal)%bocoInfo(jj)%familyID
+              if(jj == famID) storeSubface = .true.
 
            else
-
-             ! Family info is present. Check if this subface belongs
-             ! to the given familyID.
-
-             jj = cgnsSubface(mm)
-             jj = cgnsDoms(nbkGlobal)%bocoInfo(jj)%familyID
-             if(jj == famID) storeSubface = .true.
-
+              
+              !if(famID == 0) then
+                 
+              ! No family info present; all solid wall points are stored.
+              
+              if(BCType(mm) == EulerWall       .or. &
+                   BCType(mm) == NSWallAdiabatic .or. &
+                   BCType(mm) == NSWallIsothermal) storeSubface = .true.
+                            
            endif
 
            ! Store the data of this subface, if needed.

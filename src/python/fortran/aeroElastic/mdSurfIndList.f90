@@ -56,13 +56,13 @@
        ! Perform a check to see if this routine is called correctly.
        ! If not, terminate the program.
 
-       if(famID == 0 .and. cgnsNfamilies > 0) then
-         if(myID == 0)                           &
-           call terminate("mdCreateSurfIndList", &
-                          "Family ID 0 is only allowed when no family &
-                          &info is present in the grid")
-         call mpi_barrier(SUmb_comm_world, ierr)
-       endif
+!!$       if(famID == 0 .and. cgnsNfamilies > 0) then
+!!$         if(myID == 0)                           &
+!!$           call terminate("mdCreateSurfIndList", &
+!!$                          "Family ID 0 is only allowed when no family &
+!!$                          &info is present in the grid")
+!!$         call mpi_barrier(SUmb_comm_world, ierr)
+!!$       endif
 
        ! Determine the number of surface nodes per family if this
        ! information is not available.
@@ -103,7 +103,19 @@
 
            storeSubface = .false.
 
-           if(famID == 0) then
+           !check to see whether family boundary conditions are present
+           if (cgnsDoms(nbkGlobal)%BCFamilies==.true.)then
+              !BC families are present
+              
+              ! Family info is present. Check if this subface belongs
+              ! to the given familyID.
+              
+              jj = cgnsSubface(mm)
+              jj = cgnsDoms(nbkGlobal)%bocoInfo(jj)%familyID
+              if(jj == famID) storeSubface = .true.
+           else
+              
+              !if(famID == 0) then
 
              ! No family info present; all solid wall points are stored.
 
@@ -111,16 +123,7 @@
                 BCType(mm) == NSWallAdiabatic .or. &
                 BCType(mm) == NSWallIsothermal) storeSubface = .true.
 
-           else
-
-             ! Family info is present. Check if this subface belongs
-             ! to the given familyID.
-
-             jj = cgnsSubface(mm)
-             jj = cgnsDoms(nbkGlobal)%bocoInfo(jj)%familyID
-             if(jj == famID) storeSubface = .true.
-
-           endif
+          end if
 
            ! Store the data of this subface, if needed.
 
