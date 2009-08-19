@@ -344,6 +344,8 @@
 !!$                                          write(unitdrdx,13) idxnode,idxres,l,i,j,k,nn,m,kcell,jcell,icell,xAdjb(ii,jj,kk,l),xAdj(ii,jj,kk,l)!idxnode,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value
 !!$                                          !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
 !!$13                                        format(1x,'drdx',11I8,2f18.10)
+!!$                                             print 14,idxnode,idxres,l,i,j,k,nn,m,kcell,jcell,icell,xAdjb(ii,jj,kk,l)
+!!$14                                           format(1x,'drdx',11I8,f18.10)
                                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
                                                   xAdjb(ii,jj,kk,l), ADD_VALUES, PETScIerr)
                                              if( PETScIerr/=0 ) &
@@ -479,8 +481,8 @@
                                     idxres = globalCell(i,j,k)*nw+n
                                     if ((idxres-1)>=0 .and. (idxnode-1)>=0)then
                                        call MatGetValues(drdxfd,1,idxres-1,1,idxnode-1,value,PETScIerr)
-                                       !if(value.ne.0)then
-                                       if(value>1e-10)then
+                                       if(value.ne.0)then
+                                       !if(abs(value)>1e-10)then
                                           !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
                                           !12                                     format(1x,'Face',6I2,'edge',12I2)
                                           write(unitdrdx,13) idxnode,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value

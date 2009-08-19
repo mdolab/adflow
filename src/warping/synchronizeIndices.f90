@@ -32,7 +32,7 @@ call mdCreateSurfIndList(famID,startInd,endInd)
 
 print *,'creating local list'
 call mdCreateSurfIndListLocal(famID,startInd,endInd)
-print *,'local indices',mdNSurfNodesLocal,'global',mdNSurfNodes!(nn)
+!print *,'local indices',mdNSurfNodesLocal,'global',mdNSurfNodes!(nn)
 
 !temporarily reset the coordinates to accomodate the surface synch
 !set x to -5

@@ -507,6 +507,11 @@
 
          real(kind=realType), dimension(3) :: rotCenter, rotRate
 
+         
+         ! Whether or not a the BCs in this zone have families.
+
+         logical :: BCFamilies
+
        end type cgnsBlockInfoType
 !
 !      ******************************************************************

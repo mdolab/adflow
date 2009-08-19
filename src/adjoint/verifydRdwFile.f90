@@ -90,6 +90,9 @@
       REAL(KIND=REALTYPE), DIMENSION(3):: rotrateadj
       REAL(KIND=REALTYPE) :: rotrateadjb(3)
 
+      REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3), xblockcorneradjb(2&
+           &  , 2, 2, 3)
+
       integer :: ierr
       logical :: fineGrid, correctForK, exchangeTurb,secondHalo
       REAL(KIND=REALTYPE) ::value
@@ -264,10 +267,11 @@
             do kCell = 2, kl
                do jCell = 2, jl
                   do iCell = 2, il
- !                    print *,'indices',icell,jcell,kcell
+                     print *,'indices',icell,jcell,kcell
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
-                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+                     call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
+                          betaAdj,MachAdj,&
                           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
@@ -296,12 +300,13 @@
                 !                     dW(iCell+ii,jCell+jj,kCell+kk,n)
 
                         ! Call reverse mode of residual computation
-                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                             &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                             &  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-                             &  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-                             &  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-                             &  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+                             &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+                             &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+                             &  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+                             &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+                             &  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+                             &  liftindex)
                         
                         ! Store the block Jacobians (by rows).
                         !                       print *,'entering storage loop'

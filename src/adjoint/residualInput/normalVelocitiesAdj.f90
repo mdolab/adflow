@@ -249,20 +249,24 @@
 
                      ! Compute the inverse of the length of the normal
                      ! vector and possibly correct for inward pointing.
-
-                     weight = sqrt(ss(ii,jj,1)**2 + ss(ii,jj,2)**2 &
-                            +      ss(ii,jj,3)**2)
-                     if(weight > zero) weight = mult/weight
-
-                     ! Compute the normal velocity based on the outward
-                     ! pointing unit normal.
-
-                     !BCData(mm)%rFace(i,j) = weight*sFace(i,j)
-                     rFaceAdj(mm,ii,jj) = weight*sFaceAdj(ii,jj)
+                       if( ss(ii,jj,1)>zero .or. ss(ii,jj,2)>zero&
+                            .or. ss(ii,jj,3)>zero)then
+                          weight = sqrt(ss(ii,jj,1)**2 + ss(ii,jj,2)**2 &
+                               +      ss(ii,jj,3)**2)
+                          !if(weight > zero) weight = mult/weight
+                          weight = mult/weight
+                          ! Compute the normal velocity based on the outward
+                          ! pointing unit normal.
+                          
+                          !BCData(mm)%rFace(i,j) = weight*sFace(i,j)
+                          rFaceAdj(mm,ii,jj) = weight*sFaceAdj(ii,jj)
 !!$                     if (abs(BCData(mm)%rFace(l+ii,m+jj)-rFaceAdj(mm,ii,jj))>1e-16)then
 !!$                        print *,'indices',mm,ii,jj,l,m
 !!$                        print *,'rface',BCData(mm)%rFace(l+ii,m+jj),rFaceAdj(mm,ii,jj),BCData(mm)%rFace(l+ii,m+jj)-rFaceAdj(mm,ii,jj)
 !!$                     endif
+                       else
+                          rFaceAdj(mm,ii,jj)= zero
+                       endif
 
                    enddo
                  enddo

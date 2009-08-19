@@ -107,6 +107,7 @@
                              cgnsDoms(nZone)%bocoInfo(i)%normalListFlag, &
                              cgnsDoms(nZone)%bocoInfo(i)%normalDataType, &
                              cgnsNDataSet, ierr)
+
          if(ierr /= all_ok)            &
            call terminate("readBocos", &
                           "Something wrong when calling cg_boco_info_f")
@@ -237,7 +238,9 @@
              case (FamilySpecified)
 
                ! Boundary condition is specified per family.
-
+                !added to accomodate case where a grid family is specified
+                ! but BC's are specified in standard CGNS Format
+                cgnsDoms(nZone)%BCFamilies = .True.
                ! Find out the family name to which this boundary
                ! face belongs.
 
@@ -375,6 +378,10 @@
                  if(myID == 0) call terminate("readBocos", errorMessage)
                  call mpi_barrier(SUmb_comm_world, ierr)
                endif
+               
+               !added to accomodate case where a grid family is specified
+               ! but BC's are specified in standard CGNS Format
+                cgnsDoms(nZone)%BCFamilies = .False.
 
            end select
 

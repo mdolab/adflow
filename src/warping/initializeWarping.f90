@@ -6,7 +6,7 @@
 ! *  Modified: 12-12-2008
 ! ***********************************
 
-subroutine initializeWarping
+subroutine initializeWarping(famID)
 
 use blockPointers
 use communication
@@ -16,27 +16,25 @@ use mdDataLocal
 use mdData
 implicit none
 
-
+!subroutine Arguments
+integer(kind=intType)::famid
 ! Local Arguments
 
-integer(kind=intType)::sps = 1,famid = 0,startind,endInd,level=1
+integer(kind=intType)::sps = 1,startind,endInd,level=1
 
-
-
-
-!begin execution
+print *,'in initializewarping...'
 
 !Call old indexing and coordinate functions to populate
 !Baseline datastructures in mdData and mdDataLocal
 call mdCreateSurfCoorListLocal(sps,famid,startInd,endInd)
-
+!print *,'famID, ind.',famID
 call mdCreateSurfIndListLocal(famID,startInd,endInd)
-
+!print *,'local indices created'
 call mdCreateNsurfNodes
-
+!print *,'nsurface nodes complete'
 !Run the index synchronization and reduction
 call synchronizeIndices
-
+!print *,'synchronize indices complete'
 !Create the reduced surface coordinate list for python interface
 call mdCreateGlobalReducedSurfaceList
 
@@ -54,7 +52,7 @@ call warpingInitializePETSc
 
 call createWarpingPETScMat
 
-
+!print *,'indices',mdSurfGlobalIndLocal,'xx',mdGlobalSurfxx
 end subroutine initializeWarping
 
 
