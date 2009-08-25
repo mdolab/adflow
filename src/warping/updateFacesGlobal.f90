@@ -40,9 +40,13 @@ subroutine updateFacesGlobal(ncoords,xyz_new)
         if (int(mdSurfGlobalIndLocal(5,j))==i-1)then
            do k = 1,3
               call setPointers(mdSurfGlobalIndLocal(4,j),level,sps)
-              !print *,'xyzold',x(mdSurfGlobalIndLocal(1,j),mdSurfGlobalIndLocal(2,j),mdSurfGlobalIndLocal(3,j),k)
+              !if( mdSurfGlobalIndLocal(4,j)==11)then
+              !   print *,'xyzold',x(mdSurfGlobalIndLocal(1,j),mdSurfGlobalIndLocal(2,j),mdSurfGlobalIndLocal(3,j),k),mdSurfGlobalIndLocal(1,j),mdSurfGlobalIndLocal(2,j),mdSurfGlobalIndLocal(3,j)
+              !end if
               x(mdSurfGlobalIndLocal(1,j),mdSurfGlobalIndLocal(2,j),mdSurfGlobalIndLocal(3,j),k) = xyz_new(k,i)
-              !print *,'xyznew',xyz_new(k,i)
+              !if( mdSurfGlobalIndLocal(4,j)==11)then
+              !   print *,'xyznew',xyz_new(k,i)
+              !endif
            end do
            
         endif

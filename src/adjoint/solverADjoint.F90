@@ -161,7 +161,7 @@
 
       ! Perform some verifications if in DEBUG mode.
       !moved after PETSc initialization because PETsc now included in debugging...
-	 
+return	 
       !if( debug ) then
 
         ! Verify the node-based residual routine.

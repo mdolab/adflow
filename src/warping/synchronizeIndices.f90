@@ -21,7 +21,7 @@ implicit none
 
 !Local Variables
 integer(kind=intType) :: startInd, endInd,famID
-integer(kind=intType)::level=1,sps=1,nn,mm,i,j,k
+integer(kind=intType)::level=1,sps=1,nn,mm,i,j,k,ierr
 
 
 !Begin Execution
@@ -38,9 +38,10 @@ call mdCreateSurfIndListLocal(famID,startInd,endInd)
 !set x to -5
 do nn=1,nDom
    call setPointers(nn,level,sps)
-   x(:,:,:,:) = -5
+   x(:,:,:,1) = -5
 enddo
 
+print *,'setting index in x temporarily'
 !set global index in corresponding x location.
 !loop over domains
 do nn = 1,nDom
@@ -55,6 +56,11 @@ do nn = 1,nDom
    end do
 end do
 !stop
+
+call mpi_barrier(sumb_comm_world, ierr)
+
+if(myID==0)print *,'synchronizing Surface indices'
+
 !run syncronize faces
 !what about duplicate nodes at split surface boundaries? Use sychronization to set common nodes to the lower of the two index values.
 call synchronizeSurfaceIndices(level,sps)
@@ -76,6 +82,9 @@ do nn=1,nDom
    DO I=1,il!IMAX
       DO J=1,jl!JMAX
          DO K=1,kl!KMAX
+!!$            if (nn==11)then
+!!$               print *,'x',x(i,j,k,:),'xinit',xinit(i,j,k,:)
+!!$            endif
             X(I,J,K,1) = Xinit(I,J,K,1)
             X(I,J,K,2) = Xinit(I,J,K,2)
             X(I,J,K,3) = Xinit(I,J,K,3)

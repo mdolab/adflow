@@ -213,14 +213,15 @@ subroutine synchronizeBlockFaces(level,sps)
 !!$                    do m =jmin,jmax+meshblocks(i)%incrementJ(j),meshblocks(i)%incrementJ(j)
 !!$                       do n=kmin,kmax+meshblocks(i)%incrementK(j),meshblocks(i)%incrementK(j)
                           !#Set the counter step based on the coordinate transformation for the face
-                          step(1) = (abs(l-inmin))
+                          !switch l1() location!,...
+                          step(abs(l1(j))) = (abs(l-inmin))
                           step(2) = (abs(m-jnmin))
                           step(3) = (abs(n-knmin))
                           !print *,'step',step(:),l,m,n
                           !print *,'di',meshblocks(i)%dibeg(j),meshblocks(i)%djbeg(j),meshblocks(i)%dkbeg(j)
                           !print *,'increment',meshblocks(i)%incrementdI(j),meshblocks(i)%incrementdJ(j),meshblocks(i)%incrementdK(j)
                           !print *,'abs(meshblocks(i)%l1(j))-1',abs(meshblocks(i)%l1(j)),abs(meshblocks(i)%l2(j)),abs(meshblocks(i)%l3(j))
-                          counterI =dinbeg(j)+step(abs(l1(j)))*incrementdI(j)
+                          counterI =dinbeg(j)+step(1)*incrementdI(j)
                           !print *,'counterI'
                           counterJ =djnbeg(j)+step(abs(l2(j)))*incrementdJ(j)
                           !print *,'counterJ'
@@ -287,6 +288,7 @@ subroutine synchronizeBlockFaces(level,sps)
                           !print *,'setting step',ii,jj,kk
                           
                           !#set the counter step based on the face coordinate transformation
+                          !switch l1() location
                           step(1) = (abs(ii-inmin))
                           step(2) = (abs(jj-jnmin))
                           step(3) = (abs(kk-knmin))

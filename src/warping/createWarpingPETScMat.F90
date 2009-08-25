@@ -75,7 +75,7 @@
       
 	
       nzDiagonalXs = 1
-      nzDiagonal = 13 ! 1 + 6 + 6  check!!!
+      nzDiagonal = mdNSurfNodesCompact/nproc!13 ! 1 + 6 + 6  check!!!
 
 
       ! Average number of off processor contributions per Cell
@@ -182,7 +182,7 @@
         nnzDiagonal = nzDiagonalXs
         nnzOffDiag  = nzOffDiag
 
-	print *,'petscnull',PETSC_NULL
+	!print *,'petscnull',PETSC_NULL
 
         !call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
         !                     nDimX, nDimS,                     &
@@ -196,14 +196,12 @@
         !                     0,PETSC_NULL,         &
         !                     0, PETSC_NULL,            &
         !                     dXvdXs, PETScIerr)
-	print *,'creating dxvdxs'
         call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
                              nDimX,PETSC_DECIDE,               &
 		             PETSC_DETERMINE, nDimS,           &
                              nzDiagonalXs, nnzDiagonal,         &
                              nzOffDiag, nnzOffDiag,            &
                              dXvdXs, PETScIerr)
-
 
       deallocate( nnzDiagonal, nnzOffDiag )
 
@@ -369,7 +367,7 @@
 
         nnzDiagonal = nzDiagonalXs
         nnzOffDiag  = nzOffDiag
-        print *,'petscnull 2',PETSC_NULL	
+        !print *,'petscnull 2',PETSC_NULL	
         !call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
         !                     nDimX, nDimS,                     &
         !                     PETSC_DETERMINE, PETSC_DETERMINE, &
@@ -549,7 +547,7 @@
 
         nnzDiagonal = nzDiagonalXs
         nnzOffDiag  = nzOffDiag
-        print *,'petscnull 2',PETSC_NULL	
+        !print *,'petscnull 2',PETSC_NULL	
    	call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
                              nDimX,PETSC_DECIDE,        &
 		             PETSC_DETERMINE, nDimS,                     &
@@ -728,15 +726,15 @@
         !
         ! See .../petsc/docs/manualpages/Mat/MatCreateMPIAIJ.html
 
-        nzDiagonal = nzDiagonal * nw
+        nzDiagonal = nzDiagonal * 3!nw
         nzOffDiag   = nzOffDiag   * 3
-
+        
         allocate( nnzDiagonal(nDimW), nnzOffDiag(nDimW) )
 
         nnzDiagonal = nzDiagonal
         nnzOffDiag  = nzOffDiag
 
-	print *,'petscnull',PETSC_NULL
+	!print *,'petscnull',PETSC_NULL
 
         !call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
         !                     nDimX, nDimS,                     &
@@ -750,7 +748,7 @@
         !                     0,PETSC_NULL,         &
         !                     0, PETSC_NULL,            &
         !                     dXvdXs, PETScIerr)
-	print *,'creating dxvdxs'
+	!print *,'creating dxvdxs'
         call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
                              nDimW,PETSC_DECIDE,               &
 		             PETSC_DETERMINE, nDimS,           &
