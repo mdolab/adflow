@@ -95,6 +95,9 @@ do nn=1,nDom
                mdSurfGlobalIndLocal(3,counter+1) = k
                mdSurfGlobalIndLocal(4,counter+1) = nn
                mdSurfGlobalIndLocal(5,counter+1) = X(i,j,k,1)-1
+!!$               if( nn == 11)then
+!!$                  print *,'block 11',X(i,j,k,1),i,j,k,nn
+!!$               end if
                !print *,'global index', mdSurfGlobalIndLocal(5,counter+1),counter,counter+1
                counter = counter+1
             endif
@@ -123,6 +126,9 @@ do i = 1,mdNSurfNodes(nProc,1)!maximum number of possible surface nodes??counter
    do j = 1,counter!+1
       if (int(mdSurfGlobalIndLocal(5,j))==i-1)then
          mdSurfGlobalIndLocal(5,j)=compresscounter
+!!$         if( i>25 .and. i<51)then
+!!$            print *,'compressing',i,compresscounter
+!!$         endif
          !testindices(5,j)=compresscounter
          !print *,'indices',int(mdSurfGlobalIndLocal(5,j)),compresscounter,myid,j
          !call sleep(0.2)
