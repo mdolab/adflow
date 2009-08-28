@@ -48,7 +48,7 @@ subroutine synchronizeSurfaceIndices(level,sps)
   integer(kind=intType),dimension(:),allocatable::incrementI,&
      incrementJ,incrementK,  incrementdI,&
      incrementdJ,incrementdK  
- 
+  integer(kind=inttype),dimension(1)::recvlength
 
   !************************
   ! Begin Execution
@@ -58,7 +58,7 @@ subroutine synchronizeSurfaceIndices(level,sps)
   
   notSynchronized = .True.
   count = 0
-  !if(myID==0)print *,'allocating warp_comm memory'
+!  if(myID==0)print *,'allocating warp_comm memory'
   !allocate warp_comm storage
   do i=1,nDom
      call setPointers(i,level,sps)
@@ -78,13 +78,15 @@ subroutine synchronizeSurfaceIndices(level,sps)
      do i=1,nDom
     
         call setPointers(i,level,sps)
-
+        !print *,'allocating nnodessubface',(.not. associated(nNodesSubface))
         ! Check to see if the memory is allocated to store the total number
         ! of nodes on each subface. If not, allocate.
         if(.not. associated(nNodesSubface)) then
-           allocate(nNodesSubface(nsubface), stat=ierr)
+           allocate(flowdoms(i,1,1)%nNodesSubface(nsubface), stat=ierr)
         endif
-
+        !print *,'allocated resetting pointers'
+        call setPointers(i,level,sps)
+        !print *,'nnodes subface allocated',nNodesSubface
 
         !allocate the memory for the block increments
         allocate(incrementI(nsubface),incrementJ(nsubface),incrementK(nsubface))
@@ -94,7 +96,7 @@ subroutine synchronizeSurfaceIndices(level,sps)
         ! and its donor
         call getIncrementD(nSubface)
         
-        !if(myID==0)print *,'setting subface range'
+        !if(myID==0)print *,'setting subface range',nsubface
         !Loop over the subfaces
         do j=1,nSubface
            
@@ -133,7 +135,8 @@ subroutine synchronizeSurfaceIndices(level,sps)
            else
               print *,'Error:Not a valid face type',BCFaceID(j)
            endif
-
+           !print *,'nnodes subface',nNodesSubface(j),BCFaceID(j),j,i,myID
+          
            ! Set the length for the communication buffer 3 coords + 3 indices + 1 blocknum
            length = 7*nNodesSubface(j)
            
@@ -145,19 +148,28 @@ subroutine synchronizeSurfaceIndices(level,sps)
                 allocate(warp_comm(j)%recvBuffer(length))
            if (.not. allocated(warp_comm(j)%sendBuffer)) &
                 allocate(warp_comm(j)%sendBuffer(length))
-                      
+          
            !Check for one to one matching internal faces
-           print *,'B2BCheck',b2bmatch,BCType(j),i,neighblock(j),j,BCFaceID(j)
+           !print *,'B2BCheck',b2bmatch,BCType(j),i,neighblock(j),j,BCFaceID(j)
            if(BCType(j) == B2BMatch)then
               !Check that face requires interprocessor communication
               if(neighproc(j) /= myid)then
+                 !print *,'processor check',neighproc(j) /= myid,neighproc(j), myid
+                 
+!!$                 if (myID==2 .and.i ==9)then
+!!$                    print *,'block9',length,nNodesSubface(j),flowDoms(i,1,1)%cgnsBlockID,neighproc(j),neighblock(j),1000000*neighproc(j)+1000*neighblock(j)+i,1000000*myid+1000*(i)+neighblock(j),j
+!!$                 endif
+!!$                 if (myID==3 .and.i ==4)then
+!!$                    print *,'block4',length,nNodesSubface(j),flowDoms(i,1,1)%cgnsBlockID,neighproc(j),neighblock(j),1000000*neighproc(j)+1000*neighblock(j)+i,1000000*myid+1000*(i)+neighblock(j),j,'nnodes',nNodesSubface
+!!$                 endif
                  !need communication with blocks on another processor
                           
                  !post non blocking recieves for face communicator
                 
                  !Generate a unique tag for this subface
-                 recvtag = 10000*neighproc(j)+100*neighblock(j)+i
-                 print *,'recvtag', recvtag,i
+                 !recvtag = 10000*neighproc(j)+100*neighblock(j)+i
+                 recvtag = 1000000*neighproc(j)+1000*neighblock(j)+i
+                 !print *,'recvtag', recvtag,i
                  !post the non blocking recv
                  call mpi_irecv(warp_comm(j)%recvBuffer(1), length, sumb_real,&
                       neighproc(j), recvtag, sumb_comm_world, &
@@ -188,20 +200,20 @@ subroutine synchronizeSurfaceIndices(level,sps)
                           !#set the value in the send buffer
                           warp_comm(j)%sendBuffer(counter)=x(l,m,n,1)
                           warp_comm(j)%sendBuffer(counter+1)=float(i)!flowDoms(i,1,1)%cgnsBlockID)!x(l,m,n,2)
-                          warp_comm(j)%sendBuffer(counter+2)=float(neighproc(j))!x(l,m,n,3)
-                          print *,'source',i,neighproc(j)
+                          warp_comm(j)%sendBuffer(counter+2)=float(myid)!x(l,m,n,3)
+                          !print *,'source',i,neighproc(j)
                           warp_comm(j)%sendBuffer(counter+3)=float(counterI)
                           warp_comm(j)%sendBuffer(counter+4)=float(counterJ)
                           warp_comm(j)%sendBuffer(counter+5)=float(counterK)
                           warp_comm(j)%sendBuffer(counter+6)=float(neighblock(j))!-1
-                          
+                          !print *,'length',length, counter+6
                           counter=counter+7
                        enddo
                     enddo
                  enddo
                  
                  !Post the buffer send
-                 sendtag = 10000*myid+100*(i)+neighblock(j)
+                 sendtag = 1000000*myid+1000*(i)+neighblock(j)
                 
                  call mpi_isend(warp_comm(j)%sendBuffer(1), length,sumb_real,&
                       neighproc(j),sendtag, sumb_comm_world, &
@@ -289,13 +301,13 @@ subroutine synchronizeSurfaceIndices(level,sps)
                                       ! other index will be corrected
                                       local = local
                                       !print *,'indices',i,j,neighbourindex,ii,jj,kk
-                                      print *,'iam correct',local,neighbour,ii,jj,kk,counterI,counterJ,counterK
+                                      !print *,'iam correct',local,neighbour,ii,jj,kk,counterI,counterJ,counterK
                                       notSynchronized = .True.
                                   
                                    else
                                       !neighbour block is lower
                                       !print *,'indices',i,j,neighbourindex,ii,jj,kk
-                                      print *,'neighbour correct',x(ii,jj,kk,nn),neighbour
+                                      !print *,'neighbour correct',x(ii,jj,kk,nn),neighbour
                                       x(ii,jj,kk,nn) = neighbour
                                       !print *,'neighbour correct2',x(ii,jj,kk,nn),neighbour
                                       notSynchronized = .True.
@@ -362,10 +374,16 @@ subroutine synchronizeSurfaceIndices(level,sps)
            if(BCType(m) == B2BMatch)then
               !#Check that face requires interprocessor communication
               if(neighproc(m) /= myid)then
-
+                 !print *,'processor check recieved',neighproc(m) /= myid,neighproc(m),myid
                  !#need communication with blocks on another processor   
                  length = nNodesSubface(m)
-                 
+                 !print *,'nnodes subface recieve',nNodesSubface(m)
+!!$                 if (myID==2 .and.l ==9)then
+!!$                    print *,'block9 recieved',length,nNodesSubface(m),flowDoms(l,1,1)%cgnsBlockID,neighproc(m),neighblock(m),1000000*neighproc(m)+1000*neighblock(m)+l,1000000*myid+1000*(l)+neighblock(m),m
+!!$                 endif
+!!$                 if (myID==3 .and.l ==4)then
+!!$                    print *,'block4 recieved',length,nNodesSubface(m),flowDoms(l,1,1)%cgnsBlockID,neighproc(m),neighblock(m),1000000*neighproc(m)+1000*neighblock(m)+l,1000000*myid+1000*(l)+neighblock(m),m,'nnodes',nNodesSubface
+!!$                 endif
                  do i=1,int(length)
                     index = 1+(i-1)*7
                     !if(myID==0) print *,'index',index,count
@@ -376,7 +394,17 @@ subroutine synchronizeSurfaceIndices(level,sps)
                     !(indices(:)) from the receive buffer
                     coords(:) =  warp_comm(m)%recvbuffer(index:index+2)        
                     indices(:) = int(warp_comm(m)%recvbuffer(index+3:index+5))
-                    print *,'source check',myID,neighblock(m),int(coords(2)),int(coords(3))
+!!$                    if (neighblock(m).ne.int(coords(2)))then
+!!$                       print *,'source check1',myID,l,neighblock(m),neighproc(m),int(coords(2)),int(coords(3))
+!!$                    endif
+!!$                    if (myID==3 .and.l ==58)then
+!!$                       print *,'source check2',myID,l,neighblock(m),neighproc(m),int(coords(2)),int(coords(3))
+!!$                    endif
+                    recvlength(:) = shape(warp_comm(m)%recvbuffer(:))
+!!$                    if (recvlength(1)<(length*7))then
+!!$                       print *,'length recieved',shape(warp_comm(m)%recvbuffer(:)),length,index+6,nNodesSubface(m)
+!!$                       print *,'source/dest.',myID,neighblock(m),neighproc(m),l,flowDoms(l,1,1)%cgnsBlockID
+!!$                    endif
                     !Set pointers for the given destblock
                     call setPointers(destblock,level,sps)
                     !need only the first coordinate because this 
@@ -420,12 +448,12 @@ subroutine synchronizeSurfaceIndices(level,sps)
                                 !I am the correct index
                                 ! other index will be corrected
                                 local = local
-                                print *,'mpi I am correct',int(local),int(realbuf)
+                                !print *,'mpi I am correct',int(local),int(realbuf)
                                 notSynchronized = .True.
 
                              else
                                 !neighbour block is lower
-                                print *,'mpi neighbour correct',int(x(indices(1),indices(2),indices(3),nn)),int(realbuf)
+                                !print *,'mpi neighbour correct',int(x(indices(1),indices(2),indices(3),nn)),int(realbuf)
                                 x(indices(1),indices(2),indices(3),nn) = int(realbuf)!neighbour
                                 notSynchronized = .True.
                      
