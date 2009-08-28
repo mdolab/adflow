@@ -79,9 +79,9 @@
        !velzGrid = zero
 
        aInf = sqrt(gammaInf*pInf/rhoInf)
-       velxGrid0 = aInf*machgrid*-velDirFreestream(1)
-       velyGrid0 = aInf*machgrid*-velDirFreestream(2) 
-       velzGrid0 = aInf*machgrid*-velDirFreestream(3) 
+       velxGrid0 = (aInf*machgrid)*(-velDirFreestream(1))
+       velyGrid0 = (aInf*machgrid)*(-velDirFreestream(2))
+       velzGrid0 = (aInf*machgrid)*(-velDirFreestream(3))
 
        ! Compute the derivative of the rotation matrix and the rotation
        ! point; needed for velocity due to the rigid body rotation of

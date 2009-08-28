@@ -343,3 +343,15 @@ SGI_N32_MPI_ORIGIN:
 	(cd externals/ADT && gmake SGI_N32_MPI_ORIGIN)
 	ln -sf config/config.SGI_N32_MPI_ORIGIN.mk config.mk
 	gmake sumb
+
+SICORTEX:
+	(cd externals/SU_MPI && gmake SICORTEX)
+	(cd externals/ADT && gmake SICORTEX)
+	ln -sf config/config.SICORTEX.mk config.mk
+	gmake sumb
+
+SICORTEX_MPI:
+	(cd externals/SU_MPI && gmake SICORTEX_MPI)
+	(cd externals/ADT && gmake SICORTEX_MPI)
+	ln -sf config/config.SICORTEX_MPI.mk config.mk
+	gmake sumb

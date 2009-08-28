@@ -260,3 +260,11 @@ SGI_N32_MPICH:
 SGI_N32_MPI_ORIGIN:
 	ln -sf config/config.SGI_N32_MPI_ORIGIN.mk config.mk
 	gmake parallel
+
+SICORTEX:
+	ln -sf config/config.SICORTEX.mk config.mk
+	gmake sequential
+
+SICORTEX_MPI:
+	ln -sf config/config.SICORTEX_MPI.mk config.mk
+	gmake parallel
