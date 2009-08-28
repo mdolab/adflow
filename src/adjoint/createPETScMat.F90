@@ -86,12 +86,12 @@
       ! 6  - 2nd level nodes along directions i,j,k
       ! 12 - 1st level nodes along diagonals (i,j),(i,k),(j,k) 
 
-      nzDiagonalX = 25 ! 1 + 6 + 6 + 12 Check
+      nzDiagonalX = 25+4+4 ! 1 + 6 + 6 + 12 Check
 
       ! Average number of off processor contributions per Cell
       ! (average number of donor cells that come from other processor)
 
-      nzOffDiag  = 3
+      nzOffDiag  = 3+8
 !
 !     ******************************************************************
 !     *                                                                *

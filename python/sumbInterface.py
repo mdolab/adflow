@@ -237,6 +237,7 @@ class SUmbMesh(object):
         filename -- the name of the file (optional)
          
         """
+        sumb.iteration.groundlevel = 1
         if (filename):
             sumb.inputio.newgridfile[:] = ''
             sumb.inputio.newgridfile[0:len(filename[0])] = filename[0]
@@ -780,8 +781,21 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Free Stream Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "                             Mach: %12.12e\n"%(aero_problem._flows.mach))
-        autofile.write(  "            Mach for coefficients: %12.12e\n"%(aero_problem._flows.mach))
+        try: kwargs['FamilyRot']
+        except KeyError:
+            Rotating = False
+        else:
+            Rotating = True
+        #endif
+        if Rotating:
+            autofile.write(  "                             Mach: %12.12e\n"%(0))
+            autofile.write(  "            Mach for coefficients: %12.12e\n"%(aero_problem._flows.mach))
+            autofile.write(  "            Mach for mesh velocity: %12.12e\n"%(aero_problem._flows.mach))
+        else:
+            autofile.write(  "                             Mach: %12.12e\n"%(aero_problem._flows.mach))
+            autofile.write(  "            Mach for coefficients: %12.12e\n"%(aero_problem._flows.mach))
+            autofile.write(  "            Mach for mesh velocity: %12.12e\n"%(0))
+        #endif
         autofile.write(  "                          # Default is Mach\n")
         autofile.write(  "#                         Reynolds: 100000\n")
         autofile.write(  "       Reynolds length (in meter): 1.0\n")
@@ -808,12 +822,12 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Geometrical Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "           Reference surface: %2.1f\n"%(aero_problem._refs.sref))
+        autofile.write(  "           Reference surface: %6.6f\n"%(aero_problem._refs.sref*kwargs['MetricConversion']**2))
         #autofile.write(  "           Reference surface: %2.1f\n"%(1.0))
-        autofile.write(  "            Reference length: %2.1f\n"%(aero_problem._refs.cref))
-        autofile.write(  "    Moment reference point x:  %2.1f\n"%(aero_problem._refs.xref))
-        autofile.write(  "    Moment reference point y:  %2.1f\n"%(aero_problem._refs.yref))
-        autofile.write(  "    Moment reference point z:  %2.1f\n"%(aero_problem._refs.zref))
+        autofile.write(  "            Reference length: %6.6f\n"%(aero_problem._refs.cref*kwargs['MetricConversion']))
+        autofile.write(  "    Moment reference point x:  %6.6f\n"%(aero_problem._refs.xref*kwargs['MetricConversion']))
+        autofile.write(  "    Moment reference point y:  %6.6f\n"%(aero_problem._refs.yref*kwargs['MetricConversion']))
+        autofile.write(  "    Moment reference point z:  %6.6f\n"%(aero_problem._refs.zref*kwargs['MetricConversion']))
         autofile.write( "\n")
         
         #! Write the keywords and default values for the discretization
@@ -989,9 +1003,9 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Multigrid Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "      Number of multigrid cycles coarse grid:  2  # Means same as on fine grid\n")
-        autofile.write(  "                      CFL number coarse grid: -1.0  # Means same as on fine grid\n")
-        autofile.write(  "Relative L2 norm for convergence coarse grid: 1.e-2\n")
+        autofile.write(  "      Number of multigrid cycles coarse grid:  -1.0  # -1 Means same as on fine grid\n")
+        autofile.write(  "                      CFL number coarse grid: -1.0  # -1 Means same as on fine grid\n")
+        autofile.write(  "Relative L2 norm for convergence coarse grid: 1.e-4\n")
         autofile.write( "\n")
         
         autofile.write(  "#        Discretization scheme coarse grid:  # Default fine grid scheme\n")
@@ -1073,29 +1087,30 @@ class SUmbInterface(object):
         autofile.write("-------------------------------------------------------------------------------\n")
         autofile.write( "     Monitoring and output variables\n")
         autofile.write( "-------------------------------------------------------------------------------\n")
-        autofile.write( "                Monitoring variables: resrho_cl_cd_cmx\n")
+        autofile.write( "                Monitoring variables: resrho_cl_cd_cmx_cmy_cmz\n")
         autofile.write( " Monitor massflow sliding interfaces: no\n")
         autofile.write( "            Surface output variables: rho_cp_vx_vy_vz_mach\n")
         autofile.write( "           Volume output variables: ptloss_resrho\n")
         autofile.write( "\n")
 
-##        ! The section to overwrite the rotation info for the families.
-
-##        autofile.write( ) "-----------------------------------------&
-##                               &--------------------------------------"
-##        autofile.write( ) "     Family rotation info "
-##        autofile.write( ) "-----------------------------------------&
-##                               &--------------------------------------"
-##        autofile.write( )
-
-##        autofile.write( ) "                               Rotation &
-##                               &center  Rotation rate (rad/s)"
-##        autofile.write( ) "Rotating family <family_name1> : 0.0 0.0 0.0 &
-##                               &   1.e+4 0.e+0 0.e+0"
-##        autofile.write( ) "Rotating family <family_name2> : 0.0 0.0 0.0 &
-##                               &   1.e+3 0.e+0 0.e+0"
-##        autofile.write( ) "Etc."
-##        autofile.write( )
+        # The section to overwrite the rotation info for the families.
+        try:
+            autofile.write( "------------------------------------------------------------------------------\n")
+            autofile.write( "     Family rotation info \n")
+            autofile.write( "------------------------------------------------------------------------------\n")
+            autofile.write( "\n")
+            
+            autofile.write( "                               Rotation center  Rotation rate (rad/s)\n")
+            autofile.write( "Rotating family %s : %6.6f %6.6f %6.6f    0.e+0 0.e+0 0.e+0    \n"%(kwargs['FamilyRot'],kwargs['rotCenter'][0],kwargs['rotCenter'][1],kwargs['rotCenter'][2]))
+        except:
+            if(self.myid ==0):
+                print 'No rotating families Present'
+            #endif
+        #endtry
+        
+#        autofile.write( "Rotating family <family_name2> : 0.0 0.0 0.0    1.e+3 0.e+0 0.e+0    \n")
+#        autofile.write( ) "Etc."
+#        autofile.write( )
 
 ##        ! The section to overwrite the boundary condition data sets
 ##        ! for the families.
@@ -1348,15 +1363,15 @@ class SUmbInterface(object):
             sumb.monitor.timeunsteady = 0.0
 
         #endif
-        print 'setupfinished'
-        self.Mesh.WriteMeshFile('newmesh.cgns')
+        if self.myid ==0:print 'setupfinished'
+        #self.Mesh.WriteMeshFile('newmesh.cgns')
         if self.myid ==0: print 'calling solver'
         self.GetMesh()._UpdateGeometryInfo()
-        print 'mesh info updated'
-        self.Mesh.WriteMeshFile('newmesh0.cgns')
-        print 'new file written'
+        #print 'mesh info updated'
+        #self.Mesh.WriteMeshFile('newmesh0.cgns')
+        #print 'new file written'
         sumb.solver()
-        print 'solver called'
+        if self.myid ==0:print 'solver called'
 ## ################################################################
 ## # The code below reproduces solver.F90 in python
 ## # See file solver.F90
