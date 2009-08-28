@@ -105,9 +105,9 @@
       ! velzGrid = zero
 
        aInf = sqrt(gammaInf*pInf/rhoInf)
-       velxGrid0 = aInf*machgridAdj*-velDirFreestreamAdj(1)
-       velyGrid0 = aInf*machgridAdj*-velDirFreestreamAdj(2) 
-       velzGrid0 = aInf*machgridAdj*-velDirFreestreamAdj(3) 
+       velxGrid0 = (aInf*machgridAdj)*(-velDirFreestreamAdj(1))
+       velyGrid0 = (aInf*machgridAdj)*(-velDirFreestreamAdj(2))
+       velzGrid0 = (aInf*machgridAdj)*(-velDirFreestreamAdj(3))
 
 
        ! Compute the derivative of the rotation matrix and the rotation

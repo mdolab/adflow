@@ -259,3 +259,11 @@ SGI_N32_MPICH:
 SGI_N32_MPI_ORIGIN:
 	ln -sf config/config.SGI_N32.mk config.mk
 	gmake adt
+
+SICORTEX:
+	ln -sf config/config.SICORTEX.mk config.mk
+	gmake adt
+
+SICORTEX_MPI:
+	ln -sf config/config.SICORTEX.mk config.mk
+	gmake adt
