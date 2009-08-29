@@ -25,7 +25,7 @@
 #      *                                                                *
 #      ******************************************************************
 
-#MAKE = make -j 8
+MAKE = make -j 8
 
 #      ******************************************************************
 #      *                                                                *
@@ -42,8 +42,8 @@ EXEC_SUFFIX = _sicortex
 #      *                                                                *
 #      ******************************************************************
 
-FF90 = mips64el-gentoo-linux-gnu-pathf95
-CC   = mips64el-gentoo-linux-gnu-pathcc
+FF90 = pathf95
+CC   = pathcc
 
 #      ******************************************************************
 #      *                                                                *
@@ -53,10 +53,8 @@ CC   = mips64el-gentoo-linux-gnu-pathcc
 
 #CGNS_INCLUDE_FLAGS = -DUSE_NO_CGNS
 #CGNS_INCLUDE_FLAGS =
-#CGNS_INCLUDE_FLAGS = -I/usr/include
-#CGNS_LINKER_FLAGS  = -L/usr/lib64 -lcgns
-CGNS_INCLUDE_FLAGS = -I$(HOME)/cgnslib_2.5
-CGNS_LINKER_FLAGS  = -L$(HOME)/cgnslib_2.5/LINUX64 -lcgns
+CGNS_INCLUDE_FLAGS = -I/usr/include
+CGNS_LINKER_FLAGS  = -L/usr/lib64 -lcgns
 
 #      ******************************************************************
 #      *                                                                *
@@ -91,11 +89,11 @@ CC_PRECISION_FLAGS   = $(CC_INTEGER_PRECISION_FLAG) \
 
 COMMAND_SEARCH_PATH_MODULES = -I
 
-FF90_GEN_FLAGS = -fno-second-underscore -G6 -DHAS_ISNAN
-CC_GEN_FLAGS   = -fno-strict-aliasing
+FF90_GEN_FLAGS = -fPIC -fno-second-underscore -G6 -DHAS_ISNAN
+CC_GEN_FLAGS   = -fPIC -fno-strict-aliasing
 
-FF90_OPTFLAGS   = -O3 -OPT:Ofast -fPIC
-CC_OPTFLAGS     = -O3 -OPT:Ofast -fPIC
+FF90_OPTFLAGS   = -O3 -OPT:Ofast -ffast-math
+CC_OPTFLAGS     = -O3 -OPT:Ofast -ffast-math
 
 #FF90_DEBUGFLAGS = -DDEBUG_MODE -g -Wall
 #CC_DEBUGFLAGS   = -DDEBUG_MODE -g -Wall
@@ -129,7 +127,7 @@ CC_FLAGS   = $(CC_GEN_FLAGS)   $(CC_OPTFLAGS)   $(CC_DEBUGFLAGS)
 #PETSC_ARCH = linux-mips-n64
 #PETSC_INCLUDE_FLAGS = -DUSE_NO_PETSC
 PETSC_INCLUDE_FLAGS = -I$(PETSC_DIR) -I$(PETSC_DIR)/bmake/$(PETSC_ARCH) -I$(PETSC_DIR)/include -I$(PETSC_DIR)/include/mpiuni
-PETSC_LINKER_FLAGS  = -L/usr/lib64 -lpetscksp -lpetscdm -lpetscmat -lpetscvec -lpetsc -lX11 -llapack -lf77blas -latlas -lm
+PETSC_LINKER_FLAGS  = -L/usr/lib64 -lpetscksp -lpetscdm -lpetscmat -lpetscvec -lpetsc -lX11 -llapack -lf77blas -latlas -lscm -lm
 
 #      ******************************************************************
 #      *                                                                *
@@ -137,7 +135,7 @@ PETSC_LINKER_FLAGS  = -L/usr/lib64 -lpetscksp -lpetscdm -lpetscmat -lpetscvec -l
 #      *                                                                *
 #      ******************************************************************
 
-AR       = mips64el-gentoo-linux-gnu-ar
+AR       = ar
 AR_FLAGS = -rvs
 
 #      ******************************************************************

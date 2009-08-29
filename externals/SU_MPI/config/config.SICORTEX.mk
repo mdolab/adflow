@@ -25,7 +25,7 @@
 #      *                                                                *
 #      ******************************************************************
 
-#MAKE = make -j 8
+MAKE = make -j 8
 
 #      ******************************************************************
 #      *                                                                *
@@ -44,11 +44,9 @@ CC   = pathcc
 
 COMMAND_SEARCH_PATH_MODULES = -I
 
-FF90_GEN_FLAGS = -fPIC -DSEQUENTIAL_MODE
-CC_GEN_FLAGS   = -fPIC -DSEQUENTIAL_MODE
+FF90_GEN_FLAGS = -fPIC -DSEQUENTIAL_MODE -r8 -fno-second-underscore -G6
+CC_GEN_FLAGS   = -fPIC -DSEQUENTIAL_MODE -fno-strict-aliasing
 
-#FF90_OPTFLAGS   = -O3 -IPA -OPT:Ofast
-#CC_OPTFLAGS     = -O3 -IPA -OPT:Ofast
 FF90_OPTFLAGS   = -O3 -OPT:Ofast
 CC_OPTFLAGS     = -O3 -OPT:Ofast
 

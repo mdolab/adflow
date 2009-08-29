@@ -33,8 +33,8 @@ MAKE = make -j 8
 #      *                                                                *
 #      ******************************************************************
 
-FF90 = mpif90
-CC   = mpicc
+FF90 = pathf95 -lscmpi
+CC   = pathcc -lscmpi
 
 #      ******************************************************************
 #      *                                                                *
@@ -44,11 +44,9 @@ CC   = mpicc
 
 COMMAND_SEARCH_PATH_MODULES = -I
 
-FF90_GEN_FLAGS = -DUSE_MPI_INCLUDE_FILE -r8
-CC_GEN_FLAGS   =
+FF90_GEN_FLAGS = -fPIC -DUSE_MPI_INCLUDE_FILE -r8 -fno-second-underscore -G6
+CC_GEN_FLAGS   = -fPIC -fno-strict-aliasing
 
-#FF90_OPTFLAGS   = -O3 -IPA -OPT:Ofast
-#CC_OPTFLAGS     = -O3 -IPA -OPT:Ofast
 FF90_OPTFLAGS   = -O3 -OPT:Ofast
 CC_OPTFLAGS     = -O3 -OPT:Ofast
 
