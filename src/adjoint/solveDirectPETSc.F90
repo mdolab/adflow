@@ -25,6 +25,7 @@
 !
       use ADjointPETSc 
       use ADjointVars
+      use inputADjoint
       use flowVarRefState !nw
       use blockPointers   !il,jl,kl,globalcell
       use communication

@@ -24,6 +24,7 @@
 !
        use inputPhysics
        use inputTimeSpectral
+       use inputADjoint
        use communication
        implicit none
 !
@@ -83,13 +84,14 @@
        endif
 
        ! Solve ADjoint
-
-       call solverADjoint
-
-       if(myID==0)then
-          call cpu_time(timer(3))
-          print *, "       time for adjoint = ", timer(3)-timer(2)
-       endif
+       if(solveADjoint) then
+          call solverADjoint
+          
+          if(myID==0)then
+             call cpu_time(timer(3))
+             print *, "       time for adjoint = ", timer(3)-timer(2)
+          endif
+       end if
        ! First part to release the memory.
 
        call releaseMemoryPart1

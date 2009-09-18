@@ -22,7 +22,7 @@ integer(kind=intType)::famid
 
 integer(kind=intType)::sps = 1,startind,endInd,level=1
 
-print *,'in initializewarping...'
+if(myid==0)print *,'in initializewarping...'
 
 !Call old indexing and coordinate functions to populate
 !Baseline datastructures in mdData and mdDataLocal

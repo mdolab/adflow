@@ -58,6 +58,7 @@
        use inputTimeSpectral
        use inputUnsteady
        use inputVisualization
+       use inputADjoint
        implicit none
        save
 

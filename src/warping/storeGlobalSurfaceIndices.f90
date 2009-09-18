@@ -70,7 +70,7 @@ end DO
 call mpi_allgather(counter, 1, sumb_integer, &
      mdNGlobalSurfNodesLocal,1, sumb_integer, &
      SUmb_comm_world, ierr)
-print *,'N Global Surface nodes',myID,counter,mdNGlobalSurfNodesLocal
+!print *,'N Global Surface nodes',myID,counter,mdNGlobalSurfNodesLocal
 !Allocate storage for counter tracking the number of global surface 
 !nodes on each processor
   if(.not. allocated(mdSurfGlobalIndLocal) ) then
@@ -149,7 +149,7 @@ do i = 1,mdNSurfNodes(nProc,1)!maximum number of possible surface nodes??counter
       compresscounter = compresscounter+1
    endif
 enddo
-print *,'compresscounter',compresscounter
+!print *,'compresscounter',compresscounter
 !reprint index
 mdNSurfNodesCompact= compresscounter!-1
 !!$do i = 1,counter!+1

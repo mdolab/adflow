@@ -66,7 +66,7 @@
 
        ! Determine the number of surface nodes per family if this
        ! information is not available.
-       print *,'creating Nsurfnodes local'
+       !print *,'creating Nsurfnodes local'
        if(.not. allocated(mdNSurfNodesLocal)) call mdCreateNSurfNodesLocal
 
        ! Allocate the memory for the local surface coordinates.
@@ -74,7 +74,7 @@
 
        modFamID = max(famID, 1_intType)
        nSurfNodesLoc = mdNSurfNodesLocal(modFamID) 
-       print *,'allocating xxloc',nsurfnodesloc
+       !print *,'allocating xxloc',nsurfnodesloc
        allocate(xxLoc(3,nSurfNodesLoc), stat=ierr)
        if(ierr /= 0)                                &
          call terminate("mdCreateSurfCoorList", &

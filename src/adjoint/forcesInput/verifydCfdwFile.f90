@@ -312,9 +312,9 @@ subroutine verifydCfdwfile(level)
            CmxAdjB = 0
            CmyAdjB = 0
            CmzAdjB = 0
-!!$        CfxAdjB = 0
-!!$        CfyAdjB = 0
-!!$        CfzAdjB = 0
+           CfxAdjB = 0
+           CfyAdjB = 0
+           CfzAdjB = 0
            
            !xAdjB(:,:,:,:) = zero ! > return dCf/dx
            !wAdjB(:,:,:,:) = zero ! > return dCf/dW
@@ -326,14 +326,15 @@ subroutine verifydCfdwfile(level)
            !===============================================================
            ! Compute the force derivatives
            call  COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
-&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
-&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
-&  rotrateadj, rotrateadjb, liftindex)
+&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
+&  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
+&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
+&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
+&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
+&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
+&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
+&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex)
+
 
            wadjb2 = wadjb2+wadjb
 
@@ -379,9 +380,9 @@ subroutine verifydCfdwfile(level)
            CmxAdjB = 0
            CmyAdjB = 0
            CmzAdjB = 0
-!!$        CfxAdjB = 0
-!!$        CfyAdjB = 0
-!!$        CfzAdjB = 0
+           CfxAdjB = 0
+           CfyAdjB = 0
+           CfzAdjB = 0
        
            !xAdjB(:,:,:,:) = zero ! > return dCf/dx
            !wAdjB(:,:,:,:) = zero ! > return dCf/dW
@@ -394,14 +395,15 @@ subroutine verifydCfdwfile(level)
            ! Compute the force derivatives
             
            call  COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
-&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
-&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
-&  rotrateadj, rotrateadjb, liftindex)
+&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
+&  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
+&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
+&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
+&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
+&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
+&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
+&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex)
+
            wadjb2 = wadjb2+wadjb  
         enddo bocoLoop2
         do k = 0,kb
@@ -443,9 +445,9 @@ subroutine verifydCfdwfile(level)
            CmxAdjB = 1
            CmyAdjB = 0
            CmzAdjB = 0
- !       CfxAdjB = 0
- !       CfyAdjB = 0
- !       CfzAdjB = 0
+           CfxAdjB = 0
+           CfyAdjB = 0
+           CfzAdjB = 0
        
            !xAdjB(:,:,:,:) = zero ! > return dCf/dx
            !wAdjB(:,:,:,:) = zero ! > return dCf/dW
@@ -457,15 +459,16 @@ subroutine verifydCfdwfile(level)
            
            !===============================================================
            ! Compute the force derivatives
-           call  COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
-&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
-&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
-&  rotrateadj, rotrateadjb, liftindex)
+           call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
+&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
+&  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
+&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
+&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
+&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
+&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
+&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
+&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex)
+
            wadjb2 = wadjb2+wadjb
            
         enddo bocoLoop3

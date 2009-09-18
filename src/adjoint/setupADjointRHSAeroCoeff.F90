@@ -193,6 +193,9 @@
 		!print *,'computing lift derivatives'
                ClAdjB = 1
                CDAdjB = 0
+               CfxAdjB = 0
+               CfyAdjB = 0
+               CfzAdjB = 0
                CmxAdjB = 0
                CmyAdjB = 0
                CmzAdjB = 0     
@@ -204,6 +207,9 @@
 
                ClAdjB = 0
                CDAdjB = 1
+               CfxAdjB = 0
+               CfyAdjB = 0
+               CfzAdjB = 0
                CmxAdjB = 0
                CmyAdjB = 0
                CmzAdjB = 0 
@@ -212,9 +218,9 @@
 
                ClAdjB = 0
                CDAdjB = 0
-	       !CfxAdjB = 1
-               !CfyAdjB = 0
-               !CfzAdjB = 0
+	       CfxAdjB = 1
+               CfyAdjB = 0
+               CfzAdjB = 0
                CmxAdjB = 0
                CmyAdjB = 0
                CmzAdjB = 0
@@ -223,9 +229,9 @@
 
                ClAdjB = 0
                CDAdjB = 0
-   	       !CfxAdjB = 0
-               !CfyAdjB = 1
-               !CfzAdjB = 0
+   	       CfxAdjB = 0
+               CfyAdjB = 1
+               CfzAdjB = 0
                CmxAdjB = 0
                CmyAdjB = 0
                CmzAdjB = 0      
@@ -234,9 +240,9 @@
 
                ClAdjB = 0
                CDAdjB = 0
-	       !CfxAdjB = 0
-               !CfyAdjB = 0
-               !CfzAdjB = 1
+	       CfxAdjB = 0
+               CfyAdjB = 0
+               CfzAdjB = 1
                CmxAdjB = 0
                CmyAdjB = 0
                CmzAdjB = 0                
@@ -245,6 +251,9 @@
 
                ClAdjB = 0
                CDAdjB = 0
+               CfxAdjB = 0
+               CfyAdjB = 0
+               CfzAdjB = 0
                CmxAdjB = 1
                CmyAdjB = 0
                CmzAdjB = 0
@@ -253,6 +262,9 @@
 
                ClAdjB = 0
                CDAdjB = 0
+               CfxAdjB = 0
+               CfyAdjB = 0
+               CfzAdjB = 0
                CmxAdjB = 0
                CmyAdjB = 1
                CmzAdjB = 0      
@@ -261,6 +273,9 @@
 
                ClAdjB = 0
                CDAdjB = 0
+               CfxAdjB = 0
+               CfyAdjB = 0
+               CfzAdjB = 0
                CmxAdjB = 0
                CmyAdjB = 0
                CmzAdjB = 1      
@@ -285,23 +300,14 @@
                !print *,'cladjb',cladjb,cdadjb
                !print *,'before',sum(wadjb)
 	       call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
-&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
-&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
-&  rotrateadj, rotrateadjb, liftindex)
-!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-!&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-!&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
-!&  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-!&  murefadj, timerefadj, pinfcorradj, rotcenteradj, rotrateadj, &
-!&  rotrateadjb, liftindex)
+&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
+&  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
+&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
+&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
+&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
+&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
+&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
+&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex)
 
 
 

@@ -21,6 +21,7 @@
 !     ******************************************************************
 !
       use ADjointPETSc
+      use inputADjoint
       use communication
       implicit none
 !

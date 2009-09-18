@@ -406,13 +406,13 @@
 !Print Both solutions
 !**************
 
-      if(PetscRank == 0)then
-        
-	 print *,'printing result'
-         do i = 1,3*mdNSurfNodesCompact
-            print *,'costfunction derivative',functionGradSurface(costFunction,i),functionGradSurface(costfunction,i),i
-         enddo
-      endif
+!!$      if(PetscRank == 0)then
+!!$        
+!!$	 print *,'printing result'
+!!$         do i = 1,3*mdNSurfNodesCompact
+!!$            print *,'costfunction derivative',functionGradSurface(costFunction,i),functionGradSurface(costfunction,i),i
+!!$         enddo
+!!$      endif
       
 
       ! Release memory to store the local function gradient values.

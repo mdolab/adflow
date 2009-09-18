@@ -416,6 +416,9 @@
 
            ClAdjB  = zero
            CDAdjB  = zero
+           CfxAdjB = zero
+           CfyAdjB = zero
+           CfzAdjB = zero
            CmxAdjB = zero
            CmyAdjB = zero
            CmzAdjB = zero
@@ -426,9 +429,9 @@
            case (costFuncDragCoef)
               CdAdjB = 1
            case (costFuncForceXCoef)
-              !CfxAdjB = 1
+              CfxAdjB = 1
            case (costFuncForceYCoef)
-              !CfyAdjB = 1
+              CfyAdjB = 1
            case (costFuncForceZCoef)
               CfzAdjb = 1
            case (costFuncMomXCoef)
@@ -446,23 +449,14 @@
            ! Compute the force derivatives
            
            call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
-&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
-&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
-&  rotrateadj, rotrateadjb, liftindex)
-!COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-!&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-!&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-!&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-!&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-!&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
-!&  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-!&  murefadj, timerefadj, pinfcorradj, rotcenteradj, rotrateadj, &
-!&  rotrateadjb, liftindex)
+&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
+&  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
+&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
+&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
+&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
+&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
+&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
+&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex)
  
 
           ! Loop over cells to store the jacobian

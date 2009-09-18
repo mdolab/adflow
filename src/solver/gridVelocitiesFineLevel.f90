@@ -89,7 +89,7 @@
        ! the grid is only specified if there is only 1 section present.
 
        call derivativeRotMatrixRigid(rotationMatrix, rotationPoint, t(1))
-
+       !print *,'rotation Matrix',rotationMatrix, rotationPoint,'t', t(1)
        ! Loop over the number of local blocks.
 
        domains: do nn=1,nDom
@@ -101,7 +101,7 @@
          ! Check for a moving block.
 
          testMoving: if( blockIsMoving ) then
-
+            print *,'block is moving',blockIsMoving,useOldCoor 
            ! Determine the situation we are having here.
 
            testUseOldCoor: if( useOldCoor ) then
