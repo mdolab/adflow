@@ -182,24 +182,25 @@
 
       logical :: PETScBlockMatrix
 
-      ! Convergence tolerances and monitor parameters used by PETSc to
-      ! solve the adjoint equations. These are set by the routine
-      ! "KSPSetTolerances" and "KSPGMRESSetRestart".
-      !
-      ! adjRelTol    Relative tolerance
-      ! adjAbsTol    Absolute tolerance
-      ! adjDivTol    Relative tolerance increase to divergence
-      ! adjMaxIter   Maximum number of iterations
-      ! adjRestart   Maximum number of steps before restart
-      !              It has a high impact on the required memory!
-      ! adjMonStep   Convergence monitor step
-
-      real(kind=realType),   parameter :: adjRelTol  = 1.0e-12_realType
-      real(kind=realType),   parameter :: adjAbsTol  = 1.0e-25_realType
-      real(kind=realType),   parameter :: adjDivTol  = 1.0e+5_realType
-      integer(kind=intType), parameter :: adjMaxIter = 500_intType!128_intType
-      integer(kind=intType), parameter :: adjRestart = 80_intType!128_intType
-      integer(kind=intType), parameter :: adjMonStep = 10_intType
+!moved to inputADjoint
+!!$      ! Convergence tolerances and monitor parameters used by PETSc to
+!!$      ! solve the adjoint equations. These are set by the routine
+!!$      ! "KSPSetTolerances" and "KSPGMRESSetRestart".
+!!$      !
+!!$      ! adjRelTol    Relative tolerance
+!!$      ! adjAbsTol    Absolute tolerance
+!!$      ! adjDivTol    Relative tolerance increase to divergence
+!!$      ! adjMaxIter   Maximum number of iterations
+!!$      ! adjRestart   Maximum number of steps before restart
+!!$      !              It has a high impact on the required memory!
+!!$      ! adjMonStep   Convergence monitor step
+!!$
+!!$      real(kind=realType),   parameter :: adjRelTol  = 1.0e-12_realType
+!!$      real(kind=realType),   parameter :: adjAbsTol  = 1.0e-25_realType
+!!$      real(kind=realType),   parameter :: adjDivTol  = 1.0e+5_realType
+!!$      integer(kind=intType), parameter :: adjMaxIter = 500_intType!128_intType
+!!$      integer(kind=intType), parameter :: adjRestart = 80_intType!128_intType
+!!$      integer(kind=intType), parameter :: adjMonStep = 10_intType
 
       ! adjResHist   Linear solver residual history [adjMaxIter]
       ! adjConvIts   Number of iterations to convergence

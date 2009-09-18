@@ -27,10 +27,10 @@ integer(kind=intType)::level=1,sps=1,nn,mm,i,j,k,ierr
 !Begin Execution
 
 famID  = 0
-print *,'creating global list'
+!print *,'creating global list'
 call mdCreateSurfIndList(famID,startInd,endInd)
 
-print *,'creating local list'
+!print *,'creating local list'
 call mdCreateSurfIndListLocal(famID,startInd,endInd)
 !print *,'local indices',mdNSurfNodesLocal,'global',mdNSurfNodes!(nn)
 
@@ -41,7 +41,7 @@ do nn=1,nDom
    x(:,:,:,1) = -5
 enddo
 
-print *,'setting index in x temporarily'
+!print *,'setting index in x temporarily'
 !set global index in corresponding x location.
 !loop over domains
 do nn = 1,nDom
@@ -64,10 +64,10 @@ if(myID==0)print *,'synchronizing Surface indices'
 !run syncronize faces
 !what about duplicate nodes at split surface boundaries? Use sychronization to set common nodes to the lower of the two index values.
 call synchronizeSurfaceIndices(level,sps)
-print *,'indices synchronized'
+if(myID==0)print *,'indices synchronized'
 
 call storeGlobalSurfaceIndices
-print *,'indices stored'
+
 !run through each block, counting the number of global indices
 !create a varible only large enough to hold local "globalindex" values. 
 !store global index with corresponding local block and i,j,k info. 
@@ -96,7 +96,7 @@ call xhalo(level)
 
 !Now generate the list for interfacing with python
 call mdCreateGlobalReducedSurfaceList
-print *,'surface list generated'
+!print *,'surface list generated'
 !stop
 
 end subroutine synchronizeIndices

@@ -110,7 +110,7 @@ TAPENADE_PARSERFILESEPARATOR = "/"
 
 # Dependent output variables (separator: white space, default: all)
 
-TAPENADE_OUTVARS = "CLAdj CDAdj CmxAdj CmyAdj CmzAdj"
+TAPENADE_OUTVARS = "CLAdj CDAdj cfxadj cfyadj cfzadj CmxAdj CmyAdj CmzAdj"
 
 # Independent input variables (separator: white space, default: all)
 

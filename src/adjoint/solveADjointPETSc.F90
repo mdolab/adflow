@@ -24,6 +24,7 @@
 !     ******************************************************************
 !
       use ADjointPETSc
+      use inputADjoint
       implicit none
 !
 !     Local variables.

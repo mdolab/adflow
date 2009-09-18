@@ -3,10 +3,11 @@
 !  
 !  Differentiation of computeforcesadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: cdadj rotrateadj
-!                cladj machadj alphaadj xadj wadj betaadj machgridadj
-!                cmzadj cmyadj machcoefadj cmxadj
-!   of linear combination of output variables: cdadj cladj cmzadj
-!                cmyadj cmxadj
+!                cfzadj cfyadj cladj machadj alphaadj cfxadj xadj
+!                wadj betaadj machgridadj cmzadj cmyadj machcoefadj
+!                cmxadj
+!   of linear combination of output variables: cdadj cfzadj cfyadj
+!                cladj cfxadj cmzadj cmyadj cmxadj
 !
 !     ******************************************************************
 !     *                                                                *
@@ -19,14 +20,14 @@
 !     ******************************************************************
 !
 SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
-&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
-&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
-&  rotrateadj, rotrateadjb, liftindex)
+&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
+&  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
+&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
+&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
+&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
+&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
+&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
+&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex)
   USE bctypes
   USE blockpointers
   USE communication
@@ -38,12 +39,14 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
   REAL(KIND=REALTYPE) :: alphaadj, alphaadjb, betaadj, betaadjb
   REAL(KIND=REALTYPE) :: cfpadj(3), cmpadj(3)
   REAL(KIND=REALTYPE) :: cdadj(ntimeintervalsspectral), cdadjb(&
-&  ntimeintervalsspectral), cfxadj(ntimeintervalsspectral), cfyadj(&
-&  ntimeintervalsspectral), cfzadj(ntimeintervalsspectral), cladj(&
-&  ntimeintervalsspectral), cladjb(ntimeintervalsspectral), cmxadj(&
-&  ntimeintervalsspectral), cmxadjb(ntimeintervalsspectral), cmyadj(&
-&  ntimeintervalsspectral), cmyadjb(ntimeintervalsspectral), cmzadj(&
-&  ntimeintervalsspectral), cmzadjb(ntimeintervalsspectral)
+&  ntimeintervalsspectral), cfxadj(ntimeintervalsspectral), cfxadjb(&
+&  ntimeintervalsspectral), cfyadj(ntimeintervalsspectral), cfyadjb(&
+&  ntimeintervalsspectral), cfzadj(ntimeintervalsspectral), cfzadjb(&
+&  ntimeintervalsspectral), cladj(ntimeintervalsspectral), cladjb(&
+&  ntimeintervalsspectral), cmxadj(ntimeintervalsspectral), cmxadjb(&
+&  ntimeintervalsspectral), cmyadj(ntimeintervalsspectral), cmyadjb(&
+&  ntimeintervalsspectral), cmzadj(ntimeintervalsspectral), cmzadjb(&
+&  ntimeintervalsspectral)
   INTEGER(KIND=INTTYPE), INTENT(IN) :: i2beg
   INTEGER(KIND=INTTYPE), INTENT(IN) :: i2end
   INTEGER(KIND=INTTYPE), INTENT(IN) :: iibeg
@@ -233,16 +236,22 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
   cmpadjoutb(1) = cmpadjoutb(1) + cmxadjb(sps)
   cmvadjoutb(1) = cmvadjoutb(1) + cmxadjb(sps)
   cfpadjoutb(1:3) = 0.0
-  dragdirectionadjb(1:3) = 0.0
   cfvadjoutb(1:3) = 0.0
-  cfpadjoutb(1) = dragdirectionadj(1)*cdadjb(sps)
-  cfvadjoutb(1) = dragdirectionadj(1)*cdadjb(sps)
+  cfpadjoutb(3) = cfzadjb(sps)
+  cfvadjoutb(3) = cfzadjb(sps)
+  cfpadjoutb(2) = cfpadjoutb(2) + cfyadjb(sps)
+  cfvadjoutb(2) = cfvadjoutb(2) + cfyadjb(sps)
+  cfpadjoutb(1) = cfpadjoutb(1) + dragdirectionadj(1)*cdadjb(sps) + &
+&    cfxadjb(sps)
+  cfvadjoutb(1) = cfvadjoutb(1) + dragdirectionadj(1)*cdadjb(sps) + &
+&    cfxadjb(sps)
+  dragdirectionadjb(1:3) = 0.0
   dragdirectionadjb(1) = (cfpadjout(1)+cfvadjout(1))*cdadjb(sps)
-  cfpadjoutb(2) = dragdirectionadj(2)*cdadjb(sps)
-  cfvadjoutb(2) = dragdirectionadj(2)*cdadjb(sps)
+  cfpadjoutb(2) = cfpadjoutb(2) + dragdirectionadj(2)*cdadjb(sps)
+  cfvadjoutb(2) = cfvadjoutb(2) + dragdirectionadj(2)*cdadjb(sps)
   dragdirectionadjb(2) = (cfpadjout(2)+cfvadjout(2))*cdadjb(sps)
-  cfpadjoutb(3) = dragdirectionadj(3)*cdadjb(sps)
-  cfvadjoutb(3) = dragdirectionadj(3)*cdadjb(sps)
+  cfpadjoutb(3) = cfpadjoutb(3) + dragdirectionadj(3)*cdadjb(sps)
+  cfvadjoutb(3) = cfvadjoutb(3) + dragdirectionadj(3)*cdadjb(sps)
   dragdirectionadjb(3) = (cfpadjout(3)+cfvadjout(3))*cdadjb(sps)
   liftdirectionadjb(1:3) = 0.0
   cfpadjoutb(1) = cfpadjoutb(1) + liftdirectionadj(1)*cladjb(sps)
@@ -320,7 +329,10 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &                              liftdirectionadjb, dragdirectionadj, &
 &                              liftindex)
   cdadjb(1:ntimeintervalsspectral) = 0.0
+  cfzadjb(1:ntimeintervalsspectral) = 0.0
+  cfyadjb(1:ntimeintervalsspectral) = 0.0
   cladjb(1:ntimeintervalsspectral) = 0.0
+  cfxadjb(1:ntimeintervalsspectral) = 0.0
   cmzadjb(1:ntimeintervalsspectral) = 0.0
   cmyadjb(1:ntimeintervalsspectral) = 0.0
   cmxadjb(1:ntimeintervalsspectral) = 0.0

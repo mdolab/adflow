@@ -215,9 +215,9 @@ subroutine setupGradientRHSExtra(level,costFunction)
         
            ClAdjB = 0
            CDAdjB = 0
-           !CfxAdjB = 0
-           !CfyAdjB = 0
-           !CfzAdjB = 0
+           CfxAdjB = 0
+           CfyAdjB = 0
+           CfzAdjB = 0
            CmxAdjB = 0
            CmyAdjB = 0
            CmzAdjB = 0  
@@ -234,16 +234,16 @@ subroutine setupGradientRHSExtra(level,costFunction)
 
            case (costFuncForceXCoef)
 
-              !CfxAdjB = 1
+              CfxAdjB = 1
  
 
            case (costFuncForceYCoef)
 
-              !CfyAdjB = 1
+              CfyAdjB = 1
 
            case (costFuncForceZCoef)
 
-              !CfzAdjB = 1
+              CfzAdjB = 1
 
            case (costFuncMomXCoef)
 
@@ -272,14 +272,14 @@ subroutine setupGradientRHSExtra(level,costFunction)
            
 
 	   call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfyadj, &
-&  cfzadj, cmxadj, cmxadjb, cmyadj, cmyadjb, cmzadj, cmzadjb, yplusmax, &
-&  refpoint, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
-&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
-&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
-&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
-&  rotrateadj, rotrateadjb, liftindex)
+&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
+&  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
+&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
+&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
+&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
+&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
+&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
+&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex)
 
 
 	   enddo bocoLoop

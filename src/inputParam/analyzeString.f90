@@ -1155,6 +1155,162 @@
 !
 !        ****************************************************************
 !        *                                                              *
+!        * ADjoint parameters.                                          *
+!        *                                                              *
+!        ****************************************************************
+!
+        case ("solve adjoint")
+           solveADjoint = checkYesNo(value, keyword)
+        case ("set monitor")
+           setMonitor = checkYesNo(value, keyword)
+        case("matrix ordering")
+           ! Convert value to lower case and check the options.
+           
+           call convertToLowerCase(value)
+           
+           select case (value)
+           case ("natural")
+              matrixOrdering = Natural
+           case ("reversecuthillmckee")
+              matrixOrdering = ReverseCuthillMckee
+           case ("nesteddissection")
+              matrixOrdering = NestedDissection
+           case ("onewaydissection")
+              matrixOrdering = OnewayDissection
+           case ("quotientminimumdegree")
+              matrixOrdering = QuotientMinimumDegree
+           case default
+              write(errorMessage,*) "Unknown matrix ordering, ", &
+                   trim(value), ", specified"
+              if(myID == 0) &
+                   call terminate("analyzeString", errorMessage)
+              call mpi_barrier(SUmb_comm_world, pos)
+           end select
+
+        case("adjoint solver type")
+           ! Convert value to lower case and check the options.
+           
+           call convertToLowerCase(value)
+           
+           select case (value)
+           case ("gmres")
+              ADjointSolverType = PETSCGMRES
+           case("fgmres")
+              ADjointSolverType = PETSCFGMRES
+           case("bicgstab")
+              ADjointSolverType = PETSCBICGSTAB
+           case("cg")
+              ADjointSolverType = PETSCCG
+           case default
+              write(errorMessage,*) "Unknown solver type, ", &
+                   trim(value), ", specified"
+              if(myID == 0) &
+                   call terminate("analyzeString", errorMessage)
+              call mpi_barrier(SUmb_comm_world, pos)
+           end select
+
+        case("preconditioner side")
+           ! Convert value to lower case and check the options.
+           
+           call convertToLowerCase(value)
+           
+           select case (value)
+
+           case("right")
+              PCSide = Right
+           case("left")
+              PCSide = Left
+           case default
+              write(errorMessage,*) "Unknown preconditioner side, ", &
+                   trim(value), ", specified"
+              if(myID == 0) &
+                   call terminate("analyzeString", errorMessage)
+              call mpi_barrier(SUmb_comm_world, pos)
+           end select
+
+        case("adjoint relative tolerance")
+           read(value,*) adjRelTol 
+        case("adjoint absolute tolerance")
+           read(value,*) adjAbsTol
+        case("adjoint divergence tolerance")
+           read(value,*) adjDivTol
+        case("adjoint max iterations")
+           read(value,*) adjMaxIter
+        case("adjoint restart iteration")
+           read(value,*) adjRestart
+        case("adjoint monitor step")
+           read(value,*) adjMonStep
+
+        case("global preconditioner type")
+           ! Convert value to lower case and check the options.
+           
+           call convertToLowerCase(value)
+           
+           select case (value)
+           case ("jacobi")
+              PreCondType = JACOBI
+           case("block jacobi")
+              PreCondType = BlockJacobi
+           case("additive schwartz")
+              PreCondType = AdditiveSchwartz
+           case default
+              write(errorMessage,*) "Unknown Global precondtioner type, ", &
+                   trim(value), ", specified"
+              if(myID == 0) &
+                   call terminate("analyzeString", errorMessage)
+              call mpi_barrier(SUmb_comm_world, pos)
+           end select
+
+        case("local preconditioner type")
+           ! Convert value to lower case and check the options.
+           
+           call convertToLowerCase(value)
+           
+           select case (value)
+           case ("ilu")
+              localPCType = ILU
+           case("icc")
+              localPCType = ICC
+           case("lu")
+              localPCType = LU
+           case("cholesky")
+              localPCType = Cholesky
+           case default
+              write(errorMessage,*) "Unknown local precondtioner type, ", &
+                   trim(value), ", specified"
+              if(myID == 0) &
+                   call terminate("analyzeString", errorMessage)
+              call mpi_barrier(SUmb_comm_world, pos)
+           end select
+        case("jacobi scale factor type")
+           ! Convert value to lower case and check the options.
+           
+           call convertToLowerCase(value)
+           
+           select case (value)
+           case ("normal")
+              scaleType = Normal
+           case("rowmax")
+              scaleType = RowMax
+           case("rowsum")
+              scaleType = RowSum
+           case("rowabs")
+              scaleType = RowAbs
+           case default
+              write(errorMessage,*) "Unknown jacobi scale factor type, ", &
+                   trim(value), ", specified"
+              if(myID == 0) &
+                   call terminate("analyzeString", errorMessage)
+              call mpi_barrier(SUmb_comm_world, pos)
+           end select
+
+        case("ilu fill levels")
+           read(value,*) fillLevel
+        case("asm overlap")
+           read(value,*) overlap
+!
+!        ****************************************************************
+!        *                                                              *
 !        * Monitoring of the mass flow of the sliding interfaces.       *
 !        *                                                              *
 !        ****************************************************************

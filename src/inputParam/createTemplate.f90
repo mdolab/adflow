@@ -78,7 +78,8 @@
        write(writeUnit,"(a)") "     IO Parameters"
        write(writeUnit,"(a)") "-----------------------------------------&
                               &--------------------------------------"
-       write(writeUnit,"(a)") "                       File format: CGNS"
+       write(writeUnit,"(a)") "                   File format read: CGNS"
+       write(writeUnit,"(a)") "                  File format write: CGNS"
        write(writeUnit,"(a)") "               # Other possibility: &
                               &PLOT3D"
        write(writeUnit,"(a)")
@@ -486,6 +487,62 @@
                               &MG level"
        write(writeUnit,"(a)") "                 Multigrid cycle strategy: sg"
        write(writeUnit,"(a)")
+
+       !write parameters for the adjoint solver
+       write(writeUnit,"(a)") "-----------------------------------------&
+                               &--------------------------------------"
+       write(writeUnit,"(a)") "  ADjoint Parameters"
+       write(writeUnit,"(a)") "-----------------------------------------&
+                               &--------------------------------------"
+
+       write(writeUnit,"(a)") " 	solve ADjoint : Yes"
+       write(writeUnit,"(a)") "         # Other possibility: &
+            &no"
+       write(writeUnit,"(a)") "	        set monitor   : Yes "
+       write(writeUnit,"(a)") "         # Other possibility: no"
+       write(writeUnit,"(a)") " 	Adjoint solver type: GMRES"
+       write(writeUnit,"(a)") "	        # Other possibilities: BiCGStab"
+       write(writeUnit,"(a)") "         #                      CG"
+       write(writeUnit,"(a)") "	        #                      GMRES"
+       write(writeUnit,"(a)") "	        #                      FGMRES"
+
+       write(writeUnit,"(a)") "	       adjoint relative tolerance   : 1e-10"
+       write(writeUnit,"(a)") "        adjoint absolute tolerance   : 1e-16"
+       write(writeUnit,"(a)") "        adjoint divergence tolerance : 1e5"
+       write(writeUnit,"(a)") "        adjoint max iterations       : 500"
+       write(writeUnit,"(a)") "        adjoint restart iteration    : 80"
+       write(writeUnit,"(a)") "        adjoint monitor step         : 10"
+
+       write(writeUnit,"(a)") "	Preconditioner Side: LEFT"
+       write(writeUnit,"(a)") " 	# Other possibilities: Left"
+       write(writeUnit,"(a)") "        #                      Right"
+       
+       write(writeUnit,"(a)") "	Matrix Ordering	: ReverseCuthillMckee"
+       write(writeUnit,"(a)") "	#                 ReverseCuthillMckee"
+       write(writeUnit,"(a)") "	#                 Natural"
+       write(writeUnit,"(a)") "	#                 NestedDissection"
+       write(writeUnit,"(a)") "	#                 OnewayDissection"
+       write(writeUnit,"(a)") "	#                 QuotientMinimumDegree"
+       
+       write(writeUnit,"(a)") "	Global Preconditioner Type : Block Jacobi"
+       write(writeUnit,"(a)") "	#                            Jacobi"
+       write(writeUnit,"(a)") "	#                            Block Jacobi"
+       write(writeUnit,"(a)") "	#                            Additive Schwartz"
+       
+       write(writeUnit,"(a)") "	ASM Overlap : 5"
+       
+       write(writeUnit,"(a)") "	Local Preconditioner Type: ILU"
+       write(writeUnit,"(a)") "	#                          ILU"
+       write(writeUnit,"(a)") "	#                          ICC"
+       write(writeUnit,"(a)") "	#                          LU"
+       write(writeUnit,"(a)") "	#                          Cholesky"
+       
+       write(writeUnit,"(a)") "	ILU Fill Levels	: 1"
+       
+       write(writeUnit,"(a)") "	Jacobi Scale Factor Type : RowMax"
+       write(writeUnit,"(a)") "	#                          RowMax"
+       write(writeUnit,"(a)") "	#                          RowSum"
+       write(writeUnit,"(a)") "	#                          RowAbs"
 
        ! Write the keywords and default values for the overset parameters.
 

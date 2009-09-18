@@ -2,9 +2,10 @@
 !      ******************************************************************
 !      *                                                                *
 !      * File:          inputParam.f90                                  *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
+!      * Author:        Edwin van der Weide, Steve Repsher,             *
+!      *                C.A.(Sandy) Mader                               *
 !      * Starting date: 12-11-2002                                      *
-!      * Last modified: 11-27-2007                                      *
+!      * Last modified: 09-17-2009                                      *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -810,3 +811,96 @@
        real(kind=realType) :: allowableDonorQuality
 
        end module inputOverset
+
+       module inputADjoint
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Definition of some parameters ADjoint.                         *
+!      * The actual values of this parameters are arbitrary;            *
+!      * in the code always the symbolic names are (should be) used.    *
+!      *                                                                *
+!      ******************************************************************
+!
+       use precision
+       implicit none
+       save
+
+       !definition of parameters for the ADjoint Linear Solver
+
+       integer(kind=intType), parameter :: PETSCBICGStab = 1_intType, &
+                                           PETSCGMRES    = 2_intType, &
+                                           PETSCCG       = 3_intType, &
+                                           PETSCFGMRES   = 4_intType
+       
+       !Definitions for Global Preconditioners
+       integer(kind=intType), parameter :: BlockJacobi      = 1_intType, &
+                                           Jacobi           = 2_intType, &
+                                           AdditiveSchwartz = 3_intType
+
+       !Definitions for local Preconditioners
+       integer(kind=intType), parameter :: ILU       = 1_intType, &
+                                           ICC       = 2_intType, &
+                                           LU        = 3_intType, &
+                                           Cholesky  = 4_intType
+
+       !Definitions for matrix ordering method
+       integer(kind=intType), parameter :: Natural               = 1_intType, &
+                                           ReverseCuthillMckee   = 2_intType, &
+                                           NestedDissection      = 3_intType, &
+                                           OnewayDissection      = 4_intType, &
+                                           QuotientMinimumDegree = 5_intType
+
+       !Definitions for Preconditioner Side
+       integer(kind=intType), parameter :: Left  = 1_intType, &
+                                           Right = 2_intType
+       
+       !Definitions for matrix ordering method
+       integer(kind=intType), parameter :: Normal = 1_intType, &
+                                           RowMax = 2_intType, &
+                                           RowSum = 3_intType, &
+                                           RowAbs = 4_intType
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Definition of the adjoint input parameters.                    *
+!      *                                                                *
+!      ******************************************************************
+!
+       ! solveADjoint : Whether or not the adjoint equations should be solved
+       ! Monitor      : Whether or not to enable the monitor for the KSP 
+       !                contexts.
+       logical :: solveADjoint, setMonitor
+
+       ! ADjointSolverType: Type of linear solver for the ADjoint
+       ! PreCondType      : Type of Preconditioner to use
+       ! ScaleType        : Type of Scaling to use in Jacobi Preconditioner
+       ! Matrix Ordering  : Type of matrix ordering to use
+       integer(kind=intType)::ADjointSolverType,PreCondType,ScaleType,&
+            MatrixOrdering
+       
+       ! PCSide  : Right or Left Preconditioning
+       ! LocalPC : Local preconditioning type 
+       integer(kind=intType):: PCSide,LocalPCType
+
+       ! FillLevel     : Number of levels of fill for the ILU local PC
+       ! Overlap       : Amount of overlap in the ASM PC
+       integer(kind=intType):: FillLevel, Overlap
+
+       ! adjRelTol     : Relative tolerance
+       ! adjAbsTol     : Absolute tolerance
+       ! adjDivTol     : Relative tolerance increase to divergence
+       ! adjMaxIter    : Maximum number of iterations
+       ! adjRestart    : Maximum number of steps before restart
+       !                 It has a high impact on the required memory!
+       ! adjMonStep    : Convergence monitor step
+       
+       real(kind=realType)    :: adjRelTol  
+       real(kind=realType)    :: adjAbsTol  
+       real(kind=realType)    :: adjDivTol  
+       integer(kind=intType)  :: adjMaxIter 
+       integer(kind=intType)  :: adjRestart 
+       integer(kind=intType)  :: adjMonStep 
+      
+
+     end module inputADjoint

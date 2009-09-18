@@ -327,7 +327,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
 !  omegafourxrotb = 0.0
 !  coefpolxrotb(:) = 0.0
 !  omegafouryrotb = 0.0
-!  coefpolyrotb(:) = 0.0
+ ! coefpolyrotb(:) = 0.0
 !  omegafourzrotb = 0.0
 !  coefpolzrotb(:) = 0.0
 !  coscoeffourxrotb(:) = 0.0

@@ -76,7 +76,7 @@
        ! introduced to take famID == 0 into account.
 
        modFamID = max(famID, 1_intType)
-       print *,'modFamiID',modfamID,famid
+       !print *,'modFamiID',modfamID,famid
        nSurfNodesLoc = mdNSurfNodesLocal(modFamID) 
        nSurfNodes = mdNSurfNodes(:,modFamID) 
 
