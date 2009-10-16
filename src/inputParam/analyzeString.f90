@@ -1155,6 +1155,17 @@
 !
 !        ****************************************************************
 !        *                                                              *
+!        * TS Stability Derivative parameters.                          *
+!        *                                                              *
+!        ****************************************************************
+!
+        case ("compute ts stability derivatives")
+           TSStability= checkYesNo(value, keyword)
+           !print *,'Tsstability',TSStability
+
+!
+!        ****************************************************************
+!        *                                                              *
 !        * ADjoint parameters.                                          *
 !        *                                                              *
 !        ****************************************************************

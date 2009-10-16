@@ -904,3 +904,21 @@
       
 
      end module inputADjoint
+
+     module inputTSStabDeriv
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Definition of some parameters for Time Spectral stability      *
+!      * derivatives.                                                   *
+!      * The actual values of this parameters are arbitrary;            *
+!      * in the code always the symbolic names are (should be) used.    *
+!      *                                                                *
+!      ******************************************************************
+!
+
+       ! TSStability : Whether or not the TS stability derivatives should
+       !               be computed
+       logical:: TSStability
+
+     end module inputTSStabDeriv

@@ -57,15 +57,15 @@
       !Reset the local storage to zero
       coefLoc(:) = 0
       domains: do nn=1,nDom
-
+         print *,'domain',nn
          ! Set the pointers for this block.
-         
+         print *,'setting pointers',nn, groundLevel, sps
          call setPointers(nn, groundLevel, sps)
          
          ! Compute the forces and moments for this block.
-         
+         print *,'calling forces'
          call forcesAndMoments(cfp, cfv, cmp, cmv, yplusMax)
-         
+         print *,'summing'
          coefLoc(1) =coefLoc(1) + (cFp(1) + cFv(1))*liftDirection(1) &
               + (cFp(2) + cFv(2))*liftDirection(2) &
               + (cFp(3) + cFv(3))*liftDirection(3)
@@ -82,6 +82,7 @@
 
       enddo domains
 
+      print *,'loop finished...reducing'
       ! Determine the global sum of the summation monitoring
       ! variables. The sum is made known to all processors.
 
