@@ -25,6 +25,7 @@
        use inputPhysics
        use inputTimeSpectral
        use inputADjoint
+       use inputTSStabDeriv
        use communication
        implicit none
 !
@@ -92,6 +93,17 @@
              print *, "       time for adjoint = ", timer(3)-timer(2)
           endif
        end if
+       !print *,'tsstability',TSStability
+!stop
+       if(TSStability)then
+          call computeTSDerivatives
+          
+          if(myID==0)then
+             call cpu_time(timer(4))
+             print *, "       time for tsDerivatives = ", timer(4)-timer(3)
+          endif
+       end if
+
        ! First part to release the memory.
 
        call releaseMemoryPart1
