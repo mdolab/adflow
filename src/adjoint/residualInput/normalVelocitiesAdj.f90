@@ -9,7 +9,7 @@
 !      ******************************************************************
 !
        subroutine normalVelocitiesAllLevelsAdj(sps,iCell, jCell, kCell,sFaceIAdj,&
-            sFaceJAdj,sFaceKAdj,siAdj, sjAdj, skAdj,rFaceAdj)
+            sFaceJAdj,sFaceKAdj,siAdj, sjAdj, skAdj,rFaceAdj,nn,level,sps2)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -23,21 +23,22 @@
        use BCTypes
        use blockPointers
        use iteration
+       use inputTimeSpectral !nIntervalTimespectral
        implicit none
 !
 !      Subroutine arguments.
 !
-       integer(kind=intType), intent(in) :: sps
+       integer(kind=intType), intent(in) :: nn,level,sps,sps2
        integer(kind=intType), intent(in) :: iCell, jCell, kCell
-       real(kind=realType), dimension(-2:2,-2:2,-2:2), intent(in) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
-       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) :: siAdj, sjAdj, skAdj
-       real(kind=realType), dimension(nBocos,-2:2,-2:2), intent(out) :: rFaceAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral), intent(in) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
+       real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral), intent(in) :: siAdj, sjAdj, skAdj
+       real(kind=realType), dimension(nBocos,-2:2,-2:2,nTimeIntervalsSpectral), intent(out) :: rFaceAdj
        
 !
 !      Local variables.
 !
 
-       integer(kind=intType) :: nLevels, level, nn, mm
+       integer(kind=intType) :: nLevels, mm
        integer(kind=intType) :: i, j,l,m
 
        integer(kind=intType) :: iSt,iEn,jSt,jEn,ii,jj
@@ -61,7 +62,7 @@
        ! since rface normally isn't allocate for all BC's set to zero by 
        ! default, then let it get filled in.
 
-       rFaceAdj(:,:,:) = zero
+       rFaceAdj(:,:,:,sps2) = zero
 
 !!Governed Outside computeRAdj!
 !!$       ! Loop over the number of grid levels, starting at groundLevel,
@@ -136,12 +137,12 @@
                       if(iRBeg == iREnd) secondHalo = .false.
                       if(secondHalo)then
                          mult = -one
-                         ss(iSt:iEn,jSt:jEn,:) = siAdj(-1,iSt:iEn,jSt:jEn,:)
-                         sFaceAdj(iSt:iEn,jSt:jEn)= sFaceIAdj(-1,iSt:iEn,jSt:jEn)
+                         ss(iSt:iEn,jSt:jEn,:) = siAdj(-1,iSt:iEn,jSt:jEn,:,sps2)
+                         sFaceAdj(iSt:iEn,jSt:jEn)= sFaceIAdj(-1,iSt:iEn,jSt:jEn,sps2)
                       else 
                          mult = -one
-                         ss(iSt:iEn,jSt:jEn,:) = siAdj(-2,iSt:iEn,jSt:jEn,:)
-                         sFaceAdj(iSt:iEn,jSt:jEn)= sFaceIAdj(-2,iSt:iEn,jSt:jEn)
+                         ss(iSt:iEn,jSt:jEn,:) = siAdj(-2,iSt:iEn,jSt:jEn,:,sps2)
+                         sFaceAdj(iSt:iEn,jSt:jEn)= sFaceIAdj(-2,iSt:iEn,jSt:jEn,sps2)
                       end if
                    
                    case (iMax)
@@ -155,12 +156,12 @@
                       if(iRBeg == iREnd) secondHalo = .false.
                       if(secondHalo) then
                          mult = one
-                         ss(iSt:iEn,jSt:jEn,:) = siAdj(0,iSt:iEn,jSt:jEn,:)
-                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceIAdj(0,iSt:iEn,jSt:jEn)
+                         ss(iSt:iEn,jSt:jEn,:) = siAdj(0,iSt:iEn,jSt:jEn,:,sps2)
+                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceIAdj(0,iSt:iEn,jSt:jEn,sps2)
                       else
                          mult = one
-                         ss(iSt:iEn,jSt:jEn,:) = siAdj(1,iSt:iEn,jSt:jEn,:)
-                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceIAdj(1,iSt:iEn,jSt:jEn)
+                         ss(iSt:iEn,jSt:jEn,:) = siAdj(1,iSt:iEn,jSt:jEn,:,sps2)
+                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceIAdj(1,iSt:iEn,jSt:jEn,sps2)
                       end if
                    
                    case (jMin)
@@ -174,12 +175,12 @@
                       if(jRBeg == jREnd) secondHalo = .false.
                       if(secondHalo) then
                          mult = -one
-                         ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,-1,jSt:jEn,:)
-                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceJAdj(iSt:iEn,-1,jSt:jEn)
+                         ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,-1,jSt:jEn,:,sps2)
+                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceJAdj(iSt:iEn,-1,jSt:jEn,sps2)
                       else
                          mult = -one
-                         ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,-2,jSt:jEn,:)
-                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceJAdj(iSt:iEn,-2,jSt:jEn)
+                         ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,-2,jSt:jEn,:,sps2)
+                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceJAdj(iSt:iEn,-2,jSt:jEn,sps2)
                       end if
 
                    case (jMax)
@@ -193,12 +194,12 @@
                       if(jRBeg == jREnd) secondHalo = .false.
                       if(secondHalo) then
                          mult = one
-                         ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,0,jSt:jEn,:)
-                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceJAdj(iSt:iEn,0,jSt:jEn)
+                         ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,0,jSt:jEn,:,sps2)
+                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceJAdj(iSt:iEn,0,jSt:jEn,sps2)
                       else
                          mult = one
-                         ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,1,jSt:jEn,:)
-                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceJAdj(iSt:iEn,1,jSt:jEn)
+                         ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,1,jSt:jEn,:,sps2)
+                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceJAdj(iSt:iEn,1,jSt:jEn,sps2)
                       end if
                      
                    case (kMin)
@@ -212,12 +213,12 @@
                       if(kRBeg == kREnd) secondHalo = .false.
                       if(secondHalo) then
                          mult = -one
-                         ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,-1,:)
-                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceKAdj(iSt:iEn,jSt:jEn,-1)
+                         ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,-1,:,sps2)
+                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceKAdj(iSt:iEn,jSt:jEn,-1,sps2)
                       else
                          mult = -one
-                         ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,-2,:)
-                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceKAdj(iSt:iEn,jSt:jEn,-2)
+                         ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,-2,:,sps2)
+                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceKAdj(iSt:iEn,jSt:jEn,-2,sps2)
                       end if
                      
                    case (kMax)
@@ -231,12 +232,12 @@
                       if(kRBeg == kREnd) secondHalo = .false.
                       if(secondHalo) then
                          mult = one
-                         ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,0,:)
-                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceKAdj(iSt:iEn,jSt:jEn,0)
+                         ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,0,:,sps2)
+                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceKAdj(iSt:iEn,jSt:jEn,0,sps2)
                       else
                          mult = one
-                         ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,1,:)
-                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceKAdj(iSt:iEn,jSt:jEn,1)
+                         ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,1,:,sps2)
+                         sFaceAdj(iSt:iEn,jSt:jEn) = sFaceKAdj(iSt:iEn,jSt:jEn,1,sps2)
                       end if
                       
                    end select
@@ -249,8 +250,8 @@
 
                      ! Compute the inverse of the length of the normal
                      ! vector and possibly correct for inward pointing.
-                       if( ss(ii,jj,1)>zero .or. ss(ii,jj,2)>zero&
-                            .or. ss(ii,jj,3)>zero)then
+                       if( ss(ii,jj,1)**2>zero .or. ss(ii,jj,2)**2>zero&
+                            .or. ss(ii,jj,3)**2>zero)then
                           weight = sqrt(ss(ii,jj,1)**2 + ss(ii,jj,2)**2 &
                                +      ss(ii,jj,3)**2)
                           !if(weight > zero) weight = mult/weight
@@ -259,13 +260,13 @@
                           ! pointing unit normal.
                           
                           !BCData(mm)%rFace(i,j) = weight*sFace(i,j)
-                          rFaceAdj(mm,ii,jj) = weight*sFaceAdj(ii,jj)
+                          rFaceAdj(mm,ii,jj,sps2) = weight*sFaceAdj(ii,jj)
 !!$                     if (abs(BCData(mm)%rFace(l+ii,m+jj)-rFaceAdj(mm,ii,jj))>1e-16)then
 !!$                        print *,'indices',mm,ii,jj,l,m
 !!$                        print *,'rface',BCData(mm)%rFace(l+ii,m+jj),rFaceAdj(mm,ii,jj),BCData(mm)%rFace(l+ii,m+jj)-rFaceAdj(mm,ii,jj)
 !!$                     endif
                        else
-                          rFaceAdj(mm,ii,jj)= zero
+                          rFaceAdj(mm,ii,jj,sps2)= zero
                        endif
 
                    enddo
@@ -284,7 +285,7 @@
                 !if( associated(BCData(mm)%rFace) ) &
                 !    BCData(mm)%rFace = zero 
                 if(BCType(mm) == FarField .or. BCType(mm) == EulerWall) then
-                   rFaceAdj(mm,:,:) = zero
+                   rFaceAdj(mm,:,:,sps2) = zero
                 endif
              enddo
 

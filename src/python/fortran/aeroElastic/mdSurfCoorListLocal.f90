@@ -66,13 +66,14 @@
 
        ! Determine the number of surface nodes per family if this
        ! information is not available.
-       !print *,'creating Nsurfnodes local'
+       !print *,'creating Nsurfnodes local', mdNSurfNodesLocal
        if(.not. allocated(mdNSurfNodesLocal)) call mdCreateNSurfNodesLocal
 
        ! Allocate the memory for the local surface coordinates.
        ! ModFamID is introduced to take famID == 0 into account.
 
        modFamID = max(famID, 1_intType)
+       !print *,'famid', modFamID
        nSurfNodesLoc = mdNSurfNodesLocal(modFamID) 
        !print *,'allocating xxloc',nsurfnodesloc
        allocate(xxLoc(3,nSurfNodesLoc), stat=ierr)
@@ -81,7 +82,7 @@
                         "Memory allocation failure for xxLoc")
 
        ! Store the coordinates of the local surface nodes.
-
+       !print *,'entering domain loop'
        ii = 0
        domains: do nn=1,nDom
 
@@ -119,7 +120,7 @@
                    BCType(mm) == NSWallIsothermal) storeSubface = .true.
                             
            endif
-
+           !print *,'storing subface',mm,nBocos
            ! Store the data of this subface, if needed.
 
            storeSubfaceTest: if( storeSubface ) then
@@ -172,10 +173,10 @@
            endif storeSubfaceTest
          enddo bocos
        enddo domains
-
+       !print *,'looping finished'
        ! Test if the memory of mdSurfxx has already been allocated.
        ! If not, allocate it.
-
+       !print *,'aalocating mdSurfxxlocal'
        if(.not. allocated(mdSurfxxLocal) ) then
 
          jj = mdNSurfNodesLocal(max(cgnsNfamilies,1_intType))
@@ -188,7 +189,7 @@
        mdSurfxxLocal(:,:)=xxLoc(:,:)
 
        ! Release the memory of xxLoc.
-
+       
        deallocate(xxLoc, stat=ierr)
        if(ierr /= 0)                            &
          call terminate("mdCreateSurfCoorList", &

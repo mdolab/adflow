@@ -24,6 +24,7 @@
       use iteration     ! groundLevel
       use inputTimeSpectral ! spaceDiscr
       use inputIO
+      use cgnsGrid        ! cgnsNFamilies
 
       !from old verify routine
       use ADjointPETSc, only: drdx,petscone,insert_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world,add_values,mat_initial_matrix,PETSC_DEFAULT_DOUBLE_PRECISION
@@ -48,7 +49,7 @@
 !
 !     Local variables 
 !
-      integer(kind=intType) :: i, j, k, n,nn,nnn,sps = 1,m,idxres,idxnode
+      integer(kind=intType) :: i, j, k, n,nn,nnn,sps = 1,m,idxres,idxnode,famid
       real(kind=realType), dimension(10) :: time
       real(kind=realType) :: timeRes
 
@@ -79,8 +80,12 @@
       !****************************
       !Now set up dxvdxs
       !*********************
-      
-      call initializeWarping
+       if(cgnsNfamilies > 0) then
+         famID = 1
+      else
+         famID = 0
+      endif
+      call initializeWarping(famID)
       
       call setupVolumeSurfaceDerivatives
 
@@ -103,7 +108,7 @@
                            if ((idxres-1)>=0 .and. (idxnode-1)>=0)then
                               call MatGetValues(drdxs,1,idxres-1,1,idxnode-1,value,PETScIerr)
                               !if(value.ne.0)then
-                              if(value>1e-10)then
+                              if(abs(value)>1e-10)then
                                  !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
                                  !12                                     format(1x,'Face',6I2,'edge',12I2)
                                  write(unitdrdxs,13) idxnode,idxres,m,nn,n,k,j,i,nnn,value

@@ -12,7 +12,7 @@
                               sFaceIAdj,sFaceJAdj,sFaceKAdj,&
                               radIAdj,radJAdj,radKAdj,&
                               dwAdj, iCell, jCell, kCell,  &  
-                              rotRateAdj, correctForK)
+                              rotRateAdj, correctForK,nn,level,sps)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -31,26 +31,26 @@
        implicit none
        
 !       Subroutine Variables
-       integer(kind=intType) :: iCell, jCell, kCell
-       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(inout) :: siAdj, sjAdj, skAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2), intent(in) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
+       integer(kind=intType) :: iCell, jCell, kCell,nn,level,sps
+       real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral), intent(inout) :: siAdj, sjAdj, skAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral), intent(in) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
        real(kind=realType), dimension(3),intent(in) ::rotRateAdj
-       real(kind=realType), dimension(0:0,0:0,0:0), intent(inout) :: volAdj
-       real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(inout) :: normAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
+       real(kind=realType), dimension(0:0,0:0,0:0,nTimeIntervalsSpectral), intent(inout) :: volAdj
+       real(kind=realType), dimension(nBocos,-2:2,-2:2,3,nTimeIntervalsSpectral), intent(inout) :: normAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral), &
                                                  intent(inout) :: wAdj
-       real(kind=realType), dimension(-1:1,-1:1,-1:1) :: radIAdj,radJAdj,radKAdj
-       real(kind=realType), dimension(nw), intent(inout) :: dwAdj
-       real(kind=realType),dimension(nw):: dwAdj2
+       real(kind=realType), dimension(-1:1,-1:1,-1:1,nTimeIntervalsSpectral) :: radIAdj,radJAdj,radKAdj
+       real(kind=realType), dimension(nw,nTimeIntervalsSpectral), intent(inout) :: dwAdj
+       real(kind=realType),dimension(nw,nTimeIntervalsSpectral):: dwAdj2
        !integer(kind=intType), intent(in) :: discr
        logical, intent(in) :: correctForK
 
-       real(kind=realType), dimension(-2:2,-2:2,-2:2),intent(in) :: pAdj
-        real(kind=realType), dimension(nw) :: fwAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral),intent(in) :: pAdj
+        real(kind=realType), dimension(nw,nTimeIntervalsSpectral) :: fwAdj
 !
 !      Local variables.
 !
-       integer(kind=intType) :: sps, nn, discr
+       integer(kind=intType) :: discr!sps, nn, discr
        integer(kind=intType) :: i, j, k, l
 
        logical :: fineGrid
@@ -112,7 +112,7 @@
                                          siAdj, sjAdj, skAdj, volAdj, &
                                          sFaceIAdj,sFaceJAdj,sFaceKAdj,&
                                          rotRateAdj,                  &
-                                         iCell, jCell, kCell)
+                                         iCell, jCell, kCell,nn,level,sps)
 
            !print *,'after inviscid central',dwadj
 
@@ -131,15 +131,15 @@
                   !call inviscidDissFluxScalar()
                   call inviscidDissFluxScalarAdj(wAdj,  pAdj,  dwadj,&
                                                 radIAdj,radJAdj,radKAdj, &
-                                                iCell, jCell, kCell)
+                                                iCell, jCell, kCell,nn,level,sps)
 
-!!$               do i = 1,nw
-!!$                  !if (abs(dwAdj(i)-dwAdj2(i))>0.0) then
-!!$                  !if (abs(dwAdj(i)-fw(icell,jcell,kcell,i))>1e-16) then
-!!$                  !if (1.0>0.0) then
-!!$                     print *,abs(dwAdj(i)-fw(icell,jcell,kcell,i)),'dwadjscalar',dwAdj(i),'scalar2',i,icell,jcell,kcell,fw(icell,jcell,kcell,i)
-!!$                  !endif
-!!$               enddo
+!!$!               do i = 1,nw
+!!$!                  !if (abs(dwAdj(i)-dwAdj2(i))>0.0) then
+!!$!                  !if (abs(dwAdj(i)-fw(icell,jcell,kcell,i))>1e-16) then
+!!$!                  !if (1.0>0.0) then
+!!$!                     print *,abs(dwAdj(i)-fw(icell,jcell,kcell,i)),'dwadjscalar',dwAdj(i),'scalar2',i,icell,jcell,kcell,fw(icell,jcell,kcell,i)
+!!$!                  !endif
+!!$!               enddo
                !stop
                else
                   call terminate("residualAdj", &
@@ -149,27 +149,27 @@
 
              !===========================================================
 
-!!$             case (dissMatrix) ! Matrix dissipation scheme.
-!!$
-!!$               if( fineGrid ) then
-!!$                 call inviscidDissFluxMatrixAdj()
-!!$               else
-!!$                 call terminate("residualAdj", &
-!!$                        "ADjoint does not function on coarse grid level")
-!!$                 !call inviscidDissFluxMatrixCoarse
-!!$               endif
+!!$!             case (dissMatrix) ! Matrix dissipation scheme.
+!!$!
+!!$!               if( fineGrid ) then
+!!$!                 call inviscidDissFluxMatrixAdj()
+!!$!               else
+!!$!                 call terminate("residualAdj", &
+!!$!                        "ADjoint does not function on coarse grid level")
+!!$!                 !call inviscidDissFluxMatrixCoarse
+!!$!               endif
 
              !===========================================================
 
-!!$             case (dissCusp) ! Cusp dissipation scheme.
-!!$
-!!$               if( fineGrid ) then
-!!$                 call inviscidDissFluxCuspAdj()
-!!$               else
-!!$                 call terminate("residualAdj", &
-!!$                        "ADjoint does not function on coarse grid level")
-!!$                 !call inviscidDissFluxCuspCoarse
-!!$               endif
+!!$ !            case (dissCusp) ! Cusp dissipation scheme.
+!!$!
+!!$!               if( fineGrid ) then
+!!$!                 call inviscidDissFluxCuspAdj()
+!!$!               else
+!!$!                 call terminate("residualAdj", &
+!!$!                        "ADjoint does not function on coarse grid level")
+!!$!                 !call inviscidDissFluxCuspCoarse
+!!$!               endif
 
              !===========================================================
 
@@ -182,63 +182,63 @@
                call inviscidUpwindFluxAdj(wAdj,  pAdj,  dwAdj, &
                                         siAdj, sjAdj, skAdj, &
                                         sFaceIAdj,sFaceJAdj,sFaceKAdj,&
-                                        iCell, jCell, kCell,finegrid)
+                                        iCell, jCell, kCell,finegrid,nn,level,sps)
 
                !print *,'After inviscid upwind',dwAdj
 !               call inviscidUpwindFluxAdj2(wAdj,  pAdj,  dwAdj2, &
 !                                        iCell, jCell, kCell,finegrid)
-!!$               call inviscidUpwindFluxAdj2(w(icell-2:icell+2,jcell-2:jcell+2,kcell-2:kcell+2,:), p(icell-2:icell+2,jcell-2:jcell+2,kcell-2:kcell+2),  dwAdj2, &
-!!$                                        iCell, jCell, kCell,finegrid)
-!!$               
-!!$               fw(:,:,:,:) = 0.0
-!!$
-!!$               call inviscidUpwindFlux(fineGrid)
+!!$ !              call inviscidUpwindFluxAdj2(w(icell-2:icell+2,jcell-2:jcell+2,kcell-2:kcell+2,:), p(icell-2:icell+2,jcell-2:jcell+2,kcell-2:kcell+2),  dwAdj2, &
+!!$ !                                       iCell, jCell, kCell,finegrid)
+!!$ !              
+!!$ !              fw(:,:,:,:) = 0.0
+!!$!
+!!$ !              call inviscidUpwindFlux(fineGrid)
 
-!!$               do l=1,nwf
-!!$                  do k=2,kl
-!!$                     do j=2,jl
-!!$                        do i=2,il
-!!$                           dw(i,j,k,l) = (dw(i,j,k,l) + fw(i,j,k,l)) &
-!!$                                * real(iblank(i,j,k), realType)
-!!$                        enddo
-!!$                     enddo
-!!$                  enddo
-!!$               enddo
+!!$ !              do l=1,nwf
+!!$ !                 do k=2,kl
+!!$ !                    do j=2,jl
+!!$ !                       do i=2,il
+!!$ !                          dw(i,j,k,l) = (dw(i,j,k,l) + fw(i,j,k,l)) &
+!!$ !                               * real(iblank(i,j,k), realType)
+!!$ !                       enddo
+!!$ !                    enddo
+!!$  !                enddo
+!!$  !             enddo
 
-!!$               do i = 1,nw
-!!$                  !if (abs(dwAdj(i)-dwAdj2(i))>0.0) then
-!!$                  if (abs(dwAdj(i)-fw(icell,jcell,kcell,i))>0.0) then
-!!$                  !if (1.0>0.0) then
-!!$                     print *,abs(dwAdj(i)-fw(icell,jcell,kcell,i)),'dwadjup',dwAdj(i),'up2',dwAdj2(i),i,icell,jcell,kcell,fw(icell,jcell,kcell,i)
-!!$                  endif
-!!$               enddo
+!!$  !             do i = 1,nw
+!!$  !                !if (abs(dwAdj(i)-dwAdj2(i))>0.0) then
+!!$  !                if (abs(dwAdj(i)-fw(icell,jcell,kcell,i))>0.0) then
+!!$  !                !if (1.0>0.0) then
+!!$  !                   print *,abs(dwAdj(i)-fw(icell,jcell,kcell,i)),'dwadjup',dwAdj(i),'up2',dwAdj2(i),i,icell,jcell,kcell,fw(icell,jcell,kcell,i)
+!!$  !                endif
+!!$  !             enddo
            end select
-
-!come back to later
-!!$           ! Compute the viscous flux in case of a viscous computation.
 !!$
-!!$           if( viscous ) call viscousFlux
+!!$!come back to later
+  !         ! Compute the viscous flux in case of a viscous computation.
+!
+ !          if( viscous ) call viscousFlux
 
            ! Add the dissipative and possibly viscous fluxes to the
            ! Euler fluxes. Loop over the owned cells and add fw to dw.
            ! Also multiply by iblank so that no updates occur in holes
            ! or on the overset boundary.
 
-!!$           do l=1,nwf
-!!$             do k=2,kl
-!!$               do j=2,jl
-!!$                 do i=2,il
-!!$                   dw(i,j,k,l) = (dw(i,j,k,l) + fw(i,j,k,l)) &
-!!$                               * real(iblank(i,j,k), realType)
-!!$                 enddo
-!!$               enddo
-!!$             enddo
-!!$           enddo
+!!$  !         do l=1,nwf
+!!$  !           do k=2,kl
+!!$  !             do j=2,jl
+!!$  !               do i=2,il
+!!$  !                 dw(i,j,k,l) = (dw(i,j,k,l) + fw(i,j,k,l)) &
+!!$  !                             * real(iblank(i,j,k), realType)
+!!$  !               enddo
+!!$  !             enddo
+!!$  !           enddo
+!!$  !         enddo
 
 
            do l=1,nwf
 
-              dwAdj(l) =dwAdj(l)! (dwAdj(l) + fwAdj(l)) &
+              dwAdj(l,sps) =dwAdj(l,sps)! (dwAdj(l) + fwAdj(l)) &
                                !* real(iblank(iCell,jCell,kCell), realType)
            enddo
 

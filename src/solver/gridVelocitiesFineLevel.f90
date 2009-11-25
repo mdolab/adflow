@@ -30,6 +30,8 @@
        use inputUnsteady
        use iteration
        use inputPhysics
+       use inputTSStabDeriv
+       use monitor
        implicit none
 !
 !      Subroutine arguments.
@@ -52,12 +54,22 @@
        real(kind=realType), dimension(3) :: rotCenter, rotRate
 
        real(kind=realType), dimension(3)   :: rotationPoint
-       real(kind=realType), dimension(3,3) :: rotationMatrix
+       real(kind=realType), dimension(3,3) :: rotationMatrix,&
+            derivRotationMatrix
 
+       real(kind=realType) :: tNew, tOld
        real(kind=realType), dimension(:,:), pointer :: sFace
 
        real(kind=realType), dimension(:,:,:),   pointer :: xx, ss
        real(kind=realType), dimension(:,:,:,:), pointer :: xxOld
+
+       integer(kind=intType) :: liftIndex
+       real(kind=realType) :: alpha,beta,intervalMach
+       real(kind=realType), dimension(3) ::velDir,liftDir,dragDir
+      
+       !Function Definitions
+       
+       real(kind=realType) :: TSAlpha,TSBeta,TSMach
 !
 !      ******************************************************************
 !      *                                                                *
@@ -88,8 +100,85 @@
        ! the entire grid. It is assumed that the rigid body motion of
        ! the grid is only specified if there is only 1 section present.
 
-       call derivativeRotMatrixRigid(rotationMatrix, rotationPoint, t(1))
-       !print *,'rotation Matrix',rotationMatrix, rotationPoint,'t', t(1)
+       call derivativeRotMatrixRigid(derivRotationMatrix, rotationPoint, t(1))
+       !print *,'rotation Matrix',derivRotationMatrix, rotationPoint,'t', t(1)
+       
+       !compute the rotation matrix to update the velocities for the time
+       !spectral stability derivative case...
+       if(TSStability)then
+          ! Determine the time values of the old and new time level.
+          ! It is assumed that the rigid body rotation of the mesh is only
+          ! used when only 1 section is present.
+          
+          tNew = timeUnsteady + timeUnsteadyRestart
+          tOld = tNew - t(1)
+
+          if(TSpqrMode) then
+             ! Compute the rotation matrix of the rigid body rotation as
+             ! well as the rotation point; the latter may vary in time due
+             ! to rigid body translation.
+             
+             call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+             velxgrid0 = rotationMatrix(1,1)*velxgrid0 &
+                  + rotationMatrix(1,2)*velygrid0 &
+                  + rotationMatrix(1,3)*velzgrid0
+             velygrid0 = rotationMatrix(2,1)*velxgrid0 &
+                  + rotationMatrix(2,2)*velygrid0 &
+                  + rotationMatrix(2,3)*velzgrid0
+             velzgrid0 = rotationMatrix(3,1)*velxgrid0 &
+                  + rotationMatrix(3,2)*velygrid0 &
+                  + rotationMatrix(3,3)*velzgrid0
+          elseif(tsAlphaMode)then
+             ! get the baseline alpha and determine the liftIndex
+             call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+             
+             !Determine the alpha for this time instance
+             alpha = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+                             degreeFourAlpha,  omegaFourAlpha,     &
+                             cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+             !Determine the grid velocity for this alpha
+             call adjustInflowAngleAdj(alpha,beta,velDir,liftDir,dragDir,&
+                  liftIndex)
+             !do I need to update the lift direction and drag direction as well?
+             !set the effictive grid velocity for this time interval
+             velxGrid0 = (aInf*machgrid)*(-velDir(1))
+             velyGrid0 = (aInf*machgrid)*(-velDir(2))
+             velzGrid0 = (aInf*machgrid)*(-velDir(3))
+             print *,'base velocity',machgrid, velxGrid0 , velyGrid0 , velzGrid0 
+
+          elseif(tsBetaMode)then
+             ! get the baseline alpha and determine the liftIndex
+             call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+             
+             !Determine the alpha for this time instance
+             alpha = TSBeta(degreePolBeta,   coefPolBeta,       &
+                             degreeFourBeta,  omegaFourBeta,     &
+                             cosCoefFourBeta, sinCoefFourBeta, t(1))
+             !Determine the grid velocity for this alpha
+             call adjustInflowAngleAdj(alpha,beta,velDir,liftDir,dragDir,&
+                  liftIndex)
+             !do I need to update the lift direction and drag direction as well?
+             !set the effictive grid velocity for this time interval
+             velxGrid0 = (aInf*machgrid)*(-velDir(1))
+             velyGrid0 = (aInf*machgrid)*(-velDir(2))
+             velzGrid0 = (aInf*machgrid)*(-velDir(3))
+          elseif(TSMachMode)then
+             !determine the mach number at this time interval
+             IntervalMach = TSMach(degreePolMach,   coefPolMach,       &
+                             degreeFourMach,  omegaFourMach,     &
+                             cosCoefFourMach, sinCoefFourMach, t(1))
+             !set the effective grid velocity
+             velxGrid0 = (aInf*(IntervalMach+machgrid))*(-velDirFreestream(1))
+             velyGrid0 = (aInf*(IntervalMach+machgrid))*(-velDirFreestream(2))
+             velzGrid0 = (aInf*(IntervalMach+machgrid))*(-velDirFreestream(3))
+             
+          elseif(TSAltitudeMode)then
+             call terminate('gridVelocityFineLevel','altitude motion not yet implemented...')
+          else
+             call terminate('gridVelocityFineLevel','Not a recognized Stability Motion')
+          end if
+       endif
+
        ! Loop over the number of local blocks.
 
        domains: do nn=1,nDom
@@ -325,13 +414,32 @@
              j = nbkGlobal
 
              rotCenter = cgnsDoms(j)%rotCenter
+             !print *,'rotcenter',rotCenter,'rotpoint',rotpoint
              rotRate   = timeRef*cgnsDoms(j)%rotRate
-
+             !print *,'rotRate',rotRate,'timeref',timeref
              !subtract off the rotational velocity of the center of the grid
              ! to account for the added overall velocity.
-             velxGrid =velxgrid0+ 1*(rotRate(2)*rotCenter(3) - rotRate(3)*rotCenter(2))
-             velyGrid =velygrid0+ 1*(rotRate(3)*rotCenter(1) - rotRate(1)*rotCenter(3))
-             velzGrid =velzgrid0+ 1*(rotRate(1)*rotCenter(2) - rotRate(2)*rotCenter(1))
+!             velxGrid =velxgrid0+ 1*(rotRate(2)*rotCenter(3) - rotRate(3)*rotCenter(2))
+!             velyGrid =velygrid0+ 1*(rotRate(3)*rotCenter(1) - rotRate(1)*rotCenter(3))
+!             velzGrid =velzgrid0+ 1*(rotRate(1)*rotCenter(2) - rotRate(2)*rotCenter(1))
+             
+             velxGrid =velxgrid0+ 1*(rotRate(2)*rotCenter(3) &
+                                  - rotRate(3)*rotCenter(2)) &
+                              + derivRotationMatrix(1,1)*rotPoint(1) &
+                              + derivRotationMatrix(1,2)*rotPoint(2) &
+                              + derivRotationMatrix(1,3)*rotPoint(3)
+             velyGrid =velygrid0+ 1*(rotRate(3)*rotCenter(1)&
+                                  - rotRate(1)*rotCenter(3))&
+                              + derivRotationMatrix(2,1)*rotPoint(1) &
+                              + derivRotationMatrix(2,2)*rotPoint(2) &
+                              + derivRotationMatrix(2,3)*rotPoint(3)
+             velzGrid =velzgrid0+ 1*(rotRate(1)*rotCenter(2) &
+                                  - rotRate(2)*rotCenter(1)) &
+                              + derivRotationMatrix(3,1)*rotPoint(1) &
+                              + derivRotationMatrix(3,2)*rotPoint(2) &
+                              + derivRotationMatrix(3,3)*rotPoint(3)
+
+           !add in rotmatrix*rotpoint....
              !print *,'velgrid',velxGrid,velyGrid , velzGrid
 
 !
@@ -370,37 +478,44 @@
                    xxc(1) = xc(1) - rotCenter(1)
                    xxc(2) = xc(2) - rotCenter(2)
                    xxc(3) = xc(3) - rotCenter(3)
-
+                   !print *,'xxc1',- rotRate(3)+ derivRotationMatrix(1,2),xxc
                    ! Determine the rotation speed of the cell center,
                    ! which is omega*r.
 
                    sc(1) = rotRate(2)*xxc(3) - rotRate(3)*xxc(2)
                    sc(2) = rotRate(3)*xxc(1) - rotRate(1)*xxc(3)
                    sc(3) = rotRate(1)*xxc(2) - rotRate(2)*xxc(1)
-
+                 
+!                   print *,'sc(1)',rotRate(2),xxc(3), -rotRate(3),xxc(2)
                    ! Determine the coordinates relative to the
                    ! rigid body rotation point.
 
                    xxc(1) = xc(1) - rotationPoint(1)
                    xxc(2) = xc(2) - rotationPoint(2)
                    xxc(3) = xc(3) - rotationPoint(3)
-
+                   !print *,'xxc2',- rotRate(3)+ derivRotationMatrix(1,2),xxc
                    ! Determine the total velocity of the cell center.
                    ! This is a combination of rotation speed of this
                    ! block and the entire rigid body rotation.
-
+                   !print *,'velgridx',velxGrid,rotRate(2)*xxc(3)+derivRotationMatrix(1,3)*xxc(3),- rotRate(3)+ derivRotationMatrix(1,2),xxc(2) 
                    s(i,j,k,1) = sc(1) + velxGrid           &
-                              + rotationMatrix(1,1)*xxc(1) &
-                              + rotationMatrix(1,2)*xxc(2) &
-                              + rotationMatrix(1,3)*xxc(3)
+                              + derivRotationMatrix(1,1)*xxc(1) &
+                              + derivRotationMatrix(1,2)*xxc(2) &
+                              + derivRotationMatrix(1,3)*xxc(3)
                    s(i,j,k,2) = sc(2) + velyGrid           &
-                              + rotationMatrix(2,1)*xxc(1) &
-                              + rotationMatrix(2,2)*xxc(2) &
-                              + rotationMatrix(2,3)*xxc(3)
+                              + derivRotationMatrix(2,1)*xxc(1) &
+                              + derivRotationMatrix(2,2)*xxc(2) &
+                              + derivRotationMatrix(2,3)*xxc(3)
                    s(i,j,k,3) = sc(3) + velzGrid           &
-                              + rotationMatrix(3,1)*xxc(1) &
-                              + rotationMatrix(3,2)*xxc(2) &
-                              + rotationMatrix(3,3)*xxc(3)
+                              + derivRotationMatrix(3,1)*xxc(1) &
+                              + derivRotationMatrix(3,2)*xxc(2) &
+                              + derivRotationMatrix(3,3)*xxc(3)
+                   !print *,'s1',i,j,k,s(i,j,k,1)!,sc(1), &
+!                        derivRotationMatrix(1,1)*xxc(1) &
+!                        + derivRotationMatrix(1,2)*xxc(2) &
+!                        + derivRotationMatrix(1,3)*xxc(3)
+!                   print *,'rm1',derivRotationMatrix(1,3),xxc(3),&
+!                        derivRotationMatrix(1,2),xxc(2)
                  enddo
                enddo
              enddo
@@ -502,17 +617,17 @@
                      ! block and the entire rigid body rotation.
 
                      sc(1) = sc(1) + velxGrid           &
-                           + rotationMatrix(1,1)*xxc(1) &
-                           + rotationMatrix(1,2)*xxc(2) &
-                           + rotationMatrix(1,3)*xxc(3)
+                           + derivRotationMatrix(1,1)*xxc(1) &
+                           + derivRotationMatrix(1,2)*xxc(2) &
+                           + derivRotationMatrix(1,3)*xxc(3)
                      sc(2) = sc(2) + velyGrid           &
-                           + rotationMatrix(2,1)*xxc(1) &
-                           + rotationMatrix(2,2)*xxc(2) &
-                           + rotationMatrix(2,3)*xxc(3)
+                           + derivRotationMatrix(2,1)*xxc(1) &
+                           + derivRotationMatrix(2,2)*xxc(2) &
+                           + derivRotationMatrix(2,3)*xxc(3)
                      sc(3) = sc(3) + velzGrid           &
-                           + rotationMatrix(3,1)*xxc(1) &
-                           + rotationMatrix(3,2)*xxc(2) &
-                           + rotationMatrix(3,3)*xxc(3)
+                           + derivRotationMatrix(3,1)*xxc(1) &
+                           + derivRotationMatrix(3,2)*xxc(2) &
+                           + derivRotationMatrix(3,3)*xxc(3)
 
                      ! Store the dot product of grid velocity sc and
                      ! the normal ss in sFace.

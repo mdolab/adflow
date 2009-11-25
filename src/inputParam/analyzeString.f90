@@ -719,6 +719,158 @@
                                sinCoefFourZRot)
 
            gridMotionSpecified = .true.
+
+         ! Polynomial Mach Number parameters.
+
+         case ("degree polynomial mach")
+           read(value,*) degreePolMach
+
+
+         case ("polynomial coefficients mach")
+           nn = max(degreePolMach,0_intType)
+           allocate(coefPolMach(0:nn), stat=ierr)
+           if(ierr /= 0) call terminate("analyzeString", &
+                                        "Memory allocation failure for &
+                                        &coefPolMach")
+
+           call readMotionCoef(value, 0_intType, degreePolMach, &
+                               coefPolMach)
+
+           gridMotionSpecified = .true.
+
+         ! Fourier rotation parameters.
+
+         case ("degree fourier mach")
+           read(value,*) degreeFourMach
+
+         case ("omega fourier mach")
+           read(value,*) omegaFourMach
+
+         case ("fourier cosine coefficients mach")
+           nn = max(degreeFourMach,0_intType)
+           allocate(cosCoefFourMach(0:nn), stat=ierr)
+           if(ierr /= 0) call terminate("analyzeString", &
+                                        "Memory allocation failure for &
+                                        &cosCoefFourMach")
+
+           call readMotionCoef(value, 0_intType, degreeFourMach, &
+                               cosCoefFourMach)
+
+           gridMotionSpecified = .true.
+
+         case ("fourier sine coefficients mach")
+           nn = max(degreeFourMach,1_intType)
+           allocate(sinCoefFourMach(1:nn), stat=ierr)
+           if(ierr /= 0) call terminate("analyzeString", &
+                                        "Memory allocation failure for &
+                                        &sinCoefFourMach")
+
+           call readMotionCoef(value, 1_intType, degreeFourMach, &
+                               sinCoefFourMach)
+
+           gridMotionSpecified = .true.
+
+        ! Polynomial alpha parameters.
+
+        case ("degree polynomial alpha")
+           read(value,*) degreePolAlpha
+           
+        case ("polynomial coefficients alpha")
+           nn = max(degreePolAlpha,0_intType)
+           allocate(coefPolAlpha(0:nn), stat=ierr)
+           if(ierr /= 0) call terminate("analyzeString", &
+                "Memory allocation failure for &
+                &coefPolAlpha")
+           
+           call readMotionCoef(value, 0_intType, degreePolAlpha, &
+                coefPolAlpha)
+           
+           gridMotionSpecified = .true.
+           
+           
+           ! Fourier rotation parameters.
+           
+        case ("degree fourier alpha")
+           read(value,*) degreeFourAlpha
+           
+        case ("omega fourier alpha")
+           read(value,*) omegaFourAlpha
+              
+        case ("fourier cosine coefficients alpha")
+           nn = max(degreeFourAlpha,0_intType)
+           allocate(cosCoefFourAlpha(0:nn), stat=ierr)
+           if(ierr /= 0) call terminate("analyzeString", &
+                                        "Memory allocation failure for &
+                                        &cosCoefFourAlpha")
+
+           call readMotionCoef(value, 0_intType, degreeFourAlpha, &
+                               cosCoefFourAlpha)
+
+           gridMotionSpecified = .true.
+
+         case ("fourier sine coefficients alpha")
+           nn = max(degreeFourAlpha,1_intType)
+           allocate(sinCoefFourAlpha(1:nn), stat=ierr)
+           if(ierr /= 0) call terminate("analyzeString", &
+                                        "Memory allocation failure for &
+                                        &sinCoefFourAlpha")
+
+           call readMotionCoef(value, 1_intType, degreeFourAlpha, &
+                               sinCoefFourAlpha)
+
+           gridMotionSpecified = .true.
+
+        ! Polynomial Beta parameters.
+
+        case ("degree polynomial beta")
+           read(value,*) degreePolBeta
+
+        case ("polynomial coefficients beta")
+           nn = max(degreePolBeta,0_intType)
+           allocate(coefPolBeta(0:nn), stat=ierr)
+           if(ierr /= 0) call terminate("analyzeString", &
+                                        "Memory allocation failure for &
+                                        &coefPolBeta")
+
+           call readMotionCoef(value, 0_intType, degreePolBeta, &
+                               coefPolBeta)
+
+           gridMotionSpecified = .true.
+
+         ! Fourier Beta parameters.
+
+         case ("degree fourier beta")
+           read(value,*) degreeFourBeta
+
+         case ("omega fourier beta")
+           read(value,*) omegaFourBeta
+
+         case ("fourier cosine coefficients beta")
+           nn = max(degreeFourBeta,0_intType)
+           allocate(cosCoefFourBeta(0:nn), stat=ierr)
+           if(ierr /= 0) call terminate("analyzeString", &
+                                        "Memory allocation failure for &
+                                        &cosCoefFourBeta")
+
+           call readMotionCoef(value, 0_intType, degreeFourBeta, &
+                               cosCoefFourBeta)
+
+           gridMotionSpecified = .true.
+
+         case ("fourier sine coefficients beta")
+           nn = max(degreeFourBeta,1_intType)
+           allocate(sinCoefFourBeta(1:nn), stat=ierr)
+           if(ierr /= 0) call terminate("analyzeString", &
+                                        "Memory allocation failure for &
+                                        &sinCoefFourBeta")
+
+           call readMotionCoef(value, 1_intType, degreeFourBeta, &
+                               sinCoefFourBeta)
+
+           gridMotionSpecified = .true.
+
+  
+
 !
 !        ****************************************************************
 !        *                                                              *
@@ -1161,6 +1313,21 @@
 !
         case ("compute ts stability derivatives")
            TSStability= checkYesNo(value, keyword)
+           !print *,'Tsstability',TSStability
+        case ("ts alpha mode")
+           TSalphaMode= checkYesNo(value, keyword)
+           !print *,'Tsstability',TSStability
+        case ("ts rotation mode")
+           TSpqrMode= checkYesNo(value, keyword)
+           !print *,'Tsstability',TSStability
+        case ("ts beta mode")
+           TSBetaMode= checkYesNo(value, keyword)
+           !print *,'Tsstability',TSStability
+        case ("ts mach number mode")
+           TSMachMode= checkYesNo(value, keyword)
+           !print *,'Tsstability',TSStability
+        case ("ts altitude mode")
+           TSAltitudeMode= checkYesNo(value, keyword)
            !print *,'Tsstability',TSStability
 
 !
@@ -1634,6 +1801,8 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       !print *,'initial string',string,start,end
+
        ! Check if end >= 0, i.e. if the order of the polynomial/fourier
        ! series is specified before this subroutine is called.
 
@@ -1652,7 +1821,7 @@
        ! Loop over the number of coefficients to be read.
 
        do i=start,end
-
+          !print *,'i',i,start,end
          ! Check if the string still contains data. If not processor
          ! zero prints and error message, while the others wait to get
          ! killed.
@@ -1667,7 +1836,7 @@
          ! Read the i-th coefficient from the string.
 
          read(string,*) coef(i)
-         print *,'coef',coef(i)
+         !print *,'coef',coef(i)
          ! Remove this coefficient from the string.
 
          pos = index(string, " ")
@@ -1683,7 +1852,7 @@
 
        ! The length of the string should be zero. If not too much data
        ! is specified. Print a warning to indicate this.
-
+       !print *,'string',string
        if(myID == 0 .and. len_trim(string) > 0) then
          print "(a)", "#"
          print "(a)", "#*==================== !!! Warning !!! &

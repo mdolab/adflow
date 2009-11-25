@@ -75,8 +75,8 @@
       
 	
       nzDiagonalXs = 1
-      nzDiagonal = mdNSurfNodesCompact/nproc!13 ! 1 + 6 + 6  check!!!
-
+      nzDiagonal = mdNSurfNodesCompact/(nproc*2)!13 ! 1 + 6 + 6  check!!!
+      print *,'nzdiagonal', nzDiagonal,mdNSurfNodesCompact
 
       ! Average number of off processor contributions per Cell
       ! (average number of donor cells that come from other processor)
@@ -637,13 +637,13 @@
 !
 !     ******************************************************************
 !     *                                                                *
-!     * Create matrix dXvdXs to store teh derivative of the volume     *
+!     * Create matrix dRdXs to store the derivative of the residuals   *
 !     * coordinates wrt the surface coodinates.                        *
-!     * Matrix dXvdXs has size [nDimXv,nDimS].                          *
+!     * Matrix dRdXs has size [nDimw,nDimS].                         *
 !     *                                                                *
 !     ******************************************************************
 !
-      ! Create the matrix dXvdXs.
+      ! Create the matrix dRdXs.
 
       ! sparse parallel matrix in AIJ format
       !                 General case...
@@ -748,7 +748,8 @@
         !                     0,PETSC_NULL,         &
         !                     0, PETSC_NULL,            &
         !                     dXvdXs, PETScIerr)
-	!print *,'creating dxvdxs'
+	print *,'creating dxvdxs',nDimW,PETSC_DECIDE,               &
+		             PETSC_DETERMINE, nDimS
         call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
                              nDimW,PETSC_DECIDE,               &
 		             PETSC_DETERMINE, nDimS,           &
@@ -765,7 +766,7 @@
         call terminate("createWarpingPETScMat", errorMessage)
       endif
 
-      ! Set the matrix dXvdXs options.
+      ! Set the matrix dRdXs options.
 
       ! Warning: The array values is logically two-dimensional, 
       ! containing the values that are to be inserted. By default the

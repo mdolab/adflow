@@ -100,6 +100,73 @@
            endif
          endif
 
+
+         ! Alpha
+
+         if(degreeFourAlpha > 0) then
+           tt = two*pi/omegaFourAlpha
+
+           ! Check if a time period was already determined. If so, try
+           ! to determine a common time. Otherwise just copy the data.
+
+           if( timeDetermined ) then
+             timePeriod = commonTimeSpectral(timePeriod, tt)
+           else
+             timePeriod     = tt
+             timeDetermined = .true.
+           endif
+         endif
+
+
+         ! Beta
+
+         if(degreeFourBeta > 0) then
+           tt = two*pi/omegaFourBeta
+
+           ! Check if a time period was already determined. If so, try
+           ! to determine a common time. Otherwise just copy the data.
+
+           if( timeDetermined ) then
+             timePeriod = commonTimeSpectral(timePeriod, tt)
+           else
+             timePeriod     = tt
+             timeDetermined = .true.
+           endif
+         endif
+
+         ! Mach
+
+         if(degreeFourMach > 0) then
+           tt = two*pi/omegaFourMach
+
+           ! Check if a time period was already determined. If so, try
+           ! to determine a common time. Otherwise just copy the data.
+
+           if( timeDetermined ) then
+             timePeriod = commonTimeSpectral(timePeriod, tt)
+           else
+             timePeriod     = tt
+             timeDetermined = .true.
+           endif
+         endif
+
+
+!!$         ! Altitude.
+!!$
+!!$         if(degreeFourAltitude > 0) then
+!!$           tt = two*pi/omegaFourAltitude
+!!$
+!!$           ! Check if a time period was already determined. If so, try
+!!$           ! to determine a common time. Otherwise just copy the data.
+!!$
+!!$           if( timeDetermined ) then
+!!$             timePeriod = commonTimeSpectral(timePeriod, tt)
+!!$           else
+!!$             timePeriod     = tt
+!!$             timeDetermined = .true.
+!!$           endif
+!!$         endif
+
        endif externalTest
 
        ! If it was possible to determine the time, copy it to the

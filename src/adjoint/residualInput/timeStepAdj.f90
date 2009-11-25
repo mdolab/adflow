@@ -9,8 +9,8 @@
 !      ******************************************************************
 !
        subroutine timeStepAdj(onlyRadii,wAdj,pAdj,siAdj, sjAdj, skAdj,&
-            sFaceIAdj,sFaceJAdj,sFaceKAdj,radIAdj,radJAdj,radKAdj,&
-            iCell, jCell, kCell,pInfCorrAdj,rhoInfAdj)
+            sFaceIAdj,sFaceJAdj,sFaceKAdj,volAdj,radIAdj,radJAdj,radKAdj,&
+            iCell, jCell, kCell,pInfCorrAdj,rhoInfAdj,nn,level,sps,sps2)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -37,17 +37,18 @@
 !      Subroutine argument.
 !
        logical, intent(in) :: onlyRadii
-       integer(kind=intType), intent(in) :: iCell, jCell, kCell
-       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
+       integer(kind=intType), intent(in) :: iCell, jCell, kCell,nn,level,sps,sps2
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral), &
             intent(in) :: wAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2) :: pAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral) :: pAdj
 
-       real(kind=realType), dimension(-1:1,-1:1,-1:1) :: radIAdj,radJAdj,radKAdj
+       real(kind=realType), dimension(-1:1,-1:1,-1:1,nTimeIntervalsSpectral) :: radIAdj,radJAdj,radKAdj
 
        
-       real(kind=realType), dimension(-3:2,-3:2,-3:2,3) :: siAdj, sjAdj, skAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
+       real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral) :: siAdj, sjAdj, skAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
        real(kind=realType) ::pInfCorrAdj,rhoinfAdj
+       real(kind=realType),dimension(nTimeIntervalsSpectral):: volAdj
 !
 !      Local parameters.
 !
@@ -132,10 +133,10 @@
                       kk = kcell+k
                      ! Compute the velocities and speed of sound squared.
 
-                     ux  = wAdj(i,j,k,ivx)
-                     uy  = wAdj(i,j,k,ivy)
-                     uz  = wAdj(i,j,k,ivz)
-                     cc2 = gamma(ii,jj,kk)*pAdj(i,j,k)/wAdj(i,j,k,irho)
+                     ux  = wAdj(i,j,k,ivx,sps2)
+                     uy  = wAdj(i,j,k,ivy,sps2)
+                     uz  = wAdj(i,j,k,ivz,sps2)
+                     cc2 = gamma(ii,jj,kk)*pAdj(i,j,k,sps2)/wAdj(i,j,k,irho,sps2)
                      cc2 = max(cc2,clim2)
 
                      ! Set the dot product of the grid velocity and the
@@ -144,66 +145,66 @@
                      ! is taken.
 
                      if( addGridVelocities ) &
-                       sFace = sFaceIAdj(i-1,j,k) + sFaceIAdj(i,j,k)
+                       sFace = sFaceIAdj(i-1,j,k,sps2) + sFaceIAdj(i,j,k,sps2)
 
                      ! Spectral radius in i-direction.
 
-                     sx = siAdj(i-1,j,k,1) + siAdj(i,j,k,1)
-                     sy = siAdj(i-1,j,k,2) + siAdj(i,j,k,2)
-                     sz = siAdj(i-1,j,k,3) + siAdj(i,j,k,3)
+                     sx = siAdj(i-1,j,k,1,sps2) + siAdj(i,j,k,1,sps2)
+                     sy = siAdj(i-1,j,k,2,sps2) + siAdj(i,j,k,2,sps2)
+                     sz = siAdj(i-1,j,k,3,sps2) + siAdj(i,j,k,3,sps2)
                      
                      qs = ux*sx + uy*sy + uz*sz - sFace
 
                      if( sx>zero .or. sy>zero .or. sz>zero)then
-                        radiAdj(i,j,k) = half*(abs(qs) &
+                        radiAdj(i,j,k,sps2) = half*(abs(qs) &
                              +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
                      else
-                        radiAdj(i,j,k) = half*(abs(qs))
+                        radiAdj(i,j,k,sps2) = half*(abs(qs))
                      endif
 
                      ! The grid velocity in j-direction.
 
                      if( addGridVelocities ) &
-                       sFace = sFaceJAdj(i,j-1,k) + sFaceJAdj(i,j,k)
+                       sFace = sFaceJAdj(i,j-1,k,sps2) + sFaceJAdj(i,j,k,sps2)
 
                      ! Spectral radius in j-direction.
 
-                     sx = sjAdj(i,j-1,k,1) + sjAdj(i,j,k,1)
-                     sy = sjAdj(i,j-1,k,2) + sjAdj(i,j,k,2)
-                     sz = sjAdj(i,j-1,k,3) + sjAdj(i,j,k,3)
+                     sx = sjAdj(i,j-1,k,1,sps2) + sjAdj(i,j,k,1,sps2)
+                     sy = sjAdj(i,j-1,k,2,sps2) + sjAdj(i,j,k,2,sps2)
+                     sz = sjAdj(i,j-1,k,3,sps2) + sjAdj(i,j,k,3,sps2)
 
                      qs = ux*sx + uy*sy + uz*sz - sFace
                      
                      if( sx>zero .or. sy>zero .or. sz>zero)then
-                        radJAdj(i,j,k) = half*(abs(qs) &
+                        radJAdj(i,j,k,sps2) = half*(abs(qs) &
                              +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
                      else
-                        radJAdj(i,j,k) = half*(abs(qs))
+                        radJAdj(i,j,k,sps2) = half*(abs(qs))
                      endif
                      ! The grid velocity in k-direction.
 
                      if( addGridVelocities ) &
-                       sFace = sFaceKAdj(i,j,k-1) + sFaceKAdj(i,j,k)
+                       sFace = sFaceKAdj(i,j,k-1,sps2) + sFaceKAdj(i,j,k,sps2)
 
                      ! Spectral radius in k-direction.
 
-                     sx = skAdj(i,j,k-1,1) + skAdj(i,j,k,1)
-                     sy = skAdj(i,j,k-1,2) + skAdj(i,j,k,2)
-                     sz = skAdj(i,j,k-1,3) + skAdj(i,j,k,3)
+                     sx = skAdj(i,j,k-1,1,sps2) + skAdj(i,j,k,1,sps2)
+                     sy = skAdj(i,j,k-1,2,sps2) + skAdj(i,j,k,2,sps2)
+                     sz = skAdj(i,j,k-1,3,sps2) + skAdj(i,j,k,3,sps2)
 
                      qs = ux*sx + uy*sy + uz*sz - sFace
                      
                      if( sx>zero .or. sy>zero .or. sz>zero)then
                         
-                        radKAdj(i,j,k) = half*(abs(qs) &
+                        radKAdj(i,j,k,sps2) = half*(abs(qs) &
                              +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
                      else
-                        radKAdj(i,j,k) = half*(abs(qs) )
+                        radKAdj(i,j,k,sps2) = half*(abs(qs) )
                      endif
                            
                      ! Compute the inviscid contribution to the time step.
 
-                     dtlAdj = radiAdj(i,j,k) + radJAdj(i,j,k) + radKAdj(i,j,k)
+                     dtlAdj = radiAdj(i,j,k,sps2) + radJAdj(i,j,k,sps2) + radKAdj(i,j,k,sps2)
 
                    enddo
                  enddo
@@ -240,9 +241,9 @@
                    ! Avoid division by zero by clipping radi, radJ and
                    ! radK.
 
-                   ri = max(radiAdj(i,j,k),eps)
-                   rj = max(radJAdj(i,j,k),eps)
-                   rk = max(radKAdj(i,j,k),eps)
+                   ri = max(radiAdj(i,j,k,sps2),eps)
+                   rj = max(radJAdj(i,j,k,sps2),eps)
+                   rk = max(radKAdj(i,j,k,sps2),eps)
 
                    ! Compute the scaling in the three coordinate
                    ! directions.
@@ -260,9 +261,9 @@
                !   radJ(i,j,k) = third*radJ(i,j,k)*(one + one/rjk + rij)
                !   radK(i,j,k) = third*radK(i,j,k)*(one + one/rki + rjk)
 
-                   radiAdj(i,j,k) = radiAdj(i,j,k)*(one + one/rij + rki)
-                   radJAdj(i,j,k) = radJAdj(i,j,k)*(one + one/rjk + rij)
-                   radKAdj(i,j,k) = radKAdj(i,j,k)*(one + one/rki + rjk)
+                   radiAdj(i,j,k,sps2) = radiAdj(i,j,k,sps2)*(one + one/rij + rki)
+                   radJAdj(i,j,k,sps2) = radJAdj(i,j,k,sps2)*(one + one/rjk + rij)
+                   radKAdj(i,j,k,sps2) = radKAdj(i,j,k,sps2)*(one + one/rki + rjk)
                    
                  enddo
                enddo
@@ -346,18 +347,19 @@
              if(equationMode == timeSpectral) then
 
                 print *,'time spectral not yet implemented'
-!!$               tmp = nTimeIntervalsSpectral*pi*timeRef &
-!!$                   / sections(sectionID)%timePeriod
-!!$
-!!$               ! Loop over the owned cell centers and add the term.
-!!$
-!!$               do k=2,kl
-!!$                 do j=2,jl
-!!$                   do i=2,il
-!!$                     dtl(i,j,k) = dtl(i,j,k) + tmp*vol(i,j,k)
-!!$                   enddo
-!!$                 enddo
-!!$               enddo
+               tmp = nTimeIntervalsSpectral*pi*timeRef &
+                   / sections(sectionID)%timePeriod
+
+               ! Loop over the owned cell centers and add the term.
+
+               !do k=2,kl
+               !  do j=2,jl
+               !    do i=2,il
+                     !dtl(i,j,k) = dtl(i,j,k) + tmp*vol(i,j,k)
+                     dtlAdj = dtlAdj + tmp*volAdj(sps2)
+               !    enddo
+               !  enddo
+               !enddo
 
              endif
 
@@ -370,12 +372,12 @@
 !!$             do k=2,kl
 !!$               do j=2,jl
 !!$                 do i=2,il
-                   dpi = abs(pAdj(i+1,j,k) - two*pAdj(i,j,k) + pAdj(i-1,j,k)) &
-                       /    (pAdj(i+1,j,k) + two*pAdj(i,j,k) + pAdj(i-1,j,k) + plim)
-                   dpj = abs(pAdj(i,j+1,k) - two*pAdj(i,j,k) + pAdj(i,j-1,k)) &
-                       /    (pAdj(i,j+1,k) + two*pAdj(i,j,k) + pAdj(i,j-1,k) + plim)
-                   dpk = abs(pAdj(i,j,k+1) - two*pAdj(i,j,k) + pAdj(i,j,k-1)) &
-                       /    (pAdj(i,j,k+1) + two*pAdj(i,j,k) + pAdj(i,j,k-1) + plim)
+                   dpi = abs(pAdj(i+1,j,k,sps2) - two*pAdj(i,j,k,sps2) + pAdj(i-1,j,k,sps2)) &
+                       /    (pAdj(i+1,j,k,sps2) + two*pAdj(i,j,k,sps2) + pAdj(i-1,j,k,sps2) + plim)
+                   dpj = abs(pAdj(i,j+1,k,sps2) - two*pAdj(i,j,k,sps2) + pAdj(i,j-1,k,sps2)) &
+                       /    (pAdj(i,j+1,k,sps2) + two*pAdj(i,j,k,sps2) + pAdj(i,j-1,k,sps2) + plim)
+                   dpk = abs(pAdj(i,j,k+1,sps2) - two*pAdj(i,j,k,sps2) + pAdj(i,j,k-1,sps2)) &
+                       /    (pAdj(i,j,k+1,sps2) + two*pAdj(i,j,k,sps2) + pAdj(i,j,k-1,sps2) + plim)
                    rfl = one/(one + b*(dpi  +dpj  +dpk))
  
                    dtlAdj = rfl/dtlAdj

@@ -10,7 +10,7 @@
 !      ******************************************************************
 !
 subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
-     siAdj, sjAdj, skAdj, normAdj,rfaceAdj,iCell,jCell,kCell)
+     siAdj, sjAdj, skAdj, normAdj,rfaceAdj,iCell,jCell,kCell,nn,level,sps,sps2)
 
   !
   !      ******************************************************************
@@ -28,12 +28,13 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
   use constants
   use flowVarRefState
   use inputDiscretization
-  use iteration
+  use iteration 
+  use inputTimeSpectral !nIntervalTimespectral
   implicit none
   !
   !      Subroutine arguments.
   !
-  integer(kind=intType):: nn
+  integer(kind=intType):: nn,level,sps,sps2
   integer(kind=intType) ::iCell, jCell,kCell
   integer(kind=intType) ::isbeg,jsbeg,ksbeg,isend,jsend,ksend
   integer(kind=intType) ::ibbeg,jbbeg,kbbeg,ibend,jbend,kbend
@@ -56,17 +57,17 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
 
 
 !  real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(in) ::siAdj, sjAdj, skAdj
-  real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) ::siAdj, sjAdj, skAdj
-  real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(in) :: normAdj
-  real(kind=realType), dimension(nBocos,-2:2,-2:2), intent(in) ::rFaceAdj
-  real(kind=realType), dimension(-2:2,-2:2,-2:2,nw),intent(in) :: wAdj
-  real(kind=realType), dimension(-2:2,-2:2,-2:2),intent(in) :: pAdj
-  real(kind=realType), dimension(-2:2,-2:2,-2:2,3),intent(in) :: sAdj
+  real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral), intent(in) ::siAdj, sjAdj, skAdj
+  real(kind=realType), dimension(nBocos,-2:2,-2:2,3,nTimeIntervalsSpectral), intent(in) :: normAdj
+  real(kind=realType), dimension(nBocos,-2:2,-2:2,nTimeIntervalsSpectral), intent(in) ::rFaceAdj
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral),intent(in) :: wAdj
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral),intent(in) :: pAdj
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,3,nTimeIntervalsSpectral),intent(in) :: sAdj
 
   !
   !      Local variables.
   !
-  integer(kind=intType) :: i, j, k, l, ii, jj, kk
+  integer(kind=intType) :: i, j, k, l, ii, jj, kk,nnbcs
   integer(kind=intType) :: jm1,  jp1,  km1,  kp1
   integer(kind=intType) :: jjm1, jjp1, kkm1, kkp1
 
@@ -100,9 +101,9 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
 
   ! Loop over the boundary condition subfaces of this block.
 
-  bocos: do nn=1,nBocos
+  bocos: do nnbcs=1,nBocos
      
-     call checkOverlapAdj(nn,icell,jcell,kcell,isbeg,jsbeg,&
+     call checkOverlapAdj(nnbcs,icell,jcell,kcell,isbeg,jsbeg,&
           ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,jbend,kbend,&
           computeBC)
 
@@ -111,7 +112,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
 
         ! Check for Euler wall boundary condition.
 
-        invWall: if(BCType(nn) == EulerWall) then
+        invWall: if(BCType(nnbcs) == EulerWall) then
 
            ! Set the pointers for the unit normal and the normal
            ! velocity to make the code more readable.
@@ -121,12 +122,12 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
 
           
            !Copy the states and other parameters to subfaces
-           call extractBCStatesAdj(nn,wAdj,pAdj,wAdj0, wAdj1, wAdj2,wAdj3,&
+           call extractBCStatesAdj(nnbcs,wAdj,pAdj,wAdj0, wAdj1, wAdj2,wAdj3,&
             pAdj0,pAdj1, pAdj2,pAdj3,&
             rlvAdj, revAdj,rlvAdj1, rlvAdj2,revAdj1, revAdj2,iOffset,&
             jOffset, kOffset,iCell, jCell,kCell,&
             isbeg,jsbeg,ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,&
-            jbend,kbend,icbeg,jcbeg,icend,jcend,secondHalo)
+            jbend,kbend,icbeg,jcbeg,icend,jcend,secondHalo,nn,level,sps,sps2)
 
            ! Some initialization
            ssi = zero
@@ -201,18 +202,18 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
               ! the code. For moving faces also the grid velocity of
               ! the 1st cell center from the wall is needed.
 
-              select case (BCFaceID(nn))
+              select case (BCFaceID(nnbcs))
               case (iMin)
                  if(secondHalo) then
-                    ssi(:,:,:) = siAdj(-1,:,:,:)
-                    ssj(:,:,:) = sjAdj(0,:,:,:)
-                    ssk(:,:,:) = skAdj(0,:,:,:)
-                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(0,:,:,:)
+                    ssi(:,:,:) = siAdj(-1,:,:,:,sps2)
+                    ssj(:,:,:) = sjAdj(0,:,:,:,sps2)
+                    ssk(:,:,:) = skAdj(0,:,:,:,sps2)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(0,:,:,:,sps2)
                  else
-                    ssi(:,:,:) = siAdj(-2,:,:,:)
-                    ssj(:,:,:) = sjAdj(-1,:,:,:)
-                    ssk(:,:,:) = skAdj(-1,:,:,:) 
-                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(-1,:,:,:)  
+                    ssi(:,:,:) = siAdj(-2,:,:,:,sps2)
+                    ssj(:,:,:) = sjAdj(-1,:,:,:,sps2)
+                    ssk(:,:,:) = skAdj(-1,:,:,:,sps2) 
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(-1,:,:,:,sps2)  
                  end if
                  
 
@@ -220,30 +221,30 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
 
               case (iMax)
                  if(secondHalo)then
-                    ssi(:,:,:) = siAdj(0,:,:,:)
-                    ssj(:,:,:) = sjAdj(0,:,:,:)
-                    ssk(:,:,:) = skAdj(0,:,:,:)
-                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(0,:,:,:)
+                    ssi(:,:,:) = siAdj(0,:,:,:,sps2)
+                    ssj(:,:,:) = sjAdj(0,:,:,:,sps2)
+                    ssk(:,:,:) = skAdj(0,:,:,:,sps2)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(0,:,:,:,sps2)
                  else
-                    ssi(:,:,:) = siAdj(1,:,:,:)
-                    ssj(:,:,:) = sjAdj(1,:,:,:)
-                    ssk(:,:,:) = skAdj(1,:,:,:)
-                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(1,:,:,:)
+                    ssi(:,:,:) = siAdj(1,:,:,:,sps2)
+                    ssj(:,:,:) = sjAdj(1,:,:,:,sps2)
+                    ssk(:,:,:) = skAdj(1,:,:,:,sps2)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(1,:,:,:,sps2)
                  end if
 
                  !===========================================================
 
               case (jMin)
                  if(secondHalo) then
-                    ssi(:,:,:) = sjAdj(:,-1,:,:)
-                    ssj(:,:,:) = siAdj(:,0,:,:)
-                    ssk(:,:,:) = skAdj(:,0,:,:)
-                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,0,:,:)
+                    ssi(:,:,:) = sjAdj(:,-1,:,:,sps2)
+                    ssj(:,:,:) = siAdj(:,0,:,:,sps2)
+                    ssk(:,:,:) = skAdj(:,0,:,:,sps2)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,0,:,:,sps2)
                  else
-                    ssi(:,:,:) = sjAdj(:,-2,:,:)
-                    ssj(:,:,:) = siAdj(:,-1,:,:)
-                    ssk(:,:,:) = skAdj(:,-1,:,:)
-                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,-1,:,:)
+                    ssi(:,:,:) = sjAdj(:,-2,:,:,sps2)
+                    ssj(:,:,:) = siAdj(:,-1,:,:,sps2)
+                    ssk(:,:,:) = skAdj(:,-1,:,:,sps2)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,-1,:,:,sps2)
                  end if
 
 
@@ -253,15 +254,15 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
 
               case (jMax)
                  if(secondHalo) then
-                    ssi(:,:,:) = sjAdj(:,0,:,:)
-                    ssj(:,:,:) = siAdj(:,0,:,:)
-                    ssk(:,:,:) = skAdj(:,0,:,:)
-                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,0,:,:)
+                    ssi(:,:,:) = sjAdj(:,0,:,:,sps2)
+                    ssj(:,:,:) = siAdj(:,0,:,:,sps2)
+                    ssk(:,:,:) = skAdj(:,0,:,:,sps2)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,0,:,:,sps2)
                  else
-                    ssi(:,:,:) = sjAdj(:,1,:,:)
-                    ssj(:,:,:) = siAdj(:,1,:,:)
-                    ssk(:,:,:) = skAdj(:,1,:,:)
-                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,1,:,:)
+                    ssi(:,:,:) = sjAdj(:,1,:,:,sps2)
+                    ssj(:,:,:) = siAdj(:,1,:,:,sps2)
+                    ssk(:,:,:) = skAdj(:,1,:,:,sps2)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,1,:,:,sps2)
                  end if
 
                  
@@ -270,15 +271,15 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
 
               case (kMin)
                  if(secondHalo) then
-                    ssi(:,:,:) = skAdj(:,:,-1,:)
-                    ssj(:,:,:) = siAdj(:,:,0,:)
-                    ssk(:,:,:) = sjAdj(:,:,0,:)
-                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,:,0,:)
+                    ssi(:,:,:) = skAdj(:,:,-1,:,sps2)
+                    ssj(:,:,:) = siAdj(:,:,0,:,sps2)
+                    ssk(:,:,:) = sjAdj(:,:,0,:,sps2)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,:,0,:,sps2)
                  else
-                    ssi(:,:,:) = skAdj(:,:,-2,:)
-                    ssj(:,:,:) = siAdj(:,:,-1,:)
-                    ssk(:,:,:) = sjAdj(:,:,-1,:)
-                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,:,-1,:)
+                    ssi(:,:,:) = skAdj(:,:,-2,:,sps2)
+                    ssj(:,:,:) = siAdj(:,:,-1,:,sps2)
+                    ssk(:,:,:) = sjAdj(:,:,-1,:,sps2)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,:,-1,:,sps2)
                  end if
 
                  
@@ -287,15 +288,15 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
 
               case (kMax)
                  if(secondHalo) then
-                    ssi(:,:,:) = skAdj(:,:,0,:)
-                    ssj(:,:,:) = siAdj(:,:,0,:)
-                    ssk(:,:,:) = sjAdj(:,:,0,:)
-                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,:,0,:)
+                    ssi(:,:,:) = skAdj(:,:,0,:,sps2)
+                    ssj(:,:,:) = siAdj(:,:,0,:,sps2)
+                    ssk(:,:,:) = sjAdj(:,:,0,:,sps2)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,:,0,:,sps2)
                  else
-                    ssi(:,:,:) = skAdj(:,:,1,:)
-                    ssj(:,:,:) = siAdj(:,:,1,:)
-                    ssk(:,:,:) = sjAdj(:,:,1,:)
-                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,:,1,:)
+                    ssi(:,:,:) = skAdj(:,:,1,:,sps2)
+                    ssj(:,:,:) = siAdj(:,:,1,:,sps2)
+                    ssk(:,:,:) = sjAdj(:,:,1,:,sps2)
+                    if( addGridVelocities ) ssAdj(:,:,:) = sAdj(:,:,1,:,sps2)
                  end if
 
                  
@@ -311,8 +312,8 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
                  ! Store the indices k+1, k-1 a bit easier and make
                  ! sure that they do not exceed the range of the arrays.
 
-                 km1 = k-1; km1 = max(BCData(nn)%jcBeg,km1)
-                 kp1 = k+1; kp1 = min(BCData(nn)%jcEnd,kp1)
+                 km1 = k-1; km1 = max(BCData(nnbcs)%jcBeg,km1)
+                 kp1 = k+1; kp1 = min(BCData(nnbcs)%jcEnd,kp1)
 
                  ! Compute the scaling factor for the central difference
                  ! in the k-direction.
@@ -332,8 +333,8 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
                     ! The indices j+1 and j-1. Make sure that they
                     ! do not exceed the range of the arrays.
 
-                    jm1 = j-1; jm1 = max(BCData(nn)%icBeg,jm1)
-                    jp1 = j+1; jp1 = min(BCData(nn)%icEnd,jp1)
+                    jm1 = j-1; jm1 = max(BCData(nnbcs)%icBeg,jm1)
+                    jp1 = j+1; jp1 = min(BCData(nnbcs)%icEnd,jp1)
 
                     ! Compute the scaling factor for the central
                     ! difference in the j-direction.
@@ -372,27 +373,27 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
                     ! however this is not really a problem, because these
                     ! values are overwritten in the communication pattern.
 
-                    rxj = a1*(normAdj(nn,jjp1,kk,1) - normAdj(nn,jjm1,kk,1))
-                    ryj = a1*(normAdj(nn,jjp1,kk,2) - normAdj(nn,jjm1,kk,2))
-                    rzj = a1*(normAdj(nn,jjp1,kk,3) - normAdj(nn,jjm1,kk,3))
+                    rxj = a1*(normAdj(nnbcs,jjp1,kk,1,sps2) - normAdj(nnbcs,jjm1,kk,1,sps2))
+                    ryj = a1*(normAdj(nnbcs,jjp1,kk,2,sps2) - normAdj(nnbcs,jjm1,kk,2,sps2))
+                    rzj = a1*(normAdj(nnbcs,jjp1,kk,3,sps2) - normAdj(nnbcs,jjm1,kk,3,sps2))
                     !print *, "jjp1,jjm1, kk =", jjp1,jjm1, kk
                     dpj = a1*(pAdj2(jjp1,kk) - pAdj2(jjm1,kk))
 
-                    rxk = b1*(normAdj(nn,jj,kkp1,1) - normAdj(nn,jj,kkm1,1))
-                    ryk = b1*(normAdj(nn,jj,kkp1,2) - normAdj(nn,jj,kkm1,2))
-                    rzk = b1*(normAdj(nn,jj,kkp1,3) - normAdj(nn,jj,kkm1,3))
+                    rxk = b1*(normAdj(nnbcs,jj,kkp1,1,sps2) - normAdj(nnbcs,jj,kkm1,1,sps2))
+                    ryk = b1*(normAdj(nnbcs,jj,kkp1,2,sps2) - normAdj(nnbcs,jj,kkm1,2,sps2))
+                    rzk = b1*(normAdj(nnbcs,jj,kkp1,3,sps2) - normAdj(nnbcs,jj,kkm1,3,sps2))
                     !print *, "jj, kkp1, kkm1 =", jj, kkp1, kkm1
                     dpk = b1*(pAdj2(jj,kkp1) - pAdj2(jj,kkm1))
 
                     ! Compute the dot product between the unit vector
                     ! and the normal vectors in i, j and k-direction.
 
-                    ri = normAdj(nn,jj,kk,1)*sixa + normAdj(nn,jj,kk,2)*siya &
-                         + normAdj(nn,jj,kk,3)*siza
-                    rj = normAdj(nn,jj,kk,1)*sjxa + normAdj(nn,jj,kk,2)*sjya &
-                         + normAdj(nn,jj,kk,3)*sjza
-                    rk = normAdj(nn,jj,kk,1)*skxa + normAdj(nn,jj,kk,2)*skya &
-                         + normAdj(nn,jj,kk,3)*skza
+                    ri = normAdj(nnbcs,jj,kk,1,sps2)*sixa + normAdj(nnbcs,jj,kk,2,sps2)*siya &
+                         + normAdj(nnbcs,jj,kk,3,sps2)*siza
+                    rj = normAdj(nnbcs,jj,kk,1,sps2)*sjxa + normAdj(nnbcs,jj,kk,2,sps2)*sjya &
+                         + normAdj(nnbcs,jj,kk,3,sps2)*sjza
+                    rk = normAdj(nnbcs,jj,kk,1,sps2)*skxa + normAdj(nnbcs,jj,kk,2,sps2)*skya &
+                         + normAdj(nnbcs,jj,kk,3,sps2)*skza
 
                     ! Store the velocity components in ux, uy and uz and
                     ! subtract the mesh velocity if the face is moving.
@@ -436,7 +437,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
                  ii = i - iOffset
                  jj = j - jOffset
                  
-                 rface = rFaceAdj(nn,ii,jj)!BCData(nn)%rface(i,j)
+                 rface = rFaceAdj(nnbcs,ii,jj,sps2)!BCData(nn)%rface(i,j)
 
                  ! Compute the pressure density and velocity in the
                  ! halo cell. Note that rface is the grid velocity
@@ -450,14 +451,14 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
 !!$!                      - wAdj2(ii,jj,ivy)*normAdj(nn,ii,jj,2) &
 !!$ !                     - wAdj2(ii,jj,ivz)*normAdj(nn,ii,jj,3))
 !!$
-                 vn = two*(rface - wAdj2(ii,jj,ivx)*normAdj(nn,ii,jj,1) &
-                      - wAdj2(ii,jj,ivy)*normAdj(nn,ii,jj,2) &
-                      - wAdj2(ii,jj,ivz)*normAdj(nn,ii,jj,3))
-
+                 vn = two*(rface - wAdj2(ii,jj,ivx)*normAdj(nnbcs,ii,jj,1,sps2) &
+                      - wAdj2(ii,jj,ivy)*normAdj(nnbcs,ii,jj,2,sps2) &
+                      - wAdj2(ii,jj,ivz)*normAdj(nnbcs,ii,jj,3,sps2))
+                 
                  wAdj1(ii,jj,irho) = wAdj2(ii,jj,irho)
-                 wAdj1(ii,jj,ivx)  = wAdj2(ii,jj,ivx) + vn*normAdj(nn,ii,jj,1)
-                 wAdj1(ii,jj,ivy)  = wAdj2(ii,jj,ivy) + vn*normAdj(nn,ii,jj,2)
-                 wAdj1(ii,jj,ivz)  = wAdj2(ii,jj,ivz) + vn*normAdj(nn,ii,jj,3)
+                 wAdj1(ii,jj,ivx)  = wAdj2(ii,jj,ivx) + vn*normAdj(nnbcs,ii,jj,1,sps2)
+                 wAdj1(ii,jj,ivy)  = wAdj2(ii,jj,ivy) + vn*normAdj(nnbcs,ii,jj,2,sps2)
+                 wAdj1(ii,jj,ivz)  = wAdj2(ii,jj,ivz) + vn*normAdj(nnbcs,ii,jj,3,sps2)
 
                  ! Just copy the turbulent variables.
 
@@ -491,14 +492,14 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
 
            
            if( secondHalo )                                             &
-                call extrapolate2ndHaloAdj(nn,icBeg, icEnd, jcBeg, jcEnd,  &
+                call extrapolate2ndHaloAdj(nnbcs,icBeg, icEnd, jcBeg, jcEnd,  &
                 iOffset, jOffset, wAdj0, wAdj1, &
                 wAdj2, pAdj0, pAdj1, pAdj2)
            
-           call replaceBCStatesAdj(nn,  wAdj0,wAdj1, wAdj2, wAdj3,&
+           call replaceBCStatesAdj(nnbcs,  wAdj0,wAdj1, wAdj2, wAdj3,&
                 pAdj0,pAdj1, pAdj2, pAdj3,rlvAdj1, rlvAdj2,revAdj1, revAdj2,&
                 iCell, jCell,kCell,&
-                wAdj,pAdj,rlvAdj,revAdj,secondHalo)
+                wAdj,pAdj,rlvAdj,revAdj,secondHalo,nn,level,sps,sps2)
            
         endif invWall
 

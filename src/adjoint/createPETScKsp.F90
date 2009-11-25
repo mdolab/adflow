@@ -174,6 +174,9 @@
       if( PETScIerr/=0 ) &
         call terminate("createPETScKsp", "Error in KSPSetFromOptions")
 
+      !call KSPSetComputeSingularValues(ksp, PETSC_TRUE, PETScIerr)
+
+
 !
 !     *****************************************************************
 !     *                                                               *
@@ -1045,11 +1048,15 @@ case(AdditiveSchwartz)
       
       if(setMonitor)then
          !Set the convergence monitors
-         call KSPMonitorSet(subksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
-              PETSC_NULL_FUNCTION, PETScIerr)
+!         call KSPMonitorSet(subksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
+!              PETSC_NULL_FUNCTION, PETScIerr)
          
          call KSPMonitorSet(ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
               PETSC_NULL_FUNCTION, PETScIerr)
+
+!         call KSPMonitorSet(ksp,KSPMonitorSingularValue,PETSC_NULL_OBJECT,&
+!              PETSC_NULL_FUNCTION, PETScIerr)
+
       endif
 end select
 

@@ -10,7 +10,7 @@
 !      ******************************************************************
 !
 subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
-     siAdj, sjAdj, skAdj, normAdj,rFaceAdj,iCell,jCell,kCell)
+     siAdj, sjAdj, skAdj, normAdj,rFaceAdj,iCell,jCell,kCell,nn,level,sps,sps2)
 
   !
   !      ******************************************************************
@@ -26,11 +26,12 @@ subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
   use flowVarRefState   ! gammaInf, wInf, pInfCorr
   use BCTypes
   use iteration
+  use inputTimeSpectral !nIntervalTimespectral
   implicit none
   !
   !      Subroutine arguments.
   !
-  integer(kind=intType) :: nn ! it's not needed anymore w/ normAdj
+  integer(kind=intType) ::nn,level,sps,sps2! it's not needed anymore w/ normAdj
   !       integer(kind=intType), intent(in) :: icBeg, icEnd, jcBeg, jcEnd
   !       integer(kind=intType), intent(in) :: iOffset, jOffset
 
@@ -49,13 +50,13 @@ subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
 
 !  real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(in) :: &
 !       siAdj, sjAdj, skAdj
-  real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) :: &
+  real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral), intent(in) :: &
        siAdj, sjAdj, skAdj
-  real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(in) :: normAdj
-  real(kind=realType), dimension(nBocos,-2:2,-2:2), intent(in) :: rFaceAdj
-  real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
+  real(kind=realType), dimension(nBocos,-2:2,-2:2,3,nTimeIntervalsSpectral), intent(in) :: normAdj
+  real(kind=realType), dimension(nBocos,-2:2,-2:2,nTimeIntervalsSpectral), intent(in) :: rFaceAdj
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral), &
        intent(in) :: wAdj
-  real(kind=realType), dimension(-2:2,-2:2,-2:2),intent(in) :: pAdj
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral),intent(in) :: pAdj
   real(kind=realType)::pInfCorrAdj
 
   logical, intent(in) :: secondHalo
@@ -69,7 +70,7 @@ subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
   !
   !      Local variables.
   !
-  integer(kind=intType) :: i, j, l, ii, jj
+  integer(kind=intType) :: i, j, l, ii, jj,nnbcs
 
   real(kind=realType) :: nnx, nny, nnz
   real(kind=realType) :: gm1, ovgm1, gm53, factK, ac1, ac2
@@ -81,6 +82,20 @@ subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
 
 
   logical :: computeBC
+
+!!$!File Parameters remove for AD
+!!$      integer :: unitxAD = 15,ierror
+!!$      integer ::iii,iiii,jjj,jjjj,kkk,kkkk,nnnn,istart2,jstart2,kstart2,iend2,jend2,kend2,n
+!!$      character(len = 16)::outfile
+!!$      
+!!$      outfile = "xAD.txt"
+!!$      
+!!$      open (UNIT=unitxAD,File=outfile,status='old',position='append',action='write',iostat=ierror)
+!!$      if(ierror /= 0)                        &
+!!$           call terminate("verifyResiduals", &
+!!$           "Something wrong when &
+!!$           &calling open")
+
 !
 !      Interfaces
 !
@@ -113,9 +128,9 @@ subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
 
   ! Loop over the boundary condition subfaces of this block.
 
-  bocos: do nn=1,nBocos
-     
-     call checkOverlapAdj(nn,icell,jcell,kcell,isbeg,jsbeg,&
+  bocos: do nnbcs=1,nBocos
+     !print *,'nn',nn,nnbcs
+     call checkOverlapAdj(nnbcs,icell,jcell,kcell,isbeg,jsbeg,&
           ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,jbend,kbend,&
           computeBC)
 
@@ -125,16 +140,16 @@ subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
         ! Check for farfield boundary conditions.
         
 
-        testFarfield: if(BCType(nn) == FarField) then
+        testFarfield: if(BCType(nnbcs) == FarField) then
 
            
-           call extractBCStatesAdj(nn,wAdj,pAdj,wAdj0, wAdj1, wAdj2,wAdj3,&
+           call extractBCStatesAdj(nnbcs,wAdj,pAdj,wAdj0, wAdj1, wAdj2,wAdj3,&
             pAdj0,pAdj1, pAdj2,pAdj3,&
             rlvAdj, revAdj,rlvAdj1, rlvAdj2,revAdj1, revAdj2,iOffset,&
             jOffset, kOffset,iCell, jCell,kCell,&
             isbeg,jsbeg,ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,&
-            jbend,kbend,icbeg,jcbeg,icend,jcend,secondHalo)
-          
+            jbend,kbend,icbeg,jcbeg,icend,jcend,secondHalo,nn,level,sps,sps2)
+           !print *,'extract',secondhalo,icell,jcell,kcell
 
            ! Loop over the generic subface to set the state in the
            ! halo cells.
@@ -145,15 +160,23 @@ subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
                  ii = i - iOffset
                  jj = j - jOffset
              
-                 rface = rFaceAdj(nn,ii,jj)!BCData(nn)%rface(i,j)
+                 rface = rFaceAdj(nnbcs,ii,jj,sps2)!BCData(nn)%rface(i,j)
                  
                  ! Store the three components of the unit normal a
                  ! bit easier.
 
-                 nnx = normAdj(nn,ii,jj,1)
-                 nny = normAdj(nn,ii,jj,2)
-                 nnz = normAdj(nn,ii,jj,3)
-                                  
+                 nnx = normAdj(nnbcs,ii,jj,1,sps2)
+                 nny = normAdj(nnbcs,ii,jj,2,sps2)
+                 nnz = normAdj(nnbcs,ii,jj,3,sps2)
+!!$                 if(i==1 .and. j ==1)then
+!!$                    print *,'normxAdj',nnx,nnbcs!,i,j,ii,jj
+!!$                    print *,'normyAdj',nny,nnbcs
+!!$                    print *,'normzAdj',nnz,nnbcs
+!!$                    print *,'rfaceAdj',rface,nnbcs
+!!$                 endif
+
+!!$                 write(unitxAD,11)int((icbeg+icend)/2),int((jcbeg+jcend)/2), i,j,nnbcs,normAdj(nnbcs,ii,jj,1,sps2), rFaceAdj(nnbcs,ii,jj,sps2) 
+!!$11               format(1x,'wadj',5I8,2f20.14)       
                  ! Compute the normal velocity of the free stream and
                  ! substract the normal velocity of the mesh.
 
@@ -229,7 +252,8 @@ subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
                  wAdj1(ii,jj,ivz)  = wf
                  pAdj1(ii,jj)      = wAdj1(ii,jj,irho)*cc
                  
- 
+                 !print*,'wadj1',i,j,wAdj1(ii,jj,irho),wAdj1(ii,jj,ivx),wAdj1(ii,jj,ivy),wAdj1(ii,jj,ivz),wAdj1(ii,jj,irhoE),pAdj1(ii,jj) 
+                 
                  ! Compute the total energy.
 
                  wAdj1(ii,jj,irhoE) = ovgm1*pAdj1(ii,jj)     &
@@ -250,21 +274,22 @@ subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
 
            ! Extrapolate the state vectors in case a second halo
            ! is needed.
-
+          ! print *,'second halo adj', secondHalo
            if( secondHalo )                                             &
-                call extrapolate2ndHaloAdj(nn,icBeg, icEnd, jcBeg, jcEnd,  &
+                call extrapolate2ndHaloAdj(nnbcs,icBeg, icEnd, jcBeg, jcEnd,  &
                 iOffset, jOffset, wAdj0, wAdj1, &
                 wAdj2, pAdj0, pAdj1, pAdj2)
-
-           call replaceBCStatesAdj(nn,  wAdj0,wAdj1, wAdj2, wAdj3,&
+           !print *,'replaceadj', secondHalo
+           call replaceBCStatesAdj(nnbcs,  wAdj0,wAdj1, wAdj2, wAdj3,&
                 pAdj0,pAdj1, pAdj2, pAdj3,rlvAdj1, rlvAdj2,revAdj1, revAdj2,&
                 iCell, jCell,kCell,&
-                wAdj,pAdj,rlvAdj,revAdj,secondHalo)
+                wAdj,pAdj,rlvAdj,revAdj,secondHalo,nn,level,sps,sps2)
            
         endif testFarfield
     
      endif
 
  enddo bocos
-
+!print *,'nnendbcfar',nn,nnbcs
+!close (UNIT=unitxAD)
        end subroutine bcFarfieldAdj

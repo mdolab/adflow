@@ -406,6 +406,7 @@
                              dw(i,j,k,l) = dw(i,j,k,l)        &
                                          + dscalar(jj,sps,mm) &
                                          * volsp(i,j,k)*wsp(i,j,k,l)
+                             
                            enddo
                          enddo
                        enddo
@@ -562,6 +563,7 @@
                enddo
              enddo
            enddo
+
 
          enddo domains
 

@@ -436,6 +436,87 @@
        real(kind=realType), dimension(:), allocatable :: sinCoefFourYRot
        real(kind=realType), dimension(:), allocatable :: sinCoefFourZRot
 
+       ! degreePolAlpha: Degree of the Alpha polynomial.
+   
+       integer(kind=intType) :: degreePolAlpha
+      
+       ! coefPolAlpha(0:): coefficients of the Alpha polynomial.
+     
+       real(kind=realType), dimension(:), allocatable :: coefPolAlpha
+ 
+       ! degreeFourAlpha: Degree of the Alpha fourier series.
+      
+       integer(kind=intType) :: degreeFourAlpha
+
+       ! omegaFourAlpha: Fourier frequency of the Alpha; the
+       !                   period of the motion is 2*pi/omega.
+   
+       real(kind=realType) :: omegaFourAlpha
+  
+       ! cosCoefFourAlpha(0:): cosine coefficients of the
+       !                      x-rotation fourier series.
+
+       real(kind=realType), dimension(:), allocatable :: cosCoefFourAlpha
+       
+       ! sinCoefFourAlpha(1:): sine coefficients of the
+       !                      Alpha fourier series.
+
+       real(kind=realType), dimension(:), allocatable :: sinCoefFourAlpha
+
+       ! degreePolXRot: Degree of the Beta polynomial.
+  
+       integer(kind=intType) :: degreePolBeta  
+
+       ! coefPolXRot(0:): coefficients of the Beta polynomial.
+ 
+       real(kind=realType), dimension(:), allocatable :: coefPolBeta
+
+       ! degreeFourBeta: Degree of the Beta fourier series.
+   
+       integer(kind=intType) :: degreeFourBeta
+
+       ! omegaFourBeta: Fourier frequency of the Beta; the
+       !                   period of the motion is 2*pi/omega.
+ 
+       real(kind=realType) :: omegaFourBeta
+
+       ! cosCoefFourBeta(0:): cosine coefficients of the
+       !                      Beta fourier series.
+    
+       real(kind=realType), dimension(:), allocatable :: cosCoefFourBeta
+
+       ! sinCoefFourBeta(1:): sine coefficients of the
+       !                      Beta fourier series.
+ 
+       real(kind=realType), dimension(:), allocatable :: sinCoefFourBeta
+
+       ! degreePolMach: Degree of the Mach polynomial.
+ 
+       integer(kind=intType) :: degreePolMach
+
+       ! coefPolMach(0:): coefficients of the Mach polynomial.
+
+       real(kind=realType), dimension(:), allocatable :: coefPolMach
+
+       ! degreeFourMach: Degree of the Mach fourier series.
+ 
+       integer(kind=intType) :: degreeFourMach
+
+       ! omegaFourMach: Fourier frequency of the Mach Number; the
+       !                   period of the motion is 2*pi/omega.
+ 
+       real(kind=realType) :: omegaFourMach
+
+       ! cosCoefFourMach(0:): cosine coefficients of the
+       !                      Mach Number fourier series.
+ 
+       real(kind=realType), dimension(:), allocatable :: cosCoefFourMach
+
+       ! sinCoefFourMach(1:): sine coefficients of the
+       !                      Mach Number fourier series.
+  
+       real(kind=realType), dimension(:), allocatable :: sinCoefFourMach
+
        ! gridMotionSpecified: Whether or not a rigid body motion of
        !                      the grid has been specified.
 
@@ -919,6 +1000,7 @@
 
        ! TSStability : Whether or not the TS stability derivatives should
        !               be computed
-       logical:: TSStability
+       logical:: TSStability,TSAlphaMode,TSBetaMode,TSpqrMode,&
+            TSAltitudeMode,TSMachMode
 
      end module inputTSStabDeriv

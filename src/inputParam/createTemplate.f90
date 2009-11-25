@@ -495,54 +495,63 @@
        write(writeUnit,"(a)") "-----------------------------------------&
                                &--------------------------------------"
 
-       write(writeUnit,"(a)") " 	solve ADjoint : Yes"
-       write(writeUnit,"(a)") "         # Other possibility: &
-            &no"
-       write(writeUnit,"(a)") "	        set monitor   : Yes "
-       write(writeUnit,"(a)") "         # Other possibility: no"
-       write(writeUnit,"(a)") " 	Adjoint solver type: GMRES"
-       write(writeUnit,"(a)") "	        # Other possibilities: BiCGStab"
-       write(writeUnit,"(a)") "         #                      CG"
-       write(writeUnit,"(a)") "	        #                      GMRES"
-       write(writeUnit,"(a)") "	        #                      FGMRES"
-
-       write(writeUnit,"(a)") "	       adjoint relative tolerance   : 1e-10"
+       write(writeUnit,"(a)") "                       solve ADjoint : Yes"
+       write(writeUnit,"(a)") "                  # Other possibility: no"
+       write(writeUnit,"(a)")
+       write(writeUnit,"(a)") "                       set monitor   : Yes "
+       write(writeUnit,"(a)") "                  # Other possibility: no"
+       write(writeUnit,"(a)")
+       write(writeUnit,"(a)") "                  Adjoint solver type: GMRES"
+       write(writeUnit,"(a)") "                # Other possibilities: BiCGStab"
+       write(writeUnit,"(a)") "                #                      CG"
+       write(writeUnit,"(a)") "                #                      GMRES"
+       write(writeUnit,"(a)") "                #                      FGMRES"
+       write(writeUnit,"(a)")
+       write(writeUnit,"(a)") "        adjoint relative tolerance   : 1e-10"
        write(writeUnit,"(a)") "        adjoint absolute tolerance   : 1e-16"
        write(writeUnit,"(a)") "        adjoint divergence tolerance : 1e5"
        write(writeUnit,"(a)") "        adjoint max iterations       : 500"
        write(writeUnit,"(a)") "        adjoint restart iteration    : 80"
        write(writeUnit,"(a)") "        adjoint monitor step         : 10"
-
-       write(writeUnit,"(a)") "	Preconditioner Side: LEFT"
-       write(writeUnit,"(a)") " 	# Other possibilities: Left"
-       write(writeUnit,"(a)") "        #                      Right"
+       write(writeUnit,"(a)")
+       write(writeUnit,"(a)") "                  Preconditioner Side: LEFT"
+       write(writeUnit,"(a)") "                # Other possibilities: Left"
+       write(writeUnit,"(a)") "                #                      Right"
+       write(writeUnit,"(a)")       
+       write(writeUnit,"(a)") "                     Matrix Ordering : &
+            &ReverseCuthillMckee"
+       write(writeUnit,"(a)") "                    #                  &
+            &ReverseCuthillMckee"
+       write(writeUnit,"(a)") "                    #                  Natural"
+       write(writeUnit,"(a)") "                    #                  &
+            &NestedDissection"
+       write(writeUnit,"(a)") "                    #                  &
+            &OnewayDissection"
+       write(writeUnit,"(a)") "                    #                  &
+            &QuotientMinimumDegree\n"
        
-       write(writeUnit,"(a)") "	Matrix Ordering	: ReverseCuthillMckee"
-       write(writeUnit,"(a)") "	#                 ReverseCuthillMckee"
-       write(writeUnit,"(a)") "	#                 Natural"
-       write(writeUnit,"(a)") "	#                 NestedDissection"
-       write(writeUnit,"(a)") "	#                 OnewayDissection"
-       write(writeUnit,"(a)") "	#                 QuotientMinimumDegree"
-       
-       write(writeUnit,"(a)") "	Global Preconditioner Type : Block Jacobi"
-       write(writeUnit,"(a)") "	#                            Jacobi"
-       write(writeUnit,"(a)") "	#                            Block Jacobi"
-       write(writeUnit,"(a)") "	#                            Additive Schwartz"
-       
-       write(writeUnit,"(a)") "	ASM Overlap : 5"
-       
-       write(writeUnit,"(a)") "	Local Preconditioner Type: ILU"
-       write(writeUnit,"(a)") "	#                          ILU"
-       write(writeUnit,"(a)") "	#                          ICC"
-       write(writeUnit,"(a)") "	#                          LU"
-       write(writeUnit,"(a)") "	#                          Cholesky"
-       
-       write(writeUnit,"(a)") "	ILU Fill Levels	: 1"
-       
-       write(writeUnit,"(a)") "	Jacobi Scale Factor Type : RowMax"
-       write(writeUnit,"(a)") "	#                          RowMax"
-       write(writeUnit,"(a)") "	#                          RowSum"
-       write(writeUnit,"(a)") "	#                          RowAbs"
+       write(writeUnit,"(a)") "          Global Preconditioner Type : Block &
+            &Jacobi"
+       write(writeUnit,"(a)") "          #                            Jacobi"
+       write(writeUnit,"(a)") "          #                            Block &
+            &Jacobi"
+       write(writeUnit,"(a)") "          #                            Additive&
+            & Schwartz"
+       write(writeUnit,"(a)")
+       write(writeUnit,"(a)") "                         ASM Overlap : 5"
+       write(writeUnit,"(a)")
+       write(writeUnit,"(a)") "            Local Preconditioner Type: ILU"
+       write(writeUnit,"(a)") "            #                          ILU"
+       write(writeUnit,"(a)") "            #                          ICC"
+       write(writeUnit,"(a)") "            #                          LU"
+       write(writeUnit,"(a)") "            #                          Cholesky"
+       write(writeUnit,"(a)")       
+       write(writeUnit,"(a)") "                     ILU Fill Levels : 1"
+       write(writeUnit,"(a)")
+       write(writeUnit,"(a)") "            Jacobi Scale Factor Type : RowMax"
+       write(writeUnit,"(a)") "            #                          RowMax"
+       write(writeUnit,"(a)") "            #                          RowSum"
+       write(writeUnit,"(a)") "            #                          RowAbs\n"
 
        ! Write the keywords and default values for the overset parameters.
 
@@ -580,6 +589,25 @@
                               &1.2"
        write(writeUnit,"(a)") "Velocity direction for initialization: &
                               &1.0 0.0 0.0"
+       write(writeUnit,"(a)")
+       
+       !***********************
+       !
+       ! Time Spectral Stability Derivative Parameters
+       !
+       !*****************************
+
+       write(writeUnit,"(a)") "-----------------------------------------&
+                              &--------------------------------------"
+       write(writeUnit,"(a)") "     Time Spectral Stability Derivative Parameters"
+       write(writeUnit,"(a)") "-----------------------------------------&
+                              &--------------------------------------"
+       write(writeUnit,"(a)") "   compute ts stability derivatives: Yes#no"
+       write(writeUnit,"(a)") "   TS Alpha mode: yes#no"
+       write(writeUnit,"(a)") "   TS Beta mode: no#yes"
+       write(writeUnit,"(a)") "   TS Rotation mode: no#yes"
+       write(writeUnit,"(a)") "   TS Mach number mode: no#yes"
+       write(writeUnit,"(a)") "   TS Altitude mode: no#yes"
        write(writeUnit,"(a)")
 
        ! Write the keywords and default values for the parallel, i.e.
@@ -641,6 +669,37 @@
        write(writeUnit,"(a)")
 
        write(writeUnit,"(a)") "Fourier sine coefficients z-rotation: 0.1"
+       write(writeUnit,"(a)")
+
+       write(writeUnit,"(a)") "# inputs for TS stability derivatives"
+       write(writeUnit,"(a)") "    Degree polynomial Alpha: 0"
+       write(writeUnit,"(a)") "    Degree polynomial Beta: 0"
+       write(writeUnit,"(a)") "    Degree polynomial Mach: 1"
+       write(writeUnit,"(a)")
+       
+       write(writeUnit,"(a)") "Polynomial coefficients Alpha: 0.0"
+       write(writeUnit,"(a)") "Polynomial coefficients Beta: 0.0"
+       write(writeUnit,"(a)") "Polynomial coefficients Mach: 0.0 1.e-3"
+       write(writeUnit,"(a)")
+
+       write(writeUnit,"(a)") "       Degree fourier Alpha: 0"
+       write(writeUnit,"(a)") "       Degree fourier Beta: 0"
+       write(writeUnit,"(a)") "       Degree fourier Mach: 1"
+       write(writeUnit,"(a)")
+
+       write(writeUnit,"(a)") "        Omega fourier Alpha: 0.25"
+       write(writeUnit,"(a)") "        Omega fourier Beta: 0.32"
+       write(writeUnit,"(a)") "        Omega fourier Mach: 0.41"
+       write(writeUnit,"(a)")
+
+       write(writeUnit,"(a)") "Fourier cosine coefficients Alpha: 0.0"
+       write(writeUnit,"(a)") "Fourier cosine coefficients Beta: 0.0"
+       write(writeUnit,"(a)") "Fourier cosine coefficients Mach: 0.0 0.0"
+       write(writeUnit,"(a)")
+
+       write(writeUnit,"(a)") "Fourier sine coefficients Alpha: 0.1"
+       write(writeUnit,"(a)") "Fourier sine coefficients Beta: 0.1"
+       write(writeUnit,"(a)") "Fourier sine coefficients Mach: 0.1"
        write(writeUnit,"(a)")
 
        ! Write the monitor, surface output and volume output variables.

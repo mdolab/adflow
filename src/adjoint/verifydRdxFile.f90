@@ -336,7 +336,7 @@
 !!$                                       endif
 !!$                                    end if
 
-                                    if(i>zero .and. j>zero .and. k>zero .and. i<=ie .and. j<=je .and. k<=ke)then
+                                    if(i>=zero .and. j>=zero .and. k>=zero .and. i<=ie .and. j<=je .and. k<=ke)then
                                        idxnode = globalnode(i,j,k)*3+l
                                        idxres   = globalCell(iCell,jCell,kCell)*nw+m
                                        if( (idxres-1)>=0 .and. (idxnode-1)>=0) then
@@ -481,8 +481,8 @@
                                     idxres = globalCell(i,j,k)*nw+n
                                     if ((idxres-1)>=0 .and. (idxnode-1)>=0)then
                                        call MatGetValues(drdxfd,1,idxres-1,1,idxnode-1,value,PETScIerr)
-                                       if(value.ne.0)then
-                                       !if(abs(value)>1e-10)then
+                                       !if(value.ne.0)then
+                                       if(abs(value)>1e-10)then
                                           !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
                                           !12                                     format(1x,'Face',6I2,'edge',12I2)
                                           write(unitdrdx,13) idxnode,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value

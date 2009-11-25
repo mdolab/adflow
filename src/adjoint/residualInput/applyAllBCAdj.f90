@@ -11,7 +11,7 @@
 !
        subroutine applyAllBCAdj(wInfAdj,pInfCorrAdj,wAdj, pAdj,sAdj, &
                               siAdj, sjAdj, skAdj, volAdj, normAdj, &
-                              rFaceAdj,iCell, jCell, kCell,secondHalo)
+                              rFaceAdj,iCell, jCell, kCell,secondHalo,nn,level,sps,sps2)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -26,6 +26,7 @@
                          !         BCFaceID, BCType, BCData,p,w
        use flowVarRefState
        use inputDiscretization !precond,choimerkle, etc...
+       use inputTimeSpectral !nIntervalTimespectral
        implicit none
 
 !!$       use blockPointers
@@ -40,26 +41,27 @@
        logical, intent(in) :: secondHalo
 
        integer(kind=intType) :: iCell, jCell, kCell
+       integer(kind=intType) :: nn,level, sps,sps2
 
-       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral), &
                                                    intent(inout) :: wAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2),    &
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral),    &
                                                    intent(inout) :: pAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2,3),intent(in) :: sAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,3,nTimeIntervalsSpectral),intent(in) :: sAdj
 !       real(kind=realType), dimension(-2:2,-2:2,-2:2,3), &
 !                                                   intent(in) :: siAdj, sjAdj, skAdj
-       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), &
+       real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral), &
                                                    intent(in) :: siAdj, sjAdj, skAdj
        !real(kind=realType), dimension(0:0,0:0,0:0), intent(in) :: volAdj
-       real(kind=realType), intent(in) :: volAdj,pInfCorrAdj
-       real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(in) :: normAdj
-       real(kind=realType), dimension(nBocos,-2:2,-2:2), intent(in) ::rFaceAdj
+       real(kind=realType),dimension(nTimeIntervalsSpectral), intent(in) :: volAdj,pInfCorrAdj
+       real(kind=realType), dimension(nBocos,-2:2,-2:2,3,nTimeIntervalsSpectral), intent(in) :: normAdj
+       real(kind=realType), dimension(nBocos,-2:2,-2:2,nTimeIntervalsSpectral), intent(in) ::rFaceAdj
        real(kind=realType), dimension(nw),intent(in)::wInfAdj
 
 !
 !      Local variables.
 !
-       integer(kind=intType) :: nn, sps
+       
        integer(kind=intType)::i,j,k,ii,jj,kk,l
        integer(kind=intType) :: iStart,iEnd,jStart,jEnd,kStart,kEnd
 
@@ -101,9 +103,10 @@
 !!$           ! Apply all the boundary conditions. The order is important.
 
            ! The symmetry boundary conditions.
-       !print *,'bcSymm'
+       !print *,'bcSymm',nn,secondhalo
 !*************************
-       call bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
+       call bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo,nn,level,sps,sps2)
+       !print *,'bcSymm2',nn,secondhalo
 !**************************
 !###       call bcSymmPolar(secondHalo)
 
@@ -119,14 +122,14 @@
 !!$       ! and call the appropriate routine.
 !!$       
 
-!!$!*******************************
+!*******************************
        select case (precond)
           
        case (noPrecond)
-          !print *,'bcFarfield'
+          !print *,'bcFarfield',nn,secondhalo
           call bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
-               siAdj, sjAdj, skAdj, normAdj,rFaceAdj,iCell,jCell,kCell)
-
+               siAdj, sjAdj, skAdj, normAdj,rFaceAdj,iCell,jCell,kCell,nn,level,sps,sps2)
+          !print *,'bcFarfield2',nn,secondhalo
        case (Turkel)
           call terminate("applyAllBC", "Farfield boundary conditions for Turkel preconditioner not implemented")
           
@@ -134,7 +137,7 @@
           call terminate("applyAllBC", "Farfield boundary conditions for Choi and Merkle preconditioner not implemented")
 
        end select
-!!$!******************************8
+!******************************8
 
        
 !!$
@@ -165,9 +168,9 @@
 !!$       call bcExtrap(secondHalo, correctForK)
 !!$       
        ! Inviscid wall boundary conditions.
-       !print *,'bceulerwall'
+       !print *,'bceulerwall',nn,secondhalo
        call bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
-            siAdj, sjAdj, skAdj, normAdj,rFaceAdj,iCell,jCell,kCell)
+            siAdj, sjAdj, skAdj, normAdj,rFaceAdj,iCell,jCell,kCell,nn,level,sps,sps2)
        
 !!$       ! Domain-interface boundary conditions,
 !!$       ! when coupled with other solvers.
@@ -180,5 +183,5 @@
 
 !!$         enddo domains
 !!$       enddo spectralLoop
-
+       !print *,'bcend',nn,secondhalo
      end subroutine applyAllBCAdj

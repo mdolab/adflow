@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine initresAdj(varStart, varEnd,sps,dwAdj)
+       subroutine initresAdj(varStart, varEnd,wAdj,volAdj,dwAdj,nn,level,sps)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -34,15 +34,19 @@
 !      Subroutine arguments.
 !
        integer(kind=intType), intent(in) :: varStart, varEnd
-
-        real(kind=realType), dimension(nw),  intent(inout) :: dwAdj
+       
+       real(kind=realType),dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral):: wAdj
+       real(kind=realType),dimension(nw,nTimeIntervalsSpectral),  intent(inout) :: dwAdj
+       real(kind=realType),dimension(nTimeIntervalsSpectral):: volAdj
+       integer(kind=intType), intent(in)::nn,level,sps
 !
 !      Local variables.
 !
-       integer(kind=intType) :: sps, nn, mm, ll, ii, jj, i, j, k, l, m
-
+       integer(kind=intType) ::  mm, ll, ii, jj, i, j, k, l, m
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw)::  wspAdj
+       real(kind=realType)  :: volspAdj
 !unsteady and timespectral variables
-!!$       real(kind=realType)   :: oneOverDt, tmp
+       real(kind=realType)   :: oneOverDt, tmp
 !!$
 !!$       real(kind=realType), dimension(:,:,:,:), pointer :: ww, wsp, wsp1
 !!$       real(kind=realType), dimension(:,:,:),   pointer :: volsp
@@ -93,7 +97,7 @@
 !!$                   enddo
 !!$                 enddo
                   do l=varStart,varEnd
-                     dwAdj(l) = zero
+                     dwAdj(l,:) = zero
                   enddo
                else steadyLevelTest
 
@@ -141,7 +145,7 @@
 !!$                   enddo
 
                     do l=varStart,varEnd
-                       dwAdj(l) = zero
+                       dwAdj(l,:) = zero
                     enddo
 
                  !=======================================================
@@ -331,28 +335,28 @@
              !===========================================================
 
              case (timeSpectral)
-
-                call terminate("initRes", &
-                                  "Time Spectral ADjoint not yet implemented")
+!!$
+!!$                call terminate("initRes", &
+!!$                                  "Time Spectral ADjoint not yet implemented")
                 
-!!$               ! Time spectral computation. The time derivative of the
-!!$               ! current solution is given by a linear combination of
-!!$               ! all other solutions, i.e. a matrix vector product.
-!!$
-!!$               ! First store the section to which this block belongs
-!!$               ! in jj.
-!!$
-!!$               jj = sectionID
-!!$
-!!$               ! Determine the currently active multigrid level.
-!!$
-!!$               spectralLevelTest: if(currentLevel == groundLevel) then
-!!$
-!!$                 ! Finest multigrid level. The residual must be
-!!$                 ! initialized to the time derivative.
-!!$
-!!$                 ! Initialize it to zero.
-!!$
+               ! Time spectral computation. The time derivative of the
+               ! current solution is given by a linear combination of
+               ! all other solutions, i.e. a matrix vector product.
+
+               ! First store the section to which this block belongs
+               ! in jj.
+
+               jj = sectionID
+
+               ! Determine the currently active multigrid level.
+
+               spectralLevelTest: if(currentLevel == groundLevel) then
+
+                 ! Finest multigrid level. The residual must be
+                 ! initialized to the time derivative.
+
+                 ! Initialize it to zero.
+
 !!$                 do l=varStart,varEnd
 !!$                   do k=2,kl
 !!$                     do j=2,jl
@@ -362,89 +366,108 @@
 !!$                     enddo
 !!$                   enddo
 !!$                 enddo
-!!$
-!!$                 ! Loop over the number of terms which contribute
-!!$                 ! to the time derivative.
-!!$
-!!$                 timeLoopFine: do mm=1,nTimeIntervalsSpectral
-!!$
-!!$                   ! Store the pointer for the variable to be used to
-!!$                   ! compute the unsteady source term and the volume.
-!!$                   ! Also store in ii the offset needed for vector
-!!$                   ! quantities.
-!!$
-!!$                   wsp   => flowDoms(nn,currentLevel,mm)%w
-!!$                   volsp => flowDoms(nn,currentLevel,mm)%vol
-!!$                   ii    =  3*(mm-1)
-!!$
-!!$                   ! Loop over the number of variables to be set.
-!!$
-!!$                   varLoopFine: do l=varStart,varEnd
-!!$
-!!$                     ! Test for a momentum variable.
-!!$
-!!$                     if(l == ivx .or. l == ivy .or. l == ivz) then
-!!$
-!!$                       ! Momentum variable. A special treatment is
-!!$                       ! needed because it is a vector and the velocities
-!!$                       ! are stored instead of the momentum. Set the
-!!$                       ! coefficient ll, which defines the row of the
-!!$                       ! matrix used later on.
-!!$
-!!$                       if(l == ivx) ll = 3*sps - 2
-!!$                       if(l == ivy) ll = 3*sps - 1
-!!$                       if(l == ivz) ll = 3*sps
-!!$
-!!$                       ! Loop over the owned cell centers to add the
-!!$                       ! contribution from wsp.
-!!$
-!!$                       do k=2,kl
-!!$                         do j=2,jl
-!!$                           do i=2,il
-!!$
-!!$                             ! Store the matrix vector product with the
-!!$                             ! velocity in tmp.
-!!$
-!!$                             tmp = dvector(jj,ll,ii+1)*wsp(i,j,k,ivx) &
-!!$                                 + dvector(jj,ll,ii+2)*wsp(i,j,k,ivy) &
-!!$                                 + dvector(jj,ll,ii+3)*wsp(i,j,k,ivz)
-!!$
-!!$                             ! Update the residual. Note the
-!!$                             ! multiplication with the density to obtain
-!!$                             ! the correct time derivative for the
-!!$                             ! momentum variable.
-!!$
-!!$                             dw(i,j,k,l) = dw(i,j,k,l) &
-!!$                                         + tmp*volsp(i,j,k)*wsp(i,j,k,irho)
-!!$
-!!$                           enddo
-!!$                         enddo
-!!$                       enddo
-!!$
-!!$                     else
-!!$
-!!$                       ! Scalar variable.  Loop over the owned cells to
-!!$                       ! add the contribution of wsp to the time
-!!$                       ! derivative.
-!!$
-!!$                       do k=2,kl
-!!$                         do j=2,jl
-!!$                           do i=2,il
-!!$                             dw(i,j,k,l) = dw(i,j,k,l)        &
-!!$                                         + dscalar(jj,sps,mm) &
-!!$                                         * volsp(i,j,k)*wsp(i,j,k,l)
-!!$                           enddo
-!!$                         enddo
-!!$                       enddo
-!!$
-!!$                     endif
-!!$
-!!$                   enddo varLoopFine
-!!$
-!!$                 enddo timeLoopFine
-!!$
-!!$               else spectralLevelTest
-!!$
+                  do l=varStart,varEnd
+                     dwAdj(l,sps) = zero
+                  enddo
+                 ! Loop over the number of terms which contribute
+                 ! to the time derivative.
+
+                 timeLoopFine: do mm=1,nTimeIntervalsSpectral
+
+                   ! Store the pointer for the variable to be used to
+                   ! compute the unsteady source term and the volume.
+                   ! Also store in ii the offset needed for vector
+                   ! quantities.
+
+                   wspAdj   = wAdj(:,:,:,:,mm)
+                   volspAdj = volAdj(mm)!(:,:,:,mm)
+                   ii    =  3*(mm-1)
+
+                   ! Loop over the number of variables to be set.
+
+                   varLoopFine: do l=varStart,varEnd
+                      
+                      ! Test for a momentum variable.
+                      
+                      if(l == ivx .or. l == ivy .or. l == ivz) then
+                         
+                         ! Momentum variable. A special treatment is
+                         ! needed because it is a vector and the velocities
+                         ! are stored instead of the momentum. Set the
+                         ! coefficient ll, which defines the row of the
+                         ! matrix used later on.
+                         
+                         if(l == ivx) ll = 3*sps - 2
+                         if(l == ivy) ll = 3*sps - 1
+                         if(l == ivz) ll = 3*sps
+                         
+                         ! Loop over the owned cell centers to add the
+                         ! contribution from wsp.
+                         
+                         !do k=2,kl
+                         !  do j=2,jl
+                         !    do i=2,il
+                         
+                         ! Store the matrix vector product with the
+                         ! velocity in tmp.
+                         
+                         !tmp = dvector(jj,ll,ii+1)*wsp(i,j,k,ivx) &
+                         !          + dvector(jj,ll,ii+2)*wsp(i,j,k,ivy) &
+                         !          + dvector(jj,ll,ii+3)*wsp(i,j,k,ivz)
+                         tmp = dvector(jj,ll,ii+1)*wspAdj(0,0,0,ivx) &
+                              + dvector(jj,ll,ii+2)*wspAdj(0,0,0,ivy) &
+                              + dvector(jj,ll,ii+3)*wspAdj(0,0,0,ivz)
+                         
+                         
+                         ! Update the residual. Note the
+                         ! multiplication with the density to obtain
+                         ! the correct time derivative for the
+                         ! momentum variable.
+                         
+                         !dw(i,j,k,l) = dw(i,j,k,l) &
+                         !     + tmp*volsp(i,j,k)*wsp(i,j,k,irho)
+                         
+                         !dwAdj(l,mm) = dwAdj(l,mm) &
+                         dwAdj(l,sps) = dwAdj(l,sps) &
+                              + tmp*volspAdj*wspAdj(0,0,0,irho)
+                         
+                         
+                         !     enddo
+                         !   enddo
+                         ! enddo
+                         
+                      else
+                         
+                         ! Scalar variable.  Loop over the owned cells to
+                         ! add the contribution of wsp to the time
+                         ! derivative.
+                         
+                         !do k=2,kl
+                         !  do j=2,jl
+                         !    do i=2,il
+                         !dw(i,j,k,l) = dw(i,j,k,l)        &
+                         !                  + dscalar(jj,sps,mm) &
+                         !                  * volsp(i,j,k)*wsp(i,j,k,l)
+                         
+                         !dwAdj(l,mm) = dwAdj(l,mm)        &
+                         dwAdj(l,sps) = dwAdj(l,sps)        &
+                              + dscalar(jj,sps,mm) &
+                              * volspAdj*wspAdj(0,0,0,l)
+                         
+                         !       enddo
+                         !     enddo
+                         !   enddo
+                         
+                      endif
+                      
+                   enddo varLoopFine
+                   
+                enddo timeLoopFine
+
+               else spectralLevelTest
+            
+                  call terminate("initRes", &
+                       "Coarse levels not supported in ADjoint...")
 !!$                 ! Coarse grid level. Initialize the owned cells to the
 !!$                 ! residual forcing term plus a correction for the
 !!$                 ! multigrid treatment of the time derivative term.
@@ -553,8 +576,8 @@
 !!$                   enddo varLoopCoarse
 !!$
 !!$                 enddo timeLoopCoarse
-!!$
-!!$               endif spectralLevelTest
+
+               endif spectralLevelTest
 
            end select
 

@@ -205,6 +205,16 @@ python module sumb ! in
          integer(kind=inttype) intent(in) :: costfunction
        end subroutine computeadjointgradientsurface
 
+       subroutine solveradjoint
+         
+         use adjointvars
+         use adjointpetsc    !petsc_comm_world,petsc_rank
+         use communication   ! myID, nProc
+         use cgnsgrid        ! cgnsNFamilies
+         use iteration       ! groundLevel
+         implicit none
+         
+       end subroutine solveradjoint
         
 !preprocessing
         
@@ -764,15 +774,15 @@ python module sumb ! in
 
         module adjointpetsc ! in :sumb:ADjointPETSc.F90
           use constants
-          real(kind=realtype) parameter,optional :: adjreltol=1.0e-12_realtype
-          real(kind=realtype) parameter,optional :: adjabstol=1.0e-25_realtype
-          integer(kind=inttype) parameter,optional :: adjrestart=100
-          integer(kind=inttype) parameter,optional :: adjmonstep=10
-          real(kind=realtype) parameter,optional :: adjdivtol=1.0e+5_realtype
+          !real(kind=realtype) parameter,optional :: adjreltol=1.0e-12_realtype
+          !real(kind=realtype) parameter,optional :: adjabstol=1.0e-25_realtype
+          !integer(kind=inttype) parameter,optional :: adjrestart=100
+          !integer(kind=inttype) parameter,optional :: adjmonstep=10
+          !real(kind=realtype) parameter,optional :: adjdivtol=1.0e+5_realtype
           real(kind=realtype) allocatable,dimension(:) :: adjreshist
           logical :: petscblockmatrix
           integer(kind=inttype) :: adjconvits
-          integer(kind=inttype) parameter,optional :: adjmaxiter=500
+          !integer(kind=inttype) parameter,optional :: adjmaxiter=500
         end module adjointpetsc
 
         module adjointvars ! in :sumb:ADjointVars.F90
@@ -852,6 +862,7 @@ python module sumb ! in
 
         subroutine initializepetsc ! in :sumb:../../adjoint/initializePETSc.F90
           use adjointpetsc
+          use inputadjoint
           use communication
         end subroutine initializepetsc
         
@@ -860,6 +871,7 @@ python module sumb ! in
           use adjointvars
           use blockpointers
           use flowvarrefstate         ! nw
+          use inputadjoint
           implicit none
         end subroutine createpetscksp
 
@@ -891,6 +903,8 @@ python module sumb ! in
 
         subroutine solveadjointpetsc ! in :sumb:../../adjoint/solveADjointPETSc.F90
             use adjointpetsc
+            use inputadjoint
+            implicit none
         end subroutine solveadjointpetsc
 
        subroutine setupgradientrhsspatial(level,costFunction)! in :sumb:../../adjoint/computeADjointGradientSpatial.F90

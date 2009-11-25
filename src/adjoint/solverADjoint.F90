@@ -166,62 +166,62 @@
 
         ! Verify the node-based residual routine.
 
-      !call verifyRAdj(level)
+!      call verifyRAdj(level)
 !stop
-!	call verifyResiduals(level)
-!return
+	call verifyResiduals(level)
+return
 !stop
-        ! Verify the node-based ADjoint residual routine.
-
-!	call verifydRdW(level,sps)
-      !call verifydRdWFile(level,sps)
-!        call verifydRdwFileFD(level)
-!      call verifydRdxFile(level)
-!      call verifydRdxsFile
-!      call verifydRdxFileFD(level)
-!stop
-!return
-        ! Verify the dRdx routine
-
-! 	call verifydRdx(level,sps)
-!stop	
-!	call verifydRdExtra(level)
-	!call verifydRdExtraFDAD(level)	
-
-        ! Verify the ADjoint routine for the forces
-
-
-	!call verifyForcesAdj(level,sps) 
-!stop	
-        
-	! Verify the force derivatives
-
-	
-       ! call verifydCfdx(level)
-
-!stop
-	! Verify the force derivatives
-	!call verifydCfdwfile(level)	
-!        call verifydCfdw(level)
-!stop
-        !return
-	!verify the coupling derivatives
-	!call verifyForceCouplingAdj(level)
-	!call verifydSdw(level)
-	!call verifydSdx(level)
-
-!stop
-	!print *,'Going to call verifydSdx'
-	!call verifydSdx(level)
-	!print *,'Done VerifydSdx'
-	!stop
-	!print *,'Going to call verifydWdx'
-	!call verifydSdw(level)
-	!print *,'Done VerifydWdx'
-	!stop
-
-!stop
-
+!!$        ! Verify the node-based ADjoint residual routine.
+!!$
+!!$!	call verifydRdW(level,sps)
+!!$      call verifydRdWFile(level,sps)
+!!$!        call verifydRdwFileFD(level)
+!!$      call verifydRdxFile(level)
+!!$      call verifydRdxsFile
+!!$!      call verifydRdxFileFD(level)
+!!$!stop
+!!$!return
+!!$        ! Verify the dRdx routine
+!!$
+!!$! 	call verifydRdx(level,sps)
+!!$!stop	
+!!$	call verifydRdExtra(level)
+!!$	call verifydRdExtraFDAD(level)	
+!!$
+!!$        ! Verify the ADjoint routine for the forces
+!!$
+!!$
+!!$	!call verifyForcesAdj(level,sps) 
+!!$!stop	
+!!$        
+!!$	! Verify the force derivatives
+!!$
+!!$	
+!!$       ! call verifydCfdx(level)
+!!$
+!!$!stop
+!!$	! Verify the force derivatives
+!!$	call verifydCfdwfile(level)	
+!!$!        call verifydCfdw(level)
+!!$!stop
+!!$        !return
+!!$	!verify the coupling derivatives
+!!$	!call verifyForceCouplingAdj(level)
+!!$	!call verifydSdw(level)
+!!$	!call verifydSdx(level)
+!!$
+!!$!stop
+!!$	!print *,'Going to call verifydSdx'
+!!$	!call verifydSdx(level)
+!!$	!print *,'Done VerifydSdx'
+!!$	!stop
+!!$	!print *,'Going to call verifydWdx'
+!!$	!call verifydSdw(level)
+!!$	!print *,'Done VerifydWdx'
+!!$	!stop
+!!$
+!!$!stop
+!!$!return
 
 
   !    endif
@@ -237,6 +237,7 @@
 !
       !print *,'calling setupADjointMatrix'
       call setupADjointMatrix(level)
+!return
 !stop
 
       ! Reordered for ASM preconditioner
@@ -271,8 +272,9 @@
       call setupVolumeSurfaceDerivatives
 
 
-!      call solveDirectPETSc
-!stop
+!!$      call solveDirectPETSc
+!!$return
+!!$!stop
 !
 !     ******************************************************************
 !     *                                                                *

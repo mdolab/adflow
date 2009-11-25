@@ -10,9 +10,9 @@
 !     ******************************************************************
 !
       subroutine copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
-           betaAdj,MachAdj,&
-           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
-           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+           betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
+           nn,level,sps,&
+           prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
            rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
            murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
 !
@@ -33,6 +33,7 @@
 !      use indices         ! nw
       use flowVarRefState  !timeref,nw
       use inputPhysics
+      use inputTimeSpectral !nTimeIntervalsSpectral
       use cgnsgrid    !cgnsdoms
       implicit none
 
@@ -40,11 +41,11 @@
 !     Subroutine arguments.
 !
       integer(kind=intType), intent(in) :: iCell, jCell, kCell
-      real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
+      real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral), &
                                                      intent(out) :: wAdj
 !      real(kind=realType), dimension(-2:3,-2:3,-2:3,3), &
 !                                                     intent(out) :: xAdj
-      real(kind=realType), dimension(-3:2,-3:2,-3:2,3), &
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral), &
                                                      intent(out) :: xAdj
 
       real(kind=realType) :: alphaAdj, betaAdj,MachAdj,MachCoefAdj,machGridAdj
@@ -55,11 +56,14 @@
       integer(kind=intType)::liftIndex
 
       real(kind=realType), dimension(3),intent(out) ::rotRateAdj,rotCenterAdj
-      real(kind=realType), dimension(2,2,2,3),intent(out) ::xBlockCornerAdj
+      real(kind=realType), dimension(2,2,2,3,nTimeIntervalsSpectral),intent(out) ::xBlockCornerAdj
+
+      integer(kind=intType) :: nn,level,sps
 
 !
 !     Local variables.
 !
+      integer(kind=intType) :: sps2
       integer(kind=intType) :: ii, jj, kk, i1, j1, k1, i2, j2, k2, l,j
       integer(kind=intType) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
 
@@ -76,7 +80,7 @@
         do kk=-2,2
           do jj=-2,2
             do ii=-2,2
-              wAdj(ii,jj,kk,l) = 0.0
+              wAdj(ii,jj,kk,l,:) = 0.0
             enddo
           enddo
         enddo
@@ -87,24 +91,27 @@
         do kk=-3,2
           do jj=-3,2
             do ii=-3,2
-              xAdj(ii,jj,kk,l) = 0.0
+              xAdj(ii,jj,kk,l,:) = 0.0
             enddo
           enddo
         enddo
       enddo
 
       ! Copy the wAdj from w
-      do l=1,nw
-        do kk=-2,2
-          do jj=-2,2
-            do ii=-2,2
-              !print *,'wadj',wAdj(ii,jj,kk,l), iCell+ii, jCell+jj, kCell+kk
-              wAdj(ii,jj,kk,l) = w(iCell+ii, jCell+jj, kCell+kk,l)
+      do sps2 = 1,nTimeIntervalsSpectral
+         call setPointers(nn,level,sps2)
+         do l=1,nw
+            do kk=-2,2
+               do jj=-2,2
+                  do ii=-2,2
+                     !print *,'wadj',wAdj(ii,jj,kk,l), iCell+ii, jCell+jj, kCell+kk
+                     wAdj(ii,jj,kk,l,sps2) = w(iCell+ii, jCell+jj, kCell+kk,l)
+                  enddo
+               enddo
             enddo
-          enddo
-        enddo
-      enddo
-
+         enddo
+         call setPointers(nn,level,sps)
+      end do
 
       ! Copy xAdj from x
 
@@ -122,28 +129,33 @@
       if(iCell==2) iStart=-2; if(iCell==il) iEnd=1
       if(jCell==2) jStart=-2; if(jCell==jl) jEnd=1
       if(kCell==2) kStart=-2; if(kCell==kl) kEnd=1
-
-      do l=1,3
-        do kk=kStart,kEnd
-          do jj=jStart,jEnd
-            do ii=iStart,iEnd
-              xAdj(ii,jj,kk,l) = x(iCell+ii, jCell+jj, kCell+kk,l)
+     do sps2 = 1,nTimeIntervalsSpectral
+         call setPointers(nn,level,sps2)
+         do l=1,3
+            do kk=kStart,kEnd
+               do jj=jStart,jEnd
+                  do ii=iStart,iEnd
+                     xAdj(ii,jj,kk,l,sps2) = x(iCell+ii, jCell+jj, kCell+kk,l)
+                  enddo
+               enddo
             enddo
-          enddo
-        enddo
-      enddo
-
+         enddo
+         call setPointers(nn,level,sps)
+      end do
+    
+      do sps2 = 1,nTimeIntervalsSpectral
+         call setPointers(nn,level,sps2)     
+         xBlockCornerAdj(1,1,1,:,sps2) = x(1, 1, 1,:)
+         xBlockCornerAdj(2,1,1,:,sps2) = x(il, 1, 1,:)
+         xBlockCornerAdj(1,2,1,:,sps2) = x(1,jl,1,:)
+         xBlockCornerAdj(2,2,1,:,sps2) = x(il,jl,1,:)
+         xBlockCornerAdj(1,2,2,:,sps2) = x(1,jl,kl,:)
+         xBlockCornerAdj(2,2,2,:,sps2) = x(il,jl,kl,:)
+         xBlockCornerAdj(1,1,2,:,sps2) = x(1, 1,kl,:)
+         xBlockCornerAdj(2,1,2,:,sps2) = x(il, 1,kl,:)
+         call setPointers(nn,level,sps)
+      end do
       
-      xBlockCornerAdj(1,1,1,:) = x(1, 1, 1,:)
-      xBlockCornerAdj(2,1,1,:) = x(il, 1, 1,:)
-      xBlockCornerAdj(1,2,1,:) = x(1,jl,1,:)
-      xBlockCornerAdj(2,2,1,:) = x(il,jl,1,:)
-      xBlockCornerAdj(1,2,2,:) = x(1,jl,kl,:)
-      xBlockCornerAdj(2,2,2,:) = x(il,jl,kl,:)
-      xBlockCornerAdj(1,1,2,:) = x(1, 1,kl,:)
-      xBlockCornerAdj(2,1,2,:) = x(il, 1,kl,:)
-      
-
       MachAdj = Mach
       MachCoefAdj = MachCoef
       MachGridAdj = MachGrid

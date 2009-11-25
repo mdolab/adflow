@@ -41,6 +41,16 @@
        real(kind=realType) :: length, dot
 
        real(kind=realType), dimension(3) :: v1, v2, norm
+
+       !File IO
+       integer ::iii,iiii,jjj,jjjj,kkk,kkkk,nnnn,istart,jstart,kstart,iend2,jend2,kend2,n
+       integer ::unitx = 12
+       !logical ::isopen 
+
+       LOGICAL :: opened=.false., named
+       CHARACTER(LEN=80) :: fname
+       
+       INQUIRE (UNIT=unitx, NAMED=named,  OPENED=opened, NAME=fname)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -57,6 +67,10 @@
            ! Set the pointers to this block.
 
            call setPointers(nn, level, sps)
+           
+!!$           if(opened)then
+!!$              write(unitx,*) 'block Num',nn
+!!$           endif
 !
 !          **************************************************************
 !          *                                                            *
@@ -120,15 +134,15 @@
            ! Loop over boundary subfaces.
 
            loopBocos: do mm=1,nBocos
-
+              !if(opened) write(unitx,*)'loopBocos',mm,nbocos
              ! The actual correction of the coordinates only takes
              ! place for symmetry planes.
 
              testSymmetry: if(BCType(mm) == Symm) then
-
+               ! if(opened) write(unitx,*)'testSymmetry',bcfaceID(mm)
                ! Set some variables, depending on the block face on
                ! which the subface is located.
-
+ 
                select case (BCFaceID(mm))
                  case (iMin)
                    iBeg = jnBeg(mm); iEnd = jnEnd(mm); iiMax = jl
@@ -160,7 +174,79 @@
                    jBeg = jnBeg(mm); jEnd = jnEnd(mm); jjMax = jl
                    x0 => x(:,:,ke,:); x1 => x(:,:,kl,:); x2 => x(:,:,nz,:)
                end select
-               
+ 
+!!$               if(opened)then
+!!$ !                 do nnnn=1,ndom
+!!$ !                    call setPointersAdj(nnnn,1,sps)
+!!$                     do iii = 2,il
+!!$                        do jjj = 2,jl
+!!$                           do kkk = 2,kl
+!!$                              if(opened)then
+!!$                                 write(unitx,*)  'kl',kkk,kl,BCFaceID(mm)
+!!$                              endif
+!!$                              istart = -3
+!!$                              jstart = -3
+!!$                              !kstart = -3
+!!$                              iend2 = 2
+!!$                              jend2 = 2
+!!$                              !kend2 = 2 
+!!$                              select case (BCFaceID(mm))
+!!$                              case (iMin)
+!!$                                 if(jjj==2) istart=-2
+!!$                                 if(kkk==2) jstart=-2
+!!$                                 if(jjj==jl) iend2=1
+!!$                                 if(kkk==kl) jend2=1 
+!!$                              case (iMax)
+!!$                                 if(jjj==2) istart=-2
+!!$                                 if(kkk==2) jstart=-2
+!!$                                 if(jjj==jl) iend2=1
+!!$                                 if(kkk==kl) jend2=1 
+!!$                              case (jMin)
+!!$                                 if(iii==2) istart=-2
+!!$                                 if(kkk==2) jstart=-2
+!!$                                 if(iii==il) iend2=1
+!!$                                 if(kkk==kl) jend2=1 
+!!$                              case (jMax)
+!!$                                 if(iii==2) istart=-2
+!!$                                 if(kkk==2) jstart=-2
+!!$                                 if(iii==il) iend2=1
+!!$                                 if(kkk==kl) jend2=1 
+!!$                              case (kMin)
+!!$                                 if(iii==2) istart=-2
+!!$                                 if(jjj==2) jstart=-2
+!!$                                 if(iii==il) iend2=1
+!!$                                 if(jjj==jl) jend2=1
+!!$                                  
+!!$                              case (kMax)
+!!$                                 if(iii==2) istart=-2
+!!$                                 if(jjj==2) jstart=-2
+!!$                                 if(iii==il) iend2=1
+!!$                                 if(jjj==jl) jend2=1
+!!$                                  
+!!$                              end select
+!!$                             
+!!$                              
+!!$                              do jjjj = jstart,jend2
+!!$                                 do iiii = istart,iend2
+!!$                                    !do kkkk = kstart,kend2
+!!$                                    do n = 1,3
+!!$                                       i = iii+iiii
+!!$                                       j = jjj+jjjj
+!!$                                       !k = kkk+kkkk
+!                                          write(unitx,10) i,j,k,n,nn,v1(1),v1(2),v1(3)
+!10                                        format(1x,'res',5I8,3f20.14)
+!!$                                       write(unitx,10) i,j,n,iii,jjj,x0(i+1,j+1,n), x1(i+1,j+1,n), x2(i+1,j+1,n)!, dot*norm(n)
+!!$10                                     format(1x,'res',5I8,3f20.14)
+!!$                                    enddo
+!!$                                    !enddo
+!!$                                 enddo
+!!$                              enddo
+!!$                           enddo
+!!$                        enddo
+!!$                     enddo
+!                     call setPointersAdj(nn,1,sps)
+!                  enddo
+!!$                  endif
 !CAM commented out on Aug. 11, 2009 by C.A.Mader. Computation modified to fit 
 !CAM into a single residual stencil...
 !!$
@@ -335,14 +421,130 @@
                         x0(i+1,j+1,2) = x2(i+1,j+1,2) + dot*norm(2)
                         x0(i+1,j+1,3) = x2(i+1,j+1,3) + dot*norm(3)
                         !print *,'xhalo', x0(i+1,j+1,1) ,x2(i+1,j+1,1) , dot,norm(1),i,j,BCFaceID(mm)
-                        
+
                      enddo
                   enddo
+!!$                  print *,'opened',opened,nn
+!!$                  if(opened)then
+!                  
+!                  
+!                  do nnnn=1,ndom
+!                     call setPointersAdj(nnnn,1,sps)
+!!$                     do iii = 2,il
+!!$                        do jjj = 2,jl
+!!$                           do kkk = 2,kl
+!!$                              if(opened)then
+!!$                                 write(unitx,*)  'kl',kkk,kl
+!!$                              endif
+!!$                              istart = -3
+!!$                              jstart = -3
+!!$                              !kstart = -3
+!!$                              iend2 = 2
+!!$                              jend2 = 2
+!!$                              !kend2 = 2 
+!!$                              select case (BCFaceID(mm))
+!!$                              case (iMin)
+!!$                                 if(jjj==2) istart=-2
+!!$                                 if(kkk==2) jstart=-2
+!!$                                 if(jjj==jl) iend2=1
+!!$                                 if(kkk==kl) jend2=1 
+!!$                              case (iMax)
+!!$                                 if(jjj==2) istart=-2
+!!$                                 if(kkk==2) jstart=-2
+!!$                                 if(jjj==jl) iend2=1
+!!$                                 if(kkk==kl) jend2=1 
+!!$                              case (jMin)
+!!$                                 if(iii==2) istart=-2
+!!$                                 if(kkk==2) jstart=-2
+!!$                                 if(iii==il) iend2=1
+!!$                                 if(kkk==kl) jend2=1 
+!!$                              case (jMax)
+!!$                                 if(iii==2) istart=-2
+!!$                                 if(kkk==2) jstart=-2
+!!$                                 if(iii==il) iend2=1
+!!$                                 if(kkk==kl) jend2=1 
+!!$                              case (kMin)
+!!$                                 if(iii==2) istart=-2
+!!$                                 if(jjj==2) jstart=-2
+!!$                                 if(iii==il) iend2=1
+!!$                                 if(jjj==jl) jend2=1
+!!$                                  
+!!$                              case (kMax)
+!!$                                 if(iii==2) istart=-2
+!!$                                 if(jjj==2) jstart=-2
+!!$                                 if(iii==il) iend2=1
+!!$                                 if(jjj==jl) jend2=1
+!!$                                  
+!!$                              end select
+!!$                             
+!!$                              
+!!$                              do jjjj = jstart,jend2
+!!$                                 do iiii = istart,iend2
+!!$                                    !do kkkk = kstart,kend2
+!!$                                    do n = 1,3
+!!$                                       i = iii+iiii
+!!$                                       j = jjj+jjjj
+!!$                                       !k = kkk+kkkk
+!                                          write(unitx,10) i,j,k,n,nn,v1(1),v1(2),v1(3)
+!10                                        format(1x,'res',5I8,3f20.14)
+!!$                                       write(unitx,10) i,j,n,iii,jjj,x0(i+1,j+1,n), x2(i+1,j+1,n)!, dot*norm(n)
+!!$10                                     format(1x,'res',5I8,2f20.14)
+!!$                                    enddo
+!!$                                    !enddo
+!!$                                 enddo
+!!$                              enddo
+!!$                           enddo
+!!$                        enddo
+!!$                     enddo
+!                     call setPointersAdj(nn,1,sps)
+!                  enddo
+!!$                  endif
                endif testSingular
             endif testSymmetry
          enddo loopBocos
       enddo domains
-   enddo spectralLoop
+      
+!!$print *,'opened',opened
+!!$   
+!!$   if(opened)then                  
+!!$      do nnnn=1,ndom
+!!$         call setPointersAdj(nnnn,1,sps)
+!!$         do iii = 2,il
+!!$            do jjj = 2,jl
+!!$               do kkk = 2,kl
+!!$                  istart = -3
+!!$                  jstart = -3
+!!$                  kstart = -3
+!!$                  iend2 = 2
+!!$                  jend2 = 2
+!!$                  kend2 = 2
+!!$                  if(iii==2) istart=-2
+!!$                  if(jjj==2) jstart=-2
+!!$                  if(kkk==2) kstart=-2
+!!$                  if(iii==il) iend2=1
+!!$                  if(jjj==jl) jend2=1
+!!$                  if(kkk==kl) kend2=1
+!!$                  do iiii = istart,iend2
+!!$                     do jjjj = jstart,jend2
+!!$                        do kkkk = kstart,kend2
+!!$                           do n = 1,3
+!!$                              i = iii+iiii
+!!$                              j = jjj+jjjj
+!!$                              k = kkk+kkkk
+!!$                              write(unitx,10) i,j,k,n,x(i,j,k,n)
+!!$10                            format(1x,'res',4I8,f20.14)
+!!$                           enddo
+!!$                        enddo
+!!$                     enddo
+!!$                  enddo
+!!$               enddo
+!!$            enddo
+!!$         enddo
+!!$         call setPointersAdj(nn,1,sps)
+!!$      enddo
+!!$   endif
+   enddo spectralLoop 
+  
 !
 !      ******************************************************************
 !      *                                                                *
@@ -351,5 +553,44 @@
 !      ******************************************************************
 !
    call exchangeCoor(level)
-   
+!!$sps=1
+!!$print *,'opened',opened
+!!$   
+!!$   if(opened)then                  
+!!$      do nnnn=1,ndom
+!!$         call setPointersAdj(nnnn,1,sps)
+!!$         do iii = 2,il
+!!$            do jjj = 2,jl
+!!$               do kkk = 2,kl
+!!$                  istart = -3
+!!$                  jstart = -3
+!!$                  kstart = -3
+!!$                  iend2 = 2
+!!$                  jend2 = 2
+!!$                  kend2 = 2
+!!$                  if(iii==2) istart=-2
+!!$                  if(jjj==2) jstart=-2
+!!$                  if(kkk==2) kstart=-2
+!!$                  if(iii==il) iend2=1
+!!$                  if(jjj==jl) jend2=1
+!!$                  if(kkk==kl) kend2=1
+!!$                  do iiii = istart,iend2
+!!$                     do jjjj = jstart,jend2
+!!$                        do kkkk = kstart,kend2
+!!$                           do n = 1,3
+!!$                              i = iii+iiii
+!!$                              j = jjj+jjjj
+!!$                              k = kkk+kkkk
+!!$                              write(unitx,10) i,j,k,n,x(i,j,k,n)
+!!$10                            format(1x,'res',4I8,f20.14)
+!!$                           enddo
+!!$                        enddo
+!!$                     enddo
+!!$                  enddo
+!!$               enddo
+!!$            enddo
+!!$         enddo
+!!$         call setPointersAdj(nn,1,sps)
+!!$      enddo
+!!$   endif   
  end subroutine xhalo

@@ -65,7 +65,9 @@
       real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdj
       real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdjb
       real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xFD
-
+ 
+      REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3), xblockcorneradjb(2&
+           &  , 2, 2, 3)
       REAL(KIND=REALTYPE) :: machadj, machcoefadj,machGridAdj, pinfcorradj
       REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadjb, pinfcorradjb
       REAL(KIND=REALTYPE) :: prefadj, rhorefadj
@@ -328,7 +330,8 @@
  !                    print *,'indices',icell,jcell,kcell
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
-                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+                     call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
+                          betaAdj,MachAdj,&
                           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
@@ -343,23 +346,24 @@
                      machadj = ExtraAdjRef+deltaw
                      
                      
-                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                          &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                          &  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-                          &  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-                          &  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-                          &  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
-
+                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+                          &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+                          &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+                          &  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+                          &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+                          &  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+                          &  liftindex)
                      dwAdjP = dwadj
 
                      machadj = ExtraAdjRef-deltaw
 
-                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                          &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                          &  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-                          &  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-                          &  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-                          &  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+                          &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+                          &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+                          &  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+                          &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+                          &  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+                          &  liftindex)
 
                      dwAdjM = dwadj
                      
@@ -404,7 +408,8 @@
  !                    print *,'indices',icell,jcell,kcell
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
-                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+                     call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
+                          betaAdj,MachAdj,&
                           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
@@ -419,23 +424,25 @@
                      alphaadj = ExtraAdjRef+deltaw
                      
                      
-                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                          &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                          &  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-                          &  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-                          &  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-                          &  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+                          &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+                          &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+                          &  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+                          &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+                          &  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+                          &  liftindex)
 
                      dwAdjP = dwadj
 
                      alphaadj = ExtraAdjRef-deltaw
 
-                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                          &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                          &  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-                          &  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-                          &  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-                          &  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+                          &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+                          &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+                          &  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+                          &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+                          &  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+                          &  liftindex)
 
                      dwAdjM = dwadj
                      
@@ -480,7 +487,8 @@
  !                    print *,'indices',icell,jcell,kcell
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
-                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+                     call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
+                          betaAdj,MachAdj,&
                           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
@@ -495,23 +503,25 @@
                      betaadj = ExtraAdjRef+deltaw
                      
                      
-                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                          &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                          &  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-                          &  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-                          &  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-                          &  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+                          &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+                          &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+                          &  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+                          &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+                          &  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+                          &  liftindex)
 
                      dwAdjP = dwadj
 
                      betaadj = ExtraAdjRef-deltaw
 
-                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                          &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                          &  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-                          &  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-                          &  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-                          &  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+                          &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+                          &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+                          &  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+                          &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+                          &  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+                          &  liftindex)
 
                      dwAdjM = dwadj
                      
@@ -558,7 +568,8 @@
  !                    print *,'indices',icell,jcell,kcell
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
-                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+                     call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
+                          betaAdj,MachAdj,&
                           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
@@ -572,35 +583,25 @@
 
                      rotrateadj(1) = ExtraAdjRef+deltaw
                      
-                     call computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
+                     call computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
+                          betaAdj,MachAdj, &
                           MachCoefAdj,machGridAdj,iCell, jCell,  kCell, &
                           nn,sps, correctForK,secondHalo,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-!!$                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-!!$                          &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-!!$                          &  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-!!$                          &  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-!!$                          &  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-!!$                          &  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
 
                      dwAdjP = dwadj
 
                      rotrateadj(1) = ExtraAdjRef-deltaw
 
-                     call computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
+                     call computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
+                          betaAdj,MachAdj, &
                           MachCoefAdj,machGridAdj,iCell, jCell,  kCell, &
                           nn,sps, correctForK,secondHalo,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-!!$                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-!!$                          &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-!!$                          &  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-!!$                          &  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-!!$                          &  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-!!$                          &  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
 
                      dwAdjM = dwadj
                      
@@ -659,7 +660,8 @@
  !                    print *,'indices',icell,jcell,kcell
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
-                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+                     call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
+                          betaAdj,MachAdj,&
                           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
@@ -674,23 +676,25 @@
                      rotrateadj(2)= ExtraAdjRef+deltaw
                      
                      
-                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                          &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                          &  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-                          &  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-                          &  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-                          &  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+                          &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+                          &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+                          &  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+                          &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+                          &  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+                          &  liftindex)
 
                      dwAdjP = dwadj
 
                      rotrateadj(2)= ExtraAdjRef-deltaw
 
-                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                          &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                          &  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-                          &  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-                          &  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-                          &  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+                          &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+                          &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+                          &  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+                          &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+                          &  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+                          &  liftindex)
 
                      dwAdjM = dwadj
                      
@@ -734,7 +738,8 @@
  !                    print *,'indices',icell,jcell,kcell
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
-                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+                     call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
+                          betaAdj,MachAdj,&
                           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
@@ -749,23 +754,25 @@
                      rotrateadj(3) = ExtraAdjRef+deltaw
                      
                      
-                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                          &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                          &  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-                          &  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-                          &  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-                          &  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+                          &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+                          &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+                          &  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+                          &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+                          &  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+                          &  liftindex)
 
                      dwAdjP = dwadj
 
                      rotrateadj(3) = ExtraAdjRef-deltaw
 
-                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-                          &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-                          &  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-                          &  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-                          &  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-                          &  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+                          &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+                          &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+                          &  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+                          &  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+                          &  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+                          &  liftindex)
 
                      dwAdjM = dwadj
                      

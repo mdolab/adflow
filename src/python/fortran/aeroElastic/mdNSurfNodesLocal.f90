@@ -43,7 +43,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-
+       !print *,'in mdnsurfnodeslocal'
        ! Determine the local number of surface nodes per family.
 
        nNodesLoc = 0

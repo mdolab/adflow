@@ -73,8 +73,8 @@
 
        do nn=1,degreeFourRot
          val = nn*omegaFourRot
-         dPhi = dPhi - val**2*cosCoefFourRot(nn)*sin(val*t)
-         dPhi = dPhi - val**2*sinCoefFourRot(nn)*cos(val*t)
+         dPhi = dPhi - val**2*sinCoefFourRot(nn)*sin(val*t)
+         dPhi = dPhi - val**2*cosCoefFourRot(nn)*cos(val*t)
        enddo
 
        ! Set derivativeRigidRotAngle to dPhi. Multiply by timeRef

@@ -43,13 +43,14 @@
       logical :: secondHalo!, correctForK
       
 
-      real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdj
+      real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral) :: wAdj
       !real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xAdj
-      real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdj
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral)  :: xAdj
 
 
-      real(kind=realType), dimension(nw)                :: dwAdj
+      real(kind=realType), dimension(nw,nTimeIntervalsSpectral)                :: dwAdj
 
+      real(kind=realType), dimension(2,2,2,3,nTimeIntervalsSpectral) ::xBlockCornerAdj
       real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj,machGridAdj
       REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
       REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
@@ -79,7 +80,7 @@
 
       if(myID == 0) then
         write(*,*) "Running verifyRAdj..."
-        write(*,*) "proc block  i   j   k  sum(dwAdj)", &
+        write(*,*) "proc sps block  i   j   k  sum(dwAdj)", &
                    "    sum(dw)  sum(diff)"
       endif
 
@@ -201,7 +202,7 @@
       ! Loop over the number of local blocks.
       spectralLoop: do sps=1,nTimeIntervalsSpectral
          domainResidualLoop: do nn=1,nDom
-
+            !print *,'setpointers',nn,nDom
             ! Set some pointers to make the code more readable.
 
             call setPointersAdj(nn,level,sps)
@@ -211,7 +212,7 @@
             ! Compute the residual for each cell.
             !print *,'aftersetpointeres',nn,il,jl,kl!,shape(w)
             do kCell=2,kl!2,kl
-               !print *,'init il,jl,kl',il,jl,kl!,shape(w)
+               !print *,'init il,jl,kl',il,jl,kl,nTimeIntervalsSpectral!,shape(w)
                do jCell=2,jl!2,jl
                   !print *,'interior il,jl,kl',il,jl,kl,nn!,shape(w)
                   do iCell=2,il
@@ -219,34 +220,29 @@
                      ! Transfer the state w to the auxiliar array wAdj
                      ! and the coordinates x to the auxiliar array xAdj.
                      !print *,'copying Adjoint',nn,icell,il,jcell,jl,kcell,kl,shape(w)
-                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
-                          machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
-                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                     call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
+                          betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
+                          nn,level,sps,&
+                          prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-                     !print *,'rotrateadj,rotcenteradj',rotRateAdj,rotCenterAdj
-                     !(wAdj, xAdj, iCell, jCell, kCell)
-                     !print *,'interior3 il,jl,kl',il,jl,kl,nn!,shape(w)
+                
                      ! Compute the total residual.
                      ! This includes inviscid and viscous fluxes, artificial
                      ! dissipation, and boundary conditions.                   
-                     !print *,'Calling compute ADjoint'!,wadj(:,:,:,irho)!,wAdj,xAdj,dwAdj,alphaAdj,&
+                     !print *,'Calling compute ADjoint',nn!,wadj(:,:,:,irho)!,wAdj,xAdj,dwAdj,alphaAdj,&
                      ! rotrateadj = rotrateAdj+1e-5
                      !rotCenteradj = rotcenterAdj+0
-!                          betaAdj,MachAdj, MachCoefAdj,&
-!                          iCell, jCell,  kCell, &
-!                          nn,sps, correctForK,secondHalo,prefAdj,&
-!                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-!                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-!                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex
-                     call computeRAdjoint(wAdj,xAdj,dwAdj,alphaAdj,betaAdj,MachAdj, &
+
+                     call computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
+                          betaAdj,MachAdj, &
                           MachCoefAdj,machGridAdj,iCell, jCell,  kCell, &
-                          nn,sps, correctForK,secondHalo,prefAdj,&
+                          nn,level,sps, correctForK,secondHalo,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
 
-                     !print *,'interior4 il,jl,kl',il,jl,kl,nn!,shape(w)
+                   !  print *,'interior4 il,jl,kl',il,jl,kl,nn!,shape(w)
 
 !!$                     call computeRAdjoint(wAdj,        &
 !!$                          xAdj,                       &
@@ -258,7 +254,7 @@
                      ! Output the result sum(dw(:)) to debug.
 
                      !differ = sum(dwAdj(:))-sum(dw(iCell,jCell,kCell,:))
-                     differ = (sum(dwAdj(:))-sum(dw(iCell,jCell,kCell,:)))/sum(dw(iCell,jCell,kCell,:))
+                     differ = (sum(dwAdj(:,sps))-sum(dw(iCell,jCell,kCell,:)))/sum(dw(iCell,jCell,kCell,:))
 
 !!$              if( differ > L2Conv ) &
 !!$                write(*,10) myID, nn, iCell, jCell, kCell,               &
@@ -268,15 +264,15 @@
 !                     if( differ > 1e-14 ) &
                      if( abs(differ) > 1e-14 ) &
 !                     if( abs(1) > 1e-14 ) &
-                          write(*,10) myID, nn, iCell, jCell, kCell,               &
-                          sum(dwAdj(:)), sum(dw(iCell,jCell,kCell,:)), &
-                          differ,(dwAdj(2)), (dw(iCell,jCell,kCell,2)),(dwAdj(1))-(dw(iCell,jCell,kCell,1)),(dwAdj(2))-(dw(iCell,jCell,kCell,2)),(dwAdj(3))-(dw(iCell,jCell,kCell,3)),(dwAdj(4))-(dw(iCell,jCell,kCell,4)),(dwAdj(5))-(dw(iCell,jCell,kCell,5))
+                          write(*,10) myID,sps, nn, iCell, jCell, kCell,               &
+                          sum(dwAdj(:,sps)), sum(dw(iCell,jCell,kCell,:)), &
+                          differ,(dwAdj(2,sps)), (dw(iCell,jCell,kCell,2)),(dwAdj(1,sps))-(dw(iCell,jCell,kCell,1)),(dwAdj(2,sps))-(dw(iCell,jCell,kCell,2)),(dwAdj(3,sps))-(dw(iCell,jCell,kCell,3)),(dwAdj(4,sps))-(dw(iCell,jCell,kCell,4)),(dwAdj(5,sps))-(dw(iCell,jCell,kCell,5))
 
                      ! Store difference to output to volume solution file.
                      ! (resrho, resmom, resrhoe) have to be added to the volume
                      ! output variables in the parameter file.
                      
-                     dw(iCell,jCell,kCell,:) = dw(iCell,jCell,kCell,:) - dwAdj(:)
+                     dw(iCell,jCell,kCell,:) = dw(iCell,jCell,kCell,:) - dwAdj(:,sps)
 
                   enddo
                enddo
@@ -334,7 +330,7 @@
 
       ! Output formats.
 
-  10  format(1x,i3,2x,i3,2x,i3,1x,i3,1x,i3,2x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3)
+  10  format(1x,i3,2x,i3,2x,i3,2x,i3,1x,i3,1x,i3,2x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3,1x,e10.3)
   99  format(2a)
 
       end subroutine verifyRAdj
