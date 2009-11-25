@@ -267,7 +267,7 @@
             do kCell = 2, kl
                do jCell = 2, jl
                   do iCell = 2, il
-                     print *,'indices',icell,jcell,kcell
+                     !print *,'indices',icell,jcell,kcell
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
                      call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
@@ -317,6 +317,10 @@
                                     i = iCell + ii
                                     j = jCell + jj
                                     k = kCell + kk
+
+                                    idxstate = globalCell(i,j,k)*nw+l
+                                    idxres   = globalCell(iCell,jCell,kCell)*nw+m
+
 !!$                                    !print *,'secondaryindicies',i,j,k,ii,jj,kk
 !!$                                    if(i>zero .and. j>zero .and. k>zero .and. i<=il .and. j<=jl .and. k<=kl)then
 !!$                                       idxstate = globalCell(i,j,k)*nw+l
@@ -327,12 +331,19 @@
 !!$
 !!$                                       endif
 !!$                                    end if
-
-                                    if(i>zero .and. j>zero .and. k>zero .and. i<=il .and. j<=jl .and. k<=kl)then
-                                       idxstate = globalCell(i,j,k)*nw+l
-                                       idxres   = globalCell(iCell,jCell,kCell)*nw+m
+!!$                                    if(nn==5.and.icell==2.and.jcell==2.and.kcell==2.and.l==3)then
+!!$                                       print *,'ad value',(i>zero .and. j>zero .and. k>zero .and. i<=ib .and. j<=jb .and. k<=kb),(idxres>=0 .and. idxstate>=0),(wAdjb(ii,jj,kk,l)/=0)
+!!$                                       write(*,13) idxstate,idxres,l,icell,jcell,kcell,nn,m,k,j,i,nnn,wAdjb(ii,jj,kk,l)
+!!$                                    endif
+                                    !if(i>zero .and. j>zero .and. k>zero .and. i<=il .and. j<=jl .and. k<=kl)then
+                                    if(i>=zero .and. j>=zero .and. k>=zero .and. i<=ib .and. j<=jb .and. k<=kb)then
+                                       
                                        if( idxres>=0 .and. idxstate>=0) then
                                           if (wAdjb(ii,jj,kk,l)/=0)then
+!!$                                             if(nn==5.and.icell==2.and.jcell==2.and.kcell==2.and.l==3)then
+!!$                                                print *,'ad value'
+!!$                                                write(*,13) idxstate,idxres,l,icell,jcell,kcell,nn,m,k,j,i,nnn,wAdjb(ii,jj,kk,l)
+!!$                                             endif
                                              call MatSetValues(drdwfd, 1, idxres-1, 1, idxstate-1,   &
                                                   wAdjb(ii,jj,kk,l), ADD_VALUES, PETScIerr)
                                              if( PETScIerr/=0 ) &
@@ -402,8 +413,13 @@
                            DO J=2,Jl
                               DO K=2,Kl
                                  do n = 1,nw
-                                    idxres = globalCell(i,j,k)*nw+n
+                                    idxres = globalCell(i,j,k)*nw+n                                    
                                     call MatGetValues(drdwfd,1,idxres-1,1,idxstate-1,value,PETScIerr)
+
+!!$                                    if(nn==1.and.icell==2.and.jcell==3.and.kcell==2.and.m==3)then
+!!$                                      print *,'mat value'
+!!$                                      write(*,13) idxstate,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value
+!!$                                    endif
                                     !if(value.ne.0)then
                                     if(abs(value)>1e-10)then
                                        !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
@@ -416,6 +432,7 @@
                               END DO
                            END DO
                         END DO
+                        call setPointersAdj(nn,1,sps)
                      end do
                   end do
                enddo

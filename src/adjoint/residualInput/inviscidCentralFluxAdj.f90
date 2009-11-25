@@ -13,7 +13,7 @@
                                          siAdj, sjAdj, skAdj, volAdj, &
                                          sFaceIAdj,sFaceJAdj,sFaceKAdj,&
                                          rotRateAdj,                  &
-                                         iCell, jCell, kCell)
+                                         iCell, jCell, kCell,nn,level,sps)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -29,20 +29,21 @@
        use flowVarRefState ! constants (irho, ivx, ivy, imx,..), timeRef
        use inputPhysics    ! equationMode, steady
        use cgnsGrid        !
+       use inputTimeSpectral !nTimeIntervalsSpectral
        implicit none
 !
 !      Subroutine arguments
 !
-       integer(kind=intType) :: iCell, jCell, kCell
+       integer(kind=intType) :: iCell, jCell, kCell,nn,level,sps
 
-       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral), &
                                                       intent(in) :: wAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2),    &
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral),    &
                                                       intent(in) :: pAdj
-       real(kind=realType), dimension(nw), intent(inout) :: dwAdj
-       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) :: siAdj, sjAdj, skAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2), intent(in) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
-       real(kind=realType), dimension(0:0,0:0,0:0), intent(in) :: volAdj
+       real(kind=realType), dimension(nw,nTimeIntervalsSpectral), intent(inout) :: dwAdj
+       real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral), intent(in) :: siAdj, sjAdj, skAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral), intent(in) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
+       real(kind=realType), dimension(0:0,0:0,0:0,nTimeIntervalsSpectral), intent(in) :: volAdj
        real(kind=realType), dimension(3),intent(in) ::rotRateAdj
 !
 !      Local variables.
@@ -87,17 +88,17 @@
          ! Set the dot product of the grid velocity and the
          ! normal in i-direction for a moving face.
           
-         if( addGridVelocities ) sFace = sFaceIAdj(ii,0,0)
+         if( addGridVelocities ) sFace = sFaceIAdj(ii,0,0,sps)
 
          ! Compute the normal velocities of the left and right state.
 
-         vnp = wAdj(ii+1,0,0,ivx)*sIAdj(ii,0,0,1) &
-             + wAdj(ii+1,0,0,ivy)*sIAdj(ii,0,0,2) &
-             + wAdj(ii+1,0,0,ivz)*sIAdj(ii,0,0,3)
-         vnm = wAdj(ii,  0,0,ivx)*sIAdj(ii,0,0,1) &
-             + wAdj(ii,  0,0,ivy)*sIAdj(ii,0,0,2) &
-             + wAdj(ii,  0,0,ivz)*sIAdj(ii,0,0,3)
-
+         vnp = wAdj(ii+1,0,0,ivx,sps)*sIAdj(ii,0,0,1,sps) &
+             + wAdj(ii+1,0,0,ivy,sps)*sIAdj(ii,0,0,2,sps) &
+             + wAdj(ii+1,0,0,ivz,sps)*sIAdj(ii,0,0,3,sps)
+         vnm = wAdj(ii,  0,0,ivx,sps)*sIAdj(ii,0,0,1,sps) &
+             + wAdj(ii,  0,0,ivy,sps)*sIAdj(ii,0,0,2,sps) &
+             + wAdj(ii,  0,0,ivz,sps)*sIAdj(ii,0,0,3,sps)
+         !print *,'vnp',wAdj(ii+1,0,0,ivx,sps),sIAdj(ii,0,0,1,sps),sps
 
          ! Set the values of the porosities for this face.
          ! porVel defines the porosity w.r.t. velocity;
@@ -125,39 +126,39 @@
          ! Compute the normal velocities relative to the grid for
          ! the face as well as the mass fluxes.
 
-         qsp = (vnp - sFace)*porVel
-         qsm = (vnm - sFace)*porVel
+         qsp = (vnp -sFace)*porVel
+         qsm = (vnm -sFace)*porVel
 
-         rqsp = qsp*wAdj(ii+1,0,0,irho)
-         rqsm = qsm*wAdj(ii,  0,0,irho)
+         rqsp = qsp*wAdj(ii+1,0,0,irho,sps)
+         rqsm = qsm*wAdj(ii,  0,0,irho,sps)
  
          ! Compute the sum of the pressure multiplied by porFlux.
          ! For the default value of porFlux, 0.5, this leads to
          ! the average pressure.
           
-         pa = porFlux*(pAdj(ii+1,0,0) + pAdj(ii,0,0))
+         pa = porFlux*(pAdj(ii+1,0,0,sps) + pAdj(ii,0,0,sps))
          
          ! Compute the fluxes through this face.
           
          fs = rqsp + rqsm
           
-         dwAdj(irho) = dwAdj(irho) + fact*fs
+         dwAdj(irho,sps) = dwAdj(irho,sps) + fact*fs
           
-         fs = rqsp*wAdj(ii+1,0,0,ivx) + rqsm*wAdj(ii,0,0,ivx) &
-            + pa*sIAdj(ii,0,0,1)
-         dwAdj(imx) = dwAdj(imx) + fact*fs
+         fs = rqsp*wAdj(ii+1,0,0,ivx,sps) + rqsm*wAdj(ii,0,0,ivx,sps) &
+            + pa*sIAdj(ii,0,0,1,sps)
+         dwAdj(imx,sps) = dwAdj(imx,sps) + fact*fs
           
-         fs = rqsp*wAdj(ii+1,0,0,ivy) + rqsm*wAdj(ii,0,0,ivy) &
-            + pa*sIAdj(ii,0,0,2)
-         dwAdj(imy) = dwAdj(imy) + fact*fs
+         fs = rqsp*wAdj(ii+1,0,0,ivy,sps) + rqsm*wAdj(ii,0,0,ivy,sps) &
+            + pa*sIAdj(ii,0,0,2,sps)
+         dwAdj(imy,sps) = dwAdj(imy,sps) + fact*fs
           
-         fs = rqsp*wAdj(ii+1,0,0,ivz) + rqsm*wAdj(ii,0,0,ivz) &
-            + pa*sIAdj(ii,0,0,3)
-         dwAdj(imz) = dwAdj(imz) + fact*fs
+         fs = rqsp*wAdj(ii+1,0,0,ivz,sps) + rqsm*wAdj(ii,0,0,ivz,sps) &
+            + pa*sIAdj(ii,0,0,3,sps)
+         dwAdj(imz,sps) = dwAdj(imz,sps) + fact*fs
           
-         fs = qsp*wAdj(ii+1,0,0,irhoE) + qsm*wAdj(ii,0,0,irhoE) &
-            + porFlux*(vnp*pAdj(ii+1,0,0) + vnm*pAdj(ii,0,0))
-         dwAdj(irhoE) = dwAdj(irhoE) + fact*fs
+         fs = qsp*wAdj(ii+1,0,0,irhoE,sps) + qsm*wAdj(ii,0,0,irhoE,sps) &
+            + porFlux*(vnp*pAdj(ii+1,0,0,sps) + vnm*pAdj(ii,0,0,sps))
+         dwAdj(irhoE,sps) = dwAdj(irhoE,sps) + fact*fs
 
          ! Update i and set fact to 1 for the second face.
 
@@ -183,16 +184,16 @@
          ! Set the dot product of the grid velocity and the
          ! normal in j-direction for a moving face.
           
-         if( addGridVelocities ) sFace = sFaceJAdj(0,jj,0)
+         if( addGridVelocities ) sFace = sFaceJAdj(0,jj,0,sps)
 
          ! Compute the normal velocities of the left and right state.
 
-         vnp = wAdj(0,jj+1,0,ivx)*sJAdj(0,jj,0,1) &
-             + wAdj(0,jj+1,0,ivy)*sJAdj(0,jj,0,2) &
-             + wAdj(0,jj+1,0,ivz)*sJAdj(0,jj,0,3)
-         vnm = wAdj(0,jj,  0,ivx)*sJAdj(0,jj,0,1) &
-             + wAdj(0,jj,  0,ivy)*sJAdj(0,jj,0,2) &
-             + wAdj(0,jj,  0,ivz)*sJAdj(0,jj,0,3)
+         vnp = wAdj(0,jj+1,0,ivx,sps)*sJAdj(0,jj,0,1,sps) &
+             + wAdj(0,jj+1,0,ivy,sps)*sJAdj(0,jj,0,2,sps) &
+             + wAdj(0,jj+1,0,ivz,sps)*sJAdj(0,jj,0,3,sps)
+         vnm = wAdj(0,jj,  0,ivx,sps)*sJAdj(0,jj,0,1,sps) &
+             + wAdj(0,jj,  0,ivy,sps)*sJAdj(0,jj,0,2,sps) &
+             + wAdj(0,jj,  0,ivz,sps)*sJAdj(0,jj,0,3,sps)
 
          ! Set the values of the porosities for this face.
          ! porVel defines the porosity w.r.t. velocity;
@@ -223,36 +224,36 @@
          qsp = (vnp - sFace)*porVel
          qsm = (vnm - sFace)*porVel
 
-         rqsp = qsp*wAdj(0,jj+1,0,irho)
-         rqsm = qsm*wAdj(0,jj,  0,irho)
+         rqsp = qsp*wAdj(0,jj+1,0,irho,sps)
+         rqsm = qsm*wAdj(0,jj,  0,irho,sps)
  
          ! Compute the sum of the pressure multiplied by porFlux.
          ! For the default value of porFlux, 0.5, this leads to
          ! the average pressure.
           
-         pa = porFlux*(pAdj(0,jj+1,0) + pAdj(0,jj,0))
+         pa = porFlux*(pAdj(0,jj+1,0,sps) + pAdj(0,jj,0,sps))
           
          ! Compute the fluxes through this face.
           
          fs = rqsp + rqsm
           
-         dwAdj(irho) = dwAdj(irho) + fact*fs
+         dwAdj(irho,sps) = dwAdj(irho,sps) + fact*fs
           
-         fs = rqsp*wAdj(0,jj+1,0,ivx) + rqsm*wAdj(0,jj,0,ivx) &
-            + pa*sJAdj(0,jj,0,1)
-         dwAdj(imx) = dwAdj(imx) + fact*fs
+         fs = rqsp*wAdj(0,jj+1,0,ivx,sps) + rqsm*wAdj(0,jj,0,ivx,sps) &
+            + pa*sJAdj(0,jj,0,1,sps)
+         dwAdj(imx,sps) = dwAdj(imx,sps) + fact*fs
           
-         fs = rqsp*wAdj(0,jj+1,0,ivy) + rqsm*wAdj(0,jj,0,ivy) &
-            + pa*sJAdj(0,jj,0,2)
-         dwAdj(imy) = dwAdj(imy) + fact*fs
+         fs = rqsp*wAdj(0,jj+1,0,ivy,sps) + rqsm*wAdj(0,jj,0,ivy,sps) &
+            + pa*sJAdj(0,jj,0,2,sps)
+         dwAdj(imy,sps) = dwAdj(imy,sps) + fact*fs
           
-         fs = rqsp*wAdj(0,jj+1,0,ivz) + rqsm*wAdj(0,jj,0,ivz) &
-            + pa*sJAdj(0,jj,0,3)
-         dwAdj(imz) = dwAdj(imz) + fact*fs
+         fs = rqsp*wAdj(0,jj+1,0,ivz,sps) + rqsm*wAdj(0,jj,0,ivz,sps) &
+            + pa*sJAdj(0,jj,0,3,sps)
+         dwAdj(imz,sps) = dwAdj(imz,sps) + fact*fs
           
-         fs = qsp*wAdj(0,jj+1,0,irhoE) + qsm*wAdj(0,jj,0,irhoE) &
-            + porFlux*(vnp*pAdj(0,jj+1,0) + vnm*pAdj(0,jj,0))
-         dwAdj(irhoE) = dwAdj(irhoE) + fact*fs
+         fs = qsp*wAdj(0,jj+1,0,irhoE,sps) + qsm*wAdj(0,jj,0,irhoE,sps) &
+            + porFlux*(vnp*pAdj(0,jj+1,0,sps) + vnm*pAdj(0,jj,0,sps))
+         dwAdj(irhoE,sps) = dwAdj(irhoE,sps) + fact*fs
 
          ! Update j and set fact to 1 for the second face.
 
@@ -278,16 +279,16 @@
          ! Set the dot product of the grid velocity and the
          ! normal in k-direction for a moving face.
           
-         if( addGridVelocities ) sFace = sFaceKAdj(0,0,kk)
+         if( addGridVelocities ) sFace = sFaceKAdj(0,0,kk,sps)
 
          ! Compute the normal velocities of the left and right state.
 
-         vnp = wAdj(0,0,kk+1,ivx)*sKAdj(0,0,kk,1) &
-             + wAdj(0,0,kk+1,ivy)*sKAdj(0,0,kk,2) &
-             + wAdj(0,0,kk+1,ivz)*sKAdj(0,0,kk,3)
-         vnm = wAdj(0,0,kk,  ivx)*sKAdj(0,0,kk,1) &
-             + wAdj(0,0,kk,  ivy)*sKAdj(0,0,kk,2) &
-             + wAdj(0,0,kk,  ivz)*sKAdj(0,0,kk,3)
+         vnp = wAdj(0,0,kk+1,ivx,sps)*sKAdj(0,0,kk,1,sps) &
+             + wAdj(0,0,kk+1,ivy,sps)*sKAdj(0,0,kk,2,sps) &
+             + wAdj(0,0,kk+1,ivz,sps)*sKAdj(0,0,kk,3,sps)
+         vnm = wAdj(0,0,kk,  ivx,sps)*sKAdj(0,0,kk,1,sps) &
+             + wAdj(0,0,kk,  ivy,sps)*sKAdj(0,0,kk,2,sps) &
+             + wAdj(0,0,kk,  ivz,sps)*sKAdj(0,0,kk,3,sps)
 
          ! Set the values of the porosities for this face.
          ! porVel defines the porosity w.r.t. velocity;
@@ -318,36 +319,36 @@
          qsp = (vnp - sFace)*porVel
          qsm = (vnm - sFace)*porVel
 
-         rqsp = qsp*wAdj(0,0,kk+1,irho)
-         rqsm = qsm*wAdj(0,0,kk,  irho)
+         rqsp = qsp*wAdj(0,0,kk+1,irho,sps)
+         rqsm = qsm*wAdj(0,0,kk,  irho,sps)
  
          ! Compute the sum of the pressure multiplied by porFlux.
          ! For the default value of porFlux, 0.5, this leads to
          ! the average pressure.
           
-         pa = porFlux*(pAdj(0,0,kk+1) + pAdj(0,0,kk))
+         pa = porFlux*(pAdj(0,0,kk+1,sps) + pAdj(0,0,kk,sps))
           
          ! Compute the fluxes through this face.
           
          fs = rqsp + rqsm
           
-         dwAdj(irho) = dwAdj(irho) + fact*fs
+         dwAdj(irho,sps) = dwAdj(irho,sps) + fact*fs
           
-         fs = rqsp*wAdj(0,0,kk+1,ivx) + rqsm*wAdj(0,0,kk,ivx) &
-            + pa*sKAdj(0,0,kk,1)
-         dwAdj(imx) = dwAdj(imx) + fact*fs
+         fs = rqsp*wAdj(0,0,kk+1,ivx,sps) + rqsm*wAdj(0,0,kk,ivx,sps) &
+            + pa*sKAdj(0,0,kk,1,sps)
+         dwAdj(imx,sps) = dwAdj(imx,sps) + fact*fs
           
-         fs = rqsp*wAdj(0,0,kk+1,ivy) + rqsm*wAdj(0,0,kk,ivy) &
-            + pa*sKAdj(0,0,kk,2)
-         dwAdj(imy) = dwAdj(imy) + fact*fs
+         fs = rqsp*wAdj(0,0,kk+1,ivy,sps) + rqsm*wAdj(0,0,kk,ivy,sps) &
+            + pa*sKAdj(0,0,kk,2,sps)
+         dwAdj(imy,sps) = dwAdj(imy,sps) + fact*fs
           
-         fs = rqsp*wAdj(0,0,kk+1,ivz) + rqsm*wAdj(0,0,kk,ivz) &
-            + pa*sKAdj(0,0,kk,3)
-         dwAdj(imz) = dwAdj(imz) + fact*fs
+         fs = rqsp*wAdj(0,0,kk+1,ivz,sps) + rqsm*wAdj(0,0,kk,ivz,sps) &
+            + pa*sKAdj(0,0,kk,3,sps)
+         dwAdj(imz,sps) = dwAdj(imz,sps) + fact*fs
           
-         fs = qsp*wAdj(0,0,kk+1,irhoE) + qsm*wAdj(0,0,kk,irhoE) &
-            + porFlux*(vnp*pAdj(0,0,kk+1) + vnm*pAdj(0,0,kk))
-         dwAdj(irhoE) = dwAdj(irhoE) + fact*fs
+         fs = qsp*wAdj(0,0,kk+1,irhoE,sps) + qsm*wAdj(0,0,kk,irhoE,sps) &
+            + porFlux*(vnp*pAdj(0,0,kk+1,sps) + vnm*pAdj(0,0,kk,sps))
+         dwAdj(irhoE,sps) = dwAdj(irhoE,sps) + fact*fs
 
          ! Update k and set fact to 1 for the second face.
 
@@ -372,14 +373,14 @@
           wy = rotRateAdj(2)
           wz = rotRateAdj(3)
 
-          rvol = wAdj(0,0,0,irho)*volAdj(0,0,0)
+          rvol = wAdj(0,0,0,irho,sps)*volAdj(0,0,0,sps)
          
-          dwAdj(imx) = dwAdj(imx) &
-               + rvol*(wy*wAdj(0,0,0,ivz) - wz*wAdj(0,0,0,ivy))
-          dwAdj(imy) = dwAdj(imy) &
-               + rvol*(wz*wAdj(0,0,0,ivx) - wx*wAdj(0,0,0,ivz))
-          dwAdj(imz) = dwAdj(imz) &
-               + rvol*(wx*wAdj(0,0,0,ivy) - wy*wAdj(0,0,0,ivx))
+          dwAdj(imx,sps) = dwAdj(imx,sps) &
+               + rvol*(wy*wAdj(0,0,0,ivz,sps) - wz*wAdj(0,0,0,ivy,sps))
+          dwAdj(imy,sps) = dwAdj(imy,sps) &
+               + rvol*(wz*wAdj(0,0,0,ivx,sps) - wx*wAdj(0,0,0,ivz,sps))
+          dwAdj(imz,sps) = dwAdj(imz,sps) &
+               + rvol*(wx*wAdj(0,0,0,ivy,sps) - wy*wAdj(0,0,0,ivx,sps))
 
 
        end if rotation

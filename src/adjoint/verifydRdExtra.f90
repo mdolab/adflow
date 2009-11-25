@@ -65,7 +65,8 @@
       real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdj
       real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdjb
       real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xFD
-
+      REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3), xblockcorneradjb(2&
+&  , 2, 2, 3)
       REAL(KIND=REALTYPE) :: machadj, machcoefadj,machGridAdj, pinfcorradj
       REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadjb, pinfcorradjb
       REAL(KIND=REALTYPE) :: prefadj, rhorefadj
@@ -273,7 +274,7 @@
          allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
       end do allocatedomains
 
-
+      print *,'domains allocated'
 !           if(ierr /= 0)                       &
 !                call terminate("memory?") 
       
@@ -369,7 +370,7 @@
          ! Loop over the number of time instances for this block.
 
          spectralLoop: do sps=1,nTimeIntervalsSpectral
-  !          print *,'Setting Pointers'
+            !print *,'Setting Pointers'
             call setPointersAdj(nn,level,sps)
 
             ! Loop over location of output (R) cell of residual
@@ -379,11 +380,13 @@
  !                    print *,'indices',icell,jcell,kcell
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
-                     call copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
+                     call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
+           betaAdj,MachAdj,&
            machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
            rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
            rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
            murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+                     !print *,'liftiindex',liftindex
                      !print *,'rotcenteradj',nn,icell,jcell,kcell,rotcenteradj
 !copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
 !                          machCoefAdj,iCell, jCell, kCell,prefAdj,&
@@ -405,24 +408,14 @@
 !                        print *,'secondhalo',secondhalo
                         
                         ! Call reverse mode of residual computation
-                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-&  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-&  machcoefadj, machgridadj, machgridadjb, icell, jcell, kcell, nn, sps&
-&  , correctfork, secondhalo, prefadj, rhorefadj, pinfdimadj, &
-&  rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, rotrateadjb, &
-&  rotcenteradj, murefadj, timerefadj, pinfcorradj, liftindex)
+                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+&  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+&  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
+&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
+&  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+&  liftindex)
 
-!COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-!                             &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-!                             &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
-!                             &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-!                             &  rotrateadj, rotrateadjb, rotcenteradj, murefadj, timerefadj, &
-!                             &  pinfcorradj, liftindex)
-!!$                        COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
-!!$                             &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
-!!$                             &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
-!!$                             &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
-!!$                             &  murefadj, timerefadj, pinfcorradj)
 
                         ! Store the block Jacobians (by rows).
                         idxres   = globalCell(iCell,jCell,kCell)*nw+m
@@ -437,7 +430,7 @@
 !!$                           dRdExtraAdj(idxres,nDesignRotY,nn,sps) = rotrateadjb(2)
 !!$                           dRdExtraAdj(idxres,nDesignRotZ,nn,sps) = rotrateadjb(3)
                            dRdExtraAdj(idxres,nDesignMach,1,sps) = machadjb
-                           !pvrlocal(m) = machadjb
+                           pvrlocal(m) = machadjb
                            write(unitM,10) machadjb,nn,icell,jcell,kcell,m,idxres
 10                         format(1x,'Mach ',f18.10,6I8)
                            dRdExtraAdj(idxres,nDesignMachGrid,1,sps) = machgridadjb
@@ -459,7 +452,7 @@
 15                         format(1x,'Rotz ',f18.10,6I8)
                            dRdExtraAdj(idxres,nDesignRotY,1,sps) = rotrateadjb(2)
                            dRdExtraAdj(idxres,nDesignRotZ,1,sps) = rotrateadjb(3)
-                           pvrlocal(m) = rotrateadjb(3)*timeref
+                           !pvrlocal(m) = rotrateadjb(3)*timeref
                         endif
                                        
                      end do mLoop

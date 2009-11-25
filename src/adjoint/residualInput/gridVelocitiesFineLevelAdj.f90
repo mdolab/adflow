@@ -11,7 +11,7 @@
        subroutine gridVelocitiesFineLevelAdj(useOldCoor, t, sps,xAdj,&
             siAdj, sjAdj, skAdj,rotCenterAdj, rotRateAdj,sAdj,sFaceIAdj,&
             sFaceJAdj,sFaceKAdj,machGridAdj,velDirFreestreamAdj,&
-            iCell, jCell, kCell)
+            iCell, jCell, kCell,nn,level,sps2)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -31,24 +31,28 @@
        use flowVarRefState
        use inputMotion
        use inputUnsteady
+       use inputTimeSpectral !nTimeIntervalsSpectral
        use iteration
+       use inputTSStabDeriv
+       use inputPhysics
+       use monitor
        implicit none
 !
 !      Subroutine arguments.
 !
-       integer(kind=intType), intent(in) :: sps
+       integer(kind=intType), intent(in) :: sps,nn,level,sps2
        logical,               intent(in) :: useOldCoor
 
        real(kind=realType), dimension(*), intent(in) :: t
        real(kind=realType), dimension(3), intent(in) :: rotCenterAdj, rotRateAdj
        
        !real(kind=realType), dimension(:,:), intent(out) :: sFace
-       real(kind=realType), dimension(-2:2,-2:2,-2:2,3),intent(out) :: sAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2), intent(out) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,3,nTimeIntervalsSpectral),intent(out) :: sAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral), intent(out) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
 
        !new ADjoint variables
-       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) :: xAdj
-       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) :: siAdj, sjAdj, skAdj
+       real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral), intent(in) :: xAdj
+       real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral), intent(in) :: siAdj, sjAdj, skAdj
        real(kind=realType), dimension(-3:2,-3:2,3)::xxAdj,ssAdj
        !real(kind=realType) :: volAdj
        !real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(out) :: normAdj
@@ -58,7 +62,7 @@
 !
 !      Local variables.
 !
-       integer(kind=intType) :: nn, mm
+       integer(kind=intType) ::  mm
        integer(kind=intType) :: i, j, k, ii, iie, jje, kke
        integer(kind=intType) :: iStart,iEnd,jStart,jEnd,kStart,kEnd
 
@@ -70,6 +74,7 @@
 
        real(kind=realType), dimension(3)   :: rotationPointAdj,rotPointAdj
        real(kind=realType), dimension(3,3) :: rotationMatrixAdj
+       real(kind=realType), dimension(3,3) :: derivRotationMatrixAdj
 
        !real(kind=realType), dimension(:,:), pointer :: sFace
        real(kind=realType), dimension(-2:2,-2:2)::sFaceAdj 
@@ -77,8 +82,12 @@
        real(kind=realType), dimension(:,:,:),   pointer :: xx, ss
        real(kind=realType), dimension(:,:,:,:), pointer :: xxOld
 
+       real(kind=realType) ::tNew,tOld,intervalMach
+       real(kind=realType), dimension(3)::liftDir,velDir,dragDir,alpha,beta
+       integer(kind=intType) :: liftIndex
 
-
+       !function definitions
+       real(kind=realType) ::TSAlpha,TSBeta,TSMach
 
 !
 !      ******************************************************************
@@ -108,8 +117,83 @@
        ! the entire grid. It is assumed that the rigid body motion of
        ! the grid is only specified if there is only 1 section present.
 
-       call derivativeRotMatrixRigidAdj(rotationMatrixAdj, rotationPointAdj,rotPointAdj, t(1))
+       call derivativeRotMatrixRigidAdj(derivRotationMatrixAdj, rotationPointAdj,rotPointAdj, t(1))
+       
+       !compute the rotation matrix to update the velocities for the time
+       !spectral stability derivative case...
+       if(TSStability)then
+          ! Determine the time values of the old and new time level.
+          ! It is assumed that the rigid body rotation of the mesh is only
+          ! used when only 1 section is present.
+          
+          tNew = timeUnsteady + timeUnsteadyRestart
+          tOld = tNew - t(1)
+          !print *,'Time',t(1)
+          if(TSpqrMode) then
+             ! Compute the rotation matrix of the rigid body rotation as
+             ! well as the rotation point; the latter may vary in time due
+             ! to rigid body translation.
+             
+             call rotMatrixRigidBodyAdj(tNew, tOld, rotationMatrixAdj, rotationPointAdj)
+             velxgrid0 = rotationMatrixAdj(1,1)*velxgrid0 &
+                  + rotationMatrixAdj(1,2)*velygrid0 &
+                  + rotationMatrixAdj(1,3)*velzgrid0
+             velygrid0 = rotationMatrixAdj(2,1)*velxgrid0 &
+                  + rotationMatrixAdj(2,2)*velygrid0 &
+                  + rotationMatrixAdj(2,3)*velzgrid0
+             velzgrid0 = rotationMatrixAdj(3,1)*velxgrid0 &
+                  + rotationMatrixAdj(3,2)*velygrid0 &
+                  + rotationMatrixAdj(3,3)*velzgrid0
+          elseif(tsAlphaMode)then
+             ! get the baseline alpha and determine the liftIndex
+             call getDirAngle(velDir,liftDir,liftIndex,alpha,beta)
+             
+             !Determine the alpha for this time instance
+             alpha = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+                             degreeFourAlpha,  omegaFourAlpha,     &
+                             cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+             !Determine the grid velocity for this alpha
+             call adjustInflowAngleAdj(alpha,beta,velDir,liftDir,dragDir,&
+                  liftIndex)
+             !do I need to update the lift direction and drag direction as well?
+             !set the effictive grid velocity for this time interval
+             velxGrid0 = (aInf*machgridAdj)*(-velDir(1))
+             velyGrid0 = (aInf*machgridAdj)*(-velDir(2))
+             velzGrid0 = (aInf*machgridAdj)*(-velDir(3))
+             print *,'base velocity',machgrid, velxGrid0 , velyGrid0 , velzGrid0 
 
+          elseif(tsBetaMode)then
+             ! get the baseline alpha and determine the liftIndex
+             call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+             
+             !Determine the alpha for this time instance
+             alpha = TSBeta(degreePolBeta,   coefPolBeta,       &
+                             degreeFourBeta,  omegaFourBeta,     &
+                             cosCoefFourBeta, sinCoefFourBeta, t(1))
+             !Determine the grid velocity for this alpha
+             call adjustInflowAngleAdj(alpha,beta,velDir,liftDir,dragDir,&
+                  liftIndex)
+             !do I need to update the lift direction and drag direction as well?
+             !set the effictive grid velocity for this time interval
+             velxGrid0 = (aInf*machgridAdj)*(-velDir(1))
+             velyGrid0 = (aInf*machgridAdj)*(-velDir(2))
+             velzGrid0 = (aInf*machgridAdj)*(-velDir(3))
+          elseif(TSMachMode)then
+             !determine the mach number at this time interval
+             IntervalMach = TSMach(degreePolMach,   coefPolMach,       &
+                             degreeFourMach,  omegaFourMach,     &
+                             cosCoefFourMach, sinCoefFourMach, t(1))
+             !set the effective grid velocity
+             velxGrid0 = (aInf*(IntervalMach+machgridAdj))*(-velDirFreestreamAdj(1))
+             velyGrid0 = (aInf*(IntervalMach+machgridAdj))*(-velDirFreestreamAdj(2))
+             velzGrid0 = (aInf*(IntervalMach+machgridAdj))*(-velDirFreestreamAdj(3))
+             
+          elseif(TSAltitudeMode)then
+             call terminate('gridVelocityFineLevel','altitude motion not yet implemented...')
+          else
+             call terminate('gridVelocityFineLevel','Not a recognized Stability Motion')
+          end if
+       endif
 !!$!       ! Loop over the number of local blocks.
 !!$!
 !!$!       domains: do nn=1,nDom!
@@ -355,9 +439,21 @@
 
              !subtract off the rotational velocity of the center of the grid
              ! to account for the added overall velocity.
-             velxGrid =velxgrid0+ 1*(rotRateAdj(2)*rotCenterAdj(3) - rotRateAdj(3)*rotCenterAdj(2))
-             velyGrid = velygrid0+ 1*(rotRateAdj(3)*rotCenterAdj(1) - rotRateAdj(1)*rotCenterAdj(3))
-             velzGrid =velzgrid0+ 1*(rotRateAdj(1)*rotCenterAdj(2) - rotRateAdj(2)*rotCenterAdj(1))
+             velxGrid =velxgrid0+ 1*(rotRateAdj(2)*rotCenterAdj(3)&
+                                 - rotRateAdj(3)*rotCenterAdj(2)) &
+                                 + derivRotationMatrixAdj(1,1)*rotPointAdj(1) &
+                                 + derivRotationMatrixAdj(1,2)*rotPointAdj(2) &
+                                 + derivRotationMatrixAdj(1,3)*rotPointAdj(3)
+             velyGrid = velygrid0+ 1*(rotRateAdj(3)*rotCenterAdj(1) &
+                              - rotRateAdj(1)*rotCenterAdj(3)) &
+                              + derivRotationMatrixAdj(2,1)*rotPointAdj(1) &
+                              + derivRotationMatrixAdj(2,2)*rotPointAdj(2) &
+                              + derivRotationMatrixAdj(2,3)*rotPointAdj(3)
+             velzGrid =velzgrid0+ 1*(rotRateAdj(1)*rotCenterAdj(2)&
+                              - rotRateAdj(2)*rotCenterAdj(1)) &
+                              + derivRotationMatrixAdj(3,1)*rotPointAdj(1) &
+                              + derivRotationMatrixAdj(3,2)*rotPointAdj(2) &
+                              + derivRotationMatrixAdj(3,3)*rotPointAdj(3)
 
 !
 !            ************************************************************
@@ -381,18 +477,18 @@
                    ! Determine the coordinates of the cell center,
                    ! which are stored in xc.
 
-                   xc(1) = eighth*(xAdj(i-1,j-1,k-1,1) + xAdj(i,j-1,k-1,1) &
-                         +         xAdj(i-1,j,  k-1,1) + xAdj(i,j,  k-1,1) &
-                         +         xAdj(i-1,j-1,k,  1) + xAdj(i,j-1,k,  1) &
-                         +         xAdj(i-1,j,  k,  1) + xAdj(i,j,  k,  1))
-                   xc(2) = eighth*(xAdj(i-1,j-1,k-1,2) + xAdj(i,j-1,k-1,2) &
-                         +         xAdj(i-1,j,  k-1,2) + xAdj(i,j,  k-1,2) &
-                         +         xAdj(i-1,j-1,k,  2) + xAdj(i,j-1,k,  2) &
-                         +         xAdj(i-1,j,  k,  2) + xAdj(i,j,  k,  2))
-                   xc(3) = eighth*(xAdj(i-1,j-1,k-1,3) + xAdj(i,j-1,k-1,3) &
-                         +         xAdj(i-1,j,  k-1,3) + xAdj(i,j,  k-1,3) &
-                         +         xAdj(i-1,j-1,k,  3) + xAdj(i,j-1,k,  3) &
-                         +         xAdj(i-1,j,  k,  3) + xAdj(i,j,  k,  3))
+                   xc(1) = eighth*(xAdj(i-1,j-1,k-1,1,sps2) + xAdj(i,j-1,k-1,1,sps2) &
+                         +         xAdj(i-1,j,  k-1,1,sps2) + xAdj(i,j,  k-1,1,sps2) &
+                         +         xAdj(i-1,j-1,k,  1,sps2) + xAdj(i,j-1,k,  1,sps2) &
+                         +         xAdj(i-1,j,  k,  1,sps2) + xAdj(i,j,  k,  1,sps2))
+                   xc(2) = eighth*(xAdj(i-1,j-1,k-1,2,sps2) + xAdj(i,j-1,k-1,2,sps2) &
+                         +         xAdj(i-1,j,  k-1,2,sps2) + xAdj(i,j,  k-1,2,sps2) &
+                         +         xAdj(i-1,j-1,k,  2,sps2) + xAdj(i,j-1,k,  2,sps2) &
+                         +         xAdj(i-1,j,  k,  2,sps2) + xAdj(i,j,  k,  2,sps2))
+                   xc(3) = eighth*(xAdj(i-1,j-1,k-1,3,sps2) + xAdj(i,j-1,k-1,3,sps2) &
+                         +         xAdj(i-1,j,  k-1,3,sps2) + xAdj(i,j,  k-1,3,sps2) &
+                         +         xAdj(i-1,j-1,k,  3,sps2) + xAdj(i,j-1,k,  3,sps2) &
+                         +         xAdj(i-1,j,  k,  3,sps2) + xAdj(i,j,  k,  3,sps2))
 
                    ! Determine the coordinates relative to the
                    ! center of rotation.
@@ -419,18 +515,18 @@
                    ! This is a combination of rotation speed of this
                    ! block and the entire rigid body rotation.
 
-                   sAdj(i,j,k,1) = sc(1) + velxGrid           &
-                              + rotationMatrixAdj(1,1)*xxc(1) &
-                              + rotationMatrixAdj(1,2)*xxc(2) &
-                              + rotationMatrixAdj(1,3)*xxc(3)
-                   sAdj(i,j,k,2) = sc(2) + velyGrid           &
-                              + rotationMatrixAdj(2,1)*xxc(1) &
-                              + rotationMatrixAdj(2,2)*xxc(2) &
-                              + rotationMatrixAdj(2,3)*xxc(3)
-                   sAdj(i,j,k,3) = sc(3) + velzGrid           &
-                              + rotationMatrixAdj(3,1)*xxc(1) &
-                              + rotationMatrixAdj(3,2)*xxc(2) &
-                              + rotationMatrixAdj(3,3)*xxc(3)
+                   sAdj(i,j,k,1,sps2) = sc(1) + velxGrid           &
+                              + derivrotationMatrixAdj(1,1)*xxc(1) &
+                              + derivrotationMatrixAdj(1,2)*xxc(2) &
+                              + derivrotationMatrixAdj(1,3)*xxc(3)
+                   sAdj(i,j,k,2,sps2) = sc(2) + velyGrid           &
+                              + derivrotationMatrixAdj(2,1)*xxc(1) &
+                              + derivrotationMatrixAdj(2,2)*xxc(2) &
+                              + derivrotationMatrixAdj(2,3)*xxc(3)
+                   sAdj(i,j,k,3,sps2) = sc(3) + velzGrid           &
+                              + derivrotationMatrixAdj(3,1)*xxc(1) &
+                              + derivrotationMatrixAdj(3,2)*xxc(2) &
+                              + derivrotationMatrixAdj(3,3)*xxc(3)
                  enddo
                enddo
              enddo
@@ -509,16 +605,16 @@
 
                  select case (mm)
                    case (1_intType)       ! normals in i-direction
-                     xxAdj =  xAdj(i,:,:,:)
-                     ssAdj = siAdj(i,:,:,:)
+                     xxAdj =  xAdj(i,:,:,:,sps2)
+                     ssAdj = siAdj(i,:,:,:,sps2)
 
                    case (2_intType)       ! normals in j-direction
-                     xxAdj =  xAdj(:,i,:,:)
-                     ssAdj = sjAdj(:,i,:,:)
+                     xxAdj =  xAdj(:,i,:,:,sps2)
+                     ssAdj = sjAdj(:,i,:,:,sps2)
 
                    case (3_intType)       ! normals in k-direction
-                     xxAdj =  xAdj(:,:,i,:)
-                     ssAdj = skAdj(:,:,i,:)
+                     xxAdj =  xAdj(:,:,i,:,sps2)
+                     ssAdj = skAdj(:,:,i,:,sps2)
                  end select
 
                  ! Loop over the k and j-direction of this generalized
@@ -543,11 +639,11 @@
                      !      +         xxAdj(j+1,k,  3) + xxAdj(j,k,  3))
 
                      xc(1) = fourth*(xxAdj(j,k,1) + xxAdj(j-1,k,1) &
-                           +         xxAdj(j,k-1,  1) + xxAdj(j-1,k-1,  1))
+                           +         xxAdj(j,k-1,1) + xxAdj(j-1,k-1,1))
                      xc(2) = fourth*(xxAdj(j,k,2) + xxAdj(j-1,k,2) &
-                           +         xxAdj(j,k-1,  2) + xxAdj(j-1,k-1,  2))
+                           +         xxAdj(j,k-1,2) + xxAdj(j-1,k-1,2))
                      xc(3) = fourth*(xxAdj(j,k,3) + xxAdj(j-1,k,3) &
-                           +         xxAdj(j,k-1,  3) + xxAdj(j-1,k-1,  3))
+                           +         xxAdj(j,k-1,3) + xxAdj(j-1,k-1,3))
 
                      ! Determine the coordinates relative to the
                      ! center of rotation.
@@ -575,17 +671,17 @@
                      ! block and the entire rigid body rotation.
 
                      sc(1) = sc(1) + velxGrid           &
-                           + rotationMatrixAdj(1,1)*xxc(1) &
-                           + rotationMatrixAdj(1,2)*xxc(2) &
-                           + rotationMatrixAdj(1,3)*xxc(3)
+                           + derivrotationMatrixAdj(1,1)*xxc(1) &
+                           + derivrotationMatrixAdj(1,2)*xxc(2) &
+                           + derivrotationMatrixAdj(1,3)*xxc(3)
                      sc(2) = sc(2) + velyGrid           &
-                           + rotationMatrixAdj(2,1)*xxc(1) &
-                           + rotationMatrixAdj(2,2)*xxc(2) &
-                           + rotationMatrixAdj(2,3)*xxc(3)
+                           + derivrotationMatrixAdj(2,1)*xxc(1) &
+                           + derivrotationMatrixAdj(2,2)*xxc(2) &
+                           + derivrotationMatrixAdj(2,3)*xxc(3)
                      sc(3) = sc(3) + velzGrid           &
-                           + rotationMatrixAdj(3,1)*xxc(1) &
-                           + rotationMatrixAdj(3,2)*xxc(2) &
-                           + rotationMatrixAdj(3,3)*xxc(3)
+                           + derivrotationMatrixAdj(3,1)*xxc(1) &
+                           + derivrotationMatrixAdj(3,2)*xxc(2) &
+                           + derivrotationMatrixAdj(3,3)*xxc(3)
 
                      ! Store the dot product of grid velocity sc and
                      ! the normal ss in sFace.
@@ -597,13 +693,13 @@
                  enddo
                  select case (mm)
                  case (1_intType)       ! normals in i-direction
-                    sFaceIAdj(i,:,:) = sFaceAdj
+                    sFaceIAdj(i,:,:,sps2) = sFaceAdj
                     
                  case (2_intType)       ! normals in j-direction
-                    sFaceJAdj(:,i,:) = sFaceAdj
+                    sFaceJAdj(:,i,:,sps2) = sFaceAdj
                     
                  case (3_intType)       ! normals in k-direction
-                    sFaceKAdj(:,:,i) = sFaceAdj
+                    sFaceKAdj(:,:,i,sps2) = sFaceAdj
                  end select
                  
                enddo

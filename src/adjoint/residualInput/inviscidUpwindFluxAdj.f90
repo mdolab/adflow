@@ -12,7 +12,7 @@
        subroutine inviscidUpwindFluxAdj(wAdj,  pAdj,  dwAdj, &
                                         siAdj, sjAdj, skAdj, &
                                         sFaceIAdj,sFaceJAdj,sFaceKAdj,&
-                                        iCell, jCell, kCell,finegrid)
+                                        iCell, jCell, kCell,finegrid,nn,level,sps)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -28,19 +28,20 @@
        use inputDiscretization  ! limiter, firstOrder
        use inputPhysics
        use flowVarRefState
+       use inputTimeSpectral !nTimeIntervalsSpectral
        implicit none
 !
 !      Subroutine arguments.
 !
-       integer(kind=intType) :: iCell, jCell, kCell
+       integer(kind=intType) :: iCell, jCell, kCell,nn,level,sps
 
-       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral), &
                                                       intent(in) :: wAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2),    &
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral),    &
                                                       intent(in) :: pAdj
-       real(kind=realType), dimension(nw), intent(inout) :: dwAdj
-       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) :: siAdj, sjAdj, skAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2), intent(in) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
+       real(kind=realType), dimension(nw,nTimeIntervalsSpectral), intent(inout) :: dwAdj
+       real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral), intent(in) :: siAdj, sjAdj, skAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral), intent(in) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
 !
 !      Local variables.
 !
@@ -135,25 +136,25 @@
            ! Store the normal vector, the porosity and the
            ! mesh velocity if present.
 
-           sx = siAdj(ii,0,0,1); sy = siAdj(ii,0,0,2); sz = siAdj(ii,0,0,3)
+           sx = siAdj(ii,0,0,1,sps); sy = siAdj(ii,0,0,2,sps); sz = siAdj(ii,0,0,3,sps)
            por = porI(i,j,k)
-           if( addGridVelocities ) sFace = sFaceIAdj(ii,0,0)
+           if( addGridVelocities ) sFace = sFaceIAdj(ii,0,0,sps)
 
            ! Determine the left and right state.
 
-           left(irho)  = wAdj(ii,0,0,irho)
-           left(ivx)   = wAdj(ii,0,0,ivx)
-           left(ivy)   = wAdj(ii,0,0,ivy)
-           left(ivz)   = wAdj(ii,0,0,ivz)
-           left(irhoE) = pAdj(ii,0,0)
-           if( correctForK ) left(itu1) = wAdj(ii,0,0,itu1)
+           left(irho)  = wAdj(ii,0,0,irho,sps)
+           left(ivx)   = wAdj(ii,0,0,ivx,sps)
+           left(ivy)   = wAdj(ii,0,0,ivy,sps)
+           left(ivz)   = wAdj(ii,0,0,ivz,sps)
+           left(irhoE) = pAdj(ii,0,0,sps)
+           if( correctForK ) left(itu1) = wAdj(ii,0,0,itu1,sps)
 
-           right(irho)  = wAdj(ii+1,0,0,irho)
-           right(ivx)   = wAdj(ii+1,0,0,ivx)
-           right(ivy)   = wAdj(ii+1,0,0,ivy)
-           right(ivz)   = wAdj(ii+1,0,0,ivz)
-           right(irhoE) = pAdj(ii+1,0,0)
-           if( correctForK ) right(itu1) = wAdj(ii+1,0,0,itu1)
+           right(irho)  = wAdj(ii+1,0,0,irho,sps)
+           right(ivx)   = wAdj(ii+1,0,0,ivx,sps)
+           right(ivy)   = wAdj(ii+1,0,0,ivy,sps)
+           right(ivz)   = wAdj(ii+1,0,0,ivz,sps)
+           right(irhoE) = pAdj(ii+1,0,0,sps)
+           if( correctForK ) right(itu1) = wAdj(ii+1,0,0,itu1,sps)
 
            ! Compute the value of gamma on the face.
            ! Constant gamma for now.
@@ -168,11 +169,11 @@
 !           call riemannFluxAdj(left,right,flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
             call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid)
 
-           dwAdj(irho)  = dwAdj(irho)  + fact*flux(irho)
-           dwAdj(imx)   = dwAdj(imx)   + fact*flux(imx)
-           dwAdj(imy)   = dwAdj(imy)   + fact*flux(imy)
-           dwAdj(imz)   = dwAdj(imz)   + fact*flux(imz)
-           dwAdj(irhoE) = dwAdj(irhoE) + fact*flux(irhoE)
+           dwAdj(irho,sps)  = dwAdj(irho,sps)  + fact*flux(irho)
+           dwAdj(imx,sps)   = dwAdj(imx,sps)   + fact*flux(imx)
+           dwAdj(imy,sps)   = dwAdj(imy,sps)   + fact*flux(imy)
+           dwAdj(imz,sps)   = dwAdj(imz,sps)   + fact*flux(imz)
+           dwAdj(irhoE,sps) = dwAdj(irhoE,sps) + fact*flux(irhoE)
 
            ! Update i and set fact to 1 for the second face.
 
@@ -194,25 +195,25 @@
            ! Store the normal vector, the porosity and the
            ! mesh velocity if present.
 
-           sx = sjAdj(0,jj,0,1); sy = sjAdj(0,jj,0,2); sz = sjAdj(0,jj,0,3)
+           sx = sjAdj(0,jj,0,1,sps); sy = sjAdj(0,jj,0,2,sps); sz = sjAdj(0,jj,0,3,sps)
            por = porJ(i,j,k)
-           if( addGridVelocities ) sFace = sFaceJAdj(0,jj,0)
+           if( addGridVelocities ) sFace = sFaceJAdj(0,jj,0,sps)
 
            ! Determine the left and right state.
 
-           left(irho)  = wAdj(0,jj,0,irho)
-           left(ivx)   = wAdj(0,jj,0,ivx)
-           left(ivy)   = wAdj(0,jj,0,ivy)
-           left(ivz)   = wAdj(0,jj,0,ivz)
-           left(irhoE) = pAdj(0,jj,0)
-           if( correctForK ) left(itu1) = wAdj(0,jj,0,itu1)
+           left(irho)  = wAdj(0,jj,0,irho,sps)
+           left(ivx)   = wAdj(0,jj,0,ivx,sps)
+           left(ivy)   = wAdj(0,jj,0,ivy,sps)
+           left(ivz)   = wAdj(0,jj,0,ivz,sps)
+           left(irhoE) = pAdj(0,jj,0,sps)
+           if( correctForK ) left(itu1) = wAdj(0,jj,0,itu1,sps)
 
-           right(irho)  = wAdj(0,jj+1,0,irho)
-           right(ivx)   = wAdj(0,jj+1,0,ivx)
-           right(ivy)   = wAdj(0,jj+1,0,ivy)
-           right(ivz)   = wAdj(0,jj+1,0,ivz)
-           right(irhoE) = pAdj(0,jj+1,0)
-           if( correctForK ) right(itu1) = wAdj(0,jj+1,0,itu1)
+           right(irho)  = wAdj(0,jj+1,0,irho,sps)
+           right(ivx)   = wAdj(0,jj+1,0,ivx,sps)
+           right(ivy)   = wAdj(0,jj+1,0,ivy,sps)
+           right(ivz)   = wAdj(0,jj+1,0,ivz,sps)
+           right(irhoE) = pAdj(0,jj+1,0,sps)
+           if( correctForK ) right(itu1) = wAdj(0,jj+1,0,itu1,sps)
 
            ! Compute the value of gamma on the face.
            ! Constant gamma for now.
@@ -225,11 +226,11 @@
 !           call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
             call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid)
 
-           dwAdj(irho)  = dwAdj(irho)  + fact*flux(irho)
-           dwAdj(imx)   = dwAdj(imx)   + fact*flux(imx)
-           dwAdj(imy)   = dwAdj(imy)   + fact*flux(imy)
-           dwAdj(imz)   = dwAdj(imz)   + fact*flux(imz)
-           dwAdj(irhoE) = dwAdj(irhoE) + fact*flux(irhoE)
+           dwAdj(irho,sps)  = dwAdj(irho,sps)  + fact*flux(irho)
+           dwAdj(imx,sps)   = dwAdj(imx,sps)   + fact*flux(imx)
+           dwAdj(imy,sps)   = dwAdj(imy,sps)   + fact*flux(imy)
+           dwAdj(imz,sps)   = dwAdj(imz,sps)   + fact*flux(imz)
+           dwAdj(irhoE,sps) = dwAdj(irhoE,sps) + fact*flux(irhoE)
 
            ! Update j and set fact to 1 for the second face.
 
@@ -251,25 +252,25 @@
            ! Store the normal vector, the porosity and the
            ! mesh velocity if present.
 
-           sx = skAdj(0,0,kk,1); sy = skAdj(0,0,kk,2); sz = skAdj(0,0,kk,3)
+           sx = skAdj(0,0,kk,1,sps); sy = skAdj(0,0,kk,2,sps); sz = skAdj(0,0,kk,3,sps)
            por = porK(i,j,k)
-           if( addGridVelocities ) sFace = sFaceKAdj(0,0,kk)
+           if( addGridVelocities ) sFace = sFaceKAdj(0,0,kk,sps)
 
            ! Determine the left and right state.
 
-           left(irho)  = wAdj(0,0,kk,irho)
-           left(ivx)   = wAdj(0,0,kk,ivx)
-           left(ivy)   = wAdj(0,0,kk,ivy)
-           left(ivz)   = wAdj(0,0,kk,ivz)
-           left(irhoE) = pAdj(0,0,kk)
-           if( correctForK ) left(itu1) = wAdj(0,0,kk,itu1)
+           left(irho)  = wAdj(0,0,kk,irho,sps)
+           left(ivx)   = wAdj(0,0,kk,ivx,sps)
+           left(ivy)   = wAdj(0,0,kk,ivy,sps)
+           left(ivz)   = wAdj(0,0,kk,ivz,sps)
+           left(irhoE) = pAdj(0,0,kk,sps)
+           if( correctForK ) left(itu1) = wAdj(0,0,kk,itu1,sps)
 
-           right(irho)  = wAdj(0,0,kk+1,irho)
-           right(ivx)   = wAdj(0,0,kk+1,ivx)
-           right(ivy)   = wAdj(0,0,kk+1,ivy)
-           right(ivz)   = wAdj(0,0,kk+1,ivz)
-           right(irhoE) = pAdj(0,0,kk+1)
-           if( correctForK ) right(itu1) = wAdj(0,0,kk+1,itu1)
+           right(irho)  = wAdj(0,0,kk+1,irho,sps)
+           right(ivx)   = wAdj(0,0,kk+1,ivx,sps)
+           right(ivy)   = wAdj(0,0,kk+1,ivy,sps)
+           right(ivz)   = wAdj(0,0,kk+1,ivz,sps)
+           right(irhoE) = pAdj(0,0,kk+1,sps)
+           if( correctForK ) right(itu1) = wAdj(0,0,kk+1,itu1,sps)
 
            ! Compute the value of gamma on the face.
            ! Constant gamma for now.
@@ -282,11 +283,11 @@
            !call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
             call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid)
 
-           dwAdj(irho)  = dwAdj(irho)  + fact*flux(irho)
-           dwAdj(imx)   = dwAdj(imx)   + fact*flux(imx)
-           dwAdj(imy)   = dwAdj(imy)   + fact*flux(imy)
-           dwAdj(imz)   = dwAdj(imz)   + fact*flux(imz)
-           dwAdj(irhoE) = dwAdj(irhoE) + fact*flux(irhoE)
+           dwAdj(irho,sps)  = dwAdj(irho,sps)  + fact*flux(irho)
+           dwAdj(imx,sps)   = dwAdj(imx,sps)   + fact*flux(imx)
+           dwAdj(imy,sps)   = dwAdj(imy,sps)   + fact*flux(imy)
+           dwAdj(imz,sps)   = dwAdj(imz,sps)   + fact*flux(imz)
+           dwAdj(irhoE,sps) = dwAdj(irhoE,sps) + fact*flux(irhoE)
 
            ! Update k and set fact to 1 for the second face.
 
@@ -325,31 +326,31 @@
            ! Store the three differences used in the interpolation
            ! in du1, du2, du3.
 
-           du1(irho) = wAdj(ii,  0,0,irho) - wAdj(ii-1,0,0,irho)
-           du2(irho) = wAdj(ii+1,0,0,irho) - wAdj(ii,  0,0,irho)
-           du3(irho) = wAdj(ii+2,0,0,irho) - wAdj(ii+1,0,0,irho)
+           du1(irho) = wAdj(ii,  0,0,irho,sps) - wAdj(ii-1,0,0,irho,sps)
+           du2(irho) = wAdj(ii+1,0,0,irho,sps) - wAdj(ii,  0,0,irho,sps)
+           du3(irho) = wAdj(ii+2,0,0,irho,sps) - wAdj(ii+1,0,0,irho,sps)
 
-           du1(ivx) = wAdj(ii,  0,0,ivx) - wAdj(ii-1,0,0,ivx)
-           du2(ivx) = wAdj(ii+1,0,0,ivx) - wAdj(ii,  0,0,ivx)
-           du3(ivx) = wAdj(ii+2,0,0,ivx) - wAdj(ii+1,0,0,ivx)
+           du1(ivx) = wAdj(ii,  0,0,ivx,sps) - wAdj(ii-1,0,0,ivx,sps)
+           du2(ivx) = wAdj(ii+1,0,0,ivx,sps) - wAdj(ii,  0,0,ivx,sps)
+           du3(ivx) = wAdj(ii+2,0,0,ivx,sps) - wAdj(ii+1,0,0,ivx,sps)
 
-           du1(ivy) = wAdj(ii,  0,0,ivy) - wAdj(ii-1,0,0,ivy)
-           du2(ivy) = wAdj(ii+1,0,0,ivy) - wAdj(ii,  0,0,ivy)
-           du3(ivy) = wAdj(ii+2,0,0,ivy) - wAdj(ii+1,0,0,ivy)
+           du1(ivy) = wAdj(ii,  0,0,ivy,sps) - wAdj(ii-1,0,0,ivy,sps)
+           du2(ivy) = wAdj(ii+1,0,0,ivy,sps) - wAdj(ii,  0,0,ivy,sps)
+           du3(ivy) = wAdj(ii+2,0,0,ivy,sps) - wAdj(ii+1,0,0,ivy,sps)
 
-           du1(ivz) = wAdj(ii,  0,0,ivz) - wAdj(ii-1,0,0,ivz)
-           du2(ivz) = wAdj(ii+1,0,0,ivz) - wAdj(ii,  0,0,ivz)
-           du3(ivz) = wAdj(ii+2,0,0,ivz) - wAdj(ii+1,0,0,ivz)
+           du1(ivz) = wAdj(ii,  0,0,ivz,sps) - wAdj(ii-1,0,0,ivz,sps)
+           du2(ivz) = wAdj(ii+1,0,0,ivz,sps) - wAdj(ii,  0,0,ivz,sps)
+           du3(ivz) = wAdj(ii+2,0,0,ivz,sps) - wAdj(ii+1,0,0,ivz,sps)
 
-           du1(irhoE) = pAdj(ii,  0,0) - pAdj(ii-1,0,0)
-           du2(irhoE) = pAdj(ii+1,0,0) - pAdj(ii,  0,0)
-           du3(irhoE) = pAdj(ii+2,0,0) - pAdj(ii+1,0,0)
+           du1(irhoE) = pAdj(ii,  0,0,sps) - pAdj(ii-1,0,0,sps)
+           du2(irhoE) = pAdj(ii+1,0,0,sps) - pAdj(ii,  0,0,sps)
+           du3(irhoE) = pAdj(ii+2,0,0,sps) - pAdj(ii+1,0,0,sps)
            
 !!$           print *,'pAdj',p(i,  j,k) - p(i-1,j,k),pAdj(ii,  0,0) - pAdj(ii-1,0,0),p(i,  j,k),p(i-1,j,k),pAdj(ii,  0,0), pAdj(ii-1,0,0),p(i,  j,k) -pAdj(ii,  0,0),p(i,  j,k) - p(i-1,j,k)-(pAdj(ii,  0,0) - pAdj(ii-1,0,0))
            if( correctForK ) then
-             du1(itu1) = wAdj(ii,  0,0,itu1) - wAdj(ii-1,0,0,itu1)
-             du2(itu1) = wAdj(ii+1,0,0,itu1) - wAdj(ii,  0,0,itu1)
-             du3(itu1) = wAdj(ii+2,0,0,itu1) - wAdj(ii+1,0,0,itu1)
+             du1(itu1) = wAdj(ii,  0,0,itu1,sps) - wAdj(ii-1,0,0,itu1,sps)
+             du2(itu1) = wAdj(ii+1,0,0,itu1,sps) - wAdj(ii,  0,0,itu1,sps)
+             du3(itu1) = wAdj(ii+2,0,0,itu1,sps) - wAdj(ii+1,0,0,itu1,sps)
            endif
 
            ! Compute the differences from the first order scheme.
@@ -360,30 +361,30 @@
            ! differences, such that the correct state vector
            ! is stored.
 
-           left(irho)  = left(irho)  + wAdj(ii,0,0,irho)
+           left(irho)  = left(irho)  + wAdj(ii,0,0,irho,sps)
            !print *,'left',left(irho),wAdj(ii,0,0,irho)
-           left(ivx)   = left(ivx)   + wAdj(ii,0,0,ivx)
-           left(ivy)   = left(ivy)   + wAdj(ii,0,0,ivy)
-           left(ivz)   = left(ivz)   + wAdj(ii,0,0,ivz)
-           left(irhoE) = left(irhoE) + pAdj(ii,0,0)
+           left(ivx)   = left(ivx)   + wAdj(ii,0,0,ivx,sps)
+           left(ivy)   = left(ivy)   + wAdj(ii,0,0,ivy,sps)
+           left(ivz)   = left(ivz)   + wAdj(ii,0,0,ivz,sps)
+           left(irhoE) = left(irhoE) + pAdj(ii,0,0,sps)
 
-           right(irho)  = right(irho)  + wAdj(ii+1,0,0,irho)
-           right(ivx)   = right(ivx)   + wAdj(ii+1,0,0,ivx)
-           right(ivy)   = right(ivy)   + wAdj(ii+1,0,0,ivy)
-           right(ivz)   = right(ivz)   + wAdj(ii+1,0,0,ivz)
-           right(irhoE) = right(irhoE) + pAdj(ii+1,0,0)
+           right(irho)  = right(irho)  + wAdj(ii+1,0,0,irho,sps)
+           right(ivx)   = right(ivx)   + wAdj(ii+1,0,0,ivx,sps)
+           right(ivy)   = right(ivy)   + wAdj(ii+1,0,0,ivy,sps)
+           right(ivz)   = right(ivz)   + wAdj(ii+1,0,0,ivz,sps)
+           right(irhoE) = right(irhoE) + pAdj(ii+1,0,0,sps)
 
            if( correctForK ) then
-             left(itu1)  = left(itu1)  + wAdj(ii,0,0,itu1)
-             right(itu1) = right(itu1) + wAdj(ii+1,0,0,itu1)
+             left(itu1)  = left(itu1)  + wAdj(ii,0,0,itu1,sps)
+             right(itu1) = right(itu1) + wAdj(ii+1,0,0,itu1,sps)
            endif
 
            ! Store the normal vector, the porosity and the
            ! mesh velocity if present.
 
-           sx = siAdj(ii,0,0,1); sy = siAdj(ii,0,0,2); sz = siAdj(ii,0,0,3)
+           sx = siAdj(ii,0,0,1,sps); sy = siAdj(ii,0,0,2,sps); sz = siAdj(ii,0,0,3,sps)
            por = porI(i,j,k)
-           if( addGridVelocities ) sFace = sFaceIAdj(ii,0,0)
+           if( addGridVelocities ) sFace = sFaceIAdj(ii,0,0,sps)
 
            ! Compute the value of gamma on the face.
            ! Constant gamma for now.
@@ -400,11 +401,11 @@
  !          print *,'riemanninputI',left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid
            call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid)
   !         print *,'fluxadjI',flux,icell,jcell,kcell
-           dwAdj(irho)  = dwAdj(irho)  + fact*flux(irho)
-           dwAdj(imx)   = dwAdj(imx)   + fact*flux(imx)
-           dwAdj(imy)   = dwAdj(imy)   + fact*flux(imy)
-           dwAdj(imz)   = dwAdj(imz)   + fact*flux(imz)
-           dwAdj(irhoE) = dwAdj(irhoE) + fact*flux(irhoE)
+           dwAdj(irho,sps)  = dwAdj(irho,sps)  + fact*flux(irho)
+           dwAdj(imx,sps)   = dwAdj(imx,sps)   + fact*flux(imx)
+           dwAdj(imy,sps)   = dwAdj(imy,sps)   + fact*flux(imy)
+           dwAdj(imz,sps)   = dwAdj(imz,sps)   + fact*flux(imz)
+           dwAdj(irhoE,sps) = dwAdj(irhoE,sps) + fact*flux(irhoE)
 
            ! Update i and set fact to 1 for the second face.
 
@@ -426,30 +427,30 @@
            ! Store the three differences used in the interpolation
            ! in du1, du2, du3.
 
-           du1(irho) = wAdj(0,jj,  0,irho) - wAdj(0,jj-1,0,irho)
-           du2(irho) = wAdj(0,jj+1,0,irho) - wAdj(0,jj,  0,irho)
-           du3(irho) = wAdj(0,jj+2,0,irho) - wAdj(0,jj+1,0,irho)
+           du1(irho) = wAdj(0,jj,  0,irho,sps) - wAdj(0,jj-1,0,irho,sps)
+           du2(irho) = wAdj(0,jj+1,0,irho,sps) - wAdj(0,jj,  0,irho,sps)
+           du3(irho) = wAdj(0,jj+2,0,irho,sps) - wAdj(0,jj+1,0,irho,sps)
 
-           du1(ivx) = wAdj(0,jj,  0,ivx) - wAdj(0,jj-1,0,ivx)
-           du2(ivx) = wAdj(0,jj+1,0,ivx) - wAdj(0,jj,  0,ivx)
-           du3(ivx) = wAdj(0,jj+2,0,ivx) - wAdj(0,jj+1,0,ivx)
+           du1(ivx) = wAdj(0,jj,  0,ivx,sps) - wAdj(0,jj-1,0,ivx,sps)
+           du2(ivx) = wAdj(0,jj+1,0,ivx,sps) - wAdj(0,jj,  0,ivx,sps)
+           du3(ivx) = wAdj(0,jj+2,0,ivx,sps) - wAdj(0,jj+1,0,ivx,sps)
 
-           du1(ivy) = wAdj(0,jj,  0,ivy) - wAdj(0,jj-1,0,ivy)
-           du2(ivy) = wAdj(0,jj+1,0,ivy) - wAdj(0,jj,  0,ivy)
-           du3(ivy) = wAdj(0,jj+2,0,ivy) - wAdj(0,jj+1,0,ivy)
+           du1(ivy) = wAdj(0,jj,  0,ivy,sps) - wAdj(0,jj-1,0,ivy,sps)
+           du2(ivy) = wAdj(0,jj+1,0,ivy,sps) - wAdj(0,jj,  0,ivy,sps)
+           du3(ivy) = wAdj(0,jj+2,0,ivy,sps) - wAdj(0,jj+1,0,ivy,sps)
 
-           du1(ivz) = wAdj(0,jj,  0,ivz) - wAdj(0,jj-1,0,ivz)
-           du2(ivz) = wAdj(0,jj+1,0,ivz) - wAdj(0,jj,  0,ivz)
-           du3(ivz) = wAdj(0,jj+2,0,ivz) - wAdj(0,jj+1,0,ivz)
+           du1(ivz) = wAdj(0,jj,  0,ivz,sps) - wAdj(0,jj-1,0,ivz,sps)
+           du2(ivz) = wAdj(0,jj+1,0,ivz,sps) - wAdj(0,jj,  0,ivz,sps)
+           du3(ivz) = wAdj(0,jj+2,0,ivz,sps) - wAdj(0,jj+1,0,ivz,sps)
 
-           du1(irhoE) = pAdj(0,jj,  0) - pAdj(0,jj-1,0)
-           du2(irhoE) = pAdj(0,jj+1,0) - pAdj(0,jj,  0)
-           du3(irhoE) = pAdj(0,jj+2,0) - pAdj(0,jj+1,0)
+           du1(irhoE) = pAdj(0,jj,  0,sps) - pAdj(0,jj-1,0,sps)
+           du2(irhoE) = pAdj(0,jj+1,0,sps) - pAdj(0,jj,  0,sps)
+           du3(irhoE) = pAdj(0,jj+2,0,sps) - pAdj(0,jj+1,0,sps)
 
            if( correctForK ) then
-             du1(itu1) = wAdj(0,jj,  0,itu1) - wAdj(0,jj-1,0,itu1)
-             du2(itu1) = wAdj(0,jj+1,0,itu1) - wAdj(0,jj,  0,itu1)
-             du3(itu1) = wAdj(0,jj+2,0,itu1) - wAdj(0,jj+1,0,itu1)
+             du1(itu1) = wAdj(0,jj,  0,itu1,sps) - wAdj(0,jj-1,0,itu1,sps)
+             du2(itu1) = wAdj(0,jj+1,0,itu1,sps) - wAdj(0,jj,  0,itu1,sps)
+             du3(itu1) = wAdj(0,jj+2,0,itu1,sps) - wAdj(0,jj+1,0,itu1,sps)
            endif
 
            ! Compute the differences from the first order scheme.
@@ -460,29 +461,29 @@
            ! differences, such that the correct state vector
            ! is stored.
 
-           left(irho)  = left(irho)  + wAdj(0,jj,0,irho)
-           left(ivx)   = left(ivx)   + wAdj(0,jj,0,ivx)
-           left(ivy)   = left(ivy)   + wAdj(0,jj,0,ivy)
-           left(ivz)   = left(ivz)   + wAdj(0,jj,0,ivz)
-           left(irhoE) = left(irhoE) + pAdj(0,jj,0)
+           left(irho)  = left(irho)  + wAdj(0,jj,0,irho,sps)
+           left(ivx)   = left(ivx)   + wAdj(0,jj,0,ivx,sps)
+           left(ivy)   = left(ivy)   + wAdj(0,jj,0,ivy,sps)
+           left(ivz)   = left(ivz)   + wAdj(0,jj,0,ivz,sps)
+           left(irhoE) = left(irhoE) + pAdj(0,jj,0,sps)
 
-           right(irho)  = right(irho)  + wAdj(0,jj+1,0,irho)
-           right(ivx)   = right(ivx)   + wAdj(0,jj+1,0,ivx)
-           right(ivy)   = right(ivy)   + wAdj(0,jj+1,0,ivy)
-           right(ivz)   = right(ivz)   + wAdj(0,jj+1,0,ivz)
-           right(irhoE) = right(irhoE) + pAdj(0,jj+1,0)
+           right(irho)  = right(irho)  + wAdj(0,jj+1,0,irho,sps)
+           right(ivx)   = right(ivx)   + wAdj(0,jj+1,0,ivx,sps)
+           right(ivy)   = right(ivy)   + wAdj(0,jj+1,0,ivy,sps)
+           right(ivz)   = right(ivz)   + wAdj(0,jj+1,0,ivz,sps)
+           right(irhoE) = right(irhoE) + pAdj(0,jj+1,0,sps)
 
            if( correctForK ) then
-             left(itu1)  = left(itu1)  + wAdj(0,jj,0,itu1)
-             right(itu1) = right(itu1) + wAdj(0,jj+1,0,itu1)
+             left(itu1)  = left(itu1)  + wAdj(0,jj,0,itu1,sps)
+             right(itu1) = right(itu1) + wAdj(0,jj+1,0,itu1,sps)
            endif
 
            ! Store the normal vector, the porosity and the
            ! mesh velocity if present.
 
-           sx = sjAdj(0,jj,0,1); sy = sjAdj(0,jj,0,2); sz = sjAdj(0,jj,0,3)
+           sx = sjAdj(0,jj,0,1,sps); sy = sjAdj(0,jj,0,2,sps); sz = sjAdj(0,jj,0,3,sps)
            por = porJ(i,j,k)
-           if( addGridVelocities ) sFace = sFaceJAdj(0,jj,0)
+           if( addGridVelocities ) sFace = sFaceJAdj(0,jj,0,sps)
 
            ! Compute the value of gamma on the face.
            ! Constant gamma for now.
@@ -495,11 +496,11 @@
            !call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace)
             call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid)
 
-           dwAdj(irho)  = dwAdj(irho)  + fact*flux(irho)
-           dwAdj(imx)   = dwAdj(imx)   + fact*flux(imx)
-           dwAdj(imy)   = dwAdj(imy)   + fact*flux(imy)
-           dwAdj(imz)   = dwAdj(imz)   + fact*flux(imz)
-           dwAdj(irhoE) = dwAdj(irhoE) + fact*flux(irhoE)
+           dwAdj(irho,sps)  = dwAdj(irho,sps)  + fact*flux(irho)
+           dwAdj(imx,sps)   = dwAdj(imx,sps)   + fact*flux(imx)
+           dwAdj(imy,sps)   = dwAdj(imy,sps)   + fact*flux(imy)
+           dwAdj(imz,sps)   = dwAdj(imz,sps)   + fact*flux(imz)
+           dwAdj(irhoE,sps) = dwAdj(irhoE,sps) + fact*flux(irhoE)
 
            ! Update j and set fact to 1 for the second face.
 
@@ -521,30 +522,30 @@
            ! Store the three differences used in the interpolation
            ! in du1, du2, du3.
 
-           du1(irho) = wAdj(0,0,kk,  irho) - wAdj(0,0,kk-1,irho)
-           du2(irho) = wAdj(0,0,kk+1,irho) - wAdj(0,0,kk,  irho)
-           du3(irho) = wAdj(0,0,kk+2,irho) - wAdj(0,0,kk+1,irho)
+           du1(irho) = wAdj(0,0,kk,  irho,sps) - wAdj(0,0,kk-1,irho,sps)
+           du2(irho) = wAdj(0,0,kk+1,irho,sps) - wAdj(0,0,kk,  irho,sps)
+           du3(irho) = wAdj(0,0,kk+2,irho,sps) - wAdj(0,0,kk+1,irho,sps)
 
-           du1(ivx) = wAdj(0,0,kk,  ivx) - wAdj(0,0,kk-1,ivx)
-           du2(ivx) = wAdj(0,0,kk+1,ivx) - wAdj(0,0,kk,  ivx)
-           du3(ivx) = wAdj(0,0,kk+2,ivx) - wAdj(0,0,kk+1,ivx)
+           du1(ivx) = wAdj(0,0,kk,  ivx,sps) - wAdj(0,0,kk-1,ivx,sps)
+           du2(ivx) = wAdj(0,0,kk+1,ivx,sps) - wAdj(0,0,kk,  ivx,sps)
+           du3(ivx) = wAdj(0,0,kk+2,ivx,sps) - wAdj(0,0,kk+1,ivx,sps)
 
-           du1(ivy) = wAdj(0,0,kk,  ivy) - wAdj(0,0,kk-1,ivy)
-           du2(ivy) = wAdj(0,0,kk+1,ivy) - wAdj(0,0,kk,  ivy)
-           du3(ivy) = wAdj(0,0,kk+2,ivy) - wAdj(0,0,kk+1,ivy)
+           du1(ivy) = wAdj(0,0,kk,  ivy,sps) - wAdj(0,0,kk-1,ivy,sps)
+           du2(ivy) = wAdj(0,0,kk+1,ivy,sps) - wAdj(0,0,kk,  ivy,sps)
+           du3(ivy) = wAdj(0,0,kk+2,ivy,sps) - wAdj(0,0,kk+1,ivy,sps)
 
-           du1(ivz) = wAdj(0,0,kk,  ivz) - wAdj(0,0,kk-1,ivz)
-           du2(ivz) = wAdj(0,0,kk+1,ivz) - wAdj(0,0,kk,  ivz)
-           du3(ivz) = wAdj(0,0,kk+2,ivz) - wAdj(0,0,kk+1,ivz)
+           du1(ivz) = wAdj(0,0,kk,  ivz,sps) - wAdj(0,0,kk-1,ivz,sps)
+           du2(ivz) = wAdj(0,0,kk+1,ivz,sps) - wAdj(0,0,kk,  ivz,sps)
+           du3(ivz) = wAdj(0,0,kk+2,ivz,sps) - wAdj(0,0,kk+1,ivz,sps)
 
-           du1(irhoE) = pAdj(0,0,kk)   - pAdj(0,0,kk-1)
-           du2(irhoE) = pAdj(0,0,kk+1) - pAdj(0,0,kk)
-           du3(irhoE) = pAdj(0,0,kk+2) - pAdj(0,0,kk+1)
+           du1(irhoE) = pAdj(0,0,kk,sps)   - pAdj(0,0,kk-1,sps)
+           du2(irhoE) = pAdj(0,0,kk+1,sps) - pAdj(0,0,kk,sps)
+           du3(irhoE) = pAdj(0,0,kk+2,sps) - pAdj(0,0,kk+1,sps)
 
            if( correctForK ) then
-             du1(itu1) = wAdj(0,0,kk,  itu1) - wAdj(0,0,kk-1,itu1)
-             du2(itu1) = wAdj(0,0,kk+1,itu1) - wAdj(0,0,kk,  itu1)
-             du3(itu1) = wAdj(0,0,kk+2,itu1) - wAdj(0,0,kk+1,itu1)
+             du1(itu1) = wAdj(0,0,kk,  itu1,sps) - wAdj(0,0,kk-1,itu1,sps)
+             du2(itu1) = wAdj(0,0,kk+1,itu1,sps) - wAdj(0,0,kk,  itu1,sps)
+             du3(itu1) = wAdj(0,0,kk+2,itu1,sps) - wAdj(0,0,kk+1,itu1,sps)
            endif
 
            ! Compute the differences from the first order scheme.
@@ -555,29 +556,29 @@
            ! differences, such that the correct state vector
            ! is stored.
 
-           left(irho)  = left(irho)  + wAdj(0,0,kk,irho)
-           left(ivx)   = left(ivx)   + wAdj(0,0,kk,ivx)
-           left(ivy)   = left(ivy)   + wAdj(0,0,kk,ivy)
-           left(ivz)   = left(ivz)   + wAdj(0,0,kk,ivz)
-           left(irhoE) = left(irhoE) + pAdj(0,0,kk)
+           left(irho)  = left(irho)  + wAdj(0,0,kk,irho,sps)
+           left(ivx)   = left(ivx)   + wAdj(0,0,kk,ivx,sps)
+           left(ivy)   = left(ivy)   + wAdj(0,0,kk,ivy,sps)
+           left(ivz)   = left(ivz)   + wAdj(0,0,kk,ivz,sps)
+           left(irhoE) = left(irhoE) + pAdj(0,0,kk,sps)
 
-           right(irho)  = right(irho)  + wAdj(0,0,kk+1,irho)
-           right(ivx)   = right(ivx)   + wAdj(0,0,kk+1,ivx)
-           right(ivy)   = right(ivy)   + wAdj(0,0,kk+1,ivy)
-           right(ivz)   = right(ivz)   + wAdj(0,0,kk+1,ivz)
-           right(irhoE) = right(irhoE) + pAdj(0,0,kk+1)
+           right(irho)  = right(irho)  + wAdj(0,0,kk+1,irho,sps)
+           right(ivx)   = right(ivx)   + wAdj(0,0,kk+1,ivx,sps)
+           right(ivy)   = right(ivy)   + wAdj(0,0,kk+1,ivy,sps)
+           right(ivz)   = right(ivz)   + wAdj(0,0,kk+1,ivz,sps)
+           right(irhoE) = right(irhoE) + pAdj(0,0,kk+1,sps)
 
            if( correctForK ) then
-             left(itu1)  = left(itu1)  + wAdj(0,0,kk,itu1)
-             right(itu1) = right(itu1) + wAdj(0,0,kk+1,itu1)
+             left(itu1)  = left(itu1)  + wAdj(0,0,kk,itu1,sps)
+             right(itu1) = right(itu1) + wAdj(0,0,kk+1,itu1,sps)
            endif
 
            ! Store the normal vector, the porosity and the
            ! mesh velocity if present.
 
-           sx = skAdj(0,0,kk,1); sy = skAdj(0,0,kk,2); sz = skAdj(0,0,kk,3)
+           sx = skAdj(0,0,kk,1,sps); sy = skAdj(0,0,kk,2,sps); sz = skAdj(0,0,kk,3,sps)
            por = porK(i,j,k)
-           if( addGridVelocities ) sFace = sFaceKAdj(0,0,kk)
+           if( addGridVelocities ) sFace = sFaceKAdj(0,0,kk,sps)
 
            ! Compute the value of gamma on the face.
            ! Constant gamma for now.
@@ -591,11 +592,11 @@
 !           print *,'riemanninputk',left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid
            call riemannFluxAdj(left, right, flux,por,gammaFace,correctForK,sX,sY,sZ,sFace,fineGrid)
 
-           dwAdj(irho)  = dwAdj(irho)  + fact*flux(irho)
-           dwAdj(imx)   = dwAdj(imx)   + fact*flux(imx)
-           dwAdj(imy)   = dwAdj(imy)   + fact*flux(imy)
-           dwAdj(imz)   = dwAdj(imz)   + fact*flux(imz)
-           dwAdj(irhoE) = dwAdj(irhoE) + fact*flux(irhoE)
+           dwAdj(irho,sps)  = dwAdj(irho,sps)  + fact*flux(irho)
+           dwAdj(imx,sps)   = dwAdj(imx,sps)   + fact*flux(imx)
+           dwAdj(imy,sps)   = dwAdj(imy,sps)   + fact*flux(imy)
+           dwAdj(imz,sps)   = dwAdj(imz,sps)   + fact*flux(imz)
+           dwAdj(irhoE,sps) = dwAdj(irhoE,sps) + fact*flux(irhoE)
 
            !print *,'dwupwind',dwadj,'fact',fact,'flux',flux
 

@@ -10,7 +10,7 @@
 !
        subroutine inviscidDissFluxScalarAdj(wAdj,  pAdj,  dwadj,   &
                                             radIAdj,radJAdj,radKAdj, &
-                                            iCell, jCell, kCell)
+                                            iCell, jCell, kCell,nn,level,sps)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -28,19 +28,20 @@
        use inputDiscretization
        use inputPhysics
        use iteration
+       use inputTimeSpectral !nTimeIntervalsSpectral
        implicit none
 
 !
 !      Subroutine arguments
 !
-       integer(kind=intType) :: iCell, jCell, kCell
+       integer(kind=intType) :: iCell, jCell, kCell,nn,level,sps
 
-       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral), &
                                                       intent(inout) :: wAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2),    &
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral),    &
                                                       intent(in) :: pAdj
-       real(kind=realType), dimension(-1:1,-1:1,-1:1) :: radIAdj,radJAdj,radKAdj
-       real(kind=realType), dimension(nw), intent(inout) :: dwadj
+       real(kind=realType), dimension(-1:1,-1:1,-1:1,nTimeIntervalsSpectral) :: radIAdj,radJAdj,radKAdj
+       real(kind=realType), dimension(nw,nTimeIntervalsSpectral), intent(inout) :: dwadj
 
 !
 !      Local parameter.
@@ -93,7 +94,7 @@
            do k=-2,2!0,kb
              do j=-2,2!2,jl
                do i=-2,2!2,il
-                 ss(i,j,k) = pAdj(i,j,k)
+                 ss(i,j,k) = pAdj(i,j,k,sps)
                enddo
              enddo
            enddo
@@ -172,10 +173,10 @@
        do k=-2,2!0,kb
          do j=-2,2!2,jl
            do i=-2,2!2,il
-             wAdj(i,j,k,ivx)   = wAdj(i,j,k,irho)*wAdj(i,j,k,ivx)
-             wAdj(i,j,k,ivy)   = wAdj(i,j,k,irho)*wAdj(i,j,k,ivy)
-             wAdj(i,j,k,ivz)   = wAdj(i,j,k,irho)*wAdj(i,j,k,ivz)
-             wAdj(i,j,k,irhoE) = wAdj(i,j,k,irhoE) + pAdj(i,j,k)
+             wAdj(i,j,k,ivx,sps)   = wAdj(i,j,k,irho,sps)*wAdj(i,j,k,ivx,sps)
+             wAdj(i,j,k,ivy,sps)   = wAdj(i,j,k,irho,sps)*wAdj(i,j,k,ivy,sps)
+             wAdj(i,j,k,ivz,sps)   = wAdj(i,j,k,irho,sps)*wAdj(i,j,k,ivz,sps)
+             wAdj(i,j,k,irhoE,sps) = wAdj(i,j,k,irhoE,sps) + pAdj(i,j,k,sps)
            enddo
          enddo
        enddo
@@ -285,7 +286,7 @@
              ppor = zero
              if(porI(i,j,k) == normalFlux) ppor = half
              !rrad = ppor*(radI(i,j,k) + radI(i+1,j,k))
-             rrad = ppor*(radIAdj(ii,0,0) + radIAdj(ii+1,0,0))
+             rrad = ppor*(radIAdj(ii,0,0,sps) + radIAdj(ii+1,0,0,sps))
              !print *,'radI',radIAdj(ii,0,0),radI(icell+ii,jcell,kcell),icell,jcell,kcell,radIAdj(ii+1,0,0),radI(icell+ii+1,jcell,kcell)
              dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
              !dis4 = dim(fis4*rrad, dis2)
@@ -300,13 +301,13 @@
              ! Density. Store it in the mass flow of the
              ! appropriate sliding mesh interface.
 
-             ddw = wAdj(ii+1,0,0,irho) - wAdj(ii,0,0,irho)
+             ddw = wAdj(ii+1,0,0,irho,sps) - wAdj(ii,0,0,irho,sps)
              fs  = dis2*ddw &
-                 - dis4*(wAdj(ii+2,0,0,irho) - wAdj(ii-1,0,0,irho) - three*ddw)
+                 - dis4*(wAdj(ii+2,0,0,irho,sps) - wAdj(ii-1,0,0,irho,sps) - three*ddw)
 
              !fw(i+1,j,k,irho) = fw(i+1,j,k,irho) + fs
              !fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
-             dwadj(irho) = dwadj(irho) + fact*fs
+             dwadj(irho,sps) = dwadj(irho,sps) + fact*fs
 
              ind = indFamilyI(i,j,k)
              massFlowFamilyDiss(ind,spectralSol) =       &
@@ -315,43 +316,43 @@
 
              ! X-momentum.
 
-             ddw = wAdj(ii+1,0,0,ivx) - wAdj(ii,0,0,ivx)
+             ddw = wAdj(ii+1,0,0,ivx,sps) - wAdj(ii,0,0,ivx,sps)
              fs  = dis2*ddw &
-                 - dis4*(wAdj(ii+2,0,0,ivx) - wAdj(ii-1,0,0,ivx) - three*ddw)
+                 - dis4*(wAdj(ii+2,0,0,ivx,sps) - wAdj(ii-1,0,0,ivx,sps) - three*ddw)
 
              !fw(i+1,j,k,imx) = fw(i+1,j,k,imx) + fs
              !fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
-             dwadj(imx) = dwadj(imx) + fact*fs
+             dwadj(imx,sps) = dwadj(imx,sps) + fact*fs
 
              ! Y-momentum.
 
-             ddw = wAdj(ii+1,0,0,ivy) - wAdj(ii,0,0,ivy)
+             ddw = wAdj(ii+1,0,0,ivy,sps) - wAdj(ii,0,0,ivy,sps)
              fs  = dis2*ddw &
-                 - dis4*(wAdj(ii+2,0,0,ivy) - wAdj(ii-1,0,0,ivy) - three*ddw)
+                 - dis4*(wAdj(ii+2,0,0,ivy,sps) - wAdj(ii-1,0,0,ivy,sps) - three*ddw)
 
              !fw(i+1,j,k,imy) = fw(i+1,j,k,imy) + fs
              !fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
-             dwadj(imy) = dwadj(imy) + fact*fs
+             dwadj(imy,sps) = dwadj(imy,sps) + fact*fs
 
              ! Z-momentum.
 
-             ddw = wAdj(ii+1,0,0,ivz) - wAdj(ii,0,0,ivz)
+             ddw = wAdj(ii+1,0,0,ivz,sps) - wAdj(ii,0,0,ivz,sps)
              fs  = dis2*ddw &
-                 - dis4*(wAdj(ii+2,0,0,ivz) - wAdj(ii-1,0,0,ivz) - three*ddw)
+                 - dis4*(wAdj(ii+2,0,0,ivz,sps) - wAdj(ii-1,0,0,ivz,sps) - three*ddw)
 
              !fw(i+1,j,k,imz) = fw(i+1,j,k,imz) + fs
              !fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
-             dwadj(imz) = dwadj(imz) + fact*fs
+             dwadj(imz,sps) = dwadj(imz,sps) + fact*fs
 
              ! Energy.
 
-             ddw = wAdj(ii+1,0,0,irhoE) - wAdj(ii,0,0,irhoE)
+             ddw = wAdj(ii+1,0,0,irhoE,sps) - wAdj(ii,0,0,irhoE,sps)
              fs  = dis2*ddw &
-                 - dis4*(wAdj(ii+2,0,0,irhoE) - wAdj(ii-1,0,0,irhoE) - three*ddw)
+                 - dis4*(wAdj(ii+2,0,0,irhoE,sps) - wAdj(ii-1,0,0,irhoE,sps) - three*ddw)
 
              !fw(i+1,j,k,irhoE) = fw(i+1,j,k,irhoE) + fs
              !fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
-             dwadj(irhoE) = dwadj(irhoE) + fact*fs
+             dwadj(irhoE,sps) = dwadj(irhoE,sps) + fact*fs
 
              ! Update i and set fact to 1 for the second face.
 
@@ -403,7 +404,7 @@
              ppor = zero
              if(porJ(i,j,k) == normalFlux) ppor = half
              !rrad = ppor*(radJ(i,j,k) + radJ(i,j+1,k))
-             rrad = ppor*(radJAdj(0,jj,0) + radJAdj(0,jj+1,0))
+             rrad = ppor*(radJAdj(0,jj,0,sps) + radJAdj(0,jj+1,0,sps))
 
              dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
              !dis4 = dim(fis4*rrad, dis2)
@@ -416,13 +417,13 @@
              ! Density. Store it in the mass flow of the
              ! appropriate sliding mesh interface.
 
-             ddw = wAdj(0,jj+1,0,irho) - wAdj(0,jj,0,irho)
+             ddw = wAdj(0,jj+1,0,irho,sps) - wAdj(0,jj,0,irho,sps)
              fs  = dis2*ddw &
-                 - dis4*(wAdj(0,jj+2,0,irho) - wAdj(0,jj-1,0,irho) - three*ddw)
+                 - dis4*(wAdj(0,jj+2,0,irho,sps) - wAdj(0,jj-1,0,irho,sps) - three*ddw)
 
              !fw(i,j+1,k,irho) = fw(i,j+1,k,irho) + fs
              !fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
-             dwadj(irho) = dwadj(irho) + fact*fs
+             dwadj(irho,sps) = dwadj(irho,sps) + fact*fs
              
              ind = indFamilyJ(i,j,k)
              massFlowFamilyDiss(ind,spectralSol) =       &
@@ -431,43 +432,43 @@
 
              ! X-momentum.
 
-             ddw = wAdj(0,jj+1,0,ivx) - wAdj(0,jj,0,ivx)
+             ddw = wAdj(0,jj+1,0,ivx,sps) - wAdj(0,jj,0,ivx,sps)
              fs  = dis2*ddw &
-                 - dis4*(wAdj(0,jj+2,0,ivx) - wAdj(0,jj-1,0,ivx) - three*ddw)
+                 - dis4*(wAdj(0,jj+2,0,ivx,sps) - wAdj(0,jj-1,0,ivx,sps) - three*ddw)
 
              !fw(i,j+1,k,imx) = fw(i,j+1,k,imx) + fs
              !fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
-             dwadj(imx) = dwadj(imx) + fact*fs
+             dwadj(imx,sps) = dwadj(imx,sps) + fact*fs
              
              ! Y-momentum.
 
-             ddw = wAdj(0,jj+1,0,ivy) - wAdj(0,jj,0,ivy)
+             ddw = wAdj(0,jj+1,0,ivy,sps) - wAdj(0,jj,0,ivy,sps)
              fs  = dis2*ddw &
-                 - dis4*(wAdj(0,jj+2,0,ivy) - wAdj(0,jj-1,0,ivy) - three*ddw)
+                 - dis4*(wAdj(0,jj+2,0,ivy,sps) - wAdj(0,jj-1,0,ivy,sps) - three*ddw)
 
              !fw(i,j+1,k,imy) = fw(i,j+1,k,imy) + fs
              !fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
-             dwadj(imy) = dwadj(imy) + fact*fs
+             dwadj(imy,sps) = dwadj(imy,sps) + fact*fs
              
              ! Z-momentum.
 
-             ddw = wAdj(0,jj+1,0,ivz) - wAdj(0,jj,0,ivz)
+             ddw = wAdj(0,jj+1,0,ivz,sps) - wAdj(0,jj,0,ivz,sps)
              fs  = dis2*ddw &
-                 - dis4*(wAdj(0,jj+2,0,ivz) - wAdj(0,jj-1,0,ivz) - three*ddw)
+                 - dis4*(wAdj(0,jj+2,0,ivz,sps) - wAdj(0,jj-1,0,ivz,sps) - three*ddw)
 
              !fw(i,j+1,k,imz) = fw(i,j+1,k,imz) + fs
              !fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
-             dwadj(imz) = dwadj(imz) + fact*fs
+             dwadj(imz,sps) = dwadj(imz,sps) + fact*fs
              
              ! Energy.
 
-             ddw = wAdj(0,jj+1,0,irhoE) - wAdj(0,jj,0,irhoE)
+             ddw = wAdj(0,jj+1,0,irhoE,sps) - wAdj(0,jj,0,irhoE,sps)
              fs  = dis2*ddw &
-                 - dis4*(wAdj(0,jj+2,0,irhoE) - wAdj(0,jj-1,0,irhoE) - three*ddw)
+                 - dis4*(wAdj(0,jj+2,0,irhoE,sps) - wAdj(0,jj-1,0,irhoE,sps) - three*ddw)
 
              !fw(i,j+1,k,irhoE) = fw(i,j+1,k,irhoE) + fs
              !fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
-             dwadj(irhoE) = dwadj(irhoE) + fact*fs
+             dwadj(irhoE,sps) = dwadj(irhoE,sps) + fact*fs
              
              ! Update j and set fact to 1 for the second face.
              
@@ -519,7 +520,7 @@
              ppor = zero
              if(porK(i,j,k) == normalFlux) ppor = half
              !rrad = ppor*(radK(i,j,k) + radK(i,j,k+1))
-             rrad = ppor*(radKAdj(0,0,kk) + radKAdj(0,0,kk+1))
+             rrad = ppor*(radKAdj(0,0,kk,sps) + radKAdj(0,0,kk+1,sps))
 
              dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
              !dis4 = dim(fis4*rrad, dis2)
@@ -532,13 +533,13 @@
              ! Density. Store it in the mass flow of the
              ! appropriate sliding mesh interface.
 
-             ddw = wAdj(0,0,kk+1,irho) - wAdj(0,0,kk,irho)
+             ddw = wAdj(0,0,kk+1,irho,sps) - wAdj(0,0,kk,irho,sps)
              fs  = dis2*ddw &
-                 - dis4*(wAdj(0,0,kk+2,irho) - wAdj(0,0,kk-1,irho) - three*ddw)
+                 - dis4*(wAdj(0,0,kk+2,irho,sps) - wAdj(0,0,kk-1,irho,sps) - three*ddw)
 
              !fw(i,j,k+1,irho) = fw(i,j,k+1,irho) + fs
              !fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
-             dwadj(irho) = dwadj(irho) + fact*fs
+             dwadj(irho,sps) = dwadj(irho,sps) + fact*fs
              
              ind = indFamilyK(i,j,k)
              massFlowFamilyDiss(ind,spectralSol) =       &
@@ -547,43 +548,43 @@
 
              ! X-momentum.
 
-             ddw = wAdj(0,0,kk+1,ivx) - wAdj(0,0,kk,ivx)
+             ddw = wAdj(0,0,kk+1,ivx,sps) - wAdj(0,0,kk,ivx,sps)
              fs  = dis2*ddw &
-                 - dis4*(wAdj(0,0,kk+2,ivx) - wAdj(0,0,kk-1,ivx) - three*ddw)
+                 - dis4*(wAdj(0,0,kk+2,ivx,sps) - wAdj(0,0,kk-1,ivx,sps) - three*ddw)
 
              !fw(i,j,k+1,imx) = fw(i,j,k+1,imx) + fs
              !fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
-             dwadj(imx) = dwadj(imx) + fact*fs
+             dwadj(imx,sps) = dwadj(imx,sps) + fact*fs
 
              ! Y-momentum.
 
-             ddw = wAdj(0,0,kk+1,ivy) - wAdj(0,0,kk,ivy)
+             ddw = wAdj(0,0,kk+1,ivy,sps) - wAdj(0,0,kk,ivy,sps)
              fs  = dis2*ddw &
-                 - dis4*(wAdj(0,0,kk+2,ivy) - wAdj(0,0,kk-1,ivy) - three*ddw)
+                 - dis4*(wAdj(0,0,kk+2,ivy,sps) - wAdj(0,0,kk-1,ivy,sps) - three*ddw)
 
              !fw(i,j,k+1,imy) = fw(i,j,k+1,imy) + fs
              !fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
-             dwadj(imy) = dwadj(imy) + fact*fs
+             dwadj(imy,sps) = dwadj(imy,sps) + fact*fs
 
              ! Z-momentum.
 
-             ddw = wAdj(0,0,kk+1,ivz) - wAdj(0,0,kk,ivz)
+             ddw = wAdj(0,0,kk+1,ivz,sps) - wAdj(0,0,kk,ivz,sps)
              fs  = dis2*ddw &
-                 - dis4*(wAdj(0,0,kk+2,ivz) - wAdj(0,0,kk-1,ivz) - three*ddw)
+                 - dis4*(wAdj(0,0,kk+2,ivz,sps) - wAdj(0,0,kk-1,ivz,sps) - three*ddw)
 
              !fw(i,j,k+1,imz) = fw(i,j,k+1,imz) + fs
              !fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
-             dwadj(imz) = dwadj(imz) + fact*fs
+             dwadj(imz,sps) = dwadj(imz,sps) + fact*fs
              
              ! Energy.
 
-             ddw = wAdj(0,0,kk+1,irhoE) - wAdj(0,0,kk,irhoE)
+             ddw = wAdj(0,0,kk+1,irhoE,sps) - wAdj(0,0,kk,irhoE,sps)
              fs  = dis2*ddw &
-                 - dis4*(wAdj(0,0,kk+2,irhoE) - wAdj(0,0,kk-1,irhoE) - three*ddw)
+                 - dis4*(wAdj(0,0,kk+2,irhoE,sps) - wAdj(0,0,kk-1,irhoE,sps) - three*ddw)
 
              !fw(i,j,k+1,irhoE) = fw(i,j,k+1,irhoE) + fs
              !fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
-             dwadj(irhoE) = dwadj(irhoE) + fact*fs
+             dwadj(irhoE,sps) = dwadj(irhoE,sps) + fact*fs
 
              ! Update k and set fact to 1 for the second face.
              
@@ -607,11 +608,11 @@
        do k=-2,2!0,kb
          do j=-2,2!2,jl
            do i=-2,2!2,il
-             rhoi           = one/wAdj(i,j,k,irho)
-             wAdj(i,j,k,ivx)   = wAdj(i,j,k,ivx)*rhoi
-             wAdj(i,j,k,ivy)   = wAdj(i,j,k,ivy)*rhoi
-             wAdj(i,j,k,ivz)   = wAdj(i,j,k,ivz)*rhoi
-             wAdj(i,j,k,irhoE) = wAdj(i,j,k,irhoE) - pAdj(i,j,k)
+             rhoi           = one/wAdj(i,j,k,irho,sps)
+             wAdj(i,j,k,ivx,sps)   = wAdj(i,j,k,ivx,sps)*rhoi
+             wAdj(i,j,k,ivy,sps)   = wAdj(i,j,k,ivy,sps)*rhoi
+             wAdj(i,j,k,ivz,sps)   = wAdj(i,j,k,ivz,sps)*rhoi
+             wAdj(i,j,k,irhoE,sps) = wAdj(i,j,k,irhoE,sps) - pAdj(i,j,k,sps)
            enddo
          enddo
        enddo

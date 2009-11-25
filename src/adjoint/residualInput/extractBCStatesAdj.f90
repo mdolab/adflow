@@ -13,7 +13,7 @@
             rlvAdj, revAdj,rlvAdj1, rlvAdj2,revAdj1, revAdj2,iOffset,&
             jOffset, kOffset,iCell, jCell,kCell,&
             isbeg,jsbeg,ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,&
-            jbend,kbend,icbeg,jcbeg,icend,jcend,secondHalo)
+            jbend,kbend,icbeg,jcbeg,icend,jcend,secondHalo,nnn,level,sps,sps2)
 
 !      ******************************************************************
 !      *                                                                *
@@ -29,11 +29,13 @@
        use blockPointers, only : ie, ib, je, jb, ke, kb, nBocos, &
                                   BCFaceID, BCType, BCData
        use flowVarRefState
+       use inputTimeSpectral !nIntervalTimespectral
+
        implicit none
 !
 !      Subroutine arguments.
 !
-       integer(kind=intType), intent(in) :: nn!, offset
+       integer(kind=intType), intent(in) :: nn,nnn,level,sps,sps2!, offset
        integer(kind=intType), intent(in) ::iCell, jCell,kCell
        integer(kind=intType), intent(in) ::isbeg,jsbeg,ksbeg,isend,jsend,ksend
        integer(kind=intType), intent(in) ::ibbeg,jbbeg,kbbeg,ibend,jbend,kbend
@@ -42,9 +44,9 @@
 
        integer(kind=intType) :: iOffset, jOffset, kOffset
 
-       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral), &
                    intent(in) :: wAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2),intent(in) :: pAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral),intent(in) :: pAdj
        
 
        real(kind=realType), dimension(-2:2,-2:2,nw) :: wAdj0, wAdj1
@@ -189,10 +191,15 @@
              ! At most the halo's of nearest neighbors enter the
              ! stencil. Make sure to limit properly.
              
-             icBeg = max(jRBeg,jCell-1)
-             icEnd = min(jREnd,jCell+1)
-             jcBeg = max(kRBeg,kCell-1)
-             jcEnd = min(kREnd,kCell+1)
+!!$             icBeg = max(jRBeg,jCell-1)
+!!$             icEnd = min(jREnd,jCell+1)
+!!$             jcBeg = max(kRBeg,kCell-1)
+!!$             jcEnd = min(kREnd,kCell+1)
+             icBeg = max(jRBeg,jCell-2)
+             icEnd = min(jREnd,jCell+2)
+             jcBeg = max(kRBeg,kCell-2)
+             jcEnd = min(kREnd,kCell+2)
+             
              
              ! Other straightforward stuff.
              
@@ -203,15 +210,15 @@
              if(iRBeg == iREnd) secondHalo = .false.
         
              if( secondHalo ) then
-                wAdj0(-2:2,-2:2,1:nw) = wAdj(-2,-2:2,-2:2,1:nw)
-                wAdj1(-2:2,-2:2,1:nw) = wAdj(-1,-2:2,-2:2,1:nw)
-                wAdj2(-2:2,-2:2,1:nw) = wAdj( 0,-2:2,-2:2,1:nw)
-                wAdj3(-2:2,-2:2,1:nw) = wAdj( 1,-2:2,-2:2,1:nw)
+                wAdj0(-2:2,-2:2,1:nw) = wAdj(-2,-2:2,-2:2,1:nw,sps2)
+                wAdj1(-2:2,-2:2,1:nw) = wAdj(-1,-2:2,-2:2,1:nw,sps2)
+                wAdj2(-2:2,-2:2,1:nw) = wAdj( 0,-2:2,-2:2,1:nw,sps2)
+                wAdj3(-2:2,-2:2,1:nw) = wAdj( 1,-2:2,-2:2,1:nw,sps2)
                 
-                pAdj0(-2:2,-2:2) = pAdj(-2,-2:2,-2:2)
-                pAdj1(-2:2,-2:2) = pAdj(-1,-2:2,-2:2)
-                pAdj2(-2:2,-2:2) = pAdj( 0,-2:2,-2:2)
-                pAdj3(-2:2,-2:2) = pAdj( 1,-2:2,-2:2)
+                pAdj0(-2:2,-2:2) = pAdj(-2,-2:2,-2:2,sps2)
+                pAdj1(-2:2,-2:2) = pAdj(-1,-2:2,-2:2,sps2)
+                pAdj2(-2:2,-2:2) = pAdj( 0,-2:2,-2:2,sps2)
+                pAdj3(-2:2,-2:2) = pAdj( 1,-2:2,-2:2,sps2)
                 
                 if( viscous ) then
                    rlvAdj1(-2:2,-2:2) = rlvAdj(-1,-2:2,-2:2)
@@ -223,13 +230,13 @@
                 endif
                 
              else
-                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2,-2:2,-2:2,1:nw)
-                wAdj2(-2:2,-2:2,1:nw) = wAdj(-1,-2:2,-2:2,1:nw)
-                wAdj3(-2:2,-2:2,1:nw) = wAdj( 0,-2:2,-2:2,1:nw)
+                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2,-2:2,-2:2,1:nw,sps2)
+                wAdj2(-2:2,-2:2,1:nw) = wAdj(-1,-2:2,-2:2,1:nw,sps2)
+                wAdj3(-2:2,-2:2,1:nw) = wAdj( 0,-2:2,-2:2,1:nw,sps2)
                 
-                pAdj1(-2:2,-2:2) = pAdj(-2,-2:2,-2:2)
-                pAdj2(-2:2,-2:2) = pAdj(-1,-2:2,-2:2)
-                pAdj3(-2:2,-2:2) = pAdj( 0,-2:2,-2:2)
+                pAdj1(-2:2,-2:2) = pAdj(-2,-2:2,-2:2,sps2)
+                pAdj2(-2:2,-2:2) = pAdj(-1,-2:2,-2:2,sps2)
+                pAdj3(-2:2,-2:2) = pAdj( 0,-2:2,-2:2,sps2)
 
                 if( viscous ) then
                    rlvAdj1(-2:2,-2:2) = rlvAdj(-2,-2:2,-2:2)
@@ -250,10 +257,14 @@
              ! At most the halo's of nearest neighbors enter the
              ! stencil. Make sure to limit properly.
              
-             icBeg = max(jRBeg,jCell-1)
-             icEnd = min(jREnd,jCell+1)
-             jcBeg = max(kRBeg,kCell-1)
-             jcEnd = min(kREnd,kCell+1)
+!!$             icBeg = max(jRBeg,jCell-1)
+!!$             icEnd = min(jREnd,jCell+1)
+!!$             jcBeg = max(kRBeg,kCell-1)
+!!$             jcEnd = min(kREnd,kCell+1)
+             icBeg = max(jRBeg,jCell-2)
+             icEnd = min(jREnd,jCell+2)
+             jcBeg = max(kRBeg,kCell-2)
+             jcEnd = min(kREnd,kCell+2)
              
              ! Other straightforward stuff.
              
@@ -264,15 +275,15 @@
              if(iRBeg == iREnd) secondHalo = .false.
              
              if( secondHalo ) then
-                wAdj0(-2:2,-2:2,1:nw) = wAdj( 2,-2:2,-2:2,1:nw)
-                wAdj1(-2:2,-2:2,1:nw) = wAdj( 1,-2:2,-2:2,1:nw)
-                wAdj2(-2:2,-2:2,1:nw) = wAdj( 0,-2:2,-2:2,1:nw)
-                wAdj3(-2:2,-2:2,1:nw) = wAdj(-1,-2:2,-2:2,1:nw)
+                wAdj0(-2:2,-2:2,1:nw) = wAdj( 2,-2:2,-2:2,1:nw,sps2)
+                wAdj1(-2:2,-2:2,1:nw) = wAdj( 1,-2:2,-2:2,1:nw,sps2)
+                wAdj2(-2:2,-2:2,1:nw) = wAdj( 0,-2:2,-2:2,1:nw,sps2)
+                wAdj3(-2:2,-2:2,1:nw) = wAdj(-1,-2:2,-2:2,1:nw,sps2)
                 
-                pAdj0(-2:2,-2:2) = pAdj( 2,-2:2,-2:2)
-                pAdj1(-2:2,-2:2) = pAdj( 1,-2:2,-2:2)
-                pAdj2(-2:2,-2:2) = pAdj( 0,-2:2,-2:2)
-                pAdj3(-2:2,-2:2) = pAdj(-1,-2:2,-2:2)
+                pAdj0(-2:2,-2:2) = pAdj( 2,-2:2,-2:2,sps2)
+                pAdj1(-2:2,-2:2) = pAdj( 1,-2:2,-2:2,sps2)
+                pAdj2(-2:2,-2:2) = pAdj( 0,-2:2,-2:2,sps2)
+                pAdj3(-2:2,-2:2) = pAdj(-1,-2:2,-2:2,sps2)
 
                 if( viscous ) then
                    rlvAdj1(-2:2,-2:2) = rlvAdj(1,-2:2,-2:2)
@@ -283,13 +294,13 @@
                    revAdj2(-2:2,-2:2) = revAdj(0,-2:2,-2:2)
                 endif
              else
-                wAdj1(-2:2,-2:2,1:nw) = wAdj( 2,-2:2,-2:2,1:nw)
-                wAdj2(-2:2,-2:2,1:nw) = wAdj( 1,-2:2,-2:2,1:nw)
-                wAdj3(-2:2,-2:2,1:nw) = wAdj( 0,-2:2,-2:2,1:nw)
+                wAdj1(-2:2,-2:2,1:nw) = wAdj( 2,-2:2,-2:2,1:nw,sps2)
+                wAdj2(-2:2,-2:2,1:nw) = wAdj( 1,-2:2,-2:2,1:nw,sps2)
+                wAdj3(-2:2,-2:2,1:nw) = wAdj( 0,-2:2,-2:2,1:nw,sps2)
                 
-                pAdj1(-2:2,-2:2) = pAdj( 2,-2:2,-2:2)
-                pAdj2(-2:2,-2:2) = pAdj( 1,-2:2,-2:2)
-                pAdj3(-2:2,-2:2) = pAdj( 0,-2:2,-2:2)
+                pAdj1(-2:2,-2:2) = pAdj( 2,-2:2,-2:2,sps2)
+                pAdj2(-2:2,-2:2) = pAdj( 1,-2:2,-2:2,sps2)
+                pAdj3(-2:2,-2:2) = pAdj( 0,-2:2,-2:2,sps2)
 
                 if( viscous ) then
                    rlvAdj1(-2:2,-2:2) = rlvAdj(2,-2:2,-2:2)
@@ -314,10 +325,10 @@
              !jcBeg = max(kRBeg,kCell-1)
              !jcEnd = min(kREnd,kCell+1)
 
-             icBeg = max(iRBeg,iCell-1)
-             icEnd = min(iREnd,iCell+1)
-             jcBeg = max(kRBeg,kCell-1)
-             jcEnd = min(kREnd,kCell+1)
+             icBeg = max(iRBeg,iCell-2)
+             icEnd = min(iREnd,iCell+2)
+             jcBeg = max(kRBeg,kCell-2)
+             jcEnd = min(kREnd,kCell+2)
              ! Other straightforward stuff.
              
              jOffset = kOffset
@@ -326,15 +337,15 @@
              if(jRBeg == jREnd) secondHalo = .false.
              
              if( secondHalo ) then
-                wAdj0(-2:2,-2:2,1:nw) = wAdj(-2:2,-2,-2:2,1:nw)
-                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2,-1,-2:2,1:nw)
-                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2, 0,-2:2,1:nw)
-                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2, 1,-2:2,1:nw)
+                wAdj0(-2:2,-2:2,1:nw) = wAdj(-2:2,-2,-2:2,1:nw,sps2)
+                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2,-1,-2:2,1:nw,sps2)
+                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2, 0,-2:2,1:nw,sps2)
+                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2, 1,-2:2,1:nw,sps2)
                 
-                pAdj0(-2:2,-2:2) = pAdj(-2:2,-2,-2:2)
-                pAdj1(-2:2,-2:2) = pAdj(-2:2,-1,-2:2)
-                pAdj2(-2:2,-2:2) = pAdj(-2:2, 0,-2:2)
-                pAdj3(-2:2,-2:2) = pAdj(-2:2, 1,-2:2)
+                pAdj0(-2:2,-2:2) = pAdj(-2:2,-2,-2:2,sps2)
+                pAdj1(-2:2,-2:2) = pAdj(-2:2,-1,-2:2,sps2)
+                pAdj2(-2:2,-2:2) = pAdj(-2:2, 0,-2:2,sps2)
+                pAdj3(-2:2,-2:2) = pAdj(-2:2, 1,-2:2,sps2)
 
                 if( viscous ) then
                    rlvAdj1(-2:2,-2:2) = rlvAdj(-2:2,-1,-2:2)
@@ -345,13 +356,13 @@
                    revAdj2(-2:2,-2:2) = revAdj(-2:2,0,-2:2)
                 endif
              else
-                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2,-2,-2:2,1:nw)
-                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2,-1,-2:2,1:nw)
-                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2, 0,-2:2,1:nw)
+                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2,-2,-2:2,1:nw,sps2)
+                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2,-1,-2:2,1:nw,sps2)
+                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2, 0,-2:2,1:nw,sps2)
                 
-                pAdj1(-2:2,-2:2) = pAdj(-2:2,-2,-2:2)
-                pAdj2(-2:2,-2:2) = pAdj(-2:2,-1,-2:2)
-                pAdj3(-2:2,-2:2) = pAdj(-2:2, 0,-2:2)
+                pAdj1(-2:2,-2:2) = pAdj(-2:2,-2,-2:2,sps2)
+                pAdj2(-2:2,-2:2) = pAdj(-2:2,-1,-2:2,sps2)
+                pAdj3(-2:2,-2:2) = pAdj(-2:2, 0,-2:2,sps2)
                 
                 if( viscous ) then
                    rlvAdj1(-2:2,-2:2) = rlvAdj(-2:2,-2,-2:2)
@@ -371,10 +382,14 @@
              ! At most the halo's of nearest neighbors enter the
              ! stencil. Make sure to limit properly.
              
-             icBeg = max(iRBeg,iCell-1)
-             icEnd = min(iREnd,iCell+1)
-             jcBeg = max(kRBeg,kCell-1)
-             jcEnd = min(kREnd,kCell+1)
+!!$             icBeg = max(iRBeg,iCell-1)
+!!$             icEnd = min(iREnd,iCell+1)
+!!$             jcBeg = max(kRBeg,kCell-1)
+!!$             jcEnd = min(kREnd,kCell+1)
+             icBeg = max(iRBeg,iCell-2)
+             icEnd = min(iREnd,iCell+2)
+             jcBeg = max(kRBeg,kCell-2)
+             jcEnd = min(kREnd,kCell+2)
              
              ! Other straightforward stuff.
              
@@ -384,15 +399,15 @@
              if(jRBeg == jREnd) secondHalo = .false.
              
              if( secondHalo ) then
-                wAdj0(-2:2,-2:2,1:nw) = wAdj(-2:2, 2,-2:2,1:nw)
-                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2, 1,-2:2,1:nw)
-                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2, 0,-2:2,1:nw)
-                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2,-1,-2:2,1:nw)
+                wAdj0(-2:2,-2:2,1:nw) = wAdj(-2:2, 2,-2:2,1:nw,sps2)
+                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2, 1,-2:2,1:nw,sps2)
+                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2, 0,-2:2,1:nw,sps2)
+                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2,-1,-2:2,1:nw,sps2)
                 
-                pAdj0(-2:2,-2:2) = pAdj(-2:2, 2,-2:2)
-                pAdj1(-2:2,-2:2) = pAdj(-2:2, 1,-2:2)
-                pAdj2(-2:2,-2:2) = pAdj(-2:2, 0,-2:2)
-                pAdj3(-2:2,-2:2) = pAdj(-2:2,-1,-2:2)
+                pAdj0(-2:2,-2:2) = pAdj(-2:2, 2,-2:2,sps2)
+                pAdj1(-2:2,-2:2) = pAdj(-2:2, 1,-2:2,sps2)
+                pAdj2(-2:2,-2:2) = pAdj(-2:2, 0,-2:2,sps2)
+                pAdj3(-2:2,-2:2) = pAdj(-2:2,-1,-2:2,sps2)
 
                 if( viscous ) then
                    rlvAdj1(-2:2,-2:2) = rlvAdj(-2:2,1,-2:2)
@@ -403,13 +418,13 @@
                    revAdj2(-2:2,-2:2) = revAdj(-2:2,0,-2:2)
                 endif
              else
-                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2, 2,-2:2,1:nw)
-                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2, 1,-2:2,1:nw)
-                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2, 0,-2:2,1:nw)
+                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2, 2,-2:2,1:nw,sps2)
+                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2, 1,-2:2,1:nw,sps2)
+                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2, 0,-2:2,1:nw,sps2)
                 
-                pAdj1(-2:2,-2:2) = pAdj(-2:2, 2,-2:2)
-                pAdj2(-2:2,-2:2) = pAdj(-2:2, 1,-2:2)
-                pAdj3(-2:2,-2:2) = pAdj(-2:2, 0,-2:2)
+                pAdj1(-2:2,-2:2) = pAdj(-2:2, 2,-2:2,sps2)
+                pAdj2(-2:2,-2:2) = pAdj(-2:2, 1,-2:2,sps2)
+                pAdj3(-2:2,-2:2) = pAdj(-2:2, 0,-2:2,sps2)
 
                 if( viscous ) then
                    rlvAdj1(-2:2,-2:2) = rlvAdj(-2:2,2,-2:2)
@@ -428,10 +443,14 @@
              ! At most the halo's of nearest neighbors enter the
              ! stencil. Make sure to limit properly.
              
-             icBeg = max(iRBeg,iCell-1)
-             icEnd = min(iREnd,iCell+1)
-             jcBeg = max(jRBeg,jCell-1)
-             jcEnd = min(jREnd,jCell+1)
+!!$             icBeg = max(iRBeg,iCell-1)
+!!$             icEnd = min(iREnd,iCell+1)
+!!$             jcBeg = max(jRBeg,jCell-1)
+!!$             jcEnd = min(jREnd,jCell+1)
+             icBeg = max(iRBeg,iCell-2)
+             icEnd = min(iREnd,iCell+2)
+             jcBeg = max(jRBeg,jCell-2)
+             jcEnd = min(jREnd,jCell+2)
              
              ! Other straightforward stuff.
              
@@ -439,15 +458,15 @@
              if(kRBeg == kREnd) secondHalo = .false.
              
              if( secondHalo ) then
-                wAdj0(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2,-2,1:nw)
-                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2,-1,1:nw)
-                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 0,1:nw)
-                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 1,1:nw)
+                wAdj0(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2,-2,1:nw,sps2)
+                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2,-1,1:nw,sps2)
+                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 0,1:nw,sps2)
+                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 1,1:nw,sps2)
                 
-                pAdj0(-2:2,-2:2) = pAdj(-2:2,-2:2,-2)
-                pAdj1(-2:2,-2:2) = pAdj(-2:2,-2:2,-1)
-                pAdj2(-2:2,-2:2) = pAdj(-2:2,-2:2, 0)
-                pAdj3(-2:2,-2:2) = pAdj(-2:2,-2:2, 1)
+                pAdj0(-2:2,-2:2) = pAdj(-2:2,-2:2,-2,sps2)
+                pAdj1(-2:2,-2:2) = pAdj(-2:2,-2:2,-1,sps2)
+                pAdj2(-2:2,-2:2) = pAdj(-2:2,-2:2, 0,sps2)
+                pAdj3(-2:2,-2:2) = pAdj(-2:2,-2:2, 1,sps2)
 
                 if( viscous ) then
                    rlvAdj1(-2:2,-2:2) = rlvAdj(-2:2,-2:2,-1)
@@ -458,13 +477,13 @@
                    revAdj2(-2:2,-2:2) = revAdj(-2:2,-2:2,0)
                 endif
              else
-                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2,-2,1:nw)
-                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2,-1,1:nw)
-                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 0,1:nw)
+                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2,-2,1:nw,sps2)
+                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2,-1,1:nw,sps2)
+                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 0,1:nw,sps2)
                 
-                pAdj1(-2:2,-2:2) = pAdj(-2:2,-2:2,-2)
-                pAdj2(-2:2,-2:2) = pAdj(-2:2,-2:2,-1)
-                pAdj3(-2:2,-2:2) = pAdj(-2:2,-2:2, 0)
+                pAdj1(-2:2,-2:2) = pAdj(-2:2,-2:2,-2,sps2)
+                pAdj2(-2:2,-2:2) = pAdj(-2:2,-2:2,-1,sps2)
+                pAdj3(-2:2,-2:2) = pAdj(-2:2,-2:2, 0,sps2)
 
                 
                 if( viscous ) then
@@ -484,10 +503,14 @@
              ! At most the halo's of nearest neighbors enter the
              ! stencil. Make sure to limit properly.
              
-             icBeg = max(iRBeg,iCell-1)
-             icEnd = min(iREnd,iCell+1)
-             jcBeg = max(jRBeg,jCell-1)
-             jcEnd = min(jREnd,jCell+1)
+!!$             icBeg = max(iRBeg,iCell-1)
+!!$             icEnd = min(iREnd,iCell+1)
+!!$             jcBeg = max(jRBeg,jCell-1)
+!!$             jcEnd = min(jREnd,jCell+1)
+             icBeg = max(iRBeg,iCell-2)
+             icEnd = min(iREnd,iCell+2)
+             jcBeg = max(jRBeg,jCell-2)
+             jcEnd = min(jREnd,jCell+2)
              
              ! Other straightforward stuff.
              
@@ -495,15 +518,15 @@
              if(kRBeg == kREnd) secondHalo = .false.
              
              if( secondHalo ) then
-                wAdj0(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 2,1:nw)
-                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 1,1:nw)
-                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 0,1:nw)
-                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2,-1,1:nw)
+                wAdj0(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 2,1:nw,sps2)
+                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 1,1:nw,sps2)
+                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 0,1:nw,sps2)
+                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2,-1,1:nw,sps2)
                 
-                pAdj0(-2:2,-2:2) = pAdj(-2:2,-2:2, 2)
-                pAdj1(-2:2,-2:2) = pAdj(-2:2,-2:2, 1)
-                pAdj2(-2:2,-2:2) = pAdj(-2:2,-2:2, 0)
-                pAdj3(-2:2,-2:2) = pAdj(-2:2,-2:2,-1)
+                pAdj0(-2:2,-2:2) = pAdj(-2:2,-2:2, 2,sps2)
+                pAdj1(-2:2,-2:2) = pAdj(-2:2,-2:2, 1,sps2)
+                pAdj2(-2:2,-2:2) = pAdj(-2:2,-2:2, 0,sps2)
+                pAdj3(-2:2,-2:2) = pAdj(-2:2,-2:2,-1,sps2)
 
                 
                 if( viscous ) then
@@ -515,13 +538,13 @@
                    revAdj2(-2:2,-2:2) = revAdj(-2:2,-2:2,0)
                 endif
              else
-                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 2,1:nw)
-                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 1,1:nw)
-                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 0,1:nw)
+                wAdj1(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 2,1:nw,sps2)
+                wAdj2(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 1,1:nw,sps2)
+                wAdj3(-2:2,-2:2,1:nw) = wAdj(-2:2,-2:2, 0,1:nw,sps2)
                 
-                pAdj1(-2:2,-2:2) = pAdj(-2:2,-2:2, 2)
-                pAdj2(-2:2,-2:2) = pAdj(-2:2,-2:2, 1)
-                pAdj3(-2:2,-2:2) = pAdj(-2:2,-2:2, 0)
+                pAdj1(-2:2,-2:2) = pAdj(-2:2,-2:2, 2,sps2)
+                pAdj2(-2:2,-2:2) = pAdj(-2:2,-2:2, 1,sps2)
+                pAdj3(-2:2,-2:2) = pAdj(-2:2,-2:2, 0,sps2)
 
                 
                 if( viscous ) then

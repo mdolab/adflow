@@ -425,7 +425,7 @@
                                     j = jCell + jj
                                     k = kCell + kk
                                     !print *,'secondaryindicies',i,j,k,ii,jj,kk
-                                    if(i>zero .and. j>zero .and. k>zero .and. i<=ie .and. j<=je .and. k<=ke)then
+                                    if(i>=zero .and. j>=zero .and. k>=zero .and. i<=ie .and. j<=je .and. k<=ke)then
                                        idxnode = globalNode(i,j,k)*3+l
                                        idxres   = globalCell(iCell,jCell,kCell)*nw+m 
                                        if( (idxres-1)>=0 .and. (idxnode-1)>=0) then

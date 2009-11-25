@@ -8,8 +8,9 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine checkXOverlapAdj(icell,jcell,kcell,ioffset,joffset,&
-            koffset,iMinOverlap, jMinOverlap, kMinOverlap ,&
+       subroutine checkXOverlapAdj(icell,jcell,kcell,iminoffset,imaxoffset,&
+            jminoffset,jmaxoffset,kminoffset,&
+            kmaxoffset,iMinOverlap, jMinOverlap, kMinOverlap ,&
             iMaxOverlap, jMaxOverlap, kMaxOverlap)
 
          
@@ -23,7 +24,8 @@
 
        !subroutine arguments
        integer(kind=intType), intent(in) ::iCell, jCell,kCell
-       integer(kind=intType) :: iOffset, jOffset, kOffset
+       integer(kind=intType) :: iminOffset, jminOffset, kminOffset
+       integer(kind=intType) :: imaxOffset, jmaxOffset, kmaxOffset
        logical :: iMinOverlap, jMinOverlap, kMinOverlap 
        logical :: iMaxOverlap, jMaxOverlap, kMaxOverlap 
 
@@ -44,9 +46,10 @@
        jSBeg = jCell - 3; jSEnd = jCell + 2
        kSBeg = kCell - 3; kSEnd = kCell + 2
 
-       iOffset = zero
-       jOffset = zero
-       kOffset = zero
+       iminOffset = zero;imaxOffset = zero
+       jminOffset = zero;jmaxOffset = zero
+       kminOffset = zero;kmaxOffset = zero
+       
 
        iBBeg = 0; iBEnd = ie
        jBBeg = 0; jBEnd = je
@@ -102,37 +105,37 @@
        iMinOverlap = .false.
        if(iSBeg <= iBBeg .and. iSEnd >= iBBeg) then
           iMinOverlap = .true.
-          ioffset= iBBeg-icell
+          iminoffset= iBBeg-icell
        end if
 
        iMaxOverlap = .false.
        if(iSBeg <= iBEnd .and. iSEnd >= iBEnd)then
           iMaxOverlap = .true.
-          ioffset= iBEnd-icell
+          imaxoffset= iBEnd-icell
        endif
 
        jMinOverlap = .false.
        if(jSBeg <= jBBeg .and. jSEnd >= jBBeg)then
           jMinOverlap = .true.
-          joffset = jBBeg-jcell
+          jminoffset = jBBeg-jcell
        endif
        
        jMaxOverlap = .false.
        if(jSBeg <= jBEnd .and. jSEnd >= jBEnd) then
           jMaxOverlap = .true.
-          joffset = jBEnd-jcell
+          jmaxoffset = jBEnd-jcell
        endif
        
        kMinOverlap = .false.
        if(kSBeg <= kBBeg .and. kSEnd >= kBBeg) then
           kMinOverlap = .true.
-          koffset = kBBeg-kcell
+          kminoffset = kBBeg-kcell
        endif
 
        kMaxOverlap = .false.
        if(kSBeg <= kBEnd .and. kSEnd >= kBEnd) then
           kMaxOverlap = .true.
-          koffset = kBEnd-kcell
+          kmaxoffset = kBEnd-kcell
        endif
        
 

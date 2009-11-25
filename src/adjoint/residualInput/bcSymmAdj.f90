@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
+subroutine bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo,nnn,level,sps,sps2)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -30,15 +30,17 @@ subroutine bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
   use constants
   use flowVarRefState  !nw
   use iteration        !nt1mg,nt2mg
+  use inputTimeSpectral !nIntervalTimespectral
   implicit none
   !
   !      Subroutine arguments.
   !
   logical, intent(in) :: secondHalo
-  real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
+  integer(kind=intType)::nnn,level,sps,sps2
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral), &
        intent(in) :: wAdj
-  real(kind=realType), dimension(-2:2,-2:2,-2:2),intent(in) :: pAdj
-  real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(in) :: normAdj
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral),intent(in) :: pAdj
+  real(kind=realType), dimension(nBocos,-2:2,-2:2,3,nTimeIntervalsSpectral), intent(in) :: normAdj
 
   !
   !      Local variables.
@@ -133,7 +135,7 @@ subroutine bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
                    rlvAdj, revAdj,rlvAdj1, rlvAdj2,revAdj1, revAdj2,iOffset,&
                    jOffset, kOffset,iCell, jCell,kCell,&
                    isbeg,jsbeg,ksbeg,isend,jsend,ksend,ibbeg,jbbeg,kbbeg,ibend,&
-                   jbend,kbend,icbeg,jcbeg,icend,jcend,secondHalo)
+                   jbend,kbend,icbeg,jcbeg,icend,jcend,secondHalo,nnn,level,sps,sps2)
               !(nn,wAdj,pAdj, wAdj1, wAdj2, pAdj1, pAdj2,&
               !     rlvAdj, revAdj,rlvAdj1, rlvAdj2,revAdj1, revAdj2,iOffset,&
               !     jOffset, kOffset,iCell, jCell,kCell,&
@@ -196,9 +198,9 @@ subroutine bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
                     ! Store the three components of the unit normal a
                     ! bit easier.
 
-                    nnx = normAdj(nn,ii,jj,1)!BCData(nn)%norm(i,j,1)
-                    nny = normAdj(nn,ii,jj,2)!BCData(nn)%norm(i,j,2)
-                    nnz = normAdj(nn,ii,jj,3)!BCData(nn)%norm(i,j,3)
+                    nnx = normAdj(nn,ii,jj,1,sps2)!BCData(nn)%norm(i,j,1)
+                    nny = normAdj(nn,ii,jj,2,sps2)!BCData(nn)%norm(i,j,2)
+                    nnz = normAdj(nn,ii,jj,3,sps2)!BCData(nn)%norm(i,j,3)
 !!$                    nnx = BCData(nn)%norm(i,j,1)
 !!$                    nny = BCData(nn)%norm(i,j,2)
 !!$                    nnz = BCData(nn)%norm(i,j,3)
@@ -277,7 +279,7 @@ subroutine bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo)
               call replaceBCStatesAdj(nn,  wAdj0,wAdj1, wAdj2, wAdj3,&
                    pAdj0,pAdj1, pAdj2, pAdj3,rlvAdj1, rlvAdj2,revAdj1, revAdj2,&
                    iCell, jCell,kCell,&
-                   wAdj,pAdj,rlvAdj,revAdj,secondHalo)
+                   wAdj,pAdj,rlvAdj,revAdj,secondHalo,nnn,level,sps,sps2)
 
            endif symmetry
         endif

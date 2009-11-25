@@ -22,7 +22,7 @@ integer(kind=intType)::famid
 
 integer(kind=intType)::sps = 1,startind,endInd,level=1
 
-if(myid==0)print *,'in initializewarping...'
+if(myid==0)print *,'in initializewarping...',famid
 
 !Call old indexing and coordinate functions to populate
 !Baseline datastructures in mdData and mdDataLocal
@@ -36,7 +36,7 @@ call mdCreateNsurfNodes
 call synchronizeIndices
 !print *,'synchronize indices complete'
 !Create the reduced surface coordinate list for python interface
-call mdCreateGlobalReducedSurfaceList
+!call mdCreateGlobalReducedSurfaceList
 
 !Run the Adjoint preprocessing to setup global volume numbering and
 !initialize the various PETSc variables

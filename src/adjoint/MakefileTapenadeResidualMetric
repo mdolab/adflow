@@ -96,8 +96,8 @@
 #SOLVER_DIRSRC = /nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src
 #SOLVER_DIRSRC = /home/guysmiley/acmarta/SVN/SUmbVertex/src
 #SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/SUmbVertex/trunk/src
-SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
-#SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
+#SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
+SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
 
 #     ******************************************************************
 #     *                                                                *
@@ -123,6 +123,7 @@ TAPENADE_HEADROUTINE = "computeRAdjoint"
 # Differentiation mode
 
 TAPENADE_MODE = -reverse
+#TAPENADE_MODE = -forward
 
 # Output directory
 
@@ -142,6 +143,7 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 TAPENADE_DIRSRC_RES = $(SOLVER_DIRSRC)/adjoint/residualInput
 #TAPENADE_DIRSRC_MET = $(SOLVER_DIRSRC)/adjoint/metricInput
 TAPENADE_DIRMOD     = $(SOLVER_DIRSRC)/modules
+TAPENADE_DIRUTILS     = $(SOLVER_DIRSRC)/utils
 
 TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
 
@@ -162,7 +164,9 @@ TAPENADE_SRC_SOLVER = $(TAPENADE_DIRSRC_RES)/applyAllBCAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/bcFarfieldAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/bcSymmAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/checkOverlapAdj.f90\
+	       $(TAPENADE_DIRSRC_RES)/checkXOverlapAdj.f90\
 	       $(TAPENADE_DIRSRC_RES)/computePressureAdj.f90 \
+               $(TAPENADE_DIRSRC_RES)/rotMatrixRigidBodyAdj.f90\
                $(TAPENADE_DIRSRC_RES)/derivativeRigidRotAngleAdj.f90\
                $(TAPENADE_DIRSRC_RES)/derivativeRotMatrixRigidAdj.f90\
 	       $(TAPENADE_DIRSRC_RES)/etotArrayAdj.f90 \
@@ -184,13 +188,15 @@ TAPENADE_SRC_SOLVER = $(TAPENADE_DIRSRC_RES)/applyAllBCAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/checkInputParamAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/referenceStateAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/setFlowInfinityStateAdj.f90 \
+	       $(TAPENADE_DIRSRC_RES)/getDirAngle.f90 \
 	       $(TAPENADE_DIRSRC_RES)/getDirVector.f90 \
 	       $(TAPENADE_DIRSRC_RES)/computeGammaAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/timeStepAdj.f90 \
 	       $(TAPENADE_DIRSRC_RES)/vectorRotation.f90\
-	       $(TAPENADE_DIRSRC_RES)/xhaloAdj.f90
-
-	
+	       $(TAPENADE_DIRSRC_RES)/xhaloAdj.f90\
+	       $(TAPENADE_DIRUTILS)/TSalpha.f90\
+	       $(TAPENADE_DIRUTILS)/TSBeta.f90\
+	       $(TAPENADE_DIRUTILS)/TSMach.f90	
 
 
 
@@ -202,6 +208,7 @@ TAPENADE_MOD = $(TAPENADE_DIRSRC_RES)/block.f90 \
 	       $(TAPENADE_DIRMOD)/BCTypes.f90 \
 	       $(TAPENADE_DIRMOD)/blockPointers.f90 \
 	       $(TAPENADE_DIRMOD)/iteration.f90 \
+	       $(TAPENADE_DIRMOD)/monitor.f90 \
 	       $(TAPENADE_DIRSRC_RES)/cgnsGrid.f90 \
 	       $(TAPENADE_DIRSRC_RES)/communication.f90 \
 	       $(TAPENADE_DIRMOD)/section.f90\
@@ -238,5 +245,5 @@ clean:
 			echo; \
 			echo "making $@ in $$subdir"; \
 			echo; \
-			(cd $$subdir && rm -f *_b.f90 *.msg *~) || exit 1; \
+			(cd $$subdir && rm -f *_b.f90 *_d.f90  *.msg *~) || exit 1; \
 		done

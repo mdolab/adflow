@@ -81,6 +81,12 @@ FF90_OBJECTS = bsearchIntegers.o\
 	       SUmb_init.o\
 	       tempMemory.o\
 	       terminate.o\
+               TSalpha.o\
+	       TSalphadot.o\
+               TSBeta.o\
+               TSBetadot.o\
+               TSMach.o\
+               TSMachdot.o\
 	       whalo1to1.o\
 	       whalo.o\
 	       whaloMixing.o\

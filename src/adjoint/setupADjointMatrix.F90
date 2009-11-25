@@ -87,7 +87,7 @@
 
       integer(kind=intType), dimension(nw) :: idxmg, idxng
 
-      integer :: unitdRdw = 8,ierror,idxstate, idxres,nnn
+!!$      integer :: unitdRdw = 8,ierror,idxstate, idxres,nnn
 !!$      character(len = 20)::outfile,testfile
 !!$      write(testfile,100) myid!12
 !!$100   format (i5)  
@@ -102,7 +102,7 @@
 !!$           call terminate("verifydRdwFile", &
 !!$           "Something wrong when &
 !!$           &calling open")
-!
+!!$!
 !     ******************************************************************
 !     *                                                                *
 !     * Begin execution.                                               *
@@ -302,8 +302,8 @@
 !!$                                    j = jCell + jj
 !!$                                    k = kCell + kk
 !!$                                    
-!!$                                    
-!!$                                    if(i>zero .and. j>zero .and. k>zero .and. i<=il .and. j<=jl .and. k<=kl)then
+!!$                                    if(i>=zero .and. j>=zero .and. k>=zero .and. i<=ib .and. j<=jb .and. k<=kb)then
+!!$                                       !if(i>zero .and. j>zero .and. k>zero .and. i<=il .and. j<=jl .and. k<=kl)then
 !!$                                       idxstate = globalCell(i,j,k)*nw+l
 !!$                                       idxres   = globalCell(iCell,jCell,kCell)*nw+m
 !!$                                       if( idxres-1>=0 .and. idxstate-1>=0) then
@@ -918,51 +918,52 @@
       ! see .../petsc/docs/manualpages/Mat/MatView.html
       ! or PETSc users manual, pp.57,148
 
-      if( debug ) then
-        !call MatView(dRdW,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-      print *,'viewing drdw'
-        call MatView(dRdW,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
-        if( PETScIerr/=0 ) &
-          call terminate("setupADjointMatrix", "Error in MatView")
-        !pause
-      !endif
+!!$      if( debug ) then
+!!$        !call MatView(dRdW,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+!!$      print *,'viewing drdw'
+!!$        call MatView(dRdW,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+!!$        if( PETScIerr/=0 ) &
+!!$          call terminate("setupADjointMatrix", "Error in MatView")
+!!$        !pause
+!!$      !endif
 !      !now extract and write to a file
-       sps = 1
-       do nn = 1,nDom
-          call setPointersAdj(nn,1,sps)
-          do kCell = 2, kl
-             do jCell = 2, jl
-                do iCell = 2, il
-                   do m = 1, nw
-                     idxstate   = globalCell(iCell,jCell,kCell)*nw+m 
-                     do nnn = 1,ndom
-                        call setPointersAdj(nnn,1,sps)
-                        DO I=2,Il
-                           DO J=2,Jl
-                              DO K=2,Kl
-                                 do n = 1,nw
-                                    idxres = globalCell(i,j,k)*nw+n
-                                    call MatGetValues(drdw,1,idxres-1,1,idxstate-1,value,PETScIerr)
-                                    !if(value.ne.0)then
-                                    if(abs(value)>1e-10)then
-                                       !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
-!12                                     format(1x,'Face',6I2,'edge',12I2)
-                                       write(unitdrdw,13) idxstate,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value
-                                       !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
-13                                     format(1x,'drdw',12I8,f18.10)
-                                    endif
-                                 enddo
-                              END DO
-                           END DO
-                        END DO
-                     end do
-                  end do
-               enddo
-            end do
-         end do
-      enddo
+!!$       sps = 1
+!!$       do nn = 1,nDom
+!!$          call setPointersAdj(nn,1,sps)
+!!$          do kCell = 2, kl
+!!$             do jCell = 2, jl
+!!$                do iCell = 2, il
+!!$                   do m = 1, nw
+!!$                     idxstate   = globalCell(iCell,jCell,kCell)*nw+m 
+!!$                     do nnn = 1,ndom
+!!$                        call setPointersAdj(nnn,1,sps)
+!!$                        DO I=2,Il
+!!$                           DO J=2,Jl
+!!$                              DO K=2,Kl
+!!$                                 do n = 1,nw
+!!$                                    idxres = globalCell(i,j,k)*nw+n
+!!$                                    call MatGetValues(drdw,1,idxres-1,1,idxstate-1,value,PETScIerr)
+!!$                                    !if(value.ne.0)then
+!!$                                    if(abs(value)>1e-10)then
+!!$                                       !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
+!!$!12                                     format(1x,'Face',6I2,'edge',12I2)
+!!$                                       write(unitdrdw,13) idxstate,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value
+!!$                                       !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
+!!$13                                     format(1x,'drdw',12I8,f18.10)
+!!$                                    endif
+!!$                                 enddo
+!!$                              END DO
+!!$                           END DO
+!!$                        END DO
+!!$                        call setPointersAdj(nn,1,sps)
+!!$                     end do
+!!$                  end do
+!!$               enddo
+!!$            end do
+!!$         end do
+!!$      enddo
 
-   endif
+!!$   endif
 !Print *,'barriercall',myID
 call mpi_barrier(SUmb_comm_world, ierr)
 

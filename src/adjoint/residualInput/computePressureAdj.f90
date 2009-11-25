@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine computePressureAdj(wAdj, pAdj)
+       subroutine computePressureAdj(wAdj, pAdj,nn,level,sps,sps2)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -19,13 +19,16 @@
 !
        use flowVarRefState
        use inputPhysics
+       use inputTimeSpectral !nIntervalTimespectral
        implicit none
 !
 !      Subroutine arguments
 !
-       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw), &
+
+       integer(kind=intType)::nn,level,sps,sps2
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral), &
                                                       intent(in) :: wAdj
-       real(kind=realType), dimension(-2:2,-2:2,-2:2) :: pAdj
+       real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral) :: pAdj
 !
 !      Local variables
 !
@@ -53,12 +56,12 @@
          do k=-2,2
            do j=-2,2
              do i=-2,2
-               v2 = wAdj(i,j,k,ivx)**2 + wAdj(i,j,k,ivy)**2 &
-                  + wAdj(i,j,k,ivz)**2
+               v2 = wAdj(i,j,k,ivx,sps2)**2 + wAdj(i,j,k,ivy,sps2)**2 &
+                  + wAdj(i,j,k,ivz,sps2)**2
 
-               pAdj(i,j,k) = gm1*(wAdj(i,j,k,irhoE)    &
-                           - half*wAdj(i,j,k,irho)*v2) &
-                           + factK*wAdj(i,j,k,irho)*wAdj(i,j,k,itu1)
+               pAdj(i,j,k,sps2) = gm1*(wAdj(i,j,k,irhoE,sps2)    &
+                           - half*wAdj(i,j,k,irho,sps2)*v2) &
+                           + factK*wAdj(i,j,k,irho,sps2)*wAdj(i,j,k,itu1,sps2)
              enddo
            enddo
          enddo
@@ -71,11 +74,11 @@
          do k=-2,2
            do j=-2,2
              do i=-2,2
-               v2 = wAdj(i,j,k,ivx)**2 + wAdj(i,j,k,ivy)**2 &
-                  + wAdj(i,j,k,ivz)**2
+               v2 = wAdj(i,j,k,ivx,sps2)**2 + wAdj(i,j,k,ivy,sps2)**2 &
+                  + wAdj(i,j,k,ivz,sps2)**2
 
-               pAdj(i,j,k) = gm1*(wAdj(i,j,k,irhoE) &
-                           - half*wAdj(i,j,k,irho)*v2)
+               pAdj(i,j,k,sps2) = gm1*(wAdj(i,j,k,irhoE,sps2) &
+                           - half*wAdj(i,j,k,irho,sps2)*v2)
              enddo
            enddo
          enddo

@@ -69,6 +69,7 @@ FF90_OBJECTS = adjustInflowAngleAdj.o   \
 	       residualAdj.o            \
 	       riemannFluxAdj.o         \
 	       rigidRotAngleAdj.o       \
+	       rotMatrixRigidBodyAdj.o     \
 	       setFlowInfinityStateAdj.o\
 	       timeStepAdj.o            \
 	       vectorRotation.o         \

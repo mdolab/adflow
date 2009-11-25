@@ -15,12 +15,13 @@ subroutine adjustInflowAngleAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
   implicit none
 
   !Subroutine Vars
-   real(kind=realType), dimension(3) :: velDirFreestreamAdj
-   real(kind=realType), dimension(3) :: liftDirectionAdj
-   real(kind=realType), dimension(3) :: dragDirectionAdj
+  real(kind=realType) :: alphaAdj, betaAdj
 
-   real(kind=realType) :: alphaAdj, betaAdj
-   integer(kind=intType)::liftIndex
+  real(kind=realType), dimension(3) :: velDirFreestreamAdj
+  real(kind=realType), dimension(3) :: liftDirectionAdj
+  real(kind=realType), dimension(3) :: dragDirectionAdj
+  
+  integer(kind=intType)::liftIndex
 
 !Local Vars
    

@@ -3,7 +3,7 @@
 !      *                                                                *
 !      * File:          metricAdj.f90                                   *
 !      * Author:        Edwin van der Weide                             *
-!      *                Seongim Choi                                    *
+!      *                Seongim Choi,C.A.(Sandy) Mader                  *
 !      * Starting date: 12-15-2007                                      *
 !      * Last modified: 12-26-2007                                      *
 !      *                                                                *
@@ -11,7 +11,7 @@
 !
 
        subroutine metricAdj(xAdj,siAdj,sjAdj,skAdj,volAdj,normAdj, &
-                            iCell,jCell,kCell)
+                            iCell,jCell,kCell,nn,level,sps,sps2)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -32,7 +32,7 @@
        use blockPointers
        use cgnsGrid
        use communication
-       use inputTimeSpectral
+       use inputTimeSpectral !nTimeIntervalsSpectral
        use section
        use constants
 
@@ -40,13 +40,13 @@
 !
 !      Subroutine arguments.
 !
-       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(in) :: xAdj
+       real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral), intent(in) :: xAdj
 !       real(kind=realType), dimension(-2:3,-2:3,-2:3,3), intent(in) :: xAdj
 !       real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(out) :: siAdj, sjAdj, skAdj
-       real(kind=realType), dimension(-3:2,-3:2,-3:2,3), intent(out) :: siAdj, sjAdj, skAdj
-       real(kind=realType) :: volAdj
-       real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(out) :: normAdj
-       integer(kind=intType), intent(in) :: iCell, jCell, kCell
+       real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral), intent(out) :: siAdj, sjAdj, skAdj
+       real(kind=realType),dimension(nTimeIntervalsSpectral) :: volAdj
+       real(kind=realType), dimension(nBocos,-2:2,-2:2,3,nTimeIntervalsSpectral), intent(out) :: normAdj
+       integer(kind=intType), intent(in) :: iCell, jCell, kCell,nn,level,sps,sps2
 
 !
 !      Local parameter.
@@ -62,7 +62,7 @@
        integer(kind=intType) :: iBBeg,iBEnd,jBBeg,jBEnd,kBBeg,kBEnd
        integer(kind=intType) :: iRBeg,iREnd,jRBeg,jREnd,kRBeg,kREnd
        integer(kind=intType) :: iStart,iEnd,jStart,jEnd,kStart,kEnd
-       integer(kind=intType) :: mm, sps, nTime
+       integer(kind=intType) :: mm, nTime
        integer(kind=intType) :: nVolBad,   nVolBadGlobal
 
        real(kind=realType) :: fact, mult
@@ -89,8 +89,8 @@
        ! Some initialization for siAdj,sjAdj,skAdj,normAdj 
        ! Volume needs only one stencil so it does not need initialization
 
-       siAdj = zero; sjAdj = zero; skAdj = zero
-       normAdj = zero
+       siAdj(:,:,:,:,sps2) = zero; sjAdj(:,:,:,:,sps2) = zero; skAdj(:,:,:,:,sps2) = zero
+       normAdj(:,:,:,:,sps2) = zero
 !!$       do n = 1,3
 !!$          do i = -3,2
 !!$             do j = -3,2
@@ -122,59 +122,59 @@
 
        ! Compute the coordinates of the center of gravity.
 
-       xp = eighth*(xAdj(i,j,k,1) + xAdj(i,m,k,1) &
-            +         xAdj(i,m,n,1) + xAdj(i,j,n,1) &
-            +         xAdj(l,j,k,1) + xAdj(l,m,k,1) &
-            +         xAdj(l,m,n,1) + xAdj(l,j,n,1))
-       yp = eighth*(xAdj(i,j,k,2) + xAdj(i,m,k,2) &
-            +         xAdj(i,m,n,2) + xAdj(i,j,n,2) &
-            +         xAdj(l,j,k,2) + xAdj(l,m,k,2) &
-            +         xAdj(l,m,n,2) + xAdj(l,j,n,2))
-       zp = eighth*(xAdj(i,j,k,3) + xAdj(i,m,k,3) &
-            +         xAdj(i,m,n,3) + xAdj(i,j,n,3) &
-            +         xAdj(l,j,k,3) + xAdj(l,m,k,3) &
-            +         xAdj(l,m,n,3) + xAdj(l,j,n,3))
+       xp = eighth*(xAdj(i,j,k,1,sps2) + xAdj(i,m,k,1,sps2) &
+            +         xAdj(i,m,n,1,sps2) + xAdj(i,j,n,1,sps2) &
+            +         xAdj(l,j,k,1,sps2) + xAdj(l,m,k,1,sps2) &
+            +         xAdj(l,m,n,1,sps2) + xAdj(l,j,n,1,sps2))
+       yp = eighth*(xAdj(i,j,k,2,sps2) + xAdj(i,m,k,2,sps2) &
+            +         xAdj(i,m,n,2,sps2) + xAdj(i,j,n,2,sps2) &
+            +         xAdj(l,j,k,2,sps2) + xAdj(l,m,k,2,sps2) &
+            +         xAdj(l,m,n,2,sps2) + xAdj(l,j,n,2,sps2))
+       zp = eighth*(xAdj(i,j,k,3,sps2) + xAdj(i,m,k,3,sps2) &
+            +         xAdj(i,m,n,3,sps2) + xAdj(i,j,n,3,sps2) &
+            +         xAdj(l,j,k,3,sps2) + xAdj(l,m,k,3,sps2) &
+            +         xAdj(l,m,n,3,sps2) + xAdj(l,j,n,3,sps2))
 
        ! Compute the volumes of the 6 sub pyramids. The
        ! arguments of volpym must be such that for a (regular)
        ! right handed hexahedron all volumes are positive.
        
-       call volpym2(xAdj(i,j,k,1), xAdj(i,j,k,2), xAdj(i,j,k,3), &
-            xAdj(i,j,n,1), xAdj(i,j,n,2), xAdj(i,j,n,3), &
-            xAdj(i,m,n,1), xAdj(i,m,n,2), xAdj(i,m,n,3), &
-            xAdj(i,m,k,1), xAdj(i,m,k,2), xAdj(i,m,k,3),xp,yp,zp,vp1)
+       call volpym2(xAdj(i,j,k,1,sps2), xAdj(i,j,k,2,sps2), xAdj(i,j,k,3,sps2), &
+            xAdj(i,j,n,1,sps2), xAdj(i,j,n,2,sps2), xAdj(i,j,n,3,sps2), &
+            xAdj(i,m,n,1,sps2), xAdj(i,m,n,2,sps2), xAdj(i,m,n,3,sps2), &
+            xAdj(i,m,k,1,sps2), xAdj(i,m,k,2,sps2), xAdj(i,m,k,3,sps2),xp,yp,zp,vp1)
        
-       call volpym2(xAdj(l,j,k,1), xAdj(l,j,k,2), xAdj(l,j,k,3), &
-            xAdj(l,m,k,1), xAdj(l,m,k,2), xAdj(l,m,k,3), &
-            xAdj(l,m,n,1), xAdj(l,m,n,2), xAdj(l,m,n,3), &
-            xAdj(l,j,n,1), xAdj(l,j,n,2), xAdj(l,j,n,3),xp,yp,zp,vp2)
+       call volpym2(xAdj(l,j,k,1,sps2), xAdj(l,j,k,2,sps2), xAdj(l,j,k,3,sps2), &
+            xAdj(l,m,k,1,sps2), xAdj(l,m,k,2,sps2), xAdj(l,m,k,3,sps2), &
+            xAdj(l,m,n,1,sps2), xAdj(l,m,n,2,sps2), xAdj(l,m,n,3,sps2), &
+            xAdj(l,j,n,1,sps2), xAdj(l,j,n,2,sps2), xAdj(l,j,n,3,sps2),xp,yp,zp,vp2)
        
-       call volpym2(xAdj(i,j,k,1), xAdj(i,j,k,2), xAdj(i,j,k,3), &
-            xAdj(l,j,k,1), xAdj(l,j,k,2), xAdj(l,j,k,3), &
-            xAdj(l,j,n,1), xAdj(l,j,n,2), xAdj(l,j,n,3), &
-            xAdj(i,j,n,1), xAdj(i,j,n,2), xAdj(i,j,n,3),xp,yp,zp,vp3)
+       call volpym2(xAdj(i,j,k,1,sps2), xAdj(i,j,k,2,sps2), xAdj(i,j,k,3,sps2), &
+            xAdj(l,j,k,1,sps2), xAdj(l,j,k,2,sps2), xAdj(l,j,k,3,sps2), &
+            xAdj(l,j,n,1,sps2), xAdj(l,j,n,2,sps2), xAdj(l,j,n,3,sps2), &
+            xAdj(i,j,n,1,sps2), xAdj(i,j,n,2,sps2), xAdj(i,j,n,3,sps2),xp,yp,zp,vp3)
        
-       call volpym2(xAdj(i,m,k,1), xAdj(i,m,k,2), xAdj(i,m,k,3), &
-            xAdj(i,m,n,1), xAdj(i,m,n,2), xAdj(i,m,n,3), &
-            xAdj(l,m,n,1), xAdj(l,m,n,2), xAdj(l,m,n,3), &
-            xAdj(l,m,k,1), xAdj(l,m,k,2), xAdj(l,m,k,3),xp,yp,zp,vp4)
+       call volpym2(xAdj(i,m,k,1,sps2), xAdj(i,m,k,2,sps2), xAdj(i,m,k,3,sps2), &
+            xAdj(i,m,n,1,sps2), xAdj(i,m,n,2,sps2), xAdj(i,m,n,3,sps2), &
+            xAdj(l,m,n,1,sps2), xAdj(l,m,n,2,sps2), xAdj(l,m,n,3,sps2), &
+            xAdj(l,m,k,1,sps2), xAdj(l,m,k,2,sps2), xAdj(l,m,k,3,sps2),xp,yp,zp,vp4)
        
-       call volpym2(xAdj(i,j,k,1), xAdj(i,j,k,2), xAdj(i,j,k,3), &
-            xAdj(i,m,k,1), xAdj(i,m,k,2), xAdj(i,m,k,3), &
-            xAdj(l,m,k,1), xAdj(l,m,k,2), xAdj(l,m,k,3), &
-            xAdj(l,j,k,1), xAdj(l,j,k,2), xAdj(l,j,k,3),xp,yp,zp,vp5)
+       call volpym2(xAdj(i,j,k,1,sps2), xAdj(i,j,k,2,sps2), xAdj(i,j,k,3,sps2), &
+            xAdj(i,m,k,1,sps2), xAdj(i,m,k,2,sps2), xAdj(i,m,k,3,sps2), &
+            xAdj(l,m,k,1,sps2), xAdj(l,m,k,2,sps2), xAdj(l,m,k,3,sps2), &
+            xAdj(l,j,k,1,sps2), xAdj(l,j,k,2,sps2), xAdj(l,j,k,3,sps2),xp,yp,zp,vp5)
        
-       call volpym2(xAdj(i,j,n,1), xAdj(i,j,n,2), xAdj(i,j,n,3), &
-            xAdj(l,j,n,1), xAdj(l,j,n,2), xAdj(l,j,n,3), &
-            xAdj(l,m,n,1), xAdj(l,m,n,2), xAdj(l,m,n,3), &
-            xAdj(i,m,n,1), xAdj(i,m,n,2), xAdj(i,m,n,3),xp,yp,zp,vp6)
+       call volpym2(xAdj(i,j,n,1,sps2), xAdj(i,j,n,2,sps2), xAdj(i,j,n,3,sps2), &
+            xAdj(l,j,n,1,sps2), xAdj(l,j,n,2,sps2), xAdj(l,j,n,3,sps2), &
+            xAdj(l,m,n,1,sps2), xAdj(l,m,n,2,sps2), xAdj(l,m,n,3,sps2), &
+            xAdj(i,m,n,1,sps2), xAdj(i,m,n,2,sps2), xAdj(i,m,n,3,sps2),xp,yp,zp,vp6)
 
        ! Set the volume to 1/6 of the sum of the volumes of the
        ! pyramid. Remember that volpym computes 6 times the
        ! volume.
        
 
-       volAdj = sixth*(vp1 + vp2 + vp3 + vp4 + vp5 + vp6)
+       volAdj(sps2) = sixth*(vp1 + vp2 + vp3 + vp4 + vp5 + vp6)
        
        ! Check the volume and update the number of positive
        ! and negative volumes if needed.
@@ -186,7 +186,7 @@
           ! handed blocks. This is checked later.
           ! Set the logical volumeIsNeg accordingly.
                
-          if(volAdj < zero) then
+          if(volAdj(sps2) < zero) then
              volumeIsNeg = .true.
           else
              volumeIsNeg = .false.
@@ -194,28 +194,28 @@
           
           ! terminate if negative volume is located
           if(volumeIsNeg) &
-               write(*,*)"VOLUME NEGATIVE",voladj,nbkglobal,iCell,jCell,kCell
+               write(*,*)"VOLUME NEGATIVE",voladj(sps2),nbkglobal,iCell,jCell,kCell
 !            call terminate("negative volume located")
 
           ! Set the threshold for the volume quality.
           
-          fact = thresVolume*abs(voladj)
+          fact = thresVolume*abs(voladj(sps2))
           
           ! Check the quality of the volume.
           
           badVolume = .false.
 
-          if(vp1*volAdj < zero .and. &
+          if(vp1*volAdj(sps2) < zero .and. &
                abs(vp1)       > fact) badVolume = .true.
-          if(vp2*volAdj < zero .and. &
+          if(vp2*volAdj(sps2) < zero .and. &
                abs(vp2)       > fact) badVolume = .true.
-          if(vp3*volAdj < zero .and. &
+          if(vp3*volAdj(sps2) < zero .and. &
                abs(vp3)       > fact) badVolume = .true.
-          if(vp4*volAdj < zero .and. &
+          if(vp4*volAdj(sps2) < zero .and. &
                abs(vp4)       > fact) badVolume = .true.
-          if(vp5*volAdj < zero .and. &
+          if(vp5*volAdj(sps2) < zero .and. &
                abs(vp5)       > fact) badVolume = .true.
-          if(vp6*volAdj < zero .and. &
+          if(vp6*volAdj(sps2) < zero .and. &
                abs(vp6)       > fact) badVolume = .true.
           
           ! Update nVolBad if this is a bad volume.
@@ -229,7 +229,7 @@
           ! Set the volume to the absolute value.
           
        
-       volAdj = abs(volAdj)
+       volAdj(sps2) = abs(volAdj(sps2))
           
 !!$           ! Some additional safety stuff for halo volumes.
 !!$
@@ -300,21 +300,21 @@
 
                  ! Determine the two diagonal vectors of the face.
 
-                 v1(1) = xAdj(i,j,n,1) - xAdj(i,m,k,1)
-                 v1(2) = xAdj(i,j,n,2) - xAdj(i,m,k,2)
-                 v1(3) = xAdj(i,j,n,3) - xAdj(i,m,k,3)
+                 v1(1) = xAdj(i,j,n,1,sps2) - xAdj(i,m,k,1,sps2)
+                 v1(2) = xAdj(i,j,n,2,sps2) - xAdj(i,m,k,2,sps2)
+                 v1(3) = xAdj(i,j,n,3,sps2) - xAdj(i,m,k,3,sps2)
 
-                 v2(1) = xAdj(i,j,k,1) - xAdj(i,m,n,1)
-                 v2(2) = xAdj(i,j,k,2) - xAdj(i,m,n,2)
-                 v2(3) = xAdj(i,j,k,3) - xAdj(i,m,n,3)
+                 v2(1) = xAdj(i,j,k,1,sps2) - xAdj(i,m,n,1,sps2)
+                 v2(2) = xAdj(i,j,k,2,sps2) - xAdj(i,m,n,2,sps2)
+                 v2(3) = xAdj(i,j,k,3,sps2) - xAdj(i,m,n,3,sps2)
 
                  ! The face normal, which is the cross product of the two
                  ! diagonal vectors times fact; remember that fact is
                  ! either -0.5 or 0.5.
 
-                 siAdj(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
-                 siAdj(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
-                 siAdj(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
+                 siAdj(i,j,k,1,sps2) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
+                 siAdj(i,j,k,2,sps2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
+                 siAdj(i,j,k,3,sps2) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
 
                enddo
              enddo
@@ -342,21 +342,21 @@
 
                  ! Determine the two diagonal vectors of the face.
 
-                 v1(1) = xAdj(i,j,n,1) - xAdj(l,j,k,1)
-                 v1(2) = xAdj(i,j,n,2) - xAdj(l,j,k,2)
-                 v1(3) = xAdj(i,j,n,3) - xAdj(l,j,k,3)
+                 v1(1) = xAdj(i,j,n,1,sps2) - xAdj(l,j,k,1,sps2)
+                 v1(2) = xAdj(i,j,n,2,sps2) - xAdj(l,j,k,2,sps2)
+                 v1(3) = xAdj(i,j,n,3,sps2) - xAdj(l,j,k,3,sps2)
 
-                 v2(1) = xAdj(l,j,n,1) - xAdj(i,j,k,1)
-                 v2(2) = xAdj(l,j,n,2) - xAdj(i,j,k,2)
-                 v2(3) = xAdj(l,j,n,3) - xAdj(i,j,k,3)
+                 v2(1) = xAdj(l,j,n,1,sps2) - xAdj(i,j,k,1,sps2)
+                 v2(2) = xAdj(l,j,n,2,sps2) - xAdj(i,j,k,2,sps2)
+                 v2(3) = xAdj(l,j,n,3,sps2) - xAdj(i,j,k,3,sps2)
 
                  ! The face normal, which is the cross product of the two
                  ! diagonal vectors times fact; remember that fact is
                  ! either -0.5 or 0.5.
 
-                 sjAdj(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
-                 sjAdj(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
-                 sjAdj(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
+                 sjAdj(i,j,k,1,sps2) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
+                 sjAdj(i,j,k,2,sps2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
+                 sjAdj(i,j,k,3,sps2) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
                  
                  !print *,'sj2', sjAdj(i,j,k,2),sj(icell+i,jcell+j,kcell+k,2),i,j,k,icell+i,jcell+j,kcell+k
 
@@ -388,22 +388,22 @@
 
                  ! Determine the two diagonal vectors of the face.
 
-                 v1(1) = xAdj(i,j,k,1) - xAdj(l,m,k,1)
-                 v1(2) = xAdj(i,j,k,2) - xAdj(l,m,k,2)
-                 v1(3) = xAdj(i,j,k,3) - xAdj(l,m,k,3)
+                 v1(1) = xAdj(i,j,k,1,sps2) - xAdj(l,m,k,1,sps2)
+                 v1(2) = xAdj(i,j,k,2,sps2) - xAdj(l,m,k,2,sps2)
+                 v1(3) = xAdj(i,j,k,3,sps2) - xAdj(l,m,k,3,sps2)
 
-                 v2(1) = xAdj(l,j,k,1) - xAdj(i,m,k,1)
-                 v2(2) = xAdj(l,j,k,2) - xAdj(i,m,k,2)
-                 v2(3) = xAdj(l,j,k,3) - xAdj(i,m,k,3)
-                 !print *,'in metric',v2,'x',xAdj(l,j,k,:),xAdj(i,m,k,:)
+                 v2(1) = xAdj(l,j,k,1,sps2) - xAdj(i,m,k,1,sps2)
+                 v2(2) = xAdj(l,j,k,2,sps2) - xAdj(i,m,k,2,sps2)
+                 v2(3) = xAdj(l,j,k,3,sps2) - xAdj(i,m,k,3,sps2)
+                 !print *,'in metric',v2,'x',xAdj(l,j,k,sps2),xAdj(i,m,k,sps2)
                  !print *,'indices',l,j,k,i,m,k
                  ! The face normal, which is the cross product of the two
                  ! diagonal vectors times fact; remember that fact is
                  ! either -0.5 or 0.5.
 
-                 skAdj(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
-                 skAdj(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
-                 skAdj(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
+                 skAdj(i,j,k,1,sps2) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
+                 skAdj(i,j,k,2,sps2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
+                 skAdj(i,j,k,3,sps2) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
 
                enddo
              enddo
@@ -508,9 +508,9 @@
                     secondHalo = .true.
                     if(iRBeg == iREnd) secondHalo = .false.
                     if(secondHalo)then
-                       mult = -one; ss(iSt:iEn,jSt:jEn,:) = siAdj(-1,iSt:iEn,jSt:jEn,:)
+                       mult = -one; ss(iSt:iEn,jSt:jEn,:) = siAdj(-1,iSt:iEn,jSt:jEn,:,sps2)
                     else 
-                       mult = -one; ss(iSt:iEn,jSt:jEn,:) = siAdj(-2,iSt:iEn,jSt:jEn,:)                       
+                       mult = -one; ss(iSt:iEn,jSt:jEn,:) = siAdj(-2,iSt:iEn,jSt:jEn,:,sps2)                       
                     end if
                     
                  case (iMax)
@@ -521,9 +521,9 @@
                     secondHalo = .true.
                     if(iRBeg == iREnd) secondHalo = .false.
                     if(secondHalo) then
-                       mult = one;  ss(iSt:iEn,jSt:jEn,:) = siAdj(0,iSt:iEn,jSt:jEn,:)
+                       mult = one;  ss(iSt:iEn,jSt:jEn,:) = siAdj(0,iSt:iEn,jSt:jEn,:,sps2)
                     else
-                       mult = one;  ss(iSt:iEn,jSt:jEn,:) = siAdj(1,iSt:iEn,jSt:jEn,:)
+                       mult = one;  ss(iSt:iEn,jSt:jEn,:) = siAdj(1,iSt:iEn,jSt:jEn,:,sps2)
                     end if
 
                     
@@ -535,9 +535,9 @@
                     secondHalo = .true.
                     if(jRBeg == jREnd) secondHalo = .false.
                    if(secondHalo) then
-                       mult = -one; ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,-1,jSt:jEn,:)
+                       mult = -one; ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,-1,jSt:jEn,:,sps2)
                     else
-                       mult = -one; ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,-2,jSt:jEn,:)
+                       mult = -one; ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,-2,jSt:jEn,:,sps2)
                     end if                    
 
                  case (jMax)
@@ -548,9 +548,9 @@
                     secondHalo = .true.
                     if(jRBeg == jREnd) secondHalo = .false.
                    if(secondHalo) then
-                       mult = one;  ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,0,jSt:jEn,:)
+                       mult = one;  ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,0,jSt:jEn,:,sps2)
                     else
-                       mult = one;  ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,1,jSt:jEn,:)
+                       mult = one;  ss(iSt:iEn,jSt:jEn,:) = sjAdj(iSt:iEn,1,jSt:jEn,:,sps2)
                     end if                    
                     
                  case (kMin)
@@ -561,9 +561,9 @@
                     secondHalo = .true.
                     if(kRBeg == kREnd) secondHalo = .false.
                     if(secondHalo) then
-                       mult = -one; ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,-1,:)
+                       mult = -one; ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,-1,:,sps2)
                     else
-                       mult = -one; ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,-2,:)
+                       mult = -one; ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,-2,:,sps2)
                     end if
 
                     
@@ -575,9 +575,9 @@
                     secondHalo = .true.
                     if(kRBeg == kREnd) secondHalo = .false.
                     if(secondHalo) then
-                       mult = one;  ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,0,:)
+                       mult = one;  ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,0,:,sps2)
                     else
-                       mult = one;  ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,1,:)
+                       mult = one;  ss(iSt:iEn,jSt:jEn,:) = skAdj(iSt:iEn,jSt:jEn,1,:,sps2)
                     end if                    
                  end select
                  
@@ -598,19 +598,19 @@
 !!$                       normAdj(mm,jj,kk,3) = fact*zp
 
                        !alternate form to allow inclusion of degenrate halos???
-                       if( xp>zero .or. yp>zero .or. zp>zero)then
+                       if( xp**2>zero .or. yp**2>zero .or. zp**2>zero)then
                           !if (fact > zero)then
                           !compute length
                           fact = sqrt(xp*xp + yp*yp + zp*zp)
                           !set factor to 1/length
                           fact = mult/fact
                           !compute unit normal...
-                          normAdj(mm,jj,kk,1) = fact*xp
-                          normAdj(mm,jj,kk,2) = fact*yp
-                          normAdj(mm,jj,kk,3) = fact*zp
+                          normAdj(mm,jj,kk,1,sps2) = fact*xp
+                          normAdj(mm,jj,kk,2,sps2) = fact*yp
+                          normAdj(mm,jj,kk,3,sps2) = fact*zp
                        else
                           !Length is zero
-                          normAdj(mm,jj,kk,:) = zero
+                          normAdj(mm,jj,kk,:,sps2) = zero
                        endif
                     enddo
                  enddo
@@ -640,34 +640,34 @@
               ! normals with the lowest index get a negative sign;
               ! normals point in the direction of the higher index.
               
-              v1(1) = siAdj(i,j,k,1) + sjAdj(i,j,k,1) + skAdj(i,j,k,1) &
-                    - siAdj(l,j,k,1) - sjAdj(i,m,k,1) - skAdj(i,j,n,1)
-              v1(2) = siAdj(i,j,k,2) + sjAdj(i,j,k,2) + skAdj(i,j,k,2) &
-                    - siAdj(l,j,k,2) - sjAdj(i,m,k,2) - skAdj(i,j,n,2)
-              v1(3) = siAdj(i,j,k,3) + sjAdj(i,j,k,3) + skAdj(i,j,k,3) &
-                    - siAdj(l,j,k,3) - sjAdj(i,m,k,3) - skAdj(i,j,n,3)
+              v1(1) = siAdj(i,j,k,1,sps2) + sjAdj(i,j,k,1,sps2) + skAdj(i,j,k,1,sps2) &
+                    - siAdj(l,j,k,1,sps2) - sjAdj(i,m,k,1,sps2) - skAdj(i,j,n,1,sps2)
+              v1(2) = siAdj(i,j,k,2,sps2) + sjAdj(i,j,k,2,sps2) + skAdj(i,j,k,2,sps2) &
+                    - siAdj(l,j,k,2,sps2) - sjAdj(i,m,k,2,sps2) - skAdj(i,j,n,2,sps2)
+              v1(3) = siAdj(i,j,k,3,sps2) + sjAdj(i,j,k,3,sps2) + skAdj(i,j,k,3,sps2) &
+                    - siAdj(l,j,k,3,sps2) - sjAdj(i,m,k,3,sps2) - skAdj(i,j,n,3,sps2)
               
               ! Store the inverse of the sum of the areas of the
               ! six faces in fact.
 
-              fact = one/(sqrt(siAdj(i,j,k,1)*siAdj(i,j,k,1)  &
-                   +           siAdj(i,j,k,2)*siAdj(i,j,k,2)  &
-                   +           siAdj(i,j,k,3)*siAdj(i,j,k,3)) &
-                   +      sqrt(siAdj(l,j,k,1)*siAdj(l,j,k,1)  &
-                   +           siAdj(l,j,k,2)*siAdj(l,j,k,2)  &
-                   +           siAdj(l,j,k,3)*siAdj(l,j,k,3)) &
-                   +      sqrt(sjAdj(i,j,k,1)*sjAdj(i,j,k,1)  &
-                   +           sjAdj(i,j,k,2)*sjAdj(i,j,k,2)  &
-                   +           sjAdj(i,j,k,3)*sjAdj(i,j,k,3)) &
-                   +      sqrt(sjAdj(i,m,k,1)*sjAdj(i,m,k,1)  &
-                   +           sjAdj(i,m,k,2)*sjAdj(i,m,k,2)  &
-                   +           sjAdj(i,m,k,3)*sjAdj(i,m,k,3)) &
-                   +      sqrt(skAdj(i,j,k,1)*skAdj(i,j,k,1)  &
-                   +           skAdj(i,j,k,2)*skAdj(i,j,k,2)  &
-                   +           skAdj(i,j,k,3)*skAdj(i,j,k,3)) &
-                   +      sqrt(skAdj(i,j,n,1)*skAdj(i,j,n,1)  &
-                   +           skAdj(i,j,n,2)*skAdj(i,j,n,2)  &
-                   +           skAdj(i,j,n,3)*skAdj(i,j,n,3)))
+              fact = one/(sqrt(siAdj(i,j,k,1,sps2)*siAdj(i,j,k,1,sps2)  &
+                   +           siAdj(i,j,k,2,sps2)*siAdj(i,j,k,2,sps2)  &
+                   +           siAdj(i,j,k,3,sps2)*siAdj(i,j,k,3,sps2)) &
+                   +      sqrt(siAdj(l,j,k,1,sps2)*siAdj(l,j,k,1,sps2)  &
+                   +           siAdj(l,j,k,2,sps2)*siAdj(l,j,k,2,sps2)  &
+                   +           siAdj(l,j,k,3,sps2)*siAdj(l,j,k,3,sps2)) &
+                   +      sqrt(sjAdj(i,j,k,1,sps2)*sjAdj(i,j,k,1,sps2)  &
+                   +           sjAdj(i,j,k,2,sps2)*sjAdj(i,j,k,2,sps2)  &
+                   +           sjAdj(i,j,k,3,sps2)*sjAdj(i,j,k,3,sps2)) &
+                   +      sqrt(sjAdj(i,m,k,1,sps2)*sjAdj(i,m,k,1,sps2)  &
+                   +           sjAdj(i,m,k,2,sps2)*sjAdj(i,m,k,2,sps2)  &
+                   +           sjAdj(i,m,k,3,sps2)*sjAdj(i,m,k,3,sps2)) &
+                   +      sqrt(skAdj(i,j,k,1,sps2)*skAdj(i,j,k,1,sps2)  &
+                   +           skAdj(i,j,k,2,sps2)*skAdj(i,j,k,2,sps2)  &
+                   +           skAdj(i,j,k,3,sps2)*skAdj(i,j,k,3,sps2)) &
+                   +      sqrt(skAdj(i,j,n,1,sps2)*skAdj(i,j,n,1,sps2)  &
+                   +           skAdj(i,j,n,2,sps2)*skAdj(i,j,n,2,sps2)  &
+                   +           skAdj(i,j,n,3,sps2)*skAdj(i,j,n,3,sps2)))
               
               ! Multiply v1 by fact to obtain a nonDimensional
               ! quantity and take tha absolute value of it.
