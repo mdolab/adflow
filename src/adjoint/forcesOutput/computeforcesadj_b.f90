@@ -27,7 +27,7 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
 &  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
 &  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
-&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex)
+&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex, t)
   USE bctypes
   USE blockpointers
   USE communication
@@ -71,6 +71,7 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
   REAL(KIND=REALTYPE) :: rotcenteradj(3), rotrateadj(3), rotrateadjb(3)
   LOGICAL, INTENT(IN) :: secondhalo
   INTEGER(KIND=INTTYPE), INTENT(IN) :: sps
+  REAL(KIND=REALTYPE) :: t
   REAL(KIND=REALTYPE), DIMENSION(0:ib, 0:jb, 0:kb, nw), INTENT(IN) :: &
 &  wadj
   REAL(KIND=REALTYPE) :: wadjb(0:ib, 0:jb, 0:kb, nw)
@@ -104,11 +105,6 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
   REAL(KIND=REALTYPE) :: pinfcorradjb, uinfadj, uinfadjb
   REAL(KIND=REALTYPE) :: veldirfreestreamadj(3), veldirfreestreamadjb(3)
   REAL(KIND=REALTYPE) :: winfadj(nw), winfadjb(nw)
-!(xAdj, &
-!         iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
-!         mm,cFxAdj,cFyAdj,cFzAdj, &
-!         cMxAdj,cMyAdj,cMzAdj,yplusMax,refPoint,CLAdj,CDAdj,  &
-!        nn,level,sps,cFpAdj,cMpAdj)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -183,15 +179,15 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
   CALL GETSURFACENORMALSADJ(xadj, siadj, sjadj, skadj, normadj, iibeg, &
 &                      iiend, jjbeg, jjend, mm, level, nn, sps, &
 &                      righthanded)
-!call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
-!first two arguments needed for time spectral.just set to initial values for the current steady case...
-!  print *,'calling gridvelocities',mm
-  CALL GRIDVELOCITIESFINELEVELFORCESADJ(.false., zero, sps, xadj, sadj, &
+  CALL GRIDVELOCITIESFINELEVELFORCESADJ(.false., t, sps, xadj, sadj, &
 &                                  iibeg, iiend, jjbeg, jjend, i2beg, &
 &                                  i2end, j2beg, j2end, mm, sfaceiadj, &
 &                                  sfacejadj, sfacekadj, machgridadj, &
 &                                  veldirfreestreamadj, rotcenteradj, &
 &                                  rotrateadj, siadj, sjadj, skadj)
+!call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
+!first two arguments needed for time spectral.just set to initial values for the current steady case...
+!  print *,'calling gridvelocities',mm
 !    print *,'calling normal velocities'
   CALL NORMALVELOCITIESALLLEVELSFORCESADJ(sps, mm, sfaceiadj, iibeg, &
 &                                    iiend, jjbeg, jjend, i2beg, i2end, &
@@ -284,12 +280,12 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &                       iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end&
 &                       , secondhalo, mm)
   CALL COMPUTEFORCESPRESSUREADJ_B(wadj, wadjb, padj, padjb)
-  CALL GRIDVELOCITIESFINELEVELFORCESADJ_B(.false., zero, sps, xadj, &
-&                                    xadjb, sadj, sadjb, iibeg, iiend, &
-&                                    jjbeg, jjend, i2beg, i2end, j2beg, &
-&                                    j2end, mm, sfaceiadj, sfacejadj, &
-&                                    sfacekadj, machgridadj, &
-&                                    machgridadjb, veldirfreestreamadj, &
+  CALL GRIDVELOCITIESFINELEVELFORCESADJ_B(.false., t, sps, xadj, xadjb, &
+&                                    sadj, sadjb, iibeg, iiend, jjbeg, &
+&                                    jjend, i2beg, i2end, j2beg, j2end, &
+&                                    mm, sfaceiadj, sfacejadj, sfacekadj&
+&                                    , machgridadj, machgridadjb, &
+&                                    veldirfreestreamadj, &
 &                                    veldirfreestreamadjb, rotcenteradj&
 &                                    , rotrateadj, rotrateadjb, siadj, &
 &                                    sjadj, skadj)

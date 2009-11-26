@@ -15,26 +15,31 @@
 !      ******************************************************************
 !
 SUBROUTINE BCSYMMADJ_B(wadj, wadjb, padj, padjb, normadj, normadjb, &
-&  icell, jcell, kcell, secondhalo)
+&  icell, jcell, kcell, secondhalo, nnn, level, sps, sps2)
   USE bctypes
   USE blockpointers, ONLY : ie, ib, il, je, jb, jl, ke, kb, kl, nbocos&
 &  , gamma, bcfaceid, bctype, bcdata
   USE constants
   USE flowvarrefstate
+  USE inputtimespectral
   USE iteration
   IMPLICIT NONE
 !  enddo nHalo
 !stop
   INTEGER(KIND=INTTYPE) :: icell, jcell, kcell
-  REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3), INTENT(IN) :: &
-&  normadj
-  REAL(KIND=REALTYPE) :: normadjb(nbocos, -2:2, -2:2, 3)
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2), INTENT(IN) :: padj
-  REAL(KIND=REALTYPE) :: padjb(-2:2, -2:2, -2:2)
+  INTEGER(KIND=INTTYPE) :: level, nnn, sps, sps2
+  REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: normadj
+  REAL(KIND=REALTYPE) :: normadjb(nbocos, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), INTENT(IN) :: padj
+  REAL(KIND=REALTYPE) :: padjb(-2:2, -2:2, -2:2, ntimeintervalsspectral)
   LOGICAL, INTENT(IN) :: secondhalo
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw), INTENT(IN) :: &
-&  wadj
-  REAL(KIND=REALTYPE) :: wadjb(-2:2, -2:2, -2:2, nw)
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral), INTENT(IN) :: wadj
+  REAL(KIND=REALTYPE) :: wadjb(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral)
   INTEGER :: ad_from, ad_from0, ad_to, ad_to0, branch
   LOGICAL :: computebc
   REAL(KIND=REALTYPE) :: gamma1(-2:2, -2:2), gamma2(-2:2, -2:2)
@@ -74,6 +79,7 @@ SUBROUTINE BCSYMMADJ_B(wadj, wadjb, padj, padjb, normadj, normadjb, &
 !
 !nw
 !nt1mg,nt2mg
+!nIntervalTimespectral
 !
 !      Subroutine arguments.
 !
@@ -155,7 +161,7 @@ bocos:DO nn=1,nbocos
 &                          kcell, isbeg, jsbeg, ksbeg, isend, jsend, &
 &                          ksend, ibbeg, jbbeg, kbbeg, ibend, jbend, &
 &                          kbend, icbeg, jcbeg, icend, jcend, secondhalo&
-&                         )
+&                          , nnn, level, sps, sps2)
 !(nn,wAdj,pAdj, wAdj1, wAdj2, pAdj1, pAdj2,&
 !     rlvAdj, revAdj,rlvAdj1, rlvAdj2,revAdj1, revAdj2,iOffset,&
 !     jOffset, kOffset,iCell, jCell,kCell,&
@@ -195,13 +201,13 @@ bocos:DO nn=1,nbocos
 ! Store the three components of the unit normal a
 ! bit easier.
 !BCData(nn)%norm(i,j,1)
-            nnx = normadj(nn, ii, jj, 1)
+            nnx = normadj(nn, ii, jj, 1, sps2)
             CALL PUSHREAL8(nny)
 !BCData(nn)%norm(i,j,2)
-            nny = normadj(nn, ii, jj, 2)
+            nny = normadj(nn, ii, jj, 2, sps2)
             CALL PUSHREAL8(nnz)
 !BCData(nn)%norm(i,j,3)
-            nnz = normadj(nn, ii, jj, 3)
+            nnz = normadj(nn, ii, jj, 3, sps2)
             CALL PUSHREAL8(vn)
 !!$                    nnx = BCData(nn)%norm(i,j,1)
 !!$                    nny = BCData(nn)%norm(i,j,2)
@@ -254,11 +260,12 @@ bocos:DO nn=1,nbocos
         END DO
         CALL PUSHINTEGER4(j - 1)
         CALL PUSHINTEGER4(ad_from)
-        CALL PUSHREAL8ARRAY(wadj, 5**3*nw)
+        CALL PUSHREAL8ARRAY(wadj, 5**3*nw*ntimeintervalsspectral)
         CALL REPLACEBCSTATESADJ(nn, wadj0, wadj1, wadj2, wadj3, padj0, &
 &                          padj1, padj2, padj3, rlvadj1, rlvadj2, &
 &                          revadj1, revadj2, icell, jcell, kcell, wadj, &
-&                          padj, rlvadj, revadj, secondhalo)
+&                          padj, rlvadj, revadj, secondhalo, nnn, level&
+&                          , sps, sps2)
         CALL PUSHINTEGER4(3)
       ELSE
         CALL PUSHINTEGER4(2)
@@ -278,12 +285,13 @@ bocos:DO nn=1,nbocos
   DO nn=nbocos,1,-1
     CALL POPINTEGER4(branch)
     IF (.NOT.branch .LT. 3) THEN
-      CALL POPREAL8ARRAY(wadj, 5**3*nw)
+      CALL POPREAL8ARRAY(wadj, 5**3*nw*ntimeintervalsspectral)
       CALL REPLACEBCSTATESADJ_B(nn, wadj0, wadj0b, wadj1, wadj1b, wadj2&
 &                          , wadj3, padj0, padj0b, padj1, padj1b, padj2&
 &                          , padj3, rlvadj1, rlvadj2, revadj1, revadj2, &
 &                          icell, jcell, kcell, wadj, wadjb, padj, padjb&
-&                          , rlvadj, revadj, secondhalo)
+&                          , rlvadj, revadj, secondhalo, nnn, level, sps&
+&                          , sps2)
       CALL POPINTEGER4(ad_from)
       CALL POPINTEGER4(ad_to)
       DO j=ad_to,ad_from,-1
@@ -367,11 +375,14 @@ bocos:DO nn=1,nbocos
           wadj2b(ii, jj, ivz) = wadj2b(ii, jj, ivz) + nnz*tempb
           nnzb = nnzb + wadj2(ii, jj, ivz)*tempb
           CALL POPREAL8(nnz)
-          normadjb(nn, ii, jj, 3) = normadjb(nn, ii, jj, 3) + nnzb
+          normadjb(nn, ii, jj, 3, sps2) = normadjb(nn, ii, jj, 3, sps2) &
+&            + nnzb
           CALL POPREAL8(nny)
-          normadjb(nn, ii, jj, 2) = normadjb(nn, ii, jj, 2) + nnyb
+          normadjb(nn, ii, jj, 2, sps2) = normadjb(nn, ii, jj, 2, sps2) &
+&            + nnyb
           CALL POPREAL8(nnx)
-          normadjb(nn, ii, jj, 1) = normadjb(nn, ii, jj, 1) + nnxb
+          normadjb(nn, ii, jj, 1, sps2) = normadjb(nn, ii, jj, 1, sps2) &
+&            + nnxb
           CALL POPINTEGER4(jj)
           CALL POPINTEGER4(ii)
         END DO
@@ -387,7 +398,8 @@ bocos:DO nn=1,nbocos
 &                          joffset, koffset, icell, jcell, kcell, isbeg&
 &                          , jsbeg, ksbeg, isend, jsend, ksend, ibbeg, &
 &                          jbbeg, kbbeg, ibend, jbend, kbend, icbeg, &
-&                          jcbeg, icend, jcend, secondhalo)
+&                          jcbeg, icend, jcend, secondhalo, nnn, level, &
+&                          sps, sps2)
     END IF
     CALL POPINTEGER4(isbeg)
     CALL POPINTEGER4(jsbeg)

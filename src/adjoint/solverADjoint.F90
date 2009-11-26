@@ -169,7 +169,7 @@
 !      call verifyRAdj(level)
 !stop
 	call verifyResiduals(level)
-return
+!return
 !stop
 !!$        ! Verify the node-based ADjoint residual routine.
 !!$
@@ -191,7 +191,9 @@ return
 !!$        ! Verify the ADjoint routine for the forces
 !!$
 !!$
-!!$	!call verifyForcesAdj(level,sps) 
+         call verifyForcesAdj(level) 
+         call verifyTSStabilityDerivAdj(level)
+return
 !!$!stop	
 !!$        
 !!$	! Verify the force derivatives

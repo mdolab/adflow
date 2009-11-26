@@ -37,7 +37,11 @@
                                           costFuncForceZCoef = 5_intType,&
                                           costFuncMomXCoef = 6_intType,&
                                           costFuncMomYCoef = 7_intType,&
-                                          costFuncMomZCoef = 8_intType
+                                          costFuncMomZCoef = 8_intType,&
+                                          costFuncCmAlpha  = 9_intType,&
+                                          costFuncCm0      = 10_intType,&
+                                          costFuncClAlpha  = 11_intType,&
+                                          costFuncCl0      = 12_intType
 
       ! Cost function names.
 

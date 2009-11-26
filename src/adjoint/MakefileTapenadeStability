@@ -1,24 +1,23 @@
 #     ******************************************************************
 #     *                                                                *
-#     * File:          MakefileResidualMetric                          *
-#     * Author:        Andre C. Marta, Sandy Mader                     *
-#     * Starting date: 08-02-2006                                      *
-#     * Last modified: 05-08-2008                                      *
+#     * File:          MakefileTapenadeForces                          *
+#     * Author:        Sandy Mader                                     *
+#     * Starting date: 11-26-2009                                      *
+#     * Last modified: 11-26-2009                                      *
 #     *                                                                *
 #     ******************************************************************
 
 #     ******************************************************************
 #     *                                                                *
 #     * Description: Makefile to build the differentiated routines of  *
-#     * the SUmb flow residual with respect to both xAdj and wAdj,     *
-#     * including penalty terms, using Tapenade                        *
+#     * the SUmb forces with respect to xAdj using Tapenade            *
 #     *                                                                *
 #     * http://www-sop.inria.fr/tropics/tapenade.html                  *
 #     *                                                                *
 #     * Upon local installation of Tapenade, typing tapenade -help     *
 #     * at the prompt gives the following information:                 *
 #     *                                                                *
-#     * Tapenade - Version 2.2 (r2308) - Java 1.6.0_06                 *
+#     * Tapenade - Version 2.2 (r1239) - Java 1.5.0_07                 *
 #     *                                                                *
 #     *  Builds a differentiated program.                              *
 #     *                                                                *
@@ -86,16 +85,10 @@
 #     *                                                                *
 #     ******************************************************************
 
-#JAVA_HOME = /nfs/opal/home/mader/jdk1.5.0_06
-#JAVA_HOME = /home/guysmiley/acmarta/software/tapenade/jre1.5.0_07
 #JAVA_HOME =/home/mader/UTIAS/SRC/jdk1.6.0_06
-#TAPENADE_HOME = /nfs/opal/home/mader/SRC/Tapenade/tapenade2.2
-#TAPENADE_HOME = /home/guysmiley/acmarta/software/tapenade/tapenade2.2
+
 #TAPENADE_HOME = /home/mader/UTIAS/SRC/tapenade2.2.4
 
-#SOLVER_DIRSRC = /nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src
-#SOLVER_DIRSRC = /home/guysmiley/acmarta/SVN/SUmbVertex/src
-#SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/SUmbVertex/trunk/src
 SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
 #SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
 
@@ -109,25 +102,23 @@ TAPENADE_PARSERFILESEPARATOR = "/"
 
 # Dependent output variables (separator: white space, default: all)
 
-TAPENADE_OUTVARS = "dwadj"
+TAPENADE_OUTVARS = "cl0 cmz0 dcldalpha dcmzdalpha"
 
 # Independent input variables (separator: white space, default: all)
 
-#TAPENADE_VARS = "xadj wadj alphaadj machadj"
-TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj machcoefadj machGridAdj rotRateAdj xBlockCornerAdj"
+TAPENADE_VARS = "CLAdj CDAdj cfxadj cfyadj cfzadj CmxAdj CmyAdj CmzAdj"
 
 # Name of the top routine
 
-TAPENADE_HEADROUTINE = "computeRAdjoint"
+TAPENADE_HEADROUTINE = "computeTSStabilityDerivAdj"
 
 # Differentiation mode
 
 TAPENADE_MODE = -reverse
-#TAPENADE_MODE = -forward
 
 # Output directory
 
-TAPENADE_OUTDIR = $(SOLVER_DIRSRC)/adjoint/residualTapenade
+TAPENADE_OUTDIR = $(SOLVER_DIRSRC)/adjoint/stabilityTapenade/
 
 # Integer, double and real precision (bytes)
 
@@ -139,11 +130,11 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 #     * The subdirectories where the sources are located.              *
 #     *                                                                *
 #     ******************************************************************
-
-TAPENADE_DIRSRC_RES = $(SOLVER_DIRSRC)/adjoint/residualInput
-#TAPENADE_DIRSRC_MET = $(SOLVER_DIRSRC)/adjoint/metricInput
-TAPENADE_DIRMOD     = $(SOLVER_DIRSRC)/modules
-TAPENADE_DIRUTILS     = $(SOLVER_DIRSRC)/utils
+TAPENADE_DIRSRC1 = $(SOLVER_DIRSRC)/adjoint/residualInput
+TAPENADE_DIRSRC  = $(SOLVER_DIRSRC)/adjoint
+TAPENADE_DIRSRC3 = $(SOLVER_DIRSRC)/adjoint/stabilityInput
+TAPENADE_DIRMOD  = $(SOLVER_DIRSRC)/modules
+SUMB_MODDIR      = $(SOLVER_DIRSRC)/modules
 
 TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
 
@@ -153,76 +144,18 @@ TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
 #     *                                                                *
 #     ******************************************************************
 
-TAPENADE_SRC_COMMON = $(TAPENADE_DIRSRC_RES)/residualAdj.f90 \
-		      $(TAPENADE_DIRSRC_RES)/computeRAdj.f90 
+TAPENADE_SRC = $(TAPENADE_DIRSRC3)/computeTSStabilityDerivAdj.f90\
+               $(SOLVER_DIRSRC)/stabilityDerivatives/computeLeastSquaresRegression.f90
 
-#TAPENADE_SRC_METRIC = $(TAPENADE_DIRSRC_MET)/computedRAdj.f90 \
-#	       $(TAPENADE_DIRSRC_MET)/correctMetricDegenerateFacesAdj.f90 \
-#	       $(TAPENADE_DIRSRC_MET)/metricAdj.f90
-
-TAPENADE_SRC_SOLVER = $(TAPENADE_DIRSRC_RES)/applyAllBCAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/bcFarfieldAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/bcSymmAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/checkOverlapAdj.f90\
-	       $(TAPENADE_DIRSRC_RES)/checkXOverlapAdj.f90\
-	       $(TAPENADE_DIRSRC_RES)/computePressureAdj.f90 \
-               $(TAPENADE_DIRSRC_RES)/rotMatrixRigidBodyAdj.f90\
-               $(TAPENADE_DIRSRC_RES)/derivativeRigidRotAngleAdj.f90\
-               $(TAPENADE_DIRSRC_RES)/derivativeRotMatrixRigidAdj.f90\
-	       $(TAPENADE_DIRSRC_RES)/etotArrayAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/extractBCStatesAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/extrapolate2ndHaloAdj.f90 \
-               $(TAPENADE_DIRSRC_RES)/gridVelocitiesFineLevelAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/initresAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/inviscidCentralFluxAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/inviscidUpwindFluxAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/inviscidDissFluxScalarAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/leftRightStateAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/metricAdj.f90 \
-               $(TAPENADE_DIRSRC_RES)/normalVelocitiesAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/replaceBCStatesAdj.f90\
-	       $(TAPENADE_DIRSRC_RES)/riemannFluxAdj.f90\
-               $(TAPENADE_DIRSRC_RES)/rigidRotAngleAdj.f90      \
-	       $(TAPENADE_DIRSRC_RES)/bcEulerWallAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/adjustInflowAngleAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/checkInputParamAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/referenceStateAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/setFlowInfinityStateAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/getDirAngle.f90 \
-	       $(TAPENADE_DIRSRC_RES)/getDirVector.f90 \
-	       $(TAPENADE_DIRSRC_RES)/computeGammaAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/timeStepAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/vectorRotation.f90\
-	       $(TAPENADE_DIRSRC_RES)/xhaloAdj.f90\
-	       $(TAPENADE_DIRUTILS)/TSalpha.f90\
-	       $(TAPENADE_DIRUTILS)/TSBeta.f90\
-	       $(TAPENADE_DIRUTILS)/TSMach.f90	
-
-
-
-TAPENADE_MOD = $(TAPENADE_DIRSRC_RES)/block.f90 \
-	       $(TAPENADE_DIRSRC_RES)/constants.f90 \
-	       $(TAPENADE_DIRSRC_RES)/flowVarRefState.f90 \
-	       $(TAPENADE_DIRSRC_RES)/precision.f90 \
-	       $(TAPENADE_DIRMOD)/inputParam.f90 \
-	       $(TAPENADE_DIRMOD)/BCTypes.f90 \
-	       $(TAPENADE_DIRMOD)/blockPointers.f90 \
-	       $(TAPENADE_DIRMOD)/iteration.f90 \
-	       $(TAPENADE_DIRMOD)/monitor.f90 \
-	       $(TAPENADE_DIRSRC_RES)/cgnsGrid.f90 \
-	       $(TAPENADE_DIRSRC_RES)/communication.f90 \
+TAPENADE_MOD = $(TAPENADE_DIRSRC1)/inputParam.f90 \
+               $(TAPENADE_DIRSRC1)/constants.f90 \
+	       $(TAPENADE_DIRSRC1)/communication.f90 \
 	       $(TAPENADE_DIRMOD)/section.f90\
-	       $(TAPENADE_DIRSRC_RES)/CpCurveFits.f90\
-	       $(TAPENADE_DIRSRC_RES)/su_mpi.f90
-#	       $(TAPENADE_DIRSRC_RES)/terminate.f90
+	       $(TAPENADE_DIRSRC1)/precision.f90
+               
 
-#	       $(TAPENADE_DIRSRC_RES)/inputParam.f90 \
 
-#TAPENADE_SRC_ALL = $(TAPENADE_SRC_COMMON) $(TAPENADE_SRC_METRIC) \
-#		   $(TAPENADE_SRC_SOLVER) $(TAPENADE_SRC_MAGNETIC) \
-#		   $(TAPENADE_MOD)
-TAPENADE_SRC_ALL = $(TAPENADE_SRC_COMMON) $(TAPENADE_SRC_SOLVER)\
-	  	   $(TAPENADE_MOD)
+TAPENADE_SRC_ALL = $(TAPENADE_SRC) $(TAPENADE_MOD)
 
 #     ******************************************************************
 #     *                                                                *
@@ -232,7 +165,7 @@ TAPENADE_SRC_ALL = $(TAPENADE_SRC_COMMON) $(TAPENADE_SRC_SOLVER)\
 
 default:
 	@echo "TAPENADE - parsing and generating differentiated code"
-	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
+	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30  -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
 	@echo "deleting some unnecessary files..."
 	@rm -f $(TAPENADE_OUTDIR)/*__.f90 $(TAPENADE_OUTDIR)/*~
 
@@ -245,5 +178,5 @@ clean:
 			echo; \
 			echo "making $@ in $$subdir"; \
 			echo; \
-			(cd $$subdir && rm -f *_b.f90 *_d.f90  *.msg *~) || exit 1; \
+			(cd $$subdir && rm -f *_b.f90 *.msg *~) || exit 1; \
 		done

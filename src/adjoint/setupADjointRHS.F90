@@ -110,9 +110,14 @@
               costFuncMomYCoef, &
               costFuncMomZCoef)
 
-          call setupADjointRHSAeroCoeff(level,costFunction)
-!	call setupADjointRHSAeroCoeff(level,sps,costFunction)
+           call setupADjointRHSAeroCoeff(level,costFunction)
+           !	call setupADjointRHSAeroCoeff(level,sps,costFunction)
 
+        case(costFuncCmAlpha, &
+             costFuncCm0,&
+             costFuncClAlpha,&
+             costFuncCl0)
+           call setupADjointRHSStability(level,costFunction)
         case default
           write(*,*) "Invalid cost function ", costFunction
           stop

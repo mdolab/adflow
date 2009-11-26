@@ -52,7 +52,7 @@ emacs bceulerwallforcesadj_b.f90 and comment out + ovgm1*tmpb (approx line 591)
 
    5.2) cd residualOutput
 
-emacs computepressureadj_b.f90        >remove "gammaconstantb = 0.0" from the end
+emacs computepressureadj_b.f90        >remove "gammaconstantb = 0.0" from the end fixed!
 
 emacs eintarray_b.f90               > remove "gammaconstantb = 0.0 " from the end
 
@@ -66,7 +66,7 @@ emacs riemannfluxadj_b.f90        > remove "rfilb = 0.0" from end. fixed
 
 emacs referencestateadj_b.f90     > remove "    gammaconstantb = 0.0
 					    rgasdimb = 0.0
-					    tempfreestreamb = 0.0" from end
+					    tempfreestreamb = 0.0" from end. fixed
 emacs gridvelocitiesfineleveladj_b.f90 >remove   coscoeffourzrotb(:) = 0.0
   sincoeffourxrotb(:) = 0.0
   sincoeffouryrotb(:) = 0.0

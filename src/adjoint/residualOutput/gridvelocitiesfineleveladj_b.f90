@@ -3,13 +3,18 @@
 !  
 !  Differentiation of gridvelocitiesfineleveladj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: rotrateadj xadj
-!                machgridadj skadj sjadj veldirfreestreamadj siadj
-!                coscoeffouryrot coscoeffourxrot coefpolzrot omegafourzrot
-!                coefpolyrot omegafouryrot coefpolxrot omegafourxrot
-!                sincoeffourzrot sincoeffouryrot sincoeffourxrot
+!                machgridadj sfacekadj skadj sfacejadj sjadj sfaceiadj
+!                sadj veldirfreestreamadj siadj sincoeffouralpha
+!                coscoeffouryrot sincoeffourbeta coscoeffourxrot
+!                coefpolmach coefpolzrot omegafourmach omegafouralpha
+!                omegafourzrot coefpolyrot omegafouryrot coefpolxrot
+!                coefpolalpha sincoeffourmach omegafourxrot sincoeffourzrot
+!                coscoeffourbeta rotpoint sincoeffouryrot sincoeffourxrot
+!                coscoeffouralpha coefpolbeta omegafourbeta coscoeffourmach
 !                coscoeffourzrot
-!   of linear combination of output variables: rotrateadj sfacekadj
-!                skadj sfacejadj sjadj sfaceiadj sadj siadj
+!   of linear combination of output variables: rotrateadj xadj
+!                machgridadj sfacekadj skadj sfacejadj sjadj sfaceiadj
+!                sadj veldirfreestreamadj siadj
 !
 !      ******************************************************************
 !      *                                                                *
@@ -25,49 +30,68 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 &  rotrateadj, rotrateadjb, sadj, sadjb, sfaceiadj, sfaceiadjb, &
 &  sfacejadj, sfacejadjb, sfacekadj, sfacekadjb, machgridadj, &
 &  machgridadjb, veldirfreestreamadj, veldirfreestreamadjb, icell, jcell&
-&  , kcell)
+&  , kcell, nn, level, sps2)
   USE blockpointers
   USE cgnsgrid
   USE flowvarrefstate
   USE inputmotion
+  USE inputphysics
+  USE inputtimespectral
+  USE inputtsstabderiv
   USE inputunsteady
   USE iteration
+  USE monitor
   IMPLICIT NONE
 !      enddo domains
   INTEGER(KIND=INTTYPE), INTENT(IN) :: icell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: jcell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: kcell
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: level
   REAL(KIND=REALTYPE), INTENT(IN) :: machgridadj
   REAL(KIND=REALTYPE) :: machgridadjb
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: nn
   REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: rotcenteradj
   REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: rotrateadj
   REAL(KIND=REALTYPE) :: rotrateadjb(3)
-  REAL(KIND=REALTYPE) :: sadj(-2:2, -2:2, -2:2, 3), sadjb(-2:2, -2:2, -2&
-&  :2, 3)
-  REAL(KIND=REALTYPE) :: sfaceiadj(-2:2, -2:2, -2:2), sfaceiadjb(-2:2, -&
-&  2:2, -2:2), sfacejadj(-2:2, -2:2, -2:2), sfacejadjb(-2:2, -2:2, -2:2)&
-&  , sfacekadj(-2:2, -2:2, -2:2), sfacekadjb(-2:2, -2:2, -2:2)
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  siadj
-  REAL(KIND=REALTYPE) :: siadjb(-3:2, -3:2, -3:2, 3), sjadjb(-3:2, -3:2&
-&  , -3:2, 3), skadjb(-3:2, -3:2, -3:2, 3)
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  sjadj
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  skadj
+  REAL(KIND=REALTYPE) :: sadj(-2:2, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral), sadjb(-2:2, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE) :: sfaceiadj(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), sfaceiadjb(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), sfacejadj(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), sfacejadjb(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), sfacekadj(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), sfacekadjb(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: siadj
+  REAL(KIND=REALTYPE) :: siadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), sjadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), skadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: sjadj
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: skadj
   INTEGER(KIND=INTTYPE), INTENT(IN) :: sps
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: sps2
   REAL(KIND=REALTYPE), DIMENSION(*), INTENT(IN) :: t
   LOGICAL, INTENT(IN) :: useoldcoor
   REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: veldirfreestreamadj
   REAL(KIND=REALTYPE) :: veldirfreestreamadjb(3)
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  xadj
-  REAL(KIND=REALTYPE) :: xadjb(-3:2, -3:2, -3:2, 3)
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: xadj
+  REAL(KIND=REALTYPE) :: xadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral)
   INTEGER :: ad_from, ad_from0, ad_from1, ad_from2, ad_from3, ad_from4, &
 &  ad_to, ad_to0, ad_to1, ad_to2, ad_to3, ad_to4, branch
+  REAL(KIND=REALTYPE) :: alpha, beta
+  REAL(KIND=REALTYPE) :: derivrotationmatrixadj(3, 3)
+  REAL(KIND=REALTYPE) :: dragdir(3), liftdir(3), veldir(3)
   INTEGER(KIND=INTTYPE) :: i, ii, iie, j, jje, k, kke
   INTEGER(KIND=INTTYPE) :: iend, istart, jend, jstart, kend, kstart
-  INTEGER(KIND=INTTYPE) :: mm, nn
+  INTEGER(KIND=INTTYPE) :: liftindex
+  INTEGER(KIND=INTTYPE) :: mm
   REAL(KIND=REALTYPE) :: oneover4dt, oneover8dt
   REAL(KIND=REALTYPE) :: rotationmatrixadj(3, 3)
   REAL(KIND=REALTYPE) :: rotationpointadj(3), rotpointadj(3)
@@ -75,6 +99,10 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
   REAL(KIND=REALTYPE), DIMENSION(:, :, :), POINTER :: ss, xx
   REAL(KIND=REALTYPE) :: ssadj(-3:2, -3:2, 3), ssadjb(-3:2, -3:2, 3), &
 &  xxadj(-3:2, -3:2, 3), xxadjb(-3:2, -3:2, 3)
+  REAL(KIND=REALTYPE) :: intervalmach, tnew, told
+  REAL(KIND=REALTYPE) :: TSALPHA
+  REAL(KIND=REALTYPE) :: TSBETA
+  REAL(KIND=REALTYPE) :: TSMACH
   REAL(KIND=REALTYPE) :: ainf, velxgrid, velxgridb, velygrid, velygridb&
 &  , velzgrid, velzgridb
   REAL(KIND=REALTYPE) :: velxgrid0, velxgrid0b, velygrid0, velygrid0b, &
@@ -98,6 +126,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 !      *                                                                *
 !      ******************************************************************
 !
+!nTimeIntervalsSpectral
 !
 !      Subroutine arguments.
 !
@@ -109,6 +138,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 !      Local variables.
 !
 !real(kind=realType), dimension(:,:), pointer :: sFace
+!function definitions
 !
 !      ******************************************************************
 !      *                                                                *
@@ -132,8 +162,81 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 ! point; needed for velocity due to the rigid body rotation of
 ! the entire grid. It is assumed that the rigid body motion of
 ! the grid is only specified if there is only 1 section present.
-  CALL DERIVATIVEROTMATRIXRIGIDADJ(rotationmatrixadj, rotationpointadj, &
-&                             rotpointadj, t(1))
+!this may need to be modified later...(perhaps put in copy stencil?)
+  rotpointadj = rotpoint
+  CALL DERIVATIVEROTMATRIXRIGIDADJ(derivrotationmatrixadj, &
+&                             rotationpointadj, rotpointadj, t(1))
+!compute the rotation matrix to update the velocities for the time
+!spectral stability derivative case...
+  IF (tsstability) THEN
+! Determine the time values of the old and new time level.
+! It is assumed that the rigid body rotation of the mesh is only
+! used when only 1 section is present.
+    tnew = timeunsteady + timeunsteadyrestart
+    told = tnew - t(1)
+!print *,'Time',t(1)
+    IF (tspmode .OR. tsqmode .OR. tsrmode) THEN
+! Compute the rotation matrix of the rigid body rotation as
+! well as the rotation point; the latter may vary in time due
+! to rigid body translation.
+      CALL ROTMATRIXRIGIDBODYADJ(tnew, told, rotationmatrixadj, &
+&                           rotationpointadj)
+      velxgrid0 = rotationmatrixadj(1, 1)*velxgrid0 + rotationmatrixadj(&
+&        1, 2)*velygrid0 + rotationmatrixadj(1, 3)*velzgrid0
+      velygrid0 = rotationmatrixadj(2, 1)*velxgrid0 + rotationmatrixadj(&
+&        2, 2)*velygrid0 + rotationmatrixadj(2, 3)*velzgrid0
+      velzgrid0 = rotationmatrixadj(3, 1)*velxgrid0 + rotationmatrixadj(&
+&        3, 2)*velygrid0 + rotationmatrixadj(3, 3)*velzgrid0
+      CALL PUSHINTEGER4(1)
+    ELSE IF (tsalphamode) THEN
+! get the baseline alpha and determine the liftIndex
+      CALL GETDIRANGLE(veldir, liftdir, liftindex, alpha, beta)
+!Determine the alpha for this time instance
+      alpha = TSALPHA(degreepolalpha, coefpolalpha, degreefouralpha, &
+&        omegafouralpha, coscoeffouralpha, sincoeffouralpha, t(1))
+!Determine the grid velocity for this alpha
+      CALL ADJUSTINFLOWANGLEADJ(alpha, beta, veldir, liftdir, dragdir, &
+&                          liftindex)
+!do I need to update the lift direction and drag direction as well?
+!set the effictive grid velocity for this time interval
+      velxgrid0 = ainf*machgridadj*(-veldir(1))
+      velygrid0 = ainf*machgridadj*(-veldir(2))
+      velzgrid0 = ainf*machgridadj*(-veldir(3))
+      CALL PUSHINTEGER4(2)
+    ELSE IF (tsbetamode) THEN
+! get the baseline alpha and determine the liftIndex
+      CALL GETDIRANGLE(veldirfreestream, liftdirection, liftindex, alpha&
+&                 , beta)
+!Determine the alpha for this time instance
+      alpha = TSBETA(degreepolbeta, coefpolbeta, degreefourbeta, &
+&        omegafourbeta, coscoeffourbeta, sincoeffourbeta, t(1))
+!Determine the grid velocity for this alpha
+      CALL ADJUSTINFLOWANGLEADJ(alpha, beta, veldir, liftdir, dragdir, &
+&                          liftindex)
+!do I need to update the lift direction and drag direction as well?
+!set the effictive grid velocity for this time interval
+      velxgrid0 = ainf*machgridadj*(-veldir(1))
+      velygrid0 = ainf*machgridadj*(-veldir(2))
+      velzgrid0 = ainf*machgridadj*(-veldir(3))
+      CALL PUSHINTEGER4(3)
+    ELSE IF (tsmachmode) THEN
+!determine the mach number at this time interval
+      intervalmach = TSMACH(degreepolmach, coefpolmach, degreefourmach, &
+&        omegafourmach, coscoeffourmach, sincoeffourmach, t(1))
+!set the effective grid velocity
+      velxgrid0 = ainf*(intervalmach+machgridadj)*(-veldirfreestreamadj(&
+&        1))
+      velygrid0 = ainf*(intervalmach+machgridadj)*(-veldirfreestreamadj(&
+&        2))
+      velzgrid0 = ainf*(intervalmach+machgridadj)*(-veldirfreestreamadj(&
+&        3))
+      CALL PUSHINTEGER4(5)
+    ELSE
+      CALL PUSHINTEGER4(4)
+    END IF
+  ELSE
+    CALL PUSHINTEGER4(0)
+  END IF
 !!$!       ! Loop over the number of local blocks.
 !!$!
 !!$!       domains: do nn=1,nDom!
@@ -146,7 +249,6 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
   IF (blockismoving) THEN
 ! Determine the situation we are having here.
     IF (useoldcoor) THEN
-      xadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
       velxgrid0b = 0.0
       velzgrid0b = 0.0
       velygrid0b = 0.0
@@ -172,11 +274,17 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 !subtract off the rotational velocity of the center of the grid
 ! to account for the added overall velocity.
       velxgrid = velxgrid0 + 1*(rotrateadj(2)*rotcenteradj(3)-rotrateadj&
-&        (3)*rotcenteradj(2))
+&        (3)*rotcenteradj(2)) + derivrotationmatrixadj(1, 1)*rotpointadj&
+&        (1) + derivrotationmatrixadj(1, 2)*rotpointadj(2) + &
+&        derivrotationmatrixadj(1, 3)*rotpointadj(3)
       velygrid = velygrid0 + 1*(rotrateadj(3)*rotcenteradj(1)-rotrateadj&
-&        (1)*rotcenteradj(3))
+&        (1)*rotcenteradj(3)) + derivrotationmatrixadj(2, 1)*rotpointadj&
+&        (1) + derivrotationmatrixadj(2, 2)*rotpointadj(2) + &
+&        derivrotationmatrixadj(2, 3)*rotpointadj(3)
       velzgrid = velzgrid0 + 1*(rotrateadj(1)*rotcenteradj(2)-rotrateadj&
-&        (2)*rotcenteradj(1))
+&        (2)*rotcenteradj(1)) + derivrotationmatrixadj(3, 1)*rotpointadj&
+&        (1) + derivrotationmatrixadj(3, 2)*rotpointadj(2) + &
+&        derivrotationmatrixadj(3, 3)*rotpointadj(3)
 !
 !            ************************************************************
 !            *                                                          *
@@ -206,18 +314,18 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 !!$                 do i=1,ie
 ! Determine the coordinates of the cell center,
 ! which are stored in xc.
-            xc(1) = eighth*(xadj(i-1, j-1, k-1, 1)+xadj(i, j-1, k-1, 1)+&
-&              xadj(i-1, j, k-1, 1)+xadj(i, j, k-1, 1)+xadj(i-1, j-1, k&
-&              , 1)+xadj(i, j-1, k, 1)+xadj(i-1, j, k, 1)+xadj(i, j, k, &
-&              1))
-            xc(2) = eighth*(xadj(i-1, j-1, k-1, 2)+xadj(i, j-1, k-1, 2)+&
-&              xadj(i-1, j, k-1, 2)+xadj(i, j, k-1, 2)+xadj(i-1, j-1, k&
-&              , 2)+xadj(i, j-1, k, 2)+xadj(i-1, j, k, 2)+xadj(i, j, k, &
-&              2))
-            xc(3) = eighth*(xadj(i-1, j-1, k-1, 3)+xadj(i, j-1, k-1, 3)+&
-&              xadj(i-1, j, k-1, 3)+xadj(i, j, k-1, 3)+xadj(i-1, j-1, k&
-&              , 3)+xadj(i, j-1, k, 3)+xadj(i-1, j, k, 3)+xadj(i, j, k, &
-&              3))
+            xc(1) = eighth*(xadj(i-1, j-1, k-1, 1, sps2)+xadj(i, j-1, k-&
+&              1, 1, sps2)+xadj(i-1, j, k-1, 1, sps2)+xadj(i, j, k-1, 1&
+&              , sps2)+xadj(i-1, j-1, k, 1, sps2)+xadj(i, j-1, k, 1, &
+&              sps2)+xadj(i-1, j, k, 1, sps2)+xadj(i, j, k, 1, sps2))
+            xc(2) = eighth*(xadj(i-1, j-1, k-1, 2, sps2)+xadj(i, j-1, k-&
+&              1, 2, sps2)+xadj(i-1, j, k-1, 2, sps2)+xadj(i, j, k-1, 2&
+&              , sps2)+xadj(i-1, j-1, k, 2, sps2)+xadj(i, j-1, k, 2, &
+&              sps2)+xadj(i-1, j, k, 2, sps2)+xadj(i, j, k, 2, sps2))
+            xc(3) = eighth*(xadj(i-1, j-1, k-1, 3, sps2)+xadj(i, j-1, k-&
+&              1, 3, sps2)+xadj(i-1, j, k-1, 3, sps2)+xadj(i, j, k-1, 3&
+&              , sps2)+xadj(i-1, j-1, k, 3, sps2)+xadj(i, j-1, k, 3, &
+&              sps2)+xadj(i-1, j, k, 3, sps2)+xadj(i, j, k, 3, sps2))
             CALL PUSHREAL8(xxc(1))
 ! Determine the coordinates relative to the
 ! center of rotation.
@@ -292,21 +400,21 @@ loopdirection:DO mm=1,3
           SELECT CASE  (mm) 
           CASE (1_intType) 
 ! normals in i-direction
-            xxadj = xadj(i, :, :, :)
+            xxadj = xadj(i, :, :, :, sps2)
             CALL PUSHREAL8ARRAY(ssadj, 6**2*3)
-            ssadj = siadj(i, :, :, :)
+            ssadj = siadj(i, :, :, :, sps2)
             CALL PUSHINTEGER4(1)
           CASE (2_intType) 
 ! normals in j-direction
-            xxadj = xadj(:, i, :, :)
+            xxadj = xadj(:, i, :, :, sps2)
             CALL PUSHREAL8ARRAY(ssadj, 6**2*3)
-            ssadj = sjadj(:, i, :, :)
+            ssadj = sjadj(:, i, :, :, sps2)
             CALL PUSHINTEGER4(2)
           CASE (3_intType) 
 ! normals in k-direction
-            xxadj = xadj(:, :, i, :)
+            xxadj = xadj(:, :, i, :, sps2)
             CALL PUSHREAL8ARRAY(ssadj, 6**2*3)
-            ssadj = skadj(:, :, i, :)
+            ssadj = skadj(:, :, i, :, sps2)
             CALL PUSHINTEGER4(3)
           CASE DEFAULT
             CALL PUSHINTEGER4(0)
@@ -364,17 +472,17 @@ loopdirection:DO mm=1,3
 ! Determine the total velocity of the cell face.
 ! This is a combination of rotation speed of this
 ! block and the entire rigid body rotation.
-              sc(1) = sc(1) + velxgrid + rotationmatrixadj(1, 1)*xxc(1) &
-&                + rotationmatrixadj(1, 2)*xxc(2) + rotationmatrixadj(1&
-&                , 3)*xxc(3)
+              sc(1) = sc(1) + velxgrid + derivrotationmatrixadj(1, 1)*&
+&                xxc(1) + derivrotationmatrixadj(1, 2)*xxc(2) + &
+&                derivrotationmatrixadj(1, 3)*xxc(3)
               CALL PUSHREAL8(sc(2))
-              sc(2) = sc(2) + velygrid + rotationmatrixadj(2, 1)*xxc(1) &
-&                + rotationmatrixadj(2, 2)*xxc(2) + rotationmatrixadj(2&
-&                , 3)*xxc(3)
+              sc(2) = sc(2) + velygrid + derivrotationmatrixadj(2, 1)*&
+&                xxc(1) + derivrotationmatrixadj(2, 2)*xxc(2) + &
+&                derivrotationmatrixadj(2, 3)*xxc(3)
               CALL PUSHREAL8(sc(3))
-              sc(3) = sc(3) + velzgrid + rotationmatrixadj(3, 1)*xxc(1) &
-&                + rotationmatrixadj(3, 2)*xxc(2) + rotationmatrixadj(3&
-&                , 3)*xxc(3)
+              sc(3) = sc(3) + velzgrid + derivrotationmatrixadj(3, 1)*&
+&                xxc(1) + derivrotationmatrixadj(3, 2)*xxc(2) + &
+&                derivrotationmatrixadj(3, 3)*xxc(3)
 ! Store the dot product of grid velocity sc and
 ! the normal ss in sFace.
             END DO
@@ -397,7 +505,6 @@ loopdirection:DO mm=1,3
         CALL PUSHINTEGER4(i - 1)
         CALL PUSHINTEGER4(ad_from2)
       END DO loopdirection
-      xadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
       ssadjb(-3:2, -3:2, 1:3) = 0.0
       velygridb = 0.0
       xcb(1:3) = 0.0
@@ -414,15 +521,15 @@ loopdirection:DO mm=1,3
           CALL POPINTEGER4(branch)
           IF (branch .LT. 3) THEN
             IF (.NOT.branch .LT. 2) THEN
-              sfaceadjb = sfaceadjb + sfaceiadjb(i, :, :)
-              sfaceiadjb(i, :, :) = 0.0
+              sfaceadjb = sfaceadjb + sfaceiadjb(i, :, :, sps2)
+              sfaceiadjb(i, :, :, sps2) = 0.0
             END IF
           ELSE IF (branch .LT. 4) THEN
-            sfaceadjb = sfaceadjb + sfacejadjb(:, i, :)
-            sfacejadjb(:, i, :) = 0.0
+            sfaceadjb = sfaceadjb + sfacejadjb(:, i, :, sps2)
+            sfacejadjb(:, i, :, sps2) = 0.0
           ELSE
-            sfaceadjb = sfaceadjb + sfacekadjb(:, :, i)
-            sfacekadjb(:, :, i) = 0.0
+            sfaceadjb = sfaceadjb + sfacekadjb(:, :, i, sps2)
+            sfacekadjb(:, :, i, sps2) = 0.0
           END IF
           CALL POPINTEGER4(ad_from3)
           CALL POPINTEGER4(ad_to3)
@@ -439,19 +546,19 @@ loopdirection:DO mm=1,3
               sfaceadjb(j, k) = 0.0
               CALL POPREAL8(sc(3))
               velzgridb = velzgridb + scb(3)
-              xxcb(1) = xxcb(1) + rotationmatrixadj(3, 1)*scb(3)
-              xxcb(2) = xxcb(2) + rotationmatrixadj(3, 2)*scb(3)
-              xxcb(3) = xxcb(3) + rotationmatrixadj(3, 3)*scb(3)
+              xxcb(1) = xxcb(1) + derivrotationmatrixadj(3, 1)*scb(3)
+              xxcb(2) = xxcb(2) + derivrotationmatrixadj(3, 2)*scb(3)
+              xxcb(3) = xxcb(3) + derivrotationmatrixadj(3, 3)*scb(3)
               CALL POPREAL8(sc(2))
               velygridb = velygridb + scb(2)
-              xxcb(1) = xxcb(1) + rotationmatrixadj(2, 1)*scb(2)
-              xxcb(2) = xxcb(2) + rotationmatrixadj(2, 2)*scb(2)
-              xxcb(3) = xxcb(3) + rotationmatrixadj(2, 3)*scb(2)
+              xxcb(1) = xxcb(1) + derivrotationmatrixadj(2, 1)*scb(2)
+              xxcb(2) = xxcb(2) + derivrotationmatrixadj(2, 2)*scb(2)
+              xxcb(3) = xxcb(3) + derivrotationmatrixadj(2, 3)*scb(2)
               CALL POPREAL8(sc(1))
               velxgridb = velxgridb + scb(1)
-              xxcb(1) = xxcb(1) + rotationmatrixadj(1, 1)*scb(1)
-              xxcb(2) = xxcb(2) + rotationmatrixadj(1, 2)*scb(1)
-              xxcb(3) = xxcb(3) + rotationmatrixadj(1, 3)*scb(1)
+              xxcb(1) = xxcb(1) + derivrotationmatrixadj(1, 1)*scb(1)
+              xxcb(2) = xxcb(2) + derivrotationmatrixadj(1, 2)*scb(1)
+              xxcb(3) = xxcb(3) + derivrotationmatrixadj(1, 3)*scb(1)
               CALL POPREAL8(xxc(3))
               xcb(3) = xcb(3) + xxcb(3)
               xxcb(3) = 0.0
@@ -512,21 +619,22 @@ loopdirection:DO mm=1,3
           IF (branch .LT. 2) THEN
             IF (.NOT.branch .LT. 1) THEN
               CALL POPREAL8ARRAY(ssadj, 6**2*3)
-              siadjb(i, :, :, :) = siadjb(i, :, :, :) + ssadjb
-              xadjb(i, :, :, :) = xadjb(i, :, :, :) + xxadjb
+              siadjb(i, :, :, :, sps2) = siadjb(i, :, :, :, sps2) + &
+&                ssadjb
+              xadjb(i, :, :, :, sps2) = xadjb(i, :, :, :, sps2) + xxadjb
               ssadjb(-3:2, -3:2, 1:3) = 0.0
               xxadjb(-3:2, -3:2, 1:3) = 0.0
             END IF
           ELSE IF (branch .LT. 3) THEN
             CALL POPREAL8ARRAY(ssadj, 6**2*3)
-            sjadjb(:, i, :, :) = sjadjb(:, i, :, :) + ssadjb
-            xadjb(:, i, :, :) = xadjb(:, i, :, :) + xxadjb
+            sjadjb(:, i, :, :, sps2) = sjadjb(:, i, :, :, sps2) + ssadjb
+            xadjb(:, i, :, :, sps2) = xadjb(:, i, :, :, sps2) + xxadjb
             ssadjb(-3:2, -3:2, 1:3) = 0.0
             xxadjb(-3:2, -3:2, 1:3) = 0.0
           ELSE
             CALL POPREAL8ARRAY(ssadj, 6**2*3)
-            skadjb(:, :, i, :) = skadjb(:, :, i, :) + ssadjb
-            xadjb(:, :, i, :) = xadjb(:, :, i, :) + xxadjb
+            skadjb(:, :, i, :, sps2) = skadjb(:, :, i, :, sps2) + ssadjb
+            xadjb(:, :, i, :, sps2) = xadjb(:, :, i, :, sps2) + xxadjb
             ssadjb(-3:2, -3:2, 1:3) = 0.0
             xxadjb(-3:2, -3:2, 1:3) = 0.0
           END IF
@@ -541,33 +649,33 @@ loopdirection:DO mm=1,3
           CALL POPINTEGER4(ad_from1)
           CALL POPINTEGER4(ad_to1)
           DO i=ad_to1,ad_from1,-1
-            scb(3) = scb(3) + sadjb(i, j, k, 3)
-            velzgridb = velzgridb + sadjb(i, j, k, 3)
-            xxcb(1) = xxcb(1) + rotationmatrixadj(3, 1)*sadjb(i, j, k, 3&
-&              )
-            xxcb(2) = xxcb(2) + rotationmatrixadj(3, 2)*sadjb(i, j, k, 3&
-&              )
-            xxcb(3) = xxcb(3) + rotationmatrixadj(3, 3)*sadjb(i, j, k, 3&
-&              )
-            sadjb(i, j, k, 3) = 0.0
-            scb(2) = scb(2) + sadjb(i, j, k, 2)
-            velygridb = velygridb + sadjb(i, j, k, 2)
-            xxcb(1) = xxcb(1) + rotationmatrixadj(2, 1)*sadjb(i, j, k, 2&
-&              )
-            xxcb(2) = xxcb(2) + rotationmatrixadj(2, 2)*sadjb(i, j, k, 2&
-&              )
-            xxcb(3) = xxcb(3) + rotationmatrixadj(2, 3)*sadjb(i, j, k, 2&
-&              )
-            sadjb(i, j, k, 2) = 0.0
-            scb(1) = scb(1) + sadjb(i, j, k, 1)
-            velxgridb = velxgridb + sadjb(i, j, k, 1)
-            xxcb(1) = xxcb(1) + rotationmatrixadj(1, 1)*sadjb(i, j, k, 1&
-&              )
-            xxcb(2) = xxcb(2) + rotationmatrixadj(1, 2)*sadjb(i, j, k, 1&
-&              )
-            xxcb(3) = xxcb(3) + rotationmatrixadj(1, 3)*sadjb(i, j, k, 1&
-&              )
-            sadjb(i, j, k, 1) = 0.0
+            scb(3) = scb(3) + sadjb(i, j, k, 3, sps2)
+            velzgridb = velzgridb + sadjb(i, j, k, 3, sps2)
+            xxcb(1) = xxcb(1) + derivrotationmatrixadj(3, 1)*sadjb(i, j&
+&              , k, 3, sps2)
+            xxcb(2) = xxcb(2) + derivrotationmatrixadj(3, 2)*sadjb(i, j&
+&              , k, 3, sps2)
+            xxcb(3) = xxcb(3) + derivrotationmatrixadj(3, 3)*sadjb(i, j&
+&              , k, 3, sps2)
+            sadjb(i, j, k, 3, sps2) = 0.0
+            scb(2) = scb(2) + sadjb(i, j, k, 2, sps2)
+            velygridb = velygridb + sadjb(i, j, k, 2, sps2)
+            xxcb(1) = xxcb(1) + derivrotationmatrixadj(2, 1)*sadjb(i, j&
+&              , k, 2, sps2)
+            xxcb(2) = xxcb(2) + derivrotationmatrixadj(2, 2)*sadjb(i, j&
+&              , k, 2, sps2)
+            xxcb(3) = xxcb(3) + derivrotationmatrixadj(2, 3)*sadjb(i, j&
+&              , k, 2, sps2)
+            sadjb(i, j, k, 2, sps2) = 0.0
+            scb(1) = scb(1) + sadjb(i, j, k, 1, sps2)
+            velxgridb = velxgridb + sadjb(i, j, k, 1, sps2)
+            xxcb(1) = xxcb(1) + derivrotationmatrixadj(1, 1)*sadjb(i, j&
+&              , k, 1, sps2)
+            xxcb(2) = xxcb(2) + derivrotationmatrixadj(1, 2)*sadjb(i, j&
+&              , k, 1, sps2)
+            xxcb(3) = xxcb(3) + derivrotationmatrixadj(1, 3)*sadjb(i, j&
+&              , k, 1, sps2)
+            sadjb(i, j, k, 1, sps2) = 0.0
             CALL POPREAL8(xxc(3))
             xcb(3) = xcb(3) + xxcb(3)
             xxcb(3) = 0.0
@@ -602,34 +710,55 @@ loopdirection:DO mm=1,3
             xcb(1) = xcb(1) + xxcb(1)
             xxcb(1) = 0.0
             tempb = eighth*xcb(3)
-            xadjb(i-1, j-1, k-1, 3) = xadjb(i-1, j-1, k-1, 3) + tempb
-            xadjb(i, j-1, k-1, 3) = xadjb(i, j-1, k-1, 3) + tempb
-            xadjb(i-1, j, k-1, 3) = xadjb(i-1, j, k-1, 3) + tempb
-            xadjb(i, j, k-1, 3) = xadjb(i, j, k-1, 3) + tempb
-            xadjb(i-1, j-1, k, 3) = xadjb(i-1, j-1, k, 3) + tempb
-            xadjb(i, j-1, k, 3) = xadjb(i, j-1, k, 3) + tempb
-            xadjb(i-1, j, k, 3) = xadjb(i-1, j, k, 3) + tempb
-            xadjb(i, j, k, 3) = xadjb(i, j, k, 3) + tempb
+            xadjb(i-1, j-1, k-1, 3, sps2) = xadjb(i-1, j-1, k-1, 3, sps2&
+&              ) + tempb
+            xadjb(i, j-1, k-1, 3, sps2) = xadjb(i, j-1, k-1, 3, sps2) + &
+&              tempb
+            xadjb(i-1, j, k-1, 3, sps2) = xadjb(i-1, j, k-1, 3, sps2) + &
+&              tempb
+            xadjb(i, j, k-1, 3, sps2) = xadjb(i, j, k-1, 3, sps2) + &
+&              tempb
+            xadjb(i-1, j-1, k, 3, sps2) = xadjb(i-1, j-1, k, 3, sps2) + &
+&              tempb
+            xadjb(i, j-1, k, 3, sps2) = xadjb(i, j-1, k, 3, sps2) + &
+&              tempb
+            xadjb(i-1, j, k, 3, sps2) = xadjb(i-1, j, k, 3, sps2) + &
+&              tempb
+            xadjb(i, j, k, 3, sps2) = xadjb(i, j, k, 3, sps2) + tempb
             xcb(3) = 0.0
             tempb0 = eighth*xcb(2)
-            xadjb(i-1, j-1, k-1, 2) = xadjb(i-1, j-1, k-1, 2) + tempb0
-            xadjb(i, j-1, k-1, 2) = xadjb(i, j-1, k-1, 2) + tempb0
-            xadjb(i-1, j, k-1, 2) = xadjb(i-1, j, k-1, 2) + tempb0
-            xadjb(i, j, k-1, 2) = xadjb(i, j, k-1, 2) + tempb0
-            xadjb(i-1, j-1, k, 2) = xadjb(i-1, j-1, k, 2) + tempb0
-            xadjb(i, j-1, k, 2) = xadjb(i, j-1, k, 2) + tempb0
-            xadjb(i-1, j, k, 2) = xadjb(i-1, j, k, 2) + tempb0
-            xadjb(i, j, k, 2) = xadjb(i, j, k, 2) + tempb0
+            xadjb(i-1, j-1, k-1, 2, sps2) = xadjb(i-1, j-1, k-1, 2, sps2&
+&              ) + tempb0
+            xadjb(i, j-1, k-1, 2, sps2) = xadjb(i, j-1, k-1, 2, sps2) + &
+&              tempb0
+            xadjb(i-1, j, k-1, 2, sps2) = xadjb(i-1, j, k-1, 2, sps2) + &
+&              tempb0
+            xadjb(i, j, k-1, 2, sps2) = xadjb(i, j, k-1, 2, sps2) + &
+&              tempb0
+            xadjb(i-1, j-1, k, 2, sps2) = xadjb(i-1, j-1, k, 2, sps2) + &
+&              tempb0
+            xadjb(i, j-1, k, 2, sps2) = xadjb(i, j-1, k, 2, sps2) + &
+&              tempb0
+            xadjb(i-1, j, k, 2, sps2) = xadjb(i-1, j, k, 2, sps2) + &
+&              tempb0
+            xadjb(i, j, k, 2, sps2) = xadjb(i, j, k, 2, sps2) + tempb0
             xcb(2) = 0.0
             tempb1 = eighth*xcb(1)
-            xadjb(i-1, j-1, k-1, 1) = xadjb(i-1, j-1, k-1, 1) + tempb1
-            xadjb(i, j-1, k-1, 1) = xadjb(i, j-1, k-1, 1) + tempb1
-            xadjb(i-1, j, k-1, 1) = xadjb(i-1, j, k-1, 1) + tempb1
-            xadjb(i, j, k-1, 1) = xadjb(i, j, k-1, 1) + tempb1
-            xadjb(i-1, j-1, k, 1) = xadjb(i-1, j-1, k, 1) + tempb1
-            xadjb(i, j-1, k, 1) = xadjb(i, j-1, k, 1) + tempb1
-            xadjb(i-1, j, k, 1) = xadjb(i-1, j, k, 1) + tempb1
-            xadjb(i, j, k, 1) = xadjb(i, j, k, 1) + tempb1
+            xadjb(i-1, j-1, k-1, 1, sps2) = xadjb(i-1, j-1, k-1, 1, sps2&
+&              ) + tempb1
+            xadjb(i, j-1, k-1, 1, sps2) = xadjb(i, j-1, k-1, 1, sps2) + &
+&              tempb1
+            xadjb(i-1, j, k-1, 1, sps2) = xadjb(i-1, j, k-1, 1, sps2) + &
+&              tempb1
+            xadjb(i, j, k-1, 1, sps2) = xadjb(i, j, k-1, 1, sps2) + &
+&              tempb1
+            xadjb(i-1, j-1, k, 1, sps2) = xadjb(i-1, j-1, k, 1, sps2) + &
+&              tempb1
+            xadjb(i, j-1, k, 1, sps2) = xadjb(i, j-1, k, 1, sps2) + &
+&              tempb1
+            xadjb(i-1, j, k, 1, sps2) = xadjb(i-1, j, k, 1, sps2) + &
+&              tempb1
+            xadjb(i, j, k, 1, sps2) = xadjb(i, j, k, 1, sps2) + tempb1
             xcb(1) = 0.0
           END DO
         END DO
@@ -645,30 +774,85 @@ loopdirection:DO mm=1,3
       rotrateadjb(3) = rotrateadjb(3) - rotcenteradj(2)*velxgridb
     END IF
   ELSE
-    xadjb(-3:2, -3:2, -3:2, 1:3) = 0.0
     velxgrid0b = 0.0
     velzgrid0b = 0.0
     velygrid0b = 0.0
   END IF
-  veldirfreestreamadjb(1:3) = 0.0
-  machgridadjb = -(ainf*veldirfreestreamadj(1)*velxgrid0b) - ainf*&
-&    veldirfreestreamadj(2)*velygrid0b - ainf*veldirfreestreamadj(3)*&
+  CALL POPINTEGER4(branch)
+  IF (branch .LT. 3) THEN
+    IF (branch .LT. 2) THEN
+      IF (.NOT.branch .LT. 1) THEN
+        velygrid0b = velygrid0b + rotationmatrixadj(3, 2)*velzgrid0b
+        velxgrid0b = velxgrid0b + rotationmatrixadj(2, 1)*velygrid0b + &
+&          rotationmatrixadj(3, 1)*velzgrid0b
+        velzgrid0b = rotationmatrixadj(1, 3)*velxgrid0b + &
+&          rotationmatrixadj(2, 3)*velygrid0b + rotationmatrixadj(3, 3)*&
+&          velzgrid0b
+        velygrid0b = rotationmatrixadj(1, 2)*velxgrid0b + &
+&          rotationmatrixadj(2, 2)*velygrid0b
+        velxgrid0b = rotationmatrixadj(1, 1)*velxgrid0b
+      END IF
+    ELSE
+      machgridadjb = machgridadjb - veldir(1)*ainf*velxgrid0b - veldir(2&
+&        )*ainf*velygrid0b - veldir(3)*ainf*velzgrid0b
+      velxgrid0b = 0.0
+      velzgrid0b = 0.0
+      velygrid0b = 0.0
+    END IF
+  ELSE IF (branch .LT. 5) THEN
+    IF (branch .LT. 4) THEN
+      machgridadjb = machgridadjb - veldir(1)*ainf*velxgrid0b - veldir(2&
+&        )*ainf*velygrid0b - veldir(3)*ainf*velzgrid0b
+      velxgrid0b = 0.0
+      velzgrid0b = 0.0
+      velygrid0b = 0.0
+    END IF
+  ELSE
+    machgridadjb = machgridadjb - ainf*veldirfreestreamadj(1)*velxgrid0b&
+&     - ainf*veldirfreestreamadj(2)*velygrid0b - ainf*&
+&      veldirfreestreamadj(3)*velzgrid0b
+    veldirfreestreamadjb(3) = veldirfreestreamadjb(3) - ainf*(&
+&      intervalmach+machgridadj)*velzgrid0b
+    veldirfreestreamadjb(2) = veldirfreestreamadjb(2) - ainf*(&
+&      intervalmach+machgridadj)*velygrid0b
+    veldirfreestreamadjb(1) = veldirfreestreamadjb(1) - ainf*(&
+&      intervalmach+machgridadj)*velxgrid0b
+    velxgrid0b = 0.0
+    velzgrid0b = 0.0
+    velygrid0b = 0.0
+  END IF
+  machgridadjb = machgridadjb - ainf*veldirfreestreamadj(1)*velxgrid0b -&
+&   ainf*veldirfreestreamadj(2)*velygrid0b - ainf*veldirfreestreamadj(3)&
+&    *velzgrid0b
+  veldirfreestreamadjb(3) = veldirfreestreamadjb(3) - ainf*machgridadj*&
 &    velzgrid0b
-  veldirfreestreamadjb(3) = -(ainf*machgridadj*velzgrid0b)
   veldirfreestreamadjb(2) = veldirfreestreamadjb(2) - ainf*machgridadj*&
 &    velygrid0b
   veldirfreestreamadjb(1) = veldirfreestreamadjb(1) - ainf*machgridadj*&
 &    velxgrid0b
 !  coscoeffourzrotb(:) = 0.0
+!  coscoeffourmachb(:) = 0.0
+!  omegafourbetab = 0.0
+!  coefpolbetab(:) = 0.0
+!  coscoeffouralphab(:) = 0.0
 !  sincoeffourxrotb(:) = 0.0
 !  sincoeffouryrotb(:) = 0.0
+!  rotpointb(1:3) = 0.0
+!  coscoeffourbetab(:) = 0.0
 !  sincoeffourzrotb(:) = 0.0
 !  omegafourxrotb = 0.0
+!  sincoeffourmachb(:) = 0.0
+!  coefpolalphab(:) = 0.0
 !  coefpolxrotb(:) = 0.0
 !  omegafouryrotb = 0.0
 !  coefpolyrotb(:) = 0.0
 !  omegafourzrotb = 0.0
+!  omegafouralphab = 0.0
+!  omegafourmachb = 0.0
 !  coefpolzrotb(:) = 0.0
+!  coefpolmachb(:) = 0.0
 !  coscoeffourxrotb(:) = 0.0
+!  sincoeffourbetab(:) = 0.0
 !  coscoeffouryrotb(:) = 0.0
+!  sincoeffouralphab(:) = 0.0
 END SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B

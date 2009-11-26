@@ -3,7 +3,7 @@
 !  
 !  Differentiation of xhaloadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: xadj xblockcorneradj
-!   of linear combination of output variables: xadj
+!   of linear combination of output variables: xadj xblockcorneradj
 !
 !      ******************************************************************
 !      *                                                                *
@@ -15,7 +15,7 @@
 !      ******************************************************************
 !
 SUBROUTINE XHALOADJ_B(xadj, xadjb, xblockcorneradj, xblockcorneradjb, &
-&  icell, jcell, kcell)
+&  icell, jcell, kcell, nn, level, sps, sps2)
   USE bctypes
   USE blockpointers
   USE communication
@@ -23,6 +23,32 @@ SUBROUTINE XHALOADJ_B(xadj, xadjb, xblockcorneradj, xblockcorneradjb, &
   IMPLICIT NONE
 !     enddo domains
 !  enddo spectralLoop
+!!$         !print out xAdj
+!!$         istart2 = -3
+!!$         jstart2 = -3
+!!$         kstart2 = -3
+!!$         iend2 = 2
+!!$         jend2 = 2
+!!$         kend2 = 2
+!!$         if(icell==2) istart2=-2
+!!$         if(jcell==2) jstart2=-2
+!!$         if(kcell==2) kstart2=-2
+!!$         if(icell==il) iend2=1
+!!$         if(jcell==jl) jend2=1
+!!$         if(kcell==kl) kend2=1
+!!$         do iiii = istart2,iend2
+!!$            do jjjj = jstart2,jend2
+!!$               do kkkk = kstart2,kend2
+!!$                  do n = 1,3
+!!$                     i = icell+iiii
+!!$                     j = jcell+jjjj
+!!$                     k = kcell+kkkk
+!!$                     write(unitxAD,10) i,j,k,n,xAdj(iiii,jjjj,kkkk,n)
+!!$10                   format(1x,'res',4I8,f20.14)
+!!$                  enddo
+!!$               enddo
+!!$            enddo
+!!$         enddo
 !!$!
 !!$!      ******************************************************************
 !!$!      *                                                                *
@@ -34,23 +60,32 @@ SUBROUTINE XHALOADJ_B(xadj, xadjb, xblockcorneradj, xblockcorneradjb, &
   INTEGER(KIND=INTTYPE), INTENT(IN) :: icell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: jcell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: kcell
-  REAL(KIND=REALTYPE) :: xadj(-3:2, -3:2, -3:2, 3), xadjb(-3:2, -3:2, -3&
-&  :2, 3)
-  REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3), xblockcorneradjb(2&
-&  , 2, 2, 3)
-  INTEGER :: ad_from, ad_from0, ad_to, ad_to0, branch
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: level
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: nn
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: sps
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: sps2
+  REAL(KIND=REALTYPE) :: xadj(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), xadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3, &
+&  ntimeintervalsspectral), xblockcorneradjb(2, 2, 2, 3, &
+&  ntimeintervalsspectral)
   INTEGER(KIND=INTTYPE) :: ibeg, iend, iimax, jbeg, jend, jjmax
-  LOGICAL :: imaxoverlap, iminoverlap, jmaxoverlap, jminoverlap, &
-&  kmaxoverlap, kminoverlap
-  INTEGER(KIND=INTTYPE) :: ioffset, joffset, koffset
+  INTEGER(KIND=INTTYPE) :: imaxoffset, jmaxoffset, kmaxoffset
+  LOGICAL :: imaxinternal, imaxoverlap, imininternal, iminoverlap, &
+&  jmaxinternal, jmaxoverlap, jmininternal, jminoverlap, kmaxinternal, &
+&  kmaxoverlap, kmininternal, kminoverlap
   INTEGER(KIND=INTTYPE) :: istart, jstart
-  INTEGER(KIND=INTTYPE) :: i, ii, j, jj, k, mm, nn, sps
+  INTEGER(KIND=INTTYPE) :: i, ii, j, jj, k, mm
+  INTEGER(KIND=INTTYPE) :: iminoffset, jminoffset, kminoffset
+  INTEGER :: ad_from, ad_from0, ad_to, ad_to0, branch, iend2, iii, iiii&
+&  , istart2, itemp, jend2, jjj, jjjj, jstart2, jtemp, kend2, kkk, kkkk&
+&  , kstart2, n, nnn, nnnn, unitxad=13
   REAL(KIND=REALTYPE) :: dot, dotb, length, lengthb, tempb, tempb0
   REAL(KIND=REALTYPE) :: norm(3), normb(3), v1(3), v1b(3), v2(3), v2b(3)
   REAL(KIND=REALTYPE) :: x0(-3:2, -3:2, 3), x0b(-3:2, -3:2, 3), x1(-3:2&
 &  , -3:2, 3), x1b(-3:2, -3:2, 3), x2(-3:2, -3:2, 3), x2b(-3:2, -3:2, 3)
   REAL(KIND=REALTYPE) :: xfacecorner(2, 2, 3), xfacecornerb(2, 2, 3)
-  EXTERNAL CHECKXOVERLAPADJ
   INTRINSIC MAX, MIN, SQRT
 !
 !      ******************************************************************
@@ -64,6 +99,7 @@ SUBROUTINE XHALOADJ_B(xadj, xadjb, xblockcorneradj, xblockcorneradjb, &
 !      *                                                                *
 !      ******************************************************************
 !
+!nIntervalTimespectral
 !
 !      Subroutine arguments.
 !
@@ -73,7 +109,9 @@ SUBROUTINE XHALOADJ_B(xadj, xadjb, xblockcorneradj, xblockcorneradjb, &
 !
 !integer(kind=intType) :: iBeg2, iEnd2, jBeg2, jEnd2
 !real(kind=realType), dimension(:,:,:), pointer :: x0, x1, x2
+!,dimension(nTimeIntervalsSpectral)
 !,iend,jend
+!FILEIO
 !
 !      ******************************************************************
 !      *                                                                *
@@ -92,9 +130,61 @@ SUBROUTINE XHALOADJ_B(xadj, xadjb, xblockcorneradj, xblockcorneradjb, &
 !!$           call setPointers(nn, level, sps)
 !!$
 !Check to see if current cell contains a halo and if so which one...
-  CALL CHECKXOVERLAPADJ(icell, jcell, kcell, ioffset, joffset, koffset, &
+  CALL CHECKXOVERLAPADJ(icell, jcell, kcell, iminoffset, imaxoffset, &
+&                  jminoffset, jmaxoffset, kminoffset, kmaxoffset, &
 &                  iminoverlap, jminoverlap, kminoverlap, imaxoverlap, &
 &                  jmaxoverlap, kmaxoverlap)
+!
+!          **************************************************************
+!          *                                                            *
+!          * Because of exchangeCorr at the end of the original xhalo   *
+!          * the internal face halos need to be left alone. Therefore   *
+!          * loop over the Bocos to determine which block faces are     *
+!          * internal.                                                  *
+!          *                                                            *
+!          **************************************************************
+!
+  imininternal = .false.
+  jmininternal = .false.
+  kmininternal = .false.
+  imaxinternal = .false.
+  jmaxinternal = .false.
+  kmaxinternal = .false.
+!print *,'internals',iMinInternal,jMinInternal,kMinInternal,&
+!    iMaxInternal,jMaxInternal,kMaxInternal
+!Bocos
+loopsubface:DO mm=1,nsubface
+! Check whether a given block face is internal
+! print *,'bctype',BCType(mm),B2BMatch,mm
+    IF (bctype(mm) .EQ. b2bmatch) THEN
+      SELECT CASE  (bcfaceid(mm)) 
+      CASE (imin) 
+        imininternal = .true.
+        CALL PUSHINTEGER4(3)
+      CASE (imax) 
+        imaxinternal = .true.
+        CALL PUSHINTEGER4(4)
+      CASE (jmin) 
+        jmininternal = .true.
+        CALL PUSHINTEGER4(5)
+      CASE (jmax) 
+        jmaxinternal = .true.
+        CALL PUSHINTEGER4(6)
+      CASE (kmin) 
+        kmininternal = .true.
+        CALL PUSHINTEGER4(7)
+      CASE (kmax) 
+        kmaxinternal = .true.
+        CALL PUSHINTEGER4(8)
+      CASE DEFAULT
+        CALL PUSHINTEGER4(2)
+      END SELECT
+    ELSE
+      CALL PUSHINTEGER4(1)
+    END IF
+  END DO loopsubface
+!print *,'internals after',iMinInternal,jMinInternal,kMinInternal,&
+!     iMaxInternal,jMaxInternal,kMaxInternal
 !
 !          **************************************************************
 !          *                                                            *
@@ -108,18 +198,36 @@ SUBROUTINE XHALOADJ_B(xadj, xadjb, xblockcorneradj, xblockcorneradjb, &
 !
 ! Extrapolation in i-direction.
   IF (iminoverlap) THEN
-    IF (ioffset .GE. -3) THEN
-      DO j=-3,2
-        DO k=-3,2
-          xadj(ioffset, j, k, 1) = two*xadj(ioffset+1, j, k, 1) - xadj(&
-&            ioffset+2, j, k, 1)
-          xadj(ioffset, j, k, 2) = two*xadj(ioffset+1, j, k, 2) - xadj(&
-&            ioffset+2, j, k, 2)
-          xadj(ioffset, j, k, 3) = two*xadj(ioffset+1, j, k, 3) - xadj(&
-&            ioffset+2, j, k, 3)
+    IF (.NOT.imininternal) THEN
+      IF (iminoffset .GE. -3) THEN
+        DO j=-3,2
+          DO k=-3,2
+            jjj = jcell + j
+            kkk = kcell + k
+            IF (kkk .GE. 1 .AND. jjj .GE. 1) THEN
+              IF (kkk .LE. kl .AND. jjj .LE. jl) THEN
+                CALL PUSHREAL8(xadj(iminoffset, j, k, 1, sps2))
+                xadj(iminoffset, j, k, 1, sps2) = two*xadj(iminoffset+1&
+&                  , j, k, 1, sps2) - xadj(iminoffset+2, j, k, 1, sps2)
+                CALL PUSHREAL8(xadj(iminoffset, j, k, 2, sps2))
+                xadj(iminoffset, j, k, 2, sps2) = two*xadj(iminoffset+1&
+&                  , j, k, 2, sps2) - xadj(iminoffset+2, j, k, 2, sps2)
+                CALL PUSHREAL8(xadj(iminoffset, j, k, 3, sps2))
+                xadj(iminoffset, j, k, 3, sps2) = two*xadj(iminoffset+1&
+&                  , j, k, 3, sps2) - xadj(iminoffset+2, j, k, 3, sps2)
+                CALL PUSHINTEGER4(3)
+              ELSE
+                CALL PUSHINTEGER4(2)
+              END IF
+            ELSE
+              CALL PUSHINTEGER4(1)
+            END IF
+          END DO
         END DO
-      END DO
-      CALL PUSHINTEGER4(2)
+        CALL PUSHINTEGER4(3)
+      ELSE
+        CALL PUSHINTEGER4(2)
+      END IF
     ELSE
       CALL PUSHINTEGER4(1)
     END IF
@@ -127,49 +235,85 @@ SUBROUTINE XHALOADJ_B(xadj, xadjb, xblockcorneradj, xblockcorneradjb, &
     CALL PUSHINTEGER4(0)
   END IF
   IF (imaxoverlap) THEN
-    IF (ioffset .LE. 2) THEN
-      DO j=-3,2
-        DO k=-3,2
-          xadj(ioffset, j, k, 1) = two*xadj(ioffset-1, j, k, 1) - xadj(&
-&            ioffset-2, j, k, 1)
-          xadj(ioffset, j, k, 2) = two*xadj(ioffset-1, j, k, 2) - xadj(&
-&            ioffset-2, j, k, 2)
-          xadj(ioffset, j, k, 3) = two*xadj(ioffset-1, j, k, 3) - xadj(&
-&            ioffset-2, j, k, 3)
+    IF (.NOT.imaxinternal) THEN
+      IF (imaxoffset .LE. 2) THEN
+        DO j=-3,2
+          DO k=-3,2
+            jjj = jcell + j
+            kkk = kcell + k
+            IF (kkk .GE. 1 .AND. jjj .GE. 1) THEN
+              IF (kkk .LE. kl .AND. jjj .LE. jl) THEN
+                CALL PUSHREAL8(xadj(imaxoffset, j, k, 1, sps2))
+                xadj(imaxoffset, j, k, 1, sps2) = two*xadj(imaxoffset-1&
+&                  , j, k, 1, sps2) - xadj(imaxoffset-2, j, k, 1, sps2)
+                CALL PUSHREAL8(xadj(imaxoffset, j, k, 2, sps2))
+                xadj(imaxoffset, j, k, 2, sps2) = two*xadj(imaxoffset-1&
+&                  , j, k, 2, sps2) - xadj(imaxoffset-2, j, k, 2, sps2)
+                CALL PUSHREAL8(xadj(imaxoffset, j, k, 3, sps2))
+                xadj(imaxoffset, j, k, 3, sps2) = two*xadj(imaxoffset-1&
+&                  , j, k, 3, sps2) - xadj(imaxoffset-2, j, k, 3, sps2)
+                CALL PUSHINTEGER4(3)
+              ELSE
+                CALL PUSHINTEGER4(2)
+              END IF
+            ELSE
+              CALL PUSHINTEGER4(1)
+            END IF
+          END DO
         END DO
-      END DO
-      CALL PUSHINTEGER4(2)
+        CALL PUSHINTEGER4(3)
+      ELSE
+        CALL PUSHINTEGER4(2)
+      END IF
     ELSE
       CALL PUSHINTEGER4(1)
     END IF
   ELSE
     CALL PUSHINTEGER4(0)
   END IF
-!!$           do k=1,kl
-!!$             do j=1,jl
-!!$               x(0,j,k,1) = two*x(1,j,k,1) - x(2,j,k,1)
-!!$               x(0,j,k,2) = two*x(1,j,k,2) - x(2,j,k,2)
-!!$               x(0,j,k,3) = two*x(1,j,k,3) - x(2,j,k,3)
-!!$
-!!$               x(ie,j,k,1) = two*x(il,j,k,1) - x(nx,j,k,1)
-!!$               x(ie,j,k,2) = two*x(il,j,k,2) - x(nx,j,k,2)
-!!$               x(ie,j,k,3) = two*x(il,j,k,3) - x(nx,j,k,3)
-!!$             enddo
-!!$           enddo
+!!$!           do k=1,kl
+!!$!             do j=1,jl
+!!$!               x(0,j,k,1) = two*x(1,j,k,1) - x(2,j,k,1)
+!!$!               x(0,j,k,2) = two*x(1,j,k,2) - x(2,j,k,2)
+!!$!               x(0,j,k,3) = two*x(1,j,k,3) - x(2,j,k,3)
+!!$!
+!!$!               x(ie,j,k,1) = two*x(il,j,k,1) - x(nx,j,k,1)
+!!$!               x(ie,j,k,2) = two*x(il,j,k,2) - x(nx,j,k,2)
+!!$!               x(ie,j,k,3) = two*x(il,j,k,3) - x(nx,j,k,3)
+!!$!             enddo
+!!$!           enddo
 ! Extrapolation in j-direction.
   IF (jminoverlap) THEN
-    IF (joffset .GE. -3) THEN
-      DO i=-3,2
-        DO k=-3,2
-          xadj(i, joffset, k, 1) = two*xadj(i, joffset+1, k, 1) - xadj(i&
-&            , joffset+2, k, 1)
-          xadj(i, joffset, k, 2) = two*xadj(i, joffset+1, k, 2) - xadj(i&
-&            , joffset+2, k, 2)
-          xadj(i, joffset, k, 3) = two*xadj(i, joffset+1, k, 3) - xadj(i&
-&            , joffset+2, k, 3)
+    IF (.NOT.jmininternal) THEN
+      IF (jminoffset .GE. -3) THEN
+        DO i=-3,2
+          DO k=-3,2
+            iii = icell + i
+            kkk = kcell + k
+            IF (kkk .GE. 1 .AND. iii .GE. 0) THEN
+              IF (kkk .LE. kl .AND. iii .LE. ie) THEN
+                CALL PUSHREAL8(xadj(i, jminoffset, k, 1, sps2))
+                xadj(i, jminoffset, k, 1, sps2) = two*xadj(i, jminoffset&
+&                  +1, k, 1, sps2) - xadj(i, jminoffset+2, k, 1, sps2)
+                CALL PUSHREAL8(xadj(i, jminoffset, k, 2, sps2))
+                xadj(i, jminoffset, k, 2, sps2) = two*xadj(i, jminoffset&
+&                  +1, k, 2, sps2) - xadj(i, jminoffset+2, k, 2, sps2)
+                CALL PUSHREAL8(xadj(i, jminoffset, k, 3, sps2))
+                xadj(i, jminoffset, k, 3, sps2) = two*xadj(i, jminoffset&
+&                  +1, k, 3, sps2) - xadj(i, jminoffset+2, k, 3, sps2)
+                CALL PUSHINTEGER4(3)
+              ELSE
+                CALL PUSHINTEGER4(2)
+              END IF
+            ELSE
+              CALL PUSHINTEGER4(1)
+            END IF
+          END DO
         END DO
-      END DO
-      CALL PUSHINTEGER4(2)
+        CALL PUSHINTEGER4(3)
+      ELSE
+        CALL PUSHINTEGER4(2)
+      END IF
     ELSE
       CALL PUSHINTEGER4(1)
     END IF
@@ -177,49 +321,89 @@ SUBROUTINE XHALOADJ_B(xadj, xadjb, xblockcorneradj, xblockcorneradjb, &
     CALL PUSHINTEGER4(0)
   END IF
   IF (jmaxoverlap) THEN
-    IF (joffset .LE. 2) THEN
-      DO k=-3,2
-        DO i=-3,2
-          xadj(i, joffset, k, 1) = two*xadj(i, joffset-1, k, 1) - xadj(i&
-&            , joffset-2, k, 1)
-          xadj(i, joffset, k, 2) = two*xadj(i, joffset-1, k, 2) - xadj(i&
-&            , joffset-2, k, 2)
-          xadj(i, joffset, k, 3) = two*xadj(i, joffset-1, k, 3) - xadj(i&
-&            , joffset-2, k, 3)
+    IF (.NOT.jmaxinternal) THEN
+      IF (jmaxoffset .LE. 2) THEN
+        DO k=-3,2
+          DO i=-3,2
+            iii = icell + i
+            kkk = kcell + k
+            IF (kkk .GE. 1 .AND. iii .GE. 0) THEN
+              IF (kkk .LE. kl .AND. iii .LE. ie) THEN
+                CALL PUSHREAL8(xadj(i, jmaxoffset, k, 1, sps2))
+                xadj(i, jmaxoffset, k, 1, sps2) = two*xadj(i, jmaxoffset&
+&                  -1, k, 1, sps2) - xadj(i, jmaxoffset-2, k, 1, sps2)
+                CALL PUSHREAL8(xadj(i, jmaxoffset, k, 2, sps2))
+                xadj(i, jmaxoffset, k, 2, sps2) = two*xadj(i, jmaxoffset&
+&                  -1, k, 2, sps2) - xadj(i, jmaxoffset-2, k, 2, sps2)
+                CALL PUSHREAL8(xadj(i, jmaxoffset, k, 3, sps2))
+                xadj(i, jmaxoffset, k, 3, sps2) = two*xadj(i, jmaxoffset&
+&                  -1, k, 3, sps2) - xadj(i, jmaxoffset-2, k, 3, sps2)
+                CALL PUSHINTEGER4(3)
+              ELSE
+                CALL PUSHINTEGER4(2)
+              END IF
+            ELSE
+              CALL PUSHINTEGER4(1)
+            END IF
+          END DO
         END DO
-      END DO
-      CALL PUSHINTEGER4(2)
+        CALL PUSHINTEGER4(3)
+      ELSE
+        CALL PUSHINTEGER4(2)
+      END IF
     ELSE
       CALL PUSHINTEGER4(1)
     END IF
   ELSE
     CALL PUSHINTEGER4(0)
   END IF
-!!$           do k=1,kl
-!!$             do i=0,ie
-!!$               x(i,0,k,1) = two*x(i,1,k,1) - x(i,2,k,1)
-!!$               x(i,0,k,2) = two*x(i,1,k,2) - x(i,2,k,2)
-!!$               x(i,0,k,3) = two*x(i,1,k,3) - x(i,2,k,3)
-!!$
-!!$               x(i,je,k,1) = two*x(i,jl,k,1) - x(i,ny,k,1)
-!!$               x(i,je,k,2) = two*x(i,jl,k,2) - x(i,ny,k,2)
-!!$               x(i,je,k,3) = two*x(i,jl,k,3) - x(i,ny,k,3)
-!!$             enddo
-!!$           enddo
+!           do k=1,kl
+!             do i=0,ie
+!               x(i,0,k,1) = two*x(i,1,k,1) - x(i,2,k,1)
+!               x(i,0,k,2) = two*x(i,1,k,2) - x(i,2,k,2)
+!               x(i,0,k,3) = two*x(i,1,k,3) - x(i,2,k,3)
+!
+!               x(i,je,k,1) = two*x(i,jl,k,1) - x(i,ny,k,1)
+!               x(i,je,k,2) = two*x(i,jl,k,2) - x(i,ny,k,2)
+!               x(i,je,k,3) = two*x(i,jl,k,3) - x(i,ny,k,3)
+!             enddo
+!           enddo
 ! Extrapolation in k-direction.
   IF (kminoverlap) THEN
-    IF (koffset .GE. -3) THEN
-      DO j=-3,2
-        DO i=-3,2
-          xadj(i, j, koffset, 1) = two*xadj(i, j, koffset+1, 1) - xadj(i&
-&            , j, koffset+2, 1)
-          xadj(i, j, koffset, 2) = two*xadj(i, j, koffset+1, 2) - xadj(i&
-&            , j, koffset+2, 2)
-          xadj(i, j, koffset, 3) = two*xadj(i, j, koffset+1, 3) - xadj(i&
-&            , j, koffset+2, 3)
+    IF (.NOT.kmininternal) THEN
+!print *,'kcellmin',kcell,kminoffset
+      IF (kminoffset .GE. -3) THEN
+        DO j=-3,2
+          DO i=-3,2
+            iii = icell + i
+            jjj = jcell + j
+            IF (jjj .GE. 0 .AND. iii .GE. 0) THEN
+              IF (jjj .LE. je .AND. iii .LE. ie) THEN
+                CALL PUSHREAL8(xadj(i, j, kminoffset, 1, sps2))
+                xadj(i, j, kminoffset, 1, sps2) = two*xadj(i, j, &
+&                  kminoffset+1, 1, sps2) - xadj(i, j, kminoffset+2, 1, &
+&                  sps2)
+                CALL PUSHREAL8(xadj(i, j, kminoffset, 2, sps2))
+                xadj(i, j, kminoffset, 2, sps2) = two*xadj(i, j, &
+&                  kminoffset+1, 2, sps2) - xadj(i, j, kminoffset+2, 2, &
+&                  sps2)
+                CALL PUSHREAL8(xadj(i, j, kminoffset, 3, sps2))
+                xadj(i, j, kminoffset, 3, sps2) = two*xadj(i, j, &
+&                  kminoffset+1, 3, sps2) - xadj(i, j, kminoffset+2, 3, &
+&                  sps2)
+                CALL PUSHINTEGER4(3)
+              ELSE
+                CALL PUSHINTEGER4(2)
+              END IF
+            ELSE
+              CALL PUSHINTEGER4(1)
+            END IF
+          END DO
         END DO
-      END DO
-      CALL PUSHINTEGER4(2)
+        CALL PUSHINTEGER4(3)
+      ELSE
+        CALL PUSHINTEGER4(2)
+      END IF
     ELSE
       CALL PUSHINTEGER4(1)
     END IF
@@ -227,35 +411,57 @@ SUBROUTINE XHALOADJ_B(xadj, xadjb, xblockcorneradj, xblockcorneradjb, &
     CALL PUSHINTEGER4(0)
   END IF
   IF (kmaxoverlap) THEN
-    IF (koffset .LE. 2) THEN
-      DO j=-3,2
-        DO i=-3,2
-          xadj(i, j, koffset, 1) = two*xadj(i, j, koffset-1, 1) - xadj(i&
-&            , j, koffset-2, 1)
-          xadj(i, j, koffset, 2) = two*xadj(i, j, koffset-1, 2) - xadj(i&
-&            , j, koffset-2, 2)
-          xadj(i, j, koffset, 3) = two*xadj(i, j, koffset-1, 3) - xadj(i&
-&            , j, koffset-2, 3)
+    IF (.NOT.kmaxinternal) THEN
+!print *,'kcellmax',kcell,kmaxoffset
+      IF (kmaxoffset .LE. 2) THEN
+        DO j=-3,2
+          DO i=-3,2
+            iii = icell + i
+            jjj = jcell + j
+            IF (jjj .GE. 0 .AND. iii .GE. 0) THEN
+              IF (jjj .LE. je .AND. iii .LE. ie) THEN
+                CALL PUSHREAL8(xadj(i, j, kmaxoffset, 1, sps2))
+                xadj(i, j, kmaxoffset, 1, sps2) = two*xadj(i, j, &
+&                  kmaxoffset-1, 1, sps2) - xadj(i, j, kmaxoffset-2, 1, &
+&                  sps2)
+                CALL PUSHREAL8(xadj(i, j, kmaxoffset, 2, sps2))
+                xadj(i, j, kmaxoffset, 2, sps2) = two*xadj(i, j, &
+&                  kmaxoffset-1, 2, sps2) - xadj(i, j, kmaxoffset-2, 2, &
+&                  sps2)
+                CALL PUSHREAL8(xadj(i, j, kmaxoffset, 3, sps2))
+                xadj(i, j, kmaxoffset, 3, sps2) = two*xadj(i, j, &
+&                  kmaxoffset-1, 3, sps2) - xadj(i, j, kmaxoffset-2, 3, &
+&                  sps2)
+                CALL PUSHINTEGER4(3)
+              ELSE
+                CALL PUSHINTEGER4(2)
+              END IF
+            ELSE
+              CALL PUSHINTEGER4(1)
+            END IF
+          END DO
         END DO
-      END DO
-      CALL PUSHINTEGER4(2)
+        CALL PUSHINTEGER4(3)
+      ELSE
+        CALL PUSHINTEGER4(2)
+      END IF
     ELSE
       CALL PUSHINTEGER4(1)
     END IF
   ELSE
     CALL PUSHINTEGER4(0)
   END IF
-!!$           do j=0,je
-!!$             do i=0,ie
-!!$               x(i,j,0,1) = two*x(i,j,1,1) - x(i,j,2,1)
-!!$               x(i,j,0,2) = two*x(i,j,1,2) - x(i,j,2,2)
-!!$               x(i,j,0,3) = two*x(i,j,1,3) - x(i,j,2,3)
-!!$
-!!$               x(i,j,ke,1) = two*x(i,j,kl,1) - x(i,j,nz,1)
-!!$               x(i,j,ke,2) = two*x(i,j,kl,2) - x(i,j,nz,2)
-!!$               x(i,j,ke,3) = two*x(i,j,kl,3) - x(i,j,nz,3)
-!!$             enddo
-!!$           enddo
+!           do j=0,je
+!             do i=0,ie
+!               x(i,j,0,1) = two*x(i,j,1,1) - x(i,j,2,1)
+!               x(i,j,0,2) = two*x(i,j,1,2) - x(i,j,2,2)
+!               x(i,j,0,3) = two*x(i,j,1,3) - x(i,j,2,3)!!
+!
+!               x(i,j,ke,1) = two*x(i,j,kl,1) - x(i,j,nz,1)
+!               x(i,j,ke,2) = two*x(i,j,kl,2) - x(i,j,nz,2)
+!               x(i,j,ke,3) = two*x(i,j,kl,3) - x(i,j,nz,3)
+!             enddo
+!           enddo
 !
 !          **************************************************************
 !          *                                                            *
@@ -266,9 +472,11 @@ SUBROUTINE XHALOADJ_B(xadj, xadjb, xblockcorneradj, xblockcorneradjb, &
 !
 ! Loop over boundary subfaces.
 loopbocos:DO mm=1,nbocos
+!write(unitxAD,*)'loopBocos',mm,nbocos
 ! The actual correction of the coordinates only takes
 ! place for symmetry planes.
     IF (bctype(mm) .EQ. symm) THEN
+!write(unitxAD,*)'testSymmetry',bcfaceID(mm)
 !!$               ! Set some variables, depending on the block face on
 !!$               ! which the subface is located.
 !!$
@@ -341,25 +549,26 @@ loopbocos:DO mm=1,nbocos
         END IF
 !print *,'bcfaceID,imin',BCFaceID(mm),imin,iMinOverlap,icell,jcell,kcell
         IF (iminoverlap) THEN
-          xfacecorner(:, :, :) = xblockcorneradj(1, :, :, :)
+          xfacecorner(:, :, :) = xblockcorneradj(1, :, :, :, sps2)
           IF (icell .EQ. 2) THEN
-            x0(-3:2, -3:2, 1:3) = xadj(-2, -3:2, -3:2, 1:3)
-            x1(-3:2, -3:2, 1:3) = xadj(-1, -3:2, -3:2, 1:3)
-            x2(-3:2, -3:2, 1:3) = xadj(0, -3:2, -3:2, 1:3)
+            x0(-3:2, -3:2, 1:3) = xadj(-2, -3:2, -3:2, 1:3, sps2)
+            x1(-3:2, -3:2, 1:3) = xadj(-1, -3:2, -3:2, 1:3, sps2)
+            x2(-3:2, -3:2, 1:3) = xadj(0, -3:2, -3:2, 1:3, sps2)
             CALL PUSHINTEGER4(1)
           ELSE
-            x0(-3:2, -3:2, 1:3) = xadj(-3, -3:2, -3:2, 1:3)
-            x1(-3:2, -3:2, 1:3) = xadj(-2, -3:2, -3:2, 1:3)
-            x2(-3:2, -3:2, 1:3) = xadj(-1, -3:2, -3:2, 1:3)
+            x0(-3:2, -3:2, 1:3) = xadj(-3, -3:2, -3:2, 1:3, sps2)
+            x1(-3:2, -3:2, 1:3) = xadj(-2, -3:2, -3:2, 1:3, sps2)
+            x2(-3:2, -3:2, 1:3) = xadj(-1, -3:2, -3:2, 1:3, sps2)
             CALL PUSHINTEGER4(2)
           END IF
         ELSE
-          CALL PUSHINTEGER4(4)
+          CALL PUSHINTEGER4(5)
           GOTO 100
         END IF
       CASE (imax) 
 !skip remainder of loop
 !print *,'cycling imin'
+!write(unitxAD,*)'cycling imin'
         IF (-3 .LT. 2 - jcell - 2) THEN
           istart = 2 - jcell - 2
           CALL PUSHINTEGER4(1)
@@ -390,25 +599,26 @@ loopbocos:DO mm=1,nbocos
         END IF
 !print *,'bcfaceID,imax',BCFaceID(mm),imax,iMaxOverlap,icell,jcell,kcell
         IF (imaxoverlap) THEN
-          xfacecorner(:, :, :) = xblockcorneradj(2, :, :, :)
+          xfacecorner(:, :, :) = xblockcorneradj(2, :, :, :, sps2)
           IF (icell .EQ. il) THEN
-            x0(-3:2, -3:2, 1:3) = xadj(1, -3:2, -3:2, 1:3)
-            x1(-3:2, -3:2, 1:3) = xadj(0, -3:2, -3:2, 1:3)
-            x2(-3:2, -3:2, 1:3) = xadj(-1, -3:2, -3:2, 1:3)
+            x0(-3:2, -3:2, 1:3) = xadj(1, -3:2, -3:2, 1:3, sps2)
+            x1(-3:2, -3:2, 1:3) = xadj(0, -3:2, -3:2, 1:3, sps2)
+            x2(-3:2, -3:2, 1:3) = xadj(-1, -3:2, -3:2, 1:3, sps2)
             CALL PUSHINTEGER4(3)
           ELSE
-            x0(-3:2, -3:2, 1:3) = xadj(2, -3:2, -3:2, 1:3)
-            x1(-3:2, -3:2, 1:3) = xadj(1, -3:2, -3:2, 1:3)
-            x2(-3:2, -3:2, 1:3) = xadj(0, -3:2, -3:2, 1:3)
+            x0(-3:2, -3:2, 1:3) = xadj(2, -3:2, -3:2, 1:3, sps2)
+            x1(-3:2, -3:2, 1:3) = xadj(1, -3:2, -3:2, 1:3, sps2)
+            x2(-3:2, -3:2, 1:3) = xadj(0, -3:2, -3:2, 1:3, sps2)
             CALL PUSHINTEGER4(4)
           END IF
         ELSE
-          CALL PUSHINTEGER4(5)
+          CALL PUSHINTEGER4(6)
           GOTO 100
         END IF
       CASE (jmin) 
 !skip remainder of loop
 !print *,'cycling imax'
+!write(unitxAD,*)'cycling imax'
         IF (-3 .LT. 2 - icell - 2) THEN
           istart = 2 - icell - 2
           CALL PUSHINTEGER4(1)
@@ -437,27 +647,28 @@ loopbocos:DO mm=1,nbocos
           jend = 2
           CALL PUSHINTEGER4(0)
         END IF
-!print *,'bcfaceID,jmin',BCFaceID(mm),jmin,jMinOverlap,icell,jcell,kcell
+!print *,'bcfaceID,jmin',BCFaceID(mm),jmin,jMinOverlap,icell,jcell,kcell 
         IF (jminoverlap) THEN
-          xfacecorner(:, :, :) = xblockcorneradj(:, 1, :, :)
+          xfacecorner(:, :, :) = xblockcorneradj(:, 1, :, :, sps2)
           IF (jcell .EQ. 2) THEN
-            x0(-3:2, -3:2, 1:3) = xadj(-3:2, -2, -3:2, 1:3)
-            x1(-3:2, -3:2, 1:3) = xadj(-3:2, -1, -3:2, 1:3)
-            x2(-3:2, -3:2, 1:3) = xadj(-3:2, 0, -3:2, 1:3)
+            x0(-3:2, -3:2, 1:3) = xadj(-3:2, -2, -3:2, 1:3, sps2)
+            x1(-3:2, -3:2, 1:3) = xadj(-3:2, -1, -3:2, 1:3, sps2)
+            x2(-3:2, -3:2, 1:3) = xadj(-3:2, 0, -3:2, 1:3, sps2)
             CALL PUSHINTEGER4(5)
           ELSE
-            x0(-3:2, -3:2, 1:3) = xadj(-3:2, -3, -3:2, 1:3)
-            x1(-3:2, -3:2, 1:3) = xadj(-3:2, -2, -3:2, 1:3)
-            x2(-3:2, -3:2, 1:3) = xadj(-3:2, -1, -3:2, 1:3)
+            x0(-3:2, -3:2, 1:3) = xadj(-3:2, -3, -3:2, 1:3, sps2)
+            x1(-3:2, -3:2, 1:3) = xadj(-3:2, -2, -3:2, 1:3, sps2)
+            x2(-3:2, -3:2, 1:3) = xadj(-3:2, -1, -3:2, 1:3, sps2)
             CALL PUSHINTEGER4(6)
           END IF
         ELSE
-          CALL PUSHINTEGER4(6)
+          CALL PUSHINTEGER4(7)
           GOTO 100
         END IF
       CASE (jmax) 
 !skip remainder of loop
 !print *,'cycling jmin'
+!write(unitxAD,*)'cycling jmin'
         IF (-3 .LT. 2 - icell - 2) THEN
           istart = 2 - icell - 2
           CALL PUSHINTEGER4(1)
@@ -488,74 +699,26 @@ loopbocos:DO mm=1,nbocos
         END IF
 !print *,'bcfaceID,jmax',BCFaceID(mm),jmax,jMaxOverlap,icell,jcell,kcell
         IF (jmaxoverlap) THEN
-          xfacecorner(:, :, :) = xblockcorneradj(:, 2, :, :)
+          xfacecorner(:, :, :) = xblockcorneradj(:, 2, :, :, sps2)
           IF (jcell .EQ. jl) THEN
-            x0(-3:2, -3:2, 1:3) = xadj(-3:2, 1, -3:2, 1:3)
-            x1(-3:2, -3:2, 1:3) = xadj(-3:2, 0, -3:2, 1:3)
-            x2(-3:2, -3:2, 1:3) = xadj(-3:2, -1, -3:2, 1:3)
+            x0(-3:2, -3:2, 1:3) = xadj(-3:2, 1, -3:2, 1:3, sps2)
+            x1(-3:2, -3:2, 1:3) = xadj(-3:2, 0, -3:2, 1:3, sps2)
+            x2(-3:2, -3:2, 1:3) = xadj(-3:2, -1, -3:2, 1:3, sps2)
             CALL PUSHINTEGER4(7)
           ELSE
-            x0(-3:2, -3:2, 1:3) = xadj(-3:2, 2, -3:2, 1:3)
-            x1(-3:2, -3:2, 1:3) = xadj(-3:2, 1, -3:2, 1:3)
-            x2(-3:2, -3:2, 1:3) = xadj(-3:2, 0, -3:2, 1:3)
+            x0(-3:2, -3:2, 1:3) = xadj(-3:2, 2, -3:2, 1:3, sps2)
+            x1(-3:2, -3:2, 1:3) = xadj(-3:2, 1, -3:2, 1:3, sps2)
+            x2(-3:2, -3:2, 1:3) = xadj(-3:2, 0, -3:2, 1:3, sps2)
             CALL PUSHINTEGER4(8)
-          END IF
-        ELSE
-          CALL PUSHINTEGER4(7)
-          GOTO 100
-        END IF
-      CASE (kmin) 
-!skip remainder of loop
-!print *,'cycling jmax'
-        IF (-3 .LT. 2 - icell - 2) THEN
-          istart = 2 - icell - 2
-          CALL PUSHINTEGER4(1)
-        ELSE
-          istart = -3
-          CALL PUSHINTEGER4(0)
-        END IF
-        IF (-3 .LT. 2 - jcell - 2) THEN
-          jstart = 2 - jcell - 2
-          CALL PUSHINTEGER4(1)
-        ELSE
-          jstart = -3
-          CALL PUSHINTEGER4(0)
-        END IF
-        IF (2 .GT. il - icell + 1) THEN
-          iend = il - icell + 1
-          CALL PUSHINTEGER4(1)
-        ELSE
-          iend = 2
-          CALL PUSHINTEGER4(0)
-        END IF
-        IF (2 .GT. jl - jcell + 1) THEN
-          jend = jl - jcell + 1
-          CALL PUSHINTEGER4(1)
-        ELSE
-          jend = 2
-          CALL PUSHINTEGER4(0)
-        END IF
-!print *,'bcfaceID,kmin',BCFaceID(mm),kmin,kMinOverlap,icell,jcell,kcell
-        IF (kminoverlap) THEN
-          xfacecorner(:, :, :) = xblockcorneradj(:, :, 1, :)
-          IF (kcell .EQ. 2) THEN
-            x0(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, -2, 1:3)
-            x1(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, -1, 1:3)
-            x2(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, 0, 1:3)
-            CALL PUSHINTEGER4(9)
-          ELSE
-            x0(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, -3, 1:3)
-            x1(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, -2, 1:3)
-            x2(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, -1, 1:3)
-            CALL PUSHINTEGER4(10)
           END IF
         ELSE
           CALL PUSHINTEGER4(8)
           GOTO 100
         END IF
-      CASE (kmax) 
+      CASE (kmin) 
 !skip remainder of loop
-!print *,'cycling kmin'
+!print *,'cycling jmax'
+!write(unitxAD,*)'cycling jmax'
         IF (-3 .LT. 2 - icell - 2) THEN
           istart = 2 - icell - 2
           CALL PUSHINTEGER4(1)
@@ -584,22 +747,72 @@ loopbocos:DO mm=1,nbocos
           jend = 2
           CALL PUSHINTEGER4(0)
         END IF
-!print *,'bcfaceID,kmax',BCFaceID(mm),kmax,kMaxOverlap,icell,jcell,kcell
-        IF (kmaxoverlap) THEN
-          xfacecorner(:, :, :) = xblockcorneradj(:, :, 2, :)
-          IF (kcell .EQ. kl) THEN
-            x0(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, 1, 1:3)
-            x1(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, 0, 1:3)
-            x2(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, -1, 1:3)
-            CALL PUSHINTEGER4(11)
+!print *,'bcfaceID,kmin',BCFaceID(mm),kmin,kMinOverlap,icell,jcell,kcell 
+        IF (kminoverlap) THEN
+          xfacecorner(:, :, :) = xblockcorneradj(:, :, 1, :, sps2)
+          IF (kcell .EQ. 2) THEN
+            x0(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, -2, 1:3, sps2)
+            x1(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, -1, 1:3, sps2)
+            x2(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, 0, 1:3, sps2)
+            CALL PUSHINTEGER4(9)
           ELSE
-            x0(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, 2, 1:3)
-            x1(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, 1, 1:3)
-            x2(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, 0, 1:3)
-            CALL PUSHINTEGER4(12)
+            x0(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, -3, 1:3, sps2)
+            x1(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, -2, 1:3, sps2)
+            x2(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, -1, 1:3, sps2)
+            CALL PUSHINTEGER4(10)
           END IF
         ELSE
           CALL PUSHINTEGER4(9)
+          GOTO 100
+        END IF
+      CASE (kmax) 
+!skip remainder of loop
+!print *,'cycling kmin'
+!write(unitxAD,*)'cycling kmin'
+        IF (-3 .LT. 2 - icell - 2) THEN
+          istart = 2 - icell - 2
+          CALL PUSHINTEGER4(1)
+        ELSE
+          istart = -3
+          CALL PUSHINTEGER4(0)
+        END IF
+        IF (-3 .LT. 2 - jcell - 2) THEN
+          jstart = 2 - jcell - 2
+          CALL PUSHINTEGER4(1)
+        ELSE
+          jstart = -3
+          CALL PUSHINTEGER4(0)
+        END IF
+        IF (2 .GT. il - icell + 1) THEN
+          iend = il - icell + 1
+          CALL PUSHINTEGER4(1)
+        ELSE
+          iend = 2
+          CALL PUSHINTEGER4(0)
+        END IF
+        IF (2 .GT. jl - jcell + 1) THEN
+          jend = jl - jcell + 1
+          CALL PUSHINTEGER4(1)
+        ELSE
+          jend = 2
+          CALL PUSHINTEGER4(0)
+        END IF
+!print *,'bcfaceID,kmax',BCFaceID(mm),kmax,kMaxOverlap,icell,jcell,kcell 
+        IF (kmaxoverlap) THEN
+          xfacecorner(:, :, :) = xblockcorneradj(:, :, 2, :, sps2)
+          IF (kcell .EQ. kl) THEN
+            x0(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, 1, 1:3, sps2)
+            x1(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, 0, 1:3, sps2)
+            x2(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, -1, 1:3, sps2)
+            CALL PUSHINTEGER4(11)
+          ELSE
+            x0(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, 2, 1:3, sps2)
+            x1(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, 1, 1:3, sps2)
+            x2(-3:2, -3:2, 1:3) = xadj(-3:2, -3:2, 0, 1:3, sps2)
+            CALL PUSHINTEGER4(12)
+          END IF
+        ELSE
+          CALL PUSHINTEGER4(10)
           GOTO 100
         END IF
       CASE DEFAULT
@@ -608,6 +821,22 @@ loopbocos:DO mm=1,nbocos
       CALL PUSHREAL8(v1(1))
 !skip remainder of loop
 !print *,'cycling kmax'
+!write(unitxAD,*)'cycling kmax'
+!!$               write(unitxAD,*) 'kl',kcell,kl,BCFaceID(mm)
+!!$               !print out xAdj
+!!$               do j=jstart,jend!jBeg,jEnd
+!!$                  do i=istart,iend!iBeg,iEnd
+!!$                     do n = 1,3
+!!$                        ii = itemp+i
+!!$                        jj = jtemp+j
+!!$                        
+!                           write(unitxAD,10) i,j,k,n,nnn,v1(1),v1(2),v1(3)
+!10                         format(1x,'res',5I8,3f20.14)
+!!$                        write(unitxAD,10) ii,jj,n,itemp,jtemp,x0(i,j,n),x1(i,j,n),x2(i,j,n)!,dot*norm(n)
+!!$10                      format(1x,'res',5I8,3f20.14)
+!!$                     enddo
+!!$                  enddo
+!!$               enddo
 !CAM commented out on Aug. 11, 2009 by C.A.Mader. Computation modified to fit 
 !CAM into a single residual stencil...
 !!$
@@ -799,6 +1028,35 @@ loopbocos:DO mm=1,nbocos
       ELSE
         CALL PUSHINTEGER4(0)
       END IF
+!print out xAdj
+!!$               istart2 = -3
+!!$               jstart2 = -3
+!!$               kstart2 = -3
+!!$               iend2 = 2
+!!$               jend2 = 2
+!!$               kend2 = 2
+!!$               if(icell==2) istart2=-2
+!!$               if(jcell==2) jstart2=-2
+!!$               if(kcell==2) kstart2=-2
+!!$               if(icell==il) iend2=1
+!!$               if(jcell==jl) jend2=1
+!!$               if(kcell==kl) kend2=1
+!do iiii = istart2,iend2
+!do jjjj = jstart2,jend2
+!     do kkkk = kstart2,kend2
+!!$                        do n = 1,3
+!!$                           ii = itemp+i
+!!$                           jj = jtemp+j
+!!$                           
+!                           write(unitxAD,10) i,j,k,n,nnn,v1(1),v1(2),v1(3)
+!10                         format(1x,'res',5I8,3f20.14)
+!!$                           write(unitxAD,10) ii,jj,n,itemp,jtemp,x0(i,j,n),x2(i,j,n)!,dot*norm(n)
+!!$10                         format(1x,'res',5I8,2f20.14)
+!!$                        enddo
+!
+!!$                     enddo
+!!$                  enddo
+!!$               enddo
 !print *,'xhaloAdj', x0(i,j,1) ,x2(i,j,1) , dot,norm(1),icell+i,jcell+j,BCFaceID(mm)
 ! Reset modified xAdj, depending on the block face on
 ! which the subface is located.
@@ -806,108 +1064,143 @@ loopbocos:DO mm=1,nbocos
       CASE (imin) 
         IF (iminoverlap) THEN
           IF (icell .EQ. 2) THEN
-            xadj(-2, -3:2, -3:2, 1:3) = x0(-3:2, -3:2, 1:3)
-            xadj(-1, -3:2, -3:2, 1:3) = x1(-3:2, -3:2, 1:3)
-            xadj(0, -3:2, -3:2, 1:3) = x2(-3:2, -3:2, 1:3)
-            CALL PUSHINTEGER4(12)
-          ELSE
-            xadj(-3, -3:2, -3:2, 1:3) = x0(-3:2, -3:2, 1:3)
-            xadj(-2, -3:2, -3:2, 1:3) = x1(-3:2, -3:2, 1:3)
-            xadj(-1, -3:2, -3:2, 1:3) = x2(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(-2, :, :, :, sps2), 6**2*3)
+            xadj(-2, -3:2, -3:2, 1:3, sps2) = x0(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(-1, :, :, :, sps2), 6**2*3)
+            xadj(-1, -3:2, -3:2, 1:3, sps2) = x1(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(0, :, :, :, sps2), 6**2*3)
+            xadj(0, -3:2, -3:2, 1:3, sps2) = x2(-3:2, -3:2, 1:3)
             CALL PUSHINTEGER4(13)
+          ELSE
+            CALL PUSHREAL8ARRAY(xadj(-3, :, :, :, sps2), 6**2*3)
+            xadj(-3, -3:2, -3:2, 1:3, sps2) = x0(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(-2, :, :, :, sps2), 6**2*3)
+            xadj(-2, -3:2, -3:2, 1:3, sps2) = x1(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(-1, :, :, :, sps2), 6**2*3)
+            xadj(-1, -3:2, -3:2, 1:3, sps2) = x2(-3:2, -3:2, 1:3)
+            CALL PUSHINTEGER4(14)
           END IF
         ELSE
-          CALL PUSHINTEGER4(11)
+          CALL PUSHINTEGER4(12)
         END IF
       CASE (imax) 
         IF (imaxoverlap) THEN
           IF (icell .EQ. il) THEN
-            xadj(1, -3:2, -3:2, 1:3) = x0(-3:2, -3:2, 1:3)
-            xadj(0, -3:2, -3:2, 1:3) = x1(-3:2, -3:2, 1:3)
-            xadj(-1, -3:2, -3:2, 1:3) = x2(-3:2, -3:2, 1:3)
-            CALL PUSHINTEGER4(15)
-          ELSE
-            xadj(2, -3:2, -3:2, 1:3) = x0(-3:2, -3:2, 1:3)
-            xadj(1, -3:2, -3:2, 1:3) = x1(-3:2, -3:2, 1:3)
-            xadj(0, -3:2, -3:2, 1:3) = x2(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(1, :, :, :, sps2), 6**2*3)
+            xadj(1, -3:2, -3:2, 1:3, sps2) = x0(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(0, :, :, :, sps2), 6**2*3)
+            xadj(0, -3:2, -3:2, 1:3, sps2) = x1(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(-1, :, :, :, sps2), 6**2*3)
+            xadj(-1, -3:2, -3:2, 1:3, sps2) = x2(-3:2, -3:2, 1:3)
             CALL PUSHINTEGER4(16)
+          ELSE
+            CALL PUSHREAL8ARRAY(xadj(2, :, :, :, sps2), 6**2*3)
+            xadj(2, -3:2, -3:2, 1:3, sps2) = x0(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(1, :, :, :, sps2), 6**2*3)
+            xadj(1, -3:2, -3:2, 1:3, sps2) = x1(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(0, :, :, :, sps2), 6**2*3)
+            xadj(0, -3:2, -3:2, 1:3, sps2) = x2(-3:2, -3:2, 1:3)
+            CALL PUSHINTEGER4(17)
           END IF
         ELSE
-          CALL PUSHINTEGER4(14)
+          CALL PUSHINTEGER4(15)
         END IF
       CASE (jmin) 
         IF (jminoverlap) THEN
           IF (jcell .EQ. 2) THEN
-            xadj(-3:2, -2, -3:2, 1:3) = x0(-3:2, -3:2, 1:3)
-            xadj(-3:2, -1, -3:2, 1:3) = x1(-3:2, -3:2, 1:3)
-            xadj(-3:2, 0, -3:2, 1:3) = x2(-3:2, -3:2, 1:3)
-            CALL PUSHINTEGER4(18)
-          ELSE
-            xadj(-3:2, -3, -3:2, 1:3) = x0(-3:2, -3:2, 1:3)
-            xadj(-3:2, -2, -3:2, 1:3) = x1(-3:2, -3:2, 1:3)
-            xadj(-3:2, -1, -3:2, 1:3) = x2(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, -2, :, :, sps2), 6**2*3)
+            xadj(-3:2, -2, -3:2, 1:3, sps2) = x0(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, -1, :, :, sps2), 6**2*3)
+            xadj(-3:2, -1, -3:2, 1:3, sps2) = x1(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, 0, :, :, sps2), 6**2*3)
+            xadj(-3:2, 0, -3:2, 1:3, sps2) = x2(-3:2, -3:2, 1:3)
             CALL PUSHINTEGER4(19)
+          ELSE
+            CALL PUSHREAL8ARRAY(xadj(:, -3, :, :, sps2), 6**2*3)
+            xadj(-3:2, -3, -3:2, 1:3, sps2) = x0(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, -2, :, :, sps2), 6**2*3)
+            xadj(-3:2, -2, -3:2, 1:3, sps2) = x1(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, -1, :, :, sps2), 6**2*3)
+            xadj(-3:2, -1, -3:2, 1:3, sps2) = x2(-3:2, -3:2, 1:3)
+            CALL PUSHINTEGER4(20)
           END IF
         ELSE
-          CALL PUSHINTEGER4(17)
+          CALL PUSHINTEGER4(18)
         END IF
       CASE (jmax) 
         IF (jmaxoverlap) THEN
           IF (jcell .EQ. jl) THEN
-            xadj(-3:2, 1, -3:2, 1:3) = x0(-3:2, -3:2, 1:3)
-            xadj(-3:2, 0, -3:2, 1:3) = x1(-3:2, -3:2, 1:3)
-            xadj(-3:2, -1, -3:2, 1:3) = x2(-3:2, -3:2, 1:3)
-            CALL PUSHINTEGER4(21)
-          ELSE
-            xadj(-3:2, 2, -3:2, 1:3) = x0(-3:2, -3:2, 1:3)
-            xadj(-3:2, 1, -3:2, 1:3) = x1(-3:2, -3:2, 1:3)
-            xadj(-3:2, 0, -3:2, 1:3) = x2(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, 1, :, :, sps2), 6**2*3)
+            xadj(-3:2, 1, -3:2, 1:3, sps2) = x0(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, 0, :, :, sps2), 6**2*3)
+            xadj(-3:2, 0, -3:2, 1:3, sps2) = x1(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, -1, :, :, sps2), 6**2*3)
+            xadj(-3:2, -1, -3:2, 1:3, sps2) = x2(-3:2, -3:2, 1:3)
             CALL PUSHINTEGER4(22)
+          ELSE
+            CALL PUSHREAL8ARRAY(xadj(:, 2, :, :, sps2), 6**2*3)
+            xadj(-3:2, 2, -3:2, 1:3, sps2) = x0(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, 1, :, :, sps2), 6**2*3)
+            xadj(-3:2, 1, -3:2, 1:3, sps2) = x1(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, 0, :, :, sps2), 6**2*3)
+            xadj(-3:2, 0, -3:2, 1:3, sps2) = x2(-3:2, -3:2, 1:3)
+            CALL PUSHINTEGER4(23)
           END IF
         ELSE
-          CALL PUSHINTEGER4(20)
+          CALL PUSHINTEGER4(21)
         END IF
       CASE (kmin) 
         IF (kminoverlap) THEN
           IF (kcell .EQ. 2) THEN
-            xadj(-3:2, -3:2, -2, 1:3) = x0(-3:2, -3:2, 1:3)
-            xadj(-3:2, -3:2, -1, 1:3) = x1(-3:2, -3:2, 1:3)
-            xadj(-3:2, -3:2, 0, 1:3) = x2(-3:2, -3:2, 1:3)
-            CALL PUSHINTEGER4(24)
-          ELSE
-            xadj(-3:2, -3:2, -3, 1:3) = x0(-3:2, -3:2, 1:3)
-            xadj(-3:2, -3:2, -2, 1:3) = x1(-3:2, -3:2, 1:3)
-            xadj(-3:2, -3:2, -1, 1:3) = x2(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, :, -2, :, sps2), 6**2*3)
+            xadj(-3:2, -3:2, -2, 1:3, sps2) = x0(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, :, -1, :, sps2), 6**2*3)
+            xadj(-3:2, -3:2, -1, 1:3, sps2) = x1(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, :, 0, :, sps2), 6**2*3)
+            xadj(-3:2, -3:2, 0, 1:3, sps2) = x2(-3:2, -3:2, 1:3)
             CALL PUSHINTEGER4(25)
+          ELSE
+            CALL PUSHREAL8ARRAY(xadj(:, :, -3, :, sps2), 6**2*3)
+            xadj(-3:2, -3:2, -3, 1:3, sps2) = x0(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, :, -2, :, sps2), 6**2*3)
+            xadj(-3:2, -3:2, -2, 1:3, sps2) = x1(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, :, -1, :, sps2), 6**2*3)
+            xadj(-3:2, -3:2, -1, 1:3, sps2) = x2(-3:2, -3:2, 1:3)
+            CALL PUSHINTEGER4(26)
           END IF
         ELSE
-          CALL PUSHINTEGER4(23)
+          CALL PUSHINTEGER4(24)
         END IF
       CASE (kmax) 
         IF (kmaxoverlap) THEN
           IF (kcell .EQ. kl) THEN
-            xadj(-3:2, -3:2, 1, 1:3) = x0(-3:2, -3:2, 1:3)
-            xadj(-3:2, -3:2, 0, 1:3) = x1(-3:2, -3:2, 1:3)
-            xadj(-3:2, -3:2, -1, 1:3) = x2(-3:2, -3:2, 1:3)
-            CALL PUSHINTEGER4(27)
-          ELSE
-            xadj(-3:2, -3:2, 2, 1:3) = x0(-3:2, -3:2, 1:3)
-            xadj(-3:2, -3:2, 1, 1:3) = x1(-3:2, -3:2, 1:3)
-            xadj(-3:2, -3:2, 0, 1:3) = x2(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, :, 1, :, sps2), 6**2*3)
+            xadj(-3:2, -3:2, 1, 1:3, sps2) = x0(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, :, 0, :, sps2), 6**2*3)
+            xadj(-3:2, -3:2, 0, 1:3, sps2) = x1(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, :, -1, :, sps2), 6**2*3)
+            xadj(-3:2, -3:2, -1, 1:3, sps2) = x2(-3:2, -3:2, 1:3)
             CALL PUSHINTEGER4(28)
+          ELSE
+            CALL PUSHREAL8ARRAY(xadj(:, :, 2, :, sps2), 6**2*3)
+            xadj(-3:2, -3:2, 2, 1:3, sps2) = x0(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, :, 1, :, sps2), 6**2*3)
+            xadj(-3:2, -3:2, 1, 1:3, sps2) = x1(-3:2, -3:2, 1:3)
+            CALL PUSHREAL8ARRAY(xadj(:, :, 0, :, sps2), 6**2*3)
+            xadj(-3:2, -3:2, 0, 1:3, sps2) = x2(-3:2, -3:2, 1:3)
+            CALL PUSHINTEGER4(29)
           END IF
         ELSE
-          CALL PUSHINTEGER4(26)
+          CALL PUSHINTEGER4(27)
         END IF
       CASE DEFAULT
-        CALL PUSHINTEGER4(10)
+        CALL PUSHINTEGER4(11)
       END SELECT
     ELSE
-      CALL PUSHINTEGER4(3)
+      CALL PUSHINTEGER4(4)
     END IF
  100 CONTINUE
   END DO loopbocos
-  xblockcorneradjb(1:2, 1:2, 1:2, 1:3) = 0.0
   v1b(1:3) = 0.0
   v2b(1:3) = 0.0
   xfacecornerb(1:2, 1:2, 1:3) = 0.0
@@ -917,22 +1210,22 @@ loopbocos:DO mm=1,nbocos
   x2b(-3:2, -3:2, 1:3) = 0.0
   DO mm=nbocos,1,-1
     CALL POPINTEGER4(branch)
-    IF (branch .LT. 16) THEN
-      IF (branch .LT. 10) THEN
-        IF (branch .LT. 7) THEN
-          IF (branch .LT. 5) THEN
-            IF (branch .LT. 4) THEN
+    IF (branch .LT. 17) THEN
+      IF (branch .LT. 11) THEN
+        IF (branch .LT. 8) THEN
+          IF (branch .LT. 6) THEN
+            IF (branch .LT. 5) THEN
               GOTO 190
             ELSE
               GOTO 180
             END IF
-          ELSE IF (branch .LT. 6) THEN
+          ELSE IF (branch .LT. 7) THEN
             GOTO 170
           ELSE
             GOTO 160
           END IF
-        ELSE IF (branch .LT. 9) THEN
-          IF (branch .LT. 8) THEN
+        ELSE IF (branch .LT. 10) THEN
+          IF (branch .LT. 9) THEN
             GOTO 150
           ELSE
             GOTO 140
@@ -940,145 +1233,181 @@ loopbocos:DO mm=1,nbocos
         ELSE
           GOTO 130
         END IF
-      ELSE IF (branch .LT. 13) THEN
-        IF (.NOT.branch .LT. 12) THEN
+      ELSE IF (branch .LT. 14) THEN
+        IF (.NOT.branch .LT. 13) THEN
+          CALL POPREAL8ARRAY(xadj(0, :, :, :, sps2), 6**2*3)
           x2b(-3:2, -3:2, 1:3) = x2b(-3:2, -3:2, 1:3) + xadjb(0, -3:2, -&
-&            3:2, 1:3)
-          xadjb(0, -3:2, -3:2, 1:3) = 0.0
+&            3:2, 1:3, sps2)
+          xadjb(0, -3:2, -3:2, 1:3, sps2) = 0.0
+          CALL POPREAL8ARRAY(xadj(-1, :, :, :, sps2), 6**2*3)
           x1b(-3:2, -3:2, 1:3) = x1b(-3:2, -3:2, 1:3) + xadjb(-1, -3:2, &
-&            -3:2, 1:3)
-          xadjb(-1, -3:2, -3:2, 1:3) = 0.0
+&            -3:2, 1:3, sps2)
+          xadjb(-1, -3:2, -3:2, 1:3, sps2) = 0.0
+          CALL POPREAL8ARRAY(xadj(-2, :, :, :, sps2), 6**2*3)
           x0b(-3:2, -3:2, 1:3) = x0b(-3:2, -3:2, 1:3) + xadjb(-2, -3:2, &
-&            -3:2, 1:3)
-          xadjb(-2, -3:2, -3:2, 1:3) = 0.0
+&            -3:2, 1:3, sps2)
+          xadjb(-2, -3:2, -3:2, 1:3, sps2) = 0.0
         END IF
-      ELSE IF (branch .LT. 15) THEN
-        IF (branch .LT. 14) THEN
+      ELSE IF (branch .LT. 16) THEN
+        IF (branch .LT. 15) THEN
+          CALL POPREAL8ARRAY(xadj(-1, :, :, :, sps2), 6**2*3)
           x2b(-3:2, -3:2, 1:3) = x2b(-3:2, -3:2, 1:3) + xadjb(-1, -3:2, &
-&            -3:2, 1:3)
-          xadjb(-1, -3:2, -3:2, 1:3) = 0.0
+&            -3:2, 1:3, sps2)
+          xadjb(-1, -3:2, -3:2, 1:3, sps2) = 0.0
+          CALL POPREAL8ARRAY(xadj(-2, :, :, :, sps2), 6**2*3)
           x1b(-3:2, -3:2, 1:3) = x1b(-3:2, -3:2, 1:3) + xadjb(-2, -3:2, &
-&            -3:2, 1:3)
-          xadjb(-2, -3:2, -3:2, 1:3) = 0.0
+&            -3:2, 1:3, sps2)
+          xadjb(-2, -3:2, -3:2, 1:3, sps2) = 0.0
+          CALL POPREAL8ARRAY(xadj(-3, :, :, :, sps2), 6**2*3)
           x0b(-3:2, -3:2, 1:3) = x0b(-3:2, -3:2, 1:3) + xadjb(-3, -3:2, &
-&            -3:2, 1:3)
-          xadjb(-3, -3:2, -3:2, 1:3) = 0.0
+&            -3:2, 1:3, sps2)
+          xadjb(-3, -3:2, -3:2, 1:3, sps2) = 0.0
         END IF
       ELSE
+        CALL POPREAL8ARRAY(xadj(-1, :, :, :, sps2), 6**2*3)
         x2b(-3:2, -3:2, 1:3) = x2b(-3:2, -3:2, 1:3) + xadjb(-1, -3:2, -3&
-&          :2, 1:3)
-        xadjb(-1, -3:2, -3:2, 1:3) = 0.0
+&          :2, 1:3, sps2)
+        xadjb(-1, -3:2, -3:2, 1:3, sps2) = 0.0
+        CALL POPREAL8ARRAY(xadj(0, :, :, :, sps2), 6**2*3)
         x1b(-3:2, -3:2, 1:3) = x1b(-3:2, -3:2, 1:3) + xadjb(0, -3:2, -3:&
-&          2, 1:3)
-        xadjb(0, -3:2, -3:2, 1:3) = 0.0
+&          2, 1:3, sps2)
+        xadjb(0, -3:2, -3:2, 1:3, sps2) = 0.0
+        CALL POPREAL8ARRAY(xadj(1, :, :, :, sps2), 6**2*3)
         x0b(-3:2, -3:2, 1:3) = x0b(-3:2, -3:2, 1:3) + xadjb(1, -3:2, -3:&
-&          2, 1:3)
-        xadjb(1, -3:2, -3:2, 1:3) = 0.0
+&          2, 1:3, sps2)
+        xadjb(1, -3:2, -3:2, 1:3, sps2) = 0.0
       END IF
-    ELSE IF (branch .LT. 23) THEN
-      IF (branch .LT. 20) THEN
-        IF (branch .LT. 18) THEN
-          IF (branch .LT. 17) THEN
+    ELSE IF (branch .LT. 24) THEN
+      IF (branch .LT. 21) THEN
+        IF (branch .LT. 19) THEN
+          IF (branch .LT. 18) THEN
+            CALL POPREAL8ARRAY(xadj(0, :, :, :, sps2), 6**2*3)
             x2b(-3:2, -3:2, 1:3) = x2b(-3:2, -3:2, 1:3) + xadjb(0, -3:2&
-&              , -3:2, 1:3)
-            xadjb(0, -3:2, -3:2, 1:3) = 0.0
+&              , -3:2, 1:3, sps2)
+            xadjb(0, -3:2, -3:2, 1:3, sps2) = 0.0
+            CALL POPREAL8ARRAY(xadj(1, :, :, :, sps2), 6**2*3)
             x1b(-3:2, -3:2, 1:3) = x1b(-3:2, -3:2, 1:3) + xadjb(1, -3:2&
-&              , -3:2, 1:3)
-            xadjb(1, -3:2, -3:2, 1:3) = 0.0
+&              , -3:2, 1:3, sps2)
+            xadjb(1, -3:2, -3:2, 1:3, sps2) = 0.0
+            CALL POPREAL8ARRAY(xadj(2, :, :, :, sps2), 6**2*3)
             x0b(-3:2, -3:2, 1:3) = x0b(-3:2, -3:2, 1:3) + xadjb(2, -3:2&
-&              , -3:2, 1:3)
-            xadjb(2, -3:2, -3:2, 1:3) = 0.0
+&              , -3:2, 1:3, sps2)
+            xadjb(2, -3:2, -3:2, 1:3, sps2) = 0.0
           END IF
-        ELSE IF (branch .LT. 19) THEN
+        ELSE IF (branch .LT. 20) THEN
+          CALL POPREAL8ARRAY(xadj(:, 0, :, :, sps2), 6**2*3)
           x2b(-3:2, -3:2, 1:3) = x2b(-3:2, -3:2, 1:3) + xadjb(-3:2, 0, -&
-&            3:2, 1:3)
-          xadjb(-3:2, 0, -3:2, 1:3) = 0.0
+&            3:2, 1:3, sps2)
+          xadjb(-3:2, 0, -3:2, 1:3, sps2) = 0.0
+          CALL POPREAL8ARRAY(xadj(:, -1, :, :, sps2), 6**2*3)
           x1b(-3:2, -3:2, 1:3) = x1b(-3:2, -3:2, 1:3) + xadjb(-3:2, -1, &
-&            -3:2, 1:3)
-          xadjb(-3:2, -1, -3:2, 1:3) = 0.0
+&            -3:2, 1:3, sps2)
+          xadjb(-3:2, -1, -3:2, 1:3, sps2) = 0.0
+          CALL POPREAL8ARRAY(xadj(:, -2, :, :, sps2), 6**2*3)
           x0b(-3:2, -3:2, 1:3) = x0b(-3:2, -3:2, 1:3) + xadjb(-3:2, -2, &
-&            -3:2, 1:3)
-          xadjb(-3:2, -2, -3:2, 1:3) = 0.0
+&            -3:2, 1:3, sps2)
+          xadjb(-3:2, -2, -3:2, 1:3, sps2) = 0.0
         ELSE
+          CALL POPREAL8ARRAY(xadj(:, -1, :, :, sps2), 6**2*3)
           x2b(-3:2, -3:2, 1:3) = x2b(-3:2, -3:2, 1:3) + xadjb(-3:2, -1, &
-&            -3:2, 1:3)
-          xadjb(-3:2, -1, -3:2, 1:3) = 0.0
+&            -3:2, 1:3, sps2)
+          xadjb(-3:2, -1, -3:2, 1:3, sps2) = 0.0
+          CALL POPREAL8ARRAY(xadj(:, -2, :, :, sps2), 6**2*3)
           x1b(-3:2, -3:2, 1:3) = x1b(-3:2, -3:2, 1:3) + xadjb(-3:2, -2, &
-&            -3:2, 1:3)
-          xadjb(-3:2, -2, -3:2, 1:3) = 0.0
+&            -3:2, 1:3, sps2)
+          xadjb(-3:2, -2, -3:2, 1:3, sps2) = 0.0
+          CALL POPREAL8ARRAY(xadj(:, -3, :, :, sps2), 6**2*3)
           x0b(-3:2, -3:2, 1:3) = x0b(-3:2, -3:2, 1:3) + xadjb(-3:2, -3, &
-&            -3:2, 1:3)
-          xadjb(-3:2, -3, -3:2, 1:3) = 0.0
+&            -3:2, 1:3, sps2)
+          xadjb(-3:2, -3, -3:2, 1:3, sps2) = 0.0
         END IF
-      ELSE IF (branch .LT. 22) THEN
-        IF (.NOT.branch .LT. 21) THEN
+      ELSE IF (branch .LT. 23) THEN
+        IF (.NOT.branch .LT. 22) THEN
+          CALL POPREAL8ARRAY(xadj(:, -1, :, :, sps2), 6**2*3)
           x2b(-3:2, -3:2, 1:3) = x2b(-3:2, -3:2, 1:3) + xadjb(-3:2, -1, &
-&            -3:2, 1:3)
-          xadjb(-3:2, -1, -3:2, 1:3) = 0.0
+&            -3:2, 1:3, sps2)
+          xadjb(-3:2, -1, -3:2, 1:3, sps2) = 0.0
+          CALL POPREAL8ARRAY(xadj(:, 0, :, :, sps2), 6**2*3)
           x1b(-3:2, -3:2, 1:3) = x1b(-3:2, -3:2, 1:3) + xadjb(-3:2, 0, -&
-&            3:2, 1:3)
-          xadjb(-3:2, 0, -3:2, 1:3) = 0.0
+&            3:2, 1:3, sps2)
+          xadjb(-3:2, 0, -3:2, 1:3, sps2) = 0.0
+          CALL POPREAL8ARRAY(xadj(:, 1, :, :, sps2), 6**2*3)
           x0b(-3:2, -3:2, 1:3) = x0b(-3:2, -3:2, 1:3) + xadjb(-3:2, 1, -&
-&            3:2, 1:3)
-          xadjb(-3:2, 1, -3:2, 1:3) = 0.0
+&            3:2, 1:3, sps2)
+          xadjb(-3:2, 1, -3:2, 1:3, sps2) = 0.0
         END IF
       ELSE
+        CALL POPREAL8ARRAY(xadj(:, 0, :, :, sps2), 6**2*3)
         x2b(-3:2, -3:2, 1:3) = x2b(-3:2, -3:2, 1:3) + xadjb(-3:2, 0, -3:&
-&          2, 1:3)
-        xadjb(-3:2, 0, -3:2, 1:3) = 0.0
+&          2, 1:3, sps2)
+        xadjb(-3:2, 0, -3:2, 1:3, sps2) = 0.0
+        CALL POPREAL8ARRAY(xadj(:, 1, :, :, sps2), 6**2*3)
         x1b(-3:2, -3:2, 1:3) = x1b(-3:2, -3:2, 1:3) + xadjb(-3:2, 1, -3:&
-&          2, 1:3)
-        xadjb(-3:2, 1, -3:2, 1:3) = 0.0
+&          2, 1:3, sps2)
+        xadjb(-3:2, 1, -3:2, 1:3, sps2) = 0.0
+        CALL POPREAL8ARRAY(xadj(:, 2, :, :, sps2), 6**2*3)
         x0b(-3:2, -3:2, 1:3) = x0b(-3:2, -3:2, 1:3) + xadjb(-3:2, 2, -3:&
-&          2, 1:3)
-        xadjb(-3:2, 2, -3:2, 1:3) = 0.0
+&          2, 1:3, sps2)
+        xadjb(-3:2, 2, -3:2, 1:3, sps2) = 0.0
       END IF
-    ELSE IF (branch .LT. 26) THEN
-      IF (branch .LT. 25) THEN
-        IF (.NOT.branch .LT. 24) THEN
+    ELSE IF (branch .LT. 27) THEN
+      IF (branch .LT. 26) THEN
+        IF (.NOT.branch .LT. 25) THEN
+          CALL POPREAL8ARRAY(xadj(:, :, 0, :, sps2), 6**2*3)
           x2b(-3:2, -3:2, 1:3) = x2b(-3:2, -3:2, 1:3) + xadjb(-3:2, -3:2&
-&            , 0, 1:3)
-          xadjb(-3:2, -3:2, 0, 1:3) = 0.0
+&            , 0, 1:3, sps2)
+          xadjb(-3:2, -3:2, 0, 1:3, sps2) = 0.0
+          CALL POPREAL8ARRAY(xadj(:, :, -1, :, sps2), 6**2*3)
           x1b(-3:2, -3:2, 1:3) = x1b(-3:2, -3:2, 1:3) + xadjb(-3:2, -3:2&
-&            , -1, 1:3)
-          xadjb(-3:2, -3:2, -1, 1:3) = 0.0
+&            , -1, 1:3, sps2)
+          xadjb(-3:2, -3:2, -1, 1:3, sps2) = 0.0
+          CALL POPREAL8ARRAY(xadj(:, :, -2, :, sps2), 6**2*3)
           x0b(-3:2, -3:2, 1:3) = x0b(-3:2, -3:2, 1:3) + xadjb(-3:2, -3:2&
-&            , -2, 1:3)
-          xadjb(-3:2, -3:2, -2, 1:3) = 0.0
+&            , -2, 1:3, sps2)
+          xadjb(-3:2, -3:2, -2, 1:3, sps2) = 0.0
         END IF
       ELSE
+        CALL POPREAL8ARRAY(xadj(:, :, -1, :, sps2), 6**2*3)
         x2b(-3:2, -3:2, 1:3) = x2b(-3:2, -3:2, 1:3) + xadjb(-3:2, -3:2, &
-&          -1, 1:3)
-        xadjb(-3:2, -3:2, -1, 1:3) = 0.0
+&          -1, 1:3, sps2)
+        xadjb(-3:2, -3:2, -1, 1:3, sps2) = 0.0
+        CALL POPREAL8ARRAY(xadj(:, :, -2, :, sps2), 6**2*3)
         x1b(-3:2, -3:2, 1:3) = x1b(-3:2, -3:2, 1:3) + xadjb(-3:2, -3:2, &
-&          -2, 1:3)
-        xadjb(-3:2, -3:2, -2, 1:3) = 0.0
+&          -2, 1:3, sps2)
+        xadjb(-3:2, -3:2, -2, 1:3, sps2) = 0.0
+        CALL POPREAL8ARRAY(xadj(:, :, -3, :, sps2), 6**2*3)
         x0b(-3:2, -3:2, 1:3) = x0b(-3:2, -3:2, 1:3) + xadjb(-3:2, -3:2, &
-&          -3, 1:3)
-        xadjb(-3:2, -3:2, -3, 1:3) = 0.0
+&          -3, 1:3, sps2)
+        xadjb(-3:2, -3:2, -3, 1:3, sps2) = 0.0
       END IF
-    ELSE IF (branch .LT. 28) THEN
-      IF (.NOT.branch .LT. 27) THEN
+    ELSE IF (branch .LT. 29) THEN
+      IF (.NOT.branch .LT. 28) THEN
+        CALL POPREAL8ARRAY(xadj(:, :, -1, :, sps2), 6**2*3)
         x2b(-3:2, -3:2, 1:3) = x2b(-3:2, -3:2, 1:3) + xadjb(-3:2, -3:2, &
-&          -1, 1:3)
-        xadjb(-3:2, -3:2, -1, 1:3) = 0.0
+&          -1, 1:3, sps2)
+        xadjb(-3:2, -3:2, -1, 1:3, sps2) = 0.0
+        CALL POPREAL8ARRAY(xadj(:, :, 0, :, sps2), 6**2*3)
         x1b(-3:2, -3:2, 1:3) = x1b(-3:2, -3:2, 1:3) + xadjb(-3:2, -3:2, &
-&          0, 1:3)
-        xadjb(-3:2, -3:2, 0, 1:3) = 0.0
+&          0, 1:3, sps2)
+        xadjb(-3:2, -3:2, 0, 1:3, sps2) = 0.0
+        CALL POPREAL8ARRAY(xadj(:, :, 1, :, sps2), 6**2*3)
         x0b(-3:2, -3:2, 1:3) = x0b(-3:2, -3:2, 1:3) + xadjb(-3:2, -3:2, &
-&          1, 1:3)
-        xadjb(-3:2, -3:2, 1, 1:3) = 0.0
+&          1, 1:3, sps2)
+        xadjb(-3:2, -3:2, 1, 1:3, sps2) = 0.0
       END IF
     ELSE
+      CALL POPREAL8ARRAY(xadj(:, :, 0, :, sps2), 6**2*3)
       x2b(-3:2, -3:2, 1:3) = x2b(-3:2, -3:2, 1:3) + xadjb(-3:2, -3:2, 0&
-&        , 1:3)
-      xadjb(-3:2, -3:2, 0, 1:3) = 0.0
+&        , 1:3, sps2)
+      xadjb(-3:2, -3:2, 0, 1:3, sps2) = 0.0
+      CALL POPREAL8ARRAY(xadj(:, :, 1, :, sps2), 6**2*3)
       x1b(-3:2, -3:2, 1:3) = x1b(-3:2, -3:2, 1:3) + xadjb(-3:2, -3:2, 1&
-&        , 1:3)
-      xadjb(-3:2, -3:2, 1, 1:3) = 0.0
+&        , 1:3, sps2)
+      xadjb(-3:2, -3:2, 1, 1:3, sps2) = 0.0
+      CALL POPREAL8ARRAY(xadj(:, :, 2, :, sps2), 6**2*3)
       x0b(-3:2, -3:2, 1:3) = x0b(-3:2, -3:2, 1:3) + xadjb(-3:2, -3:2, 2&
-&        , 1:3)
-      xadjb(-3:2, -3:2, 2, 1:3) = 0.0
+&        , 1:3, sps2)
+      xadjb(-3:2, -3:2, 2, 1:3, sps2) = 0.0
     END IF
     CALL POPINTEGER4(branch)
     IF (branch .LT. 1) THEN
@@ -1187,167 +1516,167 @@ loopbocos:DO mm=1,nbocos
           IF (branch .LT. 1) THEN
             GOTO 190
           ELSE
-            xadjb(0, -3:2, -3:2, 1:3) = xadjb(0, -3:2, -3:2, 1:3) + x2b(&
-&              -3:2, -3:2, 1:3)
+            xadjb(0, -3:2, -3:2, 1:3, sps2) = xadjb(0, -3:2, -3:2, 1:3, &
+&              sps2) + x2b(-3:2, -3:2, 1:3)
             x2b(-3:2, -3:2, 1:3) = 0.0
-            xadjb(-1, -3:2, -3:2, 1:3) = xadjb(-1, -3:2, -3:2, 1:3) + &
-&              x1b(-3:2, -3:2, 1:3)
+            xadjb(-1, -3:2, -3:2, 1:3, sps2) = xadjb(-1, -3:2, -3:2, 1:3&
+&              , sps2) + x1b(-3:2, -3:2, 1:3)
             x1b(-3:2, -3:2, 1:3) = 0.0
-            xadjb(-2, -3:2, -3:2, 1:3) = xadjb(-2, -3:2, -3:2, 1:3) + &
-&              x0b(-3:2, -3:2, 1:3)
+            xadjb(-2, -3:2, -3:2, 1:3, sps2) = xadjb(-2, -3:2, -3:2, 1:3&
+&              , sps2) + x0b(-3:2, -3:2, 1:3)
             x0b(-3:2, -3:2, 1:3) = 0.0
           END IF
         ELSE IF (branch .LT. 3) THEN
-          xadjb(-1, -3:2, -3:2, 1:3) = xadjb(-1, -3:2, -3:2, 1:3) + x2b(&
-&            -3:2, -3:2, 1:3)
+          xadjb(-1, -3:2, -3:2, 1:3, sps2) = xadjb(-1, -3:2, -3:2, 1:3, &
+&            sps2) + x2b(-3:2, -3:2, 1:3)
           x2b(-3:2, -3:2, 1:3) = 0.0
-          xadjb(-2, -3:2, -3:2, 1:3) = xadjb(-2, -3:2, -3:2, 1:3) + x1b(&
-&            -3:2, -3:2, 1:3)
+          xadjb(-2, -3:2, -3:2, 1:3, sps2) = xadjb(-2, -3:2, -3:2, 1:3, &
+&            sps2) + x1b(-3:2, -3:2, 1:3)
           x1b(-3:2, -3:2, 1:3) = 0.0
-          xadjb(-3, -3:2, -3:2, 1:3) = xadjb(-3, -3:2, -3:2, 1:3) + x0b(&
-&            -3:2, -3:2, 1:3)
+          xadjb(-3, -3:2, -3:2, 1:3, sps2) = xadjb(-3, -3:2, -3:2, 1:3, &
+&            sps2) + x0b(-3:2, -3:2, 1:3)
           x0b(-3:2, -3:2, 1:3) = 0.0
         ELSE
-          xadjb(-1, -3:2, -3:2, 1:3) = xadjb(-1, -3:2, -3:2, 1:3) + x2b(&
-&            -3:2, -3:2, 1:3)
+          xadjb(-1, -3:2, -3:2, 1:3, sps2) = xadjb(-1, -3:2, -3:2, 1:3, &
+&            sps2) + x2b(-3:2, -3:2, 1:3)
           x2b(-3:2, -3:2, 1:3) = 0.0
-          xadjb(0, -3:2, -3:2, 1:3) = xadjb(0, -3:2, -3:2, 1:3) + x1b(-3&
-&            :2, -3:2, 1:3)
+          xadjb(0, -3:2, -3:2, 1:3, sps2) = xadjb(0, -3:2, -3:2, 1:3, &
+&            sps2) + x1b(-3:2, -3:2, 1:3)
           x1b(-3:2, -3:2, 1:3) = 0.0
-          xadjb(1, -3:2, -3:2, 1:3) = xadjb(1, -3:2, -3:2, 1:3) + x0b(-3&
-&            :2, -3:2, 1:3)
+          xadjb(1, -3:2, -3:2, 1:3, sps2) = xadjb(1, -3:2, -3:2, 1:3, &
+&            sps2) + x0b(-3:2, -3:2, 1:3)
           x0b(-3:2, -3:2, 1:3) = 0.0
           GOTO 110
         END IF
-        xblockcorneradjb(1, :, :, :) = xblockcorneradjb(1, :, :, :) + &
-&          xfacecornerb(:, :, :)
+        xblockcorneradjb(1, :, :, :, sps2) = xblockcorneradjb(1, :, :, :&
+&          , sps2) + xfacecornerb(:, :, :)
         xfacecornerb(:, :, :) = 0.0
         GOTO 180
       ELSE
         IF (branch .LT. 6) THEN
           IF (branch .LT. 5) THEN
-            xadjb(0, -3:2, -3:2, 1:3) = xadjb(0, -3:2, -3:2, 1:3) + x2b(&
-&              -3:2, -3:2, 1:3)
+            xadjb(0, -3:2, -3:2, 1:3, sps2) = xadjb(0, -3:2, -3:2, 1:3, &
+&              sps2) + x2b(-3:2, -3:2, 1:3)
             x2b(-3:2, -3:2, 1:3) = 0.0
-            xadjb(1, -3:2, -3:2, 1:3) = xadjb(1, -3:2, -3:2, 1:3) + x1b(&
-&              -3:2, -3:2, 1:3)
+            xadjb(1, -3:2, -3:2, 1:3, sps2) = xadjb(1, -3:2, -3:2, 1:3, &
+&              sps2) + x1b(-3:2, -3:2, 1:3)
             x1b(-3:2, -3:2, 1:3) = 0.0
-            xadjb(2, -3:2, -3:2, 1:3) = xadjb(2, -3:2, -3:2, 1:3) + x0b(&
-&              -3:2, -3:2, 1:3)
+            xadjb(2, -3:2, -3:2, 1:3, sps2) = xadjb(2, -3:2, -3:2, 1:3, &
+&              sps2) + x0b(-3:2, -3:2, 1:3)
             x0b(-3:2, -3:2, 1:3) = 0.0
             GOTO 110
           ELSE
-            xadjb(-3:2, 0, -3:2, 1:3) = xadjb(-3:2, 0, -3:2, 1:3) + x2b(&
-&              -3:2, -3:2, 1:3)
+            xadjb(-3:2, 0, -3:2, 1:3, sps2) = xadjb(-3:2, 0, -3:2, 1:3, &
+&              sps2) + x2b(-3:2, -3:2, 1:3)
             x2b(-3:2, -3:2, 1:3) = 0.0
-            xadjb(-3:2, -1, -3:2, 1:3) = xadjb(-3:2, -1, -3:2, 1:3) + &
-&              x1b(-3:2, -3:2, 1:3)
+            xadjb(-3:2, -1, -3:2, 1:3, sps2) = xadjb(-3:2, -1, -3:2, 1:3&
+&              , sps2) + x1b(-3:2, -3:2, 1:3)
             x1b(-3:2, -3:2, 1:3) = 0.0
-            xadjb(-3:2, -2, -3:2, 1:3) = xadjb(-3:2, -2, -3:2, 1:3) + &
-&              x0b(-3:2, -3:2, 1:3)
+            xadjb(-3:2, -2, -3:2, 1:3, sps2) = xadjb(-3:2, -2, -3:2, 1:3&
+&              , sps2) + x0b(-3:2, -3:2, 1:3)
             x0b(-3:2, -3:2, 1:3) = 0.0
           END IF
         ELSE
-          xadjb(-3:2, -1, -3:2, 1:3) = xadjb(-3:2, -1, -3:2, 1:3) + x2b(&
-&            -3:2, -3:2, 1:3)
+          xadjb(-3:2, -1, -3:2, 1:3, sps2) = xadjb(-3:2, -1, -3:2, 1:3, &
+&            sps2) + x2b(-3:2, -3:2, 1:3)
           x2b(-3:2, -3:2, 1:3) = 0.0
-          xadjb(-3:2, -2, -3:2, 1:3) = xadjb(-3:2, -2, -3:2, 1:3) + x1b(&
-&            -3:2, -3:2, 1:3)
+          xadjb(-3:2, -2, -3:2, 1:3, sps2) = xadjb(-3:2, -2, -3:2, 1:3, &
+&            sps2) + x1b(-3:2, -3:2, 1:3)
           x1b(-3:2, -3:2, 1:3) = 0.0
-          xadjb(-3:2, -3, -3:2, 1:3) = xadjb(-3:2, -3, -3:2, 1:3) + x0b(&
-&            -3:2, -3:2, 1:3)
+          xadjb(-3:2, -3, -3:2, 1:3, sps2) = xadjb(-3:2, -3, -3:2, 1:3, &
+&            sps2) + x0b(-3:2, -3:2, 1:3)
           x0b(-3:2, -3:2, 1:3) = 0.0
         END IF
-        xblockcorneradjb(:, 1, :, :) = xblockcorneradjb(:, 1, :, :) + &
-&          xfacecornerb(:, :, :)
+        xblockcorneradjb(:, 1, :, :, sps2) = xblockcorneradjb(:, 1, :, :&
+&          , sps2) + xfacecornerb(:, :, :)
         xfacecornerb(:, :, :) = 0.0
         GOTO 160
       END IF
- 110  xblockcorneradjb(2, :, :, :) = xblockcorneradjb(2, :, :, :) + &
-&        xfacecornerb(:, :, :)
+ 110  xblockcorneradjb(2, :, :, :, sps2) = xblockcorneradjb(2, :, :, :, &
+&        sps2) + xfacecornerb(:, :, :)
       xfacecornerb(:, :, :) = 0.0
       GOTO 170
     ELSE
       IF (branch .LT. 10) THEN
         IF (branch .LT. 9) THEN
           IF (branch .LT. 8) THEN
-            xadjb(-3:2, -1, -3:2, 1:3) = xadjb(-3:2, -1, -3:2, 1:3) + &
-&              x2b(-3:2, -3:2, 1:3)
+            xadjb(-3:2, -1, -3:2, 1:3, sps2) = xadjb(-3:2, -1, -3:2, 1:3&
+&              , sps2) + x2b(-3:2, -3:2, 1:3)
             x2b(-3:2, -3:2, 1:3) = 0.0
-            xadjb(-3:2, 0, -3:2, 1:3) = xadjb(-3:2, 0, -3:2, 1:3) + x1b(&
-&              -3:2, -3:2, 1:3)
+            xadjb(-3:2, 0, -3:2, 1:3, sps2) = xadjb(-3:2, 0, -3:2, 1:3, &
+&              sps2) + x1b(-3:2, -3:2, 1:3)
             x1b(-3:2, -3:2, 1:3) = 0.0
-            xadjb(-3:2, 1, -3:2, 1:3) = xadjb(-3:2, 1, -3:2, 1:3) + x0b(&
-&              -3:2, -3:2, 1:3)
+            xadjb(-3:2, 1, -3:2, 1:3, sps2) = xadjb(-3:2, 1, -3:2, 1:3, &
+&              sps2) + x0b(-3:2, -3:2, 1:3)
             x0b(-3:2, -3:2, 1:3) = 0.0
           ELSE
-            xadjb(-3:2, 0, -3:2, 1:3) = xadjb(-3:2, 0, -3:2, 1:3) + x2b(&
-&              -3:2, -3:2, 1:3)
+            xadjb(-3:2, 0, -3:2, 1:3, sps2) = xadjb(-3:2, 0, -3:2, 1:3, &
+&              sps2) + x2b(-3:2, -3:2, 1:3)
             x2b(-3:2, -3:2, 1:3) = 0.0
-            xadjb(-3:2, 1, -3:2, 1:3) = xadjb(-3:2, 1, -3:2, 1:3) + x1b(&
-&              -3:2, -3:2, 1:3)
+            xadjb(-3:2, 1, -3:2, 1:3, sps2) = xadjb(-3:2, 1, -3:2, 1:3, &
+&              sps2) + x1b(-3:2, -3:2, 1:3)
             x1b(-3:2, -3:2, 1:3) = 0.0
-            xadjb(-3:2, 2, -3:2, 1:3) = xadjb(-3:2, 2, -3:2, 1:3) + x0b(&
-&              -3:2, -3:2, 1:3)
+            xadjb(-3:2, 2, -3:2, 1:3, sps2) = xadjb(-3:2, 2, -3:2, 1:3, &
+&              sps2) + x0b(-3:2, -3:2, 1:3)
             x0b(-3:2, -3:2, 1:3) = 0.0
           END IF
-          xblockcorneradjb(:, 2, :, :) = xblockcorneradjb(:, 2, :, :) + &
-&            xfacecornerb(:, :, :)
+          xblockcorneradjb(:, 2, :, :, sps2) = xblockcorneradjb(:, 2, :&
+&            , :, sps2) + xfacecornerb(:, :, :)
           xfacecornerb(:, :, :) = 0.0
           GOTO 150
         ELSE
-          xadjb(-3:2, -3:2, 0, 1:3) = xadjb(-3:2, -3:2, 0, 1:3) + x2b(-3&
-&            :2, -3:2, 1:3)
+          xadjb(-3:2, -3:2, 0, 1:3, sps2) = xadjb(-3:2, -3:2, 0, 1:3, &
+&            sps2) + x2b(-3:2, -3:2, 1:3)
           x2b(-3:2, -3:2, 1:3) = 0.0
-          xadjb(-3:2, -3:2, -1, 1:3) = xadjb(-3:2, -3:2, -1, 1:3) + x1b(&
-&            -3:2, -3:2, 1:3)
+          xadjb(-3:2, -3:2, -1, 1:3, sps2) = xadjb(-3:2, -3:2, -1, 1:3, &
+&            sps2) + x1b(-3:2, -3:2, 1:3)
           x1b(-3:2, -3:2, 1:3) = 0.0
-          xadjb(-3:2, -3:2, -2, 1:3) = xadjb(-3:2, -3:2, -2, 1:3) + x0b(&
-&            -3:2, -3:2, 1:3)
+          xadjb(-3:2, -3:2, -2, 1:3, sps2) = xadjb(-3:2, -3:2, -2, 1:3, &
+&            sps2) + x0b(-3:2, -3:2, 1:3)
           x0b(-3:2, -3:2, 1:3) = 0.0
         END IF
       ELSE
         IF (branch .LT. 12) THEN
           IF (branch .LT. 11) THEN
-            xadjb(-3:2, -3:2, -1, 1:3) = xadjb(-3:2, -3:2, -1, 1:3) + &
-&              x2b(-3:2, -3:2, 1:3)
+            xadjb(-3:2, -3:2, -1, 1:3, sps2) = xadjb(-3:2, -3:2, -1, 1:3&
+&              , sps2) + x2b(-3:2, -3:2, 1:3)
             x2b(-3:2, -3:2, 1:3) = 0.0
-            xadjb(-3:2, -3:2, -2, 1:3) = xadjb(-3:2, -3:2, -2, 1:3) + &
-&              x1b(-3:2, -3:2, 1:3)
+            xadjb(-3:2, -3:2, -2, 1:3, sps2) = xadjb(-3:2, -3:2, -2, 1:3&
+&              , sps2) + x1b(-3:2, -3:2, 1:3)
             x1b(-3:2, -3:2, 1:3) = 0.0
-            xadjb(-3:2, -3:2, -3, 1:3) = xadjb(-3:2, -3:2, -3, 1:3) + &
-&              x0b(-3:2, -3:2, 1:3)
+            xadjb(-3:2, -3:2, -3, 1:3, sps2) = xadjb(-3:2, -3:2, -3, 1:3&
+&              , sps2) + x0b(-3:2, -3:2, 1:3)
             x0b(-3:2, -3:2, 1:3) = 0.0
             GOTO 120
           ELSE
-            xadjb(-3:2, -3:2, -1, 1:3) = xadjb(-3:2, -3:2, -1, 1:3) + &
-&              x2b(-3:2, -3:2, 1:3)
+            xadjb(-3:2, -3:2, -1, 1:3, sps2) = xadjb(-3:2, -3:2, -1, 1:3&
+&              , sps2) + x2b(-3:2, -3:2, 1:3)
             x2b(-3:2, -3:2, 1:3) = 0.0
-            xadjb(-3:2, -3:2, 0, 1:3) = xadjb(-3:2, -3:2, 0, 1:3) + x1b(&
-&              -3:2, -3:2, 1:3)
+            xadjb(-3:2, -3:2, 0, 1:3, sps2) = xadjb(-3:2, -3:2, 0, 1:3, &
+&              sps2) + x1b(-3:2, -3:2, 1:3)
             x1b(-3:2, -3:2, 1:3) = 0.0
-            xadjb(-3:2, -3:2, 1, 1:3) = xadjb(-3:2, -3:2, 1, 1:3) + x0b(&
-&              -3:2, -3:2, 1:3)
+            xadjb(-3:2, -3:2, 1, 1:3, sps2) = xadjb(-3:2, -3:2, 1, 1:3, &
+&              sps2) + x0b(-3:2, -3:2, 1:3)
             x0b(-3:2, -3:2, 1:3) = 0.0
           END IF
         ELSE
-          xadjb(-3:2, -3:2, 0, 1:3) = xadjb(-3:2, -3:2, 0, 1:3) + x2b(-3&
-&            :2, -3:2, 1:3)
+          xadjb(-3:2, -3:2, 0, 1:3, sps2) = xadjb(-3:2, -3:2, 0, 1:3, &
+&            sps2) + x2b(-3:2, -3:2, 1:3)
           x2b(-3:2, -3:2, 1:3) = 0.0
-          xadjb(-3:2, -3:2, 1, 1:3) = xadjb(-3:2, -3:2, 1, 1:3) + x1b(-3&
-&            :2, -3:2, 1:3)
+          xadjb(-3:2, -3:2, 1, 1:3, sps2) = xadjb(-3:2, -3:2, 1, 1:3, &
+&            sps2) + x1b(-3:2, -3:2, 1:3)
           x1b(-3:2, -3:2, 1:3) = 0.0
-          xadjb(-3:2, -3:2, 2, 1:3) = xadjb(-3:2, -3:2, 2, 1:3) + x0b(-3&
-&            :2, -3:2, 1:3)
+          xadjb(-3:2, -3:2, 2, 1:3, sps2) = xadjb(-3:2, -3:2, 2, 1:3, &
+&            sps2) + x0b(-3:2, -3:2, 1:3)
           x0b(-3:2, -3:2, 1:3) = 0.0
         END IF
-        xblockcorneradjb(:, :, 2, :) = xblockcorneradjb(:, :, 2, :) + &
-&          xfacecornerb(:, :, :)
+        xblockcorneradjb(:, :, 2, :, sps2) = xblockcorneradjb(:, :, 2, :&
+&          , sps2) + xfacecornerb(:, :, :)
         xfacecornerb(:, :, :) = 0.0
         GOTO 130
       END IF
- 120  xblockcorneradjb(:, :, 1, :) = xblockcorneradjb(:, :, 1, :) + &
-&        xfacecornerb(:, :, :)
+ 120  xblockcorneradjb(:, :, 1, :, sps2) = xblockcorneradjb(:, :, 1, :, &
+&        sps2) + xfacecornerb(:, :, :)
       xfacecornerb(:, :, :) = 0.0
       GOTO 140
     END IF
@@ -1384,134 +1713,185 @@ loopbocos:DO mm=1,nbocos
   END DO
   CALL POPINTEGER4(branch)
   IF (.NOT.branch .LT. 2) THEN
-    DO j=2,-3,-1
-      DO i=2,-3,-1
-        xadjb(i, j, koffset-1, 3) = xadjb(i, j, koffset-1, 3) + two*&
-&          xadjb(i, j, koffset, 3)
-        xadjb(i, j, koffset-2, 3) = xadjb(i, j, koffset-2, 3) - xadjb(i&
-&          , j, koffset, 3)
-        xadjb(i, j, koffset, 3) = 0.0
-        xadjb(i, j, koffset-1, 2) = xadjb(i, j, koffset-1, 2) + two*&
-&          xadjb(i, j, koffset, 2)
-        xadjb(i, j, koffset-2, 2) = xadjb(i, j, koffset-2, 2) - xadjb(i&
-&          , j, koffset, 2)
-        xadjb(i, j, koffset, 2) = 0.0
-        xadjb(i, j, koffset-1, 1) = xadjb(i, j, koffset-1, 1) + two*&
-&          xadjb(i, j, koffset, 1)
-        xadjb(i, j, koffset-2, 1) = xadjb(i, j, koffset-2, 1) - xadjb(i&
-&          , j, koffset, 1)
-        xadjb(i, j, koffset, 1) = 0.0
+    IF (.NOT.branch .LT. 3) THEN
+      DO j=2,-3,-1
+        DO i=2,-3,-1
+          CALL POPINTEGER4(branch)
+          IF (.NOT.branch .LT. 3) THEN
+            CALL POPREAL8(xadj(i, j, kmaxoffset, 3, sps2))
+            xadjb(i, j, kmaxoffset-1, 3, sps2) = xadjb(i, j, kmaxoffset-&
+&              1, 3, sps2) + two*xadjb(i, j, kmaxoffset, 3, sps2)
+            xadjb(i, j, kmaxoffset-2, 3, sps2) = xadjb(i, j, kmaxoffset-&
+&              2, 3, sps2) - xadjb(i, j, kmaxoffset, 3, sps2)
+            xadjb(i, j, kmaxoffset, 3, sps2) = 0.0
+            CALL POPREAL8(xadj(i, j, kmaxoffset, 2, sps2))
+            xadjb(i, j, kmaxoffset-1, 2, sps2) = xadjb(i, j, kmaxoffset-&
+&              1, 2, sps2) + two*xadjb(i, j, kmaxoffset, 2, sps2)
+            xadjb(i, j, kmaxoffset-2, 2, sps2) = xadjb(i, j, kmaxoffset-&
+&              2, 2, sps2) - xadjb(i, j, kmaxoffset, 2, sps2)
+            xadjb(i, j, kmaxoffset, 2, sps2) = 0.0
+            CALL POPREAL8(xadj(i, j, kmaxoffset, 1, sps2))
+            xadjb(i, j, kmaxoffset-1, 1, sps2) = xadjb(i, j, kmaxoffset-&
+&              1, 1, sps2) + two*xadjb(i, j, kmaxoffset, 1, sps2)
+            xadjb(i, j, kmaxoffset-2, 1, sps2) = xadjb(i, j, kmaxoffset-&
+&              2, 1, sps2) - xadjb(i, j, kmaxoffset, 1, sps2)
+            xadjb(i, j, kmaxoffset, 1, sps2) = 0.0
+          END IF
+        END DO
       END DO
-    END DO
+    END IF
   END IF
   CALL POPINTEGER4(branch)
   IF (.NOT.branch .LT. 2) THEN
-    DO j=2,-3,-1
-      DO i=2,-3,-1
-        xadjb(i, j, koffset+1, 3) = xadjb(i, j, koffset+1, 3) + two*&
-&          xadjb(i, j, koffset, 3)
-        xadjb(i, j, koffset+2, 3) = xadjb(i, j, koffset+2, 3) - xadjb(i&
-&          , j, koffset, 3)
-        xadjb(i, j, koffset, 3) = 0.0
-        xadjb(i, j, koffset+1, 2) = xadjb(i, j, koffset+1, 2) + two*&
-&          xadjb(i, j, koffset, 2)
-        xadjb(i, j, koffset+2, 2) = xadjb(i, j, koffset+2, 2) - xadjb(i&
-&          , j, koffset, 2)
-        xadjb(i, j, koffset, 2) = 0.0
-        xadjb(i, j, koffset+1, 1) = xadjb(i, j, koffset+1, 1) + two*&
-&          xadjb(i, j, koffset, 1)
-        xadjb(i, j, koffset+2, 1) = xadjb(i, j, koffset+2, 1) - xadjb(i&
-&          , j, koffset, 1)
-        xadjb(i, j, koffset, 1) = 0.0
+    IF (.NOT.branch .LT. 3) THEN
+      DO j=2,-3,-1
+        DO i=2,-3,-1
+          CALL POPINTEGER4(branch)
+          IF (.NOT.branch .LT. 3) THEN
+            CALL POPREAL8(xadj(i, j, kminoffset, 3, sps2))
+            xadjb(i, j, kminoffset+1, 3, sps2) = xadjb(i, j, kminoffset+&
+&              1, 3, sps2) + two*xadjb(i, j, kminoffset, 3, sps2)
+            xadjb(i, j, kminoffset+2, 3, sps2) = xadjb(i, j, kminoffset+&
+&              2, 3, sps2) - xadjb(i, j, kminoffset, 3, sps2)
+            xadjb(i, j, kminoffset, 3, sps2) = 0.0
+            CALL POPREAL8(xadj(i, j, kminoffset, 2, sps2))
+            xadjb(i, j, kminoffset+1, 2, sps2) = xadjb(i, j, kminoffset+&
+&              1, 2, sps2) + two*xadjb(i, j, kminoffset, 2, sps2)
+            xadjb(i, j, kminoffset+2, 2, sps2) = xadjb(i, j, kminoffset+&
+&              2, 2, sps2) - xadjb(i, j, kminoffset, 2, sps2)
+            xadjb(i, j, kminoffset, 2, sps2) = 0.0
+            CALL POPREAL8(xadj(i, j, kminoffset, 1, sps2))
+            xadjb(i, j, kminoffset+1, 1, sps2) = xadjb(i, j, kminoffset+&
+&              1, 1, sps2) + two*xadjb(i, j, kminoffset, 1, sps2)
+            xadjb(i, j, kminoffset+2, 1, sps2) = xadjb(i, j, kminoffset+&
+&              2, 1, sps2) - xadjb(i, j, kminoffset, 1, sps2)
+            xadjb(i, j, kminoffset, 1, sps2) = 0.0
+          END IF
+        END DO
       END DO
-    END DO
+    END IF
   END IF
   CALL POPINTEGER4(branch)
   IF (.NOT.branch .LT. 2) THEN
-    DO k=2,-3,-1
-      DO i=2,-3,-1
-        xadjb(i, joffset-1, k, 3) = xadjb(i, joffset-1, k, 3) + two*&
-&          xadjb(i, joffset, k, 3)
-        xadjb(i, joffset-2, k, 3) = xadjb(i, joffset-2, k, 3) - xadjb(i&
-&          , joffset, k, 3)
-        xadjb(i, joffset, k, 3) = 0.0
-        xadjb(i, joffset-1, k, 2) = xadjb(i, joffset-1, k, 2) + two*&
-&          xadjb(i, joffset, k, 2)
-        xadjb(i, joffset-2, k, 2) = xadjb(i, joffset-2, k, 2) - xadjb(i&
-&          , joffset, k, 2)
-        xadjb(i, joffset, k, 2) = 0.0
-        xadjb(i, joffset-1, k, 1) = xadjb(i, joffset-1, k, 1) + two*&
-&          xadjb(i, joffset, k, 1)
-        xadjb(i, joffset-2, k, 1) = xadjb(i, joffset-2, k, 1) - xadjb(i&
-&          , joffset, k, 1)
-        xadjb(i, joffset, k, 1) = 0.0
-      END DO
-    END DO
-  END IF
-  CALL POPINTEGER4(branch)
-  IF (.NOT.branch .LT. 2) THEN
-    DO i=2,-3,-1
+    IF (.NOT.branch .LT. 3) THEN
       DO k=2,-3,-1
-        xadjb(i, joffset+1, k, 3) = xadjb(i, joffset+1, k, 3) + two*&
-&          xadjb(i, joffset, k, 3)
-        xadjb(i, joffset+2, k, 3) = xadjb(i, joffset+2, k, 3) - xadjb(i&
-&          , joffset, k, 3)
-        xadjb(i, joffset, k, 3) = 0.0
-        xadjb(i, joffset+1, k, 2) = xadjb(i, joffset+1, k, 2) + two*&
-&          xadjb(i, joffset, k, 2)
-        xadjb(i, joffset+2, k, 2) = xadjb(i, joffset+2, k, 2) - xadjb(i&
-&          , joffset, k, 2)
-        xadjb(i, joffset, k, 2) = 0.0
-        xadjb(i, joffset+1, k, 1) = xadjb(i, joffset+1, k, 1) + two*&
-&          xadjb(i, joffset, k, 1)
-        xadjb(i, joffset+2, k, 1) = xadjb(i, joffset+2, k, 1) - xadjb(i&
-&          , joffset, k, 1)
-        xadjb(i, joffset, k, 1) = 0.0
+        DO i=2,-3,-1
+          CALL POPINTEGER4(branch)
+          IF (.NOT.branch .LT. 3) THEN
+            CALL POPREAL8(xadj(i, jmaxoffset, k, 3, sps2))
+            xadjb(i, jmaxoffset-1, k, 3, sps2) = xadjb(i, jmaxoffset-1, &
+&              k, 3, sps2) + two*xadjb(i, jmaxoffset, k, 3, sps2)
+            xadjb(i, jmaxoffset-2, k, 3, sps2) = xadjb(i, jmaxoffset-2, &
+&              k, 3, sps2) - xadjb(i, jmaxoffset, k, 3, sps2)
+            xadjb(i, jmaxoffset, k, 3, sps2) = 0.0
+            CALL POPREAL8(xadj(i, jmaxoffset, k, 2, sps2))
+            xadjb(i, jmaxoffset-1, k, 2, sps2) = xadjb(i, jmaxoffset-1, &
+&              k, 2, sps2) + two*xadjb(i, jmaxoffset, k, 2, sps2)
+            xadjb(i, jmaxoffset-2, k, 2, sps2) = xadjb(i, jmaxoffset-2, &
+&              k, 2, sps2) - xadjb(i, jmaxoffset, k, 2, sps2)
+            xadjb(i, jmaxoffset, k, 2, sps2) = 0.0
+            CALL POPREAL8(xadj(i, jmaxoffset, k, 1, sps2))
+            xadjb(i, jmaxoffset-1, k, 1, sps2) = xadjb(i, jmaxoffset-1, &
+&              k, 1, sps2) + two*xadjb(i, jmaxoffset, k, 1, sps2)
+            xadjb(i, jmaxoffset-2, k, 1, sps2) = xadjb(i, jmaxoffset-2, &
+&              k, 1, sps2) - xadjb(i, jmaxoffset, k, 1, sps2)
+            xadjb(i, jmaxoffset, k, 1, sps2) = 0.0
+          END IF
+        END DO
       END DO
-    END DO
+    END IF
   END IF
   CALL POPINTEGER4(branch)
   IF (.NOT.branch .LT. 2) THEN
-    DO j=2,-3,-1
-      DO k=2,-3,-1
-        xadjb(ioffset-1, j, k, 3) = xadjb(ioffset-1, j, k, 3) + two*&
-&          xadjb(ioffset, j, k, 3)
-        xadjb(ioffset-2, j, k, 3) = xadjb(ioffset-2, j, k, 3) - xadjb(&
-&          ioffset, j, k, 3)
-        xadjb(ioffset, j, k, 3) = 0.0
-        xadjb(ioffset-1, j, k, 2) = xadjb(ioffset-1, j, k, 2) + two*&
-&          xadjb(ioffset, j, k, 2)
-        xadjb(ioffset-2, j, k, 2) = xadjb(ioffset-2, j, k, 2) - xadjb(&
-&          ioffset, j, k, 2)
-        xadjb(ioffset, j, k, 2) = 0.0
-        xadjb(ioffset-1, j, k, 1) = xadjb(ioffset-1, j, k, 1) + two*&
-&          xadjb(ioffset, j, k, 1)
-        xadjb(ioffset-2, j, k, 1) = xadjb(ioffset-2, j, k, 1) - xadjb(&
-&          ioffset, j, k, 1)
-        xadjb(ioffset, j, k, 1) = 0.0
+    IF (.NOT.branch .LT. 3) THEN
+      DO i=2,-3,-1
+        DO k=2,-3,-1
+          CALL POPINTEGER4(branch)
+          IF (.NOT.branch .LT. 3) THEN
+            CALL POPREAL8(xadj(i, jminoffset, k, 3, sps2))
+            xadjb(i, jminoffset+1, k, 3, sps2) = xadjb(i, jminoffset+1, &
+&              k, 3, sps2) + two*xadjb(i, jminoffset, k, 3, sps2)
+            xadjb(i, jminoffset+2, k, 3, sps2) = xadjb(i, jminoffset+2, &
+&              k, 3, sps2) - xadjb(i, jminoffset, k, 3, sps2)
+            xadjb(i, jminoffset, k, 3, sps2) = 0.0
+            CALL POPREAL8(xadj(i, jminoffset, k, 2, sps2))
+            xadjb(i, jminoffset+1, k, 2, sps2) = xadjb(i, jminoffset+1, &
+&              k, 2, sps2) + two*xadjb(i, jminoffset, k, 2, sps2)
+            xadjb(i, jminoffset+2, k, 2, sps2) = xadjb(i, jminoffset+2, &
+&              k, 2, sps2) - xadjb(i, jminoffset, k, 2, sps2)
+            xadjb(i, jminoffset, k, 2, sps2) = 0.0
+            CALL POPREAL8(xadj(i, jminoffset, k, 1, sps2))
+            xadjb(i, jminoffset+1, k, 1, sps2) = xadjb(i, jminoffset+1, &
+&              k, 1, sps2) + two*xadjb(i, jminoffset, k, 1, sps2)
+            xadjb(i, jminoffset+2, k, 1, sps2) = xadjb(i, jminoffset+2, &
+&              k, 1, sps2) - xadjb(i, jminoffset, k, 1, sps2)
+            xadjb(i, jminoffset, k, 1, sps2) = 0.0
+          END IF
+        END DO
       END DO
-    END DO
+    END IF
   END IF
   CALL POPINTEGER4(branch)
   IF (.NOT.branch .LT. 2) THEN
-    DO j=2,-3,-1
-      DO k=2,-3,-1
-        xadjb(ioffset+1, j, k, 3) = xadjb(ioffset+1, j, k, 3) + two*&
-&          xadjb(ioffset, j, k, 3)
-        xadjb(ioffset+2, j, k, 3) = xadjb(ioffset+2, j, k, 3) - xadjb(&
-&          ioffset, j, k, 3)
-        xadjb(ioffset, j, k, 3) = 0.0
-        xadjb(ioffset+1, j, k, 2) = xadjb(ioffset+1, j, k, 2) + two*&
-&          xadjb(ioffset, j, k, 2)
-        xadjb(ioffset+2, j, k, 2) = xadjb(ioffset+2, j, k, 2) - xadjb(&
-&          ioffset, j, k, 2)
-        xadjb(ioffset, j, k, 2) = 0.0
-        xadjb(ioffset+1, j, k, 1) = xadjb(ioffset+1, j, k, 1) + two*&
-&          xadjb(ioffset, j, k, 1)
-        xadjb(ioffset+2, j, k, 1) = xadjb(ioffset+2, j, k, 1) - xadjb(&
-&          ioffset, j, k, 1)
-        xadjb(ioffset, j, k, 1) = 0.0
+    IF (.NOT.branch .LT. 3) THEN
+      DO j=2,-3,-1
+        DO k=2,-3,-1
+          CALL POPINTEGER4(branch)
+          IF (.NOT.branch .LT. 3) THEN
+            CALL POPREAL8(xadj(imaxoffset, j, k, 3, sps2))
+            xadjb(imaxoffset-1, j, k, 3, sps2) = xadjb(imaxoffset-1, j, &
+&              k, 3, sps2) + two*xadjb(imaxoffset, j, k, 3, sps2)
+            xadjb(imaxoffset-2, j, k, 3, sps2) = xadjb(imaxoffset-2, j, &
+&              k, 3, sps2) - xadjb(imaxoffset, j, k, 3, sps2)
+            xadjb(imaxoffset, j, k, 3, sps2) = 0.0
+            CALL POPREAL8(xadj(imaxoffset, j, k, 2, sps2))
+            xadjb(imaxoffset-1, j, k, 2, sps2) = xadjb(imaxoffset-1, j, &
+&              k, 2, sps2) + two*xadjb(imaxoffset, j, k, 2, sps2)
+            xadjb(imaxoffset-2, j, k, 2, sps2) = xadjb(imaxoffset-2, j, &
+&              k, 2, sps2) - xadjb(imaxoffset, j, k, 2, sps2)
+            xadjb(imaxoffset, j, k, 2, sps2) = 0.0
+            CALL POPREAL8(xadj(imaxoffset, j, k, 1, sps2))
+            xadjb(imaxoffset-1, j, k, 1, sps2) = xadjb(imaxoffset-1, j, &
+&              k, 1, sps2) + two*xadjb(imaxoffset, j, k, 1, sps2)
+            xadjb(imaxoffset-2, j, k, 1, sps2) = xadjb(imaxoffset-2, j, &
+&              k, 1, sps2) - xadjb(imaxoffset, j, k, 1, sps2)
+            xadjb(imaxoffset, j, k, 1, sps2) = 0.0
+          END IF
+        END DO
       END DO
-    END DO
+    END IF
   END IF
+  CALL POPINTEGER4(branch)
+  IF (.NOT.branch .LT. 2) THEN
+    IF (.NOT.branch .LT. 3) THEN
+      DO j=2,-3,-1
+        DO k=2,-3,-1
+          CALL POPINTEGER4(branch)
+          IF (.NOT.branch .LT. 3) THEN
+            CALL POPREAL8(xadj(iminoffset, j, k, 3, sps2))
+            xadjb(iminoffset+1, j, k, 3, sps2) = xadjb(iminoffset+1, j, &
+&              k, 3, sps2) + two*xadjb(iminoffset, j, k, 3, sps2)
+            xadjb(iminoffset+2, j, k, 3, sps2) = xadjb(iminoffset+2, j, &
+&              k, 3, sps2) - xadjb(iminoffset, j, k, 3, sps2)
+            xadjb(iminoffset, j, k, 3, sps2) = 0.0
+            CALL POPREAL8(xadj(iminoffset, j, k, 2, sps2))
+            xadjb(iminoffset+1, j, k, 2, sps2) = xadjb(iminoffset+1, j, &
+&              k, 2, sps2) + two*xadjb(iminoffset, j, k, 2, sps2)
+            xadjb(iminoffset+2, j, k, 2, sps2) = xadjb(iminoffset+2, j, &
+&              k, 2, sps2) - xadjb(iminoffset, j, k, 2, sps2)
+            xadjb(iminoffset, j, k, 2, sps2) = 0.0
+            CALL POPREAL8(xadj(iminoffset, j, k, 1, sps2))
+            xadjb(iminoffset+1, j, k, 1, sps2) = xadjb(iminoffset+1, j, &
+&              k, 1, sps2) + two*xadjb(iminoffset, j, k, 1, sps2)
+            xadjb(iminoffset+2, j, k, 1, sps2) = xadjb(iminoffset+2, j, &
+&              k, 1, sps2) - xadjb(iminoffset, j, k, 1, sps2)
+            xadjb(iminoffset, j, k, 1, sps2) = 0.0
+          END IF
+        END DO
+      END DO
+    END IF
+  END IF
+  DO mm=nsubface,1,-1
+    CALL POPINTEGER4(branch)
+  END DO
 END SUBROUTINE XHALOADJ_B

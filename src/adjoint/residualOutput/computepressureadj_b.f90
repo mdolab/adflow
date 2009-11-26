@@ -2,7 +2,7 @@
 !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
 !  
 !  Differentiation of computepressureadj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: wadj gammaconstant
+!   gradient, with respect to input variables: padj wadj
 !   of linear combination of output variables: padj wadj
 !
 !      ******************************************************************
@@ -14,14 +14,19 @@
 !      *                                                                *
 !      ******************************************************************
 !
-SUBROUTINE COMPUTEPRESSUREADJ_B(wadj, wadjb, padj, padjb)
+SUBROUTINE COMPUTEPRESSUREADJ_B(wadj, wadjb, padj, padjb, nn, level, sps&
+&  , sps2)
   USE flowvarrefstate
   USE inputphysics
+  USE inputtimespectral
   IMPLICIT NONE
-  REAL(KIND=REALTYPE) :: padj(-2:2, -2:2, -2:2), padjb(-2:2, -2:2, -2:2)
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw), INTENT(IN) :: &
-&  wadj
-  REAL(KIND=REALTYPE) :: wadjb(-2:2, -2:2, -2:2, nw)
+  INTEGER(KIND=INTTYPE) :: level, nn, sps, sps2
+  REAL(KIND=REALTYPE) :: padj(-2:2, -2:2, -2:2, ntimeintervalsspectral)&
+&  , padjb(-2:2, -2:2, -2:2, ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral), INTENT(IN) :: wadj
+  REAL(KIND=REALTYPE) :: wadjb(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral)
   INTEGER(KIND=INTTYPE) :: i, j, k
   REAL(KIND=REALTYPE) :: tempb, tempb0
   REAL(KIND=REALTYPE) :: factk, gm1, v2, v2b
@@ -33,6 +38,7 @@ SUBROUTINE COMPUTEPRESSUREADJ_B(wadj, wadjb, padj, padjb)
 !      *                                                                *
 !      ******************************************************************
 !
+!nIntervalTimespectral
 !
 !      Subroutine arguments
 !
@@ -55,29 +61,31 @@ SUBROUTINE COMPUTEPRESSUREADJ_B(wadj, wadjb, padj, padjb)
       DO j=-2,2
         DO i=-2,2
           CALL PUSHREAL8(v2)
-          v2 = wadj(i, j, k, ivx)**2 + wadj(i, j, k, ivy)**2 + wadj(i, j&
-&            , k, ivz)**2
+          v2 = wadj(i, j, k, ivx, sps2)**2 + wadj(i, j, k, ivy, sps2)**2&
+&           + wadj(i, j, k, ivz, sps2)**2
         END DO
       END DO
     END DO
     DO k=2,-2,-1
       DO j=2,-2,-1
         DO i=2,-2,-1
-          tempb = gm1*padjb(i, j, k)
-          wadjb(i, j, k, irhoe) = wadjb(i, j, k, irhoe) + tempb
-          wadjb(i, j, k, irho) = wadjb(i, j, k, irho) + factk*wadj(i, j&
-&            , k, itu1)*padjb(i, j, k) - half*v2*tempb
-          v2b = -(half*wadj(i, j, k, irho)*tempb)
-          wadjb(i, j, k, itu1) = wadjb(i, j, k, itu1) + factk*wadj(i, j&
-&            , k, irho)*padjb(i, j, k)
-          padjb(i, j, k) = 0.0
+          tempb = gm1*padjb(i, j, k, sps2)
+          wadjb(i, j, k, irhoe, sps2) = wadjb(i, j, k, irhoe, sps2) + &
+&            tempb
+          wadjb(i, j, k, irho, sps2) = wadjb(i, j, k, irho, sps2) + &
+&            factk*wadj(i, j, k, itu1, sps2)*padjb(i, j, k, sps2) - half&
+&            *v2*tempb
+          v2b = -(half*wadj(i, j, k, irho, sps2)*tempb)
+          wadjb(i, j, k, itu1, sps2) = wadjb(i, j, k, itu1, sps2) + &
+&            factk*wadj(i, j, k, irho, sps2)*padjb(i, j, k, sps2)
+          padjb(i, j, k, sps2) = 0.0
           CALL POPREAL8(v2)
-          wadjb(i, j, k, ivx) = wadjb(i, j, k, ivx) + 2*wadj(i, j, k, &
-&            ivx)*v2b
-          wadjb(i, j, k, ivy) = wadjb(i, j, k, ivy) + 2*wadj(i, j, k, &
-&            ivy)*v2b
-          wadjb(i, j, k, ivz) = wadjb(i, j, k, ivz) + 2*wadj(i, j, k, &
-&            ivz)*v2b
+          wadjb(i, j, k, ivx, sps2) = wadjb(i, j, k, ivx, sps2) + 2*wadj&
+&            (i, j, k, ivx, sps2)*v2b
+          wadjb(i, j, k, ivy, sps2) = wadjb(i, j, k, ivy, sps2) + 2*wadj&
+&            (i, j, k, ivy, sps2)*v2b
+          wadjb(i, j, k, ivz, sps2) = wadjb(i, j, k, ivz, sps2) + 2*wadj&
+&            (i, j, k, ivz, sps2)*v2b
         END DO
       END DO
     END DO
@@ -88,29 +96,30 @@ SUBROUTINE COMPUTEPRESSUREADJ_B(wadj, wadjb, padj, padjb)
       DO j=-2,2
         DO i=-2,2
           CALL PUSHREAL8(v2)
-          v2 = wadj(i, j, k, ivx)**2 + wadj(i, j, k, ivy)**2 + wadj(i, j&
-&            , k, ivz)**2
+          v2 = wadj(i, j, k, ivx, sps2)**2 + wadj(i, j, k, ivy, sps2)**2&
+&           + wadj(i, j, k, ivz, sps2)**2
         END DO
       END DO
     END DO
     DO k=2,-2,-1
       DO j=2,-2,-1
         DO i=2,-2,-1
-          tempb0 = gm1*padjb(i, j, k)
-          wadjb(i, j, k, irhoe) = wadjb(i, j, k, irhoe) + tempb0
-          wadjb(i, j, k, irho) = wadjb(i, j, k, irho) - half*v2*tempb0
-          v2b = -(half*wadj(i, j, k, irho)*tempb0)
-          padjb(i, j, k) = 0.0
+          tempb0 = gm1*padjb(i, j, k, sps2)
+          wadjb(i, j, k, irhoe, sps2) = wadjb(i, j, k, irhoe, sps2) + &
+&            tempb0
+          wadjb(i, j, k, irho, sps2) = wadjb(i, j, k, irho, sps2) - half&
+&            *v2*tempb0
+          v2b = -(half*wadj(i, j, k, irho, sps2)*tempb0)
+          padjb(i, j, k, sps2) = 0.0
           CALL POPREAL8(v2)
-          wadjb(i, j, k, ivx) = wadjb(i, j, k, ivx) + 2*wadj(i, j, k, &
-&            ivx)*v2b
-          wadjb(i, j, k, ivy) = wadjb(i, j, k, ivy) + 2*wadj(i, j, k, &
-&            ivy)*v2b
-          wadjb(i, j, k, ivz) = wadjb(i, j, k, ivz) + 2*wadj(i, j, k, &
-&            ivz)*v2b
+          wadjb(i, j, k, ivx, sps2) = wadjb(i, j, k, ivx, sps2) + 2*wadj&
+&            (i, j, k, ivx, sps2)*v2b
+          wadjb(i, j, k, ivy, sps2) = wadjb(i, j, k, ivy, sps2) + 2*wadj&
+&            (i, j, k, ivy, sps2)*v2b
+          wadjb(i, j, k, ivz, sps2) = wadjb(i, j, k, ivz, sps2) + 2*wadj&
+&            (i, j, k, ivz, sps2)*v2b
         END DO
       END DO
     END DO
   END IF
-!  gammaconstantb = 0.0
 END SUBROUTINE COMPUTEPRESSUREADJ_B

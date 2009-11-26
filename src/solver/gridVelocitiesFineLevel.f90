@@ -113,7 +113,7 @@
           tNew = timeUnsteady + timeUnsteadyRestart
           tOld = tNew - t(1)
 
-          if(TSpqrMode) then
+          if(TSpMode.or. TSqMode .or.TSrMode) then
              ! Compute the rotation matrix of the rigid body rotation as
              ! well as the rotation point; the latter may vary in time due
              ! to rigid body translation.

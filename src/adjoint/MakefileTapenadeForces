@@ -146,6 +146,7 @@ TAPENADE_DIRSRC  = $(SOLVER_DIRSRC)/adjoint
 TAPENADE_DIRSRC3 = $(SOLVER_DIRSRC)/adjoint/forcesInput
 TAPENADE_DIRMOD  = $(SOLVER_DIRSRC)/modules
 SUMB_MODDIR      = $(SOLVER_DIRSRC)/modules
+TAPENADE_DIRUTILS     = $(SOLVER_DIRSRC)/utils
 
 TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
 
@@ -172,13 +173,19 @@ TAPENADE_SRC = $(TAPENADE_DIRSRC3)/applyAllBCForcesAdj.f90 \
 	       $(TAPENADE_DIRSRC3)/replaceBCStatesForcesAdj.f90 \
 	       $(TAPENADE_DIRSRC3)/setFlowInfinityStateForcesAdj.f90 \
 	       $(TAPENADE_DIRSRC3)/getDirVectorForces.f90 \
+	       $(TAPENADE_DIRSRC3)/getDirAngleForces.f90 \
 	       $(TAPENADE_DIRSRC1)/computeGammaAdj.f90 \
 	       $(TAPENADE_DIRSRC3)/vectorRotationForces.f90\
 	       $(TAPENADE_DIRSRC3)/normalVelocitiesForcesAdj.f90\
 	       $(TAPENADE_DIRSRC3)/gridVelocitiesFineLevelForcesAdj.f90\
 	       $(TAPENADE_DIRSRC3)/derivativeRigidRotAngleForcesAdj.f90\
 	       $(TAPENADE_DIRSRC3)/derivativeRotMatrixRigidForcesAdj.f90\
-               $(TAPENADE_DIRSRC3)/rigidRotAngleForcesAdj.f90
+               $(TAPENADE_DIRSRC3)/rigidRotAngleForcesAdj.f90\
+               $(TAPENADE_DIRSRC3)/rotMatrixRigidBodyForcesAdj.f90\
+	       $(TAPENADE_DIRUTILS)/TSalpha.f90\
+	       $(TAPENADE_DIRUTILS)/TSBeta.f90\
+	       $(TAPENADE_DIRUTILS)/TSMach.f90	
+
 
 TAPENADE_MOD = $(TAPENADE_DIRSRC1)/BCTypes.f90 \
 	       $(TAPENADE_DIRSRC1)/block.f90 \

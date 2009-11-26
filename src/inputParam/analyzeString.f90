@@ -1317,8 +1317,14 @@
         case ("ts alpha mode")
            TSalphaMode= checkYesNo(value, keyword)
            !print *,'Tsstability',TSStability
-        case ("ts rotation mode")
-           TSpqrMode= checkYesNo(value, keyword)
+        case ("ts p mode")
+           TSpMode= checkYesNo(value, keyword)
+           !print *,'Tsstability',TSStability
+        case ("ts q mode")
+           TSqMode= checkYesNo(value, keyword)
+           !print *,'Tsstability',TSStability
+        case ("ts r mode")
+           TSrMode= checkYesNo(value, keyword)
            !print *,'Tsstability',TSStability
         case ("ts beta mode")
            TSBetaMode= checkYesNo(value, keyword)

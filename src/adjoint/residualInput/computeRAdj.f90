@@ -129,8 +129,10 @@ subroutine computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
        
        if(equationMode == timeSpectral) then
           do nnn=1,nSections
+             !t(nnn) = t(nnn) + (sps2-1)*sections(nnn)%timePeriod &
+             !     /         real(nTimeIntervalsSpectral,realType)
              t(nnn) = t(nnn) + (sps2-1)*sections(nnn)%timePeriod &
-                   /         real(nTimeIntervalsSpectral,realType)
+                   /         (nTimeIntervalsSpectral*1.0)!to make denomenator a real number...
           enddo
        endif
        !first two arguments needed for time spectral.just set to initial values for the current steady case...
@@ -162,6 +164,8 @@ subroutine computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
        !print *,'Calling computepressure',il,jl,kl,nn,secondhalo!,wadj(:,:,:,irho)!
        ! replace with Compute Pressure Adjoint!
        call computePressureAdj(wAdj, pAdj,nn,level,sps,sps2)
+
+
 !!$       !print out pAdj
 !!$       istart2 = -2
 !!$       jstart2 = -2
@@ -291,9 +295,11 @@ subroutine computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
 !#!$         call turbResidualAdj
 !#!$       endif
 !#!$
-     !do sps2 = 1,nTimeIntervalsSpectral
-     !  print *,'calculating initres',nn
-       !call initresAdj(1_intType, nwf,sps,dwAdj)
+ 
+!!$   dwadj(:,sps) = wadj(0,0,0,:,sps)*voladj(sps)
+!!$     !do sps2 = 1,nTimeIntervalsSpectral
+!!$     !  print *,'calculating initres',nn
+!!$       !call initresAdj(1_intType, nwf,sps,dwAdj)
     !dwAdj(:,sps) = 0.0
        call initresAdj(1, nwf,wAdj,volAdj,dwAdj,nn,level,sps)
        !print *,'dwadj',dwadj,icell,jcell,kcell
