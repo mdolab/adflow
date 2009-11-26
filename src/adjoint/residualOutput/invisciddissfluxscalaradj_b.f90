@@ -17,13 +17,14 @@
 !
 SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
 &  dwadjb, radiadj, radiadjb, radjadj, radjadjb, radkadj, radkadjb, &
-&  icell, jcell, kcell)
+&  icell, jcell, kcell, nn, level, sps)
   USE blockpointers
   USE cgnsgrid
   USE constants
   USE flowvarrefstate
   USE inputdiscretization
   USE inputphysics
+  USE inputtimespectral
   USE iteration
   IMPLICIT NONE
 !!$       do k=2,kl
@@ -81,15 +82,22 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
 !!$           w(i,jb,k,irhoE) = w(i,jb,k,irhoE) - p(i,jb,k)
 !!$         enddo
 !!$       enddo
-  REAL(KIND=REALTYPE) :: dwadj(nw), dwadjb(nw)
-  INTEGER(KIND=INTTYPE) :: icell, jcell, kcell
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2), INTENT(IN) :: padj
-  REAL(KIND=REALTYPE) :: padjb(-2:2, -2:2, -2:2)
-  REAL(KIND=REALTYPE) :: radiadj(-1:1, -1:1, -1:1), radiadjb(-1:1, -1:1&
-&  , -1:1), radjadj(-1:1, -1:1, -1:1), radjadjb(-1:1, -1:1, -1:1), &
-&  radkadj(-1:1, -1:1, -1:1), radkadjb(-1:1, -1:1, -1:1)
-  REAL(KIND=REALTYPE) :: wadj(-2:2, -2:2, -2:2, nw), wadjb(-2:2, -2:2, -&
-&  2:2, nw)
+  REAL(KIND=REALTYPE) :: dwadj(nw, ntimeintervalsspectral), dwadjb(nw, &
+&  ntimeintervalsspectral)
+  INTEGER(KIND=INTTYPE) :: icell, jcell, kcell, level, nn, sps
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), INTENT(IN) :: padj
+  REAL(KIND=REALTYPE) :: padjb(-2:2, -2:2, -2:2, ntimeintervalsspectral)
+  REAL(KIND=REALTYPE) :: radiadj(-1:1, -1:1, -1:1, &
+&  ntimeintervalsspectral), radiadjb(-1:1, -1:1, -1:1, &
+&  ntimeintervalsspectral), radjadj(-1:1, -1:1, -1:1, &
+&  ntimeintervalsspectral), radjadjb(-1:1, -1:1, -1:1, &
+&  ntimeintervalsspectral), radkadj(-1:1, -1:1, -1:1, &
+&  ntimeintervalsspectral), radkadjb(-1:1, -1:1, -1:1, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE) :: wadj(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral), wadjb(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral)
   REAL(KIND=REALTYPE), PARAMETER :: dssmax=0.25_realType
   INTEGER :: branch
   REAL(KIND=REALTYPE) :: ddw, ddwb, dss1, dss1b, dss2, dss2b, fs, fsb, &
@@ -120,6 +128,7 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
 !      *                                                                *
 !      ******************************************************************
 !
+!nTimeIntervalsSpectral
 !
 !      Subroutine arguments
 !
@@ -140,11 +149,11 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
 ! Check if rFil == 0. If so, the dissipative flux needs not to
 ! be computed.
   IF (rfil .EQ. zero) THEN
-    padjb(-2:2, -2:2, -2:2) = 0.0
-    radkadjb(-1:1, -1:1, -1:1) = 0.0
-    radjadjb(-1:1, -1:1, -1:1) = 0.0
-    wadjb(-2:2, -2:2, -2:2, 1:nw) = 0.0
-    radiadjb(-1:1, -1:1, -1:1) = 0.0
+    padjb(-2:2, -2:2, -2:2, 1:ntimeintervalsspectral) = 0.0
+    radkadjb(-1:1, -1:1, -1:1, 1:ntimeintervalsspectral) = 0.0
+    radjadjb(-1:1, -1:1, -1:1, 1:ntimeintervalsspectral) = 0.0
+    wadjb(-2:2, -2:2, -2:2, 1:nw, 1:ntimeintervalsspectral) = 0.0
+    radiadjb(-1:1, -1:1, -1:1, 1:ntimeintervalsspectral) = 0.0
   ELSE
 !!$           ! Viscous case. Pressure switch is based on the entropy.
 !!$           ! Also set the value of sslim. To be fully consistent this
@@ -200,7 +209,7 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         DO j=-2,2
 !2,il
           DO i=-2,2
-            ss(i, j, k) = padj(i, j, k)
+            ss(i, j, k) = padj(i, j, k, sps)
           END DO
         END DO
       END DO
@@ -222,17 +231,18 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       DO j=-2,2
 !2,il
         DO i=-2,2
-          tmp = wadj(i, j, k, irho)*wadj(i, j, k, ivx)
-          CALL PUSHREAL8(wadj(i, j, k, ivx))
-          wadj(i, j, k, ivx) = tmp
-          tmp0 = wadj(i, j, k, irho)*wadj(i, j, k, ivy)
-          CALL PUSHREAL8(wadj(i, j, k, ivy))
-          wadj(i, j, k, ivy) = tmp0
-          tmp1 = wadj(i, j, k, irho)*wadj(i, j, k, ivz)
-          CALL PUSHREAL8(wadj(i, j, k, ivz))
-          wadj(i, j, k, ivz) = tmp1
-          CALL PUSHREAL8(wadj(i, j, k, irhoe))
-          wadj(i, j, k, irhoe) = wadj(i, j, k, irhoe) + padj(i, j, k)
+          tmp = wadj(i, j, k, irho, sps)*wadj(i, j, k, ivx, sps)
+          CALL PUSHREAL8(wadj(i, j, k, ivx, sps))
+          wadj(i, j, k, ivx, sps) = tmp
+          tmp0 = wadj(i, j, k, irho, sps)*wadj(i, j, k, ivy, sps)
+          CALL PUSHREAL8(wadj(i, j, k, ivy, sps))
+          wadj(i, j, k, ivy, sps) = tmp0
+          tmp1 = wadj(i, j, k, irho, sps)*wadj(i, j, k, ivz, sps)
+          CALL PUSHREAL8(wadj(i, j, k, ivz, sps))
+          wadj(i, j, k, ivz, sps) = tmp1
+          CALL PUSHREAL8(wadj(i, j, k, irhoe, sps))
+          wadj(i, j, k, irhoe, sps) = wadj(i, j, k, irhoe, sps) + padj(i&
+&            , j, k, sps)
         END DO
       END DO
     END DO
@@ -350,7 +360,7 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       END IF
       CALL PUSHREAL8(rrad)
 !rrad = ppor*(radI(i,j,k) + radI(i+1,j,k))
-      rrad = ppor*(radiadj(ii, 0, 0)+radiadj(ii+1, 0, 0))
+      rrad = ppor*(radiadj(ii, 0, 0, sps)+radiadj(ii+1, 0, 0, sps))
       IF (dss1 .LT. dss2) THEN
         y1 = dss2
         CALL PUSHINTEGER4(1)
@@ -384,27 +394,27 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
 ! Compute and scatter the dissipative flux.
 ! Density. Store it in the mass flow of the
 ! appropriate sliding mesh interface.
-      ddw = wadj(ii+1, 0, 0, irho) - wadj(ii, 0, 0, irho)
+      ddw = wadj(ii+1, 0, 0, irho, sps) - wadj(ii, 0, 0, irho, sps)
       CALL PUSHREAL8(ddw)
 !fw(i+1,j,k,irho) = fw(i+1,j,k,irho) + fs
 !fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
 ! X-momentum.
-      ddw = wadj(ii+1, 0, 0, ivx) - wadj(ii, 0, 0, ivx)
+      ddw = wadj(ii+1, 0, 0, ivx, sps) - wadj(ii, 0, 0, ivx, sps)
       CALL PUSHREAL8(ddw)
 !fw(i+1,j,k,imx) = fw(i+1,j,k,imx) + fs
 !fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
 ! Y-momentum.
-      ddw = wadj(ii+1, 0, 0, ivy) - wadj(ii, 0, 0, ivy)
+      ddw = wadj(ii+1, 0, 0, ivy, sps) - wadj(ii, 0, 0, ivy, sps)
       CALL PUSHREAL8(ddw)
 !fw(i+1,j,k,imy) = fw(i+1,j,k,imy) + fs
 !fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
 ! Z-momentum.
-      ddw = wadj(ii+1, 0, 0, ivz) - wadj(ii, 0, 0, ivz)
+      ddw = wadj(ii+1, 0, 0, ivz, sps) - wadj(ii, 0, 0, ivz, sps)
       CALL PUSHREAL8(ddw)
 !fw(i+1,j,k,imz) = fw(i+1,j,k,imz) + fs
 !fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
 ! Energy.
-      ddw = wadj(ii+1, 0, 0, irhoe) - wadj(ii, 0, 0, irhoe)
+      ddw = wadj(ii+1, 0, 0, irhoe, sps) - wadj(ii, 0, 0, irhoe, sps)
 !fw(i+1,j,k,irhoE) = fw(i+1,j,k,irhoE) + fs
 !fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
 ! Update i and set fact to 1 for the second face.
@@ -462,7 +472,7 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       END IF
       CALL PUSHREAL8(rrad)
 !rrad = ppor*(radJ(i,j,k) + radJ(i,j+1,k))
-      rrad = ppor*(radjadj(0, jj, 0)+radjadj(0, jj+1, 0))
+      rrad = ppor*(radjadj(0, jj, 0, sps)+radjadj(0, jj+1, 0, sps))
       IF (dss1 .LT. dss2) THEN
         y2 = dss2
         CALL PUSHINTEGER4(1)
@@ -495,27 +505,27 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
 ! Compute and scatter the dissipative flux.
 ! Density. Store it in the mass flow of the
 ! appropriate sliding mesh interface.
-      ddw = wadj(0, jj+1, 0, irho) - wadj(0, jj, 0, irho)
+      ddw = wadj(0, jj+1, 0, irho, sps) - wadj(0, jj, 0, irho, sps)
       CALL PUSHREAL8(ddw)
 !fw(i,j+1,k,irho) = fw(i,j+1,k,irho) + fs
 !fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
 ! X-momentum.
-      ddw = wadj(0, jj+1, 0, ivx) - wadj(0, jj, 0, ivx)
+      ddw = wadj(0, jj+1, 0, ivx, sps) - wadj(0, jj, 0, ivx, sps)
       CALL PUSHREAL8(ddw)
 !fw(i,j+1,k,imx) = fw(i,j+1,k,imx) + fs
 !fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
 ! Y-momentum.
-      ddw = wadj(0, jj+1, 0, ivy) - wadj(0, jj, 0, ivy)
+      ddw = wadj(0, jj+1, 0, ivy, sps) - wadj(0, jj, 0, ivy, sps)
       CALL PUSHREAL8(ddw)
 !fw(i,j+1,k,imy) = fw(i,j+1,k,imy) + fs
 !fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
 ! Z-momentum.
-      ddw = wadj(0, jj+1, 0, ivz) - wadj(0, jj, 0, ivz)
+      ddw = wadj(0, jj+1, 0, ivz, sps) - wadj(0, jj, 0, ivz, sps)
       CALL PUSHREAL8(ddw)
 !fw(i,j+1,k,imz) = fw(i,j+1,k,imz) + fs
 !fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
 ! Energy.
-      ddw = wadj(0, jj+1, 0, irhoe) - wadj(0, jj, 0, irhoe)
+      ddw = wadj(0, jj+1, 0, irhoe, sps) - wadj(0, jj, 0, irhoe, sps)
 !fw(i,j+1,k,irhoE) = fw(i,j+1,k,irhoE) + fs
 !fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
 ! Update j and set fact to 1 for the second face.
@@ -574,7 +584,7 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       END IF
       CALL PUSHREAL8(rrad)
 !rrad = ppor*(radK(i,j,k) + radK(i,j,k+1))
-      rrad = ppor*(radkadj(0, 0, kk)+radkadj(0, 0, kk+1))
+      rrad = ppor*(radkadj(0, 0, kk, sps)+radkadj(0, 0, kk+1, sps))
       IF (dss1 .LT. dss2) THEN
         y3 = dss2
         CALL PUSHINTEGER4(1)
@@ -607,27 +617,27 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
 ! Compute and scatter the dissipative flux.
 ! Density. Store it in the mass flow of the
 ! appropriate sliding mesh interface.
-      ddw = wadj(0, 0, kk+1, irho) - wadj(0, 0, kk, irho)
+      ddw = wadj(0, 0, kk+1, irho, sps) - wadj(0, 0, kk, irho, sps)
       CALL PUSHREAL8(ddw)
 !fw(i,j,k+1,irho) = fw(i,j,k+1,irho) + fs
 !fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
 ! X-momentum.
-      ddw = wadj(0, 0, kk+1, ivx) - wadj(0, 0, kk, ivx)
+      ddw = wadj(0, 0, kk+1, ivx, sps) - wadj(0, 0, kk, ivx, sps)
       CALL PUSHREAL8(ddw)
 !fw(i,j,k+1,imx) = fw(i,j,k+1,imx) + fs
 !fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
 ! Y-momentum.
-      ddw = wadj(0, 0, kk+1, ivy) - wadj(0, 0, kk, ivy)
+      ddw = wadj(0, 0, kk+1, ivy, sps) - wadj(0, 0, kk, ivy, sps)
       CALL PUSHREAL8(ddw)
 !fw(i,j,k+1,imy) = fw(i,j,k+1,imy) + fs
 !fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
 ! Z-momentum.
-      ddw = wadj(0, 0, kk+1, ivz) - wadj(0, 0, kk, ivz)
+      ddw = wadj(0, 0, kk+1, ivz, sps) - wadj(0, 0, kk, ivz, sps)
       CALL PUSHREAL8(ddw)
 !fw(i,j,k+1,imz) = fw(i,j,k+1,imz) + fs
 !fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
 ! Energy.
-      ddw = wadj(0, 0, kk+1, irhoe) - wadj(0, 0, kk, irhoe)
+      ddw = wadj(0, 0, kk+1, irhoe, sps) - wadj(0, 0, kk, irhoe, sps)
 !fw(i,j,k+1,irhoE) = fw(i,j,k+1,irhoE) + fs
 !fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
 ! Update k and set fact to 1 for the second face.
@@ -635,66 +645,77 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       CALL PUSHREAL8(fact)
       fact = -one
     END DO
-    radkadjb(-1:1, -1:1, -1:1) = 0.0
-    wadjb(-2:2, -2:2, -2:2, 1:nw) = 0.0
+    radkadjb(-1:1, -1:1, -1:1, 1:ntimeintervalsspectral) = 0.0
+    wadjb(-2:2, -2:2, -2:2, 1:nw, 1:ntimeintervalsspectral) = 0.0
     ssb(-2:2, -2:2, -2:2) = 0.0
     DO kk=0,-1,-1
       CALL POPREAL8(fact)
-      fsb = fact*dwadjb(irhoe)
+      fsb = fact*dwadjb(irhoe, sps)
       temp5b0 = -(dis4*fsb)
       dis2b = ddw*fsb
       ddwb = dis2*fsb - three*temp5b0
-      dis4b = -((wadj(0, 0, kk+2, irhoe)-wadj(0, 0, kk-1, irhoe)-three*&
-&        ddw)*fsb)
-      wadjb(0, 0, kk+2, irhoe) = wadjb(0, 0, kk+2, irhoe) + temp5b0
-      wadjb(0, 0, kk-1, irhoe) = wadjb(0, 0, kk-1, irhoe) - temp5b0
+      dis4b = -((wadj(0, 0, kk+2, irhoe, sps)-wadj(0, 0, kk-1, irhoe, &
+&        sps)-three*ddw)*fsb)
+      wadjb(0, 0, kk+2, irhoe, sps) = wadjb(0, 0, kk+2, irhoe, sps) + &
+&        temp5b0
+      wadjb(0, 0, kk-1, irhoe, sps) = wadjb(0, 0, kk-1, irhoe, sps) - &
+&        temp5b0
       CALL POPREAL8(ddw)
-      wadjb(0, 0, kk+1, irhoe) = wadjb(0, 0, kk+1, irhoe) + ddwb
-      wadjb(0, 0, kk, irhoe) = wadjb(0, 0, kk, irhoe) - ddwb
-      fsb = fact*dwadjb(imz)
+      wadjb(0, 0, kk+1, irhoe, sps) = wadjb(0, 0, kk+1, irhoe, sps) + &
+&        ddwb
+      wadjb(0, 0, kk, irhoe, sps) = wadjb(0, 0, kk, irhoe, sps) - ddwb
+      fsb = fact*dwadjb(imz, sps)
       temp5b1 = -(dis4*fsb)
       dis2b = dis2b + ddw*fsb
       ddwb = dis2*fsb - three*temp5b1
-      dis4b = dis4b - (wadj(0, 0, kk+2, ivz)-wadj(0, 0, kk-1, ivz)-three&
-&        *ddw)*fsb
-      wadjb(0, 0, kk+2, ivz) = wadjb(0, 0, kk+2, ivz) + temp5b1
-      wadjb(0, 0, kk-1, ivz) = wadjb(0, 0, kk-1, ivz) - temp5b1
+      dis4b = dis4b - (wadj(0, 0, kk+2, ivz, sps)-wadj(0, 0, kk-1, ivz, &
+&        sps)-three*ddw)*fsb
+      wadjb(0, 0, kk+2, ivz, sps) = wadjb(0, 0, kk+2, ivz, sps) + &
+&        temp5b1
+      wadjb(0, 0, kk-1, ivz, sps) = wadjb(0, 0, kk-1, ivz, sps) - &
+&        temp5b1
       CALL POPREAL8(ddw)
-      wadjb(0, 0, kk+1, ivz) = wadjb(0, 0, kk+1, ivz) + ddwb
-      wadjb(0, 0, kk, ivz) = wadjb(0, 0, kk, ivz) - ddwb
-      fsb = fact*dwadjb(imy)
+      wadjb(0, 0, kk+1, ivz, sps) = wadjb(0, 0, kk+1, ivz, sps) + ddwb
+      wadjb(0, 0, kk, ivz, sps) = wadjb(0, 0, kk, ivz, sps) - ddwb
+      fsb = fact*dwadjb(imy, sps)
       temp5b2 = -(dis4*fsb)
       dis2b = dis2b + ddw*fsb
       ddwb = dis2*fsb - three*temp5b2
-      dis4b = dis4b - (wadj(0, 0, kk+2, ivy)-wadj(0, 0, kk-1, ivy)-three&
-&        *ddw)*fsb
-      wadjb(0, 0, kk+2, ivy) = wadjb(0, 0, kk+2, ivy) + temp5b2
-      wadjb(0, 0, kk-1, ivy) = wadjb(0, 0, kk-1, ivy) - temp5b2
+      dis4b = dis4b - (wadj(0, 0, kk+2, ivy, sps)-wadj(0, 0, kk-1, ivy, &
+&        sps)-three*ddw)*fsb
+      wadjb(0, 0, kk+2, ivy, sps) = wadjb(0, 0, kk+2, ivy, sps) + &
+&        temp5b2
+      wadjb(0, 0, kk-1, ivy, sps) = wadjb(0, 0, kk-1, ivy, sps) - &
+&        temp5b2
       CALL POPREAL8(ddw)
-      wadjb(0, 0, kk+1, ivy) = wadjb(0, 0, kk+1, ivy) + ddwb
-      wadjb(0, 0, kk, ivy) = wadjb(0, 0, kk, ivy) - ddwb
-      fsb = fact*dwadjb(imx)
+      wadjb(0, 0, kk+1, ivy, sps) = wadjb(0, 0, kk+1, ivy, sps) + ddwb
+      wadjb(0, 0, kk, ivy, sps) = wadjb(0, 0, kk, ivy, sps) - ddwb
+      fsb = fact*dwadjb(imx, sps)
       temp5b3 = -(dis4*fsb)
       dis2b = dis2b + ddw*fsb
       ddwb = dis2*fsb - three*temp5b3
-      dis4b = dis4b - (wadj(0, 0, kk+2, ivx)-wadj(0, 0, kk-1, ivx)-three&
-&        *ddw)*fsb
-      wadjb(0, 0, kk+2, ivx) = wadjb(0, 0, kk+2, ivx) + temp5b3
-      wadjb(0, 0, kk-1, ivx) = wadjb(0, 0, kk-1, ivx) - temp5b3
+      dis4b = dis4b - (wadj(0, 0, kk+2, ivx, sps)-wadj(0, 0, kk-1, ivx, &
+&        sps)-three*ddw)*fsb
+      wadjb(0, 0, kk+2, ivx, sps) = wadjb(0, 0, kk+2, ivx, sps) + &
+&        temp5b3
+      wadjb(0, 0, kk-1, ivx, sps) = wadjb(0, 0, kk-1, ivx, sps) - &
+&        temp5b3
       CALL POPREAL8(ddw)
-      wadjb(0, 0, kk+1, ivx) = wadjb(0, 0, kk+1, ivx) + ddwb
-      wadjb(0, 0, kk, ivx) = wadjb(0, 0, kk, ivx) - ddwb
-      fsb = fact*dwadjb(irho)
+      wadjb(0, 0, kk+1, ivx, sps) = wadjb(0, 0, kk+1, ivx, sps) + ddwb
+      wadjb(0, 0, kk, ivx, sps) = wadjb(0, 0, kk, ivx, sps) - ddwb
+      fsb = fact*dwadjb(irho, sps)
       temp5b4 = -(dis4*fsb)
       dis2b = dis2b + ddw*fsb
       ddwb = dis2*fsb - three*temp5b4
-      dis4b = dis4b - (wadj(0, 0, kk+2, irho)-wadj(0, 0, kk-1, irho)-&
-&        three*ddw)*fsb
-      wadjb(0, 0, kk+2, irho) = wadjb(0, 0, kk+2, irho) + temp5b4
-      wadjb(0, 0, kk-1, irho) = wadjb(0, 0, kk-1, irho) - temp5b4
+      dis4b = dis4b - (wadj(0, 0, kk+2, irho, sps)-wadj(0, 0, kk-1, irho&
+&        , sps)-three*ddw)*fsb
+      wadjb(0, 0, kk+2, irho, sps) = wadjb(0, 0, kk+2, irho, sps) + &
+&        temp5b4
+      wadjb(0, 0, kk-1, irho, sps) = wadjb(0, 0, kk-1, irho, sps) - &
+&        temp5b4
       CALL POPREAL8(ddw)
-      wadjb(0, 0, kk+1, irho) = wadjb(0, 0, kk+1, irho) + ddwb
-      wadjb(0, 0, kk, irho) = wadjb(0, 0, kk, irho) - ddwb
+      wadjb(0, 0, kk+1, irho, sps) = wadjb(0, 0, kk+1, irho, sps) + ddwb
+      wadjb(0, 0, kk, irho, sps) = wadjb(0, 0, kk, irho, sps) - ddwb
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
         CALL POPREAL8(dis4)
@@ -724,8 +745,8 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         dss1b = 0.0
       END IF
       CALL POPREAL8(rrad)
-      radkadjb(0, 0, kk) = radkadjb(0, 0, kk) + ppor*rradb
-      radkadjb(0, 0, kk+1) = radkadjb(0, 0, kk+1) + ppor*rradb
+      radkadjb(0, 0, kk, sps) = radkadjb(0, 0, kk, sps) + ppor*rradb
+      radkadjb(0, 0, kk+1, sps) = radkadjb(0, 0, kk+1, sps) + ppor*rradb
       CALL POPINTEGER4(branch)
       CALL POPREAL8(ppor)
       CALL POPINTEGER4(branch)
@@ -755,64 +776,75 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       ssb(0, 0, kk) = ssb(0, 0, kk) + two*temp3b5 - two*temp4b
       ssb(0, 0, kk-1) = ssb(0, 0, kk-1) + temp3b5 + temp4b
     END DO
-    radjadjb(-1:1, -1:1, -1:1) = 0.0
+    radjadjb(-1:1, -1:1, -1:1, 1:ntimeintervalsspectral) = 0.0
     DO jj=0,-1,-1
       CALL POPREAL8(fact)
-      fsb = fact*dwadjb(irhoe)
+      fsb = fact*dwadjb(irhoe, sps)
       temp3b0 = -(dis4*fsb)
       dis2b = ddw*fsb
       ddwb = dis2*fsb - three*temp3b0
-      dis4b = -((wadj(0, jj+2, 0, irhoe)-wadj(0, jj-1, 0, irhoe)-three*&
-&        ddw)*fsb)
-      wadjb(0, jj+2, 0, irhoe) = wadjb(0, jj+2, 0, irhoe) + temp3b0
-      wadjb(0, jj-1, 0, irhoe) = wadjb(0, jj-1, 0, irhoe) - temp3b0
+      dis4b = -((wadj(0, jj+2, 0, irhoe, sps)-wadj(0, jj-1, 0, irhoe, &
+&        sps)-three*ddw)*fsb)
+      wadjb(0, jj+2, 0, irhoe, sps) = wadjb(0, jj+2, 0, irhoe, sps) + &
+&        temp3b0
+      wadjb(0, jj-1, 0, irhoe, sps) = wadjb(0, jj-1, 0, irhoe, sps) - &
+&        temp3b0
       CALL POPREAL8(ddw)
-      wadjb(0, jj+1, 0, irhoe) = wadjb(0, jj+1, 0, irhoe) + ddwb
-      wadjb(0, jj, 0, irhoe) = wadjb(0, jj, 0, irhoe) - ddwb
-      fsb = fact*dwadjb(imz)
+      wadjb(0, jj+1, 0, irhoe, sps) = wadjb(0, jj+1, 0, irhoe, sps) + &
+&        ddwb
+      wadjb(0, jj, 0, irhoe, sps) = wadjb(0, jj, 0, irhoe, sps) - ddwb
+      fsb = fact*dwadjb(imz, sps)
       temp3b1 = -(dis4*fsb)
       dis2b = dis2b + ddw*fsb
       ddwb = dis2*fsb - three*temp3b1
-      dis4b = dis4b - (wadj(0, jj+2, 0, ivz)-wadj(0, jj-1, 0, ivz)-three&
-&        *ddw)*fsb
-      wadjb(0, jj+2, 0, ivz) = wadjb(0, jj+2, 0, ivz) + temp3b1
-      wadjb(0, jj-1, 0, ivz) = wadjb(0, jj-1, 0, ivz) - temp3b1
+      dis4b = dis4b - (wadj(0, jj+2, 0, ivz, sps)-wadj(0, jj-1, 0, ivz, &
+&        sps)-three*ddw)*fsb
+      wadjb(0, jj+2, 0, ivz, sps) = wadjb(0, jj+2, 0, ivz, sps) + &
+&        temp3b1
+      wadjb(0, jj-1, 0, ivz, sps) = wadjb(0, jj-1, 0, ivz, sps) - &
+&        temp3b1
       CALL POPREAL8(ddw)
-      wadjb(0, jj+1, 0, ivz) = wadjb(0, jj+1, 0, ivz) + ddwb
-      wadjb(0, jj, 0, ivz) = wadjb(0, jj, 0, ivz) - ddwb
-      fsb = fact*dwadjb(imy)
+      wadjb(0, jj+1, 0, ivz, sps) = wadjb(0, jj+1, 0, ivz, sps) + ddwb
+      wadjb(0, jj, 0, ivz, sps) = wadjb(0, jj, 0, ivz, sps) - ddwb
+      fsb = fact*dwadjb(imy, sps)
       temp3b2 = -(dis4*fsb)
       dis2b = dis2b + ddw*fsb
       ddwb = dis2*fsb - three*temp3b2
-      dis4b = dis4b - (wadj(0, jj+2, 0, ivy)-wadj(0, jj-1, 0, ivy)-three&
-&        *ddw)*fsb
-      wadjb(0, jj+2, 0, ivy) = wadjb(0, jj+2, 0, ivy) + temp3b2
-      wadjb(0, jj-1, 0, ivy) = wadjb(0, jj-1, 0, ivy) - temp3b2
+      dis4b = dis4b - (wadj(0, jj+2, 0, ivy, sps)-wadj(0, jj-1, 0, ivy, &
+&        sps)-three*ddw)*fsb
+      wadjb(0, jj+2, 0, ivy, sps) = wadjb(0, jj+2, 0, ivy, sps) + &
+&        temp3b2
+      wadjb(0, jj-1, 0, ivy, sps) = wadjb(0, jj-1, 0, ivy, sps) - &
+&        temp3b2
       CALL POPREAL8(ddw)
-      wadjb(0, jj+1, 0, ivy) = wadjb(0, jj+1, 0, ivy) + ddwb
-      wadjb(0, jj, 0, ivy) = wadjb(0, jj, 0, ivy) - ddwb
-      fsb = fact*dwadjb(imx)
+      wadjb(0, jj+1, 0, ivy, sps) = wadjb(0, jj+1, 0, ivy, sps) + ddwb
+      wadjb(0, jj, 0, ivy, sps) = wadjb(0, jj, 0, ivy, sps) - ddwb
+      fsb = fact*dwadjb(imx, sps)
       temp3b3 = -(dis4*fsb)
       dis2b = dis2b + ddw*fsb
       ddwb = dis2*fsb - three*temp3b3
-      dis4b = dis4b - (wadj(0, jj+2, 0, ivx)-wadj(0, jj-1, 0, ivx)-three&
-&        *ddw)*fsb
-      wadjb(0, jj+2, 0, ivx) = wadjb(0, jj+2, 0, ivx) + temp3b3
-      wadjb(0, jj-1, 0, ivx) = wadjb(0, jj-1, 0, ivx) - temp3b3
+      dis4b = dis4b - (wadj(0, jj+2, 0, ivx, sps)-wadj(0, jj-1, 0, ivx, &
+&        sps)-three*ddw)*fsb
+      wadjb(0, jj+2, 0, ivx, sps) = wadjb(0, jj+2, 0, ivx, sps) + &
+&        temp3b3
+      wadjb(0, jj-1, 0, ivx, sps) = wadjb(0, jj-1, 0, ivx, sps) - &
+&        temp3b3
       CALL POPREAL8(ddw)
-      wadjb(0, jj+1, 0, ivx) = wadjb(0, jj+1, 0, ivx) + ddwb
-      wadjb(0, jj, 0, ivx) = wadjb(0, jj, 0, ivx) - ddwb
-      fsb = fact*dwadjb(irho)
+      wadjb(0, jj+1, 0, ivx, sps) = wadjb(0, jj+1, 0, ivx, sps) + ddwb
+      wadjb(0, jj, 0, ivx, sps) = wadjb(0, jj, 0, ivx, sps) - ddwb
+      fsb = fact*dwadjb(irho, sps)
       temp3b4 = -(dis4*fsb)
       dis2b = dis2b + ddw*fsb
       ddwb = dis2*fsb - three*temp3b4
-      dis4b = dis4b - (wadj(0, jj+2, 0, irho)-wadj(0, jj-1, 0, irho)-&
-&        three*ddw)*fsb
-      wadjb(0, jj+2, 0, irho) = wadjb(0, jj+2, 0, irho) + temp3b4
-      wadjb(0, jj-1, 0, irho) = wadjb(0, jj-1, 0, irho) - temp3b4
+      dis4b = dis4b - (wadj(0, jj+2, 0, irho, sps)-wadj(0, jj-1, 0, irho&
+&        , sps)-three*ddw)*fsb
+      wadjb(0, jj+2, 0, irho, sps) = wadjb(0, jj+2, 0, irho, sps) + &
+&        temp3b4
+      wadjb(0, jj-1, 0, irho, sps) = wadjb(0, jj-1, 0, irho, sps) - &
+&        temp3b4
       CALL POPREAL8(ddw)
-      wadjb(0, jj+1, 0, irho) = wadjb(0, jj+1, 0, irho) + ddwb
-      wadjb(0, jj, 0, irho) = wadjb(0, jj, 0, irho) - ddwb
+      wadjb(0, jj+1, 0, irho, sps) = wadjb(0, jj+1, 0, irho, sps) + ddwb
+      wadjb(0, jj, 0, irho, sps) = wadjb(0, jj, 0, irho, sps) - ddwb
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
         CALL POPREAL8(dis4)
@@ -842,8 +874,8 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         dss1b = 0.0
       END IF
       CALL POPREAL8(rrad)
-      radjadjb(0, jj, 0) = radjadjb(0, jj, 0) + ppor*rradb
-      radjadjb(0, jj+1, 0) = radjadjb(0, jj+1, 0) + ppor*rradb
+      radjadjb(0, jj, 0, sps) = radjadjb(0, jj, 0, sps) + ppor*rradb
+      radjadjb(0, jj+1, 0, sps) = radjadjb(0, jj+1, 0, sps) + ppor*rradb
       CALL POPINTEGER4(branch)
       CALL POPREAL8(ppor)
       CALL POPINTEGER4(branch)
@@ -873,64 +905,75 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       ssb(0, jj, 0) = ssb(0, jj, 0) + two*temp1b5 - two*temp2b
       ssb(0, jj-1, 0) = ssb(0, jj-1, 0) + temp1b5 + temp2b
     END DO
-    radiadjb(-1:1, -1:1, -1:1) = 0.0
+    radiadjb(-1:1, -1:1, -1:1, 1:ntimeintervalsspectral) = 0.0
     DO ii=0,-1,-1
       CALL POPREAL8(fact)
-      fsb = fact*dwadjb(irhoe)
+      fsb = fact*dwadjb(irhoe, sps)
       temp1b0 = -(dis4*fsb)
       dis2b = ddw*fsb
       ddwb = dis2*fsb - three*temp1b0
-      dis4b = -((wadj(ii+2, 0, 0, irhoe)-wadj(ii-1, 0, 0, irhoe)-three*&
-&        ddw)*fsb)
-      wadjb(ii+2, 0, 0, irhoe) = wadjb(ii+2, 0, 0, irhoe) + temp1b0
-      wadjb(ii-1, 0, 0, irhoe) = wadjb(ii-1, 0, 0, irhoe) - temp1b0
+      dis4b = -((wadj(ii+2, 0, 0, irhoe, sps)-wadj(ii-1, 0, 0, irhoe, &
+&        sps)-three*ddw)*fsb)
+      wadjb(ii+2, 0, 0, irhoe, sps) = wadjb(ii+2, 0, 0, irhoe, sps) + &
+&        temp1b0
+      wadjb(ii-1, 0, 0, irhoe, sps) = wadjb(ii-1, 0, 0, irhoe, sps) - &
+&        temp1b0
       CALL POPREAL8(ddw)
-      wadjb(ii+1, 0, 0, irhoe) = wadjb(ii+1, 0, 0, irhoe) + ddwb
-      wadjb(ii, 0, 0, irhoe) = wadjb(ii, 0, 0, irhoe) - ddwb
-      fsb = fact*dwadjb(imz)
+      wadjb(ii+1, 0, 0, irhoe, sps) = wadjb(ii+1, 0, 0, irhoe, sps) + &
+&        ddwb
+      wadjb(ii, 0, 0, irhoe, sps) = wadjb(ii, 0, 0, irhoe, sps) - ddwb
+      fsb = fact*dwadjb(imz, sps)
       temp1b1 = -(dis4*fsb)
       dis2b = dis2b + ddw*fsb
       ddwb = dis2*fsb - three*temp1b1
-      dis4b = dis4b - (wadj(ii+2, 0, 0, ivz)-wadj(ii-1, 0, 0, ivz)-three&
-&        *ddw)*fsb
-      wadjb(ii+2, 0, 0, ivz) = wadjb(ii+2, 0, 0, ivz) + temp1b1
-      wadjb(ii-1, 0, 0, ivz) = wadjb(ii-1, 0, 0, ivz) - temp1b1
+      dis4b = dis4b - (wadj(ii+2, 0, 0, ivz, sps)-wadj(ii-1, 0, 0, ivz, &
+&        sps)-three*ddw)*fsb
+      wadjb(ii+2, 0, 0, ivz, sps) = wadjb(ii+2, 0, 0, ivz, sps) + &
+&        temp1b1
+      wadjb(ii-1, 0, 0, ivz, sps) = wadjb(ii-1, 0, 0, ivz, sps) - &
+&        temp1b1
       CALL POPREAL8(ddw)
-      wadjb(ii+1, 0, 0, ivz) = wadjb(ii+1, 0, 0, ivz) + ddwb
-      wadjb(ii, 0, 0, ivz) = wadjb(ii, 0, 0, ivz) - ddwb
-      fsb = fact*dwadjb(imy)
+      wadjb(ii+1, 0, 0, ivz, sps) = wadjb(ii+1, 0, 0, ivz, sps) + ddwb
+      wadjb(ii, 0, 0, ivz, sps) = wadjb(ii, 0, 0, ivz, sps) - ddwb
+      fsb = fact*dwadjb(imy, sps)
       temp1b2 = -(dis4*fsb)
       dis2b = dis2b + ddw*fsb
       ddwb = dis2*fsb - three*temp1b2
-      dis4b = dis4b - (wadj(ii+2, 0, 0, ivy)-wadj(ii-1, 0, 0, ivy)-three&
-&        *ddw)*fsb
-      wadjb(ii+2, 0, 0, ivy) = wadjb(ii+2, 0, 0, ivy) + temp1b2
-      wadjb(ii-1, 0, 0, ivy) = wadjb(ii-1, 0, 0, ivy) - temp1b2
+      dis4b = dis4b - (wadj(ii+2, 0, 0, ivy, sps)-wadj(ii-1, 0, 0, ivy, &
+&        sps)-three*ddw)*fsb
+      wadjb(ii+2, 0, 0, ivy, sps) = wadjb(ii+2, 0, 0, ivy, sps) + &
+&        temp1b2
+      wadjb(ii-1, 0, 0, ivy, sps) = wadjb(ii-1, 0, 0, ivy, sps) - &
+&        temp1b2
       CALL POPREAL8(ddw)
-      wadjb(ii+1, 0, 0, ivy) = wadjb(ii+1, 0, 0, ivy) + ddwb
-      wadjb(ii, 0, 0, ivy) = wadjb(ii, 0, 0, ivy) - ddwb
-      fsb = fact*dwadjb(imx)
+      wadjb(ii+1, 0, 0, ivy, sps) = wadjb(ii+1, 0, 0, ivy, sps) + ddwb
+      wadjb(ii, 0, 0, ivy, sps) = wadjb(ii, 0, 0, ivy, sps) - ddwb
+      fsb = fact*dwadjb(imx, sps)
       temp1b3 = -(dis4*fsb)
       dis2b = dis2b + ddw*fsb
       ddwb = dis2*fsb - three*temp1b3
-      dis4b = dis4b - (wadj(ii+2, 0, 0, ivx)-wadj(ii-1, 0, 0, ivx)-three&
-&        *ddw)*fsb
-      wadjb(ii+2, 0, 0, ivx) = wadjb(ii+2, 0, 0, ivx) + temp1b3
-      wadjb(ii-1, 0, 0, ivx) = wadjb(ii-1, 0, 0, ivx) - temp1b3
+      dis4b = dis4b - (wadj(ii+2, 0, 0, ivx, sps)-wadj(ii-1, 0, 0, ivx, &
+&        sps)-three*ddw)*fsb
+      wadjb(ii+2, 0, 0, ivx, sps) = wadjb(ii+2, 0, 0, ivx, sps) + &
+&        temp1b3
+      wadjb(ii-1, 0, 0, ivx, sps) = wadjb(ii-1, 0, 0, ivx, sps) - &
+&        temp1b3
       CALL POPREAL8(ddw)
-      wadjb(ii+1, 0, 0, ivx) = wadjb(ii+1, 0, 0, ivx) + ddwb
-      wadjb(ii, 0, 0, ivx) = wadjb(ii, 0, 0, ivx) - ddwb
-      fsb = fact*dwadjb(irho)
+      wadjb(ii+1, 0, 0, ivx, sps) = wadjb(ii+1, 0, 0, ivx, sps) + ddwb
+      wadjb(ii, 0, 0, ivx, sps) = wadjb(ii, 0, 0, ivx, sps) - ddwb
+      fsb = fact*dwadjb(irho, sps)
       temp1b4 = -(dis4*fsb)
       dis2b = dis2b + ddw*fsb
       ddwb = dis2*fsb - three*temp1b4
-      dis4b = dis4b - (wadj(ii+2, 0, 0, irho)-wadj(ii-1, 0, 0, irho)-&
-&        three*ddw)*fsb
-      wadjb(ii+2, 0, 0, irho) = wadjb(ii+2, 0, 0, irho) + temp1b4
-      wadjb(ii-1, 0, 0, irho) = wadjb(ii-1, 0, 0, irho) - temp1b4
+      dis4b = dis4b - (wadj(ii+2, 0, 0, irho, sps)-wadj(ii-1, 0, 0, irho&
+&        , sps)-three*ddw)*fsb
+      wadjb(ii+2, 0, 0, irho, sps) = wadjb(ii+2, 0, 0, irho, sps) + &
+&        temp1b4
+      wadjb(ii-1, 0, 0, irho, sps) = wadjb(ii-1, 0, 0, irho, sps) - &
+&        temp1b4
       CALL POPREAL8(ddw)
-      wadjb(ii+1, 0, 0, irho) = wadjb(ii+1, 0, 0, irho) + ddwb
-      wadjb(ii, 0, 0, irho) = wadjb(ii, 0, 0, irho) - ddwb
+      wadjb(ii+1, 0, 0, irho, sps) = wadjb(ii+1, 0, 0, irho, sps) + ddwb
+      wadjb(ii, 0, 0, irho, sps) = wadjb(ii, 0, 0, irho, sps) - ddwb
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
         CALL POPREAL8(dis4)
@@ -960,8 +1003,8 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         dss1b = 0.0
       END IF
       CALL POPREAL8(rrad)
-      radiadjb(ii, 0, 0) = radiadjb(ii, 0, 0) + ppor*rradb
-      radiadjb(ii+1, 0, 0) = radiadjb(ii+1, 0, 0) + ppor*rradb
+      radiadjb(ii, 0, 0, sps) = radiadjb(ii, 0, 0, sps) + ppor*rradb
+      radiadjb(ii+1, 0, 0, sps) = radiadjb(ii+1, 0, 0, sps) + ppor*rradb
       CALL POPINTEGER4(branch)
       CALL POPREAL8(ppor)
       CALL POPINTEGER4(branch)
@@ -991,33 +1034,34 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       ssb(ii, 0, 0) = ssb(ii, 0, 0) + two*tempb - two*temp0b
       ssb(ii-1, 0, 0) = ssb(ii-1, 0, 0) + tempb + temp0b
     END DO
-    padjb(-2:2, -2:2, -2:2) = 0.0
+    padjb(-2:2, -2:2, -2:2, 1:ntimeintervalsspectral) = 0.0
     DO k=2,-2,-1
       DO j=2,-2,-1
         DO i=2,-2,-1
-          CALL POPREAL8(wadj(i, j, k, irhoe))
-          padjb(i, j, k) = padjb(i, j, k) + wadjb(i, j, k, irhoe)
-          CALL POPREAL8(wadj(i, j, k, ivz))
-          tmp1b = wadjb(i, j, k, ivz)
-          wadjb(i, j, k, ivz) = 0.0
-          wadjb(i, j, k, irho) = wadjb(i, j, k, irho) + wadj(i, j, k, &
-&            ivz)*tmp1b
-          wadjb(i, j, k, ivz) = wadjb(i, j, k, ivz) + wadj(i, j, k, irho&
-&            )*tmp1b
-          CALL POPREAL8(wadj(i, j, k, ivy))
-          tmp0b = wadjb(i, j, k, ivy)
-          wadjb(i, j, k, ivy) = 0.0
-          wadjb(i, j, k, irho) = wadjb(i, j, k, irho) + wadj(i, j, k, &
-&            ivy)*tmp0b
-          wadjb(i, j, k, ivy) = wadjb(i, j, k, ivy) + wadj(i, j, k, irho&
-&            )*tmp0b
-          CALL POPREAL8(wadj(i, j, k, ivx))
-          tmpb = wadjb(i, j, k, ivx)
-          wadjb(i, j, k, ivx) = 0.0
-          wadjb(i, j, k, irho) = wadjb(i, j, k, irho) + wadj(i, j, k, &
-&            ivx)*tmpb
-          wadjb(i, j, k, ivx) = wadjb(i, j, k, ivx) + wadj(i, j, k, irho&
-&            )*tmpb
+          CALL POPREAL8(wadj(i, j, k, irhoe, sps))
+          padjb(i, j, k, sps) = padjb(i, j, k, sps) + wadjb(i, j, k, &
+&            irhoe, sps)
+          CALL POPREAL8(wadj(i, j, k, ivz, sps))
+          tmp1b = wadjb(i, j, k, ivz, sps)
+          wadjb(i, j, k, ivz, sps) = 0.0
+          wadjb(i, j, k, irho, sps) = wadjb(i, j, k, irho, sps) + wadj(i&
+&            , j, k, ivz, sps)*tmp1b
+          wadjb(i, j, k, ivz, sps) = wadjb(i, j, k, ivz, sps) + wadj(i, &
+&            j, k, irho, sps)*tmp1b
+          CALL POPREAL8(wadj(i, j, k, ivy, sps))
+          tmp0b = wadjb(i, j, k, ivy, sps)
+          wadjb(i, j, k, ivy, sps) = 0.0
+          wadjb(i, j, k, irho, sps) = wadjb(i, j, k, irho, sps) + wadj(i&
+&            , j, k, ivy, sps)*tmp0b
+          wadjb(i, j, k, ivy, sps) = wadjb(i, j, k, ivy, sps) + wadj(i, &
+&            j, k, irho, sps)*tmp0b
+          CALL POPREAL8(wadj(i, j, k, ivx, sps))
+          tmpb = wadjb(i, j, k, ivx, sps)
+          wadjb(i, j, k, ivx, sps) = 0.0
+          wadjb(i, j, k, irho, sps) = wadjb(i, j, k, irho, sps) + wadj(i&
+&            , j, k, ivx, sps)*tmpb
+          wadjb(i, j, k, ivx, sps) = wadjb(i, j, k, ivx, sps) + wadj(i, &
+&            j, k, irho, sps)*tmpb
         END DO
       END DO
     END DO
@@ -1026,7 +1070,7 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       DO k=2,-2,-1
         DO j=2,-2,-1
           DO i=2,-2,-1
-            padjb(i, j, k) = padjb(i, j, k) + ssb(i, j, k)
+            padjb(i, j, k, sps) = padjb(i, j, k, sps) + ssb(i, j, k)
             ssb(i, j, k) = 0.0
           END DO
         END DO

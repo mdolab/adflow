@@ -2,7 +2,8 @@
 !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
 !  
 !  Differentiation of metricadj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: xadj
+!   gradient, with respect to input variables: voladj xadj skadj
+!                sjadj siadj normadj
 !   of linear combination of output variables: voladj xadj skadj
 !                sjadj siadj normadj
 !
@@ -10,14 +11,15 @@
 !      *                                                                *
 !      * File:          metricAdj.f90                                   *
 !      * Author:        Edwin van der Weide                             *
-!      *                Seongim Choi                                    *
+!      *                Seongim Choi,C.A.(Sandy) Mader                  *
 !      * Starting date: 12-15-2007                                      *
 !      * Last modified: 12-26-2007                                      *
 !      *                                                                *
 !      ******************************************************************
 !
 SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
-&  , skadjb, voladj, voladjb, normadj, normadjb, icell, jcell, kcell)
+&  , skadjb, voladj, voladjb, normadj, normadjb, icell, jcell, kcell, nn&
+&  , level, sps, sps2)
   USE bctypes
   USE blockpointers
   USE cgnsgrid
@@ -31,15 +33,26 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
   INTEGER(KIND=INTTYPE), INTENT(IN) :: icell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: jcell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: kcell
-  REAL(KIND=REALTYPE) :: normadj(nbocos, -2:2, -2:2, 3), normadjb(nbocos&
-&  , -2:2, -2:2, 3)
-  REAL(KIND=REALTYPE) :: siadj(-3:2, -3:2, -3:2, 3), siadjb(-3:2, -3:2, &
-&  -3:2, 3), sjadj(-3:2, -3:2, -3:2, 3), sjadjb(-3:2, -3:2, -3:2, 3), &
-&  skadj(-3:2, -3:2, -3:2, 3), skadjb(-3:2, -3:2, -3:2, 3)
-  REAL(KIND=REALTYPE) :: voladj, voladjb
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  xadj
-  REAL(KIND=REALTYPE) :: xadjb(-3:2, -3:2, -3:2, 3)
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: level
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: nn
+  REAL(KIND=REALTYPE) :: normadj(nbocos, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral), normadjb(nbocos, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE) :: siadj(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), siadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), sjadj(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), sjadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), skadj(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), skadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral)
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: sps
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: sps2
+  REAL(KIND=REALTYPE) :: voladj(ntimeintervalsspectral), voladjb(&
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: xadj
+  REAL(KIND=REALTYPE) :: xadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral)
   REAL(KIND=REALTYPE), PARAMETER :: thresvolume=1.e-2_realType
   INTEGER :: ad_from, ad_from0, ad_from1, ad_from2, ad_from3, ad_from4, &
 &  ad_from5, ad_from6, ad_to, ad_to0, ad_to1, ad_to2, ad_to3, ad_to4, &
@@ -53,19 +66,22 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
   INTEGER(KIND=INTTYPE) :: irbeg, irend, jrbeg, jrend, krbeg, krend
   INTEGER(KIND=INTTYPE) :: isbeg, isend, jsbeg, jsend, ksbeg, ksend
   INTEGER(KIND=INTTYPE) :: iend, istart, jend, jstart, kend, kstart
-  INTEGER(KIND=INTTYPE) :: mm, ntime, sps
+  INTEGER(KIND=INTTYPE) :: mm, ntime
   INTEGER(KIND=INTTYPE) :: nvolbad, nvolbadglobal
   REAL(KIND=REALTYPE) :: ss(-2:2, -2:2, 3), ssb(-2:2, -2:2, 3)
   REAL(KIND=REALTYPE) :: temp, temp0, temp0b, temp1, temp10, temp11, &
-&  temp1b, temp2, temp2b, temp3, temp3b, temp4, temp4b, temp5, temp5b, &
-&  temp6, temp7, temp8, temp9, tempb10, tempb11, tempb13, tempb3, tempb4&
-&  , tempb5, tempb6, tempb7, tempb8, tempb9
+&  temp12, temp13, temp14, temp15, temp16, temp17, temp18, temp19, &
+&  temp1b, temp2, temp20, temp21, temp22, temp23, temp24, temp25, temp26&
+&  , temp27, temp28, temp29, temp2b, temp3, temp3b, temp4, temp4b, temp5&
+&  , temp5b, temp6, temp7, temp8, temp9, tempb10, tempb11, tempb13, &
+&  tempb3, tempb4, tempb5, tempb6, tempb7, tempb8, tempb9
   REAL(KIND=REALTYPE) :: abs1, tempb
   REAL(KIND=REALTYPE) :: v1(3), v1b(3), v2(3), v2b(3)
   REAL(KIND=REALTYPE) :: abs2, abs3, abs4, abs5, abs6, abs7, tempb0, &
 &  tempb1, tempb2, vp1, vp1b, vp2, vp2b, vp3, vp3b, vp4, vp4b, vp5, vp5b&
 &  , vp6, vp6b, xp, xpb, yp, ypb, zp, zpb
   INTRINSIC MAX, ABS, MIN, SQRT
+  CALL PUSHREAL8ARRAY(siadj(:, :, :, :, sps2), 6**3*3)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -82,6 +98,7 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
 !      *                                                                *
 !      ******************************************************************
 !
+!nTimeIntervalsSpectral
 !
 !      Subroutine arguments.
 !
@@ -101,9 +118,11 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
 !      ******************************************************************
 ! Some initialization for siAdj,sjAdj,skAdj,normAdj 
 ! Volume needs only one stencil so it does not need initialization
-  siadj = zero
-  sjadj = zero
-  skadj = zero
+  siadj(:, :, :, :, sps2) = zero
+  CALL PUSHREAL8ARRAY(sjadj(:, :, :, :, sps2), 6**3*3)
+  sjadj(:, :, :, :, sps2) = zero
+  CALL PUSHREAL8ARRAY(skadj(:, :, :, :, sps2), 6**3*3)
+  skadj(:, :, :, :, sps2) = zero
 !!$       do n = 1,3
 !!$          do i = -3,2
 !!$             do j = -3,2
@@ -135,49 +154,61 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
   l = i - 1
 ! always check the volume of changed cell
 ! Compute the coordinates of the center of gravity.
-  xp = eighth*(xadj(i, j, k, 1)+xadj(i, m, k, 1)+xadj(i, m, n, 1)+xadj(i&
-&    , j, n, 1)+xadj(l, j, k, 1)+xadj(l, m, k, 1)+xadj(l, m, n, 1)+xadj(&
-&    l, j, n, 1))
-  yp = eighth*(xadj(i, j, k, 2)+xadj(i, m, k, 2)+xadj(i, m, n, 2)+xadj(i&
-&    , j, n, 2)+xadj(l, j, k, 2)+xadj(l, m, k, 2)+xadj(l, m, n, 2)+xadj(&
-&    l, j, n, 2))
-  zp = eighth*(xadj(i, j, k, 3)+xadj(i, m, k, 3)+xadj(i, m, n, 3)+xadj(i&
-&    , j, n, 3)+xadj(l, j, k, 3)+xadj(l, m, k, 3)+xadj(l, m, n, 3)+xadj(&
-&    l, j, n, 3))
+  xp = eighth*(xadj(i, j, k, 1, sps2)+xadj(i, m, k, 1, sps2)+xadj(i, m, &
+&    n, 1, sps2)+xadj(i, j, n, 1, sps2)+xadj(l, j, k, 1, sps2)+xadj(l, m&
+&    , k, 1, sps2)+xadj(l, m, n, 1, sps2)+xadj(l, j, n, 1, sps2))
+  yp = eighth*(xadj(i, j, k, 2, sps2)+xadj(i, m, k, 2, sps2)+xadj(i, m, &
+&    n, 2, sps2)+xadj(i, j, n, 2, sps2)+xadj(l, j, k, 2, sps2)+xadj(l, m&
+&    , k, 2, sps2)+xadj(l, m, n, 2, sps2)+xadj(l, j, n, 2, sps2))
+  zp = eighth*(xadj(i, j, k, 3, sps2)+xadj(i, m, k, 3, sps2)+xadj(i, m, &
+&    n, 3, sps2)+xadj(i, j, n, 3, sps2)+xadj(l, j, k, 3, sps2)+xadj(l, m&
+&    , k, 3, sps2)+xadj(l, m, n, 3, sps2)+xadj(l, j, n, 3, sps2))
 ! Compute the volumes of the 6 sub pyramids. The
 ! arguments of volpym must be such that for a (regular)
 ! right handed hexahedron all volumes are positive.
-  CALL VOLPYM2(xadj(i, j, k, 1), xadj(i, j, k, 2), xadj(i, j, k, 3), &
-&         xadj(i, j, n, 1), xadj(i, j, n, 2), xadj(i, j, n, 3), xadj(i, &
-&         m, n, 1), xadj(i, m, n, 2), xadj(i, m, n, 3), xadj(i, m, k, 1)&
-&         , xadj(i, m, k, 2), xadj(i, m, k, 3), xp, yp, zp, vp1)
-  CALL VOLPYM2(xadj(l, j, k, 1), xadj(l, j, k, 2), xadj(l, j, k, 3), &
-&         xadj(l, m, k, 1), xadj(l, m, k, 2), xadj(l, m, k, 3), xadj(l, &
-&         m, n, 1), xadj(l, m, n, 2), xadj(l, m, n, 3), xadj(l, j, n, 1)&
-&         , xadj(l, j, n, 2), xadj(l, j, n, 3), xp, yp, zp, vp2)
-  CALL VOLPYM2(xadj(i, j, k, 1), xadj(i, j, k, 2), xadj(i, j, k, 3), &
-&         xadj(l, j, k, 1), xadj(l, j, k, 2), xadj(l, j, k, 3), xadj(l, &
-&         j, n, 1), xadj(l, j, n, 2), xadj(l, j, n, 3), xadj(i, j, n, 1)&
-&         , xadj(i, j, n, 2), xadj(i, j, n, 3), xp, yp, zp, vp3)
-  CALL VOLPYM2(xadj(i, m, k, 1), xadj(i, m, k, 2), xadj(i, m, k, 3), &
-&         xadj(i, m, n, 1), xadj(i, m, n, 2), xadj(i, m, n, 3), xadj(l, &
-&         m, n, 1), xadj(l, m, n, 2), xadj(l, m, n, 3), xadj(l, m, k, 1)&
-&         , xadj(l, m, k, 2), xadj(l, m, k, 3), xp, yp, zp, vp4)
-  CALL VOLPYM2(xadj(i, j, k, 1), xadj(i, j, k, 2), xadj(i, j, k, 3), &
-&         xadj(i, m, k, 1), xadj(i, m, k, 2), xadj(i, m, k, 3), xadj(l, &
-&         m, k, 1), xadj(l, m, k, 2), xadj(l, m, k, 3), xadj(l, j, k, 1)&
-&         , xadj(l, j, k, 2), xadj(l, j, k, 3), xp, yp, zp, vp5)
-  CALL VOLPYM2(xadj(i, j, n, 1), xadj(i, j, n, 2), xadj(i, j, n, 3), &
-&         xadj(l, j, n, 1), xadj(l, j, n, 2), xadj(l, j, n, 3), xadj(l, &
-&         m, n, 1), xadj(l, m, n, 2), xadj(l, m, n, 3), xadj(i, m, n, 1)&
-&         , xadj(i, m, n, 2), xadj(i, m, n, 3), xp, yp, zp, vp6)
+  CALL VOLPYM2(xadj(i, j, k, 1, sps2), xadj(i, j, k, 2, sps2), xadj(i, j&
+&         , k, 3, sps2), xadj(i, j, n, 1, sps2), xadj(i, j, n, 2, sps2)&
+&         , xadj(i, j, n, 3, sps2), xadj(i, m, n, 1, sps2), xadj(i, m, n&
+&         , 2, sps2), xadj(i, m, n, 3, sps2), xadj(i, m, k, 1, sps2), &
+&         xadj(i, m, k, 2, sps2), xadj(i, m, k, 3, sps2), xp, yp, zp, &
+&         vp1)
+  CALL VOLPYM2(xadj(l, j, k, 1, sps2), xadj(l, j, k, 2, sps2), xadj(l, j&
+&         , k, 3, sps2), xadj(l, m, k, 1, sps2), xadj(l, m, k, 2, sps2)&
+&         , xadj(l, m, k, 3, sps2), xadj(l, m, n, 1, sps2), xadj(l, m, n&
+&         , 2, sps2), xadj(l, m, n, 3, sps2), xadj(l, j, n, 1, sps2), &
+&         xadj(l, j, n, 2, sps2), xadj(l, j, n, 3, sps2), xp, yp, zp, &
+&         vp2)
+  CALL VOLPYM2(xadj(i, j, k, 1, sps2), xadj(i, j, k, 2, sps2), xadj(i, j&
+&         , k, 3, sps2), xadj(l, j, k, 1, sps2), xadj(l, j, k, 2, sps2)&
+&         , xadj(l, j, k, 3, sps2), xadj(l, j, n, 1, sps2), xadj(l, j, n&
+&         , 2, sps2), xadj(l, j, n, 3, sps2), xadj(i, j, n, 1, sps2), &
+&         xadj(i, j, n, 2, sps2), xadj(i, j, n, 3, sps2), xp, yp, zp, &
+&         vp3)
+  CALL VOLPYM2(xadj(i, m, k, 1, sps2), xadj(i, m, k, 2, sps2), xadj(i, m&
+&         , k, 3, sps2), xadj(i, m, n, 1, sps2), xadj(i, m, n, 2, sps2)&
+&         , xadj(i, m, n, 3, sps2), xadj(l, m, n, 1, sps2), xadj(l, m, n&
+&         , 2, sps2), xadj(l, m, n, 3, sps2), xadj(l, m, k, 1, sps2), &
+&         xadj(l, m, k, 2, sps2), xadj(l, m, k, 3, sps2), xp, yp, zp, &
+&         vp4)
+  CALL VOLPYM2(xadj(i, j, k, 1, sps2), xadj(i, j, k, 2, sps2), xadj(i, j&
+&         , k, 3, sps2), xadj(i, m, k, 1, sps2), xadj(i, m, k, 2, sps2)&
+&         , xadj(i, m, k, 3, sps2), xadj(l, m, k, 1, sps2), xadj(l, m, k&
+&         , 2, sps2), xadj(l, m, k, 3, sps2), xadj(l, j, k, 1, sps2), &
+&         xadj(l, j, k, 2, sps2), xadj(l, j, k, 3, sps2), xp, yp, zp, &
+&         vp5)
+  CALL VOLPYM2(xadj(i, j, n, 1, sps2), xadj(i, j, n, 2, sps2), xadj(i, j&
+&         , n, 3, sps2), xadj(l, j, n, 1, sps2), xadj(l, j, n, 2, sps2)&
+&         , xadj(l, j, n, 3, sps2), xadj(l, m, n, 1, sps2), xadj(l, m, n&
+&         , 2, sps2), xadj(l, m, n, 3, sps2), xadj(i, m, n, 1, sps2), &
+&         xadj(i, m, n, 2, sps2), xadj(i, m, n, 3, sps2), xp, yp, zp, &
+&         vp6)
 ! Set the volume to 1/6 of the sum of the volumes of the
 ! pyramid. Remember that volpym computes 6 times the
 ! volume.
-  voladj = sixth*(vp1+vp2+vp3+vp4+vp5+vp6)
+  voladj(sps2) = sixth*(vp1+vp2+vp3+vp4+vp5+vp6)
 ! Check the volume and update the number of positive
 ! and negative volumes if needed.
-  IF (voladj .GE. 0.) THEN
+  IF (voladj(sps2) .GE. 0.) THEN
     CALL PUSHINTEGER4(1)
   ELSE
     CALL PUSHINTEGER4(0)
@@ -285,23 +316,26 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
       DO i=ad_from1,iend
         CALL PUSHREAL8(v1(1))
 ! Determine the two diagonal vectors of the face.
-        v1(1) = xadj(i, j, n, 1) - xadj(i, m, k, 1)
+        v1(1) = xadj(i, j, n, 1, sps2) - xadj(i, m, k, 1, sps2)
         CALL PUSHREAL8(v1(2))
-        v1(2) = xadj(i, j, n, 2) - xadj(i, m, k, 2)
+        v1(2) = xadj(i, j, n, 2, sps2) - xadj(i, m, k, 2, sps2)
         CALL PUSHREAL8(v1(3))
-        v1(3) = xadj(i, j, n, 3) - xadj(i, m, k, 3)
+        v1(3) = xadj(i, j, n, 3, sps2) - xadj(i, m, k, 3, sps2)
         CALL PUSHREAL8(v2(1))
-        v2(1) = xadj(i, j, k, 1) - xadj(i, m, n, 1)
+        v2(1) = xadj(i, j, k, 1, sps2) - xadj(i, m, n, 1, sps2)
         CALL PUSHREAL8(v2(2))
-        v2(2) = xadj(i, j, k, 2) - xadj(i, m, n, 2)
+        v2(2) = xadj(i, j, k, 2, sps2) - xadj(i, m, n, 2, sps2)
         CALL PUSHREAL8(v2(3))
-        v2(3) = xadj(i, j, k, 3) - xadj(i, m, n, 3)
+        v2(3) = xadj(i, j, k, 3, sps2) - xadj(i, m, n, 3, sps2)
+        CALL PUSHREAL8(siadj(i, j, k, 1, sps2))
 ! The face normal, which is the cross product of the two
 ! diagonal vectors times fact; remember that fact is
 ! either -0.5 or 0.5.
-        siadj(i, j, k, 1) = fact*(v1(2)*v2(3)-v1(3)*v2(2))
-        siadj(i, j, k, 2) = fact*(v1(3)*v2(1)-v1(1)*v2(3))
-        siadj(i, j, k, 3) = fact*(v1(1)*v2(2)-v1(2)*v2(1))
+        siadj(i, j, k, 1, sps2) = fact*(v1(2)*v2(3)-v1(3)*v2(2))
+        CALL PUSHREAL8(siadj(i, j, k, 2, sps2))
+        siadj(i, j, k, 2, sps2) = fact*(v1(3)*v2(1)-v1(1)*v2(3))
+        CALL PUSHREAL8(siadj(i, j, k, 3, sps2))
+        siadj(i, j, k, 3, sps2) = fact*(v1(1)*v2(2)-v1(2)*v2(1))
       END DO
       CALL PUSHINTEGER4(i - 1)
       CALL PUSHINTEGER4(ad_from1)
@@ -371,23 +405,26 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
         l = i - 1
         CALL PUSHREAL8(v1(1))
 ! Determine the two diagonal vectors of the face.
-        v1(1) = xadj(i, j, n, 1) - xadj(l, j, k, 1)
+        v1(1) = xadj(i, j, n, 1, sps2) - xadj(l, j, k, 1, sps2)
         CALL PUSHREAL8(v1(2))
-        v1(2) = xadj(i, j, n, 2) - xadj(l, j, k, 2)
+        v1(2) = xadj(i, j, n, 2, sps2) - xadj(l, j, k, 2, sps2)
         CALL PUSHREAL8(v1(3))
-        v1(3) = xadj(i, j, n, 3) - xadj(l, j, k, 3)
+        v1(3) = xadj(i, j, n, 3, sps2) - xadj(l, j, k, 3, sps2)
         CALL PUSHREAL8(v2(1))
-        v2(1) = xadj(l, j, n, 1) - xadj(i, j, k, 1)
+        v2(1) = xadj(l, j, n, 1, sps2) - xadj(i, j, k, 1, sps2)
         CALL PUSHREAL8(v2(2))
-        v2(2) = xadj(l, j, n, 2) - xadj(i, j, k, 2)
+        v2(2) = xadj(l, j, n, 2, sps2) - xadj(i, j, k, 2, sps2)
         CALL PUSHREAL8(v2(3))
-        v2(3) = xadj(l, j, n, 3) - xadj(i, j, k, 3)
+        v2(3) = xadj(l, j, n, 3, sps2) - xadj(i, j, k, 3, sps2)
+        CALL PUSHREAL8(sjadj(i, j, k, 1, sps2))
 ! The face normal, which is the cross product of the two
 ! diagonal vectors times fact; remember that fact is
 ! either -0.5 or 0.5.
-        sjadj(i, j, k, 1) = fact*(v1(2)*v2(3)-v1(3)*v2(2))
-        sjadj(i, j, k, 2) = fact*(v1(3)*v2(1)-v1(1)*v2(3))
-        sjadj(i, j, k, 3) = fact*(v1(1)*v2(2)-v1(2)*v2(1))
+        sjadj(i, j, k, 1, sps2) = fact*(v1(2)*v2(3)-v1(3)*v2(2))
+        CALL PUSHREAL8(sjadj(i, j, k, 2, sps2))
+        sjadj(i, j, k, 2, sps2) = fact*(v1(3)*v2(1)-v1(1)*v2(3))
+        CALL PUSHREAL8(sjadj(i, j, k, 3, sps2))
+        sjadj(i, j, k, 3, sps2) = fact*(v1(1)*v2(2)-v1(2)*v2(1))
       END DO
       CALL PUSHINTEGER4(i - 1)
       CALL PUSHINTEGER4(ad_from4)
@@ -455,25 +492,28 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
         l = i - 1
         CALL PUSHREAL8(v1(1))
 ! Determine the two diagonal vectors of the face.
-        v1(1) = xadj(i, j, k, 1) - xadj(l, m, k, 1)
+        v1(1) = xadj(i, j, k, 1, sps2) - xadj(l, m, k, 1, sps2)
         CALL PUSHREAL8(v1(2))
-        v1(2) = xadj(i, j, k, 2) - xadj(l, m, k, 2)
+        v1(2) = xadj(i, j, k, 2, sps2) - xadj(l, m, k, 2, sps2)
         CALL PUSHREAL8(v1(3))
-        v1(3) = xadj(i, j, k, 3) - xadj(l, m, k, 3)
+        v1(3) = xadj(i, j, k, 3, sps2) - xadj(l, m, k, 3, sps2)
         CALL PUSHREAL8(v2(1))
-        v2(1) = xadj(l, j, k, 1) - xadj(i, m, k, 1)
+        v2(1) = xadj(l, j, k, 1, sps2) - xadj(i, m, k, 1, sps2)
         CALL PUSHREAL8(v2(2))
-        v2(2) = xadj(l, j, k, 2) - xadj(i, m, k, 2)
+        v2(2) = xadj(l, j, k, 2, sps2) - xadj(i, m, k, 2, sps2)
         CALL PUSHREAL8(v2(3))
-        v2(3) = xadj(l, j, k, 3) - xadj(i, m, k, 3)
-!print *,'in metric',v2,'x',xAdj(l,j,k,:),xAdj(i,m,k,:)
+        v2(3) = xadj(l, j, k, 3, sps2) - xadj(i, m, k, 3, sps2)
+        CALL PUSHREAL8(skadj(i, j, k, 1, sps2))
+!print *,'in metric',v2,'x',xAdj(l,j,k,sps2),xAdj(i,m,k,sps2)
 !print *,'indices',l,j,k,i,m,k
 ! The face normal, which is the cross product of the two
 ! diagonal vectors times fact; remember that fact is
 ! either -0.5 or 0.5.
-        skadj(i, j, k, 1) = fact*(v1(2)*v2(3)-v1(3)*v2(2))
-        skadj(i, j, k, 2) = fact*(v1(3)*v2(1)-v1(1)*v2(3))
-        skadj(i, j, k, 3) = fact*(v1(1)*v2(2)-v1(2)*v2(1))
+        skadj(i, j, k, 1, sps2) = fact*(v1(2)*v2(3)-v1(3)*v2(2))
+        CALL PUSHREAL8(skadj(i, j, k, 2, sps2))
+        skadj(i, j, k, 2, sps2) = fact*(v1(3)*v2(1)-v1(1)*v2(3))
+        CALL PUSHREAL8(skadj(i, j, k, 3, sps2))
+        skadj(i, j, k, 3, sps2) = fact*(v1(1)*v2(2)-v1(2)*v2(1))
       END DO
     END DO
   END DO
@@ -667,12 +707,12 @@ bocoloop:DO mm=1,nbocos
         IF (secondhalo) THEN
           CALL PUSHREAL8(mult)
           mult = -one
-          ss(ist:ien, jst:jen, :) = siadj(-1, ist:ien, jst:jen, :)
+          ss(ist:ien, jst:jen, :) = siadj(-1, ist:ien, jst:jen, :, sps2)
           CALL PUSHINTEGER4(11)
         ELSE
           CALL PUSHREAL8(mult)
           mult = -one
-          ss(ist:ien, jst:jen, :) = siadj(-2, ist:ien, jst:jen, :)
+          ss(ist:ien, jst:jen, :) = siadj(-2, ist:ien, jst:jen, :, sps2)
           CALL PUSHINTEGER4(12)
         END IF
       CASE (imax) 
@@ -710,12 +750,12 @@ bocoloop:DO mm=1,nbocos
         IF (secondhalo) THEN
           CALL PUSHREAL8(mult)
           mult = one
-          ss(ist:ien, jst:jen, :) = siadj(0, ist:ien, jst:jen, :)
+          ss(ist:ien, jst:jen, :) = siadj(0, ist:ien, jst:jen, :, sps2)
           CALL PUSHINTEGER4(9)
         ELSE
           CALL PUSHREAL8(mult)
           mult = one
-          ss(ist:ien, jst:jen, :) = siadj(1, ist:ien, jst:jen, :)
+          ss(ist:ien, jst:jen, :) = siadj(1, ist:ien, jst:jen, :, sps2)
           CALL PUSHINTEGER4(10)
         END IF
       CASE (jmin) 
@@ -753,12 +793,12 @@ bocoloop:DO mm=1,nbocos
         IF (secondhalo) THEN
           CALL PUSHREAL8(mult)
           mult = -one
-          ss(ist:ien, jst:jen, :) = sjadj(ist:ien, -1, jst:jen, :)
+          ss(ist:ien, jst:jen, :) = sjadj(ist:ien, -1, jst:jen, :, sps2)
           CALL PUSHINTEGER4(7)
         ELSE
           CALL PUSHREAL8(mult)
           mult = -one
-          ss(ist:ien, jst:jen, :) = sjadj(ist:ien, -2, jst:jen, :)
+          ss(ist:ien, jst:jen, :) = sjadj(ist:ien, -2, jst:jen, :, sps2)
           CALL PUSHINTEGER4(8)
         END IF
       CASE (jmax) 
@@ -796,12 +836,12 @@ bocoloop:DO mm=1,nbocos
         IF (secondhalo) THEN
           CALL PUSHREAL8(mult)
           mult = one
-          ss(ist:ien, jst:jen, :) = sjadj(ist:ien, 0, jst:jen, :)
+          ss(ist:ien, jst:jen, :) = sjadj(ist:ien, 0, jst:jen, :, sps2)
           CALL PUSHINTEGER4(5)
         ELSE
           CALL PUSHREAL8(mult)
           mult = one
-          ss(ist:ien, jst:jen, :) = sjadj(ist:ien, 1, jst:jen, :)
+          ss(ist:ien, jst:jen, :) = sjadj(ist:ien, 1, jst:jen, :, sps2)
           CALL PUSHINTEGER4(6)
         END IF
       CASE (kmin) 
@@ -839,12 +879,12 @@ bocoloop:DO mm=1,nbocos
         IF (secondhalo) THEN
           CALL PUSHREAL8(mult)
           mult = -one
-          ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, -1, :)
+          ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, -1, :, sps2)
           CALL PUSHINTEGER4(3)
         ELSE
           CALL PUSHREAL8(mult)
           mult = -one
-          ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, -2, :)
+          ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, -2, :, sps2)
           CALL PUSHINTEGER4(4)
         END IF
       CASE (kmax) 
@@ -882,12 +922,12 @@ bocoloop:DO mm=1,nbocos
         IF (secondhalo) THEN
           CALL PUSHREAL8(mult)
           mult = one
-          ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, 0, :)
+          ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, 0, :, sps2)
           CALL PUSHINTEGER4(1)
         ELSE
           CALL PUSHREAL8(mult)
           mult = one
-          ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, 1, :)
+          ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, 1, :, sps2)
           CALL PUSHINTEGER4(2)
         END IF
       CASE DEFAULT
@@ -914,7 +954,8 @@ bocoloop:DO mm=1,nbocos
 !!$                       normAdj(mm,jj,kk,2) = fact*yp
 !!$                       normAdj(mm,jj,kk,3) = fact*zp
 !alternate form to allow inclusion of degenrate halos???
-          IF (xp .GT. zero .OR. yp .GT. zero .OR. zp .GT. zero) THEN
+          IF (xp**2 .GT. zero .OR. yp**2 .GT. zero .OR. zp**2 .GT. zero&
+&          ) THEN
             CALL PUSHREAL8(fact)
 !if (fact > zero)then
 !compute length
@@ -965,32 +1006,44 @@ bocoloop:DO mm=1,nbocos
 ! normals point in the direction of the higher index.
 ! Store the inverse of the sum of the areas of the
 ! six faces in fact.
-    temp = skadj(i, j, n, 1)**2 + skadj(i, j, n, 2)**2 + skadj(i, j, n, &
-&      3)**2
-    temp11 = SQRT(temp)
-    temp0 = skadj(i, j, k, 1)**2 + skadj(i, j, k, 2)**2 + skadj(i, j, k&
-&      , 3)**2
-    temp10 = SQRT(temp0)
-    temp1 = sjadj(i, m, k, 1)**2 + sjadj(i, m, k, 2)**2 + sjadj(i, m, k&
-&      , 3)**2
-    temp9 = SQRT(temp1)
-    temp2 = sjadj(i, j, k, 1)**2 + sjadj(i, j, k, 2)**2 + sjadj(i, j, k&
-&      , 3)**2
-    temp8 = SQRT(temp2)
-    temp3 = siadj(l, j, k, 1)**2 + siadj(l, j, k, 2)**2 + siadj(l, j, k&
-&      , 3)**2
-    temp7 = SQRT(temp3)
-    temp4 = siadj(i, j, k, 1)**2 + siadj(i, j, k, 2)**2 + siadj(i, j, k&
-&      , 3)**2
+    temp29 = skadj(i, j, n, 3, sps2)
+    temp28 = skadj(i, j, n, 2, sps2)
+    temp27 = skadj(i, j, n, 1, sps2)
+    temp = temp27**2 + temp28**2 + temp29**2
+    temp26 = SQRT(temp)
+    temp25 = skadj(i, j, k, 3, sps2)
+    temp24 = skadj(i, j, k, 2, sps2)
+    temp23 = skadj(i, j, k, 1, sps2)
+    temp0 = temp23**2 + temp24**2 + temp25**2
+    temp22 = SQRT(temp0)
+    temp21 = sjadj(i, m, k, 3, sps2)
+    temp20 = sjadj(i, m, k, 2, sps2)
+    temp19 = sjadj(i, m, k, 1, sps2)
+    temp1 = temp19**2 + temp20**2 + temp21**2
+    temp18 = SQRT(temp1)
+    temp17 = sjadj(i, j, k, 3, sps2)
+    temp16 = sjadj(i, j, k, 2, sps2)
+    temp15 = sjadj(i, j, k, 1, sps2)
+    temp2 = temp15**2 + temp16**2 + temp17**2
+    temp14 = SQRT(temp2)
+    temp13 = siadj(l, j, k, 3, sps2)
+    temp12 = siadj(l, j, k, 2, sps2)
+    temp11 = siadj(l, j, k, 1, sps2)
+    temp3 = temp11**2 + temp12**2 + temp13**2
+    temp10 = SQRT(temp3)
+    temp9 = siadj(i, j, k, 3, sps2)
+    temp8 = siadj(i, j, k, 2, sps2)
+    temp7 = siadj(i, j, k, 1, sps2)
+    temp4 = temp7**2 + temp8**2 + temp9**2
     temp6 = SQRT(temp4)
-    temp5 = temp6 + temp7 + temp8 + temp9 + temp10 + temp11
+    temp5 = temp6 + temp10 + temp14 + temp18 + temp22 + temp26
     temp5b = -(one*factb/temp5**2)
     temp4b = temp5b/(2.0*temp6)
-    temp3b = temp5b/(2.0*temp7)
-    temp2b = temp5b/(2.0*temp8)
-    temp1b = temp5b/(2.0*temp9)
-    temp0b = temp5b/(2.0*temp10)
-    tempb13 = temp5b/(2.0*temp11)
+    temp3b = temp5b/(2.0*temp10)
+    temp2b = temp5b/(2.0*temp14)
+    temp1b = temp5b/(2.0*temp18)
+    temp0b = temp5b/(2.0*temp22)
+    tempb13 = temp5b/(2.0*temp26)
     CALL POPINTEGER4(n)
     CALL POPINTEGER4(m)
     CALL POPINTEGER4(l)
@@ -1009,15 +1062,15 @@ bocoloop:DO mm=1,nbocos
         DO jj=ad_to6,ad_from6,-1
           CALL POPINTEGER4(branch)
           IF (branch .LT. 2) THEN
-            factb = zp*normadjb(mm, jj, kk, 3)
-            zpb = fact*normadjb(mm, jj, kk, 3)
-            normadjb(mm, jj, kk, 3) = 0.0
-            factb = factb + yp*normadjb(mm, jj, kk, 2)
-            ypb = fact*normadjb(mm, jj, kk, 2)
-            normadjb(mm, jj, kk, 2) = 0.0
-            factb = factb + xp*normadjb(mm, jj, kk, 1)
-            xpb = fact*normadjb(mm, jj, kk, 1)
-            normadjb(mm, jj, kk, 1) = 0.0
+            factb = zp*normadjb(mm, jj, kk, 3, sps2)
+            zpb = fact*normadjb(mm, jj, kk, 3, sps2)
+            normadjb(mm, jj, kk, 3, sps2) = 0.0
+            factb = factb + yp*normadjb(mm, jj, kk, 2, sps2)
+            ypb = fact*normadjb(mm, jj, kk, 2, sps2)
+            normadjb(mm, jj, kk, 2, sps2) = 0.0
+            factb = factb + xp*normadjb(mm, jj, kk, 1, sps2)
+            xpb = fact*normadjb(mm, jj, kk, 1, sps2)
+            normadjb(mm, jj, kk, 1, sps2) = 0.0
             CALL POPREAL8(fact)
             factb = -(mult*factb/fact**2)
             CALL POPREAL8(fact)
@@ -1026,7 +1079,7 @@ bocoloop:DO mm=1,nbocos
             ypb = ypb + 2*yp*tempb12
             zpb = zpb + 2*zp*tempb12
           ELSE
-            normadjb(mm, jj, kk, :) = 0.0
+            normadjb(mm, jj, kk, :, sps2) = 0.0
             xpb = 0.0
             ypb = 0.0
             zpb = 0.0
@@ -1046,19 +1099,19 @@ bocoloop:DO mm=1,nbocos
             IF (branch .LT. 1) THEN
               GOTO 120
             ELSE
-              skadjb(ist:ien, jst:jen, 0, :) = skadjb(ist:ien, jst:jen, &
-&                0, :) + ssb(ist:ien, jst:jen, :)
+              skadjb(ist:ien, jst:jen, 0, :, sps2) = skadjb(ist:ien, jst&
+&                :jen, 0, :, sps2) + ssb(ist:ien, jst:jen, :)
               ssb(ist:ien, jst:jen, :) = 0.0
               CALL POPREAL8(mult)
             END IF
           ELSE IF (branch .LT. 3) THEN
-            skadjb(ist:ien, jst:jen, 1, :) = skadjb(ist:ien, jst:jen, 1&
-&              , :) + ssb(ist:ien, jst:jen, :)
+            skadjb(ist:ien, jst:jen, 1, :, sps2) = skadjb(ist:ien, jst:&
+&              jen, 1, :, sps2) + ssb(ist:ien, jst:jen, :)
             ssb(ist:ien, jst:jen, :) = 0.0
             CALL POPREAL8(mult)
           ELSE
-            skadjb(ist:ien, jst:jen, -1, :) = skadjb(ist:ien, jst:jen, -&
-&              1, :) + ssb(ist:ien, jst:jen, :)
+            skadjb(ist:ien, jst:jen, -1, :, sps2) = skadjb(ist:ien, jst:&
+&              jen, -1, :, sps2) + ssb(ist:ien, jst:jen, :)
             ssb(ist:ien, jst:jen, :) = 0.0
             CALL POPREAL8(mult)
             GOTO 100
@@ -1071,20 +1124,20 @@ bocoloop:DO mm=1,nbocos
         ELSE
           IF (branch .LT. 6) THEN
             IF (branch .LT. 5) THEN
-              skadjb(ist:ien, jst:jen, -2, :) = skadjb(ist:ien, jst:jen&
-&                , -2, :) + ssb(ist:ien, jst:jen, :)
+              skadjb(ist:ien, jst:jen, -2, :, sps2) = skadjb(ist:ien, &
+&                jst:jen, -2, :, sps2) + ssb(ist:ien, jst:jen, :)
               ssb(ist:ien, jst:jen, :) = 0.0
               CALL POPREAL8(mult)
               GOTO 100
             ELSE
-              sjadjb(ist:ien, 0, jst:jen, :) = sjadjb(ist:ien, 0, jst:&
-&                jen, :) + ssb(ist:ien, jst:jen, :)
+              sjadjb(ist:ien, 0, jst:jen, :, sps2) = sjadjb(ist:ien, 0, &
+&                jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
               ssb(ist:ien, jst:jen, :) = 0.0
               CALL POPREAL8(mult)
             END IF
           ELSE
-            sjadjb(ist:ien, 1, jst:jen, :) = sjadjb(ist:ien, 1, jst:jen&
-&              , :) + ssb(ist:ien, jst:jen, :)
+            sjadjb(ist:ien, 1, jst:jen, :, sps2) = sjadjb(ist:ien, 1, &
+&              jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
             ssb(ist:ien, jst:jen, :) = 0.0
             CALL POPREAL8(mult)
           END IF
@@ -1104,13 +1157,13 @@ bocoloop:DO mm=1,nbocos
         IF (branch .LT. 10) THEN
           IF (branch .LT. 9) THEN
             IF (branch .LT. 8) THEN
-              sjadjb(ist:ien, -1, jst:jen, :) = sjadjb(ist:ien, -1, jst:&
-&                jen, :) + ssb(ist:ien, jst:jen, :)
+              sjadjb(ist:ien, -1, jst:jen, :, sps2) = sjadjb(ist:ien, -1&
+&                , jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
               ssb(ist:ien, jst:jen, :) = 0.0
               CALL POPREAL8(mult)
             ELSE
-              sjadjb(ist:ien, -2, jst:jen, :) = sjadjb(ist:ien, -2, jst:&
-&                jen, :) + ssb(ist:ien, jst:jen, :)
+              sjadjb(ist:ien, -2, jst:jen, :, sps2) = sjadjb(ist:ien, -2&
+&                , jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
               ssb(ist:ien, jst:jen, :) = 0.0
               CALL POPREAL8(mult)
             END IF
@@ -1121,28 +1174,28 @@ bocoloop:DO mm=1,nbocos
             CALL POPINTEGER4(branch)
             GOTO 120
           ELSE
-            siadjb(0, ist:ien, jst:jen, :) = siadjb(0, ist:ien, jst:jen&
-&              , :) + ssb(ist:ien, jst:jen, :)
+            siadjb(0, ist:ien, jst:jen, :, sps2) = siadjb(0, ist:ien, &
+&              jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
             ssb(ist:ien, jst:jen, :) = 0.0
             CALL POPREAL8(mult)
           END IF
         ELSE
           IF (branch .LT. 12) THEN
             IF (branch .LT. 11) THEN
-              siadjb(1, ist:ien, jst:jen, :) = siadjb(1, ist:ien, jst:&
-&                jen, :) + ssb(ist:ien, jst:jen, :)
+              siadjb(1, ist:ien, jst:jen, :, sps2) = siadjb(1, ist:ien, &
+&                jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
               ssb(ist:ien, jst:jen, :) = 0.0
               CALL POPREAL8(mult)
               GOTO 110
             ELSE
-              siadjb(-1, ist:ien, jst:jen, :) = siadjb(-1, ist:ien, jst:&
-&                jen, :) + ssb(ist:ien, jst:jen, :)
+              siadjb(-1, ist:ien, jst:jen, :, sps2) = siadjb(-1, ist:ien&
+&                , jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
               ssb(ist:ien, jst:jen, :) = 0.0
               CALL POPREAL8(mult)
             END IF
           ELSE
-            siadjb(-2, ist:ien, jst:jen, :) = siadjb(-2, ist:ien, jst:&
-&              jen, :) + ssb(ist:ien, jst:jen, :)
+            siadjb(-2, ist:ien, jst:jen, :, sps2) = siadjb(-2, ist:ien, &
+&              jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
             ssb(ist:ien, jst:jen, :) = 0.0
             CALL POPREAL8(mult)
           END IF
@@ -1180,45 +1233,48 @@ bocoloop:DO mm=1,nbocos
   DO k=kend,kstart,-1
     DO j=jend,jstart,-1
       DO i=iend,istart,-1
-        tempb9 = fact*skadjb(i, j, k, 3)
+        CALL POPREAL8(skadj(i, j, k, 3, sps2))
+        tempb9 = fact*skadjb(i, j, k, 3, sps2)
         v1b(1) = v1b(1) + v2(2)*tempb9
         v2b(2) = v2b(2) + v1(1)*tempb9
         v1b(2) = v1b(2) - v2(1)*tempb9
-        skadjb(i, j, k, 3) = 0.0
-        tempb10 = fact*skadjb(i, j, k, 2)
+        skadjb(i, j, k, 3, sps2) = 0.0
+        tempb10 = fact*skadjb(i, j, k, 2, sps2)
         v2b(1) = v2b(1) + v1(3)*tempb10 - v1(2)*tempb9
+        CALL POPREAL8(skadj(i, j, k, 2, sps2))
         v1b(3) = v1b(3) + v2(1)*tempb10
         v1b(1) = v1b(1) - v2(3)*tempb10
-        skadjb(i, j, k, 2) = 0.0
-        tempb11 = fact*skadjb(i, j, k, 1)
+        skadjb(i, j, k, 2, sps2) = 0.0
+        tempb11 = fact*skadjb(i, j, k, 1, sps2)
         v2b(3) = v2b(3) + v1(2)*tempb11 - v1(1)*tempb10
+        CALL POPREAL8(skadj(i, j, k, 1, sps2))
         v1b(2) = v1b(2) + v2(3)*tempb11
         v1b(3) = v1b(3) - v2(2)*tempb11
         v2b(2) = v2b(2) - v1(3)*tempb11
-        skadjb(i, j, k, 1) = 0.0
+        skadjb(i, j, k, 1, sps2) = 0.0
         CALL POPREAL8(v2(3))
-        xadjb(l, j, k, 3) = xadjb(l, j, k, 3) + v2b(3)
-        xadjb(i, m, k, 3) = xadjb(i, m, k, 3) - v2b(3)
+        xadjb(l, j, k, 3, sps2) = xadjb(l, j, k, 3, sps2) + v2b(3)
+        xadjb(i, m, k, 3, sps2) = xadjb(i, m, k, 3, sps2) - v2b(3)
         v2b(3) = 0.0
         CALL POPREAL8(v2(2))
-        xadjb(l, j, k, 2) = xadjb(l, j, k, 2) + v2b(2)
-        xadjb(i, m, k, 2) = xadjb(i, m, k, 2) - v2b(2)
+        xadjb(l, j, k, 2, sps2) = xadjb(l, j, k, 2, sps2) + v2b(2)
+        xadjb(i, m, k, 2, sps2) = xadjb(i, m, k, 2, sps2) - v2b(2)
         v2b(2) = 0.0
         CALL POPREAL8(v2(1))
-        xadjb(l, j, k, 1) = xadjb(l, j, k, 1) + v2b(1)
-        xadjb(i, m, k, 1) = xadjb(i, m, k, 1) - v2b(1)
+        xadjb(l, j, k, 1, sps2) = xadjb(l, j, k, 1, sps2) + v2b(1)
+        xadjb(i, m, k, 1, sps2) = xadjb(i, m, k, 1, sps2) - v2b(1)
         v2b(1) = 0.0
         CALL POPREAL8(v1(3))
-        xadjb(i, j, k, 3) = xadjb(i, j, k, 3) + v1b(3)
-        xadjb(l, m, k, 3) = xadjb(l, m, k, 3) - v1b(3)
+        xadjb(i, j, k, 3, sps2) = xadjb(i, j, k, 3, sps2) + v1b(3)
+        xadjb(l, m, k, 3, sps2) = xadjb(l, m, k, 3, sps2) - v1b(3)
         v1b(3) = 0.0
         CALL POPREAL8(v1(2))
-        xadjb(i, j, k, 2) = xadjb(i, j, k, 2) + v1b(2)
-        xadjb(l, m, k, 2) = xadjb(l, m, k, 2) - v1b(2)
+        xadjb(i, j, k, 2, sps2) = xadjb(i, j, k, 2, sps2) + v1b(2)
+        xadjb(l, m, k, 2, sps2) = xadjb(l, m, k, 2, sps2) - v1b(2)
         v1b(2) = 0.0
         CALL POPREAL8(v1(1))
-        xadjb(i, j, k, 1) = xadjb(i, j, k, 1) + v1b(1)
-        xadjb(l, m, k, 1) = xadjb(l, m, k, 1) - v1b(1)
+        xadjb(i, j, k, 1, sps2) = xadjb(i, j, k, 1, sps2) + v1b(1)
+        xadjb(l, m, k, 1, sps2) = xadjb(l, m, k, 1, sps2) - v1b(1)
         v1b(1) = 0.0
         CALL POPINTEGER4(l)
       END DO
@@ -1242,45 +1298,48 @@ bocoloop:DO mm=1,nbocos
       CALL POPINTEGER4(ad_from4)
       CALL POPINTEGER4(ad_to4)
       DO i=ad_to4,ad_from4,-1
-        tempb6 = fact*sjadjb(i, j, k, 3)
+        CALL POPREAL8(sjadj(i, j, k, 3, sps2))
+        tempb6 = fact*sjadjb(i, j, k, 3, sps2)
         v1b(1) = v1b(1) + v2(2)*tempb6
         v2b(2) = v2b(2) + v1(1)*tempb6
         v1b(2) = v1b(2) - v2(1)*tempb6
-        sjadjb(i, j, k, 3) = 0.0
-        tempb7 = fact*sjadjb(i, j, k, 2)
+        sjadjb(i, j, k, 3, sps2) = 0.0
+        tempb7 = fact*sjadjb(i, j, k, 2, sps2)
         v2b(1) = v2b(1) + v1(3)*tempb7 - v1(2)*tempb6
+        CALL POPREAL8(sjadj(i, j, k, 2, sps2))
         v1b(3) = v1b(3) + v2(1)*tempb7
         v1b(1) = v1b(1) - v2(3)*tempb7
-        sjadjb(i, j, k, 2) = 0.0
-        tempb8 = fact*sjadjb(i, j, k, 1)
+        sjadjb(i, j, k, 2, sps2) = 0.0
+        tempb8 = fact*sjadjb(i, j, k, 1, sps2)
         v2b(3) = v2b(3) + v1(2)*tempb8 - v1(1)*tempb7
+        CALL POPREAL8(sjadj(i, j, k, 1, sps2))
         v1b(2) = v1b(2) + v2(3)*tempb8
         v1b(3) = v1b(3) - v2(2)*tempb8
         v2b(2) = v2b(2) - v1(3)*tempb8
-        sjadjb(i, j, k, 1) = 0.0
+        sjadjb(i, j, k, 1, sps2) = 0.0
         CALL POPREAL8(v2(3))
-        xadjb(l, j, n, 3) = xadjb(l, j, n, 3) + v2b(3)
-        xadjb(i, j, k, 3) = xadjb(i, j, k, 3) - v2b(3)
+        xadjb(l, j, n, 3, sps2) = xadjb(l, j, n, 3, sps2) + v2b(3)
+        xadjb(i, j, k, 3, sps2) = xadjb(i, j, k, 3, sps2) - v2b(3)
         v2b(3) = 0.0
         CALL POPREAL8(v2(2))
-        xadjb(l, j, n, 2) = xadjb(l, j, n, 2) + v2b(2)
-        xadjb(i, j, k, 2) = xadjb(i, j, k, 2) - v2b(2)
+        xadjb(l, j, n, 2, sps2) = xadjb(l, j, n, 2, sps2) + v2b(2)
+        xadjb(i, j, k, 2, sps2) = xadjb(i, j, k, 2, sps2) - v2b(2)
         v2b(2) = 0.0
         CALL POPREAL8(v2(1))
-        xadjb(l, j, n, 1) = xadjb(l, j, n, 1) + v2b(1)
-        xadjb(i, j, k, 1) = xadjb(i, j, k, 1) - v2b(1)
+        xadjb(l, j, n, 1, sps2) = xadjb(l, j, n, 1, sps2) + v2b(1)
+        xadjb(i, j, k, 1, sps2) = xadjb(i, j, k, 1, sps2) - v2b(1)
         v2b(1) = 0.0
         CALL POPREAL8(v1(3))
-        xadjb(i, j, n, 3) = xadjb(i, j, n, 3) + v1b(3)
-        xadjb(l, j, k, 3) = xadjb(l, j, k, 3) - v1b(3)
+        xadjb(i, j, n, 3, sps2) = xadjb(i, j, n, 3, sps2) + v1b(3)
+        xadjb(l, j, k, 3, sps2) = xadjb(l, j, k, 3, sps2) - v1b(3)
         v1b(3) = 0.0
         CALL POPREAL8(v1(2))
-        xadjb(i, j, n, 2) = xadjb(i, j, n, 2) + v1b(2)
-        xadjb(l, j, k, 2) = xadjb(l, j, k, 2) - v1b(2)
+        xadjb(i, j, n, 2, sps2) = xadjb(i, j, n, 2, sps2) + v1b(2)
+        xadjb(l, j, k, 2, sps2) = xadjb(l, j, k, 2, sps2) - v1b(2)
         v1b(2) = 0.0
         CALL POPREAL8(v1(1))
-        xadjb(i, j, n, 1) = xadjb(i, j, n, 1) + v1b(1)
-        xadjb(l, j, k, 1) = xadjb(l, j, k, 1) - v1b(1)
+        xadjb(i, j, n, 1, sps2) = xadjb(i, j, n, 1, sps2) + v1b(1)
+        xadjb(l, j, k, 1, sps2) = xadjb(l, j, k, 1, sps2) - v1b(1)
         v1b(1) = 0.0
         CALL POPINTEGER4(l)
       END DO
@@ -1304,45 +1363,48 @@ bocoloop:DO mm=1,nbocos
       CALL POPINTEGER4(ad_from1)
       CALL POPINTEGER4(ad_to1)
       DO i=ad_to1,ad_from1,-1
-        tempb3 = fact*siadjb(i, j, k, 3)
+        CALL POPREAL8(siadj(i, j, k, 3, sps2))
+        tempb3 = fact*siadjb(i, j, k, 3, sps2)
         v1b(1) = v1b(1) + v2(2)*tempb3
         v2b(2) = v2b(2) + v1(1)*tempb3
         v1b(2) = v1b(2) - v2(1)*tempb3
-        siadjb(i, j, k, 3) = 0.0
-        tempb4 = fact*siadjb(i, j, k, 2)
+        siadjb(i, j, k, 3, sps2) = 0.0
+        tempb4 = fact*siadjb(i, j, k, 2, sps2)
         v2b(1) = v2b(1) + v1(3)*tempb4 - v1(2)*tempb3
+        CALL POPREAL8(siadj(i, j, k, 2, sps2))
         v1b(3) = v1b(3) + v2(1)*tempb4
         v1b(1) = v1b(1) - v2(3)*tempb4
-        siadjb(i, j, k, 2) = 0.0
-        tempb5 = fact*siadjb(i, j, k, 1)
+        siadjb(i, j, k, 2, sps2) = 0.0
+        tempb5 = fact*siadjb(i, j, k, 1, sps2)
         v2b(3) = v2b(3) + v1(2)*tempb5 - v1(1)*tempb4
+        CALL POPREAL8(siadj(i, j, k, 1, sps2))
         v1b(2) = v1b(2) + v2(3)*tempb5
         v1b(3) = v1b(3) - v2(2)*tempb5
         v2b(2) = v2b(2) - v1(3)*tempb5
-        siadjb(i, j, k, 1) = 0.0
+        siadjb(i, j, k, 1, sps2) = 0.0
         CALL POPREAL8(v2(3))
-        xadjb(i, j, k, 3) = xadjb(i, j, k, 3) + v2b(3)
-        xadjb(i, m, n, 3) = xadjb(i, m, n, 3) - v2b(3)
+        xadjb(i, j, k, 3, sps2) = xadjb(i, j, k, 3, sps2) + v2b(3)
+        xadjb(i, m, n, 3, sps2) = xadjb(i, m, n, 3, sps2) - v2b(3)
         v2b(3) = 0.0
         CALL POPREAL8(v2(2))
-        xadjb(i, j, k, 2) = xadjb(i, j, k, 2) + v2b(2)
-        xadjb(i, m, n, 2) = xadjb(i, m, n, 2) - v2b(2)
+        xadjb(i, j, k, 2, sps2) = xadjb(i, j, k, 2, sps2) + v2b(2)
+        xadjb(i, m, n, 2, sps2) = xadjb(i, m, n, 2, sps2) - v2b(2)
         v2b(2) = 0.0
         CALL POPREAL8(v2(1))
-        xadjb(i, j, k, 1) = xadjb(i, j, k, 1) + v2b(1)
-        xadjb(i, m, n, 1) = xadjb(i, m, n, 1) - v2b(1)
+        xadjb(i, j, k, 1, sps2) = xadjb(i, j, k, 1, sps2) + v2b(1)
+        xadjb(i, m, n, 1, sps2) = xadjb(i, m, n, 1, sps2) - v2b(1)
         v2b(1) = 0.0
         CALL POPREAL8(v1(3))
-        xadjb(i, j, n, 3) = xadjb(i, j, n, 3) + v1b(3)
-        xadjb(i, m, k, 3) = xadjb(i, m, k, 3) - v1b(3)
+        xadjb(i, j, n, 3, sps2) = xadjb(i, j, n, 3, sps2) + v1b(3)
+        xadjb(i, m, k, 3, sps2) = xadjb(i, m, k, 3, sps2) - v1b(3)
         v1b(3) = 0.0
         CALL POPREAL8(v1(2))
-        xadjb(i, j, n, 2) = xadjb(i, j, n, 2) + v1b(2)
-        xadjb(i, m, k, 2) = xadjb(i, m, k, 2) - v1b(2)
+        xadjb(i, j, n, 2, sps2) = xadjb(i, j, n, 2, sps2) + v1b(2)
+        xadjb(i, m, k, 2, sps2) = xadjb(i, m, k, 2, sps2) - v1b(2)
         v1b(2) = 0.0
         CALL POPREAL8(v1(1))
-        xadjb(i, j, n, 1) = xadjb(i, j, n, 1) + v1b(1)
-        xadjb(i, m, k, 1) = xadjb(i, m, k, 1) - v1b(1)
+        xadjb(i, j, n, 1, sps2) = xadjb(i, j, n, 1, sps2) + v1b(1)
+        xadjb(i, m, k, 1, sps2) = xadjb(i, m, k, 1, sps2) - v1b(1)
         v1b(1) = 0.0
       END DO
       CALL POPINTEGER4(i)
@@ -1359,96 +1421,116 @@ bocoloop:DO mm=1,nbocos
   CALL POPINTEGER4(branch)
   CALL POPINTEGER4(branch)
   CALL POPINTEGER4(branch)
-  IF (branch .LT. 1) voladjb = -voladjb
-  tempb = sixth*voladjb
+  IF (branch .LT. 1) voladjb(sps2) = -voladjb(sps2)
+  tempb = sixth*voladjb(sps2)
   vp1b = tempb
   vp2b = tempb
   vp3b = tempb
   vp4b = tempb
   vp5b = tempb
   vp6b = tempb
+  voladjb(sps2) = 0.0
   zpb = 0.0
   ypb = 0.0
   xpb = 0.0
-  CALL VOLPYM2_B(xadj(i, j, n, 1), xadjb(i, j, n, 1), xadj(i, j, n, 2), &
-&           xadjb(i, j, n, 2), xadj(i, j, n, 3), xadjb(i, j, n, 3), xadj&
-&           (l, j, n, 1), xadjb(l, j, n, 1), xadj(l, j, n, 2), xadjb(l, &
-&           j, n, 2), xadj(l, j, n, 3), xadjb(l, j, n, 3), xadj(l, m, n&
-&           , 1), xadjb(l, m, n, 1), xadj(l, m, n, 2), xadjb(l, m, n, 2)&
-&           , xadj(l, m, n, 3), xadjb(l, m, n, 3), xadj(i, m, n, 1), &
-&           xadjb(i, m, n, 1), xadj(i, m, n, 2), xadjb(i, m, n, 2), xadj&
-&           (i, m, n, 3), xadjb(i, m, n, 3), xp, xpb, yp, ypb, zp, zpb, &
-&           vp6, vp6b)
-  CALL VOLPYM2_B(xadj(i, j, k, 1), xadjb(i, j, k, 1), xadj(i, j, k, 2), &
-&           xadjb(i, j, k, 2), xadj(i, j, k, 3), xadjb(i, j, k, 3), xadj&
-&           (i, m, k, 1), xadjb(i, m, k, 1), xadj(i, m, k, 2), xadjb(i, &
-&           m, k, 2), xadj(i, m, k, 3), xadjb(i, m, k, 3), xadj(l, m, k&
-&           , 1), xadjb(l, m, k, 1), xadj(l, m, k, 2), xadjb(l, m, k, 2)&
-&           , xadj(l, m, k, 3), xadjb(l, m, k, 3), xadj(l, j, k, 1), &
-&           xadjb(l, j, k, 1), xadj(l, j, k, 2), xadjb(l, j, k, 2), xadj&
-&           (l, j, k, 3), xadjb(l, j, k, 3), xp, xpb, yp, ypb, zp, zpb, &
-&           vp5, vp5b)
-  CALL VOLPYM2_B(xadj(i, m, k, 1), xadjb(i, m, k, 1), xadj(i, m, k, 2), &
-&           xadjb(i, m, k, 2), xadj(i, m, k, 3), xadjb(i, m, k, 3), xadj&
-&           (i, m, n, 1), xadjb(i, m, n, 1), xadj(i, m, n, 2), xadjb(i, &
-&           m, n, 2), xadj(i, m, n, 3), xadjb(i, m, n, 3), xadj(l, m, n&
-&           , 1), xadjb(l, m, n, 1), xadj(l, m, n, 2), xadjb(l, m, n, 2)&
-&           , xadj(l, m, n, 3), xadjb(l, m, n, 3), xadj(l, m, k, 1), &
-&           xadjb(l, m, k, 1), xadj(l, m, k, 2), xadjb(l, m, k, 2), xadj&
-&           (l, m, k, 3), xadjb(l, m, k, 3), xp, xpb, yp, ypb, zp, zpb, &
-&           vp4, vp4b)
-  CALL VOLPYM2_B(xadj(i, j, k, 1), xadjb(i, j, k, 1), xadj(i, j, k, 2), &
-&           xadjb(i, j, k, 2), xadj(i, j, k, 3), xadjb(i, j, k, 3), xadj&
-&           (l, j, k, 1), xadjb(l, j, k, 1), xadj(l, j, k, 2), xadjb(l, &
-&           j, k, 2), xadj(l, j, k, 3), xadjb(l, j, k, 3), xadj(l, j, n&
-&           , 1), xadjb(l, j, n, 1), xadj(l, j, n, 2), xadjb(l, j, n, 2)&
-&           , xadj(l, j, n, 3), xadjb(l, j, n, 3), xadj(i, j, n, 1), &
-&           xadjb(i, j, n, 1), xadj(i, j, n, 2), xadjb(i, j, n, 2), xadj&
-&           (i, j, n, 3), xadjb(i, j, n, 3), xp, xpb, yp, ypb, zp, zpb, &
-&           vp3, vp3b)
-  CALL VOLPYM2_B(xadj(l, j, k, 1), xadjb(l, j, k, 1), xadj(l, j, k, 2), &
-&           xadjb(l, j, k, 2), xadj(l, j, k, 3), xadjb(l, j, k, 3), xadj&
-&           (l, m, k, 1), xadjb(l, m, k, 1), xadj(l, m, k, 2), xadjb(l, &
-&           m, k, 2), xadj(l, m, k, 3), xadjb(l, m, k, 3), xadj(l, m, n&
-&           , 1), xadjb(l, m, n, 1), xadj(l, m, n, 2), xadjb(l, m, n, 2)&
-&           , xadj(l, m, n, 3), xadjb(l, m, n, 3), xadj(l, j, n, 1), &
-&           xadjb(l, j, n, 1), xadj(l, j, n, 2), xadjb(l, j, n, 2), xadj&
-&           (l, j, n, 3), xadjb(l, j, n, 3), xp, xpb, yp, ypb, zp, zpb, &
-&           vp2, vp2b)
-  CALL VOLPYM2_B(xadj(i, j, k, 1), xadjb(i, j, k, 1), xadj(i, j, k, 2), &
-&           xadjb(i, j, k, 2), xadj(i, j, k, 3), xadjb(i, j, k, 3), xadj&
-&           (i, j, n, 1), xadjb(i, j, n, 1), xadj(i, j, n, 2), xadjb(i, &
-&           j, n, 2), xadj(i, j, n, 3), xadjb(i, j, n, 3), xadj(i, m, n&
-&           , 1), xadjb(i, m, n, 1), xadj(i, m, n, 2), xadjb(i, m, n, 2)&
-&           , xadj(i, m, n, 3), xadjb(i, m, n, 3), xadj(i, m, k, 1), &
-&           xadjb(i, m, k, 1), xadj(i, m, k, 2), xadjb(i, m, k, 2), xadj&
-&           (i, m, k, 3), xadjb(i, m, k, 3), xp, xpb, yp, ypb, zp, zpb, &
-&           vp1, vp1b)
+  CALL VOLPYM2_B(xadj(i, j, n, 1, sps2), xadjb(i, j, n, 1, sps2), xadj(i&
+&           , j, n, 2, sps2), xadjb(i, j, n, 2, sps2), xadj(i, j, n, 3, &
+&           sps2), xadjb(i, j, n, 3, sps2), xadj(l, j, n, 1, sps2), &
+&           xadjb(l, j, n, 1, sps2), xadj(l, j, n, 2, sps2), xadjb(l, j&
+&           , n, 2, sps2), xadj(l, j, n, 3, sps2), xadjb(l, j, n, 3, &
+&           sps2), xadj(l, m, n, 1, sps2), xadjb(l, m, n, 1, sps2), xadj&
+&           (l, m, n, 2, sps2), xadjb(l, m, n, 2, sps2), xadj(l, m, n, 3&
+&           , sps2), xadjb(l, m, n, 3, sps2), xadj(i, m, n, 1, sps2), &
+&           xadjb(i, m, n, 1, sps2), xadj(i, m, n, 2, sps2), xadjb(i, m&
+&           , n, 2, sps2), xadj(i, m, n, 3, sps2), xadjb(i, m, n, 3, &
+&           sps2), xp, xpb, yp, ypb, zp, zpb, vp6, vp6b)
+  CALL VOLPYM2_B(xadj(i, j, k, 1, sps2), xadjb(i, j, k, 1, sps2), xadj(i&
+&           , j, k, 2, sps2), xadjb(i, j, k, 2, sps2), xadj(i, j, k, 3, &
+&           sps2), xadjb(i, j, k, 3, sps2), xadj(i, m, k, 1, sps2), &
+&           xadjb(i, m, k, 1, sps2), xadj(i, m, k, 2, sps2), xadjb(i, m&
+&           , k, 2, sps2), xadj(i, m, k, 3, sps2), xadjb(i, m, k, 3, &
+&           sps2), xadj(l, m, k, 1, sps2), xadjb(l, m, k, 1, sps2), xadj&
+&           (l, m, k, 2, sps2), xadjb(l, m, k, 2, sps2), xadj(l, m, k, 3&
+&           , sps2), xadjb(l, m, k, 3, sps2), xadj(l, j, k, 1, sps2), &
+&           xadjb(l, j, k, 1, sps2), xadj(l, j, k, 2, sps2), xadjb(l, j&
+&           , k, 2, sps2), xadj(l, j, k, 3, sps2), xadjb(l, j, k, 3, &
+&           sps2), xp, xpb, yp, ypb, zp, zpb, vp5, vp5b)
+  CALL VOLPYM2_B(xadj(i, m, k, 1, sps2), xadjb(i, m, k, 1, sps2), xadj(i&
+&           , m, k, 2, sps2), xadjb(i, m, k, 2, sps2), xadj(i, m, k, 3, &
+&           sps2), xadjb(i, m, k, 3, sps2), xadj(i, m, n, 1, sps2), &
+&           xadjb(i, m, n, 1, sps2), xadj(i, m, n, 2, sps2), xadjb(i, m&
+&           , n, 2, sps2), xadj(i, m, n, 3, sps2), xadjb(i, m, n, 3, &
+&           sps2), xadj(l, m, n, 1, sps2), xadjb(l, m, n, 1, sps2), xadj&
+&           (l, m, n, 2, sps2), xadjb(l, m, n, 2, sps2), xadj(l, m, n, 3&
+&           , sps2), xadjb(l, m, n, 3, sps2), xadj(l, m, k, 1, sps2), &
+&           xadjb(l, m, k, 1, sps2), xadj(l, m, k, 2, sps2), xadjb(l, m&
+&           , k, 2, sps2), xadj(l, m, k, 3, sps2), xadjb(l, m, k, 3, &
+&           sps2), xp, xpb, yp, ypb, zp, zpb, vp4, vp4b)
+  CALL VOLPYM2_B(xadj(i, j, k, 1, sps2), xadjb(i, j, k, 1, sps2), xadj(i&
+&           , j, k, 2, sps2), xadjb(i, j, k, 2, sps2), xadj(i, j, k, 3, &
+&           sps2), xadjb(i, j, k, 3, sps2), xadj(l, j, k, 1, sps2), &
+&           xadjb(l, j, k, 1, sps2), xadj(l, j, k, 2, sps2), xadjb(l, j&
+&           , k, 2, sps2), xadj(l, j, k, 3, sps2), xadjb(l, j, k, 3, &
+&           sps2), xadj(l, j, n, 1, sps2), xadjb(l, j, n, 1, sps2), xadj&
+&           (l, j, n, 2, sps2), xadjb(l, j, n, 2, sps2), xadj(l, j, n, 3&
+&           , sps2), xadjb(l, j, n, 3, sps2), xadj(i, j, n, 1, sps2), &
+&           xadjb(i, j, n, 1, sps2), xadj(i, j, n, 2, sps2), xadjb(i, j&
+&           , n, 2, sps2), xadj(i, j, n, 3, sps2), xadjb(i, j, n, 3, &
+&           sps2), xp, xpb, yp, ypb, zp, zpb, vp3, vp3b)
+  CALL VOLPYM2_B(xadj(l, j, k, 1, sps2), xadjb(l, j, k, 1, sps2), xadj(l&
+&           , j, k, 2, sps2), xadjb(l, j, k, 2, sps2), xadj(l, j, k, 3, &
+&           sps2), xadjb(l, j, k, 3, sps2), xadj(l, m, k, 1, sps2), &
+&           xadjb(l, m, k, 1, sps2), xadj(l, m, k, 2, sps2), xadjb(l, m&
+&           , k, 2, sps2), xadj(l, m, k, 3, sps2), xadjb(l, m, k, 3, &
+&           sps2), xadj(l, m, n, 1, sps2), xadjb(l, m, n, 1, sps2), xadj&
+&           (l, m, n, 2, sps2), xadjb(l, m, n, 2, sps2), xadj(l, m, n, 3&
+&           , sps2), xadjb(l, m, n, 3, sps2), xadj(l, j, n, 1, sps2), &
+&           xadjb(l, j, n, 1, sps2), xadj(l, j, n, 2, sps2), xadjb(l, j&
+&           , n, 2, sps2), xadj(l, j, n, 3, sps2), xadjb(l, j, n, 3, &
+&           sps2), xp, xpb, yp, ypb, zp, zpb, vp2, vp2b)
+  CALL VOLPYM2_B(xadj(i, j, k, 1, sps2), xadjb(i, j, k, 1, sps2), xadj(i&
+&           , j, k, 2, sps2), xadjb(i, j, k, 2, sps2), xadj(i, j, k, 3, &
+&           sps2), xadjb(i, j, k, 3, sps2), xadj(i, j, n, 1, sps2), &
+&           xadjb(i, j, n, 1, sps2), xadj(i, j, n, 2, sps2), xadjb(i, j&
+&           , n, 2, sps2), xadj(i, j, n, 3, sps2), xadjb(i, j, n, 3, &
+&           sps2), xadj(i, m, n, 1, sps2), xadjb(i, m, n, 1, sps2), xadj&
+&           (i, m, n, 2, sps2), xadjb(i, m, n, 2, sps2), xadj(i, m, n, 3&
+&           , sps2), xadjb(i, m, n, 3, sps2), xadj(i, m, k, 1, sps2), &
+&           xadjb(i, m, k, 1, sps2), xadj(i, m, k, 2, sps2), xadjb(i, m&
+&           , k, 2, sps2), xadj(i, m, k, 3, sps2), xadjb(i, m, k, 3, &
+&           sps2), xp, xpb, yp, ypb, zp, zpb, vp1, vp1b)
   tempb0 = eighth*zpb
-  xadjb(i, j, k, 3) = xadjb(i, j, k, 3) + tempb0
-  xadjb(i, m, k, 3) = xadjb(i, m, k, 3) + tempb0
-  xadjb(i, m, n, 3) = xadjb(i, m, n, 3) + tempb0
-  xadjb(i, j, n, 3) = xadjb(i, j, n, 3) + tempb0
-  xadjb(l, j, k, 3) = xadjb(l, j, k, 3) + tempb0
-  xadjb(l, m, k, 3) = xadjb(l, m, k, 3) + tempb0
-  xadjb(l, m, n, 3) = xadjb(l, m, n, 3) + tempb0
-  xadjb(l, j, n, 3) = xadjb(l, j, n, 3) + tempb0
+  xadjb(i, j, k, 3, sps2) = xadjb(i, j, k, 3, sps2) + tempb0
+  xadjb(i, m, k, 3, sps2) = xadjb(i, m, k, 3, sps2) + tempb0
+  xadjb(i, m, n, 3, sps2) = xadjb(i, m, n, 3, sps2) + tempb0
+  xadjb(i, j, n, 3, sps2) = xadjb(i, j, n, 3, sps2) + tempb0
+  xadjb(l, j, k, 3, sps2) = xadjb(l, j, k, 3, sps2) + tempb0
+  xadjb(l, m, k, 3, sps2) = xadjb(l, m, k, 3, sps2) + tempb0
+  xadjb(l, m, n, 3, sps2) = xadjb(l, m, n, 3, sps2) + tempb0
+  xadjb(l, j, n, 3, sps2) = xadjb(l, j, n, 3, sps2) + tempb0
   tempb1 = eighth*ypb
-  xadjb(i, j, k, 2) = xadjb(i, j, k, 2) + tempb1
-  xadjb(i, m, k, 2) = xadjb(i, m, k, 2) + tempb1
-  xadjb(i, m, n, 2) = xadjb(i, m, n, 2) + tempb1
-  xadjb(i, j, n, 2) = xadjb(i, j, n, 2) + tempb1
-  xadjb(l, j, k, 2) = xadjb(l, j, k, 2) + tempb1
-  xadjb(l, m, k, 2) = xadjb(l, m, k, 2) + tempb1
-  xadjb(l, m, n, 2) = xadjb(l, m, n, 2) + tempb1
-  xadjb(l, j, n, 2) = xadjb(l, j, n, 2) + tempb1
+  xadjb(i, j, k, 2, sps2) = xadjb(i, j, k, 2, sps2) + tempb1
+  xadjb(i, m, k, 2, sps2) = xadjb(i, m, k, 2, sps2) + tempb1
+  xadjb(i, m, n, 2, sps2) = xadjb(i, m, n, 2, sps2) + tempb1
+  xadjb(i, j, n, 2, sps2) = xadjb(i, j, n, 2, sps2) + tempb1
+  xadjb(l, j, k, 2, sps2) = xadjb(l, j, k, 2, sps2) + tempb1
+  xadjb(l, m, k, 2, sps2) = xadjb(l, m, k, 2, sps2) + tempb1
+  xadjb(l, m, n, 2, sps2) = xadjb(l, m, n, 2, sps2) + tempb1
+  xadjb(l, j, n, 2, sps2) = xadjb(l, j, n, 2, sps2) + tempb1
   tempb2 = eighth*xpb
-  xadjb(i, j, k, 1) = xadjb(i, j, k, 1) + tempb2
-  xadjb(i, m, k, 1) = xadjb(i, m, k, 1) + tempb2
-  xadjb(i, m, n, 1) = xadjb(i, m, n, 1) + tempb2
-  xadjb(i, j, n, 1) = xadjb(i, j, n, 1) + tempb2
-  xadjb(l, j, k, 1) = xadjb(l, j, k, 1) + tempb2
-  xadjb(l, m, k, 1) = xadjb(l, m, k, 1) + tempb2
-  xadjb(l, m, n, 1) = xadjb(l, m, n, 1) + tempb2
-  xadjb(l, j, n, 1) = xadjb(l, j, n, 1) + tempb2
+  xadjb(i, j, k, 1, sps2) = xadjb(i, j, k, 1, sps2) + tempb2
+  xadjb(i, m, k, 1, sps2) = xadjb(i, m, k, 1, sps2) + tempb2
+  xadjb(i, m, n, 1, sps2) = xadjb(i, m, n, 1, sps2) + tempb2
+  xadjb(i, j, n, 1, sps2) = xadjb(i, j, n, 1, sps2) + tempb2
+  xadjb(l, j, k, 1, sps2) = xadjb(l, j, k, 1, sps2) + tempb2
+  xadjb(l, m, k, 1, sps2) = xadjb(l, m, k, 1, sps2) + tempb2
+  xadjb(l, m, n, 1, sps2) = xadjb(l, m, n, 1, sps2) + tempb2
+  xadjb(l, j, n, 1, sps2) = xadjb(l, j, n, 1, sps2) + tempb2
+  normadjb(:, :, :, :, sps2) = 0.0
+  CALL POPREAL8ARRAY(skadj(:, :, :, :, sps2), 6**3*3)
+  skadjb(:, :, :, :, sps2) = 0.0
+  CALL POPREAL8ARRAY(sjadj(:, :, :, :, sps2), 6**3*3)
+  sjadjb(:, :, :, :, sps2) = 0.0
+  CALL POPREAL8ARRAY(siadj(:, :, :, :, sps2), 6**3*3)
+  siadjb(:, :, :, :, sps2) = 0.0
 END SUBROUTINE METRICADJ_B

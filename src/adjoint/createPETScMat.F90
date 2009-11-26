@@ -21,6 +21,7 @@
       use ADjointPETSc
       use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
       use communication   ! myID, nProc
+      use inputTimeSpectral !nTimeIntervalsSpectral
       use flowVarRefState ! 
       implicit none
 !
@@ -56,12 +57,12 @@
       ! number of Cells owned by the processor and the number of 
       ! equations.
 
-      nDimW = nw * nCellsLocal     
+      nDimW = nw * nCellsLocal*nTimeIntervalsSpectral
 
       ! Define matrix dRdx local size (number of columns) for the
       ! spatial derivatives.
 
-      nDimX = 3 * nNodesLocal
+      nDimX = 3 * nNodesLocal*nTimeIntervalsSpectral
 
       ! Define matrix dSdx local size (number of Rows) for the
       ! Coupling derivatives.
@@ -78,7 +79,7 @@
       ! 6  - 1st level cells along directions i,j,k
       ! 6  - 2nd level cells along directions i,j,k
 
-      nzDiagonalW = 13 ! 1 + 6 + 6  check!!!
+      nzDiagonalW = 13 +nTimeIntervalsSpectral! 1 + 6 + 6  check!!!
 
       ! Stencil of X
       ! 1  - center node
@@ -86,7 +87,7 @@
       ! 6  - 2nd level nodes along directions i,j,k
       ! 12 - 1st level nodes along diagonals (i,j),(i,k),(j,k) 
 
-      nzDiagonalX = 25+4+4 ! 1 + 6 + 6 + 12 Check
+      nzDiagonalX = 25+4+4 +4*nTimeIntervalsSpectral! 1 + 6 + 6 + 12 Check
 
       ! Average number of off processor contributions per Cell
       ! (average number of donor cells that come from other processor)

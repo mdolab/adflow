@@ -53,7 +53,8 @@
        real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral), &
                                                    intent(in) :: siAdj, sjAdj, skAdj
        !real(kind=realType), dimension(0:0,0:0,0:0), intent(in) :: volAdj
-       real(kind=realType),dimension(nTimeIntervalsSpectral), intent(in) :: volAdj,pInfCorrAdj
+       real(kind=realType),dimension(nTimeIntervalsSpectral), intent(in) :: volAdj
+       real(kind=realType), intent(in) ::pInfCorrAdj
        real(kind=realType), dimension(nBocos,-2:2,-2:2,3,nTimeIntervalsSpectral), intent(in) :: normAdj
        real(kind=realType), dimension(nBocos,-2:2,-2:2,nTimeIntervalsSpectral), intent(in) ::rFaceAdj
        real(kind=realType), dimension(nw),intent(in)::wInfAdj

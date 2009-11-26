@@ -37,6 +37,7 @@
 !      use block
       use blockpointers
       use communication
+      use inputTimeSpectral !nTimeIntervalsSpectral
       use mddatalocal
       implicit none
 !
@@ -163,37 +164,42 @@
      
       ! Determine the global block row index for each (i,j,k) cell in
       ! each local block.
-
-      do nn=1,nDom
-         call setPointers(nn,level,sps)
-        do k=2,kl
-          do j=2,jl
-            do i=2,il
-!              flowDoms(nn,level,sps)%globalCell(i,j,k) &
-!                = nCellBLockOffset(nn) +(i-2) +(j-2)*il +(k-2)*il*jl
-              flowDoms(nn,level,sps)%globalCell(i,j,k) &
-                = nCellBLockOffset(nn) +(i-2) +(j-2)*nx +(k-2)*nx*ny
+      do sps = 1,nTimeIntervalsSpectral
+         do nn=1,nDom
+            call setPointers(nn,level,sps)
+            do k=2,kl
+               do j=2,jl
+                  do i=2,il
+                     !              flowDoms(nn,level,sps)%globalCell(i,j,k) &
+                     !                = nCellBLockOffset(nn) +(i-2) +(j-2)*il +(k-2)*il*jl
+                     flowDoms(nn,level,sps)%globalCell(i,j,k) &
+                          = nCellBLockOffset(nn) +(i-2) +(j-2)*nx +(k-2)*nx*ny&
+                          +nCellsGlobal*(sps-1)
+                  enddo
+               enddo
             enddo
-          enddo
-        enddo
-      enddo
-      !print *,'global cell bock row determined'
+         enddo
+         !print *,'global cell bock row determined'
+      end do
      
 
       ! Determine the global block row index for each (i,j,k) node in
       ! each local block.
-
-      do nn=1,nDom
-         call setPointers(nn,level,sps)
-        do k=1,kl
-          do j=1,jl
-            do i=1,il
-              flowDoms(nn,level,sps)%globalNode(i,j,k) &
-                = nNodeBLockOffset(nn) +(i-1) +(j-1)*il +(k-1)*il*jl
-              !print *,'globalnode',flowDoms(nn,level,sps)%globalNode(i,j,k),i,j,k
+      
+      do sps = 1,nTimeIntervalsSpectral
+         do nn=1,nDom
+            call setPointers(nn,level,sps)
+            do k=1,kl
+               do j=1,jl
+                  do i=1,il
+                     flowDoms(nn,level,sps)%globalNode(i,j,k) &
+                          = nNodeBLockOffset(nn) +(i-1) +(j-1)*il +(k-1)*il*jl&
+                          +nNodesGlobal*(sps-1)
+                     !print *,'globalnode',flowDoms(nn,level,sps)%globalNode(i,j,k),i,j,k
+                  enddo
+               enddo
             enddo
-          enddo
-        enddo
+         enddo
       enddo
       !print *,'end'
 !stop

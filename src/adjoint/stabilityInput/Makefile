@@ -36,36 +36,8 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS = adjustInflowAngleForcesAdj.o\
-	       applyAllBCForcesAdj.o\
-               bcEulerWallForcesAdj.o\
-               bcFarfieldForcesAdj.o\
-	       bcSymmForcesAdj.o\
-	       checkInputParamForcesAdj.o\
-	       computeForcesAdj.o\
-	       computeForcesPressureAdj.o\
-               copyADjointForcesStencil.o\
-	       derivativeRotMatrixRigidForcesAdj.o\
-	       derivativeRigidRotAngleForcesAdj.o\
-               etotArrayForcesAdj.o \
-	       extractBCStatesForcesAdj.o\
-               extrapolate2ndHaloForcesAdj.o\
-               forcesAndMomentsAdj.o\
-	       getDirVectorForces.o\
-               getDirAngleForces.o\
-	       getSurfaceNormalsAdj.o\
-	       gridVelocitiesFineLevelForcesAdj.o\
-	       normalVelocitiesForcesAdj.o\
-               referenceStateForcesAdj.o\
-	       replaceBCStatesForcesAdj.o\
-	       rigidRotAngleForcesAdj.o\
-	       rotMatrixRigidBodyForcesAdj.o\
-               setFlowInfinityStateForcesAdj.o\
-	       vectorRotationForces.o\
-	       verifydCfdx.o\
-	       verifydCfdw.o\
-               verifydCfdwFile.o\
-	       verifyForcesAdj.o
+FF90_OBJECTS = computeTSStabilityDerivAdj.o\
+	       verifyTSStabilityDerivAdj.o
 
 #CC_OBJECTS   = connect_signals.o
 

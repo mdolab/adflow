@@ -21,11 +21,13 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
 &  padj1, padj1b, padj2, padj2b, padj3, padj3b, rlvadj, revadj, rlvadj1&
 &  , rlvadj2, revadj1, revadj2, ioffset, joffset, koffset, icell, jcell&
 &  , kcell, isbeg, jsbeg, ksbeg, isend, jsend, ksend, ibbeg, jbbeg, &
-&  kbbeg, ibend, jbend, kbend, icbeg, jcbeg, icend, jcend, secondhalo)
+&  kbbeg, ibend, jbend, kbend, icbeg, jcbeg, icend, jcend, secondhalo, &
+&  nnn, level, sps, sps2)
   USE bctypes
   USE blockpointers, ONLY : ie, ib, je, jb, ke, kb, nbocos, bcfaceid, &
 &  bctype, bcdata
   USE flowvarrefstate
+  USE inputtimespectral
   IMPLICIT NONE
 !    end if checkOverlap
 !  enddo
@@ -47,25 +49,31 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
   INTEGER(KIND=INTTYPE), INTENT(IN) :: kcell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: ksbeg
   INTEGER(KIND=INTTYPE), INTENT(IN) :: ksend
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: level
   INTEGER(KIND=INTTYPE), INTENT(IN) :: nn
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2), INTENT(IN) :: padj
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: nnn
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), INTENT(IN) :: padj
   REAL(KIND=REALTYPE) :: padj0(-2:2, -2:2), padj0b(-2:2, -2:2), padj1(-2&
 &  :2, -2:2), padj1b(-2:2, -2:2)
   REAL(KIND=REALTYPE) :: padj2(-2:2, -2:2), padj2b(-2:2, -2:2), padj3(-2&
 &  :2, -2:2), padj3b(-2:2, -2:2)
-  REAL(KIND=REALTYPE) :: padjb(-2:2, -2:2, -2:2)
+  REAL(KIND=REALTYPE) :: padjb(-2:2, -2:2, -2:2, ntimeintervalsspectral)
   REAL(KIND=REALTYPE) :: revadj1(-2:2, -2:2), revadj2(-2:2, -2:2)
   REAL(KIND=REALTYPE) :: revadj(-2:2, -2:2, -2:2), rlvadj(-2:2, -2:2, -2&
 &  :2)
   REAL(KIND=REALTYPE) :: rlvadj1(-2:2, -2:2), rlvadj2(-2:2, -2:2)
   LOGICAL :: secondhalo
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw), INTENT(IN) :: &
-&  wadj
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: sps
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: sps2
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral), INTENT(IN) :: wadj
   REAL(KIND=REALTYPE) :: wadj0(-2:2, -2:2, nw), wadj0b(-2:2, -2:2, nw), &
 &  wadj1(-2:2, -2:2, nw), wadj1b(-2:2, -2:2, nw)
   REAL(KIND=REALTYPE) :: wadj2(-2:2, -2:2, nw), wadj2b(-2:2, -2:2, nw), &
 &  wadj3(-2:2, -2:2, nw), wadj3b(-2:2, -2:2, nw)
-  REAL(KIND=REALTYPE) :: wadjb(-2:2, -2:2, -2:2, nw)
+  REAL(KIND=REALTYPE) :: wadjb(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral)
   INTEGER :: branch
   LOGICAL :: ioverlap, joverlap, koverlap
   INTEGER(KIND=INTTYPE) :: irbeg, irend, jrbeg, jrend, krbeg, krend
@@ -125,41 +133,48 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       CALL PUSHINTEGER4(0)
     END IF
     IF (secondhalo) THEN
-      padjb(1, -2:2, -2:2) = padjb(1, -2:2, -2:2) + padj3b(-2:2, -2:2)
+      padjb(1, -2:2, -2:2, sps2) = padjb(1, -2:2, -2:2, sps2) + padj3b(-&
+&        2:2, -2:2)
       padj3b(-2:2, -2:2) = 0.0
-      padjb(0, -2:2, -2:2) = padjb(0, -2:2, -2:2) + padj2b(-2:2, -2:2)
+      padjb(0, -2:2, -2:2, sps2) = padjb(0, -2:2, -2:2, sps2) + padj2b(-&
+&        2:2, -2:2)
       padj2b(-2:2, -2:2) = 0.0
-      padjb(-1, -2:2, -2:2) = padjb(-1, -2:2, -2:2) + padj1b(-2:2, -2:2)
+      padjb(-1, -2:2, -2:2, sps2) = padjb(-1, -2:2, -2:2, sps2) + padj1b&
+&        (-2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
-      padjb(-2, -2:2, -2:2) = padjb(-2, -2:2, -2:2) + padj0b(-2:2, -2:2)
+      padjb(-2, -2:2, -2:2, sps2) = padjb(-2, -2:2, -2:2, sps2) + padj0b&
+&        (-2:2, -2:2)
       padj0b(-2:2, -2:2) = 0.0
-      wadjb(1, -2:2, -2:2, 1:nw) = wadjb(1, -2:2, -2:2, 1:nw) + wadj3b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(1, -2:2, -2:2, 1:nw, sps2) = wadjb(1, -2:2, -2:2, 1:nw, sps2&
+&        ) + wadj3b(-2:2, -2:2, 1:nw)
       wadj3b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(0, -2:2, -2:2, 1:nw) = wadjb(0, -2:2, -2:2, 1:nw) + wadj2b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(0, -2:2, -2:2, 1:nw, sps2) = wadjb(0, -2:2, -2:2, 1:nw, sps2&
+&        ) + wadj2b(-2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-1, -2:2, -2:2, 1:nw) = wadjb(-1, -2:2, -2:2, 1:nw) + wadj1b&
-&        (-2:2, -2:2, 1:nw)
+      wadjb(-1, -2:2, -2:2, 1:nw, sps2) = wadjb(-1, -2:2, -2:2, 1:nw, &
+&        sps2) + wadj1b(-2:2, -2:2, 1:nw)
       wadj1b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2, -2:2, -2:2, 1:nw) = wadjb(-2, -2:2, -2:2, 1:nw) + wadj0b&
-&        (-2:2, -2:2, 1:nw)
+      wadjb(-2, -2:2, -2:2, 1:nw, sps2) = wadjb(-2, -2:2, -2:2, 1:nw, &
+&        sps2) + wadj0b(-2:2, -2:2, 1:nw)
       wadj0b(-2:2, -2:2, 1:nw) = 0.0
     ELSE
-      padjb(0, -2:2, -2:2) = padjb(0, -2:2, -2:2) + padj3b(-2:2, -2:2)
+      padjb(0, -2:2, -2:2, sps2) = padjb(0, -2:2, -2:2, sps2) + padj3b(-&
+&        2:2, -2:2)
       padj3b(-2:2, -2:2) = 0.0
-      padjb(-1, -2:2, -2:2) = padjb(-1, -2:2, -2:2) + padj2b(-2:2, -2:2)
+      padjb(-1, -2:2, -2:2, sps2) = padjb(-1, -2:2, -2:2, sps2) + padj2b&
+&        (-2:2, -2:2)
       padj2b(-2:2, -2:2) = 0.0
-      padjb(-2, -2:2, -2:2) = padjb(-2, -2:2, -2:2) + padj1b(-2:2, -2:2)
+      padjb(-2, -2:2, -2:2, sps2) = padjb(-2, -2:2, -2:2, sps2) + padj1b&
+&        (-2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
-      wadjb(0, -2:2, -2:2, 1:nw) = wadjb(0, -2:2, -2:2, 1:nw) + wadj3b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(0, -2:2, -2:2, 1:nw, sps2) = wadjb(0, -2:2, -2:2, 1:nw, sps2&
+&        ) + wadj3b(-2:2, -2:2, 1:nw)
       wadj3b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-1, -2:2, -2:2, 1:nw) = wadjb(-1, -2:2, -2:2, 1:nw) + wadj2b&
-&        (-2:2, -2:2, 1:nw)
+      wadjb(-1, -2:2, -2:2, 1:nw, sps2) = wadjb(-1, -2:2, -2:2, 1:nw, &
+&        sps2) + wadj2b(-2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2, -2:2, -2:2, 1:nw) = wadjb(-2, -2:2, -2:2, 1:nw) + wadj1b&
-&        (-2:2, -2:2, 1:nw)
+      wadjb(-2, -2:2, -2:2, 1:nw, sps2) = wadjb(-2, -2:2, -2:2, 1:nw, &
+&        sps2) + wadj1b(-2:2, -2:2, 1:nw)
       wadj1b(-2:2, -2:2, 1:nw) = 0.0
     END IF
     CALL POPINTEGER4(branch)
@@ -175,41 +190,48 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       CALL PUSHINTEGER4(0)
     END IF
     IF (secondhalo) THEN
-      padjb(-1, -2:2, -2:2) = padjb(-1, -2:2, -2:2) + padj3b(-2:2, -2:2)
+      padjb(-1, -2:2, -2:2, sps2) = padjb(-1, -2:2, -2:2, sps2) + padj3b&
+&        (-2:2, -2:2)
       padj3b(-2:2, -2:2) = 0.0
-      padjb(0, -2:2, -2:2) = padjb(0, -2:2, -2:2) + padj2b(-2:2, -2:2)
+      padjb(0, -2:2, -2:2, sps2) = padjb(0, -2:2, -2:2, sps2) + padj2b(-&
+&        2:2, -2:2)
       padj2b(-2:2, -2:2) = 0.0
-      padjb(1, -2:2, -2:2) = padjb(1, -2:2, -2:2) + padj1b(-2:2, -2:2)
+      padjb(1, -2:2, -2:2, sps2) = padjb(1, -2:2, -2:2, sps2) + padj1b(-&
+&        2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
-      padjb(2, -2:2, -2:2) = padjb(2, -2:2, -2:2) + padj0b(-2:2, -2:2)
+      padjb(2, -2:2, -2:2, sps2) = padjb(2, -2:2, -2:2, sps2) + padj0b(-&
+&        2:2, -2:2)
       padj0b(-2:2, -2:2) = 0.0
-      wadjb(-1, -2:2, -2:2, 1:nw) = wadjb(-1, -2:2, -2:2, 1:nw) + wadj3b&
-&        (-2:2, -2:2, 1:nw)
+      wadjb(-1, -2:2, -2:2, 1:nw, sps2) = wadjb(-1, -2:2, -2:2, 1:nw, &
+&        sps2) + wadj3b(-2:2, -2:2, 1:nw)
       wadj3b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(0, -2:2, -2:2, 1:nw) = wadjb(0, -2:2, -2:2, 1:nw) + wadj2b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(0, -2:2, -2:2, 1:nw, sps2) = wadjb(0, -2:2, -2:2, 1:nw, sps2&
+&        ) + wadj2b(-2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(1, -2:2, -2:2, 1:nw) = wadjb(1, -2:2, -2:2, 1:nw) + wadj1b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(1, -2:2, -2:2, 1:nw, sps2) = wadjb(1, -2:2, -2:2, 1:nw, sps2&
+&        ) + wadj1b(-2:2, -2:2, 1:nw)
       wadj1b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(2, -2:2, -2:2, 1:nw) = wadjb(2, -2:2, -2:2, 1:nw) + wadj0b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(2, -2:2, -2:2, 1:nw, sps2) = wadjb(2, -2:2, -2:2, 1:nw, sps2&
+&        ) + wadj0b(-2:2, -2:2, 1:nw)
       wadj0b(-2:2, -2:2, 1:nw) = 0.0
     ELSE
-      padjb(0, -2:2, -2:2) = padjb(0, -2:2, -2:2) + padj3b(-2:2, -2:2)
+      padjb(0, -2:2, -2:2, sps2) = padjb(0, -2:2, -2:2, sps2) + padj3b(-&
+&        2:2, -2:2)
       padj3b(-2:2, -2:2) = 0.0
-      padjb(1, -2:2, -2:2) = padjb(1, -2:2, -2:2) + padj2b(-2:2, -2:2)
+      padjb(1, -2:2, -2:2, sps2) = padjb(1, -2:2, -2:2, sps2) + padj2b(-&
+&        2:2, -2:2)
       padj2b(-2:2, -2:2) = 0.0
-      padjb(2, -2:2, -2:2) = padjb(2, -2:2, -2:2) + padj1b(-2:2, -2:2)
+      padjb(2, -2:2, -2:2, sps2) = padjb(2, -2:2, -2:2, sps2) + padj1b(-&
+&        2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
-      wadjb(0, -2:2, -2:2, 1:nw) = wadjb(0, -2:2, -2:2, 1:nw) + wadj3b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(0, -2:2, -2:2, 1:nw, sps2) = wadjb(0, -2:2, -2:2, 1:nw, sps2&
+&        ) + wadj3b(-2:2, -2:2, 1:nw)
       wadj3b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(1, -2:2, -2:2, 1:nw) = wadjb(1, -2:2, -2:2, 1:nw) + wadj2b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(1, -2:2, -2:2, 1:nw, sps2) = wadjb(1, -2:2, -2:2, 1:nw, sps2&
+&        ) + wadj2b(-2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(2, -2:2, -2:2, 1:nw) = wadjb(2, -2:2, -2:2, 1:nw) + wadj1b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(2, -2:2, -2:2, 1:nw, sps2) = wadjb(2, -2:2, -2:2, 1:nw, sps2&
+&        ) + wadj1b(-2:2, -2:2, 1:nw)
       wadj1b(-2:2, -2:2, 1:nw) = 0.0
     END IF
     CALL POPINTEGER4(branch)
@@ -225,41 +247,48 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       CALL PUSHINTEGER4(0)
     END IF
     IF (secondhalo) THEN
-      padjb(-2:2, 1, -2:2) = padjb(-2:2, 1, -2:2) + padj3b(-2:2, -2:2)
+      padjb(-2:2, 1, -2:2, sps2) = padjb(-2:2, 1, -2:2, sps2) + padj3b(-&
+&        2:2, -2:2)
       padj3b(-2:2, -2:2) = 0.0
-      padjb(-2:2, 0, -2:2) = padjb(-2:2, 0, -2:2) + padj2b(-2:2, -2:2)
+      padjb(-2:2, 0, -2:2, sps2) = padjb(-2:2, 0, -2:2, sps2) + padj2b(-&
+&        2:2, -2:2)
       padj2b(-2:2, -2:2) = 0.0
-      padjb(-2:2, -1, -2:2) = padjb(-2:2, -1, -2:2) + padj1b(-2:2, -2:2)
+      padjb(-2:2, -1, -2:2, sps2) = padjb(-2:2, -1, -2:2, sps2) + padj1b&
+&        (-2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
-      padjb(-2:2, -2, -2:2) = padjb(-2:2, -2, -2:2) + padj0b(-2:2, -2:2)
+      padjb(-2:2, -2, -2:2, sps2) = padjb(-2:2, -2, -2:2, sps2) + padj0b&
+&        (-2:2, -2:2)
       padj0b(-2:2, -2:2) = 0.0
-      wadjb(-2:2, 1, -2:2, 1:nw) = wadjb(-2:2, 1, -2:2, 1:nw) + wadj3b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, 1, -2:2, 1:nw, sps2) = wadjb(-2:2, 1, -2:2, 1:nw, sps2&
+&        ) + wadj3b(-2:2, -2:2, 1:nw)
       wadj3b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, 0, -2:2, 1:nw) = wadjb(-2:2, 0, -2:2, 1:nw) + wadj2b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, 0, -2:2, 1:nw, sps2) = wadjb(-2:2, 0, -2:2, 1:nw, sps2&
+&        ) + wadj2b(-2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, -1, -2:2, 1:nw) = wadjb(-2:2, -1, -2:2, 1:nw) + wadj1b&
-&        (-2:2, -2:2, 1:nw)
+      wadjb(-2:2, -1, -2:2, 1:nw, sps2) = wadjb(-2:2, -1, -2:2, 1:nw, &
+&        sps2) + wadj1b(-2:2, -2:2, 1:nw)
       wadj1b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, -2, -2:2, 1:nw) = wadjb(-2:2, -2, -2:2, 1:nw) + wadj0b&
-&        (-2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2, -2:2, 1:nw, sps2) = wadjb(-2:2, -2, -2:2, 1:nw, &
+&        sps2) + wadj0b(-2:2, -2:2, 1:nw)
       wadj0b(-2:2, -2:2, 1:nw) = 0.0
     ELSE
-      padjb(-2:2, 0, -2:2) = padjb(-2:2, 0, -2:2) + padj3b(-2:2, -2:2)
+      padjb(-2:2, 0, -2:2, sps2) = padjb(-2:2, 0, -2:2, sps2) + padj3b(-&
+&        2:2, -2:2)
       padj3b(-2:2, -2:2) = 0.0
-      padjb(-2:2, -1, -2:2) = padjb(-2:2, -1, -2:2) + padj2b(-2:2, -2:2)
+      padjb(-2:2, -1, -2:2, sps2) = padjb(-2:2, -1, -2:2, sps2) + padj2b&
+&        (-2:2, -2:2)
       padj2b(-2:2, -2:2) = 0.0
-      padjb(-2:2, -2, -2:2) = padjb(-2:2, -2, -2:2) + padj1b(-2:2, -2:2)
+      padjb(-2:2, -2, -2:2, sps2) = padjb(-2:2, -2, -2:2, sps2) + padj1b&
+&        (-2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
-      wadjb(-2:2, 0, -2:2, 1:nw) = wadjb(-2:2, 0, -2:2, 1:nw) + wadj3b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, 0, -2:2, 1:nw, sps2) = wadjb(-2:2, 0, -2:2, 1:nw, sps2&
+&        ) + wadj3b(-2:2, -2:2, 1:nw)
       wadj3b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, -1, -2:2, 1:nw) = wadjb(-2:2, -1, -2:2, 1:nw) + wadj2b&
-&        (-2:2, -2:2, 1:nw)
+      wadjb(-2:2, -1, -2:2, 1:nw, sps2) = wadjb(-2:2, -1, -2:2, 1:nw, &
+&        sps2) + wadj2b(-2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, -2, -2:2, 1:nw) = wadjb(-2:2, -2, -2:2, 1:nw) + wadj1b&
-&        (-2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2, -2:2, 1:nw, sps2) = wadjb(-2:2, -2, -2:2, 1:nw, &
+&        sps2) + wadj1b(-2:2, -2:2, 1:nw)
       wadj1b(-2:2, -2:2, 1:nw) = 0.0
     END IF
     CALL POPINTEGER4(branch)
@@ -275,41 +304,48 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       CALL PUSHINTEGER4(0)
     END IF
     IF (secondhalo) THEN
-      padjb(-2:2, -1, -2:2) = padjb(-2:2, -1, -2:2) + padj3b(-2:2, -2:2)
+      padjb(-2:2, -1, -2:2, sps2) = padjb(-2:2, -1, -2:2, sps2) + padj3b&
+&        (-2:2, -2:2)
       padj3b(-2:2, -2:2) = 0.0
-      padjb(-2:2, 0, -2:2) = padjb(-2:2, 0, -2:2) + padj2b(-2:2, -2:2)
+      padjb(-2:2, 0, -2:2, sps2) = padjb(-2:2, 0, -2:2, sps2) + padj2b(-&
+&        2:2, -2:2)
       padj2b(-2:2, -2:2) = 0.0
-      padjb(-2:2, 1, -2:2) = padjb(-2:2, 1, -2:2) + padj1b(-2:2, -2:2)
+      padjb(-2:2, 1, -2:2, sps2) = padjb(-2:2, 1, -2:2, sps2) + padj1b(-&
+&        2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
-      padjb(-2:2, 2, -2:2) = padjb(-2:2, 2, -2:2) + padj0b(-2:2, -2:2)
+      padjb(-2:2, 2, -2:2, sps2) = padjb(-2:2, 2, -2:2, sps2) + padj0b(-&
+&        2:2, -2:2)
       padj0b(-2:2, -2:2) = 0.0
-      wadjb(-2:2, -1, -2:2, 1:nw) = wadjb(-2:2, -1, -2:2, 1:nw) + wadj3b&
-&        (-2:2, -2:2, 1:nw)
+      wadjb(-2:2, -1, -2:2, 1:nw, sps2) = wadjb(-2:2, -1, -2:2, 1:nw, &
+&        sps2) + wadj3b(-2:2, -2:2, 1:nw)
       wadj3b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, 0, -2:2, 1:nw) = wadjb(-2:2, 0, -2:2, 1:nw) + wadj2b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, 0, -2:2, 1:nw, sps2) = wadjb(-2:2, 0, -2:2, 1:nw, sps2&
+&        ) + wadj2b(-2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, 1, -2:2, 1:nw) = wadjb(-2:2, 1, -2:2, 1:nw) + wadj1b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, 1, -2:2, 1:nw, sps2) = wadjb(-2:2, 1, -2:2, 1:nw, sps2&
+&        ) + wadj1b(-2:2, -2:2, 1:nw)
       wadj1b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, 2, -2:2, 1:nw) = wadjb(-2:2, 2, -2:2, 1:nw) + wadj0b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, 2, -2:2, 1:nw, sps2) = wadjb(-2:2, 2, -2:2, 1:nw, sps2&
+&        ) + wadj0b(-2:2, -2:2, 1:nw)
       wadj0b(-2:2, -2:2, 1:nw) = 0.0
     ELSE
-      padjb(-2:2, 0, -2:2) = padjb(-2:2, 0, -2:2) + padj3b(-2:2, -2:2)
+      padjb(-2:2, 0, -2:2, sps2) = padjb(-2:2, 0, -2:2, sps2) + padj3b(-&
+&        2:2, -2:2)
       padj3b(-2:2, -2:2) = 0.0
-      padjb(-2:2, 1, -2:2) = padjb(-2:2, 1, -2:2) + padj2b(-2:2, -2:2)
+      padjb(-2:2, 1, -2:2, sps2) = padjb(-2:2, 1, -2:2, sps2) + padj2b(-&
+&        2:2, -2:2)
       padj2b(-2:2, -2:2) = 0.0
-      padjb(-2:2, 2, -2:2) = padjb(-2:2, 2, -2:2) + padj1b(-2:2, -2:2)
+      padjb(-2:2, 2, -2:2, sps2) = padjb(-2:2, 2, -2:2, sps2) + padj1b(-&
+&        2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
-      wadjb(-2:2, 0, -2:2, 1:nw) = wadjb(-2:2, 0, -2:2, 1:nw) + wadj3b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, 0, -2:2, 1:nw, sps2) = wadjb(-2:2, 0, -2:2, 1:nw, sps2&
+&        ) + wadj3b(-2:2, -2:2, 1:nw)
       wadj3b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, 1, -2:2, 1:nw) = wadjb(-2:2, 1, -2:2, 1:nw) + wadj2b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, 1, -2:2, 1:nw, sps2) = wadjb(-2:2, 1, -2:2, 1:nw, sps2&
+&        ) + wadj2b(-2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, 2, -2:2, 1:nw) = wadjb(-2:2, 2, -2:2, 1:nw) + wadj1b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, 2, -2:2, 1:nw, sps2) = wadjb(-2:2, 2, -2:2, 1:nw, sps2&
+&        ) + wadj1b(-2:2, -2:2, 1:nw)
       wadj1b(-2:2, -2:2, 1:nw) = 0.0
     END IF
     CALL POPINTEGER4(branch)
@@ -325,41 +361,48 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       CALL PUSHINTEGER4(0)
     END IF
     IF (secondhalo) THEN
-      padjb(-2:2, -2:2, 1) = padjb(-2:2, -2:2, 1) + padj3b(-2:2, -2:2)
+      padjb(-2:2, -2:2, 1, sps2) = padjb(-2:2, -2:2, 1, sps2) + padj3b(-&
+&        2:2, -2:2)
       padj3b(-2:2, -2:2) = 0.0
-      padjb(-2:2, -2:2, 0) = padjb(-2:2, -2:2, 0) + padj2b(-2:2, -2:2)
+      padjb(-2:2, -2:2, 0, sps2) = padjb(-2:2, -2:2, 0, sps2) + padj2b(-&
+&        2:2, -2:2)
       padj2b(-2:2, -2:2) = 0.0
-      padjb(-2:2, -2:2, -1) = padjb(-2:2, -2:2, -1) + padj1b(-2:2, -2:2)
+      padjb(-2:2, -2:2, -1, sps2) = padjb(-2:2, -2:2, -1, sps2) + padj1b&
+&        (-2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
-      padjb(-2:2, -2:2, -2) = padjb(-2:2, -2:2, -2) + padj0b(-2:2, -2:2)
+      padjb(-2:2, -2:2, -2, sps2) = padjb(-2:2, -2:2, -2, sps2) + padj0b&
+&        (-2:2, -2:2)
       padj0b(-2:2, -2:2) = 0.0
-      wadjb(-2:2, -2:2, 1, 1:nw) = wadjb(-2:2, -2:2, 1, 1:nw) + wadj3b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2:2, 1, 1:nw, sps2) = wadjb(-2:2, -2:2, 1, 1:nw, sps2&
+&        ) + wadj3b(-2:2, -2:2, 1:nw)
       wadj3b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, -2:2, 0, 1:nw) = wadjb(-2:2, -2:2, 0, 1:nw) + wadj2b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2:2, 0, 1:nw, sps2) = wadjb(-2:2, -2:2, 0, 1:nw, sps2&
+&        ) + wadj2b(-2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, -2:2, -1, 1:nw) = wadjb(-2:2, -2:2, -1, 1:nw) + wadj1b&
-&        (-2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2:2, -1, 1:nw, sps2) = wadjb(-2:2, -2:2, -1, 1:nw, &
+&        sps2) + wadj1b(-2:2, -2:2, 1:nw)
       wadj1b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, -2:2, -2, 1:nw) = wadjb(-2:2, -2:2, -2, 1:nw) + wadj0b&
-&        (-2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2:2, -2, 1:nw, sps2) = wadjb(-2:2, -2:2, -2, 1:nw, &
+&        sps2) + wadj0b(-2:2, -2:2, 1:nw)
       wadj0b(-2:2, -2:2, 1:nw) = 0.0
     ELSE
-      padjb(-2:2, -2:2, 0) = padjb(-2:2, -2:2, 0) + padj3b(-2:2, -2:2)
+      padjb(-2:2, -2:2, 0, sps2) = padjb(-2:2, -2:2, 0, sps2) + padj3b(-&
+&        2:2, -2:2)
       padj3b(-2:2, -2:2) = 0.0
-      padjb(-2:2, -2:2, -1) = padjb(-2:2, -2:2, -1) + padj2b(-2:2, -2:2)
+      padjb(-2:2, -2:2, -1, sps2) = padjb(-2:2, -2:2, -1, sps2) + padj2b&
+&        (-2:2, -2:2)
       padj2b(-2:2, -2:2) = 0.0
-      padjb(-2:2, -2:2, -2) = padjb(-2:2, -2:2, -2) + padj1b(-2:2, -2:2)
+      padjb(-2:2, -2:2, -2, sps2) = padjb(-2:2, -2:2, -2, sps2) + padj1b&
+&        (-2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
-      wadjb(-2:2, -2:2, 0, 1:nw) = wadjb(-2:2, -2:2, 0, 1:nw) + wadj3b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2:2, 0, 1:nw, sps2) = wadjb(-2:2, -2:2, 0, 1:nw, sps2&
+&        ) + wadj3b(-2:2, -2:2, 1:nw)
       wadj3b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, -2:2, -1, 1:nw) = wadjb(-2:2, -2:2, -1, 1:nw) + wadj2b&
-&        (-2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2:2, -1, 1:nw, sps2) = wadjb(-2:2, -2:2, -1, 1:nw, &
+&        sps2) + wadj2b(-2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, -2:2, -2, 1:nw) = wadjb(-2:2, -2:2, -2, 1:nw) + wadj1b&
-&        (-2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2:2, -2, 1:nw, sps2) = wadjb(-2:2, -2:2, -2, 1:nw, &
+&        sps2) + wadj1b(-2:2, -2:2, 1:nw)
       wadj1b(-2:2, -2:2, 1:nw) = 0.0
     END IF
     CALL POPINTEGER4(branch)
@@ -375,41 +418,48 @@ SUBROUTINE EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
       CALL PUSHINTEGER4(0)
     END IF
     IF (secondhalo) THEN
-      padjb(-2:2, -2:2, -1) = padjb(-2:2, -2:2, -1) + padj3b(-2:2, -2:2)
+      padjb(-2:2, -2:2, -1, sps2) = padjb(-2:2, -2:2, -1, sps2) + padj3b&
+&        (-2:2, -2:2)
       padj3b(-2:2, -2:2) = 0.0
-      padjb(-2:2, -2:2, 0) = padjb(-2:2, -2:2, 0) + padj2b(-2:2, -2:2)
+      padjb(-2:2, -2:2, 0, sps2) = padjb(-2:2, -2:2, 0, sps2) + padj2b(-&
+&        2:2, -2:2)
       padj2b(-2:2, -2:2) = 0.0
-      padjb(-2:2, -2:2, 1) = padjb(-2:2, -2:2, 1) + padj1b(-2:2, -2:2)
+      padjb(-2:2, -2:2, 1, sps2) = padjb(-2:2, -2:2, 1, sps2) + padj1b(-&
+&        2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
-      padjb(-2:2, -2:2, 2) = padjb(-2:2, -2:2, 2) + padj0b(-2:2, -2:2)
+      padjb(-2:2, -2:2, 2, sps2) = padjb(-2:2, -2:2, 2, sps2) + padj0b(-&
+&        2:2, -2:2)
       padj0b(-2:2, -2:2) = 0.0
-      wadjb(-2:2, -2:2, -1, 1:nw) = wadjb(-2:2, -2:2, -1, 1:nw) + wadj3b&
-&        (-2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2:2, -1, 1:nw, sps2) = wadjb(-2:2, -2:2, -1, 1:nw, &
+&        sps2) + wadj3b(-2:2, -2:2, 1:nw)
       wadj3b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, -2:2, 0, 1:nw) = wadjb(-2:2, -2:2, 0, 1:nw) + wadj2b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2:2, 0, 1:nw, sps2) = wadjb(-2:2, -2:2, 0, 1:nw, sps2&
+&        ) + wadj2b(-2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, -2:2, 1, 1:nw) = wadjb(-2:2, -2:2, 1, 1:nw) + wadj1b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2:2, 1, 1:nw, sps2) = wadjb(-2:2, -2:2, 1, 1:nw, sps2&
+&        ) + wadj1b(-2:2, -2:2, 1:nw)
       wadj1b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, -2:2, 2, 1:nw) = wadjb(-2:2, -2:2, 2, 1:nw) + wadj0b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2:2, 2, 1:nw, sps2) = wadjb(-2:2, -2:2, 2, 1:nw, sps2&
+&        ) + wadj0b(-2:2, -2:2, 1:nw)
       wadj0b(-2:2, -2:2, 1:nw) = 0.0
     ELSE
-      padjb(-2:2, -2:2, 0) = padjb(-2:2, -2:2, 0) + padj3b(-2:2, -2:2)
+      padjb(-2:2, -2:2, 0, sps2) = padjb(-2:2, -2:2, 0, sps2) + padj3b(-&
+&        2:2, -2:2)
       padj3b(-2:2, -2:2) = 0.0
-      padjb(-2:2, -2:2, 1) = padjb(-2:2, -2:2, 1) + padj2b(-2:2, -2:2)
+      padjb(-2:2, -2:2, 1, sps2) = padjb(-2:2, -2:2, 1, sps2) + padj2b(-&
+&        2:2, -2:2)
       padj2b(-2:2, -2:2) = 0.0
-      padjb(-2:2, -2:2, 2) = padjb(-2:2, -2:2, 2) + padj1b(-2:2, -2:2)
+      padjb(-2:2, -2:2, 2, sps2) = padjb(-2:2, -2:2, 2, sps2) + padj1b(-&
+&        2:2, -2:2)
       padj1b(-2:2, -2:2) = 0.0
-      wadjb(-2:2, -2:2, 0, 1:nw) = wadjb(-2:2, -2:2, 0, 1:nw) + wadj3b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2:2, 0, 1:nw, sps2) = wadjb(-2:2, -2:2, 0, 1:nw, sps2&
+&        ) + wadj3b(-2:2, -2:2, 1:nw)
       wadj3b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, -2:2, 1, 1:nw) = wadjb(-2:2, -2:2, 1, 1:nw) + wadj2b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2:2, 1, 1:nw, sps2) = wadjb(-2:2, -2:2, 1, 1:nw, sps2&
+&        ) + wadj2b(-2:2, -2:2, 1:nw)
       wadj2b(-2:2, -2:2, 1:nw) = 0.0
-      wadjb(-2:2, -2:2, 2, 1:nw) = wadjb(-2:2, -2:2, 2, 1:nw) + wadj1b(-&
-&        2:2, -2:2, 1:nw)
+      wadjb(-2:2, -2:2, 2, 1:nw, sps2) = wadjb(-2:2, -2:2, 2, 1:nw, sps2&
+&        ) + wadj1b(-2:2, -2:2, 1:nw)
       wadj1b(-2:2, -2:2, 1:nw) = 0.0
     END IF
     CALL POPINTEGER4(branch)

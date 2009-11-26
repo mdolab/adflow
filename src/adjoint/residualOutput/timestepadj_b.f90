@@ -2,12 +2,12 @@
 !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
 !  
 !  Differentiation of timestepadj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: padj pinfcorradj
-!                wadj sfacekadj skadj sfacejadj sjadj sfaceiadj
-!                siadj adis
-!   of linear combination of output variables: padj radkadj radjadj
-!                wadj radiadj sfacekadj skadj sfacejadj sjadj sfaceiadj
-!                siadj
+!   gradient, with respect to input variables: padj radkadj pinfcorradj
+!                radjadj wadj radiadj sfacekadj skadj sfacejadj
+!                sjadj sfaceiadj siadj adis
+!   of linear combination of output variables: padj radkadj pinfcorradj
+!                radjadj wadj radiadj sfacekadj skadj sfacejadj
+!                sjadj sfaceiadj siadj
 !
 !      ******************************************************************
 !      *                                                                *
@@ -20,9 +20,9 @@
 !
 SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
 &  siadjb, sjadj, sjadjb, skadj, skadjb, sfaceiadj, sfaceiadjb, &
-&  sfacejadj, sfacejadjb, sfacekadj, sfacekadjb, radiadj, radiadjb, &
-&  radjadj, radjadjb, radkadj, radkadjb, icell, jcell, kcell, &
-&  pinfcorradj, pinfcorradjb, rhoinfadj)
+&  sfacejadj, sfacejadjb, sfacekadj, sfacekadjb, voladj, radiadj, &
+&  radiadjb, radjadj, radjadjb, radkadj, radkadjb, icell, jcell, kcell, &
+&  pinfcorradj, pinfcorradjb, rhoinfadj, nn, level, sps, sps2)
   USE blockpointers
   USE constants
   USE flowvarrefstate
@@ -39,21 +39,40 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
   INTEGER(KIND=INTTYPE), INTENT(IN) :: icell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: jcell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: kcell
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: level
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: nn
   LOGICAL, INTENT(IN) :: onlyradii
-  REAL(KIND=REALTYPE) :: padj(-2:2, -2:2, -2:2), padjb(-2:2, -2:2, -2:2)
-  REAL(KIND=REALTYPE) :: radiadj(-1:1, -1:1, -1:1), radiadjb(-1:1, -1:1&
-&  , -1:1), radjadj(-1:1, -1:1, -1:1), radjadjb(-1:1, -1:1, -1:1), &
-&  radkadj(-1:1, -1:1, -1:1), radkadjb(-1:1, -1:1, -1:1)
+  REAL(KIND=REALTYPE) :: padj(-2:2, -2:2, -2:2, ntimeintervalsspectral)&
+&  , padjb(-2:2, -2:2, -2:2, ntimeintervalsspectral)
+  REAL(KIND=REALTYPE) :: radiadj(-1:1, -1:1, -1:1, &
+&  ntimeintervalsspectral), radiadjb(-1:1, -1:1, -1:1, &
+&  ntimeintervalsspectral), radjadj(-1:1, -1:1, -1:1, &
+&  ntimeintervalsspectral), radjadjb(-1:1, -1:1, -1:1, &
+&  ntimeintervalsspectral), radkadj(-1:1, -1:1, -1:1, &
+&  ntimeintervalsspectral), radkadjb(-1:1, -1:1, -1:1, &
+&  ntimeintervalsspectral)
   REAL(KIND=REALTYPE) :: pinfcorradj, pinfcorradjb, rhoinfadj
-  REAL(KIND=REALTYPE) :: sfaceiadj(-2:2, -2:2, -2:2), sfaceiadjb(-2:2, -&
-&  2:2, -2:2), sfacejadj(-2:2, -2:2, -2:2), sfacejadjb(-2:2, -2:2, -2:2)&
-&  , sfacekadj(-2:2, -2:2, -2:2), sfacekadjb(-2:2, -2:2, -2:2)
-  REAL(KIND=REALTYPE) :: siadj(-3:2, -3:2, -3:2, 3), siadjb(-3:2, -3:2, &
-&  -3:2, 3), sjadj(-3:2, -3:2, -3:2, 3), sjadjb(-3:2, -3:2, -3:2, 3), &
-&  skadj(-3:2, -3:2, -3:2, 3), skadjb(-3:2, -3:2, -3:2, 3)
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw), INTENT(IN) :: &
-&  wadj
-  REAL(KIND=REALTYPE) :: wadjb(-2:2, -2:2, -2:2, nw)
+  REAL(KIND=REALTYPE) :: sfaceiadj(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), sfaceiadjb(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), sfacejadj(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), sfacejadjb(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), sfacekadj(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), sfacekadjb(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE) :: siadj(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), siadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), sjadj(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), sjadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), skadj(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), skadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral)
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: sps
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: sps2
+  REAL(KIND=REALTYPE) :: voladj(ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral), INTENT(IN) :: wadj
+  REAL(KIND=REALTYPE) :: wadjb(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral)
   REAL(KIND=REALTYPE), PARAMETER :: b=2.0_realType
   REAL(KIND=REALTYPE) :: abs7, abs8, abs9
   INTEGER :: branch
@@ -116,9 +135,7 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
   END IF
 ! Return immediately if only the spectral radii must be computed
 ! and these are not needed for the flux computation.
-  IF (onlyradii .AND. (.NOT.radiineeded)) THEN
-    pinfcorradjb = 0.0
-  ELSE
+  IF (.NOT.(onlyradii .AND. (.NOT.radiineeded))) THEN
 ! Set the value of plim. To be fully consistent this must have
 ! the dimension of a pressure. Therefore a fraction of pInfCorr
 ! is used. Idem for rlim; compute clim2 as well.
@@ -160,13 +177,14 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
             kk = kcell + k
             CALL PUSHREAL8(ux)
 ! Compute the velocities and speed of sound squared.
-            ux = wadj(i, j, k, ivx)
+            ux = wadj(i, j, k, ivx, sps2)
             CALL PUSHREAL8(uy)
-            uy = wadj(i, j, k, ivy)
+            uy = wadj(i, j, k, ivy, sps2)
             CALL PUSHREAL8(uz)
-            uz = wadj(i, j, k, ivz)
+            uz = wadj(i, j, k, ivz, sps2)
             CALL PUSHREAL8(cc2)
-            cc2 = gamma(ii, jj, kk)*padj(i, j, k)/wadj(i, j, k, irho)
+            cc2 = gamma(ii, jj, kk)*padj(i, j, k, sps2)/wadj(i, j, k, &
+&              irho, sps2)
             IF (cc2 .LT. clim2) THEN
               cc2 = clim2
               CALL PUSHINTEGER4(1)
@@ -179,18 +197,19 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
 ! a number of multiplications by 0.5 simply the sum
 ! is taken.
             IF (addgridvelocities) THEN
-              sface = sfaceiadj(i-1, j, k) + sfaceiadj(i, j, k)
+              sface = sfaceiadj(i-1, j, k, sps2) + sfaceiadj(i, j, k, &
+&                sps2)
               CALL PUSHINTEGER4(1)
             ELSE
               CALL PUSHINTEGER4(0)
             END IF
             CALL PUSHREAL8(sx)
 ! Spectral radius in i-direction.
-            sx = siadj(i-1, j, k, 1) + siadj(i, j, k, 1)
+            sx = siadj(i-1, j, k, 1, sps2) + siadj(i, j, k, 1, sps2)
             CALL PUSHREAL8(sy)
-            sy = siadj(i-1, j, k, 2) + siadj(i, j, k, 2)
+            sy = siadj(i-1, j, k, 2, sps2) + siadj(i, j, k, 2, sps2)
             CALL PUSHREAL8(sz)
-            sz = siadj(i-1, j, k, 3) + siadj(i, j, k, 3)
+            sz = siadj(i-1, j, k, 3, sps2) + siadj(i, j, k, 3, sps2)
             qs = ux*sx + uy*sy + uz*sz - sface
             IF (sx .GT. zero .OR. sy .GT. zero .OR. sz .GT. zero) THEN
               IF (qs .GE. 0.) THEN
@@ -200,8 +219,8 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
                 abs1 = -qs
                 CALL PUSHINTEGER4(0)
               END IF
-              radiadj(i, j, k) = half*(abs1+SQRT(cc2*(sx**2+sy**2+sz**2)&
-&                ))
+              radiadj(i, j, k, sps2) = half*(abs1+SQRT(cc2*(sx**2+sy**2+&
+&                sz**2)))
               CALL PUSHINTEGER4(0)
             ELSE
               IF (qs .GE. 0.) THEN
@@ -211,23 +230,24 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
                 abs2 = -qs
                 CALL PUSHINTEGER4(0)
               END IF
-              radiadj(i, j, k) = half*abs2
+              radiadj(i, j, k, sps2) = half*abs2
               CALL PUSHINTEGER4(1)
             END IF
 ! The grid velocity in j-direction.
             IF (addgridvelocities) THEN
-              sface = sfacejadj(i, j-1, k) + sfacejadj(i, j, k)
+              sface = sfacejadj(i, j-1, k, sps2) + sfacejadj(i, j, k, &
+&                sps2)
               CALL PUSHINTEGER4(1)
             ELSE
               CALL PUSHINTEGER4(0)
             END IF
             CALL PUSHREAL8(sx)
 ! Spectral radius in j-direction.
-            sx = sjadj(i, j-1, k, 1) + sjadj(i, j, k, 1)
+            sx = sjadj(i, j-1, k, 1, sps2) + sjadj(i, j, k, 1, sps2)
             CALL PUSHREAL8(sy)
-            sy = sjadj(i, j-1, k, 2) + sjadj(i, j, k, 2)
+            sy = sjadj(i, j-1, k, 2, sps2) + sjadj(i, j, k, 2, sps2)
             CALL PUSHREAL8(sz)
-            sz = sjadj(i, j-1, k, 3) + sjadj(i, j, k, 3)
+            sz = sjadj(i, j-1, k, 3, sps2) + sjadj(i, j, k, 3, sps2)
             qs = ux*sx + uy*sy + uz*sz - sface
             IF (sx .GT. zero .OR. sy .GT. zero .OR. sz .GT. zero) THEN
               IF (qs .GE. 0.) THEN
@@ -237,8 +257,8 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
                 abs3 = -qs
                 CALL PUSHINTEGER4(0)
               END IF
-              radjadj(i, j, k) = half*(abs3+SQRT(cc2*(sx**2+sy**2+sz**2)&
-&                ))
+              radjadj(i, j, k, sps2) = half*(abs3+SQRT(cc2*(sx**2+sy**2+&
+&                sz**2)))
               CALL PUSHINTEGER4(0)
             ELSE
               IF (qs .GE. 0.) THEN
@@ -248,23 +268,24 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
                 abs4 = -qs
                 CALL PUSHINTEGER4(0)
               END IF
-              radjadj(i, j, k) = half*abs4
+              radjadj(i, j, k, sps2) = half*abs4
               CALL PUSHINTEGER4(1)
             END IF
 ! The grid velocity in k-direction.
             IF (addgridvelocities) THEN
-              sface = sfacekadj(i, j, k-1) + sfacekadj(i, j, k)
+              sface = sfacekadj(i, j, k-1, sps2) + sfacekadj(i, j, k, &
+&                sps2)
               CALL PUSHINTEGER4(1)
             ELSE
               CALL PUSHINTEGER4(0)
             END IF
             CALL PUSHREAL8(sx)
 ! Spectral radius in k-direction.
-            sx = skadj(i, j, k-1, 1) + skadj(i, j, k, 1)
+            sx = skadj(i, j, k-1, 1, sps2) + skadj(i, j, k, 1, sps2)
             CALL PUSHREAL8(sy)
-            sy = skadj(i, j, k-1, 2) + skadj(i, j, k, 2)
+            sy = skadj(i, j, k-1, 2, sps2) + skadj(i, j, k, 2, sps2)
             CALL PUSHREAL8(sz)
-            sz = skadj(i, j, k-1, 3) + skadj(i, j, k, 3)
+            sz = skadj(i, j, k-1, 3, sps2) + skadj(i, j, k, 3, sps2)
             qs = ux*sx + uy*sy + uz*sz - sface
             IF (sx .GT. zero .OR. sy .GT. zero .OR. sz .GT. zero) THEN
               IF (qs .GE. 0.) THEN
@@ -274,8 +295,8 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
                 abs5 = -qs
                 CALL PUSHINTEGER4(0)
               END IF
-              radkadj(i, j, k) = half*(abs5+SQRT(cc2*(sx**2+sy**2+sz**2)&
-&                ))
+              radkadj(i, j, k, sps2) = half*(abs5+SQRT(cc2*(sx**2+sy**2+&
+&                sz**2)))
               CALL PUSHINTEGER4(1)
             ELSE
               IF (qs .GE. 0.) THEN
@@ -285,7 +306,7 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
                 abs6 = -qs
                 CALL PUSHINTEGER4(0)
               END IF
-              radkadj(i, j, k) = half*abs6
+              radkadj(i, j, k, sps2) = half*abs6
               CALL PUSHINTEGER4(2)
             END IF
           END DO
@@ -312,31 +333,31 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
       DO k=-1,1
         DO j=-1,1
           DO i=-1,1
-            IF (radiadj(i, j, k) .LT. eps) THEN
+            IF (radiadj(i, j, k, sps2) .LT. eps) THEN
               CALL PUSHREAL8(ri)
               ri = eps
               CALL PUSHINTEGER4(1)
             ELSE
               CALL PUSHREAL8(ri)
-              ri = radiadj(i, j, k)
+              ri = radiadj(i, j, k, sps2)
               CALL PUSHINTEGER4(0)
             END IF
-            IF (radjadj(i, j, k) .LT. eps) THEN
+            IF (radjadj(i, j, k, sps2) .LT. eps) THEN
               CALL PUSHREAL8(rj)
               rj = eps
               CALL PUSHINTEGER4(1)
             ELSE
               CALL PUSHREAL8(rj)
-              rj = radjadj(i, j, k)
+              rj = radjadj(i, j, k, sps2)
               CALL PUSHINTEGER4(0)
             END IF
-            IF (radkadj(i, j, k) .LT. eps) THEN
+            IF (radkadj(i, j, k, sps2) .LT. eps) THEN
               CALL PUSHREAL8(rk)
               rk = eps
               CALL PUSHINTEGER4(1)
             ELSE
               CALL PUSHREAL8(rk)
-              rk = radkadj(i, j, k)
+              rk = radkadj(i, j, k, sps2)
               CALL PUSHINTEGER4(0)
             END IF
             CALL PUSHREAL8(rij)
@@ -347,7 +368,7 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
             rjk = (rj/rk)**adis
             CALL PUSHREAL8(rki)
             rki = (rk/ri)**adis
-            CALL PUSHREAL8(radiadj(i, j, k))
+            CALL PUSHREAL8(radiadj(i, j, k, sps2))
 ! Create the scaled versions of the aspect ratios.
 ! Note that the multiplication is done with radi, radJ
 ! and radK, such that the influence of the clipping
@@ -355,11 +376,14 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
 !   radi(i,j,k) = third*radi(i,j,k)*(one + one/rij + rki)
 !   radJ(i,j,k) = third*radJ(i,j,k)*(one + one/rjk + rij)
 !   radK(i,j,k) = third*radK(i,j,k)*(one + one/rki + rjk)
-            radiadj(i, j, k) = radiadj(i, j, k)*(one+one/rij+rki)
-            CALL PUSHREAL8(radjadj(i, j, k))
-            radjadj(i, j, k) = radjadj(i, j, k)*(one+one/rjk+rij)
-            CALL PUSHREAL8(radkadj(i, j, k))
-            radkadj(i, j, k) = radkadj(i, j, k)*(one+one/rki+rjk)
+            radiadj(i, j, k, sps2) = radiadj(i, j, k, sps2)*(one+one/rij&
+&              +rki)
+            CALL PUSHREAL8(radjadj(i, j, k, sps2))
+            radjadj(i, j, k, sps2) = radjadj(i, j, k, sps2)*(one+one/rjk&
+&              +rij)
+            CALL PUSHREAL8(radkadj(i, j, k, sps2))
+            radkadj(i, j, k, sps2) = radkadj(i, j, k, sps2)*(one+one/rki&
+&              +rjk)
           END DO
         END DO
       END DO
@@ -380,18 +404,21 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
       DO k=1,-1,-1
         DO j=1,-1,-1
           DO i=1,-1,-1
-            CALL POPREAL8(radkadj(i, j, k))
-            temp3b0 = radkadj(i, j, k)*radkadjb(i, j, k)
-            CALL POPREAL8(radjadj(i, j, k))
-            CALL POPREAL8(radiadj(i, j, k))
-            temp3b1 = radiadj(i, j, k)*radiadjb(i, j, k)
+            CALL POPREAL8(radkadj(i, j, k, sps2))
+            temp3b0 = radkadj(i, j, k, sps2)*radkadjb(i, j, k, sps2)
+            CALL POPREAL8(radjadj(i, j, k, sps2))
+            CALL POPREAL8(radiadj(i, j, k, sps2))
+            temp3b1 = radiadj(i, j, k, sps2)*radiadjb(i, j, k, sps2)
             rkib = temp3b1 - one*temp3b0/rki**2
-            temp3b2 = radjadj(i, j, k)*radjadjb(i, j, k)
+            temp3b2 = radjadj(i, j, k, sps2)*radjadjb(i, j, k, sps2)
             rjkb = temp3b0 - one*temp3b2/rjk**2
-            radkadjb(i, j, k) = (one+one/rki+rjk)*radkadjb(i, j, k)
+            radkadjb(i, j, k, sps2) = (one+one/rki+rjk)*radkadjb(i, j, k&
+&              , sps2)
             rijb = temp3b2 - one*temp3b1/rij**2
-            radjadjb(i, j, k) = (one+one/rjk+rij)*radjadjb(i, j, k)
-            radiadjb(i, j, k) = (one+one/rij+rki)*radiadjb(i, j, k)
+            radjadjb(i, j, k, sps2) = (one+one/rjk+rij)*radjadjb(i, j, k&
+&              , sps2)
+            radiadjb(i, j, k, sps2) = (one+one/rij+rki)*radiadjb(i, j, k&
+&              , sps2)
             CALL POPREAL8(rki)
             IF (rkib .EQ. 0.0 .OR. rk/ri .LE. 0.0 .AND. (adis .EQ. 0.0 &
 &                .OR. adis .NE. INT(adis))) THEN
@@ -419,21 +446,21 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
             CALL POPINTEGER4(branch)
             IF (branch .LT. 1) THEN
               CALL POPREAL8(rk)
-              radkadjb(i, j, k) = radkadjb(i, j, k) + rkb
+              radkadjb(i, j, k, sps2) = radkadjb(i, j, k, sps2) + rkb
             ELSE
               CALL POPREAL8(rk)
             END IF
             CALL POPINTEGER4(branch)
             IF (branch .LT. 1) THEN
               CALL POPREAL8(rj)
-              radjadjb(i, j, k) = radjadjb(i, j, k) + rjb
+              radjadjb(i, j, k, sps2) = radjadjb(i, j, k, sps2) + rjb
             ELSE
               CALL POPREAL8(rj)
             END IF
             CALL POPINTEGER4(branch)
             IF (branch .LT. 1) THEN
               CALL POPREAL8(ri)
-              radiadjb(i, j, k) = radiadjb(i, j, k) + rib
+              radiadjb(i, j, k, sps2) = radiadjb(i, j, k, sps2) + rib
             ELSE
               CALL POPREAL8(ri)
             END IF
@@ -454,14 +481,15 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
               CALL POPINTEGER4(branch)
               IF (branch .LT. 2) THEN
                 temp2 = sx**2 + sy**2 + sz**2
-                temp3b = half*radkadjb(i, j, k)/(2.0*SQRT(cc2*temp2))
+                temp3b = half*radkadjb(i, j, k, sps2)/(2.0*SQRT(cc2*&
+&                  temp2))
                 temp2b0 = cc2*temp3b
-                abs5b = half*radkadjb(i, j, k)
+                abs5b = half*radkadjb(i, j, k, sps2)
                 cc2b = temp2*temp3b
                 sxb = 2*sx*temp2b0
                 syb = 2*sy*temp2b0
                 szb = 2*sz*temp2b0
-                radkadjb(i, j, k) = 0.0
+                radkadjb(i, j, k, sps2) = 0.0
                 CALL POPINTEGER4(branch)
                 IF (branch .LT. 1) THEN
                   qsb = -abs5b
@@ -469,8 +497,8 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
                   qsb = abs5b
                 END IF
               ELSE
-                abs6b = half*radkadjb(i, j, k)
-                radkadjb(i, j, k) = 0.0
+                abs6b = half*radkadjb(i, j, k, sps2)
+                radkadjb(i, j, k, sps2) = 0.0
                 CALL POPINTEGER4(branch)
                 IF (branch .LT. 1) THEN
                   qsb = -abs6b
@@ -490,31 +518,37 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
               szb = szb + uz*qsb
               sfaceb = sfaceb - qsb
               CALL POPREAL8(sz)
-              skadjb(i, j, k-1, 3) = skadjb(i, j, k-1, 3) + szb
-              skadjb(i, j, k, 3) = skadjb(i, j, k, 3) + szb
+              skadjb(i, j, k-1, 3, sps2) = skadjb(i, j, k-1, 3, sps2) + &
+&                szb
+              skadjb(i, j, k, 3, sps2) = skadjb(i, j, k, 3, sps2) + szb
               CALL POPREAL8(sy)
-              skadjb(i, j, k-1, 2) = skadjb(i, j, k-1, 2) + syb
-              skadjb(i, j, k, 2) = skadjb(i, j, k, 2) + syb
+              skadjb(i, j, k-1, 2, sps2) = skadjb(i, j, k-1, 2, sps2) + &
+&                syb
+              skadjb(i, j, k, 2, sps2) = skadjb(i, j, k, 2, sps2) + syb
               CALL POPREAL8(sx)
-              skadjb(i, j, k-1, 1) = skadjb(i, j, k-1, 1) + sxb
-              skadjb(i, j, k, 1) = skadjb(i, j, k, 1) + sxb
+              skadjb(i, j, k-1, 1, sps2) = skadjb(i, j, k-1, 1, sps2) + &
+&                sxb
+              skadjb(i, j, k, 1, sps2) = skadjb(i, j, k, 1, sps2) + sxb
               CALL POPINTEGER4(branch)
               IF (.NOT.branch .LT. 1) THEN
-                sfacekadjb(i, j, k-1) = sfacekadjb(i, j, k-1) + sfaceb
-                sfacekadjb(i, j, k) = sfacekadjb(i, j, k) + sfaceb
+                sfacekadjb(i, j, k-1, sps2) = sfacekadjb(i, j, k-1, sps2&
+&                  ) + sfaceb
+                sfacekadjb(i, j, k, sps2) = sfacekadjb(i, j, k, sps2) + &
+&                  sfaceb
                 sfaceb = 0.0
               END IF
               CALL POPINTEGER4(branch)
               IF (branch .LT. 1) THEN
                 temp1 = sx**2 + sy**2 + sz**2
-                temp2b = half*radjadjb(i, j, k)/(2.0*SQRT(cc2*temp1))
+                temp2b = half*radjadjb(i, j, k, sps2)/(2.0*SQRT(cc2*&
+&                  temp1))
                 temp1b0 = cc2*temp2b
-                abs3b = half*radjadjb(i, j, k)
+                abs3b = half*radjadjb(i, j, k, sps2)
                 cc2b = cc2b + temp1*temp2b
                 sxb = 2*sx*temp1b0
                 syb = 2*sy*temp1b0
                 szb = 2*sz*temp1b0
-                radjadjb(i, j, k) = 0.0
+                radjadjb(i, j, k, sps2) = 0.0
                 CALL POPINTEGER4(branch)
                 IF (branch .LT. 1) THEN
                   qsb = -abs3b
@@ -522,8 +556,8 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
                   qsb = abs3b
                 END IF
               ELSE
-                abs4b = half*radjadjb(i, j, k)
-                radjadjb(i, j, k) = 0.0
+                abs4b = half*radjadjb(i, j, k, sps2)
+                radjadjb(i, j, k, sps2) = 0.0
                 CALL POPINTEGER4(branch)
                 IF (branch .LT. 1) THEN
                   qsb = -abs4b
@@ -542,31 +576,37 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
               szb = szb + uz*qsb
               sfaceb = sfaceb - qsb
               CALL POPREAL8(sz)
-              sjadjb(i, j-1, k, 3) = sjadjb(i, j-1, k, 3) + szb
-              sjadjb(i, j, k, 3) = sjadjb(i, j, k, 3) + szb
+              sjadjb(i, j-1, k, 3, sps2) = sjadjb(i, j-1, k, 3, sps2) + &
+&                szb
+              sjadjb(i, j, k, 3, sps2) = sjadjb(i, j, k, 3, sps2) + szb
               CALL POPREAL8(sy)
-              sjadjb(i, j-1, k, 2) = sjadjb(i, j-1, k, 2) + syb
-              sjadjb(i, j, k, 2) = sjadjb(i, j, k, 2) + syb
+              sjadjb(i, j-1, k, 2, sps2) = sjadjb(i, j-1, k, 2, sps2) + &
+&                syb
+              sjadjb(i, j, k, 2, sps2) = sjadjb(i, j, k, 2, sps2) + syb
               CALL POPREAL8(sx)
-              sjadjb(i, j-1, k, 1) = sjadjb(i, j-1, k, 1) + sxb
-              sjadjb(i, j, k, 1) = sjadjb(i, j, k, 1) + sxb
+              sjadjb(i, j-1, k, 1, sps2) = sjadjb(i, j-1, k, 1, sps2) + &
+&                sxb
+              sjadjb(i, j, k, 1, sps2) = sjadjb(i, j, k, 1, sps2) + sxb
               CALL POPINTEGER4(branch)
               IF (.NOT.branch .LT. 1) THEN
-                sfacejadjb(i, j-1, k) = sfacejadjb(i, j-1, k) + sfaceb
-                sfacejadjb(i, j, k) = sfacejadjb(i, j, k) + sfaceb
+                sfacejadjb(i, j-1, k, sps2) = sfacejadjb(i, j-1, k, sps2&
+&                  ) + sfaceb
+                sfacejadjb(i, j, k, sps2) = sfacejadjb(i, j, k, sps2) + &
+&                  sfaceb
                 sfaceb = 0.0
               END IF
               CALL POPINTEGER4(branch)
               IF (branch .LT. 1) THEN
                 temp0 = sx**2 + sy**2 + sz**2
-                temp1b = half*radiadjb(i, j, k)/(2.0*SQRT(cc2*temp0))
+                temp1b = half*radiadjb(i, j, k, sps2)/(2.0*SQRT(cc2*&
+&                  temp0))
                 temp0b = cc2*temp1b
-                abs1b = half*radiadjb(i, j, k)
+                abs1b = half*radiadjb(i, j, k, sps2)
                 cc2b = cc2b + temp0*temp1b
                 sxb = 2*sx*temp0b
                 syb = 2*sy*temp0b
                 szb = 2*sz*temp0b
-                radiadjb(i, j, k) = 0.0
+                radiadjb(i, j, k, sps2) = 0.0
                 CALL POPINTEGER4(branch)
                 IF (branch .LT. 1) THEN
                   qsb = -abs1b
@@ -574,8 +614,8 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
                   qsb = abs1b
                 END IF
               ELSE
-                abs2b = half*radiadjb(i, j, k)
-                radiadjb(i, j, k) = 0.0
+                abs2b = half*radiadjb(i, j, k, sps2)
+                radiadjb(i, j, k, sps2) = 0.0
                 CALL POPINTEGER4(branch)
                 IF (branch .LT. 1) THEN
                   qsb = -abs2b
@@ -594,18 +634,23 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
               szb = szb + uz*qsb
               sfaceb = sfaceb - qsb
               CALL POPREAL8(sz)
-              siadjb(i-1, j, k, 3) = siadjb(i-1, j, k, 3) + szb
-              siadjb(i, j, k, 3) = siadjb(i, j, k, 3) + szb
+              siadjb(i-1, j, k, 3, sps2) = siadjb(i-1, j, k, 3, sps2) + &
+&                szb
+              siadjb(i, j, k, 3, sps2) = siadjb(i, j, k, 3, sps2) + szb
               CALL POPREAL8(sy)
-              siadjb(i-1, j, k, 2) = siadjb(i-1, j, k, 2) + syb
-              siadjb(i, j, k, 2) = siadjb(i, j, k, 2) + syb
+              siadjb(i-1, j, k, 2, sps2) = siadjb(i-1, j, k, 2, sps2) + &
+&                syb
+              siadjb(i, j, k, 2, sps2) = siadjb(i, j, k, 2, sps2) + syb
               CALL POPREAL8(sx)
-              siadjb(i-1, j, k, 1) = siadjb(i-1, j, k, 1) + sxb
-              siadjb(i, j, k, 1) = siadjb(i, j, k, 1) + sxb
+              siadjb(i-1, j, k, 1, sps2) = siadjb(i-1, j, k, 1, sps2) + &
+&                sxb
+              siadjb(i, j, k, 1, sps2) = siadjb(i, j, k, 1, sps2) + sxb
               CALL POPINTEGER4(branch)
               IF (.NOT.branch .LT. 1) THEN
-                sfaceiadjb(i-1, j, k) = sfaceiadjb(i-1, j, k) + sfaceb
-                sfaceiadjb(i, j, k) = sfaceiadjb(i, j, k) + sfaceb
+                sfaceiadjb(i-1, j, k, sps2) = sfaceiadjb(i-1, j, k, sps2&
+&                  ) + sfaceb
+                sfaceiadjb(i, j, k, sps2) = sfaceiadjb(i, j, k, sps2) + &
+&                  sfaceb
                 sfaceb = 0.0
               END IF
               CALL POPINTEGER4(branch)
@@ -614,17 +659,20 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
                 cc2b = 0.0
               END IF
               CALL POPREAL8(cc2)
-              temp = wadj(i, j, k, irho)
+              temp = wadj(i, j, k, irho, sps2)
               tempb = gamma(ii, jj, kk)*cc2b/temp
-              padjb(i, j, k) = padjb(i, j, k) + tempb
-              wadjb(i, j, k, irho) = wadjb(i, j, k, irho) - padj(i, j, k&
-&                )*tempb/temp
+              padjb(i, j, k, sps2) = padjb(i, j, k, sps2) + tempb
+              wadjb(i, j, k, irho, sps2) = wadjb(i, j, k, irho, sps2) - &
+&                padj(i, j, k, sps2)*tempb/temp
               CALL POPREAL8(uz)
-              wadjb(i, j, k, ivz) = wadjb(i, j, k, ivz) + uzb
+              wadjb(i, j, k, ivz, sps2) = wadjb(i, j, k, ivz, sps2) + &
+&                uzb
               CALL POPREAL8(uy)
-              wadjb(i, j, k, ivy) = wadjb(i, j, k, ivy) + uyb
+              wadjb(i, j, k, ivy, sps2) = wadjb(i, j, k, ivy, sps2) + &
+&                uyb
               CALL POPREAL8(ux)
-              wadjb(i, j, k, ivx) = wadjb(i, j, k, ivx) + uxb
+              wadjb(i, j, k, ivx, sps2) = wadjb(i, j, k, ivx, sps2) + &
+&                uxb
               CALL POPINTEGER4(kk)
               CALL POPINTEGER4(jj)
               CALL POPINTEGER4(ii)
@@ -637,7 +685,8 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
     ELSE
       clim2b = 0.0
     END IF
-    pinfcorradjb = gammainf*0.000001_realType*clim2b/rhoinfadj
+    pinfcorradjb = pinfcorradjb + gammainf*0.000001_realType*clim2b/&
+&      rhoinfadj
   END IF
   CALL POPINTEGER4(branch)
 !  adisb = 0.0

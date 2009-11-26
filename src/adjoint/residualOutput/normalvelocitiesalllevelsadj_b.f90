@@ -2,8 +2,8 @@
 !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
 !  
 !  Differentiation of normalvelocitiesalllevelsadj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: sfacekadj skadj
-!                sfacejadj sjadj sfaceiadj siadj
+!   gradient, with respect to input variables: rfaceadj sfacekadj
+!                skadj sfacejadj sjadj sfaceiadj siadj
 !   of linear combination of output variables: rfaceadj sfacekadj
 !                skadj sfacejadj sjadj sfaceiadj siadj
 !
@@ -18,9 +18,11 @@
 !
 SUBROUTINE NORMALVELOCITIESALLLEVELSADJ_B(sps, icell, jcell, kcell, &
 &  sfaceiadj, sfaceiadjb, sfacejadj, sfacejadjb, sfacekadj, sfacekadjb, &
-&  siadj, siadjb, sjadj, sjadjb, skadj, skadjb, rfaceadj, rfaceadjb)
+&  siadj, siadjb, sjadj, sjadjb, skadj, skadjb, rfaceadj, rfaceadjb, nn&
+&  , level, sps2)
   USE bctypes
   USE blockpointers
+  USE inputtimespectral
   USE iteration
   IMPLICIT NONE
 !         enddo domains
@@ -28,32 +30,40 @@ SUBROUTINE NORMALVELOCITIESALLLEVELSADJ_B(sps, icell, jcell, kcell, &
   INTEGER(KIND=INTTYPE), INTENT(IN) :: icell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: jcell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: kcell
-  REAL(KIND=REALTYPE) :: rfaceadj(nbocos, -2:2, -2:2), rfaceadjb(nbocos&
-&  , -2:2, -2:2)
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2), INTENT(IN) :: &
-&  sfaceiadj
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2), INTENT(IN) :: &
-&  sfacejadj
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2), INTENT(IN) :: &
-&  sfacekadj
-  REAL(KIND=REALTYPE) :: sfaceiadjb(-2:2, -2:2, -2:2), sfacejadjb(-2:2, &
-&  -2:2, -2:2), sfacekadjb(-2:2, -2:2, -2:2)
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  siadj
-  REAL(KIND=REALTYPE) :: siadjb(-3:2, -3:2, -3:2, 3), sjadjb(-3:2, -3:2&
-&  , -3:2, 3), skadjb(-3:2, -3:2, -3:2, 3)
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  sjadj
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  skadj
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: level
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: nn
+  REAL(KIND=REALTYPE) :: rfaceadj(nbocos, -2:2, -2:2, &
+&  ntimeintervalsspectral), rfaceadjb(nbocos, -2:2, -2:2, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), INTENT(IN) :: sfaceiadj
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), INTENT(IN) :: sfacejadj
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), INTENT(IN) :: sfacekadj
+  REAL(KIND=REALTYPE) :: sfaceiadjb(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), sfacejadjb(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), sfacekadjb(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: siadj
+  REAL(KIND=REALTYPE) :: siadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), sjadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), skadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: sjadj
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: skadj
   INTEGER(KIND=INTTYPE), INTENT(IN) :: sps
+  INTEGER(KIND=INTTYPE), INTENT(IN) :: sps2
   INTEGER :: ad_from, ad_from0, ad_to, ad_to0, branch
   INTEGER(KIND=INTTYPE) :: ibbeg, ibend, jbbeg, jbend, kbbeg, kbend
   INTEGER(KIND=INTTYPE) :: ien, ii, ist, jen, jj, jst
   INTEGER(KIND=INTTYPE) :: irbeg, irend, jrbeg, jrend, krbeg, krend
   INTEGER(KIND=INTTYPE) :: isbeg, isend, jsbeg, jsend, ksbeg, ksend
-  INTEGER(KIND=INTTYPE) :: level, mm, nlevels, nn
   INTEGER(KIND=INTTYPE) :: i, j, l, m
+  INTEGER(KIND=INTTYPE) :: mm, nlevels
   LOGICAL :: computebc, secondhalo
   REAL(KIND=REALTYPE) :: sfaceadj(-2:2, -2:2), sfaceadjb(-2:2, -2:2)
   REAL(KIND=REALTYPE) :: ss(-3:2, -3:2, 3), ssb(-3:2, -3:2, 3)
@@ -69,6 +79,7 @@ SUBROUTINE NORMALVELOCITIESALLLEVELSADJ_B(sps, icell, jcell, kcell, &
 !      *                                                                *
 !      ******************************************************************
 !
+!nIntervalTimespectral
 !
 !      Subroutine arguments.
 !
@@ -216,22 +227,24 @@ bocoloop:DO mm=1,nbocos
               mult = -one
               CALL PUSHREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                            jen-jst+1)*3)
-              ss(ist:ien, jst:jen, :) = siadj(-1, ist:ien, jst:jen, :)
+              ss(ist:ien, jst:jen, :) = siadj(-1, ist:ien, jst:jen, :, &
+&                sps2)
               CALL PUSHREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1&
 &                            )*(jen-jst+1))
               sfaceadj(ist:ien, jst:jen) = sfaceiadj(-1, ist:ien, jst:&
-&                jen)
+&                jen, sps2)
               CALL PUSHINTEGER4(1)
             ELSE
               CALL PUSHREAL8(mult)
               mult = -one
               CALL PUSHREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                            jen-jst+1)*3)
-              ss(ist:ien, jst:jen, :) = siadj(-2, ist:ien, jst:jen, :)
+              ss(ist:ien, jst:jen, :) = siadj(-2, ist:ien, jst:jen, :, &
+&                sps2)
               CALL PUSHREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1&
 &                            )*(jen-jst+1))
               sfaceadj(ist:ien, jst:jen) = sfaceiadj(-2, ist:ien, jst:&
-&                jen)
+&                jen, sps2)
               CALL PUSHINTEGER4(2)
             END IF
           CASE (imax) 
@@ -271,22 +284,24 @@ bocoloop:DO mm=1,nbocos
               mult = one
               CALL PUSHREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                            jen-jst+1)*3)
-              ss(ist:ien, jst:jen, :) = siadj(0, ist:ien, jst:jen, :)
+              ss(ist:ien, jst:jen, :) = siadj(0, ist:ien, jst:jen, :, &
+&                sps2)
               CALL PUSHREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1&
 &                            )*(jen-jst+1))
               sfaceadj(ist:ien, jst:jen) = sfaceiadj(0, ist:ien, jst:jen&
-&                )
+&                , sps2)
               CALL PUSHINTEGER4(3)
             ELSE
               CALL PUSHREAL8(mult)
               mult = one
               CALL PUSHREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                            jen-jst+1)*3)
-              ss(ist:ien, jst:jen, :) = siadj(1, ist:ien, jst:jen, :)
+              ss(ist:ien, jst:jen, :) = siadj(1, ist:ien, jst:jen, :, &
+&                sps2)
               CALL PUSHREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1&
 &                            )*(jen-jst+1))
               sfaceadj(ist:ien, jst:jen) = sfaceiadj(1, ist:ien, jst:jen&
-&                )
+&                , sps2)
               CALL PUSHINTEGER4(4)
             END IF
           CASE (jmin) 
@@ -326,22 +341,24 @@ bocoloop:DO mm=1,nbocos
               mult = -one
               CALL PUSHREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                            jen-jst+1)*3)
-              ss(ist:ien, jst:jen, :) = sjadj(ist:ien, -1, jst:jen, :)
+              ss(ist:ien, jst:jen, :) = sjadj(ist:ien, -1, jst:jen, :, &
+&                sps2)
               CALL PUSHREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1&
 &                            )*(jen-jst+1))
               sfaceadj(ist:ien, jst:jen) = sfacejadj(ist:ien, -1, jst:&
-&                jen)
+&                jen, sps2)
               CALL PUSHINTEGER4(5)
             ELSE
               CALL PUSHREAL8(mult)
               mult = -one
               CALL PUSHREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                            jen-jst+1)*3)
-              ss(ist:ien, jst:jen, :) = sjadj(ist:ien, -2, jst:jen, :)
+              ss(ist:ien, jst:jen, :) = sjadj(ist:ien, -2, jst:jen, :, &
+&                sps2)
               CALL PUSHREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1&
 &                            )*(jen-jst+1))
               sfaceadj(ist:ien, jst:jen) = sfacejadj(ist:ien, -2, jst:&
-&                jen)
+&                jen, sps2)
               CALL PUSHINTEGER4(6)
             END IF
           CASE (jmax) 
@@ -381,22 +398,24 @@ bocoloop:DO mm=1,nbocos
               mult = one
               CALL PUSHREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                            jen-jst+1)*3)
-              ss(ist:ien, jst:jen, :) = sjadj(ist:ien, 0, jst:jen, :)
+              ss(ist:ien, jst:jen, :) = sjadj(ist:ien, 0, jst:jen, :, &
+&                sps2)
               CALL PUSHREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1&
 &                            )*(jen-jst+1))
               sfaceadj(ist:ien, jst:jen) = sfacejadj(ist:ien, 0, jst:jen&
-&                )
+&                , sps2)
               CALL PUSHINTEGER4(7)
             ELSE
               CALL PUSHREAL8(mult)
               mult = one
               CALL PUSHREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                            jen-jst+1)*3)
-              ss(ist:ien, jst:jen, :) = sjadj(ist:ien, 1, jst:jen, :)
+              ss(ist:ien, jst:jen, :) = sjadj(ist:ien, 1, jst:jen, :, &
+&                sps2)
               CALL PUSHREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1&
 &                            )*(jen-jst+1))
               sfaceadj(ist:ien, jst:jen) = sfacejadj(ist:ien, 1, jst:jen&
-&                )
+&                , sps2)
               CALL PUSHINTEGER4(8)
             END IF
           CASE (kmin) 
@@ -436,22 +455,24 @@ bocoloop:DO mm=1,nbocos
               mult = -one
               CALL PUSHREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                            jen-jst+1)*3)
-              ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, -1, :)
+              ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, -1, :, &
+&                sps2)
               CALL PUSHREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1&
 &                            )*(jen-jst+1))
               sfaceadj(ist:ien, jst:jen) = sfacekadj(ist:ien, jst:jen, -&
-&                1)
+&                1, sps2)
               CALL PUSHINTEGER4(9)
             ELSE
               CALL PUSHREAL8(mult)
               mult = -one
               CALL PUSHREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                            jen-jst+1)*3)
-              ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, -2, :)
+              ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, -2, :, &
+&                sps2)
               CALL PUSHREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1&
 &                            )*(jen-jst+1))
               sfaceadj(ist:ien, jst:jen) = sfacekadj(ist:ien, jst:jen, -&
-&                2)
+&                2, sps2)
               CALL PUSHINTEGER4(10)
             END IF
           CASE (kmax) 
@@ -491,22 +512,24 @@ bocoloop:DO mm=1,nbocos
               mult = one
               CALL PUSHREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                            jen-jst+1)*3)
-              ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, 0, :)
+              ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, 0, :, &
+&                sps2)
               CALL PUSHREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1&
 &                            )*(jen-jst+1))
               sfaceadj(ist:ien, jst:jen) = sfacekadj(ist:ien, jst:jen, 0&
-&                )
+&                , sps2)
               CALL PUSHINTEGER4(11)
             ELSE
               CALL PUSHREAL8(mult)
               mult = one
               CALL PUSHREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                            jen-jst+1)*3)
-              ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, 1, :)
+              ss(ist:ien, jst:jen, :) = skadj(ist:ien, jst:jen, 1, :, &
+&                sps2)
               CALL PUSHREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1&
 &                            )*(jen-jst+1))
               sfaceadj(ist:ien, jst:jen) = sfacekadj(ist:ien, jst:jen, 1&
-&                )
+&                , sps2)
               CALL PUSHINTEGER4(12)
             END IF
           CASE DEFAULT
@@ -521,8 +544,8 @@ bocoloop:DO mm=1,nbocos
 !  do i=icBeg, icEnd
 ! Compute the inverse of the length of the normal
 ! vector and possibly correct for inward pointing.
-              IF (ss(ii, jj, 1) .GT. zero .OR. ss(ii, jj, 2) .GT. zero &
-&                  .OR. ss(ii, jj, 3) .GT. zero) THEN
+              IF (ss(ii, jj, 1)**2 .GT. zero .OR. ss(ii, jj, 2)**2 .GT. &
+&                  zero .OR. ss(ii, jj, 3)**2 .GT. zero) THEN
                 CALL PUSHREAL8(weight)
                 weight = SQRT(ss(ii, jj, 1)**2 + ss(ii, jj, 2)**2 + ss(&
 &                  ii, jj, 3)**2)
@@ -570,10 +593,10 @@ bocoloop:DO mm=1,nbocos
           DO ii=ad_to0,ad_from0,-1
             CALL POPINTEGER4(branch)
             IF (branch .LT. 2) THEN
-              weightb = sfaceadj(ii, jj)*rfaceadjb(mm, ii, jj)
+              weightb = sfaceadj(ii, jj)*rfaceadjb(mm, ii, jj, sps2)
               sfaceadjb(ii, jj) = sfaceadjb(ii, jj) + weight*rfaceadjb(&
-&                mm, ii, jj)
-              rfaceadjb(mm, ii, jj) = 0.0
+&                mm, ii, jj, sps2)
+              rfaceadjb(mm, ii, jj, sps2) = 0.0
               CALL POPREAL8(weight)
               weightb = -(mult*weightb/weight**2)
               CALL POPREAL8(weight)
@@ -583,7 +606,7 @@ bocoloop:DO mm=1,nbocos
               ssb(ii, jj, 2) = ssb(ii, jj, 2) + 2*ss(ii, jj, 2)*tempb
               ssb(ii, jj, 3) = ssb(ii, jj, 3) + 2*ss(ii, jj, 3)*tempb
             ELSE
-              rfaceadjb(mm, ii, jj) = 0.0
+              rfaceadjb(mm, ii, jj, sps2) = 0.0
             END IF
           END DO
         END DO
@@ -596,38 +619,38 @@ bocoloop:DO mm=1,nbocos
               ELSE
                 CALL POPREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+&
 &                             1)*(jen-jst+1))
-                sfaceiadjb(-1, ist:ien, jst:jen) = sfaceiadjb(-1, ist:&
-&                  ien, jst:jen) + sfaceadjb(ist:ien, jst:jen)
+                sfaceiadjb(-1, ist:ien, jst:jen, sps2) = sfaceiadjb(-1, &
+&                  ist:ien, jst:jen, sps2) + sfaceadjb(ist:ien, jst:jen)
                 sfaceadjb(ist:ien, jst:jen) = 0.0
                 CALL POPREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*&
 &                             (jen-jst+1)*3)
-                siadjb(-1, ist:ien, jst:jen, :) = siadjb(-1, ist:ien, &
-&                  jst:jen, :) + ssb(ist:ien, jst:jen, :)
+                siadjb(-1, ist:ien, jst:jen, :, sps2) = siadjb(-1, ist:&
+&                  ien, jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
                 ssb(ist:ien, jst:jen, :) = 0.0
                 CALL POPREAL8(mult)
               END IF
             ELSE IF (branch .LT. 3) THEN
               CALL POPREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1)&
 &                           *(jen-jst+1))
-              sfaceiadjb(-2, ist:ien, jst:jen) = sfaceiadjb(-2, ist:ien&
-&                , jst:jen) + sfaceadjb(ist:ien, jst:jen)
+              sfaceiadjb(-2, ist:ien, jst:jen, sps2) = sfaceiadjb(-2, &
+&                ist:ien, jst:jen, sps2) + sfaceadjb(ist:ien, jst:jen)
               sfaceadjb(ist:ien, jst:jen) = 0.0
               CALL POPREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                           jen-jst+1)*3)
-              siadjb(-2, ist:ien, jst:jen, :) = siadjb(-2, ist:ien, jst:&
-&                jen, :) + ssb(ist:ien, jst:jen, :)
+              siadjb(-2, ist:ien, jst:jen, :, sps2) = siadjb(-2, ist:ien&
+&                , jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
               ssb(ist:ien, jst:jen, :) = 0.0
               CALL POPREAL8(mult)
             ELSE
               CALL POPREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1)&
 &                           *(jen-jst+1))
-              sfaceiadjb(0, ist:ien, jst:jen) = sfaceiadjb(0, ist:ien, &
-&                jst:jen) + sfaceadjb(ist:ien, jst:jen)
+              sfaceiadjb(0, ist:ien, jst:jen, sps2) = sfaceiadjb(0, ist:&
+&                ien, jst:jen, sps2) + sfaceadjb(ist:ien, jst:jen)
               sfaceadjb(ist:ien, jst:jen) = 0.0
               CALL POPREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                           jen-jst+1)*3)
-              siadjb(0, ist:ien, jst:jen, :) = siadjb(0, ist:ien, jst:&
-&                jen, :) + ssb(ist:ien, jst:jen, :)
+              siadjb(0, ist:ien, jst:jen, :, sps2) = siadjb(0, ist:ien, &
+&                jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
               ssb(ist:ien, jst:jen, :) = 0.0
               CALL POPREAL8(mult)
               GOTO 100
@@ -642,39 +665,39 @@ bocoloop:DO mm=1,nbocos
               IF (branch .LT. 5) THEN
                 CALL POPREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+&
 &                             1)*(jen-jst+1))
-                sfaceiadjb(1, ist:ien, jst:jen) = sfaceiadjb(1, ist:ien&
-&                  , jst:jen) + sfaceadjb(ist:ien, jst:jen)
+                sfaceiadjb(1, ist:ien, jst:jen, sps2) = sfaceiadjb(1, &
+&                  ist:ien, jst:jen, sps2) + sfaceadjb(ist:ien, jst:jen)
                 sfaceadjb(ist:ien, jst:jen) = 0.0
                 CALL POPREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*&
 &                             (jen-jst+1)*3)
-                siadjb(1, ist:ien, jst:jen, :) = siadjb(1, ist:ien, jst:&
-&                  jen, :) + ssb(ist:ien, jst:jen, :)
+                siadjb(1, ist:ien, jst:jen, :, sps2) = siadjb(1, ist:ien&
+&                  , jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
                 ssb(ist:ien, jst:jen, :) = 0.0
                 CALL POPREAL8(mult)
                 GOTO 100
               ELSE
                 CALL POPREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+&
 &                             1)*(jen-jst+1))
-                sfacejadjb(ist:ien, -1, jst:jen) = sfacejadjb(ist:ien, -&
-&                  1, jst:jen) + sfaceadjb(ist:ien, jst:jen)
+                sfacejadjb(ist:ien, -1, jst:jen, sps2) = sfacejadjb(ist:&
+&                  ien, -1, jst:jen, sps2) + sfaceadjb(ist:ien, jst:jen)
                 sfaceadjb(ist:ien, jst:jen) = 0.0
                 CALL POPREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*&
 &                             (jen-jst+1)*3)
-                sjadjb(ist:ien, -1, jst:jen, :) = sjadjb(ist:ien, -1, &
-&                  jst:jen, :) + ssb(ist:ien, jst:jen, :)
+                sjadjb(ist:ien, -1, jst:jen, :, sps2) = sjadjb(ist:ien, &
+&                  -1, jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
                 ssb(ist:ien, jst:jen, :) = 0.0
                 CALL POPREAL8(mult)
               END IF
             ELSE
               CALL POPREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1)&
 &                           *(jen-jst+1))
-              sfacejadjb(ist:ien, -2, jst:jen) = sfacejadjb(ist:ien, -2&
-&                , jst:jen) + sfaceadjb(ist:ien, jst:jen)
+              sfacejadjb(ist:ien, -2, jst:jen, sps2) = sfacejadjb(ist:&
+&                ien, -2, jst:jen, sps2) + sfaceadjb(ist:ien, jst:jen)
               sfaceadjb(ist:ien, jst:jen) = 0.0
               CALL POPREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                           jen-jst+1)*3)
-              sjadjb(ist:ien, -2, jst:jen, :) = sjadjb(ist:ien, -2, jst:&
-&                jen, :) + ssb(ist:ien, jst:jen, :)
+              sjadjb(ist:ien, -2, jst:jen, :, sps2) = sjadjb(ist:ien, -2&
+&                , jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
               ssb(ist:ien, jst:jen, :) = 0.0
               CALL POPREAL8(mult)
             END IF
@@ -696,25 +719,25 @@ bocoloop:DO mm=1,nbocos
               IF (branch .LT. 8) THEN
                 CALL POPREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+&
 &                             1)*(jen-jst+1))
-                sfacejadjb(ist:ien, 0, jst:jen) = sfacejadjb(ist:ien, 0&
-&                  , jst:jen) + sfaceadjb(ist:ien, jst:jen)
+                sfacejadjb(ist:ien, 0, jst:jen, sps2) = sfacejadjb(ist:&
+&                  ien, 0, jst:jen, sps2) + sfaceadjb(ist:ien, jst:jen)
                 sfaceadjb(ist:ien, jst:jen) = 0.0
                 CALL POPREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*&
 &                             (jen-jst+1)*3)
-                sjadjb(ist:ien, 0, jst:jen, :) = sjadjb(ist:ien, 0, jst:&
-&                  jen, :) + ssb(ist:ien, jst:jen, :)
+                sjadjb(ist:ien, 0, jst:jen, :, sps2) = sjadjb(ist:ien, 0&
+&                  , jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
                 ssb(ist:ien, jst:jen, :) = 0.0
                 CALL POPREAL8(mult)
               ELSE
                 CALL POPREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+&
 &                             1)*(jen-jst+1))
-                sfacejadjb(ist:ien, 1, jst:jen) = sfacejadjb(ist:ien, 1&
-&                  , jst:jen) + sfaceadjb(ist:ien, jst:jen)
+                sfacejadjb(ist:ien, 1, jst:jen, sps2) = sfacejadjb(ist:&
+&                  ien, 1, jst:jen, sps2) + sfaceadjb(ist:ien, jst:jen)
                 sfaceadjb(ist:ien, jst:jen) = 0.0
                 CALL POPREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*&
 &                             (jen-jst+1)*3)
-                sjadjb(ist:ien, 1, jst:jen, :) = sjadjb(ist:ien, 1, jst:&
-&                  jen, :) + ssb(ist:ien, jst:jen, :)
+                sjadjb(ist:ien, 1, jst:jen, :, sps2) = sjadjb(ist:ien, 1&
+&                  , jst:jen, :, sps2) + ssb(ist:ien, jst:jen, :)
                 ssb(ist:ien, jst:jen, :) = 0.0
                 CALL POPREAL8(mult)
               END IF
@@ -727,13 +750,13 @@ bocoloop:DO mm=1,nbocos
             ELSE
               CALL POPREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1)&
 &                           *(jen-jst+1))
-              sfacekadjb(ist:ien, jst:jen, -1) = sfacekadjb(ist:ien, jst&
-&                :jen, -1) + sfaceadjb(ist:ien, jst:jen)
+              sfacekadjb(ist:ien, jst:jen, -1, sps2) = sfacekadjb(ist:&
+&                ien, jst:jen, -1, sps2) + sfaceadjb(ist:ien, jst:jen)
               sfaceadjb(ist:ien, jst:jen) = 0.0
               CALL POPREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                           jen-jst+1)*3)
-              skadjb(ist:ien, jst:jen, -1, :) = skadjb(ist:ien, jst:jen&
-&                , -1, :) + ssb(ist:ien, jst:jen, :)
+              skadjb(ist:ien, jst:jen, -1, :, sps2) = skadjb(ist:ien, &
+&                jst:jen, -1, :, sps2) + ssb(ist:ien, jst:jen, :)
               ssb(ist:ien, jst:jen, :) = 0.0
               CALL POPREAL8(mult)
             END IF
@@ -742,39 +765,39 @@ bocoloop:DO mm=1,nbocos
               IF (branch .LT. 11) THEN
                 CALL POPREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+&
 &                             1)*(jen-jst+1))
-                sfacekadjb(ist:ien, jst:jen, -2) = sfacekadjb(ist:ien, &
-&                  jst:jen, -2) + sfaceadjb(ist:ien, jst:jen)
+                sfacekadjb(ist:ien, jst:jen, -2, sps2) = sfacekadjb(ist:&
+&                  ien, jst:jen, -2, sps2) + sfaceadjb(ist:ien, jst:jen)
                 sfaceadjb(ist:ien, jst:jen) = 0.0
                 CALL POPREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*&
 &                             (jen-jst+1)*3)
-                skadjb(ist:ien, jst:jen, -2, :) = skadjb(ist:ien, jst:&
-&                  jen, -2, :) + ssb(ist:ien, jst:jen, :)
+                skadjb(ist:ien, jst:jen, -2, :, sps2) = skadjb(ist:ien, &
+&                  jst:jen, -2, :, sps2) + ssb(ist:ien, jst:jen, :)
                 ssb(ist:ien, jst:jen, :) = 0.0
                 CALL POPREAL8(mult)
                 GOTO 110
               ELSE
                 CALL POPREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+&
 &                             1)*(jen-jst+1))
-                sfacekadjb(ist:ien, jst:jen, 0) = sfacekadjb(ist:ien, &
-&                  jst:jen, 0) + sfaceadjb(ist:ien, jst:jen)
+                sfacekadjb(ist:ien, jst:jen, 0, sps2) = sfacekadjb(ist:&
+&                  ien, jst:jen, 0, sps2) + sfaceadjb(ist:ien, jst:jen)
                 sfaceadjb(ist:ien, jst:jen) = 0.0
                 CALL POPREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*&
 &                             (jen-jst+1)*3)
-                skadjb(ist:ien, jst:jen, 0, :) = skadjb(ist:ien, jst:jen&
-&                  , 0, :) + ssb(ist:ien, jst:jen, :)
+                skadjb(ist:ien, jst:jen, 0, :, sps2) = skadjb(ist:ien, &
+&                  jst:jen, 0, :, sps2) + ssb(ist:ien, jst:jen, :)
                 ssb(ist:ien, jst:jen, :) = 0.0
                 CALL POPREAL8(mult)
               END IF
             ELSE
               CALL POPREAL8ARRAY(sfaceadj(ist:ien, jst:jen), (ien-ist+1)&
 &                           *(jen-jst+1))
-              sfacekadjb(ist:ien, jst:jen, 1) = sfacekadjb(ist:ien, jst:&
-&                jen, 1) + sfaceadjb(ist:ien, jst:jen)
+              sfacekadjb(ist:ien, jst:jen, 1, sps2) = sfacekadjb(ist:ien&
+&                , jst:jen, 1, sps2) + sfaceadjb(ist:ien, jst:jen)
               sfaceadjb(ist:ien, jst:jen) = 0.0
               CALL POPREAL8ARRAY(ss(ist:ien, jst:jen, :), (ien-ist+1)*(&
 &                           jen-jst+1)*3)
-              skadjb(ist:ien, jst:jen, 1, :) = skadjb(ist:ien, jst:jen, &
-&                1, :) + ssb(ist:ien, jst:jen, :)
+              skadjb(ist:ien, jst:jen, 1, :, sps2) = skadjb(ist:ien, jst&
+&                :jen, 1, :, sps2) + ssb(ist:ien, jst:jen, :)
               ssb(ist:ien, jst:jen, :) = 0.0
               CALL POPREAL8(mult)
             END IF
@@ -804,5 +827,22 @@ bocoloop:DO mm=1,nbocos
       CALL POPINTEGER4(branch)
  130  CONTINUE
     END DO
+  ELSE
+! Block is not moving. Loop over the boundary faces and set
+! the normal grid velocity to zero if allocated.
+    DO mm=1,nbocos
+!if( associated(BCData(mm)%rFace) ) &
+!    BCData(mm)%rFace = zero 
+      IF (bctype(mm) .EQ. farfield .OR. bctype(mm) .EQ. eulerwall) THEN
+        CALL PUSHINTEGER4(2)
+      ELSE
+        CALL PUSHINTEGER4(1)
+      END IF
+    END DO
+    DO mm=nbocos,1,-1
+      CALL POPINTEGER4(branch)
+      IF (.NOT.branch .LT. 2) rfaceadjb(mm, :, :, sps2) = 0.0
+    END DO
   END IF
+  rfaceadjb(:, :, :, sps2) = 0.0
 END SUBROUTINE NORMALVELOCITIESALLLEVELSADJ_B

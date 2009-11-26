@@ -22,7 +22,8 @@
 !
       use ADjointPETSc
       use ADjointVars     ! nCellsLocal, nDesignExtra
-      use communication   ! myID, nProc
+      use communication   ! myID, nProc 
+      use inputTimeSpectral !nTimeIntervalsSpectral
       use flowVarRefState ! 
       implicit none
 !
@@ -52,16 +53,16 @@
       ! number  of nodes owned by the processor and the number of
       ! equations.
 
-      nDimW = nw * nCellsLocal
+      nDimW = nw * nCellsLocal*nTimeIntervalsSpectral
 
       ! Define matrix dJdx local size for the spatial derivatives.
 
-      nDimX = 3 * nNodesLocal
+      nDimX = 3 * nNodesLocal*nTimeIntervalsSpectral
 
       ! Define vec phic local size (number of Rows) for the
       ! Coupling derivatives.
 
-      nDimS = 3 * nSurfNodesLocal
+      nDimS = 3 * nSurfNodesLocal*nTimeIntervalsSpectral
 !
 !     ******************************************************************
 !     *                                                                *

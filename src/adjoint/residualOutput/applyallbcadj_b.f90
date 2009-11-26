@@ -4,8 +4,8 @@
 !  Differentiation of applyallbcadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: winfadj padj pinfcorradj
 !                wadj rfaceadj skadj sjadj sadj siadj normadj
-!   of linear combination of output variables: padj pinfcorradj
-!                wadj skadj sjadj siadj
+!   of linear combination of output variables: winfadj padj pinfcorradj
+!                wadj rfaceadj skadj sjadj sadj siadj normadj
 !
 !      ******************************************************************
 !      *                                                                *
@@ -20,11 +20,12 @@
 SUBROUTINE APPLYALLBCADJ_B(winfadj, winfadjb, pinfcorradj, pinfcorradjb&
 &  , wadj, wadjb, padj, padjb, sadj, sadjb, siadj, siadjb, sjadj, sjadjb&
 &  , skadj, skadjb, voladj, normadj, normadjb, rfaceadj, rfaceadjb, &
-&  icell, jcell, kcell, secondhalo)
+&  icell, jcell, kcell, secondhalo, nn, level, sps, sps2)
   USE bctypes
   USE blockpointers
   USE flowvarrefstate
   USE inputdiscretization
+  USE inputtimespectral
   IMPLICIT NONE
 !!$       ! Domain-interface boundary conditions,
 !!$       ! when coupled with other solvers.
@@ -36,41 +37,50 @@ SUBROUTINE APPLYALLBCADJ_B(winfadj, winfadjb, pinfcorradj, pinfcorradjb&
 !!$       call bcSupersonicInflow(secondHalo, correctForK)
 !!$         enddo domains
 !!$       enddo spectralLoop
+!print *,'bcend',nn,secondhalo
   INTEGER(KIND=INTTYPE) :: icell, jcell, kcell
-  REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3), INTENT(IN) :: &
-&  normadj
-  REAL(KIND=REALTYPE) :: normadjb(nbocos, -2:2, -2:2, 3)
-  REAL(KIND=REALTYPE) :: padj(-2:2, -2:2, -2:2), padjb(-2:2, -2:2, -2:2)
+  INTEGER(KIND=INTTYPE) :: level, nn, sps, sps2
+  REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: normadj
+  REAL(KIND=REALTYPE) :: normadjb(nbocos, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE) :: padj(-2:2, -2:2, -2:2, ntimeintervalsspectral)&
+&  , padjb(-2:2, -2:2, -2:2, ntimeintervalsspectral)
   REAL(KIND=REALTYPE), INTENT(IN) :: pinfcorradj
   REAL(KIND=REALTYPE) :: pinfcorradjb
-  REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2), INTENT(IN) :: &
-&  rfaceadj
-  REAL(KIND=REALTYPE) :: rfaceadjb(nbocos, -2:2, -2:2)
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3), INTENT(IN) :: &
-&  sadj
-  REAL(KIND=REALTYPE) :: sadjb(-2:2, -2:2, -2:2, 3)
+  REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, &
+&  ntimeintervalsspectral), INTENT(IN) :: rfaceadj
+  REAL(KIND=REALTYPE) :: rfaceadjb(nbocos, -2:2, -2:2, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: sadj
+  REAL(KIND=REALTYPE) :: sadjb(-2:2, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral)
   LOGICAL, INTENT(IN) :: secondhalo
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  siadj
-  REAL(KIND=REALTYPE) :: siadjb(-3:2, -3:2, -3:2, 3), sjadjb(-3:2, -3:2&
-&  , -3:2, 3), skadjb(-3:2, -3:2, -3:2, 3)
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  sjadj
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  skadj
-  REAL(KIND=REALTYPE), INTENT(IN) :: voladj
-  REAL(KIND=REALTYPE) :: wadj(-2:2, -2:2, -2:2, nw), wadjb(-2:2, -2:2, -&
-&  2:2, nw)
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: siadj
+  REAL(KIND=REALTYPE) :: siadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), sjadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), skadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: sjadj
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: skadj
+  REAL(KIND=REALTYPE), DIMENSION(ntimeintervalsspectral), INTENT(IN) :: &
+&  voladj
+  REAL(KIND=REALTYPE) :: wadj(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral), wadjb(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral)
   REAL(KIND=REALTYPE), DIMENSION(nw), INTENT(IN) :: winfadj
   REAL(KIND=REALTYPE) :: winfadjb(nw)
   INTEGER :: branch
   LOGICAL :: correctfork
   INTEGER(KIND=INTTYPE) :: i, ii, j, jj, k, kk, l
   INTEGER(KIND=INTTYPE) :: iend, istart, jend, jstart, kend, kstart
-  INTEGER(KIND=INTTYPE) :: nn, sps
   EXTERNAL TERMINATE
   CALL PUSHBOOLEAN(secondhalo)
-  CALL PUSHREAL8ARRAY(wadj, 5**3*nw)
+  CALL PUSHREAL8ARRAY(wadj, 5**3*nw*ntimeintervalsspectral)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -83,6 +93,7 @@ SUBROUTINE APPLYALLBCADJ_B(winfadj, winfadjb, pinfcorradj, pinfcorradjb&
 !, only : ie, ib, je, jb, ke, kb, nBocos, &
 !         BCFaceID, BCType, BCData,p,w
 !precond,choimerkle, etc...
+!nIntervalTimespectral
 !!$       use blockPointers
 !!$       use flowVarRefState
 !!$       use inputDiscretization
@@ -132,9 +143,11 @@ SUBROUTINE APPLYALLBCADJ_B(winfadj, winfadjb, pinfcorradj, pinfcorradjb&
 !!$
 !!$           ! Apply all the boundary conditions. The order is important.
 ! The symmetry boundary conditions.
-!print *,'bcSymm'
+!print *,'bcSymm',nn,secondhalo
 !*************************
-  CALL BCSYMMADJ(wadj, padj, normadj, icell, jcell, kcell, secondhalo)
+  CALL BCSYMMADJ(wadj, padj, normadj, icell, jcell, kcell, secondhalo, &
+&           nn, level, sps, sps2)
+!print *,'bcSymm2',nn,secondhalo
 !**************************
 !###       call bcSymmPolar(secondHalo)
 !!$       ! call bcEulerWall(secondHalo, correctForK)
@@ -148,48 +161,42 @@ SUBROUTINE APPLYALLBCADJ_B(winfadj, winfadjb, pinfcorradj, pinfcorradjb&
 !!$       ! differs when preconditioning is used. Make that distinction
 !!$       ! and call the appropriate routine.
 !!$       
-!!$!*******************************
+!*******************************
   SELECT CASE  (precond) 
   CASE (noprecond) 
-    CALL PUSHREAL8ARRAY(padj, 5**3)
-    CALL PUSHREAL8ARRAY(wadj, 5**3*nw)
+    CALL PUSHREAL8ARRAY(padj, 5**3*ntimeintervalsspectral)
+    CALL PUSHREAL8ARRAY(wadj, 5**3*nw*ntimeintervalsspectral)
     CALL PUSHBOOLEAN(secondhalo)
-!print *,'bcFarfield'
+!print *,'bcFarfield',nn,secondhalo
     CALL BCFARFIELDADJ(secondhalo, winfadj, pinfcorradj, wadj, padj, &
 &                 siadj, sjadj, skadj, normadj, rfaceadj, icell, jcell, &
-&                 kcell)
-    CALL PUSHINTEGER4(1)
-  CASE (turkel) 
-    CALL PUSHINTEGER4(2)
-  CASE (choimerkle) 
+&                 kcell, nn, level, sps, sps2)
     CALL PUSHINTEGER4(3)
-  CASE DEFAULT
+  CASE (turkel) 
+    CALL PUSHINTEGER4(1)
+  CASE (choimerkle) 
     CALL PUSHINTEGER4(0)
+  CASE DEFAULT
+    CALL PUSHINTEGER4(2)
   END SELECT
   CALL BCEULERWALLADJ_B(secondhalo, wadj, wadjb, padj, padjb, sadj, &
 &                  sadjb, siadj, siadjb, sjadj, sjadjb, skadj, skadjb, &
 &                  normadj, normadjb, rfaceadj, rfaceadjb, icell, jcell&
-&                  , kcell)
+&                  , kcell, nn, level, sps, sps2)
   CALL POPINTEGER4(branch)
-  IF (branch .LT. 2) THEN
-    IF (branch .LT. 1) THEN
-      winfadjb(1:nw) = 0.0
-    ELSE
+  IF (.NOT.branch .LT. 2) THEN
+    IF (.NOT.branch .LT. 3) THEN
       CALL POPBOOLEAN(secondhalo)
-      CALL POPREAL8ARRAY(wadj, 5**3*nw)
-      CALL POPREAL8ARRAY(padj, 5**3)
+      CALL POPREAL8ARRAY(wadj, 5**3*nw*ntimeintervalsspectral)
+      CALL POPREAL8ARRAY(padj, 5**3*ntimeintervalsspectral)
       CALL BCFARFIELDADJ_B(secondhalo, winfadj, winfadjb, pinfcorradj, &
 &                     pinfcorradjb, wadj, wadjb, padj, padjb, siadj, &
 &                     sjadj, skadj, normadj, normadjb, rfaceadj, icell, &
-&                     jcell, kcell)
+&                     jcell, kcell, nn, level, sps, sps2)
     END IF
-  ELSE IF (branch .LT. 3) THEN
-    winfadjb(1:nw) = 0.0
-  ELSE
-    winfadjb(1:nw) = 0.0
   END IF
-  CALL POPREAL8ARRAY(wadj, 5**3*nw)
+  CALL POPREAL8ARRAY(wadj, 5**3*nw*ntimeintervalsspectral)
   CALL POPBOOLEAN(secondhalo)
   CALL BCSYMMADJ_B(wadj, wadjb, padj, padjb, normadj, normadjb, icell, &
-&             jcell, kcell, secondhalo)
+&             jcell, kcell, secondhalo, nn, level, sps, sps2)
 END SUBROUTINE APPLYALLBCADJ_B

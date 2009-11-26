@@ -2,8 +2,7 @@
 !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
 !  
 !  Differentiation of referencestateadj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: machadj tempfreestream
-!                rgasdim gammaconstant
+!   gradient, with respect to input variables: machadj
 !   of linear combination of output variables: uinfadj
 !
 !      ******************************************************************
@@ -226,8 +225,5 @@ SUBROUTINE REFERENCESTATEADJ_B(machadj, machadjb, machcoefadj, uinfadj, &
     CALL POPINTEGER4(branch)
     CALL POPINTEGER4(branch)
     CALL POPINTEGER4(branch)
-!    gammaconstantb = 0.0
-!    rgasdimb = 0.0
-!    tempfreestreamb = 0.0
   END IF
 END SUBROUTINE REFERENCESTATEADJ_B

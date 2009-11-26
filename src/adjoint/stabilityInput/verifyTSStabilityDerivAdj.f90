@@ -1,22 +1,22 @@
 !
 !     ******************************************************************
 !     *                                                                *
-!     * File:          verifyForcesAdj.f90                             *
-!     * Author:        C.A.(Sandy) Mader, Andre C. Marta               *
-!     *                Seongim Choi                                    *
-!     * Starting date: 12-14-2007                                      *
-!     * Last modified: 12-27-2007                                      *
+!     * File:          verifyTSStabilityDerivAdj.f90                   *
+!     * Author:        C.A.(Sandy) Mader                               *
+!     * Starting date: 11-26-2009                                      *
+!     * Last modified: 11-26-2009                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine verifyForcesAdj(level)
+      subroutine verifyTSStabilityDerivAdj(level)
 !
 !     ******************************************************************
 !     *                                                                *
-!     * Computes the Force coefficients for the current configuration  *
-!     * for the finest grid level over all time instances using the    *
+!     * Computes the Time spectral stability derivatives for the       *
+!     * current configuration for the finest grid level over all time  *
+!     * instances using the                                            *
 !     * auxiliary routines modified for tapenade and compares them to  *
-!     * the force coefficients computed with the original code.        *
+!     * the stability derivatives computed with the original code.     *
 !     *                                                                *
 !     * This is only executed in debug mode.                           *
 !     *                                                                *
@@ -30,9 +30,10 @@
       use iteration           ! currentLevel
       use monitor             ! monLoc, MonGlob, nMonSum
       use inputTimeSpectral   ! nTimeInstancesMax
-      use section
+      use section             !nsections, sections%
       use bcTypes             ! EulerWall, NSWallAdiabatic, NSWallIsothermal
-      use monitor             ! timeunsteady, timeunsteadyrestart
+      use monitor             ! timeunsteady...
+      
       implicit none
 !
 !     Subroutine arguments.
@@ -87,10 +88,18 @@
 
       logical :: contributeToForce, viscousSubface,secondhalo, righthanded
 
-      real(kind=realType), dimension(nSections) :: t
-
       integer :: ierr
 
+      real(kind=realType)::dcldp,dcldpdot,dcmzdp,dcmzdpdot         
+      real(kind=realType)::dcldq,dcldqdot,dcmzdq,dcmzdqdot
+      real(kind=realType)::dcldr,dcldrdot,dcmzdr,dcmzdrdot
+      real(kind=realType)::dcldalpha,dcldalphadot,dcmzdalpha,dcmzdalphadot
+      real(kind=realType)::dcldMach,dcldMachdot,dcmzdMach,dcmzdMachdot
+      real(kind=realType)::cl0,cl0dot,cmz0,cmz0dot
+
+      real(kind=realType)::cl0Adj,cmz0Adj,dcldalphaAdj,dcmzdalphaAdj
+
+      real(kind=realType), dimension(nSections) :: t
 !for debug
 real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !
@@ -101,8 +110,8 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !     ******************************************************************
 !
       if(myID == 0) then
-        write(*,*) "Running verifyForcesAdj..."
-        write(*,10) "CL","CD","Cfx","Cmx"
+        write(*,*) "Running verifyTSStabilityDerivAdj..."
+        !write(*,10) "CL","CD","Cfx","Cmx"
       endif
 
       ! Set the grid level of the current MG cycle, the value of the
@@ -162,78 +171,12 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !
 !     ******************************************************************
 !     *                                                                *
-!     * Update the force coefficients using the usual flow solver      *
-!     * routine.                                                       *
+!     * Compute the stability derivatives using the original routine.  *
 !     *                                                                *
 !     ******************************************************************
 !
-  !    print *,' Calling original routines',level
-      call metric(level) 
-      spectralLoop: do sps=1,nTimeIntervalsSpectral
+      call computeTSDerivatives(cl0,cmz0,dcldalpha,dcmzdalpha)
 
-         ! Initialize the local monitoring variables to zero.
-         
-         monLoc1 = zero
-
-         ! Loop over the blocks.
-
-         domains: do nn=1,nDom
-
-           ! Set the pointers for this block.
-
-           call setPointers(nn, groundLevel, sps)
-
-           ! Compute the forces and moments for this block.
-
-           call forcesAndMoments(cfp, cfv, cmp, cmv, yplusMax)
-
-           
-           Cl(sps) = (cfp(1) + cfv(1))*liftDirection(1) &
-                + (cfp(2) + cfv(2))*liftDirection(2) &
-                + (cfp(3) + cfv(3))*liftDirection(3)
-           
-           Cd(sps) = (cfp(1) + cfv(1))*dragDirection(1) &
-                + (cfp(2) + cfv(2))*dragDirection(2) &
-                + (cfp(3) + cfv(3))*dragDirection(3)
-           
-           Cfx(sps) = cfp(1) + cfv(1)
-           Cfy(sps) = cfp(2) + cfv(2)
-           Cfz(sps) = cfp(3) + cfv(3)
-           
-           Cmx(sps) = cmp(1) + cmv(1)
-           Cmy(sps) = cmp(2) + cmv(2)
-           Cmz(sps) = cmp(3) + cmv(3)
-           
-           nmonsum = 8
-           
-           monLoc1(1) = monLoc1(1)+ Cl(sps)
-           monLoc1(2) = monLoc1(2)+ Cd(sps)
-           monLoc1(3) = monLoc1(3)+ cfx(sps)
-           monLoc1(4) = monLoc1(4)+ cfy(sps)
-           monLoc1(5) = monLoc1(5)+ cfz(sps)
-           monLoc1(6) = monLoc1(6)+ cmx(sps)
-           monLoc1(7) = monLoc1(7)+ cmy(sps)
-           monLoc1(8) = monLoc1(8)+ cmz(sps)
-
-        enddo domains
-           
-      ! Determine the global sum of the summation monitoring
-      ! variables. The sum is made known to all processors.
-!      print *,'reducing'
-      call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
-                         mpi_sum, SUmb_comm_world, ierr)
-
-      ! Transfer the cost function values to output arguments.
-
-      CL(sps)  = monGlob1(1)
-      CD(sps)  = monGlob1(2)
-      Cfx(sps) = monGlob1(3)
-      Cfy(sps) = monGlob1(4)
-      Cfz(sps) = monGlob1(5) 
-      CMx(sps) = monGlob1(6)
-      CMy(sps) = monGlob1(7)
-      CMz(sps) = monGlob1(8)
-   enddo spectralLoop
 !
 !     ******************************************************************
 !     *                                                                *
@@ -413,17 +356,25 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
       end do spectralLoopAdj
 
       call mpi_barrier(SUmb_comm_world, ierr)
+
+
+      !Now compute the stability derivatives
+
+      call computeTSStabilityDerivAdj(cFxAdj,cFyAdj,cFzAdj,cMxAdj,&
+                       cMyAdj,cMzAdj,CLAdj,CDAdj,&
+                       cl0Adj,cmz0Adj,dcldalphaAdj,dcmzdalphaAdj)
+
+
       ! Root processor outputs results.
  !     print *,'printing results'
-      do sps=1,nTimeIntervalsSpectral
-         if(myID == 0) then
-            write(*,*)  "sps ", sps 
-            write(*,20) "Original", CL(sps), CD(sps), Cfx(sps),cfy(sps),cfz(sps),cmx(sps),cmy(sps),cmz(sps)
-            write(*,20) "Adjoint ", CLAdj(sps), CDAdj(sps), CfxAdj(sps), CfyAdj(sps), CfzAdj(sps), CmxAdj(sps), CmyAdj(sps), CmzAdj(sps)
-         endif
-      end do
-       
-      !print *,'finished computing forces'
+      if(myID == 0) then
+         write(*,*) 'Stability Derivative verification results'
+         write(*,*) 'Cl0   cmz0   dcldalpha   dcmzdalpha'
+         write(*,20) "Original", cl0,cmz0,dcldalpha,dcmzdalpha
+         write(*,20) "Adjoint ", cl0Adj,cmz0Adj,dcldalphaAdj,dcmzdalphaAdj
+      endif
+             
+      !print *,'finished computing derivatives'
       ! Flush the output buffer and synchronize the processors.
        
       call f77flush()
@@ -434,5 +385,5 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 10    format(1x,4a14)
 20    format(1x,a,8(1x,e13.6))
 
-      end subroutine verifyForcesAdj
+    end subroutine verifyTSStabilityDerivAdj
      

@@ -83,7 +83,8 @@
        real(kind=realType), dimension(:,:,:,:), pointer :: xxOld
 
        real(kind=realType) ::tNew,tOld,intervalMach
-       real(kind=realType), dimension(3)::liftDir,velDir,dragDir,alpha,beta
+       real(kind=realType), dimension(3)::liftDir,velDir,dragDir
+       real(kind=realType)::alpha,beta
        integer(kind=intType) :: liftIndex
 
        !function definitions
@@ -116,6 +117,9 @@
        ! point; needed for velocity due to the rigid body rotation of
        ! the entire grid. It is assumed that the rigid body motion of
        ! the grid is only specified if there is only 1 section present.
+       
+       !this may need to be modified later...(perhaps put in copy stencil?)
+       rotPointAdj = rotPoint
 
        call derivativeRotMatrixRigidAdj(derivRotationMatrixAdj, rotationPointAdj,rotPointAdj, t(1))
        
@@ -129,7 +133,7 @@
           tNew = timeUnsteady + timeUnsteadyRestart
           tOld = tNew - t(1)
           !print *,'Time',t(1)
-          if(TSpqrMode) then
+          if(TSpMode.or.TSqMode .or.TSrMode) then
              ! Compute the rotation matrix of the rigid body rotation as
              ! well as the rotation point; the latter may vary in time due
              ! to rigid body translation.
@@ -164,7 +168,7 @@
 
           elseif(tsBetaMode)then
              ! get the baseline alpha and determine the liftIndex
-             call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+             call getDirAngle(velDirFreestreamAdj,liftDirection,liftIndex,alpha,beta)
              
              !Determine the alpha for this time instance
              alpha = TSBeta(degreePolBeta,   coefPolBeta,       &

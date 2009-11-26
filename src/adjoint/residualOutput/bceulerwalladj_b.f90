@@ -4,8 +4,8 @@
 !  Differentiation of bceulerwalladj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: padj wadj rfaceadj
 !                skadj sjadj sadj siadj normadj
-!   of linear combination of output variables: padj wadj skadj
-!                sjadj siadj
+!   of linear combination of output variables: padj wadj rfaceadj
+!                skadj sjadj sadj siadj normadj
 !
 !      ******************************************************************
 !      *                                                                *
@@ -19,39 +19,48 @@
 !
 SUBROUTINE BCEULERWALLADJ_B(secondhalo, wadj, wadjb, padj, padjb, sadj, &
 &  sadjb, siadj, siadjb, sjadj, sjadjb, skadj, skadjb, normadj, normadjb&
-&  , rfaceadj, rfaceadjb, icell, jcell, kcell)
+&  , rfaceadj, rfaceadjb, icell, jcell, kcell, nn, level, sps, sps2)
   USE bctypes
   USE blockpointers, ONLY : il, jl, kl, bcdata, bcfaceid, &
 &  addgridvelocities, nbocos, bctype
   USE constants
   USE flowvarrefstate
   USE inputdiscretization
+  USE inputtimespectral
   USE iteration
   IMPLICIT NONE
   INTEGER(KIND=INTTYPE) :: icell, jcell, kcell
-  REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3), INTENT(IN) :: &
-&  normadj
-  REAL(KIND=REALTYPE) :: normadjb(nbocos, -2:2, -2:2, 3)
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2), INTENT(IN) :: padj
-  REAL(KIND=REALTYPE) :: padjb(-2:2, -2:2, -2:2)
-  REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2), INTENT(IN) :: &
-&  rfaceadj
-  REAL(KIND=REALTYPE) :: rfaceadjb(nbocos, -2:2, -2:2)
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3), INTENT(IN) :: &
-&  sadj
-  REAL(KIND=REALTYPE) :: sadjb(-2:2, -2:2, -2:2, 3)
+  INTEGER(KIND=INTTYPE) :: level, nn, sps, sps2
+  REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: normadj
+  REAL(KIND=REALTYPE) :: normadjb(nbocos, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), INTENT(IN) :: padj
+  REAL(KIND=REALTYPE) :: padjb(-2:2, -2:2, -2:2, ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, &
+&  ntimeintervalsspectral), INTENT(IN) :: rfaceadj
+  REAL(KIND=REALTYPE) :: rfaceadjb(nbocos, -2:2, -2:2, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: sadj
+  REAL(KIND=REALTYPE) :: sadjb(-2:2, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral)
   LOGICAL, INTENT(IN) :: secondhalo
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  siadj
-  REAL(KIND=REALTYPE) :: siadjb(-3:2, -3:2, -3:2, 3), sjadjb(-3:2, -3:2&
-&  , -3:2, 3), skadjb(-3:2, -3:2, -3:2, 3)
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  sjadj
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  skadj
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw), INTENT(IN) :: &
-&  wadj
-  REAL(KIND=REALTYPE) :: wadjb(-2:2, -2:2, -2:2, nw)
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: siadj
+  REAL(KIND=REALTYPE) :: siadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), sjadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), skadjb(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: sjadj
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: skadj
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral), INTENT(IN) :: wadj
+  REAL(KIND=REALTYPE) :: wadjb(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral)
   INTEGER :: ad_from, ad_from0, ad_from1, ad_from2, ad_from3, ad_from4, &
 &  ad_from5, ad_from6, ad_to, ad_to0, ad_to1, ad_to2, ad_to3, ad_to4, &
 &  ad_to5, ad_to6, branch, max1, max2
@@ -61,11 +70,10 @@ SUBROUTINE BCEULERWALLADJ_B(secondhalo, wadj, wadjb, padj, padjb, sadj, &
   INTEGER(KIND=INTTYPE) :: ibbeg, ibend, jbbeg, jbend, kbbeg, kbend
   INTEGER(KIND=INTTYPE) :: icbeg, icend, jcbeg, jcend, kcbeg, kcend
   INTEGER(KIND=INTTYPE) :: ioffset, joffset, koffset
-  INTEGER(KIND=INTTYPE) :: i, ii, j, jj, k, kk, l
+  INTEGER(KIND=INTTYPE) :: i, ii, j, jj, k, kk, l, nnbcs
   INTEGER(KIND=INTTYPE) :: jm1, jp1, km1, kp1
   INTEGER(KIND=INTTYPE) :: jjm1, jjp1, kkm1, kkp1
   INTEGER(KIND=INTTYPE) :: isbeg, isend, jsbeg, jsend, ksbeg, ksend
-  INTEGER(KIND=INTTYPE) :: nn
   REAL(KIND=REALTYPE) :: padj2(-2:2, -2:2), padj2b(-2:2, -2:2), padj3(-2&
 &  :2, -2:2), padj3b(-2:2, -2:2)
   REAL(KIND=REALTYPE) :: revadj1(-2:2, -2:2), revadj2(-2:2, -2:2)
@@ -94,7 +102,7 @@ SUBROUTINE BCEULERWALLADJ_B(secondhalo, wadj, wadjb, padj, padjb, sadj, &
   INTEGER(KIND=INTTYPE) :: walltreatment
   INTRINSIC MAX, MIN
 ! Loop over the boundary condition subfaces of this block.
-bocos:DO nn=1,nbocos
+bocos:DO nnbcs=1,nbocos
     CALL PUSHINTEGER4(kbend)
     CALL PUSHINTEGER4(jbend)
     CALL PUSHINTEGER4(ibend)
@@ -107,12 +115,12 @@ bocos:DO nn=1,nbocos
     CALL PUSHINTEGER4(ksbeg)
     CALL PUSHINTEGER4(jsbeg)
     CALL PUSHINTEGER4(isbeg)
-    CALL CHECKOVERLAPADJ(nn, icell, jcell, kcell, isbeg, jsbeg, ksbeg, &
-&                   isend, jsend, ksend, ibbeg, jbbeg, kbbeg, ibend, &
+    CALL CHECKOVERLAPADJ(nnbcs, icell, jcell, kcell, isbeg, jsbeg, ksbeg&
+&                   , isend, jsend, ksend, ibbeg, jbbeg, kbbeg, ibend, &
 &                   jbend, kbend, computebc)
     IF (computebc) THEN
 ! Check for Euler wall boundary condition.
-      IF (bctype(nn) .EQ. eulerwall) THEN
+      IF (bctype(nnbcs) .EQ. eulerwall) THEN
         CALL PUSHBOOLEAN(secondhalo)
         CALL PUSHINTEGER4(jcend)
         CALL PUSHINTEGER4(icend)
@@ -129,14 +137,14 @@ bocos:DO nn=1,nbocos
 !!?norm  => BCData(nn)%norm
 !!?rface => BCData(nn)%rface
 !Copy the states and other parameters to subfaces
-        CALL EXTRACTBCSTATESADJ(nn, wadj, padj, wadj0, wadj1, wadj2, &
+        CALL EXTRACTBCSTATESADJ(nnbcs, wadj, padj, wadj0, wadj1, wadj2, &
 &                          wadj3, padj0, padj1, padj2, padj3, rlvadj, &
 &                          revadj, rlvadj1, rlvadj2, revadj1, revadj2, &
 &                          ioffset, joffset, koffset, icell, jcell, &
 &                          kcell, isbeg, jsbeg, ksbeg, isend, jsend, &
 &                          ksend, ibbeg, jbbeg, kbbeg, ibend, jbend, &
 &                          kbend, icbeg, jcbeg, icend, jcend, secondhalo&
-&                         )
+&                          , nn, level, sps, sps2)
 ! Some initialization
         ssi = zero
         ssj = zero
@@ -215,24 +223,24 @@ bocos:DO nn=1,nbocos
 ! an offset of 1 for these normals. This is commented in
 ! the code. For moving faces also the grid velocity of
 ! the 1st cell center from the wall is needed.
-          SELECT CASE  (bcfaceid(nn)) 
+          SELECT CASE  (bcfaceid(nnbcs)) 
           CASE (imin) 
             IF (secondhalo) THEN
-              ssi(:, :, :) = siadj(-1, :, :, :)
-              ssj(:, :, :) = sjadj(0, :, :, :)
-              ssk(:, :, :) = skadj(0, :, :, :)
+              ssi(:, :, :) = siadj(-1, :, :, :, sps2)
+              ssj(:, :, :) = sjadj(0, :, :, :, sps2)
+              ssk(:, :, :) = skadj(0, :, :, :, sps2)
               IF (addgridvelocities) THEN
-                ssadj(:, :, :) = sadj(0, :, :, :)
+                ssadj(:, :, :) = sadj(0, :, :, :, sps2)
                 CALL PUSHINTEGER4(2)
               ELSE
                 CALL PUSHINTEGER4(1)
               END IF
             ELSE
-              ssi(:, :, :) = siadj(-2, :, :, :)
-              ssj(:, :, :) = sjadj(-1, :, :, :)
-              ssk(:, :, :) = skadj(-1, :, :, :)
+              ssi(:, :, :) = siadj(-2, :, :, :, sps2)
+              ssj(:, :, :) = sjadj(-1, :, :, :, sps2)
+              ssk(:, :, :) = skadj(-1, :, :, :, sps2)
               IF (addgridvelocities) THEN
-                ssadj(:, :, :) = sadj(-1, :, :, :)
+                ssadj(:, :, :) = sadj(-1, :, :, :, sps2)
                 CALL PUSHINTEGER4(4)
               ELSE
                 CALL PUSHINTEGER4(3)
@@ -241,21 +249,21 @@ bocos:DO nn=1,nbocos
           CASE (imax) 
 !===========================================================
             IF (secondhalo) THEN
-              ssi(:, :, :) = siadj(0, :, :, :)
-              ssj(:, :, :) = sjadj(0, :, :, :)
-              ssk(:, :, :) = skadj(0, :, :, :)
+              ssi(:, :, :) = siadj(0, :, :, :, sps2)
+              ssj(:, :, :) = sjadj(0, :, :, :, sps2)
+              ssk(:, :, :) = skadj(0, :, :, :, sps2)
               IF (addgridvelocities) THEN
-                ssadj(:, :, :) = sadj(0, :, :, :)
+                ssadj(:, :, :) = sadj(0, :, :, :, sps2)
                 CALL PUSHINTEGER4(6)
               ELSE
                 CALL PUSHINTEGER4(5)
               END IF
             ELSE
-              ssi(:, :, :) = siadj(1, :, :, :)
-              ssj(:, :, :) = sjadj(1, :, :, :)
-              ssk(:, :, :) = skadj(1, :, :, :)
+              ssi(:, :, :) = siadj(1, :, :, :, sps2)
+              ssj(:, :, :) = sjadj(1, :, :, :, sps2)
+              ssk(:, :, :) = skadj(1, :, :, :, sps2)
               IF (addgridvelocities) THEN
-                ssadj(:, :, :) = sadj(1, :, :, :)
+                ssadj(:, :, :) = sadj(1, :, :, :, sps2)
                 CALL PUSHINTEGER4(8)
               ELSE
                 CALL PUSHINTEGER4(7)
@@ -264,21 +272,21 @@ bocos:DO nn=1,nbocos
           CASE (jmin) 
 !===========================================================
             IF (secondhalo) THEN
-              ssi(:, :, :) = sjadj(:, -1, :, :)
-              ssj(:, :, :) = siadj(:, 0, :, :)
-              ssk(:, :, :) = skadj(:, 0, :, :)
+              ssi(:, :, :) = sjadj(:, -1, :, :, sps2)
+              ssj(:, :, :) = siadj(:, 0, :, :, sps2)
+              ssk(:, :, :) = skadj(:, 0, :, :, sps2)
               IF (addgridvelocities) THEN
-                ssadj(:, :, :) = sadj(:, 0, :, :)
+                ssadj(:, :, :) = sadj(:, 0, :, :, sps2)
                 CALL PUSHINTEGER4(10)
               ELSE
                 CALL PUSHINTEGER4(9)
               END IF
             ELSE
-              ssi(:, :, :) = sjadj(:, -2, :, :)
-              ssj(:, :, :) = siadj(:, -1, :, :)
-              ssk(:, :, :) = skadj(:, -1, :, :)
+              ssi(:, :, :) = sjadj(:, -2, :, :, sps2)
+              ssj(:, :, :) = siadj(:, -1, :, :, sps2)
+              ssk(:, :, :) = skadj(:, -1, :, :, sps2)
               IF (addgridvelocities) THEN
-                ssadj(:, :, :) = sadj(:, -1, :, :)
+                ssadj(:, :, :) = sadj(:, -1, :, :, sps2)
                 CALL PUSHINTEGER4(12)
               ELSE
                 CALL PUSHINTEGER4(11)
@@ -287,21 +295,21 @@ bocos:DO nn=1,nbocos
           CASE (jmax) 
 !===========================================================
             IF (secondhalo) THEN
-              ssi(:, :, :) = sjadj(:, 0, :, :)
-              ssj(:, :, :) = siadj(:, 0, :, :)
-              ssk(:, :, :) = skadj(:, 0, :, :)
+              ssi(:, :, :) = sjadj(:, 0, :, :, sps2)
+              ssj(:, :, :) = siadj(:, 0, :, :, sps2)
+              ssk(:, :, :) = skadj(:, 0, :, :, sps2)
               IF (addgridvelocities) THEN
-                ssadj(:, :, :) = sadj(:, 0, :, :)
+                ssadj(:, :, :) = sadj(:, 0, :, :, sps2)
                 CALL PUSHINTEGER4(14)
               ELSE
                 CALL PUSHINTEGER4(13)
               END IF
             ELSE
-              ssi(:, :, :) = sjadj(:, 1, :, :)
-              ssj(:, :, :) = siadj(:, 1, :, :)
-              ssk(:, :, :) = skadj(:, 1, :, :)
+              ssi(:, :, :) = sjadj(:, 1, :, :, sps2)
+              ssj(:, :, :) = siadj(:, 1, :, :, sps2)
+              ssk(:, :, :) = skadj(:, 1, :, :, sps2)
               IF (addgridvelocities) THEN
-                ssadj(:, :, :) = sadj(:, 1, :, :)
+                ssadj(:, :, :) = sadj(:, 1, :, :, sps2)
                 CALL PUSHINTEGER4(16)
               ELSE
                 CALL PUSHINTEGER4(15)
@@ -310,21 +318,21 @@ bocos:DO nn=1,nbocos
           CASE (kmin) 
 !===========================================================
             IF (secondhalo) THEN
-              ssi(:, :, :) = skadj(:, :, -1, :)
-              ssj(:, :, :) = siadj(:, :, 0, :)
-              ssk(:, :, :) = sjadj(:, :, 0, :)
+              ssi(:, :, :) = skadj(:, :, -1, :, sps2)
+              ssj(:, :, :) = siadj(:, :, 0, :, sps2)
+              ssk(:, :, :) = sjadj(:, :, 0, :, sps2)
               IF (addgridvelocities) THEN
-                ssadj(:, :, :) = sadj(:, :, 0, :)
+                ssadj(:, :, :) = sadj(:, :, 0, :, sps2)
                 CALL PUSHINTEGER4(18)
               ELSE
                 CALL PUSHINTEGER4(17)
               END IF
             ELSE
-              ssi(:, :, :) = skadj(:, :, -2, :)
-              ssj(:, :, :) = siadj(:, :, -1, :)
-              ssk(:, :, :) = sjadj(:, :, -1, :)
+              ssi(:, :, :) = skadj(:, :, -2, :, sps2)
+              ssj(:, :, :) = siadj(:, :, -1, :, sps2)
+              ssk(:, :, :) = sjadj(:, :, -1, :, sps2)
               IF (addgridvelocities) THEN
-                ssadj(:, :, :) = sadj(:, :, -1, :)
+                ssadj(:, :, :) = sadj(:, :, -1, :, sps2)
                 CALL PUSHINTEGER4(20)
               ELSE
                 CALL PUSHINTEGER4(19)
@@ -333,21 +341,21 @@ bocos:DO nn=1,nbocos
           CASE (kmax) 
 !===========================================================
             IF (secondhalo) THEN
-              ssi(:, :, :) = skadj(:, :, 0, :)
-              ssj(:, :, :) = siadj(:, :, 0, :)
-              ssk(:, :, :) = sjadj(:, :, 0, :)
+              ssi(:, :, :) = skadj(:, :, 0, :, sps2)
+              ssj(:, :, :) = siadj(:, :, 0, :, sps2)
+              ssk(:, :, :) = sjadj(:, :, 0, :, sps2)
               IF (addgridvelocities) THEN
-                ssadj(:, :, :) = sadj(:, :, 0, :)
+                ssadj(:, :, :) = sadj(:, :, 0, :, sps2)
                 CALL PUSHINTEGER4(22)
               ELSE
                 CALL PUSHINTEGER4(21)
               END IF
             ELSE
-              ssi(:, :, :) = skadj(:, :, 1, :)
-              ssj(:, :, :) = siadj(:, :, 1, :)
-              ssk(:, :, :) = sjadj(:, :, 1, :)
+              ssi(:, :, :) = skadj(:, :, 1, :, sps2)
+              ssj(:, :, :) = siadj(:, :, 1, :, sps2)
+              ssk(:, :, :) = sjadj(:, :, 1, :, sps2)
               IF (addgridvelocities) THEN
-                ssadj(:, :, :) = sadj(:, :, 1, :)
+                ssadj(:, :, :) = sadj(:, :, 1, :, sps2)
                 CALL PUSHINTEGER4(24)
               ELSE
                 CALL PUSHINTEGER4(23)
@@ -365,19 +373,19 @@ bocos:DO nn=1,nbocos
 ! Store the indices k+1, k-1 a bit easier and make
 ! sure that they do not exceed the range of the arrays.
             km1 = k - 1
-            IF (bcdata(nn)%jcbeg .LT. km1) THEN
+            IF (bcdata(nnbcs)%jcbeg .LT. km1) THEN
               km1 = km1
               CALL PUSHINTEGER4(1)
             ELSE
-              km1 = bcdata(nn)%jcbeg
+              km1 = bcdata(nnbcs)%jcbeg
               CALL PUSHINTEGER4(0)
             END IF
             kp1 = k + 1
-            IF (bcdata(nn)%jcend .GT. kp1) THEN
+            IF (bcdata(nnbcs)%jcend .GT. kp1) THEN
               kp1 = kp1
               CALL PUSHINTEGER4(1)
             ELSE
-              kp1 = bcdata(nn)%jcend
+              kp1 = bcdata(nnbcs)%jcend
               CALL PUSHINTEGER4(0)
             END IF
             IF (1 .LT. kp1 - km1) THEN
@@ -404,19 +412,19 @@ bocos:DO nn=1,nbocos
 ! The indices j+1 and j-1. Make sure that they
 ! do not exceed the range of the arrays.
               jm1 = j - 1
-              IF (bcdata(nn)%icbeg .LT. jm1) THEN
+              IF (bcdata(nnbcs)%icbeg .LT. jm1) THEN
                 jm1 = jm1
                 CALL PUSHINTEGER4(1)
               ELSE
-                jm1 = bcdata(nn)%icbeg
+                jm1 = bcdata(nnbcs)%icbeg
                 CALL PUSHINTEGER4(0)
               END IF
               jp1 = j + 1
-              IF (bcdata(nn)%icend .GT. jp1) THEN
+              IF (bcdata(nnbcs)%icend .GT. jp1) THEN
                 jp1 = jp1
                 CALL PUSHINTEGER4(1)
               ELSE
-                jp1 = bcdata(nn)%icend
+                jp1 = bcdata(nnbcs)%icend
                 CALL PUSHINTEGER4(0)
               END IF
               IF (1 .LT. jp1 - jm1) THEN
@@ -475,40 +483,43 @@ bocos:DO nn=1,nbocos
 ! of the internal halo values is not consistent;
 ! however this is not really a problem, because these
 ! values are overwritten in the communication pattern.
-              rxj = a1*(normadj(nn, jjp1, kk, 1)-normadj(nn, jjm1, kk, 1&
-&                ))
+              rxj = a1*(normadj(nnbcs, jjp1, kk, 1, sps2)-normadj(nnbcs&
+&                , jjm1, kk, 1, sps2))
               CALL PUSHREAL8(ryj)
-              ryj = a1*(normadj(nn, jjp1, kk, 2)-normadj(nn, jjm1, kk, 2&
-&                ))
+              ryj = a1*(normadj(nnbcs, jjp1, kk, 2, sps2)-normadj(nnbcs&
+&                , jjm1, kk, 2, sps2))
               CALL PUSHREAL8(rzj)
-              rzj = a1*(normadj(nn, jjp1, kk, 3)-normadj(nn, jjm1, kk, 3&
-&                ))
+              rzj = a1*(normadj(nnbcs, jjp1, kk, 3, sps2)-normadj(nnbcs&
+&                , jjm1, kk, 3, sps2))
               CALL PUSHREAL8(dpj)
 !print *, "jjp1,jjm1, kk =", jjp1,jjm1, kk
               dpj = a1*(padj2(jjp1, kk)-padj2(jjm1, kk))
               CALL PUSHREAL8(rxk)
-              rxk = b1*(normadj(nn, jj, kkp1, 1)-normadj(nn, jj, kkm1, 1&
-&                ))
+              rxk = b1*(normadj(nnbcs, jj, kkp1, 1, sps2)-normadj(nnbcs&
+&                , jj, kkm1, 1, sps2))
               CALL PUSHREAL8(ryk)
-              ryk = b1*(normadj(nn, jj, kkp1, 2)-normadj(nn, jj, kkm1, 2&
-&                ))
+              ryk = b1*(normadj(nnbcs, jj, kkp1, 2, sps2)-normadj(nnbcs&
+&                , jj, kkm1, 2, sps2))
               CALL PUSHREAL8(rzk)
-              rzk = b1*(normadj(nn, jj, kkp1, 3)-normadj(nn, jj, kkm1, 3&
-&                ))
+              rzk = b1*(normadj(nnbcs, jj, kkp1, 3, sps2)-normadj(nnbcs&
+&                , jj, kkm1, 3, sps2))
               CALL PUSHREAL8(dpk)
 !print *, "jj, kkp1, kkm1 =", jj, kkp1, kkm1
               dpk = b1*(padj2(jj, kkp1)-padj2(jj, kkm1))
               CALL PUSHREAL8(ri)
 ! Compute the dot product between the unit vector
 ! and the normal vectors in i, j and k-direction.
-              ri = normadj(nn, jj, kk, 1)*sixa + normadj(nn, jj, kk, 2)*&
-&                siya + normadj(nn, jj, kk, 3)*siza
+              ri = normadj(nnbcs, jj, kk, 1, sps2)*sixa + normadj(nnbcs&
+&                , jj, kk, 2, sps2)*siya + normadj(nnbcs, jj, kk, 3, &
+&                sps2)*siza
               CALL PUSHREAL8(rj)
-              rj = normadj(nn, jj, kk, 1)*sjxa + normadj(nn, jj, kk, 2)*&
-&                sjya + normadj(nn, jj, kk, 3)*sjza
+              rj = normadj(nnbcs, jj, kk, 1, sps2)*sjxa + normadj(nnbcs&
+&                , jj, kk, 2, sps2)*sjya + normadj(nnbcs, jj, kk, 3, &
+&                sps2)*sjza
               CALL PUSHREAL8(rk)
-              rk = normadj(nn, jj, kk, 1)*skxa + normadj(nn, jj, kk, 2)*&
-&                skya + normadj(nn, jj, kk, 3)*skza
+              rk = normadj(nnbcs, jj, kk, 1, sps2)*skxa + normadj(nnbcs&
+&                , jj, kk, 2, sps2)*skya + normadj(nnbcs, jj, kk, 3, &
+&                sps2)*skza
               CALL PUSHREAL8(ux)
 ! Store the velocity components in ux, uy and uz and
 ! subtract the mesh velocity if the face is moving.
@@ -558,7 +569,7 @@ bocos:DO nn=1,nbocos
             CALL PUSHINTEGER4(jj)
             jj = j - joffset
 !BCData(nn)%rface(i,j)
-            rface = rfaceadj(nn, ii, jj)
+            rface = rfaceadj(nnbcs, ii, jj, sps2)
             IF (zero .LT. padj2(ii, jj) - padj1(ii, jj)) THEN
               padj1(ii, jj) = padj2(ii, jj) - padj1(ii, jj)
               CALL PUSHINTEGER4(1)
@@ -573,20 +584,20 @@ bocos:DO nn=1,nbocos
 !!$!                      - wAdj2(ii,jj,ivy)*normAdj(nn,ii,jj,2) &
 !!$ !                     - wAdj2(ii,jj,ivz)*normAdj(nn,ii,jj,3))
 !!$
-            vn = two*(rface-wadj2(ii, jj, ivx)*normadj(nn, ii, jj, 1)-&
-&              wadj2(ii, jj, ivy)*normadj(nn, ii, jj, 2)-wadj2(ii, jj, &
-&              ivz)*normadj(nn, ii, jj, 3))
+            vn = two*(rface-wadj2(ii, jj, ivx)*normadj(nnbcs, ii, jj, 1&
+&              , sps2)-wadj2(ii, jj, ivy)*normadj(nnbcs, ii, jj, 2, sps2&
+&              )-wadj2(ii, jj, ivz)*normadj(nnbcs, ii, jj, 3, sps2))
             CALL PUSHREAL8(wadj1(ii, jj, irho))
             wadj1(ii, jj, irho) = wadj2(ii, jj, irho)
             CALL PUSHREAL8(wadj1(ii, jj, ivx))
-            wadj1(ii, jj, ivx) = wadj2(ii, jj, ivx) + vn*normadj(nn, ii&
-&              , jj, 1)
+            wadj1(ii, jj, ivx) = wadj2(ii, jj, ivx) + vn*normadj(nnbcs, &
+&              ii, jj, 1, sps2)
             CALL PUSHREAL8(wadj1(ii, jj, ivy))
-            wadj1(ii, jj, ivy) = wadj2(ii, jj, ivy) + vn*normadj(nn, ii&
-&              , jj, 2)
+            wadj1(ii, jj, ivy) = wadj2(ii, jj, ivy) + vn*normadj(nnbcs, &
+&              ii, jj, 2, sps2)
             CALL PUSHREAL8(wadj1(ii, jj, ivz))
-            wadj1(ii, jj, ivz) = wadj2(ii, jj, ivz) + vn*normadj(nn, ii&
-&              , jj, 3)
+            wadj1(ii, jj, ivz) = wadj2(ii, jj, ivz) + vn*normadj(nnbcs, &
+&              ii, jj, 3, sps2)
 ! Just copy the turbulent variables.
             DO l=nt1mg,nt2mg
               CALL PUSHREAL8(wadj1(ii, jj, l))
@@ -621,17 +632,18 @@ bocos:DO nn=1,nbocos
         IF (secondhalo) THEN
           CALL PUSHREAL8ARRAY(padj0, 5**2)
           CALL PUSHREAL8ARRAY(wadj0, 5**2*nw)
-          CALL EXTRAPOLATE2NDHALOADJ(nn, icbeg, icend, jcbeg, jcend, &
+          CALL EXTRAPOLATE2NDHALOADJ(nnbcs, icbeg, icend, jcbeg, jcend, &
 &                               ioffset, joffset, wadj0, wadj1, wadj2, &
 &                               padj0, padj1, padj2)
           CALL PUSHINTEGER4(1)
         ELSE
           CALL PUSHINTEGER4(0)
         END IF
-        CALL REPLACEBCSTATESADJ(nn, wadj0, wadj1, wadj2, wadj3, padj0, &
-&                          padj1, padj2, padj3, rlvadj1, rlvadj2, &
+        CALL REPLACEBCSTATESADJ(nnbcs, wadj0, wadj1, wadj2, wadj3, padj0&
+&                          , padj1, padj2, padj3, rlvadj1, rlvadj2, &
 &                          revadj1, revadj2, icell, jcell, kcell, wadj, &
-&                          padj, rlvadj, revadj, secondhalo)
+&                          padj, rlvadj, revadj, secondhalo, nn, level, &
+&                          sps, sps2)
         CALL PUSHINTEGER4(3)
       ELSE
         CALL PUSHINTEGER4(2)
@@ -640,9 +652,6 @@ bocos:DO nn=1,nbocos
       CALL PUSHINTEGER4(1)
     END IF
   END DO bocos
-  rfaceadjb(1:nbocos, -2:2, -2:2) = 0.0
-  sadjb(-2:2, -2:2, -2:2, 1:3) = 0.0
-  normadjb(1:nbocos, -2:2, -2:2, 1:3) = 0.0
   ssadjb(-2:2, -2:2, 1:3) = 0.0
   padj0b(-2:2, -2:2) = 0.0
   padj1b(-2:2, -2:2) = 0.0
@@ -651,19 +660,20 @@ bocos:DO nn=1,nbocos
   wadj0b(-2:2, -2:2, 1:nw) = 0.0
   wadj1b(-2:2, -2:2, 1:nw) = 0.0
   wadj2b(-2:2, -2:2, 1:nw) = 0.0
-  DO nn=nbocos,1,-1
+  DO nnbcs=nbocos,1,-1
     CALL POPINTEGER4(branch)
     IF (.NOT.branch .LT. 3) THEN
-      CALL REPLACEBCSTATESADJ_B(nn, wadj0, wadj0b, wadj1, wadj1b, wadj2&
-&                          , wadj3, padj0, padj0b, padj1, padj1b, padj2&
-&                          , padj3, rlvadj1, rlvadj2, revadj1, revadj2, &
-&                          icell, jcell, kcell, wadj, wadjb, padj, padjb&
-&                          , rlvadj, revadj, secondhalo)
+      CALL REPLACEBCSTATESADJ_B(nnbcs, wadj0, wadj0b, wadj1, wadj1b, &
+&                          wadj2, wadj3, padj0, padj0b, padj1, padj1b, &
+&                          padj2, padj3, rlvadj1, rlvadj2, revadj1, &
+&                          revadj2, icell, jcell, kcell, wadj, wadjb, &
+&                          padj, padjb, rlvadj, revadj, secondhalo, nn, &
+&                          level, sps, sps2)
       CALL POPINTEGER4(branch)
       IF (.NOT.branch .LT. 1) THEN
         CALL POPREAL8ARRAY(wadj0, 5**2*nw)
         CALL POPREAL8ARRAY(padj0, 5**2)
-        CALL EXTRAPOLATE2NDHALOADJ_B(nn, icbeg, icend, jcbeg, jcend, &
+        CALL EXTRAPOLATE2NDHALOADJ_B(nnbcs, icbeg, icend, jcbeg, jcend, &
 &                               ioffset, joffset, wadj0, wadj0b, wadj1, &
 &                               wadj1b, wadj2, wadj2b, padj0, padj0b, &
 &                               padj1, padj1b, padj2, padj2b)
@@ -706,24 +716,26 @@ bocos:DO nn=1,nbocos
           CALL POPREAL8(wadj1(ii, jj, ivz))
           wadj2b(ii, jj, ivz) = wadj2b(ii, jj, ivz) + wadj1b(ii, jj, ivz&
 &            )
-          vnb = normadj(nn, ii, jj, 3)*wadj1b(ii, jj, ivz)
-          normadjb(nn, ii, jj, 3) = normadjb(nn, ii, jj, 3) + vn*wadj1b(&
-&            ii, jj, ivz)
+          vnb = normadj(nnbcs, ii, jj, 3, sps2)*wadj1b(ii, jj, ivz)
+          normadjb(nnbcs, ii, jj, 3, sps2) = normadjb(nnbcs, ii, jj, 3, &
+&            sps2) + vn*wadj1b(ii, jj, ivz)
           wadj1b(ii, jj, ivz) = 0.0
           CALL POPREAL8(wadj1(ii, jj, ivy))
           wadj2b(ii, jj, ivy) = wadj2b(ii, jj, ivy) + wadj1b(ii, jj, ivy&
 &            )
-          vnb = vnb + normadj(nn, ii, jj, 2)*wadj1b(ii, jj, ivy)
-          normadjb(nn, ii, jj, 2) = normadjb(nn, ii, jj, 2) + vn*wadj1b(&
-&            ii, jj, ivy)
+          vnb = vnb + normadj(nnbcs, ii, jj, 2, sps2)*wadj1b(ii, jj, ivy&
+&            )
+          normadjb(nnbcs, ii, jj, 2, sps2) = normadjb(nnbcs, ii, jj, 2, &
+&            sps2) + vn*wadj1b(ii, jj, ivy)
           wadj1b(ii, jj, ivy) = 0.0
           CALL POPREAL8(wadj1(ii, jj, ivx))
           wadj2b(ii, jj, ivx) = wadj2b(ii, jj, ivx) + wadj1b(ii, jj, ivx&
 &            )
-          vnb = vnb + normadj(nn, ii, jj, 1)*wadj1b(ii, jj, ivx)
+          vnb = vnb + normadj(nnbcs, ii, jj, 1, sps2)*wadj1b(ii, jj, ivx&
+&            )
           temp2b0 = two*vnb
-          normadjb(nn, ii, jj, 1) = normadjb(nn, ii, jj, 1) + vn*wadj1b(&
-&            ii, jj, ivx) - wadj2(ii, jj, ivx)*temp2b0
+          normadjb(nnbcs, ii, jj, 1, sps2) = normadjb(nnbcs, ii, jj, 1, &
+&            sps2) + vn*wadj1b(ii, jj, ivx) - wadj2(ii, jj, ivx)*temp2b0
           wadj1b(ii, jj, ivx) = 0.0
           CALL POPREAL8(wadj1(ii, jj, irho))
           wadj2b(ii, jj, irho) = wadj2b(ii, jj, irho) + wadj1b(ii, jj, &
@@ -731,16 +743,16 @@ bocos:DO nn=1,nbocos
           wadj1b(ii, jj, irho) = 0.0
           CALL POPREAL8(vn)
           rfaceb = temp2b0
-          wadj2b(ii, jj, ivx) = wadj2b(ii, jj, ivx) - normadj(nn, ii, jj&
-&            , 1)*temp2b0
-          wadj2b(ii, jj, ivy) = wadj2b(ii, jj, ivy) - normadj(nn, ii, jj&
-&            , 2)*temp2b0
-          normadjb(nn, ii, jj, 2) = normadjb(nn, ii, jj, 2) - wadj2(ii, &
-&            jj, ivy)*temp2b0
-          wadj2b(ii, jj, ivz) = wadj2b(ii, jj, ivz) - normadj(nn, ii, jj&
-&            , 3)*temp2b0
-          normadjb(nn, ii, jj, 3) = normadjb(nn, ii, jj, 3) - wadj2(ii, &
-&            jj, ivz)*temp2b0
+          wadj2b(ii, jj, ivx) = wadj2b(ii, jj, ivx) - normadj(nnbcs, ii&
+&            , jj, 1, sps2)*temp2b0
+          wadj2b(ii, jj, ivy) = wadj2b(ii, jj, ivy) - normadj(nnbcs, ii&
+&            , jj, 2, sps2)*temp2b0
+          normadjb(nnbcs, ii, jj, 2, sps2) = normadjb(nnbcs, ii, jj, 2, &
+&            sps2) - wadj2(ii, jj, ivy)*temp2b0
+          wadj2b(ii, jj, ivz) = wadj2b(ii, jj, ivz) - normadj(nnbcs, ii&
+&            , jj, 3, sps2)*temp2b0
+          normadjb(nnbcs, ii, jj, 3, sps2) = normadjb(nnbcs, ii, jj, 3, &
+&            sps2) - wadj2(ii, jj, ivz)*temp2b0
           CALL POPINTEGER4(branch)
           IF (branch .LT. 1) THEN
             padj1b(ii, jj) = 0.0
@@ -748,7 +760,8 @@ bocos:DO nn=1,nbocos
             padj2b(ii, jj) = padj2b(ii, jj) + padj1b(ii, jj)
             padj1b(ii, jj) = -padj1b(ii, jj)
           END IF
-          rfaceadjb(nn, ii, jj) = rfaceadjb(nn, ii, jj) + rfaceb
+          rfaceadjb(nnbcs, ii, jj, sps2) = rfaceadjb(nnbcs, ii, jj, sps2&
+&            ) + rfaceb
           CALL POPINTEGER4(jj)
           CALL POPINTEGER4(ii)
         END DO
@@ -838,62 +851,71 @@ bocos:DO nn=1,nbocos
             CALL POPREAL8(ux)
             wadj2b(jj, kk, ivx) = wadj2b(jj, kk, ivx) + uxb
             CALL POPREAL8(rk)
-            normadjb(nn, jj, kk, 1) = normadjb(nn, jj, kk, 1) + skxa*rkb
-            skxab = skxab + normadj(nn, jj, kk, 1)*rkb
-            normadjb(nn, jj, kk, 2) = normadjb(nn, jj, kk, 2) + skya*rkb
-            skyab = skyab + normadj(nn, jj, kk, 2)*rkb
-            normadjb(nn, jj, kk, 3) = normadjb(nn, jj, kk, 3) + skza*rkb
-            skzab = skzab + normadj(nn, jj, kk, 3)*rkb
+            normadjb(nnbcs, jj, kk, 1, sps2) = normadjb(nnbcs, jj, kk, 1&
+&              , sps2) + skxa*rkb
+            skxab = skxab + normadj(nnbcs, jj, kk, 1, sps2)*rkb
+            normadjb(nnbcs, jj, kk, 2, sps2) = normadjb(nnbcs, jj, kk, 2&
+&              , sps2) + skya*rkb
+            skyab = skyab + normadj(nnbcs, jj, kk, 2, sps2)*rkb
+            normadjb(nnbcs, jj, kk, 3, sps2) = normadjb(nnbcs, jj, kk, 3&
+&              , sps2) + skza*rkb
+            skzab = skzab + normadj(nnbcs, jj, kk, 3, sps2)*rkb
             CALL POPREAL8(rj)
-            normadjb(nn, jj, kk, 1) = normadjb(nn, jj, kk, 1) + sjxa*rjb
-            sjxab = sjxab + normadj(nn, jj, kk, 1)*rjb
-            normadjb(nn, jj, kk, 2) = normadjb(nn, jj, kk, 2) + sjya*rjb
-            sjyab = sjyab + normadj(nn, jj, kk, 2)*rjb
-            normadjb(nn, jj, kk, 3) = normadjb(nn, jj, kk, 3) + sjza*rjb
-            sjzab = sjzab + normadj(nn, jj, kk, 3)*rjb
+            normadjb(nnbcs, jj, kk, 1, sps2) = normadjb(nnbcs, jj, kk, 1&
+&              , sps2) + sjxa*rjb
+            sjxab = sjxab + normadj(nnbcs, jj, kk, 1, sps2)*rjb
+            normadjb(nnbcs, jj, kk, 2, sps2) = normadjb(nnbcs, jj, kk, 2&
+&              , sps2) + sjya*rjb
+            sjyab = sjyab + normadj(nnbcs, jj, kk, 2, sps2)*rjb
+            normadjb(nnbcs, jj, kk, 3, sps2) = normadjb(nnbcs, jj, kk, 3&
+&              , sps2) + sjza*rjb
+            sjzab = sjzab + normadj(nnbcs, jj, kk, 3, sps2)*rjb
             CALL POPREAL8(ri)
-            normadjb(nn, jj, kk, 1) = normadjb(nn, jj, kk, 1) + sixa*rib
-            sixab = normadj(nn, jj, kk, 1)*rib
-            normadjb(nn, jj, kk, 2) = normadjb(nn, jj, kk, 2) + siya*rib
-            siyab = normadj(nn, jj, kk, 2)*rib
-            normadjb(nn, jj, kk, 3) = normadjb(nn, jj, kk, 3) + siza*rib
-            sizab = normadj(nn, jj, kk, 3)*rib
+            normadjb(nnbcs, jj, kk, 1, sps2) = normadjb(nnbcs, jj, kk, 1&
+&              , sps2) + sixa*rib
+            sixab = normadj(nnbcs, jj, kk, 1, sps2)*rib
+            normadjb(nnbcs, jj, kk, 2, sps2) = normadjb(nnbcs, jj, kk, 2&
+&              , sps2) + siya*rib
+            siyab = normadj(nnbcs, jj, kk, 2, sps2)*rib
+            normadjb(nnbcs, jj, kk, 3, sps2) = normadjb(nnbcs, jj, kk, 3&
+&              , sps2) + siza*rib
+            sizab = normadj(nnbcs, jj, kk, 3, sps2)*rib
             CALL POPREAL8(dpk)
             padj2b(jj, kkp1) = padj2b(jj, kkp1) + b1*dpkb
             padj2b(jj, kkm1) = padj2b(jj, kkm1) - b1*dpkb
             CALL POPREAL8(rzk)
-            normadjb(nn, jj, kkp1, 3) = normadjb(nn, jj, kkp1, 3) + b1*&
-&              rzkb
-            normadjb(nn, jj, kkm1, 3) = normadjb(nn, jj, kkm1, 3) - b1*&
-&              rzkb
+            normadjb(nnbcs, jj, kkp1, 3, sps2) = normadjb(nnbcs, jj, &
+&              kkp1, 3, sps2) + b1*rzkb
+            normadjb(nnbcs, jj, kkm1, 3, sps2) = normadjb(nnbcs, jj, &
+&              kkm1, 3, sps2) - b1*rzkb
             CALL POPREAL8(ryk)
-            normadjb(nn, jj, kkp1, 2) = normadjb(nn, jj, kkp1, 2) + b1*&
-&              rykb
-            normadjb(nn, jj, kkm1, 2) = normadjb(nn, jj, kkm1, 2) - b1*&
-&              rykb
+            normadjb(nnbcs, jj, kkp1, 2, sps2) = normadjb(nnbcs, jj, &
+&              kkp1, 2, sps2) + b1*rykb
+            normadjb(nnbcs, jj, kkm1, 2, sps2) = normadjb(nnbcs, jj, &
+&              kkm1, 2, sps2) - b1*rykb
             CALL POPREAL8(rxk)
-            normadjb(nn, jj, kkp1, 1) = normadjb(nn, jj, kkp1, 1) + b1*&
-&              rxkb
-            normadjb(nn, jj, kkm1, 1) = normadjb(nn, jj, kkm1, 1) - b1*&
-&              rxkb
+            normadjb(nnbcs, jj, kkp1, 1, sps2) = normadjb(nnbcs, jj, &
+&              kkp1, 1, sps2) + b1*rxkb
+            normadjb(nnbcs, jj, kkm1, 1, sps2) = normadjb(nnbcs, jj, &
+&              kkm1, 1, sps2) - b1*rxkb
             CALL POPREAL8(dpj)
             padj2b(jjp1, kk) = padj2b(jjp1, kk) + a1*dpjb
             padj2b(jjm1, kk) = padj2b(jjm1, kk) - a1*dpjb
             CALL POPREAL8(rzj)
-            normadjb(nn, jjp1, kk, 3) = normadjb(nn, jjp1, kk, 3) + a1*&
-&              rzjb
-            normadjb(nn, jjm1, kk, 3) = normadjb(nn, jjm1, kk, 3) - a1*&
-&              rzjb
+            normadjb(nnbcs, jjp1, kk, 3, sps2) = normadjb(nnbcs, jjp1, &
+&              kk, 3, sps2) + a1*rzjb
+            normadjb(nnbcs, jjm1, kk, 3, sps2) = normadjb(nnbcs, jjm1, &
+&              kk, 3, sps2) - a1*rzjb
             CALL POPREAL8(ryj)
-            normadjb(nn, jjp1, kk, 2) = normadjb(nn, jjp1, kk, 2) + a1*&
-&              ryjb
-            normadjb(nn, jjm1, kk, 2) = normadjb(nn, jjm1, kk, 2) - a1*&
-&              ryjb
+            normadjb(nnbcs, jjp1, kk, 2, sps2) = normadjb(nnbcs, jjp1, &
+&              kk, 2, sps2) + a1*ryjb
+            normadjb(nnbcs, jjm1, kk, 2, sps2) = normadjb(nnbcs, jjm1, &
+&              kk, 2, sps2) - a1*ryjb
             CALL POPREAL8(rxj)
-            normadjb(nn, jjp1, kk, 1) = normadjb(nn, jjp1, kk, 1) + a1*&
-&              rxjb
-            normadjb(nn, jjm1, kk, 1) = normadjb(nn, jjm1, kk, 1) - a1*&
-&              rxjb
+            normadjb(nnbcs, jjp1, kk, 1, sps2) = normadjb(nnbcs, jjp1, &
+&              kk, 1, sps2) + a1*rxjb
+            normadjb(nnbcs, jjm1, kk, 1, sps2) = normadjb(nnbcs, jjm1, &
+&              kk, 1, sps2) - a1*rxjb
             CALL POPREAL8(skza)
             sskb(jj, kk-1, 3) = sskb(jj, kk-1, 3) + skzab
             sskb(jj, kk, 3) = sskb(jj, kk, 3) + skzab
@@ -941,132 +963,175 @@ bocos:DO nn=1,nbocos
               IF (branch .LT. 2) THEN
                 IF (branch .LT. 1) GOTO 140
               ELSE IF (branch .LT. 3) THEN
-                sadjb(0, :, :, :) = sadjb(0, :, :, :) + ssadjb(:, :, :)
+                sadjb(0, :, :, :, sps2) = sadjb(0, :, :, :, sps2) + &
+&                  ssadjb(:, :, :)
                 ssadjb(:, :, :) = 0.0
               ELSE
                 GOTO 100
               END IF
-              skadjb(0, :, :, :) = skadjb(0, :, :, :) + sskb(:, :, :)
-              sjadjb(0, :, :, :) = sjadjb(0, :, :, :) + ssjb(:, :, :)
-              siadjb(-1, :, :, :) = siadjb(-1, :, :, :) + ssib(:, :, :)
+              skadjb(0, :, :, :, sps2) = skadjb(0, :, :, :, sps2) + sskb&
+&                (:, :, :)
+              sjadjb(0, :, :, :, sps2) = sjadjb(0, :, :, :, sps2) + ssjb&
+&                (:, :, :)
+              siadjb(-1, :, :, :, sps2) = siadjb(-1, :, :, :, sps2) + &
+&                ssib(:, :, :)
             ELSE
               IF (branch .LT. 6) THEN
                 IF (branch .LT. 5) THEN
-                  sadjb(-1, :, :, :) = sadjb(-1, :, :, :) + ssadjb(:, :&
-&                    , :)
+                  sadjb(-1, :, :, :, sps2) = sadjb(-1, :, :, :, sps2) + &
+&                    ssadjb(:, :, :)
                   ssadjb(:, :, :) = 0.0
                   GOTO 100
                 END IF
               ELSE
-                sadjb(0, :, :, :) = sadjb(0, :, :, :) + ssadjb(:, :, :)
+                sadjb(0, :, :, :, sps2) = sadjb(0, :, :, :, sps2) + &
+&                  ssadjb(:, :, :)
                 ssadjb(:, :, :) = 0.0
               END IF
-              skadjb(0, :, :, :) = skadjb(0, :, :, :) + sskb(:, :, :)
-              sjadjb(0, :, :, :) = sjadjb(0, :, :, :) + ssjb(:, :, :)
-              siadjb(0, :, :, :) = siadjb(0, :, :, :) + ssib(:, :, :)
+              skadjb(0, :, :, :, sps2) = skadjb(0, :, :, :, sps2) + sskb&
+&                (:, :, :)
+              sjadjb(0, :, :, :, sps2) = sjadjb(0, :, :, :, sps2) + ssjb&
+&                (:, :, :)
+              siadjb(0, :, :, :, sps2) = siadjb(0, :, :, :, sps2) + ssib&
+&                (:, :, :)
             END IF
             GOTO 140
- 100        skadjb(-1, :, :, :) = skadjb(-1, :, :, :) + sskb(:, :, :)
-            sjadjb(-1, :, :, :) = sjadjb(-1, :, :, :) + ssjb(:, :, :)
-            siadjb(-2, :, :, :) = siadjb(-2, :, :, :) + ssib(:, :, :)
+ 100        skadjb(-1, :, :, :, sps2) = skadjb(-1, :, :, :, sps2) + sskb&
+&              (:, :, :)
+            sjadjb(-1, :, :, :, sps2) = sjadjb(-1, :, :, :, sps2) + ssjb&
+&              (:, :, :)
+            siadjb(-2, :, :, :, sps2) = siadjb(-2, :, :, :, sps2) + ssib&
+&              (:, :, :)
           ELSE
             IF (branch .LT. 10) THEN
               IF (branch .LT. 9) THEN
                 IF (.NOT.branch .LT. 8) THEN
-                  sadjb(1, :, :, :) = sadjb(1, :, :, :) + ssadjb(:, :, :&
-&                    )
+                  sadjb(1, :, :, :, sps2) = sadjb(1, :, :, :, sps2) + &
+&                    ssadjb(:, :, :)
                   ssadjb(:, :, :) = 0.0
                 END IF
-                skadjb(1, :, :, :) = skadjb(1, :, :, :) + sskb(:, :, :)
-                sjadjb(1, :, :, :) = sjadjb(1, :, :, :) + ssjb(:, :, :)
-                siadjb(1, :, :, :) = siadjb(1, :, :, :) + ssib(:, :, :)
+                skadjb(1, :, :, :, sps2) = skadjb(1, :, :, :, sps2) + &
+&                  sskb(:, :, :)
+                sjadjb(1, :, :, :, sps2) = sjadjb(1, :, :, :, sps2) + &
+&                  ssjb(:, :, :)
+                siadjb(1, :, :, :, sps2) = siadjb(1, :, :, :, sps2) + &
+&                  ssib(:, :, :)
                 GOTO 140
               END IF
             ELSE
               IF (branch .LT. 12) THEN
                 IF (branch .LT. 11) THEN
-                  sadjb(:, 0, :, :) = sadjb(:, 0, :, :) + ssadjb(:, :, :&
-&                    )
+                  sadjb(:, 0, :, :, sps2) = sadjb(:, 0, :, :, sps2) + &
+&                    ssadjb(:, :, :)
                   ssadjb(:, :, :) = 0.0
                   GOTO 110
                 END IF
               ELSE
-                sadjb(:, -1, :, :) = sadjb(:, -1, :, :) + ssadjb(:, :, :&
-&                  )
+                sadjb(:, -1, :, :, sps2) = sadjb(:, -1, :, :, sps2) + &
+&                  ssadjb(:, :, :)
                 ssadjb(:, :, :) = 0.0
               END IF
-              skadjb(:, -1, :, :) = skadjb(:, -1, :, :) + sskb(:, :, :)
-              siadjb(:, -1, :, :) = siadjb(:, -1, :, :) + ssjb(:, :, :)
-              sjadjb(:, -2, :, :) = sjadjb(:, -2, :, :) + ssib(:, :, :)
+              skadjb(:, -1, :, :, sps2) = skadjb(:, -1, :, :, sps2) + &
+&                sskb(:, :, :)
+              siadjb(:, -1, :, :, sps2) = siadjb(:, -1, :, :, sps2) + &
+&                ssjb(:, :, :)
+              sjadjb(:, -2, :, :, sps2) = sjadjb(:, -2, :, :, sps2) + &
+&                ssib(:, :, :)
               GOTO 140
             END IF
- 110        skadjb(:, 0, :, :) = skadjb(:, 0, :, :) + sskb(:, :, :)
-            siadjb(:, 0, :, :) = siadjb(:, 0, :, :) + ssjb(:, :, :)
-            sjadjb(:, -1, :, :) = sjadjb(:, -1, :, :) + ssib(:, :, :)
+ 110        skadjb(:, 0, :, :, sps2) = skadjb(:, 0, :, :, sps2) + sskb(:&
+&              , :, :)
+            siadjb(:, 0, :, :, sps2) = siadjb(:, 0, :, :, sps2) + ssjb(:&
+&              , :, :)
+            sjadjb(:, -1, :, :, sps2) = sjadjb(:, -1, :, :, sps2) + ssib&
+&              (:, :, :)
           END IF
         ELSE IF (branch .LT. 19) THEN
           IF (branch .LT. 16) THEN
             IF (branch .LT. 15) THEN
               IF (.NOT.branch .LT. 14) THEN
-                sadjb(:, 0, :, :) = sadjb(:, 0, :, :) + ssadjb(:, :, :)
+                sadjb(:, 0, :, :, sps2) = sadjb(:, 0, :, :, sps2) + &
+&                  ssadjb(:, :, :)
                 ssadjb(:, :, :) = 0.0
               END IF
-              skadjb(:, 0, :, :) = skadjb(:, 0, :, :) + sskb(:, :, :)
-              siadjb(:, 0, :, :) = siadjb(:, 0, :, :) + ssjb(:, :, :)
-              sjadjb(:, 0, :, :) = sjadjb(:, 0, :, :) + ssib(:, :, :)
+              skadjb(:, 0, :, :, sps2) = skadjb(:, 0, :, :, sps2) + sskb&
+&                (:, :, :)
+              siadjb(:, 0, :, :, sps2) = siadjb(:, 0, :, :, sps2) + ssjb&
+&                (:, :, :)
+              sjadjb(:, 0, :, :, sps2) = sjadjb(:, 0, :, :, sps2) + ssib&
+&                (:, :, :)
               GOTO 140
             END IF
           ELSE
             IF (branch .LT. 18) THEN
               IF (branch .LT. 17) THEN
-                sadjb(:, 1, :, :) = sadjb(:, 1, :, :) + ssadjb(:, :, :)
+                sadjb(:, 1, :, :, sps2) = sadjb(:, 1, :, :, sps2) + &
+&                  ssadjb(:, :, :)
                 ssadjb(:, :, :) = 0.0
                 GOTO 120
               END IF
             ELSE
-              sadjb(:, :, 0, :) = sadjb(:, :, 0, :) + ssadjb(:, :, :)
+              sadjb(:, :, 0, :, sps2) = sadjb(:, :, 0, :, sps2) + ssadjb&
+&                (:, :, :)
               ssadjb(:, :, :) = 0.0
             END IF
-            sjadjb(:, :, 0, :) = sjadjb(:, :, 0, :) + sskb(:, :, :)
-            siadjb(:, :, 0, :) = siadjb(:, :, 0, :) + ssjb(:, :, :)
-            skadjb(:, :, -1, :) = skadjb(:, :, -1, :) + ssib(:, :, :)
+            sjadjb(:, :, 0, :, sps2) = sjadjb(:, :, 0, :, sps2) + sskb(:&
+&              , :, :)
+            siadjb(:, :, 0, :, sps2) = siadjb(:, :, 0, :, sps2) + ssjb(:&
+&              , :, :)
+            skadjb(:, :, -1, :, sps2) = skadjb(:, :, -1, :, sps2) + ssib&
+&              (:, :, :)
             GOTO 140
           END IF
- 120      skadjb(:, 1, :, :) = skadjb(:, 1, :, :) + sskb(:, :, :)
-          siadjb(:, 1, :, :) = siadjb(:, 1, :, :) + ssjb(:, :, :)
-          sjadjb(:, 1, :, :) = sjadjb(:, 1, :, :) + ssib(:, :, :)
+ 120      skadjb(:, 1, :, :, sps2) = skadjb(:, 1, :, :, sps2) + sskb(:, &
+&            :, :)
+          siadjb(:, 1, :, :, sps2) = siadjb(:, 1, :, :, sps2) + ssjb(:, &
+&            :, :)
+          sjadjb(:, 1, :, :, sps2) = sjadjb(:, 1, :, :, sps2) + ssib(:, &
+&            :, :)
         ELSE
           IF (branch .LT. 22) THEN
             IF (branch .LT. 21) THEN
               IF (.NOT.branch .LT. 20) THEN
-                sadjb(:, :, -1, :) = sadjb(:, :, -1, :) + ssadjb(:, :, :&
-&                  )
+                sadjb(:, :, -1, :, sps2) = sadjb(:, :, -1, :, sps2) + &
+&                  ssadjb(:, :, :)
                 ssadjb(:, :, :) = 0.0
               END IF
-              sjadjb(:, :, -1, :) = sjadjb(:, :, -1, :) + sskb(:, :, :)
-              siadjb(:, :, -1, :) = siadjb(:, :, -1, :) + ssjb(:, :, :)
-              skadjb(:, :, -2, :) = skadjb(:, :, -2, :) + ssib(:, :, :)
+              sjadjb(:, :, -1, :, sps2) = sjadjb(:, :, -1, :, sps2) + &
+&                sskb(:, :, :)
+              siadjb(:, :, -1, :, sps2) = siadjb(:, :, -1, :, sps2) + &
+&                ssjb(:, :, :)
+              skadjb(:, :, -2, :, sps2) = skadjb(:, :, -2, :, sps2) + &
+&                ssib(:, :, :)
               GOTO 140
             END IF
           ELSE
             IF (branch .LT. 24) THEN
               IF (branch .LT. 23) THEN
-                sadjb(:, :, 0, :) = sadjb(:, :, 0, :) + ssadjb(:, :, :)
+                sadjb(:, :, 0, :, sps2) = sadjb(:, :, 0, :, sps2) + &
+&                  ssadjb(:, :, :)
                 ssadjb(:, :, :) = 0.0
                 GOTO 130
               END IF
             ELSE
-              sadjb(:, :, 1, :) = sadjb(:, :, 1, :) + ssadjb(:, :, :)
+              sadjb(:, :, 1, :, sps2) = sadjb(:, :, 1, :, sps2) + ssadjb&
+&                (:, :, :)
               ssadjb(:, :, :) = 0.0
             END IF
-            sjadjb(:, :, 1, :) = sjadjb(:, :, 1, :) + sskb(:, :, :)
-            siadjb(:, :, 1, :) = siadjb(:, :, 1, :) + ssjb(:, :, :)
-            skadjb(:, :, 1, :) = skadjb(:, :, 1, :) + ssib(:, :, :)
+            sjadjb(:, :, 1, :, sps2) = sjadjb(:, :, 1, :, sps2) + sskb(:&
+&              , :, :)
+            siadjb(:, :, 1, :, sps2) = siadjb(:, :, 1, :, sps2) + ssjb(:&
+&              , :, :)
+            skadjb(:, :, 1, :, sps2) = skadjb(:, :, 1, :, sps2) + ssib(:&
+&              , :, :)
             GOTO 140
           END IF
- 130      sjadjb(:, :, 0, :) = sjadjb(:, :, 0, :) + sskb(:, :, :)
-          siadjb(:, :, 0, :) = siadjb(:, :, 0, :) + ssjb(:, :, :)
-          skadjb(:, :, 0, :) = skadjb(:, :, 0, :) + ssib(:, :, :)
+ 130      sjadjb(:, :, 0, :, sps2) = sjadjb(:, :, 0, :, sps2) + sskb(:, &
+&            :, :)
+          siadjb(:, :, 0, :, sps2) = siadjb(:, :, 0, :, sps2) + ssjb(:, &
+&            :, :)
+          skadjb(:, :, 0, :, sps2) = skadjb(:, :, 0, :, sps2) + ssib(:, &
+&            :, :)
         END IF
       END IF
  140  CALL POPREAL8(factk)
@@ -1083,7 +1148,7 @@ bocos:DO nn=1,nbocos
       CALL POPINTEGER4(jcend)
       CALL POPBOOLEAN(secondhalo)
       wadj3b(:, :, :) = 0.0
-      CALL EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
+      CALL EXTRACTBCSTATESADJ_B(nnbcs, wadj, wadjb, padj, padjb, wadj0, &
 &                          wadj0b, wadj1, wadj1b, wadj2, wadj2b, wadj3, &
 &                          wadj3b, padj0, padj0b, padj1, padj1b, padj2, &
 &                          padj2b, padj3, padj3b, rlvadj, revadj, &
@@ -1091,7 +1156,8 @@ bocos:DO nn=1,nbocos
 &                          joffset, koffset, icell, jcell, kcell, isbeg&
 &                          , jsbeg, ksbeg, isend, jsend, ksend, ibbeg, &
 &                          jbbeg, kbbeg, ibend, jbend, kbend, icbeg, &
-&                          jcbeg, icend, jcend, secondhalo)
+&                          jcbeg, icend, jcend, secondhalo, nn, level, &
+&                          sps, sps2)
     END IF
     CALL POPINTEGER4(isbeg)
     CALL POPINTEGER4(jsbeg)

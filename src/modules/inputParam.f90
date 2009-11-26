@@ -1000,7 +1000,7 @@
 
        ! TSStability : Whether or not the TS stability derivatives should
        !               be computed
-       logical:: TSStability,TSAlphaMode,TSBetaMode,TSpqrMode,&
-            TSAltitudeMode,TSMachMode
+       logical:: TSStability,TSAlphaMode,TSBetaMode,TSpMode,&
+            TSqMode,TSrMode,TSAltitudeMode,TSMachMode
 
      end module inputTSStabDeriv

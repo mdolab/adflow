@@ -2,9 +2,10 @@
 !      ******************************************************************
 !      *                                                                *
 !      * File:          inputParam.f90                                  *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
+!      * Author:        Edwin van der Weide, Steve Repsher,             *
+!      *                C.A.(Sandy) Mader                               *
 !      * Starting date: 12-11-2002                                      *
-!      * Last modified: 11-27-2007                                      *
+!      * Last modified: 09-17-2009                                      *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -435,6 +436,87 @@
        real(kind=realType), dimension(:), allocatable :: sinCoefFourYRot
        real(kind=realType), dimension(:), allocatable :: sinCoefFourZRot
 
+       ! degreePolAlpha: Degree of the Alpha polynomial.
+   
+       integer(kind=intType) :: degreePolAlpha
+      
+       ! coefPolAlpha(0:): coefficients of the Alpha polynomial.
+     
+       real(kind=realType), dimension(:), allocatable :: coefPolAlpha
+ 
+       ! degreeFourAlpha: Degree of the Alpha fourier series.
+      
+       integer(kind=intType) :: degreeFourAlpha
+
+       ! omegaFourAlpha: Fourier frequency of the Alpha; the
+       !                   period of the motion is 2*pi/omega.
+   
+       real(kind=realType) :: omegaFourAlpha
+  
+       ! cosCoefFourAlpha(0:): cosine coefficients of the
+       !                      x-rotation fourier series.
+
+       real(kind=realType), dimension(:), allocatable :: cosCoefFourAlpha
+       
+       ! sinCoefFourAlpha(1:): sine coefficients of the
+       !                      Alpha fourier series.
+
+       real(kind=realType), dimension(:), allocatable :: sinCoefFourAlpha
+
+       ! degreePolXRot: Degree of the Beta polynomial.
+  
+       integer(kind=intType) :: degreePolBeta  
+
+       ! coefPolXRot(0:): coefficients of the Beta polynomial.
+ 
+       real(kind=realType), dimension(:), allocatable :: coefPolBeta
+
+       ! degreeFourBeta: Degree of the Beta fourier series.
+   
+       integer(kind=intType) :: degreeFourBeta
+
+       ! omegaFourBeta: Fourier frequency of the Beta; the
+       !                   period of the motion is 2*pi/omega.
+ 
+       real(kind=realType) :: omegaFourBeta
+
+       ! cosCoefFourBeta(0:): cosine coefficients of the
+       !                      Beta fourier series.
+    
+       real(kind=realType), dimension(:), allocatable :: cosCoefFourBeta
+
+       ! sinCoefFourBeta(1:): sine coefficients of the
+       !                      Beta fourier series.
+ 
+       real(kind=realType), dimension(:), allocatable :: sinCoefFourBeta
+
+       ! degreePolMach: Degree of the Mach polynomial.
+ 
+       integer(kind=intType) :: degreePolMach
+
+       ! coefPolMach(0:): coefficients of the Mach polynomial.
+
+       real(kind=realType), dimension(:), allocatable :: coefPolMach
+
+       ! degreeFourMach: Degree of the Mach fourier series.
+ 
+       integer(kind=intType) :: degreeFourMach
+
+       ! omegaFourMach: Fourier frequency of the Mach Number; the
+       !                   period of the motion is 2*pi/omega.
+ 
+       real(kind=realType) :: omegaFourMach
+
+       ! cosCoefFourMach(0:): cosine coefficients of the
+       !                      Mach Number fourier series.
+ 
+       real(kind=realType), dimension(:), allocatable :: cosCoefFourMach
+
+       ! sinCoefFourMach(1:): sine coefficients of the
+       !                      Mach Number fourier series.
+  
+       real(kind=realType), dimension(:), allocatable :: sinCoefFourMach
+
        ! gridMotionSpecified: Whether or not a rigid body motion of
        !                      the grid has been specified.
 
@@ -537,6 +619,10 @@
        ! Mach:                Free stream Mach number.
        ! MachCoef:            Mach number used to compute coefficients;
        !                      only relevant for translating geometries.
+       ! MachGrid:            Mach number of the Mesh. Used in stability 
+       !                      derivative calculations. Specified as the
+       !                      negative of the desired freestream Mach number.
+       !                      When this option is set, set Mach = 0.0...
        ! velDirFreestream(3): Direction of the free-stream velocity.
        !                      Internally this vector is scaled to a unit
        !                      vector, so there is no need to specify a
@@ -571,7 +657,7 @@
 
        logical :: wallFunctions, wallDistanceNeeded
 
-       real(kind=realType) :: Mach, MachCoef
+       real(kind=realType) :: Mach, MachCoef,MachGrid
        real(kind=realType) :: Reynolds, ReynoldsLength
        real(kind=realType) :: tempFreestream, gammaConstant, RGasDim
        real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset
@@ -806,3 +892,115 @@
        real(kind=realType) :: allowableDonorQuality
 
        end module inputOverset
+
+       module inputADjoint
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Definition of some parameters ADjoint.                         *
+!      * The actual values of this parameters are arbitrary;            *
+!      * in the code always the symbolic names are (should be) used.    *
+!      *                                                                *
+!      ******************************************************************
+!
+       use precision
+       implicit none
+       save
+
+       !definition of parameters for the ADjoint Linear Solver
+
+       integer(kind=intType), parameter :: PETSCBICGStab = 1_intType, &
+                                           PETSCGMRES    = 2_intType, &
+                                           PETSCCG       = 3_intType, &
+                                           PETSCFGMRES   = 4_intType
+       
+       !Definitions for Global Preconditioners
+       integer(kind=intType), parameter :: BlockJacobi      = 1_intType, &
+                                           Jacobi           = 2_intType, &
+                                           AdditiveSchwartz = 3_intType
+
+       !Definitions for local Preconditioners
+       integer(kind=intType), parameter :: ILU       = 1_intType, &
+                                           ICC       = 2_intType, &
+                                           LU        = 3_intType, &
+                                           Cholesky  = 4_intType
+
+       !Definitions for matrix ordering method
+       integer(kind=intType), parameter :: Natural               = 1_intType, &
+                                           ReverseCuthillMckee   = 2_intType, &
+                                           NestedDissection      = 3_intType, &
+                                           OnewayDissection      = 4_intType, &
+                                           QuotientMinimumDegree = 5_intType
+
+       !Definitions for Preconditioner Side
+       integer(kind=intType), parameter :: Left  = 1_intType, &
+                                           Right = 2_intType
+       
+       !Definitions for matrix ordering method
+       integer(kind=intType), parameter :: Normal = 1_intType, &
+                                           RowMax = 2_intType, &
+                                           RowSum = 3_intType, &
+                                           RowAbs = 4_intType
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Definition of the adjoint input parameters.                    *
+!      *                                                                *
+!      ******************************************************************
+!
+       ! solveADjoint : Whether or not the adjoint equations should be solved
+       ! Monitor      : Whether or not to enable the monitor for the KSP 
+       !                contexts.
+       logical :: solveADjoint, setMonitor
+
+       ! ADjointSolverType: Type of linear solver for the ADjoint
+       ! PreCondType      : Type of Preconditioner to use
+       ! ScaleType        : Type of Scaling to use in Jacobi Preconditioner
+       ! Matrix Ordering  : Type of matrix ordering to use
+       integer(kind=intType)::ADjointSolverType,PreCondType,ScaleType,&
+            MatrixOrdering
+       
+       ! PCSide  : Right or Left Preconditioning
+       ! LocalPC : Local preconditioning type 
+       integer(kind=intType):: PCSide,LocalPCType
+
+       ! FillLevel     : Number of levels of fill for the ILU local PC
+       ! Overlap       : Amount of overlap in the ASM PC
+       integer(kind=intType):: FillLevel, Overlap
+
+       ! adjRelTol     : Relative tolerance
+       ! adjAbsTol     : Absolute tolerance
+       ! adjDivTol     : Relative tolerance increase to divergence
+       ! adjMaxIter    : Maximum number of iterations
+       ! adjRestart    : Maximum number of steps before restart
+       !                 It has a high impact on the required memory!
+       ! adjMonStep    : Convergence monitor step
+       
+       real(kind=realType)    :: adjRelTol  
+       real(kind=realType)    :: adjAbsTol  
+       real(kind=realType)    :: adjDivTol  
+       integer(kind=intType)  :: adjMaxIter 
+       integer(kind=intType)  :: adjRestart 
+       integer(kind=intType)  :: adjMonStep 
+      
+
+     end module inputADjoint
+
+     module inputTSStabDeriv
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Definition of some parameters for Time Spectral stability      *
+!      * derivatives.                                                   *
+!      * The actual values of this parameters are arbitrary;            *
+!      * in the code always the symbolic names are (should be) used.    *
+!      *                                                                *
+!      ******************************************************************
+!
+
+       ! TSStability : Whether or not the TS stability derivatives should
+       !               be computed
+       logical:: TSStability,TSAlphaMode,TSBetaMode,TSpMode,&
+            TSqMode,TSrMode,TSAltitudeMode,TSMachMode
+
+     end module inputTSStabDeriv

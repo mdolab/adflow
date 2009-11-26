@@ -4,7 +4,7 @@
 !  Differentiation of bcfarfieldadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: winfadj padj pinfcorradj
 !                wadj normadj
-!   of linear combination of output variables: padj pinfcorradj
+!   of linear combination of output variables: winfadj padj pinfcorradj
 !                wadj normadj
 !
 !      ******************************************************************
@@ -19,33 +19,40 @@
 !
 SUBROUTINE BCFARFIELDADJ_B(secondhalo, winfadj, winfadjb, pinfcorradj, &
 &  pinfcorradjb, wadj, wadjb, padj, padjb, siadj, sjadj, skadj, normadj&
-&  , normadjb, rfaceadj, icell, jcell, kcell)
+&  , normadjb, rfaceadj, icell, jcell, kcell, nn, level, sps, sps2)
   USE bctypes
   USE blockpointers, ONLY : bcdata, nbocos, bctype, bcfaceid, gamma, &
 &  il, jl, kl, w, p
   USE constants
   USE flowvarrefstate
+  USE inputtimespectral
   USE iteration
   IMPLICIT NONE
+!print *,'nnendbcfar',nn,nnbcs
+!close (UNIT=unitxAD)
   INTEGER(KIND=INTTYPE) :: icell, jcell, kcell
-  REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3), INTENT(IN) :: &
-&  normadj
-  REAL(KIND=REALTYPE) :: normadjb(nbocos, -2:2, -2:2, 3)
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2), INTENT(IN) :: padj
-  REAL(KIND=REALTYPE) :: padjb(-2:2, -2:2, -2:2)
+  INTEGER(KIND=INTTYPE) :: level, nn, sps, sps2
+  REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: normadj
+  REAL(KIND=REALTYPE) :: normadjb(nbocos, -2:2, -2:2, 3, &
+&  ntimeintervalsspectral)
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, &
+&  ntimeintervalsspectral), INTENT(IN) :: padj
+  REAL(KIND=REALTYPE) :: padjb(-2:2, -2:2, -2:2, ntimeintervalsspectral)
   REAL(KIND=REALTYPE) :: pinfcorradj, pinfcorradjb
-  REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2), INTENT(IN) :: &
-&  rfaceadj
+  REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, &
+&  ntimeintervalsspectral), INTENT(IN) :: rfaceadj
   LOGICAL, INTENT(IN) :: secondhalo
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  siadj
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  sjadj
-  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3), INTENT(IN) :: &
-&  skadj
-  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw), INTENT(IN) :: &
-&  wadj
-  REAL(KIND=REALTYPE) :: wadjb(-2:2, -2:2, -2:2, nw)
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: siadj
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: sjadj
+  REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
+&  ntimeintervalsspectral), INTENT(IN) :: skadj
+  REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral), INTENT(IN) :: wadj
+  REAL(KIND=REALTYPE) :: wadjb(-2:2, -2:2, -2:2, nw, &
+&  ntimeintervalsspectral)
   REAL(KIND=REALTYPE), DIMENSION(nw), INTENT(IN) :: winfadj
   REAL(KIND=REALTYPE) :: winfadjb(nw)
   REAL(KIND=REALTYPE) :: ac1, ac1b, ac2, ac2b, factk, gm1, gm53, ovgm1
@@ -56,9 +63,8 @@ SUBROUTINE BCFARFIELDADJ_B(secondhalo, winfadj, winfadjb, pinfcorradj, &
   INTEGER(KIND=INTTYPE) :: ibbeg, ibend, jbbeg, jbend, kbbeg, kbend
   INTEGER(KIND=INTTYPE) :: icbeg, icend, jcbeg, jcend, kcbeg, kcend
   INTEGER(KIND=INTTYPE) :: ioffset, joffset, koffset
-  INTEGER(KIND=INTTYPE) :: i, ii, j, jj, l
+  INTEGER(KIND=INTTYPE) :: i, ii, j, jj, l, nnbcs
   INTEGER(KIND=INTTYPE) :: isbeg, isend, jsbeg, jsend, ksbeg, ksend
-  INTEGER(KIND=INTTYPE) :: nn
   REAL(KIND=REALTYPE) :: nnx, nnxb, nny, nnyb, nnz, nnzb
   REAL(KIND=REALTYPE) :: padj0(-2:2, -2:2), padj0b(-2:2, -2:2), padj1(-2&
 &  :2, -2:2), padj1b(-2:2, -2:2)
@@ -90,6 +96,7 @@ SUBROUTINE BCFARFIELDADJ_B(secondhalo, winfadj, winfadjb, pinfcorradj, &
 !
 ! irho,ivx,ivy,ivz
 ! gammaInf, wInf, pInfCorr
+!nIntervalTimespectral
 !
 !      Subroutine arguments.
 !
@@ -102,6 +109,18 @@ SUBROUTINE BCFARFIELDADJ_B(secondhalo, winfadj, winfadjb, pinfcorradj, &
 !
 !      Local variables.
 !
+!!$!File Parameters remove for AD
+!!$      integer :: unitxAD = 15,ierror
+!!$      integer ::iii,iiii,jjj,jjjj,kkk,kkkk,nnnn,istart2,jstart2,kstart2,iend2,jend2,kend2,n
+!!$      character(len = 16)::outfile
+!!$      
+!!$      outfile = "xAD.txt"
+!!$      
+!!$      open (UNIT=unitxAD,File=outfile,status='old',position='append',action='write',iostat=ierror)
+!!$      if(ierror /= 0)                        &
+!!$           call terminate("verifyResiduals", &
+!!$           "Something wrong when &
+!!$           &calling open")
 !
 !      Interfaces
 !
@@ -126,7 +145,7 @@ SUBROUTINE BCFARFIELDADJ_B(secondhalo, winfadj, winfadjb, pinfcorradj, &
   c0 = SQRT(gammainf*pinfcorradj*r0)
   s0 = winfadj(irho)**gammainf/pinfcorradj
 ! Loop over the boundary condition subfaces of this block.
-bocos:DO nn=1,nbocos
+bocos:DO nnbcs=1,nbocos
     CALL PUSHINTEGER4(kbend)
     CALL PUSHINTEGER4(jbend)
     CALL PUSHINTEGER4(ibend)
@@ -139,12 +158,13 @@ bocos:DO nn=1,nbocos
     CALL PUSHINTEGER4(ksbeg)
     CALL PUSHINTEGER4(jsbeg)
     CALL PUSHINTEGER4(isbeg)
-    CALL CHECKOVERLAPADJ(nn, icell, jcell, kcell, isbeg, jsbeg, ksbeg, &
-&                   isend, jsend, ksend, ibbeg, jbbeg, kbbeg, ibend, &
+!print *,'nn',nn,nnbcs
+    CALL CHECKOVERLAPADJ(nnbcs, icell, jcell, kcell, isbeg, jsbeg, ksbeg&
+&                   , isend, jsend, ksend, ibbeg, jbbeg, kbbeg, ibend, &
 &                   jbend, kbend, computebc)
     IF (computebc) THEN
 ! Check for farfield boundary conditions.
-      IF (bctype(nn) .EQ. farfield) THEN
+      IF (bctype(nnbcs) .EQ. farfield) THEN
         CALL PUSHBOOLEAN(secondhalo)
         CALL PUSHINTEGER4(jcend)
         CALL PUSHINTEGER4(icend)
@@ -156,15 +176,16 @@ bocos:DO nn=1,nbocos
         CALL PUSHREAL8ARRAY(padj1, 5**2)
         CALL PUSHREAL8ARRAY(wadj2, 5**2*nw)
         CALL PUSHREAL8ARRAY(wadj1, 5**2*nw)
-        CALL EXTRACTBCSTATESADJ(nn, wadj, padj, wadj0, wadj1, wadj2, &
+        CALL EXTRACTBCSTATESADJ(nnbcs, wadj, padj, wadj0, wadj1, wadj2, &
 &                          wadj3, padj0, padj1, padj2, padj3, rlvadj, &
 &                          revadj, rlvadj1, rlvadj2, revadj1, revadj2, &
 &                          ioffset, joffset, koffset, icell, jcell, &
 &                          kcell, isbeg, jsbeg, ksbeg, isend, jsend, &
 &                          ksend, ibbeg, jbbeg, kbbeg, ibend, jbend, &
 &                          kbend, icbeg, jcbeg, icend, jcend, secondhalo&
-&                         )
+&                          , nn, level, sps, sps2)
         ad_from = jcbeg
+!print *,'extract',secondhalo,icell,jcell,kcell
 ! Loop over the generic subface to set the state in the
 ! halo cells.
         DO j=ad_from,jcend
@@ -175,16 +196,25 @@ bocos:DO nn=1,nbocos
             CALL PUSHINTEGER4(jj)
             jj = j - joffset
 !BCData(nn)%rface(i,j)
-            rface = rfaceadj(nn, ii, jj)
+            rface = rfaceadj(nnbcs, ii, jj, sps2)
             CALL PUSHREAL8(nnx)
 ! Store the three components of the unit normal a
 ! bit easier.
-            nnx = normadj(nn, ii, jj, 1)
+            nnx = normadj(nnbcs, ii, jj, 1, sps2)
             CALL PUSHREAL8(nny)
-            nny = normadj(nn, ii, jj, 2)
+            nny = normadj(nnbcs, ii, jj, 2, sps2)
             CALL PUSHREAL8(nnz)
-            nnz = normadj(nn, ii, jj, 3)
+            nnz = normadj(nnbcs, ii, jj, 3, sps2)
             CALL PUSHREAL8(qn0)
+!!$                 if(i==1 .and. j ==1)then
+!!$                    print *,'normxAdj',nnx,nnbcs!,i,j,ii,jj
+!!$                    print *,'normyAdj',nny,nnbcs
+!!$                    print *,'normzAdj',nnz,nnbcs
+!!$                    print *,'rfaceAdj',rface,nnbcs
+!!$                 endif
+!!$                 write(unitxAD,11)int((icbeg+icend)/2),int((jcbeg+jcend)/2), i,j,nnbcs,normAdj(nnbcs,ii,jj,1,sps2), rFaceAdj(n
+!nbcs,ii,jj,sps2) 
+!!$11               format(1x,'wadj',5I8,2f20.14)       
 ! Compute the normal velocity of the free stream and
 ! substract the normal velocity of the mesh.
             qn0 = u0*nnx + v0*nny + w0*nnz
@@ -274,6 +304,7 @@ bocos:DO nn=1,nbocos
             CALL PUSHREAL8(wadj1(ii, jj, ivz))
             wadj1(ii, jj, ivz) = wf
             padj1(ii, jj) = wadj1(ii, jj, irho)*cc
+!print*,'wadj1',i,j,wAdj1(ii,jj,irho),wAdj1(ii,jj,ivx),wAdj1(ii,jj,ivy),wAdj1(ii,jj,ivz),wAdj1(ii,jj,irhoE),pAdj1(ii,jj) 
 ! Compute the total energy.
             tmp = ovgm1*padj1(ii, jj) + half*wadj1(ii, jj, irho)*(uf**2+&
 &              vf**2+wf**2)
@@ -299,20 +330,23 @@ bocos:DO nn=1,nbocos
 !
 ! Extrapolate the state vectors in case a second halo
 ! is needed.
+! print *,'second halo adj', secondHalo
         IF (secondhalo) THEN
           CALL PUSHREAL8ARRAY(padj0, 5**2)
           CALL PUSHREAL8ARRAY(wadj0, 5**2*nw)
-          CALL EXTRAPOLATE2NDHALOADJ(nn, icbeg, icend, jcbeg, jcend, &
+          CALL EXTRAPOLATE2NDHALOADJ(nnbcs, icbeg, icend, jcbeg, jcend, &
 &                               ioffset, joffset, wadj0, wadj1, wadj2, &
 &                               padj0, padj1, padj2)
           CALL PUSHINTEGER4(1)
         ELSE
           CALL PUSHINTEGER4(0)
         END IF
-        CALL REPLACEBCSTATESADJ(nn, wadj0, wadj1, wadj2, wadj3, padj0, &
-&                          padj1, padj2, padj3, rlvadj1, rlvadj2, &
+!print *,'replaceadj', secondHalo
+        CALL REPLACEBCSTATESADJ(nnbcs, wadj0, wadj1, wadj2, wadj3, padj0&
+&                          , padj1, padj2, padj3, rlvadj1, rlvadj2, &
 &                          revadj1, revadj2, icell, jcell, kcell, wadj, &
-&                          padj, rlvadj, revadj, secondhalo)
+&                          padj, rlvadj, revadj, secondhalo, nn, level, &
+&                          sps, sps2)
         CALL PUSHINTEGER4(3)
       ELSE
         CALL PUSHINTEGER4(2)
@@ -321,7 +355,6 @@ bocos:DO nn=1,nbocos
       CALL PUSHINTEGER4(1)
     END IF
   END DO bocos
-  winfadjb(1:nw) = 0.0
   v0b = 0.0
   s0b = 0.0
   padj0b(-2:2, -2:2) = 0.0
@@ -333,19 +366,20 @@ bocos:DO nn=1,nbocos
   wadj1b(-2:2, -2:2, 1:nw) = 0.0
   wadj2b(-2:2, -2:2, 1:nw) = 0.0
   u0b = 0.0
-  DO nn=nbocos,1,-1
+  DO nnbcs=nbocos,1,-1
     CALL POPINTEGER4(branch)
     IF (.NOT.branch .LT. 3) THEN
-      CALL REPLACEBCSTATESADJ_B(nn, wadj0, wadj0b, wadj1, wadj1b, wadj2&
-&                          , wadj3, padj0, padj0b, padj1, padj1b, padj2&
-&                          , padj3, rlvadj1, rlvadj2, revadj1, revadj2, &
-&                          icell, jcell, kcell, wadj, wadjb, padj, padjb&
-&                          , rlvadj, revadj, secondhalo)
+      CALL REPLACEBCSTATESADJ_B(nnbcs, wadj0, wadj0b, wadj1, wadj1b, &
+&                          wadj2, wadj3, padj0, padj0b, padj1, padj1b, &
+&                          padj2, padj3, rlvadj1, rlvadj2, revadj1, &
+&                          revadj2, icell, jcell, kcell, wadj, wadjb, &
+&                          padj, padjb, rlvadj, revadj, secondhalo, nn, &
+&                          level, sps, sps2)
       CALL POPINTEGER4(branch)
       IF (.NOT.branch .LT. 1) THEN
         CALL POPREAL8ARRAY(wadj0, 5**2*nw)
         CALL POPREAL8ARRAY(padj0, 5**2)
-        CALL EXTRAPOLATE2NDHALOADJ_B(nn, icbeg, icend, jcbeg, jcend, &
+        CALL EXTRAPOLATE2NDHALOADJ_B(nnbcs, icbeg, icend, jcbeg, jcend, &
 &                               ioffset, joffset, wadj0, wadj0b, wadj1, &
 &                               wadj1b, wadj2, wadj2b, padj0, padj0b, &
 &                               padj1, padj1b, padj2, padj2b)
@@ -492,11 +526,14 @@ bocos:DO nn=1,nbocos
           v0b = v0b + nny*qn0b
           w0b = w0b + nnz*qn0b
           CALL POPREAL8(nnz)
-          normadjb(nn, ii, jj, 3) = normadjb(nn, ii, jj, 3) + nnzb
+          normadjb(nnbcs, ii, jj, 3, sps2) = normadjb(nnbcs, ii, jj, 3, &
+&            sps2) + nnzb
           CALL POPREAL8(nny)
-          normadjb(nn, ii, jj, 2) = normadjb(nn, ii, jj, 2) + nnyb
+          normadjb(nnbcs, ii, jj, 2, sps2) = normadjb(nnbcs, ii, jj, 2, &
+&            sps2) + nnyb
           CALL POPREAL8(nnx)
-          normadjb(nn, ii, jj, 1) = normadjb(nn, ii, jj, 1) + nnxb
+          normadjb(nnbcs, ii, jj, 1, sps2) = normadjb(nnbcs, ii, jj, 1, &
+&            sps2) + nnxb
           CALL POPINTEGER4(jj)
           CALL POPINTEGER4(ii)
         END DO
@@ -514,7 +551,7 @@ bocos:DO nn=1,nbocos
       CALL POPBOOLEAN(secondhalo)
       padj3b(:, :) = 0.0
       wadj3b(:, :, :) = 0.0
-      CALL EXTRACTBCSTATESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0, &
+      CALL EXTRACTBCSTATESADJ_B(nnbcs, wadj, wadjb, padj, padjb, wadj0, &
 &                          wadj0b, wadj1, wadj1b, wadj2, wadj2b, wadj3, &
 &                          wadj3b, padj0, padj0b, padj1, padj1b, padj2, &
 &                          padj2b, padj3, padj3b, rlvadj, revadj, &
@@ -522,7 +559,8 @@ bocos:DO nn=1,nbocos
 &                          joffset, koffset, icell, jcell, kcell, isbeg&
 &                          , jsbeg, ksbeg, isend, jsend, ksend, ibbeg, &
 &                          jbbeg, kbbeg, ibend, jbend, kbend, icbeg, &
-&                          jcbeg, icend, jcend, secondhalo)
+&                          jcbeg, icend, jcend, secondhalo, nn, level, &
+&                          sps, sps2)
     END IF
     CALL POPINTEGER4(isbeg)
     CALL POPINTEGER4(jsbeg)

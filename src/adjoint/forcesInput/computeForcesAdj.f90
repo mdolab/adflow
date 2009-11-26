@@ -17,12 +17,8 @@
                        alphaAdj,betaAdj,machAdj,machcoefAdj,machGridAdj,&
                        prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                        rhoinfAdj, pinfAdj,murefAdj, timerefAdj,pInfCorrAdj,&
-                       rotCenterAdj, rotRateAdj,liftIndex)
-        !(xAdj, &
-        !         iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
-        !         mm,cFxAdj,cFyAdj,cFzAdj, &
-        !         cMxAdj,cMyAdj,cMzAdj,yplusMax,refPoint,CLAdj,CDAdj,  &
-         !        nn,level,sps,cFpAdj,cMpAdj)
+                       rotCenterAdj, rotRateAdj,liftIndex,t)
+
 !
 !     ******************************************************************
 !     *                                                                *
@@ -77,7 +73,7 @@
 
       real(kind=realType), dimension(3) :: rotCenterAdj, rotRateAdj
 
-
+      REAL(KIND=REALTYPE) ::t
 !
 !     Local variables.
 !
@@ -150,7 +146,7 @@
 
        !first two arguments needed for time spectral.just set to initial values for the current steady case...
      !  print *,'calling gridvelocities',mm
-       call gridVelocitiesFineLevelForcesAdj(.false.,zero, sps,xAdj,sAdj,&
+       call gridVelocitiesFineLevelForcesAdj(.false.,t, sps,xAdj,sAdj,&
             iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End,mm,&
             sFaceIAdj,sFaceJAdj,sFaceKAdj,&
             machGridAdj,velDirFreestreamAdj,&
