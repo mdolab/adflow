@@ -3,7 +3,7 @@
 !  
 !  Differentiation of getdirvector in reverse (adjoint) mode:
 !   gradient, with respect to input variables: alpha beta
-!   of linear combination of output variables: winddirection
+!   of linear combination of output variables: alpha beta winddirection
 !
 !     ******************************************************************
 !     *                                                                *
@@ -103,9 +103,9 @@ SUBROUTINE GETDIRVECTOR_B(refdirection, alpha, alphab, beta, betab, &
     CALL VECTORROTATION(x1, y1, z1, 2, alpha, xbn, ybn, zbn)
 ! 2) rotate beta radians ccw about y-axis
 !    ( <=> rotate z-axis -beta radians ccw)
-    CALL PUSHINTEGER4(1)
-  ELSE
     CALL PUSHINTEGER4(2)
+  ELSE
+    CALL PUSHINTEGER4(1)
   END IF
   zwb = winddirectionb(3)
   winddirectionb(3) = 0.0
@@ -115,21 +115,20 @@ SUBROUTINE GETDIRVECTOR_B(refdirection, alpha, alphab, beta, betab, &
   CALL POPINTEGER4(branch)
   IF (branch .LT. 2) THEN
     IF (branch .LT. 1) THEN
+      arg1b = 0.0
       CALL VECTORROTATION_B(xw, xwb, yw, ywb, zw, zwb, 2, arg1, arg1b, &
 &                      x1, x1b, y1, y1b, z1, z1b)
       CALL POPREAL8(arg1)
-      betab = -arg1b
+      betab = betab - arg1b
+      arg1b = 0.0
       CALL VECTORROTATION_B(x1, x1b, y1, y1b, z1, z1b, 3, arg1, arg1b, &
 &                      xbn, xbnb, ybn, ybnb, zbn, zbnb)
-      alphab = -arg1b
-    ELSE
-      CALL VECTORROTATION_B(xw, xwb, yw, ywb, zw, zwb, 3, beta, betab, &
-&                      x1, x1b, y1, y1b, z1, z1b)
-      CALL VECTORROTATION_B(x1, x1b, y1, y1b, z1, z1b, 2, alpha, alphab&
-&                      , xbn, xbnb, ybn, ybnb, zbn, zbnb)
+      alphab = alphab - arg1b
     END IF
   ELSE
-    alphab = 0.0
-    betab = 0.0
+    CALL VECTORROTATION_B(xw, xwb, yw, ywb, zw, zwb, 3, beta, betab, x1&
+&                    , x1b, y1, y1b, z1, z1b)
+    CALL VECTORROTATION_B(x1, x1b, y1, y1b, z1, z1b, 2, alpha, alphab, &
+&                    xbn, xbnb, ybn, ybnb, zbn, zbnb)
   END IF
 END SUBROUTINE GETDIRVECTOR_B

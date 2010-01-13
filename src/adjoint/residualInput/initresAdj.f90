@@ -75,10 +75,13 @@
 !!$           call setPointers(nn, currentLevel, sps)
 
            ! Determine the equation mode and act accordingly.
-
-           select case (equationMode)
-             case (steady)
-
+           !print *,'equation Mode',equationMode,'ref',steady,timespectral,unsteady
+           !switch to if statments. this particular case setup doesn't work
+           !with tapenade. The steady case dissappears and Tapenade doesn't
+           !know how to handle the empty case....
+!           select case (equationMode)
+!             case (steady)
+           if(equationMode==steady)then
                ! Steady state computation.
                ! Determine the currently active multigrid level.
 
@@ -122,7 +125,8 @@
 
              !===========================================================
 
-             case (unsteady)
+            elseif(equationMode==Unsteady)then
+               !case (unsteady)
 
                ! Unsteady computation.
                ! A further distinction must be made.
@@ -333,11 +337,11 @@
                end select
 
              !===========================================================
-
-             case (timeSpectral)
-!!$
-!!$                call terminate("initRes", &
-!!$                                  "Time Spectral ADjoint not yet implemented")
+            elseif(equationMode==timespectral)then
+               !case (timeSpectral)
+!!$!
+!!$!                call terminate("initRes", &
+!!$!                                  "Time Spectral ADjoint not yet implemented")
                 
                ! Time spectral computation. The time derivative of the
                ! current solution is given by a linear combination of
@@ -578,8 +582,11 @@
 !!$                 enddo timeLoopCoarse
 
                endif spectralLevelTest
-
-           end select
+            else
+               call terminate("initResAdj", &
+                    "Not a valid equation Mode...")
+            endif
+          !end select
 
 !redundent calculation. The entire stencil is zeroed above. May need to be corrected for more complex initalizaitons....
 !!$           ! Set the residual in the halo cells to zero. This is just

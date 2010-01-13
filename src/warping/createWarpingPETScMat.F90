@@ -25,6 +25,7 @@
       use flowVarRefState ! 
       use mdData          !mdNSurfNodes,mdNSurfNodesCompact
       use mdDataLocal     !mdSurfGlobalIndLocal
+      use inputTimeSpectral !nTimeIntervalsSpectral
       implicit none
 !
 !     Local variables.
@@ -58,12 +59,12 @@
 
       ! Define matrix dXvdXs local size (number of columns) for the mesh
       ! volume coordinates.
-      nDimW = nw*nCellsLocal
+      nDimW = nw*nCellsLocal*nTimeIntervalsSpectral
 
-      nDimX = 3 * nNodesLocal
+      nDimX = 3 * nNodesLocal*nTimeIntervalsSpectral
       ! Define matrix dXvdXs global size (number of Rows) for the
       ! surface coordinates.
-      nDimS = 3 * mdNSurfNodesCompact
+      nDimS = 3 * mdNSurfNodesCompact*nTimeIntervalsSpectral
 
       ! Number of non-zero blocks per residual row in dRdW
       ! >>> This depends on the stencil being used R=R(W)
@@ -75,8 +76,8 @@
       
 	
       nzDiagonalXs = 1
-      nzDiagonal = mdNSurfNodesCompact/(nproc*2)!13 ! 1 + 6 + 6  check!!!
-      print *,'nzdiagonal', nzDiagonal,mdNSurfNodesCompact
+      nzDiagonal = min(mdNSurfNodesCompact,20)!/(nproc*2)!13 ! 1 + 6 + 6  check!!!
+      !print *,'nzdiagonal', nzDiagonal,mdNSurfNodesCompact
 
       ! Average number of off processor contributions per Cell
       ! (average number of donor cells that come from other processor)

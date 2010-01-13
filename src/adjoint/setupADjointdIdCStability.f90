@@ -1,27 +1,26 @@
 !
 !     ******************************************************************
 !     *                                                                *
-!     * File:          verifyTSStabilityDerivAdj.f90                   *
+!     * File:          setupADjointdIdCStability.f90                   *
 !     * Author:        C.A.(Sandy) Mader                               *
-!     * Starting date: 11-26-2009                                      *
-!     * Last modified: 11-26-2009                                      *
+!     * Starting date: 11-27-2009                                      *
+!     * Last modified: 11-27-2009                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine verifyTSStabilityDerivAdj(level)
+      subroutine setupADjointdIdCStability(level,costFunction)
 !
 !     ******************************************************************
 !     *                                                                *
 !     * Computes the Time spectral stability derivatives for the       *
 !     * current configuration for the finest grid level over all time  *
 !     * instances using the                                            *
-!     * auxiliary routines modified for tapenade and compares them to  *
-!     * the stability derivatives computed with the original code.     *
-!     *                                                                *
-!     * This is only executed in debug mode.                           *
+!     * auxiliary routines modified for tapenade.                      *
 !     *                                                                *
 !     ******************************************************************
 !
+      use ADjointPETSc
+      use ADjointVars
       use blockPointers
       use communication       ! myID
       use inputPhysics        !
@@ -38,7 +37,7 @@
 !
 !     Subroutine arguments.
 !
-      integer(kind=intType), intent(in) :: level
+      integer(kind=intType), intent(in) :: level,costFunction
 !
 !     Local variables.
 !
@@ -70,6 +69,8 @@
       real(kind=realType), dimension(nTimeIntervalsSpectral) :: Cl,Cd,Cfx,Cfy,Cfz,Cmx,Cmy,Cmz
       real(kind=realType), dimension(nTimeIntervalsSpectral) :: ClAdj,CdAdj,CfxAdj,CfyAdj,CfzAdj, &
                                                            CmxAdj,CmyAdj,CmzAdj
+      real(kind=realType), dimension(nTimeIntervalsSpectral) :: ClAdjb,CdAdjb,CfxAdjb,CfyAdjb,CfzAdjb, &
+           CmxAdjb,CmyAdjb,CmzAdjb
 !      real(kind=realType), dimension(:,:,:),allocatable:: normAdj
       real(kind=realType), dimension(3) :: refPoint
       real(kind=realType) :: yplusMax
@@ -81,7 +82,7 @@
       REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
 
       integer(kind=intType) :: nmonsum2 ,i
-      real(kind=realType),  dimension(:), allocatable :: monLoc1, monGlob1
+      !real(kind=realType),  dimension(:), allocatable :: monLoc1, monGlob1
       real(kind=realType),  dimension(:), allocatable :: monLoc2, monGlob2
 
       real(kind=realType) :: fact!temporary
@@ -96,10 +97,22 @@
       real(kind=realType)::dcldalpha,dcldalphadot,dcmzdalpha,dcmzdalphadot
       real(kind=realType)::dcldMach,dcldMachdot,dcmzdMach,dcmzdMachdot
       real(kind=realType)::cl0,cl0dot,cmz0,cmz0dot
+      real(kind=realType)::cl0b,cmz0b
+      real(kind=realType)::dcldalphab,dcmzdalphab
 
       real(kind=realType)::cl0Adj,cmz0Adj,dcldalphaAdj,dcmzdalphaAdj
+      !real(kind=realType)::cl0AdjB,cmz0AdjB,dcldalphaAdjB,dcmzdalphaAdjB
+
+      !Temporary storage for petsc
+      real(kind=realType) :: dIdcTemp
+
+      !timing variables
+      real(kind=realType), dimension(2) :: time
+      real(kind=realType)               :: timeAdjLocal, timeAdj
 
       real(kind=realType), dimension(nSections) :: t
+      
+      character(len=2*maxStringLen) :: errorMessage
 !for debug
 real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !
@@ -110,10 +123,12 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !     ******************************************************************
 !
       if(myID == 0) then
-        write(*,*) "Running verifyTSStabilityDerivAdj..."
-        !write(*,10) "CL","CD","Cfx","Cmx"
+         write(*,*) "Running setupADjointdIdcStability...",costfunction
       endif
-
+      ! Get the initial time.
+      
+      call cpu_time(time(1))
+      
       ! Set the grid level of the current MG cycle, the value of the
       ! discretization and the logical fineGrid.
 
@@ -128,56 +143,13 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
       correctForK  = .false.
       exchangeTurb = .false.
       secondhalo = .true.
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Exchange halo data to make sure it is up-to-date.              *
-!     * (originally called inside "rungeKuttaSmoother" subroutine).    *
-!     *                                                                *
-!     ******************************************************************
 
       ! allocate monLoc2, monGlob2
 
       nmonsum2 = 8
  !     print *,'allocating monsum'
-      allocate(monLoc1(nmonsum2), monGlob1(nmonsum2))
+      !allocate(monLoc1(nmonsum2), monGlob1(nmonsum2))
       allocate(monLoc2(nmonsum2), monGlob2(nmonsum2))
-
-!      print *,'exchanging halo data'
-      ! Exchange the pressure if the pressure must be exchanged early.
-      ! Only the first halo's are needed, thus whalo1 is called.
-      ! Only on the fine grid.
-      
-      if(exchangePressureEarly .and. currentLevel <= groundLevel) &
-           call whalo1(currentLevel, 1_intType, 0_intType, .true.,&
-           .false., .false.)
-      
-      ! Apply all boundary conditions to all blocks on this level.
-      
-      call applyAllBC(secondHalo)
-      
-      ! Exchange the solution. Either whalo1 or whalo2
-      ! must be called.
-      
-      if( secondHalo ) then
-         call whalo2(currentLevel, 1_intType, nMGVar, .true., &
-              .true., .true.)
-      else
-         call whalo1(currentLevel, 1_intType, nMGVar, .true., &
-              .true., .true.)
-      endif
-
-      call mpi_barrier(SUmb_comm_world, ierr)      
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Compute the stability derivatives using the original routine.  *
-!     *                                                                *
-!     ******************************************************************
-!
-      dcldalpha = 0.0
-      dcmzdalpha = 0.0
-      call computeTSDerivatives(cl0,cmz0,dcldalpha,dcmzdalpha)
       
 !
 !     ******************************************************************
@@ -358,29 +330,88 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
       end do spectralLoopAdj
 
       call mpi_barrier(SUmb_comm_world, ierr)
+      deallocate(monLoc2, monGlob2)
 
+      !Now compute the derivatives of the stability derivatives
 
-      cl0Adj =0.0
-      cmz0Adj =0.0
-      dcldalphaAdj =0.0
-      dcmzdalphaAdj =0.0
-      !Now compute the stability derivatives
+      cl0 =0.0
+      cmz0 =0.0
+      dcldalpha =0.0
+      dcmzdalpha =0.0
+      cl0b = 0.0
+      cmz0b = 0.0
+      dcldalphab = 0.0
+      dcmzdalphab = 0.0
 
-      call computeTSStabilityDerivAdj(cFxAdj,cFyAdj,cFzAdj,cMxAdj,&
-                       cMyAdj,cMzAdj,CLAdj,CDAdj,&
-                       cl0Adj,cmz0Adj,dcldalphaAdj,dcmzdalphaAdj)
+      select case(costFunction)
+      case(costfunccl0)
+         cl0b=1.0
+      case(costfuncclalpha)
+         dcldalphab = 1.0
+      case(costfunccm0)
+         cmz0b=1.0
+      case(costfunccmzalpha)
+         dcmzdalphab = 1.0
+      end select
 
+      call COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
+           cmyadj, cmzadj, cmzadjb, cladj, cladjb, cdadj, cl0, cl0b, &
+           cmz0, cmz0b,dcldalpha, dcldalphab, dcmzdalpha, dcmzdalphab)
+ 
+      
+      do sps = 1,nTimeIntervalsSpectral
 
-      ! Root processor outputs results.
- !     print *,'printing results'
-      if(myID == 0) then
-         write(*,*) 'Stability Derivative verification results'
-         write(*,*) 'Cl0   cmz0   dcldalpha   dcmzdalpha'
-         write(*,20) "Original", cl0,cmz0,dcldalpha,dcmzdalpha
-         write(*,20) "Adjoint ", cl0Adj,cmz0Adj,dcldalphaAdj,dcmzdalphaAdj
-      endif
-             
-      !print *,'finished computing derivatives'
+         select case(costFunction)
+         case(costfunccl0,costfuncclalpha)
+            dIdctemp = Cladjb(sps)
+         case(costfunccm0,costfunccmzalpha)
+            dIdctemp = cmzAdjb(sps)
+            
+         end select
+
+         call VecSetValue(dJdc, sps-1, dIdctemp ,INSERT_VALUES, PETScIerr)
+         !call VecSetValue(dJdc, sps-1, 1.0 ,INSERT_VALUES, PETScIerr)
+         if( PETScIerr/=0 ) then
+            write(errorMessage,99) &
+                 "Error in VecSetValues for time instance", &
+                 sps
+            call terminate("setupADjointdIdcStability", &
+                 errorMessage)
+         endif
+
+      end do
+
+      !Assemble vector
+      call VecAssemblyBegin(dJdc,PETScIerr)
+       
+      if( PETScIerr/=0 ) &
+           call terminate("setupADjointdIdcStability", "Error in VecAssemblyBegin")  
+      
+      call VecAssemblyEnd(dJdc,PETScIerr)
+       
+      if( PETScIerr/=0 ) &
+           call terminate("setupADjointdIdcStability", "Error in VecAssemblyEnd")
+      
+!      if( debug ) then
+ !        call VecView(dJdc,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+         call VecView(dJdc,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+         if( PETScIerr/=0 ) &
+              call terminate("setupADjointdIdcStability", "Error in VecView")
+  !       pause
+  !    endif
+       
+      call cpu_time(time(2))
+      timeAdjLocal = time(2)-time(1)
+      
+      ! Determine the maximum time using MPI reduce
+      ! with operation mpi_max.
+      
+      call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
+           mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
+      
+      if( PETScRank==0 ) &
+           write(*,20) "Assembling dI/dC matrix time (s) =", timeAdj
+       
       ! Flush the output buffer and synchronize the processors.
        
       call f77flush()
@@ -390,6 +421,6 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
        
 10    format(1x,4a14)
 20    format(1x,a,8(1x,e13.6))
-
-    end subroutine verifyTSStabilityDerivAdj
+99    format(a,1x,i6)
+    end subroutine setupADjointdIdCStability
      

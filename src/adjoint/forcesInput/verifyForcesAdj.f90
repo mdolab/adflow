@@ -412,6 +412,9 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 
       end do spectralLoopAdj
 
+      deallocate(monLoc1, monGlob1)
+      deallocate(monLoc2, monGlob2)
+
       call mpi_barrier(SUmb_comm_world, ierr)
       ! Root processor outputs results.
  !     print *,'printing results'

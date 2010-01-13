@@ -2,26 +2,24 @@
 !
 !     ******************************************************************
 !     *                                                                *
-!     * File:          setupADjointRHS.F90                             *
-!     * Author:        Andre C. Marta, C.A.(Sandy) Mader               *
-!     * Starting date: 07-27-2006                                      *
-!     * Last modified: 05-13-2008                                      *
+!     * File:          setupGradientRHS.F90                            *
+!     * Author:         C.A.(Sandy) Mader                              *
+!     * Starting date: 11-27-2009                                      *
+!     * Last modified: 11-27-2009                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine setupADjointRHS(level,costFunction)
-        !subroutine setupADjointRHS(level,sps,costFunction)
+      subroutine setupGradientRHS(level,costFunction)
+        !subroutine setupGradientRHS(level,sps,costFunction)
 !
 !     ******************************************************************
 !     *                                                                *
-!     * Compute the right hand side of the discrete ADjoint problem    *
+!     * Compute the partial derivative for the discrete ADjoint problem*
 !     * in question. Notice that this right hand side is problem /     *
 !     * cost function J dependent.                                     *
 !     *                                                                *
 !     * The ordering of the unknowns in the ADjoint vector used here   *
-!     * is based on the global node numbering and is consistent with   *
-!     * the ordering used in the matrix for the ADjoint problem        *
-!     * assembled in setupADjointMatrix.                               *
+!     * is based on the global node numbering.                         *
 !     *                                                                *
 !     ******************************************************************
 !
@@ -50,49 +48,13 @@
       ! Send some feedback to screen.
 
       if( PETScRank==0 ) &
-        write(*,10) "Assembling ADjoint RHS vector..."
-      if( PETScRank==0 ) print*,'costfunction',costfunction
+        write(*,10) "Assembling Gradient RHS vector..."
 
       ! Get the initial time.
 
       call cpu_time(time(1))
 
-      ! Reset the RHS vector dJ/dW by assigning the value zero to all
-      ! its components.
 
-      ! VecSet - Sets all components of vector to a single scalar value.
-      !
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecSet(Vec x,PetscScalar alpha, PetscErrorCode ierr)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameters
-      !   x     - the vector
-      !   alpha	- the scalar
-      !
-      ! Output Parameter
-      !   x -the vector
-      !
-      ! Note
-      ! For a vector of dimension n, VecSet() computes
-      ! x[i] = alpha, for i=1,...,n,
-      ! so that all vector entries then equal the identical scalar
-      ! value, alpha. Use the more general routine VecSetValues() to
-      ! set different vector entries.
-      !
-      ! You CANNOT call this after you have called VecSetValues() but
-      ! before you call VecAssemblyBegin/End(). 
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecSet.html
-      ! or PETSc users manual, pp.36
-
-      call VecSet(dJdW,PETScZero,PETScIerr)
-
-      if( PETScIerr/=0 ) &
-        call terminate("setupADjointRHS", "Error in VecSet")
 !
 !     ******************************************************************
 !     *                                                                *
@@ -117,15 +79,17 @@
            !spectral case. In the long run maybe we specify this from the
            !input file...
            sps = 1
-           !call setupADjointRHSAeroCoeff(level,costFunction)
-           call setupADjointRHSAeroCoeff(level,sps,costFunction)
+           
+           call setupGradientRHSExtra(level,costFunction,sps)
+           
+           call setupGradientRHSSpatial(level,costFunction,sps) 
+   
 
         case(costFuncCmzAlpha, &
              costFuncCm0,&
              costFuncClAlpha,&
              costFuncCl0)
-           if (PETScRank==0)print *,'stability costfunction',costfunction
-           call setupADjointRHSStability(level,costFunction)
+           call setupGradientRHSStability(level,costFunction)
         case default
           write(*,*) "Invalid cost function ", costFunction
           stop
@@ -190,7 +154,7 @@
                       mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
 
       if( PETScRank==0 ) &
-        write(*,20) "Assembling ADjoint RHS vector time (s) = ", timeAdj
+        write(*,20) "Assembling Gradient RHS vector time (s) = ", timeAdj
 !
 !     ******************************************************************
 !     *                                                                *
@@ -242,4 +206,4 @@
 
 #endif
 
-    end subroutine setupADjointRHS
+    end subroutine setupGradientRHS

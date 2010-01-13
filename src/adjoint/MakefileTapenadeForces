@@ -196,7 +196,9 @@ TAPENADE_MOD = $(TAPENADE_DIRSRC1)/BCTypes.f90 \
 	       $(TAPENADE_DIRSRC1)/flowVarRefState.f90 \
 	       $(TAPENADE_DIRSRC1)/inputParam.f90 \
 	       $(TAPENADE_DIRSRC1)/iteration.f90\
-	       $(TAPENADE_DIRSRC1)/precision.f90
+	       $(TAPENADE_DIRMOD)/monitor.f90 \
+	       $(TAPENADE_DIRSRC1)/precision.f90\
+	       $(TAPENADE_DIRMOD)/section.f90
 
 #TAPENADE_MOD = $(TAPENADE_DIRSRC1)/accuracy.f90 \
 #	       $(TAPENADE_DIRSRC1)/BCTypes.f90 \

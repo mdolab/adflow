@@ -137,9 +137,10 @@ subroutine computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
        endif
        !first two arguments needed for time spectral.just set to initial values for the current steady case...
        !print *,'grid velocities',il,jl,kl,nn,secondhalo
-       call gridVelocitiesFineLevelAdj(.false., t, sps,xAdj,&
+       call gridVelocitiesFineLevelAdj(useOldCoor, t, sps,xAdj,&
             siAdj, sjAdj, skAdj,rotCenterAdj, rotRateAdj,sAdj,sFaceIAdj,&
             sFaceJAdj,sFaceKAdj,machGridAdj,velDirFreestreamAdj,&
+            liftDirectionAdj,alphaAdj,betaAdj,liftIndex,&
             iCell, jCell, kCell,nn,level,sps2)
        !print *,'gvsiAdj',siAdj(:,0,0,1,:)
 !for debugging intermediate stages      
@@ -300,7 +301,9 @@ subroutine computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
 !!$     !do sps2 = 1,nTimeIntervalsSpectral
 !!$     !  print *,'calculating initres',nn
 !!$       !call initresAdj(1_intType, nwf,sps,dwAdj)
-    !dwAdj(:,sps) = 0.0
+!    dwAdj(:,sps) = 0.0
+!    dwAdj(1:3,sps) = sAdj(0,0,0,:,sps)!xAdj(0,0,0,:,sps)
+    !dwAdj(4,sps) = volAdj(sps)
        call initresAdj(1, nwf,wAdj,volAdj,dwAdj,nn,level,sps)
        !print *,'dwadj',dwadj,icell,jcell,kcell
        

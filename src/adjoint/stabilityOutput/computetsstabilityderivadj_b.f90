@@ -24,6 +24,7 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
   USE inputphysics
   USE inputtimespectral
   USE inputtsstabderiv
+  USE monitor
   USE section
   IMPLICIT NONE
   REAL(KIND=REALTYPE) :: cdadj(ntimeintervalsspectral), cfxadj(&
@@ -62,7 +63,6 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
 &  ntimeintervalsspectral), rescmy(ntimeintervalsspectral), rescmz(&
 &  ntimeintervalsspectral)
   REAL(KIND=REALTYPE) :: t(nsections)
-  REAL :: timeunsteadyrestart
   REAL(KIND=REALTYPE) :: res2, TSALPHA, TSALPHADOT
   REAL(KIND=REALTYPE) :: res3, result1, TSMACH, TSMACHDOT
   EXTERNAL TSALPHA, TSMACHDOT, DERIVATIVERIGIDROTANGLE, TSMACH, &

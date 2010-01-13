@@ -39,7 +39,8 @@ vpath %.o $(SUMB_OBJDIR)
 FF90_MODULES = 
 
 FF90_OBJECTS = computeLeastSquaresRegression.o\
-	       computeTSDerivatives.o   
+	       computeTSDerivatives.o   \
+               stabilityDerivativeDriver.o
 
 CC_OBJECTS   = 
 

@@ -36,6 +36,7 @@
                           ! nNodesGlobal, nDesignDipoles
       use communication   ! myID
       use flowVarRefState ! magnetic
+      use inputTimeSpectral !nTimeIntervalsSpectral
       implicit none
 !
 !     Local variables.
@@ -62,7 +63,7 @@
       !   + nDesignSpatial (= 3 * nNodesGlobal)
       !   + nDesignExtra
 
-      nDesignSpatial = 3 * nNodesGlobal
+      nDesignSpatial = (3 * nNodesGlobal)*nTimeIntervalsSpectral
       nDesign        = nDesignExtra + nDesignSpatial
 
 !

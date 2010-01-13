@@ -103,7 +103,8 @@
          
          
       else
-         call terminate('getDirVector', 'Invalid Lift Direction')
+         print *,'lift index',liftindex
+         call terminate('getDirVectorForces', 'Invalid Lift Direction')
          
       endif
       

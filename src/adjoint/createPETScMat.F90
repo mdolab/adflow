@@ -52,7 +52,7 @@
       ! PETSc macros are lost and have to be redefined.
       ! They were extracted from: <PETSc root dir>/include/petscmat.h
 #define MATMPIDENSE        "mpidense"
-
+#define MATMPIAIJ          "mpiaij"
       ! Define matrix dRdW local size, taking into account the total
       ! number of Cells owned by the processor and the number of 
       ! equations.
@@ -165,11 +165,12 @@
         !
         ! See .../petsc/docs/manualpages/Mat/MatCreateMPIBAIJ.html
   
-        allocate( nnzDiagonal(nCellsLocal), nnzOffDiag(nCellsLocal) )
+        allocate( nnzDiagonal(nCellsLocal*nTimeIntervalsSpectral),&
+             nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
 
         nnzDiagonal = nzDiagonalW
         nnzOffDiag  = nzOffDiag
-
+        !print *,'nnzDiagonal',nnzDiagonal,'ofdiag',nnzOffDiag 
         call MatCreateMPIBAIJ(PETSC_COMM_WORLD, nw,             &
                               nDimW, nDimW,                     &
                               PETSC_DETERMINE, PETSC_DETERMINE, &
@@ -1567,7 +1568,490 @@
       endif
 !
 !     ******************************************************************
+!     dCdw
+
 !
+!     ******************************************************************
+!     *                                                                *
+!     * Create matrix dCdW that is used to compute the RHS of the      *
+!     * ADjoint for the time spectral case                             *
+!     *                                                                *
+!     * Matrix dCdw has size [nTimeIntervalsSpectral,nDimW] and is     *
+!     * generally sparse.                                              *
+!     *                                                                *
+!     *                                                                *
+!     ******************************************************************
+!
+      ! Create the matrix. Depending on either this is a sequential or 
+      ! parallel run,  PETSc automatically generates the apropriate
+      ! matrix type over all processes in PETSC_COMM_WORLD
+
+      ! MatCreate - Creates a matrix where the type is determined from
+      !   either a call to MatSetType() or from the options database
+      !   with a call to MatSetFromOptions(). The default matrix type is
+      !   AIJ, using the routines MatCreateSeqAIJ() or MatCreateMPIAIJ()
+      !   if you do not set a type in the options database. If you never
+      !   call MatSetType() or MatSetFromOptions() it will generate an
+      !   error when you try to use the matrix.
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h"  
+      ! call MatCreate(MPI_Comm comm,Mat *A,PetscErrorCode ierr)
+      !
+      ! Collective on MPI_Comm
+      !
+      ! Input Parameter
+      !   comm - MPI communicator
+      ! Output Parameter
+      !   A    - the matrix 
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatCreate.html
+      ! or PETSc users manual, pp.51-52
+
+      call MatCreate(PETSC_COMM_WORLD, dCdw, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatCreate dCdw")
+
+      ! C(# rows): Set the global size (PETSc determine the global size)
+      ! w(# columns): Set the local size (PETSc decide the local size)
+      !
+
+      ! MatSetSizes - Sets the local and global sizes, and checks to
+      !               determine compatibility
+      ! Synopsis
+      !
+      ! #include "petscmat.h"  
+      ! call MatSetSizes(Mat A, PetscInt m, PetscInt n, &
+      !                  PetscInt M, PetscInt N, PetscErrorCode ierr)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   A - the matrix
+      !   m - number of local rows (or PETSC_DECIDE)
+      !   n - number of local columns (or PETSC_DECIDE)
+      !   M - number of global rows (or PETSC_DETERMINE)
+      !   N - number of global columns (or PETSC_DETERMINE)
+      !
+      ! Notes
+      ! m (n) and M (N) cannot be both PETSC_DECIDE If one processor
+      !   calls this with M (N) of PETSC_DECIDE then all processors
+      !   must, otherwise the program will hang.
+      !
+      ! If PETSC_DECIDE is not used for the arguments 'm' and 'n', then
+      !   the user must ensure that they are chosen to be compatible
+      !   with the vectors. To do this, one first considers the
+      !   matrix-vector product 'y = A x'. The 'm' that is used in the
+      !   above routine must match the local size used in the vector
+      !   creation routine VecCreateMPI() for 'y'. Likewise, the 'n'
+      !   used must match that used as the local size in VecCreateMPI()
+      !   for 'x'. 
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatSetSizes.html
+      ! or PETSc users manual, pp.51-52
+
+      call MatSetSizes(dCdw, PETSC_DECIDE,nDimW, &
+                       nTimeIntervalsSpectral,PETSC_DETERMINE, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetSizes dCdw")
+
+      ! MatSetType - Builds matrix object for a particular matrix type
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h" 
+      ! call MatSetType(Mat mat, MatType matype, PetscErrorCode ierr)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   mat    - the matrix object
+      !   matype - matrix type
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatSetType.html
+
+      call MatSetType(dCdw,MATMPIAIJ,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", &
+                       "Error in MatSetFromOptions dCdw")
+
+      ! Set column major order for the matrix dRda.
+
+      call MatSetOption(dCdw, MAT_COLUMN_ORIENTED, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dCdw")
+
+      ! Extract info from the global matrix (only processor 0 does it).
+
+      if( PETScRank==0 .and. debug ) then
+
+        ! Get the global number of rows and columns.
+
+        call MatGetSize(dCdw, matRows, matCols, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatGetSize dCdw")
+
+        write(*,20) "# MATRIX: dCdw global size =", &
+                    matRows, " x ", matCols
+
+        ! Gets the matrix type as a string from the matrix object.
+
+        call MatGetType(dCdw, matTypeStr, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatGetType dCdw")
+
+        write(*,30) "# MATRIX: dCdw type        =", matTypeStr
+
+      endif
+
+      ! Query about the ownership range.
+
+      if( debug ) then
+        call MatGetOwnershipRange(dCdw, iLow, iHigh, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", &
+                         "Error in MatGetOwnershipRange dCdw")
+
+        write(*,40) "# MATRIX: dCdw Proc", PETScRank, "; #rows =", &
+                    nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
+      endif
+
+!     ******************************************************************
+!     dCdx
+
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Create matrix dCdx that is used to compute the Gradient        *
+!     * partial derivative for the ADjoint.                            *
+!     *                                                                *
+!     * Matrix dCdx has size [nTimeIntervalsSpectral,nDimX] and is     *
+!     * generally sparse.                                              *
+!     *                                                                *
+!     *                                                                *
+!     ******************************************************************
+!
+      ! Create the matrix. Depending on either this is a sequential or 
+      ! parallel run,  PETSc automatically generates the apropriate
+      ! matrix type over all processes in PETSC_COMM_WORLD
+
+      ! MatCreate - Creates a matrix where the type is determined from
+      !   either a call to MatSetType() or from the options database
+      !   with a call to MatSetFromOptions(). The default matrix type is
+      !   AIJ, using the routines MatCreateSeqAIJ() or MatCreateMPIAIJ()
+      !   if you do not set a type in the options database. If you never
+      !   call MatSetType() or MatSetFromOptions() it will generate an
+      !   error when you try to use the matrix.
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h"  
+      ! call MatCreate(MPI_Comm comm,Mat *A,PetscErrorCode ierr)
+      !
+      ! Collective on MPI_Comm
+      !
+      ! Input Parameter
+      !   comm - MPI communicator
+      ! Output Parameter
+      !   A    - the matrix 
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatCreate.html
+      ! or PETSc users manual, pp.51-52
+
+      call MatCreate(PETSC_COMM_WORLD, dCdx, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatCreate dCdx")
+
+      ! C(# rows): Set the global size (PETSc determine the local size)
+      ! x(# columns): Set the local size (PETSc decide the global size)
+      !
+      ! This is done for sigma sensitivity (volume). Any additional
+      ! design variable can be appended to the root processor later on.
+      ! It has to be consistent with vector dJda local size...
+
+      ! MatSetSizes - Sets the local and global sizes, and checks to
+      !               determine compatibility
+      ! Synopsis
+      !
+      ! #include "petscmat.h"  
+      ! call MatSetSizes(Mat A, PetscInt m, PetscInt n, &
+      !                  PetscInt M, PetscInt N, PetscErrorCode ierr)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   A - the matrix
+      !   m - number of local rows (or PETSC_DECIDE)
+      !   n - number of local columns (or PETSC_DECIDE)
+      !   M - number of global rows (or PETSC_DETERMINE)
+      !   N - number of global columns (or PETSC_DETERMINE)
+      !
+      ! Notes
+      ! m (n) and M (N) cannot be both PETSC_DECIDE If one processor
+      !   calls this with M (N) of PETSC_DECIDE then all processors
+      !   must, otherwise the program will hang.
+      !
+      ! If PETSC_DECIDE is not used for the arguments 'm' and 'n', then
+      !   the user must ensure that they are chosen to be compatible
+      !   with the vectors. To do this, one first considers the
+      !   matrix-vector product 'y = A x'. The 'm' that is used in the
+      !   above routine must match the local size used in the vector
+      !   creation routine VecCreateMPI() for 'y'. Likewise, the 'n'
+      !   used must match that used as the local size in VecCreateMPI()
+      !   for 'x'. 
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatSetSizes.html
+      ! or PETSc users manual, pp.51-52
+
+      call MatSetSizes(dCdx, PETSC_DECIDE,nDimX, &
+                       nTimeIntervalsSpectral,PETSC_DETERMINE, PETScIerr)
+      !call MatSetSizes(dCdx,PETSC_DETERMINE, nTimeIntervalsSpectral , &
+      !                 nDimX, PETSC_DECIDE, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetSizes dCdx")
+
+
+      ! MatSetType - Builds matrix object for a particular matrix type
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h" 
+      ! call MatSetType(Mat mat, MatType matype, PetscErrorCode ierr)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   mat    - the matrix object
+      !   matype - matrix type
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatSetType.html
+
+      call MatSetType(dCdx,MATMPIAIJ,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", &
+                       "Error in MatSetFromOptions dCdw")
+
+
+      ! Set column major order for the matrix dRda.
+
+      call MatSetOption(dCdx, MAT_COLUMN_ORIENTED, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dCdx")
+
+      ! Extract info from the global matrix (only processor 0 does it).
+
+      if( PETScRank==0 .and. debug ) then
+
+        ! Get the global number of rows and columns.
+
+        call MatGetSize(dCdx, matRows, matCols, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatGetSize dCdx")
+
+        write(*,20) "# MATRIX: dCdx global size =", &
+                    matRows, " x ", matCols
+
+        ! Gets the matrix type as a string from the matrix object.
+
+        call MatGetType(dCdx, matTypeStr, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatGetType dCdx")
+
+        write(*,30) "# MATRIX: dCdx type        =", matTypeStr
+
+      endif
+
+      ! Query about the ownership range.
+
+      if( debug ) then
+        call MatGetOwnershipRange(dCdx, iLow, iHigh, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", &
+                         "Error in MatGetOwnershipRange dCdx")
+
+        write(*,40) "# MATRIX: dCdx Proc", PETScRank, "; #rows =", &
+                    nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
+      endif
+
+!     ******************************************************************
+!     dCda
+
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Create matrix dCda that is used to compute the partial         *
+!     * derivative of the Extra variabled for the the time spectral    *
+!     * case                                                           *
+!     *                                                                *
+!     * Matrix dRda has size [nTimeIntervals,nDesignExtra] and is      *
+!     * generally dense.                                               *
+!     *                                                                *
+
+!     *                                                                *
+!     ******************************************************************
+!
+      ! Create the matrix. Depending on either this is a sequential or 
+      ! parallel run,  PETSc automatically generates the apropriate
+      ! matrix type over all processes in PETSC_COMM_WORLD
+
+      ! MatCreate - Creates a matrix where the type is determined from
+      !   either a call to MatSetType() or from the options database
+      !   with a call to MatSetFromOptions(). The default matrix type is
+      !   AIJ, using the routines MatCreateSeqAIJ() or MatCreateMPIAIJ()
+      !   if you do not set a type in the options database. If you never
+      !   call MatSetType() or MatSetFromOptions() it will generate an
+      !   error when you try to use the matrix.
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h"  
+      ! call MatCreate(MPI_Comm comm,Mat *A,PetscErrorCode ierr)
+      !
+      ! Collective on MPI_Comm
+      !
+      ! Input Parameter
+      !   comm - MPI communicator
+      ! Output Parameter
+      !   A    - the matrix 
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatCreate.html
+      ! or PETSc users manual, pp.51-52
+
+      call MatCreate(PETSC_COMM_WORLD, dCda, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatCreate dCda")
+
+      ! C(# rows): Set the global size (PETSc determine the local size)
+      ! a(# columns): Set the global size (PETSc decide the local size)
+  
+
+      ! MatSetSizes - Sets the local and global sizes, and checks to
+      !               determine compatibility
+      ! Synopsis
+      !
+      ! #include "petscmat.h"  
+      ! call MatSetSizes(Mat A, PetscInt m, PetscInt n, &
+      !                  PetscInt M, PetscInt N, PetscErrorCode ierr)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   A - the matrix
+      !   m - number of local rows (or PETSC_DECIDE)
+      !   n - number of local columns (or PETSC_DECIDE)
+      !   M - number of global rows (or PETSC_DETERMINE)
+      !   N - number of global columns (or PETSC_DETERMINE)
+      !
+      ! Notes
+      ! m (n) and M (N) cannot be both PETSC_DECIDE If one processor
+      !   calls this with M (N) of PETSC_DECIDE then all processors
+      !   must, otherwise the program will hang.
+      !
+      ! If PETSC_DECIDE is not used for the arguments 'm' and 'n', then
+      !   the user must ensure that they are chosen to be compatible
+      !   with the vectors. To do this, one first considers the
+      !   matrix-vector product 'y = A x'. The 'm' that is used in the
+      !   above routine must match the local size used in the vector
+      !   creation routine VecCreateMPI() for 'y'. Likewise, the 'n'
+      !   used must match that used as the local size in VecCreateMPI()
+      !   for 'x'. 
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatSetSizes.html
+      ! or PETSc users manual, pp.51-52
+
+      call MatSetSizes(dCda, PETSC_DECIDE,PETSC_DECIDE, &
+                       nTimeIntervalsSpectral,nDesignExtra, PETScIerr)
+     ! call MatSetSizes(dCda,PETSC_DETERMINE, nTimeIntervalsSpectral, &
+     !                  PETSC_DETERMINE, nDesignExtra, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetSizes dCda")
+
+      ! MatSetType - Builds matrix object for a particular matrix type
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h" 
+      ! call MatSetType(Mat mat, MatType matype, PetscErrorCode ierr)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   mat    - the matrix object
+      !   matype - matrix type
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatSetType.html
+
+      call MatSetType(dCda,MATMPIDENSE,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", &
+                       "Error in MatSetType dCda")
+
+      ! Set column major order for the matrix dRda.
+
+      call MatSetOption(dCda, MAT_COLUMN_ORIENTED, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dCda")
+
+      ! Extract info from the global matrix (only processor 0 does it).
+
+      if( PETScRank==0 .and. debug ) then
+
+        ! Get the global number of rows and columns.
+
+        call MatGetSize(dCda, matRows, matCols, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatGetSize dCda")
+
+        write(*,20) "# MATRIX: dCda global size =", &
+                    matRows, " x ", matCols
+
+        ! Gets the matrix type as a string from the matrix object.
+
+        call MatGetType(dCda, matTypeStr, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatGetType dCda")
+
+        write(*,30) "# MATRIX: dCda type        =", matTypeStr
+
+      endif
+
+      ! Query about the ownership range.
+
+      if( debug ) then
+        call MatGetOwnershipRange(dCda, iLow, iHigh, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", &
+                         "Error in MatGetOwnershipRange dCda")
+
+        write(*,40) "# MATRIX: dCda Proc", PETScRank, "; #rows =", &
+             nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
+     endif
+       
+
+
+!     ******************************************************************
       ! Output formats.
 
    10 format(a,1x,i2)                            ! block size

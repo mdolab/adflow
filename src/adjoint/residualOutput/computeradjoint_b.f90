@@ -196,11 +196,13 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
     CALL PUSHREAL8ARRAY(sadj, 5**3*3*ntimeintervalsspectral)
 !first two arguments needed for time spectral.just set to initial values for the current steady case...
 !print *,'grid velocities',il,jl,kl,nn,secondhalo
-    CALL GRIDVELOCITIESFINELEVELADJ(.false., t, sps, xadj, siadj, sjadj&
-&                              , skadj, rotcenteradj, rotrateadj, sadj, &
-&                              sfaceiadj, sfacejadj, sfacekadj, &
-&                              machgridadj, veldirfreestreamadj, icell, &
-&                              jcell, kcell, nn, level, sps2)
+    CALL GRIDVELOCITIESFINELEVELADJ(useoldcoor, t, sps, xadj, siadj, &
+&                              sjadj, skadj, rotcenteradj, rotrateadj, &
+&                              sadj, sfaceiadj, sfacejadj, sfacekadj, &
+&                              machgridadj, veldirfreestreamadj, &
+&                              liftdirectionadj, alphaadj, betaadj, &
+&                              liftindex, icell, jcell, kcell, nn, level&
+&                              , sps2)
     CALL PUSHREAL8ARRAY(rfaceadj, nbocos*5**2*ntimeintervalsspectral)
 !print *,'gvsiAdj',siAdj(:,0,0,1,:)
 !for debugging intermediate stages      
@@ -353,7 +355,9 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 !!$     !do sps2 = 1,nTimeIntervalsSpectral
 !!$     !  print *,'calculating initres',nn
 !!$       !call initresAdj(1_intType, nwf,sps,dwAdj)
-!dwAdj(:,sps) = 0.0
+!    dwAdj(:,sps) = 0.0
+!    dwAdj(1:3,sps) = sAdj(0,0,0,:,sps)!xAdj(0,0,0,:,sps)
+!dwAdj(4,sps) = volAdj(sps)
   CALL INITRESADJ(1, nwf, wadj, voladj, dwadj, nn, level, sps)
 !print *,'dwadj',dwadj,icell,jcell,kcell
 !  print *,'calculating residuals',nn
@@ -365,9 +369,11 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 &               rotrateadj, rotrateadjb, correctfork, nn, level, sps)
   CALL INITRESADJ_B(1, nwf, wadj, wadjb, voladj, voladjb, dwadj, dwadjb&
 &              , nn, level, sps)
+  alphaadjb = 0.0
   pinfcorradjb = 0.0
   xadjb(-3:2, -3:2, -3:2, 1:3, 1:ntimeintervalsspectral) = 0.0
   xblockcorneradjb(1:2, 1:2, 1:2, 1:3, 1:ntimeintervalsspectral) = 0.0
+  betaadjb = 0.0
   machgridadjb = 0.0
   winfadjb(1:nw) = 0.0
   rfaceadjb(1:nbocos, -2:2, -2:2, 1:ntimeintervalsspectral) = 0.0
@@ -406,14 +412,16 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
     CALL POPREAL8ARRAY(sfaceiadj, 5**3*ntimeintervalsspectral)
     CALL POPREAL8ARRAY(sfacejadj, 5**3*ntimeintervalsspectral)
     CALL POPREAL8ARRAY(sfacekadj, 5**3*ntimeintervalsspectral)
-    CALL GRIDVELOCITIESFINELEVELADJ_B(.false., t, sps, xadj, xadjb, &
+    CALL GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb, &
 &                                siadj, siadjb, sjadj, sjadjb, skadj, &
 &                                skadjb, rotcenteradj, rotrateadj, &
 &                                rotrateadjb, sadj, sadjb, sfaceiadj, &
 &                                sfaceiadjb, sfacejadj, sfacejadjb, &
 &                                sfacekadj, sfacekadjb, machgridadj, &
 &                                machgridadjb, veldirfreestreamadj, &
-&                                veldirfreestreamadjb, icell, jcell, &
+&                                veldirfreestreamadjb, liftdirectionadj&
+&                                , alphaadj, alphaadjb, betaadj, &
+&                                betaadjb, liftindex, icell, jcell, &
 &                                kcell, nn, level, sps2)
     CALL POPINTEGER4(branch)
     IF (.NOT.branch .LT. 1) nnn = 0

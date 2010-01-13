@@ -33,6 +33,7 @@
        nullify(flowDoms(nn,level,sps)%BCType)
        nullify(flowDoms(nn,level,sps)%BCFaceID)
        nullify(flowDoms(nn,level,sps)%cgnsSubface)
+       nullify(flowDoms(nn,level,sps)%nNodesSubface)
 
        nullify(flowDoms(nn,level,sps)%inBeg)
        nullify(flowDoms(nn,level,sps)%jnBeg)
@@ -80,6 +81,9 @@
        nullify(flowDoms(nn,level,sps)%viscKmaxPointer)
 
        nullify(flowDoms(nn,level,sps)%x)
+       nullify(flowDoms(nn,level,sps)%xInit)
+       nullify(flowDoms(nn,level,sps)%xPlus)
+       nullify(flowDoms(nn,level,sps)%xMinus)
        nullify(flowDoms(nn,level,sps)%xOld)
        nullify(flowDoms(nn,level,sps)%si)
        nullify(flowDoms(nn,level,sps)%sj)
@@ -108,14 +112,20 @@
        nullify(flowDoms(nn,level,sps)%sFaceK)
 
        nullify(flowDoms(nn,level,sps)%w)
+       nullify(flowDoms(nn,level,sps)%wtmp)
        nullify(flowDoms(nn,level,sps)%wOld)
        nullify(flowDoms(nn,level,sps)%p)
+       nullify(flowDoms(nn,level,sps)%ptmp)
        nullify(flowDoms(nn,level,sps)%gamma)
        nullify(flowDoms(nn,level,sps)%rlv)
        nullify(flowDoms(nn,level,sps)%rev)
        nullify(flowDoms(nn,level,sps)%s)
 
        nullify(flowDoms(nn,level,sps)%dw)
+       nullify(flowDoms(nn,level,sps)%dwp)
+       nullify(flowDoms(nn,level,sps)%dwm)
+       nullify(flowDoms(nn,level,sps)%dwtmp)
+       nullify(flowDoms(nn,level,sps)%dwtemp)
        nullify(flowDoms(nn,level,sps)%fw)
 
        nullify(flowDoms(nn,level,sps)%dwOldRK)
@@ -162,5 +172,12 @@
        nullify(flowDoms(nn,level,sps)%bvtj2)
        nullify(flowDoms(nn,level,sps)%bvtk1)
        nullify(flowDoms(nn,level,sps)%bvtk2)
+
+       nullify(flowDoms(nn,level,sps)%globalCell)
+       nullify(flowDoms(nn,level,sps)%globalNode)
+       nullify(flowDoms(nn,level,sps)%psiAdj)
+
+       nullify(flowDoms(nn,level,sps)%warp_comm)
+  
 
        end subroutine nullifyFlowDomPointers

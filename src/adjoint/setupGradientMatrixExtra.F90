@@ -64,10 +64,10 @@
 
       ! auxiliar variables to compute dR/dalpha and dR/dbeta
 
-      real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdj, wAdjB
-      real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdj, xAdjB
+      real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral) :: wAdj, wAdjB
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral)  :: xAdj, xAdjB
 
-      real(kind=realType), dimension(nw) :: dwAdj, dwAdjB
+      real(kind=realType), dimension(nw,nTimeIntervalsSpectral) :: dwAdj, dwAdjB
 
       REAL(KIND=REALTYPE) :: machadj, machcoefadj, uinfadj, pinfcorradj
       REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadj, machgridadjb
@@ -78,8 +78,8 @@
       REAL(KIND=REALTYPE) :: alphaadj, betaadj
       REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
       real(kind=realType), dimension(3) ::rotRateAdj,rotCenterAdj,rotrateadjb
-      REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3), xblockcorneradjb(2&
-           &  , 2, 2, 3)
+      REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3,nTimeIntervalsSpectral), xblockcorneradjb(2&
+           &  , 2, 2, 3,nTimeIntervalsSpectral)
 
       logical :: secondHalo,exchangeTurb,correctfork,finegrid
       integer(kind=intType):: discr
@@ -197,20 +197,20 @@
                   do iCell = 2, il
                      ! Copy the state w to the wAdj array in the stencil
                      call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
-                          betaAdj,MachAdj,&
-                          machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
-                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+           betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
+           nn,level,sps,&
+           prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
 
                      mLoop: do m = 1, nw       
                         ! Loop over output cell residuals (R)
 
                         ! Initialize the seed for the reverse mode
-                        dwAdjb(:) = 0.; dwAdjb(m) = 1.
-                        dwAdj(:)  = 0.
-                        wAdjb(:,:,:,:)  = 0.  !dR(m)/dw
-                        xAdjb(:,:,:,:)  = 0.  !dR(m)/dx
+                        dwAdjb(:,:) = 0.; dwAdjb(m,sps) = 1.
+                        dwAdj(:,:)  = 0.
+                        wAdjb(:,:,:,:,:)  = 0.  !dR(m)/dw
+                        xAdjb(:,:,:,:,:)  = 0.  !dR(m)/dx
                         alphaAdjb = 0.
                         betaAdjb = 0.
                         MachAdjb = 0.
@@ -221,9 +221,9 @@
                         call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
-&  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
-&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
-&  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+&  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
+&  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
+&  , rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
 &  liftindex)
 
 

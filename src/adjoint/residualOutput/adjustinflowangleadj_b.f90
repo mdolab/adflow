@@ -3,7 +3,8 @@
 !  
 !  Differentiation of adjustinflowangleadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: alphaadj betaadj
-!   of linear combination of output variables: veldirfreestreamadj
+!   of linear combination of output variables: alphaadj betaadj
+!                veldirfreestreamadj
 !
 !      ******************************************************************
 !      *                                                                *
@@ -42,6 +43,9 @@ SUBROUTINE ADJUSTINFLOWANGLEADJ_B(alphaadj, alphaadjb, betaadj, betaadjb&
 !                        velDirFreestreamAdj(3))
   refdirection(:) = zero
   refdirection(1) = one
+  CALL GETDIRVECTOR(refdirection, alphaadj, betaadj, veldirfreestreamadj&
+&              , liftindex)
+  CALL PUSHREAL8ARRAY(refdirection, 3)
 !!$      velDirFreestreamAdj(1) = temp1
 !!$      velDirFreestreamAdj(2) = temp2
 !!$      velDirFreestreamAdj(3) = temp3
@@ -55,6 +59,12 @@ SUBROUTINE ADJUSTINFLOWANGLEADJ_B(alphaadj, alphaadjb, betaadj, betaadjb&
 !temp1 = dragDirectionAdj(1)
 !temp2 = dragDirectionAdj(2)
 !temp3 = dragDirectionAdj(3)
+  refdirection(:) = zero
+  CALL PUSHREAL8(refdirection(1))
+  refdirection(1) = one
+  CALL GETDIRVECTOR(refdirection, alphaadj, betaadj, dragdirectionadj(1)&
+&              , liftindex)
+  CALL PUSHREAL8ARRAY(refdirection, 3)
 !!$      dragDirectionAdj(1)= temp1
 !!$      dragDirectionAdj(2)= temp2
 !!$      dragDirectionAdj(3)= temp3
@@ -68,6 +78,13 @@ SUBROUTINE ADJUSTINFLOWANGLEADJ_B(alphaadj, alphaadjb, betaadj, betaadjb&
 !temp1 = liftDirectionAdj(1)
 !temp2 = liftDirectionAdj(2)
 !temp3 = liftDirectionAdj(3)
+  refdirection(:) = zero
+  CALL PUSHREAL8(refdirection(liftindex))
+  refdirection(liftindex) = one
+  CALL POPREAL8(refdirection(liftindex))
+  CALL POPREAL8ARRAY(refdirection, 3)
+  CALL POPREAL8(refdirection(1))
+  CALL POPREAL8ARRAY(refdirection, 3)
   CALL GETDIRVECTOR_B(refdirection, alphaadj, alphaadjb, betaadj, &
 &                betaadjb, veldirfreestreamadj, veldirfreestreamadjb, &
 &                liftindex)

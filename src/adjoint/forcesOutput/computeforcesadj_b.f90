@@ -183,11 +183,13 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &                                  iibeg, iiend, jjbeg, jjend, i2beg, &
 &                                  i2end, j2beg, j2end, mm, sfaceiadj, &
 &                                  sfacejadj, sfacekadj, machgridadj, &
-&                                  veldirfreestreamadj, rotcenteradj, &
-&                                  rotrateadj, siadj, sjadj, skadj)
+&                                  veldirfreestreamadj, liftdirectionadj&
+&                                  , alphaadj, betaadj, liftindex, &
+&                                  rotcenteradj, rotrateadj, siadj, &
+&                                  sjadj, skadj)
 !call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
 !first two arguments needed for time spectral.just set to initial values for the current steady case...
-!  print *,'calling gridvelocities',mm
+!print *,'calling gridvelocities',mm,liftindex
 !    print *,'calling normal velocities'
   CALL NORMALVELOCITIESALLLEVELSFORCESADJ(sps, mm, sfaceiadj, iibeg, &
 &                                    iiend, jjbeg, jjend, i2beg, i2end, &
@@ -286,9 +288,11 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &                                    mm, sfaceiadj, sfacejadj, sfacekadj&
 &                                    , machgridadj, machgridadjb, &
 &                                    veldirfreestreamadj, &
-&                                    veldirfreestreamadjb, rotcenteradj&
-&                                    , rotrateadj, rotrateadjb, siadj, &
-&                                    sjadj, skadj)
+&                                    veldirfreestreamadjb, &
+&                                    liftdirectionadj, alphaadj, &
+&                                    alphaadjb, betaadj, betaadjb, &
+&                                    liftindex, rotcenteradj, rotrateadj&
+&                                    , rotrateadjb, siadj, sjadj, skadj)
   CALL POPREAL8ARRAY(siadj, 2*(iiend-iibeg+1)*(jjend-jjbeg+1)*3)
   CALL POPREAL8ARRAY(sjadj, (iiend-iibeg+1)*2*(jjend-jjbeg+1)*3)
   CALL POPREAL8ARRAY(skadj, (iiend-iibeg+1)*(jjend-jjbeg+1)*2*3)

@@ -112,6 +112,7 @@
       ! Compute the forces.
 
 !      call the initialization routines to calculate the effect of Mach and alpha
+      
       call adjustInflowAngleForcesAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
            liftDirectionAdj,dragDirectionAdj,liftIndex)
       
@@ -145,11 +146,12 @@
 !call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
 
        !first two arguments needed for time spectral.just set to initial values for the current steady case...
-     !  print *,'calling gridvelocities',mm
+       !print *,'calling gridvelocities',mm,liftindex
        call gridVelocitiesFineLevelForcesAdj(.false.,t, sps,xAdj,sAdj,&
             iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End,mm,&
             sFaceIAdj,sFaceJAdj,sFaceKAdj,&
             machGridAdj,velDirFreestreamAdj,&
+            liftDirectionAdj,alphaAdj,betaAdj,liftindex,&
             rotCenterAdj, rotRateAdj,siAdj,sjAdj,skAdj)
 
    !    print *,'calling normal velocities'

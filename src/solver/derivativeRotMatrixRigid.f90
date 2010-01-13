@@ -104,7 +104,7 @@
                                        omegaFourZRot,   &
                                        cosCoefFourZRot, &
                                        sinCoefFourZRot, t)
-       print *,'dphiz',dphiz
+       !print *,'dphiz',dphiz
        ! Compute the time derivative of the rotation matrix applied to
        ! the coordinates at t == 0.
 

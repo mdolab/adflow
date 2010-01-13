@@ -15,6 +15,7 @@ subroutine setupVolumeSurfaceDerivatives
   use mdDataLocal
   use mdData, only: mdNSurfNodesCompact
   use warpingPETSc
+  use inputTimeSpectral !nTimeIntervalsSpectral
   !use ADjointPETSc, only: PETScOne, value
   implicit none
   !Subroutine Arguments
@@ -53,88 +54,98 @@ subroutine setupVolumeSurfaceDerivatives
        call terminate("setupVolumeSurfaceDerivatives", "Error in MatZeroEntries dXvdXs")
   
   !loop over the Global surface points on this process to calculate the derivatives 
-  !loop over domains
-  do nn = 1,nDom
-     call setPointersAdj(nn,1,sps)
-      
-     !loop over new coordinates array
-     !print *,'number of local surface nodes',myID,mdNGlobalSurfNodesLocal(myID+1)
-     do mm = 1,mdNGlobalSurfNodesLocal(myID+1)
-        !Check to see that coordinate is in this block. if so, update
-        if( mdSurfGlobalIndLocal(4,mm)==nn)then
-                     
-           !only local block needs to be perturbed. Index sychronization will take care of the rest
-           
-           IMAX = IL
-           JMAX = JL
-           KMAX = KL
-           
-           ! SAVE NEW AND INITIAL XYZ VALUES TO BE PASSED TO WARPBLK
-           
-           ALLOCATE(XYZ0(3,0:IMAX+1,0:JMAX+1,0:KMAX+1),XYZNEW(3,0:IMAX+1,0:JMAX+1,0:KMAX+1),XYZNEWd(3,0:IMAX+1,0:JMAX+1,0:KMAX+1))
-           
-           
-           
-           do ll = 1,3
-              xyz0 = 0
-              xyznew = 0
-              
-              XYZ0(1,1:IMAX,1:JMAX,1:KMAX) = XInit(1:IMAX,1:JMAX,1:KMAX,1)
-              XYZ0(2,1:IMAX,1:JMAX,1:KMAX) = XInit(1:IMAX,1:JMAX,1:KMAX,2)
-              XYZ0(3,1:IMAX,1:JMAX,1:KMAX) = XInit(1:IMAX,1:JMAX,1:KMAX,3)
-              XYZNEW(1,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,1)
-              XYZNEW(2,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,2)
-              XYZNEW(3,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,3)
 
-              !zero the AD perturbation
-              xyznewd(:,:,:,:)  = 0.0
+  !loop over time instances
+  do sps = 1,nTimeIntervalsSpectral
+     !loop over domains
+     
+     do nn = 1,nDom
+        call setPointersAdj(nn,1,sps)
+      
+        !loop over new coordinates array
+        !print *,'number of local surface nodes',myID,mdNGlobalSurfNodesLocal(myID+1)
+        do mm = 1,mdNGlobalSurfNodesLocal(myID+1)
+           !Check to see that coordinate is in this block. if so, update
+           if( mdSurfGlobalIndLocal(4,mm)==nn)then
               
-              !set the AD perturbation. A small real perturbation is set as 
-              !well to keep out of the funny region for deltax<eps in the
-              !warping algorithm
-              xyznewd(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm)) = 1.0
-              xref = xyznew(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm))
-              xyznew(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm)) = xref+ 1.0e-12
-            
-              !determine the explicitly and implicitly perturbed
-              !faces and edges
-              call flagImplicitEdgesAndFacesDeriv(xyznewd,ifaceptb,iedgeptb)
+              !only local block needs to be perturbed. Index sychronization will take care of the rest
               
-              !Warp the block
-              call WARP_LOCAL_D(xyznew, xyznewd, xyz0, ifaceptb, iedgeptb, imax&
-                   &  , jmax, kmax)
+              IMAX = IL
+              JMAX = JL
+              KMAX = KL
               
-              !reset the small real perturbation
-              xyznew(ll,mdSurfGlobalIndLocal(1,mm),mdSurfGlobalIndLocal(2,mm),mdSurfGlobalIndLocal(3,mm)) = xref
-             
-              ! ASSIGN THESE derivative values
-              DO I=1,IMAX
-                 DO J=1,JMAX
-                    DO K=1,KMAX
-                       do n = 1,3
-                          idxvol = globalNode(i,j,k)*3+n
-                          idxsurf= mdSurfGlobalIndLocal(5,mm)*3+ll!1
-                          
-                          if (xyznewd(n,I,J,K).ne.0.0)then
+              ! SAVE NEW AND INITIAL XYZ VALUES TO BE PASSED TO WARPBLK
+              
+              ALLOCATE(XYZ0(3,0:IMAX+1,0:JMAX+1,0:KMAX+1),XYZNEW(3,0:IMAX+1,0:JMAX+1,0:KMAX+1),XYZNEWd(3,0:IMAX+1,0:JMAX+1,0:KMAX+1))
+              
+              
+              
+              do ll = 1,3
+                 xyz0 = 0
+                 xyznew = 0
+                 
+                 XYZ0(1,1:IMAX,1:JMAX,1:KMAX) = XInit(1:IMAX,1:JMAX,1:KMAX,1)
+                 XYZ0(2,1:IMAX,1:JMAX,1:KMAX) = XInit(1:IMAX,1:JMAX,1:KMAX,2)
+                 XYZ0(3,1:IMAX,1:JMAX,1:KMAX) = XInit(1:IMAX,1:JMAX,1:KMAX,3)
+                 XYZNEW(1,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,1)
+                 XYZNEW(2,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,2)
+                 XYZNEW(3,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,3)
+                 
+                 !zero the AD perturbation
+                 xyznewd(:,:,:,:)  = 0.0
+                 
+                 !set the AD perturbation. A small real perturbation is set as 
+                 !well to keep out of the funny region for deltax<eps in the
+                 !warping algorithm
+                 xyznewd(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm)) = 1.0
+                 xref = xyznew(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm))
+                 xyznew(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm)) = xref+ 1.0e-12
+                 
+                 !determine the explicitly and implicitly perturbed
+                 !faces and edges
+                 call flagImplicitEdgesAndFacesDeriv(xyznewd,ifaceptb,iedgeptb)
+              
+                 !Warp the block
+                 call WARP_LOCAL_D(xyznew, xyznewd, xyz0, ifaceptb, iedgeptb, imax&
+                      &  , jmax, kmax)
+                 
+                 !reset the small real perturbation
+                 xyznew(ll,mdSurfGlobalIndLocal(1,mm),mdSurfGlobalIndLocal(2,mm),mdSurfGlobalIndLocal(3,mm)) = xref
+                 
+                 ! ASSIGN THESE derivative values
+                 DO I=1,IMAX
+                    DO J=1,JMAX
+                       DO K=1,KMAX
+                          do n = 1,3
+                             !no need to alter sps here since in this case
+                             !all time instances are independent, the overall
+                             !sps loop takes care of this...
+                             idxvol = globalNode(i,j,k)*3+n
+                             !However, we need to add sps variation here
+                             idxsurf= mdNSurfNodesCompact*(sps-1)+&
+                                  mdSurfGlobalIndLocal(5,mm)*3+ll!1
                              
+                             if (xyznewd(n,I,J,K).ne.0.0)then
+                                
 !!$                             call MatSetValues(dXvdXsPara, 1, idxvol-1, 1, idxsurf-1,   &
 !!$                                               xyznewd(n,I,J,K), ADD_VALUES, PETScIerr)
-                             call MatSetValues(dXvdXs, 1, idxvol-1, 1, idxsurf-1,   &
-                                               xyznewd(n,I,J,K), ADD_VALUES, PETScIerr)
-                            
-                             if( PETScIerr/=0 ) &
-                                  print *,'matrix setting error'
-                          endif
-                       enddo
+                                call MatSetValues(dXvdXs, 1, idxvol-1, 1, idxsurf-1,   &
+                                     xyznewd(n,I,J,K), ADD_VALUES, PETScIerr)
+                                
+                                if( PETScIerr/=0 ) &
+                                     print *,'matrix setting error'
+                             endif
+                          enddo
+                       END DO
                     END DO
                  END DO
-              END DO
-              
-           end do
-           deALLOCATE(XYZ0,XYZNEW,xyznewd)
-        endif
+                 
+              end do
+              deALLOCATE(XYZ0,XYZNEW,xyznewd)
+           endif
+        end do
      end do
-  end do
+  enddo
 !
 !     ******************************************************************
 !     *                                                                *

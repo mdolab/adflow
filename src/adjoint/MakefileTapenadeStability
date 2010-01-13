@@ -151,6 +151,7 @@ TAPENADE_MOD = $(TAPENADE_DIRSRC1)/inputParam.f90 \
                $(TAPENADE_DIRSRC1)/constants.f90 \
 	       $(TAPENADE_DIRSRC1)/communication.f90 \
 	       $(TAPENADE_DIRMOD)/section.f90\
+	       $(TAPENADE_DIRMOD)/monitor.f90\
 	       $(TAPENADE_DIRSRC1)/precision.f90
                
 

@@ -1,28 +1,20 @@
 !
 !     ******************************************************************
 !     *                                                                *
-!     * File:          setupADjointRHSAeroCoeff.F90                    *
-!     * Author:        Andre C. Marta,C.A.(Sandy) Mader                *
-!     * Starting date: 10-04-2006                                      *
-!     * Last modified: 06-09-2008                                      *
+!     * File:          setupADjointdCdwStability.F90                   *
+!     * Author:        C.A.(Sandy) Mader                               *
+!     * Starting date: 11-27-2009                                      *
+!     * Last modified: 11-27-2009                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-!      subroutine setupADjointRHSAeroCoeff(level,costFunction)
-      subroutine setupADjointRHSAeroCoeff(level,sps,costFunction)
+      subroutine setupADjointdCdwStability(level,costFunction)
 !
 !     ******************************************************************
 !     *                                                                *
-!     * This routine computes the right hand side of the discrete      *
-!     * ADjoint problem when using aerodynamic coefficients (CD,CL,CM) *
-!     * as cost functions:                                             *
-!     *                         dPartial(J)                            *
-!     *   J = CD, CL or CM  =>  -----------                            *
-!     *                         dPartial(W)                            *
-!     *                                                                *
-!     *                                                                *
-!     * This routine is based on /solver/convergenceInfo.f90 and       *
-!     * /solver/forcesAndMoments.f90 (as of 05-16-2006).               *
+!     * This routine computes the dCdw portion of the right hand side  *
+!     * of the discrete ADjoint problem when using the Time Spectral   *
+!     * stability derivative formulation.                              *
 !     *                                                                *
 !     ******************************************************************
 !
@@ -39,12 +31,12 @@
       use inputPhysics     ! pointRef, equations, RANSEquations, 
                            ! MachCoef,surfaceRef
       use monitor          ! timeUnsteadyRestart
-      use section          ! nSection,sections%()
+      use section          ! nSections,section%
       implicit none
 !
 !     Subroutine arguments.
 !
-      integer(kind=intType), intent(in) :: level, costFunction, sps
+      integer(kind=intType), intent(in) :: level, costFunction!, sps
 !
 !     Local variables.
 !
@@ -54,7 +46,7 @@
       real(kind=realType), dimension(3) :: cFpAdj, cFvAdj
       real(kind=realType), dimension(3) :: cMpAdj, cMvAdj
 
-      integer(kind=intType) :: nn, mm, i, j,liftIndex
+      integer(kind=intType) :: nn, mm, i, j,liftIndex,nnn
       integer(kind=intType) :: iiBeg, iiEnd, jjBeg, jjEnd
       integer(kind=intType) ::  i2Beg,  i2End,  j2Beg,  j2End
 
@@ -85,8 +77,9 @@
       REAL(KIND=REALTYPE) :: rotcenteradj(3), rotrateadj(3), rotrateadjb(3)
 
       logical :: contributeToForce, viscousSubface,secondHalo,righthanded
-      
+
       real(kind=realType), dimension(nSections) :: t
+
       ! dJ/dw row block
       
       real(kind=realType), dimension(nw) :: dJdWlocal
@@ -97,8 +90,11 @@
 
       character(len=2*maxStringLen) :: errorMessage
 	
-      integer :: ierr,nnn!,sps
+      integer :: ierr,sps,n
 
+      real(kind=realType), dimension(2) :: time
+      real(kind=realType)               :: timeAdjLocal, timeAdj
+      
       !
       !     ******************************************************************
       !     *                                                                *
@@ -111,11 +107,9 @@
       secondhalo = .true.
 #ifndef USE_NO_PETSC
 
-      !zero the vector
-      call VecSet(dJdW,PETScZero,PETScIerr)
- 
-      if( PETScIerr/=0 ) &
-        call terminate("setupADjointRRHSAeroCoeff", "Error in VecSet X")
+     ! Get the initial time.
+
+      call cpu_time(time(1))
       ! Determine the reference point for the moment computation in
       ! meters.
 
@@ -137,8 +131,7 @@
 
       yplusMax = zero
 
-      !Calculate only for the specified time instance
-      !spectralLoopAdj: do sps=1,nTimeIntervalsSpectral
+      spectralLoopAdj: do sps=1,nTimeIntervalsSpectral
 
          ! Initialize the force and moment coefficients to 0.
 
@@ -192,8 +185,10 @@
 	    !print *,'selecting case',costfunction
             select case (costFunction)
 		               
-            case (costFuncLiftCoef)
-               !print *,'computing lift derivatives',sps
+            !case (costFuncLiftCoef)
+            case (costFunccl0,costFuncclalpha)
+		!print *,'computing lift derivatives'
+               ClAdjB = 0
                ClAdjB(sps) = 1
                CDAdjB = 0
                CfxAdjB = 0
@@ -205,82 +200,83 @@
 		!print *,'Case CL',clAdjb
 	 
              
-            case (costFuncDragCoef)
-	       !print *,'computing drag derivatives',sps
+!!$            case (costFunccd0,costFuncdcddalpha)
+!!$	       !print *,'computing drag derivatives'
+!!$
+!!$               ClAdjB = 0
+!!$               CDAdjB(sps) = 1
+!!$               CfxAdjB = 0
+!!$               CfyAdjB = 0
+!!$               CfzAdjB = 0
+!!$               CmxAdjB = 0
+!!$               CmyAdjB = 0
+!!$               CmzAdjB = 0 
+
+!!$            case (costFuncForceXCoef)
+!!$
+!!$               ClAdjB = 0
+!!$               CDAdjB = 0
+!!$	       CfxAdjB(sps) = 1
+!!$               CfyAdjB = 0
+!!$               CfzAdjB = 0
+!!$               CmxAdjB = 0
+!!$               CmyAdjB = 0
+!!$               CmzAdjB = 0
+               
+!!$            case (costFuncForceYCoef)
+!!$
+!!$               ClAdjB = 0
+!!$               CDAdjB = 0
+!!$   	       CfxAdjB = 0
+!!$               CfyAdjB(sps) = 1
+!!$               CfzAdjB = 0
+!!$               CmxAdjB = 0
+!!$               CmyAdjB = 0
+!!$               CmzAdjB = 0      
+               
+!!$            case (costFuncForceZCoef)
+!!$
+!!$               ClAdjB = 0
+!!$               CDAdjB = 0
+!!$	       CfxAdjB = 0
+!!$               CfyAdjB = 0
+!!$               CfzAdjB(sps) = 1
+!!$               CmxAdjB = 0
+!!$               CmyAdjB = 0
+!!$               CmzAdjB = 0                
+!!$               
+!!$            case (costFuncMomXCoef)
+!!$
+!!$               ClAdjB = 0
+!!$               CDAdjB = 0
+!!$               CfxAdjB = 0
+!!$               CfyAdjB = 0
+!!$               CfzAdjB = 0
+!!$               CmxAdjB(sps) = 1
+!!$               CmyAdjB = 0
+!!$               CmzAdjB = 0
+!!$               
+!!$            case (costFuncMomYCoef)
+!!$
+!!$               ClAdjB = 0
+!!$               CDAdjB = 0
+!!$               CfxAdjB = 0
+!!$               CfyAdjB = 0
+!!$               CfzAdjB = 0
+!!$               CmxAdjB = 0
+!!$               CmyAdjB(sps) = 1
+!!$               CmzAdjB = 0      
+               
+            case (costFunccm0,costFunccmzalpha)
 
                ClAdjB = 0
-               CDAdjB(sps) = 1
+               CDAdjB = 0
                CfxAdjB = 0
                CfyAdjB = 0
                CfzAdjB = 0
                CmxAdjB = 0
                CmyAdjB = 0
-               CmzAdjB = 0 
-
-            case (costFuncForceXCoef)
-
-               ClAdjB = 0
-               CDAdjB = 0
-	       CfxAdjB(sps) = 1
-               CfyAdjB = 0
-               CfzAdjB = 0
-               CmxAdjB = 0
-               CmyAdjB = 0
-               CmzAdjB = 0
-               
-            case (costFuncForceYCoef)
-
-               ClAdjB = 0
-               CDAdjB = 0
-   	       CfxAdjB = 0
-               CfyAdjB(sps) = 1
-               CfzAdjB = 0
-               CmxAdjB = 0
-               CmyAdjB = 0
-               CmzAdjB = 0      
-               
-            case (costFuncForceZCoef)
-
-               ClAdjB = 0
-               CDAdjB = 0
-	       CfxAdjB = 0
-               CfyAdjB = 0
-               CfzAdjB(sps) = 1
-               CmxAdjB = 0
-               CmyAdjB = 0
-               CmzAdjB = 0                
-               
-            case (costFuncMomXCoef)
-
-               ClAdjB = 0
-               CDAdjB = 0
-               CfxAdjB = 0
-               CfyAdjB = 0
-               CfzAdjB = 0
-               CmxAdjB(sps) = 1
-               CmyAdjB = 0
-               CmzAdjB = 0
-               
-            case (costFuncMomYCoef)
-
-               ClAdjB = 0
-               CDAdjB = 0
-               CfxAdjB = 0
-               CfyAdjB = 0
-               CfzAdjB = 0
-               CmxAdjB = 0
-               CmyAdjB(sps) = 1
-               CmzAdjB = 0      
-               
-            case (costFuncMomZCoef)
-               !print *,'Moment Derivatives',sps
-               ClAdjB = 0
-               CDAdjB = 0
-               CfxAdjB = 0
-               CfyAdjB = 0
-               CfzAdjB = 0
-               CmxAdjB = 0
-               CmyAdjB = 0
+               CmzAdjB =0
                CmzAdjB(sps) = 1      
                               
             end select
@@ -313,7 +309,6 @@
                endif
                !print *,'cladjb',cladjb,cdadjb
                !print *,'before',sum(wadjb)
-               !print *,'liftindex before',liftindex
 	       call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
 &  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
@@ -386,29 +381,35 @@
             do kcell = 0,kb
                do jcell = 0,jb
                   do icell = 0,ib  
-                     idxmgb = globalCell(icell,jcell,kcell)
-                     
-                     test = sum(wAdjB(icell,jcell,kcell,:))
-                     !print *,'test',test,idxmgb
-                     if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal*nTimeIntervalsSpectral) then
-			!print *,'test',test,idxmgb
-	                !print *,'setting PETSc Vector',sum(wAdjB(icell,jcell,kcell,:))
-                       dJdWlocal(:) = wAdjB(icell,jcell,kcell,:)
-                     
-                       call VecSetValuesBlocked(dJdW, 1, idxmgb, dJdWlocal, &
-                                                ADD_VALUES, PETScIerr)
-       !                 call VecSetValuesBlocked(dJdW, 1, idxmgb, dJdWlocal, &
-       !                      ADD_VALUES, PETScIerr)
-            
-                        if( PETScIerr/=0 ) then
-                           write(errorMessage,99) &
-                                "Error in VecSetValuesBlocked for global node", &
-                                idxmgb
-                           call terminate("setupADjointRHSAeroCoeff", &
-                                errorMessage)
+                     do n = 1,nw
+                        !idxmgb = globalCell(icell,jcell,kcell)
+                        idxmgb = globalCell(iCell,jCell,kCell)*nw+n
+                        !print *,'index',idxmgb,sps,nn,icell,jcell,kcell,n,globalCell(iCell,jCell,kCell)
+                        test = sum(wAdjB(icell,jcell,kcell,:))
+                        !if(abs(test)>1e-12)then
+                        !if(abs(wAdjB(icell,jcell,kcell,n))>1e-12)then
+                        !   print *,'wadjb',wAdjB(icell,jcell,kcell,n),idxmgb,sps,nn,globalcell(icell,jcell,kcell),icell,jcell,kcell
+                        !endif
+                        !if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal*nTimeIntervalsSpectral) then
+                        if (idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<=nCellsGlobal*nTimeIntervalsSpectral*nw) then
+                           !print *,'test',test,idxmgb
+                           !print *,'setting PETSc Vector',sum(wAdjB(icell,jcell,kcell,:))
+                           if (wAdjb(icell,jcell,kcell,n).ne.0.0)then
+                              !print *,'mat set',wadjb(icell,jcell,kcell,n),idxmgb
+                              call MatSetValues(dCdw, 1, sps-1, 1, idxmgb-1,   &
+                                   wAdjb(icell,jcell,kcell,n), ADD_VALUES, PETScIerr)
+                              
+                              if( PETScIerr/=0 ) then
+                                 write(errorMessage,99) &
+                                      "Error in MatSetValues for global cell", &
+                                      idxmgb
+                                 call terminate("setupADjointdCdwStability", &
+                                      errorMessage)
+                              endif
+                           endif
                         endif
-		     endif
-                  enddo
+                     enddo
+                  end do
                enddo
             enddo
 	    
@@ -447,12 +448,164 @@
             
          enddo domainLoopAD
          
-!      enddo spectralLoopAdj
+      enddo spectralLoopAdj
 
+
+!     ******************************************************************
+!     *                                                                *
+!     * Complete the PETSc matrix assembly process.                    *
+!     *                                                                *
+!     ******************************************************************
+!
+      ! MatAssemblyBegin - Begins assembling the matrix. This routine
+      !  should be called after completing all calls to MatSetValues().
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h" 
+      ! PetscErrorCode PETSCMAT_DLLEXPORT MatAssemblyBegin(Mat mat, &
+      !                                            MatAssemblyType type)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   mat  - the matrix
+      !   type - type of assembly, either MAT_FLUSH_ASSEMBLY or
+      !          MAT_FINAL_ASSEMBLY
+      ! Notes
+      ! MatSetValues() generally caches the values. The matrix is ready
+      !  to use only after MatAssemblyBegin() and MatAssemblyEnd() have
+      !  been called. Use MAT_FLUSH_ASSEMBLY when switching between
+      !  ADD_VALUES and INSERT_VALUES in MatSetValues(); use
+      !  MAT_FINAL_ASSEMBLY for the final assembly before using the
+      !  matrix.
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatAssemblyBegin.html
+
+      call MatAssemblyBegin(dCdw,MAT_FINAL_ASSEMBLY,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("setupADjointdCdwStability", &
+                       "Error in MatAssemblyBegin dCdw")
+
+      ! MatAssemblyEnd - Completes assembling the matrix. This routine
+      !                  should be called after MatAssemblyBegin().
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h" 
+      ! PetscErrorCode PETSCMAT_DLLEXPORT MatAssemblyEnd(Mat mat,&
+      !                                            MatAssemblyType type)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   mat  - the matrix
+      !   type - type of assembly, either MAT_FLUSH_ASSEMBLY or
+      !          MAT_FINAL_ASSEMBLY
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatAssemblyEnd.html
+
+      call MatAssemblyEnd  (dCdw,MAT_FINAL_ASSEMBLY,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("setupADjointdCdwStability", &
+                       "Error in MatAssemblyEnd dCdw")
+
+      ! Let PETSc know that the dRda matrix retains the same nonzero 
+      ! pattern, in case the matrix is assembled again, as for a new
+      ! point in the design space.
+
+      ! MatSetOption - Sets a parameter option for a matrix.
+      !   Some options may be specific to certain storage formats.
+      !   Some options determine how values will be inserted (or added).
+      !   Sorted,row-oriented input will generally assemble the fastest.
+      !   The default is row-oriented, nonsorted input.
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h" 
+      ! call MatSetOption(Mat mat,MatOption op,PetscErrorCode ierr)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   mat    - the matrix
+      !   option - the option, one of those listed below (and possibly
+      !     others), e.g., MAT_ROWS_SORTED, MAT_NEW_NONZERO_LOCATION_ERR
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
+      ! or PETSc users manual, pp.52
+
+      call MatSetOption(dCdw,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("setupADjointdcdwStability", &
+                       "Error in MatSetOption dCdw")
+
+      ! Get new time and compute the elapsed time.
+
+      call cpu_time(time(2))
+      timeAdjLocal = time(2)-time(1)
+
+      ! Determine the maximum time using MPI reduce
+      ! with operation mpi_max.
+
+      call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
+                      mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
+
+      if( PETScRank==0 ) &
+        write(*,20) "Assembling dC/dw matrix time (s) =", timeAdj
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Visualize the assembled matrix.                                *
+!     *                                                                *
+!     ******************************************************************
+!
+      ! MatView - Visualizes a matrix object.
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h" 
+      ! PetscErrorCode PETSCMAT_DLLEXPORT MatView(Mat mat, &
+      !                                              PetscViewer viewer)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   mat    - the matrix
+      !   viewer - visualization context
+      !
+      ! Notes
+      ! The available visualization contexts include
+      !  PETSC_VIEWER_STDOUT_SELF  - standard output (default)
+      !  PETSC_VIEWER_STDOUT_WORLD - synchronized standard output where
+      !                         only the first processor opens the file.
+      !                         All other processors send their data to
+      !                         the first processor to print.
+      !  PETSC_VIEWER_DRAW_WORLD- graphical display of nonzero structure
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatView.html
+      ! or PETSc users manual, pp.57,148
+
+      if( debug ) then
+        !call MatView(dCdw,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+        call MatView(dCdw,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+        if( PETScIerr/=0 ) &
+          call terminate("setupADjointdCdwStability", "Error in MatView")
+        !pause
+      endif
+
+      ! Flush the output buffer and synchronize the processors.
+
+      call f77flush()
+      call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
       ! Output format.
 
+20    format(a,1x,f8.2)
    99 format(a,1x,i6)
 
 #endif
 
-      end subroutine setupADjointRHSAeroCoeff
+    end subroutine setupADjointdCdwStability

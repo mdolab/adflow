@@ -65,6 +65,7 @@
       use communication   ! myID, nProc
       use cgnsGrid        ! cgnsNFamilies
       use iteration       ! groundLevel
+      use inputTimeSpectral !nIntervalsTimeSpectral
       implicit none
 !
 !     Local variables.
@@ -107,22 +108,24 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      call computeAeroCoef(CL,CD,Cfx,Cfy,Cfz,CMx,CMy,CMz,level,sps)
+      do sps  = 1,nTimeIntervalsSpectral
+         call computeAeroCoef(CL,CD,Cfx,Cfy,Cfz,CMx,CMy,CMz,level,sps)
 
-      ! Write the cost function values; only processor 0 does this.
-
-      if(myID == 0) then
-        write(*,*) "Cost function values:"
-        write(*,*) " CL  =", CL
-        write(*,*) " CD  =", CD
-    	write(*,*) " CFx =", CFx   
-        write(*,*) " CFy =", CFy
-        write(*,*) " CFz =", CFz
-        write(*,*) " CMx =", CMx
-        write(*,*) " CMy =", CMy
-        write(*,*) " CMz =", CMz
-        write(*,*)
-      endif
+         ! Write the cost function values; only processor 0 does this.
+         
+         if(myID == 0) then
+            write(*,*) "Cost function values: sps:",sps
+            write(*,*) " CL  =", CL
+            write(*,*) " CD  =", CD
+            write(*,*) " CFx =", CFx   
+            write(*,*) " CFy =", CFy
+            write(*,*) " CFz =", CFz
+            write(*,*) " CMx =", CMx
+            write(*,*) " CMy =", CMy
+            write(*,*) " CMz =", CMz
+            write(*,*)
+         endif
+      enddo
 !
 !     ******************************************************************
 !     *                                                                *
@@ -168,15 +171,16 @@
 
 !      call verifyRAdj(level)
 !stop
-	call verifyResiduals(level)
+      !call verifyResiduals(level)
 !return
 !stop
 !!$        ! Verify the node-based ADjoint residual routine.
 !!$
 !!$!	call verifydRdW(level,sps)
-!!$      call verifydRdWFile(level,sps)
+      !call verifydRdWFile(level,sps)
 !!$!        call verifydRdwFileFD(level)
-!!$      call verifydRdxFile(level)
+!     call verifydRdxFile(level)
+!return
 !!$      call verifydRdxsFile
 !!$!      call verifydRdxFileFD(level)
 !!$!stop
@@ -185,15 +189,15 @@
 !!$
 !!$! 	call verifydRdx(level,sps)
 !!$!stop	
-!!$	call verifydRdExtra(level)
+!      call verifydRdExtra(level)
 !!$	call verifydRdExtraFDAD(level)	
 !!$
 !!$        ! Verify the ADjoint routine for the forces
 !!$
 !!$
-         call verifyForcesAdj(level) 
-         call verifyTSStabilityDerivAdj(level)
-return
+!         call verifyForcesAdj(level) 
+!         call verifyTSStabilityDerivAdj(level)
+!return
 !!$!stop	
 !!$        
 !!$	! Verify the force derivatives
@@ -203,10 +207,11 @@ return
 !!$
 !!$!stop
 !!$	! Verify the force derivatives
-!!$	call verifydCfdwfile(level)	
+!	call verifydCfdwfile(level)	
 !!$!        call verifydCfdw(level)
 !!$!stop
-!!$        !return
+!      call verifydIdwfile(level)
+!return
 !!$	!verify the coupling derivatives
 !!$	!call verifyForceCouplingAdj(level)
 !!$	!call verifydSdw(level)
@@ -294,8 +299,9 @@ return
         ! => dJ/dW(il,jl,kl,nw)                                        *
         !                                                              *
         !***************************************************************
-
-        call setupADjointRHS(level,sps,costFunction)
+         !print *,'costfunction',costfunction 
+        !call setupADjointRHS(level,sps,costFunction)
+        call setupADjointRHS(level,costFunction)
 
         ! Solve the discrete ADjoint problem using PETSc's Krylov
         ! solver and preconditioner.
@@ -310,10 +316,7 @@ return
         !                                                              *
         !***************************************************************
 
-        call setupGradientRHSExtra(level,costFunction)
-
-        call setupGradientRHSSpatial(level,costFunction) 
-  
+        call setupGradientRHS(level,costFunction)
 
         ! Compute the total sensitivity dIda(nDesignExtra) and
         ! store it in the array functionGrad(nCostFunc,nDesignExtra)
@@ -326,7 +329,7 @@ return
 	! spatial design variables
 
         call computeADjointGradientSpatial(costFunction)
-
+        !print *,'computing surface'
         call computeADjointGradientSurface(costFunction)
 !!$
 !!$        ! Write the adjoint field solution, the convergence history and
@@ -348,22 +351,34 @@ return
 
       call finalizePETSc
       
+      !print *,'petsc Finalized'
       ! Release memory allocated in initDesign.
 
       if(allocated(functionName )) deallocate(functionName )
       if(allocated(functionValue)) deallocate(functionValue)
       if(allocated(functionGrad )) deallocate(functionGrad )
+      
+      !print *,' new additions'
+      !new additions
+      if(allocated(functionGradSurface)) deallocate(functionGradSurface)
+      if(allocated(adjoint)) deallocate(adjoint)
+      if(allocated(functionGradSpatial)) deallocate(functionGradSpatial)
+      if(allocated(functionGradStruct)) deallocate(functionGradStruct)
+      if(allocated(functionGradCoupling)) deallocate(functionGradCoupling)
+      if(allocated(functionGradCouplingExp)) deallocate(functionGradCouplingExp)
 
+      !print *,'xdesign'
       if(allocated(xDesignVarName )) deallocate(xDesignVarName )
       if(allocated(xDesignVar     )) deallocate(xDesignVar     )
       if(allocated(xDesignVarLower)) deallocate(xDesignVarLower)
       if(allocated(xDesignVarUpper)) deallocate(xDesignVarUpper)
    
       ! Release the memory of the adjoint variables.
-
+      !print *,'releaseMemADjoint'
       !this function causes segmentation fault in block splitting mode
-      call releaseMemADjoint(level,sps)
-      
+      do sps  = 1,nTimeIntervalsSpectral
+         call releaseMemADjoint(level,sps)
+      end do
       ! Output formats.
 
    10 format(/,3x,a)

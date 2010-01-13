@@ -11,6 +11,7 @@
        subroutine gridVelocitiesFineLevelAdj(useOldCoor, t, sps,xAdj,&
             siAdj, sjAdj, skAdj,rotCenterAdj, rotRateAdj,sAdj,sFaceIAdj,&
             sFaceJAdj,sFaceKAdj,machGridAdj,velDirFreestreamAdj,&
+            liftDirectionAdj,alphaAdj,betaAdj,liftindex,&
             iCell, jCell, kCell,nn,level,sps2)
 !
 !      ******************************************************************
@@ -57,7 +58,8 @@
        !real(kind=realType) :: volAdj
        !real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(out) :: normAdj
        real(kind=realType),intent(in):: machGridAdj
-       real(kind=realType),dimension(3),intent(in):: velDirFreestreamAdj
+       real(kind=realType),dimension(3),intent(in):: velDirFreestreamAdj,&
+            liftDirectionAdj
        integer(kind=intType), intent(in) :: iCell, jCell, kCell
 !
 !      Local variables.
@@ -82,9 +84,11 @@
        real(kind=realType), dimension(:,:,:),   pointer :: xx, ss
        real(kind=realType), dimension(:,:,:,:), pointer :: xxOld
 
-       real(kind=realType) ::tNew,tOld,intervalMach
+       real(kind=realType) ::tNew,tOld,intervalMach,alphaIncrement,alphaTS,&
+            betaIncrement,betaTS
        real(kind=realType), dimension(3)::liftDir,velDir,dragDir
-       real(kind=realType)::alpha,beta
+       !real(kind=realType)::alpha,beta
+       real(kind=realType) :: alphaAdj, betaAdj
        integer(kind=intType) :: liftIndex
 
        !function definitions
@@ -149,33 +153,38 @@
                   + rotationMatrixAdj(3,2)*velygrid0 &
                   + rotationMatrixAdj(3,3)*velzgrid0
           elseif(tsAlphaMode)then
-             ! get the baseline alpha and determine the liftIndex
-             call getDirAngle(velDir,liftDir,liftIndex,alpha,beta)
+            ! ! get the baseline alpha and determine the liftIndex
+            ! call getDirAngle(velDirFreestreamAdj,liftDirectionAdj,&
+            !      liftIndex,alpha,beta)
              
              !Determine the alpha for this time instance
-             alpha = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+             alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha, &
                              degreeFourAlpha,  omegaFourAlpha,     &
                              cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+
+             alphaTS = alphaAdj+alphaIncrement
              !Determine the grid velocity for this alpha
-             call adjustInflowAngleAdj(alpha,beta,velDir,liftDir,dragDir,&
+             call adjustInflowAngleAdj(alphaTS,betaAdj,velDir,liftDir,dragDir,&
                   liftIndex)
              !do I need to update the lift direction and drag direction as well?
              !set the effictive grid velocity for this time interval
              velxGrid0 = (aInf*machgridAdj)*(-velDir(1))
              velyGrid0 = (aInf*machgridAdj)*(-velDir(2))
              velzGrid0 = (aInf*machgridAdj)*(-velDir(3))
-             print *,'base velocity',machgrid, velxGrid0 , velyGrid0 , velzGrid0 
+             !print *,'base velocity',machgrid, velxGrid0 , velyGrid0 , velzGrid0 
 
           elseif(tsBetaMode)then
-             ! get the baseline alpha and determine the liftIndex
-             call getDirAngle(velDirFreestreamAdj,liftDirection,liftIndex,alpha,beta)
+             !! get the baseline alpha and determine the liftIndex
+             !call getDirAngle(velDirFreestreamAdj,liftDirectionAdj,liftIndex,alpha,beta)
              
              !Determine the alpha for this time instance
-             alpha = TSBeta(degreePolBeta,   coefPolBeta,       &
+             betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
                              degreeFourBeta,  omegaFourBeta,     &
                              cosCoefFourBeta, sinCoefFourBeta, t(1))
+
+             betaTS = betaAdj+betaIncrement
              !Determine the grid velocity for this alpha
-             call adjustInflowAngleAdj(alpha,beta,velDir,liftDir,dragDir,&
+             call adjustInflowAngleAdj(alphaAdj,betaTS,velDir,liftDir,dragDir,&
                   liftIndex)
              !do I need to update the lift direction and drag direction as well?
              !set the effictive grid velocity for this time interval

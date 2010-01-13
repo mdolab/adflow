@@ -74,7 +74,7 @@
          alpha = alpha + cosCoefFouralpha(nn)*cos(val) &
                    + sinCoefFouralpha(nn)*sin(val)
        enddo
-       print *,'inTSalpha',alpha,nn,val,t
+       !print *,'inTSalpha',alpha,nn,val,t
        ! Set TSAlpha to phi.
 
        TSAlpha = alpha

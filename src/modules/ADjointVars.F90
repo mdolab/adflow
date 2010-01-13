@@ -28,7 +28,7 @@
 !
       ! nCostFunction Number of cost/constraint functions.
 
-      integer(kind=intType), parameter :: nCostFunction = 8_intType
+      integer(kind=intType), parameter :: nCostFunction = 12_intType
 
       integer(kind=intType), parameter :: costFuncLiftCoef = 1_intType,&
                                           costFuncDragCoef = 2_intType,&
@@ -38,7 +38,7 @@
                                           costFuncMomXCoef = 6_intType,&
                                           costFuncMomYCoef = 7_intType,&
                                           costFuncMomZCoef = 8_intType,&
-                                          costFuncCmAlpha  = 9_intType,&
+                                          costFuncCmzAlpha  = 9_intType,&
                                           costFuncCm0      = 10_intType,&
                                           costFuncClAlpha  = 11_intType,&
                                           costFuncCl0      = 12_intType

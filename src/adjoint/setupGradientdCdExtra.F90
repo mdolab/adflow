@@ -1,41 +1,30 @@
 !
 !     ******************************************************************
 !     *                                                                *
-!     * File:          setupGradientRHSExtra.F90                       *
-!     * Author:        Andre C. Marta                                  *
-!     * Starting date: 08-23-2005                                      *
-!     * Last modified: 03-01-2007                                      *
+!     * File:          setupGradientdCdExtra.F90                       *
+!     * Author:        C.A.(Sandy) Mader                               *
+!     * Starting date: 11-30-2009                                      *
+!     * Last modified: 11-30-2009                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine setupGradientRHSExtra(level,costFunction,sps)
+subroutine setupGradientdCdExtra(level,costFunction)
   !
   !     ******************************************************************
   !     *                                                                *
-  !     * Compute the cost function partial sensitivity with respect to  *
-  !     * the extra design variables:                                    *
+  !     * Compute the force coefficient partial sensitivity with respect *
+  !     * to the extra design variables:                                 *
   !     *                                                                *
-  !     *                                dpartial J                      *
-  !     *   dJda(nDesignExtra) = ----------------------------            *
-  !     *                        dpartial alpha(nDesignExtra)            *
+  !     *                                  dpartial C(sps)               *
+  !     *   dCda(sps,nDesignExtra) = ----------------------------        *
+  !     *                            dpartial alpha(nDesignExtra)        *
   !     *                                                                *
   !     *   where nDesignExtra includes:                                 *
   !     *   > angle of attack                                            *
   !     *   > side slip angle                                            *
   !     *   > Mach Number                                                *
+  !     *   > Rotation Rate(p,q,r)                                       *
   !     *                                                                *
-  !     * This routine has to be consistent with the design variable     *
-  !     * ordering done in "setDesignVaribles".                          *
-  !     *                                                                *
-  !     * Supported cost functions J:                                    *
-  !     *   - lift coefficient Cl  if "costFunction" = costFuncLiftCoef  *
-  !     *   - drag coefficient Cd  if "costFunction" = costFuncDragCoef  *
-  !     *   - x-force coef.   Cfx if "costFunction" = costFuncForceXCoef *
-  !     *   - y-force coef.   Cfy if "costFunction" = costFuncForceYCoef *
-  !     *   - z-force coef.   Cfz if "costFunction" = costFuncForceZCoef *
-  !     *   - x-moment coef.   Cmx if "costFunction" = costFuncMomXCoef  *
-  !     *   - y-moment coef.   Cmy if "costFunction" = costFuncMomYCoef  *
-  !     *   - z-moment coef.   Cmz if "costFunction" = costFuncMomZCoef  *
   !     *                                                                *
   !     ******************************************************************
   !
@@ -46,8 +35,8 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
   use inputPhysics   ! liftDirection, dragDirection
   use flowVarRefState!nw
   use inputTimeSpectral !nTimeIntervalsSpectral
-  use monitor          ! timeUnsteadyRestart
-  use section          ! nSections,section%
+  use monitor        !timeunsteadyrestart
+  use section        !nsection,sections%
   implicit none
   !
   !     Subroutine arguments.
@@ -106,10 +95,9 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
   REAL(KIND=REALTYPE) :: rotcenteradj(3), rotrateadj(3), rotrateadjb(3)
 
   logical :: secondHalo,exchangeTurb,correctfork,finegrid,righthanded
-
-  real(kind=realType), dimension(nSections) :: t
-
   integer(kind=intType):: discr
+
+  real(kind=realType), dimension(nSections) :: t     
 
   character(len=2*maxStringLen) :: errorMessage
   !
@@ -123,20 +111,10 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
   !Specify the existence of a second halo.
   secondhalo = .true.
 #ifndef USE_NO_PETSC
-
+!print *,'setupgradientdcdextra'
   ! Get the initial time.
 
   call cpu_time(time(1))
-
-  ! Reset the RHS vector dJ/da by assigning the value zero to all
-  ! its components.
-
-  ! VecSet - Sets all components of vector to a single scalar value.
-
-  call VecSet(dJda,PETScZero,PETScIerr)
-
-  if( PETScIerr/=0 ) &
-       call terminate("setupGradientRHSExtra", "Error in VecSet")
 
 
   ! Determine the reference point for the moment computation in
@@ -160,9 +138,8 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
 
   yplusMax = zero
 
-!for the spectral case can only use one at a time anyway..
-!  spectralLoopAdj: do sps=1,nTimeIntervalsSpectral
-
+  spectralLoopAdj: do sps=1,nTimeIntervalsSpectral
+     !print *,'spectral loop',sps
      ! Initialize the force and moment coefficients to 0.
 
      !zero the force components
@@ -172,7 +149,7 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
      cMvAdj(1) = zero; cMvAdj(2) = zero; cMvAdj(3) = zero
  
      domainLoopAD: do nn=1,nDom
-
+      !  print *,'domain loop',nn
         ! Set some pointers to make the code more readable.
  
         call setPointersAdj(nn,level,sps)
@@ -216,6 +193,7 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
 	!rotrateadjb(:)=zero
 
 	bocoLoop: do mm=1,nBocos
+           !print *,'bc loop',mm
 	   ! Initialize the seed for reverse mode. Select case based on
            ! desired cost function.
         
@@ -262,6 +240,12 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
            case (costFuncMomZCoef)
               CmzAdjB(sps) = 1      
 
+           case (costFunccl0,costFuncclalpha)
+              ClAdjB(sps) = 1
+
+           case (costFunccm0,costFunccmzalpha)
+              CmzAdjB(sps) = 1     
+              
            end select
 	
 	   
@@ -277,7 +261,7 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
            j2Beg= BCData(mm)%jnBeg+1; j2End = BCData(mm)%jnEnd
 
            t = timeUnsteadyRestart
-
+           
            if(equationMode == timeSpectral) then
               do nnn=1,nSections
                  !t(nnn) = t(nnn) + (sps2-1)*sections(nnn)%timePeriod &
@@ -295,10 +279,11 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
 &  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
 &  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
 &  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
-&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex, t)
+&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex,t)
+
 
 	   enddo bocoLoop
-
+           !print *,'end bc loop'
         ! Deallocate the xAdj.
         deallocate(pAdj, stat=ierr)
         if(ierr /= 0)                              &
@@ -328,8 +313,8 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
         
 
      enddo domainLoopAD
-!see above
-!  enddo spectralLoopAdj
+     !print *,'end domain loop'
+ 
 	
            !***************************************************
            !        set angle of of attack (AOA) derivative
@@ -343,47 +328,42 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
 
            idxmg = nDesignAOA - 1
 
-           ! Transfer data to PETSc vector
-
-           call VecSetValue(dJda, idxmg, dJdaLocal, &
+           ! Transfer data to PETSc matrix
+           !print *,'alpha',idxmg,sps-1
+           call MatSetValues(dCda,1,sps-1,1,idxmg, dJdaLocal, &
                 ADD_VALUES, PETScIerr)
-	   !print *,'setting alpha',dJda, idxmg, dJdaLocal
-	   !call VecSetValue(dJda, idxmg, dJdaLocal, &
-           !     INSERT_VALUES, PETScIerr)
 
            if( PETScIerr/=0 ) then
               write(errorMessage,99) &
-                   "Error in VecSetValue for global node", idxmg
-              call terminate("setupGradientRHSExtra", errorMessage)
+                   "Error in MatSetValue for alpha", idxmg
+              call terminate("setupGradientdcdExtra", errorMessage)
            endif
 
-           !
-           !     ******************************************************************
-           !     *                                                                *
-           !     * Side slip angle > beta.                                        *
-           !     *                                                                *
-           !     ******************************************************************
-           !
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Side slip angle > beta.                                        *
+!     *                                                                *
+!     ******************************************************************
+!
 
            dJdaLocal = betaadjb
 	   
            ! Set the corresponding single entry of the PETSc vector dJda.
-
+           
            ! Global vector row idxmg function of design variable index.
 
            idxmg = nDesignSSA - 1
 
            ! Transfer data to PETSc vector
-
-           call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !print *,'sideslip',idxmg,sps-1
+           call MatSetValues(dCda,1,sps-1,1,idxmg, dJdaLocal, &
                 ADD_VALUES, PETScIerr)
-	   !call VecSetValue(dJda, idxmg, dJdaLocal, &
-           !     INSERT_VALUES, PETScIerr)
 
            if( PETScIerr/=0 ) then
               write(errorMessage,99) &
-                   "Error in VecSetValue for global node", idxmg
-              call terminate("setupGradientRHSExtra", errorMessage)
+                   "Error in MatSetValues for beta", idxmg
+              call terminate("setupGradientdCdExtra", errorMessage)
            endif
 
        	   !
@@ -394,7 +374,7 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
            !     ******************************************************************
            !
 
-           dJdaLocal = machadjb!+machcoefadjb
+           dJdaLocal = machadjb+machcoefadjb
 	   
            ! Set the corresponding single entry of the PETSc vector dJda.
 
@@ -403,28 +383,25 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
            idxmg = nDesignMach - 1
 
            ! Transfer data to PETSc vector
-
-           call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !print *,'mach',idxmg,sps-1
+           call MatSetValues(dCda,1,sps-1,1,idxmg, dJdaLocal, &
                 ADD_VALUES, PETScIerr)
-	   !print *,'setting vector',dJda, idxmg, dJdaLocal
-	   !call VecSetValue(dJda, idxmg, dJdaLocal, &
-           !     INSERT_VALUES, PETScIerr)
 
            if( PETScIerr/=0 ) then
               write(errorMessage,99) &
-                   "Error in VecSetValue for global node", idxmg
-              call terminate("setupGradientRHSExtra", errorMessage)
+                   "Error in MatSetValues for mach", idxmg
+              call terminate("setupGradientdCdExtra", errorMessage)
            endif
 
-	       	   !
-           !     ******************************************************************
-           !     *                                                                *
-           !     * Mach Number Grid derivative.                                   *
-           !     *                                                                *
-           !     ******************************************************************
-           !
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Mach Number Grid derivative.                                   *
+!     *                                                                *
+!     ******************************************************************
+!
 
-           dJdaLocal = machcoefadjb!+machgridadjb
+           dJdaLocal = machcoefadjb+machgridadjb
 	   
            ! Set the corresponding single entry of the PETSc vector dJda.
 
@@ -433,27 +410,24 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
            idxmg = nDesignMachGrid - 1
 
            ! Transfer data to PETSc vector
-
-           call VecSetValue(dJda, idxmg, dJdaLocal, &
+           print *,'machgrid',idxmg,sps-1,dJdaLocal
+           call MatSetValues(dCda,1,sps-1,1,idxmg, dJdaLocal, &
                 ADD_VALUES, PETScIerr)
-	   !print *,'setting vector',dJda, idxmg, dJdaLocal
-	   !call VecSetValue(dJda, idxmg, dJdaLocal, &
-           !     INSERT_VALUES, PETScIerr)
-
+     
            if( PETScIerr/=0 ) then
               write(errorMessage,99) &
-                   "Error in VecSetValue for global node", idxmg
-              call terminate("setupGradientRHSExtra", errorMessage)
+                   "Error in MatSetValues for MachGrid", idxmg
+              call terminate("setupGradientdCdExtra", errorMessage)
            endif
 
 
-	   ! 
-           !     ******************************************************************
-           !     *                                                                *
-           !     * Rot X derivative.                                              *
-           !     *                                                                *
-           !     ******************************************************************
-           !
+! 
+!     ******************************************************************
+!     *                                                                *
+!     * Rot X derivative.                                              *
+!     *                                                                *
+!     ******************************************************************
+!
 
            dJdaLocal = rotrateadjb(1)
 	   
@@ -464,25 +438,23 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
            idxmg = nDesignRotX - 1
 
            ! Transfer data to PETSc vector
-
-           call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !print *,'rotx',idxmg,sps-1
+           call MatSetValues(dCda,1,sps-1,1,idxmg, dJdaLocal, &
                 ADD_VALUES, PETScIerr)
-	   !call VecSetValue(dJda, idxmg, dJdaLocal, &
-           !     INSERT_VALUES, PETScIerr)
 
            if( PETScIerr/=0 ) then
               write(errorMessage,99) &
-                   "Error in VecSetValue for global node", idxmg
-              call terminate("setupGradientRHSExtra", errorMessage)
+                   "Error in MatSetValues for roterate(1)", idxmg
+              call terminate("setupGradientdCdExtra", errorMessage)
            endif
 
-           !
-           !     ******************************************************************
-           !     *                                                                *
-           !     * Rot Y derivative.                                              *
-           !     *                                                                *
-           !     ******************************************************************
-           !
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Rot Y derivative.                                              *
+!     *                                                                *
+!     ******************************************************************
+!
 
            dJdaLocal = rotrateadjb(2)
 	   
@@ -493,25 +465,23 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
            idxmg = nDesignRotY - 1
 
            ! Transfer data to PETSc vector
-
-           call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !print *,'roty',idxmg,sps-1
+           call MatSetValues(dCda,1,sps-1,1,idxmg, dJdaLocal, &
                 ADD_VALUES, PETScIerr)
-           !call VecSetValue(dJda, idxmg, dJdaLocal, &
-           !     INSERT_VALUES, PETScIerr)
 
            if( PETScIerr/=0 ) then
               write(errorMessage,99) &
-                   "Error in VecSetValue for global node", idxmg
-              call terminate("setupGradientRHSExtra", errorMessage)
+                   "Error in MatSetValues for roterate(2)", idxmg
+              call terminate("setupGradientdCdExtra", errorMessage)
            endif
  
-           !
-           !     ******************************************************************
-           !     *                                                                *
-           !     * Rot Z derivative.                                              *
-           !     *                                                                *
-           !     ******************************************************************
-           !
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Rot Z derivative.                                              *
+!     *                                                                *
+!     ******************************************************************
+!
 
            dJdaLocal = rotrateadjb(3)
 	   
@@ -522,19 +492,18 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
            idxmg = nDesignRotZ - 1
 
            ! Transfer data to PETSc vector
-
-           call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !print *,'rotz',idxmg,sps-1
+           call MatSetValues(dCda,1,sps-1,1,idxmg, dJdaLocal, &
                 ADD_VALUES, PETScIerr)
-           !call VecSetValue(dJda, idxmg, dJdaLocal, &
-           !     INSERT_VALUES, PETScIerr)
-
+           
            if( PETScIerr/=0 ) then
               write(errorMessage,99) &
-                   "Error in VecSetValue for global node", idxmg
-              call terminate("setupGradientRHSExtra", errorMessage)
+                   "Error in MatSetValues for roterate(3)", idxmg
+              call terminate("setupGradientdCdExtra", errorMessage)
            endif
 
-
+        enddo spectralLoopAdj
+        !print *,'finished loops'
 !
 !     ******************************************************************
 !     *                                                                *
@@ -544,22 +513,23 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
 !
       ! VecAssemblyBegin - Begins assembling the vector. This routine
       ! should be called after completing all calls to VecSetValues().
-
-      call VecAssemblyBegin(dJda,PETScIerr)
-
+        !print *,'assemblybegin',petscierr
+      call MatAssemblyBegin(dCda,MAT_FINAL_ASSEMBLY,PETScIerr)
+      !print *,'assemblybegin1',petscierr
       if( PETScIerr/=0 ) &
-        call terminate("setupGradientRHSExtra", &
-                       "Error in VecAssemblyBegin")
-
+        call terminate("setupGradientdCdExtra", &
+                       "Error in MatAssemblyBegin")
+!      print *,'assemblybegin2',petscierr
       ! VecAssemblyEnd - Completes assembling the vector. This routine
       ! should be called after VecAssemblyBegin().
 
-      call VecAssemblyEnd  (dJda,PETScIerr)
-
+      call MatAssemblyEnd(dCda,MAT_FINAL_ASSEMBLY,PETScIerr)
+ !     print *,'assemblyend',petscierr
       if( PETScIerr/=0 ) &
-        call terminate("setupGradientRHSExtra", &
-                       "Error in VecAssemblyEnd")
+        call terminate("setupGradientdCdExtra", &
+                       "Error in MatAssemblyEnd")
 
+  !    print *,'end assembly'
       ! Get new time and compute the elapsed time.
 
       call cpu_time(time(2))
@@ -571,8 +541,9 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
                       mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
 
+   !   print *,'time',petscrank,timeadj
       if( PETScRank==0 ) &
-        write(*,20) "Assembling dJ/da vector time (s) =", timeAdj
+        write(*,20) "Assembling dC/da vector time (s) =", timeAdj
 !
 !     ******************************************************************
 !     *                                                                *
@@ -583,10 +554,10 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
       ! VecView - Views a vector object.
 
       !if( debug ) then
-        !call VecView(dJda,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-	call VecView(dJda,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+        !call MatView(dCda,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+	call MatView(dCda,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
         if( PETScIerr/=0 ) &
-          call terminate("setupGradientRHS", "Error in VecView")
+          call terminate("setupGradientdCdExtra", "Error in MatView")
         !pause
       !endif
 
@@ -603,4 +574,4 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
 
 #endif
 
-      end subroutine setupGradientRHSExtra
+    end subroutine setupGradientdCdExtra

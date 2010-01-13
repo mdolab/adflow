@@ -13,28 +13,29 @@
 subroutine storeReferenceMesh
 
 use blockPointers
+use inputTimeSpectral
 implicit none
 
 !
 ! Local Variables
 !
 
-integer(kind=intType)::i,j,k,nn
+integer(kind=intType)::i,j,k,nn,sps
 
 !
 !Begin Execution
 !
-
-do nn=1,nDom
-   call setPointers(nn,1,1)
-   do i = 0,ie
-      do j=0,je
-         do k=0,ke
-            xInit(i,j,k,:) = x(i,j,k,:)
+do sps = 1, nTimeIntervalsSpectral
+   do nn=1,nDom
+      call setPointers(nn,1,sps)
+      do i = 0,ie
+         do j=0,je
+            do k=0,ke
+               xInit(i,j,k,:) = x(i,j,k,:)
+            enddo
          enddo
       enddo
    enddo
-enddo
-
+end do
 
 end subroutine storeReferenceMesh

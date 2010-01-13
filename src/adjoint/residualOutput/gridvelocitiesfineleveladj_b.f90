@@ -2,19 +2,19 @@
 !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
 !  
 !  Differentiation of gridvelocitiesfineleveladj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: rotrateadj xadj
-!                machgridadj sfacekadj skadj sfacejadj sjadj sfaceiadj
-!                sadj veldirfreestreamadj siadj sincoeffouralpha
-!                coscoeffouryrot sincoeffourbeta coscoeffourxrot
-!                coefpolmach coefpolzrot omegafourmach omegafouralpha
-!                omegafourzrot coefpolyrot omegafouryrot coefpolxrot
-!                coefpolalpha sincoeffourmach omegafourxrot sincoeffourzrot
-!                coscoeffourbeta rotpoint sincoeffouryrot sincoeffourxrot
-!                coscoeffouralpha coefpolbeta omegafourbeta coscoeffourmach
-!                coscoeffourzrot
-!   of linear combination of output variables: rotrateadj xadj
-!                machgridadj sfacekadj skadj sfacejadj sjadj sfaceiadj
-!                sadj veldirfreestreamadj siadj
+!   gradient, with respect to input variables: rotrateadj alphaadj
+!                xadj betaadj machgridadj sfacekadj skadj sfacejadj
+!                sjadj sfaceiadj sadj veldirfreestreamadj siadj
+!                sincoeffouralpha coscoeffouryrot sincoeffourbeta
+!                coscoeffourxrot coefpolmach coefpolzrot omegafourmach
+!                omegafouralpha omegafourzrot coefpolyrot omegafouryrot
+!                coefpolxrot coefpolalpha sincoeffourmach omegafourxrot
+!                sincoeffourzrot coscoeffourbeta rotpoint sincoeffouryrot
+!                sincoeffourxrot coscoeffouralpha coefpolbeta omegafourbeta
+!                coscoeffourmach coscoeffourzrot
+!   of linear combination of output variables: rotrateadj alphaadj
+!                xadj betaadj machgridadj sfacekadj skadj sfacejadj
+!                sjadj sfaceiadj sadj veldirfreestreamadj siadj
 !
 !      ******************************************************************
 !      *                                                                *
@@ -29,8 +29,9 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 &  , siadj, siadjb, sjadj, sjadjb, skadj, skadjb, rotcenteradj, &
 &  rotrateadj, rotrateadjb, sadj, sadjb, sfaceiadj, sfaceiadjb, &
 &  sfacejadj, sfacejadjb, sfacekadj, sfacekadjb, machgridadj, &
-&  machgridadjb, veldirfreestreamadj, veldirfreestreamadjb, icell, jcell&
-&  , kcell, nn, level, sps2)
+&  machgridadjb, veldirfreestreamadj, veldirfreestreamadjb, &
+&  liftdirectionadj, alphaadj, alphaadjb, betaadj, betaadjb, liftindex, &
+&  icell, jcell, kcell, nn, level, sps2)
   USE blockpointers
   USE cgnsgrid
   USE flowvarrefstate
@@ -43,10 +44,13 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
   USE monitor
   IMPLICIT NONE
 !      enddo domains
+  REAL(KIND=REALTYPE) :: alphaadj, alphaadjb, betaadj, betaadjb
   INTEGER(KIND=INTTYPE), INTENT(IN) :: icell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: jcell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: kcell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: level
+  REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: liftdirectionadj
+  INTEGER(KIND=INTTYPE) :: liftindex
   REAL(KIND=REALTYPE), INTENT(IN) :: machgridadj
   REAL(KIND=REALTYPE) :: machgridadjb
   INTEGER(KIND=INTTYPE), INTENT(IN) :: nn
@@ -85,12 +89,12 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 &  ntimeintervalsspectral)
   INTEGER :: ad_from, ad_from0, ad_from1, ad_from2, ad_from3, ad_from4, &
 &  ad_to, ad_to0, ad_to1, ad_to2, ad_to3, ad_to4, branch
-  REAL(KIND=REALTYPE) :: alpha, beta
+  REAL(KIND=REALTYPE) :: alphaincrement, alphats, alphatsb, &
+&  betaincrement, betats, betatsb, intervalmach, tnew, told
   REAL(KIND=REALTYPE) :: derivrotationmatrixadj(3, 3)
-  REAL(KIND=REALTYPE) :: dragdir(3), liftdir(3), veldir(3)
+  REAL(KIND=REALTYPE) :: dragdir(3), liftdir(3), veldir(3), veldirb(3)
   INTEGER(KIND=INTTYPE) :: i, ii, iie, j, jje, k, kke
   INTEGER(KIND=INTTYPE) :: iend, istart, jend, jstart, kend, kstart
-  INTEGER(KIND=INTTYPE) :: liftindex
   INTEGER(KIND=INTTYPE) :: mm
   REAL(KIND=REALTYPE) :: oneover4dt, oneover8dt
   REAL(KIND=REALTYPE) :: rotationmatrixadj(3, 3)
@@ -99,7 +103,6 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
   REAL(KIND=REALTYPE), DIMENSION(:, :, :), POINTER :: ss, xx
   REAL(KIND=REALTYPE) :: ssadj(-3:2, -3:2, 3), ssadjb(-3:2, -3:2, 3), &
 &  xxadj(-3:2, -3:2, 3), xxadjb(-3:2, -3:2, 3)
-  REAL(KIND=REALTYPE) :: intervalmach, tnew, told
   REAL(KIND=REALTYPE) :: TSALPHA
   REAL(KIND=REALTYPE) :: TSBETA
   REAL(KIND=REALTYPE) :: TSMACH
@@ -138,6 +141,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 !      Local variables.
 !
 !real(kind=realType), dimension(:,:), pointer :: sFace
+!real(kind=realType)::alpha,beta
 !function definitions
 !
 !      ******************************************************************
@@ -189,30 +193,34 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 &        3, 2)*velygrid0 + rotationmatrixadj(3, 3)*velzgrid0
       CALL PUSHINTEGER4(1)
     ELSE IF (tsalphamode) THEN
-! get the baseline alpha and determine the liftIndex
-      CALL GETDIRANGLE(veldir, liftdir, liftindex, alpha, beta)
+! ! get the baseline alpha and determine the liftIndex
+! call getDirAngle(velDirFreestreamAdj,liftDirectionAdj,&
+!      liftIndex,alpha,beta)
 !Determine the alpha for this time instance
-      alpha = TSALPHA(degreepolalpha, coefpolalpha, degreefouralpha, &
-&        omegafouralpha, coscoeffouralpha, sincoeffouralpha, t(1))
+      alphaincrement = TSALPHA(degreepolalpha, coefpolalpha, &
+&        degreefouralpha, omegafouralpha, coscoeffouralpha, &
+&        sincoeffouralpha, t(1))
+      alphats = alphaadj + alphaincrement
 !Determine the grid velocity for this alpha
-      CALL ADJUSTINFLOWANGLEADJ(alpha, beta, veldir, liftdir, dragdir, &
-&                          liftindex)
+      CALL ADJUSTINFLOWANGLEADJ(alphats, betaadj, veldir, liftdir, &
+&                          dragdir, liftindex)
 !do I need to update the lift direction and drag direction as well?
 !set the effictive grid velocity for this time interval
       velxgrid0 = ainf*machgridadj*(-veldir(1))
       velygrid0 = ainf*machgridadj*(-veldir(2))
       velzgrid0 = ainf*machgridadj*(-veldir(3))
+!print *,'base velocity',machgrid, velxGrid0 , velyGrid0 , velzGrid0 
       CALL PUSHINTEGER4(2)
     ELSE IF (tsbetamode) THEN
-! get the baseline alpha and determine the liftIndex
-      CALL GETDIRANGLE(veldirfreestream, liftdirection, liftindex, alpha&
-&                 , beta)
+!! get the baseline alpha and determine the liftIndex
+!call getDirAngle(velDirFreestreamAdj,liftDirectionAdj,liftIndex,alpha,beta)
 !Determine the alpha for this time instance
-      alpha = TSBETA(degreepolbeta, coefpolbeta, degreefourbeta, &
-&        omegafourbeta, coscoeffourbeta, sincoeffourbeta, t(1))
+      betaincrement = TSBETA(degreepolbeta, coefpolbeta, degreefourbeta&
+&        , omegafourbeta, coscoeffourbeta, sincoeffourbeta, t(1))
+      betats = betaadj + betaincrement
 !Determine the grid velocity for this alpha
-      CALL ADJUSTINFLOWANGLEADJ(alpha, beta, veldir, liftdir, dragdir, &
-&                          liftindex)
+      CALL ADJUSTINFLOWANGLEADJ(alphaadj, betats, veldir, liftdir, &
+&                          dragdir, liftindex)
 !do I need to update the lift direction and drag direction as well?
 !set the effictive grid velocity for this time interval
       velxgrid0 = ainf*machgridadj*(-veldir(1))
@@ -793,16 +801,34 @@ loopdirection:DO mm=1,3
         velxgrid0b = rotationmatrixadj(1, 1)*velxgrid0b
       END IF
     ELSE
-      machgridadjb = machgridadjb - veldir(1)*ainf*velxgrid0b - veldir(2&
-&        )*ainf*velygrid0b - veldir(3)*ainf*velzgrid0b
+      veldirb(1:3) = 0.0
+      machgridadjb = machgridadjb - ainf*veldir(1)*velxgrid0b - ainf*&
+&        veldir(2)*velygrid0b - ainf*veldir(3)*velzgrid0b
+      veldirb(3) = -(ainf*machgridadj*velzgrid0b)
+      veldirb(2) = veldirb(2) - ainf*machgridadj*velygrid0b
+      veldirb(1) = veldirb(1) - ainf*machgridadj*velxgrid0b
+      alphatsb = 0.0
+      CALL ADJUSTINFLOWANGLEADJ_B(alphats, alphatsb, betaadj, betaadjb, &
+&                            veldir, veldirb, liftdir, dragdir, &
+&                            liftindex)
+      alphaadjb = alphaadjb + alphatsb
       velxgrid0b = 0.0
       velzgrid0b = 0.0
       velygrid0b = 0.0
     END IF
   ELSE IF (branch .LT. 5) THEN
     IF (branch .LT. 4) THEN
-      machgridadjb = machgridadjb - veldir(1)*ainf*velxgrid0b - veldir(2&
-&        )*ainf*velygrid0b - veldir(3)*ainf*velzgrid0b
+      veldirb(1:3) = 0.0
+      machgridadjb = machgridadjb - ainf*veldir(1)*velxgrid0b - ainf*&
+&        veldir(2)*velygrid0b - ainf*veldir(3)*velzgrid0b
+      veldirb(3) = -(ainf*machgridadj*velzgrid0b)
+      veldirb(2) = veldirb(2) - ainf*machgridadj*velygrid0b
+      veldirb(1) = veldirb(1) - ainf*machgridadj*velxgrid0b
+      betatsb = 0.0
+      CALL ADJUSTINFLOWANGLEADJ_B(alphaadj, alphaadjb, betats, betatsb, &
+&                            veldir, veldirb, liftdir, dragdir, &
+&                            liftindex)
+      betaadjb = betaadjb + betatsb
       velxgrid0b = 0.0
       velzgrid0b = 0.0
       velygrid0b = 0.0
@@ -846,7 +872,7 @@ loopdirection:DO mm=1,3
 !  coefpolxrotb(:) = 0.0
 !  omegafouryrotb = 0.0
 !  coefpolyrotb(:) = 0.0
-!  omegafourzrotb = 0.0
+ ! omegafourzrotb = 0.0
 !  omegafouralphab = 0.0
 !  omegafourmachb = 0.0
 !  coefpolzrotb(:) = 0.0
