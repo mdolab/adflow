@@ -37,7 +37,8 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 
 FF90_OBJECTS = computeTSStabilityDerivAdj.o\
-	       verifyTSStabilityDerivAdj.o
+	       verifyTSStabilityDerivAdj.o\
+	       verifydIdwFile.o
 
 #CC_OBJECTS   = connect_signals.o
 

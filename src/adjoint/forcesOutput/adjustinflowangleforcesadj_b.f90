@@ -3,8 +3,8 @@
 !  
 !  Differentiation of adjustinflowangleforcesadj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: alphaadj betaadj
-!   of linear combination of output variables: liftdirectionadj
-!                veldirfreestreamadj
+!   of linear combination of output variables: alphaadj liftdirectionadj
+!                betaadj veldirfreestreamadj
 !
 !      ******************************************************************
 !      *                                                                *
@@ -97,8 +97,6 @@ SUBROUTINE ADJUSTINFLOWANGLEFORCESADJ_B(alphaadj, alphaadjb, betaadj, &
   refdirection(:) = zero
   CALL PUSHREAL8(refdirection(liftindex))
   refdirection(liftindex) = one
-  betaadjb = 0.0
-  alphaadjb = 0.0
   CALL GETDIRVECTORFORCES_B(refdirection, alphaadj, alphaadjb, betaadj, &
 &                      betaadjb, liftdirectionadj, liftdirectionadjb, &
 &                      liftindex)

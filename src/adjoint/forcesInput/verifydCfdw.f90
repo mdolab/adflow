@@ -1367,7 +1367,8 @@ subroutine verifydCfdw(level)
 !
 !     ******************************************************************
 !
-
+      deallocate(monLoc1, monGlob1)
+      deallocate(monLoc2, monGlob2)
       
       ! Deallocate memory for the temporary arrays.
       !print *,'deallocating dcl'

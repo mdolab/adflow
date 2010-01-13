@@ -67,19 +67,26 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       releaseMemADjoint.o      \
 	       setGlobalCellsAndNodes.o \
 	       setPointersAdj.o         \
+               setupADjointdCdwStability.o\
+               setupADjointdIdCStability.o\
 	       setupADjointMatrix.o     \
 	       setupADjointRHS.o        \
 	       setupADjointRHSAeroCoeff.o\
+	       setupADjointRHSStability.o\
 	       setupADjointRHSStruct.o  \
 	       setupCouplingMatrixStruct.o\
 	       setupCouplingTotalStruct.o\
 	       solveADjointPETSc.o      \
 	       solveDirectPETSc.o       \
 	       setupADjointTotalStruct.o\
+	       setupGradientdCdExtra.o\
+	       setupGradientdCdx.o \
 	       setupGradientMatrixExtra.o\
 	       setupGradientMatrixSpatial.o\
+               setupGradientRHS.o\
 	       setupGradientRHSExtra.o\
 	       setupGradientRHSSpatial.o\
+               setupGradientRHSStability.o\
                solverADjoint.o          \
 	       updateFlow.o             \
 	       verifydRdw.o             \

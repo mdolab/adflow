@@ -143,17 +143,19 @@
 !
        ! Release the memory of flowDoms of the finest grid and of the
        ! array flowDoms afterwards.
-
+       !print *,'In release memory 2'
        do sps=1,nTimeIntervalsSpectral
          do nn=1,nDom
+            !print *,'deallocating block:',sps,nn
            call deallocateBlock(nn, 1_intType, sps)
          enddo
        enddo
-
+       !print *,'Blocks deallocated'
        deallocate(flowDoms, stat=ierr)
        if(ierr /= 0)                          &
          call terminate("releaseMemoryPart2", &
                         "Deallocation failure for flowDoms")
+       !print *,'flowdoms deallocated'
 
        ! Some more memory should be deallocated if this code is to
        ! be used in combination with adaptation.
@@ -186,6 +188,7 @@
 
        type(viscSubfaceType), dimension(:), pointer :: viscSubface
        type(BCDataType),      dimension(:), pointer :: BCData
+       TYPE(warp_comm_type), DIMENSION(:),pointer :: warp_comm
 
        logical :: deallocationFailure
 !
@@ -203,7 +206,7 @@
        ! stored in there. Initialize ierr to 0, such that the terminate
        ! routine is only called at the end if a memory deallocation
        ! failure occurs.
-
+       !print *,'visc subface'
        ierr = 0
        viscSubface => flowDoms(nn,level,sps)%viscSubface
        do i=1,flowDoms(nn,level,sps)%nViscBocos
@@ -218,7 +221,7 @@
 
        ! Set the pointer for BCData and deallocate the memory
        ! stored in there.
-
+       !print *,'bcdata'
        BCData => flowDoms(nn,level,sps)%BCData
        do i=1,flowDoms(nn,level,sps)%nBocos
 
@@ -285,7 +288,7 @@
          if( associated(BCData(i)%turbInlet) ) &
            deallocate(BCData(i)%turbInlet, stat=ierr)
          if(ierr /= 0) deallocationFailure = .true.
-
+         !print *,'nullify bcdata'
          nullify(BCData(i)%norm)
          nullify(BCData(i)%rface)
          nullify(BCData(i)%uSlip)
@@ -305,8 +308,22 @@
 
        enddo
 
-       ! Deallocate all pointers of this block.
+       do i=1,flowDoms(nn,level,sps)%nSubface
+          warp_comm=>flowDoms(nn,level,sps)%warp_comm
+          if (associated(warp_comm))then
+             if( allocated(warp_comm(i)%sendbuffer) ) &
+                  deallocate(warp_comm(i)%sendbuffer, stat=ierr)
+             if(ierr /= 0) deallocationFailure = .true.
+             
+             if( allocated(warp_comm(i)%recvbuffer) ) &
+                  deallocate(warp_comm(i)%recvbuffer, stat=ierr)
+             if(ierr /= 0) deallocationFailure = .true.
+          endif
+          
+       enddo
 
+       ! Deallocate all pointers of this block.
+       !print *,'pointers'
        if( associated(flowDoms(nn,level,sps)%BCType) ) &
          deallocate(flowDoms(nn,level,sps)%BCType, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
@@ -315,10 +332,15 @@
          deallocate(flowDoms(nn,level,sps)%BCFaceID, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
+       if( associated(flowDoms(nn,level,sps)%nNodesSubface) ) &
+         deallocate(flowDoms(nn,level,sps)%nNodesSubface, stat=ierr)
+       if(ierr /= 0) deallocationFailure = .true.
+
        if( associated(flowDoms(nn,level,sps)%cgnsSubface) ) &
          deallocate(flowDoms(nn,level,sps)%cgnsSubface, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
+       !print *,'group 1'
        if( associated(flowDoms(nn,level,sps)%inBeg) ) &
          deallocate(flowDoms(nn,level,sps)%inBeg, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
@@ -391,56 +413,58 @@
          deallocate(flowDoms(nn,level,sps)%kcEnd, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
+       !print *,'group 2'
+       !print *,'neighblock'
        if( associated(flowDoms(nn,level,sps)%neighBlock) ) &
          deallocate(flowDoms(nn,level,sps)%neighBlock, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
-
+       !print *,'neighproc'
        if( associated(flowDoms(nn,level,sps)%neighProc) ) &
          deallocate(flowDoms(nn,level,sps)%neighProc, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
-
+       !print *,'l1'
        if( associated(flowDoms(nn,level,sps)%l1) ) &
          deallocate(flowDoms(nn,level,sps)%l1, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
-
+       !print *,'l2'
        if( associated(flowDoms(nn,level,sps)%l2) ) &
          deallocate(flowDoms(nn,level,sps)%l2, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
-
+       !print *,'l3'
        if( associated(flowDoms(nn,level,sps)%l3) ) &
          deallocate(flowDoms(nn,level,sps)%l3, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
-
+       !print *,'groupnum'
        if( associated(flowDoms(nn,level,sps)%groupNum) ) &
          deallocate(flowDoms(nn,level,sps)%groupNum, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
-
-
-       if( associated(flowDoms(nn,level,sps)%iblank) ) &
-         deallocate(flowDoms(nn,level,sps)%iblank, stat=ierr)
-       if(ierr /= 0) deallocationFailure = .true.
-
+!!$       print *,'iblank',shape(flowDoms(nn,level,sps)%iblank)
+!!$
+!!$       if( associated(flowDoms(nn,level,sps)%iblank) ) &
+!!$         deallocate(flowDoms(nn,level,sps)%iblank, stat=ierr)
+!!$       if(ierr /= 0) deallocationFailure = .true.
+       !print *,'ibndry'
        if( associated(flowDoms(nn,level,sps)%ibndry) ) &
          deallocate(flowDoms(nn,level,sps)%ibndry, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
-
+       !print *,'idonor'
        if( associated(flowDoms(nn,level,sps)%idonor) ) &
          deallocate(flowDoms(nn,level,sps)%idonor, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
-
+       !print *,'overint'
        if( associated(flowDoms(nn,level,sps)%overint) ) &
          deallocate(flowDoms(nn,level,sps)%overint, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
-
+       !print *,'neighblockover'
        if( associated(flowDoms(nn,level,sps)%neighBlockOver) ) &
          deallocate(flowDoms(nn,level,sps)%neighBlockOver, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
-
+       !print *,'neighprocover'
        if( associated(flowDoms(nn,level,sps)%neighProcOver) ) &
          deallocate(flowDoms(nn,level,sps)%neighProcOver, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
-
+       !print *,'group 3'
        if( associated(flowDoms(nn,level,sps)%BCData) ) &
          deallocate(flowDoms(nn,level,sps)%BCData, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
@@ -474,11 +498,23 @@
          deallocate(flowDoms(nn,level,sps)%viscKmaxPointer, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
-
+       !print *,'group 4'
        if( associated(flowDoms(nn,level,sps)%x) ) &
          deallocate(flowDoms(nn,level,sps)%x, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
+       if( associated(flowDoms(nn,level,sps)%xInit) ) &
+         deallocate(flowDoms(nn,level,sps)%xInit, stat=ierr)
+       if(ierr /= 0) deallocationFailure = .true.
+
+       if( associated(flowDoms(nn,level,sps)%xPlus) ) &
+            deallocate(flowDoms(nn,level,sps)%xPlus, stat=ierr)
+       if(ierr /= 0) deallocationFailure = .true.
+       
+       if( associated(flowDoms(nn,level,sps)%xMinus) ) &
+            deallocate(flowDoms(nn,level,sps)%xMinus, stat=ierr)
+       if(ierr /= 0) deallocationFailure = .true.
+       
        if( associated(flowDoms(nn,level,sps)%xOld) ) &
          deallocate(flowDoms(nn,level,sps)%xOld, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
@@ -515,6 +551,7 @@
          deallocate(flowDoms(nn,level,sps)%pork, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
+       !print *,'group 5'
        if( associated(flowDoms(nn,level,sps)%indFamilyI) ) &
          deallocate(flowDoms(nn,level,sps)%indFamilyI, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
@@ -563,9 +600,13 @@
          deallocate(flowDoms(nn,level,sps)%sFaceK, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
-
+       !print *,'group 6'
        if( associated(flowDoms(nn,level,sps)%w) ) &
          deallocate(flowDoms(nn,level,sps)%w, stat=ierr)
+       if(ierr /= 0) deallocationFailure = .true.
+
+       if( associated(flowDoms(nn,level,sps)%wtmp) ) &
+         deallocate(flowDoms(nn,level,sps)%wtmp, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
        if( associated(flowDoms(nn,level,sps)%wOld) ) &
@@ -574,6 +615,10 @@
 
        if( associated(flowDoms(nn,level,sps)%p) ) &
          deallocate(flowDoms(nn,level,sps)%p, stat=ierr)
+       if(ierr /= 0) deallocationFailure = .true.
+
+       if( associated(flowDoms(nn,level,sps)%ptmp) ) &
+         deallocate(flowDoms(nn,level,sps)%ptmp, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
        if( associated(flowDoms(nn,level,sps)%gamma) ) &
@@ -592,13 +637,29 @@
          deallocate(flowDoms(nn,level,sps)%s, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
-
+       !print *,'group 7'
        if( associated(flowDoms(nn,level,sps)%p1) ) &
          deallocate(flowDoms(nn,level,sps)%p1, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
        if( associated(flowDoms(nn,level,sps)%dw) ) &
          deallocate(flowDoms(nn,level,sps)%dw, stat=ierr)
+       if(ierr /= 0) deallocationFailure = .true.
+
+       if( associated(flowDoms(nn,level,sps)%dwp) ) &
+            deallocate(flowDoms(nn,level,sps)%dwp, stat=ierr)
+       if(ierr /= 0) deallocationFailure = .true.
+
+       if( associated(flowDoms(nn,level,sps)%dwm) ) &
+            deallocate(flowDoms(nn,level,sps)%dwm, stat=ierr)
+       if(ierr /= 0) deallocationFailure = .true.
+
+       if( associated(flowDoms(nn,level,sps)%dwtmp) ) &
+         deallocate(flowDoms(nn,level,sps)%dwtmp, stat=ierr)
+       if(ierr /= 0) deallocationFailure = .true.
+
+       if( associated(flowDoms(nn,level,sps)%dwtemp) ) &
+         deallocate(flowDoms(nn,level,sps)%dwtemp, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
        if( associated(flowDoms(nn,level,sps)%fw) ) &
@@ -608,7 +669,8 @@
        if( associated(flowDoms(nn,level,sps)%dwOldRK) ) &
          deallocate(flowDoms(nn,level,sps)%dwOldRK, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
-
+       
+       !print *,'group 8'
        if( associated(flowDoms(nn,level,sps)%w1) ) &
          deallocate(flowDoms(nn,level,sps)%w1, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
@@ -665,7 +727,7 @@
          deallocate(flowDoms(nn,level,sps)%kCo, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
-
+       !print *,'group 9'
        if( associated(flowDoms(nn,level,sps)%wn) ) &
          deallocate(flowDoms(nn,level,sps)%wn, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
@@ -745,6 +807,13 @@
          deallocate(flowDoms(nn,level,sps)%bvtk2, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
+
+
+       !print *,'warp comm'
+       if( associated(flowDoms(nn,level,sps)%warp_comm) ) &
+         deallocate(flowDoms(nn,level,sps)%warp_comm, stat=ierr)
+       if(ierr /= 0) deallocationFailure = .true.
+
        ! Check for errors in the deallocation.
 
        if( deallocationFailure ) &
@@ -752,7 +821,7 @@
                         "Something went wrong when deallocating memory")
 
        ! Nullify the pointers of this block.
-
+       !print *,'nullifying flowdom pointers'
        call nullifyFlowDomPointers(nn,level,sps)
  
        end subroutine deallocateBlock

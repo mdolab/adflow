@@ -50,15 +50,15 @@ subroutine verifydCfdwfile(level)
 
       logical :: fineGrid,correctForK, exchangeTurb
 
-      real(kind=realType) :: Cl,Cd,Cfx,Cfy,Cfz,Cmx,Cmy,Cmz
-      real(kind=realType) :: ClAdj,CdAdj,CfxAdj,CfyAdj,CfzAdj,&
+      real(kind=realType),dimension(nTimeIntervalsSpectral) :: Cl,Cd,Cfx,Cfy,Cfz,Cmx,Cmy,Cmz
+      real(kind=realType),dimension(nTimeIntervalsSpectral) :: ClAdj,CdAdj,CfxAdj,CfyAdj,CfzAdj,&
                              &CmxAdj,CmyAdj,CmzAdj  
-      real(kind=realType) :: CLAdjP,CLAdjM,CDAdjP,CDAdjM,dCLdwFD,dCDdwFD,&
+      real(kind=realType),dimension(nTimeIntervalsSpectral) :: CLAdjP,CLAdjM,CDAdjP,CDAdjM,dCLdwFD,dCDdwFD,&
                              &dCmxdwFD,CmxAdjP,CmxAdjM
-      real(kind=realType) :: ClAdjB,CdAdjB,CfxAdjB,CfyAdjB,CfzAdjB,&
+      real(kind=realType),dimension(nTimeIntervalsSpectral) :: ClAdjB,CdAdjB,CfxAdjB,CfyAdjB,CfzAdjB,&
                              &CmxAdjB,CmyAdjB,CmzAdjB 
 
-      real(kind=realType) :: CLP,CLM,CDP,CDM,CmxP,CmxM,CmyP,CmyM,CmzP,CmzM,&
+      real(kind=realType),dimension(nTimeIntervalsSpectral) :: CLP,CLM,CDP,CDM,CmxP,CmxM,CmyP,CmyM,CmzP,CmzM,&
                              &CfxP,CfxM,CfyP,CfyM,CfzP,CfzM
 
       real(kind=realType), dimension(:,:,:,:), allocatable :: xAdj,xAdjB
@@ -307,14 +307,14 @@ subroutine verifydCfdwfile(level)
 
           
            ! Initialize the seed for reverse mode. Cl is the first one
-           ClAdjB = 1
-           CDAdjB = 0
-           CmxAdjB = 0
-           CmyAdjB = 0
-           CmzAdjB = 0
-           CfxAdjB = 0
-           CfyAdjB = 0
-           CfzAdjB = 0
+           ClAdjB(sps) = 1
+           CDAdjB(sps) = 0
+           CmxAdjB(sps) = 0
+           CmyAdjB(sps) = 0
+           CmzAdjB(sps) = 0
+           CfxAdjB(sps) = 0
+           CfyAdjB(sps) = 0
+           CfzAdjB(sps) = 0
            
            !xAdjB(:,:,:,:) = zero ! > return dCf/dx
            !wAdjB(:,:,:,:) = zero ! > return dCf/dW
@@ -340,9 +340,9 @@ subroutine verifydCfdwfile(level)
 
 
         enddo bocoLoop
-        do k = 0,kb
-           do j = 0,jb
-              do i = 0,ib
+        do k = 2,kl!0,kb
+           do j = 2,jl!0,jb
+              do i = 2,il!0,ib
                  do l = 1,nw
                     !idxmgb = globalCell(i,j,k)
                     idxmgb   = globalCell(i,j,k)*nw+l
@@ -352,7 +352,7 @@ subroutine verifydCfdwfile(level)
                        !if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
                        !print *,'globalcell',idxmgb,wadjb(i,j,k,l),wadjb2(i,j,k,l)
                        !idxmgb = globalCell(i,j,k)*nw+l-1  !L minus 1 not 1 minus 1
-                       write(unitwcl,10) wadjb2(i,j,k,l),nn,i,j,k,l,idxmgb
+                       write(unitwcl,10) wadjb2(i,j,k,l),sps,nn,i,j,k,l,idxmgb
 10                     format(1x,'wcl ',f18.10,7I8)
                     endif
                  enddo
@@ -375,14 +375,14 @@ subroutine verifydCfdwfile(level)
            i2Beg= BCData(mm)%inBeg+1; i2End = BCData(mm)%inEnd
            j2Beg= BCData(mm)%jnBeg+1; j2End = BCData(mm)%jnEnd
            ! Initialize the seed for reverse mode. Cd second
-           ClAdjB = 0
-           CDAdjB = 1
-           CmxAdjB = 0
-           CmyAdjB = 0
-           CmzAdjB = 0
-           CfxAdjB = 0
-           CfyAdjB = 0
-           CfzAdjB = 0
+           ClAdjB(sps) = 0
+           CDAdjB(sps) = 1
+           CmxAdjB(sps) = 0
+           CmyAdjB(sps) = 0
+           CmzAdjB(sps) = 0
+           CfxAdjB(sps) = 0
+           CfyAdjB(sps) = 0
+           CfzAdjB(sps) = 0
        
            !xAdjB(:,:,:,:) = zero ! > return dCf/dx
            !wAdjB(:,:,:,:) = zero ! > return dCf/dW
@@ -418,7 +418,7 @@ subroutine verifydCfdwfile(level)
                        !if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
                        
                        !idxmgb = globalCell(i,j,k)*nw+l-1  !L minus 1 not 1 minus 1
-                       write(unitwcd,11) wadjb2(i,j,k,l),nn,i,j,k,l,idxmgb
+                       write(unitwcd,11) wadjb2(i,j,k,l),sps,nn,i,j,k,l,idxmgb
 11                     format(1x,'wcd ',f18.10,7I8)
                     endif
                  enddo
@@ -440,14 +440,14 @@ subroutine verifydCfdwfile(level)
            i2Beg= BCData(mm)%inBeg+1; i2End = BCData(mm)%inEnd
            j2Beg= BCData(mm)%jnBeg+1; j2End = BCData(mm)%jnEnd
            ! Initialize the seed for reverse mode. Cmx third
-           ClAdjB = 0
-           CDAdjB = 0
-           CmxAdjB = 1
-           CmyAdjB = 0
-           CmzAdjB = 0
-           CfxAdjB = 0
-           CfyAdjB = 0
-           CfzAdjB = 0
+           ClAdjB(sps) = 0
+           CDAdjB(sps) = 0
+           CmxAdjB(sps) = 1
+           CmyAdjB(sps) = 0
+           CmzAdjB(sps) = 0
+           CfxAdjB(sps) = 0
+           CfyAdjB(sps) = 0
+           CfzAdjB(sps) = 0
        
            !xAdjB(:,:,:,:) = zero ! > return dCf/dx
            !wAdjB(:,:,:,:) = zero ! > return dCf/dW
@@ -484,7 +484,7 @@ subroutine verifydCfdwfile(level)
                        !if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
                        
                        !idxmgb = globalCell(i,j,k)*nw+l-1  !L minus 1 not 1 minus 1
-                       write(unitwcm,12) wadjb2(i,j,k,l),nn,i,j,k,l,idxmgb
+                       write(unitwcm,12) wadjb2(i,j,k,l),sps,nn,i,j,k,l,idxmgb
 12                     format(1x,'wcm ',f18.10,7I8)
                     endif
                  enddo
@@ -535,6 +535,8 @@ subroutine verifydCfdwfile(level)
    print *,'AD loop finished'
    !stop
    ! Get new time and compute the elapsed AD time.
+   deallocate(monLoc1, monGlob1)
+   deallocate(monLoc2, monGlob2)
    
    call mpi_barrier(SUmb_comm_world, ierr)
    if(myID == 0) then

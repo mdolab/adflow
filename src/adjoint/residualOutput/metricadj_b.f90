@@ -59,7 +59,7 @@ SUBROUTINE METRICADJ_B(xadj, xadjb, siadj, siadjb, sjadj, sjadjb, skadj&
 &  ad_to5, ad_to6, branch, ierr
   LOGICAL :: badvolume, checkall, checki, checkj, checkk, ioverlap, &
 &  joverlap, koverlap, secondhalo, volumeisneg
-  REAL(KIND=REALTYPE) :: fact, factb, mult, tempb12
+  REAL(KIND=REALTYPE) :: fact, factb=0.0, mult, tempb12
   INTEGER(KIND=INTTYPE) :: ibbeg, ibend, jbbeg, jbend, kbbeg, kbend
   CHARACTER(len=10) :: integerstring
   INTEGER(KIND=INTTYPE) :: i, ien, ist, j, jen, jj, jst, k, kk, l, m, n

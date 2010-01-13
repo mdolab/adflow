@@ -3,7 +3,7 @@
 !  
 !  Differentiation of vectorrotation in reverse (adjoint) mode:
 !   gradient, with respect to input variables: x y z angle
-!   of linear combination of output variables: xp yp zp
+!   of linear combination of output variables: xp yp angle zp
 !
 !     ******************************************************************
 !     *                                                                *
@@ -55,13 +55,13 @@ SUBROUTINE VECTORROTATION_B(xp, xpb, yp, ypb, zp, zpb, iaxis, angle, &
   SELECT CASE  (iaxis) 
   CASE (1) 
     xb = xpb
-    angleb = (z*COS(angle)-y*SIN(angle))*ypb + (-(z*SIN(angle))-y*COS(&
-&      angle))*zpb
+    angleb = angleb + (z*COS(angle)-y*SIN(angle))*ypb + (-(z*SIN(angle))&
+&      -y*COS(angle))*zpb
     yb = COS(angle)*ypb - SIN(angle)*zpb
     zb = SIN(angle)*ypb + COS(angle)*zpb
   CASE (2) 
-    angleb = (-(z*COS(angle))-x*SIN(angle))*xpb + (x*COS(angle)-z*SIN(&
-&      angle))*zpb
+    angleb = angleb + (-(z*COS(angle))-x*SIN(angle))*xpb + (x*COS(angle)&
+&      -z*SIN(angle))*zpb
     xb = COS(angle)*xpb + SIN(angle)*zpb
     yb = ypb
     zb = COS(angle)*zpb - SIN(angle)*xpb
@@ -69,7 +69,7 @@ SUBROUTINE VECTORROTATION_B(xp, xpb, yp, ypb, zp, zpb, iaxis, angle, &
     xb = COS(angle)*xpb - SIN(angle)*ypb
     yb = SIN(angle)*xpb + COS(angle)*ypb
     zb = zpb
-    angleb = (y*COS(angle)-x*SIN(angle))*xpb + (-(x*COS(angle))-y*SIN(&
-&      angle))*ypb
+    angleb = angleb + (y*COS(angle)-x*SIN(angle))*xpb + (-(x*COS(angle))&
+&      -y*SIN(angle))*ypb
   END SELECT
 END SUBROUTINE VECTORROTATION_B

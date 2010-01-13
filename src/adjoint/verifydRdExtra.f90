@@ -22,7 +22,7 @@
       use flowvarrefstate
       use communication
       use iteration     ! groundLevel
-      use inputTimeSpectral ! spaceDiscr
+      use inputTimeSpectral ! spaceDiscr,nTimeIntervalsSpectral
       use inputIO
 
       !from old verify routine
@@ -53,20 +53,20 @@
 !
       integer(kind=intType) :: i, j, k, n,mm
       integer(kind=intType) :: iCell,jCell,kCell
-      real(kind=realType), dimension(nw) :: dwL2
-      real(kind=realType), dimension(nx, ny, nz, nw) :: dwerr
+      !real(kind=realType), dimension(nw) :: dwL2
+      !real(kind=realType), dimension(nx, ny, nz, nw) :: dwerr
       real(kind=realType), dimension(10) :: time
       real(kind=realType) :: timeRes
 !      real(kind=realType), dimension(4) :: time
       real(kind=realType) ::  timeOri
-      real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdj
-      real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdjb
-      real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wFD
-      real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdj
-      real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xAdjb
-      real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xFD
-      REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3), xblockcorneradjb(2&
-&  , 2, 2, 3)
+      real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral) :: wAdj
+      real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral) :: wAdjb
+      !real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral) :: wFD
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral)  :: xAdj
+      real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral)  :: xAdjb
+      !real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral)  :: xFD
+      REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3,nTimeIntervalsSpectral), xblockcorneradjb(2&
+&  , 2, 2, 3,nTimeIntervalsSpectral)
       REAL(KIND=REALTYPE) :: machadj, machcoefadj,machGridAdj, pinfcorradj
       REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadjb, pinfcorradjb
       REAL(KIND=REALTYPE) :: prefadj, rhorefadj
@@ -82,15 +82,15 @@
       real(kind=realType), dimension(3) :: dragDirectionAdj
 
       character fileName*32, dataName*32
-      real(kind=realType), dimension(nw) :: dwAdj,dwAdjb,dwAdjRef
-      real(kind=realType), dimension(nw) :: dwAdjP, dwAdjM
+      real(kind=realType), dimension(nw,nTimeIntervalsSpectral) :: dwAdj,dwAdjb,dwAdjRef
+      !real(kind=realType), dimension(nw,nTimeIntervalsSpectral) :: dwAdjP, dwAdjM
       real(kind=realType) :: deltaw, ExtraAdjRef
       real(kind=realType) :: timeAdj, timeFD, timeResAdj,test
 
-      integer(kind=intType), dimension(nDom) :: maxglobalcell
+      !integer(kind=intType), dimension(nDom) :: maxglobalcell
       integer(kind=intType) :: idx, ii, jj, kk, idxres, m, l,idxmgb,liftindex
-      integer(kind=intType) :: sps, nTime, max_nTime, nHalo, nn, discr
-      real(kind=realType), allocatable, dimension(:,:,:,:) :: dRdExtraAdj,dRdExtraFD,dRdExtraErr
+      integer(kind=intType) :: sps, nTime, max_nTime, nHalo, nn, discr,sps2
+!      real(kind=realType), allocatable, dimension(:,:,:,:) :: dRdExtraAdj!,dRdExtraFD,dRdExtraErr
 
       integer :: ierr
       logical :: fineGrid, correctForK, exchangeTurb,secondHalo
@@ -98,15 +98,15 @@
       !FULL FD Variables
       
       !real(kind=realType), dimension(nx, ny, nz, nw,nx) :: dRdwErr, dRdwErrRel
-      real(kind=realType), dimension(nw) :: dRdwL2, dRdwL2Rel
+      !real(kind=realType), dimension(nw) :: dRdwL2, dRdwL2Rel
       !real(kind=realtype), dimension(0:ib,0:jb,0:kb,1:nw)::dwp,dwm,dwtemp
-      real(kind=realType), dimension(0:ib,0:jb,0:kb,1:nw) :: wtemp
-      real(kind=realType), dimension(0:ib,0:jb,0:kb) :: ptemp
+      !real(kind=realType), dimension(0:ib,0:jb,0:kb,1:nw) :: wtemp
+      !real(kind=realType), dimension(0:ib,0:jb,0:kb) :: ptemp
 !      integer(kind=intType) :: istate, jstate, kstate,ires
       integer(kind=intType) :: ires
-      real(kind=realType), dimension(-2:2,-2:2,-2:2) :: pAdjtemp
-      real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdjtemp
-      real(kind=realType), dimension(nx,ny,nz,nw) :: wFD2
+      !real(kind=realType), dimension(-2:2,-2:2,-2:2) :: pAdjtemp
+      !real(kind=realType), dimension(-2:2,-2:2,-2:2,nw) :: wAdjtemp
+      !real(kind=realType), dimension(nx,ny,nz,nw) :: wFD2
       !real(kind=realType), dimension(ib*jb*kb*nw,ib*jb*kb*nw) :: dRdw
       !real(kind=realType), dimension(ib*jb*kb*nw,ib*jb*kb*nw) :: dRdwFD
 
@@ -117,7 +117,7 @@
       real(kind=realType), dimension(nw) :: pvrlocal
       character(len=2*maxStringLen) :: errorMessage
      !File Parameters
-      integer :: unitM = 8,unitAoA = 30,unitSSA = 12,unitRotx = 13,ierror,unitRoty,unitRotz
+      integer :: unitM = 8,unitAoA = 30,unitSSA = 12,unitRotx = 13,unitMgrid = 14,ierror,unitRoty,unitRotz
       character(len = 16)::outfile,testfile
 
       write(testfile,100) myid!12
@@ -203,6 +203,21 @@
            "Something wrong when &
            &calling open")
 
+      write(testfile,112) myid!12
+112   format (i5)  
+      testfile=adjustl(testfile)
+      write(outfile,101) trim(testfile)!testfile
+113   format("ADMachGridfile",a,".out")
+      !outfile = "CSMachfile.txt"
+      unitMgrid = 8+myID+nproc*6
+      !outfile = "CSMachfile.txt"
+      
+      open (UNIT=unitMGrid,File=outfile,status='replace',action='write',iostat=ierror)
+      if(ierror /= 0)                        &
+           call terminate("verifydRdExtra", &
+           "Something wrong when &
+           &calling open")
+
 
 !     ******************************************************************
 !     *                                                                *
@@ -244,44 +259,44 @@
          secondHalo = .false.
       endif
 
-      !allocate memory for error arrays
-      max_nTime=-100
-      do i = 1,nDom
-         !print *,'allocating i'
-         maxglobalcell(i) = maxval(flowDoms(i,currentLevel,1)%globalCell(:,:,:))
-         !print *,'maxglobalcell',maxglobalcell(i) 
-         nTime     = nTimeIntervalsSpectral!sections(sectionID)%nTimeInstances
-         if(nTime>=max_nTime) max_nTime = nTime
-      enddo
-      idx = maxval(maxglobalcell(:))
-      !print *,'allocating',idx,nw*(idx+1),nw*(idx+1),ndom,max_nTime
-      !allocate(dRdExtraErr(nw*(idx+1),nDesignExtra,ndom,max_nTime), &
-      !         dRdExtraAdj(nw*(idx+1),nDesignExtra,ndom,max_nTime), &
-      !         dRdExtraFD(nw*(idx+1),nDesignExtra,ndom,max_nTime))
-      allocate(dRdExtraErr(nw*(idx+1),nDesignExtra,1,max_nTime), &
-           dRdExtraAdj(nw*(idx+1),nDesignExtra,1,max_nTime), &
-           dRdExtraFD(nw*(idx+1),nDesignExtra,1,max_nTime))
-      !print *,' allocated'
+!!$      !allocate memory for error arrays
+!!$      max_nTime=-100
+!!$      do i = 1,nDom
+!!$         !print *,'allocating i'
+!!$         maxglobalcell(i) = maxval(flowDoms(i,currentLevel,1)%globalCell(:,:,:))
+!!$         !print *,'maxglobalcell',maxglobalcell(i) 
+!!$         nTime     = nTimeIntervalsSpectral!sections(sectionID)%nTimeInstances
+!!$         if(nTime>=max_nTime) max_nTime = nTime
+!!$      enddo
+!!$      idx = maxval(maxglobalcell(:))
+!!$      !print *,'allocating',idx,nw*(idx+1),nw*(idx+1),ndom,max_nTime
+!!$      !allocate(dRdExtraErr(nw*(idx+1),nDesignExtra,ndom,max_nTime), &
+!!$      !         dRdExtraAdj(nw*(idx+1),nDesignExtra,ndom,max_nTime), &
+!!$      !         dRdExtraFD(nw*(idx+1),nDesignExtra,ndom,max_nTime))
+!!$      allocate(dRdExtraErr(nw*(idx+1),nDesignExtra,1,max_nTime), &
+!!$           dRdExtraAdj(nw*(idx+1),nDesignExtra,1,max_nTime), &
+!!$           dRdExtraFD(nw*(idx+1),nDesignExtra,1,max_nTime))
+!!$      !print *,' allocated'
 
-    !allocate memory for FD
-      allocatedomains: do nn = 1,ndom
-         print *,'domain',nn
-         groundLevel = 1
-         sps = 1
-         call setPointersAdj(nn,1,sps)
-         allocate(flowDoms(nn,level,sps)%dwp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-         allocate(flowDoms(nn,level,sps)%dwm(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-         allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-      end do allocatedomains
-
-      print *,'domains allocated'
+!!$    !allocate memory for FD
+!!$      allocatedomains: do nn = 1,ndom
+!!$         print *,'domain',nn
+!!$         groundLevel = 1
+!!$         sps = 1
+!!$         call setPointersAdj(nn,1,sps)
+!!$         allocate(flowDoms(nn,level,sps)%dwp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+!!$         allocate(flowDoms(nn,level,sps)%dwm(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+!!$         allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+!!$      end do allocatedomains
+!!$
+!!$      print *,'domains allocated'
 !           if(ierr /= 0)                       &
 !                call terminate("memory?") 
       
       ! Initialize the temporary arrays.
-      dRdExtraErr = 0
-      dRdExtraAdj = 0
-      dRdExtraFD  = 0
+      !dRdExtraErr = 0
+      !dRdExtraAdj = 0
+      !dRdExtraFD  = 0
 
 
 !
@@ -364,62 +379,54 @@
       call mpi_barrier(SUmb_comm_world, ierr)
       if( myID==0 ) call cpu_time(time(1))
       
-      !print *,'Entering Domain loop'
-      domainLoopAD: do nn=1,nDom!97,97!1,1!nDom
-         
-         ! Loop over the number of time instances for this block.
-
-         spectralLoop: do sps=1,nTimeIntervalsSpectral
-            !print *,'Setting Pointers'
+      ! Loop over the number of time instances for this block.
+      
+      spectralLoop: do sps=1,nTimeIntervalsSpectral
+         print *,'Entering Domain loop'
+         domainLoopAD: do nn=1,nDom!97,97!1,1!nDom
+            print *,'Setting Pointers'
             call setPointersAdj(nn,level,sps)
 
             ! Loop over location of output (R) cell of residual
             do kCell = 2, kl
                do jCell = 2, jl
                   do iCell = 2, il
- !                    print *,'indices',icell,jcell,kcell
+                     !print *,'indices',icell,jcell,kcell
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
                      call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
-           betaAdj,MachAdj,&
-           machCoefAdj,machGridAdj,iCell, jCell, kCell,prefAdj,&
-           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-                     !print *,'liftiindex',liftindex
-                     !print *,'rotcenteradj',nn,icell,jcell,kcell,rotcenteradj
-!copyADjointStencil(wAdj, xAdj,alphaAdj,betaAdj,MachAdj,&
-!                          machCoefAdj,iCell, jCell, kCell,prefAdj,&
-!                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-!                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-!                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-!                     print *,'Stencil Copied'
+                          betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
+                          nn,level,sps,&
+                          prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+                     !print *,'Stencil Copied'
 
                      mLoop: do m = 1, nw           ! Loop over output cell residuals (R)
-!                        print *,'initializing variables'
+                      !  print *,'initializing variables'
                         ! Initialize the seed for the reverse mode
-                        dwAdjb(:) = 0.; dwAdjb(m) = 1.
-                        dwAdj(:)  = 0.
-                        wAdjb(:,:,:,:)  = 0.  !dR(m)/dw
+                        dwAdjb(:,:) = 0.; dwAdjb(m,sps) = 1.
+                        dwAdj(:,:)  = 0.
+                        wAdjb(:,:,:,:,:)  = 0.  !dR(m)/dw
                         machadjb = 0
                         
 
-  !                      print *,'calling reverse mode'
+                       ! print *,'calling reverse mode'
 !                        print *,'secondhalo',secondhalo
                         
                         ! Call reverse mode of residual computation
                         call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
-&  icell, jcell, kcell, nn, sps, correctfork, secondhalo, prefadj, &
-&  rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj, &
-&  rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+&  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
+&  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
+&  , rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
 &  liftindex)
 
 
                         ! Store the block Jacobians (by rows).
                         idxres   = globalCell(iCell,jCell,kCell)*nw+m
-                        !print *,'globalindices',idxstate,idxres,shape(dRdwAdj)
+                        !print *,'globalindices'!,idxstate,idxres!,shape(dRdwAdj)
                         if( idxres>=0) then
 !!$                           dRdExtraAdj(idxres,nDesignMach,nn,sps) = machadjb
 !!$                           pvrlocal(m) = machadjb
@@ -429,29 +436,31 @@
 !!$                           dRdExtraAdj(idxres,nDesignRotX,nn,sps) = rotrateadjb(1)!*timeref
 !!$                           dRdExtraAdj(idxres,nDesignRotY,nn,sps) = rotrateadjb(2)
 !!$                           dRdExtraAdj(idxres,nDesignRotZ,nn,sps) = rotrateadjb(3)
-                           dRdExtraAdj(idxres,nDesignMach,1,sps) = machadjb
+                           !dRdExtraAdj(idxres,nDesignMach,1,sps) = machadjb
                            pvrlocal(m) = machadjb
-                           write(unitM,10) machadjb,nn,icell,jcell,kcell,m,idxres
-10                         format(1x,'Mach ',f18.10,6I8)
-                           dRdExtraAdj(idxres,nDesignMachGrid,1,sps) = machgridadjb
+                           write(unitM,10) machadjb,sps,nn,icell,jcell,kcell,m,idxres
+10                         format(1x,'Mach ',f18.10,7I8)
+                           write(unitMgrid,16) machgridadjb,sps,nn,icell,jcell,kcell,m,idxres
+16                         format(1x,'MachGrid ',f18.10,7I8)
+                           !dRdExtraAdj(idxres,nDesignMachGrid,1,sps) = machgridadjb
                            !pvrlocal(m) = machGridadjb
-                           dRdExtraAdj(idxres,nDesignAOA,1,sps) = alphaadjb
-                           write(unitAoA,11) alphaadjb,nn,icell,jcell,kcell,m,idxres
-11                         format(1x,'AoA ',f18.10,6I8)
-                           dRdExtraAdj(idxres,nDesignSSA,1,sps) = betaadjb
-                           write(unitSSA,12) betaadjb,nn,icell,jcell,kcell,m,idxres
-12                         format(1x,'SSA ',f18.10,6I8)
+                           !dRdExtraAdj(idxres,nDesignAOA,1,sps) = alphaadjb
+                           write(unitAoA,11) alphaadjb,sps,nn,icell,jcell,kcell,m,idxres
+11                         format(1x,'AoA ',f18.10,7I8)
+                           !dRdExtraAdj(idxres,nDesignSSA,1,sps) = betaadjb
+                           write(unitSSA,12) betaadjb,sps,nn,icell,jcell,kcell,m,idxres
+12                         format(1x,'SSA ',f18.10,7I8)
                            !print *,'results',machadjb,rotrateadjb,idxres,nDesignRotX,nn,sps
-                           dRdExtraAdj(idxres,nDesignRotX,1,sps) = rotrateadjb(1)!*timeref
+                           !dRdExtraAdj(idxres,nDesignRotX,1,sps) = rotrateadjb(1)!*timeref
                            !pvrlocal(m) = rotrateadjb(1)*timeref
-                           write(unitRotx,13) rotrateadjb(1),nn,icell,jcell,kcell,m,idxres
-13                         format(1x,'Rotx ',f18.10,6I8)
-                           write(unitRoty,14) rotrateadjb(2),nn,icell,jcell,kcell,m,idxres
-14                         format(1x,'Roty ',f18.10,6I8)
-                           write(unitRotz,15) rotrateadjb(3),nn,icell,jcell,kcell,m,idxres
-15                         format(1x,'Rotz ',f18.10,6I8)
-                           dRdExtraAdj(idxres,nDesignRotY,1,sps) = rotrateadjb(2)
-                           dRdExtraAdj(idxres,nDesignRotZ,1,sps) = rotrateadjb(3)
+                           write(unitRotx,13) rotrateadjb(1),sps,nn,icell,jcell,kcell,m,idxres
+13                         format(1x,'Rotx ',f18.10,7I8)
+                           write(unitRoty,14) rotrateadjb(2),sps,nn,icell,jcell,kcell,m,idxres
+14                         format(1x,'Roty ',f18.10,7I8)
+                           write(unitRotz,15) rotrateadjb(3),sps,nn,icell,jcell,kcell,m,idxres
+15                         format(1x,'Rotz ',f18.10,7I8)
+                           !dRdExtraAdj(idxres,nDesignRotY,1,sps) = rotrateadjb(2)
+                           !dRdExtraAdj(idxres,nDesignRotZ,1,sps) = rotrateadjb(3)
                            !pvrlocal(m) = rotrateadjb(3)*timeref
                         endif
                                        
@@ -473,15 +482,15 @@
                            write(errorMessage,99) &
                                 "Error in VecSetValuesBlocked for global node", &
                            idxmgb
-                           call terminate("setupADjointRHSAeroCoeff", &
+                           call terminate("verifydRdExtra", &
                                 errorMessage)
                         endif
                      endif
                   end do !iCell
                end do !jCell
             end do! kCell
-         end do spectralLoop
-      end do domainLoopAD
+         end do domainLoopAD
+      end do spectralLoop
       !print *,'AD Completed'
       ! Get new time and compute the elapsed AD time.
 !      stop
@@ -704,18 +713,18 @@
        call VecAssemblyBegin(pvr,PETScIerr)
        
        if( PETScIerr/=0 ) &
-            call terminate("setupASjointRHS", "Error in VecAssemblyBegin")  
+            call terminate("verifydRdExtra", "Error in VecAssemblyBegin")  
        
        call VecAssemblyEnd  (pvr,PETScIerr)
        
        if( PETScIerr/=0 ) &
-            call terminate("setupADjointRHS", "Error in VecAssemblyEnd")
+            call terminate("verifydRdExtra", "Error in VecAssemblyEnd")
        
        if( debug ) then
           call VecView(pvr,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
           !call VecView(pvr,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
           if( PETScIerr/=0 ) &
-               call terminate("setupADjointRHS", "Error in VecView")
+               call terminate("verifydRdExtra", "Error in VecView")
           pause
        endif
        
@@ -1591,16 +1600,16 @@
 !      print *, "max, min of dRdwErrRel =", maxval(dRdwErrRel_q(:,:,:,1)), minval(dRdwErrRel_q(:,:,:,1))
 !      print *
 
-           !deallocate memory for FD
-      deallocatedomains: do nn = 1,ndom
-         print *,'domain',nn
-         groundLevel = 1
-         sps = 1
-         call setPointersAdj(nn,1,sps)
-         deallocate(flowDoms(nn,level,sps)%dwp)
-         deallocate(flowDoms(nn,level,sps)%dwm)
-         deallocate(flowDoms(nn,level,sps)%dwtemp)
-      end do deallocatedomains
+!!$           !deallocate memory for FD
+!!$      deallocatedomains: do nn = 1,ndom
+!!$         print *,'domain',nn
+!!$         groundLevel = 1
+!!$         sps = 1
+!!$         call setPointersAdj(nn,1,sps)
+!!$         deallocate(flowDoms(nn,level,sps)%dwp)
+!!$         deallocate(flowDoms(nn,level,sps)%dwm)
+!!$         deallocate(flowDoms(nn,level,sps)%dwtemp)
+!!$      end do deallocatedomains
 
 
        close(unitM)

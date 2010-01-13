@@ -605,7 +605,9 @@
        write(writeUnit,"(a)") "   compute ts stability derivatives: Yes#no"
        write(writeUnit,"(a)") "   TS Alpha mode: yes#no"
        write(writeUnit,"(a)") "   TS Beta mode: no#yes"
-       write(writeUnit,"(a)") "   TS Rotation mode: no#yes"
+       write(writeUnit,"(a)") "   TS q mode: no#yes"
+       write(writeUnit,"(a)") "   TS p mode: no#yes"
+       write(writeUnit,"(a)") "   TS r mode: no#yes"
        write(writeUnit,"(a)") "   TS Mach number mode: no#yes"
        write(writeUnit,"(a)") "   TS Altitude mode: no#yes"
        write(writeUnit,"(a)")

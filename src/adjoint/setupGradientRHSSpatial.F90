@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine setupGradientRHSSpatial(level,costFunction)
+      subroutine setupGradientRHSSpatial(level,costFunction,sps)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -41,7 +41,8 @@
       use inputDiscretization ! spaceDiscr, useCompactDiss
       use inputTimeSpectral   ! nTimeIntervalsSpectral
       use iteration           ! overset, currentLevel
-      use section
+      use monitor          ! timeUnsteadyRestart
+      use section          ! nSections,section%
       use bcTypes             !imin,imax,jmin,jmax,kmin,kmax
       implicit none
 !
@@ -51,7 +52,7 @@
 !
 !     Local variables.
 !
-      integer(kind=intType) :: discr, nHalo,sps
+      integer(kind=intType) :: discr, nHalo,sps,nnn
       integer(kind=intType) :: iNode, jNode, kNode, mm, nn, m, n
       integer(kind=intType) :: ii, jj, kk, i1, j1, k1, i2, j2, k2
 
@@ -62,10 +63,10 @@
       logical :: correctForK
 
       real(kind=realType) :: Cl, Cd, Cfx, Cfy, Cfz, Cmx, Cmy, Cmz
-      real(kind=realType) :: ClAdj,   CdAdj,            &
+      real(kind=realType),dimension(nTimeIntervalsSpectral) :: ClAdj,   CdAdj,            &
                              CfxAdj,  CfyAdj,  CfzAdj,  &
                              CmxAdj,  CmyAdj,  CmzAdj
-      real(kind=realType) :: ClAdjB,  CdAdjB,           &
+      real(kind=realType),dimension(nTimeIntervalsSpectral) :: ClAdjB,  CdAdjB,           &
                              CfxAdjB, CfyAdjB, CfzAdjB, &
                              CmxAdjB, CmyAdjB, CmzAdjB 
   
@@ -103,6 +104,8 @@
 
       logical :: contributeToForce, viscousSubface,righthanded,secondHalo
       logical :: finegrid,exchangeturb
+
+      real(kind=realType), dimension(nSections) :: t
 
       ! dJ/dx local vector at node (iNode,jNode,kNode)
 
@@ -352,7 +355,8 @@
 
       yplusMax = zero
 
-      spectralLoopAdj: do sps=1,nTimeIntervalsSpectral
+!for the spectral case can only use one at a time anyway..
+!      spectralLoopAdj: do sps=1,nTimeIntervalsSpectral
          
          !print *,'zeroing force output'
          !zero the force components
@@ -425,21 +429,21 @@
            
            select case (costFunction)
            case (costFuncLiftCoef)
-              ClAdjB = 1
+              ClAdjB(sps) = 1
            case (costFuncDragCoef)
-              CdAdjB = 1
+              CdAdjB(sps) = 1
            case (costFuncForceXCoef)
-              CfxAdjB = 1
+              CfxAdjB(sps) = 1
            case (costFuncForceYCoef)
-              CfyAdjB = 1
+              CfyAdjB(sps) = 1
            case (costFuncForceZCoef)
-              CfzAdjb = 1
+              CfzAdjb(sps) = 1
            case (costFuncMomXCoef)
-              CmxAdjB = 1
+              CmxAdjB(sps) = 1
            case (costFuncMomYCoef)
-              CmyAdjB = 1
+              CmyAdjB(sps) = 1
            case (costFuncMomZCoef)
-              CmzAdjB = 1 
+              CmzAdjB(sps) = 1 
            end select
 
            ! Initialize output.
@@ -447,7 +451,15 @@
            xAdjB(:,:,:,:) = zero ! > return dCf/dx
            !===============================================================
            ! Compute the force derivatives
-           
+           if(equationMode == timeSpectral) then
+              do nnn=1,nSections
+                 !t(nnn) = t(nnn) + (sps2-1)*sections(nnn)%timePeriod &
+                 !     /         real(nTimeIntervalsSpectral,realType)
+                 t(nnn) = t(nnn) + (sps-1)*sections(nnn)%timePeriod &
+                      /         (nTimeIntervalsSpectral*1.0)!to make denomenator a real number...
+              enddo
+           endif
+
            call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
 &  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
@@ -456,7 +468,7 @@
 &  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
 &  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
 &  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
-&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex)
+&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex, t)
  
 
           ! Loop over cells to store the jacobian
@@ -585,7 +597,8 @@
              "Deallocation failure for xAdj.") 
  
      enddo domainLoop
-  enddo spectralLoopAdj
+!see above
+!  enddo spectralLoopAdj
 !
 !     ******************************************************************
 !     *                                                                *

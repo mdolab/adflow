@@ -48,6 +48,7 @@
       use WarpingPETSc, only: dXvdXs,drdxs,didxs2,djdxs2
       use mdData, only: mdNSurfNodesCompact
       use blockpointers !globalnode
+      use inputTimeSpectral !nTimeIntervalsSpectral
       implicit none
 
 !
@@ -90,9 +91,9 @@
 
       !Allocate storage for completed array
       if(.not. allocated(functionGradSurface))&
-           allocate(functionGradSurface(nCostFunction,3*mdNSurfNodesCompact))
+           allocate(functionGradSurface(nCostFunction,3*mdNSurfNodesCompact*nTimeIntervalsSpectral))
       if(.not. allocated(functionGradSurface2))&
-           allocate(functionGradSurface2(nCostFunction,3*mdNSurfNodesCompact))
+           allocate(functionGradSurface2(nCostFunction,3*mdNSurfNodesCompact*nTimeIntervalsSpectral))
       !create the PETSc Vector aswell
       ! Create the vector. Depending on either this is a sequential or 
       ! parallel run,  PETSc automatically generates the apropriate
@@ -107,9 +108,9 @@
       
       ! Set the local size and let PETSc determine its global size
 
-      call VecSetSizes(dIdxs,PETSC_DECIDE,3*mdNSurfNodesCompact,PETScIerr)
-      call VecSetSizes(dIdxs2,PETSC_DECIDE,3*mdNSurfNodesCompact,PETScIerr)
-      call VecSetSizes(dJdxs2,PETSC_DECIDE,3*mdNSurfNodesCompact,PETScIerr)
+      call VecSetSizes(dIdxs,PETSC_DECIDE,3*mdNSurfNodesCompact*nTimeIntervalsSpectral,PETScIerr)
+      call VecSetSizes(dIdxs2,PETSC_DECIDE,3*mdNSurfNodesCompact*nTimeIntervalsSpectral,PETScIerr)
+      call VecSetSizes(dJdxs2,PETSC_DECIDE,3*mdNSurfNodesCompact*nTimeIntervalsSpectral,PETScIerr)
 
       if( PETScIerr/=0 ) then
         write(errorMessage,99) &
@@ -422,7 +423,7 @@
       
       if (allocated(nDesignGlobal)) deallocate(nDesignGlobal)
       if (allocated(nDisplsGlobal)) deallocate(nDisplsGlobal)
-
+      if (allocated(functionGradSurface2)) deallocate(functionGradSurface2)
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()

@@ -122,11 +122,11 @@
          if(myID==0)print *,'dphixdot',dphixdot
          !now compute dCl/dp
          
-         call computeLeastSquaresRegression(cl,dphix,nTimeIntervalsSpectral,dcldq,cl0)
+         call computeLeastSquaresRegression(cl,dphix,nTimeIntervalsSpectral,dcldp,cl0)
          
          !now compute dCmz/dp
          
-         call computeLeastSquaresRegression(cmz,dphix,nTimeIntervalsSpectral,dcmzdq,cmz0)
+         call computeLeastSquaresRegression(cmz,dphix,nTimeIntervalsSpectral,dcmzdp,cmz0)
          if(myID==0)then
             print *,'CL estimates:'
             print *,'Clp = : ',dcldp,' cl0 = : ',cl0

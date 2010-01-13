@@ -2,10 +2,10 @@
 !     ******************************************************************
 !     *                                                                *
 !     * File:          copyADjointStencil.f90                          *
-!     * Author:        Andre C. Marta                                  *
+!     * Author:        Andre C. Marta,C.A.(Sandy) Mader                *
 !     *                Seongim Choi                                    *
 !     * Starting date: 08-03-2006                                      *
-!     * Last modified: 11-18-2007                                      *
+!     * Last modified: 11-30-2009                                      *
 !     *                                                                *
 !     ******************************************************************
 !
@@ -159,7 +159,7 @@
       MachAdj = Mach
       MachCoefAdj = MachCoef
       MachGridAdj = MachGrid
-      !print *,'getting angle',liftDirection,shape(liftDirection)
+!      print *,'getting angle',liftDirection,shape(liftDirection)
       call getDirAngle(velDirFreestream,liftDirection,liftIndex,alphaAdj,betaAdj)
 !      call getDirAngle(velDirFreestream,velDirFreestream,liftIndex,alphaAdj,betaAdj)
       !call getDirAngle(velDirFreestream(1), velDirFreestream(2),&

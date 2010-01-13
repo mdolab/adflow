@@ -96,8 +96,12 @@ subroutine synchronizeBlockFaces(level,sps)
         ! of nodes on each subface. If not, allocate.
         !if(.not. allocated(nNodesSubface)) then
         if(.not. associated(nNodesSubface)) then
-           allocate(nNodesSubface(nsubface), stat=ierr)
+           !allocate(nNodesSubface(nsubface), stat=ierr)
+           allocate(flowdoms(i,1,1)%nNodesSubface(nsubface), stat=ierr)
         endif
+        !print *,'allocated resetting pointers'
+        call setPointers(i,level,sps)
+        
 
         !allocate the memory for the block face communicators
         !if (.not. associated(warp_comm)) &

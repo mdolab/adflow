@@ -12,6 +12,7 @@
             iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End,mm,&
             sFaceIAdj,sFaceJAdj,sFaceKAdj,&
             machGridAdj,velDirFreestreamAdj,&
+            liftDirectionAdj,alphaAdj,betaAdj,liftindex,&
             rotCenterAdj, rotRateAdj,siAdj,sjAdj,skAdj)
 !
 !      ******************************************************************
@@ -63,7 +64,7 @@
        real(kind=realType), dimension(iiBeg:iiEnd,jjBeg:jjEnd,1:2) :: sFacekAdj
        
        real(kind=realType),intent(in):: machGridAdj
-       real(kind=realType),dimension(3),intent(in):: velDirFreestreamAdj
+       real(kind=realType),dimension(3),intent(in):: velDirFreestreamAdj,liftDirectionAdj
 !
 !      Local variables.
 !
@@ -85,7 +86,9 @@
       
        real(kind=realType) ::tNew,tOld,intervalMach
        real(kind=realType), dimension(3)::liftDir,velDir,dragDir
-       real(kind=realType)::alpha,beta
+       real(kind=realType)::alphaAdj,betaAdj
+       real(kind=realType)::alphaIncrement,betaIncrement
+       real(kind=realType)::alphaTS,betaTS
        integer(kind=intType) :: liftIndex
 
        !function definitions
@@ -154,33 +157,36 @@
                   + rotationMatrixAdj(3,2)*velygrid0 &
                   + rotationMatrixAdj(3,3)*velzgrid0
           elseif(tsAlphaMode)then
+             !print*,'liftindex alpha',liftindex,velDirFreestreamAdj,liftDir,liftIndex
              ! get the baseline alpha and determine the liftIndex
-             call getDirAngleForces(velDirFreestreamAdj,liftDir,liftIndex,alpha,beta)
-             
+!             call getDirAngleForces(velDirFreestreamAdj,liftDir,liftIndex,alpha,beta)
+             !print *,'liftindex alpha',liftindex
              !Determine the alpha for this time instance
-             alpha = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+             alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
                              degreeFourAlpha,  omegaFourAlpha,     &
                              cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+             alphaTS = alphaAdj+alphaIncrement
              !Determine the grid velocity for this alpha
-             call adjustInflowAngleForcesAdj(alpha,beta,velDir,liftDir,dragDir,&
+             call adjustInflowAngleForcesAdj(alphaTS,betaAdj,velDir,liftDir,dragDir,&
                   liftIndex)
              !do I need to update the lift direction and drag direction as well?
              !set the effictive grid velocity for this time interval
              velxGrid0 = (aInf*machgridAdj)*(-velDir(1))
              velyGrid0 = (aInf*machgridAdj)*(-velDir(2))
              velzGrid0 = (aInf*machgridAdj)*(-velDir(3))
-             print *,'base velocity',machgridadj, velxGrid0 , velyGrid0 , velzGrid0 
+             !print *,'base velocity',machgridadj, velxGrid0 , velyGrid0 , velzGrid0 
 
           elseif(tsBetaMode)then
              ! get the baseline alpha and determine the liftIndex
-             call getDirAngleForces(velDirFreestreamAdj,liftDir,liftIndex,alpha,beta)
+             !call getDirAngleForces(velDirFreestreamAdj,liftDir,liftIndex,alpha,beta)
              
              !Determine the alpha for this time instance
-             alpha = TSBeta(degreePolBeta,   coefPolBeta,       &
+             betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
                              degreeFourBeta,  omegaFourBeta,     &
                              cosCoefFourBeta, sinCoefFourBeta, t(1))
+             betaTS = betaAdj+betaIncrement
              !Determine the grid velocity for this alpha
-             call adjustInflowAngleForcesAdj(alpha,beta,velDir,liftDir,dragDir,&
+             call adjustInflowAngleForcesAdj(alphaAdj,betaTS,velDir,liftDir,dragDir,&
                   liftIndex)
              !do I need to update the lift direction and drag direction as well?
              !set the effictive grid velocity for this time interval

@@ -24,6 +24,7 @@ SUBROUTINE INITRESADJ_B(varstart, varend, wadj, wadjb, voladj, voladjb, &
   USE inputunsteady
   USE iteration
   IMPLICIT NONE
+!end select
 !redundent calculation. The entire stencil is zeroed above. May need to be corrected for more complex initalizaitons....
 !!$           ! Set the residual in the halo cells to zero. This is just
 !!$           ! to avoid possible problems. Their values do not matter.
@@ -121,65 +122,74 @@ SUBROUTINE INITRESADJ_B(varstart, varend, wadj, wadjb, voladj, voladjb, &
 !!$
 !!$           call setPointers(nn, currentLevel, sps)
 ! Determine the equation mode and act accordingly.
-    SELECT CASE  (equationmode) 
-    CASE (unsteady, steady, timespectral) 
+!print *,'equation Mode',equationMode,'ref',steady,timespectral,unsteady
+!switch to if statments. this particular case setup doesn't work
+!with tapenade. The steady case dissappears and Tapenade doesn't
+!know how to handle the empty case....
+!           select case (equationMode)
+!             case (steady)
+    IF (.NOT.equationmode .EQ. steady) THEN
 !===========================================================
-!!$
-!!$                call terminate("initRes", &
-!!$                                  "Time Spectral ADjoint not yet implemented")
+      IF (.NOT.equationmode .EQ. unsteady) THEN
+!===========================================================
+        IF (equationmode .EQ. timespectral) THEN
+!case (timeSpectral)
+!!$!
+!!$!                call terminate("initRes", &
+!!$!                                  "Time Spectral ADjoint not yet implemented")
 ! Time spectral computation. The time derivative of the
 ! current solution is given by a linear combination of
 ! all other solutions, i.e. a matrix vector product.
 ! First store the section to which this block belongs
 ! in jj.
-      jj = sectionid
+          jj = sectionid
 ! Determine the currently active multigrid level.
-      IF (currentlevel .EQ. groundlevel) THEN
+          IF (currentlevel .EQ. groundlevel) THEN
 ! Loop over the number of terms which contribute
 ! to the time derivative.
 timeloopfine:DO mm=1,ntimeintervalsspectral
-          CALL PUSHREAL8ARRAY(wspadj, 5**3*nw)
+              CALL PUSHREAL8ARRAY(wspadj, 5**3*nw)
 ! Store the pointer for the variable to be used to
 ! compute the unsteady source term and the volume.
 ! Also store in ii the offset needed for vector
 ! quantities.
-          wspadj = wadj(:, :, :, :, mm)
-          CALL PUSHREAL8(volspadj)
+              wspadj = wadj(:, :, :, :, mm)
+              CALL PUSHREAL8(volspadj)
 !(:,:,:,mm)
-          volspadj = voladj(mm)
-          CALL PUSHINTEGER4(ii)
-          ii = 3*(mm-1)
+              volspadj = voladj(mm)
+              CALL PUSHINTEGER4(ii)
+              ii = 3*(mm-1)
 ! Loop over the number of variables to be set.
-varloopfine:DO l=varstart,varend
+ varloopfine: DO l=varstart,varend
 ! Test for a momentum variable.
-            IF (l .EQ. ivx .OR. l .EQ. ivy .OR. l .EQ. ivz) THEN
+                IF (l .EQ. ivx .OR. l .EQ. ivy .OR. l .EQ. ivz) THEN
 ! Momentum variable. A special treatment is
 ! needed because it is a vector and the velocities
 ! are stored instead of the momentum. Set the
 ! coefficient ll, which defines the row of the
 ! matrix used later on.
-              IF (l .EQ. ivx) THEN
-                CALL PUSHINTEGER4(ll)
-                ll = 3*sps - 2
-                CALL PUSHINTEGER4(1)
-              ELSE
-                CALL PUSHINTEGER4(0)
-              END IF
-              IF (l .EQ. ivy) THEN
-                CALL PUSHINTEGER4(ll)
-                ll = 3*sps - 1
-                CALL PUSHINTEGER4(1)
-              ELSE
-                CALL PUSHINTEGER4(0)
-              END IF
-              IF (l .EQ. ivz) THEN
-                CALL PUSHINTEGER4(ll)
-                ll = 3*sps
-                CALL PUSHINTEGER4(1)
-              ELSE
-                CALL PUSHINTEGER4(0)
-              END IF
-              CALL PUSHREAL8(tmp)
+                  IF (l .EQ. ivx) THEN
+                    CALL PUSHINTEGER4(ll)
+                    ll = 3*sps - 2
+                    CALL PUSHINTEGER4(1)
+                  ELSE
+                    CALL PUSHINTEGER4(0)
+                  END IF
+                  IF (l .EQ. ivy) THEN
+                    CALL PUSHINTEGER4(ll)
+                    ll = 3*sps - 1
+                    CALL PUSHINTEGER4(1)
+                  ELSE
+                    CALL PUSHINTEGER4(0)
+                  END IF
+                  IF (l .EQ. ivz) THEN
+                    CALL PUSHINTEGER4(ll)
+                    ll = 3*sps
+                    CALL PUSHINTEGER4(1)
+                  ELSE
+                    CALL PUSHINTEGER4(0)
+                  END IF
+                  CALL PUSHREAL8(tmp)
 ! Loop over the owned cell centers to add the
 ! contribution from wsp.
 !do k=2,kl
@@ -190,9 +200,9 @@ varloopfine:DO l=varstart,varend
 !tmp = dvector(jj,ll,ii+1)*wsp(i,j,k,ivx) &
 !          + dvector(jj,ll,ii+2)*wsp(i,j,k,ivy) &
 !          + dvector(jj,ll,ii+3)*wsp(i,j,k,ivz)
-              tmp = dvector(jj, ll, ii+1)*wspadj(0, 0, 0, ivx) + dvector&
-&                (jj, ll, ii+2)*wspadj(0, 0, 0, ivy) + dvector(jj, ll, &
-&                ii+3)*wspadj(0, 0, 0, ivz)
+                  tmp = dvector(jj, ll, ii+1)*wspadj(0, 0, 0, ivx) + &
+&                    dvector(jj, ll, ii+2)*wspadj(0, 0, 0, ivy) + &
+&                    dvector(jj, ll, ii+3)*wspadj(0, 0, 0, ivz)
 ! Update the residual. Note the
 ! multiplication with the density to obtain
 ! the correct time derivative for the
@@ -203,50 +213,52 @@ varloopfine:DO l=varstart,varend
 !     enddo
 !   enddo
 ! enddo
-              CALL PUSHINTEGER4(1)
-            ELSE
-              CALL PUSHINTEGER4(2)
-            END IF
-          END DO varloopfine
-        END DO timeloopfine
-        DO mm=ntimeintervalsspectral,1,-1
-          wspadjb(-2:2, -2:2, -2:2, 1:nw) = 0.0
-          volspadjb = 0.0
-          DO l=varend,varstart,-1
-            CALL POPINTEGER4(branch)
-            IF (branch .LT. 2) THEN
-              tempb = wspadj(0, 0, 0, irho)*dwadjb(l, sps)
-              tmpb = volspadj*tempb
-              volspadjb = volspadjb + tmp*tempb
-              wspadjb(0, 0, 0, irho) = wspadjb(0, 0, 0, irho) + tmp*&
-&                volspadj*dwadjb(l, sps)
-              CALL POPREAL8(tmp)
-              wspadjb(0, 0, 0, ivx) = wspadjb(0, 0, 0, ivx) + dvector(jj&
-&                , ll, ii+1)*tmpb
-              wspadjb(0, 0, 0, ivy) = wspadjb(0, 0, 0, ivy) + dvector(jj&
-&                , ll, ii+2)*tmpb
-              wspadjb(0, 0, 0, ivz) = wspadjb(0, 0, 0, ivz) + dvector(jj&
-&                , ll, ii+3)*tmpb
-              CALL POPINTEGER4(branch)
-              IF (.NOT.branch .LT. 1) CALL POPINTEGER4(ll)
-              CALL POPINTEGER4(branch)
-              IF (.NOT.branch .LT. 1) CALL POPINTEGER4(ll)
-              CALL POPINTEGER4(branch)
-              IF (.NOT.branch .LT. 1) CALL POPINTEGER4(ll)
-            ELSE
-              tempb0 = dscalar(jj, sps, mm)*dwadjb(l, sps)
-              volspadjb = volspadjb + wspadj(0, 0, 0, l)*tempb0
-              wspadjb(0, 0, 0, l) = wspadjb(0, 0, 0, l) + volspadj*&
-&                tempb0
-            END IF
-          END DO
-          CALL POPINTEGER4(ii)
-          CALL POPREAL8(volspadj)
-          voladjb(mm) = voladjb(mm) + volspadjb
-          CALL POPREAL8ARRAY(wspadj, 5**3*nw)
-          wadjb(:, :, :, :, mm) = wadjb(:, :, :, :, mm) + wspadjb
-        END DO
+                  CALL PUSHINTEGER4(1)
+                ELSE
+                  CALL PUSHINTEGER4(2)
+                END IF
+              END DO varloopfine
+            END DO timeloopfine
+            DO mm=ntimeintervalsspectral,1,-1
+              wspadjb(-2:2, -2:2, -2:2, 1:nw) = 0.0
+              volspadjb = 0.0
+              DO l=varend,varstart,-1
+                CALL POPINTEGER4(branch)
+                IF (branch .LT. 2) THEN
+                  tempb = wspadj(0, 0, 0, irho)*dwadjb(l, sps)
+                  tmpb = volspadj*tempb
+                  volspadjb = volspadjb + tmp*tempb
+                  wspadjb(0, 0, 0, irho) = wspadjb(0, 0, 0, irho) + tmp*&
+&                    volspadj*dwadjb(l, sps)
+                  CALL POPREAL8(tmp)
+                  wspadjb(0, 0, 0, ivx) = wspadjb(0, 0, 0, ivx) + &
+&                    dvector(jj, ll, ii+1)*tmpb
+                  wspadjb(0, 0, 0, ivy) = wspadjb(0, 0, 0, ivy) + &
+&                    dvector(jj, ll, ii+2)*tmpb
+                  wspadjb(0, 0, 0, ivz) = wspadjb(0, 0, 0, ivz) + &
+&                    dvector(jj, ll, ii+3)*tmpb
+                  CALL POPINTEGER4(branch)
+                  IF (.NOT.branch .LT. 1) CALL POPINTEGER4(ll)
+                  CALL POPINTEGER4(branch)
+                  IF (.NOT.branch .LT. 1) CALL POPINTEGER4(ll)
+                  CALL POPINTEGER4(branch)
+                  IF (.NOT.branch .LT. 1) CALL POPINTEGER4(ll)
+                ELSE
+                  tempb0 = dscalar(jj, sps, mm)*dwadjb(l, sps)
+                  volspadjb = volspadjb + wspadj(0, 0, 0, l)*tempb0
+                  wspadjb(0, 0, 0, l) = wspadjb(0, 0, 0, l) + volspadj*&
+&                    tempb0
+                END IF
+              END DO
+              CALL POPINTEGER4(ii)
+              CALL POPREAL8(volspadj)
+              voladjb(mm) = voladjb(mm) + volspadjb
+              CALL POPREAL8ARRAY(wspadj, 5**3*nw)
+              wadjb(:, :, :, :, mm) = wadjb(:, :, :, :, mm) + wspadjb
+            END DO
+          END IF
+        END IF
       END IF
-    END SELECT
+    END IF
   END IF
 END SUBROUTINE INITRESADJ_B

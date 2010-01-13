@@ -36,6 +36,7 @@ SUBDIR_SRC    = src/modules       \
 	        src/preprocessing \
 	        src/slidingComm   \
 	        src/solver        \
+	        src/stabilityDerivatives \
 	        src/turbulence    \
 	        src/utils         \
 	        src/wallDistance
@@ -46,6 +47,8 @@ SUBDIR_ADJOINT = src/adjoint               \
 		 src/adjoint/residualOutput\
 		 src/adjoint/forcesInput\
 	         src/adjoint/forcesOutput\
+                 src/adjoint/stabilityInput\
+	         src/adjoint/stabilityOutput\
 		 src/adjoint/couplingInput\
 	         src/adjoint/couplingOutput
 

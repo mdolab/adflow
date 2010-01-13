@@ -40,8 +40,8 @@
             sumx2=sumx2+x(i)*x(i)
             sumxy=sumxy+x(i)*y(i)
          enddo
-         
+         !print *,'sums',x,y,sumx,sumy,sumx2,sumxy,npts
          m = ((npts*sumxy)-(sumy*sumx))/((npts*sumx2)-(sumx)**2)
          b = (sumy*sumx2-(sumx*sumxy))/((npts*sumx2)-(sumx)**2)
-
+         !print *,'m,b:',m,b
        end subroutine computeLeastSquaresRegression

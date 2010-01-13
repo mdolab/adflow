@@ -770,6 +770,218 @@
         write(*,40) "# VECTOR: phic Proc", PETScRank, "; #rows =", &
                     nDimS, "; ownership =", iLow, "to", iHigh-1
       endif
+!
+!     ******************************************************************
+!     dJdc
+
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Create the right-hand-side vector dJdC that agregates the      *
+!     * Time spectral derivatives of the various other components.     *
+!     *                                                                *
+!     * Vector dJdC has size [nTimeIntervalsSpectral] and is dense.    *
+!     *                                                                *
+!     ******************************************************************
+!
+      ! Create the vector. Depending on either this is a sequential or 
+      ! parallel run,  PETSc automatically generates the apropriate
+      ! vector type over all processes in PETSC_COMM_WORLD.
+
+      ! VecCreate- Creates an empty vector object. The type can then be
+      !            set with VecSetType(), or VecSetFromOptions().
+      ! Synopsis
+      !
+      ! #include "petscvec.h" 
+      ! call VecCreate(MPI_Comm comm, Vec *vec, PetscErrorCode ierr)
+      !
+      ! If you never call VecSetType() or VecSetFromOptions() it will
+      ! generate an error when you try to use the vector.
+      !
+      ! Collective on MPI_Comm
+      !
+      ! Input Parameter
+      !   comm - The communicator for the vector object
+      !
+      ! Output Parameter
+      !   vec - The vector object
+      !
+      ! see .../petsc/docs/manualpages/Vec/VecCreate.html
+      ! or PETSc users manual, pp.35
+
+      call VecCreate(PETSC_COMM_WORLD, dJdC, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScVec", "Error in VecCreate dJdC")
+      
+      ! Set the global size and let PETSc decide its local size.
+
+      ! VecSetSizes - Sets the local and global sizes, and checks to
+      !               determine compatibility
+      ! Synopsis
+      !
+      ! #include "petscvec.h" 
+      ! call VecSetSizes(Vec v, PetscInt n, PetscInt N, PetscErrorCode ierr)
+      !
+      ! Collective on Vec
+      !
+      ! Input Parameters
+      !   v - the vector
+      !   n - the local size (or PETSC_DECIDE to have it set)
+      !   N - the global size (or PETSC_DECIDE)
+      !
+      ! Notes
+      ! n and N cannot be both PETSC_DECIDE If one processor calls this
+      !   with N of PETSC_DECIDE then all processors must, otherwise the
+      !   program will hang.
+      !
+      ! see .../petsc/docs/manualpages/Vec/VecSetSizes.html
+
+      call VecSetSizes(dJdC, PETSC_DETERMINE, nTimeIntervalsSpectral,&
+           PETScIerr)
+
+      if( PETScIerr/=0 ) then
+         write(errorMessage,99) &
+              "Error in VecSetSizes dJdC for local size", nTimeIntervalsSpectral
+        call terminate("createPETScVec", errorMessage)
+      endif
+
+      ! Set the vector from options.
+
+      ! VecSetFromOptions - Configures the vector from the options
+      !                     database.
+      ! Synopsis
+      !
+      ! #include "petscvec.h" 
+      ! call VecSetFromOptions(Vec vec,PetscErrorCode ierr)
+      !
+      ! Collective on Vec
+      !
+      ! Input Parameter
+      !   vec - The vector
+      !
+      ! Notes: To see all options, run your program with the -help
+      !   option, or consult the users manual. Must be called after
+      !   VecCreate() but before the vector is used.
+      !
+      ! see .../petsc/docs/manualpages/Vec/VecSetFromOptions.html
+
+      call VecSetFromOptions(dJdC, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScVec", &
+                       "Error in VecSetFromOptions dJdC")
+
+
+      ! Extract info from the vector.
+
+      if( PETScRank==0 .and. debug ) then
+
+        write(*,10) "# VECTOR: dJdC block size  =", vecBlockSize
+
+        ! Get the vector global size.
+
+        ! VecGetSize - Returns the global number of elements of the
+        !              vector.
+        ! Synopsis
+        !
+        ! #include "petscvec.h" 
+        ! call VecGetSize(Vec x,PetscInt *size,PetscErrorCode ierr)
+        !
+        ! Not Collective
+        !
+        ! Input Parameter
+        !   x    - the vector
+        !
+        ! Output Parameters
+        !   size - the global length of the vector
+        !
+        ! see .../petsc/docs/manualpages/Vec/VecGetSize.html
+
+        call VecGetSize(dJdC, vecRows, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScVec", "Error in VecGetSize dJdC")
+
+        write(*,20) "# VECTOR: dJdc global size =", vecRows
+
+        ! Gets the vector type as a string from the vector object.
+
+        ! VecGetType - Gets the vector type name (as a string) from
+        !              the Vec.
+        ! Synopsis
+        !
+        ! #include "petscvec.h"  
+        ! call VecGetType(Vec vec, VecType *type, PetscErrorCode ierr)
+        !
+        ! Not Collective
+        !
+        ! Input Parameter
+        !   vec  - The vector
+        !
+        ! Output Parameter
+        !   type - The vector type name
+        !
+        ! see .../petsc/docs/manualpages/Vec/VecGetType.html
+
+        call VecGetType(dJdC, vecTypeStr, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScVec", "Error in VecGetType dJdC")
+
+        write(*,30) "# VECTOR: dJdC type        =", vecTypeStr
+
+      endif
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Query about the ownership range.                               *
+!     *                                                                *
+!     ******************************************************************
+!
+      ! VecGetOwnershipRange - Returns the range of indices owned by
+      !   this processor, assuming that the vectors are laid out with
+      !   the first n1 elements on the first processor, next n2 elements
+      !   on the second, etc. For certain parallel layouts this range
+      !   may not be well defined.
+      !
+      ! Synopsis
+      !
+      ! #include "petscvec.h" 
+      ! call VecGetOwnershipRange(Vec x,PetscInt *low,PetscInt *high, &
+      !                           PetscErrorCode ierr)
+      ! Not Collective
+      !
+      ! Input Parameter
+      !   x - the vector
+      !
+      ! Output Parameters
+      !   low  - the first local element, pass in PETSC_NULL if not
+      !          interested
+      !   high - one more than the last local element, pass in
+      !          PETSC_NULL if not interested
+      ! Note
+      ! The high argument is one more than the last element stored
+      !   locally.
+      !
+      ! Fortran: PETSC_NULL_INTEGER should be used instead of PETSC_NULL
+      !
+      ! see .../petsc/docs/manualpages/Vec/VecGetOwnershipRange.html
+      ! or PETSc users manual, pp.37
+
+      if( debug ) then
+        call VecGetOwnershipRange(dJdC, iLow, iHigh, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScVec", &
+                         "Error in VecGetOwnershipRange dJdC")
+
+        write(*,40) "# VECTOR: dJdC Proc", PETScRank, "; #rows =", &
+             nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
+      endif
+
+
+
 
 !
 !     ******************************************************************

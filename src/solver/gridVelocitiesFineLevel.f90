@@ -64,7 +64,8 @@
        real(kind=realType), dimension(:,:,:,:), pointer :: xxOld
 
        integer(kind=intType) :: liftIndex
-       real(kind=realType) :: alpha,beta,intervalMach
+       real(kind=realType) :: alpha,beta,intervalMach,alphaTS,alphaIncrement,&
+            betaTS,betaIncrement
        real(kind=realType), dimension(3) ::velDir,liftDir,dragDir
       
        !Function Definitions
@@ -133,29 +134,33 @@
              call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
              
              !Determine the alpha for this time instance
-             alpha = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+             alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
                              degreeFourAlpha,  omegaFourAlpha,     &
                              cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+
+             alphaTS = alpha+alphaIncrement
              !Determine the grid velocity for this alpha
-             call adjustInflowAngleAdj(alpha,beta,velDir,liftDir,dragDir,&
+             call adjustInflowAngleAdj(alphaTS,beta,velDir,liftDir,dragDir,&
                   liftIndex)
              !do I need to update the lift direction and drag direction as well?
              !set the effictive grid velocity for this time interval
              velxGrid0 = (aInf*machgrid)*(-velDir(1))
              velyGrid0 = (aInf*machgrid)*(-velDir(2))
              velzGrid0 = (aInf*machgrid)*(-velDir(3))
-             print *,'base velocity',machgrid, velxGrid0 , velyGrid0 , velzGrid0 
+             !print *,'base velocity',machgrid, velxGrid0 , velyGrid0 , velzGrid0 
 
           elseif(tsBetaMode)then
              ! get the baseline alpha and determine the liftIndex
              call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
              
              !Determine the alpha for this time instance
-             alpha = TSBeta(degreePolBeta,   coefPolBeta,       &
+             betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
                              degreeFourBeta,  omegaFourBeta,     &
                              cosCoefFourBeta, sinCoefFourBeta, t(1))
+
+             betaTS = beta+betaIncrement
              !Determine the grid velocity for this alpha
-             call adjustInflowAngleAdj(alpha,beta,velDir,liftDir,dragDir,&
+             call adjustInflowAngleAdj(alpha,betaTS,velDir,liftDir,dragDir,&
                   liftIndex)
              !do I need to update the lift direction and drag direction as well?
              !set the effictive grid velocity for this time interval

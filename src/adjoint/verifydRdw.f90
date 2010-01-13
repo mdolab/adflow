@@ -749,7 +749,8 @@
       !print *, "max, min of dRdwErr =", maxval(dRdwErr(:,:,1,1)), minval(dRdwErr(:,:,1,1))
 !      print *, "max, min of dRdwErrRel =", maxval(dRdwErrRel_q(:,:,:,1)), minval(dRdwErrRel_q(:,:,:,1))
 !      print *
-
+      deallocate(dRdwErr,dRdwAdj, dRdwFD1,dRdwFD2)
+      print *,' deallocated'
 
  111  format(4I4, 3ES22.14)
 

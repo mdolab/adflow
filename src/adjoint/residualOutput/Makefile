@@ -38,6 +38,16 @@ vpath %.o $(SUMB_OBJDIR)
 
 FF90_MODULES = 
 
+#FF90_OBJECTS = adjustinflowangleadj_b.o   \
+#	       checkinputparamadj_b.o     \
+#               computeradjoint_b.o        \
+#	       getdirangle_b.o            \
+#	       getdirvector_b.o           \
+#	       gridvelocitiesfineleveladj_b.o \
+#               metricadj_b.o              \
+#	       vectorrotation_b.o         \
+#               volpym2_b.o\
+#               xhaloadj_b.o
 FF90_OBJECTS = adjustinflowangleadj_b.o   \
 	       applyallbcadj_b.o          \
 	       bceulerwalladj_b.o         \
@@ -52,6 +62,7 @@ FF90_OBJECTS = adjustinflowangleadj_b.o   \
 	       extrapolate2ndhaloadj_b.o  \
 	       getdirvector_b.o           \
 	       gridvelocitiesfineleveladj_b.o \
+	       initresadj_b.o             \
                inviscidcentralfluxadj_b.o \
 	       inviscidupwindfluxadj_b.o  \
 	       invisciddissfluxscalaradj_b.o  \

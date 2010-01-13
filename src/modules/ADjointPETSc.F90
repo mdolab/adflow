@@ -133,7 +133,8 @@
       !       of design variables.
 
       Mat     dRda, dRdsigma, dRdx,dRdxFD, dRdy, dRdz,dSdw,dSdx,dSdxfd2
-
+      Mat     dCda, dCdx, dCdw
+      Vec     dJdC
 !###      ! Variables for the insertion of dRdx
 !###      ! row           Row number
 !###      ! row_size      Number of elements in each row of dRdx

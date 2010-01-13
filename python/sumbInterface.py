@@ -822,12 +822,12 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Geometrical Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "           Reference surface: %6.6f\n"%(aero_problem._refs.sref*kwargs['MetricConversion']**2))
+        autofile.write(  "           Reference surface: %12.12e\n"%(aero_problem._refs.sref*kwargs['MetricConversion']**2))
         #autofile.write(  "           Reference surface: %2.1f\n"%(1.0))
-        autofile.write(  "            Reference length: %6.6f\n"%(aero_problem._refs.cref*kwargs['MetricConversion']))
-        autofile.write(  "    Moment reference point x:  %6.6f\n"%(aero_problem._refs.xref*kwargs['MetricConversion']))
-        autofile.write(  "    Moment reference point y:  %6.6f\n"%(aero_problem._refs.yref*kwargs['MetricConversion']))
-        autofile.write(  "    Moment reference point z:  %6.6f\n"%(aero_problem._refs.zref*kwargs['MetricConversion']))
+        autofile.write(  "            Reference length: %12.12e\n"%(aero_problem._refs.cref*kwargs['MetricConversion']))
+        autofile.write(  "    Moment reference point x:  %12.12e\n"%(aero_problem._refs.xref*kwargs['MetricConversion']))
+        autofile.write(  "    Moment reference point y:  %12.12e\n"%(aero_problem._refs.yref*kwargs['MetricConversion']))
+        autofile.write(  "    Moment reference point z:  %12.12e\n"%(aero_problem._refs.zref*kwargs['MetricConversion']))
         autofile.write( "\n")
         
         #! Write the keywords and default values for the discretization
