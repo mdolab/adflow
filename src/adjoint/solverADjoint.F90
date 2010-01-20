@@ -251,7 +251,7 @@
       ! Create the Krylov subspace linear solver context,
       ! the preconditioner context, and set their various options.
 
-      call createPETScKsp
+      call createPETScKsp(level)
 
       ! Flush the output buffer and synchronize the processors.
 
@@ -276,7 +276,7 @@
 
       call setupGradientMatrixSpatial(level)
 
-      call setupVolumeSurfaceDerivatives
+      !call setupVolumeSurfaceDerivatives
 
 
 !!$      call solveDirectPETSc
@@ -330,7 +330,7 @@
 
         call computeADjointGradientSpatial(costFunction)
         !print *,'computing surface'
-        call computeADjointGradientSurface(costFunction)
+        !call computeADjointGradientSurface(costFunction)
 !!$
 !!$        ! Write the adjoint field solution, the convergence history and
 !!$        ! the cost function total sensitivity to file/screen.

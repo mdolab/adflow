@@ -107,27 +107,27 @@
        end if
 
        ! First part to release the memory.
-       print *,'releasing memory'
+       !print *,'releasing memory'
        call releaseMemoryPart1
-       print *,'memory released'
+       !print *,'memory released'
        ! Check if for the time spectral method additional solution
        ! files must be written.
        
        if(equationMode == timeSpectral) then
-          print *,'writing ts 1'
+        !  print *,'writing ts 1'
          if( writeUnsteadyRestartSpectral ) &
            call writeUnsteadyFromSpectral
-         print *,'writing ts 2'
+         !print *,'writing ts 2'
          if(writeUnsteadyVolSpectral .or. &
             writeUnsteadySurfSpectral)    &
            call writeInterpolFromSpectral
-         print *,'written'
+         !print *,'written'
        endif
 
        ! Second part to release the memory.
-       print *,'releasing memory 2'
+       !print *,'releasing memory 2'
        call releaseMemoryPart2
-       print *,'memory released 2'
+       !print *,'memory released 2'
        ! Write the parameters used for this run to stdout.
 
        call writeInputParam

@@ -1347,6 +1347,8 @@
            solveADjoint = checkYesNo(value, keyword)
         case ("set monitor")
            setMonitor = checkYesNo(value, keyword)
+        case ("use approximate preconditioner")
+           ApproxPC = checkYesNo(value, keyword)
         case("matrix ordering")
            ! Convert value to lower case and check the options.
            
@@ -1424,6 +1426,9 @@
            read(value,*) adjRestart
         case("adjoint monitor step")
            read(value,*) adjMonStep
+
+        case("dissipation lumping parameter")
+           read(value,*) sigma 
 
         case("global preconditioner type")
            ! Convert value to lower case and check the options.

@@ -501,6 +501,9 @@
        write(writeUnit,"(a)") "                       set monitor   : Yes "
        write(writeUnit,"(a)") "                  # Other possibility: no"
        write(writeUnit,"(a)")
+       write(writeUnit,"(a)") "      Use Approximate Preconditioner : Yes "
+       write(writeUnit,"(a)") "                  # Other possibility: no"
+       write(writeUnit,"(a)")
        write(writeUnit,"(a)") "                  Adjoint solver type: GMRES"
        write(writeUnit,"(a)") "                # Other possibilities: BiCGStab"
        write(writeUnit,"(a)") "                #                      CG"
@@ -513,6 +516,7 @@
        write(writeUnit,"(a)") "        adjoint max iterations       : 500"
        write(writeUnit,"(a)") "        adjoint restart iteration    : 80"
        write(writeUnit,"(a)") "        adjoint monitor step         : 10"
+       write(writeUnit,"(a)") "       dissipation lumping parameter : 4"
        write(writeUnit,"(a)")
        write(writeUnit,"(a)") "                  Preconditioner Side: LEFT"
        write(writeUnit,"(a)") "                # Other possibilities: Left"

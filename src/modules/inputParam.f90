@@ -951,7 +951,9 @@
        ! solveADjoint : Whether or not the adjoint equations should be solved
        ! Monitor      : Whether or not to enable the monitor for the KSP 
        !                contexts.
-       logical :: solveADjoint, setMonitor
+       ! ApproxPC     : Whether or not to use the approximate jacobian 
+       !                preconditioner
+       logical :: solveADjoint, setMonitor, ApproxPC
 
        ! ADjointSolverType: Type of linear solver for the ADjoint
        ! PreCondType      : Type of Preconditioner to use
@@ -982,6 +984,11 @@
        integer(kind=intType)  :: adjMaxIter 
        integer(kind=intType)  :: adjRestart 
        integer(kind=intType)  :: adjMonStep 
+
+       ! sigma    : Scaling parameter for dissipation lumping in approximate
+       !            precondtioner
+       
+       real(kind=realType)    :: sigma
       
 
      end module inputADjoint
