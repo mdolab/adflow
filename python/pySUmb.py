@@ -104,16 +104,18 @@ class SUMB(AeroSolver):
 		
 		Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
 		'''
-		
+	
 		# Pre-Processing
-		try:  kwargs['reinitialize']
+		try:  kwargs['solver_options']['reinitialize']
 		except KeyError:
 			test=1
 		else:
-			if kwargs['reinitialize']:
+			if kwargs['solver_options']['reinitialize']==True:
 				self.interface.initializeFlow(aero_problem,sol_type,grid_file, *args, **kwargs)
 				self.filename=grid_file
-				print 'flowinitialized'
+				if(self.interface.myid==0):print 'flowinitialized'
+			else:
+				a=1
 			#endif
 		#endtry
 		try:  kwargs['niterations']
@@ -125,7 +127,7 @@ class SUMB(AeroSolver):
 
 		#check if meshwarping is initialize. If not, do so
 		if (not self.meshWarpingInitialized):
-			print 'initializing Internal Warping'
+			if(self.interface.myid==0):print 'initializing Internal Warping'
 			self.interface.Mesh.initializeInternalWarping()
 			self.meshWarpingInitialized=True
 		#endif
@@ -133,12 +135,12 @@ class SUMB(AeroSolver):
 		#if updategeometry:
 		#	self.interface.updateGeometry(geometry)
 		##endif
-		print 'setting inflowangle'
+		if(self.interface.myid==0):print 'setting inflowangle'
 		#set inflow angle
 		self.interface.setInflowAngle(aero_problem)
 		
 		# Run Solver
-		print 'running iterations'
+		if(self.interface.myid==0):print 'running iterations'
 		# get flow and ref from aero_problem
 		#print 'niterations',niterations
 		t0 = time.time()
@@ -150,7 +152,7 @@ class SUMB(AeroSolver):
 		#Write solutions
 		volname=self.filename+'%d'%(self.callCounter)+'vol.cgns'
 		surfname=self.filename+'%d'%(self.callCounter)+'surf.cgns'
-		print volname,surfname
+		if(self.interface.myid==0):print volname,surfname
 		self.interface.WriteVolumeSolutionFile(volname)
 		self.interface.WriteSurfaceSolutionFile(surfname)
 		
@@ -202,14 +204,14 @@ class SUMB(AeroSolver):
 
 			try:
 				
-				print 'Trying pySUmb internal meshwarping...'
+				if(self.interface.myid==0):print 'Trying pySUmb internal meshwarping...'
 				#Set the internal coordinates
 				self.interface.Mesh.SetGlobalSurfaceCoordinates(new_cfd_surf)
 				#now Warp the mesh
 				self.interface.Mesh.warpMesh()
-				print 'Internal warping Finished...'
+				if(self.interface.myid==0):print 'Internal warping Finished...'
 			except:
-				print 'pySUmb Internal meshwarping failed, using external...'
+				if(self.interface.myid==0):print 'pySUmb Internal meshwarping failed, using external...'
 				sys.exit(0)
 				# Update the Local blocks based on the perturbed points
 				# on the local processor
@@ -239,9 +241,9 @@ class SUMB(AeroSolver):
 			ijk_blnum = self.Mesh.GetSurfaceIndices()
 			print mpi.rank, "Done with self.Mesh.GetSurfaceIndices('')"
 			if mpi.rank == 0:
-				print "calling self.meshwarping.Warp ...."
+				if(self.interface.myid==0):print "calling self.meshwarping.Warp ...."
 				meshwarping.Warp(new_cfd_surf, ijk_blnum[3,:], ijk_blnum[0:3,:])
-				print "done with self.meshwarping.Warp"
+				if(self.interface.myid==0):print "done with self.meshwarping.Warp"
 				
 				for n in range(1, self.Mesh.GetNumberBlocks()+1):
 					#print "In n loop:", mpi.rank, n
@@ -291,7 +293,7 @@ class SUMB(AeroSolver):
 
 	def _on_adjoint(self,objective,*args,**kwargs):
 
-		print 'running cfd adjoint',objective
+		if(self.interface.myid==0):print 'running cfd adjoint',objective
 
 		self.interface.setupADjointRHS(objective)
 
@@ -494,12 +496,12 @@ class SUMB(AeroSolver):
 
 		#initialize vector for the surface derivatives
 		self.dJcdxyz = numpy.zeros([len(xyzref[:,0]),len(xyzref[0,:])],'d')
-		print 'computeAeroImplicitCoupling'
+		if(self.interface.myid==0):print 'computeAeroImplicitCoupling'
 		try: self.meshDerivatives
 		except:
 			self.meshDerivatives = []
 		else:
-			print 'meshDerivatives exists'
+			if(self.interface.myid==0):print 'meshDerivatives exists'
 		#endif
 		if self.meshDerivatives == []:
 			filename = 'meshDerivatives+%04d'%self.myid+'.dat'

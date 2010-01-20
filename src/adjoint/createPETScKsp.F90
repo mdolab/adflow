@@ -4,11 +4,11 @@
 !     * File:          createPETScKsp.F90                              *
 !     * Author:        Andre C. Marta,C.A.(Sandy) Mader                *
 !     * Starting date: 12-15-2005                                      *
-!     * Last modified: 09-17-2009                                      *
+!     * Last modified: 01-19-2010                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine createPETScKsp
+      subroutine createPETScKsp(level)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -30,6 +30,13 @@
 !     User-defined Fortran routine.
 !
       external MyKSPMonitor
+
+!
+!     Subroutine Variables
+!
+
+      integer(kind=intType)::level
+
 !
 !     Local variables.
 !
@@ -137,14 +144,31 @@
       ! see .../petsc/docs/manualpages/KSP/KSPSetOperators.html
       ! or PETSc users manual, pp.63
 
-      ! Here the matrix that defines the linear system
-      ! also serves as the preconditioning matrix.
-
-      call KSPSetOperators(ksp,dRdW,dRdW, &
+      if (ApproxPC)then
+         
+         !setup the approximate PC Matrix
+         call setupADjointPCMatrix(level)
+         
+         !now set up KSP Context
+         call KSPSetOperators(ksp,dRdW,dRdWPre, &
                            DIFFERENT_NONZERO_PATTERN,PETScIerr)
 
-      if( PETScIerr/=0 ) &
-        call terminate("createPETScKSP", "Error in KSPSetOperators.")
+         if( PETScIerr/=0 ) &
+              call terminate("createPETScKSP", "Error in KSPSetOperators.")
+
+      else
+         
+         ! Use the exact jacobian.
+         ! Here the matrix that defines the linear system
+         ! also serves as the preconditioning matrix.
+         
+         call KSPSetOperators(ksp,dRdW,dRdW, &
+              DIFFERENT_NONZERO_PATTERN,PETScIerr)
+         
+         if( PETScIerr/=0 ) &
+              call terminate("createPETScKSP", "Error in KSPSetOperators.")
+
+      end if
 
 !
 !     ******************************************************************

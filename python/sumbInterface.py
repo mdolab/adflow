@@ -302,13 +302,14 @@ class SUmbMesh(object):
     def _UpdateGeometryInfo(self):
         """Update the SUmb internal geometry info, if necessary."""
         if (self._update_geom_info):
-            print 'updatecoords'
+            if (self.myid==0): print 'Updating Geometry...'
+            #print 'updatecoords'
             sumb.updatecoordinatesalllevels()
-            print 'update_wall'
+            #print 'update_wall'
             sumb.updatewalldistancealllevels()
-            print 'update sliding'
+            #print 'update sliding'
             sumb.updateslidingalllevels()
-            print 'update metrics'
+            #print 'update metrics'
             sumb.updatemetricsalllevels()
             self._update_geom_info = False
 
@@ -513,7 +514,7 @@ class SUmbInterface(object):
 
         """
         #Initialize the MPI in the flow solver
-        print 'running initialization'
+        #print 'running initialization'
         sumb.sumb_init()
 
         # Setup a mesh object
@@ -538,6 +539,7 @@ class SUmbInterface(object):
         # Determine the rank and number of processors inside the group
         # defined by sumb_comm_world.
         self.myid = sumb.communication.myid = self.sumb_comm_world.rank
+        self.Mesh.myid = self.myid
         self.nproc = sumb.communication.nproc = self.sumb_comm_world.size
 
         # Allocate the memory for SENDREQUESTS and RECVREQUESTS.
@@ -588,16 +590,16 @@ class SUmbInterface(object):
         self.startfile = startfile
         
         sumb.inputio.paramfile[0:len(startfile)] = startfile
-        print 'readparamfile'
+        if(self.myid==0):print 'readparamfile'
         # Read the parameter file
         sumb.readparamfile()
 
         # Partition the blocks and read the grid
         sumb.partitionandreadgrid()
-        print 'preprocessing'
+        if(self.myid==0):print 'preprocessing'
         # Perform the preprocessing task
         sumb.preprocessing()
-        print 'initializing flow'
+        if(self.myid==0):print 'initializing flow'
         # Initialize the flow variables
         sumb.initflow()
 
@@ -643,8 +645,7 @@ class SUmbInterface(object):
     def generateInputFile(self,aero_problem,sol_type,grid_file,file_type='cgns',eqn_type='Euler',*args,**kwargs):
         ''' Code to generate an SUmb Input File on the fly'''
         print 'generating input file'
-        print 'flow',aero_problem._flows
-
+        
         #Convert alpha and beta to a freestream vector
         [velDir,liftDir,dragDir]= sumb.adjustinflowangleadj((aero_problem._flows.alpha*(pi/180.0)),(aero_problem._flows.beta*(pi/180.0)),aero_problem._flows.liftIndex)
         
@@ -679,8 +680,8 @@ class SUmbInterface(object):
         if file_type =='cgns':
             autofile.write("                         Grid file: %s.cgns \n"%(grid_file))
             autofile.write("\n")
-            autofile.write("                      Restart file: restart.cgns\n")
-            autofile.write("                           Restart: no\n")
+            autofile.write("                      Restart file: %s_restart.cgns \n"%(grid_file))
+            autofile.write("                           Restart: %s\n"%(kwargs['solver_options']['sol_restart']))
             autofile.write("       Check nondimensionalization: yes\n\n")
             autofile.write("                     New grid file: %s_NewGrid.cgns\n\n"%(grid_file))
             autofile.write("                     Solution file: %s_SolSUmb.cgns\n"%(grid_file))
@@ -815,19 +816,21 @@ class SUmbInterface(object):
         autofile.write(  "            Reference pressure (in Pa): 101325.0\n")
         autofile.write(  "         Reference density (in kg/m^3): 1.25\n")
         autofile.write(  "          Reference temperature (in K): 273.15\n")
-        autofile.write(  " Conversion factor grid units to meter: %6.4f\n"%(kwargs['MetricConversion']))
-        self.Mesh.metricConversion = kwargs['MetricConversion']
+        autofile.write(  " Conversion factor grid units to meter: %6.4f\n"%(kwargs['solver_options']['MetricConversion']))
+        self.Mesh.metricConversion = kwargs['solver_options']['MetricConversion']
         autofile.write( "\n")
         
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Geometrical Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "           Reference surface: %12.12e\n"%(aero_problem._refs.sref*kwargs['MetricConversion']**2))
+        autofile.write(  "           Reference surface: %12.12e\n"%(aero_problem._refs.sref*kwargs['solver_options']['MetricConversion']**2))
+
         #autofile.write(  "           Reference surface: %2.1f\n"%(1.0))
-        autofile.write(  "            Reference length: %12.12e\n"%(aero_problem._refs.cref*kwargs['MetricConversion']))
-        autofile.write(  "    Moment reference point x:  %12.12e\n"%(aero_problem._refs.xref*kwargs['MetricConversion']))
-        autofile.write(  "    Moment reference point y:  %12.12e\n"%(aero_problem._refs.yref*kwargs['MetricConversion']))
-        autofile.write(  "    Moment reference point z:  %12.12e\n"%(aero_problem._refs.zref*kwargs['MetricConversion']))
+
+        autofile.write(  "            Reference length: %12.12e\n"%(aero_problem._refs.cref*kwargs['solver_options']['MetricConversion']))
+        autofile.write(  "    Moment reference point x:  %12.12e\n"%(aero_problem._refs.xref*kwargs['solver_options']['MetricConversion']))
+        autofile.write(  "    Moment reference point y:  %12.12e\n"%(aero_problem._refs.yref*kwargs['solver_options']['MetricConversion']))
+        autofile.write(  "    Moment reference point z:  %12.12e\n"%(aero_problem._refs.zref*kwargs['solver_options']['MetricConversion']))
         autofile.write( "\n")
         
         #! Write the keywords and default values for the discretization
@@ -836,7 +839,7 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Fine Grid Discretization Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "       Discretization scheme: %s\n"%(kwargs['Discretization']))
+        autofile.write(  "       Discretization scheme: %s\n"%(kwargs['solver_options']['Discretization']))
         autofile.write(  "             # Possibilities: Central plus scalar dissipation\n")
         autofile.write(  "             #              : Central plus matrix dissipation\n")
         autofile.write(  "             #              : Central plus CUSP dissipation\n")
@@ -988,7 +991,7 @@ class SUmbInterface(object):
         autofile.write(  "   Number of single grid startup iterations: 0\n")
         autofile.write(  "                                 Save every: 0\n")
         autofile.write(  "                         Save surface every: 0\n")
-        autofile.write(  "                                 CFL number: %2.1f\n"%(kwargs['CFL']))
+        autofile.write(  "                                 CFL number: %2.1f\n"%(kwargs['solver_options']['CFL']))
         autofile.write( "\n")
         if eqn_type=='RANS':
             autofile.write(  "                       Turbulent relaxation: Explixit\n")
@@ -997,7 +1000,7 @@ class SUmbInterface(object):
             autofile.write(  "                     Alpha turbulent DD-ADI: 0.8\n")
             autofile.write(  "                      Beta turbulent DD-ADI: -1  # Same as alpha\n")
         #endif
-        autofile.write(  "           Relative L2 norm for convergence: %3.2e\n"%(kwargs['L2Convergence']))
+        autofile.write(  "           Relative L2 norm for convergence: %3.2e\n"%(kwargs['solver_options']['L2Convergence']))
         autofile.write( "\n")
 
         autofile.write(  "-------------------------------------------------------------------------------\n")
@@ -1020,8 +1023,55 @@ class SUmbInterface(object):
         autofile.write(  " Treatment boundary multigrid corrections: Zero Dirichlet\n")
         autofile.write(  "            Restriction relaxation factor: 1.0\n")
         autofile.write(  "#                    Multigrid start level:  # Default is coarsest MG level\n")
-        autofile.write(  "                 Multigrid cycle strategy: %s\n"%(kwargs['MGCycle']))
+        autofile.write(  "                 Multigrid cycle strategy: %s\n"%(kwargs['solver_options']['MGCycle']))
         autofile.write( "\n")
+
+#
+# ADjoint Parameters
+#
+        autofile.write(  "-------------------------------------------------------------------------------\n")
+        autofile.write(  "      ADjoint Parameters\n")
+        autofile.write(  "-------------------------------------------------------------------------------\n")
+        autofile.write(  "                       solve ADjoint :  %s\n"%(kwargs['solver_options']['solveADjoint']))
+        autofile.write(  "                  # Other possibility: no\n")
+        autofile.write(  "	                 set monitor   :  %s\n"%(kwargs['solver_options']['set Monitor']))
+        autofile.write(  "                  # Other possibility: no\n")
+        autofile.write(  " 	            Adjoint solver type: %s\n"%(kwargs['solver_options']['Adjoint solver type']))
+        autofile.write(  "                # Other possibilities: BiCGStab\n")
+        autofile.write(  "                #                      CG\n")
+        autofile.write(  "                #                      GMRES\n")
+        autofile.write(  "                #                      FGMRES\n")
+        autofile.write(  "        adjoint relative tolerance   : %3.2e\n"%(kwargs['solver_options']['adjoint relative tolerance']))
+        autofile.write(  "        adjoint absolute tolerance   : %3.2e\n"%(kwargs['solver_options']['adjoint absolute tolerance']))
+        autofile.write(  "        adjoint divergence tolerance : 1e5\n")
+        autofile.write(  "        adjoint max iterations       : %d\n"%kwargs['solver_options']['adjoint max iterations'])
+        autofile.write(  "        adjoint restart iteration    : %d\n"%kwargs['solver_options']['adjoint restart iteration'])
+        autofile.write(  "        adjoint monitor step         : %d\n"%kwargs['solver_options']['adjoint monitor step'])
+        autofile.write(  "                  Preconditioner Side: %s\n"%(kwargs['solver_options']['Preconditioner Side']))
+        autofile.write(  "                # Other possibilities: Left\n")
+        autofile.write(  "                #                      Right\n")
+        autofile.write(  "	             Matrix Ordering   : %s\n"%(kwargs['solver_options']['Matrix Ordering']))
+        autofile.write(  "	               #                 ReverseCuthillMckee\n")
+        autofile.write(  "	               #                 Natural\n")
+        autofile.write(  "	               #                 NestedDissection\n")
+        autofile.write(  "                     #                 OnewayDissection\n")
+        autofile.write(  "                     #                 QuotientMinimumDegree\n")
+        autofile.write(  "          Global Preconditioner Type : %s\n"%(kwargs['solver_options']['Global Preconditioner Type']))
+        autofile.write(  "          #                            Jacobi\n")
+        autofile.write(  "          #                            Block Jacobi\n")
+        autofile.write(  "          #                            Additive Schwartz\n")
+        autofile.write(  "                         ASM Overlap : 5\n")
+        autofile.write(  "            Local Preconditioner Type: %s\n"%(kwargs['solver_options']['Local Preconditioner Type']))
+        autofile.write(  "            #                          ILU\n")
+        autofile.write(  "            #                          ICC\n")
+        autofile.write(  "            #                          LU\n")
+        autofile.write(  "            #                          Cholesky\n")
+        autofile.write(  "                    ILU Fill Levels  : %d\n"%kwargs['solver_options']['ILU Fill Levels'])
+        autofile.write(  "            Jacobi Scale Factor Type : RowMax\n")
+        autofile.write(  "            #                          RowMax\n")
+        autofile.write(  "            #                          RowSum\n")
+        autofile.write(  "            #                          RowAbs\n")
+
 
         #! Write the keywords and default values for the parallel, i.e.
         #! load balance parameters.
@@ -1101,7 +1151,7 @@ class SUmbInterface(object):
             autofile.write( "\n")
             
             autofile.write( "                               Rotation center  Rotation rate (rad/s)\n")
-            autofile.write( "Rotating family %s : %6.6f %6.6f %6.6f    0.e+0 0.e+0 0.e+0    \n"%(kwargs['FamilyRot'],kwargs['rotCenter'][0],kwargs['rotCenter'][1],kwargs['rotCenter'][2]))
+            autofile.write( "Rotating family %s : %6.6f %6.6f %6.6f    0.e+0 0.e+0 0.e+0    \n"%(kwargs['solver_options']['FamilyRot'],kwargs['solver_options']['rotCenter'][0],kwargs['solver_options']['rotCenter'][1],kwargs['solver_options']['rotCenter'][2]))
         except:
             if(self.myid ==0):
                 print 'No rotating families Present'
@@ -1211,7 +1261,7 @@ class SUmbInterface(object):
                 # Set new value of MG cycles
                 if (len(ncycles) > 1):
                   if (ncycles[1] != sumb.inputiteration.ncycles):
-                      print 'setting ncycles'
+                      if(self.myid==0):print 'setting ncycles'
                       sumb.inputiteration.ncycles = ncycles[1]
                 # Reallocate convergence history array and
                 # time array with new size
@@ -1248,7 +1298,7 @@ class SUmbInterface(object):
                 # time array with new size, storing old values from restart
                 if (self.myid == 0):
                     # number of time steps from restart
-                    ntimestepsrestart = sumb.monitor.ntimestepsrestart[0]
+                    ntimestepsrestart = sumb.monitor.ntimestepsrestart#[0]
                     # store restart time history and deallocate arrays
                     temp_t = copy.deepcopy(sumb.monitor.timearray[:ntimestepsrestart])
                     sumb.monitor.timearray = None
@@ -1686,19 +1736,19 @@ class SUmbInterface(object):
         
         #Run the preprocessing routine. Sets the node numbering and
         #allocates memory.
-        print 'preprocessing adjoint'
+        if(self.myid==0): print 'preprocessing adjoint'
         sumb.preprocessingadjoint(self.level)
         
         #Initialize the design variable and function storage
-        print 'Before design init'
+        if(self.myid==0):print 'Before design init'
         sumb.designinit()
 
         #initalize PETSc
-        print 'before petsc'
+        if(self.myid==0):print 'before petsc'
         sumb.initializepetsc()
 
         #create the neccesary PETSc objects
-        print 'before createpetsecars'
+        if(self.myid==0):print 'before createpetsecars'
         sumb.createpetscvars()
 
         #mark the ADjoint as initialized
@@ -1706,7 +1756,7 @@ class SUmbInterface(object):
         if(self.myid==0):
             print 'ADjoint Initialized Succesfully...'
         #endif
-        print 'before nspatial'
+        if(self.myid==0):print 'before nspatial'
         self.nSpatial = sumb.adjointvars.ndesignspatial
 
         return
@@ -1761,6 +1811,16 @@ class SUmbInterface(object):
         sumb.solveadjointpetsc()
 
         return
+
+    def verifyPartials(self):
+        '''
+        Run solverADjoint to verify the partial derivatives in the ADjoint
+        '''
+        sumb.solveradjoint()
+
+        return
+    
+    
 
     def setupGradientRHSVolume(self,objective):
         '''
@@ -2227,7 +2287,7 @@ class SUmbInterface(object):
     
     def getGlobalNodesLocal(self,blocknum,il,jl,kl):
         #get global node ordering from sumb
-        print 'in sumbInterface'
+        if(self.myid==0):print 'in sumbInterface'
         globalNodes = sumb.getglobalnodes(blocknum,il,jl,kl)
         
         return globalNodes

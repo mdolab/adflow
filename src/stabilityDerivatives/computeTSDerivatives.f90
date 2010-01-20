@@ -77,11 +77,11 @@
       if(myID==0) print *,'in compute TS deriv...'
          !Compute and store the aero coef. Values for each TS level
          do sps =1,nTimeIntervalsSpectral
-            if(myID==0) print *,'sps',sps
+            !if(myID==0) print *,'sps',sps
             level = 1
             call computeAeroCoef(CL(sps),CD(sps),CFx(sps),CFy(sps),CFz(sps),&
                  CMx(sps),CMy(sps),CMz(sps),level,sps)
-            if(myID==0) print *,'CL',cl
+            !if(myID==0) print *,'CL',cl
            
          end do
          
@@ -97,7 +97,7 @@
                        /         real(nTimeIntervalsSpectral,realType)
                enddo
             endif
-            print *,'t',t
+            !print *,'t',t
             ! Compute the time derivative of the rotation angles around the
             ! x-axis. i.e. compute p
             
@@ -118,8 +118,8 @@
                  sinCoefFourXRot, t)
             !if(myID==0)print *,'dphixdot',dphixdot
          enddo
-         if(myID==0)print *,'dphix',dphix
-         if(myID==0)print *,'dphixdot',dphixdot
+         !if(myID==0)print *,'dphix',dphix
+         !if(myID==0)print *,'dphixdot',dphixdot
          !now compute dCl/dp
          
          call computeLeastSquaresRegression(cl,dphix,nTimeIntervalsSpectral,dcldp,cl0)
@@ -171,7 +171,7 @@
                        /         real(nTimeIntervalsSpectral,realType)
                enddo
             endif
-            print *,'t',t
+            !print *,'t',t
             
             ! Compute the time derivative of the rotation angles around the
             ! z-axis. i.e. compute q
@@ -247,7 +247,7 @@
                        /         real(nTimeIntervalsSpectral,realType)
                enddo
             endif
-            print *,'t',t
+            !print *,'t',t
             
             ! Compute the time derivative of the rotation angles around the
             ! y-axis and z-axis. i.e. compute r
@@ -315,7 +315,7 @@
                        /         real(nTimeIntervalsSpectral,realType)
                enddo
             endif
-            print *,'t',t
+            !print *,'t',t
             intervalAlpha(sps) = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
                  degreeFourAlpha,  omegaFourAlpha,     &
                  cosCoefFourAlpha, sinCoefFourAlpha, t)
@@ -324,7 +324,7 @@
                  degreeFourAlpha,  omegaFourAlpha,     &
                  cosCoefFourAlpha, sinCoefFourAlpha, t)
          end do
-         print *,'Alpha', intervalAlpha
+         !print *,'Alpha', intervalAlpha
          !now compute dCl/dalpha
          
          call computeLeastSquaresRegression(cl,intervalAlpha,nTimeIntervalsSpectral,dcldalpha,cl0)
@@ -377,7 +377,7 @@
                        /         real(nTimeIntervalsSpectral,realType)
                enddo
             endif
-            if(myID==0)print *,'t',t
+            !if(myID==0)print *,'t',t
             intervalMach(sps) = machgrid+TSMach(degreePolMach,   coefPolMach,       &
                  degreeFourMach,  omegaFourMach,     &
                  cosCoefFourMach, sinCoefFourMach, t)
@@ -386,7 +386,7 @@
                  degreeFourMach,  omegaFourMach,     &
                  cosCoefFourMach, sinCoefFourMach, t)
          end do
-         if(myID==0) print *,'Mach', intervalMach,machgrid
+         !if(myID==0) print *,'Mach', intervalMach,machgrid
          !now compute dCl/dalpha
          
          call computeLeastSquaresRegression(cl,intervalMach,nTimeIntervalsSpectral,dcldMach,cl0)

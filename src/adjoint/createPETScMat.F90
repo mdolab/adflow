@@ -23,6 +23,7 @@
       use communication   ! myID, nProc
       use inputTimeSpectral !nTimeIntervalsSpectral
       use flowVarRefState ! 
+      use inputADjoint    !ApproxPC
       implicit none
 !
 !     Local variables.
@@ -36,7 +37,7 @@
       integer       :: matBlockSize, matRows, matCols
       character(15) :: matTypeStr
 
-      integer   :: nzDiagonalW, nzDiagonalX, nzOffDiag
+      integer   :: nzDiagonalW, nzDiagonalX, nzOffDiag,nzDiagonalWPC
       integer, dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
 
       character(len=2*maxStringLen) :: errorMessage
@@ -79,7 +80,19 @@
       ! 6  - 1st level cells along directions i,j,k
       ! 6  - 2nd level cells along directions i,j,k
 
-      nzDiagonalW = 13 +nTimeIntervalsSpectral! 1 + 6 + 6  check!!!
+      nzDiagonalW = 13 *nTimeIntervalsSpectral
+      !should be addition not multiplication but this will require filtering 
+      !of some of the TS results for non-zero terms. 
+      !i.e.:13 +nTimeIntervalsSpectral! 1 + 6 + 6  check!!!
+
+      ! Stencil of W pc
+      ! 1  - center cell
+      ! 6  - 1st level cells along directions i,j,k
+
+      nzDiagonalWPC = 7 *nTimeIntervalsSpectral
+      !should be addition not multiplication but this will require filtering 
+      !of some of the TS results for non-zero terms. 
+      !i.e.:7 +nTimeIntervalsSpectral! 1 + 6  check!!!
 
       ! Stencil of X
       ! 1  - center node
@@ -87,7 +100,7 @@
       ! 6  - 2nd level nodes along directions i,j,k
       ! 12 - 1st level nodes along diagonals (i,j),(i,k),(j,k) 
 
-      nzDiagonalX = 25+4+4 +4*nTimeIntervalsSpectral! 1 + 6 + 6 + 12 Check
+      nzDiagonalX = 33*nTimeIntervalsSpectral!25+4+4 +4*nTimeIntervalsSpectral! 1 + 6 + 6 + 12 Check
 
       ! Average number of off processor contributions per Cell
       ! (average number of donor cells that come from other processor)
@@ -353,6 +366,274 @@
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dRdW")
+!****************
+!create dRdWPre
+!***************
+
+if (ApproxPC) then
+
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Create matrix dRdWPre for the ADjoint approximate preconitioner*
+!     * This matrix is sparse with a narrower bandwidth than drdw      *
+!     *                                                                *
+!     ******************************************************************
+!
+      ! Create the matrix dRdWPre.
+
+      ! >>> option #1 : sparse parallel matrix in block AIJ format
+      !                 Only works for block up to size 7...
+
+      if( nw <= 7 ) then
+!      if( nw == 7 ) then
+
+         PETScBlockMatrix = .true.
+
+        ! MatCreateMPIBAIJ - Creates a sparse parallel matrix in block
+        !   AIJ format (block compressed row). For good matrix assembly
+        !   performance the user should preallocate the matrix storage
+        !   by setting the parameters d_nz (or d_nnz) and o_nz (or
+        !   o_nnz). By setting these parameters accurately, performance
+        !   can be increased by more than a factor of 50.
+        !
+        ! Synopsis
+        !
+        ! #include "petscmat.h"  
+        ! call MatCreateMPIBAIJ(MPI_Comm comm,PetscInt bs,             &
+        !                 PetscInt m,PetscInt n,PetscInt M,PetscInt N, &
+        !                 PetscInt d_nz,const PetscInt d_nnz[],        &
+        !                 PetscInt o_nz,const PetscInt o_nnz[],        &
+        !                 Mat *A,PetscErrorCode ierr)
+        !
+        ! Collective on MPI_Comm
+        !
+        ! Input Parameters
+        !   comm  - MPI communicator
+        !   bs    - size of block
+        !   m     - number of local rows (or PETSC_DECIDE to have 
+        !           calculated if M is given). This value should be the
+        !           same as the local size used in creating the y
+        !           vector for the matrix-vector product y = Ax.
+        !   n     - number of local columns (or PETSC_DECIDE to have
+        !           calculated if N is given). This value should be the
+        !           same as the local size used in creating the x
+        !           vector for the matrix-vector product y = Ax.
+        !   M     - number of global rows (or PETSC_DETERMINE to have
+        !           calculated if m is given).
+        !   N     - number of global columns (or PETSC_DETERMINE to
+        !           have calculated if n is given).
+        !   d_nz  - number of nonzero blocks per block row in diagonal
+        !           portion of local submatrix (same for all local rows)
+        !   d_nnz - array containing the number of nonzero blocks in the
+        !           various block rows of the in diagonal portion of the
+        !           local (possibly different for each block row) or
+        !           PETSC_NULL. You must leave room for the diagonal
+        !           entry even if it is zero.
+        !   o_nz  - number of nonzero blocks per block row in the
+        !           off-diagonal portion of local submatrix (same for
+        !           all local rows).
+        !   o_nnz - array containing the number of nonzero blocks in the
+        !           various block rows of the off-diagonal portion of
+        !           the local submatrix (possibly different for each
+        !           block row) or PETSC_NULL.
+        !
+        ! Output Parameter
+        !   A     - the matrix 
+        !
+        ! See .../petsc/docs/manualpages/Mat/MatCreateMPIBAIJ.html
+  
+        allocate( nnzDiagonal(nCellsLocal*nTimeIntervalsSpectral),&
+             nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
+
+        nnzDiagonal = nzDiagonalWPC
+        nnzOffDiag  = nzOffDiag
+        !print *,'nnzDiagonal',nnzDiagonal,'ofdiag',nnzOffDiag 
+        call MatCreateMPIBAIJ(PETSC_COMM_WORLD, nw,             &
+                              nDimW, nDimW,                     &
+                              PETSC_DETERMINE, PETSC_DETERMINE, &
+                              nzDiagonalW, nnzDiagonal,         &
+                              nzOffDiag, nnzOffDiag,            &
+                              dRdWPre, PETScIerr)
+
+      ! >>> option #2 : sparse parallel matrix in AIJ format
+      !                 General case...
+
+      else
+
+         PETScBlockMatrix = .false.
+
+        ! MatCreateMPIAIJ - Creates a sparse parallel matrix in AIJ
+        !   format (the default parallel PETSc format). For good matrix
+        !   assembly performance the user should preallocate the matrix
+        !   storage by setting the parameters d_nz (or d_nnz) and o_nz
+        !   (or o_nnz). By setting these parameters accurately,
+        !   performance can be increased by more than a factor of 50.
+        !
+        ! Synopsis
+        !
+        ! #include "petscmat.h" 
+        ! call MatCreateMPIAIJ(MPI_Comm comm,                           &
+        !                  PetscInt m,PetscInt n,PetscInt M,PetscInt N, &
+        !                  PetscInt d_nz,const PetscInt d_nnz[],        &
+        !                  PetscInt o_nz,const PetscInt o_nnz[],        &
+        !                  Mat *A, PetscErrorCode ierr)
+        !
+        ! Collective on MPI_Comm
+        !
+        ! Input Parameters
+        !   comm  - MPI communicator
+        !   m     - number of local rows (or PETSC_DECIDE to have
+        !           calculated if M is given) This value should be the
+        !           same as the local size used in creating the y vector
+        !           for the matrix-vector product y = Ax.
+        !   n     - This value should be the same as the local size used
+        !           in creating the x vector for the matrix-vector
+        !           product y = Ax. (or PETSC_DECIDE to have calculated
+        !           if N is given) For square matrices n is almost
+        !           always m.
+        !   M     - number of global rows (or PETSC_DETERMINE to have
+        !           calculated if m is given)
+        !   N     - number of global columns (or PETSC_DETERMINE to have
+        !           calculated if n is given)
+        !   d_nz  - number of nonzeros per row in DIAGONAL portion of
+        !           local submatrix (same value is used for all local
+        !           rows)
+        !   d_nnz - array containing the number of nonzeros in the
+        !           various rows of the DIAGONAL portion of the local
+        !           submatrix (possibly different for each row) or
+        !           PETSC_NULL, if d_nz is used to specify the nonzero
+        !           structure. The size of this array is equal to the
+        !           number of local rows, i.e 'm'. You must leave room
+        !           for the diagonal entry even if it is zero.
+        !   o_nz  - number of nonzeros per row in the OFF-DIAGONAL
+        !           portion of local submatrix (same value is used for
+        !           all local rows).
+        !   o_nnz - array containing the number of nonzeros in the
+        !           various rows of the OFF-DIAGONAL portion of the
+        !           local submatrix (possibly different for each row) or
+        !           PETSC_NULL, if o_nz is used to specify the nonzero
+        !           structure. The size of this array is equal to the
+        !           number of local rows, i.e 'm'.
+        !
+        ! Output Parameter
+        !   A     - the matrix
+        !
+        ! Notes
+        ! The parallel matrix is partitioned such that the first m0 rows
+        !  belong to process 0, the next m1 rows belong to process 1,
+        !  the next m2 rows belong to process 2 etc.. where m0,m1,m2...
+        !  are the input parameter 'm'.
+        !
+        ! The DIAGONAL portion of the local submatrix of a processor can
+        !  be defined as the submatrix which is obtained by extraction
+        !  the part corresponding to the rows r1-r2 and columns r1-r2 of
+        !  the global matrix, where r1 is the first row that belongs to
+        !  the processor, and r2 is the last row belonging to the this
+        !  processor. This is a square mxm matrix. The remaining portion
+        !  of the local submatrix (mxN) constitute the OFF-DIAGONAL
+        !  portion.
+        !
+        ! If o_nnz, d_nnz are specified, then o_nz, and d_nz are ignored.
+        !
+        ! When calling this routine with a single process communicator,
+        !  a matrix of type SEQAIJ is returned.
+        !
+        ! See .../petsc/docs/manualpages/Mat/MatCreateMPIAIJ.html
+
+        nzDiagonalW = nzDiagonalW * nw
+        nzOffDiag   = nzOffDiag   * nw
+
+        allocate( nnzDiagonal(nDimW), nnzOffDiag(nDimW) )
+
+        nnzDiagonal = nzDiagonalWPC
+        nnzOffDiag  = nzOffDiag
+
+        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+                             nDimW, nDimW,                     &
+                             PETSC_DETERMINE, PETSC_DETERMINE, &
+                             nzDiagonalW, nnzDiagonal,         &
+                             nzOffDiag, nnzOffDiag,            &
+                             dRdWPre, PETScIerr)
+
+      endif
+
+      deallocate( nnzDiagonal, nnzOffDiag )
+
+      if( PETScIerr/=0 ) then
+        write(errorMessage,99) &
+                     "Could not create matrix dRdWPre of local size", nDimW
+        call terminate("createPETScMat", errorMessage)
+      endif
+
+      ! Set the matrix dRdWPre options.
+
+      ! Warning: The array values is logically two-dimensional, 
+      ! containing the values that are to be inserted. By default the
+      ! values are given in row major order, which is the opposite of
+      ! the Fortran convention, meaning that the value to be put in row
+      ! idxm[i] and column idxn[j] is located in values[i*n+j]. To allow
+      ! the insertion of values in column major order, one can call the
+      ! command MatSetOption(Mat A,MAT COLUMN ORIENTED);
+
+      ! MatSetOption - Sets a parameter option for a matrix.
+      !   Some options may be specific to certain storage formats.
+      !   Some options determine how values will be inserted (or added).
+      !   Sorted, row-oriented input will generally assemble the fastest.
+      !   The default is row-oriented, nonsorted input.
+      !
+      ! Synopsis
+      !
+      ! #include "petscmat.h" 
+      ! call MatSetOption(Mat mat,MatOption op,PetscErrorCode ierr)
+      !
+      ! Collective on Mat
+      !
+      ! Input Parameters
+      !   mat    - the matrix
+      !   option - the option, one of those listed below (and possibly
+      !     others), e.g., MAT_ROWS_SORTED, MAT_NEW_NONZERO_LOCATION_ERR
+      !
+      ! Options For Use with MatSetValues()
+      ! Insert a logically dense subblock, which can be
+      !   MAT_ROW_ORIENTED     - row-oriented (default)
+      !   MAT_COLUMN_ORIENTED  - column-oriented
+      !   MAT_ROWS_SORTED      - sorted by row
+      !   MAT_ROWS_UNSORTED    - not sorted by row (default)
+      !   MAT_COLUMNS_SORTED   - sorted by column
+      !   MAT_COLUMNS_UNSORTED - not sorted by column (default)
+      !
+      ! Note these options reflect the data you pass in with
+      !   MatSetValues(); it has nothing to do with how the data
+      !   is stored internally in the matrix data structure.
+      !
+      ! When (re)assembling a matrix, we can restrict the input for
+      !   efficiency/debugging purposes. These options include
+      !     MAT_NO_NEW_NONZERO_LOCATIONS  - additional insertions will
+      !       not be allowed if they generate a new nonzero
+      !     MAT_YES_NEW_NONZERO_LOCATIONS - additional insertions will
+      !       be allowed
+      !     MAT_NO_NEW_DIAGONALS          - additional insertions will
+      !       not be allowed if they generate a nonzero in a new
+      !       diagonal (for block diagonal format only)
+      !     MAT_YES_NEW_DIAGONALS         - new diagonals will be
+      !       allowed (for block diagonal format only)
+      !     MAT_IGNORE_OFF_PROC_ENTRIES   - drops off-processor entries
+      !     MAT_NEW_NONZERO_LOCATION_ERR  - generates an error for new
+      !       matrix entry
+      !     MAT_USE_HASH_TABLE            - uses a hash table to speed
+      !       up matrix assembly
+      !
+      ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
+      ! or PETSc users manual, pp.51-52
+
+      call MatSetOption(dRdWPre, MAT_COLUMN_ORIENTED, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dRdWPre")
+   end if
+
+
 
       !******************************************
       !Create dRdWFD for debugging
@@ -834,8 +1115,8 @@
 !
       allocate( nnzDiagonal(nDimW), nnzOffDiag(nDimW) )
 
-      nnzDiagonal = nzDiagonalX * 3
-      nnzOffDiag  = nzOffDiag   * 3
+      nnzDiagonal = nzDiagonalX * 3*nTimeIntervalsSpectral
+      nnzOffDiag  = nzOffDiag   * 3*nTimeIntervalsSpectral
 
       ! Create the matrix dRdx.
 
@@ -1100,8 +1381,8 @@
 !
       allocate( nnzDiagonal(nDimW), nnzOffDiag(nDimW) )
 
-      nnzDiagonal = nzDiagonalX * 3
-      nnzOffDiag  = nzOffDiag   * 3
+      nnzDiagonal = nzDiagonalX * 3*nTimeIntervalsSpectral
+      nnzOffDiag  = nzOffDiag   * 3*nTimeIntervalsSpectral
 
       ! Create the matrix dRdx.
 

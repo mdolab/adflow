@@ -70,6 +70,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
                setupADjointdCdwStability.o\
                setupADjointdIdCStability.o\
 	       setupADjointMatrix.o     \
+	       setupADjointPCMatrix.o     \
 	       setupADjointRHS.o        \
 	       setupADjointRHSAeroCoeff.o\
 	       setupADjointRHSStability.o\

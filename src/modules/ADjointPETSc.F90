@@ -103,7 +103,7 @@
       !       this defintion in the future
 	
 
-      Mat     dRdW ,dRdWFD,dRdWPreCond
+      Mat     dRdW ,dRdWFD,dRdWPre
       Vec     psi, dJdW, pvr,phic,dJcdW
 
       ! ksp   Linear solver (Krylov subspace method) context
