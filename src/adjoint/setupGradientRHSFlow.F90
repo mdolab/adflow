@@ -2,14 +2,14 @@
 !
 !     ******************************************************************
 !     *                                                                *
-!     * File:          setupGradientRHS.F90                            *
+!     * File:          setupGradientRHSFlow.F90                        *
 !     * Author:         C.A.(Sandy) Mader                              *
 !     * Starting date: 11-27-2009                                      *
-!     * Last modified: 11-27-2009                                      *
+!     * Last modified: 02-02-2010                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine setupGradientRHS(level,costFunction)
+      subroutine setupGradientRHSFlow(level,costFunction)
         !subroutine setupGradientRHS(level,sps,costFunction)
 !
 !     ******************************************************************
@@ -81,9 +81,6 @@
            sps = 1
            
            call setupGradientRHSExtra(level,costFunction,sps)
-           
-           call setupGradientRHSSpatial(level,costFunction,sps) 
-   
 
         case(costFuncCmzAlpha, &
              costFuncCm0,&
@@ -205,5 +202,5 @@
    20 format(a,1x,f8.2)
 
 #endif
-
-    end subroutine setupGradientRHS
+      
+    end subroutine setupGradientRHSFlow

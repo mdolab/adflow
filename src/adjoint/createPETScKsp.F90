@@ -940,7 +940,7 @@ case(BlockJacobi)
    ! see .../petsc/docs/manualpages/PC/PCSetType.html
 
    call PCSetType( pc, PCBJACOBI, PETScIerr)
-   
+   call PCSetUp(pc,PETScIerr)
    Nsub = 1!_intType
    length = nCellsLocal*nw
    call PCBJacobiSetLocalBlocks(pc,Nsub,length,PETScIerr)

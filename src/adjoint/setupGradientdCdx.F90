@@ -139,9 +139,9 @@ subroutine setupGradientdCdx(level,costFunction)
   CfzAdj = zero
 
   yplusMax = zero
-
+  
   spectralLoopAdj: do sps=1,nTimeIntervalsSpectral
-
+     !print *,'tssps',sps,nTimeintervalsspectral
      ! Initialize the force and moment coefficients to 0.
 
      !zero the force components
@@ -243,6 +243,9 @@ subroutine setupGradientdCdx(level,costFunction)
 
            case (costFunccl0,costFuncclalpha)
               ClAdjB(sps) = 1
+
+           case (costFunccd0,costFunccdalpha)
+              CdAdjB(sps) = 1
               
            case (costFunccm0,costFunccmzalpha)
               CmzAdjB(sps) = 1     
@@ -272,7 +275,7 @@ subroutine setupGradientdCdx(level,costFunction)
                       /         (nTimeIntervalsSpectral*1.0)!to make denomenator a real number...
               enddo
            endif
-           
+           !print *,'cmzadjb(sps)',CmzAdjB(sps),sps
 	   call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
 &  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
@@ -283,98 +286,101 @@ subroutine setupGradientdCdx(level,costFunction)
 &  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
 &  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex,t)
 
-          ! Loop over cells to store the jacobian
+           ! Loop over cells to store the jacobian
 
-          do k = 0,ke
-            do j = 0,je
-              do i = 0,ie
-                 !*******************************************************
-                 !                                                      *
-                 ! Store the Values in PETSc.                           *
-                 !                                                      *
-                 !*******************************************************
-                 
-                 dJdxLocal(:) = xAdjB(i,j,k,:)
-                 
-                 !*******************************************************
-                 !                                                      *
-                 ! Transfer the block Jacobians to the PETSc vector.    *
-                 !                                                      *
-                 !*******************************************************
-                 
-                 ! When using the block vector format, one can insert
-                 ! elements more efficiently using the block variant.
-                 
-                 ! VecSetValuesBlocked - Inserts or adds blocks of values
-                 !                    into certain locations of a vector.
-                 ! Synopsis
-                 ! 
-                 ! #include "petscvec.h" 
-                 ! call VecSetValuesBlocked(Vec x,PetscInt ni,          &
-                 !            const PetscInt ix[],const PetscScalar y[],&
-                 !            InsertMode iora,PetscErrorCode ierr) 
-                 !
-                 ! Not Collective
-                 !
-                 ! Input Parameters
-                 !   x    - vector to insert in
-                 !   ni   - number of blocks to add
-                 !   ix   - indices where to add in block count,
-                 !          rather than element count
-                 !   y    - array of values
-                 !   iora - either INSERT_VALUES or ADD_VALUES,
-                 !          where ADD_VALUES adds values to any existing
-                 !          entries, and INSERT_VALUES replaces existing
-                 !          entries with new values
-                 ! Notes
-                 ! VecSetValuesBlocked() sets x[bs*ix[i]+j] = y[bs*i+j],
-                 !   for j=0,...,bs, for i=0,...,ni-1. where bs was set
-                 !   with VecSetBlockSize().
-                 !
-                 ! Calls to VecSetValuesBlocked() with the INSERT_VALUES
-                 !   and ADD_VALUES options cannot be mixed without
-                 !   intervening calls to the assembly routines.
-                 !
-                 ! These values may be cached, so VecAssemblyBegin() and
-                 !   VecAssemblyEnd() MUST be called after all calls to
-                 !   VecSetValuesBlocked() have been completed.
-                 !
-                 ! VecSetValuesBlocked() uses 0-based indices in Fortran
-                 !   as well as in C. 
-                 !
-                 ! see .../petsc/docs/manualpages/Vec/VecSetValuesBlocked.html
-                 
-                 ! Global vector block row mgb function of node indices.
-                 !
-                 ! VecSetValuesBlocked() uses 0-based row numbers but the
-                 ! global node numbering already accounts for that since
-                 ! it starts at node 0.
-                 do L = 1,3
-                    idxmgb = globalNode(i,j,k)*3+L
+           do k = 0,ke
+              do j = 0,je
+                 do i = 0,ie
+                    !*******************************************************
+                    !                                                      *
+                    ! Store the Values in PETSc.                           *
+                    !                                                      *
+                    !*******************************************************
                     
-                    if (idxmgb<nNodesGlobal*nTimeIntervalsSpectral.and.idxmgb>=0)then
-                       if (djdxlocal(L)/=0)then
-                          ! note: Add_values is used here to accumulate over the subfaces
-                          ! possible to add an if != 0 clause to speed up????
-                      
-                          call MatSetValues(dCdx, 1, sps-1, 1, idxmgb-1,   &
-                               xAdjb(i,j,k,L), ADD_VALUES, PETScIerr)
+                    dJdxLocal(:) = xAdjB(i,j,k,:)
                     
-                  
-                          if( PETScIerr/=0 ) then
-                             write(errorMessage,99) &
-                                  "Error in MatSetValues for global node", &
-                              idxmgb
-                             call terminate("setupGradientdCdx", &
-                                  errorMessage)
+                    !*******************************************************
+                    !                                                      *
+                    ! Transfer the block Jacobians to the PETSc vector.    *
+                    !                                                      *
+                    !*******************************************************
+                 
+                    ! When using the block vector format, one can insert
+                    ! elements more efficiently using the block variant.
+                    
+                    ! VecSetValuesBlocked - Inserts or adds blocks of values
+                    !                    into certain locations of a vector.
+                    ! Synopsis
+                    ! 
+                    ! #include "petscvec.h" 
+                    ! call VecSetValuesBlocked(Vec x,PetscInt ni,          &
+                    !            const PetscInt ix[],const PetscScalar y[],&
+                    !            InsertMode iora,PetscErrorCode ierr) 
+                    !
+                    ! Not Collective
+                    !
+                    ! Input Parameters
+                    !   x    - vector to insert in
+                    !   ni   - number of blocks to add
+                    !   ix   - indices where to add in block count,
+                    !          rather than element count
+                    !   y    - array of values
+                    !   iora - either INSERT_VALUES or ADD_VALUES,
+                    !          where ADD_VALUES adds values to any existing
+                    !          entries, and INSERT_VALUES replaces existing
+                    !          entries with new values
+                    ! Notes
+                    ! VecSetValuesBlocked() sets x[bs*ix[i]+j] = y[bs*i+j],
+                    !   for j=0,...,bs, for i=0,...,ni-1. where bs was set
+                    !   with VecSetBlockSize().
+                    !
+                    ! Calls to VecSetValuesBlocked() with the INSERT_VALUES
+                    !   and ADD_VALUES options cannot be mixed without
+                    !   intervening calls to the assembly routines.
+                    !
+                    ! These values may be cached, so VecAssemblyBegin() and
+                    !   VecAssemblyEnd() MUST be called after all calls to
+                    !   VecSetValuesBlocked() have been completed.
+                    !
+                    ! VecSetValuesBlocked() uses 0-based indices in Fortran
+                    !   as well as in C. 
+                    !
+                    ! see .../petsc/docs/manualpages/Vec/VecSetValuesBlocked.html
+                    
+                    ! Global vector block row mgb function of node indices.
+                    !
+                    ! VecSetValuesBlocked() uses 0-based row numbers but the
+                    ! global node numbering already accounts for that since
+                    ! it starts at node 0.
+                    do L = 1,3
+                       idxmgb = globalNode(i,j,k)*3+L
+                       
+                       !if (idxmgb<nNodesGlobal*nTimeIntervalsSpectral.and.idxmgb>=0)then
+                       if (idxmgb<nNodesGlobal*3*nTimeIntervalsSpectral.and.idxmgb>=0)then
+                          
+                          if (djdxlocal(L)/=0)then
+                             !print *,'indices',idxmgb,nNodesGlobal*nTimeIntervalsSpectral,djdxlocal(L)
+                             ! note: Add_values is used here to accumulate over the subfaces
+                             ! possible to add an if != 0 clause to speed up????
+                             !print *,'petsc sps',sps-1
+                             call MatSetValues(dCdx, 1, sps-1, 1, idxmgb-1,   &
+                                  xAdjb(i,j,k,L), ADD_VALUES, PETScIerr)
+                             
+                             
+                             if( PETScIerr/=0 ) then
+                                write(errorMessage,99) &
+                                     "Error in MatSetValues for global node", &
+                                     idxmgb
+                                call terminate("setupGradientdCdx", &
+                                     errorMessage)
+                             endif
                           endif
                        endif
-                    endif
-                 enddo
-              end do
+                    enddo
+                 end do
+              enddo
            enddo
-        enddo
-     enddo bocoLoop
+        enddo bocoLoop
 
         ! Deallocate the xAdj.
         deallocate(pAdj, stat=ierr)
@@ -407,7 +413,7 @@ subroutine setupGradientdCdx(level,costFunction)
      enddo domainLoopAD
 
   enddo spectralLoopAdj
-
+  print *,'end spectral loop'
 !
 !     ******************************************************************
 !     *                                                                *
@@ -455,13 +461,13 @@ subroutine setupGradientdCdx(level,costFunction)
 !
       ! VecView - Views a vector object.
 
-      !if( debug ) then
-        !call MatView(dCdx,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-	call MatView(dCdx,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
-        if( PETScIerr/=0 ) &
-          call terminate("setupGradientdCdx", "Error in MatView")
-        !pause
-      !endif
+      if( debug ) then
+         call MatView(dCdx,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+         !call MatView(dCdx,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+         if( PETScIerr/=0 ) &
+              call terminate("setupGradientdCdx", "Error in MatView")
+         !pause
+      endif
 
       ! Flush the output buffer and synchronize the processors.
 

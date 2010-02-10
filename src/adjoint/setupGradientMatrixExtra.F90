@@ -234,15 +234,15 @@
 			dRdaLocal(m,nDesignRotX) =rotrateadjb(1)
 			dRdaLocal(m,nDesignRotY) =rotrateadjb(2)
 			dRdaLocal(m,nDesignRotZ) =rotrateadjb(3)
-                        pvrlocal(m) = machAdjb!rotrateadjb(3)*timeref
+                        pvrlocal(m) = machgridAdjb!machAdjb!rotrateadjb(3)*timeref
                      enddo mLoop
 
-!temporary code to setup Direct solve
-                     idxmgb = globalCell(icell,jcell,kcell)
-                     
+!!$!temporary code to setup Direct solve
+!!$                     idxmgb = globalCell(icell,jcell,kcell)
+!!$                     
 !!$                     test = sum(pvrlocal(:))
 !!$                     !print *,'test',test
-!!$                     if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
+!!$                     if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal*nTimeIntervalsSpectral) then
 !!$                        !print *,'setting PETSc Vector',sum(wAdjB(icell,jcell,kcell,:))
 !!$                        !pvrlocal(:) = wFD2(iCell-1, jCell-1, kCell-1,:)
 !!$                        
@@ -259,7 +259,7 @@
 !!$                                errorMessage)
 !!$                        endif
 !!$                     endif
-!!$
+
               ! Transfer the block Jacobians to the global [dR/da]
               ! matrix by setting the corresponding block entries of
               ! the PETSc matrix dRda.

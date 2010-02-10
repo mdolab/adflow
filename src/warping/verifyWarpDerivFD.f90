@@ -15,6 +15,7 @@ subroutine verifyWarpDerivFD!(ncoords,xyzface,indices_new)
   use mdDataLocal
   use mdData, only: mdNSurfNodesCompact,mdGlobalSurfxx
   use warpingPETSc
+  use inputTimeSpectral !nTimeIntervalsSpectral
   implicit none
   !Subroutine Arguments
   !integer(kind=intType)::ncoords
@@ -78,8 +79,8 @@ subroutine verifyWarpDerivFD!(ncoords,xyzface,indices_new)
           "Memory allocation failure for surfacePoints")
   
   call mdCreateGlobalReducedSurfaceList
-
-  surfacePoints=mdGlobalSurfxx
+  do sps =1,nTimeIntervalsSpectral
+     surfacePoints=mdGlobalSurfxx(:,:,sps)
 
   print *,'in integrated warp FD'
   !Loop over each global surface node in turn
@@ -357,7 +358,7 @@ subroutine verifyWarpDerivFD!(ncoords,xyzface,indices_new)
         end do
      end do
   end do
-
+end do
 !
 !     ******************************************************************
 !     *                                                                *

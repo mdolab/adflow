@@ -200,17 +200,18 @@
 		!print *,'Case CL',clAdjb
 	 
              
-!!$            case (costFunccd0,costFuncdcddalpha)
-!!$	       !print *,'computing drag derivatives'
-!!$
-!!$               ClAdjB = 0
-!!$               CDAdjB(sps) = 1
-!!$               CfxAdjB = 0
-!!$               CfyAdjB = 0
-!!$               CfzAdjB = 0
-!!$               CmxAdjB = 0
-!!$               CmyAdjB = 0
-!!$               CmzAdjB = 0 
+            case (costFunccd0,costFunccdalpha)
+	       !print *,'computing drag derivatives'
+
+               ClAdjB = 0
+               CDAdjB = 0
+               CDAdjB(sps) = 1
+               CfxAdjB = 0
+               CfyAdjB = 0
+               CfzAdjB = 0
+               CmxAdjB = 0
+               CmyAdjB = 0
+               CmzAdjB = 0 
 
 !!$            case (costFuncForceXCoef)
 !!$

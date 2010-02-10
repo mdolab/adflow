@@ -28,7 +28,7 @@
 !
       ! nCostFunction Number of cost/constraint functions.
 
-      integer(kind=intType), parameter :: nCostFunction = 12_intType
+      integer(kind=intType), parameter :: nCostFunction = 14_intType
 
       integer(kind=intType), parameter :: costFuncLiftCoef = 1_intType,&
                                           costFuncDragCoef = 2_intType,&
@@ -41,7 +41,9 @@
                                           costFuncCmzAlpha  = 9_intType,&
                                           costFuncCm0      = 10_intType,&
                                           costFuncClAlpha  = 11_intType,&
-                                          costFuncCl0      = 12_intType
+                                          costFuncCl0      = 12_intType,&
+                                          costFuncCdAlpha  = 13_intType,&
+                                          costFuncCd0      = 14_intType
 
       ! Cost function names.
 
@@ -74,7 +76,8 @@
       real(kind=realType), allocatable, dimension(:,:) :: functionGrad
       real(kind=realType), allocatable, dimension(:,:) :: ADjoint
       real(kind=realType), allocatable, dimension(:,:) :: functionGradSpatial
-      real(kind=realType), allocatable, dimension(:,:) :: functionGradSurface
+      real(kind=realType), allocatable, dimension(:,:) :: functionGradSurfaceDV
+      real(kind=realType), allocatable, dimension(:,:) :: functionGradSurfaceDisp
       real(kind=realType), allocatable, dimension(:,:) :: functionGradStruct
       real(kind=realType), allocatable, dimension(:,:) :: functionGradCoupling
       real(kind=realType), allocatable, dimension(:,:) :: functionGradCouplingExp

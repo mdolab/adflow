@@ -394,7 +394,7 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
            !     ******************************************************************
            !
 
-           dJdaLocal = machadjb!+machcoefadjb
+           dJdaLocal = machadjb+machcoefadjb
 	   
            ! Set the corresponding single entry of the PETSc vector dJda.
 
@@ -424,7 +424,7 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
            !     ******************************************************************
            !
 
-           dJdaLocal = machcoefadjb!+machgridadjb
+           dJdaLocal = machcoefadjb+machgridadjb
 	   
            ! Set the corresponding single entry of the PETSc vector dJda.
 

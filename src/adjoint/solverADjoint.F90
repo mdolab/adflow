@@ -177,14 +177,14 @@
 !!$        ! Verify the node-based ADjoint residual routine.
 !!$
 !!$!	call verifydRdW(level,sps)
-      !call verifydRdWFile(level,sps)
+!      call verifydRdWFile(level,sps)
 !!$!        call verifydRdwFileFD(level)
 !     call verifydRdxFile(level)
 !return
-!!$      call verifydRdxsFile
+!      call verifydRdxsFile
 !!$!      call verifydRdxFileFD(level)
 !!$!stop
-!!$!return
+!return
 !!$        ! Verify the dRdx routine
 !!$
 !!$! 	call verifydRdx(level,sps)
@@ -276,11 +276,12 @@
 
       call setupGradientMatrixSpatial(level)
 
-      !call setupVolumeSurfaceDerivatives
+      call setupVolumeSurfaceDerivativesDV
 
-
-!!$      call solveDirectPETSc
-!!$return
+!      call setupSurfaceDirect
+!
+!      call solveDirectPETSc
+ !  return
 !!$!stop
 !
 !     ******************************************************************
@@ -290,7 +291,7 @@
 !     ******************************************************************
 !
 
-      functionLoop: do costFunction = 1, nCostFunction
+      functionLoop: do costFunction = 10,10!1, 1!nCostFunction
 
         !***************************************************************
         !                                                              *
@@ -316,7 +317,8 @@
         !                                                              *
         !***************************************************************
 
-        call setupGradientRHS(level,costFunction)
+        call setupGradientRHSFlow(level,costFunction)
+        call setupGradientRHSVolume(level,costFunction)
 
         ! Compute the total sensitivity dIda(nDesignExtra) and
         ! store it in the array functionGrad(nCostFunc,nDesignExtra)
@@ -330,7 +332,7 @@
 
         call computeADjointGradientSpatial(costFunction)
         !print *,'computing surface'
-        !call computeADjointGradientSurface(costFunction)
+        call computeADjointGradientSurfaceDV(costFunction)
 !!$
 !!$        ! Write the adjoint field solution, the convergence history and
 !!$        ! the cost function total sensitivity to file/screen.
@@ -360,7 +362,8 @@
       
       !print *,' new additions'
       !new additions
-      if(allocated(functionGradSurface)) deallocate(functionGradSurface)
+      if(allocated(functionGradSurfaceDV)) deallocate(functionGradSurfaceDV)
+      if(allocated(functionGradSurfaceDisp)) deallocate(functionGradSurfaceDisp)
       if(allocated(adjoint)) deallocate(adjoint)
       if(allocated(functionGradSpatial)) deallocate(functionGradSpatial)
       if(allocated(functionGradStruct)) deallocate(functionGradStruct)

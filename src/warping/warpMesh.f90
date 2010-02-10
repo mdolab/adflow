@@ -12,6 +12,7 @@ subroutine warpMesh
   ! updateGlobalFaces
 
   use blockpointers
+  use inputTimeSpectral !nTimeIntervalsSpectral
   implicit none
   !Subroutine Arguments
  
@@ -27,7 +28,7 @@ subroutine warpMesh
   !begin execution
 
   ! Now warp the blocks based on new face coordinates
-  
+do sps = 1,nTimeIntervalsSpectral
   do nn=1,nDom
      !print*,'warpingblock',nn
      call setPointers(nn,level,sps)     
@@ -69,5 +70,6 @@ subroutine warpMesh
      END DO
       deALLOCATE(XYZ0,XYZNEW)
   end do
+end do
  
 end subroutine warpMesh

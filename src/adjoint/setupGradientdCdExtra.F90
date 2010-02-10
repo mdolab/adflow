@@ -243,6 +243,9 @@ subroutine setupGradientdCdExtra(level,costFunction)
            case (costFunccl0,costFuncclalpha)
               ClAdjB(sps) = 1
 
+           case (costFunccd0,costFunccdalpha)
+              CdAdjB(sps) = 1
+
            case (costFunccm0,costFunccmzalpha)
               CmzAdjB(sps) = 1     
               
@@ -553,13 +556,13 @@ subroutine setupGradientdCdExtra(level,costFunction)
 !
       ! VecView - Views a vector object.
 
-      !if( debug ) then
+      if( debug ) then
         !call MatView(dCda,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
 	call MatView(dCda,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
         if( PETScIerr/=0 ) &
           call terminate("setupGradientdCdExtra", "Error in MatView")
         !pause
-      !endif
+      endif
 
       ! Flush the output buffer and synchronize the processors.
 

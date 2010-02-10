@@ -31,9 +31,9 @@
       real(kind=realType)::dcldp,dcldpdot,dcmzdp,dcmzdpdot         
       real(kind=realType)::dcldq,dcldqdot,dcmzdq,dcmzdqdot
       real(kind=realType)::dcldr,dcldrdot,dcmzdr,dcmzdrdot
-      real(kind=realType)::dcldalpha,dcldalphadot,dcmzdalpha,dcmzdalphadot
+      real(kind=realType)::dcldalpha,dcldalphadot,dcddalpha,dcmzdalpha,dcmzdalphadot
       real(kind=realType)::dcldMach,dcldMachdot,dcmzdMach,dcmzdMachdot
-      real(kind=realType)::cl0,cl0dot,cmz0,cmz0dot
+      real(kind=realType)::cl0,cl0dot,cD0,cmz0,cmz0dot
       
 
 !
@@ -44,7 +44,7 @@
 !     ******************************************************************
 !
 
-      call computeTSDerivatives(cl0,cmz0,dcldalpha,dcmzdalpha)
+      call computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,dcmzdalpha)
 
 
     end subroutine stabilityDerivativeDriver

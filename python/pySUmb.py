@@ -104,7 +104,7 @@ class SUMB(AeroSolver):
 		
 		Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
 		'''
-	
+		print 'keys',kwargs.keys()
 		# Pre-Processing
 		try:  kwargs['solver_options']['reinitialize']
 		except KeyError:
@@ -157,7 +157,9 @@ class SUMB(AeroSolver):
 		self.interface.WriteSurfaceSolutionFile(surfname)
 		
 		# get forces? from SUmb attributes
-		
+		if (kwargs['solver_options']['TS Stability'])=='yes':
+			self.interface.computeStabilityParameters()
+		#endif
 		
 		# Store Results
 		#aero_problem.addSol(self.__class__.__name__, sol_name, sol_time, sol_inform, 
@@ -347,7 +349,7 @@ class SUMB(AeroSolver):
 		#coords. in SUmb (meshwarping...)
 		self.interface.setupVolumeSurfaceDerivatives()
 
-	
+		self.interface.computeTotalVolumeDerivative(objective)
 		#compute and store the surface derivatives
 		self.interface.computeTotalSurfaceDerivative(objective)
 
@@ -362,7 +364,7 @@ class SUMB(AeroSolver):
 		#stop
 		#sys.exit(0)
 
-		return surfaceDerivative
+		return surfaceDerivative*self.interface.Mesh.metricConversion
 
 #*****************
 # Depricated!!

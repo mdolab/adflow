@@ -29,6 +29,7 @@
       use flowVarRefState !nw
       use blockPointers   !il,jl,kl,globalcell
       use communication
+      use inputTimeSpectral !nTimeIntervalsSpectral
       implicit none
 !
 !     Local variables.
@@ -43,7 +44,7 @@
       character(len=2*maxStringLen) :: errorMessage
 
       integer       :: nDimW
-      integer(kind=intType) :: i, j, k, iw,idxres,nn,ierr,localoffset
+      integer(kind=intType) :: i, j, k, iw,idxres,nn,ierr,localoffset,sps
       integer(kind=intType) :: iFile = 8
       character*32:: testfile,file1
       write(*,*)'In solveDirect Petsc.....'
@@ -244,6 +245,55 @@
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
                       mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
 
+ 
+      ! Get the iteration number when convergence or divergence
+      ! was detected.
+
+      ! KSPGetIterationNumber - Gets the current iteration number;
+      !                         if the KSPSolve() is complete, returns
+      !                         the number of iterations used.
+      ! Synopsis
+      !
+      ! #include "petscksp.h" 
+      ! call KSPGetIterationNumber(KSP ksp,PetscInt *its, &
+      !                            PetscErrorCode ierr)
+      !
+      ! Not Collective
+      !
+      ! Input Parameters
+      !   ksp - the iterative context
+      !
+      ! Output Parameters
+      !   its - number of iterations
+      !
+      ! Notes: During the ith iteration this returns i-1
+      !
+      ! see .../petsc/docs/manualpages/KSP/KSPGetIterationNumber.html
+      ! or PETSc users manual, pp.64
+
+      call KSPGetIterationNumber(ksp,adjConvIts,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("solveDirectPETSc", & 
+                       "Error in KSPGetIterationNumber.")
+
+      ! Use the root processor to display the output summary, such as
+      ! the norm of error and the number of iterations
+
+      if( PETScRank==0 ) then
+        write(*,20) "Solving Direct with PETSc time (s) =", timeAdj
+        !write(*,30) "Norm of error =",norm,"Iterations =",adjConvIts
+        write(*,*) "------------------------------------------------"
+        if( adjConvIts.lt.0 ) then
+          write(*,40) "PETSc solver diverged after", -adjConvIts, &
+                     "iterations..."
+        else
+          write(*,40) "PETSc solver converged after", adjConvIts, &
+                       "iterations."
+        endif
+        write(*,*) "------------------------------------------------"
+      endif
+
 !     *****************************************************************
 !     *                                                               *
 !     * Write the Solution to a File                                  *
@@ -264,27 +314,28 @@
       do i = 1,nDimW
           vecval = x_array(i_x + i)
 
-          write(iFile,11) -vecval
+          write(iFile,11) -vecval!*0.3048
 11        format(1x,'',f20.7)
       enddo
-
-      do nn=1,nDom
-         call setPointersAdj(nn,1,1)
-         do k= 2, kl
-            do j= 2, jl
-               do i= 2, il
-                  do iw = 1, nw
-		    
-                     idxres   = (globalCell(i,j,k)-localoffset)*nw+iw
-!                     print *,'index',i,j,k,iw,nn,i_x + idxres,i_x,idxres
-	             vecval = x_array(i_x + idxres)
-                    ! write(iFile+1, 12) -vecval ,nn,i,j,k,iw,idxres
-                     write(iFile+1+myID, 12) -vecval ,nn,i,j,k,iw,idxres+localoffset*nw
+      do sps = 1,nTimeIntervalsSpectral
+         do nn=1,nDom
+            call setPointersAdj(nn,1,1)
+            do k= 2, kl
+               do j= 2, jl
+                  do i= 2, il
+                     do iw = 1, nw
+                        
+                        idxres   = (globalCell(i,j,k)-localoffset)*nw+iw+nCellsGlobal*(sps-1)*nw
+                        !                     print *,'index',i,j,k,iw,nn,i_x + idxres,i_x,idxres
+                        vecval = x_array(i_x + idxres)!*0.3048
+                        ! write(iFile+1, 12) -vecval ,nn,i,j,k,iw,idxres
+                        write(iFile+1+myID, 12) -vecval ,nn,i,j,k,iw,idxres+localoffset*nw
+                     end do
                   end do
                end do
             end do
-         end do
-      enddo
+         enddo
+      end do
 12        format(1x,'dwdx',f20.9,6I8)
 
 

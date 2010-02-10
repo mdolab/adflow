@@ -1,14 +1,14 @@
 !
 !     ******************************************************************
 !     *                                                                *
-!     * File:          computeADjointGradientSurface.F90               *
+!     * File:          computeADjointGradientSurfaceDV.F90             *
 !     * Author:        C.A.(Sandy) Mader                               *
 !     * Starting date: 07-15-2009                                      *
-!     * Last modified: 07-15-2009                                      *
+!     * Last modified: 01-25-2010                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine computeADjointGradientSurface(costFunction)
+      subroutine computeADjointGradientSurfaceDV(costFunction)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -20,18 +20,22 @@
 !     * Compute the total cost/constraint function sensitivity as      *
 !     * dIdx = (dJdxv - psi^T dRdxv)*dxvdxs, where                     *
 !     *                                                                *
-!     *  dIdx [3*nNodesGlobal] is the total gradient of the cost       *
+!     *  dIdx [3*nNodesGlobal*nTimeIntervalsSpectral] is the total     *
+!     *            gradient of the cost                                *
 !     *            function with respect to the design variables,      *
 !     *                                                                *
-!     *  dJdx [3*nNodesglobal] is the partial gradient of the cost     *
+!     *  dJdx [3*nNodesglobal*nTimeIntervalsSpectral] is the partial   *
+!     *            gradient of the cost                                *
 !     *            function with respect to the design variables,      *
 !     *                                                                *
 !     *  psi [nDim] is the adjoint solution,                           *
 !     *                                                                *
-!     *  dRdx [nDim,3*nNodesGlobal] is the partial gradient of the     *
+!     *  dRdx [nDim,3*nNodesGlobal*nTimeIntervalsSpectral] is the      *
+!     *             partial gradient of the                            *
 !     *             residual with respect to the design variables,     *
 !     *                                                                *
-!     *  dxvdxs [3*nNodesGlobal,3*ndNSurfNodesCompact] is the          *
+!     *  dxvdxsDV [3*nNodesGlobal*nTimeIntervalsSpectral,              *
+!     *            3*ndNSurfNodesCompact] is the                       *
 !     *             derivative of the volume mesh wrt the surface      *
 !     *             coordinates(meshwarping)                           *
 !     *                                                                *
@@ -45,7 +49,7 @@
       use ADjointPETSc
       use ADjointVars
       !use warpingPETSc
-      use WarpingPETSc, only: dXvdXs,drdxs,didxs2,djdxs2
+      use WarpingPETSc, only: dXvdXsDV,drdxsDV,didxs2,djdxs2
       use mdData, only: mdNSurfNodesCompact
       use blockpointers !globalnode
       use inputTimeSpectral !nTimeIntervalsSpectral
@@ -70,7 +74,7 @@
       integer(kind=intType), dimension(:),allocatable :: nDesignGlobal
       integer(kind=intType), dimension(:),allocatable :: nDisplsGlobal 
       real(kind=realType),dimension(:),allocatable :: functionGradLocal
-      real(kind=realType),dimension(:,:),allocatable :: functionGradSurface2
+      real(kind=realType),dimension(:,:),allocatable :: functionGradSurfaceDV2
       logical :: designVarPresent 		
       integer(kind=intType) :: idx
       integer(kind=intType) :: idxlocal,i
@@ -90,27 +94,27 @@
         write(*,10) "Computing total sensitivity wrt Surface..."
 
       !Allocate storage for completed array
-      if(.not. allocated(functionGradSurface))&
-           allocate(functionGradSurface(nCostFunction,3*mdNSurfNodesCompact*nTimeIntervalsSpectral))
-      if(.not. allocated(functionGradSurface2))&
-           allocate(functionGradSurface2(nCostFunction,3*mdNSurfNodesCompact*nTimeIntervalsSpectral))
+      if(.not. allocated(functionGradSurfaceDV))&
+           allocate(functionGradSurfaceDV(nCostFunction,3*mdNSurfNodesCompact))
+!!$      if(.not. allocated(functionGradSurfaceDV2))&
+!!$           allocate(functionGradSurfaceDV2(nCostFunction,3*mdNSurfNodesCompact))
       !create the PETSc Vector aswell
       ! Create the vector. Depending on either this is a sequential or 
       ! parallel run,  PETSc automatically generates the apropriate
       ! vector type over all processes in PETSC_COMM_WORLD.
 
-      call VecCreate(PETSC_COMM_WORLD, dIdxs, PETScIerr)
-      call VecCreate(PETSC_COMM_WORLD, dIdxs2, PETScIerr)
-      call VecCreate(PETSC_COMM_WORLD, dJdxs2, PETScIerr)
+      call VecCreate(PETSC_COMM_WORLD, dIdxsDV, PETScIerr)
+!!$      call VecCreate(PETSC_COMM_WORLD, dIdxs2, PETScIerr)
+!!$      call VecCreate(PETSC_COMM_WORLD, dJdxs2, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("computeADjointGradientSurface", "Error in VecCreate dIdxs")
       
       ! Set the local size and let PETSc determine its global size
 
-      call VecSetSizes(dIdxs,PETSC_DECIDE,3*mdNSurfNodesCompact*nTimeIntervalsSpectral,PETScIerr)
-      call VecSetSizes(dIdxs2,PETSC_DECIDE,3*mdNSurfNodesCompact*nTimeIntervalsSpectral,PETScIerr)
-      call VecSetSizes(dJdxs2,PETSC_DECIDE,3*mdNSurfNodesCompact*nTimeIntervalsSpectral,PETScIerr)
+      call VecSetSizes(dIdxsDV,PETSC_DECIDE,3*mdNSurfNodesCompact,PETScIerr)
+!!$      call VecSetSizes(dIdxs2,PETSC_DECIDE,3*mdNSurfNodesCompact,PETScIerr)
+!!$      call VecSetSizes(dJdxs2,PETSC_DECIDE,3*mdNSurfNodesCompact,PETScIerr)
 
       if( PETScIerr/=0 ) then
         write(errorMessage,99) &
@@ -120,13 +124,13 @@
 
       ! Set the vector from options.
 
-      call VecSetFromOptions(dIdxs, PETScIerr)
-      call VecSetFromOptions(dIdxs2, PETScIerr)
-      call VecSetFromOptions(dJdxs2, PETScIerr)
+      call VecSetFromOptions(dIdxsDV, PETScIerr)
+!!$      call VecSetFromOptions(dIdxs2, PETScIerr)
+!!$      call VecSetFromOptions(dJdxs2, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScVec", &
-                       "Error in VecSetFromOptions dIdxs")
+                       "Error in VecSetFromOptions dIdxsDV")
 
       ! Get the initial time.
 
@@ -151,10 +155,10 @@
                        "Error in VecAYPX X")
 
       !now multiply by the volume surface derivative
-      call MatMultTranspose(dXvdXs,dIdx,dIdxs,PETScIerr)
+      call MatMultTranspose(dXvdXsDV,dIdx,dIdxsDV,PETScIerr)
 
-!      !now multiply by the volume surface derivative
-!      call MatMultTranspose(dXvdXs,dJdx,dIdxs,PETScIerr)
+      !!now multiply by the volume surface derivative
+      !call MatMultTranspose(dXvdXs,dJdx,dIdxs,PETScIerr)
 
       ! Get new time and compute the elapsed time.
 
@@ -171,14 +175,14 @@
         write(*,20) "Computing total sensitivity wrt Surface time (s) =", &
                     timeAdj
 
-      !Alternate solution      
-      !multiply and store in drdxs
-      call MatMatMult(dRdx,dXvdXs,MAT_INITIAL_MATRIX,PETSC_DEFAULT_DOUBLE_PRECISION,dRdXs, PETScIerr) 
-      
-      call MatMultTranspose(dXvdXs,dJdx,dJdxs2,PETScIerr)
-      call MatMultTranspose(dRdxs,psi,dIdxs2,PETScIerr)
-      call VecAYPX(dIdxs2,PETScNegOne,dJdxs2,PETScIerr)
-      ! View the solution vector dIdx.
+!!$      !Alternate solution      
+!!$      !multiply and store in drdxs
+!!$      call MatMatMult(dRdx,dXvdXsDV,MAT_INITIAL_MATRIX,PETSC_DEFAULT_DOUBLE_PRECISION,dRdXsDV, PETScIerr) 
+!!$      
+!!$      call MatMultTranspose(dXvdXsDV,dJdx,dJdxs2,PETScIerr)
+!!$      call MatMultTranspose(dRdxsDV,psi,dIdxs2,PETScIerr)
+!!$      call VecAYPX(dIdxs2,PETScNegOne,dJdxs2,PETScIerr)
+!!$      ! View the solution vector dIdx.
  
      if(  debug ) then
 
@@ -188,13 +192,13 @@
           write(*,*) "# ============================ "
         endif
 
-        call VecView(dIdxs,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+        call VecView(dIdxsDV,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
 !        call VecView(dIdx,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
 
         if( PETScIerr/=0 ) &
           call terminate("computeADjointGradientSurface", &
                          "Error in VecView")
-	pause
+!	pause
 
       endif
 !
@@ -208,7 +212,7 @@
       ! Query about the ownership range.
       ! iHigh is one more than the last element stored locally.
 
-      call VecGetOwnershipRange(dIdxs, iLow, iHigh, PETScIerr)
+      call VecGetOwnershipRange(dIdxsDV, iLow, iHigh, PETScIerr)
 	
 !      print *,'irange',ilow,ihigh,petscrank
 !      print *,'irange',iLow,iHigh
@@ -238,7 +242,7 @@
         n = n + 1
         designVarPresent = .true.
 
-        call VecGetValues(dIdxs, 1, idxmg, &
+        call VecGetValues(dIdxsDV, 1, idxmg, &
                           functionGradLocal(n), PETScIerr)
 	
 	!functionGradLocal(n) = idxmg !to debug interface with meshwarping derivatives	
@@ -300,7 +304,7 @@
 
 
        call mpi_allgatherv(functionGradLocal, nDesignLocal, sumb_real, &
-                       functionGradSurface(costFunction,:), nDesignGlobal,&
+                       functionGradSurfaceDV(costFunction,:), nDesignGlobal,&
                        nDisplsGlobal, sumb_real, &
                         PETSC_COMM_WORLD, PETScIerr)
 
@@ -310,121 +314,121 @@
       
       if (allocated(nDesignGlobal)) deallocate(nDesignGlobal)
       if (allocated(nDisplsGlobal)) deallocate(nDisplsGlobal)
-!!******************
-! Get alternate solution
-!************
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Transfer solution from PETSc context.                          *
-!     *                                                                *
-!     ******************************************************************
-!
-
-      ! Query about the ownership range.
-      ! iHigh is one more than the last element stored locally.
-
-      call VecGetOwnershipRange(dIdxs2, iLow, iHigh, PETScIerr)
-	
-!      print *,'irange',ilow,ihigh,petscrank
-!      print *,'irange',iLow,iHigh
-
-      if( PETScIerr/=0 ) &
-        call terminate("computeADjointGradientSurface", &
-                       "Error in VecGetOwnershipRange dIdxs")
-!      RETURN!!!!!!!!	
-
-
-      ! Determine the number of variables stores in the local processor.
-      ! Allocate memory to store the local function gradient values.
-      ! Note: it might result in a zero-size array but it's ok!
-
-      nDesignLocal = dim(iHigh,iLow)
-	
-      allocate( functionGradLocal(nDesignLocal) )
-
-      ! VecGetValues - Gets values from certain locations of a vector.
-      !           Currently can only get values on the same processor.
-
-      n = 0
-      designVarPresent = .false.
-
-      do idxmg=iLow, iHigh-1
-
-        n = n + 1
-        designVarPresent = .true.
-
-        call VecGetValues(dIdxs2, 1, idxmg, &
-                          functionGradLocal(n), PETScIerr)
-	
-	!functionGradLocal(n) = idxmg !to debug interface with meshwarping derivatives	
-
-        if( PETScIerr/=0 ) then
-           write(errorMessage,99) &
-                "Error in VecGetValues for global node", idxmg
-           call terminate("computeADjointGradientSurface", errorMessage)
-        endif
-
-     enddo
-
-      ! Gather the number of design variables stored per processor
-      ! in the root processor.
-
-      allocate( nDesignGlobal(PETScSize) )
-
-      !call mpi_gather(nDesignLocal, 1, sumb_integer, &
-      !                nDesignGlobal, 1, sumb_integer, &
-      !                0, PETSC_COMM_WORLD, PETScIerr)
-      call mpi_allgather(nDesignLocal, 1, sumb_integer, &
-                      nDesignGlobal, 1, sumb_integer, &
-                       PETSC_COMM_WORLD, PETScIerr)
-
-      ! Gather the displacement of the number of design variables
-      ! per processor in the root processor.
-
-      allocate( nDisplsGlobal(PETScSize) )
-
-      nDisplsLocal = iLow
-
-      !call mpi_gather(nDisplsLocal, 1, sumb_integer, &
-      !                nDisplsGlobal, 1, sumb_integer, &
-       !               0, PETSC_COMM_WORLD, PETScIerr)
-      call mpi_allgather(nDisplsLocal, 1, sumb_integer, &
-                      nDisplsGlobal, 1, sumb_integer, &
-                       PETSC_COMM_WORLD, PETScIerr)
-
-      ! Gather the total gradients in the root processor.
-      ! Note: if the local processor does not hold any design variable
-      !   then nDesignLocal = 0 and nothing is actually sent to the
-      !   processor.
-
-
-       call mpi_allgatherv(functionGradLocal, nDesignLocal, sumb_real, &
-                       functionGradSurface2(costFunction,:), nDesignGlobal,&
-                       nDisplsGlobal, sumb_real, &
-                        PETSC_COMM_WORLD, PETScIerr)
-!*********
-!Print Both solutions
-!**************
-
-
-!!$      if(PetscRank == 0)then
-!!$        
-!!$	 print *,'printing result'
-!!$         do i = 1,3*mdNSurfNodesCompact
-!!$            print *,'costfunction derivative',functionGradSurface(costFunction,i),functionGradSurface2(costfunction,i),i
-!!$         enddo
-!!$      endif
-      
-
-      ! Release memory to store the local function gradient values.
-
-      if (allocated(functionGradLocal)) deallocate(functionGradLocal)
-      
-      if (allocated(nDesignGlobal)) deallocate(nDesignGlobal)
-      if (allocated(nDisplsGlobal)) deallocate(nDisplsGlobal)
-      if (allocated(functionGradSurface2)) deallocate(functionGradSurface2)
-      ! Flush the output buffer and synchronize the processors.
+!!$!!******************
+!!$! Get alternate solution
+!!$!************
+!!$!
+!!$!     ******************************************************************
+!!$!     *                                                                *
+!!$!     * Transfer solution from PETSc context.                          *
+!!$!     *                                                                *
+!!$!     ******************************************************************
+!!$!
+!!$
+!!$      ! Query about the ownership range.
+!!$      ! iHigh is one more than the last element stored locally.
+!!$
+!!$      call VecGetOwnershipRange(dIdxs2, iLow, iHigh, PETScIerr)
+!!$	
+!!$!      print *,'irange',ilow,ihigh,petscrank
+!!$!      print *,'irange',iLow,iHigh
+!!$
+!!$      if( PETScIerr/=0 ) &
+!!$        call terminate("computeADjointGradientSurface", &
+!!$                       "Error in VecGetOwnershipRange dIdxs")
+!!$!      RETURN!!!!!!!!	
+!!$
+!!$
+!!$      ! Determine the number of variables stores in the local processor.
+!!$      ! Allocate memory to store the local function gradient values.
+!!$      ! Note: it might result in a zero-size array but it's ok!
+!!$
+!!$      nDesignLocal = dim(iHigh,iLow)
+!!$	
+!!$      allocate( functionGradLocal(nDesignLocal) )
+!!$
+!!$      ! VecGetValues - Gets values from certain locations of a vector.
+!!$      !           Currently can only get values on the same processor.
+!!$
+!!$      n = 0
+!!$      designVarPresent = .false.
+!!$
+!!$      do idxmg=iLow, iHigh-1
+!!$
+!!$        n = n + 1
+!!$        designVarPresent = .true.
+!!$
+!!$        call VecGetValues(dIdxs2, 1, idxmg, &
+!!$                          functionGradLocal(n), PETScIerr)
+!!$	
+!!$	!functionGradLocal(n) = idxmg !to debug interface with meshwarping derivatives	
+!!$
+!!$        if( PETScIerr/=0 ) then
+!!$           write(errorMessage,99) &
+!!$                "Error in VecGetValues for global node", idxmg
+!!$           call terminate("computeADjointGradientSurface", errorMessage)
+!!$        endif
+!!$
+!!$     enddo
+!!$
+!!$      ! Gather the number of design variables stored per processor
+!!$      ! in the root processor.
+!!$
+!!$      allocate( nDesignGlobal(PETScSize) )
+!!$
+!!$      !call mpi_gather(nDesignLocal, 1, sumb_integer, &
+!!$      !                nDesignGlobal, 1, sumb_integer, &
+!!$      !                0, PETSC_COMM_WORLD, PETScIerr)
+!!$      call mpi_allgather(nDesignLocal, 1, sumb_integer, &
+!!$                      nDesignGlobal, 1, sumb_integer, &
+!!$                       PETSC_COMM_WORLD, PETScIerr)
+!!$
+!!$      ! Gather the displacement of the number of design variables
+!!$      ! per processor in the root processor.
+!!$
+!!$      allocate( nDisplsGlobal(PETScSize) )
+!!$
+!!$      nDisplsLocal = iLow
+!!$
+!!$      !call mpi_gather(nDisplsLocal, 1, sumb_integer, &
+!!$      !                nDisplsGlobal, 1, sumb_integer, &
+!!$       !               0, PETSC_COMM_WORLD, PETScIerr)
+!!$      call mpi_allgather(nDisplsLocal, 1, sumb_integer, &
+!!$                      nDisplsGlobal, 1, sumb_integer, &
+!!$                       PETSC_COMM_WORLD, PETScIerr)
+!!$
+!!$      ! Gather the total gradients in the root processor.
+!!$      ! Note: if the local processor does not hold any design variable
+!!$      !   then nDesignLocal = 0 and nothing is actually sent to the
+!!$      !   processor.
+!!$
+!!$
+!!$       call mpi_allgatherv(functionGradLocal, nDesignLocal, sumb_real, &
+!!$                       functionGradSurfaceDV2(costFunction,:), nDesignGlobal,&
+!!$                       nDisplsGlobal, sumb_real, &
+!!$                        PETSC_COMM_WORLD, PETScIerr)
+!!$!*********
+!!$!Print Both solutions
+!!$!**************
+!!$
+!!$
+      if(PetscRank == 0)then
+        
+	 print *,'printing result'
+         do i = 1,3*mdNSurfNodesCompact
+            print *,'costfunction derivative',functionGradSurfacedv(costFunction,i),i!,functionGradSurfacedv2(costfunction,i),i
+         enddo
+      endif
+!!$      
+!!$
+!!$      ! Release memory to store the local function gradient values.
+!!$
+!!$      if (allocated(functionGradLocal)) deallocate(functionGradLocal)
+!!$      
+!!$      if (allocated(nDesignGlobal)) deallocate(nDesignGlobal)
+!!$      if (allocated(nDisplsGlobal)) deallocate(nDisplsGlobal)
+!!$      if (allocated(functionGradSurfaceDV2)) deallocate(functionGradSurfaceDV2)
+!!$      ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
       call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
@@ -437,4 +441,4 @@
 !
 #endif
 
-    end subroutine computeADjointGradientSurface
+    end subroutine computeADjointGradientSurfaceDV

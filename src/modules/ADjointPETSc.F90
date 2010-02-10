@@ -153,8 +153,8 @@
       !       {dIdW} = {dJdW} - {psi}^T [dRda]. Row vector.
       !       Size[nDesign].
 
-      Vec     dJda, dIda 
-      Vec     dJdx, dJcdx,dJdy, dJdz, dIdx, dIdy, dIdz,dIdxs
+      Vec     dJda, dIda ,selector
+      Vec     dJdx, dJcdx,dJdy, dJdz, dIdx, dIdy, dIdz,dIdxsDisp,dIdxsdv
 
       ! Some useful real constants
 
