@@ -83,3 +83,59 @@
        enddo
 
        end subroutine updateMetricsAllLevels
+
+       subroutine updateGridVelocitiesAllLevels
+
+!
+!      ******************************************************************
+!      *                                                                *
+!      * updateGridVelocitesAllLevels recomputes the rotational         *
+!      * parameters on all grid                                         *
+!      * levels. This routine is typically called when the coordinates  *
+!      * have changed, but the connectivity remains the same, i.e. for  *
+!      * moving or deforming mesh problems.                             *
+!      *                                                                *
+!      ******************************************************************
+!
+       use block
+       use iteration
+       use section
+       use monitor
+       use inputTimeSpectral
+       use inputPhysics
+       implicit none
+
+       !subroutine variables
+
+       !Local Variables
+       
+       integer(kind=inttype):: mm,nnn
+
+       real(kind=realType), dimension(nSections) :: t
+
+       do mm=1,nTimeIntervalsSpectral
+          
+          ! Compute the time, which corresponds to this spectral solution.
+          ! For steady and unsteady mode this is simply the restart time;
+          ! for the spectral mode the periodic time must be taken into
+          ! account, which can be different for every section.
+          
+          t = timeUnsteadyRestart
+          
+          if(equationMode == timeSpectral) then
+             do nnn=1,nSections
+                t(nnn) = t(nnn) + (mm-1)*sections(nnn)%timePeriod &
+                     /         real(nTimeIntervalsSpectral,realType)
+             enddo
+          endif
+          
+          call gridVelocitiesFineLevel(.false., t, mm)
+          call gridVelocitiesCoarseLevels(mm)
+          call normalVelocitiesAllLevels(mm)
+          
+          call slipVelocitiesFineLevel(.false., t, mm)
+          call slipVelocitiesCoarseLevels(mm)
+          
+       enddo
+       
+     end subroutine updateGridVelocitiesAllLevels

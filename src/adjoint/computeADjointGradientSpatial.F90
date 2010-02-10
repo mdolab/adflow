@@ -226,7 +226,6 @@
 !      print *,'costfunction',costFunction,nDisplsGlobal,'shapes',shape(functionGradSpatial),'s2',shape(functionGradLocal)
 !	call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)	
 !	stop
-
 !      call mpi_gatherv(functionGradLocal, nDesignLocal, sumb_real, &
 !                       functionGradSpatial(costFunction,:), nDesignGlobal,&
 !                       nDisplsGlobal, sumb_real, &
@@ -245,13 +244,13 @@
                        nDisplsGlobal, sumb_real, &
                         PETSC_COMM_WORLD, PETScIerr)
 
-!!$if (PETScRank==0) then
-!!$   do i = 1,size(functionGradSpatial(costFunction,:) )
-!!$      if (functionGradSpatial(costFunction,i).ne. 0.0)then
-!!$         print *,'vol.deriv:',functionGradSpatial(costFunction,i),i
-!!$      endif
-!!$   end do
-!!$end if
+if (PETScRank==0) then
+   do i = 1,size(functionGradSpatial(costFunction,:) )
+      if (functionGradSpatial(costFunction,i).ne. 0.0)then
+         print *,'vol.deriv:',functionGradSpatial(costFunction,i),i
+      endif
+   end do
+end if
 !	if (PETScRank==0) then
 !	     print *,'spatial function',functionGradSpatial(costFunction,:) 
 !        endif

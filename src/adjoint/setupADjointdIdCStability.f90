@@ -91,16 +91,16 @@
 
       integer :: ierr
 
-      real(kind=realType)::dcldp,dcldpdot,dcmzdp,dcmzdpdot         
-      real(kind=realType)::dcldq,dcldqdot,dcmzdq,dcmzdqdot
-      real(kind=realType)::dcldr,dcldrdot,dcmzdr,dcmzdrdot
-      real(kind=realType)::dcldalpha,dcldalphadot,dcmzdalpha,dcmzdalphadot
-      real(kind=realType)::dcldMach,dcldMachdot,dcmzdMach,dcmzdMachdot
-      real(kind=realType)::cl0,cl0dot,cmz0,cmz0dot
-      real(kind=realType)::cl0b,cmz0b
-      real(kind=realType)::dcldalphab,dcmzdalphab
+      real(kind=realType)::dcldp,dcldpdot,dcddp,dcddpdot,dcmzdp,dcmzdpdot
+      real(kind=realType)::dcldq,dcldqdot,dcddq,dcddqdot,dcmzdq,dcmzdqdot
+      real(kind=realType)::dcldr,dcldrdot,dcddr,dcddrdot,dcmzdr,dcmzdrdot
+      real(kind=realType)::dcldalpha,dcldalphadot,dcddalpha,dcddalphadot,dcmzdalpha,dcmzdalphadot
+      real(kind=realType)::dcldMach,dcldMachdot,dcddMach,dcddMachdot,dcmzdMach,dcmzdMachdot
+      real(kind=realType)::cl0,cl0dot,cd0,cd0dot,cmz0,cmz0dot
+      real(kind=realType)::cl0b,cd0b,cmz0b
+      real(kind=realType)::dcldalphab,dcddalphab,dcmzdalphab
 
-      real(kind=realType)::cl0Adj,cmz0Adj,dcldalphaAdj,dcmzdalphaAdj
+      real(kind=realType)::cl0Adj,cd0Adj,cmz0Adj,dcldalphaAdj,dcddalphaAdj,dcmzdalphaAdj
       !real(kind=realType)::cl0AdjB,cmz0AdjB,dcldalphaAdjB,dcmzdalphaAdjB
 
       !Temporary storage for petsc
@@ -348,6 +348,10 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
          cl0b=1.0
       case(costfuncclalpha)
          dcldalphab = 1.0
+      case(costfunccd0)
+         cd0b=1.0
+      case(costfunccdalpha)
+         dcddalphab = 1.0
       case(costfunccm0)
          cmz0b=1.0
       case(costfunccmzalpha)
@@ -355,8 +359,9 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
       end select
 
       call COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
-           cmyadj, cmzadj, cmzadjb, cladj, cladjb, cdadj, cl0, cl0b, &
-           cmz0, cmz0b,dcldalpha, dcldalphab, dcmzdalpha, dcmzdalphab)
+&  cmyadj, cmzadj, cmzadjb, cladj, cladjb, cdadj, cdadjb, cl0, cl0b, cd0&
+&  , cd0b, cmz0, cmz0b, dcldalpha, dcldalphab, dcddalpha, dcddalphab, &
+&  dcmzdalpha, dcmzdalphab)
  
       
       do sps = 1,nTimeIntervalsSpectral
@@ -364,6 +369,8 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
          select case(costFunction)
          case(costfunccl0,costfuncclalpha)
             dIdctemp = Cladjb(sps)
+         case(costfunccd0,costfunccdalpha)
+            dIdctemp = Cdadjb(sps)
          case(costfunccm0,costfunccmzalpha)
             dIdctemp = cmzAdjb(sps)
             

@@ -88,48 +88,46 @@
       endif
       call initializeWarping(famID)
       
-      call setupVolumeSurfaceDerivativesDV
+      call setupVolumeSurfaceDerivativesDisp
 
       !multiply and store in drdxs
       call MatMatMult(dRdx,dXvdXsDV,MAT_INITIAL_MATRIX,PETSC_DEFAULT_DOUBLE_PRECISION,dRdXsDV, PETScIerr) 
 
 
       !now extract and write to a file
-      !do sps = 1,nTimeIntervalsSpectral
-      print *,'sps',sps
-      do nn = 1,mdNSurfNodesCompact
-         do m = 1, 3
-            idxnode   = (nn-1)*3+m 
-            do sps2 = 1,nTimeIntervalsSpectral
-               do nnn = 1,ndom
-                  call setPointersAdj(nnn,1,sps2)
-                  DO I=2,Il
-                     DO J=2,Jl
-                        DO K=2,Kl
-                           do n = 1,nw
-                              idxres = globalCell(i,j,k)*nw+n
-                              if ((idxres-1)>=0 .and. (idxnode-1)>=0)then
-                                 call MatGetValues(drdxsdv,1,idxres-1,1,idxnode-1,value,PETScIerr)
-                                 !if(value.ne.0)then
-                                 if(abs(value)>1e-10)then
-                                    !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
-                                    !12                                     format(1x,'Face',6I2,'edge',12I2)
-                                    write(unitdrdxs,13) idxnode,idxres,m,nn,n,k,j,i,nnn,sps2,value
-                                    !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
-13                                  format(1x,'drdxs',10I8,f18.10)
-                                 endif
-                              end if
-                           enddo
+      do sps = 1,nTimeIntervalsSpectral
+         do nn = 1,mdNSurfNodesCompact
+            do m = 1, 3
+               idxnode   = (nn-1)*3+m+mdNSurfNodesCompact*(sps-1) 
+               do sps2 = 1,nTimeIntervalsSpectral
+                  do nnn = 1,ndom
+                     call setPointersAdj(nnn,1,sps2)
+                     DO I=2,Il
+                        DO J=2,Jl
+                           DO K=2,Kl
+                              do n = 1,nw
+                                 idxres = globalCell(i,j,k)*nw+n
+                                 if ((idxres-1)>=0 .and. (idxnode-1)>=0)then
+                                    call MatGetValues(drdxsdv,1,idxres-1,1,idxnode-1,value,PETScIerr)
+                                    !if(value.ne.0)then
+                                    if(abs(value)>1e-10)then
+                                       !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
+                                       !12                                     format(1x,'Face',6I2,'edge',12I2)
+                                       write(unitdrdxs,13) idxnode,idxres,m,nn,sps,n,k,j,i,nnn,sps2,value
+                                       !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
+13                                     format(1x,'drdxs',9I8,f18.10)
+                                    endif
+                                 end if
+                              enddo
+                           END DO
                         END DO
                      END DO
-                  END DO
-                  !print *,'spsloop',sps
-                  call setPointersAdj(nnn,1,sps)
-               end do
-            enddo
-         end do
-      enddo
-      
+                     call setPointersAdj(nnn,1,sps)
+                  end do
+               enddo
+            end do
+         enddo
+      end do
       call mpi_barrier(SUmb_comm_world, ierr)
       
       close(unitdrdxs)

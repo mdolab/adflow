@@ -48,14 +48,14 @@
        uInf2 = MachCoef*MachCoef*gammaInf*pInf/rhoInf
 
        ! Allocate the memory for wInf.
-       
+      
        if( allocated(wInf)) deallocate(wInf)
-
+      
        allocate(wInf(nw), stat=ierr)
        if(ierr /= 0)                             &
          call terminate("setFlowReferenceState", &
                         "Memory allocation failure for wInf")
-
+      
        ! Set the reference value of the flow variables, except the total
        ! energy. This will be computed at the end of this routine.
 
@@ -63,10 +63,10 @@
        wInf(ivx)  = uInf*velDirFreestream(1)
        wInf(ivy)  = uInf*velDirFreestream(2)
        wInf(ivz)  = uInf*velDirFreestream(3)
-
+       
        ! Set the turbulent variables if transport variables are
        ! to be solved.
-
+       
        if(equations == RANSEquations) then
 
          nuInf  = muInf/rhoInf
@@ -108,15 +108,15 @@
 
        ! Set the value of pInfCorr. In case a k-equation is present
        ! add 2/3 times rho*k.
-
+       
        pInfCorr = pInf
        if( kPresent ) pInfCorr = pInf + two*third*rhoInf*wInf(itu1)
 
        ! Compute the free stream total energy.
-
+       
        ktmp = zero
        if( kPresent ) ktmp = wInf(itu1)
        call etotArray(rhoInf, uInf, zero, zero, pInfCorr, ktmp, &
                        wInf(irhoE), kPresent, 1_intType)
-
+       
        end subroutine setFlowInfinityState

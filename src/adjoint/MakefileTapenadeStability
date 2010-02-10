@@ -102,7 +102,7 @@ TAPENADE_PARSERFILESEPARATOR = "/"
 
 # Dependent output variables (separator: white space, default: all)
 
-TAPENADE_OUTVARS = "cl0 cmz0 dcldalpha dcmzdalpha"
+TAPENADE_OUTVARS = "cl0 cd0 cmz0 dcldalpha dcddalpha dcmzdalpha"
 
 # Independent input variables (separator: white space, default: all)
 

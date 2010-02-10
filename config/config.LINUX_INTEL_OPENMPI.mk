@@ -61,8 +61,10 @@ CC   = mpicc
 #      * CGNS include and linker flags.                                 *
 #      *                                                                *
 #      ******************************************************************
-CGNS_INCLUDE_FLAGS = -I$(HOME)/Ubunto_setup_files/cgnslib_2.4
-CGNS_LINKER_FLAGS  = -L$(HOME)/Ubunto_setup_files/cgnslib_2.4/LINUX -lcgns
+#CGNS_INCLUDE_FLAGS = -I$(HOME)/Ubunto_setup_files/cgnslib_2.4
+#CGNS_LINKER_FLAGS  = -L$(HOME)/Ubunto_setup_files/cgnslib_2.4/LINUX -lcgns
+CGNS_INCLUDE_FLAGS = -I$(HOME)/Ubunto_setup_files/cgnslib_2.4_back
+CGNS_LINKER_FLAGS  = -L$(HOME)/Ubunto_setup_files/cgnslib_2.4_back/LINUX -lcgns
 #CGNS_INCLUDE_FLAGS = -I/usr/local/include
 #CGNS_LINKER_FLAGS  = -L/usr/local/lib64 -lcgns.intel
 #CGNS_LINKER_FLAGS  = -L/usr/local/lib -lcgns.intel
@@ -105,13 +107,13 @@ FF90_GEN_FLAGS = -DHAS_ISNAN
 CC_GEN_FLAGS   =
 
 #FF90_OPTFLAGS   = -O3 -ipo -ipo_obj
-FF90_OPTFLAGS   = -O2 -r8 -fpic# -check all #-tpp7 -xW -unroll -ip
+FF90_OPTFLAGS   = -g -O2 -r8 -fpic# -check all #-tpp7 -xW -unroll -ip
 #CC_OPTFLAGS     = -O3 -fexpensive-optimizations -frerun-cse-after-loop \
-		  -fthread-jumps -funroll-loops -finline-functions
-CC_OPTFLAGS     = -O -fpic
+#		  -fthread-jumps -funroll-loops -finline-functions
+CC_OPTFLAGS     = -g -O -fpic
 
 #FF90_DEBUGFLAGS = -g -C -implicitnone -ftrapuv -debug extended \
-		  -traceback -DDEBUG_MODE
+#		  -traceback -DDEBUG_MODE
 #FF90_DEBUGFLAGS = -g -implicitnone -DDEBUG_MODE
 #CC_DEBUGFLAGS   = -g -Wall -pedantic -DDEBUG_MODE
 

@@ -2,10 +2,10 @@
 !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
 !  
 !  Differentiation of computetsstabilityderivadj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: dcldalpha cladj
-!                cl0 cmzadj dcmzdalpha cmz0
-!   of linear combination of output variables: dcldalpha cl0 dcmzdalpha
-!                cmz0
+!   gradient, with respect to input variables: cdadj dcldalpha
+!                cladj cl0 dcddalpha cmzadj dcmzdalpha cd0 cmz0
+!   of linear combination of output variables: dcldalpha cl0 dcddalpha
+!                dcmzdalpha cd0 cmz0
 !
 !     ******************************************************************
 !     *                                                                *
@@ -17,8 +17,9 @@
 !     ******************************************************************
 !
 SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
-&  cmyadj, cmzadj, cmzadjb, cladj, cladjb, cdadj, cl0, cl0b, cmz0, cmz0b&
-&  , dcldalpha, dcldalphab, dcmzdalpha, dcmzdalphab)
+&  cmyadj, cmzadj, cmzadjb, cladj, cladjb, cdadj, cdadjb, cl0, cl0b, cd0&
+&  , cd0b, cmz0, cmz0b, dcldalpha, dcldalphab, dcddalpha, dcddalphab, &
+&  dcmzdalpha, dcmzdalphab)
   USE communication
   USE inputmotion
   USE inputphysics
@@ -27,25 +28,26 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
   USE monitor
   USE section
   IMPLICIT NONE
-  REAL(KIND=REALTYPE) :: cdadj(ntimeintervalsspectral), cfxadj(&
-&  ntimeintervalsspectral), cfyadj(ntimeintervalsspectral), cfzadj(&
-&  ntimeintervalsspectral), cladj(ntimeintervalsspectral), cladjb(&
-&  ntimeintervalsspectral), cmxadj(ntimeintervalsspectral), cmyadj(&
-&  ntimeintervalsspectral), cmzadj(ntimeintervalsspectral), cmzadjb(&
-&  ntimeintervalsspectral)
-  REAL(KIND=REALTYPE) :: cl0, cl0b, cmz0, cmz0b
-  REAL(KIND=REALTYPE) :: dcldalpha, dcldalphab, dcmzdalpha, dcmzdalphab
+  REAL(KIND=REALTYPE) :: cd0, cd0b, cl0, cl0b, cmz0, cmz0b
+  REAL(KIND=REALTYPE) :: cdadj(ntimeintervalsspectral), cdadjb(&
+&  ntimeintervalsspectral), cfxadj(ntimeintervalsspectral), cfyadj(&
+&  ntimeintervalsspectral), cfzadj(ntimeintervalsspectral), cladj(&
+&  ntimeintervalsspectral), cladjb(ntimeintervalsspectral), cmxadj(&
+&  ntimeintervalsspectral), cmyadj(ntimeintervalsspectral), cmzadj(&
+&  ntimeintervalsspectral), cmzadjb(ntimeintervalsspectral)
+  REAL(KIND=REALTYPE) :: dcddalpha, dcddalphab, dcldalpha, dcldalphab, &
+&  dcmzdalpha, dcmzdalphab
   INTEGER :: branch
-  REAL(KIND=REALTYPE) :: cl0dot, cmz0dot
-  REAL(KIND=REALTYPE) :: dcldalphadot, dcmzdalphadot
-  REAL(KIND=REALTYPE) :: dcldmach, dcldmachb, dcldmachdot, dcmzdmach, &
-&  dcmzdmachb, dcmzdmachdot
-  REAL(KIND=REALTYPE) :: dcldp, dcldpb, dcldpdot, dcmzdp, dcmzdpb, &
-&  dcmzdpdot
-  REAL(KIND=REALTYPE) :: dcldq, dcldqb, dcldqdot, dcmzdq, dcmzdqb, &
-&  dcmzdqdot
-  REAL(KIND=REALTYPE) :: dcldr, dcldrb, dcldrdot, dcmzdr, dcmzdrb, &
-&  dcmzdrdot
+  REAL(KIND=REALTYPE) :: cd0dot, cl0dot, cmz0dot
+  REAL(KIND=REALTYPE) :: dcddalphadot, dcldalphadot, dcmzdalphadot
+  REAL(KIND=REALTYPE) :: dcddq, dcddqb, dcddqdot, dcldq, dcldqb, &
+&  dcldqdot, dcmzdq, dcmzdqb, dcmzdqdot
+  REAL(KIND=REALTYPE) :: dcddr, dcddrb, dcddrdot, dcldr, dcldrb, &
+&  dcldrdot, dcmzdr, dcmzdrb, dcmzdrdot
+  REAL(KIND=REALTYPE) :: dcddmach, dcddmachb, dcddmachdot, dcldmach, &
+&  dcldmachb, dcldmachdot, dcmzdmach, dcmzdmachb, dcmzdmachdot
+  REAL(KIND=REALTYPE) :: dcddp, dcddpb, dcddpdot, dcldp, dcldpb, &
+&  dcldpdot, dcmzdp, dcmzdpb, dcmzdpdot
   REAL(KIND=REALTYPE) :: DERIVATIVERIGIDROTANGLE, res, res0, res1, &
 &  SECONDDERIVATIVERIGIDROTANGLE
   REAL(KIND=REALTYPE) :: dphix(ntimeintervalsspectral), dphiy(&
@@ -98,11 +100,18 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
 !now compute dCl/dp
     CALL COMPUTELEASTSQUARESREGRESSION(cladj, dphix, &
 &                                 ntimeintervalsspectral, dcldp, cl0)
+!now compute dCd/dp
+    CALL COMPUTELEASTSQUARESREGRESSION(cdadj, dphix, &
+&                                 ntimeintervalsspectral, dcddp, cd0)
 !now compute dCmz/dp
     dcmzdpb = 0.0
     CALL COMPUTELEASTSQUARESREGRESSION_B(cmzadj, cmzadjb, dphix, &
 &                                   ntimeintervalsspectral, dcmzdp, &
 &                                   dcmzdpb, cmz0, cmz0b)
+    dcddpb = 0.0
+    CALL COMPUTELEASTSQUARESREGRESSION_B(cdadj, cdadjb, dphix, &
+&                                   ntimeintervalsspectral, dcddp, &
+&                                   dcddpb, cd0, cd0b)
     dcldpb = 0.0
     CALL COMPUTELEASTSQUARESREGRESSION_B(cladj, cladjb, dphix, &
 &                                   ntimeintervalsspectral, dcldp, &
@@ -141,11 +150,18 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
 !now compute dCl/dq
     CALL COMPUTELEASTSQUARESREGRESSION(cladj, dphiz, &
 &                                 ntimeintervalsspectral, dcldq, cl0)
+!now compute dCd/dq
+    CALL COMPUTELEASTSQUARESREGRESSION(cdadj, dphiz, &
+&                                 ntimeintervalsspectral, dcddq, cd0)
 !now compute dCmz/dq
     dcmzdqb = 0.0
     CALL COMPUTELEASTSQUARESREGRESSION_B(cmzadj, cmzadjb, dphiz, &
 &                                   ntimeintervalsspectral, dcmzdq, &
 &                                   dcmzdqb, cmz0, cmz0b)
+    dcddqb = 0.0
+    CALL COMPUTELEASTSQUARESREGRESSION_B(cdadj, cdadjb, dphiz, &
+&                                   ntimeintervalsspectral, dcddq, &
+&                                   dcddqb, cd0, cd0b)
     dcldqb = 0.0
     CALL COMPUTELEASTSQUARESREGRESSION_B(cladj, cladjb, dphiz, &
 &                                   ntimeintervalsspectral, dcldq, &
@@ -184,11 +200,18 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
 !now compute dCl/dr
     CALL COMPUTELEASTSQUARESREGRESSION(cladj, dphiy, &
 &                                 ntimeintervalsspectral, dcldr, cl0)
+!now compute dCD/dr
+    CALL COMPUTELEASTSQUARESREGRESSION(cdadj, dphiy, &
+&                                 ntimeintervalsspectral, dcddr, cd0)
 !now compute dCmz/dr
     dcmzdrb = 0.0
     CALL COMPUTELEASTSQUARESREGRESSION_B(cmzadj, cmzadjb, dphiy, &
 &                                   ntimeintervalsspectral, dcmzdr, &
 &                                   dcmzdrb, cmz0, cmz0b)
+    dcddrb = 0.0
+    CALL COMPUTELEASTSQUARESREGRESSION_B(cdadj, cdadjb, dphiy, &
+&                                   ntimeintervalsspectral, dcddr, &
+&                                   dcddrb, cd0, cd0b)
     dcldrb = 0.0
     CALL COMPUTELEASTSQUARESREGRESSION_B(cladj, cladjb, dphiy, &
 &                                   ntimeintervalsspectral, dcldr, &
@@ -223,10 +246,17 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
     CALL COMPUTELEASTSQUARESREGRESSION(cladj, intervalalpha, &
 &                                 ntimeintervalsspectral, dcldalpha, cl0&
 &                                )
+!now compute dCd/dalpha
+    CALL COMPUTELEASTSQUARESREGRESSION(cdadj, intervalalpha, &
+&                                 ntimeintervalsspectral, dcddalpha, cd0&
+&                                )
 !now compute dCmz/dq
     CALL COMPUTELEASTSQUARESREGRESSION_B(cmzadj, cmzadjb, intervalalpha&
 &                                   , ntimeintervalsspectral, dcmzdalpha&
 &                                   , dcmzdalphab, cmz0, cmz0b)
+    CALL COMPUTELEASTSQUARESREGRESSION_B(cdadj, cdadjb, intervalalpha, &
+&                                   ntimeintervalsspectral, dcddalpha, &
+&                                   dcddalphab, cd0, cd0b)
     CALL COMPUTELEASTSQUARESREGRESSION_B(cladj, cladjb, intervalalpha, &
 &                                   ntimeintervalsspectral, dcldalpha, &
 &                                   dcldalphab, cl0, cl0b)
@@ -259,11 +289,18 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
 !now compute dCl/dalpha
     CALL COMPUTELEASTSQUARESREGRESSION(cladj, intervalmach, &
 &                                 ntimeintervalsspectral, dcldmach, cl0)
+!now compute dCd/dalpha
+    CALL COMPUTELEASTSQUARESREGRESSION(cdadj, intervalmach, &
+&                                 ntimeintervalsspectral, dcddmach, cd0)
 !now compute dCmz/dq
     dcmzdmachb = 0.0
     CALL COMPUTELEASTSQUARESREGRESSION_B(cmzadj, cmzadjb, intervalmach, &
 &                                   ntimeintervalsspectral, dcmzdmach, &
 &                                   dcmzdmachb, cmz0, cmz0b)
+    dcddmachb = 0.0
+    CALL COMPUTELEASTSQUARESREGRESSION_B(cdadj, cdadjb, intervalmach, &
+&                                   ntimeintervalsspectral, dcddmach, &
+&                                   dcddmachb, cd0, cd0b)
     dcldmachb = 0.0
     CALL COMPUTELEASTSQUARESREGRESSION_B(cladj, cladjb, intervalmach, &
 &                                   ntimeintervalsspectral, dcldmach, &
@@ -273,11 +310,14 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
       IF (.NOT.branch .LT. 1) nn = 0
     END DO
   ELSE
+    cdadjb(1:ntimeintervalsspectral) = 0.0
     cladjb(1:ntimeintervalsspectral) = 0.0
     cmzadjb(1:ntimeintervalsspectral) = 0.0
   END IF
   dcldalphab = 0.0
   cl0b = 0.0
+  dcddalphab = 0.0
   dcmzdalphab = 0.0
+  cd0b = 0.0
   cmz0b = 0.0
 END SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B

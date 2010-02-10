@@ -45,7 +45,8 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       computeAeroExpCoupling.o  \
 	       computeADjointGradientExtra.o\
 	       computeADjointGradientSpatial.o\
-	       computeADjointGradientSurface.o\
+	       computeADjointGradientSurfaceDV.o\
+               computeADjointGradientSurfaceDisp.o\
 	       copyADjointStencil.o     \
 	       createPETScKsp.o         \
 	       createPETScMat.o         \
@@ -79,12 +80,14 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       setupCouplingTotalStruct.o\
 	       solveADjointPETSc.o      \
 	       solveDirectPETSc.o       \
+	       setupSurfaceDirect.o     \
 	       setupADjointTotalStruct.o\
 	       setupGradientdCdExtra.o\
 	       setupGradientdCdx.o \
 	       setupGradientMatrixExtra.o\
 	       setupGradientMatrixSpatial.o\
-               setupGradientRHS.o\
+               setupGradientRHSFlow.o\
+	       setupGradientRHSVolume.o\
 	       setupGradientRHSExtra.o\
 	       setupGradientRHSSpatial.o\
                setupGradientRHSStability.o\

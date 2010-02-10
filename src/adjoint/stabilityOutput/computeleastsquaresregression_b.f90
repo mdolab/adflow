@@ -17,6 +17,7 @@
 SUBROUTINE COMPUTELEASTSQUARESREGRESSION_B(y, yb, x, npts, m, mb, b, bb)
   USE precision
   IMPLICIT NONE
+!print *,'m,b:',m,b
   REAL(KIND=REALTYPE) :: b, bb, m, mb
   INTEGER(KIND=INTTYPE) :: npts
   REAL(KIND=REALTYPE) :: x(npts), y(npts), yb(npts)

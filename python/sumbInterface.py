@@ -311,6 +311,7 @@ class SUmbMesh(object):
             sumb.updateslidingalllevels()
             #print 'update metrics'
             sumb.updatemetricsalllevels()
+            sumb.updategridvelocitiesalllevels()
             self._update_geom_info = False
 
     def GetNumberBlocks(self):
@@ -637,7 +638,7 @@ class SUmbInterface(object):
         sumb.inputphysics.liftdirection = liftDir
         sumb.inputphysics.dragdirection = dragDir
 
-        #print 'Alpha',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha,velDir,liftDir,dragDir
+        print 'Alpha',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha,velDir,liftDir,dragDir
         #update the flow vars
         sumb.updateflow()
         return
@@ -788,7 +789,7 @@ class SUmbInterface(object):
         else:
             Rotating = True
         #endif
-        if Rotating:
+        if Rotating or sol_type=='Time Spectral':
             autofile.write(  "                             Mach: %12.12e\n"%(0))
             autofile.write(  "            Mach for coefficients: %12.12e\n"%(aero_problem._flows.mach))
             autofile.write(  "            Mach for mesh velocity: %12.12e\n"%(aero_problem._flows.mach))
@@ -928,29 +929,22 @@ class SUmbInterface(object):
             autofile.write( "\n")
         #endif
 
-        if eqn_type=='Time_Spectral':
+        if sol_type=='Time Spectral':
             #! Write the keywords and default values for the time spectral
             #! parameters.
 
             autofile.write("-------------------------------------------------------------------------------\n")
-##             write(writeUnit,"(a)") "     Time Spectral Parameters"
-##             write(writeUnit,"(a)") "-----------------------------------------&
-##             &--------------------------------------"
-##             write(writeUnit,"(a)") "             Number time intervals spectral: &
-##             &MISSING PARAMETER"
-##             write(writeUnit,"(a)")
-##             write(writeUnit,"(a)") "            Write file for unsteady restart: &
-##             &no"
-##             write(writeUnit,"(a)") "    Time step (in sec) for unsteady restart: &
-##             &MISSING PARAMETER"
-##             write(writeUnit,"(a)")
-##             write(writeUnit,"(a)") "       Write unsteady volume solution files: &
-##             &no"
-##             write(writeUnit,"(a)") "      Write unsteady surface solution files: &
-##             &no"
-##             write(writeUnit,"(a)") "          Number of unsteady solution files: &
-##             &MISSING PARAMETER"
-##             write(writeUnit,"(a)")
+            autofile.write("     Time Spectral Parameters\n")
+            autofile.write("-------------------------------------------------------------------------------\n")
+            autofile.write("             Number time intervals spectral: %d\n"%(kwargs['solver_options']['Time Intervals']))
+            autofile.write("\n")
+            autofile.write("            Write file for unsteady restart: no\n")
+            autofile.write("    Time step (in sec) for unsteady restart: 1000\n")
+            autofile.write("\n")
+            autofile.write("       Write unsteady volume solution files: no\n")
+            autofile.write("      Write unsteady surface solution files: no\n")
+            autofile.write("          Number of unsteady solution files: 0\n")
+            autofile.write("\n")
         #endif
 
         #! Write the keywords and default values for the iteration
@@ -1036,6 +1030,8 @@ class SUmbInterface(object):
         autofile.write(  "                  # Other possibility: no\n")
         autofile.write(  "	                 set monitor   :  %s\n"%(kwargs['solver_options']['set Monitor']))
         autofile.write(  "                  # Other possibility: no\n")
+        autofile.write(  "       Use Approximate Preconditioner: %s\n"%(kwargs['solver_options']['Approx PC']))
+        autofile.write(  "                  # Other possibility: yes/no\n")
         autofile.write(  " 	            Adjoint solver type: %s\n"%(kwargs['solver_options']['Adjoint solver type']))
         autofile.write(  "                # Other possibilities: BiCGStab\n")
         autofile.write(  "                #                      CG\n")
@@ -1047,6 +1043,8 @@ class SUmbInterface(object):
         autofile.write(  "        adjoint max iterations       : %d\n"%kwargs['solver_options']['adjoint max iterations'])
         autofile.write(  "        adjoint restart iteration    : %d\n"%kwargs['solver_options']['adjoint restart iteration'])
         autofile.write(  "        adjoint monitor step         : %d\n"%kwargs['solver_options']['adjoint monitor step'])
+        autofile.write(  "        dissipation lumping parameter: %d\n"%kwargs['solver_options']['dissipation lumping parameter'])
+        
         autofile.write(  "                  Preconditioner Side: %s\n"%(kwargs['solver_options']['Preconditioner Side']))
         autofile.write(  "                # Other possibilities: Left\n")
         autofile.write(  "                #                      Right\n")
@@ -1072,6 +1070,22 @@ class SUmbInterface(object):
         autofile.write(  "            #                          RowSum\n")
         autofile.write(  "            #                          RowAbs\n")
 
+        #Write the options for the Time Spectral stability derivatives to the input file
+        
+        autofile.write(  "-------------------------------------------------------------------------------\n")
+        autofile.write(  "TS Stability Derivative Parameters\n")
+        autofile.write(  "-------------------------------------------------------------------------------\n")
+	autofile.write(  "compute TS stability derivatives : %s\n"%(kwargs['solver_options']['TS Stability']))
+	autofile.write(  "#Other Possibilities:               no\n")
+        if kwargs['solver_options']['TS Stability']== 'yes':
+            autofile.write(  "TS Alpha mode: %s\n"%(kwargs['solver_options']['Alpha Mode']))
+            autofile.write(  "TS Beta mode: %s\n"%(kwargs['solver_options']['Beta Mode']))
+            autofile.write(  "TS p mode: %s\n"%(kwargs['solver_options']['p Mode']))
+            autofile.write(  "TS q mode: %s\n"%(kwargs['solver_options']['q Mode']))
+            autofile.write(  "TS r mode: %s\n"%(kwargs['solver_options']['r Mode']))
+            autofile.write(  "TS Mach number mode: %s\n"%(kwargs['solver_options']['Mach Mode']))
+            autofile.write(  "TS Altitude mode: %s\n"%(kwargs['solver_options']['Altitude Mode']))
+        #endif
 
         #! Write the keywords and default values for the parallel, i.e.
         #! load balance parameters.
@@ -1093,17 +1107,64 @@ class SUmbInterface(object):
 ##        autofile.write( ) "          pV3 visualization only: no"
 ##        autofile.write( )
 
+        if sol_type=='Time Spectral':
 ##        ! Write the keywords and example values for the grid motion.
+            
+            autofile.write("-------------------------------------------------------------------------------\n")
+            autofile.write("     Grid motion Parameters\n")
+            autofile.write( "-------------------------------------------------------------------------------\n")
 
-##        autofile.write( ) "-----------------------------------------&
-##                               &--------------------------------------"
-##        autofile.write( ) "     Grid motion Parameters"
-##        autofile.write( ) "-----------------------------------------&
-##                               &--------------------------------------"
+            autofile.write( "     Rotation point body (x,y,z): %12.12e %12.12e %12.12e\n"%(kwargs['solver_options']['rotCenter'][0],kwargs['solver_options']['rotCenter'][1],kwargs['solver_options']['rotCenter'][2]))
+            autofile.write("\n" )
 
-##        autofile.write( ) "     Rotation point body (x,y,z): 0.0 0.0 0.0"
-##        autofile.write( )
+            # inputs for TS stability derivatives
+            autofile.write( "Degree polynomial Alpha: 0\n")
+            autofile.write( "Degree polynomial Beta: 0\n")
+            autofile.write( "Degree polynomial Mach: 0\n")
+            
+            autofile.write( "Polynomial coefficients Alpha: 0.0\n")
+            autofile.write( "Polynomial coefficients Beta: 0.0\n")
+            autofile.write( "Polynomial coefficients Mach: 0.0\n")
 
+            if kwargs['solver_options']['Alpha Mode'] =='yes':
+                autofile.write( "Degree fourier Alpha: 1\n")
+                autofile.write( "Degree fourier Beta: 0\n")
+                autofile.write( "Degree fourier Mach: 0#1\n")
+            elif kwargs['solver_options']['Beta Mode'] =='yes':
+                autofile.write( "Degree fourier Alpha: 0\n")
+                autofile.write( "Degree fourier Beta: 1\n")
+                autofile.write( "Degree fourier Mach: 0\n")
+            elif kwargs['solver_options']['Mach Mode'] =='yes':
+                autofile.write( "Degree fourier Alpha: 0\n")
+                autofile.write( "Degree fourier Beta: 0\n")
+                autofile.write( "Degree fourier Mach: 1\n")
+            #endif
+
+            if kwargs['solver_options']['Alpha Mode'] =='yes':
+                autofile.write( "Omega fourier Alpha: %f\n"%(kwargs['solver_options']['Omega fourier']))
+                autofile.write( "Omega fourier Beta: 0.0\n")
+                autofile.write( "Omega fourier Mach: 0.0\n")
+            elif kwargs['solver_options']['Beta Mode'] =='yes':
+                autofile.write( "Omega fourier Alpha: 0.0\n")
+                autofile.write( "Omega fourier Beta: %f\n"%(kwargs['solver_options']['Omega fourier']))
+                autofile.write( "Omega fourier Mach: 0.0\n")
+            elif kwargs['solver_options']['Mach Mode'] =='yes':
+                autofile.write( "Omega fourier Alpha: 0.0\n")
+                autofile.write( "Omega fourier Beta: 0.0\n")
+                autofile.write( "Omega fourier Mach: %f\n"%(kwargs['solver_options']['Omega fourier']))
+            #endif
+
+            if kwargs['solver_options']['Alpha Mode'] =='yes':
+                autofile.write( "Fourier cosine coefficients Alpha: 0.0 0.0\n")
+                autofile.write( "Fourier sine coefficients Alpha: %12.12e\n"%(kwargs['solver_options']['Fourier sine coefficient']))
+            elif kwargs['solver_options']['Beta Mode'] =='yes':
+                autofile.write( "Fourier cosine coefficients Beta: 0.0 0.0\n")
+                autofile.write( "Fourier sine coefficients Beta: %12.12e\n"%(kwargs['solver_options']['Fourier sine coefficient']))
+            elif kwargs['solver_options']['Mach Mode'] =='yes':
+                autofile.write( "Fourier cosine coefficients Mach: 0.0 0.0\n")
+                autofile.write( "Fourier sine coefficients Mach: %12.12e\n"%(kwargs['solver_options']['Fourier sine coefficient']))
+            #endif
+        #endif
 ##        autofile.write( ) "    Degree polynomial x-rotation: 0"
 ##        autofile.write( ) "    Degree polynomial y-rotation: 0"
 ##        autofile.write( ) "    Degree polynomial z-rotation: 1"
@@ -1422,6 +1483,7 @@ class SUmbInterface(object):
         #print 'new file written'
         sumb.solver()
         if self.myid ==0:print 'solver called'
+        
 ## ################################################################
 ## # The code below reproduces solver.F90 in python
 ## # See file solver.F90
@@ -1792,6 +1854,12 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
 
         if self.myid==0:
@@ -1800,7 +1868,7 @@ class SUmbInterface(object):
     
         #print SUmbCostfunctions[objective]
 
-        sumb.setupadjointrhs(self.level,self.sps,SUmbCostfunctions[objective])
+        sumb.setupadjointrhs(self.level,SUmbCostfunctions[objective])
 
         return
 
@@ -1816,6 +1884,7 @@ class SUmbInterface(object):
         '''
         Run solverADjoint to verify the partial derivatives in the ADjoint
         '''
+        print 'in interface verify partials'
         sumb.solveradjoint()
 
         return
@@ -1834,17 +1903,29 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
-				       'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
-				       'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
-				       'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
-				       'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
-				       'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
-				       'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
-				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
-				       }
+                               'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+                               'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+                               'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+                               'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+                               'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+                               'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+                               'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               'cMzAlpha':'cMzAlpha',\
+                               'cM0':'cM0',\
+                               'clAlpha':'clAlpha',\
+                               'cl0':'cl0',\
+                               'cdAlpha':'cdAlpha',\
+                               'cd0':'cd0'
+                               }
         
         #for item in objective:
         if self.myid==0:
@@ -1852,7 +1933,8 @@ class SUmbInterface(object):
             print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
         #endif
         
-        sumb.setupgradientrhsspatial(self.level,SUmbCostfunctions[possibleObjectives[objective]])
+        sumb.setupgradientrhsvolume(self.level,SUmbCostfunctions[possibleObjectives[objective]])
+        #sumb.setupgradientrhsspatial(self.level,SUmbCostfunctions[possibleObjectives[objective]],self.sps)
         #endfor
 
         return
@@ -1870,25 +1952,38 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
-				       'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
-				       'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
-				       'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
-				       'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
-				       'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
-				       'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
-				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
-				       }
+                               'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+                               'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+                               'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+                               'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+                               'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+                               'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+                               'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               'cMzAlpha':'cMzAlpha',\
+                               'cM0':'cM0',\
+                               'clAlpha':'clAlpha',\
+                               'cl0':'cl0',\
+                               'cdAlpha':'cdAlpha',\
+                               'cd0':'cd0'
+                               }
         
         #for item in objective:
         if self.myid==0:
             print 'Computing RHS Partial for costfuntion: ',possibleObjectives[objective]#item#objective[item]
             print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
         #endif
-        
-        sumb.setupgradientrhsextra(self.level,SUmbCostfunctions[possibleObjectives[objective]])
+
+        sumb.setupgradientrhsflow(self.level,SUmbCostfunctions[possibleObjectives[objective]])
+        #sumb.setupgradientrhsextra(self.level,SUmbCostfunctions[possibleObjectives[objective]],self.sps)
         #endfor
 
         return
@@ -1920,7 +2015,7 @@ class SUmbInterface(object):
         """Set up the derivative of the volume mesh  w.r.t. the
         CFD Surface...(meshwarpingderivatives)"""
         
-        sumb.setupvolumesurfacederivatives()
+        sumb.setupvolumesurfacederivativesdv()
         
 	if (self.myid == 0):
             print "Meshwarping derivatives set up successfully."
@@ -1939,17 +2034,29 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
-				       'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
-				       'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
-				       'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
-				       'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
-				       'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
-				       'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
-				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
-				       }
+                               'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+                               'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+                               'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+                               'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+                               'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+                               'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+                               'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               'cMzAlpha':'cMzAlpha',\
+                               'cM0':'cM0',\
+                               'clAlpha':'clAlpha',\
+                               'cl0':'cl0',\
+                               'cdAlpha':'cdAlpha',\
+                               'cd0':'cd0'
+                               }
         
         #for item in objective:
         if self.myid==0:
@@ -1957,7 +2064,7 @@ class SUmbInterface(object):
             print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
         #endif
         
-        sumb.computeadjointgradientsurface(SUmbCostfunctions[possibleObjectives[objective]])
+        sumb.computeadjointgradientsurfacedv(SUmbCostfunctions[possibleObjectives[objective]])
         #endfor
 
         return
@@ -1974,17 +2081,29 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
-				       'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
-				       'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
-				       'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
-				       'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
-				       'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
-				       'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
-				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
-				       }
+                               'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+                               'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+                               'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+                               'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+                               'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+                               'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+                               'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               'cMzAlpha':'cMzAlpha',\
+                               'cM0':'cM0',\
+                               'clAlpha':'clAlpha',\
+                               'cl0':'cl0',\
+                               'cdAlpha':'cdAlpha',\
+                               'cd0':'cd0'
+                               }
         
         #for item in objective:
         if self.myid==0:
@@ -2011,6 +2130,12 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
         
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2021,6 +2146,12 @@ class SUmbInterface(object):
                                'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
                                'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
                                'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               'cMzAlpha':'cMzAlpha',\
+                               'cM0':'cM0',\
+                               'clAlpha':'clAlpha',\
+                               'cl0':'cl0',\
+                               'cdAlpha':'cdAlpha',\
+                               'cd0':'cd0'
                                }
         
         grad = numpy.zeros((sumb.adjointvars.ndesignspatial),float)
@@ -2048,6 +2179,12 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
         
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2058,10 +2195,16 @@ class SUmbInterface(object):
                                'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
                                'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
                                'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               'cMzAlpha':'cMzAlpha',\
+                               'cM0':'cM0',\
+                               'clAlpha':'clAlpha',\
+                               'cl0':'cl0',\
+                               'cdAlpha':'cdAlpha',\
+                               'cd0':'cd0'
                                }
         
         grad = numpy.zeros((3*sumb.mddata.mdnsurfnodescompact),float)
-        grad[:] = sumb.adjointvars.functiongradsurface[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
+        grad[:] = sumb.adjointvars.functiongradsurfacedv[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
    
         
         return grad
@@ -2078,17 +2221,29 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
-				       'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
-				       'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
-				       'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
-				       'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
-				       'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
-				       'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
-				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
-				       }
+                               'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+                               'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+                               'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+                               'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+                               'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+                               'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+                               'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               'cMzAlpha':'cMzAlpha',\
+                               'cM0':'cM0',\
+                               'clAlpha':'clAlpha',\
+                               'cl0':'cl0',\
+                               'cdAlpha':'cdAlpha',\
+                               'cd0':'cd0'
+                               }
         
         #for item in objective:
         if self.myid==0:
@@ -2115,6 +2270,12 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
         
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2125,6 +2286,12 @@ class SUmbInterface(object):
                                'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
                                'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
                                'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               'cMzAlpha':'cMzAlpha',\
+                               'cM0':'cM0',\
+                               'clAlpha':'clAlpha',\
+                               'cl0':'cl0',\
+                               'cdAlpha':'cdAlpha',\
+                               'cd0':'cd0'
                                }
         
         grad = numpy.zeros((sumb.adjointvars.ndesignextra),float)
@@ -2149,17 +2316,29 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
-				       'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
-				       'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
-				       'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
-				       'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
-				       'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
-				       'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
-				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
-				       }
+                               'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+                               'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+                               'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+                               'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+                               'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+                               'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+                               'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               'cMzAlpha':'cMzAlpha',\
+                               'cM0':'cM0',\
+                               'clAlpha':'clAlpha',\
+                               'cl0':'cl0',\
+                               'cdAlpha':'cdAlpha',\
+                               'cd0':'cd0'
+                               }
         
         #for item in objective:
         if self.myid==0:
@@ -2186,6 +2365,12 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
         
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2196,6 +2381,12 @@ class SUmbInterface(object):
                                'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
                                'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
                                'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               'cMzAlpha':'cMzAlpha',\
+                               'cM0':'cM0',\
+                               'clAlpha':'clAlpha',\
+                               'cl0':'cl0',\
+                               'cdAlpha':'cdAlpha',\
+                               'cd0':'cd0'
                                }
         
         grad = numpy.zeros((sumb.adjointvars.ndesignspatial),float)
@@ -2221,17 +2412,29 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
-				       'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
-				       'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
-				       'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
-				       'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
-				       'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
-				       'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
-				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
-				       }
+                               'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
+                               'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
+                               'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
+                               'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
+                               'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
+                               'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
+                               'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               'cMzAlpha':'cMzAlpha',\
+                               'cM0':'cM0',\
+                               'clAlpha':'clAlpha',\
+                               'cl0':'cl0',\
+                               'cdAlpha':'cdAlpha',\
+                               'cd0':'cd0'
+                               }
         try:
             #for item in objective:
             if self.myid==0:
@@ -2260,6 +2463,12 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2270,6 +2479,12 @@ class SUmbInterface(object):
                                'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
                                'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
                                'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               'cMzAlpha':'cMzAlpha',\
+                               'cM0':'cM0',\
+                               'clAlpha':'clAlpha',\
+                               'cl0':'cl0',\
+                               'cdAlpha':'cdAlpha',\
+                               'cd0':'cd0'
                                }
         
         grad = numpy.zeros((sumb.adjointvars.ndesignspatial),float)
@@ -2309,6 +2524,12 @@ class SUmbInterface(object):
                          'cMx':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncmomxcoef-1],\
                          'cMy':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncmomycoef-1],\
                          'cMz':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncmomzcoef-1],\
+                         'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                         'cM0':sumb.adjointvars.costfunccm0,\
+                         'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                         'cl0':sumb.adjointvars.costfunccl0,\
+                         'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                         'cd0':sumb.adjointvars.costfunccd0
                          }
 
         return SUmbsolutions
@@ -2338,6 +2559,12 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
         
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2348,6 +2575,12 @@ class SUmbInterface(object):
                                'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
                                'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
                                'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               'cMzAlpha':'cMzAlpha',\
+                               'cM0':'cM0',\
+                               'clAlpha':'clAlpha',\
+                               'cl0':'cl0',\
+                               'cdAlpha':'cdAlpha',\
+                               'cd0':'cd0'
                                }
 
         sumb.getadjoint(SUmbCostfunctions[possibleObjectives[objective]])
@@ -2376,6 +2609,12 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
         
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2386,6 +2625,12 @@ class SUmbInterface(object):
                                'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
                                'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
                                'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               'cMzAlpha':'cMzAlpha',\
+                               'cM0':'cM0',\
+                               'clAlpha':'clAlpha',\
+                               'cl0':'cl0',\
+                               'cdAlpha':'cdAlpha',\
+                               'cd0':'cd0'
                                }
         
         grad = numpy.zeros((sumb.adjointvars.ndesignspatial),float)
@@ -2413,6 +2658,12 @@ class SUmbInterface(object):
                              'cMx':sumb.adjointvars.costfuncmomxcoef,\
                              'cMy':sumb.adjointvars.costfuncmomycoef,\
                              'cMz':sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':sumb.adjointvars.costfunccm0,\
+                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
+                             'cl0':sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
+                             'cd0':sumb.adjointvars.costfunccd0
                              }
         
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2423,6 +2674,12 @@ class SUmbInterface(object):
                                'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
                                'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
                                'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
+                               'cMzAlpha':'cMzAlpha',\
+                               'cM0':'cM0',\
+                               'clAlpha':'clAlpha',\
+                               'cl0':'cl0',\
+                               'cdAlpha':'cdAlpha',\
+                               'cd0':'cd0'
                                }
         try:
             #for item in objective:
@@ -2435,6 +2692,16 @@ class SUmbInterface(object):
         except:
             print 'not an aerodynamic cost function'
         #end
+
+        return
+
+    def computeStabilityParameters(self):
+        '''
+        run the stability derivative driver to compute the stability parameters
+        from the time spectral solution
+        '''
+
+        sumb.stabilityderivativedriver()
 
         return
     

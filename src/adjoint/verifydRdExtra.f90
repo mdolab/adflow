@@ -118,13 +118,13 @@
       character(len=2*maxStringLen) :: errorMessage
      !File Parameters
       integer :: unitM = 8,unitAoA = 30,unitSSA = 12,unitRotx = 13,unitMgrid = 14,ierror,unitRoty,unitRotz
-      character(len = 16)::outfile,testfile
+      character(len = 32)::outfile,testfile
 
       write(testfile,100) myid!12
 100   format (i5)  
       testfile=adjustl(testfile)
       write(outfile,101) trim(testfile)!testfile
-101   format("CSMachfile",a,".out")
+101   format("ADMachfile",a,".out")
       !outfile = "CSMachfile.txt"
       unitM = 8+myID
       !outfile = "CSMachfile.txt"
@@ -138,7 +138,7 @@
 102   format (i5)  
       testfile=adjustl(testfile)
       write(outfile,103) trim(testfile)!testfile
-103   format("CSAoAfile",a,".out")
+103   format("ADAoAfile",a,".out")
       unitAoA = 8+myID+nproc*1
       !outfile = "CSAOAfile.txt"
       
@@ -151,7 +151,7 @@
 104   format (i5)  
       testfile=adjustl(testfile)
       write(outfile,105) trim(testfile)!testfile
-105   format("CSSSAfile",a,".out")
+105   format("ADSSAfile",a,".out")
       unitSSA = 8+myID+nproc*2
       !outfile = "CSSSAfile.txt"
       
@@ -165,7 +165,7 @@
 106   format (i5)  
       testfile=adjustl(testfile)
       write(outfile,107) trim(testfile)!testfile
-107   format("CSRotxfile",a,".out")
+107   format("ADRotxfile",a,".out")
       unitrotx = 8+myID+nproc*3
       !outfile = "CSRotxfile.txt"
       
@@ -179,7 +179,7 @@
 108   format (i5)  
       testfile=adjustl(testfile)
       write(outfile,109) trim(testfile)!testfile
-109   format("CSRotyfile",a,".out")
+109   format("ADRotyfile",a,".out")
       unitroty = 8+myID+nproc*4
       !outfile = "CSRotxfile.txt"
       
@@ -193,7 +193,7 @@
 110   format (i5)  
       testfile=adjustl(testfile)
       write(outfile,111) trim(testfile)!testfile
-111   format("CSRotzfile",a,".out")
+111   format("ADRotzfile",a,".out")
       unitrotz = 8+myID+nproc*5
       !outfile = "CSRotxfile.txt"
       
@@ -206,7 +206,7 @@
       write(testfile,112) myid!12
 112   format (i5)  
       testfile=adjustl(testfile)
-      write(outfile,101) trim(testfile)!testfile
+      write(outfile,113) trim(testfile)!testfile
 113   format("ADMachGridfile",a,".out")
       !outfile = "CSMachfile.txt"
       unitMgrid = 8+myID+nproc*6

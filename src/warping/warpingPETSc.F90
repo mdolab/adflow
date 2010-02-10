@@ -81,16 +81,28 @@
       PetscErrorCode PETScIerr
       PetscMPIInt    PETScRank, PETScSize
 
-      ! dXvdXs Matrix of derivatives of the volume mesh coordinates with
-      !        respect to the surface coordinates.
-      !       Size[nNodes*3, nNodesSurf*3], where nNodes is the global
-      !       number of grid nodes and nNodesSurf is the number surface
-      !       nodes.
+      ! dXvdXsDV: Matrix of derivatives of the volume mesh coordinates with
+      !           respect to the surface coordinates. multiplication by the
+      !           rotations is included to reduce the solution to a single
+      !           surface.
+      !           Size[nNodes*3*nTimeIntervalsSpectral, nNodesSurf*3], where
+      !           nNodes is the global
+      !           number of grid nodes and nNodesSurf is the number surface
+      !           nodes.
+      !
+      ! dXvdXsDisp: Matrix of derivatives of the volume mesh coordinates with
+      !             respect to the surface coordinates. These deriavtives are
+      !             with respect to each individual time spectral surface to
+      !             allow the appropriate coupled derivatives to be calculated
+      !             in multidisciplinary cases.
+      !             Size[nNodes*3*nTimeIntervalsSpectral, nNodesSurf*3], where
+      !             nNodes is the global number of grid nodes and nNodesSurf
+      !             is the number surface nodes.
       !
  
-      Mat     dXvdXs ,dXvdXsFD,dXvdXsPara,dRdXs
+      Mat     dXvdXsDV,dXvdXsDisp ,dXvdXsFD,dXvdXsPara,dRdXsDV,dRdXSDisp
 
-      Vec     dIdxs2,dJdxs2
+      Vec     dIdxDisp,dIdxs2,dJdxs2
 #endif
 
       end module warpingPETSc

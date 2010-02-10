@@ -272,16 +272,17 @@
                                     i = iCell + ii
                                     j = jCell + jj
                                     k = kCell + kk
-                                    !print *,'secondaryindicies',i,j,k,ii,jj,kk
-                                    if(i>=zero .and. j>=zero .and. k>=zero .and. i<=ie .and. j<=je .and. k<=ke)then
-                                       call setPointersAdj(nn,level,sps2)
-                                       idxnode = globalNode(i,j,k)*3+l
-                                       call setPointersAdj(nn,level,sps)
-                                       idxres   = globalCell(iCell,jCell,kCell)*nw+m 
-                                       if( (idxres-1)>=0 .and. (idxnode-1)>=0) then
-                                          if (xAdjb(ii,jj,kk,l,sps2).ne.0.0)then
-!!$                                             print 13,idxnode,idxres,l,i,j,k,nn,m,kcell,jcell,icell,xAdjb(ii,jj,kk,l)
-!!$13                                           format(1x,'drdx',11I8,f18.10)
+                                    if (xAdjb(ii,jj,kk,l,sps2).ne.0.0)then
+                                       !print *,'secondaryindicies',i,j,k,ii,jj,kk
+                                       if(i>=zero .and. j>=zero .and. k>=zero .and. i<=ie .and. j<=je .and. k<=ke)then
+                                          call setPointersAdj(nn,level,sps2)
+                                          idxnode = globalNode(i,j,k)*3+l
+                                          call setPointersAdj(nn,level,sps)
+                                          idxres   = globalCell(iCell,jCell,kCell)*nw+m 
+                                          if( (idxres-1)>=0 .and. (idxnode-1)>=0) then
+                                             !if (xAdjb(ii,jj,kk,l,sps2).ne.0.0)then
+!!$!                                             print 13,idxnode,idxres,l,i,j,k,nn,m,kcell,jcell,icell,xAdjb(ii,jj,kk,l)
+!!$!13                                           format(1x,'drdx',11I8,f18.10)
                                              call MatSetValues(dRdx, 1, idxres-1, 1, idxnode-1,   &
                                                   xAdjb(ii,jj,kk,l,sps2), ADD_VALUES, PETScIerr)
                                              if( PETScIerr/=0 ) &
@@ -373,6 +374,8 @@
                             endif
                          enddo
                       end do
+
+
 !!$                ! Store the block Jacobians (by rows).
 !!$
 !!$                Aad(m,:)  = xAdjB( 0, 0, 0,:)

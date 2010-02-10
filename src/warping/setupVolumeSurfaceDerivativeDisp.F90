@@ -1,12 +1,12 @@
 !
 ! ***********************************
-! *  File: setupVolumeSurfaceDerivatives.F90
+! *  File: setupVolumeSurfaceDerivativesDisp.F90
 ! *  Author: C.A.(Sandy) Mader
 ! *  Started: 15-07-2009
-! *  Modified: 15-07-2009
+! *  Modified: 25-01-2010
 ! ***********************************
 
-subroutine setupVolumeSurfaceDerivatives
+subroutine setupVolumeSurfaceDerivativesDisp
 
   ! Find the derivatives of the mesh wrt the surface at the current point
 
@@ -39,7 +39,7 @@ subroutine setupVolumeSurfaceDerivatives
   ! Send some feedback to screen.
 
   if( PETScRank==0 ) &
-       write(*,10) "Assembling dXv/dXs Parallel matrix..."
+       write(*,10) "Assembling dXv/dXsDisp Parallel matrix..."
   
   ! Get the initial time.
   
@@ -48,7 +48,7 @@ subroutine setupVolumeSurfaceDerivatives
   !!zero the matrix for dXvdXsPara ADD call
   !call MatZeroEntries(dXvdXsPara,PETScIerr)
   !zero the matrix for dXvdXs ADD call
-  call MatZeroEntries(dXvdXs,PETScIerr)
+  call MatZeroEntries(dXvdXsDisp,PETScIerr)
   
   if( PETScIerr/=0 ) &
        call terminate("setupVolumeSurfaceDerivatives", "Error in MatZeroEntries dXvdXs")
@@ -129,7 +129,7 @@ subroutine setupVolumeSurfaceDerivatives
                                 
 !!$                             call MatSetValues(dXvdXsPara, 1, idxvol-1, 1, idxsurf-1,   &
 !!$                                               xyznewd(n,I,J,K), ADD_VALUES, PETScIerr)
-                                call MatSetValues(dXvdXs, 1, idxvol-1, 1, idxsurf-1,   &
+                                call MatSetValues(dXvdXsDisp, 1, idxvol-1, 1, idxsurf-1,   &
                                      xyznewd(n,I,J,K), ADD_VALUES, PETScIerr)
                                 
                                 if( PETScIerr/=0 ) &
@@ -179,11 +179,11 @@ subroutine setupVolumeSurfaceDerivatives
       ! see .../petsc/docs/manualpages/Mat/MatAssemblyBegin.html
 
       !call MatAssemblyBegin(dXvdXsPara,MAT_FINAL_ASSEMBLY,PETScIerr)
-      call MatAssemblyBegin(dXvdXs,MAT_FINAL_ASSEMBLY,PETScIerr)
+      call MatAssemblyBegin(dXvdXsDisp,MAT_FINAL_ASSEMBLY,PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("setupVolumeSurfaceDerivatives", &
-                       "Error in MatAssemblyBegin dXvdXs")
+        call terminate("setupVolumeSurfaceDerivativesDisp", &
+                       "Error in MatAssemblyBegin dXvdXsDisp")
 
       ! MatAssemblyEnd - Completes assembling the matrix. This routine
       !                  should be called after MatAssemblyBegin().
@@ -204,11 +204,11 @@ subroutine setupVolumeSurfaceDerivatives
       ! see .../petsc/docs/manualpages/Mat/MatAssemblyEnd.html
 
       !call MatAssemblyEnd  (dXvdXsPara,MAT_FINAL_ASSEMBLY,PETScIerr)
-      call MatAssemblyEnd  (dXvdXs,MAT_FINAL_ASSEMBLY,PETScIerr)
+      call MatAssemblyEnd  (dXvdXsDisp,MAT_FINAL_ASSEMBLY,PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("setupVolumeSurfaceDerivatives", &
-                       "Error in MatAssemblyEnd dXvdXs")
+        call terminate("setupVolumeSurfaceDerivativesDisp", &
+                       "Error in MatAssemblyEnd dXvdXsDisp")
 
       ! Let PETSc know that the dXvdXs matrix retains the same nonzero 
       ! pattern, in case the matrix is assembled again, as for a new
@@ -236,11 +236,11 @@ subroutine setupVolumeSurfaceDerivatives
       ! or PETSc users manual, pp.52
 
       !call MatSetOption(dXvdXsPara,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
-      call MatSetOption(dXvdXs,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
+      call MatSetOption(dXvdXsDisp,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("setupVolumeSurfaceDerivatives", &
-                       "Error in MatSetOption dXvdXs")
+        call terminate("setupVolumeSurfaceDerivativesDisp", &
+                       "Error in MatSetOption dXvdXsDisp")
 
       ! Get new time and compute the elapsed time.
 
@@ -254,7 +254,7 @@ subroutine setupVolumeSurfaceDerivatives
                       mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
 
       if( PETScRank==0 ) &
-        write(*,20) "Assembling dXv/dXs Parallel matrix time (s) =", timeAdj
+        write(*,20) "Assembling dXv/dXsDisp Parallel matrix time (s) =", timeAdj
 !
 !     ******************************************************************
 !     *                                                                *
@@ -291,10 +291,10 @@ subroutine setupVolumeSurfaceDerivatives
       if( debug ) then
          !call MatView(dXvdXsPara,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
          !call MatView(dXvdXsPara,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
-         call MatView(dXvdXs,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+         call MatView(dXvdXsDisp,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
          !call MatView(dXvdXs,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
         if( PETScIerr/=0 ) &
-          call terminate("setupVolumeSurfaceDerivatives", "Error in MatView")
+          call terminate("setupVolumeSurfaceDerivativesDisp", "Error in MatView")
         !pause
       endif
 
@@ -309,5 +309,5 @@ subroutine setupVolumeSurfaceDerivatives
    20 format(a,1x,f8.2)
 
 #endif
-    end subroutine setupVolumeSurfaceDerivatives
+    end subroutine setupVolumeSurfaceDerivativesDisp
 

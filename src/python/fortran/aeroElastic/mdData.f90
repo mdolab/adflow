@@ -56,6 +56,9 @@
        !                              surface; index 4 is the block ID.
        ! mdSurfxx(3,mdNSurfNodes):    Surface coordinates of all
        !                              these nodes.
+       ! mdGlobalSurfxx(3,mdNSurfNodes,nTimeIntervalsSpectral):  Surface 
+       !                              coordinates of the compact list of
+       !                              surface nodes for all time instances.
        ! mdSurfForce(3,mdNSurfNodes): Aerodynamic forces in these nodes.
        ! mdSurfVal(mdNSurfNodes):     Storage for the value of a
        !                              scalar variable at the surface.
@@ -63,7 +66,7 @@
        integer(kind=intType), dimension(:,:), allocatable :: mdSurfInd
 
        real(kind=realType), dimension(:,:), allocatable :: mdSurfxx
-       real(kind=realtype),dimension(:,:),allocatable:: mdGlobalSurfxx
+       real(kind=realtype),dimension(:,:,:),allocatable:: mdGlobalSurfxx
        real(kind=realType), dimension(:,:), allocatable :: mdSurfForce
        real(kind=realType), dimension(:),   allocatable :: mdSurfVal
 

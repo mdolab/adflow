@@ -10,7 +10,7 @@
 !
       subroutine computeTSStabilityDerivAdj(cFxAdj,cFyAdj,cFzAdj,cMxAdj,&
                        cMyAdj,cMzAdj,CLAdj,CDAdj,&
-                       cl0,cmz0,dcldalpha,dcmzdalpha)
+                       cl0,cd0,cmz0,dcldalpha,dcddalpha,dcmzdalpha)
  
 !
 !     ******************************************************************
@@ -42,12 +42,12 @@
                              ClAdj,CdAdj,CfxAdj,CfyAdj,CfzAdj,   &
                              CmxAdj,CmyAdj,CmzAdj
      
-      real(kind=realType)::dcldp,dcldpdot,dcmzdp,dcmzdpdot         
-      real(kind=realType)::dcldq,dcldqdot,dcmzdq,dcmzdqdot
-      real(kind=realType)::dcldr,dcldrdot,dcmzdr,dcmzdrdot
-      real(kind=realType)::dcldalpha,dcldalphadot,dcmzdalpha,dcmzdalphadot
-      real(kind=realType)::dcldMach,dcldMachdot,dcmzdMach,dcmzdMachdot
-      real(kind=realType)::cl0,cl0dot,cmz0,cmz0dot
+      real(kind=realType)::dcldp,dcldpdot,dcddp,dcddpdot,dcmzdp,dcmzdpdot
+      real(kind=realType)::dcldq,dcldqdot,dcddq,dcddqdot,dcmzdq,dcmzdqdot
+      real(kind=realType)::dcldr,dcldrdot,dcddr,dcddrdot,dcmzdr,dcmzdrdot
+      real(kind=realType)::dcldalpha,dcldalphadot,dcddalpha,dcddalphadot,dcmzdalpha,dcmzdalphadot
+      real(kind=realType)::dcldMach,dcldMachdot,dcddMach,dcddMachdot,dcmzdMach,dcmzdMachdot
+      real(kind=realType)::cl0,cl0dot,cd0,cd0dot,cmz0,cmz0dot
       
       
 !
@@ -131,6 +131,10 @@
          !now compute dCl/dp
          
          call computeLeastSquaresRegression(cladj,dphix,nTimeIntervalsSpectral,dcldp,cl0)
+
+         !now compute dCd/dp
+         
+         call computeLeastSquaresRegression(cdadj,dphix,nTimeIntervalsSpectral,dcddp,cd0)
          
          !now compute dCmz/dp
          
@@ -138,6 +142,8 @@
          if(myID==0)then
             print *,'CL estimates:'
             print *,'Clp = : ',dcldp,' cl0 = : ',cl0
+            print *,'CD estimates:'
+            print *,'CDp = : ',dcDdp,' cD0 = : ',cD0
             print *,'CMz estimates:'
             print *,'CMzp = : ',dcmzdp,' cmz0 = : ',cmz0
          endif
@@ -147,14 +153,20 @@
          
          do i = 1,nTimeIntervalsSpectral
             ResCL(i) = ClAdj(i)-(dcldp*dphix(i)+cl0)
+            ResCd(i) = CdAdj(i)-(dcddp*dphix(i)+cd0)
             ResCMz(i) = CmzAdj(i)-(dcmzdp*dphix(i)+cmz0)
          enddo
          if(myID==0) print *,'ResCL',resCL
+         if(myID==0) print *,'ResCd',resCd
          if(myID==0) print *,'resCMZ',resCMZ
          
          !now compute dCl/dpdot
          
          call computeLeastSquaresRegression(Rescl,dphixdot,nTimeIntervalsSpectral,dcldpdot,cl0dot)
+
+         !now compute dCd/dpdot
+         
+         call computeLeastSquaresRegression(Rescd,dphixdot,nTimeIntervalsSpectral,dcddpdot,cd0dot)
          
          !now compute dCmz/dpdot
          
@@ -163,6 +175,8 @@
          if(myID==0)then
             print *,'CL estimates:'
             print *,'Clpdot = : ',dcldpdot,' cl0dot = : ',cl0dot
+            print *,'Cd estimates:'
+            print *,'Cdpdot = : ',dcddpdot,' cd0dot = : ',cd0dot
             print *,'CMz estimates:'
             print *,'CMzpdot = : ',dcmzdpdot,' cmz0dot = : ',cmz0dot
          end if
@@ -209,6 +223,10 @@
          !now compute dCl/dq
          
          call computeLeastSquaresRegression(clAdj,dphiz,nTimeIntervalsSpectral,dcldq,cl0)
+
+         !now compute dCd/dq
+         
+         call computeLeastSquaresRegression(cdAdj,dphiz,nTimeIntervalsSpectral,dcddq,cd0)
          
          !now compute dCmz/dq
          
@@ -216,6 +234,8 @@
          if(myID==0)then
             print *,'CL estimates:'
             print *,'Clq = : ',dcldq,' cl0 = : ',cl0
+            print *,'Cd estimates:'
+            print *,'Cdq = : ',dcddq,' cd0 = : ',cd0
             print *,'CMz estimates:'
             print *,'CMzq = : ',dcmzdq,' cmz0 = : ',cmz0
          endif
@@ -225,14 +245,20 @@
          
          do i = 1,nTimeIntervalsSpectral
             ResCL(i) = ClAdj(i)-(dcldq*dphiz(i)+cl0)
+            ResCd(i) = CdAdj(i)-(dcddq*dphiz(i)+cd0)
             ResCMz(i) = CmzAdj(i)-(dcmzdq*dphiz(i)+cmz0)
          enddo
          if(myID==0) print *,'ResCL',resCL
+         if(myID==0) print *,'ResCd',resCd
          if(myID==0) print *,'resCMZ',resCMZ
          
          !now compute dCl/dqdot
          
          call computeLeastSquaresRegression(Rescl,dphizdot,nTimeIntervalsSpectral,dcldqdot,cl0dot)
+
+         !now compute dCd/dqdot
+         
+         call computeLeastSquaresRegression(Rescd,dphizdot,nTimeIntervalsSpectral,dcddqdot,cd0dot)
          
          !now compute dCmz/dqdot
          
@@ -241,6 +267,8 @@
          if(myID==0)then
             print *,'CL estimates:'
             print *,'Clqdot = : ',dcldqdot,' cl0dot = : ',cl0dot
+            print *,'Cd estimates:'
+            print *,'Cdqdot = : ',dcddqdot,' cd0dot = : ',cd0dot
             print *,'CMz estimates:'
             print *,'CMzqdot = : ',dcmzdqdot,' cmz0dot = : ',cmz0dot
          end if
@@ -291,6 +319,10 @@
          !now compute dCl/dr
          
          call computeLeastSquaresRegression(clAdj,dphiy,nTimeIntervalsSpectral,dcldr,cl0)
+
+         !now compute dCD/dr
+         
+         call computeLeastSquaresRegression(cdAdj,dphiy,nTimeIntervalsSpectral,dcddr,cd0)
          
          !now compute dCmz/dr
          
@@ -298,6 +330,8 @@
          if(myID==0)then
             print *,'CL estimates:'
             print *,'Clr = : ',dcldr,' cl0 = : ',cl0
+            print *,'CD estimates:'
+            print *,'CDr = : ',dcddr,' cd0 = : ',cd0
             print *,'CMz estimates:'
             print *,'CMzr = : ',dcmzdr,' cmz0 = : ',cmz0
          endif
@@ -307,9 +341,11 @@
          
          do i = 1,nTimeIntervalsSpectral
             ResCL(i) = ClAdj(i)-(dcldr*dphiy(i)+cl0)
+            ResCd(i) = CdAdj(i)-(dcddr*dphiy(i)+cd0)
             ResCMz(i) = CmzAdj(i)-(dcmzdr*dphiy(i)+cmz0)
          enddo
          if(myID==0) print *,'ResCL',resCL
+         if(myID==0) print *,'ResCd',resCd
          if(myID==0) print *,'resCMZ',resCMZ
          
          
@@ -342,6 +378,10 @@
          !now compute dCl/dalpha
          
          call computeLeastSquaresRegression(clAdj,intervalAlpha,nTimeIntervalsSpectral,dcldalpha,cl0)
+
+         !now compute dCd/dalpha
+         
+         call computeLeastSquaresRegression(cdAdj,intervalAlpha,nTimeIntervalsSpectral,dcddalpha,cd0)
          
          !now compute dCmz/dq
          
@@ -349,6 +389,8 @@
          if(myID==0)then
             print *,'CL estimates:'
             print *,'ClAlpha = : ',dcldalpha,' cl0 = : ',cl0
+            print *,'Cd estimates:'
+            print *,'CdAlpha = : ',dcddalpha,' cd0 = : ',cd0
             print *,'CMz estimates:'
             print *,'CMzAlpha = : ',dcmzdalpha,' cmz0 = : ',cmz0
          endif
@@ -358,13 +400,19 @@
          
          do i = 1,nTimeIntervalsSpectral
             ResCL(i) = ClAdj(i)-(dcldalpha*IntervalAlpha(i)+cl0)
+            ResCd(i) = CdAdj(i)-(dcddalpha*IntervalAlpha(i)+cd0)
             ResCMz(i) = CmzAdj(i)-(dcmzdalpha*IntervalAlpha(i)+cmz0)
          enddo
          if(myID==0) print *,'ResCL',resCL
+         if(myID==0) print *,'ResCd',resCd
          if(myID==0) print *,'resCMZ',resCMZ
          !now compute dCl/dqdot
          
          call computeLeastSquaresRegression(Rescl,intervalAlphadot,nTimeIntervalsSpectral,dcldalphadot,cl0dot)
+
+         !now compute dCd/dqdot
+         
+         call computeLeastSquaresRegression(Rescd,intervalAlphadot,nTimeIntervalsSpectral,dcddalphadot,cd0dot)
          
          !now compute dCmz/dqdot
          
@@ -373,6 +421,8 @@
          if(myID==0)then
             print *,'CL estimates:'
             print *,'ClAlphadot = : ',dcldalphadot,' cl0dot = : ',cl0dot
+            print *,'Cd estimates:'
+            print *,'CdAlphadot = : ',dcddalphadot,' cd0dot = : ',cd0dot
             print *,'CMz estimates:'
             print *,'CMzAlphadot = : ',dcmzdalphadot,' cmz0dot = : ',cmz0dot
          end if
@@ -406,6 +456,10 @@
          !now compute dCl/dalpha
          
          call computeLeastSquaresRegression(clAdj,intervalMach,nTimeIntervalsSpectral,dcldMach,cl0)
+
+         !now compute dCd/dalpha
+         
+         call computeLeastSquaresRegression(cdAdj,intervalMach,nTimeIntervalsSpectral,dcddMach,cd0)
          
          !now compute dCmz/dq
          
@@ -413,6 +467,8 @@
          if(myID==0)then
             print *,'CL estimates:'
             print *,'ClMach = : ',dcldMach,' cl0 = : ',cl0
+            print *,'Cd estimates:'
+            print *,'CdMach = : ',dcddMach,' cd0 = : ',cd0
             print *,'CMz estimates:'
             print *,'CMzMach = : ',dcmzdMach,' cmz0 = : ',cmz0
          endif
@@ -422,13 +478,19 @@
          
          do i = 1,nTimeIntervalsSpectral
             ResCL(i) = ClAdj(i)-(dcldalpha*IntervalMach(i)+cl0)
+            ResCd(i) = CdAdj(i)-(dcddalpha*IntervalMach(i)+cd0)
             ResCMz(i) = CmzAdj(i)-(dcmzdalpha*IntervalMach(i)+cmz0)
          enddo
          if(myID==0) print *,'ResCL',resCL
+         if(myID==0) print *,'ResCd',resCd
          if(myID==0) print *,'resCMZ',resCMZ
          !now compute dCl/dqdot
          
          call computeLeastSquaresRegression(Rescl,intervalMachdot,nTimeIntervalsSpectral,dcldMachdot,cl0dot)
+
+         !now compute dCl/dqdot
+         
+         call computeLeastSquaresRegression(Rescd,intervalMachdot,nTimeIntervalsSpectral,dcddMachdot,cd0dot)
          
          !now compute dCmz/dqdot
       
@@ -437,6 +499,8 @@
          if(myID==0)then
             print *,'CL estimates:'
             print *,'ClMachdot = : ',dcldMachdot,' cl0dot = : ',cl0dot
+            print *,'Cd estimates:'
+            print *,'CdMachdot = : ',dcddMachdot,' cd0dot = : ',cd0dot
             print *,'CMz estimates:'
             print *,'CMzMachdot = : ',dcmzdMachdot,' cmz0dot = : ',cmz0dot
          end if

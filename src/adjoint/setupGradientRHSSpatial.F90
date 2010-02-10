@@ -540,7 +540,7 @@
                 ! it starts at node 0.
 
                 idxmgb = globalNode(i,j,k)
-                
+                !print *,'indices',idxmgb,nNodesGlobal
                 if (idxmgb<nNodesGlobal.and.idxmgb>=0)then
                    test = sum(dJdxLocal(:))
                    if (test/=0)then
