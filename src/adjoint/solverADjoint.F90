@@ -66,12 +66,13 @@
       use cgnsGrid        ! cgnsNFamilies
       use iteration       ! groundLevel
       use inputTimeSpectral !nIntervalsTimeSpectral
+      use inputTSStabDeriv !TSstability
       implicit none
 !
 !     Local variables.
 !
       integer(kind=intType) :: level, sps ,ierr,famID
-      integer(kind=intType) :: costFunction
+      integer(kind=intType) :: costFunction,cfstart,cfend
 
       real(kind=realType)   :: CL, CD, Cfx,Cfy,Cfz, CMx, CMy, CMz
 !
@@ -290,8 +291,15 @@
 !     *                                                                *
 !     ******************************************************************
 !
-
-      functionLoop: do costFunction = 1,1!10,10!1, 1!nCostFunction
+      if(TSStability)then
+         cfstart = 9
+         cfend = 14
+      else
+         cfstart =1
+         cfend = 8
+      end if
+!      functionLoop: do costFunction = 1,1!10,10!1, 1!nCostFunction
+      functionLoop: do costFunction = cfstart,cfend
 
         !***************************************************************
         !                                                              *
