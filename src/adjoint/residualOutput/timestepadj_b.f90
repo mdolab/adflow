@@ -211,7 +211,8 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
             CALL PUSHREAL8(sz)
             sz = siadj(i-1, j, k, 3, sps2) + siadj(i, j, k, 3, sps2)
             qs = ux*sx + uy*sy + uz*sz - sface
-            IF (sx .GT. zero .OR. sy .GT. zero .OR. sz .GT. zero) THEN
+            IF (sx**2 .GT. zero .OR. sy**2 .GT. zero .OR. sz**2 .GT. &
+&                zero) THEN
               IF (qs .GE. 0.) THEN
                 abs1 = qs
                 CALL PUSHINTEGER4(1)
@@ -249,7 +250,9 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
             CALL PUSHREAL8(sz)
             sz = sjadj(i, j-1, k, 3, sps2) + sjadj(i, j, k, 3, sps2)
             qs = ux*sx + uy*sy + uz*sz - sface
-            IF (sx .GT. zero .OR. sy .GT. zero .OR. sz .GT. zero) THEN
+!print *,'sx',sx,sy,sz
+            IF (sx**2 .GT. zero .OR. sy**2 .GT. zero .OR. sz**2 .GT. &
+&                zero) THEN
               IF (qs .GE. 0.) THEN
                 abs3 = qs
                 CALL PUSHINTEGER4(1)
@@ -287,7 +290,8 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
             CALL PUSHREAL8(sz)
             sz = skadj(i, j, k-1, 3, sps2) + skadj(i, j, k, 3, sps2)
             qs = ux*sx + uy*sy + uz*sz - sface
-            IF (sx .GT. zero .OR. sy .GT. zero .OR. sz .GT. zero) THEN
+            IF (sx**2 .GT. zero .OR. sy**2 .GT. zero .OR. sz**2 .GT. &
+&                zero) THEN
               IF (qs .GE. 0.) THEN
                 abs5 = qs
                 CALL PUSHINTEGER4(1)
@@ -689,5 +693,5 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
 &      rhoinfadj
   END IF
   CALL POPINTEGER4(branch)
- ! adisb = 0.0
+!  adisb = 0.0
 END SUBROUTINE TIMESTEPADJ_B

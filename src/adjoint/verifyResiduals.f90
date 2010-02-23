@@ -382,50 +382,53 @@
 !!$    end do
        call metric(level)
        call checkSymmetry(level)
-!!$       !print out x
-!!$       do sps = 1,nTimeIntervalsSpectral
-!!$          do nnnn=1,ndom
-!!$          call setPointersAdj(nnnn,1,sps)
-!!$          do iii = 2,il
-!!$             do jjj = 2,jl
-!!$                do kkk = 2,kl
+       !print out x
+       do sps = 1,nTimeIntervalsSpectral
+          do nnnn=1,1!ndom
+          call setPointersAdj(nnnn,1,sps)
+          do iii = 2,il
+             do jjj = 2,jl
+                do kkk = 2,kl
+                   istart = -3
+                   jstart = -3
+                   kstart = -3
 !!$                   istart = -2!3
 !!$                   jstart = -2!3
 !!$                   kstart = -2!3
-!!$                   iend = 2
-!!$                   jend = 2
-!!$                   kend = 2
-!!$ !                  if(iii==2) istart=-2
-!!$ !                  if(jjj==2) jstart=-2
-!!$ !                  if(kkk==2) kstart=-2
-!!$ !                  if(iii==il) iend=1
-!!$ !                  if(jjj==jl) jend=1
-!!$ !                  if(kkk==kl) kend=1
-!!$                   do iiii = istart,iend
-!!$                      do jjjj = jstart,jend
-!!$                         do kkkk = kstart,kend
-!!$                            !do n = 1,3
-!!$                            do n = 1,nw
-!!$                               do sps2 = 1,nTimeIntervalsSpectral
-!!$                                  call setPointersAdj(nnnn,1,sps2)
-!!$                                  i = iii+iiii
-!!$                                  j = jjj+jjjj
-!!$                                  k = kkk+kkkk
-!!$                                  !write(unitx,11) i,j,k,n,nnnn,sps,sps2,x(i,j,k,n)
-!!$                                  write(unitx,11) i,j,k,n,nnnn,sps,sps2,w(i,j,k,n)
-!!$11                                format(1x,'res',7I8,f20.14)
-!!$                                  call setPointersAdj(nnnn,1,sps)
-!!$                               end do
-!!$                            enddo
-!!$                         enddo
-!!$                      enddo
-!!$                   enddo
-!!$                enddo
-!!$             enddo
-!!$          enddo
-!!$          call setPointersAdj(nn,1,sps)
-!!$       enddo
-!!$    end do
+                   iend = 2
+                   jend = 2
+                   kend = 2
+                   if(iii==2) istart=-2
+                   if(jjj==2) jstart=-2
+                   if(kkk==2) kstart=-2
+                   if(iii==il) iend=1
+                   if(jjj==jl) jend=1
+                   if(kkk==kl) kend=1
+                   do iiii = istart,iend
+                      do jjjj = jstart,jend
+                         do kkkk = kstart,kend
+                            do n = 1,3
+                            !do n = 1,nw
+                               do sps2 = 1,nTimeIntervalsSpectral
+                                  call setPointersAdj(nnnn,1,sps2)
+                                  i = iii+iiii
+                                  j = jjj+jjjj
+                                  k = kkk+kkkk
+                                  write(unitx,11) i,j,k,n,nnnn,sps,sps2,x(i,j,k,n)
+                                  !write(unitx,11) i,j,k,n,nnnn,sps,sps2,w(i,j,k,n)
+11                                format(1x,'res',7I8,f20.14)
+                                  call setPointersAdj(nnnn,1,sps)
+                               end do
+                            enddo
+                         enddo
+                      enddo
+                   enddo
+                enddo
+             enddo
+          enddo
+          call setPointersAdj(nn,1,sps)
+       enddo
+    end do
         do sps = 1,nTimeIntervalsSpectral
            do nnn=1,ndom
               call setPointersAdj(nnn,1,sps)
@@ -581,42 +584,42 @@
 !!$          enddo
 !!$       end do    
   !print out w
-       do sps = 1,nTimeIntervalsSpectral
-          do nnnn=1,ndom
-          call setPointersAdj(nnnn,1,sps)
-          do iii = 2,il
-             do jjj = 2,jl
-                do kkk = 2,kl
-                   istart = -2!3
-                   jstart = -2!3
-                   kstart = -2!3
-                   iend = 2
-                   jend = 2
-                   kend = 2
-                   do iiii = istart,iend
-                      do jjjj = jstart,jend
-                         do kkkk = kstart,kend
-                            do n = 1,nw
-                               do sps2 = 1,nTimeIntervalsSpectral
-                                  call setPointersAdj(nnnn,1,sps2)
-                                  i = iii+iiii
-                                  j = jjj+jjjj
-                                  k = kkk+kkkk
-                                 
-                                  write(unitx,11) i,j,k,n,nnnn,sps,sps2,iii,jjj,kkk,w(i,j,k,n)
-11                                format(1x,'wadj',10I8,f20.12)
-                                  call setPointersAdj(nnnn,1,sps)
-                               end do
-                            enddo
-                         enddo
-                      enddo
-                   enddo
-                enddo
-             enddo
-          enddo
-          call setPointersAdj(nn,1,sps)
-       enddo
-    end do      
+!!$       do sps = 1,nTimeIntervalsSpectral
+!!$          do nnnn=1,1!ndom
+!!$          call setPointersAdj(nnnn,1,sps)
+!!$          do iii = 2,il
+!!$             do jjj = 2,jl
+!!$                do kkk = 2,kl
+!!$                   istart = -2!3
+!!$                   jstart = -2!3
+!!$                   kstart = -2!3
+!!$                   iend = 2
+!!$                   jend = 2
+!!$                   kend = 2
+!!$                   do iiii = istart,iend
+!!$                      do jjjj = jstart,jend
+!!$                         do kkkk = kstart,kend
+!!$                            do n = 1,nw
+!!$                               do sps2 = 1,nTimeIntervalsSpectral
+!!$                                  call setPointersAdj(nnnn,1,sps2)
+!!$                                  i = iii+iiii
+!!$                                  j = jjj+jjjj
+!!$                                  k = kkk+kkkk
+!!$                                 
+!!$                                  write(unitx,11) i,j,k,n,nnnn,sps,sps2,iii,jjj,kkk,w(i,j,k,n)
+!!$11                                format(1x,'wadj',10I8,f20.12)
+!!$                                  call setPointersAdj(nnnn,1,sps)
+!!$                               end do
+!!$                            enddo
+!!$                         enddo
+!!$                      enddo
+!!$                   enddo
+!!$                enddo
+!!$             enddo
+!!$          enddo
+!!$          call setPointersAdj(nn,1,sps)
+!!$       enddo
+!!$    end do      
        if( turbCoupled ) then
           call initres(nt1MG, nMGVar)
           call turbResidual
@@ -695,7 +698,7 @@
 !Now compute residuals using ADjoint routines
 !***********************************
 
-      do nnn = 1,ndom
+      do nnn = 1,1!ndom
          call setPointersAdj(nnn ,level,sps)
          !print *,'in AD loop',nnn 
          !write(unitxAD,*) 'block Num',nnn
@@ -754,56 +757,56 @@
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
 
-!!$                  !print out xAdj
-!!$                  istart = -3
-!!$                  jstart = -3
-!!$                  kstart = -3
-!!$                  iend = 2
-!!$                  jend = 2
-!!$                  kend = 2
-!!$                  if(icell==2) istart=-2
-!!$                  if(jcell==2) jstart=-2
-!!$                  if(kcell==2) kstart=-2
-!!$                  if(icell==il) iend=1
-!!$                  if(jcell==jl) jend=1
-!!$                  if(kcell==kl) kend=1
-!!$                  do iiii = istart,iend
-!!$                     do jjjj = jstart,jend
-!!$                        do kkkk = kstart,kend
-!!$                           do n = 1,3
-!!$                              do sps2 = 1,nTimeIntervalsSpectral
-!!$                                 i = icell+iiii
-!!$                                 j = jcell+jjjj
-!!$                                 k = kcell+kkkk
-!!$                                 write(unitxAD,11) i,j,k,n,nnn,sps,sps2,xAdj(iiii,jjjj,kkkk,n,sps2)
-!!$                              enddo
-!!$                           enddo
-!!$                        enddo
-!!$                     enddo
-!!$                  enddo
-                 !print out wAdj
-                  istart = -2
-                  jstart = -2
-                  kstart = -2
+                  !print out xAdj
+                  istart = -3
+                  jstart = -3
+                  kstart = -3
                   iend = 2
                   jend = 2
                   kend = 2
+                  if(icell==2) istart=-2
+                  if(jcell==2) jstart=-2
+                  if(kcell==2) kstart=-2
+                  if(icell==il) iend=1
+                  if(jcell==jl) jend=1
+                  if(kcell==kl) kend=1
                   do iiii = istart,iend
                      do jjjj = jstart,jend
                         do kkkk = kstart,kend
-                           !do n = 1,1!nw
-                              do n = 1,nw 
+                           do n = 1,3
                               do sps2 = 1,nTimeIntervalsSpectral
                                  i = icell+iiii
                                  j = jcell+jjjj
                                  k = kcell+kkkk
-                                 write(unitxAD,11) i,j,k,n,nnn,sps,sps2,icell,jcell,kcell,wAdj(iiii,jjjj,kkkk,n,sps2) 
-                                 !write(unitxAD,11) i,j,k,n,nnn,sps,sps2,pAdj(iiii,jjjj,kkkk,sps2)
+                                 write(unitxAD,11) i,j,k,n,nnn,sps,sps2,xAdj(iiii,jjjj,kkkk,n,sps2)
                               enddo
                            enddo
                         enddo
                      enddo
                   enddo
+!!$                 !print out wAdj
+!!$                  istart = -2
+!!$                  jstart = -2
+!!$                  kstart = -2
+!!$                  iend = 2
+!!$                  jend = 2
+!!$                  kend = 2
+!!$                  do iiii = istart,iend
+!!$                     do jjjj = jstart,jend
+!!$                        do kkkk = kstart,kend
+!!$                           !do n = 1,1!nw
+!!$                              do n = 1,nw 
+!!$                              do sps2 = 1,nTimeIntervalsSpectral
+!!$                                 i = icell+iiii
+!!$                                 j = jcell+jjjj
+!!$                                 k = kcell+kkkk
+!!$                                 write(unitxAD,11) i,j,k,n,nnn,sps,sps2,icell,jcell,kcell,wAdj(iiii,jjjj,kkkk,n,sps2) 
+!!$                                 !write(unitxAD,11) i,j,k,n,nnn,sps,sps2,pAdj(iiii,jjjj,kkkk,sps2)
+!!$                              enddo
+!!$                           enddo
+!!$                        enddo
+!!$                     enddo
+!!$                  enddo
         
                   !----------------------------------------------
                   

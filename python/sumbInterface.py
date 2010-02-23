@@ -1002,7 +1002,7 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "      Number of multigrid cycles coarse grid:  -1.0  # -1 Means same as on fine grid\n")
         autofile.write(  "                      CFL number coarse grid: -1.0  # -1 Means same as on fine grid\n")
-        autofile.write(  "Relative L2 norm for convergence coarse grid: 1.e-4\n")
+        autofile.write(  "Relative L2 norm for convergence coarse grid: 1.e-2\n")
         autofile.write( "\n")
         
         autofile.write(  "#        Discretization scheme coarse grid:  # Default fine grid scheme\n")

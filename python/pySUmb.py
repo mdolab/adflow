@@ -157,9 +157,14 @@ class SUMB(AeroSolver):
 		self.interface.WriteSurfaceSolutionFile(surfname)
 		
 		# get forces? from SUmb attributes
-		if (kwargs['solver_options']['TS Stability'])=='yes':
-			self.interface.computeStabilityParameters()
-		#endif
+		try:  kwargs['solver_options']['TS Stability']
+		except KeyError:
+			test=1
+		else:
+			if (kwargs['solver_options']['TS Stability'])=='yes':
+				self.interface.computeStabilityParameters()
+ 		        #endif
+		#end
 		
 		# Store Results
 		#aero_problem.addSol(self.__class__.__name__, sol_name, sol_time, sol_inform, 

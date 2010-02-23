@@ -77,7 +77,6 @@
        ! Determine the variables used to compute the switch.
        ! For the inviscid case this is the pressure; for the viscous
        ! case it is the entropy.
-
        select case (equations)
          case (EulerEquations)
 

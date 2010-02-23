@@ -171,13 +171,13 @@
 
 !      call verifyRAdj(level)
 !stop
-      !call verifyResiduals(level)
+!      call verifyResiduals(level)
 !return
 !stop
 !!$        ! Verify the node-based ADjoint residual routine.
 !!$
 !!$!	call verifydRdW(level,sps)
-!      call verifydRdWFile(level,sps)
+      !call verifydRdWFile(level,sps)
 !!$!        call verifydRdwFileFD(level)
 !     call verifydRdxFile(level)
 !return
@@ -291,7 +291,7 @@
 !     ******************************************************************
 !
 
-      functionLoop: do costFunction = 10,10!1, 1!nCostFunction
+      functionLoop: do costFunction = 1,1!10,10!1, 1!nCostFunction
 
         !***************************************************************
         !                                                              *

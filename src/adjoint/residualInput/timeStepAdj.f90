@@ -155,7 +155,7 @@
                      
                      qs = ux*sx + uy*sy + uz*sz - sFace
 
-                     if( sx>zero .or. sy>zero .or. sz>zero)then
+                     if( sx**2>zero .or. sy**2>zero .or. sz**2>zero)then
                         radiAdj(i,j,k,sps2) = half*(abs(qs) &
                              +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
                      else
@@ -174,8 +174,8 @@
                      sz = sjAdj(i,j-1,k,3,sps2) + sjAdj(i,j,k,3,sps2)
 
                      qs = ux*sx + uy*sy + uz*sz - sFace
-                     
-                     if( sx>zero .or. sy>zero .or. sz>zero)then
+                     !print *,'sx',sx,sy,sz
+                     if( sx**2>zero .or. sy**2>zero .or. sz**2>zero)then
                         radJAdj(i,j,k,sps2) = half*(abs(qs) &
                              +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
                      else
@@ -194,7 +194,7 @@
 
                      qs = ux*sx + uy*sy + uz*sz - sFace
                      
-                     if( sx>zero .or. sy>zero .or. sz>zero)then
+                     if( sx**2>zero .or. sy**2>zero .or. sz**2>zero)then
                         
                         radKAdj(i,j,k,sps2) = half*(abs(qs) &
                              +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
