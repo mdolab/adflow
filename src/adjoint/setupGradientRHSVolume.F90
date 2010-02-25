@@ -87,7 +87,9 @@
         case(costFuncCmzAlpha, &
              costFuncCm0,&
              costFuncClAlpha,&
-             costFuncCl0)
+             costFuncCl0,&
+             costFuncCdAlpha,&
+             costFuncCd0)
            call setupGradientRHSStability(level,costFunction)
         case default
           write(*,*) "Invalid cost function ", costFunction

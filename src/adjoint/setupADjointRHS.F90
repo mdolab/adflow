@@ -123,7 +123,9 @@
         case(costFuncCmzAlpha, &
              costFuncCm0,&
              costFuncClAlpha,&
-             costFuncCl0)
+             costFuncCl0,&
+             costFuncCdAlpha,&
+             costFuncCd0)
            if (PETScRank==0)print *,'stability costfunction',costfunction
            call setupADjointRHSStability(level,costFunction)
         case default
