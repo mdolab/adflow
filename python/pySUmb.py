@@ -146,7 +146,7 @@ class SUMB(AeroSolver):
 		t0 = time.time()
 		self.interface.RunIterations(0,niterations)
 		sol_time = time.time() - t0
-		
+		if(self.interface.myid==0):print 'Solution Time',sol_time
 		
 		# Post-Processing
 		#Write solutions
