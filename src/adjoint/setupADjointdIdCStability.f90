@@ -335,12 +335,16 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
       !Now compute the derivatives of the stability derivatives
 
       cl0 =0.0
+      cd0 = 0.0
       cmz0 =0.0
       dcldalpha =0.0
+      dcddalpha = 0.0
       dcmzdalpha =0.0
       cl0b = 0.0
+      cd0b = 0.0
       cmz0b = 0.0
       dcldalphab = 0.0
+      dcddalphab = 0.0
       dcmzdalphab = 0.0
 
       select case(costFunction)
