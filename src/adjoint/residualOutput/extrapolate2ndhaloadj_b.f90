@@ -193,6 +193,7 @@ SUBROUTINE EXTRAPOLATE2NDHALOADJ_B(nn, icbeg, icend, jcbeg, jcend, &
         CALL POPREAL8(wadj0(ii, jj, irho))
         wadj1b(ii, jj, irho) = wadj1b(ii, jj, irho) + factor*wadj0b(ii, &
 &          jj, irho)
+
         wadj0b(ii, jj, irho) = 0.0
       ELSE
         CALL POPREAL8(wadj0(ii, jj, irho))
@@ -200,6 +201,7 @@ SUBROUTINE EXTRAPOLATE2NDHALOADJ_B(nn, icbeg, icend, jcbeg, jcend, &
       CALL POPREAL8(wadj0(ii, jj, irho))
       wadj1b(ii, jj, irho) = wadj1b(ii, jj, irho) + two*wadj0b(ii, jj, &
 &        irho)
+
       wadj2b(ii, jj, irho) = wadj2b(ii, jj, irho) - wadj0b(ii, jj, irho)
       wadj0b(ii, jj, irho) = 0.0
       CALL POPINTEGER4(jj)

@@ -59,7 +59,8 @@
        real(kind=realType), dimension(-2:2,-2:2)::revAdj1, revAdj2
        
        logical :: iOverlap, jOverlap, kOverlap
-       logical,intent(inout) :: secondHalo
+       !logical,intent(inout) :: secondHalo
+       logical :: secondHalo
        
 
 !
@@ -184,7 +185,6 @@
            
 
           ! Set some pointers depending on the situation.
-          
           select case (BCFaceID(nn))
           case (iMin)
 
@@ -205,10 +205,10 @@
              
              iOffset = jOffset
              jOffset = kOffset
-             
+
              secondHalo = .true.
              if(iRBeg == iREnd) secondHalo = .false.
-        
+
              if( secondHalo ) then
                 wAdj0(-2:2,-2:2,1:nw) = wAdj(-2,-2:2,-2:2,1:nw,sps2)
                 wAdj1(-2:2,-2:2,1:nw) = wAdj(-1,-2:2,-2:2,1:nw,sps2)
@@ -564,6 +564,5 @@
  
   !  enddo
 !          print *,'offsets',ioffset,joffset
-    
      end subroutine extractBCStatesAdj
   

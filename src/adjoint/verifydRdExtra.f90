@@ -438,6 +438,9 @@
 !!$                           dRdExtraAdj(idxres,nDesignRotZ,nn,sps) = rotrateadjb(3)
                            !dRdExtraAdj(idxres,nDesignMach,1,sps) = machadjb
                            pvrlocal(m) = machadjb
+                           if (icell==2.and.jcell==2.and.kcell==3)then
+                              print *,'Machadjb',machadjb,icell,jcell,kcell,m
+                           end if
                            write(unitM,10) machadjb,sps,nn,icell,jcell,kcell,m,idxres
 10                         format(1x,'Mach ',f18.10,7I8)
                            write(unitMgrid,16) machgridadjb,sps,nn,icell,jcell,kcell,m,idxres
