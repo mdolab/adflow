@@ -56,7 +56,7 @@ SUBROUTINE APPLYALLBCADJ_B(winfadj, winfadjb, pinfcorradj, pinfcorradjb&
 &  ntimeintervalsspectral), INTENT(IN) :: sadj
   REAL(KIND=REALTYPE) :: sadjb(-2:2, -2:2, -2:2, 3, &
 &  ntimeintervalsspectral)
-  LOGICAL, INTENT(IN) :: secondhalo
+  LOGICAL :: secondhalo
   REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
 &  ntimeintervalsspectral), INTENT(IN) :: siadj
   REAL(KIND=REALTYPE) :: siadjb(-3:2, -3:2, -3:2, 3, &

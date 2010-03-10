@@ -35,7 +35,7 @@ subroutine bcSymmAdj(wAdj,pAdj,normAdj,iCell,jCell,kCell,secondHalo,nnn,level,sp
   !
   !      Subroutine arguments.
   !
-  logical, intent(in) :: secondHalo
+  logical:: secondHalo
   integer(kind=intType)::nnn,level,sps,sps2
   real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral), &
        intent(in) :: wAdj

@@ -38,7 +38,8 @@
 !
 !      Subroutine arguments.
 !
-       logical, intent(in) :: secondHalo
+       !logical, intent(in) :: secondHalo
+       logical:: secondHalo
 
        integer(kind=intType) :: iCell, jCell, kCell
        integer(kind=intType) :: nn,level, sps,sps2

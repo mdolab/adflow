@@ -35,7 +35,7 @@ SUBROUTINE BCSYMMADJ_B(wadj, wadjb, padj, padjb, normadj, normadjb, &
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, &
 &  ntimeintervalsspectral), INTENT(IN) :: padj
   REAL(KIND=REALTYPE) :: padjb(-2:2, -2:2, -2:2, ntimeintervalsspectral)
-  LOGICAL, INTENT(IN) :: secondhalo
+  LOGICAL :: secondhalo
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw, &
 &  ntimeintervalsspectral), INTENT(IN) :: wadj
   REAL(KIND=REALTYPE) :: wadjb(-2:2, -2:2, -2:2, nw, &

@@ -44,7 +44,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
   !  integer(kind=intType) :: iOffset, jOffset
   integer(kind=intType) :: wallTreatment
 
-  logical, intent(in) :: secondHalo
+  logical :: secondHalo
 
   real(kind=realType), dimension(-2:2,-2:2,nw) :: wAdj0, wAdj1
   real(kind=realType), dimension(-2:2,-2:2,nw) :: wAdj2, wAdj3
