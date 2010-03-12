@@ -178,7 +178,7 @@
 !!$        ! Verify the node-based ADjoint residual routine.
 !!$
 !!$!	call verifydRdW(level,sps)
-      !call verifydRdWFile(level,sps)
+!      call verifydRdWFile(level,sps)
 !!$!        call verifydRdwFileFD(level)
 !     call verifydRdxFile(level)
 !return

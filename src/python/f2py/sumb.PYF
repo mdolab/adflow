@@ -890,6 +890,7 @@ python module sumb ! in
             use adjointvars
             use flowvarrefstate
             use inputphysics
+            use inputtsstabderiv
         end subroutine getsolution
 
 ! ############################################################################

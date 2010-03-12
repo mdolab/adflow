@@ -21,6 +21,7 @@
       use ADjointVars     ! functionValue, xDesignVar, nDesignDipoles
       use flowVarRefState ! magnetic
       use inputPhysics    ! velDirFreestream
+      use inputTSStabDeriv !TSStability
 
       implicit none
 !
@@ -29,6 +30,13 @@
       integer(kind=intType) :: level, sps, n, nn
       real(kind=realType)   :: CL, CD, CFx, CFy, CFz, CMx, CMy, CMz
       real(kind=realType)   :: alpha, beta
+
+      real(kind=realType)::dcldp,dcldpdot,dcmzdp,dcmzdpdot         
+      real(kind=realType)::dcldq,dcldqdot,dcmzdq,dcmzdqdot
+      real(kind=realType)::dcldr,dcldrdot,dcmzdr,dcmzdrdot
+      real(kind=realType)::dcldalpha,dcldalphadot,dcddalpha,dcmzdalpha,dcmzdalphadot
+      real(kind=realType)::dcldMach,dcldMachdot,dcmzdMach,dcmzdMachdot
+      real(kind=realType)::cl0,cl0dot,cD0,cmz0,cmz0dot
 !
 !     ******************************************************************
 !     *                                                                *
@@ -61,4 +69,14 @@
       functionValue(costFuncMomYCoef) = CMy
       functionValue(costFuncMomZCoef) = CMz
 
+      if(TSStability)then
+         call computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
+           dcmzdalpha)
+         functionValue(costFuncCmzAlpha)  = dcmzdalpha
+         functionValue( costFuncCm0)      = cmz0
+         functionValue( costFuncClAlpha)  = dcldalpha
+         functionValue( costFuncCl0  )    = cl0
+         functionValue( costFuncCdAlpha ) = dcmzdalpha
+         functionValue(costFuncCd0  )     = cd0
+      end if
     end subroutine getSolution

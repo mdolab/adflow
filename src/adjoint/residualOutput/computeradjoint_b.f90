@@ -384,14 +384,12 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
     CALL POPREAL8ARRAY(radiadj, 3**3*ntimeintervalsspectral)
     CALL POPREAL8ARRAY(radjadj, 3**3*ntimeintervalsspectral)
     CALL POPREAL8ARRAY(radkadj, 3**3*ntimeintervalsspectral)
- 
     CALL TIMESTEPADJ_B(.true., wadj, wadjb, padj, padjb, siadj, siadjb, &
 &                 sjadj, sjadjb, skadj, skadjb, sfaceiadj, sfaceiadjb, &
 &                 sfacejadj, sfacejadjb, sfacekadj, sfacekadjb, voladj, &
 &                 radiadj, radiadjb, radjadj, radjadjb, radkadj, &
 &                 radkadjb, icell, jcell, kcell, pinfcorradj, &
 &                 pinfcorradjb, rhoinfadj, nn, level, sps, sps2)
-
     CALL POPREAL8ARRAY(wadj, 5**3*nw*ntimeintervalsspectral)
     CALL POPREAL8ARRAY(padj, 5**3*ntimeintervalsspectral)
     CALL POPBOOLEAN(secondhalo)
@@ -400,7 +398,6 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 &                   , sjadj, sjadjb, skadj, skadjb, voladj, normadj, &
 &                   normadjb, rfaceadj, rfaceadjb, icell, jcell, kcell, &
 &                   secondhalo, nn, level, sps, sps2)
-
     CALL POPREAL8ARRAY(padj, 5**3*ntimeintervalsspectral)
     CALL COMPUTEPRESSUREADJ_B(wadj, wadjb, padj, padjb, nn, level, sps, &
 &                        sps2)
@@ -442,7 +439,6 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 &              icell, jcell, kcell, nn, level, sps, sps2)
   END DO
   CALL POPREAL8ARRAY(winfadj, nw)
-
   CALL SETFLOWINFINITYSTATEADJ_B(veldirfreestreamadj, &
 &                           veldirfreestreamadjb, liftdirectionadj, &
 &                           dragdirectionadj, machadj, machcoefadj, &
@@ -453,12 +449,10 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
   CALL POPREAL8(prefadj)
   CALL POPREAL8(rhorefadj)
   CALL POPREAL8(gammainf)
-
   CALL REFERENCESTATEADJ_B(machadj, machadjb, machcoefadj, uinfadj, &
 &                     uinfadjb, prefadj, rhorefadj, pinfdimadj, &
 &                     rhoinfdimadj, rhoinfadj, pinfadj, murefadj, &
 &                     timerefadj)
-
   CALL POPREAL8ARRAY(veldirfreestreamadj, 3)
   CALL CHECKINPUTPARAMADJ_B(veldirfreestreamadj, veldirfreestreamadjb, &
 &                      liftdirectionadj, dragdirectionadj, machadj, &

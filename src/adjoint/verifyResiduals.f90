@@ -698,7 +698,7 @@
 !Now compute residuals using ADjoint routines
 !***********************************
 
-      do nnn = 1,1!ndom
+      do nnn = 1,ndom
          call setPointersAdj(nnn ,level,sps)
          !print *,'in AD loop',nnn 
          !write(unitxAD,*) 'block Num',nnn

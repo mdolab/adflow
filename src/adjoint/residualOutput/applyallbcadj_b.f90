@@ -103,6 +103,7 @@ SUBROUTINE APPLYALLBCADJ_B(winfadj, winfadjb, pinfcorradj, pinfcorradjb&
 !
 !      Subroutine arguments.
 !
+!logical, intent(in) :: secondHalo
 !       real(kind=realType), dimension(-2:2,-2:2,-2:2,3), &
 !                                                   intent(in) :: siAdj, sjAdj, skAdj
 !real(kind=realType), dimension(0:0,0:0,0:0), intent(in) :: volAdj
