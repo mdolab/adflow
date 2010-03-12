@@ -2524,12 +2524,12 @@ class SUmbInterface(object):
                          'cMx':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncmomxcoef-1],\
                          'cMy':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncmomycoef-1],\
                          'cMz':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncmomzcoef-1],\
-                         'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                         'cM0':sumb.adjointvars.costfunccm0,\
-                         'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                         'cl0':sumb.adjointvars.costfunccl0,\
-                         'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                         'cd0':sumb.adjointvars.costfunccd0
+                         'cMzAlpha':sumb.adjointvars.functionvalue[sumb.adjointvars.costfunccmzalpha-1],\
+                         'cM0':sumb.adjointvars.functionvalue[sumb.adjointvars.costfunccm0-1],\
+                         'clAlpha':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncclalpha-1],\
+                         'cl0':sumb.adjointvars.functionvalue[sumb.adjointvars.costfunccl0-1],\
+                         'cdAlpha':sumb.adjointvars.functionvalue[sumb.adjointvars.costfunccdalpha-1],\
+                         'cd0':sumb.adjointvars.functionvalue[sumb.adjointvars.costfunccd0-1]
                          }
 
         return SUmbsolutions
