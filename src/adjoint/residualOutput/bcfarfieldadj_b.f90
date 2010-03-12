@@ -42,7 +42,6 @@ SUBROUTINE BCFARFIELDADJ_B(secondhalo, winfadj, winfadjb, pinfcorradj, &
   REAL(KIND=REALTYPE) :: pinfcorradj, pinfcorradjb
   REAL(KIND=REALTYPE), DIMENSION(nbocos, -2:2, -2:2, &
 &  ntimeintervalsspectral), INTENT(IN) :: rfaceadj
-  !LOGICAL, INTENT(IN) :: secondhalo
   LOGICAL :: secondhalo
   REAL(KIND=REALTYPE), DIMENSION(-3:2, -3:2, -3:2, 3, &
 &  ntimeintervalsspectral), INTENT(IN) :: siadj
@@ -106,6 +105,7 @@ SUBROUTINE BCFARFIELDADJ_B(secondhalo, winfadj, winfadjb, pinfcorradj, &
 !       integer(kind=intType), intent(in) :: iOffset, jOffset
 !  real(kind=realType), dimension(-2:2,-2:2,-2:2,3), intent(in) :: &
 !       siAdj, sjAdj, skAdj
+!logical, intent(in) :: secondHalo
 !real(kind=realType), dimension(nBocos,-2:2,-2:2,3), intent(in) :: normAdj
 !
 !      Local variables.
@@ -186,7 +186,6 @@ bocos:DO nnbcs=1,nbocos
 &                          kbend, icbeg, jcbeg, icend, jcend, secondhalo&
 &                          , nn, level, sps, sps2)
         ad_from = jcbeg
-
 !print *,'extract',secondhalo,icell,jcell,kcell
 ! Loop over the generic subface to set the state in the
 ! halo cells.
@@ -377,7 +376,6 @@ bocos:DO nnbcs=1,nbocos
 &                          revadj2, icell, jcell, kcell, wadj, wadjb, &
 &                          padj, padjb, rlvadj, revadj, secondhalo, nn, &
 &                          level, sps, sps2)
-
       CALL POPINTEGER4(branch)
       IF (.NOT.branch .LT. 1) THEN
         CALL POPREAL8ARRAY(wadj0, 5**2*nw)
@@ -400,7 +398,6 @@ bocos:DO nnbcs=1,nbocos
             wadj1b(ii, jj, irhoe) = tmp0b
             wadj1b(ii, jj, irho) = wadj1b(ii, jj, irho) - factk*wadj1(ii&
 &              , jj, itu1)*tmp0b
-
             wadj1b(ii, jj, itu1) = wadj1b(ii, jj, itu1) - factk*wadj1(ii&
 &              , jj, irho)*tmp0b
           END IF
@@ -409,10 +406,8 @@ bocos:DO nnbcs=1,nbocos
           wadj1b(ii, jj, irhoe) = 0.0
           tempb3 = half*wadj1(ii, jj, irho)*tmpb
           padj1b(ii, jj) = padj1b(ii, jj) + ovgm1*tmpb
- 
           wadj1b(ii, jj, irho) = wadj1b(ii, jj, irho) + cc*padj1b(ii, jj&
 &            ) + half*(uf**2+vf**2+wf**2)*tmpb
-
           wfb = wadj1b(ii, jj, ivz) + 2*wf*tempb3
           wadj1b(ii, jj, ivz) = 0.0
           vfb = wadj1b(ii, jj, ivy) + 2*vf*tempb3
@@ -424,10 +419,8 @@ bocos:DO nnbcs=1,nbocos
             tempb4 = 0.0
           ELSE
             tempb4 = ovgm1*(sf*cc)**(ovgm1-1)*wadj1b(ii, jj, irho)
-
           END IF
           ccb = sf*tempb4 + wadj1(ii, jj, irho)*padj1b(ii, jj)
-  
           padj1b(ii, jj) = 0.0
           CALL POPREAL8(wadj1(ii, jj, ivz))
           CALL POPREAL8(wadj1(ii, jj, ivy))
@@ -437,7 +430,6 @@ bocos:DO nnbcs=1,nbocos
           wadj1b(ii, jj, irho) = 0.0
           CALL POPREAL8(cc)
           cfb = 2*cf*ccb/gammainf
- 
           CALL POPINTEGER4(branch)
           IF (branch .LT. 1) THEN
             DO l=nt2mg,nt1mg,-1
@@ -491,10 +483,8 @@ bocos:DO nnbcs=1,nbocos
           END IF
           CALL POPREAL8(cf)
           tempb1 = fourth*gm1*cfb
-   
           ac1b = half*qnfb + tempb1
           ac2b = half*qnfb - tempb1
-      
           CALL POPREAL8(qnf)
           CALL POPINTEGER4(branch)
           IF (branch .LT. 1) THEN
@@ -586,7 +576,6 @@ bocos:DO nnbcs=1,nbocos
     CALL POPINTEGER4(jbend)
     CALL POPINTEGER4(kbend)
   END DO
-
   IF (.NOT.(s0b .EQ. 0.0 .OR. winfadj(irho) .LE. 0.0 .AND. (gammainf &
 &      .EQ. 0.0 .OR. gammainf .NE. INT(gammainf)))) winfadjb(irho) = &
 &      winfadjb(irho) + gammainf*winfadj(irho)**(gammainf-1)*s0b/&
@@ -594,11 +583,9 @@ bocos:DO nnbcs=1,nbocos
   tempb = gammainf*c0b/(2.0*SQRT(gammainf*(pinfcorradj*r0)))
   pinfcorradjb = pinfcorradjb + r0*tempb - winfadj(irho)**gammainf*s0b/&
 &    pinfcorradj**2
-
   r0b = pinfcorradj*tempb
   winfadjb(ivz) = winfadjb(ivz) + w0b
   winfadjb(ivy) = winfadjb(ivy) + v0b
   winfadjb(ivx) = winfadjb(ivx) + u0b
   winfadjb(irho) = winfadjb(irho) - one*r0b/winfadj(irho)**2
-
 END SUBROUTINE BCFARFIELDADJ_B
