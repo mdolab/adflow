@@ -870,7 +870,7 @@ python module sumb ! in
             character(len=maxstringlen) parameter,optional :: varnameaoa="angleofattack"
             integer(kind=inttype) :: ndesignspatial
             integer(kind=inttype) parameter,optional :: ndesignaoa=1
-            integer(kind=inttype) parameter,optional :: ncostfunction=8
+            integer(kind=inttype) parameter,optional :: ncostfunction=14
             integer(kind=inttype) parameter,optional :: costfuncforcexcoef=3
             integer(kind=inttype) :: nsurfnodesglobal
             integer(kind=inttype) parameter,optional :: costfuncforceycoef=4
