@@ -81,6 +81,7 @@ default:
 	@echo "                         ALC_INTEL"
 	@echo "                         ALTIX"
 	@echo "                         ALTIX_MPI"
+	@echo "                         ALTIX_MPICH2"
 	@echo "                         APPLE_MAC_NAG"
 	@echo "                         APPLE_MAC_NAG_MPICH"
 	@echo "                         APPLE_MAC_XLF"
@@ -95,6 +96,9 @@ default:
 	@echo "                         LINUX_G95_MPICH"
 	@echo "                         LINUX_INTEL"
 	@echo "                         LINUX_INTEL_MPICH"
+	@echo "                         LINUX_INTEL_OPENMPI"
+	@echo "                         LINUX_INTEL_OPENMPI_SCINET"
+	@echo "                         LINUX_INTEL_OPENMPI_SCINET_PYTHON"
 	@echo "                         LINUX_PG"
 	@echo "                         LINUX_PG_MPICH"
 	@echo "                         REDHOT_IFC_ETHERNET"
@@ -274,6 +278,20 @@ LINUX_INTEL_OPENMPI:
 	(cd externals/ADT && gmake LINUX_INTEL_OPENMPI)
 	ln -sf config/config.LINUX_INTEL_OPENMPI.mk config.mk
 	gmake sumb
+
+LINUX_INTEL_OPENMPI_SCINET:
+	(cd externals/SU_MPI && gmake LINUX_INTEL_OPENMPI_SCINET)
+	(cd externals/ADT && gmake LINUX_INTEL_OPENMPI_SCINET)
+	ln -sf config/config.LINUX_INTEL_OPENMPI_SCINET.mk config.mk
+	gmake sumb
+
+LINUX_INTEL_OPENMPI_SCINET_PYTHON:
+	(cd externals/SU_MPI && gmake LINUX_INTEL_OPENMPI_SCINET)
+	(cd externals/ADT && gmake LINUX_INTEL_OPENMPI_SCINET)
+	ln -sf config/config.LINUX_INTEL_OPENMPI_SCINET.mk config.mk
+	gmake sumb
+	(cd src/python/f2py && gmake)
+
 
 LINUX_PG:
 	(cd externals/SU_MPI && gmake LINUX_PG)
