@@ -150,8 +150,19 @@ class SUMB(AeroSolver):
 		
 		# Post-Processing
 		#Write solutions
-		volname=self.filename+'%d'%(self.callCounter)+'vol.cgns'
-		surfname=self.filename+'%d'%(self.callCounter)+'surf.cgns'
+## 		try:  kwargs['solver_options']['OutputDir']
+## 		except KeyError:
+## 			#volname=self.filename+'%d'%(self.callCounter)+'vol.cgns'
+##                         #surfname=self.filename+'%d'%(self.callCounter)+'surf.cgns'
+## 			volname=self.filename+'vol.cgns'
+## 			surfname=self.filename+'surf.cgns'
+## 		else:
+## 			volname=kwargs['solver_options']['OutputDir']+self.filename+'vol.cgns'
+## 			surfname=kwargs['solver_options']['OutputDir']+self.filename+'surf.cgns'
+## 		#endif
+		volname=self.interface.OutputDir+self.filename+'vol.cgns'
+		surfname=self.interface.OutputDir+self.filename+'surf.cgns'
+		
 		if(self.interface.myid==0):print volname,surfname
 		self.interface.WriteVolumeSolutionFile(volname)
 		self.interface.WriteSurfaceSolutionFile(surfname)
