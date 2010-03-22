@@ -577,9 +577,18 @@ class SUmbInterface(object):
             grid_file - name of 3-d Mesh file
             '''
         #Generate Input File from Options
-        self.generateInputFile(aero_problem,sol_type,grid_file,*args,**kwargs)
+        try:  kwargs['solver_options']['OutputDir']
+        except KeyError:
+            self.OutputDir = ''
+        else:
+            self.OutputDir = kwargs['solver_options']['OutputDir']
+        #endtry
+
+        startfile = self.OutputDir+'autogen.input'
         
-        startfile = 'autogen.input'
+        self.generateInputFile(aero_problem,sol_type,grid_file,startfile,*args,**kwargs)
+        
+        #startfile = 'autogen.input'
         #startfile      -- the name of the SUmb input parameter file
 
         # Make sure the parameter file exists
@@ -621,9 +630,13 @@ class SUmbInterface(object):
         sumb.mdcreatensurfnodes()
 
         # Determine the total number of blocks in the mesh and store it
-        self.Mesh.nmeshblocks = self.sumb_comm_world.Allreduce(
+        #print 'mpitest',sumb.block.ndom,mpi.SUM
+        #For older versions of mpi4py...
+        #self.Mesh.nmeshblocks = self.sumb_comm_world.Allreduce(
+        #			     sumb.block.ndom,mpi.SUM)
+        #for mpi4py version 1.2
+        self.Mesh.nmeshblocks = self.sumb_comm_world.allreduce(
         			     sumb.block.ndom,mpi.SUM)
-
         #Set flags for ADjoint initialization
         self.adjointInitialized = False
         
@@ -643,14 +656,15 @@ class SUmbInterface(object):
         sumb.updateflow()
         return
         
-    def generateInputFile(self,aero_problem,sol_type,grid_file,file_type='cgns',eqn_type='Euler',*args,**kwargs):
+    def generateInputFile(self,aero_problem,sol_type,grid_file,startfile,file_type='cgns',eqn_type='Euler',*args,**kwargs):
         ''' Code to generate an SUmb Input File on the fly'''
         print 'generating input file'
         
         #Convert alpha and beta to a freestream vector
         [velDir,liftDir,dragDir]= sumb.adjustinflowangleadj((aero_problem._flows.alpha*(pi/180.0)),(aero_problem._flows.beta*(pi/180.0)),aero_problem._flows.liftIndex)
         
-        autofile = open("autogen.input",'w')
+        #autofile = open("autogen.input",'w')
+        autofile = open(startfile,'w')
 
         # Write the header of the file
 
@@ -684,9 +698,9 @@ class SUmbInterface(object):
             autofile.write("                      Restart file: %s_restart.cgns \n"%(grid_file))
             autofile.write("                           Restart: %s\n"%(kwargs['solver_options']['sol_restart']))
             autofile.write("       Check nondimensionalization: yes\n\n")
-            autofile.write("                     New grid file: %s_NewGrid.cgns\n\n"%(grid_file))
-            autofile.write("                     Solution file: %s_SolSUmb.cgns\n"%(grid_file))
-            autofile.write("             Surface solution file: %s_SolSUmb_surface.cgns\n"%(grid_file))
+            autofile.write("                     New grid file: %s%s_NewGrid.cgns\n\n"%(self.OutputDir,grid_file))
+            autofile.write("                     Solution file: %s%s_SolSUmb.cgns\n"%(self.OutputDir,grid_file))
+            autofile.write("             Surface solution file: %s%s_SolSUmb_surface.cgns\n"%(self.OutputDir,grid_file))
             
         elif file_type == 'plot3d':
             autofile.write("                         Grid file: %s.mesh \n"%(grid_file))
