@@ -742,7 +742,7 @@ python module sumb ! in
             integer :: nmon
             real(kind=realtype) allocatable,dimension(:) :: monloc
             real(kind=realtype) allocatable,dimension(:) :: monglob
-            real(kind=realType) allocatable,dimension(:) :: monRef
+            real(kind=realtype) allocatable,dimension(:) :: monRef
             character(len=32) allocatable,dimension(:) :: monnames
             logical :: monmachorhmax
             logical :: showcpu
