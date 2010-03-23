@@ -532,13 +532,13 @@ subroutine verifydSdx(level)
       !
       ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
       ! or PETSc users manual, pp.52
-
+#ifndef USE_PETSC_3
       call MatSetOption(dSdx,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("verifydSdx", &
                        "Error in MatSetOption X")
-
+#endif
       ! Get new time and compute the elapsed time.
 
 !!$      call cpu_time(time(2))
@@ -807,13 +807,13 @@ subroutine verifydSdx(level)
       !
       ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
       ! or PETSc users manual, pp.52
-
+#ifndef USE_PETSC_3
       call MatSetOption(dSdxFD2,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("verifydSdx", &
                        "Error in MatSetOption X")
-
+#endif
       ! Get new time and compute the elapsed time.
 
 !!$      call cpu_time(time(2))

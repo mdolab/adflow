@@ -362,10 +362,18 @@
       ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
       ! or PETSc users manual, pp.51-52
 
+
+#ifdef USE_PETSC_3
+      call MatSetOption(dRdW, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+#else
       call MatSetOption(dRdW, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dRdW")
+#endif
 !****************
 !create dRdWPre
 !***************
@@ -626,11 +634,17 @@ if (ApproxPC) then
       !
       ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
       ! or PETSc users manual, pp.51-52
+#ifdef USE_PETSC_3
+      call MatSetOption(dRdWPre, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+#else
       call MatSetOption(dRdWPre, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dRdWPre")
+#endif
    end if
 
 
@@ -800,12 +814,17 @@ if (ApproxPC) then
       !
       ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
       ! or PETSc users manual, pp.51-52
+#ifdef USE_PETSC_3
+      call MatSetOption(dRdWFD, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+#else
       call MatSetOption(dRdWFD, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dRdWFD")
-
+#endif
       !*****************************************
       ! end of create dRdWFD
       !*****************************************
@@ -1054,12 +1073,17 @@ if (ApproxPC) then
                        "Error in MatSetFromOptions dRda")
 
       ! Set column major order for the matrix dRda.
+#ifdef USE_PETSC_3
+      call MatSetOption(dRda, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+#else
       call MatSetOption(dRda, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dRda")
-
+#endif
       ! Extract info from the global matrix (only processor 0 does it).
 
       if( PETScRank==0 .and. debug ) then
@@ -1312,13 +1336,18 @@ if (ApproxPC) then
                        "Error in MatSetFromOptions dRdx")
 
       ! Set column major order for the matrix dRdx.
+#ifdef USE_PETSC_3
+      call MatSetOption(dRdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+#else
       call MatSetOption(dRdx, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", &
                        "Error in MatSetOption dRdx")
-
+#endif
       ! Extract info from the global matrix (only processor 0).
 
       if( PETScRank==0 .and. debug ) then
@@ -1427,13 +1456,18 @@ if (ApproxPC) then
                        "Error in MatSetFromOptions dRdxFD")
 
       ! Set column major order for the matrix dRdxFD.
+#ifdef USE_PETSC_3
+      call MatSetOption(dRdxFD, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+#else
       call MatSetOption(dRdxFD, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", &
                        "Error in MatSetOption dRdxFD")
-
+#endif
       ! Extract info from the global matrix (only processor 0).
 
       if( PETScRank==0 .and. debug ) then
@@ -1550,13 +1584,18 @@ if (ApproxPC) then
                        "Error in MatSetFromOptions dSdx")
 
       ! Set column major order for the matrix dSdx.
+#ifdef USE_PETSC_3
+      call MatSetOption(dSdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+#else
       call MatSetOption(dSdx, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", &
                        "Error in MatSetOption dSdx")
-
+#endif
       ! Extract info from the global matrix (only processor 0).
 
       if( PETScRank==0 .and. debug ) then
@@ -1674,13 +1713,18 @@ if (ApproxPC) then
                        "Error in MatSetFromOptions dSdxfd")
 
       ! Set column major order for the matrix dSdx.
+#ifdef USE_PETSC_3
+      call MatSetOption(dSdxfd2, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+#else
       call MatSetOption(dSdxfd2, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", &
                        "Error in MatSetOption dSdxfd")
-
+#endif
       ! Extract info from the global matrix (only processor 0).
 
       if( PETScRank==0 .and. debug ) then
@@ -1800,13 +1844,18 @@ if (ApproxPC) then
                        "Error in MatSetFromOptions dSdw")
 
       ! Set column major order for the matrix dSdw.
+#ifdef USE_PETSC_3
+      call MatSetOption(dSdw, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+#else
       call MatSetOption(dSdw, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", &
                        "Error in MatSetOption dSdw")
-
+#endif
       ! Extract info from the global matrix (only processor 0).
 
       if( PETScRank==0 .and. debug ) then
@@ -1961,12 +2010,17 @@ if (ApproxPC) then
                        "Error in MatSetFromOptions dCdw")
 
       ! Set column major order for the matrix dRda.
+#ifdef USE_PETSC_3
+      call MatSetOption(dCdw, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+#else
       call MatSetOption(dCdw, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dCdw")
-
+#endif
       ! Extract info from the global matrix (only processor 0 does it).
 
       if( PETScRank==0 .and. debug ) then
@@ -2125,12 +2179,17 @@ if (ApproxPC) then
 
 
       ! Set column major order for the matrix dRda.
+#ifdef USE_PETSC_3
+      call MatSetOption(dCdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+#else
       call MatSetOption(dCdx, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dCdx")
-
+#endif
       ! Extract info from the global matrix (only processor 0 does it).
 
       if( PETScRank==0 .and. debug ) then
@@ -2286,12 +2345,17 @@ if (ApproxPC) then
                        "Error in MatSetType dCda")
 
       ! Set column major order for the matrix dRda.
+#ifdef USE_PETSC_3
+      call MatSetOption(dCda, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+#else
       call MatSetOption(dCda, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dCda")
-
+#endif
       ! Extract info from the global matrix (only processor 0 does it).
 
       if( PETScRank==0 .and. debug ) then
