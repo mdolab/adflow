@@ -64,7 +64,7 @@
       real(kind=realType),dimension(:),allocatable :: functionGradLocal
 		
       logical :: designVarPresent 		
-
+#ifndef USE_NO_PETSC
       integer(kind=intType) :: idx
       integer(kind=intType) :: idxlocal,i
       integer(kind=intType),dimension(PETSCSize) :: idxglobal
@@ -75,7 +75,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-#ifndef USE_NO_PETSC
+
 
       ! Send some feedback to screen.
 

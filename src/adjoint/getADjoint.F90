@@ -34,7 +34,8 @@ subroutine getADjoint(costFunction)
       integer(kind=intType), dimension(:),allocatable :: & 		
            nDesignGlobal, nDisplsGlobal 		
       real(kind=realType),dimension(:),allocatable :: functionGradLocal
-		
+
+#ifndef USE_NO_PETSC		
       logical :: designVarPresent 
       integer(kind=intType) :: idx
       integer(kind=intType) :: idxlocal,i
@@ -162,6 +163,6 @@ subroutine getADjoint(costFunction)
    20 format(a,1x,f8.2)
    99 format(a,1x,i6)
 
-!#endif
+#endif
 
     end subroutine getADjoint

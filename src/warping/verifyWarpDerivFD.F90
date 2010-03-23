@@ -41,7 +41,8 @@ subroutine verifyWarpDerivFD!(ncoords,xyzface,indices_new)
 
   integer :: unitWarp = 8,ierr
   character(len = 16)::outfile,testfile
-  
+
+#ifndef USE_NO_PETSC   
   write(testfile,100) myid!12
 100 format (i5)  
   testfile=adjustl(testfile)
@@ -529,5 +530,6 @@ end do
      deallocate(xminus)
   enddo
   print *,'warp derivatives finished'
+#endif
 end subroutine verifyWarpDerivFD
    

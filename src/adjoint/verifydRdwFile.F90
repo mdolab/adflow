@@ -1,14 +1,14 @@
 !
 !     ******************************************************************
 !     *                                                                *
-!     * File:          verifydRdxfile.f90                              *
+!     * File:          verifydRdwfile.f90                              *
 !     * Author:        C.A.(Sandy) Mader                               *
 !     * Starting date: 06-12-2009                                      *
 !     * Last modified: 06-12-2009                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine verifydRdxfile(level)
+      subroutine verifydRdwfile(level)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -17,7 +17,7 @@
 !     *                                                                *
 !     ******************************************************************
 
-
+#ifndef USE_NO_PETSC
       use blockPointers ! block (nDoms,flowDoms), globalCell
       use flowvarrefstate
       use communication
@@ -26,7 +26,7 @@
       use inputIO
 
       !from old verify routine
-      use ADjointPETSc, only: drdx,drdxfd,petscone,insert_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world,add_values
+      use ADjointPETSc, only: drdw,drdwfd,petscone,insert_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world,add_values
       !use FDPETSc, only: DRDWFD
       use precision
       !use blockPointers
@@ -62,7 +62,7 @@
 !!$      real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xFD
       real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral)  :: xAdj
       real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral)  :: xAdjb
-      !real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral)  :: xFD
+      !real(kind=realType), dimension(-3:2,-3:2,-3:2,3)  :: xFD
 
 
       REAL(KIND=REALTYPE) :: machadj, machcoefadj, pinfcorradj,machgridadj
@@ -82,7 +82,7 @@
       real(kind=realType) :: timeAdj, timeFD, timeResAdj
 
       !integer(kind=intType), dimension(nDom) :: maxglobalcell
-      integer(kind=intType) :: idx, ii, jj, kk, idxnode, idxres, m, l,nnn
+      integer(kind=intType) :: idx, ii, jj, kk, idxstate, idxres, m, l,nnn
       integer(kind=intType) :: sps, nTime, max_nTime, nHalo, nn, discr,sps2
       !real(kind=realType), allocatable, dimension(:,:,:,:) :: dRdwAdj,dRdwFD1,dRdwFD2,dRdwErr
 
@@ -93,24 +93,24 @@
       REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3,nTimeIntervalsSpectral), xblockcorneradjb(2&
            &  , 2, 2, 3,nTimeIntervalsSpectral)
 
-      integer :: ierr, testnode
+      integer :: ierr
       logical :: fineGrid, correctForK, exchangeTurb,secondHalo
       REAL(KIND=REALTYPE) ::value
  
 
-      integer :: unitdRdx = 8,ierror
+      integer :: unitdRdw = 8,ierror
       character(len = 20)::outfile,testfile
       write(testfile,100) myid!12
 100   format (i5)  
       testfile=adjustl(testfile)
       write(outfile,101) trim(testfile)!testfile
-101   format("ADdRdxfile",a,".out")
-      unitdrdx = 8+myID
+101   format("ADdRdWfile",a,".out")
+      unitdrdw = 8+myID
 
       
-      open (UNIT=unitdRdx,File=outfile,status='replace',action='write',iostat=ierror)
+      open (UNIT=unitdRdw,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
-           call terminate("verifydRdxFile", &
+           call terminate("verifydRdwFile", &
            "Something wrong when &
            &calling open")
 
@@ -134,7 +134,7 @@
 !     *                                                                *
 !     ******************************************************************
 
-      if( myID==0 ) write(*,*) "Running verifydRdxFile..."
+      if( myID==0 ) write(*,*) "Running verifydRdWFile..."
 
       currentLevel = level
       !discr        = spaceDiscr
@@ -250,10 +250,10 @@
       if( myID==0 ) call cpu_time(time(1))
 
       !zero the matrix for dRdW Insert call
-      call MatZeroEntries(dRdxFD,PETScIerr)
+      call MatZeroEntries(dRdwFD,PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("verifydRdxFile", "Error in MatZeroEntries drdxfd")
+        call terminate("setupADjointMatrix", "Error in MatZeroEntries drdwfd")
       print *,'Entering Domain loop'
       domainLoopAD: do nn=1,nDom
          
@@ -271,62 +271,59 @@
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
                      call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
-           betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
-           nn,level,sps,&
-           prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-
-
+                          betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
+                          nn,level,sps,&
+                          prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
                      
-
-                     !print *,'Stencil Copied'
-!                     print *,'wadj',wadj
+                     
+                     !                     print *,'Stencil Copied'
+                     !                     print *,'wadj',wadj
                      mLoop: do m = 1, nw           ! Loop over output cell residuals (R)
-!                        print *,'initializing variables'
+                        !                        print *,'initializing variables'
                         ! Initialize the seed for the reverse mode
                         dwAdjb(:,:) = 0.; dwAdjb(m,sps) = 1.
                         dwAdj(:,:)  = 0.
                         wAdjb(:,:,:,:,:)  = 0.  !dR(m)/dw
-                        xAdjb(:,:,:,:,:)  = 0.  !dR(m)/dw
-                        xblockcorneradjb  = 0.
                         alphaadjb = 0.
                         betaadjb = 0.
                         machadjb = 0.
 !                        print *,'dwadjb',dwadjb,'wadjb',wadjb(0,0,0,:)
 
-  !                      print *,'calling reverse mode'
-!                        print *,'secondhalo',secondhalo
+                        !print *,'calling reverse mode'
+                        !print *,'secondhalo',secondhalo
                         	        ! Call the reverse mode of residual computation.
                 !
                 !                          dR(iCell,jCell,kCell,l)
                 ! wAdjb(ii,jj,kk,n) = --------------------------------
                 !                     dW(iCell+ii,jCell+jj,kCell+kk,n)
- !                       print *,'input',wadj, wadjb, xadj, xadjb, dwadj, dwadjb, &
- !                            &  alphaadj, alphaadjb, betaadj, betaadjb, machadj, machadjb, &
- !                            &  machcoefadj, icell, jcell, kcell, nn, sps, correctfork, secondhalo, &
- !                            &  prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
- !                            &  murefadj, timerefadj, pinfcorradj   
-                        !print *,'calling reverse mode'
-                        ! Call reverse mode of residual computation
-                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
-&  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
-&  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
-&  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
-&  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
-&  , rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
-&  liftindex)
 
+                        ! Call reverse mode of residual computation
+                        call  COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+                             &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+                             &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+                             &  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
+                             &  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
+                             &  , rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+                             &  liftindex)
+                        
                         ! Store the block Jacobians (by rows).
                         !print *,'entering storage loop'
                         do sps2 = 1,nTimeIntervalsSpectral
-                        do ii=-3,2!1,il-1
-                           do jj = -3,2!1,jl-1
-                              do kk = -3,2!1,kl-1
-                                 do l = 1,3
-                                    i = iCell + ii
-                                    j = jCell + jj
-                                    k = kCell + kk
+                           do ii=-2,2!1,il-1
+                              do jj = -2,2!1,jl-1
+                                 do kk = -2,2!1,kl-1
+                                    do l = 1,nw
+                                       i = iCell + ii
+                                       j = jCell + jj
+                                       k = kCell + kk
+
+                                    call setPointersAdj(nn,level,sps2)
+                                    idxstate = globalCell(i,j,k)*nw+l
+                                    call setPointersAdj(nn,level,sps)
+                                    idxres   = globalCell(iCell,jCell,kCell)*nw+m
+
 !!$                                    !print *,'secondaryindicies',i,j,k,ii,jj,kk
 !!$                                    if(i>zero .and. j>zero .and. k>zero .and. i<=il .and. j<=jl .and. k<=kl)then
 !!$                                       idxstate = globalCell(i,j,k)*nw+l
@@ -337,110 +334,35 @@
 !!$
 !!$                                       endif
 !!$                                    end if
-
-                                    if(i>=zero .and. j>=zero .and. k>=zero .and. i<=ie .and. j<=je .and. k<=ke)then
-                                       call setPointersAdj(nn,level,sps2)
-                                       idxnode = globalnode(i,j,k)*3+l
-                                       call setPointersAdj(nn,level,sps)
-                                       idxres   = globalCell(iCell,jCell,kCell)*nw+m
-                                       if( (idxres-1)>=0 .and. (idxnode-1)>=0) then
-                                          if (xAdjb(ii,jj,kk,l,sps2).ne.0.0)then
-!!$                                          write(unitdrdx,13) idxnode,idxres,l,i,j,k,nn,m,kcell,jcell,icell,xAdjb(ii,jj,kk,l),xAdj(ii,jj,kk,l)!idxnode,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value
-!!$                                          !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
-!!$13                                        format(1x,'drdx',11I8,2f18.10)
-!!$                                             print 14,idxnode,idxres,l,i,j,k,nn,m,kcell,jcell,icell,xAdjb(ii,jj,kk,l)
-!!$14                                           format(1x,'drdx',11I8,f18.10)
-                                             call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
-                                                  xAdjb(ii,jj,kk,l,sps2), ADD_VALUES, PETScIerr)
+!!$                                    if(nn==5.and.icell==2.and.jcell==2.and.kcell==2.and.l==3)then
+!!$                                       print *,'ad value',(i>zero .and. j>zero .and. k>zero .and. i<=ib .and. j<=jb .and. k<=kb),(idxres>=0 .and. idxstate>=0),(wAdjb(ii,jj,kk,l)/=0)
+!!$                                       write(*,13) idxstate,idxres,l,icell,jcell,kcell,nn,m,k,j,i,nnn,wAdjb(ii,jj,kk,l)
+!!$                                    endif
+                                    !if(i>zero .and. j>zero .and. k>zero .and. i<=il .and. j<=jl .and. k<=kl)then
+                                    if(i>=zero .and. j>=zero .and. k>=zero .and. i<=ib .and. j<=jb .and. k<=kb)then
+                                       
+                                       if( idxres>=0 .and. idxstate>=0) then
+                                          if (wAdjb(ii,jj,kk,l,sps2)/=0)then
+!!$                                             if(nn==5.and.icell==2.and.jcell==2.and.kcell==2.and.l==3)then
+!!$                                                print *,'ad value'
+!!$                                                write(*,13) idxstate,idxres,l,icell,jcell,kcell,nn,m,k,j,i,nnn,wAdjb(ii,jj,kk,l)
+!!$                                             endif
+                                             !print *,'setting values'
+                                             call MatSetValues(drdwfd, 1, idxres-1, 1, idxstate-1,   &
+                                                  wAdjb(ii,jj,kk,l,sps2), ADD_VALUES, PETScIerr)
                                              if( PETScIerr/=0 ) &
                                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+
                                           endif
-                                       endif
-                                    endif                                   
+                                       end if
+                                    endif
+                                    
                                     
                                  enddo !l
                               enddo !kk
                            enddo !jj
                         enddo !ii
-                     
-                        !set values for symmtery plane normal derivatives
-                        do l = 1,3
-                           if (xblockcorneradjb(1,1,1,l,sps2).ne.0.0)then
-                              call setPointersAdj(nn,level,sps2)
-                              idxnode = globalnode(1,1,1)*3+l
-                              call setPointersAdj(nn,level,sps)
-                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
-                                   xblockcorneradjb(1,1,1,l,sps2), ADD_VALUES, PETScIerr)
-                              if( PETScIerr/=0 ) &
-                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
-                           endif
-                           if (xblockcorneradjb(2,1,1,l,sps2).ne.0.0)then
-                              call setPointersAdj(nn,level,sps2)
-                              idxnode = globalnode(il,1,1)*3+l
-                              call setPointersAdj(nn,level,sps)
-                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
-                                   xblockcorneradjb(2,1,1,l,sps2), ADD_VALUES, PETScIerr)
-                              if( PETScIerr/=0 ) &
-                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
-                           endif
-                           if (xblockcorneradjb(1,2,1,l,sps2).ne.0.0)then
-                              call setPointersAdj(nn,level,sps2)
-                              idxnode = globalnode(1,jl,1)*3+l
-                              call setPointersAdj(nn,level,sps)
-                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
-                                   xblockcorneradjb(1,2,1,l,sps2), ADD_VALUES, PETScIerr)
-                              if( PETScIerr/=0 ) &
-                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
-                           endif
-                           if (xblockcorneradjb(2,2,1,l,sps2).ne.0.0)then
-                              call setPointersAdj(nn,level,sps2)
-                              idxnode = globalnode(il,jl,1)*3+l
-                              call setPointersAdj(nn,level,sps)
-                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
-                                   xblockcorneradjb(2,2,1,l,sps2), ADD_VALUES, PETScIerr)
-                              if( PETScIerr/=0 ) &
-                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
-                           endif
-                           if (xblockcorneradjb(1,1,2,l,sps2).ne.0.0)then
-                              call setPointersAdj(nn,level,sps2)
-                              idxnode = globalnode(1,1,kl)*3+l
-                              call setPointersAdj(nn,level,sps)
-                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
-                                   xblockcorneradjb(1,1,2,l,sps2), ADD_VALUES, PETScIerr)
-                              if( PETScIerr/=0 ) &
-                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
-                           endif
-                           if (xblockcorneradjb(1,2,2,l,sps2).ne.0.0)then
-                              call setPointersAdj(nn,level,sps2)
-                              idxnode = globalnode(1,jl,kl)*3+l
-                              call setPointersAdj(nn,level,sps)
-                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
-                                   xblockcorneradjb(1,2,2,l,sps2), ADD_VALUES, PETScIerr)
-                              if( PETScIerr/=0 ) &
-                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
-                           endif
-                           if (xblockcorneradjb(2,1,2,l,sps2).ne.0.0)then
-                              call setPointersAdj(nn,level,sps2)
-                              idxnode = globalnode(il,1,kl)*3+l
-                              call setPointersAdj(nn,level,sps)
-                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
-                                   xblockcorneradjb(2,1,2,l,sps2), ADD_VALUES, PETScIerr)
-                              if( PETScIerr/=0 ) &
-                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
-                           endif
-                           if (xblockcorneradjb(2,2,2,l,sps2).ne.0.0)then
-                              call setPointersAdj(nn,level,sps2)
-                              idxnode = globalnode(il,jl,kl)*3+l
-                              call setPointersAdj(nn,level,sps)
-                              call MatSetValues(drdxfd, 1, idxres-1, 1, idxnode-1,   &
-                                   xblockcorneradjb(2,2,2,l,sps2), ADD_VALUES, PETScIerr)
-                              if( PETScIerr/=0 ) &
-                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
-                           endif
-                        enddo
-
                      end do
-
                      end do mLoop
                      !stop
                   end do !iCell
@@ -458,20 +380,20 @@
          timeAdj = time(2)-time(1)
       endif
       
-      call MatAssemblyBegin(drdxfd,MAT_FINAL_ASSEMBLY,PETScIerr)
+      call MatAssemblyBegin(drdwfd,MAT_FINAL_ASSEMBLY,PETScIerr)
       
       if( PETScIerr/=0 ) &
-           call terminate("verifydrdxFile","Error in MatAssemblyBegin")
+           call terminate("verifydrdwfdFile","Error in MatAssemblyBegin")
       
       
-      call MatAssemblyEnd(drdxfd,MAT_FINAL_ASSEMBLY,PETScIerr)
+      call MatAssemblyEnd(drdwfd,MAT_FINAL_ASSEMBLY,PETScIerr)
        
        if( PETScIerr/=0 ) &
-            call terminate("verifydrdxFile","Error in MatAssemblyEnd")
+            call terminate("verifydrdwfdFile","Error in MatAssemblyEnd")
 
        !if( debug ) then
-          !call MatView(drdxFD,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-          !call MatView(drdxFD,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+          !call MatView(drdwfdFD,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+          !call MatView(drdwfdFD,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
           !if( PETScIerr/=0 ) &
           !     call terminate("setupADjointMatrix", "Error in MatView")
           !pause
@@ -481,61 +403,62 @@
        timeFD = time(4)-time(3)
 
 !      !now extract and write to a file
-       do sps = 1,nTimeIntervalsSpectral
-       do nn = 1,nDom
-          call setPointersAdj(nn,1,sps)
-          do kCell = 1,kl!0, ke
-             do jCell = 1,jl!0, je
-                do iCell = 1,il!0, ie
-                   !print *,'ie',icell,ie,jcell,je,kcell,ke
-                   do m = 1, 3
-                      do sps2 = 1,nTimeIntervalsSpectral
-                      call setPointersAdj(nn,1,sps)
-                     idxnode   = globalnode(iCell,jCell,kCell)*3+m 
-                     testnode = globalnode(iCell,jCell,kCell)
-                     call setPointersAdj(nn,1,sps2)
-                     do nnn = 1,ndom
-                        call setPointersAdj(nnn,1,sps2)
-                        DO I=2,Il
-                           DO J=2,Jl
-                              DO K=2,Kl
-                                 do n = 1,nw
-                                    idxres = globalCell(i,j,k)*nw+n
-                                    if ((idxres-1)>=0 .and. (idxnode-1)>=0)then
-                                       call MatGetValues(drdxfd,1,idxres-1,1,idxnode-1,value,PETScIerr)
-                                       !print *,'value',value,i,j,k
-                                       !if(value.ne.0)then
-                                       if(abs(value)>1e-10)then
-                                          !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
-                                          !12                                     format(1x,'Face',6I2,'edge',12I2)
-                                          write(unitdrdx,13) idxnode,idxres,m,icell,jcell,kcell,nn,sps,n,k,j,i,nnn,sps2,value
-                                          !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
-13                                        format(1x,'drdx',14I8,f18.10)
-                                       endif
-                                    end if
-                                 enddo
-                              END DO
-                           END DO
-                        END DO
-                        call setPointersAdj(nn,1,sps2)
-                     end do
-                  end do
-               enddo
-            end do
-         end do
-      enddo
-   end do
-end do
-!Print *,'barriercall',myID
-call mpi_barrier(SUmb_comm_world, ierr)
+       do sps2 = 1,nTimeIntervalsSpectral
+          do nn = 1,nDom
+             call setPointersAdj(nn,1,sps2)
+             do kCell = 2, kl
+                do jCell = 2, jl
+                   do iCell = 2, il
+                      do m = 1, nw
+                         do sps = 1,nTimeIntervalsSpectral
+                            call setPointersAdj(nn,1,sps2)
+                            idxstate   = globalCell(iCell,jCell,kCell)*nw+m 
+                            call setPointersAdj(nn,1,sps)
+                            do nnn = 1,ndom
+                               call setPointersAdj(nnn,1,sps)
+                               DO I=2,Il
+                                  DO J=2,Jl
+                                     DO K=2,Kl
+                                        do n = 1,nw
+                                           idxres = globalCell(i,j,k)*nw+n                                    
+                                           call MatGetValues(drdwfd,1,idxres-1,1,idxstate-1,value,PETScIerr)
 
- close(unitdrdx)
+!!$                                    if(nn==1.and.icell==2.and.jcell==3.and.kcell==2.and.m==3)then
+!!$                                      print *,'mat value'
+!!$                                      write(*,13) idxstate,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value
+!!$                                    endif
+                                           !if(value.ne.0)then
+                                           if(abs(value)>1e-10)then
+                                              !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
+                                              !12                                     format(1x,'Face',6I2,'edge',12I2)
+                                              write(unitdrdw,13) idxstate,idxres,m,icell,jcell,kcell,nn,sps2,n,k,j,i,nnn,sps,value
+                                              !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
+13                                            format(1x,'drdw',14I8,f18.10)
+                                           endif
+                                        enddo
+                                     END DO
+                                  END DO
+                               END DO
+                               call setPointersAdj(nn,1,sps)
+                            end do
+                         end do
+                      end do
+                   enddo
+                end do
+             end do
+          enddo
+       end do
+       !Print *,'barriercall',myID
+       call mpi_barrier(SUmb_comm_world, ierr)
+       
+       close(unitdrdw)
+       
+       call mpi_barrier(SUmb_comm_world, ierr)
 
- call mpi_barrier(SUmb_comm_world, ierr)
-
-
- 111  format(4I4, 3ES22.14)
-
-
-
-end subroutine verifydRdxfile
+       
+111    format(4I4, 3ES22.14)
+       
+       
+#endif       
+     end subroutine verifydRdwfile
+     

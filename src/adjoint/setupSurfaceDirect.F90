@@ -16,7 +16,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-
+#ifndef USE_NO_PETSC
       use ADjointPETSc
       use ADjointVars
       !use warpingPETSc
@@ -85,7 +85,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-#ifndef USE_NO_PETSC
+
 !
       ! Send some feedback to screen.
 

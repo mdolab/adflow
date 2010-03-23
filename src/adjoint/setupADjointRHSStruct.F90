@@ -46,7 +46,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-!#ifndef USE_NO_PETSC
+#ifndef USE_NO_PETSC
 !      !determine the number of surface nodes for coupling matrix
 !      call mdCreateNSurfNodesLocal
       modFamID = max(0, 1_intType)
@@ -206,6 +206,6 @@
    10 format(a)
    20 format(a,1x,f8.2)
 
-!#endif
+#endif
 
     end subroutine setupADjointRHSStruct
