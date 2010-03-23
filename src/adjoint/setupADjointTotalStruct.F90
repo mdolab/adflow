@@ -52,7 +52,7 @@ subroutine setupADjointTotalStruct(lenadjoint,structAdjoint,costfunction)
       real(kind=realType),dimension(:),allocatable :: functionGradLocal
 		
       logical :: designVarPresent 		
-
+#ifndef USE_NO_PETSC
       integer(kind=intType) :: idx
       integer(kind=intType) :: idxlocal,i
       integer(kind=intType),dimension(PETSCSize) :: idxglobal
@@ -63,7 +63,7 @@ subroutine setupADjointTotalStruct(lenadjoint,structAdjoint,costfunction)
 !     *                                                                *
 !     ******************************************************************
 !
-!#ifndef USE_NO_PETSC
+!
 !      !determine the number of surface nodes for coupling matrix
 !      call mdCreateNSurfNodesLocal
       modFamID = max(0, 1_intType)
@@ -313,6 +313,6 @@ subroutine setupADjointTotalStruct(lenadjoint,structAdjoint,costfunction)
    10 format(a)
    20 format(a,1x,f8.2)
    99 format(a,1x,i6)
-!#endif
+#endif
 
     end subroutine setupADjointTotalStruct

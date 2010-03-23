@@ -139,6 +139,7 @@ subroutine verifydCfdw(level)
 !     *                                                                *
 !     ******************************************************************
 !
+#ifndef USE_NO_PETSC
       print *,'in verifydcfdw'
  !     if( myID==0 ) write(*,*) "Running verifydCfdx...",sps
 
@@ -1383,4 +1384,5 @@ subroutine verifydCfdw(level)
   20  format(1x,(e18.6),2x,(e18.6),2x,(e18.6))
   30  format(1x,a,1x,i3,2x,e13.6,1x,5(i2,1x),3x,e13.6,1x,5(i2,1x))
   99  format(a,1x,i6)
+#endif
     end subroutine verifydCfdw

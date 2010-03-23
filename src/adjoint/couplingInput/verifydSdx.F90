@@ -123,6 +123,7 @@ subroutine verifydSdx(level)
 !     *                                                                *
 !     ******************************************************************
 !
+#ifndef USE_NO_PETSC
       !print *,'in verifydSdx...'
       if( myID==0 ) write(*,*) "Running verifydSdx..."
 
@@ -984,4 +985,5 @@ subroutine verifydSdx(level)
   30  format(1x,a,1x,i3,2x,e13.6,1x,5(i2,1x),3x,e13.6,1x,5(i2,1x))
   99  format(a,1x,i6)
       print *,' Finished verifydSdx'
+#endif
     end subroutine verifydSdx

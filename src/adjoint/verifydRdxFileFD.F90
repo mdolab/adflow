@@ -1,14 +1,14 @@
 !
 !     ******************************************************************
 !     *                                                                *
-!     * File:          verifydRdwfileFD.f90                              *
+!     * File:          verifydRdxfile.f90                              *
 !     * Author:        C.A.(Sandy) Mader                               *
-!     * Starting date: 07-29-2009                                      *
-!     * Last modified: 07-29-2009                                      *
+!     * Starting date: 06-12-2009                                      *
+!     * Last modified: 06-12-2009                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine verifydRdwfileFD(level)
+      subroutine verifydRdxfileFD(level)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -17,7 +17,7 @@
 !     *                                                                *
 !     ******************************************************************
 
-
+#ifndef USE_NO_PETSC
       use blockPointers ! block (nDoms,flowDoms), globalCell
       use flowvarrefstate
       use communication
@@ -78,11 +78,11 @@
       character fileName*32, dataName*32
       real(kind=realType), dimension(nw) :: dwAdj,dwAdjb,dwAdjRef
       real(kind=realType), dimension(nw) :: dwAdjP, dwAdjM
-      real(kind=realType) :: deltaw
+      real(kind=realType) :: deltax
       real(kind=realType) :: timeAdj, timeFD, timeResAdj
 
       integer(kind=intType), dimension(nDom) :: maxglobalcell
-      integer(kind=intType) :: idx, ii, jj, kk, idxstate, idxres, m, l,nnn
+      integer(kind=intType) :: idx, ii, jj, kk, idxnode, idxres, m, l,nnn
       integer(kind=intType) :: sps, nTime, max_nTime, nHalo, nn, discr
       !real(kind=realType), allocatable, dimension(:,:,:,:) :: dRdwAdj,dRdwFD1,dRdwFD2,dRdwErr
       real(kind=realType), allocatable, dimension(:,:,:,:) ::xtemp
@@ -94,20 +94,20 @@
 
       integer :: ierr, testnode
       logical :: fineGrid, correctForK, exchangeTurb,secondHalo
-      REAL(KIND=REALTYPE) ::value,wref
+      REAL(KIND=REALTYPE) ::value,xref
  
 
-      integer :: unitdrdw = 8,ierror
+      integer :: unitdRdx = 8,ierror
       character(len = 20)::outfile,testfile
       write(testfile,100) myid!12
 100   format (i5)  
       testfile=adjustl(testfile)
       write(outfile,101) trim(testfile)!testfile
-101   format("FDdRdwfile",a,".out")
-      unitdrdw = 8+myID
+101   format("FDdRdxfile",a,".out")
+      unitdrdx = 8+myID
 
       
-      open (UNIT=unitdrdw,File=outfile,status='replace',action='write',iostat=ierror)
+      open (UNIT=unitdRdx,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
            call terminate("verifydRdxFile", &
            "Something wrong when &
@@ -133,7 +133,7 @@
 !     *                                                                *
 !     ******************************************************************
 
-      if( myID==0 ) write(*,*) "Running verifydRdwFileFD..."
+      if( myID==0 ) write(*,*) "Running verifydRdxFile..."
 
       currentLevel = level
       !discr        = spaceDiscr
@@ -258,8 +258,6 @@
          allocate(flowDoms(nn,level,sps)%dwp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
          allocate(flowDoms(nn,level,sps)%dwm(0:ib,0:jb,0:kb,1:nw),stat=ierr)
          allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-         allocate(flowDoms(nn,level,sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-         allocate(flowDoms(nn,level,sps)%ptmp(0:ib,0:jb,0:kb),stat=ierr)
          dwtemp = zero
          dwp = zero
          dwm = zero
@@ -271,8 +269,6 @@
          sps = 1
          call setPointersAdj(nn,1,sps)
          dwtemp = dw
-         ptmp = p
-         wtmp = w
       end do storedomains
       !zero the matrix for dRdW Insert call
       call MatZeroEntries(dRdxFD,PETScIerr)
@@ -280,7 +276,7 @@
       if( PETScIerr/=0 ) &
         call terminate("verifydRdxFileFD", "Error in MatZeroEntries drdxfd")
 
-      deltaw = 1e-5!1.d-5
+      deltax = 1e-5!1.d-5
       !print *, "deltaw=", deltaw
       !wFD2(:,:,:,:) = 0. 
       call cpu_time(time(3))
@@ -289,37 +285,33 @@
          groundLevel = 1
          sps = 1
          call setPointersAdj(nn,1,sps)
+         allocate(xtemp(0:ie,0:je,0:ke,1:3),ptemp(0:ib,0:jb,0:kb))
+         xtemp(:,:,:,:) = x(:,:,:,:)
+         ptemp = p
          do kCell = 1,kl!0, ke
             do jCell = 1,jl!0, je
                do iCell = 1,il!0, ie
                   !print *,'ie',icell,ie,jcell,je,kcell,ke
-                  do m = 1, nw
+                  do m = 1, 3
                      do nnn = 1,ndom
                         call setPointersAdj(nnn,1,sps)
-                        w = wtmp
-                        p = ptmp
+                        dw = dwtemp
                      enddo
                      call setPointersAdj(nn,1,sps)
-                     wref =w(icell,jcell,kcell,m) 
-                     w(icell,jcell,kcell,m)  = wref+ deltaw
-                  
-                     call referenceState
+                     
+                     xref =x(icell,jcell,kcell,m) 
+                     x(icell,jcell,kcell,m)  = xref+ deltax
+                     p = ptemp
+                     call xhalo(groundlevel)
+                     call metric(groundlevel)
+                     !call setPointers(nn,level,sps)
+                     call checkSymmetry(groundlevel)
+                     !call referenceState
                       
-                     call setFlowInfinityState
-
-                     do nnn=1,ndom
-                        call setPointersAdj(nnn,1,sps)
-                        call computeForcesPressureAdj(w,p)
-                     end do
-                     call setPointersAdj(nn,1,sps)
-            ! Exchange the pressure if the pressure must be exchanged early.
-            ! Only the first halo's are needed, thus whalo1 is called.
-            ! Only on the fine grid.
-
-                     if(exchangePressureEarly .and. currentLevel <= groundLevel) &
-                          call whalo1(currentLevel, 1_intType, 0_intType, .true.,&
-                          .false., .false.)                  
-
+                     !call setFlowInfinityState
+                     
+                     call initres(1_intType, nwf)
+                     
                      call applyAllBC(secondHalo)
                      
                      ! Exchange the solution. Either whalo1 or whalo2
@@ -340,12 +332,7 @@
                      !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
                      !        .true., .true.)
                      !endif
-                     call initres(1_intType, nwf)
-                     if( turbCoupled ) then
-                        call initres(nt1MG, nMGVar)
-                        call turbResidual
-                     endif
-                     call initres(1_intType, nwf)
+                     
                      call residual
                      !save residual
                      do nnn = 1,ndom
@@ -354,39 +341,29 @@
                         call setPointersAdj(nnn,1,sps)
                         dwp = dw
                      end do
-                     
-                     !reset states
                      !print *, "Called Residual =",nn,domain
                      do nnn = 1,ndom
                         call setPointersAdj(nnn,1,sps)
-                        w = wtmp
-                        p = ptmp
+                        dw = dwtemp
+                        
                      enddo
                      !nn=domain
                      groundlevel = 1
                      sps = 1
                      call setPointersAdj(nn,1,sps)
-                     w(icell,jcell,kcell,m)  = wref- deltaw
- 
-                     call referenceState
-                      
-                     call setFlowInfinityState
+                     p(:,:,:) = ptemp(:,:,:)
+                     x(icell,jcell,kcell,m)  = xref- deltax
                      
-                     do nnn=1,ndom
-                        call setPointersAdj(nnn,1,sps)
-                        call computeForcesPressureAdj(w,p)
-                     end do
-                     
-                     call setPointersAdj(nn,1,sps)
-            ! Exchange the pressure if the pressure must be exchanged early.
-            ! Only the first halo's are needed, thus whalo1 is called.
-            ! Only on the fine grid.
-
-                     if(exchangePressureEarly .and. currentLevel <= groundLevel) &
-                          call whalo1(currentLevel, 1_intType, 0_intType, .true.,&
-                          .false., .false.)    
-
+                     call xhalo(groundlevel)
+                     call metric(groundlevel)
+                     !call setPointers(nn,level,sps)
+                     call checkSymmetry(groundlevel)
+                     !call referenceState
                       
+                     !call setFlowInfinityState
+                     
+                     call initres(1_intType, nwf)
+                     
                      call applyAllBC(secondHalo)
                      
                      ! Exchange the solution. Either whalo1 or whalo2
@@ -398,14 +375,16 @@
                         call whalo1(currentLevel, 1_intType, nMGVar, .true., &
                              .true., .true.)
                      endif
- 
-                     call initres(1_intType, nwf)
-                     if( turbCoupled ) then
-                        call initres(nt1MG, nMGVar)
-                        call turbResidual
-                     endif
-
-                     call initres(1_intType, nwf)
+                     !if( secondHalo ) then
+                     !   !  write(*,*)'2ndHalo..........'
+                     !   call whalo2(currentLevel, 1_intType, nVarInt, .true., &
+                     !        .true., .true.)
+                     !else
+                     !   ! write(*,*)'1stHalo..........'
+                     !   call whalo1(currentLevel, 1_intType, nVarInt, .true., &
+                     !        .true., .true.)
+                     !endif
+                     
                      call residual
                      !save residual
                      do nnn = 1,ndom
@@ -421,8 +400,8 @@
                      sps = 1
                      call setPointersAdj(nn,1,sps)
 
-                     idxstate   = globalcell(iCell,jCell,kCell)*nw+m 
-                     
+                     idxnode   = globalnode(iCell,jCell,kCell)*3+m 
+                     !testnode =  globalnode(iCell,jCell,kCell)
                      do nnn = 1,ndom
                         call setPointersAdj(nnn,1,sps)
                         DO I=2,Il
@@ -433,14 +412,14 @@
                                     
                                     ! Loop over output cell residuals (R)
                                     ! Loop over location of output (R) cell of residual
-                                    value = (dwp(i,j,k,n)-dwm(i,j,k,n))/(2*deltaw)
+                                    value = (dwp(i,j,k,n)-dwm(i,j,k,n))/(2*deltax)
 !                                    value = (dwp(i,j,k,n)-dwtemp(i,j,k,n))/(deltax)
-                                    if ((idxres-1)>=0 .and. (idxstate-1)>=0)then
+                                    if ((idxres-1)>=0 .and. (idxnode-1)>=0)then
                                        if(value>1e-10)then
-                                          !print *,'dx',value,dwp(i,j,k,n),dwm(i,j,k,n),dwtemp(i,j,k,n),(2*deltaw)
-                                          write(unitdrdw,13) idxstate,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value
+                                          print *,'dx',value,dwp(i,j,k,n),dwm(i,j,k,n),dwtemp(i,j,k,n),(2*deltax)
+                                          write(unitdrdx,13) idxnode,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value
                                           !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
-13                                        format(1x,'drdw',12I8,f18.10)
+13                                        format(1x,'drdx',12I8,f18.10)
                                        endif
                                     end if
                                  end do
@@ -450,24 +429,17 @@
                         !call setPointersAdj(nn,1,sps)
                      enddo
                      call setPointersAdj(nn,1,sps)
-                     !x(icell,jcell,kcell,m) =xref
-                     !p = ptemp
+                     x(icell,jcell,kcell,m) =xref
+                     p = ptemp
                   end do
                enddo
             end do
          enddo
          call setPointersAdj(nn,1,sps)
-         !x(:,:,:,:) = xtemp(:,:,:,:)
-         !deallocate(xtemp,ptemp)
+         x(:,:,:,:) = xtemp(:,:,:,:)
+         deallocate(xtemp,ptemp)
       enddo domains
-      resetdomains: do nn = 1,ndom
-         groundLevel = 1
-         sps = 1
-         call setPointersAdj(nn,1,sps)
-         dw = dwtemp
-         p = ptmp
-         w = wtmp
-      end do resetdomains
+
 
       !deallocate memory for FD
       deallocatedomains: do nn = 1,ndom
@@ -478,8 +450,6 @@
          deallocate(flowDoms(nn,level,sps)%dwp)
          deallocate(flowDoms(nn,level,sps)%dwm)
          deallocate(flowDoms(nn,level,sps)%dwtemp)
-         deallocate(flowDoms(nn,level,sps)%wtmp)
-         deallocate(flowDoms(nn,level,sps)%ptmp)
       end do deallocatedomains
 
       ! Get new time and compute the elapsed AD time.
@@ -494,13 +464,13 @@
       !Print *,'barriercall',myID
       call mpi_barrier(SUmb_comm_world, ierr)
       
-      close(unitdrdw)
+      close(unitdrdx)
       
       call mpi_barrier(SUmb_comm_world, ierr)
       
       
 111   format(4I4, 3ES22.14)
       
+#endif      
       
-      
-    end subroutine verifydRdwfileFD
+    end subroutine verifydRdxfileFD

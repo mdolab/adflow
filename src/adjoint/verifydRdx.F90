@@ -17,7 +17,7 @@
 !     *                                                                *
 !     ******************************************************************
 
-
+#ifndef USE_NO_PETSC
       use blockPointers ! block (nDoms,flowDoms), globalCell
       use flowvarrefstate
       use communication
@@ -884,5 +884,5 @@ enddo outputDomainLoop
  111  format(4I4, 3ES22.14)
 
 
-
+#endif
   end subroutine verifydRdx

@@ -115,6 +115,8 @@
       character(len=2*maxStringLen) :: errorMessage
 !for debug
 real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
+
+#ifndef USE_NO_PETSC
 !
 !     ******************************************************************
 !     *                                                                *
@@ -433,5 +435,6 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 10    format(1x,4a14)
 20    format(1x,a,8(1x,e13.6))
 99    format(a,1x,i6)
+#endif
     end subroutine setupADjointdIdCStability
      
