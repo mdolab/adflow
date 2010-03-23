@@ -432,13 +432,13 @@ enddo domainLoop
       !   Some options determine how values will be inserted (or added).
       !   Sorted,row-oriented input will generally assemble the fastest.
       !   The default is row-oriented, nonsorted input.
-
+#ifndef USE_PETSC_3
       call MatSetOption(dRda,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("setupGradientMatrixExtra", &
                        "Error in MatSetOption")
-
+#endif
       ! Get new time and compute the elapsed time.
 
       call cpu_time(time(2))

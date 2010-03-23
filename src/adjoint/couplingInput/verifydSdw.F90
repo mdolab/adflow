@@ -489,13 +489,13 @@ subroutine verifydSdw(level)
       !
       ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
       ! or PETSc users manual, pp.52
-
+#ifndef USE_PETSC_3
       call MatSetOption(dSdw,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("verifydSdw", &
                        "Error in MatSetOption X")
-
+#endif
       ! Get new time and compute the elapsed time.
 
 !!$      call cpu_time(time(2))
