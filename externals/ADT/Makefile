@@ -195,6 +195,10 @@ LINUX_G95_MPICH:
 	ln -sf config/config.LINUX_G95.mk config.mk
 	gmake adt
 
+LINUX_G95_OPENMPI:
+	ln -sf config/config.LINUX_G95.mk config.mk
+	gmake adt
+
 LINUX_INTEL:
 	ln -sf config/config.LINUX_INTEL.mk config.mk
 	gmake adt
