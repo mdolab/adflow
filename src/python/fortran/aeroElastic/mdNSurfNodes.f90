@@ -60,7 +60,7 @@
          bocos: do mm=1,nBocos
 
             !check to see whether family boundary conditions are present
-            if (cgnsDoms(nbkGlobal)%BCFamilies==.true.)then
+            if (cgnsDoms(nbkGlobal)%BCFamilies.eqv. .true.)then
                !BC families are present
 
                ! Determine the family id of the subface and check if

@@ -104,7 +104,7 @@
            storeSubface = .false.
 
            !check to see whether family boundary conditions are present
-           if (cgnsDoms(nbkGlobal)%BCFamilies==.true.)then
+           if (cgnsDoms(nbkGlobal)%BCFamilies.eqv..true.)then
               !BC families are present
               
               ! Family info is present. Check if this subface belongs
