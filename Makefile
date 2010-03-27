@@ -261,6 +261,19 @@ LINUX_G95_MPICH:
 	ln -sf config/config.LINUX_G95_MPICH.mk config.mk
 	gmake sumb
 
+LINUX_G95_OPENMPI:
+	(cd externals/SU_MPI && gmake LINUX_G95_OPENMPI)
+	(cd externals/ADT && gmake LINUX_G95_OPENMPI)
+	ln -sf config/config.LINUX_G95_OPENMPI.mk config.mk
+	gmake sumb
+
+LINUX_G95_OPENMPI_PYTHON:
+	(cd externals/SU_MPI && gmake LINUX_G95_OPENMPI)
+	(cd externals/ADT && gmake LINUX_G95_OPENMPI)
+	ln -sf config/config.LINUX_G95_OPENMPI.mk config.mk
+	gmake sumb
+	(cd src/python/f2py && gmake)
+
 LINUX_INTEL:
 	(cd externals/SU_MPI && gmake LINUX_INTEL)
 	(cd externals/ADT && gmake LINUX_INTEL)
