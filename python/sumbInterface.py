@@ -313,6 +313,7 @@ class SUmbMesh(object):
             sumb.updatemetricsalllevels()
             sumb.updategridvelocitiesalllevels()
             self._update_geom_info = False
+            
 
     def GetNumberBlocks(self):
         """Get the number of blocks in the mesh."""
@@ -563,6 +564,7 @@ class SUmbInterface(object):
         sumb.writeintromessage()
 
         self.nw =sumb.flowvarrefstate.nw
+        sumb.killsignals.frompython=True
         return
 
     def initializeFlow(self,aero_problem,sol_type,grid_file,*args,**kwargs):
@@ -632,11 +634,11 @@ class SUmbInterface(object):
         # Determine the total number of blocks in the mesh and store it
         #print 'mpitest',sumb.block.ndom,mpi.SUM
         #For older versions of mpi4py...
-        #self.Mesh.nmeshblocks = self.sumb_comm_world.Allreduce(
-        #			     sumb.block.ndom,mpi.SUM)
-        #for mpi4py version 1.2
-        self.Mesh.nmeshblocks = self.sumb_comm_world.allreduce(
+        self.Mesh.nmeshblocks = self.sumb_comm_world.Allreduce(
         			     sumb.block.ndom,mpi.SUM)
+        #for mpi4py version 1.2
+        #self.Mesh.nmeshblocks = self.sumb_comm_world.allreduce(
+        #			     sumb.block.ndom,mpi.SUM)
         #Set flags for ADjoint initialization
         self.adjointInitialized = False
         
@@ -1492,6 +1494,12 @@ class SUmbInterface(object):
         #self.Mesh.WriteMeshFile('newmesh.cgns')
         if self.myid ==0: print 'calling solver'
         self.GetMesh()._UpdateGeometryInfo()
+
+        if sumb.killsignals.routinefailed==True:
+            raise ValueError
+            return    
+        #endif
+        
         #print 'mesh info updated'
         #self.Mesh.WriteMeshFile('newmesh0.cgns')
         #print 'new file written'

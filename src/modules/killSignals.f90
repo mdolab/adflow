@@ -44,4 +44,10 @@
 
        integer(kind=intType) :: localSignal, globalSignal
 
+       ! fromPython: was this instance of the solver called from python
+       logical :: fromPython
+       
+       ! routineFailed: was terminate called from a routine?
+       logical :: routineFailed
+
        end module killSignals

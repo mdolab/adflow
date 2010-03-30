@@ -20,6 +20,7 @@
        use precision
        use communication
        use constants
+       use killSignals
        implicit none
 !
 !      Subroutine arguments
@@ -121,8 +122,12 @@
 
        ! Call abort and stop the program. This stop should be done in
        ! abort, but just to be sure.
-
-       call mpi_abort(SUmb_comm_world, 1, ierr)
-       stop
+       
+       if (fromPython)then
+          routineFailed=.True.
+       else
+          call mpi_abort(SUmb_comm_world, 1, ierr)
+          stop
+       end if
 
        end subroutine terminate
