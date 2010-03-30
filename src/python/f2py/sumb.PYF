@@ -811,6 +811,8 @@ python module sumb ! in
             integer(kind=inttype) parameter,optional :: signalwritequit=2_int_type
             integer(kind=inttype) :: localsignal
             integer(kind=inttype) :: globalsignal
+            logical :: frompython
+            logical :: routinefailed
         end module killsignals
 
         module adjointpetsc ! in :sumb:ADjointPETSc.F90
