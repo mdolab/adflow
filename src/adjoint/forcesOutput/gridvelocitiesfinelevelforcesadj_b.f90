@@ -169,6 +169,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
 !print*,'liftindex alpha',liftindex,velDirFreestreamAdj,liftDir,liftIndex
 ! get the baseline alpha and determine the liftIndex
 !             call getDirAngleForces(velDirFreestreamAdj,liftDir,liftIndex,alpha,beta)
+!print *,'liftindex alpha',liftindex
 !Determine the alpha for this time instance
       alphaincrement = TSALPHA(degreepolalpha, coefpolalpha, &
 &        degreefouralpha, omegafouralpha, coscoeffouralpha, &
@@ -179,6 +180,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
 &                                , dragdir, liftindex)
 !do I need to update the lift direction and drag direction as well?
 !set the effictive grid velocity for this time interval
+!print *,'base velocity',machgridadj, velxGrid0 , velyGrid0 , velzGrid0 
       CALL PUSHINTEGER4(2)
     ELSE IF (tsbetamode) THEN
 ! get the baseline alpha and determine the liftIndex
@@ -486,8 +488,8 @@ SUBROUTINE GRIDVELOCITIESFINELEVELFORCESADJ_B(useoldcoor, t, sps, xadj, &
 &    velygrid0b
   veldirfreestreamadjb(1) = veldirfreestreamadjb(1) - ainf*machgridadj*&
 &    velxgrid0b
-!!$  timeunsteadyb = 0.0
-!!$  timeunsteadyrestartb = 0.0
+!  timeunsteadyb = 0.0
+!  timeunsteadyrestartb = 0.0
 !!$  coscoeffourzrotb(:) = 0.0
 !!$  coscoeffourmachb(:) = 0.0
 !!$  omegafourbetab = 0.0

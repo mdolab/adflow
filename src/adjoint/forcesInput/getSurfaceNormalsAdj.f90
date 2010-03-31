@@ -372,7 +372,7 @@
 !!$             normAdj(i,j,3) = fact*zp
              
              !alternate form to allow inclusion of degenrate halos???
-             if( xp>zero .or. yp>zero .or. zp>zero)then
+             if( xp**2>zero .or. yp**2>zero .or. zp**2>zero)then
                 !if (fact > zero)then
                 !compute length
                 fact = sqrt(xp*xp + yp*yp + zp*zp)
