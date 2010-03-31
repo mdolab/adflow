@@ -34,6 +34,8 @@ Procedure to run the Automatic Differentiation software and obtain the AD routin
    5.1) cd forcesOutput
 emacs eintarrayforcesadj_b.f90     >remove "gammaconstantb = 0.0" from the end
 emacs gridvelocitiesfinelevelforcesadj_b.f90 >remove   
+timeunsteadyb=0.0
+timeunsteadyrestartb=0.0
 coscoeffourzrotb(:) = 0.0
   sincoeffourxrotb(:) = 0.0
   sincoeffouryrotb(:) = 0.0

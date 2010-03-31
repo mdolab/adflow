@@ -427,7 +427,8 @@ SUBROUTINE GETSURFACENORMALSADJ_B(xadj, xadjb, siadj, siadjb, sjadj, &
 !!$             normAdj(i,j,2) = fact*yp
 !!$             normAdj(i,j,3) = fact*zp
 !alternate form to allow inclusion of degenrate halos???
-      IF (xp .GT. zero .OR. yp .GT. zero .OR. zp .GT. zero) THEN
+      IF (xp**2 .GT. zero .OR. yp**2 .GT. zero .OR. zp**2 .GT. zero) &
+&      THEN
         CALL PUSHREAL8(fact)
 !if (fact > zero)then
 !compute length
