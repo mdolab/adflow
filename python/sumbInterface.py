@@ -498,6 +498,16 @@ class SUmbMesh(object):
 
         return
 
+    def warpMeshSolid(self,g_index,gptr,l_index,lptr,l_sizes,nfree,nsurface,nboundary):
+        '''
+        run the internal meshwarping scheme
+        '''
+        
+        sumb.warpmeshsolid(g_index,gptr,l_index,lptr,l_sizes,nfree,nsurface,nboundary)
+
+        return
+
+
 # =============================================================================
 
 class SUmbInterface(object):
@@ -997,7 +1007,7 @@ class SUmbInterface(object):
         autofile.write(  "                      #                    : alternate stages\n")
         autofile.write(  "     Residual averaging smoothing parameter: 1.5\n")
 
-        autofile.write(  "                 Number of multigrid cycles: 100\n")
+        autofile.write(  "                 Number of multigrid cycles: 1\n")
         autofile.write(  "   Number of single grid startup iterations: 0\n")
         autofile.write(  "                                 Save every: 0\n")
         autofile.write(  "                         Save surface every: 0\n")
@@ -1016,7 +1026,7 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Multigrid Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "      Number of multigrid cycles coarse grid:  -1.0  # -1 Means same as on fine grid\n")
+        autofile.write(  "      Number of multigrid cycles coarse grid:  -1  # -1 Means same as on fine grid\n")
         autofile.write(  "                      CFL number coarse grid: -1.0  # -1 Means same as on fine grid\n")
         autofile.write(  "Relative L2 norm for convergence coarse grid: 1.e-2\n")
         autofile.write( "\n")
