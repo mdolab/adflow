@@ -193,6 +193,23 @@ python module sumb ! in
          implicit none
        end subroutine warpmesh
 
+        subroutine warpmeshsolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,nfree,nsurface,nboundary) ! in :test:warpMeshSolid.f90
+            use blockpointers
+            use communication,,only: myid,sumb_comm_world
+            integer(kind=inttype) dimension(ngi) :: g_index
+            integer(kind=inttype) dimension(ngptr) :: gptr
+            integer(kind=inttype) dimension(nli) :: l_index
+            integer(kind=inttype) dimension(nblock + 1) :: lptr
+            integer(kind=inttype) dimension(nblock,3),depend(nblock) :: l_sizes
+            integer(kind=inttype) optional,check(len(g_index)>=ngi),depend(g_index) :: ngi=len(g_index)
+            integer(kind=inttype) optional,check(len(gptr)>=ngptr),depend(gptr) :: ngptr=len(gptr)
+            integer(kind=inttype) optional,check(len(l_index)>=nli),depend(l_index) :: nli=len(l_index)
+            integer(kind=inttype) optional,check((len(lptr)-1)>=nblock),depend(lptr) :: nblock=(len(lptr)-1)
+            integer(kind=inttype) intent(in) :: nfree
+            integer(kind=inttype) intent(in) :: nsurface
+            integer(kind=inttype) intent(in) :: nboundary
+        end subroutine warpmeshsolid
+
        subroutine setupvolumesurfacederivativesdv
 
          ! Find the derivatives of the mesh wrt the surface at the current point
