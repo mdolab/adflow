@@ -26,22 +26,31 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
   integer(kind=intType) :: indx,indy,indz,indxp1,indyp1,indzp1
   integer(kind=intType) :: elemPtr(nBlock+1),n
 
-  integer(kind=intType)::level=1,ierr
-  integer(kind=intType)::nn,sps=1,i,ii,j,jj,k,npts,idim,jdim,irow,jcol
-  integer(kind=intType) :: indices(8,3),rows(3),cols(3)
+  integer(kind=intType) :: level=1,ierr
+  integer(kind=intType) :: nn,sps=1,i,ii,iii,j,jj,jjj,k,kk,kkk
+  integer(kind=intType) :: npts,idim,jdim,irow,jcol
+  integer(kind=intType) :: indices(8,3),rows(3),cols(3),lenx,leny,lenz
   ! Temporary Variables
-  real(kind=realType)::  points(8,3)
+  real(kind=realType)::  points(8,3),value(1,1),value1(1,1),value2(1,1)
+  real(kind=realType):: deltas(8,3)
 
   ! Sending Variables 
   real(kind=realType),  dimension(:,:,:), allocatable :: allK
   real(kind=realType),  dimension(:,:)  , allocatable :: allBCVal
   real(kind=realType),  dimension(:)    , allocatable :: solution
-  integer(kind=intType) ::  elemCounter ,elemID
+  integer(kind=intType) :: elemID
 
   ! Petsc sizes
   integer(kind=intType) :: nonz
   integer(kind=intType),dimension(:), allocatable :: nnz
   ! Compute total number of points
+
+  ! Temporary Mesh Arrays
+  real(kind=realType), dimension(:,:,:,:), allocatable :: Xstart
+  real(kind=realType), dimension(:,:,:,:), allocatable :: Xupdated
+  real(kind=realType), dimension(:,:,:,:), allocatable :: SS
+  real(kind=realType) ::  shp(8),pt_delta(3),nns(2),nnt(2),nnr(2)
+
 
   external MyKSPMonitor
 
@@ -58,7 +67,6 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
   allocate(allK(elemPtr(nBlock+1)-1,24,24))
   allocate(allBCVal(elemPtr(nBlock+1)-1,24))
 
-  elemCounter = 0
   do nn=1,nDom
      call setPointers(nn,level,sps)
      ! nbkGlobal is the original CGNS block ID we're on...if we
@@ -71,9 +79,8 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
      do i=1,nelemx   
         do j =1,nelemy
            do k=1,nelemz
-              elemcounter =elemcounter + 1
               ! Now we must figure out the indices
-              indx = int(floor(dble(i-1.0)/(nelemx)*(nx))) + 1
+              indx = int(floor(dble(i-1.0)/(nelemx)*(nx))) + 1 ! note nx is number of elems, or mesh size-1
               indy = int(floor(dble(j-1.0)/(nelemy)*(ny))) + 1
               indz = int(floor(dble(k-1.0)/(nelemz)*(nz))) + 1
 
@@ -128,9 +135,9 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
    ! --------------- Kuu ----------------
    nrow = nfree*3
    allocate(nnz(nfree*3))
-   nnz(:) = 27 ! Petsc is screwed up...we can't just pass in the singe,
-               ! nz value we MUST pass in the full nnz array
-   nonz = 27
+   nnz(:) = min(27,nfree) ! Petsc is screwed up...we can't just pass in the singe,
+                          ! nz value we MUST pass in the full nnz array
+   nonz = min(27,nfree)
 
    !call MatCreateSeqSBAIJ(PETSC_COMM_SELF,3,nrow,nrow,nonz,nnz,kuu,ierr)
    call MatCreate(PETSC_COMM_SELF,kuu,ierr)
@@ -138,16 +145,20 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
    call MatSetType(kuu,'seqsbaij',ierr)
    call MatSeqSBAIJSetPreallocation(kuu,3,nonz,nnz,ierr)
    call MatSetOption(kuu,MAT_ROW_ORIENTED,PETSC_FALSE,ierr)
-
+   deallocate(nnz)
    ! --------------- Kus ----------------
    ncol = nSurface*3
    !call MatCreateSeqBAIJ(PETSC_COMM_SELF,3,nrow,ncol,nonz,nnz,kus,ierr)
-   call MatCreate(PETSC_COMM_SELF,kus,ierr)
-   call MatSetSizes(kus,nrow,ncol,nrow,ncol,ierr)
-   call MatSetType(kus,'seqbaij',ierr)
-   call MatSeqBAIJSetPreallocation(kus,3,nonz,nnz,ierr)
-   call MatSetOption(kus,MAT_ROW_ORIENTED,PETSC_FALSE,ierr)
-
+   
+   allocate(nnz(nfree*3))
+   nnz(:) = min(27,nsurface) ! Petsc is screwed up...we can't just pass in the singe,
+                          ! nz value we MUST pass in the full nnz array
+   nonz = min(27,nsurface)
+   call MatCreate(PETSC_COMM_SELF,Kus,ierr)
+   call MatSetSizes(Kus,nrow,ncol,nrow,ncol,ierr)
+   call MatSetType(Kus,'seqbaij',ierr)
+   call MatSeqBAIJSetPreallocation(Kus,3,nonz,nnz,ierr)
+   call MatSetOption(Kus,MAT_ROW_ORIENTED,PETSC_FALSE,ierr)
    deallocate(nnz)
 
    ! --------------- uu,us,fu -----------------
@@ -177,7 +188,7 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
             do k=1,nelemz
                elemID = elemPtr(nn)+(i-1)*(nelemy*nelemz)+(j-1)*(nelemz)+(k-1)
                call hexa_index(i-1,j-1,k-1,indices) ! Make this zero based
-              
+               
                do ii=1,8
                   irow = l_index(lptr(nn) +&
                        indices(ii,1)*l_sizes(nn,2)*l_sizes(nn,3) + &
@@ -186,25 +197,25 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
                   
                   if (irow .ge. nFree .and. irow .lt. (nFree+Nsurface)) then
                      call VecSetValuesBlocked(us,1,irow-nFree, &
-                     allBCVal(elemID,(ii-1)*3+1:ii*3),INSERT_VALUES,ierr)
+                     allBCVal(elemID,3*ii-2:ii*3),INSERT_VALUES,ierr)
                   end if
 
-                  do jj=ii,8
+                  do jj=1,8
                      jcol = l_index(lptr(nn) +&
                           indices(jj,1)*l_sizes(nn,2)*l_sizes(nn,3) + &
                           indices(jj,2)*l_sizes(nn,3) +&
                           indices(jj,3)+1)
 
-                     if (irow .lt. nFree .and. jcol .lt. nFree) then
+                     if (irow .lt. nFree .and. jcol .lt. nFree .and. jcol .ge. jcol) then
                         call MatSetValuesBlocked(Kuu,1,irow,1,jcol, &
-                             allK(elemID,(ii-1)*3+1:ii*3,(jj-1)*3+1:jj*3), &
+                             allK(elemID,ii*3-2:ii*3,jj*3-2:jj*3), &
                              ADD_VALUES,ierr)
                      end if
 
                      if (irow .lt. nFree .and. jcol .ge. nFree .and. &
                           jcol .lt. (nFree+nSurface)) then
                         call MatSetValuesBlocked(Kus,1,irow,1,jcol-nFree, &
-                             allK(elemID,(ii-1)*3+1:ii*3,(jj-1)*3+1:jj*3), &
+                             allK(elemID,ii*3-2:ii*3,jj*3-2:jj*3), &
                              ADD_VALUES,ierr)
                      end if
                   end do ! j node loop
@@ -220,22 +231,23 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
    call MatAssemblyEnd(Kus,MAT_FINAL_ASSEMBLY,ierr)
    call VecAssemblyBegin(us,ierr)
    call VecAssemblyEnd(us,ierr)
+
    print *,'Done Assmebly'
    call mpi_barrier(sumb_comm_world, ierr) 
    if (ierr .ne. 0) then 
       print *,'Error creating Stiffness Matrix' 
    end if
-
+   !call VecView(us,PETSC_VIEWER_STDOUT_SELF,ierr )
    ! Multiply kus by us to get -Fu
    PETScNegOne = -1.0
    call MatMult(Kus,us,fu,ierr)
    call VecScale(fu,PETScNegOne,ierr)
-
+   
    ! Ksp 
     call KSPCreate(PETSC_COMM_SELF,ksp, ierr)
     call KSPSetOperators(ksp,kuu,kuu,DIFFERENT_NONZERO_PATTERN,ierr)
     call KSPSetFromOptions(ksp, ierr)
-    call KSPSetType(ksp, "preonly", ierr)
+    call KSPSetType(ksp, "preonly", ierr) !preonly
     call KSPSetTolerances(ksp, 1e-12,1e-16,1e3,250,ierr) !reltol,abstol,
                                                          !divergence tol,
                                                          !max iter
@@ -244,104 +256,148 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
     !call PCSetType( pc, "icc",ierr)
     !print *,'pc factor ordering'
     !call PCFactorSetMatOrderingtype(pc,"rcm",ierr)
-        call KSPMonitorSet(ksp,MyKSPMonitor,PETSC_NULL_OBJECT, &
-                         PETSC_NULL_FUNCTION, ierr)
+    call KSPMonitorSet(ksp,MyKSPMonitor,PETSC_NULL_OBJECT, &
+         PETSC_NULL_FUNCTION, ierr)
     
-    call KSPSetUp(ksp,ierr)
     call KSPSolve(ksp,fu,uu,ierr)
+    
+    print *,'Done Solution'
+    ! Now set them back into the X
+    OPEN (7, FILE = 'zones.dat')
+    WRITE(7,*) 'TITLE = "SOLID WARP Finite Element Data"'
+    WRITE(7,*) 'VARIABLES = "X", "Y","Z"'
+
+
+    do nn=1,nDom ! This is now done for each processor
+       call setPointers(nn,1,1)
+
+       nelemx = l_sizes(nbkGlobal,1)-1
+       nelemy = l_sizes(nbkGlobal,2)-1
+       nelemz = l_sizes(nbkGlobal,3)-1
+       print *,'nn:',nn
+
+
+       do i=1,nelemx   
+          do j =1,nelemy
+             do k=1,nelemz
+
+                elemID = elemPtr(nbkglobal)+(i-1)*(nelemy*nelemz)+(j-1)*(nelemz)+(k-1)
+              ! Now we must figure out the indices
+              indx = int(floor(dble(i-1.0)/(nelemx)*(nx))) + 1
+              indy = int(floor(dble(j-1.0)/(nelemy)*(ny))) + 1
+              indz = int(floor(dble(k-1.0)/(nelemz)*(nz))) + 1
+
+              indxp1 = int(floor(dble(i)/(nelemx)*(nx))) + 1
+              indyp1 = int(floor(dble(j)/(nelemy)*(ny))) + 1
+              indzp1 = int(floor(dble(k)/(nelemz)*(nz))) + 1
+
+              lenx = indxp1-indx+1
+              leny = indyp1-indy+1
+              lenz = indzp1-indz+1
+
+              write(7,*) 'Zone I=',lenx,' J=',leny,' K=',lenz
+              write(7,*) 'DATAPACKING=POINT\n'
+
+              allocate(Xstart(lenx,leny,lenz,3))
+              allocate(SS(lenx,leny,lenz,3))
+
+              XStart = Xinit(indx:indxp1,indy:indyp1,indz:indzp1,:)
+
+              call para3d(Xstart,lenx,leny,lenz,3,SS)
+
+              ! Now get the deltas from the FE solution
+              call hexa_index(i-1,j-1,k-1,indices)
+              do ii=1,8
+                 irow = l_index(lptr(nbkglobal) +&
+                        indices(ii,1)*l_sizes(nbkGlobal,2)*l_sizes(nbkGlobal,3)+&
+                        indices(ii,2)*l_sizes(nbkGlobal,3) +&
+                        indices(ii,3)+1) !! 0 based
+                 
+                 if (irow .lt. nFree) then
+                    call VecGetValues(uu,1,3*irow,deltas(ii,1),ierr)
+                    call VecGetValues(uu,1,3*irow+1,deltas(ii,2),ierr)
+                    call VecGetValues(uu,1,3*irow+2,deltas(ii,3),ierr)
+
+                 elseif (irow .lt. nFree+nSurface) then
+                    print *,'fuck2, irow:',irow,elemID
+                    deltas(ii,:) = allBCval(elemID,3*ii-2:ii*3)
+                 else
+                    deltas(ii,:) = 0.0
+                 end if
+              end do
+              ! Now actuall update the Mesh Variables 'X'
+              print *,'nx,ny,nz:',nx,ny,nz
+
+              do ii=1,lenx
+                 do jj=1,leny
+                    do kk=1,lenz
+                       
+                       nnr(1) =  1.0 - SS(ii,jj,kk,1)
+                       nnr(2) =  SS(ii,jj,kk,1)
+                       
+                       nns(1) = 1.0 - SS(ii,jj,kk,2)
+                       nns(2) = SS(ii,jj,kk,2)
+
+                       nnt(1) = 1.0 - SS(ii,jj,kk,3)
+                       nnt(2) = SS(ii,jj,kk,3)
+
+                       shp(1) = nnr(1)*nns(1)*nnt(1)
+                       shp(2) = nnr(2)*nns(1)*nnt(1)
+                       shp(3) = nnr(1)*nns(2)*nnt(1)
+                       shp(4) = nnr(2)*nns(2)*nnt(1)
+                       shp(5) = nnr(1)*nns(1)*nnt(2)
+                       shp(6) = nnr(2)*nns(1)*nnt(2)
+                       shp(7) = nnr(1)*nns(2)*nnt(2)
+                       shp(8) = nnr(2)*nns(2)*nnt(2)
+                       
+                       pt_delta = matmul(shp,deltas)
+
+                       X(indx+ii-1,indy+jj-1,indz+kk-1,:) =  &
+                       Xinit(indx+ii-1,indy+jj-1,indz+kk-1,:) + pt_delta
+                       
+                    end do ! kk loop
+              end do ! jj loop
+           end do !ii loop
+
+           do kk=1,lenz
+              do jj=1,leny
+                 do ii=1,lenx
+                    write(7,*) X(indx+ii-1,indy+jj-1,indz+kk-1,1),&
+                         X(indx+ii-1,indy+jj-1,indz+kk-1,2),&
+                         X(indx+ii-1,indy+jj-1,indz+kk-1,3)
+                 end do
+              end do
+           end do
+           
+           deallocate(Xstart,SS)
+
+           end do ! k loop
+        end do ! j loop
+     end do ! i loop
+  end do
+   
+  close(7)
+
 
     allocate(solution(nfree*3))
     do i=1,nfree*3
-       call VecGetValues(uu,1,i-1,ierr,solution(i))
+       call VecGetValues(uu,1,i-1,solution(i),ierr)
     end do
 
     call writeFEAP('solid_test.dat',g_index,gptr,l_index,lptr,l_sizes,ngi,&
          ngptr,nli,nblock,elemPtr(nBlock+1)-1,solution,nfree)
 
-    !call VecView(uu,PETSC_VIEWER_DRAW_WORLD,ierr)
-    !call VecView(uu,PETSC_VIEWER_STDOUT_SELF,ierr)
-      !pause
-
-    deallocate(allK,allBCVal,solution)
+    ! Deallocation
+  deallocate(allK,allBCVal,solution)
     call MatDestroy(Kuu,ierr)
     call MatDestroy(Kus,ierr)
     call VecDestroy(uu,ierr)
     call VecDestroy(us,ierr)
     call VecDestroy(fu,ierr)
-   
+   call mpi_barrier(sumb_comm_world, ierr) 
 #endif
 end subroutine warpMeshSolid
 
-subroutine writeFEAP(file_name,g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,&
-  nli,nblock,nelem,solution,nfree)
-  use blockpointers
-
-  implicit none
-  character*32 file_name
-  integer(kind=intType) :: g_index(ngi),gptr(ngptr)
-  integer(kind=intType) :: l_index(nli),lptr(nblock+1),l_sizes(nblock,3)
-  integer(kind=intType) :: ngi,nli,ngptr,nblock,nelem,nfree
-  real(kind=realType)   :: solution(nfree*3)
-  integer(kind=intType) :: ii,i,j,k,blockID,nelemx,nelemy,nelemz,indx,indy,indz
-  integer(kind=intType) :: indices(8,3),nn
-
-  OPEN (7, FILE = file_name)
-  WRITE(7,*) 'TITLE = "SOLID WARP Finite Element Data"'
-  WRITE(7,*) 'VARIABLES = "CoordinateX", "CoordinateY",', &
-       '"CoordinateZ"'
-  WRITE(7,*) 'Zone N=',ngptr-1,'E=', nelem
-  WRITE(7,*)  'DATAPACKING=POINT, ZONETYPE = FEBRICK'
-    
-  ! ONLY WORKS ON ONE PROCESSOR
-  print *,'About to do x'
-  do ii=1,ngptr-1 ! Global number of points
-     blockID = g_index(gptr(ii)+1)+1 ! gptr is zero based
-     i       = g_index(gptr(ii)+2)+1
-     j       = g_index(gptr(ii)+3)+1
-     k       = g_index(gptr(ii)+4)+1
-     call setPointers(blockID,1,1)
-     nelemx = l_sizes(nbkGlobal,1)-1
-     nelemy = l_sizes(nbkGlobal,2)-1
-     nelemz = l_sizes(nbkGlobal,3)-1
-
-     indx = int(floor(dble(i-1.0)/(nelemx)*(nx))) + 1
-     indy = int(floor(dble(j-1.0)/(nelemy)*(ny))) + 1
-     indz = int(floor(dble(k-1.0)/(nelemz)*(nz))) + 1
-
-     !write(7,*) Xinit(indx,indy,indz,1),Xinit(indx,indy,indz,2),Xinit(indx,indy,indz,3)
-
-     if (ii .le. nfree) then
-        write(7,*) Xinit(indx,indy,indz,1)+solution(ii*3-2),&
-             Xinit(indx,indy,indz,2)+solution(ii*3-1),&
-             Xinit(indx,indy,indz,3)+solution(ii*3  )
-     else
-        write(7,*) X(indx,indy,indz,1),&
-             X(indx,indy,indz,2),&
-             X(indx,indy,indz,3)
-     end if
-  end do
-
-  print *,'About to do connectivity'
-  ! Connectivity (CCW Ordered)
-  do nn=1,nblock
- 
-     do i=1,l_sizes(nn,1)-1
-        do j =1,l_sizes(nn,2)-1
-           do k=1,l_sizes(nn,3)-1
-
-              call hexa_index_ccw(i-1,j-1,k-1,indices)
-              do ii=1,8
-                 write(7,'(I5)') l_index(lptr(nn) + &
-                      indices(ii,1)*l_sizes(nn,2)*l_sizes(nn,3) + &
-                      indices(ii,2)*l_sizes(nn,3) + &
-                      indices(ii,3)+1)+1
-              end do
-           end do
-        end do
-     end do
-  end do
-  close(7)
-end subroutine writeFEAP
 
 
 subroutine calcstiffness(points,Kstif)
@@ -355,29 +411,50 @@ subroutine calcstiffness(points,Kstif)
   ! Working 
   real(kind=realType) :: c,G,E,volume,nu,onemnuc,nuc
   real(kind=realType) :: Jac(3,3),Jinv(3,3)
-  integer(kind=intType):: i,j,k,l,m,n,ii,jj,kk,jm1_3,im1_3
+  integer(kind=intType):: i,j,k,l,m,n,ii,jj,kk
   real(kind=realType) :: r,s,t
   real(kind=realType) :: Nr(8),Ns(8),Nt(8),Nx(8),Ny(8),Nz(8)
   real(kind=realType) :: nnr(2),nns(2),nnt(2),ndr(2),nds(2),ndt(2)
   real(kind=realType) :: g_points(2),det,invdet
 
+
+  real(kind=realType) :: Bi(6,3),Bj(6,3),Cm(6,6),intM(3,3)
+
   ! First calculate the volume needed for the stiffness
 
   call volume_hexa(points,volume)
 
-  E = 1.0/volume
-  E = 1.0
-  nu = 0.3
+  E = 1.0/(volume*volume)
+  !E = 1
+  nu = 0.2
   c = E/((1+nu)*(1-2*nu))
-  G = E/(2*(1+nu))
+  G = c/(2-nu)
 
-  onemnuc = (1-nu)*c
+  onemnuc = (1.0-nu)*c
   nuc = nu*c
+  Cm(:,:) = 0.0
+  Cm(1,1) = onemnuc
+  Cm(1,2) = nuc
+  Cm(1,3) = nuc
 
+  Cm(2,1) = nuc
+  Cm(2,2) = onemnuc
+  Cm(2,3) = nuc
+
+  Cm(3,1) = nuc
+  Cm(3,2) = nuc
+  Cm(3,3) = onemnuc
+
+  Cm(4,4) = G
+  Cm(5,5) = G
+  Cm(6,6) = G
+  Kstif(:,:) = 0.0
+
+  !print *,'E,nu,c,g,onemnuc,nuc:',E,nu,c,G,onemnuc,nuc
   ! Now here is where we do the integration numerically
 
   g_points(1) = -0.5773502691
-  g_points(2) = 0.5773502691
+  g_points(2) =  0.5773502691
 
   ! 2x2x2 Gaussian Integration
   do k=1,2 ! Gauss in r
@@ -481,47 +558,64 @@ subroutine calcstiffness(points,Kstif)
               Nz(n) = Jinv(3,1)*Nr(n) + Jinv(3,2)*Ns(n) + Jinv(3,3)*Nt(n)
            end do
 
-           ! This does transpose(Bi)*C*Bj
            do i=1,8
               do j=i,8
 
-                 im1_3 = (i-1)*3
-                 jm1_3 = (j-1)*3
+                 Bi(:,:) = 0.0
+                 Bj(:,:) = 0.0
 
-                 Kstif(im1_3 + 1, jm1_3 + 1) = Kstif(im1_3 + 1, jm1_3 + 1) + &
-                      (Nx(i)*onemnuc*Nx(j)+Ny(i)*G*Ny(j)+Nz(i)*G*Nz(j))*det
-                 Kstif(im1_3 + 1, jm1_3 + 2) = Kstif(im1_3 + 1, jm1_3 + 2) + &
-                      (Nx(i)*nuc*Ny(j)+Ny(i)*G*Nx(j))*det
-                 Kstif(im1_3 + 1, jm1_3 + 3) = Kstif(im1_3 + 1, jm1_3 + 3) + &
-                      (Nx(i)*nuc*Nz(j)+Nz(i)*G*Nx(j))*det
+                 Bi(1,1) = Nx(i)
+                 Bi(2,2) = Ny(i)
+                 Bi(3,3) = Nz(i)
 
-                 Kstif(im1_3 + 2, jm1_3 + 1) = Kstif(im1_3 + 2, jm1_3 + 1) + &
-                      (Ny(i)*nuc*Nx(j)+Nx(i)*G*Ny(j))*det
-                 Kstif(im1_3 + 2, jm1_3 + 2) = Kstif(im1_3 + 2, jm1_3 + 2) + &
-                      (Ny(i)*onemnuc*Ny(j)+Nx(i)*G*Nx(j)+Nz(i)*G*Nz(j))*det
-                 Kstif(im1_3 + 2, jm1_3 + 3) = Kstif(im1_3 + 2, jm1_3 + 3) + &
-                      (Ny(i)*nuc*Nz(j)+Nz(i)*G*Ny(j))*det
+                 Bi(4,1) = Ny(i)
+                 Bi(4,2) = Nx(i)
+                 
+                 Bi(5,2) = Nz(i)
+                 Bi(5,3) = Ny(i)
+                 
+                 Bi(6,1) = Nz(i)
+                 Bi(6,3) = Nx(i)
+                 
+                 !Bj 
+                 Bj(1,1) = Nx(j)
+                 Bj(2,2) = Ny(j)
+                 Bj(3,3) = Nz(j)
+                 
+                 Bj(4,1) = Ny(j)
+                 Bj(4,2) = Nx(j)
+                 
+                 Bj(5,2) = Nz(j)
+                 Bj(5,3) = Ny(j)
+                 
+                 Bj(6,1) = Nz(j)
+                 Bj(6,3) = Nx(j)
 
-                 Kstif(im1_3 + 3, jm1_3 + 1) = Kstif(im1_3 + 3, jm1_3 + 1) + &
-                      (Nz(i)*nuc*Nx(j)+Nx(i)*G*Nz(j))*det
-                 Kstif(im1_3 + 3, jm1_3 + 2) = Kstif(im1_3 + 3, jm1_3 + 2) + &
-                      (Nz(i)*nuc*Ny(j)+Ny(i)*G*Nz(j))*det
-                 Kstif(im1_3 + 3, jm1_3 + 3) = Kstif(im1_3 + 3, jm1_3 + 3) + &
-                      (Nz(i)*onemnuc*Nz(j)+Ny(i)*G*Ny(j)+Nx(i)*G*Nx(j))*det
 
+                 intM = matmul(transpose(Bi), matmul(Cm,Bj))
+                
+                 Kstif(3*i-2,3*j-2) = Kstif(3*i-2,3*j-2) +   intM(1,1)*det
+                 Kstif(3*i-2,3*j-1) = Kstif(3*i-2,3*j-1) +   intM(1,2)*det
+                 Kstif(3*i-2,3*j  ) = Kstif(3*i-2,3*j  ) +   intM(1,3)*det
+
+                 Kstif(3*i-1,3*j-2) = Kstif(3*i-1,3*j-2) +   intM(2,1)*det
+                 Kstif(3*i-1,3*j-1) = Kstif(3*i-1,3*j-1) +   intM(2,2)*det
+                 Kstif(3*i-1,3*j  ) = Kstif(3*i-1,3*j  ) +   intM(2,3)*det
+
+                 Kstif(3*i  ,3*j-2) = Kstif(3*i  ,3*j-2) +   intM(3,1)*det
+                 Kstif(3*i  ,3*j-1) = Kstif(3*i  ,3*j-1) +   intM(3,2)*det
+                 Kstif(3*i  ,3*j  ) = Kstif(3*i  ,3*j  ) +   intM(3,3)*det
               end do
            end do
         end do
      end do
   end do
    ! Fill up the remainder
-   do i=1,24
-      do j = 1,i
-         Kstif(i,j) = Kstif(j,i)
-      end do
-   end do
-
-
+  do i=1,24
+     do j = 1,i
+        Kstif(i,j) = Kstif(j,i)
+     end do
+  end do
 end subroutine calcstiffness
 
 subroutine volume_hexa(points,volume)
@@ -597,6 +691,101 @@ subroutine hexa_index_ccw(i,j,k,indices)
   indices(8,:) = (/i,j+1,k+1/)
 end subroutine hexa_index_ccw
 
+subroutine writeFEAP(file_name,g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,&
+  nli,nblock,nelem,solution,nfree)
+  use blockpointers
+
+  implicit none
+  character*32 file_name
+  integer(kind=intType) :: g_index(ngi),gptr(ngptr)
+  integer(kind=intType) :: l_index(nli),lptr(nblock+1),l_sizes(nblock,3)
+  integer(kind=intType) :: ngi,nli,ngptr,nblock,nelem,nfree
+  real(kind=realType)   :: solution(nfree*3)
+  integer(kind=intType) :: ii,i,j,k,blockID,nelemx,nelemy,nelemz,indx,indy,indz
+  integer(kind=intType) :: indices(8,3),nn
+
+  OPEN (7, FILE = file_name)
+  WRITE(7,*) 'TITLE = "SOLID WARP Finite Element Data"'
+  WRITE(7,*) 'VARIABLES = "X", "Y","Z"'
+  WRITE(7,*) 'Zone N=',ngptr-1,'E=', nelem
+  WRITE(7,*)  'DATAPACKING=POINT, ZONETYPE = FEBRICK'
+    
+  ! ONLY WORKS ON ONE PROCESSOR
+  print *,'About to do x'
+  print *,'nfree:',nfree
+  do ii=1,ngptr-1 ! Global number of points
+     blockID = g_index(gptr(ii)+1)+1 ! gptr is zero based
+     i       = g_index(gptr(ii)+2)+1
+     j       = g_index(gptr(ii)+3)+1
+     k       = g_index(gptr(ii)+4)+1
+
+     call setPointers(blockID,1,1)
+     nelemx = l_sizes(nbkGlobal,1)-1
+     nelemy = l_sizes(nbkGlobal,2)-1
+     nelemz = l_sizes(nbkGlobal,3)-1
+
+     indx = int(floor(dble(i-1.0)/(nelemx)*(nx))) + 1
+     indy = int(floor(dble(j-1.0)/(nelemy)*(ny))) + 1
+     indz = int(floor(dble(k-1.0)/(nelemz)*(nz))) + 1
+     
+     !write(7,*) Xinit(indx,indy,indz,1),Xinit(indx,indy,indz,2),Xinit(indx,indy,indz,3)
+
+     if (ii .le. nfree) then
+        write(7,*) Xinit(indx,indy,indz,1)+solution(ii*3-2)/1.,&
+             Xinit(indx,indy,indz,2)+solution(ii*3-1)/1.,&
+             Xinit(indx,indy,indz,3)+solution(ii*3  )/1.
+     else
+        write(7,*) X(indx,indy,indz,1),&
+             X(indx,indy,indz,2),&
+             X(indx,indy,indz,3)
+
+     end if
+  end do
+
+  ! Connectivity (CCW Ordered)
+  do nn=1,nblock
+ 
+     do i=1,l_sizes(nn,1)-1
+        do j =1,l_sizes(nn,2)-1
+           do k=1,l_sizes(nn,3)-1
+
+              call hexa_index_ccw(i-1,j-1,k-1,indices)
+              do ii=1,8
+                 write(7,'(I5)') l_index(lptr(nn) + &
+                      indices(ii,1)*l_sizes(nn,2)*l_sizes(nn,3) + &
+                      indices(ii,2)*l_sizes(nn,3) + &
+                      indices(ii,3)+1)+1
+              end do
+           end do
+        end do
+     end do
+  end do
+
+  ! Zone with DOF it THINKS are free
+  WRITE(7,*) 'Zone T=free I=',nfree
+  write(7,*) 'DATAPACKING=POINT'
+
+  do ii=1,nfree
+     blockID = g_index(gptr(ii)+1)+1 ! gptr is zero based
+     i       = g_index(gptr(ii)+2)+1
+     j       = g_index(gptr(ii)+3)+1
+     k       = g_index(gptr(ii)+4)+1
+     
+     call setPointers(blockID,1,1)
+     nelemx = l_sizes(nbkGlobal,1)-1
+     nelemy = l_sizes(nbkGlobal,2)-1
+     nelemz = l_sizes(nbkGlobal,3)-1
+     
+     indx = int(floor(dble(i-1.0)/(nelemx)*(nx))) + 1
+     indy = int(floor(dble(j-1.0)/(nelemy)*(ny))) + 1
+     indz = int(floor(dble(k-1.0)/(nelemz)*(nz))) + 1
+     
+     write(7,*) Xinit(indx,indy,indz,1),Xinit(indx,indy,indz,2),Xinit(indx,indy,indz,3)
+  end do
+
+  close(7)
+end subroutine writeFEAP
+
 !   allocate(bc_block(l_sizes(nbkGlobal,1),l_sizes(nbkGlobal,2),l_sizes(nbkGlobal,3),3))
       
 !      ! Now determine the BCs for all nodes on the domain
@@ -656,4 +845,230 @@ end subroutine hexa_index_ccw
 !         end do ! j loop
 !      end do ! i loop
 
+
+
+ !   open(7,file='kus.txt')
+!    do j=1,nsurface*3
+!       do i=1,nfree*3
+!          call MatGetValues(Kus,1,i-1,1,j-1,value1,ierr)
+!          write(7,*) value1
+!       end do 
+!    end do
+!    close(7)
+
+!    open(7,file='us.txt')
+!    do j=1,nsurface*3
+!       call VecGetValues(us,1,j-1,value1,ierr)
+!       write(7,*) value1
+!    end do
+!    close(7)
+
+!    open(7,file="rhs.txt")
+!    do i=1,nfree*3
+!       call VecGetValues(fu,1,i-1,value1,ierr)
+!       write(7,*) value1
+!    end do
+!    close(7)
+   
+
+    ! open(7,file="uu.txt")
+!     do i=1,nfree*3
+!        call VecGetValues(uu,1,i-1,value1,ierr)
+!        write(7,*) value1
+!     end do
+!    close(7)
+
+!     open(7,file='matrix.txt')
+!     do j=1,nfree*3
+!        do i=1,nfree*3
+!           call MatGetValues(kuu,1,i-1,1,j-1,value1,ierr)
+!           call MatGetValues(kuu,1,j-1,1,i-1,value2,ierr)
+!           write(7,*) value1
+!        end do
+!     end do
+!     close(7)
+
+
+subroutine para3d(X,n,m,l,ndim,S)
+  !***DESCRIPTION
+  !
+  !     Written by Gaetan Kenway
+  !
+  !     Abstract para3d calculates the parametric locations for a 3d block
+  !
+  !     Description of Arguments
+  !     Input
+  !     X       - Real,size(n,m,l,ndim): Coordiantes
+  !     Output
+  !     S       - Real,size(n,m,l,3): The u,v,w parametric positions
+
+  implicit none
+
+  ! Input
+  integer          , intent(in)   :: n,m,l,ndim
+  double precision , intent(in)   :: X(n,m,l,ndim)
+  
+
+  ! Output
+  double precision , intent(out)  :: S(n,m,l,ndim)
+
+  ! Working 
+  integer                         :: i,j,k
+
+  double precision DELI,DELJ,DELK
+
+  DELI(I,J,K) = SQRT ((X(I,J,K,1) - X(I-1,J,K,1)) ** 2 + &
+       (X(I,J,K,2) - X(I-1,J,K,2)) ** 2 + &
+       (X(I,J,K,3) - X(I-1,J,K,3)) ** 2)
+
+  DELJ(I,J,K) = SQRT ((X(I,J,K,1) - X(I,J-1,K,1)) ** 2 + &
+       (X(I,J,K,2) - X(I,J-1,K,2)) ** 2 + &
+       (X(I,J,K,3) - X(I,J-1,K,3)) ** 2)
+
+  DELK(I,J,K) = SQRT ((X(I,J,K,1) - X(I,J,K-1,1)) ** 2 + &
+       (X(I,J,K,2) - X(I,J,K-1,2)) ** 2 + &
+       (X(I,J,K,3) - X(I,J,K-1,3)) ** 2)
+
+
+  !     Zero the three low-end faces (or edges if one plane is specified).
+  
+  DO K = 1, l
+     DO J = 1, m
+        S(1,J,K,1) = 0.0
+     END DO
+     
+     DO I = 1, n
+        S(I,1,K,2) = 0.0
+     END DO
+  END DO
+  
+  DO J = 1, m
+     DO I = 1, n
+        S(I,J,1,3) = 0.0
+     END DO
+  END DO
+  
+  !     Set up the low-end edge lines because they are missed by the
+  !     following loops over most of the low-end faces:
+
+  DO I = 2, n
+     S(I,1,1,1) = S(I-1,1,1,1) + DELI(I,1,1)
+  END DO
+
+  DO J = 2, m
+     S(1,J,1,2) = S(1,J-1,1,2) + DELJ(1,J,1)
+  END DO
+
+  DO K = 2, l
+     S(1,1,K,3) = S(1,1,K-1,3) + DELK(1,1,K)
+  END DO
+
+  !     Set up the rest of the low-end face lines because they are
+  !     missed by the the main loop over most of the volume.
+
+  DO K = 2, l
+     DO J = 2, m
+        S(1,J,K,2) = S(1,J-1,K,2) + DELJ(1,J,K)
+        S(1,J,K,3) = S(1,J,K-1,3) + DELK(1,J,K)
+     END DO
+     DO I = 2, n
+        S(I,1,K,1) = S(I-1,1,K,1) + DELI(I,1,K)
+        S(I,1,K,3) = S(I,1,K-1,3) + DELK(I,1,K)
+     END DO
+
+  END DO
+
+  DO J = 2, m
+     DO I = 2, n
+        S(I,J,1,1) = S(I-1,J,1,1) + DELI(I,J,1)
+        S(I,J,1,2) = S(I,J-1,1,2) + DELJ(I,J,1)
+     END DO
+  END DO
+
+  !     Traverse the block just once for all lines except those within
+  !     the low-end faces.
+
+  DO K = 2, l
+     DO J = 2, m
+        DO I = 2, n
+           S(I,J,K,1) = S(I-1,J,K,1) + DELI(I,J,K)
+           S(I,J,K,2) = S(I,J-1,K,2) + DELJ(I,J,K)
+           S(I,J,K,3) = S(I,J,K-1,3) + DELK(I,J,K)
+        END DO
+     END DO
+  END DO
+
+  !     Normalizing requires another pass through the volume.
+  !     Handle lines of zero length first by inserting uniform
+  !     distributions.  Then the standard normalization can be
+  !     applied safely everywhere.
+
+  DO K = 1, l
+
+     !        Zero-length lines in the I direction?
+
+     DO J = 1, m
+        IF (S(n,J,K,1) == 0.0) THEN
+           DO I = 2, n
+              S(I,J,K,1) = I - 1
+           END DO
+        END IF
+     END DO
+
+     !        Zero-length lines in the J direction?
+
+     DO I = 1, n
+        IF (S(I,m,K,2) == 0.0) THEN
+           DO J = 2, m
+              S(I,J,K,2) = J - 1
+           END DO
+        END IF
+     END DO
+  END DO
+
+  !     Zero-length lines in the K direction?
+
+  DO J = 1, m
+     DO I = 1, n
+        IF (S(I,J,l,3) == 0.0) THEN
+           DO K = 2, l
+              S(I,J,K,3) = K - 1
+           END DO
+        END IF
+     END DO
+  END DO
+
+  !     Normalize:
+
+  DO K = 1, l
+     DO J = 1, m
+        DO I = 1, n
+           S(I,J,K,1) = S(I,J,K,1) / S(n,J,K,1)
+           S(I,J,K,2) = S(I,J,K,2) / S(I,m,K,2)
+           S(I,J,K,3) = S(I,J,K,3) / S(I,J,l,3)
+        END DO
+     END DO
+  END DO
+
+  !     Finally, precise 1s for the three high-end faces:
+
+  DO K = 1, l
+     DO J = 1, m
+        S(n,J,K,1) = 1.0
+     END DO
+     
+     DO I = 1, n
+        S(I,m,K,2) = 1.0
+     END DO
+  END DO
+  
+  DO J = 1, m
+     DO I = 1, n
+        S(I,J,l,3) = 1.0
+     END DO
+  END DO
+
+
+
+end subroutine para3d
 
