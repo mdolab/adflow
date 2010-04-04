@@ -50,11 +50,15 @@
       Vec     us
       Vec     uu
       Vec     fu
+      Vec     vec_temp
+      Vec     res
       Mat     Kuu,Kus
+      Mat     factor
       IS      row_perm,col_perm
       KSP     ksp
       PC      pc
       PetscScalar   PETScNegOne, PETScZero, PETScOne
+      MatFactorInfo  info(MAT_FACTORINFO_SIZE)
 
       
 #endif
