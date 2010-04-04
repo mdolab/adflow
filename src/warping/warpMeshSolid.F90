@@ -19,7 +19,7 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
   integer(kind=intType) :: g_index(ngi),gptr(ngptr)
   integer(kind=intType) :: l_index(nli),lptr(nblock+1),l_sizes(nblock,3)
   integer(kind=intType) :: ngi,nli,ngptr,nblock
-  integer(kind=intType) :: nFree,nSurface,nBoundary
+  integer(kind=intType) :: nFree,nSurface,nBoundary,counter
 
   ! Working Data
   integer(kind=intType) :: nelemx,nelemy,nelemz,nelem
@@ -29,16 +29,16 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
   integer(kind=intType) :: level=1,ierr
   integer(kind=intType) :: nn,sps=1,i,ii,iii,j,jj,jjj,k,kk,kkk
   integer(kind=intType) :: npts,idim,jdim,irow,jcol
-  integer(kind=intType) :: indices(8,3),rows(3),cols(3),lenx,leny,lenz
+  integer(kind=intType) :: indices(8,3),rows(3),cols(3),lenx,leny,lenz,indices2(8)
   ! Temporary Variables
   real(kind=realType)::  points(8,3),value(1,1),value1(1,1),value2(1,1)
-  real(kind=realType):: deltas(8,3)
+  real(kind=realType):: deltas(8,3),volume
 
   ! Sending Variables 
   real(kind=realType),  dimension(:,:,:), allocatable :: allK
   real(kind=realType),  dimension(:,:)  , allocatable :: allBCVal
   real(kind=realType),  dimension(:)    , allocatable :: solution
-  integer(kind=intType) :: elemID
+  integer(kind=intType) :: elemID,blockID
 
   ! Petsc sizes
   integer(kind=intType) :: nonz
@@ -50,7 +50,6 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
   real(kind=realType), dimension(:,:,:,:), allocatable :: Xupdated
   real(kind=realType), dimension(:,:,:,:), allocatable :: SS
   real(kind=realType) ::  shp(8),pt_delta(3),nns(2),nnt(2),nnr(2)
-
 
   external MyKSPMonitor
 
@@ -67,15 +66,21 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
   allocate(allK(elemPtr(nBlock+1)-1,24,24))
   allocate(allBCVal(elemPtr(nBlock+1)-1,24))
 
+  open(7,FILE='FEAP_input.inp')
+  write(7,*)"FEAP * * Solid Element Element Example"
+  write(7,*) nfree+nsurface+nboundary,elemPtr(nBlock+1)-1,1,3,3,8
+  write(7,*) " "
+ 
+
   do nn=1,nDom
      call setPointers(nn,level,sps)
      ! nbkGlobal is the original CGNS block ID we're on...if we
      ! haven't been block split this should be exactly the same
-     
+
      nelemx = l_sizes(nbkGlobal,1)-1
      nelemy = l_sizes(nbkGlobal,2)-1
      nelemz = l_sizes(nbkGlobal,3)-1
-     
+
      do i=1,nelemx   
         do j =1,nelemy
            do k=1,nelemz
@@ -87,7 +92,7 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
               indxp1 = int(floor(dble(i)/(nelemx)*(nx))) + 1
               indyp1 = int(floor(dble(j)/(nelemy)*(ny))) + 1
               indzp1 = int(floor(dble(k)/(nelemz)*(nz))) + 1
-
+              
               points(1,:) = X(indx  ,indy  ,indz  ,:)
               points(2,:) = X(indxp1,indy  ,indz  ,:)
               points(3,:) = X(indx  ,indyp1,indz  ,:)
@@ -110,178 +115,283 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
                  allBCVal(elemID,6*3 + jj) = X(indx  ,indyp1,indzp1,jj)-XInit(indx  ,indyp1,indzp1,jj)
                  allBCVal(elemID,7*3 + jj) = X(indxp1,indyp1,indzp1,jj)-XInit(indxp1,indyp1,indzp1,jj)
               end do
-          
+
               ! Compute Stiffness
+
+              call volume_hexa(points,volume)
+            !   write(7,*) "MATErial ",elemID
+!               write(7,*) "SOLID"
+!               write(7,*) "ELAStic ISOtripoic ",1/volume,0.3
+!               write(7,*) " "
+
+
               call calcStiffness(points,allK(elemID,:,:))
 
               call mpi_bcast(allK(elemID,:,:),24*24,sumb_real,myID,SUmb_comm_world,ierr)
               call mpi_bcast(allBCVal(elemID,:),24,sumb_real,myID,SUmb_comm_world,ierr)
-              
+
               if (ierr .ne. 0) then
                  print *,'Error in mpi_bast. Number is:',ierr
               end if
-              
+
            end do ! k loop
         end do ! j loop
      end do ! iloop
-   end do !nDoms loop
-   call mpi_barrier(sumb_comm_world, ierr) ! Make sure everything gets caught up
+  end do !nDoms loop
 
-   ! Now we have all the data we need on every processor so we can go
-   ! right to town to assemble and solve the structural system.
+  write(7,*) "MATErial ",1
+  write(7,*) "SOLID"
+  write(7,*) "ELAStic ISOtropic ",1,0.3
+  write(7,*) " "
 
-   ! Initialize the PETSc Matrices
+  call mpi_barrier(sumb_comm_world, ierr) ! Make sure everything gets caught up
 
-   ! --------------- Kuu ----------------
-   nrow = nfree*3
-   allocate(nnz(nfree*3))
-   nnz(:) = min(27,nfree) ! Petsc is screwed up...we can't just pass in the singe,
-                          ! nz value we MUST pass in the full nnz array
-   nonz = min(27,nfree)
+  write(7,*) "COORdinate ALL"
+  do ii=1,ngptr-1 ! Global number of points
+     blockID = g_index(gptr(ii)+1)+1 ! gptr is zero based
+     i       = g_index(gptr(ii)+2)+1
+     j       = g_index(gptr(ii)+3)+1
+     k       = g_index(gptr(ii)+4)+1
 
-   !call MatCreateSeqSBAIJ(PETSC_COMM_SELF,3,nrow,nrow,nonz,nnz,kuu,ierr)
-   call MatCreate(PETSC_COMM_SELF,kuu,ierr)
-   call MatSetSizes(kuu,nrow,nrow,nrow,nrow,ierr)
-   call MatSetType(kuu,'seqsbaij',ierr)
-   call MatSeqSBAIJSetPreallocation(kuu,3,nonz,nnz,ierr)
-   call MatSetOption(kuu,MAT_ROW_ORIENTED,PETSC_FALSE,ierr)
-   deallocate(nnz)
-   ! --------------- Kus ----------------
-   ncol = nSurface*3
-   !call MatCreateSeqBAIJ(PETSC_COMM_SELF,3,nrow,ncol,nonz,nnz,kus,ierr)
-   
-   allocate(nnz(nfree*3))
-   nnz(:) = min(27,nsurface) ! Petsc is screwed up...we can't just pass in the singe,
-                          ! nz value we MUST pass in the full nnz array
-   nonz = min(27,nsurface)
-   call MatCreate(PETSC_COMM_SELF,Kus,ierr)
-   call MatSetSizes(Kus,nrow,ncol,nrow,ncol,ierr)
-   call MatSetType(Kus,'seqbaij',ierr)
-   call MatSeqBAIJSetPreallocation(Kus,3,nonz,nnz,ierr)
-   call MatSetOption(Kus,MAT_ROW_ORIENTED,PETSC_FALSE,ierr)
-   deallocate(nnz)
+     call setPointers(blockID,1,1)
+     nelemx = l_sizes(nbkGlobal,1)-1
+     nelemy = l_sizes(nbkGlobal,2)-1
+     nelemz = l_sizes(nbkGlobal,3)-1
 
-   ! --------------- uu,us,fu -----------------
-   call VecCreate(PETSC_COMM_SELF,uu,ierr)
-   call VecSetSizes(uu,nrow,nrow,ierr)
-   call VecSetType(uu,'seq',ierr)
+     indx = int(floor(dble(i-1.0)/(nelemx)*(nx))) + 1
+     indy = int(floor(dble(j-1.0)/(nelemy)*(ny))) + 1
+     indz = int(floor(dble(k-1.0)/(nelemz)*(nz))) + 1
 
-   call VecCreate(PETSC_COMM_SELF,us,ierr)
-   call VecSetSizes(us,ncol,ncol,ierr)
-   call VecSetType(us,'seq',ierr)
-   call VecSetBlockSize(us,3,ierr)
+     write(7,*) ii,0,Xinit(indx,indy,indz,1),Xinit(indx,indy,indz,2),Xinit(indx,indy,indz,3)
+  
+  end do
+  write(7,*) " "
+  write(7,*) "ELEMents"
+        ! Connectivity (CCW Ordered)
+  counter = 1
+  do nn=1,nblock
+     do i=1,l_sizes(nn,1)-1
+        do j =1,l_sizes(nn,2)-1
+           do k=1,l_sizes(nn,3)-1
+              call hexa_index_ccw(i-1,j-1,k-1,indices)
+              do ii=1,8
+                 indices2(ii) = l_index(lptr(nn) + &
+                      indices(ii,1)*l_sizes(nn,2)*l_sizes(nn,3) + &
+                      indices(ii,2)*l_sizes(nn,3) + &
+                      indices(ii,3)+1)+1
+              end do
+              write(7,*) counter,1,1,indices2(1),indices2(2),indices2(3),indices2(4),&
+                   indices2(5),indices2(6),indices2(7),indices2(8)
+              counter = counter + 1
+           end do
+        end do
+     end do
+  end do
 
-   call VecCreate(PETSC_COMM_SELF,fu,ierr)
-   call VecSetSizes(fu,nrow,nrow,ierr)
-   call VecSetType(fu,'seq',ierr)
+  write(7,*) " "
+  write(7,*) "BOUNdary restraints"
+  
+  ! Now do the boundary restraints
+  ! Set the prescribed displacements and the fixed ones
+  do i=nfree+nsurface+1,nfree+nsurface+nboundary
+     write(7,*) i,0,1,1,1
+  end do
+  write(7,*)
+  write(7,*) "DISPlacement restraints"
+  
+  ! Now do the boundary restraints
+  ! Set the prescribed displacements and the fixed ones
+  
+  do ii=nfree+1,nfree+nsurface ! Global number of points
+     blockID = g_index(gptr(ii)+1)+1 ! gptr is zero based
+     i       = g_index(gptr(ii)+2)+1
+     j       = g_index(gptr(ii)+3)+1
+     k       = g_index(gptr(ii)+4)+1
 
-   print *,'Assembling'
-   print *,'nFree,nSurface,nBoundary:',nfree,nsurface,nboundary
-   
-   do nn=1,nblock
-      nelemx = l_sizes(nn,1)-1
-      nelemy = l_sizes(nn,2)-1
-      nelemz = l_sizes(nn,3)-1
-      
-      do i=1,nelemx   
-         do j =1,nelemy
-            do k=1,nelemz
-               elemID = elemPtr(nn)+(i-1)*(nelemy*nelemz)+(j-1)*(nelemz)+(k-1)
-               call hexa_index(i-1,j-1,k-1,indices) ! Make this zero based
-               
-               do ii=1,8
-                  irow = l_index(lptr(nn) +&
-                       indices(ii,1)*l_sizes(nn,2)*l_sizes(nn,3) + &
-                       indices(ii,2)*l_sizes(nn,3) +&
-                       indices(ii,3)+1)
-                  
-                  if (irow .ge. nFree .and. irow .lt. (nFree+Nsurface)) then
-                     call VecSetValuesBlocked(us,1,irow-nFree, &
-                     allBCVal(elemID,3*ii-2:ii*3),INSERT_VALUES,ierr)
-                  end if
+     call setPointers(blockID,1,1)
+     pt_delta = X(i,j,k,:)-Xinit(i,j,k,:)
+     write(7,*) ii,0,pt_delta(1),pt_delta(2),pt_delta(3)
+  end do
 
-                  do jj=1,8
-                     jcol = l_index(lptr(nn) +&
-                          indices(jj,1)*l_sizes(nn,2)*l_sizes(nn,3) + &
-                          indices(jj,2)*l_sizes(nn,3) +&
-                          indices(jj,3)+1)
-
-                     if (irow .lt. nFree .and. jcol .lt. nFree .and. jcol .ge. jcol) then
-                        call MatSetValuesBlocked(Kuu,1,irow,1,jcol, &
-                             allK(elemID,ii*3-2:ii*3,jj*3-2:jj*3), &
-                             ADD_VALUES,ierr)
-                     end if
-
-                     if (irow .lt. nFree .and. jcol .ge. nFree .and. &
-                          jcol .lt. (nFree+nSurface)) then
-                        call MatSetValuesBlocked(Kus,1,irow,1,jcol-nFree, &
-                             allK(elemID,ii*3-2:ii*3,jj*3-2:jj*3), &
-                             ADD_VALUES,ierr)
-                     end if
-                  end do ! j node loop
-               end do ! inode loop
-            end do !z elem loop
-         end do ! yelem loop
-      end do ! xelem loop
-   end do !ndomain loop
-
-   call MatAssemblyBegin(Kuu,MAT_FINAL_ASSEMBLY,ierr)
-   call MatAssemblyEnd(Kuu,MAT_FINAL_ASSEMBLY,ierr)
-   call MatAssemblyBegin(Kus,MAT_FINAL_ASSEMBLY,ierr)
-   call MatAssemblyEnd(Kus,MAT_FINAL_ASSEMBLY,ierr)
-   call VecAssemblyBegin(us,ierr)
-   call VecAssemblyEnd(us,ierr)
-
-   print *,'Done Assmebly'
-   call mpi_barrier(sumb_comm_world, ierr) 
-   if (ierr .ne. 0) then 
-      print *,'Error creating Stiffness Matrix' 
-   end if
-   !call VecView(us,PETSC_VIEWER_STDOUT_SELF,ierr )
-   ! Multiply kus by us to get -Fu
-   PETScNegOne = -1.0
-   call MatMult(Kus,us,fu,ierr)
-   call VecScale(fu,PETScNegOne,ierr)
-   
-   ! Ksp 
-    call KSPCreate(PETSC_COMM_SELF,ksp, ierr)
-    call KSPSetOperators(ksp,kuu,kuu,DIFFERENT_NONZERO_PATTERN,ierr)
-    call KSPSetFromOptions(ksp, ierr)
-    call KSPSetType(ksp, "preonly", ierr) !preonly
-    call KSPSetTolerances(ksp, 1e-12,1e-16,1e3,250,ierr) !reltol,abstol,
-                                                         !divergence tol,
-                                                         !max iter
-    call KSPGetPC(ksp, pc,ierr)
-    call PCSetType( pc, "cholesky",ierr)
-    !call PCSetType( pc, "icc",ierr)
-    !print *,'pc factor ordering'
-    !call PCFactorSetMatOrderingtype(pc,"rcm",ierr)
-    call KSPMonitorSet(ksp,MyKSPMonitor,PETSC_NULL_OBJECT, &
-         PETSC_NULL_FUNCTION, ierr)
-    
-    call KSPSolve(ksp,fu,uu,ierr)
-    
-    print *,'Done Solution'
-    ! Now set them back into the X
-    OPEN (7, FILE = 'zones.dat')
-    WRITE(7,*) 'TITLE = "SOLID WARP Finite Element Data"'
-    WRITE(7,*) 'VARIABLES = "X", "Y","Z"'
+  write(7,*) " "
+  write(7,*) "END"
+  write(7,*) "BATCh"
+  write(7,*) "TANGent"
+  write(7,*) "FORM"
+  write(7,*) "SOLV"
+  write(7,*) "DISPlacement all"
+  write(7,*) "END"
+  write(7,*) "STOP"
+  close(7)
 
 
-    do nn=1,nDom ! This is now done for each processor
-       call setPointers(nn,1,1)
-
-       nelemx = l_sizes(nbkGlobal,1)-1
-       nelemy = l_sizes(nbkGlobal,2)-1
-       nelemz = l_sizes(nbkGlobal,3)-1
-       print *,'nn:',nn
 
 
-       do i=1,nelemx   
-          do j =1,nelemy
-             do k=1,nelemz
 
-                elemID = elemPtr(nbkglobal)+(i-1)*(nelemy*nelemz)+(j-1)*(nelemz)+(k-1)
+
+  ! Now we have all the data we need on every processor so we can go
+  ! right to town to assemble and solve the structural system.
+
+  ! Initialize the PETSc Matrices
+
+  ! --------------- Kuu ----------------
+  nrow = nfree*3
+  allocate(nnz(nfree*3))
+  nnz(:) = min(27,nfree) ! Petsc is screwed up...we can't just pass in the singe,
+  ! nz value we MUST pass in the full nnz array
+  nonz = min(27,nfree)
+
+  !call MatCreateSeqSBAIJ(PETSC_COMM_SELF,3,nrow,nrow,nonz,nnz,kuu,ierr)
+  call MatCreate(PETSC_COMM_SELF,kuu,ierr)
+  call MatSetSizes(kuu,nrow,nrow,nrow,nrow,ierr)
+  call MatSetType(kuu,'seqbaij',ierr)
+  call MatSeqBAIJSetPreallocation(kuu,3,nonz,nnz,ierr)
+  call MatSetOption(kuu,MAT_ROW_ORIENTED,PETSC_FALSE,ierr)
+  deallocate(nnz)
+  ! --------------- Kus ----------------
+  ncol = nSurface*3
+  !call MatCreateSeqBAIJ(PETSC_COMM_SELF,3,nrow,ncol,nonz,nnz,kus,ierr)
+
+  allocate(nnz(nfree*3))
+  nnz(:) = min(27,nsurface) ! Petsc is screwed up...we can't just pass in the singe,
+  ! nz value we MUST pass in the full nnz array
+  nonz = min(27,nsurface)
+  call MatCreate(PETSC_COMM_SELF,Kus,ierr)
+  call MatSetSizes(Kus,nrow,ncol,nrow,ncol,ierr)
+  call MatSetType(Kus,'seqbaij',ierr)
+  call MatSeqBAIJSetPreallocation(Kus,3,nonz,nnz,ierr)
+  call MatSetOption(Kus,MAT_ROW_ORIENTED,PETSC_FALSE,ierr)
+  deallocate(nnz)
+
+  ! --------------- uu,us,fu -----------------
+  call VecCreate(PETSC_COMM_SELF,uu,ierr)
+  call VecSetSizes(uu,nrow,nrow,ierr)
+  call VecSetType(uu,'seq',ierr)
+
+  call VecCreate(PETSC_COMM_SELF,us,ierr)
+  call VecSetSizes(us,ncol,ncol,ierr)
+  call VecSetType(us,'seq',ierr)
+  call VecSetBlockSize(us,3,ierr)
+
+  call VecCreate(PETSC_COMM_SELF,fu,ierr)
+  call VecSetSizes(fu,nrow,nrow,ierr)
+  call VecSetType(fu,'seq',ierr)
+
+  print *,'Assembling'
+  print *,'nFree,nSurface,nBoundary:',nfree,nsurface,nboundary
+
+  do nn=1,nblock
+     nelemx = l_sizes(nn,1)-1
+     nelemy = l_sizes(nn,2)-1
+     nelemz = l_sizes(nn,3)-1
+
+     do i=1,nelemx   
+        do j =1,nelemy
+           do k=1,nelemz
+              elemID = elemPtr(nn)+(i-1)*(nelemy*nelemz)+(j-1)*(nelemz)+(k-1)
+              call hexa_index(i-1,j-1,k-1,indices) ! Make this zero based
+
+              do ii=1,8
+                 irow = l_index(lptr(nn) +&
+                      indices(ii,1)*l_sizes(nn,2)*l_sizes(nn,3) + &
+                      indices(ii,2)*l_sizes(nn,3) +&
+                      indices(ii,3)+1)
+
+                 if (irow .ge. nFree .and. irow .lt. (nFree+Nsurface)) then
+                    call VecSetValuesBlocked(us,1,irow-nFree, &
+                         allBCVal(elemID,3*ii-2:ii*3),INSERT_VALUES,ierr)
+                 end if
+
+                 do jj=1,8
+                    jcol = l_index(lptr(nn) +&
+                         indices(jj,1)*l_sizes(nn,2)*l_sizes(nn,3) + &
+                         indices(jj,2)*l_sizes(nn,3) +&
+                         indices(jj,3)+1)
+
+                    if (irow .lt. nFree .and. jcol .lt. nFree .and. jcol .ge. jcol) then
+                       call MatSetValuesBlocked(Kuu,1,irow,1,jcol, &
+                            allK(elemID,ii*3-2:ii*3,jj*3-2:jj*3), &
+                            ADD_VALUES,ierr)
+                    end if
+
+                    if (irow .lt. nFree .and. jcol .ge. nFree .and. &
+                         jcol .lt. (nFree+nSurface)) then
+                       call MatSetValuesBlocked(Kus,1,irow,1,jcol-nFree, &
+                            allK(elemID,ii*3-2:ii*3,jj*3-2:jj*3), &
+                            ADD_VALUES,ierr)
+                    end if
+                 end do ! j node loop
+              end do ! inode loop
+           end do !z elem loop
+        end do ! yelem loop
+     end do ! xelem loop
+  end do !ndomain loop
+
+  call MatAssemblyBegin(Kuu,MAT_FINAL_ASSEMBLY,ierr)
+  call MatAssemblyEnd(Kuu,MAT_FINAL_ASSEMBLY,ierr)
+  call MatAssemblyBegin(Kus,MAT_FINAL_ASSEMBLY,ierr)
+  call MatAssemblyEnd(Kus,MAT_FINAL_ASSEMBLY,ierr)
+  call VecAssemblyBegin(us,ierr)
+  call VecAssemblyEnd(us,ierr)
+
+  print *,'Done Assmebly'
+  call mpi_barrier(sumb_comm_world, ierr) 
+
+  ! Multiply kus by us to get -Fu
+  PETScNegOne = -1.0
+  call MatMult(Kus,us,fu,ierr)
+  call VecScale(fu,PETScNegOne,ierr)
+
+  !    open(7,file="rhs.txt")
+  !    do i=1,nfree*3
+  !       call VecGetValues(fu,1,i-1,value1,ierr)
+  !       write(7,*) value1
+  !    end do
+  !    close(7)
+
+  !     open(7,file='matrix.txt')
+  !     do i=1,nfree*3
+  !        do j=1,nfree*3
+  !           call MatGetValues(kuu,1,i-1,1,j-1,value1,ierr)
+  !           write(7,*) value1
+  !        end do
+  !     end do
+  !     close(7)
+  !     call VecNorm(fu,NORM_2,value1,ierr)
+
+  ! Do the cholesky directly, no ksp
+  call MatGetOrdering(kuu,"rcm",row_perm,col_perm,ierr)
+  call MatLUFactor(kuu,row_perm,col_perm,info,ierr)
+  call MatSolve(kuu,fu,uu,ierr)
+
+  open(7,file="uu.txt")
+  do i=1,nfree*3
+     call VecGetValues(uu,1,i-1,value1,ierr)
+     write(7,*) value1
+  end do
+  close(7)
+
+  print *,'Done Solution'
+
+  OPEN (7, FILE = 'zones.dat')
+  WRITE(7,*) 'TITLE = "SOLID WARP Finite Element Data"'
+  WRITE(7,*) 'VARIABLES = "X", "Y","Z"'
+
+
+  do nn=1,nDom ! This is now done for each processor
+     call setPointers(nn,1,1)
+
+     nelemx = l_sizes(nbkGlobal,1)-1
+     nelemy = l_sizes(nbkGlobal,2)-1
+     nelemz = l_sizes(nbkGlobal,3)-1
+     !print *,'nn:',nn
+
+
+     do i=1,nelemx   
+        do j =1,nelemy
+           do k=1,nelemz
+
+              elemID = elemPtr(nbkglobal)+(i-1)*(nelemy*nelemz)+(j-1)*(nelemz)+(k-1)
               ! Now we must figure out the indices
               indx = int(floor(dble(i-1.0)/(nelemx)*(nx))) + 1
               indy = int(floor(dble(j-1.0)/(nelemy)*(ny))) + 1
@@ -309,32 +419,29 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
               call hexa_index(i-1,j-1,k-1,indices)
               do ii=1,8
                  irow = l_index(lptr(nbkglobal) +&
-                        indices(ii,1)*l_sizes(nbkGlobal,2)*l_sizes(nbkGlobal,3)+&
-                        indices(ii,2)*l_sizes(nbkGlobal,3) +&
-                        indices(ii,3)+1) !! 0 based
-                 
+                      indices(ii,1)*l_sizes(nbkGlobal,2)*l_sizes(nbkGlobal,3)+&
+                      indices(ii,2)*l_sizes(nbkGlobal,3) +&
+                      indices(ii,3)+1) !! 0 based
+
                  if (irow .lt. nFree) then
                     call VecGetValues(uu,1,3*irow,deltas(ii,1),ierr)
                     call VecGetValues(uu,1,3*irow+1,deltas(ii,2),ierr)
                     call VecGetValues(uu,1,3*irow+2,deltas(ii,3),ierr)
 
                  elseif (irow .lt. nFree+nSurface) then
-                    print *,'fuck2, irow:',irow,elemID
                     deltas(ii,:) = allBCval(elemID,3*ii-2:ii*3)
                  else
                     deltas(ii,:) = 0.0
                  end if
               end do
               ! Now actuall update the Mesh Variables 'X'
-              print *,'nx,ny,nz:',nx,ny,nz
-
               do ii=1,lenx
                  do jj=1,leny
                     do kk=1,lenz
-                       
+
                        nnr(1) =  1.0 - SS(ii,jj,kk,1)
                        nnr(2) =  SS(ii,jj,kk,1)
-                       
+
                        nns(1) = 1.0 - SS(ii,jj,kk,2)
                        nns(2) = SS(ii,jj,kk,2)
 
@@ -349,52 +456,52 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
                        shp(6) = nnr(2)*nns(1)*nnt(2)
                        shp(7) = nnr(1)*nns(2)*nnt(2)
                        shp(8) = nnr(2)*nns(2)*nnt(2)
-                       
+
                        pt_delta = matmul(shp,deltas)
 
                        X(indx+ii-1,indy+jj-1,indz+kk-1,:) =  &
-                       Xinit(indx+ii-1,indy+jj-1,indz+kk-1,:) + pt_delta
-                       
-                    end do ! kk loop
-              end do ! jj loop
-           end do !ii loop
+                            Xinit(indx+ii-1,indy+jj-1,indz+kk-1,:) + pt_delta
 
-           do kk=1,lenz
-              do jj=1,leny
-                 do ii=1,lenx
-                    write(7,*) X(indx+ii-1,indy+jj-1,indz+kk-1,1),&
-                         X(indx+ii-1,indy+jj-1,indz+kk-1,2),&
-                         X(indx+ii-1,indy+jj-1,indz+kk-1,3)
+                    end do ! kk loop
+                 end do ! jj loop
+              end do !ii loop
+
+              do kk=1,lenz
+                 do jj=1,leny
+                    do ii=1,lenx
+                       write(7,*) X(indx+ii-1,indy+jj-1,indz+kk-1,1),&
+                            X(indx+ii-1,indy+jj-1,indz+kk-1,2),&
+                            X(indx+ii-1,indy+jj-1,indz+kk-1,3)
+                    end do
                  end do
               end do
-           end do
-           
-           deallocate(Xstart,SS)
+
+              deallocate(Xstart,SS)
 
            end do ! k loop
         end do ! j loop
      end do ! i loop
   end do
-   
+
   close(7)
 
 
-    allocate(solution(nfree*3))
-    do i=1,nfree*3
-       call VecGetValues(uu,1,i-1,solution(i),ierr)
-    end do
+  allocate(solution(nfree*3))
+  do i=1,nfree*3
+     call VecGetValues(uu,1,i-1,solution(i),ierr)
+  end do
 
-    call writeFEAP('solid_test.dat',g_index,gptr,l_index,lptr,l_sizes,ngi,&
-         ngptr,nli,nblock,elemPtr(nBlock+1)-1,solution,nfree)
+  call writeFEAP(g_index,gptr,l_index,lptr,l_sizes,ngi,&
+       ngptr,nli,nblock,elemPtr(nBlock+1)-1,solution,nfree)
 
-    ! Deallocation
+  ! Deallocation
   deallocate(allK,allBCVal,solution)
-    call MatDestroy(Kuu,ierr)
-    call MatDestroy(Kus,ierr)
-    call VecDestroy(uu,ierr)
-    call VecDestroy(us,ierr)
-    call VecDestroy(fu,ierr)
-   call mpi_barrier(sumb_comm_world, ierr) 
+  call MatDestroy(Kuu,ierr)
+  call MatDestroy(Kus,ierr)
+  call VecDestroy(uu,ierr)
+  call VecDestroy(us,ierr)
+  call VecDestroy(fu,ierr)
+  call mpi_barrier(sumb_comm_world, ierr) 
 #endif
 end subroutine warpMeshSolid
 
@@ -424,9 +531,9 @@ subroutine calcstiffness(points,Kstif)
 
   call volume_hexa(points,volume)
 
-  E = 1.0/(volume*volume)
+  E = 1.0/(volume)!*volume)
   !E = 1
-  nu = 0.2
+  nu = .2
   c = E/((1+nu)*(1-2*nu))
   G = c/(2-nu)
 
@@ -533,7 +640,7 @@ subroutine calcstiffness(points,Kstif)
            !             [ |a22 a23|   |a12 a13|  |a12 a13|]     */
            !             [ |a32 a33|  -|a32 a33|  |a22 a23|]     */
            !             [                                 ]     */
-           !             [ |a21 a23|   |a11 a13|  |a11 a13|]     */
+           !             [ |a21\ a23|   |a11 a13|  |a11 a13|]     */
            !    A^(-1) = [-|a31 a33|   |a31 a33| -|a21 a23|] / d */
            !             [                                 ]     */
            !             [ |a21 a22|   |a11 a12|  |a11 a12|]     */
@@ -570,30 +677,30 @@ subroutine calcstiffness(points,Kstif)
 
                  Bi(4,1) = Ny(i)
                  Bi(4,2) = Nx(i)
-                 
+
                  Bi(5,2) = Nz(i)
                  Bi(5,3) = Ny(i)
-                 
+
                  Bi(6,1) = Nz(i)
                  Bi(6,3) = Nx(i)
-                 
+
                  !Bj 
                  Bj(1,1) = Nx(j)
                  Bj(2,2) = Ny(j)
                  Bj(3,3) = Nz(j)
-                 
+
                  Bj(4,1) = Ny(j)
                  Bj(4,2) = Nx(j)
-                 
+
                  Bj(5,2) = Nz(j)
                  Bj(5,3) = Ny(j)
-                 
+
                  Bj(6,1) = Nz(j)
                  Bj(6,3) = Nx(j)
 
 
                  intM = matmul(transpose(Bi), matmul(Cm,Bj))
-                
+
                  Kstif(3*i-2,3*j-2) = Kstif(3*i-2,3*j-2) +   intM(1,1)*det
                  Kstif(3*i-2,3*j-1) = Kstif(3*i-2,3*j-1) +   intM(1,2)*det
                  Kstif(3*i-2,3*j  ) = Kstif(3*i-2,3*j  ) +   intM(1,3)*det
@@ -610,7 +717,7 @@ subroutine calcstiffness(points,Kstif)
         end do
      end do
   end do
-   ! Fill up the remainder
+  ! Fill up the remainder
   do i=1,24
      do j = 1,i
         Kstif(i,j) = Kstif(j,i)
@@ -666,7 +773,7 @@ end function volpymrid
 subroutine hexa_index(i,j,k,indices)
   use precision
   integer(kind=intType) :: i,j,k,indices(8,3)
-  
+
   indices(1,:) = (/i,j,k/)
   indices(2,:) = (/i+1,j,k/)
   indices(3,:) = (/i,j+1,k/)
@@ -680,7 +787,7 @@ end subroutine hexa_index
 subroutine hexa_index_ccw(i,j,k,indices)
   use precision
   integer(kind=intType) :: i,j,k,indices(8,3)
-  
+
   indices(1,:) = (/i,j,k/)
   indices(2,:) = (/i+1,j,k/)
   indices(3,:) = (/i+1,j+1,k/)
@@ -691,12 +798,11 @@ subroutine hexa_index_ccw(i,j,k,indices)
   indices(8,:) = (/i,j+1,k+1/)
 end subroutine hexa_index_ccw
 
-subroutine writeFEAP(file_name,g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,&
-  nli,nblock,nelem,solution,nfree)
+subroutine writeFEAP(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,&
+     nli,nblock,nelem,solution,nfree)
   use blockpointers
 
   implicit none
-  character*32 file_name
   integer(kind=intType) :: g_index(ngi),gptr(ngptr)
   integer(kind=intType) :: l_index(nli),lptr(nblock+1),l_sizes(nblock,3)
   integer(kind=intType) :: ngi,nli,ngptr,nblock,nelem,nfree
@@ -704,12 +810,12 @@ subroutine writeFEAP(file_name,g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,&
   integer(kind=intType) :: ii,i,j,k,blockID,nelemx,nelemy,nelemz,indx,indy,indz
   integer(kind=intType) :: indices(8,3),nn
 
-  OPEN (7, FILE = file_name)
+  OPEN (7, FILE ='solid_test.dat')
   WRITE(7,*) 'TITLE = "SOLID WARP Finite Element Data"'
   WRITE(7,*) 'VARIABLES = "X", "Y","Z"'
   WRITE(7,*) 'Zone N=',ngptr-1,'E=', nelem
   WRITE(7,*)  'DATAPACKING=POINT, ZONETYPE = FEBRICK'
-    
+
   ! ONLY WORKS ON ONE PROCESSOR
   print *,'About to do x'
   print *,'nfree:',nfree
@@ -727,7 +833,7 @@ subroutine writeFEAP(file_name,g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,&
      indx = int(floor(dble(i-1.0)/(nelemx)*(nx))) + 1
      indy = int(floor(dble(j-1.0)/(nelemy)*(ny))) + 1
      indz = int(floor(dble(k-1.0)/(nelemz)*(nz))) + 1
-     
+
      !write(7,*) Xinit(indx,indy,indz,1),Xinit(indx,indy,indz,2),Xinit(indx,indy,indz,3)
 
      if (ii .le. nfree) then
@@ -744,7 +850,7 @@ subroutine writeFEAP(file_name,g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,&
 
   ! Connectivity (CCW Ordered)
   do nn=1,nblock
- 
+
      do i=1,l_sizes(nn,1)-1
         do j =1,l_sizes(nn,2)-1
            do k=1,l_sizes(nn,3)-1
@@ -770,16 +876,16 @@ subroutine writeFEAP(file_name,g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,&
      i       = g_index(gptr(ii)+2)+1
      j       = g_index(gptr(ii)+3)+1
      k       = g_index(gptr(ii)+4)+1
-     
+
      call setPointers(blockID,1,1)
      nelemx = l_sizes(nbkGlobal,1)-1
      nelemy = l_sizes(nbkGlobal,2)-1
      nelemz = l_sizes(nbkGlobal,3)-1
-     
+
      indx = int(floor(dble(i-1.0)/(nelemx)*(nx))) + 1
      indy = int(floor(dble(j-1.0)/(nelemy)*(ny))) + 1
      indz = int(floor(dble(k-1.0)/(nelemz)*(nz))) + 1
-     
+
      write(7,*) Xinit(indx,indy,indz,1),Xinit(indx,indy,indz,2),Xinit(indx,indy,indz,3)
   end do
 
@@ -787,7 +893,7 @@ subroutine writeFEAP(file_name,g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,&
 end subroutine writeFEAP
 
 !   allocate(bc_block(l_sizes(nbkGlobal,1),l_sizes(nbkGlobal,2),l_sizes(nbkGlobal,3),3))
-      
+
 !      ! Now determine the BCs for all nodes on the domain
 !      do i=1,l_sizes(nbkGlobal,1)
 !         do j =1,l_sizes(nbkGlobal,2)
@@ -847,7 +953,7 @@ end subroutine writeFEAP
 
 
 
- !   open(7,file='kus.txt')
+!   open(7,file='kus.txt')
 !    do j=1,nsurface*3
 !       do i=1,nfree*3
 !          call MatGetValues(Kus,1,i-1,1,j-1,value1,ierr)
@@ -855,38 +961,6 @@ end subroutine writeFEAP
 !       end do 
 !    end do
 !    close(7)
-
-!    open(7,file='us.txt')
-!    do j=1,nsurface*3
-!       call VecGetValues(us,1,j-1,value1,ierr)
-!       write(7,*) value1
-!    end do
-!    close(7)
-
-!    open(7,file="rhs.txt")
-!    do i=1,nfree*3
-!       call VecGetValues(fu,1,i-1,value1,ierr)
-!       write(7,*) value1
-!    end do
-!    close(7)
-   
-
-    ! open(7,file="uu.txt")
-!     do i=1,nfree*3
-!        call VecGetValues(uu,1,i-1,value1,ierr)
-!        write(7,*) value1
-!     end do
-!    close(7)
-
-!     open(7,file='matrix.txt')
-!     do j=1,nfree*3
-!        do i=1,nfree*3
-!           call MatGetValues(kuu,1,i-1,1,j-1,value1,ierr)
-!           call MatGetValues(kuu,1,j-1,1,i-1,value2,ierr)
-!           write(7,*) value1
-!        end do
-!     end do
-!     close(7)
 
 
 subroutine para3d(X,n,m,l,ndim,S)
@@ -907,7 +981,7 @@ subroutine para3d(X,n,m,l,ndim,S)
   ! Input
   integer          , intent(in)   :: n,m,l,ndim
   double precision , intent(in)   :: X(n,m,l,ndim)
-  
+
 
   ! Output
   double precision , intent(out)  :: S(n,m,l,ndim)
@@ -931,23 +1005,23 @@ subroutine para3d(X,n,m,l,ndim,S)
 
 
   !     Zero the three low-end faces (or edges if one plane is specified).
-  
+
   DO K = 1, l
      DO J = 1, m
         S(1,J,K,1) = 0.0
      END DO
-     
+
      DO I = 1, n
         S(I,1,K,2) = 0.0
      END DO
   END DO
-  
+
   DO J = 1, m
      DO I = 1, n
         S(I,J,1,3) = 0.0
      END DO
   END DO
-  
+
   !     Set up the low-end edge lines because they are missed by the
   !     following loops over most of the low-end faces:
 
@@ -1056,12 +1130,12 @@ subroutine para3d(X,n,m,l,ndim,S)
      DO J = 1, m
         S(n,J,K,1) = 1.0
      END DO
-     
+
      DO I = 1, n
         S(I,m,K,2) = 1.0
      END DO
   END DO
-  
+
   DO J = 1, m
      DO I = 1, n
         S(I,J,l,3) = 1.0
@@ -1072,3 +1146,20 @@ subroutine para3d(X,n,m,l,ndim,S)
 
 end subroutine para3d
 
+
+!    call MatCholeskyFactor(kuu,col_perm,10,ierr)
+!    ! Ksp 
+!     call KSPCreate(PETSC_COMM_SELF,ksp, ierr)
+!     call KSPSetOperators(ksp,kuu,kuu,DIFFERENT_NONZERO_PATTERN,ierr)
+!     call KSPSetFromOptions(ksp, ierr)
+!     call KSPSetType(ksp, "preonly", ierr) !preonly
+!     call KSPSetTolerances(ksp, 1e-12,1e-16,1e3,250,ierr) !reltol,abstol,
+!                                                          !divergence tol,
+!                                                          !max iter
+!     call KSPGetPC(ksp, pc,ierr)
+!     call PCSetType( pc, "cholesky",ierr)
+!     !call PCSetType( pc, "icc",ierr)
+!     call KSPMonitorSet(ksp,MyKSPMonitor,PETSC_NULL_OBJECT, &
+!          PETSC_NULL_FUNCTION, ierr)
+
+!     call KSPSolve(ksp,fu,uu,ierr)
