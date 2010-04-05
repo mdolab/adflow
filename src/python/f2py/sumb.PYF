@@ -193,9 +193,10 @@ python module sumb ! in
          implicit none
        end subroutine warpmesh
 
-        subroutine warpmeshsolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,nfree,nsurface,nboundary) ! in :test:warpMeshSolid.f90
+        subroutine warpmeshsolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,nfree,nsurface,nboundary,free_dof) ! in :test:warpMeshSolid.f90
             use blockpointers
-            use communication,,only: myid,sumb_comm_world
+            use communication,,only: myid,sumb_comm_world,sumb_comm_self
+            use solidwarpmodule
             integer(kind=inttype) dimension(ngi) :: g_index
             integer(kind=inttype) dimension(ngptr) :: gptr
             integer(kind=inttype) dimension(nli) :: l_index
@@ -205,9 +206,10 @@ python module sumb ! in
             integer(kind=inttype) optional,check(len(gptr)>=ngptr),depend(gptr) :: ngptr=len(gptr)
             integer(kind=inttype) optional,check(len(l_index)>=nli),depend(l_index) :: nli=len(l_index)
             integer(kind=inttype) optional,check((len(lptr)-1)>=nblock),depend(lptr) :: nblock=(len(lptr)-1)
-            integer(kind=inttype) intent(in) :: nfree
-            integer(kind=inttype) intent(in) :: nsurface
-            integer(kind=inttype) intent(in) :: nboundary
+            integer(kind=inttype) optional,check((len(free_dof))/(3)>=nfree),depend(free_dof) :: nfree=(len(free_dof))/(3)
+            integer(kind=inttype) :: nsurface
+            integer(kind=inttype) :: nboundary
+            integer(kind=inttype) dimension(3 * nfree) :: free_dof
         end subroutine warpmeshsolid
 
        subroutine setupvolumesurfacederivativesdv
