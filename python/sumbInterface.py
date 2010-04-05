@@ -22,8 +22,9 @@ from math import pi
 # =============================================================================
 
 import numpy
-
-# Try to import the mpi module
+from mdo_import_helper import *
+exec(import_modules('geo_utils','pySpline'))
+# import to import the mpi module
 try:
     from mpi4py import MPI as mpi
 #    import mpi
@@ -67,6 +68,7 @@ class SUmbMesh(object):
         """Initialize the object."""
         self._update_geom_info = False
         self._suggar_interface_initialized = False
+        self.solid_warp_initialized=False
 
     def GetSurfaceCoordinates(self, family=None, sps=1):
         """Return surface coordinates.
@@ -498,14 +500,258 @@ class SUmbMesh(object):
 
         return
 
-    def warpMeshSolid(self,g_index,gptr,l_index,lptr,l_sizes,nfree,nsurface,nboundary):
+    def warpMeshSolid(self,*args,**kwargs):
         '''
-        run the internal meshwarping scheme
-        '''
-        
-        sumb.warpmeshsolid(g_index,gptr,l_index,lptr,l_sizes,nfree,nsurface,nboundary)
+        run the Solid Mesh Warping scheme
+       '''
+
+        if not self.solid_warp_initialized: # We have initialization stuff to do
+            mpiPrint('\nInitializating Solid Mesh Warping...')
+            import pyspline # Direct access to the compiled spline library
+            
+            if 'file' in kwargs: # we're using a separate CGNS file
+                file_name = kwargs['file']
+            elif 'n' in kwargs:
+                file_name = self.GetFilename() #we're using mesh file with constant 'n'
+                n = kwargs['n']
+            #end if
+            if 'sym' in kwargs:
+                if kwargs['sym'] == 'xy' or kwargs['sym'] == 'yx':
+                    sym = [0,0,-1]
+                elif kwargs['sym'] == 'yz' or kwargs['sym'] == 'zy':
+                    sym = [-1,0,0]
+                elif kwargs['sym'] == 'xz' or kwargs['sym'] == 'zx':
+                    sym = [0,-1,0]
+                else:
+                    mpiPrint('Error: sym must be one of xy, yz or xz')
+                    sys.exit(0)
+                # end if
+            else:
+                mpiPrint('  ** Warning: sym is not specified. xy symmetry plane is assumed.')
+                sym = [0,0,-1]
+            # end if
+
+            cg,nzones = pyspline.open_cgns(file_name)
+            sizes = []
+            BCs = []
+            corners = []
+            for i in xrange(nzones):
+                zoneshape = pyspline.read_cgns_zone_shape(cg,i+1)
+                X,faceBCs = pyspline.read_cgns_zone(cg,i+1,zoneshape[0],zoneshape[1],zoneshape[2])
+                sizes.append(zoneshape)
+                BCs.append(faceBCs)
+                corners.append(numpy.zeros((8,3),'intc'))
+                corners[-1][0] = X[0,0,0]
+                corners[-1][1] = X[-1,0,0]
+                corners[-1][2] = X[0,-1,0]
+                corners[-1][3] = X[-1,-1,0]
+                corners[-1][4] = X[0,0,-1]
+                corners[-1][5] = X[-1,0,-1]
+                corners[-1][6] = X[0,-1,-1]
+                corners[-1][7] = X[-1,-1,-1]
+            # end for
+            pyspline.close_cgns(cg) # Done with cgns file
+            sizes = array(sizes)
+
+            self.FE_topo = BlockTopology(corners)
+            if 'n' in kwargs:
+                sizes[:,:] = n
+            # end if
+
+            self.FE_topo.calcGlobalNumbering(sizes)
+            nFree,nSurface,nBoundary,free_dof = self._reOrderIndices(BCs,sym)
+            g_index,gptr,l_index,lptr,l_sizes = self.FE_topo.flatten_indices()
+            self.solidWarpData = [g_index,gptr,l_index,lptr,l_sizes,nSurface,nBoundary,free_dof]
+            self.solid_warp_initialized = True
+            mpiPrint('  -> Solid Mesh Warping Initialized.')
+        # end if
+        # sumb.warpmeshsolid(g_index,gptr,l_index,lptr,l_sizes,nsurface,nboundary,free_dof)  <--- Actual arguments
+        print free_dof
+        sumb.warpmeshsolid(self.solidWarpData[0],self.solidWarpData[1],
+                           self.solidWarpData[2],self.solidWarpData[3],
+                           self.solidWarpData[4],self.solidWarpData[5],
+                           self.solidWarpData[6],self.solidWarpData[7])
 
         return
+
+    def _reOrderIndices(self,faceBCs,sym):
+        '''This funcion takes the order from self.FE_topo and reorders
+        them accordint to the Boundary Condition types in each volume
+        class. The sole purpose of this is to facilitate the
+        structural mesh warping algorithim for matrix assembly.'''
+        # We want the global indicies ordered according to:
+        #[ interior unonstrainted nodes]
+        #[ constrained surface nodes   ]
+        #[ constrained fixed nodes     ]
+
+        # First determine the number in each category
+        
+        pt_type = numpy.zeros(self.FE_topo.nGlobal,'intc')
+
+        for ii in xrange(self.FE_topo.nGlobal):
+            
+            for jj in xrange(len(self.FE_topo.g_index[ii])):
+                ivol = self.FE_topo.g_index[ii][jj][0]
+                i    = self.FE_topo.g_index[ii][jj][1]
+                j    = self.FE_topo.g_index[ii][jj][2]
+                k    = self.FE_topo.g_index[ii][jj][3]
+
+                N = self.FE_topo.l_index[ivol].shape[0]
+                M = self.FE_topo.l_index[ivol].shape[1]
+                L = self.FE_topo.l_index[ivol].shape[2]
+              
+                type,number,index1,index2 = \
+                    indexPosition3D(i,j,k,N,M,L)
+                
+                checkFaces = []
+                if type == 0:
+                    pt_type[ii] = 0
+                else: # Face
+                    if type == 1: # Face
+                        checkFaces.append(number)
+                    elif type == 2: # Edge
+                        if number in [0,1,2,3]:
+                            checkFaces.append(0)
+                        if number in [4,5,6,7]:
+                            checkFaces.append(1)
+                        if number in [2,6,8,10]:
+                            checkFaces.append(2)
+                        if number in [3,7,9,11]:
+                            checkFaces.append(3)
+                        if number in [0,4,8,9]:
+                            checkFaces.append(4)
+                        if number in [1,5,10,11]:
+                            checkFaces.append(5)
+                    elif type == 3: # Corner
+                        if number == 0:
+                            checkFaces.extend([0,2,4])
+                        elif number == 1:
+                            checkFaces.extend([0,3,4])
+                        elif number == 2:
+                            checkFaces.extend([0,2,5])
+                        elif number == 3:
+                            checkFaces.extend([0,3,5])
+                        elif number == 4:
+                            checkFaces.extend([1,2,4])
+                        elif number == 5:
+                            checkFaces.extend([1,3,4])
+                        elif number == 6:
+                            checkFaces.extend([1,2,5])
+                        elif number == 7:
+                            checkFaces.extend([1,3,5])
+                    # end if
+
+                    for iii in xrange(len(checkFaces)):
+                        iface = checkFaces[iii]
+                        if faceBCs[ivol][checkFaces[iii]] == 1:
+                            pt_type[ii] = 1
+                        # end if
+                        if faceBCs[ivol][checkFaces[iii]] == 2:
+                            pt_type[ii] = 2
+                        # end if
+                        if faceBCs[ivol][checkFaces[iii]] == 3:
+                            # Only set it as a symmetry plane if nothing is already set
+                            if pt_type[ii] == 0:
+                                pt_type[ii] = 3
+                            # end if
+                        # end if
+                    # end for
+                # end if
+            # end for
+        # end for
+                            
+        surface_points = 0
+        boundary_points = 0
+        for i in xrange(len(pt_type)):
+            if pt_type[i] == 1:
+                surface_points += 1
+            if pt_type[i] == 2:
+                boundary_points += 1
+            # end if
+        # end for
+
+        free_points = self.FE_topo.nGlobal - (boundary_points+surface_points)
+        mpiPrint('  -> Total Nodes   : %d'%(self.FE_topo.nGlobal))
+        mpiPrint('  -> Free Nodes    : %d'%(free_points))
+        mpiPrint('  -> Surface Nodes : %d'%(surface_points))
+        mpiPrint('  -> Boundary Nodes: %d'%(boundary_points))
+
+        # Now attempt to do the reorganization
+        # We can split the the g_index up into three parts:
+        #  -> pt_type 0 
+        #  -> pt_type 1
+        #  -> pt_type 2
+        g_index_free = [ [] for i in xrange(free_points)]
+        g_index_surface = [ [] for i in xrange(surface_points)]
+        g_index_boundary = [ [] for i in xrange(boundary_points)]
+
+        # Make a single pass through, puck out each list in
+        # g_index[i], add it to the correct sub_list, AND update each
+        # of the entries in the local index to point back to the
+        # correct place IN THE NEW,RE-ASSEMBLED g_index
+
+        freeCount = 0
+        surfaceCount = 0
+        boundaryCount = 0
+        free_dof = []
+        for ii in xrange(self.FE_topo.nGlobal):
+            if pt_type[ii] == 0 or pt_type[ii] == 3:
+                g_index_free[freeCount] = self.FE_topo.g_index[ii]
+                if pt_type[ii] == 0:
+                    free_dof.extend([0,0,0])
+                else:
+                    free_dof.extend(sym)
+                # end if
+
+                for jj in xrange(len(self.FE_topo.g_index[ii])):
+                    ivol = self.FE_topo.g_index[ii][jj][0]
+                    i    = self.FE_topo.g_index[ii][jj][1]
+                    j    = self.FE_topo.g_index[ii][jj][2]
+                    k    = self.FE_topo.g_index[ii][jj][3]
+                
+                    self.FE_topo.l_index[ivol][i,j,k] = 0 + freeCount
+                # end for
+                
+                freeCount += 1
+                                    
+            elif pt_type[ii] == 1:
+                g_index_surface[surfaceCount] = self.FE_topo.g_index[ii]
+
+                for jj in xrange(len(self.FE_topo.g_index[ii])):
+                    ivol = self.FE_topo.g_index[ii][jj][0]
+                    i    = self.FE_topo.g_index[ii][jj][1]
+                    j    = self.FE_topo.g_index[ii][jj][2]
+                    k    = self.FE_topo.g_index[ii][jj][3]
+                
+                    self.FE_topo.l_index[ivol][i,j,k] = free_points + surfaceCount
+                # end for
+
+                surfaceCount += 1
+
+            elif pt_type[ii] == 2:
+                g_index_boundary[boundaryCount] = self.FE_topo.g_index[ii]
+
+                for jj in xrange(len(self.FE_topo.g_index[ii])):
+                    ivol = self.FE_topo.g_index[ii][jj][0]
+                    i    = self.FE_topo.g_index[ii][jj][1]
+                    j    = self.FE_topo.g_index[ii][jj][2]
+                    k    = self.FE_topo.g_index[ii][jj][3]
+                
+                    self.FE_topo.l_index[ivol][i,j,k] = \
+                        free_points + surface_points + boundaryCount
+                # end for
+
+                boundaryCount += 1
+            # end if
+        # end for
+
+        # Finally, concentenate g_index back together
+        g_index_free.extend(g_index_surface)
+        g_index_free.extend(g_index_boundary)
+        self.FE_topo.g_index = g_index_free
+        return free_points,surface_points,boundary_points,array(free_dof)
+
+
 
 
 # =============================================================================
@@ -644,11 +890,11 @@ class SUmbInterface(object):
         # Determine the total number of blocks in the mesh and store it
         #print 'mpitest',sumb.block.ndom,mpi.SUM
         #For older versions of mpi4py...
-        self.Mesh.nmeshblocks = self.sumb_comm_world.Allreduce(
-        			     sumb.block.ndom,mpi.SUM)
+        #self.Mesh.nmeshblocks = self.sumb_comm_world.Allreduce(
+        #    sumb.block.ndom,mpi.SUM)
         #for mpi4py version 1.2
-        #self.Mesh.nmeshblocks = self.sumb_comm_world.allreduce(
-        #			     sumb.block.ndom,mpi.SUM)
+        self.Mesh.nmeshblocks = self.sumb_comm_world.allreduce(
+        			     sumb.block.ndom,mpi.SUM)
         #Set flags for ADjoint initialization
         self.adjointInitialized = False
         
