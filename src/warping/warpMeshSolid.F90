@@ -7,7 +7,7 @@
 ! ***********************************
 
 subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock, &
-     nFree,nSurface,nBoundary)
+     nFree,nSurface,nBoundary,free_dof)
 #ifndef USE_NO_PETSC
 
   use blockpointers
@@ -19,7 +19,7 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
   integer(kind=intType) :: g_index(ngi),gptr(ngptr)
   integer(kind=intType) :: l_index(nli),lptr(nblock+1),l_sizes(nblock,3)
   integer(kind=intType) :: ngi,nli,ngptr,nblock
-  integer(kind=intType) :: nFree,nSurface,nBoundary,counter
+  integer(kind=intType) :: nFree,nSurface,nBoundary,counter,free_dof(3*nfree)
 
   ! Working Data
   integer(kind=intType) :: nelemx,nelemy,nelemz,nelem
@@ -27,7 +27,7 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
   integer(kind=intType) :: elemPtr(nBlock+1),n
 
   integer(kind=intType) :: level=1,ierr
-  integer(kind=intType) :: nn,sps=1,i,ii,iii,j,jj,jjj,k,kk,kkk
+  integer(kind=intType) :: nn,sps=1,i,ii,iii,j,jj,jjj,k,kk,kkk,iset,jset
   integer(kind=intType) :: npts,idim,jdim,irow,jcol
   integer(kind=intType) :: indices(8,3),rows(3),cols(3),lenx,leny,lenz,indices2(8)
   ! Temporary Variables
@@ -224,11 +224,6 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
   write(7,*) "STOP"
   close(7)
 
-
-
-
-
-
   ! Now we have all the data we need on every processor so we can go
   ! right to town to assemble and solve the structural system.
 
@@ -244,7 +239,7 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
   !call MatCreateSeqSBAIJ(PETSC_COMM_SELF,3,nrow,nrow,nonz,nnz,kuu,ierr)
   call MatCreate(PETSC_COMM_SELF,kuu,ierr)
   call MatSetSizes(kuu,nrow,nrow,nrow,nrow,ierr)
-  call MatSetType(kuu,'seqbaij',ierr)
+  call MatSetType(kuu,'seqaij',ierr)
   call MatSeqBAIJSetPreallocation(kuu,3,nonz,nnz,ierr)
   call MatSetOption(kuu,MAT_ROW_ORIENTED,PETSC_FALSE,ierr)
   deallocate(nnz)
@@ -279,7 +274,10 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
 
   print *,'Assembling'
   print *,'nFree,nSurface,nBoundary:',nfree,nsurface,nboundary
-
+  print *,'fre dof'
+  do i=1,3*nfree
+     print *,i,free_dof(i)
+  end do
   do nn=1,nblock
      nelemx = l_sizes(nn,1)-1
      nelemy = l_sizes(nn,2)-1
@@ -309,9 +307,26 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
                          indices(jj,3)+1)
 
                     if (irow .lt. nFree .and. jcol .lt. nFree .and. jcol .ge. jcol) then
-                       call MatSetValuesBlocked(Kuu,1,irow,1,jcol, &
-                            allK(elemID,ii*3-2:ii*3,jj*3-2:jj*3), &
-                            ADD_VALUES,ierr)
+                       do iii=1,3
+                          do jjj=1,3
+                             if (free_dof(3*irow+iii) == -1) then
+                                iset = -1
+                                print *,'iset -1'
+                             else
+                                iset = 3*irow+iii-1
+                             end if
+
+                             if (free_dof(3*jcol+jjj) == -1) then
+                                jset = -1
+                             else
+                                jset = 3*jcol+jjj-1
+                             end if
+
+                             call MatSetValues(Kuu,1,iset,1,jset, &
+                                  allK(elemID,3*(ii-1)+iii,(jj-1)*3+jjj), &
+                                  ADD_VALUES,ierr)
+                          end do
+                       end do
                     end if
 
                     if (irow .lt. nFree .and. jcol .ge. nFree .and. &
@@ -489,6 +504,7 @@ subroutine warpMeshSolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,
   allocate(solution(nfree*3))
   do i=1,nfree*3
      call VecGetValues(uu,1,i-1,solution(i),ierr)
+     print *,free_dof(i),solution(i)
   end do
 
   call writeFEAP(g_index,gptr,l_index,lptr,l_sizes,ngi,&
