@@ -85,11 +85,12 @@ do mm= 1,nSubface
             do ll=1,3
                local = x(ii,jj,kk,ll)
                local0 = xInit(ii,jj,kk,ll)
+               !print *,'locals',local,local0
                tolerance = 1.0e-12
                if( (abs(local -local0)/max(abs(local0),abs(local),tolerance)>1e-12.and. abs(local -local0)>tolerance ).or.(xyznewd(ll,ii,jj,kk)/=0))then
-               
+                  
 !!$               if(xyznewd(ll,ii,jj,kk)/=0)then  
-                  !print *,'corner',ii,jj,kk,ll,xyznewd(ll,ii,jj,kk)
+                  !print *,'corner',ii,jj,kk,ll,local,local0,xyznewd(ll,ii,jj,kk)
                   !point has moved
                   !set the index for this point
                   IJK_NUM = (/ii,jj,kk/)

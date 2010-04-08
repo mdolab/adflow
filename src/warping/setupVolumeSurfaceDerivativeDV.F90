@@ -13,7 +13,7 @@ subroutine setupVolumeSurfaceDerivativesDV
   use blockpointers
   use communication
   use mdDataLocal
-  use mdData, only: mdNSurfNodesCompact
+  use mdData, only: mdNSurfNodesCompact,mdGlobalSurfxx
   use warpingPETSc
   use inputTimeSpectral !nTimeIntervalsSpectral
   !use ADjointPETSc, only: PETScOne, value
@@ -41,6 +41,8 @@ subroutine setupVolumeSurfaceDerivativesDV
   
   real(kind=realType), dimension(3)   :: rotationPoint
   real(kind=realType), dimension(3,3) :: rotationMatrix
+
+  real(kind=realType), allocatable,dimension(:,:)::surfaceNodes
  
 #ifndef USE_NO_PETSC  
   
@@ -48,6 +50,12 @@ subroutine setupVolumeSurfaceDerivativesDV
 
   if( PETScRank==0 ) &
        write(*,10) "Assembling dXv/dXsDV Parallel matrix..."
+
+!!$  ! ensure that the current derivatives are up to date
+  allocate(surfaceNodes(3,mdNSurfNodesCompact))
+  surfaceNodes = mdGlobalSurfxx(:,:,1)
+  !print *,'surface Nodes',surfaceNodes
+  call updateFacesGlobal(mdNSurfNodesCompact,surfaceNodes)
   
   ! Get the initial time.
   
@@ -62,7 +70,7 @@ subroutine setupVolumeSurfaceDerivativesDV
        call terminate("setupVolumeSurfaceDerivativesDV", "Error in MatZeroEntries dXvdXsDV")
   
   !loop over the Global surface points on this process to calculate the derivatives 
-
+  !if (myID==0) print *,'global surface',mdGlobalSurfxx(:,:,1)
   !Set some time variables for the rotations
   timeUnsteady = zero
 
@@ -99,6 +107,7 @@ subroutine setupVolumeSurfaceDerivativesDV
         !print *,'number of local surface nodes',myID,mdNGlobalSurfNodesLocal(myID+1)
         do mm = 1,mdNGlobalSurfNodesLocal(myID+1)
            !Check to see that coordinate is in this block. if so, update
+           !print *,'mdSurfGlobalIndLoca',mdSurfGlobalIndLocal(4,mm),nn
            if( mdSurfGlobalIndLocal(4,mm)==nn)then
               
               !only local block needs to be perturbed. Index sychronization will take care of the rest
@@ -137,7 +146,7 @@ subroutine setupVolumeSurfaceDerivativesDV
                  !determine the explicitly and implicitly perturbed
                  !faces and edges
                  call flagImplicitEdgesAndFacesDeriv(xyznewd,ifaceptb,iedgeptb)
-              
+                 !print *,'warpl_local_d',sps,nn,ifaceptb,iedgeptb
                  !Warp the block
                  call WARP_LOCAL_D(xyznew, xyznewd, xyz0, ifaceptb, iedgeptb, imax&
                       &  , jmax, kmax)
@@ -173,7 +182,8 @@ subroutine setupVolumeSurfaceDerivativesDV
                              !idxsurf= mdNSurfNodesCompact*(sps-1)+&
                              !     mdSurfGlobalIndLocal(5,mm)*3+ll!1
                              !Sps variation now included above
-                             idxsurf= mdSurfGlobalIndLocal(5,mm)*3+ll!1
+                             !idxsurf= (mdSurfGlobalIndLocal(5,mm)-1)*3+ll!1
+                             idxsurf= (mdSurfGlobalIndLocal(5,mm))*3+ll!1
                              
                              if (xyznewd(n,I,J,K).ne.0.0)then
                                 
@@ -181,15 +191,19 @@ subroutine setupVolumeSurfaceDerivativesDV
 !!$                                               xyznewd(n,I,J,K), ADD_VALUES, PETScIerr)
                                 call MatSetValues(dXvdXsDV, 1, idxvol-1, 1, idxsurf-1,   &
                                      xyznewd(n,I,J,K), ADD_VALUES, PETScIerr)
+                              !  call MatSetValues(dXvdXsDV, 1, 0, 1, idxsurf-1,   &
+                              !       mdGlobalSurfxx(ll,mdSurfGlobalIndLocal(5,mm)+1,sps), INSERT_VALUES, PETScIerr)
                                 
                                 if( PETScIerr/=0 ) &
                                      print *,'matrix setting error'
+
                              endif
+
                           enddo
                        END DO
                     END DO
                  END DO
-                 
+                 !print *,'idxsurf',idxsurf,mdSurfGlobalIndLocal(5,mm),ll
               end do
               deALLOCATE(XYZ0,XYZNEW,xyznewd)
            endif
@@ -286,7 +300,7 @@ subroutine setupVolumeSurfaceDerivativesDV
       ! or PETSc users manual, pp.52
 
       !call MatSetOption(dXvdXsPara,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
-      call MatSetOption(dXvdXsDV,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
+      !call MatSetOption(dXvdXsDV,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("setupVolumeSurfaceDerivativesDV", &
@@ -341,15 +355,16 @@ subroutine setupVolumeSurfaceDerivativesDV
       if( debug ) then
          !call MatView(dXvdXsPara,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
          !call MatView(dXvdXsPara,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
-         call MatView(dXvdXsDV,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-         !call MatView(dXvdXs,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
-        if( PETScIerr/=0 ) &
+         !all MatView(dXvdXsDV,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
+         call MatView(dXvdXsDV,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
+         !call MatView(dXvdXsDV,PETSC_VIEWER_STDOUT_SELF,PETScIerr)
+         if( PETScIerr/=0 ) &
           call terminate("setupVolumeSurfaceDerivativesDV", "Error in MatViewDV")
-        !pause
+        pause
       endif
 
       ! Flush the output buffer and synchronize the processors.
-
+      deallocate(surfaceNodes)
       call f77flush()
       call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
 
