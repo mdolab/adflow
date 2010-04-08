@@ -78,7 +78,7 @@
       
 	
       nzDiagonalXs = 1
-      nzDiagonal = min(mdNSurfNodesCompact,20)!/(nproc*2)!13 ! 1 + 6 + 6  check!!!
+      nzDiagonal = min(mdNSurfNodesCompact/nproc,20)!/(nproc*2)!13 ! 1 + 6 + 6  check!!!
       !print *,'nzdiagonal', nzDiagonal,mdNSurfNodesCompact
 
       ! Average number of off processor contributions per Cell
@@ -275,10 +275,17 @@
       ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
       ! or PETSc users manual, pp.51-52
 
+#ifdef USE_PETSC_3
+      call MatSetOption(dXvdXsDV, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dXvdXsDV")
+#else
       call MatSetOption(dXvdXsDV, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("createPETScMat", "Error in MatSetOption dXvdXsdv")
+        call terminate("createPETScMat", "Error in MatSetOption dXvdXsDV")
+#endif
 
       ! Create the matrix dXvdXsDisp.
 
@@ -461,10 +468,18 @@
       ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
       ! or PETSc users manual, pp.51-52
 
+#ifdef USE_PETSC_3
+      call MatSetOption(dXvdXsDisp, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dXvdXsDisp")
+#else
       call MatSetOption(dXvdXsDisp, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dXvdXsDisp")
+#endif
+
 
       if(debug)then
       !******************************************
@@ -639,10 +654,17 @@
       ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
       ! or PETSc users manual, pp.51-52
 
+#ifdef USE_PETSC_3
+      call MatSetOption(dXvdXsFD, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dXvdXsFD")
+#else
       call MatSetOption(dXvdXsFD, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("createwarpingPETScMat", "Error in MatSetOption dXvdXsFD")
+        call terminate("createPETScMat", "Error in MatSetOption dXvdXsFD")
+#endif
 
       !*****************************************
       ! end of create dXvdXsFD
@@ -813,10 +835,17 @@
       ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
       ! or PETSc users manual, pp.51-52
 
+#ifdef USE_PETSC_3
+      call MatSetOption(dXvdXsPara, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dXvdXsPara")
+#else
       call MatSetOption(dXvdXsPara, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("createwarpingPETScMat", "Error in MatSetOption dXvdXsFD")
+        call terminate("createPETScMat", "Error in MatSetOption dXvdXsPara")
+#endif
 
       !*****************************************
       ! end of create dXvdXsPara
@@ -1016,11 +1045,18 @@
       ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
       ! or PETSc users manual, pp.51-52
 
+
+#ifdef USE_PETSC_3
+      call MatSetOption(dRdXsDV, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScMat", "Error in MatSetOption dRdXs")
+#else
       call MatSetOption(dRdXsDV, MAT_COLUMN_ORIENTED, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dRdXs")
-
+#endif
 
    
       ! Extract info from the global matrix (only processor 0 does it).

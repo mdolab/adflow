@@ -10,7 +10,7 @@
 subroutine updateFacesGlobal(ncoords,xyz_new)
 
   use blockPointers
-!  use mdData       !mdNSurfNodesCompact
+  use mdData       !mdNSurfNodesCompact
   use mdDataLocal   !mdSurfGlobalIndLocal
   use inputTimeSpectral !nTimeIntervalsSpectral
   use section       !nSection, section%
@@ -37,10 +37,12 @@ subroutine updateFacesGlobal(ncoords,xyz_new)
   do sps = 1,nTimeIntervalsSpectral
      do nn = 1,ndom
         call setPointers(nn,1,sps)
+        !print *,'xinit',sum(xInit),nn,sps
         x = xInit
      enddo
   end do
-
+  call xhalo(level)
+!return
 !
 !      ******************************************************************
 !      *                                                                *
@@ -89,7 +91,9 @@ subroutine updateFacesGlobal(ncoords,xyz_new)
      
      !print *,'ncoords',ncoords,shape(xyz_new),xyz_new
      ! update working block coordinates with new coords
-     !loop over the incomping coordinates
+     !loop over the incoming coordinates
+     !print *,'ncoords',ncoords,mdNSurfNodesCompact
+     !stop
      do i =1 ,ncoords
         !Loop over the surface nodes on this processor
         do j = 1,size(mdSurfGlobalIndLocal(5,:))
@@ -122,6 +126,19 @@ subroutine updateFacesGlobal(ncoords,xyz_new)
                    = rotationMatrix(3,1)*xp &
                    + rotationMatrix(3,2)*yp &
                    + rotationMatrix(3,3)*zp + rotationPoint(3)+ displZ
+
+              mdGlobalSurfxx(1,i,sps) = rotationMatrix(1,1)*xp &
+                   + rotationMatrix(1,2)*yp &
+                   + rotationMatrix(1,3)*zp + rotationPoint(1)+ displX
+              mdGlobalSurfxx(2,i,sps) = rotationMatrix(2,1)*xp &
+                   + rotationMatrix(2,2)*yp &
+                   + rotationMatrix(2,3)*zp + rotationPoint(2)+ displY
+              mdGlobalSurfxx(3,i,sps) = rotationMatrix(3,1)*xp &
+                   + rotationMatrix(3,2)*yp &
+                   + rotationMatrix(3,3)*zp + rotationPoint(3)+ displZ
+              !if(isnan(sum(mdGlobalSurfxx(:,i,sps))))then
+              !     print *,'globalsurfacenan',mdGlobalSurfxx(:,i,sps),i
+              !endif
               !print *,'xsurface',x(mdSurfGlobalIndLocal(1,j),mdSurfGlobalIndLocal(2,j),mdSurfGlobalIndLocal(3,j),k), xyz_new(k,i),sps
               !x(mdSurfGlobalIndLocal(1,j),mdSurfGlobalIndLocal(2,j),mdSurfGlobalIndLocal(3,j),k) = xyz_new(k,i)
               

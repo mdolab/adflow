@@ -55,6 +55,7 @@ do sps = 1,nTimeIntervalsSpectral
      XYZNEW(2,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,2)
      XYZNEW(3,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,3)
      !print *,'call warp local'
+     !print *,'warpl_local',sps,nn,ifaceptb,iedgeptb
      call warp_local(xyznew,xyz0,ifaceptb,iedgeptb,imax,jmax,kmax)
      
      !print *,'update coordinates'

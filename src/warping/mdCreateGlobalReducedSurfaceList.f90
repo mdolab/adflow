@@ -32,7 +32,11 @@ real(kind=realtype),dimension(:,:),allocatable::surfaceNodes
 !Begin Execution
 if(.not. allocated(mdGlobalSurfxx))then
    allocate(mdGlobalSurfxx(3,mdNSurfNodesCompact,nTimeIntervalsSpectral))
+else
+   !if memory already allocated return...
+   return
 endif
+
 if(.not. allocated(surfaceNodes))then
    allocate(surfaceNodes(3,mdNSurfNodesCompact))
 endif

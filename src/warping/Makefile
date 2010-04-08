@@ -42,10 +42,8 @@ FF90_OBJECTS = warp_local.o        \
 	       warp-mb.o      \
 	       warpMesh.o\
 	       solidwarpmodule.o\
- 	       warpMeshSolid.o\
-               integratedWarp.o\
+	       warpMeshSolid.o\
                initializeWarping.o\
-               updateFaces.o\
                updateFacesGlobal.o\
                createWarpingPETScMat.o\
 	       flagImplicitFacesAndEdges.o\
@@ -54,17 +52,23 @@ FF90_OBJECTS = warp_local.o        \
 	       blockRelations.o\
 	       blockLogicalFunctions.o\
                storeGlobalSurfaceIndices.o\
-               synchronizeFaces.o\
                synchronizeIndices.o\
                synchronizeSurfaceIndices.o\
 	       setupVolumeSurfaceDerivativeDisp.o\
                setupVolumeSurfaceDerivativeDV.o\
                warpingInitializePetsc.o\
 	       verifyWarpDerivFD.o
+
+#               integratedWarp.o\
+#               updateFaces.o\
+#               synchronizeFaces.o\
+#
 #            integratedWarpDeriv.o \
 #               integratedWarpDerivParallel.o \
 #               integratedWarpDerivFD.o \
 #              testwarping.o\
+
+
 
 CC_OBJECTS   = 
 
