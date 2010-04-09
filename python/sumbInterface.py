@@ -22,14 +22,18 @@ from math import pi
 # =============================================================================
 
 import numpy
-from mdo_import_helper import *
-exec(import_modules('geo_utils','pySpline'))
-# import to import the mpi module
+try:
+    from mdo_import_helper import *
+    exec(import_modules('geo_utils','pySpline'))
+except:
+    print 'Warning: mdo_import_helper not found'
+# end try
+
+# try to import the mpi module
 try:
     from mpi4py import MPI as mpi
 #    import mpi
     _parallel = True
-    print 'importingMPI',_parallel
 except ImportError:
     try:
         import dummy_mpi as mpi
@@ -44,9 +48,9 @@ if _parallel:
     except ImportError:
         try:
             import sumb
-            print "Warning: Running in an MPI environment, but failed"
-            print "         to import parallel version of SUmb.  Proceeding"
-            print "         with a sequential version."
+            #print "Warning: Running in an MPI environment, but failed"
+            #print "         to import parallel version of SUmb.  Proceeding"
+            #print "         with a sequential version."
         except ImportError:
             print "Error: Failed to import parallel or sequential version"
             print "       of SUmb."
@@ -465,7 +469,7 @@ class SUmbMesh(object):
         self.nGlobalSurfNodes = sumb.mddata.mdnsurfnodescompact
         return
 
-    def SetGlobalSurfaceCoordinates(self,xyz):
+    def SetGlobalSurfaceCoordinates(self,xyz,reinitialize=True):
         """Set the surface coordinates for the mesh                                                                                
         Keyword arguments:
                                                                                 
@@ -478,7 +482,7 @@ class SUmbMesh(object):
         #sys.exit(0)
         #sumb.updatefacesglobal(ncoords,xyz)
         xyz = self.metricConversion*xyz
-        sumb.updatefacesglobal(xyz)
+        sumb.updatefacesglobal(xyz,reinitialize)
     
         self._update_geom_info = True
 
@@ -514,6 +518,8 @@ class SUmbMesh(object):
             elif 'n' in kwargs:
                 file_name = self.GetFilename() #we're using mesh file with constant 'n'
                 n = kwargs['n']
+            elif 'topo' in kwargs:
+                file_name = self.GetFilename()
             #end if
             if 'sym' in kwargs:
                 if kwargs['sym'] == 'xy' or kwargs['sym'] == 'yx':
@@ -534,44 +540,46 @@ class SUmbMesh(object):
             cg,nzones = pyspline.open_cgns(file_name)
             sizes = []
             BCs = []
-            corners = []
+            corners = numpy.zeros((nzones,8,3))
             for i in xrange(nzones):
                 zoneshape = pyspline.read_cgns_zone_shape(cg,i+1)
                 X,faceBCs = pyspline.read_cgns_zone(cg,i+1,zoneshape[0],zoneshape[1],zoneshape[2])
                 sizes.append(zoneshape)
                 BCs.append(faceBCs)
-                corners.append(numpy.zeros((8,3),'intc'))
-                corners[-1][0] = X[0,0,0]
-                corners[-1][1] = X[-1,0,0]
-                corners[-1][2] = X[0,-1,0]
-                corners[-1][3] = X[-1,-1,0]
-                corners[-1][4] = X[0,0,-1]
-                corners[-1][5] = X[-1,0,-1]
-                corners[-1][6] = X[0,-1,-1]
-                corners[-1][7] = X[-1,-1,-1]
+                corners[i][0] = X[0,0,0]
+                corners[i][1] = X[-1,0,0]
+                corners[i][2] = X[0,-1,0]
+                corners[i][3] = X[-1,-1,0]
+                corners[i][4] = X[0,0,-1]
+                corners[i][5] = X[-1,0,-1]
+                corners[i][6] = X[0,-1,-1]
+                corners[i][7] = X[-1,-1,-1]
             # end for
             pyspline.close_cgns(cg) # Done with cgns file
-            sizes = array(sizes)
+            sizes = array(sizes) # make sizes into a numpy array
 
-            self.FE_topo = BlockTopology(corners)
             if 'n' in kwargs:
+                self.FE_topo = BlockTopology(corners) # Compute topology
                 sizes[:,:] = n
+                self.FE_topo.calcGlobalNumbering(sizes)
+            elif 'file' in kwargs:
+                self.FE_topo = BlockTopology(corners) # Compute topology
+                self.FE_topo.calcGlobalNumbering(sizes)
+            elif 'topo' in kwargs:
+                self.FE_topo = BlockTopology(file=kwargs['topo'])
+                self.FE_topo.calcGlobalNumbering()
             # end if
 
-            self.FE_topo.calcGlobalNumbering(sizes)
-            nFree,nSurface,nBoundary,free_dof = self._reOrderIndices(BCs,sym)
-            g_index,gptr,l_index,lptr,l_sizes = self.FE_topo.flatten_indices()
-            self.solidWarpData = [g_index,gptr,l_index,lptr,l_sizes,nSurface,nBoundary,free_dof]
+            nuu,nus,l_index_flat,l_ptr,l_sizes = self._reOrderIndices(BCs,sym) # Re-order numbering to account for constrained dof
+            self.solidWarpData = [nuu,nus,l_index_flat,l_ptr,l_sizes]
             self.solid_warp_initialized = True
             mpiPrint('  -> Solid Mesh Warping Initialized.')
         # end if
-        # sumb.warpmeshsolid(g_index,gptr,l_index,lptr,l_sizes,nsurface,nboundary,free_dof)  <--- Actual arguments
-        print free_dof
+        #sumb.warpmeshsolid(nuu,nus,l_index,l_ptr,l_sizes)  <--- Actual arguments
         sumb.warpmeshsolid(self.solidWarpData[0],self.solidWarpData[1],
                            self.solidWarpData[2],self.solidWarpData[3],
-                           self.solidWarpData[4],self.solidWarpData[5],
-                           self.solidWarpData[6],self.solidWarpData[7])
-
+                           self.solidWarpData[4])
+        
         return
 
     def _reOrderIndices(self,faceBCs,sym):
@@ -580,17 +588,14 @@ class SUmbMesh(object):
         class. The sole purpose of this is to facilitate the
         structural mesh warping algorithim for matrix assembly.'''
         # We want the global indicies ordered according to:
-        #[ interior unonstrainted nodes]
-        #[ constrained surface nodes   ]
-        #[ constrained fixed nodes     ]
+        #[ freedof ]
+        #[ constrained dof ]
 
-        # First determine the number in each category
-        
-        pt_type = numpy.zeros(self.FE_topo.nGlobal,'intc')
+        pt_dof = numpy.zeros((self.FE_topo.nGlobal,3),'intc')
 
         for ii in xrange(self.FE_topo.nGlobal):
-            
             for jj in xrange(len(self.FE_topo.g_index[ii])):
+
                 ivol = self.FE_topo.g_index[ii][jj][0]
                 i    = self.FE_topo.g_index[ii][jj][1]
                 j    = self.FE_topo.g_index[ii][jj][2]
@@ -605,7 +610,7 @@ class SUmbMesh(object):
                 
                 checkFaces = []
                 if type == 0:
-                    pt_type[ii] = 0
+                    pt_dof[ii] = [0,0,0]
                 else: # Face
                     if type == 1: # Face
                         checkFaces.append(number)
@@ -643,113 +648,76 @@ class SUmbMesh(object):
 
                     for iii in xrange(len(checkFaces)):
                         iface = checkFaces[iii]
-                        if faceBCs[ivol][checkFaces[iii]] == 1:
-                            pt_type[ii] = 1
+                        if faceBCs[ivol][iface] in [1,2]: # BC_wall OR Farfield/inflow
+                            pt_dof[ii] = [1,1,1]
                         # end if
-                        if faceBCs[ivol][checkFaces[iii]] == 2:
-                            pt_type[ii] = 2
-                        # end if
-                        if faceBCs[ivol][checkFaces[iii]] == 3:
+                        if faceBCs[ivol][iface] == 3:
                             # Only set it as a symmetry plane if nothing is already set
-                            if pt_type[ii] == 0:
-                                pt_type[ii] = 3
-                            # end if
+                            index_set = 2
+                            pt_dof[ii][index_set] = 1
                         # end if
                     # end for
                 # end if
             # end for
         # end for
-                            
-        surface_points = 0
-        boundary_points = 0
-        for i in xrange(len(pt_type)):
-            if pt_type[i] == 1:
-                surface_points += 1
-            if pt_type[i] == 2:
-                boundary_points += 1
-            # end if
+      
+        nus = int(sum(sum(pt_dof)))
+        nuu = self.FE_topo.nGlobal*3-nus
+        mpiPrint('  -> Total DOF  : %d'%(self.FE_topo.nGlobal*3))
+        mpiPrint('  -> Unknown DOF: %d'%(nuu))
+        mpiPrint('  -> Known DOF  : %d'%(nus))
+
+        # We will forgo the g_index reorganization...it is not
+        # strictly necessary We want l_index[ivol] to be of size
+        # (nu,nv,nw,3) with each entry pointing to the dof in the
+        # global matrix
+
+        free_dof_count = 0
+        constr_dof_count = 0
+        l_index = []
+        for ivol in xrange(len(self.FE_topo.l_index)):
+            l_index.append(zeros((self.FE_topo.l_index[ivol].shape[0],
+                                  self.FE_topo.l_index[ivol].shape[1],
+                                  self.FE_topo.l_index[ivol].shape[2],3),'intc'))
         # end for
 
-        free_points = self.FE_topo.nGlobal - (boundary_points+surface_points)
-        mpiPrint('  -> Total Nodes   : %d'%(self.FE_topo.nGlobal))
-        mpiPrint('  -> Free Nodes    : %d'%(free_points))
-        mpiPrint('  -> Surface Nodes : %d'%(surface_points))
-        mpiPrint('  -> Boundary Nodes: %d'%(boundary_points))
-
-        # Now attempt to do the reorganization
-        # We can split the the g_index up into three parts:
-        #  -> pt_type 0 
-        #  -> pt_type 1
-        #  -> pt_type 2
-        g_index_free = [ [] for i in xrange(free_points)]
-        g_index_surface = [ [] for i in xrange(surface_points)]
-        g_index_boundary = [ [] for i in xrange(boundary_points)]
-
-        # Make a single pass through, puck out each list in
-        # g_index[i], add it to the correct sub_list, AND update each
-        # of the entries in the local index to point back to the
-        # correct place IN THE NEW,RE-ASSEMBLED g_index
-
-        freeCount = 0
-        surfaceCount = 0
-        boundaryCount = 0
-        free_dof = []
         for ii in xrange(self.FE_topo.nGlobal):
-            if pt_type[ii] == 0 or pt_type[ii] == 3:
-                g_index_free[freeCount] = self.FE_topo.g_index[ii]
-                if pt_type[ii] == 0:
-                    free_dof.extend([0,0,0])
-                else:
-                    free_dof.extend(sym)
+            for iii in xrange(3):
+                if pt_dof[ii][iii] == 0:
+                    for jj in xrange(len(self.FE_topo.g_index[ii])):
+                        ivol = self.FE_topo.g_index[ii][jj][0]
+                        i    = self.FE_topo.g_index[ii][jj][1]
+                        j    = self.FE_topo.g_index[ii][jj][2]
+                        k    = self.FE_topo.g_index[ii][jj][3]
+                        l_index[ivol][i,j,k,iii] = free_dof_count
+                    # end for
+                    free_dof_count += 1
                 # end if
+                if pt_dof[ii][iii] == 1:
+                    for jj in xrange(len(self.FE_topo.g_index[ii])):
+                        ivol = self.FE_topo.g_index[ii][jj][0]
+                        i    = self.FE_topo.g_index[ii][jj][1]
+                        j    = self.FE_topo.g_index[ii][jj][2]
+                        k    = self.FE_topo.g_index[ii][jj][3]
+                        l_index[ivol][i,j,k,iii] = nuu + constr_dof_count
+                    # end for
+                    constr_dof_count += 1
+                # end if
+            # end for (iii loop)
+        # end for (ii loop)
 
-                for jj in xrange(len(self.FE_topo.g_index[ii])):
-                    ivol = self.FE_topo.g_index[ii][jj][0]
-                    i    = self.FE_topo.g_index[ii][jj][1]
-                    j    = self.FE_topo.g_index[ii][jj][2]
-                    k    = self.FE_topo.g_index[ii][jj][3]
-                
-                    self.FE_topo.l_index[ivol][i,j,k] = 0 + freeCount
-                # end for
-                
-                freeCount += 1
-                                    
-            elif pt_type[ii] == 1:
-                g_index_surface[surfaceCount] = self.FE_topo.g_index[ii]
+        # Now we need to flatten the l_index for fortran use
 
-                for jj in xrange(len(self.FE_topo.g_index[ii])):
-                    ivol = self.FE_topo.g_index[ii][jj][0]
-                    i    = self.FE_topo.g_index[ii][jj][1]
-                    j    = self.FE_topo.g_index[ii][jj][2]
-                    k    = self.FE_topo.g_index[ii][jj][3]
-                
-                    self.FE_topo.l_index[ivol][i,j,k] = free_points + surfaceCount
-                # end for
-
-                surfaceCount += 1
-
-            elif pt_type[ii] == 2:
-                g_index_boundary[boundaryCount] = self.FE_topo.g_index[ii]
-
-                for jj in xrange(len(self.FE_topo.g_index[ii])):
-                    ivol = self.FE_topo.g_index[ii][jj][0]
-                    i    = self.FE_topo.g_index[ii][jj][1]
-                    j    = self.FE_topo.g_index[ii][jj][2]
-                    k    = self.FE_topo.g_index[ii][jj][3]
-                
-                    self.FE_topo.l_index[ivol][i,j,k] = \
-                        free_points + surface_points + boundaryCount
-                # end for
-
-                boundaryCount += 1
-            # end if
+        l_index_flat = []
+        l_ptr = [0] # -> Zero Based Here
+        l_sizes = zeros((len(l_index),3),'intc')
+        for i in xrange(len(l_index)):
+            l_index_flat.extend(l_index[i].flatten())
+            l_ptr.append(l_ptr[-1] + l_index[i].size)
+            l_sizes[i] = [l_index[i].shape[0],l_index[i].shape[1],l_index[i].shape[2]]
         # end for
 
-        # Finally, concentenate g_index back together
-        g_index_free.extend(g_index_surface)
-        g_index_free.extend(g_index_boundary)
-        self.FE_topo.g_index = g_index_free
-        return free_points,surface_points,boundary_points,array(free_dof)
+        return nuu,nus,l_index_flat,l_ptr,l_sizes
 
 
 
