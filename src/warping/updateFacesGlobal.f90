@@ -7,7 +7,7 @@
 ! *  Modified: 07-13-2009
 ! ***********************************
 
-subroutine updateFacesGlobal(ncoords,xyz_new)
+subroutine updateFacesGlobal(ncoords,xyz_new,reinitialize)
 
   use blockPointers
   use mdData       !mdNSurfNodesCompact
@@ -18,6 +18,7 @@ subroutine updateFacesGlobal(ncoords,xyz_new)
   implicit none
 
   !Subroutine Arguments
+  logical  :: reinitialize
   integer(kind=intType)::ncoords
   real(kind=realType), dimension(3,ncoords)::xyz_new
   !integer(kind=intType),dimension(5,ncoords)::indices_new
@@ -34,15 +35,14 @@ subroutine updateFacesGlobal(ncoords,xyz_new)
   real(kind=realType), dimension(3,3) :: rotationMatrix
 
  !reset block values
-  do sps = 1,nTimeIntervalsSpectral
-     do nn = 1,ndom
-        call setPointers(nn,1,sps)
-        !print *,'xinit',sum(xInit),nn,sps
-        x = xInit
-     enddo
-  end do
-  call xhalo(level)
-!return
+  if (reinitialize) then
+     do sps = 1,nTimeIntervalsSpectral
+        do nn = 1,ndom
+           call setPointers(nn,1,sps)
+           x = xInit
+        enddo
+     end do
+  end if
 !
 !      ******************************************************************
 !      *                                                                *
@@ -110,7 +110,7 @@ subroutine updateFacesGlobal(ncoords,xyz_new)
               xp = xyz_new(1,i) - rotationPoint(1)
               yp = xyz_new(2,i) - rotationPoint(2)
               zp = xyz_new(3,i) - rotationPoint(3)
-                
+
               ! Apply the transformation matrix to the vector (xp,yp,zp)
               ! and set the new coordinates.
               
