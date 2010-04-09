@@ -45,22 +45,28 @@
       PetscErrorCode PETScIerr
       PetscMPIInt    PETScRank, PETScSize
       
-
-      PetscInt nrow,ncol,size1,size2
       Vec     us
       Vec     uu
       Vec     fu
-      Vec     vec_temp
-      Vec     res
       Mat     Kuu,Kus
-      Mat     factor
       IS      row_perm,col_perm
       KSP     ksp
       PC      pc
       PetscScalar   PETScNegOne, PETScZero, PETScOne
       MatFactorInfo  info(MAT_FACTORINFO_SIZE)
 
+      integer(kind=intType),dimension(:), allocatable :: &
+           allNDom,cumNDom,allNElem,cumNElem,allBlockIDs
+      integer(kind=intType),dimension(:),allocatable :: &
+           Kdispls,BCdispls,Krecvcount,BCrecvcount
+      integer(kind=intType) :: nElem
       
+      ! Storage for stiffness matrices/Boundary Conditions
+      real(kind=realType),  dimension(:), allocatable :: &
+           allK,localK,allBCVal,localBCVal
+      real(kind=realType),  dimension(:,:,:,:), allocatable:: Xtarget
+
+
 #endif
 
     end module solidwarpmodule
