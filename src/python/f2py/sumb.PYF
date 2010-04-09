@@ -151,13 +151,6 @@ python module sumb ! in
 ! Integrated warping
 ! *********************
 
-       subroutine integratedwarp(ncoords,xyzface,indices) ! in :sumb:integratedWarp.f90
-         use blockpointers
-         integer(kind=inttype) optional,check(shape(xyzface,1)==ncoords),depend(xyzface) :: ncoords=shape(xyzface,1)
-         real(kind=realtype) dimension(3,ncoords) :: xyzface
-         integer(kind=inttype) dimension(4,ncoords),depend(ncoords) :: indices
-       end subroutine integratedwarp
-
        subroutine initializewarping(famid)
          
          use blockpointers
@@ -171,7 +164,7 @@ python module sumb ! in
          
        end subroutine initializewarping
        
-       subroutine updatefacesglobal(ncoords,xyz_new)
+       subroutine updatefacesglobal(ncoords,xyz_new,reinitialize)
          
          use blockpointers
          use mddatalocal   !mdSurfGlobalIndLocal
@@ -181,6 +174,7 @@ python module sumb ! in
          !integer(kind=intType)::ncoords
          integer(kind=inttype) optional,check(shape(xyz_new,1)==ncoords),depend(xyz_new) :: ncoords=shape(xyz_new,1)
          real(kind=realtype), dimension(3,ncoords)::xyz_new
+         logical :: reinitialize
          
        end subroutine updatefacesglobal
 
@@ -192,24 +186,17 @@ python module sumb ! in
          use blockpointers
          implicit none
        end subroutine warpmesh
-
-        subroutine warpmeshsolid(g_index,gptr,l_index,lptr,l_sizes,ngi,ngptr,nli,nblock,nfree,nsurface,nboundary,free_dof) ! in :test:warpMeshSolid.f90
+        subroutine warpmeshsolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock) ! in :test:warpMeshSolid.F90
             use blockpointers
             use communication,,only: myid,sumb_comm_world,sumb_comm_self
             use solidwarpmodule
-            integer(kind=inttype) dimension(ngi) :: g_index
-            integer(kind=inttype) dimension(ngptr) :: gptr
+            integer(kind=inttype) :: nuu
+            integer(kind=inttype) :: nus
             integer(kind=inttype) dimension(nli) :: l_index
             integer(kind=inttype) dimension(nblock + 1) :: lptr
             integer(kind=inttype) dimension(nblock,3),depend(nblock) :: l_sizes
-            integer(kind=inttype) optional,check(len(g_index)>=ngi),depend(g_index) :: ngi=len(g_index)
-            integer(kind=inttype) optional,check(len(gptr)>=ngptr),depend(gptr) :: ngptr=len(gptr)
             integer(kind=inttype) optional,check(len(l_index)>=nli),depend(l_index) :: nli=len(l_index)
             integer(kind=inttype) optional,check((len(lptr)-1)>=nblock),depend(lptr) :: nblock=(len(lptr)-1)
-            integer(kind=inttype) optional,check((len(free_dof))/(3)>=nfree),depend(free_dof) :: nfree=(len(free_dof))/(3)
-            integer(kind=inttype) :: nsurface
-            integer(kind=inttype) :: nboundary
-            integer(kind=inttype) dimension(3 * nfree) :: free_dof
         end subroutine warpmeshsolid
 
        subroutine setupvolumesurfacederivativesdv
