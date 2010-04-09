@@ -6,7 +6,7 @@
 ! *  Modified: 12-11-2008
 ! ***********************************
 
-subroutine flagImplicitEdgesAndFaces(ifaceptb,iedgeptb)
+subroutine flagImplicitEdgesAndFaces(ifaceptb,iedgeptb,useSolid)
 
 !*****************************************************
 !
@@ -22,6 +22,7 @@ implicit none
 
 integer(kind=intType),dimension(6)::IFACEPTB
 integer(kind=intType),dimension(12)::IEDGEPTB
+logical         :: useSolid
 
 !Local Variables
 integer(kind=intType)::mm,ll,ii,jj,kk,i,j,k,m,n
@@ -37,13 +38,15 @@ integer(kind=intType),dimension(12,6)::searchPattern
 integer(kind=intType),dimension(nSubface)::incrementI,&
      incrementJ,incrementK
 
+real(kind=realType),dimension(:,:,:,:),pointer :: xComp
+
 !Create storage for corner perturbation info
 logical,dimension(8)::perturbedCorner = (/.False.,.False.,.False.,&
      .False.,.False.,.False.,.False.,.False./)
     
 !
 ! Begin Execution
-!
+!  
 
 ! Determine whether the coordinates are increasing or
 ! decreasing in each direction for each subface
@@ -78,6 +81,10 @@ end do
       !set the lists for this block to zero
 IFACEPTB(:)=0
 IEDGEPTB(:)=0
+
+
+
+
 do mm= 1,nSubface
 !!$   do ii=inbeg(mm),inend(mm)+incrementI(mm),incrementI(mm)
 !!$      do jj=jnbeg(mm),jnend(mm)+incrementJ(mm),incrementJ(mm)
@@ -89,7 +96,11 @@ do mm= 1,nSubface
             !print *,'indicies',ii,jj,kk,mm
             do ll=1,3
                local = x(ii,jj,kk,ll)
-               local0 = xInit(ii,jj,kk,ll)
+               if (useSolid) then
+                  local0 = xSW(ii,jj,kk,ll)
+               else
+                  local0 = Xinit(ii,jj,kk,ll)
+               end if
                tolerance = 1.0e-12
                if (abs(local -local0)/max(abs(local0),abs(local),tolerance)>1e-12.and. abs(local -local0)>tolerance )then
                   !print *,'ifcheck movement',abs(local -local0)/max(abs(local0),abs(local),tolerance)>1e-12,local,local0,abs(local -local0),max(abs(local0),abs(local),tolerance),abs(local -local0)/max(abs(local0),abs(local),tolerance)
@@ -149,7 +160,11 @@ do k=1,kl,kl-1!ijk(3),ijk(3)!jump corner to corner
          do n =1,3
             !print *,'i,j,k',i,j,k,n
             local = x(i,j,k,n)
-            local0 = xInit(i,j,k,n)
+            if (useSolid) then
+               local0 = xSW(i,j,k,n) 
+            else
+               local0 = xInit(i,j,k,n)
+            end if
             tolerance = 1.0e-12
             !#             if (abs(local.real -local0.real)/max(abs(local0.real),abs(local.real),tolerance)>1e-6 or abs(local.imag -local0.imag)/max(abs(local0.imag),abs(local.imag),tolerance)>1e-6):
             if (abs(local -local0)/max(abs(local0),abs(local),tolerance)>1e-12.and. abs(local -local0)>tolerance)then
@@ -204,7 +219,11 @@ do mm = 1,12!len(searchPattern)!Loop over edges
             !print *,'i,j,k',i,j,k
             do n=1,3
                local = x(i,j,k,n)
-               local0 = xInit(i,j,k,n)
+               if (useSolid) then
+                  local0 = xSW(i,j,k,n)
+               else
+                  local0 = xInit(i,j,k,n)
+               end if
                tolerance = 1.0e-12
 !#if (abs(local.real -local0.real)/max(abs(local0.real),abs(local.real),tolerance)>1e-6 or abs(local.imag -local0.imag)/max(abs(local0.imag),abs(local.imag),tolerance)>1e-6):
                if (abs(local -local0)/max(abs(local0),abs(local),tolerance)>1e-12.and. abs(local -local0)>tolerance )then
