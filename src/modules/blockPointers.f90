@@ -107,7 +107,7 @@
        integer(kind=intType), dimension(:,:), pointer :: viscKMinPointer
        integer(kind=intType), dimension(:,:), pointer :: viscKMaxPointer
 
-       real(kind=realType), dimension(:,:,:,:),   pointer :: x,xInit
+       real(kind=realType), dimension(:,:,:,:),   pointer :: x,xInit,xSW
        real(kind=realType), dimension(:,:,:,:),   pointer :: xplus,xminus
        real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
 
