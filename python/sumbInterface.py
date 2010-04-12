@@ -15,6 +15,7 @@ import os
 import copy
 import string
 import types
+import bisect
 from math import pi
 
 # =============================================================================
@@ -508,6 +509,15 @@ class SUmbMesh(object):
         '''
         run the Solid Mesh Warping scheme
        '''
+        def inBinarySearch(list,element):
+            ileft = bisect.bisect_left(list,element)
+            if ileft >= len(list):
+                return False
+            if list[ileft] == element:
+                return True
+            else:
+                return False
+        # end def
 
         if not self.solid_warp_initialized: # We have initialization stuff to do
             mpiPrint('\nInitializating Solid Mesh Warping...')
@@ -529,7 +539,7 @@ class SUmbMesh(object):
                 elif kwargs['sym'] == 'xz' or kwargs['sym'] == 'zx':
                     sym = [0,-1,0]
                 else:
-                    mpiPrint('Error: sym must be one of xy, yz or xz')
+                    mpiPrint('  ## Error: sym must be one of xy, yz or xz')
                     sys.exit(0)
                 # end if
             else:
@@ -574,7 +584,93 @@ class SUmbMesh(object):
             self.solidWarpData = [nuu,nus,l_index_flat,l_ptr,l_sizes]
             self.solid_warp_initialized = True
             mpiPrint('  -> Solid Mesh Warping Initialized.')
+
+            # Lets see if we can produce ifaceptb,iedgeptb using the
+            #topology information and the face boundary condition data
+
+            # Step 1: Loop over all faces on all blocks, for each
+            # face, add the ID of each of the four nodes to the
+            # explicitly perturbed corner list
+
+            explicitly_perturbed_corners = []
+            for ivol in xrange(self.FE_topo.nVol):
+                for iface in xrange(6):
+                    if BCs[ivol][iface] == 1: # BCwallViscous
+                        corners = nodesFromFace(iface)
+                        for icorner in corners:
+                            explicitly_perturbed_corners.append(self.FE_topo.node_link[ivol][icorner])
+                        # end for
+                    # end if
+                # end for
+            # end for
+
+            # Step 2: Unique-ify the explicitly_perturbed_corners list
+            # and sort them in the process
+
+            explicitly_perturbed_corners = unique(explicitly_perturbed_corners)
+            explicitly_perturbed_corners.sort() # It should alreadly be sorted, but just in case
+
+            # Step 3: Loop over all edges on all volumes. If they have
+            # ONE explictly perturbed corner they are IMPLICTLY
+            # perturbed, if they have TWO explictly perturbed corners,
+            # they are EXPLICTLY perturbed. Note we call
+            # inBinarySearch here. This is simpilar to python's 'in'
+            # function. However since we have a sorted list, we can do
+            # a binary search instead of a linear search which is MUCH
+            # faster. The return in True or False as to whether
+            # 'element' is in 'list'
+
+            iedgeptb = zeros((self.FE_topo.nVol,12),'intc')
+            
+            for ivol in xrange(self.FE_topo.nVol):
+                for iedge in xrange(12):
+                    edge_number = self.FE_topo.edge_link[ivol][iedge]
+                    corners = [self.FE_topo.edges[edge_number].n1,self.FE_topo.edges[edge_number].n2]
+                    explicit = array([False,False])
+                    for icorner in xrange(2):
+                        explicit[icorner] = inBinarySearch(\
+                            explicitly_perturbed_corners,corners[icorner])
+                    # end for
+
+                    if explicit.all():
+                        iedgeptb[ivol][iedge] = 2
+                    elif explicit.any():
+                        iedgeptb[ivol][iedge] = 1
+                    else:
+                        iedgeptb[ivol][iedge] = 0
+                    # end if
+                # end for
+            # end for
+
+            # Step 4: Loop over all faces on all volumes. An EXPLICTLY
+            # perturbed face will have ALL corners explictly
+            # perturbed. An IMPLICLTY perturbed face will have at
+            # least EXPLICTLY perturbed corner. A face will have value
+            # of 0 if there are NO EXPLICTLY perturbed corners.
+
+            ifaceptb = zeros((self.FE_topo.nVol,6),'intc')
+            
+            for ivol in xrange(self.FE_topo.nVol):
+                for iface in xrange(6):
+                    corners = nodesFromFace(iface)
+                    explicit = array([False,False,False,False])
+                    for icorner in xrange(4):
+                        node = self.FE_topo.node_link[ivol][corners[icorner]]
+                        explicit[icorner] = inBinarySearch(\
+                            explicitly_perturbed_corners,node)
+                    # end for
+                    if explicit.all():
+                        ifaceptb[ivol][iface] = 2
+                    elif explicit.any():
+                        ifaceptb[ivol][iface] = 1
+                    else:
+                        ifaceptb[ivol][iface] = 0
+                    # end if
+                # end for
+            # end for
         # end if
+
+
         #sumb.warpmeshsolid(nuu,nus,l_index,l_ptr,l_sizes)  <--- Actual arguments
         sumb.warpmeshsolid(self.solidWarpData[0],self.solidWarpData[1],
                            self.solidWarpData[2],self.solidWarpData[3],
