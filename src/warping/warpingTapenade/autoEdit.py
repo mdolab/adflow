@@ -18,21 +18,12 @@ import string
 
 # Specify file extension
 
-EXT = '.f90'
+EXT = '_d.f90'
 
 # Specify directory containing the original source files
 # and the output directory for edited files
-
-#DIR_ORI = '/home/guysmiley/acmarta/SVN/SUmbVertex/src/adjoint/residualTapenade'
-#DIR_MOD = '/home/guysmiley/acmarta/SVN/SUmbVertex/src/adjoint/residualOutput'
-#DIR_ORI = '/nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src/adjoint/residualTapenade'
-#DIR_MOD = '/nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src/adjoint/residualOutput'
-#DIR_ORI = '/nfs/basalt/home/mdo/mader/svn/SUmbVertex/trunk/src/adjoint/residualTapenade'
-#DIR_MOD = '/nfs/basalt/home/mdo/mader/svn/SUmbVertex/trunk/src/adjoint/residualOutput'
-#DIR_ORI = '/home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src/adjoint/residualTapenade'
-#DIR_MOD = '/home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src/adjoint/residualOutput'
-DIR_ORI = '/nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src/warping/warpingTapenade'
-DIR_MOD = '/nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src/warping/warpingOutput'
+DIR_ORI = os.getcwd()
+DIR_MOD = DIR_ORI + '/../warpingOutput'
 # Specify line identifier
 
 FILE_EXCL = 'MODULE'
