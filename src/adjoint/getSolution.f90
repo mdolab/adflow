@@ -68,8 +68,9 @@
       functionValue(costFuncMomXCoef) = CMx
       functionValue(costFuncMomYCoef) = CMy
       functionValue(costFuncMomZCoef) = CMz
-
+      
       if(TSStability)then
+         
          call computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
            dcmzdalpha)
          functionValue(costFuncCmzAlpha)  = dcmzdalpha

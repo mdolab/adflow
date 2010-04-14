@@ -184,6 +184,7 @@ SUBROUTINE APPLYALLBCFORCESADJ_B(winfadj, winfadjb, pinfcorradj, &
 &                        skadjb, normadj, normadjb, rfaceadj, mm, iibeg&
 &                        , iiend, jjbeg, jjend, i2beg, i2end, j2beg, &
 &                        j2end)
+!  print *,'bcwall',sum(wadjb)
   CALL POPINTEGER4(branch)
   IF (branch .LT. 2) THEN
     IF (branch .LT. 1) THEN
@@ -197,6 +198,7 @@ SUBROUTINE APPLYALLBCFORCESADJ_B(winfadj, winfadjb, pinfcorradj, &
 &                           , padjb, siadj, sjadj, skadj, normadj, &
 &                           normadjb, rfaceadj, mm, iibeg, iiend, jjbeg&
 &                           , jjend, i2beg, i2end, j2beg, j2end)
+ !     print *,'bcfarfield',sum(wadjb)
     END IF
   ELSE IF (branch .LT. 3) THEN
     winfadjb(1:nw) = 0.0
@@ -206,7 +208,9 @@ SUBROUTINE APPLYALLBCFORCESADJ_B(winfadj, winfadjb, pinfcorradj, &
     pinfcorradjb = 0.0
   END IF
   CALL POPREAL8ARRAY(wadj, (ib+1)*(jb+1)*(kb+1)*nw)
+  !print *,'norm',sum(normadj)
   CALL BCSYMMFORCESADJ_B(secondhalo, wadj, wadjb, padj, padjb, normadj, &
 &                   normadjb, mm, iibeg, iiend, jjbeg, jjend, i2beg, &
 &                   i2end, j2beg, j2end)
+!print *,'symm',sum(wadjb)
 END SUBROUTINE APPLYALLBCFORCESADJ_B

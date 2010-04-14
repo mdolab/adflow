@@ -190,7 +190,7 @@
 !!$
 !!$! 	call verifydRdx(level,sps)
 !!$!stop	
-!      call verifydRdExtra(level)
+      !call verifydRdExtra(level)
 !!$	call verifydRdExtraFDAD(level)	
 !!$
 !!$        ! Verify the ADjoint routine for the forces
@@ -204,7 +204,7 @@
 !!$	! Verify the force derivatives
 !!$
 !!$	
-!!$       ! call verifydCfdx(level)
+!call verifydCfdx(level)
 !!$
 !!$!stop
 !!$	! Verify the force derivatives

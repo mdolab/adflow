@@ -71,13 +71,17 @@
          if(level <= mgStartlevel .or. turbTreatment == coupled) then
            allocate(flowDoms(nn,level,sps)%w(0:ib,0:jb,0:kb,1:nw), &
                     stat=ierr)
-           allocate(flowDoms(nn,level,sps)%wtmp(0:ib,0:jb,0:kb,1:nw), &
-                    stat=ierr)
+           !if(debug)then
+              allocate(flowDoms(nn,level,sps)%wtmp(0:ib,0:jb,0:kb,1:nw), &
+                   stat=ierr)
+           !end if
          else
            allocate(flowDoms(nn,level,sps)%w(0:ib,0:jb,0:kb,1:nMGVar), &
                     stat=ierr)
-           allocate(flowDoms(nn,level,sps)%wtmp(0:ib,0:jb,0:kb,1:nMGVar), &
+           !if(debug)then
+              allocate(flowDoms(nn,level,sps)%wtmp(0:ib,0:jb,0:kb,1:nMGVar), &
                     stat=ierr)
+           !end if
          endif
          if(ierr /= 0)                           &
            call terminate("allocMemFlovarPart1", &
@@ -89,10 +93,12 @@
          if(ierr /= 0)                           &
            call terminate("allocMemFlovarPart1", &
                           "Memory allocation failure for p")
-         allocate(flowDoms(nn,level,sps)%ptmp(0:ib,0:jb,0:kb), stat=ierr)
-         if(ierr /= 0)                           &
-           call terminate("allocMemFlovarPart1", &
-                          "Memory allocation failure for ptmp")
+         !if(debug)then
+            allocate(flowDoms(nn,level,sps)%ptmp(0:ib,0:jb,0:kb), stat=ierr)
+            if(ierr /= 0)                           &
+                 call terminate("allocMemFlovarPart1", &
+                 "Memory allocation failure for ptmp")
+         !end if
 
          ! The eddy viscosity for eddy viscosity models.
          ! Although a dependent variable, it is allocated on all grid
@@ -270,13 +276,16 @@
            ! Allocate the memory that must always be allocated.
 
            allocate(flowDoms(nn,level,sps)%dw(0:ib,0:jb,0:kb,1:nw),  &
-                    flowDoms(nn,level,sps)%dwtmp(0:ib,0:jb,0:kb,1:nw),  &
                     flowDoms(nn,level,sps)%fw(0:ib,0:jb,0:kb,1:nwf), &
                     flowDoms(nn,level,sps)%dtl(1:ie,1:je,1:ke),      &
                     flowDoms(nn,level,sps)%radI(1:ie,1:je,1:ke),     &
                     flowDoms(nn,level,sps)%radJ(1:ie,1:je,1:ke),     &
                     flowDoms(nn,level,sps)%radK(1:ie,1:je,1:ke),     &
                     stat=ierr)
+          ! if(debug)then
+              allocate(flowDoms(nn,level,sps)%dwtmp(0:ib,0:jb,0:kb,1:nw),&
+                   stat=ierr)
+          ! end if
            if(ierr /= 0)                              &
              call terminate("allocMemFlovarPart2", &
                             "Memory allocation failure for dw, fw, &

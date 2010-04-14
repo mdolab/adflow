@@ -647,7 +647,7 @@ if (ApproxPC) then
 #endif
    end if
 
-
+if(Debug) then
 
       !******************************************
       !Create dRdWFD for debugging
@@ -828,7 +828,7 @@ if (ApproxPC) then
       !*****************************************
       ! end of create dRdWFD
       !*****************************************
-
+   end if
 
       ! Extract info from the global matrix (only processor 0 does it).
 
@@ -1388,6 +1388,9 @@ if (ApproxPC) then
                     "; #rows =", nDimW,                 &
                     "; ownership =", iLow, "to", iHigh-1
       endif
+
+
+if(debug)then
 !***********************
 ! Create dRdxFD
 !***********************
@@ -1512,6 +1515,7 @@ if (ApproxPC) then
 !********************
 ! end create dRdxFD
 !********************
+   endif
 
 !
 !     ******************************************************************
@@ -1636,6 +1640,8 @@ if (ApproxPC) then
                     "; #rows =", nDimW,                 &
                     "; ownership =", iLow, "to", iHigh-1
       endif
+
+if( debug) then
 !**************
 !
 !dsdxfd for debug
@@ -1771,7 +1777,7 @@ if (ApproxPC) then
 ! end dsdxfd
 !
 !************
-
+   endif
 
 !
 !     ******************************************************************

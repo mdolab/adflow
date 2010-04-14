@@ -2,10 +2,11 @@
 
 import sys
 
-name = 'sumb'
+name = 'sumb%s'%(sys.argv[1])
 print "Testing if module %s can be imported..." % name
+import_cmd = "import %s" % name
 try:
-    import sumb
+    exec import_cmd
 except Exception, inst:
     print "Error: %s." % inst
     sys.exit(1)

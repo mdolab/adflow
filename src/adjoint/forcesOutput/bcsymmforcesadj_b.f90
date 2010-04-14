@@ -212,6 +212,7 @@ SUBROUTINE BCSYMMFORCESADJ_B(secondhalo, wadj, wadjb, padj, padjb, &
 &                              revadj1, revadj2, wadj, wadjb, padj, &
 &                              padjb, rlvadj, revadj, iibeg, jjbeg, &
 &                              iiend, jjend, secondhalo)
+    !print *,'replace',sum(wadjb),secondhalo,sum(wadj3b),sum(wadj2b),sum(wadj1b),sum(wadj0b),nnx,nny,nnz
     padj2b(iibeg:iiend, jjbeg:jjend) = 0.0
     padj3b(iibeg:iiend, jjbeg:jjend) = 0.0
     wadj2b(iibeg:iiend, jjbeg:jjend, 1:nw) = 0.0
@@ -273,7 +274,9 @@ SUBROUTINE BCSYMMFORCESADJ_B(secondhalo, wadj, wadjb, padj, padjb, &
         wadj1b(i, j, ivy) = 0.0
         wadj2b(i, j, ivx) = wadj2b(i, j, ivx) + wadj1b(i, j, ivx)
         vnb = vnb - nnx*wadj1b(i, j, ivx)
+        !print *,'vnb',nnx,wadj1b(i, j, ivx)
         tempb = two*vnb
+        !print *,'tempb',vnb
         nnxb = nnxb + wadj2(i, j, ivx)*tempb - vn*wadj1b(i, j, ivx)
         wadj1b(i, j, ivx) = 0.0
         wadj2b(i, j, irho) = wadj2b(i, j, irho) + wadj1b(i, j, irho)
@@ -283,6 +286,7 @@ SUBROUTINE BCSYMMFORCESADJ_B(secondhalo, wadj, wadjb, padj, padjb, &
         wadj2b(i, j, ivy) = wadj2b(i, j, ivy) + nny*tempb
         nnyb = nnyb + wadj2(i, j, ivy)*tempb
         wadj2b(i, j, ivz) = wadj2b(i, j, ivz) + nnz*tempb
+        !print *,'w2',nnz,tempb,wadj2b(i, j, ivz)
         nnzb = nnzb + wadj2(i, j, ivz)*tempb
         CALL POPREAL8(nnz)
         normadjb(i, j, 3) = normadjb(i, j, 3) + nnzb
@@ -292,6 +296,7 @@ SUBROUTINE BCSYMMFORCESADJ_B(secondhalo, wadj, wadjb, padj, padjb, &
         normadjb(i, j, 1) = normadjb(i, j, 1) + nnxb
       END DO
     END DO
+
     CALL EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, wadj0&
 &                              , wadj0b, wadj1, wadj1b, wadj2, wadj2b, &
 &                              wadj3, wadj3b, padj0, padj0b, padj1, &
@@ -299,5 +304,6 @@ SUBROUTINE BCSYMMFORCESADJ_B(secondhalo, wadj, wadjb, padj, padjb, &
 &                              rlvadj, revadj, rlvadj1, rlvadj2, revadj1&
 &                              , revadj2, iibeg, jjbeg, iiend, jjend, &
 &                              secondhalo)
+    !print *,'extract',sum(wadjb),secondhalo
   END IF
 END SUBROUTINE BCSYMMFORCESADJ_B

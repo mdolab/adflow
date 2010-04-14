@@ -57,3 +57,51 @@
        convArray = zero
 
        end subroutine allocConvArrays
+
+
+       subroutine deallocConvArrays
+!
+!      ******************************************************************
+!      *                                                                *
+!      * deallocConvArrays deallocates the memory for the convergence   *
+!      * arrays.                                                        *
+!      *                                                                *
+!      ******************************************************************
+!
+       use constants
+       use inputIO
+       use inputTimeSpectral
+       use monitor
+       implicit none
+!
+!      Subroutine argument.
+!
+
+!
+!      Local variables.
+!
+       integer :: ierr
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Begin execution                                                *
+!      *                                                                *
+!      ******************************************************************
+!
+       ! Return immediately if the convergence history (of the inner
+       ! iterations) does not need to be stored. This logical can
+       ! only be .false. for an unsteady computation.
+
+       if(.not. storeConvInnerIter) return 
+
+       ! Allocate the memory for convArray and initialize them,
+       ! just to be sure.
+
+       deallocate(convArray,stat=ierr)
+       
+       if(ierr /= 0)                         &
+         call terminate("deallocConvArrays", &
+                        "Memory deallocation failure for convArray")
+
+
+     end subroutine deallocConvArrays
