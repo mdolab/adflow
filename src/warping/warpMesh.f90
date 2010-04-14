@@ -35,7 +35,7 @@ do sps = 1,nTimeIntervalsSpectral
      
      !print *,'flag implicites'
      !determine the explicitly and implicitly perturbed faces and edges
-     call flagImplicitEdgesAndFaces(ifaceptb,iedgeptb,.True.)
+     call flagImplicitEdgesAndFaces(ifaceptb,iedgeptb,.False.)
 
      ! LOOP THROUGH ALL local BLOCKS AND CALL WARPBLK WHERE APPROPRIATE
      

@@ -227,9 +227,12 @@ class SUMB(AeroSolver):
 				if(self.interface.myid==0):print 'Trying pySUmb internal meshwarping...'
 				#Set the internal coordinates
 				self.interface.Mesh.SetGlobalSurfaceCoordinates(new_cfd_surf)
+				if(self.interface.myid==0):print 'Internal Surfaces set...'
+				
 				#now Warp the mesh
 				self.interface.Mesh.warpMesh()
 				if(self.interface.myid==0):print 'Internal warping Finished...'
+				
 			except:
 				if(self.interface.myid==0):print 'pySUmb Internal meshwarping failed, using external...'
 				sys.exit(0)
