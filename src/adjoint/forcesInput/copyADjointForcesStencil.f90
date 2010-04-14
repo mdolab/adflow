@@ -107,7 +107,7 @@
             enddo
          enddo
       enddo
-
+      !print *,' copystenscil sum',sum(xAdj)
       MachAdj = Mach
       MachCoefAdj = MachCoef
       MachGridAdj = MachGrid

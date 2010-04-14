@@ -97,7 +97,6 @@
 
        iConvStdout = nIterCur
        if(equationMode == unsteady) iConvStdout = iterTot
-
        ! Loop over the number of spectral solutions.
 
        spectralLoop: do sps=1,nTimeIntervalsSpectral

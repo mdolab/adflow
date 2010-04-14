@@ -258,7 +258,7 @@
                    v2(1) = xAdj(l,j,k,1) - xAdj(i,m,k,1)
                    v2(2) = xAdj(l,j,k,2) - xAdj(i,m,k,2)
                    v2(3) = xAdj(l,j,k,3) - xAdj(i,m,k,3)
-                   
+                   !print *,'kmin vectors',v1,'v2',v2,'fact',fact
                    ! The face normal, which is the cross product of the two
                    ! diagonal vectors times fact; remember that fact is
                    ! either -0.5 or 0.5.
@@ -317,22 +317,22 @@
           
        case (iMin)
           mult = -one; ss(:,:,:) = siAdj(1,:,:,:)
-          
+          !print *,'imin',sum(ss)
        case (iMax)
           mult = one;  ss(:,:,:) = siAdj(2,:,:,:) ! which was si(il,:,:,:)
-          
+          !print *,'imax',sum(ss)
        case (jMin)
           mult = -one; ss(:,:,:) = sjAdj(:,1,:,:)
-          
+          !print *,'jmin',sum(ss)
        case (jMax)
           mult = one;  ss(:,:,:) = sjAdj(:,2,:,:) ! which was sj(:,jl,:,:)
-          
+          !print *,'jmax',sum(ss)
        case (kMin)
           mult = -one; ss(:,:,:) = skAdj(:,:,1,:)
-          
+          !print *,'kmin',sum(ss)
        case (kMax)
           mult = one;  ss(:,:,:) = skAdj(:,:,2,:) ! which was sk(:,:,kl,:)
-          
+          !print *,'kmax',sum(ss)
        end select
        
 
@@ -386,6 +386,7 @@
                 !Length is zero
                 normAdj(i,j,:) = zero
              endif
+             !print *,'normInd',normAdj,i,j,fact,xp,yp,zp
           enddo
        enddo
        

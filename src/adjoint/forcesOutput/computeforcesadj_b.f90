@@ -175,10 +175,11 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 ! Compute the surface normals (normAdj which is used only in 
 ! visous force computation) for the stencil
 ! Get siAdj,sjAdj,skAdj,normAdj
-! print *,'getting surface normals'
+  !print *,'getting surface normals',sum(xadj)
   CALL GETSURFACENORMALSADJ(xadj, siadj, sjadj, skadj, normadj, iibeg, &
 &                      iiend, jjbeg, jjend, mm, level, nn, sps, &
 &                      righthanded)
+  !print *,'normals',sum(normadj),myid
   CALL GRIDVELOCITIESFINELEVELFORCESADJ(.false., t, sps, xadj, sadj, &
 &                                  iibeg, iiend, jjbeg, jjend, i2beg, &
 &                                  i2end, j2beg, j2end, mm, sfaceiadj, &
@@ -187,6 +188,7 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &                                  , alphaadj, betaadj, liftindex, &
 &                                  rotcenteradj, rotrateadj, siadj, &
 &                                  sjadj, skadj)
+  !print *,'gridvelocities',sum(normadj)
 !call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
 !first two arguments needed for time spectral.just set to initial values for the current steady case...
 !print *,'calling gridvelocities',mm,liftindex
@@ -195,6 +197,7 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &                                    iiend, jjbeg, jjend, i2beg, i2end, &
 &                                    j2beg, j2end, sfacejadj, sfacekadj&
 &                                    , siadj, sjadj, skadj, rfaceadj)
+  !print *,'normalvelocites',sum(normadj)
 !needed for uSlip in Viscous Calculations
 !call slipVelocitiesFineLevel(.false., t, mm)
 !     print *,'computing pressures'
@@ -206,6 +209,7 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &                     , sjadj, skadj, normadj, rfaceadj, iibeg, iiend, &
 &                     jjbeg, jjend, i2beg, i2end, j2beg, j2end, &
 &                     secondhalo, mm)
+  !print *,'bcs',sum(normadj)
   CALL PUSHREAL8ARRAY(cmvadj, 3)
   CALL PUSHREAL8ARRAY(cfvadj, 3)
   CALL PUSHREAL8ARRAY(cmpadj, 3)
@@ -217,6 +221,7 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &                     refpoint, siadj, sjadj, skadj, normadj, xadj, padj&
 &                     , wadj, iibeg, iiend, jjbeg, jjend, i2beg, i2end, &
 &                     j2beg, j2end, level, mm, nn, machcoefadj)
+ !print *,'forces',sum(normadj)
 !(cFpAdj,cMpAdj, &
 !     cFpAdjOut,cMpAdjOut, &
 !     yplusMax,refPoint,siAdj,sjAdj,skAdj,normAdj,xAdj,pAdj,wAdj,&
@@ -265,6 +270,7 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
   CALL POPREAL8ARRAY(cmpadj, 3)
   CALL POPREAL8ARRAY(cfvadj, 3)
   CALL POPREAL8ARRAY(cmvadj, 3)
+  !print *,'preforce_b',sum(normadj)
   CALL FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, cfpadjout, &
 &                       cfpadjoutb, cmpadjout, cmpadjoutb, cfvadjout, &
 &                       cfvadjoutb, cmvadjout, cmvadjoutb, yplusmax, &
@@ -275,13 +281,16 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &                       machcoefadjb)
   CALL POPREAL8ARRAY(wadj, (ib+1)*(jb+1)*(kb+1)*nw)
   CALL POPREAL8ARRAY(padj, (ib+1)*(jb+1)*(kb+1))
+  !print *,'preapply',sum(normadj)
   CALL APPLYALLBCFORCESADJ_B(winfadj, winfadjb, pinfcorradj, &
 &                       pinfcorradjb, wadj, wadjb, padj, padjb, sadj, &
 &                       sadjb, siadj, siadjb, sjadj, sjadjb, skadj, &
 &                       skadjb, normadj, normadjb, rfaceadj, iibeg, &
 &                       iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end&
 &                       , secondhalo, mm)
+  !print *,'bcs_b',sum(wadjb)
   CALL COMPUTEFORCESPRESSUREADJ_B(wadj, wadjb, padj, padjb)
+  !print *,'pressureb',sum(wadjb)
   CALL GRIDVELOCITIESFINELEVELFORCESADJ_B(.false., t, sps, xadj, xadjb, &
 &                                    sadj, sadjb, iibeg, iiend, jjbeg, &
 &                                    jjend, i2beg, i2end, j2beg, j2end, &

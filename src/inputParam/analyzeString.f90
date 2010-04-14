@@ -376,6 +376,7 @@
 
          case ("store convergence inner iterations")
            storeConvInnerIter = checkYesNo(value, keyword)
+
 !
 !        ****************************************************************
 !        *                                                              *

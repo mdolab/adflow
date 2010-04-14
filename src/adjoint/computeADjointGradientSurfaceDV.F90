@@ -153,10 +153,18 @@
       if( PETScIerr/=0 ) &
         call terminate("computeADjointGradientSurface", &
                        "Error in VecAYPX X")
+      !Temporary set to check vector ordering...
+!!$      call VecSet(dIdx,PETScZero,PETScIerr)
+!!$      call VecSetValue(dIdx, 0, 1.0 ,INSERT_VALUES, PETScIerr)
+!!$      call VecAssemblyBegin(dIdx,PETScIerr)
+!!$      call VecAssemblyEnd  (dIdx,PETScIerr)
+!!$      call VecView(dIdx,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
 
       !now multiply by the volume surface derivative
       call MatMultTranspose(dXvdXsDV,dIdx,dIdxsDV,PETScIerr)
-
+      if( PETScIerr/=0 ) &
+           call terminate("computeADjointGradientSurface", &
+           "Error in MatMultTranspose")
       !!now multiply by the volume surface derivative
       !call MatMultTranspose(dXvdXs,dJdx,dIdxs,PETScIerr)
 

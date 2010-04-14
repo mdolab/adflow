@@ -104,7 +104,7 @@ class SUMB(AeroSolver):
 		
 		Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
 		'''
-		print 'keys',kwargs.keys()
+		#print 'keys',kwargs.keys()
 		# Pre-Processing
 		try:  kwargs['solver_options']['reinitialize']
 		except KeyError:
@@ -144,7 +144,9 @@ class SUMB(AeroSolver):
 		# get flow and ref from aero_problem
 		#print 'niterations',niterations
 		t0 = time.time()
-		self.interface.RunIterations(0,niterations)
+		self.interface.RunIterations(sol_type=sol_type,\
+					     ncycles=niterations,\
+					     *args, **kwargs)
 		sol_time = time.time() - t0
 		if(self.interface.myid==0):print 'Solution Time',sol_time
 		
@@ -160,8 +162,8 @@ class SUMB(AeroSolver):
 ## 			volname=kwargs['solver_options']['OutputDir']+self.filename+'vol.cgns'
 ## 			surfname=kwargs['solver_options']['OutputDir']+self.filename+'surf.cgns'
 ## 		#endif
-		volname=self.interface.OutputDir+self.filename+'vol.cgns'
-		surfname=self.interface.OutputDir+self.filename+'surf.cgns'
+		volname=self.interface.OutputDir+self.interface.probName+self.filename+'vol.cgns'
+		surfname=self.interface.OutputDir+self.interface.probName+self.filename+'surf.cgns'
 		
 		if(self.interface.myid==0):print volname,surfname
 		self.interface.WriteVolumeSolutionFile(volname)

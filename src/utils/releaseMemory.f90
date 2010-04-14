@@ -507,13 +507,15 @@
          deallocate(flowDoms(nn,level,sps)%xInit, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
-       if( associated(flowDoms(nn,level,sps)%xPlus) ) &
-            deallocate(flowDoms(nn,level,sps)%xPlus, stat=ierr)
-       if(ierr /= 0) deallocationFailure = .true.
-       
-       if( associated(flowDoms(nn,level,sps)%xMinus) ) &
-            deallocate(flowDoms(nn,level,sps)%xMinus, stat=ierr)
-       if(ierr /= 0) deallocationFailure = .true.
+       if(debug)then
+          if( associated(flowDoms(nn,level,sps)%xPlus) ) &
+               deallocate(flowDoms(nn,level,sps)%xPlus, stat=ierr)
+          if(ierr /= 0) deallocationFailure = .true.
+          
+          if( associated(flowDoms(nn,level,sps)%xMinus) ) &
+               deallocate(flowDoms(nn,level,sps)%xMinus, stat=ierr)
+          if(ierr /= 0) deallocationFailure = .true.
+       end if
        
        if( associated(flowDoms(nn,level,sps)%xOld) ) &
          deallocate(flowDoms(nn,level,sps)%xOld, stat=ierr)
@@ -605,9 +607,11 @@
          deallocate(flowDoms(nn,level,sps)%w, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
-       if( associated(flowDoms(nn,level,sps)%wtmp) ) &
-         deallocate(flowDoms(nn,level,sps)%wtmp, stat=ierr)
-       if(ierr /= 0) deallocationFailure = .true.
+       if(debug)then
+          if( associated(flowDoms(nn,level,sps)%wtmp) ) &
+               deallocate(flowDoms(nn,level,sps)%wtmp, stat=ierr)
+          if(ierr /= 0) deallocationFailure = .true.
+       end if
 
        if( associated(flowDoms(nn,level,sps)%wOld) ) &
          deallocate(flowDoms(nn,level,sps)%wOld, stat=ierr)
@@ -616,10 +620,12 @@
        if( associated(flowDoms(nn,level,sps)%p) ) &
          deallocate(flowDoms(nn,level,sps)%p, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
-
-       if( associated(flowDoms(nn,level,sps)%ptmp) ) &
-         deallocate(flowDoms(nn,level,sps)%ptmp, stat=ierr)
-       if(ierr /= 0) deallocationFailure = .true.
+       
+       if(debug)then
+          if( associated(flowDoms(nn,level,sps)%ptmp) ) &
+               deallocate(flowDoms(nn,level,sps)%ptmp, stat=ierr)
+          if(ierr /= 0) deallocationFailure = .true.
+       end if
 
        if( associated(flowDoms(nn,level,sps)%gamma) ) &
          deallocate(flowDoms(nn,level,sps)%gamma, stat=ierr)
@@ -646,17 +652,19 @@
          deallocate(flowDoms(nn,level,sps)%dw, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
-       if( associated(flowDoms(nn,level,sps)%dwp) ) &
-            deallocate(flowDoms(nn,level,sps)%dwp, stat=ierr)
-       if(ierr /= 0) deallocationFailure = .true.
+       if(debug)then
+          if( associated(flowDoms(nn,level,sps)%dwp) ) &
+               deallocate(flowDoms(nn,level,sps)%dwp, stat=ierr)
+          if(ierr /= 0) deallocationFailure = .true.
+          
+          if( associated(flowDoms(nn,level,sps)%dwm) ) &
+               deallocate(flowDoms(nn,level,sps)%dwm, stat=ierr)
+          if(ierr /= 0) deallocationFailure = .true.
 
-       if( associated(flowDoms(nn,level,sps)%dwm) ) &
-            deallocate(flowDoms(nn,level,sps)%dwm, stat=ierr)
-       if(ierr /= 0) deallocationFailure = .true.
-
-       if( associated(flowDoms(nn,level,sps)%dwtmp) ) &
-         deallocate(flowDoms(nn,level,sps)%dwtmp, stat=ierr)
-       if(ierr /= 0) deallocationFailure = .true.
+          if( associated(flowDoms(nn,level,sps)%dwtmp) ) &
+               deallocate(flowDoms(nn,level,sps)%dwtmp, stat=ierr)
+          if(ierr /= 0) deallocationFailure = .true.
+       end if
 
        if( associated(flowDoms(nn,level,sps)%dwtemp) ) &
          deallocate(flowDoms(nn,level,sps)%dwtemp, stat=ierr)

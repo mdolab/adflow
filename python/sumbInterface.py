@@ -35,6 +35,12 @@ try:
     from mpi4py import MPI as mpi
 #    import mpi
     _parallel = True
+
+
+    if mpi.COMM_WORLD.rank==0:
+        print 'importingMPI',_parallel
+    #endif
+
 except ImportError:
     try:
         import dummy_mpi as mpi
@@ -49,12 +55,18 @@ if _parallel:
     except ImportError:
         try:
             import sumb
-            #print "Warning: Running in an MPI environment, but failed"
-            #print "         to import parallel version of SUmb.  Proceeding"
-            #print "         with a sequential version."
+
+            if mpi.COMM_WORLD.rank==0:
+                print "Warning: Running in an MPI environment, but failed"
+                print "         to import parallel version of SUmb.  Proceeding"
+                print "         with a sequential version."
+            #endif
+
         except ImportError:
-            print "Error: Failed to import parallel or sequential version"
-            print "       of SUmb."
+            if mpi.COMM_WORLD.rank==0:
+                print "Error: Failed to import parallel or sequential version"
+                print "       of SUmb."
+            #endif
 else:
     try:
         import sumb
@@ -483,7 +495,10 @@ class SUmbMesh(object):
         #sys.exit(0)
         #sumb.updatefacesglobal(ncoords,xyz)
         xyz = self.metricConversion*xyz
+
+
         sumb.updatefacesglobal(xyz,reinitialize)
+
     
         self._update_geom_info = True
 
@@ -885,6 +900,7 @@ class SUmbInterface(object):
 
         self.nw =sumb.flowvarrefstate.nw
         sumb.killsignals.frompython=True
+        #sumb.killsignals.routinefailed=False
         return
 
     def initializeFlow(self,aero_problem,sol_type,grid_file,*args,**kwargs):
@@ -898,6 +914,13 @@ class SUmbInterface(object):
             sol_type - solution type - Steady,Unsteady,Time Spectral
             grid_file - name of 3-d Mesh file
             '''
+	try:  kwargs['solver_options']['probName']
+        except KeyError:
+            self.probName = ''
+        else:
+            self.probName = kwargs['solver_options']['probName']
+        #endtry
+
         #Generate Input File from Options
         try:  kwargs['solver_options']['OutputDir']
         except KeyError:
@@ -906,7 +929,7 @@ class SUmbInterface(object):
             self.OutputDir = kwargs['solver_options']['OutputDir']
         #endtry
 
-        startfile = self.OutputDir+'autogen.input'
+        startfile = self.OutputDir+self.probName+grid_file+'autogen.input'
         
         self.generateInputFile(aero_problem,sol_type,grid_file,startfile,*args,**kwargs)
         
@@ -925,7 +948,8 @@ class SUmbInterface(object):
         if(self.myid==0):print 'readparamfile'
         # Read the parameter file
         sumb.readparamfile()
-
+        #This is just to flip the -1 to 1 possibly a memory issue?
+        sumb.inputio.storeconvinneriter=abs(sumb.inputio.storeconvinneriter)
         # Partition the blocks and read the grid
         sumb.partitionandreadgrid()
         if(self.myid==0):print 'preprocessing'
@@ -934,7 +958,6 @@ class SUmbInterface(object):
         if(self.myid==0):print 'initializing flow'
         # Initialize the flow variables
         sumb.initflow()
-
         # Create dictionary of variables we are monitoring
         nmon = sumb.monitor.nmon
         self.monnames = {}
@@ -950,10 +973,10 @@ class SUmbInterface(object):
             self.Mesh.families[string.strip(sumb.mddata.mdfamilynames[i]
         		       .tostring())] = i + 1
         sumb.mdcreatensurfnodes()
-
         # Determine the total number of blocks in the mesh and store it
         #print 'mpitest',sumb.block.ndom,mpi.SUM
         #For older versions of mpi4py...
+
         #self.Mesh.nmeshblocks = self.sumb_comm_world.Allreduce(
         #    sumb.block.ndom,mpi.SUM)
         #for mpi4py version 1.2
@@ -973,14 +996,14 @@ class SUmbInterface(object):
         sumb.inputphysics.liftdirection = liftDir
         sumb.inputphysics.dragdirection = dragDir
 
-        print 'Alpha',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha,velDir,liftDir,dragDir
+        if (self.myid==0):print 'Alpha',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha,velDir,liftDir,dragDir
         #update the flow vars
         sumb.updateflow()
         return
         
     def generateInputFile(self,aero_problem,sol_type,grid_file,startfile,file_type='cgns',eqn_type='Euler',*args,**kwargs):
         ''' Code to generate an SUmb Input File on the fly'''
-        print 'generating input file'
+        if (self.myid==0): print 'generating input file'
         
         #Convert alpha and beta to a freestream vector
         [velDir,liftDir,dragDir]= sumb.adjustinflowangleadj((aero_problem._flows.alpha*(pi/180.0)),(aero_problem._flows.beta*(pi/180.0)),aero_problem._flows.liftIndex)
@@ -1020,9 +1043,9 @@ class SUmbInterface(object):
             autofile.write("                      Restart file: %s_restart.cgns \n"%(grid_file))
             autofile.write("                           Restart: %s\n"%(kwargs['solver_options']['sol_restart']))
             autofile.write("       Check nondimensionalization: yes\n\n")
-            autofile.write("                     New grid file: %s%s_NewGrid.cgns\n\n"%(self.OutputDir,grid_file))
-            autofile.write("                     Solution file: %s%s_SolSUmb.cgns\n"%(self.OutputDir,grid_file))
-            autofile.write("             Surface solution file: %s%s_SolSUmb_surface.cgns\n"%(self.OutputDir,grid_file))
+            autofile.write("                     New grid file: %s%s%s_NewGrid.cgns\n\n"%(self.OutputDir,self.probName,grid_file))
+            autofile.write("                     Solution file: %s%s%s_SolSUmb.cgns\n"%(self.OutputDir,self.probName,grid_file))
+            autofile.write("             Surface solution file: %s%s%s_SolSUmb_surface.cgns\n"%(self.OutputDir,self.probName,grid_file))
             
         elif file_type == 'plot3d':
             autofile.write("                         Grid file: %s.mesh \n"%(grid_file))
@@ -1337,7 +1360,8 @@ class SUmbInterface(object):
         autofile.write(  "     Multigrid Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "      Number of multigrid cycles coarse grid:  -1  # -1 Means same as on fine grid\n")
-        autofile.write(  "                      CFL number coarse grid: -1.0  # -1 Means same as on fine grid\n")
+        autofile.write(  "                      CFL number coarse grid: -1  # -1 Means same as on fine grid\n")
+
         autofile.write(  "Relative L2 norm for convergence coarse grid: 1.e-2\n")
         autofile.write( "\n")
         
@@ -1626,26 +1650,187 @@ class SUmbInterface(object):
         """Return a reference to the mesh object for this solution."""
         return self.Mesh
 
-    def RunIterations(self,*ncycles):
+    def RunIterations(self, *args, **kwargs):
         """Run the flow solver for a given number of time steps and
            multigrid cycles.
 
         Keyword arguments:
 
-        ntimesteps -- passed as ncycles[0] is the number of unsteady
-                      physical time steps which defaults to the value
-                      read from the input file
+        sol_type  -- Solution type: Steady, Time Spectral or Unsteady
 
-        ncycles -- passed as ncycles[1], which implies that the number
-                   of time steps has to be passed as ncycles[0], is the
-                   number of multigrid cycles to run on the finest mesh,
+        ncycles -- The number of multigrid cycles to run on the finest mesh,
                    which defaults to the previous value used when calling this
                    method OR the value read from the input file if this method
                    has not been called before
 
+        ntimesteps -- The number of unsteady
+                      physical time steps which defaults to the value
+                      read from the input file
+
         """
-        #print ncycles,sumb.monitor.niterold, sumb.monitor.nitercur, sumb.iteration.itertot ,'storeconv',sumb.inputio.storeconvinneriter,True,False,sumb.inputunsteady.ntimestepsfine,sumb.inputiteration.ncycles
-        #sumb.inputio.storeconvinneriter=True#False
+        
+        if(self.myid ==0):print 'Iterations...',sumb.monitor.niterold,sumb.monitor.nitercur,\
+               sumb.iteration.itertot
+
+        try: kwargs['sol_type']
+        except:
+            print 'sol_type not defined...exiting...'
+            sys.exit(0)
+        else:
+            sol_type = kwargs['sol_type']
+        #endtry
+
+        try: kwargs['ncycles']
+        except:
+            print 'ncycles not defined...exiting...'
+            sys.exit(0)
+        else:
+            ncycles = kwargs['ncycles']
+        #endtry
+
+        try: kwargs['storeHistory']
+        except:
+            storeHistory=False
+        else:
+            storeHistory= kwargs['storeHistory']
+        #endtry
+
+        #reset python failute check to false
+        sumb.killsignals.routinefailed=False
+
+        if sol_type=='steady' or sol_type=='time spectral':
+            if(self.myid ==0):print 'steady',sumb.inputio.storeconvinneriter,True,False,sumb.inputio.storeconvinneriter==True,sumb.inputio.storeconvinneriter==False
+            #if(self.myid ==0):sumb.inputio.storeconvinneriter=True
+            #if(self.myid ==0):print 'steady',sumb.inputio.storeconvinneriter,True,False,sumb.inputio.storeconvinneriter==True,sumb.inputio.storeconvinneriter==False
+            #set the number of cycles for this call
+            sumb.inputiteration.ncycles = ncycles
+            
+            if (sumb.monitor.niterold == 0 and \
+                sumb.monitor.nitercur == 0 and \
+                sumb.iteration.itertot == 0):
+                # No iterations have been done
+                if (sumb.inputio.storeconvinneriter):
+                    nn = sumb.inputiteration.nsgstartup+sumb.inputiteration.ncycles
+                    if(self.myid==0):
+                       print 'shape',sumb.monitor.convarray.shape
+                       #sumb.monitor.convarray = None
+                       sumb.deallocconvarrays()
+                       print 'nn',nn
+                       sumb.allocconvarrays(nn)
+                       #print 'convarray',sumb.monitor.convarray
+                    #endif
+                #endif
+
+            elif(sumb.monitor.nitercur == 0 and\
+                 sumb.iteration.itertot == 0):
+                
+                # Reallocate convergence history array and
+                # time array with new size, storing old values from restart
+                if (self.myid == 0):
+                    # number of time steps from restart
+                    ntimestepsrestart = sumb.monitor.ntimestepsrestart
+                                        
+                    if (sumb.inputio.storeconvinneriter):
+                        # number of iterations from restart
+                        niterold = sumb.monitor.niterold#[0]
+                        if storeHistory:
+                            # store restart convergence history and deallocate array
+                            temp = copy.deepcopy(sumb.monitor.convarray[:niterold+1,:])
+                            sumb.deallocconvarrays()
+                            # allocate convergence history array with new extended size
+                            sumb.allocconvarrays(temp.shape[0]
+                                                 +sumb.inputiteration.ncycles-1)
+                            # recover values from restart and deallocate temporary array
+                            sumb.monitor.convarray[:temp.shape[0],:temp.shape[1]] = temp
+                            temp = None
+                        else:
+                            temp=copy.deepcopy(sumb.monitor.convarray[0,:,:])
+                            sumb.deallocconvarrays()
+                            # allocate convergence history array with new extended size
+                            sumb.allocconvarrays(sumb.inputiteration.ncycles+1+niterold)
+                            sumb.monitor.convarray[0,:,:] = temp
+                            temp = None
+                        #endif
+                    #endif
+                #endif
+            else:
+                # More Time Steps / Iterations in the same session
+            
+                # Reallocate convergence history array and
+                # time array with new size, storing old values from previous runs
+                if (self.myid == 0):
+                    if (sumb.inputio.storeconvinneriter):
+                        if storeHistory:
+                            # store previous convergence history and deallocate array
+                            temp = copy.deepcopy(sumb.monitor.convarray)
+
+                            sumb.deallocconvarrays()
+                            # allocate convergence history array with new extended size
+                            nn = sumb.inputiteration.nsgstartup+sumb.inputiteration.ncycles
+                            print 'alloc'
+                            sumb.allocconvarrays(temp.shape[0]+nn-1)
+                        
+                            # recover values from previous runs and deallocate temporary array
+                            sumb.monitor.convarray[:temp.shape[0],:] = copy.deepcopy(temp)
+                            
+                            temp = None
+                        else:
+                            temp=copy.deepcopy(sumb.monitor.convarray[0,:,:])
+                            print 'temp',temp
+                            sumb.deallocconvarrays()
+                            sumb.allocconvarrays(sumb.inputiteration.ncycles+1)
+                            sumb.monitor.convarray[0,:,:] = temp
+                            temp = None
+                        #endif
+                    #endif
+                #endif
+                # re-initialize iteration variables
+                sumb.inputiteration.mgstartlevel = 1
+                if storeHistory:
+                    sumb.monitor.niterold  = sumb.monitor.nitercur
+                else:
+                    sumb.monitor.niterold  = 1#0#sumb.monitor.nitercur
+                #endif
+                sumb.monitor.nitercur  = 0#1
+                sumb.iteration.itertot = 0#1
+                # update number of time steps from restart
+                sumb.monitor.ntimestepsrestart = sumb.monitor.ntimestepsrestart \
+                                                 + sumb.monitor.timestepunsteady
+                # re-initialize number of time steps previously run (excluding restart)             
+                sumb.monitor.timestepunsteady = 0
+                # update time previously run
+                sumb.monitor.timeunsteadyrestart = sumb.monitor.timeunsteadyrestart \
+                                                   + sumb.monitor.timeunsteady
+                # re-initialize time run
+                sumb.monitor.timeunsteady = 0.0
+                
+            #endif
+        elif sol_type=='unsteady':
+            print 'unsteady not implemented yet...'
+            sys.exit(0)
+        else:
+            print 'unknown sol_type:',sol_type,'exiting...'
+            sys.exit(0)
+        #endif
+
+        if self.myid ==0:print 'setupfinished'
+        self.GetMesh()._UpdateGeometryInfo()
+        #print 'killsignal',sumb.killsignals.routinefailed,True,self.myid
+        self.routineFailed = self.sumb_comm_world.allreduce(sumb.killsignals.routinefailed,mpi.MIN)
+        #print 'routinefailed',self.routineFailed,self.myid
+        if (abs(self.routineFailed)==True):
+            #print 'raising error'
+            raise ValueError
+            #print 'error raised'
+            #return
+        #endif
+    
+        if self.myid ==0: print 'calling solver'
+        sumb.solver()
+        if self.myid ==0:print 'solver called'
+
+        return
+        sys.exit(0)
         
         if (sumb.monitor.niterold == 0 and
             sumb.monitor.nitercur == 0 and
@@ -1663,9 +1848,9 @@ class SUmbInterface(object):
                 # Reallocate convergence history array and
                 # time array with new size
                 if (self.myid == 0):
-                    #print 'sumb.monitor.timearray'#,sumb.monitor.timearray 
+                    print 'sumb.monitor.timearray'#,sumb.monitor.timearray 
                     sumb.monitor.timearray = None
-                    #print 'sumb.monitor.timearray',sumb.monitor.timearray 
+                    print 'sumb.monitor.timearray',sumb.monitor.timearray 
                     sumb.monitor.timedataarray = None
                     sumb.alloctimearrays(sumb.inputunsteady.ntimestepsfine)
                     if (sumb.inputio.storeconvinneriter):
@@ -2227,7 +2412,9 @@ class SUmbInterface(object):
         Run solverADjoint to verify the partial derivatives in the ADjoint
         '''
         print 'in interface verify partials'
-        sumb.solveradjoint()
+        #sumb.verifydrdxsfile()
+        sumb.verifydcfdx(1)
+        #sumb.solveradjoint()
 
         return
     

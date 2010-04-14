@@ -151,6 +151,15 @@ python module sumb ! in
 ! Integrated warping
 ! *********************
 
+
+!!$       subroutine integratedwarp(ncoords,xyzface,indices) ! in :sumb:integratedWarp.f90
+!!$         use blockpointers
+!!$         integer(kind=inttype) optional,check(shape(xyzface,1)==ncoords),depend(xyzface) :: ncoords=shape(xyzface,1)
+!!$         real(kind=realtype) dimension(3,ncoords) :: xyzface
+!!$         integer(kind=inttype) dimension(4,ncoords),depend(ncoords) :: indices
+!!$       end subroutine integratedwarp
+
+
        subroutine initializewarping(famid)
          
          use blockpointers
@@ -212,6 +221,43 @@ python module sumb ! in
          implicit none
        end subroutine setupvolumesurfacederivativesdv
 
+       subroutine verifydrdxsfile
+         use blockpointers 
+         use flowvarrefstate
+         use communication
+         use iteration     
+         use inputtimespectral 
+         use inputio
+         use cgnsgrid
+         use adjointpetsc, only: drdx,petscone,insert_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world,add_values,mat_initial_matrix,petsc_default_double_precision
+         use warpingpetsc, only: dxvdxsdv,drdxsdv
+         use precision
+         use inputiteration
+         use mddata
+         
+         implicit none
+       end subroutine verifydrdxsfile
+
+       subroutine verifydcfdx(level)
+
+         use blockpointers
+         use cgnsgrid            
+         use communication       
+         use inputphysics        
+         use flowvarrefstate     
+         use inputdiscretization 
+         use iteration           
+         use inputtimespectral  
+         use section
+         use monitor            
+         use bctypes     
+         use adjointvars 
+         implicit none
+
+         integer(kind=inttype), intent(in) :: level
+         
+       end subroutine verifydCfdx
+
        subroutine setupvolumesurfacederivativesdisp
 
          ! Find the derivatives of the mesh wrt the surface at the current point
@@ -265,10 +311,21 @@ python module sumb ! in
 
         subroutine allocconvarrays(nitertot) ! in :sumb:../../initFlow/allocConvArrays.f90
             use constants
+            use inputio
             use inputtimespectral
             use monitor
+            implicit none
             integer(kind=inttype) :: nitertot
         end subroutine allocconvarrays
+
+        subroutine deallocconvarrays ! in :sumb:../../initFlow/allocConvArrays.f90
+          use constants
+          use inputio
+          use inputtimespectral
+          use monitor
+          implicit none
+          
+        end subroutine deallocconvarrays
 
         subroutine alloctimearrays(nitertot) ! in :sumb:../../initFlow/allocTimeArrays.f90
             use monitor

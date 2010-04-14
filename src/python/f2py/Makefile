@@ -45,10 +45,12 @@ LINKER_ALL_FLAGS = -L$(SU_MPI_DIR)/lib -L$(ADT_DIR)/lib \
 #      *                                                                *
 #      ******************************************************************
 
+SUFFIX = _parallel
+
 PYTHON_OBJECTS = fortranobject.o \
-		 sumbmodule.o \
-		 sumb-f2pywrappers.o \
-		 sumb-f2pywrappers2.o 
+		 sumb$(SUFFIX)module.o \
+		 sumb$(SUFFIX)-f2pywrappers.o \
+		 sumb$(SUFFIX)-f2pywrappers2.o 
 
 #      ******************************************************************
 #      *                                                                *
@@ -59,19 +61,20 @@ PYTHON_OBJECTS = fortranobject.o \
 default: all
 
 all:
-	cp sumb.PYF sumb.pyf
+#	cp sumb.PYF sumb.pyf
+	python createpyfFile.py sumb.PYF $(SUFFIX)
 #       need to have f2py_f2cmap in this folder....
 	cp f2py_f2cmap.ref .f2py_f2cmap
-	f2py sumb.pyf
-	$(CC) $(CC_ALL_FLAGS) -I$(NUMPY_ROOT_DIR)/numpy/core/include -I$(NUMPY_ROOT_DIR)/numpy/f2py/src -I$(PYTHON_INCLUDE_DIR) -c sumbmodule.c
+	f2py sumb$(SUFFIX).pyf
+	$(CC) $(CC_ALL_FLAGS) -I$(NUMPY_ROOT_DIR)/numpy/core/include -I$(NUMPY_ROOT_DIR)/numpy/f2py/src -I$(PYTHON_INCLUDE_DIR) -c sumb$(SUFFIX)module.c
 	$(CC) $(CC_ALL_FLAGS) -I$(NUMPY_ROOT_DIR)/numpy/core/include -I$(NUMPY_ROOT_DIR)/numpy/f2py/src -I$(PYTHON_INCLUDE_DIR) -c $(NUMPY_ROOT_DIR)/numpy/f2py/src/fortranobject.c -o fortranobject.o
-	$(FF90) $(FF90_ALL_FLAGS) -I$(SUMB_MODDIR) -c sumb-f2pywrappers.f
-	$(FF90) $(FF90_ALL_FLAGS) -I$(SUMB_MODDIR) -I$(SUMB_DIR)/src/python/fortran/suggar/ -I$(SUMB_DIR)/src/python/fortran/aeroElastic -c sumb-f2pywrappers2.f90
-	$(FF90) -shared $(PYTHON_OBJECTS) $(LINKER_ALL_FLAGS) -o sumb.so
-	python importTest.py
+	$(FF90) $(FF90_ALL_FLAGS) -I$(SUMB_MODDIR) -c sumb$(SUFFIX)-f2pywrappers.f
+	$(FF90) $(FF90_ALL_FLAGS) -I$(SUMB_MODDIR) -I$(SUMB_DIR)/src/python/fortran/suggar/ -I$(SUMB_DIR)/src/python/fortran/aeroElastic -c sumb$(SUFFIX)-f2pywrappers2.f90
+	$(FF90) -shared $(PYTHON_OBJECTS) $(LINKER_ALL_FLAGS) -o sumb$(SUFFIX).so
+	python importTest.py $(SUFFIX)
 
-	mv sumb.so ../../../python
-	-rm sumb.pyf
+	mv sumb$(SUFFIX).so ../../../python
+	-rm *.pyf
 	-rm *.o
 	-rm *.f90 *.f *.c
 	-rm .f2py_f2cmap
