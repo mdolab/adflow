@@ -42,7 +42,9 @@ subroutine updateFacesGlobal(ncoords,xyz_new,reinitialize)
            x = xInit
         enddo
      end do
+     call xhalo(level)
   end if
+  
 !
 !      ******************************************************************
 !      *                                                                *

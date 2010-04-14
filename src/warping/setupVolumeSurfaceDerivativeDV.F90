@@ -55,7 +55,7 @@ subroutine setupVolumeSurfaceDerivativesDV
   allocate(surfaceNodes(3,mdNSurfNodesCompact))
   surfaceNodes = mdGlobalSurfxx(:,:,1)
   !print *,'surface Nodes',surfaceNodes
-  call updateFacesGlobal(mdNSurfNodesCompact,surfaceNodes)
+  call updateFacesGlobal(mdNSurfNodesCompact,surfaceNodes,.True.)
   
   ! Get the initial time.
   
