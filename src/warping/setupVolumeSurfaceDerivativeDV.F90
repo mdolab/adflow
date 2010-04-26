@@ -148,7 +148,7 @@ subroutine setupVolumeSurfaceDerivativesDV
                  !call flagImplicitEdgesAndFacesDeriv(xyznewd,ifaceptb,iedgeptb)
                  !print *,'warpl_local_d',sps,nn,ifaceptb,iedgeptb
                  !Warp the block
-                 call WARP_LOCAL_D(xyznew, xyznewd, xyz0, ifaceptb, iedgeptb, imax&
+                 call WARP_LOCAL_D(xyznew, xyznewd, xyz0, imax&
                       &  , jmax, kmax)
                  
                  !reset the small real perturbation

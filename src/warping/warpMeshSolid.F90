@@ -28,8 +28,8 @@ subroutine warpMeshSolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock)
   integer(kind=intType) :: nn,i,ii,iii,j,jj,jjj,k,kk,kkk
   integer(kind=intType) :: irow,jcol,blockID,counter,indices(8,3)
 
-  integer(kind=intType),dimension(6)::IFACEPTB
-  integer(kind=intType),dimension(12)::IEDGEPTB  
+  !integer(kind=intType),dimension(6)::IFACEPTB
+  !integer(kind=intType),dimension(12)::IEDGEPTB  
 
   ! Temporary Variables
   real(kind=realType)   ::  points(8,3),deltas(8,3)
@@ -264,7 +264,7 @@ subroutine warpMeshSolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock)
   
   do nn=1,nDom
      call setPointers(nn,level,sps)     
-     call flagImplicitEdgesAndFaces(ifaceptb,iedgeptb)
+     !call flagImplicitEdgesAndFaces(ifaceptb,iedgeptb)
 
      ! LOOP THROUGH ALL local BLOCKS AND CALL WARPBLK WHERE APPROPRIATE
      ! SAVE NEW AND INITIAL XYZ VALUES TO BE PASSED TO WARPBLK
@@ -283,7 +283,7 @@ subroutine warpMeshSolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock)
      XYZNEW(2,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,2)
      XYZNEW(3,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,3)
 
-     call warp_local(xyznew,xyz0,ifaceptb,iedgeptb,imax,jmax,kmax)
+     call warp_local(xyznew,xyz0,imax,jmax,kmax)
      
      ! ASSIGN THESE NEW XYZ VALUES TO THE MESH ITSELF
      DO I=1,IMAX

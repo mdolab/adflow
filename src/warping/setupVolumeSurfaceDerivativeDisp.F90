@@ -26,8 +26,8 @@ subroutine setupVolumeSurfaceDerivativesDisp
   integer(kind=intType)::level=1,idxvol,idxsurf
   integer(kind=intType)::nn,sps=1,imax,jmax,kmax,i,j,k,n,mm,ll,nnn
   real(kind=realType), dimension(:,:,:,:),allocatable::xyznew,xyz0,xyznewd
-  integer(kind=intType),dimension(6)::IFACEPTB
-  integer(kind=intType),dimension(12)::IEDGEPTB
+  !integer(kind=intType),dimension(6)::IFACEPTB
+  !integer(kind=intType),dimension(12)::IEDGEPTB
 
   real(kind=realType), dimension(2) :: time
   real(kind=realType)               :: timeAdjLocal, timeAdj
@@ -103,10 +103,10 @@ subroutine setupVolumeSurfaceDerivativesDisp
                  
                  !determine the explicitly and implicitly perturbed
                  !faces and edges
-                 call flagImplicitEdgesAndFacesDeriv(xyznewd,ifaceptb,iedgeptb)
+                ! call flagImplicitEdgesAndFacesDeriv(xyznewd,ifaceptb,iedgeptb)
               
                  !Warp the block
-                 call WARP_LOCAL_D(xyznew, xyznewd, xyz0, ifaceptb, iedgeptb, imax&
+                 call WARP_LOCAL_D(xyznew, xyznewd, xyz0, imax&
                       &  , jmax, kmax)
                  
                  !reset the small real perturbation

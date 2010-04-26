@@ -23,7 +23,7 @@ implicit none
 
 
 !Local Variables
-integer(kind=intType)::mm,ll,ii,jj,kk,i,j,k,m,n
+integer(kind=intType)::mm,ll,ii,jj,kk,i,j,k,m,n,nn
 integer(kind=intType)::edge,face,counter
 integer(kind=intType),dimension(3)::ijk_num
 logical::cornerPoint,on_edge,on_face,is_corner,edgepoint,facepoint
@@ -32,7 +32,7 @@ integer(kind=intType),dimension(3,8)::relatedFaces,relatedEdges
 integer(kind=intType),dimension(2,12)::edgeRelatedFaces
 integer(kind=intType),dimension(12,6)::searchPattern
 
-integer(kind=intType)::level=1,sps=1
+integer(kind=intType)::level=1,sps=1,ierr
 integer(kind=intType)::which_corner,on_which_edge
     
 !
@@ -40,10 +40,10 @@ integer(kind=intType)::which_corner,on_which_edge
 !  
 do nn = 1,nDom
    if(.not. associated(flowdoms(i,level,sps)%ifaceptb))then
-      allocate(flowdoms(i,level,sps)%ifaceptb(6),status=ierr)
+      allocate(flowdoms(i,level,sps)%ifaceptb(6),stat=ierr)
    endif
    if(.not. associated(flowdoms(i,level,sps)%iedgeptb))then
-      allocate(flowdoms(i,level,sps)%iedgeptb(12),status=ierr)
+      allocate(flowdoms(i,level,sps)%iedgeptb(12),stat=ierr)
    endif
 end do
 
