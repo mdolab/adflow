@@ -163,136 +163,217 @@ function ON_EDGE(IJK)
 end function ON_EDGE
 
 
-subroutine ON_WHICH_FACE(Ijk,which_face)
+!!$subroutine ON_WHICH_FACE(Ijk,which_face)
+!!$  use blockPointers
+!!$  use BCTypes
+!!$  implicit none
+!!$  !Function Arguments
+!!$  
+!!$  integer(kind=intType),dimension(3),intent(in)::ijk
+!!$  
+!!$  !Function Value
+!!$  logical,dimension(6),intent(out):: which_face
+!!$  
+!!$  !Local Variables
+!!$  integer :: i,j,k
+!!$  !
+!!$  !      ******************************************************************
+!!$  !      *                                                                *
+!!$  !      * DETERMINES WHICH FACE(S) a given point is on.                  *
+!!$  !      *                                                                *
+!!$  !      ******************************************************************
+!!$  !         
+!!$  !         
+!!$  i = ijk(1) 
+!!$  j = ijk(2)
+!!$  k = ijk(3)
+!!$  !
+!!$  !      ******************************************************************
+!!$  !      *                                                                *
+!!$  !      * BEGIN EXECUTION                                                *
+!!$  !      *                                                                *
+!!$  !      ******************************************************************
+!!$  !      
+!!$  WHICH_FACE(:) = .False.
+!!$        
+!!$  if (I == 1)then
+!!$     which_face(imin) = .True.
+!!$  endif
+!!$  
+!!$  if (I == IL)then
+!!$     which_face(imax) = .True.
+!!$  endif
+!!$  
+!!$  if (J == 1)then
+!!$     which_face(jmin) = .True.
+!!$  endif
+!!$  
+!!$  if (J == JL)then
+!!$     which_face(jmax) = .True.
+!!$  endif
+!!$  
+!!$  if (k == 1)then
+!!$     which_face(kmin) = .True.
+!!$  endif
+!!$  
+!!$  if (K == KL)then
+!!$     which_face(kmax) = .True.
+!!$  endif
+!!$  
+!!$  
+!!$end subroutine ON_WHICH_FACE
+!!$
+!!$
+!!$function on_wall_surface(ijk)  
+!!$  use blockPointers
+!!$  use BCTypes
+!!$  implicit none
+!!$  !Function Arguments
+!!$  
+!!$  integer(kind=intType),dimension(3),intent(in)::ijk
+!!$  
+!!$  !Function Value
+!!$  integer:: on_wall_surface
+!!$  
+!!$  !Local Variables
+!!$  logical,dimension(6):: blockFaces
+!!$  integer::n
+!!$  on_wall_surface = 0 !false
+!!$
+!!$  call on_which_face(ijk,blockFaces)
+!!$  do n=1,nSubface
+!!$     if (BCFaceID(n)== imin) then !imin
+!!$        if(blockFaces(imin))then
+!!$           if(BCType(n) == Eulerwall .or. &
+!!$                BCType(n) == NSWallAdiabatic .or. &
+!!$                BCType(n) == NSWallIsothermal) then
+!!$              on_wall_surface =1! .true.
+!!$           endif
+!!$        endif
+!!$     elseif (BCFaceID(n)== imax) then!imax
+!!$     if(blockFaces(imax))then
+!!$        if(BCType(n) == Eulerwall   .or. &
+!!$             BCType(n) == NSWallAdiabatic .or. &
+!!$             BCType(n) == NSWallIsothermal) then
+!!$           on_wall_surface =1! .true.
+!!$        endif
+!!$     endif
+!!$  elseif (BCFaceID(n)== jmin)then!:#jmin
+!!$     if(blockFaces(jmin))then
+!!$        if(BCType(n) == Eulerwall   .or. &
+!!$             BCType(n) == NSWallAdiabatic .or. &
+!!$             BCType(n) == NSWallIsothermal) then
+!!$           on_wall_surface =1! .true.
+!!$        endif
+!!$     endif
+!!$  elseif (BCFaceID(n)== jmax)then!:#jmax
+!!$     if(blockFaces(jmax))then
+!!$        if(BCType(n) == Eulerwall   .or. &
+!!$             BCType(n) == NSWallAdiabatic .or. &
+!!$             BCType(n) == NSWallIsothermal) then
+!!$           on_wall_surface = 1!.true.
+!!$        endif
+!!$     endif
+!!$  elseif(BCFaceID(n)== kmin)then!:#kmin
+!!$     if(blockFaces(kmin))then
+!!$        if(BCType(n) == Eulerwall   .or. &
+!!$             BCType(n) == NSWallAdiabatic .or. &
+!!$             BCType(n) == NSWallIsothermal) then
+!!$           on_wall_surface =1! .true.
+!!$        endif
+!!$     endif
+!!$  elseif (BCFaceID(n)== kmax)then!:#kmax
+!!$     if(blockFaces(kmax))then
+!!$        if(BCType(n) == Eulerwall   .or. &
+!!$             BCType(n) == NSWallAdiabatic .or. &
+!!$             BCType(n) == NSWallIsothermal) then
+!!$           on_wall_surface =1! .true.
+!!$        endif
+!!$     endif
+!!$  else
+!!$     print *,'Error:Not a valid face type',BCFaceID(n)
+!!$  endif
+!!$end do
+!!$return
+!!$end function on_wall_surface
+
+function which_corner(ijk)  
   use blockPointers
-  use BCTypes
   implicit none
   !Function Arguments
   
   integer(kind=intType),dimension(3),intent(in)::ijk
   
   !Function Value
-  logical,dimension(6),intent(out):: which_face
+  integer:: which_corner
   
   !Local Variables
-  integer :: i,j,k
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * DETERMINES WHICH FACE(S) a given point is on.                  *
-  !      *                                                                *
-  !      ******************************************************************
-  !         
-  !         
-  i = ijk(1) 
-  j = ijk(2)
-  k = ijk(3)
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * BEGIN EXECUTION                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !      
-  WHICH_FACE(:) = .False.
-        
-  if (I == 1)then
-     which_face(imin) = .True.
-  endif
+  integer(kind=inttype)::i,j,k,counter
   
-  if (I == IL)then
-     which_face(imax) = .True.
-  endif
-  
-  if (J == 1)then
-     which_face(jmin) = .True.
-  endif
-  
-  if (J == JL)then
-     which_face(jmax) = .True.
-  endif
-  
-  if (k == 1)then
-     which_face(kmin) = .True.
-  endif
-  
-  if (K == KL)then
-     which_face(kmax) = .True.
-  endif
-  
-  
-end subroutine ON_WHICH_FACE
-
-
-function on_wall_surface(ijk)  
-  use blockPointers
-  use BCTypes
-  implicit none
-  !Function Arguments
-  
-  integer(kind=intType),dimension(3),intent(in)::ijk
-  
-  !Function Value
-  integer:: on_wall_surface
-  
-  !Local Variables
-  logical,dimension(6):: blockFaces
-  integer::n
-  on_wall_surface = 0 !false
-
-  call on_which_face(ijk,blockFaces)
-  do n=1,nSubface
-     if (BCFaceID(n)== imin) then !imin
-        if(blockFaces(imin))then
-           if(BCType(n) == Eulerwall .or. &
-                BCType(n) == NSWallAdiabatic .or. &
-                BCType(n) == NSWallIsothermal) then
-              on_wall_surface =1! .true.
+  !Begin Execution
+  which_corner = 0 
+  counter = 1
+  do k=1,kl,kl-1!ijk(3),ijk(3)!jump corner to corner
+     do j=1,jl,jl-1!ijk(2),ijk(2)
+        do i=1,il,il-1!ijk(1),ijk(1)
+           if( ijk(1)==i .and. ijk(2)==j .and. ijk(3)==k)then
+              which_corner=counter
            endif
-        endif
-     elseif (BCFaceID(n)== imax) then!imax
-     if(blockFaces(imax))then
-        if(BCType(n) == Eulerwall   .or. &
-             BCType(n) == NSWallAdiabatic .or. &
-             BCType(n) == NSWallIsothermal) then
-           on_wall_surface =1! .true.
-        endif
-     endif
-  elseif (BCFaceID(n)== jmin)then!:#jmin
-     if(blockFaces(jmin))then
-        if(BCType(n) == Eulerwall   .or. &
-             BCType(n) == NSWallAdiabatic .or. &
-             BCType(n) == NSWallIsothermal) then
-           on_wall_surface =1! .true.
-        endif
-     endif
-  elseif (BCFaceID(n)== jmax)then!:#jmax
-     if(blockFaces(jmax))then
-        if(BCType(n) == Eulerwall   .or. &
-             BCType(n) == NSWallAdiabatic .or. &
-             BCType(n) == NSWallIsothermal) then
-           on_wall_surface = 1!.true.
-        endif
-     endif
-  elseif(BCFaceID(n)== kmin)then!:#kmin
-     if(blockFaces(kmin))then
-        if(BCType(n) == Eulerwall   .or. &
-             BCType(n) == NSWallAdiabatic .or. &
-             BCType(n) == NSWallIsothermal) then
-           on_wall_surface =1! .true.
-        endif
-     endif
-  elseif (BCFaceID(n)== kmax)then!:#kmax
-     if(blockFaces(kmax))then
-        if(BCType(n) == Eulerwall   .or. &
-             BCType(n) == NSWallAdiabatic .or. &
-             BCType(n) == NSWallIsothermal) then
-           on_wall_surface =1! .true.
-        endif
-     endif
-  else
-     print *,'Error:Not a valid face type',BCFaceID(n)
-  endif
-end do
+           counter=counter+1
+        end do
+     end do
+  end do
+  
 return
-end function on_wall_surface
+end function which_corner
+
+function on_which_edge(indices)  
+  use blockPointers
+  
+  implicit none
+  !Function Arguments
+  
+  integer(kind=intType),dimension(3),intent(in)::indices
+  integer(kind=intType),dimension(3)::ijk
+  
+  !Function Value
+  integer:: on_which_edge
+  
+  !Local Variables
+  integer(kind=intType),dimension(12,6)::searchPattern
+  integer(kind=inttype)::mm,i,j,k
+  !begin execution
+  on_which_edge = 0 
+  !Setup block dimensions
+  ijk(1) = il
+  ijk(2) = jl
+  ijk(3) = kl
+  
+  !Edge search pattern
+  !set to match the edge pattern in flagimplicits
+  searchPattern(1,:)=(/1+1, ijk(1)-1,1,1,1,1/)
+  searchPattern(2,:)=(/1+1, ijk(1)-1, ijk(2), ijk(2),1,1/)
+  searchPattern(3,:)=(/1+1, ijk(1)-1,1,1, ijk(3), ijk(3)/)
+  searchPattern(4,:)=(/1+1, ijk(1)-1, ijk(2), ijk(2), ijk(3), ijk(3)/)
+  searchPattern(5,:)=(/1,1,1+1, ijk(2)-1,1,1/)
+  searchPattern(6,:)=(/ ijk(1), ijk(1),1+1, ijk(2)-1,1,1/)
+  searchPattern(7,:)=(/1,1,1+1, ijk(2)-1, ijk(3), ijk(3)/)
+  searchPattern(8,:)=(/ ijk(1), ijk(1),1+1, ijk(2)-1, ijk(3), ijk(3)/)
+  searchPattern(9,:)=(/1,1,1,1,1+1, ijk(3)-1/)
+  searchPattern(10,:)=(/ ijk(1), ijk(1),1,1,1+1, ijk(3)-1/)
+  searchPattern(11,:)=(/1,1, ijk(2), ijk(2),1+1, ijk(3)-1/)
+  searchPattern(12,:)=(/ ijk(1), ijk(1), ijk(2), ijk(2),1+1, ijk(3)-1/)
+  
+  do mm = 1,12
+     do i=searchPattern(mm,1),searchPattern(mm,2)
+        do j=searchPattern(mm,3),searchPattern(mm,4)
+           do k=searchPattern(mm,5),searchPattern(mm,6)
+              if( indices(1)==i .and. indices(2)==j .and. indices(3)==k)then
+                 on_which_edge=mm
+              endif
+           enddo
+        enddo
+     enddo
+  enddo
+  return
+end function on_which_edge
