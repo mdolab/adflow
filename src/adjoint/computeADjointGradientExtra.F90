@@ -41,6 +41,7 @@
       use ADjointPETSc
       use ADjointVars
       use flowvarrefstate !Timeref
+      use inputPhysics
       use constants
       implicit none
 !
@@ -62,6 +63,9 @@
       real(kind=realType)               :: timeAdjLocal, timeAdj
 
       character(len=2*maxStringLen) :: errorMessage
+      
+      !Values for derivative normalization
+      real(kind=realType)::a !speed of sound
 !
 !     ******************************************************************
 !     *                                                                *
@@ -246,6 +250,20 @@
 	print *,'Rotx:',functionGrad(costFunction,nDesignRotX)
 	print *,'RotY:',functionGrad(costFunction,nDesignRotY)
 	print *,'RotZ:',functionGrad(costFunction,nDesignRotZ)
+      endif
+
+      if( PETScRank==0 ) then	
+	print *,'Stability Derivatives per Rad'
+	print *,'Alpha',functionGrad(costFunction,nDesignAoA)*(180.0_realType/pi)
+	print *,'Beta',functionGrad(costFunction,nDesignSSA)*(180.0_realType/pi)
+	print *,'Mach',functionGrad(costFunction,nDesignMach)
+	print *,'MachGrid',functionGrad(costFunction,nDesignMachGrid)	
+	print *,'Corrected rotational derivatives...'
+        a  = sqrt(gammaInf*pInfDim/rhoInfDim)
+        print *,'Speed of Sound',a,MachGrid*a,lengthRef
+	print *,'Rotx:',functionGrad(costFunction,nDesignRotX)
+	print *,'RotY:',functionGrad(costFunction,nDesignRotY)
+	print *,'RotZ:',functionGrad(costFunction,nDesignRotZ)*(machGrid*a)/lengthRef
       endif
 
       ! Flush the output buffer and synchronize the processors.
