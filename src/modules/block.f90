@@ -743,7 +743,7 @@
          TYPE(warp_comm_type), DIMENSION(:),pointer :: warp_comm
 
          integer(kind=intType),dimension(6),target::ifaceptb
-         integer(kind=inteType),dimension(12),target::iedgeptb
+         integer(kind=intType),dimension(12),target::iedgeptb
 
        end type blockType
 
