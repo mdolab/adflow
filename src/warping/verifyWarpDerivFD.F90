@@ -447,7 +447,7 @@ end do
       ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
       ! or PETSc users manual, pp.52
 
-      call MatSetOption(dXvdXsFD,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
+      !call MatSetOption(dXvdXsFD,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("integratedWarpDerivParallel", &
