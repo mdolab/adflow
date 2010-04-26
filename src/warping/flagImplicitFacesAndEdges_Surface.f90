@@ -38,10 +38,20 @@ integer(kind=intType)::which_corner,on_which_edge
 !
 ! Begin Execution
 !  
+do nn = 1,nDom
+   if(.not. associated(flowdoms(i,level,sps)%ifaceptb))then
+      allocate(flowdoms(i,level,sps)%ifaceptb(6),status=ierr)
+   endif
+   if(.not. associated(flowdoms(i,level,sps)%iedgeptb))then
+      allocate(flowdoms(i,level,sps)%iedgeptb(12),status=ierr)
+   endif
+end do
 
-
-IFACEPTB(:)=0
-IEDGEPTB(:)=0
+do nn = 1,nDom
+   call setpointers(nn,level,sps)
+   IFACEPTB(:)=0
+   IEDGEPTB(:)=0
+enddo
 call blockRelations(relatedFaces,relatedEdges,edgeRelatedFaces,&
      searchPattern)
 
@@ -56,7 +66,7 @@ do i = 1,size(mdSurfGlobalIndLocal(5,:))
    cornerPoint = IS_CORNER(IJK_NUM)
    edgePoint = ON_EDGE(IJK_NUM)
    facePoint = ON_FACE(IJK_NUM)
-
+   
    if (cornerPoint) then
       !print *,'corner perturbed',i
       mm = which_corner(IJK_NUM)
@@ -87,7 +97,7 @@ do i = 1,size(mdSurfGlobalIndLocal(5,:))
    else
       IEDGEPTB(mm) = IEDGEPTB(mm) 
    endif
-   
+      
    if ((.not. cornerPoint) .and. (.not. edgePoint) .and.&
         facePoint)then
       if (IJK_NUM(1) == 1) then
@@ -117,6 +127,7 @@ do i = 1,size(mdSurfGlobalIndLocal(5,:))
       stop
    endif
 end do
+
 end subroutine flagImplicitEdgesAndFacesSurface
 
 
