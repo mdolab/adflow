@@ -38,6 +38,9 @@ call synchronizeIndices
 !Create the reduced surface coordinate list for python interface
 !call mdCreateGlobalReducedSurfaceList
 
+!setup perturbation list for warping
+call flagImplicitEdgesAndFacesSurface
+
 !Run the Adjoint preprocessing to setup global volume numbering and
 !initialize the various PETSc variables
 
