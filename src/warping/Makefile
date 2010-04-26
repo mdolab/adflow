@@ -47,6 +47,7 @@ FF90_OBJECTS = warp_local.o        \
                updateFacesGlobal.o\
                createWarpingPETScMat.o\
 	       flagImplicitFacesAndEdges.o\
+               flagImplicitFacesAndEdges_Surface.o\
 	       flagImplicitFacesAndEdgesDeriv.o\
 	       mdCreateGlobalReducedSurfaceList.o\
 	       blockRelations.o\
