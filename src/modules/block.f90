@@ -742,8 +742,8 @@
          !TYPE(warp_comm_type), ALLOCATABLE, DIMENSION(:) :: warp_comm
          TYPE(warp_comm_type), DIMENSION(:),pointer :: warp_comm
 
-         integer(kind=intType),dimension(6),target::ifaceptb
-         integer(kind=intType),dimension(12),target::iedgeptb
+         integer(kind=intType),dimension(:),pointer::ifaceptb
+         integer(kind=intType),dimension(:),pointer::iedgeptb
 
        end type blockType
 
