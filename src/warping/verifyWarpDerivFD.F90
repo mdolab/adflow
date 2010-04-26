@@ -27,8 +27,8 @@ subroutine verifyWarpDerivFD!(ncoords,xyzface,indices_new)
   integer(kind=intType)::level=1,idxvol,idxsurf
   integer(kind=intType)::nn,sps=1,imax,jmax,kmax,i,j,k,n,mm,ll,nnn,ii,length
   real(kind=realType), dimension(:,:,:,:),allocatable::xyznew,xyz0
-  integer(kind=intType),dimension(6)::IFACEPTB
-  integer(kind=intType),dimension(12)::IEDGEPTB
+  !integer(kind=intType),dimension(6)::IFACEPTB
+  !integer(kind=intType),dimension(12)::IEDGEPTB
 !  real(kind=realType), dimension(:,:,:,:,:,:,:),allocatable::xyzderiv
  ! real(kind=realType), dimension(:,:,:,:,:,),allocatable::xyzderiv
   real(kind=realType)::deltax = 1e-7,xderiv

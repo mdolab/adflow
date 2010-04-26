@@ -6,15 +6,15 @@
 ! *  Modified: 12-07-2008
 ! ***********************************
 
-subroutine warp_local(xyznew,xyz0,ifaceptb,iedgeptb,imax,jmax,kmax)
+subroutine warp_local(xyznew,xyz0,imax,jmax,kmax)
 
   use blockpointers
   implicit none
 
   ! Subroutine Arguments
   real(kind=realType),dimension(3,0:IMAX+1,0:JMAX+1,0:KMAX+1)::xyznew,xyz0
-  integer(kind=intType),dimension(6)::IFACEPTB
-  integer(kind=intType),dimension(12)::IEDGEPTB
+  !integer(kind=intType),dimension(6)::IFACEPTB
+  !integer(kind=intType),dimension(12)::IEDGEPTB
   integer(kind=intType)::imax,jmax,kmax
   ! Local Variables
 

@@ -11,7 +11,7 @@
 ! *  Started: 12-07-2008
 ! *  Modified: 12-07-2008
 ! ***********************************
-SUBROUTINE WARP_LOCAL_D(xyznew, xyznewd, xyz0, ifaceptb, iedgeptb, imax&
+SUBROUTINE WARP_LOCAL_D(xyznew, xyznewd, xyz0, imax&
 &  , jmax, kmax)
   USE blockpointers
   IMPLICIT NONE
@@ -21,8 +21,8 @@ SUBROUTINE WARP_LOCAL_D(xyznew, xyznewd, xyz0, ifaceptb, iedgeptb, imax&
 &  xyznew, xyz0
   REAL(KIND=REALTYPE), DIMENSION(3, 0:imax+1, 0:jmax+1, 0:kmax+1) :: &
 &  xyznewd
-  INTEGER(KIND=INTTYPE), DIMENSION(6) :: ifaceptb
-  INTEGER(KIND=INTTYPE), DIMENSION(12) :: iedgeptb
+  !INTEGER(KIND=INTTYPE), DIMENSION(6) :: ifaceptb
+  !INTEGER(KIND=INTTYPE), DIMENSION(12) :: iedgeptb
 ! Local Variables
   REAL(KIND=REALTYPE), DIMENSION(:, :, :, :, :), ALLOCATABLE :: dfacei, &
 &  dfacej, dfacek
