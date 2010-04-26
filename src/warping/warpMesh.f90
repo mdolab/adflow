@@ -22,8 +22,8 @@ subroutine warpMesh
   integer(kind=intType)::level=1
   integer(kind=intType)::nn,sps=1,imax,jmax,kmax,i,j,k
   real(kind=realType), dimension(:,:,:,:),allocatable::xyznew,xyz0
-  integer(kind=intType),dimension(6)::IFACEPTB
-  integer(kind=intType),dimension(12)::IEDGEPTB  
+!  integer(kind=intType),dimension(6)::IFACEPTB
+!  integer(kind=intType),dimension(12)::IEDGEPTB  
 
   !begin execution
 
@@ -35,7 +35,7 @@ do sps = 1,nTimeIntervalsSpectral
      
      !print *,'flag implicites'
      !determine the explicitly and implicitly perturbed faces and edges
-     call flagImplicitEdgesAndFaces(ifaceptb,iedgeptb,.False.)
+     !call flagImplicitEdgesAndFaces(ifaceptb,iedgeptb,.False.)
 
      ! LOOP THROUGH ALL local BLOCKS AND CALL WARPBLK WHERE APPROPRIATE
      

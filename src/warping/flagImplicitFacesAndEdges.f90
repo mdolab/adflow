@@ -20,8 +20,8 @@ implicit none
 
 !Subroutine Arguments
 
-integer(kind=intType),dimension(6)::IFACEPTB
-integer(kind=intType),dimension(12)::IEDGEPTB
+!integer(kind=intType),dimension(6)::IFACEPTB
+!integer(kind=intType),dimension(12)::IEDGEPTB
 logical         :: useSolid
 
 !Local Variables
