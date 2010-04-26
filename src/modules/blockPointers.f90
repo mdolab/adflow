@@ -189,5 +189,5 @@
        !       IncrementJ,incrementK
        !INTEGER(KIND=INTTYPE),dimension(:),pointer :: incrementdI,&
        !       IncrementdJ,incrementdK
-       
+       integer(kind=intType), dimension(:), pointer ::ifaceptb,iedgeptb
        end module blockPointers
