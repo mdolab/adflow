@@ -86,7 +86,8 @@ do i = 1,size(mdSurfGlobalIndLocal(5,:))
    if (edgepoint .and. (.not. cornerPoint) )then
       !print *,'edgeperturbed',i,j,k,local,local0!,n,mm
       mm = on_which_edge(IJK_NUM)
-      IEDGEPTB(i) = 2
+      
+      IEDGEPTB(mm) = 2
       do m=1,2
          !print *,'m,mm',m,mm
          face = edgeRelatedFaces(m,mm)
@@ -94,7 +95,7 @@ do i = 1,size(mdSurfGlobalIndLocal(5,:))
             IFACEPTB(face)=1
          endif
       end do
-      exit!break
+      
    else
       IEDGEPTB(mm) = IEDGEPTB(mm) 
    endif
@@ -103,22 +104,22 @@ do i = 1,size(mdSurfGlobalIndLocal(5,:))
         facePoint)then
       if (IJK_NUM(1) == 1) then
          IFACEPTB(1) = 2
-         exit!break
+         !exit!break
       elseif (IJK_NUM(1) == il) then
          IFACEPTB(2) = 2
-         exit!break
+         !exit!break
       elseif (IJK_NUM(2) == 1) then
          IFACEPTB(3) = 2
-         exit!break
+         !exit!break
       elseif (IJK_NUM(2) == jl) then
          IFACEPTB(4) = 2
-         exit!break
+         !exit!break
       elseif (IJK_NUM(3) == 1) then
          IFACEPTB(5) = 2
-         exit!break
+         !exit!break
       elseif (IJK_NUM(3) == kl) then
          IFACEPTB(6) = 2
-         exit!break
+         !exit!break
       END IF
    elseif (.not. facePoint)then
       print *,'WARNING - ILLEGAL PERTURBATION!  PERTURBATION PASSED TO '
@@ -128,6 +129,13 @@ do i = 1,size(mdSurfGlobalIndLocal(5,:))
       stop
    endif
 end do
+!!$do nn =1,ndom
+!!$   call setPointers(nn,level,sps)
+!!$   print *,'nn',nn
+!!$   print *,'ifaceptb',ifaceptb
+!!$   print *,'iedgeptb',iedgeptb
+!!$end do
+!!$stop
 
 end subroutine flagImplicitEdgesAndFacesSurface
 
