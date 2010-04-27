@@ -368,9 +368,11 @@ function on_which_edge(indices)
      do i=searchPattern(mm,1),searchPattern(mm,2)
         do j=searchPattern(mm,3),searchPattern(mm,4)
            do k=searchPattern(mm,5),searchPattern(mm,6)
+              !print *,'indices',indices,'ijk',i,j,k
               if( indices(1)==i .and. indices(2)==j .and. indices(3)==k)then
                  on_which_edge=mm
               endif
+              !print *,'onwhichedge',on_which_edge
            enddo
         enddo
      enddo

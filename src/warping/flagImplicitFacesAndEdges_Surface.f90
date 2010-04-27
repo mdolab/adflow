@@ -39,11 +39,11 @@ integer(kind=intType)::which_corner,on_which_edge
 ! Begin Execution
 !  
 do nn = 1,nDom
-   if(.not. associated(flowdoms(i,level,sps)%ifaceptb))then
-      allocate(flowdoms(i,level,sps)%ifaceptb(6),stat=ierr)
+   if(.not. associated(flowdoms(nn,level,sps)%ifaceptb))then
+      allocate(flowdoms(nn,level,sps)%ifaceptb(6),stat=ierr)
    endif
-   if(.not. associated(flowdoms(i,level,sps)%iedgeptb))then
-      allocate(flowdoms(i,level,sps)%iedgeptb(12),stat=ierr)
+   if(.not. associated(flowdoms(nn,level,sps)%iedgeptb))then
+      allocate(flowdoms(nn,level,sps)%iedgeptb(12),stat=ierr)
    endif
 end do
 
@@ -83,11 +83,12 @@ do i = 1,size(mdSurfGlobalIndLocal(5,:))
          endif
       end do
    endif
-   if (edgepoint )then
+   if (edgepoint .and. (.not. cornerPoint) )then
       !print *,'edgeperturbed',i,j,k,local,local0!,n,mm
       mm = on_which_edge(IJK_NUM)
       IEDGEPTB(i) = 2
       do m=1,2
+         !print *,'m,mm',m,mm
          face = edgeRelatedFaces(m,mm)
          if (.not. IFACEPTB(face)==2)then
             IFACEPTB(face)=1
