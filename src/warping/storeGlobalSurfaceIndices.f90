@@ -152,6 +152,7 @@ enddo
 !print *,'compresscounter',compresscounter
 !reprint index
 mdNSurfNodesCompact= compresscounter!-1
+!print *,'storing indices',mdnsurfnodescompact
 !!$do i = 1,counter!+1
 !!$   do j = 1,counter!+1
 !!$      if (int(mdSurfGlobalIndLocal(5,j))==i-1)then
