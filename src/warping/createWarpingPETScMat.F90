@@ -287,6 +287,7 @@
         call terminate("createPETScMat", "Error in MatSetOption dXvdXsDV")
 #endif
 
+if (debug) then
       ! Create the matrix dXvdXsDisp.
 
       ! sparse parallel matrix in AIJ format
@@ -479,7 +480,7 @@
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dXvdXsDisp")
 #endif
-
+endif
 
       if(debug)then
       !******************************************
@@ -851,7 +852,7 @@
       ! end of create dXvdXsPara
       !*****************************************
    endif
-
+if(debug)then
 !
 !     ******************************************************************
 !     *                                                                *
@@ -1058,7 +1059,7 @@
         call terminate("createPETScMat", "Error in MatSetOption dRdXs")
 #endif
 
-   
+   endif
       ! Extract info from the global matrix (only processor 0 does it).
 
       if( PETScRank==0 .and. debug ) then
