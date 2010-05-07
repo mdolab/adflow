@@ -3,7 +3,7 @@
 !  
 !  Differentiation of invisciddissfluxscalaradj in reverse (adjoint) mode:
 !   gradient, with respect to input variables: padj radkadj radjadj
-!                dwadj wadj radiadj
+!                dwadj wadj radiadj sigma
 !   of linear combination of output variables: dwadj
 !
 !      ******************************************************************
@@ -22,6 +22,7 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
   USE cgnsgrid
   USE constants
   USE flowvarrefstate
+  USE inputadjoint
   USE inputdiscretization
   USE inputphysics
   USE inputtimespectral
@@ -115,8 +116,9 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
   REAL(KIND=REALTYPE) :: ss(-2:2, -2:2, -2:2), ssb(-2:2, -2:2, -2:2), &
 &  temp0b, temp1b, temp2b, temp3b, temp4b, temp5b, x1, x1b, x2, x2b, x3&
 &  , x3b, x4, x4b, x5, x5b, x6, x6b
-  REAL(KIND=REALTYPE) :: min1, min1b, min2, min2b, min3, min3b, y1, y1b&
-&  , y2, y2b, y3, y3b
+  REAL(KIND=REALTYPE) :: min1, min1b, min2, min2b, min3, min3b, min4, &
+&  min4b, min5, min5b, min6, min6b, y1, y1b, y2, y2b, y3, y3b, y4, y4b, &
+&  y5, y5b, y6, y6b
   INTRINSIC MAX, ABS, MIN
 !
 !      ******************************************************************
@@ -361,34 +363,59 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       CALL PUSHREAL8(rrad)
 !rrad = ppor*(radI(i,j,k) + radI(i+1,j,k))
       rrad = ppor*(radiadj(ii, 0, 0, sps)+radiadj(ii+1, 0, 0, sps))
-      IF (dss1 .LT. dss2) THEN
-        y1 = dss2
-        CALL PUSHINTEGER4(1)
-      ELSE
-        y1 = dss1
-        CALL PUSHINTEGER4(0)
-      END IF
-      IF (dssmax .GT. y1) THEN
-        CALL PUSHREAL8(min1)
-        min1 = y1
-        CALL PUSHINTEGER4(0)
-      ELSE
-        CALL PUSHREAL8(min1)
-        min1 = dssmax
-        CALL PUSHINTEGER4(1)
-      END IF
-      CALL PUSHREAL8(dis2)
 !print *,'radI',radIAdj(ii,0,0),radI(icell+ii,jcell,kcell),icell,jcell,kcell,radIAdj(ii+1,0,0),radI(icell+ii+1,jcell,kcell)
-      dis2 = fis2*rrad*min1
-!dis4 = dim(fis4*rrad, dis2)
-      IF (fis4*rrad - dis2 .GT. 0.0) THEN
-        CALL PUSHREAL8(dis4)
-        dis4 = fis4*rrad - dis2
-        CALL PUSHINTEGER4(1)
-      ELSE
+!lumped Dissipation for preconditioner
+      IF (lumpeddiss) THEN
+        IF (dss1 .LT. dss2) THEN
+          y1 = dss2
+          CALL PUSHINTEGER4(1)
+        ELSE
+          y1 = dss1
+          CALL PUSHINTEGER4(0)
+        END IF
+        IF (dssmax .GT. y1) THEN
+          CALL PUSHREAL8(min1)
+          min1 = y1
+          CALL PUSHINTEGER4(0)
+        ELSE
+          CALL PUSHREAL8(min1)
+          min1 = dssmax
+          CALL PUSHINTEGER4(1)
+        END IF
+        CALL PUSHREAL8(dis2)
+        dis2 = fis2*rrad*min1 + sigma*fis4*rrad
         CALL PUSHREAL8(dis4)
         dis4 = 0.0
         CALL PUSHINTEGER4(0)
+      ELSE
+        IF (dss1 .LT. dss2) THEN
+          y2 = dss2
+          CALL PUSHINTEGER4(1)
+        ELSE
+          y2 = dss1
+          CALL PUSHINTEGER4(0)
+        END IF
+        IF (dssmax .GT. y2) THEN
+          CALL PUSHREAL8(min2)
+          min2 = y2
+          CALL PUSHINTEGER4(0)
+        ELSE
+          CALL PUSHREAL8(min2)
+          min2 = dssmax
+          CALL PUSHINTEGER4(1)
+        END IF
+        CALL PUSHREAL8(dis2)
+        dis2 = fis2*rrad*min2
+!dis4 = dim(fis4*rrad, dis2)
+        IF (fis4*rrad - dis2 .GT. 0.0) THEN
+          CALL PUSHREAL8(dis4)
+          dis4 = fis4*rrad - dis2
+          CALL PUSHINTEGER4(2)
+        ELSE
+          CALL PUSHREAL8(dis4)
+          dis4 = 0.0
+          CALL PUSHINTEGER4(1)
+        END IF
       END IF
       CALL PUSHREAL8(ddw)
 ! Compute and scatter the dissipative flux.
@@ -473,33 +500,58 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       CALL PUSHREAL8(rrad)
 !rrad = ppor*(radJ(i,j,k) + radJ(i,j+1,k))
       rrad = ppor*(radjadj(0, jj, 0, sps)+radjadj(0, jj+1, 0, sps))
-      IF (dss1 .LT. dss2) THEN
-        y2 = dss2
-        CALL PUSHINTEGER4(1)
-      ELSE
-        y2 = dss1
-        CALL PUSHINTEGER4(0)
-      END IF
-      IF (dssmax .GT. y2) THEN
-        CALL PUSHREAL8(min2)
-        min2 = y2
-        CALL PUSHINTEGER4(0)
-      ELSE
-        CALL PUSHREAL8(min2)
-        min2 = dssmax
-        CALL PUSHINTEGER4(1)
-      END IF
-      CALL PUSHREAL8(dis2)
-      dis2 = fis2*rrad*min2
-!dis4 = dim(fis4*rrad, dis2)
-      IF (fis4*rrad - dis2 .GT. 0.0) THEN
-        CALL PUSHREAL8(dis4)
-        dis4 = fis4*rrad - dis2
-        CALL PUSHINTEGER4(1)
-      ELSE
+!lumped Dissipation for preconditioner
+      IF (lumpeddiss) THEN
+        IF (dss1 .LT. dss2) THEN
+          y3 = dss2
+          CALL PUSHINTEGER4(1)
+        ELSE
+          y3 = dss1
+          CALL PUSHINTEGER4(0)
+        END IF
+        IF (dssmax .GT. y3) THEN
+          CALL PUSHREAL8(min3)
+          min3 = y3
+          CALL PUSHINTEGER4(0)
+        ELSE
+          CALL PUSHREAL8(min3)
+          min3 = dssmax
+          CALL PUSHINTEGER4(1)
+        END IF
+        CALL PUSHREAL8(dis2)
+        dis2 = fis2*rrad*min3 + sigma*fis4*rrad
         CALL PUSHREAL8(dis4)
         dis4 = 0.0
         CALL PUSHINTEGER4(0)
+      ELSE
+        IF (dss1 .LT. dss2) THEN
+          y4 = dss2
+          CALL PUSHINTEGER4(1)
+        ELSE
+          y4 = dss1
+          CALL PUSHINTEGER4(0)
+        END IF
+        IF (dssmax .GT. y4) THEN
+          CALL PUSHREAL8(min4)
+          min4 = y4
+          CALL PUSHINTEGER4(0)
+        ELSE
+          CALL PUSHREAL8(min4)
+          min4 = dssmax
+          CALL PUSHINTEGER4(1)
+        END IF
+        CALL PUSHREAL8(dis2)
+        dis2 = fis2*rrad*min4
+!dis4 = dim(fis4*rrad, dis2)
+        IF (fis4*rrad - dis2 .GT. 0.0) THEN
+          CALL PUSHREAL8(dis4)
+          dis4 = fis4*rrad - dis2
+          CALL PUSHINTEGER4(2)
+        ELSE
+          CALL PUSHREAL8(dis4)
+          dis4 = 0.0
+          CALL PUSHINTEGER4(1)
+        END IF
       END IF
       CALL PUSHREAL8(ddw)
 ! Compute and scatter the dissipative flux.
@@ -585,33 +637,58 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       CALL PUSHREAL8(rrad)
 !rrad = ppor*(radK(i,j,k) + radK(i,j,k+1))
       rrad = ppor*(radkadj(0, 0, kk, sps)+radkadj(0, 0, kk+1, sps))
-      IF (dss1 .LT. dss2) THEN
-        y3 = dss2
-        CALL PUSHINTEGER4(1)
-      ELSE
-        y3 = dss1
-        CALL PUSHINTEGER4(0)
-      END IF
-      IF (dssmax .GT. y3) THEN
-        CALL PUSHREAL8(min3)
-        min3 = y3
-        CALL PUSHINTEGER4(0)
-      ELSE
-        CALL PUSHREAL8(min3)
-        min3 = dssmax
-        CALL PUSHINTEGER4(1)
-      END IF
-      CALL PUSHREAL8(dis2)
-      dis2 = fis2*rrad*min3
-!dis4 = dim(fis4*rrad, dis2)
-      IF (fis4*rrad - dis2 .GT. 0.0) THEN
-        CALL PUSHREAL8(dis4)
-        dis4 = fis4*rrad - dis2
-        CALL PUSHINTEGER4(1)
-      ELSE
+!lumped Dissipation for preconditioner
+      IF (lumpeddiss) THEN
+        IF (dss1 .LT. dss2) THEN
+          y5 = dss2
+          CALL PUSHINTEGER4(1)
+        ELSE
+          y5 = dss1
+          CALL PUSHINTEGER4(0)
+        END IF
+        IF (dssmax .GT. y5) THEN
+          CALL PUSHREAL8(min5)
+          min5 = y5
+          CALL PUSHINTEGER4(0)
+        ELSE
+          CALL PUSHREAL8(min5)
+          min5 = dssmax
+          CALL PUSHINTEGER4(1)
+        END IF
+        CALL PUSHREAL8(dis2)
+        dis2 = fis2*rrad*min5 + sigma*fis4*rrad
         CALL PUSHREAL8(dis4)
         dis4 = 0.0
         CALL PUSHINTEGER4(0)
+      ELSE
+        IF (dss1 .LT. dss2) THEN
+          y6 = dss2
+          CALL PUSHINTEGER4(1)
+        ELSE
+          y6 = dss1
+          CALL PUSHINTEGER4(0)
+        END IF
+        IF (dssmax .GT. y6) THEN
+          CALL PUSHREAL8(min6)
+          min6 = y6
+          CALL PUSHINTEGER4(0)
+        ELSE
+          CALL PUSHREAL8(min6)
+          min6 = dssmax
+          CALL PUSHINTEGER4(1)
+        END IF
+        CALL PUSHREAL8(dis2)
+        dis2 = fis2*rrad*min6
+!dis4 = dim(fis4*rrad, dis2)
+        IF (fis4*rrad - dis2 .GT. 0.0) THEN
+          CALL PUSHREAL8(dis4)
+          dis4 = fis4*rrad - dis2
+          CALL PUSHINTEGER4(2)
+        ELSE
+          CALL PUSHREAL8(dis4)
+          dis4 = 0.0
+          CALL PUSHINTEGER4(1)
+        END IF
       END IF
       CALL PUSHREAL8(ddw)
 ! Compute and scatter the dissipative flux.
@@ -717,34 +794,58 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       wadjb(0, 0, kk+1, irho, sps) = wadjb(0, 0, kk+1, irho, sps) + ddwb
       wadjb(0, 0, kk, irho, sps) = wadjb(0, 0, kk, irho, sps) - ddwb
       CALL POPINTEGER4(branch)
-      IF (branch .LT. 1) THEN
-        CALL POPREAL8(dis4)
-        rradb = 0.0
+      IF (branch .LT. 2) THEN
+        IF (branch .LT. 1) THEN
+          CALL POPREAL8(dis4)
+          CALL POPREAL8(dis2)
+          rradb = (sigma*fis4+fis2*min5)*dis2b
+          min5b = fis2*rrad*dis2b
+          CALL POPINTEGER4(branch)
+          IF (branch .LT. 1) THEN
+            CALL POPREAL8(min5)
+            y5b = min5b
+          ELSE
+            CALL POPREAL8(min5)
+            y5b = 0.0
+          END IF
+          CALL POPINTEGER4(branch)
+          IF (branch .LT. 1) THEN
+            dss1b = y5b
+            dss2b = 0.0
+          ELSE
+            dss2b = y5b
+            dss1b = 0.0
+          END IF
+          GOTO 100
+        ELSE
+          CALL POPREAL8(dis4)
+          rradb = 0.0
+        END IF
       ELSE
         CALL POPREAL8(dis4)
         rradb = fis4*dis4b
         dis2b = dis2b - dis4b
       END IF
       CALL POPREAL8(dis2)
-      rradb = rradb + fis2*min3*dis2b
-      min3b = fis2*rrad*dis2b
+      rradb = rradb + fis2*min6*dis2b
+      min6b = fis2*rrad*dis2b
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
-        CALL POPREAL8(min3)
-        y3b = min3b
+        CALL POPREAL8(min6)
+        y6b = min6b
       ELSE
-        CALL POPREAL8(min3)
-        y3b = 0.0
+        CALL POPREAL8(min6)
+        y6b = 0.0
       END IF
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
-        dss1b = y3b
+        dss1b = y6b
         dss2b = 0.0
       ELSE
-        dss2b = y3b
+        dss2b = y6b
         dss1b = 0.0
       END IF
-      CALL POPREAL8(rrad)
+ 100  CALL POPREAL8(rrad)
       radkadjb(0, 0, kk, sps) = radkadjb(0, 0, kk, sps) + ppor*rradb
       radkadjb(0, 0, kk+1, sps) = radkadjb(0, 0, kk+1, sps) + ppor*rradb
       CALL POPINTEGER4(branch)
@@ -846,34 +947,58 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       wadjb(0, jj+1, 0, irho, sps) = wadjb(0, jj+1, 0, irho, sps) + ddwb
       wadjb(0, jj, 0, irho, sps) = wadjb(0, jj, 0, irho, sps) - ddwb
       CALL POPINTEGER4(branch)
-      IF (branch .LT. 1) THEN
-        CALL POPREAL8(dis4)
-        rradb = 0.0
+      IF (branch .LT. 2) THEN
+        IF (branch .LT. 1) THEN
+          CALL POPREAL8(dis4)
+          CALL POPREAL8(dis2)
+          rradb = (sigma*fis4+fis2*min3)*dis2b
+          min3b = fis2*rrad*dis2b
+          CALL POPINTEGER4(branch)
+          IF (branch .LT. 1) THEN
+            CALL POPREAL8(min3)
+            y3b = min3b
+          ELSE
+            CALL POPREAL8(min3)
+            y3b = 0.0
+          END IF
+          CALL POPINTEGER4(branch)
+          IF (branch .LT. 1) THEN
+            dss1b = y3b
+            dss2b = 0.0
+          ELSE
+            dss2b = y3b
+            dss1b = 0.0
+          END IF
+          GOTO 110
+        ELSE
+          CALL POPREAL8(dis4)
+          rradb = 0.0
+        END IF
       ELSE
         CALL POPREAL8(dis4)
         rradb = fis4*dis4b
         dis2b = dis2b - dis4b
       END IF
       CALL POPREAL8(dis2)
-      rradb = rradb + fis2*min2*dis2b
-      min2b = fis2*rrad*dis2b
+      rradb = rradb + fis2*min4*dis2b
+      min4b = fis2*rrad*dis2b
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
-        CALL POPREAL8(min2)
-        y2b = min2b
+        CALL POPREAL8(min4)
+        y4b = min4b
       ELSE
-        CALL POPREAL8(min2)
-        y2b = 0.0
+        CALL POPREAL8(min4)
+        y4b = 0.0
       END IF
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
-        dss1b = y2b
+        dss1b = y4b
         dss2b = 0.0
       ELSE
-        dss2b = y2b
+        dss2b = y4b
         dss1b = 0.0
       END IF
-      CALL POPREAL8(rrad)
+ 110  CALL POPREAL8(rrad)
       radjadjb(0, jj, 0, sps) = radjadjb(0, jj, 0, sps) + ppor*rradb
       radjadjb(0, jj+1, 0, sps) = radjadjb(0, jj+1, 0, sps) + ppor*rradb
       CALL POPINTEGER4(branch)
@@ -975,34 +1100,58 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       wadjb(ii+1, 0, 0, irho, sps) = wadjb(ii+1, 0, 0, irho, sps) + ddwb
       wadjb(ii, 0, 0, irho, sps) = wadjb(ii, 0, 0, irho, sps) - ddwb
       CALL POPINTEGER4(branch)
-      IF (branch .LT. 1) THEN
-        CALL POPREAL8(dis4)
-        rradb = 0.0
+      IF (branch .LT. 2) THEN
+        IF (branch .LT. 1) THEN
+          CALL POPREAL8(dis4)
+          CALL POPREAL8(dis2)
+          rradb = (sigma*fis4+fis2*min1)*dis2b
+          min1b = fis2*rrad*dis2b
+          CALL POPINTEGER4(branch)
+          IF (branch .LT. 1) THEN
+            CALL POPREAL8(min1)
+            y1b = min1b
+          ELSE
+            CALL POPREAL8(min1)
+            y1b = 0.0
+          END IF
+          CALL POPINTEGER4(branch)
+          IF (branch .LT. 1) THEN
+            dss1b = y1b
+            dss2b = 0.0
+          ELSE
+            dss2b = y1b
+            dss1b = 0.0
+          END IF
+          GOTO 120
+        ELSE
+          CALL POPREAL8(dis4)
+          rradb = 0.0
+        END IF
       ELSE
         CALL POPREAL8(dis4)
         rradb = fis4*dis4b
         dis2b = dis2b - dis4b
       END IF
       CALL POPREAL8(dis2)
-      rradb = rradb + fis2*min1*dis2b
-      min1b = fis2*rrad*dis2b
+      rradb = rradb + fis2*min2*dis2b
+      min2b = fis2*rrad*dis2b
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
-        CALL POPREAL8(min1)
-        y1b = min1b
+        CALL POPREAL8(min2)
+        y2b = min2b
       ELSE
-        CALL POPREAL8(min1)
-        y1b = 0.0
+        CALL POPREAL8(min2)
+        y2b = 0.0
       END IF
       CALL POPINTEGER4(branch)
       IF (branch .LT. 1) THEN
-        dss1b = y1b
+        dss1b = y2b
         dss2b = 0.0
       ELSE
-        dss2b = y1b
+        dss2b = y2b
         dss1b = 0.0
       END IF
-      CALL POPREAL8(rrad)
+ 120  CALL POPREAL8(rrad)
       radiadjb(ii, 0, 0, sps) = radiadjb(ii, 0, 0, sps) + ppor*rradb
       radiadjb(ii+1, 0, 0, sps) = radiadjb(ii+1, 0, 0, sps) + ppor*rradb
       CALL POPINTEGER4(branch)
@@ -1077,4 +1226,5 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
       END DO
     END IF
   END IF
+!  sigmab = 0.0
 END SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B
