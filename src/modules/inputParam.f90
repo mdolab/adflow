@@ -953,7 +953,7 @@
        !                contexts.
        ! ApproxPC     : Whether or not to use the approximate jacobian 
        !                preconditioner
-       logical :: solveADjoint, setMonitor, ApproxPC
+       logical :: solveADjoint, setMonitor, ApproxPC,lumpedDiss
 
        ! ADjointSolverType: Type of linear solver for the ADjoint
        ! PreCondType      : Type of Preconditioner to use
