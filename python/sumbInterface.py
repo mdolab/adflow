@@ -508,8 +508,15 @@ class SUmbMesh(object):
         """
         Get the surface coordinates for the mesh    
         """
-         
-        return sumb.mddata.mdglobalsurfxx/self.metricConversion
+        if self.sol_type == 'Steady' or self.sol_type == 'steady':
+            return sumb.mddata.mdglobalsurfxx/self.metricConversion
+        elif self.sol_type == 'Time Spectral' or self.sol_type == 'time spectral':
+            return sumb.mddata.mdglobalsurfxx[:,:,0]/self.metricConversion
+        else:
+            print 'invalid solutions type for surface coords...Exiting'
+            sys.exit(0)
+        #endif
+        return
 
     def warpMesh(self):
         '''
@@ -899,6 +906,7 @@ class SUmbInterface(object):
         sumb.writeintromessage()
 
         self.nw =sumb.flowvarrefstate.nw
+        print 'setting from python'
         sumb.killsignals.frompython=True
         #sumb.killsignals.routinefailed=False
         return
@@ -928,6 +936,8 @@ class SUmbInterface(object):
         else:
             self.OutputDir = kwargs['solver_options']['OutputDir']
         #endtry
+
+        self.Mesh.sol_type = sol_type
 
         startfile = self.OutputDir+self.probName+grid_file+'autogen.input'
         
@@ -1000,7 +1010,15 @@ class SUmbInterface(object):
         #update the flow vars
         sumb.updateflow()
         return
-        
+    def resetFlow(self):
+        '''
+        Reset the flow for the complex derivative calculation
+        '''
+
+        sumb.setuniformflow()
+
+        return
+    
     def generateInputFile(self,aero_problem,sol_type,grid_file,startfile,file_type='cgns',eqn_type='Euler',*args,**kwargs):
         ''' Code to generate an SUmb Input File on the fly'''
         if (self.myid==0): print 'generating input file'
@@ -1142,12 +1160,13 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Free Stream Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        try: kwargs['FamilyRot']
+        try: kwargs['solver_options']['FamilyRot']
         except KeyError:
             Rotating = False
         else:
             Rotating = True
         #endif
+        #print 'Rotating',Rotating,kwargs['solver_options']['FamilyRot']
         if Rotating or sol_type=='Time Spectral':
             autofile.write(  "                             Mach: %12.12e\n"%(0))
             autofile.write(  "            Mach for coefficients: %12.12e\n"%(aero_problem._flows.mach))
@@ -1165,7 +1184,7 @@ class SUmbInterface(object):
         autofile.write(  "   Free stream velocity direction: %12.12e %12.12e %12.12e\n"%(velDir[0],velDir[1],velDir[2]))
         autofile.write(  "                   Lift direction: %12.12e %12.12e %12.12e\n"%(liftDir[0],liftDir[1],liftDir[2]))
         autofile.write(  "     # Default is normal to free stream without y-component\n")
-        autofile.write(  "   Free stream temperature (in K): 288.15\n")
+        autofile.write(  "   Free stream temperature (in K): %12.12e\n"%(kwargs['solver_options']['Reference Temp.']))
         autofile.write(  " Free stream eddy viscosity ratio: 0.01\n")
         autofile.write(  "  Free stream turbulent intensity: 0.001\n")
         autofile.write(  "\n")
@@ -1173,9 +1192,9 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Reference State\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "            Reference pressure (in Pa): 101325.0\n")
+        autofile.write(  "            Reference pressure (in Pa): %12.12e\n"%(kwargs['solver_options']['Reference Pressure']))
         autofile.write(  "         Reference density (in kg/m^3): 1.25\n")
-        autofile.write(  "          Reference temperature (in K): 273.15\n")
+        autofile.write(  "          Reference temperature (in K): %12.12e\n"%(kwargs['solver_options']['Reference Temp.']))
         autofile.write(  " Conversion factor grid units to meter: %6.4f\n"%(kwargs['solver_options']['MetricConversion']))
         self.Mesh.metricConversion = kwargs['solver_options']['MetricConversion']
         autofile.write( "\n")
@@ -1340,7 +1359,7 @@ class SUmbInterface(object):
         autofile.write(  "                      #                    : alternate stages\n")
         autofile.write(  "     Residual averaging smoothing parameter: 1.5\n")
 
-        autofile.write(  "                 Number of multigrid cycles: 1\n")
+        autofile.write(  "                 Number of multigrid cycles: 200\n")
         autofile.write(  "   Number of single grid startup iterations: 0\n")
         autofile.write(  "                                 Save every: 0\n")
         autofile.write(  "                         Save surface every: 0\n")
@@ -1698,7 +1717,7 @@ class SUmbInterface(object):
         #reset python failute check to false
         sumb.killsignals.routinefailed=False
 
-        if sol_type=='steady' or sol_type=='time spectral':
+        if sol_type=='Steady' or sol_type=='steady' or sol_type=='Time Spectral' or sol_type=='time spectral':
             if(self.myid ==0):print 'steady',sumb.inputio.storeconvinneriter,True,False,sumb.inputio.storeconvinneriter==True,sumb.inputio.storeconvinneriter==False
             #if(self.myid ==0):sumb.inputio.storeconvinneriter=True
             #if(self.myid ==0):print 'steady',sumb.inputio.storeconvinneriter,True,False,sumb.inputio.storeconvinneriter==True,sumb.inputio.storeconvinneriter==False
@@ -1819,7 +1838,7 @@ class SUmbInterface(object):
         self.routineFailed = self.sumb_comm_world.allreduce(sumb.killsignals.routinefailed,mpi.MIN)
         #print 'routinefailed',self.routineFailed,self.myid
         if (abs(self.routineFailed)==True):
-            #print 'raising error'
+            if self.myid ==0:print 'Error raise in updateGeometry'
             raise ValueError
             #print 'error raised'
             #return
@@ -1827,6 +1846,20 @@ class SUmbInterface(object):
     
         if self.myid ==0: print 'calling solver'
         sumb.solver()
+        #Check to see whether we have a valid solution
+        print 'killsignal',sumb.killsignals.routinefailed,True,self.myid
+        #self.routineFailed = self.sumb_comm_world.allreduce(sumb.killsignals.routinefailed,mpi.MIN)
+        #in this case routineFailed will be triggered on all processors
+        self.routineFailed = self.sumb_comm_world.allreduce(abs(sumb.killsignals.routinefailed),mpi.SUM)/mpi.COMM_WORLD.size
+        #therefore sum up and devide by nProc
+        print 'routinefailed',self.routineFailed,self.myid
+        if (abs(self.routineFailed)==True):
+            #print 'raising error'
+            if self.myid ==0: print 'Error Raised in solver'
+            raise ValueError
+            #print 'error raised'
+            #return
+        #endif
         if self.myid ==0:print 'solver called'
 
         return
@@ -2311,10 +2344,7 @@ class SUmbInterface(object):
         Initialize the Ajoint problem for this test case
         in SUMB
         '''
-	#Check to see if initialization has already been performed
-        if(self.adjointInitialized):
-            return
-        
+	        
         #Set the mesh level and timespectral instance for this
         #computation
         self.level = 1
@@ -2322,6 +2352,10 @@ class SUmbInterface(object):
         
         sumb.iteration.currentlevel=1
         sumb.iteration.groundlevel=1
+
+        #Check to see if initialization has already been performed
+        if(self.adjointInitialized):
+            return
         
         #Run the preprocessing routine. Sets the node numbering and
         #allocates memory.
@@ -2341,7 +2375,7 @@ class SUmbInterface(object):
         sumb.createpetscvars()
 
         #mark the ADjoint as initialized
-        self.adjointInitialized=True
+        self.adjointInitialized = True
         if(self.myid==0):
             print 'ADjoint Initialized Succesfully...'
         #endif
@@ -2355,9 +2389,10 @@ class SUmbInterface(object):
         Setup the ADjoint dRdw matrix and create the PETSc
         Solution KSP object
         '''
-        sumb.setupadjointmatrix(self.level)
+        #sumb.setupadjointmatrix(self.level)
+        sumb.setupadjointmatrixtranspose(self.level)
 
-        sumb.createpetscksp()
+        sumb.createpetscksp(self.level)
 
         return
 
@@ -2403,7 +2438,8 @@ class SUmbInterface(object):
         '''
         Solve the ADjoint system using PETSc
         '''
-        sumb.solveadjointpetsc()
+        #sumb.solveadjointpetsc()
+        sumb.solveadjointtransposepetsc()
 
         return
 

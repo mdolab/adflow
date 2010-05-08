@@ -790,7 +790,8 @@ class SUMB(AeroSolver):
 		destroy the PESTcKSP context
 		'''
 		self.meshDerivatives =[]
-		
+		self.volumeMatrixInitialized = False
+		self.flowMatrixInitialized=False	
 		self.interface.releaseAdjointMemeory()
 		
 		return
