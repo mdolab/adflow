@@ -86,10 +86,12 @@ CC_PRECISION_FLAGS   = $(CC_INTEGER_PRECISION_FLAG) \
 
 COMMAND_SEARCH_PATH_MODULES = -I
 
-FF90_GEN_FLAGS =  -DUSE_MPI_INCLUDE_FILE -ffree-line-length-huge -fno-second-underscore
+FF90_GEN_FLAGS =  -DUSE_MPI_INCLUDE_FILE -ffree-line-length-huge -fno-second-underscore  -DUSE_PETSC_3
+#-fbounds-check -ftrace=full
+
 CC_GEN_FLAGS   = 
 
-FF90_OPTFLAGS   = -O2
+FF90_OPTFLAGS   = -O2 -r8
 CC_OPTFLAGS     = -O
 
 #FF90_DEBUGFLAGS = -g -DDEBUG_MODE -fbounds-check
