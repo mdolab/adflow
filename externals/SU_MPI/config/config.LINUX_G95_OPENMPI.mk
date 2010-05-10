@@ -46,7 +46,7 @@ COMMAND_SEARCH_PATH_MODULES = -I
 FF90_GEN_FLAGS = -DUSE_MPI_INCLUDE_FILE
 CC_GEN_FLAGS   = -DFORTRAN_DOUBLE_UNDERSCORE
 
-FF90_OPTFLAGS   = -O2
+FF90_OPTFLAGS   = -O2 -r8
 CC_OPTFLAGS     = -O3 -fexpensive-optimizations -frerun-cse-after-loop \
 		  -fthread-jumps -funroll-loops -finline-functions
 
