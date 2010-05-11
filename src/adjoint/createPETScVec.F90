@@ -998,7 +998,7 @@
         call terminate("computeADjointGradientSurface", "Error in VecCreate dIdxs")
       
       ! Set the local size and let PETSc determine its global size
-      print *,'mdnsurfnodescompact',mdNSurfNodesCompact
+      !print *,'mdnsurfnodescompact',mdNSurfNodesCompact
       call VecSetSizes(dIdxsDV,PETSC_DECIDE,3*mdNSurfNodesCompact,PETScIerr)
 !
 

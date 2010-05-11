@@ -49,7 +49,7 @@
       use ADjointPETSc
       use ADjointVars
       !use warpingPETSc
-      use WarpingPETSc, only: dXvdXsDisp,drdxsDisp,dIdxsDisp,didxs2,djdxs2
+      use WarpingPETSc, only: dXvdXsDisp,drdxsDisp,didxs2,djdxs2
       use mdData, only: mdNSurfNodesCompact
       use blockpointers !globalnode
       use inputTimeSpectral !nTimeIntervalsSpectral

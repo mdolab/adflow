@@ -95,21 +95,21 @@
       !Reference values of the dissipation coeff for the preconditioner
       real(kind=realType) :: vis2_ref, vis4_ref
 
-      integer :: unitdRdwpre = 8,ierror,nnn!,idxstate, idxres,nnn
-      character(len = 20)::outfile,testfile
-      write(testfile,100) myid!12
-100   format (i5)  
-      testfile=adjustl(testfile)
-      write(outfile,101) trim(testfile)!testfile
-101   format("AD1dRdWprefile2",a,".out")
-      unitdrdwpre = 8+myID
-
-      
-      open (UNIT=unitdRdwpre,File=outfile,status='replace',action='write',iostat=ierror)
-      if(ierror /= 0)                        &
-           call terminate("verifydRdwpreFile", &
-           "Something wrong when &
-           &calling open")
+!!$      integer :: unitdRdwpre = 8,ierror,nnn!,idxstate, idxres,nnn
+!!$      character(len = 20)::outfile,testfile
+!!$      write(testfile,100) myid!12
+!!$100   format (i5)  
+!!$      testfile=adjustl(testfile)
+!!$      write(outfile,101) trim(testfile)!testfile
+!!$101   format("AD1dRdWprefile2",a,".out")
+!!$      unitdrdwpre = 8+myID
+!!$
+!!$      
+!!$      open (UNIT=unitdRdwpre,File=outfile,status='replace',action='write',iostat=ierror)
+!!$      if(ierror /= 0)                        &
+!!$           call terminate("verifydRdwpreFile", &
+!!$           "Something wrong when &
+!!$           &calling open")
 !
 !     ******************************************************************
 !     *                                                                *
@@ -852,47 +852,47 @@
 !!$        !pause
 !!$      !endif
 !      !now extract and write to a file
-       sps = 1
-       do nn = 1,nDom
-          call setPointersAdj(nn,1,sps)
-          do kCell = 2, kl
-             do jCell = 2, jl
-                do iCell = 2, il
-                   do m = 1, nw
-                     idxstate   = globalCell(iCell,jCell,kCell)*nw+m 
-                     do nnn = 1,ndom
-                        call setPointersAdj(nnn,1,sps)
-                        DO I=2,Il
-                           DO J=2,Jl
-                              DO K=2,Kl
-                                 do n = 1,nw
-                                    idxres = globalCell(i,j,k)*nw+n
-                                    call MatGetValues(drdwpret,1,idxstate-1,1,idxres-1,value,PETScIerr)
-                                    !if(value.ne.0)then
-                                    if(abs(value)>1e-10)then
-                                       !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
-!12                                     format(1x,'Face',6I2,'edge',12I2)
-                                       write(unitdrdwpre,13) idxstate,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value
-                                       !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
-13                                     format(1x,'drdwpre',12I8,f18.10)
-                                    endif
-                                 enddo
-                              END DO
-                           END DO
-                        END DO
-                        call setPointersAdj(nn,1,sps)
-                     end do
-                  end do
-               enddo
-            end do
-         end do
-      enddo
+!!$       sps = 1
+!!$       do nn = 1,nDom
+!!$          call setPointersAdj(nn,1,sps)
+!!$          do kCell = 2, kl
+!!$             do jCell = 2, jl
+!!$                do iCell = 2, il
+!!$                   do m = 1, nw
+!!$                     idxstate   = globalCell(iCell,jCell,kCell)*nw+m 
+!!$                     do nnn = 1,ndom
+!!$                        call setPointersAdj(nnn,1,sps)
+!!$                        DO I=2,Il
+!!$                           DO J=2,Jl
+!!$                              DO K=2,Kl
+!!$                                 do n = 1,nw
+!!$                                    idxres = globalCell(i,j,k)*nw+n
+!!$                                    call MatGetValues(drdwpret,1,idxstate-1,1,idxres-1,value,PETScIerr)
+!!$                                    !if(value.ne.0)then
+!!$                                    if(abs(value)>1e-10)then
+!!$                                       !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
+!!$!12                                     format(1x,'Face',6I2,'edge',12I2)
+!!$                                       write(unitdrdwpre,13) idxstate,idxres,m,icell,jcell,kcell,nn,n,k,j,i,nnn,value
+!!$                                       !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
+!!$13                                     format(1x,'drdwpre',12I8,f18.10)
+!!$                                    endif
+!!$                                 enddo
+!!$                              END DO
+!!$                           END DO
+!!$                        END DO
+!!$                        call setPointersAdj(nn,1,sps)
+!!$                     end do
+!!$                  end do
+!!$               enddo
+!!$            end do
+!!$         end do
+!!$      enddo
 
 !!$   endif
 !Print *,'barriercall',myID
 call mpi_barrier(SUmb_comm_world, ierr)
 
- close(unitdrdwpre)
+! close(unitdrdwpre)
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()

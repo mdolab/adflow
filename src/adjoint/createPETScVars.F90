@@ -72,6 +72,18 @@
       if( PETScRank==0 ) &
         print "(a)", "# ... vectors created;"
 
+      ! Create the global krylov object,
+   
+      call createPETScKsp
+
+      ! Flush the output buffer and synchronize the processors.
+
+      call f77flush()
+      call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
+
+      if( PETScRank==0 ) &
+        print "(a)", "# ... ksp created;"
+
 
       ! Get new time and compute the elapsed time.
 
