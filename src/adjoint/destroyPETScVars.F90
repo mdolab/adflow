@@ -95,6 +95,11 @@
         call terminate("destroyPETScVars", &
                        "Could not destroy vector dIdx")
 
+      call VecDestroy(dIdxsDV, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("destroyPETScVars", &
+                       "Could not destroy vector dIdxsDV")
       ! MatDestroy - Frees space taken by a matrix.
       !
       ! Synopsis

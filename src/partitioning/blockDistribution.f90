@@ -143,7 +143,7 @@
        ! Loop to determine a good load balance.
 
        distributionLoop: do iter=1,iterMax
-
+          
          ! Determine the computational blocks from the splitting info of
          ! the original blocks.
          
@@ -205,7 +205,7 @@
          print "(a)", "#                    Warning"
          print "(a)", "# Communication costs neglected to obtain&
                        & a valid partitioning."
-         print "(a)", "#"
+         print "(a)", "#print 'pySciPlot not available'#"
        endif
 
        ! If the load imbalance tolerance was not met, print a warning
@@ -280,7 +280,7 @@
            ! Check whether this number is smaller or equal to the
            ! maximum allowed number. If not, set splittingIsOkay to
            ! .false. and exit the loop.
-
+           !print *,'splitting is ok',ncells,nCellsPerProcMax,i
            if(nCells > nCellsPerProcMax) then
              splittingIsOkay = .false.
              exit

@@ -98,39 +98,6 @@
            allocate(functionGradSurfaceDV(nCostFunction,3*mdNSurfNodesCompact))
 !!$      if(.not. allocated(functionGradSurfaceDV2))&
 !!$           allocate(functionGradSurfaceDV2(nCostFunction,3*mdNSurfNodesCompact))
-      !create the PETSc Vector aswell
-      ! Create the vector. Depending on either this is a sequential or 
-      ! parallel run,  PETSc automatically generates the apropriate
-      ! vector type over all processes in PETSC_COMM_WORLD.
-
-      call VecCreate(PETSC_COMM_WORLD, dIdxsDV, PETScIerr)
-!!$      call VecCreate(PETSC_COMM_WORLD, dIdxs2, PETScIerr)
-!!$      call VecCreate(PETSC_COMM_WORLD, dJdxs2, PETScIerr)
-
-      if( PETScIerr/=0 ) &
-        call terminate("computeADjointGradientSurface", "Error in VecCreate dIdxs")
-      
-      ! Set the local size and let PETSc determine its global size
-
-      call VecSetSizes(dIdxsDV,PETSC_DECIDE,3*mdNSurfNodesCompact,PETScIerr)
-!!$      call VecSetSizes(dIdxs2,PETSC_DECIDE,3*mdNSurfNodesCompact,PETScIerr)
-!!$      call VecSetSizes(dJdxs2,PETSC_DECIDE,3*mdNSurfNodesCompact,PETScIerr)
-
-      if( PETScIerr/=0 ) then
-        write(errorMessage,99) &
-              "Error in VecSetSizes dIdxs for global size", mdNSurfNodesCompact
-        call terminate("createPETScVec", errorMessage)
-      endif
-
-      ! Set the vector from options.
-
-      call VecSetFromOptions(dIdxsDV, PETScIerr)
-!!$      call VecSetFromOptions(dIdxs2, PETScIerr)
-!!$      call VecSetFromOptions(dJdxs2, PETScIerr)
-
-      if( PETScIerr/=0 ) &
-        call terminate("createPETScVec", &
-                       "Error in VecSetFromOptions dIdxsDV")
 
       ! Get the initial time.
 
@@ -153,21 +120,13 @@
       if( PETScIerr/=0 ) &
         call terminate("computeADjointGradientSurface", &
                        "Error in VecAYPX X")
-      !Temporary set to check vector ordering...
-!!$      call VecSet(dIdx,PETScZero,PETScIerr)
-!!$      call VecSetValue(dIdx, 0, 1.0 ,INSERT_VALUES, PETScIerr)
-!!$      call VecAssemblyBegin(dIdx,PETScIerr)
-!!$      call VecAssemblyEnd  (dIdx,PETScIerr)
-!!$      call VecView(dIdx,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
 
       !now multiply by the volume surface derivative
       call MatMultTranspose(dXvdXsDV,dIdx,dIdxsDV,PETScIerr)
       if( PETScIerr/=0 ) &
            call terminate("computeADjointGradientSurface", &
-           "Error in MatMultTranspose")
-      !!now multiply by the volume surface derivative
-      !call MatMultTranspose(dXvdXs,dJdx,dIdxs,PETScIerr)
-
+           "Error in MatMultTranspose dxvdxsdv")
+     
       ! Get new time and compute the elapsed time.
 
       call cpu_time(time(2))
@@ -183,14 +142,8 @@
         write(*,20) "Computing total sensitivity wrt Surface time (s) =", &
                     timeAdj
 
-!!$      !Alternate solution      
-!!$      !multiply and store in drdxs
-!!$      call MatMatMult(dRdx,dXvdXsDV,MAT_INITIAL_MATRIX,PETSC_DEFAULT_DOUBLE_PRECISION,dRdXsDV, PETScIerr) 
-!!$      
-!!$      call MatMultTranspose(dXvdXsDV,dJdx,dJdxs2,PETScIerr)
-!!$      call MatMultTranspose(dRdxsDV,psi,dIdxs2,PETScIerr)
-!!$      call VecAYPX(dIdxs2,PETScNegOne,dJdxs2,PETScIerr)
-!!$      ! View the solution vector dIdx.
+
+!!$      ! View the solution vector dIdxsDV.
  
      if(  debug ) then
 
@@ -420,13 +373,17 @@
 !!$!**************
 !!$
 !!$
-      if(PetscRank == 0)then
-        
-	 print *,'printing result'
-         do i = 1,3*mdNSurfNodesCompact
-            print *,'costfunction derivative',functionGradSurfacedv(costFunction,i),i!,functionGradSurfacedv2(costfunction,i),i
-         enddo
-      endif
+
+
+!!$      if(PetscRank == 0)then
+!!$        
+!!$	 print *,'printing result'
+!!$         do i = 1,3*mdNSurfNodesCompact
+!!$            print *,'costfunction derivative',functionGradSurfacedv(costFunction,i),i!,functionGradSurfacedv2(costfunction,i),i
+!!$         enddo
+!!$      endif
+
+
 !!$      
 !!$
 !!$      ! Release memory to store the local function gradient values.

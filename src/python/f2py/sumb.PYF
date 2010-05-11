@@ -980,13 +980,14 @@ python module sumb ! in
           use communication
         end subroutine initializepetsc
         
-        subroutine createpetscksp ! in :sumb:../../adjoint/createPETScVars.F90
+        subroutine createpetscksp(level) ! in :sumb:../../adjoint/createPETScVars.F90
           use adjointpetsc
           use adjointvars
           use blockpointers
           use flowvarrefstate         ! nw
           use inputadjoint
           implicit none
+	  integer(kind=inttype) intent(in)::level
         end subroutine createpetscksp
 
         subroutine createpetscvars ! in :sumb:../../adjoint/createPETScVars.F90
@@ -1005,7 +1006,21 @@ python module sumb ! in
             use inputtimespectral
             integer(kind=inttype) intent(in) :: level
         end subroutine setupadjointmatrix
-        
+
+       subroutine setupadjointmatrixtranspose(level) ! in :sumb:../../adjoint/setupADjointMatrix.F90
+         use adjointpetsc
+         use adjointvars
+         use blockpointers
+         use cgnsgrid
+         use communication
+         use inputdiscretization
+         use inputtimespectral
+         use iteration
+         use flowvarrefstate
+         use inputadjoint
+         integer(kind=inttype) intent(in) :: level
+       end subroutine setupadjointmatrixtranspose
+       
         subroutine setupadjointrhs(level,costfunction) ! in :sumb:../../adjoint/setupADjointRHS.F90
             use adjointpetsc
             use adjointvars
@@ -1019,6 +1034,12 @@ python module sumb ! in
             use inputadjoint
             implicit none
         end subroutine solveadjointpetsc
+
+        subroutine solveadjointtransposepetsc ! in :sumb:../../adjoint/solveADjointPETSc.F90
+          use adjointpetsc
+          use inputadjoint
+          implicit none
+        end subroutine solveadjointtransposepetsc
 
         subroutine solvedirectpetsc ! in :sumb:../../adjoint/solveADjointPETSc.F90
           use adjointpetsc
@@ -1224,6 +1245,10 @@ python module sumb ! in
         end subroutine setupadjointtotalstruct
         
         subroutine updateflow
+          use inputtimespectral 
+          use section
+          use inputphysics  !
+          use monitor
           implicit none
         end subroutine updateflow
 ! ############################################################################
@@ -1479,7 +1504,17 @@ python module sumb ! in
             integer(kind=inttype) intent(in) :: liftindex
         end subroutine adjustinflowangleadj
 
+        subroutine setuniformflow
 
+          use blockpointers
+          use communication
+          use flowvarrefstate
+          use inputiteration
+          use inputphysics
+          use inputtimespectral
+          implicit none
+
+        end subroutine setuniformflow
 
 ! ############################################################################
 ! Coupler API Routines

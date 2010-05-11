@@ -119,6 +119,7 @@ void MocCompute2WayPartitionParams(CtrlType *ctrl, GraphType *graph)
   for (i=0; i<nvtxs; i++) {
     ASSERT(where[i] >= 0 && where[i] <= 1);
     me = where[i];
+    /*printf("saxpy: %d",i);*/
     saxpy(ncon, 1.0, nvwgt+i*ncon, 1, npwgts+me*ncon, 1);
 
     for (j=xadj[i]; j<xadj[i+1]; j++) {

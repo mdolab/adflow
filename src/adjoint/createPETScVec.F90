@@ -25,6 +25,7 @@
       use communication   ! myID, nProc 
       use inputTimeSpectral !nTimeIntervalsSpectral
       use flowVarRefState ! 
+      use mdData          ! mdNSurfNodesCompact
       implicit none
 !
 !     Local variables.
@@ -980,9 +981,47 @@
              nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
       endif
 
+! ************************************************
+! dIdxsDV
+! ************************************************
 
+      !create the PETSc Vector aswell
+      ! Create the vector. Depending on either this is a sequential or 
+      ! parallel run,  PETSc automatically generates the apropriate
+      ! vector type over all processes in PETSC_COMM_WORLD.
 
+      call VecCreate(PETSC_COMM_WORLD, dIdxsDV, PETScIerr)
+!!$      call VecCreate(PETSC_COMM_WORLD, dIdxs2, PETScIerr)
+!!$      call VecCreate(PETSC_COMM_WORLD, dJdxs2, PETScIerr)
 
+      if( PETScIerr/=0 ) &
+        call terminate("computeADjointGradientSurface", "Error in VecCreate dIdxs")
+      
+      ! Set the local size and let PETSc determine its global size
+      print *,'mdnsurfnodescompact',mdNSurfNodesCompact
+      call VecSetSizes(dIdxsDV,PETSC_DECIDE,3*mdNSurfNodesCompact,PETScIerr)
+!
+
+      if( PETScIerr/=0 ) then
+        write(errorMessage,99) &
+              "Error in VecSetSizes dIdxs for global size", mdNSurfNodesCompact
+        call terminate("createPETScVec", errorMessage)
+      endif
+
+      ! Set the vector from options.
+
+      call VecSetFromOptions(dIdxsDV, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("createPETScVec", &
+                       "Error in VecSetFromOptions dIdxsDV")
+!!$      
+!!$      call VecGetSize(dIdxsDV, vecRows, PETScIerr)
+!!$
+!!$        if( PETScIerr/=0 ) &
+!!$          call terminate("createPETScVec", "Error in VecGetSize dJdW")
+!!$
+!!$        write(*,20) "# VECTOR: dIdxsDV global size =", vecRows
 !
 !     ******************************************************************
 !

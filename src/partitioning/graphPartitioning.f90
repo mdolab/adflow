@@ -93,7 +93,7 @@
 !
        ! Check whether part is allocated from a previous call. If so,
        ! release the memory.
-!       print *,'allocating part'
+       !print *,'allocating part'
        if( allocated(part) ) then
          deallocate(part, stat=ierr)
          if(ierr /= 0)                       &
@@ -103,12 +103,13 @@
 
        ! Determine the number of edges in the graph and the maximum
        ! number for a vertex in the graph.
-   !    print *,' determining edges'
+       !print *,' determining edges'
        nEdges = 0
        nEdgesMax = 0
        do i=1,nBlocks
          ii        = blocks(i)%n1to1 + ubound(blocks(i)%overComm,1)
          nEdges    = nedges + ii
+         !print *,'edges',nedges,ii,blocks(i)%n1to1,i
          nEdgesMax = max(nedgesMax, ii)
        enddo
 
@@ -139,7 +140,16 @@
        adjwgt  = 0
 
        ! Loop over the number of blocks to build the graph.
- !      print *,'looping blocks'
+       !print *,'looping blocks',myID
+       call mpi_barrier(SUmb_comm_world, ierr)
+       do i =0, nProc-1
+          !print *,'ufmyID',myID,nProc
+          if (myID==i) then
+             print *,'myID',myID,nProc
+          end if
+          call f77flush()
+          call mpi_barrier(SUmb_comm_world, ierr)
+       enddo
        graphVertex: do i=1,nBlocks
 
          ! Store the both vertex weights.
@@ -242,7 +252,7 @@
          enddo EdgesOverset
 
        enddo graphVertex
-     !  print *,'end graphvertex'
+       !if(myid==0) print *,'end graphvertex'
        ! Metis has problems when the total number of cells or faces
        ! used in the weights exceeds 2Gb. Therefore the sum of these
        ! values is determined and an appropriate weight factor is 
@@ -255,7 +265,7 @@
          nCellsTotal = nCellsTotal + vwgt(1,i)
          nFacesTotal = nFacesTotal + vwgt(2,i)
        enddo
-
+       !if(myid==0) print *,'ncells total',nCellsTotal,nFacesTotal
        if(nCellsTotal > 2147483647 .or. nFacesTotal > 2147483647) then
          nCellsTotal = nCellsTotal/2147483647 + 1
          nFacesTotal = nFacesTotal/2147483647 + 1
@@ -263,6 +273,7 @@
          do i=1,nBlocks
            vwgt(1,i) = vwgt(1,i)/nCellsTotal
            vwgt(2,i) = vwgt(2,i)/nFacesTotal
+           !print *,'vwgt', vwgt(1,i),vwgt(2,i),i
          enddo
        endif
 
@@ -274,26 +285,34 @@
        ! normally gives a valid partitioning.
        ! Initialize commNeglected to .false. This will change if in
        ! the loop below the first call to metis is not successful.
- !      print *,'starting metis'
+       if(myid==0) print *,'starting metis'
        commNeglected = .false.
        attemptLoop: do ii=1,2
-
+          if(myid==0)print *,'looping',ii
          ! Call the graph partitioner.
-!!$          print *,'calling metis',nVertex, nCon, xadj, adjncy, vwgt, &
-!!$                             adjwgt, wgtflag, numflag, nParts,  &
-!!$                             ubvec, options, edgecut, part
+         !if(myid==0) print *,'calling metis',nVertex, nCon, numflag, nParts,  &
+          !                   ubvec, options
+          !if(myID==0) print *,'sizes',nVertex, nCon,'x',shape(xadj),'adjncy',shape(adjncy),'vw',shape(vwgt),'adjw',shape(adjwgt)
+          
+
+
+         ! if(myid==0) print *,'calling metis',nVertex, nCon, xadj, adjncy, vwgt, &
+         !                    adjwgt, wgtflag, numflag, nParts,  &
+         !                    ubvec, options
+         call mpi_barrier(SUmb_comm_world, ierr)
          call metisInterface(nVertex, nCon, xadj, adjncy, vwgt, &
                              adjwgt, wgtflag, numflag, nParts,  &
                              ubvec, options, edgecut, part)
-
+         !if(myid==0) print *,'metis called', edgecut,'part',part,shape(part)
          ! Determine the number of blocks per processor.
          !print *,'nblocks',nblocks
+         if(myid==0)  print *,'nblocks',nblocks
          nBlockPerProc = 0
          do i=1,nBlocks
           !  print *,'nblocksperproc',nBlockPerProc(part(i)) 
            nBlockPerProc(part(i)) = nBlockPerProc(part(i)) + 1
          enddo
-
+         if(myid==0)print *,'nblocksperprocFinal',nBlockPerProc
          ! Check for empty partitions.
 
          emptyPartitions = .false.

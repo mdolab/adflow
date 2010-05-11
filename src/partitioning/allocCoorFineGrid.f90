@@ -74,7 +74,7 @@
                 "Memory allocation failure for flowDoms%xInit")
            !for the first grid also allocate xPlus and xMinus for the 
            !meshwarping verification...
-          !if(debug)then
+          if(debug)then
            if (mm ==1) then
               allocate(flowDoms(nn,1,mm)%xPlus(0:ie,0:je,0:ke,3), stat=ierr)
               if(ierr /= 0)                         &
@@ -85,7 +85,7 @@
                    call terminate("allocCoorFineGrid", &
                    "Memory allocation failure for flowDoms%xMinus")
            end if
-           !endif
+           endif
          enddo
 
          ! For a time accurate computation on deforming meshes, allocate

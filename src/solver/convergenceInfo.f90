@@ -28,13 +28,15 @@
        use inputUnsteady
        use monitor
        use iteration
+       use killSignals
+       use flowVarRefState
        implicit none
 !
 !      Local variables.
 !
        integer :: ierr, iConvStdout
 
-       integer(kind=intType) :: sps, nn, mm, iConv
+       integer(kind=intType) :: sps, nn, mm, iConv,ilevel
 
        real(kind=realType) :: hdiffMax, MachMax
        real(kind=realType) :: eddyvisMax, yplusMax
@@ -437,10 +439,62 @@
        ! such that possible solution files written earlier are not
        ! corrupted.
 
-       if( nanOccurred )                   &
-         call terminate("convergenceInfo", &
-                        "A NaN occurred during the computation.")
+       !if( nanOccurred )                   &
+       !     call terminate("convergenceInfo", &
+       !                 "A NaN occurred during the computation.")
+       call mpi_bcast(nanOccurred, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
+       if( nanOccurred )then
+          !reset flow and exit!
+          print *,'nanOccured',myID
+          call initflow
+          !print *,'terminating'
+          call terminate("convergenceInfo", &
+               "A NaN occurred during the computation.")
+          ! in a normal computation, code will simply exit.
+          ! in a python based computation, code will set 
+          ! routinedFailed to .True. and return to the 
+          ! python level...
+          return
+       endif
 
+       
+       !if(myID==0) print *,'iconv',iconv,nCycles,(fromPython).and. (iconv==nCycles)
+       if((fromPython).and. (iconv==nCycles))then
+          !if(myID==0) print *,'checking divergence',fromPython
+          !Check to see if residuals are diverging or stalled for python
+          select case (equationMode)
+             
+          case (steady, timeSpectral)
+             
+             ! Steady or time spectral mode. The convergence histories
+             ! are stored and this info can be used. If the residuals 
+             ! are divergin the, logical routineFailed in killSignals
+             ! is set to true and the progress is halted.
+             !only check on root porcessor
+             if (myID==0)then
+                do sps=1,nTimeIntervalsSpectral
+                   
+                   !if(myID==0) print *,'convarray',shape(convArray),iconv,sps,1,convArray(1,1,1),convArray(0,1,1)
+                   !if(myID==0) print *,'convarray2',convArray(10,1,1)
+                   !if(myID==0) print *,'convarray3',convArray(iConv,sps,1)
+                   if(convArray(iConv,sps,1) > &
+                        convArray(0,sps,1)) routineFailed=.True.
+                   
+                   if(convArray(iConv,sps,1) > 1.0e-3) routineFailed=.True.
+                   if(convArray(iConv,sps,1) > &
+                        1.0e-4*convArray(0,sps,1)) routineFailed=.True.
+                enddo
+             endif
+             call mpi_bcast(routineFailed, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
+             if(myID==0) print *,'Divergence Check',routineFailed
+             !stop
+             !return
+          case(unsteady)
+             print *,'divergence check for unsteady not implemented...'
+             !return
+          end select
+       endif
+       !if(myID==0) print *,'after dievergence check',converged 
        ! Determine whether or not the solution is considered converged.
        ! This info is only known at processor 0 and must therefore be
        ! broadcast to the other processors. MPI supports the
@@ -495,6 +549,7 @@
            do i=2,il
        !     monLoc(mm) = monLoc(mm) + dw(i,j,k,nn)*dw(i,j,k,nn)
              monLoc(mm) = monLoc(mm) + (dw(i,j,k,nn)/vol(i,j,k))**2
+             !if(mm==1) print *,'sumRes',monLoc(mm),dw(i,j,k,nn),vol(i,j,k),i,j,k,nn
            enddo
          enddo
        enddo

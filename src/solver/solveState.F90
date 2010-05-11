@@ -303,6 +303,17 @@
          ! Determine and write the convergence info.
 
          call convergenceInfo
+         
+         !check for divergence or nan here
+         if(routineFailed)then
+            ! Release the memory of cycling.
+            if (myID==0) print *,'checking routinefailed',routineFailed
+            deallocate(cycling, stat=ierr)
+            if(ierr /= 0)                 &
+                 call terminate("solveState", &
+                 "Deallocation failure for cycling")
+            return
+         endif
 
          ! The signal stuff must be done after every iteration only in
          ! steady or spectral mode. In unsteady mode the signals are

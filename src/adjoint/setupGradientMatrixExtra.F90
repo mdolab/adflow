@@ -38,7 +38,7 @@
       use inputDiscretization ! spaceDiscr
       use inputPhysics    ! velDirFreestream
       use iteration       ! magCoupled
-     
+      use inputADjoint        !lumpedDiss
       implicit none
 !
 !     Subroutine arguments.
@@ -177,7 +177,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-
+      lumpedDiss=.false.
       ! Get the initial time.
 
       call cpu_time(time(1))

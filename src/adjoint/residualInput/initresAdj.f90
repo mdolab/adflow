@@ -84,7 +84,6 @@
            if(equationMode==steady)then
                ! Steady state computation.
                ! Determine the currently active multigrid level.
-
                steadyLevelTest: if(currentLevel == groundLevel) then
 
                  ! Ground level of the multigrid cycle. Initialize the
@@ -104,7 +103,7 @@
                   enddo
                else steadyLevelTest
 
-                  call terminate("initRes", &
+                  call terminate("initResAD", &
                                   "ADjoint does not function on coarse grid level")
                   
 

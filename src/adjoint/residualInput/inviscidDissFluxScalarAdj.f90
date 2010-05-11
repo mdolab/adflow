@@ -302,7 +302,7 @@
                    dis4 =0.0
                 endif
              endif
-             
+             !print *,'dis2,4',dis2,dis4
 
              ! Compute and scatter the dissipative flux.
              ! Density. Store it in the mass flow of the

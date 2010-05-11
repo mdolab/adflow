@@ -46,12 +46,13 @@
 
        nSubPerCGNS(0) = 0
        do i=1,cgnsNDom
+          !print *,'nsubpercgns',nSubPerCGNS(i-1),splitInfo(i)%nSubblocks,i
          nSubPerCGNS(i) = nSubPerCGNS(i-1) + splitInfo(i)%nSubblocks
        enddo
 
        ! Check whether blocks are already allocated. If so, release
        ! the memory.
-
+       !print *,'allocated blocks',allocated(blocks)
        if( allocated(blocks) ) then
 
          ! Loop over the number of old blocks and release the memory.
@@ -140,6 +141,7 @@
            ! that no reallocation is needed for the boundary info.
 
            nAlloc = cgnsDoms(i)%nBocos + cgnsDoms(i)%n1to1
+           !print *,'nalloc',nalloc
            allocate(blocks(ii)%BCType(nAlloc),      &
                     blocks(ii)%BCFaceID(nAlloc),    &
                     blocks(ii)%cgnsSubface(nAlloc), &

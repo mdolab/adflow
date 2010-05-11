@@ -147,14 +147,25 @@
       if (ApproxPC)then
          
          !setup the approximate PC Matrix
-         call setupADjointPCMatrix(level)
+         !call setupADjointPCMatrix(level)
+         call setupADjointPCMatrixTranspose(level)
          
          !now set up KSP Context
-         call KSPSetOperators(ksp,dRdW,dRdWPre, &
-                           DIFFERENT_NONZERO_PATTERN,PETScIerr)
+         !call KSPSetOperators(ksp,dRdW,dRdWPre, &
+         !                  DIFFERENT_NONZERO_PATTERN,PETScIerr)
+         call KSPSetOperators(ksp,dRdWT,dRdWPreT, &
+              DIFFERENT_NONZERO_PATTERN,PETScIerr)
 
          if( PETScIerr/=0 ) &
               call terminate("createPETScKSP", "Error in KSPSetOperators.")
+
+
+
+         !call PetscOptionsPrint(PETScIerr)
+         !call PetscOptionsSetValue('-ksp_gmres_modifiedgramschmidt',PETSC_NULL_CHARACTER,PETScIerr)
+         
+         !call PetscOptionsPrint(PETScIerr)
+
 
       else
          
@@ -162,7 +173,9 @@
          ! Here the matrix that defines the linear system
          ! also serves as the preconditioning matrix.
          
-         call KSPSetOperators(ksp,dRdW,dRdW, &
+         !call KSPSetOperators(ksp,dRdW,dRdW, &
+         !     DIFFERENT_NONZERO_PATTERN,PETScIerr)
+         call KSPSetOperators(ksp,dRdWT,dRdWT, &
               DIFFERENT_NONZERO_PATTERN,PETScIerr)
          
          if( PETScIerr/=0 ) &
@@ -339,6 +352,36 @@
          if( PETScIerr/=0 ) &
               call terminate("createPETScKsp", &
               "Error in KSPGMRESSetCGSRefinementType")
+
+
+!!$         !Set orthogonalization to modified gram schmidt
+!!$         !Synopsis
+!!$
+!!$         !#include "petscksp.h"  
+!!$         !PetscErrorCode PETSCKSP_DLLEXPORT KSPGMRESSetOrthogonalization(KSP ksp,PetscErrorCode (*fcn)(KSP,PetscInt))
+!!$
+!!$         !Collective on KSP
+!!$
+!!$         !Input Parameters
+!!$         !      ksp 	- iterative context obtained from KSPCreate
+!!$         !      fcn 	- orthogonalization function
+!!$
+!!$         !Calling Sequence of function
+!!$
+!!$         !errorcode = int fcn(KSP ksp,int it);
+!!$
+!!$         !it is one minus the number of GMRES iterations since last restart;
+!!$
+!!$         !   i.e. the size of Krylov space minus one
+!!$         
+!!$         call KSPGMRESSetOrthogonalization(ksp,KSPGMRESModifiedGramSchmidtOrthogonalization,PETScIerr)
+!!$
+
+
+
+
+
+
 !
 !     *****************************************************************
 !     *                                                               *
