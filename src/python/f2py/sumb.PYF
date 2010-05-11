@@ -989,6 +989,15 @@ python module sumb ! in
           implicit none
 	  integer(kind=inttype) intent(in)::level
         end subroutine createpetscksp
+        subroutine setuppetscksp(level) ! in :sumb:../../adjoint/createPETScVars.F90
+          use adjointpetsc
+          use adjointvars
+          use blockpointers
+          use flowvarrefstate         ! nw
+          use inputadjoint
+          implicit none
+	  integer(kind=inttype) intent(in)::level
+        end subroutine setuppetscksp
 
         subroutine createpetscvars ! in :sumb:../../adjoint/createPETScVars.F90
           use adjointpetsc
