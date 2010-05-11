@@ -190,6 +190,12 @@
                               nzDiagonalW, nnzDiagonal,         &
                               nzOffDiag, nnzOffDiag,            &
                               dRdW, PETScIerr)
+        call MatCreateMPIBAIJ(PETSC_COMM_WORLD, nw,             &
+                              nDimW, nDimW,                     &
+                              PETSC_DETERMINE, PETSC_DETERMINE, &
+                              nzDiagonalW, nnzDiagonal,         &
+                              nzOffDiag, nnzOffDiag,            &
+                              dRdWT, PETScIerr)
 
       ! >>> option #2 : sparse parallel matrix in AIJ format
       !                 General case...
@@ -291,6 +297,13 @@
                              nzOffDiag, nnzOffDiag,            &
                              dRdW, PETScIerr)
 
+        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+                             nDimW, nDimW,                     &
+                             PETSC_DETERMINE, PETSC_DETERMINE, &
+                             nzDiagonalW, nnzDiagonal,         &
+                             nzOffDiag, nnzOffDiag,            &
+                             dRdWT, PETScIerr)
+
       endif
 
       deallocate( nnzDiagonal, nnzOffDiag )
@@ -365,12 +378,13 @@
 
 #ifdef USE_PETSC_3
       call MatSetOption(dRdW, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+      call MatSetOption(dRdWt, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dRdW")
 #else
       call MatSetOption(dRdW, MAT_COLUMN_ORIENTED, PETScIerr)
-
+      call MatSetOption(dRdWt, MAT_COLUMN_ORIENTED, PETScIerr)
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dRdW")
 #endif
@@ -463,6 +477,12 @@ if (ApproxPC) then
                               nzDiagonalW, nnzDiagonal,         &
                               nzOffDiag, nnzOffDiag,            &
                               dRdWPre, PETScIerr)
+        call MatCreateMPIBAIJ(PETSC_COMM_WORLD, nw,             &
+                              nDimW, nDimW,                     &
+                              PETSC_DETERMINE, PETSC_DETERMINE, &
+                              nzDiagonalW, nnzDiagonal,         &
+                              nzOffDiag, nnzOffDiag,            &
+                              dRdWPreT, PETScIerr)
 
       ! >>> option #2 : sparse parallel matrix in AIJ format
       !                 General case...
@@ -563,6 +583,12 @@ if (ApproxPC) then
                              nzDiagonalW, nnzDiagonal,         &
                              nzOffDiag, nnzOffDiag,            &
                              dRdWPre, PETScIerr)
+        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+                             nDimW, nDimW,                     &
+                             PETSC_DETERMINE, PETSC_DETERMINE, &
+                             nzDiagonalW, nnzDiagonal,         &
+                             nzOffDiag, nnzOffDiag,            &
+                             dRdWPret, PETScIerr)
 
       endif
 
@@ -636,12 +662,12 @@ if (ApproxPC) then
       ! or PETSc users manual, pp.51-52
 #ifdef USE_PETSC_3
       call MatSetOption(dRdWPre, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
-
+      call MatSetOption(dRdWPret, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dRdW")
 #else
       call MatSetOption(dRdWPre, MAT_COLUMN_ORIENTED, PETScIerr)
-
+      call MatSetOption(dRdWPret, MAT_COLUMN_ORIENTED, PETScIerr)
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dRdWPre")
 #endif
@@ -1517,6 +1543,7 @@ if(debug)then
 !********************
    endif
 
+if(.false.)then
 !
 !     ******************************************************************
 !     *                                                                *
@@ -1600,6 +1627,8 @@ if(debug)then
         call terminate("createPETScMat", &
                        "Error in MatSetOption dSdx")
 #endif
+
+   endif
       ! Extract info from the global matrix (only processor 0).
 
       if( PETScRank==0 .and. debug ) then
@@ -1779,6 +1808,7 @@ if( debug) then
 !************
    endif
 
+if(.false.)then
 !
 !     ******************************************************************
 !     *                                                                *
@@ -1862,6 +1892,8 @@ if( debug) then
         call terminate("createPETScMat", &
                        "Error in MatSetOption dSdw")
 #endif
+
+   endif
       ! Extract info from the global matrix (only processor 0).
 
       if( PETScRank==0 .and. debug ) then

@@ -149,10 +149,6 @@
       ! Initialize PETSc.
 
       call initializePETSc
-    
-      ! Create all the necessary PETSc objects.
-
-      call createPETScVars
 
       !initializeWarping
       !begin execution
@@ -162,6 +158,10 @@
          famID = 0
       endif
       call initializeWarping(famID)
+    
+      ! Create all the necessary PETSc objects.
+
+      call createPETScVars
 
       ! Perform some verifications if in DEBUG mode.
       !moved after PETSc initialization because PETsc now included in debugging...
@@ -244,7 +244,8 @@
 !     ******************************************************************
 !
       !print *,'calling setupADjointMatrix'
-      call setupADjointMatrix(level)
+      !call setupADjointMatrix(level)
+      call setupADjointMatrixTranspose(level)
 !return
 !stop
 
@@ -296,7 +297,7 @@
          cfend = 14
       else
          cfstart =1
-         cfend = 8
+         cfend = 1!8
       end if
 !      functionLoop: do costFunction = 1,1!10,10!1, 1!nCostFunction
       functionLoop: do costFunction = cfstart,cfend
@@ -316,7 +317,8 @@
         ! solver and preconditioner.
         ! => psi
 
-        call solveADjointPETSc
+        !call solveADjointPETSc
+        call solveADjointTransposePETSc
 
         !***************************************************************
         !                                                              *

@@ -71,7 +71,9 @@ FF90_OBJECTS = allocMemADjoint.o        \
                setupADjointdCdwStability.o\
                setupADjointdIdCStability.o\
 	       setupADjointMatrix.o     \
+               setupADjointMatrixTranspose.o\
 	       setupADjointPCMatrix.o     \
+	       setupADjointPCMatrixTranspose.o \
 	       setupADjointRHS.o        \
 	       setupADjointRHSAeroCoeff.o\
 	       setupADjointRHSStability.o\
@@ -79,6 +81,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       setupCouplingMatrixStruct.o\
 	       setupCouplingTotalStruct.o\
 	       solveADjointPETSc.o      \
+               solveADjointTransposePETSc.o\
 	       solveDirectPETSc.o       \
 	       setupSurfaceDirect.o     \
 	       setupADjointTotalStruct.o\

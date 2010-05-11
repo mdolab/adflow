@@ -45,6 +45,7 @@
        
        if(.not. storeConvInnerIter) return 
 
+       if( allocated(convArray)) call deallocConvArrays
        ! Allocate the memory for convArray and initialize them,
        ! just to be sure.
 

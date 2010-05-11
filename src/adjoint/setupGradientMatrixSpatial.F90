@@ -40,6 +40,7 @@
       use inputDiscretization ! spaceDiscr
       use inputTimeSpectral   ! nTimeIntervalsSpectral
       use iteration           ! overset, currentLevel
+      use inputADjoint        !lumpedDiss
       implicit none
 !
 !     Subroutine arguments.
@@ -216,6 +217,7 @@
       if( PETScIerr/=0 ) &
         call terminate("setupGradientMatrixSpatial", "Error in MatZeroEntries drdx")
 
+      lumpedDiss=.false.
       ! Loop over the number of local blocks.
 
       domainLoop: do nn=1,nDom

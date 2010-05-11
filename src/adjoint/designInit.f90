@@ -94,12 +94,12 @@
               call terminate("designInit", &
               "Memory allocation failure for functionGrad")
       endif
-      if( .not. allocated(adjoint))then
-         allocate(adjoint(nCostFunction,nw * nCellsGlobal),stat=ierr)
-         if(ierr /= 0)                       &
-              call terminate("designInit", &
-              "Memory allocation failure for adjoint")
-      endif 
+!!$      if( .not. allocated(adjoint))then
+!!$         allocate(adjoint(nCostFunction,nw * nCellsGlobal),stat=ierr)
+!!$         if(ierr /= 0)                       &
+!!$              call terminate("designInit", &
+!!$              "Memory allocation failure for adjoint")
+!!$      endif 
       if( .not. allocated(functionGradSpatial))then
          allocate(functionGradSpatial(nCostFunction,nDesignSpatial),stat=ierr)
          if(ierr /= 0)                       &
@@ -107,24 +107,24 @@
               "Memory allocation failure for functionGradSpatial")
       endif 
 
-      if( .not. allocated(functionGradStruct))then
-         allocate(functionGradStruct(nCostFunction,nDesignSpatial),stat=ierr)
- if(ierr /= 0)                       &
-              call terminate("designInit", &
-              "Memory allocation failure for functionGradStruct")
-      endif 
-      if( .not. allocated(functionGradCoupling))then
-         allocate(functionGradCoupling(nCostFunction,nDesignSpatial),stat=ierr)
-         if(ierr /= 0)                       &
-              call terminate("designInit", &
-              "Memory allocation failure for functionGradCoupling")
-      endif
-      if( .not. allocated(functionGradCouplingExp))then
-         allocate(functionGradCouplingExp(nCostFunction,nDesignSpatial),stat=ierr) 
-         if(ierr /= 0)                       &
-              call terminate("designInit", &
-              "Memory allocation failure for functionGradCouplingExp")
-      endif
+!!$      if( .not. allocated(functionGradStruct))then
+!!$         allocate(functionGradStruct(nCostFunction,nDesignSpatial),stat=ierr)
+!!$ if(ierr /= 0)                       &
+!!$              call terminate("designInit", &
+!!$              "Memory allocation failure for functionGradStruct")
+!!$      endif 
+!!$      if( .not. allocated(functionGradCoupling))then
+!!$         allocate(functionGradCoupling(nCostFunction,nDesignSpatial),stat=ierr)
+!!$         if(ierr /= 0)                       &
+!!$              call terminate("designInit", &
+!!$              "Memory allocation failure for functionGradCoupling")
+!!$      endif
+!!$      if( .not. allocated(functionGradCouplingExp))then
+!!$         allocate(functionGradCouplingExp(nCostFunction,nDesignSpatial),stat=ierr) 
+!!$         if(ierr /= 0)                       &
+!!$              call terminate("designInit", &
+!!$              "Memory allocation failure for functionGradCouplingExp")
+!!$      endif
       
       !print *,'function storage allocated'
 
@@ -148,37 +148,37 @@
       ! Allocate memory to store the design variable names, values,
       ! lower and upper bounds.
 
-      if( .not. allocated(xDesignVarName))then
-         allocate(xDesignVarName (nDesignExtra),stat=ierr)
-         if(ierr /= 0)                       &
-              call terminate("designInit", &
-              "Memory allocation failure for xDesignVarName")
-      endif
-      if( .not. allocated(xDesignVar))then
-         allocate(xDesignVar     (nDesignExtra),stat=ierr)
-         if(ierr /= 0)                       &
-              call terminate("designInit", &
-              "Memory allocation failure for xDesignVar")
-      endif
-      if( .not. allocated(xDesignVarLower))then
-         allocate(xDesignVarLower(nDesignExtra),stat=ierr)
-         if(ierr /= 0)                       &
-              call terminate("designInit", &
-              "Memory allocation failure for xDesignVarLower")
-      endif
-      if( .not. allocated(xDesignVarUpper))then
-         allocate(xDesignVarUpper(nDesignExtra),stat=ierr)
-         if(ierr /= 0)                       &
-              call terminate("designInit", &
-              "Memory allocation failure for xDesignVarUpper")
-      endif
-      
-      ! Set the design variable names.
-      
-      ! Angle of attack and side-slip angle.
-
-      xDesignVarName(nDesignAOA) = trim(varNameAOA)
-      xDesignVarName(nDesignSSA) = trim(varNameSSA)
+!!$      if( .not. allocated(xDesignVarName))then
+!!$         allocate(xDesignVarName (nDesignExtra),stat=ierr)
+!!$         if(ierr /= 0)                       &
+!!$              call terminate("designInit", &
+!!$              "Memory allocation failure for xDesignVarName")
+!!$      endif
+!!$      if( .not. allocated(xDesignVar))then
+!!$         allocate(xDesignVar     (nDesignExtra),stat=ierr)
+!!$         if(ierr /= 0)                       &
+!!$              call terminate("designInit", &
+!!$              "Memory allocation failure for xDesignVar")
+!!$      endif
+!!$      if( .not. allocated(xDesignVarLower))then
+!!$         allocate(xDesignVarLower(nDesignExtra),stat=ierr)
+!!$         if(ierr /= 0)                       &
+!!$              call terminate("designInit", &
+!!$              "Memory allocation failure for xDesignVarLower")
+!!$      endif
+!!$      if( .not. allocated(xDesignVarUpper))then
+!!$         allocate(xDesignVarUpper(nDesignExtra),stat=ierr)
+!!$         if(ierr /= 0)                       &
+!!$              call terminate("designInit", &
+!!$              "Memory allocation failure for xDesignVarUpper")
+!!$      endif
+!!$      
+!!$      ! Set the design variable names.
+!!$      
+!!$      ! Angle of attack and side-slip angle.
+!!$
+!!$      xDesignVarName(nDesignAOA) = trim(varNameAOA)
+!!$      xDesignVarName(nDesignSSA) = trim(varNameSSA)
 
  
 
