@@ -80,6 +80,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       setupADjointRHSStruct.o  \
 	       setupCouplingMatrixStruct.o\
 	       setupCouplingTotalStruct.o\
+               setupPETScKsp.o         \
 	       solveADjointPETSc.o      \
                solveADjointTransposePETSc.o\
 	       solveDirectPETSc.o       \

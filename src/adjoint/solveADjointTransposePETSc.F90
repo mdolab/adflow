@@ -194,7 +194,7 @@
 
       if( PETScIerr/=0 ) &
         call terminate("solveADjointPETSc", &
-                       "Error in KSPSolveTranspose.")
+                       "Error in KSPSolve.")
 
 !      call VecView(psi,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
      ! call VecView(psi,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
