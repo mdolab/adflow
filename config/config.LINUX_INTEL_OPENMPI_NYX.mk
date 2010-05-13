@@ -61,7 +61,7 @@ CC   = mpicc -fPIC
 #      * CGNS include and linker flags.                                 *
 #      *                                                                *
 #      ******************************************************************
-CGNS_INCLUDE_FLAGS = 
+CGNS_INCLUDE_FLAGS = -I/nobackup/kenway/opt/include 
 CGNS_LINKER_FLAGS  = -L/nobackup/kenway/opt/lib/ -lcgns 
 #CGNS_INCLUDE_FLAGS = -I$(HOME)/packages/cgnslib_2.5_debug
 #CGNS_LINKER_FLAGS  = -L$(HOME)/packages/cgnslib_2.5_debug/LINUX -lcgns
