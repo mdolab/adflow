@@ -305,6 +305,18 @@ LINUX_INTEL_OPENMPI_SCINET_PYTHON:
 	gmake sumb
 	(cd src/python/f2py && gmake)
 
+LINUX_INTEL_OPENMPI_NYX:
+	(cd externals/SU_MPI && gmake LINUX_INTEL_OPENMPI_SCINET)
+	(cd externals/ADT && gmake LINUX_INTEL_OPENMPI_SCINET)
+	ln -sf config/config.LINUX_INTEL_OPENMPI_NYX.mk config.mk
+	gmake sumb
+
+LINUX_INTEL_OPENMPI_NYX_PYTHON:
+	(cd externals/SU_MPI && gmake LINUX_INTEL_OPENMPI_SCINET)
+	(cd externals/ADT && gmake LINUX_INTEL_OPENMPI_SCINET)
+	ln -sf config/config.LINUX_INTEL_OPENMPI_NYX.mk config.mk
+	gmake sumb
+	(cd src/python/f2py && gmake)
 
 LINUX_PG:
 	(cd externals/SU_MPI && gmake LINUX_PG)
