@@ -96,12 +96,12 @@
       real(kind=realType) :: vis2_ref, vis4_ref
 
 !!$      integer :: unitdRdwpre = 8,ierror,nnn!,idxstate, idxres,nnn
-!!$      character(len = 20)::outfile,testfile
+!!$      character(len = 35)::outfile,testfile
 !!$      write(testfile,100) myid!12
 !!$100   format (i5)  
 !!$      testfile=adjustl(testfile)
 !!$      write(outfile,101) trim(testfile)!testfile
-!!$101   format("AD1dRdWprefile2",a,".out")
+!!$101   format("/scratch/mader/AD1dRdWprefile2",a,".out")
 !!$      unitdrdwpre = 8+myID
 !!$
 !!$      
@@ -296,295 +296,295 @@
 &  liftindex)
 
 
-!!$                        ! Store the block Jacobians (by rows).
-!!$                        
-!!$                        Aad(m,:,:)  = wAdjB( 0, 0, 0,:,:)
-!!$                        Bad(m,:,:)  = wAdjB(-1, 0, 0,:,:)
-!!$                        !BBad(m,:,:) = wAdjB(-2, 0, 0,:,:)
-!!$                        Cad(m,:,:)  = wAdjB( 1, 0, 0,:,:)
-!!$                        !CCad(m,:,:) = wAdjB( 2, 0, 0,:,:)
-!!$                        Dad(m,:,:)  = wAdjB( 0,-1, 0,:,:)
-!!$                        !DDad(m,:,:) = wAdjB( 0,-2, 0,:,:)
-!!$                        Ead(m,:,:)  = wAdjB( 0, 1, 0,:,:)
-!!$                        !EEad(m,:,:) = wAdjB( 0, 2, 0,:,:)
-!!$                        Fad(m,:,:)  = wAdjB( 0, 0,-1,:,:)
-!!$                        !FFad(m,:,:) = wAdjB( 0, 0,-2,:,:)
-!!$                        Gad(m,:,:)  = wAdjB( 0, 0, 1,:,:)
-!!$                        !GGad(m,:,:) = wAdjB( 0, 0, 2,:,:)
+                        ! Store the block Jacobians (by rows).
                         
-                        do ii=-1,1!-2,2!-1,1!1,il-1
-                           do jj = -1,1!-2,2!-1,1!1,jl-1
-                              do kk = -1,1!-2,2!-1,1!1,kl-1
-                                 do l = 1,nw
-                                    i = iCell + ii
-                                    j = jCell + jj
-                                    k = kCell + kk
-                                    do sps2 = 1,nTimeIntervalsSpectral
-                                       if(i>=zero .and. j>=zero .and. k>=zero .and. i<=ib .and. j<=jb .and. k<=kb)then
-                                          !if(i>zero .and. j>zero .and. k>zero .and. i<=il .and. j<=jl .and. k<=kl)then
-                                          idxstate = globalCell(i,j,k)*nw+l
-                                          idxres   = globalCell(iCell,jCell,kCell)*nw+m
-                                          if( idxres-1>=0 .and. idxstate-1>=0) then
-                                             !if( idxres>=0 .and. idxstate>=0) then
-                                             if(wAdjb(ii,jj,kk,l,sps2).ne.0)then
-                                                call MatSetValues(drdwpret, 1, idxstate-1, 1, idxres-1,   &
-                                                     wAdjb(ii,jj,kk,l,sps2), ADD_VALUES, PETScIerr)
-                                                if( PETScIerr/=0 ) &
-                                                     print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw[re")
-                                             endif
-                                          endif
-                                       endif
-                                    enddo
-                                    
-                                 enddo !l
-                              enddo !kk
-                           enddo !jj
-                        enddo !ii
+                        Aad(m,:,:)  = wAdjB( 0, 0, 0,:,:)
+                        Bad(m,:,:)  = wAdjB(-1, 0, 0,:,:)
+                        !BBad(m,:,:) = wAdjB(-2, 0, 0,:,:)
+                        Cad(m,:,:)  = wAdjB( 1, 0, 0,:,:)
+                        !CCad(m,:,:) = wAdjB( 2, 0, 0,:,:)
+                        Dad(m,:,:)  = wAdjB( 0,-1, 0,:,:)
+                        !DDad(m,:,:) = wAdjB( 0,-2, 0,:,:)
+                        Ead(m,:,:)  = wAdjB( 0, 1, 0,:,:)
+                        !EEad(m,:,:) = wAdjB( 0, 2, 0,:,:)
+                        Fad(m,:,:)  = wAdjB( 0, 0,-1,:,:)
+                        !FFad(m,:,:) = wAdjB( 0, 0,-2,:,:)
+                        Gad(m,:,:)  = wAdjB( 0, 0, 1,:,:)
+                        !GGad(m,:,:) = wAdjB( 0, 0, 2,:,:)
+!!$                        
+!!$                        do ii=-1,1!-2,2!-1,1!1,il-1
+!!$                           do jj = -1,1!-2,2!-1,1!1,jl-1
+!!$                              do kk = -1,1!-2,2!-1,1!1,kl-1
+!!$                                 do l = 1,nw
+!!$                                    i = iCell + ii
+!!$                                    j = jCell + jj
+!!$                                    k = kCell + kk
+!!$                                    do sps2 = 1,nTimeIntervalsSpectral
+!!$                                       if(i>=zero .and. j>=zero .and. k>=zero .and. i<=ib .and. j<=jb .and. k<=kb)then
+!!$                                          !if(i>zero .and. j>zero .and. k>zero .and. i<=il .and. j<=jl .and. k<=kl)then
+!!$                                          idxstate = globalCell(i,j,k)*nw+l
+!!$                                          idxres   = globalCell(iCell,jCell,kCell)*nw+m
+!!$                                          if( idxres-1>=0 .and. idxstate-1>=0) then
+!!$                                             !if( idxres>=0 .and. idxstate>=0) then
+!!$                                             if(wAdjb(ii,jj,kk,l,sps2).ne.0)then
+!!$                                                call MatSetValues(drdwpret, 1, idxstate-1, 1, idxres-1,   &
+!!$                                                     wAdjb(ii,jj,kk,l,sps2), ADD_VALUES, PETScIerr)
+!!$                                                if( PETScIerr/=0 ) &
+!!$                                                     print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw[re")
+!!$                                             endif
+!!$                                          endif
+!!$                                       endif
+!!$                                    enddo
+!!$                                    
+!!$                                 enddo !l
+!!$                              enddo !kk
+!!$                           enddo !jj
+!!$                        enddo !ii
                         
                         
                      enddo mLoop
-!!$           do sps2 = 1,nTimeIntervalsSpectral
-!!$              !*********************************************************
-!!$              !                                                        *
-!!$              ! Transfer the block Jacobians to the PETSc matrix.      *
-!!$              ! For the off-diagonal blocks, take into account halo    *
-!!$              ! nodes at the boundaries, if present.                   *
-!!$              !                                                        *
-!!$              ! This depends on the type of the PETsc matrix dRdWPre,  *
-!!$              ! whether is blocked or not.                             *
-!!$              !                                                        *
-!!$              !*********************************************************
-!!$
-!!$              ! >>> block sparse matrix -> use MatSetValuesBlocked
-!!$
-!!$              ! When using the block compressed sparse row matrix format
-!!$              ! (MATSEQBAIJ or MATMPIBAIJ), one can insert elements more
-!!$              ! efficiently using the block variant MatSetValuesBlocked.
-!!$              !
-!!$              ! MatSetValuesBlocked - Inserts or adds a block of values
-!!$              !                       into a matrix.
-!!$              ! Synopsis
-!!$              !
-!!$              ! #include "petscmat.h" 
-!!$              ! call MatSetValuesBlocked(Mat mat,                      &
-!!$              !                  PetscInt m,const PetscInt idxm[],     &
-!!$              !                  PetscInt n,const PetscInt idxn[],     &
-!!$              !                  const PetscScalar v[],InsertMode addv,&
-!!$              !                  PetscErrorCode ierr)
-!!$              !
-!!$              ! Not Collective
-!!$              !
-!!$              ! Input Parameters
-!!$              !   mat     - the matrix
-!!$              !   v       - a logically two-dimensional array of values
-!!$              !   m, idxm - the number of block rows and their global
-!!$              !             block indices
-!!$              !   n, idxn - the number of block columns and their global
-!!$              !             block indices
-!!$              !   addv    - either ADD_VALUES or INSERT_VALUES, where
-!!$              !             ADD_VALUES adds values to any existing
-!!$              !             entries, and INSERT_VALUES replaces existing
-!!$              !             entries with new values
-!!$              ! Notes
-!!$              ! The m and n count the NUMBER of blocks in the row
-!!$              !   direction and column direction, NOT the total number
-!!$              !   of rows/columns; for example, if the block size is 2
-!!$              !   and you are passing in values for rows 2,3,4,5 then m
-!!$              !   would be 2 (not 4).
-!!$              !
-!!$              ! By default the values, v, are row-oriented and unsorted.
-!!$              !   So the layout of v is the same as for MatSetValues().
-!!$              !   See MatSetOption() for other options.
-!!$              !
-!!$              ! Calls to MatSetValuesBlocked() with the INSERT_VALUES
-!!$              !   and ADD_VALUES options cannot be mixed without
-!!$              !   intervening calls to the assembly routines.
-!!$              !
-!!$              ! MatSetValuesBlocked() uses 0-based row and column
-!!$              !   numbers in Fortran as well as in C. 
-!!$              !
-!!$              ! see .../petsc/docs/manualpages/Mat/MatSetValuesBlocked.html
-!!$
-!!$              if(PETScBlockMatrix) then
-!!$
-!!$                ! Global matrix block row mgb function of node indices.
-!!$                !
-!!$                ! MatSetValuesBlocked() uses 0-based row and column 
-!!$                ! numbers but the global node numbering already accounts
-!!$                ! for that since it starts at node 0.
-!!$
-!!$                idxmgb = globalCell(iCell,jCell,kCell)
-!!$		!print *,'globalcell',idxmgb,globalCell(iCell,jCell,kCell)
-!!$                ! >>> center block A < W(i,j,k)
-!!$                call setPointersAdj(nn,level,sps2)
-!!$                idxngb = globalCell(iCell,jCell,kCell)!idxmgb
-!!$                call setPointersAdj(nn,level,sps)
-!!$		!print *,'indicies0',idxmgb,idxngb
-!!$                call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, &
-!!$                                         Aad(:,:,sps2), ADD_VALUES,PETScIerr)
-!!$                if( PETScIerr/=0 ) &
-!!$                  call errAssemb("MatSetValuesBlocked", "Aad")
-!!$
-!!$                ! >>> west block B < W(i-1,j,k)
-!!$	
-!!$                if( (iCell-1) >= 0 ) then
-!!$                  call setPointersAdj(nn,level,sps2)
-!!$                  idxngb = globalCell(iCell-1,jCell,kCell)!idxmgb
-!!$                  call setPointersAdj(nn,level,sps)
-!!$                  !idxngb = globalCell(iCell-1,jCell,kCell)
-!!$	          if (idxngb >=0 .and. idxngb.ne.-5) then
-!!$		     !print *,'indiciesi-1',idxmgb,idxngb
-!!$                     call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, &
-!!$                                           Bad(:,:,sps2), ADD_VALUES,PETScIerr)
-!!$                     if( PETScIerr/=0 ) &
-!!$                        call errAssemb("MatSetValuesBlocked", "Bad")
-!!$		  endif
-!!$                endif
-!!$
+           do sps2 = 1,nTimeIntervalsSpectral
+              !*********************************************************
+              !                                                        *
+              ! Transfer the block Jacobians to the PETSc matrix.      *
+              ! For the off-diagonal blocks, take into account halo    *
+              ! nodes at the boundaries, if present.                   *
+              !                                                        *
+              ! This depends on the type of the PETsc matrix dRdWPre,  *
+              ! whether is blocked or not.                             *
+              !                                                        *
+              !*********************************************************
+
+              ! >>> block sparse matrix -> use MatSetValuesBlocked
+
+              ! When using the block compressed sparse row matrix format
+              ! (MATSEQBAIJ or MATMPIBAIJ), one can insert elements more
+              ! efficiently using the block variant MatSetValuesBlocked.
+              !
+              ! MatSetValuesBlocked - Inserts or adds a block of values
+              !                       into a matrix.
+              ! Synopsis
+              !
+              ! #include "petscmat.h" 
+              ! call MatSetValuesBlocked(Mat mat,                      &
+              !                  PetscInt m,const PetscInt idxm[],     &
+              !                  PetscInt n,const PetscInt idxn[],     &
+              !                  const PetscScalar v[],InsertMode addv,&
+              !                  PetscErrorCode ierr)
+              !
+              ! Not Collective
+              !
+              ! Input Parameters
+              !   mat     - the matrix
+              !   v       - a logically two-dimensional array of values
+              !   m, idxm - the number of block rows and their global
+              !             block indices
+              !   n, idxn - the number of block columns and their global
+              !             block indices
+              !   addv    - either ADD_VALUES or INSERT_VALUES, where
+              !             ADD_VALUES adds values to any existing
+              !             entries, and INSERT_VALUES replaces existing
+              !             entries with new values
+              ! Notes
+              ! The m and n count the NUMBER of blocks in the row
+              !   direction and column direction, NOT the total number
+              !   of rows/columns; for example, if the block size is 2
+              !   and you are passing in values for rows 2,3,4,5 then m
+              !   would be 2 (not 4).
+              !
+              ! By default the values, v, are row-oriented and unsorted.
+              !   So the layout of v is the same as for MatSetValues().
+              !   See MatSetOption() for other options.
+              !
+              ! Calls to MatSetValuesBlocked() with the INSERT_VALUES
+              !   and ADD_VALUES options cannot be mixed without
+              !   intervening calls to the assembly routines.
+              !
+              ! MatSetValuesBlocked() uses 0-based row and column
+              !   numbers in Fortran as well as in C. 
+              !
+              ! see .../petsc/docs/manualpages/Mat/MatSetValuesBlocked.html
+
+              if(PETScBlockMatrix) then
+
+                ! Global matrix block row mgb function of node indices.
+                !
+                ! MatSetValuesBlocked() uses 0-based row and column 
+                ! numbers but the global node numbering already accounts
+                ! for that since it starts at node 0.
+
+                idxmgb = globalCell(iCell,jCell,kCell)
+		!print *,'globalcell',idxmgb,globalCell(iCell,jCell,kCell)
+                ! >>> center block A < W(i,j,k)
+                call setPointersAdj(nn,level,sps2)
+                idxngb = globalCell(iCell,jCell,kCell)!idxmgb
+                call setPointersAdj(nn,level,sps)
+		!print *,'indicies0',idxmgb,idxngb
+                call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
+                                         transpose(Aad(:,:,sps2)), ADD_VALUES,PETScIerr)
+                if( PETScIerr/=0 ) &
+                  call errAssemb("MatSetValuesBlocked", "Aad")
+
+                ! >>> west block B < W(i-1,j,k)
+	
+                if( (iCell-1) >= 0 ) then
+                  call setPointersAdj(nn,level,sps2)
+                  idxngb = globalCell(iCell-1,jCell,kCell)!idxmgb
+                  call setPointersAdj(nn,level,sps)
+                  !idxngb = globalCell(iCell-1,jCell,kCell)
+	          if (idxngb >=0 .and. idxngb.ne.-5) then
+		     !print *,'indiciesi-1',idxmgb,idxngb
+                     call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
+                                           transpose(Bad(:,:,sps2)), ADD_VALUES,PETScIerr)
+                     if( PETScIerr/=0 ) &
+                        call errAssemb("MatSetValuesBlocked", "Bad")
+		  endif
+                endif
 
 !!$
-!!$                ! >>> east block C < W(i+1,j,k)
-!!$
-!!$                if( (iCell+1) <= ib ) then
-!!$                   call setPointersAdj(nn,level,sps2)
-!!$                   idxngb = globalCell(iCell+1,jCell,kCell)!idxmgb
-!!$                   call setPointersAdj(nn,level,sps)
-!!$                   !idxngb = globalCell(iCell+1,jCell,kCell)
-!!$		  !print *,'ncellsglobal',ncellsglobal,globalcell(13,5,5)
-!!$		  !stop
-!!$		  if (idxngb<nCellsGlobal*sps2 .and. idxngb.ne.-5) then
-!!$                      call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, &
-!!$                                              Cad(:,:,sps2), ADD_VALUES,PETScIerr)
-!!$                      if( PETScIerr/=0 ) &
-!!$                        call errAssemb("MatSetValuesBlocked", "Cad")
-!!$		  endif
-!!$                end if
-!!$
-!!$                ! >>> far east block CC < W(i+2,j,k)
-!!$
+
+                ! >>> east block C < W(i+1,j,k)
+
+                if( (iCell+1) <= ib ) then
+                   call setPointersAdj(nn,level,sps2)
+                   idxngb = globalCell(iCell+1,jCell,kCell)!idxmgb
+                   call setPointersAdj(nn,level,sps)
+                   !idxngb = globalCell(iCell+1,jCell,kCell)
+		  !print *,'ncellsglobal',ncellsglobal,globalcell(13,5,5)
+		  !stop
+		  if (idxngb<nCellsGlobal*sps2 .and. idxngb.ne.-5) then
+                      call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
+                                              transpose(Cad(:,:,sps2)), ADD_VALUES,PETScIerr)
+                      if( PETScIerr/=0 ) &
+                        call errAssemb("MatSetValuesBlocked", "Cad")
+		  endif
+                end if
+
+                ! >>> far east block CC < W(i+2,j,k)
 
 !!$
-!!$                ! >>> south block D < W(i,j-1,k)
-!!$
-!!$                if( (jCell-1) >= 0 ) then
-!!$                   call setPointersAdj(nn,level,sps2)
-!!$                   idxngb = globalCell(iCell,jCell-1,kCell)!idxmgb
-!!$                   call setPointersAdj(nn,level,sps)
-!!$                   !idxngb = globalCell(iCell,jCell-1,kCell)
-!!$		  if (idxngb>=0 .and. idxngb.ne.-5) then
-!!$                      call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, &
-!!$                                               Dad(:,:,sps2), ADD_VALUES,PETScIerr)
-!!$                      if( PETScIerr/=0 ) &
-!!$                         call errAssemb("MatSetValuesBlocked", "Dad")
-!!$	  	  endif
-!!$                endif
-!!$
+
+                ! >>> south block D < W(i,j-1,k)
+
+                if( (jCell-1) >= 0 ) then
+                   call setPointersAdj(nn,level,sps2)
+                   idxngb = globalCell(iCell,jCell-1,kCell)!idxmgb
+                   call setPointersAdj(nn,level,sps)
+                   !idxngb = globalCell(iCell,jCell-1,kCell)
+		  if (idxngb>=0 .and. idxngb.ne.-5) then
+                      call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
+                                               transpose(Dad(:,:,sps2)), ADD_VALUES,PETScIerr)
+                      if( PETScIerr/=0 ) &
+                         call errAssemb("MatSetValuesBlocked", "Dad")
+	  	  endif
+                endif
 
 !!$
-!!$                ! >>> north block E < W(i,j+1,k)
-!!$
-!!$                if( (jCell+1) <= jb ) then
-!!$                   call setPointersAdj(nn,level,sps2)
-!!$                   idxngb = globalCell(iCell,jCell+1,kCell)!idxmgb
-!!$                   call setPointersAdj(nn,level,sps)
-!!$                   !idxngb = globalCell(iCell,jCell+1,kCell)
-!!$                  if (idxngb<nCellsGlobal*sps2 .and. idxngb.ne.-5) then
-!!$                     call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, &
-!!$                                              Ead(:,:,sps2), ADD_VALUES,PETScIerr)
-!!$                     if( PETScIerr/=0 ) &
-!!$                       call errAssemb("MatSetValuesBlocked", "Ead")
-!!$		  endif
-!!$                end if
-!!$
+
+                ! >>> north block E < W(i,j+1,k)
+
+                if( (jCell+1) <= jb ) then
+                   call setPointersAdj(nn,level,sps2)
+                   idxngb = globalCell(iCell,jCell+1,kCell)!idxmgb
+                   call setPointersAdj(nn,level,sps)
+                   !idxngb = globalCell(iCell,jCell+1,kCell)
+                  if (idxngb<nCellsGlobal*sps2 .and. idxngb.ne.-5) then
+                     call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
+                                              transpose(Ead(:,:,sps2)), ADD_VALUES,PETScIerr)
+                     if( PETScIerr/=0 ) &
+                       call errAssemb("MatSetValuesBlocked", "Ead")
+		  endif
+                end if
 
 !!$
-!!$                ! >>> back block F < W(i,j,k-1)
-!!$
-!!$                if( (kCell-1) >= 0 ) then
-!!$                   call setPointersAdj(nn,level,sps2)
-!!$                  idxngb = globalCell(iCell,jCell,kCell-1)!idxmgb
-!!$                  call setPointersAdj(nn,level,sps)
-!!$                  !idxngb = globalCell(iCell,jCell,kCell-1)
-!!$                  if (idxngb>=0 .and. idxngb.ne.-5) then
-!!$                     call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, &
-!!$                                              Fad(:,:,sps2), ADD_VALUES,PETScIerr)
-!!$                     if( PETScIerr/=0 ) &
-!!$                       call errAssemb("MatSetValuesBlocked", "Fad")
-!!$		  endif
-!!$                endif
-!!$
+
+                ! >>> back block F < W(i,j,k-1)
+
+                if( (kCell-1) >= 0 ) then
+                   call setPointersAdj(nn,level,sps2)
+                  idxngb = globalCell(iCell,jCell,kCell-1)!idxmgb
+                  call setPointersAdj(nn,level,sps)
+                  !idxngb = globalCell(iCell,jCell,kCell-1)
+                  if (idxngb>=0 .and. idxngb.ne.-5) then
+                     call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
+                                              transpose(Fad(:,:,sps2)), ADD_VALUES,PETScIerr)
+                     if( PETScIerr/=0 ) &
+                       call errAssemb("MatSetValuesBlocked", "Fad")
+		  endif
+                endif
 
 !!$
-!!$                ! >>> front block G < W(i,j,k+1)
-!!$
-!!$                if( (kCell+1) <= kb ) then
-!!$                  call setPointersAdj(nn,level,sps2)
-!!$                  idxngb = globalCell(iCell,jCell,kCell+1)!idxmgb
-!!$                  call setPointersAdj(nn,level,sps)
-!!$                  !idxngb = globalCell(iCell,jCell,kCell+1)
-!!$ 		  if (idxngb<nCellsGlobal*sps2 .and. idxngb.ne.-5) then
-!!$                     call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, &
-!!$                                              Gad(:,:,sps2), ADD_VALUES,PETScIerr)
-!!$                     if( PETScIerr/=0 ) &
-!!$                       call errAssemb("MatSetValuesBlocked", "Gad")
-!!$		  endif
-!!$                end if
-!!$
+
+                ! >>> front block G < W(i,j,k+1)
+
+                if( (kCell+1) <= kb ) then
+                  call setPointersAdj(nn,level,sps2)
+                  idxngb = globalCell(iCell,jCell,kCell+1)!idxmgb
+                  call setPointersAdj(nn,level,sps)
+                  !idxngb = globalCell(iCell,jCell,kCell+1)
+ 		  if (idxngb<nCellsGlobal*sps2 .and. idxngb.ne.-5) then
+                     call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
+                                              transpose(Gad(:,:,sps2)), ADD_VALUES,PETScIerr)
+                     if( PETScIerr/=0 ) &
+                       call errAssemb("MatSetValuesBlocked", "Gad")
+		  endif
+                end if
 
 !!$
-!!$
-!!$
-!!$              ! >>> sparse matrix -> use MatSetValues
-!!$
-!!$              ! MatSetValues - Inserts or adds a block of values into a
-!!$              !                matrix. These values may be cached, so
-!!$              !                MatAssemblyBegin() and MatAssemblyEnd()
-!!$              !                MUST be called after all calls to 
-!!$              !                MatSetValues() have been completed.
-!!$              !
-!!$              ! Synopsis
-!!$              !
-!!$              ! #include "petscmat.h" 
-!!$              ! call MatSetValues(Mat mat,                             &
-!!$              !                PetscInt m,const PetscInt idxm[],       &
-!!$              !                PetscInt n,const PetscInt idxn[],       &
-!!$              !                const PetscScalar v[], InsertMode addv, &
-!!$              !                PetscErrorCodeierr)
-!!$              !
-!!$              ! Not Collective
-!!$              !
-!!$              ! Input Parameters
-!!$              !   mat     - the matrix
-!!$              !   v       - a logically two-dimensional array of values
-!!$              !   m, idxm - the number of rows and their global indices
-!!$              !   n, idxn - the number of columns and their global indices
-!!$              !   addv    - either ADD_VALUES or INSERT_VALUES, where
-!!$              !             ADD_VALUES adds values to any existing
-!!$              !             entries, and INSERT_VALUES replaces existing
-!!$              !             entries with new values
-!!$              !
-!!$              ! Notes
-!!$              ! By default the values, v, are row-oriented and unsorted.
-!!$              !   See MatSetOption() for other options.
-!!$              !
-!!$              ! Calls to MatSetValues() with the INSERT_VALUES
-!!$              !   and ADD_VALUES options cannot be mixed without
-!!$              !   intervening calls to the assembly routines.
-!!$              !
-!!$              ! MatSetValues() uses 0-based row and column
-!!$              !   numbers in Fortran as well as in C.
-!!$              !
-!!$              ! Efficiency Alert
-!!$              ! The routine MatSetValuesBlocked() may offer much better
-!!$              ! efficiency for users of block sparse formats
-!!$              ! (MATSEQBAIJ and MATMPIBAIJ).
-!!$              !
-!!$              ! see .../petsc/docs/manualpages/Mat/MatSetValues.html
-!!$              !
-!!$              !*********************************************************
-!!$
-!!$              else ! PETScBlockMatrix
-!!$		stop
+
+
+
+              ! >>> sparse matrix -> use MatSetValues
+
+              ! MatSetValues - Inserts or adds a block of values into a
+              !                matrix. These values may be cached, so
+              !                MatAssemblyBegin() and MatAssemblyEnd()
+              !                MUST be called after all calls to 
+              !                MatSetValues() have been completed.
+              !
+              ! Synopsis
+              !
+              ! #include "petscmat.h" 
+              ! call MatSetValues(Mat mat,                             &
+              !                PetscInt m,const PetscInt idxm[],       &
+              !                PetscInt n,const PetscInt idxn[],       &
+              !                const PetscScalar v[], InsertMode addv, &
+              !                PetscErrorCodeierr)
+              !
+              ! Not Collective
+              !
+              ! Input Parameters
+              !   mat     - the matrix
+              !   v       - a logically two-dimensional array of values
+              !   m, idxm - the number of rows and their global indices
+              !   n, idxn - the number of columns and their global indices
+              !   addv    - either ADD_VALUES or INSERT_VALUES, where
+              !             ADD_VALUES adds values to any existing
+              !             entries, and INSERT_VALUES replaces existing
+              !             entries with new values
+              !
+              ! Notes
+              ! By default the values, v, are row-oriented and unsorted.
+              !   See MatSetOption() for other options.
+              !
+              ! Calls to MatSetValues() with the INSERT_VALUES
+              !   and ADD_VALUES options cannot be mixed without
+              !   intervening calls to the assembly routines.
+              !
+              ! MatSetValues() uses 0-based row and column
+              !   numbers in Fortran as well as in C.
+              !
+              ! Efficiency Alert
+              ! The routine MatSetValuesBlocked() may offer much better
+              ! efficiency for users of block sparse formats
+              ! (MATSEQBAIJ and MATMPIBAIJ).
+              !
+              ! see .../petsc/docs/manualpages/Mat/MatSetValues.html
+              !
+              !*********************************************************
+
+              else ! PETScBlockMatrix
+		stop
 !!$                ! Global matrix block row mgb function of node indices.
 !!$                !
 !!$                ! MatSetValues() uses 0-based row and column 
@@ -689,22 +689,22 @@
 !!$
 
 !!$   
-!!$
-!!$              endif ! PETScBlockMatrix
-!!$           end do
+
+              endif ! PETScBlockMatrix
+           end do
 	
-            enddo
-          enddo 
-        enddo 
+        enddo
+     enddo
+  enddo
+  
+enddo spectralLoop
+!===============================================================
 
-      enddo spectralLoop
-        !===============================================================
+enddo domainLoopad
 
-      enddo domainLoopad
-
-      !Return dissipation Parameters to normal
-      vis2 = vis2_ref
-      vis4 = vis4_ref
+!Return dissipation Parameters to normal
+vis2 = vis2_ref
+vis4 = vis4_ref
       
 !
 !     ******************************************************************
@@ -790,11 +790,17 @@
       !
       ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
       ! or PETSc users manual, pp.52
-#ifndef USE_PETSC_3
+#ifdef USE_PETSC_3
+      call MatSetOption(dRdWPreT,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("setupADjointMatrixPCTranspose", "Error in MatSetOption")
+
+#else
       call MatSetOption(dRdWPreT,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("setupADjointMatrixPC", "Error in MatSetOption")
+        call terminate("setupADjointMatrixPCTranspose", "Error in MatSetOption")
 #endif
       ! Get new time and compute the elapsed time.
 
@@ -844,6 +850,9 @@
       ! or PETSc users manual, pp.57,148
 
 !!$      if( debug ) then
+!      call PetscViewerBinaryOpen(PETSC_COMM_WORLD,outfile,FILE_MODE_WRITE,Bin_Viewer,PETScIerr)
+!      call MatView(dRdWpreT,Bin_Viewer,PETScIerr)
+!      call PetscViewerDestroy(Bin_Viewer,PETScIerr)
 !!$        !call MatView(dRdWPre,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
 !!$      print *,'viewing drdwPC'
 !!$        call MatView(dRdWPre,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
@@ -902,88 +911,88 @@ call mpi_barrier(SUmb_comm_world, ierr)
 
    10 format(a)
    20 format(a,1x,f8.2)
-!!$
-!!$      !=================================================================
-!!$
-!!$      contains
-!!$
-!!$        !===============================================================
-!!$
-!!$        subroutine blockIndices(indexBlock, indexArray)
-!!$!
-!!$!       ****************************************************************
-!!$!       *                                                              *
-!!$!       * blockIndices fill the array containing the block matrix      *
-!!$!       * indices used when assembling the Jacobian matrix with the    *
-!!$!       * PETSc function MatSetValues().                               *
-!!$!       *                                                              *
-!!$!       ****************************************************************
-!!$!
-!!$        implicit none
-!!$!
-!!$!       Subroutine arguments.
-!!$!
-!!$        integer(kind=intType), intent(in) :: indexBlock
-!!$        integer(kind=intType), dimension(nw), intent(out) :: indexArray
-!!$!
-!!$!       Local variables.
-!!$!
-!!$        integer(kind=intType) :: idx
-!!$!
-!!$!       ****************************************************************
-!!$!       *                                                              *
-!!$!       * Begin execution.                                             *
-!!$!       *                                                              *
-!!$!       ****************************************************************
-!!$!
-!!$        indexArray(1) = indexBlock * nw
-!!$        do idx = 2, nw
-!!$          indexArray(idx) = indexArray(idx-1) + 1
-!!$        enddo
-!!$
-!!$        end subroutine blockIndices
-!!$
-!!$        !===============================================================
-!!$
-!!$        subroutine errAssemb(routineName, matrixName)
-!!$!
-!!$!       ****************************************************************
-!!$!       *                                                              *
-!!$!       * errAssemb handles the error message and program termination  *
-!!$!       * during the Jacobian matrix dRdWpre assembly.                    *
-!!$!       *                                                              *
-!!$!       ****************************************************************
-!!$!
-!!$        implicit none
-!!$!
-!!$!       Subroutine arguments.
-!!$!
-!!$        character(len=*), intent(in) :: routineName
-!!$        character(len=*), intent(in) :: matrixName
-!!$!
-!!$!       Local variables.
-!!$!
-!!$        character(len=2*maxStringLen) :: errorMessage
-!!$!
-!!$!       ****************************************************************
-!!$!       *                                                              *
-!!$!       * Begin execution.                                             *
-!!$!       *                                                              *
-!!$!       ****************************************************************
-!!$!
-!!$        ! Determine the number of halo nodes to be communicated and
-!!$        ! check if halo data should be copied to the buffer.
-!!$
-!!$        write(errorMessage,99) "Error in",                          &
-!!$                               trim(routineName), trim(matrixName), &
-!!$                               "for global node", idxmgb
-!!$        call terminate("setupADjointMatrix", errorMessage)
-!!$
-!!$        ! Output format.
-!!$
-!!$   99   format(a,1x,a,1x,a,1x,a,1x,i6)
-!!$
-!!$        end subroutine errAssemb
+
+      !=================================================================
+
+      contains
+
+        !===============================================================
+
+        subroutine blockIndices(indexBlock, indexArray)
+!
+!       ****************************************************************
+!       *                                                              *
+!       * blockIndices fill the array containing the block matrix      *
+!       * indices used when assembling the Jacobian matrix with the    *
+!       * PETSc function MatSetValues().                               *
+!       *                                                              *
+!       ****************************************************************
+!
+        implicit none
+!
+!       Subroutine arguments.
+!
+        integer(kind=intType), intent(in) :: indexBlock
+        integer(kind=intType), dimension(nw), intent(out) :: indexArray
+!
+!       Local variables.
+!
+        integer(kind=intType) :: idx
+!
+!       ****************************************************************
+!       *                                                              *
+!       * Begin execution.                                             *
+!       *                                                              *
+!       ****************************************************************
+!
+        indexArray(1) = indexBlock * nw
+        do idx = 2, nw
+          indexArray(idx) = indexArray(idx-1) + 1
+        enddo
+
+        end subroutine blockIndices
+
+        !===============================================================
+
+        subroutine errAssemb(routineName, matrixName)
+!
+!       ****************************************************************
+!       *                                                              *
+!       * errAssemb handles the error message and program termination  *
+!       * during the Jacobian matrix dRdWpre assembly.                    *
+!       *                                                              *
+!       ****************************************************************
+!
+        implicit none
+!
+!       Subroutine arguments.
+!
+        character(len=*), intent(in) :: routineName
+        character(len=*), intent(in) :: matrixName
+!
+!       Local variables.
+!
+        character(len=2*maxStringLen) :: errorMessage
+!
+!       ****************************************************************
+!       *                                                              *
+!       * Begin execution.                                             *
+!       *                                                              *
+!       ****************************************************************
+!
+        ! Determine the number of halo nodes to be communicated and
+        ! check if halo data should be copied to the buffer.
+
+        write(errorMessage,99) "Error in",                          &
+                               trim(routineName), trim(matrixName), &
+                               "for global node", idxmgb
+        call terminate("setupADjointMatrix", errorMessage)
+
+        ! Output format.
+
+   99   format(a,1x,a,1x,a,1x,a,1x,i6)
+
+        end subroutine errAssemb
 
 #endif
 

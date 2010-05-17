@@ -128,10 +128,12 @@
               call terminate("createPETScKSP", "Error in KSPSetOperators.")
 
 
-
+         !call KSPSetInitialGuessNonzero(ksp,PETSC_TRUE,PETScIerr)
+         !if( PETScIerr/=0 ) &
+         !     call terminate("setupPETScKSP", "Error in KSPSetInitialGuessNonZero.")
          !call PetscOptionsPrint(PETScIerr)
          !call PetscOptionsSetValue('-ksp_gmres_modifiedgramschmidt',PETSC_NULL_CHARACTER,PETScIerr)
-         
+         !call PetscOptionsSetValue('-ksp_gmres_krylov_monitor',PETSC_NULL_CHARACTER,PETScIerr) 
          !call PetscOptionsPrint(PETScIerr)
 
 
@@ -314,8 +316,11 @@
          !      call KSPGMRESSetCGSRefinementType(ksp, &
          !                     KSP_GMRES_CGS_REFINE_NEVER, PETScIerr)
          
-         call KSPGMRESSetCGSRefinementType(ksp, &
-              KSP_GMRES_CGS_REFINE_IFNEEDED, PETScIerr)
+!         call KSPGMRESSetCGSRefinementType(ksp, &
+!              KSP_GMRES_CGS_REFINE_IFNEEDED, PETScIerr)
+
+         call KSPGMRESSetCGSRefinementType(ksp, & 
+              KSP_GMRES_CGS_REFINE_IFNEEDED, PETScIerr)   
 
          if( PETScIerr/=0 ) &
               call terminate("createPETScKsp", &
@@ -1189,7 +1194,7 @@ subroutine MyKSPMonitor(myKsp, n, rnorm, dummy, ierr)
      
      ! Output format.
      
-10   format(i4,1x,'KSP Residual norm',1x,e10.4)
+10   format(i4,1x,'KSP Residual norm',1x,e16.10)
      
 #endif
      

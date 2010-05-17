@@ -115,6 +115,8 @@
 !     *                                                                *
 !     ******************************************************************
 !
+      !call PetscOptionsSetValue('-mat_view_info_detailed',PETSC_NULL_CHARACTER,PETScIerr)
+
       ! Create the matrix dRdW.
 
       ! >>> option #1 : sparse parallel matrix in block AIJ format
@@ -184,12 +186,12 @@
         nnzDiagonal = nzDiagonalW
         nnzOffDiag  = nzOffDiag
         !print *,'nnzDiagonal',nnzDiagonal,'ofdiag',nnzOffDiag 
-        call MatCreateMPIBAIJ(PETSC_COMM_WORLD, nw,             &
-                              nDimW, nDimW,                     &
-                              PETSC_DETERMINE, PETSC_DETERMINE, &
-                              nzDiagonalW, nnzDiagonal,         &
-                              nzOffDiag, nnzOffDiag,            &
-                              dRdW, PETScIerr)
+!!$        call MatCreateMPIBAIJ(PETSC_COMM_WORLD, nw,             &
+!!$                              nDimW, nDimW,                     &
+!!$                              PETSC_DETERMINE, PETSC_DETERMINE, &
+!!$                              nzDiagonalW, nnzDiagonal,         &
+!!$                              nzOffDiag, nnzOffDiag,            &
+!!$                              dRdW, PETScIerr)
         call MatCreateMPIBAIJ(PETSC_COMM_WORLD, nw,             &
                               nDimW, nDimW,                     &
                               PETSC_DETERMINE, PETSC_DETERMINE, &
@@ -290,12 +292,12 @@
         nnzDiagonal = nzDiagonalW
         nnzOffDiag  = nzOffDiag
 
-        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
-                             nDimW, nDimW,                     &
-                             PETSC_DETERMINE, PETSC_DETERMINE, &
-                             nzDiagonalW, nnzDiagonal,         &
-                             nzOffDiag, nnzOffDiag,            &
-                             dRdW, PETScIerr)
+!!$        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+!!$                             nDimW, nDimW,                     &
+!!$                             PETSC_DETERMINE, PETSC_DETERMINE, &
+!!$                             nzDiagonalW, nnzDiagonal,         &
+!!$                             nzOffDiag, nnzOffDiag,            &
+!!$                             dRdW, PETScIerr)
 
         call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
                              nDimW, nDimW,                     &
@@ -377,13 +379,14 @@
 
 
 #ifdef USE_PETSC_3
-      call MatSetOption(dRdW, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+    !  call MatSetOption(dRdW, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
       call MatSetOption(dRdWt, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
-
+      !call MatSetOption(dRdWt,MAT_NEW_NONZERO_LOCATIONS,PETSC_TRUE,PETScIErr)
+      !call MatSetOption(dRdWt,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE,PETScIErr)
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dRdW")
 #else
-      call MatSetOption(dRdW, MAT_COLUMN_ORIENTED, PETScIerr)
+  !    call MatSetOption(dRdW, MAT_COLUMN_ORIENTED, PETScIerr)
       call MatSetOption(dRdWt, MAT_COLUMN_ORIENTED, PETScIerr)
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dRdW")
@@ -471,12 +474,12 @@ if (ApproxPC) then
         nnzDiagonal = nzDiagonalWPC
         nnzOffDiag  = nzOffDiag
         !print *,'nnzDiagonal',nnzDiagonal,'ofdiag',nnzOffDiag 
-        call MatCreateMPIBAIJ(PETSC_COMM_WORLD, nw,             &
-                              nDimW, nDimW,                     &
-                              PETSC_DETERMINE, PETSC_DETERMINE, &
-                              nzDiagonalW, nnzDiagonal,         &
-                              nzOffDiag, nnzOffDiag,            &
-                              dRdWPre, PETScIerr)
+!!$        call MatCreateMPIBAIJ(PETSC_COMM_WORLD, nw,             &
+!!$                              nDimW, nDimW,                     &
+!!$                              PETSC_DETERMINE, PETSC_DETERMINE, &
+!!$                              nzDiagonalW, nnzDiagonal,         &
+!!$                              nzOffDiag, nnzOffDiag,            &
+!!$                              dRdWPre, PETScIerr)
         call MatCreateMPIBAIJ(PETSC_COMM_WORLD, nw,             &
                               nDimW, nDimW,                     &
                               PETSC_DETERMINE, PETSC_DETERMINE, &
@@ -577,12 +580,12 @@ if (ApproxPC) then
         nnzDiagonal = nzDiagonalWPC
         nnzOffDiag  = nzOffDiag
 
-        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
-                             nDimW, nDimW,                     &
-                             PETSC_DETERMINE, PETSC_DETERMINE, &
-                             nzDiagonalW, nnzDiagonal,         &
-                             nzOffDiag, nnzOffDiag,            &
-                             dRdWPre, PETScIerr)
+!!$        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+!!$                             nDimW, nDimW,                     &
+!!$                             PETSC_DETERMINE, PETSC_DETERMINE, &
+!!$                             nzDiagonalW, nnzDiagonal,         &
+!!$                             nzOffDiag, nnzOffDiag,            &
+!!$                             dRdWPre, PETScIerr)
         call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
                              nDimW, nDimW,                     &
                              PETSC_DETERMINE, PETSC_DETERMINE, &
@@ -661,12 +664,14 @@ if (ApproxPC) then
       ! see .../petsc/docs/manualpages/Mat/MatSetOption.html
       ! or PETSc users manual, pp.51-52
 #ifdef USE_PETSC_3
-      call MatSetOption(dRdWPre, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+   !   call MatSetOption(dRdWPre, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
       call MatSetOption(dRdWPret, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+      !call MatSetOption(dRdWPret,MAT_NEW_NONZERO_LOCATIONS,PETSC_TRUE,PETScIErr)
+     ! call MatSetOption(dRdWPret,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE,PETScIErr)
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dRdW")
 #else
-      call MatSetOption(dRdWPre, MAT_COLUMN_ORIENTED, PETScIerr)
+    !  call MatSetOption(dRdWPre, MAT_COLUMN_ORIENTED, PETScIerr)
       call MatSetOption(dRdWPret, MAT_COLUMN_ORIENTED, PETScIerr)
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dRdWPre")
@@ -880,13 +885,13 @@ if(Debug) then
         !
         ! see .../petsc/docs/manualpages/Mat/MatGetBlockSize.html
 
-        call MatGetBlockSize(dRdW, matBlockSize, PETScIerr)
+        call MatGetBlockSize(dRdWt, matBlockSize, PETScIerr)
 
         if( PETScIerr/=0 ) &
           call terminate("createPETScMat", &
                          "Error in MatGetBlockSize dRdW")
 
-        write(*,10) "# MATRIX: dRdW block size  =", matBlockSize
+        write(*,10) "# MATRIX: dRdWt block size  =", matBlockSize
 
         ! Get the global number of rows and columns.
 
@@ -909,12 +914,12 @@ if(Debug) then
         !
         ! see .../petsc/docs/manualpages/Mat/MatGetSize.html
 
-        call MatGetSize(dRdW, matRows, matCols, PETScIerr)
+        call MatGetSize(dRdWt, matRows, matCols, PETScIerr)
 
         if( PETScIerr/=0 ) &
-          call terminate("createPETScMat", "Error in MatGetSize dRdW")
+          call terminate("createPETScMat", "Error in MatGetSize dRdWt")
 
-        write(*,20) "# MATRIX: dRdW global size =", &
+        write(*,20) "# MATRIX: dRdWt global size =", &
                     matRows, "x", matCols
 
         ! Gets the matrix type as a string from the matrix object.
@@ -936,12 +941,12 @@ if(Debug) then
         !
         ! see .../petsc/docs/manualpages/Mat/MatGetType.html
 
-        call MatGetType(dRdW, matTypeStr, PETScIerr)
+        call MatGetType(dRdWt, matTypeStr, PETScIerr)
 
         if( PETScIerr/=0 ) &
-          call terminate("createPETScMat", "Error in MatGetType dRdW")
+          call terminate("createPETScMat", "Error in MatGetType dRdWt")
 
-        write(*,30) "# MATRIX: dRdW type        =", matTypeStr
+        write(*,30) "# MATRIX: dRdWt type        =", matTypeStr
 
       endif
 
@@ -971,13 +976,13 @@ if(Debug) then
       ! or PETSc users manual, pp.56
 
       if( debug ) then
-        call MatGetOwnershipRange(dRdW, iLow, iHigh, PETScIerr)
+        call MatGetOwnershipRange(dRdWt, iLow, iHigh, PETScIerr)
 
         if( PETScIerr/=0 ) &
           call terminate("createPETScMat", &
-                         "Error in MatGetOwnershipRange dRdW")
+                         "Error in MatGetOwnershipRange dRdWt")
 
-        write(*,40) "# MATRIX: dRdW Proc", PETScRank, "; #rows =", &
+        write(*,40) "# MATRIX: dRdWt Proc", PETScRank, "; #rows =", &
                     nDimW, "; ownership =", iLow, "to", iHigh-1
 
       endif
@@ -1103,7 +1108,7 @@ if(Debug) then
       call MatSetOption(dRda, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+        call terminate("createPETScMat", "Error in MatSetOption dRda")
 #else
       call MatSetOption(dRda, MAT_COLUMN_ORIENTED, PETScIerr)
 
@@ -1364,9 +1369,9 @@ if(Debug) then
       ! Set column major order for the matrix dRdx.
 #ifdef USE_PETSC_3
       call MatSetOption(dRdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
-
+      !call MatSetOption(dRdx,MAT_NEW_NONZERO_LOCATIONS,PETSC_TRUE,PETScIErr)
       if( PETScIerr/=0 ) &
-        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+        call terminate("createPETScMat", "Error in MatSetOption dRdx")
 #else
       call MatSetOption(dRdx, MAT_COLUMN_ORIENTED, PETScIerr)
 
@@ -1489,7 +1494,7 @@ if(debug)then
       call MatSetOption(dRdxFD, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+        call terminate("createPETScMat", "Error in MatSetOption dRdxfd")
 #else
       call MatSetOption(dRdxFD, MAT_COLUMN_ORIENTED, PETScIerr)
 
@@ -1619,7 +1624,7 @@ if(.false.)then
       call MatSetOption(dSdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+        call terminate("createPETScMat", "Error in MatSetOption dsdx")
 #else
       call MatSetOption(dSdx, MAT_COLUMN_ORIENTED, PETScIerr)
 
@@ -1752,7 +1757,7 @@ if( debug) then
       call MatSetOption(dSdxfd2, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+        call terminate("createPETScMat", "Error in MatSetOption dsdxfd2")
 #else
       call MatSetOption(dSdxfd2, MAT_COLUMN_ORIENTED, PETScIerr)
 
@@ -1884,7 +1889,7 @@ if(.false.)then
       call MatSetOption(dSdw, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+        call terminate("createPETScMat", "Error in MatSetOption dsdW")
 #else
       call MatSetOption(dSdw, MAT_COLUMN_ORIENTED, PETScIerr)
 
@@ -2052,7 +2057,7 @@ if(.false.)then
       call MatSetOption(dCdw, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+        call terminate("createPETScMat", "Error in MatSetOption dcdw")
 #else
       call MatSetOption(dCdw, MAT_COLUMN_ORIENTED, PETScIerr)
 
@@ -2221,7 +2226,7 @@ if(.false.)then
       call MatSetOption(dCdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+        call terminate("createPETScMat", "Error in MatSetOption dcdx")
 #else
       call MatSetOption(dCdx, MAT_COLUMN_ORIENTED, PETScIerr)
 
@@ -2387,7 +2392,7 @@ if(.false.)then
       call MatSetOption(dCda, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("createPETScMat", "Error in MatSetOption dRdW")
+        call terminate("createPETScMat", "Error in MatSetOption dcda")
 #else
       call MatSetOption(dCda, MAT_COLUMN_ORIENTED, PETScIerr)
 
@@ -2433,6 +2438,9 @@ if(.false.)then
      endif
        
 
+     ! Synchronize the processors.
+
+     call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
 
 !     ******************************************************************
       ! Output formats.

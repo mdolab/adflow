@@ -1003,6 +1003,16 @@ python module sumb ! in
           use adjointpetsc
         end subroutine createpetscvars
 
+        subroutine createpetscmat
+          use adjointpetsc
+          use adjointvars     
+          use communication   
+          use inputtimespectral 
+          use flowvarrefstate  
+          use inputadjoint    
+          implicit none
+        end subroutine createpetscmat
+
         subroutine setupadjointmatrix(level) ! in :sumb:../../adjoint/setupADjointMatrix.F90
             use adjointpetsc
             use adjointvars
@@ -1188,6 +1198,18 @@ python module sumb ! in
             use communication
             use flowvarrefstate
         end subroutine destroypetscksp
+
+        subroutine destroypetscvars ! in :sumb:../../adjoint/destroyPETScVars.F90
+            use adjointpetsc
+            use communication
+            use flowvarrefstate
+        end subroutine destroypetscvars
+
+        subroutine destroypetscmat
+          use adjointpetsc
+          use communication
+          use flowvarrefstate 
+        end subroutine destroypetscmat
         
         subroutine setupadjointrhsstruct(lenadjoint,structadjoint) ! in :sumb:setupADjointRHSStruct.f90
             use adjointpetsc
