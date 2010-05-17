@@ -59,7 +59,7 @@
 !#f90##include "include/finclude/petscmat.h90"
 #include "include/finclude/petscksp.h"
 #include "include/finclude/petscpc.h"
-!#include "include/finclude/petscviewer.h"
+#include "include/finclude/petscviewer.h"
 #include "include/finclude/petscis.h"
 #include "include/finclude/petscis.h90"
 !#include "include/finclude/petscdraw.h"
@@ -216,6 +216,9 @@
       PetscScalar x_array(1)
 
       PetscOffset i_x
+
+      !Binary Viewer
+      PetscViewer Bin_Viewer
 
 #endif
 

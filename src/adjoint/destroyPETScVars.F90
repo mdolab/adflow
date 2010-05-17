@@ -71,6 +71,12 @@
         call terminate("destroyPETScVars", &
                        "Could not destroy vector pvr")
 
+      call VecDestroy(dJcdW, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("destroyPETScVars", &
+                       "Could not destroy vector dJcdW")
+
       call VecDestroy(dJda, PETScIerr)
 
       if( PETScIerr/=0 ) &
@@ -100,6 +106,18 @@
       if( PETScIerr/=0 ) &
         call terminate("destroyPETScVars", &
                        "Could not destroy vector dIdxsDV")
+
+      call VecDestroy(phic, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("destroyPETScVars", &
+                       "Could not destroy vector phic")
+
+      call VecDestroy(dJdc, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("destroyPETScVars", &
+                       "Could not destroy vector djdc")
       ! MatDestroy - Frees space taken by a matrix.
       !
       ! Synopsis
@@ -121,6 +139,25 @@
         call terminate("destroyPETScVars", &
                        "Could not destroy matrix dRdW")
 
+      call MatDestroy(dRdWt, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("destroyPETScVars", &
+                       "Could not destroy matrix dRdWt")
+
+      call MatDestroy(dRdWPre, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("destroyPETScVars", &
+                       "Could not destroy matrix dRdWpre")
+
+      call MatDestroy(dRdWpret, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("destroyPETScVars", &
+                       "Could not destroy matrix dRdWpret")
+
+
       call MatDestroy(dRda, PETScIerr)
 
       if( PETScIerr/=0 ) &
@@ -132,6 +169,25 @@
       if( PETScIerr/=0 ) &
         call terminate("destroyPETScVars", &
                        "Could not destroy matrix dRdx")
+
+      call MatDestroy(dCdw, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+           call terminate("destroyPETScVars", &
+           "Could not destroy matrix dcdw")
+
+      call MatDestroy(dCdx, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+           call terminate("destroyPETScVars", &
+           "Could not destroy matrix dcdx")
+
+      call MatDestroy(dCda, PETScIerr)
+
+      if( PETScIerr/=0 ) &
+           call terminate("destroyPETScVars", &
+           "Could not destroy matrix dcda")
+
 
       ! KSPDestroy - Destroys KSP context.
       !
