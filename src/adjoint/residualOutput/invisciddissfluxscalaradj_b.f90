@@ -418,6 +418,7 @@ SUBROUTINE INVISCIDDISSFLUXSCALARADJ_B(wadj, wadjb, padj, padjb, dwadj, &
         END IF
       END IF
       CALL PUSHREAL8(ddw)
+!print *,'dis2,4',dis2,dis4
 ! Compute and scatter the dissipative flux.
 ! Density. Store it in the mass flow of the
 ! appropriate sliding mesh interface.

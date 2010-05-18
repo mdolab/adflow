@@ -52,6 +52,7 @@
 
        real(kind=realType), dimension(3) :: sc, xc, xxc
        real(kind=realType), dimension(3) :: rotCenter, rotRate
+       real(kind=realType), dimension(3) :: offsetVector
 
        real(kind=realType), dimension(3)   :: rotationPoint
        real(kind=realType), dimension(3,3) :: rotationMatrix,&
@@ -421,6 +422,8 @@
 
              rotCenter = cgnsDoms(j)%rotCenter
              !print *,'rotcenter',rotCenter,'rotpoint',rotpoint
+             offSetVector= (rotCenter-pointRef)
+             !print *,'offset vector',offSetVector, rotCenter,pointRef
              rotRate   = timeRef*cgnsDoms(j)%rotRate
              !print *,'rotRate',rotRate,'timeref',timeref
              !subtract off the rotational velocity of the center of the grid
@@ -429,18 +432,18 @@
 !             velyGrid =velygrid0+ 1*(rotRate(3)*rotCenter(1) - rotRate(1)*rotCenter(3))
 !             velzGrid =velzgrid0+ 1*(rotRate(1)*rotCenter(2) - rotRate(2)*rotCenter(1))
              
-             velxGrid =velxgrid0+ 1*(rotRate(2)*rotCenter(3) &
-                                  - rotRate(3)*rotCenter(2)) &
+             velxGrid =velxgrid0+ 1*(rotRate(2)*offSetVector(3) &
+                                  - rotRate(3)*offSetVector(2)) &
                               + derivRotationMatrix(1,1)*rotPoint(1) &
                               + derivRotationMatrix(1,2)*rotPoint(2) &
                               + derivRotationMatrix(1,3)*rotPoint(3)
-             velyGrid =velygrid0+ 1*(rotRate(3)*rotCenter(1)&
-                                  - rotRate(1)*rotCenter(3))&
+             velyGrid =velygrid0+ 1*(rotRate(3)*offSetVector(1)&
+                                  - rotRate(1)*offSetVector(3))&
                               + derivRotationMatrix(2,1)*rotPoint(1) &
                               + derivRotationMatrix(2,2)*rotPoint(2) &
                               + derivRotationMatrix(2,3)*rotPoint(3)
-             velzGrid =velzgrid0+ 1*(rotRate(1)*rotCenter(2) &
-                                  - rotRate(2)*rotCenter(1)) &
+             velzGrid =velzgrid0+ 1*(rotRate(1)*offSetVector(2) &
+                                  - rotRate(2)*offSetVector(1)) &
                               + derivRotationMatrix(3,1)*rotPoint(1) &
                               + derivRotationMatrix(3,2)*rotPoint(2) &
                               + derivRotationMatrix(3,3)*rotPoint(3)

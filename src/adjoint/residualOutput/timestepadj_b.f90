@@ -693,5 +693,5 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
 &      rhoinfadj
   END IF
   CALL POPINTEGER4(branch)
-  !adisb = 0.0
+ ! adisb = 0.0
 END SUBROUTINE TIMESTEPADJ_B
