@@ -1407,5 +1407,5 @@ SUBROUTINE INVISCIDUPWINDFLUXADJ_B(wadj, wadjb, padj, padjb, dwadj, &
   END IF
   CALL POPINTEGER4(branch)
   CALL POPINTEGER4(branch)
-  !gammaconstantb = 0.0
+ ! gammaconstantb = 0.0
 END SUBROUTINE INVISCIDUPWINDFLUXADJ_B

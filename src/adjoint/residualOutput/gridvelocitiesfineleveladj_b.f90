@@ -96,6 +96,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
   INTEGER(KIND=INTTYPE) :: i, ii, iie, j, jje, k, kke
   INTEGER(KIND=INTTYPE) :: iend, istart, jend, jstart, kend, kstart
   INTEGER(KIND=INTTYPE) :: mm
+  REAL(KIND=REALTYPE) :: offsetvector(3)
   REAL(KIND=REALTYPE) :: oneover4dt, oneover8dt
   REAL(KIND=REALTYPE) :: rotationmatrixadj(3, 3)
   REAL(KIND=REALTYPE) :: rotationpointadj(3), rotpointadj(3)
@@ -279,18 +280,19 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 !!$
 !!$             rotCenter = cgnsDoms(j)%rotCenter
 !!$             rotRate   = timeRef*cgnsDoms(j)%rotRate
-!subtract off the rotational velocity of the center of the grid
+      offsetvector = rotcenteradj - pointref
+!subtract off the rotational velocity of the center gravity of the grid
 ! to account for the added overall velocity.
-      velxgrid = velxgrid0 + 1*(rotrateadj(2)*rotcenteradj(3)-rotrateadj&
-&        (3)*rotcenteradj(2)) + derivrotationmatrixadj(1, 1)*rotpointadj&
+      velxgrid = velxgrid0 + 1*(rotrateadj(2)*offsetvector(3)-rotrateadj&
+&        (3)*offsetvector(2)) + derivrotationmatrixadj(1, 1)*rotpointadj&
 &        (1) + derivrotationmatrixadj(1, 2)*rotpointadj(2) + &
 &        derivrotationmatrixadj(1, 3)*rotpointadj(3)
-      velygrid = velygrid0 + 1*(rotrateadj(3)*rotcenteradj(1)-rotrateadj&
-&        (1)*rotcenteradj(3)) + derivrotationmatrixadj(2, 1)*rotpointadj&
+      velygrid = velygrid0 + 1*(rotrateadj(3)*offsetvector(1)-rotrateadj&
+&        (1)*offsetvector(3)) + derivrotationmatrixadj(2, 1)*rotpointadj&
 &        (1) + derivrotationmatrixadj(2, 2)*rotpointadj(2) + &
 &        derivrotationmatrixadj(2, 3)*rotpointadj(3)
-      velzgrid = velzgrid0 + 1*(rotrateadj(1)*rotcenteradj(2)-rotrateadj&
-&        (2)*rotcenteradj(1)) + derivrotationmatrixadj(3, 1)*rotpointadj&
+      velzgrid = velzgrid0 + 1*(rotrateadj(1)*offsetvector(2)-rotrateadj&
+&        (2)*offsetvector(1)) + derivrotationmatrixadj(3, 1)*rotpointadj&
 &        (1) + derivrotationmatrixadj(3, 2)*rotpointadj(2) + &
 &        derivrotationmatrixadj(3, 3)*rotpointadj(3)
 !
@@ -772,14 +774,14 @@ loopdirection:DO mm=1,3
         END DO
       END DO
       velzgrid0b = velzgridb
-      rotrateadjb(1) = rotrateadjb(1) + rotcenteradj(2)*velzgridb
-      rotrateadjb(2) = rotrateadjb(2) - rotcenteradj(1)*velzgridb
+      rotrateadjb(1) = rotrateadjb(1) + offsetvector(2)*velzgridb
+      rotrateadjb(2) = rotrateadjb(2) - offsetvector(1)*velzgridb
       velygrid0b = velygridb
-      rotrateadjb(3) = rotrateadjb(3) + rotcenteradj(1)*velygridb
-      rotrateadjb(1) = rotrateadjb(1) - rotcenteradj(3)*velygridb
+      rotrateadjb(3) = rotrateadjb(3) + offsetvector(1)*velygridb
+      rotrateadjb(1) = rotrateadjb(1) - offsetvector(3)*velygridb
       velxgrid0b = velxgridb
-      rotrateadjb(2) = rotrateadjb(2) + rotcenteradj(3)*velxgridb
-      rotrateadjb(3) = rotrateadjb(3) - rotcenteradj(2)*velxgridb
+      rotrateadjb(2) = rotrateadjb(2) + offsetvector(3)*velxgridb
+      rotrateadjb(3) = rotrateadjb(3) - offsetvector(2)*velxgridb
     END IF
   ELSE
     velxgrid0b = 0.0

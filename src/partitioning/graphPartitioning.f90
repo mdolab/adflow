@@ -93,6 +93,9 @@
 !
        ! Check whether part is allocated from a previous call. If so,
        ! release the memory.
+
+       !if(myid==0)print *,'allocating part'
+
        !print *,'allocating part'
        if( allocated(part) ) then
          deallocate(part, stat=ierr)
@@ -103,7 +106,10 @@
 
        ! Determine the number of edges in the graph and the maximum
        ! number for a vertex in the graph.
-       !print *,' determining edges'
+
+       !if(myid==0)print *,' determining edges'
+
+
        nEdges = 0
        nEdgesMax = 0
        do i=1,nBlocks
@@ -125,7 +131,7 @@
        options  = 0
 
        !  Allocate the memory to store/build the graph.
-!       print *,'allocating graph memory'
+       !if(myid==0)print *,'allocating graph memory'
        allocate(xadj(0:nVertex), vwgt(nCon,nVertex), adjncy(nEdges), &
                 adjwgt(nEdges), part(nVertex), tmp(nEdgesMax), stat=ierr)
        if(ierr /= 0)                         &
@@ -140,16 +146,19 @@
        adjwgt  = 0
 
        ! Loop over the number of blocks to build the graph.
-       !print *,'looping blocks',myID
-       call mpi_barrier(SUmb_comm_world, ierr)
-       do i =0, nProc-1
-          !print *,'ufmyID',myID,nProc
-          if (myID==i) then
-             print *,'myID',myID,nProc
-          end if
-          call f77flush()
-          call mpi_barrier(SUmb_comm_world, ierr)
-       enddo
+
+       !if(myid==0)print *,'looping blocks'
+!!$       !print *,'looping blocks',myID
+!!$       call mpi_barrier(SUmb_comm_world, ierr)
+!!$       do i =0, nProc-1
+!!$          !print *,'ufmyID',myID,nProc
+!!$          if (myID==i) then
+!!$             print *,'myID',myID,nProc
+!!$          end if
+!!$          call f77flush()
+!!$          call mpi_barrier(SUmb_comm_world, ierr)
+!!$       enddo
+
        graphVertex: do i=1,nBlocks
 
          ! Store the both vertex weights.
@@ -252,7 +261,9 @@
          enddo EdgesOverset
 
        enddo graphVertex
+
        !if(myid==0) print *,'end graphvertex'
+
        ! Metis has problems when the total number of cells or faces
        ! used in the weights exceeds 2Gb. Therefore the sum of these
        ! values is determined and an appropriate weight factor is 
@@ -285,34 +296,36 @@
        ! normally gives a valid partitioning.
        ! Initialize commNeglected to .false. This will change if in
        ! the loop below the first call to metis is not successful.
-       if(myid==0) print *,'starting metis'
+
+       !if(myid==0) print *,'starting metis'
+
        commNeglected = .false.
        attemptLoop: do ii=1,2
-          if(myid==0)print *,'looping',ii
+
+          !if(myid==0)print *,'looping',ii
+
+
          ! Call the graph partitioner.
-         !if(myid==0) print *,'calling metis',nVertex, nCon, numflag, nParts,  &
-          !                   ubvec, options
-          !if(myID==0) print *,'sizes',nVertex, nCon,'x',shape(xadj),'adjncy',shape(adjncy),'vw',shape(vwgt),'adjw',shape(adjwgt)
-          
+          !if(myid==0) print *,'calling metis',nVertex, nCon, xadj, adjncy, vwgt, &
+          !                   adjwgt, wgtflag, numflag, nParts,  &
+          !                   ubvec, options!, edgecut, part
 
-
-         ! if(myid==0) print *,'calling metis',nVertex, nCon, xadj, adjncy, vwgt, &
-         !                    adjwgt, wgtflag, numflag, nParts,  &
-         !                    ubvec, options
-         call mpi_barrier(SUmb_comm_world, ierr)
          call metisInterface(nVertex, nCon, xadj, adjncy, vwgt, &
                              adjwgt, wgtflag, numflag, nParts,  &
                              ubvec, options, edgecut, part)
          !if(myid==0) print *,'metis called', edgecut,'part',part,shape(part)
          ! Determine the number of blocks per processor.
-         !print *,'nblocks',nblocks
+         !if(myid==0)  print *,'nblocks',nblocks
          if(myid==0)  print *,'nblocks',nblocks
          nBlockPerProc = 0
          do i=1,nBlocks
-          !  print *,'nblocksperproc',nBlockPerProc(part(i)) 
-           nBlockPerProc(part(i)) = nBlockPerProc(part(i)) + 1
+            !if(myid==0)print *,'nblocksperproc',nBlockPerProc(part(i)), part(i)
+            nBlockPerProc(part(i)) = nBlockPerProc(part(i)) + 1
+            !if(myid==0)print *,'nblocksperproc',nBlockPerProc(part(i)), part(i)
          enddo
-         if(myid==0)print *,'nblocksperprocFinal',nBlockPerProc
+
+         !if(myid==0)print *,'nblocksperprocFinal',nBlockPerProc
+
          ! Check for empty partitions.
 
          emptyPartitions = .false.
@@ -331,14 +344,27 @@
 
          commNeglected = .true.
          xadj          = 0
-
+         
+         deallocate(adjncy)
+         allocate(adjncy(2*nvertex))
+         do i = 1,nvertex
+            xadj(i)=2*i
+            adjncy(2*i) = i
+            adjncy(2*i-1)=i-2
+         enddo
+         adjncy(1)=nvertex
+         adjncy(2*nvertex)=0
+         ubvec = 1.03
+         !wgtflag=0
+         !options(1)=1
+         !options(2) = 1
        enddo attemptLoop
-       !print *,'ending metis'
+       !if(myid==0)print *,'ending metis'
        ! Deallocate the memory for the graph except part.
-
+       
        deallocate(xadj, vwgt, adjncy, adjwgt, tmp, stat=ierr)
        if(ierr /= 0)                         &
          call terminate("graphPartitioning", &
                         "Deallocation failure for graph variables")
-
+       !if(myid==0)print *,'deallocations finished'
        end subroutine graphPartitioning

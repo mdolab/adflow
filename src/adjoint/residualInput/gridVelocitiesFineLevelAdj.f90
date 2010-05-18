@@ -46,6 +46,7 @@
 
        real(kind=realType), dimension(*), intent(in) :: t
        real(kind=realType), dimension(3), intent(in) :: rotCenterAdj, rotRateAdj
+       real(kind=realType), dimension(3) :: offSetVector
        
        !real(kind=realType), dimension(:,:), intent(out) :: sFace
        real(kind=realType), dimension(-2:2,-2:2,-2:2,3,nTimeIntervalsSpectral),intent(out) :: sAdj
@@ -449,21 +450,21 @@
 !!$
 !!$             rotCenter = cgnsDoms(j)%rotCenter
 !!$             rotRate   = timeRef*cgnsDoms(j)%rotRate
-
-             !subtract off the rotational velocity of the center of the grid
+              offSetVector= (rotCenterAdj-pointRef)
+             !subtract off the rotational velocity of the center gravity of the grid
              ! to account for the added overall velocity.
-             velxGrid =velxgrid0+ 1*(rotRateAdj(2)*rotCenterAdj(3)&
-                                 - rotRateAdj(3)*rotCenterAdj(2)) &
+             velxGrid =velxgrid0+ 1*(rotRateAdj(2)*offSetVector(3)&
+                                 - rotRateAdj(3)*offSetVector(2)) &
                                  + derivRotationMatrixAdj(1,1)*rotPointAdj(1) &
                                  + derivRotationMatrixAdj(1,2)*rotPointAdj(2) &
                                  + derivRotationMatrixAdj(1,3)*rotPointAdj(3)
-             velyGrid = velygrid0+ 1*(rotRateAdj(3)*rotCenterAdj(1) &
-                              - rotRateAdj(1)*rotCenterAdj(3)) &
+             velyGrid = velygrid0+ 1*(rotRateAdj(3)*offSetVector(1) &
+                              - rotRateAdj(1)*offSetVector(3)) &
                               + derivRotationMatrixAdj(2,1)*rotPointAdj(1) &
                               + derivRotationMatrixAdj(2,2)*rotPointAdj(2) &
                               + derivRotationMatrixAdj(2,3)*rotPointAdj(3)
-             velzGrid =velzgrid0+ 1*(rotRateAdj(1)*rotCenterAdj(2)&
-                              - rotRateAdj(2)*rotCenterAdj(1)) &
+             velzGrid =velzgrid0+ 1*(rotRateAdj(1)*offSetVector(2)&
+                              - rotRateAdj(2)*offSetVector(1)) &
                               + derivRotationMatrixAdj(3,1)*rotPointAdj(1) &
                               + derivRotationMatrixAdj(3,2)*rotPointAdj(2) &
                               + derivRotationMatrixAdj(3,3)*rotPointAdj(3)

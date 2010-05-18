@@ -141,7 +141,7 @@
        if( splitBlocks ) iterMax = 2
 
        ! Loop to determine a good load balance.
-
+       !if(myid==0)print *,'itermax=',itermax
        distributionLoop: do iter=1,iterMax
           
          ! Determine the computational blocks from the splitting info of
@@ -150,9 +150,9 @@
          call determineComputeBlocks(splitInfo)
 
          ! Apply the graph partitioning to the computational blocks.
-         
+         !if(myid==0) print *,'graph partitioning',iter
          call graphPartitioning(emptyPartitions, commNeglected)
-
+         !if(myid==0) print *,'finished gp',iter
          ! Determine whether the load balance is okay. If empty
          ! partitions are present the load balance is per definition
          ! not okay and there is no need to call checkLoadBalance.
@@ -163,7 +163,7 @@
          else
            call checkLoadBalance(cellsBalanced, facesBalanced)
          endif
-         
+         !if(myid==0) print *,'lb checked',iter
          ! Exit the loop if the cells or the faces are load balanced
          ! or if the maximum number of iterations have been reached.
 
@@ -173,7 +173,7 @@
          ! exit
 
          ! Split some blocks on the processors with too many cells/faces.
-
+         !if(myid==0) print *,'splitblockslb',iter
          call splitBlocksLoadBalance
 
        enddo distributionLoop

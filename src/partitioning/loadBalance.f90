@@ -55,7 +55,7 @@
 
        !nProc = 64
        !do nProc=250,400 !750,1000 !200,400
-       !  write(*,*) 'nProc: ', nProc
+       !   write(*,*) 'nProc: ', nProc
        call blockDistribution
        !enddo
        !call terminate("loadBalance","Hack for distribution test")
