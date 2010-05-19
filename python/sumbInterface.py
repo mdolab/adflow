@@ -25,7 +25,7 @@ from math import pi
 import numpy
 try:
     from mdo_import_helper import *
-    exec(import_modules('geo_utils','pySpline'))
+    
 except:
     print 'Warning: mdo_import_helper not found'
 # end try
@@ -1279,7 +1279,7 @@ class SUmbInterface(object):
         autofile.write(  "                           Vis2: 0.5\n")
         autofile.write(  "                           Vis4: 0.015625  # 1/64\n")
         autofile.write(  "Directional dissipation scaling: yes\n")
-        autofile.write(  "   Exponent dissipation scaling: 0.5\n")
+        autofile.write(  "   Exponent dissipation scaling: %4.2f\n"%(kwargs['solver_options']['Dissipation Scaling Exponent']))
         autofile.write( "\n")
         autofile.write(  "   Total enthalpy scaling inlet: no\n")
         autofile.write( "\n")
@@ -1397,7 +1397,7 @@ class SUmbInterface(object):
         autofile.write(  "      Number of multigrid cycles coarse grid:  -1  # -1 Means same as on fine grid\n")
         autofile.write(  "                      CFL number coarse grid: -1  # -1 Means same as on fine grid\n")
 
-        autofile.write(  "Relative L2 norm for convergence coarse grid: 8.e-1\n")
+        autofile.write(  "Relative L2 norm for convergence coarse grid: 1.e-2\n")
         autofile.write( "\n")
         
         autofile.write(  "#        Discretization scheme coarse grid:  # Default fine grid scheme\n")
@@ -2404,10 +2404,14 @@ class SUmbInterface(object):
         Setup the ADjoint dRdw matrix and create the PETSc
         Solution KSP object
         '''
+        #create the neccesary PETSc objects
+        if(self.myid==0):print 'before createpetscvars'
+        #sumb.createpetscvars()
+        #sumb.createpetscmat()
         #sumb.setupadjointmatrix(self.level)
         sumb.setupadjointmatrixtranspose(self.level)
 
-        sumb.createpetscksp(self.level)
+        sumb.setuppetscksp(self.level)
 
         return
 
@@ -2415,8 +2419,9 @@ class SUmbInterface(object):
         '''
         release the KSP memory...
         '''
-        sumb.destroypetscksp()
-
+        #sumb.destroypetscksp()
+        #sumb.destroypetscvars()
+        #sumb.destroypetscmat()
         return
 
     def setupADjointRHS(self,objective):

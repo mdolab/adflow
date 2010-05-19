@@ -57,36 +57,6 @@ from pyAero_solver import AeroSolver
 # Misc Definitions
 # =============================================================================
 
-#Default Solver Options:
-solver_options_default={
-	'probName':'',
-	'OutputDir':'./',
-	'reinitialize':True,
-	'CFL':1.0,
-	'L2Convergence':1e-6,
-	'MGCycle':'sg',
-	'MetricConversion':1.0,
-	'Discretization':'Central plus scalar dissipation',
-	'sol_restart':'no',
-	'solveADjoint':'no',
-	'set Monitor':'Yes',
-	'Approx PC': 'no',
-	'Adjoint solver type': 'GMRES',
-	'adjoint relative tolerance':1e-10,
-	'adjoint absolute tolerance':1e-16,
-	'adjoint max iterations': 500,
-	'adjoint restart iteration' : 80,
-	'adjoint monitor step': 10,
-	'dissipation lumping parameter':6,
-	'Preconditioner Side': 'LEFT',
-	'Matrix Ordering': 'NestedDissection',
-	'Global Preconditioner Type': 'Additive Schwartz',
-	'Local Preconditioner Type' : 'ILU',
-	'ILU Fill Levels': 2,
-	'ASM Overlap' : 5,
-	'TS Stability': 'no',
-	'Reference Temp.':398,
-	'Reference Pressure':101325.0}
 
 # =============================================================================
 # SUMB Class
@@ -123,6 +93,37 @@ class SUMB(AeroSolver):
 		self.flowMatrixInitialized=False
 		self.meshWarpingInitialized=False
 
+		self.solver_options_default={
+			'probName':'',
+			'OutputDir':'./',
+			'reinitialize':True,
+			'CFL':1.0,
+			'L2Convergence':1e-6,
+			'MGCycle':'sg',
+			'MetricConversion':1.0,
+			'Discretization':'Central plus scalar dissipation',
+			'Dissipation Scaling Exponent':0.67,\
+			'sol_restart':'no',
+			'solveADjoint':'no',
+			'set Monitor':'Yes',
+			'Approx PC': 'no',
+			'Adjoint solver type': 'GMRES',
+			'adjoint relative tolerance':1e-10,
+			'adjoint absolute tolerance':1e-16,
+			'adjoint max iterations': 500,
+			'adjoint restart iteration' : 80,
+			'adjoint monitor step': 10,
+			'dissipation lumping parameter':6,
+			'Preconditioner Side': 'LEFT',
+			'Matrix Ordering': 'NestedDissection',
+			'Global Preconditioner Type': 'Additive Schwartz',
+			'Local Preconditioner Type' : 'ILU',
+			'ILU Fill Levels': 2,
+			'ASM Overlap' : 5,
+			'TS Stability': 'no',
+			'Reference Temp.':398,
+			'Reference Pressure':101325.0}
+
 		return
 
 	def __solve__(self, aero_problem, sol_type,grid_file='default', *args, **kwargs):
@@ -134,15 +135,17 @@ class SUMB(AeroSolver):
 		'''
 
 		try:
-			kwargs['solver_options']
-			solver_options = self._checkOptions(kwargs['solver_options'])
+			kwargs['solver_options'] = self._checkOptions(kwargs['solver_options'])
 		except:
-			solver_options = solver_options_default
+			kwargs['solver_options'] = self.solver_options_default
+			print kwargs
 		# end try
 			
-		if solver_options['reinitialize'] == True:
+		if kwargs['solver_options']['reinitialize'] == True:
 			self.interface.initializeFlow(aero_problem,sol_type,grid_file, *args, **kwargs)
 			self.filename=grid_file
+			self.solver_options_default['reinitialize']=False
+			print 'solveroptions',self.solver_options_default
 		# end if
 
 		try:
@@ -188,8 +191,8 @@ class SUMB(AeroSolver):
 ## 			volname=kwargs['solver_options']['OutputDir']+self.filename+'vol.cgns'
 ## 			surfname=kwargs['solver_options']['OutputDir']+self.filename+'surf.cgns'
 ## 		#endif
-		volname=self.interface.OutputDir+self.interface.probName+self.filename+'vol.cgns'
-		surfname=self.interface.OutputDir+self.interface.probName+self.filename+'surf.cgns'
+		volname=self.interface.OutputDir+self.interface.probName+self.filename+'_vol.cgns'
+		surfname=self.interface.OutputDir+self.interface.probName+self.filename+'_surf.cgns'
 		
 		if(self.interface.myid==0):print volname,surfname
 		self.interface.WriteVolumeSolutionFile(volname)
@@ -210,6 +213,7 @@ class SUMB(AeroSolver):
 		#	sol_geom, sol_flows, sol_options, display_opts=disp_opts,
 		#	#Lift,Drag,CL,CD,CDi,CDp,CDw,Distribs,etc...
 		#	arguments=args, **kwargs)
+		
 		self.callCounter+=1
 		return
 
@@ -1057,9 +1061,11 @@ class SUMB(AeroSolver):
 		'''Check the solver options against the default ones
 		and add option iff it is NOT in solver_options
 		'''
-		for key in solver_options_default.keys():
+		for key in self.solver_options_default.keys():
 			if not(key in solver_options.keys()):
-				solver_options[key] = solver_options_default[key]
+				solver_options[key] = self.solver_options_default[key]
+			else:
+				self.solver_options_default[key]=solver_options[key]	
 			# end if
 		# end for
 		return solver_options
