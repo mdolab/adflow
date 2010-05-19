@@ -81,11 +81,13 @@ class SUmbMesh(object):
  
     """
  
-    def __init__(self):
+    def __init__(self,comm):
         """Initialize the object."""
         self._update_geom_info = False
         self._suggar_interface_initialized = False
         self.solid_warp_initialized=False
+        self.comm = comm
+        self.myid = comm.rank
 
     def GetSurfaceCoordinates(self, family=None, sps=1):
         """Return surface coordinates.
@@ -262,7 +264,7 @@ class SUmbMesh(object):
             sumb.inputio.newgridfile[0:len(filename[0])] = filename[0]
         sumb.monitor.writegrid=True
         sumb.monitor.writevolume=True#False
-        sumb.monitor.writesurface=False
+        sumb.monitor.writesurface=True
         sumb.writesol()
 
     def DummySetCoordinates(self, sps =1):
@@ -432,15 +434,19 @@ class SUmbMesh(object):
     def getBlockCoordinates(self,blocknum,il,jl,kl):
         """get the xyz coordinates from blockblocknum"""
         return sumb.getblockcoords(blocknum,il,jl,kl)
+
     def getBlockCGNSID(self,blocknum):
         """ Get original CGNS blockID for block blocknum"""
         return sumb.getblockcgnsid(blocknum)
+
     def getNSubfacesBlock(self,blocknum):
         """ get subface infor for block: blocknum"""
         return sumb.getnsubfacesblock(blocknum)
+
     def getBlockCommunicationInfo(self,blocknum,nSubface,n1to1,nNonMatch):
         """Get all fo the relevant MPI communication ifo for this block"""
         return sumb.getblockcommunicationinfo(blocknum,nSubface,n1to1,nNonMatch)
+
     def getNBlocksLocal(self):
         """ get the number of blocks present on the local processor"""
         return sumb.getnblockslocal()
@@ -531,6 +537,8 @@ class SUmbMesh(object):
         '''
         run the Solid Mesh Warping scheme
        '''
+
+        # Define several functions required for initialization
         def inBinarySearch(list,element):
             ileft = bisect.bisect_left(list,element)
             if ileft >= len(list):
@@ -540,188 +548,193 @@ class SUmbMesh(object):
             else:
                 return False
         # end def
-
-        if not self.solid_warp_initialized: # We have initialization stuff to do
-            mpiPrint('\nInitializating Solid Mesh Warping...')
-            import pyspline # Direct access to the compiled spline library
-            
-            if 'file' in kwargs: # we're using a separate CGNS file
-                file_name = kwargs['file']
-            elif 'n' in kwargs:
-                file_name = self.GetFilename() #we're using mesh file with constant 'n'
-                n = kwargs['n']
-            elif 'topo' in kwargs:
-                file_name = self.GetFilename()
-            #end if
-            if 'sym' in kwargs:
-                if kwargs['sym'] == 'xy' or kwargs['sym'] == 'yx':
-                    sym = [0,0,-1]
-                elif kwargs['sym'] == 'yz' or kwargs['sym'] == 'zy':
-                    sym = [-1,0,0]
-                elif kwargs['sym'] == 'xz' or kwargs['sym'] == 'zx':
-                    sym = [0,-1,0]
-                else:
-                    mpiPrint('  ## Error: sym must be one of xy, yz or xz')
-                    sys.exit(0)
-                # end if
-            else:
-                mpiPrint('  ** Warning: sym is not specified. xy symmetry plane is assumed.')
-                sym = [0,0,-1]
-            # end if
-
-            cg,nzones = pyspline.open_cgns(file_name)
-            sizes = []
-            BCs = []
-            corners = numpy.zeros((nzones,8,3))
-            for i in xrange(nzones):
-                zoneshape = pyspline.read_cgns_zone_shape(cg,i+1)
-                X,faceBCs = pyspline.read_cgns_zone(cg,i+1,zoneshape[0],zoneshape[1],zoneshape[2])
-                sizes.append(zoneshape)
-                BCs.append(faceBCs)
-                corners[i][0] = X[0,0,0]
-                corners[i][1] = X[-1,0,0]
-                corners[i][2] = X[0,-1,0]
-                corners[i][3] = X[-1,-1,0]
-                corners[i][4] = X[0,0,-1]
-                corners[i][5] = X[-1,0,-1]
-                corners[i][6] = X[0,-1,-1]
-                corners[i][7] = X[-1,-1,-1]
-            # end for
-            pyspline.close_cgns(cg) # Done with cgns file
-            sizes = array(sizes) # make sizes into a numpy array
-
-            if 'n' in kwargs:
-                self.FE_topo = BlockTopology(corners) # Compute topology
-                sizes[:,:] = n
-                self.FE_topo.calcGlobalNumbering(sizes)
-            elif 'file' in kwargs:
-                self.FE_topo = BlockTopology(corners) # Compute topology
-                self.FE_topo.calcGlobalNumbering(sizes)
-            elif 'topo' in kwargs:
-                self.FE_topo = BlockTopology(file=kwargs['topo'])
-                self.FE_topo.calcGlobalNumbering()
-            # end if
-
-            nuu,nus,l_index_flat,l_ptr,l_sizes = self._reOrderIndices(BCs,sym) # Re-order numbering to account for constrained dof
-            self.solidWarpData = [nuu,nus,l_index_flat,l_ptr,l_sizes]
-            self.solid_warp_initialized = True
-            mpiPrint('  -> Solid Mesh Warping Initialized.')
-
-            # Lets see if we can produce ifaceptb,iedgeptb using the
-            #topology information and the face boundary condition data
-
-            # Step 1: Loop over all faces on all blocks, for each
-            # face, add the ID of each of the four nodes to the
-            # explicitly perturbed corner list
-
-            explicitly_perturbed_corners = []
-            for ivol in xrange(self.FE_topo.nVol):
-                for iface in xrange(6):
-                    if BCs[ivol][iface] == 1: # BCwallViscous
-                        corners = nodesFromFace(iface)
-                        for icorner in corners:
-                            explicitly_perturbed_corners.append(self.FE_topo.node_link[ivol][icorner])
-                        # end for
-                    # end if
-                # end for
-            # end for
-
-            # Step 2: Unique-ify the explicitly_perturbed_corners list
-            # and sort them in the process
-
-            explicitly_perturbed_corners = unique(explicitly_perturbed_corners)
-            explicitly_perturbed_corners.sort() # It should alreadly be sorted, but just in case
-
-            # Step 3: Loop over all edges on all volumes. If they have
-            # ONE explictly perturbed corner they are IMPLICTLY
-            # perturbed, if they have TWO explictly perturbed corners,
-            # they are EXPLICTLY perturbed. Note we call
-            # inBinarySearch here. This is simpilar to python's 'in'
-            # function. However since we have a sorted list, we can do
-            # a binary search instead of a linear search which is MUCH
-            # faster. The return in True or False as to whether
-            # 'element' is in 'list'
-
-            iedgeptb = zeros((self.FE_topo.nVol,12),'intc')
-            
-            for ivol in xrange(self.FE_topo.nVol):
-                for iedge in xrange(12):
-                    edge_number = self.FE_topo.edge_link[ivol][iedge]
-                    corners = [self.FE_topo.edges[edge_number].n1,self.FE_topo.edges[edge_number].n2]
-                    explicit = array([False,False])
-                    for icorner in xrange(2):
-                        explicit[icorner] = inBinarySearch(\
-                            explicitly_perturbed_corners,corners[icorner])
-                    # end for
-
-                    if explicit.all():
-                        iedgeptb[ivol][iedge] = 2
-                    elif explicit.any():
-                        iedgeptb[ivol][iedge] = 1
-                    else:
-                        iedgeptb[ivol][iedge] = 0
-                    # end if
-                # end for
-            # end for
-
-            # Step 4: Loop over all faces on all volumes. An EXPLICTLY
-            # perturbed face will have ALL corners explictly
-            # perturbed. An IMPLICLTY perturbed face will have at
-            # least EXPLICTLY perturbed corner. A face will have value
-            # of 0 if there are NO EXPLICTLY perturbed corners.
-
-            ifaceptb = zeros((self.FE_topo.nVol,6),'intc')
-            
-            for ivol in xrange(self.FE_topo.nVol):
-                for iface in xrange(6):
-                    corners = nodesFromFace(iface)
-                    explicit = array([False,False,False,False])
-                    for icorner in xrange(4):
-                        node = self.FE_topo.node_link[ivol][corners[icorner]]
-                        explicit[icorner] = inBinarySearch(\
-                            explicitly_perturbed_corners,node)
-                    # end for
-                    if explicit.all():
-                        ifaceptb[ivol][iface] = 2
-                    elif explicit.any():
-                        ifaceptb[ivol][iface] = 1
-                    else:
-                        ifaceptb[ivol][iface] = 0
-                    # end if
-                # end for
-            # end for
-        # end if
-
-
-        #sumb.warpmeshsolid(nuu,nus,l_index,l_ptr,l_sizes)  <--- Actual arguments
-        sumb.warpmeshsolid(self.solidWarpData[0],self.solidWarpData[1],
-                           self.solidWarpData[2],self.solidWarpData[3],
-                           self.solidWarpData[4])
         
+        def convertFaces(face_list): # Convert faces from pyPSG to SUmb
+            new_face_list = zeros(6,face_list.dtype)
+            new_face_list[0] = face_list[2] # ilo
+            new_face_list[1] = face_list[3] # ihi
+            new_face_list[2] = face_list[4] # jlo
+            new_face_list[3] = face_list[5] # jhi
+            new_face_list[4] = face_list[0] # klo
+            new_face_list[5] = face_list[1] # khi
+            return new_face_list
+
+        def convertEdges(edge_list): # Convert Edges from pyPSG to SUmb
+            new_edge_list = zeros(12,edge_list.dtype)
+            new_edge_list[0] = edge_list[0]
+            new_edge_list[1] = edge_list[1]
+            new_edge_list[2] = edge_list[4]
+            new_edge_list[3] = edge_list[5]
+            new_edge_list[4] = edge_list[2]
+            new_edge_list[5] = edge_list[3]
+            new_edge_list[6] = edge_list[6]
+            new_edge_list[7] = edge_list[7]
+            new_edge_list[8] = edge_list[8]
+            new_edge_list[9] = edge_list[9]
+            new_edge_list[10] = edge_list[10]
+            new_edge_list[11] = edge_list[11]
+            return new_edge_list
+
+        # We have initialization stuff to do ONLY on the root prco
+        if not self.solid_warp_initialized:
+            if self.myid == 0:
+                mpiPrint('\nInitializating Solid Mesh Warping...')
+                import pyspline # Direct access to the compiled spline library
+
+                if 'file' in kwargs: # we're using a separate CGNS file
+                    file_name = kwargs['file']
+                elif 'n' in kwargs:
+                    file_name = self.GetFilename() #we're using mesh file with constant 'n'
+                    n = kwargs['n']
+                elif 'topo' in kwargs:
+                    file_name = self.GetFilename()
+                else:
+                    mpiPrint('Error: Keyword arguments \'n=integer\' \'file=<cgns_file>\' or \'topo=topo_file\' must be passed to warpMeshSolid',comm=comm)
+
+                if 'sym' in kwargs:
+                    if kwargs['sym'] == 'xy' or kwargs['sym'] == 'yx':
+                        sym = [0,0,-1]
+                    elif kwargs['sym'] == 'yz' or kwargs['sym'] == 'zy':
+                        sym = [-1,0,0]
+                    elif kwargs['sym'] == 'xz' or kwargs['sym'] == 'zx':
+                        sym = [0,-1,0]
+                    else:
+                        mpiPrint('  ## Error: sym must be one of xy, yz or xz')
+                        sys.exit(0)
+                    # end if
+                else:
+                    mpiPrint('  ** Warning: sym is not specified.',comm=self.comm)
+                    sym = [0,0,0]
+                # end if
+
+                cg,nzones = pyspline.open_cgns(file_name)
+                sizes = []
+                BCs = []
+                corners = numpy.zeros((nzones,8,3))
+                for i in xrange(nzones):
+                    zoneshape = pyspline.read_cgns_zone_shape(cg,i+1)
+                    X,faceBCs = pyspline.read_cgns_zone(cg,i+1,zoneshape[0],zoneshape[1],zoneshape[2])
+                    sizes.append(zoneshape)
+                    BCs.append(faceBCs)
+                    corners[i][0] = X[0,0,0]
+                    corners[i][1] = X[-1,0,0]
+                    corners[i][2] = X[0,-1,0]
+                    corners[i][3] = X[-1,-1,0]
+                    corners[i][4] = X[0,0,-1]
+                    corners[i][5] = X[-1,0,-1]
+                    corners[i][6] = X[0,-1,-1]
+                    corners[i][7] = X[-1,-1,-1]
+                # end for
+                pyspline.close_cgns(cg) # Done with cgns file
+                sizes = array(sizes) # make sizes into a numpy array
+                if 'n' in kwargs:
+                    FE_topo = BlockTopology(corners) # Compute topology
+                    sizes[:,:] = n
+                    FE_topo.calcGlobalNumbering(sizes)
+                elif 'file' in kwargs:
+                    FE_topo = BlockTopology(corners) # Compute topology
+                    FE_topo.calcGlobalNumbering(sizes)
+                elif 'topo' in kwargs:
+                    FE_topo = BlockTopology(file=kwargs['topo'])
+                    FE_topo.calcGlobalNumbering()
+                 # end if
+                nuu,nus,l_index_flat,l_ptr,l_sizes = self._reOrderIndices(FE_topo,BCs,sym) # Re-order numbering to account for constrained dof
+
+                self.FE_topo = FE_topo
+                solidWarpData = [nuu,nus,array(l_index_flat),array(l_ptr),array(l_sizes)]
+            else:
+                self.FE_topo = None
+                solidWarpData = None
+            # end if (myID == 0 test)
+                
+            # Bcast data from root node to all
+            self.FE_topo  = self.comm.bcast(self.FE_topo,root=0)
+            solidWarpData = self.comm.bcast(solidWarpData,root=0)
+
+            # Also produce the global to local mapping for the
+            # mdsurfacenodescompact back to each of the blocks 
+            
+            data = self.comm.gather(sumb.mddatalocal.mdsurfglobalindlocal,root=0)
+            if self.myid == 0:
+                md_g_index = [[] for i in xrange(sumb.mddata.mdnsurfnodescompact)]
+                # Now loop over data from each proc and each node on the proc
+                for iproc in xrange(len(data)):
+                    for ii in xrange(data[iproc].shape[1]):
+                        i  = data[iproc][0,ii] # i index on this block
+                        j  = data[iproc][1,ii] # j index on this block
+                        k  = data[iproc][2,ii] # k index on this block
+                        nn = data[iproc][3,ii] # domain number of process
+                        id = data[iproc][4,ii] # global node id
+                                        
+                        md_g_index[id].append([i,j,k,iproc,nn])
+                    # end for
+                # end for
+                     
+                # Now flatten the g_index along with a pointer
+                md_g_ptr = zeros((len(md_g_index)+1),'intc')
+                md_g_ptr[0] = 0# Zerobased Here
+                for i in xrange(len(md_g_index)):
+                    md_g_ptr[i+1] = md_g_ptr[i] + len(md_g_index[i])*5
+                # end for
+
+                # Dont' ask..it works since we only have 1 level deep...
+                md_g_index = array([item for sublist in md_g_index for item in sublist]).flatten()
+            else:
+                md_g_index = None
+                md_g_ptr = None
+
+            # Now bcast g_index and g_ptr back to everyone
+            md_g_index = self.comm.bcast(md_g_index,root=0)
+            md_g_ptr   = self.comm.bcast(md_g_ptr,root=0)
+            
+            # Set the required data in the module
+            sumb.solidwarpmodule.nuu      = solidWarpData[0]
+            sumb.solidwarpmodule.nus      = solidWarpData[1]
+            sumb.solidwarpmodule.l_index  = solidWarpData[2]
+            sumb.solidwarpmodule.lptr     = solidWarpData[3]
+            sumb.solidwarpmodule.l_sizes  = solidWarpData[4]
+            sumb.solidwarpmodule.nblock   = len(solidWarpData[2])
+            sumb.solidwarpmodule.md_g_index = md_g_index
+            sumb.solidwarpmodule.md_g_ptr   = md_g_ptr
+
+            # Now run the fortran initialization
+            sumb.initializewarpmeshsolid_parallel()
+
+            # Initialization Complete
+            mpiPrint('  -> Solid Mesh Warping Initialized.',comm=self.comm)
+            self.solid_warp_initialized = True
+        # end if Initialization
+
+        # Now run the actual warping command
+        sumb.warpmeshsolid_parallel()
+
         return
 
-    def _reOrderIndices(self,faceBCs,sym):
+    def warpMeshSolidDeriv(self,*args,**kwargs):
+        sumb.calculatesolidwarpderiv()
+
+    def _reOrderIndices(self,FE_topo,faceBCs,sym):
         '''This funcion takes the order from self.FE_topo and reorders
-        them accordint to the Boundary Condition types in each volume
+        them according to the Boundary Condition types in each volume
         class. The sole purpose of this is to facilitate the
         structural mesh warping algorithim for matrix assembly.'''
         # We want the global indicies ordered according to:
         #[ freedof ]
         #[ constrained dof ]
+        sym = array(sym)
+        pt_dof = numpy.zeros((FE_topo.nGlobal,3),'intc')
 
-        pt_dof = numpy.zeros((self.FE_topo.nGlobal,3),'intc')
+        for ii in xrange(FE_topo.nGlobal):
+            for jj in xrange(len(FE_topo.g_index[ii])):
 
-        for ii in xrange(self.FE_topo.nGlobal):
-            for jj in xrange(len(self.FE_topo.g_index[ii])):
+                ivol = FE_topo.g_index[ii][jj][0]
+                i    = FE_topo.g_index[ii][jj][1]
+                j    = FE_topo.g_index[ii][jj][2]
+                k    = FE_topo.g_index[ii][jj][3]
 
-                ivol = self.FE_topo.g_index[ii][jj][0]
-                i    = self.FE_topo.g_index[ii][jj][1]
-                j    = self.FE_topo.g_index[ii][jj][2]
-                k    = self.FE_topo.g_index[ii][jj][3]
-
-                N = self.FE_topo.l_index[ivol].shape[0]
-                M = self.FE_topo.l_index[ivol].shape[1]
-                L = self.FE_topo.l_index[ivol].shape[2]
+                N = FE_topo.l_index[ivol].shape[0]
+                M = FE_topo.l_index[ivol].shape[1]
+                L = FE_topo.l_index[ivol].shape[2]
               
                 type,number,index1,index2 = \
                     indexPosition3D(i,j,k,N,M,L)
@@ -763,7 +776,9 @@ class SUmbMesh(object):
                         elif number == 7:
                             checkFaces.extend([1,3,5])
                     # end if
-
+                    
+                    # We now now all faces a point that belong to a
+                    # pt, check each for boun dary conditions
                     for iii in xrange(len(checkFaces)):
                         iface = checkFaces[iii]
                         if faceBCs[ivol][iface] in [1,2]: # BC_wall OR Farfield/inflow
@@ -771,7 +786,7 @@ class SUmbMesh(object):
                         # end if
                         if faceBCs[ivol][iface] == 3:
                             # Only set it as a symmetry plane if nothing is already set
-                            index_set = 2
+                            index_set = where(sym==-1)[0][0]
                             pt_dof[ii][index_set] = 1
                         # end if
                     # end for
@@ -780,10 +795,10 @@ class SUmbMesh(object):
         # end for
       
         nus = int(sum(sum(pt_dof)))
-        nuu = self.FE_topo.nGlobal*3-nus
-        mpiPrint('  -> Total DOF  : %d'%(self.FE_topo.nGlobal*3))
-        mpiPrint('  -> Unknown DOF: %d'%(nuu))
-        mpiPrint('  -> Known DOF  : %d'%(nus))
+        nuu = FE_topo.nGlobal*3-nus
+        mpiPrint('  -> Total DOF  : %d'%(FE_topo.nGlobal*3),comm=self.comm)
+        mpiPrint('  -> Unknown DOF: %d'%(nuu),comm=self.comm)
+        mpiPrint('  -> Known DOF  : %d'%(nus),comm=self.comm)
 
         # We will forgo the g_index reorganization...it is not
         # strictly necessary We want l_index[ivol] to be of size
@@ -793,30 +808,30 @@ class SUmbMesh(object):
         free_dof_count = 0
         constr_dof_count = 0
         l_index = []
-        for ivol in xrange(len(self.FE_topo.l_index)):
-            l_index.append(zeros((self.FE_topo.l_index[ivol].shape[0],
-                                  self.FE_topo.l_index[ivol].shape[1],
-                                  self.FE_topo.l_index[ivol].shape[2],3),'intc'))
+        for ivol in xrange(len(FE_topo.l_index)):
+            l_index.append(zeros((FE_topo.l_index[ivol].shape[0],
+                                  FE_topo.l_index[ivol].shape[1],
+                                  FE_topo.l_index[ivol].shape[2],3),'intc'))
         # end for
 
-        for ii in xrange(self.FE_topo.nGlobal):
+        for ii in xrange(FE_topo.nGlobal):
             for iii in xrange(3):
                 if pt_dof[ii][iii] == 0:
-                    for jj in xrange(len(self.FE_topo.g_index[ii])):
-                        ivol = self.FE_topo.g_index[ii][jj][0]
-                        i    = self.FE_topo.g_index[ii][jj][1]
-                        j    = self.FE_topo.g_index[ii][jj][2]
-                        k    = self.FE_topo.g_index[ii][jj][3]
+                    for jj in xrange(len(FE_topo.g_index[ii])):
+                        ivol = FE_topo.g_index[ii][jj][0]
+                        i    = FE_topo.g_index[ii][jj][1]
+                        j    = FE_topo.g_index[ii][jj][2]
+                        k    = FE_topo.g_index[ii][jj][3]
                         l_index[ivol][i,j,k,iii] = free_dof_count
                     # end for
                     free_dof_count += 1
                 # end if
                 if pt_dof[ii][iii] == 1:
-                    for jj in xrange(len(self.FE_topo.g_index[ii])):
-                        ivol = self.FE_topo.g_index[ii][jj][0]
-                        i    = self.FE_topo.g_index[ii][jj][1]
-                        j    = self.FE_topo.g_index[ii][jj][2]
-                        k    = self.FE_topo.g_index[ii][jj][3]
+                    for jj in xrange(len(FE_topo.g_index[ii])):
+                        ivol = FE_topo.g_index[ii][jj][0]
+                        i    = FE_topo.g_index[ii][jj][1]
+                        j    = FE_topo.g_index[ii][jj][2]
+                        k    = FE_topo.g_index[ii][jj][3]
                         l_index[ivol][i,j,k,iii] = nuu + constr_dof_count
                     # end for
                     constr_dof_count += 1
@@ -824,7 +839,7 @@ class SUmbMesh(object):
             # end for (iii loop)
         # end for (ii loop)
 
-        # Now we need to flatten the l_index for fortran use
+        # Lastly, we need to flatten the l_index for fortran use
 
         l_index_flat = []
         l_ptr = [0] # -> Zero Based Here
@@ -837,7 +852,22 @@ class SUmbMesh(object):
 
         return nuu,nus,l_index_flat,l_ptr,l_sizes
 
+    def GetMeshQuality(self,file_name):
+        # Return a list of the quality of all elements
+        
+        # Step 1: Determine the number of elements on this processor
+        nElem = 0
+        for i in xrange(sumb.block.ndom):
+            size = self.getBlockDimensions(i+1)
+            nElem += (size[0]-1)*(size[1]-1)*(size[2]-1)
+        # end for
+        quality = sumb.getquality(nElem)
 
+        # Dump it out to a file
+        f = open(file_name+'_%d'%(self.myid),'w')
+        quality.tofile(f,sep="\n",format="%20.16g")
+        
+        return     
 
 
 # =============================================================================
@@ -845,7 +875,7 @@ class SUmbMesh(object):
 class SUmbInterface(object):
     """Represents a SUmb flow solution."""
 
-    def __init__(self,communicator=None,deforming_mesh=False):
+    def __init__(self,*args,**kwargs):#deforming_mesh=False):
         """Initialize the object.
 
         Keyword arguments:
@@ -857,33 +887,28 @@ class SUmbInterface(object):
                           
 
         """
-        #Initialize the MPI in the flow solver
-        #print 'running initialization'
-        sumb.sumb_init()
 
-        # Setup a mesh object
-        self.Mesh = SUmbMesh()
-
-        # Create a Python communicator to mirror the Fortran
-        # SUmb_COMM_WORLD and set the Fortran SUmb communicator to the
-        # Python one.
-        if (communicator is not None):
-            self.sumb_comm_world = communicator
+        # The very first thing --> Set the MPI Communicators
+        if 'comm' in kwargs:
+            sumb.communication.sumb_comm_world = kwargs['comm'].py2f()
+            sumb.communication.sumb_comm_self  = mpi.COMM_SELF.py2f()
+            self.sumb_comm_world = kwargs['comm']
         else:
-#            self.sumb_comm_world = mpi.COMM_WORLD.comm_create(
-#        				     mpi.COMM_WORLD[:])
+            sumb.communication.sumb_comm_world = mpi.COMM_WORLD.py2f()
+            sumb.communication.sumb_comm_self  = mpi.COMM_SELF.py2f()
             self.sumb_comm_world = mpi.COMM_WORLD
-        #sumb.communication.sumb_comm_world = int(self.sumb_comm_world)
-        self.Mesh.sumb_comm_world = self.sumb_comm_world
+        # end if
+        
+        if 'init_petsc' in kwargs:
+            if kwargs['init_petsc']:
+                sumb.initializepetsc()
+        # end if
 
-##         # Store the name of the input file
-##         self.startfile = startfile
-##         sumb.inputio.paramfile[0:len(startfile)] = startfile
+        # Setup the mesh object with sumb_comm_world
+        self.Mesh = SUmbMesh(self.sumb_comm_world)
 
-        # Determine the rank and number of processors inside the group
-        # defined by sumb_comm_world.
+        # Determine the rank sumb_comm_world size
         self.myid = sumb.communication.myid = self.sumb_comm_world.rank
-        self.Mesh.myid = self.myid
         self.nproc = sumb.communication.nproc = self.sumb_comm_world.size
 
         # Allocate the memory for SENDREQUESTS and RECVREQUESTS.
@@ -895,20 +920,20 @@ class SUmbInterface(object):
         except:
             print "Memory allocation failure for SENDREQUESTS " \
         	  "and RECVREQUESTS."
-            return
+            sys.exit(1)
+        # end try
 
         # Set the SUmb module value of standalonemode to false and
         # the value of deforming_grid to the input value.
         sumb.iteration.standalonemode = False
-        sumb.iteration.deforming_grid = deforming_mesh
+        sumb.iteration.deforming_grid = deforming_mesh = False
 
         # Write the intro message
         sumb.writeintromessage()
 
-        self.nw =sumb.flowvarrefstate.nw
-        print 'setting from python'
+        # Set the frompython flag to true
         sumb.killsignals.frompython=True
-        #sumb.killsignals.routinefailed=False
+
         return
 
     def initializeFlow(self,aero_problem,sol_type,grid_file,*args,**kwargs):
@@ -922,30 +947,20 @@ class SUmbInterface(object):
             sol_type - solution type - Steady,Unsteady,Time Spectral
             grid_file - name of 3-d Mesh file
             '''
-	try:  kwargs['solver_options']['probName']
-        except KeyError:
-            self.probName = ''
-        else:
+        if kwargs['solver_options']:
             self.probName = kwargs['solver_options']['probName']
-        #endtry
-
-        #Generate Input File from Options
-        try:  kwargs['solver_options']['OutputDir']
-        except KeyError:
-            self.OutputDir = ''
-        else:
             self.OutputDir = kwargs['solver_options']['OutputDir']
-        #endtry
+        else:
+            self.probName = ''
+            self.OutputDir = './'
+        # end if 
 
         self.Mesh.sol_type = sol_type
 
-        startfile = self.OutputDir+self.probName+grid_file+'autogen.input'
+        startfile = self.OutputDir+self.probName+grid_file+'_autogen.input'
         
         self.generateInputFile(aero_problem,sol_type,grid_file,startfile,*args,**kwargs)
         
-        #startfile = 'autogen.input'
-        #startfile      -- the name of the SUmb input parameter file
-
         # Make sure the parameter file exists
         if not os.path.isfile(startfile):
             print 'Error: Could not find file %s' % startfile
@@ -955,19 +970,22 @@ class SUmbInterface(object):
         self.startfile = startfile
         
         sumb.inputio.paramfile[0:len(startfile)] = startfile
-        if(self.myid==0):print 'readparamfile'
+
         # Read the parameter file
         sumb.readparamfile()
+
         #This is just to flip the -1 to 1 possibly a memory issue?
         sumb.inputio.storeconvinneriter=abs(sumb.inputio.storeconvinneriter)
-        # Partition the blocks and read the grid
+
+        if(self.myid ==0):print ' -> Partitioning and Reading Grid'
         sumb.partitionandreadgrid()
-        if(self.myid==0):print 'preprocessing'
-        # Perform the preprocessing task
+
+        if(self.myid==0):print ' -> Preprocessing'
         sumb.preprocessing()
-        if(self.myid==0):print 'initializing flow'
-        # Initialize the flow variables
+
+        if(self.myid==0):print ' -> Initializing flow'
         sumb.initflow()
+
         # Create dictionary of variables we are monitoring
         nmon = sumb.monitor.nmon
         self.monnames = {}
@@ -982,14 +1000,12 @@ class SUmbInterface(object):
         for i in range(nfamilies):
             self.Mesh.families[string.strip(sumb.mddata.mdfamilynames[i]
         		       .tostring())] = i + 1
-        sumb.mdcreatensurfnodes()
-        # Determine the total number of blocks in the mesh and store it
-        #print 'mpitest',sumb.block.ndom,mpi.SUM
-        #For older versions of mpi4py...
 
-        #self.Mesh.nmeshblocks = self.sumb_comm_world.Allreduce(
-        #    sumb.block.ndom,mpi.SUM)
-        #for mpi4py version 1.2
+        # Create Surface Node list
+        if(self.myid==0): print ' -> Creating Surface Node List'
+        sumb.mdcreatensurfnodes()
+
+        # Reduce the total number of blocks
         self.Mesh.nmeshblocks = self.sumb_comm_world.allreduce(
         			     sumb.block.ndom,mpi.SUM)
         #Set flags for ADjoint initialization
@@ -1006,7 +1022,7 @@ class SUmbInterface(object):
         sumb.inputphysics.liftdirection = liftDir
         sumb.inputphysics.dragdirection = dragDir
 
-        if (self.myid==0):print 'Alpha',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha,velDir,liftDir,dragDir
+        #if (self.myid==0):print 'Alpha',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha,velDir,liftDir,dragDir
         #update the flow vars
         sumb.updateflow()
         return
@@ -1021,7 +1037,7 @@ class SUmbInterface(object):
     
     def generateInputFile(self,aero_problem,sol_type,grid_file,startfile,file_type='cgns',eqn_type='Euler',*args,**kwargs):
         ''' Code to generate an SUmb Input File on the fly'''
-        if (self.myid==0): print 'generating input file'
+        if (self.myid==0): print ' -> Generating Input File'
         
         #Convert alpha and beta to a freestream vector
         [velDir,liftDir,dragDir]= sumb.adjustinflowangleadj((aero_problem._flows.alpha*(pi/180.0)),(aero_problem._flows.beta*(pi/180.0)),aero_problem._flows.liftIndex)
@@ -1263,7 +1279,7 @@ class SUmbInterface(object):
         autofile.write(  "                           Vis2: 0.5\n")
         autofile.write(  "                           Vis4: 0.015625  # 1/64\n")
         autofile.write(  "Directional dissipation scaling: yes\n")
-        autofile.write(  "   Exponent dissipation scaling: 0.0\n")
+        autofile.write(  "   Exponent dissipation scaling: 0.5\n")
         autofile.write( "\n")
         autofile.write(  "   Total enthalpy scaling inlet: no\n")
         autofile.write( "\n")
@@ -1361,8 +1377,8 @@ class SUmbInterface(object):
 
         autofile.write(  "                 Number of multigrid cycles: 200\n")
         autofile.write(  "   Number of single grid startup iterations: 0\n")
-        autofile.write(  "                                 Save every: 0\n")
-        autofile.write(  "                         Save surface every: 0\n")
+        autofile.write(  "                                 Save every: 10\n")
+        autofile.write(  "                         Save surface every: 10\n")
         autofile.write(  "                                 CFL number: %2.1f\n"%(kwargs['solver_options']['CFL']))
         autofile.write( "\n")
         if eqn_type=='RANS':
@@ -1381,7 +1397,7 @@ class SUmbInterface(object):
         autofile.write(  "      Number of multigrid cycles coarse grid:  -1  # -1 Means same as on fine grid\n")
         autofile.write(  "                      CFL number coarse grid: -1  # -1 Means same as on fine grid\n")
 
-        autofile.write(  "Relative L2 norm for convergence coarse grid: 1.e-2\n")
+        autofile.write(  "Relative L2 norm for convergence coarse grid: 8.e-1\n")
         autofile.write( "\n")
         
         autofile.write(  "#        Discretization scheme coarse grid:  # Default fine grid scheme\n")
@@ -1593,8 +1609,7 @@ class SUmbInterface(object):
             autofile.write( "                               Rotation center  Rotation rate (rad/s)\n")
             autofile.write( "Rotating family %s : %6.6f %6.6f %6.6f    0.e+0 0.e+0 0.e+0    \n"%(kwargs['solver_options']['FamilyRot'],kwargs['solver_options']['rotCenter'][0],kwargs['solver_options']['rotCenter'][1],kwargs['solver_options']['rotCenter'][2]))
         except:
-            if(self.myid ==0):
-                print 'No rotating families Present'
+            if(self.myid ==0): print ' -> No rotating families Present'
             #endif
         #endtry
         
@@ -1688,8 +1703,11 @@ class SUmbInterface(object):
 
         """
         
-        if(self.myid ==0):print 'Iterations...',sumb.monitor.niterold,sumb.monitor.nitercur,\
-               sumb.iteration.itertot
+#         if(self.myid ==0):
+#             print 'Iterations...',sumb.monitor.niterold,sumb.monitor.nitercur,\
+#                 sumb.iteration.itertot
+#         # end if
+        sumb.monitor.niterold = self.sumb_comm_world.bcast(sumb.monitor.niterold,root=0)
 
         try: kwargs['sol_type']
         except:
@@ -1718,7 +1736,7 @@ class SUmbInterface(object):
         sumb.killsignals.routinefailed=False
 
         if sol_type=='Steady' or sol_type=='steady' or sol_type=='Time Spectral' or sol_type=='time spectral':
-            if(self.myid ==0):print 'steady',sumb.inputio.storeconvinneriter,True,False,sumb.inputio.storeconvinneriter==True,sumb.inputio.storeconvinneriter==False
+            #if(self.myid ==0):print 'steady',sumb.inputio.storeconvinneriter,True,False,sumb.inputio.storeconvinneriter==True,sumb.inputio.storeconvinneriter==False
             #if(self.myid ==0):sumb.inputio.storeconvinneriter=True
             #if(self.myid ==0):print 'steady',sumb.inputio.storeconvinneriter,True,False,sumb.inputio.storeconvinneriter==True,sumb.inputio.storeconvinneriter==False
             #set the number of cycles for this call
@@ -1731,10 +1749,8 @@ class SUmbInterface(object):
                 if (sumb.inputio.storeconvinneriter):
                     nn = sumb.inputiteration.nsgstartup+sumb.inputiteration.ncycles
                     if(self.myid==0):
-                       print 'shape',sumb.monitor.convarray.shape
-                       #sumb.monitor.convarray = None
+                        # sumb.monitor.convarray = None
                        sumb.deallocconvarrays()
-                       print 'nn',nn
                        sumb.allocconvarrays(nn)
                        #print 'convarray',sumb.monitor.convarray
                     #endif
@@ -1795,7 +1811,6 @@ class SUmbInterface(object):
                             temp = None
                         else:
                             temp=copy.deepcopy(sumb.monitor.convarray[0,:,:])
-                            print 'temp',temp
                             sumb.deallocconvarrays()
                             sumb.allocconvarrays(sumb.inputiteration.ncycles+1)
                             sumb.monitor.convarray[0,:,:] = temp
@@ -1832,7 +1847,7 @@ class SUmbInterface(object):
             sys.exit(0)
         #endif
 
-        if self.myid ==0:print 'setupfinished'
+        #if self.myid ==0:print 'setupfinished'
         self.GetMesh()._UpdateGeometryInfo()
         #print 'killsignal',sumb.killsignals.routinefailed,True,self.myid
         self.routineFailed = self.sumb_comm_world.allreduce(sumb.killsignals.routinefailed,mpi.MIN)
@@ -1844,7 +1859,7 @@ class SUmbInterface(object):
             #return
         #endif
     
-        if self.myid ==0: print 'calling solver'
+        #if self.myid ==0: print 'calling solver'
         sumb.solver()
         #Check to see whether we have a valid solution
         print 'killsignal',sumb.killsignals.routinefailed,True,self.myid
@@ -3081,6 +3096,8 @@ class SUmbInterface(object):
         sumb.getsolution()
 
         #print 'solution mapped'
+        print 'sumb value:',sumb.adjointvars.costfuncliftcoef-1
+
         SUmbsolutions = {'cl':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncliftcoef-1],\
                          'cd':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncdragcoef-1],\
                          'cFx':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncforcexcoef-1],\
@@ -3270,3 +3287,104 @@ class SUmbInterface(object):
 
         return
     
+
+
+
+
+
+
+
+
+
+# Only python version to compute ifaceptb and iedgept...not complete...new version 
+# in fortran renders this unnecessary
+#   # Now produce ifaceptb,iedgeptb using the topology
+#                 #information and the face boundary condition data
+
+#                 # Step 1: Loop over all faces on all blocks, for each
+#                 # face, add the ID of each of the four nodes to the
+#                 # explicitly perturbed corner list
+
+#                 explicitly_perturbed_corners = []
+#                 for ivol in xrange(FE_topo.nVol):
+#                     for iface in xrange(6):
+#                         if BCs[ivol][iface] == 1: # BCwallViscous
+#                             corners = nodesFromFace(iface)
+#                             for icorner in corners:
+#                                 explicitly_perturbed_corners.append(FE_topo.node_link[ivol][icorner])
+#                             # end for
+#                         # end if
+#                     # end for
+#                 # end for
+
+#                 # Step 2: Unique-ify the explicitly_perturbed_corners list
+#                 # and sort them in the process
+
+#                 explicitly_perturbed_corners = unique(explicitly_perturbed_corners)
+#                 explicitly_perturbed_corners.sort() # It should alreadly be sorted, but just in case
+
+#                 # Step 3: Loop over all edges on all volumes. If they have
+#                 # ONE explictly perturbed corner they are IMPLICTLY
+#                 # perturbed, if they have TWO explictly perturbed corners,
+#                 # they are EXPLICTLY perturbed. Note we call
+#                 # inBinarySearch here. This is simpilar to python's 'in'
+#                 # function. However since we have a sorted list, we can do
+#                 # a binary search instead of a linear search which is MUCH
+#                 # faster. The return is True or False as to whether
+#                 # 'element' is in 'list'
+
+#                 iedgeptb = zeros((FE_topo.nVol,12),'intc')
+
+#                 for ivol in xrange(FE_topo.nVol):
+#                     for iedge in xrange(12):
+#                         edge_number = FE_topo.edge_link[ivol][iedge]
+#                         corners = [FE_topo.edges[edge_number].n1,FE_topo.edges[edge_number].n2]
+#                         explicit = array([False,False])
+#                         for icorner in xrange(2):
+#                             explicit[icorner] = inBinarySearch(\
+#                                 explicitly_perturbed_corners,corners[icorner])
+#                         # end for
+
+#                         if explicit.all():
+#                             iedgeptb[ivol][iedge] = 2
+#                         elif explicit.any():
+#                             iedgeptb[ivol][iedge] = 1
+#                         else:
+#                             iedgeptb[ivol][iedge] = 0
+#                         # end if
+#                     # end for
+#                 # end for
+
+#                 # Step 4: Loop over all faces on all volumes. An EXPLICTLY
+#                 # perturbed face will have ALL corners explictly
+#                 # perturbed. An IMPLICLTY perturbed face will have at
+#                 # least EXPLICTLY perturbed corner. A face will have value
+#                 # of 0 if there are NO EXPLICTLY perturbed corners.
+
+#                 ifaceptb = zeros((FE_topo.nVol,6),'intc')
+
+#                 for ivol in xrange(FE_topo.nVol):
+#                     for iface in xrange(6):
+#                         corners = nodesFromFace(iface)
+#                         explicit = array([False,False,False,False])
+#                         for icorner in xrange(4):
+#                             node = FE_topo.node_link[ivol][corners[icorner]]
+#                             explicit[icorner] = inBinarySearch(\
+#                                 explicitly_perturbed_corners,node)
+#                         # end for
+#                         if explicit.all():
+#                             ifaceptb[ivol][iface] = 2
+#                         elif explicit.any():
+#                             ifaceptb[ivol][iface] = 1
+#                         else:
+#                             ifaceptb[ivol][iface] = 0
+#                         # end if
+#                     # end for
+#                 # end for
+                            
+#                 # Step 5: Finally permute the faces and edges from pyPSG
+#                 # format to to SUmb format
+#                 for ivol in xrange(FE_topo.nVol):
+#                     ifaceptb[ivol] = convertFaces(ifaceptb[ivol])
+#                     iedgeptb[ivol] = convertEdges(iedgeptb[ivol])
+#                 # end for

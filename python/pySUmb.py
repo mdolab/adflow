@@ -57,7 +57,36 @@ from pyAero_solver import AeroSolver
 # Misc Definitions
 # =============================================================================
 
-
+#Default Solver Options:
+solver_options_default={
+	'probName':'',
+	'OutputDir':'./',
+	'reinitialize':True,
+	'CFL':1.0,
+	'L2Convergence':1e-6,
+	'MGCycle':'sg',
+	'MetricConversion':1.0,
+	'Discretization':'Central plus scalar dissipation',
+	'sol_restart':'no',
+	'solveADjoint':'no',
+	'set Monitor':'Yes',
+	'Approx PC': 'no',
+	'Adjoint solver type': 'GMRES',
+	'adjoint relative tolerance':1e-10,
+	'adjoint absolute tolerance':1e-16,
+	'adjoint max iterations': 500,
+	'adjoint restart iteration' : 80,
+	'adjoint monitor step': 10,
+	'dissipation lumping parameter':6,
+	'Preconditioner Side': 'LEFT',
+	'Matrix Ordering': 'NestedDissection',
+	'Global Preconditioner Type': 'Additive Schwartz',
+	'Local Preconditioner Type' : 'ILU',
+	'ILU Fill Levels': 2,
+	'ASM Overlap' : 5,
+	'TS Stability': 'no',
+	'Reference Temp.':398,
+	'Reference Pressure':101325.0}
 
 # =============================================================================
 # SUMB Class
@@ -84,10 +113,9 @@ class SUMB(AeroSolver):
 		informs = {
 		}
 		AeroSolver.__init__(self, name, category, def_opts, informs, *args, **kwargs)
-
 		
 		#self.sumb = SUmbInterface()
-		self.interface = SUmbInterface()
+		self.interface = SUmbInterface(*args,**kwargs)
 		self.Mesh = self.interface.Mesh
 		self.myid = self.interface.myid
 		self.callCounter = 0
@@ -95,7 +123,7 @@ class SUMB(AeroSolver):
 		self.flowMatrixInitialized=False
 		self.meshWarpingInitialized=False
 
-	
+		return
 
 	def __solve__(self, aero_problem, sol_type,grid_file='default', *args, **kwargs):
 		
@@ -104,30 +132,28 @@ class SUMB(AeroSolver):
 		
 		Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
 		'''
-		#print 'keys',kwargs.keys()
-		# Pre-Processing
-		try:  kwargs['solver_options']['reinitialize']
+
+		try:
+			kwargs['solver_options']
+			solver_options = self._checkOptions(kwargs['solver_options'])
+		except:
+			solver_options = solver_options_default
+		# end try
+			
+		if solver_options['reinitialize'] == True:
+			self.interface.initializeFlow(aero_problem,sol_type,grid_file, *args, **kwargs)
+			self.filename=grid_file
+		# end if
+
+		try:
+			niterations = kwargs['niterations']
 		except KeyError:
 			test=1
-		else:
-			if kwargs['solver_options']['reinitialize']==True:
-				self.interface.initializeFlow(aero_problem,sol_type,grid_file, *args, **kwargs)
-				self.filename=grid_file
-				if(self.interface.myid==0):print 'flowinitialized'
-			else:
-				a=1
-			#endif
-		#endtry
-		try:  kwargs['niterations']
-		except KeyError:
-			test=1
-		else:
-			niterations= kwargs['niterations']
 		#endtry
 
 		#check if meshwarping is initialize. If not, do so
 		if (not self.meshWarpingInitialized):
-			if(self.interface.myid==0):print 'initializing Internal Warping'
+			if(self.interface.myid==0):print ' -> Initializing Internal Warping'
 			self.interface.Mesh.initializeInternalWarping()
 			self.meshWarpingInitialized=True
 		#endif
@@ -135,14 +161,14 @@ class SUMB(AeroSolver):
 		#if updategeometry:
 		#	self.interface.updateGeometry(geometry)
 		##endif
-		if(self.interface.myid==0):print 'setting inflowangle'
+		if(self.interface.myid==0):print ' ->Setting inflowangle'
 		#set inflow angle
 		self.interface.setInflowAngle(aero_problem)
 		
 		# Run Solver
-		if(self.interface.myid==0):print 'running iterations'
+		if(self.interface.myid==0):print ' ->Running iterations'
 		# get flow and ref from aero_problem
-		#print 'niterations',niterations
+
 		t0 = time.time()
 		self.interface.RunIterations(sol_type=sol_type,\
 					     ncycles=niterations,\
@@ -1026,6 +1052,19 @@ class SUMB(AeroSolver):
 		
 		# 
 		return self.informs[infocode]
+
+	def _checkOptions(self,solver_options):
+		'''Check the solver options against the default ones
+		and add option iff it is NOT in solver_options
+		'''
+		for key in solver_options_default.keys():
+			if not(key in solver_options.keys()):
+				solver_options[key] = solver_options_default[key]
+			# end if
+		# end for
+		return solver_options
+			
+		
 	
 
 
