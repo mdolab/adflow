@@ -33,14 +33,7 @@ except:
 # try to import the mpi module
 try:
     from mpi4py import MPI as mpi
-#    import mpi
     _parallel = True
-
-
-    if mpi.COMM_WORLD.rank==0:
-        print 'importingMPI',_parallel
-    #endif
-
 except ImportError:
     try:
         import dummy_mpi as mpi
@@ -49,13 +42,14 @@ except ImportError:
         print "Error: Failed to import mpi or dummy_mpi."
 
 # Import the sumb module
+
+
 if _parallel:
     try:
         import sumb_parallel as sumb
     except ImportError:
         try:
             import sumb
-
             if mpi.COMM_WORLD.rank==0:
                 print "Warning: Running in an MPI environment, but failed"
                 print "         to import parallel version of SUmb.  Proceeding"
@@ -85,170 +79,169 @@ class SUmbMesh(object):
         """Initialize the object."""
         self._update_geom_info = False
         self._suggar_interface_initialized = False
-        self.solid_warp_initialized=False
         self.comm = comm
         self.myid = comm.rank
 
-    def GetSurfaceCoordinates(self, family=None, sps=1):
-        """Return surface coordinates.
+#     def GetSurfaceCoordinates(self, family=None, sps=1):
+#         """Return surface coordinates.
         
-        Keyword arguments:
+#         Keyword arguments:
         
-        family -- optional string specifying the return of surface coordinates
-                  only for the specified family.
-        sps    -- spectral time step (optional, default is set to 1).
-                  (sps=1 for usual steady or unsteady models)
+#         family -- optional string specifying the return of surface coordinates
+#                   only for the specified family.
+#         sps    -- spectral time step (optional, default is set to 1).
+#                   (sps=1 for usual steady or unsteady models)
 
-        """
+#         """
         
-        if(family):
-            try:
-                index = self.families[family]
-            except KeyError:
-                print "Error: No such family '%s'" % family
-                return None
-            [start_ind,end_ind] = sumb.mdcreatesurfcoorlist(sps,index)
-            return sumb.mddata.mdsurfxx[:,start_ind-1:end_ind]
-        else:
-            nfamilies = len(self.families)
-            if (nfamilies == 0):
-                [start_ind,end_ind] = sumb.mdcreatesurfcoorlist(sps,0) 
-            else:
-                for n in range(nfamilies): 
-                    [start_ind,end_ind] = sumb.mdcreatesurfcoorlist(sps,n+1)
-            return sumb.mddata.mdsurfxx
+#         if(family):
+#             try:
+#                 index = self.families[family]
+#             except KeyError:
+#                 print "Error: No such family '%s'" % family
+#                 return None
+#             [start_ind,end_ind] = sumb.mdcreatesurfcoorlist(sps,index)
+#             return sumb.mddata.mdsurfxx[:,start_ind-1:end_ind]
+#         else:
+#             nfamilies = len(self.families)
+#             if (nfamilies == 0):
+#                 [start_ind,end_ind] = sumb.mdcreatesurfcoorlist(sps,0) 
+#             else:
+#                 for n in range(nfamilies): 
+#                     [start_ind,end_ind] = sumb.mdcreatesurfcoorlist(sps,n+1)
+#             return sumb.mddata.mdsurfxx
 
-    def GetSurfaceCoordinatesLocal(self, family=None, sps=1):
-        """Return surface coordinates for this processor only.
+#     def GetSurfaceCoordinatesLocal(self, family=None, sps=1):
+#         """Return surface coordinates for this processor only.
         
-        Keyword arguments:
+#         Keyword arguments:
         
-        family -- optional string specifying the return of surface coordinates
-                  only for the specified family.
-        sps    -- spectral time step (optional, default is set to 1).
-                  (sps=1 for usual steady or unsteady models)
+#         family -- optional string specifying the return of surface coordinates
+#                   only for the specified family.
+#         sps    -- spectral time step (optional, default is set to 1).
+#                   (sps=1 for usual steady or unsteady models)
 
-        """
+#         """
         
-        if(family):
-            try:
-                index = self.families[family]
-            except KeyError:
-                print "Error: No such family '%s'" % family
-                return None
-            [start_ind,end_ind] = sumb.mdcreatesurfcoorlistlocal(sps,index)
-            return sumb.mddatalocal.mdsurfxxlocal[:,start_ind-1:end_ind]
-        else:
-            nfamilies = len(self.families)
-            if (nfamilies == 0):
-                [start_ind,end_ind] = sumb.mdcreatesurfcoorlistlocal(sps,0) 
-            else:
-                for n in range(nfamilies): 
-                    [start_ind,end_ind] = sumb.mdcreatesurfcoorlistlocal(sps,n+1)
-            return sumb.mddatalocal.mdsurfxxlocal
+#         if(family):
+#             try:
+#                 index = self.families[family]
+#             except KeyError:
+#                 print "Error: No such family '%s'" % family
+#                 return None
+#             [start_ind,end_ind] = sumb.mdcreatesurfcoorlistlocal(sps,index)
+#             return sumb.mddatalocal.mdsurfxxlocal[:,start_ind-1:end_ind]
+#         else:
+#             nfamilies = len(self.families)
+#             if (nfamilies == 0):
+#                 [start_ind,end_ind] = sumb.mdcreatesurfcoorlistlocal(sps,0) 
+#             else:
+#                 for n in range(nfamilies): 
+#                     [start_ind,end_ind] = sumb.mdcreatesurfcoorlistlocal(sps,n+1)
+#             return sumb.mddatalocal.mdsurfxxlocal
 
-    def DeallocateSurfaceCoordinates(self):
-        """Deallocate memory used for the surface coordinates."""
-        sumb.mddeletesurfcoorlist()
+#     def DeallocateSurfaceCoordinates(self):
+#         """Deallocate memory used for the surface coordinates."""
+#         sumb.mddeletesurfcoorlist()
 
           
-    def DeallocateSurfaceCoordinatesLocal(self):
-        """Deallocate memory used for the surface coordinates."""
-        sumb.mddeletesurfcoorlistlocal()
+#     def DeallocateSurfaceCoordinatesLocal(self):
+#         """Deallocate memory used for the surface coordinates."""
+#         sumb.mddeletesurfcoorlistlocal()
 
-    def GetSurfacePatchDimensions(self, family=None):
-        """Return surface patch dimensions.
+#     def GetSurfacePatchDimensions(self, family=None):
+#         """Return surface patch dimensions.
 
-        Keyword arguments:
+#         Keyword arguments:
 
-        family -- optional string specifying the return of surface patch
-                  dimensions only for the specified family.
+#         family -- optional string specifying the return of surface patch
+#                   dimensions only for the specified family.
 
-        """
-        if(family):
-            try:
-                index = self.families[family]
-            except KeyError:
-                print "Error: No such family '%s'" % family
-                return None
-            [start_ind,end_ind] = sumb.mdsurfacepatchdim(index)
-            return sumb.mddata.mdpatchdimensions[:,start_ind-1:end_ind]
-        else:
-            nfamilies = len(self.families)
-            if (nfamilies == 0):
-                [start_ind,end_ind] = sumb.mdsurfacepatchdim(0)
-            else:
-                for n in range(nfamilies):
-                    [start_ind,end_ind] = sumb.mdsurfacepatchdim(n+1)
-            return sumb.mddata.mdpatchdimensions
+#         """
+#         if(family):
+#             try:
+#                 index = self.families[family]
+#             except KeyError:
+#                 print "Error: No such family '%s'" % family
+#                 return None
+#             [start_ind,end_ind] = sumb.mdsurfacepatchdim(index)
+#             return sumb.mddata.mdpatchdimensions[:,start_ind-1:end_ind]
+#         else:
+#             nfamilies = len(self.families)
+#             if (nfamilies == 0):
+#                 [start_ind,end_ind] = sumb.mdsurfacepatchdim(0)
+#             else:
+#                 for n in range(nfamilies):
+#                     [start_ind,end_ind] = sumb.mdsurfacepatchdim(n+1)
+#             return sumb.mddata.mdpatchdimensions
 
-    def DeallocateSurfacePatchDimensions(self):
-        """Deallocate memory used for the surface patch dimensions."""
-        sumb.mddeletesurfacepatchdim()
+#     def DeallocateSurfacePatchDimensions(self):
+#         """Deallocate memory used for the surface patch dimensions."""
+#         sumb.mddeletesurfacepatchdim()
                                              
-    def GetSurfaceIndices(self, family=None):
-        """Return CGNS block IDs and indices.  This is a 2-D array, dimensions
-        (4,npoints).  The first 3 indices are the i,j,k and the fourth is the
-        CGNS block ID.
+#     def GetSurfaceIndices(self, family=None):
+#         """Return CGNS block IDs and indices.  This is a 2-D array, dimensions
+#         (4,npoints).  The first 3 indices are the i,j,k and the fourth is the
+#         CGNS block ID.
                                              
-        Keyword arguments:
+#         Keyword arguments:
                                              
-        family -- optional string specifying the return of indices only for the
-                  specified family.
+#         family -- optional string specifying the return of indices only for the
+#                   specified family.
                                              
-        """
-        if(family):
-            try:
-                index = self.families[family]
-            except KeyError:
-                print "Error: No such family '%s'" % family
-                return None
-            [start_ind,end_ind] = sumb.mdcreatesurfindlist(index)
-            return sumb.mddata.mdsurfind[:,start_ind-1:end_ind]
-        else:
-            nfamilies = len(self.families)
-            if (nfamilies == 0):
-                [start_ind,end_ind] = sumb.mdcreatesurfindlist(0)
-            else:
-                for n in range(nfamilies):
-                    [start_ind,end_ind] = sumb.mdcreatesurfindlist(n+1)
-            return sumb.mddata.mdsurfind
+#         """
+#         if(family):
+#             try:
+#                 index = self.families[family]
+#             except KeyError:
+#                 print "Error: No such family '%s'" % family
+#                 return None
+#             [start_ind,end_ind] = sumb.mdcreatesurfindlist(index)
+#             return sumb.mddata.mdsurfind[:,start_ind-1:end_ind]
+#         else:
+#             nfamilies = len(self.families)
+#             if (nfamilies == 0):
+#                 [start_ind,end_ind] = sumb.mdcreatesurfindlist(0)
+#             else:
+#                 for n in range(nfamilies):
+#                     [start_ind,end_ind] = sumb.mdcreatesurfindlist(n+1)
+#             return sumb.mddata.mdsurfind
 
-    def GetSurfaceIndicesLocal(self, family=None):
-        """Return CGNS block IDs and indices.  This is a 2-D array, dimensions
-        (4,npoints).  The first 3 indices are the i,j,k and the fourth is the
-        CGNS block ID.
+#     def GetSurfaceIndicesLocal(self, family=None):
+#         """Return CGNS block IDs and indices.  This is a 2-D array, dimensions
+#         (4,npoints).  The first 3 indices are the i,j,k and the fourth is the
+#         CGNS block ID.
                                              
-        Keyword arguments:
+#         Keyword arguments:
                                              
-        family -- optional string specifying the return of indices only for the
-                  specified family.
+#         family -- optional string specifying the return of indices only for the
+#                   specified family.
                                              
-        """
-        if(family):
-            try:
-                index = self.families[family]
-            except KeyError:
-                print "Error: No such family '%s'" % family
-                return None
-            [start_ind,end_ind] = sumb.mdcreatesurfindlistlocal(index)
-            return sumb.mddata.mdsurfindlocal[:,start_ind-1:end_ind]
-        else:
-            nfamilies = len(self.families)
-            if (nfamilies == 0):
-                [start_ind,end_ind] = sumb.mdcreatesurfindlistlocal(0)
-            else:
-                for n in range(nfamilies):
-                    [start_ind,end_ind] = sumb.mdcreatesurfindlistlocal(n+1)
-            return sumb.mddatalocal.mdsurfindlocal
+#         """
+#         if(family):
+#             try:
+#                 index = self.families[family]
+#             except KeyError:
+#                 print "Error: No such family '%s'" % family
+#                 return None
+#             [start_ind,end_ind] = sumb.mdcreatesurfindlistlocal(index)
+#             return sumb.mddata.mdsurfindlocal[:,start_ind-1:end_ind]
+#         else:
+#             nfamilies = len(self.families)
+#             if (nfamilies == 0):
+#                 [start_ind,end_ind] = sumb.mdcreatesurfindlistlocal(0)
+#             else:
+#                 for n in range(nfamilies):
+#                     [start_ind,end_ind] = sumb.mdcreatesurfindlistlocal(n+1)
+#             return sumb.mddatalocal.mdsurfindlocal
                                              
-    def DeallocateSurfaceIndices(self):
-        """Deallocate memory used for the surface indices."""
-        sumb.mddeletesurfindlist()
+#     def DeallocateSurfaceIndices(self):
+#         """Deallocate memory used for the surface indices."""
+#         sumb.mddeletesurfindlist()
 
-    def DeallocateSurfaceIndicesLocal(self):
-        """Deallocate memory used for the surface indices."""
-        sumb.mddeletesurfindlistlocal()
+#     def DeallocateSurfaceIndicesLocal(self):
+#         """Deallocate memory used for the surface indices."""
+#         sumb.mddeletesurfindlistlocal()
 
     def WriteMeshFile(self,*filename):
         """Write the current state of the mesh to a CGNS file.
@@ -267,58 +260,58 @@ class SUmbMesh(object):
         sumb.monitor.writesurface=True
         sumb.writesol()
 
-    def DummySetCoordinates(self, sps =1):
-        """Dummy SetCoordinates routine to be called on processors where no
-        new coordinates reside.
+#     def DummySetCoordinates(self, sps =1):
+#         """Dummy SetCoordinates routine to be called on processors where no
+#         new coordinates reside.
  
-        Keyword arguments:
+#         Keyword arguments:
 
-        sps    -- spectral time step (optional, default set to 1).
-                        (sps= 1 for usual steady or unsteady models)
+#         sps    -- spectral time step (optional, default set to 1).
+#                         (sps= 1 for usual steady or unsteady models)
 
-        """
-        sumb.iteration.groundlevel = 1
-        blocknums = numpy.zeros((0))
-        ranges = numpy.zeros((3,2,0))
-        xyz = numpy.zeros((3,0),'d')
-        sumb.mdsetcoor(sps,blocknums,ranges,xyz)
-        self._update_geom_info = True
+#         """
+#         sumb.iteration.groundlevel = 1
+#         blocknums = numpy.zeros((0))
+#         ranges = numpy.zeros((3,2,0))
+#         xyz = numpy.zeros((3,0),'d')
+#         sumb.mdsetcoor(sps,blocknums,ranges,xyz)
+#         self._update_geom_info = True
  
-    def SetCoordinates(self, blocknums, ranges, xyz, sps=1):
-        """Set the coordinates for a given block or sub-blocks.
+#     def SetCoordinates(self, blocknums, ranges, xyz, sps=1):
+#         """Set the coordinates for a given block or sub-blocks.
                                                                                 
-        Keyword arguments:
+#         Keyword arguments:
                                                                                 
-        blocknums -- the block number for each sub-block, dimension (nsubblocks)
-        ranges -- the ijk ranges for each sub-block, dimension (3,2,nsubblocks)
-        xyz -- the new xyz coordinates, dimension (3,npts)
-        sps    -- spectral time step (optional, default is set to 1).
-                  (sps=1 for usual steady or unsteady models)
+#         blocknums -- the block number for each sub-block, dimension (nsubblocks)
+#         ranges -- the ijk ranges for each sub-block, dimension (3,2,nsubblocks)
+#         xyz -- the new xyz coordinates, dimension (3,npts)
+#         sps    -- spectral time step (optional, default is set to 1).
+#                   (sps=1 for usual steady or unsteady models)
                                                                                 
-        """
-        sumb.iteration.groundlevel = 1
-        sumb.mdsetcoor(sps,blocknums,ranges,xyz)
-        self._update_geom_info = True
+#         """
+#         sumb.iteration.groundlevel = 1
+#         sumb.mdsetcoor(sps,blocknums,ranges,xyz)
+#         self._update_geom_info = True
 
-    def SetCoordinatesLocal(self, blocknum,il,jl,kl,xyz, sps=1):
-        """Set the coordinates for a given block or sub-blocks.
+#     def SetCoordinatesLocal(self, blocknum,il,jl,kl,xyz, sps=1):
+#         """Set the coordinates for a given block or sub-blocks.
                                                                                 
-        Keyword arguments:
+#         Keyword arguments:
                                                                                 
-        blocknums -- the block number for each sub-block, dimension (nsubblocks)
-        ranges -- the ijk ranges for each sub-block, dimension (3,2,nsubblocks)
-        xyz -- the new xyz coordinates, dimension (3,npts)
-        sps    -- spectral time step (optional, default is set to 1).
-                  (sps=1 for usual steady or unsteady models)
+#         blocknums -- the block number for each sub-block, dimension (nsubblocks)
+#         ranges -- the ijk ranges for each sub-block, dimension (3,2,nsubblocks)
+#         xyz -- the new xyz coordinates, dimension (3,npts)
+#         sps    -- spectral time step (optional, default is set to 1).
+#                   (sps=1 for usual steady or unsteady models)
                                                                                 
-        """
-        sumb.iteration.groundlevel = 1
-        #sumb.mdsetcoor(sps,blocknums,ranges,xyz.real)#only the real part needs to be set in SUmb
-        #print 'setting block coords',il,jl,kl,xyz.real.shape
-        sumb.setblockcoords(blocknum,il,jl,kl,xyz.real)
-        #print 'bloock coords set'
-        #sumb.mdsetcoor(sps,blocknums,ranges,xyz)
-        self._update_geom_info = True
+#         """
+#         sumb.iteration.groundlevel = 1
+#         #sumb.mdsetcoor(sps,blocknums,ranges,xyz.real)#only the real part needs to be set in SUmb
+#         #print 'setting block coords',il,jl,kl,xyz.real.shape
+#         sumb.setblockcoords(blocknum,il,jl,kl,xyz.real)
+#         #print 'bloock coords set'
+#         #sumb.mdsetcoor(sps,blocknums,ranges,xyz)
+#         self._update_geom_info = True
 
     def _UpdateGeometryInfo(self):
         """Update the SUmb internal geometry info, if necessary."""
@@ -496,16 +489,8 @@ class SUmbMesh(object):
                                                                                         
         """
         sumb.iteration.groundlevel = 1
-        #ncoords = xyz.shape[1]
-        #print 'ncoords',ncoords,xyz.shape
-        #sys.exit(0)
-        #sumb.updatefacesglobal(ncoords,xyz)
         xyz = self.metricConversion*xyz
-
-
         sumb.updatefacesglobal(xyz,reinitialize)
-
-    
         self._update_geom_info = True
 
         return
@@ -514,9 +499,9 @@ class SUmbMesh(object):
         """
         Get the surface coordinates for the mesh    
         """
-        if self.sol_type == 'Steady' or self.sol_type == 'steady':
+        if self.sol_type.lower() == 'steady':
             return sumb.mddata.mdglobalsurfxx/self.metricConversion
-        elif self.sol_type == 'Time Spectral' or self.sol_type == 'time spectral':
+        elif self.sol_type.lower() == 'time spectral':
             return sumb.mddata.mdglobalsurfxx[:,:,0]/self.metricConversion
         else:
             print 'invalid solutions type for surface coords...Exiting'
@@ -533,342 +518,19 @@ class SUmbMesh(object):
 
         return
 
-    def warpMeshSolid(self,*args,**kwargs):
-        '''
-        run the Solid Mesh Warping scheme
-       '''
-
-        # Define several functions required for initialization
-        def inBinarySearch(list,element):
-            ileft = bisect.bisect_left(list,element)
-            if ileft >= len(list):
-                return False
-            if list[ileft] == element:
-                return True
-            else:
-                return False
-        # end def
-        
-        def convertFaces(face_list): # Convert faces from pyPSG to SUmb
-            new_face_list = zeros(6,face_list.dtype)
-            new_face_list[0] = face_list[2] # ilo
-            new_face_list[1] = face_list[3] # ihi
-            new_face_list[2] = face_list[4] # jlo
-            new_face_list[3] = face_list[5] # jhi
-            new_face_list[4] = face_list[0] # klo
-            new_face_list[5] = face_list[1] # khi
-            return new_face_list
-
-        def convertEdges(edge_list): # Convert Edges from pyPSG to SUmb
-            new_edge_list = zeros(12,edge_list.dtype)
-            new_edge_list[0] = edge_list[0]
-            new_edge_list[1] = edge_list[1]
-            new_edge_list[2] = edge_list[4]
-            new_edge_list[3] = edge_list[5]
-            new_edge_list[4] = edge_list[2]
-            new_edge_list[5] = edge_list[3]
-            new_edge_list[6] = edge_list[6]
-            new_edge_list[7] = edge_list[7]
-            new_edge_list[8] = edge_list[8]
-            new_edge_list[9] = edge_list[9]
-            new_edge_list[10] = edge_list[10]
-            new_edge_list[11] = edge_list[11]
-            return new_edge_list
-
-        # We have initialization stuff to do ONLY on the root prco
-        if not self.solid_warp_initialized:
-            if self.myid == 0:
-                mpiPrint('\nInitializating Solid Mesh Warping...')
-                import pyspline # Direct access to the compiled spline library
-
-                if 'file' in kwargs: # we're using a separate CGNS file
-                    file_name = kwargs['file']
-                elif 'n' in kwargs:
-                    file_name = self.GetFilename() #we're using mesh file with constant 'n'
-                    n = kwargs['n']
-                elif 'topo' in kwargs:
-                    file_name = self.GetFilename()
-                else:
-                    mpiPrint('Error: Keyword arguments \'n=integer\' \'file=<cgns_file>\' or \'topo=topo_file\' must be passed to warpMeshSolid',comm=comm)
-
-                if 'sym' in kwargs:
-                    if kwargs['sym'] == 'xy' or kwargs['sym'] == 'yx':
-                        sym = [0,0,-1]
-                    elif kwargs['sym'] == 'yz' or kwargs['sym'] == 'zy':
-                        sym = [-1,0,0]
-                    elif kwargs['sym'] == 'xz' or kwargs['sym'] == 'zx':
-                        sym = [0,-1,0]
-                    else:
-                        mpiPrint('  ## Error: sym must be one of xy, yz or xz')
-                        sys.exit(0)
-                    # end if
-                else:
-                    mpiPrint('  ** Warning: sym is not specified.',comm=self.comm)
-                    sym = [0,0,0]
-                # end if
-
-                cg,nzones = pyspline.open_cgns(file_name)
-                sizes = []
-                BCs = []
-                corners = numpy.zeros((nzones,8,3))
-                for i in xrange(nzones):
-                    zoneshape = pyspline.read_cgns_zone_shape(cg,i+1)
-                    X,faceBCs = pyspline.read_cgns_zone(cg,i+1,zoneshape[0],zoneshape[1],zoneshape[2])
-                    sizes.append(zoneshape)
-                    BCs.append(faceBCs)
-                    corners[i][0] = X[0,0,0]
-                    corners[i][1] = X[-1,0,0]
-                    corners[i][2] = X[0,-1,0]
-                    corners[i][3] = X[-1,-1,0]
-                    corners[i][4] = X[0,0,-1]
-                    corners[i][5] = X[-1,0,-1]
-                    corners[i][6] = X[0,-1,-1]
-                    corners[i][7] = X[-1,-1,-1]
-                # end for
-                pyspline.close_cgns(cg) # Done with cgns file
-                sizes = array(sizes) # make sizes into a numpy array
-                if 'n' in kwargs:
-                    FE_topo = BlockTopology(corners) # Compute topology
-                    sizes[:,:] = n
-                    FE_topo.calcGlobalNumbering(sizes)
-                elif 'file' in kwargs:
-                    FE_topo = BlockTopology(corners) # Compute topology
-                    FE_topo.calcGlobalNumbering(sizes)
-                elif 'topo' in kwargs:
-                    FE_topo = BlockTopology(file=kwargs['topo'])
-                    FE_topo.calcGlobalNumbering()
-                 # end if
-                nuu,nus,l_index_flat,l_ptr,l_sizes = self._reOrderIndices(FE_topo,BCs,sym) # Re-order numbering to account for constrained dof
-
-                self.FE_topo = FE_topo
-                solidWarpData = [nuu,nus,array(l_index_flat),array(l_ptr),array(l_sizes)]
-            else:
-                self.FE_topo = None
-                solidWarpData = None
-            # end if (myID == 0 test)
-                
-            # Bcast data from root node to all
-            self.FE_topo  = self.comm.bcast(self.FE_topo,root=0)
-            solidWarpData = self.comm.bcast(solidWarpData,root=0)
-
-            # Also produce the global to local mapping for the
-            # mdsurfacenodescompact back to each of the blocks 
-            
-            data = self.comm.gather(sumb.mddatalocal.mdsurfglobalindlocal,root=0)
-            if self.myid == 0:
-                md_g_index = [[] for i in xrange(sumb.mddata.mdnsurfnodescompact)]
-                # Now loop over data from each proc and each node on the proc
-                for iproc in xrange(len(data)):
-                    for ii in xrange(data[iproc].shape[1]):
-                        i  = data[iproc][0,ii] # i index on this block
-                        j  = data[iproc][1,ii] # j index on this block
-                        k  = data[iproc][2,ii] # k index on this block
-                        nn = data[iproc][3,ii] # domain number of process
-                        id = data[iproc][4,ii] # global node id
-                                        
-                        md_g_index[id].append([i,j,k,iproc,nn])
-                    # end for
-                # end for
-                     
-                # Now flatten the g_index along with a pointer
-                md_g_ptr = zeros((len(md_g_index)+1),'intc')
-                md_g_ptr[0] = 0# Zerobased Here
-                for i in xrange(len(md_g_index)):
-                    md_g_ptr[i+1] = md_g_ptr[i] + len(md_g_index[i])*5
-                # end for
-
-                # Dont' ask..it works since we only have 1 level deep...
-                md_g_index = array([item for sublist in md_g_index for item in sublist]).flatten()
-            else:
-                md_g_index = None
-                md_g_ptr = None
-
-            # Now bcast g_index and g_ptr back to everyone
-            md_g_index = self.comm.bcast(md_g_index,root=0)
-            md_g_ptr   = self.comm.bcast(md_g_ptr,root=0)
-            
-            # Set the required data in the module
-            sumb.solidwarpmodule.nuu      = solidWarpData[0]
-            sumb.solidwarpmodule.nus      = solidWarpData[1]
-            sumb.solidwarpmodule.l_index  = solidWarpData[2]
-            sumb.solidwarpmodule.lptr     = solidWarpData[3]
-            sumb.solidwarpmodule.l_sizes  = solidWarpData[4]
-            sumb.solidwarpmodule.nblock   = len(solidWarpData[2])
-            sumb.solidwarpmodule.md_g_index = md_g_index
-            sumb.solidwarpmodule.md_g_ptr   = md_g_ptr
-
-            # Now run the fortran initialization
-            sumb.initializewarpmeshsolid_parallel()
-
-            # Initialization Complete
-            mpiPrint('  -> Solid Mesh Warping Initialized.',comm=self.comm)
-            self.solid_warp_initialized = True
-        # end if Initialization
-
-        # Now run the actual warping command
-        sumb.warpmeshsolid_parallel()
+    def initializeExternalWarping(self,ndoflocal):
+        sumb.initializeexternalwarping(ndoflocal)
 
         return
 
-    def warpMeshSolidDeriv(self,*args,**kwargs):
-        sumb.calculatesolidwarpderiv()
-
-    def _reOrderIndices(self,FE_topo,faceBCs,sym):
-        '''This funcion takes the order from self.FE_topo and reorders
-        them according to the Boundary Condition types in each volume
-        class. The sole purpose of this is to facilitate the
-        structural mesh warping algorithim for matrix assembly.'''
-        # We want the global indicies ordered according to:
-        #[ freedof ]
-        #[ constrained dof ]
-        sym = array(sym)
-        pt_dof = numpy.zeros((FE_topo.nGlobal,3),'intc')
-
-        for ii in xrange(FE_topo.nGlobal):
-            for jj in xrange(len(FE_topo.g_index[ii])):
-
-                ivol = FE_topo.g_index[ii][jj][0]
-                i    = FE_topo.g_index[ii][jj][1]
-                j    = FE_topo.g_index[ii][jj][2]
-                k    = FE_topo.g_index[ii][jj][3]
-
-                N = FE_topo.l_index[ivol].shape[0]
-                M = FE_topo.l_index[ivol].shape[1]
-                L = FE_topo.l_index[ivol].shape[2]
-              
-                type,number,index1,index2 = \
-                    indexPosition3D(i,j,k,N,M,L)
-                
-                checkFaces = []
-                if type == 0:
-                    pt_dof[ii] = [0,0,0]
-                else: # Face
-                    if type == 1: # Face
-                        checkFaces.append(number)
-                    elif type == 2: # Edge
-                        if number in [0,1,2,3]:
-                            checkFaces.append(0)
-                        if number in [4,5,6,7]:
-                            checkFaces.append(1)
-                        if number in [2,6,8,10]:
-                            checkFaces.append(2)
-                        if number in [3,7,9,11]:
-                            checkFaces.append(3)
-                        if number in [0,4,8,9]:
-                            checkFaces.append(4)
-                        if number in [1,5,10,11]:
-                            checkFaces.append(5)
-                    elif type == 3: # Corner
-                        if number == 0:
-                            checkFaces.extend([0,2,4])
-                        elif number == 1:
-                            checkFaces.extend([0,3,4])
-                        elif number == 2:
-                            checkFaces.extend([0,2,5])
-                        elif number == 3:
-                            checkFaces.extend([0,3,5])
-                        elif number == 4:
-                            checkFaces.extend([1,2,4])
-                        elif number == 5:
-                            checkFaces.extend([1,3,4])
-                        elif number == 6:
-                            checkFaces.extend([1,2,5])
-                        elif number == 7:
-                            checkFaces.extend([1,3,5])
-                    # end if
-                    
-                    # We now now all faces a point that belong to a
-                    # pt, check each for boun dary conditions
-                    for iii in xrange(len(checkFaces)):
-                        iface = checkFaces[iii]
-                        if faceBCs[ivol][iface] in [1,2]: # BC_wall OR Farfield/inflow
-                            pt_dof[ii] = [1,1,1]
-                        # end if
-                        if faceBCs[ivol][iface] == 3:
-                            # Only set it as a symmetry plane if nothing is already set
-                            index_set = where(sym==-1)[0][0]
-                            pt_dof[ii][index_set] = 1
-                        # end if
-                    # end for
-                # end if
-            # end for
-        # end for
-      
-        nus = int(sum(sum(pt_dof)))
-        nuu = FE_topo.nGlobal*3-nus
-        mpiPrint('  -> Total DOF  : %d'%(FE_topo.nGlobal*3),comm=self.comm)
-        mpiPrint('  -> Unknown DOF: %d'%(nuu),comm=self.comm)
-        mpiPrint('  -> Known DOF  : %d'%(nus),comm=self.comm)
-
-        # We will forgo the g_index reorganization...it is not
-        # strictly necessary We want l_index[ivol] to be of size
-        # (nu,nv,nw,3) with each entry pointing to the dof in the
-        # global matrix
-
-        free_dof_count = 0
-        constr_dof_count = 0
-        l_index = []
-        for ivol in xrange(len(FE_topo.l_index)):
-            l_index.append(zeros((FE_topo.l_index[ivol].shape[0],
-                                  FE_topo.l_index[ivol].shape[1],
-                                  FE_topo.l_index[ivol].shape[2],3),'intc'))
-        # end for
-
-        for ii in xrange(FE_topo.nGlobal):
-            for iii in xrange(3):
-                if pt_dof[ii][iii] == 0:
-                    for jj in xrange(len(FE_topo.g_index[ii])):
-                        ivol = FE_topo.g_index[ii][jj][0]
-                        i    = FE_topo.g_index[ii][jj][1]
-                        j    = FE_topo.g_index[ii][jj][2]
-                        k    = FE_topo.g_index[ii][jj][3]
-                        l_index[ivol][i,j,k,iii] = free_dof_count
-                    # end for
-                    free_dof_count += 1
-                # end if
-                if pt_dof[ii][iii] == 1:
-                    for jj in xrange(len(FE_topo.g_index[ii])):
-                        ivol = FE_topo.g_index[ii][jj][0]
-                        i    = FE_topo.g_index[ii][jj][1]
-                        j    = FE_topo.g_index[ii][jj][2]
-                        k    = FE_topo.g_index[ii][jj][3]
-                        l_index[ivol][i,j,k,iii] = nuu + constr_dof_count
-                    # end for
-                    constr_dof_count += 1
-                # end if
-            # end for (iii loop)
-        # end for (ii loop)
-
-        # Lastly, we need to flatten the l_index for fortran use
-
-        l_index_flat = []
-        l_ptr = [0] # -> Zero Based Here
-        l_sizes = zeros((len(l_index),3),'intc')
-        for i in xrange(len(l_index)):
-            l_index_flat.extend(l_index[i].flatten())
-            l_ptr.append(l_ptr[-1] + l_index[i].size)
-            l_sizes[i] = [l_index[i].shape[0],l_index[i].shape[1],l_index[i].shape[2]]
-        # end for
-
-        return nuu,nus,l_index_flat,l_ptr,l_sizes
-
-    def GetMeshQuality(self,file_name):
-        # Return a list of the quality of all elements
-        
-        # Step 1: Determine the number of elements on this processor
-        nElem = 0
-        for i in xrange(sumb.block.ndom):
-            size = self.getBlockDimensions(i+1)
-            nElem += (size[0]-1)*(size[1]-1)*(size[2]-1)
-        # end for
-        quality = sumb.getquality(nElem)
-
-        # Dump it out to a file
-        f = open(file_name+'_%d'%(self.myid),'w')
-        quality.tofile(f,sep="\n",format="%20.16g")
-        
-        return     
-
+    def setGrid(self,externaldof):
+        sumb.setgrid(externaldof)
+        self._update_geom_info = True
+        return
+    
+    def getForces(self,cgnsdof):
+        return sumb.getforces(cgnsdof)
+    
 
 # =============================================================================
 
@@ -974,6 +636,9 @@ class SUmbInterface(object):
         # Read the parameter file
         sumb.readparamfile()
 
+        # Set printIteration Flag
+        sumb.inputiteration.printiterations = kwargs['solver_options']['printIterations']
+
         #This is just to flip the -1 to 1 possibly a memory issue?
         sumb.inputio.storeconvinneriter=abs(sumb.inputio.storeconvinneriter)
 
@@ -1026,6 +691,7 @@ class SUmbInterface(object):
         #update the flow vars
         sumb.updateflow()
         return
+
     def resetFlow(self):
         '''
         Reset the flow for the complex derivative calculation
@@ -1041,8 +707,7 @@ class SUmbInterface(object):
         
         #Convert alpha and beta to a freestream vector
         [velDir,liftDir,dragDir]= sumb.adjustinflowangleadj((aero_problem._flows.alpha*(pi/180.0)),(aero_problem._flows.beta*(pi/180.0)),aero_problem._flows.liftIndex)
-        
-        #autofile = open("autogen.input",'w')
+       
         autofile = open(startfile,'w')
 
         # Write the header of the file
@@ -1703,10 +1368,6 @@ class SUmbInterface(object):
 
         """
         
-#         if(self.myid ==0):
-#             print 'Iterations...',sumb.monitor.niterold,sumb.monitor.nitercur,\
-#                 sumb.iteration.itertot
-#         # end if
         sumb.monitor.niterold = self.sumb_comm_world.bcast(sumb.monitor.niterold,root=0)
 
         try: kwargs['sol_type']
@@ -1735,16 +1396,12 @@ class SUmbInterface(object):
         #reset python failute check to false
         sumb.killsignals.routinefailed=False
 
-        if sol_type=='Steady' or sol_type=='steady' or sol_type=='Time Spectral' or sol_type=='time spectral':
-            #if(self.myid ==0):print 'steady',sumb.inputio.storeconvinneriter,True,False,sumb.inputio.storeconvinneriter==True,sumb.inputio.storeconvinneriter==False
-            #if(self.myid ==0):sumb.inputio.storeconvinneriter=True
-            #if(self.myid ==0):print 'steady',sumb.inputio.storeconvinneriter,True,False,sumb.inputio.storeconvinneriter==True,sumb.inputio.storeconvinneriter==False
+        if sol_type.lower() in ['steady', 'time_spectral']:
+
             #set the number of cycles for this call
             sumb.inputiteration.ncycles = ncycles
             
-            if (sumb.monitor.niterold == 0 and \
-                sumb.monitor.nitercur == 0 and \
-                sumb.iteration.itertot == 0):
+            if (sumb.monitor.niterold == 0 and sumb.monitor.nitercur == 0 and sumb.iteration.itertot == 0):
                 # No iterations have been done
                 if (sumb.inputio.storeconvinneriter):
                     nn = sumb.inputiteration.nsgstartup+sumb.inputiteration.ncycles
@@ -1752,13 +1409,10 @@ class SUmbInterface(object):
                         # sumb.monitor.convarray = None
                        sumb.deallocconvarrays()
                        sumb.allocconvarrays(nn)
-                       #print 'convarray',sumb.monitor.convarray
                     #endif
                 #endif
 
-            elif(sumb.monitor.nitercur == 0 and\
-                 sumb.iteration.itertot == 0):
-                
+            elif(sumb.monitor.nitercur == 0 and  sumb.iteration.itertot == 0):
                 # Reallocate convergence history array and
                 # time array with new size, storing old values from restart
                 if (self.myid == 0):
@@ -1839,7 +1493,7 @@ class SUmbInterface(object):
                 sumb.monitor.timeunsteady = 0.0
                 
             #endif
-        elif sol_type=='unsteady':
+        elif sol_type.lower()=='unsteady':
             print 'unsteady not implemented yet...'
             sys.exit(0)
         else:
@@ -1847,217 +1501,226 @@ class SUmbInterface(object):
             sys.exit(0)
         #endif
 
-        #if self.myid ==0:print 'setupfinished'
         self.GetMesh()._UpdateGeometryInfo()
-        #print 'killsignal',sumb.killsignals.routinefailed,True,self.myid
         self.routineFailed = self.sumb_comm_world.allreduce(sumb.killsignals.routinefailed,mpi.MIN)
-        #print 'routinefailed',self.routineFailed,self.myid
+
         if (abs(self.routineFailed)==True):
             if self.myid ==0:print 'Error raise in updateGeometry'
             raise ValueError
-            #print 'error raised'
-            #return
         #endif
-    
-        #if self.myid ==0: print 'calling solver'
+        sumb.inputiteration.l2convrel = kwargs['solver_options']['L2ConvergenceRel']
+                
+        # Now coll the solver
         sumb.solver()
+        
         #Check to see whether we have a valid solution
-        print 'killsignal',sumb.killsignals.routinefailed,True,self.myid
-        #self.routineFailed = self.sumb_comm_world.allreduce(sumb.killsignals.routinefailed,mpi.MIN)
         #in this case routineFailed will be triggered on all processors
         self.routineFailed = self.sumb_comm_world.allreduce(abs(sumb.killsignals.routinefailed),mpi.SUM)/mpi.COMM_WORLD.size
         #therefore sum up and devide by nProc
-        print 'routinefailed',self.routineFailed,self.myid
         if (abs(self.routineFailed)==True):
-            #print 'raising error'
             if self.myid ==0: print 'Error Raised in solver'
             raise ValueError
-            #print 'error raised'
-            #return
         #endif
-        if self.myid ==0:print 'solver called'
+
+        if kwargs['solver_options']['printIterations'] == False:
+            # If we weren't printing iterations, output the 0th (initial) 1st (start of this set of iterations) and final
+            if self.myid == 0:
+                print '  -> CFD Initial Rho Norm: %10.5e'%(sumb.monitor.convarray[0,0,0])
+                print '  -> CFD Start   Rho Norm: %10.5e'%(sumb.monitor.convarray[1,0,0])
+                print '  -> CFD Final   Rho Norm: %10.5e'%(sumb.monitor.convarray[sumb.monitor.nitercur,0,0])
+                     
 
         return
-        sys.exit(0)
+
+    def getResiduals(self):
+        if self.myid == 0:
+            return sumb.monitor.convarray[0,0,0],sumb.monitor.convarray[1,0,0],sumb.monitor.convarray[sumb.monitor.nitercur,0,0]
+        else:
+            return None,None,None
+        # end if
+
         
-        if (sumb.monitor.niterold == 0 and
-            sumb.monitor.nitercur == 0 and
-            sumb.iteration.itertot == 0):
-            # No iterations have been done
-            if (ncycles):
-                # Set new value of unsteady physical time steps
-                if (ncycles[0] != sumb.inputunsteady.ntimestepsfine):
-                    sumb.inputunsteady.ntimestepsfine = ncycles[0]
-                # Set new value of MG cycles
-                if (len(ncycles) > 1):
-                  if (ncycles[1] != sumb.inputiteration.ncycles):
-                      if(self.myid==0):print 'setting ncycles'
-                      sumb.inputiteration.ncycles = ncycles[1]
-                # Reallocate convergence history array and
-                # time array with new size
-                if (self.myid == 0):
-                    print 'sumb.monitor.timearray'#,sumb.monitor.timearray 
-                    sumb.monitor.timearray = None
-                    print 'sumb.monitor.timearray',sumb.monitor.timearray 
-                    sumb.monitor.timedataarray = None
-                    sumb.alloctimearrays(sumb.inputunsteady.ntimestepsfine)
-                    if (sumb.inputio.storeconvinneriter):
-                        nn = sumb.inputiteration.nsgstartup+sumb.inputiteration.ncycles
-                        if (sumb.inputphysics.equationmode==2):#2 is unsteady
-                            nn=sumb.inputunsteady.ntimestepsfine*sumb.inputiteration.ncycles
-                        #endif
-                        sumb.monitor.convarray = None
-                        #print 'nn',nn
-                        sumb.allocconvarrays(nn)
-                        #print 'convarray',sumb.monitor.convarray
+
+ #        sys.exit(0)
+        
+#         if (sumb.monitor.niterold == 0 and
+#             sumb.monitor.nitercur == 0 and
+#             sumb.iteration.itertot == 0):
+#             # No iterations have been done
+#             if (ncycles):
+#                 # Set new value of unsteady physical time steps
+#                 if (ncycles[0] != sumb.inputunsteady.ntimestepsfine):
+#                     sumb.inputunsteady.ntimestepsfine = ncycles[0]
+#                 # Set new value of MG cycles
+#                 if (len(ncycles) > 1):
+#                   if (ncycles[1] != sumb.inputiteration.ncycles):
+#                       if(self.myid==0):print 'setting ncycles'
+#                       sumb.inputiteration.ncycles = ncycles[1]
+#                 # Reallocate convergence history array and
+#                 # time array with new size
+#                 if (self.myid == 0):
+#                     print 'sumb.monitor.timearray'#,sumb.monitor.timearray 
+#                     sumb.monitor.timearray = None
+#                     print 'sumb.monitor.timearray',sumb.monitor.timearray 
+#                     sumb.monitor.timedataarray = None
+#                     sumb.alloctimearrays(sumb.inputunsteady.ntimestepsfine)
+#                     if (sumb.inputio.storeconvinneriter):
+#                         nn = sumb.inputiteration.nsgstartup+sumb.inputiteration.ncycles
+#                         if (sumb.inputphysics.equationmode==2):#2 is unsteady
+#                             nn=sumb.inputunsteady.ntimestepsfine*sumb.inputiteration.ncycles
+#                         #endif
+#                         sumb.monitor.convarray = None
+#                         #print 'nn',nn
+#                         sumb.allocconvarrays(nn)
+#                         #print 'convarray',sumb.monitor.convarray
                         
 
-        elif (sumb.monitor.nitercur == 0 and
-              sumb.iteration.itertot == 0):
+#         elif (sumb.monitor.nitercur == 0 and
+#               sumb.iteration.itertot == 0):
 
-            # Read in a restart file but no new iterations
-            if (ncycles):
-                # Set new value of unsteady physical time steps
-                if (ncycles[0] != sumb.inputunsteady.ntimestepsfine):
-                    sumb.inputunsteady.ntimestepsfine = ncycles[0]
-                # Set new value of MG cycles
-                if (len(ncycles) > 1):
-                    if (ncycles[1] != sumb.inputiteration.ncycles):
-                        sumb.inputiteration.ncycles = ncycles[1]
-                # Reallocate convergence history array and
-                # time array with new size, storing old values from restart
-                if (self.myid == 0):
-                    # number of time steps from restart
-                    ntimestepsrestart = sumb.monitor.ntimestepsrestart#[0]
-                    # store restart time history and deallocate arrays
-                    temp_t = copy.deepcopy(sumb.monitor.timearray[:ntimestepsrestart])
-                    sumb.monitor.timearray = None
-                    temp_td = copy.deepcopy(sumb.monitor.timedataarray[:ntimestepsrestart,:])
-                    sumb.monitor.timedataarray = None
-                    # allocate time history arrays with new extended size
-                    sumb.alloctimearrays(ntimestepsrestart+sumb.inputunsteady.ntimestepsfine)
-                    # recover values from restart and deallocate temporary arrays
-                    sumb.monitor.timearray[:temp_td.shape[0]] = temp_t
-                    sumb.monitor.timedataarray[:temp_td.shape[0],:temp_td.shape[1]] = temp_td
-                    temp_t = None
-                    temp_td = None
+#             # Read in a restart file but no new iterations
+#             if (ncycles):
+#                 # Set new value of unsteady physical time steps
+#                 if (ncycles[0] != sumb.inputunsteady.ntimestepsfine):
+#                     sumb.inputunsteady.ntimestepsfine = ncycles[0]
+#                 # Set new value of MG cycles
+#                 if (len(ncycles) > 1):
+#                     if (ncycles[1] != sumb.inputiteration.ncycles):
+#                         sumb.inputiteration.ncycles = ncycles[1]
+#                 # Reallocate convergence history array and
+#                 # time array with new size, storing old values from restart
+#                 if (self.myid == 0):
+#                     # number of time steps from restart
+#                     ntimestepsrestart = sumb.monitor.ntimestepsrestart#[0]
+#                     # store restart time history and deallocate arrays
+#                     temp_t = copy.deepcopy(sumb.monitor.timearray[:ntimestepsrestart])
+#                     sumb.monitor.timearray = None
+#                     temp_td = copy.deepcopy(sumb.monitor.timedataarray[:ntimestepsrestart,:])
+#                     sumb.monitor.timedataarray = None
+#                     # allocate time history arrays with new extended size
+#                     sumb.alloctimearrays(ntimestepsrestart+sumb.inputunsteady.ntimestepsfine)
+#                     # recover values from restart and deallocate temporary arrays
+#                     sumb.monitor.timearray[:temp_td.shape[0]] = temp_t
+#                     sumb.monitor.timedataarray[:temp_td.shape[0],:temp_td.shape[1]] = temp_td
+#                     temp_t = None
+#                     temp_td = None
 
-                    if (sumb.inputio.storeconvinneriter):
-                        # number of iterations from restart
-                        niterold = sumb.monitor.niterold[0]
-                        # store restart convergence history and deallocate array
-                        temp = copy.deepcopy(sumb.monitor.convarray[:niterold+1,:])
-                        sumb.monitor.convarray = None
-                        # allocate convergence history array with new extended size
-                        sumb.allocconvarrays(temp.shape[0]
-                                             +sumb.inputunsteady.ntimestepsfine
-                                             *sumb.inputiteration.ncycles-1)
-                        # recover values from restart and deallocate temporary array
-                        sumb.monitor.convarray[:temp.shape[0],:temp.shape[1]] = temp
-                        temp = None
+#                     if (sumb.inputio.storeconvinneriter):
+#                         # number of iterations from restart
+#                         niterold = sumb.monitor.niterold[0]
+#                         # store restart convergence history and deallocate array
+#                         temp = copy.deepcopy(sumb.monitor.convarray[:niterold+1,:])
+#                         sumb.monitor.convarray = None
+#                         # allocate convergence history array with new extended size
+#                         sumb.allocconvarrays(temp.shape[0]
+#                                              +sumb.inputunsteady.ntimestepsfine
+#                                              *sumb.inputiteration.ncycles-1)
+#                         # recover values from restart and deallocate temporary array
+#                         sumb.monitor.convarray[:temp.shape[0],:temp.shape[1]] = temp
+#                         temp = None
                   
-        else:
-            # More Time Steps / Iterations in the same session
-            #print 'more cycles',ncycles[0],ncycles[1],sumb.monitor.convarray,self.myid
+#         else:
+#             # More Time Steps / Iterations in the same session
+#             #print 'more cycles',ncycles[0],ncycles[1],sumb.monitor.convarray,self.myid
             
-            if (ncycles):
-                # Set new value of unsteady physical time steps to run
-                if (ncycles[0] != sumb.inputunsteady.ntimestepsfine):
-                    sumb.inputunsteady.ntimestepsfine = ncycles[0]
-                # Set new value of MG cycles ro run
-                if (len(ncycles) > 1):
-                    if (ncycles[1] != sumb.inputiteration.ncycles):
-                        # print 'sumb cycles',sumb.inputiteration.ncycles
-                        sumb.inputiteration.ncycles = ncycles[1]
-                        #print sumb.inputiteration.ncycles
+#             if (ncycles):
+#                 # Set new value of unsteady physical time steps to run
+#                 if (ncycles[0] != sumb.inputunsteady.ntimestepsfine):
+#                     sumb.inputunsteady.ntimestepsfine = ncycles[0]
+#                 # Set new value of MG cycles ro run
+#                 if (len(ncycles) > 1):
+#                     if (ncycles[1] != sumb.inputiteration.ncycles):
+#                         # print 'sumb cycles',sumb.inputiteration.ncycles
+#                         sumb.inputiteration.ncycles = ncycles[1]
+#                         #print sumb.inputiteration.ncycles
 
-            # Reallocate convergence history array and
-            # time array with new size, storing old values from previous runs
-            if (self.myid == 0):
-                #print 'more cycles',ncycles[0],ncycles[1],sumb.monitor.convarray
+#             # Reallocate convergence history array and
+#             # time array with new size, storing old values from previous runs
+#             if (self.myid == 0):
+#                 #print 'more cycles',ncycles[0],ncycles[1],sumb.monitor.convarray
                 
-                #print 'equation mode',sumb.inputphysics.equationmode
-                if (sumb.inputphysics.equationmode==2):#2 is unsteady
-                    #print 'unsteady'
-                    #print 'checking time array'
-                    # store previous time history and deallocate arrays
-                    temp_t = copy.deepcopy(sumb.monitor.timearray)
-                    #print 'deallocating time array',sumb.monitor.timearray
-                    sumb.monitor.timearray = None
-                    #print 'checking time data array',sumb.monitor.timedataarray
-                    temp_td = copy.deepcopy(sumb.monitor.timedataarray)
-                    #print 'deallocating timedata array'
-                    sumb.monitor.timedataarray = None
-                    #print 'allocating new time array'
-                    # allocate time history arrays with new extended size
-                    sumb.alloctimearrays(temp_td.shape[0]+sumb.inputunsteady.ntimestepsfine)
-                    # recover values from previous runs and deallocate temporary arrays
-                    sumb.monitor.timearray[:temp_td.shape[0]] = temp_t
-                    sumb.monitor.timedataarray[:temp_td.shape[0],:temp_td.shape[1]] = temp_td
-                    temp_t = None
-                    temp_td = None
+#                 #print 'equation mode',sumb.inputphysics.equationmode
+#                 if (sumb.inputphysics.equationmode==2):#2 is unsteady
+#                     #print 'unsteady'
+#                     #print 'checking time array'
+#                     # store previous time history and deallocate arrays
+#                     temp_t = copy.deepcopy(sumb.monitor.timearray)
+#                     #print 'deallocating time array',sumb.monitor.timearray
+#                     sumb.monitor.timearray = None
+#                     #print 'checking time data array',sumb.monitor.timedataarray
+#                     temp_td = copy.deepcopy(sumb.monitor.timedataarray)
+#                     #print 'deallocating timedata array'
+#                     sumb.monitor.timedataarray = None
+#                     #print 'allocating new time array'
+#                     # allocate time history arrays with new extended size
+#                     sumb.alloctimearrays(temp_td.shape[0]+sumb.inputunsteady.ntimestepsfine)
+#                     # recover values from previous runs and deallocate temporary arrays
+#                     sumb.monitor.timearray[:temp_td.shape[0]] = temp_t
+#                     sumb.monitor.timedataarray[:temp_td.shape[0],:temp_td.shape[1]] = temp_td
+#                     temp_t = None
+#                     temp_td = None
 
-                if (sumb.inputio.storeconvinneriter):
-                    #print 'store conv?',sumb.inputio.storeconvinneriter,sumb.inputiteration.ncycles-1
-                    #print 'conv, arreay',sumb.monitor.convarray[:,0,1]
-                    #sdfg
-                    # store previous convergence history and deallocate array
-                    temp = copy.deepcopy(sumb.monitor.convarray)
-                    #temp = copy.deepcopy(sumb.monitor.convarray)
-                    #print 'conv, arreay',sumb.monitor.convarray
-                    sumb.monitor.convarray = None
-                    #print 'allocating convergence arrays for new size',sumb.monitor.convarray,temp.shape[0],sumb.inputunsteady.ntimestepsfine,sumb.inputiteration.ncycles,sumb.inputiteration.ncycles-1
+#                 if (sumb.inputio.storeconvinneriter):
+#                     #print 'store conv?',sumb.inputio.storeconvinneriter,sumb.inputiteration.ncycles-1
+#                     #print 'conv, arreay',sumb.monitor.convarray[:,0,1]
+#                     #sdfg
+#                     # store previous convergence history and deallocate array
+#                     temp = copy.deepcopy(sumb.monitor.convarray)
+#                     #temp = copy.deepcopy(sumb.monitor.convarray)
+#                     #print 'conv, arreay',sumb.monitor.convarray
+#                     sumb.monitor.convarray = None
+#                     #print 'allocating convergence arrays for new size',sumb.monitor.convarray,temp.shape[0],sumb.inputunsteady.ntimestepsfine,sumb.inputiteration.ncycles,sumb.inputiteration.ncycles-1
                     
-                    #print 'testing',temp.shape[0]
-                    # allocate convergence history array with new extended size
-                    nn = sumb.inputiteration.nsgstartup+sumb.inputiteration.ncycles
-                    if (sumb.inputphysics.equationmode==2):#2 is unsteady
-                        nn=sumb.inputunsteady.ntimestepsfine*sumb.inputiteration.ncycles
-                    #endif
-                    sumb.allocconvarrays(temp.shape[0]+nn-1)
-                    #print 'convergence shape',sumb.monitor.convarray.shape,temp.shape, sumb.monitor.convarray[:temp.shape[0],:].shape,temp[:,0,:].shape
-                    # recover values from previous runs and deallocate temporary array
-                    sumb.monitor.convarray[:temp.shape[0],:] = copy.deepcopy(temp)
-##                     # allocate convergence history array with new extended size
-##                     sumb.allocconvarrays(temp.shape[0]
-##                                          +sumb.inputunsteady.ntimestepsfine
-##                                          *sumb.inputiteration.ncycles-1)
-##                     # recover values from previous runs and deallocate temporary array
-##                     sumb.monitor.convarray[:temp.shape[0],:temp.shape[1]] = temp
-                    temp = None
+#                     #print 'testing',temp.shape[0]
+#                     # allocate convergence history array with new extended size
+#                     nn = sumb.inputiteration.nsgstartup+sumb.inputiteration.ncycles
+#                     if (sumb.inputphysics.equationmode==2):#2 is unsteady
+#                         nn=sumb.inputunsteady.ntimestepsfine*sumb.inputiteration.ncycles
+#                     #endif
+#                     sumb.allocconvarrays(temp.shape[0]+nn-1)
+#                     #print 'convergence shape',sumb.monitor.convarray.shape,temp.shape, sumb.monitor.convarray[:temp.shape[0],:].shape,temp[:,0,:].shape
+#                     # recover values from previous runs and deallocate temporary array
+#                     sumb.monitor.convarray[:temp.shape[0],:] = copy.deepcopy(temp)
+# ##                     # allocate convergence history array with new extended size
+# ##                     sumb.allocconvarrays(temp.shape[0]
+# ##                                          +sumb.inputunsteady.ntimestepsfine
+# ##                                          *sumb.inputiteration.ncycles-1)
+# ##                     # recover values from previous runs and deallocate temporary array
+# ##                     sumb.monitor.convarray[:temp.shape[0],:temp.shape[1]] = temp
+#                     temp = None
 
-            # re-initialize iteration variables
-	    sumb.inputiteration.mgstartlevel = 1
-            sumb.monitor.niterold  = sumb.monitor.nitercur
-            sumb.monitor.nitercur  = 0
-            sumb.iteration.itertot = 0
-            # update number of time steps from restart
-            sumb.monitor.ntimestepsrestart = sumb.monitor.ntimestepsrestart \
-                                           + sumb.monitor.timestepunsteady
-            # re-initialize number of time steps previously run (excluding restart)             
-            sumb.monitor.timestepunsteady = 0
-            # update time previously run
-            sumb.monitor.timeunsteadyrestart = sumb.monitor.timeunsteadyrestart \
-                                             + sumb.monitor.timeunsteady
-            # re-initialize time run
-            sumb.monitor.timeunsteady = 0.0
+#             # re-initialize iteration variables
+# 	    sumb.inputiteration.mgstartlevel = 1
+#             sumb.monitor.niterold  = sumb.monitor.nitercur
+#             sumb.monitor.nitercur  = 0
+#             sumb.iteration.itertot = 0
+#             # update number of time steps from restart
+#             sumb.monitor.ntimestepsrestart = sumb.monitor.ntimestepsrestart \
+#                                            + sumb.monitor.timestepunsteady
+#             # re-initialize number of time steps previously run (excluding restart)             
+#             sumb.monitor.timestepunsteady = 0
+#             # update time previously run
+#             sumb.monitor.timeunsteadyrestart = sumb.monitor.timeunsteadyrestart \
+#                                              + sumb.monitor.timeunsteady
+#             # re-initialize time run
+#             sumb.monitor.timeunsteady = 0.0
 
-        #endif
-        if self.myid ==0:print 'setupfinished'
-        #self.Mesh.WriteMeshFile('newmesh.cgns')
-        if self.myid ==0: print 'calling solver'
-        self.GetMesh()._UpdateGeometryInfo()
+#         #endif
+#         if self.myid ==0:print 'setupfinished'
+#         #self.Mesh.WriteMeshFile('newmesh.cgns')
+#         if self.myid ==0: print 'calling solver'
+#         self.GetMesh()._UpdateGeometryInfo()
 
-        if sumb.killsignals.routinefailed==True:
-            raise ValueError
-            return    
-        #endif
+#         if sumb.killsignals.routinefailed==True:
+#             raise ValueError
+#             return    
+#         #endif
         
-        #print 'mesh info updated'
-        #self.Mesh.WriteMeshFile('newmesh0.cgns')
-        #print 'new file written'
-        sumb.solver()
-        if self.myid ==0:print 'solver called'
+#         #print 'mesh info updated'
+#         #self.Mesh.WriteMeshFile('newmesh0.cgns')
+#         #print 'new file written'
+#         sumb.solver()
+#         if self.myid ==0:print 'solver called'
         
 ## ################################################################
 ## # The code below reproduces solver.F90 in python
@@ -2191,120 +1854,120 @@ class SUmbInterface(object):
         sumb.monitor.writesurface=True
         sumb.writesol()
 
-    def GetSurfaceLoads(self, family=None, sps=1):
-        """Return an array of the surface forces.
+ #    def GetSurfaceLoads(self, family=None, sps=1):
+#         """Return an array of the surface forces.
          
-        Keyword arguments:
+#         Keyword arguments:
          
-        family -- optional string specifying the return of forces
-                  only for the specified family.
-        sps    -- spectral time step (optional, default is set to 1).
-                  (sps=1 for usual steady or unsteady models)
+#         family -- optional string specifying the return of forces
+#                   only for the specified family.
+#         sps    -- spectral time step (optional, default is set to 1).
+#                   (sps=1 for usual steady or unsteady models)
                                    
-        """
-#        if(sumb.flovarrefstate.viscous):
-#            sumb.iteration.rfil = 1.
-#            for i in range(sumb.block.ndom):
-#                sumb.setpointers(i,1)
-#                sumb.viscousflux() 
-        if(family):
-            try:
-                index = self.Mesh.families[family]
-            except KeyError:
-                print "Error: No such family '%s'" % family
-                return None
-            [start_ind,end_ind] = sumb.mdcreatesurfforcelist(sps,index)
-            return sumb.mddata.mdsurfforce[:,start_ind-1:end_ind]
-        else:
-            nfamilies = len(self.Mesh.families)
-            if (nfamilies == 0):
-                [start_ind,end_ind] = sumb.mdcreatesurfforcelist(sps,0)
-            else:
-                for n in range(nfamilies):
-                    [start_ind,end_ind] = sumb.mdcreatesurfforcelist(sps,n+1)
-            return sumb.mddata.mdsurfforce
+#         """
+# #        if(sumb.flovarrefstate.viscous):
+# #            sumb.iteration.rfil = 1.
+# #            for i in range(sumb.block.ndom):
+# #                sumb.setpointers(i,1)
+# #                sumb.viscousflux() 
+#         if(family):
+#             try:
+#                 index = self.Mesh.families[family]
+#             except KeyError:
+#                 print "Error: No such family '%s'" % family
+#                 return None
+#             [start_ind,end_ind] = sumb.mdcreatesurfforcelist(sps,index)
+#             return sumb.mddata.mdsurfforce[:,start_ind-1:end_ind]
+#         else:
+#             nfamilies = len(self.Mesh.families)
+#             if (nfamilies == 0):
+#                 [start_ind,end_ind] = sumb.mdcreatesurfforcelist(sps,0)
+#             else:
+#                 for n in range(nfamilies):
+#                     [start_ind,end_ind] = sumb.mdcreatesurfforcelist(sps,n+1)
+#             return sumb.mddata.mdsurfforce
 
-    def DeallocateSurfaceLoads(self):
-        """Deallocate memory used for the surface loads."""
-        sumb.mddeletesurfforcelist()
+#     def DeallocateSurfaceLoads(self):
+#         """Deallocate memory used for the surface loads."""
+#         sumb.mddeletesurfforcelist()
 
-    def GetSurfaceLoadsLocal(self, family=None, sps=1):
-        """Return an array of the surface forces.
+#     def GetSurfaceLoadsLocal(self, family=None, sps=1):
+#         """Return an array of the surface forces.
          
-        Keyword arguments:
+#         Keyword arguments:
          
-        family -- optional string specifying the return of forces
-                  only for the specified family.
-        sps    -- spectral time step (optional, default is set to 1).
-                  (sps=1 for usual steady or unsteady models)
+#         family -- optional string specifying the return of forces
+#                   only for the specified family.
+#         sps    -- spectral time step (optional, default is set to 1).
+#                   (sps=1 for usual steady or unsteady models)
                                    
-        """
-#        if(sumb.flovarrefstate.viscous):
-#            sumb.iteration.rfil = 1.
-#            for i in range(sumb.block.ndom):
-#                sumb.setpointers(i,1)
-#                sumb.viscousflux() 
-        if(family):
-            try:
-                index = self.Mesh.families[family]
-            except KeyError:
-                print "Error: No such family '%s'" % family
-                return None
-            [start_ind,end_ind] = sumb.mdcreatesurfforcelistlocal(sps,index)
-            return sumb.mddatalocal.mdsurfforcelocal[:,start_ind-1:end_ind]
-        else:
-            nfamilies = len(self.Mesh.families)
-            if (nfamilies == 0):
-                [start_ind,end_ind] = sumb.mdcreatesurfforcelistlocal(sps,0)
-            else:
-                for n in range(nfamilies):
-                    [start_ind,end_ind] = sumb.mdcreatesurfforcelistlocal(sps,n+1)
-            return sumb.mddatalocal.mdsurfforcelocal
+#         """
+# #        if(sumb.flovarrefstate.viscous):
+# #            sumb.iteration.rfil = 1.
+# #            for i in range(sumb.block.ndom):
+# #                sumb.setpointers(i,1)
+# #                sumb.viscousflux() 
+#         if(family):
+#             try:
+#                 index = self.Mesh.families[family]
+#             except KeyError:
+#                 print "Error: No such family '%s'" % family
+#                 return None
+#             [start_ind,end_ind] = sumb.mdcreatesurfforcelistlocal(sps,index)
+#             return sumb.mddatalocal.mdsurfforcelocal[:,start_ind-1:end_ind]
+#         else:
+#             nfamilies = len(self.Mesh.families)
+#             if (nfamilies == 0):
+#                 [start_ind,end_ind] = sumb.mdcreatesurfforcelistlocal(sps,0)
+#             else:
+#                 for n in range(nfamilies):
+#                     [start_ind,end_ind] = sumb.mdcreatesurfforcelistlocal(sps,n+1)
+#             return sumb.mddatalocal.mdsurfforcelocal
 
-    def DeallocateSurfaceLoadsLocal(self):
-        """Deallocate memory used for the surface loads."""
-        sumb.mddeletesurfforcelistlocal()
+#     def DeallocateSurfaceLoadsLocal(self):
+#         """Deallocate memory used for the surface loads."""
+#         sumb.mddeletesurfforcelistlocal()
 
-    def AccumulateLoads(self,oml_loads_local):
-        '''
-        Sum up all of the local loads to get the total force on the oml
-        '''
-        oml_loads = self.sumb_comm_world.Allreduce(oml_loads_local,mpi.SUM)
+#     def AccumulateLoads(self,oml_loads_local):
+#         '''
+#         Sum up all of the local loads to get the total force on the oml
+#         '''
+#         oml_loads = self.sumb_comm_world.Allreduce(oml_loads_local,mpi.SUM)
 
-        return oml_loads
+#         return oml_loads
 
 
-    def GetSurfaceCp(self, family=None, sps=1):
-        """Return an array of the surface pressure coefficients.
+#     def GetSurfaceCp(self, family=None, sps=1):
+#         """Return an array of the surface pressure coefficients.
 
-        Keyword arguments:
+#         Keyword arguments:
 
-        family -- optional string specifying the return of surface Cp
-                  only for the specified family.
-        sps    -- spectral time step (optional, default is set to 1).
-                  (sps=1 for usual steady or unsteady models)
+#         family -- optional string specifying the return of surface Cp
+#                   only for the specified family.
+#         sps    -- spectral time step (optional, default is set to 1).
+#                   (sps=1 for usual steady or unsteady models)
 
-        """
-        if(family):
-            try:
-                index = self.Mesh.families[family]
-            except KeyError:
-                print "Error: No such family '%s'" % family
-                return None
-            [start_ind,end_ind] = sumb.mdcreatesurfvarlist(sps,index)
-            return sumb.mddata.mdsurfval[start_ind-1:end_ind]
-        else:
-            nfamilies = len(self.Mesh.families)
-            if (nfamilies == 0):
-                [start_ind,end_ind] = sumb.mdcreatesurfvarlist(sps,0)
-            else:
-                for n in range(nfamilies):
-                    [start_ind,end_ind] = sumb.mdcreatesurfvarlist(sps,n+1)
-            return sumb.mddata.mdsurfval
+#         """
+#         if(family):
+#             try:
+#                 index = self.Mesh.families[family]
+#             except KeyError:
+#                 print "Error: No such family '%s'" % family
+#                 return None
+#             [start_ind,end_ind] = sumb.mdcreatesurfvarlist(sps,index)
+#             return sumb.mddata.mdsurfval[start_ind-1:end_ind]
+#         else:
+#             nfamilies = len(self.Mesh.families)
+#             if (nfamilies == 0):
+#                 [start_ind,end_ind] = sumb.mdcreatesurfvarlist(sps,0)
+#             else:
+#                 for n in range(nfamilies):
+#                     [start_ind,end_ind] = sumb.mdcreatesurfvarlist(sps,n+1)
+#             return sumb.mddata.mdsurfval
 
-    def DeallocateSurfaceCp(self):
-        """Deallocate memory used for the surface pressure coefficients."""
-        sumb.mddeletesurfvallist()
+#     def DeallocateSurfaceCp(self):
+#         """Deallocate memory used for the surface pressure coefficients."""
+#         sumb.mddeletesurfvallist()
 
     def GetMach(self):
         """Get the current freestream Mach number."""
