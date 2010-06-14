@@ -52,6 +52,10 @@
 !     *                                                                *
 !     ******************************************************************
 !
+
+#include "include/petscversion.h"
+
+#if PETSC_VERSION_MAJOR==2
 #include "include/finclude/petsc.h"
 #include "include/finclude/petscvec.h"
 !#f90##include "include/finclude/petscvec.h90"
@@ -63,8 +67,25 @@
 #include "include/finclude/petscis.h"
 #include "include/finclude/petscis.h90"
 !#include "include/finclude/petscdraw.h"
-!#include "include/finclude/petscmg.h"
+!PETSC_VERSION_MAJOR==2#include "include/finclude/petscmg.h"
 !#include "include/finclude/petscsys.h"
+#endif
+
+#if PETSC_VERSION_MAJOR==3
+#if PETSC_VERSION_MINOR>=1
+#include "include/finclude/petsc.h"
+#else
+#include "include/finclude/petsc.h"
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscmat.h"
+#include "include/finclude/petscksp.h"
+#include "include/finclude/petscpc.h"
+#include "include/finclude/petscviewer.h"
+#include "include/finclude/petscis.h"
+#include "include/finclude/petscis.h90"
+#endif
+#endif
+
 #define PETSC_NULL           0
 !
 !     ******************************************************************

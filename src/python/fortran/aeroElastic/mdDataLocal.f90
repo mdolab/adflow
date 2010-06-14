@@ -74,5 +74,6 @@
        real(kind=realType), dimension(:,:), allocatable :: mdSurfxxLocal
        real(kind=realType), dimension(:,:), allocatable :: mdSurfForceLocal
        real(kind=realType), dimension(:),   allocatable :: mdSurfValLocal
+       integer(kind=intType) :: mdSumNsurfNodesLocal                 
 
      end module mdDataLocal

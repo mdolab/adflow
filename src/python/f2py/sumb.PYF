@@ -186,6 +186,36 @@ python module sumb ! in
          logical :: reinitialize
          
        end subroutine updatefacesglobal
+       subroutine initializeexternalwarping(ndofcgns)
+         use precision
+         use blockPointers
+         use communication
+         use monitor
+         use cgnsGrid
+         use warpingPetsc
+         integer(kind=inttype) intent(in) :: ndofcgns
+       end subroutine initializeexternalwarping
+
+       subroutine setgrid(cgnsdof,ndofcgns) ! in :test:setGrid.f90                                                                                                     
+         use blockpointers
+         use communication
+         use warpingpetsc
+         use precision
+         real(kind=realtype) dimension(ndofcgns),intent(in) :: cgnsdof
+         integer(kind=inttype) optional,intent(in),check(len(cgnsdof)>=ndofcgns),depend(cgnsdof) :: ndofcgns=len(cgnsdof)
+       end subroutine setgrid
+       subroutine getforces(ndofcgns,forces) ! in :test:getForces.f90                                                                                                 
+          use blockpointers
+          use bctypes
+          use communication
+          use mddatalocal                                                                                                                                              
+          use warpingpetsc
+          use cgnsgrid
+          use flowvarrefstate
+          integer(kind=inttype) intent(in) :: ndofcgns
+          real(kind=realtype) dimension(ndofcgns),intent(out),depend(ndofcgns) :: forces
+        end subroutine getforces
+
 
        subroutine warpmesh
          
@@ -195,19 +225,6 @@ python module sumb ! in
          use blockpointers
          implicit none
        end subroutine warpmesh
-        subroutine warpmeshsolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock) ! in :test:warpMeshSolid.F90
-            use blockpointers
-            use communication,,only: myid,sumb_comm_world,sumb_comm_self
-            use solidwarpmodule
-            integer(kind=inttype) :: nuu
-            integer(kind=inttype) :: nus
-            integer(kind=inttype) dimension(nli) :: l_index
-            integer(kind=inttype) dimension(nblock + 1) :: lptr
-            integer(kind=inttype) dimension(nblock,3),depend(nblock) :: l_sizes
-            integer(kind=inttype) optional,check(len(l_index)>=nli),depend(l_index) :: nli=len(l_index)
-            integer(kind=inttype) optional,check((len(lptr)-1)>=nblock),depend(lptr) :: nblock=(len(lptr)-1)
-        end subroutine warpmeshsolid
-
        subroutine setupvolumesurfacederivativesdv
 
          ! Find the derivatives of the mesh wrt the surface at the current point
@@ -245,7 +262,7 @@ python module sumb ! in
          use communication       
          use inputphysics        
          use flowvarrefstate     
-         use inputdiscretization 
+         use inputdiscretization
          use iteration           
          use inputtimespectral  
          use section
@@ -646,9 +663,11 @@ python module sumb ! in
             real(kind=realtype) :: betaturb
             real(kind=realtype) :: l2conv
             real(kind=realtype) :: l2convcoarse
+            real(kind=realtype) :: l2convrel
             real(kind=realtype) allocatable,dimension(:) :: etark
             real(kind=realtype) allocatable,dimension(:) :: cdisrk
             logical :: freezeturbsource
+            logical :: printiterations
         end module inputiteration
 
         module inputmotion ! in :sumb:../../modules/inputParam.f90
