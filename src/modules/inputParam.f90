@@ -337,7 +337,7 @@
        ! cdisRk:           Dissipative coefficients in the runge kutta
        !                   scheme. The values depend on the number of
        !                   stages specified.
-
+       ! printIterations: If True, iterations are printed to stdout
        integer(kind=intType) :: nCycles, nCyclesCoarse
        integer(kind=intType) :: nSaveVolume, nSaveSurface
        integer(kind=intType) :: nsgStartup, smoother, nRKStages
@@ -352,11 +352,13 @@
        real(kind=realType) :: cfl, cflCoarse, fcoll, smoop
        real(kind=realType) :: alfaTurb, betaTurb
        real(kind=realType) :: L2Conv, L2ConvCoarse
+       real(kind=realType) :: L2ConvRel
        real(kind=realType) :: relaxBleeds
 
        real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK
 
        logical :: freezeTurbSource
+       logical :: printIterations
 
        end module inputIteration
 

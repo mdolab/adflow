@@ -41,10 +41,11 @@
        real(kind=realType) :: hdiffMax, MachMax
        real(kind=realType) :: eddyvisMax, yplusMax
        real(kind=realType) :: L2ConvThisLevel
-
+       real(kind=realType) :: L2ConvThisLevelRel
        real(kind=realType), dimension(3) :: cfp, cfv, cmp, cmv
 
        logical :: nanOccurred, writeIterations
+       logical :: relNotConv,absNotConv
 !
 !      Function definition
 !
@@ -73,6 +74,8 @@
 
        L2ConvThisLevel = L2ConvCoarse
        if(groundLevel == 1) L2ConvThisLevel = L2Conv
+
+       L2ConvThisLevelRel = L2ConvRel
 
        ! Set the value of nIterCur, depending on groundLevel.
 
@@ -248,26 +251,28 @@
 
            ! The variables which must always be written.
 
-           write(*,"(1x,i6,2x)",advance="no") groundLevel
+            if(printIterations .eqv. .true. ) then
 
-           if(equationMode == unsteady) then
+               write(*,"(1x,i6,2x)",advance="no") groundLevel
+            
+               if(equationMode == unsteady) then
 
-             write(*,"(i6,1x)",advance="no") timeStepUnsteady + &
-                                             nTimeStepsRestart
-             write(*,"(e12.5,1x)",advance="no") timeUnsteady + &
-                                                timeUnsteadyRestart
+                  write(*,"(i6,1x)",advance="no") timeStepUnsteady + &
+                       nTimeStepsRestart
+                  write(*,"(e12.5,1x)",advance="no") timeUnsteady + &
+                       timeUnsteadyRestart
+                  
+               else if(equationMode == timeSpectral) then
+                  
+                  write(*,"(i8,3x)",advance="no") sps
+                  
+               endif
 
-           else if(equationMode == timeSpectral) then
-
-             write(*,"(i8,3x)",advance="no") sps
-
-           endif
-
-           if( writeIterations ) &
-             write(*,"(i6,1x)",advance="no") iConvStdout
-           if( showCPU ) &
-             write(*,"(e12.5,1x)",advance="no") mpi_wtime() - t0Solver
-
+               if( writeIterations ) &
+                    write(*,"(i6,1x)",advance="no") iConvStdout
+               if( showCPU ) &
+                    write(*,"(e12.5,1x)",advance="no") mpi_wtime() - t0Solver
+            end if
            ! Loop over the number of monitoring values.
 
            do mm=1,nMon
@@ -289,15 +294,15 @@
              end select
 
              ! Write the convergence info to stdout.
-
-             write(*,"(e20.12,1x)",advance="no") monGlob(mm)
-
-           enddo
+             if ( printIterations .eqv. .True.) then
+                write(*,"(e20.12,1x)",advance="no") monGlob(mm)
+             end if
+          enddo
 
            ! Write the carriage return.
-
-           print "(1x)"
-
+          if (printIterations .eqv. .True.) then
+             print "(1x)"
+          end if
            ! Store the convergence info in convArray, if desired.
 
            if( storeConvInnerIter ) then
@@ -320,9 +325,27 @@
                ! converged is set to .false. if the density residual
                ! has not converged yet.
 
-                !print *,'convergence....',convArray(iConv,sps,1),L2ConvThisLevel*convArray(0,sps,1),converged,L2ConvThisLevel,convArray(0,sps,1)
-               if(convArray(iConv,sps,1) > &
-                 L2ConvThisLevel*convArray(0,sps,1)) converged = .false.
+                if(convArray(iConv,sps,1) > L2ConvThisLevel*convArray(0,sps,1)) then
+                  absNotConv = .True.
+               else
+                  absNotConv = .False.
+               end if
+
+               if(fromPython) then
+                  if (convArray(iConv,sps,1) > L2ConvThisLevelRel*convArray(1,sps,1)) then
+                     relNotConv = .True.
+                  else
+                     relNotConv = .False.
+                  end if
+               else
+                  relNotConv = .True.
+               end if
+                 
+               if (absNotConv .and. relNotConv) then ! Not converged if the absCheck is True and the rel Check is true.
+                  converged = .False.
+               end if
+
+
                !print *,'convergence....',converged
              !===========================================================
 

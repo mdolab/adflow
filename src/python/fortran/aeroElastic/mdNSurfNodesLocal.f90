@@ -135,10 +135,11 @@
        ! version of nNodes. It is cumulative also for the families,
        ! such that one big array can be used to store the data of the
        ! different families.
-
+       mdSumNSurfNodesLocal = 0
        do nn=1,size
           !print *,'size',nn,size,nNodesLoc(nn)
           mdNSurfNodesLocal(nn) =  nNodesLoc(nn)
+          mdSumNSurfNodesLocal = mdSumNSurfNodesLocal + nnodesloc(nn)
 !!$          if (nn==1) then
 !!$             mdNSurfNodesLocal(2,nn) =  0
 !!$          else
@@ -146,7 +147,7 @@
 !!$                  nNodesLoc(nn-1)
 !!$          endif
        enddo
-
+       
      end subroutine mdCreateNsurfNodesLocal
 
 !      ==================================================================

@@ -405,4 +405,6 @@
        velDirIni(2) = zero
        velDirIni(3) = zero
 
+       printIterations = .True.
+
        end subroutine setDefaultValues
