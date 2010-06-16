@@ -107,19 +107,19 @@
            call terminate("setupGradientRHSStability",&
            "Error in MatZeroEntries dCda")
 
-      print *,'dcdextra'
+      !print *,'dcdextra'
       !Compute dCdExtra
       call setupGradientdCdExtra(level,costFunction)
 
-      print *,'dcdx'
+      !print *,'dcdx'
       !Compute dCdx
       call setupGradientdCdx(level,costFunction)
 
-      print *,'dIdc'
+      !print *,'dIdc'
       !compute dIdc
       call setupADjointdIdCStability(level,costFunction)
       
-      print *,'matmult'
+      !print *,'matmult'
       !multiply to get djdx
       call MatMultTranspose(dCdx,dJdc,dJdx,PETScIerr)
 
@@ -148,13 +148,13 @@
 !
       ! VecView - Views a vector object.
 
-      !if( debug ) then
+      if( debug ) then
         !call VecView(dJda,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
 	call VecView(dJda,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
         if( PETScIerr/=0 ) &
           call terminate("setupGradientRHS", "Error in VecView")
         !pause
-      !endif
+      endif
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()

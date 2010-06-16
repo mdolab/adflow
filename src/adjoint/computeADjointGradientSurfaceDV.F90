@@ -375,13 +375,13 @@
 !!$
 
 
-!!$      if(PetscRank == 0)then
-!!$        
-!!$	 print *,'printing result'
-!!$         do i = 1,3*mdNSurfNodesCompact
-!!$            print *,'costfunction derivative',functionGradSurfacedv(costFunction,i),i!,functionGradSurfacedv2(costfunction,i),i
-!!$         enddo
-!!$      endif
+      if(PetscRank == 0)then
+        
+	 print *,'printing result'
+         do i = 1,3*mdNSurfNodesCompact
+            print *,'costfunction derivative',functionGradSurfacedv(costFunction,i),i!,functionGradSurfacedv2(costfunction,i),i
+         enddo
+      endif
 
 
 !!$      

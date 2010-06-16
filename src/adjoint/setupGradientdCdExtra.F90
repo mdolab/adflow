@@ -413,7 +413,7 @@ subroutine setupGradientdCdExtra(level,costFunction)
            idxmg = nDesignMachGrid - 1
 
            ! Transfer data to PETSc vector
-           print *,'machgrid',idxmg,sps-1,dJdaLocal
+           !print *,'machgrid',idxmg,sps-1,dJdaLocal
            call MatSetValues(dCda,1,sps-1,1,idxmg, dJdaLocal, &
                 ADD_VALUES, PETScIerr)
      
