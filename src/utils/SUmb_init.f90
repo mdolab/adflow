@@ -31,15 +31,15 @@ integer rank, size, ierr
 !   Enroll the program in MPI; for a sequential code this is a dummy. 
 !call MPI_INIT(ierr)
 
-call MPI_COMM_SIZE(MPI_COMM_WORLD, size, ierr)
-call MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierr)
+! call MPI_COMM_SIZE(MPI_COMM_WORLD, size, ierr)
+! call MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierr)
 
-if( rank ==0)then
-   print *,'SUmb MPI Initialization Parameters'
-   print *,'MPI_COMM_WORLD = ',MPI_COMM_WORLD
-   print *,'Size = ',size
-endif
-print *,'Rank = ',rank
-SUmb_comm_world = mpi_comm_world
-SUmb_comm_self = mpi_comm_self
+! if( rank ==0)then
+!    print *,'SUmb MPI Initialization Parameters'
+!    print *,'MPI_COMM_WORLD = ',MPI_COMM_WORLD
+!    print *,'Size = ',size
+! endif
+! print *,'Rank = ',rank
+! SUmb_comm_world = mpi_comm_world
+! SUmb_comm_self = mpi_comm_self  
 end subroutine SUmb_init
