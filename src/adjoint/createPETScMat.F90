@@ -80,7 +80,7 @@
       ! 6  - 1st level cells along directions i,j,k
       ! 6  - 2nd level cells along directions i,j,k
 
-      nzDiagonalW = 13 *nTimeIntervalsSpectral
+      nzDiagonalW = 13+1*(nTimeIntervalsSpectral-1)
       !should be addition not multiplication but this will require filtering 
       !of some of the TS results for non-zero terms. 
       !i.e.:13 +nTimeIntervalsSpectral! 1 + 6 + 6  check!!!
@@ -100,12 +100,12 @@
       ! 6  - 2nd level nodes along directions i,j,k
       ! 12 - 1st level nodes along diagonals (i,j),(i,k),(j,k) 
 
-      nzDiagonalX = 33*nTimeIntervalsSpectral!25+4+4 +4*nTimeIntervalsSpectral! 1 + 6 + 6 + 12 Check
+      nzDiagonalX = 33+8*(nTimeIntervalsSpectral-1)!25+4*nTimeIntervalsSpectral! 1 + 6 + 6 + 12 Check
 
       ! Average number of off processor contributions per Cell
       ! (average number of donor cells that come from other processor)
 
-      nzOffDiag  = 3+8
+      nzOffDiag  = 3+5*(nTimeIntervalsSpectral-1)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -115,7 +115,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      !call PetscOptionsSetValue('-mat_view_info_detailed',PETSC_NULL_CHARACTER,PETScIerr)
+      !call PetscOptionsSetValue('-mat_view_info',PETSC_NULL_CHARACTER,PETScIerr)
 
       ! Create the matrix dRdW.
 
@@ -864,6 +864,7 @@ if(Debug) then
       ! Extract info from the global matrix (only processor 0 does it).
 
       if( PETScRank==0 .and. debug ) then
+    !  if( PETScRank==0 ) then
 
         ! Get the matrix block size.
 
@@ -1170,7 +1171,7 @@ if(Debug) then
 !
       allocate( nnzDiagonal(nDimW), nnzOffDiag(nDimW) )
 
-      nnzDiagonal = nzDiagonalX * 3*nTimeIntervalsSpectral
+      nnzDiagonal = nzDiagonalX * 3!*nTimeIntervalsSpectral
       nnzOffDiag  = nzOffDiag   * 3*nTimeIntervalsSpectral
 
       ! Create the matrix dRdx.
@@ -1369,7 +1370,7 @@ if(Debug) then
       ! Set column major order for the matrix dRdx.
 #ifdef USE_PETSC_3
       call MatSetOption(dRdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
-      !call MatSetOption(dRdx,MAT_NEW_NONZERO_LOCATIONS,PETSC_TRUE,PETScIErr)
+      call MatSetOption(dRdx,MAT_NEW_NONZERO_LOCATIONS,PETSC_TRUE,PETScIErr)
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatSetOption dRdx")
 #else

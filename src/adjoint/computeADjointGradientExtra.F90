@@ -260,10 +260,10 @@
 	print *,'MachGrid',functionGrad(costFunction,nDesignMachGrid)	
 	print *,'Corrected rotational derivatives...'
         a  = sqrt(gammaInf*pInfDim/rhoInfDim)
-        print *,'Speed of Sound',a,MachGrid*a,lengthRef
+        print *,'Speed of Sound',a,MachGrid*a,lengthRef,surfaceRef
 	print *,'Rotx:',functionGrad(costFunction,nDesignRotX)
 	print *,'RotY:',functionGrad(costFunction,nDesignRotY)
-	print *,'RotZ:',functionGrad(costFunction,nDesignRotZ)*(machGrid*a)/lengthRef
+	print *,'RotZ:',functionGrad(costFunction,nDesignRotZ)*2*(machGrid*a)/lengthRef
       endif
 
       ! Flush the output buffer and synchronize the processors.

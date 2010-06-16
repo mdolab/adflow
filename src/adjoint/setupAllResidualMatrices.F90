@@ -1,17 +1,18 @@
 !
 !     ******************************************************************
 !     *                                                                *
-!     * File:          setupADjointMatrixTranspose.F90                 *
+!     * File:          setupAllResidualMatrices.F90                    *
 !     * Author:        C.A.(Sandy) Mader                               *
-!     * Starting date: 05-07-2010                                      *
-!     * Last modified: 05-14-2010                                      *
+!     * Starting date: 06-04-2010                                      *
+!     * Last modified: 06-04-2010                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine setupADjointMatrixTranspose(level)
+      subroutine setupAllResidualMatrices(level)
 !
 !     ******************************************************************
 !     *                                                                *
+!     * Combines all of the redidual setting routines into one....     *
 !     * Compute the transpose of the matrix dRdW of the discrete       *
 !     * ADjoint problem for                                            *
 !     * subsequent use by the solveADjointPETSc subroutine. The entries*
@@ -46,7 +47,7 @@
 !
       integer(kind=intType) :: discr, nHalo
       integer(kind=intType) :: iCell, jCell, kCell
-      integer(kind=intType) :: mm, nn, m, n,idxstate,idxres
+      integer(kind=intType) :: mm, nn, m, n,idxstate,idxres,idxnode
       integer(kind=intType) :: ii, jj, kk, i, j, k,liftIndex,l
 
       logical :: fineGrid, correctForK, exchangeTurb,secondhalo
@@ -89,6 +90,12 @@
       ! idxngb - array of global column indices
 
       integer(kind=intType), dimension(nw) :: idxmg, idxng
+
+      ! dR/da local block matrix at node (iNode,jNode,kNode)
+
+      real(kind=realType), dimension(nw,ndesignextra) :: dRdaLocal
+      character(len=2*maxStringLen) :: errorMessage
+            
 
 !!$      integer :: unitdRdw = 8,ierror,nnn!,idxstate, idxres,nnn
 !!$      character(len = 35)::outfile,testfile
@@ -200,7 +207,7 @@
       ! Send some feedback to screen.
 
       if( PETScRank==0 ) &
-        write(*,10) "Assembling ADjoint Transpose matrix..."
+        write(*,10) "Assembling All Residual Matrices..."
  
       call mpi_barrier(SUmb_comm_world, ierr)
       !if( myID==0 ) call cpu_time(time(1))
@@ -210,7 +217,12 @@
       call MatZeroEntries(dRdwt,PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("setupADjointMatrixTranspose", "Error in MatZeroEntries drdwt")
+           call terminate("setupAllresidualMatrices", "Error in MatZeroEntries drdwt")
+      !zero the matrix for dRdx ADD call
+      call MatZeroEntries(dRdx,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("setupAllresidualMatrices", "Error in MatZeroEntries drdx")
 	
       !print *,'Entering Domain loop'
       domainLoopAD: do nn=1,nDom
@@ -257,10 +269,13 @@
                         dwAdjb(m,sps) = 1.
                         dwAdj(:,:)  = 0.
                         wAdjb(:,:,:,:,:)  = 0.  !dR(m)/dw
+                        xAdjb(:,:,:,:,:)  = 0.  !dR(m)/dx
+                        xblockcorneradjb  = 0.
                         xadjb = 0.
                         alphaadjb = 0.
                         betaadjb = 0.
                         machadjb = 0.
+                        machgridadjb = 0.
                         rotrateadjb(:)=0.
 !                    print *,'dwadjb',dwadjb,'wadjb',wadjb(0,0,0,:)
 !                    print *,'calling reverse mode'
@@ -297,6 +312,14 @@
                         FFad(m,:,:) = wAdjB( 0, 0,-2,:,:)
                         Gad(m,:,:)  = wAdjB( 0, 0, 1,:,:)
                         GGad(m,:,:) = wAdjB( 0, 0, 2,:,:)
+
+                        dRdaLocal(m,nDesignAOA) =alphaAdjb
+                        dRdaLocal(m,nDesignSSA) =betaAdjb
+                        dRdaLocal(m,nDesignMach) =machAdjb
+                        dRdaLocal(m,nDesignMachGrid) =machgridAdjb
+			dRdaLocal(m,nDesignRotX) =rotrateadjb(1)
+			dRdaLocal(m,nDesignRotY) =rotrateadjb(2)
+			dRdaLocal(m,nDesignRotZ) =rotrateadjb(3)
                         
 !!$                        do ii=-2,2!1,il-1
 !!$                           do jj = -2,2!1,jl-1
@@ -327,8 +350,231 @@
 !!$                           enddo !jj
 !!$                        enddo !ii
                         
-                        
+                        do sps2 = 1,nTimeIntervalsSpectral
+                           do ii=-3,2!1,il-1
+                              do jj = -3,2!1,jl-1
+                                 do kk = -3,2!1,kl-1
+                                    do l = 1,3
+                                       i = iCell + ii
+                                       j = jCell + jj
+                                       k = kCell + kk
+                                       if (xAdjb(ii,jj,kk,l,sps2).ne.0.0)then
+                                          !print *,'secondaryindicies',i,j,k,ii,jj,kk
+                                          if(i>=zero .and. j>=zero .and. k>=zero .and. i<=ie .and. j<=je .and. k<=ke)then
+                                             call setPointersAdj(nn,level,sps2)
+                                             idxnode = globalNode(i,j,k)*3+l
+                                             call setPointersAdj(nn,level,sps)
+                                             idxres   = globalCell(iCell,jCell,kCell)*nw+m 
+                                             if( (idxres-1)>=0 .and. (idxnode-1)>=0) then
+                                                !if (xAdjb(ii,jj,kk,l,sps2).ne.0.0)then
+!!$!                                             print 13,idxnode,idxres,l,i,j,k,nn,m,kcell,jcell,icell,xAdjb(ii,jj,kk,l)
+!!$!13                                           format(1x,'drdx',11I8,f18.10)
+                                                call MatSetValues(dRdx, 1, idxres-1, 1, idxnode-1,   &
+                                                     xAdjb(ii,jj,kk,l,sps2), ADD_VALUES, PETScIerr)
+                                                if( PETScIerr/=0 ) &
+                                                     print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                                             endif
+                                          endif
+                                       endif
+                                    enddo
+                                    
+                                    
+                                    
+                                 enddo
+                              enddo
+                           enddo
+                           
+                           !set values for symmtery plane normal derivatives
+                           do l = 1,3
+                              if (xblockcorneradjb(1,1,1,l,sps2).ne.0.0)then
+                                 call setPointersAdj(nn,level,sps2)
+                                 idxnode = globalnode(1,1,1)*3+l
+                                 call setPointersAdj(nn,level,sps)
+                                 call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                                      xblockcorneradjb(1,1,1,l,sps2), ADD_VALUES, PETScIerr)
+                                 if( PETScIerr/=0 ) &
+                                      print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                              endif
+                              if (xblockcorneradjb(2,1,1,l,sps2).ne.0.0)then
+                                 call setPointersAdj(nn,level,sps2)
+                                 idxnode = globalnode(il,1,1)*3+l
+                                 call setPointersAdj(nn,level,sps)
+                                 call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                                      xblockcorneradjb(2,1,1,l,sps2), ADD_VALUES, PETScIerr)
+                                 if( PETScIerr/=0 ) &
+                                      print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                              endif
+                              if (xblockcorneradjb(1,2,1,l,sps2).ne.0.0)then
+                                 call setPointersAdj(nn,level,sps2)
+                                 idxnode = globalnode(1,jl,1)*3+l
+                                 call setPointersAdj(nn,level,sps)
+                                 call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                                      xblockcorneradjb(1,2,1,l,sps2), ADD_VALUES, PETScIerr)
+                                 if( PETScIerr/=0 ) &
+                                      print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                              endif
+                              if (xblockcorneradjb(2,2,1,l,sps2).ne.0.0)then
+                                 call setPointersAdj(nn,level,sps2)
+                                 idxnode = globalnode(il,jl,1)*3+l
+                                 call setPointersAdj(nn,level,sps)
+                                 call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                                      xblockcorneradjb(2,2,1,l,sps2), ADD_VALUES, PETScIerr)
+                                 if( PETScIerr/=0 ) &
+                                      print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                              endif
+                              if (xblockcorneradjb(1,1,2,l,sps2).ne.0.0)then
+                                 call setPointersAdj(nn,level,sps2)
+                                 idxnode = globalnode(1,1,kl)*3+l
+                                 call setPointersAdj(nn,level,sps)
+                                 call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                                      xblockcorneradjb(1,1,2,l,sps2), ADD_VALUES, PETScIerr)
+                                 if( PETScIerr/=0 ) &
+                                      print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                              endif
+                              if (xblockcorneradjb(1,2,2,l,sps2).ne.0.0)then
+                                 call setPointersAdj(nn,level,sps2)
+                                 idxnode = globalnode(1,jl,kl)*3+l
+                                 call setPointersAdj(nn,level,sps)
+                                 call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                                      xblockcorneradjb(1,2,2,l,sps2), ADD_VALUES, PETScIerr)
+                                 if( PETScIerr/=0 ) &
+                                      print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                              endif
+                              if (xblockcorneradjb(2,1,2,l,sps2).ne.0.0)then
+                                 call setPointersAdj(nn,level,sps2)
+                                 idxnode = globalnode(il,1,kl)*3+l
+                                 call setPointersAdj(nn,level,sps)
+                                 call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                                      xblockcorneradjb(2,1,2,l,sps2), ADD_VALUES, PETScIerr)
+                                 if( PETScIerr/=0 ) &
+                                      print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                              endif
+                              if (xblockcorneradjb(2,2,2,l,sps2).ne.0.0)then
+                                 call setPointersAdj(nn,level,sps2)
+                                 idxnode = globalnode(il,jl,kl)*3+l
+                                 call setPointersAdj(nn,level,sps)
+                                 call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                                      xblockcorneradjb(2,2,2,l,sps2), ADD_VALUES, PETScIerr)
+                                 if( PETScIerr/=0 ) &
+                                      print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
+                              endif
+                           enddo
+                        end do
+
+
                      enddo mLoop
+
+                     ! Transfer the block Jacobians to the global [dR/da]
+                     ! matrix by setting the corresponding block entries of
+                     ! the PETSc matrix dRda.
+                     !
+                     ! Global matrix column idxmg function of node indices.
+                     ! (note: index displaced by previous design variables)
+                     
+                     !Angle of Attack
+                     do m=1,nw
+                        idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+                     enddo
+                     idxngb = nDesignAOA - 1
+                     !print *,'index',idxmg,'n',idxng
+                     call MatSetValues(dRda, nw, idxmg, 1, idxngb, &
+                          dRdaLocal(:,nDesignAOA), INSERT_VALUES, PETScIerr)
+                     
+                     if( PETScIerr/=0 ) then
+                        write(errorMessage,99) &
+                             "Error in MatSetValues for global column", idxngb
+                        call terminate("setupAllResidualMatrices", errorMessage)
+                     endif
+                     
+                     ! Side slip angle
+                     do m=1,nw
+                        idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+                     enddo
+                     idxngb = nDesignSSA - 1
+                     
+                     call MatSetValues(dRda, nw, idxmg, 1, idxngb, &
+                          dRdaLocal(:,nDesignSSA), INSERT_VALUES, PETScIerr)
+                     
+                     if( PETScIerr/=0 ) then
+                        write(errorMessage,99) &
+                             "Error in MatSetValues for global column", idxngb
+                        call terminate("setupAllResidualMatrices", errorMessage)
+                     endif
+                     
+                     !Mach Number
+                     do m=1,nw
+                        idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+                     enddo
+                     idxngb = nDesignMach - 1
+                     
+                     call MatSetValues(dRda, nw, idxmg, 1, idxngb, &
+                          dRdaLocal(:,nDesignMach), INSERT_VALUES, PETScIerr)
+                     
+                     if( PETScIerr/=0 ) then
+                        write(errorMessage,99) &
+                             "Error in MatSetValues for global column", idxngb
+                        call terminate("setupAllResidualMatrices", errorMessage)
+                     endif
+                     
+                     !Mach Number Grid
+                     do m=1,nw
+                        idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+                     enddo
+                     idxngb = nDesignMachGrid - 1
+                     
+                     call MatSetValues(dRda, nw, idxmg, 1, idxngb, &
+                          dRdaLocal(:,nDesignMachGrid), INSERT_VALUES, PETScIerr)
+                     
+                     if( PETScIerr/=0 ) then
+                        write(errorMessage,99) &
+                             "Error in MatSetValues for global column", idxngb
+                        call terminate("setupAllResidualMatrices", errorMessage)
+                     endif
+                     
+                     !X Rotation
+                     do m=1,nw
+                        idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+                     enddo
+                     idxngb = nDesignRotX - 1
+                     
+                     call MatSetValues(dRda, nw, idxmg, 1, idxngb, &
+                          dRdaLocal(:,nDesignRotX), INSERT_VALUES, PETScIerr)
+                     
+                     if( PETScIerr/=0 ) then
+                        write(errorMessage,99) &
+                             "Error in MatSetValues for global column", idxngb
+                        call terminate("setupAllResidualMatrices", errorMessage)
+                     endif
+                     
+                     !Y Rotation
+                     do m=1,nw
+                        idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+                     enddo
+                     idxngb = nDesignRotY - 1
+                     
+                     call MatSetValues(dRda, nw, idxmg, 1, idxngb, &
+                          dRdaLocal(:,nDesignRotY), INSERT_VALUES, PETScIerr)
+                     
+                     if( PETScIerr/=0 ) then
+                        write(errorMessage,99) &
+                             "Error in MatSetValues for global column", idxngb
+                        call terminate("setupAllResidualMatrices", errorMessage)
+                     endif
+                     
+                     !Z Rotation
+                     do m=1,nw
+                        idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+                     enddo
+                     idxngb = nDesignRotZ - 1
+                     
+                     call MatSetValues(dRda, nw, idxmg, 1, idxngb, &
+                          dRdaLocal(:,nDesignRotZ), INSERT_VALUES, PETScIerr)
+                     
+                     if( PETScIerr/=0 ) then
+                        write(errorMessage,99) &
+                             "Error in MatSetValues for global column", idxngb
+                        call terminate("setupAllResidualMatrices", errorMessage)
+                     endif
          !  do sps2 = 1,nTimeIntervalsSpectral
               !*********************************************************
               !                                                        *
@@ -862,7 +1108,20 @@ enddo domainLoopad
       call MatAssemblyBegin(dRdWT,MAT_FINAL_ASSEMBLY,PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("setupADjointMatrix","Error in MatAssemblyBegin")
+        call terminate("setupAllResidualMatrices","Error in MatAssemblyBegin")
+
+      call MatAssemblyBegin(dRdx,MAT_FINAL_ASSEMBLY,PETScIerr)
+      
+      if( PETScIerr/=0 ) &
+           call terminate("setupAllResidualMatrices", &
+           "Error in MatAssemblyBegin X") 
+
+      call MatAssemblyBegin(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("setupAllResidualMatrices", &
+                       "Error in MatAssemblyBegin")
+
 
       ! MatAssemblyEnd - Completes assembling the matrix. This routine
       !                  should be called after MatAssemblyBegin().
@@ -885,7 +1144,19 @@ enddo domainLoopad
       call MatAssemblyEnd  (dRdWT,MAT_FINAL_ASSEMBLY,PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("setupADjointMatrix","Error in MatAssemblyEnd")
+        call terminate("setupAllResidualMatrices","Error in MatAssemblyEnd")
+
+      call MatAssemblyEnd  (dRdx,MAT_FINAL_ASSEMBLY,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("setupAllResidualMatrices", &
+                       "Error in MatAssemblyEnd X")
+
+      call MatAssemblyEnd(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("setupAllResidualMatrices", &
+                       "Error in MatAssemblyEnd")
 
       ! Let PETSc know that the dRdW matrix retains the same nonzero 
       ! pattern, in case the matrix is assembled again, as for a new
@@ -916,12 +1187,23 @@ enddo domainLoopad
       call MatSetOption(dRdWT,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("setupADjointMatrixTranspose", "Error in MatSetOption")
+        call terminate("setupAllResidualMatrices", "Error in MatSetOption")
+
+      call MatSetOption(dRdx,MAT_NEW_NONZERO_LOCATIONS,PETSC_TRUE,PETScIerr)    
+ 
+      if( PETScIerr/=0 ) &
+        call terminate("setupAllResidualMatrices", &
+                       "Error in MatSetOption X")
 #else
       call MatSetOption(dRdWT,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("setupADjointMatrixTranspose", "Error in MatSetOption")
+        call terminate("setupAllResidualMatrices", "Error in MatSetOption")
+!      call MatSetOption(dRdx,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
+ 
+!      if( PETScIerr/=0 ) &
+!        call terminate("setupAllResidualMatrices", &
+!                       "Error in MatSetOption X")
 #endif
       ! Get new time and compute the elapsed time.
 
@@ -935,7 +1217,7 @@ enddo domainLoopad
                       mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
 
       if( PETScRank==0 ) &
-        write(*,20) "Assembling ADjoint matrix time (s) = ", timeAdj
+        write(*,20) "Assembling All Residaul Matrices time (s) = ", timeAdj
 !
 !     ******************************************************************
 !     *                                                                *
@@ -1033,6 +1315,7 @@ call mpi_barrier(SUmb_comm_world, ierr)
 
    10 format(a)
    20 format(a,1x,f8.2)
+   99 format(a,1x,i6)
 
       !=================================================================
 
@@ -1118,4 +1401,4 @@ call mpi_barrier(SUmb_comm_world, ierr)
 
 #endif
 
-      end subroutine setupADjointMatrixTranspose
+      end subroutine setupAllResidualMatrices

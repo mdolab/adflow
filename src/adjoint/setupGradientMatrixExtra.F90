@@ -177,6 +177,10 @@
 !     *                                                                *
 !     ******************************************************************
 !
+      call MatZeroEntries(dRda,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+           call terminate("setupGradientMatrixExtra", "Error in MatZeroEntries drda")
       lumpedDiss=.false.
       ! Get the initial time.
 

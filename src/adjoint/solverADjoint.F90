@@ -150,6 +150,7 @@
 
       call initializePETSc
 
+      !call PetscOptionsSetValue('-malloc_debug',PETSC_NULL_CHARACTER,PETScIerr)
       !initializeWarping
       !begin execution
       if(cgnsNfamilies > 0) then
@@ -162,6 +163,7 @@
       ! Create all the necessary PETSc objects.
 
       call createPETScVars
+
 
       ! Perform some verifications if in DEBUG mode.
       !moved after PETSc initialization because PETsc now included in debugging...
@@ -245,7 +247,8 @@
 !
       !print *,'calling setupADjointMatrix'
       !call setupADjointMatrix(level)
-      call setupADjointMatrixTranspose(level)
+      !call setupADjointMatrixTranspose(level)
+      call setupAllResidualMatrices(level)
 !return
 !stop
 
@@ -253,8 +256,8 @@
       ! Create the Krylov subspace linear solver context,
       ! the preconditioner context, and set their various options.
 
-      call createPETScKsp(level)
-
+      !call createPETScKsp(level)
+      call setupPETScKsp(level)
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
@@ -274,9 +277,9 @@
 !     ******************************************************************
 !
 
-      call setupGradientMatrixExtra(level)
+     ! call setupGradientMatrixExtra(level)
 
-      call setupGradientMatrixSpatial(level)
+     ! call setupGradientMatrixSpatial(level)
 
       call setupVolumeSurfaceDerivativesDV
 
@@ -294,7 +297,7 @@
 !
       if(TSStability)then
          cfstart = 9
-         cfend = 14
+         cfend = 9!14
       else
          cfstart =1
          cfend = 1!8
@@ -360,12 +363,13 @@
       call destroyPETScVars
       
       ! Finalize PETSc.
+      !print *,'finalizing petsc'
 
       call finalizePETSc
       
       !print *,'petsc Finalized'
       ! Release memory allocated in initDesign.
-
+      
       if(allocated(functionName )) deallocate(functionName )
       if(allocated(functionValue)) deallocate(functionValue)
       if(allocated(functionGrad )) deallocate(functionGrad )

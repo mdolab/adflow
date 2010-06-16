@@ -413,7 +413,7 @@ subroutine setupGradientdCdx(level,costFunction)
      enddo domainLoopAD
 
   enddo spectralLoopAdj
-  print *,'end spectral loop'
+!  print *,'end spectral loop'
 !
 !     ******************************************************************
 !     *                                                                *

@@ -19,7 +19,8 @@
 !
       use ADjointPETSc
       use communication
-      use flowVarRefState ! magnetic
+      use flowVarRefState ! 
+      use inputADjoint    !ApproxPC
       implicit none
 !
 !     ******************************************************************
@@ -52,6 +53,8 @@
       !
       ! see .../petsc/docs/manualpages/Vec/VecDestroy.html
       ! or PETSc users manual, pp.37
+
+      !print *,'vecs'
 
       call VecDestroy(psi, PETScIerr)
 
@@ -132,62 +135,64 @@
       !
       ! see .../petsc/docs/manualpages/Mat/MatDestroy.html
       ! or PETSc users manual, pp.61
+      !print *,'mats'
 
-      call MatDestroy(dRdW, PETScIerr)
-
-      if( PETScIerr/=0 ) &
-        call terminate("destroyPETScVars", &
-                       "Could not destroy matrix dRdW")
+!!$      call MatDestroy(dRdW, PETScIerr)
+!!$
+!!$      if( PETScIerr/=0 ) &
+!!$        call terminate("destroyPETScVars", &
+!!$                       "Could not destroy matrix dRdW")
 
       call MatDestroy(dRdWt, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("destroyPETScVars", &
                        "Could not destroy matrix dRdWt")
-
-      call MatDestroy(dRdWPre, PETScIerr)
-
-      if( PETScIerr/=0 ) &
-        call terminate("destroyPETScVars", &
-                       "Could not destroy matrix dRdWpre")
-
-      call MatDestroy(dRdWpret, PETScIerr)
-
-      if( PETScIerr/=0 ) &
-        call terminate("destroyPETScVars", &
-                       "Could not destroy matrix dRdWpret")
-
-
+!!$
+!!$      call MatDestroy(dRdWPre, PETScIerr)
+!!$
+!!$      if( PETScIerr/=0 ) &
+!!$        call terminate("destroyPETScVars", &
+!!$                       "Could not destroy matrix dRdWpre")
+      if (ApproxPC) then
+         !print *,'mats,prpwpre'
+         call MatDestroy(dRdWpret, PETScIerr)
+         
+         if( PETScIerr/=0 ) &
+              call terminate("destroyPETScVars", &
+              "Could not destroy matrix dRdWpret")
+      endif
+      !print *,'mats,drda'
       call MatDestroy(dRda, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("destroyPETScVars", &
                        "Could not destroy matrix dRda")
-
+      !print *,'mats,drdx'
       call MatDestroy(dRdx, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("destroyPETScVars", &
                        "Could not destroy matrix dRdx")
-
+      !print *,'mats,dcdw'
       call MatDestroy(dCdw, PETScIerr)
 
       if( PETScIerr/=0 ) &
            call terminate("destroyPETScVars", &
            "Could not destroy matrix dcdw")
-
+      !print *,'matsdcdx'
       call MatDestroy(dCdx, PETScIerr)
 
       if( PETScIerr/=0 ) &
            call terminate("destroyPETScVars", &
            "Could not destroy matrix dcdx")
-
+      !print *,'matsdcda'
       call MatDestroy(dCda, PETScIerr)
 
       if( PETScIerr/=0 ) &
            call terminate("destroyPETScVars", &
            "Could not destroy matrix dcda")
-
+      !print *,'mats finished'
 
       ! KSPDestroy - Destroys KSP context.
       !
@@ -203,7 +208,7 @@
       !
       ! see .../petsc/docs/manualpages/KSP/KSPDestroy.html
       ! or PETSc users manual, pp.64
-
+      !print *,'ksp'
       call KSPDestroy(ksp, PETScIerr)
 
       if( PETScIerr/=0 ) &

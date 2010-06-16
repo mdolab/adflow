@@ -145,7 +145,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-
+      if( PETScRank==0 ) print *,'ownerrange'
       ! Query about the ownership range.
       ! iHigh is one more than the last element stored locally.
 
@@ -163,7 +163,7 @@
       ! Determine the number of variables stores in the local processor.
       ! Allocate memory to store the local function gradient values.
       ! Note: it might result in a zero-size array but it's ok!
-
+      if( PETScRank==0 ) print *,'ndesign local'
       nDesignLocal = dim(iHigh,iLow)
 	
       allocate( functionGradLocal(nDesignLocal) )
@@ -194,7 +194,7 @@
 
       ! Gather the number of design variables stored per processor
       ! in the root processor.
-
+      if( PETScRank==0 ) print *,'ndesignglobal'
       allocate( nDesignGlobal(PETScSize) )
 
       !call mpi_gather(nDesignLocal, 1, sumb_integer, &
@@ -206,7 +206,7 @@
 
       ! Gather the displacement of the number of design variables
       ! per processor in the root processor.
-
+      if( PETScRank==0 ) print *,'ndisp global'
       allocate( nDisplsGlobal(PETScSize) )
 
       nDisplsLocal = iLow
@@ -238,19 +238,20 @@
 !                        PETSC_COMM_WORLD, PETScIerr
 !	endif
 
-
+      if( PETScRank==0 ) print *,'allgather',shape(functionGradSpatial),&
+           nDesignGlobal,nDisplsGlobal,shape(functionGradLocal), nDesignLocal
        call mpi_allgatherv(functionGradLocal, nDesignLocal, sumb_real, &
                        functionGradSpatial(costFunction,:), nDesignGlobal,&
                        nDisplsGlobal, sumb_real, &
                         PETSC_COMM_WORLD, PETScIerr)
 
-!!$if (PETScRank==0) then
-!!$   do i = 1,size(functionGradSpatial(costFunction,:) )
-!!$      if (functionGradSpatial(costFunction,i).ne. 0.0)then
-!!$         print *,'vol.deriv:',functionGradSpatial(costFunction,i),i
-!!$      endif
-!!$   end do
-!!$end if
+if (PETScRank==0) then
+   do i = 1,size(functionGradSpatial(costFunction,:) )
+      if (functionGradSpatial(costFunction,i).ne. 0.0)then
+         print *,'vol.deriv:',functionGradSpatial(costFunction,i),i
+      endif
+   end do
+end if
 !	if (PETScRank==0) then
 !	     print *,'spatial function',functionGradSpatial(costFunction,:) 
 !        endif
@@ -310,7 +311,7 @@
       !print *,'costfunction derivative',idx,functionGradSpatial(costFunction,idx)
 !****************
 
-
+       if( PETScRank==0 ) print *,'deallovating'
       ! Release memory to store the local function gradient values.
 
       if (allocated(functionGradLocal)) deallocate(functionGradLocal)

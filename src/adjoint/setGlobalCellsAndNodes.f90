@@ -82,7 +82,7 @@
          call setPointers(nn,level,sps)
 
         nCellsLocal = nCellsLocal + nx*ny*nz
- 
+        !print *,'ncellslocal',nCellslocal
         nNodesLocal = nNodesLocal + il  *jl * kl
         !print *,'nnodeslocal',nnodeslocal
         !print *,'nnodes local',il,jl,kl,il  *jl * kl,shape(x),nx,ny,nz,nx*ny*nz
@@ -95,7 +95,7 @@
 
       call mpi_allreduce(nCellsLocal, nCellsGlobal, 1, sumb_integer, &
                       mpi_sum, SUmb_comm_world, ierr)
-
+      !print *,'ncellsGlobal', nCellsGlobal
       ! Gather the number of Cells per processor in the root processor.
 
       call mpi_gather(nCellsLocal, 1, sumb_integer, nCells, 1, &
@@ -122,10 +122,9 @@
         do nn=2,nProc
           nCellOffset(nn) = nCellOffset(nn-1) + nCells(nn-1)
           nNodeOffset(nn) = nNodeOffset(nn-1) + nNodes(nn-1)
-          !print *,'offset',nnodeoffset(nn)
         enddo
-      endif rootProc
-
+     endif rootProc
+     
       ! Scatter the global cell number offset per processor.
 
       call mpi_scatter(nCellOffset, 1, sumb_integer, nCellOffsetLocal, 1, &
@@ -155,33 +154,46 @@
          call setPointers(nn-1,level,sps)
         nNodeBlockOffset(nn) = nNodeBLockOffset(nn-1)          &
                          + il *jl * kl
-        !print *,' block offset',nNodeBlockOffset(nn),nn, il *jl * kl
+      
       enddo
       ! call mpi_barrier(SUmb_comm_world, ierr)
       !stop
-  !    print *,'global node offsets determined', nNodeBlockOffset
 
      
       ! Determine the global block row index for each (i,j,k) cell in
       ! each local block.
-      do sps = 1,nTimeIntervalsSpectral
-         do nn=1,nDom
+      !do sps = 1,nTimeIntervalsSpectral
+      
+      do nn=1,nDom
+         do sps = 1,nTimeIntervalsSpectral
+            
             call setPointers(nn,level,sps)
             do k=2,kl
                do j=2,jl
                   do i=2,il
+                     !original steady indexing
                      !              flowDoms(nn,level,sps)%globalCell(i,j,k) &
                      !                = nCellBLockOffset(nn) +(i-2) +(j-2)*il +(k-2)*il*jl
-                     flowDoms(nn,level,sps)%globalCell(i,j,k) &
-                          = nCellBLockOffset(nn) +(i-2) +(j-2)*nx +(k-2)*nx*ny&
-                          +nCellsGlobal*(sps-1)
+                     !orignal time spectral indexing
+!!$                     flowDoms(nn,level,sps)%globalCell(i,j,k) &
+!!$                          = nCellBLockOffset(nn) +(i-2) +(j-2)*nx +(k-2)*nx*ny&
+!!$                          +nCellsGlobal*(sps-1)
+
+!!$                     !modified Timespectral indexing. Put all time instances of a give block adjacent to each other in the matrix
+                     flowDoms(nn,level,sps)%globalCell(i,j,k)=&
+                          nCellBLockOffset(nn)*nTimeIntervalsSpectral+nx*ny*nz*(sps-1)+&
+                          (i-2) +(j-2)*nx +(k-2)*nx*ny
+
                   enddo
                enddo
             enddo
+          
          enddo
          !print *,'global cell bock row determined'
       end do
      
+
+
 
       ! Determine the global block row index for each (i,j,k) node in
       ! each local block.
@@ -192,9 +204,14 @@
             do k=1,kl
                do j=1,jl
                   do i=1,il
+!!$                     !orignal time spectral indexing
+!!$                     flowDoms(nn,level,sps)%globalNode(i,j,k) &
+!!$                          = nNodeBLockOffset(nn) +(i-1) +(j-1)*il +(k-1)*il*jl&
+!!$                          +nNodesGlobal*(sps-1)
+                     !modified Timespectral indexing. Put all time instances of a give block adjacent to each other in the matrix
                      flowDoms(nn,level,sps)%globalNode(i,j,k) &
-                          = nNodeBLockOffset(nn) +(i-1) +(j-1)*il +(k-1)*il*jl&
-                          +nNodesGlobal*(sps-1)
+                          =nNodeBLockOffset(nn)*nTimeIntervalsSpectral + il *jl * kl*(sps-1)+&
+                          (i-1) +(j-1)*il +(k-1)*il*jl
                      !print *,'globalnode',flowDoms(nn,level,sps)%globalNode(i,j,k),i,j,k
                   enddo
                enddo

@@ -343,7 +343,7 @@
                         
                         
                      enddo mLoop
-           do sps2 = 1,nTimeIntervalsSpectral
+           !do sps2 = 1,nTimeIntervalsSpectral
               !*********************************************************
               !                                                        *
               ! Transfer the block Jacobians to the PETSc matrix.      *
@@ -415,6 +415,7 @@
 
                 idxmgb = globalCell(iCell,jCell,kCell)
 		!print *,'globalcell',idxmgb,globalCell(iCell,jCell,kCell)
+                do sps2 = 1,nTimeIntervalsSpectral
                 ! >>> center block A < W(i,j,k)
                 call setPointersAdj(nn,level,sps2)
                 idxngb = globalCell(iCell,jCell,kCell)!idxmgb
@@ -424,7 +425,8 @@
                                          transpose(Aad(:,:,sps2)), ADD_VALUES,PETScIerr)
                 if( PETScIerr/=0 ) &
                   call errAssemb("MatSetValuesBlocked", "Aad")
-
+                enddo
+		sps2=sps
                 ! >>> west block B < W(i-1,j,k)
 	
                 if( (iCell-1) >= 0 ) then
@@ -452,7 +454,7 @@
                    !idxngb = globalCell(iCell+1,jCell,kCell)
 		  !print *,'ncellsglobal',ncellsglobal,globalcell(13,5,5)
 		  !stop
-		  if (idxngb<nCellsGlobal*sps2 .and. idxngb.ne.-5) then
+		  if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                       call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
                                               transpose(Cad(:,:,sps2)), ADD_VALUES,PETScIerr)
                       if( PETScIerr/=0 ) &
@@ -488,7 +490,7 @@
                    idxngb = globalCell(iCell,jCell+1,kCell)!idxmgb
                    call setPointersAdj(nn,level,sps)
                    !idxngb = globalCell(iCell,jCell+1,kCell)
-                  if (idxngb<nCellsGlobal*sps2 .and. idxngb.ne.-5) then
+                  if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                      call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
                                               transpose(Ead(:,:,sps2)), ADD_VALUES,PETScIerr)
                      if( PETScIerr/=0 ) &
@@ -522,7 +524,7 @@
                   idxngb = globalCell(iCell,jCell,kCell+1)!idxmgb
                   call setPointersAdj(nn,level,sps)
                   !idxngb = globalCell(iCell,jCell,kCell+1)
- 		  if (idxngb<nCellsGlobal*sps2 .and. idxngb.ne.-5) then
+ 		  if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                      call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
                                               transpose(Gad(:,:,sps2)), ADD_VALUES,PETScIerr)
                      if( PETScIerr/=0 ) &
@@ -691,7 +693,7 @@
 !!$   
 
               endif ! PETScBlockMatrix
-           end do
+           !end do
 	
         enddo
      enddo

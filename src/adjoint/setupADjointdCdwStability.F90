@@ -394,6 +394,7 @@
                         !if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal*nTimeIntervalsSpectral) then
                         if (idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<=nCellsGlobal*nTimeIntervalsSpectral*nw) then
                            !print *,'test',test,idxmgb
+                           !print *,'index',idxmgb,sps,nn,icell,jcell,kcell,n,globalCell(iCell,jCell,kCell)
                            !print *,'setting PETSc Vector',sum(wAdjB(icell,jcell,kcell,:))
                            if (wAdjb(icell,jcell,kcell,n).ne.0.0)then
                               !print *,'mat set',wadjb(icell,jcell,kcell,n),idxmgb
