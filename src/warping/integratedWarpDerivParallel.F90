@@ -13,7 +13,8 @@ subroutine integratedWarpDerivParallel!(ncoords,xyzface,indices_new)
 
   use blockpointers
   use communication
-  use mdData
+  use mdDataLocal
+  use mdData, only: mdNSurfNodesCompact
   use warpingPETSc
   use ADjointPETSc, only: PETScOne, value
   implicit none

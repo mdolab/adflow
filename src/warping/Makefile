@@ -36,11 +36,13 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_MODULES = warpingPETSc.o\
+FF90_MODULES = warpingPETSc.o
 
 FF90_OBJECTS = warp_local.o        \
 	       warp-mb.o      \
 	       warpMesh.o\
+	       solidwarpmodule.o\
+	       warpMeshSolid.o\
                initializeWarping.o\
                updateFacesGlobal.o\
                createWarpingPETScMat.o\
@@ -55,9 +57,9 @@ FF90_OBJECTS = warp_local.o        \
                setupVolumeSurfaceDerivativeDV.o\
                warpingInitializePetsc.o\
 	       verifyWarpDerivFD.o\
-	       initializeExternalWarping.o\
-	       setGrid.o\
 	       getForces.o\
+	       setGrid.o\
+	       initializeExternalWarping.o\
 #               integratedWarp.o\
 #               updateFaces.o\
 #               synchronizeFaces.o\
@@ -81,7 +83,7 @@ default: all
 
 all:
 	$(MAKE) mod
-	cp -f *.mod $(SUMB_MODDIR)
+#	cp -f *.mod $(SUMB_MODDIR)
 	$(MAKE) src
 
 clean:

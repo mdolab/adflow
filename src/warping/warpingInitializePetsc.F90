@@ -34,7 +34,11 @@
       call MPI_Comm_size(PETSC_COMM_WORLD, PETScSize, PETScIerr)
       call MPI_Comm_rank(PETSC_COMM_WORLD, PETScRank, PETScIerr)
 
-    
+      ! Send some feedback to screen.
+
+      if( PETScRank==0 ) &
+        write(*,10) "Warping Initializing PETSc..."
+
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()

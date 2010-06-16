@@ -5,7 +5,7 @@
 ! *  Started: 03-23-2010
 ! *  Modified: 02-23-2010
 ! ***********************************
-subroutine warpMeshSolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock,ifaceptb,iedgeptb)
+subroutine warpMeshSolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock)
 #ifndef USE_NO_PETSC
 
   use blockpointers
@@ -16,7 +16,6 @@ subroutine warpMeshSolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock,ifaceptb,iedgep
   implicit none
   ! Input Data
   integer(kind=intType) :: l_index(nli),lptr(nblock+1),l_sizes(nblock,3)
-  integer(kind=intType) :: ifaceptb(nblock,6),iedgeptb(nblock,12)
   integer(kind=intType) :: nli,nblock,nuu,nus
 
   ! Working Data
@@ -34,17 +33,12 @@ subroutine warpMeshSolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock,ifaceptb,iedgep
 
   ! Temporary Variables
   real(kind=realType)   ::  points(8,3),deltas(8,3)
-  real(kind=realType), dimension(:,:,:,:),allocatable::xyznew,xyz0,paraS
-  real(kind=realType)   :: reltol,abstol,divtol
-  integer(kind=intType) :: max_iter
-  !real(kind=realType),dimension(:), allocatable   :: uu_local,us_local,values
-
+  real(kind=realType), dimension(:,:,:,:),allocatable::xyznew,xyz0
 
   ! Temporary Mesh Arrays
-  real(kind=realType), dimension(:,:,:,:), allocatable :: SS
-  real(kind=realType) ::  shp(8),pt_delta(3),nns(2),nnt(2),nnr(2),value
+  real(kind=realType), dimension(:,:,:,:), allocatable :: Xstart,Xupdated,SS
+  real(kind=realType) ::  shp(8),pt_delta(3),nns(2),nnt(2),nnr(2)
 
-  logical :: print_it
   external MyKSPMonitor
 
   call initPETScWrap()
@@ -68,11 +62,9 @@ subroutine warpMeshSolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock,ifaceptb,iedgep
               indy = int(floor(dble(j-1.0)/(nelemy)*(ny))) + 1
               indz = int(floor(dble(k-1.0)/(nelemz)*(nz))) + 1
 
-              ! This is NOT indx+1, its the next mesh index for the next node
-              indxp1 = int(floor(dble(i)/(nelemx)*(nx))) + 1 
+              indxp1 = int(floor(dble(i)/(nelemx)*(nx))) + 1
               indyp1 = int(floor(dble(j)/(nelemy)*(ny))) + 1
               indzp1 = int(floor(dble(k)/(nelemz)*(nz))) + 1
-
               points(1,:) = Xinit(indx  ,indy  ,indz  ,:)
               points(2,:) = Xinit(indxp1,indy  ,indz  ,:)
               points(3,:) = Xinit(indx  ,indyp1,indz  ,:)
@@ -104,69 +96,15 @@ subroutine warpMeshSolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock,ifaceptb,iedgep
   print *,'done matrices'
   ! ------------------ Communicate all stifness matrices to each other processor ----------
 
-  if (.not. use_parallel) then
-     call mpi_allgatherv(localK,allNelem(myID+1)*24*24,sumb_real,allK,Krecvcount,Kdispls,sumb_real,SUmb_comm_world,ierr)
-     call mpi_allgatherv(localBCVal,allNelem(myID+1)*24,sumb_real,allBCVal,BCrecvcount,BCdispls,sumb_real,SUmb_comm_world,ierr)
-     call checkError(ierr,'warpMeshSolid','MPI allgatherv error')
-  end if
+  call mpi_allgatherv(localK,allNelem(myID+1)*24*24,sumb_real,allK,Krecvcount,Kdispls,sumb_real,SUmb_comm_world,ierr)
+  call mpi_allgatherv(localBCVal,allNelem(myID+1)*24,sumb_real,allBCVal,BCrecvcount,BCdispls,sumb_real,SUmb_comm_world,ierr)
+
   ! ------------------ Assemble Global Stiffness Matrix on each Processor ----------------
 
-  if (.not. use_parallel) then 
-     counter = 0
-     do iproc =1,nProc
-        do nn=1,allnDom(iproc)
-           blockID = allBlockIDs(cumNDom(iproc)+nn)
-           nelemx = l_sizes(blockID,1)-1
-           nelemy = l_sizes(blockID,2)-1
-           nelemz = l_sizes(blockID,3)-1
-           do i=1,nelemx   
-              do j =1,nelemy
-                 do k=1,nelemz
-                    call hexa_index(i-1,j-1,k-1,indices) ! Make this zero based
-                    do ii=1,8
-                       do iii=1,3
-                          irow = l_index(lptr(blockID) +&
-                               indices(ii,1)*l_sizes(blockID,2)*l_sizes(blockID,3)*3 + &
-                               indices(ii,2)*l_sizes(blockID,3)*3 +&
-                               indices(ii,3)*3+ iii )
-
-                          if (irow .ge. nuu) then
-                             call VecSetValues(us,1,irow-nuu,allBCVal(counter*24+3*(ii-1)+iii),&
-                                  INSERT_VALUES,ierr)
-                          end if
-
-                          do jj=1,8
-                             do jjj =1,3
-                                jcol = l_index(lptr(blockID) +&
-                                     indices(jj,1)*l_sizes(blockID,2)*l_sizes(blockID,3)*3 + &
-                                     indices(jj,2)*l_sizes(blockID,3)*3 +&
-                                     indices(jj,3)*3 + jjj )
-                                if (irow .lt. nuu) then
-                                   if (jcol .lt. nuu) then
-                                      call MatSetValues(Kuu,1,irow,1,jcol, &
-                                           allK(counter*24*24+(3*(ii-1)+iii-1)*24+3*(jj-1)+jjj), &
-                                           ADD_VALUES,ierr)
-                                   else
-                                      call MatSetValues(Kus,1,irow,1,jcol-nuu, &
-                                           allK(counter*24*24+(3*(ii-1)+iii-1)*24+3*(jj-1)+jjj), &
-                                           ADD_VALUES,ierr)
-                                   end if
-                                end if
-                             end do ! jjj dof loop
-                          end do ! j node loop
-                       end do ! iii dof loop
-                    end do ! inode loop
-                    counter = counter + 1
-                 end do !z elem loop
-              end do ! yelem loop
-           end do ! xelem loop
-        end do !ndomain loop
-     end do !iproc loop
-  else ! We are using parallel assembly
-     counter = 0
-     do nn=1,nDom
-        call setPointers(nn,1,1)
-        blockID = nbkGlobal
+  counter = 0
+  do iproc =1,nProc
+     do nn=1,allnDom(iproc)
+        blockID = allBlockIDs(cumNDom(iproc)+nn)
         nelemx = l_sizes(blockID,1)-1
         nelemy = l_sizes(blockID,2)-1
         nelemz = l_sizes(blockID,3)-1
@@ -182,7 +120,7 @@ subroutine warpMeshSolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock,ifaceptb,iedgep
                             indices(ii,3)*3+ iii )
 
                        if (irow .ge. nuu) then
-                          call VecSetValues(us,1,irow-nuu,localBCVal(counter*24+3*(ii-1)+iii),&
+                          call VecSetValues(us,1,irow-nuu,allBCVal(counter*24+3*(ii-1)+iii),&
                                INSERT_VALUES,ierr)
                        end if
 
@@ -195,11 +133,11 @@ subroutine warpMeshSolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock,ifaceptb,iedgep
                              if (irow .lt. nuu) then
                                 if (jcol .lt. nuu) then
                                    call MatSetValues(Kuu,1,irow,1,jcol, &
-                                        localK(counter*24*24+(3*(ii-1)+iii-1)*24+3*(jj-1)+jjj), &
+                                        allK(counter*24*24+(3*(ii-1)+iii-1)*24+3*(jj-1)+jjj), &
                                         ADD_VALUES,ierr)
                                 else
                                    call MatSetValues(Kus,1,irow,1,jcol-nuu, &
-                                        localK(counter*24*24+(3*(ii-1)+iii-1)*24+3*(jj-1)+jjj), &
+                                        allK(counter*24*24+(3*(ii-1)+iii-1)*24+3*(jj-1)+jjj), &
                                         ADD_VALUES,ierr)
                                 end if
                              end if
@@ -212,166 +150,115 @@ subroutine warpMeshSolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock,ifaceptb,iedgep
            end do ! yelem loop
         end do ! xelem loop
      end do !ndomain loop
-  end if
-
-  call checkError(ierr,'warpMeshSolid','Error in Matrix assmebly')
+  end do !iproc loop
 
   ! ------------------- Do petsc assmebly and solve -------------
   call MatAssemblyBegin(Kuu,MAT_FINAL_ASSEMBLY,ierr)
   call MatAssemblyEnd(Kuu,MAT_FINAL_ASSEMBLY,ierr)
-  call checkError(ierr,'warpMeshSolid','Error in kuu assembly')
   call MatAssemblyBegin(Kus,MAT_FINAL_ASSEMBLY,ierr)
   call MatAssemblyEnd(Kus,MAT_FINAL_ASSEMBLY,ierr)
-  call checkError(ierr,'warpMeshSolid','Error in kus assembly')
   call VecAssemblyBegin(us,ierr)
   call VecAssemblyEnd(us,ierr)
-  call checkError(ierr,'warpMeshSolid','Error in us assembly')
+
   ! Multiply kus by us to get -Fu
   call MatMult(Kus,us,fu,ierr)
-  call checkError(ierr,'warpMeshSolid','Kus*us error')
   call VecScale(fu,PETScNegOne,ierr)
-
-  ! Ksp 
-  if (use_parallel) then
-!      call KSPCreate(PETSC_COMM_WORLD,ksp, ierr)
-!      call KSPSetOperators(ksp,kuu,kuu,DIFFERENT_NONZERO_PATTERN,ierr)
-!      call KSPSetFromOptions(ksp, ierr)
-!      call KSPSetType(ksp, "bicg", ierr) !preonly
-!      reltol = 1e-10
-!      abstol = 1e-16
-!      divtol = 1e3
-!      max_iter = 10000
-!      call KSPSetTolerances(ksp,reltol,abstol,divtol,max_iter,ierr)
-!      call KSPGetPC(ksp, pc,ierr)
-!      call PCSetType( pc, "asm",ierr)
-!      call KSPMonitorSet(ksp,MyKSPMonitor,PETSC_NULL_OBJECT, &
-!           PETSC_NULL_FUNCTION, ierr)
-!      call KSPSolve(ksp,fu,uu,ierr)
-
-!      Solve direct with spooles
-     call KSPCreate(PETSC_COMM_WORLD,ksp, ierr)
-     call KSPSetOperators(ksp,kuu,kuu,DIFFERENT_NONZERO_PATTERN,ierr)
-     call KSPSetFromOptions(ksp, ierr)
-     call KSPSetType(ksp, "preonly", ierr) !preonly
-     reltol = 1e-10
-     abstol = 1e-16
-     divtol = 1e3
-     max_iter = 10000
-     call KSPSetTolerances(ksp,reltol,abstol,divtol,max_iter,ierr)
-     call KSPGetPC(ksp, pc,ierr)
-     call PCSetType( pc, "lu",ierr)
-     call PCFactorSetMatSolverPackage(pc,"spooles",ierr)
-     call PCFactorSetMatOrderingType(pc, "nd",ierr)
-     call KSPMonitorSet(ksp,MyKSPMonitor,PETSC_NULL_OBJECT, &
-          PETSC_NULL_FUNCTION, ierr)
-     call KSPSolve(ksp,fu,uu,ierr)
-  else 
-     call MatGetOrdering(kuu,"nd",row_perm,col_perm,ierr)
-     call checkError(ierr,'warpMeshSolid','kuu matordering error')
-     call MatLUFactor(kuu,row_perm,col_perm,info,ierr)  
-     call checkError(ierr,'warpMeshSolid','MatLUfactor error')
-     call MatSolve(kuu,fu,uu,ierr)
-     call checkError(ierr,'warpMeshSolid','MatSolve error')
-  end if
+  
+  call MatGetOrdering(kuu,"nd",row_perm,col_perm,ierr)
+  call MatLUFactor(kuu,row_perm,col_perm,info,ierr)  
+  call MatSolve(kuu,fu,uu,ierr)
 
   ! ------------------ Set the Volume Coordinates from Solution -----------------
 
-  if (.not. use_parallel) then
-     counter = cumNelem(myID+1)
-     do nn=1,nDom ! This is now done for each processor
-        call setPointers(nn,level,sps)
+  counter = cumNElem(myID+1)
+  do nn=1,nDom ! This is now done for each processor
+     call setPointers(nn,level,sps)
 
-        nelemx = l_sizes(nbkGlobal,1)-1
-        nelemy = l_sizes(nbkGlobal,2)-1
-        nelemz = l_sizes(nbkGlobal,3)-1
+     nelemx = l_sizes(nbkGlobal,1)-1
+     nelemy = l_sizes(nbkGlobal,2)-1
+     nelemz = l_sizes(nbkGlobal,3)-1
+     
+     do i=1,nelemx   
+        do j =1,nelemy
+           do k=1,nelemz
 
-        do i=1,nelemx   
-           do j =1,nelemy
-              do k=1,nelemz
+              ! Now we must figure out the indices
+              indx = int(floor(dble(i-1.0)/(nelemx)*(nx))) + 1
+              indy = int(floor(dble(j-1.0)/(nelemy)*(ny))) + 1
+              indz = int(floor(dble(k-1.0)/(nelemz)*(nz))) + 1
 
-                 ! Now we must figure out the indices
-                 indx = int(floor(dble(i-1.0)/(nelemx)*(nx))) + 1
-                 indy = int(floor(dble(j-1.0)/(nelemy)*(ny))) + 1
-                 indz = int(floor(dble(k-1.0)/(nelemz)*(nz))) + 1
+              indxp1 = int(floor(dble(i)/(nelemx)*(nx))) + 1
+              indyp1 = int(floor(dble(j)/(nelemy)*(ny))) + 1
+              indzp1 = int(floor(dble(k)/(nelemz)*(nz))) + 1
 
-                 indxp1 = int(floor(dble(i)/(nelemx)*(nx))) + 1
-                 indyp1 = int(floor(dble(j)/(nelemy)*(ny))) + 1
-                 indzp1 = int(floor(dble(k)/(nelemz)*(nz))) + 1
+              lenx = indxp1-indx+1
+              leny = indyp1-indy+1
+              lenz = indzp1-indz+1
 
-                 lenx = indxp1-indx+1
-                 leny = indyp1-indy+1
-                 lenz = indzp1-indz+1
+              allocate(Xstart(lenx,leny,lenz,3))
+              allocate(SS(lenx,leny,lenz,3))
 
-                 allocate(SS(lenx,leny,lenz,3))
+              XStart = Xinit(indx:indxp1,indy:indyp1,indz:indzp1,:)
 
-                 call para3d(Xinit(indx:indxp1,indy:indyp1,indz:indzp1,:),lenx,leny,lenz,3,SS)
+              call para3d(Xstart,lenx,leny,lenz,3,SS)
 
-                 ! Now get the deltas from the FE solution
-                 call hexa_index(i-1,j-1,k-1,indices)
-                 do ii=1,8
-                    do iii=1,3
-                       irow = l_index(lptr(nbkGlobal) +&
-                            indices(ii,1)*l_sizes(nbkGlobal,2)*l_sizes(nbkGlobal,3)*3 + &
-                            indices(ii,2)*l_sizes(nbkGlobal,3)*3 +&
-                            indices(ii,3)*3+ iii )
-
-                       if (irow .lt. nuu) then
-                          call VecGetValues(uu,1,irow,deltas(ii,iii),ierr)
-                       else
-                          deltas(ii,iii) = allBCval(counter*24+3*(ii-1)+iii)
-                       end if
-                    end do
+              ! Now get the deltas from the FE solution
+              call hexa_index(i-1,j-1,k-1,indices)
+              do ii=1,8
+                 do iii=1,3
+                    irow = l_index(lptr(nbkGlobal) +&
+                         indices(ii,1)*l_sizes(nbkGlobal,2)*l_sizes(nbkGlobal,3)*3 + &
+                         indices(ii,2)*l_sizes(nbkGlobal,3)*3 +&
+                         indices(ii,3)*3+ iii )
+                    
+                    if (irow .lt. nuu) then
+                       call VecGetValues(uu,1,irow,deltas(ii,iii),ierr)
+                    else
+                       deltas(ii,iii) = allBCval(counter*24+3*(ii-1)+iii)
+                    end if
                  end do
-                 call checkError(ierr,'warpMeshSolid','VecGetValues error')
-                 ! Now actually update the Mesh Variables 'X'
-                 do ii=1,lenx
-                    do jj=1,leny
-                       do kk=1,lenz
+              end do
+              ! Now actually update the Mesh Variables 'X'
+              do ii=1,lenx
+                 do jj=1,leny
+                    do kk=1,lenz
 
-                          nnr(1) = 1.0 - SS(ii,jj,kk,1)
-                          nnr(2) = SS(ii,jj,kk,1)
+                       nnr(1) = 1.0 - SS(ii,jj,kk,1)
+                       nnr(2) = SS(ii,jj,kk,1)
 
-                          nns(1) = 1.0 - SS(ii,jj,kk,2)
-                          nns(2) = SS(ii,jj,kk,2)
+                       nns(1) = 1.0 - SS(ii,jj,kk,2)
+                       nns(2) = SS(ii,jj,kk,2)
 
-                          nnt(1) = 1.0 - SS(ii,jj,kk,3)
-                          nnt(2) = SS(ii,jj,kk,3)
+                       nnt(1) = 1.0 - SS(ii,jj,kk,3)
+                       nnt(2) = SS(ii,jj,kk,3)
 
-                          shp(1) = nnr(1)*nns(1)*nnt(1)
-                          shp(2) = nnr(2)*nns(1)*nnt(1)
-                          shp(3) = nnr(1)*nns(2)*nnt(1)
-                          shp(4) = nnr(2)*nns(2)*nnt(1)
-                          shp(5) = nnr(1)*nns(1)*nnt(2)
-                          shp(6) = nnr(2)*nns(1)*nnt(2)
-                          shp(7) = nnr(1)*nns(2)*nnt(2)
-                          shp(8) = nnr(2)*nns(2)*nnt(2)
+                       shp(1) = nnr(1)*nns(1)*nnt(1)
+                       shp(2) = nnr(2)*nns(1)*nnt(1)
+                       shp(3) = nnr(1)*nns(2)*nnt(1)
+                       shp(4) = nnr(2)*nns(2)*nnt(1)
+                       shp(5) = nnr(1)*nns(1)*nnt(2)
+                       shp(6) = nnr(2)*nns(1)*nnt(2)
+                       shp(7) = nnr(1)*nns(2)*nnt(2)
+                       shp(8) = nnr(2)*nns(2)*nnt(2)
 
-                          pt_delta = matmul(shp,deltas)
+                       pt_delta = matmul(shp,deltas)
 
-                          XSW(indx+ii-1,indy+jj-1,indz+kk-1,:) =  &
-                               Xinit(indx+ii-1,indy+jj-1,indz+kk-1,:) + pt_delta
-                          X  (indx+ii-1,indy+jj-1,indz+kk-1,:) =  &
-                               Xinit(indx+ii-1,indy+jj-1,indz+kk-1,:) + pt_delta
+                       XSW(indx+ii-1,indy+jj-1,indz+kk-1,:) =  &
+                            Xinit(indx+ii-1,indy+jj-1,indz+kk-1,:) + pt_delta
+                       X  (indx+ii-1,indy+jj-1,indz+kk-1,:) =  &
+                            Xinit(indx+ii-1,indy+jj-1,indz+kk-1,:) + pt_delta
 
-                       end do ! kk loop
-                    end do ! jj loop
-                 end do !ii loop
-                 counter = counter + 1 
-                 deallocate(SS)
-              end do ! k loop
-           end do ! j loop
-        end do ! i loop
-     end do
-  else
-    
-     ! Scatter the vector to all the procs
-     call VecScatterCreateToAll(uu,uu_scatter,uu_local,ierr)
-     call VecScatterBegin(uu_scatter,uu,uu_local,ADD_VALUES,SCATTER_FORWARD,ierr)
-     call VecScatterEnd  (uu_scatter,uu,uu_local,ADD_VALUES,SCATTER_FORWARD,ierr)
+                    end do ! kk loop
+                 end do ! jj loop
+              end do !ii loop
+              counter = counter + 1 
+              deallocate(Xstart,SS)
+           end do ! k loop
+        end do ! j loop
+     end do ! i loop
+  end do
 
-     call VecScatterCreateToAll(us,us_scatter,us_local,ierr)
-     call VecScatterBegin(us_scatter,us,us_local,INSERT_VALUES,SCATTER_FORWARD,ierr)
-     call VecScatterEnd  (us_scatter,us,us_local,INSERT_VALUES,SCATTER_FORWARD,ierr)
+  ! Re-update the global faces
 
   call updateFacesGlobal(mdNSurfNodesCompact,mdGlobalSurfxx,.false.)
   
@@ -379,346 +266,119 @@ subroutine warpMeshSolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock,ifaceptb,iedgep
      call setPointers(nn,level,sps)     
      !call flagImplicitEdgesAndFaces(ifaceptb,iedgeptb)
 
-        do i=1,nelemx   
-           do j =1,nelemy
-              do k=1,nelemz
-
-                 ! Now we must figure out the indices
-                 indx = int(floor(dble(i-1.0)/(nelemx)*(nx))) + 1
-                 indy = int(floor(dble(j-1.0)/(nelemy)*(ny))) + 1
-                 indz = int(floor(dble(k-1.0)/(nelemz)*(nz))) + 1
-
-                 indxp1 = int(floor(dble(i)/(nelemx)*(nx))) + 1
-                 indyp1 = int(floor(dble(j)/(nelemy)*(ny))) + 1
-                 indzp1 = int(floor(dble(k)/(nelemz)*(nz))) + 1
-
-                 lenx = indxp1-indx+1
-                 leny = indyp1-indy+1
-                 lenz = indzp1-indz+1
-
-                 allocate(SS(lenx,leny,lenz,3))
-
-                 call para3d(Xinit(indx:indxp1,indy:indyp1,indz:indzp1,:),lenx,leny,lenz,3,SS)
-
-                 ! Now get the deltas from the FE solution
-                 call hexa_index(i-1,j-1,k-1,indices)
-                 do ii=1,8
-                    do iii=1,3
-                       irow = l_index(lptr(nbkGlobal) +&
-                            indices(ii,1)*l_sizes(nbkGlobal,2)*l_sizes(nbkGlobal,3)*3 + &
-                            indices(ii,2)*l_sizes(nbkGlobal,3)*3 +&
-                            indices(ii,3)*3+ iii )
-
-                       if (irow .lt. nuu) then
-                          call VecGetValues(uu_local,1,irow,deltas(ii,iii),ierr)
-                       else
-                          call VecGetValues(us_local,1,irow-nuu,deltas(ii,iii),ierr)
-                       end if
-                    end do
-                 end do
-                 !call checkError(ierr,'warpMeshSolid','VecGetValues error')
-                 ! Now actually update the Mesh Variables 'X'
-                 do ii=1,lenx
-                    do jj=1,leny
-                       do kk=1,lenz
-
-                          nnr(1) = 1.0 - SS(ii,jj,kk,1)
-                          nnr(2) = SS(ii,jj,kk,1)
-
-                          nns(1) = 1.0 - SS(ii,jj,kk,2)
-                          nns(2) = SS(ii,jj,kk,2)
-
-                          nnt(1) = 1.0 - SS(ii,jj,kk,3)
-                          nnt(2) = SS(ii,jj,kk,3)
-
-                          shp(1) = nnr(1)*nns(1)*nnt(1)
-                          shp(2) = nnr(2)*nns(1)*nnt(1)
-                          shp(3) = nnr(1)*nns(2)*nnt(1)
-                          shp(4) = nnr(2)*nns(2)*nnt(1)
-                          shp(5) = nnr(1)*nns(1)*nnt(2)
-                          shp(6) = nnr(2)*nns(1)*nnt(2)
-                          shp(7) = nnr(1)*nns(2)*nnt(2)
-                          shp(8) = nnr(2)*nns(2)*nnt(2)
-
-                          pt_delta = matmul(shp,deltas)
-                          
-                          XSW(indx+ii-1,indy+jj-1,indz+kk-1,:) =  &
-                               Xinit(indx+ii-1,indy+jj-1,indz+kk-1,:) + pt_delta
-                          X  (indx+ii-1,indy+jj-1,indz+kk-1,:) =  &
-                               Xinit(indx+ii-1,indy+jj-1,indz+kk-1,:) + pt_delta
-
-                       end do ! kk loop
-                    end do ! jj loop
-                 end do !ii loop
-                 deallocate(SS)
-              end do ! k loop
-           end do ! j loop
-        end do ! i loop
-     end do
-     call VecScatterDestroy(uu_scatter,ierr)
-     call VecScatterDestroy(us_scatter,ierr)
-     call VecDestroy(us_local,ierr)
-     call VecDestroy(uu_local,ierr)
-     
-  end if
-  ! Re-update the global faces
-  call updateFacesGlobal(mdNSurfNodesCompact,mdGlobalSurfxx,.false.)
-
-  do nn=1,nDom
-     call setPointers(nn,level,sps)   
-
      ! LOOP THROUGH ALL local BLOCKS AND CALL WARPBLK WHERE APPROPRIATE
      ! SAVE NEW AND INITIAL XYZ VALUES TO BE PASSED TO WARPBLK
+     IMAX = IL
+     JMAX = JL
+     KMAX = KL
 
-     ALLOCATE(XYZ0(3,0:IL+1,0:JL+1,0:KL+1),XYZNEW(3,0:IL+1,0:JL+1,0:KL+1),&
-          paraS(3,0:IL+1,0:JL+1,0:KL+1))
+     ALLOCATE(XYZ0(3,0:IMAX+1,0:JMAX+1,0:KMAX+1),XYZNEW(3,0:IMAX+1,0:JMAX+1,0:KMAX+1))
+     xyz0 = 0
+     xyznew = 0
+     
+     XYZ0(1,1:IMAX,1:JMAX,1:KMAX) = XSW(1:IMAX,1:JMAX,1:KMAX,1)
+     XYZ0(2,1:IMAX,1:JMAX,1:KMAX) = XSW(1:IMAX,1:JMAX,1:KMAX,2)
+     XYZ0(3,1:IMAX,1:JMAX,1:KMAX) = XSW(1:IMAX,1:JMAX,1:KMAX,3)
+     XYZNEW(1,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,1)
+     XYZNEW(2,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,2)
+     XYZNEW(3,1:IMAX,1:JMAX,1:KMAX) = X(1:IMAX,1:JMAX,1:KMAX,3)
 
-     XYZ0(1,1:IL,1:JL,1:KL) = XSW(1:IL,1:JL,1:KL,1)
-     XYZ0(2,1:IL,1:JL,1:KL) = XSW(1:IL,1:JL,1:KL,2)
-     XYZ0(3,1:IL,1:JL,1:KL) = XSW(1:IL,1:JL,1:KL,3)
-
-     XYZNEW(1,1:IL,1:JL,1:KL) = X(1:IL,1:JL,1:KL,1)
-     XYZNEW(2,1:IL,1:JL,1:KL) = X(1:IL,1:JL,1:KL,2)
-     XYZNEW(3,1:IL,1:JL,1:KL) = X(1:IL,1:JL,1:KL,3)
-
-     ! Only warp if we have at least one implicitly perturbed face or edge
-     IF (MAXVAL(IFACEPTB(nbkGlobal,:)) >= 1 .OR. MAXVAL(IEDGEPTB(nbkGlobal,:)) >= 1) THEN
-        CALL WARPBLK_solid(IFACEPTB(nbkGlobal,:),IEDGEPTB(nbkGlobal,:),-3,0,1,IL,JL,KL,&
-             XYZ0,paraS,XYZnew)
-     END IF
-
+     call warp_local(xyznew,xyz0,imax,jmax,kmax)
+     
      ! ASSIGN THESE NEW XYZ VALUES TO THE MESH ITSELF
-     DO I=1,IL
-        DO J=1,JL
-           DO K=1,KL
+     DO I=1,IMAX
+        DO J=1,JMAX
+           DO K=1,KMAX
               X(I,J,K,1) = XYZNEW(1,I,J,K)
               X(I,J,K,2) = XYZNEW(2,I,J,K)
               X(I,J,K,3) = XYZNEW(3,I,J,K)
            END DO
         END DO
      END DO
-     deALLOCATE(XYZ0,XYZNEW,paraS)
-  end do
+     deALLOCATE(XYZ0,XYZNEW)
+   end do
 
-  call mpi_barrier(sumb_comm_world, ierr)
-  !call calculateSolidWarpDeriv(nuu,nus)
-  call destroyWarpMeshSolid()
-  call mpi_barrier(sumb_comm_world, ierr)
+
+call destroyWarpMeshSolid()
 #endif
 end subroutine warpMeshSolid
-
-subroutine calculateSolidWarpDeriv(nuu,nus)
-
-  use precision 
-  use communication, only: myID,sumb_comm_world
-  use blockpointers
-  use solidwarpmodule
-  !use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
-  use mdData          !mdNSurfNodes,mdNSurfNodesCompact
-
-  implicit none
-
-  ! After we have the back solve solution to the FE stiffness problem,
-  ! we can compute the (dense) back-solve solution for each DOF
-  integer(kind=intType) :: nuu,nus,ierr
-  integer(kind=intType) :: n,nn,m,mm,i,j,k,idim
-  integer(kind=intType) :: level=1,sps=1
-  real(kind=realType)    :: values(nuu),val
-  integer(kind=intType) :: indices(nuu)
-  integer(kind=intType) :: nDimX
-
-  ! This technically performs MORE backs solves then strictly
-  ! necessary, since it includes the constrained DOF on the
-  ! boundary. However, since this is EMBARASSINGLY parrallel, it makes
-  ! little difference
-
-  call MatCreate(sumb_comm_world,dXvFEdXsFE,ierr)
-  call MatSetSizes(dXvFEdXsFE,PETSC_DECIDE,PETSC_DECIDE,nuu,nus,ierr) ! mat,m,n,M,n,ierr
-  call MatSetType(dXvFEdXsFE,"mpidense",ierr)
-  call MatSetOption(dXvFEdXsFE,MAT_ROW_ORIENTED,PETSC_FALSE, ierr)
-  call MatGetOwnershipRangeColumn(dXvFEdXsFE,m,n,ierr)
-  call checkError(ierr,'warpMeshSolid','Error creating dXvFEdXsFE')
-
-  do i=1,nuu
-     indices(i) = i-1
-  end do
-  print *,'before back solve'
-
-  do i=m,n-1
-     call VecZeroEntries(us,ierr)
-     call VecSetValues(us,1,i,one,INSERT_VALUES,ierr)
-     call VecAssemblyBegin(us,ierr)
-     call VecAssemblyEnd(us,ierr)
-     call MatMult(Kus,us,fu,ierr)
-     call VecScale(fu,PETScNegOne,ierr)
-     call MatSolve(kuu,fu,uu,ierr)
-     call VecGetValues(uu,nuu,indices,values,ierr)
-     call MatSetValues(dXvFEdXsFE,nuu,indices,1,i,values,INSERT_VALUES,ierr)
-  end do
-
-  call MatAssemblyBegin(dXvFEdXsFE,MAT_FINAL_ASSEMBLY,ierr)
-  call MatAssemblyEnd(dXvFEdXsFE,MAT_FINAL_ASSEMBLY,ierr)
-
-  do nn = 1,nDom
-     call setPointers(nn,level,sps)
-     call setPointersAdj(nn,level,sps)
-
-     do mm = 1,mdNGlobalSurfNodesLocal(myID+1)
-        ! Is this coordinate on this block?
-        if( mdSurfGlobalIndLocal(4,mm)==nn)then
-           ! We need to determine IF this node is on the structural FE grid
-           i = mdSurfGlobalIndLocal(1,mm)
-           j = mdSurfGlobalIndLocal(2,mm)
-           k = mdSurfGlobalIndLocal(3,mm)
-           do idim=1,3
-              if (FE_id(i,j,k,idim) .ne. -1) then
-                 !                call VecZeroEntries(us,ierr)
-                 !                  call VecSetValues(us,1,FE_ID(i,j,k,idim),one,INSERT_VALUES,ierr)
-                 !                  call VecAssemblyBegin(us,ierr)
-                 !                  call VecAssemblyEnd(us,ierr)
-                 !                  call MatMult(Kus,us,fu,ierr)
-                 !                  call VecScale(fu,PETScNegOne,ierr)
-                 !                  call MatSolve(kuu,fu,uu,ierr)
-                 !                  call VecGetValues(uu,nuu,indices,values,ierr)
-
-                 !                 print *,'nn,mm,i,j,k:',nn,mm,i,j,k,FE_ID(i,j,k,:)
-              end if
-           end do
-        end if
-     end do
-  end do
-
-end subroutine calculateSolidWarpDeriv
 
 
 subroutine initializeWarpMeshSolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock)
   ! This subroutine, sets up the preprocessing information required
   ! for warpMeshSolid
   use blockpointers
-  !use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
   use communication, only: myID,sumb_comm_world,sumb_comm_self,nProc
   use solidwarpmodule
-  use mdData          !mdNSurfNodes,mdNSurfNodesCompact
-
   implicit none
 
   ! Input Data
   integer(kind=intType) :: l_index(nli),lptr(nblock+1),l_sizes(nblock,3)
   integer(kind=intType) :: nli,nblock,nuu,nus
 
-  ! Working Data
 
-  character             :: mat_type*6,vec_type*3
-  integer               :: comm_to_use
-  integer(kind=intType) :: n,nn,i,ii,iii,j,jj,jjj,k,kk,kkk
-  integer(kind=intType) :: istart,jstart,kstart
-  integer(kind=intType) :: indx,indy,indz,indxp1,indyp1,indzp1
-  integer(kind=intType) :: lenx,leny,lenz
-  integer(kind=intType) :: nelemx,nelemy,nelemz
-  integer(kind=intType) :: col_indices(8,3),indices(8,3)
-  integer(kind=intType) :: nDimX,idxvol
-  real(kind=realType) ::  shp(8),pt_delta(3),nns(2),nnt(2),nnr(2)
-  real(kind=realType), dimension(:,:,:,:), allocatable :: SS
-  integer(kind=intType) :: counter
-  ! Petsc non-zero sizes
+  ! Working Data
+  integer(kind=intType) :: i,nn
+
+ ! Petsc non-zero sizes
   integer(kind=intType) :: nonz
   integer(kind=intType),dimension(:), allocatable :: nnz
   integer(kind=intType) :: nelem_local,blockID_local(nDom)
   integer(kind=intType) :: level=1,sps=1,ierr
 
-  use_parallel = .True.
-  if (.not. use_parallel) then
+  ! Allocate some size arrays
+  allocate(allNDom(nProc),cumNDom(nProc+1),allNElem(nProc),cumNElem(nProc+1))
+  allocate(allBlockIDs(nBlock))
+  allocate(Kdispls(nProc),BCdispls(nProc),Krecvcount(nProc),BCrecvcount(nProc))
 
-     ! Allocate some size arrays
-     allocate(allNDom(nProc),cumNDom(nProc+1),allNElem(nProc),cumNElem(nProc+1))
-     allocate(allBlockIDs(nBlock))
-     allocate(Kdispls(nProc),BCdispls(nProc),Krecvcount(nProc),BCrecvcount(nProc))
 
-     ! Distribute the number of domains on each processor
-     call mpi_allgather(nDom,1,sumb_integer,allnDom,1,sumb_integer,PETSC_COMM_WORLD,ierr)
-     call checkError(ierr,'warpMeshSolid','Error cathering allnDom')
+  ! Distribute the number of domains on each processor
+  call mpi_allgather(nDom,1,sumb_integer,allnDom,1,sumb_integer,PETSC_COMM_WORLD,ierr)
+  cumNDom(1) = 0
+  do i=1,nProc
+     cumNDom(i+1) = cumNDom(i) + allNDom(i)
+  end do
+  ! Compute the number of elements on this processor
+  nelem_local = 0
+  do nn=1,nDom
+     call setPointers(nn,level,sps)
+     nelem_local = nelem_local + (l_sizes(nbkGlobal,1)-1)*(l_sizes(nbkGlobal,2)-1)*(l_sizes(nBkGlobal,3)-1)
+     blockID_local(nn) = nbkGlobal
+  end do
+  call mpi_allgather(nelem_local,1,sumb_integer,allNElem,1,sumb_integer,PETSC_COMM_WORLD,ierr)
+  cumNElem(1) = 0
+  do i=1,nProc
+     cumNElem(i+1) = cumNElem(i) + allNElem(i)
+  end do
+  
+  nElem = cumNElem(nProc+1)
+  ! Get the global BlockID list
+  call mpi_allgatherv(blockID_local,nDom,sumb_integer,allBlockIDs,allNDom,cumNDom(1:nProc),sumb_integer,SUmb_comm_world,ierr)
 
-     cumNDom(1) = 0
-     do i=1,nProc
-        cumNDom(i+1) = cumNDom(i) + allNDom(i)
-     end do
-     ! Compute the number of elements on this processor
-     nelem_local = 0
-     do nn=1,nDom
-        call setPointers(nn,level,sps)
-        nelem_local = nelem_local + (l_sizes(nbkGlobal,1)-1)*(l_sizes(nbkGlobal,2)-1)*(l_sizes(nBkGlobal,3)-1)
-        blockID_local(nn) = nbkGlobal
-     end do
-     call mpi_allgather(nelem_local,1,sumb_integer,allNElem,1,sumb_integer,PETSC_COMM_WORLD,ierr)
-     call checkError(ierr,'warpMeshSolid','Error cathering allNElem')
+  ! Now we can allocate Allk,allBc,Klocal ect
 
-     cumNElem(1) = 0
-     do i=1,nProc
-        cumNElem(i+1) = cumNElem(i) + allNElem(i)
-     end do
+  allocate(allK(24*24*nElem),allBCVal(24*nElem))
+  allocate(localK(allNelem(myID+1)*24*24),localBCVal(allNelem(myID+1)*24))
 
-     nElem = cumNElem(nProc+1)
-     ! Get the global BlockID list
-     call mpi_allgatherv(blockID_local,nDom,sumb_integer,allBlockIDs,allNDom,cumNDom(1:nProc),sumb_integer,SUmb_comm_world,ierr)
-     call checkError(ierr,'warpMeshSolid','Error cathering allBlockIDs')
-
-     ! Now we can allocate Allk,allBc,Klocal ect
-
-     allocate(allK(24*24*nElem),allBCVal(24*nElem))
-     allocate(localK(allNelem(myID+1)*24*24),localBCVal(allNelem(myID+1)*24))
-     ! Set up K and BC sending data
-     Kdispls = cumNElem(1:nProc)*24*24
-     BCdispls = cumNElem(1:nProc)*24
-     Krecvcount = allNElem(:)*24*24
-     BCrecvcount = allNelem(:)*24
-
-  else
-     nelem_local = 0
-     do nn=1,nDom
-        call setPointers(nn,level,sps)
-        nelem_local = nelem_local + (l_sizes(nbkGlobal,1)-1)*(l_sizes(nbkGlobal,2)-1)*(l_sizes(nBkGlobal,3)-1)
-     end do
-     allocate(localK(nelem_local*24*24),localBCVal(nelem_local*24)) ! This is all we need for parallel case
-  end if
-
+  ! Set up K and BC sending data
+  Kdispls = cumNElem(1:nProc)*24*24
+  BCdispls = cumNElem(1:nProc)*24
+  Krecvcount = allNElem(:)*24*24
+  BCrecvcount = allNelem(:)*24
   ! --------- Setup PETSc Arrays --------------
   PETScNegOne = -1.0
   PETScOne = 1
-
-  if (use_parallel) then
-     mat_type = 'mpiaij'
-     vec_type = 'mpi'
-     comm_to_use = PETSC_COMM_WORLD
-  else
-     mat_type = 'seqaij'
-     vec_type = 'seq'
-     comm_to_use = PETSC_COMM_SELF
-  end if
-
-
   ! Kuu
   allocate(nnz(nuu))
   nnz(:) = min(81,nuu) ! Petsc is screwed up...we can't just pass in the singe,
   ! nz value we MUST pass in the full nnz array
-  nonz = min(81,nuu)
+  nonz = min(27,nuu)
 
-  
-
-  call MatCreate(comm_to_use,kuu,ierr)
-  if (use_parallel) then
-     call MatSetSizes(kuu,PETSC_DECIDE,PETSC_DECIDE,nuu,nuu,ierr)
-  else
-     call MatSetSizes(kuu,nuu,nuu,nuu,nuu,ierr)
-  end if
-  call MatSetType(kuu,mat_type,ierr)
-  if (use_parallel) then
-     call MatMPIAIJSetPreallocation(kuu,nonz,nnz,nonz,nnz,ierr)
-  else
-     call MatSeqAIJSetPreallocation(kuu,nonz,nnz,ierr)
-  end if
-
+  call MatCreate(PETSC_COMM_SELF,kuu,ierr)
+  call MatSetSizes(kuu,nuu,nuu,nuu,nuu,ierr)
+  call MatSetType(kuu,'seqaij',ierr)
+  call MatSeqAIJSetPreallocation(kuu,nonz,nnz,ierr)
   call MatSetOption(kuu,MAT_ROW_ORIENTED,PETSC_FALSE,ierr)
-  call checkError(ierr,'warpMeshSolid','Error creating kuu')
   deallocate(nnz)
 
   ! Kus 
@@ -726,187 +386,25 @@ subroutine initializeWarpMeshSolid(nuu,nus,l_index,lptr,l_sizes,nli,nblock)
   nnz(:) = min(81,nus) ! Petsc is screwed up...we can't just pass in the singe,
   ! nz value we MUST pass in the full nnz array
   nonz = min(81,nus)
-  call MatCreate(comm_to_use,Kus,ierr)
-  if (use_parallel) then
-     call MatSetSizes(Kus,PETSC_DECIDE,PETSC_DECIDE,nuu,nus,ierr)
-  else
-     call MatSetSizes(Kus,nuu,nus,nuu,nus,ierr)
-  end if
-  call MatSetType(Kus,mat_type,ierr)
-  if (use_parallel) then
-     call MatMPIAIJSetPreallocation(kus,nonz,nnz,nonz,nnz,ierr)
-  else
-     call MatSeqAIJSetPreallocation(kus,nonz,nnz,ierr)
-  end if
+  call MatCreate(PETSC_COMM_SELF,Kus,ierr)
+  call MatSetSizes(Kus,nuu,nus,nuu,nus,ierr)
+  call MatSetType(Kus,'seqaij',ierr)
+  call MatSeqAIJSetPreallocation(Kus,nonz,nnz,ierr)
   call MatSetOption(Kus,MAT_ROW_ORIENTED,PETSC_FALSE,ierr)
-  call checkError(ierr,'warpMeshSolid','Error creating kus')
   deallocate(nnz)
 
   ! --------------- uu,us,fu -----------------
-  call VecCreate(comm_to_use,uu,ierr)
-  call VecSetType(uu,vec_type,ierr)
+  call VecCreate(PETSC_COMM_SELF,uu,ierr)
+  call VecSetSizes(uu,nuu,nuu,ierr)
+  call VecSetType(uu,'seq',ierr)
 
-  call VecCreate(comm_to_use,us,ierr)
-  call VecSetType(us,vec_type,ierr)
+  call VecCreate(PETSC_COMM_SELF,us,ierr)
+  call VecSetSizes(us,nus,nus,ierr)
+  call VecSetType(us,'seq',ierr)
 
-  call VecCreate(comm_to_use,fu,ierr)
-  call VecSetType(fu,vec_type,ierr)
-
-  if (use_parallel) then
-     call VecSetSizes(uu,PETSC_DECIDE,nuu,ierr)
-     call VecSetSizes(us,PETSC_DECIDE,nus,ierr)
-     call VecSetSizes(fu,PETSC_DECIDE,nuu,ierr)
-  else
-     call VecSetSizes(uu,nuu,nuu,ierr)
-     call VecSetSizes(us,nus,nus,ierr)
-     call VecSetSizes(fu,nuu,nuu,ierr)
-  end if
-  call checkError(ierr,'warpMeshSolid','Error creating uu,us,or fu')
-
-!   if (use_parallel) then
-!      ! Create the data we need to be able to scatter uu and us to all
-!      ! processors EVEN for the parallel version
-!      allocate(uu_sizes(nProc),cum_uu(nProc+1))
-!      call VecGetOwnershipRanges(uu,cum_uu,ierr)
-!      do i=1,nProc
-!         uu_sizes(i) = cum_uu(i+1)-cum_uu(i)
-!      end do
-!      print *,'myid,cum_uu:',myid,cum_uu
-!      allocate(us_sizes(nProc),cum_us(nProc+1))
-!      call VecGetOwnershipRanges(us,cum_us,ierr)
-!      do i=1,nProc
- !         us_sizes(i) = cum_us(i+1)-cum_us(i)
-!      end do
-!      print *,'myid,cum_us:',myid,cum_us
-!   end if
-
-  !  nDimX = 3 * nNodesLocal*1
-  !   allocate(nnz(nDimX))
-  !   nnz(:) = 8
-  !   nonz = 1 ! Ignored anyway
-
-  !   call MatCreate(sumb_comm_world,dXvdXvFE, ierr)
-  !   call MatSetSizes(dXvdXvFE,nDimX,PETSC_DECIDE,PETSC_DETERMINE,nuu+nus,ierr)
-  !   call MatSetType(dXvdXvFE,"mpiaij",ierr)
-  !   call MatMPIAIJSetPreallocation(dXvdXvFE,nonz,nnz,nonz,nnz,ierr)
-  !   call MatSetOption(dXvdXvFE,MAT_ROW_ORIENTED,PETSC_FALSE,ierr)
-  !   call checkError(ierr,'warpMeshSolid','Error creating dXvdXvFE')
-
-  !   deallocate(nnz)
-  !   counter= 1
-  !   call MatGetSize(dXvdXvFE,i,j,ierr)
-  !   print *,'damn size:',i,j
-  !   do nn=1,nDom
-  !      call setPointers(nn,level,sps)
-  !      call setPointersAdj(nn,level,sps)
-  !      FE_ID(:,:,:,:) = -1 ! Set them to -1 by default...not on FE_grid
-  !      nelemx = l_sizes(nbkGlobal,1)-1
-  !      nelemy = l_sizes(nbkGlobal,2)-1
-  !      nelemz = l_sizes(nbkGlobal,3)-1
-  !      do i=1,nelemx   
-  !         do j =1,nelemy
-  !            do k=1,nelemz
-
-  !               ! Now we must figure out the indices
-  !               indx = int(floor(dble(i-1.0)/(nelemx)*(nx))) + 1
-  !               indy = int(floor(dble(j-1.0)/(nelemy)*(ny))) + 1
-  !               indz = int(floor(dble(k-1.0)/(nelemz)*(nz))) + 1
-
-  !               indxp1 = int(floor(dble(i-0)/(nelemx)*(nx))) + 1
-  !               indyp1 = int(floor(dble(j-0)/(nelemy)*(ny))) + 1
-  !               indzp1 = int(floor(dble(k-0)/(nelemz)*(nz))) + 1
-
-  !               lenx = indxp1-indx+1
-  !               leny = indyp1-indy+1
-  !               lenz = indzp1-indz+1
-
-  !               allocate(SS(lenx,leny,lenz,3))
-
-  !               call para3d(Xinit(indx:indxp1,indy:indyp1,indz:indzp1,:),lenx,leny,lenz,3,SS)
-  !               call hexa_index(i-1,j-1,k-1,indices)
-
-  !               do ii=1,8
-  !                  do iii =1,3
-  !                     col_indices(ii,iii) = l_index(lptr(nbkGlobal) +&
-  !                          indices(ii,1)*l_sizes(nbkGlobal,2)*l_sizes(nbkGlobal,3)*3 + &
-  !                          indices(ii,2)*l_sizes(nbkGlobal,3)*3 +&
-  !                          indices(ii,3)*3+ iii )
-  !                  end do
-  !               end do
-
-  !               do iii=1,3
-  !                  FE_ID(indx  ,indy  ,indz  ,iii) = col_indices(1,iii)
-  !                  FE_ID(indxp1,indy  ,indz  ,iii) = col_indices(2,iii)
-  !                  FE_ID(indx  ,indyp1,indz  ,iii) = col_indices(3,iii)
-  !                  FE_ID(indxp1,indyp1,indz  ,iii) = col_indices(4,iii)
-  !                  FE_ID(indx  ,indy  ,indzp1,iii) = col_indices(5,iii)
-  !                  FE_ID(indxp1,indy  ,indzp1,iii) = col_indices(6,iii)
-  !                  FE_ID(indx  ,indyp1,indzp1,iii) = col_indices(7,iii)
-  !                  FE_ID(indxp1,indyp1,indzp1,iii) = col_indices(8,iii)
-  !               end do
-
-
-  !               if (i == 1) then
-  !                  istart = 1
-  !               else
-  !                  istart = 2
-  !               end if
-
-  !               if (j == 1) then
-  !                  jstart = 1
-  !               else
-  !                  jstart = 2
-  !               end if
-  !               if (k == 1) then
-  !                  kstart = 1
-  !               else
-  !                  kstart = 2
-  !               end if
-
-  !               do ii=istart,lenx
-  !                  do jj=jstart,leny
-  !                     do kk=kstart,lenz
-
-  !                        nnr(1) = 1.0 - SS(ii,jj,kk,1)
-  !                        nnr(2) = SS(ii,jj,kk,1)
-
-  !                        nns(1) = 1.0 - SS(ii,jj,kk,2)
-  !                        nns(2) = SS(ii,jj,kk,2)
-
-  !                        nnt(1) = 1.0 - SS(ii,jj,kk,3)
-  !                        nnt(2) = SS(ii,jj,kk,3)
-
-  !                        shp(1) = nnr(1)*nns(1)*nnt(1)
-  !                        shp(2) = nnr(2)*nns(1)*nnt(1)
-  !                        shp(3) = nnr(1)*nns(2)*nnt(1)
-  !                        shp(4) = nnr(2)*nns(2)*nnt(1)
-  !                        shp(5) = nnr(1)*nns(1)*nnt(2)
-  !                        shp(6) = nnr(2)*nns(1)*nnt(2)
-  !                        shp(7) = nnr(1)*nns(2)*nnt(2)
-  !                        shp(8) = nnr(2)*nns(2)*nnt(2)
-
-  !                        do n=1,3
-  !                           counter = counter + 1
-  !                           idxvol = globalNode(indx+ii-1,indy+jj-1,indz+kk-1)*3+n
-  !                           do iii=1,8
-  !                              call MatSetValue(dXvdXvFE,idxvol-1,col_indices(iii,n),&
-  !                                   shp(iii),INSERT_VALUES,ierr)
-  !                           end do
-  !                        end do
-  !                     end do ! kk loop
-  !                  end do ! jj loop
-  !               end do !ii loop
-  !               deallocate(SS)
-  !            end do ! k loop
-  !         end do ! j loop
-  !      end do ! i loop
-  !   end do ! nndomain loop
-
-  !   call checkError(ierr,'warpMeshSolid','Error setting dXvdXvFE values')
-  !   call MatAssemblyBegin(dXvdXvFE,MAT_FINAL_ASSEMBLY,ierr)
-  !   call MatAssemblyEnd(dXvdXvFE,MAT_FINAL_ASSEMBLY,ierr)
-  !   call checkError(ierr,'warpMeshSolid','Error assembling dXvdXvFE')
-
+  call VecCreate(PETSC_COMM_SELF,fu,ierr)
+  call VecSetSizes(fu,nuu,nuu,ierr)
+  call VecSetType(fu,'seq',ierr)
   print *,'Done initialization'
 end subroutine initializeWarpMeshSolid
 
@@ -915,41 +413,452 @@ subroutine destroyWarpMeshSolid ! Deallocation
   use communication, only: sumb_comm_world
   implicit none
   integer(kind=intType) :: ierr
-  if (.not. use_parallel) then
-     deallocate(allK,allBCVal,allBlockIDs,localK,localBCVal)
-     deallocate(allNDom,cumNDom,allNElem,cumNElem)
-     deallocate(Kdispls,BCdispls,Krecvcount,BCrecvcount)
-  else
-     deallocate(localK,localBCVal)!,uu_sizes,us_sizes,cum_uu,cum_us)
-  end if
+  deallocate(allK,allBCVal,allBlockIDs,localK,localBCVal)
+  deallocate(allNDom,cumNDom,allNElem,cumNElem)
+  deallocate(Kdispls,BCdispls,Krecvcount,BCrecvcount)
 
   call MatDestroy(Kuu,ierr)
-  call checkError(ierr,'warpMeshSolid','Error destroying kuu')
-
   call MatDestroy(Kus,ierr)
-  call checkError(ierr,'warpMeshSolid','Error destroying kus')
-
-  !call MatDestroy(dXvFEdXsFE,ierr)
-  !call checkError(ierr,'warpMeshSolid','Error destroying dXvFEdXsFE')
-
-  !call MatDestroy(dXvdXvFE,ierr)
-  !call checkError(ierr,'warpMeshSolid','Error destroying dXvdXsFE')
-
-  !call MatDestroy(dXvdXsFE,ierr)
-  !call checkError(ierr,'warpMeshSolid','Error destroying dXvdXsFE')
-
   call VecDestroy(uu,ierr)
-  call checkError(ierr,'warpMeshSolid','Error destroying uu')
-
   call VecDestroy(us,ierr)
-  call checkError(ierr,'warpMeshSolid','Error destroying us')
-
   call VecDestroy(fu,ierr)
-  call checkError(ierr,'warpMeshSolid','Error destroying fu')
-
   call mpi_barrier(sumb_comm_world, ierr)
 end subroutine destroyWarpMeshSolid
 
+subroutine calcstiffness(points,Kstif)
+  use precision 
+  implicit none
+
+  ! Input/Output
+  real(kind=realType) :: points(8,3)
+  real(kind=realType) :: Kstif(24*24)
+
+  ! Working 
+  real(kind=realType) :: c,G,E,volume,nu,onemnuc,nuc
+  real(kind=realType) :: Jac(3,3),Jinv(3,3)
+  integer(kind=intType):: i,j,k,l,m,n,ii,jj,kk
+  real(kind=realType) :: r,s,t
+  real(kind=realType) :: Nr(8),Ns(8),Nt(8),Nx(8),Ny(8),Nz(8)
+  real(kind=realType) :: nnr(2),nns(2),nnt(2),ndr(2),nds(2),ndt(2)
+  real(kind=realType) :: g_points(2),det,invdet
+
+  ! First calculate the volume needed for the stiffness
+
+  call volume_hexa(points,volume)
+
+  E = 1.0/(volume)!*volume)!*volume)
+  nu = -.2
+  c = E/((1+nu)*(1-2*nu))
+  G = c/(2-nu)
+
+  onemnuc = (1.0-nu)*c
+  nuc = nu*c
+
+  Kstif(:) = 0.0
+
+  ! Now here is where we do the integration numerically
+
+  g_points(1) = -0.5773502691
+  g_points(2) =  0.5773502691
+
+  ! 2x2x2 Gaussian Integration
+  do k=1,2 ! Gauss in r
+     do l=1,2 ! Gauss in s
+        do m=1,2 ! Gauss in t
+           r = g_points(k)
+           s = g_points(l)
+           t = g_points(m)
+
+           nnr(1) = 0.5*( 1.0 - r )
+           nnr(2) = 0.5*( 1.0 + r )
+           ndr(1) = - 0.5
+           ndr(2) =   0.5
+
+           nns(1) = 0.5*( 1.0 - s )
+           nns(2) = 0.5*( 1.0 + s )
+           nds(1) = - 0.5
+           nds(2) =   0.5
+
+           nnt(1) = 0.5*( 1.0 - t )
+           nnt(2) = 0.5*( 1.0 + t )
+           ndt(1) = - 0.5
+           ndt(2) =   0.5
+
+           Nr(1) = ndr(1)*nns(1)*nnt(1)
+           Nr(2) = ndr(2)*nns(1)*nnt(1)
+           Nr(3) = ndr(1)*nns(2)*nnt(1)
+           Nr(4) = ndr(2)*nns(2)*nnt(1)
+           Nr(5) = ndr(1)*nns(1)*nnt(2)
+           Nr(6) = ndr(2)*nns(1)*nnt(2)
+           Nr(7) = ndr(1)*nns(2)*nnt(2)
+           Nr(8) = ndr(2)*nns(2)*nnt(2)
+
+           Ns(1) = nnr(1)*nds(1)*nnt(1)
+           Ns(2) = nnr(2)*nds(1)*nnt(1)
+           Ns(3) = nnr(1)*nds(2)*nnt(1)
+           Ns(4) = nnr(2)*nds(2)*nnt(1)
+           Ns(5) = nnr(1)*nds(1)*nnt(2)
+           Ns(6) = nnr(2)*nds(1)*nnt(2)
+           Ns(7) = nnr(1)*nds(2)*nnt(2)
+           Ns(8) = nnr(2)*nds(2)*nnt(2)
+
+           Nt(1) = nnr(1)*nns(1)*ndt(1)
+           Nt(2) = nnr(2)*nns(1)*ndt(1)
+           Nt(3) = nnr(1)*nns(2)*ndt(1)
+           Nt(4) = nnr(2)*nns(2)*ndt(1)
+           Nt(5) = nnr(1)*nns(1)*ndt(2)
+           Nt(6) = nnr(2)*nns(1)*ndt(2)
+           Nt(7) = nnr(1)*nns(2)*ndt(2)
+           Nt(8) = nnr(2)*nns(2)*ndt(2)
+
+           Jac(:,:) = 0.0
+           do n=1,8
+              Jac(1,1) = Jac(1,1) + Nr(n)*points(n,1)
+              Jac(1,2) = Jac(1,2) + Nr(n)*points(n,2)
+              Jac(1,3) = Jac(1,3) + Nr(n)*points(n,3)
+
+              Jac(2,1) = Jac(2,1) + Ns(n)*points(n,1)
+              Jac(2,2) = Jac(2,2) + Ns(n)*points(n,2)
+              Jac(2,3) = Jac(2,3) + Ns(n)*points(n,3)
+
+              Jac(3,1) = Jac(3,1) + Nt(n)*points(n,1)
+              Jac(3,2) = Jac(3,2) + Nt(n)*points(n,2)
+              Jac(3,3) = Jac(3,3) + Nt(n)*points(n,3)
+           end do
+
+           ! Express the inverse of the jacobian explicitly 
+           det = Jac(1,1)*Jac(2,2)*Jac(3,3)  &
+                +   Jac(1,2)*Jac(2,3)*Jac(3,1)&
+                +   Jac(1,3)*Jac(2,1)*Jac(3,2)&
+                -   Jac(1,1)*Jac(2,3)*Jac(3,2)&
+                -   Jac(1,2)*Jac(2,1)*Jac(3,3)&
+                -   Jac(1,3)*Jac(2,2)*Jac(3,1)
+           invdet = 1/det
+
+           !             [ |a22 a23|   |a12 a13|  |a12 a13|]     */
+           !             [ |a32 a33|  -|a32 a33|  |a22 a23|]     */
+           !             [                                 ]     */
+           !             [ |a21\ a23|   |a11 a13|  |a11 a13|]     */
+           !    A^(-1) = [-|a31 a33|   |a31 a33| -|a21 a23|] / d */
+           !             [                                 ]     */
+           !             [ |a21 a22|   |a11 a12|  |a11 a12|]     */
+           !             [ |a31 a32|  -|a31 a32|  |a21 a22|]     */
+
+           Jinv(1,1) =  invdet*(Jac(2,2)*Jac(3,3)-Jac(2,3)*Jac(3,2))
+           Jinv(1,2) = -invdet*(Jac(1,2)*Jac(3,3)-Jac(1,3)*Jac(3,2))
+           Jinv(1,3) =  invdet*(Jac(1,2)*Jac(2,3)-Jac(1,3)*Jac(2,2))
+
+           Jinv(2,1) = -invdet*(Jac(2,1)*Jac(3,3)-Jac(2,3)*Jac(3,1))
+           Jinv(2,2) =  invdet*(Jac(1,1)*Jac(3,3)-Jac(1,3)*Jac(3,1))
+           Jinv(2,3) = -invdet*(Jac(1,1)*Jac(2,3)-Jac(1,3)*Jac(2,1))
+
+           Jinv(3,1) =  invdet*(Jac(2,1)*Jac(3,2)-Jac(2,2)*Jac(3,1))
+           Jinv(3,2) = -invdet*(Jac(1,1)*Jac(3,2)-Jac(1,2)*Jac(3,1))
+           Jinv(3,3) =  invdet*(Jac(1,1)*Jac(2,2)-Jac(1,2)*Jac(2,1))
+
+           ! this calc is [die Ni/die x, die Ni/die y]T = J^-1 * [die Ni/die s , die Ni/die t]T
+           do n=1,8
+              Nx(n) = Jinv(1,1)*Nr(n) + Jinv(1,2)*Ns(n) + Jinv(1,3)*Nt(n)
+              Ny(n) = Jinv(2,1)*Nr(n) + Jinv(2,2)*Ns(n) + Jinv(2,3)*Nt(n)
+              Nz(n) = Jinv(3,1)*Nr(n) + Jinv(3,2)*Ns(n) + Jinv(3,3)*Nt(n)
+           end do
+
+           do i=1,8
+              do j=i,8
+
+                 !                  intM = matmul(transpose(Bi), matmul(Cm,Bj)) ==->
+
+                 ![ Nxi*onemnuc*Nxj+Nyi*G*Nyj+Nzi*G*Nzj,               Nxi*nuc*Nyj+Nyi*G*Nxj,               Nxi*nuc*Nzj+Nzi*G*Nxj]
+                 ![               Nyi*nuc*Nxj+Nxi*G*Nyj, Nyi*onemnuc*Nyj+Nxi*G*Nxj+Nzi*G*Nzj,               Nyi*nuc*Nzj+Nzi*G*Nyj]
+                 ![               Nzi*nuc*Nxj+Nxi*G*Nzj,               Nzi*nuc*Nyj+Nyi*G*Nzj, Nzi*onemnuc*Nzj+Nyi*G*Nyj+Nxi*G*Nxj]
+
+                 ! USE ROW ORIENTED 1D array for Kstif
+                 Kstif((3*i-3)*24  + 3*j-2) =Kstif((3*i-3)*24  + 3*j-2) + &
+                      (Nx(i)*onemnuc*Nx(j)+Ny(i)*G*Ny(j)+Nz(i)*G*Nz(j))*det
+                 Kstif((3*i-3)*24  + 3*j-1) = Kstif((3*i-3)*24  + 3*j-1) + &
+                      (Nx(i)*nuc*Ny(j)+Ny(i)*G*Nx(j))*det
+                 Kstif((3*i-3)*24  + 3*j  ) =Kstif((3*i-3)*24  + 3*j)  + &
+                      (Nx(i)*nuc*Nz(j)+Nz(i)*G*Nx(j))*det
+
+                 Kstif((3*i-2)*24 + 3*j-2) = Kstif((3*i-2)*24 + 3*j-2) + & 
+                      (Ny(i)*nuc*Nx(j)+Nx(i)*G*Ny(j))*det
+                 Kstif((3*i-2)*24 + 3*j-1) = Kstif((3*i-2)*24 + 3*j-1) + &
+                      (Ny(i)*onemnuc*Ny(j)+Nx(i)*G*Nx(j)+Nz(i)*G*Nz(j))*det
+                 Kstif((3*i-2)*24 + 3*j  ) = Kstif((3*i-2)*24 + 3*j  ) + & 
+                      (Ny(i)*nuc*Nz(j)+Nz(i)*G*Ny(j))*det
+
+                 Kstif((3*i-1)*24  +3*j-2) = Kstif((3*i-1)*24  +3*j-2) + &
+                      (Nz(i)*nuc*Nx(j)+Nx(i)*G*Nz(j))*det
+                 Kstif((3*i-1)*24  +3*j-1) = Kstif((3*i-1)*24  +3*j-1) + &
+                      (Nz(i)*nuc*Ny(j)+Ny(i)*G*Nz(j))*det
+                 Kstif((3*i-1)*24  +3*j  ) = Kstif((3*i-1)*24  +3*j  ) + &
+                      (Nz(i)*onemnuc*Nz(j)+Ny(i)*G*Ny(j)+Nx(i)*G*Nx(j))*det
+              end do
+           end do
+        end do
+     end do
+  end do
+  ! Fill up the remainder
+  do i=1,24
+     do j = 1,i
+        Kstif((24*(i-1))+j) = Kstif((j-1)*24 + i)
+     end do
+  end do
+end subroutine calcstiffness
+
+subroutine volume_hexa(points,volume)
+  use precision 
+
+  implicit none
+  real(kind=realType) :: points(8,3),volume
+  real(kind=realType) :: center(3),sum,volpymrid
+  integer(kind=intType) ::  i,idim
+  ! Compute the center of the points
+  ! Average x
+  do idim =1,3
+     sum = 0.0
+     do i=1,8
+        sum = sum + points(i,idim)
+     end do
+     center(idim) = sum / 8
+  end do
+
+  ! Compute the volumes of the 6 sub pyramids. The
+  ! arguments of volpym must be such that for a (regular)
+  ! right handed hexahedron all volumes are positive.
+
+  volume = (volpymrid(center,points(1,:),points(2,:),points(4,:),points(2,:)) + &
+       volpymrid(center,points(7,:),points(8,:),points(6,:),points(5,:)) + &
+       volpymrid(center,points(1,:),points(3,:),points(7,:),points(5,:)) + & 
+       volpymrid(center,points(4,:),points(2,:),points(6,:),points(8,:)) + &
+       volpymrid(center,points(2,:),points(1,:),points(5,:),points(4,:)) + & 
+       volpymrid(center,points(3,:),points(4,:),points(8,:),points(7,:)))/6
+
+end subroutine volume_hexa
+
+function volpymrid(p,a,b,c,d)
+  use precision 
+  implicit none
+  real(kind=realType) :: p(3),a(3),b(3),c(3),d(3),volpymrid
+
+  ! 6*Volume of a pyrimid -> Counter clockwise ordering
+  volpymrid = (p(1) - 0.25*(a(1) + b(1)  + c(1) + d(1))) *&
+       ((a(2) - c(2))*(b(3) - d(3)) - (a(3) - c(3))*(b(2) - d(2)))   + &
+       (p(2) - .25*(a(2) + b(2)  + c(2) + d(2)))*&
+       ((a(3) - c(3))*(b(1) - d(1)) - (a(1) - c(1))*(b(3) - d(3)))   + &
+       (p(3) - .25*(a(3) + b(3)  + c(3) + d(3)))* &
+       ((a(1) - c(1))*(b(2) - d(2)) - (a(2) - c(2))*(b(1) - d(1)))
+
+end function volpymrid
+
+subroutine hexa_index(i,j,k,indices)
+  use precision
+  integer(kind=intType) :: i,j,k,indices(8,3)
+
+  indices(1,:) = (/i,j,k/)
+  indices(2,:) = (/i+1,j,k/)
+  indices(3,:) = (/i,j+1,k/)
+  indices(4,:) = (/i+1,j+1,k/)
+  indices(5,:) = (/i,j,k+1/)
+  indices(6,:) = (/i+1,j,k+1/)
+  indices(7,:) = (/i,j+1,k+1/)
+  indices(8,:) = (/i+1,j+1,k+1/)
+end subroutine hexa_index
+
+subroutine hexa_index_ccw(i,j,k,indices)
+  use precision
+  integer(kind=intType) :: i,j,k,indices(8,3)
+
+  indices(1,:) = (/i,j,k/)
+  indices(2,:) = (/i+1,j,k/)
+  indices(3,:) = (/i+1,j+1,k/)
+  indices(4,:) = (/i,j+1,k/)
+  indices(5,:) = (/i,j,k+1/)
+  indices(6,:) = (/i+1,j,k+1/)
+  indices(7,:) = (/i+1,j+1,k+1/)
+  indices(8,:) = (/i,j+1,k+1/)
+end subroutine hexa_index_ccw
+
+subroutine para3d(X,n,m,l,ndim,S)
+  !***DESCRIPTION
+  !
+  !     Written by Gaetan Kenway
+  !
+  !     Abstract para3d calculates the parametric locations for a 3d block
+  !
+  !     Description of Arguments
+  !     Input
+  !     X       - Real,size(n,m,l,ndim): Coordiantes
+  !     Output
+  !     S       - Real,size(n,m,l,3): The u,v,w parametric positions
+
+  implicit none
+
+  ! Input
+  integer          , intent(in)   :: n,m,l,ndim
+  double precision , intent(in)   :: X(n,m,l,ndim)
+
+
+  ! Output
+  double precision , intent(out)  :: S(n,m,l,ndim)
+
+  ! Working 
+  integer                         :: i,j,k
+
+  double precision DELI,DELJ,DELK
+
+  DELI(I,J,K) = SQRT ((X(I,J,K,1) - X(I-1,J,K,1)) ** 2 + &
+       (X(I,J,K,2) - X(I-1,J,K,2)) ** 2 + &
+       (X(I,J,K,3) - X(I-1,J,K,3)) ** 2)
+
+  DELJ(I,J,K) = SQRT ((X(I,J,K,1) - X(I,J-1,K,1)) ** 2 + &
+       (X(I,J,K,2) - X(I,J-1,K,2)) ** 2 + &
+       (X(I,J,K,3) - X(I,J-1,K,3)) ** 2)
+
+  DELK(I,J,K) = SQRT ((X(I,J,K,1) - X(I,J,K-1,1)) ** 2 + &
+       (X(I,J,K,2) - X(I,J,K-1,2)) ** 2 + &
+       (X(I,J,K,3) - X(I,J,K-1,3)) ** 2)
+
+
+  !     Zero the three low-end faces (or edges if one plane is specified).
+
+  DO K = 1, l
+     DO J = 1, m
+        S(1,J,K,1) = 0.0
+     END DO
+
+     DO I = 1, n
+        S(I,1,K,2) = 0.0
+     END DO
+  END DO
+
+  DO J = 1, m
+     DO I = 1, n
+        S(I,J,1,3) = 0.0
+     END DO
+  END DO
+
+  !     Set up the low-end edge lines because they are missed by the
+  !     following loops over most of the low-end faces:
+
+  DO I = 2, n
+     S(I,1,1,1) = S(I-1,1,1,1) + DELI(I,1,1)
+  END DO
+
+  DO J = 2, m
+     S(1,J,1,2) = S(1,J-1,1,2) + DELJ(1,J,1)
+  END DO
+
+  DO K = 2, l
+     S(1,1,K,3) = S(1,1,K-1,3) + DELK(1,1,K)
+  END DO
+
+  !     Set up the rest of the low-end face lines because they are
+  !     missed by the the main loop over most of the volume.
+
+  DO K = 2, l
+     DO J = 2, m
+        S(1,J,K,2) = S(1,J-1,K,2) + DELJ(1,J,K)
+        S(1,J,K,3) = S(1,J,K-1,3) + DELK(1,J,K)
+     END DO
+     DO I = 2, n
+        S(I,1,K,1) = S(I-1,1,K,1) + DELI(I,1,K)
+        S(I,1,K,3) = S(I,1,K-1,3) + DELK(I,1,K)
+     END DO
+
+  END DO
+
+  DO J = 2, m
+     DO I = 2, n
+        S(I,J,1,1) = S(I-1,J,1,1) + DELI(I,J,1)
+        S(I,J,1,2) = S(I,J-1,1,2) + DELJ(I,J,1)
+     END DO
+  END DO
+
+  !     Traverse the block just once for all lines except those within
+  !     the low-end faces.
+
+  DO K = 2, l
+     DO J = 2, m
+        DO I = 2, n
+           S(I,J,K,1) = S(I-1,J,K,1) + DELI(I,J,K)
+           S(I,J,K,2) = S(I,J-1,K,2) + DELJ(I,J,K)
+           S(I,J,K,3) = S(I,J,K-1,3) + DELK(I,J,K)
+        END DO
+     END DO
+  END DO
+
+  !     Normalizing requires another pass through the volume.
+  !     Handle lines of zero length first by inserting uniform
+  !     distributions.  Then the standard normalization can be
+  !     applied safely everywhere.
+
+  DO K = 1, l
+
+     !        Zero-length lines in the I direction?
+
+     DO J = 1, m
+        IF (S(n,J,K,1) == 0.0) THEN
+           DO I = 2, n
+              S(I,J,K,1) = I - 1
+           END DO
+        END IF
+     END DO
+
+     !        Zero-length lines in the J direction?
+
+     DO I = 1, n
+        IF (S(I,m,K,2) == 0.0) THEN
+           DO J = 2, m
+              S(I,J,K,2) = J - 1
+           END DO
+        END IF
+     END DO
+  END DO
+
+  !     Zero-length lines in the K direction?
+
+  DO J = 1, m
+     DO I = 1, n
+        IF (S(I,J,l,3) == 0.0) THEN
+           DO K = 2, l
+              S(I,J,K,3) = K - 1
+           END DO
+        END IF
+     END DO
+  END DO
+
+  !     Normalize:
+
+  DO K = 1, l
+     DO J = 1, m
+        DO I = 1, n
+           S(I,J,K,1) = S(I,J,K,1) / S(n,J,K,1)
+           S(I,J,K,2) = S(I,J,K,2) / S(I,m,K,2)
+           S(I,J,K,3) = S(I,J,K,3) / S(I,J,l,3)
+        END DO
+     END DO
+  END DO
+
+  !     Finally, precise 1s for the three high-end faces:
+
+  DO K = 1, l
+     DO J = 1, m
+        S(n,J,K,1) = 1.0
+     END DO
+
+     DO I = 1, n
+        S(I,m,K,2) = 1.0
+     END DO
+  END DO
+
+  DO J = 1, m
+     DO I = 1, n
+        S(I,J,l,3) = 1.0
+     END DO
+  END DO
+
+end subroutine para3d
 
 ! !    ! Ksp 
 !      call KSPCreate(PETSC_COMM_SELF,ksp, ierr)
@@ -980,5 +889,3 @@ end subroutine destroyWarpMeshSolid
 !   call MatCholeskyFactor(kuu,row_perm,info,ierr)
 
 !  print *,'solve'
-
-
