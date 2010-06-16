@@ -81,7 +81,7 @@ default: all
 
 all:
 	$(MAKE) mod
-#	cp -f *.mod $(SUMB_MODDIR)
+	cp -f *.mod $(SUMB_MODDIR)
 	$(MAKE) src
 
 clean:

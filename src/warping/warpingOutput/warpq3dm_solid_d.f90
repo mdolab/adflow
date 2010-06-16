@@ -8,7 +8,7 @@
 SUBROUTINE WARPQ3DM_SOLID_D(il, jl, kl, i1, i2, j1, j2, k1, k2, xyz0, &
 &  xyz0d, s0, s0d, dfacei, dfaceid, dfacej, dfacejd, dfacek, dfacekd, xyz&
 &  , xyzd)
-  use precision
+  USE PRECISION
   IMPLICIT NONE
 !     ******************************************************************
 !     *   WARPQ3DM perturbs the interior of one face of one block of a *

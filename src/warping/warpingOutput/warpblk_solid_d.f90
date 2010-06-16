@@ -6,7 +6,7 @@
 !   with respect to input variables: xyz0 xyz
 SUBROUTINE WARPBLK_SOLID_D(ifaceptb, iedgeptb, ncall, ig, igo, il, jl, &
 &  kl, xyz0, xyz0d, s0, xyz, xyzd)
-  use precision
+  USE PRECISION
   IMPLICIT NONE
 !     ******************************************************************
 !     *   WARP-BLK completes the perturbation of one block of a multi- *
@@ -240,12 +240,12 @@ SUBROUTINE WARPBLK_SOLID_D(ifaceptb, iedgeptb, ncall, ig, igo, il, jl, &
   REAL(kind=realtype) :: abs32
   REAL(kind=realtype) :: x3d
   REAL(kind=realtype) :: abs31
-  ALLOCATE(dfaceid(3, 1:jl, 1:kl, 2, 4))
-  ALLOCATE(dfacei(3, 1:jl, 1:kl, 2, 4))
-  ALLOCATE(dfacejd(3, 1:il, 1:kl, 2, 4))
-  ALLOCATE(dfacej(3, 1:il, 1:kl, 2, 4))
-  ALLOCATE(dfacekd(3, 1:il, 1:jl, 2, 4))
-  ALLOCATE(dfacek(3, 1:il, 1:jl, 2, 4))
+  ALLOCATE(dfaceid(3, jl, kl, 2, 4))
+  ALLOCATE(dfacei(3, jl, kl, 2, 4))
+  ALLOCATE(dfacejd(3, il, kl, 2, 4))
+  ALLOCATE(dfacej(3, il, kl, 2, 4))
+  ALLOCATE(dfacekd(3, il, jl, 2, 4))
+  ALLOCATE(dfacek(3, il, jl, 2, 4))
 !     Execution.
 !     Parameterize the block volume on the first call:
   IF (ncall .LE. -3 .AND. ig .NE. igo) THEN

@@ -12,8 +12,7 @@ subroutine setupVolumeSurfaceDerivativesDV
 
   use blockpointers
   use communication
-  use mdDataLocal
-  use mdData, only: mdNSurfNodesCompact,mdGlobalSurfxx
+  use mdData
   use warpingPETSc
   use inputTimeSpectral !nTimeIntervalsSpectral
   !use ADjointPETSc, only: PETScOne, value

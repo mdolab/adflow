@@ -24,14 +24,11 @@ subroutine storeGlobalSurfaceIndices
   use blockPointers
   use communication, only: myID,sumb_comm_world,nProc
   use BCTypes
-  use mdDataLocal
-  use mdData        !mdNSurfNodesCompact
+  use mdData
+  use mddatalocal
   implicit none
 
-
 !Subroutine Variables
-
-
 
 !Local Variables
 integer(kind=intType)::level=1,sps=1,nn,i,j,k,ierr,counter,compresscounter
@@ -119,7 +116,9 @@ end DO
 
 !compress to be continuous numbering
 compresscounter = 0
-do i = 1,mdNSurfNodes(nProc,1)!maximum number of possible surface nodes??counter+1
+!do i = 1,mdNSurfNodes(nProc,1)!maximum number of possible surface nodes??counter+1
+do i = 1, mdNSurfNodesProc(nProc)
+
    !if (myid==0) print *,'global surface node...',i,mdNSurfNodes(nProc,1)
    !call sleep(0.2)
    indexfound = .False.
@@ -149,7 +148,7 @@ do i = 1,mdNSurfNodes(nProc,1)!maximum number of possible surface nodes??counter
       compresscounter = compresscounter+1
    endif
 enddo
-!print *,'compresscounter',compresscounter
+
 !reprint index
 mdNSurfNodesCompact= compresscounter!-1
 !print *,'storing indices',mdnsurfnodescompact

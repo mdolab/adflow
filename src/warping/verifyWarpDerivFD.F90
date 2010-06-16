@@ -12,8 +12,7 @@ subroutine verifyWarpDerivFD!(ncoords,xyzface,indices_new)
 
   use blockpointers
   use communication
-  use mdDataLocal
-  use mdData, only: mdNSurfNodesCompact,mdGlobalSurfxx
+  use mdData
   use warpingPETSc
   use inputTimeSpectral !nTimeIntervalsSpectral
   implicit none

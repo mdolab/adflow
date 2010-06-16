@@ -18,7 +18,7 @@ import string
 
 # Specify file extension
 
-EXT = '_d.f90'
+EXT = '_d.f90' 
 
 # Specify directory containing the original source files
 # and the output directory for edited files
@@ -32,7 +32,7 @@ LINE_ID = '  USE '
 
 # Specify the string to be find and its replacement
 
-STR_OLD = '_d'
+STR_OLD = '_D'
 STR_NEW = ''
 
 # Some feedback
