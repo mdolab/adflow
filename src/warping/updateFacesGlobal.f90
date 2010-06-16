@@ -11,11 +11,10 @@ subroutine updateFacesGlobal(ncoords,xyz_new,reinitialize)
 
   use blockPointers
   use mdData       !mdNSurfNodesCompact
+  use mdDataLocal   !mdSurfGlobalIndLocal
   use inputTimeSpectral !nTimeIntervalsSpectral
   use section       !nSection, section%
   use monitor       !timeUnsteadyRestart
-  use mdData
-  use mdDataLocal
   implicit none
 
   !Subroutine Arguments

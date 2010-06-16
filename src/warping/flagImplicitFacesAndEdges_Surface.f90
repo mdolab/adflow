@@ -16,8 +16,7 @@ subroutine flagImplicitEdgesAndFacesSurface
 !*****************************************************
 
 use blockPointers
-use mddata
-use mddatalocal
+use mdDataLocal
 implicit none
 
 !Subroutine Arguments

@@ -14,13 +14,15 @@ subroutine mdCreateGlobalReducedSurfaceList
 
 use blockPointers
 use mdData           !mdNSurfNodesCompact,mdGlobalSurfCoords
-use mdDataLocal
+use mdDataLocal    
 use communication !myid
 use inputTimeSpectral !nTimeIntervalsSpectral
 
 implicit none
 
 !Subroutine Arguments
+
+
 
 !Local Variables
 integer(kind=intType) :: startInd, endInd,famID

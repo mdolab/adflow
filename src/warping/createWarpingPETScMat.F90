@@ -24,6 +24,7 @@
       use communication   ! myID, nProc
       use flowVarRefState ! 
       use mdData          !mdNSurfNodes,mdNSurfNodesCompact
+      use mdDataLocal     !mdSurfGlobalIndLocal
       use inputTimeSpectral !nTimeIntervalsSpectral
       implicit none
 !
@@ -77,9 +78,7 @@
       
 	
       nzDiagonalXs = 1
-
       nzDiagonal = min(mdNSurfNodesCompact/nproc,20)!/(nproc*2)!13 ! 1 + 6 + 6  check!!!
-
       !print *,'nzdiagonal', nzDiagonal,mdNSurfNodesCompact
 
       ! Average number of off processor contributions per Cell
