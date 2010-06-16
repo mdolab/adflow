@@ -451,6 +451,7 @@
          !  sFaceK(ie,je,0:ke) - Idem in k-direction.
 
          real(kind=realType), dimension(:,:,:,:),   pointer :: x,xInit,xSW
+         integer(kind=intType), dimension(:,:,:,:), pointer :: fe_id
          real(kind=realType), dimension(:,:,:,:),   pointer :: xplus,xminus
          real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
 
@@ -748,6 +749,7 @@
        end type blockType
 
 
+   
 !
 !      ******************************************************************
 !      *                                                                *
