@@ -41,8 +41,6 @@ FF90_MODULES = warpingPETSc.o
 FF90_OBJECTS = warp_local.o        \
 	       warp-mb.o      \
 	       warpMesh.o\
-	       solidwarpmodule.o\
-	       warpMeshSolid.o\
                initializeWarping.o\
                updateFacesGlobal.o\
                createWarpingPETScMat.o\
