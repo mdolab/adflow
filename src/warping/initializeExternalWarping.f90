@@ -36,7 +36,7 @@ subroutine initializeExternalWarping(ndofcgns)
   integer(kind=intTYpe) :: iBeg,iEnd,jBeg,jEnd,kBeg,kEnd
   integer(kind=intType) :: ist,ien,jst,jen,kst,ken
   integer(kind=intType) :: il_cg,jl_cg,kl_cg
-  integer(kind=intType) :: ierr,mdSumNSurfNodesLocal
+  integer(kind=intType) :: ierr
   integer(kind=intType) ,allocatable,dimension(:) :: dof_offset
   integer(kind=intType) ,allocatable,dimension(:) :: temp
 
@@ -146,8 +146,6 @@ subroutine initializeExternalWarping(ndofcgns)
   ! -------------------------------------------------------------
 
   ! We need to transfer  mdSumNSurfNodesLocal*3 values from this processor
-
-  mdSumNSurfNodesLocal = mdNSurfNodesLocal(1)
 
   allocate(indices(mdSumNSurfNodesLocal*3))   ! -> These are CGNS indices
   allocate(indices2(mdSumNSurfNodesLocal*3))  ! -> These are SUMB indices
