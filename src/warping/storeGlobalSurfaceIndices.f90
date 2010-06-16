@@ -116,8 +116,8 @@ end DO
 
 !compress to be continuous numbering
 compresscounter = 0
-!do i = 1,mdNSurfNodes(nProc,1)!maximum number of possible surface nodes??counter+1
-do i = 1, mdNSurfNodesProc(nProc)
+do i = 1,mdNSurfNodes(nProc,1)!maximum number of possible surface nodes??counter+1
+!do i = 1, mdNSurfNodesProc(nProc)
 
    !if (myid==0) print *,'global surface node...',i,mdNSurfNodes(nProc,1)
    !call sleep(0.2)
