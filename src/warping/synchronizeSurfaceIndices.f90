@@ -46,8 +46,8 @@ subroutine synchronizeSurfaceIndices(level,sps)
   real(KIND=REALTYPE), dimension(3)::coords
   integer(kind=inttype),dimension(3)::indices
   integer(kind=intType),dimension(:),allocatable::incrementI,&
-     incrementJ,incrementK,  incrementdI,&
-     incrementdJ,incrementdK  
+       incrementJ,incrementK,  incrementdI,&
+       incrementdJ,incrementdK  
   integer(kind=inttype),dimension(1)::recvlength
 
   !************************
@@ -55,28 +55,26 @@ subroutine synchronizeSurfaceIndices(level,sps)
   !************************
 
   !Set the inital state to not syncronized
-  
+
   notSynchronized = .True.
   count = 0
-!  if(myID==0)print *,'allocating warp_comm memory'
-  !allocate warp_comm storage
+
   do i=1,nDom
      call setPointers(i,level,sps)
 
      !allocate the memory for the block face communicators
-     
      allocate(flowdoms(i,1,1)%warp_comm(nsubface), stat=ierr)
-       
+
   end do
-  !if(myID==0)print *,'syncronizing'
+
   do while (notSynchronized)
-     ! Set state to synchronized and the check for truth at the end of the 
-     ! loop.
+     ! Set state to synchronized and the check for truth at the end of
+     ! the loop.
      notSynchronized = .False.
 
      !loop over blocks and subfaces
      do i=1,nDom
-    
+
         call setPointers(i,level,sps)
         !print *,'allocating nnodessubface',(.not. associated(nNodesSubface))
         ! Check to see if the memory is allocated to store the total number
@@ -95,11 +93,11 @@ subroutine synchronizeSurfaceIndices(level,sps)
         call getIncrement(nSubface)
         ! and its donor
         call getIncrementD(nSubface)
-        
+
         !if(myID==0)print *,'setting subface range',nsubface
         !Loop over the subfaces
         do j=1,nSubface
-           
+
            ! determine the number of nodes on this subface
            ! Determine which face is active for this subface
            if (BCFaceID(j)== imin) then !imin
@@ -136,10 +134,10 @@ subroutine synchronizeSurfaceIndices(level,sps)
               print *,'Error:Not a valid face type',BCFaceID(j)
            endif
            !print *,'nnodes subface',nNodesSubface(j),BCFaceID(j),j,i,myID
-          
+
            ! Set the length for the communication buffer 3 coords + 3 indices + 1 blocknum
            length = 7*nNodesSubface(j)
-           
+
            !if(myID==0)print *,'allocating send/recieve buffers'
            !allocate the communicators for this subface
            !Generate the receive buffer
@@ -148,14 +146,14 @@ subroutine synchronizeSurfaceIndices(level,sps)
                 allocate(warp_comm(j)%recvBuffer(length))
            if (.not. allocated(warp_comm(j)%sendBuffer)) &
                 allocate(warp_comm(j)%sendBuffer(length))
-          
+
            !Check for one to one matching internal faces
            !print *,'B2BCheck',b2bmatch,BCType(j),i,neighblock(j),j,BCFaceID(j)
            if(BCType(j) == B2BMatch)then
               !Check that face requires interprocessor communication
               if(neighproc(j) /= myid)then
                  !print *,'processor check',neighproc(j) /= myid,neighproc(j), myid
-                 
+
 !!$                 if (myID==2 .and.i ==9)then
 !!$                    print *,'block9',length,nNodesSubface(j),flowDoms(i,1,1)%cgnsBlockID,neighproc(j),neighblock(j),1000000*neighproc(j)+1000*neighblock(j)+i,1000000*myid+1000*(i)+neighblock(j),j
 !!$                 endif
@@ -163,9 +161,9 @@ subroutine synchronizeSurfaceIndices(level,sps)
 !!$                    print *,'block4',length,nNodesSubface(j),flowDoms(i,1,1)%cgnsBlockID,neighproc(j),neighblock(j),1000000*neighproc(j)+1000*neighblock(j)+i,1000000*myid+1000*(i)+neighblock(j),j,'nnodes',nNodesSubface
 !!$                 endif
                  !need communication with blocks on another processor
-                          
+
                  !post non blocking recieves for face communicator
-                
+
                  !Generate a unique tag for this subface
                  !recvtag = 10000*neighproc(j)+100*neighblock(j)+i
                  recvtag = 1000000*neighproc(j)+1000*neighblock(j)+i
@@ -174,10 +172,10 @@ subroutine synchronizeSurfaceIndices(level,sps)
                  call mpi_irecv(warp_comm(j)%recvBuffer(1), length, sumb_real,&
                       neighproc(j), recvtag, sumb_comm_world, &
                       warp_comm(j)%recvreq, ierr)
-                                                                   
+
                  !set a placement counter for the send buffer
                  counter=1
-                                                   
+
                  !Loop over the local indices
                  do l =inmin,inmax,incrementI(j)
                     do m =jnmin,jnmax,incrementJ(j)
@@ -196,7 +194,7 @@ subroutine synchronizeSurfaceIndices(level,sps)
                           counterI =dinbeg(j)+step(1)*incrementdI(j)
                           counterJ =djnbeg(j)+step(2)*incrementdJ(j)
                           counterK =dknbeg(j)+step(3)*incrementdK(j)
-                          
+
                           !#set the value in the send buffer
                           warp_comm(j)%sendBuffer(counter)=x(l,m,n,1)
                           warp_comm(j)%sendBuffer(counter+1)=float(i)!flowDoms(i,1,1)%cgnsBlockID)!x(l,m,n,2)
@@ -211,17 +209,17 @@ subroutine synchronizeSurfaceIndices(level,sps)
                        enddo
                     enddo
                  enddo
-                 
+
                  !Post the buffer send
                  sendtag = 1000000*myid+1000*(i)+neighblock(j)
-                
+
                  call mpi_isend(warp_comm(j)%sendBuffer(1), length,sumb_real,&
                       neighproc(j),sendtag, sumb_comm_world, &
                       warp_comm(j)%sendreq, ierr)
-                 
-                                      
+
+
               else              
-                 
+
                  !internal communication
                  !communicate the blocks that are on the local processor
                  !print the face  connections
@@ -230,7 +228,7 @@ subroutine synchronizeSurfaceIndices(level,sps)
                  do ii =inmin,inmax,incrementI(j)
                     do jj =jnmin,jnmax,incrementJ(j)
                        do kk=knmin,knmax,incrementK(j)
-               
+
                           !#set the counter step based on the face coordinate transformation
                           !step(1) = (abs(ii-inmin))
                           !step(2) = (abs(jj-jnmin))
@@ -238,7 +236,7 @@ subroutine synchronizeSurfaceIndices(level,sps)
                           step(abs(l1(j))) = (abs(ii-inmin))
                           step(abs(l2(j))) = (abs(jj-jnmin))
                           step(abs(l3(j))) = (abs(kk-knmin))
-                         
+
                           !#compute the neighbouring face counters
 !!$                          counterI =dinbeg(j)+step(abs(l1(j)))*incrementdI(j)
 !!$                          print *,'counterI',dinbeg(j),dinend(j),step(abs(l1(j))),abs(l1(j)),incrementdI(j)
@@ -259,9 +257,9 @@ subroutine synchronizeSurfaceIndices(level,sps)
                              neighbourindex = neighblock(j)
                              !reset pointers and get neighbour data
                              call setpointers(neighbourindex,level,sps)
-                            
+
                              neighbour = x(counterI,counterJ,counterK,nn)
-                            
+
                              !Reset pointers to the local block.
                              call setpointers(i,level,sps)
                              local = x(ii,jj,kk,nn)
@@ -269,7 +267,7 @@ subroutine synchronizeSurfaceIndices(level,sps)
                              !check the various options and act accordingly
                              if( int(local) ==-5 )then
                                 !#Then local face is not on surface
-                                
+
                                 !check if neighbour is...
                                 if (int(neighbour)/=-5)then
                                    !neighbout is on surface, update my Global index.
@@ -288,7 +286,7 @@ subroutine synchronizeSurfaceIndices(level,sps)
                                    !neighbour is not a surface,
                                    !keep current index
                                    local = local
-                                  
+
                                 else
                                    !neighbour is on a surface,
                                    !set both indices to lower value 
@@ -303,7 +301,7 @@ subroutine synchronizeSurfaceIndices(level,sps)
                                       !print *,'indices',i,j,neighbourindex,ii,jj,kk
                                       !print *,'iam correct',local,neighbour,ii,jj,kk,counterI,counterJ,counterK
                                       notSynchronized = .True.
-                                  
+
                                    else
                                       !neighbour block is lower
                                       !print *,'indices',i,j,neighbourindex,ii,jj,kk
@@ -314,20 +312,20 @@ subroutine synchronizeSurfaceIndices(level,sps)
                                    endif
                                 end if
                              endif
-                             
+
                           end do
                        end do
                     end do
                  end do
-                 
+
               endif
            else
               !#no communicaton required
               !print *,'no communication required'
               a=1
            endif
-           
-           
+
+
         end do
         !allocate the memory for the block increments
         deallocate(incrementI,incrementJ,incrementK)
@@ -336,11 +334,11 @@ subroutine synchronizeSurfaceIndices(level,sps)
      !if(myID==0)print *,'posts completed',count
      call mpi_barrier(sumb_comm_world, ierr)
      !if(myID==0)print *,'posts completed',count
-     
+
      !loop over blocks and subfaces
      do i=1,nDom
         call setPointers(i,level,sps)
- 
+
         do j=1,nSubface 
            !only check for receives on procesors that posted them
            if(BCType(j) == B2BMatch)then
@@ -357,20 +355,20 @@ subroutine synchronizeSurfaceIndices(level,sps)
 
      !if(myID==0) print *,'waits completed',count
 
-!            #Wait for all of the faces to be comunicated
-!            MPI.Request.Waitall(reqList)
-            
+     !            #Wait for all of the faces to be comunicated
+     !            MPI.Request.Waitall(reqList)
+
 
      !Now loop over the recieved buffers and update the local blocks
-!     if(myID==0) print *,'retrieving data',count
+     !     if(myID==0) print *,'retrieving data',count
      !loop over blocks and subfaces
      do l=1,nDom
         call setPointers(l,level,sps)
-      
+
         do m=1,nSubface
            !if(myID==0) print *,'subface',l,m,ndom,nsubface,count
            ! Check for one to one matching internal faces
-           
+
            if(BCType(m) == B2BMatch)then
               !#Check that face requires interprocessor communication
               if(neighproc(m) /= myid)then
@@ -389,7 +387,7 @@ subroutine synchronizeSurfaceIndices(level,sps)
                     !if(myID==0) print *,'index',index,count
                     !Set the destination block index
                     destblock = int(warp_comm(m)%recvbuffer(index+6))
-                    
+
                     !get the surface indices (coord(1)) and location 
                     !(indices(:)) from the receive buffer
                     coords(:) =  warp_comm(m)%recvbuffer(index:index+2)        
@@ -409,12 +407,12 @@ subroutine synchronizeSurfaceIndices(level,sps)
                     call setPointers(destblock,level,sps)
                     !need only the first coordinate because this 
                     !is only index communication
-                    
+
                     do nn=1,1
-                      
+
                        local = x(indices(1),indices(2),indices(3),nn)
                        realbuf = coords(nn)!real(coords(nn))
-                       
+
                        !check the various options and act accordingly
                        if( int(local) ==-5 )then
                           !#Then local face is not on surface
@@ -423,7 +421,7 @@ subroutine synchronizeSurfaceIndices(level,sps)
                              !neighbour is on surface, update my Global index.
                              x(indices(1),indices(2),indices(3),nn) = int(realbuf)!neighbour
                              notSynchronized = .True.
-                             
+
                           else
                              !neither point is on surface, cycle
                              a=1
@@ -435,13 +433,13 @@ subroutine synchronizeSurfaceIndices(level,sps)
                              !keep current index
                              local = local
                              notSynchronized = .True.
-                             
+
                           else
                              !neighbour is on a surface,
                              !set both indices to value of
                              !lower numbered block
                              if (int(local)==int(realbuf))then
-                               !Both have correct index
+                                !Both have correct index
                                 !do nothing
                                 a=1
                              elseif (int(local)<int(realbuf))then
@@ -456,26 +454,26 @@ subroutine synchronizeSurfaceIndices(level,sps)
                                 !print *,'mpi neighbour correct',int(x(indices(1),indices(2),indices(3),nn)),int(realbuf)
                                 x(indices(1),indices(2),indices(3),nn) = int(realbuf)!neighbour
                                 notSynchronized = .True.
-                     
+
                              endif
                           end if
                        endif
-                    
+
                     end do
                     !return pointers to normal
                     call setPointers(l,level,sps)
-                    
+
                  end do
               end if
            endif
         end do
      end do
-!     if(myID==0) print *,'checking synchronization',count
+     !     if(myID==0) print *,'checking synchronization',count
      call mpi_barrier(sumb_comm_world, ierr)
-!     if(myID==0) print *,'checking synchronization',count
+     !     if(myID==0) print *,'checking synchronization',count
      !Collect logicals for synchronization check.
      call mpi_allreduce(notSynchronized,test,1,MPI_LOGICAL,MPI_LOR,sumb_comm_world,ierr)
- !    if(myID==0) print *,'allreduce complete',count
+     !    if(myID==0) print *,'allreduce complete',count
      if (myid ==0) then !myid
         print *,'Synchronization test',test
      endif
@@ -491,88 +489,88 @@ subroutine synchronizeSurfaceIndices(level,sps)
         print *,'count',count
         exit!break
      endif
-     if (myid ==0) then !myid
-        print *,'count',count
+     !if (myid ==0) then !myid
+     !   print *,'count',count
         !count+=1
-     endif
+  !endif
      count=count+1
      !endif
   end do !do while
-  
+
   !deallocate warp_comm storage
   do i=1,nDom
-     
+
      call setPointers(i,level,sps)
      !allocate the memory for the block face communicators
-     
+
      deallocate(flowdoms(i,1,1)%warp_comm, stat=ierr)
-     
+
   end do
 
-  contains
-    
-    subroutine getIncrement(nSubface)
+contains
 
-      integer(kind=intType),intent(in):: nSubface
-      integer(kind=intType)::i
-      
-      !begin execution
-      
-      ! Determine whether the coordinates are increasing or
-      ! decreasing in each direction for each subface
-      
-      do i =1,nSubface
-         !check for +ve vs -ve increment
-         if (inend(i) >=inbeg(i)) then
-            incrementI(i) = 1
-         else
-            incrementI(i) = -1
-         endif
-         
-         if ( jnend(i) >= jnbeg(i)) then
-            incrementJ(i) = 1
-         else
-            incrementJ(i) = -1
-         endif
-         
-         if ( knend(i) >= knbeg(i)) then
-            incrementK(i) = 1
-         else
-            incrementK(i) = -1
-         endif
-      end do
-    end subroutine getIncrement
+  subroutine getIncrement(nSubface)
 
-    subroutine getIncrementD(nSubface)
+    integer(kind=intType),intent(in):: nSubface
+    integer(kind=intType)::i
 
-      integer(kind=intType),intent(in):: nSubface
-      integer(kind=intType)::i
-      
-      !begin execution
-      
-      ! Determine whether the coordinates are increasing or
-      ! decreasing in each direction for each subface
-      
-      do i =1,nSubface
-         !check for +ve vs -ve increment
-         if (dinend(i) >=dinbeg(i)) then
-            incrementdI(i) = 1
-         else
-            incrementdI(i) = -1
-         endif
-         
-         if ( djnend(i) >= djnbeg(i)) then
-            incrementdJ(i) = 1
-         else
-            incrementdJ(i) = -1
-         endif
-         
-         if ( dknend(i) >= dknbeg(i)) then
-            incrementdK(i) = 1
-         else
-            incrementdK(i) = -1
-         endif
-      end do
-    end subroutine getIncrementD
+    !begin execution
 
-  end subroutine synchronizeSurfaceIndices
+    ! Determine whether the coordinates are increasing or
+    ! decreasing in each direction for each subface
+
+    do i =1,nSubface
+       !check for +ve vs -ve increment
+       if (inend(i) >=inbeg(i)) then
+          incrementI(i) = 1
+       else
+          incrementI(i) = -1
+       endif
+
+       if ( jnend(i) >= jnbeg(i)) then
+          incrementJ(i) = 1
+       else
+          incrementJ(i) = -1
+       endif
+
+       if ( knend(i) >= knbeg(i)) then
+          incrementK(i) = 1
+       else
+          incrementK(i) = -1
+       endif
+    end do
+  end subroutine getIncrement
+
+  subroutine getIncrementD(nSubface)
+
+    integer(kind=intType),intent(in):: nSubface
+    integer(kind=intType)::i
+
+    !begin execution
+
+    ! Determine whether the coordinates are increasing or
+    ! decreasing in each direction for each subface
+
+    do i =1,nSubface
+       !check for +ve vs -ve increment
+       if (dinend(i) >=dinbeg(i)) then
+          incrementdI(i) = 1
+       else
+          incrementdI(i) = -1
+       endif
+
+       if ( djnend(i) >= djnbeg(i)) then
+          incrementdJ(i) = 1
+       else
+          incrementdJ(i) = -1
+       endif
+
+       if ( dknend(i) >= dknbeg(i)) then
+          incrementdK(i) = 1
+       else
+          incrementdK(i) = -1
+       endif
+    end do
+  end subroutine getIncrementD
+
+end subroutine synchronizeSurfaceIndices

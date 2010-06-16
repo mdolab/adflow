@@ -12,7 +12,6 @@ use blockPointers
 use communication
 use monitor
 use inputIO
-use mdDataLocal
 use mdData
 implicit none
 

@@ -39,10 +39,21 @@ vpath %.o $(SUMB_OBJDIR)
 FF90_MODULES = 
 
 FF90_OBJECTS = delq3dm_d.o \
-               warp_local_d.o        \
+               warp_local_d.o \
 	       warpblk_d.o  \
-               warpq3dm_d.o 
-
+               warpq3dm_d.o \
+	       delq3dm_solid_d.o\
+	       param3dm_solid_d.o\
+	       warpblk_solid_d.o\
+               warpq3dm_solid_d.o\
+	       b3ink_d.o\
+	       bintk_d.o\
+	       bnslv_d.o\
+	       btpcf_d.o\
+	       b3val_d.o\
+	       bnfac_d.o\
+	       bspvn_d.o\
+	       bvalu_d.o
 
 CC_OBJECTS   = 
 

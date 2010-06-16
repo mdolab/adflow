@@ -8,95 +8,91 @@
 
 subroutine synchronizeIndices
 
-use blockPointers
-use mdData
-use mdDataLocal
-use communication !myid
+  use BCTypes
+  use blockPointers
+  use mddatalocal
+  use mddata
+  use cgnsGrid
+  use communication !myid
 
-implicit none
+  implicit none
 
-!Subroutine Arguments
+  !Local Variables
+  integer(kind=intType)::level=1,sps=1,nn,mm,i,j,k,ierr
+  integer(kind=intType) :: famBCType,ifam,mstart,mstop
+  logical :: checkFamily
+  integer(kind=intType) :: currBC,famID
+
+  !temporarily reset the coordinates to accomodate the surface synch -- Reset at end
+  do nn=1,nDom
+     call setPointers(nn,level,sps)
+     x(:,:,:,1) = -5
+  enddo
+
+  if (mdnfamilieslocal == 1) then
+     checkFamily = .False.
+  else
+     checkFamily = .True.
+  end if
+!   print *,'mdnfamilieslocal',mdnfamilieslocal
+!   print *,'mdnsurfnodes:',mdNsurfNodesLocal
+!   print *,'checkFamily:',checkFamily
+!   print *,'mdNSurfNodesProc(myID)',mdNSurfNodesProc(myID)
 
 
+  if (checkFamily) then
+     do nn = 1,nDom
+        call setPointers(nn,1,sps)
+        
+        do mm=1,mdNSurfNodesLocal(mdnfamilieslocal)
+           !Check to see that coordinate is in this block. if so, update
+           if(mdSurfIndLocal(4,mm)==nn) then
+              famID = mdSurfIndLocal(6,mm) ! Check this famid
+              currBC = cgnsFamilies(famID)%BCType
+              if(currBC == EulerWall.or.currBC== NSWallAdiabatic .or.currBC==NSWallIsothermal) then
+                 x(mdSurfIndLocal(1,mm),mdSurfIndLocal(2,mm),mdSurfIndLocal(3,mm),1) = mdSurfIndLocal(5,mm)
+              endif
+           end if
+        end do
+     end do
 
-!Local Variables
-integer(kind=intType) :: startInd, endInd,famID
-integer(kind=intType)::level=1,sps=1,nn,mm,i,j,k,ierr
+  else ! No family BCs -> All surface nodes used for warping
+     do nn = 1,nDom
+        call setPointers(nn,1,sps)
+        do mm=1,mdSumNsurfNodesLocal
+           !Check to see that coordinate is in this block. if so, update
+           if(mdSurfIndLocal(4,mm)==nn) then
+              x(mdSurfIndLocal(1,mm),mdSurfIndLocal(2,mm),mdSurfIndLocal(3,mm),1) = mdSurfIndLocal(5,mm)
+           endif
+        end do
+     end do
+  end if
 
 
-!Begin Execution
-
-famID  = 0
-!print *,'creating global list'
-call mdCreateSurfIndList(famID,startInd,endInd)
-
-!print *,'creating local list'
-call mdCreateSurfIndListLocal(famID,startInd,endInd)
-!print *,'local indices',mdNSurfNodesLocal,'global',mdNSurfNodes!(nn)
-
-!temporarily reset the coordinates to accomodate the surface synch
-!set x to -5
-do nn=1,nDom
-   call setPointers(nn,level,sps)
-   x(:,:,:,1) = -5
-enddo
-
-!print *,'setting index in x temporarily'
-!set global index in corresponding x location.
-!loop over domains
-do nn = 1,nDom
-   call setPointers(nn,1,sps)
-   !loop over new coordinates array
-   do mm = 1,mdNSurfNodesLocal(1)
-      !Check to see that coordinate is in this block. if so, update
-      if(mdSurfIndLocal(4,mm)==nn)then
-         x(mdSurfIndLocal(1,mm),mdSurfIndLocal(2,mm),mdSurfIndLocal(3,mm),1) = mdSurfIndLocal(5,mm)
-         !print *,'localblock',flowdoms(nn,level,sps)%cgnsblockid,myid,mdSurfIndLocal(1,mm),mdSurfIndLocal(2,mm),mdSurfIndLocal(3,mm),mdSurfIndLocal(5,mm)
-      endif
-   end do
-end do
-!stop
-
-call mpi_barrier(sumb_comm_world, ierr)
-
-if(myID==0)print *,'synchronizing Surface indices'
+  call mpi_barrier(sumb_comm_world, ierr)
 
 !run syncronize faces
 !what about duplicate nodes at split surface boundaries? Use sychronization to set common nodes to the lower of the two index values.
 call synchronizeSurfaceIndices(level,sps)
-if(myID==0)print *,'indices synchronized'
-
+call mdCreateNsurfNodes ! Needed for storeglobalsurfaceindices
 call storeGlobalSurfaceIndices
-
-!run through each block, counting the number of global indices
-!create a varible only large enough to hold local "globalindex" values. 
-!store global index with corresponding local block and i,j,k info. 
-
-
-!to differentiate loop through local list, storing values in column corresponding to global index
-
 
 !reset the mesh coordinates to initial values to prepare for warp
 do nn=1,nDom
-   call setPointers(nn,level,sps)
-   DO I=1,il!IMAX
-      DO J=1,jl!JMAX
-         DO K=1,kl!KMAX
-!!$            if (nn==11)then
-!!$               print *,'x',x(i,j,k,:),'xinit',xinit(i,j,k,:)
-!!$            endif
-            X(I,J,K,1) = Xinit(I,J,K,1)
-            X(I,J,K,2) = Xinit(I,J,K,2)
-            X(I,J,K,3) = Xinit(I,J,K,3)
-         END DO
-      END DO
-   END DO
+  call setPointers(nn,level,sps)
+  DO I=1,il!IMAX
+     DO J=1,jl!JMAX
+        DO K=1,kl!KMAX
+           X(I,J,K,1) = Xinit(I,J,K,1)
+           X(I,J,K,2) = Xinit(I,J,K,2)
+           X(I,J,K,3) = Xinit(I,J,K,3)
+        END DO
+     END DO
+  END DO
 enddo
 call xhalo(level)
 
 !Now generate the list for interfacing with python
 call mdCreateGlobalReducedSurfaceList
-!print *,'surface list generated'
-!stop
 
 end subroutine synchronizeIndices

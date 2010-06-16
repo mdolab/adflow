@@ -24,7 +24,6 @@
       use communication   ! myID, nProc
       use flowVarRefState ! 
       use mdData          !mdNSurfNodes,mdNSurfNodesCompact
-      use mdDataLocal     !mdSurfGlobalIndLocal
       use inputTimeSpectral !nTimeIntervalsSpectral
       implicit none
 !

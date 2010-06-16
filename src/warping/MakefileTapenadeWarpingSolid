@@ -1,9 +1,9 @@
 #     ******************************************************************
 #     *                                                                *
-#     * File:          MakefileTapenadWarping                          *
-#     * Author:        Sandy Mader                                     *
-#     * Starting date: 12-07-2008                                      *
-#     * Last modified: 12-07-2008                                      *
+#     * File:          MakefileTapenadWarpingSolid                     *
+#     * Author:        Gaetan Kenway                                   *
+#     * Starting date: 04-13-2010                                      *
+#     * Last modified: 04-13-2010                                      *
 #     *                                                                *
 #     ******************************************************************
 
@@ -85,51 +85,37 @@
 #     *                                                                *
 #     ******************************************************************
 
-#JAVA_HOME = /nfs/opal/home/mader/jdk1.5.0_06
-#JAVA_HOME = /home/guysmiley/acmarta/software/tapenade/jre1.5.0_07
-#JAVA_HOME =/home/mader/UTIAS/SRC/jdk1.6.0_06
-#TAPENADE_HOME = /nfs/opal/home/mader/SRC/Tapenade/tapenade2.2
-#TAPENADE_HOME = /home/guysmiley/acmarta/software/tapenade/tapenade2.2
-#TAPENADE_HOME = /home/mader/UTIAS/SRC/tapenade2.2.4
-
-#SOLVER_DIRSRC = /nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src
-#SOLVER_DIRSRC = /home/guysmiley/acmarta/SVN/SUmbVertex/src
-#SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/SUmbVertex/trunk/src
-#SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
-#SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
 SOLVER_DIRSRC = /nfs/mica/home/kenway/svn/pyHF/SUmbADjoint/trunk/src
-#SOLVER_DIRSRC =/nfs/tuff/home/mader/Requires_backup/svn/pyHF/SUmbADjoint/trunk/src
+
 #     ******************************************************************
 #     *                                                                *
 #     * Set Tapenade options.                                          *
 #     *                                                                *
 #     ******************************************************************
 
+
 TAPENADE_PARSERFILESEPARATOR = "/"
-
-# Dependent output variables (separator: white space, default: all)
-
-TAPENADE_OUTVARS = "xyznew"
-
-# Independent input variables (separator: white space, default: all)
-
-TAPENADE_VARS = "xyznew"
-
-# Name of the top routine
-
-TAPENADE_HEADROUTINE = "warp_local"
-
-# Differentiation mode
-
 TAPENADE_MODE = -forward
 
-# Output directory
+# Algebric warping routine info 
+OUTVARS_WARP = "xyz"
+INVARS_WARP = "xyz xyz0"
+ROUTINE_WARP = "warpblk_solid"
+
+# Interpolation routine info
+OUTVARS_INTERP = "bcoef"
+INVARS_INTERP = "fcn"
+ROUTINE_INTERP = "b3intk"
+
+# Evaluation routine info
+OUTVARS_EVAL = "b3val"
+INVARS_EVAL = "bcoef"
+ROUTINE_EVAL = "b3val"
+
 
 TAPENADE_OUTDIR = $(SOLVER_DIRSRC)/warping/warpingTapenade
 
 # Integer, double and real precision (bytes)
-
-#TAPENADE_PRECISION = -i4 -dr8 -r4
 TAPENADE_PRECISION = -i4 -dr8 -r8
 
 #     ******************************************************************
@@ -138,7 +124,7 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 #     *                                                                *
 #     ******************************************************************
 
-TAPENADE_DIRSRC_RES = $(SOLVER_DIRSRC)/warping
+TAPENADE_DIRSRC     = $(SOLVER_DIRSRC)/warping
 TAPENADE_DIRMOD     = $(SOLVER_DIRSRC)/modules
 
 TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
@@ -149,13 +135,25 @@ TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
 #     *                                                                *
 #     ******************************************************************
 
-TAPENADE_SRC_COMMON = $(TAPENADE_DIRSRC_RES)/warp_local.f90 \
-		      $(TAPENADE_DIRSRC_RES)/warp-mb.f90\
+SRC_WARP            = $(TAPENADE_DIRSRC)/warp-mb_solid.f90\
 		      $(TAPENADE_DIRMOD)/blockPointers.f90\
 		      $(TAPENADE_DIRMOD)/block.f90\
 		      $(SOLVER_DIRSRC)/adjoint/residualInput/precision.f90
 
-TAPENADE_SRC_ALL = $(TAPENADE_SRC_COMMON)
+SRC_INTERP          = $(TAPENADE_DIRSRC)/b3ink.f\
+	              $(TAPENADE_DIRSRC)/btpcf.f\
+                      $(TAPENADE_DIRSRC)/bintk.f\
+                      $(TAPENADE_DIRSRC)/bnslv.f\
+                      $(TAPENADE_DIRSRC)/bknot.f\
+                      $(TAPENADE_DIRSRC)/bnslv.f\
+	              $(TAPENADE_DIRSRC)/bspvn.f\
+	              $(TAPENADE_DIRSRC)/bnfac.f\
+
+SRC_EVAL            = $(TAPENADE_DIRSRC)/b3val.f\
+	              $(TAPENADE_DIRSRC)/intrv.f\
+                      $(TAPENADE_DIRSRC)/bvalu.f\
+
+
 
 #     ******************************************************************
 #     *                                                                *
@@ -164,8 +162,12 @@ TAPENADE_SRC_ALL = $(TAPENADE_SRC_COMMON)
 #     ******************************************************************
 
 default:
-	@echo "TAPENADE - parsing and generating differentiated code"
-	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30 -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
+	@echo "TAPENADE - Differentiating algebraic warping routine"
+	tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(OUTVARS_WARP) -vars $(INVARS_WARP) -head $(ROUTINE_WARP) $(TAPENADE_MODE) -msglevel 30 -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(SRC_WARP)
+	@echo "TAPENADE - Differentiating interpolation routine"
+	tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(OUTVARS_INTERP) -vars $(INVARS_INTERP) -head $(ROUTINE_INTERP) $(TAPENADE_MODE) -msglevel 30 -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(SRC_INTERP)
+	@echo "TAPENADE - Differentiating evaluation routine"
+	tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(OUTVARS_EVAL) -vars $(INVARS_EVAL) -head $(ROUTINE_EVAL) $(TAPENADE_MODE) -msglevel 30 -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(SRC_EVAL)
 	@echo "deleting some unnecessary files..."
 	@rm -f $(TAPENADE_OUTDIR)/*__.f90 $(TAPENADE_OUTDIR)/*~
 
