@@ -97,7 +97,8 @@ class SUMB(AeroSolver):
 		self.solver_options_default={
 			'probName':'',
 			'OutputDir':'./',
-			'reinitialize':True,
+			'Equation Type': 'Euler',\
+			'reinitialize':False,
 			'CFL':1.0,
 			'L2Convergence':1e-6,
 			'L2ConvergenceRel':0.0,
@@ -105,7 +106,9 @@ class SUMB(AeroSolver):
 			'MetricConversion':1.0,
 			'Discretization':'Central plus scalar dissipation',
 			'Dissipation Scaling Exponent':0.67,\
+			'Dissipation Coefficients':[0.5,0.015625],\
 			'sol_restart':'no',
+			'Allow block splitting':'no',\
 			'solveADjoint':'no',
 			'set Monitor':'Yes',
 			'printIterations':True,
@@ -137,13 +140,15 @@ class SUMB(AeroSolver):
 		
 		Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
 		'''
-
+	
+		
 		try:
 			kwargs['solver_options'] = self._checkOptions(kwargs['solver_options'])
 		except:
 			kwargs['solver_options'] = self.solver_options_default
 		# end try
-			
+		if self.allInitialized==True:return
+		
 		self.interface.initializeFlow(aero_problem,sol_type,grid_file, *args, **kwargs)
 		self.filename=grid_file
 		self.solver_options_default['reinitialize']=False
@@ -168,20 +173,16 @@ class SUMB(AeroSolver):
 		Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
 		'''
 
-		if self.allInitialized==False:
-			self.initialize(aero_problem,sol_type,grid_file,*args,**kwargs)
-		# end if
+		self.initialize(aero_problem,sol_type,grid_file,*args,**kwargs)
+		
 
-		try:
-			kwargs['solver_options'] = self._checkOptions(kwargs['solver_options'])
-		except:
-			kwargs['solver_options'] = self.solver_options_default
-		# end try
 			
 		if kwargs['solver_options']['reinitialize'] == True:
-			self.interface.initializeFlow(aero_problem,sol_type,grid_file, *args, **kwargs)
-			self.filename=grid_file
+			print 'reinitialization not yet implemented...'
+			sys.exit(0)
+			#self.interface.reinitialize()
 			self.solver_options_default['reinitialize']=False
+
 		# end if
 		
 
@@ -190,7 +191,7 @@ class SUMB(AeroSolver):
 		except KeyError:
 			test=1
 		#endtry
-
+	
 		if(self.interface.myid==0):print ' ->Setting inflowangle'
 		#set inflow angle
 		self.interface.setInflowAngle(aero_problem)

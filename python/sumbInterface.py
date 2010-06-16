@@ -687,7 +687,7 @@ class SUmbInterface(object):
         sumb.inputphysics.liftdirection = liftDir
         sumb.inputphysics.dragdirection = dragDir
 
-        #if (self.myid==0):print 'Alpha',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha,velDir,liftDir,dragDir
+        if (self.myid==0):print '-> Alpha...',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha#,velDir,liftDir,dragDir
         #update the flow vars
         sumb.updateflow()
         return
@@ -701,7 +701,7 @@ class SUmbInterface(object):
 
         return
     
-    def generateInputFile(self,aero_problem,sol_type,grid_file,startfile,file_type='cgns',eqn_type='Euler',*args,**kwargs):
+    def generateInputFile(self,aero_problem,sol_type,grid_file,startfile,file_type='cgns',*args,**kwargs):
         ''' Code to generate an SUmb Input File on the fly'''
         if (self.myid==0): print ' -> Generating Input File'
         
@@ -777,11 +777,11 @@ class SUmbInterface(object):
         autofile.write("\n")
 
         #! Write the keywords and default values for the physics parameters.
-
+        #print 'solver options',kwargs['solver_options']['Equation Type']
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Physics Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "                  Equations: %s\n"%(eqn_type))
+        autofile.write(  "                  Equations: %s\n"%(kwargs['solver_options']['Equation Type']))
         #autofile.write(  "            # Possibilities: Euler")
         #autofile.write(  "            #              : Laminar NS")
         #autofile.write(  "            #              : RANS")
@@ -802,7 +802,7 @@ class SUmbInterface(object):
         #autofile.write(  "        # Other possibility: Temperature curve fits")
         autofile.write( "\n")
 
-        if eqn_type=='RANS':
+        if kwargs['solver_options']['Equation Type']=='RANS':
             autofile.write(  "           Turbulence model: Baldwin Lomax\n")
             #autofile.write(  "            # Possibilities: Baldwin Lomax")
             autofile.write(  "            #              : Spalart Allmaras")
@@ -858,8 +858,8 @@ class SUmbInterface(object):
             autofile.write(  "            Mach for mesh velocity: %12.12e\n"%(0))
         #endif
         autofile.write(  "                          # Default is Mach\n")
-        autofile.write(  "#                         Reynolds: 100000\n")
-        autofile.write(  "       Reynolds length (in meter): 1.0\n")
+        autofile.write(  "                         Reynolds: 100000\n")
+        autofile.write(  "       Reynolds length (in meter): %12.12e\n"%(aero_problem._refs.cref*kwargs['solver_options']['MetricConversion']))
         #autofile.write(  "   Free stream velocity direction: 1.0 0.05 0.0\n")
         #autofile.write(  "                   Lift direction: -0.05 1.0 0.0\n")
         autofile.write(  "   Free stream velocity direction: %12.12e %12.12e %12.12e\n"%(velDir[0],velDir[1],velDir[2]))
@@ -906,7 +906,7 @@ class SUmbInterface(object):
         autofile.write(  "             #              : Upwind\n")
         autofile.write( "\n")
         
-        if eqn_type=='RANS':
+        if kwargs['solver_options']['Equation Type']=='RANS':
             autofile.write(  "   Order turbulent equations: First order\n")
             autofile.write(  "         # Other possibility: Second order\n")
             autofile.write( "\n")
@@ -941,8 +941,8 @@ class SUmbInterface(object):
         autofile.write(  "                  # Other possibility: Conservative\n")
         autofile.write( "\n")
         
-        autofile.write(  "                           Vis2: 0.5\n")
-        autofile.write(  "                           Vis4: 0.015625  # 1/64\n")
+        autofile.write(  "                           Vis2: %10.8f\n"%(kwargs['solver_options']['Dissipation Coefficients'][0]))
+        autofile.write(  "                           Vis4: %10.8f  # 1/64\n"%(kwargs['solver_options']['Dissipation Coefficients'][1]))
         autofile.write(  "Directional dissipation scaling: yes\n")
         autofile.write(  "   Exponent dissipation scaling: %4.2f\n"%(kwargs['solver_options']['Dissipation Scaling Exponent']))
         autofile.write( "\n")
@@ -1021,7 +1021,7 @@ class SUmbInterface(object):
         autofile.write(  "               Number of Runge Kutta stages: 5\n")
         autofile.write( "\n")
 
-        if eqn_type =='RANS':
+        if kwargs['solver_options']['Equation Type'] =='RANS':
             autofile.write(  "              Treatment turbulent equations: Segregated\n")
             autofile.write(  "                        # Other possibility: Coupled\n")
             autofile.write(  "    Number additional turbulence iterations: 0\n")
@@ -1046,7 +1046,7 @@ class SUmbInterface(object):
         autofile.write(  "                         Save surface every: 10\n")
         autofile.write(  "                                 CFL number: %2.1f\n"%(kwargs['solver_options']['CFL']))
         autofile.write( "\n")
-        if eqn_type=='RANS':
+        if kwargs['solver_options']['Equation Type'] =='RANS':
             autofile.write(  "                       Turbulent relaxation: Explixit\n")
             autofile.write(  "                            # Possibilities: Explicit\n")
             autofile.write(  "                            #              : Implicit\n")
@@ -1154,7 +1154,7 @@ class SUmbInterface(object):
         autofile.write(  "     Load balancing Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "        Allowable load imbalance: 0.1\n")
-        autofile.write(  "   Split blocks for load balance: no#yes\n")
+        autofile.write(  "   Split blocks for load balance: %s\n"%(kwargs['solver_options']['Allow block splitting']))
         autofile.write( "\n")
 
 ##        ! Write the visualization parameters.
@@ -1272,7 +1272,7 @@ class SUmbInterface(object):
             autofile.write( "\n")
             
             autofile.write( "                               Rotation center  Rotation rate (rad/s)\n")
-            autofile.write( "Rotating family %s : %6.6f %6.6f %6.6f    0.e+0 0.e+0 0.e+0    \n"%(kwargs['solver_options']['FamilyRot'],kwargs['solver_options']['rotCenter'][0],kwargs['solver_options']['rotCenter'][1],kwargs['solver_options']['rotCenter'][2]))
+            autofile.write( "Rotating family %s : %6.6f %6.6f %6.6f    %6.6f %6.6f %6.6f    \n"%(kwargs['solver_options']['FamilyRot'],kwargs['solver_options']['rotCenter'][0],kwargs['solver_options']['rotCenter'][1],kwargs['solver_options']['rotCenter'][2],kwargs['solver_options']['rotRate'][0],kwargs['solver_options']['rotRate'][1],kwargs['solver_options']['rotRate'][2]))
         except:
             if(self.myid ==0): print ' -> No rotating families Present'
             #endif
@@ -2057,9 +2057,9 @@ class SUmbInterface(object):
         if(self.myid==0):
             print 'ADjoint Initialized Succesfully...'
         #endif
-        if(self.myid==0):print 'before nspatial'
+        if(self.myid==0):print 'before nspatial..   '
         self.nSpatial = sumb.adjointvars.ndesignspatial
-
+        if(self.myid==0):print 'returning....'
         return
 
     def setupADjointMatrix(self):
