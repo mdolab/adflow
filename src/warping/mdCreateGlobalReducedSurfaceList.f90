@@ -14,6 +14,7 @@ subroutine mdCreateGlobalReducedSurfaceList
 
 use blockPointers
 use mdData           !mdNSurfNodesCompact,mdGlobalSurfCoords
+use mdDataLocal
 use communication !myid
 use inputTimeSpectral !nTimeIntervalsSpectral
 

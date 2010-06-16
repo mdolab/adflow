@@ -15,6 +15,7 @@ subroutine updateFacesGlobal(ncoords,xyz_new,reinitialize)
   use section       !nSection, section%
   use monitor       !timeUnsteadyRestart
   use mdData
+  use mdDataLocal
   implicit none
 
   !Subroutine Arguments
