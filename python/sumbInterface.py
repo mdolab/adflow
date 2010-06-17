@@ -609,9 +609,10 @@ class SUmbInterface(object):
             sol_type - solution type - Steady,Unsteady,Time Spectral
             grid_file - name of 3-d Mesh file
             '''
-        if kwargs['solver_options']:
-            self.probName = kwargs['solver_options']['probName']
-            self.OutputDir = kwargs['solver_options']['OutputDir']
+
+        if kwargs['options']:
+            self.probName = kwargs['options']['probName'][1]
+            self.OutputDir = kwargs['options']['OutputDir'][1]
         else:
             self.probName = ''
             self.OutputDir = './'
@@ -637,7 +638,7 @@ class SUmbInterface(object):
         sumb.readparamfile()
 
         # Set printIteration Flag
-        sumb.inputiteration.printiterations = kwargs['solver_options']['printIterations']
+        sumb.inputiteration.printiterations = kwargs['options']['printIterations'][1]
 
         #This is just to flip the -1 to 1 possibly a memory issue?
         sumb.inputio.storeconvinneriter=abs(sumb.inputio.storeconvinneriter)
@@ -740,7 +741,7 @@ class SUmbInterface(object):
             autofile.write("                         Grid file: %s.cgns \n"%(grid_file))
             autofile.write("\n")
             autofile.write("                      Restart file: %s_restart.cgns \n"%(grid_file))
-            autofile.write("                           Restart: %s\n"%(kwargs['solver_options']['sol_restart']))
+            autofile.write("                           Restart: %s\n"%(kwargs['options']['sol_restart'][1]))
             autofile.write("       Check nondimensionalization: yes\n\n")
             autofile.write("                     New grid file: %s%s%s_NewGrid.cgns\n\n"%(self.OutputDir,self.probName,grid_file))
             autofile.write("                     Solution file: %s%s%s_SolSUmb.cgns\n"%(self.OutputDir,self.probName,grid_file))
@@ -777,11 +778,11 @@ class SUmbInterface(object):
         autofile.write("\n")
 
         #! Write the keywords and default values for the physics parameters.
-        #print 'solver options',kwargs['solver_options']['Equation Type']
+        #print 'solver options',kwargs['options']['Equation Type'][1]
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Physics Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "                  Equations: %s\n"%(kwargs['solver_options']['Equation Type']))
+        autofile.write(  "                  Equations: %s\n"%(kwargs['options']['Equation Type'][1]))
         #autofile.write(  "            # Possibilities: Euler")
         #autofile.write(  "            #              : Laminar NS")
         #autofile.write(  "            #              : RANS")
@@ -802,7 +803,7 @@ class SUmbInterface(object):
         #autofile.write(  "        # Other possibility: Temperature curve fits")
         autofile.write( "\n")
 
-        if kwargs['solver_options']['Equation Type']=='RANS':
+        if kwargs['options']['Equation Type'][1]=='RANS':
             autofile.write(  "           Turbulence model: Baldwin Lomax\n")
             #autofile.write(  "            # Possibilities: Baldwin Lomax")
             autofile.write(  "            #              : Spalart Allmaras")
@@ -841,13 +842,13 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Free Stream Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        try: kwargs['solver_options']['FamilyRot']
+        try: kwargs['options']['FamilyRot'][1]
         except KeyError:
             Rotating = False
         else:
             Rotating = True
         #endif
-        #print 'Rotating',Rotating,kwargs['solver_options']['FamilyRot']
+        #print 'Rotating',Rotating,kwargs['options']['FamilyRot'][1]
         if Rotating or sol_type=='Time Spectral':
             autofile.write(  "                             Mach: %12.12e\n"%(0))
             autofile.write(  "            Mach for coefficients: %12.12e\n"%(aero_problem._flows.mach))
@@ -859,13 +860,13 @@ class SUmbInterface(object):
         #endif
         autofile.write(  "                          # Default is Mach\n")
         autofile.write(  "                         Reynolds: 100000\n")
-        autofile.write(  "       Reynolds length (in meter): %12.12e\n"%(aero_problem._refs.cref*kwargs['solver_options']['MetricConversion']))
+        autofile.write(  "       Reynolds length (in meter): %12.12e\n"%(aero_problem._refs.cref*kwargs['options']['MetricConversion'][1]))
         #autofile.write(  "   Free stream velocity direction: 1.0 0.05 0.0\n")
         #autofile.write(  "                   Lift direction: -0.05 1.0 0.0\n")
         autofile.write(  "   Free stream velocity direction: %12.12e %12.12e %12.12e\n"%(velDir[0],velDir[1],velDir[2]))
         autofile.write(  "                   Lift direction: %12.12e %12.12e %12.12e\n"%(liftDir[0],liftDir[1],liftDir[2]))
         autofile.write(  "     # Default is normal to free stream without y-component\n")
-        autofile.write(  "   Free stream temperature (in K): %12.12e\n"%(kwargs['solver_options']['Reference Temp.']))
+        autofile.write(  "   Free stream temperature (in K): %12.12e\n"%(kwargs['options']['Reference Temp.'][1]))
         autofile.write(  " Free stream eddy viscosity ratio: 0.01\n")
         autofile.write(  "  Free stream turbulent intensity: 0.001\n")
         autofile.write(  "\n")
@@ -873,24 +874,24 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Reference State\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "            Reference pressure (in Pa): %12.12e\n"%(kwargs['solver_options']['Reference Pressure']))
+        autofile.write(  "            Reference pressure (in Pa): %12.12e\n"%(kwargs['options']['Reference Pressure'][1]))
         autofile.write(  "         Reference density (in kg/m^3): 1.25\n")
-        autofile.write(  "          Reference temperature (in K): %12.12e\n"%(kwargs['solver_options']['Reference Temp.']))
-        autofile.write(  " Conversion factor grid units to meter: %6.4f\n"%(kwargs['solver_options']['MetricConversion']))
-        self.Mesh.metricConversion = kwargs['solver_options']['MetricConversion']
+        autofile.write(  "          Reference temperature (in K): %12.12e\n"%(kwargs['options']['Reference Temp.'][1]))
+        autofile.write(  " Conversion factor grid units to meter: %6.4f\n"%(kwargs['options']['MetricConversion'][1]))
+        self.Mesh.metricConversion = kwargs['options']['MetricConversion'][1]
         autofile.write( "\n")
         
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Geometrical Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "           Reference surface: %12.12e\n"%(aero_problem._refs.sref*kwargs['solver_options']['MetricConversion']**2))
+        autofile.write(  "           Reference surface: %12.12e\n"%(aero_problem._refs.sref*kwargs['options']['MetricConversion'][1]**2))
 
         #autofile.write(  "           Reference surface: %2.1f\n"%(1.0))
 
-        autofile.write(  "            Reference length: %12.12e\n"%(aero_problem._refs.cref*kwargs['solver_options']['MetricConversion']))
-        autofile.write(  "    Moment reference point x:  %12.12e\n"%(aero_problem._refs.xref*kwargs['solver_options']['MetricConversion']))
-        autofile.write(  "    Moment reference point y:  %12.12e\n"%(aero_problem._refs.yref*kwargs['solver_options']['MetricConversion']))
-        autofile.write(  "    Moment reference point z:  %12.12e\n"%(aero_problem._refs.zref*kwargs['solver_options']['MetricConversion']))
+        autofile.write(  "            Reference length: %12.12e\n"%(aero_problem._refs.cref*kwargs['options']['MetricConversion'][1]))
+        autofile.write(  "    Moment reference point x:  %12.12e\n"%(aero_problem._refs.xref*kwargs['options']['MetricConversion'][1]))
+        autofile.write(  "    Moment reference point y:  %12.12e\n"%(aero_problem._refs.yref*kwargs['options']['MetricConversion'][1]))
+        autofile.write(  "    Moment reference point z:  %12.12e\n"%(aero_problem._refs.zref*kwargs['options']['MetricConversion'][1]))
         autofile.write( "\n")
         
         #! Write the keywords and default values for the discretization
@@ -899,14 +900,14 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Fine Grid Discretization Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "       Discretization scheme: %s\n"%(kwargs['solver_options']['Discretization']))
+        autofile.write(  "       Discretization scheme: %s\n"%(kwargs['options']['Discretization'][1]))
         autofile.write(  "             # Possibilities: Central plus scalar dissipation\n")
         autofile.write(  "             #              : Central plus matrix dissipation\n")
         autofile.write(  "             #              : Central plus CUSP dissipation\n")
         autofile.write(  "             #              : Upwind\n")
         autofile.write( "\n")
         
-        if kwargs['solver_options']['Equation Type']=='RANS':
+        if kwargs['options']['Equation Type'][1]=='RANS':
             autofile.write(  "   Order turbulent equations: First order\n")
             autofile.write(  "         # Other possibility: Second order\n")
             autofile.write( "\n")
@@ -941,10 +942,10 @@ class SUmbInterface(object):
         autofile.write(  "                  # Other possibility: Conservative\n")
         autofile.write( "\n")
         
-        autofile.write(  "                           Vis2: %10.8f\n"%(kwargs['solver_options']['Dissipation Coefficients'][0]))
-        autofile.write(  "                           Vis4: %10.8f  # 1/64\n"%(kwargs['solver_options']['Dissipation Coefficients'][1]))
+        autofile.write(  "                           Vis2: %10.8f\n"%(kwargs['options']['Dissipation Coefficients'][1][0]))
+        autofile.write(  "                           Vis4: %10.8f  # 1/64\n"%(kwargs['options']['Dissipation Coefficients'][1][1]))
         autofile.write(  "Directional dissipation scaling: yes\n")
-        autofile.write(  "   Exponent dissipation scaling: %4.2f\n"%(kwargs['solver_options']['Dissipation Scaling Exponent']))
+        autofile.write(  "   Exponent dissipation scaling: %4.2f\n"%(kwargs['options']['Dissipation Scaling Exponent'][1]))
         autofile.write( "\n")
         autofile.write(  "   Total enthalpy scaling inlet: no\n")
         autofile.write( "\n")
@@ -995,7 +996,7 @@ class SUmbInterface(object):
             autofile.write("-------------------------------------------------------------------------------\n")
             autofile.write("     Time Spectral Parameters\n")
             autofile.write("-------------------------------------------------------------------------------\n")
-            autofile.write("             Number time intervals spectral: %d\n"%(kwargs['solver_options']['Time Intervals']))
+            autofile.write("             Number time intervals spectral: %d\n"%(kwargs['options']['Time Intervals'][1]))
             autofile.write("\n")
             autofile.write("            Write file for unsteady restart: no\n")
             autofile.write("    Time step (in sec) for unsteady restart: 1000\n")
@@ -1021,7 +1022,7 @@ class SUmbInterface(object):
         autofile.write(  "               Number of Runge Kutta stages: 5\n")
         autofile.write( "\n")
 
-        if kwargs['solver_options']['Equation Type'] =='RANS':
+        if kwargs['options']['Equation Type'][1] =='RANS':
             autofile.write(  "              Treatment turbulent equations: Segregated\n")
             autofile.write(  "                        # Other possibility: Coupled\n")
             autofile.write(  "    Number additional turbulence iterations: 0\n")
@@ -1044,16 +1045,16 @@ class SUmbInterface(object):
         autofile.write(  "   Number of single grid startup iterations: 0\n")
         autofile.write(  "                                 Save every: 10\n")
         autofile.write(  "                         Save surface every: 10\n")
-        autofile.write(  "                                 CFL number: %2.1f\n"%(kwargs['solver_options']['CFL']))
+        autofile.write(  "                                 CFL number: %2.1f\n"%(kwargs['options']['CFL'][1]))
         autofile.write( "\n")
-        if kwargs['solver_options']['Equation Type'] =='RANS':
+        if kwargs['options']['Equation Type'][1] =='RANS':
             autofile.write(  "                       Turbulent relaxation: Explixit\n")
             autofile.write(  "                            # Possibilities: Explicit\n")
             autofile.write(  "                            #              : Implicit\n")
             autofile.write(  "                     Alpha turbulent DD-ADI: 0.8\n")
             autofile.write(  "                      Beta turbulent DD-ADI: -1  # Same as alpha\n")
         #endif
-        autofile.write(  "           Relative L2 norm for convergence: %3.2e\n"%(kwargs['solver_options']['L2Convergence']))
+        autofile.write(  "           Relative L2 norm for convergence: %3.2e\n"%(kwargs['options']['L2Convergence'][1]))
         autofile.write( "\n")
 
         autofile.write(  "-------------------------------------------------------------------------------\n")
@@ -1077,7 +1078,7 @@ class SUmbInterface(object):
         autofile.write(  " Treatment boundary multigrid corrections: Zero Dirichlet\n")
         autofile.write(  "            Restriction relaxation factor: 1.0\n")
         autofile.write(  "#                    Multigrid start level:  # Default is coarsest MG level\n")
-        autofile.write(  "                 Multigrid cycle strategy: %s\n"%(kwargs['solver_options']['MGCycle']))
+        autofile.write(  "                 Multigrid cycle strategy: %s\n"%(kwargs['options']['MGCycle'][1]))
         autofile.write( "\n")
 
 #
@@ -1086,45 +1087,45 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "      ADjoint Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        autofile.write(  "                       solve ADjoint :  %s\n"%(kwargs['solver_options']['solveADjoint']))
+        autofile.write(  "                       solve ADjoint :  %s\n"%(kwargs['options']['solveADjoint'][1]))
         autofile.write(  "                  # Other possibility: no\n")
-        autofile.write(  "	                 set monitor   :  %s\n"%(kwargs['solver_options']['set Monitor']))
+        autofile.write(  "	                 set monitor   :  %s\n"%(kwargs['options']['set Monitor'][1]))
         autofile.write(  "                  # Other possibility: no\n")
-        autofile.write(  "       Use Approximate Preconditioner: %s\n"%(kwargs['solver_options']['Approx PC']))
+        autofile.write(  "       Use Approximate Preconditioner: %s\n"%(kwargs['options']['Approx PC'][1]))
         autofile.write(  "                  # Other possibility: yes/no\n")
-        autofile.write(  " 	            Adjoint solver type: %s\n"%(kwargs['solver_options']['Adjoint solver type']))
+        autofile.write(  " 	            Adjoint solver type: %s\n"%(kwargs['options']['Adjoint solver type'][1]))
         autofile.write(  "                # Other possibilities: BiCGStab\n")
         autofile.write(  "                #                      CG\n")
         autofile.write(  "                #                      GMRES\n")
         autofile.write(  "                #                      FGMRES\n")
-        autofile.write(  "        adjoint relative tolerance   : %3.2e\n"%(kwargs['solver_options']['adjoint relative tolerance']))
-        autofile.write(  "        adjoint absolute tolerance   : %3.2e\n"%(kwargs['solver_options']['adjoint absolute tolerance']))
+        autofile.write(  "        adjoint relative tolerance   : %3.2e\n"%(kwargs['options']['adjoint relative tolerance'][1]))
+        autofile.write(  "        adjoint absolute tolerance   : %3.2e\n"%(kwargs['options']['adjoint absolute tolerance'][1]))
         autofile.write(  "        adjoint divergence tolerance : 1e5\n")
-        autofile.write(  "        adjoint max iterations       : %d\n"%kwargs['solver_options']['adjoint max iterations'])
-        autofile.write(  "        adjoint restart iteration    : %d\n"%kwargs['solver_options']['adjoint restart iteration'])
-        autofile.write(  "        adjoint monitor step         : %d\n"%kwargs['solver_options']['adjoint monitor step'])
-        autofile.write(  "        dissipation lumping parameter: %d\n"%kwargs['solver_options']['dissipation lumping parameter'])
+        autofile.write(  "        adjoint max iterations       : %d\n"%kwargs['options']['adjoint max iterations'][1])
+        autofile.write(  "        adjoint restart iteration    : %d\n"%kwargs['options']['adjoint restart iteration'][1])
+        autofile.write(  "        adjoint monitor step         : %d\n"%kwargs['options']['adjoint monitor step'][1])
+        autofile.write(  "        dissipation lumping parameter: %d\n"%kwargs['options']['dissipation lumping parameter'][1])
         
-        autofile.write(  "                  Preconditioner Side: %s\n"%(kwargs['solver_options']['Preconditioner Side']))
+        autofile.write(  "                  Preconditioner Side: %s\n"%(kwargs['options']['Preconditioner Side'][1]))
         autofile.write(  "                # Other possibilities: Left\n")
         autofile.write(  "                #                      Right\n")
-        autofile.write(  "	             Matrix Ordering   : %s\n"%(kwargs['solver_options']['Matrix Ordering']))
+        autofile.write(  "	             Matrix Ordering   : %s\n"%(kwargs['options']['Matrix Ordering'][1]))
         autofile.write(  "	               #                 ReverseCuthillMckee\n")
         autofile.write(  "	               #                 Natural\n")
         autofile.write(  "	               #                 NestedDissection\n")
         autofile.write(  "                     #                 OnewayDissection\n")
         autofile.write(  "                     #                 QuotientMinimumDegree\n")
-        autofile.write(  "          Global Preconditioner Type : %s\n"%(kwargs['solver_options']['Global Preconditioner Type']))
+        autofile.write(  "          Global Preconditioner Type : %s\n"%(kwargs['options']['Global Preconditioner Type'][1]))
         autofile.write(  "          #                            Jacobi\n")
         autofile.write(  "          #                            Block Jacobi\n")
         autofile.write(  "          #                            Additive Schwartz\n")
         autofile.write(  "                         ASM Overlap : 5\n")
-        autofile.write(  "            Local Preconditioner Type: %s\n"%(kwargs['solver_options']['Local Preconditioner Type']))
+        autofile.write(  "            Local Preconditioner Type: %s\n"%(kwargs['options']['Local Preconditioner Type'][1]))
         autofile.write(  "            #                          ILU\n")
         autofile.write(  "            #                          ICC\n")
         autofile.write(  "            #                          LU\n")
         autofile.write(  "            #                          Cholesky\n")
-        autofile.write(  "                    ILU Fill Levels  : %d\n"%kwargs['solver_options']['ILU Fill Levels'])
+        autofile.write(  "                    ILU Fill Levels  : %d\n"%kwargs['options']['ILU Fill Levels'][1])
         autofile.write(  "            Jacobi Scale Factor Type : RowMax\n")
         autofile.write(  "            #                          RowMax\n")
         autofile.write(  "            #                          RowSum\n")
@@ -1135,16 +1136,16 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "TS Stability Derivative Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-	autofile.write(  "compute TS stability derivatives : %s\n"%(kwargs['solver_options']['TS Stability']))
+	autofile.write(  "compute TS stability derivatives : %s\n"%(kwargs['options']['TS Stability'][1]))
 	autofile.write(  "#Other Possibilities:               no\n")
-        if kwargs['solver_options']['TS Stability']== 'yes':
-            autofile.write(  "TS Alpha mode: %s\n"%(kwargs['solver_options']['Alpha Mode']))
-            autofile.write(  "TS Beta mode: %s\n"%(kwargs['solver_options']['Beta Mode']))
-            autofile.write(  "TS p mode: %s\n"%(kwargs['solver_options']['p Mode']))
-            autofile.write(  "TS q mode: %s\n"%(kwargs['solver_options']['q Mode']))
-            autofile.write(  "TS r mode: %s\n"%(kwargs['solver_options']['r Mode']))
-            autofile.write(  "TS Mach number mode: %s\n"%(kwargs['solver_options']['Mach Mode']))
-            autofile.write(  "TS Altitude mode: %s\n"%(kwargs['solver_options']['Altitude Mode']))
+        if kwargs['options']['TS Stability'][1]== 'yes':
+            autofile.write(  "TS Alpha mode: %s\n"%(kwargs['options']['Alpha Mode'][1]))
+            autofile.write(  "TS Beta mode: %s\n"%(kwargs['options']['Beta Mode'][1]))
+            autofile.write(  "TS p mode: %s\n"%(kwargs['options']['p Mode'][1]))
+            autofile.write(  "TS q mode: %s\n"%(kwargs['options']['q Mode'][1]))
+            autofile.write(  "TS r mode: %s\n"%(kwargs['options']['r Mode'][1]))
+            autofile.write(  "TS Mach number mode: %s\n"%(kwargs['options']['Mach Mode'][1]))
+            autofile.write(  "TS Altitude mode: %s\n"%(kwargs['options']['Altitude Mode'][1]))
         #endif
 
         #! Write the keywords and default values for the parallel, i.e.
@@ -1154,7 +1155,7 @@ class SUmbInterface(object):
         autofile.write(  "     Load balancing Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "        Allowable load imbalance: 0.1\n")
-        autofile.write(  "   Split blocks for load balance: %s\n"%(kwargs['solver_options']['Allow block splitting']))
+        autofile.write(  "   Split blocks for load balance: %s\n"%(kwargs['options']['Allow block splitting'][1]))
         autofile.write( "\n")
 
 ##        ! Write the visualization parameters.
@@ -1174,7 +1175,7 @@ class SUmbInterface(object):
             autofile.write("     Grid motion Parameters\n")
             autofile.write( "-------------------------------------------------------------------------------\n")
 
-            autofile.write( "     Rotation point body (x,y,z): %12.12e %12.12e %12.12e\n"%(kwargs['solver_options']['rotCenter'][0],kwargs['solver_options']['rotCenter'][1],kwargs['solver_options']['rotCenter'][2]))
+            autofile.write( "     Rotation point body (x,y,z): %12.12e %12.12e %12.12e\n"%(kwargs['options']['rotCenter'][1][0],kwargs['options']['rotCenter'][1][1],kwargs['options']['rotCenter'][1][2]))
             autofile.write("\n" )
 
             # inputs for TS stability derivatives
@@ -1186,43 +1187,43 @@ class SUmbInterface(object):
             autofile.write( "Polynomial coefficients Beta: 0.0\n")
             autofile.write( "Polynomial coefficients Mach: 0.0\n")
 
-            if kwargs['solver_options']['Alpha Mode'] =='yes':
+            if kwargs['options']['Alpha Mode'][1] =='yes':
                 autofile.write( "Degree fourier Alpha: 1\n")
                 autofile.write( "Degree fourier Beta: 0\n")
                 autofile.write( "Degree fourier Mach: 0#1\n")
-            elif kwargs['solver_options']['Beta Mode'] =='yes':
+            elif kwargs['options']['Beta Mode'][1] =='yes':
                 autofile.write( "Degree fourier Alpha: 0\n")
                 autofile.write( "Degree fourier Beta: 1\n")
                 autofile.write( "Degree fourier Mach: 0\n")
-            elif kwargs['solver_options']['Mach Mode'] =='yes':
+            elif kwargs['options']['Mach Mode'][1] =='yes':
                 autofile.write( "Degree fourier Alpha: 0\n")
                 autofile.write( "Degree fourier Beta: 0\n")
                 autofile.write( "Degree fourier Mach: 1\n")
             #endif
 
-            if kwargs['solver_options']['Alpha Mode'] =='yes':
-                autofile.write( "Omega fourier Alpha: %f\n"%(kwargs['solver_options']['Omega fourier']))
+            if kwargs['options']['Alpha Mode'][1] =='yes':
+                autofile.write( "Omega fourier Alpha: %f\n"%(kwargs['options']['Omega fourier'][1]))
                 autofile.write( "Omega fourier Beta: 0.0\n")
                 autofile.write( "Omega fourier Mach: 0.0\n")
-            elif kwargs['solver_options']['Beta Mode'] =='yes':
+            elif kwargs['options']['Beta Mode'][1] =='yes':
                 autofile.write( "Omega fourier Alpha: 0.0\n")
-                autofile.write( "Omega fourier Beta: %f\n"%(kwargs['solver_options']['Omega fourier']))
+                autofile.write( "Omega fourier Beta: %f\n"%(kwargs['options']['Omega fourier'][1]))
                 autofile.write( "Omega fourier Mach: 0.0\n")
-            elif kwargs['solver_options']['Mach Mode'] =='yes':
+            elif kwargs['options']['Mach Mode'][1] =='yes':
                 autofile.write( "Omega fourier Alpha: 0.0\n")
                 autofile.write( "Omega fourier Beta: 0.0\n")
-                autofile.write( "Omega fourier Mach: %f\n"%(kwargs['solver_options']['Omega fourier']))
+                autofile.write( "Omega fourier Mach: %f\n"%(kwargs['options']['Omega fourier'][1]))
             #endif
 
-            if kwargs['solver_options']['Alpha Mode'] =='yes':
+            if kwargs['options']['Alpha Mode'][1] =='yes':
                 autofile.write( "Fourier cosine coefficients Alpha: 0.0 0.0\n")
-                autofile.write( "Fourier sine coefficients Alpha: %12.12e\n"%(kwargs['solver_options']['Fourier sine coefficient']))
-            elif kwargs['solver_options']['Beta Mode'] =='yes':
+                autofile.write( "Fourier sine coefficients Alpha: %12.12e\n"%(kwargs['options']['Fourier sine coefficient'][1]))
+            elif kwargs['options']['Beta Mode'][1] =='yes':
                 autofile.write( "Fourier cosine coefficients Beta: 0.0 0.0\n")
-                autofile.write( "Fourier sine coefficients Beta: %12.12e\n"%(kwargs['solver_options']['Fourier sine coefficient']))
-            elif kwargs['solver_options']['Mach Mode'] =='yes':
+                autofile.write( "Fourier sine coefficients Beta: %12.12e\n"%(kwargs['options']['Fourier sine coefficient'][1]))
+            elif kwargs['options']['Mach Mode'][1] =='yes':
                 autofile.write( "Fourier cosine coefficients Mach: 0.0 0.0\n")
-                autofile.write( "Fourier sine coefficients Mach: %12.12e\n"%(kwargs['solver_options']['Fourier sine coefficient']))
+                autofile.write( "Fourier sine coefficients Mach: %12.12e\n"%(kwargs['options']['Fourier sine coefficient'][1]))
             #endif
         #endif
 ##        autofile.write( ) "    Degree polynomial x-rotation: 0"
@@ -1272,7 +1273,7 @@ class SUmbInterface(object):
             autofile.write( "\n")
             
             autofile.write( "                               Rotation center  Rotation rate (rad/s)\n")
-            autofile.write( "Rotating family %s : %6.6f %6.6f %6.6f    %6.6f %6.6f %6.6f    \n"%(kwargs['solver_options']['FamilyRot'],kwargs['solver_options']['rotCenter'][0],kwargs['solver_options']['rotCenter'][1],kwargs['solver_options']['rotCenter'][2],kwargs['solver_options']['rotRate'][0],kwargs['solver_options']['rotRate'][1],kwargs['solver_options']['rotRate'][2]))
+            autofile.write( "Rotating family %s : %6.6f %6.6f %6.6f    %6.6f %6.6f %6.6f    \n"%(kwargs['options']['FamilyRot'][1],kwargs['options']['rotCenter'][1][0],kwargs['options']['rotCenter'][1][1],kwargs['options']['rotCenter'][1][2],kwargs['options']['rotRate'][1][0],kwargs['options']['rotRate'][1][1],kwargs['options']['rotRate'][1][2]))
         except:
             if(self.myid ==0): print ' -> No rotating families Present'
             #endif
@@ -1396,7 +1397,7 @@ class SUmbInterface(object):
         #reset python failute check to false
         sumb.killsignals.routinefailed=False
 
-        if sol_type.lower() in ['steady', 'time_spectral']:
+        if sol_type.lower() in ['steady', 'time spectral']:
 
             #set the number of cycles for this call
             sumb.inputiteration.ncycles = ncycles
@@ -1508,7 +1509,7 @@ class SUmbInterface(object):
             if self.myid ==0:print 'Error raise in updateGeometry'
             raise ValueError
         #endif
-        sumb.inputiteration.l2convrel = kwargs['solver_options']['L2ConvergenceRel']
+        sumb.inputiteration.l2convrel = kwargs['options']['L2ConvergenceRel'][1]
                 
         # Now coll the solver
         sumb.solver()
@@ -1522,7 +1523,7 @@ class SUmbInterface(object):
             raise ValueError
         #endif
 
-        if kwargs['solver_options']['printIterations'] == False:
+        if kwargs['options']['printIterations'][1] == False:
             # If we weren't printing iterations, output the 0th (initial) 1st (start of this set of iterations) and final
             if self.myid == 0:
                 print '  -> CFD Initial Rho Norm: %10.5e'%(sumb.monitor.convarray[0,0,0])
