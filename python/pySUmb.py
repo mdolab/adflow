@@ -141,12 +141,6 @@ class SUMB(AeroSolver):
 		Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
 		'''
 	
-		
-		try:
-			kwargs['solver_options'] = self._checkOptions(kwargs['solver_options'])
-		except:
-			kwargs['solver_options'] = self.solver_options_default
-		# end try
 		if self.allInitialized==True:return
 		
 		self.interface.initializeFlow(aero_problem,sol_type,grid_file, *args, **kwargs)
@@ -172,24 +166,29 @@ class SUMB(AeroSolver):
 		
 		Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
 		'''
-
+	
+		try:
+			kwargs['solver_options'] = self._checkOptions(kwargs['solver_options'])
+		except:
+			kwargs['solver_options'] = self.solver_options_default
+		# end try
+	
 		self.initialize(aero_problem,sol_type,grid_file,*args,**kwargs)
 		
 
-			
 		if kwargs['solver_options']['reinitialize'] == True:
 			print 'reinitialization not yet implemented...'
 			sys.exit(0)
-			#self.interface.reinitialize()
+			# self.interface.reinitialize()
 			self.solver_options_default['reinitialize']=False
-
 		# end if
-		
 
-		try:
+
+		if 'niterations' in kwargs:
 			niterations = kwargs['niterations']
-		except KeyError:
-			test=1
+		else:
+			mpiPrint('Error: niterations must be specified in kwargs')
+			sys.exit(0)
 		#endtry
 	
 		if(self.interface.myid==0):print ' ->Setting inflowangle'
@@ -203,7 +202,7 @@ class SUMB(AeroSolver):
 		t0 = time.time()
 		self.interface.RunIterations(sol_type=sol_type,\
 					     ncycles=niterations,\
-					     *args, **kwargs)
+						     *args, **kwargs)
 		sol_time = time.time() - t0
 		if kwargs['solver_options']['printSolTime']:
 			if(self.interface.myid==0):
@@ -248,114 +247,114 @@ class SUMB(AeroSolver):
 		self.callCounter+=1
 		return
 
-# 	def updateMesh(self,xyz,mapping={},meshwarping={}, *args, **kwargs):
-# 		'''
-# 		Take in a new surface and update the mesh
-# 		'''
-# 		# Compute the new CFD coordinates for each set of local CFD
-# 		# Surface points
-# 		#if mapping.cfd_surf_orig.shape[1]!=0:
-# 		#	new_cfd_surf = mapping.getMappedSurface(xyz)
-# 		##endif
-# 		#Global surface defined on all processors
-# 		new_cfd_surf = mapping.getMappedSurface(xyz)
+	def updateMesh(self,xyz,mapping={},meshwarping={}, *args, **kwargs):
+		'''
+		Take in a new surface and update the mesh
+		'''
+		# Compute the new CFD coordinates for each set of local CFD
+		# Surface points
+		#if mapping.cfd_surf_orig.shape[1]!=0:
+		#	new_cfd_surf = mapping.getMappedSurface(xyz)
+		##endif
+		#Global surface defined on all processors
+		new_cfd_surf = mapping.getMappedSurface(xyz)
 		
 	
 
-# #		indices = self.Mesh.GetSurfaceIndicesLocal()
-#                 #print 'surface indices',indices.shape,indices
+#		indices = self.Mesh.GetSurfaceIndicesLocal()
+                #print 'surface indices',indices.shape,indices
 
-# 		## # Translate new coordinates into perturbations
-# ## 		if self.xyz_cfd_orig.shape[1]!=0:
-# ## 			cfd_dispts = xyz_cfd_new - self.xyz_cfd_orig
-# ## 		else:
-# ## 			cfd_dispts = 0.0*self.xyz_cfd_orig
-# ##                 #endif
-# ##                 # what about case where initial block has no surface points but
-# ##                 # association with another block causes perturbations? Handled
-# ##                 # in warp!
+		## # Translate new coordinates into perturbations
+## 		if self.xyz_cfd_orig.shape[1]!=0:
+## 			cfd_dispts = xyz_cfd_new - self.xyz_cfd_orig
+## 		else:
+## 			cfd_dispts = 0.0*self.xyz_cfd_orig
+##                 #endif
+##                 # what about case where initial block has no surface points but
+##                 # association with another block causes perturbations? Handled
+##                 # in warp!
 
-# ##                 #return from perturbations to actual coordinates
-# ## 	        cfd_xyz = self.xyz_cfd_orig + cfd_dispts
-# ## 	        #print 'cfd',cfd_xyz
-# ## 		# do we need this, can't we just pass the coordinates?
-# 		[_parallel,mpi]=self.interface.CheckIfParallel()
+##                 #return from perturbations to actual coordinates
+## 	        cfd_xyz = self.xyz_cfd_orig + cfd_dispts
+## 	        #print 'cfd',cfd_xyz
+## 		# do we need this, can't we just pass the coordinates?
+		[_parallel,mpi]=self.interface.CheckIfParallel()
 		
-# 		if _parallel :
+		if _parallel :
 
-# 			try:
+			try:
 				
-# 				if(self.interface.myid==0):print 'Trying pySUmb internal meshwarping...'
-# 				#Set the internal coordinates
-# 				self.interface.Mesh.SetGlobalSurfaceCoordinates(new_cfd_surf)
-# 				if(self.interface.myid==0):print 'Internal Surfaces set...'
+				if(self.interface.myid==0):print 'Trying pySUmb internal meshwarping...'
+				#Set the internal coordinates
+				self.interface.Mesh.SetGlobalSurfaceCoordinates(new_cfd_surf)
+				if(self.interface.myid==0):print 'Internal Surfaces set...'
 				
-# 				#now Warp the mesh
-# 				self.interface.Mesh.warpMesh()
-# 				if(self.interface.myid==0):print 'Internal warping Finished...'
+				#now Warp the mesh
+				self.interface.Mesh.warpMesh()
+				if(self.interface.myid==0):print 'Internal warping Finished...'
 				
-# 			except:
-# 				if(self.interface.myid==0):print 'pySUmb Internal meshwarping failed, using external...'
-# 				sys.exit(0)
-# 				# Update the Local blocks based on the perturbed points
-# 				# on the local processor
-# 				if mapping.cfd_surf_orig.shape[1]!=0:
-# 					meshwarping.updateLocalBlockFaces(new_cfd_surf,indices)
-# 				#endif
-# 				mpi.WORLD.Barrier()
+			except:
+				if(self.interface.myid==0):print 'pySUmb Internal meshwarping failed, using external...'
+				sys.exit(0)
+				# Update the Local blocks based on the perturbed points
+				# on the local processor
+				if mapping.cfd_surf_orig.shape[1]!=0:
+					meshwarping.updateLocalBlockFaces(new_cfd_surf,indices)
+				#endif
+				mpi.WORLD.Barrier()
 				
-# 				# Propogate perturbations to all blocks based on
-# 				# flow solver information
-# 				meshwarping.synchronizeBlockFaces()
+				# Propogate perturbations to all blocks based on
+				# flow solver information
+				meshwarping.synchronizeBlockFaces()
 			
-#                                 #print 'Block faces synchronized...'
-# 				#Update the local blocks with the fortran routine WARPBLK
-# 				meshwarping.updateLocalBlockCoords()
+                                #print 'Block faces synchronized...'
+				#Update the local blocks with the fortran routine WARPBLK
+				meshwarping.updateLocalBlockCoords()
 
-# 			#endtry
-# ##	            #repeat
-# ##             self.meshwarping.synchronizeBlockFaces()
+			#endtry
+##	            #repeat
+##             self.meshwarping.synchronizeBlockFaces()
 
-# ##             print 'Block faces synchronized...'
-# ##             #Update the local blocks with the fortran routine WARPBLK
-# ##             self.meshwarping.updateLocalBlockCoords()
+##             print 'Block faces synchronized...'
+##             #Update the local blocks with the fortran routine WARPBLK
+##             self.meshwarping.updateLocalBlockCoords()
 	
 
-# 		else:
-# 			ijk_blnum = self.Mesh.GetSurfaceIndices()
-# 			print mpi.rank, "Done with self.Mesh.GetSurfaceIndices('')"
-# 			if mpi.rank == 0:
-# 				if(self.interface.myid==0):print "calling self.meshwarping.Warp ...."
-# 				meshwarping.Warp(new_cfd_surf, ijk_blnum[3,:], ijk_blnum[0:3,:])
-# 				if(self.interface.myid==0):print "done with self.meshwarping.Warp"
+		else:
+			ijk_blnum = self.Mesh.GetSurfaceIndices()
+			print mpi.rank, "Done with self.Mesh.GetSurfaceIndices('')"
+			if mpi.rank == 0:
+				if(self.interface.myid==0):print "calling self.meshwarping.Warp ...."
+				meshwarping.Warp(new_cfd_surf, ijk_blnum[3,:], ijk_blnum[0:3,:])
+				if(self.interface.myid==0):print "done with self.meshwarping.Warp"
 				
-# 				for n in range(1, self.Mesh.GetNumberBlocks()+1):
-# 					#print "In n loop:", mpi.rank, n
+				for n in range(1, self.Mesh.GetNumberBlocks()+1):
+					#print "In n loop:", mpi.rank, n
 				 
-# 					if mpi.rank == 0:
-# 						# Get the new coordinates from warp
-# 						[blocknum,ijkrange,xyz_new] = self.meshwarping.GetCoordinates(n)
-# 					# end if
+					if mpi.rank == 0:
+						# Get the new coordinates from warp
+						[blocknum,ijkrange,xyz_new] = self.meshwarping.GetCoordinates(n)
+					# end if
 				
-# 					if mpi.rank != 0:
-# 						blocknum = None
-# 						ijkrange = None
-# 						xyz_new = None
-# 					# end if
+					if mpi.rank != 0:
+						blocknum = None
+						ijkrange = None
+						xyz_new = None
+					# end if
 				
-# 					blocknum = self.comm_world.bcast(blocknum) 
-# 					ijkrange = self.comm_world.bcast(ijkrange) 
-# 					xyz_new = self.comm_world.bcast(xyz_new) 
+					blocknum = self.comm_world.bcast(blocknum) 
+					ijkrange = self.comm_world.bcast(ijkrange) 
+					xyz_new = self.comm_world.bcast(xyz_new) 
                     
-# 					# Set new mesh coordinates in SUmb
-# 					self.Mesh.SetCoordinates(blocknum, ijkrange, xyz_new.real)	
-# 				# end for
-# 			#endif
-# 		#endif
-# 		if self.myid==0: 
-# 			print " New coordinates set in SUmb ... \n"
-# 		#endif
-# 		return
+					# Set new mesh coordinates in SUmb
+					self.Mesh.SetCoordinates(blocknum, ijkrange, xyz_new.real)	
+				# end for
+			#endif
+		#endif
+		if self.myid==0: 
+			print " New coordinates set in SUmb ... \n"
+		#endif
+		return
 
 	def initAdjoint(self, *args, **kwargs):
 		'''
