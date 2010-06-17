@@ -78,8 +78,45 @@ class SUMB(AeroSolver):
 		# 
 		name = 'SUMB'
 		category = 'Three Dimensional CFD'
-		def_opts = {
-		}
+		def_opts ={
+			'probName':[str,''],
+			'OutputDir':[str,'./'],
+			'Equation Type': [str,'Euler'],
+			'reinitialize':[bool,False],
+			'CFL':[float,1.0],
+			'L2Convergence':[float,1e-6],
+			'L2ConvergenceRel':[float,0.0],
+			'MGCycle':[str,'sg'],
+			'MetricConversion':[float,1.0],
+			'Discretization':[str,'Central plus scalar dissipation'],
+			'Dissipation Scaling Exponent':[str,0.67],
+			'Dissipation Coefficients':[list,[0.5,0.015625]],
+			'sol_restart':[str,'no'],
+			'Allow block splitting':[str,'no'],
+			'solveADjoint':[str,'no'],
+			'set Monitor':[str,'Yes'],
+			'printIterations':[bool,True],
+			'printSolTime':[bool,True],
+			'writeSolution':[bool,True],
+			'Approx PC': [str,'no'],
+			'Adjoint solver type': [str,'GMRES'],
+			'adjoint relative tolerance':[float,1e-10],
+			'adjoint absolute tolerance':[float,1e-16],
+			'adjoint max iterations': [int,500],
+			'adjoint restart iteration' : [int,80],
+			'adjoint monitor step': [int,10],
+			'dissipation lumping parameter':[float,6.0],
+			'Preconditioner Side': [str,'LEFT'],
+			'Matrix Ordering': [str,'NestedDissection'],
+			'Global Preconditioner Type': [str,'Additive Schwartz'],
+			'Local Preconditioner Type' : [str,'ILU'],
+			'ILU Fill Levels': [int,2],
+			'ASM Overlap' : [int,5],
+			'TS Stability': [str,'no'],
+			'Reference Temp.':[float,398.0],
+			'Reference Pressure':[float,101325.0]
+			}
+		
 		informs = {
 		}
 		AeroSolver.__init__(self, name, category, def_opts, informs, *args, **kwargs)
@@ -94,43 +131,6 @@ class SUMB(AeroSolver):
 		self.meshWarpingInitialized=False
 		self.allInitialized = False
 		# If a new option is added, make sure to add a default here!!
-		self.solver_options_default={
-			'probName':'',
-			'OutputDir':'./',
-			'Equation Type': 'Euler',\
-			'reinitialize':False,
-			'CFL':1.0,
-			'L2Convergence':1e-6,
-			'L2ConvergenceRel':0.0,
-			'MGCycle':'sg',
-			'MetricConversion':1.0,
-			'Discretization':'Central plus scalar dissipation',
-			'Dissipation Scaling Exponent':0.67,\
-			'Dissipation Coefficients':[0.5,0.015625],\
-			'sol_restart':'no',
-			'Allow block splitting':'no',\
-			'solveADjoint':'no',
-			'set Monitor':'Yes',
-			'printIterations':True,
-			'printSolTime':True,
-			'writeSolution':True,
-			'Approx PC': 'no',
-			'Adjoint solver type': 'GMRES',
-			'adjoint relative tolerance':1e-10,
-			'adjoint absolute tolerance':1e-16,
-			'adjoint max iterations': 500,
-			'adjoint restart iteration' : 80,
-			'adjoint monitor step': 10,
-			'dissipation lumping parameter':6,
-			'Preconditioner Side': 'LEFT',
-			'Matrix Ordering': 'NestedDissection',
-			'Global Preconditioner Type': 'Additive Schwartz',
-			'Local Preconditioner Type' : 'ILU',
-			'ILU Fill Levels': 2,
-			'ASM Overlap' : 5,
-			'TS Stability': 'no',
-			'Reference Temp.':398,
-			'Reference Pressure':101325.0}
 
 		return
 
@@ -140,12 +140,11 @@ class SUMB(AeroSolver):
 		
 		Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
 		'''
-	
-		if self.allInitialized==True:return
 		
-		self.interface.initializeFlow(aero_problem,sol_type,grid_file, *args, **kwargs)
+
+		if self.allInitialized==True:return
+		self.interface.initializeFlow(aero_problem,sol_type,grid_file,options=self.options, *args, **kwargs)
 		self.filename=grid_file
-		self.solver_options_default['reinitialize']=False
 
 		#check if meshwarping is initialize. If not, do so
 		if (not self.meshWarpingInitialized):
@@ -167,20 +166,14 @@ class SUMB(AeroSolver):
 		Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
 		'''
 	
-		try:
-			kwargs['solver_options'] = self._checkOptions(kwargs['solver_options'])
-		except:
-			kwargs['solver_options'] = self.solver_options_default
-		# end try
 	
 		self.initialize(aero_problem,sol_type,grid_file,*args,**kwargs)
-		
 
-		if kwargs['solver_options']['reinitialize'] == True:
+		if self.getOption('reinitialize'):
 			print 'reinitialization not yet implemented...'
 			sys.exit(0)
 			# self.interface.reinitialize()
-			self.solver_options_default['reinitialize']=False
+			self.setOptions('reinitialize',False)
 		# end if
 
 
@@ -201,26 +194,16 @@ class SUMB(AeroSolver):
 
 		t0 = time.time()
 		self.interface.RunIterations(sol_type=sol_type,\
-					     ncycles=niterations,\
+					     ncycles=niterations,options=self.options,
 						     *args, **kwargs)
 		sol_time = time.time() - t0
-		if kwargs['solver_options']['printSolTime']:
+		if self.getOption('printSolTime'):
 			if(self.interface.myid==0):
 				print 'Solution Time',sol_time
 		
 		# Post-Processing
 		#Write solutions
-## 		try:  kwargs['solver_options']['OutputDir']
-## 		except KeyError:
-## 			#volname=self.filename+'%d'%(self.callCounter)+'vol.cgns'
-##                         #surfname=self.filename+'%d'%(self.callCounter)+'surf.cgns'
-## 			volname=self.filename+'vol.cgns'
-## 			surfname=self.filename+'surf.cgns'
-## 		else:
-## 			volname=kwargs['solver_options']['OutputDir']+self.filename+'vol.cgns'
-## 			surfname=kwargs['solver_options']['OutputDir']+self.filename+'surf.cgns'
-## 		#endif
-		if kwargs['solver_options']['writeSolution']:
+		if self.getOption('writeSolution'):
 			volname=self.interface.OutputDir+self.interface.probName+self.filename+'_vol.cgns'
 			surfname=self.interface.OutputDir+self.interface.probName+self.filename+'_surf.cgns'
 		
@@ -229,14 +212,10 @@ class SUMB(AeroSolver):
 			self.interface.WriteSurfaceSolutionFile(surfname)
 		# end if
 		# get forces? from SUmb attributes
-		try:  kwargs['solver_options']['TS Stability']
-		except KeyError:
-			test=1
-		else:
-			if (kwargs['solver_options']['TS Stability'])=='yes':
-				self.interface.computeStabilityParameters()
- 		        #endif
-		#end
+		if self.getOption('TS Stability') == 'yes':
+			self.interface.computeStabilityParameters()
+		#endif
+
 		
 		# Store Results
 		#aero_problem.addSol(self.__class__.__name__, sol_name, sol_time, sol_inform, 
@@ -1085,21 +1064,6 @@ class SUMB(AeroSolver):
 		# 
 		return self.informs[infocode]
 
-	def _checkOptions(self,solver_options):
-		'''Check the solver options against the default ones
-		and add option iff it is NOT in solver_options
-		'''
-		for key in self.solver_options_default.keys():
-			if not(key in solver_options.keys()):
-				solver_options[key] = self.solver_options_default[key]
-			else:
-				self.solver_options_default[key]=solver_options[key]	
-			# end if
-		# end for
-		return solver_options
-			
-		
-	
 
 
 #==============================================================================
