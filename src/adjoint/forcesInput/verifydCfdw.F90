@@ -964,7 +964,7 @@ subroutine verifydCfdw(level)
 !!$      ! with operation mpi_max.
 !!$
 !!$      call mpi_reduce(time(3), timeAdj, 1, sumb_real, &
-!!$                      mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
+!!$                      mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
       print *,'n'
       if( PETScRank==0 ) &
         write(*,25) "Assembling ADjoint RHS vector..."

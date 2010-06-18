@@ -542,7 +542,7 @@ subroutine setupGradientdCdExtra(level,costFunction)
       ! with operation mpi_max.
 
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-                      mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
+                      mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
 
    !   print *,'time',petscrank,timeadj
       if( PETScRank==0 ) &
@@ -567,7 +567,7 @@ subroutine setupGradientdCdExtra(level,costFunction)
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
-      call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
+      call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       ! Output formats.
 

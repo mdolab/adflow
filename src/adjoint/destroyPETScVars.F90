@@ -217,7 +217,7 @@
 
       ! Synchronize the processors.
 
-      call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
+      call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
 #endif
 

@@ -18,6 +18,7 @@
 !     ******************************************************************
 !
       use constants
+      use communication 
       implicit none
 
 #ifndef USE_NO_PETSC

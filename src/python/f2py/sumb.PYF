@@ -504,6 +504,7 @@ python module sumb ! in
         module communication ! in :sumb:../../modules/communication.f90
             use precision
             integer :: sumb_comm_world
+            integer :: sumb_petsc_comm_world
             integer :: myid
             integer :: nproc
             integer(kind=inttype) :: sendbuffersize_1to1
@@ -1059,6 +1060,21 @@ python module sumb ! in
          integer(kind=inttype) intent(in) :: level
        end subroutine setupadjointmatrixtranspose
        
+       subroutine setupallresidualmatrices(level) ! in :sumb:../../adjoint/setupADjointMatrix.F90
+         use adjointpetsc
+         use adjointvars
+         use blockpointers
+         use cgnsgrid
+         use communication
+         use inputdiscretization
+         use inputtimespectral
+         use iteration
+         use flowvarrefstate
+         use inputadjoint
+         integer(kind=inttype) intent(in) :: level
+       end subroutine setupallresidualmatrices
+
+
         subroutine setupadjointrhs(level,costfunction) ! in :sumb:../../adjoint/setupADjointRHS.F90
             use adjointpetsc
             use adjointvars

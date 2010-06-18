@@ -214,18 +214,18 @@
 	
       !print *,'Entering Domain loop'
       domainLoopAD: do nn=1,nDom
-         
          ! Loop over the number of time instances for this block.
 
          spectralLoop: do sps=1,nTimeIntervalsSpectral
             !print *,'Setting Pointers',nn,level,sps
             call setPointersAdj(nn,level,sps)
-
+           
             ! Loop over location of output (R) cell of residual
 	
             do kCell = 2, kl
                do jCell = 2, jl
                   do iCell = 2, il
+
                      ! Copy the state w to the wAdj array in the stencil
                      call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
                           betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
@@ -235,7 +235,7 @@
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
         
 
-                     
+
                      Aad(:,:,:)  = zero
                      Bad(:,:,:)  = zero
                      BBad(:,:,:) = zero
@@ -262,6 +262,7 @@
                         betaadjb = 0.
                         machadjb = 0.
                         rotrateadjb(:)=0.
+                        !print *,'m:',m
 !                    print *,'dwadjb',dwadjb,'wadjb',wadjb(0,0,0,:)
 !                    print *,'calling reverse mode'
 !                   print *,'secondhalo',secondhalo
@@ -281,7 +282,7 @@
 &  , rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
 &  liftindex)
 
-
+                        
                         ! Store the block Jacobians (by rows).
                         
                         Aad(m,:,:)  = wAdjB( 0, 0, 0,:,:)
@@ -391,7 +392,7 @@
               !
               ! see .../petsc/docs/manualpages/Mat/MatSetValuesBlocked.html
 
-              if(PETScBlockMatrix) then
+               if(PETScBlockMatrix) then
 
                 ! Global matrix block row mgb function of node indices.
                 !
@@ -932,7 +933,7 @@ enddo domainLoopad
       ! with operation mpi_max.
 
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-                      mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
+                      mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       if( PETScRank==0 ) &
         write(*,20) "Assembling ADjoint matrix time (s) = ", timeAdj
@@ -970,7 +971,7 @@ enddo domainLoopad
       ! or PETSc users manual, pp.57,148
 
 !!$      if( debug ) then
-!      call PetscViewerBinaryOpen(PETSC_COMM_WORLD,outfile,FILE_MODE_WRITE,Bin_Viewer,PETScIerr)
+!      call PetscViewerBinaryOpen(SUMB_PETSC_COMM_WORLD,outfile,FILE_MODE_WRITE,Bin_Viewer,PETScIerr)
 !      call MatView(dRdWT,Bin_Viewer,PETScIerr)
 !      call PetscViewerDestroy(Bin_Viewer,PETScIerr)
 !!$        !call MatView(dRdW,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
@@ -1027,7 +1028,7 @@ call mpi_barrier(SUmb_comm_world, ierr)
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
-      call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
+      call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       ! Output formats.
 

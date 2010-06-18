@@ -108,7 +108,7 @@
       ! see .../petsc/docs/manualpages/KSP/KSPCreate.html
       ! or PETSc users manual, pp.63
 
-      call KSPCreate(PETSC_COMM_WORLD, ksp, PETScIerr)
+      call KSPCreate(SUMB_PETSC_COMM_WORLD, ksp, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScKsp", "Error in KSPCreate")  

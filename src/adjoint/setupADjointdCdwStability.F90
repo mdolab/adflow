@@ -554,7 +554,7 @@
       ! with operation mpi_max.
 
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-                      mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
+                      mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       if( PETScRank==0 ) &
         write(*,20) "Assembling dC/dw matrix time (s) =", timeAdj
@@ -602,7 +602,7 @@
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
-      call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
+      call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
       ! Output format.
 
 20    format(a,1x,f8.2)

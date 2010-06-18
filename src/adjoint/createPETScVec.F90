@@ -77,7 +77,7 @@
 !
       ! Create the vector. Depending on either this is a sequential or 
       ! parallel run,  PETSc automatically generates the apropriate
-      ! vector type over all processes in PETSC_COMM_WORLD.
+      ! vector type over all processes in SUMB_PETSC_COMM_WORLD.
 
       ! VecCreate- Creates an empty vector object. The type can then be
       !            set with VecSetType(), or VecSetFromOptions().
@@ -100,7 +100,7 @@
       ! see .../petsc/docs/manualpages/Vec/VecCreate.html
       ! or PETSc users manual, pp.35
 
-      call VecCreate(PETSC_COMM_WORLD, dJdW, PETScIerr)
+      call VecCreate(SUMB_PETSC_COMM_WORLD, dJdW, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScVec", "Error in VecCreate dJdW")
@@ -388,9 +388,9 @@
 !
       ! Create vector. Depending on either this is a sequential or 
       ! parallel run,  PETSc automatically generates the apropriate
-      ! vector type over all processes in PETSC_COMM_WORLD.
+      ! vector type over all processes in SUMB_PETSC_COMM_WORLD.
 
-      call VecCreate(PETSC_COMM_WORLD, dJda, PETScIerr)
+      call VecCreate(SUMB_PETSC_COMM_WORLD, dJda, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScVec", "Error in VecCreate dJda")
@@ -475,9 +475,9 @@
 !
       ! Create the vector. Depending on either this is a sequential or 
       ! parallel run,  PETSc automatically generates the apropriate
-      ! vector type over all processes in PETSC_COMM_WORLD.
+      ! vector type over all processes in SUMB_PETSC_COMM_WORLD.
 
-      call VecCreate(PETSC_COMM_WORLD, dJdx, PETScIerr)
+      call VecCreate(SUMB_PETSC_COMM_WORLD, dJdx, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScVec", "Error in VecCreate dJdx")
@@ -582,7 +582,7 @@
 !
       ! Create the vector. Depending on either this is a sequential or 
       ! parallel run,  PETSc automatically generates the apropriate
-      ! vector type over all processes in PETSC_COMM_WORLD.
+      ! vector type over all processes in SUMB_PETSC_COMM_WORLD.
 
       ! VecCreate- Creates an empty vector object. The type can then be
       !            set with VecSetType(), or VecSetFromOptions().
@@ -605,7 +605,7 @@
       ! see .../petsc/docs/manualpages/Vec/VecCreate.html
       ! or PETSc users manual, pp.35
 
-      call VecCreate(PETSC_COMM_WORLD, phic, PETScIerr)
+      call VecCreate(SUMB_PETSC_COMM_WORLD, phic, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScVec", "Error in VecCreate phic")
@@ -787,7 +787,7 @@
 !
       ! Create the vector. Depending on either this is a sequential or 
       ! parallel run,  PETSc automatically generates the apropriate
-      ! vector type over all processes in PETSC_COMM_WORLD.
+      ! vector type over all processes in SUMB_PETSC_COMM_WORLD.
 
       ! VecCreate- Creates an empty vector object. The type can then be
       !            set with VecSetType(), or VecSetFromOptions().
@@ -810,7 +810,7 @@
       ! see .../petsc/docs/manualpages/Vec/VecCreate.html
       ! or PETSc users manual, pp.35
 
-      call VecCreate(PETSC_COMM_WORLD, dJdC, PETScIerr)
+      call VecCreate(SUMB_PETSC_COMM_WORLD, dJdC, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScVec", "Error in VecCreate dJdC")
@@ -988,11 +988,11 @@
       !create the PETSc Vector aswell
       ! Create the vector. Depending on either this is a sequential or 
       ! parallel run,  PETSc automatically generates the apropriate
-      ! vector type over all processes in PETSC_COMM_WORLD.
+      ! vector type over all processes in SUMB_PETSC_COMM_WORLD.
 
-      call VecCreate(PETSC_COMM_WORLD, dIdxsDV, PETScIerr)
-!!$      call VecCreate(PETSC_COMM_WORLD, dIdxs2, PETScIerr)
-!!$      call VecCreate(PETSC_COMM_WORLD, dJdxs2, PETScIerr)
+      call VecCreate(SUMB_PETSC_COMM_WORLD, dIdxsDV, PETScIerr)
+!!$      call VecCreate(SUMB_PETSC_COMM_WORLD, dIdxs2, PETScIerr)
+!!$      call VecCreate(SUMB_PETSC_COMM_WORLD, dJdxs2, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("computeADjointGradientSurface", "Error in VecCreate dIdxs")

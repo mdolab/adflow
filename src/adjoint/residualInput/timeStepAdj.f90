@@ -114,7 +114,8 @@
 !          * Compute the cell centered values of the spectral radii.    *
 !          *                                                            *
 !          **************************************************************
-!
+           !
+           !print *,'precond:',precond
            select case (precond)
 
              case (noPrecond)
@@ -132,7 +133,7 @@
                       jj = jcell+j
                       kk = kcell+k
                      ! Compute the velocities and speed of sound squared.
-
+                      !print *,'i,j,k:',i,j,k
                      ux  = wAdj(i,j,k,ivx,sps2)
                      uy  = wAdj(i,j,k,ivy,sps2)
                      uz  = wAdj(i,j,k,ivz,sps2)
@@ -209,7 +210,7 @@
                    enddo
                  enddo
                enddo
-
+               !print *,'made it here'
              case (Turkel)
                call terminate("timeStep", &
                               "Turkel preconditioner not &
@@ -240,7 +241,7 @@
 
                    ! Avoid division by zero by clipping radi, radJ and
                    ! radK.
-
+                       !print *,'i,j,k:',i,j,k,'her'
                    ri = max(radiAdj(i,j,k,sps2),eps)
                    rj = max(radJAdj(i,j,k,sps2),eps)
                    rk = max(radKAdj(i,j,k,sps2),eps)
@@ -372,6 +373,7 @@
 !!$             do k=2,kl
 !!$               do j=2,jl
 !!$                 do i=2,il
+                      !print *,'i,j,k two:',i,j,k
                    dpi = abs(pAdj(i+1,j,k,sps2) - two*pAdj(i,j,k,sps2) + pAdj(i-1,j,k,sps2)) &
                        /    (pAdj(i+1,j,k,sps2) + two*pAdj(i,j,k,sps2) + pAdj(i-1,j,k,sps2) + plim)
                    dpj = abs(pAdj(i,j+1,k,sps2) - two*pAdj(i,j,k,sps2) + pAdj(i,j-1,k,sps2)) &
@@ -389,5 +391,5 @@
 !!$
 !!$         enddo domains
 !!$       enddo spectralLoop
-
+           !print *,'done timestepadj'
      end subroutine timeStepAdj

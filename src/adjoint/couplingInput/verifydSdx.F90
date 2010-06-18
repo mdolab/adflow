@@ -548,7 +548,7 @@ subroutine verifydSdx(level)
 !!$      ! with operation mpi_max.
 !!$
 !!$      call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-!!$                      mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
+!!$                      mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
 !!$
 !!$      if( PETScRank==0 ) &
 !!$        write(*,20) "Assembling dS/dx matrix time (s) =", timeAdj
@@ -823,7 +823,7 @@ subroutine verifydSdx(level)
 !!$      ! with operation mpi_max.
 !!$
 !!$      call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-!!$                      mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
+!!$                      mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
 !!$
 !!$      if( PETScRank==0 ) &
 !!$        write(*,20) "Assembling dS/dx matrix time (s) =", timeAdj

@@ -48,7 +48,7 @@
       ! call PetscInitialize(int *argc,char ***args,const char file[], &
       !                      const char help[],PetscErrorCode ierr)
       !
-      ! Collective on MPI_COMM_WORLD or PETSC_COMM_WORLD
+      ! Collective on MPI_COMM_WORLD or SUMB_PETSC_COMM_WORLD
       !   if it has been set
       !
       ! Input Parameters
@@ -61,7 +61,7 @@
       !
       ! If you wish PETSc to run on a subcommunicator of MPI_COMM_WORLD,
       !   create that communicator first and assign it to
-      !   PETSC_COMM_WORLD BEFORE calling PetscInitialize() 
+      !   SUMB_PETSC_COMM_WORLD BEFORE calling PetscInitialize() 
       !
       ! Notes
       ! If for some reason you must call MPI_Init() separately, call it
@@ -100,13 +100,13 @@
 
       ! Set the PETSc communicator to the SUmb communicator.
 
-      PETSC_COMM_WORLD = SUmb_comm_world
+      SUMB_PETSC_COMM_WORLD = SUmb_comm_world
       PETSC_COMM_SELF = SUmb_comm_self
 
       ! Determine the communicator size and the processor rank.
 
-      call MPI_Comm_size(PETSC_COMM_WORLD, PETScSize, PETScIerr)
-      call MPI_Comm_rank(PETSC_COMM_WORLD, PETScRank, PETScIerr)
+      call MPI_Comm_size(SUMB_PETSC_COMM_WORLD, PETScSize, PETScIerr)
+      call MPI_Comm_rank(SUMB_PETSC_COMM_WORLD, PETScRank, PETScIerr)
 
       ! Send some feedback to screen.
 
@@ -128,7 +128,7 @@
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
-      call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
+      call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       ! Output format.
 
