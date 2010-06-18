@@ -276,7 +276,7 @@ subroutine verifydIdwfile(level)
       ! with operation mpi_max.
 
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-                      mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
+                      mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       if( PETScRank==0 ) &
         write(*,20) "Assembling ADjoint TS RHS vector time (s) = ", timeAdj

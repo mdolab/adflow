@@ -44,7 +44,8 @@ FF90_OBJECTS_1 = precision.o\
 FF90_OBJECTS_2 = bleedFlows.o\
 		 constants.o\
 		 coolingModelLevel0.o\
-		 killSignals.o
+		 killSignals.o\
+		 communication.o\
 
 FF90_OBJECTS_3 = ADjointPETSc.o\
 		 ADjointVars.o\
@@ -57,7 +58,6 @@ FF90_OBJECTS_4 = BCTypes.o\
 		 cgnsNames.o\
 		 commMixing.o\
 		 commSliding.o\
-		 communication.o\
 		 couplerParam.o\
 		 CpCurveFits.o\
 		 extraOutput.o\

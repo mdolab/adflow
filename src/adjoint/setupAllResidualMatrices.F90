@@ -1214,7 +1214,7 @@ enddo domainLoopad
       ! with operation mpi_max.
 
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-                      mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
+                      mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       if( PETScRank==0 ) &
         write(*,20) "Assembling All Residaul Matrices time (s) = ", timeAdj
@@ -1252,7 +1252,7 @@ enddo domainLoopad
       ! or PETSc users manual, pp.57,148
 
 !!$      if( debug ) then
-!      call PetscViewerBinaryOpen(PETSC_COMM_WORLD,outfile,FILE_MODE_WRITE,Bin_Viewer,PETScIerr)
+!      call PetscViewerBinaryOpen(SUMB_PETSC_COMM_WORLD,outfile,FILE_MODE_WRITE,Bin_Viewer,PETScIerr)
 !      call MatView(dRdWT,Bin_Viewer,PETScIerr)
 !      call PetscViewerDestroy(Bin_Viewer,PETScIerr)
 !!$        !call MatView(dRdW,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
@@ -1309,7 +1309,7 @@ call mpi_barrier(SUmb_comm_world, ierr)
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
-      call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
+      call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       ! Output formats.
 

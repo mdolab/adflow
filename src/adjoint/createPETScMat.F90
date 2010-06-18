@@ -186,13 +186,13 @@
         nnzDiagonal = nzDiagonalW
         nnzOffDiag  = nzOffDiag
         !print *,'nnzDiagonal',nnzDiagonal,'ofdiag',nnzOffDiag 
-!!$        call MatCreateMPIBAIJ(PETSC_COMM_WORLD, nw,             &
+!!$        call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
 !!$                              nDimW, nDimW,                     &
 !!$                              PETSC_DETERMINE, PETSC_DETERMINE, &
 !!$                              nzDiagonalW, nnzDiagonal,         &
 !!$                              nzOffDiag, nnzOffDiag,            &
 !!$                              dRdW, PETScIerr)
-        call MatCreateMPIBAIJ(PETSC_COMM_WORLD, nw,             &
+        call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
                               nDimW, nDimW,                     &
                               PETSC_DETERMINE, PETSC_DETERMINE, &
                               nzDiagonalW, nnzDiagonal,         &
@@ -292,14 +292,14 @@
         nnzDiagonal = nzDiagonalW
         nnzOffDiag  = nzOffDiag
 
-!!$        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+!!$        call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
 !!$                             nDimW, nDimW,                     &
 !!$                             PETSC_DETERMINE, PETSC_DETERMINE, &
 !!$                             nzDiagonalW, nnzDiagonal,         &
 !!$                             nzOffDiag, nnzOffDiag,            &
 !!$                             dRdW, PETScIerr)
 
-        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+        call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
                              nDimW, nDimW,                     &
                              PETSC_DETERMINE, PETSC_DETERMINE, &
                              nzDiagonalW, nnzDiagonal,         &
@@ -474,13 +474,13 @@ if (ApproxPC) then
         nnzDiagonal = nzDiagonalWPC
         nnzOffDiag  = nzOffDiag
         !print *,'nnzDiagonal',nnzDiagonal,'ofdiag',nnzOffDiag 
-!!$        call MatCreateMPIBAIJ(PETSC_COMM_WORLD, nw,             &
+!!$        call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
 !!$                              nDimW, nDimW,                     &
 !!$                              PETSC_DETERMINE, PETSC_DETERMINE, &
 !!$                              nzDiagonalW, nnzDiagonal,         &
 !!$                              nzOffDiag, nnzOffDiag,            &
 !!$                              dRdWPre, PETScIerr)
-        call MatCreateMPIBAIJ(PETSC_COMM_WORLD, nw,             &
+        call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
                               nDimW, nDimW,                     &
                               PETSC_DETERMINE, PETSC_DETERMINE, &
                               nzDiagonalW, nnzDiagonal,         &
@@ -580,13 +580,13 @@ if (ApproxPC) then
         nnzDiagonal = nzDiagonalWPC
         nnzOffDiag  = nzOffDiag
 
-!!$        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+!!$        call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
 !!$                             nDimW, nDimW,                     &
 !!$                             PETSC_DETERMINE, PETSC_DETERMINE, &
 !!$                             nzDiagonalW, nnzDiagonal,         &
 !!$                             nzOffDiag, nnzOffDiag,            &
 !!$                             dRdWPre, PETScIerr)
-        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+        call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
                              nDimW, nDimW,                     &
                              PETSC_DETERMINE, PETSC_DETERMINE, &
                              nzDiagonalW, nnzDiagonal,         &
@@ -770,7 +770,7 @@ if(Debug) then
         nnzDiagonal = nzDiagonalW
         nnzOffDiag  = nzOffDiag
 
-        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+        call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
                              nDimW, nDimW,                     &
                              PETSC_DETERMINE, PETSC_DETERMINE, &
                              nzDiagonalW, nnzDiagonal,         &
@@ -1006,7 +1006,7 @@ if(Debug) then
 !
       ! Create the matrix. Depending on either this is a sequential or 
       ! parallel run,  PETSc automatically generates the apropriate
-      ! matrix type over all processes in PETSC_COMM_WORLD
+      ! matrix type over all processes in SUMB_PETSC_COMM_WORLD
 
       ! MatCreate - Creates a matrix where the type is determined from
       !   either a call to MatSetType() or from the options database
@@ -1031,7 +1031,7 @@ if(Debug) then
       ! see .../petsc/docs/manualpages/Mat/MatCreate.html
       ! or PETSc users manual, pp.51-52
 
-      call MatCreate(PETSC_COMM_WORLD, dRda, PETScIerr)
+      call MatCreate(SUMB_PETSC_COMM_WORLD, dRda, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatCreate dRda")
@@ -1176,7 +1176,7 @@ if(Debug) then
 
       ! Create the matrix dRdx.
 
-      call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+      call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
                            nDimW, nDimX,                     &
                            PETSC_DETERMINE, PETSC_DETERMINE, &
                            nzDiagonalX, nnzDiagonal,         &
@@ -1193,7 +1193,7 @@ if(Debug) then
 
       ! Create the matrix. Depending on either this is a sequential or
       ! parallel run,  PETSc automatically generates the apropriate
-      ! matrix type over all processes in PETSC_COMM_WORLD
+      ! matrix type over all processes in SUMB_PETSC_COMM_WORLD
       ! MatCreateMPIAIJ
       ! Creates a sparse parallel matrix in AIJ format (the default 
       ! parallel PETSc format). For good matrix assembly performance the 
@@ -1250,7 +1250,7 @@ if(Debug) then
 !###      nnzDiagonal(:) = nw**3*3!375 for euler ! ### for 2nd order stencil ###
 !###      nnzOffDiag(:)  = nw**3*3!375
       
-!###      call MatCreateMPIAIJ(PETSC_COMM_WORLD, nDim, nDimx, PETSC_DETERMINE,&
+!###      call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD, nDim, nDimx, PETSC_DETERMINE,&
 !###           PETSC_DETERMINE, nw**3*3, nnzDiagonal,nw**3*3, nnzOffDiag, dRdx,&
 !###	   PETScIerr)
 
@@ -1290,7 +1290,7 @@ if(Debug) then
 !!$      ! see .../petsc/docs/manualpages/Mat/MatCreate.html
 !!$      ! or PETSc users manual, pp.51-52
 !!$
-!!$      call MatCreate(PETSC_COMM_WORLD, dRdx, PETScIerr)
+!!$      call MatCreate(SUMB_PETSC_COMM_WORLD, dRdx, PETScIerr)
 !!$
 !!$        if( PETScIerr/=0 ) &
 !!$          call terminate("createPETScMat","Error in MatCreate dRdx")
@@ -1450,7 +1450,7 @@ if(debug)then
 
       ! Create the matrix dRdx.
 
-      call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+      call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
                            nDimW, nDimX,                     &
                            PETSC_DETERMINE, PETSC_DETERMINE, &
                            nzDiagonalX, nnzDiagonal,         &
@@ -1573,7 +1573,7 @@ if(.false.)then
 
       ! Create the matrix dSdx.
 
-      call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+      call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
                            nDimS, nDimX,                     &
                            PETSC_DETERMINE, PETSC_DETERMINE, &
                            nzDiagonalX, nnzDiagonal,         &
@@ -1706,7 +1706,7 @@ if( debug) then
 
       ! Create the matrix dSdxfd.
 
-      call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+      call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
                            nDimS, nDimX,                     &
                            PETSC_DETERMINE, PETSC_DETERMINE, &
                            nzDiagonalX, nnzDiagonal,         &
@@ -1838,7 +1838,7 @@ if(.false.)then
 
       ! Create the matrix dSdx.
 
-      call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+      call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
                            nDimS, nDimW,                     &
                            PETSC_DETERMINE, PETSC_DETERMINE, &
                            nzDiagonalX, nnzDiagonal,         &
@@ -1958,7 +1958,7 @@ if(.false.)then
 !
       ! Create the matrix. Depending on either this is a sequential or 
       ! parallel run,  PETSc automatically generates the apropriate
-      ! matrix type over all processes in PETSC_COMM_WORLD
+      ! matrix type over all processes in SUMB_PETSC_COMM_WORLD
 
       ! MatCreate - Creates a matrix where the type is determined from
       !   either a call to MatSetType() or from the options database
@@ -1983,7 +1983,7 @@ if(.false.)then
       ! see .../petsc/docs/manualpages/Mat/MatCreate.html
       ! or PETSc users manual, pp.51-52
 
-      call MatCreate(PETSC_COMM_WORLD, dCdw, PETScIerr)
+      call MatCreate(SUMB_PETSC_COMM_WORLD, dCdw, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatCreate dCdw")
@@ -2120,7 +2120,7 @@ if(.false.)then
 !
       ! Create the matrix. Depending on either this is a sequential or 
       ! parallel run,  PETSc automatically generates the apropriate
-      ! matrix type over all processes in PETSC_COMM_WORLD
+      ! matrix type over all processes in SUMB_PETSC_COMM_WORLD
 
       ! MatCreate - Creates a matrix where the type is determined from
       !   either a call to MatSetType() or from the options database
@@ -2145,7 +2145,7 @@ if(.false.)then
       ! see .../petsc/docs/manualpages/Mat/MatCreate.html
       ! or PETSc users manual, pp.51-52
 
-      call MatCreate(PETSC_COMM_WORLD, dCdx, PETScIerr)
+      call MatCreate(SUMB_PETSC_COMM_WORLD, dCdx, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatCreate dCdx")
@@ -2291,7 +2291,7 @@ if(.false.)then
 !
       ! Create the matrix. Depending on either this is a sequential or 
       ! parallel run,  PETSc automatically generates the apropriate
-      ! matrix type over all processes in PETSC_COMM_WORLD
+      ! matrix type over all processes in SUMB_PETSC_COMM_WORLD
 
       ! MatCreate - Creates a matrix where the type is determined from
       !   either a call to MatSetType() or from the options database
@@ -2316,7 +2316,7 @@ if(.false.)then
       ! see .../petsc/docs/manualpages/Mat/MatCreate.html
       ! or PETSc users manual, pp.51-52
 
-      call MatCreate(PETSC_COMM_WORLD, dCda, PETScIerr)
+      call MatCreate(SUMB_PETSC_COMM_WORLD, dCda, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScMat", "Error in MatCreate dCda")
@@ -2441,7 +2441,7 @@ if(.false.)then
 
      ! Synchronize the processors.
 
-     call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
+     call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
 !     ******************************************************************
       ! Output formats.

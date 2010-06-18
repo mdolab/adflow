@@ -420,7 +420,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
       ! with operation mpi_max.
       
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-           mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
+           mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
       
       if( PETScRank==0 ) &
            write(*,20) "Assembling dI/dC matrix time (s) =", timeAdj

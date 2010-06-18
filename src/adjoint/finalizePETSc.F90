@@ -40,7 +40,7 @@
       ! #include "petsc.h"   
       ! call PetscFinalize(PetscErrorCode ierr)
       !
-      ! Collective on PETSC_COMM_WORLD
+      ! Collective on SUMB_PETSC_COMM_WORLD
       !
       ! see .../petsc/docs/manualpages/Sys/PetscFinalize.html
       ! or PETSc users manual, pp.17
@@ -62,7 +62,7 @@
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
-      call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
+      call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       ! Output format.
 

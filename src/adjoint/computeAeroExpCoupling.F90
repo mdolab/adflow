@@ -510,7 +510,7 @@
       ! with operation mpi_max.
 
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-                      mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
+                      mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       if( PETScRank==0 ) &
         write(*,20) "Assembling dJ/dspatial vector time (s) =", timeAdj
@@ -555,7 +555,7 @@
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
-      call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
+      call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       !now retrieve the vector
 
@@ -613,10 +613,10 @@
 
       !call mpi_gather(nDesignLocal, 1, sumb_integer, &
       !                nDesignGlobal, 1, sumb_integer, &
-      !                0, PETSC_COMM_WORLD, PETScIerr)
+      !                0, SUMB_PETSC_COMM_WORLD, PETScIerr)
       call mpi_allgather(nDesignLocal, 1, sumb_integer, &
                       nDesignGlobal, 1, sumb_integer, &
-                       PETSC_COMM_WORLD, PETScIerr)
+                       SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       ! Gather the displacement of the number of design variables
       ! per processor in the root processor.
@@ -627,10 +627,10 @@
 
       !call mpi_gather(nDisplsLocal, 1, sumb_integer, &
       !                nDisplsGlobal, 1, sumb_integer, &
-       !               0, PETSC_COMM_WORLD, PETScIerr)
+       !               0, SUMB_PETSC_COMM_WORLD, PETScIerr)
       call mpi_allgather(nDisplsLocal, 1, sumb_integer, &
                       nDisplsGlobal, 1, sumb_integer, &
-                       PETSC_COMM_WORLD, PETScIerr)
+                       SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       ! Gather the total gradients in the root processor.
       ! Note: if the local processor does not hold any design variable
@@ -640,13 +640,13 @@
 !      call mpi_gatherv(functionGradLocal, nDesignLocal, sumb_real, &
 !                       functionGradSpatial(costFunction,:), nDesignGlobal,&
 !                       nDisplsGlobal, sumb_real, &
-!                       0, PETSC_COMM_WORLD, PETScIerr)
+!                       0, SUMB_PETSC_COMM_WORLD, PETScIerr)
 
 
        call mpi_allgatherv(functionGradLocal, nDesignLocal, sumb_real, &
                        functionGradCouplingExp(costFunction,:), nDesignGlobal,&
                        nDisplsGlobal, sumb_real, &
-                        PETSC_COMM_WORLD, PETScIerr)
+                        SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       ! Release memory to store the local function gradient values.
 
@@ -658,7 +658,7 @@
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
-      call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
+      call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
 
       ! Output formats.

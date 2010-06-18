@@ -29,6 +29,7 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
   USE inputtimespectral
   USE monitor
   USE section
+  use communication
   IMPLICIT NONE
 !end do
 ! print *,'nn end',nn
@@ -133,6 +134,8 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 ! *************************************************************************
 !print *,'in computeRadj',wadj(:,:,:,irho)!
 !      call the initialization routines to calculate the effect of Mach and alpha
+
+!  print *,'myid, one',myid
   CALL ADJUSTINFLOWANGLEADJ(alphaadj, betaadj, veldirfreestreamadj, &
 &                      liftdirectionadj, dragdirectionadj, liftindex)
   CALL PUSHREAL8ARRAY(veldirfreestreamadj, 3)
@@ -156,6 +159,7 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 &                         uinfadj, winfadj, prefadj, rhorefadj, &
 &                         pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
 &                         murefadj, timerefadj, pinfcorradj)
+!  print *,'myid, two',myid
   DO sps2=1,ntimeintervalsspectral
     CALL PUSHREAL8ARRAY(xadj, 6**3*3*ntimeintervalsspectral)
 !      Call the metric routines to generate the areas, volumes and surface normals for the stencil.
@@ -171,6 +175,7 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
     CALL METRICADJ(xadj, siadj, sjadj, skadj, voladj, normadj, icell, &
 &             jcell, kcell, nn, level, sps, sps2)
     CALL PUSHREAL8ARRAY(t, nsections)
+!    print *,'myid, three',myid
 !print *,'siAdj',siAdj(:,0,0,1,:)
 !call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
 ! Compute the time, which corresponds to this spectral solution.
@@ -270,6 +275,7 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 ! Apply all boundary conditions of the mean flow.
 !print *,'applying bcs',nn,secondhalo,sps2
 !******************************************
+ !   print *,'before applyallbc'
     CALL APPLYALLBCADJ(winfadj, pinfcorradj, wadj, padj, sadj, siadj, &
 &                 sjadj, skadj, voladj, normadj, rfaceadj, icell, jcell&
 &                 , kcell, secondhalo, nn, level, sps, sps2)
@@ -337,10 +343,12 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 ! Compute the time step.
 !call timeStepAdj(.false.)
 !print *,'nntimestep',nn
+    !print *,'calling time step',myid
     CALL TIMESTEPADJ(.true., wadj, padj, siadj, sjadj, skadj, sfaceiadj&
 &               , sfacejadj, sfacekadj, voladj, radiadj, radjadj, &
 &               radkadj, icell, jcell, kcell, pinfcorradj, rhoinfadj, nn&
 &               , level, sps, sps2)
+
   END DO
 !print *,'tstepsiAdj',siAdj(:,0,0,1,:)
 !#!$

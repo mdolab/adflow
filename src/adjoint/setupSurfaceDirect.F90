@@ -95,9 +95,9 @@
       !create the PETSc Vector aswell
       ! Create the vector. Depending on either this is a sequential or 
       ! parallel run,  PETSc automatically generates the apropriate
-      ! vector type over all processes in PETSC_COMM_WORLD.
+      ! vector type over all processes in SUMB_PETSC_COMM_WORLD.
 
-      call VecCreate(PETSC_COMM_WORLD, selector, PETScIerr)
+      call VecCreate(SUMB_PETSC_COMM_WORLD, selector, PETScIerr)
 
 
       if( PETScIerr/=0 ) &
@@ -242,7 +242,7 @@
       close(unitpvr)
 
       call f77flush()
-      call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
+      call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       ! Output format.
 
