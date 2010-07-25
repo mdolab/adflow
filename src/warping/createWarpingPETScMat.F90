@@ -199,7 +199,7 @@
         !                     0,PETSC_NULL,         &
         !                     0, PETSC_NULL,            &
         !                     dXvdXs, PETScIerr)
-        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+        call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
                              nDimX,PETSC_DECIDE,               &
 		             PETSC_DETERMINE, nDimS,           &
                              nzDiagonalXs, nnzDiagonal,         &
@@ -393,7 +393,7 @@ if (debug) then
         !                     0,PETSC_NULL,         &
         !                     0, PETSC_NULL,            &
         !                     dXvdXs, PETScIerr)
-        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+        call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
                              nDimX,PETSC_DECIDE,               &
 		             PETSC_DETERMINE, nDimSTS,           &
                              nzDiagonalXs, nnzDiagonal,         &
@@ -579,7 +579,7 @@ endif
         !                     nzDiagonalW, nnzDiagonal,         &
         !                     nzOffDiag, nnzOffDiag,            &
         !                     dXvdXsFD, PETScIerr)
-	call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+	call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
                              nDimX,PETSC_DECIDE,        &
 		             PETSC_DETERMINE, nDimS,                     &
                              nzDiagonalXs, nnzDiagonal,         &
@@ -760,7 +760,7 @@ endif
         nnzDiagonal = nzDiagonalXs
         nnzOffDiag  = nzOffDiag
         !print *,'petscnull 2',PETSC_NULL	
-   	call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+   	call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
                              nDimX,PETSC_DECIDE,        &
 		             PETSC_DETERMINE, nDimS,                     &
                              nzDiagonalXs, nnzDiagonal,         &
@@ -969,7 +969,7 @@ if(debug)then
         !                     dXvdXs, PETScIerr)
 	!print *,'creating dxvdxs',nDimW,PETSC_DECIDE,               &
 	!	             PETSC_DETERMINE, nDimS
-        call MatCreateMPIAIJ(PETSC_COMM_WORLD,                 &
+        call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
                              nDimW,PETSC_DECIDE,               &
 		             PETSC_DETERMINE, nDimS,           &
                              nzDiagonal, nnzDiagonal,         &
