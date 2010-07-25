@@ -31,8 +31,8 @@
 
       ! Determine the communicator size and the processor rank.
 
-      call MPI_Comm_size(PETSC_COMM_WORLD, PETScSize, PETScIerr)
-      call MPI_Comm_rank(PETSC_COMM_WORLD, PETScRank, PETScIerr)
+      call MPI_Comm_size(SUMB_PETSC_COMM_WORLD, PETScSize, PETScIerr)
+      call MPI_Comm_rank(SUMB_PETSC_COMM_WORLD, PETScRank, PETScIerr)
 
       ! Send some feedback to screen.
 
@@ -42,7 +42,7 @@
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
-      call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
+      call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       ! Output format.
 
