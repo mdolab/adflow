@@ -104,8 +104,8 @@ subroutine getForces(ndofcgns,forces)
            ! Compute the inviscid force on each of the faces and
            ! scatter it to the 4 nodes, whose forces are updated.
 
-           do j=jBeg, jEnd
-              do i=iBeg, iEnd
+           do j=jBeg, jEnd ! This is a face loop
+              do i=iBeg, iEnd ! This is a face loop 
 
                  ! Compute the pressure in the center of the boundary
                  ! face, which is an average between pp2 and pp1. The
@@ -115,7 +115,7 @@ subroutine getForces(ndofcgns,forces)
                  ! the possibility of inward or outward pointing normal
                  ! into account).
 
-                 pp = half*(pp2(i,j) + pp1(i,j))
+                 pp = half*(pp2(i,j) + pp1(i,j))-Pinf
                  pp = fourth*fact*scaleDim*pp
 
                  ! Compute the corresponding force.
@@ -124,12 +124,10 @@ subroutine getForces(ndofcgns,forces)
                  f(2) = pp*ss(i,j,2)
                  f(3) = pp*ss(i,j,3)
 
-
                  ! Now its just an indexing problem...we need to
                  ! set each of the 4 entries in the sumbGridVec
                  ! with AddValues
 
-              
                  select case(BCFaceID(mm))
                  case(imin)
                     call getIset(nn,1  ,i-1,j-1,il,jl,kl,iset)
@@ -209,7 +207,6 @@ subroutine getForces(ndofcgns,forces)
   call VecGetValues(cgnsGridVec,size,indices,forces,ierr)
 
   deallocate(indices)
-  
 end subroutine getForces
 
 
@@ -222,32 +219,19 @@ subroutine getIset(nn,i,j,k,il,jl,kl,iset)
 
   integer(kind=intType) :: i,j,k,il,jl,kl,iset(3),nn
 
-  iset(:) = 1
   iset(1) = cumdofproc(myID) + cumdofblock(nn) + &
-       (i-1)*jl*kl*3 + &
-       (j-1)*kl*3    + &
-       (k-1)*3
+       (k-1)*jl*il*3 + &
+       (j-1)*il*3    + &
+       (i-1)*3
 
   iset(2) = cumdofproc(myID) + cumdofblock(nn) + &
-       (i-1)*jl*kl*3 + &
-       (j-1)*kl*3    + &
-       (k-1)*3 + 1
+       (k-1)*jl*il*3 + &
+       (j-1)*il*3    + &
+       (i-1)*3 + 1
 
   iset(3) = cumdofproc(myID) + cumdofblock(nn) + &
-       (i-1)*jl*kl*3 + &
-       (j-1)*kl*3    + &
-       (k-1)*3 + 2
-
-  if (iset(1) >= 123*9*9*9*3) then
-     print *,'Error iset if screwed'
-  end if
-
-  if (iset(2) >= 123*9*9*9*3) then
-     print *,'Error iset if screwed'
-  end if
-  if (iset(3) >= 123*9*9*9*3) then
-     print *,'Error iset if screwed'
-  end if
-
+       (k-1)*jl*il*3 + &
+       (j-1)*il*3    + &
+       (i-1)*3 + 2
 
 end subroutine getIset

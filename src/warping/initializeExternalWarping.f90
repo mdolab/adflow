@@ -83,9 +83,10 @@ subroutine initializeExternalWarping(ndofcgns)
   ii = 0
   do nn=1,nDom
      call setPointers(nn,1_intType,1_intType)
-     do i=1,il
+ 
+     do k=1,kl
         do j=1,jl
-           do k=1,kl
+           do i=1,il
               il_cg = cgnsDoms(nbkGlobal)%il
               jl_cg = cgnsDoms(nbkGlobal)%jl
               kl_cg = cgnsDoms(nbkGlobal)%kl
@@ -97,19 +98,19 @@ subroutine initializeExternalWarping(ndofcgns)
               indz = kBegOr + k - 1
 
               indices(ii*3-2) = dof_offset(nbkGlobal)  + &
-                   (indx-1)*jl_cg*kl_cg*3 + &
-                   (indy-1)*kl_cg*3       + &
-                   (indz-1)*3
+                   (indz-1)*jl_cg*il_cg*3 + &
+                   (indy-1)*il_cg*3       + &
+                   (indx-1)*3
 
               indices(ii*3-1) = dof_offset(nbkGlobal)  + &
-                   (indx-1)*jl_cg*kl_cg*3 + &
-                   (indy-1)*kl_cg*3       + &
-                   (indz-1)*3 + 1
+                   (indz-1)*jl_cg*il_cg*3 + &
+                   (indy-1)*il_cg*3       + &
+                   (indx-1)*3 + 1
 
               indices(ii*3 ) = dof_offset(nbkGlobal)   + &
-                   (indx-1)*jl_cg*kl_cg*3 + &
-                   (indy-1)*kl_cg*3       + &
-                   (indz-1)*3 + 2
+                   (indz-1)*jl_cg*il_cg*3 + &
+                   (indy-1)*il_cg*3       + &
+                   (indx-1)*3 + 2
 
            end do ! k loop
         end do ! j loop
@@ -169,9 +170,11 @@ subroutine initializeExternalWarping(ndofcgns)
         if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
              BCType(mm) == NSWallIsothermal) then
       
-           do i= inBeg(mm),inEnd(mm)
+
+
+           do k= knBeg(mm),knEnd(mm)
               do j= jnBeg(mm),jnEnd(mm)
-                 do k= knBeg(mm),knEnd(mm)
+                 do i= inBeg(mm),inEnd(mm)
                     ii = ii + 1
 
                     indx = iBegOr + i - 1
@@ -179,34 +182,34 @@ subroutine initializeExternalWarping(ndofcgns)
                     indz = kBegOr + k - 1
 
                     indices(ii*3-2) = dof_offset(nbkGlobal)  + &
-                         (indx-1)*jl_cg*kl_cg*3 + &
-                         (indy-1)*kl_cg*3       + &
-                         (indz-1)*3
+                         (indz-1)*jl_cg*il_cg*3 + &
+                         (indy-1)*il_cg*3       + &
+                         (indx-1)*3
 
                     indices(ii*3-1) = dof_offset(nbkGlobal)  + &
-                         (indx-1)*jl_cg*kl_cg*3 + &
-                         (indy-1)*kl_cg*3       + &
-                         (indz-1)*3 + 1
+                         (indz-1)*jl_cg*il_cg*3 + &
+                         (indy-1)*il_cg*3       + &
+                         (indx-1)*3 + 1
 
                     indices(ii*3 ) = dof_offset(nbkGlobal)   + &
-                         (indx-1)*jl_cg*kl_cg*3 + &
-                         (indy-1)*kl_cg*3       + &
-                         (indz-1)*3 + 2
+                         (indz-1)*jl_cg*il_cg*3 + &
+                         (indy-1)*il_cg*3       + &
+                         (indx-1)*3 + 2
 
                     indices2(ii*3-2) = cumdofproc(myID) + cumdofblock(nn) + &
-                         (i-1)*jl*kl*3 + &
-                         (j-1)*kl*3    + &
-                         (k-1)*3
+                         (k-1)*jl*il*3 + &
+                         (j-1)*il*3    + &
+                         (i-1)*3
 
                     indices2(ii*3-1) = cumdofproc(myID) + cumdofblock(nn) + &
-                         (i-1)*jl*kl*3 + &
-                         (j-1)*kl*3    + &
-                         (k-1)*3 + 1
+                         (k-1)*jl*il*3 + &
+                         (j-1)*il*3    + &
+                         (i-1)*3 + 1
 
                     indices2(ii*3  ) = cumdofproc(myID) + cumdofblock(nn) + &
-                         (i-1)*jl*kl*3 + &
-                         (j-1)*kl*3    + &
-                         (k-1)*3 + 2
+                         (k-1)*jl*il*3 + &
+                         (j-1)*il*3    + &
+                         (i-1)*3 + 2
                  end do
               end do
            end do

@@ -25,7 +25,7 @@ real(kind=realType) ,intent(in) :: cgnsdof(ndofcgns)
 
 integer(kind=intType) :: nn,ii,i,j,k,ierr
 integer(kind=intType) :: cgnsindices(ndofcgns)
-integer(kind=intType) :: lowInd,HighInd
+integer(kind=intType) :: lowInd,HighInd 
 
 ! Set the cgnsdof into the cgnsGridVec 
 call VecGetOwnershipRange(cgnsgridvec,lowInd,highInd,ierr)
@@ -51,10 +51,10 @@ call VecGetOwnershipRange(sumbGridVec,lowInd,HighInd,ierr)
 ii = 0
 do nn=1,nDom
    call setPointers(nn,1_intType,1_intType)
-   
-   do i=1,il
+
+   do k=1,kl
       do j=1,jl
-         do k=1,kl
+         do i=1,il
             call VecGetValues(sumbGridVec,1,lowInd+ii  , X(i,j,k,1),ierr)
             call VecGetValues(sumbGridVec,1,lowInd+ii+1, X(i,j,k,2),ierr)
             call VecGetValues(sumbGridVec,1,lowInd+ii+2, X(i,j,k,3),ierr)
