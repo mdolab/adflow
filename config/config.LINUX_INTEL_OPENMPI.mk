@@ -32,8 +32,9 @@ RM         = /bin/rm -rf
 MV         = /bin/mv -f
 SYM_LINK   = ln -sf
 #MAKE       = make
-MAKE_CLEAN = make
-MAKE = make -j 2
+#MAKE_CLEAN = make
+MAKE = make -j 4
+
 
 #      ******************************************************************
 #      *                                                                *
@@ -63,12 +64,13 @@ CC   = mpicc
 #      ******************************************************************
 #CGNS_INCLUDE_FLAGS = -I$(HOME)/Ubunto_setup_files/cgnslib_2.4
 #CGNS_LINKER_FLAGS  = -L$(HOME)/Ubunto_setup_files/cgnslib_2.4/LINUX -lcgns
-CGNS_INCLUDE_FLAGS = -I$(HOME)/Ubunto_setup_files/cgnslib_2.4_back
-CGNS_LINKER_FLAGS  = -L$(HOME)/Ubunto_setup_files/cgnslib_2.4_back/LINUX -lcgns
+#CGNS_INCLUDE_FLAGS = -I$(HOME)/Ubunto_setup_files/cgnslib_2.4_back
+#CGNS_LINKER_FLAGS  = -L$(HOME)/Ubunto_setup_files/cgnslib_2.4_back/LINUX -lcgns
 #CGNS_INCLUDE_FLAGS = -I/usr/local/include
 #CGNS_LINKER_FLAGS  = -L/usr/local/lib64 -lcgns.intel
 #CGNS_LINKER_FLAGS  = -L/usr/local/lib -lcgns.intel
-
+#CGNS_INCLUDE_FLAGS = 
+CGNS_LINKER_FLAGS = -lcgns
 #      ******************************************************************
 #      *                                                                *
 #      * Precision flags. When nothing is specified 4 byte integer and  *
@@ -103,11 +105,11 @@ CC_PRECISION_FLAGS   = $(CC_INTEGER_PRECISION_FLAG) \
 
 COMMAND_SEARCH_PATH_MODULES = -I
 
-FF90_GEN_FLAGS = -DHAS_ISNAN
+FF90_GEN_FLAGS = -DHAS_ISNAN -DUSE_PETSC_3
 CC_GEN_FLAGS   =
 
 #FF90_OPTFLAGS   = -O3 -ipo -ipo_obj
-FF90_OPTFLAGS   = -O2 -r8 -fpic# -check all #-tpp7 -xW -unroll -ip
+FF90_OPTFLAGS   =  -fpic -r8 -O1 #-g -check-all #-O2 #-tpp7 -xW -unroll -ip
 #CC_OPTFLAGS     = -O3 -fexpensive-optimizations -frerun-cse-after-loop \
 #		  -fthread-jumps -funroll-loops -finline-functions
 CC_OPTFLAGS     = -O -fpic
@@ -151,11 +153,15 @@ CC_FLAGS   = $(CC_GEN_FLAGS)   $(CC_OPTFLAGS)   $(CC_DEBUGFLAGS)
 #		      -lpetscksp -lpetscdm -lpetscmat -lpetscvec -lpetsc
 
 X11_DIR = /usr/X11R6/lib
-#PETSC_DIR = /home/mader/UTIAS/SRC/petsc-2.3.2-p8
-PETSC_DIR = /home/mader/UTIAS/SRC/petsc-2.3.3-p6
-PETSC_ARCH = linux-gnu-c-debug
-PETSC_INCLUDE_FLAGS = -I$(PETSC_DIR) -I$(PETSC_DIR)/bmake/$(PETSC_ARCH) -I$(PETSC_DIR)/include -I$(PETSC_DIR)/include/mpiuni
-PETSC_LINKER_FLAGS  = -L$(PETSC_DIR)/lib/$(PETSC_ARCH) -lpetscksp -lpetscdm -lpetscmat -lpetscvec -lpetsc -lpetsccontrib -lpetscsnes -lpetscts -L$(X11_DIR) -lX11 -L$(PETSC_DIR)/externalpackages/fblaslapack/$(PETSC_ARCH) -lflapack -lfblas -lm
+
+
+include ${PETSC_DIR}/conf/variables
+PETSC_INCLUDE_FLAGS=${PETSC_CC_INCLUDES} -I$(PETSC_DIR)
+PETSC_LINKER_FLAGS=${PETSC_LIB}
+
+PYTHON_INCLUDE_DIR = /usr/include/python2.6/
+NUMPY_ROOT_DIR =/usr/lib/python2.6/dist-packages/
+
 
 #      ******************************************************************
 #      *                                                                *

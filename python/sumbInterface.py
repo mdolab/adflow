@@ -75,13 +75,13 @@ class SUmbMesh(object):
  
     """
  
-    def __init__(self,comm):
+    def __init__(self,comm,sumb):
         """Initialize the object."""
         self._update_geom_info = False
         self._suggar_interface_initialized = False
         self.comm = comm
         self.myid = comm.rank
-
+        self.sumb = sumb
 #     def GetSurfaceCoordinates(self, family=None, sps=1):
 #         """Return surface coordinates.
         
@@ -251,14 +251,16 @@ class SUmbMesh(object):
         filename -- the name of the file (optional)
          
         """
-        sumb.iteration.groundlevel = 1
+
+        print 'Writing Mesh File'
+        self.sumb.iteration.groundlevel = 1
         if (filename):
-            sumb.inputio.newgridfile[:] = ''
-            sumb.inputio.newgridfile[0:len(filename[0])] = filename[0]
-        sumb.monitor.writegrid=True
-        sumb.monitor.writevolume=True#False
-        sumb.monitor.writesurface=True
-        sumb.writesol()
+            self.sumb.inputio.newgridfile[:] = ''
+            self.sumb.inputio.newgridfile[0:len(filename[0])] = filename[0]
+        self.sumb.monitor.writegrid=True
+        self.sumb.monitor.writevolume=True#False
+        self.sumb.monitor.writesurface=True
+        self.sumb.writesol()
 
 #     def DummySetCoordinates(self, sps =1):
 #         """Dummy SetCoordinates routine to be called on processors where no
@@ -317,15 +319,11 @@ class SUmbMesh(object):
         """Update the SUmb internal geometry info, if necessary."""
         if (self._update_geom_info):
             if (self.myid==0): print 'Updating Geometry...'
-            #print 'updatecoords'
-            sumb.updatecoordinatesalllevels()
-            #print 'update_wall'
-            sumb.updatewalldistancealllevels()
-            #print 'update sliding'
-            sumb.updateslidingalllevels()
-            #print 'update metrics'
-            sumb.updatemetricsalllevels()
-            sumb.updategridvelocitiesalllevels()
+            self.sumb.updatecoordinatesalllevels()
+            self.sumb.updatewalldistancealllevels()
+            self.sumb.updateslidingalllevels()
+            self.sumb.updatemetricsalllevels()
+            self.sumb.updategridvelocitiesalllevels()
             self._update_geom_info = False
             
 
@@ -342,22 +340,22 @@ class SUmbMesh(object):
         read.
 
         """
-        return string.strip(sumb.inputio.gridfile.tostring())
+        return string.strip(self.sumb.inputio.gridfile.tostring())
 
     def _InitializeSuggarInterface(self):
         """Sets up ability to call SUGGAR interface methods."""
 
         self._suggar_interface_initialized = True
-        sumb.initsuggarinterface()
+        self.sumb.initsuggarinterface()
 
         # Create a dictionary of zone names.
         self.zones = {}
-        for i in range(sumb.suggardata.nzones[0]):
-            self.zones[string.strip(sumb.suggardata.zonenames[i]
-                       .tostring())] = sumb.suggardata.unsortedzone[i]
+        for i in range(self.sumb.suggardata.nzones[0]):
+            self.zones[string.strip(self.sumb.suggardata.zonenames[i]
+                       .tostring())] = self.sumb.suggardata.unsortedzone[i]
 
     def LoadSuggarDCIFiles(self, dcifilelist, sps=1):
-        """Loads the SUGGAR ouput DCI files in the list to SUmb. The previous
+        """Loads the SUGGAR ouput DCI files in the list to Self.Sumb. The previous
            overset data for all zones affected by the files is cleared.
 
         Keyword arguments:
@@ -373,7 +371,7 @@ class SUmbMesh(object):
         # Check to make sure each file exists and load it.
         for dcifile in dcifilelist:
             if os.path.isfile(dcifile):
-                sumb.loadsuggardcifile(dcifile, sps)
+                self.sumb.loadsuggardcifile(dcifile, sps)
             else:
                 print 'Error: Could not find DCI file %s' % dcifile
                 return None
@@ -414,7 +412,7 @@ class SUmbMesh(object):
                 return None
 
             filename = dirpath + "/" + zonename + ".x"
-            sumb.writeplot3dzonefile(index, filename, sps, byteswap)
+            self.sumb.writeplot3dzonefile(index, filename, sps, byteswap)
 
         # Wait for all zone files to be written before returning since the
         # next step will be to run SUGGAR.
@@ -422,46 +420,46 @@ class SUmbMesh(object):
 
     def getBlockDimensions(self,blocknum):
         """ Get the i,j,k dimensions of block blocknum"""
-        return  sumb.getblockdims(blocknum)
+        return  self.sumb.getblockdims(blocknum)
 
     def getBlockCoordinates(self,blocknum,il,jl,kl):
         """get the xyz coordinates from blockblocknum"""
-        return sumb.getblockcoords(blocknum,il,jl,kl)
+        return self.sumb.getblockcoords(blocknum,il,jl,kl)
 
     def getBlockCGNSID(self,blocknum):
         """ Get original CGNS blockID for block blocknum"""
-        return sumb.getblockcgnsid(blocknum)
+        return self.sumb.getblockcgnsid(blocknum)
 
     def getNSubfacesBlock(self,blocknum):
         """ get subface infor for block: blocknum"""
-        return sumb.getnsubfacesblock(blocknum)
+        return self.sumb.getnsubfacesblock(blocknum)
 
     def getBlockCommunicationInfo(self,blocknum,nSubface,n1to1,nNonMatch):
         """Get all fo the relevant MPI communication ifo for this block"""
-        return sumb.getblockcommunicationinfo(blocknum,nSubface,n1to1,nNonMatch)
+        return self.sumb.getblockcommunicationinfo(blocknum,nSubface,n1to1,nNonMatch)
 
     def getNBlocksLocal(self):
         """ get the number of blocks present on the local processor"""
-        return sumb.getnblockslocal()
+        return self.sumb.getnblockslocal()
 
     def getSingleState(self,blocknum,i,j,k,l):
         '''
         get the requested state value
         '''
-        return sumb.getsinglestate(blocknum,i,j,k,l)
+        return self.sumb.getsinglestate(blocknum,i,j,k,l)
 
     def setSingleState(self,blocknum,i,j,k,l,state):
         '''
         set the requested state value
         '''
-        sumb.setsinglestate(blocknum,i,j,k,l,state)
+        self.sumb.setsinglestate(blocknum,i,j,k,l,state)
         
         return 
 ##     def internalWarping(self,new_cfd_surf,indices):
 ##         '''
 ##         Call the integrated warping routines...
 ##         '''
-##         sumb.integratedwarp(new_cfd_surf,indices)
+##         self.sumb.integratedwarp(new_cfd_surf,indices)
 
 ##         return
 
@@ -470,15 +468,15 @@ class SUmbMesh(object):
         Initialize the required variables for the internal
         Meshwarping and derivatives
         '''
-        if(sumb.cgnsgrid.cgnsnfamilies>0):
+        if(self.sumb.cgnsgrid.cgnsnfamilies>0):
             famID = 1
         else:
             famID = 0
         #endif
         
-        sumb.initializewarping(famID)
+        self.sumb.initializewarping(famID)
 
-        self.nGlobalSurfNodes = sumb.mddata.mdnsurfnodescompact
+        self.nGlobalSurfNodes = self.sumb.mddata.mdnsurfnodescompact
         return
 
     def SetGlobalSurfaceCoordinates(self,xyz,reinitialize=True):
@@ -488,9 +486,9 @@ class SUmbMesh(object):
         xyz -- the new xyz coordinates, dimension (3,ncoords)
                                                                                         
         """
-        sumb.iteration.groundlevel = 1
+        self.sumb.iteration.groundlevel = 1
         xyz = self.metricConversion*xyz
-        sumb.updatefacesglobal(xyz,reinitialize)
+        self.sumb.updatefacesglobal(xyz,reinitialize)
         self._update_geom_info = True
 
         return
@@ -500,9 +498,9 @@ class SUmbMesh(object):
         Get the surface coordinates for the mesh    
         """
         if self.sol_type.lower() == 'steady':
-            return sumb.mddata.mdglobalsurfxx/self.metricConversion
+            return self.sumb.mddata.mdglobalsurfxx/self.metricConversion
         elif self.sol_type.lower() == 'time spectral':
-            return sumb.mddata.mdglobalsurfxx[:,:,0]/self.metricConversion
+            return self.sumb.mddata.mdglobalsurfxx[:,:,0]/self.metricConversion
         else:
             print 'invalid solutions type for surface coords...Exiting'
             sys.exit(0)
@@ -513,23 +511,22 @@ class SUmbMesh(object):
         '''
         run the internal meshwarping scheme
         '''
-
-        sumb.warpmesh()
+        self.sumb.warpmesh()
 
         return
 
     def initializeExternalWarping(self,ndoflocal):
-        sumb.initializeexternalwarping(ndoflocal)
+        self.sumb.initializeexternalwarping(ndoflocal)
 
         return
 
     def setGrid(self,externaldof):
-        sumb.setgrid(externaldof)
+        self.sumb.setgrid(externaldof)
         self._update_geom_info = True
         return
     
     def getForces(self,cgnsdof):
-        return sumb.getforces(cgnsdof)
+        return self.sumb.getforces(cgnsdof)
     
 
 # =============================================================================
@@ -550,34 +547,41 @@ class SUmbInterface(object):
 
         """
 
+        if 'sumb' in kwargs:
+            self.sumb = kwargs['sumb']
+        else:
+            self.sumb = sumb
+        # end if
+        
         # The very first thing --> Set the MPI Communicators
         if 'comm' in kwargs:
-            sumb.communication.sumb_comm_world = kwargs['comm'].py2f()
-            sumb.communication.sumb_comm_self  = mpi.COMM_SELF.py2f()
+            self.sumb.communication.sumb_comm_world = kwargs['comm'].py2f()
+            self.sumb.communication.sumb_petsc_comm_world = kwargs['comm'].py2f()
+            self.sumb.communication.sumb_comm_self  = mpi.COMM_SELF.py2f()
             self.sumb_comm_world = kwargs['comm']
         else:
-            sumb.communication.sumb_comm_world = mpi.COMM_WORLD.py2f()
-            sumb.communication.sumb_comm_self  = mpi.COMM_SELF.py2f()
+            self.sumb.communication.sumb_comm_world = mpi.COMM_WORLD.py2f()
+            self.sumb.communication.sumb_comm_self  = mpi.COMM_SELF.py2f()
             self.sumb_comm_world = mpi.COMM_WORLD
         # end if
         
         if 'init_petsc' in kwargs:
             if kwargs['init_petsc']:
-                sumb.initializepetsc()
+                self.sumb.initializepetsc()
         # end if
 
         # Setup the mesh object with sumb_comm_world
-        self.Mesh = SUmbMesh(self.sumb_comm_world)
+        self.Mesh = SUmbMesh(self.sumb_comm_world,self.sumb)
 
         # Determine the rank sumb_comm_world size
-        self.myid = sumb.communication.myid = self.sumb_comm_world.rank
-        self.nproc = sumb.communication.nproc = self.sumb_comm_world.size
+        self.myid = self.sumb.communication.myid = self.sumb_comm_world.rank
+        self.nproc = self.sumb.communication.nproc = self.sumb_comm_world.size
 
         # Allocate the memory for SENDREQUESTS and RECVREQUESTS.
         try:
-            sumb.communication.sendrequests = numpy.zeros(
+            self.sumb.communication.sendrequests = numpy.zeros(
         			  (self.sumb_comm_world.size))
-            sumb.communication.recvrequests = numpy.zeros(
+            self.sumb.communication.recvrequests = numpy.zeros(
         			  (self.sumb_comm_world.size))
         except:
             print "Memory allocation failure for SENDREQUESTS " \
@@ -587,14 +591,14 @@ class SUmbInterface(object):
 
         # Set the SUmb module value of standalonemode to false and
         # the value of deforming_grid to the input value.
-        sumb.iteration.standalonemode = False
-        sumb.iteration.deforming_grid = deforming_mesh = False
+        self.sumb.iteration.standalonemode = False
+        self.sumb.iteration.deforming_grid = deforming_mesh = False
 
         # Write the intro message
-        sumb.writeintromessage()
+        self.sumb.writeintromessage()
 
         # Set the frompython flag to true
-        sumb.killsignals.frompython=True
+        self.sumb.killsignals.frompython=True
 
         return
 
@@ -632,48 +636,48 @@ class SUmbInterface(object):
         # Store the name of the input file
         self.startfile = startfile
         
-        sumb.inputio.paramfile[0:len(startfile)] = startfile
+        self.sumb.inputio.paramfile[0:len(startfile)] = startfile
 
         # Read the parameter file
-        sumb.readparamfile()
+        self.sumb.readparamfile()
 
         # Set printIteration Flag
-        sumb.inputiteration.printiterations = kwargs['options']['printIterations'][1]
+        self.sumb.inputiteration.printiterations = kwargs['options']['printIterations'][1]
 
         #This is just to flip the -1 to 1 possibly a memory issue?
-        sumb.inputio.storeconvinneriter=abs(sumb.inputio.storeconvinneriter)
+        self.sumb.inputio.storeconvinneriter=abs(self.sumb.inputio.storeconvinneriter)
 
         if(self.myid ==0):print ' -> Partitioning and Reading Grid'
-        sumb.partitionandreadgrid()
+        self.sumb.partitionandreadgrid()
 
         if(self.myid==0):print ' -> Preprocessing'
-        sumb.preprocessing()
+        self.sumb.preprocessing()
 
         if(self.myid==0):print ' -> Initializing flow'
-        sumb.initflow()
+        self.sumb.initflow()
 
         # Create dictionary of variables we are monitoring
-        nmon = sumb.monitor.nmon
+        nmon = self.sumb.monitor.nmon
         self.monnames = {}
         for i in range(nmon):
             self.monnames[string.strip(
-        		   sumb.monitor.monnames[i].tostring())] = i
+        		   self.sumb.monitor.monnames[i].tostring())] = i
         
         # Create dictionary of the family names
-        sumb.mdgetfamilynames()
-        nfamilies = sumb.mddata.mdnfamilies
+        self.sumb.mdgetfamilynames()
+        nfamilies = self.sumb.mddata.mdnfamilies
         self.Mesh.families = {}
         for i in range(nfamilies):
-            self.Mesh.families[string.strip(sumb.mddata.mdfamilynames[i]
+            self.Mesh.families[string.strip(self.sumb.mddata.mdfamilynames[i]
         		       .tostring())] = i + 1
 
         # Create Surface Node list
         if(self.myid==0): print ' -> Creating Surface Node List'
-        sumb.mdcreatensurfnodes()
+        self.sumb.mdcreatensurfnodes()
 
         # Reduce the total number of blocks
         self.Mesh.nmeshblocks = self.sumb_comm_world.allreduce(
-        			     sumb.block.ndom,mpi.SUM)
+        			     self.sumb.block.ndom,mpi.SUM)
         #Set flags for ADjoint initialization
         self.adjointInitialized = False
         
@@ -683,14 +687,14 @@ class SUmbInterface(object):
         '''
         Set the alpha and beta fromthe desiggn variables
         '''
-        [velDir,liftDir,dragDir]= sumb.adjustinflowangleadj((aero_problem._flows.alpha*(pi/180.0)),(aero_problem._flows.beta*(pi/180.0)),aero_problem._flows.liftIndex)
-        sumb.inputphysics.veldirfreestream = velDir
-        sumb.inputphysics.liftdirection = liftDir
-        sumb.inputphysics.dragdirection = dragDir
+        [velDir,liftDir,dragDir]= self.sumb.adjustinflowangleadj((aero_problem._flows.alpha*(pi/180.0)),(aero_problem._flows.beta*(pi/180.0)),aero_problem._flows.liftIndex)
+        self.sumb.inputphysics.veldirfreestream = velDir
+        self.sumb.inputphysics.liftdirection = liftDir
+        self.sumb.inputphysics.dragdirection = dragDir
 
-        if (self.myid==0):print '-> Alpha...',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha#,velDir,liftDir,dragDir
+        #if (self.myid==0):print '-> Alpha...',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha,velDir,liftDir,dragDir
         #update the flow vars
-        sumb.updateflow()
+        self.sumb.updateflow()
         return
 
     def resetFlow(self):
@@ -698,7 +702,7 @@ class SUmbInterface(object):
         Reset the flow for the complex derivative calculation
         '''
 
-        sumb.setuniformflow()
+        self.sumb.setuniformflow()
 
         return
     
@@ -707,7 +711,7 @@ class SUmbInterface(object):
         if (self.myid==0): print ' -> Generating Input File'
         
         #Convert alpha and beta to a freestream vector
-        [velDir,liftDir,dragDir]= sumb.adjustinflowangleadj((aero_problem._flows.alpha*(pi/180.0)),(aero_problem._flows.beta*(pi/180.0)),aero_problem._flows.liftIndex)
+        [velDir,liftDir,dragDir]= self.sumb.adjustinflowangleadj((aero_problem._flows.alpha*(pi/180.0)),(aero_problem._flows.beta*(pi/180.0)),aero_problem._flows.liftIndex)
        
         autofile = open(startfile,'w')
 
@@ -875,7 +879,7 @@ class SUmbInterface(object):
         autofile.write(  "     Reference State\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "            Reference pressure (in Pa): %12.12e\n"%(kwargs['options']['Reference Pressure'][1]))
-        autofile.write(  "         Reference density (in kg/m^3): 1.25\n")
+        autofile.write(  "         Reference density (in kg/m^3): %12.12e\n"%(kwargs['options']['Reference Density'][1]))
         autofile.write(  "          Reference temperature (in K): %12.12e\n"%(kwargs['options']['Reference Temp.'][1]))
         autofile.write(  " Conversion factor grid units to meter: %6.4f\n"%(kwargs['options']['MetricConversion'][1]))
         self.Mesh.metricConversion = kwargs['options']['MetricConversion'][1]
@@ -941,7 +945,7 @@ class SUmbInterface(object):
         autofile.write(  "non-matching block to block treatment: NonConservative\n")
         autofile.write(  "                  # Other possibility: Conservative\n")
         autofile.write( "\n")
-        
+      
         autofile.write(  "                           Vis2: %10.8f\n"%(kwargs['options']['Dissipation Coefficients'][1][0]))
         autofile.write(  "                           Vis4: %10.8f  # 1/64\n"%(kwargs['options']['Dissipation Coefficients'][1][1]))
         autofile.write(  "Directional dissipation scaling: yes\n")
@@ -1063,7 +1067,7 @@ class SUmbInterface(object):
         autofile.write(  "      Number of multigrid cycles coarse grid:  -1  # -1 Means same as on fine grid\n")
         autofile.write(  "                      CFL number coarse grid: -1  # -1 Means same as on fine grid\n")
 
-        autofile.write(  "Relative L2 norm for convergence coarse grid: 1.e-2\n")
+        autofile.write(  "Relative L2 norm for convergence coarse grid: 1.e-1\n")
         autofile.write( "\n")
         
         autofile.write(  "#        Discretization scheme coarse grid:  # Default fine grid scheme\n")
@@ -1259,7 +1263,8 @@ class SUmbInterface(object):
         autofile.write("-------------------------------------------------------------------------------\n")
         autofile.write( "     Monitoring and output variables\n")
         autofile.write( "-------------------------------------------------------------------------------\n")
-        autofile.write( "                Monitoring variables: resrho_cl_cd_cmx_cmy_cmz\n")
+        #autofile.write( "                Monitoring variables: resrho_cl_cd_cmx_cmy_cmz\n")
+        autofile.write( "                Monitoring variables: resrho_cl_cd_cfx_cfy_cfz\n")
         autofile.write( " Monitor massflow sliding interfaces: no\n")
         autofile.write( "            Surface output variables: rho_cp_vx_vy_vz_mach\n")
         autofile.write( "           Volume output variables: ptloss_resrho\n")
@@ -1369,7 +1374,7 @@ class SUmbInterface(object):
 
         """
         
-        sumb.monitor.niterold = self.sumb_comm_world.bcast(sumb.monitor.niterold,root=0)
+        self.sumb.monitor.niterold = self.sumb_comm_world.bcast(self.sumb.monitor.niterold,root=0)
 
         try: kwargs['sol_type']
         except:
@@ -1395,103 +1400,108 @@ class SUmbInterface(object):
         #endtry
 
         #reset python failute check to false
-        sumb.killsignals.routinefailed=False
+        self.sumb.killsignals.routinefailed=False
 
         if sol_type.lower() in ['steady', 'time spectral']:
-
+           
             #set the number of cycles for this call
-            sumb.inputiteration.ncycles = ncycles
+            self.sumb.inputiteration.ncycles = ncycles
             
-            if (sumb.monitor.niterold == 0 and sumb.monitor.nitercur == 0 and sumb.iteration.itertot == 0):
+            if (self.sumb.monitor.niterold == 0 and self.sumb.monitor.nitercur == 0 and self.sumb.iteration.itertot == 0):
                 # No iterations have been done
-                if (sumb.inputio.storeconvinneriter):
-                    nn = sumb.inputiteration.nsgstartup+sumb.inputiteration.ncycles
+                if (self.sumb.inputio.storeconvinneriter):
+                    nn = self.sumb.inputiteration.nsgstartup+self.sumb.inputiteration.ncycles
                     if(self.myid==0):
-                        # sumb.monitor.convarray = None
-                       sumb.deallocconvarrays()
-                       sumb.allocconvarrays(nn)
+                        # self.sumb.monitor.convarray = None
+                       self.sumb.deallocconvarrays()
+                       self.sumb.allocconvarrays(nn)
                     #endif
                 #endif
 
-            elif(sumb.monitor.nitercur == 0 and  sumb.iteration.itertot == 0):
+            elif(self.sumb.monitor.nitercur == 0 and  self.sumb.iteration.itertot == 0):
+
                 # Reallocate convergence history array and
                 # time array with new size, storing old values from restart
                 if (self.myid == 0):
                     # number of time steps from restart
-                    ntimestepsrestart = sumb.monitor.ntimestepsrestart
+                    ntimestepsrestart = self.sumb.monitor.ntimestepsrestart
                                         
-                    if (sumb.inputio.storeconvinneriter):
+                    if (self.sumb.inputio.storeconvinneriter):
                         # number of iterations from restart
-                        niterold = sumb.monitor.niterold#[0]
+                        niterold = self.sumb.monitor.niterold#[0]
                         if storeHistory:
                             # store restart convergence history and deallocate array
-                            temp = copy.deepcopy(sumb.monitor.convarray[:niterold+1,:])
-                            sumb.deallocconvarrays()
+                            temp = copy.deepcopy(self.sumb.monitor.convarray[:niterold+1,:])
+                            self.sumb.deallocconvarrays()
                             # allocate convergence history array with new extended size
-                            sumb.allocconvarrays(temp.shape[0]
-                                                 +sumb.inputiteration.ncycles-1)
+                            self.sumb.allocconvarrays(temp.shape[0]
+                                                 +self.sumb.inputiteration.ncycles-1)
                             # recover values from restart and deallocate temporary array
-                            sumb.monitor.convarray[:temp.shape[0],:temp.shape[1]] = temp
+                            self.sumb.monitor.convarray[:temp.shape[0],:temp.shape[1]] = temp
                             temp = None
                         else:
-                            temp=copy.deepcopy(sumb.monitor.convarray[0,:,:])
-                            sumb.deallocconvarrays()
+                            temp=copy.deepcopy(self.sumb.monitor.convarray[0,:,:])
+                            self.sumb.deallocconvarrays()
                             # allocate convergence history array with new extended size
-                            sumb.allocconvarrays(sumb.inputiteration.ncycles+1+niterold)
-                            sumb.monitor.convarray[0,:,:] = temp
+                            self.sumb.allocconvarrays(self.sumb.inputiteration.ncycles+1+niterold)
+                            self.sumb.monitor.convarray[0,:,:] = temp
+                            self.sumb.monitor.convarray[1,:,:] = temp
                             temp = None
                         #endif
                     #endif
                 #endif
             else:
+
                 # More Time Steps / Iterations in the same session
             
                 # Reallocate convergence history array and
                 # time array with new size, storing old values from previous runs
                 if (self.myid == 0):
-                    if (sumb.inputio.storeconvinneriter):
+                    if (self.sumb.inputio.storeconvinneriter):
                         if storeHistory:
                             # store previous convergence history and deallocate array
-                            temp = copy.deepcopy(sumb.monitor.convarray)
+                            temp = copy.deepcopy(self.sumb.monitor.convarray)
 
-                            sumb.deallocconvarrays()
+                            self.sumb.deallocconvarrays()
                             # allocate convergence history array with new extended size
-                            nn = sumb.inputiteration.nsgstartup+sumb.inputiteration.ncycles
-                            print 'alloc'
-                            sumb.allocconvarrays(temp.shape[0]+nn-1)
+                            nn = self.sumb.inputiteration.nsgstartup+self.sumb.inputiteration.ncycles
+                           
+                            self.sumb.allocconvarrays(temp.shape[0]+nn-1)
                         
                             # recover values from previous runs and deallocate temporary array
-                            sumb.monitor.convarray[:temp.shape[0],:] = copy.deepcopy(temp)
+                            self.sumb.monitor.convarray[:temp.shape[0],:] = copy.deepcopy(temp)
                             
                             temp = None
                         else:
-                            temp=copy.deepcopy(sumb.monitor.convarray[0,:,:])
-                            sumb.deallocconvarrays()
-                            sumb.allocconvarrays(sumb.inputiteration.ncycles+1)
-                            sumb.monitor.convarray[0,:,:] = temp
+                            temp=copy.deepcopy(self.sumb.monitor.convarray[0,:,:])
+                            self.sumb.deallocconvarrays()
+                            self.sumb.allocconvarrays(self.sumb.inputiteration.ncycles+1)
+                            self.sumb.monitor.convarray[0,:,:] = temp
                             temp = None
                         #endif
                     #endif
                 #endif
                 # re-initialize iteration variables
-                sumb.inputiteration.mgstartlevel = 1
+                self.sumb.inputiteration.mgstartlevel = 1
                 if storeHistory:
-                    sumb.monitor.niterold  = sumb.monitor.nitercur
+                    self.sumb.monitor.niterold  = self.sumb.monitor.nitercur
                 else:
-                    sumb.monitor.niterold  = 1#0#sumb.monitor.nitercur
+                    self.sumb.monitor.niterold  = 1#0#self.sumb.monitor.nitercur
                 #endif
-                sumb.monitor.nitercur  = 0#1
-                sumb.iteration.itertot = 0#1
+                self.sumb.monitor.nitercur  = 0#1
+                self.sumb.iteration.itertot = 0#1
+
+               
                 # update number of time steps from restart
-                sumb.monitor.ntimestepsrestart = sumb.monitor.ntimestepsrestart \
-                                                 + sumb.monitor.timestepunsteady
+                self.sumb.monitor.ntimestepsrestart = self.sumb.monitor.ntimestepsrestart \
+                                                 + self.sumb.monitor.timestepunsteady
                 # re-initialize number of time steps previously run (excluding restart)             
-                sumb.monitor.timestepunsteady = 0
+                self.sumb.monitor.timestepunsteady = 0
                 # update time previously run
-                sumb.monitor.timeunsteadyrestart = sumb.monitor.timeunsteadyrestart \
-                                                   + sumb.monitor.timeunsteady
+                self.sumb.monitor.timeunsteadyrestart = self.sumb.monitor.timeunsteadyrestart \
+                                                   + self.sumb.monitor.timeunsteady
                 # re-initialize time run
-                sumb.monitor.timeunsteady = 0.0
+                self.sumb.monitor.timeunsteady = 0.0
                 
             #endif
         elif sol_type.lower()=='unsteady':
@@ -1502,21 +1512,25 @@ class SUmbInterface(object):
             sys.exit(0)
         #endif
 
+    
         self.GetMesh()._UpdateGeometryInfo()
-        self.routineFailed = self.sumb_comm_world.allreduce(sumb.killsignals.routinefailed,mpi.MIN)
-
+      
+        self.routineFailed = self.sumb_comm_world.allreduce(self.sumb.killsignals.routinefailed,mpi.MIN)
+       
         if (abs(self.routineFailed)==True):
             if self.myid ==0:print 'Error raise in updateGeometry'
             raise ValueError
         #endif
-        sumb.inputiteration.l2convrel = kwargs['options']['L2ConvergenceRel'][1]
+     
+        self.sumb.inputiteration.l2convrel = kwargs['options']['L2ConvergenceRel'][1]
                 
         # Now coll the solver
-        sumb.solver()
-        
+
+        self.sumb.solver()
+
         #Check to see whether we have a valid solution
         #in this case routineFailed will be triggered on all processors
-        self.routineFailed = self.sumb_comm_world.allreduce(abs(sumb.killsignals.routinefailed),mpi.SUM)/mpi.COMM_WORLD.size
+        self.routineFailed = self.sumb_comm_world.allreduce(abs(self.sumb.killsignals.routinefailed),mpi.SUM)/mpi.COMM_WORLD.size
         #therefore sum up and devide by nProc
         if (abs(self.routineFailed)==True):
             if self.myid ==0: print 'Error Raised in solver'
@@ -1526,16 +1540,16 @@ class SUmbInterface(object):
         if kwargs['options']['printIterations'][1] == False:
             # If we weren't printing iterations, output the 0th (initial) 1st (start of this set of iterations) and final
             if self.myid == 0:
-                print '  -> CFD Initial Rho Norm: %10.5e'%(sumb.monitor.convarray[0,0,0])
-                print '  -> CFD Start   Rho Norm: %10.5e'%(sumb.monitor.convarray[1,0,0])
-                print '  -> CFD Final   Rho Norm: %10.5e'%(sumb.monitor.convarray[sumb.monitor.nitercur,0,0])
+                print '  -> CFD Initial Rho Norm: %10.5e'%(self.sumb.monitor.convarray[0,0,0])
+                print '  -> CFD Start   Rho Norm: %10.5e'%(self.sumb.monitor.convarray[1,0,0])
+                print '  -> CFD Final   Rho Norm: %10.5e'%(self.sumb.monitor.convarray[self.sumb.monitor.nitercur,0,0])
                      
 
         return
 
     def getResiduals(self):
         if self.myid == 0:
-            return sumb.monitor.convarray[0,0,0],sumb.monitor.convarray[1,0,0],sumb.monitor.convarray[sumb.monitor.nitercur,0,0]
+            return self.sumb.monitor.convarray[0,0,0],self.sumb.monitor.convarray[1,0,0],self.sumb.monitor.convarray[self.sumb.monitor.nitercur,0,0]
         else:
             return None,None,None
         # end if
@@ -1819,7 +1833,7 @@ class SUmbInterface(object):
         """Return true if we are running with MPI."""
         return _parallel,mpi
         
-    def WriteVolumeSolutionFile(self,*filename):
+    def WriteVolumeSolutionFile(self,filename=None,gridname=None):
         """Write the current state of the volume flow solution to a CGNS file.
  
         Keyword arguments:
@@ -1827,17 +1841,24 @@ class SUmbInterface(object):
         filename -- the name of the file (optional)
 
         """
+
+        self.sumb.monitor.writegrid = False
         if (filename):
-	   sumb.inputio.solfile[:] = ''
-           sumb.inputio.solfile[0:len(filename[0])] = filename[0]
-        if(sumb.iteration.changing_grid or sumb.inputmotion.gridmotionspecified):
-            sumb.monitor.writegrid=True
-	else:
-            sumb.monitor.writegrid=False
-        sumb.monitor.writegrid=True
-        sumb.monitor.writevolume=True
-        sumb.monitor.writesurface=False
-        sumb.writesol()
+            self.sumb.inputio.solfile[:] = ''
+            self.sumb.inputio.solfile[0:len(filename)] = filename
+        if (gridname):
+            self.sumb.inputio.newgridfile[:] = ''
+            self.sumb.inputio.newgridfile[0:len(gridname)] = gridname
+            self.sumb.monitor.writegrid = True
+#         if(self.sumb.iteration.changing_grid or self.sumb.inputmotion.gridmotionspecified):
+#             self.sumb.monitor.writegrid=True
+# 	else:
+#             self.sumb.monitor.writegrid=False
+
+
+        self.sumb.monitor.writevolume=True
+        self.sumb.monitor.writesurface=False
+        self.sumb.writesol()
 
     def WriteSurfaceSolutionFile(self,*filename):
         """Write the current state of the surface flow solution to a CGNS file.
@@ -1848,12 +1869,12 @@ class SUmbInterface(object):
 
         """
         if (filename):
-            sumb.inputio.surfacesolfile[:] = ''
-            sumb.inputio.surfacesolfile[0:len(filename[0])] = filename[0]
-        sumb.monitor.writegrid=False
-        sumb.monitor.writevolume=False
-        sumb.monitor.writesurface=True
-        sumb.writesol()
+            self.sumb.inputio.surfacesolfile[:] = ''
+            self.sumb.inputio.surfacesolfile[0:len(filename[0])] = filename[0]
+        self.sumb.monitor.writegrid=False
+        self.sumb.monitor.writevolume=False
+        self.sumb.monitor.writesurface=True
+        self.sumb.writesol()
 
  #    def GetSurfaceLoads(self, family=None, sps=1):
 #         """Return an array of the surface forces.
@@ -1972,11 +1993,11 @@ class SUmbInterface(object):
 
     def GetMach(self):
         """Get the current freestream Mach number."""
-        return sumb.inputparam.mach
+        return self.sumb.inputparam.mach
 
     def SetMach(self,mach):
         """Set the freestream Mach number."""
-        sumb.inputparam.mach = mach
+        self.sumb.inputparam.mach = mach
 
     def GetConvergenceHistory(self,name):
         """Return an array of the convergence history for a particular quantity.
@@ -1992,16 +2013,16 @@ class SUmbInterface(object):
             print "Error: No such quantity '%s'" % name
             return None
 	if (self.myid == 0):
-            if (sumb.monitor.niterold == 0 and
-                sumb.monitor.nitercur == 0 and
-                sumb.iteration.itertot == 0):
+            if (self.sumb.monitor.niterold == 0 and
+                self.sumb.monitor.nitercur == 0 and
+                self.sumb.iteration.itertot == 0):
 	        history = None
-            elif (sumb.monitor.nitercur == 0 and
-                  sumb.iteration.itertot == 0):
-	        niterold = sumb.monitor.niterold[0]	    
-                history = sumb.monitor.convarray[:niterold+1,index]
+            elif (self.sumb.monitor.nitercur == 0 and
+                  self.sumb.iteration.itertot == 0):
+	        niterold = self.sumb.monitor.niterold[0]	    
+                history = self.sumb.monitor.convarray[:niterold+1,index]
             else:
-	        history = sumb.monitor.convarray[:,index]
+	        history = self.sumb.monitor.convarray[:,index]
 	else:
             history = None
 	history = self.sumb_comm_world.bcast(history)
@@ -2029,8 +2050,8 @@ class SUmbInterface(object):
         self.level = 1
         self.sps = 1
         
-        sumb.iteration.currentlevel=1
-        sumb.iteration.groundlevel=1
+        self.sumb.iteration.currentlevel=1
+        self.sumb.iteration.groundlevel=1
 
         #Check to see if initialization has already been performed
         if(self.adjointInitialized):
@@ -2039,19 +2060,19 @@ class SUmbInterface(object):
         #Run the preprocessing routine. Sets the node numbering and
         #allocates memory.
         if(self.myid==0): print 'preprocessing adjoint'
-        sumb.preprocessingadjoint(self.level)
+        self.sumb.preprocessingadjoint(self.level)
         
         #Initialize the design variable and function storage
         if(self.myid==0):print 'Before design init'
-        sumb.designinit()
+        self.sumb.designinit()
 
         #initalize PETSc
         if(self.myid==0):print 'before petsc'
-        sumb.initializepetsc()
+        self.sumb.initializepetsc()
 
         #create the neccesary PETSc objects
         if(self.myid==0):print 'before createpetsecars'
-        sumb.createpetscvars()
+        self.sumb.createpetscvars()
 
         #mark the ADjoint as initialized
         self.adjointInitialized = True
@@ -2059,7 +2080,7 @@ class SUmbInterface(object):
             print 'ADjoint Initialized Succesfully...'
         #endif
         if(self.myid==0):print 'before nspatial..   '
-        self.nSpatial = sumb.adjointvars.ndesignspatial
+        self.nSpatial = self.sumb.adjointvars.ndesignspatial
         if(self.myid==0):print 'returning....'
         return
 
@@ -2070,12 +2091,12 @@ class SUmbInterface(object):
         '''
         #create the neccesary PETSc objects
         if(self.myid==0):print 'before createpetscvars'
-        #sumb.createpetscvars()
-        #sumb.createpetscmat()
-        #sumb.setupadjointmatrix(self.level)
-        sumb.setupadjointmatrixtranspose(self.level)
-
-        sumb.setuppetscksp(self.level)
+        #self.sumb.createpetscvars()
+        #self.sumb.createpetscmat()
+        #self.sumb.setupadjointmatrix(self.level)
+        #self.sumb.setupadjointmatrixtranspose(self.level)
+        self.sumb.setupallresidualmatrices(self.level)
+        self.sumb.setuppetscksp(self.level)
 
         return
 
@@ -2083,29 +2104,29 @@ class SUmbInterface(object):
         '''
         release the KSP memory...
         '''
-        #sumb.destroypetscksp()
-        #sumb.destroypetscvars()
-        #sumb.destroypetscmat()
+        #self.sumb.destroypetscksp()
+        #self.sumb.destroypetscvars()
+        #self.sumb.destroypetscmat()
         return
 
     def setupADjointRHS(self,objective):
         '''
         setup the RHS vector for a given cost function
         '''
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
 
         if self.myid==0:
@@ -2114,7 +2135,7 @@ class SUmbInterface(object):
     
         #print SUmbCostfunctions[objective]
 
-        sumb.setupadjointrhs(self.level,SUmbCostfunctions[objective])
+        self.sumb.setupadjointrhs(self.level,SUmbCostfunctions[objective])
 
         return
 
@@ -2122,8 +2143,8 @@ class SUmbInterface(object):
         '''
         Solve the ADjoint system using PETSc
         '''
-        #sumb.solveadjointpetsc()
-        sumb.solveadjointtransposepetsc()
+        #self.sumb.solveadjointpetsc()
+        self.sumb.solveadjointtransposepetsc()
 
         return
 
@@ -2132,9 +2153,9 @@ class SUmbInterface(object):
         Run solverADjoint to verify the partial derivatives in the ADjoint
         '''
         print 'in interface verify partials'
-        #sumb.verifydrdxsfile()
-        sumb.verifydcfdx(1)
-        #sumb.solveradjoint()
+        #self.sumb.verifydrdxsfile()
+        self.sumb.verifydcfdx(1)
+        #self.sumb.solveradjoint()
 
         return
     
@@ -2144,20 +2165,20 @@ class SUmbInterface(object):
         '''
         setup the rhs partial for the mesh derivatives
         '''
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2182,8 +2203,8 @@ class SUmbInterface(object):
             print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
         #endif
         
-        sumb.setupgradientrhsvolume(self.level,SUmbCostfunctions[possibleObjectives[objective]])
-        #sumb.setupgradientrhsspatial(self.level,SUmbCostfunctions[possibleObjectives[objective]],self.sps)
+        self.sumb.setupgradientrhsvolume(self.level,SUmbCostfunctions[possibleObjectives[objective]])
+        #self.sumb.setupgradientrhsspatial(self.level,SUmbCostfunctions[possibleObjectives[objective]],self.sps)
         #endfor
 
         return
@@ -2193,20 +2214,20 @@ class SUmbInterface(object):
         '''
         setup the rhs partial for the mesh derivatives
         '''
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2231,8 +2252,8 @@ class SUmbInterface(object):
             print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
         #endif
 
-        sumb.setupgradientrhsflow(self.level,SUmbCostfunctions[possibleObjectives[objective]])
-        #sumb.setupgradientrhsextra(self.level,SUmbCostfunctions[possibleObjectives[objective]],self.sps)
+        self.sumb.setupgradientrhsflow(self.level,SUmbCostfunctions[possibleObjectives[objective]])
+        #self.sumb.setupgradientrhsextra(self.level,SUmbCostfunctions[possibleObjectives[objective]],self.sps)
         #endfor
 
         return
@@ -2242,7 +2263,7 @@ class SUmbInterface(object):
 
         """Set up the residual sensitivity w.r.t. spatial design variables."""
 
-        sumb.setupgradientmatrixspatial(self.level)
+        self.sumb.setupgradientmatrixspatial(self.level)
 
 	if (self.myid == 0):
             print "ADjoint: Spatial residual sensitivity set up successfully."
@@ -2253,7 +2274,7 @@ class SUmbInterface(object):
 
         """Set up the residual sensitivity w.r.t. spatial design variables."""
 
-        sumb.setupgradientmatrixextra(self.level)
+        self.sumb.setupgradientmatrixextra(self.level)
 
 	if (self.myid == 0):
             print "ADjoint: Extra Vars residual sensitivity set up successfully."
@@ -2264,7 +2285,7 @@ class SUmbInterface(object):
         """Set up the derivative of the volume mesh  w.r.t. the
         CFD Surface...(meshwarpingderivatives)"""
         
-        sumb.setupvolumesurfacederivativesdv()
+        self.sumb.setupvolumesurfacederivativesdv()
         
 	if (self.myid == 0):
             print "Meshwarping derivatives set up successfully."
@@ -2275,20 +2296,20 @@ class SUmbInterface(object):
         '''
         compute the total mesh derivatives
         '''
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2313,7 +2334,7 @@ class SUmbInterface(object):
             print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
         #endif
         
-        sumb.computeadjointgradientsurfacedv(SUmbCostfunctions[possibleObjectives[objective]])
+        self.sumb.computeadjointgradientsurfacedv(SUmbCostfunctions[possibleObjectives[objective]])
         #endfor
 
         return
@@ -2322,20 +2343,20 @@ class SUmbInterface(object):
         '''
         compute the total mesh derivatives
         '''
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2360,7 +2381,7 @@ class SUmbInterface(object):
             print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
         #endif
         
-        sumb.computeadjointgradientspatial(SUmbCostfunctions[possibleObjectives[objective]])
+        self.sumb.computeadjointgradientspatial(SUmbCostfunctions[possibleObjectives[objective]])
         #endfor
 
         return
@@ -2368,23 +2389,23 @@ class SUmbInterface(object):
     def getTotalVolumeDerivatives(self,objective):
 
         """
-        Get the  sensitivities from SUmb.
+        Get the  sensitivities from Self.Sumb.
                 
 	"""
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
         
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2403,12 +2424,12 @@ class SUmbInterface(object):
                                'cd0':'cd0'
                                }
         
-        grad = numpy.zeros((sumb.adjointvars.ndesignspatial),float)
-        grad[:] = sumb.adjointvars.functiongradspatial[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
+        grad = numpy.zeros((self.sumb.adjointvars.ndesignspatial),float)
+        grad[:] = self.sumb.adjointvars.functiongradspatial[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
         #for item in objective:
         
-        #for i in xrange(sumb.adjointvars.ndesignspatial):
-            #grad[i] = sumb.adjointvars.functiongradspatial[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
+        #for i in xrange(self.sumb.adjointvars.ndesignspatial):
+            #grad[i] = self.sumb.adjointvars.functiongradspatial[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
            
         #endfor
         #endfor
@@ -2417,23 +2438,23 @@ class SUmbInterface(object):
     def getTotalSurfaceDerivatives(self,objective):
 
         """
-        Get the  sensitivities from SUmb.
+        Get the  sensitivities from Self.Sumb.
                 
 	"""
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
         
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2452,8 +2473,8 @@ class SUmbInterface(object):
                                'cd0':'cd0'
                                }
         
-        grad = numpy.zeros((3*sumb.mddata.mdnsurfnodescompact),float)
-        grad[:] = sumb.adjointvars.functiongradsurfacedv[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
+        grad = numpy.zeros((3*self.sumb.mddata.mdnsurfnodescompact),float)
+        grad[:] = self.sumb.adjointvars.functiongradsurfacedv[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
    
         
         return grad
@@ -2462,20 +2483,20 @@ class SUmbInterface(object):
         '''
         compute the total mesh derivatives
         '''
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2500,7 +2521,7 @@ class SUmbInterface(object):
             print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
         #endif
         
-        sumb.computeadjointgradientextra(SUmbCostfunctions[possibleObjectives[objective]])
+        self.sumb.computeadjointgradientextra(SUmbCostfunctions[possibleObjectives[objective]])
         #endfor
 
         return
@@ -2508,23 +2529,23 @@ class SUmbInterface(object):
     def getTotalFlowDerivatives(self,objective):
 
         """
-        Get the  sensitivities from SUmb.
+        Get the  sensitivities from Self.Sumb.
                 
 	"""
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
         
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2543,11 +2564,11 @@ class SUmbInterface(object):
                                'cd0':'cd0'
                                }
         
-        grad = numpy.zeros((sumb.adjointvars.ndesignextra),float)
-        grad[:] = sumb.adjointvars.functiongrad[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
+        grad = numpy.zeros((self.sumb.adjointvars.ndesignextra),float)
+        grad[:] = self.sumb.adjointvars.functiongrad[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
         #for item in objective:
-        #for i in xrange(sumb.adjointvars.ndesignextra):
-            #grad[i] = sumb.adjointvars.functiongrad[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
+        #for i in xrange(self.sumb.adjointvars.ndesignextra):
+            #grad[i] = self.sumb.adjointvars.functiongrad[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
         #endfor
         #endfor
         
@@ -2557,20 +2578,20 @@ class SUmbInterface(object):
         '''
         compute the total mesh derivatives
         '''
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2595,7 +2616,7 @@ class SUmbInterface(object):
             print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
         #endif
         
-        sumb.computeaerocoupling(SUmbCostfunctions[possibleObjectives[objective]])
+        self.sumb.computeaerocoupling(SUmbCostfunctions[possibleObjectives[objective]])
         #endfor
 
         return
@@ -2603,23 +2624,23 @@ class SUmbInterface(object):
     def getAeroCouplingDerivatives(self,objective):
 
         """
-        Get the  sensitivities from SUmb.
+        Get the  sensitivities from Self.Sumb.
                 
 	"""
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
         
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2638,11 +2659,11 @@ class SUmbInterface(object):
                                'cd0':'cd0'
                                }
         
-        grad = numpy.zeros((sumb.adjointvars.ndesignspatial),float)
+        grad = numpy.zeros((self.sumb.adjointvars.ndesignspatial),float)
         #for item in objective:
-        grad[:] = sumb.adjointvars.functiongradcoupling[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
-        #for i in xrange(sumb.adjointvars.ndesignspatial):
-            #grad[i] = sumb.adjointvars.functiongradcoupling[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
+        grad[:] = self.sumb.adjointvars.functiongradcoupling[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
+        #for i in xrange(self.sumb.adjointvars.ndesignspatial):
+            #grad[i] = self.sumb.adjointvars.functiongradcoupling[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
             
         #endfor
         #endfor
@@ -2653,20 +2674,20 @@ class SUmbInterface(object):
         '''
         compute the total mesh derivatives
         '''
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2691,7 +2712,7 @@ class SUmbInterface(object):
                 print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
             #endif
 
-            sumb.computeaeroexpcoupling(SUmbCostfunctions[possibleObjectives[objective]])
+            self.sumb.computeaeroexpcoupling(SUmbCostfunctions[possibleObjectives[objective]])
         except:
             print 'not an aerodynamic cost function'
         #end
@@ -2701,23 +2722,23 @@ class SUmbInterface(object):
     def getAeroExplicitCouplingDerivatives(self,objective):
 
         """
-        Get the  sensitivities from SUmb.
+        Get the  sensitivities from Self.Sumb.
                 
 	"""
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
 
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2736,12 +2757,12 @@ class SUmbInterface(object):
                                'cd0':'cd0'
                                }
         
-        grad = numpy.zeros((sumb.adjointvars.ndesignspatial),float)
+        grad = numpy.zeros((self.sumb.adjointvars.ndesignspatial),float)
         #for item in objective:
         try:
-            grad[:] = sumb.adjointvars.functiongradexpcoupling[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
-            #for i in xrange(sumb.adjointvars.ndesignspatial):
-                #grad[i] = sumb.adjointvars.functiongradexpcoupling[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
+            grad[:] = self.sumb.adjointvars.functiongradexpcoupling[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
+            #for i in xrange(self.sumb.adjointvars.ndesignspatial):
+                #grad[i] = self.sumb.adjointvars.functiongradexpcoupling[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
             #endfor
         except:
             print 'not an aerodynamic cost function'
@@ -2752,7 +2773,7 @@ class SUmbInterface(object):
     def getGlobalNodesLocal(self,blocknum,il,jl,kl):
         #get global node ordering from sumb
         if(self.myid==0):print 'in sumbInterface'
-        globalNodes = sumb.getglobalnodes(blocknum,il,jl,kl)
+        globalNodes = self.sumb.getglobalnodes(blocknum,il,jl,kl)
         
         return globalNodes
 
@@ -2760,27 +2781,27 @@ class SUmbInterface(object):
         '''
         retrieve the solution values from SUmb
         '''
-        #print 'interface getting solution'
+        print 'interface getting solution'
         # Map cost functions
-        sumb.getsolution()
+        self.sumb.getsolution()
 
         #print 'solution mapped'
-        print 'sumb value:',sumb.adjointvars.costfuncliftcoef-1
+        print 'sumb value:',self.sumb.adjointvars.costfuncliftcoef-1
 
-        SUmbsolutions = {'cl':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncliftcoef-1],\
-                         'cd':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncdragcoef-1],\
-                         'cFx':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncforcexcoef-1],\
-                         'cFy':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncforceycoef-1],\
-                         'cFz':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncforcezcoef-1],\
-                         'cMx':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncmomxcoef-1],\
-                         'cMy':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncmomycoef-1],\
-                         'cMz':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncmomzcoef-1],\
-                         'cMzAlpha':sumb.adjointvars.functionvalue[sumb.adjointvars.costfunccmzalpha-1],\
-                         'cM0':sumb.adjointvars.functionvalue[sumb.adjointvars.costfunccm0-1],\
-                         'clAlpha':sumb.adjointvars.functionvalue[sumb.adjointvars.costfuncclalpha-1],\
-                         'cl0':sumb.adjointvars.functionvalue[sumb.adjointvars.costfunccl0-1],\
-                         'cdAlpha':sumb.adjointvars.functionvalue[sumb.adjointvars.costfunccdalpha-1],\
-                         'cd0':sumb.adjointvars.functionvalue[sumb.adjointvars.costfunccd0-1]
+        SUmbsolutions = {'cl':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncliftcoef-1],\
+                         'cd':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncdragcoef-1],\
+                         'cFx':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncforcexcoef-1],\
+                         'cFy':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncforceycoef-1],\
+                         'cFz':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncforcezcoef-1],\
+                         'cMx':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncmomxcoef-1],\
+                         'cMy':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncmomycoef-1],\
+                         'cMz':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncmomzcoef-1],\
+                         'cMzAlpha':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfunccmzalpha-1],\
+                         'cM0':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfunccm0-1],\
+                         'clAlpha':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncclalpha-1],\
+                         'cl0':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfunccl0-1],\
+                         'cdAlpha':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfunccdalpha-1],\
+                         'cd0':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfunccd0-1]
                          }
 
         return SUmbsolutions
@@ -2790,8 +2811,8 @@ class SUmbInterface(object):
         run the routines to augment the RHS of the ADjoint
         '''
 
-        sumb.setupcouplingmatrixstruct(1)
-        sumb.setupadjointrhsstruct(structAdjoint)
+        self.sumb.setupcouplingmatrixstruct(1)
+        self.sumb.setupadjointrhsstruct(structAdjoint)
         
 
         return
@@ -2799,23 +2820,23 @@ class SUmbInterface(object):
     def getAdjoint(self,objective):
 
         """
-        Get the  sensitivities from SUmb.
+        Get the  sensitivities from Self.Sumb.
                 
 	"""
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
         
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2834,14 +2855,14 @@ class SUmbInterface(object):
                                'cd0':'cd0'
                                }
 
-        sumb.getadjoint(SUmbCostfunctions[possibleObjectives[objective]])
-        nstate = sumb.flowvarrefstate.nw*sumb.adjointvars.ncellsglobal
+        self.sumb.getadjoint(SUmbCostfunctions[possibleObjectives[objective]])
+        nstate = self.sumb.flowvarrefstate.nw*self.sumb.adjointvars.ncellsglobal
         adjoint = numpy.zeros((nstate),float)
         #for item in objective:
         #This should work
-        adjoint[:] = sumb.adjointvars.adjoint[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
+        adjoint[:] = self.sumb.adjointvars.adjoint[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
         #for i in xrange(nstate):
-            # adjoint[i] = sumb.adjointvars.adjoint[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
+            # adjoint[i] = self.sumb.adjointvars.adjoint[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
         #endfor
        
         return adjoint
@@ -2849,23 +2870,23 @@ class SUmbInterface(object):
     def getTotalStructDerivatives(self,objective):
 
         """
-        Get the  sensitivities from SUmb.
+        Get the  sensitivities from Self.Sumb.
                 
 	"""
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
         
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2884,11 +2905,11 @@ class SUmbInterface(object):
                                'cd0':'cd0'
                                }
         
-        grad = numpy.zeros((sumb.adjointvars.ndesignspatial),float)
+        grad = numpy.zeros((self.sumb.adjointvars.ndesignspatial),float)
         #for item in objective:
-        grad[:] = sumb.adjointvars.functiongradstruct[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
-        #for i in xrange(sumb.adjointvars.ndesignspatial):
-            #grad[i] = sumb.adjointvars.functiongradstruct[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
+        grad[:] = self.sumb.adjointvars.functiongradstruct[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
+        #for i in xrange(self.sumb.adjointvars.ndesignspatial):
+            #grad[i] = self.sumb.adjointvars.functiongradstruct[SUmbCostfunctions[possibleObjectives[objective]]-1,i]
         #endfor
         
         return grad
@@ -2899,22 +2920,22 @@ class SUmbInterface(object):
         based on the coupled structural adjoint
         '''
         
-        sumb.setupcouplingtotalstruct(1)
+        self.sumb.setupcouplingtotalstruct(1)
         
-        SUmbCostfunctions = {'cl':sumb.adjointvars.costfuncliftcoef,\
-                             'cd':sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':sumb.adjointvars.costfunccm0,\
-                             'clAlpha':sumb.adjointvars.costfuncclalpha,\
-                             'cl0':sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':sumb.adjointvars.costfunccdalpha,\
-                             'cd0':sumb.adjointvars.costfunccd0
+        SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
+                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                             'cM0':self.sumb.adjointvars.costfunccm0,\
+                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                             'cl0':self.sumb.adjointvars.costfunccl0,\
+                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                             'cd0':self.sumb.adjointvars.costfunccd0
                              }
         
         possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
@@ -2939,7 +2960,7 @@ class SUmbInterface(object):
                 print 'SUmb index:',SUmbCostfunctions[possibleObjectives[objective]]
             #endif
                 
-            sumb.setupadjointtotalstruct(structAdjoint,SUmbCostfunctions[possibleObjectives[objective]])
+            self.sumb.setupadjointtotalstruct(structAdjoint,SUmbCostfunctions[possibleObjectives[objective]])
         except:
             print 'not an aerodynamic cost function'
         #end
@@ -2952,108 +2973,9 @@ class SUmbInterface(object):
         from the time spectral solution
         '''
 
-        sumb.stabilityderivativedriver()
+        self.sumb.stabilityderivativedriver()
 
         return
     
 
 
-
-
-
-
-
-
-
-# Only python version to compute ifaceptb and iedgept...not complete...new version 
-# in fortran renders this unnecessary
-#   # Now produce ifaceptb,iedgeptb using the topology
-#                 #information and the face boundary condition data
-
-#                 # Step 1: Loop over all faces on all blocks, for each
-#                 # face, add the ID of each of the four nodes to the
-#                 # explicitly perturbed corner list
-
-#                 explicitly_perturbed_corners = []
-#                 for ivol in xrange(FE_topo.nVol):
-#                     for iface in xrange(6):
-#                         if BCs[ivol][iface] == 1: # BCwallViscous
-#                             corners = nodesFromFace(iface)
-#                             for icorner in corners:
-#                                 explicitly_perturbed_corners.append(FE_topo.node_link[ivol][icorner])
-#                             # end for
-#                         # end if
-#                     # end for
-#                 # end for
-
-#                 # Step 2: Unique-ify the explicitly_perturbed_corners list
-#                 # and sort them in the process
-
-#                 explicitly_perturbed_corners = unique(explicitly_perturbed_corners)
-#                 explicitly_perturbed_corners.sort() # It should alreadly be sorted, but just in case
-
-#                 # Step 3: Loop over all edges on all volumes. If they have
-#                 # ONE explictly perturbed corner they are IMPLICTLY
-#                 # perturbed, if they have TWO explictly perturbed corners,
-#                 # they are EXPLICTLY perturbed. Note we call
-#                 # inBinarySearch here. This is simpilar to python's 'in'
-#                 # function. However since we have a sorted list, we can do
-#                 # a binary search instead of a linear search which is MUCH
-#                 # faster. The return is True or False as to whether
-#                 # 'element' is in 'list'
-
-#                 iedgeptb = zeros((FE_topo.nVol,12),'intc')
-
-#                 for ivol in xrange(FE_topo.nVol):
-#                     for iedge in xrange(12):
-#                         edge_number = FE_topo.edge_link[ivol][iedge]
-#                         corners = [FE_topo.edges[edge_number].n1,FE_topo.edges[edge_number].n2]
-#                         explicit = array([False,False])
-#                         for icorner in xrange(2):
-#                             explicit[icorner] = inBinarySearch(\
-#                                 explicitly_perturbed_corners,corners[icorner])
-#                         # end for
-
-#                         if explicit.all():
-#                             iedgeptb[ivol][iedge] = 2
-#                         elif explicit.any():
-#                             iedgeptb[ivol][iedge] = 1
-#                         else:
-#                             iedgeptb[ivol][iedge] = 0
-#                         # end if
-#                     # end for
-#                 # end for
-
-#                 # Step 4: Loop over all faces on all volumes. An EXPLICTLY
-#                 # perturbed face will have ALL corners explictly
-#                 # perturbed. An IMPLICLTY perturbed face will have at
-#                 # least EXPLICTLY perturbed corner. A face will have value
-#                 # of 0 if there are NO EXPLICTLY perturbed corners.
-
-#                 ifaceptb = zeros((FE_topo.nVol,6),'intc')
-
-#                 for ivol in xrange(FE_topo.nVol):
-#                     for iface in xrange(6):
-#                         corners = nodesFromFace(iface)
-#                         explicit = array([False,False,False,False])
-#                         for icorner in xrange(4):
-#                             node = FE_topo.node_link[ivol][corners[icorner]]
-#                             explicit[icorner] = inBinarySearch(\
-#                                 explicitly_perturbed_corners,node)
-#                         # end for
-#                         if explicit.all():
-#                             ifaceptb[ivol][iface] = 2
-#                         elif explicit.any():
-#                             ifaceptb[ivol][iface] = 1
-#                         else:
-#                             ifaceptb[ivol][iface] = 0
-#                         # end if
-#                     # end for
-#                 # end for
-                            
-#                 # Step 5: Finally permute the faces and edges from pyPSG
-#                 # format to to SUmb format
-#                 for ivol in xrange(FE_topo.nVol):
-#                     ifaceptb[ivol] = convertFaces(ifaceptb[ivol])
-#                     iedgeptb[ivol] = convertEdges(iedgeptb[ivol])
-#                 # end for

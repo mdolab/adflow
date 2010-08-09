@@ -86,12 +86,11 @@ CC_PRECISION_FLAGS   = $(CC_INTEGER_PRECISION_FLAG) \
 
 COMMAND_SEARCH_PATH_MODULES = -I
 
-FF90_GEN_FLAGS =  -DUSE_MPI_INCLUDE_FILE -ffree-line-length-huge -fno-second-underscore  -DUSE_PETSC_3
-#-fbounds-check -ftrace=full
+FF90_GEN_FLAGS =  -DUSE_MPI_INCLUDE_FILE -ffree-line-length-huge -fno-second-underscore  -DUSE_PETSC_3 -fbounds-check -ftrace=full -g
 
 CC_GEN_FLAGS   = 
 
-FF90_OPTFLAGS   = -O2 -r8
+FF90_OPTFLAGS   =  -r8 #-O2
 CC_OPTFLAGS     = -O
 
 #FF90_DEBUGFLAGS = -g -DDEBUG_MODE -fbounds-check
@@ -131,6 +130,12 @@ LINKER_FLAGS = $(FF90_OPTFLAGS)
 
 #PETSC_INCLUDE_FLAGS = -DUSE_NO_PETSC
 PETSC_DIR =/usr/lib/petscdir/3.0.0/
+
+#include ${PETSC_DIR}/conf/variables
+
+#PETSC_INCLUDE_FLAGS=${PETSC_CC_INCLUDES} -I$(PETSC_DIR)
+#PETSC_LINKER_FLAGS=${PETSC_LIB}
+
 PETSC_LINKER_FLAGS  =  -lpetscksp -lpetscdm -lpetscmat -lpetscvec -lpetsc  -lpetscsnes -lpetscts -lX11 -lm
 PETSC_INCLUDE_FLAGS= -I$(PETSC_DIR)  -I$(PETSC_DIR)include -I$(PETSC_DIR)include/finclude
 
