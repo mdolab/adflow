@@ -41,31 +41,31 @@ except ImportError:
     except ImportError:
         print "Error: Failed to import mpi or dummy_mpi."
 
-# Import the sumb module
+# # Import the sumb module
 
 
-if _parallel:
-    try:
-        import sumb_parallel as sumb
-    except ImportError:
-        try:
-            import sumb
-            if mpi.COMM_WORLD.rank==0:
-                print "Warning: Running in an MPI environment, but failed"
-                print "         to import parallel version of SUmb.  Proceeding"
-                print "         with a sequential version."
-            #endif
+# if _parallel:
+#     try:
+#         import sumb_parallel as sumb
+#     except ImportError:
+#         try:
+#             import sumb
+#             if mpi.COMM_WORLD.rank==0:
+#                 print "Warning: Running in an MPI environment, but failed"
+#                 print "         to import parallel version of SUmb.  Proceeding"
+#                 print "         with a sequential version."
+#             #endif
 
-        except ImportError:
-            if mpi.COMM_WORLD.rank==0:
-                print "Error: Failed to import parallel or sequential version"
-                print "       of SUmb."
-            #endif
-else:
-    try:
-        import sumb
-    except ImportError:
-        print "Error: Failed to import sequential version of SUmb."
+#         except ImportError:
+#             if mpi.COMM_WORLD.rank==0:
+#                 print "Error: Failed to import parallel or sequential version"
+#                 print "       of SUmb."
+#             #endif
+# else:
+#     try:
+#         import sumb
+#     except ImportError:
+#         print "Error: Failed to import sequential version of SUmb."
 
 
 # =============================================================================
@@ -318,7 +318,6 @@ class SUmbMesh(object):
     def _UpdateGeometryInfo(self):
         """Update the SUmb internal geometry info, if necessary."""
         if (self._update_geom_info):
-            if (self.myid==0): print 'Updating Geometry...'
             self.sumb.updatecoordinatesalllevels()
             self.sumb.updatewalldistancealllevels()
             self.sumb.updateslidingalllevels()
@@ -521,13 +520,19 @@ class SUmbMesh(object):
         return
 
     def setGrid(self,externaldof):
+
+        self.sumb.setgrid(externaldof)
         self.sumb.setgrid(externaldof)
         self._update_geom_info = True
         return
     
     def getForces(self,cgnsdof):
-        return self.sumb.getforces(cgnsdof)
-    
+        self.sumb.getforces1()
+        if cgnsdof > 0:
+            return self.sumb.getforces2(cgnsdof)
+        else:
+            return numpy.empty([0],dtype='d')
+        # end if
 
 # =============================================================================
 
@@ -550,7 +555,8 @@ class SUmbInterface(object):
         if 'sumb' in kwargs:
             self.sumb = kwargs['sumb']
         else:
-            self.sumb = sumb
+            sumb_mod = MExt('sumb_parallel')
+            self.sumb = sumb_mod._module
         # end if
         
         # The very first thing --> Set the MPI Communicators
@@ -1043,7 +1049,7 @@ class SUmbInterface(object):
         autofile.write(  "                         Residual averaging: all stages\n")
         autofile.write(  "                      # Other possibilities: no\n")
         autofile.write(  "                      #                    : alternate stages\n")
-        autofile.write(  "     Residual averaging smoothing parameter: 1.5\n")
+        autofile.write(  "     Residual averaging smoothing parameter: .5\n")
 
         autofile.write(  "                 Number of multigrid cycles: 200\n")
         autofile.write(  "   Number of single grid startup iterations: 0\n")
@@ -1537,13 +1543,12 @@ class SUmbInterface(object):
             raise ValueError
         #endif
 
-        if kwargs['options']['printIterations'][1] == False:
-            # If we weren't printing iterations, output the 0th (initial) 1st (start of this set of iterations) and final
-            if self.myid == 0:
-                print '  -> CFD Initial Rho Norm: %10.5e'%(self.sumb.monitor.convarray[0,0,0])
-                print '  -> CFD Start   Rho Norm: %10.5e'%(self.sumb.monitor.convarray[1,0,0])
-                print '  -> CFD Final   Rho Norm: %10.5e'%(self.sumb.monitor.convarray[self.sumb.monitor.nitercur,0,0])
-                     
+#         if kwargs['options']['printIterations'][1] == False:
+#             # If we weren't printing iterations, output the 0th (initial) 1st (start of this set of iterations) and final
+#             if self.myid == 0:
+#                 print '  -> CFD Initial Rho Norm: %10.5e'%(self.sumb.monitor.convarray[0,0,0])
+#                 print '  -> CFD Start   Rho Norm: %10.5e'%(self.sumb.monitor.convarray[1,0,0])
+#                 print '  -> CFD Final   Rho Norm: %10.5e'%(self.sumb.monitor.convarray[self.sumb.monitor.nitercur,0,0])
 
         return
 
