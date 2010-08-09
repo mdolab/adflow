@@ -50,7 +50,9 @@ from numpy import real
 # =============================================================================
 # Extension modules
 # =============================================================================
-sys.path.append(os.path.abspath('../../../../pyACDT/Aerodynamics'))
+#sys.path.append(os.path.abspath('../../../../pyACDT/pyACDT/Aerodynamics'))
+sys.path.append(os.path.abspath('../../../../pyACDT/pyACDT/Aerodynamics'))
+
 from pyAero_solver import AeroSolver
 
 # =============================================================================
@@ -89,7 +91,7 @@ class SUMB(AeroSolver):
 			'MGCycle':[str,'sg'],
 			'MetricConversion':[float,1.0],
 			'Discretization':[str,'Central plus scalar dissipation'],
-			'Dissipation Scaling Exponent':[str,0.67],
+			'Dissipation Scaling Exponent':[float,0.67],
 			'Dissipation Coefficients':[list,[0.5,0.015625]],
 			'sol_restart':[str,'no'],
 			'Allow block splitting':[str,'no'],
@@ -113,8 +115,10 @@ class SUMB(AeroSolver):
 			'ILU Fill Levels': [int,2],
 			'ASM Overlap' : [int,5],
 			'TS Stability': [str,'no'],
-			'Reference Temp.':[float,398.0],
-			'Reference Pressure':[float,101325.0]
+			'Reference Temp.':[float,298.0],
+			'Reference Pressure':[float,101325.0],
+			'Reference Density':[float,1.225]
+
 			}
 		
 		informs = {
@@ -122,7 +126,13 @@ class SUMB(AeroSolver):
 		AeroSolver.__init__(self, name, category, def_opts, informs, *args, **kwargs)
 		
 		#self.sumb = SUmbInterface()
-		self.interface = SUmbInterface(*args,**kwargs)
+
+		if 'interface' in kwargs:
+			self.interface = kwargs['interface']
+		else:
+			self.interface = SUmbInterface(*args,**kwargs)
+		# end if
+
 		self.Mesh = self.interface.Mesh
 		self.myid = self.interface.myid
 		self.callCounter = 0
@@ -130,7 +140,7 @@ class SUMB(AeroSolver):
 		self.flowMatrixInitialized=False
 		self.meshWarpingInitialized=False
 		self.allInitialized = False
-		# If a new option is added, make sure to add a default here!!
+		
 
 		return
 
@@ -349,7 +359,8 @@ class SUMB(AeroSolver):
 		Setup the adjoint matrix for the current solution
 		'''
 		self.interface.setupADjointMatrix()
-
+		self.volumeMatrixInitialized = True
+		self.flowMatrixInitialized=True
 		return
 		
 
