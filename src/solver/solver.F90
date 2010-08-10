@@ -123,10 +123,12 @@
            currentLevel = groundLevel - 1
 
            if(myID == 0) then
-             print "(a)", "#"
-             print 100, currentLevel
-             print "(a)", "#"
- 100         format("# Going down to grid level",1X,I1)
+              if (printIterations) then
+                 print "(a)", "#"
+                 print 100, currentLevel
+                 print "(a)", "#"
+100              format("# Going down to grid level",1X,I1)
+              end if
            endif
 
            call transferToFineGrid(.false.)

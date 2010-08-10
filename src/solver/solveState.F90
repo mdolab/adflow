@@ -94,11 +94,13 @@
            numberString = adjustl(numberString)
            numberString = trim(numberString)
 
-           print "(a)", "#"
-           print 100, groundLevel, trim(numberString)
-           print "(a)", "#"
- 100       format("# Grid",1X,I1,": Performing",1X,A,1X, "single grid &
+           if (printIterations) then
+              print "(a)", "#"
+              print 100, groundLevel, trim(numberString)
+              print "(a)", "#"
+100           format("# Grid",1X,I1,": Performing",1X,A,1X, "single grid &
                   &startup iterations, unless converged earlier")
+           end if
          endif
 
          ! Write the sliding mesh mass flow parameters (not for
@@ -238,12 +240,13 @@
          ! that from now on multigrid is turned on.
 
          if(nsgStartup > 0) then
-           print "(a)", "#"
-           print 101, groundLevel
-           print "(a)", "#"
- 101       format("# Grid",1X,I1,": Switching to multigrid iterations")
-         endif
-
+            if (printIterations) then
+               print "(a)", "#"
+               print 101, groundLevel
+               print "(a)", "#"
+101            format("# Grid",1X,I1,": Switching to multigrid iterations")
+            endif
+         end if
          ! Write a message about the number of multigrid iterations
          ! to be performed.
 
@@ -251,13 +254,14 @@
          numberString = adjustl(numberString)
          numberString = trim(numberString)
 
-         print "(a)", "#"
-         print 102, groundLevel, trim(numberString)
-         print "(a)", "#"
- 102     format("# Grid",1X,I1,": Performing",1X,A,1X, &
-                "multigrid iterations, unless converged earlier")
-       endif
-
+         if (printIterations) then
+            print "(a)", "#"
+            print 102, groundLevel, trim(numberString)
+            print "(a)", "#"
+102         format("# Grid",1X,I1,": Performing",1X,A,1X, &
+                 "multigrid iterations, unless converged earlier")
+         endif
+      end if
        ! Write the sliding mesh mass flow parameters (not for unsteady)
        ! and the convergence header.
 
@@ -268,7 +272,7 @@
        ! Determine and write the initial convergence info.
        ! Note that if single grid startup iterations were made, this
        ! value is printed twice.
-
+       
        call convergenceInfo
 
        ! Loop over the number of multigrid cycles.
