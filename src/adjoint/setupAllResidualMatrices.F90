@@ -67,7 +67,9 @@
       REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
       REAL(KIND=REALTYPE), DIMENSION(3) :: rotcenteradj
       REAL(KIND=REALTYPE), DIMENSION(3) :: rotrateadj
-      REAL(KIND=REALTYPE) :: rotrateadjb(3)
+      REAL(KIND=REALTYPE) :: rotcenteradjb(3), rotrateadjb(3)
+      REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3), rotpointadj(3)&
+           &  , rotpointadjb(3)
       REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3,nTimeIntervalsSpectral), xblockcorneradjb(2&
            &  , 2, 2, 3,nTimeIntervalsSpectral)
 
@@ -240,11 +242,11 @@
                   do iCell = 2, il
                      ! Copy the state w to the wAdj array in the stencil
                      call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
-                          betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
-                          nn,level,sps,&
-                          prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+           betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
+           nn,level,sps,pointRefAdj,rotPointAdj,&
+           prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
         
 
                      
@@ -276,7 +278,10 @@
                         betaadjb = 0.
                         machadjb = 0.
                         machgridadjb = 0.
-                        rotrateadjb(:)=0.
+                        rotrateadjb(:)=0. 
+                        rotpointadjb(:)=0.
+                        pointrefadjb(:)=0.
+                        rotcenteradjb(:)=0.
 !                    print *,'dwadjb',dwadjb,'wadjb',wadjb(0,0,0,:)
 !                    print *,'calling reverse mode'
 !                   print *,'secondhalo',secondhalo
@@ -293,7 +298,8 @@
 &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
 &  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
 &  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
-&  , rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+&  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, pointrefadjb&
+&  , rotpointadj, rotpointadjb, murefadj, timerefadj, pinfcorradj, &
 &  liftindex)
 
 
@@ -320,7 +326,12 @@
 			dRdaLocal(m,nDesignRotX) =rotrateadjb(1)
 			dRdaLocal(m,nDesignRotY) =rotrateadjb(2)
 			dRdaLocal(m,nDesignRotZ) =rotrateadjb(3)
-                        
+                        dRdaLocal(m,nDesignRotCenX) =rotcenteradjb(1)+rotpointadjb(1)
+			dRdaLocal(m,nDesignRotCenY) =rotcenteradjb(2)+rotpointadjb(2)
+			dRdaLocal(m,nDesignRotCenZ) =rotcenteradjb(3)+rotpointadjb(3)
+                        dRdaLocal(m,nDesignPointRefX) =pointrefadjb(1)
+			dRdaLocal(m,nDesignPointRefY) =pointrefadjb(2)
+			dRdaLocal(m,nDesignPointRefZ) =pointrefadjb(3)
 !!$                        do ii=-2,2!1,il-1
 !!$                           do jj = -2,2!1,jl-1
 !!$                              do kk = -2,2!1,kl-1
@@ -575,6 +586,97 @@
                              "Error in MatSetValues for global column", idxngb
                         call terminate("setupAllResidualMatrices", errorMessage)
                      endif
+
+                     !X Rotation Center
+                     do m=1,nw
+                        idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+                     enddo
+                     idxng = nDesignRotCenX - 1
+                     
+                     call MatSetValues(dRda, nw, idxmg, 1, idxng, &
+                          dRdaLocal(:,nDesignRotCenX), INSERT_VALUES, PETScIerr)
+                     
+                     if( PETScIerr/=0 ) then
+                        write(errorMessage,99) &
+                             "Error in MatSetValues for global column", idxng
+                        call terminate("setupGradientMatrixExtra", errorMessage)
+                     endif
+
+                     !Y Rotation Center
+                     do m=1,nw
+                        idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+                     enddo
+                     idxng = nDesignRotCenY - 1
+                     
+                     call MatSetValues(dRda, nw, idxmg, 1, idxng, &
+                          dRdaLocal(:,nDesignRotCenY), INSERT_VALUES, PETScIerr)
+                     
+                     if( PETScIerr/=0 ) then
+                        write(errorMessage,99) &
+                             "Error in MatSetValues for global column", idxng
+                        call terminate("setupGradientMatrixExtra", errorMessage)
+                     endif
+                     
+                     !Z Rotation Center
+                     do m=1,nw
+                        idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+                     enddo
+                     idxng = nDesignRotCenZ - 1
+                     
+                     call MatSetValues(dRda, nw, idxmg, 1, idxng, &
+                          dRdaLocal(:,nDesignRotCenZ), INSERT_VALUES, PETScIerr)
+                     
+                     if( PETScIerr/=0 ) then
+                        write(errorMessage,99) &
+                             "Error in MatSetValues for global column", idxng
+                        call terminate("setupGradientMatrixExtra", errorMessage)
+                     endif
+                     
+                     !X PointRef
+                     do m=1,nw
+                        idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+                     enddo
+                     idxng = nDesignPointRefX - 1
+                     
+                     call MatSetValues(dRda, nw, idxmg, 1, idxng, &
+                          dRdaLocal(:,nDesignPointRefX), INSERT_VALUES, PETScIerr)
+                     
+                     if( PETScIerr/=0 ) then
+                        write(errorMessage,99) &
+                             "Error in MatSetValues for global column", idxng
+                        call terminate("setupGradientMatrixExtra", errorMessage)
+                     endif
+                     
+                     !Y PointRef
+                     do m=1,nw
+                        idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+                     enddo
+                     idxng = nDesignPointRefY - 1
+                     
+                     call MatSetValues(dRda, nw, idxmg, 1, idxng, &
+                          dRdaLocal(:,nDesignPointRefY), INSERT_VALUES, PETScIerr)
+                     
+                     if( PETScIerr/=0 ) then
+                        write(errorMessage,99) &
+                             "Error in MatSetValues for global column", idxng
+                        call terminate("setupGradientMatrixExtra", errorMessage)
+                     endif
+                     
+                     !Z PointRef
+                     do m=1,nw
+                        idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
+                     enddo
+                     idxng = nDesignPointRefZ - 1
+                     
+                     call MatSetValues(dRda, nw, idxmg, 1, idxng, &
+                          dRdaLocal(:,nDesignPointRefZ), INSERT_VALUES, PETScIerr)
+                     
+                     if( PETScIerr/=0 ) then
+                        write(errorMessage,99) &
+                             "Error in MatSetValues for global column", idxng
+                        call terminate("setupGradientMatrixExtra", errorMessage)
+                     endif
+                     
          !  do sps2 = 1,nTimeIntervalsSpectral
               !*********************************************************
               !                                                        *

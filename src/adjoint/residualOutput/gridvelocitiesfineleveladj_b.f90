@@ -2,19 +2,21 @@
 !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
 !  
 !  Differentiation of gridvelocitiesfineleveladj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: rotrateadj alphaadj
-!                xadj betaadj machgridadj sfacekadj skadj sfacejadj
-!                sjadj sfaceiadj sadj veldirfreestreamadj siadj
-!                sincoeffouralpha coscoeffouryrot sincoeffourbeta
-!                coscoeffourxrot coefpolmach coefpolzrot omegafourmach
-!                omegafouralpha omegafourzrot coefpolyrot omegafouryrot
-!                coefpolxrot coefpolalpha sincoeffourmach omegafourxrot
-!                sincoeffourzrot coscoeffourbeta rotpoint sincoeffouryrot
-!                sincoeffourxrot coscoeffouralpha coefpolbeta omegafourbeta
-!                coscoeffourmach coscoeffourzrot
-!   of linear combination of output variables: rotrateadj alphaadj
-!                xadj betaadj machgridadj sfacekadj skadj sfacejadj
-!                sjadj sfaceiadj sadj veldirfreestreamadj siadj
+!   gradient, with respect to input variables: pointrefadj rotrateadj
+!                alphaadj rotpointadj xadj betaadj machgridadj
+!                sfacekadj skadj sfacejadj rotcenteradj sjadj sfaceiadj
+!                sadj veldirfreestreamadj siadj sincoeffouralpha
+!                coscoeffouryrot sincoeffourbeta coscoeffourxrot
+!                coefpolmach coefpolzrot omegafourmach omegafouralpha
+!                omegafourzrot coefpolyrot omegafouryrot coefpolxrot
+!                coefpolalpha sincoeffourmach omegafourxrot sincoeffourzrot
+!                coscoeffourbeta sincoeffouryrot sincoeffourxrot
+!                coscoeffouralpha coefpolbeta omegafourbeta coscoeffourmach
+!                coscoeffourzrot
+!   of linear combination of output variables: pointrefadj rotrateadj
+!                alphaadj rotpointadj xadj betaadj machgridadj
+!                sfacekadj skadj sfacejadj rotcenteradj sjadj sfaceiadj
+!                sadj veldirfreestreamadj siadj
 !
 !      ******************************************************************
 !      *                                                                *
@@ -27,11 +29,12 @@
 !
 SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 &  , siadj, siadjb, sjadj, sjadjb, skadj, skadjb, rotcenteradj, &
-&  rotrateadj, rotrateadjb, sadj, sadjb, sfaceiadj, sfaceiadjb, &
-&  sfacejadj, sfacejadjb, sfacekadj, sfacekadjb, machgridadj, &
-&  machgridadjb, veldirfreestreamadj, veldirfreestreamadjb, &
+&  rotcenteradjb, rotrateadj, rotrateadjb, sadj, sadjb, sfaceiadj, &
+&  sfaceiadjb, sfacejadj, sfacejadjb, sfacekadj, sfacekadjb, machgridadj&
+&  , machgridadjb, veldirfreestreamadj, veldirfreestreamadjb, &
 &  liftdirectionadj, alphaadj, alphaadjb, betaadj, betaadjb, liftindex, &
-&  icell, jcell, kcell, nn, level, sps2)
+&  icell, jcell, kcell, pointrefadj, pointrefadjb, rotpointadj, &
+&  rotpointadjb, nn, level, sps2)
   USE blockpointers
   USE cgnsgrid
   USE flowvarrefstate
@@ -54,9 +57,10 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
   REAL(KIND=REALTYPE), INTENT(IN) :: machgridadj
   REAL(KIND=REALTYPE) :: machgridadjb
   INTEGER(KIND=INTTYPE), INTENT(IN) :: nn
-  REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: rotcenteradj
-  REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: rotrateadj
-  REAL(KIND=REALTYPE) :: rotrateadjb(3)
+  REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3)
+  REAL(KIND=REALTYPE) :: rotcenteradj(3), rotcenteradjb(3), rotrateadj(3&
+&  ), rotrateadjb(3)
+  REAL(KIND=REALTYPE) :: rotpointadj(3), rotpointadjb(3)
   REAL(KIND=REALTYPE) :: sadj(-2:2, -2:2, -2:2, 3, &
 &  ntimeintervalsspectral), sadjb(-2:2, -2:2, -2:2, 3, &
 &  ntimeintervalsspectral)
@@ -91,15 +95,18 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 &  ad_to, ad_to0, ad_to1, ad_to2, ad_to3, ad_to4, branch
   REAL(KIND=REALTYPE) :: alphaincrement, alphats, alphatsb, &
 &  betaincrement, betats, betatsb, intervalmach, tnew, told
+  REAL(KIND=REALTYPE) :: alpha, alphab, beta, betab
   REAL(KIND=REALTYPE) :: derivrotationmatrixadj(3, 3)
   REAL(KIND=REALTYPE) :: dragdir(3), liftdir(3), veldir(3), veldirb(3)
   INTEGER(KIND=INTTYPE) :: i, ii, iie, j, jje, k, kke
   INTEGER(KIND=INTTYPE) :: iend, istart, jend, jstart, kend, kstart
   INTEGER(KIND=INTTYPE) :: mm
-  REAL(KIND=REALTYPE) :: offsetvector(3)
+  REAL(KIND=REALTYPE) :: offsetvector(3), offsetvectorb(3)
   REAL(KIND=REALTYPE) :: oneover4dt, oneover8dt
   REAL(KIND=REALTYPE) :: rotationmatrixadj(3, 3)
-  REAL(KIND=REALTYPE) :: rotationpointadj(3), rotpointadj(3)
+  REAL(KIND=REALTYPE) :: rotationpointadj(3), rotationpointadjb(3)
+  REAL(KIND=REALTYPE) :: rotratetemp(3), rotratetempb(3)
+  REAL(KIND=REALTYPE) :: rotratetrans(3, 3), rotratetransb(3, 3)
   REAL(KIND=REALTYPE) :: sfaceadj(-2:2, -2:2), sfaceadjb(-2:2, -2:2)
   REAL(KIND=REALTYPE), DIMENSION(:, :, :), POINTER :: ss, xx
   REAL(KIND=REALTYPE) :: ssadj(-3:2, -3:2, 3), ssadjb(-3:2, -3:2, 3), &
@@ -114,7 +121,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
   REAL(KIND=REALTYPE) :: sc(3), scb(3), tempb, tempb0, tempb1, tempb2, &
 &  tempb3, tempb4, xc(3), xcb(3), xxc(3), xxcb(3)
   REAL(KIND=REALTYPE), DIMENSION(:, :, :, :), POINTER :: xxold
-  INTRINSIC SQRT
+  INTRINSIC COS, SIN, SQRT
   EXTERNAL TERMINATE
 !
 !      ******************************************************************
@@ -155,7 +162,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 !  aInf = sqrt(gammaInf*pInf/rhoInf)
 !  velxGrid = aInf*MachGrid(1)
 !  velyGrid = aInf*MachGrid(2)
-!  velzGrid = aInf*MachGrid(3)
+!  velzGrid = aInf*MachGrid(3)acg[i][j]
 !velxGrid = zero
 !velyGrid = zero
 !velzGrid = zero
@@ -167,8 +174,6 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 ! point; needed for velocity due to the rigid body rotation of
 ! the entire grid. It is assumed that the rigid body motion of
 ! the grid is only specified if there is only 1 section present.
-!this may need to be modified later...(perhaps put in copy stencil?)
-  rotpointadj = rotpoint
   CALL DERIVATIVEROTMATRIXRIGIDADJ(derivrotationmatrixadj, &
 &                             rotationpointadj, rotpointadj, t(1))
 !compute the rotation matrix to update the velocities for the time
@@ -185,7 +190,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 ! well as the rotation point; the latter may vary in time due
 ! to rigid body translation.
       CALL ROTMATRIXRIGIDBODYADJ(tnew, told, rotationmatrixadj, &
-&                           rotationpointadj)
+&                           rotationpointadj, rotpointadj)
       velxgrid0 = rotationmatrixadj(1, 1)*velxgrid0 + rotationmatrixadj(&
 &        1, 2)*velygrid0 + rotationmatrixadj(1, 3)*velzgrid0
       velygrid0 = rotationmatrixadj(2, 1)*velxgrid0 + rotationmatrixadj(&
@@ -260,6 +265,7 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
     IF (useoldcoor) THEN
       velxgrid0b = 0.0
       velzgrid0b = 0.0
+      rotationpointadjb(1:3) = 0.0
       velygrid0b = 0.0
     ELSE
 !
@@ -280,7 +286,32 @@ SUBROUTINE GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb&
 !!$
 !!$             rotCenter = cgnsDoms(j)%rotCenter
 !!$             rotRate   = timeRef*cgnsDoms(j)%rotRate
-      offsetvector = rotcenteradj - pointref
+      IF (usewindaxis) THEN
+        alpha = alphaadj
+        beta = betaadj
+!Rotate the rotation rate from the wind axis back to the local body axis
+        rotratetrans(1, 1) = COS(alpha)*COS(beta)
+        rotratetrans(1, 2) = -(COS(alpha)*SIN(beta))
+        rotratetrans(1, 3) = -SIN(alpha)
+        rotratetrans(2, 1) = SIN(beta)
+        rotratetrans(2, 2) = COS(beta)
+        rotratetrans(2, 3) = 0.0
+        rotratetrans(3, 1) = SIN(alpha)*COS(beta)
+        rotratetrans(3, 2) = -(SIN(alpha)*SIN(beta))
+        rotratetrans(3, 3) = COS(alpha)
+        rotratetemp = rotrateadj
+        rotrateadj = 0.0
+        DO i=1,3
+          DO j=1,3
+            rotrateadj(i) = rotrateadj(i) + rotratetemp(j)*rotratetrans(&
+&              i, j)
+          END DO
+        END DO
+        CALL PUSHINTEGER4(1)
+      ELSE
+        CALL PUSHINTEGER4(0)
+      END IF
+      offsetvector = rotcenteradj - pointrefadj
 !subtract off the rotational velocity of the center gravity of the grid
 ! to account for the added overall velocity.
       velxgrid = velxgrid0 + 1*(rotrateadj(2)*offsetvector(3)-rotrateadj&
@@ -520,6 +551,7 @@ loopdirection:DO mm=1,3
       xcb(1:3) = 0.0
       xxcb(1:3) = 0.0
       velzgridb = 0.0
+      rotationpointadjb(1:3) = 0.0
       xxadjb(-3:2, -3:2, 1:3) = 0.0
       scb(1:3) = 0.0
       velxgridb = 0.0
@@ -571,12 +603,15 @@ loopdirection:DO mm=1,3
               xxcb(3) = xxcb(3) + derivrotationmatrixadj(1, 3)*scb(1)
               CALL POPREAL8(xxc(3))
               xcb(3) = xcb(3) + xxcb(3)
+              rotationpointadjb(3) = rotationpointadjb(3) - xxcb(3)
               xxcb(3) = 0.0
               CALL POPREAL8(xxc(2))
               xcb(2) = xcb(2) + xxcb(2)
+              rotationpointadjb(2) = rotationpointadjb(2) - xxcb(2)
               xxcb(2) = 0.0
               CALL POPREAL8(xxc(1))
               xcb(1) = xcb(1) + xxcb(1)
+              rotationpointadjb(1) = rotationpointadjb(1) - xxcb(1)
               xxcb(1) = 0.0
               CALL POPREAL8(sc(3))
               rotrateadjb(1) = rotrateadjb(1) + xxc(2)*scb(3)
@@ -598,12 +633,15 @@ loopdirection:DO mm=1,3
               scb(1) = 0.0
               CALL POPREAL8(xxc(3))
               xcb(3) = xcb(3) + xxcb(3)
+              rotcenteradjb(3) = rotcenteradjb(3) - xxcb(3)
               xxcb(3) = 0.0
               CALL POPREAL8(xxc(2))
               xcb(2) = xcb(2) + xxcb(2)
+              rotcenteradjb(2) = rotcenteradjb(2) - xxcb(2)
               xxcb(2) = 0.0
               CALL POPREAL8(xxc(1))
               xcb(1) = xcb(1) + xxcb(1)
+              rotcenteradjb(1) = rotcenteradjb(1) - xxcb(1)
               xxcb(1) = 0.0
               tempb2 = fourth*xcb(3)
               xxadjb(j, k, 3) = xxadjb(j, k, 3) + tempb2
@@ -688,12 +726,15 @@ loopdirection:DO mm=1,3
             sadjb(i, j, k, 1, sps2) = 0.0
             CALL POPREAL8(xxc(3))
             xcb(3) = xcb(3) + xxcb(3)
+            rotationpointadjb(3) = rotationpointadjb(3) - xxcb(3)
             xxcb(3) = 0.0
             CALL POPREAL8(xxc(2))
             xcb(2) = xcb(2) + xxcb(2)
+            rotationpointadjb(2) = rotationpointadjb(2) - xxcb(2)
             xxcb(2) = 0.0
             CALL POPREAL8(xxc(1))
             xcb(1) = xcb(1) + xxcb(1)
+            rotationpointadjb(1) = rotationpointadjb(1) - xxcb(1)
             xxcb(1) = 0.0
             rotrateadjb(1) = rotrateadjb(1) + xxc(2)*scb(3)
             xxcb(2) = xxcb(2) + rotrateadj(1)*scb(3)
@@ -712,12 +753,15 @@ loopdirection:DO mm=1,3
             scb(1) = 0.0
             CALL POPREAL8(xxc(3))
             xcb(3) = xcb(3) + xxcb(3)
+            rotcenteradjb(3) = rotcenteradjb(3) - xxcb(3)
             xxcb(3) = 0.0
             CALL POPREAL8(xxc(2))
             xcb(2) = xcb(2) + xxcb(2)
+            rotcenteradjb(2) = rotcenteradjb(2) - xxcb(2)
             xxcb(2) = 0.0
             CALL POPREAL8(xxc(1))
             xcb(1) = xcb(1) + xxcb(1)
+            rotcenteradjb(1) = rotcenteradjb(1) - xxcb(1)
             xxcb(1) = 0.0
             tempb = eighth*xcb(3)
             xadjb(i-1, j-1, k-1, 3, sps2) = xadjb(i-1, j-1, k-1, 3, sps2&
@@ -773,19 +817,84 @@ loopdirection:DO mm=1,3
           END DO
         END DO
       END DO
+      offsetvectorb(1:3) = 0.0
       velzgrid0b = velzgridb
       rotrateadjb(1) = rotrateadjb(1) + offsetvector(2)*velzgridb
+      offsetvectorb(2) = rotrateadj(1)*velzgridb
       rotrateadjb(2) = rotrateadjb(2) - offsetvector(1)*velzgridb
+      offsetvectorb(1) = rotrateadj(3)*velygridb - rotrateadj(2)*&
+&        velzgridb
+      rotpointadjb(1) = rotpointadjb(1) + derivrotationmatrixadj(3, 1)*&
+&        velzgridb
+      rotpointadjb(2) = rotpointadjb(2) + derivrotationmatrixadj(3, 2)*&
+&        velzgridb
+      rotpointadjb(3) = rotpointadjb(3) + derivrotationmatrixadj(3, 3)*&
+&        velzgridb
       velygrid0b = velygridb
       rotrateadjb(3) = rotrateadjb(3) + offsetvector(1)*velygridb
       rotrateadjb(1) = rotrateadjb(1) - offsetvector(3)*velygridb
+      offsetvectorb(3) = offsetvectorb(3) + rotrateadj(2)*velxgridb - &
+&        rotrateadj(1)*velygridb
+      rotpointadjb(1) = rotpointadjb(1) + derivrotationmatrixadj(2, 1)*&
+&        velygridb
+      rotpointadjb(2) = rotpointadjb(2) + derivrotationmatrixadj(2, 2)*&
+&        velygridb
+      rotpointadjb(3) = rotpointadjb(3) + derivrotationmatrixadj(2, 3)*&
+&        velygridb
       velxgrid0b = velxgridb
       rotrateadjb(2) = rotrateadjb(2) + offsetvector(3)*velxgridb
       rotrateadjb(3) = rotrateadjb(3) - offsetvector(2)*velxgridb
+      offsetvectorb(2) = offsetvectorb(2) - rotrateadj(3)*velxgridb
+      rotpointadjb(1) = rotpointadjb(1) + derivrotationmatrixadj(1, 1)*&
+&        velxgridb
+      rotpointadjb(2) = rotpointadjb(2) + derivrotationmatrixadj(1, 2)*&
+&        velxgridb
+      rotpointadjb(3) = rotpointadjb(3) + derivrotationmatrixadj(1, 3)*&
+&        velxgridb
+      rotcenteradjb = rotcenteradjb + offsetvectorb
+      pointrefadjb = pointrefadjb - offsetvectorb
+      CALL POPINTEGER4(branch)
+      IF (.NOT.branch .LT. 1) THEN
+        rotratetransb(1:3, 1:3) = 0.0
+        rotratetempb(1:3) = 0.0
+        DO i=3,1,-1
+          DO j=3,1,-1
+            rotratetempb(j) = rotratetempb(j) + rotratetrans(i, j)*&
+&              rotrateadjb(i)
+            rotratetransb(i, j) = rotratetransb(i, j) + rotratetemp(j)*&
+&              rotrateadjb(i)
+          END DO
+        END DO
+        rotrateadjb(1:3) = 0.0
+        rotrateadjb = rotratetempb
+        alphab = -(SIN(alpha)*rotratetransb(3, 3))
+        rotratetransb(3, 3) = 0.0
+        alphab = alphab - SIN(beta)*COS(alpha)*rotratetransb(3, 2)
+        betab = -(SIN(alpha)*COS(beta)*rotratetransb(3, 2))
+        rotratetransb(3, 2) = 0.0
+        alphab = alphab + COS(beta)*COS(alpha)*rotratetransb(3, 1)
+        betab = betab - SIN(alpha)*SIN(beta)*rotratetransb(3, 1)
+        rotratetransb(3, 1) = 0.0
+        rotratetransb(2, 3) = 0.0
+        betab = betab - SIN(beta)*rotratetransb(2, 2)
+        rotratetransb(2, 2) = 0.0
+        betab = betab + COS(beta)*rotratetransb(2, 1)
+        rotratetransb(2, 1) = 0.0
+        alphab = alphab - COS(alpha)*rotratetransb(1, 3)
+        rotratetransb(1, 3) = 0.0
+        alphab = alphab + SIN(beta)*SIN(alpha)*rotratetransb(1, 2)
+        betab = betab - COS(alpha)*COS(beta)*rotratetransb(1, 2)
+        rotratetransb(1, 2) = 0.0
+        alphab = alphab - COS(beta)*SIN(alpha)*rotratetransb(1, 1)
+        betab = betab - COS(alpha)*SIN(beta)*rotratetransb(1, 1)
+        betaadjb = betaadjb + betab
+        alphaadjb = alphaadjb + alphab
+      END IF
     END IF
   ELSE
     velxgrid0b = 0.0
     velzgrid0b = 0.0
+    rotationpointadjb(1:3) = 0.0
     velygrid0b = 0.0
   END IF
   CALL POPINTEGER4(branch)
@@ -801,6 +910,9 @@ loopdirection:DO mm=1,3
         velygrid0b = rotationmatrixadj(1, 2)*velxgrid0b + &
 &          rotationmatrixadj(2, 2)*velygrid0b
         velxgrid0b = rotationmatrixadj(1, 1)*velxgrid0b
+        CALL ROTMATRIXRIGIDBODYADJ_B(tnew, told, rotationmatrixadj, &
+&                               rotationpointadj, rotationpointadjb, &
+&                               rotpointadj, rotpointadjb)
       END IF
     ELSE
       veldirb(1:3) = 0.0
@@ -849,6 +961,9 @@ loopdirection:DO mm=1,3
     velzgrid0b = 0.0
     velygrid0b = 0.0
   END IF
+  CALL DERIVATIVEROTMATRIXRIGIDADJ_B(derivrotationmatrixadj, &
+&                               rotationpointadj, rotationpointadjb, &
+&                               rotpointadj, rotpointadjb, t(1))
   machgridadjb = machgridadjb - ainf*veldirfreestreamadj(1)*velxgrid0b -&
 &   ainf*veldirfreestreamadj(2)*velygrid0b - ainf*veldirfreestreamadj(3)&
 &    *velzgrid0b
@@ -865,7 +980,6 @@ loopdirection:DO mm=1,3
 !!$  coscoeffouralphab(:) = 0.0
 !!$  sincoeffourxrotb(:) = 0.0
 !!$  sincoeffouryrotb(:) = 0.0
-!!$  rotpointb(1:3) = 0.0
 !!$  coscoeffourbetab(:) = 0.0
 !!$  sincoeffourzrotb(:) = 0.0
 !!$  omegafourxrotb = 0.0

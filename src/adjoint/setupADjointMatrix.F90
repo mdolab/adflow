@@ -64,7 +64,9 @@
       REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
       REAL(KIND=REALTYPE), DIMENSION(3) :: rotcenteradj
       REAL(KIND=REALTYPE), DIMENSION(3) :: rotrateadj
-      REAL(KIND=REALTYPE) :: rotrateadjb(3)
+      REAL(KIND=REALTYPE) :: rotcenteradjb(3), rotrateadjb(3)
+      REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3), rotpointadj(3)&
+           &  , rotpointadjb(3)
       REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3,nTimeIntervalsSpectral), xblockcorneradjb(2&
            &  , 2, 2, 3,nTimeIntervalsSpectral)
 
@@ -226,11 +228,12 @@
                   do iCell = 2, il
                      ! Copy the state w to the wAdj array in the stencil
                      call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
-                          betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
-                          nn,level,sps,&
-                          prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+           betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
+           nn,level,sps,pointRefAdj,rotPointAdj,&
+           prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+
         
 
                      
@@ -271,13 +274,15 @@
                 !                     dW(iCell+ii,jCell+jj,kCell+kk,n)
 
                         ! Call reverse mode of residual computation
-                        call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+                        call  COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
 &  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
 &  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
-&  , rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+&  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, pointrefadjb&
+&  , rotpointadj, rotpointadjb, murefadj, timerefadj, pinfcorradj, &
 &  liftindex)
+
 
 
                         ! Store the block Jacobians (by rows).

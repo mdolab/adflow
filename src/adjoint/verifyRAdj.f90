@@ -57,7 +57,7 @@
       REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
       REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
       real(kind=realType), dimension(3) ::rotRateAdj,rotCenterAdj
-
+      real(kind=realType), dimension(3) ::rotPointAdj,pointRefAdj
       real(kind=realType), dimension(4) :: time
       real(kind=realType)               :: timeAdj, timeOri
 
@@ -222,7 +222,7 @@
                      !print *,'copying Adjoint',nn,icell,il,jcell,jl,kcell,kl,shape(w)
                      call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
                           betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
-                          nn,level,sps,&
+                          nn,level,sps,pointRefAdj,rotPointAdj,&
                           prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
@@ -240,6 +240,7 @@
                           nn,level,sps, correctForK,secondHalo,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                          pointRefAdj,rotPointAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
 
                    !  print *,'interior4 il,jl,kl',il,jl,kl,nn!,shape(w)

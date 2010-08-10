@@ -222,12 +222,12 @@ subroutine verifydCfdw(level)
          
 !*********************
       !from ForcesAndMoments.f90
-       ! Determine the reference point for the moment computation in
-       ! meters.
-      print *,'setting refpoint'
-       refPoint(1) = LRef*pointRef(1)
-       refPoint(2) = LRef*pointRef(2)
-       refPoint(3) = LRef*pointRef(3)
+!!$       ! Determine the reference point for the moment computation in
+!!$       ! meters.
+!!$      print *,'setting refpoint'
+!!$       refPoint(1) = LRef*pointRef(1)
+!!$       refPoint(2) = LRef*pointRef(2)
+!!$       refPoint(3) = LRef*pointRef(3)
 
        ! Initialize the force and moment coefficients to 0 as well as
        ! yplusMax.

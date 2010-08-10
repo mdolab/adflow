@@ -103,7 +103,6 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
       wadjb(0, icbeg:icend, jcbeg:jcend, 1:nw) = wadjb(0, icbeg:icend, &
 &        jcbeg:jcend, 1:nw) + wadj0b(icbeg:icend, jcbeg:jcend, 1:nw) + &
 &        wadj1b(icbeg:icend, jcbeg:jcend, 1:nw)
-  !    print *,'extract12',sum(wadjb),secondhalo
     ELSE
       padjb(2, icbeg:icend, jcbeg:jcend) = padjb(2, icbeg:icend, jcbeg:&
 &        jcend) + padj3b(icbeg:icend, jcbeg:jcend)
@@ -117,7 +116,6 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcbeg:jcend, 1:nw) + wadj2b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(0, icbeg:icend, jcbeg:jcend, 1:nw) = wadjb(0, icbeg:icend, &
 &        jcbeg:jcend, 1:nw) + wadj1b(icbeg:icend, jcbeg:jcend, 1:nw)
-   !   print *,'extract11',sum(wadjb),secondhalo
     END IF
   CASE (imax) 
 !===========================================================
@@ -155,7 +153,6 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        nw)
       wadjb(ib, icbeg:icend, jcbeg:jcend, 1:nw) = wadjb(ib, icbeg:icend&
 &        , jcbeg:jcend, 1:nw) + wadj0b(icbeg:icend, jcbeg:jcend, 1:nw)
-    !  print *,'extract10',sum(wadjb),secondhalo
     ELSE
       padjb(ib-2, icbeg:icend, jcbeg:jcend) = padjb(ib-2, icbeg:icend, &
 &        jcbeg:jcend) + padj3b(icbeg:icend, jcbeg:jcend)
@@ -171,7 +168,6 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        nw)
       wadjb(ib, icbeg:icend, jcbeg:jcend, 1:nw) = wadjb(ib, icbeg:icend&
 &        , jcbeg:jcend, 1:nw) + wadj1b(icbeg:icend, jcbeg:jcend, 1:nw)
-     ! print *,'extract9',sum(wadjb),secondhalo
     END IF
   CASE (jmin) 
 !===========================================================
@@ -206,7 +202,6 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcbeg:jcend, 1:nw) + wadj1b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(icbeg:icend, 0, jcbeg:jcend, 1:nw) = wadjb(icbeg:icend, 0, &
 &        jcbeg:jcend, 1:nw) + wadj0b(icbeg:icend, jcbeg:jcend, 1:nw)
-      !print *,'extract8',sum(wadjb),secondhalo
     ELSE
       padjb(icbeg:icend, 2, jcbeg:jcend) = padjb(icbeg:icend, 2, jcbeg:&
 &        jcend) + padj3b(icbeg:icend, jcbeg:jcend)
@@ -220,7 +215,6 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcbeg:jcend, 1:nw) + wadj2b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(icbeg:icend, 0, jcbeg:jcend, 1:nw) = wadjb(icbeg:icend, 0, &
 &        jcbeg:jcend, 1:nw) + wadj1b(icbeg:icend, jcbeg:jcend, 1:nw)
-      !print *,'extract7',sum(wadjb),secondhalo
     END IF
   CASE (jmax) 
 !===========================================================
@@ -257,7 +251,6 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        nw)
       wadjb(icbeg:icend, jb, jcbeg:jcend, 1:nw) = wadjb(icbeg:icend, jb&
 &        , jcbeg:jcend, 1:nw) + wadj0b(icbeg:icend, jcbeg:jcend, 1:nw)
-      !print *,'extract6',sum(wadjb),secondhalo
     ELSE
       padjb(icbeg:icend, jb-2, jcbeg:jcend) = padjb(icbeg:icend, jb-2, &
 &        jcbeg:jcend) + padj3b(icbeg:icend, jcbeg:jcend)
@@ -273,7 +266,6 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        nw)
       wadjb(icbeg:icend, jb, jcbeg:jcend, 1:nw) = wadjb(icbeg:icend, jb&
 &        , jcbeg:jcend, 1:nw) + wadj1b(icbeg:icend, jcbeg:jcend, 1:nw)
-      !print *,'extract5',sum(wadjb),secondhalo
     END IF
   CASE (kmin) 
 !===========================================================
@@ -305,8 +297,6 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcbeg:jcend, 1, 1:nw) + wadj1b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(icbeg:icend, jcbeg:jcend, 0, 1:nw) = wadjb(icbeg:icend, &
 &        jcbeg:jcend, 0, 1:nw) + wadj0b(icbeg:icend, jcbeg:jcend, 1:nw)
-      !print *,'extract4',sum(wadjb),secondhalo,sum(wadjb(icbeg:icend, &
-!&        jcbeg:jcend, :, 1:nw)),sum(wadj3b(icbeg:icend, jcbeg:jcend, 1:nw)),sum(wadj2b(icbeg:icend, jcbeg:jcend, 1:nw)),sum(wadj1b(icbeg:icend, jcbeg:jcend, 1:nw)),sum(wadj0b(icbeg:icend, jcbeg:jcend, 1:nw))
     ELSE
       padjb(icbeg:icend, jcbeg:jcend, 2) = padjb(icbeg:icend, jcbeg:&
 &        jcend, 2) + padj3b(icbeg:icend, jcbeg:jcend)
@@ -320,7 +310,6 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        jcbeg:jcend, 1, 1:nw) + wadj2b(icbeg:icend, jcbeg:jcend, 1:nw)
       wadjb(icbeg:icend, jcbeg:jcend, 0, 1:nw) = wadjb(icbeg:icend, &
 &        jcbeg:jcend, 0, 1:nw) + wadj1b(icbeg:icend, jcbeg:jcend, 1:nw)
- !     print *,'extract3',sum(wadjb),secondhalo
     END IF
   CASE (kmax) 
 !===========================================================
@@ -355,7 +344,6 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        nw)
       wadjb(icbeg:icend, jcbeg:jcend, kb, 1:nw) = wadjb(icbeg:icend, &
 &        jcbeg:jcend, kb, 1:nw) + wadj0b(icbeg:icend, jcbeg:jcend, 1:nw)
-  !    print *,'extract2',sum(wadjb),secondhalo
     ELSE
       padjb(icbeg:icend, jcbeg:jcend, kb-2) = padjb(icbeg:icend, jcbeg:&
 &        jcend, kb-2) + padj3b(icbeg:icend, jcbeg:jcend)
@@ -371,7 +359,6 @@ SUBROUTINE EXTRACTBCSTATESFORCESADJ_B(nn, wadj, wadjb, padj, padjb, &
 &        nw)
       wadjb(icbeg:icend, jcbeg:jcend, kb, 1:nw) = wadjb(icbeg:icend, &
 &        jcbeg:jcend, kb, 1:nw) + wadj1b(icbeg:icend, jcbeg:jcend, 1:nw)
-   !   print *,'extract1',sum(wadjb),secondhalo
     END IF
   END SELECT
 END SUBROUTINE EXTRACTBCSTATESFORCESADJ_B

@@ -53,7 +53,8 @@
 !      real(kind=realType), dimension(:,:,:,:), allocatable :: siAdj, sjAdj, skAdj
 
       real(kind=realType), dimension(3) ::rotRateAdj,rotCenterAdj
-      
+      real(kind=realType), dimension(3) ::pointRefAdj,rotPointAdj
+
       integer(kind=intType) :: i2Beg, i2End, j2Beg, j2End
       integer(kind=intType) :: iiBeg, iiEnd, jjBeg, jjEnd
 
@@ -221,7 +222,9 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
             call  copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
            MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
            rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
-           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
+           timerefAdj,pInfCorrAdj,pointRefAdj,rotPointAdj,nn,level,sps,&
+           liftIndex)
+
 
             !call copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
 
@@ -274,7 +277,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
                   call computeForcesAdj(xAdj,wAdj,pAdj, &
                        iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
                        mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
-                       yplusMax,refPoint,CLAdj,CDAdj,  &
+                       yplusMax,pointRefAdj,rotPointAdj,CLAdj,CDAdj,  &
                        nn,level,sps,cFpAdj,cMpAdj,righthanded,secondhalo,&
                        alphaAdj,betaAdj,machAdj,machcoefAdj,machGridAdj,&
                        prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&

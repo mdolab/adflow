@@ -15,6 +15,7 @@ subroutine computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
                           nn,level,sps, correctForK,secondHalo,prefAdj,&
                           rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                          pointRefAdj,rotPointAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
   
 !      Set Use Modules
@@ -38,6 +39,7 @@ subroutine computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
   real(kind=realType), dimension(nw,nTimeIntervalsSpectral)                :: dwAdj
   real(kind=realType), dimension(3),intent(in) ::rotRateAdj,rotCenterAdj
   real(kind=realType), dimension(2,2,2,3,nTimeIntervalsSpectral) ::xBlockCornerAdj
+  real(kind=realType), dimension(3) ::rotPointAdj,pointRefAdj
 
   logical :: secondHalo, correctForK,useOldCoor=.false.
 
@@ -141,7 +143,7 @@ subroutine computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
             siAdj, sjAdj, skAdj,rotCenterAdj, rotRateAdj,sAdj,sFaceIAdj,&
             sFaceJAdj,sFaceKAdj,machGridAdj,velDirFreestreamAdj,&
             liftDirectionAdj,alphaAdj,betaAdj,liftIndex,&
-            iCell, jCell, kCell,nn,level,sps2)
+            iCell, jCell, kCell,pointRefAdj,rotPointAdj,nn,level,sps2)
        !print *,'gvsiAdj',siAdj(:,0,0,1,:)
 !for debugging intermediate stages      
 !       dwadj(1:3) = sAdj(0,0,0,:)

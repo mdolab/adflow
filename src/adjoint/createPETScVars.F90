@@ -24,6 +24,7 @@
 !
       real(kind=realType), dimension(2) :: time
       real(kind=realType)               :: timeAdjLocal, timeAdj
+      integer(kind=intType)::level=1
 !
 !     ******************************************************************
 !     *                                                                *
@@ -74,7 +75,7 @@
 
       ! Create the global krylov object,
    
-      call createPETScKsp
+      call createPETScKsp(level)
 
       ! Flush the output buffer and synchronize the processors.
 

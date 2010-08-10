@@ -92,7 +92,10 @@ subroutine setupGradientdCdx(level,costFunction)
   REAL(KIND=REALTYPE) :: murefadj, timerefadj
   REAL(KIND=REALTYPE) :: alphaadj, betaadj
   REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
-  REAL(KIND=REALTYPE) :: rotcenteradj(3), rotrateadj(3), rotrateadjb(3)
+  REAL(KIND=REALTYPE) :: rotcenteradj(3), rotcenteradjb(3), rotrateadj(3&
+       &  ), rotrateadjb(3)
+  REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3), rotpointadj(3)&
+       &  , rotpointadjb(3)
 
   logical :: secondHalo,exchangeTurb,correctfork,finegrid,righthanded
   integer(kind=intType):: discr
@@ -118,13 +121,6 @@ subroutine setupGradientdCdx(level,costFunction)
 
   call cpu_time(time(1))
 
-
-  ! Determine the reference point for the moment computation in
-  ! meters.
-
-  refPoint(1) = LRef*pointRef(1)
-  refPoint(2) = LRef*pointRef(2)
-  refPoint(3) = LRef*pointRef(3)
 
   ! Initialize the force and moment coefficients to 0 as well as
   ! yplusMax.
@@ -183,7 +179,8 @@ subroutine setupGradientdCdx(level,costFunction)
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
            MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
            rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
-           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
+           timerefAdj,pInfCorrAdj,pointRefAdj,rotPointAdj,nn,level,sps,&
+           liftIndex)
 
  
         wAdjB(:,:,:,:) = zero ! > return dCf/dw
@@ -279,12 +276,14 @@ subroutine setupGradientdCdx(level,costFunction)
 	   call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
 &  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
-&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
-&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
-&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
-&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
-&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
-&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex,t)
+&  , cmzadj, cmzadjb, yplusmax, pointrefadj, pointrefadjb, rotpointadj, &
+&  rotpointadjb, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
+&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
+&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
+&  rotcenteradjb, rotrateadj, rotrateadjb, liftindex, t)
+
 
            ! Loop over cells to store the jacobian
 

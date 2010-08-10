@@ -55,9 +55,11 @@
       ! - side-slip angle
       ! - Mach Number,mach NumberGrid
       ! - Rotational Rate (3)
+      ! - Rotational Center (3)
+      ! - Moment Reference Point (3)
       ! - will eventually include Flight Dynamic Derivatives.
 
-      nDesignExtra = 7
+      nDesignExtra = 13!7
   
       ! Determine the total number of design variables.
       !   + nDesignSpatial (= 3 * nNodesGlobal)

@@ -12,7 +12,8 @@
       subroutine copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
            MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
            rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
-           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
+           timerefAdj,pInfCorrAdj,pointRefAdj,rotPointAdj,nn,level,sps,&
+           liftIndex)
 
 !
 !     ******************************************************************
@@ -32,6 +33,7 @@
       use flowvarrefstate ! nw
       use inputPhysics    ! Mach,veldirfreestream
       use cgnsgrid        ! cgnsdoms
+      use inputMotion     ! rotPoint
       implicit none
 !
 !     Subroutine arguments.
@@ -48,7 +50,7 @@
       integer(kind=intType)::liftIndex
 
       real(kind=realType), dimension(3),intent(out) ::rotRateAdj,rotCenterAdj
-
+      real(kind=realType), dimension(3),intent(out) ::pointRefAdj,rotPointAdj
 !
 !     Local variables.
 !
@@ -134,5 +136,6 @@
       
       rotCenterAdj = cgnsDoms(j)%rotCenter
       rotRateAdj   = timeRef*cgnsDoms(j)%rotRate
-      
+      pointRefAdj = pointRef
+      rotPointAdj = rotPoint
       end subroutine copyADjointForcesStencil

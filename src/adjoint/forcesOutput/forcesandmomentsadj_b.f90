@@ -2,8 +2,8 @@
 !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
 !  
 !  Differentiation of forcesandmomentsadj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: padj xadj skadj
-!                machcoefadj sjadj siadj
+!   gradient, with respect to input variables: pointrefadj padj
+!                xadj skadj machcoefadj sjadj siadj
 !   of linear combination of output variables: cfpadjout cmvadjout
 !                cmpadjout cfvadjout
 !
@@ -19,10 +19,10 @@
 !
 SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
 &  cfpadjout, cfpadjoutb, cmpadjout, cmpadjoutb, cfvadjout, cfvadjoutb, &
-&  cmvadjout, cmvadjoutb, yplusmax, refpoint, siadj, siadjb, sjadj, &
-&  sjadjb, skadj, skadjb, normadj, xadj, xadjb, padj, padjb, wadj, iibeg&
-&  , iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, level, mm, nn, &
-&  machcoefadj, machcoefadjb)
+&  cmvadjout, cmvadjoutb, yplusmax, pointrefadj, pointrefadjb, siadj, &
+&  siadjb, sjadj, sjadjb, skadj, skadjb, normadj, xadj, xadjb, padj, &
+&  padjb, wadj, iibeg, iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, &
+&  level, mm, nn, machcoefadj, machcoefadjb)
   USE bctypes
   USE blockpointers
   USE communication
@@ -54,7 +54,8 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
 &  , INTENT(IN) :: normadj
   REAL(KIND=REALTYPE), DIMENSION(0:ib, 0:jb, 0:kb), INTENT(IN) :: padj
   REAL(KIND=REALTYPE) :: padjb(0:ib, 0:jb, 0:kb)
-  REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: refpoint
+  REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: pointrefadj
+  REAL(KIND=REALTYPE) :: pointrefadjb(3)
   REAL(KIND=REALTYPE), DIMENSION(2, iibeg:iiend, jjbeg:jjend, 3)&
 &  , INTENT(IN) :: siadj
   REAL(KIND=REALTYPE) :: siadjb(2, iibeg:iiend, jjbeg:jjend, 3)
@@ -80,6 +81,7 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
   REAL(KIND=REALTYPE) :: pp1(iibeg:iiend, jjbeg:jjend), pp1b(iibeg:iiend&
 &  , jjbeg:jjend), pp2(iibeg:iiend, jjbeg:jjend), pp2b(iibeg:iiend, &
 &  jjbeg:jjend)
+  REAL(KIND=REALTYPE) :: refpoint(3), refpointb(3)
   REAL(KIND=REALTYPE) :: rho1(iibeg:iiend, jjbeg:jjend), rho2(iibeg:&
 &  iiend, jjbeg:jjend)
   REAL(KIND=REALTYPE) :: ss(iibeg:iiend, jjbeg:jjend, 3), ssb(iibeg:&
@@ -142,7 +144,12 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
 !      * Begin execution                                                *
 !      *                                                                *
 !      ******************************************************************
-!
+!    
+! Determine the reference point for the moment computation in
+! meters.
+  refpoint(1) = lref*pointrefadj(1)
+  refpoint(2) = lref*pointrefadj(2)
+  refpoint(3) = lref*pointrefadj(3)
 ! Loop over the boundary subfaces of this block.
   IF (bctype(mm) .EQ. eulerwall .OR. bctype(mm) .EQ. nswalladiabatic &
 &      .OR. bctype(mm) .EQ. nswallisothermal) THEN
@@ -480,7 +487,9 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
     skadjb(iibeg:iiend, jjbeg:jjend, 1:2, 1:3) = 0.0
     sjadjb(iibeg:iiend, 1:2, jjbeg:jjend, 1:3) = 0.0
     siadjb(1:2, iibeg:iiend, jjbeg:jjend, 1:3) = 0.0
+    refpointb(1:3) = 0.0
   ELSE
+    refpointb(1:3) = 0.0
     xxb(i2beg:i2end+1, j2beg:j2end+1, 1:3) = 0.0
     pp1b(iibeg:iiend, jjbeg:jjend) = 0.0
     pp2b(iibeg:iiend, jjbeg:jjend) = 0.0
@@ -506,18 +515,21 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
         xxb(i+1, j, 3) = xxb(i+1, j, 3) + tempb
         xxb(i, j+1, 3) = xxb(i, j+1, 3) + tempb
         xxb(i+1, j+1, 3) = xxb(i+1, j+1, 3) + tempb
+        refpointb(3) = refpointb(3) - zcb
         CALL POPREAL8(yc)
         tempb0 = fourth*ycb
         xxb(i, j, 2) = xxb(i, j, 2) + tempb0
         xxb(i+1, j, 2) = xxb(i+1, j, 2) + tempb0
         xxb(i, j+1, 2) = xxb(i, j+1, 2) + tempb0
         xxb(i+1, j+1, 2) = xxb(i+1, j+1, 2) + tempb0
+        refpointb(2) = refpointb(2) - ycb
         CALL POPREAL8(xc)
         tempb1 = fourth*xcb
         xxb(i, j, 1) = xxb(i, j, 1) + tempb1
         xxb(i+1, j, 1) = xxb(i+1, j, 1) + tempb1
         xxb(i, j+1, 1) = xxb(i, j+1, 1) + tempb1
         xxb(i+1, j+1, 1) = xxb(i+1, j+1, 1) + tempb1
+        refpointb(1) = refpointb(1) - xcb
         CALL POPREAL8(pm1)
         tempb2 = fact*half*pm1b
         pp2b(i, j) = pp2b(i, j) + tempb2
@@ -605,4 +617,12 @@ SUBROUTINE FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, &
       siadjb(1:2, iibeg:iiend, jjbeg:jjend, 1:3) = 0.0
     END IF
   END IF
+ !pointrefadjb(1:3) = 0.0
+  pointrefadjb(3) = pointrefadjb(3) + lref*refpointb(3)
+  refpointb(3) = 0.0
+  pointrefadjb(2) = pointrefadjb(2) + lref*refpointb(2)
+  refpointb(2) = 0.0
+  pointrefadjb(1) = pointrefadjb(1) + lref*refpointb(1)
+  refpointb(1) = 0.0
+ 
 END SUBROUTINE FORCESANDMOMENTSADJ_B

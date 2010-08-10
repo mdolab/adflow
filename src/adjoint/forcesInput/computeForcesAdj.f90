@@ -12,7 +12,7 @@
       subroutine computeForcesAdj(xAdj,wAdj,pAdj, &
                        iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
                        mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
-                       yplusMax,refPoint,CLAdj,CDAdj,  &
+                       yplusMax,pointRefAdj,rotPointAdj,CLAdj,CDAdj,  &
                        nn,level,sps,cFpAdj,cMpAdj,righthanded,secondhalo,&
                        alphaAdj,betaAdj,machAdj,machcoefAdj,machGridAdj,&
                        prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
@@ -49,7 +49,7 @@
       
       integer(kind=intType)::liftIndex
 
-      real(kind=realType), dimension(3) :: refPoint
+      real(kind=realType), dimension(3) :: pointRefAdj,rotPointAdj
       real(kind=realType) :: yplusMax
       real(kind=realType),dimension(3) :: cFpAdj, cMpAdj , cFvAdj, cMvAdj 
       real(kind=realType), dimension(0:ie,0:je,0:ke,3), intent(in) :: xAdj
@@ -152,6 +152,7 @@
             sFaceIAdj,sFaceJAdj,sFaceKAdj,&
             machGridAdj,velDirFreestreamAdj,&
             liftDirectionAdj,alphaAdj,betaAdj,liftindex,&
+            rotPointAdj,pointRefAdj,&
             rotCenterAdj, rotRateAdj,siAdj,sjAdj,skAdj)
 
    !    print *,'calling normal velocities'
@@ -176,15 +177,9 @@
       ! Integrate force components along the given subface
       call forcesAndMomentsAdj(cFpAdj,cMpAdj,cFvAdj,cMvAdj, &
            cFpAdjOut,cMpAdjOut, cFvAdjOut,cMvAdjOut, &
-           yplusMax,refPoint,siAdj,sjAdj,skAdj,normAdj,xAdj,pAdj,wAdj,&
+           yplusMax,pointRefAdj,siAdj,sjAdj,skAdj,normAdj,xAdj,pAdj,wAdj,&
            iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
            level,mm,nn,machCoefAdj)
-      !(cFpAdj,cMpAdj, &
-      !     cFpAdjOut,cMpAdjOut, &
-      !     yplusMax,refPoint,siAdj,sjAdj,skAdj,normAdj,xAdj,pAdj,wAdj,&
-      !     iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
-      !     level,mm,nn,machCoefAdj)
-      
 
       !end if invForce
          

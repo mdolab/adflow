@@ -11,7 +11,7 @@
 !
        subroutine forcesAndMomentsAdj(cFpAdj,cMpAdj,cFvAdj,cMvAdj, &
            cFpAdjOut,cMpAdjOut, cFvAdjOut,cMvAdjOut, &
-           yplusMax,refPoint,siAdj,sjAdj,skAdj,normAdj,xAdj,pAdj,wAdj,&
+           yplusMax,pointRefAdj,siAdj,sjAdj,skAdj,normAdj,xAdj,pAdj,wAdj,&
            iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
            level,mm,nn,machCoefAdj)
 !
@@ -65,7 +65,7 @@
        !add to allow for scaling!
        real(kind=realType), dimension(3), intent(out) :: cFpAdjOut , cFvAdjOut
        real(kind=realType), dimension(3),intent(out) :: cMpAdjOut , cMvAdjOut
-       real(kind=realType), dimension(3),intent(in) :: refPoint
+       real(kind=realType), dimension(3),intent(in) :: pointRefAdj
        real(kind=realType),intent(in) :: yplusMax
 
 
@@ -86,7 +86,7 @@
        real(kind=realType) :: pm1, fx, fy, fz, fn
        real(kind=realType) :: xc, yc, zc
        real(kind=realType) :: fact,  dwall
-
+       real(kind=realType), dimension(3)::refPoint
 !v       real(kind=realType) :: tauxx, tauyy, tauzz
 !v       real(kind=realType) :: tauxy, tauxz, tauyz
 
@@ -109,7 +109,14 @@
 !      * Begin execution                                                *
 !      *                                                                *
 !      ******************************************************************
-!
+!    
+       ! Determine the reference point for the moment computation in
+       ! meters.
+
+       refPoint(1) = LRef*pointRefAdj(1)
+       refPoint(2) = LRef*pointRefAdj(2)
+       refPoint(3) = LRef*pointRefAdj(3)
+       
        ! Loop over the boundary subfaces of this block.
        
        invForce: if(BCType(mm) == EulerWall        .or. &

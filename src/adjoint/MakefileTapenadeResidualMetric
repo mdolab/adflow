@@ -115,7 +115,7 @@ TAPENADE_OUTVARS = "dwadj"
 # Independent input variables (separator: white space, default: all)
 
 #TAPENADE_VARS = "xadj wadj alphaadj machadj"
-TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj machcoefadj machGridAdj rotRateAdj xBlockCornerAdj"
+TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj machcoefadj machGridAdj rotRateAdj xBlockCornerAdj pointrefadj rotpointadj rotcenteradj"
 
 # Name of the top routine
 
