@@ -36,6 +36,7 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
 !!$
 !!$         enddo domains
 !!$       enddo spectralLoop
+!print *,'done timestepadj'
   INTEGER(KIND=INTTYPE), INTENT(IN) :: icell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: jcell
   INTEGER(KIND=INTTYPE), INTENT(IN) :: kcell
@@ -159,6 +160,7 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
 !          *                                                            *
 !          **************************************************************
 !
+!print *,'precond:',precond
     SELECT CASE  (precond) 
     CASE (noprecond) 
 ! No preconditioner. Simply the standard spectral radius.
@@ -177,6 +179,7 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
             kk = kcell + k
             CALL PUSHREAL8(ux)
 ! Compute the velocities and speed of sound squared.
+!print *,'i,j,k:',i,j,k
             ux = wadj(i, j, k, ivx, sps2)
             CALL PUSHREAL8(uy)
             uy = wadj(i, j, k, ivy, sps2)
@@ -693,5 +696,5 @@ SUBROUTINE TIMESTEPADJ_B(onlyradii, wadj, wadjb, padj, padjb, siadj, &
 &      rhoinfadj
   END IF
   CALL POPINTEGER4(branch)
- ! adisb = 0.0
+  !adisb = 0.0
 END SUBROUTINE TIMESTEPADJ_B

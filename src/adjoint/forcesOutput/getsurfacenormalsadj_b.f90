@@ -23,6 +23,7 @@ SUBROUTINE GETSURFACENORMALSADJ_B(xadj, xadjb, siadj, siadjb, sjadj, &
   USE blockpointers
   USE communication
   IMPLICIT NONE
+!print *,'normInd',normAdj,i,j,fact,xp,yp,zp
   INTEGER(KIND=INTTYPE), INTENT(IN) :: iibeg
   INTEGER(KIND=INTTYPE), INTENT(IN) :: iiend
   INTEGER(KIND=INTTYPE), INTENT(IN) :: jjbeg
@@ -307,6 +308,7 @@ SUBROUTINE GETSURFACENORMALSADJ_B(xadj, xadjb, siadj, siadjb, sjadj, &
           v2(2) = xadj(l, j, k, 2) - xadj(i, m, k, 2)
           CALL PUSHREAL8(v2(3))
           v2(3) = xadj(l, j, k, 3) - xadj(i, m, k, 3)
+!print *,'kmin vectors',v1,'v2',v2,'fact',fact
 ! The face normal, which is the cross product of the two
 ! diagonal vectors times fact; remember that fact is
 ! either -0.5 or 0.5.
@@ -364,6 +366,7 @@ SUBROUTINE GETSURFACENORMALSADJ_B(xadj, xadjb, siadj, siadjb, sjadj, &
   END SELECT
 !if(myID==0.and.sps==1) write(*,'(a5,3i5,3e)')'hi ', &
 !i,j,kk,skAdj(i,j,kk,1)-sk(i,j,k,1),skAdj(i,j,kk,2)-sk(i,j,k,2),skAdj(i,j,kk,3)-sk(i,j,k,3)                
+!print *,'kmax',sum(ss)
 ! Determine the block face on which this subface is located
 ! and set ss and mult accordingly.
   SELECT CASE  (bcfaceid(mm)) 
@@ -372,24 +375,29 @@ SUBROUTINE GETSURFACENORMALSADJ_B(xadj, xadjb, siadj, siadjb, sjadj, &
     ss(:, :, :) = siadj(1, :, :, :)
     CALL PUSHINTEGER4(1)
   CASE (imax) 
+!print *,'imin',sum(ss)
     mult = one
 ! which was si(il,:,:,:)
     ss(:, :, :) = siadj(2, :, :, :)
     CALL PUSHINTEGER4(2)
   CASE (jmin) 
+!print *,'imax',sum(ss)
     mult = -one
     ss(:, :, :) = sjadj(:, 1, :, :)
     CALL PUSHINTEGER4(3)
   CASE (jmax) 
+!print *,'jmin',sum(ss)
     mult = one
 ! which was sj(:,jl,:,:)
     ss(:, :, :) = sjadj(:, 2, :, :)
     CALL PUSHINTEGER4(4)
   CASE (kmin) 
+!print *,'jmax',sum(ss)
     mult = -one
     ss(:, :, :) = skadj(:, :, 1, :)
     CALL PUSHINTEGER4(5)
   CASE (kmax) 
+!print *,'kmin',sum(ss)
     mult = one
 ! which was sk(:,:,kl,:)
     ss(:, :, :) = skadj(:, :, 2, :)

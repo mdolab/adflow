@@ -44,6 +44,7 @@ FF90_OBJECTS = adjustinflowangleforcesadj_b.o\
 	       checkinputparamforcesadj_b.o\
 	       computeforcesadj_b.o\
 	       computeforcespressureadj_b.o\
+	       derivativerotmatrixrigidforcesadj_b.o\
 	       eintarrayforcesadj_b.o\
 	       etotarrayforcesadj_b.o\
 	       extractbcstatesforcesadj_b.o \
@@ -54,6 +55,7 @@ FF90_OBJECTS = adjustinflowangleforcesadj_b.o\
                gridvelocitiesfinelevelforcesadj_b.o\
 	       referencestateforcesadj_b.o \
 	       replacebcstatesforcesadj_b.o \
+               rotmatrixrigidbodyforcesadj_b.o\
                setflowinfinitystateforcesadj_b.o\
 	       vectorrotationforces_b.o
 

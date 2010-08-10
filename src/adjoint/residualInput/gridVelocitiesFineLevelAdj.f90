@@ -12,7 +12,7 @@
             siAdj, sjAdj, skAdj,rotCenterAdj, rotRateAdj,sAdj,sFaceIAdj,&
             sFaceJAdj,sFaceKAdj,machGridAdj,velDirFreestreamAdj,&
             liftDirectionAdj,alphaAdj,betaAdj,liftindex,&
-            iCell, jCell, kCell,nn,level,sps2)
+            iCell, jCell, kCell,pointRefAdj,rotPointAdj,nn,level,sps2)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -45,9 +45,10 @@
        logical,               intent(in) :: useOldCoor
 
        real(kind=realType), dimension(*), intent(in) :: t
-       real(kind=realType), dimension(3), intent(in) :: rotCenterAdj, rotRateAdj
+       real(kind=realType), dimension(3):: rotCenterAdj, rotRateAdj
        real(kind=realType), dimension(3) :: offSetVector
-       
+       real(kind=realType), dimension(3) :: pointRefAdj
+
        !real(kind=realType), dimension(:,:), intent(out) :: sFace
        real(kind=realType), dimension(-2:2,-2:2,-2:2,3,nTimeIntervalsSpectral),intent(out) :: sAdj
        real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral), intent(out) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
@@ -74,6 +75,9 @@
        real(kind=realType) :: velxGrid0, velyGrid0, velzGrid0
        real(kind=realType), dimension(3) :: sc, xc, xxc
        
+       real(kind=realType), dimension(3) :: rotRateTemp
+       real(kind=realType), dimension(3,3) :: rotRateTrans
+       real(kind=realType) :: alpha,beta
 
        real(kind=realType), dimension(3)   :: rotationPointAdj,rotPointAdj
        real(kind=realType), dimension(3,3) :: rotationMatrixAdj
@@ -107,7 +111,7 @@
     !  aInf = sqrt(gammaInf*pInf/rhoInf)
     !  velxGrid = aInf*MachGrid(1)
     !  velyGrid = aInf*MachGrid(2)
-    !  velzGrid = aInf*MachGrid(3)
+    !  velzGrid = aInf*MachGrid(3)acg[i][j]
 
        !velxGrid = zero
        !velyGrid = zero
@@ -122,9 +126,6 @@
        ! point; needed for velocity due to the rigid body rotation of
        ! the entire grid. It is assumed that the rigid body motion of
        ! the grid is only specified if there is only 1 section present.
-       
-       !this may need to be modified later...(perhaps put in copy stencil?)
-       rotPointAdj = rotPoint
 
        call derivativeRotMatrixRigidAdj(derivRotationMatrixAdj, rotationPointAdj,rotPointAdj, t(1))
        
@@ -143,7 +144,7 @@
              ! well as the rotation point; the latter may vary in time due
              ! to rigid body translation.
              
-             call rotMatrixRigidBodyAdj(tNew, tOld, rotationMatrixAdj, rotationPointAdj)
+             call rotMatrixRigidBodyAdj(tNew, tOld, rotationMatrixAdj, rotationPointAdj,rotPointAdj)
              velxgrid0 = rotationMatrixAdj(1,1)*velxgrid0 &
                   + rotationMatrixAdj(1,2)*velygrid0 &
                   + rotationMatrixAdj(1,3)*velzgrid0
@@ -450,7 +451,30 @@
 !!$
 !!$             rotCenter = cgnsDoms(j)%rotCenter
 !!$             rotRate   = timeRef*cgnsDoms(j)%rotRate
-              offSetVector= (rotCenterAdj-pointRef)
+              if (useWindAxis)then
+                 alpha =alphaAdj
+                 beta= betaAdj
+                 !Rotate the rotation rate from the wind axis back to the local body axis
+                 rotRateTrans(1,1)=cos(alpha)*cos(beta)
+                 rotRateTrans(1,2)=-cos(alpha)*sin(beta)
+                 rotRateTrans(1,3)=-sin(alpha)
+                 rotRateTrans(2,1)=sin(beta)
+                 rotRateTrans(2,2)=cos(beta)
+                 rotRateTrans(2,3)=0.0
+                 rotRateTrans(3,1)=sin(alpha)*cos(beta)
+                 rotRateTrans(3,2)=-sin(alpha)*sin(beta)
+                 rotRateTrans(3,3)=cos(alpha)
+                 
+                 rotRateTemp = rotRateAdj
+                 rotRateAdj=0.0
+                 do i=1,3
+                    do j=1,3
+                       rotRateAdj(i)=rotRateAdj(i)+rotRateTemp(j)*rotRateTrans(i,j)
+                    end do
+                 end do
+              end if
+
+              offSetVector= (rotCenterAdj-pointRefAdj)
              !subtract off the rotational velocity of the center gravity of the grid
              ! to account for the added overall velocity.
              velxGrid =velxgrid0+ 1*(rotRateAdj(2)*offSetVector(3)&

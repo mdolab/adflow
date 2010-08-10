@@ -2,10 +2,10 @@
 !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
 !  
 !  Differentiation of computeforcesadj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: cdadj rotrateadj
-!                cfzadj cfyadj cladj machadj alphaadj cfxadj xadj
-!                wadj betaadj machgridadj cmzadj cmyadj machcoefadj
-!                cmxadj
+!   gradient, with respect to input variables: pointrefadj cdadj
+!                rotrateadj cfzadj cfyadj cladj machadj alphaadj
+!                rotpointadj cfxadj xadj wadj betaadj machgridadj
+!                cmzadj cmyadj rotcenteradj machcoefadj cmxadj
 !   of linear combination of output variables: cdadj cfzadj cfyadj
 !                cladj cfxadj cmzadj cmyadj cmxadj
 !
@@ -22,12 +22,13 @@
 SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
 &  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
-&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
-&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
-&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
-&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
-&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
-&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex, t)
+&  , cmzadj, cmzadjb, yplusmax, pointrefadj, pointrefadjb, rotpointadj, &
+&  rotpointadjb, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
+&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
+&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
+&  rotcenteradjb, rotrateadj, rotrateadjb, liftindex, t)
   USE bctypes
   USE blockpointers
   USE communication
@@ -64,11 +65,13 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
   INTEGER(KIND=INTTYPE), INTENT(IN) :: nn
   REAL(KIND=REALTYPE), DIMENSION(0:ib, 0:jb, 0:kb), INTENT(IN) :: padj
   REAL(KIND=REALTYPE) :: pinfdimadj, rhoinfdimadj
-  REAL(KIND=REALTYPE) :: refpoint(3)
   REAL(KIND=REALTYPE) :: pinfadj, rhoinfadj
   REAL(KIND=REALTYPE) :: prefadj, rhorefadj
   LOGICAL, INTENT(IN) :: righthanded
-  REAL(KIND=REALTYPE) :: rotcenteradj(3), rotrateadj(3), rotrateadjb(3)
+  REAL(KIND=REALTYPE) :: rotcenteradj(3), rotcenteradjb(3), rotrateadj(3&
+&  ), rotrateadjb(3)
+  REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3), rotpointadj(3)&
+&  , rotpointadjb(3)
   LOGICAL, INTENT(IN) :: secondhalo
   INTEGER(KIND=INTTYPE), INTENT(IN) :: sps
   REAL(KIND=REALTYPE) :: t
@@ -175,20 +178,20 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 ! Compute the surface normals (normAdj which is used only in 
 ! visous force computation) for the stencil
 ! Get siAdj,sjAdj,skAdj,normAdj
-  !print *,'getting surface normals',sum(xadj)
+! print *,'getting surface normals'
   CALL GETSURFACENORMALSADJ(xadj, siadj, sjadj, skadj, normadj, iibeg, &
 &                      iiend, jjbeg, jjend, mm, level, nn, sps, &
 &                      righthanded)
-  !print *,'normals',sum(normadj),myid
+  CALL PUSHREAL8ARRAY(rotrateadj, 3)
   CALL GRIDVELOCITIESFINELEVELFORCESADJ(.false., t, sps, xadj, sadj, &
 &                                  iibeg, iiend, jjbeg, jjend, i2beg, &
 &                                  i2end, j2beg, j2end, mm, sfaceiadj, &
 &                                  sfacejadj, sfacekadj, machgridadj, &
 &                                  veldirfreestreamadj, liftdirectionadj&
 &                                  , alphaadj, betaadj, liftindex, &
+&                                  rotpointadj, pointrefadj, &
 &                                  rotcenteradj, rotrateadj, siadj, &
 &                                  sjadj, skadj)
-  !print *,'gridvelocities',sum(normadj)
 !call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
 !first two arguments needed for time spectral.just set to initial values for the current steady case...
 !print *,'calling gridvelocities',mm,liftindex
@@ -197,7 +200,6 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &                                    iiend, jjbeg, jjend, i2beg, i2end, &
 &                                    j2beg, j2end, sfacejadj, sfacekadj&
 &                                    , siadj, sjadj, skadj, rfaceadj)
-  !print *,'normalvelocites',sum(normadj)
 !needed for uSlip in Viscous Calculations
 !call slipVelocitiesFineLevel(.false., t, mm)
 !     print *,'computing pressures'
@@ -209,7 +211,6 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &                     , sjadj, skadj, normadj, rfaceadj, iibeg, iiend, &
 &                     jjbeg, jjend, i2beg, i2end, j2beg, j2end, &
 &                     secondhalo, mm)
-  !print *,'bcs',sum(normadj)
   CALL PUSHREAL8ARRAY(cmvadj, 3)
   CALL PUSHREAL8ARRAY(cfvadj, 3)
   CALL PUSHREAL8ARRAY(cmpadj, 3)
@@ -218,15 +219,9 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 ! Integrate force components along the given subface
   CALL FORCESANDMOMENTSADJ(cfpadj, cmpadj, cfvadj, cmvadj, cfpadjout, &
 &                     cmpadjout, cfvadjout, cmvadjout, yplusmax, &
-&                     refpoint, siadj, sjadj, skadj, normadj, xadj, padj&
-&                     , wadj, iibeg, iiend, jjbeg, jjend, i2beg, i2end, &
-&                     j2beg, j2end, level, mm, nn, machcoefadj)
- !print *,'forces',sum(normadj)
-!(cFpAdj,cMpAdj, &
-!     cFpAdjOut,cMpAdjOut, &
-!     yplusMax,refPoint,siAdj,sjAdj,skAdj,normAdj,xAdj,pAdj,wAdj,&
-!     iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
-!     level,mm,nn,machCoefAdj)
+&                     pointrefadj, siadj, sjadj, skadj, normadj, xadj, &
+&                     padj, wadj, iibeg, iiend, jjbeg, jjend, i2beg, &
+&                     i2end, j2beg, j2end, level, mm, nn, machcoefadj)
 !end if invForce
 ! Compute the force components for the current block subface
 !print *,'cfpadjout',cfpadjout,liftdirectionadj
@@ -270,27 +265,24 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
   CALL POPREAL8ARRAY(cmpadj, 3)
   CALL POPREAL8ARRAY(cfvadj, 3)
   CALL POPREAL8ARRAY(cmvadj, 3)
-  !print *,'preforce_b',sum(normadj)
   CALL FORCESANDMOMENTSADJ_B(cfpadj, cmpadj, cfvadj, cmvadj, cfpadjout, &
 &                       cfpadjoutb, cmpadjout, cmpadjoutb, cfvadjout, &
 &                       cfvadjoutb, cmvadjout, cmvadjoutb, yplusmax, &
-&                       refpoint, siadj, siadjb, sjadj, sjadjb, skadj, &
-&                       skadjb, normadj, xadj, xadjb, padj, padjb, wadj&
-&                       , iibeg, iiend, jjbeg, jjend, i2beg, i2end, &
-&                       j2beg, j2end, level, mm, nn, machcoefadj, &
-&                       machcoefadjb)
+&                       pointrefadj, pointrefadjb, siadj, siadjb, sjadj&
+&                       , sjadjb, skadj, skadjb, normadj, xadj, xadjb, &
+&                       padj, padjb, wadj, iibeg, iiend, jjbeg, jjend, &
+&                       i2beg, i2end, j2beg, j2end, level, mm, nn, &
+&                       machcoefadj, machcoefadjb)
   CALL POPREAL8ARRAY(wadj, (ib+1)*(jb+1)*(kb+1)*nw)
   CALL POPREAL8ARRAY(padj, (ib+1)*(jb+1)*(kb+1))
-  !print *,'preapply',sum(normadj)
   CALL APPLYALLBCFORCESADJ_B(winfadj, winfadjb, pinfcorradj, &
 &                       pinfcorradjb, wadj, wadjb, padj, padjb, sadj, &
 &                       sadjb, siadj, siadjb, sjadj, sjadjb, skadj, &
 &                       skadjb, normadj, normadjb, rfaceadj, iibeg, &
 &                       iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end&
 &                       , secondhalo, mm)
-  !print *,'bcs_b',sum(wadjb)
   CALL COMPUTEFORCESPRESSUREADJ_B(wadj, wadjb, padj, padjb)
-  !print *,'pressureb',sum(wadjb)
+  CALL POPREAL8ARRAY(rotrateadj, 3)
   CALL GRIDVELOCITIESFINELEVELFORCESADJ_B(.false., t, sps, xadj, xadjb, &
 &                                    sadj, sadjb, iibeg, iiend, jjbeg, &
 &                                    jjend, i2beg, i2end, j2beg, j2end, &
@@ -300,8 +292,11 @@ SUBROUTINE COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &                                    veldirfreestreamadjb, &
 &                                    liftdirectionadj, alphaadj, &
 &                                    alphaadjb, betaadj, betaadjb, &
-&                                    liftindex, rotcenteradj, rotrateadj&
-&                                    , rotrateadjb, siadj, sjadj, skadj)
+&                                    liftindex, rotpointadj, &
+&                                    rotpointadjb, pointrefadj, &
+&                                    pointrefadjb, rotcenteradj, &
+&                                    rotcenteradjb, rotrateadj, &
+&                                    rotrateadjb, siadj, sjadj, skadj)
   CALL POPREAL8ARRAY(siadj, 2*(iiend-iibeg+1)*(jjend-jjbeg+1)*3)
   CALL POPREAL8ARRAY(sjadj, (iiend-iibeg+1)*2*(jjend-jjbeg+1)*3)
   CALL POPREAL8ARRAY(skadj, (iiend-iibeg+1)*(jjend-jjbeg+1)*2*3)

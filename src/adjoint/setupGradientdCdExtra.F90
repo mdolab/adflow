@@ -92,7 +92,10 @@ subroutine setupGradientdCdExtra(level,costFunction)
   REAL(KIND=REALTYPE) :: murefadj, timerefadj
   REAL(KIND=REALTYPE) :: alphaadj, betaadj
   REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
-  REAL(KIND=REALTYPE) :: rotcenteradj(3), rotrateadj(3), rotrateadjb(3)
+  REAL(KIND=REALTYPE) :: rotcenteradj(3), rotcenteradjb(3), rotrateadj(3&
+       &  ), rotrateadjb(3)
+  REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3), rotpointadj(3)&
+       &  , rotpointadjb(3)
 
   logical :: secondHalo,exchangeTurb,correctfork,finegrid,righthanded
   integer(kind=intType):: discr
@@ -181,7 +184,8 @@ subroutine setupGradientdCdExtra(level,costFunction)
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
            MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
            rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
-           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
+           timerefAdj,pInfCorrAdj,pointRefAdj,rotPointAdj,nn,level,sps,&
+           liftIndex)
 
  
         wAdjB(:,:,:,:) = zero ! > return dCf/dw
@@ -277,12 +281,13 @@ subroutine setupGradientdCdExtra(level,costFunction)
 	   call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
 &  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
-&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
-&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
-&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
-&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
-&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
-&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex,t)
+&  , cmzadj, cmzadjb, yplusmax, pointrefadj, pointrefadjb, rotpointadj, &
+&  rotpointadjb, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
+&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
+&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
+&  rotcenteradjb, rotrateadj, rotrateadjb, liftindex, t)
 
 
 	   enddo bocoLoop
@@ -502,6 +507,168 @@ subroutine setupGradientdCdExtra(level,costFunction)
            if( PETScIerr/=0 ) then
               write(errorMessage,99) &
                    "Error in MatSetValues for roterate(3)", idxmg
+              call terminate("setupGradientdCdExtra", errorMessage)
+           endif
+
+! 
+!     ******************************************************************
+!     *                                                                *
+!     * Rotcen X derivative.                                           *
+!     *                                                                *
+!     ******************************************************************
+!
+
+           dJdaLocal = rotcenteradjb(1)+rotpointadjb(1)
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignRotCenX - 1
+
+           ! Transfer data to PETSc vector
+           !print *,'rotx',idxmg,sps-1
+           call MatSetValues(dCda,1,sps-1,1,idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in MatSetValues for rotcen(1)", idxmg
+              call terminate("setupGradientdCdExtra", errorMessage)
+           endif
+
+!
+!     ******************************************************************
+!     *                                                                *
+!     * RotCen Y derivative.                                           *
+!     *                                                                *
+!     ******************************************************************
+!
+
+           dJdaLocal = rotcenteradjb(2)+rotpointadjb(2)
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignRotCenY - 1
+
+           ! Transfer data to PETSc vector
+           !print *,'roty',idxmg,sps-1
+           call MatSetValues(dCda,1,sps-1,1,idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in MatSetValues for rotcen(2)", idxmg
+              call terminate("setupGradientdCdExtra", errorMessage)
+           endif
+ 
+!
+!     ******************************************************************
+!     *                                                                *
+!     * RotCen Z derivative.                                           *
+!     *                                                                *
+!     ******************************************************************
+!
+
+           dJdaLocal = rotcenteradjb(3)+rotpointadjb(3)
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignRotCenZ - 1
+
+           ! Transfer data to PETSc vector
+           !print *,'rotz',idxmg,sps-1
+           call MatSetValues(dCda,1,sps-1,1,idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+           
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in MatSetValues for rotcenter(3)", idxmg
+              call terminate("setupGradientdCdExtra", errorMessage)
+           endif
+
+! 
+!     ******************************************************************
+!     *                                                                *
+!     * PointRef X derivative.                                         *
+!     *                                                                *
+!     ******************************************************************
+!
+
+           dJdaLocal = pointrefadjb(1)
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignPointRefX - 1
+
+           ! Transfer data to PETSc vector
+           !print *,'rotx',idxmg,sps-1
+           call MatSetValues(dCda,1,sps-1,1,idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in MatSetValues for pointref(1)", idxmg
+              call terminate("setupGradientdCdExtra", errorMessage)
+           endif
+
+!
+!     ******************************************************************
+!     *                                                                *
+!     * PointRef Y derivative.                                         *
+!     *                                                                *
+!     ******************************************************************
+!
+
+           dJdaLocal = pointrefadjb(2)
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignPointRefY - 1
+
+           ! Transfer data to PETSc vector
+           !print *,'roty',idxmg,sps-1
+           call MatSetValues(dCda,1,sps-1,1,idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in MatSetValues for pointref(2)", idxmg
+              call terminate("setupGradientdCdExtra", errorMessage)
+           endif
+ 
+!
+!     ******************************************************************
+!     *                                                                *
+!     * PointRef Z derivative.                                         *
+!     *                                                                *
+!     ******************************************************************
+!
+
+           dJdaLocal = pointrefadjb(3)
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignPointRefZ - 1
+
+           ! Transfer data to PETSc vector
+           !print *,'rotz',idxmg,sps-1
+           call MatSetValues(dCda,1,sps-1,1,idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+           
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in MatSetValues for pointref(3)", idxmg
               call terminate("setupGradientdCdExtra", errorMessage)
            endif
 

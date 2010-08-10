@@ -299,8 +299,8 @@
          cfstart = 9
          cfend = 9!14
       else
-         cfstart =1
-         cfend = 1!8
+         cfstart =8
+         cfend = 8!8
       end if
 !      functionLoop: do costFunction = 1,1!10,10!1, 1!nCostFunction
       functionLoop: do costFunction = cfstart,cfend

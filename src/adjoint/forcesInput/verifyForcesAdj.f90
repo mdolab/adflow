@@ -70,7 +70,7 @@
       real(kind=realType), dimension(nTimeIntervalsSpectral) :: ClAdj,CdAdj,CfxAdj,CfyAdj,CfzAdj, &
                                                            CmxAdj,CmyAdj,CmzAdj
 !      real(kind=realType), dimension(:,:,:),allocatable:: normAdj
-      real(kind=realType), dimension(3) :: refPoint
+      real(kind=realType), dimension(3) :: refPoint,pointRefAdj,rotPointAdj
       real(kind=realType) :: yplusMax
 
       real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj,machGridAdj
@@ -246,10 +246,10 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 !     * Determine the reference point for the moment computation in    *
 !     * meters.                                                        *
 !     ******************************************************************
- !     print *,' starting Tapenade routines'
-      refPoint(1) = LRef*pointRef(1)
-      refPoint(2) = LRef*pointRef(2)
-      refPoint(3) = LRef*pointRef(3)
+!!$ !     print *,' starting Tapenade routines'
+!!$      refPoint(1) = LRef*pointRef(1)
+!!$      refPoint(2) = LRef*pointRef(2)
+!!$      refPoint(3) = LRef*pointRef(3)
 
       ! Initialize the force and moment coefficients to 0 as well as
       ! yplusMax.
@@ -302,7 +302,8 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
             call  copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
            MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
            rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
-           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
+           timerefAdj,pInfCorrAdj,pointRefAdj,rotPointAdj,nn,level,sps,&
+           liftIndex)
 
             !call copyADjointForcesStencil(wAdj,xAdj,nn,level,sps)
 
@@ -355,7 +356,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
                   call computeForcesAdj(xAdj,wAdj,pAdj, &
                        iiBeg,iiEnd,jjBeg,jjEnd,i2Beg,i2End,j2Beg,j2End, &
                        mm,cFxAdj,cFyAdj,cFzAdj,cMxAdj,cMyAdj,cMzAdj,&
-                       yplusMax,refPoint,CLAdj,CDAdj,  &
+                       yplusMax,pointRefAdj,rotPointAdj,CLAdj,CDAdj,  &
                        nn,level,sps,cFpAdj,cMpAdj,righthanded,secondhalo,&
                        alphaAdj,betaAdj,machAdj,machcoefAdj,machGridAdj,&
                        prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&

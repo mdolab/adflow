@@ -11,7 +11,7 @@
 !
       subroutine copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
            betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
-           nn,level,sps,&
+           nn,level,sps,pointRefAdj,rotPointAdj,&
            prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
            rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
            murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
@@ -34,7 +34,8 @@
       use flowVarRefState  !timeref,nw
       use inputPhysics
       use inputTimeSpectral !nTimeIntervalsSpectral
-      use cgnsgrid    !cgnsdoms
+      use cgnsgrid    !cgnsdoms 
+      use inputMotion     ! rotPoint
       implicit none
 
 !
@@ -56,6 +57,7 @@
       integer(kind=intType)::liftIndex
 
       real(kind=realType), dimension(3),intent(out) ::rotRateAdj,rotCenterAdj
+      real(kind=realType), dimension(3),intent(out) ::pointRefAdj,rotPointAdj
       real(kind=realType), dimension(2,2,2,3,nTimeIntervalsSpectral),intent(out) ::xBlockCornerAdj
 
       integer(kind=intType) :: nn,level,sps
@@ -186,5 +188,6 @@
       rotCenterAdj = cgnsDoms(j)%rotCenter
       rotRateAdj   = timeRef*cgnsDoms(j)%rotRate
 !      rotRateAdj   = cgnsDoms(j)%rotRate
-
+      pointRefAdj = pointRef
+      rotPointAdj = rotPoint
     end subroutine copyADjointStencil

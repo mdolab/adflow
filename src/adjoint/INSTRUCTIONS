@@ -52,6 +52,15 @@ from the end
 
 emacs bceulerwallforcesadj_b.f90 and comment out + ovgm1*tmpb (approx line 591)
 
+in forcesandmoments_b last 6 line to
+  !pointrefadjb(1:3) = 0.0
+  pointrefadjb(3) = pointrefadjb(3) + lref*refpointb(3)
+  refpointb(3) = 0.0
+  pointrefadjb(2) = pointrefadjb(2) + lref*refpointb(2)
+  refpointb(2) = 0.0
+  pointrefadjb(1) = pointrefadjb(1) + lref*refpointb(1)
+  refpointb(1) = 0.0
+
    5.2) cd residualOutput
 
 emacs computepressureadj_b.f90        >remove "gammaconstantb = 0.0" from the end fixed!

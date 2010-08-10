@@ -103,7 +103,10 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
   REAL(KIND=REALTYPE) :: murefadj, timerefadj
   REAL(KIND=REALTYPE) :: alphaadj, betaadj
   REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
-  REAL(KIND=REALTYPE) :: rotcenteradj(3), rotrateadj(3), rotrateadjb(3)
+  REAL(KIND=REALTYPE) :: rotcenteradj(3), rotcenteradjb(3), rotrateadj(3&
+       &  ), rotrateadjb(3)
+  REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3), rotpointadj(3)&
+       &  , rotpointadjb(3)
 
   logical :: secondHalo,exchangeTurb,correctfork,finegrid,righthanded
 
@@ -137,14 +140,6 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
 
   if( PETScIerr/=0 ) &
        call terminate("setupGradientRHSExtra", "Error in VecSet")
-
-
-  ! Determine the reference point for the moment computation in
-  ! meters.
-
-  refPoint(1) = LRef*pointRef(1)
-  refPoint(2) = LRef*pointRef(2)
-  refPoint(3) = LRef*pointRef(3)
 
   ! Initialize the force and moment coefficients to 0 as well as
   ! yplusMax.
@@ -204,8 +199,8 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
            MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
            rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
-           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
-
+           timerefAdj,pInfCorrAdj,pointRefAdj,rotPointAdj,nn,level,sps,&
+           liftIndex)
  
         wAdjB(:,:,:,:) = zero ! > return dCf/dw
         xAdjB(:,:,:,:) = zero ! > return dCf/dx
@@ -290,12 +285,14 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
 	   call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
 &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
 &  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
-&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
-&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
-&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
-&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
-&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
-&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex, t)
+&  , cmzadj, cmzadjb, yplusmax, pointrefadj, pointrefadjb, rotpointadj, &
+&  rotpointadjb, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+&  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+&  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
+&  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
+&  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
+&  rotcenteradjb, rotrateadj, rotrateadjb, liftindex, t)
+           !print *,'pointref',pointrefadj, pointrefadjb
 
 	   enddo bocoLoop
 
@@ -448,11 +445,11 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
 
 
 	   ! 
-           !     ******************************************************************
-           !     *                                                                *
-           !     * Rot X derivative.                                              *
-           !     *                                                                *
-           !     ******************************************************************
+           !     ********************************************************
+           !     *                                                      *
+           !     * Rot X derivative.                                    *
+           !     *                                                      *
+           !     ********************************************************
            !
 
            dJdaLocal = rotrateadjb(1)
@@ -477,11 +474,11 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
            endif
 
            !
-           !     ******************************************************************
-           !     *                                                                *
-           !     * Rot Y derivative.                                              *
-           !     *                                                                *
-           !     ******************************************************************
+           !     ********************************************************
+           !     *                                                      *
+           !     * Rot Y derivative.                                    *
+           !     *                                                      *
+           !     ********************************************************
            !
 
            dJdaLocal = rotrateadjb(2)
@@ -506,11 +503,11 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
            endif
  
            !
-           !     ******************************************************************
-           !     *                                                                *
-           !     * Rot Z derivative.                                              *
-           !     *                                                                *
-           !     ******************************************************************
+           !     ********************************************************
+           !     *                                                      *
+           !     * Rot Z derivative.                                    *
+           !     *                                                      *
+           !     ********************************************************
            !
 
            dJdaLocal = rotrateadjb(3)
@@ -534,6 +531,178 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
               call terminate("setupGradientRHSExtra", errorMessage)
            endif
 
+	   ! 
+           !     ********************************************************
+           !     *                                                      *
+           !     * RotCen X derivative.                                 *
+           !     *                                                      *
+           !     ********************************************************
+           !
+
+           dJdaLocal = rotcenteradjb(1)+rotpointadjb(1)
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignRotCenX - 1
+
+           ! Transfer data to PETSc vector
+
+           call VecSetValue(dJda, idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+	   !call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !     INSERT_VALUES, PETScIerr)
+
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in VecSetValue for global node", idxmg
+              call terminate("setupGradientRHSExtra", errorMessage)
+           endif
+
+           !
+           !     ********************************************************
+           !     *                                                      *
+           !     * Rot Y derivative.                                    *
+           !     *                                                      *
+           !     ********************************************************
+           !
+
+           dJdaLocal = rotcenteradjb(2)+rotpointadjb(2)
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignRotCenY - 1
+
+           ! Transfer data to PETSc vector
+
+           call VecSetValue(dJda, idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+           !call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !     INSERT_VALUES, PETScIerr)
+
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in VecSetValue for global node", idxmg
+              call terminate("setupGradientRHSExtra", errorMessage)
+           endif
+ 
+           !
+           !     ********************************************************
+           !     *                                                      *
+           !     * Rot Z derivative.                                    *
+           !     *                                                      *
+           !     ********************************************************
+           !
+
+           dJdaLocal = rotcenteradjb(3)+rotpointadjb(3)
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignRotCenZ - 1
+
+           ! Transfer data to PETSc vector
+
+           call VecSetValue(dJda, idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+           !call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !     INSERT_VALUES, PETScIerr)
+
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in VecSetValue for global node", idxmg
+              call terminate("setupGradientRHSExtra", errorMessage)
+           endif
+	   ! 
+           !     ********************************************************
+           !     *                                                      *
+           !     * Rot X derivative.                                    *
+           !     *                                                      *
+           !     ********************************************************
+           !
+
+           dJdaLocal = pointrefadjb(1)
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignPointRefX - 1
+
+           ! Transfer data to PETSc vector
+
+           call VecSetValue(dJda, idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+	   !call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !     INSERT_VALUES, PETScIerr)
+
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in VecSetValue for global node pointref(1)", idxmg
+              call terminate("setupGradientRHSExtra", errorMessage)
+           endif
+
+           !
+           !     ********************************************************
+           !     *                                                      *
+           !     * Rot Y derivative.                                    *
+           !     *                                                      *
+           !     ********************************************************
+           !
+
+           dJdaLocal = pointrefadjb(2)
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignPointRefY - 1
+
+           ! Transfer data to PETSc vector
+
+           call VecSetValue(dJda, idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+           !call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !     INSERT_VALUES, PETScIerr)
+
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in VecSetValue for global node", idxmg
+              call terminate("setupGradientRHSExtra", errorMessage)
+           endif
+ 
+           !
+           !     ********************************************************
+           !     *                                                      *
+           !     * Rot Z derivative.                                    *
+           !     *                                                      *
+           !     ********************************************************
+           !
+
+           dJdaLocal = pointrefadjb(3)
+	   
+           ! Set the corresponding single entry of the PETSc vector dJda.
+
+           ! Global vector row idxmg function of design variable index.
+
+           idxmg = nDesignPointRefZ - 1
+
+           ! Transfer data to PETSc vector
+
+           call VecSetValue(dJda, idxmg, dJdaLocal, &
+                ADD_VALUES, PETScIerr)
+           !call VecSetValue(dJda, idxmg, dJdaLocal, &
+           !     INSERT_VALUES, PETScIerr)
+
+           if( PETScIerr/=0 ) then
+              write(errorMessage,99) &
+                   "Error in VecSetValue for global node", idxmg
+              call terminate("setupGradientRHSExtra", errorMessage)
+           endif
 
 !
 !     ******************************************************************

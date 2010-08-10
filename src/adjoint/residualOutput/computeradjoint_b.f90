@@ -2,9 +2,9 @@
 !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
 !  
 !  Differentiation of computeradjoint in reverse (adjoint) mode:
-!   gradient, with respect to input variables: rotrateadj machadj
-!                alphaadj xadj xblockcorneradj dwadj wadj betaadj
-!                machgridadj
+!   gradient, with respect to input variables: pointrefadj rotrateadj
+!                machadj alphaadj rotpointadj xadj xblockcorneradj
+!                dwadj wadj betaadj machgridadj rotcenteradj
 !   of linear combination of output variables: dwadj
 !
 !      ******************************************************************
@@ -21,7 +21,8 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
 &  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
 &  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
-&  , rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+&  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, pointrefadjb&
+&  , rotpointadj, rotpointadjb, murefadj, timerefadj, pinfcorradj, &
 &  liftindex)
   USE blockpointers
   USE flowvarrefstate
@@ -29,7 +30,6 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
   USE inputtimespectral
   USE monitor
   USE section
-  use communication
   IMPLICIT NONE
 !end do
 ! print *,'nn end',nn
@@ -52,8 +52,10 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
   REAL(KIND=REALTYPE) :: pinfadj, rhoinfadj
   REAL(KIND=REALTYPE) :: prefadj, rhorefadj
   REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: rotcenteradj
+  REAL(KIND=REALTYPE) :: rotcenteradjb(3), rotrateadjb(3)
+  REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3), rotpointadj(3)&
+&  , rotpointadjb(3)
   REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: rotrateadj
-  REAL(KIND=REALTYPE) :: rotrateadjb(3)
   INTEGER(KIND=INTTYPE), INTENT(IN) :: sps
   REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw, &
 &  ntimeintervalsspectral), INTENT(IN) :: wadj
@@ -134,8 +136,6 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 ! *************************************************************************
 !print *,'in computeRadj',wadj(:,:,:,irho)!
 !      call the initialization routines to calculate the effect of Mach and alpha
-
-!  print *,'myid, one',myid
   CALL ADJUSTINFLOWANGLEADJ(alphaadj, betaadj, veldirfreestreamadj, &
 &                      liftdirectionadj, dragdirectionadj, liftindex)
   CALL PUSHREAL8ARRAY(veldirfreestreamadj, 3)
@@ -159,7 +159,6 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 &                         uinfadj, winfadj, prefadj, rhorefadj, &
 &                         pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
 &                         murefadj, timerefadj, pinfcorradj)
-!  print *,'myid, two',myid
   DO sps2=1,ntimeintervalsspectral
     CALL PUSHREAL8ARRAY(xadj, 6**3*3*ntimeintervalsspectral)
 !      Call the metric routines to generate the areas, volumes and surface normals for the stencil.
@@ -175,7 +174,6 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
     CALL METRICADJ(xadj, siadj, sjadj, skadj, voladj, normadj, icell, &
 &             jcell, kcell, nn, level, sps, sps2)
     CALL PUSHREAL8ARRAY(t, nsections)
-!    print *,'myid, three',myid
 !print *,'siAdj',siAdj(:,0,0,1,:)
 !call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
 ! Compute the time, which corresponds to this spectral solution.
@@ -199,6 +197,7 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
     CALL PUSHREAL8ARRAY(sfacejadj, 5**3*ntimeintervalsspectral)
     CALL PUSHREAL8ARRAY(sfaceiadj, 5**3*ntimeintervalsspectral)
     CALL PUSHREAL8ARRAY(sadj, 5**3*3*ntimeintervalsspectral)
+    CALL PUSHREAL8ARRAY(rotrateadj, 3)
 !first two arguments needed for time spectral.just set to initial values for the current steady case...
 !print *,'grid velocities',il,jl,kl,nn,secondhalo
     CALL GRIDVELOCITIESFINELEVELADJ(useoldcoor, t, sps, xadj, siadj, &
@@ -206,8 +205,9 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 &                              sadj, sfaceiadj, sfacejadj, sfacekadj, &
 &                              machgridadj, veldirfreestreamadj, &
 &                              liftdirectionadj, alphaadj, betaadj, &
-&                              liftindex, icell, jcell, kcell, nn, level&
-&                              , sps2)
+&                              liftindex, icell, jcell, kcell, &
+&                              pointrefadj, rotpointadj, nn, level, sps2&
+&                             )
     CALL PUSHREAL8ARRAY(rfaceadj, nbocos*5**2*ntimeintervalsspectral)
 !print *,'gvsiAdj',siAdj(:,0,0,1,:)
 !for debugging intermediate stages      
@@ -275,7 +275,6 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 ! Apply all boundary conditions of the mean flow.
 !print *,'applying bcs',nn,secondhalo,sps2
 !******************************************
- !   print *,'before applyallbc'
     CALL APPLYALLBCADJ(winfadj, pinfcorradj, wadj, padj, sadj, siadj, &
 &                 sjadj, skadj, voladj, normadj, rfaceadj, icell, jcell&
 &                 , kcell, secondhalo, nn, level, sps, sps2)
@@ -343,12 +342,10 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 ! Compute the time step.
 !call timeStepAdj(.false.)
 !print *,'nntimestep',nn
-    !print *,'calling time step',myid
     CALL TIMESTEPADJ(.true., wadj, padj, siadj, sjadj, skadj, sfaceiadj&
 &               , sfacejadj, sfacekadj, voladj, radiadj, radjadj, &
 &               radkadj, icell, jcell, kcell, pinfcorradj, rhoinfadj, nn&
 &               , level, sps, sps2)
-
   END DO
 !print *,'tstepsiAdj',siAdj(:,0,0,1,:)
 !#!$
@@ -377,12 +374,15 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 &               rotrateadj, rotrateadjb, correctfork, nn, level, sps)
   CALL INITRESADJ_B(1, nwf, wadj, wadjb, voladj, voladjb, dwadj, dwadjb&
 &              , nn, level, sps)
+  pointrefadjb(1:3) = 0.0
   alphaadjb = 0.0
   pinfcorradjb = 0.0
+  rotpointadjb(1:3) = 0.0
   xadjb(-3:2, -3:2, -3:2, 1:3, 1:ntimeintervalsspectral) = 0.0
   xblockcorneradjb(1:2, 1:2, 1:2, 1:3, 1:ntimeintervalsspectral) = 0.0
   betaadjb = 0.0
   machgridadjb = 0.0
+  rotcenteradjb(1:3) = 0.0
   winfadjb(1:nw) = 0.0
   rfaceadjb(1:nbocos, -2:2, -2:2, 1:ntimeintervalsspectral) = 0.0
   sadjb(-2:2, -2:2, -2:2, 1:3, 1:ntimeintervalsspectral) = 0.0
@@ -416,21 +416,25 @@ SUBROUTINE COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 &                                  siadj, siadjb, sjadj, sjadjb, skadj, &
 &                                  skadjb, rfaceadj, rfaceadjb, nn, &
 &                                  level, sps2)
+    CALL POPREAL8ARRAY(rotrateadj, 3)
     CALL POPREAL8ARRAY(sadj, 5**3*3*ntimeintervalsspectral)
     CALL POPREAL8ARRAY(sfaceiadj, 5**3*ntimeintervalsspectral)
     CALL POPREAL8ARRAY(sfacejadj, 5**3*ntimeintervalsspectral)
     CALL POPREAL8ARRAY(sfacekadj, 5**3*ntimeintervalsspectral)
     CALL GRIDVELOCITIESFINELEVELADJ_B(useoldcoor, t, sps, xadj, xadjb, &
 &                                siadj, siadjb, sjadj, sjadjb, skadj, &
-&                                skadjb, rotcenteradj, rotrateadj, &
-&                                rotrateadjb, sadj, sadjb, sfaceiadj, &
-&                                sfaceiadjb, sfacejadj, sfacejadjb, &
-&                                sfacekadj, sfacekadjb, machgridadj, &
-&                                machgridadjb, veldirfreestreamadj, &
+&                                skadjb, rotcenteradj, rotcenteradjb, &
+&                                rotrateadj, rotrateadjb, sadj, sadjb, &
+&                                sfaceiadj, sfaceiadjb, sfacejadj, &
+&                                sfacejadjb, sfacekadj, sfacekadjb, &
+&                                machgridadj, machgridadjb, &
+&                                veldirfreestreamadj, &
 &                                veldirfreestreamadjb, liftdirectionadj&
 &                                , alphaadj, alphaadjb, betaadj, &
 &                                betaadjb, liftindex, icell, jcell, &
-&                                kcell, nn, level, sps2)
+&                                kcell, pointrefadj, pointrefadjb, &
+&                                rotpointadj, rotpointadjb, nn, level, &
+&                                sps2)
     CALL POPINTEGER4(branch)
     IF (.NOT.branch .LT. 1) nnn = 0
     CALL POPREAL8ARRAY(t, nsections)

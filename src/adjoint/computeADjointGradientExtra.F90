@@ -250,6 +250,12 @@
 	print *,'Rotx:',functionGrad(costFunction,nDesignRotX)
 	print *,'RotY:',functionGrad(costFunction,nDesignRotY)
 	print *,'RotZ:',functionGrad(costFunction,nDesignRotZ)
+        print *,'RotCenx:',functionGrad(costFunction,nDesignRotCenX)
+	print *,'RotCenY:',functionGrad(costFunction,nDesignRotCenY)
+	print *,'RotCenZ:',functionGrad(costFunction,nDesignRotCenZ)
+        print *,'PointRefx:',functionGrad(costFunction,nDesignPointRefX)
+	print *,'PointRefY:',functionGrad(costFunction,nDesignPointRefY)
+	print *,'PointRefZ:',functionGrad(costFunction,nDesignPointRefZ)
       endif
 
       if( PETScRank==0 ) then	

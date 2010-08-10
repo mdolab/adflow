@@ -9,7 +9,7 @@
 !      ******************************************************************
 !
        subroutine rotMatrixRigidBodyAdj(tNew, tOld, rotationMatrix, &
-                                     rotationPoint)
+                                     rotationPointAdj,rotPointAdj)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -28,7 +28,8 @@
 !
        real(kind=realType), intent(in) :: tNew, tOld
 
-       real(kind=realType), dimension(3),   intent(out) :: rotationPoint
+       real(kind=realType), dimension(3)  :: rotPointAdj
+       real(kind=realType), dimension(3),   intent(out) :: rotationPointAdj
        real(kind=realType), dimension(3,3), intent(out) :: rotationMatrix
 !
 !      Local variables.
@@ -154,8 +155,8 @@
     !  rotationPoint(3) = LRef*rotPoint(3) &
     !                   + MachGrid(3)*aInf*tOld/timeRef
 
-       rotationPoint(1) = LRef*rotPoint(1)
-       rotationPoint(2) = LRef*rotPoint(2)
-       rotationPoint(3) = LRef*rotPoint(3)
+       rotationPointAdj(1) = LRef*rotPointAdj(1)
+       rotationPointAdj(2) = LRef*rotPointAdj(2)
+       rotationPointAdj(3) = LRef*rotPointAdj(3)
 
      end subroutine rotMatrixRigidBodyAdj

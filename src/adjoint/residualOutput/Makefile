@@ -56,6 +56,7 @@ FF90_OBJECTS = adjustinflowangleadj_b.o   \
 	       checkinputparamadj_b.o     \
                computepressureadj_b.o     \
 	       computeradjoint_b.o        \
+	       derivativerotmatrixrigidadj_b.o\
 	       eintarrayadj_b.o           \
 	       etotarrayadj_b.o           \
                extractbcstatesadj_b.o     \
@@ -73,6 +74,7 @@ FF90_OBJECTS = adjustinflowangleadj_b.o   \
 	       replacebcstatesadj_b.o     \
                residualadj_b.o            \
                riemannfluxadj_b.o         \
+               rotmatrixrigidbodyadj_b.o \
 	       setflowinfinitystateadj_b.o\
                timestepadj_b.o            \
 	       vectorrotation_b.o         \
