@@ -629,9 +629,9 @@ class SUmbInterface(object):
         # end if 
 
         self.Mesh.sol_type = sol_type
-
-        startfile = self.OutputDir+self.probName+grid_file+'_autogen.input'
         
+        startfile = self.OutputDir+self.probName+grid_file+'_autogen.input'
+
         self.generateInputFile(aero_problem,sol_type,grid_file,startfile,*args,**kwargs)
         
         # Make sure the parameter file exists
@@ -698,7 +698,8 @@ class SUmbInterface(object):
         self.sumb.inputphysics.liftdirection = liftDir
         self.sumb.inputphysics.dragdirection = dragDir
 
-        #if (self.myid==0):print '-> Alpha...',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha,velDir,liftDir,dragDir
+        if (self.myid==0):print '-> Alpha...',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha#,velDir,liftDir,dragDir
+
         #update the flow vars
         self.sumb.updateflow()
         return
@@ -852,11 +853,10 @@ class SUmbInterface(object):
         autofile.write(  "-------------------------------------------------------------------------------\n")
         autofile.write(  "     Free Stream Parameters\n")
         autofile.write(  "-------------------------------------------------------------------------------\n")
-        try: kwargs['options']['FamilyRot'][1]
-        except KeyError:
-            Rotating = False
-        else:
+        if kwargs['options']['FamilyRot'][1]!='':
             Rotating = True
+        else:
+            Rotating = False
         #endif
         #print 'Rotating',Rotating,kwargs['options']['FamilyRot'][1]
         if Rotating or sol_type=='Time Spectral':
@@ -1157,7 +1157,7 @@ class SUmbInterface(object):
             autofile.write(  "TS Mach number mode: %s\n"%(kwargs['options']['Mach Mode'][1]))
             autofile.write(  "TS Altitude mode: %s\n"%(kwargs['options']['Altitude Mode'][1]))
         #endif
-
+        autofile.write(  "use wind axes: %s\n"%(kwargs['options']['use wind axes'][1]))
         #! Write the keywords and default values for the parallel, i.e.
         #! load balance parameters.
 
@@ -1265,19 +1265,24 @@ class SUmbInterface(object):
 ##        autofile.write( )
 
         #! Write the monitor, surface output and volume output variables.
-
+        # creat the monitoring variable string
+        monString='resrho'
+        for value in kwargs['options']['monitoring Variables'][1]:
+            monString=monString+'_'+value
+        #end
         autofile.write("-------------------------------------------------------------------------------\n")
         autofile.write( "     Monitoring and output variables\n")
         autofile.write( "-------------------------------------------------------------------------------\n")
-        #autofile.write( "                Monitoring variables: resrho_cl_cd_cmx_cmy_cmz\n")
-        autofile.write( "                Monitoring variables: resrho_cl_cd_cfx_cfy_cfz\n")
+
+        autofile.write( "                Monitoring variables: %s\n"%(monString))
+
         autofile.write( " Monitor massflow sliding interfaces: no\n")
         autofile.write( "            Surface output variables: rho_cp_vx_vy_vz_mach\n")
         autofile.write( "           Volume output variables: ptloss_resrho\n")
         autofile.write( "\n")
-
+        
         # The section to overwrite the rotation info for the families.
-        try:
+        if kwargs['options']['FamilyRot'][1]!='':
             autofile.write( "------------------------------------------------------------------------------\n")
             autofile.write( "     Family rotation info \n")
             autofile.write( "------------------------------------------------------------------------------\n")
@@ -1285,9 +1290,7 @@ class SUmbInterface(object):
             
             autofile.write( "                               Rotation center  Rotation rate (rad/s)\n")
             autofile.write( "Rotating family %s : %6.6f %6.6f %6.6f    %6.6f %6.6f %6.6f    \n"%(kwargs['options']['FamilyRot'][1],kwargs['options']['rotCenter'][1][0],kwargs['options']['rotCenter'][1][1],kwargs['options']['rotCenter'][1][2],kwargs['options']['rotRate'][1][0],kwargs['options']['rotRate'][1][1],kwargs['options']['rotRate'][1][2]))
-        except:
-            if(self.myid ==0): print ' -> No rotating families Present'
-            #endif
+        
         #endtry
         
 #        autofile.write( "Rotating family <family_name2> : 0.0 0.0 0.0    1.e+3 0.e+0 0.e+0    \n")
@@ -1354,7 +1357,6 @@ class SUmbInterface(object):
         autofile.flush()
         
         autofile.close()
-        
         return
     
     def GetMesh(self):

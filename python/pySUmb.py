@@ -115,10 +115,24 @@ class SUMB(AeroSolver):
 			'ILU Fill Levels': [int,2],
 			'ASM Overlap' : [int,5],
 			'TS Stability': [str,'no'],
-			'Reference Temp.':[float,298.0],
+			'Reference Temp.':[float,398.0],
 			'Reference Pressure':[float,101325.0],
-			'Reference Density':[float,1.225]
-
+			'Reference Density':[float,1.225],
+			'Time Intervals': [int,3],
+			'Alpha Mode':[str,'no'],
+			'Beta Mode':[str,'no'],
+			'Mach Mode':[str,'no'],
+			'p Mode':[str,'no'],
+			'q Mode':[str,'no'],
+			'r Mode':[str,'no'],
+			'Altitude Mode':[str,'no'],
+			'use wind axes':[str,'no'],
+			'FamilyRot':[str,''],
+			'rotCenter':[list,[0.0,0.0,0.0]],
+			'rotRate':[list,[0.0,0.0,0.0]],
+			'Omega fourier': [float,3.14],
+			'Fourier sine coefficient':[float,3.52e-4],
+			'monitoring Variables':[list,['cl','cd','cmz']]
 			}
 		
 		informs = {
@@ -150,7 +164,6 @@ class SUMB(AeroSolver):
 		
 		Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
 		'''
-		
 
 		if self.allInitialized==True:return
 		self.interface.initializeFlow(aero_problem,sol_type,grid_file,options=self.options, *args, **kwargs)
@@ -175,9 +188,9 @@ class SUMB(AeroSolver):
 		
 		Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
 		'''
-	
-	
+		print 'Calling initialize...'
 		self.initialize(aero_problem,sol_type,grid_file,*args,**kwargs)
+
 
 		if self.getOption('reinitialize'):
 			print 'reinitialization not yet implemented...'
