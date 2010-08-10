@@ -37,7 +37,6 @@ do i=lowInd,highInd-1
 end do
 
 call VecSetValues(cgnsGridVec,ndofcgns,cgnsindices,cgnsdof,INSERT_VALUES,ierr)
-
 call VecAssemblyBegin(cgnsGridVec,ierr)
 call VecAssemblyEnd(cgnsGridVec,ierr)
 

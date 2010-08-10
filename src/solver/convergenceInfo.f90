@@ -295,7 +295,7 @@
 
              ! Write the convergence info to stdout.
              if ( printIterations .eqv. .True.) then
-                write(*,"(e20.12,1x)",advance="no") monGlob(mm)
+                write(*,"(e24.16,1x)",advance="no") monGlob(mm)
              end if
           enddo
 

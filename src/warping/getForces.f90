@@ -1,4 +1,4 @@
-subroutine getForces(ndofcgns,forces)
+subroutine getForces1()
 
   use BCTypes
   use blockPointers
@@ -9,12 +9,6 @@ subroutine getForces(ndofcgns,forces)
   use warpingPetsc
   use block
   implicit none
-  !
-  !      Subroutine arguments.
-  !
-  integer(kind=intType),intent(in)  :: ndofcgns
-  real(kind=realType) ,intent(out)  :: forces(ndofcgns)
-
   !
   !      Local variables.
   !
@@ -29,9 +23,6 @@ subroutine getForces(ndofcgns,forces)
 
   real(kind=realType), dimension(:,:),   pointer :: pp2, pp1
   real(kind=realType), dimension(:,:,:), pointer :: ss
-
-  integer(kind=intType) ,allocatable,dimension(:) :: temp
-  integer(kind=intType), allocatable, dimension(:) :: indices
   logical :: storeSubface
   integer(kind=intType) :: iset(3),size,highInd,lowInd,ndof
 
@@ -40,9 +31,6 @@ subroutine getForces(ndofcgns,forces)
   !      * Begin execution                                                *
   !      *                                                                *
   !      ******************************************************************
-  !
-
-  forces = zero
 
   ! Compute the scaling factor to create the correct dimensional
   ! force in newton. As the coordinates are already in meters,
@@ -65,7 +53,6 @@ subroutine getForces(ndofcgns,forces)
 
         if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
              BCType(mm) == NSWallIsothermal) then
-
            select case (BCFaceID(mm))
 
            case (iMin)
@@ -196,19 +183,43 @@ subroutine getForces(ndofcgns,forces)
   call VecScatterBegin(sumbTOcgnsForce,sumbGridVec,cgnsGridVec,INSERT_VALUES,SCATTER_FORWARD,ierr)
   call VecScatterEnd  (sumbTOcgnsForce,sumbGridVec,cgnsGridVec,INSERT_VALUES,SCATTER_FORWARD,ierr)
 
+end subroutine getForces1
+
+subroutine getForces2(ndofcgns,forces)
+
+  use BCTypes
+  use blockPointers
+  use cgnsGrid
+  use communication
+  use flowVarRefState
+  use mdDataLocal
+  use warpingPetsc
+  use block
+  implicit none
+  !
+  !      Subroutine arguments.
+  !
+  integer(kind=intType),intent(in)  :: ndofcgns
+  real(kind=realType) ,intent(out)  :: forces(ndofcgns)
+
+  !
+  !      Local variables.
+  !
+  integer(kind=intType) :: lowInd,highInd,ierr,size,i
+  integer(kind=intType) ,allocatable,dimension(:) :: indices
+
   call VecGetOwnershipRange(cgnsGridVec,lowInd,HighInd,ierr)
   
   size = highInd-lowInd
-  allocate(indices(size))
-  do i=1,size
-     indices(i) = lowInd + i - 1
-  end do
+   allocate(indices(size))
+   do i=1,size
+      indices(i) = lowInd + i - 1
+   end do
   
-  call VecGetValues(cgnsGridVec,size,indices,forces,ierr)
+   call VecGetValues(cgnsGridVec,size,indices,forces,ierr)
+   deallocate(indices)
 
-  deallocate(indices)
-end subroutine getForces
-
+end subroutine getForces2
 
 subroutine getIset(nn,i,j,k,il,jl,kl,iset)
   use precision 
@@ -235,3 +246,4 @@ subroutine getIset(nn,i,j,k,il,jl,kl,iset)
        (i-1)*3 + 2
 
 end subroutine getIset
+

@@ -204,7 +204,9 @@ python module sumb ! in
          real(kind=realtype) dimension(ndofcgns),intent(in) :: cgnsdof
          integer(kind=inttype) optional,intent(in),check(len(cgnsdof)>=ndofcgns),depend(cgnsdof) :: ndofcgns=len(cgnsdof)
        end subroutine setgrid
-       subroutine getforces(ndofcgns,forces) ! in :test:getForces.f90                                                                                                 
+       subroutine getforces1()
+       end subroutine getforces1
+       subroutine getforces2(ndofcgns,forces) ! in :test:getForces.f90                                                                                                 
           use blockpointers
           use bctypes
           use communication
@@ -214,7 +216,7 @@ python module sumb ! in
           use flowvarrefstate
           integer(kind=inttype) intent(in) :: ndofcgns
           real(kind=realtype) dimension(ndofcgns),intent(out),depend(ndofcgns) :: forces
-        end subroutine getforces
+        end subroutine getforces2
 
 
        subroutine warpmesh
