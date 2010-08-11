@@ -25,6 +25,7 @@
         use cgnsGrid      !cgnsdoms
         use monitor
         use iteration
+        use blockpointers
         implicit none
 
 
@@ -38,8 +39,8 @@
               ! Set the pointers for this block.
               
               call setPointers(nn, groundLevel, mm)
-              
-              cgnsDoms(nbkglobal)%rotCenter = cgnsDoms(nbkglobal)%Lref*rotPoint
+              !lref is outside
+              cgnsDoms(nbkglobal)%rotCenter = rotPoint
            enddo
         enddo
        
