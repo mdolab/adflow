@@ -119,14 +119,6 @@ subroutine setupGradientdCdExtra(level,costFunction)
 
   call cpu_time(time(1))
 
-
-  ! Determine the reference point for the moment computation in
-  ! meters.
-
-  refPoint(1) = LRef*pointRef(1)
-  refPoint(2) = LRef*pointRef(2)
-  refPoint(3) = LRef*pointRef(3)
-
   ! Initialize the force and moment coefficients to 0 as well as
   ! yplusMax.
 
@@ -150,7 +142,8 @@ subroutine setupGradientdCdExtra(level,costFunction)
      cFvAdj(1) = zero; cFvAdj(2) = zero; cFvAdj(3) = zero
      cMpAdj(1) = zero; cMpAdj(2) = zero; cMpAdj(3) = zero
      cMvAdj(1) = zero; cMvAdj(2) = zero; cMvAdj(3) = zero
- 
+     pointrefadjb(1:3) = 0.0
+     
      domainLoopAD: do nn=1,nDom
       !  print *,'domain loop',nn
         ! Set some pointers to make the code more readable.
@@ -722,7 +715,7 @@ subroutine setupGradientdCdExtra(level,costFunction)
 !     ******************************************************************
 !
       ! VecView - Views a vector object.
-
+      
       if( debug ) then
         !call MatView(dCda,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
 	call MatView(dCda,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)

@@ -76,7 +76,10 @@
       REAL(KIND=REALTYPE) :: murefadj, timerefadj
       REAL(KIND=REALTYPE) :: alphaadj, betaadj
       REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
-      real(kind=realType), dimension(3) ::rotRateAdj,rotCenterAdj,rotrateadjb
+      real(kind=realType), dimension(3) ::rotRateAdj,rotCenterAdj
+      REAL(KIND=REALTYPE) :: rotcenteradjb(3), rotrateadjb(3)
+      REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3), rotpointadj(3)&
+           &  , rotpointadjb(3)
       real(kind=realType), dimension(3) :: velDirFreestreamAdj
       real(kind=realType), dimension(3) :: liftDirectionAdj
       real(kind=realType), dimension(3) :: dragDirectionAdj
@@ -118,6 +121,7 @@
       character(len=2*maxStringLen) :: errorMessage
      !File Parameters
       integer :: unitM = 8,unitAoA = 30,unitSSA = 12,unitRotx = 13,unitMgrid = 14,ierror,unitRoty,unitRotz
+      integer :: unitpointrefx,unitpointrefy,unitpointrefz
       character(len = 32)::outfile,testfile
 
       write(testfile,100) myid!12
@@ -131,7 +135,7 @@
       
       open (UNIT=unitM,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
-           call terminate("verifydRdExtraCS", &
+           call terminate("verifydRdExtraAD", &
            "Something wrong when &
            &calling open")
       write(testfile,102) myid!12
@@ -144,7 +148,7 @@
       
       open (UNIT=unitAoA,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
-           call terminate("verifydRdExtraCS", &
+           call terminate("verifydRdExtraAD", &
            "Something wrong when &
            &calling open")
       write(testfile,104) myid!12
@@ -157,7 +161,7 @@
       
       open (UNIT=unitSSA,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
-           call terminate("verifydRdExtraCS", &
+           call terminate("verifydRdExtraAD", &
            "Something wrong when &
            &calling open")
 
@@ -171,7 +175,7 @@
       
       open (UNIT=unitrotx,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
-           call terminate("verifydRdExtraCS", &
+           call terminate("verifydRdExtraAD", &
            "Something wrong when &
            &calling open")
 
@@ -185,7 +189,7 @@
       
       open (UNIT=unitroty,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
-           call terminate("verifydRdExtraCS", &
+           call terminate("verifydRdExtraAD", &
            "Something wrong when &
            &calling open")
 
@@ -199,7 +203,7 @@
       
       open (UNIT=unitrotz,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
-           call terminate("verifydRdExtraCS", &
+           call terminate("verifydRdExtraAD", &
            "Something wrong when &
            &calling open")
 
@@ -214,10 +218,49 @@
       
       open (UNIT=unitMGrid,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
-           call terminate("verifydRdExtra", &
+           call terminate("verifydRdExtraAD", &
            "Something wrong when &
            &calling open")
 
+      write(testfile,114) myid!12
+114   format (i5)  
+      testfile=adjustl(testfile)
+      write(outfile,115) trim(testfile)!testfile
+115   format("ADPointRefx",a,".out")
+      !outfile = "CSMachfile.txt"
+      unitpointRefx = 8+myID+nproc*7
+      !outfile = "CSMachfile.txt"
+      
+      open (UNIT=unitPointRefx,File=outfile,status='replace',action='write',iostat=ierror)
+      if(ierror /= 0)                        &
+           call terminate("verifydRdExtraAD", &
+           "Something wrong when &
+           &calling open")
+      write(testfile,116) myid!12
+116   format (i5)  
+      testfile=adjustl(testfile)
+      write(outfile,117) trim(testfile)!testfile
+117   format("ADPointRefY",a,".out")
+      unitpointRefx = 8+myID+nproc*7
+            
+      open (UNIT=unitPointRefy,File=outfile,status='replace',action='write',iostat=ierror)
+      if(ierror /= 0)                        &
+           call terminate("verifydRdExtraAD", &
+           "Something wrong when &
+           &calling open")
+      
+      write(testfile,118) myid!12
+118   format (i5)  
+      testfile=adjustl(testfile)
+      write(outfile,119) trim(testfile)!testfile
+119   format("ADPointRefZ",a,".out")
+      unitpointRefx = 8+myID+nproc*7
+      
+      open (UNIT=unitPointRefz,File=outfile,status='replace',action='write',iostat=ierror)
+      if(ierror /= 0)                        &
+           call terminate("verifydRdExtraAD", &
+           "Something wrong when &
+           &calling open")
 
 !     ******************************************************************
 !     *                                                                *
@@ -258,45 +301,6 @@
       else
          secondHalo = .false.
       endif
-
-!!$      !allocate memory for error arrays
-!!$      max_nTime=-100
-!!$      do i = 1,nDom
-!!$         !print *,'allocating i'
-!!$         maxglobalcell(i) = maxval(flowDoms(i,currentLevel,1)%globalCell(:,:,:))
-!!$         !print *,'maxglobalcell',maxglobalcell(i) 
-!!$         nTime     = nTimeIntervalsSpectral!sections(sectionID)%nTimeInstances
-!!$         if(nTime>=max_nTime) max_nTime = nTime
-!!$      enddo
-!!$      idx = maxval(maxglobalcell(:))
-!!$      !print *,'allocating',idx,nw*(idx+1),nw*(idx+1),ndom,max_nTime
-!!$      !allocate(dRdExtraErr(nw*(idx+1),nDesignExtra,ndom,max_nTime), &
-!!$      !         dRdExtraAdj(nw*(idx+1),nDesignExtra,ndom,max_nTime), &
-!!$      !         dRdExtraFD(nw*(idx+1),nDesignExtra,ndom,max_nTime))
-!!$      allocate(dRdExtraErr(nw*(idx+1),nDesignExtra,1,max_nTime), &
-!!$           dRdExtraAdj(nw*(idx+1),nDesignExtra,1,max_nTime), &
-!!$           dRdExtraFD(nw*(idx+1),nDesignExtra,1,max_nTime))
-!!$      !print *,' allocated'
-
-!!$    !allocate memory for FD
-!!$      allocatedomains: do nn = 1,ndom
-!!$         print *,'domain',nn
-!!$         groundLevel = 1
-!!$         sps = 1
-!!$         call setPointersAdj(nn,1,sps)
-!!$         allocate(flowDoms(nn,level,sps)%dwp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-!!$         allocate(flowDoms(nn,level,sps)%dwm(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-!!$         allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-!!$      end do allocatedomains
-!!$
-!!$      print *,'domains allocated'
-!           if(ierr /= 0)                       &
-!                call terminate("memory?") 
-      
-      ! Initialize the temporary arrays.
-      !dRdExtraErr = 0
-      !dRdExtraAdj = 0
-      !dRdExtraFD  = 0
 
 
 !
@@ -395,11 +399,11 @@
                      ! Copy the state w to the wAdj array in the stencil
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
                      call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
-                          betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
-                          nn,level,sps,&
-                          prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+           betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
+           nn,level,sps,pointRefAdj,rotPointAdj,&
+           prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
                      !print *,'Stencil Copied'
 
                      mLoop: do m = 1, nw           ! Loop over output cell residuals (R)
@@ -420,7 +424,8 @@
 &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
 &  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
 &  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
-&  , rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
+&  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, pointrefadjb&
+&  , rotpointadj, rotpointadjb, murefadj, timerefadj, pinfcorradj, &
 &  liftindex)
 
 
@@ -462,6 +467,14 @@
 14                         format(1x,'Roty ',f18.10,7I8)
                            write(unitRotz,15) rotrateadjb(3),sps,nn,icell,jcell,kcell,m,idxres
 15                         format(1x,'Rotz ',f18.10,7I8)
+
+                           write(unitpointrefx,17) pointrefadjb(1),sps,nn,icell,jcell,kcell,m,idxres
+17                         format(1x,'pointrefx ',f18.10,7I8)
+
+                           write(unitRoty,18) pointrefadjb(2),sps,nn,icell,jcell,kcell,m,idxres
+18                         format(1x,'pointrefy ',f18.10,7I8)
+                           write(unitRotz,19) pointrefadjb(3),sps,nn,icell,jcell,kcell,m,idxres
+19                         format(1x,'pointrefz ',f18.10,7I8)
                            !dRdExtraAdj(idxres,nDesignRotY,1,sps) = rotrateadjb(2)
                            !dRdExtraAdj(idxres,nDesignRotZ,1,sps) = rotrateadjb(3)
                            !pvrlocal(m) = rotrateadjb(3)*timeref

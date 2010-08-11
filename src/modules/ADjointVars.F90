@@ -103,6 +103,13 @@
       integer(kind=intType), parameter :: nDesignRotX     = 5_intType
       integer(kind=intType), parameter :: nDesignRotY     = 6_intType	
       integer(kind=intType), parameter :: nDesignRotZ     = 7_intType
+      integer(kind=intType), parameter :: nDesignRotCenX     = 8_intType
+      integer(kind=intType), parameter :: nDesignRotCenY     = 9_intType
+      integer(kind=intType), parameter :: nDesignRotCenZ     = 10_intType
+      integer(kind=intType), parameter :: nDesignPointRefX     = 11_intType
+      integer(kind=intType), parameter :: nDesignPointRefY     = 12_intType
+      integer(kind=intType), parameter :: nDesignPointRefZ     = 13_intType
+      
       integer(kind=intType)            :: nDesignExtra
       integer(kind=intType)	       :: nDesignSpatial 
       integer(kind=intType)            :: nDesign

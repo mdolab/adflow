@@ -1012,4 +1012,8 @@
        logical:: TSStability,TSAlphaMode,TSBetaMode,TSpMode,&
             TSqMode,TSrMode,TSAltitudeMode,TSMachMode
 
+       ! useWindAxis : whether to rotate around the wind axis or the body
+       !               axis...
+       logical:: useWindAxis
+
      end module inputTSStabDeriv

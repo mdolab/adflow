@@ -192,7 +192,7 @@
 !!$
 !!$! 	call verifydRdx(level,sps)
 !!$!stop	
-      !call verifydRdExtra(level)
+!      call verifydRdExtra(level)
 !!$	call verifydRdExtraFDAD(level)	
 !!$
 !!$        ! Verify the ADjoint routine for the forces

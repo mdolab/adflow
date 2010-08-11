@@ -217,7 +217,7 @@
 
          nn = famID(nn)
          cgnsFamilies(nn)%rotatingFrameSpecified = .true.
-
+         print *,'reading rotation info'
          read(value,*) cgnsFamilies(nn)%rotCenter(1), &
                        cgnsFamilies(nn)%rotCenter(2), &
                        cgnsFamilies(nn)%rotCenter(3), &
