@@ -99,6 +99,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
                setupGradientRHSStability.o\
                solverADjoint.o          \
 	       updateFlow.o             \
+	       updateReferencePoint.o   \
 	       verifydRdw.o             \
                verifydRdwFile.o         \
                verifydRdwFileFD.o       \
