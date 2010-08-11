@@ -315,7 +315,7 @@ subroutine setupVolumeSurfaceDerivativesDV
       ! with operation mpi_max.
 
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-                      mpi_max, 0, PETSC_COMM_WORLD, PETScIerr)
+                      mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       if( PETScRank==0 ) &
         write(*,20) "Assembling dXv/dXsDV Parallel matrix time (s) =", timeAdj
@@ -366,7 +366,7 @@ subroutine setupVolumeSurfaceDerivativesDV
       ! Flush the output buffer and synchronize the processors.
       deallocate(surfaceNodes)
       call f77flush()
-      call mpi_barrier(PETSC_COMM_WORLD, PETScIerr)
+      call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       ! Output formats.
 

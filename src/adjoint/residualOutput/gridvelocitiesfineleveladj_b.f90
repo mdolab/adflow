@@ -853,6 +853,7 @@ loopdirection:DO mm=1,3
 &        velxgridb
       rotcenteradjb = rotcenteradjb + offsetvectorb
       pointrefadjb = pointrefadjb - offsetvectorb
+      !print *,'pointrefadjb',pointrefadjb
       CALL POPINTEGER4(branch)
       IF (.NOT.branch .LT. 1) THEN
         rotratetransb(1:3, 1:3) = 0.0

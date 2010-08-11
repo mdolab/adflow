@@ -157,8 +157,8 @@ COMMAND_SEARCH_PATH_MODULES = -I
 FF90_GEN_FLAGS = -DHAS_ISNAN
 CC_GEN_FLAGS   =
 
-FF90_OPTFLAGS   = -O2 -axW -unroll -ip -fPIC
-CC_OPTFLAGS     = -O -fPIC
+FF90_OPTFLAGS   = -02 -fpic#-g -check all -fpic# -O2 -axW -unroll -ip -fPIC
+CC_OPTFLAGS     = -0 -fpic#-g -fpic#-O -fPIC
 
 FF90_DEBUGFLAGS = #-g -check all#-CB -implicitnone -DDEBUG_MODE
 #CC_DEBUGFLAGS   = -g -Wall -pedantic -DDEBUG_MODE
