@@ -25,7 +25,7 @@ subroutine verifyWarpDerivFD!(ncoords,xyzface,indices_new)
   ! Local Arguments
   
   integer(kind=intType)::level=1,idxvol,idxsurf
-  integer(kind=intType)::nn,sps=1,imax,jmax,kmax,i,j,k,n,mm,ll,nnn,ii,length
+  integer(kind=intType)::nn,sps=1,imax,jmax,kmax,i,j,k,n,mm,ll,nnn,ii
   real(kind=realType), dimension(:,:,:,:),allocatable::xyznew,xyz0
   !integer(kind=intType),dimension(6)::IFACEPTB
   !integer(kind=intType),dimension(12)::IEDGEPTB
