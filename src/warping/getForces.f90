@@ -1,4 +1,4 @@
-subroutine getForces1()
+subroutine getForces()
 
   use BCTypes
   use blockPointers
@@ -56,27 +56,27 @@ subroutine getForces1()
            select case (BCFaceID(mm))
 
            case (iMin)
-              pp2 => p( 2,1:,1:); pp1 => p( 1,1:,1:); ss => si( 1,:,:,:)
+              pp2 => p( 2,1:,1:); pp1 => p( 1,1:,1:); ss => si0( 1,:,:,:)
               fact = -one
 
            case (iMax)
-              pp2 => p(il,1:,1:); pp1 => p(ie,1:,1:); ss => si(il,:,:,:)
+              pp2 => p(il,1:,1:); pp1 => p(ie,1:,1:); ss => si0(il,:,:,:)
               fact = one
 
            case (jMin)
-              pp2 => p(1:, 2,1:); pp1 => p(1:, 1,1:); ss => sj(:, 1,:,:)
+              pp2 => p(1:, 2,1:); pp1 => p(1:, 1,1:); ss => sj0(:, 1,:,:)
               fact = -one
 
            case (jMax)
-              pp2 => p(1:,jl,1:); pp1 => p(1:,je,1:); ss => sj(:,jl,:,:)
+              pp2 => p(1:,jl,1:); pp1 => p(1:,je,1:); ss => sj0(:,jl,:,:)
               fact = one
 
            case (kMin)
-              pp2 => p(1:,1:, 2); pp1 => p(1:,1:, 1); ss => sk(:,:, 1,:)
+              pp2 => p(1:,1:, 2); pp1 => p(1:,1:, 1); ss => sk0(:,:, 1,:)
               fact = -one
 
            case (kMax)
-              pp2 => p(1:,1:,kl); pp1 => p(1:,1:,ke); ss => sk(:,:,kl,:)
+              pp2 => p(1:,1:,kl); pp1 => p(1:,1:,ke); ss => sk0(:,:,kl,:)
               fact = one
 
            end select
@@ -183,9 +183,9 @@ subroutine getForces1()
   call VecScatterBegin(sumbTOcgnsForce,sumbGridVec,cgnsGridVec,INSERT_VALUES,SCATTER_FORWARD,ierr)
   call VecScatterEnd  (sumbTOcgnsForce,sumbGridVec,cgnsGridVec,INSERT_VALUES,SCATTER_FORWARD,ierr)
 
-end subroutine getForces1
+end subroutine getForces
 
-subroutine getForces2(ndofcgns,forces)
+subroutine getCGNSData(ndofcgns,data)
 
   use BCTypes
   use blockPointers
@@ -200,7 +200,7 @@ subroutine getForces2(ndofcgns,forces)
   !      Subroutine arguments.
   !
   integer(kind=intType),intent(in)  :: ndofcgns
-  real(kind=realType) ,intent(out)  :: forces(ndofcgns)
+  real(kind=realType) ,intent(out)  :: data(ndofcgns)
 
   !
   !      Local variables.
@@ -216,10 +216,10 @@ subroutine getForces2(ndofcgns,forces)
       indices(i) = lowInd + i - 1
    end do
   
-   call VecGetValues(cgnsGridVec,size,indices,forces,ierr)
+   call VecGetValues(cgnsGridVec,size,indices,data,ierr)
    deallocate(indices)
-
-end subroutine getForces2
+   
+ end subroutine getCGNSData
 
 subroutine getIset(nn,i,j,k,il,jl,kl,iset)
   use precision 

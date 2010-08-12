@@ -38,7 +38,6 @@
 
 !       if( PETScRank==0 ) &
 !         write(*,10) "Warping Initializing PETSc..."
-
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
