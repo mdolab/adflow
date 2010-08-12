@@ -55,6 +55,9 @@ python module sumb ! in
           implicit none
         end subroutine updategridvelocitiesalllevels
 
+        subroutine setundisplacednormals
+        end subroutine setundisplacednormals
+
 !Functions in prewarp directory
         subroutine getnblockslocal(nBlocks)
           use blockpointers
@@ -204,9 +207,15 @@ python module sumb ! in
          real(kind=realtype) dimension(ndofcgns),intent(in) :: cgnsdof
          integer(kind=inttype) optional,intent(in),check(len(cgnsdof)>=ndofcgns),depend(cgnsdof) :: ndofcgns=len(cgnsdof)
        end subroutine setgrid
-       subroutine getforces1()
-       end subroutine getforces1
-       subroutine getforces2(ndofcgns,forces) ! in :test:getForces.f90                                                                                                 
+
+       subroutine getforces()
+       end subroutine getforces
+       
+       subroutine getarea(totalarea)
+         real(kind=realtype), intent(out) :: totalarea
+       end subroutine getarea
+
+       subroutine getcgnsdata(ndofcgns,data) ! in :test:getForces.f90                                                                                                 
           use blockpointers
           use bctypes
           use communication
@@ -215,8 +224,8 @@ python module sumb ! in
           use cgnsgrid
           use flowvarrefstate
           integer(kind=inttype) intent(in) :: ndofcgns
-          real(kind=realtype) dimension(ndofcgns),intent(out),depend(ndofcgns) :: forces
-        end subroutine getforces2
+          real(kind=realtype) dimension(ndofcgns),intent(out),depend(ndofcgns) :: data
+        end subroutine getcgnsdata
 
 
        subroutine warpmesh
@@ -1171,6 +1180,10 @@ python module sumb ! in
           use blockpointers !globalnode
           integer(kind=inttype), intent(in) :: costfunction
         end subroutine computeaerocoupling
+
+        subroutine getdrdxvpsi
+        end subroutine getdrdxvpsi
+
         subroutine computeaeroexpcoupling(costfunction)
           use adjointpetsc
           use adjointvars
