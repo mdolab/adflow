@@ -324,7 +324,6 @@ class SUmbMesh(object):
             self.sumb.updatemetricsalllevels()
             self.sumb.updategridvelocitiesalllevels()
             self._update_geom_info = False
-            
 
     def GetNumberBlocks(self):
         """Get the number of blocks in the mesh."""
@@ -527,9 +526,25 @@ class SUmbMesh(object):
         return
     
     def getForces(self,cgnsdof):
-        self.sumb.getforces1()
+        self.sumb.getforces()
         if cgnsdof > 0:
-            return self.sumb.getforces2(cgnsdof)
+            return self.sumb.getcgnsdata(cgnsdof)
+        else:
+            return numpy.empty([0],dtype='d')
+        # end if
+
+    def getAreas(self,cgnsdof):
+        self.sumb.getareas()
+        if cgnsdof > 0:
+            return self.sumb.getcgnsdata(cgnsdof)
+        else:
+            return numpy.empty([0],dtype='d')
+        # end if
+
+    def getCoupling(self,cgnsdof):
+        self.sumb.getdrdxvpsi()
+        if cgnsdof > 0:
+            return self.sumb.getcgnsdata(cgnsdof)
         else:
             return numpy.empty([0],dtype='d')
         # end if
@@ -698,7 +713,8 @@ class SUmbInterface(object):
         self.sumb.inputphysics.liftdirection = liftDir
         self.sumb.inputphysics.dragdirection = dragDir
 
-        if (self.myid==0):print '-> Alpha...',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha#,velDir,liftDir,dragDir
+        if self.sumb.inputiteration.printiterations:
+            if (self.myid==0):print '-> Alpha...',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha#,velDir,liftDir,dragDir
 
         #update the flow vars
         self.sumb.updateflow()

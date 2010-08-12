@@ -188,7 +188,7 @@ class SUMB(AeroSolver):
 		
 		Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
 		'''
-		print 'Calling initialize...'
+
 		self.initialize(aero_problem,sol_type,grid_file,*args,**kwargs)
 
 
