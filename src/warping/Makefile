@@ -56,6 +56,7 @@ FF90_OBJECTS = warp_local.o        \
                warpingInitializePetsc.o\
 	       verifyWarpDerivFD.o\
 	       getForces.o\
+	       getAreas.o\
 	       setGrid.o\
 	       initializeExternalWarping.o\
 #               integratedWarp.o\
