@@ -268,10 +268,10 @@ subroutine setupCouplingMatrixStruct(level)
               do j = 0,jb
                  do i = 0,ib
                     do l = 1,nw
-               
-                       idxSurf = (m-1)*3+n + (mdNsurfNodes(myID,modFamID)*3)
-                       idxres   = globalCell(i,j,k)*nw+l
                        if (wAdjb(i,j,k,l).ne.0.0)then
+                          idxSurf = (m-1)*3+n + (mdNsurfNodes(myID,modFamID)*3)
+                          idxres   = globalCell(i,j,k)*nw+l
+                    
                           !print *,'wadjb',wadjb(i,j,k,l),i,j,k,l
                           call MatSetValues(dSdw, 1, idxSurf-1, 1, idxres-1,   &
                                wAdjb(i,j,k,l), INSERT_VALUES, PETScIerr)

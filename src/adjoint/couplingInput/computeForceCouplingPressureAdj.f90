@@ -74,9 +74,9 @@
              do i=0,ib
                v2 = wAdj(i,j,k,ivx)**2 + wAdj(i,j,k,ivy)**2 &
                   + wAdj(i,j,k,ivz)**2
-
+               
                pAdj(i,j,k) = gm1*(wAdj(i,j,k,irhoE) &
-                           - half*wAdj(i,j,k,irho)*v2)
+                    - half*wAdj(i,j,k,irho)*v2)
              enddo
            enddo
          enddo
