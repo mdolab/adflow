@@ -112,7 +112,8 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       verifyRAdj.o\
 	       verifyResiduals.o\
 	       writeCGNSMesh.o\
-               writeCGNSData.o
+               writeCGNSData.o\
+	       getdRdXvPsi.o\
 #FF90_OBJECTS = allocMemADjoint.o\
 #	       assertionsADjoint.o\
 #	       computeADjointGradientExtra.o\

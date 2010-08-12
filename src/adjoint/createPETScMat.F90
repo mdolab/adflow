@@ -105,7 +105,7 @@
       ! Average number of off processor contributions per Cell
       ! (average number of donor cells that come from other processor)
 
-      nzOffDiag  = 3+5*(nTimeIntervalsSpectral-1)
+      nzOffDiag  = 12+5*(nTimeIntervalsSpectral-1)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -1179,7 +1179,7 @@ if(Debug) then
       call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
                            nDimW, nDimX,                     &
                            PETSC_DETERMINE, PETSC_DETERMINE, &
-                           nzDiagonalX, nnzDiagonal,         &
+                           nzDiagonalX, nnzDiagonal,     &
                            nzOffDiag, nnzOffDiag,            &
                            dRdx, PETScIerr)
 
