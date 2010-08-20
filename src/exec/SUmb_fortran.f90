@@ -84,6 +84,18 @@
           print *, "       time to end of solver = ", timer(2)-timer(1) 
        endif
 
+     
+!stop
+       if(TSStability)then
+          call stabilityDerivativeDriver
+          !call computeTSDerivatives
+          
+          if(myID==0)then
+             call cpu_time(timer(4))
+             print *, "       time for tsDerivatives = ", timer(4)-timer(3)
+          endif
+       end if
+
        ! Solve ADjoint
        
        if(solveADjoint) then
@@ -95,16 +107,6 @@
           endif
        end if
        !print *,'tsstability',TSStability
-!stop
-       if(TSStability)then
-          call stabilityDerivativeDriver
-          !call computeTSDerivatives
-          
-          if(myID==0)then
-             call cpu_time(timer(4))
-             print *, "       time for tsDerivatives = ", timer(4)-timer(3)
-          endif
-       end if
 
        ! First part to release the memory.
        !print *,'releasing memory'

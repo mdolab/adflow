@@ -1337,6 +1337,10 @@
            TSAltitudeMode= checkYesNo(value, keyword)
            !print *,'Tsstability',TSStability
 
+        case ("use wind axes")
+           useWindAxis = checkYesNo(value, keyword)
+           
+
 !
 !        ****************************************************************
 !        *                                                              *

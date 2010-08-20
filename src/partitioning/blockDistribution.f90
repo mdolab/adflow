@@ -150,7 +150,7 @@
          call determineComputeBlocks(splitInfo)
 
          ! Apply the graph partitioning to the computational blocks.
-         !if(myid==0) print *,'graph partitioning',iter
+         if(myid==0) print *,'graph partitioning',iter
          call graphPartitioning(emptyPartitions, commNeglected)
          !if(myid==0) print *,'finished gp',iter
          ! Determine whether the load balance is okay. If empty

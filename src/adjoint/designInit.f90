@@ -102,12 +102,12 @@
 !!$              call terminate("designInit", &
 !!$              "Memory allocation failure for adjoint")
 !!$      endif 
-      if( .not. allocated(functionGradSpatial))then
-         allocate(functionGradSpatial(nCostFunction,nDesignSpatial),stat=ierr)
-         if(ierr /= 0)                       &
-              call terminate("designInit", &
-              "Memory allocation failure for functionGradSpatial")
-      endif 
+!      if( .not. allocated(functionGradSpatial))then
+!         allocate(functionGradSpatial(nCostFunction,nDesignSpatial),stat=ierr)
+!         if(ierr /= 0)                       &
+!              call terminate("designInit", &
+!              "Memory allocation failure for functionGradSpatial")
+!      endif 
 
 !!$      if( .not. allocated(functionGradStruct))then
 !!$         allocate(functionGradStruct(nCostFunction,nDesignSpatial),stat=ierr)

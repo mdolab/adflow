@@ -210,7 +210,7 @@ class SUMB(AeroSolver):
 		#if(self.interface.myid==0):print ' ->Setting inflowangle'
 		#set inflow angle
 		self.interface.setInflowAngle(aero_problem)
-		
+		self.interface.setReferencePoint(aero_problem)
 		# Run Solver
 		#if(self.interface.myid==0):print ' ->Running iterations'
 		# get flow and ref from aero_problem

@@ -109,10 +109,10 @@ FF90_GEN_FLAGS = -DHAS_ISNAN -DUSE_PETSC_3
 CC_GEN_FLAGS   =
 
 #FF90_OPTFLAGS   = -O3 -ipo -ipo_obj
-FF90_OPTFLAGS   =-O1 -r8 #-g -check all -r8#-O1 -r8 #-check all# -O2 -r8 -fpic# -check all #-tpp7 -xW -unroll -ip
+FF90_OPTFLAGS   = -r8 -O1 -g# -check all #-r8#-O1 -r8 #-check all# -O2 -r8 -fpic# -check all #-tpp7 -xW -unroll -ip
 #CC_OPTFLAGS     = -O3 -fexpensive-optimizations -frerun-cse-after-loop \
 #		  -fthread-jumps -funroll-loops -finline-functions
-CC_OPTFLAGS     = -O
+CC_OPTFLAGS     = -O -g
 
 #FF90_DEBUGFLAGS = -g -C -implicitnone -ftrapuv -debug extended \
 #		  -traceback -DDEBUG_MODE

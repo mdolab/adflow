@@ -165,7 +165,9 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
      cFvAdj(1) = zero; cFvAdj(2) = zero; cFvAdj(3) = zero
      cMpAdj(1) = zero; cMpAdj(2) = zero; cMpAdj(3) = zero
      cMvAdj(1) = zero; cMvAdj(2) = zero; cMvAdj(3) = zero
- 
+     !zero the reference point derivatives
+     pointrefadjb = zero
+
      domainLoopAD: do nn=1,nDom
 
         ! Set some pointers to make the code more readable.

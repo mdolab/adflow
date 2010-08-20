@@ -9,7 +9,7 @@
 !     ******************************************************************
 !
       subroutine computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
-           dcmzdalpha)
+           dcmzdalpha,dcmzdalphadot,dcmzdq)
 !
 !     ******************************************************************
 !     *                                                                *

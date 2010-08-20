@@ -615,6 +615,7 @@
        write(writeUnit,"(a)") "   TS Mach number mode: no#yes"
        write(writeUnit,"(a)") "   TS Altitude mode: no#yes"
        write(writeUnit,"(a)")
+       write(writeUnit,"(a)") "   use wind axes: no#yes"
 
        ! Write the keywords and default values for the parallel, i.e.
        ! load balance parameters.

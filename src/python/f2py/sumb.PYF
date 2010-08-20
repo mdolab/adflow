@@ -1332,6 +1332,18 @@ python module sumb ! in
           use monitor
           implicit none
         end subroutine updateflow
+
+        subroutine updatereferencepoint
+          use inputtimespectral 
+          use section
+          use inputphysics  !
+          use inputmotion
+          use cgnsgrid
+          use monitor
+          use iteration
+          use blockpointers
+          implicit none
+        end subroutine updatereferencepoint
 ! ############################################################################
 ! Aeroelastic / Multi-Disciplinary Routines
 ! ############################################################################
