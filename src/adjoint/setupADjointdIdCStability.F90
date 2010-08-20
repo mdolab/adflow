@@ -99,7 +99,7 @@
       real(kind=realType)::dcldMach,dcldMachdot,dcddMach,dcddMachdot,dcmzdMach,dcmzdMachdot
       real(kind=realType)::cl0,cl0dot,cd0,cd0dot,cmz0,cmz0dot
       real(kind=realType)::cl0b,cd0b,cmz0b
-      real(kind=realType)::dcldalphab,dcddalphab,dcmzdalphab
+      real(kind=realType)::dcldalphab,dcddalphab,dcmzdalphab,dcmzdalphadotb,dcmzdqb
 
       real(kind=realType)::cl0Adj,cd0Adj,cmz0Adj,dcldalphaAdj,dcddalphaAdj,dcmzdalphaAdj
       !real(kind=realType)::cl0AdjB,cmz0AdjB,dcldalphaAdjB,dcmzdalphaAdjB
@@ -351,6 +351,8 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
       dcldalphab = 0.0
       dcddalphab = 0.0
       dcmzdalphab = 0.0
+      dcmzdalphadotb = 0
+      dcmzdqb = 0.0
 
       select case(costFunction)
       case(costfunccl0)
@@ -365,12 +367,17 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
          cmz0b=1.0
       case(costfunccmzalpha)
          dcmzdalphab = 1.0
+      case(costfunccmzalphadot)
+         dcmzdalphadotb =1.0
+      case(costfunccmzq)
+         dcmzdqb = 1.0 
       end select
 
       call COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
 &  cmyadj, cmzadj, cmzadjb, cladj, cladjb, cdadj, cdadjb, cl0, cl0b, cd0&
 &  , cd0b, cmz0, cmz0b, dcldalpha, dcldalphab, dcddalpha, dcddalphab, &
-&  dcmzdalpha, dcmzdalphab)
+&  dcmzdalpha, dcmzdalphab, dcmzdalphadot, dcmzdalphadotb, dcmzdq, &
+&  dcmzdqb)
  
       
       do sps = 1,nTimeIntervalsSpectral
@@ -380,7 +387,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
             dIdctemp = Cladjb(sps)
          case(costfunccd0,costfunccdalpha)
             dIdctemp = Cdadjb(sps)
-         case(costfunccm0,costfunccmzalpha)
+         case(costfunccm0,costfunccmzalpha,costfunccmzalphadot,costfunccmzq)
             dIdctemp = cmzAdjb(sps)
             
          end select

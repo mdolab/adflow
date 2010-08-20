@@ -89,7 +89,10 @@
              costFuncClAlpha,&
              costFuncCl0,&
              costFuncCdAlpha,&
-             costFuncCd0)
+             costFuncCd0,&
+             costFuncCmzAlphaDot,&
+             costFuncCmzq)
+
            call setupGradientRHSStability(level,costFunction)
         case default
           write(*,*) "Invalid cost function ", costFunction

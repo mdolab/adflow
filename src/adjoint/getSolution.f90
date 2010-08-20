@@ -80,6 +80,6 @@
          functionValue( costFuncCdAlpha )    = dcmzdalpha
          functionValue( costFuncCd0 )        = cd0
          functionValue( costFuncCmzAlphaDot) = dcmzdalphadot
-         functionValue( costFuncCmq)         = dcmzdq
+         functionValue( costFuncCmzq)         = dcmzdq
       end if
     end subroutine getSolution

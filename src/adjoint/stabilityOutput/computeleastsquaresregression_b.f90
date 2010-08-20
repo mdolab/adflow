@@ -3,7 +3,7 @@
 !  
 !  Differentiation of computeleastsquaresregression in reverse (adjoint) mode:
 !   gradient, with respect to input variables: y
-!   of linear combination of output variables: m b
+!   of linear combination of output variables: m y b
 !
 !      ******************************************************************
 !      *                                                                *
@@ -45,7 +45,6 @@ SUBROUTINE COMPUTELEASTSQUARESREGRESSION_B(y, yb, x, npts, m, mb, b, bb)
   tempb0 = mb/(npts*sumx2-sumx**2)
   sumyb = sumx2*tempb - sumx*tempb0
   sumxyb = npts*tempb0 - sumx*tempb
-  yb(1:npts) = 0.0
   DO i=npts,1,-1
     yb(i) = yb(i) + sumyb + x(i)*sumxyb
   END DO

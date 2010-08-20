@@ -243,7 +243,7 @@ subroutine setupGradientdCdExtra(level,costFunction)
            case (costFunccd0,costFunccdalpha)
               CdAdjB(sps) = 1
 
-           case (costFunccm0,costFunccmzalpha)
+           case (costFunccm0,costFunccmzalpha,costfunccmzalphadot,costfunccmzq)
               CmzAdjB(sps) = 1     
               
            end select
