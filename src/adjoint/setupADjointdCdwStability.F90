@@ -267,7 +267,7 @@
 !!$               CmyAdjB(sps) = 1
 !!$               CmzAdjB = 0      
                
-            case (costFunccm0,costFunccmzalpha)
+            case (costFunccm0,costFunccmzalpha,costFunccmzalphadot,costFunccmzq)
 
                ClAdjB = 0
                CDAdjB = 0

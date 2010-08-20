@@ -980,6 +980,8 @@ python module sumb ! in
             integer(kind=inttype) parameter,optional ::costfunccl0=12
             integer(kind=inttype) parameter,optional ::costfunccdalpha=13
             integer(kind=inttype) parameter,optional ::costfunccd0=14
+            integer(kind=inttype) parameter,optional :: costfunccmzalphadot=15
+            integer(kind=inttype) parameter,optional :: costfunccmzq=16
           end module adjointvars
 
         subroutine getsolution ! in :sumb:../../adjoint/designExport.f90

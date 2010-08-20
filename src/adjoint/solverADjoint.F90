@@ -297,7 +297,7 @@
 !
       if(TSStability)then
          cfstart = 9
-         cfend = 9!14
+         cfend = 16
       else
          cfstart =8
          cfend = 8!8

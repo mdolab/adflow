@@ -45,7 +45,7 @@
                                           costFuncCdAlpha  = 13_intType,&
                                           costFuncCd0      = 14_intType,&
                                           costFuncCmzAlphaDot = 15_intType,&
-                                          costFuncCmq      = 16_intType
+                                          costFuncCmzq      = 16_intType
                                           
 
       ! Cost function names.
