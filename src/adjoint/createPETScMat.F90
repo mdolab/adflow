@@ -89,7 +89,7 @@
       ! 1  - center cell
       ! 6  - 1st level cells along directions i,j,k
 
-      nzDiagonalWPC = 7 *nTimeIntervalsSpectral
+      nzDiagonalWPC = 7+ 1*(nTimeIntervalsSpectral-1)
       !should be addition not multiplication but this will require filtering 
       !of some of the TS results for non-zero terms. 
       !i.e.:7 +nTimeIntervalsSpectral! 1 + 6  check!!!
@@ -105,7 +105,10 @@
       ! Average number of off processor contributions per Cell
       ! (average number of donor cells that come from other processor)
 
+!      nzOffDiag  = 12+1*(nTimeIntervalsSpectral-1)
+
       nzOffDiag  = 12+5*(nTimeIntervalsSpectral-1)
+
 !
 !     ******************************************************************
 !     *                                                                *

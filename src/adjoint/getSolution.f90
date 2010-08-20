@@ -72,12 +72,14 @@
       if(TSStability)then
          
          call computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
-           dcmzdalpha)
-         functionValue(costFuncCmzAlpha)  = dcmzdalpha
-         functionValue( costFuncCm0)      = cmz0
-         functionValue( costFuncClAlpha)  = dcldalpha
-         functionValue( costFuncCl0  )    = cl0
-         functionValue( costFuncCdAlpha ) = dcmzdalpha
-         functionValue(costFuncCd0  )     = cd0
+           dcmzdalpha,dcmzdalphadot,dcmzdq)
+         functionValue(costFuncCmzAlpha)     = dcmzdalpha
+         functionValue( costFuncCm0)         = cmz0
+         functionValue( costFuncClAlpha)     = dcldalpha
+         functionValue( costFuncCl0  )       = cl0
+         functionValue( costFuncCdAlpha )    = dcmzdalpha
+         functionValue( costFuncCd0 )        = cd0
+         functionValue( costFuncCmzAlphaDot) = dcmzdalphadot
+         functionValue( costFuncCmq)         = dcmzdq
       end if
     end subroutine getSolution

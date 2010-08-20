@@ -44,7 +44,8 @@
 !     ******************************************************************
 !
 
-      call computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,dcmzdalpha)
+      call computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,dcmzdalpha,&
+           dcmzdalphadot,dcmzdq)
 
 
     end subroutine stabilityDerivativeDriver

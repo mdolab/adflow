@@ -10,7 +10,8 @@
 !
       subroutine computeTSStabilityDerivAdj(cFxAdj,cFyAdj,cFzAdj,cMxAdj,&
                        cMyAdj,cMzAdj,CLAdj,CDAdj,&
-                       cl0,cd0,cmz0,dcldalpha,dcddalpha,dcmzdalpha)
+                       cl0,cd0,cmz0,dcldalpha,dcddalpha,dcmzdalpha,&
+                       dcmzdalphadot,dcmzdq)
  
 !
 !     ******************************************************************

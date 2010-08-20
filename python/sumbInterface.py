@@ -720,6 +720,29 @@ class SUmbInterface(object):
         self.sumb.updateflow()
         return
 
+    def setReferencePoint(self,aero_problem):
+        '''
+        Set the alpha and beta fromthe desiggn variables
+        '''
+        #print 'aeroproblem',aero_problem
+        self.sumb.inputphysics.pointref[0] = aero_problem._refs.xref\
+                                             *self.Mesh.metricConversion
+        self.sumb.inputphysics.pointref[1] = aero_problem._refs.yref\
+                                             *self.Mesh.metricConversion
+        self.sumb.inputphysics.pointref[2] = aero_problem._refs.zref\
+                                             *self.Mesh.metricConversion
+        self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xref\
+                                             *self.Mesh.metricConversion
+        self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yref\
+                                             *self.Mesh.metricConversion
+        self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zref\
+                                             *self.Mesh.metricConversion
+
+        if (self.myid==0):print '-> RefPoint...',self.sumb.inputphysics.pointref
+        #update the flow vars
+        self.sumb.updatereferencepoint()
+        return
+
     def resetFlow(self):
         '''
         Reset the flow for the complex derivative calculation
@@ -2448,7 +2471,7 @@ class SUmbInterface(object):
                                }
         
         grad = numpy.zeros((self.sumb.adjointvars.ndesignspatial),float)
-        grad[:] = self.sumb.adjointvars.functiongradspatial[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
+        ###grad[:] = self.sumb.adjointvars.functiongradspatial[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
         #for item in objective:
         
         #for i in xrange(self.sumb.adjointvars.ndesignspatial):
@@ -2589,6 +2612,8 @@ class SUmbInterface(object):
         
         grad = numpy.zeros((self.sumb.adjointvars.ndesignextra),float)
         grad[:] = self.sumb.adjointvars.functiongrad[SUmbCostfunctions[possibleObjectives[objective]]-1,:]
+        #if self.myid==0:print 'pythongrad',grad,possibleObjectives[objective]
+        grad[10] = grad[10]*self.Mesh.metricConversion
         #for item in objective:
         #for i in xrange(self.sumb.adjointvars.ndesignextra):
             #grad[i] = self.sumb.adjointvars.functiongrad[SUmbCostfunctions[possibleObjectives[objective]]-1,i]

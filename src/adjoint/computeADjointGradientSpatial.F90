@@ -145,105 +145,109 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      if( PETScRank==0 ) print *,'ownerrange'
-      ! Query about the ownership range.
-      ! iHigh is one more than the last element stored locally.
+!!$      if( PETScRank==0 ) print *,'ownerrange'
+!!$      ! Query about the ownership range.
+!!$      ! iHigh is one more than the last element stored locally.
+!!$
+!!$      call VecGetOwnershipRange(dIdx, iLow, iHigh, PETScIerr)
+!!$	
+!!$!      print *,'irange',ilow,ihigh,petscrank
+!!$!      print *,'irange',iLow,iHigh
+!!$
+!!$      if( PETScIerr/=0 ) &
+!!$        call terminate("computeADjointGradientSpatial", &
+!!$                       "Error in VecGetOwnershipRange dJdx")
+!!$!      RETURN!!!!!!!!	
+!!$
+!!$
+!!$      ! Determine the number of variables stores in the local processor.
+!!$      ! Allocate memory to store the local function gradient values.
+!!$      ! Note: it might result in a zero-size array but it's ok!
+!!$      if( PETScRank==0 ) print *,'ndesign local'
+!!$      nDesignLocal = dim(iHigh,iLow)
+!!$	
+!!$      allocate( functionGradLocal(nDesignLocal) )
+!!$
+!!$      ! VecGetValues - Gets values from certain locations of a vector.
+!!$      !           Currently can only get values on the same processor.
+!!$
+!!$      n = 0
+!!$      designVarPresent = .false.
+!!$
+!!$      do idxmg=iLow, iHigh-1
+!!$
+!!$        n = n + 1
+!!$        designVarPresent = .true.
+!!$
+!!$        call VecGetValues(dIdx, 1, idxmg, &
+!!$                          functionGradLocal(n), PETScIerr)
+!!$	
+!!$	!functionGradLocal(n) = idxmg !to debug interface with meshwarping derivatives	
+!!$
+!!$        if( PETScIerr/=0 ) then
+!!$          write(errorMessage,99) &
+!!$                "Error in VecGetValues for global node", idxmg
+!!$          call terminate("computeADjointGradientSpatial", errorMessage)
+!!$        endif
+!!$
+!!$      enddo
+!!$
+!!$      ! Gather the number of design variables stored per processor
+!!$      ! in the root processor.
+!!$      if( PETScRank==0 ) print *,'ndesignglobal'
+!!$      allocate( nDesignGlobal(PETScSize) )
+!!$
+!!$      !call mpi_gather(nDesignLocal, 1, sumb_integer, &
+!!$      !                nDesignGlobal, 1, sumb_integer, &
+!!$      !                0, SUMB_PETSC_COMM_WORLD, PETScIerr)
+!!$      call mpi_allgather(nDesignLocal, 1, sumb_integer, &
+!!$                      nDesignGlobal, 1, sumb_integer, &
+!!$                       SUMB_PETSC_COMM_WORLD, PETScIerr)
+!!$
+!!$      ! Gather the displacement of the number of design variables
+!!$      ! per processor in the root processor.
+!!$      if( PETScRank==0 ) print *,'ndisp global'
+!!$      allocate( nDisplsGlobal(PETScSize) )
+!!$
+!!$      nDisplsLocal = iLow
+!!$
+!!$      !call mpi_gather(nDisplsLocal, 1, sumb_integer, &
+!!$      !                nDisplsGlobal, 1, sumb_integer, &
+!!$       !               0, SUMB_PETSC_COMM_WORLD, PETScIerr)
+!!$      call mpi_allgather(nDisplsLocal, 1, sumb_integer, &
+!!$                      nDisplsGlobal, 1, sumb_integer, &
+!!$                       SUMB_PETSC_COMM_WORLD, PETScIerr)
+!!$
+!!$      ! Gather the total gradients in the root processor.
+!!$      ! Note: if the local processor does not hold any design variable
+!!$      !   then nDesignLocal = 0 and nothing is actually sent to the
+!!$      !   processor.
+!!$
+!!$!      print *,'costfunction',costFunction,nDisplsGlobal,'shapes',shape(functionGradSpatial),'s2',shape(functionGradLocal)
+!!$!	call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)	
+!!$!	stop
+!!$!      call mpi_gatherv(functionGradLocal, nDesignLocal, sumb_real, &
+!!$!                       functionGradSpatial(costFunction,:), nDesignGlobal,&
+!!$!                       nDisplsGlobal, sumb_real, &
+!!$!                       0, SUMB_PETSC_COMM_WORLD, PETScIerr)
+!!$
+!!$!	if (PETScRank==0) then
+!!$!  		print *,'gathering solution',functionGradLocal, nDesignLocal, sumb_real, &
+!!$!                       functionGradSpatial(costFunction,:), nDesignGlobal,&
+!!$!                       nDisplsGlobal, sumb_real, &
+!!$!                        SUMB_PETSC_COMM_WORLD, PETScIerr
+!!$!	endif
 
-      call VecGetOwnershipRange(dIdx, iLow, iHigh, PETScIerr)
-	
-!      print *,'irange',ilow,ihigh,petscrank
-!      print *,'irange',iLow,iHigh
 
-      if( PETScIerr/=0 ) &
-        call terminate("computeADjointGradientSpatial", &
-                       "Error in VecGetOwnershipRange dJdx")
-!      RETURN!!!!!!!!	
+!*************
+!!$      if( PETScRank==0 ) print *,'allgather',shape(functionGradSpatial),&
+!!$           nDesignGlobal,nDisplsGlobal,shape(functionGradLocal), nDesignLocal
+!!$       call mpi_allgatherv(functionGradLocal, nDesignLocal, sumb_real, &
+!!$                       functionGradSpatial(costFunction,:), nDesignGlobal,&
+!!$                       nDisplsGlobal, sumb_real, &
+!!$                        SUMB_PETSC_COMM_WORLD, PETScIerr)
+!***************
 
-
-      ! Determine the number of variables stores in the local processor.
-      ! Allocate memory to store the local function gradient values.
-      ! Note: it might result in a zero-size array but it's ok!
-      if( PETScRank==0 ) print *,'ndesign local'
-      nDesignLocal = dim(iHigh,iLow)
-	
-      allocate( functionGradLocal(nDesignLocal) )
-
-      ! VecGetValues - Gets values from certain locations of a vector.
-      !           Currently can only get values on the same processor.
-
-      n = 0
-      designVarPresent = .false.
-
-      do idxmg=iLow, iHigh-1
-
-        n = n + 1
-        designVarPresent = .true.
-
-        call VecGetValues(dIdx, 1, idxmg, &
-                          functionGradLocal(n), PETScIerr)
-	
-	!functionGradLocal(n) = idxmg !to debug interface with meshwarping derivatives	
-
-        if( PETScIerr/=0 ) then
-          write(errorMessage,99) &
-                "Error in VecGetValues for global node", idxmg
-          call terminate("computeADjointGradientSpatial", errorMessage)
-        endif
-
-      enddo
-
-      ! Gather the number of design variables stored per processor
-      ! in the root processor.
-      if( PETScRank==0 ) print *,'ndesignglobal'
-      allocate( nDesignGlobal(PETScSize) )
-
-      !call mpi_gather(nDesignLocal, 1, sumb_integer, &
-      !                nDesignGlobal, 1, sumb_integer, &
-      !                0, SUMB_PETSC_COMM_WORLD, PETScIerr)
-      call mpi_allgather(nDesignLocal, 1, sumb_integer, &
-                      nDesignGlobal, 1, sumb_integer, &
-                       SUMB_PETSC_COMM_WORLD, PETScIerr)
-
-      ! Gather the displacement of the number of design variables
-      ! per processor in the root processor.
-      if( PETScRank==0 ) print *,'ndisp global'
-      allocate( nDisplsGlobal(PETScSize) )
-
-      nDisplsLocal = iLow
-
-      !call mpi_gather(nDisplsLocal, 1, sumb_integer, &
-      !                nDisplsGlobal, 1, sumb_integer, &
-       !               0, SUMB_PETSC_COMM_WORLD, PETScIerr)
-      call mpi_allgather(nDisplsLocal, 1, sumb_integer, &
-                      nDisplsGlobal, 1, sumb_integer, &
-                       SUMB_PETSC_COMM_WORLD, PETScIerr)
-
-      ! Gather the total gradients in the root processor.
-      ! Note: if the local processor does not hold any design variable
-      !   then nDesignLocal = 0 and nothing is actually sent to the
-      !   processor.
-
-!      print *,'costfunction',costFunction,nDisplsGlobal,'shapes',shape(functionGradSpatial),'s2',shape(functionGradLocal)
-!	call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)	
-!	stop
-!      call mpi_gatherv(functionGradLocal, nDesignLocal, sumb_real, &
-!                       functionGradSpatial(costFunction,:), nDesignGlobal,&
-!                       nDisplsGlobal, sumb_real, &
-!                       0, SUMB_PETSC_COMM_WORLD, PETScIerr)
-
-!	if (PETScRank==0) then
-!  		print *,'gathering solution',functionGradLocal, nDesignLocal, sumb_real, &
-!                       functionGradSpatial(costFunction,:), nDesignGlobal,&
-!                       nDisplsGlobal, sumb_real, &
-!                        SUMB_PETSC_COMM_WORLD, PETScIerr
-!	endif
-
-      if( PETScRank==0 ) print *,'allgather',shape(functionGradSpatial),&
-           nDesignGlobal,nDisplsGlobal,shape(functionGradLocal), nDesignLocal
-       call mpi_allgatherv(functionGradLocal, nDesignLocal, sumb_real, &
-                       functionGradSpatial(costFunction,:), nDesignGlobal,&
-                       nDisplsGlobal, sumb_real, &
-                        SUMB_PETSC_COMM_WORLD, PETScIerr)
 
 !!$if (PETScRank==0) then
 !!$   do i = 1,size(functionGradSpatial(costFunction,:) )

@@ -302,7 +302,7 @@
        commNeglected = .false.
        attemptLoop: do ii=1,2
 
-          !if(myid==0)print *,'looping',ii
+          if(myid==0)print *,'looping',ii
 
 
          ! Call the graph partitioner.
@@ -345,19 +345,19 @@
          commNeglected = .true.
          xadj          = 0
          
-         deallocate(adjncy)
-         allocate(adjncy(2*nvertex))
-         do i = 1,nvertex
-            xadj(i)=2*i
-            adjncy(2*i) = i
-            adjncy(2*i-1)=i-2
-         enddo
-         adjncy(1)=nvertex
-         adjncy(2*nvertex)=0
-         ubvec = 1.03
-         !wgtflag=0
-         !options(1)=1
-         !options(2) = 1
+!!$         deallocate(adjncy)
+!!$         allocate(adjncy(2*nvertex))
+!!$         do i = 1,nvertex
+!!$            xadj(i)=2*i
+!!$            adjncy(2*i) = i
+!!$            adjncy(2*i-1)=i-2
+!!$         enddo
+!!$         adjncy(1)=nvertex
+!!$         adjncy(2*nvertex)=0
+!!$         ubvec = 1.03
+!!$         !wgtflag=0
+!!$         !options(1)=1
+!!$         !options(2) = 1
        enddo attemptLoop
        !if(myid==0)print *,'ending metis'
        ! Deallocate the memory for the graph except part.
