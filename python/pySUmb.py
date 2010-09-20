@@ -51,7 +51,7 @@ from numpy import real
 # Extension modules
 # =============================================================================
 #sys.path.append(os.path.abspath('../../../../pyACDT/pyACDT/Aerodynamics'))
-sys.path.append(os.path.abspath('../../../../pyACDT/pyACDT/Aerodynamics'))
+sys.path.append(os.path.abspath('../../../../../pyACDT/pyACDT/Aerodynamics'))
 
 from pyAero_solver import AeroSolver
 
@@ -100,6 +100,7 @@ class SUMB(AeroSolver):
 			'printIterations':[bool,True],
 			'printSolTime':[bool,True],
 			'writeSolution':[bool,True],
+			'numberSolutions':[bool,False],
 			'Approx PC': [str,'no'],
 			'Adjoint solver type': [str,'GMRES'],
 			'adjoint relative tolerance':[float,1e-10],
@@ -132,7 +133,9 @@ class SUMB(AeroSolver):
 			'rotRate':[list,[0.0,0.0,0.0]],
 			'Omega fourier': [float,3.14],
 			'Fourier sine coefficient':[float,3.52e-4],
-			'monitoring Variables':[list,['cl','cd','cmz']]
+			'monitoring Variables':[list,['cl','cd','cmz']],
+			'surface Variables':[list,['cp','vx','vy','vz','mach']],
+			'volume Variables':[list,['resrho']]
 			}
 		
 		informs = {
@@ -211,6 +214,7 @@ class SUMB(AeroSolver):
 		#set inflow angle
 		self.interface.setInflowAngle(aero_problem)
 		self.interface.setReferencePoint(aero_problem)
+		self.interface.setRotationRate(aero_problem)
 		# Run Solver
 		#if(self.interface.myid==0):print ' ->Running iterations'
 		# get flow and ref from aero_problem
@@ -229,6 +233,11 @@ class SUMB(AeroSolver):
 		if self.getOption('writeSolution'):
 			volname=self.interface.OutputDir+self.interface.probName+self.filename+'_vol.cgns'
 			surfname=self.interface.OutputDir+self.interface.probName+self.filename+'_surf.cgns'
+
+			if self.getOption('numberSolutions'):
+				volname=self.interface.OutputDir+self.interface.probName+self.filename+'_vol%d.cgns'%(self.callCounter)
+				surfname=self.interface.OutputDir+self.interface.probName+self.filename+'_surf%d.cgns'%(self.callCounter)
+			#endif
 		
 			if(self.interface.myid==0):print volname,surfname
 			self.interface.WriteVolumeSolutionFile(volname)
@@ -284,10 +293,12 @@ class SUMB(AeroSolver):
 		
 		if _parallel :
 
+							
 			try:
 				
 				if(self.interface.myid==0):print 'Trying pySUmb internal meshwarping...'
 				#Set the internal coordinates
+				print 'cfdsurf',new_cfd_surf[0,0]
 				self.interface.Mesh.SetGlobalSurfaceCoordinates(new_cfd_surf)
 				if(self.interface.myid==0):print 'Internal Surfaces set...'
 				
