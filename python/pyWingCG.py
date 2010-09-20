@@ -229,14 +229,14 @@ def calculateWingInertias(acg):
                    #print 't,w',t_root,t_tip,W
                    #Volume???
                    V = Span*(t_root*(C_root+(Span/2.0)*(tan(SweepTE)-tan(SweepLE)))-((t_root-t_tip)*((C_root/2.0)+(Span/3.0)*(tan(SweepTE)-tan(SweepLE)))))
-                   print 'V',V
+                   #print 'V',V
                    #I1x = (t_root-t_tip)*(C_root/4.0+(Span*tan(SweepTE)/5.0)-Span*tan(SweepLE)/5.0)#+(t_root*(C_root/3.0+(Span*tan(SweepTE)/4.0)-Span*tan(SweepLE)/4.0)))
                    #print 'I1x1',I1x
                    #I1x =(t_root*(C_root/3.0+(Span*tan(SweepTE)/4.0)-Span*tan(SweepLE)/4.0))
                    #print 'I1x2',I1x
                    I1x = (W*Span**3/V)*(((t_root-t_tip)*(C_root/4.0+(Span*tan(SweepTE)/5.0)-Span*tan(SweepLE)/5.0))+(t_root*(C_root/3.0+(Span*tan(SweepTE)/4.0)-Span*tan(SweepLE)/4.0)))
                    #I1x =27028033000
-                   print 'I1x',I1x
+                   #print 'I1x',I1x
                    #Ok, except for I1x!!!!
                    I1y = ((W*Span)/V)*((t_root*((C_root**3/3.0)+Span*C_root*tan(SweepTE)*((C_root/2.0)+(Span*tan(SweepTE))/3.0)+(Span**3/12.0)*(tan(SweepTE)**3-tan(SweepLE)**3)))-((t_root-t_tip)*((C_root**3/6.0)+Span*C_root*tan(SweepTE)*((C_root/3.0)+(Span*tan(SweepTE)/4.0))+(Span**3/15.0)*(tan(SweepTE)**3-tan(SweepLE)**3))))
                    #print 'I1y',I1y

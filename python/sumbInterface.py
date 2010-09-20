@@ -16,7 +16,7 @@ import copy
 import string
 import types
 import bisect
-from math import pi
+from math import pi,sqrt
 
 # =============================================================================
 # Extension modules
@@ -258,8 +258,9 @@ class SUmbMesh(object):
             self.sumb.inputio.newgridfile[:] = ''
             self.sumb.inputio.newgridfile[0:len(filename[0])] = filename[0]
         self.sumb.monitor.writegrid=True
-        self.sumb.monitor.writevolume=True#False
-        self.sumb.monitor.writesurface=True
+        self.sumb.monitor.writevolume=False#True#False
+        self.sumb.monitor.writesurface=False#True
+        self.sumb.iteration.timespectralgridsnotwritten = True
         self.sumb.writesol()
 
 #     def DummySetCoordinates(self, sps =1):
@@ -486,6 +487,7 @@ class SUmbMesh(object):
         """
         self.sumb.iteration.groundlevel = 1
         xyz = self.metricConversion*xyz
+        
         self.sumb.updatefacesglobal(xyz,reinitialize)
         self._update_geom_info = True
 
@@ -722,7 +724,7 @@ class SUmbInterface(object):
 
     def setReferencePoint(self,aero_problem):
         '''
-        Set the alpha and beta fromthe desiggn variables
+        Set the reference point for rotations and moment calculations
         '''
         #print 'aeroproblem',aero_problem
         self.sumb.inputphysics.pointref[0] = aero_problem._refs.xref\
@@ -742,6 +744,22 @@ class SUmbInterface(object):
         #update the flow vars
         self.sumb.updatereferencepoint()
         return
+
+    def setRotationRate(self,aero_problem):
+        '''
+        Set the rotational rate for the grid
+        '''
+        a  = sqrt(self.sumb.flowvarrefstate.gammainf*self.sumb.flowvarrefstate.pinfdim/self.sumb.flowvarrefstate.rhoinfdim)
+        V = (self.sumb.inputphysics.machgrid+self.sumb.inputphysics.mach)*a
+        
+        p = aero_problem._flows.phat*V/aero_problem._refs.bref
+        q = aero_problem._flows.qhat*V/aero_problem._refs.cref
+        r = aero_problem._flows.rhat*V/aero_problem._refs.bref
+        #update the flow vars
+        if (self.myid==0):print 'q...',q,aero_problem._flows.qhat
+        self.sumb.updaterotationrate(p,r,q)
+        return
+
 
     def resetFlow(self):
         '''
@@ -1088,7 +1106,7 @@ class SUmbInterface(object):
         autofile.write(  "                         Residual averaging: all stages\n")
         autofile.write(  "                      # Other possibilities: no\n")
         autofile.write(  "                      #                    : alternate stages\n")
-        autofile.write(  "     Residual averaging smoothing parameter: .5\n")
+        autofile.write(  "     Residual averaging smoothing parameter: 1.5\n")
 
         autofile.write(  "                 Number of multigrid cycles: 200\n")
         autofile.write(  "   Number of single grid startup iterations: 0\n")
@@ -1231,10 +1249,16 @@ class SUmbInterface(object):
             autofile.write( "Degree polynomial Alpha: 0\n")
             autofile.write( "Degree polynomial Beta: 0\n")
             autofile.write( "Degree polynomial Mach: 0\n")
+            autofile.write( "Degree polynomial x-rotation: 0\n")
+            autofile.write( "Degree polynomial y-rotation: 0\n")
+            autofile.write( "Degree polynomial z-rotation: 0\n")
             
             autofile.write( "Polynomial coefficients Alpha: 0.0\n")
             autofile.write( "Polynomial coefficients Beta: 0.0\n")
             autofile.write( "Polynomial coefficients Mach: 0.0\n")
+            autofile.write( "Polynomial coefficients x-rotation: 0.0\n")
+            autofile.write( "Polynomial coefficients y-rotation: 0.0\n")
+            autofile.write( "Polynomial coefficients z-rotation: 0.0\n")
 
             if kwargs['options']['Alpha Mode'][1] =='yes':
                 autofile.write( "Degree fourier Alpha: 1\n")
@@ -1248,6 +1272,13 @@ class SUmbInterface(object):
                 autofile.write( "Degree fourier Alpha: 0\n")
                 autofile.write( "Degree fourier Beta: 0\n")
                 autofile.write( "Degree fourier Mach: 1\n")
+            elif kwargs['options']['p Mode'][1] =='yes':
+                ### add in lift axis dependence
+                autofile.write( "Degree fourier x-rotation: 1\n")
+            elif kwargs['options']['q Mode'][1] =='yes':
+                autofile.write( "Degree fourier z-rotation: 1\n")
+            elif kwargs['options']['r Mode'][1] =='yes':
+                autofile.write( "Degree fourier y-rotation: 1 \n")        
             #endif
 
             if kwargs['options']['Alpha Mode'][1] =='yes':
@@ -1262,6 +1293,12 @@ class SUmbInterface(object):
                 autofile.write( "Omega fourier Alpha: 0.0\n")
                 autofile.write( "Omega fourier Beta: 0.0\n")
                 autofile.write( "Omega fourier Mach: %f\n"%(kwargs['options']['Omega fourier'][1]))
+            elif kwargs['options']['p Mode'][1] =='yes':
+                autofile.write( "Omega fourier x-rotation: %f\n"%(kwargs['options']['Omega fourier'][1]))
+            elif kwargs['options']['q Mode'][1] =='yes':
+                autofile.write( "Omega fourier z-rotation: %f\n"%(kwargs['options']['Omega fourier'][1]))
+            elif kwargs['options']['r Mode'][1] =='yes':
+                autofile.write( "Omega fourier y-rotation: %f\n"%(kwargs['options']['Omega fourier'][1]))
             #endif
 
             if kwargs['options']['Alpha Mode'][1] =='yes':
@@ -1273,41 +1310,31 @@ class SUmbInterface(object):
             elif kwargs['options']['Mach Mode'][1] =='yes':
                 autofile.write( "Fourier cosine coefficients Mach: 0.0 0.0\n")
                 autofile.write( "Fourier sine coefficients Mach: %12.12e\n"%(kwargs['options']['Fourier sine coefficient'][1]))
+            elif kwargs['options']['p Mode'][1] =='yes':
+                autofile.write( "Fourier cosine coefficients x-rotation: 0.0 0.0\n")
+                autofile.write( "Fourier sine coefficients x-rotation: %12.12e\n"%(kwargs['options']['Fourier sine coefficient'][1]))
+            elif kwargs['options']['q Mode'][1] =='yes':
+                autofile.write( "Fourier cosine coefficients z-rotation: 0.0 0.0\n")
+                autofile.write( "Fourier sine coefficients z-rotation: %12.12e\n"%(kwargs['options']['Fourier sine coefficient'][1]))
+            elif kwargs['options']['r Mode'][1] =='yes':
+                autofile.write( "Fourier cosine coefficients y-rotation: 0.0 0.0\n")
+                autofile.write( "Fourier sine coefficients y-rotation: %12.12e\n"%(kwargs['options']['Fourier sine coefficient'][1]))
             #endif
         #endif
-##        autofile.write( ) "    Degree polynomial x-rotation: 0"
-##        autofile.write( ) "    Degree polynomial y-rotation: 0"
-##        autofile.write( ) "    Degree polynomial z-rotation: 1"
-##        autofile.write( )
-       
-##        autofile.write( ) "Polynomial coefficients x-rotation: 0.0"
-##        autofile.write( ) "Polynomial coefficients y-rotation: 0.0"
-##        autofile.write( ) "Polynomial coefficients z-rotation: 0.0 1.e-3"
-##        autofile.write( )
-
-##        autofile.write( ) "       Degree fourier x-rotation: 0"
-##        autofile.write( ) "       Degree fourier y-rotation: 0"
-##        autofile.write( ) "       Degree fourier z-rotation: 1"
-##        autofile.write( )
-
-##        autofile.write( ) "        Omega fourier x-rotation: 0.25"
-##        autofile.write( ) "        Omega fourier y-rotation: 0.32"
-##        autofile.write( ) "        Omega fourier z-rotation: 0.41"
-##        autofile.write( )
-
-##        autofile.write( ) "Fourier cosine coefficients x-rotation: 0.0"
-##        autofile.write( ) "Fourier cosine coefficients y-rotation: 0.0"
-##        autofile.write( ) "Fourier cosine coefficients z-rotation: 0.0 0.0"
-##        autofile.write( )
-
-##        autofile.write( ) "Fourier sine coefficients z-rotation: 0.1"
-##        autofile.write( )
 
         #! Write the monitor, surface output and volume output variables.
         # creat the monitoring variable string
         monString='resrho'
         for value in kwargs['options']['monitoring Variables'][1]:
             monString=monString+'_'+value
+        #end
+        surfString='rho'
+        for value in kwargs['options']['surface Variables'][1]:
+            surfString=surfString+'_'+value
+        #end
+        volString='ptloss'
+        for value in kwargs['options']['volume Variables'][1]:
+            volString=volString+'_'+value
         #end
         autofile.write("-------------------------------------------------------------------------------\n")
         autofile.write( "     Monitoring and output variables\n")
@@ -1316,11 +1343,12 @@ class SUmbInterface(object):
         autofile.write( "                Monitoring variables: %s\n"%(monString))
 
         autofile.write( " Monitor massflow sliding interfaces: no\n")
-        autofile.write( "            Surface output variables: rho_cp_vx_vy_vz_mach\n")
-        autofile.write( "           Volume output variables: ptloss_resrho\n")
+        autofile.write( "            Surface output variables: %s\n"%(surfString))#rho_cp_vx_vy_vz_mach\n")
+        autofile.write( "           Volume output variables: %s\n"%(volString))#ptloss_resrho\n")
         autofile.write( "\n")
         
         # The section to overwrite the rotation info for the families.
+        #print 'rotating',kwargs['options']['FamilyRot'][1]!='',kwargs['options']['FamilyRot'][1]
         if kwargs['options']['FamilyRot'][1]!='':
             autofile.write( "------------------------------------------------------------------------------\n")
             autofile.write( "     Family rotation info \n")
@@ -1330,7 +1358,8 @@ class SUmbInterface(object):
             autofile.write( "                               Rotation center  Rotation rate (rad/s)\n")
             autofile.write( "Rotating family %s : %6.6f %6.6f %6.6f    %6.6f %6.6f %6.6f    \n"%(kwargs['options']['FamilyRot'][1],kwargs['options']['rotCenter'][1][0],kwargs['options']['rotCenter'][1][1],kwargs['options']['rotCenter'][1][2],kwargs['options']['rotRate'][1][0],kwargs['options']['rotRate'][1][1],kwargs['options']['rotRate'][1][2]))
         
-        #endtry
+        #endif
+        
         
 #        autofile.write( "Rotating family <family_name2> : 0.0 0.0 0.0    1.e+3 0.e+0 0.e+0    \n")
 #        autofile.write( ) "Etc."
