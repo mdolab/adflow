@@ -62,6 +62,7 @@
        real(kind=realType), dimension(3) :: norm
 
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
+       real(kind=realType), dimension(:,:,:), pointer :: ss1, ss2
        real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
        real(kind=realType), dimension(:,:),   pointer :: gamma1, gamma2
        real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
@@ -151,6 +152,10 @@
            ww1    => w(1,1:,1:,:);   ww2    => w(2,1:,1:,:)
            pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)
            gamma1 => gamma(1,1:,1:); gamma2 => gamma(2,1:,1:)
+           !print *,'block is moving imin',blockIsMoving
+           if( blockIsMoving)then
+              ss1    => s(1,1:,1:,:);   ss2    => s(2,1:,1:,:)
+           end if
 
            iblank2 => iblank(2,1:,1:)
            viscPointer => viscIminPointer
@@ -171,6 +176,10 @@
            ww1    => w(ie,1:,1:,:);   ww2    => w(il,1:,1:,:)
            pp1    => p(ie,1:,1:);     pp2    => p(il,1:,1:)
            gamma1 => gamma(ie,1:,1:); gamma2 => gamma(il,1:,1:)
+           !print *,'block is moving imax',blockIsMoving
+           if( blockIsMoving)then
+              ss1    => s(ie-1,1:,1:,:);   ss2    => s(ie,1:,1:,:)
+           end if
 
            iblank2 => iblank(il,1:,1:)
            viscPointer => viscImaxPointer
@@ -191,6 +200,10 @@
            ww1    => w(1:,1,1:,:);   ww2    => w(1:,2,1:,:)
            pp1    => p(1:,1,1:);     pp2    => p(1:,2,1:)
            gamma1 => gamma(1:,1,1:); gamma2 => gamma(1:,2,1:)
+           !print *,'block is moving jmin',blockIsMoving
+           if( blockIsMoving)then
+              ss1    => s(1:,1,1:,:);   ss2    => s(1:,2,1:,:)
+           end if
 
            iblank2 => iblank(1:,2,1:)
            viscPointer => viscJminPointer
@@ -211,6 +224,10 @@
            ww1    => w(1:,je,1:,:);   ww2    => w(1:,jl,1:,:)
            pp1    => p(1:,je,1:);     pp2    => p(1:,jl,1:)
            gamma1 => gamma(1:,je,1:); gamma2 => gamma(1:,jl,1:)
+           !print *,'block is moving jmax',blockIsMoving
+           if( blockIsMoving)then
+              ss1    => s(1:,je-1,1:,:);   ss2    => s(1:,je,1:,:)
+           end if
 
            iblank2 => iblank(1:,jl,1:)
            viscPointer => viscJmaxPointer
@@ -231,6 +248,10 @@
            ww1    => w(1:,1:,1,:);   ww2    => w(1:,1:,2,:)
            pp1    => p(1:,1:,1);     pp2    => p(1:,1:,2)
            gamma1 => gamma(1:,1:,1); gamma2 => gamma(1:,1:,2)
+           !print *,'block is moving kmin',blockIsMoving
+           if( blockIsMoving)then
+              ss1    => s(1:,1:,1,:);   ss2    => s(1:,1:,2,:)
+           end if
 
            iblank2 => iblank(1:,1:,2)
            viscPointer => viscKminPointer
@@ -251,6 +272,10 @@
            ww1    => w(1:,1:,ke,:);   ww2    => w(1:,1:,kl,:)
            pp1    => p(1:,1:,ke);     pp2    => p(1:,1:,kl)
            gamma1 => gamma(1:,1:,ke); gamma2 => gamma(1:,1:,kl)
+           !print *,'block is moving kmax',blockIsMoving
+           if( blockIsMoving)then
+              ss1    => s(1:,1:,ke-1,:);   ss2    => s(1:,1:,ke,:)
+           end if
 
            iblank2 => iblank(1:,1:,kl)
            viscPointer => viscKmaxPointer
@@ -309,7 +334,6 @@
          !===============================================================
 
          case (cgnsVelx)
-
            do j=rangeFace(2,1), rangeFace(2,2)
              do i=rangeFace(1,1), rangeFace(1,2)
                nn = nn + 1
@@ -336,6 +360,39 @@
              do i=rangeFace(1,1), rangeFace(1,2)
                nn = nn + 1
                buffer(nn) = half*(ww1(i,j,ivz) + ww2(i,j,ivz))
+             enddo
+           enddo
+
+         !===============================================================
+
+         case (cgnsRelVelx)
+            !print *,'in relvelx',ie,je,ke,'rf',rangeFace
+           do j=rangeFace(2,1), rangeFace(2,2)
+             do i=rangeFace(1,1), rangeFace(1,2)
+               nn = nn + 1
+               buffer(nn) = half*(ww1(i,j,ivx) + ww2(i,j,ivx))-half*(ss1(i,j,1) + ss2(i,j,1))
+             enddo
+           enddo
+
+         !===============================================================
+
+         case (cgnsRelVely)
+            !print *,'in relvely'
+           do j=rangeFace(2,1), rangeFace(2,2)
+             do i=rangeFace(1,1), rangeFace(1,2)
+               nn = nn + 1
+               buffer(nn) = half*(ww1(i,j,ivy) + ww2(i,j,ivy))-half*(ss1(i,j,2) + ss2(i,j,2))
+             enddo
+           enddo
+
+         !===============================================================
+
+         case (cgnsRelVelz)
+            !print *,'in relvelz'
+           do j=rangeFace(2,1), rangeFace(2,2)
+             do i=rangeFace(1,1), rangeFace(1,2)
+               nn = nn + 1
+               buffer(nn) = half*(ww1(i,j,ivz) + ww2(i,j,ivz))-half*(ss1(i,j,3) + ss2(i,j,3))
              enddo
            enddo
 
@@ -395,6 +452,27 @@
                usurf  = half*(ww1(i,j,ivx)  + ww2(i,j,ivx))
                vsurf  = half*(ww1(i,j,ivy)  + ww2(i,j,ivy))
                wsurf  = half*(ww1(i,j,ivz)  + ww2(i,j,ivz))
+               m2surf = rsurf*(usurf**2 + vsurf**2 + wsurf**2) &
+                      / (half*(gamma1(i,j) + gamma2(i,j))*psurf)
+
+               nn = nn + 1
+               buffer(nn) = sqrt(m2surf)
+             enddo
+           enddo
+
+           
+         !===============================================================
+
+         case (cgnsRelMach)
+
+           do j=rangeFace(2,1), rangeFace(2,2)
+             do i=rangeFace(1,1), rangeFace(1,2)
+
+               psurf  = half*(pp1(i,j) + pp2(i,j))
+               rsurf  = half*(ww1(i,j,irho) + ww2(i,j,irho))
+               usurf  = half*(ww1(i,j,ivx)  + ww2(i,j,ivx))-half*(ss1(i,j,1) + ss2(i,j,1))
+               vsurf  = half*(ww1(i,j,ivy)  + ww2(i,j,ivy))-half*(ss1(i,j,2) + ss2(i,j,2))
+               wsurf  = half*(ww1(i,j,ivz)  + ww2(i,j,ivz))-half*(ss1(i,j,3) + ss2(i,j,3))
                m2surf = rsurf*(usurf**2 + vsurf**2 + wsurf**2) &
                       / (half*(gamma1(i,j) + gamma2(i,j))*psurf)
 

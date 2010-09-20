@@ -31,7 +31,8 @@
 !
        logical :: surfWriteRho,   surfWriteP,        surfWriteTemp
        logical :: surfWriteVx,    surfWriteVy,       surfWriteVz
-       logical :: surfWriteCp,    surfWritePtotLoss, surfWriteMach
+       logical :: surfWriteRVx,   surfWriteRVy,      surfWriteRVz
+       logical :: surfWriteCp,    surfWritePtotLoss, surfWriteMach, surfWriteRMach
        logical :: surfWriteCf,    surfWriteCh,       surfWriteYPlus
        logical :: surfWriteCfx,   surfWriteCfy,      surfWriteCfz
        logical :: surfWriteBlank
@@ -44,8 +45,10 @@
 !      ******************************************************************
 !
        logical :: volWriteMx,           volWriteMy,       volWriteMz
+       logical :: volWriteRVx,          volWriteRVy,      volWriteRVz
        logical :: volWriteRhoE,         volWriteTemp,     volWriteCp
        logical :: volWriteMach,         volWriteMachTurb, volWriteEddyVis
+       logical :: volWriteRMach
        logical :: volWriteRatioEddyVis, volWriteDist,     volWriteVortx
        logical :: volWritevorty,        volWritevortz,    volWriteVort
        logical :: volWritePtotLoss,     volWriteResRho,   volWriteresMom

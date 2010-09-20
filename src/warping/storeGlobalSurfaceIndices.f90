@@ -149,7 +149,7 @@ do i = 1,mdNSurfNodes(nProc,1)!maximum number of possible surface nodes??counter
       compresscounter = compresscounter+1
    endif
 enddo
-!print *,'compresscounter',compresscounter
+print *,'compresscounter',compresscounter
 !reprint index
 mdNSurfNodesCompact= compresscounter!-1
 !print *,'storing indices',mdnsurfnodescompact

@@ -427,6 +427,7 @@
              offSetVector= (rotCenter-pointRef)
              !print *,'offset vector',offSetVector, rotCenter,pointRef
              rotRate   = timeRef*cgnsDoms(j)%rotRate
+             !print *,'rotrate, gridvelocity',rotRate,cgnsDoms(j)%rotRate
 
              if (useWindAxis)then
                 !determine the current angles from the free stream velocity

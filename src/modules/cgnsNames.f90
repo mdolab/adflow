@@ -82,6 +82,12 @@
        character(len=maxCGNSNameLen), parameter :: &
                         cgnsVelZ      = "VelocityZ"
        character(len=maxCGNSNameLen), parameter :: &
+                        cgnsRelVelX   = "RelativeVelocityX"
+       character(len=maxCGNSNameLen), parameter :: &
+                        cgnsRelVelY   = "RelativeVelocityY"
+       character(len=maxCGNSNameLen), parameter :: &
+                        cgnsRelVelZ   = "RelativeVelocityZ"
+       character(len=maxCGNSNameLen), parameter :: &
                         cgnsVelr      = "VelocityR"
        character(len=maxCGNSNameLen), parameter :: &
                         cgnsVelTheta  = "VelocityTheta"
@@ -93,6 +99,8 @@
                         cgnsCp        = "CoefPressure"
        character(len=maxCGNSNameLen), parameter :: &
                         cgnsMach      = "Mach"
+       character(len=maxCGNSNameLen), parameter :: &
+                        cgnsRelMach   = "RelativeMach"
        character(len=maxCGNSNameLen), parameter :: &
                         cgnsMachTurb  = "MachTurbulent"
        character(len=maxCGNSNameLen), parameter :: &

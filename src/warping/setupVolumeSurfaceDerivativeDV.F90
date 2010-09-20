@@ -141,8 +141,11 @@ subroutine setupVolumeSurfaceDerivativesDV
                  !warping algorithm
                  xyznewd(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm)) = 1.0
                  xref = xyznew(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm))
-                 xyznew(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm)) = xref+ 1.0e-12
-                 
+                 !look into this. maybe some kind of if statement based on original surface???
+                 if (xyznew(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm))==XInit( mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm),ll))then
+                    xyznew(ll, mdSurfGlobalIndLocal(1,mm), mdSurfGlobalIndLocal(2,mm), mdSurfGlobalIndLocal(3,mm)) = xref+ 1.0e-12
+                 endif
+
                  !determine the explicitly and implicitly perturbed
                  !faces and edges
                  !call flagImplicitEdgesAndFacesDeriv(xyznewd,ifaceptb,iedgeptb)
