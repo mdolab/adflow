@@ -114,6 +114,18 @@
              volWriteMz = .true.
              nVarSpecified = nVarSpecified + 1
 
+           case ("rvx")
+             volWriteRVx = .true.
+             nVarSpecified = nVarSpecified + 1
+
+           case ("rvy")
+             volWriteRVy = .true.
+             nVarSpecified = nVarSpecified + 1
+
+           case ("rvz")
+             volWriteRVz = .true.
+             nVarSpecified = nVarSpecified + 1
+
            case ("rhoe")
              volWriteRhoe = .true.
              nVarSpecified = nVarSpecified + 1
@@ -144,6 +156,10 @@
 
            case ("mach")
              volWriteMach = .true.
+             nVarSpecified = nVarSpecified + 1
+          
+           case ("rmach")
+             volWriteRMach = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("macht")

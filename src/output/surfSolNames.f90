@@ -73,6 +73,21 @@
          solNames(nn) = cgnsVelz
        endif
 
+       if( surfWriteRVx ) then
+         nn = nn + 1
+         solNames(nn) = cgnsRelVelx
+       endif
+
+       if( surfWriteRVy ) then
+         nn = nn + 1
+         solNames(nn) = cgnsRelVely
+       endif
+
+       if( surfWriteRVz ) then
+         nn = nn + 1
+         solNames(nn) = cgnsRelVelz
+       endif
+
        if( surfWriteCp ) then
          nn = nn + 1
          solNames(nn) = cgnsCp
@@ -86,6 +101,11 @@
        if( surfWriteMach ) then
          nn = nn + 1
          solNames(nn) = cgnsMach
+       endif
+
+       if( surfWriteRMach ) then
+          nn = nn + 1
+          solNames(nn) = cgnsRelMach
        endif
 
        if( surfWriteCf ) then

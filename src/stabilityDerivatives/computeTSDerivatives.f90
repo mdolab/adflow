@@ -23,6 +23,7 @@
       use inputPhysics
       use inputTimeSpectral
       use inputTSStabDeriv
+      use flowvarrefstate !Timeref
       use monitor
       use section
       use communication !myid
@@ -66,6 +67,9 @@
          !real(kind=realType)::t
          real(kind=realType):: TSAlpha,TSAlphadot
          real(kind=realType):: TSMach,TSMachdot
+
+         !speed of sound: for normalization of q derivatives
+         real(kind=realType)::a
 
 !
 !     ******************************************************************
@@ -223,12 +227,14 @@
          
          call computeLeastSquaresRegression(cmz,dphiz,nTimeIntervalsSpectral,dcmzdq,cmz0)
          if(myID==0)then
+            a  = sqrt(gammaInf*pInfDim/rhoInfDim)
+            print *,'normalization',timeRef,(machGrid*a),lengthRef
             print *,'CL estimates:'
-            print *,'Clq = : ',dcldq,' cl0 = : ',cl0
+            print *,'Clq = : ',dcldq*timeRef*2*(machGrid*a)/lengthRef,' cl0 = : ',cl0
             print *,'CD estimates:'
-            print *,'Cdq = : ',dcddq,' cd0 = : ',cd0
+            print *,'Cdq = : ',dcddq*timeRef*2*(machGrid*a)/lengthRef,' cd0 = : ',cd0
             print *,'CMz estimates:'
-            print *,'CMzq = : ',dcmzdq,' cmz0 = : ',cmz0
+            print *,'CMzq = : ',dcmzdq*timeRef*2*(machGrid*a)/lengthRef,' cmz0 = : ',cmz0
          endif
          
          ! now subtract off estimated cl,cmz and use remainder to compute 

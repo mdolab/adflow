@@ -47,10 +47,14 @@
        if( volWriteMx )           nVolSolvar = nVolSolvar + 1
        if( volWriteMy )           nVolSolvar = nVolSolvar + 1
        if( volWriteMz )           nVolSolvar = nVolSolvar + 1
+       if( volWriteRVx )          nVolSolvar = nVolSolvar + 1
+       if( volWriteRVy )          nVolSolvar = nVolSolvar + 1
+       if( volWriteRVz )          nVolSolvar = nVolSolvar + 1
        if( volWriteRhoe )         nVolSolvar = nVolSolvar + 1
        if( volWriteTemp )         nVolSolvar = nVolSolvar + 1
        if( volWriteCp )           nVolSolvar = nVolSolvar + 1
        if( volWriteMach )         nVolSolvar = nVolSolvar + 1
+       if( volWriteRMach )        nVolSolvar = nVolSolvar + 1
        if( volWriteMachTurb )     nVolSolvar = nVolSolvar + 1
        if( volWriteEddyVis )      nVolSolvar = nVolSolvar + 1
        if( volWriteRatioEddyVis ) nVolSolvar = nVolSolvar + 1

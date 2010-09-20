@@ -97,6 +97,21 @@
          solNames(nn) = cgnsMomz
        endif
 
+       if( volWriteRVx )  then
+         nn = nn + 1
+         solNames(nn) = cgnsRelVelx
+       endif
+
+       if( volWriteRVy )  then
+         nn = nn + 1
+         solNames(nn) = cgnsRelVely
+       endif
+
+       if( volWriteRVz )  then
+         nn = nn + 1
+         solNames(nn) = cgnsRelVelz
+       endif
+
        if( volWriteRhoe ) then
          nn = nn + 1
          solNames(nn) = cgnsEnergy
@@ -115,6 +130,11 @@
        if( volWriteMach ) then
          nn = nn + 1
          solNames(nn) = cgnsMach
+       endif
+
+       if( volWriteRMach ) then
+         nn = nn + 1
+         solNames(nn) = cgnsRelMach
        endif
 
        if( volWriteMachTurb ) then

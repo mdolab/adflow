@@ -325,7 +325,7 @@
           cgnsDoms(nZone)%rotatingFrameSpecified = .true.
           cgnsDoms(nZone)%rotRate   = cgnsFamilies(nn)%rotRate
           cgnsDoms(nZone)%rotCenter = cgnsFamilies(nn)%rotCenter
-
+          !print *,'in read,rotrate',cgnsDoms(nZone)%rotRate
        else testOverwrite
 
          ! Go to the correct location in the cgns file, where

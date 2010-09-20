@@ -43,9 +43,13 @@
        if( surfWriteVx )       nSolVar = nSolVar +1
        if( surfWriteVy )       nSolVar = nSolVar +1
        if( surfWriteVz )       nSolVar = nSolVar +1
+       if( surfWriteRVx )      nSolVar = nSolVar +1
+       if( surfWriteRVy )      nSolVar = nSolVar +1
+       if( surfWriteRVz )      nSolVar = nSolVar +1
        if( surfWriteCp )       nSolVar = nSolVar +1
        if( surfWritePtotloss ) nSolVar = nSolVar +1
        if( surfWriteMach )     nSolVar = nSolVar +1
+       if( surfWriteRMach )    nSolVar = nSolVar +1
        if( surfWriteCf )       nSolVar = nSolVar +1
        if( surfWriteCh )       nSolVar = nSolVar +1
        if( surfWriteYplus )    nSolVar = nSolVar +1

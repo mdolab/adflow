@@ -746,6 +746,7 @@ python module sumb ! in
             logical :: wallfunctions
             real(kind=realtype) :: mach
             real(kind=realtype) :: machcoef
+            real(kind=realtype) :: machgrid
             real(kind=realtype) :: reynolds
             real(kind=realtype) :: reynoldslength
             real(kind=realtype) :: tempfreestream
@@ -823,8 +824,8 @@ python module sumb ! in
             integer(kind=inttype) :: noldsolavail
             integer(kind=inttype) :: noldlevels
             real(kind=realtype) allocatable,dimension(:) :: coeftime
-            logical :: timeSpectralGridsNotWritten
-            logical, dimension(:), allocatable :: oldSolWritten       
+            logical :: timespectralgridsnotwritten
+            logical, dimension(:), allocatable :: oldsolwritten       
         end module iteration
 
         module monitor ! in :sumb:../../modules/monitor.f90
@@ -1346,6 +1347,19 @@ python module sumb ! in
           use blockpointers
           implicit none
         end subroutine updatereferencepoint
+
+        subroutine updaterotationrate(xrot,yrot,zrot)
+          use inputtimespectral 
+          use section
+          use inputphysics  !
+          use inputmotion
+          use cgnsgrid
+          use monitor
+          use iteration
+          use blockpointers
+          implicit none
+          real(kind=realtype) intent(in)::xrot,yrot,zrot
+        end subroutine updaterotationrate
 ! ############################################################################
 ! Aeroelastic / Multi-Disciplinary Routines
 ! ############################################################################

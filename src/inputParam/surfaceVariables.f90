@@ -52,10 +52,14 @@
        surfWriteVx   = .false.
        surfWriteVy   = .false.
        surfWriteVz   = .false.
+       surfWriteRVx   = .false.
+       surfWriteRVy   = .false.
+       surfWriteRVz   = .false.
 
        surfWriteCp       = .false.
        surfWritePtotloss = .false.
        surfWriteMach     = .false.
+       surfWriteRMach     = .false.
 
        surfWriteCf    = .false.
        surfWriteCh    = .false.
@@ -120,6 +124,18 @@
              surfWriteVz = .true.
              nVarSpecified = nVarSpecified + 1
 
+           case ("rvx")
+             surfWriteRVx = .true.
+             nVarSpecified = nVarSpecified + 1
+
+           case ("rvy")
+             surfWriteRVy = .true.
+             nVarSpecified = nVarSpecified + 1
+
+           case ("rvz")
+             surfWriteRVz = .true.
+             nVarSpecified = nVarSpecified + 1
+
            case ("cp")
              surfWriteCp = .true.
              nVarSpecified = nVarSpecified + 1
@@ -130,6 +146,10 @@
 
            case ("mach")
              surfWriteMach = .true.
+             nVarSpecified = nVarSpecified + 1
+
+           case ("rmach")
+             surfWriteRMach = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("cf")

@@ -178,6 +178,33 @@
              enddo
            enddo
 
+         case (cgnsRelVelx)
+           do k=kBeg,kEnd
+             do j=jBeg,jEnd
+               do i=iBeg,iEnd
+                 wIO(i,j,k,1) = w(i,j,k,ivx)-s(i,j,k,1)
+               enddo
+             enddo
+           enddo
+
+         case (cgnsRelVely)
+           do k=kBeg,kEnd
+             do j=jBeg,jEnd
+               do i=iBeg,iEnd
+                 wIO(i,j,k,1) = w(i,j,k,ivy)-s(i,j,k,2)
+               enddo
+             enddo
+           enddo
+
+         case (cgnsRelVelz)
+           do k=kBeg,kEnd
+             do j=jBeg,jEnd
+               do i=iBeg,iEnd
+                 wIO(i,j,k,1) = w(i,j,k,ivz)-s(i,j,k,3)
+               enddo
+             enddo
+           enddo
+
          case (cgnsPressure)
            do k=kBeg,kEnd
              do j=jBeg,jEnd
@@ -218,6 +245,21 @@
                enddo
              enddo
            enddo
+
+         case (cgnsRelMach)
+           do k=kBeg,kEnd
+             do j=jBeg,jEnd
+               do i=iBeg,iEnd
+                 a2  = gamma(i,j,k)*max(p(i,j,k),plim) &
+                     / max(w(i,j,k,irho),rholim)
+                 tmp = ((w(i,j,k,ivx)-s(i,j,k,1))**2 +&
+                      (w(i,j,k,ivy)-s(i,j,k,2))**2 &
+                      +(w(i,j,k,ivz)-s(i,j,k,3))**2)/a2
+                 wIO(i,j,k,1) = sqrt(max(zero,tmp))
+               enddo
+             enddo
+           enddo
+
 
          case (cgnsMachTurb)
            do k=kBeg,kEnd
