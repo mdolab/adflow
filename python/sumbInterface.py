@@ -2863,7 +2863,7 @@ class SUmbInterface(object):
         self.sumb.getsolution()
 
         #print 'solution mapped'
-        print 'sumb value:',self.sumb.adjointvars.costfuncliftcoef-1
+        #print 'sumb value:',self.sumb.adjointvars.costfuncliftcoef-1
 
         SUmbsolutions = {'cl':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncliftcoef-1],\
                          'cd':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncdragcoef-1],\

@@ -943,6 +943,16 @@ python module sumb ! in
             real(kind=realtype) allocatable,dimension(:) :: xdesignvarlower
             real(kind=realtype) allocatable,dimension(:,:) :: functiongradcoupling
             integer(kind=inttype) parameter,optional :: ndesignmach=3
+            integer(kind=inttype) parameter,optional :: ndesignmachgrid=4
+            integer(kind=inttype) parameter,optional :: ndesignrotx=5
+            integer(kind=inttype) parameter,optional :: ndesignroty=6
+            integer(kind=inttype) parameter,optional :: ndesignrotz=7
+            integer(kind=inttype) parameter,optional :: ndesignrotcenx=8
+            integer(kind=inttype) parameter,optional :: ndesignrotceny=9
+            integer(kind=inttype) parameter,optional :: ndesignrotcenz=10
+            integer(kind=inttype) parameter,optional :: ndesignpointrefx=11
+            integer(kind=inttype) parameter,optional :: ndesignpointrefy=12
+            integer(kind=inttype) parameter,optional :: ndesignpointrefy=13
             real(kind=realtype) allocatable,dimension(:,:) :: functiongradcouplingexp
             real(kind=realtype) allocatable,dimension(:) :: functionvalue
             real(kind=realtype) parameter,optional :: adjrelfd=1.0e-5_realtype
