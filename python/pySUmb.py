@@ -298,7 +298,6 @@ class SUMB(AeroSolver):
 				
 				if(self.interface.myid==0):print 'Trying pySUmb internal meshwarping...'
 				#Set the internal coordinates
-				print 'cfdsurf',new_cfd_surf[0,0]
 				self.interface.Mesh.SetGlobalSurfaceCoordinates(new_cfd_surf)
 				if(self.interface.myid==0):print 'Internal Surfaces set...'
 				
