@@ -33,7 +33,7 @@ MV         = /bin/mv -f
 SYM_LINK   = ln -sf
 #MAKE       = make
 #MAKE_CLEAN = make
-MAKE = make -j 4
+MAKE = make -j 1
 
 
 #      ******************************************************************
