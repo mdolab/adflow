@@ -58,6 +58,8 @@
        jb = flowDoms(nn,mm,ll)%jb
        kb = flowDoms(nn,mm,ll)%kb
 
+       rightHanded = flowDoms(nn,mm,ll)%righthanded
+
        ! Point range in the corresponding cgns block
 
        iBegor = flowDoms(nn,mm,ll)%iBegor

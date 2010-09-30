@@ -98,7 +98,8 @@
 #SOLVER_DIRSRC = /usr/people/sichoi/SUmbADJ_NS_NEW/src/
 #SOLVER_DIRSRC = /home/guysmiley/acmarta/SVN/SUmbVertex/src
 #SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
-SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
+SOLVER_DIRSRC = /nfs/tuff/home/mader/hg/SUmbADjoint/src
+#SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
 
 #     ******************************************************************
 #     *                                                                *
@@ -198,7 +199,10 @@ TAPENADE_MOD = $(TAPENADE_DIRSRC1)/BCTypes.f90 \
 	       $(TAPENADE_DIRSRC1)/iteration.f90\
 	       $(TAPENADE_DIRMOD)/monitor.f90 \
 	       $(TAPENADE_DIRSRC1)/precision.f90\
-	       $(TAPENADE_DIRMOD)/section.f90
+	       $(TAPENADE_DIRMOD)/section.f90\
+               $(TAPENADE_DIRSRC1)/CpCurveFits.f90\
+	       $(TAPENADE_DIRSRC1)/su_mpi.f90\
+	       $(TAPENADE_DIRSRC1)/terminate.f90
 
 #TAPENADE_MOD = $(TAPENADE_DIRSRC1)/accuracy.f90 \
 #	       $(TAPENADE_DIRSRC1)/BCTypes.f90 \

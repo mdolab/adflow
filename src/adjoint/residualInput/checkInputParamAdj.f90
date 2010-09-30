@@ -307,10 +307,8 @@
                    +      velDirFreestreamAdj(3)*velDirFreestreamAdj(3))
          if(vecLength < eps) then
            if(myID == 0)                        &
-             call terminate("checkInputParam", &
-                            "Free stream velocity direction wrongly &
-                            &specified")
-           call mpi_barrier(SUmb_comm_world, ierr)
+             call terminate("checkInputParam","Free stream velocity direction wrongly specified")
+           !call mpi_barrier(SUmb_comm_world, ierr)
          endif
 
          vecLength = one/vecLength
@@ -343,9 +341,8 @@
                    +      liftDirectionAdj(3)*liftDirectionAdj(3))
          if(vecLength < eps) then
            if(myID == 0)                        &
-             call terminate("checkInputParam", &
-                            "Lift direction wrongly specified")
-           call mpi_barrier(SUmb_comm_world, ierr)
+             call terminate("checkInputParam", "Lift direction wrongly specified")
+           !call mpi_barrier(SUmb_comm_world, ierr)
          endif
 
          vecLength = one/vecLength
@@ -361,10 +358,8 @@
 
          if(abs(dot) > 1.e-3_realType) then
            if(myID == 0)                       &
-             call terminate("checkInputParam", &
-                            "Lift direction not orthogonal to &
-                            &free-stream")
-           call mpi_barrier(SUmb_comm_world, ierr)
+             call terminate("checkInputParam","Lift direction not orthogonal to free-stream")
+           !call mpi_barrier(SUmb_comm_world, ierr)
          endif
 
        else
