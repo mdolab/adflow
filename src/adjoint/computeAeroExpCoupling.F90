@@ -106,7 +106,7 @@
            nDesignGlobal, nDisplsGlobal 		
       real(kind=realType),dimension(:),allocatable :: functionGradLocal
 
-      logical :: contributeToForce, viscousSubface,righthanded,secondHalo
+      logical :: contributeToForce, viscousSubface,secondHalo
       logical :: finegrid,exchangeturb
 
       ! dJ/dx local vector at node (iNode,jNode,kNode)

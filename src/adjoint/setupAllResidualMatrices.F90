@@ -240,6 +240,7 @@
             do kCell = 2, kl
                do jCell = 2, jl
                   do iCell = 2, il
+                     !print *,'copying state',icell,jcell,kcell
                      ! Copy the state w to the wAdj array in the stencil
                      call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
            betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
@@ -283,7 +284,7 @@
                         pointrefadjb(:)=0.
                         rotcenteradjb(:)=0.
 !                    print *,'dwadjb',dwadjb,'wadjb',wadjb(0,0,0,:)
-!                    print *,'calling reverse mode'
+                    !print *,'calling reverse mode'
 !                   print *,'secondhalo',secondhalo
 
 	        ! Call the reverse mode of residual computation.
@@ -301,7 +302,7 @@
 &  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, pointrefadjb&
 &  , rotpointadj, rotpointadjb, murefadj, timerefadj, pinfcorradj, &
 &  liftindex)
-
+                        !print *,'derivatives called'
 
                         ! Store the block Jacobians (by rows).
                         
@@ -394,7 +395,7 @@
                                  enddo
                               enddo
                            enddo
-                           
+                           !print *,'storring'
                            !set values for symmtery plane normal derivatives
                            do l = 1,3
                               if (xblockcorneradjb(1,1,1,l,sps2).ne.0.0)then

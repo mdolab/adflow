@@ -98,7 +98,8 @@
 #SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/SUmbVertex/trunk/src
 #SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
 #SOLVER_DIRSRC = /nfs/tuff/home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
-SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
+SOLVER_DIRSRC = /nfs/tuff/home/mader/hg/SUmbADjoint/src
+#SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
 
 #     ******************************************************************
 #     *                                                                *
@@ -115,7 +116,7 @@ TAPENADE_OUTVARS = "dwadj"
 # Independent input variables (separator: white space, default: all)
 
 #TAPENADE_VARS = "xadj wadj alphaadj machadj"
-TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj machcoefadj machGridAdj rotRateAdj xBlockCornerAdj pointrefadj rotpointadj rotcenteradj"
+TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj machGridAdj rotRateAdj xBlockCornerAdj pointrefadj rotpointadj rotcenteradj"
 
 # Name of the top routine
 
@@ -214,8 +215,8 @@ TAPENADE_MOD = $(TAPENADE_DIRSRC_RES)/block.f90 \
 	       $(TAPENADE_DIRSRC_RES)/communication.f90 \
 	       $(TAPENADE_DIRMOD)/section.f90\
 	       $(TAPENADE_DIRSRC_RES)/CpCurveFits.f90\
-	       $(TAPENADE_DIRSRC_RES)/su_mpi.f90
-#	       $(TAPENADE_DIRSRC_RES)/terminate.f90
+	       $(TAPENADE_DIRSRC_RES)/su_mpi.f90\
+	       $(TAPENADE_DIRSRC_RES)/terminate.f90
 
 #	       $(TAPENADE_DIRSRC_RES)/inputParam.f90 \
 
@@ -233,7 +234,7 @@ TAPENADE_SRC_ALL = $(TAPENADE_SRC_COMMON) $(TAPENADE_SRC_SOLVER)\
 
 default:
 	@echo "TAPENADE - parsing and generating differentiated code"
-	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
+	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30 -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
 	@echo "deleting some unnecessary files..."
 	@rm -f $(TAPENADE_OUTDIR)/*__.f90 $(TAPENADE_OUTDIR)/*~
 
