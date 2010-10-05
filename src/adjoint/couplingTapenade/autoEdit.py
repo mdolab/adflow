@@ -31,7 +31,7 @@ DIR_MOD = DIR_ORI + '/../couplingOutput'
 LINE_ID = ['  USE','  CALL ']
 STR_OLD = ['_B'    ,'_CB'    ]
 STR_NEW = [''      ,''       ]
-
+FILE_EXCL = 'MODULE'
 
 # Some feedback
 
@@ -66,7 +66,13 @@ for f in os.listdir(DIR_ORI):
         # go to modified directory
         os.chdir(DIR_MOD)
         # open modified file in write mode
+        if string.find(all_src, FILE_EXCL) > -1 :
+            print " Module found -> discarded ! "
+            continue
+
         file_object_mod = open(f,'w')
+
+       
 
         # read the original file, line-by-line
         nEdits = len(LINE_ID)
