@@ -113,6 +113,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
                writeCGNSData.o\
 	       getdRdXvPsi.o\
 	       setupCouplingMatrixStruct.o\
+	       agumentRHS.o\
 #	       setupCouplingTotalStruct.o\
 #	       setupADjointRHSStruct.o  \
 
