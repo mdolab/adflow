@@ -97,7 +97,7 @@ subroutine setupGradientdCdx(level,costFunction)
   REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3), rotpointadj(3)&
        &  , rotpointadjb(3)
 
-  logical :: secondHalo,exchangeTurb,correctfork,finegrid,righthanded
+  logical :: secondHalo,exchangeTurb,correctfork,finegrid
   integer(kind=intType):: discr
 
   integer(kind=intType) :: idxmgb

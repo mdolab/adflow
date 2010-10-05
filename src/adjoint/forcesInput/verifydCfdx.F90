@@ -107,7 +107,7 @@ subroutine verifydCfdx(level)
       real(kind=realType),  dimension(:), allocatable :: monLoc1, monGlob1
       real(kind=realType),  dimension(:), allocatable :: monLoc2, monGlob2
 
-      logical :: contributeToForce, viscousSubface,secondHalo,righthanded
+      logical :: contributeToForce, viscousSubface,secondHalo
       real(kind=realType), dimension(7) :: dCldextra,dcddextra,dCldextraFD,dcddextraFD,&
            dCldextraerror,dcddextraerror, dCldextralocal,dcddextralocal,dcmdextra,&
            dcmdextraFD,dcmdextralocal,dcmdextraerror

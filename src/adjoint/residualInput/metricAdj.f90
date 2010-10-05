@@ -64,6 +64,7 @@
        integer(kind=intType) :: iStart,iEnd,jStart,jEnd,kStart,kEnd
        integer(kind=intType) :: mm, nTime
        integer(kind=intType) :: nVolBad,   nVolBadGlobal
+       integer(kind=intType) :: nVolNeg,   nVolPos
 
        real(kind=realType) :: fact, mult
        real(kind=realType) :: xp, yp, zp, vp1, vp2, vp3, vp4, vp5, vp6
@@ -108,6 +109,14 @@
 !      *                                                            *
 !      **************************************************************
 !
+
+       ! Initialize the number of positive and negative volumes for
+       ! this block to 0.Needed to catch right/lefthanded blocks
+       
+       nVolNeg = 0
+       nVolPos = 0
+
+
        ! Compute the volumes. The hexahedron is split into 6 pyramids
        ! whose volumes are computed. The volume is positive for a
        ! right handed block.
@@ -187,14 +196,16 @@
           ! Set the logical volumeIsNeg accordingly.
                
           if(volAdj(sps2) < zero) then
+             nVolNeg            = nVolNeg + 1
              volumeIsNeg = .true.
           else
+             nVolPos            = nVolPos + 1
              volumeIsNeg = .false.
           endif
           
           ! terminate if negative volume is located
-          if(volumeIsNeg) &
-               write(*,*)"VOLUME NEGATIVE",voladj(sps2),nbkglobal,iCell,jCell,kCell
+          !if(volumeIsNeg) &
+          !     write(*,*)"VOLUME NEGATIVE",voladj(sps2),nbkglobal,iCell,jCell,kCell
 !            call terminate("negative volume located")
 
           ! Set the threshold for the volume quality.
@@ -254,7 +265,23 @@
 !!$             enddo
 !!$           enddo
 
-
+       ! Determine the orientation of the block. For the fine level
+       ! this is based on the number of positive and negative
+       ! volumes; on the coarse levels the corresponding fine level
+       ! value is taken. If both positive and negative volumes are
+       ! present it is assumed that the block was intended to be
+       ! right handed. The code will terminate later on anyway.
+       
+       if(level == 1) then
+          if(nVolPos == 0) then       ! Left handed block.
+             rightHanded = .false.
+          else                        ! Right handed (or bad) block.
+             rightHanded = .true.
+          endif
+       else
+          print *,'ADjoint not setup on lower levels'
+          stop
+       endif
 !
 !          **************************************************************
 !          *                                                            *
@@ -271,11 +298,11 @@
 !          **************************************************************
 !
 
-!s           if( flowDoms(nn,level,sps)%rightHanded ) then
+          if( rightHanded ) then
              fact =  half
-!s           else
-!s             fact = -half
-!s           endif
+          else
+             fact = -half
+          endif
 
            ! Projected areas of cell faces in the i direction.
 

@@ -110,7 +110,7 @@ subroutine verifydCfdw(level)
       real(kind=realType),  dimension(:), allocatable :: monLoc1, monGlob1
       real(kind=realType),  dimension(:), allocatable :: monLoc2, monGlob2
 
-      logical :: contributeToForce, viscousSubface,secondHalo,righthanded
+      logical :: contributeToForce, viscousSubface,secondHalo
 
       integer :: ierr,nmonsum1,nmonsum2,idxmgb
 

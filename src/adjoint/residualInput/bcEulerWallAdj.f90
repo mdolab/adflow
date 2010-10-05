@@ -22,9 +22,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
   !      ******************************************************************
   !
   use BCTypes
-  !       use blockPointers, only : il, jl, kl, BCData, BCFaceID, &
-  !                                 si, sj, sk, s, addGridVelocities
-  use blockPointers, only : il, jl, kl, BCData, BCFaceID, addGridVelocities, nBocos, BCType
+  use blockPointers, only : BCData, BCFaceID, addGridVelocities, nBocos, BCType
   use constants
   use flowVarRefState
   use inputDiscretization
@@ -444,7 +442,7 @@ subroutine bcEulerWallAdj(secondHalo, wAdj,pAdj,sAdj,      &
                  ! component in the direction of norm, i.e. outward
                  ! pointing.
 
-                 pAdj1(ii,jj) = max(zero, pAdj2(ii,jj)-pAdj1(ii,jj) )
+                 pAdj1(ii,jj) = pAdj2(ii,jj)-pAdj1(ii,jj)! max(zero, pAdj2(ii,jj)-pAdj1(ii,jj) )
 !!$
 !!$!                 vn = two*(BCData(nn)%rface(i,j)              &
 !!$!                      - wAdj2(ii,jj,ivx)*normAdj(nn,ii,jj,1) &

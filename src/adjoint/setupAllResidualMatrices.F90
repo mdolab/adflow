@@ -208,6 +208,7 @@ subroutine setupAllResidualMatrices(level)
   !
   ! Send some feedback to screen.
 
+
   if( PETScRank==0 ) &
        write(*,10) "Assembling All Residual Matrices..."
 
@@ -218,6 +219,7 @@ subroutine setupAllResidualMatrices(level)
   !zero the matrix for dRdW Insert call
   call MatZeroEntries(dRdwt,PETScIerr)
 
+
   if( PETScIerr/=0 ) &
        call terminate("setupAllresidualMatrices", "Error in MatZeroEntries drdwt")
   !zero the matrix for dRdx ADD call
@@ -225,6 +227,7 @@ subroutine setupAllResidualMatrices(level)
 
   if( PETScIerr/=0 ) &
        call terminate("setupAllresidualMatrices", "Error in MatZeroEntries drdx")
+
 
   !print *,'Entering Domain loop'
   domainLoopAD: do nn=1,nDom
@@ -381,6 +384,7 @@ subroutine setupAllResidualMatrices(level)
                                          idxnode = flowdoms(nn,level,sps2)%globalNode(i,j,k)*3+l
 
                                          if( (idxres-1)>=0 .and. (idxnode-1)>=0) then
+
                                             call MatSetValues(dRdx, 1, idxres-1, 1, idxnode-1,   &
                                                  xAdjb(ii,jj,kk,l,sps2), ADD_VALUES, PETScIerr)
                                          endif
