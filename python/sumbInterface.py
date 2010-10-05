@@ -2009,7 +2009,8 @@ class SUmbInterface(object):
                 self.sumb.setadjoint(self.storedADjoints[self.possibleObjectives[objective.lower()]])
             else:
                 #print 'stored ADjoint not present',self.sumb.adjointvars.nnodeslocal,objective
-                self.storedADjoints[self.possibleObjectives[objective.lower()]] =  self.sumb.getadjoint(self.sumb.adjointvars.nnodeslocal*3)*0.0
+                #self.storedADjoints[self.possibleObjectives[objective.lower()]] =  self.sumb.getadjoint(self.sumb.adjointvars.nnodeslocal*3)*0.0
+                self.storedADjoints[self.possibleObjectives[objective.lower()]]=numpy.zeros([self.sumb.adjointvars.nnodeslocal*3],float)
                 self.sumb.setadjoint(self.storedADjoints[self.possibleObjectives[objective.lower()]])
             #endif
         #endif
