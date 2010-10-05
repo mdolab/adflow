@@ -127,7 +127,7 @@
 
       Mat     dRdW ,dRdWFD,dRdWPre,dRdWT,dRdWPreT
       Vec     psi, dJdW, pvr,phic,dJcdW
-      Vec     grdiVec
+      Vec     gridVec
       ! ksp   Linear solver (Krylov subspace method) context
       ! pc    Preconditioner context
 
