@@ -93,7 +93,7 @@ subroutine verifydSdw(level)
       real(kind=realType), dimension(3) :: refPoint
       real(kind=realType) :: yplusMax
 
-      logical :: contributeToForce, viscousSubface,secondHalo,righthanded
+      logical :: contributeToForce, viscousSubface,secondHalo
 
       integer :: ierr,nmonsum1,nmonsum2,idxmgb,idxres,idxsurf
 

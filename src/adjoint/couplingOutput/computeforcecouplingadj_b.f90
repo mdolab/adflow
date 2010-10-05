@@ -23,7 +23,7 @@ SUBROUTINE COMPUTEFORCECOUPLINGADJ_B(xadj, xadjb, wadj, wadjb, padj, &
 &  rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, pinfcorradj, &
 &  liftindex, ii)
   USE bctypes
-  USE blockpointers
+  USE blockpointers,only:ie,je,ke,ib,jb,kb
   USE communication
   USE flowvarrefstate
   USE inputphysics

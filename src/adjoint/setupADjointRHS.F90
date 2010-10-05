@@ -161,7 +161,7 @@
       call VecAssemblyBegin(dJdW,PETScIerr)
 
       if( PETScIerr/=0 ) &
-        call terminate("setupASjointRHS", "Error in VecAssemblyBegin")
+        call terminate("setupADjointRHS", "Error in VecAssemblyBegin")
 
       ! VecAssemblyEnd - Completes assembling the vector. This routine
       ! should be called after VecAssemblyBegin().

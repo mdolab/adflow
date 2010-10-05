@@ -67,6 +67,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       indexHaloNode1to1.o      \
 	       preprocessingADjoint.o   \
 	       releaseMemADjoint.o      \
+	       setADjoint.o             \
 	       setGlobalCellsAndNodes.o \
 	       setPointersAdj.o         \
                setupADjointdCdwStability.o\

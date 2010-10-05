@@ -503,6 +503,8 @@
        write(writeUnit,"(a)")
        write(writeUnit,"(a)") "      Use Approximate Preconditioner : Yes "
        write(writeUnit,"(a)") "                  # Other possibility: no"
+       write(writeUnit,"(a)") "                     restart adjoint : Yes "
+       write(writeUnit,"(a)") "                  # Other possibility: no"
        write(writeUnit,"(a)")
        write(writeUnit,"(a)") "                  Adjoint solver type: GMRES"
        write(writeUnit,"(a)") "                # Other possibilities: BiCGStab"
