@@ -210,14 +210,11 @@ python module sumb ! in
          integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
        end subroutine setgrid
 
-!        subroutine getforces()
-!        end subroutine getforces
-       
-       subroutine getforces2(forces,pts,npts) ! in :test:getForces.f90
+       subroutine getforces(forces,pts,npts) ! in :test:getForces.f90
          real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: forces
          real(kind=realtype) dimension(3,npts),intent(in) :: pts
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
-       end subroutine getforces2
+       end subroutine getforces
 
        subroutine verifyforces(pts,npts) ! in :test:getForces.f90
          real(kind=realtype) dimension(3,npts),intent(in) :: pts
@@ -1221,7 +1218,9 @@ python module sumb ! in
           integer(kind=inttype), intent(in) :: costfunction
         end subroutine computeaerocoupling
 
-        subroutine getdrdxvpsi
+        subroutine getdrdxvpsi(ndof,dxv)
+          integer(kind=inttype) intent(in) :: ndof
+          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
         end subroutine getdrdxvpsi
 
         subroutine computeaeroexpcoupling(costfunction)

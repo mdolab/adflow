@@ -438,6 +438,10 @@ class SUMB(AeroSolver):
  		# end if
  		return indices
 
+	def getdRdXvPsi(self):
+		ndof = self.interface.sumb.adjointvars.nnodeslocal*3
+		return self.interface.sumb.getdrdxvpsi(ndof)
+
 	def computeSurfaceDerivative(self, objective, *args, **kwargs):
 		#def computeTotalSurfaceDerivative(self, objective,surface={},mapping={},meshwarping={}, *args, **kwargs):
 		'''

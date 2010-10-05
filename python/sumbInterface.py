@@ -1951,7 +1951,7 @@ class SUmbInterface(object):
             pts = self.sumb.getForcePoints()
         # end if
         if len(cfd_force_pts) > 0:
-            return self.sumb.getforces2(cfd_force_pts.T).T
+            return self.sumb.getforces(cfd_force_pts.T).T
         else:
             return numpy.empty([0],dtype='d')
         # end if
