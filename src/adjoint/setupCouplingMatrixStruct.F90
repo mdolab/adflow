@@ -45,7 +45,7 @@ subroutine setupCouplingMatrixStruct(pts,npts)
   integer(kind=intType) :: colStart_x,colEnd_x
   real(kind=realType)   :: fact
   integer(kind=intType) :: ierr
-  logical :: rightHanded
+  !logical :: rightHanded
 
   ii=0
   call MatGetOwnershipRange(dsdw,rowStart,rowEnd,ierr)
