@@ -18,13 +18,13 @@ subroutine getdRdXvPsi(ndof,dXv)
   !     ******************************************************************
   !
   use communication
-  use ADjointPETSc, only: dRdX,psi
+  use ADjointPETSc, only: dRdX,psi,gridVec
   use warpingPETSC 
   use inputADjoint
   implicit none
 
-  integer(kind=intType) intent(in) :: ndof
-  real(kind=realType) intent(out)  :: dXv(ndof)
+  integer(kind=intType), intent(in) :: ndof
+  real(kind=realType), intent(out)  :: dXv(ndof)
 
   integer(kind=intType) :: ierr
 
