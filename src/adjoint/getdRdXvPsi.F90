@@ -25,11 +25,10 @@ subroutine getdRdXvPsi
 
   integer(kind=intType) :: ierr
 
+  !call MatMultTranspose(dRdX,psi,sumbGridVec,ierr)
 
-  call MatMultTranspose(dRdX,psi,sumbGridVec,ierr)
-
-  call VecScatterBegin(cgnsTOsumbGrid,sumbGridVec,cgnsGridVec,INSERT_VALUES,SCATTER_REVERSE,ierr)
-  call VecScatterEnd  (cgnsTOsumbGrid,sumbGridVec,cgnsGridVec,INSERT_VALUES,SCATTER_REVERSE,ierr)
+  !call VecScatterBegin(cgnsTOsumbGrid,sumbGridVec,cgnsGridVec,INSERT_VALUES,SCATTER_REVERSE,ierr)
+  !call VecScatterEnd  (cgnsTOsumbGrid,sumbGridVec,cgnsGridVec,INSERT_VALUES,SCATTER_REVERSE,ierr)
 
   ! Now we have dRdXv*psi in cgnsGridVec and we can call getCGNSData to retrieve it
 

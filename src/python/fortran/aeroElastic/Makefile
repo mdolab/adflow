@@ -38,9 +38,7 @@ include ${SUMB_MD_COMMON_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_MD_OBJDIR)
-FF90_OBJECTS_1 = mdData.o\
-		 mdDataLocal.o\
-
+FF90_OBJECTS_1 = 
 FF90_OBJECTS_2 = mdFamilyNames.o\
 		 mdNSurfNodes.o\
 		 mdNSurfNodesLocal.o\

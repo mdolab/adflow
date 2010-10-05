@@ -181,11 +181,11 @@ subroutine createPETScMat
 
 
 #ifdef USE_PETSC_3
-  call MatSetOption(dRdWt, MAT_ROW_ORIENTED,PETSC_TRUE, PETScIerr)
+  call MatSetOption(dRdWt, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
   if( PETScIerr/=0 ) &
        call terminate("createPETScMat", "Error in MatSetOption dRdW")
 #else
-  call MatSetOption(dRdWt, MAT_ROW_ORIENTED, PETScIerr)
+  call MatSetOption(dRdWt, MAT_COLUMN_ORIENTED, PETScIerr)
   if( PETScIerr/=0 ) &
        call terminate("createPETScMat", "Error in MatSetOption dRdW")
 #endif
@@ -252,11 +252,11 @@ subroutine createPETScMat
      ! Set the matrix dRdWPre options.
 
 #ifdef USE_PETSC_3
-     call MatSetOption(dRdWPret, MAT_ROW_ORIENTED,PETSC_TRUE, PETScIerr)
+     call MatSetOption(dRdWPret, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
      if( PETScIerr/=0 ) &
           call terminate("createPETScMat", "Error in MatSetOption dRdW")
 #else
-     call MatSetOption(dRdWPret, MAT_ROW_ORIENTED, PETScIerr)
+     call MatSetOption(dRdWPret, MAT_COLUMN_ORIENTED, PETScIerr)
      if( PETScIerr/=0 ) &
           call terminate("createPETScMat", "Error in MatSetOption dRdWPre")
 #endif
@@ -369,7 +369,7 @@ subroutine createPETScMat
 
   ! Set column major order for the matrix dRda.
 #ifdef USE_PETSC_3
-  call MatSetOption(dRda, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+  call MatSetOption(dRda, MAT_ROW_ORIENTED,PETSC_TRUE, PETScIerr)
 
   if( PETScIerr/=0 ) &
        call terminate("createPETScMat", "Error in MatSetOption dRda")
@@ -885,260 +885,260 @@ subroutine createPETScMat
 
   ! Set column major order for the matrix dSdw.
 #ifdef USE_PETSC_3
-  call MatSetOption(dSdw, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
-  call MatSetOption(dSdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+  call MatSetOption(dSdw, MAT_ROW_ORIENTED,PETSC_TRUE, PETScIerr)
+  call MatSetOption(dSdx, MAT_ROW_ORIENTED,PETSC_TRUE, PETScIerr)
 #else
-  call MatSetOption(dSdw, MAT_COLUMN_ORIENTED, PETScIerr)
-  call MatSetOption(dSdx, MAT_COLUMN_ORIENTED, PETScIerr)
+  call MatSetOption(dSdw, MAT_ROW_ORIENTED, PETScIerr)
+  call MatSetOption(dSdx, MAT_ROW_ORIENTED, PETScIerr)
 #endif
 
+  
+!       ******************************************************************
+!       dCdw
+
+  
+!       ******************************************************************
+!       *                                                                *
+!       * Create matrix dCdW that is used to compute the RHS of the      *
+!       * ADjoint for the time spectral case                             *
+!       *                                                                *
+!       * Matrix dCdw has size [nTimeIntervalsSpectral,nDimW] and is     *
+!       * generally sparse.                                              *
+!       *                                                                *
+!       *                                                                *
+!       ******************************************************************
+  
+
+    call MatCreate(SUMB_PETSC_COMM_WORLD, dCdw, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatCreate dCdw")
+
+
+        call MatSetSizes(dCdw, PETSC_DECIDE,nDimW, &
+                         nTimeIntervalsSpectral,PETSC_DETERMINE, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatSetSizes dCdw")
+
+        call MatSetType(dCdw,MATMPIAIJ,PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", &
+                         "Error in MatSetFromOptions dCdw")
+
+        ! Set column major order for the matrix dRda.
+  #ifdef USE_PETSC_3
+        call MatSetOption(dCdw, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatSetOption dcdw")
+  #else
+        call MatSetOption(dCdw, MAT_COLUMN_ORIENTED, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatSetOption dCdw")
+  #endif
+        ! Extract info from the global matrix (only processor 0 does it).
+
+        if( PETScRank==0 .and. debug ) then
+
+          ! Get the global number of rows and columns.
+
+          call MatGetSize(dCdw, matRows, matCols, PETScIerr)
+
+          if( PETScIerr/=0 ) &
+            call terminate("createPETScMat", "Error in MatGetSize dCdw")
+
+          write(*,20) "# MATRIX: dCdw global size =", &
+                      matRows, " x ", matCols
+
+          ! Gets the matrix type as a string from the matrix object.
+
+          call MatGetType(dCdw, matTypeStr, PETScIerr)
+
+          if( PETScIerr/=0 ) &
+            call terminate("createPETScMat", "Error in MatGetType dCdw")
+
+          write(*,30) "# MATRIX: dCdw type        =", matTypeStr
+
+        endif
+
+        ! Query about the ownership range.
+
+        if( debug ) then
+          call MatGetOwnershipRange(dCdw, iLow, iHigh, PETScIerr)
+
+          if( PETScIerr/=0 ) &
+            call terminate("createPETScMat", &
+                           "Error in MatGetOwnershipRange dCdw")
+
+          write(*,40) "# MATRIX: dCdw Proc", PETScRank, "; #rows =", &
+                      nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
+        endif
+
+  !     ******************************************************************
+  !     dCdx
+
+        call MatCreate(SUMB_PETSC_COMM_WORLD, dCdx, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatCreate dCdx")
+
+
+        call MatSetSizes(dCdx, PETSC_DECIDE,nDimX, &
+                         nTimeIntervalsSpectral,PETSC_DETERMINE, PETScIerr)
+        !call MatSetSizes(dCdx,PETSC_DETERMINE, nTimeIntervalsSpectral , &
+        !                 nDimX, PETSC_DECIDE, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatSetSizes dCdx")
+
+
+        call MatSetType(dCdx,MATMPIAIJ,PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", &
+                         "Error in MatSetFromOptions dCdw")
+
+
+        ! Set column major order for the matrix dRda.
+  #ifdef USE_PETSC_3
+        call MatSetOption(dCdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatSetOption dcdx")
+  #else
+        call MatSetOption(dCdx, MAT_COLUMN_ORIENTED, PETScIerr)
+
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatSetOption dCdx")
+  #endif
+        ! Extract info from the global matrix (only processor 0 does it).
+
+        if( PETScRank==0 .and. debug ) then
+
+          ! Get the global number of rows and columns.
+
+          call MatGetSize(dCdx, matRows, matCols, PETScIerr)
+
+          if( PETScIerr/=0 ) &
+            call terminate("createPETScMat", "Error in MatGetSize dCdx")
+
+          write(*,20) "# MATRIX: dCdx global size =", &
+                      matRows, " x ", matCols
+
+          ! Gets the matrix type as a string from the matrix object.
+
+          call MatGetType(dCdx, matTypeStr, PETScIerr)
+
+          if( PETScIerr/=0 ) &
+            call terminate("createPETScMat", "Error in MatGetType dCdx")
+
+          write(*,30) "# MATRIX: dCdx type        =", matTypeStr
+
+        endif
+
+        ! Query about the ownership range.
+
+        if( debug ) then
+          call MatGetOwnershipRange(dCdx, iLow, iHigh, PETScIerr)
+
+          if( PETScIerr/=0 ) &
+            call terminate("createPETScMat", &
+                           "Error in MatGetOwnershipRange dCdx")
+
+          write(*,40) "# MATRIX: dCdx Proc", PETScRank, "; #rows =", &
+                      nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
+        endif
+
+  !     ******************************************************************
+  !     dCda
+
   !
   !     ******************************************************************
-  !     dCdw
+  !     *                                                                *
+  !     * Create matrix dCda that is used to compute the partial         *
+  !     * derivative of the Extra variabled for the the time spectral    *
+  !     * case                                                           *
+  !     *                                                                *
+  !     * Matrix dRda has size [nTimeIntervals,nDesignExtra] and is      *
+  !     * generally dense.                                               *
+  !     *                                                                *
 
-  !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Create matrix dCdW that is used to compute the RHS of the      *
-  !     * ADjoint for the time spectral case                             *
-  !     *                                                                *
-  !     * Matrix dCdw has size [nTimeIntervalsSpectral,nDimW] and is     *
-  !     * generally sparse.                                              *
-  !     *                                                                *
   !     *                                                                *
   !     ******************************************************************
   !
 
-  !   call MatCreate(SUMB_PETSC_COMM_WORLD, dCdw, PETScIerr)
+        call MatCreate(SUMB_PETSC_COMM_WORLD, dCda, PETScIerr)
 
-  !       if( PETScIerr/=0 ) &
-  !         call terminate("createPETScMat", "Error in MatCreate dCdw")
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatCreate dCda")
 
 
-  !       call MatSetSizes(dCdw, PETSC_DECIDE,nDimW, &
-  !                        nTimeIntervalsSpectral,PETSC_DETERMINE, PETScIerr)
+        call MatSetSizes(dCda, PETSC_DECIDE,PETSC_DECIDE, &
+                         nTimeIntervalsSpectral,nDesignExtra, PETScIerr)
+       ! call MatSetSizes(dCda,PETSC_DETERMINE, nTimeIntervalsSpectral, &
+       !                  PETSC_DETERMINE, nDesignExtra, PETScIerr)
 
-  !       if( PETScIerr/=0 ) &
-  !         call terminate("createPETScMat", "Error in MatSetSizes dCdw")
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatSetSizes dCda")
 
-  !       call MatSetType(dCdw,MATMPIAIJ,PETScIerr)
+        call MatSetType(dCda,MATMPIDENSE,PETScIerr)
 
-  !       if( PETScIerr/=0 ) &
-  !         call terminate("createPETScMat", &
-  !                        "Error in MatSetFromOptions dCdw")
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", &
+                         "Error in MatSetType dCda")
 
-  !       ! Set column major order for the matrix dRda.
-  ! #ifdef USE_PETSC_3
-  !       call MatSetOption(dCdw, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+        ! Set column major order for the matrix dRda.
+  #ifdef USE_PETSC_3
+        call MatSetOption(dCda, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
-  !       if( PETScIerr/=0 ) &
-  !         call terminate("createPETScMat", "Error in MatSetOption dcdw")
-  ! #else
-  !       call MatSetOption(dCdw, MAT_COLUMN_ORIENTED, PETScIerr)
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatSetOption dcda")
+  #else
+        call MatSetOption(dCda, MAT_COLUMN_ORIENTED, PETScIerr)
 
-  !       if( PETScIerr/=0 ) &
-  !         call terminate("createPETScMat", "Error in MatSetOption dCdw")
-  ! #endif
-  !       ! Extract info from the global matrix (only processor 0 does it).
+        if( PETScIerr/=0 ) &
+          call terminate("createPETScMat", "Error in MatSetOption dCda")
+  #endif
+        ! Extract info from the global matrix (only processor 0 does it).
 
-  !       if( PETScRank==0 .and. debug ) then
+        if( PETScRank==0 .and. debug ) then
 
-  !         ! Get the global number of rows and columns.
+          ! Get the global number of rows and columns.
 
-  !         call MatGetSize(dCdw, matRows, matCols, PETScIerr)
+          call MatGetSize(dCda, matRows, matCols, PETScIerr)
 
-  !         if( PETScIerr/=0 ) &
-  !           call terminate("createPETScMat", "Error in MatGetSize dCdw")
+          if( PETScIerr/=0 ) &
+            call terminate("createPETScMat", "Error in MatGetSize dCda")
 
-  !         write(*,20) "# MATRIX: dCdw global size =", &
-  !                     matRows, " x ", matCols
+          write(*,20) "# MATRIX: dCda global size =", &
+                      matRows, " x ", matCols
 
-  !         ! Gets the matrix type as a string from the matrix object.
+          ! Gets the matrix type as a string from the matrix object.
 
-  !         call MatGetType(dCdw, matTypeStr, PETScIerr)
+          call MatGetType(dCda, matTypeStr, PETScIerr)
 
-  !         if( PETScIerr/=0 ) &
-  !           call terminate("createPETScMat", "Error in MatGetType dCdw")
+          if( PETScIerr/=0 ) &
+            call terminate("createPETScMat", "Error in MatGetType dCda")
 
-  !         write(*,30) "# MATRIX: dCdw type        =", matTypeStr
+          write(*,30) "# MATRIX: dCda type        =", matTypeStr
 
-  !       endif
+        endif
 
-  !       ! Query about the ownership range.
+        ! Query about the ownership range.
 
-  !       if( debug ) then
-  !         call MatGetOwnershipRange(dCdw, iLow, iHigh, PETScIerr)
+        if( debug ) then
+          call MatGetOwnershipRange(dCda, iLow, iHigh, PETScIerr)
 
-  !         if( PETScIerr/=0 ) &
-  !           call terminate("createPETScMat", &
-  !                          "Error in MatGetOwnershipRange dCdw")
+          if( PETScIerr/=0 ) &
+            call terminate("createPETScMat", &
+                           "Error in MatGetOwnershipRange dCda")
 
-  !         write(*,40) "# MATRIX: dCdw Proc", PETScRank, "; #rows =", &
-  !                     nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
-  !       endif
-
-  ! !     ******************************************************************
-  ! !     dCdx
-
-  !       call MatCreate(SUMB_PETSC_COMM_WORLD, dCdx, PETScIerr)
-
-  !       if( PETScIerr/=0 ) &
-  !         call terminate("createPETScMat", "Error in MatCreate dCdx")
-
-
-  !       call MatSetSizes(dCdx, PETSC_DECIDE,nDimX, &
-  !                        nTimeIntervalsSpectral,PETSC_DETERMINE, PETScIerr)
-  !       !call MatSetSizes(dCdx,PETSC_DETERMINE, nTimeIntervalsSpectral , &
-  !       !                 nDimX, PETSC_DECIDE, PETScIerr)
-
-  !       if( PETScIerr/=0 ) &
-  !         call terminate("createPETScMat", "Error in MatSetSizes dCdx")
-
-
-  !       call MatSetType(dCdx,MATMPIAIJ,PETScIerr)
-
-  !       if( PETScIerr/=0 ) &
-  !         call terminate("createPETScMat", &
-  !                        "Error in MatSetFromOptions dCdw")
-
-
-  !       ! Set column major order for the matrix dRda.
-  ! #ifdef USE_PETSC_3
-  !       call MatSetOption(dCdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
-
-  !       if( PETScIerr/=0 ) &
-  !         call terminate("createPETScMat", "Error in MatSetOption dcdx")
-  ! #else
-  !       call MatSetOption(dCdx, MAT_COLUMN_ORIENTED, PETScIerr)
-
-  !       if( PETScIerr/=0 ) &
-  !         call terminate("createPETScMat", "Error in MatSetOption dCdx")
-  ! #endif
-  !       ! Extract info from the global matrix (only processor 0 does it).
-
-  !       if( PETScRank==0 .and. debug ) then
-
-  !         ! Get the global number of rows and columns.
-
-  !         call MatGetSize(dCdx, matRows, matCols, PETScIerr)
-
-  !         if( PETScIerr/=0 ) &
-  !           call terminate("createPETScMat", "Error in MatGetSize dCdx")
-
-  !         write(*,20) "# MATRIX: dCdx global size =", &
-  !                     matRows, " x ", matCols
-
-  !         ! Gets the matrix type as a string from the matrix object.
-
-  !         call MatGetType(dCdx, matTypeStr, PETScIerr)
-
-  !         if( PETScIerr/=0 ) &
-  !           call terminate("createPETScMat", "Error in MatGetType dCdx")
-
-  !         write(*,30) "# MATRIX: dCdx type        =", matTypeStr
-
-  !       endif
-
-  !       ! Query about the ownership range.
-
-  !       if( debug ) then
-  !         call MatGetOwnershipRange(dCdx, iLow, iHigh, PETScIerr)
-
-  !         if( PETScIerr/=0 ) &
-  !           call terminate("createPETScMat", &
-  !                          "Error in MatGetOwnershipRange dCdx")
-
-  !         write(*,40) "# MATRIX: dCdx Proc", PETScRank, "; #rows =", &
-  !                     nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
-  !       endif
-
-  ! !     ******************************************************************
-  ! !     dCda
-
-  ! !
-  ! !     ******************************************************************
-  ! !     *                                                                *
-  ! !     * Create matrix dCda that is used to compute the partial         *
-  ! !     * derivative of the Extra variabled for the the time spectral    *
-  ! !     * case                                                           *
-  ! !     *                                                                *
-  ! !     * Matrix dRda has size [nTimeIntervals,nDesignExtra] and is      *
-  ! !     * generally dense.                                               *
-  ! !     *                                                                *
-
-  ! !     *                                                                *
-  ! !     ******************************************************************
-  ! !
-
-  !       call MatCreate(SUMB_PETSC_COMM_WORLD, dCda, PETScIerr)
-
-  !       if( PETScIerr/=0 ) &
-  !         call terminate("createPETScMat", "Error in MatCreate dCda")
-
-
-  !       call MatSetSizes(dCda, PETSC_DECIDE,PETSC_DECIDE, &
-  !                        nTimeIntervalsSpectral,nDesignExtra, PETScIerr)
-  !      ! call MatSetSizes(dCda,PETSC_DETERMINE, nTimeIntervalsSpectral, &
-  !      !                  PETSC_DETERMINE, nDesignExtra, PETScIerr)
-
-  !       if( PETScIerr/=0 ) &
-  !         call terminate("createPETScMat", "Error in MatSetSizes dCda")
-
-  !       call MatSetType(dCda,MATMPIDENSE,PETScIerr)
-
-  !       if( PETScIerr/=0 ) &
-  !         call terminate("createPETScMat", &
-  !                        "Error in MatSetType dCda")
-
-  !       ! Set column major order for the matrix dRda.
-  ! #ifdef USE_PETSC_3
-  !       call MatSetOption(dCda, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
-
-  !       if( PETScIerr/=0 ) &
-  !         call terminate("createPETScMat", "Error in MatSetOption dcda")
-  ! #else
-  !       call MatSetOption(dCda, MAT_COLUMN_ORIENTED, PETScIerr)
-
-  !       if( PETScIerr/=0 ) &
-  !         call terminate("createPETScMat", "Error in MatSetOption dCda")
-  ! #endif
-  !       ! Extract info from the global matrix (only processor 0 does it).
-
-  !       if( PETScRank==0 .and. debug ) then
-
-  !         ! Get the global number of rows and columns.
-
-  !         call MatGetSize(dCda, matRows, matCols, PETScIerr)
-
-  !         if( PETScIerr/=0 ) &
-  !           call terminate("createPETScMat", "Error in MatGetSize dCda")
-
-  !         write(*,20) "# MATRIX: dCda global size =", &
-  !                     matRows, " x ", matCols
-
-  !         ! Gets the matrix type as a string from the matrix object.
-
-  !         call MatGetType(dCda, matTypeStr, PETScIerr)
-
-  !         if( PETScIerr/=0 ) &
-  !           call terminate("createPETScMat", "Error in MatGetType dCda")
-
-  !         write(*,30) "# MATRIX: dCda type        =", matTypeStr
-
-  !       endif
-
-  !       ! Query about the ownership range.
-
-  !       if( debug ) then
-  !         call MatGetOwnershipRange(dCda, iLow, iHigh, PETScIerr)
-
-  !         if( PETScIerr/=0 ) &
-  !           call terminate("createPETScMat", &
-  !                          "Error in MatGetOwnershipRange dCda")
-
-  !         write(*,40) "# MATRIX: dCda Proc", PETScRank, "; #rows =", &
-  !              nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
-  !      endif
+          write(*,40) "# MATRIX: dCda Proc", PETScRank, "; #rows =", &
+               nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
+       endif
 
 
   ! Synchronize the processors.

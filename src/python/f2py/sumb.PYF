@@ -55,9 +55,6 @@ python module sumb ! in
           implicit none
         end subroutine updategridvelocitiesalllevels
 
-        subroutine setundisplacednormals
-        end subroutine setundisplacednormals
-
 !Functions in prewarp directory
         subroutine getnblockslocal(nBlocks)
           use blockpointers
@@ -189,43 +186,73 @@ python module sumb ! in
          logical :: reinitialize
          
        end subroutine updatefacesglobal
-       subroutine initializeexternalwarping(ndofcgns)
-         use precision
-         use blockPointers
-         use communication
-         use monitor
-         use cgnsGrid
-         use warpingPetsc
-         integer(kind=inttype) intent(in) :: ndofcgns
-       end subroutine initializeexternalwarping
 
-       subroutine setgrid(cgnsdof,ndofcgns) ! in :test:setGrid.f90                                                                                                     
-         use blockpointers
-         use communication
-         use warpingpetsc
-         use precision
-         real(kind=realtype) dimension(ndofcgns),intent(in) :: cgnsdof
-         integer(kind=inttype) optional,intent(in),check(len(cgnsdof)>=ndofcgns),depend(cgnsdof) :: ndofcgns=len(cgnsdof)
+       subroutine getnumberlocalnodes(ndof)
+         integer(kind=inttype) intent(out) :: ndof
+       end subroutine getnumberlocalnodes
+
+       subroutine getnumberlocalforcenodes(ndof)
+         integer(kind=inttype) intent(out) :: ndof
+       end subroutine getnumberlocalforcenodes
+
+       subroutine getcgnsmeshindices(ndof,indices)
+         integer(kind=inttype) intent(in) :: ndof
+         integer(kind=intype) dimension(ndof),intent(out),depend(ndof) :: indices
+       end subroutine getcgnsmeshindices
+
+       subroutine getcgnsforceindices(ndof,indices)
+         integer(kind=inttype) intent(in) :: ndof
+         integer(kind=intype) dimension(ndof),intent(out),depend(ndof) :: indices
+       end subroutine getcgnforceindices
+
+       subroutine setgrid(grid,ndof) ! in :test:setGrid.f90
+         real(kind=realtype) dimension(ndof),intent(in) :: grid
+         integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
        end subroutine setgrid
 
-       subroutine getforces()
-       end subroutine getforces
+!        subroutine getforces()
+!        end subroutine getforces
        
+       subroutine getforces2(forces,pts,npts) ! in :test:getForces.f90
+         real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: forces
+         real(kind=realtype) dimension(3,npts),intent(in) :: pts
+         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+       end subroutine getforces2
+
+       subroutine verifyforces(pts,npts) ! in :test:getForces.f90
+         real(kind=realtype) dimension(3,npts),intent(in) :: pts
+         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+       end subroutine verifyforces
+
+       subroutine setupcouplingmatrixstruct(pts,npts) ! in :test:getForces.f90
+         real(kind=realtype) dimension(3,npts),intent(in) :: pts
+         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+       end subroutine setupcouplingmatrixstruct
+       
+       subroutine getforcepoints(points,npts)
+         real(kind=realtype),intent(out), dimension(3,npts),depend(npts) :: points
+         integer(kind=inttype) intent(in) :: npts
+       end subroutine getforcepoints
+
+       subroutine getforcesize(npts)
+         integer(kind=inttype) intent(out) :: npts
+       end subroutine getforcesize
+
        subroutine getarea(totalarea)
          real(kind=realtype), intent(out) :: totalarea
        end subroutine getarea
 
-       subroutine getcgnsdata(ndofcgns,data) ! in :test:getForces.f90                                                                                                 
-          use blockpointers
-          use bctypes
-          use communication
-          use mddatalocal                                                                                                                                              
-          use warpingpetsc
-          use cgnsgrid
-          use flowvarrefstate
-          integer(kind=inttype) intent(in) :: ndofcgns
-          real(kind=realtype) dimension(ndofcgns),intent(out),depend(ndofcgns) :: data
-        end subroutine getcgnsdata
+!        subroutine getcgnsdata(ndofcgns,data) ! in :test:getForces.f90                                                                                                 
+!           use blockpointers
+!           use bctypes
+!           use communication
+!           use mddatalocal                                                                                                                                              
+!           use warpingpetsc
+!           use cgnsgrid
+!           use flowvarrefstate
+!           integer(kind=inttype) intent(in) :: ndofcgns
+!           real(kind=realtype) dimension(ndofcgns),intent(out),depend(ndofcgns) :: data
+!         end subroutine getcgnsdata
 
 
        subroutine warpmesh
@@ -1274,33 +1301,33 @@ python module sumb ! in
           use flowvarrefstate 
         end subroutine destroypetscmat
         
-        subroutine setupadjointrhsstruct(lenadjoint,structadjoint) ! in :sumb:setupADjointRHSStruct.f90
-            use adjointpetsc
-            use adjointvars
-            use mdData
-            use communication
-            integer(kind=inttype) optional,intent(in),check(shape(structadjoint,1)==lenadjoint),depend(structadjoint) :: lenadjoint=shape(structadjoint,1)
-            real(kind=realtype) dimension(3,lenadjoint),intent(in) :: structadjoint
-        end subroutine setupadjointrhsstruct
+!         subroutine setupadjointrhsstruct(lenadjoint,structadjoint) ! in :sumb:setupADjointRHSStruct.f90
+!             use adjointpetsc
+!             use adjointvars
+!             use mdData
+!             use communication
+!             integer(kind=inttype) optional,intent(in),check(shape(structadjoint,1)==lenadjoint),depend(structadjoint) :: lenadjoint=shape(structadjoint,1)
+!             real(kind=realtype) dimension(3,lenadjoint),intent(in) :: structadjoint
+!         end subroutine setupadjointrhsstruct
      
-        subroutine setupcouplingmatrixstruct(level) ! in :sumb:setupCouplingMatrixStruct.f90
-            use blockpointers
-            use adjointpetsc
-            use bctypes
-            use monitor
-            use communication
-            use section
-            use inputdiscretization
-            use iteration
-            use mddatalocal
-            use mddata
-            use inputtimespectral
-            use inputphysics
-            use adjointvars
-            use cgnsgrid
-            use flowvarrefstate
-            integer(kind=inttype) intent(in) :: level
-        end subroutine setupcouplingmatrixstruct
+!         subroutine setupcouplingmatrixstruct(level) ! in :sumb:setupCouplingMatrixStruct.f90
+!             use blockpointers
+!             use adjointpetsc
+!             use bctypes
+!             use monitor
+!             use communication
+!             use section
+!             use inputdiscretization
+!             use iteration
+!             use mddatalocal
+!             use mddata
+!             use inputtimespectral
+!             use inputphysics
+!             use adjointvars
+!             use cgnsgrid
+!             use flowvarrefstate
+!             integer(kind=inttype) intent(in) :: level
+!         end subroutine setupcouplingmatrixstruct
 
         subroutine getadjoint(costfunction) ! in :sumb:getADjoint.f90
             use blockpointers
@@ -1309,34 +1336,34 @@ python module sumb ! in
             integer(kind=inttype) intent(in) :: costfunction
         end subroutine getadjoint
 
-        subroutine setupcouplingtotalstruct(level) ! in :sumb:setupCouplingTotalStruct.f90
-            use blockpointers
-            use adjointpetsc
-            use bctypes
-            use monitor
-            use communication
-            use section
-            use inputdiscretization
-            use iteration
-            use mddatalocal
-            use inputtimespectral
-            use inputphysics
-            use adjointvars
-            use mddata
-            use cgnsgrid
-            use flowvarrefstate
-            integer(kind=inttype) intent(in) :: level
-        end subroutine setupcouplingtotalstruct
+!         subroutine setupcouplingtotalstruct(level) ! in :sumb:setupCouplingTotalStruct.f90
+!             use blockpointers
+!             use adjointpetsc
+!             use bctypes
+!             use monitor
+!             use communication
+!             use section
+!             use inputdiscretization
+!             use iteration
+!             use mddatalocal
+!             use inputtimespectral
+!             use inputphysics
+!             use adjointvars
+!             use mddata
+!             use cgnsgrid
+!             use flowvarrefstate
+!             integer(kind=inttype) intent(in) :: level
+!         end subroutine setupcouplingtotalstruct
 
-        subroutine setupadjointtotalstruct(lenadjoint,structadjoint,costfunction) ! in :sumb:setupADjointTotalStruct.f90
-            use communication
-            use adjointpetsc
-            use adjointvars
-            use mddata
-            integer(kind=inttype) optional,intent(in),check(shape(structadjoint,1)==lenadjoint),depend(structadjoint) :: lenadjoint=shape(structadjoint,1)
-            real(kind=realtype) dimension(3,lenadjoint),intent(in) :: structadjoint
-            integer(kind=inttype) intent(in) :: costfunction
-        end subroutine setupadjointtotalstruct
+!         subroutine setupadjointtotalstruct(lenadjoint,structadjoint,costfunction) ! in :sumb:setupADjointTotalStruct.f90
+!             use communication
+!             use adjointpetsc
+!             use adjointvars
+!             use mddata
+!             integer(kind=inttype) optional,intent(in),check(shape(structadjoint,1)==lenadjoint),depend(structadjoint) :: lenadjoint=shape(structadjoint,1)
+!             real(kind=realtype) dimension(3,lenadjoint),intent(in) :: structadjoint
+!             integer(kind=inttype) intent(in) :: costfunction
+!         end subroutine setupadjointtotalstruct
         
         subroutine updateflow
           use inputtimespectral 

@@ -113,7 +113,6 @@
        real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
 
        real(kind=realType), dimension(:,:,:,:), pointer :: sI, sJ, sK
-       real(kind=realType), dimension(:,:,:,:), pointer :: sI0, sJ0, sK0
        real(kind=realType), dimension(:,:,:),   pointer :: vol
        real(kind=realType), dimension(:,:,:,:), pointer :: volOld
 
