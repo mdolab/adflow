@@ -52,7 +52,7 @@ subroutine verifydIdwfile(level)
       ! > derivative output
 
 
-      logical :: contributeToForce, viscousSubface,secondHalo,righthanded
+      logical :: contributeToForce, viscousSubface,secondHalo
 
       integer :: ierr,idxmgb,costFunction
 

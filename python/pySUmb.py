@@ -102,6 +102,7 @@ class SUMB(AeroSolver):
 			'writeSolution':[bool,True],
 			'numberSolutions':[bool,False],
 			'Approx PC': [str,'no'],
+			'restart ADjoint':[str,'no'],
 			'Adjoint solver type': [str,'GMRES'],
 			'adjoint relative tolerance':[float,1e-10],
 			'adjoint absolute tolerance':[float,1e-16],
@@ -400,7 +401,7 @@ class SUMB(AeroSolver):
 			self.interface.augmentADjointRHS(objective,kwargs['structAdjoint'])
 		#endtry
 
-		self.interface.solveADjointPETSc()
+		self.interface.solveADjointPETSc(objective)#,restart=self.getOption('restart ADjoint')
 
 		return
 

@@ -21,7 +21,7 @@ subroutine bcFarfieldAdj(secondHalo,wInfAdj,pInfCorrAdj, wAdj,pAdj,      &
   !      *                                                                *
   !      ******************************************************************
   !
-  use blockPointers, only : BCData,nBocos,BCType,bcfaceid,gamma,il,jl,kl,w,p
+  use blockPointers, only : nBocos,BCType
   use constants         ! irho,ivx,ivy,ivz
   use flowVarRefState   ! gammaInf, wInf, pInfCorr
   use BCTypes

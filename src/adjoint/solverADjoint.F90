@@ -184,10 +184,10 @@
 !!$!        call verifydRdwFileFD(level)
 !     call verifydRdxFile(level)
 !return
-      call verifydRdxsFile
+!      call verifydRdxsFile
 !!$!      call verifydRdxFileFD(level)
 !!$!stop
-return
+!return
 !!$        ! Verify the dRdx routine
 !!$
 !!$! 	call verifydRdx(level,sps)

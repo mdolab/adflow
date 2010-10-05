@@ -1,25 +1,25 @@
 !
 !     ******************************************************************
 !     *                                                                *
-!     * File:          getADjoint.f90                                  *
+!     * File:          setADjoint.f90                                  *
 !     * Author:        C.A.(Sandy) Mader                               *
-!     * Starting date: 08-18-2008                                      *
-!     * Last modified: 10-04-2008                                      *
+!     * Starting date: 10-04-2010                                      *
+!     * Last modified: 10-04-2010                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine getADjoint(nnodes,functionGradLocal)
+subroutine setADjoint(nnodes,functionGradLocal)
       use ADjointPETSc
       use ADjointVars
+
       use blockpointers !globalnode
 
       implicit none
 !
 !     Subroutine arguments.
-!
+! 
       integer(kind=intType),intent(in):: nnodes
-      real(kind=realType),dimension(nNodes),intent(out) :: functionGradLocal
-
+      real(kind=realType),dimension(nNodes),intent(in) :: functionGradLocal
 !
 !     Local variables.
 !
@@ -31,9 +31,10 @@ subroutine getADjoint(nnodes,functionGradLocal)
       character(len=2*maxStringLen) :: errorMessage
 
       integer(kind=intType) :: idxmg, iLow, iHigh, n 		
+  		
 
 #ifndef USE_NO_PETSC		
-    
+     
 !
 !     ******************************************************************
 !     *                                                                *
@@ -45,7 +46,7 @@ subroutine getADjoint(nnodes,functionGradLocal)
       ! Send some feedback to screen.
 
       if( PETScRank==0 ) &
-        write(*,10) "Retrieving ADjoint Vector..."!,nnodes	
+        write(*,10) "Setting ADjoint Vector..."	
 !
 !     ******************************************************************
 !     *                                                                *
@@ -63,10 +64,8 @@ subroutine getADjoint(nnodes,functionGradLocal)
 !      print *,'irange',iLow,iHigh
 
       if( PETScIerr/=0 ) &
-        call terminate("getADjoint", &
+        call terminate("setADjoint", &
                        "Error in VecGetOwnershipRange psi")
-
-	
       ! VecGetValues - Gets values from certain locations of a vector.
       !           Currently can only get values on the same processor.
 
@@ -75,12 +74,11 @@ subroutine getADjoint(nnodes,functionGradLocal)
       do idxmg=iLow, iHigh-1
 
         n = n + 1
-      
-        !print *,'getting value', idxmg,n
-        call VecGetValues(psi, 1, idxmg, &
-                          functionGradLocal(n), PETScIerr)
-	
+       
 
+        call VecSetValue(psi, idxmg, &
+                          functionGradLocal(n),INSERT_VALUES, PETScIerr)
+	
         if( PETScIerr/=0 ) then
           write(errorMessage,99) &
                 "Error in VecGetValues for global node", idxmg
@@ -89,6 +87,18 @@ subroutine getADjoint(nnodes,functionGradLocal)
 
      enddo
 
+
+     !assemble vector
+
+     call VecAssemblyBegin(psi, PETScIerr)
+
+     if( PETScIerr/=0 ) &
+          call terminate("setADjoint", "Error in VecAssemblyBegin") 
+
+     call VecAssemblyEnd(psi,PETScIerr)
+
+      if( PETScIerr/=0 ) &
+        call terminate("setADjoint", "Error in VecAssemblyEnd")
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
@@ -101,5 +111,4 @@ subroutine getADjoint(nnodes,functionGradLocal)
    99 format(a,1x,i6)
 
 #endif
-
-    end subroutine getADjoint
+    end subroutine setADjoint

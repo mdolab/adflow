@@ -108,7 +108,7 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
   REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3), rotpointadj(3)&
        &  , rotpointadjb(3)
 
-  logical :: secondHalo,exchangeTurb,correctfork,finegrid,righthanded
+  logical :: secondHalo,exchangeTurb,correctfork,finegrid
 
   real(kind=realType), dimension(nSections) :: t
 
@@ -753,13 +753,13 @@ subroutine setupGradientRHSExtra(level,costFunction,sps)
 !
       ! VecView - Views a vector object.
 
-      !if( debug ) then
+      if( debug ) then
         !call VecView(dJda,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
 	call VecView(dJda,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
         if( PETScIerr/=0 ) &
           call terminate("setupGradientRHS", "Error in VecView")
         !pause
-      !endif
+     endif
 
       ! Flush the output buffer and synchronize the processors.
 

@@ -7,6 +7,7 @@
 SUBROUTINE GETSURFACENORMALSCOUPLINGADJ_B(pts, ptsb, normadj, normadjb, &
 &  righthanded)
   USE CONSTANTS
+
   IMPLICIT NONE
 ! Subroutine Arguments
   REAL(kind=realtype), INTENT(IN) :: pts(3, 3, 3)

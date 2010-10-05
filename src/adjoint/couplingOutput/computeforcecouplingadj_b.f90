@@ -13,10 +13,12 @@
 !     * Last modified: 09-27-2010                                      *
 !     *                                                                *
 !     ******************************************************************
+
 SUBROUTINE COMPUTEFORCECOUPLINGADJ_B(force, forceb, pts, ptsb, wadj, &
 &  wadjb, fact, ibeg, iend, jbeg, jend, inode, jnode, righthanded)
   USE CONSTANTS
   USE FLOWVARREFSTATE
+
   IMPLICIT NONE
 !nw
 !     Subroutine arguments.

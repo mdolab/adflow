@@ -955,7 +955,9 @@
        !                contexts.
        ! ApproxPC     : Whether or not to use the approximate jacobian 
        !                preconditioner
-       logical :: solveADjoint, setMonitor, ApproxPC,lumpedDiss
+       ! restartADjoint: Whether or not we want to restart the adjoint 
+       !                 from the previous solution
+       logical :: solveADjoint, setMonitor, ApproxPC,lumpedDiss,restartADjoint
 
        ! ADjointSolverType: Type of linear solver for the ADjoint
        ! PreCondType      : Type of Preconditioner to use

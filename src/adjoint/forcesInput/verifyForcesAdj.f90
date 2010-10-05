@@ -85,7 +85,7 @@
 
       real(kind=realType) :: fact!temporary
 
-      logical :: contributeToForce, viscousSubface,secondhalo, righthanded
+      logical :: contributeToForce, viscousSubface,secondhalo
 
       real(kind=realType), dimension(nSections) :: t
 
