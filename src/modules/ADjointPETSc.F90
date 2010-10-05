@@ -241,7 +241,7 @@
 
       !Binary Viewer
       PetscViewer Bin_Viewer
-
+      real(kind=realType) :: info(MAT_INFO_SIZE)
 
 #endif
 
