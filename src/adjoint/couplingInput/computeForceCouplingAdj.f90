@@ -33,7 +33,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      use blockPointers        ! ie,je,ke
+      use blockPointers,only:ie,je,ke,ib,jb,kb        ! ie,je,ke
       use communication        ! procHalo(currentLevel)%nProcSend, myID
       use inputPhysics         ! equations
       use inputTimeSpectral    ! nTimeIntervalsSpectral!nTimeInstancesMax

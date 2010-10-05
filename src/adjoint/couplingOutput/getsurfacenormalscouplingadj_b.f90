@@ -20,7 +20,7 @@ SUBROUTINE GETSURFACENORMALSCOUPLINGADJ_B(xadj, xadjb, siadj, siadjb, &
 &  sjadj, sjadjb, skadj, skadjb, normadj, normadjb, iibeg, iiend, jjbeg&
 &  , jjend, mm, level, nn, sps, righthanded)
   USE bctypes
-  USE blockpointers
+  USE blockpointers,only: ie,je,ke,il,jl,kl,zero,one,half,bcfaceid
   USE communication
   IMPLICIT NONE
   INTEGER(KIND=INTTYPE), INTENT(IN) :: iibeg

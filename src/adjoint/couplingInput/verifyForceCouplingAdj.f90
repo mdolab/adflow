@@ -86,7 +86,7 @@
  
       real(kind=realType) :: fact!temporary
 
-      logical :: contributeToForce, viscousSubface,secondhalo, righthanded
+      logical :: contributeToForce, viscousSubface,secondhalo
 
       integer :: ierr
 

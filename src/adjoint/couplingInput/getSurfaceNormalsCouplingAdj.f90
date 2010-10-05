@@ -22,7 +22,7 @@
 !      ******************************************************************
 !
        use BCTypes
-       use blockpointers ! ie,je,ke,il,jl,kl
+       use blockpointers,only: ie,je,ke,il,jl,kl,zero,one,half,bcfaceid
        use communication
 !       use section
        implicit none
@@ -113,13 +113,13 @@
                    v2(2) = xAdj(i,j,k,2) - xAdj(i,m,n,2)
                    v2(3) = xAdj(i,j,k,3) - xAdj(i,m,n,3)
 
-                   v12(1) = x(i,j,n,1) - x(i,m,k,1)
-                   v12(2) = x(i,j,n,2) - x(i,m,k,2)
-                   v12(3) = x(i,j,n,3) - x(i,m,k,3)
-                   
-                   v22(1) = x(i,j,k,1) - x(i,m,n,1)
-                   v22(2) = x(i,j,k,2) - x(i,m,n,2)
-                   v22(3) = x(i,j,k,3) - x(i,m,n,3)
+!!$                   v12(1) = x(i,j,n,1) - x(i,m,k,1)
+!!$                   v12(2) = x(i,j,n,2) - x(i,m,k,2)
+!!$                   v12(3) = x(i,j,n,3) - x(i,m,k,3)
+!!$                   
+!!$                   v22(1) = x(i,j,k,1) - x(i,m,n,1)
+!!$                   v22(2) = x(i,j,k,2) - x(i,m,n,2)
+!!$                   v22(3) = x(i,j,k,3) - x(i,m,n,3)
 
                    
                    ! The face normal, which is the cross product of the two
