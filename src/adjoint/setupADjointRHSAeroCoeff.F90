@@ -86,7 +86,7 @@
            &  ), rotrateadjb(3)
       REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3), rotpointadj(3)&
            &  , rotpointadjb(3)
-      logical :: contributeToForce, viscousSubface,secondHalo,righthanded
+      logical :: contributeToForce, viscousSubface,secondHalo
       
       real(kind=realType), dimension(nSections) :: t
       ! dJ/dw row block

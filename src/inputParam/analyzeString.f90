@@ -1354,6 +1354,8 @@
            setMonitor = checkYesNo(value, keyword)
         case ("use approximate preconditioner")
            ApproxPC = checkYesNo(value, keyword)
+        case ("restart adjoint")
+           restartADjoint = checkYesNo(value, keyword)
         case("matrix ordering")
            ! Convert value to lower case and check the options.
            

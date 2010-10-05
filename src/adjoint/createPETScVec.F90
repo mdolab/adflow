@@ -158,6 +158,14 @@
       if( PETScIerr/=0 ) &
         call terminate("createPETScVec", &
                        "Error in VecDuplicate dJdW->psi")
+      !now zero the psi vector
+      
+      call VecSet(psi,PETScZero,PETScIerr)
+         
+         if( PETScIerr/=0 ) &
+              call terminate("creatPETScVec", "Error in VecSet:psi")
+
+      !continue with the rest of the vec create operations
 
       call VecDuplicate(dJdW, pvr, PETScIerr)
 

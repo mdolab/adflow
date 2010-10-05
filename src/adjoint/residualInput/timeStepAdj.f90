@@ -212,15 +212,11 @@
                enddo
                !print *,'made it here'
              case (Turkel)
-               call terminate("timeStep", &
-                              "Turkel preconditioner not &
-                              &implemented yet")
+               call terminate("timeStep","Turkel preconditioner not implemented yet")
 
 
              case (ChoiMerkle)
-               call terminate("timeStep", &
-                              "choi merkle preconditioner not &
-                              &implemented yet")
+               call terminate("timeStep", "choi merkle preconditioner not implemented yet")
            end select
 !
 !          **************************************************************

@@ -105,7 +105,7 @@
       real(kind=realType), dimension(3) :: refPoint
       real(kind=realType) :: yplusMax
 
-      logical :: contributeToForce, viscousSubface,righthanded,secondHalo
+      logical :: contributeToForce, viscousSubface,secondHalo
       logical :: finegrid,exchangeturb
 
       real(kind=realType), dimension(nSections) :: t

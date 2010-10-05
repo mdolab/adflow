@@ -225,8 +225,7 @@
 
            testUseOldCoor: if( useOldCoor ) then
               
-              print *,'arbitrary mesh movement not yet supported in the ADjoint'
-              call terminate()
+              call terminate('gridVelocityFineLevel','arbitrary mesh movement not yet supported in the ADjoint')
 !!$!
 !!$!            ************************************************************
 !!$!            *                                                          *
