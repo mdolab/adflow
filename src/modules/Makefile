@@ -67,7 +67,9 @@ FF90_OBJECTS_4 = BCTypes.o\
 		 iteration.o\
 		 monitor.o\
 		 paramTurb.o\
-		 section.o
+		 section.o\
+	         mdData.o\
+	         mdDataLocal.o\
 
 #      ******************************************************************
 #      *                                                                *

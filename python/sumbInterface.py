@@ -520,28 +520,19 @@ class SUmbMesh(object):
 
         return
 
-    def setGrid(self,externaldof):
-
-        self.sumb.setgrid(externaldof)
-        self.sumb.setgrid(externaldof)
+    def setGrid(self,grid):
+        self.sumb.setgrid(grid)
         self._update_geom_info = True
+    
         return
     
-    def getForces(self,cgnsdof):
-        self.sumb.getforces()
-        if cgnsdof > 0:
-            return self.sumb.getcgnsdata(cgnsdof)
-        else:
-            return numpy.empty([0],dtype='d')
-        # end if
-
-    def getAreas(self,cgnsdof):
-        self.sumb.getareas()
-        if cgnsdof > 0:
-            return self.sumb.getcgnsdata(cgnsdof)
-        else:
-            return numpy.empty([0],dtype='d')
-        # end if
+#     def getAreas(self,cgnsdof):
+#         self.sumb.getareas()
+#         if cgnsdof > 0:
+#             return self.sumb.getcgnsdata(cgnsdof)
+#         else:
+#             return numpy.empty([0],dtype='d')
+#         # end if
 
     def getCoupling(self,cgnsdof):
         self.sumb.getdrdxvpsi()
@@ -775,7 +766,7 @@ class SUmbInterface(object):
         self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zref\
                                              *self.Mesh.metricConversion
 
-        if (self.myid==0):print '-> RefPoint...',self.sumb.inputphysics.pointref
+        #if (self.myid==0):print '-> RefPoint...',self.sumb.inputphysics.pointref
         #update the flow vars
         self.sumb.updatereferencepoint()
         return
@@ -791,7 +782,7 @@ class SUmbInterface(object):
         q = aero_problem._flows.qhat*V/aero_problem._refs.cref
         r = aero_problem._flows.rhat*V/aero_problem._refs.bref
         #update the flow vars
-        if (self.myid==0):print 'q...',q,aero_problem._flows.qhat
+        #if (self.myid==0):print 'q...',q,aero_problem._flows.qhat
         self.sumb.updaterotationrate(p,r,q)
         return
 
@@ -1714,6 +1705,31 @@ class SUmbInterface(object):
         self.sumb.monitor.writesurface=True
         self.sumb.writesol()
 
+    def getForces(self,cfd_force_pts=None):
+        ''' Return the forces on this processor. Use
+        cfd_force_pts to compute the forces if given
+        
+        '''
+        if cfd_force_pts==None:
+            pts = self.sumb.getForcePoints()
+        # end if
+        if len(cfd_force_pts) > 0:
+            return self.sumb.getforces2(cfd_force_pts.T).T
+        else:
+            return numpy.empty([0],dtype='d')
+        # end if
+
+    def getForcePoints(self):
+        npts = self.sumb.getforcesize()
+        if npts > 0:
+            return self.sumb.getforcepoints(npts).T
+        else:
+            return numpy.empty([0],dtype='d')
+        # end if
+
+
+
+
  #    def GetSurfaceLoads(self, family=None, sps=1):
 #         """Return an array of the surface forces.
          
@@ -1934,6 +1950,8 @@ class SUmbInterface(object):
         #self.sumb.setupadjointmatrix(self.level)
         #self.sumb.setupadjointmatrixtranspose(self.level)
         self.sumb.setupallresidualmatrices(self.level)
+        forcePoints = self.getForcePoints()
+        self.sumb.setupcouplingmatrixstruct(forcePoints.T)
         self.sumb.setuppetscksp(self.level)
 
         return

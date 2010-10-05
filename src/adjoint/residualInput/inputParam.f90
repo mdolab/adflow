@@ -661,7 +661,7 @@
 
        real(kind=realType) :: Mach, MachCoef,MachGrid
        real(kind=realType) :: Reynolds, ReynoldsLength
-       real(kind=realType) :: tempFreestream, gammaConstant, RGasDim
+       real(kind=realType) :: tempFreestream, RGasDim, gammaconstant
        real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset
        real(kind=realType) :: eddyVisInfRatio, turbIntensityInf
        real(kind=realType) :: surfaceRef, lengthRef
