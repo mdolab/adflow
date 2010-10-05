@@ -159,9 +159,6 @@
        si     => flowDoms(nn,mm,ll)%si
        sj     => flowDoms(nn,mm,ll)%sj
        sk     => flowDoms(nn,mm,ll)%sk
-       si0    => flowDoms(nn,mm,ll)%si0
-       sj0    => flowDoms(nn,mm,ll)%sj0
-       sk0    => flowDoms(nn,mm,ll)%sk0
 
        vol    => flowDoms(nn,mm,ll)%vol
        volOld => flowDoms(nn,1,ll)%volOld

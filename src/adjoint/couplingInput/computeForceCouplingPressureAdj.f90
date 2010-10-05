@@ -17,16 +17,14 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
        use flowVarRefState
        use inputPhysics
        implicit none
 !
 !      Subroutine arguments
 !
-       real(kind=realType), dimension(0:ib,0:jb,0:kb,nw), &
-                                                      intent(in) :: wAdj
-       real(kind=realType), dimension(0:ib,0:jb,0:kb) :: pAdj
+       real(kind=realType), dimension(2,2,2,nw), intent(in) :: wAdj
+       real(kind=realType), dimension(2,2,2) :: pAdj
 !
 !      Local variables
 !
@@ -51,9 +49,9 @@
 
          factK = five*third - gammaConstant
 
-         do k=0,kb
-           do j=0,jb
-             do i=0,ib
+         do k=1,2
+           do j=1,2
+             do i=1,2
                v2 = wAdj(i,j,k,ivx)**2 + wAdj(i,j,k,ivy)**2 &
                   + wAdj(i,j,k,ivz)**2
 
@@ -69,9 +67,10 @@
          ! No separate equation for the turbulent kinetic enery.
          ! Use the standard formula.
 
-         do k=0,kb
-           do j=0,jb
-             do i=0,ib
+          do k=1,2
+             do j=1,2
+                do i=1,2
+
                v2 = wAdj(i,j,k,ivx)**2 + wAdj(i,j,k,ivy)**2 &
                   + wAdj(i,j,k,ivz)**2
                

@@ -78,10 +78,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       setupADjointRHS.o        \
 	       setupADjointRHSAeroCoeff.o\
 	       setupADjointRHSStability.o\
-	       setupADjointRHSStruct.o  \
 	       setupAllResidualMatrices.o\
-	       setupCouplingMatrixStruct.o\
-	       setupCouplingTotalStruct.o\
                setupPETScKsp.o         \
 	       solveADjointPETSc.o      \
                solveADjointTransposePETSc.o\
@@ -115,6 +112,10 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       writeCGNSMesh.o\
                writeCGNSData.o\
 	       getdRdXvPsi.o\
+	       setupCouplingMatrixStruct.o\
+#	       setupCouplingTotalStruct.o\
+#	       setupADjointRHSStruct.o  \
+
 #FF90_OBJECTS = allocMemADjoint.o\
 #	       assertionsADjoint.o\
 #	       computeADjointGradientExtra.o\

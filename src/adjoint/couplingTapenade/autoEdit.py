@@ -18,31 +18,20 @@ import string
 
 # Specify file extension
 
-EXT = '.f90'
+EXT = '_b.f90' 
 
 # Specify directory containing the original source files
 # and the output directory for edited files
-
-#DIR_ORI = '/home/guysmiley/acmarta/SVN/SUmbVertex/src/adjoint/residualTapenade'
-#DIR_MOD = '/home/guysmiley/acmarta/SVN/SUmbVertex/src/adjoint/residualOutput'
-#DIR_ORI = '/nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src/adjoint/residualTapenade'
-#DIR_MOD = '/nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src/adjoint/residualOutput'
-#DIR_ORI = '/nfs/basalt/home/mdo/mader/svn/SUmbVertex/trunk/src/adjoint/residualTapenade'
-#DIR_MOD = '/nfs/basalt/home/mdo/mader/svn/SUmbVertex/trunk/src/adjoint/residualOutput'
-#DIR_ORI = '/home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src/adjoint/couplingTapenade'
-#DIR_MOD = '/home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src/adjoint/couplingOutput'
-DIR_ORI = '/nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src/adjoint/couplingTapenade'
-DIR_MOD = '/nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src/adjoint/couplingOutput'
+DIR_ORI = os.getcwd()
+DIR_MOD = DIR_ORI + '/../couplingOutput'
 # Specify line identifier
 
-FILE_EXCL = 'MODULE'
+# Specifiy the list of LINE ID's to find, what to replace and with what
 
-LINE_ID = '  USE '
+LINE_ID = ['  USE','  CALL ']
+STR_OLD = ['_B'    ,'_CB'    ]
+STR_NEW = [''      ,''       ]
 
-# Specify the string to be find and its replacement
-
-STR_OLD = '_b'
-STR_NEW = ''
 
 # Some feedback
 
@@ -73,10 +62,6 @@ for f in os.listdir(DIR_ORI):
         # at the first byte for future reading
         all_src = file_object_ori.read()
         file_object_ori.seek(0)
-        # check whether this is a fortran module file to discard
-        if string.find(all_src, FILE_EXCL) > -1 :
-            print " Module found -> discarded ! "
-            continue
 
         # go to modified directory
         os.chdir(DIR_MOD)
@@ -84,15 +69,16 @@ for f in os.listdir(DIR_ORI):
         file_object_mod = open(f,'w')
 
         # read the original file, line-by-line
+        nEdits = len(LINE_ID)
         for line in file_object_ori:
 
             # parse original line for relevante identifier
             # and replace the string
+            line_mod = line
+            for i in xrange(nEdits):
+                if line[0:len(LINE_ID[i])] == LINE_ID[i]:
+                    line_mod = string.replace(line_mod, STR_OLD[i], STR_NEW[i])
 
-            if line[0:len(LINE_ID)] == LINE_ID:
-                line_mod = string.replace(line, STR_OLD, STR_NEW)
-            else:
-                line_mod = line
 
             # write the modified line to new file
             file_object_mod.write(line_mod)
@@ -102,3 +88,7 @@ for f in os.listdir(DIR_ORI):
         file_object_mod.close()
         # success message
         print " Modified file saved", file_object_mod.name
+
+
+
+

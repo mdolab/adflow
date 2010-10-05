@@ -120,14 +120,14 @@ module warpingPETSc
   Mat     dXvdXsDV,dXvdXsDisp ,dXvdXsFD,dXvdXsPara,dRdXsDV,dRdXSDisp
       
   ! External Warping Interface 
-  IS ISsumb
-  IS IScgns
+  !IS ISsumb
+  !IS IScgns
       
-  Vec cgnsGridVec
-  Vec sumbGridVec
+  !Vec cgnsGridVec
+  !Vec sumbGridVec
       
-  VecScatter cgnsTOsumbGrid
-  VecScatter sumbTOcgnsForce
+  !VecScatter cgnsTOsumbGrid
+  !VecScatter sumbTOcgnsForce
 
   integer(kind=intType) ,allocatable,dimension(:) :: cumdofproc
   integer(kind=intType) ,allocatable,dimension(:) :: cumdofblock
