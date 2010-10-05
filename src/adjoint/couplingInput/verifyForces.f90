@@ -42,7 +42,7 @@ subroutine verifyForces(pts,npts)
                                                     ! version
      call applyAllBC(.True.)
   end do
-  call getForces2(forces0,pts,npts)
+  call getForces(forces0,pts,npts)
 
   ! Now compute the forces using the computeForceCouplingAdj routine
 
@@ -172,7 +172,7 @@ subroutine verifyForces(pts,npts)
   do ipt = 1,npts   ! ----> Loop over Columns
      do idim = 1,3  ! 
         pts(idim,ipt) = pts(idim,ipt) + h
-        call getForces2(forces,pts,npts)
+        call getForces(forces,pts,npts)
         deriv = (forces-forces0)/h
         
         ! Now check this deriv with the local COLUMN from dSdx
@@ -230,7 +230,7 @@ subroutine verifyForces(pts,npts)
                  call applyAllBC(.True.)
                  call setPointersAdj(nn,1_intType,1_intType) 
 
-                 call getForces2(forces,pts,npts)
+                 call getForces(forces,pts,npts)
                  call setPointersAdj(nn,1_intType,1_intType) 
                                                              
                  deriv = 0.0
