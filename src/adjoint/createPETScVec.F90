@@ -371,8 +371,8 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      call VecCreate(SUMB_PETSC_COMM_WORLD, phic, PETScIerr)
-      call VecSetSizes(phic, nDimS, PETSC_DECIDE, PETScIerr)
+!       call VecCreate(SUMB_PETSC_COMM_WORLD, phic, PETScIerr)
+!       call VecSetSizes(phic, nDimS, PETSC_DECIDE, PETScIerr)
 
 !
 !     ******************************************************************
@@ -381,16 +381,16 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      if( debug ) then
-        call VecGetOwnershipRange(phic, iLow, iHigh, PETScIerr)
+!       if( debug ) then
+!         call VecGetOwnershipRange(phic, iLow, iHigh, PETScIerr)
 
-        if( PETScIerr/=0 ) &
-          call terminate("createPETScVec", &
-                         "Error in VecGetOwnershipRange phic")
+!         if( PETScIerr/=0 ) &
+!           call terminate("createPETScVec", &
+!                          "Error in VecGetOwnershipRange phic")
 
-        write(*,40) "# VECTOR: phic Proc", PETScRank, "; #rows =", &
-                    nDimS, "; ownership =", iLow, "to", iHigh-1
-      endif
+!         write(*,40) "# VECTOR: phic Proc", PETScRank, "; #rows =", &
+!                     nDimS, "; ownership =", iLow, "to", iHigh-1
+!       endif
 !
 !     ******************************************************************
 !     dJdc

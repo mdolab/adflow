@@ -226,6 +226,11 @@ python module sumb ! in
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
        end subroutine setupcouplingmatrixstruct
        
+       subroutine agumentrhs(ndof,phi) ! in :test:agumentRHS.f90
+         integer(kind=inttype) optional,intent(in),check(len(phi)>=ndof),depend(phi) :: ndof=len(phi)
+         real(kind=realtype) dimension(ndof),intent(in) :: phi
+        end subroutine agumentrhs
+
        subroutine getforcepoints(points,npts)
          real(kind=realtype),intent(out), dimension(3,npts),depend(npts) :: points
          integer(kind=inttype) intent(in) :: npts

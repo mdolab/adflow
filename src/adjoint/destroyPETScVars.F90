@@ -93,11 +93,11 @@
         call terminate("destroyPETScVars", &
                        "Could not destroy vector dIdxsDV")
 
-      call VecDestroy(phic, PETScIerr)
+      !call VecDestroy(phic, PETScIerr)
 
-      if( PETScIerr/=0 ) &
-        call terminate("destroyPETScVars", &
-                       "Could not destroy vector phic")
+!       if( PETScIerr/=0 ) &
+!         call terminate("destroyPETScVars", &
+!                        "Could not destroy vector phic")
 
       call VecDestroy(dJdc, PETScIerr)
 
