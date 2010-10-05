@@ -47,9 +47,9 @@
        jSBeg = jCell - 2; jSEnd = jCell + 2
        kSBeg = kCell - 2; kSEnd = kCell + 2
 
-       iOffset = zero
-       jOffset = zero
-       kOffset = zero
+       iOffset = 0!zero
+       jOffset = 0!zero
+       kOffset = 0!zero
 
        ! Determine the range of halo cells which this boundary subface
        ! will change.

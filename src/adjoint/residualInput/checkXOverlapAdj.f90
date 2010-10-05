@@ -46,9 +46,9 @@
        jSBeg = jCell - 3; jSEnd = jCell + 2
        kSBeg = kCell - 3; kSEnd = kCell + 2
 
-       iminOffset = zero;imaxOffset = zero
-       jminOffset = zero;jmaxOffset = zero
-       kminOffset = zero;kmaxOffset = zero
+       iminOffset = 0;imaxOffset = 0
+       jminOffset = 0;jmaxOffset = 0
+       kminOffset = 0;kmaxOffset = 0
        
 
        iBBeg = 0; iBEnd = ie

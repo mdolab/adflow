@@ -794,7 +794,52 @@ python module sumb ! in
             real(kind=realtype) dimension(3) :: dragdirection
             real(kind=realtype) dimension(3) :: pointref
         end module inputphysics
-
+        module inputadjoint ! in :sumb:../modules/inputParam.f90
+            use precision
+            integer(kind=inttype) :: pcside
+            integer(kind=inttype) :: matrixordering
+            integer(kind=inttype) parameter,optional :: rowabs=4
+            integer(kind=inttype) parameter,optional :: right=2
+            integer(kind=inttype) :: filllevel
+            real(kind=realtype) :: adjabstol
+            real(kind=realtype) :: adjdivtol
+            integer(kind=inttype) parameter,optional :: petsccg=3
+            integer(kind=inttype) parameter,optional :: left=1
+            integer(kind=inttype) parameter,optional :: additiveschwartz=3
+            integer(kind=inttype) :: adjmaxiter
+            logical :: approxpc
+            integer(kind=inttype) parameter,optional :: cholesky=4
+            integer(kind=inttype) parameter,optional :: icc=2
+            integer(kind=inttype) parameter,optional :: rowsum=3
+            integer(kind=inttype) parameter,optional :: nesteddissection=3
+            integer(kind=inttype) :: overlap
+            integer(kind=inttype) parameter,optional :: lu=3
+            integer(kind=inttype) parameter,optional :: onewaydissection=4
+            integer(kind=inttype) parameter,optional :: jacobi=2
+            integer(kind=inttype) parameter,optional :: petscbicgstab=1
+            integer(kind=inttype) parameter,optional :: quotientminimumdegree=5
+            integer(kind=inttype) :: adjointsolvertype
+            integer(kind=inttype) parameter,optional :: normal=1
+            integer(kind=inttype) :: adjmonstep
+            integer(kind=inttype) parameter,optional :: petscfgmres=4
+            integer(kind=inttype) parameter,optional :: petscgmres=2
+            logical :: restartadjoint
+            real(kind=realtype) :: adjreltol
+            integer(kind=inttype) parameter,optional :: blockjacobi=1
+            integer(kind=inttype) parameter,optional :: natural=1
+            integer(kind=inttype) :: adjrestart
+            logical :: lumpeddiss
+            integer(kind=inttype) :: localpctype
+            logical :: solveadjoint
+            integer(kind=inttype) parameter,optional :: rowmax=2
+            integer(kind=inttype) :: precondtype
+            logical :: setmonitor
+            integer(kind=inttype) parameter,optional :: ilu=1
+            integer(kind=inttype) parameter,optional :: reversecuthillmckee=2
+            real(kind=realtype) :: sigma
+            integer(kind=inttype) :: scaletype
+        end module inputadjoint
+        
         module inputtimespectral ! in :sumb:../../modules/inputParam.f90
             use precision
             integer(kind=inttype) :: ntimeintervalsspectral
@@ -1333,12 +1378,22 @@ python module sumb ! in
 !             integer(kind=inttype) intent(in) :: level
 !         end subroutine setupcouplingmatrixstruct
 
-        subroutine getadjoint(costfunction) ! in :sumb:getADjoint.f90
+        subroutine getadjoint(nnodes,functiongradlocal) ! in :test:getADjoint.F90
             use blockpointers
             use adjointpetsc
             use adjointvars
-            integer(kind=inttype) intent(in) :: costfunction
+            integer(kind=inttype) intent(in) :: nnodes
+            real(kind=realtype) dimension(nnodes),intent(out),depend(nnodes) :: functiongradlocal
         end subroutine getadjoint
+ 
+        subroutine setadjoint(nnodes,functiongradlocal) ! in :test:setADjoint.F90
+            use blockpointers
+            use adjointpetsc
+            use adjointvars
+            integer(kind=inttype) optional,intent(in),check(len(functiongradlocal)>=nnodes),depend(functiongradlocal) :: nnodes=len(functiongradlocal)
+            real(kind=realtype) dimension(nnodes),intent(in) :: functiongradlocal
+        end subroutine setadjoint
+      
 
 !         subroutine setupcouplingtotalstruct(level) ! in :sumb:setupCouplingTotalStruct.f90
 !             use blockpointers

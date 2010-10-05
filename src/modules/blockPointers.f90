@@ -58,6 +58,8 @@
        integer(kind=intType) :: nx, ny, nz, il, jl, kl
        integer(kind=intType) :: ie, je, ke, ib, jb, kb
 
+       logical :: rightHanded
+
        integer(kind=intType) :: iBegOr, iEndOr, jBegOr, jEndOr
        integer(kind=intType) :: kBegOr, kEndOr
 

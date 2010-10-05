@@ -32,7 +32,7 @@ subroutine verifyForces(pts,npts)
   real(kind=realType)   :: fact,diff,tol,norm,h,vec_value,rel_err
   real(kind=realType)   :: max_rel_err,max_err,ad_val,fd_val
   integer(kind=intType) :: i_err,j_err,k_err,l_err,err_count
-  logical :: rightHanded
+  !logical :: rightHanded
   
   ! Get the reference set of forces 
 

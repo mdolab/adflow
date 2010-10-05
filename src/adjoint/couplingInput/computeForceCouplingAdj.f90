@@ -7,11 +7,13 @@
 !     * Last modified: 09-27-2010                                      *
 !     *                                                                *
 !     ******************************************************************
+
 subroutine computeForceCouplingAdj(force,pts,wAdj,fact,&
      iBeg,iEnd,jBeg,jEnd,iNode,jNode,righthanded)
   
   use constants
   use flowvarrefstate      !nw
+
 
   implicit none
 
