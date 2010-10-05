@@ -928,17 +928,17 @@ subroutine createPETScMat
                          "Error in MatSetFromOptions dCdw")
 
         ! Set column major order for the matrix dRda.
-  #ifdef USE_PETSC_3
+#ifdef USE_PETSC_3
         call MatSetOption(dCdw, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
         if( PETScIerr/=0 ) &
           call terminate("createPETScMat", "Error in MatSetOption dcdw")
-  #else
+#else
         call MatSetOption(dCdw, MAT_COLUMN_ORIENTED, PETScIerr)
 
         if( PETScIerr/=0 ) &
           call terminate("createPETScMat", "Error in MatSetOption dCdw")
-  #endif
+#endif
         ! Extract info from the global matrix (only processor 0 does it).
 
         if( PETScRank==0 .and. debug ) then
@@ -1003,17 +1003,17 @@ subroutine createPETScMat
 
 
         ! Set column major order for the matrix dRda.
-  #ifdef USE_PETSC_3
+#ifdef USE_PETSC_3
         call MatSetOption(dCdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
         if( PETScIerr/=0 ) &
           call terminate("createPETScMat", "Error in MatSetOption dcdx")
-  #else
+#else
         call MatSetOption(dCdx, MAT_COLUMN_ORIENTED, PETScIerr)
 
         if( PETScIerr/=0 ) &
           call terminate("createPETScMat", "Error in MatSetOption dCdx")
-  #endif
+#endif
         ! Extract info from the global matrix (only processor 0 does it).
 
         if( PETScRank==0 .and. debug ) then
@@ -1091,17 +1091,17 @@ subroutine createPETScMat
                          "Error in MatSetType dCda")
 
         ! Set column major order for the matrix dRda.
-  #ifdef USE_PETSC_3
+#ifdef USE_PETSC_3
         call MatSetOption(dCda, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
         if( PETScIerr/=0 ) &
           call terminate("createPETScMat", "Error in MatSetOption dcda")
-  #else
+#else
         call MatSetOption(dCda, MAT_COLUMN_ORIENTED, PETScIerr)
 
         if( PETScIerr/=0 ) &
           call terminate("createPETScMat", "Error in MatSetOption dCda")
-  #endif
+#endif
         ! Extract info from the global matrix (only processor 0 does it).
 
         if( PETScRank==0 .and. debug ) then
