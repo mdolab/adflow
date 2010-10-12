@@ -289,6 +289,22 @@
    alpha = alphaadj
    beta = betaadj
    !Rotate the rotation rate from the wind axis back to the local body axis
+   IF (liftindex .EQ. 2) THEN
+   ! different coordinate system for aerosurf
+   ! Wing is in z- direction
+   rotratetrans(1, 1) = COS(alpha)*COS(beta)
+   rotratetrans(1, 2) = -SIN(alpha)
+   rotratetrans(1, 3) = -(COS(alpha)*SIN(beta))
+   rotratetrans(2, 1) = SIN(alpha)*COS(beta)
+   rotratetrans(2, 2) = COS(alpha)
+   rotratetrans(2, 3) = -(SIN(alpha)*SIN(beta))
+   rotratetrans(3, 1) = SIN(beta)
+   rotratetrans(3, 2) = 0.0
+   rotratetrans(3, 3) = COS(beta)
+   CALL PUSHINTEGER4(0)
+   ELSE IF (liftindex .EQ. 3) THEN
+   ! Wing is in y- direction
+   !Rotate the rotation rate from the winsd axis back to the local body axis
    rotratetrans(1, 1) = COS(alpha)*COS(beta)
    rotratetrans(1, 2) = -(COS(alpha)*SIN(beta))
    rotratetrans(1, 3) = -SIN(alpha)
@@ -298,6 +314,19 @@
    rotratetrans(3, 1) = SIN(alpha)*COS(beta)
    rotratetrans(3, 2) = -(SIN(alpha)*SIN(beta))
    rotratetrans(3, 3) = COS(alpha)
+   CALL PUSHINTEGER4(1)
+   ELSE
+   CALL PUSHINTEGER4(2)
+   END IF
+   !!$                rotRateTrans(1,1)=cos(alpha)*cos(beta)
+   !!$                 rotRateTrans(1,2)=-cos(alpha)*sin(beta)
+   !!$                 rotRateTrans(1,3)=-sin(alpha)
+   !!$                 rotRateTrans(2,1)=sin(beta)
+   !!$                 rotRateTrans(2,2)=cos(beta)
+   !!$                 rotRateTrans(2,3)=0.0
+   !!$                 rotRateTrans(3,1)=sin(alpha)*cos(beta)
+   !!$                 rotRateTrans(3,2)=-sin(alpha)*sin(beta)
+   !!$                 rotRateTrans(3,3)=cos(alpha)
    rotratetemp = rotrateadj
    rotrateadj = 0.0
    DO i=1,3
@@ -866,6 +895,30 @@
    END DO
    rotrateadjb(1:3) = 0.0
    rotrateadjb = rotratetempb
+   CALL POPINTEGER4(branch)
+   IF (branch .LT. 2) THEN
+   IF (branch .LT. 1) THEN
+   betab = -(SIN(beta)*rotratetransb(3, 3))
+   rotratetransb(3, 3) = 0.0
+   rotratetransb(3, 2) = 0.0
+   betab = betab + COS(beta)*rotratetransb(3, 1)
+   rotratetransb(3, 1) = 0.0
+   alphab = -(SIN(beta)*COS(alpha)*rotratetransb(2, 3))
+   betab = betab - SIN(alpha)*COS(beta)*rotratetransb(2, 3)
+   rotratetransb(2, 3) = 0.0
+   alphab = alphab - SIN(alpha)*rotratetransb(2, 2)
+   rotratetransb(2, 2) = 0.0
+   alphab = alphab + COS(beta)*COS(alpha)*rotratetransb(2, 1)
+   betab = betab - SIN(alpha)*SIN(beta)*rotratetransb(2, 1)
+   rotratetransb(2, 1) = 0.0
+   alphab = alphab + SIN(beta)*SIN(alpha)*rotratetransb(1, 3)
+   betab = betab - COS(alpha)*COS(beta)*rotratetransb(1, 3)
+   rotratetransb(1, 3) = 0.0
+   alphab = alphab - COS(alpha)*rotratetransb(1, 2)
+   rotratetransb(1, 2) = 0.0
+   alphab = alphab - COS(beta)*SIN(alpha)*rotratetransb(1, 1)
+   betab = betab - COS(alpha)*SIN(beta)*rotratetransb(1, 1)
+   ELSE
    alphab = -(SIN(alpha)*rotratetransb(3, 3))
    rotratetransb(3, 3) = 0.0
    alphab = alphab - SIN(beta)*COS(alpha)*rotratetransb(3, 2)
@@ -886,6 +939,11 @@
    rotratetransb(1, 2) = 0.0
    alphab = alphab - COS(beta)*SIN(alpha)*rotratetransb(1, 1)
    betab = betab - COS(alpha)*SIN(beta)*rotratetransb(1, 1)
+   END IF
+   ELSE
+   alphab = 0.0
+   betab = 0.0
+   END IF
    betaadjb = betaadjb + betab
    alphaadjb = alphaadjb + alphab
    END IF
