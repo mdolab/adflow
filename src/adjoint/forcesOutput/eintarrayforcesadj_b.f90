@@ -157,5 +157,5 @@
    eintb(i) = 0.0
    END DO
    END SELECT
-   !gammaconstantb = 0.0
+  ! gammaconstantb = 0.0
    END SUBROUTINE EINTARRAYFORCESADJ_B

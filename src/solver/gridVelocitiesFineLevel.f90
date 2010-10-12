@@ -434,8 +434,8 @@
                 call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
 
                 if (liftIndex == 2) then
-! different coordinate system for aerosurf
-         ! Wing is in z- direction
+                   ! different coordinate system for aerosurf
+                   ! Wing is in z- direction
                    rotRateTrans(1,1)=cos(alpha)*cos(beta)
                    rotRateTrans(1,2)=-sin(alpha)
                    rotRateTrans(1,3)=-cos(alpha)*sin(beta)
