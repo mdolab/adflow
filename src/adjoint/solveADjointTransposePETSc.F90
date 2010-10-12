@@ -87,10 +87,17 @@
       ! see .../petsc/docs/manualpages/Vec/VecSet.html
       ! or PETSc users manual, pp.36
 
-      call VecSet(psi,PETScZero,PETScIerr)
+      if (restartADjoint) then
+         !THe user wants to restart the adjoint from the last point. Set
+         !initial guess non-zero to tru instead of zeroing the matrix
+         call KSPSetInitialGuessNonzero(ksp,PETSC_TRUE,PETScIerr)
 
-      if( PETScIerr/=0 ) &
-        call terminate("solveADjointPETSc", "Error in VecSet")
+      else
+         call VecSet(psi,PETScZero,PETScIerr)
+         
+         if( PETScIerr/=0 ) &
+              call terminate("solveADjointPETSc", "Error in VecSet")
+      end if
 !
 !     ******************************************************************
 !     *                                                                *

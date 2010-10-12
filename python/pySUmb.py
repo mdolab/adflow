@@ -102,6 +102,7 @@ class SUMB(AeroSolver):
 			'writeSolution':[bool,True],
 			'numberSolutions':[bool,False],
 			'Approx PC': [str,'no'],
+			'restart ADjoint':[str,'no'],
 			'Adjoint solver type': [str,'GMRES'],
 			'adjoint relative tolerance':[float,1e-10],
 			'adjoint absolute tolerance':[float,1e-16],
@@ -400,7 +401,7 @@ class SUMB(AeroSolver):
 			self.interface.augmentADjointRHS(objective,kwargs['structAdjoint'])
 		#endtry
 
-		self.interface.solveADjointPETSc()
+		self.interface.solveADjointPETSc(objective)#,restart=self.getOption('restart ADjoint')
 
 		return
 
@@ -423,6 +424,24 @@ class SUMB(AeroSolver):
 		flowDerivative=self.interface.getTotalFlowDerivatives(objective)
 
 		return flowDerivative
+
+	def getMeshIndices(self):
+		ndof = self.interface.sumb.getnumberlocalnodes()
+		indices = self.interface.sumb.getcgnsmeshindices(ndof)
+		return indices
+	
+	def getForceIndices(self):
+		ndof = self.interface.sumb.getnumberlocalforcenodes()
+ 		if ndof > 0:
+ 			indices = self.interface.sumb.getcgnsforceindices(ndof)
+ 		else:
+ 			indices = numpy.zeros(0,'intc')
+ 		# end if
+ 		return indices
+
+	def getdRdXvPsi(self):
+		ndof = self.interface.sumb.adjointvars.nnodeslocal*3
+		return self.interface.sumb.getdrdxvpsi(ndof)
 
 	def computeSurfaceDerivative(self, objective, *args, **kwargs):
 		#def computeTotalSurfaceDerivative(self, objective,surface={},mapping={},meshwarping={}, *args, **kwargs):
@@ -514,7 +533,7 @@ class SUMB(AeroSolver):
 ## 				if self.myid ==0:
 ## 					print "Coordinate %d of %d...."%(i,len(xyzref[:,0]))
 ## 				#endif
-
+	
 ## 				#setup an empty list for this row
 ## 				rowDerivatives = []
 ## 				for j in xrange(len(xyzref[0,:])):
@@ -931,6 +950,19 @@ class SUMB(AeroSolver):
 # 	#MD Coupling routines
 # 	#=====================
 
+	def getForces(self,cfd_force_pts=None):
+		''' Return the forces on this processor. Use
+		cfd_force_pts to compute the forces if given
+		
+		'''
+		return self.interface.getForces(cfd_force_pts)
+
+	def getForcePoints(self):
+		''' Return the list of points where the forces will be 
+		computed'''
+		return self.interface.getForcePoints()
+		
+	
 # 	def getOMLForces(self,mapping={}):
 # 		'''
 # 		Compute the forces on the nodes and transfer them to the OML

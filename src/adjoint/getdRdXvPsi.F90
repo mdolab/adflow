@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine getdRdXvPsi
+subroutine getdRdXvPsi(ndof,dXv)
   !
   !     ******************************************************************
   !     *                                                                *
@@ -18,20 +18,19 @@ subroutine getdRdXvPsi
   !     ******************************************************************
   !
   use communication
-  use ADjointPETSc, only: dRdX,psi
+  use ADjointPETSc, only: dRdX,psi,gridVec
   use warpingPETSC 
   use inputADjoint
   implicit none
 
+  integer(kind=intType), intent(in) :: ndof
+  real(kind=realType), intent(out)  :: dXv(ndof)
+
   integer(kind=intType) :: ierr
 
-
-  call MatMultTranspose(dRdX,psi,sumbGridVec,ierr)
-
-  call VecScatterBegin(cgnsTOsumbGrid,sumbGridVec,cgnsGridVec,INSERT_VALUES,SCATTER_REVERSE,ierr)
-  call VecScatterEnd  (cgnsTOsumbGrid,sumbGridVec,cgnsGridVec,INSERT_VALUES,SCATTER_REVERSE,ierr)
-
-  ! Now we have dRdXv*psi in cgnsGridVec and we can call getCGNSData to retrieve it
+  call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DECIDE,dXv,gridVec,ierr)
+  call MatMultTranspose(dRdX,psi,GridVec,ierr)
+  call VecDestroy(GridVec,ierr)
 
 end subroutine getdRdXvPsi
 

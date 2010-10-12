@@ -86,19 +86,7 @@
 #     *                                                                *
 #     ******************************************************************
 
-#JAVA_HOME = /nfs/opal/home/mader/jdk1.5.0_06
-#JAVA_HOME = /home/guysmiley/acmarta/software/tapenade/jre1.5.0_07
-#JAVA_HOME =/home/mader/UTIAS/SRC/jdk1.6.0_06
-
-#TAPENADE_HOME = /nfs/opal/home/mader/SRC/Tapenade/tapenade2.2
-#TAPENADE_HOME = /home/guysmiley/acmarta/software/tapenade/tapenade2.2
-#TAPENADE_HOME = /home/mader/UTIAS/SRC/tapenade2.2.4
-
-#SOLVER_DIRSRC = /nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src
-#SOLVER_DIRSRC = /usr/people/sichoi/SUmbADJ_NS_NEW/src/
-#SOLVER_DIRSRC = /home/guysmiley/acmarta/SVN/SUmbVertex/src
-#SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
-SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
+SOLVER_DIRSRC = /nfs/mica/home/kenway/hg/SUmbADjoint/src
 
 #     ******************************************************************
 #     *                                                                *
@@ -110,11 +98,11 @@ TAPENADE_PARSERFILESEPARATOR = "/"
 
 # Dependent output variables (separator: white space, default: all)
 
-TAPENADE_OUTVARS = "Forceloc"
+TAPENADE_OUTVARS = "force"
 
 # Independent input variables (separator: white space, default: all)
 
-TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj machcoefadj"
+TAPENADE_VARS = "pts,wAdj"
 
 # Name of the top routine
 
@@ -139,12 +127,8 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 #     *                                                                *
 #     ******************************************************************
 
-TAPENADE_DIRSRC1 = $(SOLVER_DIRSRC)/adjoint/residualInput
-#TAPENADE_DIRSRC2 = $(SOLVER_DIRSRC)/adjoint/metricInput
-
-TAPENADE_DIRSRC  = $(SOLVER_DIRSRC)/adjoint
-TAPENADE_DIRSRC3 = $(SOLVER_DIRSRC)/adjoint/couplingInput
-TAPENADE_DIRMOD  = $(SOLVER_DIRSRC)/modules
+TAPENADE_DIRSRC = $(SOLVER_DIRSRC)/adjoint/couplingInput
+TAPENADE_MODDIR = $(SOLVER_DIRSRC)/adjoint/residualInput
 SUMB_MODDIR      = $(SOLVER_DIRSRC)/modules
 
 TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
@@ -155,48 +139,16 @@ TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
 #     *                                                                *
 #     ******************************************************************
 
-TAPENADE_SRC = $(TAPENADE_DIRSRC3)/applyAllBCForceCouplingAdj.f90 \
-               $(TAPENADE_DIRSRC3)/bcEulerWallForceCouplingAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/bcFarfieldForceCouplingAdj.f90\
-	       $(TAPENADE_DIRSRC3)/bcSymmForceCouplingAdj.f90 \
-               $(TAPENADE_DIRSRC3)/extractBCStatesForceCouplingAdj.f90\
-	       $(TAPENADE_DIRSRC3)/extrapolate2ndHaloForceCouplingAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/getSurfaceNormalsCouplingAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/computeForceCouplingPressureAdj.f90\
-	       $(TAPENADE_DIRSRC3)/computeForceCouplingAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/forceCouplingAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/etotArrayForceCouplingAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/adjustInflowAngleForceCouplingAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/checkInputParamForceCouplingAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/referenceStateForceCouplingAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/replaceBCStatesForceCouplingAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/setFlowInfinityStateForceCouplingAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/getDirVectorForceCoupling.f90 \
-	       $(TAPENADE_DIRSRC1)/computeGammaAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/vectorRotationForceCoupling.f90
+TAPENADE_SRC = $(TAPENADE_DIRSRC)/computeForceCouplingPressureAdj.f90\
+               $(TAPENADE_DIRSRC)/computeForceCouplingAdj.f90\
+	       $(TAPENADE_DIRSRC)/bcEulerWallForceCouplingAdj.f90\
+	       $(TAPENADE_DIRSRC)/getSurfaceNormalsCouplingAdj.f90\
+               $(TAPENADE_DIRSRC)/forceCouplingAdj.f90\
 
-TAPENADE_MOD = $(TAPENADE_DIRSRC1)/BCTypes.f90 \
-	       $(TAPENADE_DIRSRC1)/block.f90 \
-	       $(TAPENADE_DIRMOD)/blockPointers.f90 \
-	       $(TAPENADE_DIRSRC1)/cgnsGrid.f90 \
-	       $(TAPENADE_DIRSRC1)/communication.f90 \
-	       $(TAPENADE_DIRSRC1)/constants.f90 \
-	       $(TAPENADE_DIRSRC1)/flowVarRefState.f90 \
-	       $(TAPENADE_DIRSRC1)/inputParam.f90 \
-	       $(TAPENADE_DIRSRC1)/iteration.f90\
-	       $(TAPENADE_DIRSRC1)/precision.f90
-
-#TAPENADE_MOD = $(TAPENADE_DIRSRC1)/accuracy.f90 \
-#	       $(TAPENADE_DIRSRC1)/BCTypes.f90 \
-#	       $(TAPENADE_DIRSRC1)/block.f90 \
-#	       $(TAPENADE_DIRSRC1)/blockPointers.f90 \
-#	       $(TAPENADE_DIRSRC1)/cgnsGrid.f90 \
-#	       $(TAPENADE_DIRSRC1)/communication.f90 \
-#	       $(TAPENADE_DIRSRC1)/constants.f90 \
-#	       $(TAPENADE_DIRSRC1)/flowVarRefState.f90 \
-#	       $(TAPENADE_DIRSRC1)/inputParam.f90 \
-#	       $(TAPENADE_DIRSRC1)/precision.f90
-
+TAPENADE_MOD = $(TAPENADE_MODDIR)/constants.f90 \
+	       $(TAPENADE_MODDIR)/flowVarRefState.f90 \
+	       $(TAPENADE_MODDIR)/precision.f90\
+	       $(TAPENADE_MODDIR)/inputParam.f90
 
 TAPENADE_SRC_ALL = $(TAPENADE_SRC) $(TAPENADE_MOD)
 
