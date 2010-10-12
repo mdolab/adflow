@@ -127,7 +127,7 @@
 
       Mat     dRdW ,dRdWFD,dRdWPre,dRdWT,dRdWPreT
       Vec     psi, dJdW, pvr,phic,dJcdW
-
+      Vec     gridVec
       ! ksp   Linear solver (Krylov subspace method) context
       ! pc    Preconditioner context
 
@@ -241,7 +241,7 @@
 
       !Binary Viewer
       PetscViewer Bin_Viewer
-
+      real(kind=realType) :: info(MAT_INFO_SIZE)
 
 #endif
 

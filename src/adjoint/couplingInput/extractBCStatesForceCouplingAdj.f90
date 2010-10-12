@@ -79,9 +79,9 @@
         
           if( secondHalo ) then
              wAdj0(icbeg:icend,jcbeg:jcend,1:nw) = wAdj(0,icbeg:icend,jcbeg:jcend,1:nw)
-             wAdj1(icbeg:icend,jcbeg:jcend,1:nw) = wAdj(0,icbeg:icend,jcbeg:jcend,1:nw)
-             wAdj2(icbeg:icend,jcbeg:jcend,1:nw) = wAdj( 2,icbeg:icend,jcbeg:jcend,1:nw)
-             wAdj3(icbeg:icend,jcbeg:jcend,1:nw) = wAdj( 3,icbeg:icend,jcbeg:jcend,1:nw)
+             wAdj1(icbeg:icend,jcbeg:jcend,1:nw) = wAdj(1,icbeg:icend,jcbeg:jcend,1:nw)
+             wAdj2(icbeg:icend,jcbeg:jcend,1:nw) = wAdj(2,icbeg:icend,jcbeg:jcend,1:nw)
+             wAdj3(icbeg:icend,jcbeg:jcend,1:nw) = wAdj(3,icbeg:icend,jcbeg:jcend,1:nw)
              
              pAdj0(icbeg:icend,jcbeg:jcend) = pAdj(0,icbeg:icend,jcbeg:jcend)
              pAdj1(icbeg:icend,jcbeg:jcend) = pAdj(1,icbeg:icend,jcbeg:jcend)

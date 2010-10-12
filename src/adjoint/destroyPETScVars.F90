@@ -39,23 +39,6 @@
         print "(a)", "# Destroying PETSc objects ..."
       endif
 
-      ! VecDestroy - Destroys a vector.
-      !
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecDestroy(Vec v, PetscErrorCode ierr)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameters
-      !   v -the vector
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecDestroy.html
-      ! or PETSc users manual, pp.37
-
-      !print *,'vecs'
-
       call VecDestroy(psi, PETScIerr)
 
       if( PETScIerr/=0 ) &
@@ -121,39 +104,12 @@
       if( PETScIerr/=0 ) &
         call terminate("destroyPETScVars", &
                        "Could not destroy vector djdc")
-      ! MatDestroy - Frees space taken by a matrix.
-      !
-      ! Synopsis
-      !
-      ! #include "petscmat.h" 
-      ! call MatDestroy(Mat A, PetscErrorCode ierr)
-      !
-      ! Collective on Mat
-      !
-      ! Input Parameter
-      !   A -the matrix 
-      !
-      ! see .../petsc/docs/manualpages/Mat/MatDestroy.html
-      ! or PETSc users manual, pp.61
-      !print *,'mats'
-
-!!$      call MatDestroy(dRdW, PETScIerr)
-!!$
-!!$      if( PETScIerr/=0 ) &
-!!$        call terminate("destroyPETScVars", &
-!!$                       "Could not destroy matrix dRdW")
-
+      
       call MatDestroy(dRdWt, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("destroyPETScVars", &
                        "Could not destroy matrix dRdWt")
-!!$
-!!$      call MatDestroy(dRdWPre, PETScIerr)
-!!$
-!!$      if( PETScIerr/=0 ) &
-!!$        call terminate("destroyPETScVars", &
-!!$                       "Could not destroy matrix dRdWpre")
       if (ApproxPC) then
          !print *,'mats,prpwpre'
          call MatDestroy(dRdWpret, PETScIerr)
@@ -162,19 +118,19 @@
               call terminate("destroyPETScVars", &
               "Could not destroy matrix dRdWpret")
       endif
-      !print *,'mats,drda'
+
       call MatDestroy(dRda, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("destroyPETScVars", &
                        "Could not destroy matrix dRda")
-      !print *,'mats,drdx'
+
       call MatDestroy(dRdx, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("destroyPETScVars", &
                        "Could not destroy matrix dRdx")
-      !print *,'mats,dcdw'
+
       call MatDestroy(dCdw, PETScIerr)
 
       if( PETScIerr/=0 ) &
@@ -192,23 +148,7 @@
       if( PETScIerr/=0 ) &
            call terminate("destroyPETScVars", &
            "Could not destroy matrix dcda")
-      !print *,'mats finished'
 
-      ! KSPDestroy - Destroys KSP context.
-      !
-      ! Synopsis
-      !
-      ! #include "petscksp.h" 
-      ! call KSPDestroy(KSP ksp, PetscErrorCode ierr)
-      !
-      ! Collective on KSP
-      !
-      ! Input Parameter
-      !   ksp -iterative context obtained from KSPCreate() 
-      !
-      ! see .../petsc/docs/manualpages/KSP/KSPDestroy.html
-      ! or PETSc users manual, pp.64
-      !print *,'ksp'
       call KSPDestroy(ksp, PETScIerr)
 
       if( PETScIerr/=0 ) &

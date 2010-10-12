@@ -448,7 +448,7 @@
 
                 elseif(liftIndex ==3) then
                    ! Wing is in y- direction
-                   !Rotate the rotation rate from the winsd axis back to the local body axis
+                   !Rotate the rotation rate from the wind axis back to the local body axis
                    rotRateTrans(1,1)=cos(alpha)*cos(beta)
                    rotRateTrans(1,2)=-cos(alpha)*sin(beta)
                    rotRateTrans(1,3)=-sin(alpha)
@@ -475,29 +475,29 @@
             ! endif
 
 
-             if (useWindAxis)then
-                !determine the current angles from the free stream velocity
-                call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
-                !Rotate the rotation rate from the wind axis back to the local body axis
-                !checkt he relationship between the differnt degrees of freedom!
-                rotRateTrans(1,1)=cos(alpha)*cos(beta)
-                rotRateTrans(1,2)=-cos(alpha)*sin(beta)
-                rotRateTrans(1,3)=-sin(alpha)
-                rotRateTrans(2,1)=sin(beta)
-                rotRateTrans(2,2)=cos(beta)
-                rotRateTrans(2,3)=0.0
-                rotRateTrans(3,1)=sin(alpha)*cos(beta)
-                rotRateTrans(3,2)=-sin(alpha)*sin(beta)
-                rotRateTrans(3,3)=cos(alpha)
-
-                rotRateTemp = rotRate
-                rotRate=0.0
-                do i=1,3
-                   do j=1,3
-                      rotRate(i)=rotRate(i)+rotRateTemp(j)*rotRateTrans(i,j)
-                   end do
-                end do
-             end if
+!!$             if (useWindAxis)then
+!!$                !determine the current angles from the free stream velocity
+!!$                call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+!!$                !Rotate the rotation rate from the wind axis back to the local body axis
+!!$                !checkt he relationship between the differnt degrees of freedom!
+!!$                rotRateTrans(1,1)=cos(alpha)*cos(beta)
+!!$                rotRateTrans(1,2)=-cos(alpha)*sin(beta)
+!!$                rotRateTrans(1,3)=-sin(alpha)
+!!$                rotRateTrans(2,1)=sin(beta)
+!!$                rotRateTrans(2,2)=cos(beta)
+!!$                rotRateTrans(2,3)=0.0
+!!$                rotRateTrans(3,1)=sin(alpha)*cos(beta)
+!!$                rotRateTrans(3,2)=-sin(alpha)*sin(beta)
+!!$                rotRateTrans(3,3)=cos(alpha)
+!!$
+!!$                rotRateTemp = rotRate
+!!$                rotRate=0.0
+!!$                do i=1,3
+!!$                   do j=1,3
+!!$                      rotRate(i)=rotRate(i)+rotRateTemp(j)*rotRateTrans(i,j)
+!!$                   end do
+!!$                end do
+!!$             end if
 
              !subtract off the rotational velocity of the center of the grid
              ! to account for the added overall velocity.

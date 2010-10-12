@@ -63,7 +63,8 @@
       ! Define vec phic local size (number of Rows) for the
       ! Coupling derivatives.
 
-      nDimS = 3 * nSurfNodesLocal*nTimeIntervalsSpectral
+      call getForceSize(nDimS)
+      nDimS = nDimS * 3
 !
 !     ******************************************************************
 !     *                                                                *
@@ -75,59 +76,11 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      ! Create the vector. Depending on either this is a sequential or 
-      ! parallel run,  PETSc automatically generates the apropriate
-      ! vector type over all processes in SUMB_PETSC_COMM_WORLD.
-
-      ! VecCreate- Creates an empty vector object. The type can then be
-      !            set with VecSetType(), or VecSetFromOptions().
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecCreate(MPI_Comm comm, Vec *vec, PetscErrorCode ierr)
-      !
-      ! If you never call VecSetType() or VecSetFromOptions() it will
-      ! generate an error when you try to use the vector.
-      !
-      ! Collective on MPI_Comm
-      !
-      ! Input Parameter
-      !   comm - The communicator for the vector object
-      !
-      ! Output Parameter
-      !   vec - The vector object
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecCreate.html
-      ! or PETSc users manual, pp.35
-
       call VecCreate(SUMB_PETSC_COMM_WORLD, dJdW, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScVec", "Error in VecCreate dJdW")
-      
-      ! Set the local size and let PETSc decide its global size.
-
-      ! VecSetSizes - Sets the local and global sizes, and checks to
-      !               determine compatibility
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecSetSizes(Vec v, PetscInt n, PetscInt N, PetscErrorCode ierr)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameters
-      !   v - the vector
-      !   n - the local size (or PETSC_DECIDE to have it set)
-      !   N - the global size (or PETSC_DECIDE)
-      !
-      ! Notes
-      ! n and N cannot be both PETSC_DECIDE If one processor calls this
-      !   with N of PETSC_DECIDE then all processors must, otherwise the
-      !   program will hang.
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecSetSizes.html
-
+ 
       call VecSetSizes(dJdW, nDimW, PETSC_DECIDE, PETScIerr)
 
       if( PETScIerr/=0 ) then
@@ -135,53 +88,12 @@
               "Error in VecSetSizes dJdW for local size", nDimW
         call terminate("createPETScVec", errorMessage)
       endif
-
-      ! Set the vector from options.
-
-      ! VecSetFromOptions - Configures the vector from the options
-      !                     database.
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecSetFromOptions(Vec vec,PetscErrorCode ierr)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameter
-      !   vec - The vector
-      !
-      ! Notes: To see all options, run your program with the -help
-      !   option, or consult the users manual. Must be called after
-      !   VecCreate() but before the vector is used.
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecSetFromOptions.html
-
       call VecSetFromOptions(dJdW, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScVec", &
                        "Error in VecSetFromOptions dJdW")
-
-      ! Set the vector block size.
-
-      ! VecSetBlockSize - Sets the blocksize for future calls to
-      !            VecSetValuesBlocked() and VecSetValuesBlockedLocal().
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecSetBlockSize(Vec v,PetscInt bs,PetscErrorCode ierr)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameter
-      !   v  - the vector
-      !   bs - the blocksize
-      !
-      ! Notes
-      ! All vectors obtained by VecDuplicate() inherit the same blocksize.
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecSetBlockSize.html
-
+     
       call VecSetBlockSize(dJdW, nw, PETScIerr)
 
       if( PETScIerr/=0 ) &
@@ -192,78 +104,21 @@
 
       if( PETScRank==0 .and. debug ) then
 
-        ! Get the vector block size.
-
-        ! VecGetBlockSize - Gets the blocksize for the vector, i.e.
-        !                   what is used for VecSetValuesBlocked() and
-        !                   VecSetValuesBlockedLocal().
-        ! Synopsis
-        !
-        ! #include "petscvec.h" 
-        ! call VecGetBlockSize(Vec v,PetscInt *bs,PetscErrorCode ierr)
-        !
-        ! Collective on Vec
-        !
-        ! Input Parameter
-        !   v - the vector
-        !
-        ! Output Parameter
-        !   bs - the blocksize 
-        !
-        ! see .../petsc/docs/manualpages/Vec/VecGetBlockSize.html
-
-        call VecGetBlockSize(dJdW, vecBlockSize, PETScIerr)
+         call VecGetBlockSize(dJdW, vecBlockSize, PETScIerr)
 
         if( PETScIerr/=0 ) &
-          call terminate("createPETScVec", &
-                         "Error in VecGetBlockSize dJdW")
-
+             call terminate("createPETScVec", &
+             "Error in VecGetBlockSize dJdW")
+        
         write(*,10) "# VECTOR: dJdW block size  =", vecBlockSize
 
-        ! Get the vector global size.
-
-        ! VecGetSize - Returns the global number of elements of the
-        !              vector.
-        ! Synopsis
-        !
-        ! #include "petscvec.h" 
-        ! call VecGetSize(Vec x,PetscInt *size,PetscErrorCode ierr)
-        !
-        ! Not Collective
-        !
-        ! Input Parameter
-        !   x    - the vector
-        !
-        ! Output Parameters
-        !   size - the global length of the vector
-        !
-        ! see .../petsc/docs/manualpages/Vec/VecGetSize.html
-
+        
         call VecGetSize(dJdW, vecRows, PETScIerr)
 
         if( PETScIerr/=0 ) &
           call terminate("createPETScVec", "Error in VecGetSize dJdW")
 
         write(*,20) "# VECTOR: dJdW global size =", vecRows
-
-        ! Gets the vector type as a string from the vector object.
-
-        ! VecGetType - Gets the vector type name (as a string) from
-        !              the Vec.
-        ! Synopsis
-        !
-        ! #include "petscvec.h"  
-        ! call VecGetType(Vec vec, VecType *type, PetscErrorCode ierr)
-        !
-        ! Not Collective
-        !
-        ! Input Parameter
-        !   vec  - The vector
-        !
-        ! Output Parameter
-        !   type - The vector type name
-        !
-        ! see .../petsc/docs/manualpages/Vec/VecGetType.html
 
         call VecGetType(dJdW, vecTypeStr, PETScIerr)
 
@@ -280,36 +135,6 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      ! VecGetOwnershipRange - Returns the range of indices owned by
-      !   this processor, assuming that the vectors are laid out with
-      !   the first n1 elements on the first processor, next n2 elements
-      !   on the second, etc. For certain parallel layouts this range
-      !   may not be well defined.
-      !
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecGetOwnershipRange(Vec x,PetscInt *low,PetscInt *high, &
-      !                           PetscErrorCode ierr)
-      ! Not Collective
-      !
-      ! Input Parameter
-      !   x - the vector
-      !
-      ! Output Parameters
-      !   low  - the first local element, pass in PETSC_NULL if not
-      !          interested
-      !   high - one more than the last local element, pass in
-      !          PETSC_NULL if not interested
-      ! Note
-      ! The high argument is one more than the last element stored
-      !   locally.
-      !
-      ! Fortran: PETSC_NULL_INTEGER should be used instead of PETSC_NULL
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecGetOwnershipRange.html
-      ! or PETSc users manual, pp.37
-
       if( debug ) then
         call VecGetOwnershipRange(dJdW, iLow, iHigh, PETScIerr)
 
@@ -328,38 +153,19 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      ! Duplicate the vectors as needed.
-
-      ! VecDuplicate - Creates a new vector of the same type as an
-      !                existing vector.
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecDuplicate(Vec x,Vec *newv,PetscErrorCode ierr) 
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameters
-      !   v    - a vector to mimic
-      !
-      ! Output Parameter
-      !   newv - location to put new vector
-      !
-      ! Notes
-      ! VecDuplicate() does not copy the vector, but rather allocates
-      !   storage for the new vector. Use VecCopy() to copy a vector.
-      !
-      ! Use VecDestroy() to free the space. Use VecDuplicateVecs() to
-      !   get several vectors.
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecDuplicate.html
-      ! or PETSc users manual, pp.37
-
       call VecDuplicate(dJdW, psi, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScVec", &
                        "Error in VecDuplicate dJdW->psi")
+      !now zero the psi vector
+      
+      call VecSet(psi,PETScZero,PETScIerr)
+         
+         if( PETScIerr/=0 ) &
+              call terminate("creatPETScVec", "Error in VecSet:psi")
+
+      !continue with the rest of the vec create operations
 
       call VecDuplicate(dJdW, pvr, PETScIerr)
 
@@ -386,10 +192,6 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      ! Create vector. Depending on either this is a sequential or 
-      ! parallel run,  PETSc automatically generates the apropriate
-      ! vector type over all processes in SUMB_PETSC_COMM_WORLD.
-
       call VecCreate(SUMB_PETSC_COMM_WORLD, dJda, PETScIerr)
 
       if( PETScIerr/=0 ) &
@@ -575,155 +377,11 @@
 !     *                                                                *
 !     * Create the phic vector for  aero-structural coupling           *
 !     *                                                                *
-!     * Vector phic size [nDimS] but can be very sparse depending      *
-!     * the surface locations.                                         *
-!     *                                                                *
 !     ******************************************************************
 !
-      ! Create the vector. Depending on either this is a sequential or 
-      ! parallel run,  PETSc automatically generates the apropriate
-      ! vector type over all processes in SUMB_PETSC_COMM_WORLD.
-
-      ! VecCreate- Creates an empty vector object. The type can then be
-      !            set with VecSetType(), or VecSetFromOptions().
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecCreate(MPI_Comm comm, Vec *vec, PetscErrorCode ierr)
-      !
-      ! If you never call VecSetType() or VecSetFromOptions() it will
-      ! generate an error when you try to use the vector.
-      !
-      ! Collective on MPI_Comm
-      !
-      ! Input Parameter
-      !   comm - The communicator for the vector object
-      !
-      ! Output Parameter
-      !   vec - The vector object
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecCreate.html
-      ! or PETSc users manual, pp.35
-
       call VecCreate(SUMB_PETSC_COMM_WORLD, phic, PETScIerr)
-
-      if( PETScIerr/=0 ) &
-        call terminate("createPETScVec", "Error in VecCreate phic")
-      
-      ! Set the local size and let PETSc decide its global size.
-
-      ! VecSetSizes - Sets the local and global sizes, and checks to
-      !               determine compatibility
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecSetSizes(Vec v, PetscInt n, PetscInt N, PetscErrorCode ierr)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameters
-      !   v - the vector
-      !   n - the local size (or PETSC_DECIDE to have it set)
-      !   N - the global size (or PETSC_DECIDE)
-      !
-      ! Notes
-      ! n and N cannot be both PETSC_DECIDE If one processor calls this
-      !   with N of PETSC_DECIDE then all processors must, otherwise the
-      !   program will hang.
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecSetSizes.html
-
       call VecSetSizes(phic, nDimS, PETSC_DECIDE, PETScIerr)
 
-      if( PETScIerr/=0 ) then
-        write(errorMessage,99) &
-              "Error in VecSetSizes phic for local size", nDimS
-        call terminate("createPETScVec", errorMessage)
-      endif
-
-      ! Set the vector from options.
-
-      ! VecSetFromOptions - Configures the vector from the options
-      !                     database.
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecSetFromOptions(Vec vec,PetscErrorCode ierr)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameter
-      !   vec - The vector
-      !
-      ! Notes: To see all options, run your program with the -help
-      !   option, or consult the users manual. Must be called after
-      !   VecCreate() but before the vector is used.
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecSetFromOptions.html
-
-      call VecSetFromOptions(phic, PETScIerr)
-
-      if( PETScIerr/=0 ) &
-        call terminate("createPETScVec", &
-                       "Error in VecSetFromOptions phic")
-
-      ! Extract info from the vector.
-
-      if( PETScRank==0 .and. debug ) then
-
-        ! Get the vector global size.
-
-        ! VecGetSize - Returns the global number of elements of the
-        !              vector.
-        ! Synopsis
-        !
-        ! #include "petscvec.h" 
-        ! call VecGetSize(Vec x,PetscInt *size,PetscErrorCode ierr)
-        !
-        ! Not Collective
-        !
-        ! Input Parameter
-        !   x    - the vector
-        !
-        ! Output Parameters
-        !   size - the global length of the vector
-        !
-        ! see .../petsc/docs/manualpages/Vec/VecGetSize.html
-
-        call VecGetSize(phic, vecRows, PETScIerr)
-
-        if( PETScIerr/=0 ) &
-          call terminate("createPETScVec", "Error in VecGetSize phic")
-
-        write(*,20) "# VECTOR: phic global size =", vecRows
-
-        ! Gets the vector type as a string from the vector object.
-
-        ! VecGetType - Gets the vector type name (as a string) from
-        !              the Vec.
-        ! Synopsis
-        !
-        ! #include "petscvec.h"  
-        ! call VecGetType(Vec vec, VecType *type, PetscErrorCode ierr)
-        !
-        ! Not Collective
-        !
-        ! Input Parameter
-        !   vec  - The vector
-        !
-        ! Output Parameter
-        !   type - The vector type name
-        !
-        ! see .../petsc/docs/manualpages/Vec/VecGetType.html
-
-        call VecGetType(phic, vecTypeStr, PETScIerr)
-
-        if( PETScIerr/=0 ) &
-          call terminate("createPETScVec", "Error in VecGetType phic")
-
-        write(*,30) "# VECTOR: phic type        =", vecTypeStr
-
-      endif
 !
 !     ******************************************************************
 !     *                                                                *
@@ -731,36 +389,6 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      ! VecGetOwnershipRange - Returns the range of indices owned by
-      !   this processor, assuming that the vectors are laid out with
-      !   the first n1 elements on the first processor, next n2 elements
-      !   on the second, etc. For certain parallel layouts this range
-      !   may not be well defined.
-      !
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecGetOwnershipRange(Vec x,PetscInt *low,PetscInt *high, &
-      !                           PetscErrorCode ierr)
-      ! Not Collective
-      !
-      ! Input Parameter
-      !   x - the vector
-      !
-      ! Output Parameters
-      !   low  - the first local element, pass in PETSC_NULL if not
-      !          interested
-      !   high - one more than the last local element, pass in
-      !          PETSC_NULL if not interested
-      ! Note
-      ! The high argument is one more than the last element stored
-      !   locally.
-      !
-      ! Fortran: PETSC_NULL_INTEGER should be used instead of PETSC_NULL
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecGetOwnershipRange.html
-      ! or PETSc users manual, pp.37
-
       if( debug ) then
         call VecGetOwnershipRange(phic, iLow, iHigh, PETScIerr)
 
@@ -785,59 +413,11 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      ! Create the vector. Depending on either this is a sequential or 
-      ! parallel run,  PETSc automatically generates the apropriate
-      ! vector type over all processes in SUMB_PETSC_COMM_WORLD.
-
-      ! VecCreate- Creates an empty vector object. The type can then be
-      !            set with VecSetType(), or VecSetFromOptions().
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecCreate(MPI_Comm comm, Vec *vec, PetscErrorCode ierr)
-      !
-      ! If you never call VecSetType() or VecSetFromOptions() it will
-      ! generate an error when you try to use the vector.
-      !
-      ! Collective on MPI_Comm
-      !
-      ! Input Parameter
-      !   comm - The communicator for the vector object
-      !
-      ! Output Parameter
-      !   vec - The vector object
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecCreate.html
-      ! or PETSc users manual, pp.35
-
       call VecCreate(SUMB_PETSC_COMM_WORLD, dJdC, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScVec", "Error in VecCreate dJdC")
       
-      ! Set the global size and let PETSc decide its local size.
-
-      ! VecSetSizes - Sets the local and global sizes, and checks to
-      !               determine compatibility
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecSetSizes(Vec v, PetscInt n, PetscInt N, PetscErrorCode ierr)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameters
-      !   v - the vector
-      !   n - the local size (or PETSC_DECIDE to have it set)
-      !   N - the global size (or PETSC_DECIDE)
-      !
-      ! Notes
-      ! n and N cannot be both PETSC_DECIDE If one processor calls this
-      !   with N of PETSC_DECIDE then all processors must, otherwise the
-      !   program will hang.
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecSetSizes.html
-
       call VecSetSizes(dJdC, PETSC_DETERMINE, nTimeIntervalsSpectral,&
            PETScIerr)
 
@@ -847,57 +427,16 @@
         call terminate("createPETScVec", errorMessage)
       endif
 
-      ! Set the vector from options.
-
-      ! VecSetFromOptions - Configures the vector from the options
-      !                     database.
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecSetFromOptions(Vec vec,PetscErrorCode ierr)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameter
-      !   vec - The vector
-      !
-      ! Notes: To see all options, run your program with the -help
-      !   option, or consult the users manual. Must be called after
-      !   VecCreate() but before the vector is used.
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecSetFromOptions.html
-
       call VecSetFromOptions(dJdC, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("createPETScVec", &
-                       "Error in VecSetFromOptions dJdC")
-
-
+                      "Error in VecSetFromOptions dJdC")
       ! Extract info from the vector.
 
       if( PETScRank==0 .and. debug ) then
 
         write(*,10) "# VECTOR: dJdC block size  =", vecBlockSize
-
-        ! Get the vector global size.
-
-        ! VecGetSize - Returns the global number of elements of the
-        !              vector.
-        ! Synopsis
-        !
-        ! #include "petscvec.h" 
-        ! call VecGetSize(Vec x,PetscInt *size,PetscErrorCode ierr)
-        !
-        ! Not Collective
-        !
-        ! Input Parameter
-        !   x    - the vector
-        !
-        ! Output Parameters
-        !   size - the global length of the vector
-        !
-        ! see .../petsc/docs/manualpages/Vec/VecGetSize.html
 
         call VecGetSize(dJdC, vecRows, PETScIerr)
 
@@ -907,23 +446,6 @@
         write(*,20) "# VECTOR: dJdc global size =", vecRows
 
         ! Gets the vector type as a string from the vector object.
-
-        ! VecGetType - Gets the vector type name (as a string) from
-        !              the Vec.
-        ! Synopsis
-        !
-        ! #include "petscvec.h"  
-        ! call VecGetType(Vec vec, VecType *type, PetscErrorCode ierr)
-        !
-        ! Not Collective
-        !
-        ! Input Parameter
-        !   vec  - The vector
-        !
-        ! Output Parameter
-        !   type - The vector type name
-        !
-        ! see .../petsc/docs/manualpages/Vec/VecGetType.html
 
         call VecGetType(dJdC, vecTypeStr, PETScIerr)
 
@@ -940,35 +462,6 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      ! VecGetOwnershipRange - Returns the range of indices owned by
-      !   this processor, assuming that the vectors are laid out with
-      !   the first n1 elements on the first processor, next n2 elements
-      !   on the second, etc. For certain parallel layouts this range
-      !   may not be well defined.
-      !
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecGetOwnershipRange(Vec x,PetscInt *low,PetscInt *high, &
-      !                           PetscErrorCode ierr)
-      ! Not Collective
-      !
-      ! Input Parameter
-      !   x - the vector
-      !
-      ! Output Parameters
-      !   low  - the first local element, pass in PETSC_NULL if not
-      !          interested
-      !   high - one more than the last local element, pass in
-      !          PETSC_NULL if not interested
-      ! Note
-      ! The high argument is one more than the last element stored
-      !   locally.
-      !
-      ! Fortran: PETSC_NULL_INTEGER should be used instead of PETSC_NULL
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecGetOwnershipRange.html
-      ! or PETSc users manual, pp.37
 
       if( debug ) then
         call VecGetOwnershipRange(dJdC, iLow, iHigh, PETScIerr)
@@ -985,20 +478,12 @@
 ! dIdxsDV
 ! ************************************************
 
-      !create the PETSc Vector aswell
-      ! Create the vector. Depending on either this is a sequential or 
-      ! parallel run,  PETSc automatically generates the apropriate
-      ! vector type over all processes in SUMB_PETSC_COMM_WORLD.
-
       call VecCreate(SUMB_PETSC_COMM_WORLD, dIdxsDV, PETScIerr)
-!!$      call VecCreate(SUMB_PETSC_COMM_WORLD, dIdxs2, PETScIerr)
-!!$      call VecCreate(SUMB_PETSC_COMM_WORLD, dJdxs2, PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("computeADjointGradientSurface", "Error in VecCreate dIdxs")
       
       ! Set the local size and let PETSc determine its global size
-      !print *,'mdnsurfnodescompact',mdNSurfNodesCompact
       call VecSetSizes(dIdxsDV,PETSC_DECIDE,3*mdNSurfNodesCompact,PETScIerr)
 !
 
@@ -1015,14 +500,7 @@
       if( PETScIerr/=0 ) &
         call terminate("createPETScVec", &
                        "Error in VecSetFromOptions dIdxsDV")
-!!$      
-!!$      call VecGetSize(dIdxsDV, vecRows, PETScIerr)
-!!$
-!!$        if( PETScIerr/=0 ) &
-!!$          call terminate("createPETScVec", "Error in VecGetSize dJdW")
-!!$
-!!$        write(*,20) "# VECTOR: dIdxsDV global size =", vecRows
-!
+
 !     ******************************************************************
 !
       ! Output formats.
