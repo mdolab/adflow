@@ -89,6 +89,7 @@ subroutine getADjoint(nnodes,functionGradLocal)
 
      enddo
 
+     !print *,'flushing'
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
