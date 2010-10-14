@@ -1999,12 +1999,13 @@ class SUmbInterface(object):
         '''
         Solve the ADjoint system using PETSc
         '''
-        print 'restart is:',self.sumb.inputadjoint.restartadjoint
+        nw = self.sumb.flowvarrefstate.nw
+
         if (abs(self.sumb.inputadjoint.restartadjoint)==True):
             if self.possibleObjectives[objective.lower()] in self.storedADjoints.keys():
                 self.sumb.setadjoint(self.storedADjoints[self.possibleObjectives[objective.lower()]])
             else:
-                self.storedADjoints[self.possibleObjectives[objective.lower()]]=numpy.zeros([self.sumb.adjointvars.ncellslocal*5],float)
+                self.storedADjoints[self.possibleObjectives[objective.lower()]]=numpy.zeros([self.sumb.adjointvars.ncellslocal*nw],float)
                 self.sumb.setadjoint(self.storedADjoints[self.possibleObjectives[objective.lower()]])
             #endif
         #endif
@@ -2013,7 +2014,7 @@ class SUmbInterface(object):
         self.sumb.solveadjointtransposepetsc()
 
         if (abs(self.sumb.inputadjoint.restartadjoint)==True):
-            self.storedADjoints[self.possibleObjectives[objective.lower()]] =  self.sumb.getadjoint(self.sumb.adjointvars.ncellslocal*5)
+            self.storedADjoints[self.possibleObjectives[objective.lower()]] =  self.sumb.getadjoint(self.sumb.adjointvars.ncellslocal*nw)
         #endif
 
         return
