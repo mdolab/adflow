@@ -461,16 +461,44 @@
               if (useWindAxis)then
                  alpha =alphaAdj
                  beta= betaAdj
-                 !Rotate the rotation rate from the wind axis back to the local body axis
-                 rotRateTrans(1,1)=cos(alpha)*cos(beta)
-                 rotRateTrans(1,2)=-cos(alpha)*sin(beta)
-                 rotRateTrans(1,3)=-sin(alpha)
-                 rotRateTrans(2,1)=sin(beta)
-                 rotRateTrans(2,2)=cos(beta)
-                 rotRateTrans(2,3)=0.0
-                 rotRateTrans(3,1)=sin(alpha)*cos(beta)
-                 rotRateTrans(3,2)=-sin(alpha)*sin(beta)
-                 rotRateTrans(3,3)=cos(alpha)
+                 !Rotate the rotation rate from the wind axis back to the local body axis 
+                 if (liftIndex == 2) then
+                    ! different coordinate system for aerosurf
+                    ! Wing is in z- direction
+                    rotRateTrans(1,1)=cos(alpha)*cos(beta)
+                    rotRateTrans(1,2)=-sin(alpha)
+                    rotRateTrans(1,3)=-cos(alpha)*sin(beta)
+                    rotRateTrans(2,1)=sin(alpha)*cos(beta)
+                    rotRateTrans(2,2)=cos(alpha)
+                    rotRateTrans(2,3)=-sin(alpha)*sin(beta)
+                    rotRateTrans(3,1)=sin(beta)
+                    rotRateTrans(3,2)=0.0
+                    rotRateTrans(3,3)=cos(beta)
+                    
+                 elseif(liftIndex ==3) then
+                    ! Wing is in y- direction
+                    !Rotate the rotation rate from the winsd axis back to the local body axis
+                    rotRateTrans(1,1)=cos(alpha)*cos(beta)
+                    rotRateTrans(1,2)=-cos(alpha)*sin(beta)
+                    rotRateTrans(1,3)=-sin(alpha)
+                    rotRateTrans(2,1)=sin(beta)
+                    rotRateTrans(2,2)=cos(beta)
+                    rotRateTrans(2,3)=0.0
+                    rotRateTrans(3,1)=sin(alpha)*cos(beta)
+                    rotRateTrans(3,2)=-sin(alpha)*sin(beta)
+                    rotRateTrans(3,3)=cos(alpha)
+                 else
+                    call terminate('getDirAngle', 'Invalid Lift Direction')
+                 endif
+!!$                 rotRateTrans(1,1)=cos(alpha)*cos(beta)
+!!$                 rotRateTrans(1,2)=-cos(alpha)*sin(beta)
+!!$                 rotRateTrans(1,3)=-sin(alpha)
+!!$                 rotRateTrans(2,1)=sin(beta)
+!!$                 rotRateTrans(2,2)=cos(beta)
+!!$                 rotRateTrans(2,3)=0.0
+!!$                 rotRateTrans(3,1)=sin(alpha)*cos(beta)
+!!$                 rotRateTrans(3,2)=-sin(alpha)*sin(beta)
+!!$                 rotRateTrans(3,3)=cos(alpha)
                  
                  rotRateTemp = rotRateAdj
                  rotRateAdj=0.0

@@ -617,10 +617,11 @@
    siadjb(1:2, iibeg:iiend, jjbeg:jjend, 1:3) = 0.0
    END IF
    END IF
-   pointrefadjb(1:3) = 0.0
-   pointrefadjb(3) = lref*refpointb(3)
+   !pointrefadjb(1:3) = 0.0
+   pointrefadjb(3) = pointrefadjb(3) + lref*refpointb(3)
    refpointb(3) = 0.0
    pointrefadjb(2) = pointrefadjb(2) + lref*refpointb(2)
    refpointb(2) = 0.0
    pointrefadjb(1) = pointrefadjb(1) + lref*refpointb(1)
+   refpointb(1) = 0.0
    END SUBROUTINE FORCESANDMOMENTSADJ_B
