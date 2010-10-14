@@ -391,9 +391,13 @@ class SUMB(AeroSolver):
 
 	def _on_adjoint(self,objective,*args,**kwargs):
 
-		if(self.interface.myid==0):print 'running cfd adjoint',objective
-
 		self.interface.setupADjointRHS(objective)
+
+		if 'structAdjoint' in kwargs:
+			phi = kwargs['structAdjoint']
+			print 'agumenting rhs'
+			self.interface.sumb.agumentrhs(phi)
+		# end if
 
 		tols = [self.getOption('adjointL2convergence'),
 			self.getOption('adjointL2convergenceRel'),
@@ -442,9 +446,6 @@ class SUMB(AeroSolver):
 		ndof = self.interface.sumb.adjointvars.nnodeslocal*3
 		return self.interface.sumb.getdrdxvpsi(ndof)
 
-	def agumentRHS(self,phi):
-		self.interface.sumb.agumentrhs(phi)
-		return 
 
 	def computeSurfaceDerivative(self, objective, *args, **kwargs):
 		#def computeTotalSurfaceDerivative(self, objective,surface={},mapping={},meshwarping={}, *args, **kwargs):
