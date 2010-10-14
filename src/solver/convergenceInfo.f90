@@ -251,7 +251,7 @@
 
            ! The variables which must always be written.
 
-            if(printIterations .eqv. .true. ) then
+            if(printIterations) then
 
                write(*,"(1x,i6,2x)",advance="no") groundLevel
             
@@ -300,7 +300,7 @@
           enddo
 
            ! Write the carriage return.
-          if (printIterations .eqv. .True.) then
+          if (printIterations) then
              print "(1x)"
           end if
            ! Store the convergence info in convArray, if desired.

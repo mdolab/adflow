@@ -221,6 +221,12 @@ python module sumb ! in
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
        end subroutine verifyforces
 
+       subroutine setadjointtolerances(l2,l2rel,l2abs) ! in :test:setAdjointTolerances.f90
+         real(kind=realtype) :: l2
+         real(kind=realtype) :: l2rel
+         real(kind=realtype) :: l2abs
+       end subroutine setadjointtolerances
+
        subroutine setupcouplingmatrixstruct(pts,npts) ! in :test:getForces.f90
          real(kind=realtype) dimension(3,npts),intent(in) :: pts
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)

@@ -31,11 +31,10 @@
 
 
         !begin execution
-        !print *,'in update flow'
+
         call referenceState
-        !print *,'reference state'
         call setFlowInfinityState
-        !print *,'flow infinity state'
+
         groundlevel = 1
         do mm=1,nTimeIntervalsSpectral
            
@@ -52,13 +51,10 @@
                       /         real(nTimeIntervalsSpectral,realType)
               enddo
            endif
-           !print *,'grid velocities',t,mm
+
            call gridVelocitiesFineLevel(.false., t, mm)
-           !print *,'grid velocities coarse'
            call gridVelocitiesCoarseLevels(mm)
-           !print *,'normal velocities'
            call normalVelocitiesAllLevels(mm)
-           !print *,'slip velocities'
            call slipVelocitiesFineLevel(.false., t, mm)
            call slipVelocitiesCoarseLevels(mm)
            
