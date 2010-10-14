@@ -435,13 +435,9 @@ subroutine createPETScMat
 
 
   allocate( nnzDiagonal(nDimW), nnzOffDiag(nDimW) )
-  nnzDiagonal = nzDiagonalX * 3!*nTimeIntervalsSpectral
-  nnzOffDiag  = 12!nzOffDiag   * 3*nTimeIntervalsSpectral
 
   ! Create the matrix dRdx.
-
   call drdxPreAllocation(nnzDiagonal,nnzOffDiag,nDimW)
-  
   call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
        nDimW, nDimX,                     &
        PETSC_DETERMINE, PETSC_DETERMINE, &
@@ -892,253 +888,253 @@ subroutine createPETScMat
   call MatSetOption(dSdx, MAT_ROW_ORIENTED, PETScIerr)
 #endif
 
-  
-! !       ******************************************************************
-! !       dCdw
 
-  
-! !       ******************************************************************
-! !       *                                                                *
-! !       * Create matrix dCdW that is used to compute the RHS of the      *
-! !       * ADjoint for the time spectral case                             *
-! !       *                                                                *
-! !       * Matrix dCdw has size [nTimeIntervalsSpectral,nDimW] and is     *
-! !       * generally sparse.                                              *
-! !       *                                                                *
-! !       *                                                                *
-! !       ******************************************************************
-  
+  ! !       ******************************************************************
+  ! !       dCdw
 
-!     call MatCreate(SUMB_PETSC_COMM_WORLD, dCdw, PETScIerr)
 
-!         if( PETScIerr/=0 ) &
-!           call terminate("createPETScMat", "Error in MatCreate dCdw")
+  ! !       ******************************************************************
+  ! !       *                                                                *
+  ! !       * Create matrix dCdW that is used to compute the RHS of the      *
+  ! !       * ADjoint for the time spectral case                             *
+  ! !       *                                                                *
+  ! !       * Matrix dCdw has size [nTimeIntervalsSpectral,nDimW] and is     *
+  ! !       * generally sparse.                                              *
+  ! !       *                                                                *
+  ! !       *                                                                *
+  ! !       ******************************************************************
 
 
-!         call MatSetSizes(dCdw, PETSC_DECIDE,nDimW, &
-!                          nTimeIntervalsSpectral,PETSC_DETERMINE, PETScIerr)
+  !     call MatCreate(SUMB_PETSC_COMM_WORLD, dCdw, PETScIerr)
 
-!         if( PETScIerr/=0 ) &
-!           call terminate("createPETScMat", "Error in MatSetSizes dCdw")
+  !         if( PETScIerr/=0 ) &
+  !           call terminate("createPETScMat", "Error in MatCreate dCdw")
 
-!         call MatSetType(dCdw,MATMPIAIJ,PETScIerr)
 
-!         if( PETScIerr/=0 ) &
-!           call terminate("createPETScMat", &
-!                          "Error in MatSetFromOptions dCdw")
+  !         call MatSetSizes(dCdw, PETSC_DECIDE,nDimW, &
+  !                          nTimeIntervalsSpectral,PETSC_DETERMINE, PETScIerr)
 
-!         ! Set column major order for the matrix dRda.
-! #ifdef USE_PETSC_3
-!         call MatSetOption(dCdw, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+  !         if( PETScIerr/=0 ) &
+  !           call terminate("createPETScMat", "Error in MatSetSizes dCdw")
 
-!         if( PETScIerr/=0 ) &
-!           call terminate("createPETScMat", "Error in MatSetOption dcdw")
-! #else
-!         call MatSetOption(dCdw, MAT_COLUMN_ORIENTED, PETScIerr)
+  !         call MatSetType(dCdw,MATMPIAIJ,PETScIerr)
 
-!         if( PETScIerr/=0 ) &
-!           call terminate("createPETScMat", "Error in MatSetOption dCdw")
-! #endif
-!         ! Extract info from the global matrix (only processor 0 does it).
+  !         if( PETScIerr/=0 ) &
+  !           call terminate("createPETScMat", &
+  !                          "Error in MatSetFromOptions dCdw")
 
-!         if( PETScRank==0 .and. debug ) then
+  !         ! Set column major order for the matrix dRda.
+  ! #ifdef USE_PETSC_3
+  !         call MatSetOption(dCdw, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
-!           ! Get the global number of rows and columns.
+  !         if( PETScIerr/=0 ) &
+  !           call terminate("createPETScMat", "Error in MatSetOption dcdw")
+  ! #else
+  !         call MatSetOption(dCdw, MAT_COLUMN_ORIENTED, PETScIerr)
 
-!           call MatGetSize(dCdw, matRows, matCols, PETScIerr)
+  !         if( PETScIerr/=0 ) &
+  !           call terminate("createPETScMat", "Error in MatSetOption dCdw")
+  ! #endif
+  !         ! Extract info from the global matrix (only processor 0 does it).
 
-!           if( PETScIerr/=0 ) &
-!             call terminate("createPETScMat", "Error in MatGetSize dCdw")
+  !         if( PETScRank==0 .and. debug ) then
 
-!           write(*,20) "# MATRIX: dCdw global size =", &
-!                       matRows, " x ", matCols
+  !           ! Get the global number of rows and columns.
 
-!           ! Gets the matrix type as a string from the matrix object.
+  !           call MatGetSize(dCdw, matRows, matCols, PETScIerr)
 
-!           call MatGetType(dCdw, matTypeStr, PETScIerr)
+  !           if( PETScIerr/=0 ) &
+  !             call terminate("createPETScMat", "Error in MatGetSize dCdw")
 
-!           if( PETScIerr/=0 ) &
-!             call terminate("createPETScMat", "Error in MatGetType dCdw")
+  !           write(*,20) "# MATRIX: dCdw global size =", &
+  !                       matRows, " x ", matCols
 
-!           write(*,30) "# MATRIX: dCdw type        =", matTypeStr
+  !           ! Gets the matrix type as a string from the matrix object.
 
-!         endif
+  !           call MatGetType(dCdw, matTypeStr, PETScIerr)
 
-!         ! Query about the ownership range.
+  !           if( PETScIerr/=0 ) &
+  !             call terminate("createPETScMat", "Error in MatGetType dCdw")
 
-!         if( debug ) then
-!           call MatGetOwnershipRange(dCdw, iLow, iHigh, PETScIerr)
+  !           write(*,30) "# MATRIX: dCdw type        =", matTypeStr
 
-!           if( PETScIerr/=0 ) &
-!             call terminate("createPETScMat", &
-!                            "Error in MatGetOwnershipRange dCdw")
+  !         endif
 
-!           write(*,40) "# MATRIX: dCdw Proc", PETScRank, "; #rows =", &
-!                       nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
-!         endif
+  !         ! Query about the ownership range.
 
-!   !     ******************************************************************
-!   !     dCdx
+  !         if( debug ) then
+  !           call MatGetOwnershipRange(dCdw, iLow, iHigh, PETScIerr)
 
-!         call MatCreate(SUMB_PETSC_COMM_WORLD, dCdx, PETScIerr)
+  !           if( PETScIerr/=0 ) &
+  !             call terminate("createPETScMat", &
+  !                            "Error in MatGetOwnershipRange dCdw")
 
-!         if( PETScIerr/=0 ) &
-!           call terminate("createPETScMat", "Error in MatCreate dCdx")
+  !           write(*,40) "# MATRIX: dCdw Proc", PETScRank, "; #rows =", &
+  !                       nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
+  !         endif
 
+  !   !     ******************************************************************
+  !   !     dCdx
 
-!         call MatSetSizes(dCdx, PETSC_DECIDE,nDimX, &
-!                          nTimeIntervalsSpectral,PETSC_DETERMINE, PETScIerr)
-!         !call MatSetSizes(dCdx,PETSC_DETERMINE, nTimeIntervalsSpectral , &
-!         !                 nDimX, PETSC_DECIDE, PETScIerr)
+  !         call MatCreate(SUMB_PETSC_COMM_WORLD, dCdx, PETScIerr)
 
-!         if( PETScIerr/=0 ) &
-!           call terminate("createPETScMat", "Error in MatSetSizes dCdx")
+  !         if( PETScIerr/=0 ) &
+  !           call terminate("createPETScMat", "Error in MatCreate dCdx")
 
 
-!         call MatSetType(dCdx,MATMPIAIJ,PETScIerr)
+  !         call MatSetSizes(dCdx, PETSC_DECIDE,nDimX, &
+  !                          nTimeIntervalsSpectral,PETSC_DETERMINE, PETScIerr)
+  !         !call MatSetSizes(dCdx,PETSC_DETERMINE, nTimeIntervalsSpectral , &
+  !         !                 nDimX, PETSC_DECIDE, PETScIerr)
 
-!         if( PETScIerr/=0 ) &
-!           call terminate("createPETScMat", &
-!                          "Error in MatSetFromOptions dCdw")
+  !         if( PETScIerr/=0 ) &
+  !           call terminate("createPETScMat", "Error in MatSetSizes dCdx")
 
 
-!         ! Set column major order for the matrix dRda.
-! #ifdef USE_PETSC_3
-!         call MatSetOption(dCdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+  !         call MatSetType(dCdx,MATMPIAIJ,PETScIerr)
 
-!         if( PETScIerr/=0 ) &
-!           call terminate("createPETScMat", "Error in MatSetOption dcdx")
-! #else
-!         call MatSetOption(dCdx, MAT_COLUMN_ORIENTED, PETScIerr)
+  !         if( PETScIerr/=0 ) &
+  !           call terminate("createPETScMat", &
+  !                          "Error in MatSetFromOptions dCdw")
 
-!         if( PETScIerr/=0 ) &
-!           call terminate("createPETScMat", "Error in MatSetOption dCdx")
-! #endif
-!         ! Extract info from the global matrix (only processor 0 does it).
 
-!         if( PETScRank==0 .and. debug ) then
+  !         ! Set column major order for the matrix dRda.
+  ! #ifdef USE_PETSC_3
+  !         call MatSetOption(dCdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
-!           ! Get the global number of rows and columns.
+  !         if( PETScIerr/=0 ) &
+  !           call terminate("createPETScMat", "Error in MatSetOption dcdx")
+  ! #else
+  !         call MatSetOption(dCdx, MAT_COLUMN_ORIENTED, PETScIerr)
 
-!           call MatGetSize(dCdx, matRows, matCols, PETScIerr)
+  !         if( PETScIerr/=0 ) &
+  !           call terminate("createPETScMat", "Error in MatSetOption dCdx")
+  ! #endif
+  !         ! Extract info from the global matrix (only processor 0 does it).
 
-!           if( PETScIerr/=0 ) &
-!             call terminate("createPETScMat", "Error in MatGetSize dCdx")
+  !         if( PETScRank==0 .and. debug ) then
 
-!           write(*,20) "# MATRIX: dCdx global size =", &
-!                       matRows, " x ", matCols
+  !           ! Get the global number of rows and columns.
 
-!           ! Gets the matrix type as a string from the matrix object.
+  !           call MatGetSize(dCdx, matRows, matCols, PETScIerr)
 
-!           call MatGetType(dCdx, matTypeStr, PETScIerr)
+  !           if( PETScIerr/=0 ) &
+  !             call terminate("createPETScMat", "Error in MatGetSize dCdx")
 
-!           if( PETScIerr/=0 ) &
-!             call terminate("createPETScMat", "Error in MatGetType dCdx")
+  !           write(*,20) "# MATRIX: dCdx global size =", &
+  !                       matRows, " x ", matCols
 
-!           write(*,30) "# MATRIX: dCdx type        =", matTypeStr
+  !           ! Gets the matrix type as a string from the matrix object.
 
-!         endif
+  !           call MatGetType(dCdx, matTypeStr, PETScIerr)
 
-!         ! Query about the ownership range.
+  !           if( PETScIerr/=0 ) &
+  !             call terminate("createPETScMat", "Error in MatGetType dCdx")
 
-!         if( debug ) then
-!           call MatGetOwnershipRange(dCdx, iLow, iHigh, PETScIerr)
+  !           write(*,30) "# MATRIX: dCdx type        =", matTypeStr
 
-!           if( PETScIerr/=0 ) &
-!             call terminate("createPETScMat", &
-!                            "Error in MatGetOwnershipRange dCdx")
+  !         endif
 
-!           write(*,40) "# MATRIX: dCdx Proc", PETScRank, "; #rows =", &
-!                       nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
-!         endif
+  !         ! Query about the ownership range.
 
-!   !     ******************************************************************
-!   !     dCda
+  !         if( debug ) then
+  !           call MatGetOwnershipRange(dCdx, iLow, iHigh, PETScIerr)
 
-!   !
-!   !     ******************************************************************
-!   !     *                                                                *
-!   !     * Create matrix dCda that is used to compute the partial         *
-!   !     * derivative of the Extra variabled for the the time spectral    *
-!   !     * case                                                           *
-!   !     *                                                                *
-!   !     * Matrix dRda has size [nTimeIntervals,nDesignExtra] and is      *
-!   !     * generally dense.                                               *
-!   !     *                                                                *
+  !           if( PETScIerr/=0 ) &
+  !             call terminate("createPETScMat", &
+  !                            "Error in MatGetOwnershipRange dCdx")
 
-!   !     *                                                                *
-!   !     ******************************************************************
-!   !
+  !           write(*,40) "# MATRIX: dCdx Proc", PETScRank, "; #rows =", &
+  !                       nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
+  !         endif
 
-!         call MatCreate(SUMB_PETSC_COMM_WORLD, dCda, PETScIerr)
+  !   !     ******************************************************************
+  !   !     dCda
 
-!         if( PETScIerr/=0 ) &
-!           call terminate("createPETScMat", "Error in MatCreate dCda")
+  !   !
+  !   !     ******************************************************************
+  !   !     *                                                                *
+  !   !     * Create matrix dCda that is used to compute the partial         *
+  !   !     * derivative of the Extra variabled for the the time spectral    *
+  !   !     * case                                                           *
+  !   !     *                                                                *
+  !   !     * Matrix dRda has size [nTimeIntervals,nDesignExtra] and is      *
+  !   !     * generally dense.                                               *
+  !   !     *                                                                *
 
+  !   !     *                                                                *
+  !   !     ******************************************************************
+  !   !
 
-!         call MatSetSizes(dCda, PETSC_DECIDE,PETSC_DECIDE, &
-!                          nTimeIntervalsSpectral,nDesignExtra, PETScIerr)
-!        ! call MatSetSizes(dCda,PETSC_DETERMINE, nTimeIntervalsSpectral, &
-!        !                  PETSC_DETERMINE, nDesignExtra, PETScIerr)
+  !         call MatCreate(SUMB_PETSC_COMM_WORLD, dCda, PETScIerr)
 
-!         if( PETScIerr/=0 ) &
-!           call terminate("createPETScMat", "Error in MatSetSizes dCda")
+  !         if( PETScIerr/=0 ) &
+  !           call terminate("createPETScMat", "Error in MatCreate dCda")
 
-!         call MatSetType(dCda,MATMPIDENSE,PETScIerr)
 
-!         if( PETScIerr/=0 ) &
-!           call terminate("createPETScMat", &
-!                          "Error in MatSetType dCda")
+  !         call MatSetSizes(dCda, PETSC_DECIDE,PETSC_DECIDE, &
+  !                          nTimeIntervalsSpectral,nDesignExtra, PETScIerr)
+  !        ! call MatSetSizes(dCda,PETSC_DETERMINE, nTimeIntervalsSpectral, &
+  !        !                  PETSC_DETERMINE, nDesignExtra, PETScIerr)
 
-!         ! Set column major order for the matrix dRda.
-! #ifdef USE_PETSC_3
-!         call MatSetOption(dCda, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
+  !         if( PETScIerr/=0 ) &
+  !           call terminate("createPETScMat", "Error in MatSetSizes dCda")
 
-!         if( PETScIerr/=0 ) &
-!           call terminate("createPETScMat", "Error in MatSetOption dcda")
-! #else
-!         call MatSetOption(dCda, MAT_COLUMN_ORIENTED, PETScIerr)
+  !         call MatSetType(dCda,MATMPIDENSE,PETScIerr)
 
-!         if( PETScIerr/=0 ) &
-!           call terminate("createPETScMat", "Error in MatSetOption dCda")
-! #endif
-!         ! Extract info from the global matrix (only processor 0 does it).
+  !         if( PETScIerr/=0 ) &
+  !           call terminate("createPETScMat", &
+  !                          "Error in MatSetType dCda")
 
-!         if( PETScRank==0 .and. debug ) then
+  !         ! Set column major order for the matrix dRda.
+  ! #ifdef USE_PETSC_3
+  !         call MatSetOption(dCda, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
 
-!           ! Get the global number of rows and columns.
+  !         if( PETScIerr/=0 ) &
+  !           call terminate("createPETScMat", "Error in MatSetOption dcda")
+  ! #else
+  !         call MatSetOption(dCda, MAT_COLUMN_ORIENTED, PETScIerr)
 
-!           call MatGetSize(dCda, matRows, matCols, PETScIerr)
+  !         if( PETScIerr/=0 ) &
+  !           call terminate("createPETScMat", "Error in MatSetOption dCda")
+  ! #endif
+  !         ! Extract info from the global matrix (only processor 0 does it).
 
-!           if( PETScIerr/=0 ) &
-!             call terminate("createPETScMat", "Error in MatGetSize dCda")
+  !         if( PETScRank==0 .and. debug ) then
 
-!           write(*,20) "# MATRIX: dCda global size =", &
-!                       matRows, " x ", matCols
+  !           ! Get the global number of rows and columns.
 
-!           ! Gets the matrix type as a string from the matrix object.
+  !           call MatGetSize(dCda, matRows, matCols, PETScIerr)
 
-!           call MatGetType(dCda, matTypeStr, PETScIerr)
+  !           if( PETScIerr/=0 ) &
+  !             call terminate("createPETScMat", "Error in MatGetSize dCda")
 
-!           if( PETScIerr/=0 ) &
-!             call terminate("createPETScMat", "Error in MatGetType dCda")
+  !           write(*,20) "# MATRIX: dCda global size =", &
+  !                       matRows, " x ", matCols
 
-!           write(*,30) "# MATRIX: dCda type        =", matTypeStr
+  !           ! Gets the matrix type as a string from the matrix object.
 
-!         endif
+  !           call MatGetType(dCda, matTypeStr, PETScIerr)
 
-!         ! Query about the ownership range.
+  !           if( PETScIerr/=0 ) &
+  !             call terminate("createPETScMat", "Error in MatGetType dCda")
 
-!         if( debug ) then
-!           call MatGetOwnershipRange(dCda, iLow, iHigh, PETScIerr)
+  !           write(*,30) "# MATRIX: dCda type        =", matTypeStr
 
-!           if( PETScIerr/=0 ) &
-!             call terminate("createPETScMat", &
-!                            "Error in MatGetOwnershipRange dCda")
+  !         endif
 
-!           write(*,40) "# MATRIX: dCda Proc", PETScRank, "; #rows =", &
-!                nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
-!        endif
+  !         ! Query about the ownership range.
+
+  !         if( debug ) then
+  !           call MatGetOwnershipRange(dCda, iLow, iHigh, PETScIerr)
+
+  !           if( PETScIerr/=0 ) &
+  !             call terminate("createPETScMat", &
+  !                            "Error in MatGetOwnershipRange dCda")
+
+  !           write(*,40) "# MATRIX: dCda Proc", PETScRank, "; #rows =", &
+  !                nTimeIntervalsSpectral, "; ownership =", iLow, "to", iHigh-1
+  !        endif
 
 
   ! Synchronize the processors.
@@ -1159,7 +1155,7 @@ subroutine createPETScMat
 end subroutine createPETScMat
 
 
-subroutine drdwPreAllocation(nnzDiag,nnzOffDiag,wSize)
+subroutine drdwPreAllocation(onProc,offProc,wSize)
 
   ! Get a good estimate of the number of non zero rows for the
   ! on-diagonal and off-diagonal portions of the matrix
@@ -1170,21 +1166,21 @@ subroutine drdwPreAllocation(nnzDiag,nnzOffDiag,wSize)
   use inputTimeSpectral 
   use flowVarRefState 
   use inputADjoint    
-
+  use BCTypes
   implicit none
 
   ! Subroutine Arguments
   integer(kind=intType),intent(in)  :: wSize
-  integer(kind=intType),intent(out) :: nnzDiag(wSize),nnzOffDiag(Wsize)
+  integer(kind=intType),intent(out) :: onProc(wSize),offProc(Wsize)
 
 
   ! Local Variables
 
-  integer(kind=intType) :: nn,i,j,k,counter,sps
+  integer(kind=intType) :: nn,i,j,k,ii,sps
 
-  counter = 1
-  nnzDiag(:) = 13+(nTimeIntervalsSpectral-1) ! ALWAYS have the center cell ON-PROCESSOR
-  nnzOffDiag(:) = 0_intType 
+  ii = 0
+  onProc(:) = 1+(nTimeIntervalsSpectral-1) ! ALWAYS have the center cell ON-PROCESSOR
+  offProc(:) = 0_intType 
   do sps=1,nTimeIntervalsSpectral
      do nn=1,nDom
         call setPointersAdj(nn,1_intType,sps)
@@ -1192,26 +1188,86 @@ subroutine drdwPreAllocation(nnzDiag,nnzOffDiag,wSize)
         do k=2,kl
            do j=2,jl
               do i=2,il 
-                 if (i-2 < 2) nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (i-1 < 2) nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (i+1 > il)nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (i+2 > il)nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (j-2 < 2) nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (j-1 < 2) nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (j+1 > jl)nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (j+2 > jl)nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (k-2 < 2) nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (k-1 < 2) nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (k+1 > kl)nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (k+2 > kl)nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 counter = counter + 1
+                 ii = ii + 1
+                 if (i-2 < 2) then
+                    call checkCell(iMin,j,k,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+
+                 if (i-1 < 2) then 
+                    call checkCell(iMin,j,k,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+
+                 if (i+1 > il) then 
+                    call checkCell(iMax,j,k,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+                 if (i+2 > il) then
+                    call checkCell(iMax,j,k,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+
+                 if (j-2 < 2) then 
+                    call checkCell(jMin,i,k,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+
+                 if (j-1 < 2) then 
+                    call checkCell(jMin,i,k,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+
+                 if (j+1 > jl) then 
+                    call checkCell(jMax,i,k,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+
+                 if (j+2 > jl) then 
+                    call checkCell(jMax,i,k,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+
+                 if (k-2 < 2) then 
+                    call checkCell(kMin,i,j,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+
+                 if (k-1 < 2) then 
+                    call checkCell(kMin,i,j,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+
+                 if (k+1 > kl) then 
+                    call checkCell(kMax,i,j,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+
+                 if (k+2 > kl) then 
+                    call checkCell(kMax,i,j,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
               end do ! I loop
            end do ! J loop
         end do ! K loop
      end do ! Domain Loop
   end do ! sps Loop
+
 end subroutine drdwPreAllocation
-subroutine drdwPCPreAllocation(nnzDiag,nnzOffDiag,wSize)
+
+subroutine drdwPCPreAllocation(onProc,offProc,wSize)
 
   ! Get a good estimate of the number of non zero rows for the
   ! on-diagonal and off-diagonal portions of the matrix
@@ -1222,21 +1278,22 @@ subroutine drdwPCPreAllocation(nnzDiag,nnzOffDiag,wSize)
   use inputTimeSpectral 
   use flowVarRefState 
   use inputADjoint    
+  use BCTypes
 
   implicit none
 
   ! Subroutine Arguments
   integer(kind=intType),intent(in)  :: wSize
-  integer(kind=intType),intent(out) :: nnzDiag(wSize),nnzOffDiag(Wsize)
+  integer(kind=intType),intent(out) :: onProc(wSize),offProc(wSize)
 
 
   ! Local Variables
 
-  integer(kind=intType) :: nn,i,j,k,counter,sps
+  integer(kind=intType) :: nn,i,j,k,sps,ii
 
-  counter = 1
-  nnzDiag(:) = 7+(nTimeIntervalsSpectral-1) ! ALWAYS have the center cell ON-PROCESSOR
-  nnzOffDiag(:) = 0_intType 
+  ii = 0
+  onProc(:) = 1+(nTimeIntervalsSpectral-1) ! ALWAYS have the center cell ON-PROCESSOR
+  offProc(:) = 0_intType 
   do sps=1,nTimeIntervalsSpectral
      do nn=1,nDom
         call setPointersAdj(nn,1_intType,sps)
@@ -1244,13 +1301,42 @@ subroutine drdwPCPreAllocation(nnzDiag,nnzOffDiag,wSize)
         do k=2,kl
            do j=2,jl
               do i=2,il 
-                 if (i-1 < 2) nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (i+1 > il)nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (j-1 < 2) nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (j+1 > jl)nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (k-1 < 2) nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 if (k+1 > kl)nnzOffDiag(counter) = nnzOffDiag(counter) + 1
-                 counter = counter + 1
+                 ii = ii + 1
+                 if (i-1 < 2) then 
+                    call checkCell(iMin,j,k,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+
+                 if (i+1 > il) then 
+                    call checkCell(iMax,j,k,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+
+                 if (j-1 < 2) then 
+                    call checkCell(jMin,i,k,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+
+                 if (j+1 > jl) then 
+                    call checkCell(jMax,i,k,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+
+                 if (k-1 < 2) then 
+                    call checkCell(kMin,i,j,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
+
+                 if (k+1 > kl) then 
+                    call checkCell(kMax,i,j,onProc(ii),offProc(ii),1)
+                 else
+                    onProc(ii) = onProc(ii) + 1
+                 end if
               end do ! I loop
            end do ! J loop
         end do ! K loop
@@ -1258,7 +1344,7 @@ subroutine drdwPCPreAllocation(nnzDiag,nnzOffDiag,wSize)
   end do ! sps loop
 end subroutine drdwPCPreAllocation
 
-subroutine drdxPreAllocation(nnzDiag,nnzOffDiag,wSize)
+subroutine drdxPreAllocation(onProc,offProc,wSize)
 
   ! Get a good estimate of the number of non zero rows for the
   ! on-diagonal and off-diagonal portions of the matrix
@@ -1269,40 +1355,206 @@ subroutine drdxPreAllocation(nnzDiag,nnzOffDiag,wSize)
   use inputTimeSpectral 
   use flowVarRefState 
   use inputADjoint    
+  use BCTypes
 
   implicit none
 
   ! Subroutine Arguments
   integer(kind=intType),intent(in)  :: wSize
-  integer(kind=intType),intent(out) :: nnzDiag(wSize),nnzOffDiag(Wsize)
+  integer(kind=intType),intent(out) :: onProc(wSize),offProc(wSize)
 
   ! Local Variables
 
-  integer(kind=intType) :: nn,i,j,k,l,counter,sps
+  integer(kind=intType) :: nn,i,j,k,l,sps,ii
 
-  counter = 1
-  nnzDiag(:) = 32*3 + 8*3*(nTimeIntervalsSpectral-1) ! ALWAYS have the center cell ON-PROCESSOR
-  nnzOffDiag(:) = 0_intType 
+  onProc(:) = 8*3+8*3*(nTimeIntervalsSpectral-1) ! ALWAYS have the center cell ON-PROCESSOR
+  offProc(:) = 0_intType 
+  ii = 0 
+
+  ! This is for the "Regular" drdx calculation. i.e. xadjb
   do sps=1,nTimeIntervalsSpectral
      do nn=1,nDom
         call setPointersAdj(nn,1_intType,sps)
-
         ! Loop over each Cell
         do k=2,kl
            do j=2,jl
               do i=2,il 
                  do l=1,nw
-                    if (i-1 < 2) nnzOffDiag(counter) = nnzOffDiag(counter) + 12
-                    if (i+1 > il)nnzOffDiag(counter) = nnzOffDiag(counter) + 12
-                    if (j-1 < 2) nnzOffDiag(counter) = nnzOffDiag(counter) + 12
-                    if (j+1 > jl)nnzOffDiag(counter) = nnzOffDiag(counter) + 12
-                    if (k-1 < 2) nnzOffDiag(counter) = nnzOffDiag(counter) + 12
-                    if (k+1 > kl)nnzOffDiag(counter) = nnzOffDiag(counter) + 12
-                    counter = counter + 1
+                    ii = ii + 1
+                    if (i-1 < 2) then 
+                       call checkCell(iMin,j,k,onProc(ii),offProc(ii),12)
+                    else
+                       onProc(ii) = onProc(ii) + 12
+                    end if
+
+                    if (i+1 > il) then 
+                       call checkCell(iMax,j,k,onProc(ii),offProc(ii),12)
+                    else
+                       onProc(ii) = onProc(ii) + 12
+                    end if
+
+                    if (j-1 < 2) then 
+                       call checkCell(jMin,i,k,onProc(ii),offProc(ii),12)
+                    else
+                       onProc(ii) = onProc(ii) + 12
+                    end if
+
+                    if (j+1 > jl) then 
+                       call checkCell(jMax,i,k,onProc(ii),offProc(ii),12)
+                    else
+                       onProc(ii) = onProc(ii) + 12
+                    end if
+
+                    if (k-1 < 2) then 
+                       call checkCell(kMin,i,j,onProc(ii),offProc(ii),12)
+                    else
+                       onProc(ii) = onProc(ii) + 12
+                    end if
+
+                    if (k+1 > kl) then 
+                       call checkCell(kMax,i,j,onProc(ii),offProc(ii),12)
+                    else
+                       onProc(ii) = onProc(ii) + 12
+                    end if
                  end do ! l loop
               end do ! I loop
            end do ! J loop
         end do ! K loop
      end do ! Domain Loop
   end do ! sps loop
+
+  ! However, drdx is more complex since we ALSO have
+  ! xblockcorners. These however, only show up for the cells that are
+  ! along a symmetry plane. Lets try to estimate those. 
+
+  ! THIS MAY NOT WORK FOR SPS CASE!!! 
+  ii = 0
+  do sps=1,nTimeIntervalsSpectral
+     do nn=1,nDom
+        call setPointersAdj(nn,1_intType,sps)
+        ! Loop over each Cell
+        do k=2,kl
+           do j=2,jl
+              do i=2,il
+                 do l=1,nw
+                    ii = ii + 1
+                    call checkCellSym(i,j,k,onProc(ii),24)
+                 end do
+              end do
+           end do
+        end do
+     end do
+  end do
 end subroutine drdxPreAllocation
+
+
+subroutine checkCell(iface,i,j,onProc,offProc,addVal)
+
+  use blockPointers
+  use BCTypes
+  use communication
+  implicit None
+
+  ! Subroutine Arguments
+
+  integer(kind=intType), intent(in) :: iface,i,j
+  integer(kind=intType), intent(inout) :: onProc,offProc
+  integer(kind=intType), intent(in) :: addVal
+
+  !local Variables
+  integer(kind=intType) :: iBeg,iEnd,jBeg,jEnd,mm,ll
+
+  ! It is assumed blockPointers are already set for this block
+
+  ! Basically what we want to do is take the cell defined by index i
+  ! and j on face defined by iface and determine:
+  ! 1. What block subface it is on.
+  ! 2. Determine if this is a boundary condition or a block-match
+  ! 3. If its a block-match is the connecting block on- or off-processor
+
+
+  ! If its a BC condition, nothing is added onProc and offProc
+  ! If its a block-match on-proc, addVal is added to onProc
+  ! If its a block-match off-proc, addVal is added to offProc
+
+  n1to1Loop: do mm=1,nsubFace
+
+     ! Store the correct index for this subface, i.e. add the
+     ! offset from the boundary subfaces.
+
+     if (BCFaceID(mm) == iface) then ! Check Face
+        if (iface == iMin .or. iface == iMax) then
+           iBeg = jcBeg(mm) ; iEnd = jcEnd(mm)
+           jBeg = kcBeg(mm) ; jEnd = kcEnd(mm)
+        else if(iface == jMin .or. iface == jMax) then
+           iBeg = icBeg(mm) ; iEnd = icEnd(mm)
+           jBeg = kcBeg(mm) ; jEnd = kcEnd(mm)
+        else
+           iBeg = icBeg(mm) ; iEnd = icEnd(mm)
+           jBeg = jcBeg(mm) ; jEnd = jcEnd(mm)
+        end if
+
+        ! Check to make sure cell is on this (possible) sub-face
+        if (i>=iBeg .and. i<=iEnd .and. j>=jBeg .and. j<= jEnd) then
+
+           if (neighproc(mm) == myid) then
+              onProc = onProc + addVal
+           else
+              if (neighproc(mm) >=0) then
+                 offProc = offProc + addVal
+              end if
+           end if
+        end if
+
+     end if
+  end do n1to1Loop
+end subroutine checkCell
+
+subroutine checkCellSym(i,j,k,onProc,addVal)
+
+  use blockPointers
+  use BCTypes
+  use communication
+  implicit None
+
+  ! Subroutine Arguments
+
+  integer(kind=intType), intent(in) :: i,j,k
+  integer(kind=intType), intent(inout) :: onProc
+  integer(kind=intType), intent(in) :: addVal
+
+  !local Variables
+  integer(kind=intType) :: iBeg,iEnd,jBeg,jEnd,mm,ll
+
+  n1to1Loop: do mm=1,nsubFace
+     if (BCType(mm) == Symm) then 
+        ! Is cell i,j,k "on" the symmetry plane
+        select case (BCFaceID(mm))
+        case (iMin)
+           if (i == 2) then
+              onProc = onProc + addVal
+           end if
+        case (iMax)
+           if (i == il) then
+              onProc = onProc + addVal
+           end if
+        case (jMin)
+           if (j == 2) then
+              onProc = onProc + addVal
+           end if
+        case (jMax)
+           if (j == jl) then
+              onProc = onProc + addVal
+           end if
+        case (kMin)
+           if (k == 2) then
+              onProc = onProc + addVal
+           end if
+        case (kMax)
+           if (k == kl) then
+              onProc = onProc + addVal
+           end if
+        end select
+     end if
+  end do n1to1Loop
+end subroutine checkCellSym

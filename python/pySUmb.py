@@ -104,8 +104,9 @@ class SUMB(AeroSolver):
 			'Approx PC': [str,'no'],
 			'restart ADjoint':[str,'no'],
 			'Adjoint solver type': [str,'GMRES'],
-			'adjoint relative tolerance':[float,1e-10],
-			'adjoint absolute tolerance':[float,1e-16],
+			'adjointL2convergence':[float,1e-10],
+			'adjointL2convergenceRel':[float,1e-16],
+			'adjointL2convergenceAbs':[float,1e-16],
 			'adjoint max iterations': [int,500],
 			'adjoint restart iteration' : [int,80],
 			'adjoint monitor step': [int,10],
@@ -194,7 +195,7 @@ class SUMB(AeroSolver):
 		'''
 
 		self.initialize(aero_problem,sol_type,grid_file,*args,**kwargs)
-
+		
 
 		if self.getOption('reinitialize'):
 			print 'reinitialization not yet implemented...'
@@ -394,14 +395,12 @@ class SUMB(AeroSolver):
 
 		self.interface.setupADjointRHS(objective)
 
-		try:  kwargs['structAdjoint']
-		except KeyError:
-			test=1
-		else:
-			self.interface.augmentADjointRHS(objective,kwargs['structAdjoint'])
-		#endtry
+		tols = [self.getOption('adjointL2convergence'),
+			self.getOption('adjointL2convergenceRel'),
+			self.getOption('adjointL2convergenceAbs')]
 
-		self.interface.solveADjointPETSc(objective)#,restart=self.getOption('restart ADjoint')
+		restart = self.getOption('restart ADjoint')
+		self.interface.solveADjointPETSc(objective,tols,restart=restart)
 
 		return
 

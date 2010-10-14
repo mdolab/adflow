@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine setADjoint(nnodes,functionGradLocal)
+subroutine setADjoint(ncells,functionGradLocal)
       use ADjointPETSc
       use ADjointVars
 
@@ -18,8 +18,8 @@ subroutine setADjoint(nnodes,functionGradLocal)
 !
 !     Subroutine arguments.
 ! 
-      integer(kind=intType),intent(in):: nnodes
-      real(kind=realType),dimension(nNodes),intent(in) :: functionGradLocal
+      integer(kind=intType),intent(in):: ncells
+      real(kind=realType),dimension(ncells),intent(in) :: functionGradLocal
 !
 !     Local variables.
 !

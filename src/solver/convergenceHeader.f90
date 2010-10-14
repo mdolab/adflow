@@ -39,7 +39,7 @@ subroutine convergenceHeader
   !
   ! Determine whether or not the iterations must be written.
 
-  if (printIterations .eqv. .True.) then
+  if (printIterations) then
      writeIterations = .true.
      if(equationMode          == unsteady .and. &
           timeIntegrationScheme == explicitRK) writeIterations = .false.

@@ -29,11 +29,9 @@ subroutine getdRdXvPsi(ndof,dXv)
   integer(kind=intType) :: ierr
 
   call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DECIDE,dXv,gridVec,ierr)
-  print *,'myid,0:',myid,ierr
   call MatMultTranspose(dRdX,psi,GridVec,ierr)
-  print *,'myid,1:',myid,ierr
   call VecDestroy(GridVec,ierr)
-  print *,'myid,2:',myid,ierr
+
 
 end subroutine getdRdXvPsi
 

@@ -190,12 +190,12 @@
        !print *,'looping domains'
        ! Loop over the number of local blocks.
 
+      
        domains: do nn=1,nDom
 
          ! Set the pointers for this block.
 
          call setPointers(nn, groundLevel, sps)
-
          ! Check for a moving block.
 
          testMoving: if( blockIsMoving ) then

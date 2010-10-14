@@ -736,6 +736,7 @@ class SUmbInterface(object):
         '''
         Set the alpha and beta fromthe desiggn variables
         '''
+        
         [velDir,liftDir,dragDir]= self.sumb.adjustinflowangleadj((aero_problem._flows.alpha*(pi/180.0)),(aero_problem._flows.beta*(pi/180.0)),aero_problem._flows.liftIndex)
         self.sumb.inputphysics.veldirfreestream = velDir
         self.sumb.inputphysics.liftdirection = liftDir
@@ -744,8 +745,11 @@ class SUmbInterface(object):
         if self.sumb.inputiteration.printiterations:
             if (self.myid==0):print '-> Alpha...',aero_problem._flows.alpha*(pi/180.0),aero_problem._flows.alpha#,velDir,liftDir,dragDir
 
+
+
         #update the flow vars
         self.sumb.updateflow()
+
         return
 
     def setReferencePoint(self,aero_problem):
@@ -1193,8 +1197,8 @@ class SUmbInterface(object):
         autofile.write(  "                #                      CG\n")
         autofile.write(  "                #                      GMRES\n")
         autofile.write(  "                #                      FGMRES\n")
-        autofile.write(  "        adjoint relative tolerance   : %3.2e\n"%(kwargs['options']['adjoint relative tolerance'][1]))
-        autofile.write(  "        adjoint absolute tolerance   : %3.2e\n"%(kwargs['options']['adjoint absolute tolerance'][1]))
+        autofile.write(  "        adjoint relative tolerance   : %3.2e\n"%(kwargs['options']['adjointL2convergence'][1]))
+        autofile.write(  "        adjoint absolute tolerance   : %3.2e\n"%(kwargs['options']['adjointL2convergenceAbs'][1]))
         autofile.write(  "        adjoint divergence tolerance : 1e5\n")
         autofile.write(  "        adjoint max iterations       : %d\n"%kwargs['options']['adjoint max iterations'][1])
         autofile.write(  "        adjoint restart iteration    : %d\n"%kwargs['options']['adjoint restart iteration'][1])
@@ -1523,7 +1527,7 @@ class SUmbInterface(object):
                 #endif
 
             elif(self.sumb.monitor.nitercur == 0 and  self.sumb.iteration.itertot == 0):
-
+                
                 # Reallocate convergence history array and
                 # time array with new size, storing old values from restart
                 if (self.myid == 0):
@@ -1557,7 +1561,6 @@ class SUmbInterface(object):
             else:
 
                 # More Time Steps / Iterations in the same session
-            
                 # Reallocate convergence history array and
                 # time array with new size, storing old values from previous runs
                 if (self.myid == 0):
@@ -1595,7 +1598,7 @@ class SUmbInterface(object):
                 self.sumb.monitor.nitercur  = 0#1
                 self.sumb.iteration.itertot = 0#1
 
-               
+                
                 # update number of time steps from restart
                 self.sumb.monitor.ntimestepsrestart = self.sumb.monitor.ntimestepsrestart \
                                                  + self.sumb.monitor.timestepunsteady
@@ -1616,7 +1619,7 @@ class SUmbInterface(object):
             sys.exit(0)
         #endif
 
-    
+
         self.GetMesh()._UpdateGeometryInfo()
       
         self.routineFailed = self.sumb_comm_world.allreduce(self.sumb.killsignals.routinefailed,mpi.MIN)
@@ -1938,19 +1941,16 @@ class SUmbInterface(object):
         if(self.myid==0):print 'returning....'
         return
 
-    def setupADjointMatrix(self):
+    def setupADjointMatrix(self,forcePoints=None):
         '''
         Setup the ADjoint dRdw matrix and create the PETSc
         Solution KSP object
         '''
-        #create the neccesary PETSc objects
-        if(self.myid==0):print 'before createpetscvars'
-        #self.sumb.createpetscvars()
-        #self.sumb.createpetscmat()
-        #self.sumb.setupadjointmatrix(self.level)
-        #self.sumb.setupadjointmatrixtranspose(self.level)
         self.sumb.setupallresidualmatrices(self.level)
-        forcePoints = self.getForcePoints()
+        if forcePoints == None:
+            forcePoints = self.getForcePoints()
+        # end if
+
         self.sumb.setupcouplingmatrixstruct(forcePoints.T)
         self.sumb.setuppetscksp(self.level)
 
@@ -1995,30 +1995,25 @@ class SUmbInterface(object):
 
         return
 
-    def solveADjointPETSc(self,objective,**kwargs):
+    def solveADjointPETSc(self,objective,tols,**kwargs):
         '''
         Solve the ADjoint system using PETSc
         '''
-        #print 'restart',kwargs['restart']
-        #print 'testing',abs(self.sumb.inputadjoint.restartadjoint)==True,self.sumb.inputadjoint.restartadjoint
+        print 'restart is:',self.sumb.inputadjoint.restartadjoint
         if (abs(self.sumb.inputadjoint.restartadjoint)==True):
-            #print 'storing adjoint'
-            #if(kwargs['restart'].lower()=='yes'):
             if self.possibleObjectives[objective.lower()] in self.storedADjoints.keys():
-                #if self.myid==0:print 'stored ADjoint present',objective
                 self.sumb.setadjoint(self.storedADjoints[self.possibleObjectives[objective.lower()]])
             else:
-                #print 'stored ADjoint not present',self.sumb.adjointvars.nnodeslocal,objective
-                #self.storedADjoints[self.possibleObjectives[objective.lower()]] =  self.sumb.getadjoint(self.sumb.adjointvars.nnodeslocal*3)*0.0
-                self.storedADjoints[self.possibleObjectives[objective.lower()]]=numpy.zeros([self.sumb.adjointvars.nnodeslocal*3],float)
+                self.storedADjoints[self.possibleObjectives[objective.lower()]]=numpy.zeros([self.sumb.adjointvars.ncellslocal*5],float)
                 self.sumb.setadjoint(self.storedADjoints[self.possibleObjectives[objective.lower()]])
             #endif
         #endif
-        #self.sumb.solveadjointpetsc()
+
+        self.sumb.setadjointtolerances(tols[0],tols[1],tols[2])
         self.sumb.solveadjointtransposepetsc()
+
         if (abs(self.sumb.inputadjoint.restartadjoint)==True):
-            #if(kwargs['restart'].lower()=='yes'):
-            self.storedADjoints[self.possibleObjectives[objective.lower()]] =  self.sumb.getadjoint(self.sumb.adjointvars.nnodeslocal*3)
+            self.storedADjoints[self.possibleObjectives[objective.lower()]] =  self.sumb.getadjoint(self.sumb.adjointvars.ncellslocal*5)
         #endif
 
         return

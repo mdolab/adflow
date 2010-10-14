@@ -228,6 +228,7 @@ subroutine setupAllResidualMatrices(level)
   if( PETScIerr/=0 ) &
        call terminate("setupAllresidualMatrices", "Error in MatZeroEntries drdx")
 
+  !call PetscOptionsSetValue('-mat_view_info',PETSC_NULL_CHARACTER,ierr)
 
   !print *,'Entering Domain loop'
   domainLoopAD: do nn=1,nDom
