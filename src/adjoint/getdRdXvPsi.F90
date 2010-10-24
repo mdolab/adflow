@@ -36,3 +36,34 @@ subroutine getdRdXvPsi(ndof,dXv)
 end subroutine getdRdXvPsi
 
 
+subroutine getdJdx(ndof,dXv)
+  !
+  !     ******************************************************************
+  !     *                                                                *
+  !     * Multiply the current adjoint vector by dRdXv to get a vector   *
+  !     * of length Xv. This is collective communication part            *
+  !     *                                                                *
+  !     ******************************************************************
+  !
+  use communication
+  use ADjointPETSc, only: dJdx
+  use warpingPETSC 
+  use inputADjoint
+  implicit none
+
+  integer(kind=intType), intent(in) :: ndof
+  real(kind=realType), intent(out)  :: dXv(ndof)
+
+  integer(kind=intType) :: ierr,ilow,ihigh,counter,i
+  
+  call VecGetOwnershipRange(dJdx,ilow,ihigh,ierr)
+
+  counter = 0
+  do i=ilow,ihigh-1
+     counter = counter + 1
+     call VecGetValues(dJdx,1,i,dXv(counter),ierr)
+  end do
+
+end subroutine getdJdx
+
+

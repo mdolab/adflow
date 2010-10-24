@@ -20,6 +20,20 @@ python module sumb ! in
             use constants
             use allinputparam
         end subroutine readparamfile
+        subroutine monitorvariables(variables) ! in :test:monitorVariables.f90
+            character*(*) intent(inout) :: variables
+        end subroutine monitorvariables
+
+        subroutine surfacevariables(variables) ! in :test:surfaceVariables.f90
+            character*(*) intent(inout) :: variables
+        end subroutine surfacevariables
+
+        subroutine volumevariables(variables) ! in :test:volumeVariables.f90
+            character*(*) intent(inout) :: variables
+        end subroutine volumevariables
+ 
+        subroutine dummyreadparamfile ! in :sumb:../../inputParam/readParamFile.f90
+        end subroutine dummyreadparamfile
 
         subroutine partitionandreadgrid ! in :sumb:../../partitioning/partitionAndReadGrid.f90
             use inputio
@@ -220,12 +234,6 @@ python module sumb ! in
          real(kind=realtype) dimension(3,npts),intent(in) :: pts
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
        end subroutine verifyforces
-
-       subroutine setadjointtolerances(l2,l2rel,l2abs) ! in :test:setAdjointTolerances.f90
-         real(kind=realtype) :: l2
-         real(kind=realtype) :: l2rel
-         real(kind=realtype) :: l2abs
-       end subroutine setadjointtolerances
 
        subroutine setupcouplingmatrixstruct(pts,npts) ! in :test:getForces.f90
          real(kind=realtype) dimension(3,npts),intent(in) :: pts
@@ -669,6 +677,11 @@ python module sumb ! in
  !           logical :: storeconvinneriter
         end module inputio
 
+        module localmg ! in :test:localModules.f90
+            use constants
+            character(len=maxstringlen) :: mgdescription
+        end module localmg
+
         module inputiteration ! in :sumb:../../modules/inputParam.f90
             use precision
             integer(kind=inttype) parameter,optional :: rungekutta=1_inttype
@@ -831,6 +844,7 @@ python module sumb ! in
             integer(kind=inttype) parameter,optional :: petscgmres=2
             logical :: restartadjoint
             real(kind=realtype) :: adjreltol
+            real(kind=realtype) :: adjreltolrel
             integer(kind=inttype) parameter,optional :: blockjacobi=1
             integer(kind=inttype) parameter,optional :: natural=1
             integer(kind=inttype) :: adjrestart
@@ -844,6 +858,7 @@ python module sumb ! in
             integer(kind=inttype) parameter,optional :: reversecuthillmckee=2
             real(kind=realtype) :: sigma
             integer(kind=inttype) :: scaletype
+            logical :: printtiming
         end module inputadjoint
         
         module inputtimespectral ! in :sumb:../../modules/inputParam.f90
@@ -1001,6 +1016,7 @@ python module sumb ! in
           logical :: petscblockmatrix
           integer(kind=inttype) :: adjconvits
           !integer(kind=inttype) parameter,optional :: adjmaxiter=500
+        
         end module adjointpetsc
 
         module adjointvars ! in :sumb:ADjointVars.F90
@@ -1074,6 +1090,19 @@ python module sumb ! in
             integer(kind=inttype) parameter,optional :: costfunccmzalphadot=15
             integer(kind=inttype) parameter,optional :: costfunccmzq=16
           end module adjointvars
+
+          module inputtsstabderiv ! in :test:inputParam.f90
+            logical :: usewindaxis
+            logical :: tsrmode
+            logical :: tsstability
+            logical :: tsbetamode
+            logical :: tsmachmode
+            logical :: tsaltitudemode
+            logical :: tspmode
+            logical :: tsqmode
+            logical :: tsalphamode
+          end module inputtsstabderiv
+
 
         subroutine getsolution ! in :sumb:../../adjoint/designExport.f90
             use adjointvars
@@ -1238,11 +1267,10 @@ python module sumb ! in
            
          end subroutine setupgradientrhsflow
          
-         subroutine setupgradientrhsvolume(level,costfunction)
+         subroutine setupgradientrhsvolume(costfunction)
            use adjointpetsc
            use adjointvars
            implicit none
-           integer(kind=inttype), intent(in) :: level
            integer(kind=inttype), intent(in) :: costfunction
            
          end subroutine setupgradientrhsvolume
@@ -1278,6 +1306,11 @@ python module sumb ! in
           integer(kind=inttype) intent(in) :: ndof
           real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
         end subroutine getdrdxvpsi
+
+        subroutine getdjdx(ndof,dxv)
+          integer(kind=inttype) intent(in) :: ndof
+          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
+        end subroutine getdjdx
 
         subroutine computeaeroexpcoupling(costfunction)
           use adjointpetsc
@@ -1400,6 +1433,11 @@ python module sumb ! in
             real(kind=realtype) dimension(nnodes),intent(in) :: functiongradlocal
         end subroutine setadjoint
       
+
+        subroutine setdefaultvalues()
+        end subroutine setdefaultvalues
+       
+
 
 !         subroutine setupcouplingtotalstruct(level) ! in :sumb:setupCouplingTotalStruct.f90
 !             use blockpointers

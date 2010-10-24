@@ -241,24 +241,3 @@ subroutine getForcePoints(points,npts)
   end do domains
 end subroutine getForcePoints
 
-
-subroutine getIset(nn,i,j,k,il,jl,kl,iset)
-  use precision 
-  use communication
-  use block
-  use warpingPETSc
-  implicit none
-
-  integer(kind=intType) :: i,j,k,il,jl,kl,iset(3),nn
-
-  iset(1) = cumdofproc(myID) + cumdofblock(nn) + &
-       (k-1)*jl*il*3 + &
-       (j-1)*il*3    + &
-       (i-1)*3
-
-  iset(2) = iset(1) + 1
-  iset(3) = iset(1) + 2
-
-end subroutine getIset
-
-

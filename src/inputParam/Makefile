@@ -52,6 +52,7 @@ FF90_OBJECTS_2 = analyzeString.o\
 		 monitorVariables.o\
 		 readCpTempCurveFits.o\
 		 readParamFile.o\
+		 dummyReadParamFile.o\
 		 setDefaultValues.o\
 		 setEquationParameters.o\
 		 setIterationParam.o\

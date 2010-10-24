@@ -1181,6 +1181,7 @@ subroutine drdwPreAllocation(onProc,offProc,wSize)
   ii = 0
   onProc(:) = 1+(nTimeIntervalsSpectral-1) ! ALWAYS have the center cell ON-PROCESSOR
   offProc(:) = 0_intType 
+  
   do sps=1,nTimeIntervalsSpectral
      do nn=1,nDom
         call setPointersAdj(nn,1_intType,sps)
@@ -1369,7 +1370,9 @@ subroutine drdxPreAllocation(onProc,offProc,wSize)
 
   onProc(:) = 8*3+8*3*(nTimeIntervalsSpectral-1) ! ALWAYS have the center cell ON-PROCESSOR
   offProc(:) = 0_intType 
+
   ii = 0 
+
 
   ! This is for the "Regular" drdx calculation. i.e. xadjb
   do sps=1,nTimeIntervalsSpectral

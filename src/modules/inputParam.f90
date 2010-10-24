@@ -983,7 +983,8 @@
        ! adjMonStep    : Convergence monitor step
        
        real(kind=realType)    :: adjRelTol  
-       real(kind=realType)    :: adjAbsTol  
+       real(kind=realType)    :: adjAbsTol
+       real(kind=realType)    :: adjRelTolRel
        real(kind=realType)    :: adjDivTol  
        integer(kind=intType)  :: adjMaxIter 
        integer(kind=intType)  :: adjRestart 
@@ -993,7 +994,7 @@
        !            precondtioner
        
        real(kind=realType)    :: sigma
-      
+       logical :: printTiming
 
      end module inputADjoint
 
@@ -1006,7 +1007,7 @@
 !      * The actual values of this parameters are arbitrary;            *
 !      * in the code always the symbolic names are (should be) used.    *
 !      *                                                                *
-!      ******************************************************************
+!      *******************************************m***********************
 !
 
        ! TSStability : Whether or not the TS stability derivatives should

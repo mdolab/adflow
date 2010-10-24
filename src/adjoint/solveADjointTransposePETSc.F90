@@ -34,7 +34,7 @@
       real(kind=realType)   :: norm
 
       real(kind=realType), dimension(2) :: time
-      real(kind=realType)               :: timeAdjLocal, timeAdj
+      real(kind=realType)               :: timeAdjLocal, timeAdj,l2abs,curRes
 
       character(len=2*maxStringLen) :: errorMessage
 !
@@ -48,8 +48,8 @@
 
       ! Send some feedback to screen.
 
-      if( PETScRank==0 ) &
-        write(*,10) "Solving ADjoint Transpose with PETSc..."
+      if( PETScRank==0 .and. printTiming)  &
+           write(*,10) "Solving ADjoint Transpose with PETSc..."
 
       ! Get the initial time.
 
@@ -57,7 +57,7 @@
 
       if (restartADjoint) then
          !THe user wants to restart the adjoint from the last point. Set
-         !initial guess non-zero to tru instead of zeroing the matrix
+         !initial guess non-zero to true instead of zeroing the vector
          call KSPSetInitialGuessNonzero(ksp,PETSC_TRUE,PETScIerr)
 
       else
@@ -75,7 +75,7 @@
 !     ******************************************************************
 
       adjResHist = 0.0_realType
-      !print *,'asjhis',shape(adjResHist),adjmaxiter
+
       call KSPSetResidualHistory(ksp, adjResHist, adjMaxIter, &
                                  PETSC_FALSE, PETScIerr)
 
@@ -84,6 +84,23 @@
                        "Error in KSPSetResidualHistory.")
 
       ! Solve the adjoint system of equations [dR/dW]T psi = dJ/dW.
+ 
+
+      ! Get Current Residual
+      call MatMult(dRdWT,psi,pvr,PETScIerr)
+      call VecAXPY(pvr,PETScNegOne,dJdW,PETScIerr)
+      call VecNorm(pvr,NORM_2,curRes,PETScIerr)  
+
+      ! We are only going to overwrite adjRelTol and adjAbsTol
+
+      L2abs = curRes * adjreltolrel
+      
+      if (L2Abs < adjAbsTol) then
+         L2abs = adjabstol
+      end if
+ 
+ 
+      call KSPSetTolerances(ksp,adjRelTol,L2Abs,adjDivTol,adjMaxIter,PETScIerr)
 
       call KSPSolve(ksp,dJdW,psi,PETScIerr)
 
@@ -91,11 +108,8 @@
         call terminate("solveADjointPETSc", &
                        "Error in KSPSolve.")
 
-!      call VecView(psi,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-     ! call VecView(psi,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
-     ! pause
-      ! Get new time and compute the elapsed time.
 
+      ! Get new time and compute the elapsed time.
       call cpu_time(time(2))
       timeAdjLocal = time(2)-time(1)
 
@@ -132,10 +146,12 @@
         call terminate("solveADjointPETSc", & 
                        "Error in KSPGetIterationNumber.")
 
+    
+
       ! Use the root processor to display the output summary, such as
       ! the norm of error and the number of iterations
 
-      if( PETScRank==0 ) then
+      if( PETScRank==0 .and. printTiming) then
         write(*,20) "Solving ADjoint Transpose with PETSc time (s) =", timeAdj
         write(*,30) "Norm of error =",norm,"Iterations =",adjConvIts
         write(*,*) "------------------------------------------------"

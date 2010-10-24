@@ -45,8 +45,8 @@ subroutine setADjoint(ncells,functionGradLocal)
 
       ! Send some feedback to screen.
 
-      if( PETScRank==0 ) &
-        write(*,10) "Setting ADjoint Vector..."	
+    !   if( PETScRank==0 ) &
+!         write(*,10) "Setting ADjoint Vector..."	
 !
 !     ******************************************************************
 !     *                                                                *
@@ -60,9 +60,6 @@ subroutine setADjoint(ncells,functionGradLocal)
 
       call VecGetOwnershipRange(psi, iLow, iHigh, PETScIerr)
 	
-      !print *,'irange',ilow,ihigh,petscrank
-!      print *,'irange',iLow,iHigh
-
       if( PETScIerr/=0 ) &
         call terminate("setADjoint", &
                        "Error in VecGetOwnershipRange psi")

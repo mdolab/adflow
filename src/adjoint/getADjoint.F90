@@ -42,11 +42,6 @@ subroutine getADjoint(nnodes,functionGradLocal)
 !     ******************************************************************
 !
 
-      ! Send some feedback to screen.
-
-      if( PETScRank==0 ) &
-        write(*,10) "Retrieving ADjoint Vector..."!,nnodes	
-!
 !     ******************************************************************
 !     *                                                                *
 !     * Transfer solution from PETSc context.                          *
