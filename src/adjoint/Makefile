@@ -115,7 +115,6 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       getdRdXvPsi.o\
 	       setupCouplingMatrixStruct.o\
 	       agumentRHS.o\
-	       setAdjointTolerances.o\
 #	       setupCouplingTotalStruct.o\
 #	       setupADjointRHSStruct.o  \
 

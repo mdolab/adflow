@@ -9,7 +9,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine setupGradientRHSVolume(level,costFunction)
+      subroutine setupGradientRHSVolume(costFunction)
         !subroutine setupGradientRHS(level,sps,costFunction)
 !
 !     ******************************************************************
@@ -29,11 +29,11 @@
 !
 !     Subroutine arguments.
 !
-      integer(kind=intType), intent(in) :: level, costFunction
+      integer(kind=intType), intent(in) ::  costFunction
 !
 !     Local variables.
 !
-      integer(kind=intType)::sps=1
+      integer(kind=intType)::sps=1,level=1
       real(kind=realType), dimension(2) :: time
       real(kind=realType)               :: timeAdjLocal, timeAdj
 !
@@ -51,10 +51,8 @@
         write(*,10) "Assembling Gradient RHS vector..."
 
       ! Get the initial time.
-
+      level = 1
       call cpu_time(time(1))
-
-
 !
 !     ******************************************************************
 !     *                                                                *
@@ -100,105 +98,6 @@
 
       end select
 !
-!     ******************************************************************
-!     *                                                                *
-!     * Complete the PETSc vector assembly process.                    *
-!     *                                                                *
-!     ******************************************************************
-!
-      ! VecAssemblyBegin - Begins assembling the vector. This routine
-      ! should be called after completing all calls to VecSetValues().
-      !
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecAssemblyBegin(Vec vec, PetscErrorCode ierr)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameter
-      !   vec -the vector 
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecAssemblyBegin.html
-
-      call VecAssemblyBegin(dJdW,PETScIerr)
-
-      if( PETScIerr/=0 ) &
-        call terminate("setupASjointRHS", "Error in VecAssemblyBegin")
-
-      ! VecAssemblyEnd - Completes assembling the vector. This routine
-      ! should be called after VecAssemblyBegin().
-      !
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecAssemblyEnd(Vec vec, PetscErrorCode ierr)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameter
-      !   vec -the vector 
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecAssemblyEnd.html
-
-      call VecAssemblyEnd  (dJdW,PETScIerr)
-
-      if( PETScIerr/=0 ) &
-        call terminate("setupADjointRHS", "Error in VecAssemblyEnd")
-
-      ! Get new time and compute the elapsed time.
-
-      call cpu_time(time(2))
-      timeAdjLocal = time(2)-time(1)
-
-      ! Determine the maximum time using MPI reduce
-      ! with operation mpi_max.
-
-      call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-                      mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
-
-      if( PETScRank==0 ) &
-        write(*,20) "Assembling Gradient RHS vector time (s) = ", timeAdj
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Visualize the assembled vector.                                *
-!     *                                                                *
-!     ******************************************************************
-!
-      ! VecView - Views a vector object.
-      !
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! PetscErrorCode PETSCVEC_DLLEXPORT VecView(Vec vec, &
-      !                                              PetscViewer viewer)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameters
-      !   v      - the vector
-      !   viewer - an optional visualization context
-      !
-      ! Notes
-      ! The available visualization contexts include
-      !   PETSC_VIEWER_STDOUT_SELF  - standard output (default)
-      !   PETSC_VIEWER_STDOUT_WORLD - synchronized standard output where
-      !    only the first processor opens the file. All other processors
-      !    send their data to the first processor to print.
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecView.html
-      ! or PETSc users manual, pp.36,148
-
-      if( debug ) then
-	!call VecView(dJdW,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-	call VecView(dJdW,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
-        if( PETScIerr/=0 ) &
-          call terminate("setupADjointRHS", "Error in VecView")
-        pause
-      endif
-
-      ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
       call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)

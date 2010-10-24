@@ -27,6 +27,7 @@
 !
       use ADjointPETSc
       use ADjointVars
+      use inputADjoint
       implicit none
 !
 !     Subroutine arguments.
@@ -49,9 +50,8 @@
 
       ! Send some feedback to screen.
 
-      if( PETScRank==0 ) &
-        write(*,10) "Assembling ADjoint RHS vector..."
-      if( PETScRank==0 ) print*,'costfunction',costfunction
+       if( PETScRank==0 .and. printTiming ) &
+         write(*,10) "Assembling ADjoint RHS vector..."
 
       ! Get the initial time.
 
@@ -194,8 +194,8 @@
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
                       mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
 
-      if( PETScRank==0 ) &
-        write(*,20) "Assembling ADjoint RHS vector time (s) = ", timeAdj
+       if( PETScRank==0 .and. printTiming) &
+         write(*,20) "Assembling ADjoint RHS vector time (s) = ", timeAdj
 !
 !     ******************************************************************
 !     *                                                                *
