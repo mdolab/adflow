@@ -214,11 +214,11 @@
 !      *                                                                *
 !      ******************************************************************
 !
+
        if( writeGrid ) then
 
          ! Grid file(s) will be written. Compare the (base) names of the
          ! grid and solution files and set useLinksInCGNS accordingly.
-
          if(newGridFile == solFile) then
            useLinksInCGNS = .false.
          else
@@ -238,7 +238,7 @@
          endif
 
        endif
-!
+
 !      ******************************************************************
 !      *                                                                *
 !      * Set the pointers for IOVar if grid files need to be written.   *

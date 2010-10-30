@@ -18,7 +18,7 @@ subroutine getdRdXvPsi(ndof,dXv)
   !     ******************************************************************
   !
   use communication
-  use ADjointPETSc, only: dRdX,psi,gridVec
+  use ADjointPETSc, only: dRdx,psi,gridVec
   use warpingPETSC 
   use inputADjoint
   implicit none

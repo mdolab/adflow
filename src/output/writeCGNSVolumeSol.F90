@@ -29,6 +29,7 @@
        use IOModule
        use su_cgns
        use outputMod
+       use inputIteration
        implicit none
 !
 !      Local variables.
@@ -60,7 +61,7 @@
        ! Write a message that the solution file(s) are being written.
        ! Of course only processor 0 does this.
 
-       if(myID == 0) then
+       if(myID == 0 .and. printIterations) then
          print "(a)", "#"
          print "(a)", "# Writing volume solution file(s) ..."
        endif
@@ -103,17 +104,19 @@
                             "Something wrong when calling cg_close_f")
          enddo
 
-         ! Deallocate the memory of fileIDs and cgnsBases.
-         ! These are only allocated on processor 0.
-
-         deallocate(fileIDs, cgnsBases, stat=ierr)
-         if(ierr /= 0)                          &
+      end if
+      
+      ! Deallocate the memory of fileIDs and cgnsBases.  These are
+      ! allocated ALL PROCESSORS not just processor 0.
+      ! Fixed Bug: GKK 
+ 
+      deallocate(fileIDs, cgnsBases, stat=ierr)
+      if(ierr /= 0)                          &
            call terminate("writeCGNSVolumeSol", &
                           "Deallocation error for fileIDs &
                           &and cgnsBases.")
-       endif
 
-       ! Deallocate the memory of solNames.
+      ! Deallocate the memory of solNames.
 
        deallocate(solNames, stat=ierr)
        if(ierr /= 0)                          &
@@ -143,7 +146,7 @@
        ! Write a message that the solution file has been written.
        ! Of course only processor 0 does this.
 
-       if(myID == 0) then
+       if(myID == 0 .and. printIterations) then
          print "(a)", "# Volume solution file(s) written"
          print "(a)", "#"
        endif

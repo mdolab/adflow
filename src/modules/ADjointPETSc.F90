@@ -178,6 +178,8 @@
       Vec     dJda, dIda ,selector
       Vec     dJdx, dJcdx,dJdy, dJdz, dIdx, dIdy, dIdz,dIdxsDisp,dIdxsdv
 
+      Vec     wVec,fVec1,fVec2
+
       ! Some useful real constants
 
       PetscScalar   PETScNegOne, PETScZero, PETScOne
