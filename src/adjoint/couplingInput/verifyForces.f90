@@ -33,16 +33,10 @@ subroutine verifyForces(pts,npts)
   real(kind=realType)   :: max_rel_err,max_err,ad_val,fd_val
   integer(kind=intType) :: i_err,j_err,k_err,l_err,err_count
   !logical :: rightHanded
-  
   ! Get the reference set of forces 
 
-  do nn=1,nDom
-     call setPointers(nn,1_intType,1_intType)
-     call computeForcesPressureAdj(w,p) ! Full block
-                                                    ! version
-     call applyAllBC(.True.)
-  end do
   call getForces(forces0,pts,npts)
+
 
   ! Now compute the forces using the computeForceCouplingAdj routine
 
@@ -60,6 +54,7 @@ subroutine verifyForces(pts,npts)
            iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
            iStride = iEnd-iBeg+1
            jStride = jEnd-jBeg+1
+           
            do j=jBeg,jEnd
               do i=iBeg,iEnd
 
@@ -73,10 +68,22 @@ subroutine verifyForces(pts,npts)
                        upper_left  = ii + iii + (jjj  )*iStride-istride-1
                        upper_right = ii + iii + (jjj  )*iStride-istride
 
-                       grid_pts(:,iii  ,jjj  ) = pts(:,lower_left)
-                       grid_pts(:,iii+1,jjj  ) = pts(:,lower_right)
-                       grid_pts(:,iii  ,jjj+1) = pts(:,upper_left)
-                       grid_pts(:,iii+1,jjj+1) = pts(:,upper_right)
+                       if (lower_left > 0) then
+                          grid_pts(:,iii  ,jjj  ) = pts(:,lower_left)
+                       end if
+
+                       if (lower_right > 0) then
+                          grid_pts(:,iii+1,jjj  ) = pts(:,lower_right)
+                       end if
+                       
+                       if (upper_left > 0) then
+                          grid_pts(:,iii  ,jjj+1) = pts(:,upper_left)
+                       end if
+
+                       if (upper_right > 0) then
+                          grid_pts(:,iii+1,jjj+1) = pts(:,upper_right)
+                       end if
+
                     end do
                  end do
 
@@ -145,17 +152,17 @@ subroutine verifyForces(pts,npts)
   end do domains
 
   ! Check The forces --- Thse should be "exact"
-  tol = 1e-12
+  tol = 5e-13
   do i=1,size(forces0,2)
      diff = norm(forces0(:,i)-forcesAdj(:,i),3)
      if (diff > tol) then
-        print *,'proc,id,diff:',myid,i,diff
+        print *,'myid,i,diff:',myid,i,diff
      end if
   end do
-  
+
   ! Now Check the dsdx matrix. First call setupCouplingMatrixStruct
   ! to generate the two matrices
-
+ 
   call setupCouplingMatrixStruct(pts,npts)
 
   ! -----------------------------

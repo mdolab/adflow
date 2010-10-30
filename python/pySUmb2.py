@@ -842,7 +842,7 @@ class SUMB(AeroSolver):
         # end if
 
         
-    def WriteVolumeSolutionFile(self,filename=None,gridname=None):
+    def WriteVolumeSolutionFile(self,filename=None,writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS file.
         
         Keyword arguments:
@@ -851,18 +851,18 @@ class SUMB(AeroSolver):
 
         """
 
-        self.sumb.monitor.writegrid = False
+        self.sumb.monitor.writegrid = writeGrid
+        self.sumb.monitor.writevolume = True
+        self.sumb.monitor.writesurface = False
+
         if (filename):
             self.sumb.inputio.solfile[:] = ''
             self.sumb.inputio.solfile[0:len(filename)] = filename
-        if (gridname):
+
             self.sumb.inputio.newgridfile[:] = ''
-            self.sumb.inputio.newgridfile[0:len(gridname)] = gridname
-            self.sumb.monitor.writegrid = True
+            self.sumb.inputio.newgridfile[0:len(filename)] = filename
+        # end if
 
-
-        self.sumb.monitor.writevolume=True
-        self.sumb.monitor.writesurface=False
         self.sumb.writesol()
 
     def WriteSurfaceSolutionFile(self,*filename):
@@ -888,7 +888,7 @@ class SUMB(AeroSolver):
         cfd_force_pts to compute the forces if given
         
         '''
-        if cfd_force_pts==None:
+        if cfd_force_pts is None:
             pts = self.getForcePoints()
         # end if
         if len(cfd_force_pts) > 0:
@@ -907,6 +907,14 @@ class SUMB(AeroSolver):
             return numpy.empty([0],dtype=self.dtype)
         # end if
 
+    def verifyForces(self,cfd_force_pts=None):
+        if cfd_force_pts is None:
+            cfd_force_pts = self.getForcePoints()
+        # end if
+
+        self.sumb.verifyforces(cfd_force_pts.T)
+
+        return
 
     def initAdjoint(self, *args, **kwargs):
         '''
@@ -952,7 +960,7 @@ class SUMB(AeroSolver):
         if forcePoints is None:
             forcePoints = self.getForcePoints()
         # end if
-
+            
         self.sumb.setupcouplingmatrixstruct(forcePoints.T)
         self.sumb.setuppetscksp(self.level)
         self.mesh.setupWarpDeriv()
@@ -977,7 +985,7 @@ class SUMB(AeroSolver):
             group_name = kwargs['group_name']
             phi = kwargs['structAdjoint']
             solver_phi = self.mesh.warp_to_solver_force(group_name,phi)
-            self.sumb.agumentrhs(phi)
+            self.sumb.agumentrhs(solver_phi)
         # end if
 
         restart = self.getOption('restartAdjoint')
@@ -1076,7 +1084,6 @@ class SUMB(AeroSolver):
         """Update the SUmb internal geometry info, if necessary."""
         if (self._update_geom_info):
             self.mesh.warpMesh()
-            self.mesh.writeVolumeGrid('debug.cgns')
             self.sumb.setgrid(self.mesh.getSolverGrid())
             self.sumb.updatecoordinatesalllevels()
             self.sumb.updatewalldistancealllevels()
@@ -1084,6 +1091,7 @@ class SUMB(AeroSolver):
             self.sumb.updatemetricsalllevels()
             self.sumb.updategridvelocitiesalllevels()
             self._update_geom_info = False
+        # end if
 
 
     def GetMonitoringVariables(self):
@@ -1167,6 +1175,22 @@ class SUMB(AeroSolver):
         self.mesh.WarpDeriv(dxv_solver)
         pforces = self.mesh.getdXs(group_name)
         return pforces
+
+    def getdRdwPsi(self):
+        nw = self.sumb.flowvarrefstate.nw
+        dRdwPsi = self.sumb.getdrdwtpsi(self.sumb.adjointvars.ncellslocal*nw)
+        
+        return dRdwPsi
+
+    def getdFdxVec(self,group_name,vec):
+        # Calculate dFdx * force_pts and return the result
+        solver_vec = self.mesh.warp_to_solver_force(group_name,vec)
+
+        dFdxVec = self.sumb.getdfdxvec(solver_vec)
+
+        dFdxVec = self.mesh.solver_to_warp_force(group_name,solver_vec)
+
+        return dFdxVec
 
     def finalizeAdjoint(self):
         '''

@@ -1307,6 +1307,22 @@ python module sumb ! in
           real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
         end subroutine getdrdxvpsi
 
+        subroutine getdrdwtpsi(ndof,drdwtpsi)
+          integer(kind=inttype) intent(in) :: ndof
+          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: drdwtpsi
+        end subroutine getdrdwtpsi
+
+        subroutine getdrdwtpsi2(ndof,drdwtpsi)
+          integer(kind=inttype) intent(in) :: ndof
+          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: drdwtpsi
+        end subroutine getdrdwtpsi2
+
+        subroutine getdfdxvec(ndof,vec_in,vec_out) ! in :test:getdFdxVec.f90
+          integer(kind=inttype) optional,intent(in),check(len(vec_in)>=ndof),depend(vec_in) :: ndof=len(vec_in)
+          real(kind=realtype) dimension(ndof),intent(in) :: vec_in
+          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: vec_out
+        end subroutine getdfdxvec
+
         subroutine getdjdx(ndof,dxv)
           integer(kind=inttype) intent(in) :: ndof
           real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv

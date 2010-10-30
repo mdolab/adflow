@@ -70,7 +70,7 @@ subroutine setupCouplingMatrixStruct(pts,npts)
                 
                  grid_pts(:,:,:) = 0.0
                  wAdj(:,:,:,:)   = 0.0
-                 pts_ind(:,:) = -1_intTYpe
+                
                  do iii =1,2
                     do jjj=1,2
                        if (.not.(i+iii-2 < iBeg .or. i+iii-1 > iEnd .or. &
@@ -81,14 +81,27 @@ subroutine setupCouplingMatrixStruct(pts,npts)
                           upper_left  = ii + iii + (jjj  )*iStride-istride-1
                           upper_right = ii + iii + (jjj  )*iStride-istride
 
-                          grid_pts(:,iii  ,jjj  ) = pts(:,lower_left)
-                          grid_pts(:,iii+1,jjj  ) = pts(:,lower_right)
-                          grid_pts(:,iii  ,jjj+1) = pts(:,upper_left)
-                          grid_pts(:,iii+1,jjj+1) = pts(:,upper_right)
+                          if (lower_left > 0) then
+                             grid_pts(:,iii  ,jjj  ) = pts(:,lower_left)
+                          end if
+
+                          if (lower_right > 0) then
+                             grid_pts(:,iii+1,jjj  ) = pts(:,lower_right)
+                          end if
+
+                          if (upper_left > 0) then
+                             grid_pts(:,iii  ,jjj+1) = pts(:,upper_left)
+                          end if
+
+                          if (upper_right > 0) then
+                             grid_pts(:,iii+1,jjj+1) = pts(:,upper_right)
+                          end if
+
                           pts_ind (iii  ,jjj  ) = lower_left -1
                           pts_ind (iii+1,jjj  ) = lower_right-1
                           pts_ind (iii  ,jjj+1) = upper_left -1
                           pts_ind (iii+1,jjj+1) = upper_right-1
+                          
                        end if
                     end do
                  end do

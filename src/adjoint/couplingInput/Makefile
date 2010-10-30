@@ -43,7 +43,7 @@ FF90_OBJECTS = 	computeForceCouplingPressureAdj.o\
 	        forceCouplingAdj.o\
 	        verifyForces.o\
 
-#CC_OBJECTS   = connect_signals.o
+
 
 #      ******************************************************************
 #      *                                                                *

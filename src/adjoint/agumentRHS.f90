@@ -31,8 +31,13 @@ subroutine agumentRHS(ndof,phi)
   real(kind=realType) :: val
   call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DETERMINE,phi,phic,ierr)
 
+!   call VecNorm(phic,NORM_2,val,ierr)
+!   print *,'phic Norm is:',val
+
   call MatMultTranspose(dSdw,phic,dJcdW,ierr)
 
+!   call VecNorm(dJcdW,NORM_2,val,ierr)
+!   print *,'Norm is:',val
   ! Computes y = alpha x + y. 
   call VecAXPY(dJdW,1.0,dJcdW,ierr)
 
