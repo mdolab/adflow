@@ -8,48 +8,48 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine updateCoordinatesAllLevels
-!
-!      ******************************************************************
-!      *                                                                *
-!      * updateCoordinatesAllLevels updates the coordinates of all      *
-!      * grid levels, assuming that the owned coordinates of the fine   *
-!      * grid are known.                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       use block
-       use iteration
+subroutine updateCoordinatesAllLevels
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * updateCoordinatesAllLevels updates the coordinates of all      *
+  !      * grid levels, assuming that the owned coordinates of the fine   *
+  !      * grid are known.                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  use block
+  use iteration
 
-!temp
-       use inputTimeSpectral
-       use blockPointers
-       implicit none
-!
-!      Local variables.
-!
-       integer(kind=intType) :: nLevels, nn
-       !temporary!
-       integer(kind=intType) :: sps,i,j,k,n
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Determine the halo coordinates of the fine level.
+  !temp
+  use inputTimeSpectral
+  use blockPointers
+  implicit none
+  !
+  !      Local variables.
+  !
+  integer(kind=intType) :: nLevels, nn
+  !temporary!
+  integer(kind=intType) :: sps,i,j,k,n
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Begin execution                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  ! Determine the halo coordinates of the fine level.
 
-       call xhalo(groundLevel)
+  call xhalo(groundLevel)
 
-       ! Loop over the coarse grid levels; first the owned coordinates
-       ! are determined, followed by the halo's.
+  ! Loop over the coarse grid levels; first the owned coordinates
+  ! are determined, followed by the halo's.
 
-       nLevels = ubound(flowDoms,2)
-       do nn=(groundLevel+1),nLevels
-         call coarseOwnedCoordinates(nn)
-         call xhalo(nn)
-       enddo
+  nLevels = ubound(flowDoms,2)
+  do nn=(groundLevel+1),nLevels
+     call coarseOwnedCoordinates(nn)
+     call xhalo(nn)
+  enddo
 
 !!$       do sps = 1,nTimeIntervalsSpectral
 !!$          do nn = 1,nDom
@@ -66,98 +66,148 @@
 !!$             end do
 !!$          end do
 !!$       end do
-       end subroutine updateCoordinatesAllLevels
+end subroutine updateCoordinatesAllLevels
 
 !      ==================================================================
 
-       subroutine updateMetricsAllLevels
-!
-!      ******************************************************************
-!      *                                                                *
-!      * updateMetricsAllLevels recomputes the metrics on all grid      *
-!      * levels. This routine is typically called when the coordinates  *
-!      * have changed, but the connectivity remains the same, i.e. for  *
-!      * moving or deforming mesh problems.                             *
-!      *                                                                *
-!      ******************************************************************
-!
-       use block
-       use iteration
-       implicit none
-!
-!      Local variables.
-!
-       integer(kind=intType) :: nLevels, nn
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Loop over the grid levels and call metric and checkSymmetry.
+subroutine updateMetricsAllLevels
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * updateMetricsAllLevels recomputes the metrics on all grid      *
+  !      * levels. This routine is typically called when the coordinates  *
+  !      * have changed, but the connectivity remains the same, i.e. for  *
+  !      * moving or deforming mesh problems.                             *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  use block
+  use iteration
+  implicit none
+  !
+  !      Local variables.
+  !
+  integer(kind=intType) :: nLevels, nn
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Begin execution                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  ! Loop over the grid levels and call metric and checkSymmetry.
 
-       nLevels = ubound(flowDoms,2)
-       do nn=groundLevel,nLevels
-         call metric(nn)
-         call checkSymmetry(nn)
-       enddo
+  nLevels = ubound(flowDoms,2)
+  do nn=groundLevel,nLevels
+     call metric(nn)
+     call checkSymmetry(nn)
+  enddo
 
-       end subroutine updateMetricsAllLevels
+end subroutine updateMetricsAllLevels
 
-       subroutine updateGridVelocitiesAllLevels
+subroutine updateGridVelocitiesAllLevels
 
-!
-!      ******************************************************************
-!      *                                                                *
-!      * updateGridVelocitesAllLevels recomputes the rotational         *
-!      * parameters on all grid                                         *
-!      * levels. This routine is typically called when the coordinates  *
-!      * have changed, but the connectivity remains the same, i.e. for  *
-!      * moving or deforming mesh problems.                             *
-!      *                                                                *
-!      ******************************************************************
-!
-       use block
-       use iteration
-       use section
-       use monitor
-       use inputTimeSpectral
-       use inputPhysics
-       implicit none
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * updateGridVelocitesAllLevels recomputes the rotational         *
+  !      * parameters on all grid                                         *
+  !      * levels. This routine is typically called when the coordinates  *
+  !      * have changed, but the connectivity remains the same, i.e. for  *
+  !      * moving or deforming mesh problems.                             *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  use block
+  use iteration
+  use section
+  use monitor
+  use inputTimeSpectral
+  use inputPhysics
+  implicit none
 
-       !subroutine variables
+  !subroutine variables
 
-       !Local Variables
-       
-       integer(kind=inttype):: mm,nnn
+  !Local Variables
 
-       real(kind=realType), dimension(nSections) :: t
+  integer(kind=inttype):: mm,nnn
 
-       do mm=1,nTimeIntervalsSpectral
-          
-          ! Compute the time, which corresponds to this spectral solution.
-          ! For steady and unsteady mode this is simply the restart time;
-          ! for the spectral mode the periodic time must be taken into
-          ! account, which can be different for every section.
-          
-          t = timeUnsteadyRestart
-          
-          if(equationMode == timeSpectral) then
-             do nnn=1,nSections
-                t(nnn) = t(nnn) + (mm-1)*sections(nnn)%timePeriod &
-                     /         real(nTimeIntervalsSpectral,realType)
-             enddo
-          endif
-          
-          call gridVelocitiesFineLevel(.false., t, mm)
-          call gridVelocitiesCoarseLevels(mm)
-          call normalVelocitiesAllLevels(mm)
-          
-          call slipVelocitiesFineLevel(.false., t, mm)
-          call slipVelocitiesCoarseLevels(mm)
-          
-       enddo
-       
-     end subroutine updateGridVelocitiesAllLevels
+  real(kind=realType), dimension(nSections) :: t
 
+  do mm=1,nTimeIntervalsSpectral
+
+     ! Compute the time, which corresponds to this spectral solution.
+     ! For steady and unsteady mode this is simply the restart time;
+     ! for the spectral mode the periodic time must be taken into
+     ! account, which can be different for every section.
+
+     t = timeUnsteadyRestart
+
+     if(equationMode == timeSpectral) then
+        do nnn=1,nSections
+           t(nnn) = t(nnn) + (mm-1)*sections(nnn)%timePeriod &
+                /         real(nTimeIntervalsSpectral,realType)
+        enddo
+     endif
+
+     call gridVelocitiesFineLevel(.false., t, mm)
+     call gridVelocitiesCoarseLevels(mm)
+     call normalVelocitiesAllLevels(mm)
+
+     call slipVelocitiesFineLevel(.false., t, mm)
+     call slipVelocitiesCoarseLevels(mm)
+
+  enddo
+
+end subroutine updateGridVelocitiesAllLevels
+
+subroutine updatePeriodicInfoAllLevels
+
+
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * updatePeriodicInfoAllLevels recomputes the spectral parameters *
+  !      * on all grid levels. This routine is typically called when the  *
+  !      * frequnecy or amplitude of the oscillation in the time spectral *
+  !      * computation has changed                                        *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  use block
+  use iteration
+  use section
+  use monitor
+  use inputTimeSpectral
+  use inputPhysics
+  use communication
+  implicit none
+
+  !subroutine variables
+
+  !Local Variables
+
+
+
+  !from partitionAndReadGrid.f90
+  ! Determine for the time spectral mode the time of one period,
+  ! the rotation matrices for the velocity components and
+  ! create the fine grid coordinates of all time spectral locations.
+  if( myid==0)print *,'in update periodicInfo...'
+  call timePeriodSpectral
+  call timeRotMatricesSpectral
+  call fineGridSpectralCoor
+
+  !Store the initial mesh as required for the integrated meshwarping
+  !routine. Called after fineGridSpectralCoor to capture all time
+  !spectral intervals.
+  call storeReferenceMesh
+
+  !From initFlow.f90
+  ! Determine for the time spectral mode the matrices for the
+  ! time derivatives.
+
+  call timeSpectralMatrices
+
+
+end subroutine updatePeriodicInfoAllLevels

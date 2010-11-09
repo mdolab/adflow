@@ -46,6 +46,7 @@ FF90_OBJECTS_2 = bleedFlows.o\
 		 coolingModelLevel0.o\
 		 killSignals.o\
 		 communication.o\
+	         costFunctions.o\
 
 FF90_OBJECTS_3 = ADjointPETSc.o\
 		 ADjointVars.o\

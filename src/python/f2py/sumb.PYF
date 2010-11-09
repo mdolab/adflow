@@ -6,202 +6,61 @@ python module sumb ! in
 ! SUmb Routines
 ! ############################################################################
 
-        subroutine connect_signals ! in :sumb:../../solver/connect_signals.c
-            intent(c) connect_signals
-        end subroutine connect_signals
-
-        subroutine writeintromessage ! in :sumb:../../utils/initExec.F90
-            use communication
-            use constants
-        end subroutine writeintromessage
-
-        subroutine readparamfile ! in :sumb:../../inputParam/readParamFile.f90
-            use communication
-            use constants
-            use allinputparam
-        end subroutine readparamfile
-        subroutine monitorvariables(variables) ! in :test:monitorVariables.f90
-            character*(*) intent(inout) :: variables
-        end subroutine monitorvariables
-
-        subroutine surfacevariables(variables) ! in :test:surfaceVariables.f90
-            character*(*) intent(inout) :: variables
-        end subroutine surfacevariables
-
-        subroutine volumevariables(variables) ! in :test:volumeVariables.f90
-            character*(*) intent(inout) :: variables
-        end subroutine volumevariables
- 
-        subroutine dummyreadparamfile ! in :sumb:../../inputParam/readParamFile.f90
-        end subroutine dummyreadparamfile
-
-        subroutine partitionandreadgrid ! in :sumb:../../partitioning/partitionAndReadGrid.f90
-            use inputio
-        end subroutine partitionandreadgrid
-
-        subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
-            use block
-            use commsliding
-            use communication
-            use inputphysics
-            use inputtimespectral
-            use interfacegroups
-            use section
-        end subroutine preprocessing
-
-        subroutine updatecoordinatesalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
-            use block
-            use iteration
-        end subroutine updatecoordinatesalllevels
-
-        subroutine updatemetricsalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
-            use block
-            use iteration
-        end subroutine updatemetricsalllevels
-
-        subroutine updategridvelocitiesalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
-          use block
-          use iteration
-          use section
-          use monitor
-          use inputtimespectral
-          use inputphysics
-          implicit none
-        end subroutine updategridvelocitiesalllevels
-
-!Functions in prewarp directory
-        subroutine getnblockslocal(nBlocks)
-          use blockpointers
-          implicit none
-          integer(kind=inttype), intent(out) :: nBlocks
-        end subroutine getnblockslocal
-        
-        subroutine getblockdims(blocknum,imax,jmax,kmax)
-          use blockpointers
-          implicit none
-          
-          integer(kind=inttype), intent(in) :: blocknum
-          integer(kind=inttype), intent(out) :: imax,jmax,kmax
-          
-        end subroutine getblockdims
-        
-        subroutine getblockcoords(blocknum,imax,jmax,kmax,xyz)
-          
-          use blockPointers
-          implicit none
-          integer(kind=inttype), intent(in) :: blocknum
-          integer(kind=inttype), intent(in):: imax,jmax,kmax
-          !real(kind=realType), dimension(imax,jmax,kmax,3),check(rank(xyz)==3),depend(imax,jmax,kmax),check(shape(xyz,3)==imax,shape(xyz,2)==jmax,shape(xyz,1)==kmax,shape(xyz,0)==3),intent(out) :: xyz
-          real(kind=realtype), dimension(3,imax,jmax,kmax), intent(out) :: xyz
-          
-        end subroutine getblockcoords
-
-        subroutine setblockcoords(blocknum,imax,jmax,kmax,xyz)
-          use blockpointers
-          implicit none
-          
-          integer(kind=inttype), intent(in) :: blocknum
-          integer(kind=inttype), intent(in):: imax,jmax,kmax
-          real(kind=realtype), dimension(3,imax,jmax,kmax), intent(in),depend(imax,jmax,kmax) :: xyz
-        end subroutine setblockcoords
-            
-        subroutine getblockcgnsid(blocknum,cgns_block_id)
-          use blockpointers
-          integer(kind=inttype), intent(in) :: blocknum
-          integer(kind=inttype), intent(out) :: cgns_block_id
-          
-        end subroutine getblockcgnsid
-
-              subroutine getnsubfacesblock(blocknum,nsubfaces, n1to1internals, n1to1s, nnonmatchs, numbocos)
-         use blockpointers
-         implicit none
-         
-         integer(kind=inttype), intent(in)::blocknum
-         integer(kind=inttype), intent(out)::nsubfaces, n1to1internals, n1to1s, nnonmatchs, numbocos
-
-       end subroutine getnsubfacesblock
+       subroutine connect_signals ! in :sumb:../../solver/connect_signals.c
+         intent(c) connect_signals
+       end subroutine connect_signals
        
-       subroutine getblockcommunicationinfo(blocknum,nSub,nOne,nNon,i1,i2,j1,j2,k1,k2,&
-            di1,di2,dj1,dj2,dk1,dk2,neighbourBlock,neighbourProc,trans1,&
-            trans2,trans3,bcinfo,faceinfo)
-         
-         use blockpointers
-         implicit none
-         
-         !Subroutine Variables
-         integer(kind=inttype),intent(in)::blocknum,nSub,nNon,nOne
-         
-         integer(kind=inttype),dimension(nSub),intent(out)::i1,i2,j1,j2,k1,k2
-         integer(kind=inttype),dimension(nSub),intent(out)::di1,di2,dj1,dj2,dk1,dk2
-         integer(kind=inttype),dimension(nSub),intent(out):: neighbourBlock,&
-              &neighbourProc
-         integer(kind=inttype),dimension(nSub),intent(out):: trans1,trans2,trans3
-         integer(kind=inttype),dimension(nSub),intent(out)::bcinfo,faceinfo
-
-                  
-
-       end subroutine getblockcommunicationinfo
-
-       subroutine setsinglestate(blocknum,i,j,k,l,state) ! in :sumb:getBlockData.f90
-            use blockpointers
-            integer(kind=inttype) intent(in) :: blocknum
-            integer(kind=inttype) intent(in) :: i
-            integer(kind=inttype) intent(in) :: j
-            integer(kind=inttype) intent(in) :: k
-            integer(kind=inttype) intent(in) :: l
-            real(kind=realtype) intent(in) :: state
-       end subroutine setsinglestate
-       subroutine getsinglestate(blocknum,i,j,k,l,state) ! in :sumb:getBlockData.f90
-            use blockpointers
-            integer(kind=inttype) intent(in) :: blocknum
-            integer(kind=inttype) intent(in) :: i
-            integer(kind=inttype) intent(in) :: j
-            integer(kind=inttype) intent(in) :: k
-            integer(kind=inttype) intent(in) :: l
-            real(kind=realtype) intent(out) :: state
-       end subroutine getsinglestate
-
-! *********************
-! Integrated warping
-! *********************
-
-
-!!$       subroutine integratedwarp(ncoords,xyzface,indices) ! in :sumb:integratedWarp.f90
-!!$         use blockpointers
-!!$         integer(kind=inttype) optional,check(shape(xyzface,1)==ncoords),depend(xyzface) :: ncoords=shape(xyzface,1)
-!!$         real(kind=realtype) dimension(3,ncoords) :: xyzface
-!!$         integer(kind=inttype) dimension(4,ncoords),depend(ncoords) :: indices
-!!$       end subroutine integratedwarp
-
-
-       subroutine initializewarping(famid)
-         
-         use blockpointers
+       subroutine writeintromessage ! in :sumb:../../utils/initExec.F90
          use communication
-         use monitor
-         use inputio
-         use mddatalocal
-         use mddata
-         implicit none
-         integer(kind=inttype) ::famid
-         
-       end subroutine initializewarping
+         use constants
+       end subroutine writeintromessage
        
-       subroutine updatefacesglobal(ncoords,xyz_new,reinitialize)
-         
-         use blockpointers
-         use mddatalocal   !mdSurfGlobalIndLocal
-         implicit none
-         
-         !Subroutine Arguments
-         !integer(kind=intType)::ncoords
-         integer(kind=inttype) optional,check(shape(xyz_new,1)==ncoords),depend(xyz_new) :: ncoords=shape(xyz_new,1)
-         real(kind=realtype), dimension(3,ncoords)::xyz_new
-         logical :: reinitialize
-         
-       end subroutine updatefacesglobal
+       subroutine readparamfile ! in :sumb:../../inputParam/readParamFile.f90
+         use communication
+         use constants
+         use allinputparam
+       end subroutine readparamfile
+       
+       subroutine monitorvariables(variables) ! in :test:monitorVariables.f90
+         character*(*) intent(inout) :: variables
+       end subroutine monitorvariables
+       
+       subroutine surfacevariables(variables) ! in :test:surfaceVariables.f90
+         character*(*) intent(inout) :: variables
+       end subroutine surfacevariables
 
-       subroutine getnumberlocalnodes(ndof)
+       subroutine volumevariables(variables) ! in :test:volumeVariables.f90
+         character*(*) intent(inout) :: variables
+       end subroutine volumevariables
+
+       subroutine dummyreadparamfile ! in :sumb:../../inputParam/readParamFile.f90
+       end subroutine dummyreadparamfile
+       
+       subroutine partitionandreadgrid ! in :sumb:../../partitioning/partitionAndReadGrid.f90
+         use inputio
+       end subroutine partitionandreadgrid
+
+       subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
+       end subroutine preprocessing
+
+       subroutine updatecoordinatesalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
+       end subroutine updatecoordinatesalllevels
+
+       subroutine updatemetricsalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
+       end subroutine updatemetricsalllevels
+
+       subroutine updategridvelocitiesalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
+       end subroutine updategridvelocitiesalllevels
+
+       subroutine updateperiodicinfoalllevels
+       end subroutine updateperiodicinfoalllevels
+
+       subroutine getcgnsmeshindices(ndof,indices)
+         integer(kind=inttype) intent(in) :: ndof
+         integer(kind=intype) dimension(ndof),intent(out),depend(ndof) :: indices
+       end subroutine getcgnsmeshindices
+
+       subroutine getnumberlocalnodes(ndof) ! in :test:initializeExternalWarping.f90
          integer(kind=inttype) intent(out) :: ndof
        end subroutine getnumberlocalnodes
 
@@ -209,15 +68,10 @@ python module sumb ! in
          integer(kind=inttype) intent(out) :: ndof
        end subroutine getnumberlocalforcenodes
 
-       subroutine getcgnsmeshindices(ndof,indices)
-         integer(kind=inttype) intent(in) :: ndof
-         integer(kind=intype) dimension(ndof),intent(out),depend(ndof) :: indices
-       end subroutine getcgnsmeshindices
-
        subroutine getcgnsforceindices(ndof,indices)
          integer(kind=inttype) intent(in) :: ndof
          integer(kind=intype) dimension(ndof),intent(out),depend(ndof) :: indices
-       end subroutine getcgnforceindices
+       end subroutine getcgnsforceindices
 
        subroutine setgrid(grid,ndof) ! in :test:setGrid.f90
          real(kind=realtype) dimension(ndof),intent(in) :: grid
@@ -254,1676 +108,802 @@ python module sumb ! in
          integer(kind=inttype) intent(out) :: npts
        end subroutine getforcesize
 
-       subroutine getarea(totalarea)
-         real(kind=realtype), intent(out) :: totalarea
-       end subroutine getarea
-
-!        subroutine getcgnsdata(ndofcgns,data) ! in :test:getForces.f90                                                                                                 
-!           use blockpointers
-!           use bctypes
-!           use communication
-!           use mddatalocal                                                                                                                                              
-!           use warpingpetsc
-!           use cgnsgrid
-!           use flowvarrefstate
-!           integer(kind=inttype) intent(in) :: ndofcgns
-!           real(kind=realtype) dimension(ndofcgns),intent(out),depend(ndofcgns) :: data
-!         end subroutine getcgnsdata
-
-
-       subroutine warpmesh
-         
-         ! Warp the current mesh to take into acccout updates from
-         ! updateGlobalFaces
-         
-         use blockpointers
-         implicit none
-       end subroutine warpmesh
-       subroutine setupvolumesurfacederivativesdv
-
-         ! Find the derivatives of the mesh wrt the surface at the current point
-         
-         use blockpointers
-         use communication
-         use mddatalocal
-         use mddata, only: mdnsurfnodescompact
-         use warpingpetscc
-         !use adjointpetsc, only: petscone, value
-         implicit none
-       end subroutine setupvolumesurfacederivativesdv
-
-       subroutine verifydrdxsfile
-         use blockpointers 
-         use flowvarrefstate
-         use communication
-         use iteration     
-         use inputtimespectral 
-         use inputio
-         use cgnsgrid
-         use adjointpetsc, only: drdx,petscone,insert_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world,add_values,mat_initial_matrix,petsc_default_double_precision
-         use warpingpetsc, only: dxvdxsdv,drdxsdv
-         use precision
-         use inputiteration
-         use mddata
-         
-         implicit none
-       end subroutine verifydrdxsfile
-
-       subroutine verifydcfdx(level)
-
-         use blockpointers
-         use cgnsgrid            
-         use communication       
-         use inputphysics        
-         use flowvarrefstate     
-         use inputdiscretization
-         use iteration           
-         use inputtimespectral  
-         use section
-         use monitor            
-         use bctypes     
-         use adjointvars 
-         implicit none
-
-         integer(kind=inttype), intent(in) :: level
-         
-       end subroutine verifydCfdx
-
-       subroutine setupvolumesurfacederivativesdisp
-
-         ! Find the derivatives of the mesh wrt the surface at the current point
-         
-         use blockpointers
-         use communication
-         use mddatalocal
-         use mddata, only: mdnsurfnodescompact
-         use warpingpetscc
-         !use adjointpetsc, only: petscone, value
-         implicit none
-       end subroutine setupvolumesurfacederivativesdisp
-
-       subroutine computeadjointgradientsurfacedv(costfunction) ! in :warpingPETSc:../adjoint/computeADjointGradientSurface.F90
-         use blockpointers
-         use adjointpetsc
-         use warpingpetsc,,only: dxvdxs
-         use adjointvars
-         use mddata,,only: mdnsurfnodescompact
-         integer(kind=inttype) intent(in) :: costfunction
-       end subroutine computeadjointgradientsurfacedv
-
-       subroutine computeadjointgradientsurfacedisp(costfunction) ! in :warpingPETSc:../adjoint/computeADjointGradientSurface.F90
-         use blockpointers
-         use adjointpetsc
-         use warpingpetsc,,only: dxvdxs
-         use adjointvars
-         use mddata,,only: mdnsurfnodescompact
-         integer(kind=inttype) intent(in) :: costfunction
-       end subroutine computeadjointgradientsurfacedisp
-
        subroutine solveradjoint
-         
-         use adjointvars
-         use adjointpetsc    !petsc_comm_world,petsc_rank
-         use communication   ! myID, nProc
-         use cgnsgrid        ! cgnsNFamilies
-         use iteration       ! groundLevel
-         implicit none
-         
        end subroutine solveradjoint
-        
-!preprocessing
-        
-        subroutine initflow ! in :sumb:../../initFlow/initFlow.f90
-            use block
-            use inputio
-            use inputtimespectral
-            use iteration
-        end subroutine initflow
+       
+       subroutine initflow ! in :sumb:../../initFlow/initFlow.f90
+       end subroutine initflow
 
-        subroutine allocconvarrays(nitertot) ! in :sumb:../../initFlow/allocConvArrays.f90
-            use constants
-            use inputio
-            use inputtimespectral
-            use monitor
-            implicit none
-            integer(kind=inttype) :: nitertot
-        end subroutine allocconvarrays
+       subroutine allocconvarrays(nitertot) ! in :sumb:../../initFlow/allocConvArrays.f90
+         integer(kind=inttype) :: nitertot
+       end subroutine allocconvarrays
 
-        subroutine deallocconvarrays ! in :sumb:../../initFlow/allocConvArrays.f90
-          use constants
-          use inputio
-          use inputtimespectral
-          use monitor
-          implicit none
-          
-        end subroutine deallocconvarrays
+       subroutine deallocconvarrays ! in :sumb:../../initFlow/allocConvArrays.f90
+       end subroutine deallocconvarrays
 
-        subroutine alloctimearrays(nitertot) ! in :sumb:../../initFlow/allocTimeArrays.f90
-            use monitor
-            integer(kind=inttype) :: ntimetot
-        end subroutine alloctimearrays
+       subroutine alloctimearrays(nitertot) ! in :sumb:../../initFlow/allocTimeArrays.f90
+         integer(kind=inttype) :: ntimetot
+       end subroutine alloctimearrays
 
-        subroutine solver ! in :sumb:../../solver/solver.F90
-            use communication
-            use constants
-            use inputdiscretization
-            use inputiteration
-            use inputphysics
-            use inputtimespectral
-            use killsignals
-            use iteration
-            use monitor
-            !real(kind=realtype) :: su_wtime
-            logical :: eulerwallspresent
-        end subroutine solver
+       subroutine solver ! in :sumb:../../solver/solver.F90
+         logical :: eulerwallspresent
+       end subroutine solver
 
-        subroutine viscousflux ! in :sumb:../../solver/viscousFlux.f90
-            use blockpointers
-            use flowvarrefstate
-            use inputphysics
-            use iteration
-        end subroutine viscousflux
+       subroutine viscousflux ! in :sumb:../../solver/viscousFlux.f90
+       end subroutine viscousflux
 
-        subroutine inviscidcentralflux ! in :sumb:../../solver/inviscidCentralFlux.f90
-            use blockpointers
-            use cgnsgrid
-            use constants
-            use flowvarrefstate
-            use inputphysics
-        end subroutine inviscidcentralflux
+       subroutine inviscidcentralflux ! in :sumb:../../solver/inviscidCentralFlux.f90
+       end subroutine inviscidcentralflux
 
-        subroutine setpointers(nn,mm,ll) ! in :sumb:../../utils/setPointers.f90
-            use blockpointers
-            integer(kind=inttype) intent(in) :: nn
-            integer(kind=inttype) intent(in) :: mm
-            integer(kind=inttype) intent(in) :: ll
-        end subroutine setpointers
+       subroutine writesol ! in :sumb:../../output/writeSol.f90
+       end subroutine writesol
 
-        subroutine writesol ! in :sumb:../../output/writeSol.f90
-            use block
-            use cgnsgrid
-            use communication
-            use extraoutput
-            use flowvarrefstate
-            use inputio
-            use inputtimespectral
-            use iteration
-            use killsignals
-            use monitor
-            use outputmod
-        end subroutine writesol
+       subroutine updatewalldistancealllevels ! in :sumb:../../wallDistance/updateWallDistanceAllLevels.f90
+       end subroutine updatewalldistancealllevels
 
-        subroutine updatewalldistancealllevels ! in :sumb:../../wallDistance/updateWallDistanceAllLevels.f90
-            use block
-            use inputphysics
-            use iteration
-        end subroutine updatewalldistancealllevels
+       subroutine updateslidingalllevels ! in :sumb:../../slidingComm/updateSlidingAllLevels.f90
+       end subroutine updateslidingalllevels
 
-        subroutine updateslidingalllevels ! in :sumb:../../slidingComm/updateSlidingAllLevels.f90
-            use block
-            use iteration
-            use interfacegroups
-        end subroutine updateslidingalllevels
+       function eulerwallspresent() ! in :sumb:../../solver/eulerWallsPresent.f90
+         logical :: eulerwallspresent
+       end function eulerwallspresent
 
-         function eulerwallspresent() ! in :sumb:../../solver/eulerWallsPresent.f90
-            use block
-            use bctypes
-            use communication
-            logical :: eulerwallspresent
-        end function eulerwallspresent
+       subroutine solversteady ! in :sumb:../../solver/solverSteady.f90
+       end subroutine solversteady
 
+       subroutine transfertofinegrid(corrections) ! in :sumb:../../solver/transferToFineGrid.f90
+         logical intent(in) :: corrections
+       end subroutine transfertofinegrid
 
-
-        subroutine solversteady ! in :sumb:../../solver/solverSteady.f90
-        end subroutine solver_steady
-
-
-        subroutine transfertofinegrid(corrections) ! in :sumb:../../solver/transferToFineGrid.f90
-            use bctypes
-            use blockpointers
-            use flovarrefstate
-            use inputiteration
-            use inputtimespectral
-            use iteration
-            logical intent(in) :: corrections
-        end subroutine transfertofinegrid
-
-        subroutine updatecoorfinemesh(dtadvance,sps) ! in :sumb:../../preprocessing/updateCoorFineMesh.f90
-            use block
-            use blockpointers
-            use flovarrefstate
-            use cgnsgrid
-            use inputmotion
-            use iteration
-            use monitor
-            integer(kind=inttype) intent(in) :: sps
-            real(kind=realtype) intent(in) :: dtadvance
-        end subroutine updatecoorfinemesh
+       subroutine updatecoorfinemesh(dtadvance,sps) ! in :sumb:../../preprocessing/updateCoorFineMesh.f90
+         integer(kind=inttype) intent(in) :: sps
+         real(kind=realtype) intent(in) :: dtadvance
+       end subroutine updatecoorfinemesh
 
 !!!!!!!!Routines inside solverUnsteady 
 
-        subroutine inittimesteppart1 ! in :sumb:../../solver/solverUnsteady.F90
-            use communication
-            use inputmotion
-            use inputunsteady
-            use iteration
-            use monitor
-        end subroutine inittimesteppart1
+       subroutine inittimesteppart1 ! in :sumb:../../solver/solverUnsteady.F90
+       end subroutine inittimesteppart1
 
-        subroutine inittimesteppart2 ! in :sumb:../../solver/solverUnsteady.F90
-            use inputmotion
-            use iteration
-            use monitor
-        end subroutine inittimesteppart2
+       subroutine inittimesteppart2 ! in :sumb:../../solver/solverUnsteady.F90
+       end subroutine inittimesteppart2
 
-        subroutine solvestate ! in :sumb:../../solver/solveState.F90
-            use communication
-            use constants
-            use flovarrefstate
-            use inputiteration
-            use inputphysics
-            use iteration
-            use killsignals
-            use monitor
-        end subroutine solvestate
+       subroutine solvestate ! in :sumb:../../solver/solveState.F90
+       end subroutine solvestate
 
-        subroutine checkwriteunsteadyinloop ! in :sumb:../../solver/solverUnsteady.F90
-            use communication
-            use inputiteration
-            use inputmotion
-            use iteration
-            use killsignals
-            use monitor
-        end subroutine checkwriteunsteadyinloop
+       subroutine checkwriteunsteadyinloop ! in :sumb:../../solver/solverUnsteady.F90
+       end subroutine checkwriteunsteadyinloop
 
-        subroutine checkwriteunsteadyendloop ! in :sumb:../../solver/solverUnsteady.F90
-            use inputmotion
-            use iteration
-            use monitor
-        end subroutine checkwriteunsteadyendloop
+       subroutine checkwriteunsteadyendloop ! in :sumb:../../solver/solverUnsteady.F90
+       end subroutine checkwriteunsteadyendloop
+ ! ############################################################################
+       ! ADjoint Routines
+       ! ############################################################################
+       subroutine getsolution(sps) ! in :sumb:../../adjoint/designExport.f90
+         integer(kind=inttype) intent(in) :: sps
+       end subroutine getsolution
 
-!*****************
-! Time spectral Stability routines
-!*****************
+       subroutine preprocessingadjoint ! in :sumb:../../adjoint/preprocessingADjoint.f90
+       end subroutine preprocessingadjoint
 
-        subroutine stabilityderivativedriver
-          use precision
-          implicit none
-          
-        end subroutine stabilityderivativedriver
-! ############################################################################
-! SUmb Modules
-! ############################################################################
+       subroutine designinit ! in :sumb:../../adjoint/designInit.f90
+       end subroutine designinit
 
-        module communication ! in :sumb:../../modules/communication.f90
-            use precision
-            integer :: sumb_comm_world
-            integer :: sumb_petsc_comm_world
-            integer :: myid
-            integer :: nproc
-            integer(kind=inttype) :: sendbuffersize_1to1
-            integer(kind=inttype) :: sendbuffersize
-            integer(kind=inttype) :: recvbuffersize_1to1
-            integer(kind=inttype) :: recvbuffersize
-            integer(kind=inttype) :: sendbuffersizeover
-            integer(kind=inttype) :: recvbuffersizeover
-            real(kind=realtype) allocatable,dimension(:) :: sendbuffer
-            real(kind=realtype) allocatable,dimension(:) :: recvbuffer
-            integer allocatable,dimension(:) :: sendrequests
-            integer allocatable,dimension(:) :: recvrequests
-        end module communication
-        
-        module cgnsgrid
-          use constants
-          implicit none
-          integer(kind=inttype) :: cgnsnfamilies
-        end module cgnsgrid
-          
-        module constants ! in :sumb:../../modules/constants.F90
-            use precision
-            integer parameter,optional :: maxstringlen   = 256
-            integer parameter,optional :: maxcgnsnamelen =  32
-        end module constants
+       subroutine initializepetsc ! in :sumb:../../adjoint/initializePETSc.F90
+       end subroutine initializepetsc
 
-        module accuracy ! in :sumb:../../modules/inputParam.f90
-            use precision
-            integer(kind=inttype) parameter,optional :: firstorder=1_inttype
-            integer(kind=inttype) parameter,optional :: secondorder=2_inttype
-            integer(kind=inttype) parameter,optional :: thirdorder=3_inttype
-        end module accuracy
+       subroutine createpetscksp ! in :sumb:../../adjoint/createPETScVars.F90
+       end subroutine createpetscksp
 
-        module inputdiscretization ! in :sumb:../../modules/inputParam.f90
-            use accuracy
-            integer(kind=inttype) parameter,optional :: dissscalar=1_inttype
-            integer(kind=inttype) parameter,optional :: dissmatrix=2_inttype
-            integer(kind=inttype) parameter,optional :: disscusp=3_inttype
-            integer(kind=inttype) parameter,optional :: upwind=9_inttype
-            integer(kind=inttype) parameter,optional :: roe=1_inttype
-            integer(kind=inttype) parameter,optional :: vanleer=2_inttype
-            integer(kind=inttype) parameter,optional :: ausmdv=3_inttype
-            integer(kind=inttype) parameter,optional :: nolimiter=2_inttype
-            integer(kind=inttype) parameter,optional :: vanalbeda=3_inttype
-            integer(kind=inttype) parameter,optional :: minmod=4_inttype
-            integer(kind=inttype) parameter,optional :: noprecond=1_inttype
-            integer(kind=inttype) parameter,optional :: turkel=2_inttype
-            integer(kind=inttype) parameter,optional :: choimerkle=3_inttype
-            integer(kind=inttype) parameter,optional :: constantpressure=1_inttype
-            integer(kind=inttype) parameter,optional :: linextrapolpressure=2_inttype
-            integer(kind=inttype) parameter,optional :: quadextrapolpressure=3_inttype
-            integer(kind=inttype) parameter,optional :: normalmomentum=4_inttype
-            integer(kind=inttype) parameter,optional :: constantextrapol=1_inttype
-            integer(kind=inttype) parameter,optional :: linextrapol=2_inttype
-            integer(kind=inttype) :: spacediscr
-            integer(kind=inttype) :: spacediscrcoarse
-            integer(kind=inttype) :: orderturb
-            integer(kind=inttype) :: limiter
-            integer(kind=inttype) :: riemann
-            integer(kind=inttype) :: riemanncoarse
-            integer(kind=inttype) :: precond
-            integer(kind=inttype) :: wallbctreatment
-            integer(kind=inttype) :: outflowtreatment
-            real(kind=realtype) :: vis2
-            real(kind=realtype) :: vis4
-            real(kind=realtype) :: vis2coarse
-            real(kind=realtype) :: adis
-            real(kind=realtype) :: kappacoef
-            logical :: vortexcorr
-            logical :: dirscaling
-            logical :: radiineededfine
-            logical :: radiineededcoarse
-        end module inputdiscretization
+       subroutine setuppetscksp ! in :sumb:../../adjoint/createPETScVars.F90
+       end subroutine setuppetscksp
 
-        module inputio ! in :sumb:../../modules/inputParam.f90
-            use constants
-            integer(kind=inttype) parameter,optional :: noformat=0
-            character(len=maxstringlen) :: solfile
-            integer(kind=inttype) parameter,optional :: precisiondouble=2
-            character(len=maxstringlen) :: surfacesolfile
-            character(len=maxstringlen) :: cpfile
-            logical :: writecoormeter
-            integer(kind=inttype) :: precisionsol
-            integer(kind=inttype) :: precisiongrid
-            integer(kind=inttype) parameter,optional :: cgnsformat=1
-            character(len=maxstringlen) :: newgridfile
-            character(len=maxstringlen) :: restartfile
-            logical :: restart
-            character(len=maxstringlen) :: plot3dconnfile
-            integer(kind=inttype) :: fileformatread
-            character(len=maxstringlen) :: gridfile
-            logical :: storeconvinneriter
-            logical :: storerindlayer
-            logical :: checkrestartsol
-            logical :: autoparameterupdate
-            integer(kind=inttype) parameter,optional :: precisionsingle=1
-            logical optional :: firstwrite=.true.
-            integer(kind=inttype) :: fileformatwrite
-            integer(kind=inttype) parameter,optional :: plot3dformat=2
-            character(len=maxstringlen) :: paramfile
+       subroutine createpetscvars ! in :sumb:../../adjoint/createPETScVars.F90
+       end subroutine createpetscvars
 
-            !use constants
- !           integer(kind=inttype) :: fileformat
- !           character(len=256) :: paramfile
- !           character(len=256) :: gridfile
- !           character(len=256) :: newgridfile
- !           character(len=256) :: restartfile
- !           character(len=256) :: solfile
- !           character(len=256) :: surfacesolfile
- !           character(len=256) :: cpfile
- !           logical :: storerindlayer
- !           logical :: restart
- !           logical :: checkrestartsol
- !           logical :: autoparameterupdate
- !           logical :: writecoormeter
- !           logical :: storeconvinneriter
-        end module inputio
+       subroutine createpetscmat
+       end subroutine createpetscmat
 
-        module localmg ! in :test:localModules.f90
-            use constants
-            character(len=maxstringlen) :: mgdescription
-        end module localmg
-
-        module inputiteration ! in :sumb:../../modules/inputParam.f90
-            use precision
-            integer(kind=inttype) parameter,optional :: rungekutta=1_inttype
-            integer(kind=inttype) parameter,optional :: nllusgs=2_inttype
-            integer(kind=inttype) parameter,optional :: nllusgsline=3_inttype
-            integer(kind=inttype) parameter,optional :: segregated=1_inttype
-            integer(kind=inttype) parameter,optional :: coupled=2_inttype
-            integer(kind=inttype) parameter,optional :: gmres=1_inttype
-            integer(kind=inttype) parameter,optional :: adi=2_inttype
-            integer(kind=inttype) parameter,optional :: bcdirichlet0=0_inttype
-            integer(kind=inttype) parameter,optional :: bcneumann=1_inttype
-            integer(kind=inttype) parameter,optional :: noresaveraging=0_inttype
-            integer(kind=inttype) parameter,optional :: alwaysresaveraging=1_inttype
-            integer(kind=inttype) parameter,optional :: alternateresaveraging=2_inttype
-            integer(kind=inttype) parameter,optional :: turbrelaxnotdefined=0_inttype
-            integer(kind=inttype) parameter,optional :: turbrelaxexplicit=1_inttype
-            integer(kind=inttype) parameter,optional :: turbrelaximplicit=2_inttype
-            integer(kind=inttype) :: ncycles
-            integer(kind=inttype) :: ncyclescoarse
-            integer(kind=inttype) :: nsavevolume
-            integer(kind=inttype) :: nsavesurface
-            integer(kind=inttype) :: nsgstartup
-            integer(kind=inttype) :: smoother
-            integer(kind=inttype) :: nrkstages
-            integer(kind=inttype) :: resaveraging
-            integer(kind=inttype) :: turbtreatment
-            integer(kind=inttype) :: turbsmoother
-            integer(kind=inttype) :: turbrelax
-            integer(kind=inttype) :: mgboundcorr
-            integer(kind=inttype) :: mgstartlevel
-            integer(kind=inttype) :: nmgsteps
-            integer(kind=inttype) :: nmglevels
-            integer(kind=inttype) allocatable,dimension(:) :: cyclestrategy
-            real(kind=realtype) :: cfl
-            real(kind=realtype) :: cflcoarse
-            real(kind=realtype) :: fcoll
-            real(kind=realtype) :: smoop
-            real(kind=realtype) :: alfaturb
-            real(kind=realtype) :: betaturb
-            real(kind=realtype) :: l2conv
-            real(kind=realtype) :: l2convcoarse
-            real(kind=realtype) :: l2convrel
-            real(kind=realtype) allocatable,dimension(:) :: etark
-            real(kind=realtype) allocatable,dimension(:) :: cdisrk
-            logical :: freezeturbsource
-            logical :: printiterations
-        end module inputiteration
-
-        module inputmotion ! in :sumb:../../modules/inputParam.f90
-            use precision
-            real(kind=realtype) dimension(3) :: rotpoint
-            integer(kind=inttype) :: degreepolxrot
-            integer(kind=inttype) :: degreepolyrot
-            integer(kind=inttype) :: degreepolzrot
-            real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
-            real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
-            real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
-            integer(kind=inttype) :: degreefourxrot
-            integer(kind=inttype) :: degreefouryrot
-            integer(kind=inttype) :: degreefourzrot
-            real(kind=realtype) :: omegafourxrot
-            real(kind=realtype) :: omegafouryrot
-            real(kind=realtype) :: omegafourzrot
-            real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
-            real(kind=realtype) allocatable,dimension(:) :: coscoeffouryrot
-            real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
-            real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
-            real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
-            real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
-            logical :: gridmotionspecified
-        end module inputmotion
-
-        module inputparallel ! in :sumb:../../modules/inputParam.f90
-            use precision
-            real(kind=realtype) :: loadimbalance
-            logical :: splitblocks
-        end module inputparallel
-
-        module inputphysics ! in :sumb:../../modules/inputParam.f90
-            use precision
-            integer(kind=inttype) parameter,optional :: eulerequations=1_inttype
-            integer(kind=inttype) parameter,optional :: nsequations=2_inttype
-            integer(kind=inttype) parameter,optional :: ransequations=3_inttype
-            integer(kind=inttype) parameter,optional :: steady=1_inttype
-            integer(kind=inttype) parameter,optional :: unsteady=2_inttype
-            integer(kind=inttype) parameter,optional :: timespectral=3_inttype
-            integer(kind=inttype) parameter,optional :: internalflow=1_inttype
-            integer(kind=inttype) parameter,optional :: externalflow=2_inttype
-            integer(kind=inttype) parameter,optional :: cpconstant=1_inttype
-            integer(kind=inttype) parameter,optional :: cptempcurvefits=2_inttype
-            integer(kind=inttype) parameter,optional :: baldwinlomax=1_inttype
-            integer(kind=inttype) parameter,optional :: spalartallmaras=2_inttype
-            integer(kind=inttype) parameter,optional :: spalartallmarasedwards=3_inttype
-            integer(kind=inttype) parameter,optional :: komegawilcox=4_inttype
-            integer(kind=inttype) parameter,optional :: komegamodified=5_inttype
-            integer(kind=inttype) parameter,optional :: ktau=6_inttype
-            integer(kind=inttype) parameter,optional :: mentersst=7_inttype
-            integer(kind=inttype) parameter,optional :: v2f=10_inttype
-            integer(kind=inttype) parameter,optional :: strain=1_inttype
-            integer(kind=inttype) parameter,optional :: vorticity=2_inttype
-            integer(kind=inttype) parameter,optional :: katolaunder=3_inttype
-            integer(kind=inttype) :: equations
-            integer(kind=inttype) :: equationmode
-            integer(kind=inttype) :: flowtype
-            integer(kind=inttype) :: turbmodel
-            integer(kind=inttype) :: cpmodel
-            integer(kind=inttype) :: turbprod
-            integer(kind=inttype) :: rvfn
-            logical :: rvfb
-            logical :: wallfunctions
-            real(kind=realtype) :: mach
-            real(kind=realtype) :: machcoef
-            real(kind=realtype) :: machgrid
-            real(kind=realtype) :: reynolds
-            real(kind=realtype) :: reynoldslength
-            real(kind=realtype) :: tempfreestream
-            real(kind=realtype) :: gammaconstant
-            real(kind=realtype) :: rgasdim
-            real(kind=realtype) :: prandtl
-            real(kind=realtype) :: prandtlturb
-            real(kind=realtype) :: pklim
-            real(kind=realtype) :: walloffset
-            real(kind=realtype) :: eddyvisinfratio
-            real(kind=realtype) :: turbintensityinf
-            real(kind=realtype) :: surfaceref
-            real(kind=realtype) :: lengthref
-            real(kind=realtype) dimension(3) :: veldirfreestream
-            real(kind=realtype) dimension(3) :: liftdirection
-            real(kind=realtype) dimension(3) :: dragdirection
-            real(kind=realtype) dimension(3) :: pointref
-        end module inputphysics
-        module inputadjoint ! in :sumb:../modules/inputParam.f90
-            use precision
-            integer(kind=inttype) :: pcside
-            integer(kind=inttype) :: matrixordering
-            integer(kind=inttype) parameter,optional :: rowabs=4
-            integer(kind=inttype) parameter,optional :: right=2
-            integer(kind=inttype) :: filllevel
-            real(kind=realtype) :: adjabstol
-            real(kind=realtype) :: adjdivtol
-            integer(kind=inttype) parameter,optional :: petsccg=3
-            integer(kind=inttype) parameter,optional :: left=1
-            integer(kind=inttype) parameter,optional :: additiveschwartz=3
-            integer(kind=inttype) :: adjmaxiter
-            logical :: approxpc
-            integer(kind=inttype) parameter,optional :: cholesky=4
-            integer(kind=inttype) parameter,optional :: icc=2
-            integer(kind=inttype) parameter,optional :: rowsum=3
-            integer(kind=inttype) parameter,optional :: nesteddissection=3
-            integer(kind=inttype) :: overlap
-            integer(kind=inttype) parameter,optional :: lu=3
-            integer(kind=inttype) parameter,optional :: onewaydissection=4
-            integer(kind=inttype) parameter,optional :: jacobi=2
-            integer(kind=inttype) parameter,optional :: petscbicgstab=1
-            integer(kind=inttype) parameter,optional :: quotientminimumdegree=5
-            integer(kind=inttype) :: adjointsolvertype
-            integer(kind=inttype) parameter,optional :: normal=1
-            integer(kind=inttype) :: adjmonstep
-            integer(kind=inttype) parameter,optional :: petscfgmres=4
-            integer(kind=inttype) parameter,optional :: petscgmres=2
-            logical :: restartadjoint
-            real(kind=realtype) :: adjreltol
-            real(kind=realtype) :: adjreltolrel
-            integer(kind=inttype) parameter,optional :: blockjacobi=1
-            integer(kind=inttype) parameter,optional :: natural=1
-            integer(kind=inttype) :: adjrestart
-            logical :: lumpeddiss
-            integer(kind=inttype) :: localpctype
-            logical :: solveadjoint
-            integer(kind=inttype) parameter,optional :: rowmax=2
-            integer(kind=inttype) :: precondtype
-            logical :: setmonitor
-            integer(kind=inttype) parameter,optional :: ilu=1
-            integer(kind=inttype) parameter,optional :: reversecuthillmckee=2
-            real(kind=realtype) :: sigma
-            integer(kind=inttype) :: scaletype
-            logical :: printtiming
-        end module inputadjoint
-        
-        module inputtimespectral ! in :sumb:../../modules/inputParam.f90
-            use precision
-            integer(kind=inttype) :: ntimeintervalsspectral
-            real(kind=realtype) allocatable,dimension(:,:,:) :: dscalar
-            real(kind=realtype) allocatable,dimension(:,:,:) :: dvector
-            real(kind=realtype) :: dtunsteadyrestartspectral
-            logical :: writeunsteadyrestartspectral
-            integer(kind=inttype) :: nunsteadysolspectral
-            logical :: writeunsteadyvolspectral
-            logical :: writeunsteadysurfspectral
-            real(kind=realtype) allocatable,dimension(:,:,:) :: rotmatrixspectral
-        end module inputtimespectral
-
-        module inputunsteady ! in :sumb:../../modules/inputParam.f90
-            use accuracy
-            integer(kind=inttype) :: timeaccuracy
-            integer(kind=inttype) :: ntimestepscoarse
-            integer(kind=inttype) :: ntimestepsfine
-            real(kind=realtype) :: deltat
-            integer(kind=inttype) :: noldgridread
-        end module inputunsteady
-
-        module inputoverset ! in :sumb:../../modules/inputParam.f90
-            use precison
-            integer(kind=inttype) parameter,optional :: trilinear=1_inttype
-            logical :: oversetdonorsareguesses
-            logical :: avgrestrictresforblanks
-            integer(kind=inttype) :: oversetinterptype
-            integer(kind=inttype) :: oversetinterptypecoarse
-            real(kind=realtype) :: allowabledonorquality
-        end module inputoverset
-
-        module iteration ! in :sumb:../../modules/iteration.f90
-            use precision
-            integer(kind=inttype) :: groundlevel
-            integer(kind=inttype) :: currentlevel
-            integer(kind=inttype) :: rkstage
-            integer(kind=inttype) :: nstepscycling
-            integer(kind=inttype) allocatable,dimension(:) :: cycling
-            integer(kind=inttype) :: nmgvar
-            integer(kind=inttype) :: nt1mg
-            integer(kind=inttype) :: nt2mg
-            logical :: restricteddyvis
-            logical :: turbsegregated
-            logical :: turbcoupled
-            integer(kind=inttype) :: itertot
-            real(kind=realtype) :: rfil
-            real(kind=realtype) :: t0solver
-            logical :: converged
-            logical :: exchangepressureearly
-            logical :: standalonemode
-            logical :: changing_grid
-            logical :: deforming_grid
-            logical :: changingoverset
-            logical optional :: pv3initialized=.false.
-            integer(kind=inttype) :: noldsolavail
-            integer(kind=inttype) :: noldlevels
-            real(kind=realtype) allocatable,dimension(:) :: coeftime
-            logical :: timespectralgridsnotwritten
-            logical, dimension(:), allocatable :: oldsolwritten       
-        end module iteration
-
-        module monitor ! in :sumb:../../modules/monitor.f90
-            use constants
-            integer parameter,optional :: fieldwidth=12
-            integer parameter,optional :: decimalwidth=5
-            integer :: nmonsum
-            integer :: nmonmax
-            integer :: nmon
-            real(kind=realtype) allocatable,dimension(:) :: monloc
-            real(kind=realtype) allocatable,dimension(:) :: monglob
-            real(kind=realtype) allocatable,dimension(:) :: monRef
-            character(len=32) allocatable,dimension(:) :: monnames
-            logical :: monmachorhmax
-            logical :: showcpu
-            logical :: monMassSliding
-            logical :: monMassFamilies
-            integer :: niterold
-            integer :: nitercur
-            real(kind=realtype) allocatable,dimension(:,:,:) :: convarray
-            integer(kind=inttype) :: ntimestepsrestart
-            integer(kind=inttype) :: timestepunsteady
-            real(kind=realtype) :: timeunsteady
-            real(kind=realtype) :: timeunsteadyrestart
-            real(kind=realtype) allocatable,dimension(:) :: timearray
-            real(kind=realtype) allocatable,dimension(:,:) :: timedataarray
-            logical :: writegrid
-            logical :: writevolume
-            logical :: writesurface
-        end module monitor
-
-        module block ! in :sumb:../../modules/block.f90
-            use constants
-            integer(kind=portype) parameter,optional :: leftstarted=-1_portype
-            integer(kind=portype) parameter,optional :: regular=0_portype
-            integer(kind=portype) parameter,optional :: rightstarted=1_portype
-            integer(kind=inttype) parameter,optional :: nosubinlet=0_inttype
-            integer(kind=inttype) parameter,optional :: totalconditions=1_inttype
-            integer(kind=inttype) parameter,optional :: massflow=2_inttype
-            integer(kind=inttype) :: ndom
-            integer(kind=inttype) allocatable,dimension(:) :: ncellglobal
-        end module block
-
-        module flowvarrefstate ! in :sumb:../../modules/flowVarRefState.f90
-            use constants
-            integer(kind=inttype) :: nw
-            integer(kind=inttype) :: nwf
-            integer(kind=inttype) :: nwt
-            integer(kind=inttype) :: nt1
-            integer(kind=inttype) :: nt2
-            real(kind=realtype) :: pref
-            real(kind=realtype) :: rhoref
-            real(kind=realtype) :: tref
-            real(kind=realtype) :: muref
-            real(kind=realtype) :: timeref
-            real(kind=realtype) :: lref
-            logical :: lrefspecified
-            real(kind=realtype) :: pinfdim
-            real(kind=realtype) :: rhoinfdim
-            real(kind=realtype) :: mudim
-            real(kind=realtype) :: rhoinf
-            real(kind=realtype) :: uinf
-            real(kind=realtype) :: pinf
-            real(kind=realtype) :: pinfcorr
-            real(kind=realtype) :: rgas
-            real(kind=realtype) :: muinf
-            real(kind=realtype) :: gammainf
-            real(kind=realtype) allocatable,dimension(:) :: winf
-            logical :: kpresent
-            logical :: eddymodel
-            logical :: viscous
-        end module flowvarrefstate
-
-       module killsignals ! in :sumb:../../modules/killSignals.f90
-            use precision
-            integer(kind=inttype) parameter,optional :: nosignal=0_int_type
-            integer(kind=inttype) parameter,optional :: signalwrite=1_int_type
-            integer(kind=inttype) parameter,optional :: signalwritequit=2_int_type
-            integer(kind=inttype) :: localsignal
-            integer(kind=inttype) :: globalsignal
-            logical :: frompython
-            logical :: routinefailed
-        end module killsignals
-
-        module adjointpetsc ! in :sumb:ADjointPETSc.F90
-          use constants
-          !real(kind=realtype) parameter,optional :: adjreltol=1.0e-12_realtype
-          !real(kind=realtype) parameter,optional :: adjabstol=1.0e-25_realtype
-          !integer(kind=inttype) parameter,optional :: adjrestart=100
-          !integer(kind=inttype) parameter,optional :: adjmonstep=10
-          !real(kind=realtype) parameter,optional :: adjdivtol=1.0e+5_realtype
-          real(kind=realtype) allocatable,dimension(:) :: adjreshist
-          logical :: petscblockmatrix
-          integer(kind=inttype) :: adjconvits
-          !integer(kind=inttype) parameter,optional :: adjmaxiter=500
-        
-        end module adjointpetsc
-
-        module adjointvars ! in :sumb:ADjointVars.F90
-            use constants
-            integer(kind=inttype) :: nnodesglobal
-            integer(kind=inttype) parameter,optional :: costfuncforcezcoef=5
-            real(kind=realtype) allocatable,dimension(:) :: xdesignvarupper
-            integer(kind=inttype) parameter,optional :: ndesignssa=2
-            integer(kind=inttype) parameter,optional :: costfuncmomzcoef=8
-            character(len=maxstringlen) parameter,optional :: costfuncnamemomz="momzcoef"
-            integer(kind=inttype) :: ncellsglobal
-            integer(kind=inttype) :: ncelloffsetlocal
-            integer(kind=inttype) :: nnodeslocal
-            character(len=maxstringlen) parameter,optional :: varnamessa="sideslipangle"
-            real(kind=realtype) allocatable,dimension(:,:) :: adjoint
-            character(len=maxstringlen) parameter,optional :: costfuncnameforcey="forceycoef"
-            character(len=maxstringlen) parameter,optional :: costfuncnameforcex="forcexcoef"
-            character(len=maxstringlen) parameter,optional :: costfuncnameforcez="forcezcoef"
-            integer(kind=inttype) :: ndesign
-            real(kind=realtype) allocatable,dimension(:) :: xdesignvarlower
-            real(kind=realtype) allocatable,dimension(:,:) :: functiongradcoupling
-            integer(kind=inttype) parameter,optional :: ndesignmach=3
-            integer(kind=inttype) parameter,optional :: ndesignmachgrid=4
-            integer(kind=inttype) parameter,optional :: ndesignrotx=5
-            integer(kind=inttype) parameter,optional :: ndesignroty=6
-            integer(kind=inttype) parameter,optional :: ndesignrotz=7
-            integer(kind=inttype) parameter,optional :: ndesignrotcenx=8
-            integer(kind=inttype) parameter,optional :: ndesignrotceny=9
-            integer(kind=inttype) parameter,optional :: ndesignrotcenz=10
-            integer(kind=inttype) parameter,optional :: ndesignpointrefx=11
-            integer(kind=inttype) parameter,optional :: ndesignpointrefy=12
-            integer(kind=inttype) parameter,optional :: ndesignpointrefy=13
-            real(kind=realtype) allocatable,dimension(:,:) :: functiongradcouplingexp
-            real(kind=realtype) allocatable,dimension(:) :: functionvalue
-            real(kind=realtype) parameter,optional :: adjrelfd=1.0e-5_realtype
-            real(kind=realtype) allocatable,dimension(:,:) :: functiongradspatial
-            real(kind=realtype) allocatable,dimension(:,:) :: functiongradsurfacedv
-            real(kind=realtype) allocatable,dimension(:,:) :: functiongradsurfacedisp
-            real(kind=realtype) allocatable,dimension(:,:) :: functiongradstruct
-            character(len=maxstringlen) allocatable,dimension(:) :: functionname
-            real(kind=realtype) allocatable,dimension(:,:) :: functiongrad
-            character(len=maxstringlen) parameter,optional :: costfuncnamemomx="momxcoef"
-            real(kind=realtype) parameter,optional :: adjepsfd=1.0e-4_realtype
-            integer(kind=inttype) :: ndesignextra
-            real(kind=realtype) parameter,optional :: adjabsfd=1.0e-5_realtype
-            integer(kind=inttype) :: ncellslocal
-            integer(kind=inttype) parameter,optional :: costfuncmomxcoef=6
-            character(len=maxstringlen) parameter,optional :: costfuncnamemomy="momycoef"
-            character(len=maxstringlen) parameter,optional :: costfuncnamelift="liftcoef"
-            integer(kind=inttype) :: nnodeoffsetlocal
-            integer(kind=inttype) parameter,optional :: costfuncliftcoef=1
-            character(len=maxstringlen) allocatable,dimension(:) :: xdesignvarname
-            integer(kind=inttype) parameter,optional :: costfuncdragcoef=2
-            character(len=maxstringlen) parameter,optional :: varnameaoa="angleofattack"
-            integer(kind=inttype) :: ndesignspatial
-            integer(kind=inttype) parameter,optional :: ndesignaoa=1
-            integer(kind=inttype) parameter,optional :: ncostfunction=14
-            integer(kind=inttype) parameter,optional :: costfuncforcexcoef=3
-            integer(kind=inttype) :: nsurfnodesglobal
-            integer(kind=inttype) parameter,optional :: costfuncforceycoef=4
-            character(len=maxstringlen) parameter,optional :: costfuncnamedrag="dragcoef"
-            real(kind=realtype) allocatable,dimension(:) :: xdesignvar
-            integer(kind=inttype) parameter,optional :: costfuncmomycoef=7
-            integer(kind=inttype) :: nsurfnodeslocal
-            integer(kind=inttype) parameter,optional :: costfunccmzalpha=9
-            integer(kind=inttype) parameter,optional ::costfunccm0=10
-            integer(kind=inttype) parameter,optional ::costfuncclalpha=11
-            integer(kind=inttype) parameter,optional ::costfunccl0=12
-            integer(kind=inttype) parameter,optional ::costfunccdalpha=13
-            integer(kind=inttype) parameter,optional ::costfunccd0=14
-            integer(kind=inttype) parameter,optional :: costfunccmzalphadot=15
-            integer(kind=inttype) parameter,optional :: costfunccmzq=16
-          end module adjointvars
-
-          module inputtsstabderiv ! in :test:inputParam.f90
-            logical :: usewindaxis
-            logical :: tsrmode
-            logical :: tsstability
-            logical :: tsbetamode
-            logical :: tsmachmode
-            logical :: tsaltitudemode
-            logical :: tspmode
-            logical :: tsqmode
-            logical :: tsalphamode
-          end module inputtsstabderiv
-
-
-        subroutine getsolution ! in :sumb:../../adjoint/designExport.f90
-            use adjointvars
-            use flowvarrefstate
-            use inputphysics
-            use inputtsstabderiv
-        end subroutine getsolution
-
-! ############################################################################
-! ADjoint Routines
-! ############################################################################
-
-       subroutine preprocessingadjoint(level) ! in :sumb:../../adjoint/preprocessingADjoint.f90
-            use communication
-            use precision
-            integer(kind=inttype) intent(in) :: level
-        end subroutine preprocessingadjoint
-
-        subroutine designinit ! in :sumb:../../adjoint/designInit.f90
-            use adjointvars
-            use communication
-            use flowvarrefstate
-        end subroutine designinit
-
-        subroutine initializepetsc ! in :sumb:../../adjoint/initializePETSc.F90
-          use adjointpetsc
-          use inputadjoint
-          use communication
-        end subroutine initializepetsc
-        
-        subroutine createpetscksp(level) ! in :sumb:../../adjoint/createPETScVars.F90
-          use adjointpetsc
-          use adjointvars
-          use blockpointers
-          use flowvarrefstate         ! nw
-          use inputadjoint
-          implicit none
-	  integer(kind=inttype) intent(in)::level
-        end subroutine createpetscksp
-        subroutine setuppetscksp(level) ! in :sumb:../../adjoint/createPETScVars.F90
-          use adjointpetsc
-          use adjointvars
-          use blockpointers
-          use flowvarrefstate         ! nw
-          use inputadjoint
-          implicit none
-	  integer(kind=inttype) intent(in)::level
-        end subroutine setuppetscksp
-
-        subroutine createpetscvars ! in :sumb:../../adjoint/createPETScVars.F90
-          use adjointpetsc
-        end subroutine createpetscvars
-
-        subroutine createpetscmat
-          use adjointpetsc
-          use adjointvars     
-          use communication   
-          use inputtimespectral 
-          use flowvarrefstate  
-          use inputadjoint    
-          implicit none
-        end subroutine createpetscmat
-
-        subroutine setupadjointmatrix(level) ! in :sumb:../../adjoint/setupADjointMatrix.F90
-            use adjointpetsc
-            use adjointvars
-            use blockpointers
-            use cgnsgrid
-            use communication
-            use inputdiscretization
-            use iteration
-            use flowvarrefstate
-            use inputtimespectral
-            integer(kind=inttype) intent(in) :: level
-        end subroutine setupadjointmatrix
-
-       subroutine setupadjointmatrixtranspose(level) ! in :sumb:../../adjoint/setupADjointMatrix.F90
-         use adjointpetsc
-         use adjointvars
-         use blockpointers
-         use cgnsgrid
-         use communication
-         use inputdiscretization
-         use inputtimespectral
-         use iteration
-         use flowvarrefstate
-         use inputadjoint
-         integer(kind=inttype) intent(in) :: level
-       end subroutine setupadjointmatrixtranspose
-       
-       subroutine setupallresidualmatrices(level) ! in :sumb:../../adjoint/setupADjointMatrix.F90
-         use adjointpetsc
-         use adjointvars
-         use blockpointers
-         use cgnsgrid
-         use communication
-         use inputdiscretization
-         use inputtimespectral
-         use iteration
-         use flowvarrefstate
-         use inputadjoint
-         integer(kind=inttype) intent(in) :: level
+       subroutine setupallresidualmatrices ! in :sumb:../../adjoint/setupADjointMatrix.F90
        end subroutine setupallresidualmatrices
 
-
-        subroutine setupadjointrhs(level,costfunction) ! in :sumb:../../adjoint/setupADjointRHS.F90
-            use adjointpetsc
-            use adjointvars
-            implicit none
-            integer(kind=inttype) intent(in) :: level
-            integer(kind=inttype) intent(in) :: costfunction
-        end subroutine setupadjointrhs
-
-        subroutine solveadjointpetsc ! in :sumb:../../adjoint/solveADjointPETSc.F90
-            use adjointpetsc
-            use inputadjoint
-            implicit none
-        end subroutine solveadjointpetsc
-
-        subroutine solveadjointtransposepetsc ! in :sumb:../../adjoint/solveADjointPETSc.F90
-          use adjointpetsc
-          use inputadjoint
-          implicit none
-        end subroutine solveadjointtransposepetsc
-
-        subroutine solvedirectpetsc ! in :sumb:../../adjoint/solveADjointPETSc.F90
-          use adjointpetsc
-          use adjointvars
-          use inputadjoint
-          use flowvarrefstate 
-          use blockpointers   
-          use communication
-          use inputtimespectral
-          implicit none
-        end subroutine solvedirectpetsc
-
-       subroutine setupgradientrhsspatial(level,costfunction,sps)! in :sumb:../../adjoint/computeADjointGradientSpatial.F90
-            use adjointpetsc
-            use adjointvars
-            use blockpointers       
-            use cgnsgrid            
-            use communication                    
-            use inputphysics        
-            use flowvarrefstate     
-            use inputdiscretization 
-            use inputtimespectral
-            use iteration        
-            use monitor    
-            use section
-            use bctypes  
-            integer(kind=inttype), intent(in) :: level
-            integer(kind=inttype), intent(in) :: costfunction
-            integer(kind=inttype), intent(in) :: sps
-         end subroutine setupgradientrhsspatial
-
-         subroutine setupgradientrhsflow(level,costfunction)
-           use adjointpetsc
-           use adjointvars
-           implicit none
-           integer(kind=inttype), intent(in) :: level
-           integer(kind=inttype), intent(in) :: costfunction
-           
-         end subroutine setupgradientrhsflow
-         
-         subroutine setupgradientrhsvolume(costfunction)
-           use adjointpetsc
-           use adjointvars
-           implicit none
-           integer(kind=inttype), intent(in) :: costfunction
-           
-         end subroutine setupgradientrhsvolume
-
-        subroutine setupgradientmatrixspatial(level)! in :sumb:../../adjoint/setupGradientMatrixSpatial.F90
-            use adjointpetsc
-            use adjointvars
-            use blockpointers
-            use cgnsgrid
-            use communication
-            use flowvarrefstate
-            use inputdiscretization
-            use inputtimespectral
-            use iteration
-            integer(kind=inttype) intent(in) :: level
-        end subroutine setupgradientmatrixspatial
-
-        subroutine computeadjointgradientspatial(costfunction)
-          use adjointpetsc
-          use adjointvars
-          use blockpointers !globalnode
-          integer(kind=inttype), intent(in) :: costfunction
-        end subroutine computeadjointgradientspatial
-
-        subroutine computeaerocoupling(costfunction)
-          use adjointpetsc
-          use adjointvars
-          use blockpointers !globalnode
-          integer(kind=inttype), intent(in) :: costfunction
-        end subroutine computeaerocoupling
-
-        subroutine getdrdxvpsi(ndof,dxv)
-          integer(kind=inttype) intent(in) :: ndof
-          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
-        end subroutine getdrdxvpsi
-
-        subroutine getdrdwtpsi(ndof,drdwtpsi)
-          integer(kind=inttype) intent(in) :: ndof
-          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: drdwtpsi
-        end subroutine getdrdwtpsi
-
-        subroutine getdrdwtpsi2(ndof,drdwtpsi)
-          integer(kind=inttype) intent(in) :: ndof
-          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: drdwtpsi
-        end subroutine getdrdwtpsi2
-
-        subroutine getdfdxvec(ndof,vec_in,vec_out) ! in :test:getdFdxVec.f90
-          integer(kind=inttype) optional,intent(in),check(len(vec_in)>=ndof),depend(vec_in) :: ndof=len(vec_in)
-          real(kind=realtype) dimension(ndof),intent(in) :: vec_in
-          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: vec_out
-        end subroutine getdfdxvec
-
-        subroutine getdjdx(ndof,dxv)
-          integer(kind=inttype) intent(in) :: ndof
-          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
-        end subroutine getdjdx
-
-        subroutine computeaeroexpcoupling(costfunction)
-          use adjointpetsc
-          use adjointvars
-          use blockpointers !globalnode
-          use cgnsgrid            ! cgnsDoms
-          use communication       ! myID, nProc
-          use inputphysics        ! liftDirection, dragDirection
-          use flowvarrefstate     ! nw
-          use inputdiscretization ! spaceDiscr, useCompactDiss
-          use inputtimespectral   ! nTimeIntervalsSpectral
-          use iteration           ! overset, currentLevel
-          use section
-          use bcyypes  
-          integer(kind=inttype), intent(in) :: costfunction
-        end subroutine computeaeroexpcoupling
-
-        subroutine setupgradientmatrixextra(level)! in :sumb:../../adjoint/setupGradientMatrixSpatial.F90
-            use adjointpetsc
-            use adjointvars
-            use blockpointers
-            use communication
-            use flowvarrefstate
-            use inputdiscretization
-            use inputtimespectral
-            use iteration
-            integer(kind=inttype) intent(in) :: level
-        end subroutine setupgradientmatrixextra
-
-        subroutine setupgradientrhsextra(level,costfunction,sps) ! in :sumb:../../adjoint/setupGradientRHSExtra.F90
-            use adjointpetsc
-            use adjointvars
-            use blockpointers
-            use communication
-            use inputphysics
-            use flowvarrefstate
-            use inputtimespectral
-            integer(kind=inttype) intent(in) :: level
-            integer(kind=inttype) intent(in) :: costfunction
-            integer(kind=inttype) intent(in) :: sps
-        end subroutine setupgradientrhsextra
-
-
-        subroutine computeadjointgradientextra(costfunction)
-          use adjointpetsc
-          use adjointvars
-          integer(kind=inttype), intent(in) :: costfunction
-        end subroutine computeadjointgradientextra
-
-        subroutine getglobalnodes(blocknum,idim,jdim,kdim,nodenumbers) ! in :sumb:../../adjoint/getGlobalNodes.f90
-          use blockpointers
-          use communication
-          use adjointvars
-          integer(kind=inttype) intent(in) :: blocknum
-          integer(kind=inttype) intent(in) :: idim
-          integer(kind=inttype) intent(in) :: jdim
-          integer(kind=inttype) intent(in) :: kdim
-          integer(kind=inttype) dimension(idim,jdim,kdim),intent(out),depend(idim,jdim,kdim) :: nodenumbers
-        end subroutine getglobalnodes
-
-        subroutine destroypetscksp ! in :sumb:../../adjoint/destroyPETScKSP.F90
-            use adjointpetsc
-            use communication
-            use flowvarrefstate
-        end subroutine destroypetscksp
-
-        subroutine destroypetscvars ! in :sumb:../../adjoint/destroyPETScVars.F90
-            use adjointpetsc
-            use communication
-            use flowvarrefstate
-        end subroutine destroypetscvars
-
-        subroutine destroypetscmat
-          use adjointpetsc
-          use communication
-          use flowvarrefstate 
-        end subroutine destroypetscmat
-        
-!         subroutine setupadjointrhsstruct(lenadjoint,structadjoint) ! in :sumb:setupADjointRHSStruct.f90
-!             use adjointpetsc
-!             use adjointvars
-!             use mdData
-!             use communication
-!             integer(kind=inttype) optional,intent(in),check(shape(structadjoint,1)==lenadjoint),depend(structadjoint) :: lenadjoint=shape(structadjoint,1)
-!             real(kind=realtype) dimension(3,lenadjoint),intent(in) :: structadjoint
-!         end subroutine setupadjointrhsstruct
-     
-!         subroutine setupcouplingmatrixstruct(level) ! in :sumb:setupCouplingMatrixStruct.f90
-!             use blockpointers
-!             use adjointpetsc
-!             use bctypes
-!             use monitor
-!             use communication
-!             use section
-!             use inputdiscretization
-!             use iteration
-!             use mddatalocal
-!             use mddata
-!             use inputtimespectral
-!             use inputphysics
-!             use adjointvars
-!             use cgnsgrid
-!             use flowvarrefstate
-!             integer(kind=inttype) intent(in) :: level
-!         end subroutine setupcouplingmatrixstruct
-
-        subroutine getadjoint(nnodes,functiongradlocal) ! in :test:getADjoint.F90
-            use blockpointers
-            use adjointpetsc
-            use adjointvars
-            integer(kind=inttype) intent(in) :: nnodes
-            real(kind=realtype) dimension(nnodes),intent(out),depend(nnodes) :: functiongradlocal
-        end subroutine getadjoint
- 
-        subroutine setadjoint(nnodes,functiongradlocal) ! in :test:setADjoint.F90
-            use blockpointers
-            use adjointpetsc
-            use adjointvars
-            integer(kind=inttype) optional,intent(in),check(len(functiongradlocal)>=nnodes),depend(functiongradlocal) :: nnodes=len(functiongradlocal)
-            real(kind=realtype) dimension(nnodes),intent(in) :: functiongradlocal
-        end subroutine setadjoint
-      
-
-        subroutine setdefaultvalues()
-        end subroutine setdefaultvalues
-       
-
-
-!         subroutine setupcouplingtotalstruct(level) ! in :sumb:setupCouplingTotalStruct.f90
-!             use blockpointers
-!             use adjointpetsc
-!             use bctypes
-!             use monitor
-!             use communication
-!             use section
-!             use inputdiscretization
-!             use iteration
-!             use mddatalocal
-!             use inputtimespectral
-!             use inputphysics
-!             use adjointvars
-!             use mddata
-!             use cgnsgrid
-!             use flowvarrefstate
-!             integer(kind=inttype) intent(in) :: level
-!         end subroutine setupcouplingtotalstruct
-
-!         subroutine setupadjointtotalstruct(lenadjoint,structadjoint,costfunction) ! in :sumb:setupADjointTotalStruct.f90
-!             use communication
-!             use adjointpetsc
-!             use adjointvars
-!             use mddata
-!             integer(kind=inttype) optional,intent(in),check(shape(structadjoint,1)==lenadjoint),depend(structadjoint) :: lenadjoint=shape(structadjoint,1)
-!             real(kind=realtype) dimension(3,lenadjoint),intent(in) :: structadjoint
-!             integer(kind=inttype) intent(in) :: costfunction
-!         end subroutine setupadjointtotalstruct
-        
-        subroutine updateflow
-          use inputtimespectral 
-          use section
-          use inputphysics  !
-          use monitor
-          implicit none
-        end subroutine updateflow
-
-        subroutine updatereferencepoint
-          use inputtimespectral 
-          use section
-          use inputphysics  !
-          use inputmotion
-          use cgnsgrid
-          use monitor
-          use iteration
-          use blockpointers
-          implicit none
-        end subroutine updatereferencepoint
-
-        subroutine updaterotationrate(xrot,yrot,zrot)
-          use inputtimespectral 
-          use section
-          use inputphysics  !
-          use inputmotion
-          use cgnsgrid
-          use monitor
-          use iteration
-          use blockpointers
-          implicit none
-          real(kind=realtype) intent(in)::xrot,yrot,zrot
-        end subroutine updaterotationrate
-! ############################################################################
-! Aeroelastic / Multi-Disciplinary Routines
-! ############################################################################
-
-        module mddata ! in :sumb:../../python/fortran/aeroElastic/mdData.f90
-            use constants
-            integer(kind=inttype) :: mdnfamilies
-            character(len=32) allocatable,dimension(:) :: mdfamilynames
-            integer(kind=inttype) allocatable,dimension(:,:) :: mdnsurfnodes
-            integer(kind=intType):: mdnsurfnodescompact
-            integer(kind=inttype) allocatable,dimension(:,:) :: mdnsurfpatches
-            integer(kind=inttype) allocatable,dimension(:,:) :: mdpatchdimensions
-            integer(kind=inttype) allocatable,dimension(:,:) :: mdsurfind
-            real(kind=realtype) allocatable,dimension(:,:) :: mdsurfxx
-            real(kind=realtype) allocatable,dimension(:,:,:):: mdglobalsurfxx
-            real(kind=realtype) allocatable,dimension(:,:) :: mdsurfforce
-            real(kind=realtype) allocatable,dimension(:) :: mdsurfval
-        end module mddata
-
-        subroutine mdgetfamilynames ! in :sumb:../../python/fortran/aeroElastic/mdFamilyNames.f90
-            use cgnsgrid
-            use mddata
-        end subroutine mdgetfamilynames
-
-        subroutine mddeletefamilynames ! in :sumb:../../python/fortran/aeroElastic/mdFamilyNames.f90
-            use mddata
-        end subroutine mddeletefamilynames
-
-        subroutine mdcreatensurfnodes ! in :sumb:../../python/fortran/aeroElastic/mdNSurfNodes.f90
-            use bctypes
-            use blockpointers
-            use cgnsgrid
-            use communication
-            use mddata
-        end subroutine mdcreatensurfnodes
-
-        subroutine mddeletensurfnodes ! in :sumb:../../python/fortran/aeroElastic/mdNSurfNodes.f90
-            use mddata
-        end subroutine mddeletensurfnodes
-
-        subroutine mdsetcoor(sps,nsubblocks,cgnsids,ranges,coor,nnode) ! in :sumb:../../python/fortran/aeroElastic/mdSetCoor.f90
-            use block
-            use cgnsgrid
-            use communication
-            integer(kind=inttype) intent(in) :: sps
-            integer(kind=inttype) optional,intent(in),check(len(cgnsids)>=nsubblocks),depend(cgnsids) :: nsubblocks=len(cgnsids)
-            integer(kind=inttype) optional,intent(in),check(shape(coor,1)==nnode),depend(coor) :: nnode=shape(coor,1)
-            integer(kind=inttype) dimension(nsubblocks),intent(in) :: cgnsids
-            integer(kind=inttype) dimension(3,2,nsubblocks),intent(in),depend(nsubblocks) :: ranges
-            real(kind=realtype) dimension(3,nnode),intent(in) :: coor
-        end subroutine mdsetcoor
-
-        subroutine mdsetmycoor(sps,cgnsid,cgnsrange,coor,ncgnsids,sortedcgnsids,nblockpercgns,blockpercgns) ! in :sumb:../fortran/mdSetCoor.f90
-            use block
-            use iteration
-            integer(kind=inttype) intent(in) :: sps
-            integer(kind=inttype) intent(in) :: cgnsid
-            integer(kind=inttype) intent(in) :: ncgnsids
-            integer(kind=inttype) dimension(3,2),intent(in) :: cgnsrange
-            integer(kind=inttype) dimension(*),intent(in) :: nblockpercgns
-            integer(kind=inttype) dimension(*),intent(in) :: blockpercgns
-            integer(kind=inttype) dimension(*),intent(in) :: sortedcgnsids
-            real(kind=realtype) dimension(3,*),intent(in) :: coor
-        end subroutine mdsetmycoor
-
-        subroutine mdcreatesurfcoorlist(sps,famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfCoorList.f90
-            use bctypes
-            use blockpointers
-            use cgnsgrid
-            use communication
-            use mddata
-            integer(kind=inttype) intent(in) :: sps
-            integer(kind=inttype) intent(in) :: famid
-            integer(kind=inttype) intent(out) :: startind
-            integer(kind=inttype) intent(out) :: endind
-        end subroutine mdcreatesurfcoorlist
-
-        subroutine mddeletesurfcoorlist ! in :sumb:../../python/fortran/aeroElastic/mdSurfCoorList.f90
-            use mddata
-        end subroutine mddeletesurfcoorlist
-
-        subroutine mdcreatesurfforcelist(sps,famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfForceList.f90
-            use bctypes
-            use blockpointers
-            use cgnsgrid
-            use communication
-            use flowvarrefstate
-            use mddata
-            integer(kind=inttype) intent(in) :: sps
-            integer(kind=inttype) intent(in) :: famid
-            integer(kind=inttype) intent(out) :: startind
-            integer(kind=inttype) intent(out) :: endind
-        end subroutine mdcreatesurfforcelist
-
-        subroutine mddeletesurfforcelist ! in :sumb:../../python/fortran/aeroElastic/mdSurfForceList.f90
-            use mddata
-        end subroutine mddeletesurfforcelist
-
-        subroutine mdcreatesurfindlist(famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfIndList.f90
-            use bctypes
-            use blockpointers
-            use cgnsgrid
-            use communication
-            use mddata
-            integer(kind=inttype) intent(in) :: famid
-            integer(kind=inttype) intent(out) :: startind
-            integer(kind=inttype) intent(out) :: endind
-        end subroutine mdcreatesurfindlist
-
-        subroutine mddeletesurfindlist ! in :sumb:../../python/fortran/aeroElastic/mdSurfIndList.f90
-            use mddata
-        end subroutine mddeletesurfindlist
-
-        subroutine mdcreatesurfvarlist(sps,famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfVarList.f90
-            use cgnsgrid
-            use communication
-            use mddata
-            integer(kind=inttype) intent(in) :: sps
-            integer(kind=inttype) intent(in) :: famid
-            integer(kind=inttype) intent(out) :: startind
-            integer(kind=inttype) intent(out) :: endind
-        end subroutine mdcreatesurfvarlist
-
-        subroutine mddeletesurfvallist ! in :sumb:../../python/fortran/aeroElastic/mdSurfVarList.f90
-            use mddata
-        end subroutine mddeletesurfvallist
-
-        subroutine mdstorelocalcp(valloc,sps,famid) ! in :sumb:../../python/fortran/aeroElastic/mdSurfVarList.f90
-            use bctypes
-            use blockpointers
-            use cgnsgrid
-            use flowvarrefstate
-            use inputphysics
-            real(kind=realtype) dimension(*),intent(inout) :: valloc
-            integer(kind=inttype) intent(in) :: sps
-            integer(kind=inttype) intent(in) :: famid
-        end subroutine mdstorelocalcp
-
-        subroutine mdsurfacepatchdim(famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfacePatchDim.f90
-            use bctypes
-            use blockpointers
-            use cgnsgrid
-            use communication
-            use mddata
-            integer(kind=inttype) intent(in) :: famid
-            integer(kind=inttype) intent(out) :: startind
-            integer(kind=inttype) intent(out) :: endind
-        end subroutine mdsurfacepatchdim
-
-        subroutine mddeletesurfacepatchdim ! in :sumb:../../python/fortran/aeroElastic/mdSurfacePatchDim.f90
-            use mddata
-        end subroutine mddeletesurfacepatchdim
-
-        subroutine mdcreatenpatch ! in :sumb:../../python/fortran/aeroElastic/mdSurfacePatchDim.f90
-            use bctypes
-            use blockpointers
-            use cgnsgrid
-            use communication
-            use mddata
-        end subroutine mdcreatenpatch
-
-!       ################################################################
-!       Aeroelastic / Multi-Disciplinary Routines Local
-!       ################################################################
-
-        module mddatalocal ! in :sumb:../../python/fortran/aeroElastic/mdData.f90
-            use constants
-            integer(kind=inttype) :: mdnfamilieslocal
-            character(len=32) allocatable,dimension(:) :: mdfamilynameslocal
-            integer(kind=inttype) allocatable,dimension(:) :: mdnsurfnodeslocal
-            integer(kind=intType) allocatable,dimension(:) :: mdnglobalsurfnodeslocal
-            integer(kind=inttype) allocatable,dimension(:,:) :: mdnsurfpatcheslocal
-            integer(kind=inttype) allocatable,dimension(:,:) :: mdpatchdimensionslocal
-            integer(kind=inttype) allocatable,dimension(:,:) :: mdsurfindlocal
-            integer(kind=intType) allocatable, dimension(:,:) :: mdsurfglobalindlocal
-            real(kind=realtype) allocatable,dimension(:,:) :: mdsurfxxlocal
-            real(kind=realtype) allocatable,dimension(:,:) :: mdsurfforcelocal
-            real(kind=realtype) allocatable,dimension(:) :: mdsurfvallocal
-        end module mddatalocal
-
-        subroutine mdcreatensurfnodeslocal ! in :sumb:../../python/fortran/aeroElastic/mdNSurfNodes.f90
-            use bctypes
-            use blockpointers
-            use cgnsgrid
-            use communication
-            use mddatalocal
-        end subroutine mdcreatensurfnodeslocal
-!!$
-        subroutine mddeletensurfnodeslocal ! in :sumb:../../python/fortran/aeroElastic/mdNSurfNodes.f90
-            use mddatalocal
-        end subroutine mddeletensurfnodeslocal
-
-        subroutine mdcreatesurfcoorlistlocal(sps,famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfCoorList.f90
-            use bctypes
-            use blockpointers
-            use cgnsgrid
-            use communication
-            use mddatalocal
-            integer(kind=inttype) intent(in) :: sps
-            integer(kind=inttype) intent(in) :: famid
-            integer(kind=inttype) intent(out) :: startind
-            integer(kind=inttype) intent(out) :: endind
-        end subroutine mdcreatesurfcoorlistlocal
-
-        subroutine mddeletesurfcoorlistlocal ! in :sumb:../../python/fortran/aeroElastic/mdSurfCoorList.f90
-            use mddatalocal
-        end subroutine mddeletesurfcoorlistlocal
-
-        subroutine mdcreatesurfindlistlocal(famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfIndList.f90
-          use bctypes
-          use blockpointers
-          use cgnsgrid
-          use communication
-          use mddatalocal
-          integer(kind=inttype) intent(in) :: famid
-          integer(kind=inttype) intent(out) :: startind
-          integer(kind=inttype) intent(out) :: endind
-        end subroutine mdcreatesurfindlistlocal
-
-        subroutine mddeletesurfindlistlocal ! in :sumb:../../python/fortran/aeroElastic/mdSurfIndList.f90
-            use mddatalocal
-        end subroutine mddeletesurfindlistlocal
-
-        subroutine mdcreatesurfforcelistlocal(sps,famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfForceList.f90
-            use bctypes
-            use blockpointers
-            use cgnsgrid
-            use communication
-            use flowvarrefstate
-            use mddatalocal
-            integer(kind=inttype) intent(in) :: sps
-            integer(kind=inttype) intent(in) :: famid
-            integer(kind=inttype) intent(out) :: startind
-            integer(kind=inttype) intent(out) :: endind
-          end subroutine mdcreatesurfforcelistlocal
-
-          subroutine mddeletesurfforcelistlocal ! in :sumb:../../python/fortran/aeroElastic/mdSurfForceList.f90
-            use mddatalocal
-        end subroutine mddeletesurfforcelistlocal
-
-! ############################################################################
-! pyAero Adaptation Routines
-! ############################################################################
-        subroutine adjustinflowangleadj(alphaadj,betaadj,veldirfreestreamadj,liftdirectionadj,dragdirectionadj,liftindex) ! in :sumb :adjustInflowAngleAdj.f90
-            use constants
-            real(kind=realtype) intent(in) :: alphaadj
-            real(kind=realtype) intent(in):: betaadj
-            real(kind=realtype) dimension(3),intent(out) :: veldirfreestreamadj
-            real(kind=realtype) dimension(3),intent(out) :: liftdirectionadj
-            real(kind=realtype) dimension(3),intent(out) :: dragdirectionadj
-            integer(kind=inttype) intent(in) :: liftindex
-        end subroutine adjustinflowangleadj
-
-        subroutine setuniformflow
-
-          use blockpointers
-          use communication
-          use flowvarrefstate
-          use inputiteration
-          use inputphysics
-          use inputtimespectral
-          implicit none
-
-        end subroutine setuniformflow
-
-! ############################################################################
-! Coupler API Routines
-! ############################################################################
-
-        module couplerparam ! in :sumb:../../modules/couplerParam.f90 
-            use precision
-            use constants
-            character(len=80) allocatable,dimension(:) :: datanamessumb
-            integer(kind=inttype) :: nnodestrue
-            integer(kind=inttype) :: ntetraalloc
-            integer(kind=inttype) :: npyraalloc
-            integer(kind=inttype) allocatable,dimension(:) :: iwsumb
-            integer(kind=inttype) :: npyratrue
-            integer(kind=inttype) :: ndatasumb
-            integer(kind=inttype) :: nprismtrue
-            real(kind=realtype) :: pini
-            integer(kind=inttype) :: nprismalloc
-            real(kind=realtype) dimension(3) :: veldirini
-            integer(kind=inttype) :: nnodesalloc
-            integer(kind=inttype) :: nhexatrue
-            real(kind=realtype) :: rhoini
-            integer(kind=inttype) :: ntetratrue
-            integer parameter,optional :: maxcplnamelen=80
-            logical :: cplgetcoarsesol
-            integer(kind=inttype) :: nhexaalloc
-            character(len=80) :: codename
-            real(kind=realtype) :: machini
-
-!            real(kind=realtype) :: machini
-!            real(kind=realtype) :: pini
-!            real(kind=realtype) :: rhoini
-!            real(kind=realtype) dimension(3) :: veldirini
-!            character(len=80) :: codename
-!            logical :: cplgetcoarsesol
-!            integer(kind=inttype) :: ninterfacesg
-!            integer(kind=inttype) :: ninterfacesl
-!            character(len=80) allocatable,dimension(:) :: interfacenamesg
-!            character(len=80) allocatable,dimension(:) :: interfacenamesl
-!            integer(kind=inttype) allocatable,dimension(:) :: l2gmap
-!            integer(kind=inttype) allocatable,dimension(:,:) :: iiddomg
-!            integer(kind=inttype) allocatable,dimension(:,:) :: iiddoml
-!            integer(kind=inttype) :: ninterfacexyzs
-!            integer(kind=inttype) :: ninterfacexyzsalloc
-!            integer(kind=inttype) allocatable,dimension(:) :: interfaceid
- !           integer(kind=inttype) :: ntetra
-!            integer(kind=inttype) :: npyra
- !           integer(kind=inttype) :: nprisms
-!            integer(kind=inttype) :: nhexa
- !           integer(kind=inttype) :: nnodes
- !           integer(kind=inttype) :: ntetraalloc
-!            integer(kind=inttype) :: npyraalloc
- !           integer(kind=inttype) :: nprismsalloc
- !           integer(kind=inttype) :: nhexaalloc
- !           integer(kind=inttype) :: nnodesalloc
- !!           integer(kind=inttype) :: ninterfacesf
- !           integer(kind=inttype) :: nfieldsmaxg
- !           integer(kind=inttype) allocatable, dimension(:) :: nfieldsg
- !           character(len=80) allocatable, dimension(:,:) :: fieldnamesg
- !           integer(kind=inttype) allocatable, dimension(:,:) :: iwmap
- !           integer(kind=inttype) :: nfieldssumb
- !           character(len=80) allocatable, dimension(:) :: fieldnamessumb
- !           integer(kind=inttype) allocatable, dimension(:) :: iwsumb
- !           integer(kind=inttype) :: nfieldsreq
- !           character(len=80) allocatable, dimension(:) :: fieldnamesreq
-        end module couplerparam
-
-
-
-
-        subroutine computettot(rho,u,v,w,p,ttot,kk) ! in :sumb:../../utils/computeTtot.f90
-            use cpcurvefits
-            use flowvarrefState
-            use inputphysics
-            integer(kind=inttype) intent(in) :: kk
-            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: rho
-            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: u
-            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: v
-            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: w
-            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: p
-            real(kind=realtype) dimension(kk),depend(kk),intent(out) :: ttot
-        end subroutine computettot
-
-        subroutine computeptot(rho,u,v,w,p,ptot,kk) ! in :sumb:../../utils/computePtot.f90
-            use cpcurvefits
-            use flowvarrefState
-            use inputphysics
-            integer(kind=inttype) intent(in) :: kk
-            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: rho
-            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: u
-            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: v
-            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: w
-            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: p
-            real(kind=realtype) dimension(kk),depend(kk),intent(out) :: ptot
-        end subroutine computeptot
-
-        subroutine sumb_init ! in :sumb:../../utils/SUmb_init.f90
-          use communication
-          implicit none
-        end subroutine SUmb_init
-        
-        subroutine sumb_finalize ! in :sumb:../../utils/SUmb_finalize.f90
-          use communication
-          implicit none
-        end subroutine SUmb_finalize
- 
-! ############################################################################
-! SUGGAR (Overset Assembly Software) Interface Routines
-! ############################################################################
-
-        module suggardata ! in :sumb:../fortran/suggar/suggarData.f90
-            use constants
-            use parallelIO
-            integer(kind=inttype) :: nzones
-            character(len=32) allocatable,dimension(:) :: zonenames
-            integer(kind=inttype) allocatable,dimension(:) :: unsortedzone
-        end module suggardata
-
-        subroutine initsuggarinterface() ! in :sumb:../fortran/suggar/initSuggarInterface.f90
-            use block
-            use cgnsgrid
-            use communication
-            use suggardata
-        end subroutine initsuggarinterface
-
-        subroutine writeplot3dzonefile(izone,zonefilename,sps,p3d_byteswap_suggar) ! in :sumb:../fortran/suggar/writePlot3DZoneFile.F90
-            use block
-            use cgnsgrid
-            use communication
-            use suggardata
-            integer(kind=inttype) intent(in) :: izone
-            integer(kind=inttype) intent(in) :: sps
-            logical intent(in) :: p3d_byteswap_suggar
-            character(len=*) intent(in) :: zonefilename
-        end subroutine writeplot3dzonefile
-
-        subroutine loadsuggardcifile(dcifile,sps) ! in :sumb:../fortran/suggar/loadSuggarDCIFile.f90
-            use block
-            use cgnsgrid
-            use communication
-            use suggardata
-            character(len=*) intent(in) :: dcifile
-            integer(kind=inttype) intent(in) :: sps
-        end subroutine loadsuggardcifile
+       subroutine computeobjpartials(costfunction,pts,npts,didpts) ! in :test:computeObjPartials.f90
+         integer(kind=inttype) intent(in) :: costfunction
+         real(kind=realtype) dimension(3,npts),intent(in) :: pts
+         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+         real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: didpts
+       end subroutine computeobjpartials
+
+       subroutine matrixinfo(pdrdwt,pdrdwpret,pdrdx,pdfdw,pdfdx,plocal,psum,pmax) ! in :test:matrixInfo.F90
+         logical intent(in) :: pdrdwt
+         logical intent(in) :: pdrdwpret
+         logical intent(in) :: pdrdx
+         logical intent(in) :: pdfdw
+         logical intent(in) :: pdfdx
+         logical intent(in) :: plocal
+         logical intent(in) :: psum
+         logical intent(in) :: pmax
+       end subroutine matrixinfo
+
+       subroutine solveadjointtransposepetsc ! in :sumb:../../adjoint/solveADjointPETSc.F90
+       end subroutine solveadjointtransposepetsc
+
+       subroutine getdrdxvpsi(ndof,dxv)
+         integer(kind=inttype) intent(in) :: ndof
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
+       end subroutine getdrdxvpsi
+
+       subroutine getdrdwtpsi(ndof,drdwtpsi)
+         integer(kind=inttype) intent(in) :: ndof
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: drdwtpsi
+       end subroutine getdrdwtpsi
+
+       subroutine getdrdwtpsi2(ndof,drdwtpsi)
+         integer(kind=inttype) intent(in) :: ndof
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: drdwtpsi
+       end subroutine getdrdwtpsi2
+
+       subroutine getdfdxvec(ndof,vec_in,vec_out) ! in :test:getdFdxVec.f90
+         integer(kind=inttype) optional,intent(in),check(len(vec_in)>=ndof),depend(vec_in) :: ndof=len(vec_in)
+         real(kind=realtype) dimension(ndof),intent(in) :: vec_in
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: vec_out
+       end subroutine getdfdxvec
+
+       subroutine getglobalnodes(blocknum,idim,jdim,kdim,nodenumbers) ! in :sumb:../../adjoint/getGlobalNodes.f90
+         integer(kind=inttype) intent(in) :: blocknum
+         integer(kind=inttype) intent(in) :: idim
+         integer(kind=inttype) intent(in) :: jdim
+         integer(kind=inttype) intent(in) :: kdim
+         integer(kind=inttype) dimension(idim,jdim,kdim),intent(out),depend(idim,jdim,kdim) :: nodenumbers
+       end subroutine getglobalnodes
+
+       subroutine destroypetscvars ! in :sumb:../../adjoint/destroyPETScVars.F90
+       end subroutine destroypetscvars
+
+       subroutine getadjoint(nnodes,functiongradlocal) ! in :test:getADjoint.F90
+         integer(kind=inttype) intent(in) :: nnodes
+         real(kind=realtype) dimension(nnodes),intent(out),depend(nnodes) :: functiongradlocal
+       end subroutine getadjoint
+
+       subroutine setadjoint(nnodes,functiongradlocal) ! in :test:setADjoint.F90
+         integer(kind=inttype) optional,intent(in),check(len(functiongradlocal)>=nnodes),depend(functiongradlocal) :: nnodes=len(functiongradlocal)
+         real(kind=realtype) dimension(nnodes),intent(in) :: functiongradlocal
+       end subroutine setadjoint
+
+       subroutine setdefaultvalues()
+       end subroutine setdefaultvalues
+
+       subroutine updateflow
+       end subroutine updateflow
+
+       subroutine updatereferencepoint
+       end subroutine updatereferencepoint
+
+       subroutine updaterotationrate(xrot,yrot,zrot)
+         real(kind=realtype) intent(in)::xrot,yrot,zrot
+       end subroutine updaterotationrate
+
+       ! ############################################################################
+       ! pyAero Adaptation Routines
+       ! ############################################################################
+       subroutine adjustinflowangleadj(alphaadj,betaadj,veldirfreestreamadj,liftdirectionadj,dragdirectionadj,liftindex) ! in :sumb :adjustInflowAngleAdj.f90
+         use constants
+         real(kind=realtype) intent(in) :: alphaadj
+         real(kind=realtype) intent(in):: betaadj
+         real(kind=realtype) dimension(3),intent(out) :: veldirfreestreamadj
+         real(kind=realtype) dimension(3),intent(out) :: liftdirectionadj
+         real(kind=realtype) dimension(3),intent(out) :: dragdirectionadj
+         integer(kind=inttype) intent(in) :: liftindex
+       end subroutine adjustinflowangleadj
+
+       subroutine setuniformflow
+       end subroutine setuniformflow
+       !*****************
+       ! Time spectral Stability routines
+       !*****************
+
+       subroutine stabilityderivativedriver
+       end subroutine stabilityderivativedriver
+
+       ! ############################################################################
+       ! SUmb Modules
+       ! ############################################################################
+
+       module communication ! in :sumb:../../modules/communication.f90
+         use precision
+         integer :: sumb_comm_world
+         integer :: sumb_petsc_comm_world
+         integer :: myid
+         integer :: nproc
+         integer(kind=inttype) :: sendbuffersize_1to1
+         integer(kind=inttype) :: sendbuffersize
+         integer(kind=inttype) :: recvbuffersize_1to1
+         integer(kind=inttype) :: recvbuffersize
+         integer(kind=inttype) :: sendbuffersizeover
+         integer(kind=inttype) :: recvbuffersizeover
+         real(kind=realtype) allocatable,dimension(:) :: sendbuffer
+         real(kind=realtype) allocatable,dimension(:) :: recvbuffer
+         integer allocatable,dimension(:) :: sendrequests
+         integer allocatable,dimension(:) :: recvrequests
+       end module communication
+
+       module cgnsgrid
+         use constants
+         implicit none
+         integer(kind=inttype) :: cgnsnfamilies
+       end module cgnsgrid
+
+       module constants ! in :sumb:../../modules/constants.F90
+         use precision
+         integer parameter,optional :: maxstringlen   = 256
+         integer parameter,optional :: maxcgnsnamelen =  32
+       end module constants
+
+       module accuracy ! in :sumb:../../modules/inputParam.f90
+         use precision
+         integer(kind=inttype) parameter,optional :: firstorder=1_inttype
+         integer(kind=inttype) parameter,optional :: secondorder=2_inttype
+         integer(kind=inttype) parameter,optional :: thirdorder=3_inttype
+       end module accuracy
+
+       module inputdiscretization ! in :sumb:../../modules/inputParam.f90
+         use accuracy
+         integer(kind=inttype) parameter,optional :: dissscalar=1_inttype
+         integer(kind=inttype) parameter,optional :: dissmatrix=2_inttype
+         integer(kind=inttype) parameter,optional :: disscusp=3_inttype
+         integer(kind=inttype) parameter,optional :: upwind=9_inttype
+         integer(kind=inttype) parameter,optional :: roe=1_inttype
+         integer(kind=inttype) parameter,optional :: vanleer=2_inttype
+         integer(kind=inttype) parameter,optional :: ausmdv=3_inttype
+         integer(kind=inttype) parameter,optional :: nolimiter=2_inttype
+         integer(kind=inttype) parameter,optional :: vanalbeda=3_inttype
+         integer(kind=inttype) parameter,optional :: minmod=4_inttype
+         integer(kind=inttype) parameter,optional :: noprecond=1_inttype
+         integer(kind=inttype) parameter,optional :: turkel=2_inttype
+         integer(kind=inttype) parameter,optional :: choimerkle=3_inttype
+         integer(kind=inttype) parameter,optional :: constantpressure=1_inttype
+         integer(kind=inttype) parameter,optional :: linextrapolpressure=2_inttype
+         integer(kind=inttype) parameter,optional :: quadextrapolpressure=3_inttype
+         integer(kind=inttype) parameter,optional :: normalmomentum=4_inttype
+         integer(kind=inttype) parameter,optional :: constantextrapol=1_inttype
+         integer(kind=inttype) parameter,optional :: linextrapol=2_inttype
+         integer(kind=inttype) :: spacediscr
+         integer(kind=inttype) :: spacediscrcoarse
+         integer(kind=inttype) :: orderturb
+         integer(kind=inttype) :: limiter
+         integer(kind=inttype) :: riemann
+         integer(kind=inttype) :: riemanncoarse
+         integer(kind=inttype) :: precond
+         integer(kind=inttype) :: wallbctreatment
+         integer(kind=inttype) :: outflowtreatment
+         real(kind=realtype) :: vis2
+         real(kind=realtype) :: vis4
+         real(kind=realtype) :: vis2coarse
+         real(kind=realtype) :: adis
+         real(kind=realtype) :: kappacoef
+         logical :: vortexcorr
+         logical :: dirscaling
+         logical :: radiineededfine
+         logical :: radiineededcoarse
+       end module inputdiscretization
+
+       module inputio ! in :sumb:../../modules/inputParam.f90
+         use constants
+         integer(kind=inttype) parameter,optional :: noformat=0
+         character(len=maxstringlen) :: solfile
+         integer(kind=inttype) parameter,optional :: precisiondouble=2
+         character(len=maxstringlen) :: surfacesolfile
+         character(len=maxstringlen) :: cpfile
+         logical :: writecoormeter
+         integer(kind=inttype) :: precisionsol
+         integer(kind=inttype) :: precisiongrid
+         integer(kind=inttype) parameter,optional :: cgnsformat=1
+         character(len=maxstringlen) :: newgridfile
+         character(len=maxstringlen) :: restartfile
+         logical :: restart
+         character(len=maxstringlen) :: plot3dconnfile
+         integer(kind=inttype) :: fileformatread
+         character(len=maxstringlen) :: gridfile
+         logical :: storeconvinneriter
+         logical :: storerindlayer
+         logical :: checkrestartsol
+         logical :: autoparameterupdate
+         integer(kind=inttype) parameter,optional :: precisionsingle=1
+         logical optional :: firstwrite=.true.
+         integer(kind=inttype) :: fileformatwrite
+         integer(kind=inttype) parameter,optional :: plot3dformat=2
+         character(len=maxstringlen) :: paramfile
+       end module inputio
+
+       module localmg ! in :test:localModules.f90
+         use constants
+         character(len=maxstringlen) :: mgdescription
+       end module localmg
+
+       module inputiteration ! in :sumb:../../modules/inputParam.f90
+         use precision
+         integer(kind=inttype) parameter,optional :: rungekutta=1_inttype
+         integer(kind=inttype) parameter,optional :: nllusgs=2_inttype
+         integer(kind=inttype) parameter,optional :: nllusgsline=3_inttype
+         integer(kind=inttype) parameter,optional :: segregated=1_inttype
+         integer(kind=inttype) parameter,optional :: coupled=2_inttype
+         integer(kind=inttype) parameter,optional :: gmres=1_inttype
+         integer(kind=inttype) parameter,optional :: adi=2_inttype
+         integer(kind=inttype) parameter,optional :: bcdirichlet0=0_inttype
+         integer(kind=inttype) parameter,optional :: bcneumann=1_inttype
+         integer(kind=inttype) parameter,optional :: noresaveraging=0_inttype
+         integer(kind=inttype) parameter,optional :: alwaysresaveraging=1_inttype
+         integer(kind=inttype) parameter,optional :: alternateresaveraging=2_inttype
+         integer(kind=inttype) parameter,optional :: turbrelaxnotdefined=0_inttype
+         integer(kind=inttype) parameter,optional :: turbrelaxexplicit=1_inttype
+         integer(kind=inttype) parameter,optional :: turbrelaximplicit=2_inttype
+         integer(kind=inttype) :: ncycles
+         integer(kind=inttype) :: ncyclescoarse
+         integer(kind=inttype) :: nsavevolume
+         integer(kind=inttype) :: nsavesurface
+         integer(kind=inttype) :: nsgstartup
+         integer(kind=inttype) :: smoother
+         integer(kind=inttype) :: nrkstages
+         integer(kind=inttype) :: resaveraging
+         integer(kind=inttype) :: turbtreatment
+         integer(kind=inttype) :: turbsmoother
+         integer(kind=inttype) :: turbrelax
+         integer(kind=inttype) :: mgboundcorr
+         integer(kind=inttype) :: mgstartlevel
+         integer(kind=inttype) :: nmgsteps
+         integer(kind=inttype) :: nmglevels
+         integer(kind=inttype) allocatable,dimension(:) :: cyclestrategy
+         real(kind=realtype) :: cfl
+         real(kind=realtype) :: cflcoarse
+         real(kind=realtype) :: fcoll
+         real(kind=realtype) :: smoop
+         real(kind=realtype) :: alfaturb
+         real(kind=realtype) :: betaturb
+         real(kind=realtype) :: l2conv
+         real(kind=realtype) :: l2convcoarse
+         real(kind=realtype) :: l2convrel
+         real(kind=realtype) allocatable,dimension(:) :: etark
+         real(kind=realtype) allocatable,dimension(:) :: cdisrk
+         logical :: freezeturbsource
+         logical :: printiterations
+       end module inputiteration
+
+       module inputmotion ! in :sumb:../../modules/inputParam.f90
+         use precision
+         real(kind=realtype) dimension(3) :: rotpoint
+         integer(kind=inttype) :: degreepolxrot
+         integer(kind=inttype) :: degreepolyrot
+         integer(kind=inttype) :: degreepolzrot
+         real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
+         real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
+         real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
+         integer(kind=inttype) :: degreefourxrot
+         integer(kind=inttype) :: degreefouryrot
+         integer(kind=inttype) :: degreefourzrot
+         real(kind=realtype) :: omegafourxrot
+         real(kind=realtype) :: omegafouryrot
+         real(kind=realtype) :: omegafourzrot
+         real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
+         real(kind=realtype) allocatable,dimension(:) :: coscoeffouryrot
+         real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
+         real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
+         real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
+         real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
+         logical :: gridmotionspecified
+       end module inputmotion
+
+       module inputparallel ! in :sumb:../../modules/inputParam.f90
+         use precision
+         real(kind=realtype) :: loadimbalance
+         logical :: splitblocks
+       end module inputparallel
+
+       module inputphysics ! in :sumb:../../modules/inputParam.f90
+         use precision
+         integer(kind=inttype) parameter,optional :: eulerequations=1_inttype
+         integer(kind=inttype) parameter,optional :: nsequations=2_inttype
+         integer(kind=inttype) parameter,optional :: ransequations=3_inttype
+         integer(kind=inttype) parameter,optional :: steady=1_inttype
+         integer(kind=inttype) parameter,optional :: unsteady=2_inttype
+         integer(kind=inttype) parameter,optional :: timespectral=3_inttype
+         integer(kind=inttype) parameter,optional :: internalflow=1_inttype
+         integer(kind=inttype) parameter,optional :: externalflow=2_inttype
+         integer(kind=inttype) parameter,optional :: cpconstant=1_inttype
+         integer(kind=inttype) parameter,optional :: cptempcurvefits=2_inttype
+         integer(kind=inttype) parameter,optional :: baldwinlomax=1_inttype
+         integer(kind=inttype) parameter,optional :: spalartallmaras=2_inttype
+         integer(kind=inttype) parameter,optional :: spalartallmarasedwards=3_inttype
+         integer(kind=inttype) parameter,optional :: komegawilcox=4_inttype
+         integer(kind=inttype) parameter,optional :: komegamodified=5_inttype
+         integer(kind=inttype) parameter,optional :: ktau=6_inttype
+         integer(kind=inttype) parameter,optional :: mentersst=7_inttype
+         integer(kind=inttype) parameter,optional :: v2f=10_inttype
+         integer(kind=inttype) parameter,optional :: strain=1_inttype
+         integer(kind=inttype) parameter,optional :: vorticity=2_inttype
+         integer(kind=inttype) parameter,optional :: katolaunder=3_inttype
+         integer(kind=inttype) :: equations
+         integer(kind=inttype) :: equationmode
+         integer(kind=inttype) :: flowtype
+         integer(kind=inttype) :: turbmodel
+         integer(kind=inttype) :: cpmodel
+         integer(kind=inttype) :: turbprod
+         integer(kind=inttype) :: rvfn
+         logical :: rvfb
+         logical :: wallfunctions
+         real(kind=realtype) :: mach
+         real(kind=realtype) :: machcoef
+         real(kind=realtype) :: machgrid
+         real(kind=realtype) :: reynolds
+         real(kind=realtype) :: reynoldslength
+         real(kind=realtype) :: tempfreestream
+         real(kind=realtype) :: gammaconstant
+         real(kind=realtype) :: rgasdim
+         real(kind=realtype) :: prandtl
+         real(kind=realtype) :: prandtlturb
+         real(kind=realtype) :: pklim
+         real(kind=realtype) :: walloffset
+         real(kind=realtype) :: eddyvisinfratio
+         real(kind=realtype) :: turbintensityinf
+         real(kind=realtype) :: surfaceref
+         real(kind=realtype) :: lengthref
+         real(kind=realtype) dimension(3) :: veldirfreestream
+         real(kind=realtype) dimension(3) :: liftdirection
+         real(kind=realtype) dimension(3) :: dragdirection
+         real(kind=realtype) dimension(3) :: pointref
+       end module inputphysics
+       module inputadjoint ! in :sumb:../modules/inputParam.f90
+         use precision
+         integer(kind=inttype) :: pcside
+         integer(kind=inttype) :: matrixordering
+         integer(kind=inttype) parameter,optional :: rowabs=4
+         integer(kind=inttype) parameter,optional :: right=2
+         integer(kind=inttype) :: filllevel
+         real(kind=realtype) :: adjabstol
+         real(kind=realtype) :: adjdivtol
+         integer(kind=inttype) parameter,optional :: petsccg=3
+         integer(kind=inttype) parameter,optional :: left=1
+         integer(kind=inttype) parameter,optional :: additiveschwartz=3
+         integer(kind=inttype) :: adjmaxiter
+         logical :: approxpc
+         integer(kind=inttype) parameter,optional :: cholesky=4
+         integer(kind=inttype) parameter,optional :: icc=2
+         integer(kind=inttype) parameter,optional :: rowsum=3
+         integer(kind=inttype) parameter,optional :: nesteddissection=3
+         integer(kind=inttype) :: overlap
+         integer(kind=inttype) parameter,optional :: lu=3
+         integer(kind=inttype) parameter,optional :: onewaydissection=4
+         integer(kind=inttype) parameter,optional :: jacobi=2
+         integer(kind=inttype) parameter,optional :: petscbicgstab=1
+         integer(kind=inttype) parameter,optional :: quotientminimumdegree=5
+         integer(kind=inttype) :: adjointsolvertype
+         integer(kind=inttype) parameter,optional :: normal=1
+         integer(kind=inttype) :: adjmonstep
+         integer(kind=inttype) parameter,optional :: petscfgmres=4
+         integer(kind=inttype) parameter,optional :: petscgmres=2
+         logical :: restartadjoint
+         real(kind=realtype) :: adjreltol
+         real(kind=realtype) :: adjreltolrel
+         integer(kind=inttype) parameter,optional :: blockjacobi=1
+         integer(kind=inttype) parameter,optional :: natural=1
+         integer(kind=inttype) :: adjrestart
+         logical :: lumpeddiss
+         integer(kind=inttype) :: localpctype
+         logical :: solveadjoint
+         integer(kind=inttype) parameter,optional :: rowmax=2
+         integer(kind=inttype) :: precondtype
+         logical :: setmonitor
+         integer(kind=inttype) parameter,optional :: ilu=1
+         integer(kind=inttype) parameter,optional :: reversecuthillmckee=2
+         real(kind=realtype) :: sigma
+         integer(kind=inttype) :: scaletype
+         logical :: printtiming
+       end module inputadjoint
+
+       module inputtimespectral ! in :sumb:../../modules/inputParam.f90
+         use precision
+         integer(kind=inttype) :: ntimeintervalsspectral
+         real(kind=realtype) allocatable,dimension(:,:,:) :: dscalar
+         real(kind=realtype) allocatable,dimension(:,:,:) :: dvector
+         real(kind=realtype) :: dtunsteadyrestartspectral
+         logical :: writeunsteadyrestartspectral
+         integer(kind=inttype) :: nunsteadysolspectral
+         logical :: writeunsteadyvolspectral
+         logical :: writeunsteadysurfspectral
+         real(kind=realtype) allocatable,dimension(:,:,:) :: rotmatrixspectral
+       end module inputtimespectral
+
+       module inputunsteady ! in :sumb:../../modules/inputParam.f90
+         use accuracy
+         integer(kind=inttype) :: timeaccuracy
+         integer(kind=inttype) :: ntimestepscoarse
+         integer(kind=inttype) :: ntimestepsfine
+         real(kind=realtype) :: deltat
+         integer(kind=inttype) :: noldgridread
+       end module inputunsteady
+
+       module inputoverset ! in :sumb:../../modules/inputParam.f90
+         use precison
+         integer(kind=inttype) parameter,optional :: trilinear=1_inttype
+         logical :: oversetdonorsareguesses
+         logical :: avgrestrictresforblanks
+         integer(kind=inttype) :: oversetinterptype
+         integer(kind=inttype) :: oversetinterptypecoarse
+         real(kind=realtype) :: allowabledonorquality
+       end module inputoverset
+
+       module iteration ! in :sumb:../../modules/iteration.f90
+         use precision
+         integer(kind=inttype) :: groundlevel
+         integer(kind=inttype) :: currentlevel
+         integer(kind=inttype) :: rkstage
+         integer(kind=inttype) :: nstepscycling
+         integer(kind=inttype) allocatable,dimension(:) :: cycling
+         integer(kind=inttype) :: nmgvar
+         integer(kind=inttype) :: nt1mg
+         integer(kind=inttype) :: nt2mg
+         logical :: restricteddyvis
+         logical :: turbsegregated
+         logical :: turbcoupled
+         integer(kind=inttype) :: itertot
+         real(kind=realtype) :: rfil
+         real(kind=realtype) :: t0solver
+         logical :: converged
+         logical :: exchangepressureearly
+         logical :: standalonemode
+         logical :: changing_grid
+         logical :: deforming_grid
+         logical :: changingoverset
+         logical optional :: pv3initialized=.false.
+         integer(kind=inttype) :: noldsolavail
+         integer(kind=inttype) :: noldlevels
+         real(kind=realtype) allocatable,dimension(:) :: coeftime
+         logical :: timespectralgridsnotwritten
+         logical, dimension(:), allocatable :: oldsolwritten       
+       end module iteration
+
+       module monitor ! in :sumb:../../modules/monitor.f90
+         use constants
+         integer parameter,optional :: fieldwidth=12
+         integer parameter,optional :: decimalwidth=5
+         integer :: nmonsum
+         integer :: nmonmax
+         integer :: nmon
+         real(kind=realtype) allocatable,dimension(:) :: monloc
+         real(kind=realtype) allocatable,dimension(:) :: monglob
+         real(kind=realtype) allocatable,dimension(:) :: monRef
+         character(len=32) allocatable,dimension(:) :: monnames
+         logical :: monmachorhmax
+         logical :: showcpu
+         logical :: monMassSliding
+         logical :: monMassFamilies
+         integer :: niterold
+         integer :: nitercur
+         real(kind=realtype) allocatable,dimension(:,:,:) :: convarray
+         integer(kind=inttype) :: ntimestepsrestart
+         integer(kind=inttype) :: timestepunsteady
+         real(kind=realtype) :: timeunsteady
+         real(kind=realtype) :: timeunsteadyrestart
+         real(kind=realtype) allocatable,dimension(:) :: timearray
+         real(kind=realtype) allocatable,dimension(:,:) :: timedataarray
+         logical :: writegrid
+         logical :: writevolume
+         logical :: writesurface
+       end module monitor
+
+       module block ! in :sumb:../../modules/block.f90
+         use constants
+         integer(kind=portype) parameter,optional :: leftstarted=-1_portype
+         integer(kind=portype) parameter,optional :: regular=0_portype
+         integer(kind=portype) parameter,optional :: rightstarted=1_portype
+         integer(kind=inttype) parameter,optional :: nosubinlet=0_inttype
+         integer(kind=inttype) parameter,optional :: totalconditions=1_inttype
+         integer(kind=inttype) parameter,optional :: massflow=2_inttype
+         integer(kind=inttype) :: ndom
+         integer(kind=inttype) allocatable,dimension(:) :: ncellglobal
+       end module block
+
+       module flowvarrefstate ! in :sumb:../../modules/flowVarRefState.f90
+         use constants
+         integer(kind=inttype) :: nw
+         integer(kind=inttype) :: nwf
+         integer(kind=inttype) :: nwt
+         integer(kind=inttype) :: nt1
+         integer(kind=inttype) :: nt2
+         real(kind=realtype) :: pref
+         real(kind=realtype) :: rhoref
+         real(kind=realtype) :: tref
+         real(kind=realtype) :: muref
+         real(kind=realtype) :: timeref
+         real(kind=realtype) :: lref
+         logical :: lrefspecified
+         real(kind=realtype) :: pinfdim
+         real(kind=realtype) :: rhoinfdim
+         real(kind=realtype) :: mudim
+         real(kind=realtype) :: rhoinf
+         real(kind=realtype) :: uinf
+         real(kind=realtype) :: pinf
+         real(kind=realtype) :: pinfcorr
+         real(kind=realtype) :: rgas
+         real(kind=realtype) :: muinf
+         real(kind=realtype) :: gammainf
+         real(kind=realtype) allocatable,dimension(:) :: winf
+         logical :: kpresent
+         logical :: eddymodel
+         logical :: viscous
+       end module flowvarrefstate
+
+       module killsignals ! in :sumb:../../modules/killSignals.f90
+         use precision
+         integer(kind=inttype) parameter,optional :: nosignal=0_int_type
+         integer(kind=inttype) parameter,optional :: signalwrite=1_int_type
+         integer(kind=inttype) parameter,optional :: signalwritequit=2_int_type
+         integer(kind=inttype) :: localsignal
+         integer(kind=inttype) :: globalsignal
+         logical :: frompython
+         logical :: routinefailed
+       end module killsignals
+
+       module adjointpetsc ! in :sumb:ADjointPETSc.F90
+         use constants
+         real(kind=realtype) allocatable,dimension(:) :: adjreshist
+         logical :: petscblockmatrix
+         integer(kind=inttype) :: adjconvits
+       end module adjointpetsc
+
+       module costfunctions ! in :test:costFunctions.F90
+         use constants
+         integer(kind=inttype) parameter,optional :: costfunclift=1
+         integer(kind=inttype) parameter,optional :: costfunccd0=22
+         integer(kind=inttype) parameter,optional :: costfuncforcex=5
+         integer(kind=inttype) parameter,optional :: costfuncforcey=6
+         integer(kind=inttype) parameter,optional :: costfuncforcez=7
+         integer(kind=inttype) parameter,optional :: costfuncforcezcoef=10
+         integer(kind=inttype) parameter,optional :: costfuncmomz=13
+         integer(kind=inttype) parameter,optional :: costfuncmomx=11
+         integer(kind=inttype) parameter,optional :: costfuncmomy=12
+         integer(kind=inttype) parameter,optional :: costfunccl0=20
+         integer(kind=inttype) parameter,optional :: costfuncmomzcoef=16
+         integer(kind=inttype) parameter,optional :: costfunccm0=18
+         integer(kind=inttype) parameter,optional :: costfuncmomxcoef=14
+         integer(kind=inttype) parameter,optional :: costfuncdrag=2
+         integer(kind=inttype) parameter,optional :: costfuncliftcoef=3
+         integer(kind=inttype) parameter,optional :: costfunccmzalpha=17
+         integer(kind=inttype) parameter,optional :: costfuncdragcoef=4
+         integer(kind=inttype) parameter,optional :: costfunccdalpha=21
+         integer(kind=inttype) parameter,optional :: ncostfunction=24
+         integer(kind=inttype) parameter,optional :: costfuncclalpha=19
+         integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
+         integer(kind=inttype) parameter,optional :: costfuncforcexcoef=8
+         integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
+         integer(kind=inttype) parameter,optional :: costfunccmzq=24
+         integer(kind=inttype) parameter,optional :: costfunccmzalphadot=23
+         real(kind=realtype) allocatable,dimension(:) :: functionvalue
+       end module costfunctions
+
+       module adjointvars ! in :test:ADjointVars.F90
+         use constants
+         use costfunctions
+         integer(kind=inttype) :: nnodesglobal
+         integer(kind=inttype) :: ncelloffsetlocal
+         real(kind=realtype) parameter,optional :: adjrelfd=1.0e-5_realtype
+         integer(kind=inttype) parameter,optional :: ndesignpointrefz=13
+         real(kind=realtype) parameter,optional :: adjepsfd=1.0e-4_realtype
+         integer(kind=inttype) parameter,optional :: ndesignpointrefy=12
+         integer(kind=inttype) parameter,optional :: ndesignssa=2
+         integer(kind=inttype) :: ndesignextra
+         integer(kind=inttype) parameter,optional :: ndesignrotcenx=8
+         integer(kind=inttype) :: ncellslocal
+         real(kind=realtype) parameter,optional :: adjabsfd=1.0e-5_realtype
+         integer(kind=inttype) parameter,optional :: ndesignpointrefx=11
+         integer(kind=inttype) :: ncellsglobal
+         integer(kind=inttype) parameter,optional :: ndesignrotz=7
+         integer(kind=inttype) :: nnodeslocal
+         integer(kind=inttype) parameter,optional :: ndesignrotx=5
+         integer(kind=inttype) parameter,optional :: ndesignroty=6
+         integer(kind=inttype) parameter,optional :: ndesignrotcenz=10
+         integer(kind=inttype) :: nnodeoffsetlocal
+         integer(kind=inttype) parameter,optional :: ndesignaoa=1
+         integer(kind=inttype) :: nsurfnodesglobal
+         integer(kind=inttype) parameter,optional :: ndesignrotceny=9
+         integer(kind=inttype) :: ndesignspatial
+         integer(kind=inttype) :: ndesign
+         integer(kind=inttype) parameter,optional :: ndesignmachgrid=4
+         integer(kind=inttype) :: nsurfnodeslocal
+         integer(kind=inttype) parameter,optional :: ndesignmach=3
+       end module adjointvars
+
+       module inputtsstabderiv ! in :test:inputParam.f90
+         logical :: usewindaxis
+         logical :: tsrmode
+         logical :: tsstability
+         logical :: tsbetamode
+         logical :: tsmachmode
+         logical :: tsaltitudemode
+         logical :: tspmode
+         logical :: tsqmode
+         logical :: tsalphamode
+       end module inputtsstabderiv
+
+   
+
+       ! ############################################################################
+       ! Coupler API Routines
+       ! ############################################################################
+
+       module couplerparam ! in :sumb:../../modules/couplerParam.f90 
+         use precision
+         use constants
+         character(len=80) allocatable,dimension(:) :: datanamessumb
+         integer(kind=inttype) :: nnodestrue
+         integer(kind=inttype) :: ntetraalloc
+         integer(kind=inttype) :: npyraalloc
+         integer(kind=inttype) allocatable,dimension(:) :: iwsumb
+         integer(kind=inttype) :: npyratrue
+         integer(kind=inttype) :: ndatasumb
+         integer(kind=inttype) :: nprismtrue
+         real(kind=realtype) :: pini
+         integer(kind=inttype) :: nprismalloc
+         real(kind=realtype) dimension(3) :: veldirini
+         integer(kind=inttype) :: nnodesalloc
+         integer(kind=inttype) :: nhexatrue
+         real(kind=realtype) :: rhoini
+         integer(kind=inttype) :: ntetratrue
+         integer parameter,optional :: maxcplnamelen=80
+         logical :: cplgetcoarsesol
+         integer(kind=inttype) :: nhexaalloc
+         character(len=80) :: codename
+         real(kind=realtype) :: machini
+
+       end module couplerparam
+
+       subroutine sumb_init ! in :sumb:../../utils/SUmb_init.f90
+         use communication
+         implicit none
+       end subroutine SUmb_init
+
+       subroutine sumb_finalize ! in :sumb:../../utils/SUmb_finalize.f90
+         use communication
+         implicit none
+       end subroutine SUmb_finalize
+
+       ! ############################################################################
+       ! SUGGAR (Overset Assembly Software) Interface Routines
+       ! ############################################################################
+
+       module suggardata ! in :sumb:../fortran/suggar/suggarData.f90
+         use constants
+         use parallelIO
+         integer(kind=inttype) :: nzones
+         character(len=32) allocatable,dimension(:) :: zonenames
+         integer(kind=inttype) allocatable,dimension(:) :: unsortedzone
+       end module suggardata
+
+       subroutine initsuggarinterface() ! in :sumb:../fortran/suggar/initSuggarInterface.f90
+         use block
+         use cgnsgrid
+         use communication
+         use suggardata
+       end subroutine initsuggarinterface
+
+       subroutine writeplot3dzonefile(izone,zonefilename,sps,p3d_byteswap_suggar) ! in :sumb:../fortran/suggar/writePlot3DZoneFile.F90
+         use block
+         use cgnsgrid
+         use communication
+         use suggardata
+         integer(kind=inttype) intent(in) :: izone
+         integer(kind=inttype) intent(in) :: sps
+         logical intent(in) :: p3d_byteswap_suggar
+         character(len=*) intent(in) :: zonefilename
+       end subroutine writeplot3dzonefile
+
+       subroutine loadsuggardcifile(dcifile,sps) ! in :sumb:../fortran/suggar/loadSuggarDCIFile.f90
+         use block
+         use cgnsgrid
+         use communication
+         use suggardata
+         character(len=*) intent(in) :: dcifile
+         integer(kind=inttype) intent(in) :: sps
+       end subroutine loadsuggardcifile
 
 ! ############################################################################
 ! Helicopter Quieting Program (HQP) Routines

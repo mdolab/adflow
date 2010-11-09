@@ -1,8 +1,7 @@
 #     ******************************************************************
 #     *                                                                *
 #     * File:          MakefileTapenadeCoupling                        *
-#     * Author:        Andre C. Marta, Sandy Mader                     *
-#     *                Seongim Choi                                    *
+#     * Author:        Gaetan Kenway                                   *
 #     * Starting date: 12-22-2007                                      *
 #     * Last modified: 08-18-2008                                      *
 #     *                                                                *
@@ -98,15 +97,15 @@ TAPENADE_PARSERFILESEPARATOR = "/"
 
 # Dependent output variables (separator: white space, default: all)
 
-TAPENADE_OUTVARS = "force"
+TAPENADE_OUTVARS = "Force cForce Lift Drag Cl Cd moment cMoment"
 
 # Independent input variables (separator: white space, default: all)
 
-TAPENADE_VARS = "pts,wAdj"
-
+TAPENADE_VARS = "alphaAdj betaAdj MachCoefAdj pointRefAdj pts wBlock"
+#TAPENADE_VARS = "pts"
 # Name of the top routine
 
-TAPENADE_HEADROUTINE = "computeForceCouplingAdj"
+TAPENADE_HEADROUTINE = "computeForceandMomentAdj"
 
 # Differentiation mode
 
@@ -144,11 +143,18 @@ TAPENADE_SRC = $(TAPENADE_DIRSRC)/computeForceCouplingPressureAdj.f90\
 	       $(TAPENADE_DIRSRC)/bcEulerWallForceCouplingAdj.f90\
 	       $(TAPENADE_DIRSRC)/getSurfaceNormalsCouplingAdj.f90\
                $(TAPENADE_DIRSRC)/forceCouplingAdj.f90\
+	       $(TAPENADE_DIRSRC)/getDirVectorForces.f90\
+	       $(TAPENADE_DIRSRC)/adjustInflowAngleForcesAdj.f90\
+	       $(TAPENADE_DIRSRC)/vectorRotationForces.f90\
+               $(TAPENADE_DIRSRC)/computeForceAndMomentAdj.f90\
 
 TAPENADE_MOD = $(TAPENADE_MODDIR)/constants.f90 \
 	       $(TAPENADE_MODDIR)/flowVarRefState.f90 \
 	       $(TAPENADE_MODDIR)/precision.f90\
-	       $(TAPENADE_MODDIR)/inputParam.f90
+	       $(TAPENADE_MODDIR)/inputParam.f90\
+	       $(TAPENADE_MODDIR)/block.f90\
+	       $(SUMB_MODDIR)/blockPointers.f90\
+	       $(SUMB_MODDIR)/BCTypes.f90
 
 TAPENADE_SRC_ALL = $(TAPENADE_SRC) $(TAPENADE_MOD)
 

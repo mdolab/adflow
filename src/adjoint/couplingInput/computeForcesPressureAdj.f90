@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine computeForceCouplingPressureAdj(wAdj, pAdj)
+       subroutine computeForcesPressureAdj(wAdj, pAdj)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -17,14 +17,16 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use blockPointers
        use flowVarRefState
        use inputPhysics
        implicit none
 !
 !      Subroutine arguments
 !
-       real(kind=realType), dimension(2,2,2,nw), intent(in) :: wAdj
-       real(kind=realType), dimension(2,2,2),intent(out) :: pAdj
+       real(kind=realType), dimension(0:ib,0:jb,0:kb,nw), &
+                                                      intent(in) :: wAdj
+       real(kind=realType), dimension(0:ib,0:jb,0:kb),intent(out) :: pAdj
 !
 !      Local variables
 !
@@ -49,9 +51,9 @@
 
          factK = five*third - gammaConstant
 
-         do k=1,2
-           do j=1,2
-             do i=1,2
+         do k=0,kb
+           do j=0,jb
+             do i=0,ib
                v2 = wAdj(i,j,k,ivx)**2 + wAdj(i,j,k,ivy)**2 &
                   + wAdj(i,j,k,ivz)**2
 
@@ -67,19 +69,18 @@
          ! No separate equation for the turbulent kinetic enery.
          ! Use the standard formula.
 
-          do k=1,2
-             do j=1,2
-                do i=1,2
-
+         do k=0,kb
+           do j=0,jb
+             do i=0,ib
                v2 = wAdj(i,j,k,ivx)**2 + wAdj(i,j,k,ivy)**2 &
                   + wAdj(i,j,k,ivz)**2
-               
+
                pAdj(i,j,k) = gm1*(wAdj(i,j,k,irhoE) &
-                    - half*wAdj(i,j,k,irho)*v2)
+                           - half*wAdj(i,j,k,irho)*v2)
              enddo
            enddo
          enddo
 
        endif
 
-     end subroutine computeForceCouplingPressureAdj
+     end subroutine computeForcesPressureAdj

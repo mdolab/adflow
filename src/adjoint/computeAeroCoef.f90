@@ -8,96 +8,89 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine computeAeroCoef(CL,CD,CFx,CFy,CFz,CMx,CMy,CMz,level,sps)
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Compute the aerodynamic coefficients from the force and moment *
-!     * produced by the pressure and shear stresses on the body walls: *
-!     *                                                                *
-!     *   CL  - Lift coefficient                                       *
-!     *   CD  - Drag coefficient                                       *
-!     *   CFx - Force coefficient in x-direction                       *
-!     *   CFy - Force coefficient in y-direction                       *
-!     *   CFz - Force coefficient in z-direction                       *
-!     *   CMx - Moment coefficient in x-direction                      *
-!     *   CMy - Moment coefficient in y-direction                      *
-!     *   CMz - Moment coefficient in z-direction                      *
-!     *                                                                *
-!     ******************************************************************
-!
-      use blockPointers  ! nDom
-      use communication  ! my_ID SUmb_comm_world
-      use inputPhysics   ! liftDirection, dragDirection
-      use iteration      ! groundLevel
-      !use monitor        ! monLoc, monGlob, nMonSum
-      use precision      ! sumb_real
-      implicit none
-!
-!     Subroutine arguments.
-!
-      real(kind=realType), intent(out)  :: CL, CD,CFx, CFy,CFz, CMx, CMy, CMz
-      integer(kind=intType), intent(in) :: level, sps
-!
-!     Local variables.
-!
-      integer :: ierr, nCoefSum,nn
-      real(kind=realType) :: yplusMax
-      real(kind=realType), dimension(3) :: cFp, cFv, cMp, cMv
-      real(kind=realType), dimension(8) :: coefLoc,coefGlob
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Begin execution.                                               *
-!     *                                                                *
-!     ******************************************************************
-!
+subroutine computeAeroCoef(sps)
+  !
+  !     ******************************************************************
+  !     *                                                                *
+  !     * Compute the aerodynamic coefficients from the force and moment *
+  !     * produced by the pressure and shear stresses on the body walls: *
+  !     *                                                                *
+  !     ******************************************************************
+  !
 
-      groundLevel = level
-      !Reset the local storage to zero
-      coefLoc(:) = 0
-      domains: do nn=1,nDom
-         !print *,'domain',nn
-         ! Set the pointers for this block.
-         !print *,'setting pointers',nn, groundLevel, sps
-         call setPointers(nn, groundLevel, sps)
-         
-         ! Compute the forces and moments for this block.
-         !print *,'calling forces'
-         call forcesAndMoments(cfp, cfv, cmp, cmv, yplusMax)
-         !print *,'summing'
-         coefLoc(1) =coefLoc(1) + (cFp(1) + cFv(1))*liftDirection(1) &
-              + (cFp(2) + cFv(2))*liftDirection(2) &
-              + (cFp(3) + cFv(3))*liftDirection(3)
-         coefLoc(2) = coefLoc(2) + (cFp(1) + cFv(1))*dragDirection(1) &
-              + (cFp(2) + cFv(2))*dragDirection(2) &
-              + (cFp(3) + cFv(3))*dragDirection(3)
-         coefLoc(3) =coefLoc(3) +  cFp(1) + cFv(1)
-         coefLoc(4) =coefLoc(4) +  cFp(2) + cFv(2)
-         coefLoc(5) = coefLoc(5) + cFp(3) + cFv(3)
-         coefLoc(6) =coefLoc(6) +   cMp(1) + cMv(1)
-         coefLoc(7) = coefLoc(7) +  cMp(2) + cMv(2)
-         coefLoc(8) = coefLoc(8) +  cMp(3) + cMv(3)
-         nCoefSum = 8
+  use blockPointers  ! nDom
+  use communication  ! my_ID SUmb_comm_world
+  use inputPhysics   ! liftDirection, dragDirection
+  use iteration      ! groundLevel
+  use BCTypes
+  !use monitor        ! monLoc, monGlob, nMonSum
+  use costFunctions
+  implicit none
+  !
+  !     Subroutine arguments.
+  integer(kind=intType) :: sps
+  !      Local variables.
+  !
+  integer :: ierr, nn,mm
+  integer :: iBeg,iEnd,jBeg,jEnd,ii,npts
 
-      enddo domains
+  real(kind=realType) :: force(3),cforce(3),Lift,Drag,CL,CD
+  real(kind=realType) :: Moment(3),cMoment(3)
+  real(kind=realType) :: alpha,beta
+  integer(kind=intType) :: liftIndex
+  real(kind=realType), dimension(:),allocatable :: lVars
+  real(kind=realType), dimension(:),allocatable :: gVars 
+  real(kind=realType),dimension(:,:),allocatable :: pts
 
-      !print *,'loop finished...reducing'
-      ! Determine the global sum of the summation monitoring
-      ! variables. The sum is made known to all processors.
+  !     ******************************************************************
+  !     *                                                                *
+  !     * Begin execution.                                               *
+  !     *                                                                *
+  !     ******************************************************************
+  !
+  call getForceSize(npts)
+  allocate(pts(3,npts))
+  call getForcePoints(pts,npts)
 
-      call mpi_allreduce(coefLoc, coefGlob, nCoefSum, sumb_real, &
-                         mpi_sum, SUmb_comm_world, ierr)
+  ii = 0
 
-      ! Transfer the cost function values to output arguments.
+  call getDirAngle(velDirFreestream,LiftDirection,&
+       liftIndex,alpha,beta)
+ 
+  domains: do nn=1,nDom
+     call setPointers(nn,1_intType,sps)
+     bocos: do mm=1,nBocos
+        if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
+             BCType(mm) == NSWallIsothermal) then
 
-      CL  = coefGlob(1)
-      CD  = coefGlob(2)
-      CFx = coefGlob(3)
-      CFy = coefGlob(4)
-      CFz = coefGlob(5)
-      CMx = coefGlob(6)
-      CMy = coefGlob(7)
-      CMz = coefGlob(8)
+           jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
+           iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
 
-      end subroutine computeAeroCoef
+           call computeForceAndMomentAdj(Force,cForce,Lift,Drag,Cl,Cd,&
+                moment,cMoment,alpha,beta,liftIndex,MachCoef,&
+                pointRef,pts,npts,w,rightHanded,bcfaceid(mm),&
+                iBeg,iEnd,jBeg,jEnd,ii)
+           ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
+
+           functionValue(costFuncLift) = functionValue(costFuncLift) + Lift
+           functionValue(costFuncDrag) = functionValue(costFuncDrag) + Drag
+           functionValue(costFuncLiftCoef) = functionValue(costFuncLiftCoef) + Cl
+           functionValue(costFuncDragCoef) = functionValue(costFuncDragCoef) + Cd
+           functionValue(costFuncForceX) = functionValue(costFuncForceX) + Force(1)
+           functionValue(costFuncForceY) = functionValue(costFuncForceY) + Force(2)
+           functionValue(costFuncForceZ) = functionValue(costFuncForceZ) + Force(3)
+           functionValue(costFuncForceXCoef) = functionValue(costFuncForceXCoef) + cForce(1)
+           functionValue(costFuncForceYCoef) = functionValue(costFuncForceYCoef) + cForce(2)
+           functionValue(costFuncForceZCoef) = functionValue(costFuncForceZCoef) + cForce(3)
+           functionValue(costFuncMomX) = functionValue(costFuncMomX) + moment(1)
+           functionValue(costFuncMomY) = functionValue(costFuncMomY) + moment(2)
+           functionValue(costFuncMomZ) = functionValue(costFuncMomZ) + moment(3)
+           functionValue(costFuncMomXCoef) = functionValue(costFuncMomXCoef) + cmoment(1)
+           functionValue(costFuncMomYCoef) = functionValue(costFuncMomYCoef) + cmoment(2)
+           functionValue(costFuncMomZCoef) = functionValue(costFuncMomZCoef) + cmoment(3)
+        end if
+     end do bocos
+  end do domains
+
+  deallocate(pts)
+end subroutine computeAeroCoef

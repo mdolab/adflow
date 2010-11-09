@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine setupAllResidualMatrices(level)
+subroutine setupAllResidualMatrices
   !
   !     ******************************************************************
   !     *                                                                *
@@ -39,13 +39,9 @@ subroutine setupAllResidualMatrices(level)
   use inputADjoint        !lumpedDiss
   implicit none
   !
-  !     Subroutine arguments.
-  !
-  integer(kind=intType), intent(in) :: level
-  !
   !     Local variables.
   !
-  integer(kind=intType) :: discr, nHalo
+  integer(kind=intType) :: discr, nHalo,level
   integer(kind=intType) :: iCell, jCell, kCell
   integer(kind=intType) :: mm, nn, m, n,idxstate,idxres,idxnode
   integer(kind=intType) :: ii, jj, kk, i, j, k,liftIndex,l
@@ -126,6 +122,7 @@ subroutine setupAllResidualMatrices(level)
   ! Set the grid level of the current MG cycle, the value of the
   ! discretization and the logical correctForK.
 
+  level = 1_intType
   currentLevel = level
   !discr        = spaceDiscr
   fineGrid     = .true.

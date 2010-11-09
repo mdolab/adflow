@@ -9,7 +9,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine preprocessingADjoint(level)
+      subroutine preprocessingADjoint
 !
 !     ******************************************************************
 !     *                                                                *
@@ -21,14 +21,10 @@
       use communication
       use precision
       implicit none
-!
-!     Subroutine arguments.
-!
-      integer(kind=intType), intent(in) :: level
-!
+
 !     Local variables.
 !
-      integer :: ierr
+      integer(kind=intType) :: ierr,level
 !
 !     ******************************************************************
 !     *                                                                *
@@ -36,23 +32,21 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      !print *,' in preprocessing adjoint'
-      ! Test the discrete adjoint solver assertions.
 
+      ! Test the discrete adjoint solver assertions.
+      level = 1_intType
       call assertionsADjoint(level)
-      !print *,'assertions called'
+
       ! Allocate the memory for the global cell indexing of the
       ! computational mesh, later used to assemble the global
       ! adjoint system of equations.
-
       call allocMemADjoint(level)
-      !print *,'memory allocated'
+
       ! Determine the global cell and Node numbering.
-
       call setGlobalCellsAndNodes(level)
-      !print *,'global node indices set'
-      ! Synchronize the processors.
 
+
+      ! Synchronize the processors.
       call mpi_barrier(SUmb_comm_world, ierr)
 
       end subroutine preprocessingADjoint

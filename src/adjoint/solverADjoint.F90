@@ -109,24 +109,24 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      do sps  = 1,nTimeIntervalsSpectral
-         call computeAeroCoef(CL,CD,Cfx,Cfy,Cfz,CMx,CMy,CMz,level,sps)
+     !  do sps  = 1,nTimeIntervalsSpectral
+!          call computeAeroCoef(CL,CD,Cfx,Cfy,Cfz,CMx,CMy,CMz,level,sps)
 
-         ! Write the cost function values; only processor 0 does this.
+!          ! Write the cost function values; only processor 0 does this.
          
-         if(myID == 0) then
-            write(*,*) "Cost function values: sps:",sps
-            write(*,*) " CL  =", CL
-            write(*,*) " CD  =", CD
-            write(*,*) " CFx =", CFx   
-            write(*,*) " CFy =", CFy
-            write(*,*) " CFz =", CFz
-            write(*,*) " CMx =", CMx
-            write(*,*) " CMy =", CMy
-            write(*,*) " CMz =", CMz
-            write(*,*)
-         endif
-      enddo
+!          if(myID == 0) then
+!             write(*,*) "Cost function values: sps:",sps
+!             write(*,*) " CL  =", CL
+!             write(*,*) " CD  =", CD
+!             write(*,*) " CFx =", CFx   
+!             write(*,*) " CFy =", CFy
+!             write(*,*) " CFz =", CFz
+!             write(*,*) " CMx =", CMx
+!             write(*,*) " CMy =", CMy
+!             write(*,*) " CMz =", CMz
+!             write(*,*)
+!          endif
+!       enddo
 !
 !     ******************************************************************
 !     *                                                                *
@@ -150,107 +150,9 @@
 
       call initializePETSc
 
-      !call PetscOptionsSetValue('-malloc_debug',PETSC_NULL_CHARACTER,PETScIerr)
-      !initializeWarping
-      !begin execution
-      if(cgnsNfamilies > 0) then
-         famID = 1
-      else
-         famID = 0
-      endif
-      call initializeWarping(famID)
-    
-      ! Create all the necessary PETSc objects.
-
       call createPETScVars
+      call setupAllResidualMatrices
 
-
-      ! Perform some verifications if in DEBUG mode.
-      !moved after PETSc initialization because PETsc now included in debugging...
-
-      !if( debug ) then
-
-        ! Verify the node-based residual routine.
-
-!      call verifyRAdj(level)
-!stop
-!      call verifyResiduals(level)
-!return
-!stop
-!!$        ! Verify the node-based ADjoint residual routine.
-!!$
-!!$!	call verifydRdW(level,sps)
-!      call verifydRdWFile(level,sps)
-!!$!        call verifydRdwFileFD(level)
-!     call verifydRdxFile(level)
-!return
-!      call verifydRdxsFile
-!!$!      call verifydRdxFileFD(level)
-!!$!stop
-!return
-!!$        ! Verify the dRdx routine
-!!$
-!!$! 	call verifydRdx(level,sps)
-!!$!stop	
-!      call verifydRdExtra(level)
-!!$	call verifydRdExtraFDAD(level)	
-!!$
-!!$        ! Verify the ADjoint routine for the forces
-!!$
-!!$
-!         call verifyForcesAdj(level) 
-!         call verifyTSStabilityDerivAdj(level)
-!return
-!!$!stop	
-!!$        
-!!$	! Verify the force derivatives
-!!$
-!!$	
-!call verifydCfdx(level)
-!!$
-!!$!stop
-!!$	! Verify the force derivatives
-!	call verifydCfdwfile(level)	
-!!$!        call verifydCfdw(level)
-!!$!stop
-!      call verifydIdwfile(level)
-!return
-!!$	!verify the coupling derivatives
-!!$	!call verifyForceCouplingAdj(level)
-!!$	!call verifydSdw(level)
-!!$	!call verifydSdx(level)
-!!$
-!!$!stop
-!!$	!print *,'Going to call verifydSdx'
-!!$	!call verifydSdx(level)
-!!$	!print *,'Done VerifydSdx'
-!!$	!stop
-!!$	!print *,'Going to call verifydWdx'
-!!$	!call verifydSdw(level)
-!!$	!print *,'Done VerifydWdx'
-!!$	!stop
-!!$
-!!$!stop
-!!$!return
-
-
-  !    endif
-
-
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Set up the ADjoint matrix dR/dW using Tapenade AD routines.    *
-!     * => dRdW(il,jl,kl,nw,nw)                                        *
-!     *                                                                *
-!     ******************************************************************
-!
-      !print *,'calling setupADjointMatrix'
-      !call setupADjointMatrix(level)
-      !call setupADjointMatrixTranspose(level)
-      call setupAllResidualMatrices(level)
-!return
-!stop
 
       ! Reordered for ASM preconditioner
       ! Create the Krylov subspace linear solver context,
@@ -265,141 +167,6 @@
 
       if( PETScRank==0 ) &
         print "(a)", "# ... Krylov subspace created;"
-
-
-
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Set up the residual sensitivity w.r.t. design variables dR/da. *
-!     * => dRda(il,jl,kl,nw,nDesign)                                   *
-!     *                                                                *
-!     ******************************************************************
-!
-
-     ! call setupGradientMatrixExtra(level)
-
-     ! call setupGradientMatrixSpatial(level)
-
-      call setupVolumeSurfaceDerivativesDV
-
-!      call setupSurfaceDirect
-!
-!      call solveDirectPETSc
- !  return
-!!$!stop
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Compute the sensitivity of each cost function J.               *
-!     *                                                                *
-!     ******************************************************************
-!
-      if(TSStability)then
-         cfstart = 9
-         cfend = 16
-      else
-         cfstart =8
-         cfend = 8!8
-      end if
-!      functionLoop: do costFunction = 1,1!10,10!1, 1!nCostFunction
-      functionLoop: do costFunction = cfstart,cfend
-
-        !***************************************************************
-        !                                                              *
-        ! Set up the RHS adjoint vector dJ/dW, ie, the cost function J *
-        ! sensitivity w.r.t. W.                                        *
-        ! => dJ/dW(il,jl,kl,nw)                                        *
-        !                                                              *
-        !***************************************************************
-         !print *,'costfunction',costfunction 
-        !call setupADjointRHS(level,sps,costFunction)
-        call setupADjointRHS(level,costFunction)
-
-        ! Solve the discrete ADjoint problem using PETSc's Krylov
-        ! solver and preconditioner.
-        ! => psi
-
-        !call solveADjointPETSc
-        call solveADjointTransposePETSc
-
-        !***************************************************************
-        !                                                              *
-        ! Set up the cost function sensitivity w.r.t. design variables.*
-        ! => dJ/da(nDesign)                                            *
-        !                                                              *
-        !***************************************************************
-
-        call setupGradientRHSFlow(level,costFunction)
-        call setupGradientRHSVolume(level,costFunction)
-
-        ! Compute the total sensitivity dIda(nDesignExtra) and
-        ! store it in the array functionGrad(nCostFunc,nDesignExtra)
-        ! for the extra design variables in the root processor.
-
-        call computeADjointGradientExtra(costFunction)
-
-	! Compute the total sensitivity dIdx(ndesignSpatial) store in
-	! it in the array spatialGrad(nCostFunc,nDesignSpatial) for the 
-	! spatial design variables
-
-        call computeADjointGradientSpatial(costFunction)
-        !print *,'computing surface'
-        call computeADjointGradientSurfaceDV(costFunction)
-!!$
-!!$        ! Write the adjoint field solution, the convergence history and
-!!$        ! the cost function total sensitivity to file/screen.
-!!$
-!!$        call writeADjoint(level,sps,costFunction)
-!!$
-      enddo functionLoop
-
-!
-!     ******************************************************************
-!
-	
-      ! Destroy all the PETSc objects.
-
-      call destroyPETScVars
-      
-      ! Finalize PETSc.
-      !print *,'finalizing petsc'
-
-      call finalizePETSc
-      
-      !print *,'petsc Finalized'
-      ! Release memory allocated in initDesign.
-      
-      if(allocated(functionName )) deallocate(functionName )
-      if(allocated(functionValue)) deallocate(functionValue)
-      if(allocated(functionGrad )) deallocate(functionGrad )
-      
-      !print *,' new additions'
-      !new additions
-      if(allocated(functionGradSurfaceDV)) deallocate(functionGradSurfaceDV)
-      if(allocated(functionGradSurfaceDisp)) deallocate(functionGradSurfaceDisp)
-      if(allocated(adjoint)) deallocate(adjoint)
-      if(allocated(functionGradSpatial)) deallocate(functionGradSpatial)
-      if(allocated(functionGradStruct)) deallocate(functionGradStruct)
-      if(allocated(functionGradCoupling)) deallocate(functionGradCoupling)
-      if(allocated(functionGradCouplingExp)) deallocate(functionGradCouplingExp)
-
-      !print *,'xdesign'
-      if(allocated(xDesignVarName )) deallocate(xDesignVarName )
-      if(allocated(xDesignVar     )) deallocate(xDesignVar     )
-      if(allocated(xDesignVarLower)) deallocate(xDesignVarLower)
-      if(allocated(xDesignVarUpper)) deallocate(xDesignVarUpper)
-   
-      ! Release the memory of the adjoint variables.
-      !print *,'releaseMemADjoint'
-      !this function causes segmentation fault in block splitting mode
-      do sps  = 1,nTimeIntervalsSpectral
-         call releaseMemADjoint(level,sps)
-      end do
-      ! Output formats.
-
-   10 format(/,3x,a)
-   20 format(1x,i3,3x,e10.3)
 
 #endif
 

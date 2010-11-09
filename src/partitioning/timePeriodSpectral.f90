@@ -59,6 +59,7 @@
 
        timeDetermined = .false.
 
+
        externalTest: if(flowType == externalFlow) then
 
          ! X-rotation.
@@ -171,6 +172,7 @@
 
        ! If it was possible to determine the time, copy it to the
        ! sections and return.
+
 
        if( timeDetermined ) then
          do nn=1,nSections

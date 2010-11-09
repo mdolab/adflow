@@ -1,14 +1,14 @@
 !
 !     ******************************************************************
 !     *                                                                *
-!     * File:          agumentRHS.f90                                  *
+!     * File:          getdRdXvPsi.F90                                 *
 !     * Author:        Gaetan Kenway                                   *
 !     * Starting date: 10-08-2010                                      *
 !     * Last modified: 10-08-2010                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine agumentRHS(ndof,phi)
+subroutine getdRdwTPsi(ndof,dRdwPsi)
   !
   !     ******************************************************************
   !     *                                                                *
@@ -17,27 +17,21 @@ subroutine agumentRHS(ndof,phi)
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPETSc 
-  use ADjointVars 
   use communication
+  use ADjointPETSc, only: dRdwT,psi,wVec
+  use warpingPETSC 
   use inputADjoint
-
   implicit none
 
   integer(kind=intType), intent(in) :: ndof
-  real(kind=realType), intent(in) :: phi(ndof)
+  real(kind=realType), intent(out)  :: dRdwPsi(ndof)
 
-  integer(kind=intType) :: ierr,ndims
-  real(kind=realType) :: val
-  call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DETERMINE,phi,phic,ierr)
+  integer(kind=intType) :: ierr
 
-  ! Dump the result temporily into pvr
-  call MatMultTranspose(dFdw,phic,pvr,ierr)
+  call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DECIDE,dRdwPsi,wVec,ierr)
+  call MatMult(dRdwT,psi,dRdwPsi,ierr)
+  call VecDestroy(wVec,ierr)
 
-  ! Computes y = alpha x + y. 
-  call VecAXPY(dJdW,1.0,pvr,ierr)
 
-  call vecDestroy(phic,ierr)
-end subroutine agumentRHS
-
+end subroutine getdRdwTPsi
 

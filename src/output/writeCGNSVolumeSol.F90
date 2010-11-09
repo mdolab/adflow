@@ -110,7 +110,13 @@
       ! allocated ALL PROCESSORS not just processor 0.
       ! Fixed Bug: GKK 
  
-      deallocate(fileIDs, cgnsBases, stat=ierr)
+      if (allocated(fileIDs)) then 
+         deallocate(fileIDs, stat=ierr)
+      end if
+      if (allocated(cgnsBases)) then
+         deallocate(cgnsBases, stat=ierr)
+      end if
+
       if(ierr /= 0)                          &
            call terminate("writeCGNSVolumeSol", &
                           "Deallocation error for fileIDs &
