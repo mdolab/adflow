@@ -24,7 +24,6 @@
 !
       real(kind=realType), dimension(2) :: time
       real(kind=realType)               :: timeAdjLocal, timeAdj
-      integer(kind=intType)::level=1
 !
 !     ******************************************************************
 !     *                                                                *
@@ -69,13 +68,13 @@
 
       call f77flush()
       call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
-
+      
       if( PETScRank==0 ) &
         print "(a)", "# ... vectors created;"
 
       ! Create the global krylov object,
    
-      call createPETScKsp(level)
+      call createPETScKsp
 
       ! Flush the output buffer and synchronize the processors.
 

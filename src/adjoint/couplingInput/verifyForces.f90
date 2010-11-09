@@ -2,18 +2,21 @@ subroutine verifyForces(pts,npts)
 
   ! This routine does three thing:
   ! 1. Check that getForces and computeForceCouplingAdj give the same results
-  ! 2. Check that dSdw matrix is correct
-  ! 3. Check that dSdx matrix is correct
+  ! 2. Check that dFdw matrix is correct
+  ! 3. Check that dFdx matrix is correct
 
   use adjointpetsc
   use BCTypes
   use blockPointers
   use flowvarrefstate ! nw
   use communication
+  use inputPhysics
   ! Subroutine Arguments
   implicit none
 
-  real(kind=realType)  :: pts(3,npts)
+  real(kind=realType),intent(inout)  :: pts(3,npts) ! Used for fd
+                                                    ! check so need
+                                                    ! out
   integer(kind=intType), intent(in) :: npts
   
   ! Local Variables
@@ -22,7 +25,7 @@ subroutine verifyForces(pts,npts)
   real(kind=realType)        :: forcesAdj(3,npts)
   real(kind=realType)        :: deriv(3,npts)
   real(kind=realType)        :: grid_pts(3,3,3)
-  real(kind=realType)        :: force(3)
+  real(kind=realType)        :: force(3),moment(3),refPoint(3)
   real(kind=realType)        :: wAdj(2,2,2,nw),wRef
   integer(kind=intType) :: nn,mm,rowStart,rowEnd,ierr,icol,irow,colStart,colEnd
   integer(kind=intType) :: i,j,k,ii,jj,kk,iii,jjj,kkk,l
@@ -32,16 +35,19 @@ subroutine verifyForces(pts,npts)
   real(kind=realType)   :: fact,diff,tol,norm,h,vec_value,rel_err
   real(kind=realType)   :: max_rel_err,max_err,ad_val,fd_val
   integer(kind=intType) :: i_err,j_err,k_err,l_err,err_count
+
+  real(kind=realType) :: cFp(3),cFv(3),cMp(3),cMv(3),yplusmax
+  real(kind=realType) :: origForceSum(3),getForceSum(3), ADForceSum(3)
+  real(kind=realType) :: origForceTotal(3),getForceTotal(3), ADForceTotal(3)
   !logical :: rightHanded
   ! Get the reference set of forces 
 
   call getForces(forces0,pts,npts)
 
-
   ! Now compute the forces using the computeForceCouplingAdj routine
 
   ii = 0
-
+  refPoint(:) = 0.0
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,1_intType)
      rightHanded = flowDoms(nn,1_intType,1_intType)%rightHanded
@@ -140,8 +146,8 @@ subroutine verifyForces(pts,npts)
                     end do
                  end select
 
-                 call computeForceCouplingAdj(force,grid_pts,wAdj,fact,&
-                      iBeg,iEnd,jBeg,jEnd,i,j,righthanded)
+                 call computeForceCouplingAdj(force,moment,grid_pts,wAdj,&
+                      refPoint,fact,iBeg,iEnd,jBeg,jEnd,i,j,righthanded)
                  ii = ii + 1
                  forcesAdj(:,ii) = force
 
@@ -159,20 +165,57 @@ subroutine verifyForces(pts,npts)
         print *,'myid,i,diff:',myid,i,diff
      end if
   end do
+  
+  ! Also check that the the sum matches the orignal forces and moments
+  ! function:
+  
+  origForceSum = 0.0
+  getForceSum = 0.0
+  ADForceSum = 0.0
+  do nn=1,nDom
+     call setPointers(nn,1_intType,1_intType)
+     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+     origForceSum = origForceSum + cFp + cFv
+  end do
 
-  ! Now Check the dsdx matrix. First call setupCouplingMatrixStruct
+  do i=1,npts
+     getForceSum = getForceSum + forces0(:,i)
+     ADForceSum = ADForceSum + forcesAdj(:,i)
+  end do
+
+  fact = two/(gammaInf*pInf*MachCoef*MachCoef*surfaceRef*LRef*LRef*Pref) 
+  origForceSum = origForceSum /fact
+
+  ! MPI_REDUCE them and display
+  
+  call MPI_Reduce(origForceSum, origForceTotal, 3, SUMB_REAL, MPI_SUM, 0, &
+       SUMB_COMM_WORLD,ierr)
+  call MPI_Reduce(ADForceSum, ADForceTotal, 3, SUMB_REAL, MPI_SUM, 0, &
+       SUMB_COMM_WORLD,ierr)
+  call MPI_Reduce(getForceSum, getForceTotal, 3, SUMB_REAL, MPI_SUM, 0, &
+       SUMB_COMM_WORLD,ierr)
+
+  if (myid == 0) then
+     print *, 'Sum Check:'
+     print *,'Orig forcesAndMoments        AD Routine              GetForces Routine'
+     print *,'X:',origForceTotal(1),ADForceTotal(1),getForceTotal(1)
+     print *,'Y:',origForceTotal(2),ADForceTotal(2),getForceTotal(2)
+     print *,'Z:',origForceTotal(3),ADForceTotal(3),getForceTotal(3)
+  end if
+
+  ! Now Check the dfdx matrix. First call setupCouplingMatrixStruct
   ! to generate the two matrices
  
   call setupCouplingMatrixStruct(pts,npts)
 
   ! -----------------------------
-  !           Check dSdx
+  !           Check dFdx
   ! -----------------------------
 
-  call MatGetOwnershipRange(dSdx,rowStart,rowEnd,ierr)
-  call MatGetOwnershipRangeColumn(dSdx,colStart,colEnd,ierr)
+  call MatGetOwnershipRange(dFdx,rowStart,rowEnd,ierr)
+  call MatGetOwnershipRangeColumn(dFdx,colStart,colEnd,ierr)
   if (myid == 0) then 
-     print *,'------------ dsdx verification ----------'
+     print *,'------------ dfdx verification ----------'
   end if
   tol = 1e-6
   h = 1e-7
@@ -182,13 +225,13 @@ subroutine verifyForces(pts,npts)
         call getForces(forces,pts,npts)
         deriv = (forces-forces0)/h
         
-        ! Now check this deriv with the local COLUMN from dSdx
+        ! Now check this deriv with the local COLUMN from dFdx
         icol = colStart + (ipt-1)*3 + idim -1
 
         do jpt =1,npts   ! ----> Loop over the Rows 
            do jdim =1,3  !
               irow = rowStart+(jpt-1)*3+jdim-1
-              call MatGetValues(dSdx,1,irow,1,icol,vec_value,ierr)
+              call MatGetValues(dFdx,1,irow,1,icol,vec_value,ierr)
 
               diff = abs(vec_value-deriv(jdim,jpt))
               if (myid == 0) then
@@ -205,15 +248,15 @@ subroutine verifyForces(pts,npts)
 
   call mpi_barrier(sumb_comm_world,ierr)
   ! -----------------------------
-  !           Check dSdw
+  !           Check dFdw
   ! -----------------------------
 
   if (myid == 0) then 
-     print *,'------------ dsdw verification ----------'
+     print *,'------------ dfdw verification ----------'
   end if
   tol = 1e-5
   h = 1e-8
-  call MatGetOwnershipRange(dSdw,rowStart,rowEnd,ierr)
+  call MatGetOwnershipRange(dFdw,rowStart,rowEnd,ierr)
   do nn=1,ndom
      max_rel_err = 0.0
      rel_err     = 0.0
@@ -243,14 +286,14 @@ subroutine verifyForces(pts,npts)
                  deriv = 0.0
                  deriv = (forces-forces0)/h
                  
-                 ! Now check this deriv with the local COLUMN from dSdw
+                 ! Now check this deriv with the local COLUMN from dFdw
 
                  icol = globalCell(i,j,k)*nw+l-1
               
                  do jpt =1,npts   ! ----> Loop over the Rows 
                        do jdim =1,3  !
                           irow = rowStart+(jpt-1)*3+jdim-1
-                          call MatGetValues(dSdw,1,irow,1,icol,vec_value,ierr)
+                          call MatGetValues(dFdw,1,irow,1,icol,vec_value,ierr)
                           
                           diff = abs(vec_value-deriv(jdim,jpt))
                           if (diff > 1e-16) then

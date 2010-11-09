@@ -122,7 +122,10 @@
              ! well as the rotation point; the latter may vary in time due
              ! to rigid body translation.
              
+
+
              call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+
              velxgrid0 = rotationMatrix(1,1)*velxgrid0 &
                   + rotationMatrix(1,2)*velygrid0 &
                   + rotationMatrix(1,3)*velzgrid0

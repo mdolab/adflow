@@ -40,7 +40,11 @@ FF90_OBJECTS = computeforcecouplingadj_b.o\
 	       computeforcecouplingpressureadj_b.o\
 	       forcescouplingadj_b.o\
                getsurfacenormalscouplingadj_b.o\
-	       bceulerwallforcecouplingadj_b.o
+	       bceulerwallforcecouplingadj_b.o\
+	       adjustinflowangleforcesadj_b.o\
+	       computeforceandmomentadj_b.o\
+	       getdirvectorforces_b.o\
+	       vectorrotationforces_b.o
 
 #CC_OBJECTS   = connect_signals.o
 

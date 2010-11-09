@@ -66,12 +66,6 @@
 
       sps=1
 
-      !determine the number of surface nodes for coupling matrix
-      call mdCreateNSurfNodesLocal
-      modFamID = max(0, 1_intType)
-      nSurfNodesLocal = mdNSurfNodesLocal(modFamID)
-
-
       ! Determine the number of nodes and cells owned by each processor
       ! by looping over the local block domains.
 

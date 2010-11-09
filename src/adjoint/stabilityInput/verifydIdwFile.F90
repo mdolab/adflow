@@ -156,7 +156,7 @@ subroutine verifydIdwfile(level)
               call terminate("verifydIdwFile", "Error in VecSet")
 
          !zero the matrix for dCdW Insert call
-         call MatZeroEntries(dCdw,PETScIerr)
+         call MatZeroEntries(dCdwT,PETScIerr)
          
          if( PETScIerr/=0 ) &
               call terminate("verifydIdwFile",&
@@ -215,7 +215,7 @@ subroutine verifydIdwfile(level)
          call setupADjointdIdCStability(level,costFunction)
          
          !multiply to get djdw
-         call MatMultTranspose(dCdw,dJdc,dJdw,PETScIerr)
+         call MatMultTranspose(dCdwT,dJdc,dJdw,PETScIerr)
          
          !write solution to file....
          do sps = 1,nTimeIntervalsSpectral

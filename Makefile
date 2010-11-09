@@ -45,12 +45,12 @@ SUBDIR_ADJOINT = src/adjoint               \
 		 src/adjoint/ADFirstAidKit \
 		 src/adjoint/residualInput \
 		 src/adjoint/residualOutput\
-		 src/adjoint/forcesInput\
-	         src/adjoint/forcesOutput\
                  src/adjoint/stabilityInput\
 	         src/adjoint/stabilityOutput\
 		 src/adjoint/couplingInput\
 	         src/adjoint/couplingOutput
+#		 src/adjoint/forcesInput\
+#	         src/adjoint/forcesOutput\
 
 
 SUBDIR_WARPING = src/warping \

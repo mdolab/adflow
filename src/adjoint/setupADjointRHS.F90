@@ -9,246 +9,174 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine setupADjointRHS(level,costFunction)
-        !subroutine setupADjointRHS(level,sps,costFunction)
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Compute the right hand side of the discrete ADjoint problem    *
-!     * in question. Notice that this right hand side is problem /     *
-!     * cost function J dependent.                                     *
-!     *                                                                *
-!     * The ordering of the unknowns in the ADjoint vector used here   *
-!     * is based on the global node numbering and is consistent with   *
-!     * the ordering used in the matrix for the ADjoint problem        *
-!     * assembled in setupADjointMatrix.                               *
-!     *                                                                *
-!     ******************************************************************
-!
-      use ADjointPETSc
-      use ADjointVars
-      use inputADjoint
-      implicit none
-!
-!     Subroutine arguments.
-!
-      integer(kind=intType), intent(in) :: level, costFunction
-!
-!     Local variables.
-!
-      integer(kind=intType)::sps=1
-      real(kind=realType), dimension(2) :: time
-      real(kind=realType)               :: timeAdjLocal, timeAdj
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Begin execution.                                               *
-!     *                                                                *
-!     ******************************************************************
-!
+subroutine setupADjointRHS(level,costFunction)
+  !subroutine setupADjointRHS(level,sps,costFunction)
+  !
+  !     ******************************************************************
+  !     *                                                                *
+  !     * Compute the right hand side of the discrete ADjoint problem    *
+  !     * in question. Notice that this right hand side is problem /     *
+  !     * cost function J dependent.                                     *
+  !     *                                                                *
+  !     * The ordering of the unknowns in the ADjoint vector used here   *
+  !     * is based on the global node numbering and is consistent with   *
+  !     * the ordering used in the matrix for the ADjoint problem        *
+  !     * assembled in setupADjointMatrix.                               *
+  !     *                                                                *
+  !     ******************************************************************
+  !
+  use ADjointPETSc
+  use ADjointVars
+  use inputADjoint
+  implicit none
+  !
+  !     Subroutine arguments.
+  !
+  integer(kind=intType), intent(in) :: level, costFunction
+  !
+  !     Local variables.
+  !
+  integer(kind=intType)::sps=1
+  real(kind=realType), dimension(2) :: time
+  real(kind=realType)               :: timeAdjLocal, timeAdj, val
+  !
+  !     ******************************************************************
+  !     *                                                                *
+  !     * Begin execution.                                               *
+  !     *                                                                *
+  !     ******************************************************************
+  !
 #ifndef USE_NO_PETSC
 
-      ! Send some feedback to screen.
+  ! Send some feedback to screen.
 
-       if( PETScRank==0 .and. printTiming ) &
-         write(*,10) "Assembling ADjoint RHS vector..."
+  if( PETScRank==0 .and. printTiming ) &
+       write(*,10) "Assembling ADjoint RHS vector..."
 
-      ! Get the initial time.
+  ! Get the initial time.
 
-      call cpu_time(time(1))
+  call cpu_time(time(1))
 
-      ! Reset the RHS vector dJ/dW by assigning the value zero to all
-      ! its components.
+  ! Reset the RHS vector dJ/dW by assigning the value zero to all
+  ! its components.
 
-      ! VecSet - Sets all components of vector to a single scalar value.
-      !
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecSet(Vec x,PetscScalar alpha, PetscErrorCode ierr)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameters
-      !   x     - the vector
-      !   alpha	- the scalar
-      !
-      ! Output Parameter
-      !   x -the vector
-      !
-      ! Note
-      ! For a vector of dimension n, VecSet() computes
-      ! x[i] = alpha, for i=1,...,n,
-      ! so that all vector entries then equal the identical scalar
-      ! value, alpha. Use the more general routine VecSetValues() to
-      ! set different vector entries.
-      !
-      ! You CANNOT call this after you have called VecSetValues() but
-      ! before you call VecAssemblyBegin/End(). 
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecSet.html
-      ! or PETSc users manual, pp.36
+  ! VecSet - Sets all components of vector to a single scalar value.
+  !
+  ! Synopsis
+  !
+  ! #include "petscvec.h" 
+  ! call VecSet(Vec x,PetscScalar alpha, PetscErrorCode ierr)
+  !
+  ! Collective on Vec
+  !
+  ! Input Parameters
+  !   x     - the vector
+  !   alpha	- the scalar
+  !
+  ! Output Parameter
+  !   x -the vector
+  !
+  ! Note
+  ! For a vector of dimension n, VecSet() computes
+  ! x[i] = alpha, for i=1,...,n,
+  ! so that all vector entries then equal the identical scalar
+  ! value, alpha. Use the more general routine VecSetValues() to
+  ! set different vector entries.
+  !
+  ! You CANNOT call this after you have called VecSetValues() but
+  ! before you call VecAssemblyBegin/End(). 
+  !
+  ! see .../petsc/docs/manualpages/Vec/VecSet.html
+  ! or PETSc users manual, pp.36
 
-      call VecSet(dJdW,PETScZero,PETScIerr)
+  call VecSet(dJdW,PETScZero,PETScIerr)
 
-      if( PETScIerr/=0 ) &
-        call terminate("setupADjointRHS", "Error in VecSet")
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Select case over different choices of cost functions.          *
-!     * The following routine calls fill in the PETSc vector dJdW by   *
-!     * making calls to the PETSc routine VecSetValuesBlocked.         *
-!     *                                                                *
-!     ******************************************************************
-!
-      select case (costFunction)
+  if( PETScIerr/=0 ) &
+       call terminate("setupADjointRHS", "Error in VecSet")
+  !
+  !     ******************************************************************
+  !     *                                                                *
+  !     * Select case over different choices of cost functions.          *
+  !     * The following routine calls fill in the PETSc vector dJdW by   *
+  !     * making calls to the PETSc routine VecSetValuesBlocked.         *
+  !     *                                                                *
+  !     ******************************************************************
+  !
+  select case (costFunction)
 
-        case (costFuncLiftCoef, &
-              costFuncDragCoef, &
-              costFuncForceXCoef,&
-              costFuncForceYCoef,&
-              costFuncForceZCoef,&
-              costFuncMomXCoef, &
-              costFuncMomYCoef, &
-              costFuncMomZCoef)
+  case(costFuncLift,costFuncDrag, &
+       costFuncLiftCoef,costFuncDragCoef, &
+       costFuncForceX,costFuncForceY,costFuncForceZ, &
+       costFuncForceXCoef,costFuncForceYCoef,costFuncForceZCoef, &
+       costFuncMomX,costFuncMomY,costFuncMomZ,&
+       costFuncMomXCoef,costFuncMomYCoef,costFuncMomZCoef)
 
-           !For now, hard code this to the first time instance for a time
-           !spectral case. In the long run maybe we specify this from the
-           !input file...
-           sps = 1
-           !call setupADjointRHSAeroCoeff(level,costFunction)
-           call setupADjointRHSAeroCoeff(level,sps,costFunction)
+     !For now, hard code this to the first time instance for a time
+     !spectral case. In the long run maybe we specify this from the
+     !input file...
+   
+     sps = 1
+   
+     !call setupADjointRHSAeroCoeff(level,sps,costFunction)
+     call setupADjointRHSAeroCoef2(level,sps,costFunction)
+   
+  case(costFuncCmzAlpha, &
+       costFuncCm0,&
+       costFuncClAlpha,&
+       costFuncCl0,&
+       costFuncCdAlpha,&
+       costFuncCd0,&
+       costFuncCmzAlphaDot,&
+       costFuncCmzq)
 
-        case(costFuncCmzAlpha, &
-             costFuncCm0,&
-             costFuncClAlpha,&
-             costFuncCl0,&
-             costFuncCdAlpha,&
-             costFuncCd0,&
-             costFuncCmzAlphaDot,&
-             costFuncCmzq)
+     if (PETScRank==0)print *,'stability costfunction',costfunction
+     call setupADjointRHSStability(level,costFunction)
+  case default
+     write(*,*) "Invalid cost function ", costFunction
+     stop
 
-           if (PETScRank==0)print *,'stability costfunction',costfunction
-           call setupADjointRHSStability(level,costFunction)
-        case default
-          write(*,*) "Invalid cost function ", costFunction
-          stop
+  end select
+  !
+  !     ******************************************************************
+  !     *                                                                *
+  !     * Complete the PETSc vector assembly process.                    *
+  !     *                                                                *
+  !     ******************************************************************
 
-      end select
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Complete the PETSc vector assembly process.                    *
-!     *                                                                *
-!     ******************************************************************
-!
-      ! VecAssemblyBegin - Begins assembling the vector. This routine
-      ! should be called after completing all calls to VecSetValues().
-      !
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecAssemblyBegin(Vec vec, PetscErrorCode ierr)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameter
-      !   vec -the vector 
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecAssemblyBegin.html
+  call VecAssemblyBegin(dJdW,PETScIerr)
 
-      call VecAssemblyBegin(dJdW,PETScIerr)
+  if( PETScIerr/=0 ) &
+       call terminate("setupADjointRHS", "Error in VecAssemblyBegin")
 
-      if( PETScIerr/=0 ) &
-        call terminate("setupADjointRHS", "Error in VecAssemblyBegin")
+  call VecAssemblyEnd  (dJdW,PETScIerr)
 
-      ! VecAssemblyEnd - Completes assembling the vector. This routine
-      ! should be called after VecAssemblyBegin().
-      !
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! call VecAssemblyEnd(Vec vec, PetscErrorCode ierr)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameter
-      !   vec -the vector 
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecAssemblyEnd.html
+  if( PETScIerr/=0 ) &
+       call terminate("setupADjointRHS", "Error in VecAssemblyEnd")
 
-      call VecAssemblyEnd  (dJdW,PETScIerr)
+  ! Get new time and compute the elapsed time.
 
-      if( PETScIerr/=0 ) &
-        call terminate("setupADjointRHS", "Error in VecAssemblyEnd")
+  call cpu_time(time(2))
+  timeAdjLocal = time(2)-time(1)
 
-      ! Get new time and compute the elapsed time.
+  ! Determine the maximum time using MPI reduce
+  ! with operation mpi_max.
 
-      call cpu_time(time(2))
-      timeAdjLocal = time(2)-time(1)
+  call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
+       mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
 
-      ! Determine the maximum time using MPI reduce
-      ! with operation mpi_max.
+  if( PETScRank==0 .and. printTiming) &
+       write(*,20) "Assembling ADjoint RHS vector time (s) = ", timeAdj
 
-      call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-                      mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
+  ! Flush the output buffer and synchronize the processors.
 
-       if( PETScRank==0 .and. printTiming) &
-         write(*,20) "Assembling ADjoint RHS vector time (s) = ", timeAdj
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Visualize the assembled vector.                                *
-!     *                                                                *
-!     ******************************************************************
-!
-      ! VecView - Views a vector object.
-      !
-      ! Synopsis
-      !
-      ! #include "petscvec.h" 
-      ! PetscErrorCode PETSCVEC_DLLEXPORT VecView(Vec vec, &
-      !                                              PetscViewer viewer)
-      !
-      ! Collective on Vec
-      !
-      ! Input Parameters
-      !   v      - the vector
-      !   viewer - an optional visualization context
-      !
-      ! Notes
-      ! The available visualization contexts include
-      !   PETSC_VIEWER_STDOUT_SELF  - standard output (default)
-      !   PETSC_VIEWER_STDOUT_WORLD - synchronized standard output where
-      !    only the first processor opens the file. All other processors
-      !    send their data to the first processor to print.
-      !
-      ! see .../petsc/docs/manualpages/Vec/VecView.html
-      ! or PETSc users manual, pp.36,148
+  call f77flush()
+  call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
-      !if( debug ) then
-  !       call PetscViewerBinaryOpen(SUMB_PETSC_COMM_WORLD,'/scratch/mader/djdw2.out',FILE_MODE_WRITE,Bin_Viewer,PETScIerr)
-  !       call VecView(dJdW,Bin_Viewer,PETScIerr)
-  !       call PetscViewerDestroy(Bin_Viewer,PETScIerr)
+  ! Output formats.
 
-	!call VecView(dJdW,PETSC_VIEWER_DRAW_WORLD,PETScIerr)
-	!call VecView(dJdW,PETSC_VIEWER_STDOUT_WORLD,PETScIerr)
-  !      if( PETScIerr/=0 ) &
-  !        call terminate("setupADjointRHS", "Error in VecView")
-        !pause
-      !endif
-
-      ! Flush the output buffer and synchronize the processors.
-
-      call f77flush()
-      call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
-
-      ! Output formats.
-
-   10 format(a)
-   20 format(a,1x,f8.2)
+10 format(a)
+20 format(a,1x,f8.2)
 
 #endif
 
-    end subroutine setupADjointRHS
+end subroutine setupADjointRHS

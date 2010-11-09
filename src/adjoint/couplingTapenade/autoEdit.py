@@ -28,10 +28,11 @@ DIR_MOD = DIR_ORI + '/../couplingOutput'
 
 # Specifiy the list of LINE ID's to find, what to replace and with what
 
-LINE_ID = ['  USE','  CALL ']
-STR_OLD = ['_B'    ,'_CB'    ]
-STR_NEW = [''      ,''       ]
+LINE_ID = ['USE','CALL']
+STR_OLD = ['_B','_CB']
+STR_NEW = [''  ,'']
 FILE_EXCL = 'MODULE'
+STR_REPLACE_ALL = {'_CB':''}
 
 # Some feedback
 
@@ -72,22 +73,25 @@ for f in os.listdir(DIR_ORI):
 
         file_object_mod = open(f,'w')
 
-       
-
         # read the original file, line-by-line
         nEdits = len(LINE_ID)
         for line in file_object_ori:
-
-            # parse original line for relevante identifier
+            # parse original line for relevante identifier      
             # and replace the string
-            line_mod = line
-            for i in xrange(nEdits):
-                if line[0:len(LINE_ID[i])] == LINE_ID[i]:
-                    line_mod = string.replace(line_mod, STR_OLD[i], STR_NEW[i])
+            line_mod = line.lstrip()
 
+            for i in xrange(nEdits):
+                if line_mod[0:len(LINE_ID[i])] == LINE_ID[i]:
+                    line_mod = string.replace(line_mod, STR_OLD[i], STR_NEW[i])
+                #end
+            #end
+            for key in STR_REPLACE_ALL:
+                line_mod = string.replace(line_mod,key,STR_REPLACE_ALL[key])
+            #end
 
             # write the modified line to new file
-            file_object_mod.write(line_mod)
+            file_object_mod.write('   '+ line_mod)
+
 
         # close the files
         file_object_ori.close()

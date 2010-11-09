@@ -41,20 +41,12 @@ FF90_MODULES =
 FF90_OBJECTS = allocMemADjoint.o        \
 	       assertionsADjoint.o      \
                computeAeroCoef.o        \
-	       computeAeroCoupling.o    \
-	       computeAeroExpCoupling.o  \
-	       computeADjointGradientExtra.o\
-	       computeADjointGradientSpatial.o\
-	       computeADjointGradientSurfaceDV.o\
-               computeADjointGradientSurfaceDisp.o\
 	       copyADjointStencil.o     \
 	       createPETScKsp.o         \
 	       createPETScMat.o         \
 	       createPETScVars.o        \
 	       createPETScVec.o         \
 	       designInit.o             \
-	       destroyPETScKSP.o        \
-	       destroyPETScMat.o       \
 	       destroyPETScVars.o       \
                finalizePETSc.o          \
 	       getGlobalNodes.o         \
@@ -70,104 +62,63 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       setADjoint.o             \
 	       setGlobalCellsAndNodes.o \
 	       setPointersAdj.o         \
-               setupADjointdCdwStability.o\
-               setupADjointdIdCStability.o\
-	       setupADjointMatrix.o     \
-               setupADjointMatrixTranspose.o\
-	       setupADjointPCMatrix.o     \
 	       setupADjointPCMatrixTranspose.o \
-	       setupADjointRHS.o        \
-	       setupADjointRHSAeroCoeff.o\
-	       setupADjointRHSStability.o\
 	       setupAllResidualMatrices.o\
                setupPETScKsp.o         \
-	       solveADjointPETSc.o      \
                solveADjointTransposePETSc.o\
-	       solveDirectPETSc.o       \
-	       setupSurfaceDirect.o     \
-	       setupADjointTotalStruct.o\
-	       setupGradientdCdExtra.o\
-	       setupGradientdCdx.o \
-	       setupGradientMatrixExtra.o\
-	       setupGradientMatrixSpatial.o\
-               setupGradientRHSFlow.o\
-	       setupGradientRHSVolume.o\
-	       setupGradientRHSExtra.o\
-	       setupGradientRHSSpatial.o\
-               setupGradientRHSStability.o\
                solverADjoint.o          \
 	       updateFlow.o             \
 	       updateReferencePoint.o   \
 	       updateRotationRate.o   \
-	       verifydRdw.o             \
-               verifydRdwFile.o         \
-               verifydRdwFileFD.o       \
-	       verifydRdx.o             \
-	       verifydRdExtra.o         \
-	       verifydRdExtraFDAD.o      \
-	       verifydRdxFile.o             \
-               verifydRdxsFile.o             \
-	       verifydRdxFileFD.o             \
-	       verifyRAdj.o\
-	       verifyResiduals.o\
-	       writeCGNSMesh.o\
-               writeCGNSData.o\
 	       getdRdXvPsi.o\
 	       getdRdwTPsi.o\
 	       setupCouplingMatrixStruct.o\
 	       agumentRHS.o\
-	       getdFdxVec.o
+	       getdFdxVec.o\
+	       computeObjPartials.o\
+	       matrixInfo.o\
+#	       verifyResiduals.o\
+#	       verifydRdw.o             \
+#              verifydRdwFile.o         \
+#              verifydRdwFileFD.o       \
+#	       verifydRdx.o             \
+#	       verifydRdExtra.o         \
+#	       verifydRdExtraFDAD.o      \
+#	       verifydRdxFile.o             \
+#              verifydRdxsFile.o             \
+#	       verifydRdxFileFD.o             \
+#	       verifyRAdj.o\
+#	       solveDirectPETSc.o       \
+#	       setupSurfaceDirect.o     \
+#	       setupADjointTotalStruct.o\
+# 	       writeCGNSMesh.o\
+#              writeCGNSData.o\
+#	       setupGradientdCdExtra.o\
+#	       setupGradientdCdx.o \
+#	       setupGradientMatrixExtra.o\
+#	       setupGradientMatrixSpatial.o\
+#              setupGradientRHSFlow.o\
+#	       setupGradientRHSVolume.o\
+#	       setupGradientRHSExtra.o\
+#              setupADjointMatrixTranspose.o\
+# 	       computeAeroCoupling.o    \
+#	       setupADjointPCMatrix.o     
+# 	       setupADjointMatrix.o     \
+#   	       computeAeroExpCoupling.o  \	
+#	       computeADjointGradientExtra.o\
+#	       computeADjointGradientSpatial.o\
+#	       computeADjointGradientSurfaceDV.o\
+#              computeADjointGradientSurfaceDisp.o\
 #	       setupCouplingTotalStruct.o\
 #	       setupADjointRHSStruct.o  \
-
-#FF90_OBJECTS = allocMemADjoint.o\
-#	       assertionsADjoint.o\
-#	       computeADjointGradientExtra.o\
-#               computeADjointGradientSpatial.o\
-#	       computeAeroCoef.o\
-#	       convertDegToRad.o\
-#	       convertRadToDeg.o\
-#	       copyADjointStencil.o\
-#	       copyLocalIndexHalo.o\
-#	       createPETScKsp.o\
-#	       createPETScMat.o\
-#	       createPETScVars.o\
-#	       createPETScVec.o\
-#	       designExport.o\
-#	       designImport.o\
-#	       designInit.o\
-#	       designWrite.o\
-#	       destroyPETScVars.o\
-#               destroyPETScKSP.o\
-#	       finalizePETSc.o\
-#	       getDirAngle.o\
-#	       getDirVector.o\
-#	       haloIndexCommunication.o\
-#	       initializePETSc.o\
-#	       preprocessingADjoint.o\
-#	       getGlobalNodes.o\
-#	       releaseMemADjoint.o\
-#	       sendIndexHalo.o\
-#	       setGlobalNodes.o\
-#	       setPointersAdj.o\
-#	       setupADjointMatrix.o\
+#              setupADjointdCdwStability.o\
+#              setupADjointdIdCStability.o\
+#	       setupGradientRHSSpatial.o\
+#              setupGradientRHSStability.o\
+#	       setupADjointRHS.o        \
 #	       setupADjointRHSAeroCoeff.o\
-#	       setupADjointRHS.o\
-#	       setupGradientMatrixExtra.o\
-#              setupGradientMatrixSpatial.o\
-#	       setupGradientRHSExtra.o\
-#               setupGradientRHSSpatial.o\
-#	       solveADjointPETSc.o\
-#	       solverADjoint.o\
-#	       storeReceivedIndexHalo.o\
-#	       vectorRotation.o\
-#	       verifydRdW.o\
-#	       verifydRdx.o\
-#	       verifyRAdj.o\
-#	       writeADjoint.o\
-#	       writeADjointGradient.o\
-#	       writeADjointHistory.o\
-#	       writeADjointSol.o
+#	       setupADjointRHSAeroCoef2.o\
+#	       setupADjointRHSStability.o\
 
 CC_OBJECTS   = initPETScWrap.o
 

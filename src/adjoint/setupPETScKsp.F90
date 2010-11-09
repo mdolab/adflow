@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine setupPETScKsp(level)
+      subroutine setupPETScKsp
 !
 !     ******************************************************************
 !     *                                                                *
@@ -30,12 +30,6 @@
 !     User-defined Fortran routine.
 !
       external MyKSPMonitor
-
-!
-!     Subroutine Variables
-!
-
-      integer(kind=intType)::level
 
 !
 !     Local variables.
@@ -116,7 +110,7 @@
          
          !setup the approximate PC Matrix
          !call setupADjointPCMatrix(level)
-         call setupADjointPCMatrixTranspose(level)
+         call setupADjointPCMatrixTranspose()
          
          !now set up KSP Context
          !call KSPSetOperators(ksp,dRdW,dRdWPre, &
