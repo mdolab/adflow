@@ -27,13 +27,8 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      ! nDesignAOA     Extra design variables: angle of atack
-      ! nDesignSSA     Extra design variables: side-slip angle
-      ! nDesignExtra   Extra number of design variables:
-      ! nDesignSpatial Spatial design variables in grid (3*nNodesGlobal)
-      ! nDesign        Total number of design variables
-      !               = nNodesGlobal (for sigma)
-      !               + 3*nNodesGlobal (for coord) + nDesignExtra
+      ! nDesignExtra   Extra number of "extra" design variables 
+      !                (listed below)
 
       integer(kind=intType), parameter :: nDesignAOA     = 1_intType
       integer(kind=intType), parameter :: nDesignSSA     = 2_intType
@@ -49,9 +44,7 @@
       integer(kind=intType), parameter :: nDesignPointRefY     = 12_intType
       integer(kind=intType), parameter :: nDesignPointRefZ     = 13_intType
       
-      integer(kind=intType)            :: nDesignExtra
-      integer(kind=intType)	       :: nDesignSpatial 
-      integer(kind=intType)            :: nDesign
+      integer(kind=intType),parameter :: nDesignExtra = 13
 
       
 !     ******************************************************************

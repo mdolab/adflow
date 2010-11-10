@@ -46,7 +46,6 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       createPETScMat.o         \
 	       createPETScVars.o        \
 	       createPETScVec.o         \
-	       designInit.o             \
 	       destroyPETScVars.o       \
                finalizePETSc.o          \
 	       getGlobalNodes.o         \

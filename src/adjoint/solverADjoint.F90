@@ -143,8 +143,6 @@
       ! that store the cost functions (values,names,gradients) and
       ! design variables (values,names,lower and upper bounds).
 
-      call designInit
-
 
       ! Initialize PETSc.
 
