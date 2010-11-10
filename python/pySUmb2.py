@@ -495,7 +495,6 @@ class SUMB(AeroSolver):
 
       
         self.sumb.dummyreadparamfile()
-        print 'motion',self.sumb.inputmotion.gridmotionspecified
 
         #This is just to flip the -1 to 1 possibly a memory issue?
         self.sumb.inputio.storeconvinneriter = \
@@ -988,7 +987,6 @@ class SUMB(AeroSolver):
         
         #Set the mesh level and timespectral instance for this
         #computation
-        self.sps = 1
         
         self.sumb.iteration.currentlevel=1
         self.sumb.iteration.groundlevel=1
@@ -1001,11 +999,9 @@ class SUMB(AeroSolver):
         #allocates memory.
         self.sumb.preprocessingadjoint()
         
-        #Initialize the design variable and function storage
-        self.sumb.designinit()
+        # Create PETSc vars
         self.sumb.initializepetsc()
         self.sumb.createpetscvars()
-        self.nSpatial = self.sumb.adjointvars.ndesignspatial
 
         self.adjointInitialized = True
         if(self.myid==0):
@@ -1111,7 +1107,10 @@ class SUMB(AeroSolver):
         # following operation to produce dI/dX_surf:
         # (p represents partial, d total)
         # dI/dX_s = pI/pX_s - (dXv/dXs)^T * ( dRdX_v^T * psi)
-
+        # 
+        # The derivative wrt the surface captures the effect of ALL
+        # GLOBAL Multidisciplinary variables -- any DV that changes
+        # the surface. 
         restart = self.getOption('restartAdjoint')
         obj = self.possibleObjectives[objective.lower()]
         
@@ -1129,6 +1128,15 @@ class SUMB(AeroSolver):
         dIdXs = dIdxs_1 - dIdxs_2 
         
         return dIdXs
+
+    def totalAeroDerivative(self,objective):
+        # The adjoint vector is now calculated. This function as above
+        # computes dI/dX_aero = pI/pX_aero - dR/dX_aero^T * psi. The
+        # "aero" variables are intrinsic ONLY to the aero
+        # discipline. Nothing in the structural process should depend
+        # on these functions directly. 
+        
+        pass
 
     def verifyPartials(self):
         '''

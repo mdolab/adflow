@@ -193,7 +193,7 @@ subroutine updatePeriodicInfoAllLevels
   ! Determine for the time spectral mode the time of one period,
   ! the rotation matrices for the velocity components and
   ! create the fine grid coordinates of all time spectral locations.
-  if( myid==0)print *,'in update periodicInfo...'
+
   call timePeriodSpectral
   call timeRotMatricesSpectral
   call fineGridSpectralCoor

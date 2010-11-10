@@ -186,9 +186,6 @@ python module sumb ! in
        subroutine preprocessingadjoint ! in :sumb:../../adjoint/preprocessingADjoint.f90
        end subroutine preprocessingadjoint
 
-       subroutine designinit ! in :sumb:../../adjoint/designInit.f90
-       end subroutine designinit
-
        subroutine initializepetsc ! in :sumb:../../adjoint/initializePETSc.F90
        end subroutine initializepetsc
 
@@ -805,8 +802,6 @@ python module sumb ! in
          integer(kind=inttype) parameter,optional :: ndesignaoa=1
          integer(kind=inttype) :: nsurfnodesglobal
          integer(kind=inttype) parameter,optional :: ndesignrotceny=9
-         integer(kind=inttype) :: ndesignspatial
-         integer(kind=inttype) :: ndesign
          integer(kind=inttype) parameter,optional :: ndesignmachgrid=4
          integer(kind=inttype) :: nsurfnodeslocal
          integer(kind=inttype) parameter,optional :: ndesignmach=3
