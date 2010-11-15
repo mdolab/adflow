@@ -22,9 +22,10 @@
    !
    !      ******************************************************************
    !      *                                                                *
-   !      * bcEulerWallAdj applies inviscid wall pplies the inviscid wall boundary condition to  *
-   !      * subface nn of the block to which the pointers in blockPointers *
-   !      * currently point.                                               *
+   !      * bcEulerWallAdj applies inviscid wall bcoundary condition       *
+   !      * to the small set of cells wAdj (2,2,2) cube.                   *
+   !      * This function is based on BCEulerWarll.f90 in src/solver       *
+   !      * It only works for constant and linear pressure extrapolation   *
    !      *                                                                *
    !      ******************************************************************
    !

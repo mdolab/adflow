@@ -89,9 +89,6 @@ subroutine setupAllResidualMatrices
 
   integer(kind=intType), dimension(nw) :: idxmg, idxng
 
-  ! dR/da local block matrix at node (iNode,jNode,kNode)
-
-  real(kind=realType), dimension(nw,ndesignextra) :: dRdaLocal
   character(len=2*maxStringLen) :: errorMessage
 
 
@@ -292,21 +289,7 @@ subroutine setupAllResidualMatrices
                     Gad(m,:,:)  = wAdjB( 0, 0, 1,:,:)
                     GGad(m,:,:) = wAdjB( 0, 0, 2,:,:)
 
-                    dRdaLocal(m,nDesignAOA) =alphaAdjb
-                    dRdaLocal(m,nDesignSSA) =betaAdjb
-                    dRdaLocal(m,nDesignMach) =machAdjb
-                    dRdaLocal(m,nDesignMachGrid) =machgridAdjb
-                    dRdaLocal(m,nDesignRotX) =rotrateadjb(1)
-                    dRdaLocal(m,nDesignRotY) =rotrateadjb(2)
-                    dRdaLocal(m,nDesignRotZ) =rotrateadjb(3)
-                    dRdaLocal(m,nDesignRotCenX) =rotcenteradjb(1)+rotpointadjb(1)
-                    dRdaLocal(m,nDesignRotCenY) =rotcenteradjb(2)+rotpointadjb(2)
-                    dRdaLocal(m,nDesignRotCenZ) =rotcenteradjb(3)+rotpointadjb(3)
-                    dRdaLocal(m,nDesignPointRefX) =pointrefadjb(1)
-                    dRdaLocal(m,nDesignPointRefY) =pointrefadjb(2)
-                    dRdaLocal(m,nDesignPointRefZ) =pointrefadjb(3)
-
-                    idxres   = globalCell(iCell,jCell,kCell)*nw+m 
+                    idxres   = globalCell(iCell,jCell,kCell)*nw+m -1
 
                     do sps2 = 1,nTimeIntervalsSpectral
                        do l = 1,3
@@ -321,8 +304,8 @@ subroutine setupAllResidualMatrices
 
                                          idxnode = flowdoms(nn,level,sps2)%globalNode(i,j,k)*3+l
 
-                                         if( (idxres-1)>=0 .and. (idxnode-1)>=0) then
-                                            call MatSetValues(dRdx, 1, idxres-1, 1, idxnode-1,   &
+                                         if( (idxres)>=0 .and. (idxnode-1)>=0) then
+                                            call MatSetValues(dRdx, 1, idxres, 1, idxnode-1,   &
                                                  xAdjb(ii,jj,kk,l,sps2), ADD_VALUES, PETScIerr)
                                             ! NO error check here for speed purposes
                                          endif
@@ -337,146 +320,158 @@ subroutine setupAllResidualMatrices
                        do l = 1,3
                           if (xblockcorneradjb(1,1,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalNode(1,1,1)*3+1
-                             call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(1,1,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__file__,__line__)
                           endif
                           if (xblockcorneradjb(2,1,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalNode(il,1,1)*3+1
-                             call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(2,1,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__file__,__line__)
                           endif
                           if (xblockcorneradjb(1,2,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(1,jl,1)*3+l
-                             call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(1,2,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__file__,__line__)
                           endif
                           if (xblockcorneradjb(2,2,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(il,jl,1)*3+l
-                             call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(2,2,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__file__,__line__)
                           endif
                           if (xblockcorneradjb(1,1,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(1,1,kl)*3+l
-                             call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(1,1,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__file__,__line__)
                           endif
                           if (xblockcorneradjb(1,2,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(1,jl,kl)*3+l
-                             call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(1,2,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__file__,__line__)
                           endif
                           if (xblockcorneradjb(2,1,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(il,1,kl)*3+l
-                             call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(2,1,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__file__,__line__)
                           endif
                           if (xblockcorneradjb(2,2,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(il,jl,kl)*3+l
-                             call MatSetValues(drdx, 1, idxres-1, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(2,2,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__file__,__line__)
                           endif
                        enddo
                     end do
+
+
+                    ! Transfer the block Jacobians to the global [dR/da]
+                    ! matrix by setting the corresponding block entries of
+                    ! the PETSc matrix dRda.
+                    !
+                    ! Global matrix column idxmg function of node indices.
+                    ! (note: index displaced by previous design variables)
+
+                    !Angle of Attack
+                    if (nDesignAoA >= 0) then
+                       call MatSetValues(dRda, 1, idxres, 1, nDesignAoA, &
+                            alphaadjb, INSERT_VALUES, PETScIerr)
+                       call EChk(PETScIerr,__file__,__line__)
+                    end if
+
+                    ! Side slip angle
+                    if (nDesignSSA >= 0) then
+                       call MatSetValues(dRda, 1, idxres, nDesignSSA, &
+                            betaadjb, INSERT_VALUES, PETScIerr)
+                       call EChk(PETScIerr,__file__,__line__)
+                    end if
+
+                    !Mach Number
+                    if (nDesignMach >= 0) then
+                       call MatSetValues(dRda, 1, idxres, nDesignMach, &
+                            machAdjb, INSERT_VALUES, PETScIerr)
+                       call EChk(PETScIerr,__file__,__line__)
+                    end if
+
+                    !Mach NumberGrid
+                    if (nDesignMachGrid >= 0) then
+                       call MatSetValues(dRda, 1, idxres, nDesignMachGrid, &
+                            machGridAdjb, INSERT_VALUES, PETScIerr)
+                       call EChk(PETScIerr,__file__,__line__)
+                    end if
+
+                    !X Rotation
+                    if (nDesignRotX >= 0) then
+                       call MatSetValues(dRda, 1, idxres, nDesignRotX, &
+                            rotrateadjb(1), INSERT_VALUES, PETScIerr)
+                       call EChk(PETScIerr,__file__,__line__)
+                    end if
+
+                    !Y Rotation
+                    if (nDesignRotY >= 0) then
+                       call MatSetValues(dRda, 1, idxres, nDesignRotY, &
+                            rotrateadjb(2), INSERT_VALUES, PETScIerr)
+                       call EChk(PETScIerr,__file__,__line__)
+                    end if
+
+                    !Z Rotation
+                    if (nDesignRotZ >= 0) then
+                       call MatSetValues(dRda, 1, idxres, nDesignRotZ, &
+                            rotrateadjb(3), INSERT_VALUES, PETScIerr)
+                       call EChk(PETScIerr,__file__,__line__)
+                    end if
+
+                    !X Rotation Center
+                    if (nDesignRotCenX >= 0) then
+                       call MatSetValues(dRda, 1, idxres, nDesignRotCenX, &
+                            rotcenteradjb(1)+rotpointadjb(1), INSERT_VALUES,&
+                            PETScIerr)
+                       call EChk(PETScIerr,__file__,__line__)
+                    end if
+
+                    !Y Rotation Center
+                    if (nDesignRotCenY >= 0) then
+                       call MatSetValues(dRda, 1, idxres, nDesignRotCenY, &
+                            rotcenteradjb(2)+rotpointadjb(2), INSERT_VALUES,&
+                            PETScIerr)
+                       call EChk(PETScIerr,__file__,__line__)
+                    end if
+
+                    !Z Rotation Center
+                    if (nDesignRotCenZ >= 0) then
+                       call MatSetValues(dRda, 1, idxres, nDesignRotCenZ, &
+                            rotcenteradjb(3)+rotpointadjb(3), INSERT_VALUES,&
+                            PETScIerr)
+                       call EChk(PETScIerr,__file__,__line__)
+                    end if
+
+                    !X Point Ref
+                    if (nDesignPointRefX >= 0) then
+                       call MatSetValues(dRda, 1, idxres, nDesignPointRefX, &
+                            pointrefadjb(1), INSERT_VALUES, PETScIerr)
+                       call EChk(PETScIerr,__file__,__line__)
+                    end if
+
+                    !Y Point Ref
+                    if (nDesignPointRefY >= 0) then
+                       call MatSetValues(dRda, 1, idxres, nDesignPointRefY, &
+                            pointrefadjb(2), INSERT_VALUES, PETScIerr)
+                       call EChk(PETScIerr,__file__,__line__)
+                    end if
+
+                    !Z Point Ref
+                    if (nDesignPointRefZ >= 0) then
+                       call MatSetValues(dRda, 1, idxres, nDesignPointRefZ, &
+                            pointrefadjb(3), INSERT_VALUES, PETScIerr)
+                       call EChk(PETScIerr,__file__,__line__)
+                    end if
+
                  enddo mLoop
-
-                 ! Transfer the block Jacobians to the global [dR/da]
-                 ! matrix by setting the corresponding block entries of
-                 ! the PETSc matrix dRda.
-                 !
-                 ! Global matrix column idxmg function of node indices.
-                 ! (note: index displaced by previous design variables)
-
-                 ! There are are the same for all dRda entries
-                 do m=1,nw
-                    idxmg(m) = globalCell(iCell,jCell,kCell) * nw + m - 1
-                 enddo
-
-                 !Angle of Attack
-
-                 idxngb = nDesignAOA - 1
-                 call MatSetValues(dRda, nw, idxmg, 1, idxngb, &
-                      dRdaLocal(:,nDesignAOA), INSERT_VALUES, PETScIerr)
-                 call EChk(PETScIerr,__file__,__line__)
-
-                 ! Side slip angle
-                 idxngb = nDesignSSA - 1
-                 call MatSetValues(dRda, nw, idxmg, 1, idxngb, &
-                      dRdaLocal(:,nDesignSSA), INSERT_VALUES, PETScIerr)
-                 call EChk(PETScIerr,__file__,__line__)
-
-                 !Mach Number
-                 idxngb = nDesignMach - 1
-                 call MatSetValues(dRda, nw, idxmg, 1, idxngb, &
-                      dRdaLocal(:,nDesignMach), INSERT_VALUES, PETScIerr)
-                 call EChk(PETScIerr,__file__,__line__)
-
-                 !Mach Number Grid
-                 idxngb = nDesignMachGrid - 1
-                 call MatSetValues(dRda, nw, idxmg, 1, idxngb, &
-                      dRdaLocal(:,nDesignMachGrid), INSERT_VALUES, PETScIerr)
-                 call EChk(PETScIerr,__file__,__line__)
-
-                 !X Rotation
-                 idxngb = nDesignRotX - 1
-                 call MatSetValues(dRda, nw, idxmg, 1, idxngb, &
-                      dRdaLocal(:,nDesignRotX), INSERT_VALUES, PETScIerr)
-                 call EChk(PETScIerr,__file__,__line__)
-
-                 !Y Rotation
-                 idxngb = nDesignRotY - 1
-                 call MatSetValues(dRda, nw, idxmg, 1, idxngb, &
-                      dRdaLocal(:,nDesignRotY), INSERT_VALUES, PETScIerr)
-                 call EChk(PETScIerr,__file__,__line__)
-
-                 !Z Rotation
-                 idxngb = nDesignRotZ - 1
-                 call MatSetValues(dRda, nw, idxmg, 1, idxngb, &
-                      dRdaLocal(:,nDesignRotZ), INSERT_VALUES, PETScIerr)
-                 call EChk(PETScIerr,__file__,__line__)
-
-                 !X Rotation Center
-                 idxng = nDesignRotCenX - 1
-                 call MatSetValues(dRda, nw, idxmg, 1, idxng, &
-                      dRdaLocal(:,nDesignRotCenX), INSERT_VALUES, PETScIerr)
-                 call EChk(PETScIerr,__file__,__line__)
-
-                 !Y Rotation Center
-                 idxng = nDesignRotCenY - 1
-                 call MatSetValues(dRda, nw, idxmg, 1, idxng, &
-                      dRdaLocal(:,nDesignRotCenY), INSERT_VALUES, PETScIerr)
-                 call EChk(PETScIerr,__file__,__line__)
-
-                 !Z Rotation Center
-                 idxng = nDesignRotCenZ - 1
-                 call MatSetValues(dRda, nw, idxmg, 1, idxng, &
-                      dRdaLocal(:,nDesignRotCenZ), INSERT_VALUES, PETScIerr)
-                 call EChk(PETScIerr,__file__,__line__)
-
-                 !X PointRef
-                 idxng = nDesignPointRefX - 1
-                 call MatSetValues(dRda, nw, idxmg, 1, idxng, &
-                      dRdaLocal(:,nDesignPointRefX), INSERT_VALUES, PETScIerr)
-                 call EChk(PETScIerr,__file__,__line__)
-
-                 !Y PointRef
-                 idxng = nDesignPointRefY - 1
-                 call MatSetValues(dRda, nw, idxmg, 1, idxng, &
-                      dRdaLocal(:,nDesignPointRefY), INSERT_VALUES, PETScIerr)
-                 call EChk(PETScIerr,__file__,__line__)
-
-                 !Z PointRef
-                 idxng = nDesignPointRefZ - 1
-                 call MatSetValues(dRda, nw, idxmg, 1, idxng, &
-                      dRdaLocal(:,nDesignPointRefZ), INSERT_VALUES, PETScIerr)
-                 call EChk(PETScIerr,__file__,__line__)
 
                  if(PETScBlockMatrix) then
 

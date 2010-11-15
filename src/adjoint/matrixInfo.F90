@@ -11,7 +11,8 @@
 ! dRdx, dFdw and dFdx and outputs nicely formatted information about
 ! them. This is useful for debugging purposes. 
 
-  subroutine matrixInfo(pdRdwT,pdRdwPreT,pdRdx,pdFdw,pdFdx,pLocal,pSum,pMax)
+  subroutine matrixInfo(pdRdwT,pdRdwPreT,pdRdx,pdRda,&
+       pdFdw,pdFdx,pLocal,pSum,pMax)
 
     use ADjointPETSc
     use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
@@ -23,7 +24,7 @@
     implicit None
 
     ! Logicals on wether or not to print these matrix
-    logical , intent(in) :: pdRdwT,pdRdwPreT,pdRdx,pdFdx,pdFdw
+    logical , intent(in) :: pdRdwT,pdRdwPreT,pdRdx,pdFdx,pdFdw,pdRda
     logical , intent(in) :: pLocal,pSum,pMax
     integer(kind=intType) :: ierr
     if (pdRdwT) then
@@ -90,6 +91,29 @@
        end if
 
     end if
+
+    if (pdRda) then
+        
+       if (pLocal) then 
+          call MatGetInfo(dRda,MAT_LOCAL,localInfo,ierr)
+          call EChk(ierr,__file__,__line__)
+          call printLocal("dRda")
+       end if
+
+       if (pMax) then 
+          call MatGetInfo(dRda,MAT_GLOBAL_MAX,maxInfo,ierr)
+          call EChk(ierr,__file__,__line__)
+          call printMax("dRda")
+       end if
+
+       if (pSum) then
+          call MatGetInfo(dRda,MAT_GLOBAL_SUM,sumInfo,ierr)
+          call EChk(ierr,__file__,__line__)
+          call printSum("dRda")
+       end if
+
+    end if
+
 
     if (pdFdx) then
         

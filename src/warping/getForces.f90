@@ -48,7 +48,7 @@ subroutine getForces(forces,pts,npts)
   real(kind=realType) :: scaleDim, fact, fact2, pp, fx,fy,fz
 
   real(kind=realType), dimension(:,:),   pointer :: pp2, pp1
-  real(kind=realType) :: ss(3),v2(3),v1(3)
+  real(kind=realType) :: sss(3),v2(3),v1(3)
   integer(kind=intType) :: lower_left,lower_right,upper_left,upper_right
 
   !      ******************************************************************
@@ -84,7 +84,7 @@ subroutine getForces(forces,pts,npts)
 
            case (iMin)
               pp2 => p( 2,1:,1:); pp1 => p( 1,1:,1:)
-              fact = -one
+              fact = -one 
 
            case (iMax)
               pp2 => p(il,1:,1:); pp1 => p(ie,1:,1:)
@@ -92,11 +92,11 @@ subroutine getForces(forces,pts,npts)
 
            case (jMin)
               pp2 => p(1:, 2,1:); pp1 => p(1:, 1,1:)
-              fact = -one
+              fact = one
 
            case (jMax)
               pp2 => p(1:,jl,1:); pp1 => p(1:,je,1:)
-              fact = one
+              fact = -one
 
            case (kMin)
               pp2 => p(1:,1:, 2); pp1 => p(1:,1:, 1)
@@ -117,7 +117,7 @@ subroutine getForces(forces,pts,npts)
 
            ! Compute the inviscid force on each of the faces and
            ! scatter it to the 4 nodes, whose forces are updated.
-
+     
            do j=jBeg, jEnd ! This is a face loop
               do i=iBeg, iEnd ! This is a face loop 
 
@@ -145,14 +145,14 @@ subroutine getForces(forces,pts,npts)
                  ! diagonal vectors times fact; remember that fact2 is
                  ! either -0.5 or 0.5.
 
-                 ss(1) = fact2*(v1(2)*v2(3) - v1(3)*v2(2))
-                 ss(2) = fact2*(v1(3)*v2(1) - v1(1)*v2(3))
-                 ss(3) = fact2*(v1(1)*v2(2) - v1(2)*v2(1))
+                 sss(1) = fact2*(v1(2)*v2(3) - v1(3)*v2(2))
+                 sss(2) = fact2*(v1(3)*v2(1) - v1(1)*v2(3))
+                 sss(3) = fact2*(v1(1)*v2(2) - v1(2)*v2(1))
 
-                 fx = pp*ss(1)
-                 fy = pp*ss(2)
-                 fz = pp*ss(3)
-
+                 fx = pp*sss(1)
+                 fy = pp*sss(2)
+                 fz = pp*sss(3)
+                 
                  forces(1,lower_left)  = forces(1,lower_left)  + fx
                  forces(2,lower_left)  = forces(2,lower_left)  + fy
                  forces(3,lower_left)  = forces(3,lower_left)  + fz
@@ -171,6 +171,9 @@ subroutine getForces(forces,pts,npts)
              
               end do
            end do
+           ! Note how iBeg,iBeg is defined above... it is one MORE
+           ! then the starting node (used for looping over faces, not
+           ! nodes)
            ii = ii + (jEnd-jBeg+2)*(iEnd-iBeg+2)
 
         end if
@@ -216,11 +219,12 @@ subroutine getForcePoints(points,npts)
            ! Compute the inviscid force on each of the faces and
            ! scatter it to the 4 nodes, whose forces are updated.
 
-           do j=jBeg, jEnd ! This is a face loop
-              do i=iBeg, iEnd ! This is a face loop 
+
+           do j=jBeg, jEnd ! This is a node loop
+              do i=iBeg, iEnd ! This is a node loop
                  ii = ii +1
                  select case(BCFaceID(mm))
-
+                    
                  case(imin)
                     points(:,ii) = x(1,i,j,:)
                  case(imax)

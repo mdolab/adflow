@@ -47,7 +47,13 @@
    CALL COMPUTEFORCECOUPLINGPRESSUREADJ(wadj, padj(2:3, :, :))
    CALL GETSURFACENORMALSCOUPLINGADJ(pts, normadj, righthanded)
    CALL PUSHREAL8ARRAY(padj, realtype*3*2**2/8)
+   ! Only BC Euler wall boundary conditions are implemented. 
    CALL BCEULERWALLFORCECOUPLINGADJ(wadj, padj)
+   ! For NS probably will need to call 
+   ! call bcNSWallAdiabaticForceCouplingAdj(wAdj,pAdj)
+   ! Also for NS calculation, will need to compute the tau on the
+   ! subfaces, with 
+   ! call viscousFluxCouplingAdj(     )
    CALL FORCESCOUPLINGADJ_B(padj, padjb, pts, ptsb, normadj, normadjb, &
    &                     refpoint, refpointb, force, forceb, moment, momentb&
    &                     , fact, ibeg, iend, jbeg, jend, inode, jnode)

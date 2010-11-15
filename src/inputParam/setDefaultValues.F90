@@ -26,6 +26,7 @@
        use allInputParam
        use localMG
        use couplerParam
+       use killSignals
        implicit none
 !
 !      ******************************************************************
@@ -406,5 +407,7 @@
        velDirIni(3) = zero
 
        printIterations = .True.
+
+       routineFailed = .False.
 
        end subroutine setDefaultValues
