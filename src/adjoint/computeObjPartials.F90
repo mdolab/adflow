@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 
-subroutine computeObjPartials(costFunction,pts,npts,dIdpts)
+subroutine computeObjPartials(costFunction,pts,npts,dIdpts,dIda,nDv)
   !
   !     ******************************************************************
   !     *                                                                *
@@ -36,10 +36,11 @@ subroutine computeObjPartials(costFunction,pts,npts,dIdpts)
   !
   ! Subroutine arguments.
   !
-  integer(kind=intType), intent(in) :: costFunction, npts
+  integer(kind=intType), intent(in) :: costFunction, npts, nDv
   real(kind=realType), intent(in) :: pts(3,npts)
   real(kind=realType) :: ptsb(3,npts)
   real(kind=realType),intent(out) :: dIdpts(3,npts)
+  real(kind=realType),intent(out) :: dIda(nDv)
 
   ! Variables for computeforceandmomentadj_b
   real(kind=realtype) :: force(3), cforce(3)
@@ -85,7 +86,7 @@ subroutine computeObjPartials(costFunction,pts,npts,dIdpts)
   pointRefAdj(3) = pointRef(3)
    
   dIdpts = 0.0
-
+  dIda = 0.0
   select case(costFunction)
   case(costFuncLift,costFuncDrag, &
        costFuncLiftCoef,costFuncDragCoef, &
@@ -289,6 +290,34 @@ subroutine computeObjPartials(costFunction,pts,npts,dIdpts)
                  end do
               end do
               !ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
+
+              ! We also have the derivative of the Objective wrt the
+              ! "AeroDVs" intrinsic aero design variables, alpha, beta etc
+              
+              if (nDesignAoA >=0) then
+                 dIda(nDesignAoA+1) = dIda(nDesignAoA+1) + alphaAdjb
+              end if
+              
+              if (nDesignSSA >= 0) then
+                 dIda(nDesignSSA+1) = dIda(nDesignSSA+1) + betaAdjb
+              end if
+
+              if (nDesignMachGrid >= 0) then
+                 dIda(nDesignMachGrid+1) = dIda(nDesignMachGrid+1) + machCoefAdjb
+              end if
+              
+              if (nDesignPointRefX >=0) then
+                 dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefAdjb(1)
+              end if
+
+              if (nDesignPointRefY >=0) then
+                 dIda(nDesignPointRefY + 1) = dIda(nDesignPointRefY + 1) + pointrefAdjb(2)
+              end if
+
+              if (nDesignPointRefZ >=0) then
+                 dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefAdjb(3)
+              end if
+
            end if
         end do bocos
 

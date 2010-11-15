@@ -21,7 +21,7 @@ subroutine createPETScVec
   !     ******************************************************************
   !
   use ADjointPETSc
-  use ADjointVars     ! nCellsLocal, nDesignExtra
+  use ADjointVars     ! nCellsLocal,
   use communication   ! myID, nProc 
   use inputTimeSpectral !nTimeIntervalsSpectral
   use flowVarRefState ! 
@@ -47,29 +47,6 @@ subroutine createPETScVec
   call EChk(PETScIerr,__file__,__line__)
 
   call VecDuplicate(dJdW, pvr, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
-
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Create the vectors of partial and total function gradient      *
-  !     * with respect to the extra design variables dJda and dIda,      *
-  !     * respectively. Vector dJda has size [nDesignExtra].             *
-  !     *                                                                *
-  !     * The global dimension is specified so that the extra design     *
-  !     * variables are scattered among the processors.                  *
-  !     * This has to be consistent with the matrix dRda.                *
-  !     *                                                                *
-  !     ******************************************************************
-  !
-  call VecCreate(SUMB_PETSC_COMM_WORLD, dJda, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
-  call VecSetSizes(dJda, PETSC_DECIDE, &
-       nDesignExtra, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
-  call VecSetType(dJda,"mpi",PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
-
-  call VecDuplicate(dJda, dIda, PETScIerr)
   call EChk(PETScIerr,__file__,__line__)
 
 #endif

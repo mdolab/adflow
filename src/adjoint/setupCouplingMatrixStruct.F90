@@ -54,11 +54,12 @@ subroutine setupCouplingMatrixStruct(pts,npts)
 
   refPoint(:) = 0.0
   refPointb(:)= 0.0
-  
 
   ii=0
   call MatGetOwnershipRange(dfdw,rowStart,rowEnd,ierr)
+  call EChk(ierr,__file__,__line__)
   call MatGetOwnershipRangeColumn(dFdx,colStart_x,colEnd_x,ierr)
+  call EChk(ierr,__file__,__line__)
 
   domains: do nn=1,nDom
      call setPointersAdj(nn,1_intType,1_intType)
@@ -144,7 +145,7 @@ subroutine setupCouplingMatrixStruct(pts,npts)
                        w_ind(kkk,2,2)  = globalCell(ib-kkk-1,i+1,j+1) 
                     end do
                  case (jMin)
-                    fact = -1_realType
+                    fact = 1_realType
                     do kkk=1,2
                        wadj(kkk,1,1,:) = w(i  ,kkk+1,j  ,:)
                        wadj(kkk,2,1,:) = w(i+1,kkk+1,j  ,:)
@@ -156,7 +157,7 @@ subroutine setupCouplingMatrixStruct(pts,npts)
                        w_ind(kkk,2,2)  = globalCell(i+1,kkk+1,j+1)
                     end do
                  case (jMax)
-                    fact = 1_realType
+                    fact = -1_realType
                     do kkk=1,2
                        wadj(kkk,1,1,:) = w(i  ,jb-kkk-1,j  ,:)
                        wadj(kkk,2,1,:) = w(i+1,jb-kkk-1,j  ,:)
@@ -220,6 +221,7 @@ subroutine setupCouplingMatrixStruct(pts,npts)
                                         w_ind(kkk,iii,jjj)*nw+l-1,&
                                         wadjb(kkk,iii,jjj,l),&
                                         INSERT_VALUES, ierr)
+                                   call EChk(ierr,__file__,__line__)
                                 end if
                              end do
                           end do
@@ -232,6 +234,7 @@ subroutine setupCouplingMatrixStruct(pts,npts)
                              call MatSetValue(dFdx,irow,&
                                   colStart_x+pts_ind(iii,jjj)*3+kkk-1,grid_ptsb(kkk,iii,jjj),&
                                   INSERT_VALUES,ierr)
+                             call EChk(ierr,__file__,__line__)
                           end do
                        end do
                     end do
@@ -246,10 +249,13 @@ subroutine setupCouplingMatrixStruct(pts,npts)
   end do domains
 
   call MatAssemblyBegin(dFdw,MAT_FINAL_ASSEMBLY,ierr)
+  call EChk(ierr,__file__,__line__)
   call MatAssemblyEnd(dFdw,MAT_FINAL_ASSEMBLY,ierr)
+  call EChk(ierr,__file__,__line__)
   call MatAssemblyBegin(dFdx,MAT_FINAL_ASSEMBLY,ierr)
+  call EChk(ierr,__file__,__line__)
   call MatAssemblyEnd(dFdx,MAT_FINAL_ASSEMBLY,ierr)
-
+  call EChk(ierr,__file__,__line__)
     
 end subroutine setupCouplingMatrixStruct
 

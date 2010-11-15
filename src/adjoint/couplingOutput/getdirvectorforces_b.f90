@@ -50,7 +50,7 @@
    REAL(kind=realtype) :: alphab, betab
    REAL(kind=realtype), DIMENSION(3) :: winddirection
    REAL(kind=realtype), DIMENSION(3) :: winddirectionb
-   INTEGER(kind=inttype) :: liftindex
+   INTEGER(kind=inttype), INTENT(IN) :: liftindex
    !
    !     Local variables.
    !

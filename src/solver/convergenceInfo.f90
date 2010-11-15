@@ -480,10 +480,8 @@
           return
        endif
 
-       
-       !if(myID==0) print *,'iconv',iconv,nCycles,(fromPython).and. (iconv==nCycles)
        if((fromPython).and. (iconv==nCycles))then
-          !if(myID==0) print *,'checking divergence',fromPython
+       
           !Check to see if residuals are diverging or stalled for python
           select case (equationMode)
              
@@ -495,23 +493,17 @@
              ! is set to true and the progress is halted.
              !only check on root porcessor
              if (myID==0)then
-                do sps=1,nTimeIntervalsSpectral
-                   
-                   !if(myID==0) print *,'convarray',shape(convArray),iconv,sps,1,convArray(1,1,1),convArray(0,1,1)
-                   !if(myID==0) print *,'convarray2',convArray(10,1,1)
-                   !if(myID==0) print *,'convarray3',convArray(iConv,sps,1)
-                   if(convArray(iConv,sps,1) > &
-                        convArray(0,sps,1)) routineFailed=.True.
-                   
-                   if(convArray(iConv,sps,1) > 1.0e-3) routineFailed=.True.
-                   if(convArray(iConv,sps,1) > &
-                        1.0e-4*convArray(0,sps,1)) routineFailed=.True.
-                enddo
+
+                ! If we made it to ncycles then the routine simply
+                ! failed.  It is up to the Python User to check the
+                ! residuals to see if they want to use the solution or
+                ! not
+                routineFailed = .True. 
+
              endif
              call mpi_bcast(routineFailed, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
              if(myID==0) print *,'Divergence Check',routineFailed
-             !stop
-             !return
+
           case(unsteady)
              print *,'divergence check for unsteady not implemented...'
              !return

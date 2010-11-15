@@ -70,6 +70,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       updateReferencePoint.o   \
 	       updateRotationRate.o   \
 	       getdRdXvPsi.o\
+	       getdRdaPsi.o\
 	       getdRdwTPsi.o\
 	       setupCouplingMatrixStruct.o\
 	       agumentRHS.o\

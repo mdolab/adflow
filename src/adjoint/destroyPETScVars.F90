@@ -66,12 +66,6 @@
       call VecDestroy(dJdW, PETScIerr)
       call EChk(PETScIerr,__file__,__line__)
 
-      call VecDestroy(dJda, PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
-
-      call VecDestroy(dIda, PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
-
       ! KSP Context
       call KSPDestroy(ksp, PETScIerr)
       call EChk(PETScIerr,__file__,__line__)

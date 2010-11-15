@@ -30,21 +30,21 @@
       ! nDesignExtra   Extra number of "extra" design variables 
       !                (listed below)
 
-      integer(kind=intType), parameter :: nDesignAOA     = 1_intType
-      integer(kind=intType), parameter :: nDesignSSA     = 2_intType
-      integer(kind=intType), parameter :: nDesignMach     = 3_intType
-      integer(kind=intType), parameter :: nDesignMachGrid = 4_intType
-      integer(kind=intType), parameter :: nDesignRotX     = 5_intType
-      integer(kind=intType), parameter :: nDesignRotY     = 6_intType	
-      integer(kind=intType), parameter :: nDesignRotZ     = 7_intType
-      integer(kind=intType), parameter :: nDesignRotCenX     = 8_intType
-      integer(kind=intType), parameter :: nDesignRotCenY     = 9_intType
-      integer(kind=intType), parameter :: nDesignRotCenZ     = 10_intType
-      integer(kind=intType), parameter :: nDesignPointRefX     = 11_intType
-      integer(kind=intType), parameter :: nDesignPointRefY     = 12_intType
-      integer(kind=intType), parameter :: nDesignPointRefZ     = 13_intType
+      integer(kind=intType) :: nDesignAOA   
+      integer(kind=intType) :: nDesignSSA    
+      integer(kind=intType) :: nDesignMach    
+      integer(kind=intType) :: nDesignMachGrid
+      integer(kind=intType) :: nDesignRotX    
+      integer(kind=intType) :: nDesignRotY    
+      integer(kind=intType) :: nDesignRotZ    
+      integer(kind=intType) :: nDesignRotCenX 
+      integer(kind=intType) :: nDesignRotCenY  
+      integer(kind=intType) :: nDesignRotCenZ   
+      integer(kind=intType) :: nDesignPointRefX  
+      integer(kind=intType) :: nDesignPointRefY   
+      integer(kind=intType) :: nDesignPointRefZ   
       
-      integer(kind=intType),parameter :: nDesignExtra = 13
+      integer(kind=intType) :: nDesignExtra
 
       
 !     ******************************************************************

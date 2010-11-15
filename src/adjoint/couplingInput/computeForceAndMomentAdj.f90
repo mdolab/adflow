@@ -110,7 +110,7 @@ subroutine computeForceAndMomentAdj(Force,cForce,Lift,Drag,Cl,Cd,&
               wadj(kkk,2,2,:) = wBlock(ib-kkk-1,i+1,j+1,:)
            end do
         case (jMin)
-           fact = -1_realType
+           fact = 1_realType
            do kkk=1,2
               wadj(kkk,1,1,:) = wBlock(i  ,kkk+1,j  ,:)
               wadj(kkk,2,1,:) = wBlock(i+1,kkk+1,j  ,:)
@@ -118,7 +118,7 @@ subroutine computeForceAndMomentAdj(Force,cForce,Lift,Drag,Cl,Cd,&
               wadj(kkk,2,2,:) = wBlock(i+1,kkk+1,j+1,:)
            end do
         case (jMax)
-           fact = 1_realType
+           fact = -1_realType
            do kkk=1,2
               wadj(kkk,1,1,:) = wBlock(i  ,jb-kkk-1,j  ,:)
               wadj(kkk,2,1,:) = wBlock(i+1,jb-kkk-1,j  ,:)

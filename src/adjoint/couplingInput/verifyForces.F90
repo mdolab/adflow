@@ -33,6 +33,7 @@ subroutine verifyForces(pts,npts)
   integer(kind=intType) :: ipt,idim,jpt,jdim
   integer(kind=intType) :: lower_left,lower_right,upper_left,upper_right
   real(kind=realType)   :: fact,diff,tol,norm,h,vec_value,rel_err
+  real(kind=realType)   :: vval
   real(kind=realType)   :: max_rel_err,max_err,ad_val,fd_val
   integer(kind=intType) :: i_err,j_err,k_err,l_err,err_count
 
@@ -113,7 +114,7 @@ subroutine verifyForces(pts,npts)
                        wadj(kkk,2,2,:) = w(ib-kkk-1,i+1,j+1,:)
                     end do
                  case (jMin)
-                    fact = -1_realType
+                    fact = 1_realType
                     do kkk=1,2
                        wadj(kkk,1,1,:) = w(i  ,kkk+1,j  ,:)
                        wadj(kkk,2,1,:) = w(i+1,kkk+1,j  ,:)
@@ -121,7 +122,7 @@ subroutine verifyForces(pts,npts)
                        wadj(kkk,2,2,:) = w(i+1,kkk+1,j+1,:)
                     end do
                  case (jMax)
-                    fact = 1_realType
+                    fact = -1_realType
                     do kkk=1,2
                        wadj(kkk,1,1,:) = w(i  ,jb-kkk-1,j  ,:)
                        wadj(kkk,2,1,:) = w(i+1,jb-kkk-1,j  ,:)
@@ -190,10 +191,13 @@ subroutine verifyForces(pts,npts)
   
   call MPI_Reduce(origForceSum, origForceTotal, 3, SUMB_REAL, MPI_SUM, 0, &
        SUMB_COMM_WORLD,ierr)
+  call EChk(ierr,__file__,__line__)
   call MPI_Reduce(ADForceSum, ADForceTotal, 3, SUMB_REAL, MPI_SUM, 0, &
        SUMB_COMM_WORLD,ierr)
+  call EChk(ierr,__file__,__line__)
   call MPI_Reduce(getForceSum, getForceTotal, 3, SUMB_REAL, MPI_SUM, 0, &
        SUMB_COMM_WORLD,ierr)
+  call EChk(ierr,__file__,__line__)
 
   if (myid == 0) then
      print *, 'Sum Check:'
@@ -212,41 +216,50 @@ subroutine verifyForces(pts,npts)
   !           Check dFdx
   ! -----------------------------
 
+  ! Currently Broken
+
   call MatGetOwnershipRange(dFdx,rowStart,rowEnd,ierr)
+  call EChk(ierr,__file__,__line__)
   call MatGetOwnershipRangeColumn(dFdx,colStart,colEnd,ierr)
-  if (myid == 0) then 
-     print *,'------------ dfdx verification ----------'
-  end if
-  tol = 1e-6
-  h = 1e-7
-  do ipt = 1,npts   ! ----> Loop over Columns
-     do idim = 1,3  ! 
-        pts(idim,ipt) = pts(idim,ipt) + h
-        call getForces(forces,pts,npts)
-        deriv = (forces-forces0)/h
+  call EChk(ierr,__file__,__line__)
+
+  ! if (myid == 0) then 
+!      print *,'------------ dfdx verification ----------'
+!   end if
+!   tol = 1e-6
+!   h = 1e-7
+  
+!   do ipt = 1,npts   ! ----> Loop over Columns
+!      do idim = 1,3  ! 
+!         pts(idim,ipt) = pts(idim,ipt) + h
+!         call getForces(forces,pts,npts)
+!         deriv = (forces-forces0)/h
         
-        ! Now check this deriv with the local COLUMN from dFdx
-        icol = colStart + (ipt-1)*3 + idim -1
+!         ! Now check this deriv with the local COLUMN from dFdx
+!         icol = colStart + (ipt-1)*3 + idim -1
 
-        do jpt =1,npts   ! ----> Loop over the Rows 
-           do jdim =1,3  !
-              irow = rowStart+(jpt-1)*3+jdim-1
-              call MatGetValues(dFdx,1,irow,1,icol,vec_value,ierr)
+!         do jpt =1,npts   ! ----> Loop over the Rows 
+!            do jdim =1,3  !
+!               irow = rowStart+(jpt-1)*3+jdim-1
+!               call MatGetValues(dFdx,1,irow,1,icol,vval,ierr)
+!               call EChk(ierr,__file__,__line__)
 
-              diff = abs(vec_value-deriv(jdim,jpt))
-              if (myid == 0) then
-              if (diff > tol) then
-                 print *,'proc,id,diff:',myid,irow,icol,diff
-              end if
-           end if
-           end do
-        end do
+!               diff = abs(vval-deriv(jdim,jpt))
+!               if (myid == 0) then
+!               if (diff > tol) then
+!                  print *,'proc,id,diff:',myid,irow,icol,diff
+!                  print *,vval,deriv(jdim,jpt)
+!               end if
+!            end if
+!            end do
+!         end do
    
-        pts(idim,ipt) = pts(idim,ipt) - h
-     end do
-  end do
+!         pts(idim,ipt) = pts(idim,ipt) - h
+!      end do
+!   end do
 
-  call mpi_barrier(sumb_comm_world,ierr)
+!   call mpi_barrier(sumb_comm_world,ierr)
+!   call EChk(ierr,__file__,__line__)
   ! -----------------------------
   !           Check dFdw
   ! -----------------------------
@@ -257,6 +270,7 @@ subroutine verifyForces(pts,npts)
   tol = 1e-5
   h = 1e-8
   call MatGetOwnershipRange(dFdw,rowStart,rowEnd,ierr)
+  call EChk(ierr,__file__,__line__)
   do nn=1,ndom
      max_rel_err = 0.0
      rel_err     = 0.0
@@ -294,7 +308,7 @@ subroutine verifyForces(pts,npts)
                        do jdim =1,3  !
                           irow = rowStart+(jpt-1)*3+jdim-1
                           call MatGetValues(dFdw,1,irow,1,icol,vec_value,ierr)
-                          
+                          call EChk(ierr,__file__,__line__)
                           diff = abs(vec_value-deriv(jdim,jpt))
                           if (diff > 1e-16) then
                              rel_err = diff/((vec_value+deriv(jdim,jpt)))

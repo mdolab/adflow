@@ -132,26 +132,19 @@
       !       Size[nNodes*nw,nDesign],where nDesign is the number
       !       of design variables.
       !
-      ! dJda  Cost function J partial sensitivity w.r.t. the design
-      !       variable vector alpha: dJ/da. Row vector.
-      !       Size[nDesign].
-      !
-      ! dIda  Cost function I total sensitivity w.r.t. the design
-      !       variable vector alpha: dI/da, computed as
-      !       {dIdW} = {dJdW} - {psi}^T [dRda]. Row vector.
-      !       Size[nDesign].
 
       Mat     dRdWT,dRdWPreT
       Mat     dRda, dRdx,dFdw,dFdx
       Vec     psi, dJdW, pvr
       Vec     gridVec
-      Vec     dJda, dIda
+      Vec     dRdaTPsi,dRdaTPsi_local
       Vec     wVec,xVec
       Vec     fVec1,fVec2
       Vec     phic,dJcdW
       ! ksp   Linear solver (Krylov subspace method) context
       ! pc    Preconditioner context
-
+      VecScatter dRdaTpsi_scatter
+      
       KSP     ksp
       PC      pc
 

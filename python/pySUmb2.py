@@ -238,6 +238,25 @@ class SUMB(AeroSolver):
               'cdalpha':'cdAlpha',
               'cd0':'cd0'
               }
+
+        self.possibleAeroDVs = {
+            'aofa':'adjointvars.ndesignaoa',
+            'ssa':'adjointvars.ndesignssa',
+            'mach':'adjointvars.ndesignmach',
+            'machgrid':'adjointvars.ndesignmachgrid',
+            'rotx':'adjointvars.ndesignrotx',
+            'roty':'adjointvars.ndesignroty',
+            'rotz':'adjointvars.ndesignrotz',
+            'rotcenx':'adjointvars.ndesignrotcenx',
+            'rotceny':'adjointvars.ndesignrotceny',
+            'rotcenz':'adjointvars.ndesignrotcenz',
+            'pointrefx':'adjointvars.ndesignpointrefx',
+            'pointrefy':'adjointvars.ndesignpointrefy',
+            'pointrefz':'adjointvars.ndesignpointrefzy'
+            }
+
+        self.aeroDVs = []
+
         if 'optionMap' in kwargs:
             self.optionMap = kwargs['optionMap']
         else:
@@ -440,6 +459,8 @@ class SUMB(AeroSolver):
                                     'probName']
         # end if
 
+     
+
         self.storedADjoints = {}
 
         # Set default values --- actual options will be set when
@@ -469,10 +490,11 @@ class SUMB(AeroSolver):
         self._update_geom_info = True
         self._update_period_info = True
         self._update_vel_info = True
-
+        self.solve_failed = False
         self.dtype = 'd'
         # Write the intro message
         self.sumb.writeintromessage()
+
         return
 
     def initialize(self, aero_problem, sol_type, grid_file='default',
@@ -492,7 +514,8 @@ class SUMB(AeroSolver):
         for option in self.options:
             if option != 'defaults':
                 self.setOption(option, self.options[option][1])
-
+            # end if
+        # end for
       
         self.sumb.dummyreadparamfile()
 
@@ -518,7 +541,7 @@ class SUMB(AeroSolver):
         for i in range(nmon):
             self.monnames[string.strip(
                     self.sumb.monitor.monnames[i].tostring())] = i
-        
+        # end for
 
         # Setup External Warping
         meshInd = self.getMeshIndices()
@@ -647,6 +670,7 @@ class SUMB(AeroSolver):
 
         self._update_period_info = True
         self._update_vel_info = True
+ 
         return
 
     def resetFlow(self):
@@ -687,9 +711,6 @@ class SUMB(AeroSolver):
 
         ncycles = niterations
         storeHistory = self.getOption('storeHistory')
-
-        #reset python failure check to false
-        self.sumb.killsignals.routinefailed=False
 
         if sol_type.lower() in ['steady', 'time spectral']:
             
@@ -827,29 +848,18 @@ class SUMB(AeroSolver):
         self._UpdateGeometryInfo()
         self._UpdateVelocityInfo()
 
-        self.routineFailed = self.sumb_comm_world.allreduce(
-            self.sumb.killsignals.routinefailed,MPI.MIN)
-        
-        if (abs(self.routineFailed)==True):
-            if self.myid ==0:print 'Error raise in updateGeometry'
-            raise ValueError
-        #endif
+        if self.sumb.killsignals.routinefailed:
+            self.solve_failed = True
+            return
 
         # Now call the solver
         
         self.sumb.solver()
 
-        #Check to see whether we have a valid solution
-        #in this case routineFailed will be triggered on all processors
-        self.routineFailed = self.sumb_comm_world.allreduce(
-            abs(self.sumb.killsignals.routinefailed),MPI.SUM)/self.comm.size
-        #therefore sum up and devide by nProc
-        if (abs(self.routineFailed)==True):
-            if self.myid ==0: print 'Error Raised in solver'
-            raise ValueError
-        #endif
-
-
+        if self.sumb.killsignals.routinefailed:
+            self.solve_failed = True
+        else:
+            self.solve_failed = False
 
         sol_time = time.time() - t0
 
@@ -879,7 +889,9 @@ class SUMB(AeroSolver):
         
         self.callCounter+=1
 
-        return
+        # If we made it to the end, it did NOT fail so return False
+        
+        return False
 
     def getSurfaceCoordinates(self,group_name):
         ''' 
@@ -905,6 +917,7 @@ class SUMB(AeroSolver):
             return None,None,None
         # end if
 
+        return
         
     def WriteVolumeSolutionFile(self,filename=None,writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS file.
@@ -927,6 +940,8 @@ class SUMB(AeroSolver):
         # end if
 
         self.sumb.writesol()
+
+        return
 
     def WriteSurfaceSolutionFile(self,*filename):
         """Write the current state of the surface flow solution to a CGNS file.
@@ -971,6 +986,10 @@ class SUMB(AeroSolver):
         # end if
 
     def verifyForces(self,cfd_force_pts=None):
+
+        # Adjoint must be initialized for force verification
+
+        self.initAdjoint()
         if cfd_force_pts is None:
             cfd_force_pts = self.getForcePoints()
         # end if
@@ -985,6 +1004,33 @@ class SUMB(AeroSolver):
         in SUMB
         '''
         
+        # Set the index value of each nDesign to -1 -> Don't use by
+        # default
+        self.sumb.adjointvars.ndesignaoa = -1
+        self.sumb.adjointvars.ndesignssa  = -1
+        self.sumb.adjointvars.ndesignmach = -1
+        self.sumb.adjointvars.ndesignmachgrid = -1
+        self.sumb.adjointvars.ndesignrotx = -1
+        self.sumb.adjointvars.ndesignroty = -1
+        self.sumb.adjointvars.ndesignrotz = -1
+        self.sumb.adjointvars.ndesignrotcenx = -1
+        self.sumb.adjointvars.ndesignrotceny = -1
+        self.sumb.adjointvars.ndesignrotcenz = -1
+        self.sumb.adjointvars.ndesignpointrefx = -1
+        self.sumb.adjointvars.ndesignpointrefy = -1
+        self.sumb.adjointvars.ndesignpointrefz = -1
+
+        # Set the required paramters for the aero-Only design vars:
+        self.nDVAero = len(self.aeroDVs)
+        self.sumb.adjointvars.ndesignextra = self.nDVAero
+
+        for i in xrange(self.nDVAero):
+            exec_str = 'self.sumb.' + self.possibleAeroDVs[self.aeroDVs[i]] + \
+                '= %d'%(i)
+            # Leave this zero-based since we only need to use it in petsc
+            exec(exec_str)
+        # end for
+
         #Set the mesh level and timespectral instance for this
         #computation
         
@@ -1010,6 +1056,21 @@ class SUMB(AeroSolver):
 
         return
 
+    def addAeroDV(self,*dvs):
+        '''Take in a list of DVs that the flow solver will use in
+        addition to shape-type design variables'''
+        for i in xrange(len(dvs)):
+            if dvs[i] in self.possibleAeroDVs and not dvs[i] in self.aeroDVs:
+                self.aeroDVs.append(dvs[i])
+            else:
+                print 'Warning: %s was not one of the possible AeroDVs'%(dvs[i])
+                print 'Full AeroDV list is:'
+                print self.possibleAeroDVs
+            # end if
+        # end for
+
+        return
+
     def setupAdjoint(self, forcePoints=None, **kwargs):
         '''
         Setup the adjoint matrix for the current solution
@@ -1026,18 +1087,16 @@ class SUMB(AeroSolver):
             self.mesh.setupWarpDeriv()
 
             self.adjointSetup = True
-
         # end if
 
         return
 
-
     def printMatrixInfo(self, dRdwT=True, dRdwPre=True, dRdx=True,
-                        dSdw=True, dSdx=True,
+                        dRda=True, dSdw=True, dSdx=True,
                         printLocal=False,printSum=True,printMax=False):
         
         # Call sumb matrixinfo function
-        self.sumb.matrixinfo(dRdwT,dRdwPre,dRdx,dSdw,dSdx,
+        self.sumb.matrixinfo(dRdwT,dRdwPre,dRdx,dRda,dSdw,dSdx,
                              printLocal,printSum,printMax)
 
         return
@@ -1051,7 +1110,6 @@ class SUMB(AeroSolver):
 
     def _on_adjoint(self,objective,forcePoints=None,*args,**kwargs):
         
-      
         # Check to see if adjoint is initialized:
         if not self.adjointInitialized:
             self.initAdjoint()
@@ -1067,8 +1125,10 @@ class SUMB(AeroSolver):
 
         # Setup the RHS
         obj_num = self.SUmbCostfunctions[self.possibleObjectives[objective.lower()]]
-        dIdpts = self.sumb.computeobjpartials(obj_num,forcePoints.T).T
-        
+        [dIdpts_temp, dIda] = self.sumb.computeobjpartials(
+            obj_num,forcePoints.T,self.nDVAero)
+        dIdpts = dIdpts_temp.T
+
         if 'structAdjoint' in kwargs and 'group_name' in kwargs:
             group_name = kwargs['group_name']
             phi = kwargs['structAdjoint']
@@ -1135,9 +1195,24 @@ class SUMB(AeroSolver):
         # "aero" variables are intrinsic ONLY to the aero
         # discipline. Nothing in the structural process should depend
         # on these functions directly. 
+        restart = self.getOption('restartAdjoint')
+        obj = self.possibleObjectives[objective.lower()]
         
-        pass
+        if restart: # Selected stored adjoint
+            self.sumb.setadjoint(self.storedADjoints[obj])
+        # end if
 
+        # Direct partial derivative contibution 
+        dIda_1 = self.getdIda(objective)
+        
+        # dIda contribution for drda^T * psi
+        dIda_2 = self.getdRdaPsi()
+        
+        # Total derivative of the obective wrt aero-only DVs
+        dIda = dIda_1 - dIda_2
+
+        return dIda
+        
     def verifyPartials(self):
         '''
         Run solverADjoint to verify the partial derivatives in the ADjoint
@@ -1268,7 +1343,13 @@ class SUMB(AeroSolver):
         dxv_solver = self.sumb.getdrdxvpsi(ndof)
         self.mesh.WarpDeriv(dxv_solver)
         pforces = self.mesh.getdXs(group_name)
+    
         return pforces
+
+    def getdRdaPsi(self):
+        dIda = self.sumb.getdrdapsi(self.nDVAero)
+
+        return dIda
 
     def getdIdx(self,objective,group_name,forcePoints=None):
         if forcePoints is None:
@@ -1277,11 +1358,29 @@ class SUMB(AeroSolver):
         obj_num = self.SUmbCostfunctions[
             self.possibleObjectives[objective.lower()]]
 
-        dIdpts = self.sumb.computeobjpartials(obj_num,forcePoints.T).T
+        [dIdpts_temp,dIda] = self.sumb.computeobjpartials(
+            obj_num, forcePoints.T, self.nDVAero)
+        dIdpts = dIdpts_temp.T
+
         dIdpts = self.mesh.solver_to_warp_force(group_name,dIdpts)
 
         return dIdpts
 
+    def getdIda(self,objective,forcePoints=None):
+        if forcePoints is None:
+            forcePoints = self.getForcePoints()
+        # end if
+        obj_num = self.SUmbCostfunctions[
+            self.possibleObjectives[objective.lower()]]
+
+        [dIdpts_temp,dIda_local] = self.sumb.computeobjpartials(
+            obj_num, forcePoints.T, self.nDVAero)
+
+        # We must MPI all reuduce
+        dIda = self.comm.allreduce(dIda_local, op=MPI.SUM)
+
+        return dIda
+    
     def getdRdwPsi(self):
         nw = self.sumb.flowvarrefstate.nw
         dRdwPsi = self.sumb.getdrdwtpsi(self.sumb.adjointvars.ncellslocal*nw)

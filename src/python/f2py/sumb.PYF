@@ -203,18 +203,21 @@ python module sumb ! in
 
        subroutine setupallresidualmatrices ! in :sumb:../../adjoint/setupADjointMatrix.F90
        end subroutine setupallresidualmatrices
-
-       subroutine computeobjpartials(costfunction,pts,npts,didpts) ! in :test:computeObjPartials.f90
+       
+       subroutine computeobjpartials(costfunction,pts,npts,didpts,dida,ndv) ! in :test:computeObjPartials.F90
          integer(kind=inttype) intent(in) :: costfunction
          real(kind=realtype) dimension(3,npts),intent(in) :: pts
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
          real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: didpts
+         real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: dida
+         integer(kind=inttype) intent(in) :: ndv
        end subroutine computeobjpartials
 
-       subroutine matrixinfo(pdrdwt,pdrdwpret,pdrdx,pdfdw,pdfdx,plocal,psum,pmax) ! in :test:matrixInfo.F90
+       subroutine matrixinfo(pdrdwt,pdrdwpret,pdrdx,pdrda,pdfdw,pdfdx,plocal,psum,pmax) ! in :test:matrixInfo.F90
          logical intent(in) :: pdrdwt
          logical intent(in) :: pdrdwpret
          logical intent(in) :: pdrdx
+         logical intent(in) :: pdrda
          logical intent(in) :: pdfdw
          logical intent(in) :: pdfdx
          logical intent(in) :: plocal
@@ -229,6 +232,11 @@ python module sumb ! in
          integer(kind=inttype) intent(in) :: ndof
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
        end subroutine getdrdxvpsi
+
+       subroutine getdrdapsi(ndv,output) ! in :test:getdRdaPsi.F90
+            integer(kind=inttype) intent(in) :: ndv
+            real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
+        end subroutine getdrdapsi
 
        subroutine getdrdwtpsi(ndof,drdwtpsi)
          integer(kind=inttype) intent(in) :: ndof
@@ -783,28 +791,28 @@ python module sumb ! in
          integer(kind=inttype) :: nnodesglobal
          integer(kind=inttype) :: ncelloffsetlocal
          real(kind=realtype) parameter,optional :: adjrelfd=1.0e-5_realtype
-         integer(kind=inttype) parameter,optional :: ndesignpointrefz=13
+         integer(kind=inttype) :: ndesignpointrefz
          real(kind=realtype) parameter,optional :: adjepsfd=1.0e-4_realtype
-         integer(kind=inttype) parameter,optional :: ndesignpointrefy=12
-         integer(kind=inttype) parameter,optional :: ndesignssa=2
+         integer(kind=inttype) :: ndesignpointrefy
+         integer(kind=inttype) :: ndesignssa
          integer(kind=inttype) :: ndesignextra
-         integer(kind=inttype) parameter,optional :: ndesignrotcenx=8
+         integer(kind=inttype) :: ndesignrotcenx
          integer(kind=inttype) :: ncellslocal
-         real(kind=realtype) parameter,optional :: adjabsfd=1.0e-5_realtype
-         integer(kind=inttype) parameter,optional :: ndesignpointrefx=11
+         integer(kind=inttype) :: ndesignpointrefx
          integer(kind=inttype) :: ncellsglobal
-         integer(kind=inttype) parameter,optional :: ndesignrotz=7
+         integer(kind=inttype) :: ndesignrotz
          integer(kind=inttype) :: nnodeslocal
-         integer(kind=inttype) parameter,optional :: ndesignrotx=5
-         integer(kind=inttype) parameter,optional :: ndesignroty=6
-         integer(kind=inttype) parameter,optional :: ndesignrotcenz=10
+         integer(kind=inttype) :: ndesignrotx
+         integer(kind=inttype) :: ndesignroty
+         integer(kind=inttype) :: ndesignrotcenz
          integer(kind=inttype) :: nnodeoffsetlocal
-         integer(kind=inttype) parameter,optional :: ndesignaoa=1
+         integer(kind=inttype) :: ndesignaoa
          integer(kind=inttype) :: nsurfnodesglobal
-         integer(kind=inttype) parameter,optional :: ndesignrotceny=9
-         integer(kind=inttype) parameter,optional :: ndesignmachgrid=4
+         integer(kind=inttype) :: ndesignrotceny
+         real(kind=realtype) parameter,optional :: adjabsfd=1.0e-5_realtype
+         integer(kind=inttype) :: ndesignmachgrid
          integer(kind=inttype) :: nsurfnodeslocal
-         integer(kind=inttype) parameter,optional :: ndesignmach=3
+         integer(kind=inttype) :: ndesignmach
        end module adjointvars
 
        module inputtsstabderiv ! in :test:inputParam.f90

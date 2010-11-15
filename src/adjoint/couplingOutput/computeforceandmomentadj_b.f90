@@ -52,7 +52,8 @@
    REAL(kind=realtype), INTENT(IN) :: wblock(0:ib, 0:jb, 0:kb, nw)
    REAL(kind=realtype) :: wblockb(0:ib, 0:jb, 0:kb, nw)
    LOGICAL, INTENT(IN) :: righthandedadj
-   INTEGER(kind=inttype), INTENT(IN) :: faceid, ii_start
+   INTEGER(kind=inttype), INTENT(IN) :: faceid
+   INTEGER(kind=inttype), INTENT(IN) :: ibeg, iend, jbeg, jend, ii_start
    ! Local Variables
    INTEGER(kind=inttype) :: ii
    REAL(kind=realtype) :: addforce(3), addmoment(3), refpoint(3)
@@ -61,8 +62,7 @@
    REAL(kind=realtype) :: liftdirb(3), dragdirb(3)
    REAL(kind=realtype) :: grid_pts(3, 3, 3), wadj(2, 2, 2, nw)
    REAL(kind=realtype) :: grid_ptsb(3, 3, 3), wadjb(2, 2, 2, nw)
-   INTEGER(kind=inttype) :: ibeg, iend, jbeg, jend, istride, jstride, i, &
-   &  j
+   INTEGER(kind=inttype) :: istride, jstride, i, j
    INTEGER(kind=inttype) :: iii, jjj, kkk
    INTEGER(kind=inttype) :: lower_left, lower_right, upper_left, &
    &  upper_right
@@ -143,7 +143,7 @@
    CALL PUSHINTEGER4(2)
    CASE (jmin) 
    CALL PUSHREAL8ARRAY(fact, realtype/8)
-   fact = -1_realType
+   fact = 1_realType
    DO kkk=1,2
    wadj(kkk, 1, 1, :) = wblock(i, kkk+1, j, :)
    wadj(kkk, 2, 1, :) = wblock(i+1, kkk+1, j, :)
@@ -153,7 +153,7 @@
    CALL PUSHINTEGER4(3)
    CASE (jmax) 
    CALL PUSHREAL8ARRAY(fact, realtype/8)
-   fact = 1_realType
+   fact = -1_realType
    DO kkk=1,2
    wadj(kkk, 1, 1, :) = wblock(i, jb-kkk-1, j, :)
    wadj(kkk, 2, 1, :) = wblock(i+1, jb-kkk-1, j, :)
@@ -202,8 +202,8 @@
    &                               veldirfreestreamadj, liftdir, dragdir, &
    &                               liftindex)
    ! Take Dot Products ... this won't AD properly so we will write explictly
-   !Lift = dot_product(Force,liftDirectionAdj)
-   !Drag = dot_product(Force,dragDirectionAdj)
+   !Lift = dot_product(Force,liftDir)
+   !Drag = dot_product(Force,dragDir)
    lift = force(1)*liftdir(1) + force(2)*liftdir(2) + force(3)*liftdir(3)
    drag = force(1)*dragdir(1) + force(2)*dragdir(2) + force(3)*dragdir(3)
    CALL PUSHREAL8ARRAY(fact, realtype/8)
