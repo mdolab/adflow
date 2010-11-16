@@ -542,11 +542,11 @@ class SUMB(AeroSolver):
             self.monnames[string.strip(
                     self.sumb.monitor.monnames[i].tostring())] = i
         # end for
-
+      
         # Setup External Warping
         meshInd = self.getMeshIndices()
         self.mesh.setExternalMeshIndices(meshInd)
-
+       
         forceInd = self.getForceIndices()
         self.mesh.setExternalForceIndices(forceInd)
         
@@ -843,11 +843,11 @@ class SUMB(AeroSolver):
             print 'unsteady not implemented yet...'
             sys.exit(0)
         #endif
-
+        self.sumb.killsignals.routinefailed = False
         self._UpdatePeriodInfo()
         self._UpdateGeometryInfo()
         self._UpdateVelocityInfo()
-
+        
         if self.sumb.killsignals.routinefailed:
             self.solve_failed = True
             return
