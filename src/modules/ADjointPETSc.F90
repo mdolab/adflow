@@ -136,6 +136,7 @@
       Mat     dRdWT,dRdWPreT
       Mat     dRda, dRdx,dFdw,dFdx
       Vec     psi, dJdW, pvr
+      Vec     dJdx
       Vec     gridVec
       Vec     dRdaTPsi,dRdaTPsi_local
       Vec     wVec,xVec

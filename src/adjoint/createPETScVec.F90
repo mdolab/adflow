@@ -49,6 +49,20 @@ subroutine createPETScVec
   call VecDuplicate(dJdW, pvr, PETScIerr)
   call EChk(PETScIerr,__file__,__line__)
 
+  !
+  !     ******************************************************************
+  !     *                                                                *
+  !     * Vectors of length nDimS
+  !     *                                                                *
+  !     ******************************************************************
+
+  call MatGetVecs(dFdx,dJdx,PETSC_NULL_OBJECT,PETScIerr)
+  call EChk(PETScIerr,__file__,__line__)
+
+
 #endif
+
+
+
 
 end subroutine createPETScVec

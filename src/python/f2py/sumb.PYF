@@ -203,12 +203,11 @@ python module sumb ! in
 
        subroutine setupallresidualmatrices ! in :sumb:../../adjoint/setupADjointMatrix.F90
        end subroutine setupallresidualmatrices
-       
-       subroutine computeobjpartials(costfunction,pts,npts,didpts,dida,ndv) ! in :test:computeObjPartials.F90
+
+       subroutine computeobjpartials(costfunction,pts,npts,dida,ndv) ! in :test:computeObjPartials.F90
          integer(kind=inttype) intent(in) :: costfunction
          real(kind=realtype) dimension(3,npts),intent(in) :: pts
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
-         real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: didpts
          real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: dida
          integer(kind=inttype) intent(in) :: ndv
        end subroutine computeobjpartials
