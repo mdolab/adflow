@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 
-subroutine computeObjPartials(costFunction,pts,npts,dIdpts,dIda,nDv)
+subroutine computeObjPartials(costFunction,pts,npts,dIda,nDv)
   !
   !     ******************************************************************
   !     *                                                                *
@@ -39,7 +39,6 @@ subroutine computeObjPartials(costFunction,pts,npts,dIdpts,dIda,nDv)
   integer(kind=intType), intent(in) :: costFunction, npts, nDv
   real(kind=realType), intent(in) :: pts(3,npts)
   real(kind=realType) :: ptsb(3,npts)
-  real(kind=realType),intent(out) :: dIdpts(3,npts)
   real(kind=realType),intent(out) :: dIda(nDv)
 
   ! Variables for computeforceandmomentadj_b
@@ -75,6 +74,7 @@ subroutine computeObjPartials(costFunction,pts,npts,dIdpts,dIda,nDv)
   integer(kind=intTYpe) :: i,j,icell,jcell,kcell,nn,mm,idxmgb,faceID,ibeg,iend,jbeg,jend
   real(kind=realType) :: dIdctemp,val
   real(kind=realType) :: dJdc(nTimeIntervalsSpectral)
+  integer(kind=intType) :: row_start,row_end
 
   ! Copy over values we need for the computeforcenadmoment call:
   MachCoefAdj = MachCoef
@@ -85,7 +85,6 @@ subroutine computeObjPartials(costFunction,pts,npts,dIdpts,dIda,nDv)
   pointRefAdj(2) = pointRef(2)
   pointRefAdj(3) = pointRef(3)
    
-  dIdpts = 0.0
   dIda = 0.0
   select case(costFunction)
   case(costFuncLift,costFuncDrag, &
@@ -185,8 +184,14 @@ subroutine computeObjPartials(costFunction,pts,npts,dIdpts,dIda,nDv)
   ! Now we have dJdc on each processor...when we go through the
   ! reverse mode AD we can take the dot-products on the fly SUM the
   ! entries into dJdw
-  call VecZeroEntries(dJdw,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call VecZeroEntries(dJdw,ierr)
+  call EChk(ierr,__file__,__line__)
+
+  call VecZeroEntries(dJdx,ierr)
+  call EChk(ierr,__file__,__line__)
+
+  call VecGetOwnershipRange(dJdx,row_start,row_end,ierr)
+  call EChk(ierr,__file__,__line__)
 
   spectralLoopAdj: do sps=1,nTimeIntervalsSpectral
      ii = 0 
@@ -284,9 +289,11 @@ subroutine computeObjPartials(costFunction,pts,npts,dIdpts,dIda,nDv)
               do j=jBeg,jEnd
                  do i=iBeg,iEnd
                     ! This takes care of the ii increments -- 
-                    ! DO NOT NEED LINE BELOW
+                    ! DO NOT NEED INCREMENT ON LINE BELOW
                     ii = ii + 1
-                    dIdpts(:,ii) = dIdpts(:,ii) + ptsb(:,ii)
+                    call VecSetValuesBlocked(dJdx,1,row_start+ii-1,ptsb(:,ii),&
+                         ADD_VALUES,PETScIerr)
+                    call EChk(PETScIerr,__file__,__line__)
                  end do
               end do
               !ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
@@ -325,8 +332,15 @@ subroutine computeObjPartials(costFunction,pts,npts,dIdpts,dIda,nDv)
      end do domainLoopAD
   end do spectralLoopAdj
 
-  ! Assemble the petsc vector
+  ! Assemble the petsc vectors
   call VecAssemblyBegin(dJdw,PETScIerr)
+  call EChk(PETScIerr,__file__,__line__)
   call VecAssemblyEnd(dJdw,PETScIerr)
- 
+  call EChk(PETScIerr,__file__,__line__)
+
+  call VecAssemblyBegin(dJdx,PETScIerr)
+  call EChk(PETScIerr,__file__,__line__)
+  call VecAssemblyEnd(dJdx,PETScIerr)
+  call EChk(PETScIerr,__file__,__line__)
+
 end subroutine computeObjPartials

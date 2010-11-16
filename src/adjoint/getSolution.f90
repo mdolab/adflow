@@ -9,15 +9,7 @@
 !     ******************************************************************
 !
 subroutine getSolution(sps)
-  !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * designExport compiles all the design data - functions and      *
-  !     *   their gradients, and design variable values - to export to   *
-  !     *   an optimizer.                                                *
-  !     *                                                                *
-  !     ******************************************************************
-  !
+
   use costFunctions
   use inputTSStabDeriv !TSStability
   use communication
@@ -31,22 +23,6 @@ subroutine getSolution(sps)
   real(kind=realType) :: cl0,cd0,cmz0,dcldalpha,dcddalpha,dcmzdalpha
   real(kind=realType) :: dcmzdalphadot,dcmzdq
   real(kind=realType),dimension(:),allocatable :: localVal,globalVal
-
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Begin execution.                                               *
-  !     *                                                                *
-  !     ******************************************************************
-  !
-  ! Set the relevant grid level and time instance.
-
-  !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Function mapping.                                              *
-  !     *                                                                *
-  !     ******************************************************************
-  !
   ! Function values
 
   if (.not. allocated(functionValue)) then

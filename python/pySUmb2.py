@@ -972,7 +972,7 @@ class SUMB(AeroSolver):
         if len(cfd_force_pts) > 0:
             forces = self.sumb.getforces(cfd_force_pts.T).T
         else:
-            forces = numpy.empty([0],dtype=self.dtype)
+            forces = numpy.empty((0,3),dtype=self.dtype)
         # end if
             
         return self.mesh.solver_to_warp_force(group_name,forces)
@@ -982,7 +982,7 @@ class SUMB(AeroSolver):
         if npts > 0:
             return self.sumb.getforcepoints(npts).T
         else:
-            return numpy.empty([0],dtype=self.dtype)
+            return numpy.empty((0,3),dtype=self.dtype)
         # end if
 
     def verifyForces(self,cfd_force_pts=None):
@@ -1124,10 +1124,9 @@ class SUMB(AeroSolver):
         # end if
 
         # Setup the RHS
-        obj_num = self.SUmbCostfunctions[self.possibleObjectives[objective.lower()]]
-        [dIdpts_temp, dIda] = self.sumb.computeobjpartials(
-            obj_num,forcePoints.T,self.nDVAero)
-        dIdpts = dIdpts_temp.T
+        self.computeObjPartials(obj_num,forcePoints)
+        sys.exit(0)
+
 
         if 'structAdjoint' in kwargs and 'group_name' in kwargs:
             group_name = kwargs['group_name']
@@ -1397,6 +1396,12 @@ class SUMB(AeroSolver):
 
         return dFdxVec
 
+    def computeObjPartials(self,obj_num,forcePoints):
+
+        dIda = self.sumb.computeobjpartials(obj_num,forcePoints.T,self.nDVAero)
+
+        return 
+        
     def finalizeAdjoint(self):
         '''
         destroy the PESTcKSP context
