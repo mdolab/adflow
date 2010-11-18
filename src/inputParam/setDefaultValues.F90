@@ -179,6 +179,7 @@
        L2ConvCoarse = 1.e-2_realType      ! Only two on coarse grids in
                                           ! full mg.
 
+       maxL2DeviationFactor = 1_realType
        nCyclesCoarse = -1             ! If these parameters are not
        cflCoarse     = -one           ! specified the corresponding fine
                                       ! grid values are taken.

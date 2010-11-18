@@ -40,6 +40,7 @@ subroutine preprocessingADjoint
   ! Allocate the memory for the global cell indexing of the
   ! computational mesh, later used to assemble the global
   ! adjoint system of equations.
+
   call allocMemADjoint(level)
 
   ! Determine the global cell and Node numbering.

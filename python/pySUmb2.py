@@ -86,6 +86,7 @@ class SUMB(AeroSolver):
             'L2Convergence':[float,1e-6],
             'L2ConvergenceRel':[float,1e-16],
             'L2ConvergenceCoarse':[float,1e-2], 
+            'maxL2DeviationFactor':[float,1.0],
             'MGCycle':[str,'3w'],
             'metricConversion':[float,1.0],
             'storeHistory':[bool,False],
@@ -349,6 +350,7 @@ class SUMB(AeroSolver):
                  'L2Convergence':{'location':'inputiteration.l2conv'},
                  'L2ConvergenceRel':{'location':'inputiteration.l2convrel'},
                  'L2ConvergenceCoarse':{'location':'inputiteration.l2convcoarse'},
+                 'maxL2DeviationFactor':{'location':'inputiteration.maxl2deviationfactor'},
                  'refTemp.':{'location':'flowvarrefstate.tref'},
                  'refPressure':{'location':'flowvarrefstate.pref'},
                  'refDensity':{'location':'flowvarrefstate.rhoref'},
@@ -485,7 +487,10 @@ class SUMB(AeroSolver):
         # in fortran
         self.allInitialized = False    # All flow solver initialization   
         self.adjointInitialized = False # Petsc Mat/Vec/Ksp Object Creation
-        self.adjointSetup = False # Adjoint matrices assembled
+        self.adjointMatrixSetup = False # Adjoint matrices assembled
+        self.adjointRHS         = None # When this is setup, it has
+                                       # the current objective
+        
 
         self._update_geom_info = True
         self._update_period_info = True
@@ -690,13 +695,15 @@ class SUMB(AeroSolver):
         
         Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
         '''
-        # As soon as we run more iterations, adjoint matrices are not
-        # valid so set their flag to False
-        self.adjointSetup = False 
+        # As soon as we run more iterations, adjoint matrices and
+        # objective partials (dIdw,dIdx,dIda) are not valid so set
+        # their flag to False
+        self.adjointMatrixSetup = False 
+        self.adjointRHS         = None
 
         self.initialize(aero_problem,sol_type,grid_file,*args,**kwargs)
 
-        #set inflow angle
+        #set inflow angle,refpoint etc.
         self.setInflowAngle(aero_problem)
         self.setReferencePoint(aero_problem)
         self.setRotationRate(aero_problem)
@@ -847,7 +854,12 @@ class SUMB(AeroSolver):
         self._UpdatePeriodInfo()
         self._UpdateGeometryInfo()
         self._UpdateVelocityInfo()
-        
+
+
+        self.sumb.killsignals.routinefailed = \
+            self.comm.allreduce(
+            bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
+
         if self.sumb.killsignals.routinefailed:
             self.solve_failed = True
             return
@@ -1023,6 +1035,7 @@ class SUMB(AeroSolver):
         # Set the required paramters for the aero-Only design vars:
         self.nDVAero = len(self.aeroDVs)
         self.sumb.adjointvars.ndesignextra = self.nDVAero
+        self.sumb.adjointvars.dida = numpy.zeros(self.nDVAero)
 
         for i in xrange(self.nDVAero):
             exec_str = 'self.sumb.' + self.possibleAeroDVs[self.aeroDVs[i]] + \
@@ -1076,7 +1089,7 @@ class SUMB(AeroSolver):
         Setup the adjoint matrix for the current solution
         '''
         
-        if not self.adjointSetup:
+        if not self.adjointMatrixSetup:
             self.sumb.setupallresidualmatrices()
             if forcePoints is None:
                 forcePoints = self.getForcePoints()
@@ -1086,7 +1099,7 @@ class SUMB(AeroSolver):
             self.sumb.setuppetscksp()
             self.mesh.setupWarpDeriv()
 
-            self.adjointSetup = True
+            self.adjointMatrixSetup = True
         # end if
 
         return
@@ -1109,25 +1122,30 @@ class SUMB(AeroSolver):
         return
 
     def _on_adjoint(self,objective,forcePoints=None,*args,**kwargs):
+
+        obj = self.possibleObjectives[objective.lower()]
+
+        if forcePoints is None:
+            forcePoints = self.getForcePoints()
+        # end if
         
         # Check to see if adjoint is initialized:
         if not self.adjointInitialized:
             self.initAdjoint()
         # end if
-
-        if not self.adjointSetup:
+        
+        # Check to see if the adjoint Matrix is setup:
+        if not self.adjointMatrixSetup:
             self.setupAdjoint(forcePoints)
         # end if
 
-        if forcePoints is None:
-            forcePoints = self.getForcePoints()
+        # Check to see if the RHS Partials have been computed
+        if not self.adjointRHS == obj:
+            self.computeObjPartials(obj,forcePoints)
         # end if
-
-        # Setup the RHS
-        self.computeObjPartials(obj_num,forcePoints)
-        sys.exit(0)
-
-
+            
+        # Check to see if we need to agument the RHS with a structural
+        # adjoint:
         if 'structAdjoint' in kwargs and 'group_name' in kwargs:
             group_name = kwargs['group_name']
             phi = kwargs['structAdjoint']
@@ -1135,13 +1153,9 @@ class SUMB(AeroSolver):
             self.sumb.agumentrhs(solver_phi)
         # end if
 
-        restart = self.getOption('restartAdjoint')
-
         nw = self.sumb.flowvarrefstate.nw
-        obj = self.possibleObjectives[objective.lower()]
-
         # If we have saved adjoints, 
-        if restart:
+        if self.getOption('restartAdjoint'):
             # Objective is already stored, so just set it
             if obj in self.storedADjoints.keys():
                 self.sumb.setadjoint(self.storedADjoints[obj])
@@ -1155,7 +1169,7 @@ class SUMB(AeroSolver):
         # Actually Solve the adjoint system
         self.sumb.solveadjointtransposepetsc()
 
-        if restart:
+        if self.getOption('restartAdjoint'):
             self.storedADjoints[obj] =  self.sumb.getadjoint(self.sumb.adjointvars.ncellslocal*nw)
         # end if
 
@@ -1180,7 +1194,7 @@ class SUMB(AeroSolver):
         # Direct partial derivative contibution 
         dIdxs_1 = self.getdIdx(objective,'all')
 
-        # dIdx contribution for drdx^T * psi
+        ## dIdx contribution for drdx^T * psi
         dIdxs_2 = self.getdRdXvPsi('all')
         
         # Total derivative of the obective with surface coordinates
@@ -1342,7 +1356,7 @@ class SUMB(AeroSolver):
         dxv_solver = self.sumb.getdrdxvpsi(ndof)
         self.mesh.WarpDeriv(dxv_solver)
         pforces = self.mesh.getdXs(group_name)
-    
+        
         return pforces
 
     def getdRdaPsi(self):
@@ -1350,35 +1364,6 @@ class SUMB(AeroSolver):
 
         return dIda
 
-    def getdIdx(self,objective,group_name,forcePoints=None):
-        if forcePoints is None:
-            forcePoints = self.getForcePoints()
-        # end if
-        obj_num = self.SUmbCostfunctions[
-            self.possibleObjectives[objective.lower()]]
-
-        [dIdpts_temp,dIda] = self.sumb.computeobjpartials(
-            obj_num, forcePoints.T, self.nDVAero)
-        dIdpts = dIdpts_temp.T
-
-        dIdpts = self.mesh.solver_to_warp_force(group_name,dIdpts)
-
-        return dIdpts
-
-    def getdIda(self,objective,forcePoints=None):
-        if forcePoints is None:
-            forcePoints = self.getForcePoints()
-        # end if
-        obj_num = self.SUmbCostfunctions[
-            self.possibleObjectives[objective.lower()]]
-
-        [dIdpts_temp,dIda_local] = self.sumb.computeobjpartials(
-            obj_num, forcePoints.T, self.nDVAero)
-
-        # We must MPI all reuduce
-        dIda = self.comm.allreduce(dIda_local, op=MPI.SUM)
-
-        return dIda
     
     def getdRdwPsi(self):
         nw = self.sumb.flowvarrefstate.nw
@@ -1396,11 +1381,50 @@ class SUMB(AeroSolver):
 
         return dFdxVec
 
-    def computeObjPartials(self,obj_num,forcePoints):
+    def computeObjPartials(self,objective,forcePoints=None):
+        obj = self.possibleObjectives[objective.lower()]
 
-        dIda = self.sumb.computeobjpartials(obj_num,forcePoints.T,self.nDVAero)
+        if forcePoints is None:
+            forcePoints = self.getForcePoints()
 
+        obj_num = self.SUmbCostfunctions[obj]
+        if not obj == self.adjointRHS:
+            self.sumb.computeobjpartials(obj_num,forcePoints.T)
+            self.adjointRHS = obj
+        # end if
         return 
+
+    def getdIdx(self,objective,group_name,forcePoints=None):
+
+        if forcePoints is None:
+            forcePoints = self.getForcePoints()
+        # end for
+        self.computeObjPartials(objective,forcePoints)
+
+        if len(forcePoints > 0):
+            dIdpts = self.sumb.getdidx(len(forcePoints)*3)
+            dIdpts.reshape(forcePoints.shape)
+        else:
+            dIdpts = zeros((0,3),self.dtype)
+        # end if
+
+        dIdpts = self.mesh.solver_to_warp_force(group_name,dIdpts)
+
+        return dIdpts
+
+    def getdIda(self,objective,forcePoints=None):
+        if forcePoints is None:
+            forcePoints = self.getForcePoints()
+        # end if
+
+        self.computeObjPartials(objective,forcePoints)
+        
+        dIda_local = self.sumb.adjointvars.dida
+
+        # We must MPI all reuduce
+        dIda = self.comm.allreduce(dIda_local, op=MPI.SUM)
+
+        return dIda
         
     def finalizeAdjoint(self):
         '''

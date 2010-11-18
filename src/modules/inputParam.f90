@@ -353,6 +353,7 @@
        real(kind=realType) :: alfaTurb, betaTurb
        real(kind=realType) :: L2Conv, L2ConvCoarse
        real(kind=realType) :: L2ConvRel
+       real(kind=realType) :: maxL2DeviationFactor
        real(kind=realType) :: relaxBleeds
 
        real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK

@@ -204,13 +204,21 @@ python module sumb ! in
        subroutine setupallresidualmatrices ! in :sumb:../../adjoint/setupADjointMatrix.F90
        end subroutine setupallresidualmatrices
 
-       subroutine computeobjpartials(costfunction,pts,npts,dida,ndv) ! in :test:computeObjPartials.F90
+       subroutine computeobjpartials(costfunction,pts,npts) ! in :test:computeObjPartials.F90
          integer(kind=inttype) intent(in) :: costfunction
          real(kind=realtype) dimension(3,npts),intent(in) :: pts
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
-         real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: dida
-         integer(kind=inttype) intent(in) :: ndv
        end subroutine computeobjpartials
+
+       subroutine getdidw(ndof,output) ! in :test:computeObjPartials.F90
+         integer(kind=inttype) intent(in) :: ndof
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: output
+       end subroutine getdidw
+
+       subroutine getdidx(ndof,output) ! in :test:computeObjPartials.F90
+         integer(kind=inttype) intent(in) :: ndof
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: output
+       end subroutine getdidx
 
        subroutine matrixinfo(pdrdwt,pdrdwpret,pdrdx,pdrda,pdfdw,pdfdx,plocal,psum,pmax) ! in :test:matrixInfo.F90
          logical intent(in) :: pdrdwt
@@ -809,6 +817,7 @@ python module sumb ! in
          integer(kind=inttype) :: nsurfnodesglobal
          integer(kind=inttype) :: ndesignrotceny
          real(kind=realtype) parameter,optional :: adjabsfd=1.0e-5_realtype
+         real(kind=realtype) allocatable,dimension(:) :: dida
          integer(kind=inttype) :: ndesignmachgrid
          integer(kind=inttype) :: nsurfnodeslocal
          integer(kind=inttype) :: ndesignmach

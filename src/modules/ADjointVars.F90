@@ -46,6 +46,7 @@
       
       integer(kind=intType) :: nDesignExtra
 
+      real(kind=realType),dimension(:),allocatable :: dIda
       
 !     ******************************************************************
 !     *                                                                *
