@@ -1405,7 +1405,7 @@ class SUMB(AeroSolver):
             dIdpts = self.sumb.getdidx(len(forcePoints)*3)
             dIdpts.reshape(forcePoints.shape)
         else:
-            dIdpts = zeros((0,3),self.dtype)
+            dIdpts = numpy.zeros((0),self.dtype)
         # end if
 
         dIdpts = self.mesh.solver_to_warp_force(group_name,dIdpts)
