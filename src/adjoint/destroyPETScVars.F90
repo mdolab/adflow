@@ -66,7 +66,10 @@
       call VecDestroy(dJdW, PETScIerr)
       call EChk(PETScIerr,__file__,__line__)
 
-      call VecDestroy(pvr, PETScIerr)
+      call VecDestroy(adjointRHS, PETScIerr)
+      call EChk(PETScIerr,__file__,__line__)
+
+      call VecDestroy(adjointRes, PETScIerr)
       call EChk(PETScIerr,__file__,__line__)
 
       call VecDestroy(dJdx, PETScIerr)

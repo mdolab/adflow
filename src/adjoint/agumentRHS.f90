@@ -31,11 +31,8 @@ subroutine agumentRHS(ndof,phi)
   real(kind=realType) :: val
   call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DETERMINE,phi,phic,ierr)
 
-  ! Dump the result temporily into pvr
-  call MatMultTranspose(dFdw,phic,pvr,ierr)
-
-  ! Computes y = alpha x + y. 
-  call VecAXPY(dJdW,1.0,pvr,ierr)
+  ! Dump the result into adjointRHS
+  call MatMultTranspose(dFdw,phic,adjointRHS,ierr)
 
   call vecDestroy(phic,ierr)
 end subroutine agumentRHS

@@ -32,8 +32,7 @@ subroutine getdRdaPsi(ndv,output)
 
   ! Create the result vector for dRda^T * psi
 
-  ! Shove the result into wVec, we will delete it at the end anyway
-  call MatGetVecs(dRda,dRdaTPsi,PETSC_NULL_OBJECT,ierr)
+  call MatGetVecs(dRda,dRdaTPsi,wVec,ierr)
   call EChk(ierr,__file__,__line__)
   call MatMultTranspose(dRda,psi,dRdaTPsi,ierr)
   call EChk(ierr,__file__,__line__)
@@ -65,6 +64,9 @@ subroutine getdRdaPsi(ndv,output)
   call EChk(ierr,__file__,__line__)
 
   call VecDestroy(dRdaTpsi_local,ierr)
+  call EChk(ierr,__file__,__line__)
+
+  call VecDestroy(wVec,ierr)
   call EChk(ierr,__file__,__line__)
   
 end subroutine getdRdaPsi

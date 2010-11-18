@@ -27,7 +27,7 @@ subroutine createPETScVec
   use flowVarRefState ! 
   use mdData          ! mdNSurfNodesCompact
   implicit none
- 
+  integer(kind=intType) :: bs
 
 #ifndef USE_NO_PETSC
 
@@ -38,31 +38,37 @@ subroutine createPETScVec
   !     *                                                                *
   !     ******************************************************************
 
-  call MatGetVecs(dRdwT,dJdW,PETSC_NULL_OBJECT,PETScIerr)
+  ! Get dJdw and psi from one MatGetVecs Call
+  call MatGetVecs(dRdwT,dJdW,psi,PETScIerr)
   call EChk(PETScIerr,__file__,__line__)
 
-  call VecDuplicate(dJdW, psi, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
-  call VecSet(psi,PETScZero,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
-
-  call VecDuplicate(dJdW, pvr, PETScIerr)
+  ! adjointRes is the same size as dJdw,psi
+  call VecDuplicate(dJdW, adjointRes, PETScIerr)
   call EChk(PETScIerr,__file__,__line__)
 
-  !
+  call VecDuplicate(dJdW, adjointRHS, PETScIerr)
+  call EChk(PETScIerr,__file__,__line__)
+
   !     ******************************************************************
   !     *                                                                *
   !     * Vectors of length nDimS
   !     *                                                                *
   !     ******************************************************************
 
-  call MatGetVecs(dFdx,dJdx,PETSC_NULL_OBJECT,PETScIerr)
+  call MatGetVecs(dFdx,dJdx,wVec,PETScIerr)
+  call EChk(PETScIerr,__file__,__line__)
+
+  call VecSetBlockSize(dJdx,3,PETScIerr)
+  call EChk(PETScierr,__file__,__line__)
+ 
+  ! Destroy wVec created above. MatGetVecs DOES NOT WORK CORRECTLY IN
+  ! FORTRAN. You MUST provide two arguments to MatGetVecs (not a
+  ! PETSC_NULL_OBJECT) since this will LEAK MEMORY.
+
+  call VecDestroy(wVec,PETScIerr)
   call EChk(PETScIerr,__file__,__line__)
 
 
 #endif
-
-
-
 
 end subroutine createPETScVec

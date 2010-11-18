@@ -117,10 +117,7 @@
       !       dJdW(il,jl,kl,nw) in each local domain mapped to a vector.
       !       Size[nNodes*nw].
       !            
-      ! pvr   Residual vector (r=Ax-b) used to verify the adjoint 
-      !       vector solution ( residual = [dRdW]^T {psi} - {dJdw} ).
-      !       Size[nNodes*nw].
-      !
+
       ! phic  Structural adjoint vector cast through the mapping onto
       !        the CFD surface. Size [nSurfNodes*3]...Possible changes to 
       !       this defintion in the future
@@ -135,7 +132,7 @@
 
       Mat     dRdWT,dRdWPreT
       Mat     dRda, dRdx,dFdw,dFdx
-      Vec     psi, dJdW, pvr
+      Vec     psi, dJdW, adjointRHS,adjointRes
       Vec     dJdx
       Vec     gridVec
       Vec     dRdaTPsi,dRdaTPsi_local

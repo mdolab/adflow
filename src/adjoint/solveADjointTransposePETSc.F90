@@ -36,8 +36,6 @@
       real(kind=realType), dimension(2) :: time
       real(kind=realType)               :: timeAdjLocal, timeAdj,l2abs,curRes
 
-      character(len=2*maxStringLen) :: errorMessage
-!
 !     ******************************************************************
 !     *                                                                *
 !     * Begin execution.                                               *
@@ -56,15 +54,13 @@
       call cpu_time(time(1))
 
       if (restartADjoint) then
-         !THe user wants to restart the adjoint from the last point. Set
+         !The user wants to restart the adjoint from the last point. Set
          !initial guess non-zero to true instead of zeroing the vector
          call KSPSetInitialGuessNonzero(ksp,PETSC_TRUE,PETScIerr)
 
       else
          call VecSet(psi,PETScZero,PETScIerr)
-         
-         if( PETScIerr/=0 ) &
-              call terminate("solveADjointPETSc", "Error in VecSet")
+         call EChk(PETScIerr,__file__,__line__)
       end if
 !
 !     ******************************************************************
@@ -78,18 +74,24 @@
 
       call KSPSetResidualHistory(ksp, adjResHist, adjMaxIter, &
                                  PETSC_FALSE, PETScIerr)
+      call EChk(PETScIerr,__file__,__line__)
 
-      if( PETScIerr/=0 ) &
-        call terminate("solveADjointPETSc", & 
-                       "Error in KSPSetResidualHistory.")
-
-      ! Solve the adjoint system of equations [dR/dW]T psi = dJ/dW.
- 
+      ! If the user is doing a MDO problem there may be an
+      ! agumentation to the RHS. This is set in agumentRHS.F90 and
+      ! results in a non-zero vector in adjointRHS. For an aero-only
+      ! problem this vector should be zero at this point. We compute:
+      ! adjointRHS = -adjointRHS + dJdw
+      
+      call VecAYPX(adjointRHS,-1.0,dJdw,PETScIerr)
+      call EChk(PETScIerr,__file__,__line__)
 
       ! Get Current Residual
-      call MatMult(dRdWT,psi,pvr,PETScIerr)
-      call VecAXPY(pvr,PETScNegOne,dJdW,PETScIerr)
-      call VecNorm(pvr,NORM_2,curRes,PETScIerr)  
+      call MatMult(dRdWT,psi,adjointRes,PETScIerr)
+      call EChk(PETScIerr,__file__,__line__)
+      call VecAXPY(adjointRes,PETScNegOne,adjointRHS,PETScIerr)
+      call EChk(PETScIerr,__file__,__line__)
+      call VecNorm(adjointRHS,NORM_2,curRes,PETScIerr)  
+      call EChk(PETScIerr,__file__,__line__)
 
       ! We are only going to overwrite adjRelTol and adjAbsTol
 
@@ -98,16 +100,13 @@
       if (L2Abs < adjAbsTol) then
          L2abs = adjabstol
       end if
- 
- 
+
+      ! Solve the adjoint system of equations [dR/dW]T psi = dJ/dW. 
+
       call KSPSetTolerances(ksp,adjRelTol,L2Abs,adjDivTol,adjMaxIter,PETScIerr)
-
+      call EChk(PETScIerr,__file__,__line__)
       call KSPSolve(ksp,dJdW,psi,PETScIerr)
-
-      if( PETScIerr/=0 ) &
-        call terminate("solveADjointPETSc", &
-                       "Error in KSPSolve.")
-
+      call EChk(PETScIerr,__file__,__line__)
 
       ! Get new time and compute the elapsed time.
       call cpu_time(time(2))
@@ -125,29 +124,22 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      call MatMult(dRdWT,psi,pvr,PETScIerr)
-
-      if( PETScIerr/=0 ) &
-        call terminate("solveADjointPETSc","Error in MatMultTranspose.")
-
-      call VecAXPY(pvr,PETScNegOne,dJdW,PETScIerr)
-
-      if( PETScIerr/=0 ) &
-        call terminate("solveADjointPETSc", "Error in VecAXPY.")
-
-      call VecNorm(pvr,NORM_2,norm,PETScIerr)
-
-      if( PETScIerr/=0 ) &
-        call terminate("solveADjointPETSc", "Error in VecNorm.")
+      call MatMult(dRdWT,psi,adjointRes,PETScIerr)
+      call EChk(PETScIerr,__file__,__line__)
+      
+      call VecAXPY(adjointRes,PETScNegOne,adjointRHS,PETScIerr)
+      call EChk(PETScIerr,__file__,__line__)
+      
+      call VecNorm(adjointRes,NORM_2,norm,PETScIerr)
+      call EChk(PETScIerr,__file__,__line__)
+      
+      ! Finally we MUST zero adjointRHS
+      call VecZeroEntries(adjointRHS,PETscIerr)
+      call EChk(PETScIerr,__file__,__line__)
 
       call KSPGetIterationNumber(ksp,adjConvIts,PETScIerr)
-
-      if( PETScIerr/=0 ) &
-        call terminate("solveADjointPETSc", & 
-                       "Error in KSPGetIterationNumber.")
-
-    
-
+      call EChk(PETScIerr,__file__,__line__)
+      
       ! Use the root processor to display the output summary, such as
       ! the norm of error and the number of iterations
 
@@ -168,7 +160,6 @@
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
-      call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
       ! Output formats.
 

@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 
-subroutine computeObjPartials(costFunction,pts,npts,dIda,nDv)
+subroutine computeObjPartials(costFunction,pts,npts)
   !
   !     ******************************************************************
   !     *                                                                *
@@ -36,10 +36,9 @@ subroutine computeObjPartials(costFunction,pts,npts,dIda,nDv)
   !
   ! Subroutine arguments.
   !
-  integer(kind=intType), intent(in) :: costFunction, npts, nDv
+  integer(kind=intType), intent(in) :: costFunction, npts
   real(kind=realType), intent(in) :: pts(3,npts)
   real(kind=realType) :: ptsb(3,npts)
-  real(kind=realType),intent(out) :: dIda(nDv)
 
   ! Variables for computeforceandmomentadj_b
   real(kind=realtype) :: force(3), cforce(3)
@@ -56,7 +55,7 @@ subroutine computeObjPartials(costFunction,pts,npts,dIda,nDv)
   logical :: righthandedadj
 
   real(kind=realType), dimension(:,:,:,:),allocatable :: wblock,wblockb
-  
+
   ! Variables for TimeSptectral Derivatives
   real(kind=realType), dimension(nTimeIntervalsSpectral)::       &
        ClAdj,CdAdj,CfxAdj,CfyAdj,CfzAdj,   &
@@ -79,12 +78,12 @@ subroutine computeObjPartials(costFunction,pts,npts,dIda,nDv)
   ! Copy over values we need for the computeforcenadmoment call:
   MachCoefAdj = MachCoef
   pointRefAdj = pointRef
-  
+
   call getDirAngle(velDirFreestream,LiftDirection,liftIndex,alphaAdj,betaAdj)
   pointRefAdj(1) = pointRef(1)
   pointRefAdj(2) = pointRef(2)
   pointRefAdj(3) = pointRef(3)
-   
+
   dIda = 0.0
   select case(costFunction)
   case(costFuncLift,costFuncDrag, &
@@ -110,7 +109,7 @@ subroutine computeObjPartials(costFunction,pts,npts,dIda,nDv)
 
      ! We have stability derivative cost functions, so there is a more
      ! complex dependance of J on the values computed at each time instance
-     
+
      ! Get the (sumed) solution values by running getSolution
 
      spectralLoopAdj2: do sps=1,nTimeIntervalsSpectral
@@ -140,7 +139,7 @@ subroutine computeObjPartials(costFunction,pts,npts,dIda,nDv)
      dcmzdalphab = 0.0
      dcmzdalphadotb = 0
      dcmzdqb = 0.0
-     
+
      select case(costFunction)
      case(costfunccl0)
         cl0b=1.0
@@ -175,12 +174,12 @@ subroutine computeObjPartials(costFunction,pts,npts,dIda,nDv)
         case(costfunccm0,costfunccmzalpha,costfunccmzalphadot,costfunccmzq)
            dIdctemp = cmzAdjb(sps)
         end select
-        
+
         dJdc(sps) = dIdctemp
 
      end do
   end select
-  
+
   ! Now we have dJdc on each processor...when we go through the
   ! reverse mode AD we can take the dot-products on the fly SUM the
   ! entries into dJdw
@@ -264,7 +263,7 @@ subroutine computeObjPartials(costFunction,pts,npts,dIda,nDv)
               righthandedadj = righthanded
 
               faceID = bcfaceid(mm)
-             
+
               call COMPUTEFORCEANDMOMENTADJ_B(force, forceb, cforce, cforceb, &
                    lift, liftb, drag, dragb, cl, clb, cd, cdb, moment, momentb, &
                    cmoment,cmomentb, alphaadj, alphaadjb, betaadj, betaadjb, &
@@ -291,8 +290,9 @@ subroutine computeObjPartials(costFunction,pts,npts,dIda,nDv)
                     ! This takes care of the ii increments -- 
                     ! DO NOT NEED INCREMENT ON LINE BELOW
                     ii = ii + 1
-                    call VecSetValuesBlocked(dJdx,1,row_start+ii-1,ptsb(:,ii),&
-                         ADD_VALUES,PETScIerr)
+                    call VecSetValues(dJdx,3,&
+                         (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/),&
+                         ptsb(:,ii),ADD_VALUES,PETScIerr)
                     call EChk(PETScIerr,__file__,__line__)
                  end do
               end do
@@ -300,11 +300,11 @@ subroutine computeObjPartials(costFunction,pts,npts,dIda,nDv)
 
               ! We also have the derivative of the Objective wrt the
               ! "AeroDVs" intrinsic aero design variables, alpha, beta etc
-              
+
               if (nDesignAoA >=0) then
                  dIda(nDesignAoA+1) = dIda(nDesignAoA+1) + alphaAdjb
               end if
-              
+
               if (nDesignSSA >= 0) then
                  dIda(nDesignSSA+1) = dIda(nDesignSSA+1) + betaAdjb
               end if
@@ -312,7 +312,7 @@ subroutine computeObjPartials(costFunction,pts,npts,dIda,nDv)
               if (nDesignMachGrid >= 0) then
                  dIda(nDesignMachGrid+1) = dIda(nDesignMachGrid+1) + machCoefAdjb
               end if
-              
+
               if (nDesignPointRefX >=0) then
                  dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefAdjb(1)
               end if
@@ -344,3 +344,49 @@ subroutine computeObjPartials(costFunction,pts,npts,dIda,nDv)
   call EChk(PETScIerr,__file__,__line__)
 
 end subroutine computeObjPartials
+
+
+! Add two functions to return dIdw and dIdx. dIda is available
+! directly in python in dIda in the adjointVars module. 
+
+subroutine getdIdw(ndof,output)
+
+  use ADjointPETSc
+  use ADjointVars
+  use precision 
+  implicit none
+
+  integer(kind=intType),intent(in) :: ndof
+  real(kind=realType),intent(out)  :: output(ndof)
+
+  integer(kind=intType) :: ilow,ihigh,i
+
+  call VecGetOwnershipRange(dJdw,ilow,ihigh,PETScIerr)
+
+  do i=1,(ihigh-ilow)
+     call VecGetValues(dJdw,1,ilow+i-1,output(i),PETScIerr)
+     call EChk(PETScIerr,__file__,__line__)
+  end do
+
+end subroutine getdIdw
+
+subroutine getdIdx(ndof,output)
+
+  use ADjointPETSc
+  use ADjointVars
+
+  implicit none
+
+  integer(kind=intType),intent(in) :: ndof
+  real(kind=realType),intent(out)  :: output(ndof)
+
+  integer(kind=intType) :: ilow,ihigh,i
+  output(:) = 0.0
+  call VecGetOwnershipRange(dJdx,ilow,ihigh,PETScIerr)
+  call EChk(PETScIerr,__file__,__line__)
+  do i=1,ndof
+     call VecGetValues(dJdx,1,ilow+i-1,output(i),PETScIerr)
+     call EChk(PETScIerr,__file__,__line__)
+  end do
+
+end subroutine getdIdx

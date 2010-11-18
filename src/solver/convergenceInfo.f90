@@ -494,11 +494,15 @@
              !only check on root porcessor
              if (myID==0)then
 
-                ! If we made it to ncycles then the routine simply
-                ! failed.  It is up to the Python User to check the
-                ! residuals to see if they want to use the solution or
-                ! not
-                routineFailed = .True. 
+                ! If we made it to ncycles, check to see if we're
+                ! "close" to being converged. 
+
+                if(convArray(iConv,sps,1) < &
+                     maxL2DeviationFactor * L2ConvThisLevel) then 
+                   routineFailed = .False.
+                else
+                   routineFailed = .True.
+                end if
 
              endif
              call mpi_bcast(routineFailed, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)

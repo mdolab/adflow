@@ -39,7 +39,7 @@ subroutine getdRdXvPsi(ndof,dXv)
   !     ******************************************************************
   !
   use communication
-  use ADjointPETSc, only: dRdx,psi,xVec
+  use ADjointPETSc, only: dRdx,psi,xVec,wVec
   use ADjointVars
   use blockPointers
   use warpingPETSC 
@@ -60,7 +60,7 @@ subroutine getdRdXvPsi(ndof,dXv)
   real(kind=realType) :: tOld,tNew,pt(3)
 
   ! Create a temporary vector which is the size of the grid*nTimeInstances
-  call MatGetVecs(dRdx,xVec,PEtSC_NULL_OBJECT,ierr)
+  call MatGetVecs(dRdx,xVec,wVec,ierr)
   call EChk(ierr,__file__,__line__)
   
   ! Do the matMultTranspose and put result into xVec
@@ -150,4 +150,7 @@ subroutine getdRdXvPsi(ndof,dXv)
   call VecDestroy(xVec,ierr)
   call EChk(ierr,__file__,__line__)
 
+  call VecDestroy(wVec,ierr)
+  call EChk(ierr,__file__,__line__)
+  
 end subroutine getdRdXvPsi
