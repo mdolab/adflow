@@ -251,7 +251,7 @@ class SUMB(AeroSolver):
               'cmzq':'cmzq',
               'cmzqdot':'cmzqdot',
               'clq':'clq',
-              'clqdot','clqDot'
+              'clqdot':'clqDot'
               }
 
         self.possibleAeroDVs = {
@@ -865,9 +865,9 @@ class SUMB(AeroSolver):
             sys.exit(0)
         #endif
         self.sumb.killsignals.routinefailed = False
-        self._UpdatePeriodInfo()
-        self._UpdateGeometryInfo()
-        self._UpdateVelocityInfo()
+        self._updatePeriodInfo()
+        self._updateGeometryInfo()
+        self._updateVelocityInfo()
 
 
         self.sumb.killsignals.routinefailed = \
@@ -1241,13 +1241,21 @@ class SUMB(AeroSolver):
         return dIda
         
     def verifyPartials(self):
+        ''' Run verifyResiduals to verify that dRdw,dRdx and dRda are
+        computed correctly'
         '''
-        Run solverADjoint to verify the partial derivatives in the ADjoint
-        '''
-        self.sumb.verifydcfdx(1)
+        self.sumb.verifypartials()
 
         return
     
+    def verifyResidual(self):
+        ''' Run verifyRAdjoint to make sure the node-based-stencil
+        routine gives the same results as the original routine
+        '''
+        self.sumb.verifyradj(1)
+
+        return 
+
     def computeStabilityParameters(self):
         '''
         run the stability derivative driver to compute the stability parameters
@@ -1258,7 +1266,7 @@ class SUMB(AeroSolver):
 
         return
 
-    def _UpdateGeometryInfo(self):
+    def _updateGeometryInfo(self):
         """Update the SUmb internal geometry info, if necessary."""
         if (self._update_geom_info):
             self.mesh.warpMesh()
@@ -1273,7 +1281,7 @@ class SUMB(AeroSolver):
 
         return 
 
-    def _UpdatePeriodInfo(self):
+    def _updatePeriodInfo(self):
         """Update the SUmb TS period info"""
         if (self._update_period_info):
             self.sumb.updateperiodicinfoalllevels()
@@ -1282,7 +1290,7 @@ class SUMB(AeroSolver):
 
         return 
 
-    def _UpdateVelocityInfo(self):
+    def _updateVelocityInfo(self):
         if (self._update_vel_info):
             self.sumb.updategridvelocitiesalllevels()
             self._update_vel_info = False
@@ -1290,7 +1298,7 @@ class SUMB(AeroSolver):
 
         return 
             
-    def GetMonitoringVariables(self):
+    def getMonitoringVariables(self):
         """Return a list of the text strings describing the variables being
         monitored.
 
@@ -1298,7 +1306,7 @@ class SUMB(AeroSolver):
         return self.monnames.keys()
     
 
-    def GetConvergenceHistory(self,name):
+    def getConvergenceHistory(self,name):
         """Return an array of the convergence history for a particular quantity.
 
         Keyword arguments:

@@ -36,8 +36,6 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_MODULES = 
-
 FF90_OBJECTS = allocMemADjoint.o        \
 	       assertionsADjoint.o      \
                computeAeroCoef.o        \
@@ -52,9 +50,10 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       getGlobalNodes.o         \
 	       getSolution.o            \
 	       getADjoint.o             \
-	       getdRdXvPsi.o\
-	       getdRdaPsi.o\
-	       getdRdwTPsi.o\
+	       getdRdXvPsi.o            \
+	       getdRdaPsi.o             \
+	       getdRdwTPsi.o            \
+	       getdFdxVec.o             \
 	       haloIndexCommunication.o \
 	       initializePETSc.o        \
 	       indexHalo.o              \
@@ -72,11 +71,11 @@ FF90_OBJECTS = allocMemADjoint.o        \
                solverADjoint.o          \
 	       updateFlow.o             \
 	       updateReferencePoint.o   \
-	       updateRotationRate.o   \
+	       updateRotationRate.o     \
 	       setupCouplingMatrixStruct.o\
 	       agumentRHS.o\
-	       getdFdxVec.o\
 	       matrixInfo.o\
+	       verifyRAdj.o\
 #	       verifyResiduals.o\
 #	       verifydRdw.o             \
 #              verifydRdwFile.o         \
@@ -87,7 +86,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 #	       verifydRdxFile.o             \
 #              verifydRdxsFile.o             \
 #	       verifydRdxFileFD.o             \
-#	       verifyRAdj.o\
+
 
 
 CC_OBJECTS   = initPETScWrap.o
@@ -101,8 +100,6 @@ CC_OBJECTS   = initPETScWrap.o
 default: all
 
 all:
-	$(MAKE) mod
-#	cp -f *.mod $(SUMB_MODDIR)
 	$(MAKE) src
 
 clean:
@@ -115,5 +112,4 @@ clean:
 #      *                                                                *
 #      ******************************************************************
 
-mod:	$(FF90_MODULES)
 src:	$(FF90_OBJECTS) $(CC_OBJECTS)
