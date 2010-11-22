@@ -49,8 +49,6 @@ SUBDIR_ADJOINT = src/adjoint               \
 	         src/adjoint/stabilityOutput\
 		 src/adjoint/couplingInput\
 	         src/adjoint/couplingOutput
-#		 src/adjoint/forcesInput\
-#	         src/adjoint/forcesOutput\
 
 
 SUBDIR_WARPING = src/warping \

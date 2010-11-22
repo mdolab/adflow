@@ -216,12 +216,19 @@ class SUMB(AeroSolver):
              'cMx':self.sumb.costfunctions.costfuncmomxcoef,
              'cMy':self.sumb.costfunctions.costfuncmomycoef,
              'cMz':self.sumb.costfunctions.costfuncmomzcoef,
-             'cMzAlpha':self.sumb.costfunctions.costfunccmzalpha,
              'cM0':self.sumb.costfunctions.costfunccm0,
-             'clAlpha':self.sumb.costfunctions.costfuncclalpha,
+             'cMzAlpha':self.sumb.costfunctions.costfunccmzalpha,
+             'cMzAlphaDot':self.sumb.costfunctions.costfunccmzalphadot,
              'cl0':self.sumb.costfunctions.costfunccl0,
-             'cdAlpha':self.sumb.costfunctions.costfunccdalpha,
+             'clAlpha':self.sumb.costfunctions.costfuncclalpha,
+             'clAlphaDot':self.sumb.costfunctions.costfuncclalphadot,
              'cd0':self.sumb.costfunctions.costfunccd0,
+             'cdAlpha':self.sumb.costfunctions.costfunccdalpha,
+             'cdAlphaDot':self.sumb.costfunctions.costfunccdalphadot,
+             'cmzq':self.sumb.costfunctions.costfunccmzq,
+             'cmzqDot':self.sumb.costfunctions.costfunccmzqdot,
+             'clq':self.sumb.costfunctions.costfuncclq,
+             'clqDot':self.sumb.costfunctions.costfuncclqdot,
              }
         
         self.possibleObjectives = \
@@ -232,12 +239,19 @@ class SUMB(AeroSolver):
               'cfx':'cFx','cfy':'cFy','cfz':'cfz',
               'mx':'Mx','my':'My','mz':'Mz',
               'cmx':'cMx','cmy':'cMy','cmz':'cMz',
-              'cmzalpha':'cMzAlpha',
               'cm0':'cM0',
-              'clalpha':'clAlpha',
+              'cmzalpha':'cMzAlpha',
+              'cmzalphadot':'cMzAlphaDot',
               'cl0':'cl0',
+              'clalpha':'clAlpha',
+              'clalphadot':'clAlphaDot',
+              'cd0':'cd0',
               'cdalpha':'cdAlpha',
-              'cd0':'cd0'
+              'cdalphadot':'cdAlphaDot',
+              'cmzq':'cmzq',
+              'cmzqdot':'cmzqdot',
+              'clq':'clq',
+              'clqdot','clqDot'
               }
 
         self.possibleAeroDVs = {

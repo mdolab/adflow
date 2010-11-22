@@ -98,15 +98,12 @@ subroutine computeObjPartials(costFunction,pts,npts)
 
      dJdc(:) = 1/nTimeIntervalsSpectral
 
-  case(costFuncCmzAlpha,   &
-       costFuncCm0,        &
-       costFuncClAlpha,    &
-       costFuncCl0,        &
-       costFuncCdAlpha,    &
-       costFuncCd0,        &
-       costFuncCmzAlphaDot,&
-       costFuncCmzq)
-
+  case(costFuncCl0,costFuncCd0,costFuncCm0, &
+       costFuncClAlpha,costFuncCdAlpha,costFuncCmzAlpha,&
+       costFuncClAlphaDot,costFuncCdAlphaDot,costFuncCmzAlphaDot,&
+       costFuncClq,costFuncCdq,costFuncCmzq,&
+       costFuncClqDot,costFuncCdqDot,costFuncCmzqDot)
+     
      ! We have stability derivative cost functions, so there is a more
      ! complex dependance of J on the values computed at each time instance
 
@@ -125,18 +122,12 @@ subroutine computeObjPartials(costFunction,pts,npts)
      end do spectralLoopAdj2
 
      ! Set Reverse Mode Seeds
-     cl0 =0.0
-     cd0 = 0.0
-     cmz0 =0.0
-     dcldalpha =0.0
-     dcddalpha = 0.0
-     dcmzdalpha =0.0
-     cl0b = 0.0
-     cd0b = 0.0
-     cmz0b = 0.0
-     dcldalphab = 0.0
-     dcddalphab = 0.0
-     dcmzdalphab = 0.0
+     cl0 =0.0; cd0 = 0.0; cmz0 =0.0
+     cl0b = 0.0; cd0b = 0.0; cmz0b = 0.0
+
+     dcldalpha =0.0 ; dcddalpha = 0.0; dcmzdalpha =0.0
+     dcldalphab = 0.0; dcddalphab = 0.0; dcmzdalphab = 0.0
+
      dcmzdalphadotb = 0
      dcmzdqb = 0.0
 
@@ -160,10 +151,11 @@ subroutine computeObjPartials(costFunction,pts,npts)
      end select
 
      call COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
-          &  cmyadj, cmzadj, cmzadjb, cladj, cladjb, cdadj, cdadjb, cl0, cl0b, cd0&
-          &  , cd0b, cmz0, cmz0b, dcldalpha, dcldalphab, dcddalpha, dcddalphab, &
-          &  dcmzdalpha, dcmzdalphab, dcmzdalphadot, dcmzdalphadotb, dcmzdq, &
-          &  dcmzdqb)
+            cmyadj, cmzadj, cmzadjb, cladj, cladjb, cdadj, cdadjb, cl0, cl0b, cd0&
+            , cd0b, cmz0, cmz0b, dcldalpha, dcldalphab, dcddalpha, dcddalphab, &
+            dcmzdalpha, dcmzdalphab, dcmzdalphadot, dcmzdalphadotb, dcmzdq, &
+            dcmzdqb)
+
 
      do sps = 1,nTimeIntervalsSpectral
         select case(costFunction)

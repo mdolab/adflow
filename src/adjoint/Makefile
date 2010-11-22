@@ -41,6 +41,7 @@ FF90_MODULES =
 FF90_OBJECTS = allocMemADjoint.o        \
 	       assertionsADjoint.o      \
                computeAeroCoef.o        \
+	       computeObjPartials.o\
 	       copyADjointStencil.o     \
 	       createPETScKsp.o         \
 	       createPETScMat.o         \
@@ -51,6 +52,9 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       getGlobalNodes.o         \
 	       getSolution.o            \
 	       getADjoint.o             \
+	       getdRdXvPsi.o\
+	       getdRdaPsi.o\
+	       getdRdwTPsi.o\
 	       haloIndexCommunication.o \
 	       initializePETSc.o        \
 	       indexHalo.o              \
@@ -69,13 +73,9 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       updateFlow.o             \
 	       updateReferencePoint.o   \
 	       updateRotationRate.o   \
-	       getdRdXvPsi.o\
-	       getdRdaPsi.o\
-	       getdRdwTPsi.o\
 	       setupCouplingMatrixStruct.o\
 	       agumentRHS.o\
 	       getdFdxVec.o\
-	       computeObjPartials.o\
 	       matrixInfo.o\
 #	       verifyResiduals.o\
 #	       verifydRdw.o             \
@@ -88,37 +88,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 #              verifydRdxsFile.o             \
 #	       verifydRdxFileFD.o             \
 #	       verifyRAdj.o\
-#	       solveDirectPETSc.o       \
-#	       setupSurfaceDirect.o     \
-#	       setupADjointTotalStruct.o\
-# 	       writeCGNSMesh.o\
-#              writeCGNSData.o\
-#	       setupGradientdCdExtra.o\
-#	       setupGradientdCdx.o \
-#	       setupGradientMatrixExtra.o\
-#	       setupGradientMatrixSpatial.o\
-#              setupGradientRHSFlow.o\
-#	       setupGradientRHSVolume.o\
-#	       setupGradientRHSExtra.o\
-#              setupADjointMatrixTranspose.o\
-# 	       computeAeroCoupling.o    \
-#	       setupADjointPCMatrix.o     
-# 	       setupADjointMatrix.o     \
-#   	       computeAeroExpCoupling.o  \	
-#	       computeADjointGradientExtra.o\
-#	       computeADjointGradientSpatial.o\
-#	       computeADjointGradientSurfaceDV.o\
-#              computeADjointGradientSurfaceDisp.o\
-#	       setupCouplingTotalStruct.o\
-#	       setupADjointRHSStruct.o  \
-#              setupADjointdCdwStability.o\
-#              setupADjointdIdCStability.o\
-#	       setupGradientRHSSpatial.o\
-#              setupGradientRHSStability.o\
-#	       setupADjointRHS.o        \
-#	       setupADjointRHSAeroCoeff.o\
-#	       setupADjointRHSAeroCoef2.o\
-#	       setupADjointRHSStability.o\
+
 
 CC_OBJECTS   = initPETScWrap.o
 
