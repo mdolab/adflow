@@ -78,6 +78,8 @@ class SUmbMesh(object):
     def __init__(self,comm,sumb):
         """Initialize the object."""
         self._update_geom_info = False
+        self._update_vel_info = False
+        self._update_period_info = False
         self._suggar_interface_initialized = False
         self.comm = comm
         self.myid = comm.rank
@@ -318,14 +320,24 @@ class SUmbMesh(object):
 
     def _UpdateGeometryInfo(self):
         """Update the SUmb internal geometry info, if necessary."""
+        if (self._update_period_info):
+            self.sumb.updateperiodicinfoalllevels()
+            self._update_period_info = False
+        #endif
+
         if (self._update_geom_info):
             self.sumb.updatecoordinatesalllevels()
             self.sumb.updatewalldistancealllevels()
             self.sumb.updateslidingalllevels()
             self.sumb.updatemetricsalllevels()
-            self.sumb.updategridvelocitiesalllevels()
             self._update_geom_info = False
+        #endif
+        if (self._update_vel_info):
+            self.sumb.updategridvelocitiesalllevels()
+            self._update_vel_info = False
+        #endif
 
+       
     def GetNumberBlocks(self):
         """Get the number of blocks in the mesh."""
         return self.nmeshblocks
@@ -615,20 +627,27 @@ class SUmbInterface(object):
         self.sumb.killsignals.frompython=True
 
         self.SUmbCostfunctions = {'cl':self.sumb.adjointvars.costfuncliftcoef,\
-                             'cd':self.sumb.adjointvars.costfuncdragcoef,\
-                             'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
-                             'cFy':self.sumb.adjointvars.costfuncforceycoef,\
-                             'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
-                             'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
-                             'cMy':self.sumb.adjointvars.costfuncmomycoef,\
-                             'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
-                             'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
-                             'cM0':self.sumb.adjointvars.costfunccm0,\
-                             'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
-                             'cl0':self.sumb.adjointvars.costfunccl0,\
-                             'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
-                             'cd0':self.sumb.adjointvars.costfunccd0
-                             }
+                                  'cd':self.sumb.adjointvars.costfuncdragcoef,\
+                                  'cFx':self.sumb.adjointvars.costfuncforcexcoef,\
+                                  'cFy':self.sumb.adjointvars.costfuncforceycoef,\
+                                  'cFz':self.sumb.adjointvars.costfuncforcezcoef,\
+                                  'cMx':self.sumb.adjointvars.costfuncmomxcoef,\
+                                  'cMy':self.sumb.adjointvars.costfuncmomycoef,\
+                                  'cMz':self.sumb.adjointvars.costfuncmomzcoef,\
+                                  'cMzAlphaDot':self.sumb.adjointvars.costfunccmzalphadot,\
+                                  'cMzAlpha':self.sumb.adjointvars.costfunccmzalpha,\
+                                  'cM0':self.sumb.adjointvars.costfunccm0,\
+                                  'clAlphaDot':self.sumb.adjointvars.costfunccmzalphadot,\
+                                  'clAlpha':self.sumb.adjointvars.costfuncclalpha,\
+                                  'cl0':self.sumb.adjointvars.costfunccl0,\
+                                  'cdAlphaDot':self.sumb.adjointvars.costfunccmzalphadot,\
+                                  'cdAlpha':self.sumb.adjointvars.costfunccdalpha,\
+                                  'cd0':self.sumb.adjointvars.costfunccd0,\
+                                  'cMzqDot':self.sumb.adjointvars.costfunccmzqdot,\
+                                  'cMzq':self.sumb.adjointvars.costfunccmzq,\
+                                  'clqDot':self.sumb.adjointvars.costfuncclqdot,\
+                                  'clq':self.sumb.adjointvars.costfuncclq,\
+                                  }
         
         self.possibleObjectives = { 'lift':'cl','cl':'cl',\
                                'drag':'cd','cd':'cd',\
@@ -746,6 +765,7 @@ class SUmbInterface(object):
 
         #update the flow vars
         self.sumb.updateflow()
+        self.Mesh._update_vel_info = True
         return
 
     def setReferencePoint(self,aero_problem):
@@ -769,6 +789,7 @@ class SUmbInterface(object):
         #if (self.myid==0):print '-> RefPoint...',self.sumb.inputphysics.pointref
         #update the flow vars
         self.sumb.updatereferencepoint()
+        self.Mesh._update_vel_info = True
         return
 
     def setRotationRate(self,aero_problem):
@@ -784,8 +805,68 @@ class SUmbInterface(object):
         #update the flow vars
         #if (self.myid==0):print 'q...',q,aero_problem._flows.qhat
         self.sumb.updaterotationrate(p,r,q)
+        self.Mesh._update_vel_info = True
         return
 
+    def setPeriodicParams(self,aero_problem,getOption):
+        '''
+        Set the frequecy and amplitude of the oscillations
+        '''
+        
+        if  getOption('Alpha Mode') =='yes':
+            self.sumb.inputmotion.omegafouralpha = aero_problem._flows.omegaFourier
+            ncoef = aero_problem._flows.degreeFourier #self.sumb.inputmotion.degreefouralpha
+            self.sumb.inputmotion.coscoeffouralpha[0] = aero_problem._flows.cosCoefFourier[0]
+            for i in xrange(ncoef):
+                self.sumb.inputmotion.coscoeffouralpha[i+1] = aero_problem._flows.cosCoefFourier[i+1]
+                self.sumb.inputmotion.sincoeffouralpha[i] = aero_problem._flows.sinCoefFourier[i]
+            #endfor
+        elif  getOption('Beta Mode') =='yes':
+            self.sumb.inputmotion.omegafourbeta = aero_problem._flows.omegaFourier
+            ncoef = aero_problem._flows.degreeFourier 
+            self.sumb.inputmotion.coscoeffourbeta[0] = aero_problem._flows.cosCoefFourier[0]
+            for i in xrange(ncoef):
+                self.sumb.inputmotion.coscoeffourbeta[i+1] = aero_problem._flows.cosCoefFourier[i+1]
+                self.sumb.inputmotion.sincoeffourbeta[i] = aero_problem._flows.sinCoefFourier[i]
+            #endfor
+        elif  getOption('Mach Mode') =='yes':
+            self.sumb.inputmotion.omegafourmach = aero_problem._flows.omegaFourier
+            ncoef = aero_problem._flows.degreeFourier
+            self.sumb.inputmotion.coscoeffourmach[0] = aero_problem._flows.cosCoefFourier[0]
+            for i in xrange(ncoef):
+                self.sumb.inputmotion.coscoeffourmach[i+1] = aero_problem._flows.cosCoefFourier[i+1]
+                self.sumb.inputmotion.sincoeffourmach[i] = aero_problem._flows.sinCoefFourier[i]
+            #endfor
+        elif  getOption('p Mode') =='yes':
+            ### add in lift axis dependence
+            self.sumb.inputmotion.omegafourxrot = aero_problem._flows.omegaFourier
+            ncoef = aero_problem._flows.degreeFourier
+            self.sumb.inputmotion.coscoeffourxrot[0] = aero_problem._flows.cosCoefFourier[0]
+            for i in xrange(ncoef):
+                self.sumb.inputmotion.coscoeffourxrot[i+1] = aero_problem._flows.cosCoefFourier[i+1]
+                self.sumb.inputmotion.sincoeffourxrot[i] = aero_problem._flows.sinCoefFourier[i]
+            #endfor
+        elif  getOption('q Mode') =='yes':
+            self.sumb.inputmotion.omegafourzrot = aero_problem._flows.omegaFourier
+            ncoef = aero_problem._flows.degreeFourier
+            self.sumb.inputmotion.coscoeffourzrot[0] = aero_problem._flows.cosCoefFourier[0]
+            for i in xrange(ncoef):
+                self.sumb.inputmotion.coscoeffourzrot[i+1] = aero_problem._flows.cosCoefFourier[i+1]
+                self.sumb.inputmotion.sincoeffourzrot[i] = aero_problem._flows.sinCoefFourier[i]
+            #endfor
+        elif  getOption('r Mode') =='yes':
+            self.sumb.inputmotion.omegafouryrot = aero_problem._flows.omegaFourier
+            ncoef = aero_problem._flows.degreeFourier
+            self.sumb.inputmotion.coscoeffouryrot[0] = aero_problem._flows.cosCoefFourier[0]
+            for i in xrange(ncoef):
+                self.sumb.inputmotion.coscoeffouryrot[i+1] = aero_problem._flows.cosCoefFourier[i+1]
+                self.sumb.inputmotion.sincoeffouryrot[i] = aero_problem._flows.sinCoefFourier[i]
+            #endfor
+        #endif
+        self.Mesh._update_period_info = True
+        self.Mesh._update_geom_info = True
+        self.Mesh._update_vel_info = True
+        return
 
     def resetFlow(self):
         '''
@@ -952,8 +1033,10 @@ class SUmbInterface(object):
             autofile.write(  "            Mach for mesh velocity: %12.12e\n"%(0))
         #endif
         autofile.write(  "                          # Default is Mach\n")
-        autofile.write(  "                         Reynolds: 100000\n")
-        autofile.write(  "       Reynolds length (in meter): %12.12e\n"%(aero_problem._refs.cref*kwargs['options']['MetricConversion'][1]))
+        if(not kwargs['options']['Equation Type'][1].lower() == 'euler'):
+            autofile.write(  "                         Reynolds: 100000\n")
+            autofile.write(  "       Reynolds length (in meter): %12.12e\n"%(aero_problem._refs.cref*kwargs['options']['MetricConversion'][1]))
+        #endif
         #autofile.write(  "   Free stream velocity direction: 1.0 0.05 0.0\n")
         #autofile.write(  "                   Lift direction: -0.05 1.0 0.0\n")
         autofile.write(  "   Free stream velocity direction: %12.12e %12.12e %12.12e\n"%(velDir[0],velDir[1],velDir[2]))
@@ -2029,6 +2112,7 @@ class SUmbInterface(object):
         '''
         print 'in interface verify partials'
         #self.sumb.verifydrdxsfile()
+        self.sumb.verifyforcesadj(1)
         self.sumb.verifydcfdx(1)
         #self.sumb.solveradjoint()
 
@@ -2654,15 +2738,15 @@ class SUmbInterface(object):
         
         return globalNodes
 
-    def getFunctionValues(self):
+    def getFunctionValues(self,sps):
         '''
         retrieve the solution values from SUmb
         '''
-        if self.myid==0:print 'interface getting solution'
+        #if self.myid==0:print 'interface getting solution',sps
         # Map cost functions
-        self.sumb.getsolution()
+        self.sumb.getsolution(sps)
 
-        #print 'solution mapped'
+        #if self.myid==0:print 'solution mapped'
         #print 'sumb value:',self.sumb.adjointvars.costfuncliftcoef-1
 
         SUmbsolutions = {'cl':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncliftcoef-1],\
@@ -2673,13 +2757,21 @@ class SUmbInterface(object):
                          'cMx':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncmomxcoef-1],\
                          'cMy':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncmomycoef-1],\
                          'cMz':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncmomzcoef-1],\
+                         'cMzAlphaDot':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfunccmzalphadot-1],\
                          'cMzAlpha':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfunccmzalpha-1],\
                          'cM0':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfunccm0-1],\
+                         'clAlphaDot':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncclalphadot-1],\
                          'clAlpha':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncclalpha-1],\
                          'cl0':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfunccl0-1],\
+                         'cdAlphaDot':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfunccdalphadot-1],\
                          'cdAlpha':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfunccdalpha-1],\
-                         'cd0':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfunccd0-1]
+                         'cd0':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfunccd0-1],\
+                         'cMzqDot':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfunccmzqdot-1],\
+                         'cMzq':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfunccmzq-1],\
+                         'clqDot':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncclqdot-1],\
+                         'clq':self.sumb.adjointvars.functionvalue[self.sumb.adjointvars.costfuncclq-1]
                          }
+        #addfunctions here
 
         return SUmbsolutions
 

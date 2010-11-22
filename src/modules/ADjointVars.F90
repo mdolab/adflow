@@ -28,24 +28,31 @@
 !
       ! nCostFunction Number of cost/constraint functions.
 
-      integer(kind=intType), parameter :: nCostFunction = 16_intType
+      integer(kind=intType), parameter :: nCostFunction = 21_intType
 
-      integer(kind=intType), parameter :: costFuncLiftCoef = 1_intType,&
-                                          costFuncDragCoef = 2_intType,&
+      integer(kind=intType), parameter :: costFuncLiftCoef   = 1_intType,&
+                                          costFuncDragCoef   = 2_intType,&
 					  costFuncForceXCoef = 3_intType,&
                                           costFuncForceYCoef = 4_intType,&
                                           costFuncForceZCoef = 5_intType,&
-                                          costFuncMomXCoef = 6_intType,&
-                                          costFuncMomYCoef = 7_intType,&
-                                          costFuncMomZCoef = 8_intType,&
-                                          costFuncCmzAlpha  = 9_intType,&
-                                          costFuncCm0      = 10_intType,&
-                                          costFuncClAlpha  = 11_intType,&
-                                          costFuncCl0      = 12_intType,&
-                                          costFuncCdAlpha  = 13_intType,&
-                                          costFuncCd0      = 14_intType,&
-                                          costFuncCmzAlphaDot = 15_intType,&
-                                          costFuncCmzq      = 16_intType
+                                          costFuncMomXCoef   = 6_intType,&
+                                          costFuncMomYCoef   = 7_intType,&
+                                          costFuncMomZCoef   = 8_intType,&
+                                          costFuncCm0        = 9_intType,&
+                                          costFuncCmzAlpha   = 10_intType,&
+                                          costFuncCmzAlphaDot= 11_intType,&
+                                          costFuncCl0        = 12_intType,&
+                                          costFuncClAlpha    = 13_intType,&
+                                          costFuncClAlphaDot = 14_intType,&
+                                          costFuncCd0        = 15_intType,&
+                                          costFuncCdAlpha    = 16_intType,& 
+                                          costFuncCdAlphadot = 17_intType,&
+                                          costFuncCmzq       = 18_intType,&
+                                          costFuncCmzqDot    = 19_intType,&
+                                          costFuncClq        = 20_intType,&
+                                          costFuncClqDot     = 21_intType
+      
+      
                                           
 
       ! Cost function names.

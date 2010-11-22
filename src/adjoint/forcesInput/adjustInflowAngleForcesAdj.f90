@@ -71,7 +71,7 @@ subroutine adjustInflowAngleForcesAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
       !temp3 = dragDirectionAdj(3)
       refDirection(:) = zero
       refDirection(1) = one
-      call getDirVectorForces(refDirection, alphaAdj, betaAdj, dragDirectionAdj(1), &
+      call getDirVectorForces(refDirection, alphaAdj, betaAdj, dragDirectionAdj, &
            liftIndex)
 !      call getDirVectorForces(one, zero, zero, alphaAdj, betaAdj, &
 !           temp1, &

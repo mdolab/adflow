@@ -25,6 +25,15 @@ python module sumb ! in
             use inputio
         end subroutine partitionandreadgrid
 
+        subroutine timeperiodspectral ! in :sumb:../../partitioning/timePeriodSpectral.f90
+          use communication
+          use constants
+          use inputmotion
+          use inputphysics
+          use section
+          implicit none
+        end subroutine timeperiodspectral
+
         subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
             use block
             use commsliding
@@ -54,6 +63,16 @@ python module sumb ! in
           use inputphysics
           implicit none
         end subroutine updategridvelocitiesalllevels
+
+        subroutine updateperiodicinfoalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
+          use block
+          use iteration
+          use section
+          use monitor
+          use inputtimespectral
+          use inputphysics
+          implicit none
+        end subroutine updateperiodicinfoalllevels
 
 !Functions in prewarp directory
         subroutine getnblockslocal(nBlocks)
@@ -309,6 +328,26 @@ python module sumb ! in
          integer(kind=inttype), intent(in) :: level
          
        end subroutine verifydCfdx
+       
+       subroutine verifyforcesadj(level)
+
+         use blockpointers
+         use communication       
+         use inputphysics        
+         use flowvarrefstate     
+         use inputdiscretization
+         use iteration           
+         use monitor
+         use inputtimespectral  
+         use section
+         use bctypes     
+         use monitor
+         implicit none
+
+         integer(kind=inttype), intent(in) :: level
+         
+       end subroutine verifyforcesadj
+
 
        subroutine setupvolumesurfacederivativesdisp
 
@@ -706,29 +745,70 @@ python module sumb ! in
             logical :: printiterations
         end module inputiteration
 
-        module inputmotion ! in :sumb:../../modules/inputParam.f90
+        module inputmotion ! in :sumb:inputParam.f90
             use precision
-            real(kind=realtype) dimension(3) :: rotpoint
-            integer(kind=inttype) :: degreepolxrot
-            integer(kind=inttype) :: degreepolyrot
-            integer(kind=inttype) :: degreepolzrot
-            real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
-            real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
-            real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
-            integer(kind=inttype) :: degreefourxrot
-            integer(kind=inttype) :: degreefouryrot
-            integer(kind=inttype) :: degreefourzrot
-            real(kind=realtype) :: omegafourxrot
-            real(kind=realtype) :: omegafouryrot
-            real(kind=realtype) :: omegafourzrot
-            real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
             real(kind=realtype) allocatable,dimension(:) :: coscoeffouryrot
+            real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
+            integer(kind=inttype) :: degreefourxrot
+            real(kind=realtype) allocatable,dimension(:) :: sincoeffouralpha
+            real(kind=realtype) :: omegafourbeta
+            real(kind=realtype) allocatable,dimension(:) :: coscoeffourbeta
+            real(kind=realtype) allocatable,dimension(:) :: sincoeffourbeta
+            integer(kind=inttype) :: degreepolbeta
+            real(kind=realtype) allocatable,dimension(:) :: sincoeffourmach
+            integer(kind=inttype) :: degreepolmach
+            real(kind=realtype) :: omegafourmach
+            integer(kind=inttype) :: degreepolalpha
+            real(kind=realtype) allocatable,dimension(:) :: coefpolmach
+            real(kind=realtype) allocatable,dimension(:) :: coscoeffouralpha
+            real(kind=realtype) allocatable,dimension(:) :: coscoeffourmach
+            real(kind=realtype) dimension(3) :: rotpoint
+            real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
+            logical :: gridmotionspecified
+            real(kind=realtype) :: omegafourzrot
+            integer(kind=inttype) :: degreefouryrot
+            real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
+            integer(kind=inttype) :: degreefourbeta
+            real(kind=realtype) :: omegafouralpha
             real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
+            integer(kind=inttype) :: degreepolzrot
+            real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
+            real(kind=realtype) :: omegafouryrot
+            integer(kind=inttype) :: degreefourzrot
+            integer(kind=inttype) :: degreefourmach
+            integer(kind=inttype) :: degreefouralpha
+            real(kind=realtype) allocatable,dimension(:) :: coefpolalpha
+            real(kind=realtype) :: omegafourxrot
+            integer(kind=inttype) :: degreepolyrot
             real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
             real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
-            real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
-            logical :: gridmotionspecified
+            integer(kind=inttype) :: degreepolxrot
+            real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
+            real(kind=realtype) allocatable,dimension(:) :: coefpolbeta
         end module inputmotion
+!!$        module inputmotion ! in :sumb:../../modules/inputParam.f90
+!!$            use precision
+!!$            real(kind=realtype) dimension(3) :: rotpoint
+!!$            integer(kind=inttype) :: degreepolxrot
+!!$            integer(kind=inttype) :: degreepolyrot
+!!$            integer(kind=inttype) :: degreepolzrot
+!!$            real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
+!!$            real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
+!!$            real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
+!!$            integer(kind=inttype) :: degreefourxrot
+!!$            integer(kind=inttype) :: degreefouryrot
+!!$            integer(kind=inttype) :: degreefourzrot
+!!$            real(kind=realtype) :: omegafourxrot
+!!$            real(kind=realtype) :: omegafouryrot
+!!$            real(kind=realtype) :: omegafourzrot
+!!$            real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
+!!$            real(kind=realtype) allocatable,dimension(:) :: coscoeffouryrot
+!!$            real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
+!!$            real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
+!!$            real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
+!!$            real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
+!!$            logical :: gridmotionspecified
+!!$        end module inputmotion
 
         module inputparallel ! in :sumb:../../modules/inputParam.f90
             use precision
@@ -992,83 +1072,159 @@ python module sumb ! in
           !integer(kind=inttype) parameter,optional :: adjmaxiter=500
         end module adjointpetsc
 
+!!$        module adjointvars ! in :sumb:ADjointVars.F90
+!!$            use constants
+!!$            integer(kind=inttype) :: nnodesglobal
+!!$            integer(kind=inttype) parameter,optional :: costfuncforcezcoef=5
+!!$            real(kind=realtype) allocatable,dimension(:) :: xdesignvarupper
+!!$            integer(kind=inttype) parameter,optional :: ndesignssa=2
+!!$            integer(kind=inttype) parameter,optional :: costfuncmomzcoef=8
+!!$            character(len=maxstringlen) parameter,optional :: costfuncnamemomz="momzcoef"
+!!$            integer(kind=inttype) :: ncellsglobal
+!!$            integer(kind=inttype) :: ncelloffsetlocal
+!!$            integer(kind=inttype) :: nnodeslocal
+!!$            character(len=maxstringlen) parameter,optional :: varnamessa="sideslipangle"
+!!$            real(kind=realtype) allocatable,dimension(:,:) :: adjoint
+!!$            character(len=maxstringlen) parameter,optional :: costfuncnameforcey="forceycoef"
+!!$            character(len=maxstringlen) parameter,optional :: costfuncnameforcex="forcexcoef"
+!!$            character(len=maxstringlen) parameter,optional :: costfuncnameforcez="forcezcoef"
+!!$            integer(kind=inttype) :: ndesign
+!!$            real(kind=realtype) allocatable,dimension(:) :: xdesignvarlower
+!!$            real(kind=realtype) allocatable,dimension(:,:) :: functiongradcoupling
+!!$            integer(kind=inttype) parameter,optional :: ndesignmach=3
+!!$            integer(kind=inttype) parameter,optional :: ndesignmachgrid=4
+!!$            integer(kind=inttype) parameter,optional :: ndesignrotx=5
+!!$            integer(kind=inttype) parameter,optional :: ndesignroty=6
+!!$            integer(kind=inttype) parameter,optional :: ndesignrotz=7
+!!$            integer(kind=inttype) parameter,optional :: ndesignrotcenx=8
+!!$            integer(kind=inttype) parameter,optional :: ndesignrotceny=9
+!!$            integer(kind=inttype) parameter,optional :: ndesignrotcenz=10
+!!$            integer(kind=inttype) parameter,optional :: ndesignpointrefx=11
+!!$            integer(kind=inttype) parameter,optional :: ndesignpointrefy=12
+!!$            integer(kind=inttype) parameter,optional :: ndesignpointrefy=13
+!!$            real(kind=realtype) allocatable,dimension(:,:) :: functiongradcouplingexp
+!!$            real(kind=realtype) allocatable,dimension(:) :: functionvalue
+!!$            real(kind=realtype) parameter,optional :: adjrelfd=1.0e-5_realtype
+!!$            real(kind=realtype) allocatable,dimension(:,:) :: functiongradspatial
+!!$            real(kind=realtype) allocatable,dimension(:,:) :: functiongradsurfacedv
+!!$            real(kind=realtype) allocatable,dimension(:,:) :: functiongradsurfacedisp
+!!$            real(kind=realtype) allocatable,dimension(:,:) :: functiongradstruct
+!!$            character(len=maxstringlen) allocatable,dimension(:) :: functionname
+!!$            real(kind=realtype) allocatable,dimension(:,:) :: functiongrad
+!!$            character(len=maxstringlen) parameter,optional :: costfuncnamemomx="momxcoef"
+!!$            real(kind=realtype) parameter,optional :: adjepsfd=1.0e-4_realtype
+!!$            integer(kind=inttype) :: ndesignextra
+!!$            real(kind=realtype) parameter,optional :: adjabsfd=1.0e-5_realtype
+!!$            integer(kind=inttype) :: ncellslocal
+!!$            integer(kind=inttype) parameter,optional :: costfuncmomxcoef=6
+!!$            character(len=maxstringlen) parameter,optional :: costfuncnamemomy="momycoef"
+!!$            character(len=maxstringlen) parameter,optional :: costfuncnamelift="liftcoef"
+!!$            integer(kind=inttype) :: nnodeoffsetlocal
+!!$            integer(kind=inttype) parameter,optional :: costfuncliftcoef=1
+!!$            character(len=maxstringlen) allocatable,dimension(:) :: xdesignvarname
+!!$            integer(kind=inttype) parameter,optional :: costfuncdragcoef=2
+!!$            character(len=maxstringlen) parameter,optional :: varnameaoa="angleofattack"
+!!$            integer(kind=inttype) :: ndesignspatial
+!!$            integer(kind=inttype) parameter,optional :: ndesignaoa=1
+!!$            integer(kind=inttype) parameter,optional :: ncostfunction=14
+!!$            integer(kind=inttype) parameter,optional :: costfuncforcexcoef=3
+!!$            integer(kind=inttype) :: nsurfnodesglobal
+!!$            integer(kind=inttype) parameter,optional :: costfuncforceycoef=4
+!!$            character(len=maxstringlen) parameter,optional :: costfuncnamedrag="dragcoef"
+!!$            real(kind=realtype) allocatable,dimension(:) :: xdesignvar
+!!$            integer(kind=inttype) parameter,optional :: costfuncmomycoef=7
+!!$            integer(kind=inttype) :: nsurfnodeslocal
+!!$            integer(kind=inttype) parameter,optional :: costfunccmzalpha=9
+!!$            integer(kind=inttype) parameter,optional ::costfunccm0=10
+!!$            integer(kind=inttype) parameter,optional ::costfuncclalpha=11
+!!$            integer(kind=inttype) parameter,optional ::costfunccl0=12
+!!$            integer(kind=inttype) parameter,optional ::costfunccdalpha=13
+!!$            integer(kind=inttype) parameter,optional ::costfunccd0=14
+!!$            integer(kind=inttype) parameter,optional :: costfunccmzalphadot=15
+!!$            integer(kind=inttype) parameter,optional :: costfunccmzq=16
+!!$          end module adjointvars
         module adjointvars ! in :sumb:ADjointVars.F90
             use constants
-            integer(kind=inttype) :: nnodesglobal
-            integer(kind=inttype) parameter,optional :: costfuncforcezcoef=5
+            integer(kind=inttype) parameter,optional :: costfunccl0=12
+            real(kind=realtype) parameter,optional :: adjepsfd=1.0e-4_realtype
+            real(kind=realtype) allocatable,dimension(:,:) :: functiongradsurfacedisp
             real(kind=realtype) allocatable,dimension(:) :: xdesignvarupper
             integer(kind=inttype) parameter,optional :: ndesignssa=2
             integer(kind=inttype) parameter,optional :: costfuncmomzcoef=8
-            character(len=maxstringlen) parameter,optional :: costfuncnamemomz="momzcoef"
+            integer(kind=inttype) parameter,optional :: costfunccm0=9
             integer(kind=inttype) :: ncellsglobal
-            integer(kind=inttype) :: ncelloffsetlocal
-            integer(kind=inttype) :: nnodeslocal
-            character(len=maxstringlen) parameter,optional :: varnamessa="sideslipangle"
-            real(kind=realtype) allocatable,dimension(:,:) :: adjoint
-            character(len=maxstringlen) parameter,optional :: costfuncnameforcey="forceycoef"
-            character(len=maxstringlen) parameter,optional :: costfuncnameforcex="forcexcoef"
-            character(len=maxstringlen) parameter,optional :: costfuncnameforcez="forcezcoef"
-            integer(kind=inttype) :: ndesign
-            real(kind=realtype) allocatable,dimension(:) :: xdesignvarlower
-            real(kind=realtype) allocatable,dimension(:,:) :: functiongradcoupling
-            integer(kind=inttype) parameter,optional :: ndesignmach=3
-            integer(kind=inttype) parameter,optional :: ndesignmachgrid=4
+            integer(kind=inttype) parameter,optional :: ndesignrotz=7
             integer(kind=inttype) parameter,optional :: ndesignrotx=5
             integer(kind=inttype) parameter,optional :: ndesignroty=6
-            integer(kind=inttype) parameter,optional :: ndesignrotz=7
-            integer(kind=inttype) parameter,optional :: ndesignrotcenx=8
-            integer(kind=inttype) parameter,optional :: ndesignrotceny=9
-            integer(kind=inttype) parameter,optional :: ndesignrotcenz=10
-            integer(kind=inttype) parameter,optional :: ndesignpointrefx=11
-            integer(kind=inttype) parameter,optional :: ndesignpointrefy=12
-            integer(kind=inttype) parameter,optional :: ndesignpointrefy=13
-            real(kind=realtype) allocatable,dimension(:,:) :: functiongradcouplingexp
-            real(kind=realtype) allocatable,dimension(:) :: functionvalue
-            real(kind=realtype) parameter,optional :: adjrelfd=1.0e-5_realtype
-            real(kind=realtype) allocatable,dimension(:,:) :: functiongradspatial
+            integer(kind=inttype) parameter,optional :: costfunccmzalphadot=11
+            real(kind=realtype) allocatable,dimension(:,:) :: adjoint
+            integer(kind=inttype) :: ndesign
+            integer(kind=inttype) parameter,optional :: ndesignmachgrid=4
             real(kind=realtype) allocatable,dimension(:,:) :: functiongradsurfacedv
-            real(kind=realtype) allocatable,dimension(:,:) :: functiongradsurfacedisp
-            real(kind=realtype) allocatable,dimension(:,:) :: functiongradstruct
+            integer(kind=inttype) parameter,optional :: costfunccmzq=18
+            integer(kind=inttype) parameter,optional :: ndesignmach=3
+            real(kind=realtype) allocatable,dimension(:,:) :: functiongradcouplingexp
+            integer(kind=inttype) parameter,optional :: costfuncclqdot=21
             character(len=maxstringlen) allocatable,dimension(:) :: functionname
+            integer(kind=inttype) parameter,optional :: ndesignpointrefz=13
             real(kind=realtype) allocatable,dimension(:,:) :: functiongrad
-            character(len=maxstringlen) parameter,optional :: costfuncnamemomx="momxcoef"
-            real(kind=realtype) parameter,optional :: adjepsfd=1.0e-4_realtype
-            integer(kind=inttype) :: ndesignextra
-            real(kind=realtype) parameter,optional :: adjabsfd=1.0e-5_realtype
+            integer(kind=inttype) parameter,optional :: ndesignrotcenz=10
+            integer(kind=inttype) parameter,optional :: ndesignrotceny=9
+            integer(kind=inttype) parameter,optional :: ndesignrotcenx=8
             integer(kind=inttype) :: ncellslocal
             integer(kind=inttype) parameter,optional :: costfuncmomxcoef=6
-            character(len=maxstringlen) parameter,optional :: costfuncnamemomy="momycoef"
-            character(len=maxstringlen) parameter,optional :: costfuncnamelift="liftcoef"
+            integer(kind=inttype) parameter,optional :: ndesignpointrefx=11
             integer(kind=inttype) :: nnodeoffsetlocal
             integer(kind=inttype) parameter,optional :: costfuncliftcoef=1
             character(len=maxstringlen) allocatable,dimension(:) :: xdesignvarname
-            integer(kind=inttype) parameter,optional :: costfuncdragcoef=2
+            integer(kind=inttype) parameter,optional :: costfunccmzalpha=10
             character(len=maxstringlen) parameter,optional :: varnameaoa="angleofattack"
-            integer(kind=inttype) :: ndesignspatial
-            integer(kind=inttype) parameter,optional :: ndesignaoa=1
-            integer(kind=inttype) parameter,optional :: ncostfunction=14
-            integer(kind=inttype) parameter,optional :: costfuncforcexcoef=3
-            integer(kind=inttype) :: nsurfnodesglobal
+            integer(kind=inttype) parameter,optional :: ndesignpointrefy=12
+            real(kind=realtype) allocatable,dimension(:,:) :: functiongradspatial
+            character(len=maxstringlen) parameter,optional :: costfuncnamelift="liftcoef"
             integer(kind=inttype) parameter,optional :: costfuncforceycoef=4
-            character(len=maxstringlen) parameter,optional :: costfuncnamedrag="dragcoef"
+            integer(kind=inttype) parameter,optional :: costfunccdalphadot=17
             real(kind=realtype) allocatable,dimension(:) :: xdesignvar
             integer(kind=inttype) parameter,optional :: costfuncmomycoef=7
+            real(kind=realtype) allocatable,dimension(:) :: functionvalue
+            integer(kind=inttype) :: nnodesglobal
+            integer(kind=inttype) parameter,optional :: costfuncforcezcoef=5
+            integer(kind=inttype) parameter,optional :: costfuncclq=20
+            integer(kind=inttype) :: ncelloffsetlocal
+            integer(kind=inttype) :: nnodeslocal
+            character(len=maxstringlen) parameter,optional :: varnamessa="sideslipangle"
+            integer(kind=inttype) parameter,optional :: costfunccmzqdot=19
+            integer(kind=inttype) parameter,optional :: costfuncclalpha=13
+            character(len=maxstringlen) parameter,optional :: costfuncnameforcey="forceycoef"
+            character(len=maxstringlen) parameter,optional :: costfuncnameforcex="forcexcoef"
+            character(len=maxstringlen) parameter,optional :: costfuncnameforcez="forcezcoef"
+            integer(kind=inttype) parameter,optional :: costfuncforcexcoef=3
+            real(kind=realtype) allocatable,dimension(:) :: xdesignvarlower
+            real(kind=realtype) allocatable,dimension(:,:) :: functiongradcoupling
+            integer(kind=inttype) parameter,optional :: costfuncclalphadot=14
+            character(len=maxstringlen) parameter,optional :: costfuncnamemomx="momxcoef"
+            real(kind=realtype) parameter,optional :: adjrelfd=1.0e-5_realtype
+            integer(kind=inttype) parameter,optional :: costfunccd0=15
+            integer(kind=inttype) :: ndesignextra
+            character(len=maxstringlen) parameter,optional :: costfuncnamemomz="momzcoef"
+            character(len=maxstringlen) parameter,optional :: costfuncnamemomy="momycoef"
+            integer(kind=inttype) parameter,optional :: costfunccdalpha=16
+            integer(kind=inttype) parameter,optional :: costfuncdragcoef=2
+            integer(kind=inttype) :: ndesignspatial
+            integer(kind=inttype) parameter,optional :: ncostfunction=21
+            integer(kind=inttype) parameter,optional :: ndesignaoa=1
+            integer(kind=inttype) :: nsurfnodesglobal
+            real(kind=realtype) allocatable,dimension(:,:) :: functiongradstruct
+            character(len=maxstringlen) parameter,optional :: costfuncnamedrag="dragcoef"
+            real(kind=realtype) parameter,optional :: adjabsfd=1.0e-5_realtype
             integer(kind=inttype) :: nsurfnodeslocal
-            integer(kind=inttype) parameter,optional :: costfunccmzalpha=9
-            integer(kind=inttype) parameter,optional ::costfunccm0=10
-            integer(kind=inttype) parameter,optional ::costfuncclalpha=11
-            integer(kind=inttype) parameter,optional ::costfunccl0=12
-            integer(kind=inttype) parameter,optional ::costfunccdalpha=13
-            integer(kind=inttype) parameter,optional ::costfunccd0=14
-            integer(kind=inttype) parameter,optional :: costfunccmzalphadot=15
-            integer(kind=inttype) parameter,optional :: costfunccmzq=16
-          end module adjointvars
-
-        subroutine getsolution ! in :sumb:../../adjoint/designExport.f90
+        end module adjointvars
+        subroutine getsolution(sps) ! in :sumb:../../adjoint/designExport.f90
             use adjointvars
             use flowvarrefstate
             use inputphysics
             use inputtsstabderiv
+            integer(kind=inttype):: sps
         end subroutine getsolution
 
 ! ############################################################################

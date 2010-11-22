@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine getSolution
+      subroutine getSolution(sps)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -22,19 +22,24 @@
       use flowVarRefState ! magnetic
       use inputPhysics    ! velDirFreestream
       use inputTSStabDeriv !TSStability
-
+      use communication !myID
       implicit none
+
+!
+!     Subroutine Variables
+!
+      integer(kind=intType):: sps
 !
 !     Local variables.
 !
-      integer(kind=intType) :: level, sps, n, nn
+      integer(kind=intType) :: level, n, nn
       real(kind=realType)   :: CL, CD, CFx, CFy, CFz, CMx, CMy, CMz
       real(kind=realType)   :: alpha, beta
 
       real(kind=realType)::dcldp,dcldpdot,dcmzdp,dcmzdpdot         
-      real(kind=realType)::dcldq,dcldqdot,dcmzdq,dcmzdqdot
+      real(kind=realType)::dcldq,dcldqdot,dcddq,dcddqdot,dcmzdq,dcmzdqdot
       real(kind=realType)::dcldr,dcldrdot,dcmzdr,dcmzdrdot
-      real(kind=realType)::dcldalpha,dcldalphadot,dcddalpha,dcmzdalpha,dcmzdalphadot
+      real(kind=realType)::dcldalpha,dcldalphadot,dcddalpha,dcddalphadot,dcmzdalpha,dcmzdalphadot
       real(kind=realType)::dcldMach,dcldMachdot,dcmzdMach,dcmzdMachdot
       real(kind=realType)::cl0,cl0dot,cD0,cmz0,cmz0dot
 !
@@ -45,9 +50,9 @@
 !     ******************************************************************
 !
       ! Set the relevant grid level and time instance.
-
+      !if (myid==0) print *,'getting solution',sps
       level = 1 ! finest grid level
-      sps   = 1 ! first time instance
+      !sps   = 1 ! first time instance
 !
 !     ******************************************************************
 !     *                                                                *
@@ -57,7 +62,7 @@
 !
       ! Function values
       !print *,'calling computeAeroCoef'
-
+      functionValue(:) = 0.0
       call computeAeroCoef(CL,CD, CFx, CFy, CFz,CMx,CMy,CMz,level,sps)
 
       functionValue(costFuncLiftCoef) = CL
@@ -72,14 +77,22 @@
       if(TSStability)then
          
          call computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
-           dcmzdalpha,dcmzdalphadot,dcmzdq)
-         functionValue(costFuncCmzAlpha)     = dcmzdalpha
+           dcmzdalpha,dcldalphadot,dcddalphadot,dcmzdalphadot,dcldq,&
+           dcddq,dcmzdq,dcldqdot,dcddqdot,dcmzdqdot)
+
+         functionValue( costFuncCmzAlpha)    = dcmzdalpha
          functionValue( costFuncCm0)         = cmz0
+         functionValue( costFuncCmzAlphadot) = dcmzdalphadot
          functionValue( costFuncClAlpha)     = dcldalpha
          functionValue( costFuncCl0  )       = cl0
-         functionValue( costFuncCdAlpha )    = dcmzdalpha
+         functionValue( costFuncClAlphadot)  = dcldalphadot
+         functionValue( costFuncCdAlpha )    = dcddalpha
          functionValue( costFuncCd0 )        = cd0
-         functionValue( costFuncCmzAlphaDot) = dcmzdalphadot
-         functionValue( costFuncCmzq)         = dcmzdq
+         functionValue( costFuncCdAlphaDot)  = dcddalphadot
+         functionValue( costFuncCmzq)        = dcmzdq
+         functionValue( costFuncCmzqdot)     = dcmzdqdot
+         functionValue( costFuncClq)         = dcldq
+         functionValue( costFuncClqdot)      = dcldqdot
+
       end if
     end subroutine getSolution
