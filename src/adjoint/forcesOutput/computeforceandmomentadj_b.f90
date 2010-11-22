@@ -184,9 +184,9 @@
    CASE DEFAULT
    CALL PUSHINTEGER4(0)
    END SELECT
-   CALL COMPUTEFORCECOUPLINGADJ(addforce, addmoment, grid_pts, &
-   &                                wadj, pointrefadj, fact, ibeg, iend, &
-   &                                jbeg, jend, i, j, righthandedadj)
+   CALL COMPUTEFORCESADJ(addforce, addmoment, grid_pts, wadj, &
+   &                         pointrefadj, fact, ibeg, iend, jbeg, jend, i, j&
+   &                         , righthandedadj)
    ii = ii + 1
    force = force + addforce
    moment = moment + addmoment
@@ -247,11 +247,10 @@
    addmomentb = 0.0
    addmomentb = momentb
    addforceb = addforceb + forceb
-   CALL COMPUTEFORCECOUPLINGADJ_B(addforce, addforceb, addmoment, &
-   &                               addmomentb, grid_pts, grid_ptsb, wadj, &
-   &                               wadjb, pointrefadj, pointrefadjb, fact, &
-   &                               ibeg, iend, jbeg, jend, i, j, &
-   &                               righthandedadj)
+   CALL COMPUTEFORCESADJ_B(addforce, addforceb, addmoment, addmomentb&
+   &                        , grid_pts, grid_ptsb, wadj, wadjb, pointrefadj&
+   &                        , pointrefadjb, fact, ibeg, iend, jbeg, jend, i&
+   &                        , j, righthandedadj)
    addforceb = 0.0
    CALL POPINTEGER4(branch)
    IF (branch .LT. 4) THEN
