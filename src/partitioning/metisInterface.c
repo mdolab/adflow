@@ -36,10 +36,10 @@ void metisInterface(int *n, int *ncon, idxtype *xadj, idxtype *adjncy,
     int i;
     for(i=0; i<(*n); i++) part[i] = 0;
   }
-  else if(*nparts > 8)
+  /* else if(*nparts > 8)
     METIS_mCPartGraphKway(n, ncon, xadj, adjncy, vwgt, adjwgt, wgtflag,
                           numflag, nparts, ubvec, options, edgecut,
-                          part);
+                          part);*/
   else
     METIS_mCPartGraphRecursive(n, ncon, xadj, adjncy, vwgt, adjwgt,
                                wgtflag, numflag, nparts, options,

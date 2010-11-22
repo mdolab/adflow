@@ -161,3 +161,55 @@
        
      end subroutine updateGridVelocitiesAllLevels
 
+
+     subroutine updatePeriodicInfoAllLevels
+
+
+!
+!      ******************************************************************
+!      *                                                                *
+!      * updatePeriodicInfoAllLevels recomputes the spectral parameters *
+!      * on all grid levels. This routine is typically called when the  *
+!      * frequnecy or amplitude of the oscillation in the time spectral *
+!      * computation has changed                                        *
+!      *                                                                *
+!      ******************************************************************
+!
+       use block
+       use iteration
+       use section
+       use monitor
+       use inputTimeSpectral
+       use inputPhysics
+       use communication
+       implicit none
+
+       !subroutine variables
+
+       !Local Variables
+       
+       
+
+       !from partitionAndReadGrid.f90
+       ! Determine for the time spectral mode the time of one period,
+       ! the rotation matrices for the velocity components and
+       ! create the fine grid coordinates of all time spectral locations.
+       if( myid==0)print *,'in update periodicInfo...'
+       call timePeriodSpectral
+       call timeRotMatricesSpectral
+       call fineGridSpectralCoor
+
+       !Store the initial mesh as required for the integrated meshwarping
+       !routine. Called after fineGridSpectralCoor to capture all time
+       !spectral intervals.
+       call storeReferenceMesh
+
+       !From initFlow.f90
+       ! Determine for the time spectral mode the matrices for the
+       ! time derivatives.
+
+       call timeSpectralMatrices
+
+
+
+     end subroutine updatePeriodicInfoAllLevels

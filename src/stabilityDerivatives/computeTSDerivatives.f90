@@ -9,13 +9,14 @@
 !     ******************************************************************
 !
       subroutine computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
-           dcmzdalpha,dcmzdalphadot,dcmzdq)
+           dcmzdalpha,dcldalphadot,dcddalphadot,dcmzdalphadot,dcldq,&
+           dcddq,dcmzdq,dcldqdot,dcddqdot,dcmzdqdot)
 !
 !     ******************************************************************
 !     *                                                                *
 !     * Computes an estimate for the stability derivatives from the    *
 !     * coefficient values of the Time Spectral Solution.              *
-!     * for now just the q derivative...                               *
+!     *                                                                *
 !     ******************************************************************
 !
       use precision
@@ -126,7 +127,10 @@
          !if(myID==0)print *,'dphix',dphix
          !if(myID==0)print *,'dphixdot',dphixdot
          !now compute dCl/dp
-         
+         if (myid==0) then
+            print *,'CL',CL
+            print *,'dphix',dphix
+         endif
          call computeLeastSquaresRegression(cl,dphix,nTimeIntervalsSpectral,dcldp,cl0)
 
          !now compute dCd/dp
@@ -190,7 +194,7 @@
                        /         real(nTimeIntervalsSpectral,realType)
                enddo
             endif
-            !print *,'t',t
+            if (myid==0)  print *,'t',t
             
             ! Compute the time derivative of the rotation angles around the
             ! z-axis. i.e. compute q
@@ -212,9 +216,14 @@
                  sinCoefFourZRot, t)
             !if(myID==0)print *,'dphizdot',dphizdot
          end do
-         if(myID==0)print *,'dphiz',dphiz
-         if(myID==0)print *,'dphizdot',dphizdot
+         !if(myID==0)print *,'dphiz',dphiz
+         !if(myID==0)print *,'dphizdot',dphizdot
          
+         if (myid==0) then
+            print *,'CL',CL
+            print *,'dphiz',dphiz
+            print *,'dphizdot',dphizdot
+         endif
          !now compute dCl/dq
          
          call computeLeastSquaresRegression(cl,dphiz,nTimeIntervalsSpectral,dcldq,cl0)
@@ -309,9 +318,13 @@
             
          enddo
          
-         if(myID==0)print *,'dphiy',dphiy
-         if(myID==0)print *,'dphiydot',dphiydot
+         !if(myID==0)print *,'dphiy',dphiy
+         !if(myID==0)print *,'dphiydot',dphiydot
          
+         if (myid==0) then
+            print *,'CL',CL
+            print *,'dphiy',dphiy
+         endif
          !now compute dCl/dr
          
          call computeLeastSquaresRegression(cl,dphiy,nTimeIntervalsSpectral,dcldr,cl0)
@@ -370,7 +383,10 @@
          end do
          !print *,'Alpha', intervalAlpha
          !now compute dCl/dalpha
-         
+         if (myid==0) then
+            print *,'CL',CL
+            print *,'intervalAlpha',intervalAlpha
+         endif
          call computeLeastSquaresRegression(cl,intervalAlpha,nTimeIntervalsSpectral,dcldalpha,cl0)
          
          !now compute dCd/dalpha
@@ -400,6 +416,8 @@
          if(myID==0) print *,'ResCL',resCL
          if(myID==0) print *,'ResCd',resCd
          if(myID==0) print *,'resCMZ',resCMZ
+
+         if(myID==0) print *,'intervalAlphaDot',intervalAlphadot
          !now compute dCl/dqdot
          
          call computeLeastSquaresRegression(Rescl,intervalAlphadot,nTimeIntervalsSpectral,dcldalphadot,cl0dot)

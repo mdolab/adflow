@@ -49,7 +49,7 @@
 
        ! Allocate the memory for rotMatrixSpectral, which will store
        ! the rotation matrices for all the sections.
-
+       if( allocated(rotMatrixSpectral)) deallocate(rotMatrixSpectral)
        allocate(rotMatrixSpectral(nSections,3,3), stat=ierr)
        if(ierr /= 0)                               &
          call terminate("timeRotMatricesSpectral", &
