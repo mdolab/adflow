@@ -78,7 +78,7 @@
          ! Compute the wind direction vector.Aerosurf axes different!!
          
          ! 1) rotate alpha radians cw about z-axis
-         !    ( <=> rotate z-axis alpha radians ccw)
+         !    ( <=> rotate z-axis alpha radians cw)
          
          
          call vectorRotationForces(x1, y1, z1, 3, -alpha, xbn, ybn, zbn)
@@ -91,13 +91,13 @@
       elseif(liftIndex==3)then
          ! Compute the wind direction vector.Aerosurf axes different!!
          
-         ! 1) rotate alpha radians cw about z-axis
+         ! 1) rotate alpha radians ccw about z-axis
          !    ( <=> rotate z-axis alpha radians ccw)
          
          call vectorRotationForces(x1, y1, z1, 2, alpha, xbn, ybn, zbn)
          
-         ! 2) rotate beta radians ccw about y-axis
-         !    ( <=> rotate z-axis -beta radians ccw)
+         ! 2) rotate beta radians ccw about z-axis
+         !    ( <=> rotate z-axis beta radians ccw)
          
          call vectorRotationForces(xw, yw, zw, 3, beta, x1, y1, z1)
          

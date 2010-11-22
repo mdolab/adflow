@@ -36,7 +36,7 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS = 	computePressureAdj.o\
+FF90_OBJECTS = 	computePressureForcesAdj.o\
 	        computeForcesAdj.o\
 	        bcEulerWallForcesAdj.o\
 	        getSurfaceNormalsForcesAdj.o\

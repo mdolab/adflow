@@ -37,7 +37,7 @@ subroutine computeForcesAdj(force,moment,pts,wAdj,refPoint,fact,&
   padj = 0.0
 
   call computePressureAdj(wAdj,pAdj(2:3,:,:))
-  call getSurfaceNormalsAdj(pts,normAdj,rightHanded)
+  call getSurfaceNormalsForcesAdj(pts,normAdj,rightHanded)
 
   ! Only BC Euler wall boundary conditions are implemented. 
   call bcEulerWallForcesAdj(wAdj,pAdj)

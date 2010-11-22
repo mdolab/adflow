@@ -23,7 +23,7 @@ EXT = '_b.f90'
 # Specify directory containing the original source files
 # and the output directory for edited files
 DIR_ORI = os.getcwd()
-DIR_MOD = DIR_ORI + '/../couplingOutput'
+DIR_MOD = DIR_ORI + '/../forcesOutput'
 # Specify line identifier
 
 # Specifiy the list of LINE ID's to find, what to replace and with what

@@ -36,15 +36,16 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS = computeforcecouplingadj_b.o\
-	       computeforcecouplingpressureadj_b.o\
-	       forcescouplingadj_b.o\
-               getsurfacenormalscouplingadj_b.o\
-	       bceulerwallforcecouplingadj_b.o\
-	       adjustinflowangleforcesadj_b.o\
-	       computeforceandmomentadj_b.o\
-	       getdirvectorforces_b.o\
-	       vectorrotationforces_b.o
+FF90_OBJECTS = 	adjustinflowangleforcesadj_b.o\
+		bceulerwallforcesadj_b.o\
+		computeforceandmomentadj_b.o\
+		computeforcesadj_b.o\
+		computepressureadj_b.o\
+		forcesadj_b.o\
+		getdirvectorforces_b.o\
+		getsurfacenormalsforcesadj_b.o\
+		vectorrotationforces_b.o\
+
 
 #CC_OBJECTS   = connect_signals.o
 

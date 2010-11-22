@@ -113,7 +113,7 @@ TAPENADE_MODE = -reverse
 
 # Output directory
 
-TAPENADE_OUTDIR = $(SOLVER_DIRSRC)/adjoint/couplingTapenade/
+TAPENADE_OUTDIR = $(SOLVER_DIRSRC)/adjoint/forcesTapenade/
 
 # Integer, double and real precision (bytes)
 
@@ -126,7 +126,7 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 #     *                                                                *
 #     ******************************************************************
 
-TAPENADE_DIRSRC = $(SOLVER_DIRSRC)/adjoint/couplingInput
+TAPENADE_DIRSRC = $(SOLVER_DIRSRC)/adjoint/forcesInput
 TAPENADE_MODDIR = $(SOLVER_DIRSRC)/adjoint/residualInput
 SUMB_MODDIR      = $(SOLVER_DIRSRC)/modules
 
@@ -138,15 +138,15 @@ TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
 #     *                                                                *
 #     ******************************************************************
 
-TAPENADE_SRC = $(TAPENADE_DIRSRC)/computeForceCouplingPressureAdj.f90\
-               $(TAPENADE_DIRSRC)/computeForceCouplingAdj.f90\
-	       $(TAPENADE_DIRSRC)/bcEulerWallForceCouplingAdj.f90\
-	       $(TAPENADE_DIRSRC)/getSurfaceNormalsCouplingAdj.f90\
-               $(TAPENADE_DIRSRC)/forceCouplingAdj.f90\
-	       $(TAPENADE_DIRSRC)/getDirVectorForces.f90\
-	       $(TAPENADE_DIRSRC)/adjustInflowAngleForcesAdj.f90\
-	       $(TAPENADE_DIRSRC)/vectorRotationForces.f90\
+TAPENADE_SRC = $(TAPENADE_DIRSRC)/adjustInflowAngleForcesAdj.f90\
+	       $(TAPENADE_DIRSRC)/bcEulerWallForcesAdj.f90\
                $(TAPENADE_DIRSRC)/computeForceAndMomentAdj.f90\
+               $(TAPENADE_DIRSRC)/computeForcesAdj.f90\
+	       $(TAPENADE_DIRSRC)/computePressureAdj.f90\
+               $(TAPENADE_DIRSRC)/forcesAdj.f90\
+	       $(TAPENADE_DIRSRC)/getDirVectorForces.f90\
+	       $(TAPENADE_DIRSRC)/getSurfaceNormalsForcesAdj.f90\
+	       $(TAPENADE_DIRSRC)/vectorRotationForces.f90\
 
 TAPENADE_MOD = $(TAPENADE_MODDIR)/constants.f90 \
 	       $(TAPENADE_MODDIR)/flowVarRefState.f90 \
