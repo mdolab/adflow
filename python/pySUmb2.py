@@ -98,7 +98,7 @@ class SUMB(AeroSolver):
             'loadImbalance':[float,0.1],
             'dissipationScalingExponent':[float,0.67],
             'vis4':[float,0.0156],
-            'vis2':[float,0.25],
+            'vis2':[float,0.5],
             'vis2Coarse':[float,0.5], 
             'restrictionRelaxation':[float,1.0],
             'printIterations':[bool,False],
@@ -1184,10 +1184,10 @@ class SUMB(AeroSolver):
         # The derivative wrt the surface captures the effect of ALL
         # GLOBAL Multidisciplinary variables -- any DV that changes
         # the surface. 
-        restart = self.getOption('restartAdjoint')
+
         obj = self.possibleObjectives[objective.lower()]
         
-        if restart: # Selected stored adjoint
+        if self.getOption('restartAdjoint'): # Selected stored adjoint
             self.sumb.setadjoint(self.storedADjoints[obj])
         # end if
 
