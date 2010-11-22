@@ -176,9 +176,14 @@ python module sumb ! in
 
        subroutine checkwriteunsteadyendloop ! in :sumb:../../solver/solverUnsteady.F90
        end subroutine checkwriteunsteadyendloop
- ! ############################################################################
+       ! ############################################################################
        ! ADjoint Routines
        ! ############################################################################
+
+       subroutine verifyradj(level)
+         integer(kind=inttype) intent(in) :: level
+       end subroutine verifyradj
+
        subroutine getsolution(sps) ! in :sumb:../../adjoint/designExport.f90
          integer(kind=inttype) intent(in) :: sps
        end subroutine getsolution
@@ -763,33 +768,40 @@ python module sumb ! in
        end module adjointpetsc
 
        module costfunctions ! in :test:costFunctions.F90
-         use constants
-         integer(kind=inttype) parameter,optional :: costfunclift=1
-         integer(kind=inttype) parameter,optional :: costfunccd0=22
-         integer(kind=inttype) parameter,optional :: costfuncforcex=5
-         integer(kind=inttype) parameter,optional :: costfuncforcey=6
-         integer(kind=inttype) parameter,optional :: costfuncforcez=7
-         integer(kind=inttype) parameter,optional :: costfuncforcezcoef=10
-         integer(kind=inttype) parameter,optional :: costfuncmomz=13
-         integer(kind=inttype) parameter,optional :: costfuncmomx=11
-         integer(kind=inttype) parameter,optional :: costfuncmomy=12
-         integer(kind=inttype) parameter,optional :: costfunccl0=20
-         integer(kind=inttype) parameter,optional :: costfuncmomzcoef=16
-         integer(kind=inttype) parameter,optional :: costfunccm0=18
-         integer(kind=inttype) parameter,optional :: costfuncmomxcoef=14
-         integer(kind=inttype) parameter,optional :: costfuncdrag=2
-         integer(kind=inttype) parameter,optional :: costfuncliftcoef=3
-         integer(kind=inttype) parameter,optional :: costfunccmzalpha=17
-         integer(kind=inttype) parameter,optional :: costfuncdragcoef=4
-         integer(kind=inttype) parameter,optional :: costfunccdalpha=21
-         integer(kind=inttype) parameter,optional :: ncostfunction=24
-         integer(kind=inttype) parameter,optional :: costfuncclalpha=19
-         integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
-         integer(kind=inttype) parameter,optional :: costfuncforcexcoef=8
-         integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
-         integer(kind=inttype) parameter,optional :: costfunccmzq=24
-         integer(kind=inttype) parameter,optional :: costfunccmzalphadot=23
-         real(kind=realtype) allocatable,dimension(:) :: functionvalue
+          use constants
+            integer(kind=inttype) parameter,optional :: costfunccdq=30
+            integer(kind=inttype) parameter,optional :: costfuncforcezcoef=10
+            integer(kind=inttype) parameter,optional :: costfuncmomzcoef=16
+            integer(kind=inttype) parameter,optional :: costfunccm0=17
+            integer(kind=inttype) parameter,optional :: costfuncforcex=5
+            integer(kind=inttype) parameter,optional :: costfuncclq=25
+            integer(kind=inttype) parameter,optional :: costfuncdrag=2
+            integer(kind=inttype) parameter,optional :: costfunccl0=22
+            integer(kind=inttype) parameter,optional :: costfunccmzqdot=21
+            integer(kind=inttype) parameter,optional :: costfuncforcexcoef=8
+            integer(kind=inttype) parameter,optional :: costfunccmzq=20
+            integer(kind=inttype) parameter,optional :: costfunccmzalphadot=19
+            real(kind=realtype) allocatable,dimension(:) :: functionvalue
+            integer(kind=inttype) parameter,optional :: costfunclift=1
+            integer(kind=inttype) parameter,optional :: costfunccd0=27
+            integer(kind=inttype) parameter,optional :: costfuncclqdot=26
+            integer(kind=inttype) parameter,optional :: costfuncforcey=6
+            integer(kind=inttype) parameter,optional :: costfuncforcez=7
+            integer(kind=inttype) parameter,optional :: costfuncmomz=13
+            integer(kind=inttype) parameter,optional :: costfunccdqdot=31
+            integer(kind=inttype) parameter,optional :: costfuncmomx=11
+            integer(kind=inttype) parameter,optional :: costfuncmomy=12
+            integer(kind=inttype) parameter,optional :: costfunccdalphadot=29
+            integer(kind=inttype) parameter,optional :: costfuncmomxcoef=14
+            integer(kind=inttype) parameter,optional :: costfunccdalpha=28
+            integer(kind=inttype) parameter,optional :: costfuncliftcoef=3
+            integer(kind=inttype) parameter,optional :: costfunccmzalpha=18
+            integer(kind=inttype) parameter,optional :: costfuncdragcoef=4
+            integer(kind=inttype) parameter,optional :: costfuncclalphadot=24
+            integer(kind=inttype) parameter,optional :: ncostfunction=31
+            integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
+            integer(kind=inttype) parameter,optional :: costfuncclalpha=23
+            integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
        end module costfunctions
 
        module adjointvars ! in :test:ADjointVars.F90

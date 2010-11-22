@@ -44,19 +44,16 @@ module costFunctions
        costFuncMomXCoef   = 14_intType,&
        costFuncMomYCoef   = 15_intType,&
        costFuncMomZCoef   = 16_intType,&
-
        costFuncCm0        = 17_intType,&
        costFuncCmzAlpha   = 18_intType,&
        costFuncCmzAlphaDot= 19_intType,&
        costFuncCmzq       = 20_intType,&
        costFuncCmzqDot    = 21_intType,&
-
        costFuncCl0        = 22_intType,&
        costFuncClAlpha    = 23_intType,&
        costFuncClAlphaDot = 24_intType,&
        costFuncClq        = 25_intType,&
        costFuncClqDot     = 26_intType,&
-
        costFuncCd0        = 27_intType,&
        costFuncCdAlpha    = 28_intType,& 
        costFuncCdAlphadot = 29_intType,&
