@@ -1,6 +1,6 @@
 
 
-subroutine getSurfaceNormalsCouplingAdj(pts,normAdj,rightHanded)
+subroutine getSurfaceNormalsForcesAdj(pts,normAdj,rightHanded)
 
   
   use constants
@@ -40,4 +40,4 @@ subroutine getSurfaceNormalsCouplingAdj(pts,normAdj,rightHanded)
   end do
 
 
-end subroutine getSurfaceNormalsCouplingAdj
+end subroutine getSurfaceNormalsForcesAdj

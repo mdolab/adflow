@@ -1,14 +1,14 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * File:          forcesCouplingAdj.f90                           *
+!      * File:          forcesAdj.f90                                   *
 !      * Author:        Edwin van der Weide,C.A.(Sandy) Mader           *
 !      * Starting date: 08-17-2008                                      *
 !      * Last modified: 08-17-2008                                      *
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine forcesCouplingAdj(pAdj,pts,normAdj,refPoint,force,moment,fact,&
+subroutine forcesAdj(pAdj,pts,normAdj,refPoint,force,moment,fact,&
      iBeg,iEnd,jBeg,jEnd,iNode,jNode)
   
   use flowVarRefState
@@ -99,4 +99,4 @@ subroutine forcesCouplingAdj(pAdj,pts,normAdj,refPoint,force,moment,fact,&
          end if
       end do
    end do
- end subroutine forcesCouplingAdj
+ end subroutine forcesAdj

@@ -10,7 +10,7 @@
 !      ******************************************************************
 !
 
-subroutine bcEulerWallForceCouplingAdj(wAdj,pAdj)
+subroutine bcEulerWallForcesAdj(wAdj,pAdj)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -55,9 +55,9 @@ subroutine bcEulerWallForceCouplingAdj(wAdj,pAdj)
      enddo
      
   case (quadExtrapolPressure)
-     call terminate("bcEulerWallForceCouplingAdj", "Adjoint Quadratic extrapolation not implemented")
+     call terminate("bcEulerWallForcesAdj", "Adjoint Quadratic extrapolation not implemented")
   case (normalMomentum)
-     call terminate("bcEulerWallForceCouplingAdj", "Normal Momentum not implemented")
+     call terminate("bcEulerWallForcesAdj", "Normal Momentum not implemented")
   end select BCTreatment
 
   ! Determine the state in the halo cell. Again loop over
@@ -69,4 +69,4 @@ subroutine bcEulerWallForceCouplingAdj(wAdj,pAdj)
      enddo
   enddo
 
-end subroutine bcEulerWallForceCouplingAdj
+end subroutine bcEulerWallForcesAdj
