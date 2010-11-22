@@ -97,7 +97,7 @@ subroutine verifydCfdx(level)
 
       real(kind=realType), parameter :: deltax = 1.e-6_realType
 
-      real(kind=realType) :: xAdjRef,xref,alpharef,machref,alpha,beta,machcoefref,rotratexref
+      real(kind=realType) :: xAdjRef,xref,alpharef,betaref,machref,alpha,beta,machcoefref,rotratexref
 
       real(kind=realType), dimension(:,:,:), pointer :: norm
       real(kind=realType), dimension(:,:,:),allocatable:: normAdj
@@ -112,7 +112,9 @@ subroutine verifydCfdx(level)
            dCldextraerror,dcddextraerror, dCldextralocal,dcddextralocal,dcmdextra,&
            dcmdextraFD,dcmdextralocal,dcmdextraerror
 
-      REAL(KIND=REALTYPE) :: rotcenteradj(3), rotrateadj(3), rotrateadjb(3)
+      REAL(KIND=REALTYPE) :: rotcenteradj(3), rotcenteradjb(3), rotrateadj(3), rotrateadjb(3)
+      REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3), rotpointadj(3)&
+           &  , rotpointadjb(3)
 
       real(kind=realType), dimension(nSections) :: t
 
@@ -220,13 +222,13 @@ subroutine verifydCfdx(level)
 !     ******************************************************************
          
 !*********************
-      !from ForcesAndMoments.f90
-       ! Determine the reference point for the moment computation in
-       ! meters.
-      print *,'setting refpoint'
-       refPoint(1) = LRef*pointRef(1)
-       refPoint(2) = LRef*pointRef(2)
-       refPoint(3) = LRef*pointRef(3)
+!!$      !from ForcesAndMoments.f90
+!!$       ! Determine the reference point for the moment computation in
+!!$       ! meters.
+!!$      print *,'setting refpoint'
+!!$       refPoint(1) = LRef*pointRef(1)
+!!$       refPoint(2) = LRef*pointRef(2)
+!!$       refPoint(3) = LRef*pointRef(3)
 
        ! Initialize the force and moment coefficients to 0 as well as
        ! yplusMax.
@@ -333,13 +335,11 @@ subroutine verifydCfdx(level)
         ! Copy the coordinates into xAdj and
         ! Compute the face normals on the subfaces
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-           MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
-           rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
-           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
-        !copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-        !     MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-        !     rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
-        !     pInfCorrAdj,nn,level,sps,liftIndex)
+     MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
+     rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
+     timerefAdj,pInfCorrAdj,pointRefAdj,rotPointAdj,nn,level,sps,&
+     liftIndex)
+        
 
         machadjb=zero
         machcoefadjb=zero
@@ -422,9 +422,9 @@ subroutine verifydCfdx(level)
            CmxAdjB = 0
            CmyAdjB = 0
            CmzAdjB = 0
-!!$        CfxAdjB = 0
-!!$        CfyAdjB = 0
-!!$        CfzAdjB = 0
+           CfxAdjB = 0
+           CfyAdjB = 0
+           CfzAdjB = 0
            
           
            
@@ -437,14 +437,15 @@ subroutine verifydCfdx(level)
            ! Compute the force derivatives
            print *,'input',machadjb, machcoefadjb,alphaadjb,betaadjb,mm         
            call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
-&  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
-&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
-&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
-&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
-&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
-&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
-&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex)
+   &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
+   &  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
+   &  , cmzadj, cmzadjb, yplusmax, pointrefadj, pointrefadjb, rotpointadj, &
+   &  rotpointadjb, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+   &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+   &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
+   &  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
+   &  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
+   &  rotcenteradjb, rotrateadj, rotrateadjb, liftindex, t)
 
            print *,'output',machadjb, machcoefadjb,alphaadjb,betaadjb,mm
 
@@ -547,7 +548,7 @@ subroutine verifydCfdx(level)
          dcldextra(6) = monGlob2(6)
          dcldextra(7) = monGlob2(7)
          !dcddextra(2) = monGlob2(8)
-
+         print *,'dcldextraglobal',dcldextra(1),dcldextra(2),dcldextra(3)
       enddo spectralLoop1Adj
 
 !****************************
@@ -651,13 +652,10 @@ subroutine verifydCfdx(level)
         ! Copy the coordinates into xAdj and
         ! Compute the face normals on the subfaces
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-           MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
-           rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
-           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
-        !copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-        !     MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-        !     rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
-        !     pInfCorrAdj,nn,level,sps,liftIndex)
+     MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
+     rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
+     timerefAdj,pInfCorrAdj,pointRefAdj,rotPointAdj,nn,level,sps,&
+     liftIndex)
 
         machadjb=zero
         machcoefadjb=zero
@@ -682,9 +680,9 @@ subroutine verifydCfdx(level)
            CmxAdjB = 0
            CmyAdjB = 0
            CmzAdjB = 0
-!!$        CfxAdjB = 0
-!!$        CfyAdjB = 0
-!!$        CfzAdjB = 0
+           CfxAdjB = 0
+           CfyAdjB = 0
+           CfzAdjB = 0
        
            xAdjB(:,:,:,:) = zero ! > return dCf/dx
            
@@ -696,14 +694,15 @@ subroutine verifydCfdx(level)
            ! Compute the force derivatives
            
            call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
-&  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
-&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
-&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
-&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
-&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
-&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
-&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex)
+   &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
+   &  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
+   &  , cmzadj, cmzadjb, yplusmax, pointrefadj, pointrefadjb, rotpointadj, &
+   &  rotpointadjb, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+   &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+   &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
+   &  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
+   &  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
+   &  rotcenteradjb, rotrateadj, rotrateadjb, liftindex, t)
 
            
            
@@ -864,9 +863,10 @@ subroutine verifydCfdx(level)
         ! Copy the coordinates into xAdj and
         ! Compute the face normals on the subfaces
         call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-           MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
-           rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
-           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
+     MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
+     rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
+     timerefAdj,pInfCorrAdj,pointRefAdj,rotPointAdj,nn,level,sps,&
+     liftIndex)
         !copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
         !     MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
         !     rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
@@ -892,31 +892,32 @@ subroutine verifydCfdx(level)
            ! Initialize the seed for reverse mode. Cmx third
            ClAdjB = 0
            CDAdjB = 0
-           CmxAdjB = 1
+           CmxAdjB = 0
            CmyAdjB = 0
-           CmzAdjB = 0
- !       CfxAdjB = 0
- !       CfyAdjB = 0
- !       CfzAdjB = 0
+           CmzAdjB = 1
+           CfxAdjB = 0
+           CfyAdjB = 0
+           CfzAdjB = 0
        
            xAdjB(:,:,:,:) = zero ! > return dCf/dx
            
            !===============================================================
            !           
-!           print *,'Calculating MomX Partials...'
+!           print *,'Calculating Momz Partials...'
            
            !===============================================================
            ! Compute the force derivatives
            
            call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
-&  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
-&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
-&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
-&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
-&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
-&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
-&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex)
+   &  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
+   &  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
+   &  , cmzadj, cmzadjb, yplusmax, pointrefadj, pointrefadjb, rotpointadj, &
+   &  rotpointadjb, cladj, cladjb, cdadj, cdadjb, nn, level, sps, cfpadj, &
+   &  cmpadj, righthanded, secondhalo, alphaadj, alphaadjb, betaadj, &
+   &  betaadjb, machadj, machadjb, machcoefadj, machcoefadjb, machgridadj, &
+   &  machgridadjb, prefadj, rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj&
+   &  , pinfadj, murefadj, timerefadj, pinfcorradj, rotcenteradj, &
+   &  rotcenteradjb, rotrateadj, rotrateadjb, liftindex, t)
 
            
            !loop over cells to store the jacobian
@@ -1272,7 +1273,8 @@ subroutine verifydCfdx(level)
       
         monloc1=0.0
         monloc2=0.0
-      sps=1
+      sps=1 
+     
       print *,'starting FD loop',sps
       domainMachLoopFDorig: do nn=1,nDom   
          
@@ -1420,7 +1422,7 @@ subroutine verifydCfdx(level)
          !print *,'clp',CLP,CLM,CLP-CLM
          dCLdextraFD(ndesignmach) = (CLP-CLM)/(two*deltax)  
          dCDdextraFD(ndesignmach) = (CDP-CDM)/(two*deltax) 
-         dcmdextrafd(ndesignmach) = (cmxp-cmxm)/(two*deltax)
+         dcmdextrafd(ndesignmach) = (cmzp-cmzm)/(two*deltax)
          !dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
         
       enddo domainMachLoopFDorig
@@ -1434,6 +1436,7 @@ subroutine verifydCfdx(level)
       monloc2=0.0
       
       sps=1
+
       print *,'starting alpha FD loop',sps
       domainalphaLoopFDorig: do nn=1,nDom   
          
@@ -1488,6 +1491,7 @@ subroutine verifydCfdx(level)
          Cl = (cfp(1) + cfv(1))*liftDirection(1) &
               + (cfp(2) + cfv(2))*liftDirection(2) &
               + (cfp(3) + cfv(3))*liftDirection(3)
+!(1.0/float(ndom))*liftDirection(1)
          
          Cd = (cfp(1) + cfv(1))*dragDirection(1) &
               + (cfp(2) + cfv(2))*dragDirection(2) &
@@ -1500,6 +1504,7 @@ subroutine verifydCfdx(level)
          Cmx = cmp(1) + cmv(1)
          Cmy = cmp(2) + cmv(2)
          Cmz = cmp(3) + cmv(3)
+!(1.0/float(ndom))*liftDirection(3)!
          
          nmonsum = 8
          
@@ -1580,6 +1585,7 @@ subroutine verifydCfdx(level)
          Cl = (cfp(1) + cfv(1))*liftDirection(1) &
               + (cfp(2) + cfv(2))*liftDirection(2) &
               + (cfp(3) + cfv(3))*liftDirection(3)
+!(1.0/float(ndom))*liftDirection(1)!
          
          Cd = (cfp(1) + cfv(1))*dragDirection(1) &
               + (cfp(2) + cfv(2))*dragDirection(2) &
@@ -1592,7 +1598,228 @@ subroutine verifydCfdx(level)
          Cmx = cmp(1) + cmv(1)
          Cmy = cmp(2) + cmv(2)
          Cmz = cmp(3) + cmv(3)
+!(1.0/float(ndom))*liftDirection(3)!
          
+         nmonsum = 8
+         
+         monLoc2(1) = monLoc2(1)+Cl
+         monLoc2(2) = monLoc2(2)+Cd
+         monLoc2(3) = monLoc2(3)+cfx
+         monLoc2(4) = monLoc2(4)+ cfy
+         monLoc2(5) = monLoc2(5)+cfz
+         monLoc2(6) = monLoc2(6) +cmx
+         monLoc2(7) = monLoc2(7) +cmy
+         monLoc2(8) = monLoc2(8)+cmz
+         
+         ! Determine the global sum of the summation monitoring
+         ! variables. The sum is made known to all processors.
+         
+         call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
+              mpi_sum, SUmb_comm_world, ierr)
+         
+         ! Transfer the cost function values to output arguments.
+         
+         CLm  = monGlob2(1)
+         CDm  = monGlob2(2)
+         Cfxm = monGlob2(3)
+         Cfym = monGlob2(4)
+         Cfzm = monGlob2(5) 
+         CMxm = monGlob2(6)
+         CMym = monGlob2(7)
+         CMzm = monGlob2(8)
+         
+         
+         alpha = alpharef
+                  
+         call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+
+         dCLdextraFD(ndesignaoa) = (CLP-CLM)/(two*deltax)  
+         dCDdextraFD(ndesignaoa) = (CDP-CDM)/(two*deltax) 
+         dcmdextrafd(ndesignaoa) = (cmzp-cmzm)/(two*deltax)
+         !dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
+
+      enddo domainalphaLoopFDorig
+
+      
+      call f77flush()
+      call mpi_barrier(SUmb_comm_world, ierr)
+
+      !get reference conditions
+      call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+      print *,'dirangle',liftDirection,beta
+      monloc1=0.0
+      monloc2=0.0
+
+      sps=1
+      print *,'starting beta FD loop',sps
+      domainbetaLoopFDorig: do nn=1,nDom   
+         
+         call setPointers(nn,level,sps)
+
+         !loop over all points
+         betaref = beta
+         
+         beta = betaref+deltax!*1000
+         
+         !*************************************************************
+         !Original force and metric calculation....
+         !     ******************************************************************
+         !     *                                                                *
+         !     * Update the force coefficients using the usual flow solver      *
+         !     * routine.                                                       *
+         !     *                                                                *
+         !     ******************************************************************
+         !
+         !print *,'betaplus', beta
+         call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+
+         !call checkInputParam
+         !print *,'adjflowangleplus',liftDirection
+              do mm=1,nTimeIntervalsSpectral
+            
+            ! Compute the time, which corresponds to this spectral solution.
+            ! For steady and unsteady mode this is simply the restart time;
+            ! for the spectral mode the periodic time must be taken into
+            ! account, which can be different for every section.
+            
+            t = timeUnsteadyRestart
+            
+            if(equationMode == timeSpectral) then
+               do ll=1,nSections
+                  t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
+                       /         real(nTimeIntervalsSpectral,realType)
+               enddo
+            endif
+            
+            call gridVelocitiesFineLevel(.false., t, mm)
+            call gridVelocitiesCoarseLevels(mm)
+            call normalVelocitiesAllLevels(mm)
+            
+            call slipVelocitiesFineLevel(.false., t, mm)
+            call slipVelocitiesCoarseLevels(mm)
+            
+         enddo
+         call metric(level)
+         call setPointers(nn,level,sps)
+         call computeForcesPressureAdj(w,p)
+         call applyAllBC(secondHalo)
+         call setPointers(nn,level,sps)
+         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+         
+         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+              + (cfp(2) + cfv(2))*liftDirection(2) &
+              + (cfp(3) + cfv(3))*liftDirection(3)
+! (1.0/float(ndom))*liftDirection(1)!        
+         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+              + (cfp(2) + cfv(2))*dragDirection(2) &
+              + (cfp(3) + cfv(3))*dragDirection(3)
+!(1.0/float(ndom))*liftDirection(2)!
+         
+         Cfx = cfp(1) + cfv(1)
+         Cfy = cfp(2) + cfv(2)
+         Cfz = cfp(3) + cfv(3)
+         
+         Cmx = cmp(1) + cmv(1)
+         Cmy = cmp(2) + cmv(2)
+         Cmz = cmp(3) + cmv(3)
+       !(1.0/float(ndom))*liftDirection(3)!      
+         nmonsum = 8
+         
+         monLoc1(1) = monLoc1(1)+Cl
+         monLoc1(2) = monLoc1(2)+Cd
+         monLoc1(3) = monLoc1(3)+ cfx
+         monLoc1(4) = monLoc1(4)+ cfy
+         monLoc1(5) = monLoc1(5)+ cfz
+         monLoc1(6) = monLoc1(6)+cmx
+         monLoc1(7) = monLoc1(7)+cmy
+         monLoc1(8) = monLoc1(8)+cmz
+         
+         
+         ! Determine the global sum of the summation monitoring
+         ! variables. The sum is made known to all processors.
+         
+         call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
+              mpi_sum, SUmb_comm_world, ierr)
+         
+         ! Transfer the cost function values to output arguments.
+         
+         CLp  = monGlob1(1)
+         CDp  = monGlob1(2)
+         Cfxp = monGlob1(3)
+         Cfyp = monGlob1(4)
+         Cfzp = monGlob1(5) 
+         CMxp = monGlob1(6)
+         CMyp = monGlob1(7)
+         CMzp = monGlob1(8)
+                     
+         
+         !*********************
+         !Now calculate other perturbation
+         beta = betaref-deltax!*1000
+                     
+         !*************************************************************
+         !Original force and metric calculation....
+         !     ******************************************************************
+         !     *                                                                *
+         !     * Update the force coefficients using the usual flow solver      *
+         !     * routine.                                                       *
+         !     *                                                                *
+         !     ******************************************************************
+         !
+         !print *,'betaminus',beta
+         call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+         !call checkInputParam
+         !print *,'adjflowangleminus',liftDirection
+         do mm=1,nTimeIntervalsSpectral
+            
+            ! Compute the time, which corresponds to this spectral solution.
+            ! For steady and unsteady mode this is simply the restart time;
+            ! for the spectral mode the periodic time must be taken into
+            ! account, which can be different for every section.
+            
+            t = timeUnsteadyRestart
+            
+            if(equationMode == timeSpectral) then
+               do ll=1,nSections
+                  t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
+                       /         real(nTimeIntervalsSpectral,realType)
+               enddo
+            endif
+            
+            call gridVelocitiesFineLevel(.false., t, mm)
+            call gridVelocitiesCoarseLevels(mm)
+            call normalVelocitiesAllLevels(mm)
+            
+            call slipVelocitiesFineLevel(.false., t, mm)
+            call slipVelocitiesCoarseLevels(mm)
+            
+         enddo
+         call metric(level)
+         call setPointers(nn,level,sps)
+         call computeForcesPressureAdj(w,p)
+         call applyAllBC(secondHalo)
+         call setPointers(nn,level,sps)
+         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+         
+         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+              + (cfp(2) + cfv(2))*liftDirection(2) &
+              + (cfp(3) + cfv(3))*liftDirection(3)
+!(1.0/float(ndom))*liftDirection(1)!
+         
+         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+              + (cfp(2) + cfv(2))*dragDirection(2) &
+              + (cfp(3) + cfv(3))*dragDirection(3)
+!(1.0/float(ndom))*liftDirection(2)!
+         
+         Cfx = cfp(1) + cfv(1)
+         Cfy = cfp(2) + cfv(2)
+         Cfz = cfp(3) + cfv(3)
+         
+         Cmx = cmp(1) + cmv(1)
+         Cmy = cmp(2) + cmv(2)
+         Cmz = cmp(3) + cmv(3)
+! (1.0/float(ndom))*liftDirection(3)!
+        
          nmonsum = 8
          
          monLoc2(1) = monLoc2(1)+Cl
@@ -1622,20 +1849,23 @@ subroutine verifydCfdx(level)
          CMzm = monGlob2(8)
          
          
-         alpha = alpharef
+         beta = betaref
                   
          call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
-
-         dCLdextraFD(ndesignaoa) = (CLP-CLM)/(two*deltax)  
-         dCDdextraFD(ndesignaoa) = (CDP-CDM)/(two*deltax) 
-         dcmdextrafd(ndesignaoa) = (cmxp-cmxm)/(two*deltax)
+         !call checkInputParam
+         !print *,'clp',clp,clm,deltax
+         dCLdextraFD(ndesignssa) = (CLP-CLM)/(two*deltax)!*1000)  
+         dCDdextraFD(ndesignssa) = (CDP-CDM)/(two*deltax)!*1000) 
+         dcmdextrafd(ndesignssa) = (cmzp-cmzm)/(two*deltax)!*1000)
          !dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
 
-      enddo domainalphaLoopFDorig
+      enddo domainbetaLoopFDorig
 
       
       call f77flush()
       call mpi_barrier(SUmb_comm_world, ierr)
+
+
       ! Loop over the number of local blocks.
       
         monloc1=0.0
@@ -1841,7 +2071,7 @@ subroutine verifydCfdx(level)
          !print *,'clp',CLP,CLM,CLP-CLM
          dCLdextraFD(ndesignrotx) = (CLP-CLM)/(two*deltax)  
          dCDdextraFD(ndesignrotx) = (CDP-CDM)/(two*deltax) 
-         dcmdextrafd(ndesignrotx) = (cmxp-cmxm)/(two*deltax)
+         dcmdextrafd(ndesignrotx) = (cmzp-cmzm)/(two*deltax)
          !dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
         
       enddo domainrotxLoopFDorig

@@ -91,7 +91,7 @@
          
          ! Compute side-slip angle beta.
          
-         beta  = atan2(freeStreamAxisNorm(3),freeStreamAxisNorm(1))
+         beta  = -atan2(freeStreamAxisNorm(3),freeStreamAxisNorm(1))
 
 
       elseif (liftIndex ==3) then
