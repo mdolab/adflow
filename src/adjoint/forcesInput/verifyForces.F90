@@ -1,7 +1,7 @@
 subroutine verifyForces(pts,npts)
 
   ! This routine does three thing:
-  ! 1. Check that getForces and computeForceCouplingAdj give the same results
+  ! 1. Check that getForces and computeForcesAdj give the same results
   ! 2. Check that dFdw matrix is correct
   ! 3. Check that dFdx matrix is correct
 
@@ -45,7 +45,7 @@ subroutine verifyForces(pts,npts)
 
   call getForces(forces0,pts,npts)
 
-  ! Now compute the forces using the computeForceCouplingAdj routine
+  ! Now compute the forces using the computeForcesAdj routine
 
   ii = 0
   refPoint(:) = 0.0
@@ -147,7 +147,7 @@ subroutine verifyForces(pts,npts)
                     end do
                  end select
 
-                 call computeForceCouplingAdj(force,moment,grid_pts,wAdj,&
+                 call computeForcesAdj(force,moment,grid_pts,wAdj,&
                       refPoint,fact,iBeg,iEnd,jBeg,jEnd,i,j,righthanded)
                  ii = ii + 1
                  forcesAdj(:,ii) = force
@@ -289,7 +289,7 @@ subroutine verifyForces(pts,npts)
                
                  w(i,j,k,l) = w(i,j,k,l) + h
 
-                 call computeForcesPressureAdj(w,p) ! Full block
+                 call computePressureAdjFullBlock(w,p) ! Full block
                                                     ! version
                  call applyAllBC(.True.)
                  call setPointersAdj(nn,1_intType,1_intType) 
@@ -335,7 +335,7 @@ subroutine verifyForces(pts,npts)
 
                  w(i,j,k,l) = w(i,j,k,l)-h
                  ! Must call this to reset the pressures
-                 call computeForcesPressureAdj(w,p)
+                 call computePressureAdjFullBlock(w,p)
               end do ! state loop
            end do !i loop
         end do ! j loop

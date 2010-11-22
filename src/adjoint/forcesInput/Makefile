@@ -36,12 +36,11 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS = 	computeForceCouplingPressureAdj.o\
-		computeForcesPressureAdj.o\
-	        computeForceCouplingAdj.o\
-	        bcEulerWallForceCouplingAdj.o\
-	        getSurfaceNormalsCouplingAdj.o\
-	        forceCouplingAdj.o\
+FF90_OBJECTS = 	computePressureAdj.o\
+	        computeForcesAdj.o\
+	        bcEulerWallForcesAdj.o\
+	        getSurfaceNormalsForcesAdj.o\
+	        forcesAdj.o\
 	        verifyForces.o\
 	        computeForceAndMomentAdj.o\
 		adjustInflowAngleForcesAdj.o\

@@ -143,7 +143,7 @@ subroutine computeForceAndMomentAdj(Force,cForce,Lift,Drag,Cl,Cd,&
            end do
         end select
         
-        call computeForceCouplingAdj(addForce,addMoment,&
+        call computeForcesAdj(addForce,addMoment,&
              grid_pts,wAdj,pointRefAdj,fact,iBeg,iEnd,jBeg,jEnd,&
              i,j,righthandedAdj)
 
