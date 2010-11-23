@@ -253,9 +253,6 @@ subroutine setupAllResidualMatrices
                     rotpointadjb(:)=0.
                     pointrefadjb(:)=0.
                     rotcenteradjb(:)=0.
-                    !                    print *,'dwadjb',dwadjb,'wadjb',wadjb(0,0,0,:)
-                    !                    print *,'calling reverse mode'
-                    !                   print *,'secondhalo',secondhalo
 
                     ! Call the reverse mode of residual computation.
                     !
@@ -289,7 +286,7 @@ subroutine setupAllResidualMatrices
                     Gad(m,:,:)  = wAdjB( 0, 0, 1,:,:)
                     GGad(m,:,:) = wAdjB( 0, 0, 2,:,:)
 
-                    idxres   = globalCell(iCell,jCell,kCell)*nw+m -1
+                    idxres   = globalCell(iCell,jCell,kCell)*nw+ m - 1
 
                     do sps2 = 1,nTimeIntervalsSpectral
                        do l = 1,3
@@ -302,12 +299,13 @@ subroutine setupAllResidualMatrices
                                    if (xAdjb(ii,jj,kk,l,sps2).ne.0.0)then
                                       if(i>=zero .and. j>=zero .and. k>=zero .and. i<=ie .and. j<=je .and. k<=ke)then
 
-                                         idxnode = flowdoms(nn,level,sps2)%globalNode(i,j,k)*3+l
+                                         idxnode = flowdoms(nn,level,sps2)%globalNode(i,j,k)*3 + l - 1
 
-                                         if( (idxres)>=0 .and. (idxnode-1)>=0) then
-                                            call MatSetValues(dRdx, 1, idxres, 1, idxnode-1,   &
+                                         if( (idxres)>=0 .and. (idxnode)>=0) then
+                                            call MatSetValues(dRdx, 1, idxres, 1, idxnode,   &
                                                  xAdjb(ii,jj,kk,l,sps2), ADD_VALUES, PETScIerr)
                                             ! NO error check here for speed purposes
+                                            call ECHk(PETScIerr,__file__,__line__)
                                          endif
                                       endif
                                    endif
@@ -685,10 +683,12 @@ subroutine setupAllResidualMatrices
 
   ! Output formats.
 #endif
+
+
 10 format(a)
 20 format(a,1x,f8.2)
 99 format(a,1x,i6)
-
+ 
   !=================================================================
 
 contains

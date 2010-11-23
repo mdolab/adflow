@@ -171,7 +171,7 @@ subroutine computeObjPartials(costFunction,pts,npts)
 
      end do
   end select
-
+  print *,'here0'
   ! Now we have dJdc on each processor...when we go through the
   ! reverse mode AD we can take the dot-products on the fly SUM the
   ! entries into dJdw

@@ -85,8 +85,8 @@ subroutine createPETScMat
      call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
           nDimW, nDimW,                     &
           PETSC_DETERMINE, PETSC_DETERMINE, &
-          0, nnzDiagonal,         &
-          0, nnzOffDiag,            &
+          8, nnzDiagonal,         &
+          8, nnzOffDiag,            &
           dRdWT, PETScIerr)
      call EChk(PETScIerr,__file__,__line__)
   else
@@ -104,8 +104,8 @@ subroutine createPETScMat
      call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
           nDimW, nDimW,                     &
           PETSC_DETERMINE, PETSC_DETERMINE, &
-          0, nnzDiagonal2,         &
-          0, nnzOffDiag2,            &
+          8, nnzDiagonal2,         &
+          8, nnzOffDiag2,            &
           dRdWT, PETScIerr)
      call EChk(PETScIerr,__file__,__line__)
      deallocate(nnzDiagonal2,nnzOffDiag2)
@@ -235,8 +235,8 @@ subroutine createPETScMat
   call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
        nDimW, nDimX,                     &
        PETSC_DETERMINE, PETSC_DETERMINE, &
-       0, nnzDiagonal,     &
-       0, nnzOffDiag,            &
+       8, nnzDiagonal,     &
+       8, nnzOffDiag,            &
        dRdx, PETScIerr)
   call EChk(PETScIerr,__file__,__line__)
   deallocate( nnzDiagonal, nnzOffDiag )
@@ -531,7 +531,6 @@ subroutine drdxPreAllocation(onProc,offProc,wSize)
   offProc(:) = 0_intType 
 
   ii = 0 
-
 
   ! This is for the "Regular" drdx calculation. i.e. xadjb
   do sps=1,nTimeIntervalsSpectral

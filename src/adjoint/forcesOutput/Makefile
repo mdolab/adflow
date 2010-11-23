@@ -40,7 +40,7 @@ FF90_OBJECTS = 	adjustinflowangleforcesadj_b.o\
 		bceulerwallforcesadj_b.o\
 		computeforceandmomentadj_b.o\
 		computeforcesadj_b.o\
-		computepressureadj_b.o\
+		computepressureforcesadj_b.o\
 		forcesadj_b.o\
 		getdirvectorforces_b.o\
 		getsurfacenormalsforcesadj_b.o\
