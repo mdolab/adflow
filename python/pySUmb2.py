@@ -74,6 +74,7 @@ class SUMB(AeroSolver):
             'reynoldsNumber':[float,1e6], 
             'reynoldsLength':[float,1.0], 
             'wallTreatment':[str,'Linear Pressure Extrapolation'],
+#            'areaAxis':[list,[0.0,1.0,0.0]],
             'nCycles':[int,500],
             'CFL':[float,1.7],
             'CFLCoarse':[float,1.0],
@@ -251,8 +252,10 @@ class SUMB(AeroSolver):
               'cmzq':'cmzq',
               'cmzqdot':'cmzqdot',
               'clq':'clq',
-              'clqdot':'clqDot'
+              'clqdot':'clqDot',
+#              'area':'area'
               }
+
 
         self.possibleAeroDVs = {
             'aofa':'adjointvars.ndesignaoa',
@@ -461,6 +464,7 @@ class SUMB(AeroSolver):
                 'numberSolutions',
                 'writeSolution',
                 'familyRot',  # -> Not sure how to do
+#                'areaAxis'
                 ]
         # end if
         
@@ -1109,10 +1113,9 @@ class SUMB(AeroSolver):
                 forcePoints = self.getForcePoints()
             # end if
             
-            self.sumb.setupcouplingmatrixstruct(forcePoints.T)
+            #self.sumb.setupcouplingmatrixstruct(forcePoints.T)
             self.sumb.setuppetscksp()
             self.mesh.setupWarpDeriv()
-
             self.adjointMatrixSetup = True
         # end if
 
@@ -1147,7 +1150,7 @@ class SUMB(AeroSolver):
         if not self.adjointInitialized:
             self.initAdjoint()
         # end if
-        
+            
         # Check to see if the adjoint Matrix is setup:
         if not self.adjointMatrixSetup:
             self.setupAdjoint(forcePoints)
@@ -1157,7 +1160,7 @@ class SUMB(AeroSolver):
         if not self.adjointRHS == obj:
             self.computeObjPartials(obj,forcePoints)
         # end if
-            
+
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
         if 'structAdjoint' in kwargs and 'group_name' in kwargs:
@@ -1181,6 +1184,7 @@ class SUMB(AeroSolver):
             # end if
 
         # Actually Solve the adjoint system
+        print 'solving'
         self.sumb.solveadjointtransposepetsc()
 
         if self.getOption('restartAdjoint'):
@@ -1201,19 +1205,27 @@ class SUMB(AeroSolver):
 
         obj = self.possibleObjectives[objective.lower()]
         
-        if self.getOption('restartAdjoint'): # Selected stored adjoint
-            self.sumb.setadjoint(self.storedADjoints[obj])
+        if obj in ['area']: # Possibly add more Direct objectives here...
+            if obj == 'area':
+                self.mesh.warp.computeareasensitivity(self.getOption('areaAxis'))
+                dIdXs = self.mesh.getdXs('all')
+            else:
+                pass
+        else:
+            if self.getOption('restartAdjoint'): # Selected stored adjoint
+                self.sumb.setadjoint(self.storedADjoints[obj])
+            # end if
+
+            # Direct partial derivative contibution 
+            dIdxs_1 = self.getdIdx(objective,'all')
+
+            # dIdx contribution for drdx^T * psi
+            dIdxs_2 = self.getdRdXvPsi('all')
+        
+            # Total derivative of the obective with surface coordinates
+            dIdXs = dIdxs_1 - dIdxs_2 
         # end if
 
-        # Direct partial derivative contibution 
-        dIdxs_1 = self.getdIdx(objective,'all')
-
-        ## dIdx contribution for drdx^T * psi
-        dIdxs_2 = self.getdRdXvPsi('all')
-        
-        # Total derivative of the obective with surface coordinates
-        dIdXs = dIdxs_1 - dIdxs_2 
-        
         return dIdXs
 
     def totalAeroDerivative(self,objective):
@@ -1222,21 +1234,26 @@ class SUMB(AeroSolver):
         # "aero" variables are intrinsic ONLY to the aero
         # discipline. Nothing in the structural process should depend
         # on these functions directly. 
-        restart = self.getOption('restartAdjoint')
-        obj = self.possibleObjectives[objective.lower()]
-        
-        if restart: # Selected stored adjoint
-            self.sumb.setadjoint(self.storedADjoints[obj])
-        # end if
 
-        # Direct partial derivative contibution 
-        dIda_1 = self.getdIda(objective)
+        obj = self.possibleObjectives[objective.lower()]
+
+        if obj in ['area']: # Possibly add more Direct objectives here...
+            # These by definition have zero dependance
+            dIda = zeros(self.nDVAero)
+        else:
+            if self.getOption('restartAdjoint'):
+                self.sumb.setadjoint(self.storedADjoints[obj])
+            # end if
+
+            # Direct partial derivative contibution 
+            dIda_1 = self.getdIda(objective)
         
-        # dIda contribution for drda^T * psi
-        dIda_2 = self.getdRdaPsi()
-        
-        # Total derivative of the obective wrt aero-only DVs
-        dIda = dIda_1 - dIda_2
+            # dIda contribution for drda^T * psi
+            dIda_2 = self.getdRdaPsi()
+
+            # Total derivative of the obective wrt aero-only DVs
+            dIda = dIda_1 - dIda_2
+        # end if
 
         return dIda
         
@@ -1491,6 +1508,10 @@ class SUMB(AeroSolver):
              'cdAlpha':funcVals[self.sumb.costfunctions.costfunccdalpha-1],
              'cd0':funcVals[self.sumb.costfunctions.costfunccd0-1]
              }
+                                                 
+        # Also add in 'direct' solutions. Area etc
+        #A_local = self.mesh.warp.computearea(self.getOption('areaAxis'))
+        #SUmbsolution['area'] = self.comm.allreduce(A_local,op=MPI.SUM)
 
         return SUmbsolution
         

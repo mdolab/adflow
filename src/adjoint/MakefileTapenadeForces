@@ -142,7 +142,7 @@ TAPENADE_SRC = $(TAPENADE_DIRSRC)/adjustInflowAngleForcesAdj.f90\
 	       $(TAPENADE_DIRSRC)/bcEulerWallForcesAdj.f90\
                $(TAPENADE_DIRSRC)/computeForceAndMomentAdj.f90\
                $(TAPENADE_DIRSRC)/computeForcesAdj.f90\
-	       $(TAPENADE_DIRSRC)/computePressureAdj.f90\
+	       $(TAPENADE_DIRSRC)/computePressureForcesAdj.f90\
                $(TAPENADE_DIRSRC)/forcesAdj.f90\
 	       $(TAPENADE_DIRSRC)/getDirVectorForces.f90\
 	       $(TAPENADE_DIRSRC)/getSurfaceNormalsForcesAdj.f90\

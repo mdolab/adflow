@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine computePressureAdj(wAdj, pAdj)
+subroutine computePressureForcesAdj(wAdj, pAdj)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -82,7 +82,7 @@ subroutine computePressureAdj(wAdj, pAdj)
 
   endif
 
-end subroutine computePressureAdj
+end subroutine computePressureForcesAdj
 
 
 subroutine computePressureAdjFullBlock(wAdj,pAdj)

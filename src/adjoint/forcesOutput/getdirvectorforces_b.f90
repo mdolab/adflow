@@ -89,7 +89,7 @@
    IF (liftindex .EQ. 2) THEN
    ! Compute the wind direction vector.Aerosurf axes different!!
    ! 1) rotate alpha radians cw about z-axis
-   !    ( <=> rotate z-axis alpha radians ccw)
+   !    ( <=> rotate z-axis alpha radians cw)
    arg1 = -alpha
    CALL VECTORROTATIONFORCES(x1, y1, z1, 3, arg1, xbn, ybn, zbn)
    CALL PUSHREAL8ARRAY(arg1, realtype/8)
@@ -99,11 +99,11 @@
    CALL PUSHINTEGER4(0)
    ELSE IF (liftindex .EQ. 3) THEN
    ! Compute the wind direction vector.Aerosurf axes different!!
-   ! 1) rotate alpha radians cw about z-axis
+   ! 1) rotate alpha radians ccw about z-axis
    !    ( <=> rotate z-axis alpha radians ccw)
    CALL VECTORROTATIONFORCES(x1, y1, z1, 2, alpha, xbn, ybn, zbn)
-   ! 2) rotate beta radians ccw about y-axis
-   !    ( <=> rotate z-axis -beta radians ccw)
+   ! 2) rotate beta radians ccw about z-axis
+   !    ( <=> rotate z-axis beta radians ccw)
    CALL PUSHINTEGER4(2)
    ELSE
    CALL PUSHINTEGER4(1)
