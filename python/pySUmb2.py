@@ -74,7 +74,7 @@ class SUMB(AeroSolver):
             'reynoldsNumber':[float,1e6], 
             'reynoldsLength':[float,1.0], 
             'wallTreatment':[str,'Linear Pressure Extrapolation'],
-#            'areaAxis':[list,[0.0,1.0,0.0]],
+            'areaAxis':[list,[0.0,1.0,0.0]],
             'nCycles':[int,500],
             'CFL':[float,1.7],
             'CFLCoarse':[float,1.0],
@@ -253,7 +253,7 @@ class SUMB(AeroSolver):
               'cmzqdot':'cmzqdot',
               'clq':'clq',
               'clqdot':'clqDot',
-#              'area':'area'
+              'area':'area'
               }
 
 
@@ -464,7 +464,7 @@ class SUMB(AeroSolver):
                 'numberSolutions',
                 'writeSolution',
                 'familyRot',  # -> Not sure how to do
-#                'areaAxis'
+                'areaAxis'
                 ]
         # end if
         
@@ -1184,7 +1184,7 @@ class SUMB(AeroSolver):
             # end if
 
         # Actually Solve the adjoint system
-        print 'solving'
+
         self.sumb.solveadjointtransposepetsc()
 
         if self.getOption('restartAdjoint'):
@@ -1209,8 +1209,7 @@ class SUMB(AeroSolver):
             if obj == 'area':
                 self.mesh.warp.computeareasensitivity(self.getOption('areaAxis'))
                 dIdXs = self.mesh.getdXs('all')
-            else:
-                pass
+            # end if
         else:
             if self.getOption('restartAdjoint'): # Selected stored adjoint
                 self.sumb.setadjoint(self.storedADjoints[obj])
@@ -1239,7 +1238,7 @@ class SUMB(AeroSolver):
 
         if obj in ['area']: # Possibly add more Direct objectives here...
             # These by definition have zero dependance
-            dIda = zeros(self.nDVAero)
+            dIda = numpy.zeros(self.nDVAero)
         else:
             if self.getOption('restartAdjoint'):
                 self.sumb.setadjoint(self.storedADjoints[obj])
@@ -1510,8 +1509,8 @@ class SUMB(AeroSolver):
              }
                                                  
         # Also add in 'direct' solutions. Area etc
-        #A_local = self.mesh.warp.computearea(self.getOption('areaAxis'))
-        #SUmbsolution['area'] = self.comm.allreduce(A_local,op=MPI.SUM)
+        A_local = self.mesh.warp.computearea(self.getOption('areaAxis'))
+        SUmbsolution['area'] = self.comm.allreduce(A_local,op=MPI.SUM)
 
         return SUmbsolution
         
