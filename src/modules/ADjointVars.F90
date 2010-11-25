@@ -61,7 +61,7 @@
       integer(kind=intType) :: nNodesGlobal, nNodesLocal, nNodeOffsetLocal
       integer(kind=intType) :: nCellsGlobal, nCellsLocal, nCellOffsetLocal
       integer(kind=intType) :: nSurfNodesGlobal, nSurfNodesLocal
-
+      real(kind=realType) :: timings(20)
       ! ****************************************************************
       ! Finite-difference approximation step size.
 

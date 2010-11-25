@@ -28,6 +28,7 @@ subroutine verifyRAdj(level)
   use flowVarRefState !kPresent
   use inputTimeSpectral     !nTimeIntervalsSpectral
   use inputIO          !solfile,surfaceSolFile
+  use adjointvars
   implicit none
   !
   !     Subroutine arguments.
@@ -75,7 +76,7 @@ subroutine verifyRAdj(level)
   ! Get the initial time.
 
   call mpi_barrier(SUmb_comm_world, ierr)
-  if(myID == 0) call cpu_time(time(1))
+  if(myID == 0) time(1) = mpi_wtime()
 
 
   if(myID == 0) then
@@ -181,10 +182,12 @@ subroutine verifyRAdj(level)
   call initres(1_intType, nwf)
   call residual
 
-  ! Get the final time for original routines.
+  ! Get the final time for original routines
+
+
   call mpi_barrier(SUmb_comm_world, ierr)
+  time(2) = mpi_wtime()
   if(myID == 0) then
-     call cpu_time(time(2))
      timeOri = time(2)-time(1)
   endif
 
@@ -198,7 +201,8 @@ subroutine verifyRAdj(level)
   ! Get the initial ResidualAdj time.
   
   call mpi_barrier(SUmb_comm_world, ierr)
-  if(myID == 0) call cpu_time(time(3))
+  timings(:) = 0.0
+  time(3) = mpi_wtime()
 
   ! Loop over the number of local blocks.
   spectralLoop: do sps=1,nTimeIntervalsSpectral
@@ -239,14 +243,14 @@ subroutine verifyRAdj(level)
 
                  differ = (sum(dwAdj(:,sps))-sum(dw(iCell,jCell,kCell,:)))/sum(dw(iCell,jCell,kCell,:))
 
-                 if( abs(differ) > 1e-12) &
-                 write(*,10) myID,sps, nn, iCell, jCell, kCell,               &
+                 if( abs(differ) > 1e-9) &
+                      write(*,10) myID,sps, nn, iCell, jCell, kCell,               &
                       sum(dwAdj(:,sps)), sum(dw(iCell,jCell,kCell,:)), &
                       differ,(dwAdj(2,sps)), (dw(iCell,jCell,kCell,2)),(dwAdj(1,sps))-(dw(iCell,jCell,kCell,1)),(dwAdj(2,sps))-(dw(iCell,jCell,kCell,2)),(dwAdj(3,sps))-(dw(iCell,jCell,kCell,3)),(dwAdj(4,sps))-(dw(iCell,jCell,kCell,4)),(dwAdj(5,sps))-(dw(iCell,jCell,kCell,5))
                  
-                 ! Store difference to output to volume solution file.
-                 ! (resrho, resmom, resrhoe) have to be added to the volume
-                 ! output variables in the parameter file.
+!                  ! Store difference to output to volume solution file.
+!                  ! (resrho, resmom, resrhoe) have to be added to the volume
+!                  ! output variables in the parameter file.
 
                  dw(iCell,jCell,kCell,:) = dw(iCell,jCell,kCell,:) - dwAdj(:,sps)
 
@@ -257,10 +261,11 @@ subroutine verifyRAdj(level)
      enddo domainResidualLoop
   enddo spectralLoop
   ! Get new time and compute the elapsed ResidualAdj time.
+    
 
   call mpi_barrier(SUmb_comm_world, ierr)
+  time(4) = mpi_wtime()
   if(myID == 0) then
-     call cpu_time(time(4))
      timeAdj = time(4)-time(3)
   endif
 
@@ -273,6 +278,9 @@ subroutine verifyRAdj(level)
      print *, " Time for node-based residual =", timeAdj
      print *, " Factor                       =", timeAdj/timeOri
      print *, "====================================================="
+     do icell=1,10
+        print *,'Time:',icell,timings(icell)
+     end do
   endif
 
   ! Output formats.
