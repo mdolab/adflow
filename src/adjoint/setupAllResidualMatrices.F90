@@ -88,7 +88,7 @@ subroutine setupAllResidualMatrices
   ! idxngb - array of global column indices
 
   integer(kind=intType), dimension(nw) :: idxmg, idxng
-
+  integer(kind=intType) :: ind_node(3),cellstodo,iiCell,ind(3,56)
   character(len=2*maxStringLen) :: errorMessage
 
 
@@ -213,6 +213,7 @@ subroutine setupAllResidualMatrices
         do kCell = 2, kl
            do jCell = 2, jl
               do iCell = 2, il
+                 print *,'nn,i,j,k:',nn,icell,jcell,kcell
                  ! Copy the state w to the wAdj array in the stencil
                  call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
                       betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
@@ -261,7 +262,9 @@ subroutine setupAllResidualMatrices
                     !                     dW(iCell+ii,jCell+jj,kCell+kk,n)
 
                     ! Call reverse mode of residual computation
-                    call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+
+
+               call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
                          &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
                          &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
                          &  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
@@ -270,7 +273,7 @@ subroutine setupAllResidualMatrices
                          &  , rotpointadj, rotpointadjb, murefadj, timerefadj, pinfcorradj, &
                          &  liftindex)
 
-                    ! Store the block Jacobians (by rows).
+                  !   ! Store the block Jacobians (by rows).
 
                     Aad(m,:,:)  = wAdjB( 0, 0, 0,:,:)
                     Bad(m,:,:)  = wAdjB(-1, 0, 0,:,:)
@@ -287,33 +290,44 @@ subroutine setupAllResidualMatrices
                     GGad(m,:,:) = wAdjB( 0, 0, 2,:,:)
 
                     idxres   = globalCell(iCell,jCell,kCell)*nw+ m - 1
-
+                    
+                  !  call five_pt_node_stencil_all(icell,jcell,kcell,ind,cellstodo)
                     do sps2 = 1,nTimeIntervalsSpectral
-                       do l = 1,3
-                          do kk = -3,2!1,kl-1
-                             do jj = -3,2!1,jl-1
-                                do ii=-3,2!1,il-1
-                                   i = iCell + ii
-                                   j = jCell + jj
-                                   k = kCell + kk
-                                   if (xAdjb(ii,jj,kk,l,sps2).ne.0.0)then
-                                      if(i>=zero .and. j>=zero .and. k>=zero .and. i<=ie .and. j<=je .and. k<=ke)then
+!                         do iiCell=1,CellsToDo
+!                            ii = ind(1,iiCell)
+!                            jj = ind(2,iiCell)
+!                            kk = ind(3,iiCell)
 
-                                         idxnode = flowdoms(nn,level,sps2)%globalNode(i,j,k)*3 + l - 1
+                       
+                       do kk = -3,2!1,kl-1
+                          do jj = -3,2!1,jl-1
+                             do ii=-3,2!1,il-1
 
-                                         if( (idxres)>=0 .and. (idxnode)>=0) then
-                                            call MatSetValues(dRdx, 1, idxres, 1, idxnode,   &
-                                                 xAdjb(ii,jj,kk,l,sps2), ADD_VALUES, PETScIerr)
+                                i = iCell + ii
+                                j = jCell + jj
+                                k = kCell + kk
+                                if (xAdjb(ii,jj,kk,1,sps2) .ne. 0.0 .or.&
+                                    xAdjb(ii,jj,kk,2,sps2) .ne. 0.0 .or.& 
+                                    xAdjb(ii,jj,kk,3,sps2) .ne. 0.0)then
+                                    if(i>=0 .and. j>=0 .and. k>=0 .and. i<=ie .and. j<=je .and. k<=ke)then
+
+                                      ind_node(1) = flowdoms(nn,level,sps2)%globalNode(i,j,k)*3
+                                      ind_node(2) = ind_node(1) + 1
+                                      ind_node(3) = ind_node(1) + 2
+
+                                      if( (idxres)>=0 .and. ind_node(1)>=0) then ! replaced idxnode with ind(1)
+
+                                         call MatSetValues(dRdx, 1, idxres, 3, ind_node,   &
+                                              xAdjb(ii,jj,kk,:,sps2), ADD_VALUES, PETScIerr)
                                             ! NO error check here for speed purposes
-                                            call ECHk(PETScIerr,__file__,__line__)
-                                         endif
+!                                            call ECHk(PETScIerr,__file__,__line__)
                                       endif
                                    endif
-                                enddo
+                                endif
                              enddo
                           enddo
                        enddo
-
+                          
                        !set values for symmtery plane normal derivatives
                        do l = 1,3
                           if (xblockcorneradjb(1,1,1,l,sps).ne.0.0)then
@@ -366,17 +380,17 @@ subroutine setupAllResidualMatrices
                           endif
                        enddo
                     end do
-
-
+                    
                     ! Transfer the block Jacobians to the global [dR/da]
                     ! matrix by setting the corresponding block entries of
                     ! the PETSc matrix dRda.
                     !
                     ! Global matrix column idxmg function of node indices.
                     ! (note: index displaced by previous design variables)
-
-                    !Angle of Attack
+                  
+                   !Angle of Attack
                     if (nDesignAoA >= 0) then
+                       !print *,'alphadjb:',alphaadjb
                        call MatSetValues(dRda, 1, idxres, 1, nDesignAoA, &
                             alphaadjb, INSERT_VALUES, PETScIerr)
                        call EChk(PETScIerr,__file__,__line__)
@@ -629,7 +643,7 @@ subroutine setupAllResidualMatrices
 
            enddo
         enddo
-
+        
      enddo spectralLoop
      !===============================================================
 

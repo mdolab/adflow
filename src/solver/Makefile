@@ -88,6 +88,7 @@ FF90_OBJECTS = applyAllBC.o\
 	       slipVelocities.o\
 	       solveState.o\
 	       solver.o\
+	       NKsolver.o\
 	       solverSteady.o\
                solverUnsteadyExplicitRK.o\
                solverUnsteadyImplicitRK.o\

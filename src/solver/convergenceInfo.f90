@@ -134,7 +134,10 @@
 
              ! Determine the monitoring variable and act accordingly.
 
-             select case (monNames(mm))
+              select case (monNames(mm))
+                
+              case ('totalR')
+                 call sumAllResiduals(mm)
 
                case (cgnsL2resRho)
                  call sumResiduals(irho, mm)
@@ -286,11 +289,12 @@
                      cgnsL2resRhoe, cgnsL2resNu,      &
                      cgnsL2resK,    cgnsL2resOmega,   &
                      cgnsL2resTau,  cgnsL2resEpsilon, &
-                     cgnsL2resV2,   cgnsL2resF)
-                 monGlob(mm) = sqrt(monGlob(mm) &
-                             /      nCellGlobal(groundLevel))
-
-                 if( myIsNAN(monGlob(mm)) ) nanOccurred = .true.
+                     cgnsL2resV2,   cgnsL2resF        )
+                  monGlob(mm) = sqrt(monGlob(mm)/nCellGlobal(groundLevel))
+                  if( myIsNAN(monGlob(mm)) ) nanOccurred = .true.                  
+               case ('totalR')
+                  monGlob(mm) = sqrt(monGlob(mm))
+                  if( myIsNAN(monGlob(mm)) ) nanOccurred = .true.                  
              end select
 
              ! Write the convergence info to stdout.
@@ -346,7 +350,6 @@
                end if
 
 
-               !print *,'convergence....',converged
              !===========================================================
 
              case (unsteady)
@@ -461,10 +464,7 @@
        ! Check if a NaN occured. If so the computation is terminated,
        ! such that possible solution files written earlier are not
        ! corrupted.
-
-       !if( nanOccurred )                   &
-       !     call terminate("convergenceInfo", &
-       !                 "A NaN occurred during the computation.")
+       
        call mpi_bcast(nanOccurred, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
        if( nanOccurred )then
           !reset flow and exit!
@@ -479,9 +479,8 @@
           ! python level...
           return
        endif
-
-       if((fromPython).and. (iconv==nCycles))then
-       
+       if((fromPython).and. (nIterCur==nCycles))then
+          
           !Check to see if residuals are diverging or stalled for python
           select case (equationMode)
              
@@ -506,14 +505,15 @@
 
              endif
              call mpi_bcast(routineFailed, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
-             if(myID==0) print *,'Divergence Check',routineFailed
 
           case(unsteady)
              print *,'divergence check for unsteady not implemented...'
              !return
           end select
-       endif
-       !if(myID==0) print *,'after dievergence check',converged 
+       else
+          routineFailed = .False.
+       end if
+
        ! Determine whether or not the solution is considered converged.
        ! This info is only known at processor 0 and must therefore be
        ! broadcast to the other processors. MPI supports the
@@ -566,11 +566,94 @@
        do k=2,kl
          do j=2,jl
            do i=2,il
-       !     monLoc(mm) = monLoc(mm) + dw(i,j,k,nn)*dw(i,j,k,nn)
-             monLoc(mm) = monLoc(mm) + (dw(i,j,k,nn)/vol(i,j,k))**2
-             !if(mm==1) print *,'sumRes',monLoc(mm),dw(i,j,k,nn),vol(i,j,k),i,j,k,nn
+              monLoc(mm) = monLoc(mm) + (dw(i,j,k,nn)/vol(i,j,k))**2
            enddo
          enddo
        enddo
 
        end subroutine sumResiduals
+
+      subroutine sumAllResiduals(mm)
+!
+!      ******************************************************************
+!      *                                                                *
+!      * sumAllResiduals adds the sum of the ALL residuals squared at   *
+!      * to monLoc at position mm.                                      *
+!      *                                                                *
+!      ******************************************************************
+!
+       use blockPointers
+       use monitor
+       use flowvarrefstate
+       implicit none
+!
+!      Subroutine arguments.
+!
+       integer(kind=intType), intent(in) :: mm
+!
+!      Local variables.
+!
+       integer(kind=intType) :: i, j, k, l
+       real(kind=realType) :: state_sum,ovv
+
+!      ******************************************************************
+!      *                                                                *
+!      * Begin execution                                                *
+!      *                                                                *
+!      ******************************************************************
+!
+       ! Loop over the number of owned cells of this block and
+       ! accumulate the residual.
+
+       do k=2,kl
+         do j=2,jl
+           do i=2,il
+              state_sum = 0.0
+              ovv = 1/vol(i,j,k)
+              do l=1,nw
+                 state_sum = state_sum + (dw(i,j,k,l)*ovv)**2
+              end do
+
+              monLoc(mm) = monLoc(mm) + state_sum
+
+           enddo
+         enddo
+       enddo
+
+     end subroutine sumAllResiduals
+
+     subroutine printCurrentR()
+       use communication 
+       use block
+       use blockPointers
+       use flowvarrefstate
+       use inputtimespectral
+       implicit none
+
+       integer(kind=intType) :: nn,sps,i,j,k,l,ierr
+       real(kind=realType) :: state_sum,rnorm,ovv
+
+       state_sum = 0.0
+       spectralLoop: do sps=1,nTimeIntervalsSpectral
+         domains: do nn=1,nDom
+            call setPointers(nn,1,sps)
+            do k=2,kl
+               do j=2,jl
+                  do i=2,il
+                     ovv = 1/vol(i,j,k)
+                     do l=1,nw
+                        state_sum = state_sum + (dw(i,j,k,l)*ovv)**2
+                     end do
+                  end do
+               end do
+            end do
+         end do domains
+      end do spectralLoop
+      call mpi_reduce(state_sum,rnorm,1,sumb_real,mpi_sum,0,&
+           SUmb_comm_world, ierr)
+
+      if (myid==0) then
+         print *,'Current R:',sqrt(rnorm)
+      end if
+
+     end subroutine printCurrentR

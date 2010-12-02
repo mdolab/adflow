@@ -1,4 +1,4 @@
-static char dpSid[]="$Id: dpStack.c 367 2006-11-29 00:47:02Z acmarta $";
+static char dpSid[]="$Id: dpStack.c 1663 2007-02-27 10:42:54Z llh $";
 
 #include <stdlib.h>
 #include <string.h>
@@ -105,6 +105,10 @@ void dppushN(char *x, unsigned int nbChars) {
  * nbChars is assumed no larger than CHUNK_SIZE */
 void dppopN(char *x, unsigned int nbChars) {
   dpcheckBack() ;
+  if (dpcurStackTop-dpcurStackBottom < nbChars) {
+    printf("Help! DP stack corrupted, height:%i !!",dpcurStackTop-dpcurStackBottom-nbChars) ;
+    exit(0) ;
+  }
   dpcurStackTop-=nbChars ;
   memcpy(x,dpcurStackTop,nbChars);
 }
@@ -447,4 +451,51 @@ void dpprintlookingplace_() {
 	}
 	printf("DP Stack look: %i+%i\n",nbBlocks,dplookStackTop - dplookStackBottom) ;
     }
+}
+
+/**** Experiment for a numeric sum that does the sum from smallest to largest ******/
+
+static double sumlist[3000] ;
+static int sumindex = 0 ;
+
+void dpsumr8reset_() {
+  int i ;
+  sumindex = 0 ;
+  for (i=0 ; i<3000 ; i++)
+    sumlist[i] = 0.0 ;
+}
+
+void dpsumr8_(double *x) {
+  double absnumber ;
+  int decali ;
+  int inserti = 0 ;
+  double number = *x ;
+  if (number>0.0 || number<0.0) {
+    if (number>0.0)
+      absnumber = number ;
+    else
+      absnumber = -number ;
+    while (inserti<sumindex &&
+           absnumber > ((sumlist[inserti]>0)?sumlist[inserti]:-sumlist[inserti]))
+      inserti++ ;
+    if (sumindex>=3000) {
+      printf("Help! sum list full!\n") ;
+      exit(0) ;
+    } else {
+      for (decali=sumindex;decali>inserti;decali--)
+        sumlist[decali] = sumlist[decali-1] ;
+      sumlist[inserti]=number ;
+      sumindex++ ;
+    }
+  }
+}
+
+void dpsumr8compute_() {
+  int i ;
+  double sum = 0.0 ;
+  for (i=0 ; i<sumindex ; i++) {
+    printf(" %25.20e",sumlist[i]) ;
+    sum += sumlist[i] ;
+  }
+  printf("\n\n Sum value: %25.20e\n", sum) ;
 }

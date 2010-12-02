@@ -160,7 +160,6 @@
       
       do nn=1,nDom
          do sps = 1,nTimeIntervalsSpectral
-            
             call setPointers(nn,level,sps)
             do k=2,kl
                do j=2,jl
