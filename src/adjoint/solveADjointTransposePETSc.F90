@@ -169,6 +169,5 @@
    40 format(1x,a,1x,i5,1x,a)
 
 #endif
-      
     end subroutine solveADjointTransposePETSc
       

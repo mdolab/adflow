@@ -74,7 +74,8 @@ subroutine setupADjointPCMatrixTranspose
 
   real(kind=realType), dimension(2) :: time
   real(kind=realType)               :: timeAdjLocal, timeAdj
-
+  real(kind=realType) :: prefadjb,rhorefadjb, pinfdimadjb,rhoinfdimadjb,&
+       rhoinfadjb,PINFADJB,MUREFADJB,PINFCORRADJB
   ! dR/dw stencil
 
   real(kind=realType), dimension(nw,nw,nTimeIntervalsSpectral) :: Aad, Bad, BBad, &
@@ -215,18 +216,18 @@ subroutine setupADjointPCMatrixTranspose
         call setPointersAdj(nn,level,sps)
 
         ! Loop over location of output (R) cell of residual
-
         do kCell = 2, kl
            do jCell = 2, jl
               do iCell = 2, il
                  ! Copy the state w to the wAdj array in the stencil
+               
                  call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
                       betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
                       nn,level,sps,pointRefAdj,rotPointAdj,&
                       prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                       rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                       murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-
+             
                  Aad(:,:,:)  = zero
                  Bad(:,:,:)  = zero
                  !BBad(:,:,:) = zero
@@ -260,6 +261,7 @@ subroutine setupADjointPCMatrixTranspose
                     !                     dW(iCell+ii,jCell+jj,kCell+kk,n)
 
                     ! Call reverse mode of residual computation
+
                     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
                          &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
                          &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &

@@ -37,7 +37,7 @@ subroutine solveState
   integer :: ierr
 
   integer(kind=intType) :: iter, nMGCycles
-
+  real(kind=realType) :: curRes
   character (len=7) :: numberString
   !
   !      ******************************************************************
@@ -115,7 +115,7 @@ subroutine solveState
      call convergenceInfo
 
   endif
-
+  
   ! Loop over the number of single grid start up iterations.
 
   singleGrid: do iter=1,nsgStartup
@@ -272,7 +272,7 @@ subroutine solveState
   ! Determine and write the initial convergence info.
   ! Note that if single grid startup iterations were made, this
   ! value is printed twice.
-
+  
   call convergenceInfo
 
   ! Loop over the number of multigrid cycles.
@@ -311,7 +311,6 @@ subroutine solveState
      !check for divergence or nan here
      if(routineFailed)then
         ! Release the memory of cycling.
-        if (myID==0) print *,'checking routinefailed',routineFailed
         deallocate(cycling, stat=ierr)
         if(ierr /= 0)                 &
              call terminate("solveState", &

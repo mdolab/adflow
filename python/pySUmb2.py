@@ -89,6 +89,19 @@ class SUMB(AeroSolver):
             'L2ConvergenceCoarse':[float,1e-2], 
             'maxL2DeviationFactor':[float,1.0],
             'MGCycle':[str,'3w'],
+            'useNKSolver':[bool,False],
+            'NKLinearSolver':[str,'gmres'],
+            'NKSwitchTol':[float,1e-2],
+            'NKSubspaceSize':[int,60],
+            'NKLinearSolveTol':[float,1e-1],
+            'NKPC':[str,'asm'],
+            'NKLocalPC':[str,'ilu'],
+            'NKASMOverlap':[int,3],
+            'NKPCILUFill':[int,3],
+            'NKLocalPCOrdering':[str,'nd'],
+            'NKMaxLinearKspIts':[int,500],
+            'NKPCSide':[str,'RIGHT'],
+            'NKJacobianLag':[int,10],
             'metricConversion':[float,1.0],
             'storeHistory':[bool,False],
             'numberSolutions':[bool,False],
@@ -108,7 +121,7 @@ class SUMB(AeroSolver):
             'adjointL2ConvergenceRel':[float,1e-16],
             'adjointL2ConvergenceAbs':[float,1e-16],
             'adjointDivTol':[float,1e5],
-            'monitorVariables':[list,['cl','cd','cmz']],
+            'monitorVariables':[list,['resrho','resmom','resrhoe','totalR']],
             'probName':[str,''],
             'outputDir':[str,'./'],
             'solRestart':[bool,False],
@@ -190,7 +203,7 @@ class SUMB(AeroSolver):
             sys.exit(1)
         # end try
 
-        self.callCounter = 0
+        self.callCounter = -1
        
         
         self.sumb.iteration.standalonemode = False
@@ -347,7 +360,43 @@ class SUMB(AeroSolver):
                                  self.sumb.inputphysics.externalflow,
                              'location':
                                  'inputphysics.flowtype'},
-                 
+
+                 'NKLinearSolver':{'gmres':'gmres',
+                                   'fgmres':'fgmres',
+                                   'bicgstab':'bicgstab',
+                                   'location':
+                                       'nksolvervars.ksp_solver_type',
+                                   'len':self.sumb.constants.maxstringlen},
+                 'NKLinearSolveTol':{'location':'nksolvervars.ksp_rtol'},
+                 'NKPC':{'BlockJacobi':'bjacobi',
+                         'Jacobi':'jacobi',
+                         'Additive Schwartz':'asm',
+                         'location':
+                             'nksolvervars.global_pc_type',
+                         'len':self.sumb.constants.maxstringlen},
+                 'NKLocalPC':{'ILU': 'ilu',
+                              'LU':  'lu',
+                              'location':
+                                  'nksolvervars.local_pc_type',
+                              'len':self.sumb.constants.maxstringlen},
+                 'NKPCSide':{'LEFT': 'left',
+                             'RIGHT':'right',
+                             'location':
+                                 'nksolvervars.pcside',
+                             'len':self.sumb.constants.maxstringlen},
+                 'NKLocalPCOrdering':{'Natural':'natural',
+                                      'RCM':'rcm',
+                                      'Nested Dissection':'nd',
+                                      'One Way Dissection':'owd',
+                                      'location':
+                                          'nksolvervars.local_pc_ordering',
+                                      'len':self.sumb.constants.maxstringlen},
+                 'NKJacobianLag':{'location':'nksolvervars.jacobian_lag'},
+                 'NKSwitchTol':{'location':'nksolvervars.nk_switch_tol'},
+                 'NKSubspaceSize':{'location':'nksolvervars.ksp_subspace'},
+                 'NKMaxLinearKspIts':{'location':'nksolvervars.ksp_max_it'},
+                 'NKASMOverlap':{'location':'nksolvervars.asm_overlap'},
+                 'NKPCILUFill':{'location':'nksolvervars.local_pc_ilu_level'},
                  'MGCycle':{'location':'localmg.mgdescription',
                             'len':self.sumb.constants.maxstringlen},
                  'gridFile':{'location':'inputio.gridfile',
@@ -455,6 +504,9 @@ class SUMB(AeroSolver):
                  }
         # end if
 
+        # These "ignore_options" are NOT actually, ignore, rather,
+        # they DO NOT GET SET IN THE FORTRAN CODE. Rather, they are
+        # used strictly in Python
         if 'ignore_options' in kwargs:
             self.ignore_options = kwargs['ignore_options']
         else:
@@ -464,7 +516,8 @@ class SUMB(AeroSolver):
                 'numberSolutions',
                 'writeSolution',
                 'familyRot',  # -> Not sure how to do
-                'areaAxis'
+                'areaAxis',
+                'useNKSolver'
                 ]
         # end if
         
@@ -718,7 +771,9 @@ class SUMB(AeroSolver):
         # their flag to False
         self.adjointMatrixSetup = False 
         self.adjointRHS         = None
+        self.callCounter += 1
 
+        # Run Initialize, if already run it just returns.
         self.initialize(aero_problem,sol_type,grid_file,*args,**kwargs)
 
         #set inflow angle,refpoint etc.
@@ -734,146 +789,52 @@ class SUMB(AeroSolver):
         self.sumb.monitor.niterold = self.sumb_comm_world.bcast(
             self.sumb.monitor.niterold, root=0)
 
-        ncycles = niterations
         storeHistory = self.getOption('storeHistory')
 
         if sol_type.lower() in ['steady', 'time spectral']:
             
             #set the number of cycles for this call
             self.sumb.inputiteration.ncycles = niterations
-            
+
+            # Cold Start -- First Run -- No Iterations Done
             if (self.sumb.monitor.niterold == 0 and 
                 self.sumb.monitor.nitercur == 0 and 
                 self.sumb.iteration.itertot == 0):
-
-                # No iterations have been done
-                if (self.sumb.inputio.storeconvinneriter):
+                if self.myid == 0:
                     nn = self.sumb.inputiteration.nsgstartup + \
                         self.sumb.inputiteration.ncycles
-                    if(self.myid==0):
-                        self.sumb.deallocconvarrays()
-                        self.sumb.allocconvarrays(nn)
-                    # end if
-                    # end if
-
-            elif(self.sumb.monitor.nitercur == 0 and  
-                 self.sumb.iteration.itertot == 0):
-                # Reallocate convergence history array and
-                # time array with new size, storing old values from restart
-                if (self.myid == 0):
-                    # number of time steps from restart
-                    ntimestepsrestart = self.sumb.monitor.ntimestepsrestart
-                    
-                    if (self.sumb.inputio.storeconvinneriter):
-                        # number of iterations from restart
-                        niterold = self.sumb.monitor.niterold#[0]
-                        if storeHistory:
-                            # store restart convergence history and
-                            # deallocate array
-                            temp = copy.deepcopy(
-                                self.sumb.monitor.convarray[:niterold+1,:])
-                            self.sumb.deallocconvarrays()
-                            # allocate convergence history array with
-                            # new extended size
-                            self.sumb.allocconvarrays(
-                                temp.shape[0]+self.sumb.inputiteration.ncycles-1)
-                            # recover values from restart and
-                            # deallocate temporary array
-                            self.sumb.monitor.convarray[\
-                                :temp.shape[0],:temp.shape[1]] = temp
-                            temp = None
-                        else:
-                            temp=copy.deepcopy(
-                                self.sumb.monitor.convarray[0,:,:])
-                            self.sumb.deallocconvarrays()
-                            # allocate convergence history array with
-                            # new extended size
-                            self.sumb.allocconvarrays(
-                                self.sumb.inputiteration.ncycles+1+niterold)
-                            self.sumb.monitor.convarray[0,:,:] = temp
-                            self.sumb.monitor.convarray[1,:,:] = temp
-                            temp = None
-                        #endif
-                    #endif
-                #endif
+                    self.sumb.deallocconvarrays()
+                    self.sumb.allocconvarrays(nn)
+                # end if
             else:
-
-                # More Time Steps / Iterations in the same session
+                # More Time Steps / Iterations OR a restart
                 # Reallocate convergence history array and time array
                 # with new size, storing old values from previous runs
-                if (self.myid == 0):
-                    if (self.sumb.inputio.storeconvinneriter):
-                        if storeHistory:
-                            # store previous convergence history and
-                            # deallocate array
-                            temp = copy.deepcopy(self.sumb.monitor.convarray)
-
-                            self.sumb.deallocconvarrays()
-                            # allocate convergence history array with
-                            # new extended size
-                            nn = self.sumb.inputiteration.nsgstartup + \
-                                self.sumb.inputiteration.ncycles
-                            
-                            self.sumb.allocconvarrays(temp.shape[0]+nn-1)
-                        
-                            # recover values from previous runs and
-                            # deallocate temporary array
-                            self.sumb.monitor.convarray[:temp.shape[0],:] = \
-                                copy.deepcopy(temp)
-                            
-                            temp = None
-                        else:
-                            temp=copy.deepcopy(
-                                self.sumb.monitor.convarray[0,:,:])
-                            self.sumb.deallocconvarrays()
-                            self.sumb.allocconvarrays(
-                                self.sumb.inputiteration.ncycles+1)
-                            self.sumb.monitor.convarray[0,:,:] = temp
-                            temp = None
-                        #endif
-                    #endif
-                #endif
-
-                # re-initialize iteration variables
-                self.sumb.inputiteration.mgstartlevel = 1
-
                 if storeHistory:
-                    self.sumb.monitor.niterold  = self.sumb.monitor.nitercur
+                    self._extendConvArray(
+                        self.sumb.inputiteration.ncycles)
+                    self.sumb.monitor.niterold  = self.sumb.monitor.nitercur+1
                 else:
-                    self.sumb.monitor.niterold  = 1#0#self.sumb.monitor.nitercur
+                    self.sumb.monitor.nitercur  = 0
+                    self.sumb.monitor.niterold  = 1
+                    self._clearConvArray()
                 #endif
+               
+                self.sumb.iteration.itertot = 0
+                self.sumb.inputiteration.mgstartlevel = 1
+            # end if
+        # end if
 
-                self.sumb.monitor.nitercur  = 0#1
-                self.sumb.iteration.itertot = 0#1
-                
-                # update number of time steps from restart
-                self.sumb.monitor.ntimestepsrestart = \
-                    self.sumb.monitor.ntimestepsrestart + \
-                    self.sumb.monitor.timestepunsteady
-
-                # re-initialize number of time steps previously run
-                # (excluding restart)
-                self.sumb.monitor.timestepunsteady = 0
-
-                # update time previously run
-                self.sumb.monitor.timeunsteadyrestart = \
-                    self.sumb.monitor.timeunsteadyrestart + \
-                    self.sumb.monitor.timeunsteady
-
-                # re-initialize time run
-                self.sumb.monitor.timeunsteady = 0.0
-                
-            #endif
         elif sol_type.lower()=='unsteady':
             print 'unsteady not implemented yet...'
             sys.exit(0)
-        #endif
+        # end if
         self.sumb.killsignals.routinefailed = False
         self._updatePeriodInfo()
         self._updateGeometryInfo()
         self._updateVelocityInfo()
 
-
+        # Check to see if the above update routines failed.
         self.sumb.killsignals.routinefailed = \
             self.comm.allreduce(
             bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
@@ -882,23 +843,80 @@ class SUMB(AeroSolver):
             self.solve_failed = True
             return
 
-        # Now call the solver
-        
-        self.sumb.solver()
+        if not self.getOption('useNKSolver'):
+            # Call the solver as we normally would 
+            self.sumb.solver()
+        else:
+            # Make sure adjoint is initialized
+            self.initAdjoint()
+
+            rhoRes,totalRRes = self.sumb.getcurrentresidual()
+            
+            if self.callCounter == 0: # Store totalRRes
+                rhoRes0,totalRRes0 = self.sumb.getfreestreamresidual()
+                self.sumb.nksolvervars.totalres0 = totalRRes0
+                self.sumb.nksolvervars.rhores0   = rhoRes0
+                self.rhoRes0 = rhoRes0
+            # See what is in the convergence history...
+            #resInit,resStart,resFinal = self.getResiduals()
+            
+            # Determine if we need to run the RK solver, before we can
+            # run the NK solver 
+            
+            if rhoRes/self.rhoRes0 > self.getOption('NKSwitchTol') or \
+                    rhoRes == 0: 
+            
+                # We haven't run anything yet OR the solution is not
+                # yet converged tightly enough to start with NK solver
+              
+                # Try to run RK solver down to NKSwitchTol
+                L2ConvSave = self.getOption('L2Convergence')
+                self.setOption('L2Convergence',
+                               self.getOption('NKSwitchTol'))
+
+                self.sumb.solver()
+                
+                # Restore the L2Conv Option -- must do this before possible quit
+                self.setOption('L2Convergence',L2ConvSave)
+
+                # A number of things can now happen: 
+
+                # 1. If the solver failed to converge to L2ConvRel OR
+                # NKSwitchTol we will say it is failed.  
+                if self.sumb.killsignals.routinefailed:
+                    self.solve_failed = True
+                    return 
+                else:
+                    rhoRes1,totalRRes1 = self.sumb.getcurrentresidual()
+                    if rhoRes1 < rhoRes * self.sumb.inputiteration.l2convrel:
+                        # 2. The solver has converged to L2ConvRel. In this
+                        # case we're do and DO NOT have to run th rk solver
+                        pass
+                    else:
+                        # 3. The solver has converged to NKSwitchTol
+                        # but NOT L2ConvRel. Run NK Solver
+                        self.sumb.nksolver()
+                    # end if
+                # end if
+            else:
+                # We already have a good starting point, so we can just call nksolver()
+                self.sumb.nksolver()
+            # end if
+        # end if (nkSolver Switch)
 
         if self.sumb.killsignals.routinefailed:
             self.solve_failed = True
         else:
             self.solve_failed = False
+        # end if
 
         sol_time = time.time() - t0
 
-        if self.getOption('printTiming'):
-            if(self.myid==0):
-                print 'Solution Time',sol_time
-        
-        # Post-Processing
-        #Write solutions
+        if self.getOption('printTiming') and self.myid == 0:
+            print 'Solution Time',sol_time
+        # end if
+
+        # Post-Processing -- Write Solutions
         if self.getOption('writeSolution'):
             base = self.getOption('outputDir') + self.getOption('probName')
             volname = base + '_vol.cgns'
@@ -908,20 +926,47 @@ class SUMB(AeroSolver):
                 volname = base + '_vol%d.cgns'%(self.callCounter)
                 surfname = base + '_surf%d.cgns'%(self.callCounter)
             #endif
-            self.WriteVolumeSolutionFile(volname)
-            self.WriteSurfaceSolutionFile(surfname)
+            self.writeVolumeSolutionFile(volname)
+            self.writeSurfaceSolutionFile(surfname)
         # end if
-        # get forces? from SUmb attributes
-       
+            
         if self.getOption('TSStability'):
             self.computeStabilityParameters()
         #endif
         
-        self.callCounter+=1
-
         # If we made it to the end, it did NOT fail so return False
         
-        return False
+        return
+
+    def _extendConvArray(self,nExtend):
+        '''Generic function to extend the current convInfo array by nExtend'''
+        if self.myid == 0:
+            # Copy Current Values
+            temp = copy.deepcopy(self.sumb.monitor.convarray)
+
+            # Deallocate Array
+            self.sumb.deallocconvarrays()
+
+            # Allocate New Size
+            self.sumb.allocconvarrays(temp.shape[0]+nExtend)
+
+            # Copy temp data back in
+            self.sumb.monitor.convarray[:temp.shape[0],:] = copy.deepcopy(temp)
+        # end if
+
+        return
+
+    def _clearConvArray(self):
+        '''Generic Function to clear the convInfo array. THIS KEEPS
+        THE FIRST value for future reference!!!'''
+        if self.myid == 0:
+            temp=copy.deepcopy(self.sumb.monitor.convarray[0,:,:])
+            self.sumb.deallocconvarrays()
+            self.sumb.allocconvarrays(self.sumb.inputiteration.ncycles+1)
+            self.sumb.monitor.convarray[0,:,:] = temp
+        # end if
+            
+        return
 
     def getSurfaceCoordinates(self,group_name):
         ''' 
@@ -940,16 +985,18 @@ class SUMB(AeroSolver):
 
     def getResiduals(self):
         if self.myid == 0:
-            return self.sumb.monitor.convarray[0,0,0],\
-                self.sumb.monitor.convarray[1,0,0],\
-                self.sumb.monitor.convarray[self.sumb.monitor.nitercur,0,0]
+            residuals = [self.sumb.monitor.convarray[0,0,0],
+                         self.sumb.monitor.convarray[1,0,0],
+                         self.sumb.monitor.convarray[self.sumb.monitor.nitercur,0,0]]
         else:
-            return None,None,None
+            residuals = None
         # end if
 
-        return
+        residuals = self.comm.bcast(residuals)
+
+        return residuals
         
-    def WriteVolumeSolutionFile(self,filename=None,writeGrid=True):
+    def writeVolumeSolutionFile(self,filename=None,writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS file.
                 Keyword arguments:
         
@@ -973,7 +1020,7 @@ class SUMB(AeroSolver):
 
         return
 
-    def WriteSurfaceSolutionFile(self,*filename):
+    def writeSurfaceSolutionFile(self,*filename):
         """Write the current state of the surface flow solution to a CGNS file.
         
         Keyword arguments:
@@ -1109,6 +1156,7 @@ class SUMB(AeroSolver):
         
         if not self.adjointMatrixSetup:
             self.sumb.setupallresidualmatrices()
+            self.printMatrixInfo()
             if forcePoints is None:
                 forcePoints = self.getForcePoints()
             # end if
@@ -1157,8 +1205,8 @@ class SUMB(AeroSolver):
         # end if
 
         # Check to see if the RHS Partials have been computed
-        if not self.adjointRHS == obj:
-            self.computeObjPartials(obj,forcePoints)
+        #if not self.adjointRHS == obj:
+        #    self.computeObjPartials(obj,forcePoints)
         # end if
 
         # Check to see if we need to agument the RHS with a structural
@@ -1568,6 +1616,7 @@ class SUMB(AeroSolver):
       
         # Exec str is what is actually executed:
         exec_str = 'self.sumb.'+self.optionMap[name]['location'] + '=' + value
+
         exec(exec_str)
 
         return

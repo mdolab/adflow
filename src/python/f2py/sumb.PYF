@@ -129,6 +129,19 @@ python module sumb ! in
          logical :: eulerwallspresent
        end subroutine solver
 
+       subroutine nksolver
+       end subroutine nksolver
+
+       subroutine getcurrentresidual(rhores,totalrres)
+         real(kind=realtype), intent(out) :: rhores
+         real(kind=realtype), intent(out) :: totalrres
+       end subroutine getcurrentresidual
+
+       subroutine getfreestreamresidual(rhores,totalrres)
+         real(kind=realtype), intent(out) :: rhores
+         real(kind=realtype), intent(out) :: totalrres
+       end subroutine getfreestreamresidual
+
        subroutine viscousflux ! in :sumb:../../solver/viscousFlux.f90
        end subroutine viscousflux
 
@@ -184,6 +197,9 @@ python module sumb ! in
          integer(kind=inttype) intent(in) :: level
        end subroutine verifyradj
 
+       subroutine verifyrnkpc
+       end subroutine verifyrnkpc
+
        subroutine getsolution(sps) ! in :sumb:../../adjoint/designExport.f90
          integer(kind=inttype) intent(in) :: sps
        end subroutine getsolution
@@ -208,6 +224,9 @@ python module sumb ! in
 
        subroutine setupallresidualmatrices ! in :sumb:../../adjoint/setupADjointMatrix.F90
        end subroutine setupallresidualmatrices
+
+       subroutine setupadjointpcmatrixtranspose
+       end subroutine setupadjointpcmatrixtranspose
 
        subroutine computeobjpartials(costfunction,pts,npts) ! in :test:computeObjPartials.F90
          integer(kind=inttype) intent(in) :: costfunction
@@ -847,7 +866,45 @@ python module sumb ! in
          logical :: tsalphamode
        end module inputtsstabderiv
 
-   
+       module nksolvervars ! in :test:NKsolverVars.F90
+         use constants
+         integer(kind=inttype) :: jacobian_lag
+         character parameter,optional :: pc_lu="lu"
+         character parameter,optional :: ord_nd="nd"
+         character parameter,optional :: pc_blockjacobi="bjacobi"
+         integer(kind=inttype) :: snes_max_funcs
+         real(kind=realtype) :: snes_rtol
+         character(len=maxstringlen) :: global_pc_side
+         character parameter,optional :: ksp_bicgstab="bicgstab"
+         character parameter,optional :: pc_ilu="ilu"
+         integer(kind=inttype) :: snes_max_its
+         character parameter,optional :: ord_rcm="rcm"
+         character(len=maxstringlen) :: ksp_solver_type
+         character parameter,optional :: ksp_gmres="gmres"
+         character parameter,optional :: side_right="right"
+         character parameter,optional :: ord_natural="natural"
+         character parameter,optional :: pc_jacobi="jacobi"
+         integer(kind=inttype) :: ksp_subspace
+         integer(kind=inttype) :: asm_overlap
+         character(len=maxstringlen) :: global_pc_type
+         real(kind=realtype) :: ksp_atol
+         integer(kind=inttype) :: ksp_max_it
+         character parameter,optional :: side_left="left"
+         integer(kind=inttype) :: local_pc_ilu_level
+         real(kind=realtype) :: snes_stol
+         real(kind=realtype) :: snes_atol
+         character(len=maxstringlen) :: local_pc_ordering
+         real(kind=realtype) :: ksp_div_tol=10
+         character(len=maxstringlen) :: local_pc_type
+         real(kind=realtype) :: nk_switch_tol
+         real(kind=realtype) :: ksp_rtol
+         character parameter,optional :: ord_owd="owd"
+         character parameter,optional :: ksp_fgmres="fgmres"
+         character parameter,optional :: pc_asm="asm"
+         real(kind=realtype) :: totalres0
+         real(kind=realtype) :: rhores0
+       end module nksolvervars
+       
 
        ! ############################################################################
        ! Coupler API Routines

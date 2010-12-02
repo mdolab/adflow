@@ -912,7 +912,10 @@
        !check allocations for multipile succesive calls
        if (allocated(etaRk)) deallocate(etaRk)
        if (allocated(cdisRK)) deallocate(cdisRK)
+       if (allocated(cdisRKb)) deallocate(cdisRKb)
+
        allocate(etaRk(nRKStages), cdisRK(nRKStages), stat=ierr)
+       allocate(cdisRKb(nRKStages), stat=ierr)
        if(ierr /= 0) &
          call terminate("checkInputParam", &
                         "Memory allocation error for etaRK and cdisRK")

@@ -132,6 +132,10 @@
        real(kind=realType) :: vis2, vis4, vis2Coarse, adis
        real(kind=realType) :: kappaCoef
 
+       real(kind=realType) :: vis2b, vis4b, kappaCoefb,adisb
+
+
+
        logical :: vortexCorr, dirScaling, hScalingInlet
        logical :: radiiNeededFine, radiiNeededCoarse
 
@@ -356,7 +360,7 @@
        real(kind=realType) :: maxL2DeviationFactor
        real(kind=realType) :: relaxBleeds
 
-       real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK
+       real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK,cdisrkb
 
        logical :: freezeTurbSource
        logical :: printIterations
@@ -413,9 +417,9 @@
        ! omegaFourYRot: Fourier frequency of the y-rotation.
        ! omegaFourZRot: Fourier frequency of the z-rotation.
 
-       real(kind=realType) :: omegaFourXRot
-       real(kind=realType) :: omegaFourYRot
-       real(kind=realType) :: omegaFourZRot
+       real(kind=realType) :: omegaFourXRot,omegaFourXRotb
+       real(kind=realType) :: omegaFourYRot,omegaFourYRotb
+       real(kind=realType) :: omegaFourZRot,omegaFourZRotb
 
        ! cosCoefFourXRot(0:): cosine coefficients of the
        !                      x-rotation fourier series.
@@ -446,6 +450,7 @@
        ! coefPolAlpha(0:): coefficients of the Alpha polynomial.
      
        real(kind=realType), dimension(:), allocatable :: coefPolAlpha
+       real(kind=realType), dimension(:), allocatable :: coefPolAlphab
  
        ! degreeFourAlpha: Degree of the Alpha fourier series.
       
@@ -454,17 +459,19 @@
        ! omegaFourAlpha: Fourier frequency of the Alpha; the
        !                   period of the motion is 2*pi/omega.
    
-       real(kind=realType) :: omegaFourAlpha
+       real(kind=realType) :: omegaFourAlpha,omegafouralphab
   
        ! cosCoefFourAlpha(0:): cosine coefficients of the
        !                      x-rotation fourier series.
 
        real(kind=realType), dimension(:), allocatable :: cosCoefFourAlpha
+       real(kind=realType), dimension(:), allocatable :: cosCoefFourAlphab
        
        ! sinCoefFourAlpha(1:): sine coefficients of the
        !                      Alpha fourier series.
 
        real(kind=realType), dimension(:), allocatable :: sinCoefFourAlpha
+       real(kind=realType), dimension(:), allocatable :: sinCoefFourAlphab
 
        ! degreePolXRot: Degree of the Beta polynomial.
   
@@ -473,6 +480,7 @@
        ! coefPolXRot(0:): coefficients of the Beta polynomial.
  
        real(kind=realType), dimension(:), allocatable :: coefPolBeta
+       real(kind=realType), dimension(:), allocatable :: coefPolBetab
 
        ! degreeFourBeta: Degree of the Beta fourier series.
    
@@ -481,17 +489,19 @@
        ! omegaFourBeta: Fourier frequency of the Beta; the
        !                   period of the motion is 2*pi/omega.
  
-       real(kind=realType) :: omegaFourBeta
+       real(kind=realType) :: omegaFourBeta,omegafourbetab
 
        ! cosCoefFourBeta(0:): cosine coefficients of the
        !                      Beta fourier series.
     
        real(kind=realType), dimension(:), allocatable :: cosCoefFourBeta
+       real(kind=realType), dimension(:), allocatable :: cosCoefFourBetab
 
        ! sinCoefFourBeta(1:): sine coefficients of the
        !                      Beta fourier series.
  
        real(kind=realType), dimension(:), allocatable :: sinCoefFourBeta
+       real(kind=realType), dimension(:), allocatable :: sinCoefFourBetab
 
        ! degreePolMach: Degree of the Mach polynomial.
  
@@ -500,6 +510,7 @@
        ! coefPolMach(0:): coefficients of the Mach polynomial.
 
        real(kind=realType), dimension(:), allocatable :: coefPolMach
+       real(kind=realType), dimension(:), allocatable :: coefPolMachb
 
        ! degreeFourMach: Degree of the Mach fourier series.
  
@@ -508,17 +519,19 @@
        ! omegaFourMach: Fourier frequency of the Mach Number; the
        !                   period of the motion is 2*pi/omega.
  
-       real(kind=realType) :: omegaFourMach
+       real(kind=realType) :: omegaFourMach,omegafourmachb
 
        ! cosCoefFourMach(0:): cosine coefficients of the
        !                      Mach Number fourier series.
  
        real(kind=realType), dimension(:), allocatable :: cosCoefFourMach
+       real(kind=realType), dimension(:), allocatable :: cosCoefFourMachb
 
        ! sinCoefFourMach(1:): sine coefficients of the
        !                      Mach Number fourier series.
   
        real(kind=realType), dimension(:), allocatable :: sinCoefFourMach
+       real(kind=realType), dimension(:), allocatable :: sinCoefFourMachb
 
        ! gridMotionSpecified: Whether or not a rigid body motion of
        !                      the grid has been specified.
@@ -663,6 +676,7 @@
        real(kind=realType) :: Mach, MachCoef,MachGrid
        real(kind=realType) :: Reynolds, ReynoldsLength
        real(kind=realType) :: tempFreestream, gammaConstant, RGasDim
+       real(kind=realType) :: gammaconstantb
        real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset
        real(kind=realType) :: eddyVisInfRatio, turbIntensityInf
        real(kind=realType) :: surfaceRef, lengthRef
@@ -994,7 +1008,7 @@
        ! sigma    : Scaling parameter for dissipation lumping in approximate
        !            precondtioner
        
-       real(kind=realType)    :: sigma
+       real(kind=realType)    :: sigma,sigmab
        logical :: printTiming
 
      end module inputADjoint

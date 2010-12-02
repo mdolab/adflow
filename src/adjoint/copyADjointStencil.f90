@@ -78,11 +78,11 @@
 !     ******************************************************************
 !
 
-!      call five_point_cell_stencil(ind,cellstodo)
+ !       call five_point_cell_stencil(ind,cellstodo)
 
-      ! Zero w and x
-      wAdj = 0.0
-      xAdj = 0.0
+! !       ! Zero w and x
+!        wAdj = 0.0
+!        xAdj = 0.0
 
 !       do sps2 = 1,nTimeIntervalsSpectral
 !          do l=1,nw
@@ -96,28 +96,26 @@
 !       end do
 
 
-      ! Copy the wAdj from w
+!       ! Copy the wAdj from w
       do sps2 = 1,nTimeIntervalsSpectral
-         call setPointers(nn,level,sps2)
+         !call setPointers(nn,level,sps2)
          do l=1,nw
             do kk=-2,2
                do jj=-2,2
                   do ii=-2,2
-                     !print *,'wadj',wAdj(ii,jj,kk,l), iCell+ii, jCell+jj, kCell+kk
-                     wAdj(ii,jj,kk,l,sps2) = w(iCell+ii, jCell+jj, kCell+kk,l)
+                     wAdj(ii,jj,kk,l,sps2) = flowdoms(nn,level,sps2)%w(iCell+ii, jCell+jj, kCell+kk,l)
                   enddo
                enddo
             enddo
          enddo
-         call setPointers(nn,level,sps)
+         !call setPointers(nn,level,sps)
       end do
 
       ! Copy xAdj from x
       
-
-!      call five_pt_node_stencil_all(icell,jcell,kcell,ind,CellsToDo)
+   !   call five_pt_node_stencil_all(icell,jcell,kcell,ind,CellsToDo)
       
- !      do sps2 = 1,nTimeIntervalsSpectral
+!       do sps2 = 1,nTimeIntervalsSpectral
 !           do l=1,3
 !             do iiCell = 1,cellsToDo
 !                ii = ind(1,iiCell)
@@ -201,6 +199,3 @@
       pointRefAdj = pointRef
       rotPointAdj = rotPoint
     end subroutine copyADjointStencil
-
-
-

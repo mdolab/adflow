@@ -95,6 +95,9 @@ subroutine convergenceHeader
 
         select case (monNames(i))
 
+        case ("totalR")
+           write(*,"(a)",advance="no") "  totalRes  |"
+
         case (cgnsL2resRho)
            write(*,"(a)",advance="no") "   Res rho  |"
 
