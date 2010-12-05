@@ -73,7 +73,7 @@
    ! In case of a full mg mode, and a segegated turbulent solver,
    ! first call the turbulent boundary conditions, such that the
    ! turbulent kinetic energy is properly initialized in the halo's.
-   !    call applyAllBCNKPC(wInf,pInfCorr,wAdj, pAdj,sAdj, &
+   !      call applyAllBCNKPC(wInf,pInfCorr,wAdj, pAdj,sAdj, &
    !           siAdj, sjAdj, skAdj, volAdj, normAdj, &
    !           rFaceAdj,iCell, jCell, kCell,secondHalo,nn,level,sps,sps2)
    CALL TIMESTEPNKPC(.true., wadj, padj, siadj, sjadj, skadj, &

@@ -95,12 +95,10 @@ class SUMB(AeroSolver):
             'NKSubspaceSize':[int,60],
             'NKLinearSolveTol':[float,1e-1],
             'NKPC':[str,'asm'],
-            'NKLocalPC':[str,'ilu'],
             'NKASMOverlap':[int,3],
             'NKPCILUFill':[int,3],
             'NKLocalPCOrdering':[str,'nd'],
             'NKMaxLinearKspIts':[int,500],
-            'NKPCSide':[str,'RIGHT'],
             'NKJacobianLag':[int,10],
             'metricConversion':[float,1.0],
             'storeHistory':[bool,False],
@@ -363,7 +361,6 @@ class SUMB(AeroSolver):
 
                  'NKLinearSolver':{'gmres':'gmres',
                                    'fgmres':'fgmres',
-                                   'bicgstab':'bicgstab',
                                    'location':
                                        'nksolvervars.ksp_solver_type',
                                    'len':self.sumb.constants.maxstringlen},
@@ -374,20 +371,11 @@ class SUMB(AeroSolver):
                          'location':
                              'nksolvervars.global_pc_type',
                          'len':self.sumb.constants.maxstringlen},
-                 'NKLocalPC':{'ILU': 'ilu',
-                              'LU':  'lu',
-                              'location':
-                                  'nksolvervars.local_pc_type',
-                              'len':self.sumb.constants.maxstringlen},
-                 'NKPCSide':{'LEFT': 'left',
-                             'RIGHT':'right',
-                             'location':
-                                 'nksolvervars.pcside',
-                             'len':self.sumb.constants.maxstringlen},
                  'NKLocalPCOrdering':{'Natural':'natural',
                                       'RCM':'rcm',
                                       'Nested Dissection':'nd',
-                                      'One Way Dissection':'owd',
+                                      'One Way Dissection':'1wd',
+                                      'Quotient Minimum Degree':'qmd',
                                       'location':
                                           'nksolvervars.local_pc_ordering',
                                       'len':self.sumb.constants.maxstringlen},
@@ -550,8 +538,7 @@ class SUMB(AeroSolver):
         if 'mesh' in kwargs:
             self.mesh = kwargs['mesh']
         else:
-            print 'Mesh must be specified'
-            sys.exit(1)
+            self.mesh = SUmbDummyMesh()
         # end if
 
         # Set Flags that are used to keep of track of what is "done"
@@ -562,7 +549,6 @@ class SUMB(AeroSolver):
         self.adjointRHS         = None # When this is setup, it has
                                        # the current objective
         
-
         self._update_geom_info = True
         self._update_period_info = True
         self._update_vel_info = True
@@ -652,7 +638,6 @@ class SUMB(AeroSolver):
 
         #update the flow vars
         self.sumb.updateflow()
-
         return
     
     def setReferencePoint(self,aero_problem):
@@ -784,7 +769,6 @@ class SUMB(AeroSolver):
         self.setPeriodicParams(aero_problem)
 
         # Run Solver
-    
         t0 = time.time()
         self.sumb.monitor.niterold = self.sumb_comm_world.bcast(
             self.sumb.monitor.niterold, root=0)
@@ -800,6 +784,7 @@ class SUMB(AeroSolver):
             if (self.sumb.monitor.niterold == 0 and 
                 self.sumb.monitor.nitercur == 0 and 
                 self.sumb.iteration.itertot == 0):
+
                 if self.myid == 0:
                     nn = self.sumb.inputiteration.nsgstartup + \
                         self.sumb.inputiteration.ncycles
@@ -823,12 +808,13 @@ class SUMB(AeroSolver):
                 self.sumb.iteration.itertot = 0
                 self.sumb.inputiteration.mgstartlevel = 1
             # end if
-        # end if
 
         elif sol_type.lower()=='unsteady':
             print 'unsteady not implemented yet...'
             sys.exit(0)
         # end if
+
+
         self.sumb.killsignals.routinefailed = False
         self._updatePeriodInfo()
         self._updateGeometryInfo()
@@ -847,11 +833,17 @@ class SUMB(AeroSolver):
             # Call the solver as we normally would 
             self.sumb.solver()
         else:
-            # Make sure adjoint is initialized
-            self.initAdjoint()
+            # Make sure global cell/node is initialized
+            self.sumb.preprocessingadjoint()
 
-            rhoRes,totalRRes = self.sumb.getcurrentresidual()
-            
+            # If we are using full multigrid get freestream residual--
+            # its a cold start by definition. 
+            if not self.sumb.inputiteration.mgstartlevel == 1:
+                rhoRes,totalRRe0 = self.sumb.getfreestreamresidual()
+            else:
+                rhoRes,totalRRes = self.sumb.getcurrentresidual()
+            # end if
+                      
             if self.callCounter == 0: # Store totalRRes
                 rhoRes0,totalRRes0 = self.sumb.getfreestreamresidual()
                 self.sumb.nksolvervars.totalres0 = totalRRes0
@@ -863,6 +855,7 @@ class SUMB(AeroSolver):
             # Determine if we need to run the RK solver, before we can
             # run the NK solver 
             
+
             if rhoRes/self.rhoRes0 > self.getOption('NKSwitchTol') or \
                     rhoRes == 0: 
             
@@ -900,6 +893,8 @@ class SUMB(AeroSolver):
                 # end if
             else:
                 # We already have a good starting point, so we can just call nksolver()
+                print 'FUCKED'
+                sys.exit(0)
                 self.sumb.nksolver()
             # end if
         # end if (nkSolver Switch)
@@ -1334,7 +1329,10 @@ class SUMB(AeroSolver):
         """Update the SUmb internal geometry info, if necessary."""
         if (self._update_geom_info):
             self.mesh.warpMesh()
-            self.sumb.setgrid(self.mesh.getSolverGrid())
+            newGrid = self.mesh.getSolverGrid()
+            if newGrid is not None:
+                self.sumb.setgrid(self.mesh.getSolverGrid())
+
             self.sumb.updatecoordinatesalllevels()
             self.sumb.updatewalldistancealllevels()
             self.sumb.updateslidingalllevels()
@@ -1600,10 +1598,24 @@ class SUMB(AeroSolver):
         # All other options do genericaly by setting value in module:
         # Check if there is an additional mapping to what actually
         # has to be set in the solver
-        try: 
-            value = self.optionMap[name][value]
+
+        temp = copy.copy(self.optionMap[name]) # This is the dictionary
+        temp.pop('location')
+        try:
+            temp.pop('len')
         except:
             pass
+        # end if
+
+        # If temp has anything left in it, we MUST be able to match to
+        # one of them.
+
+        if len(temp) == 0:
+            pass
+        else:
+            value = self.optionMap[name][value]
+        # end if
+            
 
         # If value is a string, put quotes around it and make it
         # the correct length, otherwise convert to string
@@ -1647,6 +1659,121 @@ class SUMB(AeroSolver):
         # 
         return self.informs[infocode]
 
+
+class SUmbDummyMesh(object):
+    """
+    Represents a dummy Multiblock structured Mesh for SUmb
+    """
+ 
+    def __init__(self):
+        """Initialize the object."""
+
+    def getSurfaceCoordinates(self,group_name):
+        ''' 
+        Returns a UNIQUE set of ALL surface points belonging to
+        group "group_name", that belong to blocks on THIS processor
+        '''
+
+        return 
+
+    def setSurfaceCoordinates(self,group_name,coordinates,reinitialize=True):
+        ''' 
+        Set the UNIQUE set of ALL surface points belonging to
+        group "group_name", that belong to blocks on THIS processor
+        This must be the same length as the list obtained from
+        getSurfaceCoordiantesLocal
+        '''
+
+        return 
+
+    def addFamilyGroup(self,group_name,families=None):
+
+        return 
+   
+# =========================================================================
+#                         Interface Functionality
+# =========================================================================
+
+    def setExternalMeshIndices(self,ind):
+        ''' Take in a set of external indices from another flow solver
+        and use this to setup the scatter contexts'''
+
+        return 
+
+    def setExternalForceIndices(self,ind):
+        ''' Take in a set of external indices from another flow solver
+        and use this to setup the scatter contexts'''
+
+        return 
+
+    def getSolverGrid(self):
+        '''
+        Return the grid as the external solver want it
+        '''
+        
+        return
+
+    def warp_to_solver_force(self,group_name,disp):
+
+        return 
+
+    def solver_to_warp_force(self,group_name,solver_forces):
+    
+        return
+
+    def getdXs(self,group_name):
+
+        return 
+
+
+# ==========================================================================
+#                        Output Functionality
+# ==========================================================================
+
+    def writeVolumeGrid(self,file_name):
+        '''write volume mesh'''
+
+        return
+
+    def writeSurfaceGrid(self,file_name):
+        '''write surface mesh'''
+
+        return
+
+    def writeFEGrid(self,file_name):
+        ''' write the FE grid to file '''
+        return
+
+# =========================================================================
+#                         Utiliy Functions
+# =========================================================================
+
+    def getMeshQuality(self,bins=None):
+        
+        return
+
+# =========================================================================
+#                      Mesh Warping Functionality
+# =========================================================================
+
+    def warpMesh(self):
+        ''' 
+        Run either the solid warping scheme or the algebraic
+        warping scheme depending on the options
+        '''
+
+    def setupWarpDeriv(self):
+
+        return 
+
+    def WarpDeriv(self,solver_dxv):
+
+        return 
+
+    def verifySolidWarpDeriv(self):
+
+        return
+
 #==============================================================================
 # SUmb Analysis Test
 #==============================================================================
@@ -1656,4 +1783,6 @@ if __name__ == '__main__':
     print 'Testing ...'
     sumb = SUMB()
     print sumb
+
+
 

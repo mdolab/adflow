@@ -379,6 +379,56 @@ subroutine three_point_cell_stencil(ind,cellstodo)
   CellsToDo = 7
 end subroutine three_point_cell_stencil
 
+
+subroutine three_point_cell_stencil_small(icell,jcell,kcell,ind,cellstodo)
+
+  use blockPointers
+  integer(kind=intType), intent(in) :: icell,jcell,kcell
+  integer(kind=intType), intent(out) :: ind(3,7),CellsToDo
+  integer(kind=intType) :: counter
+
+  ind(:,1) = (/0,0,0/)
+  counter = 1
+  
+  ! i - 1
+  if (icell > 2) then
+     counter = counter + 1
+     ind(:,counter) = (/-1,0,0/)
+  end if
+
+  ! i + 1
+  if (icell < il) then
+     counter = counter + 1
+     ind(:,counter) = (/1,0,0/)
+  end if
+
+  ! j - 1
+  if (jcell > 2) then
+     counter = counter + 1
+     ind(:,counter) = (/0,-1,0/)
+  end if
+
+  ! j + 1
+  if (jcell < jl) then
+     counter = counter + 1
+     ind(:,counter) = (/0,1,0/)
+  end if
+
+  ! k - 1
+  if (kcell > 2) then
+     counter = counter + 1
+     ind(:,counter) = (/0,0,-1/)
+  end if
+
+  ! k + 1
+  if (kcell < kl) then
+     counter = counter + 1
+     ind(:,counter) = (/0,0,1/)
+  end if
+
+  CellsToDo = counter
+end subroutine three_point_cell_stencil_small
+
 subroutine five_point_cell_stencil(ind,cellstodo)
 
   use blockPointers

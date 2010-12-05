@@ -301,6 +301,7 @@ subroutine setupADjointPCMatrixTranspose
                     ! numbers but the global node numbering already accounts
                     ! for that since it starts at node 0.
 
+                    
                     idxmgb = globalCell(iCell,jCell,kCell)
                     ! >>> center block A < W(i,j,k)
                     do sps2 = 1,nTimeIntervalsSpectral

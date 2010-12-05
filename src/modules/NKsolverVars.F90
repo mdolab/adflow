@@ -22,6 +22,7 @@ module NKsolverVars
 
   ! Non-linear Solver Options
   integer(kind=intType) :: jacobian_lag
+  logical :: useEW
 
   ! Non-linear Solver Tolerances
   real(kind=realType) :: snes_atol 
@@ -30,6 +31,15 @@ module NKsolverVars
   integer(kind=intType) :: snes_max_its
   integer(kind=intType) :: snes_max_funcs
 
+  ! Eisenstat-Walker Paramtersr
+  integer(kind=intType) :: ew_version
+  real(kind=realType) :: ew_rtol_0
+  real(kind=realType) :: ew_rtol_max
+  real(kind=realType) :: ew_gamma
+  real(kind=realType) :: ew_alpha
+  real(kind=realType) :: ew_alpha2
+  real(kind=realType) :: ew_threshold
+  
   ! Krylov-Solver Options
   character(maxStringLen) :: ksp_solver_type
   integer(kind=intType) :: ksp_subspace
@@ -54,7 +64,7 @@ module NKsolverVars
   ! KSP Types
   character, parameter :: ksp_gmres = "gmres"
   character, parameter :: ksP_fgmres = "fgmres"
-  character, parameter :: ksp_bicgstab = "bicgstab"
+  character, parameter :: ksp_bicgstab = "bcgs"
 
   ! Global PC Types
   character, parameter :: pc_blockjacobi = "bjacobi"
@@ -78,7 +88,7 @@ module NKsolverVars
   ! Misc Parameters
   real(kind=realType) :: totalRes0
   real(kind=realType) :: rhoRes0
-
+  real(kind=realType) :: CFL0
   integer(kind=intType) :: iterTot0
 
 end module NKsolverVars

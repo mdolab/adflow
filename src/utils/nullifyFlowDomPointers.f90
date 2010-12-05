@@ -175,7 +175,6 @@
 
        nullify(flowDoms(nn,level,sps)%globalCell)
        nullify(flowDoms(nn,level,sps)%globalNode)
-       nullify(flowDoms(nn,level,sps)%psiAdj)
 
        nullify(flowDoms(nn,level,sps)%warp_comm)
   
