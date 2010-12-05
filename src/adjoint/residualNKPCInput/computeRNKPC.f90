@@ -76,9 +76,9 @@ subroutine computeRNKPC(wAdj, dwAdj, siAdj, sjAdj, skAdj, sAdj, volAdj, &
      ! first call the turbulent boundary conditions, such that the
      ! turbulent kinetic energy is properly initialized in the halo's.
 
-  !    call applyAllBCNKPC(wInf,pInfCorr,wAdj, pAdj,sAdj, &
-!           siAdj, sjAdj, skAdj, volAdj, normAdj, &
-!           rFaceAdj,iCell, jCell, kCell,secondHalo,nn,level,sps,sps2)
+     call applyAllBCNKPC(wInf,pInfCorr,wAdj, pAdj,sAdj, &
+          siAdj, sjAdj, skAdj, volAdj, normAdj, &
+          rFaceAdj,iCell, jCell, kCell,secondHalo,nn,level,sps,sps2)
      call timeStepNKPC(.true.,wAdj,pAdj,siAdj, sjAdj, skAdj,&
           sFaceIAdj,sFaceJAdj,sFaceKAdj,volAdj,radIAdj,radJAdj,radKAdj,&
           iCell, jCell, kCell,pInfCorr,rhoInf,nn,level,sps,sps2)

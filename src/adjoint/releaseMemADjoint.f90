@@ -67,20 +67,10 @@ subroutine releaseMemADjoint(level,sps)
         if(ierr /= 0) deallocationFailure = .true.
      endif
 
-     ! Deallocate the memory for the adjoint solution, 
-     ! including halos, if they exist.
-
-     if( associated(flowDoms(nn,level,sps)%psiAdj) ) then
-        deallocate(flowDoms(nn,level,sps)%psiAdj, stat=ierr)
-        if(ierr /= 0) deallocationFailure = .true.
-     endif
-
-
      ! Nullify the pointers, such that no attempt is made to
      ! release the memory again.
 
      nullify(flowDoms(nn,level,sps)%globalNode)
-     nullify(flowDoms(nn,level,sps)%psiAdj)
      nullify(flowDoms(nn,level,sps)%globalCell)
 
      ! Check for errors in the deallocation.
