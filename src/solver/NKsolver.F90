@@ -330,7 +330,7 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
 
   ! Assemble the approximate PC
   
-  call setupNK_KSP_PC(dRdwPre)
+  call setupNK_KSP_PC2(dRdwPre)
   flag = SAME_NONZERO_PATTERN
   ! Setup the required options for the KSP solver
   call SNESGetKSP(snes,ksp,ierr);                   call EChk(ierr,__file__,__line__)
@@ -496,7 +496,6 @@ subroutine setupNK_KSP_PC2(dRdwPre)
   !     * Compute the dRdWPre matrix for the NK Solver                   *
   !     ******************************************************************
   !
-  use ADjointPETSc ,only : dRdwPreT
   use ADjointVars
   use blockPointers       ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
   use communication       ! procHalo(currentLevel)%nProcSend
@@ -513,15 +512,270 @@ subroutine setupNK_KSP_PC2(dRdwPre)
 
 Mat dRdwPre
 
-integer(kind=intType) :: ierr
+!
+  !     Local variables.
+  !
+  integer(kind=intType) :: discr, nHalo,level
+  integer(kind=intType) :: iCell, jCell, kCell
+  integer(kind=intType) :: mm, nn, m, n,idxstate,idxres
+  integer(kind=intType) :: ii, jj, kk, i, j, k,liftIndex,l
 
-! Here we're just going to cheat and assemble the transpose as we
-! would do for the adjoint and then take the transpos
-call setupADjointPCMatrixTranspose
+  logical :: fineGrid, correctForK, exchangeTurb,secondhalo
 
-call MatTranspose(dRdwPreT,MAT_REUSE_MATRIX,drdwpre,ierr)
-call EChk(ierr,__file__,__line__)
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral) :: wAdj, wAdjB
+  real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral)  :: xAdj, xAdjB
 
+  real(kind=realType), dimension(nw,nTimeIntervalsSpectral) :: dwAdj, dwAdjB
+
+  REAL(KIND=REALTYPE) :: machadj, machcoefadj, uinfadj, pinfcorradj
+  REAL(KIND=REALTYPE) :: machadjb, machcoefadjb,machgridadj, machgridadjb
+  REAL(KIND=REALTYPE) :: prefadj, rhorefadj
+  REAL(KIND=REALTYPE) :: pinfdimadj, rhoinfdimadj
+  REAL(KIND=REALTYPE) :: rhoinfadj, pinfadj
+  REAL(KIND=REALTYPE) :: murefadj, timerefadj
+  REAL(KIND=REALTYPE) :: alphaadj, betaadj
+  REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
+  REAL(KIND=REALTYPE), DIMENSION(3) :: rotcenteradj
+  REAL(KIND=REALTYPE), DIMENSION(3) :: rotrateadj 
+  REAL(KIND=REALTYPE) :: rotcenteradjb(3), rotrateadjb(3)
+  REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3), rotpointadj(3)&
+       &  , rotpointadjb(3)
+  REAL(KIND=REALTYPE) :: xblockcorneradj(2, 2, 2, 3,nTimeIntervalsSpectral), xblockcorneradjb(2&
+       &  , 2, 2, 3,nTimeIntervalsSpectral)
+
+  integer(kind=intType), dimension(0:nProc-1) :: offsetRecv
+
+  real(kind=realType), dimension(2) :: time
+  real(kind=realType)               :: timeAdjLocal, timeAdj
+  real(kind=realType) :: prefadjb,rhorefadjb, pinfdimadjb,rhoinfdimadjb,&
+       rhoinfadjb,PINFADJB,MUREFADJB,PINFCORRADJB
+  ! dR/dw stencil
+
+  real(kind=realType), dimension(nw,nw,nTimeIntervalsSpectral) :: Aad, Bad, BBad, &
+       Cad, CCad, Dad, DDad, Ead, EEad, Fad, FFad, Gad, GGad
+
+  ! idxmgb - global block row index
+  ! idxngb - global block column index
+
+  integer(kind=intType) :: idxmgb, idxngb,ierr, sps,sps2
+
+  ! idxmgb - array of global row indices
+  ! idxngb - array of global column indices
+
+  integer(kind=intType), dimension(nw) :: idxmg, idxng
+
+  !Reference values of the dissipation coeff for the preconditioner
+  real(kind=realType) :: vis2_ref, vis4_ref
+
+  !
+  !     ******************************************************************
+  !     *                                                                *
+  !     * Begin execution.                                               *
+  !     *                                                                *
+  !     ******************************************************************
+  !
+
+  ! Set the grid level of the current MG cycle, the value of the
+  ! discretization and the logical correctForK.
+  level = 1_intType
+  currentLevel = level
+  !discr        = spaceDiscr
+  fineGrid     = .true.
+  secondHalo = .True.
+  correctForK = .False.
+  rkStage = 0
+
+  call cpu_time(time(1))
+
+  !zero the matrix for dRdWPre Insert call
+  call MatZeroEntries(dRdwPre,ierr)
+  call EChk(ierr,__file__,__line__)
+
+  !store the current values of vis2,vis4 and reset vis2 for preconditioner
+  !method based on (Hicken and Zingg,2008) AIAA journal,vol46,no.11
+  vis2_ref = vis2
+  vis4_ref = vis4
+  !sigma = 4 !setup as an input parameter....
+  !vis2 = vis2_ref+sigma*vis4_ref
+  !vis4 = 0.0
+  lumpedDiss=.True.
+
+  domainLoopAD: do nn=1,nDom
+
+     ! Loop over the number of time instances for this block.
+     spectralLoop: do sps=1,nTimeIntervalsSpectral
+        call setPointersAdj(nn,level,sps)
+
+        ! Loop over location of output (R) cell of residual
+        do kCell = 2, kl
+           do jCell = 2, jl
+              do iCell = 2, il
+                 ! Copy the state w to the wAdj array in the stencil
+               
+                 call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
+                      betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
+                      nn,level,sps,pointRefAdj,rotPointAdj,&
+                      prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                      rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                      murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+             
+                 Aad(:,:,:)  = zero
+                 Bad(:,:,:)  = zero
+                 Cad(:,:,:)  = zero
+                 Dad(:,:,:)  = zero
+                 Ead(:,:,:)  = zero
+                 Fad(:,:,:)  = zero
+                 Gad(:,:,:)  = zero
+
+                 mLoop: do m = 1, nw      ! Loop over output cell residuals (R)
+                    ! Initialize the seed for the reverse mode
+                    dwAdjb(:,:) = 0.
+                    dwAdjb(m,sps) = 1.
+                    dwAdj(:,:)  = 0.
+                    wAdjb(:,:,:,:,:)  = 0.  !dR(m)/dw
+                    xadjb = 0.
+                    alphaadjb = 0.
+                    betaadjb = 0.
+                    machadjb = 0.
+                    rotrateadjb(:)=0.
+
+                    ! Call the reverse mode of residual computation.
+                    !
+                    !                          dR(iCell,jCell,kCell,l)
+                    ! wAdjb(ii,jj,kk,n) = --------------------------------
+                    !                     dW(iCell+ii,jCell+jj,kCell+kk,n)
+
+                    ! Call reverse mode of residual computation
+
+                    call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+                         &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+                         &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+                         &  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
+                         &  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
+                         &  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, pointrefadjb&
+                         &  , rotpointadj, rotpointadjb, murefadj, timerefadj, pinfcorradj, &
+                         &  liftindex)
+
+
+                    ! Store the block Jacobians (by rows).
+
+                    Aad(m,:,:)  = wAdjB( 0, 0, 0,:,:)
+                    Bad(m,:,:)  = wAdjB(-1, 0, 0,:,:)
+                    Cad(m,:,:)  = wAdjB( 1, 0, 0,:,:)
+                    Dad(m,:,:)  = wAdjB( 0,-1, 0,:,:)
+                    Ead(m,:,:)  = wAdjB( 0, 1, 0,:,:)
+                    Fad(m,:,:)  = wAdjB( 0, 0,-1,:,:)
+                    Gad(m,:,:)  = wAdjB( 0, 0, 1,:,:)
+
+                 enddo mLoop
+
+                 idxmgb = globalCell(iCell,jCell,kCell)
+                 ! >>> center block A < W(i,j,k)
+                 do sps2 = 1,nTimeIntervalsSpectral
+                    idxngb = flowDoms(nn,level,sps2)%globalCell(iCell,jCell,kCell)!idxmgb
+                    call MatSetValuesBlocked(dRdwPre, 1, idxmgb, 1, idxngb, &
+                         Aad(:,:,sps2), ADD_VALUES,ierr)
+                    call EChk(ierr,__file__,__line__)
+                 enddo
+
+                 ! >>> west block B < W(i-1,j,k)
+                 if( (iCell-1) >= 0 ) then
+                    idxngb = globalCell(iCell-1,jCell,kCell)!idxmgb
+                    if (idxngb >=0 .and. idxngb.ne.-5) then
+                       call MatSetValuesBlocked(dRdwPre, 1, idxmgb, 1, idxngb, &
+                            Bad(:,:,sps), ADD_VALUES,ierr)
+                       call EChk(ierr,__file__,__line__)
+                    endif
+                 endif
+
+                 ! >>> east block C < W(i+1,j,k)
+                 if( (iCell+1) <= ib ) then
+                    idxngb = globalCell(iCell+1,jCell,kCell)!idxmgb
+                    if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
+                       call MatSetValuesBlocked(dRdwPre, 1, idxmgb, 1, idxngb, &
+                            Cad(:,:,sps), ADD_VALUES,ierr)
+                       call EChk(ierr,__file__,__line__)
+                    endif
+                 end if
+
+                 ! >>> south block D < W(i,j-1,k)
+                 if( (jCell-1) >= 0 ) then
+                    idxngb = globalCell(iCell,jCell-1,kCell)!idxmgb
+                    if (idxngb>=0 .and. idxngb.ne.-5) then
+                       call MatSetValuesBlocked(dRdwPre, 1, idxmgb, 1, idxngb, &
+                            Dad(:,:,sps), ADD_VALUES,ierr)
+                       call EChk(ierr,__file__,__line__)
+                       
+                    endif
+                 endif
+
+                 ! >>> north block E < W(i,j+1,k)
+                 if( (jCell+1) <= jb ) then
+                    idxngb = globalCell(iCell,jCell+1,kCell)!idxmgb
+                    if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
+                       call MatSetValuesBlocked(dRdwPre, 1, idxmgb, 1, idxngb, &
+                               Ead(:,:,sps), ADD_VALUES,ierr)
+                       call EChk(ierr,__file__,__line__)
+                    endif
+                 end if
+
+                 ! >>> back block F < W(i,j,k-1)
+                 
+                 if( (kCell-1) >= 0 ) then
+                    idxngb = globalCell(iCell,jCell,kCell-1)!idxmgb
+                    if (idxngb>=0 .and. idxngb.ne.-5) then
+                       call MatSetValuesBlocked(dRdwPre, 1, idxmgb, 1, idxngb, &
+                            Fad(:,:,sps), ADD_VALUES,ierr)
+                       call EChk(ierr,__file__,__line__)
+                    endif
+                 endif
+
+                 ! >>> front block G < W(i,j,k+1)
+                 if( (kCell+1) <= kb ) then
+                    idxngb = globalCell(iCell,jCell,kCell+1)!idxmgb
+                    if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
+                       call MatSetValuesBlocked(dRdwPre, 1, idxmgb, 1, idxngb, &
+                            Gad(:,:,sps), ADD_VALUES,ierr)
+                       call EChk(ierr,__file__,__line__)
+                    endif
+                 end if
+              enddo
+           enddo
+        enddo
+     enddo spectralLoop
+     !===============================================================
+
+  enddo domainLoopad
+
+  !Return dissipation Parameters to normal
+  vis2 = vis2_ref
+  vis4 = vis4_ref
+
+  call MatAssemblyBegin(dRdWPre,MAT_FINAL_ASSEMBLY,ierr)
+  call EChk(ierr,__file__,__line__)
+  call MatAssemblyEnd  (dRdWPre,MAT_FINAL_ASSEMBLY,ierr)
+  call EChk(ierr,__file__,__line__)
+#ifdef USE_PETSC_3
+  call MatSetOption(dRdWPre,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
+  call EChk(ierr,__file__,__line__)
+#else
+  call MatSetOption(dRdWPre,MAT_NO_NEW_NONZERO_LOCATIONS,ierr)
+  call EChk(ierr,__file__,__line__)
+#endif
+  ! Get new time and compute the elapsed time.
+
+  call cpu_time(time(2))
+  timeAdjLocal = time(2)-time(1)
+
+  ! Determine maximum time using MPI reduce
+  ! with operation mpi_max.
+
+  call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
+       mpi_max, 0, SUMB_PETSC_COMM_WORLD, ierr)
+  call EChk(ierr,__file__,__line__)
+  if( myid==0 ) &
+       write(*,20) "Assembling PC matrix time (s) = ", timeAdj
+20 format(a,1x,f8.2)
 end subroutine setupNK_KSP_PC2
 
 subroutine setupNK_KSP_PC(dRdwPre)
