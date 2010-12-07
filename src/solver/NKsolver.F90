@@ -118,8 +118,8 @@ subroutine NKsolver
   call EChk(ierr,__file__,__line__)
 
   ! Look at KSP iterations
-!   call PetscOptionsSetValue('-ksp_monitor',PETSC_NULL_CHARACTER,ierr)
-!   call EChk(ierr,__file__,__line__)
+   call PetscOptionsSetValue('-ksp_monitor',PETSC_NULL_CHARACTER,ierr)
+   call EChk(ierr,__file__,__line__)
 
 
   ! Uncomment for unpreconditioned solver. ONLY FOR DEBUGGING. Also
@@ -138,7 +138,7 @@ subroutine NKsolver
   ! starting point. 
 
   snes_stol = 1e-10
-  snes_max_its = 250_intType
+  snes_max_its = 2000_intType
   snes_max_funcs = snes_max_its * 2
 
   ! Determine the current level of convergence of the solution
