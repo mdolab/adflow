@@ -1263,7 +1263,6 @@ subroutine getCurrentResidual(rhoRes,totalRRes)
 
 end subroutine getCurrentResidual
 
-
 subroutine getFreeStreamResidual(rhoRes,totalRRes)
   use communication
   use ADjointVars
@@ -1307,7 +1306,6 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
   mgStartLevel = 1
 
   call setUniformFlow
-
   call getCurrentResidual(rhoRes,totalRRes)
   counter = 0
   spectralLoop2: do sps=1,nTimeIntervalsSpectral
@@ -1329,8 +1327,6 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
   mgStartLevel = tempStartLevel
   deallocate(wtemp)
 end subroutine getFreeStreamResidual
-
-
 
 subroutine snes_monitor(snes,its,norm,ctx,ierr)
   use communication

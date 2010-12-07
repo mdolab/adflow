@@ -94,10 +94,10 @@ class SUMB(AeroSolver):
             'NKSwitchTol':[float,1e-2],
             'NKSubspaceSize':[int,60],
             'NKLinearSolveTol':[float,1e-1],
-            'NKPC':[str,'asm'],
+            'NKPC':[str,'Additive Schwartz'],
             'NKASMOverlap':[int,3],
             'NKPCILUFill':[int,3],
-            'NKLocalPCOrdering':[str,'nd'],
+            'NKLocalPCOrdering':[str,'RCM'],
             'NKMaxLinearKspIts':[int,500],
             'NKJacobianLag':[int,10],
             'metricConversion':[float,1.0],
@@ -119,7 +119,7 @@ class SUMB(AeroSolver):
             'adjointL2ConvergenceRel':[float,1e-16],
             'adjointL2ConvergenceAbs':[float,1e-16],
             'adjointDivTol':[float,1e5],
-            'monitorVariables':[list,['resrho','resmom','resrhoe','totalR']],
+            'monitorVariables':[list,['resrho','cl','cd']],
             'probName':[str,''],
             'outputDir':[str,'./'],
             'solRestart':[bool,False],
@@ -770,8 +770,9 @@ class SUMB(AeroSolver):
 
         # Run Solver
         t0 = time.time()
-        self.sumb.monitor.niterold = self.sumb_comm_world.bcast(
-            self.sumb.monitor.niterold, root=0)
+
+        #self.sumb.monitor.niterold = self.sumb_comm_world.bcast(
+        #    self.sumb.monitor.niterold, root=0)
 
         storeHistory = self.getOption('storeHistory')
 
@@ -814,7 +815,6 @@ class SUMB(AeroSolver):
             sys.exit(0)
         # end if
 
-
         self.sumb.killsignals.routinefailed = False
         self._updatePeriodInfo()
         self._updateGeometryInfo()
@@ -829,36 +829,35 @@ class SUMB(AeroSolver):
             self.solve_failed = True
             return
 
+        # Get Starting Residual
+        self.sumb.preprocessingadjoint()
+        if self.sumb.inputiteration.mgstartlevel != 1:
+            self.rhoResStart,self.totalRStart = \
+                self.sumb.getfreestreamresidual()
+        else:
+            self.rhoResStart,self.totalRStart = self.sumb.getcurrentresidual()
+        # end if
+
+        if self.callCounter == 0:
+            # We need to explicitly get the freestream residual, since
+            # we may have
+            rhoRes0,totalRRes0 = self.sumb.getfreestreamresidual()
+            self.sumb.nksolvervars.totalres0 = totalRRes0
+            self.sumb.nksolvervars.rhores0   = rhoRes0
+            self.rhoRes0 = rhoRes0
+
         if not self.getOption('useNKSolver'):
             # Call the solver as we normally would 
             self.sumb.solver()
+            self.rhoResFinal,self.totalRFinal = self.sumb.getcurrentresidual()
         else:
             # Make sure global cell/node is initialized
             self.sumb.preprocessingadjoint()
 
-            # If we are using full multigrid get freestream residual--
-            # its a cold start by definition. 
-            if not self.sumb.inputiteration.mgstartlevel == 1:
-                rhoRes,totalRRe0 = self.sumb.getfreestreamresidual()
-            else:
-                rhoRes,totalRRes = self.sumb.getcurrentresidual()
-            # end if
-                      
-            if self.callCounter == 0: # Store totalRRes
-                rhoRes0,totalRRes0 = self.sumb.getfreestreamresidual()
-                self.sumb.nksolvervars.totalres0 = totalRRes0
-                self.sumb.nksolvervars.rhores0   = rhoRes0
-                self.rhoRes0 = rhoRes0
-            # See what is in the convergence history...
-            #resInit,resStart,resFinal = self.getResiduals()
-            
             # Determine if we need to run the RK solver, before we can
             # run the NK solver 
-            
-
-            if rhoRes/self.rhoRes0 > self.getOption('NKSwitchTol') or \
-                    rhoRes == 0: 
-            
+            if self.rhoResStart/self.rhoRes0 > self.getOption('NKSwitchTol'):
+                
                 # We haven't run anything yet OR the solution is not
                 # yet converged tightly enough to start with NK solver
               
@@ -881,7 +880,7 @@ class SUMB(AeroSolver):
                     return 
                 else:
                     rhoRes1,totalRRes1 = self.sumb.getcurrentresidual()
-                    if rhoRes1 < rhoRes * self.sumb.inputiteration.l2convrel:
+                    if rhoRes1 < self.rhoResStart * self.sumb.inputiteration.l2convrel:
                         # 2. The solver has converged to L2ConvRel. In this
                         # case we're do and DO NOT have to run th rk solver
                         pass
@@ -891,11 +890,13 @@ class SUMB(AeroSolver):
                         self.sumb.nksolver()
                     # end if
                 # end if
+                self.rhoResFinal,self.totalRFinal = \
+                    self.sumb.getcurrentresidual()
             else:
                 # We already have a good starting point, so we can just call nksolver()
-                print 'FUCKED'
-                sys.exit(0)
                 self.sumb.nksolver()
+                self.rhoResFinal,self.totalRFinal = \
+                    self.sumb.getcurrentresidual()
             # end if
         # end if (nkSolver Switch)
 
@@ -978,19 +979,6 @@ class SUMB(AeroSolver):
 
         return 
 
-    def getResiduals(self):
-        if self.myid == 0:
-            residuals = [self.sumb.monitor.convarray[0,0,0],
-                         self.sumb.monitor.convarray[1,0,0],
-                         self.sumb.monitor.convarray[self.sumb.monitor.nitercur,0,0]]
-        else:
-            residuals = None
-        # end if
-
-        residuals = self.comm.bcast(residuals)
-
-        return residuals
-        
     def writeVolumeSolutionFile(self,filename=None,writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS file.
                 Keyword arguments:

@@ -349,7 +349,6 @@
                   converged = .False.
                end if
 
-
              !===========================================================
 
              case (unsteady)
@@ -526,6 +525,9 @@
 
        call mpi_bcast(mm, 1, sumb_integer, 0, SUmb_comm_world, ierr)
        if(mm == 0) converged = .false.
+
+       call mpi_barrier(sumb_comm_world,ierr)
+
 
        end subroutine convergenceInfo
 
