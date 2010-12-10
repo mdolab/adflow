@@ -40,15 +40,10 @@ FF90_MODULES =
 
 FF90_OBJECTS = computepressurenkpc_b.o     \
 	       computernkpc_b.o        \
-	       eintarraynkpc_b.o           \
-	       etotarraynkpc_b.o           \
 	       initresnkpc_b.o             \
                inviscidcentralfluxnkpc_b.o \
-	       inviscidupwindfluxnkpc_b.o  \
-	       invisciddissfluxscalarnkpc_b.o  \
-               leftrightstatenkpc_b.o      \
+	       invisciddissfluxscalarnkpc_b.o\
 	       residualnkpc_b.o            \
-               riemannfluxnkpc_b.o         \
                timestepnkpc_b.o            \
 	       applyallbcnkpc_b.o          \
 	       bceulerwallnkpc_b.o         \
@@ -56,15 +51,20 @@ FF90_OBJECTS = computepressurenkpc_b.o     \
 	       bcsymmnkpc_b.o              \
                extractbcstatesnkpc_b.o     \
 	       extrapolate2ndhalonkpc_b.o  \
-#	       replacebcstatesnkpc_b.o     \	
+	       replacebcstatesnkpc_b.o     	
 #	       applyallbcnkpc_d.o          \
 	       bceulerwallnkpc_d.o         \
 	       bcfarfieldnkpc_d.o          \
 	       bcsymmnkpc_d.o              \
+	       eintarraynkpc_b.o           \
+	       etotarraynkpc_b.o           \
                computepressurenkpc_d.o     \
 	       computernkpc_d.o        \
 	       eintarraynkpc_d.o           \
 	       etotarraynkpc_d.o           \
+	       leftrightstatenkpc_b.o      \
+               riemannfluxnkpc_b.o         \
+	       inviscidupwindfluxnkpc_b.o  \
                extractbcstatesnkpc_d.o     \
 	       extrapolate2ndhalonkpc_d.o  \
 	       initresnkpc_d.o             \
