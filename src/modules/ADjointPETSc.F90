@@ -59,17 +59,12 @@
 #if PETSC_VERSION_MAJOR==2
 #include "include/finclude/petsc.h"
 #include "include/finclude/petscvec.h"
-!#f90##include "include/finclude/petscvec.h90"
 #include "include/finclude/petscmat.h"
-!#f90##include "include/finclude/petscmat.h90"
 #include "include/finclude/petscksp.h"
 #include "include/finclude/petscpc.h"
 #include "include/finclude/petscviewer.h"
 #include "include/finclude/petscis.h"
 #include "include/finclude/petscis.h90"
-!#include "include/finclude/petscdraw.h"
-!PETSC_VERSION_MAJOR==2#include "include/finclude/petscmg.h"
-!#include "include/finclude/petscsys.h"
 #endif
 
 #if PETSC_VERSION_MAJOR==3
@@ -148,11 +143,9 @@
 
       !Subcontexts for ASM preconditioner
       PC subpc
-      !KSP, dimension(:),allocatable :: subksp!(*)! = PETSC_NULL
       KSP subksp
 
       !index sets for the ASM preconditioner
-      !IS,    dimension(10) ::  is
       IS  is
 
       !Additional variables for the ASM preconditioner

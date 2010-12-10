@@ -149,11 +149,12 @@ subroutine residualNKPC(wAdj,pAdj,siAdj,sjAdj,skAdj,volAdj,normAdj,&
 
   case (upwind) ! Dissipation via an upwind scheme.
 
-
-     call inviscidUpwindFluxNKPC(wAdj,  pAdj,  dwAdj, &
-          siAdj, sjAdj, skAdj, &
-          sFaceIAdj,sFaceJAdj,sFaceKAdj,&
-          iCell, jCell, kCell,finegrid,nn,level,sps)
+     call terminate("residualAdj", &
+          "ADjoint does not function on upwind discretization")
+!      call inviscidUpwindFluxNKPC(wAdj,  pAdj,  dwAdj, &
+!           siAdj, sjAdj, skAdj, &
+!           sFaceIAdj,sFaceJAdj,sFaceKAdj,&
+!           iCell, jCell, kCell,finegrid,nn,level,sps)
 
   end select
   !

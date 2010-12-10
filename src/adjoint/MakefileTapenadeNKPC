@@ -86,7 +86,7 @@
 #     *                                                                *
 #     ******************************************************************
 
-TAPENADE_HOME = /nfs/mica/home/kenway/Downloads/tapenade3.4
+TAPENADE_HOME = /nfs/mica/home/kenway/Downloads/tapenade2.2
 SOLVER_DIRSRC = /nfs/mica/home/kenway/hg/SUmbADjoint/src
 
 #     ******************************************************************
