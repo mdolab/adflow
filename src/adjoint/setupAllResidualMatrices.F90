@@ -188,7 +188,7 @@ subroutine setupAllResidualMatrices
   ! Send some feedback to screen.
 
 
-  if( PETScRank==0 ) &
+  if( myid ==0 ) &
        write(*,10) "Assembling All Residual Matrices..."
 
   call cpu_time(time(1))
@@ -213,7 +213,7 @@ subroutine setupAllResidualMatrices
         do kCell = 2, kl
            do jCell = 2, jl
               do iCell = 2, il
-                 print *,'nn,i,j,k:',nn,icell,jcell,kcell
+                 !print *,'nn,i,j,k:',nn,icell,jcell,kcell
                  ! Copy the state w to the wAdj array in the stencil
                  call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
                       betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
@@ -692,7 +692,7 @@ subroutine setupAllResidualMatrices
   call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
        mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
   call EChk(PETScIerr,__file__,__line__)
-  if( PETScRank==0 ) &
+  if(myid ==0) &
        write(*,20) "Assembling All Residaul Matrices time (s) = ", timeAdj
 
   ! Output formats.

@@ -544,7 +544,7 @@ class SUMB(AeroSolver):
         # Set Flags that are used to keep of track of what is "done"
         # in fortran
         self.allInitialized = False    # All flow solver initialization   
-        self.adjointInitialized = False # Petsc Mat/Vec/Ksp Object Creation
+        self.adjointPreprocessed = False
         self.adjointMatrixSetup = False # Adjoint matrices assembled
         self.adjointRHS         = None # When this is setup, it has
                                        # the current objective
@@ -838,13 +838,16 @@ class SUMB(AeroSolver):
             self.rhoResStart,self.totalRStart = self.sumb.getcurrentresidual()
         # end if
 
+        self.rhoResStart = real(self.rhoResStart)
+        self.totalRStart = real(self.totalRStart)
+
         if self.callCounter == 0:
             # We need to explicitly get the freestream residual, since
             # we may have
             rhoRes0,totalRRes0 = self.sumb.getfreestreamresidual()
-            self.sumb.nksolvervars.totalres0 = totalRRes0
-            self.sumb.nksolvervars.rhores0   = rhoRes0
-            self.rhoRes0 = rhoRes0
+            self.sumb.nksolvervars.totalres0 = real(totalRRes0)
+            self.sumb.nksolvervars.rhores0   = real(rhoRes0)
+            self.rhoRes0 = real(rhoRes0)
 
         if not self.getOption('useNKSolver'):
             # Call the solver as we normally would 
@@ -1098,22 +1101,11 @@ class SUMB(AeroSolver):
         self.sumb.iteration.currentlevel=1
         self.sumb.iteration.groundlevel=1
 
-        #Check to see if initialization has already been performed
-        if(self.adjointInitialized):
-            return
-        
-        #Run the preprocessing routine. Sets the node numbering and
-        #allocates memory.
-        self.sumb.preprocessingadjoint()
-        
-        # Create PETSc vars
-        self.sumb.initializepetsc()
-        self.sumb.createpetscvars()
+        if not self.adjointPreprocessed:
+            self.sumb.preprocessingadjoint()
+        # end if
 
-        self.adjointInitialized = True
-        if(self.myid==0):
-            print 'ADjoint Initialized Succesfully...'
-        #endif
+        #self.sumb.initializepetsc() -> I don't think we will need this
 
         return
 
@@ -1138,8 +1130,8 @@ class SUMB(AeroSolver):
         '''
         
         if not self.adjointMatrixSetup:
+            self.sumb.createpetscvars()
             self.sumb.setupallresidualmatrices()
-            self.printMatrixInfo()
             if forcePoints is None:
                 forcePoints = self.getForcePoints()
             # end if
@@ -1162,34 +1154,31 @@ class SUMB(AeroSolver):
 
         return
     
-    def releaseAdjointMemeory(self):
+    def releaseAdjointMemory(self):
         '''
-        release the KSP memory...
+        release the PETSc Memory...
         '''
+
+        self.sumb.destroypetscvars()
 
         return
 
     def _on_adjoint(self,objective,forcePoints=None,*args,**kwargs):
 
-        obj = self.possibleObjectives[objective.lower()]
+        # Solve ADjoint problem
+        self.initAdjoint()
 
-        if forcePoints is None:
-            forcePoints = self.getForcePoints()
-        # end if
-        
-        # Check to see if adjoint is initialized:
-        if not self.adjointInitialized:
-            self.initAdjoint()
-        # end if
-            
+        # Short form of objective--easier code reading
+        obj = self.possibleObjectives[objective.lower()]
+             
         # Check to see if the adjoint Matrix is setup:
         if not self.adjointMatrixSetup:
             self.setupAdjoint(forcePoints)
         # end if
 
         # Check to see if the RHS Partials have been computed
-        #if not self.adjointRHS == obj:
-        #    self.computeObjPartials(obj,forcePoints)
+        if not self.adjointRHS == obj:
+            self.computeObjPartials(obj,forcePoints)
         # end if
 
         # Check to see if we need to agument the RHS with a structural
@@ -1204,6 +1193,7 @@ class SUMB(AeroSolver):
         nw = self.sumb.flowvarrefstate.nw
         # If we have saved adjoints, 
         if self.getOption('restartAdjoint'):
+
             # Objective is already stored, so just set it
             if obj in self.storedADjoints.keys():
                 self.sumb.setadjoint(self.storedADjoints[obj])
@@ -1221,7 +1211,7 @@ class SUMB(AeroSolver):
         if self.getOption('restartAdjoint'):
             self.storedADjoints[obj] =  self.sumb.getadjoint(self.sumb.adjointvars.ncellslocal*nw)
         # end if
-
+       
         return
 
     def totalSurfaceDerivative(self,objective):
@@ -1543,7 +1533,7 @@ class SUMB(AeroSolver):
              }
                                                  
         # Also add in 'direct' solutions. Area etc
-        A_local = self.mesh.warp.computearea(self.getOption('areaAxis'))
+        A_local = self.mesh.computeArea(self.getOption('areaAxis'))
         SUmbsolution['area'] = self.comm.allreduce(A_local,op=MPI.SUM)
 
         return SUmbsolution
@@ -1713,6 +1703,9 @@ class SUmbDummyMesh(object):
 
         return 
 
+    def computeArea(self,axis):
+        
+        return 0.0
 
 # ==========================================================================
 #                        Output Functionality

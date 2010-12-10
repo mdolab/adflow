@@ -17,6 +17,7 @@ module NKsolverVars
   !     *                                                                *
   !     ******************************************************************
   !
+
   use constants
   implicit none
 

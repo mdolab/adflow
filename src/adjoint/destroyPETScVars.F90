@@ -34,17 +34,14 @@
       ! Write a message that the PETSc objects are being destroyed.
       ! Of course only processor 0 does this.
 
-      if(myID == 0) then
-        print "(a)", "#"
-        print "(a)", "# Destroying PETSc objects ..."
-      endif
-
       ! Matrices
       call MatDestroy(dRdWT, PETScIerr)
       call EChk(PETScIerr,__file__,__line__)
 
-      call MatDestroy(dRdWPreT, PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      if (ApproxPC) then
+         call MatDestroy(dRdWPreT, PETScIerr)
+         call EChk(PETScIerr,__file__,__line__)
+      end if
 
       call MatDestroy(dRdx, PETScIerr)
       call EChk(PETScIerr,__file__,__line__)

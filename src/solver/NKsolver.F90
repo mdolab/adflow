@@ -118,10 +118,12 @@ subroutine NKsolver
   call EChk(ierr,__file__,__line__)
 
   ! Look at KSP iterations
-!   call PetscOptionsSetValue('-ksp_monitor',PETSC_NULL_CHARACTER,ierr)
+  !call PetscOptionsSetValue('-ksp_monitor',PETSC_NULL_CHARACTER,ierr)
+  !call EChk(ierr,__file__,__line__)
+
+!   call PetscOptionsSetValue('-snes_ls','quadratic',ierr)
 !   call EChk(ierr,__file__,__line__)
-
-
+  
   ! Uncomment for unpreconditioned solver. ONLY FOR DEBUGGING. Also
   !need to comment out SNESSetJacobian
   !PETScOptionsSetValue('-snes_mf',PETSC_NULL_CHARACTER,ierr) call
@@ -207,6 +209,10 @@ subroutine NKsolver
   call VecDestroy(wVec,ierr)
   call EChk(ierr,__file__,__line__)
   call VecDestroy(rVec,ierr)
+  call EChk(ierr,__file__,__line__)
+  call MatDestroy(dRdw,ierr)
+  call EChk(ierr,__file__,__line__)
+  call MatDestroy(dRdwPre,ierr)
   call EChk(ierr,__file__,__line__)
 
 end subroutine NKsolver
@@ -330,7 +336,7 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
 
   ! Assemble the approximate PC
   
-  call setupNK_KSP_PC2(dRdwPre)
+  call setupNK_KSP_PC(dRdwPre)
   flag = SAME_NONZERO_PATTERN
   ! Setup the required options for the KSP solver
   call SNESGetKSP(snes,ksp,ierr);                   call EChk(ierr,__file__,__line__)
@@ -1031,183 +1037,183 @@ subroutine setupNK_KSP_PC(dRdwPre)
   end if
 end subroutine setupNK_KSP_PC
 
-subroutine setupNK_KSP_PC3(dRdwPre)
+! subroutine setupNK_KSP_PC3(dRdwPre)
 
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Compute the dRdWPre matrix for the NK Solver                   *
-  !     ******************************************************************
-  !
-  use ADjointVars
-  use blockPointers       ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
-  use communication       ! procHalo(currentLevel)%nProcSend
-  use inputDiscretization ! spaceDiscr
-  USE inputTimeSpectral   ! nTimeIntervalsSpectral
-  use iteration           ! overset, currentLevel
-  use flowVarRefState     ! nw
-  use inputTimeSpectral   ! spaceDiscr
-  use inputADjoint        !sigma
-  implicit none
+!   !     ******************************************************************
+!   !     *                                                                *
+!   !     * Compute the dRdWPre matrix for the NK Solver                   *
+!   !     ******************************************************************
+!   !
+!   use ADjointVars
+!   use blockPointers       ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
+!   use communication       ! procHalo(currentLevel)%nProcSend
+!   use inputDiscretization ! spaceDiscr
+!   USE inputTimeSpectral   ! nTimeIntervalsSpectral
+!   use iteration           ! overset, currentLevel
+!   use flowVarRefState     ! nw
+!   use inputTimeSpectral   ! spaceDiscr
+!   use inputADjoint        !sigma
+!   implicit none
 
-#define PETSC_AVOID_MPIF_H
-#include "include/finclude/petsc.h"
+! #define PETSC_AVOID_MPIF_H
+! #include "include/finclude/petsc.h"
 
-  Mat dRdwPre
+!   Mat dRdwPre
 
- !
-  !     Local variables.
+!  !
+!   !     Local variables.
 
-  integer(kind=intType) :: iCell, jCell, kCell, nn, level, m, i,j,k,ii
-  real(kind=realType), dimension(-2:2,-2:2,-2:2,nw, nTimeIntervalsSpectral) :: wAdj,wadjd
-  real(kind=realType), dimension(-3:2,-3:2,-3:2,3,&
-       nTimeIntervalsSpectral) :: siAdj, sjAdj, skAdj
-  real(kind=realType), dimension(-2:2,-2:2,-2:2,&
-       nTimeIntervalsSpectral) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
-  real(kind=realType), dimension(-2:2,-2:2,-2:2,3,&
-       nTimeIntervalsSpectral) :: sAdj
-  real(kind=realType),dimension(nTimeIntervalsSpectral) :: volAdj  
-  real(kind=realType),dimension(3) :: rotRateAdj
-  real(kind=realType), dimension(nw,nTimeIntervalsSpectral)  :: dwAdj,dwadjd
-  real(kind=realType), dimension(2) :: time
-  real(kind=realType)               ::setupTime
+!   integer(kind=intType) :: iCell, jCell, kCell, nn, level, m, i,j,k,ii
+!   real(kind=realType), dimension(-2:2,-2:2,-2:2,nw, nTimeIntervalsSpectral) :: wAdj,wadjd
+!   real(kind=realType), dimension(-3:2,-3:2,-3:2,3,&
+!        nTimeIntervalsSpectral) :: siAdj, sjAdj, skAdj
+!   real(kind=realType), dimension(-2:2,-2:2,-2:2,&
+!        nTimeIntervalsSpectral) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
+!   real(kind=realType), dimension(-2:2,-2:2,-2:2,3,&
+!        nTimeIntervalsSpectral) :: sAdj
+!   real(kind=realType),dimension(nTimeIntervalsSpectral) :: volAdj  
+!   real(kind=realType),dimension(3) :: rotRateAdj
+!   real(kind=realType), dimension(nw,nTimeIntervalsSpectral)  :: dwAdj,dwadjd
+!   real(kind=realType), dimension(2) :: time
+!   real(kind=realType)               ::setupTime
 
-  logical :: correctForK, secondHalo, exchangeTurb
+!   logical :: correctForK, secondHalo, exchangeTurb
 
-  ! dR/dw stencil
-  real(kind=realType), dimension(nw,nw) :: blockToSet
+!   ! dR/dw stencil
+!   real(kind=realType), dimension(nw,nw) :: blockToSet
 
-  ! idxmgb - global block row index
-  ! idxngb - global block column index
+!   ! idxmgb - global block row index
+!   ! idxngb - global block column index
 
-  integer(kind=intType) :: idxmgb, idxngb,ierr, sps, sps2,ilow,ihigh
-  integer(kind=intType) :: ind(3,7),CellsToDo
+!   integer(kind=intType) :: idxmgb, idxngb,ierr, sps, sps2,ilow,ihigh
+!   integer(kind=intType) :: ind(3,7),CellsToDo
 
-  !Reference values of the dissipation coeff for the preconditioner
-  real(kind=realType) :: vis2_ref, vis4_ref
+!   !Reference values of the dissipation coeff for the preconditioner
+!   real(kind=realType) :: vis2_ref, vis4_ref
 
-  ! Set the grid level of the current MG cycle, the value of the
-  ! discretization and the logical correctForK.
-  level = 1_intType
-  currentLevel = level
-  time(1) = mpi_wtime()
-  rkStage = 0
-  currentLevel = groundLevel
+!   ! Set the grid level of the current MG cycle, the value of the
+!   ! discretization and the logical correctForK.
+!   level = 1_intType
+!   currentLevel = level
+!   time(1) = mpi_wtime()
+!   rkStage = 0
+!   currentLevel = groundLevel
 
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Compute the ADjoint matrix dR/dW using Tapenade's reverse mode *
-  !     * of Automatic Differentiation.  NOTE: This is the reason I have *
-  !     * been writing the word "ADjoint" with A and D capitalized. A    *
-  !     * simple play with letter so that:                               *
-  !     *                                                                *
-  !     * ADjoint = Automatically Differentiated adjoint                 *
-  !     *                                                                *
-  !     ******************************************************************
-  !
-  ! Send some feedback to screen.
+!   !     ******************************************************************
+!   !     *                                                                *
+!   !     * Compute the ADjoint matrix dR/dW using Tapenade's reverse mode *
+!   !     * of Automatic Differentiation.  NOTE: This is the reason I have *
+!   !     * been writing the word "ADjoint" with A and D capitalized. A    *
+!   !     * simple play with letter so that:                               *
+!   !     *                                                                *
+!   !     * ADjoint = Automatically Differentiated adjoint                 *
+!   !     *                                                                *
+!   !     ******************************************************************
+!   !
+!   ! Send some feedback to screen.
 
-  if (myid == 0) then
-     print * ,"Assembling NK KSP PC3 matrix..."
-  end if
+!   if (myid == 0) then
+!      print * ,"Assembling NK KSP PC3 matrix..."
+!   end if
  
-  !store the current values of vis2,vis4 and reset vis2 for preconditioner
-  !method based on (Hicken and Zingg,2008) AIAA journal,vol46,no.11
-  vis2_ref = vis2
-  vis4_ref = vis4
-  lumpedDiss=.True.
+!   !store the current values of vis2,vis4 and reset vis2 for preconditioner
+!   !method based on (Hicken and Zingg,2008) AIAA journal,vol46,no.11
+!   vis2_ref = vis2
+!   vis4_ref = vis4
+!   lumpedDiss=.True.
   
-  call MatZeroEntries(dRdwPre,ierr)
-  call EChk(ierr,__file__,__line__)
+!   call MatZeroEntries(dRdwPre,ierr)
+!   call EChk(ierr,__file__,__line__)
 
-  domainLoopAD: do nn=1,nDom
+!   domainLoopAD: do nn=1,nDom
 
-     ! Loop over the number of time instances for this block.
-     spectralLoop: do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,level,sps)
-        ! Loop over location of output (R) cell of residual
-        do kCell = 2, kl
-           do jCell = 2, jl
-              do iCell = 2, il
-                 ! Copy the state w to the wAdj array in the stencil
-                 idxmgb = globalCell(iCell,jCell,kCell)
+!      ! Loop over the number of time instances for this block.
+!      spectralLoop: do sps=1,nTimeIntervalsSpectral
+!         call setPointersAdj(nn,level,sps)
+!         ! Loop over location of output (R) cell of residual
+!         do kCell = 2, kl
+!            do jCell = 2, jl
+!               do iCell = 2, il
+!                  ! Copy the state w to the wAdj array in the stencil
+!                  idxmgb = globalCell(iCell,jCell,kCell)
 
-                 call three_point_cell_stencil_small(icell,jcell,kcell,&
-                      ind,cellstodo)
+!                  call three_point_cell_stencil_small(icell,jcell,kcell,&
+!                       ind,cellstodo)
               
-                 do sps2 = 1,nTimeIntervalsSpectral 
+!                  do sps2 = 1,nTimeIntervalsSpectral 
 
-                    call copyNKPCStencil(iCell, jCell, kCell, nn, level, sps, wAdj, &
-                         siAdj, sjAdj, skAdj, sAdj, sfaceIAdj, sfaceJAdj, sfaceKAdj, rotRateAdj,&
-                         voladj)
+!                     call copyNKPCStencil(iCell, jCell, kCell, nn, level, sps, wAdj, &
+!                          siAdj, sjAdj, skAdj, sAdj, sfaceIAdj, sfaceJAdj, sfaceKAdj, rotRateAdj,&
+!                          voladj)
                     
-                    ! We are going to do a reduced stencil, just the 7 cells
+!                     ! We are going to do a reduced stencil, just the 7 cells
                     
-                    do ii=1,cellstodo
-                       i = ind(1,ii)
-                       j = ind(2,ii)
-                       k = ind(3,ii)
+!                     do ii=1,cellstodo
+!                        i = ind(1,ii)
+!                        j = ind(2,ii)
+!                        k = ind(3,ii)
 
-                       mLoop: do m = 1, nw ! Loop over INPUT cell's states
+!                        mLoop: do m = 1, nw ! Loop over INPUT cell's states
 
-                          wAdjd = 0.0
-                          wAdjd(i,j,k,m,sps2) = 1.0
-                          dwadjd = 0.0
+!                           wAdjd = 0.0
+!                           wAdjd(i,j,k,m,sps2) = 1.0
+!                           dwadjd = 0.0
                           
-                          call COMPUTERNKPC_D(wadj, wadjd, dwadj, dwadjd, siadj, sjadj, &
-                               &  skadj, sadj, voladj, sfaceiadj, sfacejadj, sfacekadj, rotrateadj, &
-                               &  icell, jcell, kcell, nn, level, sps)
+!                           call COMPUTERNKPC_D(wadj, wadjd, dwadj, dwadjd, siadj, sjadj, &
+!                                &  skadj, sadj, voladj, sfaceiadj, sfacejadj, sfacekadj, rotrateadj, &
+!                                &  icell, jcell, kcell, nn, level, sps)
 
-                          blockToSet(:,m) = dwadjd(:,sps)
+!                           blockToSet(:,m) = dwadjd(:,sps)
 
-                       end do mLoop
+!                        end do mLoop
 
-                       idxngb = globalCell(iCell+i,jCell+j,kCell+k)
+!                        idxngb = globalCell(iCell+i,jCell+j,kCell+k)
 
-                       if (nn== 1 .and. icell == 4 .and. jcell == 3 .and. kcell == 4 .and. &
-                            i == 0 .and.  j==0 .and. k==0) then
-                          print *,'dw:'
-                          print *,blockToSet
-                          stop
-                       end if
+!                        if (nn== 1 .and. icell == 4 .and. jcell == 3 .and. kcell == 4 .and. &
+!                             i == 0 .and.  j==0 .and. k==0) then
+!                           print *,'dw:'
+!                           print *,blockToSet
+!                           stop
+!                        end if
                       
-                       call MatSetValuesBlocked(dRdwPre, 1, idxmgb, 1, idxngb, &
-                            blockToSet(:,:), ADD_VALUES,ierr)
-                       call EChk(ierr,__file__,__line__)
+!                        call MatSetValuesBlocked(dRdwPre, 1, idxmgb, 1, idxngb, &
+!                             blockToSet(:,:), ADD_VALUES,ierr)
+!                        call EChk(ierr,__file__,__line__)
 
-                    end do
-                 end do
-              end do
-           end do
-        end do
-     end do spectralLoop
-  end do domainLoopAD
+!                     end do
+!                  end do
+!               end do
+!            end do
+!         end do
+!      end do spectralLoop
+!   end do domainLoopAD
 
 
-  !Return dissipation Parameters to normal
-  vis2 = vis2_ref
-  vis4 = vis4_ref
+!   !Return dissipation Parameters to normal
+!   vis2 = vis2_ref
+!   vis4 = vis4_ref
 
-  call MatAssemblyBegin(dRdWPre,MAT_FINAL_ASSEMBLY,ierr)
-  call EChk(ierr,__file__,__line__)
-  call MatAssemblyEnd  (dRdWPre,MAT_FINAL_ASSEMBLY,ierr)
-  call EChk(ierr,__file__,__line__)
-#ifdef USE_PETSC_3
-  call MatSetOption(dRdWPre,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
-  call EChk(ierr,__file__,__line__)
-#else
-  call MatSetOption(dRdWPre,MAT_NO_NEW_NONZERO_LOCATIONS,ierr)
-  call EChk(ierr,__file__,__line__)
-#endif
+!   call MatAssemblyBegin(dRdWPre,MAT_FINAL_ASSEMBLY,ierr)
+!   call EChk(ierr,__file__,__line__)
+!   call MatAssemblyEnd  (dRdWPre,MAT_FINAL_ASSEMBLY,ierr)
+!   call EChk(ierr,__file__,__line__)
+! #ifdef USE_PETSC_3
+!   call MatSetOption(dRdWPre,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
+!   call EChk(ierr,__file__,__line__)
+! #else
+!   call MatSetOption(dRdWPre,MAT_NO_NEW_NONZERO_LOCATIONS,ierr)
+!   call EChk(ierr,__file__,__line__)
+! #endif
 
-  time(2) = mpi_wtime()
-  call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
-       SUmb_comm_world, ierr)
+!   time(2) = mpi_wtime()
+!   call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
+!        SUmb_comm_world, ierr)
 
-  if (myid == 0) then
-     print *,'Done PC Assembly'
-     print *,'Time:',setupTime
-  end if
-end subroutine setupNK_KSP_PC3
+!   if (myid == 0) then
+!      print *,'Done PC Assembly'
+!      print *,'Time:',setupTime
+!   end if
+! end subroutine setupNK_KSP_PC3
 
 subroutine getCurrentResidual(rhoRes,totalRRes)
   use communication

@@ -50,7 +50,14 @@ FF90_OBJECTS = computepressurenkpc_b.o     \
 	       residualnkpc_b.o            \
                riemannfluxnkpc_b.o         \
                timestepnkpc_b.o            \
-	       applyallbcnkpc_d.o          \
+	       applyallbcnkpc_b.o          \
+	       bceulerwallnkpc_b.o         \
+	       bcfarfieldnkpc_b.o          \
+	       bcsymmnkpc_b.o              \
+               extractbcstatesnkpc_b.o     \
+	       extrapolate2ndhalonkpc_b.o  \
+#	       replacebcstatesnkpc_b.o     \	
+#	       applyallbcnkpc_d.o          \
 	       bceulerwallnkpc_d.o         \
 	       bcfarfieldnkpc_d.o          \
 	       bcsymmnkpc_d.o              \
@@ -69,13 +76,6 @@ FF90_OBJECTS = computepressurenkpc_b.o     \
                residualnkpc_d.o            \
                riemannfluxnkpc_d.o         \
                timestepnkpc_d.o            
-	       #applyallbcnkpc_b.o          \
-	       bceulerwallnkpc_b.o         \
-	       bcfarfieldnkpc_b.o          \
-	       bcsymmnkpc_b.o              \
-               extractbcstatesnkpc_b.o     \
-	       extrapolate2ndhalonkpc_b.o  \
-	       replacebcstatesnkpc_b.o     \	
 
 CC_OBJECTS   = 
 

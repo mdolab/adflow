@@ -27,7 +27,6 @@ module costFunctions
   !     ******************************************************************
 
   integer(kind=intType), parameter :: nCostFunction = 31_intType
-
   integer(kind=intType), parameter :: costFuncLift       = 1_intType,&
        costFuncDrag       = 2_intType,&
        costFuncLiftCoef   = 3_intType,&
