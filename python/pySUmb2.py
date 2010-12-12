@@ -264,7 +264,8 @@ class SUMB(AeroSolver):
               'cmzqdot':'cmzqdot',
               'clq':'clq',
               'clqdot':'clqDot',
-              'area':'area'
+              'area':'area',
+              'volume':'volume'
               }
 
 
@@ -1226,11 +1227,17 @@ class SUMB(AeroSolver):
 
         obj = self.possibleObjectives[objective.lower()]
         
-        if obj in ['area']: # Possibly add more Direct objectives here...
+        if obj in ['area','volume']: # Possibly add more Direct objectives here...
             if obj == 'area':
                 self.mesh.warp.computeareasensitivity(self.getOption('areaAxis'))
                 dIdXs = self.mesh.getdXs('all')
             # end if
+
+            if obj == 'volume':
+                self.mesh.warp.computevolumesensitivity()
+                dIdXs = self.mesh.getdXs('all')
+            # end if
+
         else:
             if self.getOption('restartAdjoint'): # Selected stored adjoint
                 self.sumb.setadjoint(self.storedADjoints[obj])
@@ -1257,8 +1264,9 @@ class SUMB(AeroSolver):
 
         obj = self.possibleObjectives[objective.lower()]
 
-        if obj in ['area']: # Possibly add more Direct objectives here...
-            # These by definition have zero dependance
+        if obj in ['area','volume']: # Possibly add more Direct
+                                     # objectives here...  These by
+                                     # definition have zero dependance
             dIda = numpy.zeros(self.nDVAero)
         else:
             if self.getOption('restartAdjoint'):
@@ -1536,6 +1544,9 @@ class SUMB(AeroSolver):
         A_local = self.mesh.computeArea(self.getOption('areaAxis'))
         SUmbsolution['area'] = self.comm.allreduce(A_local,op=MPI.SUM)
 
+        V_local = self.mesh.computeVolume()
+        SUmbsolution['volume'] = self.comm.allreduce(V_local,op=MPI.SUM)
+        
         return SUmbsolution
         
     def _on_setOption(self, name, value):

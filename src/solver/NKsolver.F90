@@ -131,7 +131,8 @@ subroutine NKsolver
 
   call SNESSetFromOptions(snes,ierr); call EChk(ierr,__file__,__line__)
   call SNESSetLagJacobian(snes, jacobian_lag, ierr); call EChk(ierr,__file__,__line__)
-
+  call SNESSetMaxLinearSolveFailures(snes, 25,ierr); call EChk(ierr,__file__,__line__)
+ 
   ! We are going to have to compute what the tolerances should be
   ! since we are going to be using the same convergence criteria as
   ! SUmb originally uses, that is L2Conv and L2ConvRel. This however,
@@ -140,7 +141,7 @@ subroutine NKsolver
   ! starting point. 
 
   snes_stol = 1e-10
-  snes_max_its = 250_intType
+  snes_max_its = 1250_intType
   snes_max_funcs = snes_max_its * 2
 
   ! Determine the current level of convergence of the solution
@@ -1369,6 +1370,7 @@ subroutine snes_monitor(snes,its,norm,ctx,ierr)
   call EChk(ierr,__file__,__line__)
   call KSPGetTolerances(ksp,ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,ierr)
   ksp_atol = snes_atol
+  ksp_max_it = 100
   call KSPSetTolerances(ksp,ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,ierr)
 
 
