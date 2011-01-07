@@ -117,7 +117,7 @@
        surfaceSolFile = ""          ! This will be corrected later if no
                                     ! surface solution file is specified.
 
-       storeRindLayer = .false.     ! No halo cells in solution files.
+       storeRindLayer = .True.     ! No halo cells in solution files.
 
        autoParameterUpdate = .true. ! Update the input parameter file
                                     ! when a restart file is written.
