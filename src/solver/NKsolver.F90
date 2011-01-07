@@ -912,7 +912,6 @@ subroutine setupNK_KSP_PC(dRdwPre)
                          &  skadj, sadj, voladj, sfaceiadj, sfacejadj, sfacekadj, rotrateadj, &
                          &  icell, jcell, kcell, nn, level, sps)
 
-
                 !     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 !                          &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
 !                          &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
