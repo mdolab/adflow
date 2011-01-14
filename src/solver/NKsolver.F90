@@ -79,7 +79,7 @@ subroutine NKsolver
   allocate( nnzDiagonal(nCellsLocal*nTimeIntervalsSpectral),&
        nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
 
-  call drdwPCPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal)
+  call drdwPCPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal*nTimeIntervalsSpectral)
   call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
        nDimW, nDimW,                     &
        PETSC_DETERMINE, PETSC_DETERMINE, &
