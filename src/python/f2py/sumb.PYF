@@ -339,6 +339,8 @@ python module sumb ! in
        !*****************
 
        subroutine stabilityderivativedriver
+         use precision
+         implicit none
        end subroutine stabilityderivativedriver
 
        ! ############################################################################
@@ -506,28 +508,86 @@ python module sumb ! in
 
        module inputmotion ! in :sumb:../../modules/inputParam.f90
          use precision
-         real(kind=realtype) dimension(3) :: rotpoint
-         integer(kind=inttype) :: degreepolxrot
-         integer(kind=inttype) :: degreepolyrot
-         integer(kind=inttype) :: degreepolzrot
-         real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
-         real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
-         real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
-         integer(kind=inttype) :: degreefourxrot
-         integer(kind=inttype) :: degreefouryrot
-         integer(kind=inttype) :: degreefourzrot
-         real(kind=realtype) :: omegafourxrot
-         real(kind=realtype) :: omegafouryrot
-         real(kind=realtype) :: omegafourzrot
-         real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
          real(kind=realtype) allocatable,dimension(:) :: coscoeffouryrot
+         real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
+         integer(kind=inttype) :: degreefourxrot
+         real(kind=realtype) allocatable,dimension(:) :: sincoeffouralpha
+         real(kind=realtype) :: omegafourbeta
+         real(kind=realtype) allocatable,dimension(:) :: coscoeffourbeta
+         real(kind=realtype) allocatable,dimension(:) :: sincoeffourbeta
+         integer(kind=inttype) :: degreepolbeta
+         real(kind=realtype) allocatable,dimension(:) :: sincoeffourmach
+         integer(kind=inttype) :: degreepolmach
+         real(kind=realtype) :: omegafourmach
+         integer(kind=inttype) :: degreepolalpha
+         real(kind=realtype) allocatable,dimension(:) :: coefpolmach
+         real(kind=realtype) allocatable,dimension(:) :: coscoeffouralpha
+         real(kind=realtype) allocatable,dimension(:) :: coscoeffourmach
+         real(kind=realtype) dimension(3) :: rotpoint
+         real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
+         logical :: gridmotionspecified
+         real(kind=realtype) :: omegafourzrot
+         integer(kind=inttype) :: degreefouryrot
+         real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
+         integer(kind=inttype) :: degreefourbeta
+         real(kind=realtype) :: omegafouralpha
          real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
+         integer(kind=inttype) :: degreepolzrot
+         real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
+         real(kind=realtype) :: omegafouryrot
+         integer(kind=inttype) :: degreefourzrot
+         integer(kind=inttype) :: degreefourmach
+         integer(kind=inttype) :: degreefouralpha
+         real(kind=realtype) allocatable,dimension(:) :: coefpolalpha
+         real(kind=realtype) :: omegafourxrot
+         integer(kind=inttype) :: degreepolyrot
          real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
          real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
-         real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
-         logical :: gridmotionspecified
+         integer(kind=inttype) :: degreepolxrot
+         real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
+         real(kind=realtype) allocatable,dimension(:) :: coefpolbeta
+!!$real(kind=realtype) dimension(3) :: rotpoint
+!!$         integer(kind=inttype) :: degreepolxrot
+!!$         integer(kind=inttype) :: degreepolyrot
+!!$         integer(kind=inttype) :: degreepolzrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
+!!$         integer(kind=inttype) :: degreefourxrot
+!!$         integer(kind=inttype) :: degreefouryrot
+!!$         integer(kind=inttype) :: degreefourzrot
+!!$         real(kind=realtype) :: omegafourxrot
+!!$         real(kind=realtype) :: omegafouryrot
+!!$         real(kind=realtype) :: omegafourzrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffouryrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
+!!$         logical :: gridmotionspecified
+!!$         real(kind=realtype) :: omegafourzrot
+!!$         integer(kind=inttype) :: degreefouryrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
+!!$         integer(kind=inttype) :: degreefourbeta
+!!$         real(kind=realtype) :: omegafouralpha
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
+!!$         integer(kind=inttype) :: degreepolalpha
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
+!!$         real(kind=realtype) :: omegafouryrot
+!!$         integer(kind=inttype) :: degreefourzrot
+!!$         integer(kind=inttype) :: degreefourmach
+!!$         integer(kind=inttype) :: degreefouralpha
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolalpha
+!!$         real(kind=realtype) :: omegafourxrot
+!!$         integer(kind=inttype) :: degreepolbeta
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
+!!$         integer(kind=inttype) :: degreepolmach
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolbeta
        end module inputmotion
-
+       
        module inputparallel ! in :sumb:../../modules/inputParam.f90
          use precision
          real(kind=realtype) :: loadimbalance
