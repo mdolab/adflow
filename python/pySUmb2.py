@@ -690,7 +690,6 @@ class SUMB(AeroSolver):
         '''
         Set the frequecy and amplitude of the oscillations
         '''
-
         if  self.getOption('alphaMode'):
             self.sumb.inputmotion.omegafouralpha   = aero_problem._flows.omegaFourier
             self.sumb.inputmotion.degreefouralpha  = aero_problem._flows.degreeFourier
