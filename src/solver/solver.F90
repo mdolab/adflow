@@ -28,6 +28,7 @@
        use iteration
        use monitor
        use section
+       use blockPointers
        implicit none
 !
 !      Local variables.

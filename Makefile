@@ -74,6 +74,16 @@ SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC) $(SUBDIR_PYTHON) $(SUBDIR_PV3) \
 #      *                                                                *
 #      ******************************************************************
 
+dirs:	
+	mkdir -p bin
+	mkdir -p obj
+	mkdir -p mod
+	mkdir -p externals/ADT/obj
+	mkdir -p externals/ADT/mod
+	mkdir -p externals/SU_MPI/obj
+	mkdir -p externals/SU_MPI/mod
+	mkdir -p src/python/fortran/obj
+
 default:
 	@echo "Usage: make <arch>"
 	@echo "Supported architectures: ABLATION_INTEL_IB"
@@ -293,6 +303,7 @@ LINUX_INTEL_OPENMPI:
 	gmake sumb
 
 LINUX_INTEL_OPENMPI_PYTHON:
+	make dirs
 	(cd externals/SU_MPI && gmake LINUX_INTEL_OPENMPI)
 	(cd externals/ADT && gmake LINUX_INTEL_OPENMPI)
 	ln -sf config/config.LINUX_INTEL_OPENMPI.mk config.mk
