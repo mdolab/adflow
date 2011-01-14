@@ -31,7 +31,17 @@ subroutine NKsolver
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR < 1
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscmat.h"
+#include "include/finclude/petscksp.h"
+#include "include/finclude/petscpc.h"
+#include "include/finclude/petscis.h"
+#include "include/finclude/petscsys.h"
+#include "include/finclude/petscsnes.h"
+#endif
+	
   ! PETSc Variables
   PetscFortranAddr   ctx(3)
   SNES               snes  ! Non-linear solution context
@@ -123,8 +133,7 @@ subroutine NKsolver
 
   ! Uncomment for unpreconditioned solver. ONLY FOR DEBUGGING. Also
   !need to comment out SNESSetJacobian
-  !PETScOptionsSetValue('-snes_mf',PETSC_NULL_CHARACTER,ierr) call
-  !EChk(ierr,__file__,__line__)
+  !call PETScOptionsSetValue('-snes_mf',PETSC_NULL_CHARACTER,ierr); call EChk(ierr,__file__,__line__)
 
   call SNESSetFromOptions(snes,ierr); call EChk(ierr,__file__,__line__)
   call SNESSetLagJacobian(snes, jacobian_lag, ierr); call EChk(ierr,__file__,__line__)
@@ -235,7 +244,16 @@ subroutine FormFunction(snes,wVec,rVec,ctx,ierr)
 
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR < 1
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscmat.h"
+#include "include/finclude/petscksp.h"
+#include "include/finclude/petscpc.h"
+#include "include/finclude/petscis.h"
+#include "include/finclude/petscsys.h"
+#include "include/finclude/petscsnes.h"
+#endif
   ! PETSc Variables
   SNES    snes
   Vec     wVec, rVec
@@ -313,7 +331,16 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR < 1
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscmat.h"
+#include "include/finclude/petscksp.h"
+#include "include/finclude/petscpc.h"
+#include "include/finclude/petscis.h"
+#include "include/finclude/petscsys.h"
+#include "include/finclude/petscsnes.h"
+#endif
   SNES           snes
   KSP            ksp,subksp
   PC             pc,subpc
@@ -383,7 +410,16 @@ subroutine setWVec(wVec)
 
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR < 1
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscmat.h"
+#include "include/finclude/petscksp.h"
+#include "include/finclude/petscpc.h"
+#include "include/finclude/petscis.h"
+#include "include/finclude/petscsys.h"
+#include "include/finclude/petscsnes.h"
+#endif
   Vec     wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l
   real(kind=realType) :: states(nw)
@@ -424,7 +460,16 @@ subroutine setRVec(rVec)
 
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR < 1
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscmat.h"
+#include "include/finclude/petscksp.h"
+#include "include/finclude/petscpc.h"
+#include "include/finclude/petscis.h"
+#include "include/finclude/petscsys.h"
+#include "include/finclude/petscsnes.h"
+#endif
   Vec     rVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k
   real(kind=realType) :: val,val2,ovv,valSet(nw)
@@ -467,6 +512,16 @@ subroutine setW(wVec)
 
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR < 1
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscmat.h"
+#include "include/finclude/petscksp.h"
+#include "include/finclude/petscpc.h"
+#include "include/finclude/petscis.h"
+#include "include/finclude/petscsys.h"
+#include "include/finclude/petscsnes.h"
+#endif
 
   Vec     wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l
@@ -514,7 +569,16 @@ subroutine setupNK_KSP_PC2(dRdwPre)
 
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR < 1
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscmat.h"
+#include "include/finclude/petscksp.h"
+#include "include/finclude/petscpc.h"
+#include "include/finclude/petscis.h"
+#include "include/finclude/petscsys.h"
+#include "include/finclude/petscsnes.h"
+#endif
 Mat dRdwPre
 
 !
@@ -803,7 +867,16 @@ subroutine setupNK_KSP_PC(dRdwPre)
 
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR < 1
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscmat.h"
+#include "include/finclude/petscksp.h"
+#include "include/finclude/petscpc.h"
+#include "include/finclude/petscis.h"
+#include "include/finclude/petscsys.h"
+#include "include/finclude/petscsnes.h"
+#endif
   Mat dRdwPre
 
  !
@@ -1342,6 +1415,16 @@ subroutine snes_monitor(snes,its,norm,ctx,ierr)
 
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR < 1
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscmat.h"
+#include "include/finclude/petscksp.h"
+#include "include/finclude/petscpc.h"
+#include "include/finclude/petscis.h"
+#include "include/finclude/petscsys.h"
+#include "include/finclude/petscsnes.h"
+#endif
   SNES snes
   KSP  ksp
   PetscInt its, ierr

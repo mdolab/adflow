@@ -43,7 +43,6 @@
 !     *                                                                *
 !     ******************************************************************
 !
-
       call computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
            dcmzdalpha,dcldalphadot,dcddalphadot,dcmzdalphadot,dcldq,&
            dcddq,dcmzdq,dcldqdot,dcddqdot,dcmzdqdot)

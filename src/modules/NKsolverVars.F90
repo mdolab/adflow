@@ -17,9 +17,9 @@ module NKsolverVars
   !     *                                                                *
   !     ******************************************************************
   !
-
   use constants
   implicit none
+
 
   ! Non-linear Solver Options
   integer(kind=intType) :: jacobian_lag
