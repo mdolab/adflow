@@ -487,20 +487,21 @@
              
              ! Steady or time spectral mode. The convergence histories
              ! are stored and this info can be used. If the residuals 
-             ! are divergin the, logical routineFailed in killSignals
+             ! are diverging the, logical routineFailed in killSignals
              ! is set to true and the progress is halted.
              !only check on root porcessor
              if (myID==0)then
 
                 ! If we made it to ncycles, check to see if we're
                 ! "close" to being converged. 
-
-                if(convArray(iConv,sps,1) < &
-                     maxL2DeviationFactor * L2ConvThisLevel) then 
-                   routineFailed = .False.
-                else
-                   routineFailed = .True.
-                end if
+                routineFailed = .False.
+                do sps = 1,nTimeIntervalsSpectral
+                   if(convArray(iConv,sps,1) > &
+                        maxL2DeviationFactor * L2ConvThisLevel) then 
+                      routineFailed = .True.
+                      exit
+                   end if
+                enddo
 
              endif
              call mpi_bcast(routineFailed, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
