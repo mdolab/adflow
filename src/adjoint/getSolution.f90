@@ -26,7 +26,7 @@ subroutine getSolution(sps)
   real(kind=realType) :: dcldalphaDot,dcddalphaDot,dcmzdalphaDot
   real(kind=realType) :: dcldq,dcddq,dcmzdq
   real(kind=realType) :: dcldqdot,dcddqdot,dcmzdqdot
-
+  real(kind=realType), dimension(nCostFunction)::globalCFVals
   real(kind=realType),dimension(:),allocatable :: localVal,globalVal
   ! Function values
 
@@ -35,8 +35,24 @@ subroutine getSolution(sps)
   end if
 
   functionValue(:) = 0.0
-  call computeAeroCoef(sps)
-  
+  call computeAeroCoef(globalCFVals,sps)
+  functionValue(costFuncLift) = globalCFVals(costFuncLift) 
+  functionValue(costFuncDrag) = globalCFVals(costFuncDrag) 
+  functionValue(costFuncLiftCoef) = globalCFVals(costFuncLiftCoef) 
+  functionValue(costFuncDragCoef) = globalCFVals(costFuncDragCoef) 
+  functionValue(costFuncForceX) = globalCFVals(costFuncForceX) 
+  functionValue(costFuncForceY) = globalCFVals(costFuncForceY) 
+  functionValue(costFuncForceZ) = globalCFVals(costFuncForceZ) 
+  functionValue(costFuncForceXCoef) = globalCFVals(costFuncForceXCoef) 
+  functionValue(costFuncForceYCoef) = globalCFVals(costFuncForceYCoef) 
+  functionValue(costFuncForceZCoef) = globalCFVals(costFuncForceZCoef) 
+  functionValue(costFuncMomX) = globalCFVals(costFuncMomX) 
+  functionValue(costFuncMomY) = globalCFVals(costFuncMomY) 
+  functionValue(costFuncMomZ) = globalCFVals(costFuncMomZ) 
+  functionValue(costFuncMomXCoef) = globalCFVals(costFuncMomXCoef) 
+  functionValue(costFuncMomYCoef) = globalCFVals(costFuncMomYCoef)
+  functionValue(costFuncMomZCoef) = globalCFVals(costFuncMomZCoef)
+
   if(TSStability)then
      call computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
           dcmzdalpha,dcldalphadot,dcddalphadot,dcmzdalphadot,dcldq,&
@@ -64,16 +80,5 @@ subroutine getSolution(sps)
 
   end if
 
-  ! Now we will mpi_allReduce them
-  allocate(localVal(nCostFunction),globalVal(nCostFunction))
-  ! Copy Everything into the list
-
-  localVal(:) = functionValue(:)
-  call mpi_allreduce(localVal, globalVal, nCostFunction, sumb_real, &
-       mpi_sum, SUmb_comm_world, ierr)
  
-  functionValue(:) = globalVal(:)
-
-  deallocate(localVal,globalVal)
-  
 end subroutine getSolution

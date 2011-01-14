@@ -103,10 +103,10 @@
 
 
          ! Alpha
-
+         !print *,'degreeFourAlpha',degreefouralpha,omegafouralpha,sincoeffouralpha
          if(degreeFourAlpha > 0) then
            tt = two*pi/omegaFourAlpha
-
+           !print *,'timePeriod',tt
            ! Check if a time period was already determined. If so, try
            ! to determine a common time. Otherwise just copy the data.
 
@@ -177,6 +177,7 @@
        if( timeDetermined ) then
          do nn=1,nSections
            sections(nn)%timePeriod = timePeriod/sections(nn)%nSlices
+           !print *,'sectionTimePeriod',sections(nn)%timePeriod,nn
          enddo
          return
        endif
