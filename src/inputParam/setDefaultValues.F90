@@ -27,6 +27,7 @@
        use localMG
        use couplerParam
        use killSignals
+       use NKSolverVars
        implicit none
 !
 !      ******************************************************************
@@ -408,7 +409,6 @@
        velDirIni(3) = zero
 
        printIterations = .True.
-
        routineFailed = .False.
-
+       nkSolverSetup = .False.
        end subroutine setDefaultValues

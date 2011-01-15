@@ -20,12 +20,14 @@ subroutine solveState
   !
   use communication
   use constants
+  use NKSolverVars
   use flowVarRefState
   use inputIteration
   use inputPhysics
   use iteration
   use killSignals
   use monitor
+
   implicit none
   !
   !      Local parameter
@@ -39,6 +41,10 @@ subroutine solveState
   integer(kind=intType) :: iter, nMGCycles
   real(kind=realType) :: curRes
   character (len=7) :: numberString
+  logical :: solve_NK, solve_RK
+  real(kind=realType) :: rhoRes1,totalRRes1
+  real(kind=realType) :: rhoResStart, totalRstart
+  real(kind=realType) :: l2convsave
   !
   !      ******************************************************************
   !      *                                                                *
@@ -115,6 +121,9 @@ subroutine solveState
      call convergenceInfo
 
   endif
+
+
+
   
   ! Loop over the number of single grid start up iterations.
 
@@ -275,112 +284,198 @@ subroutine solveState
   
   call convergenceInfo
 
-  ! Loop over the number of multigrid cycles.
+  
+  ! Determine if we need to run the RK solver, the NK solver or Both.
 
-  multiGrid: do iter=1,nMGCycles
+  if (groundLevel .ne. 1_intType .or. .not. useNKSolver) then !useNKSolver) then
+     ! If we are not on the finest level, or if we don't want to use
+     ! the NKsolver we will ALWAYS solve RK and NEVER NK.
+     solve_RK = .True.
+     solve_NK = .False.
+     L2ConvSave = L2Conv
+  else ! We want to use the NKsolver AND we are on the fine grid. 
 
-     ! Rewrite the sliding mesh mass flow parameters (not for
-     ! unsteady) and the convergence header after a certain number
-     ! of iterations. The latter is only done by processor 0.
+     ! Now we must determine if the solution is converged sufficently
+     ! to start directly into the NKsolver OR if we have to run the
+     ! RKsolver first to improve the starting point aand then the NKsolver
 
-     if(mod(iter,nWriteConvHeader) == 0) then
-        if(equationMode == steady .or. &
-             equationMode == timeSpectral) call writeFamilyMassflow
-        if(myID == 0) call convergenceHeader
-     endif
+     ! Get Starting Residual
+     call preprocessingadjoint()
+     if (mgstartlevel .ne. 1_intType) then
+        call getFreeStreamResidual(rhoResStart,totalRStart)
+     else
+        call getCurrentResidual(rhoResStart,totalRStart)
+     end if
 
-     ! Update iterTot and call executeMGCycle.
+     ! Store these values in the NKsolver Module
+     !self.rhoResStart = real(self.rhoResStart)
+     !self.totalRStart = real(self.totalRStart)
 
-     iterTot = iterTot + 1
-     call executeMGCycle
+     ! Determine if we need to run the RK solver, before we can
+     ! run the NK solver 
 
-     ! Update PV3 solution for a steady computation if PV3 support
-     ! is required. For unsteady mode the PV3 stuff is updated
-     ! after every physical time step.
+     if (rhoResStart/rhoRes0 > NK_Switch_Tol) then
+                
+        ! We haven't run anything yet OR the solution is not
+        ! yet converged tightly enough to start with NK solver
+              
+        ! Try to run RK solver down to NKSwitchTol
+        L2ConvSave = L2Conv
+        L2Conv = NK_Switch_Tol
 
-#ifdef USE_PV3
-     if(equationMode == steady .or.    &
-          equationMode == timeSpectral) &
-          call pv_update(real(iterTot,realPV3Type))
-#endif
+        solve_RK = .True.
+        solve_NK = .True.
+     else 
+        solve_NK = .True.
+        solve_RK = .False.
+     end if
+  end if
 
-     ! Determine and write the convergence info.
+  if (solve_RK) then
+            
+     ! Loop over the number of multigrid cycles.
 
-     call convergenceInfo
-
-     !check for divergence or nan here
-     if(routineFailed)then
-        ! Release the memory of cycling.
-        deallocate(cycling, stat=ierr)
-        if(ierr /= 0)                 &
-             call terminate("solveState", &
-             "Deallocation failure for cycling")
-        return
-     endif
-
-     ! The signal stuff must be done after every iteration only in
-     ! steady or spectral mode. In unsteady mode the signals are
-     ! handled in the routine solverUnsteady.
-
-     testSteady2: if(equationMode == steady .or. &
-          equationMode == timeSpectral) then
-
-        ! Determine the global kill parameter.
-
-        call mpi_allreduce(localSignal, globalSignal, 1,         &
-             sumb_integer, mpi_max, SUmb_comm_world, &
-             ierr)
-
-        ! Check whether a solution file, either volume or surface,
-        ! must be written. Only on the finest grid level in stand
-        ! alone mode.
-
-        if(standAloneMode .and. groundLevel == 1) then
-
-           writeVolume  = .false.
-           writeSurface = .false.
-
-           if(mod(iterTot, nSaveVolume)  == 0) writeVolume  = .true.
-           if(mod(iterTot, nSaveSurface) == 0) writeSurface = .true.
-
-           if(globalSignal == signalWrite .or. &
-                globalSignal == signalWriteQuit) then
-              writeVolume  = .true.
-              writeSurface = .true.
-           endif
-
-           ! Make a distinction between steady and spectral
-           ! mode. In the former case the grid will never
-           ! be written; in the latter case when only when
-           ! the volume is written.
-
-           writeGrid = .false.
-           if(equationMode == timeSpectral .and. writeVolume) &
-                writeGrid = .true.
-
-           if(writeGrid .or. writeVolume .or. writeSurface) &
-                call writeSol
-
+     multiGrid: do iter=1,nMGCycles
+        
+        ! Rewrite the sliding mesh mass flow parameters (not for
+        ! unsteady) and the convergence header after a certain number
+        ! of iterations. The latter is only done by processor 0.
+        
+        if(mod(iter,nWriteConvHeader) == 0) then
+           if(equationMode == steady .or. &
+                equationMode == timeSpectral) call writeFamilyMassflow
+           if(myID == 0) call convergenceHeader
         endif
 
-        ! Reset the value of localSignal.
+        ! Update iterTot and call executeMGCycle.
+        
+        iterTot = iterTot + 1
+        call executeMGCycle
 
-        localSignal = noSignal
+        ! Update PV3 solution for a steady computation if PV3 support
+        ! is required. For unsteady mode the PV3 stuff is updated
+        ! after every physical time step.
 
-     endif testSteady2
+#ifdef USE_PV3
+        if(equationMode == steady .or.    &
+             equationMode == timeSpectral) &
+             call pv_update(real(iterTot,realPV3Type))
+#endif
 
-     ! Exit the loop if the corresponding kill signal
-     ! has been received or if the solution is converged.
+        ! Determine and write the convergence info.
+        
+        call convergenceInfo
 
-     if(globalSignal == signalWriteQuit .or. converged) exit
+        !check for divergence or nan here
+        if(routineFailed)then
+           ! Release the memory of cycling.
+           deallocate(cycling, stat=ierr)
+           if(ierr /= 0)                 &
+                call terminate("solveState", &
+                "Deallocation failure for cycling")
+           return
+        endif
 
-     ! Check if the bleed boundary conditions must be updated and
-     ! do so if needed.
+        ! The signal stuff must be done after every iteration only in
+        ! steady or spectral mode. In unsteady mode the signals are
+        ! handled in the routine solverUnsteady.
 
-     if(mod(iter, nUpdateBleeds) == 0) &
-          call BCDataMassBleedOutflow(.false., .false.)
+        testSteady2: if(equationMode == steady .or. &
+             equationMode == timeSpectral) then
+           
+           ! Determine the global kill parameter.
 
-  enddo multiGrid
+           call mpi_allreduce(localSignal, globalSignal, 1,         &
+                sumb_integer, mpi_max, SUmb_comm_world, &
+                ierr)
+           
+           ! Check whether a solution file, either volume or surface,
+           ! must be written. Only on the finest grid level in stand
+           ! alone mode.
+           
+           if(standAloneMode .and. groundLevel == 1) then
+              
+              writeVolume  = .false.
+              writeSurface = .false.
+              
+              if(mod(iterTot, nSaveVolume)  == 0) writeVolume  = .true.
+              if(mod(iterTot, nSaveSurface) == 0) writeSurface = .true.
+              
+              if(globalSignal == signalWrite .or. &
+                   globalSignal == signalWriteQuit) then
+                 writeVolume  = .true.
+                 writeSurface = .true.
+              endif
+
+              ! Make a distinction between steady and spectral
+              ! mode. In the former case the grid will never
+              ! be written; in the latter case when only when
+              ! the volume is written.
+
+              writeGrid = .false.
+              if(equationMode == timeSpectral .and. writeVolume) &
+                   writeGrid = .true.
+              
+              if(writeGrid .or. writeVolume .or. writeSurface) &
+                   call writeSol
+
+           endif
+
+           ! Reset the value of localSignal.
+           
+           localSignal = noSignal
+
+        endif testSteady2
+
+        ! Exit the loop if the corresponding kill signal
+        ! has been received or if the solution is converged.
+
+        if(globalSignal == signalWriteQuit .or. converged) exit
+
+        ! Check if the bleed boundary conditions must be updated and
+        ! do so if needed.
+        
+        if(mod(iter, nUpdateBleeds) == 0) &
+             call BCDataMassBleedOutflow(.false., .false.)
+        
+     enddo multiGrid
+  end if
+
+  ! Reset the L2Convergence in case it had been changed above
+  L2Conv = L2ConvSave
+
+  ! Now we have run the RK solver. We will run the NK solver only if
+  ! the solve_NK flag is set:
+  
+  if (solve_NK) then
+
+     ! We have to check to see if NKSwitchtol was LOWER than
+     ! l2convrel. This means that the RK solution is already good
+     ! enough for what we want so we're done
+
+     call getcurrentResidual(rhoRes1,totalRRes1)
+     if (rhoRes1 < rhoResStart * l2convrel) then
+        ! We no not have to run the NK solver so do nothing
+     else
+        ! Run the NK solver down as far we need to go
+        !call NKsolver()
+        call setupNKsolver()     
+        
+        if (solve_RK .or. .not. NKsolvedOnce) then 
+           ! This is a little tricky...IF we had solved the RK or we
+           ! haven't  solved it all all, then there's a good chance we should rebuild
+           ! the PC. So set it -2: Build on the next chance
+           call SNESSetLagJacobian(snes, -2, ierr); call EChk(ierr,__file__,__line__)
+        else
+           ! Else, just set it -1, such that it WON't recompute on the
+           ! first time through. This gets reset to the actual
+           ! jacobian lag we want after the first iteration.
+           call SNESSetLagJacobian(snes, -1, ierr); call EChk(ierr,__file__,__line__)
+        end if
+
+        call NKsolver()
+     end if
+  end if
 
   ! Release the memory of cycling.
 

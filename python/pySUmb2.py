@@ -359,7 +359,7 @@ class SUMB(AeroSolver):
                                  self.sumb.inputphysics.externalflow,
                              'location':
                                  'inputphysics.flowtype'},
-
+                 'useNKSolver':{'location':'nksolvervars.usenksolver'},
                  'NKLinearSolver':{'gmres':'gmres',
                                    'fgmres':'fgmres',
                                    'location':
@@ -506,7 +506,6 @@ class SUMB(AeroSolver):
                 'writeSolution',
                 'familyRot',  # -> Not sure how to do
                 'areaAxis',
-                'useNKSolver'
                 ]
         # end if
         
@@ -767,7 +766,6 @@ class SUMB(AeroSolver):
         self.setRotationRate(aero_problem)
         self.setRefArea(aero_problem)
         self.setPeriodicParams(aero_problem)
-
         # Run Solver
         t0 = time.time()
 
@@ -829,8 +827,18 @@ class SUMB(AeroSolver):
             self.solve_failed = True
             return
 
-        # Get Starting Residual
-        self.sumb.preprocessingadjoint()
+        # Setup some residual values for reference
+
+        if self.callCounter == 0:
+            # We need to explicitly get the freestream residual, since
+            # we may have
+            self.sumb.preprocessingadjoint()
+            rhoRes0,totalRRes0 = self.sumb.getfreestreamresidual()
+            self.sumb.nksolvervars.totalres0 = real(totalRRes0)
+            self.sumb.nksolvervars.rhores0   = real(rhoRes0)
+            self.rhoRes0 = rhoRes0
+        # end if
+
         if self.sumb.inputiteration.mgstartlevel != 1:
             self.rhoResStart,self.totalRStart = \
                 self.sumb.getfreestreamresidual()
@@ -841,68 +849,12 @@ class SUMB(AeroSolver):
         self.rhoResStart = real(self.rhoResStart)
         self.totalRStart = real(self.totalRStart)
 
-        if self.callCounter == 0:
-            # We need to explicitly get the freestream residual, since
-            # we may have
-            rhoRes0,totalRRes0 = self.sumb.getfreestreamresidual()
-            self.sumb.nksolvervars.totalres0 = real(totalRRes0)
-            self.sumb.nksolvervars.rhores0   = real(rhoRes0)
-            self.rhoRes0 = real(rhoRes0)
+        # Call the Solver
+        self.sumb.solver()
 
-        if not self.getOption('useNKSolver'):
-            # Call the solver as we normally would 
-            self.sumb.solver()
-            self.rhoResFinal,self.totalRFinal = self.sumb.getcurrentresidual()
-        else:
-            # Make sure global cell/node is initialized
-            self.sumb.preprocessingadjoint()
-
-            # Determine if we need to run the RK solver, before we can
-            # run the NK solver 
-            if self.rhoResStart/self.rhoRes0 > self.getOption('NKSwitchTol'):
-                
-                # We haven't run anything yet OR the solution is not
-                # yet converged tightly enough to start with NK solver
-              
-                # Try to run RK solver down to NKSwitchTol
-                L2ConvSave = self.getOption('L2Convergence')
-                self.setOption('L2Convergence',
-                               self.getOption('NKSwitchTol'))
-
-                self.sumb.solver()
-                
-                # Restore the L2Conv Option -- must do this before possible quit
-                self.setOption('L2Convergence',L2ConvSave)
-
-                # A number of things can now happen: 
-
-                # 1. If the solver failed to converge to L2ConvRel OR
-                # NKSwitchTol we will say it is failed.  
-                if self.sumb.killsignals.routinefailed:
-                    self.solve_failed = True
-                    return 
-                else:
-                    rhoRes1,totalRRes1 = self.sumb.getcurrentresidual()
-                    if rhoRes1 < self.rhoResStart * self.sumb.inputiteration.l2convrel:
-                        # 2. The solver has converged to L2ConvRel. In this
-                        # case we're do and DO NOT have to run th rk solver
-                        pass
-                    else:
-                        # 3. The solver has converged to NKSwitchTol
-                        # but NOT L2ConvRel. Run NK Solver
-                        self.sumb.nksolver()
-                    # end if
-                # end if
-                self.rhoResFinal,self.totalRFinal = \
-                    self.sumb.getcurrentresidual()
-            else:
-                # We already have a good starting point, so we can just call nksolver()
-                self.sumb.nksolver()
-                self.rhoResFinal,self.totalRFinal = \
-                    self.sumb.getcurrentresidual()
-            # end if
-        # end if (nkSolver Switch)
-
+        # Record the final residual
+        self.rhoResFinal,self.totalRFinal = self.sumb.getcurrentresidual()
+ 
         if self.sumb.killsignals.routinefailed:
             self.solve_failed = True
         else:

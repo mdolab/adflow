@@ -20,11 +20,22 @@ module NKsolverVars
 
   use constants
   implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
+  ! PETSc Variables
+  SNES               snes 
+  PetscFortranAddr   ctx(3)
+  Mat                dRdw,dRdwPre 
+  Vec wVec,rVec
+  SNESConvergedReason reason
 
   ! Non-linear Solver Options
   integer(kind=intType) :: jacobian_lag
   logical :: useEW
-
+  logical :: useNKSolver
+  logical :: NKSolverSetup
+  logical :: NKSolvedOnce
   ! Non-linear Solver Tolerances
   real(kind=realType) :: snes_atol 
   real(kind=realType) :: snes_rtol
