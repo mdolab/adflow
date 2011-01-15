@@ -74,16 +74,6 @@ SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC) $(SUBDIR_PYTHON) $(SUBDIR_PV3) \
 #      * General targets.                                               *
 #      *                                                                *
 #      ******************************************************************
-#c_file = config/defaults/config.LINUX_INTEL_OPENMPI_PYTHON.mk
-dirs:	
-	mkdir -p bin
-	mkdir -p obj
-	mkdir -p mod
-	mkdir -p externals/ADT/obj
-	mkdir -p externals/ADT/mod
-	mkdir -p externals/SU_MPI/obj
-	mkdir -p externals/SU_MPI/mod
-	mkdir -p src/python/fortran/obj
 
 default:
 	@echo "Usage: make <arch>"
@@ -124,6 +114,16 @@ default:
 	@echo "                         SGI_N32_MPI_ORIGIN"
 
 all:	 default
+
+dirs:	
+	mkdir -p bin
+	mkdir -p obj
+	mkdir -p mod
+	mkdir -p externals/ADT/obj
+	mkdir -p externals/ADT/mod
+	mkdir -p externals/SU_MPI/obj
+	mkdir -p externals/SU_MPI/mod
+	mkdir -p src/python/fortran/obj
 
 clean:
 	@echo " Making clean ... "
