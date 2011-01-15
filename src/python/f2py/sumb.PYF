@@ -129,8 +129,14 @@ python module sumb ! in
          logical :: eulerwallspresent
        end subroutine solver
 
-       subroutine nksolver
-       end subroutine nksolver
+    !    subroutine nksolver
+!        end subroutine nksolver
+       
+       subroutine setupnksolver
+       end subroutine setupnksolver
+       
+       subroutine destroynksolver
+       end subroutine destroynksolver
 
        subroutine getcurrentresidual(rhores,totalrres)
          real(kind=realtype), intent(out) :: rhores
@@ -869,6 +875,7 @@ python module sumb ! in
        module nksolvervars ! in :test:NKsolverVars.F90
          use constants
          integer(kind=inttype) :: jacobian_lag
+         logical :: usenksolver
          character parameter,optional :: pc_lu="lu"
          character parameter,optional :: ord_nd="nd"
          character parameter,optional :: pc_blockjacobi="bjacobi"
