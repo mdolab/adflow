@@ -76,14 +76,12 @@ class SUMB(AeroSolver):
             'wallTreatment':[str,'Linear Pressure Extrapolation'],
             'areaAxis':[list,[0.0,1.0,0.0]],
             'nCycles':[int,500],
+            'nCyclesCoarse':[int,500],
             'CFL':[float,1.7],
             'CFLCoarse':[float,1.0],
             'equationType': [str,'Euler'],
             'equationMode': [str,'Steady'],
             'flowType':[str,'External'],
-            'Mach':[float,0.5],
-            'machCoef':[float,0.5],
-            'machGrid':[float,0.0],
             'L2Convergence':[float,1e-6],
             'L2ConvergenceRel':[float,1e-16],
             'L2ConvergenceCoarse':[float,1e-2], 
@@ -124,6 +122,7 @@ class SUMB(AeroSolver):
             'outputDir':[str,'./'],
             'solRestart':[bool,False],
             'setMonitor':[bool,True],
+            'solveAdjoint':[bool,False],
             'writeSolution':[bool,True],
             'approxPC': [bool,False],
             'restartAdjoint':[bool,False],
@@ -397,11 +396,9 @@ class SUMB(AeroSolver):
                  'reynoldsLength':{'location':'inputphysics.reynoldslength'},
                  'solRestart':{'location':'inputio.restart'},
                  'nCycles':{'location':'inputiteration.ncycles'},
+                 'nCyclesCoarse':{'location':'inputiteration.ncyclescoarse'},
                  'CFL':{'location':'inputiteration.cfl'},        
                  'CFLCoarse':{'location':'inputiteration.cflcoarse'},        
-                 'Mach':{'location':'inputphysics.mach'},
-                 'machCoef':{'location':'inputphysics.machcoef'},
-                 'machGrid':{'location':'inputphysics.machgrid'},
                  'L2Convergence':{'location':'inputiteration.l2conv'},
                  'L2ConvergenceRel':{'location':'inputiteration.l2convrel'},
                  'L2ConvergenceCoarse':{'location':'inputiteration.l2convcoarse'},
@@ -535,12 +532,13 @@ class SUMB(AeroSolver):
 
         # Setup the external Mesh Warping
         self._update_geom_info = False
+        print 'mesh test',('mesh' in kwargs)
         if 'mesh' in kwargs:
             self.mesh = kwargs['mesh']
         else:
             self.mesh = SUmbDummyMesh()
         # end if
-
+        
         # Set Flags that are used to keep of track of what is "done"
         # in fortran
         self.allInitialized = False    # All flow solver initialization   
@@ -566,11 +564,10 @@ class SUMB(AeroSolver):
         
         Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
         '''
-
+        
         if self.allInitialized == True:
             return
-      
-        self.setPeriodicParams(aero_problem)
+        
   
         # Make sure all the params are ok
         for option in self.options:
@@ -578,17 +575,21 @@ class SUMB(AeroSolver):
                 self.setOption(option, self.options[option][1])
             # end if
         # end for
-      
-        self.sumb.dummyreadparamfile()
 
+        self.setMachNumber(aero_problem)
+        self.setPeriodicParams(aero_problem)
+        
+        self.sumb.dummyreadparamfile()
+       
         #This is just to flip the -1 to 1 possibly a memory issue?
         self.sumb.inputio.storeconvinneriter = \
             abs(self.sumb.inputio.storeconvinneriter)
 
         if(self.myid ==0):
             print ' -> Partitioning and Reading Grid'
+        
         self.sumb.partitionandreadgrid()
-
+       
         if(self.myid==0):
             print ' -> Preprocessing'
         self.sumb.preprocessing()
@@ -596,7 +597,8 @@ class SUMB(AeroSolver):
         if(self.myid==0):
             print ' -> Initializing flow'
         self.sumb.initflow()
-
+        if(self.myid==0):
+            print ' -> Flow initialized'
         # Create dictionary of variables we are monitoring
         nmon = self.sumb.monitor.nmon
         self.monnames = {}
@@ -604,7 +606,8 @@ class SUMB(AeroSolver):
             self.monnames[string.strip(
                     self.sumb.monitor.monnames[i].tostring())] = i
         # end for
-      
+        if(self.myid==0):
+            print ' -> Setting up external warping'
         # Setup External Warping
         meshInd = self.getMeshIndices()
         self.mesh.setExternalMeshIndices(meshInd)
@@ -614,7 +617,8 @@ class SUMB(AeroSolver):
         
         # Solver is initialize
         self.allInitialized = True
-
+        if(self.myid==0):
+            print ' -> Initialization Complete'
         return
 
     def setInflowAngle(self,aero_problem):
@@ -638,6 +642,7 @@ class SUMB(AeroSolver):
 
         #update the flow vars
         self.sumb.updateflow()
+        self._update_vel_info = True
         return
     
     def setReferencePoint(self,aero_problem):
@@ -659,7 +664,7 @@ class SUMB(AeroSolver):
             *self.metricConversion
         #update the flow vars
         self.sumb.updatereferencepoint()
-
+        self._update_vel_info = True
         return
 
     def setRotationRate(self,aero_problem):
@@ -676,7 +681,7 @@ class SUMB(AeroSolver):
         r = aero_problem._flows.rhat*V/aero_problem._refs.bref
 
         self.sumb.updaterotationrate(p,r,q)
-
+        self._update_vel_info = True
         return
     
     def setRefArea(self,aero_problem):
@@ -690,18 +695,25 @@ class SUMB(AeroSolver):
         Set the frequecy and amplitude of the oscillations
         '''
         if  self.getOption('alphaMode'):
+            self.sumb.inputmotion.degreepolalpha = int(aero_problem._flows.degreePol)
+            self.sumb.inputmotion.coefpolalpha = aero_problem._flows.coefPol
             self.sumb.inputmotion.omegafouralpha   = aero_problem._flows.omegaFourier
+            #if self.myid==0: print 'omega',aero_problem._flows.omegaFourier,self.sumb.inputmotion.gridmotionspecified
             self.sumb.inputmotion.degreefouralpha  = aero_problem._flows.degreeFourier
             self.sumb.inputmotion.coscoeffouralpha = aero_problem._flows.cosCoefFourier
             self.sumb.inputmotion.sincoeffouralpha = aero_problem._flows.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
         elif  self.getOption('betaMode'):
+            self.sumb.inputmotion.degreepolmach = int(aero_problem._flows.degreePol)
+            self.sumb.inputmotion.coefpolmach = aero_problem._flows.coefPol
             self.sumb.inputmotion.omegafourbeta   = aero_problem._flows.omegaFourier
             self.sumb.inputmotion.degreefourbeta  = aero_problem._flows.degreeFourier
             self.sumb.inputmotion.coscoeffourbeta = aero_problem._flows.cosCoefFourier
             self.sumb.inputmotion.sincoeffourbeta = aero_problem._flows.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
         elif self.getOption('machMode'):
+            self.sumb.inputmotion.degreepolmach = int(aero_problem._flows.degreePol)
+            self.sumb.inputmotion.coefpolmach = aero_problem._flows.coefPol
             self.sumb.inputmotion.omegafourmach   = aero_problem._flows.omegaFourier
             self.sumb.inputmotion.degreefourmach  = aero_problem._flows.degreeFourier
             self.sumb.inputmotion.coscoeffourmach = aero_problem._flows.cosCoefFourier
@@ -709,18 +721,24 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.gridmotionspecified = True
         elif  self.getOption('pMode'):
             ### add in lift axis dependence
+            self.sumb.inputmotion.degreepolxrot = int(aero_problem._flows.degreePol)
+            self.sumb.inputmotion.coefpolxrot = aero_problem._flows.coefPol
             self.sumb.inputmotion.omegafourxrot = aero_problem._flows.omegaFourier
             self.sumb.inputmotion.degreefourxrot  = aero_problem._flows.degreeFourier
             self.sumb.inputmotion.coscoeffourxrot = aero_problem._flows.cosCoefFourier
             self.sumb.inputmotion.sincoeffourxrot = aero_problem._flows.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
         elif self.getOption('qMode'):
+            self.sumb.inputmotion.degreepolzrot = int(aero_problem._flows.degreePol)
+            self.sumb.inputmotion.coefpolzrot = aero_problem._flows.coefPol
             self.sumb.inputmotion.omegafourzrot = aero_problem._flows.omegaFourier
             self.sumb.inputmotion.degreefourzrot  = aero_problem._flows.degreeFourier
             self.sumb.inputmotion.coscoeffourzrot = aero_problem._flows.cosCoefFourier
             self.sumb.inputmotion.sincoeffourzrot = aero_problem._flows.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
         elif self.getOption('rMode'):
+            self.sumb.inputmotion.degreepolyrot = int(aero_problem._flows.degreePol)
+            self.sumb.inputmotion.coefpolyrot = aero_problem._flows.coefPol
             self.sumb.inputmotion.omegafouryrot = aero_problem._flows.omegaFourier
             self.sumb.inputmotion.degreefouryrot  = aero_problem._flows.degreeFourier
             self.sumb.inputmotion.coscoeffouryrot = aero_problem._flows.cosCoefFourier
@@ -729,8 +747,31 @@ class SUMB(AeroSolver):
         #endif
 
         self._update_period_info = True
+        self._update_geom_info = True
         self._update_vel_info = True
  
+        return
+
+    def setMachNumber(self,aero_problem):
+        '''
+        Set the mach number for the problem...
+        '''
+        if self.getOption('familyRot')!='':
+            Rotating = True
+        else:
+            Rotating = False
+        #endif
+        #print 'Rotating',Rotating,self.getOption('familyRot'),self.getOption('equationMode').lower()
+        if Rotating or self.getOption('equationMode').lower()=='time spectral':
+            self.sumb.inputphysics.mach = 0.0
+            self.sumb.inputphysics.machcoef = aero_problem._flows.mach
+            self.sumb.inputphysics.machgrid = aero_problem._flows.mach
+        else:
+            self.sumb.inputphysics.mach = aero_problem._flows.mach 
+            self.sumb.inputphysics.machcoef = aero_problem._flows.mach
+            self.sumb.inputphysics.machgrid = 0.0
+        #end
+        
         return
 
     def resetFlow(self):
@@ -757,18 +798,23 @@ class SUMB(AeroSolver):
         self.adjointRHS         = None
         self.callCounter += 1
 
+        
+
         # Run Initialize, if already run it just returns.
         self.initialize(aero_problem,sol_type,grid_file,*args,**kwargs)
 
         #set inflow angle,refpoint etc.
+        self.setMachNumber(aero_problem)
+        self.setPeriodicParams(aero_problem)
         self.setInflowAngle(aero_problem)
         self.setReferencePoint(aero_problem)
         self.setRotationRate(aero_problem)
         self.setRefArea(aero_problem)
-        self.setPeriodicParams(aero_problem)
-        # Run Solver
-        t0 = time.time()
 
+        # Run Solver
+        if(self.myid ==0): print ' -> Solving...'
+        t0 = time.time()
+        
         #self.sumb.monitor.niterold = self.sumb_comm_world.bcast(
         #    self.sumb.monitor.niterold, root=0)
 
@@ -785,8 +831,10 @@ class SUMB(AeroSolver):
                 self.sumb.iteration.itertot == 0):
 
                 if self.myid == 0:
+                    #max() handles case where ncyclescoarse is larger than ncycles
                     nn = self.sumb.inputiteration.nsgstartup + \
-                        self.sumb.inputiteration.ncycles
+                         max(self.sumb.inputiteration.ncycles,\
+                             self.sumb.inputiteration.ncyclescoarse)
                     self.sumb.deallocconvarrays()
                     self.sumb.allocconvarrays(nn)
                 # end if
@@ -1034,25 +1082,28 @@ class SUMB(AeroSolver):
         self.sumb.adjointvars.ndesignpointrefx = -1
         self.sumb.adjointvars.ndesignpointrefy = -1
         self.sumb.adjointvars.ndesignpointrefz = -1
-
+        
         # Set the required paramters for the aero-Only design vars:
-        self.nDVAero = len(self.aeroDVs)
+        self.nDVAero = len(self.aeroDVs)#for debuggin with check all...
+        
         self.sumb.adjointvars.ndesignextra = self.nDVAero
-        self.sumb.adjointvars.dida = numpy.zeros(self.nDVAero)
-
-        for i in xrange(self.nDVAero):
-            exec_str = 'self.sumb.' + self.possibleAeroDVs[self.aeroDVs[i]] + \
-                '= %d'%(i)
-            # Leave this zero-based since we only need to use it in petsc
-            exec(exec_str)
-        # end for
+        
+        if self.nDVAero >0:           
+            self.sumb.adjointvars.dida = numpy.zeros(self.nDVAero)
+            for i in xrange(self.nDVAero):
+                print 'execstring',i
+                exec_str = 'self.sumb.' + self.possibleAeroDVs[self.aeroDVs[i]] + \
+                           '= %d'%(i)
+                # Leave this zero-based since we only need to use it in petsc
+                exec(exec_str)
+            # end for
+        #endif
 
         #Set the mesh level and timespectral instance for this
         #computation
         
         self.sumb.iteration.currentlevel=1
         self.sumb.iteration.groundlevel=1
-
         if not self.adjointPreprocessed:
             self.sumb.preprocessingadjoint()
         # end if
@@ -1238,7 +1289,7 @@ class SUMB(AeroSolver):
         
     def verifyPartials(self):
         ''' Run verifyResiduals to verify that dRdw,dRdx and dRda are
-        computed correctly'
+        computed correctly
         '''
         self.sumb.verifypartials()
 
@@ -1257,9 +1308,7 @@ class SUMB(AeroSolver):
         run the stability derivative driver to compute the stability parameters
         from the time spectral solution
         '''
-
         self.sumb.stabilityderivativedriver()
-
         return
 
     def _updateGeometryInfo(self):
@@ -1456,14 +1505,14 @@ class SUMB(AeroSolver):
         
         return
 
-    def getSolution(self):
+    def getSolution(self,sps=1):
         '''
         retrieve the solution variables from the solver.
         '''
 
         # We should return the list of results that is the same as the
         # possibleObjectives list
-        self.sumb.getsolution(1)
+        self.sumb.getsolution(sps)
 
         funcVals = self.sumb.costfunctions.functionvalue
         SUmbsolution =  \
@@ -1483,12 +1532,19 @@ class SUMB(AeroSolver):
              'cmx' :funcVals[self.sumb.costfunctions.costfuncmomxcoef-1],
              'cmy' :funcVals[self.sumb.costfunctions.costfuncmomycoef-1],
              'cmz' :funcVals[self.sumb.costfunctions.costfuncmomzcoef-1],
-             'cMzAlpha':funcVals[self.sumb.costfunctions.costfunccmzalpha-1],
-             'cM0'  :funcVals[self.sumb.costfunctions.costfunccm0-1],
-             'clAlpha':funcVals[self.sumb.costfunctions.costfuncclalpha-1],
-             'cl0':funcVals[self.sumb.costfunctions.costfunccl0-1],
-             'cdAlpha':funcVals[self.sumb.costfunctions.costfunccdalpha-1],
-             'cd0':funcVals[self.sumb.costfunctions.costfunccd0-1]
+             'cmzalphadot':funcVals[self.sumb.costfunctions.costfunccmzalphadot-1],
+             'cmzalpha'   :funcVals[self.sumb.costfunctions.costfunccmzalpha-1],
+             'cm0'        :funcVals[self.sumb.costfunctions.costfunccm0-1],
+             'clalphadot' :funcVals[self.sumb.costfunctions.costfuncclalphadot-1],
+             'clalpha'    :funcVals[self.sumb.costfunctions.costfuncclalpha-1],
+             'cl0'        :funcVals[self.sumb.costfunctions.costfunccl0-1],
+             'cdalphadot' :funcVals[self.sumb.costfunctions.costfunccdalphadot-1],
+             'cdalpha'    :funcVals[self.sumb.costfunctions.costfunccdalpha-1],
+             'cd0'        :funcVals[self.sumb.costfunctions.costfunccd0-1],
+             'cmzqdot'    :funcVals[self.sumb.costfunctions.costfunccmzqdot-1],
+             'cmzq'       :funcVals[self.sumb.costfunctions.costfunccmzq-1],
+             'clqdot'     :funcVals[self.sumb.costfunctions.costfuncclqdot-1],
+             'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1]
              }
                                                  
         # Also add in 'direct' solutions. Area etc
