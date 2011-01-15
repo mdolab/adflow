@@ -167,8 +167,60 @@ subroutine NKsolver
   integer(kind=intTYpe) :: sns_max_its,ierr,snes_max_its,temp
   real(kind=realType) :: rhoRes,totalRRes,rhoRes1
 
+  call drdwPCPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal*nTimeIntervalsSpectral)
+  call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
+       nDimW, nDimW,                     &
+       PETSC_DETERMINE, PETSC_DETERMINE, &
+       0, nnzDiagonal,         &
+       0, nnzOffDiag,            &
+       dRdWPre, ierr); call EChk(ierr,__file__,__line__)
 
  ! We are going to have to compute what the tolerances should be
+  deallocate(nnzDiagonal,nnzOffDiag)
+
+#ifdef USE_PETSC_3
+  call MatSetOption(dRdWPre, MAT_ROW_ORIENTED,PETSC_FALSE, ierr)
+  call EChk(ierr,__file__,__line__)
+#else
+  call MatSetOption(dRdWPre, MAT_COLUMN_ORIENTED, ierr)
+  call EChk(ierr,__file__,__line__)
+#endif
+
+  ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  !  Set Jacobian Function 
+  ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+  call SNESSetJacobian(snes,dRdw,dRdwPre,FormJacobian,ctx,ierr)
+  call EChk(ierr,__file__,__line__)
+  
+  ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  !  Set SNES Options
+  ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+  ! Store the number of iterations completed by the RK solver
+  iterTot0 = iterTot
+  call SNESMonitorSet(snes,snes_monitor,ctx,PETSC_NULL_FUNCTION,ierr)
+  call EChk(ierr,__file__,__line__)
+
+  ! Use Eisenstat-Walker convergence criteria for KSP solver. Recommended
+  call SNESKSPSetUseEW(snes,.True.,ierr)  
+  call EChk(ierr,__file__,__line__)
+
+  ! Look at KSP iterations
+  !call PetscOptionsSetValue('-ksp_monitor',PETSC_NULL_CHARACTER,ierr)
+  !call EChk(ierr,__file__,__line__)
+
+  ! Uncomment for unpreconditioned solver. ONLY FOR DEBUGGING. Also
+  !need to comment out SNESSetJacobian
+  !PETScOptionsSetValue('-snes_mf',PETSC_NULL_CHARACTER,ierr) call
+  !EChk(ierr,__file__,__line__)
+
+  call SNESSetFromOptions(snes,ierr); call EChk(ierr,__file__,__line__)
+  call SNESSetLagJacobian(snes, jacobian_lag, ierr); call EChk(ierr,__file__,__line__)
+  call SNESSetMaxLinearSolveFailures(snes, 25,ierr); call EChk(ierr,__file__,__line__)
+ 
+  ! We are going to have to compute what the tolerances should be
+>>>>>>> other
   ! since we are going to be using the same convergence criteria as
   ! SUmb originally uses, that is L2Conv and L2ConvRel. This however,
   ! gets a little trickier, since the NKsolver will always be called
@@ -176,7 +228,8 @@ subroutine NKsolver
   ! starting point. 
 
   snes_stol = 1e-10
-  snes_max_its = 1250_intType
+  snes_max_its = 2000_intType
+
   snes_max_funcs = snes_max_its * 2
 
   ! Determine the current level of convergence of the solution
@@ -641,7 +694,6 @@ subroutine setupNK_KSP_PC(dRdwPre)
                     call COMPUTERNKPC_B(wadj, wadjb, dwadj, dwadjb, siadj, sjadj, &
                          &  skadj, sadj, voladj, sfaceiadj, sfacejadj, sfacekadj, rotrateadj, &
                          &  icell, jcell, kcell, nn, level, sps)
-
 
                 !     call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
 !                          &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
