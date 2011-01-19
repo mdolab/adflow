@@ -57,9 +57,9 @@ subroutine setupCouplingMatrixStruct(pts,npts)
 
   ii=0
   call MatGetOwnershipRange(dfdw,rowStart,rowEnd,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call MatGetOwnershipRangeColumn(dFdx,colStart_x,colEnd_x,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   domains: do nn=1,nDom
      call setPointersAdj(nn,1_intType,1_intType)
@@ -221,7 +221,7 @@ subroutine setupCouplingMatrixStruct(pts,npts)
                                         w_ind(kkk,iii,jjj)*nw+l-1,&
                                         wadjb(kkk,iii,jjj,l),&
                                         INSERT_VALUES, ierr)
-                                   call EChk(ierr,__file__,__line__)
+                                   call EChk(ierr,__FILE__,__LINE__)
                                 end if
                              end do
                           end do
@@ -234,7 +234,7 @@ subroutine setupCouplingMatrixStruct(pts,npts)
                              call MatSetValue(dFdx,irow,&
                                   colStart_x+pts_ind(iii,jjj)*3+kkk-1,grid_ptsb(kkk,iii,jjj),&
                                   INSERT_VALUES,ierr)
-                             call EChk(ierr,__file__,__line__)
+                             call EChk(ierr,__FILE__,__LINE__)
                           end do
                        end do
                     end do
@@ -249,13 +249,13 @@ subroutine setupCouplingMatrixStruct(pts,npts)
   end do domains
 
   call MatAssemblyBegin(dFdw,MAT_FINAL_ASSEMBLY,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call MatAssemblyEnd(dFdw,MAT_FINAL_ASSEMBLY,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call MatAssemblyBegin(dFdx,MAT_FINAL_ASSEMBLY,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call MatAssemblyEnd(dFdx,MAT_FINAL_ASSEMBLY,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
     
 end subroutine setupCouplingMatrixStruct
 

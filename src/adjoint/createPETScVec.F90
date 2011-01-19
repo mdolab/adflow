@@ -40,14 +40,14 @@ subroutine createPETScVec
 
   ! Get dJdw and psi from one MatGetVecs Call
   call MatGetVecs(dRdwT,dJdW,psi,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   ! adjointRes is the same size as dJdw,psi
   call VecDuplicate(dJdW, adjointRes, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   call VecDuplicate(dJdW, adjointRHS, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   !     ******************************************************************
   !     *                                                                *
@@ -56,17 +56,17 @@ subroutine createPETScVec
   !     ******************************************************************
 
   call MatGetVecs(dFdx,dJdx,wVec,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   call VecSetBlockSize(dJdx,3,PETScIerr)
-  call EChk(PETScierr,__file__,__line__)
+  call EChk(PETScierr,__FILE__,__LINE__)
  
   ! Destroy wVec created above. MatGetVecs DOES NOT WORK CORRECTLY IN
   ! FORTRAN. You MUST provide two arguments to MatGetVecs (not a
   ! PETSC_NULL_OBJECT) since this will LEAK MEMORY.
 
   call VecDestroy(wVec,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
 
 #endif

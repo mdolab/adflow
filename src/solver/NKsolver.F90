@@ -38,7 +38,11 @@ subroutine setupNKsolver
   use iteration
   implicit none
 #define PETSC_AVOID_MPIF_H
+#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
+#else
+#include "include/finclude/petscall.h"
+#endif
 
   ! Working Variables
   integer(kind=intType) :: ierr,nDimw
@@ -51,21 +55,21 @@ subroutine setupNKsolver
 
      !  Create nonlinear solver context
      call SNESCreate(SUMB_PETSC_COMM_WORLD,snes,ierr)
-     call EChk(ierr,__file__,__line__)
+     call EChk(ierr,__FILE__,__LINE__)
      
      !  Create residual and state vectors
      nDimW = nw * nCellsLocal * nTimeIntervalsSpectral
      call VecCreateMPI(SUMB_PETSC_COMM_WORLD,nDimw,PETSC_DETERMINE,wVec,ierr)
-     call EChk(ierr,__file__,__line__)
-     call VecSetBlockSize(wVec,nw,ierr);  call EChk(ierr,__file__,__line__)
-     call VecDuplicate(wVec, rVec, ierr);  call EChk(ierr,__file__,__line__)
+     call EChk(ierr,__FILE__,__LINE__)
+     call VecSetBlockSize(wVec,nw,ierr);  call EChk(ierr,__FILE__,__LINE__)
+     call VecDuplicate(wVec, rVec, ierr);  call EChk(ierr,__FILE__,__LINE__)
      
      !  Set Non-linear Function
      call SNESSetFunction(snes,rVec,FormFunction,ctx,ierr)
-     call EChk(ierr,__file__,__line__)
+     call EChk(ierr,__FILE__,__LINE__)
      
      !  Create Jacobian and Approximate Jacobian Matrices
-     call MatCreateSNESMF(snes,dRdw,ierr);  call EChk(ierr,__file__,__line__)
+     call MatCreateSNESMF(snes,dRdw,ierr);  call EChk(ierr,__FILE__,__LINE__)
      
      ! Need to get correct Pre-allocation for dRdwPre; we can re-use
      ! adjoint routines for this
@@ -78,35 +82,35 @@ subroutine setupNKsolver
           PETSC_DETERMINE, PETSC_DETERMINE, &
           0, nnzDiagonal,         &
           0, nnzOffDiag,            &
-          dRdWPre, ierr); call EChk(ierr,__file__,__line__)
+          dRdWPre, ierr); call EChk(ierr,__FILE__,__LINE__)
      
      deallocate(nnzDiagonal,nnzOffDiag)
      
 #ifdef USE_PETSC_3
      call MatSetOption(dRdWPre, MAT_ROW_ORIENTED,PETSC_FALSE, ierr)
-     call EChk(ierr,__file__,__line__)
+     call EChk(ierr,__FILE__,__LINE__)
 #else
      call MatSetOption(dRdWPre, MAT_COLUMN_ORIENTED, ierr)
-     call EChk(ierr,__file__,__line__)
+     call EChk(ierr,__FILE__,__LINE__)
 #endif
      
      !  Set Jacobian Function 
      call SNESSetJacobian(snes,dRdw,dRdwPre,FormJacobian,ctx,ierr)
-     call EChk(ierr,__file__,__line__)
+     call EChk(ierr,__FILE__,__LINE__)
      
      ! Set SNES Options
      ! Store the number of iterations completed by the RK solver
      iterTot0 = iterTot
      call SNESMonitorSet(snes,snes_monitor,ctx,PETSC_NULL_FUNCTION,ierr)
-     call EChk(ierr,__file__,__line__)
+     call EChk(ierr,__FILE__,__LINE__)
 
      ! Use Eisenstat-Walker convergence criteria for KSP solver. Recommended
      call SNESKSPSetUseEW(snes,.True.,ierr)  
-     call EChk(ierr,__file__,__line__)
-     call SNESSetFromOptions(snes,ierr); call EChk(ierr,__file__,__line__)
-     !call SNESSetLagJacobian(snes, jacobian_lag, ierr); call EChk(ierr,__file__,__line__)
-     call SNESSetLagJacobian(snes, -2_intType, ierr); call EChk(ierr,__file__,__line__)
-     call SNESSetMaxLinearSolveFailures(snes, 25,ierr); call EChk(ierr,__file__,__line__)
+     call EChk(ierr,__FILE__,__LINE__)
+     call SNESSetFromOptions(snes,ierr); call EChk(ierr,__FILE__,__LINE__)
+     !call SNESSetLagJacobian(snes, jacobian_lag, ierr); call EChk(ierr,__FILE__,__LINE__)
+     call SNESSetLagJacobian(snes, -2_intType, ierr); call EChk(ierr,__FILE__,__LINE__)
+     call SNESSetMaxLinearSolveFailures(snes, 25,ierr); call EChk(ierr,__FILE__,__LINE__)
      
      ! We are going to have to compute what the tolerances should be
      ! since we are going to be using the same convergence criteria as
@@ -132,15 +136,15 @@ subroutine destroyNKsolver
   ! We will destroy the PETSc variables created in setupNKsolver
   call SNESDestroy(snes,ierr) ! Also destroys the underlying ksp and
                               ! pc contexts
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call MatDestroy(dRdw,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call MatDestroy(dRdwPre,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call VecDestroy(wVec,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call VecDestroy(rVec,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   NKSolverSetup = .False.
 
@@ -162,7 +166,11 @@ subroutine NKsolver
   use iteration
   implicit none
 #define PETSC_AVOID_MPIF_H
+#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
+#else
+#include "include/finclude/petscall.h"
+#endif
 
   integer(kind=intTYpe) :: sns_max_its,ierr,snes_max_its,temp
   real(kind=realType) :: rhoRes,totalRRes,rhoRes1
@@ -207,7 +215,7 @@ subroutine NKsolver
   call mpi_bcast(snes_atol, 1, sumb_real, 0, SUmb_comm_world, ierr)
 
   call SNESSetTolerances(snes,snes_atol,snes_rtol,snes_stol,snes_max_its,&
-       snes_max_funcs,ierr); call EChk(ierr,__file__,__line__)
+       snes_max_funcs,ierr); call EChk(ierr,__FILE__,__LINE__)
 
   ! Note: the krylov linear solver options are set in FormJacobian
 
@@ -220,11 +228,11 @@ subroutine NKsolver
                                                    ! LEAK!!!!!!
   
   NKSolvedOnce = .True.
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   iterTot = iterTot0
 
   call SNESGetConvergedReason(snes,reason,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   if (myid == 0) then
      if (printIterations) then
         print *,'Reason:',reason
@@ -256,9 +264,12 @@ subroutine FormFunction(snes,wVec,rVec,ctx,ierr)
   !  f     - vector with newly computed function
   use precision
   implicit none
-
 #define PETSC_AVOID_MPIF_H
+#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
+#else
+#include "include/finclude/petscall.h"
+#endif
 
   ! PETSc Variables
   SNES    snes
@@ -337,7 +348,11 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
        asm_overlap,local_pc_ilu_level,local_pc_ordering
   implicit none
 #define PETSC_AVOID_MPIF_H
+#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
+#else
+#include "include/finclude/petscall.h"
+#endif
   SNES           snes
   Mat            dRdw,dRdwPre 
   KSP            ksp,subksp
@@ -353,42 +368,42 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
 
   ! Dummy assembly begin/end calls for the matrix-free Matrx
   call MatAssemblyBegin(dRdw,MAT_FINAL_ASSEMBLY,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call MatAssemblyEnd(dRdw,MAT_FINAL_ASSEMBLY,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   ! Assemble the approximate PC
   call setupNK_KSP_PC(dRdwPre)
   flag = SAME_NONZERO_PATTERN
   ! Setup the required options for the KSP solver
-  call SNESGetKSP(snes,ksp,ierr);                   call EChk(ierr,__file__,__line__)
-  call KSPSetType(ksp,ksp_solver_type,ierr);       call EChk(ierr,__file__,__line__)
-  call KSPGMRESSetRestart(ksp, ksp_subspace,ierr);  call EChk(ierr,__file__,__line__)
-  call KSPSetPreconditionerSide(ksp,PC_RIGHT,ierr); call EChk(ierr,__file__,__line__)
+  call SNESGetKSP(snes,ksp,ierr);                   call EChk(ierr,__FILE__,__LINE__)
+  call KSPSetType(ksp,ksp_solver_type,ierr);       call EChk(ierr,__FILE__,__LINE__)
+  call KSPGMRESSetRestart(ksp, ksp_subspace,ierr);  call EChk(ierr,__FILE__,__LINE__)
+  call KSPSetPreconditionerSide(ksp,PC_RIGHT,ierr); call EChk(ierr,__FILE__,__LINE__)
 
   ! Setup the required options for the Global PC
-  call KSPGetPC(ksp,pc,ierr);                 call EChk(ierr,__file__,__line__)
-  call PCSetType(pc,global_pc_type,ierr);     call EChk(ierr,__file__,__line__)
+  call KSPGetPC(ksp,pc,ierr);                 call EChk(ierr,__FILE__,__LINE__)
+  call PCSetType(pc,global_pc_type,ierr);     call EChk(ierr,__FILE__,__LINE__)
 
   if (trim(global_pc_type) == 'asm') then
-     call PCASMSetOverlap(pc,asm_overlap,ierr);  call EChk(ierr,__file__,__line__)
-     call PCSetup(pc,ierr);                      call EChk(ierr,__file__,__line__)
-     call PCASMGetSubKSP( pc, nlocal,  first, subksp, ierr );          call EChk(ierr,__file__,__line__)  
+     call PCASMSetOverlap(pc,asm_overlap,ierr);  call EChk(ierr,__FILE__,__LINE__)
+     call PCSetup(pc,ierr);                      call EChk(ierr,__FILE__,__LINE__)
+     call PCASMGetSubKSP( pc, nlocal,  first, subksp, ierr );          call EChk(ierr,__FILE__,__LINE__)  
   end if
 
   if (trim(global_pc_type) == 'bjacobi') then
-     call PCSetup(pc,ierr);                      call EChk(ierr,__file__,__line__)
-     call PCBJacobiGetSubKSP(pc,nlocal,first,subksp,ierr);   call EChk(ierr,__file__,__line__)
+     call PCSetup(pc,ierr);                      call EChk(ierr,__FILE__,__LINE__)
+     call PCBJacobiGetSubKSP(pc,nlocal,first,subksp,ierr);   call EChk(ierr,__FILE__,__LINE__)
   end if
 
 
   ! Setup the required options for the Local PC
-  call KSPGetPC(subksp, subpc, ierr );                              call EChk(ierr,__file__,__line__)
-  call PCSetType(subpc, 'ilu', ierr);                       call EChk(ierr,__file__,__line__)
-  call PCFactorSetLevels(subpc, local_pc_ilu_level, ierr);          call EChk(ierr,__file__,__line__)  
-  call PCFactorSetMatOrderingtype(subpc, local_pc_ordering, ierr ); call EChk(ierr,__file__,__line__) 
+  call KSPGetPC(subksp, subpc, ierr );                              call EChk(ierr,__FILE__,__LINE__)
+  call PCSetType(subpc, 'ilu', ierr);                       call EChk(ierr,__FILE__,__LINE__)
+  call PCFactorSetLevels(subpc, local_pc_ilu_level, ierr);          call EChk(ierr,__FILE__,__LINE__)  
+  call PCFactorSetMatOrderingtype(subpc, local_pc_ordering, ierr ); call EChk(ierr,__FILE__,__LINE__) 
   call KSPSetType(subksp, KSPPREONLY, ierr);    
-  call EChk(ierr,__file__,__line__)  
+  call EChk(ierr,__FILE__,__LINE__)  
 
   ierr = 0
   
@@ -402,9 +417,12 @@ subroutine setWVec(wVec)
   use inputTimeSpectral
   use flowvarrefstate 
   implicit none
-
 #define PETSC_AVOID_MPIF_H
+#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
+#else
+#include "include/finclude/petscall.h"
+#endif
   
   Vec     wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l
@@ -423,16 +441,16 @@ subroutine setWVec(wVec)
                  
                  call VecSetValuesBlocked(wVec,1,globalCell(i,j,k),states,&
                       INSERT_VALUES,ierr)
-                 call EChk(ierr,__file__,__line__)
+                 call EChk(ierr,__FILE__,__LINE__)
               end do
            end do
         end do
      end do
   end do
   call VecAssemblyBegin(wVec,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call VecAssemblyEnd(wVec,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
 end subroutine setWVec
 
@@ -445,9 +463,12 @@ subroutine setRVec(rVec)
   use flowvarrefstate
   use inputiteration
   implicit none
-
 #define PETSC_AVOID_MPIF_H
+#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
+#else
+#include "include/finclude/petscall.h"
+#endif
 
   Vec     rVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k
@@ -462,7 +483,7 @@ subroutine setRVec(rVec)
                  ovv = 1/vol(i,j,k)
                  call VecSetValuesBlocked(rVec,1,globalCell(i,j,k),&
                       dw(i,j,k,:)*ovv, INSERT_VALUES,ierr)
-                 call EChk(ierr,__file__,__line__)
+                 call EChk(ierr,__FILE__,__LINE__)
               end do
            end do
         end do
@@ -470,9 +491,9 @@ subroutine setRVec(rVec)
   end do
 
   call VecAssemblybegin(rVec,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call VecAssemblyEnd(rVec,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
 end subroutine setRVec
 
@@ -503,7 +524,7 @@ subroutine setW(wVec)
                  do l=1,nw
                     call VecGetValues(wVec,1,globalCell(i,j,k)*nw+l-1,&
                          w(i,j,k,l),ierr)
-                    call EChk(ierr,__file__,__line__)
+                    call EChk(ierr,__FILE__,__LINE__)
                  
                  end do
               end do
@@ -530,9 +551,12 @@ subroutine setupNK_KSP_PC(dRdwPre)
   use inputTimeSpectral   ! spaceDiscr
   use inputADjoint        !sigma
   implicit none
-
 #define PETSC_AVOID_MPIF_H
+#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
+#else
+#include "include/finclude/petscall.h"
+#endif
 
   Mat dRdwPre
 
@@ -599,7 +623,7 @@ subroutine setupNK_KSP_PC(dRdwPre)
   lumpedDiss=.True.
   
   call MatZeroEntries(dRdwPre,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   domainLoopAD: do nn=1,nDom
 
@@ -672,7 +696,7 @@ subroutine setupNK_KSP_PC(dRdwPre)
                     idxngb = flowDoms(nn,level,sps2)%globalCell(iCell,jCell,kCell)
                     call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb,Aad(:,:,sps2), &
                          ADD_VALUES,ierr)
-                    call EChk(ierr,__file__,__line__)
+                    call EChk(ierr,__FILE__,__LINE__)
                  enddo
 
                  ! >>> west block B < W(i-1,j,k)
@@ -681,7 +705,7 @@ subroutine setupNK_KSP_PC(dRdwPre)
                     if (idxngb >=0 .and. idxngb.ne.-5) then
                        call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, Bad(:,:,sps), &
                             ADD_VALUES,ierr)
-                       call EChk(ierr,__file__,__line__)
+                       call EChk(ierr,__FILE__,__LINE__)
                     endif
                  endif
 
@@ -691,7 +715,7 @@ subroutine setupNK_KSP_PC(dRdwPre)
                     if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                        call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, Cad(:,:,sps), &
                             ADD_VALUES,ierr)
-                       call EChk(ierr,__file__,__line__)
+                       call EChk(ierr,__FILE__,__LINE__)
                     endif
                  end if
 
@@ -701,7 +725,7 @@ subroutine setupNK_KSP_PC(dRdwPre)
                     if (idxngb>=0 .and. idxngb.ne.-5) then
                        call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, Dad(:,:,sps), &
                             ADD_VALUES,ierr)
-                       call EChk(ierr,__file__,__line__)
+                       call EChk(ierr,__FILE__,__LINE__)
                     endif
                  endif
 
@@ -711,7 +735,7 @@ subroutine setupNK_KSP_PC(dRdwPre)
                     if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                        call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, Ead(:,:,sps), &
                             ADD_VALUES,ierr)
-                       call EChk(ierr,__file__,__line__)
+                       call EChk(ierr,__FILE__,__LINE__)
                     endif
                  end if
 
@@ -721,7 +745,7 @@ subroutine setupNK_KSP_PC(dRdwPre)
                     if (idxngb>=0 .and. idxngb.ne.-5) then
                        call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, Fad(:,:,sps), &
                             ADD_VALUES,ierr)
-                       call EChk(ierr,__file__,__line__)
+                       call EChk(ierr,__FILE__,__LINE__)
                     endif
                  endif
 
@@ -731,7 +755,7 @@ subroutine setupNK_KSP_PC(dRdwPre)
                     if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                        call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, Gad(:,:,sps), &
                             ADD_VALUES,ierr)
-                       call EChk(ierr,__file__,__line__)
+                       call EChk(ierr,__FILE__,__LINE__)
                     endif
                  end if
               enddo
@@ -745,15 +769,15 @@ subroutine setupNK_KSP_PC(dRdwPre)
   vis4 = vis4_ref
 
   call MatAssemblyBegin(dRdWPre,MAT_FINAL_ASSEMBLY,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call MatAssemblyEnd  (dRdWPre,MAT_FINAL_ASSEMBLY,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 #ifdef USE_PETSC_3
   call MatSetOption(dRdWPre,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 #else
   call MatSetOption(dRdWPre,MAT_NO_NEW_NONZERO_LOCATIONS,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 #endif
 
   time(2) = mpi_wtime()
@@ -808,10 +832,10 @@ subroutine getCurrentResidual(rhoRes,totalRRes)
 
   call mpi_allreduce(r_sum,totalRRes,1,sumb_real,mpi_sum,&
        SUmb_comm_world, ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call mpi_allreduce(rho_sum,rhoRes,1,sumb_real,mpi_sum,&
        SUmb_comm_world, ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   ! curRes now has the inverse-volume weighted sum squared of the
   ! residuals, finally take the squareRoot
 
@@ -893,9 +917,13 @@ subroutine snes_monitor(snes,its,norm,ctx,ierr)
   use NKsolverVars, only: ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,&
        snes_atol,itertot0,jacobian_lag
   implicit none
-
 #define PETSC_AVOID_MPIF_H
+#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
+#else
+#include "include/finclude/petscall.h"
+#endif
+
   SNES snes
   KSP  ksp
   PetscInt its, ierr
@@ -909,7 +937,7 @@ subroutine snes_monitor(snes,its,norm,ctx,ierr)
   ! of how long each KSP is taking to solver
 
   call SNESGetKSP(snes,ksp,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call KSPGetTolerances(ksp,ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,ierr)
   ksp_atol = snes_atol
   ksp_max_it = 100
@@ -919,12 +947,12 @@ subroutine snes_monitor(snes,its,norm,ctx,ierr)
      ! Reset the value of the jacobianLag to what we actually want. It
      ! had been set to -1 or -2 depending on if we wanted to recompute
      ! the preconditioner on the first entry or not. 
-     call SNESSetLagJacobian(snes, jacobian_lag, ierr); call EChk(ierr,__file__,__line__)
+     call SNESSetLagJacobian(snes, jacobian_lag, ierr); call EChk(ierr,__FILE__,__LINE__)
   end if
 
   if (its > 0 .or. iterTot0 == 0) then
      call SNESGetLinearSolveIterations(snes,ksp_its,ierr)
-     call EChk(ierr,__file__,__line__)
+     call EChk(ierr,__FILE__,__LINE__)
 
      ksp_its = max(ksp_its,1)
      iterTot = iterTot0 + ksp_its

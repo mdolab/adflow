@@ -36,45 +36,45 @@
 
       ! Matrices
       call MatDestroy(dRdWT, PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 
       if (ApproxPC) then
          call MatDestroy(dRdWPreT, PETScIerr)
-         call EChk(PETScIerr,__file__,__line__)
+         call EChk(PETScIerr,__FILE__,__LINE__)
       end if
 
       call MatDestroy(dRdx, PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 
       call MatDestroy(dRda, PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 
       call MatDestroy(dFdw, PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 
       call MatDestroy(dFdx, PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 
       ! Vectors
 
       call VecDestroy(psi, PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 
       call VecDestroy(dJdW, PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 
       call VecDestroy(adjointRHS, PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 
       call VecDestroy(adjointRes, PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 
       call VecDestroy(dJdx, PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 
       ! KSP Context
       call KSPDestroy(ksp, PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 #endif
 
       end subroutine destroyPETScVars

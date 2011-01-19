@@ -33,20 +33,20 @@ subroutine setADjoint(ncells,functionGradLocal)
   ! iHigh is one more than the last element stored locally.
 
   call VecGetOwnershipRange(psi, iLow, iHigh, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   n = 0
   do idxmg=iLow, iHigh-1
      n = n + 1
      call VecSetValue(psi, idxmg, &
           functionGradLocal(n),INSERT_VALUES, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
   enddo
 
   call VecAssemblyBegin(psi, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   call VecAssemblyEnd(psi,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
 #endif
 end subroutine setADjoint

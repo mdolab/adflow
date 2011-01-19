@@ -215,6 +215,10 @@ LINUX_INTEL_OPENMPI_SCINET:
 	ln -sf config/config.LINUX_INTEL.mk config.mk
 	gmake adt
 
+LINUX_GFORTRAN:
+	ln -sf config/config.LINUX_GFORTRAN.mk config.mk
+	gmake adt
+
 LINUX_PG:
 	ln -sf config/config.LINUX_PG.mk config.mk
 	gmake adt

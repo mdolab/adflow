@@ -33,40 +33,40 @@ subroutine getdRdaPsi(ndv,output)
   ! Create the result vector for dRda^T * psi
 
   call MatGetVecs(dRda,dRdaTPsi,wVec,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call MatMultTranspose(dRda,psi,dRdaTPsi,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   ! This is a little wonkly, since dRdaTPsi only contains a handful of
   ! variables.
   ! Use a proper vec scatter here:
   call VecScatterCreateToAll(dRdaTPsi,dRdaTpsi_scatter,dRdaTPsi_local,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   call VecScatterBegin(dRdaTpsi_scatter,dRdaTPsi,dRdaTpsi_local,&
        INSERT_VALUES,SCATTER_FORWARD,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call VecScatterEnd  (dRdaTpsi_scatter,dRdaTPsi,dRdaTpsi_local,&
        INSERT_VALUES,SCATTER_FORWARD,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   ! Now just pluck off the local values
   do i=1,nDv
      call VecGetValues(dRdaTPsi_local,1,i-1,output(i),ierr)
-     call EChk(ierr,__file__,__line__)
+     call EChk(ierr,__FILE__,__LINE__)
   end do
 
   ! No longer need vectors/scatter
   call VecScatterDestroy(dRdaTpsi_scatter,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   call VecDestroy(dRdaTPsi,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   call VecDestroy(dRdaTpsi_local,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   call VecDestroy(wVec,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   
 end subroutine getdRdaPsi

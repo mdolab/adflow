@@ -62,7 +62,7 @@
 
       else
          call VecSet(psi,PETScZero,PETScIerr)
-         call EChk(PETScIerr,__file__,__line__)
+         call EChk(PETScIerr,__FILE__,__LINE__)
       end if
 !
 !     ******************************************************************
@@ -76,7 +76,7 @@
 
       call KSPSetResidualHistory(ksp, adjResHist, adjMaxIter, &
                                  PETSC_FALSE, PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 
       ! If the user is doing a MDO problem there may be an
       ! agumentation to the RHS. This is set in agumentRHS.F90 and
@@ -85,15 +85,15 @@
       ! adjointRHS = -adjointRHS + dJdw
       
       call VecAYPX(adjointRHS,-1.0,dJdw,PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 
       ! Get Current Residual
       call MatMult(dRdWT,psi,adjointRes,PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
       call VecAXPY(adjointRes,PETScNegOne,adjointRHS,PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
       call VecNorm(adjointRHS,NORM_2,curRes,PETScIerr)  
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 
       ! We are only going to overwrite adjRelTol and adjAbsTol
 
@@ -106,9 +106,9 @@
       ! Solve the adjoint system of equations [dR/dW]T psi = dJ/dW. 
 
       call KSPSetTolerances(ksp,adjRelTol,L2Abs,adjDivTol,adjMaxIter,PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
       call KSPSolve(ksp,dJdW,psi,PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 
       ! Get new time and compute the elapsed time.
       call cpu_time(time(2))
@@ -127,20 +127,20 @@
 !     ******************************************************************
 !
       call MatMult(dRdWT,psi,adjointRes,PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
       
       call VecAXPY(adjointRes,-1.0,adjointRHS,PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
       
       call VecNorm(adjointRes,NORM_2,norm,PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
       
       ! Finally we MUST zero adjointRHS
       call VecZeroEntries(adjointRHS,PETscIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
 
       call KSPGetIterationNumber(ksp,adjConvIts,PETScIerr)
-      call EChk(PETScIerr,__file__,__line__)
+      call EChk(PETScIerr,__FILE__,__LINE__)
       
       ! Use the root processor to display the output summary, such as
       ! the norm of error and the number of iterations

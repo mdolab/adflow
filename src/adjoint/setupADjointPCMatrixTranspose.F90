@@ -83,7 +83,7 @@ subroutine setupADjointPCMatrixTranspose
   lumpedDiss=.True.
   
   call MatZeroEntries(dRdwPreT,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   domainLoopAD: do nn=1,nDom
 
@@ -145,7 +145,7 @@ subroutine setupADjointPCMatrixTranspose
                     idxngb = flowDoms(nn,level,sps2)%globalCell(iCell,jCell,kCell)
                     call MatSetValuesBlocked(dRdwPreT, 1, idxngb, 1, idxmgb,&
                          transpose(Aad(:,:,sps2)),ADD_VALUES,ierr)
-                    call EChk(ierr,__file__,__line__)
+                    call EChk(ierr,__FILE__,__LINE__)
                  enddo
 
                  ! >>> west block B < W(i-1,j,k)
@@ -154,7 +154,7 @@ subroutine setupADjointPCMatrixTranspose
                     if (idxngb >=0 .and. idxngb.ne.-5) then
                        call MatSetValuesBlocked(dRdwPreT,1,idxngb,1,idxmgb,&
                             transpose( Bad(:,:,sps)),ADD_VALUES,ierr)
-                       call EChk(ierr,__file__,__line__)
+                       call EChk(ierr,__FILE__,__LINE__)
                     endif
                  endif
 
@@ -164,7 +164,7 @@ subroutine setupADjointPCMatrixTranspose
                     if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                        call MatSetValuesBlocked(dRdwPreT, 1, idxngb, 1, idxmgb,&
                             transpose(Cad(:,:,sps)),ADD_VALUES,ierr)
-                       call EChk(ierr,__file__,__line__)
+                       call EChk(ierr,__FILE__,__LINE__)
                     endif
                  end if
 
@@ -174,7 +174,7 @@ subroutine setupADjointPCMatrixTranspose
                     if (idxngb>=0 .and. idxngb.ne.-5) then
                        call MatSetValuesBlocked(dRdwPreT, 1, idxngb, 1, idxmgb,&
                             transpose( Dad(:,:,sps)),ADD_VALUES,ierr)
-                       call EChk(ierr,__file__,__line__)
+                       call EChk(ierr,__FILE__,__LINE__)
                     endif
                  endif
 
@@ -184,7 +184,7 @@ subroutine setupADjointPCMatrixTranspose
                     if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                        call MatSetValuesBlocked(dRdwPreT, 1, idxngb, 1, idxmgb,&
                             transpose( Ead(:,:,sps)),ADD_VALUES,ierr)
-                       call EChk(ierr,__file__,__line__)
+                       call EChk(ierr,__FILE__,__LINE__)
                     endif
                  end if
 
@@ -194,7 +194,7 @@ subroutine setupADjointPCMatrixTranspose
                     if (idxngb>=0 .and. idxngb.ne.-5) then
                        call MatSetValuesBlocked(dRdwPreT, 1, idxngb, 1, idxmgb,&
                             transpose( Fad(:,:,sps)),ADD_VALUES,ierr)
-                       call EChk(ierr,__file__,__line__)
+                       call EChk(ierr,__FILE__,__LINE__)
                     endif
                  endif
 
@@ -204,7 +204,7 @@ subroutine setupADjointPCMatrixTranspose
                     if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                        call MatSetValuesBlocked(dRdwPreT, 1, idxngb, 1, idxmgb,&
                             transpose( Gad(:,:,sps)),ADD_VALUES,ierr)
-                       call EChk(ierr,__file__,__line__)
+                       call EChk(ierr,__FILE__,__LINE__)
                     endif
                  end if
               enddo
@@ -218,15 +218,15 @@ subroutine setupADjointPCMatrixTranspose
   vis4 = vis4_ref
 
   call MatAssemblyBegin(dRdwPreT,MAT_FINAL_ASSEMBLY,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call MatAssemblyEnd  (dRdwPreT,MAT_FINAL_ASSEMBLY,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 #ifdef USE_PETSC_3
   call MatSetOption(dRdwPreT,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 #else
   call MatSetOption(dRdwPreT,MAT_NO_NEW_NONZERO_LOCATIONS,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 #endif
 
   time(2) = mpi_wtime()
@@ -439,12 +439,12 @@ end subroutine setupADjointPCMatrixTranspose
 !        write(*,10) "Assembling ADjoint PC Transpose matrix..."
 
 !   call mpi_barrier(SUmb_comm_world, ierr)
-!   call EChk(PETScIerr,__file__,__line__)
+!   call EChk(PETScIerr,__FILE__,__LINE__)
 !   call cpu_time(time(1))
 
 !   !zero the matrix for dRdWPre Insert call
 !   call MatZeroEntries(dRdwPreT,PETScIerr)
-!   call EChk(PETScIerr,__file__,__line__)
+!   call EChk(PETScIerr,__FILE__,__LINE__)
 
 !   !store the current values of vis2,vis4 and reset vis2 for preconditioner
 !   !method based on (Hicken and Zingg,2008) AIAA journal,vol46,no.11
@@ -555,7 +555,7 @@ end subroutine setupADjointPCMatrixTranspose
 !                        idxngb = flowDoms(nn,level,sps2)%globalCell(iCell,jCell,kCell)!idxmgb
 !                        call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
 !                             transpose(Aad(:,:,sps2)), ADD_VALUES,PETScIerr)
-!                        call EChk(PETScIerr,__file__,__line__)
+!                        call EChk(PETScIerr,__FILE__,__LINE__)
 !                     enddo
 
 !                     ! >>> west block B < W(i-1,j,k)
@@ -564,7 +564,7 @@ end subroutine setupADjointPCMatrixTranspose
 !                        if (idxngb >=0 .and. idxngb.ne.-5) then
 !                           call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
 !                                transpose(Bad(:,:,sps)), ADD_VALUES,PETScIerr)
-!                           call EChk(PETScIerr,__file__,__line__)
+!                           call EChk(PETScIerr,__FILE__,__LINE__)
 !                        endif
 !                     endif
 
@@ -574,7 +574,7 @@ end subroutine setupADjointPCMatrixTranspose
 !                        if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
 !                           call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
 !                                transpose(Cad(:,:,sps)), ADD_VALUES,PETScIerr)
-!                           call EChk(PETScIerr,__file__,__line__)
+!                           call EChk(PETScIerr,__FILE__,__LINE__)
 !                        endif
 !                     end if
 
@@ -584,7 +584,7 @@ end subroutine setupADjointPCMatrixTranspose
 !                        if (idxngb>=0 .and. idxngb.ne.-5) then
 !                           call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
 !                                transpose(Dad(:,:,sps)), ADD_VALUES,PETScIerr)
-!                           call EChk(PETScIerr,__file__,__line__)
+!                           call EChk(PETScIerr,__FILE__,__LINE__)
 
 !                        endif
 !                     endif
@@ -595,7 +595,7 @@ end subroutine setupADjointPCMatrixTranspose
 !                        if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
 !                           call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
 !                                transpose(Ead(:,:,sps)), ADD_VALUES,PETScIerr)
-!                           call EChk(PETScIerr,__file__,__line__)
+!                           call EChk(PETScIerr,__FILE__,__LINE__)
 !                        endif
 !                     end if
 
@@ -606,7 +606,7 @@ end subroutine setupADjointPCMatrixTranspose
 !                        if (idxngb>=0 .and. idxngb.ne.-5) then
 !                           call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
 !                                transpose(Fad(:,:,sps)), ADD_VALUES,PETScIerr)
-!                           call EChk(PETScIerr,__file__,__line__)
+!                           call EChk(PETScIerr,__FILE__,__LINE__)
 !                        endif
 !                     endif
 
@@ -616,7 +616,7 @@ end subroutine setupADjointPCMatrixTranspose
 !                        if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
 !                           call MatSetValuesBlocked(dRdWPret, 1, idxngb, 1, idxmgb, &
 !                                transpose(Gad(:,:,sps)), ADD_VALUES,PETScIerr)
-!                           call EChk(PETScIerr,__file__,__line__)
+!                           call EChk(PETScIerr,__FILE__,__LINE__)
 !                        endif
 !                     end if
 !                  else ! PETScBlockMatrix
@@ -638,15 +638,15 @@ end subroutine setupADjointPCMatrixTranspose
 !   vis4 = vis4_ref
 
 !   call MatAssemblyBegin(dRdWPreT,MAT_FINAL_ASSEMBLY,PETScIerr)
-!   call EChk(PETScIerr,__file__,__line__)
+!   call EChk(PETScIerr,__FILE__,__LINE__)
 !   call MatAssemblyEnd  (dRdWPreT,MAT_FINAL_ASSEMBLY,PETScIerr)
-!   call EChk(PETScIerr,__file__,__line__)
+!   call EChk(PETScIerr,__FILE__,__LINE__)
 ! #ifdef USE_PETSC_3
 !   call MatSetOption(dRdWPreT,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,PETScIerr)
-!   call EChk(PETScIerr,__file__,__line__)
+!   call EChk(PETScIerr,__FILE__,__LINE__)
 ! #else
 !   call MatSetOption(dRdWPreT,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
-!   call EChk(PETScIerr,__file__,__line__)
+!   call EChk(PETScIerr,__FILE__,__LINE__)
 ! #endif
 !   ! Get new time and compute the elapsed time.
 
@@ -658,7 +658,7 @@ end subroutine setupADjointPCMatrixTranspose
 
 !   call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
 !        mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
-!   call EChk(PETScIerr,__file__,__line__)
+!   call EChk(PETScIerr,__FILE__,__LINE__)
 !   if( myid==0 ) &
 !        write(*,20) "Assembling ADjoint PCT matrix time (s) = ", timeAdj
 

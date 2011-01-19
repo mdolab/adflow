@@ -84,7 +84,7 @@ subroutine setupPETScKsp
      !                  DIFFERENT_NONZERO_PATTERN,PETScIerr)
      call KSPSetOperators(ksp,dRdWT,dRdWPreT, &
           DIFFERENT_NONZERO_PATTERN,PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
   else
 
      ! Use the exact jacobian.
@@ -93,7 +93,7 @@ subroutine setupPETScKsp
 
      call KSPSetOperators(ksp,dRdWT,dRdWT, &
           DIFFERENT_NONZERO_PATTERN,PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
   end if
 
   !     ******************************************************************
@@ -103,7 +103,7 @@ subroutine setupPETScKsp
   !     ******************************************************************
 
   call KSPSetFromOptions(ksp, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
 
   !     *****************************************************************
@@ -118,67 +118,67 @@ subroutine setupPETScKsp
   case(PETSCGMRES)
 
      call KSPSetType(ksp, KSPGMRES, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      call KSPGMRESSetRestart(ksp, adjRestart, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      call KSPGMRESSetCGSRefinementType(ksp, & 
           KSP_GMRES_CGS_REFINE_IFNEEDED, PETScIerr)   
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      select case(PCSide)
      case(Right)
         call KSPSetPreconditionerSide(ksp, PC_RIGHT, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(Left)
         call KSPSetPreconditionerSide(ksp, PC_LEFT, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      end select
 
   case(PETSCBICGStab)
 
      call KSPSetType(ksp, KSPBCGS, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      select case(PCSide)
      case(Right)
         call KSPSetPreconditionerSide(ksp, PC_RIGHT, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(Left)
         call KSPSetPreconditionerSide(ksp, PC_LEFT, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      end select
 
   case(PETSCCG)
 
      call KSPSetType(ksp, KSPCG, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      select case(PCSide)
      case(Right)
         call KSPSetPreconditionerSide(ksp, PC_RIGHT, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(Left)
         call KSPSetPreconditionerSide(ksp, PC_LEFT, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      end select
 
   case(PETSCFGMRES)
 
      call KSPSetType(ksp, KSPFGMRES, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      call KSPGMRESSetRestart(ksp, adjRestart, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      select case(PCSide)
      case(Right)
         call KSPSetPreconditionerSide(ksp, PC_RIGHT, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(Left)
         call KSPSetPreconditionerSide(ksp, PC_LEFT, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      end select
   end select
 
@@ -186,18 +186,18 @@ subroutine setupPETScKsp
 
   call KSPSetTolerances(ksp, adjRelTol, adjAbsTol, adjDivTol, &
        adjMaxIter, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   if( myid==0 ) then
      call KSPGetTolerances(ksp, rTol, aTol, dTol, mIts, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
      write(*,20) rTol, aTol, dTol
      write(*,21) mIts
   endif
 
   ! Setup Preconditioning 
   call KSPGetPC(ksp, pc, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   !
   !     ******************************************************************
   !     *                                                                *
@@ -211,7 +211,7 @@ subroutine setupPETScKsp
   case(Jacobi)
 
      call PCSetType( pc, PCJACOBI, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
      ! set tolerances on subksp (is this really needed???)
      call KSPSetTolerances(ksp, 1.e-8, adjAbsTol, adjDivTol, &
           adjMaxIter, PETScIerr)
@@ -222,31 +222,31 @@ subroutine setupPETScKsp
         continue
      case(RowMax)
         call PCJacobiSetUseRowMax(pc, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(RowSum)
         call PCJacobiSetUseRowSum(pc, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(RowAbs)
         call PCJacobiSetUseAbs(pc, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      end select
 
      select case(MatrixOrdering)
      case(Natural)
         call PCFactorSetMatOrderingtype( pc, MATORDERING_NATURAL, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(ReverseCuthillMckee)
         call PCFactorSetMatOrderingtype( pc, MATORDERING_RCM, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(NestedDissection)
         call PCFactorSetMatOrderingtype( pc, MATORDERING_ND, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(OnewayDissection )
         call PCFactorSetMatOrderingtype( pc, MATORDERING_1WD, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case( QuotientMinimumDegree)
         call PCFactorSetMatOrderingtype( pc, MATORDERING_QMD, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      end select
 
      !Set the iteration Monitor
@@ -258,40 +258,40 @@ subroutine setupPETScKsp
   case(BlockJacobi)
 
      call PCSetType( pc, PCBJACOBI, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
      call PCSetUp(pc,PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      Nsub = 1!_intType
      length = nCellsLocal*nw
      call PCBJacobiSetLocalBlocks(pc,Nsub,length,PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      !Setup KSP context before calling local subdomain ksp contexts
      call KSPSetUp(ksp, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      !Setup local subcontexts
      call PCBJacobiGetSubKSP(pc,nlocal,first,subksp,PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      !Setup Local ILU precondtioner
      call KSPGetPC( subksp, subpc, PETScIerr )
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      select case(LocalPCType)
      case(ILU)
         call PCSetType( subpc, PCILU, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(ICC)
         call PCSetType( subpc, PCICC, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(LU)
         call PCSetType( subpc, PCLU, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(Cholesky)
         call PCSetType( subpc, PCCHOLESKY, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      end select
 
      !set matrix ordering
@@ -299,80 +299,80 @@ subroutine setupPETScKsp
      select case(MatrixOrdering)
      case(Natural)
         call PCFactorSetMatOrderingtype( subpc, MATORDERING_NATURAL, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(ReverseCuthillMckee)
         call PCFactorSetMatOrderingtype( subpc, MATORDERING_RCM, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(NestedDissection)
         call PCFactorSetMatOrderingtype( subpc, MATORDERING_ND, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(OnewayDissection )
         call PCFactorSetMatOrderingtype( subpc, MATORDERING_1WD, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case( QuotientMinimumDegree)
         call PCFactorSetMatOrderingtype( subpc, MATORDERING_QMD, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      end select
 
      !Set ILU parameters
      call PCFactorSetLevels( subpc, fillLevel , PETScIerr)!
-     call EChk(PETScIerr,__file__,__line__) 
+     call EChk(PETScIerr,__FILE__,__LINE__) 
 
      !Set local contexts to preconditioner's only
      call KSPSetType(subksp, KSPPREONLY, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      ! set tolerances on subksp (is this really needed???)
      call KSPSetTolerances(subksp, 1.e-8, adjAbsTol, adjDivTol, &
           adjMaxIter, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      if(setMonitor)then
         !Set the convergence monitors
         call KSPMonitorSet(subksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
              PETSC_NULL_FUNCTION, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
         call KSPMonitorSet(ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
              PETSC_NULL_FUNCTION, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      endif
 
   case(AdditiveSchwartz)
 
      call PCSetType( pc, PCASM, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      !setup a basic overlaping scheme, more detailed scheme to be used later
      call PCASMSetOverlap(pc,overlap,PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      !Setup KSP context before calling local subdomain ksp contexts
      call KSPSetUp(ksp, PETScIerr);
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      !get the subdomain contexts
      call PCASMGetSubKSP( pc, nlocal,  first, subksp, PETScIerr )
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
         
      !Setup the subdomain preconditioner
      call KSPGetPC( subksp, subpc, PETScIerr )
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      !Set subdomain preconditioner type
 
      select case(LocalPCType)
      case(ILU)
         call PCSetType( subpc, PCILU, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(ICC)
         call PCSetType( subpc, PCICC, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(LU)
         call PCSetType( subpc, PCLU, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(Cholesky)
         call PCSetType( subpc, PCCHOLESKY, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      end select
 
      !set matrix ordering
@@ -380,44 +380,44 @@ subroutine setupPETScKsp
      select case(MatrixOrdering)
      case(Natural)
         call PCFactorSetMatOrderingtype( subpc, MATORDERING_NATURAL, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(ReverseCuthillMckee)
         call PCFactorSetMatOrderingtype( subpc, MATORDERING_RCM, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(NestedDissection)
         call PCFactorSetMatOrderingtype( subpc, MATORDERING_ND, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case(OnewayDissection )
         call PCFactorSetMatOrderingtype( subpc, MATORDERING_1WD, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      case( QuotientMinimumDegree)
         call PCFactorSetMatOrderingtype( subpc, MATORDERING_QMD, PETScIerr )
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      end select
 
      !Set ILU parameters
      call PCFactorSetLevels( subpc, fillLevel , PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      !Set local contexts to preconditioner's only
      call KSPSetType(subksp, KSPPREONLY, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      ! set tolerances on subksp (is this really needed???)
      call KSPSetTolerances(subksp, 1.e-8, adjAbsTol, adjDivTol, &
           adjMaxIter, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
      if(setMonitor)then
         call KSPMonitorSet(ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
              PETSC_NULL_FUNCTION, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      endif
   end select
 
   if( myid==0 ) then
      call PCGetType(pc, pcType, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
      write(*,30) pcType
   endif
 
