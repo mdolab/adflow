@@ -217,6 +217,10 @@ LINUX_INTEL_OPENMPI_SCINET:
 	ln -sf config/config.LINUX_INTEL_OPENMPI_SCINET.mk config.mk
 	gmake parallel
 
+LINUX_GFORTRAN:
+	ln -sf config/config.LINUX_GFORTRAN.mk config.mk
+	gmake parallel
+
 LINUX_PG:
 	ln -sf config/config.LINUX_PG.mk config.mk
 	gmake sequential

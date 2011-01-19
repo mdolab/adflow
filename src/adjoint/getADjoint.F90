@@ -34,14 +34,14 @@ subroutine getADjoint(ncells,functionGradLocal)
   ! iHigh is one more than the last element stored locally.
 
   call VecGetOwnershipRange(psi, iLow, iHigh, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   n = 0
   do idxmg=iLow, iHigh-1
      n = n + 1
      call VecGetValues(psi, 1, idxmg, &
           functionGradLocal(n), PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
   enddo
 
 #endif

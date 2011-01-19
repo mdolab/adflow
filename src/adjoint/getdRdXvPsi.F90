@@ -61,11 +61,11 @@ subroutine getdRdXvPsi(ndof,dXv)
 
   ! Create a temporary vector which is the size of the grid*nTimeInstances
   call MatGetVecs(dRdx,xVec,wVec,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   
   ! Do the matMultTranspose and put result into xVec
   call MatMultTranspose(dRdX,psi,xVec,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   dXv = 0.0
   ! If we only have 1 time instance (NOT TimeSpectral analysis, then
@@ -84,7 +84,7 @@ subroutine getdRdXvPsi(ndof,dXv)
                         globalNode(i,j,k)*3+2/)
                  
                  call VecGetValues(xVec,3,ind,pt,ierr)
-                 call EChk(ierr,__file__,__line__)
+                 call EChk(ierr,__FILE__,__LINE__)
                  
                  dXv(counter*3+1:counter*3+3) = pt
                  
@@ -132,7 +132,7 @@ subroutine getdRdXvPsi(ndof,dXv)
                             globalNode(i,j,k)*3+2/)
 
                     call VecGetValues(xVec,3,ind,pt,ierr)
-                    call EChk(ierr,__file__,__line__)
+                    call EChk(ierr,__FILE__,__LINE__)
 
                     dXv(counter*3+1:counter*3+3) = dXv(counter*3+1:3*counter+3) + &
                          matmul(rotationMatrix,pt)
@@ -148,9 +148,9 @@ subroutine getdRdXvPsi(ndof,dXv)
 
   ! No longer need xVec
   call VecDestroy(xVec,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   call VecDestroy(wVec,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   
 end subroutine getdRdXvPsi

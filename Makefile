@@ -358,6 +358,24 @@ LINUX_INTEL_OPENMPI_PYTHON:
 	gmake sumb
 	(cd src/python/f2py && gmake)
 
+LINUX_GFORTRAN_OPENMPI:
+	make dirs
+	if [ ! -f "config/config.LINUX_GFORTRAN_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_GFORTRAN_OPENMPI.mk" ./config; fi
+	(cd externals/SU_MPI && gmake LINUX_GFORTRAN)
+	(cd externals/ADT && gmake LINUX_GFORTRAN)
+	ln -sf config/config.LINUX_GFORTRAN_OPENMPI.mk config.mk
+	gmake sumb
+
+LINUX_GFORTRAN_OPENMPI_PYTHON:
+	make dirs
+	if [ ! -f "config/config.LINUX_GFORTRAN_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_GFORTRAN_OPENMPI.mk" ./config; fi
+	(cd externals/SU_MPI && gmake LINUX_GFORTRAN)
+	(cd externals/ADT && gmake LINUX_GFORTRAN)
+	ln -sf config/config.LINUX_GFORTRAN_OPENMPI.mk config.mk
+	gmake sumb
+	(cd src/python/f2py && gmake)
+
+
 LINUX_INTEL_OPENMPI_SCINET:
 	make dirs
 	if [ ! -f "config/LINUX_INTEL_OPENMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_SCINET.mk" ./config; fi

@@ -31,19 +31,19 @@
         
        if (pLocal) then 
           call MatGetInfo(dRdwT,MAT_LOCAL,localInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printLocal("dRdwT")
        end if
 
        if (pMax) then 
           call MatGetInfo(dRdwT,MAT_GLOBAL_MAX,maxInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printMax("dRdwT")
        end if
 
        if (pSum) then
           call MatGetInfo(dRdwT,MAT_GLOBAL_SUM,sumInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printSum("dRdwT")
        end if
     end if
@@ -52,19 +52,19 @@
         
        if (pLocal) then 
           call MatGetInfo(dRdwPreT,MAT_LOCAL,localInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printLocal("dRdwPreT")
        end if
 
        if (pMax) then 
           call MatGetInfo(dRdwPreT,MAT_GLOBAL_MAX,maxInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printMax("dRdwPreT")
        end if
 
        if (pSum) then
           call MatGetInfo(dRdwPreT,MAT_GLOBAL_SUM,sumInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printSum("dRdwPreT")
        end if
 
@@ -74,19 +74,19 @@
         
        if (pLocal) then 
           call MatGetInfo(dRdx,MAT_LOCAL,localInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printLocal("dRdx")
        end if
 
        if (pMax) then 
           call MatGetInfo(dRdx,MAT_GLOBAL_MAX,maxInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printMax("dRdx")
        end if
 
        if (pSum) then
           call MatGetInfo(dRdx,MAT_GLOBAL_SUM,sumInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printSum("dRdx")
        end if
 
@@ -96,19 +96,19 @@
         
        if (pLocal) then 
           call MatGetInfo(dRda,MAT_LOCAL,localInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printLocal("dRda")
        end if
 
        if (pMax) then 
           call MatGetInfo(dRda,MAT_GLOBAL_MAX,maxInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printMax("dRda")
        end if
 
        if (pSum) then
           call MatGetInfo(dRda,MAT_GLOBAL_SUM,sumInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printSum("dRda")
        end if
 
@@ -119,19 +119,19 @@
         
        if (pLocal) then 
           call MatGetInfo(dFdx,MAT_LOCAL,localInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printLocal("dFdx")
        end if
 
        if (pMax) then 
           call MatGetInfo(dFdx,MAT_GLOBAL_MAX,maxInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printMax("dFdx")
        end if
 
        if (pSum) then
           call MatGetInfo(dFdx,MAT_GLOBAL_SUM,sumInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printSum("dFdx")
        end if
 
@@ -141,19 +141,19 @@
         
        if (pLocal) then 
           call MatGetInfo(dFdw,MAT_LOCAL,localInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printLocal("dFdw")
        end if
 
        if (pMax) then 
           call MatGetInfo(dFdw,MAT_GLOBAL_MAX,maxInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printMax("dFdw")
        end if
 
        if (pSum) then
           call MatGetInfo(dFdw,MAT_GLOBAL_SUM,sumInfo,ierr)
-          call EChk(ierr,__file__,__line__)
+          call EChk(ierr,__FILE__,__LINE__)
           call printSum("dFdw")
        end if
 
@@ -167,6 +167,10 @@
       ! Each Proc should print this info:
       
       print *,'================================================================='
+900   format(A,A,A,I3)
+901   format(A,I2,A,F20.10)
+902   format(A,A)
+
       write(*,900) "Local Matrix Information for ",matrixName," on proc :",myid
       write(*,901) "[",myid,"] Block Size: ",localInfo(1)
       write(*,901) "[",myid,"] Non Zeros Allocated  : ",localInfo(2)
@@ -180,9 +184,6 @@
       write(*,901) "[",myid,"] Mallocs for Factor         : ",localInfo(10)
       print *,'================================================================='
      
-900   format(A,A,A,I3)
-901   format(A,I2,A,F)
-902   format(A,A)
     end subroutine printLocal
 
     subroutine printMax(matrixName)
@@ -207,7 +208,7 @@
       end if
 
 900   format(A,A,A,I3)
-901   format(A,I2,A,F)
+901   format(A,I2,A,F20.10)
 902   format(A,A)
     end subroutine printMax
 
@@ -237,3 +238,4 @@
     end subroutine printSum
 
   end subroutine matrixInfo
+  

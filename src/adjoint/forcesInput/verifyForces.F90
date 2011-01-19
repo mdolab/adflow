@@ -191,13 +191,13 @@ subroutine verifyForces(pts,npts)
   
   call MPI_Reduce(origForceSum, origForceTotal, 3, SUMB_REAL, MPI_SUM, 0, &
        SUMB_COMM_WORLD,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call MPI_Reduce(ADForceSum, ADForceTotal, 3, SUMB_REAL, MPI_SUM, 0, &
        SUMB_COMM_WORLD,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call MPI_Reduce(getForceSum, getForceTotal, 3, SUMB_REAL, MPI_SUM, 0, &
        SUMB_COMM_WORLD,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   if (myid == 0) then
      print *, 'Sum Check:'
@@ -219,9 +219,9 @@ subroutine verifyForces(pts,npts)
   ! Currently Broken
 
   call MatGetOwnershipRange(dFdx,rowStart,rowEnd,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   call MatGetOwnershipRangeColumn(dFdx,colStart,colEnd,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   ! if (myid == 0) then 
 !      print *,'------------ dfdx verification ----------'
@@ -242,7 +242,7 @@ subroutine verifyForces(pts,npts)
 !            do jdim =1,3  !
 !               irow = rowStart+(jpt-1)*3+jdim-1
 !               call MatGetValues(dFdx,1,irow,1,icol,vval,ierr)
-!               call EChk(ierr,__file__,__line__)
+!               call EChk(ierr,__FILE__,__LINE__)
 
 !               diff = abs(vval-deriv(jdim,jpt))
 !               if (myid == 0) then
@@ -259,7 +259,7 @@ subroutine verifyForces(pts,npts)
 !   end do
 
 !   call mpi_barrier(sumb_comm_world,ierr)
-!   call EChk(ierr,__file__,__line__)
+!   call EChk(ierr,__FILE__,__LINE__)
   ! -----------------------------
   !           Check dFdw
   ! -----------------------------
@@ -270,7 +270,7 @@ subroutine verifyForces(pts,npts)
   tol = 1e-5
   h = 1e-8
   call MatGetOwnershipRange(dFdw,rowStart,rowEnd,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   do nn=1,ndom
      max_rel_err = 0.0
      rel_err     = 0.0
@@ -308,7 +308,7 @@ subroutine verifyForces(pts,npts)
                        do jdim =1,3  !
                           irow = rowStart+(jpt-1)*3+jdim-1
                           call MatGetValues(dFdw,1,irow,1,icol,vec_value,ierr)
-                          call EChk(ierr,__file__,__line__)
+                          call EChk(ierr,__FILE__,__LINE__)
                           diff = abs(vec_value-deriv(jdim,jpt))
                           if (diff > 1e-16) then
                              rel_err = diff/((vec_value+deriv(jdim,jpt)))

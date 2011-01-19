@@ -195,11 +195,11 @@ subroutine setupAllResidualMatrices
 
   !zero the matrix for dRdW Insert call
   call MatZeroEntries(dRdwt,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   !zero the matrix for dRdx ADD call
   call MatZeroEntries(dRdx,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   domainLoopAD: do nn=1,nDom
 
@@ -320,7 +320,7 @@ subroutine setupAllResidualMatrices
                                          call MatSetValues(dRdx, 1, idxres, 3, ind_node,   &
                                               xAdjb(ii,jj,kk,:,sps2), ADD_VALUES, PETScIerr)
                                             ! NO error check here for speed purposes
-!                                            call ECHk(PETScIerr,__file__,__line__)
+!                                            call ECHk(PETScIerr,__FILE__,__LINE__)
                                       endif
                                    endif
                                 endif
@@ -334,49 +334,49 @@ subroutine setupAllResidualMatrices
                              idxnode = flowDoms(nn,level,sps)%globalNode(1,1,1)*3+1
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(1,1,1,l,sps), ADD_VALUES, PETScIerr)
-                             call EChk(PETScIerr,__file__,__line__)
+                             call EChk(PETScIerr,__FILE__,__LINE__)
                           endif
                           if (xblockcorneradjb(2,1,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalNode(il,1,1)*3+1
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(2,1,1,l,sps), ADD_VALUES, PETScIerr)
-                             call EChk(PETScIerr,__file__,__line__)
+                             call EChk(PETScIerr,__FILE__,__LINE__)
                           endif
                           if (xblockcorneradjb(1,2,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(1,jl,1)*3+l
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(1,2,1,l,sps), ADD_VALUES, PETScIerr)
-                             call EChk(PETScIerr,__file__,__line__)
+                             call EChk(PETScIerr,__FILE__,__LINE__)
                           endif
                           if (xblockcorneradjb(2,2,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(il,jl,1)*3+l
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(2,2,1,l,sps), ADD_VALUES, PETScIerr)
-                             call EChk(PETScIerr,__file__,__line__)
+                             call EChk(PETScIerr,__FILE__,__LINE__)
                           endif
                           if (xblockcorneradjb(1,1,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(1,1,kl)*3+l
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(1,1,2,l,sps), ADD_VALUES, PETScIerr)
-                             call EChk(PETScIerr,__file__,__line__)
+                             call EChk(PETScIerr,__FILE__,__LINE__)
                           endif
                           if (xblockcorneradjb(1,2,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(1,jl,kl)*3+l
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(1,2,2,l,sps), ADD_VALUES, PETScIerr)
-                             call EChk(PETScIerr,__file__,__line__)
+                             call EChk(PETScIerr,__FILE__,__LINE__)
                           endif
                           if (xblockcorneradjb(2,1,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(il,1,kl)*3+l
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(2,1,2,l,sps), ADD_VALUES, PETScIerr)
-                             call EChk(PETScIerr,__file__,__line__)
+                             call EChk(PETScIerr,__FILE__,__LINE__)
                           endif
                           if (xblockcorneradjb(2,2,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(il,jl,kl)*3+l
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(2,2,2,l,sps), ADD_VALUES, PETScIerr)
-                             call EChk(PETScIerr,__file__,__line__)
+                             call EChk(PETScIerr,__FILE__,__LINE__)
                           endif
                        enddo
                     end do
@@ -393,49 +393,49 @@ subroutine setupAllResidualMatrices
                        !print *,'alphadjb:',alphaadjb
                        call MatSetValues(dRda, 1, idxres, 1, nDesignAoA, &
                             alphaadjb, INSERT_VALUES, PETScIerr)
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
 
                     ! Side slip angle
                     if (nDesignSSA >= 0) then
                        call MatSetValues(dRda, 1, idxres, nDesignSSA, &
                             betaadjb, INSERT_VALUES, PETScIerr)
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
 
                     !Mach Number
                     if (nDesignMach >= 0) then
                        call MatSetValues(dRda, 1, idxres, nDesignMach, &
                             machAdjb, INSERT_VALUES, PETScIerr)
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
 
                     !Mach NumberGrid
                     if (nDesignMachGrid >= 0) then
                        call MatSetValues(dRda, 1, idxres, nDesignMachGrid, &
                             machGridAdjb, INSERT_VALUES, PETScIerr)
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
 
                     !X Rotation
                     if (nDesignRotX >= 0) then
                        call MatSetValues(dRda, 1, idxres, nDesignRotX, &
                             rotrateadjb(1), INSERT_VALUES, PETScIerr)
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
 
                     !Y Rotation
                     if (nDesignRotY >= 0) then
                        call MatSetValues(dRda, 1, idxres, nDesignRotY, &
                             rotrateadjb(2), INSERT_VALUES, PETScIerr)
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
 
                     !Z Rotation
                     if (nDesignRotZ >= 0) then
                        call MatSetValues(dRda, 1, idxres, nDesignRotZ, &
                             rotrateadjb(3), INSERT_VALUES, PETScIerr)
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
 
                     !X Rotation Center
@@ -443,7 +443,7 @@ subroutine setupAllResidualMatrices
                        call MatSetValues(dRda, 1, idxres, nDesignRotCenX, &
                             rotcenteradjb(1)+rotpointadjb(1), INSERT_VALUES,&
                             PETScIerr)
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
 
                     !Y Rotation Center
@@ -451,7 +451,7 @@ subroutine setupAllResidualMatrices
                        call MatSetValues(dRda, 1, idxres, nDesignRotCenY, &
                             rotcenteradjb(2)+rotpointadjb(2), INSERT_VALUES,&
                             PETScIerr)
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
 
                     !Z Rotation Center
@@ -459,28 +459,28 @@ subroutine setupAllResidualMatrices
                        call MatSetValues(dRda, 1, idxres, nDesignRotCenZ, &
                             rotcenteradjb(3)+rotpointadjb(3), INSERT_VALUES,&
                             PETScIerr)
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
 
                     !X Point Ref
                     if (nDesignPointRefX >= 0) then
                        call MatSetValues(dRda, 1, idxres, nDesignPointRefX, &
                             pointrefadjb(1), INSERT_VALUES, PETScIerr)
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
 
                     !Y Point Ref
                     if (nDesignPointRefY >= 0) then
                        call MatSetValues(dRda, 1, idxres, nDesignPointRefY, &
                             pointrefadjb(2), INSERT_VALUES, PETScIerr)
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
 
                     !Z Point Ref
                     if (nDesignPointRefZ >= 0) then
                        call MatSetValues(dRda, 1, idxres, nDesignPointRefZ, &
                             pointrefadjb(3), INSERT_VALUES, PETScIerr)
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
 
                  enddo mLoop
@@ -500,7 +500,7 @@ subroutine setupAllResidualMatrices
                        !flip matrix indices to get transpose
                        call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                             transpose(Aad(:,:,sps2)), ADD_VALUES,PETScIerr)
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     end do
 
                     ! >>> west block B < W(i-1,j,k)
@@ -511,7 +511,7 @@ subroutine setupAllResidualMatrices
                           !print *,'indiciesi-1',idxmgb,idxngb
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(Bad(:,:,sps)), ADD_VALUES,PETScIerr)
-                          call EChk(PETScIerr,__file__,__line__)
+                          call EChk(PETScIerr,__FILE__,__LINE__)
                        endif
                     endif
 
@@ -522,7 +522,7 @@ subroutine setupAllResidualMatrices
                        if (idxngb >=0 .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(BBad(:,:,sps)),ADD_VALUES,PETScIerr)
-                          call EChk(PETScIerr,__file__,__line__)
+                          call EChk(PETScIerr,__FILE__,__LINE__)
                        endif
                     end if
 
@@ -533,7 +533,7 @@ subroutine setupAllResidualMatrices
                        if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(Cad(:,:,sps)), ADD_VALUES,PETScIerr)
-                          call EChk(PETScIerr,__file__,__line__)
+                          call EChk(PETScIerr,__FILE__,__LINE__)
                        endif
                     end if
 
@@ -543,7 +543,7 @@ subroutine setupAllResidualMatrices
                        if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(CCad(:,:,sps)),ADD_VALUES,PETScIerr)
-                          call EChk(PETScIerr,__file__,__line__)
+                          call EChk(PETScIerr,__FILE__,__LINE__)
                        endif
                     end if
 
@@ -554,7 +554,7 @@ subroutine setupAllResidualMatrices
                        if (idxngb>=0 .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(Dad(:,:,sps)), ADD_VALUES,PETScIerr)
-                          call EChk(PETScIerr,__file__,__line__)
+                          call EChk(PETScIerr,__FILE__,__LINE__)
                        endif
                     endif
 
@@ -565,7 +565,7 @@ subroutine setupAllResidualMatrices
                        if (idxngb>=0 .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(DDad(:,:,sps)),ADD_VALUES,PETScIerr)
-                          call EChk(PETScIerr,__file__,__line__)
+                          call EChk(PETScIerr,__FILE__,__LINE__)
                        endif
                     end if
 
@@ -576,7 +576,7 @@ subroutine setupAllResidualMatrices
                        if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(Ead(:,:,sps)), ADD_VALUES,PETScIerr)
-                          call EChk(PETScIerr,__file__,__line__)
+                          call EChk(PETScIerr,__FILE__,__LINE__)
                        endif
                     end if
 
@@ -587,7 +587,7 @@ subroutine setupAllResidualMatrices
                        if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(EEad(:,:,sps)),ADD_VALUES,PETScIerr)
-                          call EChk(PETScIerr,__file__,__line__)
+                          call EChk(PETScIerr,__FILE__,__LINE__)
                        endif
                     end if
 
@@ -598,7 +598,7 @@ subroutine setupAllResidualMatrices
                        if (idxngb>=0 .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(Fad(:,:,sps)), ADD_VALUES,PETScIerr)
-                          call EChk(PETScIerr,__file__,__line__)
+                          call EChk(PETScIerr,__FILE__,__LINE__)
                        endif
                     endif
 
@@ -609,7 +609,7 @@ subroutine setupAllResidualMatrices
                        if (idxngb>=0 .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(FFad(:,:,sps)),ADD_VALUES,PETScIerr)
-                          call EChk(PETScIerr,__file__,__line__)
+                          call EChk(PETScIerr,__FILE__,__LINE__)
                        endif
                     end if
 
@@ -620,7 +620,7 @@ subroutine setupAllResidualMatrices
                        if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(Gad(:,:,sps)), ADD_VALUES,PETScIerr)
-                          call EChk(PETScIerr,__file__,__line__)
+                          call EChk(PETScIerr,__FILE__,__LINE__)
                        endif
                     end if
 
@@ -631,7 +631,7 @@ subroutine setupAllResidualMatrices
                        if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(GGad(:,:,sps)),ADD_VALUES,PETScIerr)
-                          call EChk(PETScIerr,__file__,__line__)
+                          call EChk(PETScIerr,__FILE__,__LINE__)
                        endif
                     end if
                  else ! PETScBlockMatrix
@@ -656,29 +656,29 @@ subroutine setupAllResidualMatrices
   !     ******************************************************************
 
   call MatAssemblyBegin(dRdWT,MAT_FINAL_ASSEMBLY,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   call MatAssemblyBegin(dRdx,MAT_FINAL_ASSEMBLY,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   call MatAssemblyBegin(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   call MatAssemblyEnd  (dRdWT,MAT_FINAL_ASSEMBLY,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   call MatAssemblyEnd  (dRdx,MAT_FINAL_ASSEMBLY,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   call MatAssemblyEnd(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   ! Let PETSc know that the dRdW matrix retains the same nonzero 
   ! pattern, in case the matrix is assembled again, as for a new
   ! point in the design space.
 #ifdef USE_PETSC_3
   call MatSetOption(dRdWT,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   call MatSetOption(dRdx,MAT_NEW_NONZERO_LOCATIONS,PETSC_TRUE,PETScIerr)    
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 #else
   call MatSetOption(dRdWT,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 #endif
 
   ! Get new time and compute the elapsed time.
@@ -691,7 +691,7 @@ subroutine setupAllResidualMatrices
 
   call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
        mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   if(myid ==0) &
        write(*,20) "Assembling All Residaul Matrices time (s) = ", timeAdj
 

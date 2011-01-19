@@ -87,7 +87,7 @@ subroutine createPETScMat
           0, nnzDiagonal,         &
           0, nnzOffDiag,            &
           dRdWT, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
   else
 
      PETScBlockMatrix = .false.
@@ -106,7 +106,7 @@ subroutine createPETScMat
           8, nnzDiagonal2,         &
           8, nnzOffDiag2,            &
           dRdWT, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
      deallocate(nnzDiagonal2,nnzOffDiag2)
   endif
 
@@ -124,10 +124,10 @@ subroutine createPETScMat
 
 #ifdef USE_PETSC_3
   call MatSetOption(dRdWt, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 #else
   call MatSetOption(dRdWt, MAT_COLUMN_ORIENTED, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 #endif
   !****************
   !create dRdWPre
@@ -158,7 +158,7 @@ subroutine createPETScMat
              0, nnzDiagonal,         &
              0, nnzOffDiag,            &
              dRdWPreT, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
      else
 
         PETScBlockMatrix = .false.
@@ -177,7 +177,7 @@ subroutine createPETScMat
              0, nnzDiagonal2,         &
              0,nnzOffDiag2,            &
              dRdWPret, PETScIerr)
-        call EChk(PETScIerr,__file__,__line__)
+        call EChk(PETScIerr,__FILE__,__LINE__)
         deallocate(nnzDiagonal2,nnzOffDiag2)
      endif
 
@@ -187,30 +187,30 @@ subroutine createPETScMat
 
 #ifdef USE_PETSC_3
      call MatSetOption(dRdWPret, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 #else
      call MatSetOption(dRdWPret, MAT_COLUMN_ORIENTED, PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 #endif
   end if ! Approx PC
 
   ! dRda
 
   call MatCreate(SUMB_PETSC_COMM_WORLD, dRda, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   call MatSetSizes(dRda, nDimW, PETSC_DECIDE, &
        PETSC_DETERMINE, nDesignExtra, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   call MatSetType(dRda,MATMPIDENSE,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   ! Set column major order for the matrix dRda.
 #ifdef USE_PETSC_3
   call MatSetOption(dRda, MAT_ROW_ORIENTED,PETSC_TRUE, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 #else
   call MatSetOption(dRda, MAT_COLUMN_ORIENTED, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 #endif
   !
   !     ******************************************************************
@@ -237,21 +237,21 @@ subroutine createPETScMat
        8, nnzDiagonal,     &
        8, nnzOffDiag,            &
        dRdx, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   deallocate( nnzDiagonal, nnzOffDiag )
 
   call MatSetFromOptions(dRdx, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   ! Set column major order for the matrix dRdx.
 #ifdef USE_PETSC_3
   call MatSetOption(dRdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   call MatSetOption(dRdx,MAT_NEW_NONZERO_LOCATIONS,PETSC_TRUE,PETScIErr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 #else
   call MatSetOption(dRdx, MAT_COLUMN_ORIENTED, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 #endif
 
   ! Create dFdx and dFdw
@@ -280,7 +280,7 @@ subroutine createPETScMat
        0, nnzDiagonal,         &
        0, nnzOffDiag,            &
        dFdw, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   ! Create the matrix dFdx
   nnzDiagonal = 27
@@ -291,24 +291,24 @@ subroutine createPETScMat
        0, nnzDiagonal,         &
        0, nnzOffDiag,            &
        dFdx, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   deallocate( nnzDiagonal, nnzOffDiag )
 
   ! Set column major order for the matrix dFdw.
 #ifdef USE_PETSC_3
   call MatSetOption(dFdw, MAT_ROW_ORIENTED,PETSC_TRUE, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   call MatSetOption(dFdx, MAT_ROW_ORIENTED,PETSC_TRUE, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 #else
   call MatSetOption(dFdw, MAT_ROW_ORIENTED, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   call MatSetOption(dFdx, MAT_ROW_ORIENTED, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 #endif
 
   call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)  
+  call EChk(PETScIerr,__FILE__,__LINE__)  
 
 #endif
 

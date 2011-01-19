@@ -176,13 +176,13 @@ subroutine computeObjPartials(costFunction,pts,npts)
   ! reverse mode AD we can take the dot-products on the fly SUM the
   ! entries into dJdw
   call VecZeroEntries(dJdw,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   call VecZeroEntries(dJdx,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   call VecGetOwnershipRange(dJdx,row_start,row_end,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   spectralLoopAdj: do sps=1,nTimeIntervalsSpectral
      ii = 0 
@@ -271,7 +271,7 @@ subroutine computeObjPartials(costFunction,pts,npts)
                        call VecSetValuesBlocked(dJdw,1,idxmgb,&
                             wblockb(icell,jcell,kcell,:)*dJdc(sps),&
                             ADD_VALUES,PETScIerr)
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     enddo
                  enddo
               enddo
@@ -285,7 +285,7 @@ subroutine computeObjPartials(costFunction,pts,npts)
                     call VecSetValues(dJdx,3,&
                          (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/),&
                          ptsb(:,ii),ADD_VALUES,PETScIerr)
-                    call EChk(PETScIerr,__file__,__line__)
+                    call EChk(PETScIerr,__FILE__,__LINE__)
                  end do
               end do
               !ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
@@ -326,14 +326,14 @@ subroutine computeObjPartials(costFunction,pts,npts)
 
   ! Assemble the petsc vectors
   call VecAssemblyBegin(dJdw,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   call VecAssemblyEnd(dJdw,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   call VecAssemblyBegin(dJdx,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   call VecAssemblyEnd(dJdx,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
 end subroutine computeObjPartials
 
@@ -357,7 +357,7 @@ subroutine getdIdw(ndof,output)
 
   do i=1,(ihigh-ilow)
      call VecGetValues(dJdw,1,ilow+i-1,output(i),PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
   end do
 
 end subroutine getdIdw
@@ -375,10 +375,10 @@ subroutine getdIdx(ndof,output)
   integer(kind=intType) :: ilow,ihigh,i
   output(:) = 0.0
   call VecGetOwnershipRange(dJdx,ilow,ihigh,PETScIerr)
-  call EChk(PETScIerr,__file__,__line__)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   do i=1,ndof
      call VecGetValues(dJdx,1,ilow+i-1,output(i),PETScIerr)
-     call EChk(PETScIerr,__file__,__line__)
+     call EChk(PETScIerr,__FILE__,__LINE__)
   end do
 
 end subroutine getdIdx
