@@ -23,6 +23,7 @@
        use cgnsGrid
        use communication
        use inputIO
+       use killSignals
        implicit none
 !
 !      Subroutine arguments.
@@ -55,6 +56,8 @@
        ! and initialize the center and rates to zero to avoid
        ! uninitialized data. Also set the number of boundary data sets
        ! to 0.
+
+       if (fromPython) return 
 
        do nn=1,cgnsNFamilies
          cgnsFamilies(nn)%rotatingFrameSpecified = .false.

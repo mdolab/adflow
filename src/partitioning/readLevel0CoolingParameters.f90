@@ -28,6 +28,7 @@
        use coolingModelLevel0
        use inputIO
        use inputIteration
+       use killSignals
        implicit none
 !
 !      Local parameter.
@@ -75,6 +76,8 @@
 !      * account.                                                       *
 !      *                                                                *
 !      ******************************************************************
+
+       if (fromPython) return 
 !
        select case(fileFormatRead)
          case (cgnsFormat)
