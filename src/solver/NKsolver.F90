@@ -916,13 +916,10 @@ subroutine snes_monitor(snes,its,norm,ctx,ierr)
   if (its == 1) then
      ! Reset the value of the preconditionerLag to what we actually want. It
      ! had been set to -1 or -2 depending on if we wanted to recompute
-<<<<<<< local
-     ! the preconditioner on the first interation or not. 
-     call SNESSetLagJacobian(snes, jacobian_lag, ierr); call EChk(ierr,__file__,__line__)
-=======
+
      ! the preconditioner on the first entry or not. 
      call SNESSetLagJacobian(snes, jacobian_lag, ierr); call EChk(ierr,__FILE__,__LINE__)
->>>>>>> other
+
   end if
 
   if (its > 0 .or. iterTot0 == 0) then
