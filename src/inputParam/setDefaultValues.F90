@@ -190,7 +190,7 @@
        mgBoundCorr = bcDirichlet0 ! Zero out the boundary halo's for
                                   ! the multigrid corrections.
 
-       mgStartlevel = 1    ! Start at the coarsest grid of the mg cycle
+       mgStartlevel = -1    ! Start at the coarsest grid of the mg cycle
                             ! when no restart is performed.
        mgDescription = "sg" ! Single grid computation.
 !
