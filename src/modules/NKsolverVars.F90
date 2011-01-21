@@ -21,11 +21,7 @@ module NKsolverVars
   use constants
   implicit none
 #define PETSC_AVOID_MPIF_H
-#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
-#else
-#include "include/finclude/petscall.h"
-#endif
 
   ! PETSc Variables
   SNES               snes 
