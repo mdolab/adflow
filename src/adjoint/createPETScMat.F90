@@ -450,12 +450,11 @@ subroutine drdwPCPreAllocation(onProc,offProc,wSize)
   ! Local Variables
 
   integer(kind=intType) :: nn,i,j,k,sps,ii
-
   ii = 0
-  onProc(:) = 1+(nTimeIntervalsSpectral-1) ! ALWAYS have the center cell ON-PROCESSOR
+  onProc(:) = 1+(nTimeIntervalsSpectral) ! ALWAYS have the center cell ON-PROCESSOR
   offProc(:) = 0_intType 
-  do nn=1,nDom
-     do sps=1,nTimeIntervalsSpectral
+  do sps=1,nTimeIntervalsSpectral
+     do nn=1,nDom
         call setPointersAdj(nn,1_intType,sps)
         ! Loop over each Cell
         do k=2,kl
@@ -502,7 +501,6 @@ subroutine drdwPCPreAllocation(onProc,offProc,wSize)
         end do ! K loop
      end do ! sps loop
   end do ! Domain Loop
-
 end subroutine drdwPCPreAllocation
 
 subroutine drdxPreAllocation(onProc,offProc,wSize)

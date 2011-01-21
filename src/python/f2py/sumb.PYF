@@ -653,14 +653,18 @@ python module sumb ! in
          logical :: writeunsteadysurfspectral
          real(kind=realtype) allocatable,dimension(:,:,:) :: rotmatrixspectral
        end module inputtimespectral
-
-       module inputunsteady ! in :sumb:../../modules/inputParam.f90
+       
+       module inputunsteady ! in :test:inputParam.f90
          use accuracy
-         integer(kind=inttype) :: timeaccuracy
-         integer(kind=inttype) :: ntimestepscoarse
-         integer(kind=inttype) :: ntimestepsfine
+         integer(kind=inttype) parameter,optional :: bdf=1
          real(kind=realtype) :: deltat
-         integer(kind=inttype) :: noldgridread
+         integer(kind=inttype) parameter,optional :: implicitrk=3
+         integer(kind=inttype) :: timeintegrationscheme
+         logical :: updatewalldistanceunsteady
+         integer(kind=inttype) :: timeaccuracy
+         integer(kind=inttype) parameter,optional :: explicitrk=2
+         integer(kind=inttype) :: ntimestepsfine
+         integer(kind=inttype) :: ntimestepscoarse
        end module inputunsteady
 
        module inputoverset ! in :sumb:../../modules/inputParam.f90

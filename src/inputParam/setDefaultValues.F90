@@ -118,7 +118,7 @@
        surfaceSolFile = ""          ! This will be corrected later if no
                                     ! surface solution file is specified.
 
-       storeRindLayer = .false.     ! No halo cells in solution files.
+       storeRindLayer = .True.     ! No halo cells in solution files.
 
        autoParameterUpdate = .true. ! Update the input parameter file
                                     ! when a restart file is written.
@@ -150,8 +150,8 @@
        nSubIterTurb  =  0    ! No additional turbulent subiterations.
        nUpdateBleeds = 50    ! Update the bleeds every 50 iterations.
 
-       nSaveVolume  = 0      ! Only save at the end of the computation.
-       nSaveSurface = 0
+       nSaveVolume  = 1      ! Only save at the end of the computation.
+       nSaveSurface = 1
 
        smoother  = none
        nRKStages = 5
@@ -190,7 +190,7 @@
        mgBoundCorr = bcDirichlet0 ! Zero out the boundary halo's for
                                   ! the multigrid corrections.
 
-       mgStartlevel = -1    ! Start at the coarsest grid of the mg cycle
+       mgStartlevel = 1    ! Start at the coarsest grid of the mg cycle
                             ! when no restart is performed.
        mgDescription = "sg" ! Single grid computation.
 !
@@ -407,6 +407,8 @@
        velDirIni(1) = one
        velDirIni(2) = zero
        velDirIni(3) = zero
+
+       ! Additional Paramters Requiring Defaults
 
        printIterations = .True.
        routineFailed = .False.
