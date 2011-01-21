@@ -283,7 +283,6 @@ subroutine solveState
   ! value is printed twice.
   
   call convergenceInfo
-
   
   ! Determine if we need to run the RK solver, the NK solver or Both.
 
