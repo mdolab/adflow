@@ -38,11 +38,7 @@ subroutine setupNKsolver
   use iteration
   implicit none
 #define PETSC_AVOID_MPIF_H
-#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
-#else
-#include "include/finclude/petscall.h"
-#endif
 
   ! Working Variables
   integer(kind=intType) :: ierr,nDimw
@@ -166,11 +162,7 @@ subroutine NKsolver
   use iteration
   implicit none
 #define PETSC_AVOID_MPIF_H
-#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
-#else
-#include "include/finclude/petscall.h"
-#endif
 
   integer(kind=intTYpe) :: sns_max_its,ierr,snes_max_its,temp
   real(kind=realType) :: rhoRes,totalRRes,rhoRes1
@@ -265,11 +257,7 @@ subroutine FormFunction(snes,wVec,rVec,ctx,ierr)
   use precision
   implicit none
 #define PETSC_AVOID_MPIF_H
-#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
-#else
-#include "include/finclude/petscall.h"
-#endif
 
   ! PETSc Variables
   SNES    snes
@@ -348,11 +336,8 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
        asm_overlap,local_pc_ilu_level,local_pc_ordering
   implicit none
 #define PETSC_AVOID_MPIF_H
-#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
-#else
-#include "include/finclude/petscall.h"
-#endif
+
   SNES           snes
   Mat            dRdw,dRdwPre 
   KSP            ksp,subksp
@@ -418,11 +403,7 @@ subroutine setWVec(wVec)
   use flowvarrefstate 
   implicit none
 #define PETSC_AVOID_MPIF_H
-#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
-#else
-#include "include/finclude/petscall.h"
-#endif
   
   Vec     wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l
@@ -464,11 +445,7 @@ subroutine setRVec(rVec)
   use inputiteration
   implicit none
 #define PETSC_AVOID_MPIF_H
-#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
-#else
-#include "include/finclude/petscall.h"
-#endif
 
   Vec     rVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k
@@ -506,8 +483,8 @@ subroutine setW(wVec)
   use flowVarRefState
   implicit none
 
-!#define PETSC_AVOID_MPIF_H
-!#include "include/finclude/petsc.h"
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
 
   Vec     wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l
@@ -552,11 +529,7 @@ subroutine setupNK_KSP_PC(dRdwPre)
   use inputADjoint        !sigma
   implicit none
 #define PETSC_AVOID_MPIF_H
-#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
-#else
-#include "include/finclude/petscall.h"
-#endif
 
   Mat dRdwPre
 
@@ -918,11 +891,7 @@ subroutine snes_monitor(snes,its,norm,ctx,ierr)
        snes_atol,itertot0,jacobian_lag
   implicit none
 #define PETSC_AVOID_MPIF_H
-#if PETSC_VERSION_MINOR>=1
 #include "include/finclude/petsc.h"
-#else
-#include "include/finclude/petscall.h"
-#endif
 
   SNES snes
   KSP  ksp
