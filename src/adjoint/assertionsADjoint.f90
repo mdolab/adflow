@@ -59,9 +59,9 @@ subroutine assertionsADjoint(level)
 
   ! Assert that it is a steady problem.
 
-  if( equationMode == unsteady ) &
-       call terminate("assertionsADjoint", &
-       "Cannot handle unsteady yet.")
+!   if( equationMode == unsteady ) &
+!        call terminate("assertionsADjoint", &
+!        "Cannot handle unsteady yet.")
 
   ! Assert that it is an inviscid problem.
 

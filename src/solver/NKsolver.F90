@@ -72,7 +72,7 @@ subroutine setupNKsolver
      allocate( nnzDiagonal(nCellsLocal*nTimeIntervalsSpectral),&
           nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
      
-     call drdwPCPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal)
+     call drdwPCPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal*nTimeIntervalsSpectral)
      call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
           nDimW, nDimW,                     &
           PETSC_DETERMINE, PETSC_DETERMINE, &
@@ -608,7 +608,6 @@ subroutine setupNK_KSP_PC(dRdwPre)
            do jCell = 2, jl
               do iCell = 2, il
                  ! Copy the state w to the wAdj array in the stencil
-
                  call copyNKPCStencil(iCell, jCell, kCell, nn, level, sps, wAdj, &
                       siAdj, sjAdj, skAdj, sAdj, sfaceIAdj, sfaceJAdj, sfaceKAdj, rotRateAdj,&
                       voladj)
@@ -912,11 +911,18 @@ subroutine snes_monitor(snes,its,norm,ctx,ierr)
   ksp_max_it = 100
   call KSPSetTolerances(ksp,ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,ierr)
 
+  ! its == 1 AFTER the first iteration. Take this opportunity to set
+  ! the preconditioner lag to the value we actually want
   if (its == 1) then
-     ! Reset the value of the jacobianLag to what we actually want. It
+     ! Reset the value of the preconditionerLag to what we actually want. It
      ! had been set to -1 or -2 depending on if we wanted to recompute
+<<<<<<< local
+     ! the preconditioner on the first interation or not. 
+     call SNESSetLagJacobian(snes, jacobian_lag, ierr); call EChk(ierr,__file__,__line__)
+=======
      ! the preconditioner on the first entry or not. 
      call SNESSetLagJacobian(snes, jacobian_lag, ierr); call EChk(ierr,__FILE__,__LINE__)
+>>>>>>> other
   end if
 
   if (its > 0 .or. iterTot0 == 0) then

@@ -318,8 +318,8 @@
        ! Check whether a solution file, either volume or surface, must
        ! be written. Only on the finest grid level in stand alone mode.
 
-       if(standAloneMode .and. groundLevel == 1) then
-
+       !if(standAloneMode .and. groundLevel == 1) then
+       if (groundLevel == 1) then
          if(mod(timeStepUnsteady, nSaveVolume) == 0)  &
            writeVolume  = .true.
          if(mod(timeStepUnsteady, nSaveSurface) == 0) &
