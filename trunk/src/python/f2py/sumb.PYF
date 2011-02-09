@@ -1,0 +1,1001 @@
+!    -*- f90 -*-
+python module sumb ! in 
+    interface  ! in :sumb
+
+! ############################################################################
+! SUmb Routines
+! ############################################################################
+
+        subroutine connect_signals ! in :sumb:../../solver/connect_signals.c
+            intent(c) connect_signals
+        end subroutine connect_signals
+
+        subroutine writeintromessage ! in :sumb:../../utils/initExec.F90
+            use communication
+            use constants
+        end subroutine writeintromessage
+
+        subroutine readparamfile ! in :sumb:../../inputParam/readParamFile.f90
+            use communication
+            use constants
+            use allinputparam
+        end subroutine readparamfile
+
+        subroutine partitionandreadgrid ! in :sumb:../../partitioning/partitionAndReadGrid.f90
+            use inputio
+        end subroutine partitionandreadgrid
+
+        subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
+            use block
+            use commsliding
+            use communication
+            use inputphysics
+            use inputtimespectral
+            use interfacegroups
+            use section
+        end subroutine preprocessing
+
+        subroutine updatecoordinatesalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
+            use block
+            use iteration
+        end subroutine updatecoordinatesalllevels
+
+        subroutine updatemetricsalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
+            use block
+            use iteration
+        end subroutine updatemetricsalllevels
+
+        subroutine initflow ! in :sumb:../../initFlow/initFlow.f90
+            use block
+            use inputio
+            use inputtimespectral
+            use iteration
+        end subroutine initflow
+
+        subroutine allocconvarrays(nitertot) ! in :sumb:../../initFlow/allocConvArrays.f90
+            use constants
+            use inputtimespectral
+            use monitor
+            integer(kind=inttype) :: nitertot
+        end subroutine allocconvarrays
+
+        subroutine alloctimearrays(nitertot) ! in :sumb:../../initFlow/allocTimeArrays.f90
+            use monitor
+            integer(kind=inttype) :: ntimetot
+        end subroutine alloctimearrays
+
+        subroutine solver ! in :sumb:../../solver/solver.F90
+            use communication
+            use constants
+            use inputdiscretization
+            use inputiteration
+            use inputphysics
+            use inputtimespectral
+            use killsignals
+            use iteration
+            use monitor
+            real(kind=realtype) :: su_wtime
+            logical :: eulerwallspresent
+        end subroutine solver
+
+        subroutine viscousflux ! in :sumb:../../solver/viscousFlux.f90
+            use blockpointers
+            use flowvarrefstate
+            use inputphysics
+            use iteration
+        end subroutine viscousflux
+
+        subroutine inviscidcentralflux ! in :sumb:../../solver/inviscidCentralFlux.f90
+            use blockpointers
+            use cgnsgrid
+            use constants
+            use flowvarrefstate
+            use inputphysics
+        end subroutine inviscidcentralflux
+
+        subroutine setpointers(nn,mm,ll) ! in :sumb:../../utils/setPointers.f90
+            use blockpointers
+            integer(kind=inttype) intent(in) :: nn
+            integer(kind=inttype) intent(in) :: mm
+            integer(kind=inttype) intent(in) :: ll
+        end subroutine setpointers
+
+        subroutine writesol ! in :sumb:../../output/writeSol.f90
+            use block
+            use cgnsgrid
+            use communication
+            use extraoutput
+            use flowvarrefstate
+            use inputio
+            use inputtimespectral
+            use iteration
+            use killsignals
+            use monitor
+            use outputmod
+        end subroutine writesol
+
+        subroutine updatewalldistancealllevels ! in :sumb:../../wallDistance/updateWallDistanceAllLevels.f90
+            use block
+            use inputphysics
+            use iteration
+        end subroutine updatewalldistancealllevels
+
+        subroutine updateslidingalllevels ! in :sumb:../../slidingComm/updateSlidingAllLevels.f90
+            use block
+            use iteration
+            use interfacegroups
+        end subroutine updateslidingalllevels
+
+         function eulerwallspresent() ! in :sumb:../../solver/eulerWallsPresent.f90
+            use block
+            use bctypes
+            use communication
+            logical :: eulerwallspresent
+        end function eulerwallspresent
+
+        function su_wtime() ! in :sumb:../../../../SU_MPI/src/su_wtime.F90
+            use su_mpi
+            double precision :: su_wtime
+        end function su_wtime
+
+!       subroutine initializepv3 ! in :sumb:../../pv3Interface/pv3Routines.f90
+!           use block
+!           use communication
+!           use constants
+!           use flovarrefstate
+!           use inputphysics
+!           use inputvisualization
+!       end subroutine initializepv3
+
+        subroutine solversteady ! in :sumb:../../solver/solverSteady.f90
+        end subroutine solver_steady
+
+        subroutine solverunsteady ! in :sumb:../../solver/solverUnsteady.F90
+            use inputiteration
+            use inputunsteady
+            use iteration
+            use killsignals
+            use monitor
+        end subroutine solverunsteady
+
+        subroutine transfertofinegrid(corrections) ! in :sumb:../../solver/transferToFineGrid.f90
+            use bctypes
+            use blockpointers
+            use flovarrefstate
+            use inputiteration
+            use inputtimespectral
+            use iteration
+            logical intent(in) :: corrections
+        end subroutine transfertofinegrid
+
+        subroutine updatecoorfinemesh(dtadvance,sps) ! in :sumb:../../preprocessing/updateCoorFineMesh.f90
+            use block
+            use blockpointers
+            use flovarrefstate
+            use cgnsgrid
+            use inputmotion
+            use iteration
+            use monitor
+            integer(kind=inttype) intent(in) :: sps
+            real(kind=realtype) intent(in) :: dtadvance
+        end subroutine updatecoorfinemesh
+
+!!!!!!!!Routines inside solverUnsteady 
+
+        subroutine inittimesteppart1 ! in :sumb:../../solver/solverUnsteady.F90
+            use communication
+            use inputmotion
+            use inputunsteady
+            use iteration
+            use monitor
+        end subroutine inittimesteppart1
+
+        subroutine inittimesteppart2 ! in :sumb:../../solver/solverUnsteady.F90
+            use inputmotion
+            use iteration
+            use monitor
+        end subroutine inittimesteppart2
+
+        subroutine solvestate ! in :sumb:../../solver/solveState.F90
+            use communication
+            use constants
+            use flovarrefstate
+            use inputiteration
+            use inputphysics
+            use iteration
+            use killsignals
+            use monitor
+        end subroutine solvestate
+
+        subroutine checkwriteunsteadyinloop ! in :sumb:../../solver/solverUnsteady.F90
+            use communication
+            use inputiteration
+            use inputmotion
+            use iteration
+            use killsignals
+            use monitor
+        end subroutine checkwriteunsteadyinloop
+
+        subroutine checkwriteunsteadyendloop ! in :sumb:../../solver/solverUnsteady.F90
+            use inputmotion
+            use iteration
+            use monitor
+        end subroutine checkwriteunsteadyendloop
+
+! ############################################################################
+! SUmb Modules
+! ############################################################################
+
+        module communication ! in :sumb:../../modules/communication.f90
+            use precision
+            integer :: sumb_comm_world
+            integer :: myid
+            integer :: nproc
+            integer(kind=inttype) :: sendbuffersize_1to1
+            integer(kind=inttype) :: sendbuffersize
+            integer(kind=inttype) :: recvbuffersize_1to1
+            integer(kind=inttype) :: recvbuffersize
+            integer(kind=inttype) :: sendbuffersizeover
+            integer(kind=inttype) :: recvbuffersizeover
+            real(kind=realtype) allocatable,dimension(:) :: sendbuffer
+            real(kind=realtype) allocatable,dimension(:) :: recvbuffer
+            integer allocatable,dimension(:) :: sendrequests
+            integer allocatable,dimension(:) :: recvrequests
+        end module communication
+
+        module accuracy ! in :sumb:../../modules/inputParam.f90
+            use precision
+            integer(kind=inttype) parameter,optional :: firstorder=1_inttype
+            integer(kind=inttype) parameter,optional :: secondorder=2_inttype
+            integer(kind=inttype) parameter,optional :: thirdorder=3_inttype
+        end module accuracy
+
+        module inputdiscretization ! in :sumb:../../modules/inputParam.f90
+            use accuracy
+            integer(kind=inttype) parameter,optional :: dissscalar=1_inttype
+            integer(kind=inttype) parameter,optional :: dissmatrix=2_inttype
+            integer(kind=inttype) parameter,optional :: disscusp=3_inttype
+            integer(kind=inttype) parameter,optional :: upwind=9_inttype
+            integer(kind=inttype) parameter,optional :: roe=1_inttype
+            integer(kind=inttype) parameter,optional :: vanleer=2_inttype
+            integer(kind=inttype) parameter,optional :: ausmdv=3_inttype
+            integer(kind=inttype) parameter,optional :: nolimiter=2_inttype
+            integer(kind=inttype) parameter,optional :: vanalbeda=3_inttype
+            integer(kind=inttype) parameter,optional :: minmod=4_inttype
+            integer(kind=inttype) parameter,optional :: noprecond=1_inttype
+            integer(kind=inttype) parameter,optional :: turkel=2_inttype
+            integer(kind=inttype) parameter,optional :: choimerkle=3_inttype
+            integer(kind=inttype) parameter,optional :: constantpressure=1_inttype
+            integer(kind=inttype) parameter,optional :: linextrapolpressure=2_inttype
+            integer(kind=inttype) parameter,optional :: quadextrapolpressure=3_inttype
+            integer(kind=inttype) parameter,optional :: normalmomentum=4_inttype
+            integer(kind=inttype) parameter,optional :: constantextrapol=1_inttype
+            integer(kind=inttype) parameter,optional :: linextrapol=2_inttype
+            integer(kind=inttype) :: spacediscr
+            integer(kind=inttype) :: spacediscrcoarse
+            integer(kind=inttype) :: orderturb
+            integer(kind=inttype) :: limiter
+            integer(kind=inttype) :: riemann
+            integer(kind=inttype) :: riemanncoarse
+            integer(kind=inttype) :: precond
+            integer(kind=inttype) :: wallbctreatment
+            integer(kind=inttype) :: outflowtreatment
+            real(kind=realtype) :: vis2
+            real(kind=realtype) :: vis4
+            real(kind=realtype) :: vis2coarse
+            real(kind=realtype) :: adis
+            real(kind=realtype) :: kappacoef
+            logical :: vortexcorr
+            logical :: dirscaling
+            logical :: radiineededfine
+            logical :: radiineededcoarse
+        end module inputdiscretization
+
+        module inputio ! in :sumb:../../modules/inputParam.f90
+            use constants
+            integer(kind=inttype) :: fileformat
+            character(len=256) :: paramfile
+            character(len=256) :: gridfile
+            character(len=256) :: newgridfile
+            character(len=256) :: restartfile
+            character(len=256) :: solfile
+            character(len=256) :: surfacesolfile
+            character(len=256) :: cpfile
+            logical :: storerindlayer
+            logical :: restart
+            logical :: checkrestartsol
+            logical :: autoparameterupdate
+            logical :: writecoormeter
+            logical :: storeconvinneriter
+        end module inputio
+
+        module inputiteration ! in :sumb:../../modules/inputParam.f90
+            use precision
+            integer(kind=inttype) parameter,optional :: rungekutta=1_inttype
+            integer(kind=inttype) parameter,optional :: nllusgs=2_inttype
+            integer(kind=inttype) parameter,optional :: nllusgsline=3_inttype
+            integer(kind=inttype) parameter,optional :: segregated=1_inttype
+            integer(kind=inttype) parameter,optional :: coupled=2_inttype
+            integer(kind=inttype) parameter,optional :: gmres=1_inttype
+            integer(kind=inttype) parameter,optional :: adi=2_inttype
+            integer(kind=inttype) parameter,optional :: bcdirichlet0=0_inttype
+            integer(kind=inttype) parameter,optional :: bcneumann=1_inttype
+            integer(kind=inttype) parameter,optional :: noresaveraging=0_inttype
+            integer(kind=inttype) parameter,optional :: alwaysresaveraging=1_inttype
+            integer(kind=inttype) parameter,optional :: alternateresaveraging=2_inttype
+            integer(kind=inttype) parameter,optional :: turbrelaxnotdefined=0_inttype
+            integer(kind=inttype) parameter,optional :: turbrelaxexplicit=1_inttype
+            integer(kind=inttype) parameter,optional :: turbrelaximplicit=2_inttype
+            integer(kind=inttype) :: ncycles
+            integer(kind=inttype) :: ncyclescoarse
+            integer(kind=inttype) :: nsavevolume
+            integer(kind=inttype) :: nsavesurface
+            integer(kind=inttype) :: nsgstartup
+            integer(kind=inttype) :: smoother
+            integer(kind=inttype) :: nrkstages
+            integer(kind=inttype) :: resaveraging
+            integer(kind=inttype) :: turbtreatment
+            integer(kind=inttype) :: turbsmoother
+            integer(kind=inttype) :: turbrelax
+            integer(kind=inttype) :: mgboundcorr
+            integer(kind=inttype) :: mgstartlevel
+            integer(kind=inttype) :: nmgsteps
+            integer(kind=inttype) :: nmglevels
+            integer(kind=inttype) allocatable,dimension(:) :: cyclestrategy
+            real(kind=realtype) :: cfl
+            real(kind=realtype) :: cflcoarse
+            real(kind=realtype) :: fcoll
+            real(kind=realtype) :: smoop
+            real(kind=realtype) :: alfaturb
+            real(kind=realtype) :: betaturb
+            real(kind=realtype) :: l2conv
+            real(kind=realtype) :: l2convcoarse
+            real(kind=realtype) allocatable,dimension(:) :: etark
+            real(kind=realtype) allocatable,dimension(:) :: cdisrk
+            logical :: freezeturbsource
+        end module inputiteration
+
+        module inputmotion ! in :sumb:../../modules/inputParam.f90
+            use precision
+            real(kind=realtype) dimension(3) :: rotpoint
+            integer(kind=inttype) :: degreepolxrot
+            integer(kind=inttype) :: degreepolyrot
+            integer(kind=inttype) :: degreepolzrot
+            real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
+            real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
+            real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
+            integer(kind=inttype) :: degreefourxrot
+            integer(kind=inttype) :: degreefouryrot
+            integer(kind=inttype) :: degreefourzrot
+            real(kind=realtype) :: omegafourxrot
+            real(kind=realtype) :: omegafouryrot
+            real(kind=realtype) :: omegafourzrot
+            real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
+            real(kind=realtype) allocatable,dimension(:) :: coscoeffouryrot
+            real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
+            real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
+            real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
+            real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
+            logical :: gridmotionspecified
+        end module inputmotion
+
+        module inputparallel ! in :sumb:../../modules/inputParam.f90
+            use precision
+            real(kind=realtype) :: loadimbalance
+            logical :: splitblocks
+        end module inputparallel
+
+        module inputphysics ! in :sumb:../../modules/inputParam.f90
+            use precision
+            integer(kind=inttype) parameter,optional :: eulerequations=1_inttype
+            integer(kind=inttype) parameter,optional :: nsequations=2_inttype
+            integer(kind=inttype) parameter,optional :: ransequations=3_inttype
+            integer(kind=inttype) parameter,optional :: steady=1_inttype
+            integer(kind=inttype) parameter,optional :: unsteady=2_inttype
+            integer(kind=inttype) parameter,optional :: timespectral=3_inttype
+            integer(kind=inttype) parameter,optional :: internalflow=1_inttype
+            integer(kind=inttype) parameter,optional :: externalflow=2_inttype
+            integer(kind=inttype) parameter,optional :: cpconstant=1_inttype
+            integer(kind=inttype) parameter,optional :: cptempcurvefits=2_inttype
+            integer(kind=inttype) parameter,optional :: baldwinlomax=1_inttype
+            integer(kind=inttype) parameter,optional :: spalartallmaras=2_inttype
+            integer(kind=inttype) parameter,optional :: spalartallmarasedwards=3_inttype
+            integer(kind=inttype) parameter,optional :: komegawilcox=4_inttype
+            integer(kind=inttype) parameter,optional :: komegamodified=5_inttype
+            integer(kind=inttype) parameter,optional :: ktau=6_inttype
+            integer(kind=inttype) parameter,optional :: mentersst=7_inttype
+            integer(kind=inttype) parameter,optional :: v2f=10_inttype
+            integer(kind=inttype) parameter,optional :: strain=1_inttype
+            integer(kind=inttype) parameter,optional :: vorticity=2_inttype
+            integer(kind=inttype) parameter,optional :: katolaunder=3_inttype
+            integer(kind=inttype) :: equations
+            integer(kind=inttype) :: equationmode
+            integer(kind=inttype) :: flowtype
+            integer(kind=inttype) :: turbmodel
+            integer(kind=inttype) :: cpmodel
+            integer(kind=inttype) :: turbprod
+            integer(kind=inttype) :: rvfn
+            logical :: rvfb
+            logical :: wallfunctions
+            real(kind=realtype) :: mach
+            real(kind=realtype) :: machcoef
+            real(kind=realtype) :: reynolds
+            real(kind=realtype) :: reynoldslength
+            real(kind=realtype) :: tempfreestream
+            real(kind=realtype) :: gammaconstant
+            real(kind=realtype) :: rgasdim
+            real(kind=realtype) :: prandtl
+            real(kind=realtype) :: prandtlturb
+            real(kind=realtype) :: pklim
+            real(kind=realtype) :: walloffset
+            real(kind=realtype) :: eddyvisinfratio
+            real(kind=realtype) :: turbintensityinf
+            real(kind=realtype) :: surfaceref
+            real(kind=realtype) :: lengthref
+            real(kind=realtype) dimension(3) :: veldirfreestream
+            real(kind=realtype) dimension(3) :: liftdirection
+            real(kind=realtype) dimension(3) :: dragdirection
+            real(kind=realtype) dimension(3) :: pointref
+        end module inputphysics
+
+        module inputtimespectral ! in :sumb:../../modules/inputParam.f90
+            use precision
+            integer(kind=inttype) :: ntimeintervalsspectral
+            real(kind=realtype) allocatable,dimension(:,:,:) :: dscalar
+            real(kind=realtype) allocatable,dimension(:,:,:) :: dvector
+            real(kind=realtype) :: dtunsteadyrestartspectral
+            logical :: writeunsteadyrestartspectral
+            integer(kind=inttype) :: nunsteadysolspectral
+            logical :: writeunsteadyvolspectral
+            logical :: writeunsteadysurfspectral
+            real(kind=realtype) allocatable,dimension(:,:,:) :: rotmatrixspectral
+        end module inputtimespectral
+
+        module inputunsteady ! in :sumb:../../modules/inputParam.f90
+            use accuracy
+            integer(kind=inttype) :: timeaccuracy
+            integer(kind=inttype) :: ntimestepscoarse
+            integer(kind=inttype) :: ntimestepsfine
+            real(kind=realtype) :: deltat
+            integer(kind=inttype) :: noldgridread
+        end module inputunsteady
+
+        module inputoverset ! in :sumb:../../modules/inputParam.f90
+            use precison
+            integer(kind=inttype) parameter,optional :: trilinear=1_inttype
+            logical :: oversetdonorsareguesses
+            logical :: avgrestrictresforblanks
+            integer(kind=inttype) :: oversetinterptype
+            integer(kind=inttype) :: oversetinterptypecoarse
+            real(kind=realtype) :: allowabledonorquality
+        end module inputoverset
+
+        module iteration ! in :sumb:../../modules/iteration.f90
+            use precision
+            integer(kind=inttype) :: groundlevel
+            integer(kind=inttype) :: currentlevel
+            integer(kind=inttype) :: rkstage
+            integer(kind=inttype) :: nstepscycling
+            integer(kind=inttype) allocatable,dimension(:) :: cycling
+            integer(kind=inttype) :: nmgvar
+            integer(kind=inttype) :: nt1mg
+            integer(kind=inttype) :: nt2mg
+            logical :: restricteddyvis
+            logical :: turbsegregated
+            logical :: turbcoupled
+            integer(kind=inttype) :: itertot
+            real(kind=realtype) :: rfil
+            real(kind=realtype) :: t0solver
+            logical :: converged
+            logical :: exchangepressureearly
+            logical :: standalonemode
+            logical :: changing_grid
+            logical :: deforming_grid
+            logical :: changingoverset
+            logical optional :: pv3initialized=.false.
+            integer(kind=inttype) :: noldsolavail
+            integer(kind=inttype) :: noldlevels
+            real(kind=realtype) allocatable,dimension(:) :: coeftime
+            logical :: timeSpectralGridsNotWritten
+            logical, dimension(:), allocatable :: oldSolWritten       
+        end module iteration
+
+        module monitor ! in :sumb:../../modules/monitor.f90
+            use constants
+            integer parameter,optional :: fieldwidth=12
+            integer parameter,optional :: decimalwidth=5
+            integer :: nmonsum
+            integer :: nmonmax
+            integer :: nmon
+            real(kind=realtype) allocatable,dimension(:) :: monloc
+            real(kind=realtype) allocatable,dimension(:) :: monglob
+            character(len=32) allocatable,dimension(:) :: monnames
+            logical :: monmachorhmax
+            logical :: showcpu
+            integer :: niterold
+            integer :: nitercur
+            real(kind=realtype) allocatable,dimension(:,:,:) :: convarray
+            integer(kind=inttype) :: ntimestepsrestart
+            integer(kind=inttype) :: timestepunsteady
+            real(kind=realtype) :: timeunsteady
+            real(kind=realtype) :: timeunsteadyrestart
+            real(kind=realtype) allocatable,dimension(:) :: timearray
+            real(kind=realtype) allocatable,dimension(:,:) :: timedataarray
+            logical :: writegrid
+            logical :: writevolume
+            logical :: writesurface
+        end module monitor
+
+        module block ! in :sumb:../../modules/block.f90
+            use constants
+            integer(kind=portype) parameter,optional :: leftstarted=-1_portype
+            integer(kind=portype) parameter,optional :: regular=0_portype
+            integer(kind=portype) parameter,optional :: rightstarted=1_portype
+            integer(kind=inttype) parameter,optional :: nosubinlet=0_inttype
+            integer(kind=inttype) parameter,optional :: totalconditions=1_inttype
+            integer(kind=inttype) parameter,optional :: massflow=2_inttype
+            integer(kind=inttype) :: ndom
+            integer(kind=inttype) allocatable,dimension(:) :: ncellglobal
+        end module block
+
+        module flowvarrefstate ! in :sumb:../../modules/flowVarRefState.f90
+            use constants
+            integer(kind=inttype) :: nw
+            integer(kind=inttype) :: nwf
+            integer(kind=inttype) :: nwt
+            integer(kind=inttype) :: nt1
+            integer(kind=inttype) :: nt2
+            real(kind=realtype) :: pref
+            real(kind=realtype) :: rhoref
+            real(kind=realtype) :: tref
+            real(kind=realtype) :: muref
+            real(kind=realtype) :: timeref
+            real(kind=realtype) :: lref
+            logical :: lrefspecified
+            real(kind=realtype) :: pinfdim
+            real(kind=realtype) :: rhoinfdim
+            real(kind=realtype) :: mudim
+            real(kind=realtype) :: rhoinf
+            real(kind=realtype) :: uinf
+            real(kind=realtype) :: pinf
+            real(kind=realtype) :: pinfcorr
+            real(kind=realtype) :: rgas
+            real(kind=realtype) :: muinf
+            real(kind=realtype) :: gammainf
+            real(kind=realtype) allocatable,dimension(:) :: winf
+            logical :: kpresent
+            logical :: eddymodel
+            logical :: viscous
+        end module flowvarrefstate
+
+       module killsignals ! in :sumb:../../modules/killSignals.f90
+            use precision
+            integer(kind=inttype) parameter,optional :: nosignal=0_int_type
+            integer(kind=inttype) parameter,optional :: signalwrite=1_int_type
+            integer(kind=inttype) parameter,optional :: signalwritequit=2_int_type
+            integer(kind=inttype) :: localsignal
+            integer(kind=inttype) :: globalsignal
+        end module killsignals
+
+! ############################################################################
+! Aeroelastic / Multi-Disciplinary Routines
+! ############################################################################
+
+        module mddata ! in :sumb:../../python/fortran/aeroElastic/mdData.f90
+            use constants
+            integer(kind=inttype) :: mdnfamilies
+            character(len=32) allocatable,dimension(:) :: mdfamilynames
+            integer(kind=inttype) allocatable,dimension(:,:) :: mdnsurfnodes
+            integer(kind=inttype) allocatable,dimension(:,:) :: mdnsurfpatches
+            integer(kind=inttype) allocatable,dimension(:,:) :: mdpatchdimensions
+            integer(kind=inttype) allocatable,dimension(:,:) :: mdsurfind
+            real(kind=realtype) allocatable,dimension(:,:) :: mdsurfxx
+            real(kind=realtype) allocatable,dimension(:,:) :: mdsurfforce
+            real(kind=realtype) allocatable,dimension(:) :: mdsurfval
+        end module mddata
+
+        subroutine mdgetfamilynames ! in :sumb:../../python/fortran/aeroElastic/mdFamilyNames.f90
+            use cgnsgrid
+            use mddata
+        end subroutine mdgetfamilynames
+
+        subroutine mddeletefamilynames ! in :sumb:../../python/fortran/aeroElastic/mdFamilyNames.f90
+            use mddata
+        end subroutine mddeletefamilynames
+
+        subroutine mdcreatensurfnodes ! in :sumb:../../python/fortran/aeroElastic/mdNSurfNodes.f90
+            use bctypes
+            use blockpointers
+            use cgnsgrid
+            use communication
+            use mddata
+        end subroutine mdcreatensurfnodes
+
+        subroutine mddeletensurfnodes ! in :sumb:../../python/fortran/aeroElastic/mdNSurfNodes.f90
+            use mddata
+        end subroutine mddeletensurfnodes
+
+        subroutine mdsetcoor(sps,nsubblocks,cgnsids,ranges,coor,nnode) ! in :sumb:../../python/fortran/aeroElastic/mdSetCoor.f90
+            use block
+            use cgnsgrid
+            use communication
+            integer(kind=inttype) intent(in) :: sps
+            integer(kind=inttype) optional,intent(in),check(len(cgnsids)>=nsubblocks),depend(cgnsids) :: nsubblocks=len(cgnsids)
+            integer(kind=inttype) optional,intent(in),check(shape(coor,1)==nnode),depend(coor) :: nnode=shape(coor,1)
+            integer(kind=inttype) dimension(nsubblocks),intent(in) :: cgnsids
+            integer(kind=inttype) dimension(3,2,nsubblocks),intent(in),depend(nsubblocks) :: ranges
+            real(kind=realtype) dimension(3,nnode),intent(in) :: coor
+        end subroutine mdsetcoor
+
+        subroutine mdsetmycoor(sps,cgnsid,cgnsrange,coor,ncgnsids,sortedcgnsids,nblockpercgns,blockpercgns) ! in :sumb:../fortran/mdSetCoor.f90
+            use block
+            use iteration
+            integer(kind=inttype) intent(in) :: sps
+            integer(kind=inttype) intent(in) :: cgnsid
+            integer(kind=inttype) intent(in) :: ncgnsids
+            integer(kind=inttype) dimension(3,2),intent(in) :: cgnsrange
+            integer(kind=inttype) dimension(*),intent(in) :: nblockpercgns
+            integer(kind=inttype) dimension(*),intent(in) :: blockpercgns
+            integer(kind=inttype) dimension(*),intent(in) :: sortedcgnsids
+            real(kind=realtype) dimension(3,*),intent(in) :: coor
+        end subroutine mdsetmycoor
+
+        subroutine mdcreatesurfcoorlist(sps,famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfCoorList.f90
+            use bctypes
+            use blockpointers
+            use cgnsgrid
+            use communication
+            use mddata
+            integer(kind=inttype) intent(in) :: sps
+            integer(kind=inttype) intent(in) :: famid
+            integer(kind=inttype) intent(out) :: startind
+            integer(kind=inttype) intent(out) :: endind
+        end subroutine mdcreatesurfcoorlist
+
+        subroutine mddeletesurfcoorlist ! in :sumb:../../python/fortran/aeroElastic/mdSurfCoorList.f90
+            use mddata
+        end subroutine mddeletesurfcoorlist
+
+        subroutine mdcreatesurfforcelist(sps,famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfForceList.f90
+            use bctypes
+            use blockpointers
+            use cgnsgrid
+            use communication
+            use flowvarrefstate
+            use mddata
+            integer(kind=inttype) intent(in) :: sps
+            integer(kind=inttype) intent(in) :: famid
+            integer(kind=inttype) intent(out) :: startind
+            integer(kind=inttype) intent(out) :: endind
+        end subroutine mdcreatesurfforcelist
+
+        subroutine mddeletesurfforcelist ! in :sumb:../../python/fortran/aeroElastic/mdSurfForceList.f90
+            use mddata
+        end subroutine mddeletesurfforcelist
+
+        subroutine mdcreatesurfindlist(famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfIndList.f90
+            use bctypes
+            use blockpointers
+            use cgnsgrid
+            use communication
+            use mddata
+            integer(kind=inttype) intent(in) :: famid
+            integer(kind=inttype) intent(out) :: startind
+            integer(kind=inttype) intent(out) :: endind
+        end subroutine mdcreatesurfindlist
+
+        subroutine mddeletesurfindlist ! in :sumb:../../python/fortran/aeroElastic/mdSurfIndList.f90
+            use mddata
+        end subroutine mddeletesurfindlist
+
+        subroutine mdcreatesurfvarlist(sps,famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfVarList.f90
+            use cgnsgrid
+            use communication
+            use mddata
+            integer(kind=inttype) intent(in) :: sps
+            integer(kind=inttype) intent(in) :: famid
+            integer(kind=inttype) intent(out) :: startind
+            integer(kind=inttype) intent(out) :: endind
+        end subroutine mdcreatesurfvarlist
+
+        subroutine mddeletesurfvallist ! in :sumb:../../python/fortran/aeroElastic/mdSurfVarList.f90
+            use mddata
+        end subroutine mddeletesurfvallist
+
+        subroutine mdstorelocalcp(valloc,sps,famid) ! in :sumb:../../python/fortran/aeroElastic/mdSurfVarList.f90
+            use bctypes
+            use blockpointers
+            use cgnsgrid
+            use flowvarrefstate
+            use inputphysics
+            real(kind=realtype) dimension(*),intent(inout) :: valloc
+            integer(kind=inttype) intent(in) :: sps
+            integer(kind=inttype) intent(in) :: famid
+        end subroutine mdstorelocalcp
+
+        subroutine mdsurfacepatchdim(famid,startind,endind) ! in :sumb:../../python/fortran/aeroElastic/mdSurfacePatchDim.f90
+            use bctypes
+            use blockpointers
+            use cgnsgrid
+            use communication
+            use mddata
+            integer(kind=inttype) intent(in) :: famid
+            integer(kind=inttype) intent(out) :: startind
+            integer(kind=inttype) intent(out) :: endind
+        end subroutine mdsurfacepatchdim
+
+        subroutine mddeletesurfacepatchdim ! in :sumb:../../python/fortran/aeroElastic/mdSurfacePatchDim.f90
+            use mddata
+        end subroutine mddeletesurfacepatchdim
+
+        subroutine mdcreatenpatch ! in :sumb:../../python/fortran/aeroElastic/mdSurfacePatchDim.f90
+            use bctypes
+            use blockpointers
+            use cgnsgrid
+            use communication
+            use mddata
+        end subroutine mdcreatenpatch
+
+! ############################################################################
+! Coupler API Routines
+! ############################################################################
+
+        module couplerparam ! in :sumb:../../modules/couplerParam.f90 
+            use precision
+            use constants
+            real(kind=realtype) :: machini
+            real(kind=realtype) :: pini
+            real(kind=realtype) :: rhoini
+            real(kind=realtype) dimension(3) :: veldirini
+            character(len=80) :: codename
+            logical :: cplgetcoarsesol
+            integer(kind=inttype) :: ninterfacesg
+            integer(kind=inttype) :: ninterfacesl
+            character(len=80) allocatable,dimension(:) :: interfacenamesg
+            character(len=80) allocatable,dimension(:) :: interfacenamesl
+            integer(kind=inttype) allocatable,dimension(:) :: l2gmap
+            integer(kind=inttype) allocatable,dimension(:,:) :: iiddomg
+            integer(kind=inttype) allocatable,dimension(:,:) :: iiddoml
+            integer(kind=inttype) :: ninterfacexyzs
+            integer(kind=inttype) :: ninterfacexyzsalloc
+            integer(kind=inttype) allocatable,dimension(:) :: interfaceid
+            integer(kind=inttype) :: ntetra
+            integer(kind=inttype) :: npyra
+            integer(kind=inttype) :: nprisms
+            integer(kind=inttype) :: nhexa
+            integer(kind=inttype) :: nnodes
+            integer(kind=inttype) :: ntetraalloc
+            integer(kind=inttype) :: npyraalloc
+            integer(kind=inttype) :: nprismsalloc
+            integer(kind=inttype) :: nhexaalloc
+            integer(kind=inttype) :: nnodesalloc
+            integer(kind=inttype) :: ninterfacesf
+            integer(kind=inttype) :: nfieldsmaxg
+            integer(kind=inttype) allocatable, dimension(:) :: nfieldsg
+            character(len=80) allocatable, dimension(:,:) :: fieldnamesg
+            integer(kind=inttype) allocatable, dimension(:,:) :: iwmap
+            integer(kind=inttype) :: nfieldssumb
+            character(len=80) allocatable, dimension(:) :: fieldnamessumb
+            integer(kind=inttype) allocatable, dimension(:) :: iwsumb
+            integer(kind=inttype) :: nfieldsreq
+            character(len=80) allocatable, dimension(:) :: fieldnamesreq
+        end module couplerparam
+
+        subroutine get_field_info(nifpy,nfmaxpy,nfpy,fnamespy) ! in :sumb:../fortran/couplerAPI/get_field_info.f90
+            use bctypes
+            use block
+            use blockpointers
+            use communication
+            use constants
+            use couplerparam
+            use cgnsnames
+            use flowvarrefstate
+            use inputphysics
+            integer(kind=inttype) intent(in) :: nifpy
+            integer(kind=inttype) intent(in) :: nfmaxpy
+            integer(kind=inttype) dimension(nifpy),depend(nifpy),intent(out) :: nfpy
+            character(len=80*nfmaxpy*nifpy),depend(nfmaxpy,nifpy),intent(out) :: fnamespy
+        end subroutine get_field_info
+
+        subroutine get_interface_names(nigpy,inamesgpy) ! in :sumb:../fortran/couplerAPI/get_interface_names.f90
+            use bctypes
+            use block
+            use blockpointers
+            use couplerparam
+            use cgnsgrid
+            integer(kind=inttype) intent(in) :: nigpy
+            character(len=100000) intent(in) :: inamesgpy
+        end subroutine get_interface_names
+
+        subroutine get_local_interface_names(nilpy,inameslpy,l2gmappy) ! in :sumb:../fortran/couplerAPI/get_local_interface_names.f90
+            use bctypes
+            use block
+            use blockpointers
+            use communication
+            use couplerparam
+            use cgnsgrid
+            integer(kind=inttype) intent(in) :: nilpy
+            character(len=100000) intent(in) :: inameslpy
+            integer(kind=inttype) dimension(nilpy),depend(nilpy),intent(in) :: l2gmappy
+        end subroutine get_local_interface_names
+
+        subroutine get_local_num_interfaces(nilpy) ! in :sumb:../fortran/couplerAPI/get_local_num_interfaces.f90
+            use couplerparam
+            use cgnsgrid
+            integer(kind=inttype) intent(out) :: nilpy
+        end subroutine get_local_num_interfaces
+
+        subroutine get_max_no_of_fields(nfmaxpy) ! in :sumb:../fortran/couplerAPI/get_max_no_of_fields.f90
+            use bctypes
+            use block
+            use blockpointers
+            use couplerparam
+            use flowvarrefstate
+            use inputphysics
+            integer(kind=inttype) intent(inout) :: nfmaxpy
+        end subroutine get_max_no_of_fields
+
+        subroutine interface_xyzs(nixyzspy,xyzpy,iidpy) ! in :sumb:../fortran/couplerAPI/interface_xyzs.f90
+            use bctypes
+            use block
+            use blockpointers
+            use constants
+            use communication
+            use couplerparam
+            integer(kind=inttype) intent(in) :: nixyzspy
+            real(kind=realtype) dimension(3,nixyzspy),depend(nixyzspy),intent(out) :: xyzpy
+            integer(kind=inttype) dimension(nixyzspy),depend(nixyzspy),intent(out) :: iidpy
+        end subroutine interface_xyzs
+
+        subroutine localdomain(ntetraalcpy,npyraalcpy,nprismsalcpy,nhexaalcpy,nnodesalcpy,tetraconn,pyraconn,prismsconn,hexaconn,coor) ! in :sumb:../fortran/couplerAPI/localdomain.f90
+            use block
+            use blockpointers
+            use couplerparam
+            integer(kind=inttype) intent(in) :: ntetraalcpy
+            integer(kind=inttype) intent(in) :: npyraalcpy
+            integer(kind=inttype) intent(in) :: nprismsalcpy
+            integer(kind=inttype) intent(in) :: nhexaalcpy
+            integer(kind=inttype) intent(in) :: nnodesalcpy
+            real(kind=realtype) dimension(3,nnodesalcpy),depend(nnodesalcpy),intent(out) :: coor
+            integer(kind=inttype) dimension(4,ntetraalcpy),depend(ntetraalcpy),intent(out) :: tetraconn
+            integer(kind=inttype) dimension(5,npyraalcpy),depend(npyraalcpy),intent(out) :: pyraconn
+            integer(kind=inttype) dimension(6,nprismsalcpy),depend(nprismsalcpy),intent(out) :: prismsconn
+            integer(kind=inttype) dimension(8,nhexaalcpy),depend(nhexaalcpy),intent(out) :: hexaconn
+        end subroutine localdomain
+
+        subroutine localsolution(nfreqpy,nnodesalcpy,localsol) ! in :sumb:../fortran/couplerAPI/localsolution.f90
+            use block
+            use blockpointers
+            use communication
+            use constants
+            use couplerparam
+            use cgnsnames
+            use flowvarrefstate
+            use inputphysics
+            integer(kind=inttype) intent(in) :: nfreqpy
+            integer(kind=inttype) intent(in) :: nnodesalcpy
+            real(kind=realtype) dimension(nfreqpy,nnodesalcpy),depend(nfreqpy,nnodesalcpy),intent(out) :: localsol
+        end subroutine localsolution
+
+        subroutine mesh_dimensions(ntetrapy,npyrapy,nprismspy,nhexapy,nnodespy) ! :sumb:../fortran/couplerAPI/mesh_dimensions.f90
+            use block
+            use blockpointers
+            use couplerparam
+            integer(kind=inttype) intent(out) :: ntetrapy
+            integer(kind=inttype) intent(out) :: npyrapy
+            integer(kind=inttype) intent(out) :: nprismspy
+            integer(kind=inttype) intent(out) :: nhexapy
+            integer(kind=inttype) intent(out) :: nnodespy
+        end subroutine mesh_dimensions
+
+        subroutine number_of_points_in_interface(nopiipy) ! in :sumb:../fortran/couplerAPI/number_of_points_in_interface.f90
+            use bctypes
+            use block
+            use blockpointers
+            use couplerparam
+            integer(kind=inttype),intent(inout) :: nopiipy
+        end subroutine number_of_points_in_interface
+
+        subroutine set_interface_data(nfmaxpy,nixyzspy,interpsol) ! in :sumb:../fortran/couplerAPI/set_interface_data.f90
+            use bctypes
+            use block
+            use blockpointers
+            use cgnsnames
+            use constants
+            use couplerparam
+            use flowvarrefstate
+            use inputiteration
+            use inputphysics
+            use iteration
+            integer(kind=inttype) intent(in) :: nfmaxpy
+            integer(kind=inttype) intent(in) :: nixyzspy
+            real(kind=realtype) dimension(nfmaxpy,nixyzspy),depend(nfmaxpy,nixyzspy),intent(in) :: interpsol
+        end subroutine set_interface_data
+
+        subroutine set_requested_fields(nfreqpy,fnamesreqpy) ! in :sumb:../fortran/couplerAPI/set_requested_fields.f90
+            use couplerparam
+            integer(kind=inttype) intent(in) :: nfreqpy
+            character(len=100000) intent(in) :: fnamesreqpy
+        end subroutine set_requested_fields
+
+        subroutine solver_name(solname) ! in :sumb:../fortran/couplerAPI/solver_name.f90
+            use couplerparam
+            character(len=80),intent(inout) :: solname
+        end subroutine solver_name
+
+        subroutine computettot(rho,u,v,w,p,ttot,kk) ! in :sumb:../../utils/computeTtot.f90
+            use cpcurvefits
+            use flowvarrefState
+            use inputphysics
+            integer(kind=inttype) intent(in) :: kk
+            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: rho
+            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: u
+            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: v
+            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: w
+            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: p
+            real(kind=realtype) dimension(kk),depend(kk),intent(out) :: ttot
+        end subroutine computettot
+
+        subroutine computeptot(rho,u,v,w,p,ptot,kk) ! in :sumb:../../utils/computePtot.f90
+            use cpcurvefits
+            use flowvarrefState
+            use inputphysics
+            integer(kind=inttype) intent(in) :: kk
+            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: rho
+            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: u
+            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: v
+            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: w
+            real(kind=realtype) dimension(kk),depend(kk),intent(in) :: p
+            real(kind=realtype) dimension(kk),depend(kk),intent(out) :: ptot
+        end subroutine computeptot
+
+! ############################################################################
+! SUGGAR (Overset Assembly Software) Interface Routines
+! ############################################################################
+
+        module suggardata ! in :sumb:../fortran/suggar/suggarData.f90
+            use constants
+            use parallelIO
+            integer(kind=inttype) :: nzones
+            character(len=32) allocatable,dimension(:) :: zonenames
+            integer(kind=inttype) allocatable,dimension(:) :: unsortedzone
+        end module suggardata
+
+        subroutine initsuggarinterface() ! in :sumb:../fortran/suggar/initSuggarInterface.f90
+            use block
+            use cgnsgrid
+            use communication
+            use suggardata
+        end subroutine initsuggarinterface
+
+        subroutine writeplot3dzonefile(izone,zonefilename,sps,p3d_byteswap_suggar) ! in :sumb:../fortran/suggar/writePlot3DZoneFile.F90
+            use block
+            use cgnsgrid
+            use communication
+            use suggardata
+            integer(kind=inttype) intent(in) :: izone
+            integer(kind=inttype) intent(in) :: sps
+            logical intent(in) :: p3d_byteswap_suggar
+            character(len=*) intent(in) :: zonefilename
+        end subroutine writeplot3dzonefile
+
+        subroutine loadsuggardcifile(dcifile,sps) ! in :sumb:../fortran/suggar/loadSuggarDCIFile.f90
+            use block
+            use cgnsgrid
+            use communication
+            use suggardata
+            character(len=*) intent(in) :: dcifile
+            integer(kind=inttype) intent(in) :: sps
+        end subroutine loadsuggardcifile
+
+! ############################################################################
+! Helicopter Quieting Program (HQP) Routines
+! ############################################################################
+
+    end interface 
+end python module sumb
+
+! This file was auto-generated with f2py (version:2.39.235_1700).
+! See http://cens.ioc.ee/projects/f2py2e/
+!
+! File manually edited by Andre C. Marta and Seonghyeon Hahn on Aug.26,2005
