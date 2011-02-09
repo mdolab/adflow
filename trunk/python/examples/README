@@ -1,0 +1,38 @@
+SERIAL VERSION
+--------------
+1) Build auxiliar libraries (order is relevant)
+1.1) Build the SU_MPI library in serial mode
+     Edit config and Common files, "make clean", "make"
+1.2) Build the ADT library
+     Edit config and Common files, "make clean", "make"
+
+In the SUmb root:
+2) Edit to SUmb_Common.mk file to use a serial version
+3) Clear objects "make clean"
+4) Compile everything "python setup.py build"
+
+In this directory:
+5) Run the examples
+5.1) Steady "python simple.py"
+5.2) Unsteady "python simple_unsteady.py"
+
+PARALLEL VERSION
+----------------
+1) Build auxiliar libraries (order is relevant)
+1.1) Build the SU_MPI library in parallel mode
+     Edit config and Common files, "make clean", "make"
+1.2) Build the ADT library
+     Edit config and Common files, "make clean", "make"
+
+In the SUmb root:
+2) Edit to SUmb_Common.mk file to use a parallel version
+3) Clear objects "make clean"
+4) Compile everything "python setup.py build"
+
+In this directory:
+5) Run the examples
+5.1) Steady "mpirun -np 4 /usr/local/bin/pyMPI simple.py"
+5.2) Unsteady "mpirun -np 4 /usr/local/bin/pyMPI simple_unsteady.py"
+
+---------------------------------------
+Created by Andre.C.Marta on July 6,2005
