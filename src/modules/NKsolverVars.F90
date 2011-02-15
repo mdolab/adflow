@@ -28,6 +28,8 @@ module NKsolverVars
   PetscFortranAddr   ctx(3)
   Mat                dRdw,dRdwPre 
   Vec wVec,rVec
+  KSP                global_ksp,local_ksp
+  PC                 global_pc ,local_pc
   SNESConvergedReason reason
 
   ! Non-linear Solver Options
@@ -36,6 +38,7 @@ module NKsolverVars
   logical :: useNKSolver
   logical :: NKSolverSetup
   logical :: NKSolvedOnce
+  logical :: NKPCSetup
   ! Non-linear Solver Tolerances
   real(kind=realType) :: snes_atol 
   real(kind=realType) :: snes_rtol
@@ -99,7 +102,7 @@ module NKsolverVars
   
   ! Misc Parameters
   real(kind=realType) :: totalRes0
-  real(kind=realType) :: rhoRes0
+  real(kind=realType) :: rhoRes0,rhoResStart
   real(kind=realType) :: CFL0
   integer(kind=intType) :: iterTot0
 

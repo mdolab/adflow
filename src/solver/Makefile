@@ -93,6 +93,7 @@ FF90_OBJECTS = applyAllBC.o\
                solverUnsteadyExplicitRK.o\
                solverUnsteadyImplicitRK.o\
 	       solverUnsteadyBDF.o\
+	       solverUnsteadyMD.o\
 	       timeStep.o\
 	       transferToCoarseGrid.o\
 	       transferToFineGrid.o\

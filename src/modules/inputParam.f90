@@ -777,8 +777,9 @@
 
        integer(kind=intType), parameter :: BDF        = 1_intType, &
                                            explicitRK = 2_intType, &
-                                           implicitRK = 3_intType
-
+                                           implicitRK = 3_intType, &
+                                           MD         = 4_intType
+       
        ! timeIntegrationScheme: Time integration scheme to be used for
        !                        unsteady problems. Possibilities are
        !                        Backward difference schemes, explicit

@@ -190,10 +190,7 @@
           end if
        endif
 
-       !print *,'looping domains'
        ! Loop over the number of local blocks.
-
-      
        domains: do nn=1,nDom
 
          ! Set the pointers for this block.
@@ -296,7 +293,6 @@
                    s(i,j,k,1) = sc(1)*oneOver8dt
                    s(i,j,k,2) = sc(2)*oneOver8dt
                    s(i,j,k,3) = sc(3)*oneOver8dt
-
                  enddo
                enddo
              enddo

@@ -1,4 +1,15 @@
 !    -*- f90 -*-
+
+
+python module solverunsteadymd__user__routines 
+    interface solverunsteadymd_user_interface 
+        subroutine mdcallback_python(timeunsteady,firstiter) ! in :test:solverUnsteadyMD.F90:solverunsteadymd:unknown_interface
+            real*8 :: timeunsteady
+            logical :: firstiter
+        end subroutine mdcallback_python
+    end interface solverunsteadymd_user_interface
+end python module solverunsteadymd__user__routines
+
 python module sumb ! in 
     interface  ! in :sumb
 
@@ -129,14 +140,22 @@ python module sumb ! in
          logical :: eulerwallspresent
        end subroutine solver
 
-    !    subroutine nksolver
-!        end subroutine nksolver
+       subroutine solverunsteadymd(mdcallback_python) ! in :test:solverUnsteadyMD.F90
+         use solverunsteadymd__user__routines
+         external mdcallback_python
+       end subroutine solverunsteadymd
        
        subroutine setupnksolver
        end subroutine setupnksolver
        
        subroutine destroynksolver
        end subroutine destroynksolver
+       
+       subroutine applypc(in_vec,out_vec,n) ! in :test:NKsolver.F90
+         real(kind=realtype) dimension(n),intent(in) :: in_vec
+         real(kind=realtype) dimension(n),intent(out),depend(n) :: out_vec
+         integer(kind=inttype) optional,check(len(in_vec)>=n),depend(in_vec) :: n=len(in_vec)
+       end subroutine applypc
 
        subroutine getcurrentresidual(rhores,totalrres)
          real(kind=realtype), intent(out) :: rhores
@@ -209,6 +228,21 @@ python module sumb ! in
        subroutine getsolution(sps) ! in :sumb:../../adjoint/designExport.f90
          integer(kind=inttype) intent(in) :: sps
        end subroutine getsolution
+
+       subroutine getstates(states,ndimw) ! in :test:getADjoint.F90
+         real(kind=realtype) dimension(ndimw),intent(out),depend(ndimw) :: states
+         integer(kind=inttype) intent(in) :: ndimw
+       end subroutine getstates
+
+       subroutine getres(res,ndimw) ! in :test:getADjoint.F90
+         real(kind=realtype) dimension(ndimw),intent(out),depend(ndimw) :: res
+         integer(kind=inttype) intent(in) :: ndimw
+       end subroutine getres
+
+       subroutine setstates(states,ndimw) ! in :test:getADjoint.F90
+         real(kind=realtype) dimension(ndimw),intent(in) :: states
+         integer(kind=inttype) optional,intent(in),check(len(states)>=ndimw),depend(states) :: ndimw=len(states)
+       end subroutine setstates
 
        subroutine preprocessingadjoint ! in :sumb:../../adjoint/preprocessingADjoint.f90
        end subroutine preprocessingadjoint
@@ -663,6 +697,7 @@ python module sumb ! in
          logical :: updatewalldistanceunsteady
          integer(kind=inttype) :: timeaccuracy
          integer(kind=inttype) parameter,optional :: explicitrk=2
+         integer(kind=inttype) parameter,optional :: md=4
          integer(kind=inttype) :: ntimestepsfine
          integer(kind=inttype) :: ntimestepscoarse
        end module inputunsteady

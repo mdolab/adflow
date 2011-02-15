@@ -413,4 +413,5 @@
        printIterations = .True.
        routineFailed = .False.
        nkSolverSetup = .False.
+       NKPCSetup     = .False.
        end subroutine setDefaultValues
