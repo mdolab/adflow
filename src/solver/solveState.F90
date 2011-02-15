@@ -43,7 +43,7 @@ subroutine solveState
   character (len=7) :: numberString
   logical :: solve_NK, solve_RK
   real(kind=realType) :: rhoRes1,totalRRes1
-  real(kind=realType) :: rhoResStart, totalRstart
+  real(kind=realType) :: totalRstart
   real(kind=realType) :: l2convsave
   !
   !      ******************************************************************
@@ -122,9 +122,6 @@ subroutine solveState
 
   endif
 
-
-
-  
   ! Loop over the number of single grid start up iterations.
 
   singleGrid: do iter=1,nsgStartup

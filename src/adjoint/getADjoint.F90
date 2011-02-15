@@ -47,3 +47,4 @@ subroutine getADjoint(ncells,functionGradLocal)
 #endif
 
 end subroutine getADjoint
+

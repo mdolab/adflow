@@ -96,7 +96,7 @@ subroutine computeObjPartials(costFunction,pts,npts)
      ! For non-timeSpectral type functions, just time average the
      ! objectives
 
-     dJdc(:) = 1/nTimeIntervalsSpectral
+     dJdc(:) = 1.0/nTimeIntervalsSpectral
 
   case(costFuncCl0,costFuncCd0,costFuncCm0, &
        costFuncClAlpha,costFuncCdAlpha,costFuncCmzAlpha,&

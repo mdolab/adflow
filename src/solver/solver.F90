@@ -111,7 +111,9 @@
 
                case (implicitRK)
                  call solverUnsteadyImplicitRK
-             end select
+              case (MD)
+                 call solverUnsteadyMD
+              end select
          end select
 
          ! If this is not the finest grid level, interpolate the

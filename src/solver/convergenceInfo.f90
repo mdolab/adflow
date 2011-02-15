@@ -506,7 +506,7 @@
              call mpi_bcast(routineFailed, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
 
           case(unsteady)
-             print *,'divergence check for unsteady not implemented...'
+             !print *,'divergence check for unsteady not implemented...'
              !return
           end select
        else

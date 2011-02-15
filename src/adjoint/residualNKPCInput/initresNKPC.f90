@@ -106,10 +106,11 @@ subroutine initresNKPC(varStart, varEnd,wAdj,volAdj,dwAdj,nn,level,sps)
         !=======================================================
 
      case (BDF)
-
-        call terminate("initRes", &
-             "BDF ADjoint not yet implemented")
-
+        !call terminate("initRes", &
+        !     "BDF ADjoint not yet implemented")
+        do l=varStart,varEnd
+           dwAdj(l,:) = zero
+        enddo
      end select
 
      !===========================================================

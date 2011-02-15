@@ -97,6 +97,7 @@ class SUMB(AeroSolver):
             'machCoef':[float,0.5],
             'machGrid':[float,0.0],
             'MGCycle':[str,'3w'],
+            'MGStartLevel':[int,-1],
 
             # Unsteady Paramters           
             'timeIntegrationScheme':[str,'BDF'],
@@ -178,8 +179,7 @@ class SUMB(AeroSolver):
             'localPreconditioner' : [str,'ILU'],
             'ILUFill': [int,2],
             'ASMOverlap' : [int,5],
-          
-            }
+         }
 
         informs = {
             }
@@ -228,8 +228,7 @@ class SUMB(AeroSolver):
         # end try
 
         self.callCounter = -1
-       
-        
+               
         self.sumb.iteration.standalonemode = False
         self.sumb.iteration.deforming_grid = False
 
@@ -293,7 +292,6 @@ class SUMB(AeroSolver):
               'area':'area',
               'volume':'volume'
               }
-
 
         self.possibleAeroDVs = {
             'aofa':'adjointvars.ndesignaoa',
@@ -388,7 +386,7 @@ class SUMB(AeroSolver):
                                      self.sumb.inputdiscretization.normalmomentum,
                                  'location':
                                      'inputdiscretization.wallbctreatment'},
-               
+          
 
 
                 'dissipationScalingExponent':{'location':'inputdiscretization.adis'},
@@ -406,6 +404,7 @@ class SUMB(AeroSolver):
                 'machGrid':{'location':'inputphysics.machgrid'},
                 'MGCycle':{'location':'localmg.mgdescription',
                            'len':self.sumb.constants.maxstringlen},
+                'MGStartLevel':{'location':'inputiteration.mgstartlevel'},
 
                 # Unsteady Params
                 'timeIntegrationScheme':{'BDF':
@@ -414,6 +413,8 @@ class SUMB(AeroSolver):
                                              self.sumb.inputunsteady.explicitrk,
                                          'inplicitRK':
                                              self.sumb.inputunsteady.implicitrk,
+                                         'MD':
+                                             self.sumb.inputunsteady.md,
                                          'location':
                                              'inputunsteady.timeintegrationscheme'},
                 'timeAccuracy':{'location':'inputunsteady.timeaccuracy'},
@@ -575,8 +576,6 @@ class SUMB(AeroSolver):
                                     'probName']
         # end if
 
-     
-
         self.storedADjoints = {}
 
         # Set default values --- actual options will be set when
@@ -663,7 +662,9 @@ class SUMB(AeroSolver):
       
         # Do the remainder of the operations that would have been done
         # had we read in a param file
+        self.sumb.iteration.deforming_grid = True
         self.sumb.dummyreadparamfile()
+
 
         #This is just to flip the -1 to 1 possibly a memory issue?
         self.sumb.inputio.storeconvinneriter = \
@@ -698,7 +699,7 @@ class SUMB(AeroSolver):
         
         # Solver is initialize
         self.allInitialized = True
-
+        self.sumb.preprocessingadjoint()
         return
 
     def setInflowAngle(self,aero_problem):
@@ -855,13 +856,9 @@ class SUMB(AeroSolver):
 
         storeHistory = self.getOption('storeHistory')
 
-        assert 'nIterations' in kwargs,'nIteration must be specified for SUmb'
-        niterations = kwargs['nIterations']
-
-        #if self.sol_type in ['Steady', 'Time Spectral']:
-            
         # set the number of cycles for this call
-        self.sumb.inputiteration.ncycles = niterations
+        assert 'nIterations' in kwargs,'nIteration must be specified for SUmb'
+        self.sumb.inputiteration.ncycles = kwargs['nIterations']
 
         # Cold Start -- First Run -- No Iterations Done
         if (self.sumb.monitor.niterold == 0 and 
@@ -891,14 +888,6 @@ class SUMB(AeroSolver):
             self.sumb.iteration.itertot = 0
             self.sumb.inputiteration.mgstartlevel = 1
         # end if
-#        self.sumb.inputiteration.mgstartlevel = 3
-       #  elif self.sol_type=='Unsteady':
-#             self.sumb.inputiteration.ncycles = niterations
-#         # end if
-
-
-
-        # end if
 
         self.sumb.killsignals.routinefailed = False
         self._updatePeriodInfo()
@@ -915,33 +904,34 @@ class SUMB(AeroSolver):
             return
 
         # Setup some residual values for reference
+        self.sumb.preprocessingadjoint()
 
         if self.callCounter == 0:
-            # We need to explicitly get the freestream residual, since
-            # we may have
-            self.sumb.preprocessingadjoint()
-            rhoRes0,totalRRes0 = self.sumb.getfreestreamresidual()
-            self.sumb.nksolvervars.totalres0 = real(totalRRes0)
-            self.sumb.nksolvervars.rhores0   = real(rhoRes0)
-            self.rhoRes0 = rhoRes0
-        # end if
+            self.initRhoRes,self.initTotalRRes = self.sumb.getfreestreamresidual()
 
+        self.sumb.nksolvervars.totalres0 = real(self.initTotalRRes)
+        self.sumb.nksolvervars.rhores0   = real(self.initRhoRes)
+        
         if self.sumb.inputiteration.mgstartlevel != 1:
-            self.rhoResStart,self.totalRStart = \
-                self.sumb.getfreestreamresidual()
+            self.startRhoRes = self.initRhoRes
+            self.startTotalRRes = self.initTotalRRes
         else:
-            self.rhoResStart,self.totalRStart = self.sumb.getcurrentresidual()
+            self.startRhoRes,self.startTotalRRes = self.sumb.getcurrentresidual()
         # end if
 
         # Convert to real in case we're using a complex-solve
-        self.rhoResStart = real(self.rhoResStart)
-        self.totalRStart = real(self.totalRStart)
+        self.startRhoRes = real(self.startRhoRes)
+        self.startTotalRRes = real(self.startTotalRRes)
 
         # Call the Solver
-        self.sumb.solver()
+        if ('MDCallBack' in kwargs):
+            self.sumb.solverunsteadymd(kwargs['MDCallBack'])
+        else:
+            self.sumb.solver()
+        # end if
 
         # Record the final residual
-        self.rhoResFinal,self.totalRFinal = self.sumb.getcurrentresidual()
+        self.finalRhoRes,self.finalTotalRRes = self.sumb.getcurrentresidual()
  
         if self.sumb.killsignals.routinefailed:
             self.solve_failed = True
@@ -965,7 +955,7 @@ class SUMB(AeroSolver):
                 volname = base + '_vol%d.cgns'%(self.callCounter)
                 surfname = base + '_surf%d.cgns'%(self.callCounter)
             #endif
-            #self.writeVolumeSolutionFile(volname)
+            self.writeVolumeSolutionFile(volname)
             self.writeSurfaceSolutionFile(surfname)
         # end if
             
@@ -1069,8 +1059,9 @@ class SUMB(AeroSolver):
         cfd_force_pts to compute the forces if given
         
         '''
+
         if cfd_force_pts is None:
-            pts = self.getForcePoints()
+            cfd_force_pts = self.getForcePoints()
         # end if
         if len(cfd_force_pts) > 0:
             forces = self.sumb.getforces(cfd_force_pts.T).T
@@ -1100,6 +1091,16 @@ class SUMB(AeroSolver):
         self.sumb.verifyforces(cfd_force_pts.T)
 
         return
+
+
+    def globalNKPreCon(self,in_vec):
+        '''This function is ONLY used as a preconditioner to the
+        global Aero-Structural system'''
+
+        out_vec = self.sumb.applypc(in_vec)
+        
+        return out_vec
+
 
     def initAdjoint(self, *args, **kwargs):
         '''
@@ -1230,7 +1231,6 @@ class SUMB(AeroSolver):
             self.sumb.agumentrhs(solver_phi)
         # end if
 
-        nw = self.sumb.flowvarrefstate.nw
         # If we have saved adjoints, 
         if self.getOption('restartAdjoint'):
 
@@ -1239,7 +1239,7 @@ class SUMB(AeroSolver):
                 self.sumb.setadjoint(self.storedADjoints[obj])
             else:
                 # Objective is not yet run, allocated zeros and set
-                self.storedADjoints[obj]=numpy.zeros([self.sumb.adjointvars.ncellslocal*nw],float)
+                self.storedADjoints[obj]=numpy.zeros(self.getStateSize(),'d')
                 self.sumb.setadjoint(self.storedADjoints[obj])
             # end if
             # end if
@@ -1249,7 +1249,7 @@ class SUMB(AeroSolver):
         self.sumb.solveadjointtransposepetsc()
 
         if self.getOption('restartAdjoint'):
-            self.storedADjoints[obj] =  self.sumb.getadjoint(self.sumb.adjointvars.ncellslocal*nw)
+            self.storedADjoints[obj] =  self.sumb.getadjoint(self.getStateSize())
         # end if
        
         return
@@ -1444,6 +1444,11 @@ class SUMB(AeroSolver):
 
         return startRes,finalRes,fail
 
+    def getResNorms(self):
+        '''Return the initial, starting and final Res Norms'''
+        
+        return self.initTotalRRes,self.startTotalRRes,self.finalTotalRRes
+
     def getMeshIndices(self):
         ndof = self.sumb.getnumberlocalnodes()
         indices = self.sumb.getcgnsmeshindices(ndof)
@@ -1473,10 +1478,8 @@ class SUMB(AeroSolver):
 
         return dIda
 
-    
     def getdRdwPsi(self):
-        nw = self.sumb.flowvarrefstate.nw
-        dRdwPsi = self.sumb.getdrdwtpsi(self.sumb.adjointvars.ncellslocal*nw)
+        dRdwPsi = self.sumb.getdrdwtpsi(self.getStateSize())
         
         return dRdwPsi
 
@@ -1543,6 +1546,39 @@ class SUMB(AeroSolver):
         self.releaseAdjointMemeory()
         
         return
+
+    def getStateSize(self):
+        '''Return the number of degrees of freedom (states) that are
+        on this processor'''
+
+        nw     = self.sumb.flowvarrefstate.nw
+        ncells = self.sumb.adjointvars.ncellslocal
+        ntime  = self.sumb.inputtimespectral.ntimeintervalsspectral
+
+        return nw*ncells*ntime
+
+    def getStates(self):
+        '''Return the states on this processor. Used in aerostructural
+        analysis'''
+        states = self.sumb.getstates(self.getStateSize())
+
+        return states
+
+    def setStates(self,states):
+        ''' Set the states on this processor. Used in aerostructural
+        analysis'''
+
+        self.sumb.setstates(states)
+
+        return 
+
+    def getResidual(self):
+
+        '''Return the residual on this processor. Used in aerostructural
+        analysis'''
+        res    = self.sumb.getres(self.getStateSize())
+        
+        return res
 
     def getSolution(self):
         '''
