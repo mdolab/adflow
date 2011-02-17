@@ -1066,7 +1066,7 @@ class SUMB(AeroSolver):
         if len(cfd_force_pts) > 0:
             forces = self.sumb.getforces(cfd_force_pts.T).T
         else:
-            forces = numpy.empty((0,3),dtype=self.dtype)
+            forces = numpy.empty((0),dtype=self.dtype)
         # end if
             
         return self.mesh.solver_to_warp_force(group_name,forces)
