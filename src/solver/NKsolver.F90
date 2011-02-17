@@ -939,8 +939,8 @@ subroutine snes_monitor(snes,its,norm,ctx,ierr)
   if (its == 1) then
      ! Reset the value of the preconditionerLag to what we actually want. It
      ! had been set to -1 or -2 depending on if we wanted to recompute
-
      ! the preconditioner on the first entry or not. 
+
      call SNESSetLagJacobian(snes, jacobian_lag, ierr); call EChk(ierr,__FILE__,__LINE__)
 
   end if
@@ -959,7 +959,8 @@ subroutine snes_monitor(snes,its,norm,ctx,ierr)
 end subroutine snes_monitor
 
 subroutine applyPC(in_vec,out_vec,N)
-  ! Apply the NK PC to the in_vec 
+  ! Apply the NK PC to the in_vec. This subroutine is ONLY used as a
+  ! preconditioner for a global Aero-Structural Newton-Krylov Method
 
   use inputTimeSpectral
   use flowVarRefState
@@ -1096,7 +1097,7 @@ subroutine applyPC(in_vec,out_vec,N)
   call MatMFFDSetBase(dRdW,wVec,PETSC_NULL_OBJECT,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  ! Actually do the solve
+  ! Actually do the Linear Krylov Solve
   call KSPSolve(global_ksp,vecA,vecB,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
@@ -1106,6 +1107,11 @@ subroutine applyPC(in_vec,out_vec,N)
    call VecDestroy(VecB,ierr);  call EChk(ierr,__FILE__,__LINE__)
 
 end subroutine applyPC
+
+!The folloiwng three functions are wrapped in Python to allow external
+!getting and setting of the states, and retrieving the current
+!residual values. All of these function only return/get the
+!states/residuals that are owned by this process (no halos)
 
 subroutine getStates(states,ndimw)
   use ADjointPETSc
