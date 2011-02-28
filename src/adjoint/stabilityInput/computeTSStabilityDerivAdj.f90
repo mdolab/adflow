@@ -237,6 +237,7 @@
          enddo
      
          !now normalize the results...
+         a  = sqrt(gammaInf*pInfDim/rhoInfDim)
          dcdq = dcdq*timeRef*2*(machGrid*a)/lengthRef
     
          

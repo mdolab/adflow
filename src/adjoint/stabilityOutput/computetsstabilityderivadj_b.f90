@@ -24,7 +24,6 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
   USE inputphysics
   USE inputtimespectral
   USE inputtsstabderiv
-  use flowvarrefstate     
   USE monitor
   USE section
   IMPLICIT NONE
@@ -47,16 +46,21 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
 &  ntimeintervalsspectral), dphiz(ntimeintervalsspectral)
   REAL(KIND=REALTYPE) :: dphixdot(ntimeintervalsspectral), dphiydot(&
 &  ntimeintervalsspectral), dphizdot(ntimeintervalsspectral)
+  REAL :: gammainf
   REAL(KIND=REALTYPE) :: intervalalpha(ntimeintervalsspectral), &
 &  intervalalphadot(ntimeintervalsspectral)
   REAL(KIND=REALTYPE) :: intervalmach(ntimeintervalsspectral), &
 &  intervalmachdot(ntimeintervalsspectral)
   INTEGER(KIND=INTTYPE) :: i, nn, sps
+  REAL :: pinfdim
   REAL(KIND=REALTYPE) :: resbasecoef(ntimeintervalsspectral, 8), &
 &  resbasecoefb(ntimeintervalsspectral, 8)
+  REAL :: rhoinfdim
   REAL(KIND=REALTYPE) :: t(nsections)
+  REAL :: timeref
   REAL(KIND=REALTYPE) :: TSALPHA, TSALPHADOT
   REAL(KIND=REALTYPE) :: res1, result1, TSMACH, TSMACHDOT
+  INTRINSIC SQRT
   EXTERNAL TSALPHA, TSMACHDOT, DERIVATIVERIGIDROTANGLE, TSMACH, &
 &      TSALPHADOT, SECONDDERIVATIVERIGIDROTANGLE, TERMINATE
 !Given
@@ -150,6 +154,11 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
 &                                   ntimeintervalsspectral, dcdq(i), &
 &                                   coef0(i))
     END DO
+!ResCL(i) = Cl(i)-(dcldp*dphix(i)+cl0)
+!ResCD(i) = Cd(i)-(dcddp*dphix(i)+cd0)
+!ResCMz(i) = Cmz(i)-(dcmzdp*dphix(i)+cmz0)
+!now normalize the results...
+    a = SQRT(gammainf*pinfdim/rhoinfdim)
 !now compute dCl/dpdot
     DO i=1,8
       CALL COMPUTELEASTSQUARESREGRESSION(resbasecoef(:, i), dphizdot, &
