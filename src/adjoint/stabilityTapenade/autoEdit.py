@@ -26,8 +26,10 @@ EXT = '.f90'
 
 #DIR_ORI = '/home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src/adjoint/stabilityTapenade'
 #DIR_MOD = '/home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src/adjoint/stabilityOutput'
-DIR_ORI = '/nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src/adjoint/stabilityTapenade'
-DIR_MOD = '/nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src/adjoint/stabilityOutput'
+#DIR_ORI = '/nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src/adjoint/stabilityTapenade'
+#DIR_MOD = '/nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src/adjoint/stabilityOutput'
+DIR_ORI = '/nfs/tuff/home/mader/hgGK/SUmbADjoint/src/adjoint/stabilityTapenade'
+DIR_MOD = '/nfs/tuff/home/mader/hgGK/SUmbADjoint/src/adjoint/stabilityOutput'
 # Specify line identifier
 
 FILE_EXCL = 'MODULE'

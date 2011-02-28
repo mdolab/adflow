@@ -58,17 +58,21 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
   real(kind=realType), dimension(:,:,:,:),allocatable :: wblock,wblockb
 
   ! Variables for TimeSptectral Derivatives
-  real(kind=realType), dimension(nTimeIntervalsSpectral)::       &
-       ClAdj,CdAdj,CfxAdj,CfyAdj,CfzAdj,   &
-       CmxAdj,CmyAdj,CmzAdj
-  real(kind=realType), dimension(nTimeIntervalsSpectral)::       &
-       ClAdjb,CdAdjb,CfxAdjb,CfyAdjb,CfzAdjb,   &
-       CmxAdjb,CmyAdjb,CmzAdjb
+!!$  real(kind=realType), dimension(nTimeIntervalsSpectral)::       &
+!!$       ClAdj,CdAdj,CfxAdj,CfyAdj,CfzAdj,   &
+!!$       CmxAdj,CmyAdj,CmzAdj
+!!$  real(kind=realType), dimension(nTimeIntervalsSpectral)::       &
+!!$       ClAdjb,CdAdjb,CfxAdjb,CfyAdjb,CfzAdjb,   &
+!!$       CmxAdjb,CmyAdjb,CmzAdjb
 
-  real(kind=realType) :: cl0,cd0,cmz0,dcldalpha,dcddalpha,dcmzdalpha
-  real(kind=realType) :: cl0b,cd0b,cmz0b,dcldalphab,dcddalphab,dcmzdalphab
-  real(kind=realType) :: dcmzdqb,dcmzdq
-  real(kind=realType) :: dcmzdalphadot,dcmzdalphadotb
+  real(kind=realType),dimension(nTimeIntervalsSpectral,8)::BaseCoef
+  real(kind=realType),dimension(8)::dcdp,dcdpdot,dcdq,dcdqdot,dcdr,dcdrdot
+  real(kind=realType),dimension(8)::dcdalpha,dcdalphadot,dcdbeta,dcdbetadot,dcdMach,dcdMachdot
+  real(kind=realType),dimension(8)::Coef0,Coef0dot
+!!$  real(kind=realType) :: cl0,cd0,cmz0,dcldalpha,dcddalpha,dcmzdalpha
+!!$  real(kind=realType) :: cl0b,cd0b,cmz0b,dcldalphab,dcddalphab,dcmzdalphab
+!!$  real(kind=realType) :: dcmzdqb,dcmzdq
+!!$  real(kind=realType) :: dcmzdalphadot,dcmzdalphadotb
   ! Working Variables
   integer(kind=intTYpe) :: sps,ii,ii_start,ii_end,iInc,ierr,n
   integer(kind=intTYpe) :: i,j,icell,jcell,kcell,nn,mm,idxmgb,faceID,ibeg,iend,jbeg,jend
@@ -112,62 +116,63 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
 
      ! Get the (sumed) solution values by running getSolution
 
-     spectralLoopAdj2: do sps=1,nTimeIntervalsSpectral
-        call getSolution(sps)
-        cFxAdj(sps) = functionValue(costFuncForceXCoef)
-        cFyAdj(sps) = functionValue(costFuncForceYCoef)
-        cFzAdj(sps) = functionValue(costFuncForceZCoef)
-        cMxAdj(sps) = functionValue(costFuncMomXCoef)
-        cMyAdj(sps) = functionValue(costFuncMomYCoef)
-        cMzAdj(sps) = functionValue(costFuncMomZCoef)
-        ClAdj(sps)  = functionValue(costFuncLiftCoef)
-        CdAdj(sps)  = functionValue(costFuncDragCoef)
-     end do spectralLoopAdj2
+     do sps =1,nTimeIntervalsSpectral
+     
+        level = 1
+        call computeAeroCoef(globalCFVals,sps)
+        
+        BaseCoef(sps,1) = globalCFVals(costFuncLiftCoef)
+        BaseCoef(sps,2) = globalCFVals(costFuncDragCoef)
+        BaseCoef(sps,3) = globalCFVals(costFuncForceXCoef)
+        BaseCoef(sps,4) = globalCFVals(costFuncForceYCoef)
+        BaseCoef(sps,5) = globalCFVals(costFuncForceZCoef)
+        BaseCoef(sps,6) = globalCFVals(costFuncMomXCoef)
+        BaseCoef(sps,7) = globalCFVals(costFuncMomYCoef)
+        BaseCoef(sps,8) = globalCFVals(costFuncMomZCoef)
+        
+        
+     end do
 
      ! Set Reverse Mode Seeds
-     cl0 =0.0; cd0 = 0.0; cmz0 =0.0
-     cl0b = 0.0; cd0b = 0.0; cmz0b = 0.0
-
-     dcldalpha =0.0 ; dcddalpha = 0.0; dcmzdalpha =0.0
-     dcldalphab = 0.0; dcddalphab = 0.0; dcmzdalphab = 0.0
-
-     dcmzdalphadotb = 0
-     dcmzdqb = 0.0
+     coef0b= 0.0
+     dcdalphab= 0.0
+     dcdalphadotb= 0.0
+     dcdqb= 0.0
+     dcdqdotb= 0.0
+   
 
      select case(costFunction)
      case(costfunccl0)
-        cl0b=1.0
+        coef0b(1)=1.0
      case(costfuncclalpha)
-        dcldalphab = 1.0
+        dcdalphab(1) = 1.0
      case(costfunccd0)
-        cd0b=1.0
+        coef0b(2)=1.0
      case(costfunccdalpha)
-        dcddalphab = 1.0
+        dcdalphab(2) = 1.0
      case(costfunccm0)
-        cmz0b=1.0
+        coef0b(8)=1.0
      case(costfunccmzalpha)
-        dcmzdalphab = 1.0
+        dcdalphab(8) = 1.0
      case(costfunccmzalphadot)
-        dcmzdalphadotb =1.0
+        dcdalphadotb(8) =1.0
      case(costfunccmzq)
-        dcmzdqb = 1.0 
+        dcdqb(8) = 1.0 
      end select
 
-     call COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
-            cmyadj, cmzadj, cmzadjb, cladj, cladjb, cdadj, cdadjb, cl0, cl0b, cd0&
-            , cd0b, cmz0, cmz0b, dcldalpha, dcldalphab, dcddalpha, dcddalphab, &
-            dcmzdalpha, dcmzdalphab, dcmzdalphadot, dcmzdalphadotb, dcmzdq, &
-            dcmzdqb)
+     call COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
+&  coef0b, dcdalpha, dcdalphab, dcdalphadot, dcdalphadotb, dcdq, dcdqb, &
+&  dcdqdot, dcdqdotb)
 
 
      do sps = 1,nTimeIntervalsSpectral
         select case(costFunction)
         case(costfunccl0,costfuncclalpha, costFuncClAlphaDot,costFuncClq,costFuncClqDot)
-           dIdctemp = Cladjb(sps)
+           dIdctemp = basecoefb(sps,1)!Cladjb(sps)
         case(costfunccd0,costfunccdalpha,costFuncCdAlphaDot,costFuncCdq,costFuncCdqDot)
-           dIdctemp = Cdadjb(sps)
+           dIdctemp = basecoefb(sps,2)!Cdadjb(sps)
         case(costfunccm0,costfunccmzalpha,costfunccmzalphadot,costfunccmzq,costFuncCmzqDot)
-           dIdctemp = cmzAdjb(sps)
+           dIdctemp = basecoefb(sps,8)!cmzAdjb(sps)
         end select
 
         dJdc(sps) = dIdctemp
