@@ -24,6 +24,7 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
   USE inputphysics
   USE inputtimespectral
   USE inputtsstabderiv
+  use flowvarrefstate     
   USE monitor
   USE section
   IMPLICIT NONE
@@ -54,7 +55,6 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
   REAL(KIND=REALTYPE) :: resbasecoef(ntimeintervalsspectral, 8), &
 &  resbasecoefb(ntimeintervalsspectral, 8)
   REAL(KIND=REALTYPE) :: t(nsections)
-  REAL :: timeref
   REAL(KIND=REALTYPE) :: TSALPHA, TSALPHADOT
   REAL(KIND=REALTYPE) :: res1, result1, TSMACH, TSMACHDOT
   EXTERNAL TSALPHA, TSMACHDOT, DERIVATIVERIGIDROTANGLE, TSMACH, &

@@ -33,6 +33,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
   use inputPhysics     ! pointRef, equations, RANSEquations, 
   use inputTimeSpectral 
   use communication    !myID
+  use costFunctions
   implicit none
   !
   ! Subroutine arguments.
@@ -64,11 +65,16 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
 !!$  real(kind=realType), dimension(nTimeIntervalsSpectral)::       &
 !!$       ClAdjb,CdAdjb,CfxAdjb,CfyAdjb,CfzAdjb,   &
 !!$       CmxAdjb,CmyAdjb,CmzAdjb
-
+  integer(kind=inttype)::level
   real(kind=realType),dimension(nTimeIntervalsSpectral,8)::BaseCoef
   real(kind=realType),dimension(8)::dcdp,dcdpdot,dcdq,dcdqdot,dcdr,dcdrdot
   real(kind=realType),dimension(8)::dcdalpha,dcdalphadot,dcdbeta,dcdbetadot,dcdMach,dcdMachdot
   real(kind=realType),dimension(8)::Coef0,Coef0dot
+  real(kind=realType),dimension(nTimeIntervalsSpectral,8)::basecoefb
+  real(kind=realType),dimension(8)::dcdpb,dcdpdotb,dcdqb,dcdqdotb,dcdrb,dcdrdotb
+  real(kind=realType),dimension(8)::dcdalphab,dcdalphadotb,dcdbetab,dcdbetadotb,dcdMachb,dcdMachdotb
+  real(kind=realType),dimension(8)::Coef0b,Coef0dotb
+  real(kind=realType), dimension(nCostFunction)::globalCFVals
 !!$  real(kind=realType) :: cl0,cd0,cmz0,dcldalpha,dcddalpha,dcmzdalpha
 !!$  real(kind=realType) :: cl0b,cd0b,cmz0b,dcldalphab,dcddalphab,dcmzdalphab
 !!$  real(kind=realType) :: dcmzdqb,dcmzdq
