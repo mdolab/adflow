@@ -26,9 +26,8 @@ module costFunctions
   !     *                                                                *
   !     ******************************************************************
 
-  integer(kind=intType), parameter :: nCostFunction = 24_intType
-
-  integer(kind=intType), parameter :: costFuncLift = 1_intType,&
+  integer(kind=intType), parameter :: nCostFunction = 31_intType
+  integer(kind=intType), parameter :: costFuncLift       = 1_intType,&
        costFuncDrag       = 2_intType,&
        costFuncLiftCoef   = 3_intType,&
        costFuncDragCoef   = 4_intType,&
@@ -44,14 +43,23 @@ module costFunctions
        costFuncMomXCoef   = 14_intType,&
        costFuncMomYCoef   = 15_intType,&
        costFuncMomZCoef   = 16_intType,&
-       costFuncCmzAlpha   = 17_intType,&
-       costFuncCm0        = 18_intType,&
-       costFuncClAlpha    = 19_intType,&
-       costFuncCl0        = 20_intType,&
-       costFuncCdAlpha    = 21_intType,&
-       costFuncCd0        = 22_intType,&
-       costFuncCmzAlphaDot= 23_intType,&
-       costFuncCmzq       = 24_intType
+       costFuncCm0        = 17_intType,&
+       costFuncCmzAlpha   = 18_intType,&
+       costFuncCmzAlphaDot= 19_intType,&
+       costFuncCmzq       = 20_intType,&
+       costFuncCmzqDot    = 21_intType,&
+       costFuncCl0        = 22_intType,&
+       costFuncClAlpha    = 23_intType,&
+       costFuncClAlphaDot = 24_intType,&
+       costFuncClq        = 25_intType,&
+       costFuncClqDot     = 26_intType,&
+       costFuncCd0        = 27_intType,&
+       costFuncCdAlpha    = 28_intType,& 
+       costFuncCdAlphadot = 29_intType,&
+       costFuncCdq        = 30_intType,&
+       costFuncCdqDot     = 31_intType
 
   real(kind=realType), allocatable, dimension(:)   :: functionValue
 end module costFunctions
+
+

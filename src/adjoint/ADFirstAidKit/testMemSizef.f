@@ -1,4 +1,4 @@
-C$Id: testMemSizef.f 367 2006-11-29 00:47:02Z acmarta $
+C$Id: testMemSizef.f 466 2005-10-03 10:37:50Z vmp $
       program testmemsize
       external countsetbits
       integer countsetbits

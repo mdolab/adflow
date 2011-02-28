@@ -75,8 +75,7 @@ subroutine createPETScMat
   allocate( nnzDiagonal(nCellsLocal*nTimeIntervalsSpectral),&
        nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
   
-  call drdwPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal)
-
+  call drdwPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal*nTimeIntervalsSpectral)
   if( nw <= 7 ) then
 
      PETScBlockMatrix = .true.
@@ -104,8 +103,8 @@ subroutine createPETScMat
      call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
           nDimW, nDimW,                     &
           PETSC_DETERMINE, PETSC_DETERMINE, &
-          0, nnzDiagonal2,         &
-          0, nnzOffDiag2,            &
+          8, nnzDiagonal2,         &
+          8, nnzOffDiag2,            &
           dRdWT, PETScIerr)
      call EChk(PETScIerr,__file__,__line__)
      deallocate(nnzDiagonal2,nnzOffDiag2)
@@ -147,7 +146,7 @@ subroutine createPETScMat
      allocate( nnzDiagonal(nCellsLocal*nTimeIntervalsSpectral),&
           nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
      
-     call drdwPCPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal)
+     call drdwPCPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal*nTimeIntervalsSpectral)
 
      if( nw <= 7 ) then
 
@@ -235,8 +234,8 @@ subroutine createPETScMat
   call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
        nDimW, nDimX,                     &
        PETSC_DETERMINE, PETSC_DETERMINE, &
-       0, nnzDiagonal,     &
-       0, nnzOffDiag,            &
+       8, nnzDiagonal,     &
+       8, nnzOffDiag,            &
        dRdx, PETScIerr)
   call EChk(PETScIerr,__file__,__line__)
   deallocate( nnzDiagonal, nnzOffDiag )
@@ -341,8 +340,8 @@ subroutine drdwPreAllocation(onProc,offProc,wSize)
   onProc(:) = 1+(nTimeIntervalsSpectral-1) ! ALWAYS have the center cell ON-PROCESSOR
   offProc(:) = 0_intType 
   
-  do sps=1,nTimeIntervalsSpectral
-     do nn=1,nDom
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
         call setPointersAdj(nn,1_intType,sps)
         ! Loop over each Cell
         do k=2,kl
@@ -422,8 +421,9 @@ subroutine drdwPreAllocation(onProc,offProc,wSize)
               end do ! I loop
            end do ! J loop
         end do ! K loop
-     end do ! Domain Loop
-  end do ! sps Loop
+     end do ! sps Loop
+  end do ! Domain Loop
+
 
 end subroutine drdwPreAllocation
 
@@ -454,8 +454,8 @@ subroutine drdwPCPreAllocation(onProc,offProc,wSize)
   ii = 0
   onProc(:) = 1+(nTimeIntervalsSpectral-1) ! ALWAYS have the center cell ON-PROCESSOR
   offProc(:) = 0_intType 
-  do sps=1,nTimeIntervalsSpectral
-     do nn=1,nDom
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
         call setPointersAdj(nn,1_intType,sps)
         ! Loop over each Cell
         do k=2,kl
@@ -500,8 +500,9 @@ subroutine drdwPCPreAllocation(onProc,offProc,wSize)
               end do ! I loop
            end do ! J loop
         end do ! K loop
-     end do ! Domain Loop
-  end do ! sps loop
+     end do ! sps loop
+  end do ! Domain Loop
+
 end subroutine drdwPCPreAllocation
 
 subroutine drdxPreAllocation(onProc,offProc,wSize)
@@ -532,10 +533,10 @@ subroutine drdxPreAllocation(onProc,offProc,wSize)
 
   ii = 0 
 
-
   ! This is for the "Regular" drdx calculation. i.e. xadjb
-  do sps=1,nTimeIntervalsSpectral
-     do nn=1,nDom
+ 
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
         call setPointersAdj(nn,1_intType,sps)
         ! Loop over each Cell
         do k=2,kl
@@ -582,8 +583,8 @@ subroutine drdxPreAllocation(onProc,offProc,wSize)
               end do ! I loop
            end do ! J loop
         end do ! K loop
-     end do ! Domain Loop
-  end do ! sps loop
+     end do ! sps loop
+  end do ! Domain Loop
 
   ! However, drdx is more complex since we ALSO have
   ! xblockcorners. These however, only show up for the cells that are
@@ -591,8 +592,9 @@ subroutine drdxPreAllocation(onProc,offProc,wSize)
 
   ! THIS MAY NOT WORK FOR SPS CASE!!! 
   ii = 0
-  do sps=1,nTimeIntervalsSpectral
-     do nn=1,nDom
+ 
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
         call setPointersAdj(nn,1_intType,sps)
         ! Loop over each Cell
         do k=2,kl

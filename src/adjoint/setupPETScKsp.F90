@@ -24,6 +24,7 @@ subroutine setupPETScKsp
   use blockPointers
   use flowVarRefState  !nw
   use inputADjoint
+  use communication
   implicit none
 
   !
@@ -187,7 +188,7 @@ subroutine setupPETScKsp
        adjMaxIter, PETScIerr)
   call EChk(PETScIerr,__file__,__line__)
 
-  if( PETScRank==0 ) then
+  if( myid==0 ) then
      call KSPGetTolerances(ksp, rTol, aTol, dTol, mIts, PETScIerr)
      call EChk(PETScIerr,__file__,__line__)
      write(*,20) rTol, aTol, dTol
@@ -414,7 +415,7 @@ subroutine setupPETScKsp
      endif
   end select
 
-  if( PETScRank==0 ) then
+  if( myid==0 ) then
      call PCGetType(pc, pcType, PETScIerr)
      call EChk(PETScIerr,__file__,__line__)
      write(*,30) pcType
@@ -449,6 +450,7 @@ subroutine MyKSPMonitor(myKsp, n, rnorm, dummy, ierr)
   !
   use ADjointPETSc
   use inputADjoint
+  use communication
   implicit none
   !
   !     Subroutine arguments.
@@ -474,7 +476,7 @@ subroutine MyKSPMonitor(myKsp, n, rnorm, dummy, ierr)
   ! Write the residual norm to stdout every adjMonStep iterations.
 
   if( mod(n,adjMonStep)==0 ) then
-     if( PETScRank==0 ) write(*,10) n, rnorm
+     if( myid==0 ) write(*,10) n, rnorm
   end if
 
   ierr = 0

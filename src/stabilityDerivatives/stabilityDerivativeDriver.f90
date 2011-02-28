@@ -29,9 +29,9 @@
 !     Local variables.
 !
       real(kind=realType)::dcldp,dcldpdot,dcmzdp,dcmzdpdot         
-      real(kind=realType)::dcldq,dcldqdot,dcmzdq,dcmzdqdot
+      real(kind=realType)::dcldq,dcldqdot,dcddq,dcddqdot,dcmzdq,dcmzdqdot
       real(kind=realType)::dcldr,dcldrdot,dcmzdr,dcmzdrdot
-      real(kind=realType)::dcldalpha,dcldalphadot,dcddalpha,dcmzdalpha,dcmzdalphadot
+      real(kind=realType)::dcldalpha,dcldalphadot,dcddalpha,dcddalphadot,dcmzdalpha,dcmzdalphadot
       real(kind=realType)::dcldMach,dcldMachdot,dcmzdMach,dcmzdMachdot
       real(kind=realType)::cl0,cl0dot,cD0,cmz0,cmz0dot
       
@@ -43,9 +43,8 @@
 !     *                                                                *
 !     ******************************************************************
 !
-
-      call computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,dcmzdalpha,&
-           dcmzdalphadot,dcmzdq)
-
+      call computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
+           dcmzdalpha,dcldalphadot,dcddalphadot,dcmzdalphadot,dcldq,&
+           dcddq,dcmzdq,dcldqdot,dcddqdot,dcmzdqdot)
 
     end subroutine stabilityDerivativeDriver

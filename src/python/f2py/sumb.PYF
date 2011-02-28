@@ -129,6 +129,25 @@ python module sumb ! in
          logical :: eulerwallspresent
        end subroutine solver
 
+    !    subroutine nksolver
+!        end subroutine nksolver
+       
+       subroutine setupnksolver
+       end subroutine setupnksolver
+       
+       subroutine destroynksolver
+       end subroutine destroynksolver
+
+       subroutine getcurrentresidual(rhores,totalrres)
+         real(kind=realtype), intent(out) :: rhores
+         real(kind=realtype), intent(out) :: totalrres
+       end subroutine getcurrentresidual
+
+       subroutine getfreestreamresidual(rhores,totalrres)
+         real(kind=realtype), intent(out) :: rhores
+         real(kind=realtype), intent(out) :: totalrres
+       end subroutine getfreestreamresidual
+
        subroutine viscousflux ! in :sumb:../../solver/viscousFlux.f90
        end subroutine viscousflux
 
@@ -176,9 +195,17 @@ python module sumb ! in
 
        subroutine checkwriteunsteadyendloop ! in :sumb:../../solver/solverUnsteady.F90
        end subroutine checkwriteunsteadyendloop
- ! ############################################################################
+       ! ############################################################################
        ! ADjoint Routines
        ! ############################################################################
+
+       subroutine verifyradj(level)
+         integer(kind=inttype) intent(in) :: level
+       end subroutine verifyradj
+
+       subroutine verifyrnkpc
+       end subroutine verifyrnkpc
+
        subroutine getsolution(sps) ! in :sumb:../../adjoint/designExport.f90
          integer(kind=inttype) intent(in) :: sps
        end subroutine getsolution
@@ -203,6 +230,9 @@ python module sumb ! in
 
        subroutine setupallresidualmatrices ! in :sumb:../../adjoint/setupADjointMatrix.F90
        end subroutine setupallresidualmatrices
+
+       subroutine setupadjointpcmatrixtranspose
+       end subroutine setupadjointpcmatrixtranspose
 
        subroutine computeobjpartials(costfunction,pts,npts) ! in :test:computeObjPartials.F90
          integer(kind=inttype) intent(in) :: costfunction
@@ -315,6 +345,8 @@ python module sumb ! in
        !*****************
 
        subroutine stabilityderivativedriver
+         use precision
+         implicit none
        end subroutine stabilityderivativedriver
 
        ! ############################################################################
@@ -482,28 +514,86 @@ python module sumb ! in
 
        module inputmotion ! in :sumb:../../modules/inputParam.f90
          use precision
-         real(kind=realtype) dimension(3) :: rotpoint
-         integer(kind=inttype) :: degreepolxrot
-         integer(kind=inttype) :: degreepolyrot
-         integer(kind=inttype) :: degreepolzrot
-         real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
-         real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
-         real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
-         integer(kind=inttype) :: degreefourxrot
-         integer(kind=inttype) :: degreefouryrot
-         integer(kind=inttype) :: degreefourzrot
-         real(kind=realtype) :: omegafourxrot
-         real(kind=realtype) :: omegafouryrot
-         real(kind=realtype) :: omegafourzrot
-         real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
          real(kind=realtype) allocatable,dimension(:) :: coscoeffouryrot
+         real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
+         integer(kind=inttype) :: degreefourxrot
+         real(kind=realtype) allocatable,dimension(:) :: sincoeffouralpha
+         real(kind=realtype) :: omegafourbeta
+         real(kind=realtype) allocatable,dimension(:) :: coscoeffourbeta
+         real(kind=realtype) allocatable,dimension(:) :: sincoeffourbeta
+         integer(kind=inttype) :: degreepolbeta
+         real(kind=realtype) allocatable,dimension(:) :: sincoeffourmach
+         integer(kind=inttype) :: degreepolmach
+         real(kind=realtype) :: omegafourmach
+         integer(kind=inttype) :: degreepolalpha
+         real(kind=realtype) allocatable,dimension(:) :: coefpolmach
+         real(kind=realtype) allocatable,dimension(:) :: coscoeffouralpha
+         real(kind=realtype) allocatable,dimension(:) :: coscoeffourmach
+         real(kind=realtype) dimension(3) :: rotpoint
+         real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
+         logical :: gridmotionspecified
+         real(kind=realtype) :: omegafourzrot
+         integer(kind=inttype) :: degreefouryrot
+         real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
+         integer(kind=inttype) :: degreefourbeta
+         real(kind=realtype) :: omegafouralpha
          real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
+         integer(kind=inttype) :: degreepolzrot
+         real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
+         real(kind=realtype) :: omegafouryrot
+         integer(kind=inttype) :: degreefourzrot
+         integer(kind=inttype) :: degreefourmach
+         integer(kind=inttype) :: degreefouralpha
+         real(kind=realtype) allocatable,dimension(:) :: coefpolalpha
+         real(kind=realtype) :: omegafourxrot
+         integer(kind=inttype) :: degreepolyrot
          real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
          real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
-         real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
-         logical :: gridmotionspecified
+         integer(kind=inttype) :: degreepolxrot
+         real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
+         real(kind=realtype) allocatable,dimension(:) :: coefpolbeta
+!!$real(kind=realtype) dimension(3) :: rotpoint
+!!$         integer(kind=inttype) :: degreepolxrot
+!!$         integer(kind=inttype) :: degreepolyrot
+!!$         integer(kind=inttype) :: degreepolzrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
+!!$         integer(kind=inttype) :: degreefourxrot
+!!$         integer(kind=inttype) :: degreefouryrot
+!!$         integer(kind=inttype) :: degreefourzrot
+!!$         real(kind=realtype) :: omegafourxrot
+!!$         real(kind=realtype) :: omegafouryrot
+!!$         real(kind=realtype) :: omegafourzrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffouryrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
+!!$         logical :: gridmotionspecified
+!!$         real(kind=realtype) :: omegafourzrot
+!!$         integer(kind=inttype) :: degreefouryrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
+!!$         integer(kind=inttype) :: degreefourbeta
+!!$         real(kind=realtype) :: omegafouralpha
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
+!!$         integer(kind=inttype) :: degreepolalpha
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
+!!$         real(kind=realtype) :: omegafouryrot
+!!$         integer(kind=inttype) :: degreefourzrot
+!!$         integer(kind=inttype) :: degreefourmach
+!!$         integer(kind=inttype) :: degreefouralpha
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolalpha
+!!$         real(kind=realtype) :: omegafourxrot
+!!$         integer(kind=inttype) :: degreepolbeta
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
+!!$         integer(kind=inttype) :: degreepolmach
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolbeta
        end module inputmotion
-
+       
        module inputparallel ! in :sumb:../../modules/inputParam.f90
          use precision
          real(kind=realtype) :: loadimbalance
@@ -763,33 +853,40 @@ python module sumb ! in
        end module adjointpetsc
 
        module costfunctions ! in :test:costFunctions.F90
-         use constants
-         integer(kind=inttype) parameter,optional :: costfunclift=1
-         integer(kind=inttype) parameter,optional :: costfunccd0=22
-         integer(kind=inttype) parameter,optional :: costfuncforcex=5
-         integer(kind=inttype) parameter,optional :: costfuncforcey=6
-         integer(kind=inttype) parameter,optional :: costfuncforcez=7
-         integer(kind=inttype) parameter,optional :: costfuncforcezcoef=10
-         integer(kind=inttype) parameter,optional :: costfuncmomz=13
-         integer(kind=inttype) parameter,optional :: costfuncmomx=11
-         integer(kind=inttype) parameter,optional :: costfuncmomy=12
-         integer(kind=inttype) parameter,optional :: costfunccl0=20
-         integer(kind=inttype) parameter,optional :: costfuncmomzcoef=16
-         integer(kind=inttype) parameter,optional :: costfunccm0=18
-         integer(kind=inttype) parameter,optional :: costfuncmomxcoef=14
-         integer(kind=inttype) parameter,optional :: costfuncdrag=2
-         integer(kind=inttype) parameter,optional :: costfuncliftcoef=3
-         integer(kind=inttype) parameter,optional :: costfunccmzalpha=17
-         integer(kind=inttype) parameter,optional :: costfuncdragcoef=4
-         integer(kind=inttype) parameter,optional :: costfunccdalpha=21
-         integer(kind=inttype) parameter,optional :: ncostfunction=24
-         integer(kind=inttype) parameter,optional :: costfuncclalpha=19
-         integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
-         integer(kind=inttype) parameter,optional :: costfuncforcexcoef=8
-         integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
-         integer(kind=inttype) parameter,optional :: costfunccmzq=24
-         integer(kind=inttype) parameter,optional :: costfunccmzalphadot=23
-         real(kind=realtype) allocatable,dimension(:) :: functionvalue
+          use constants
+            integer(kind=inttype) parameter,optional :: costfunccdq=30
+            integer(kind=inttype) parameter,optional :: costfuncforcezcoef=10
+            integer(kind=inttype) parameter,optional :: costfuncmomzcoef=16
+            integer(kind=inttype) parameter,optional :: costfunccm0=17
+            integer(kind=inttype) parameter,optional :: costfuncforcex=5
+            integer(kind=inttype) parameter,optional :: costfuncclq=25
+            integer(kind=inttype) parameter,optional :: costfuncdrag=2
+            integer(kind=inttype) parameter,optional :: costfunccl0=22
+            integer(kind=inttype) parameter,optional :: costfunccmzqdot=21
+            integer(kind=inttype) parameter,optional :: costfuncforcexcoef=8
+            integer(kind=inttype) parameter,optional :: costfunccmzq=20
+            integer(kind=inttype) parameter,optional :: costfunccmzalphadot=19
+            real(kind=realtype) allocatable,dimension(:) :: functionvalue
+            integer(kind=inttype) parameter,optional :: costfunclift=1
+            integer(kind=inttype) parameter,optional :: costfunccd0=27
+            integer(kind=inttype) parameter,optional :: costfuncclqdot=26
+            integer(kind=inttype) parameter,optional :: costfuncforcey=6
+            integer(kind=inttype) parameter,optional :: costfuncforcez=7
+            integer(kind=inttype) parameter,optional :: costfuncmomz=13
+            integer(kind=inttype) parameter,optional :: costfunccdqdot=31
+            integer(kind=inttype) parameter,optional :: costfuncmomx=11
+            integer(kind=inttype) parameter,optional :: costfuncmomy=12
+            integer(kind=inttype) parameter,optional :: costfunccdalphadot=29
+            integer(kind=inttype) parameter,optional :: costfuncmomxcoef=14
+            integer(kind=inttype) parameter,optional :: costfunccdalpha=28
+            integer(kind=inttype) parameter,optional :: costfuncliftcoef=3
+            integer(kind=inttype) parameter,optional :: costfunccmzalpha=18
+            integer(kind=inttype) parameter,optional :: costfuncdragcoef=4
+            integer(kind=inttype) parameter,optional :: costfuncclalphadot=24
+            integer(kind=inttype) parameter,optional :: ncostfunction=31
+            integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
+            integer(kind=inttype) parameter,optional :: costfuncclalpha=23
+            integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
        end module costfunctions
 
        module adjointvars ! in :test:ADjointVars.F90
@@ -835,7 +932,46 @@ python module sumb ! in
          logical :: tsalphamode
        end module inputtsstabderiv
 
-   
+       module nksolvervars ! in :test:NKsolverVars.F90
+         use constants
+         integer(kind=inttype) :: jacobian_lag
+         logical :: usenksolver
+         character parameter,optional :: pc_lu="lu"
+         character parameter,optional :: ord_nd="nd"
+         character parameter,optional :: pc_blockjacobi="bjacobi"
+         integer(kind=inttype) :: snes_max_funcs
+         real(kind=realtype) :: snes_rtol
+         character(len=maxstringlen) :: global_pc_side
+         character parameter,optional :: ksp_bicgstab="bicgstab"
+         character parameter,optional :: pc_ilu="ilu"
+         integer(kind=inttype) :: snes_max_its
+         character parameter,optional :: ord_rcm="rcm"
+         character(len=maxstringlen) :: ksp_solver_type
+         character parameter,optional :: ksp_gmres="gmres"
+         character parameter,optional :: side_right="right"
+         character parameter,optional :: ord_natural="natural"
+         character parameter,optional :: pc_jacobi="jacobi"
+         integer(kind=inttype) :: ksp_subspace
+         integer(kind=inttype) :: asm_overlap
+         character(len=maxstringlen) :: global_pc_type
+         real(kind=realtype) :: ksp_atol
+         integer(kind=inttype) :: ksp_max_it
+         character parameter,optional :: side_left="left"
+         integer(kind=inttype) :: local_pc_ilu_level
+         real(kind=realtype) :: snes_stol
+         real(kind=realtype) :: snes_atol
+         character(len=maxstringlen) :: local_pc_ordering
+         real(kind=realtype) :: ksp_div_tol=10
+         character(len=maxstringlen) :: local_pc_type
+         real(kind=realtype) :: nk_switch_tol
+         real(kind=realtype) :: ksp_rtol
+         character parameter,optional :: ord_owd="owd"
+         character parameter,optional :: ksp_fgmres="fgmres"
+         character parameter,optional :: pc_asm="asm"
+         real(kind=realtype) :: totalres0
+         real(kind=realtype) :: rhores0
+       end module nksolvervars
+       
 
        ! ############################################################################
        ! Coupler API Routines

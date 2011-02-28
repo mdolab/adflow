@@ -9,13 +9,14 @@
 !     ******************************************************************
 !
 subroutine computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
-     dcmzdalpha,dcmzdalphadot,dcmzdq)
+     dcmzdalpha,dcldalphadot,dcddalphadot,dcmzdalphadot,dcldq,&
+     dcddq,dcmzdq,dcldqdot,dcddqdot,dcmzdqdot)
   !
   !     ******************************************************************
   !     *                                                                *
   !     * Computes an estimate for the stability derivatives from the    *
   !     * coefficient values of the Time Spectral Solution.              *
-  !     * for now just the q derivative...                               *
+  !     *                                                                *
   !     ******************************************************************
   !
   use precision
@@ -27,7 +28,7 @@ subroutine computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
   use monitor
   use section
   use communication !myid
-  use ADjointVars ! FunctionValue
+  use costFunctions
   implicit none
 
   !
@@ -68,7 +69,7 @@ subroutine computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
   !real(kind=realType)::t
   real(kind=realType):: TSAlpha,TSAlphadot
   real(kind=realType):: TSMach,TSMachdot
-
+  real(kind=realType), dimension(nCostFunction)::globalCFVals
   !speed of sound: for normalization of q derivatives
   real(kind=realType)::a
 
@@ -80,23 +81,25 @@ subroutine computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
   !     ******************************************************************
   !
 
-  if (.not. allocated(functionValue)) then
-     allocate(functionValue(nCostFunction))
-  end if
-
+  if(myID==0) print *,'in compute TS deriv...',nTimeintervalsSpectral
   !Compute and store the aero coef. Values for each TS level
 
+
   do sps =1,nTimeIntervalsSpectral
+     
      level = 1
-     call computeAeroCoef(sps)
-     CL(sps) = functionValue(costFuncLiftCoef)
-     CD(sps) = functionValue(costFuncDragCoef)
-     cFx(sps) = functionValue(costFuncForceXCoef)
-     cFy(sps) = functionValue(costFuncForceYCoef)
-     cFz(sps) = functionValue(costFuncForceZCoef)
-     cMx(sps) = functionValue(costFuncMomXCoef)
-     cMy(sps) = functionValue(costFuncMomYCoef)
-     cMz(sps) = functionValue(costFuncMomZCoef)
+     call computeAeroCoef(globalCFVals,sps)
+
+     CL(sps) = globalCFVals(costFuncLiftCoef)
+     CD(sps) = globalCFVals(costFuncDragCoef)
+     CFx(sps) = globalCFVals(costFuncForceXCoef)
+     CFy(sps) = globalCFVals(costFuncForceYCoef)
+     CFz(sps) = globalCFVals(costFuncForceZCoef)
+     CMx(sps) = globalCFVals(costFuncMomXCoef)
+     CMy(sps) = globalCFVals(costFuncMomYCoef)
+     CMz(sps) = globalCFVals(costFuncMomZCoef)
+    
+
   end do
 
   if (TSpMode)then
@@ -135,7 +138,10 @@ subroutine computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
      !if(myID==0)print *,'dphix',dphix
      !if(myID==0)print *,'dphixdot',dphixdot
      !now compute dCl/dp
-
+     if (myid==0) then
+        print *,'CL',CL
+        print *,'dphix',dphix
+     endif
      call computeLeastSquaresRegression(cl,dphix,nTimeIntervalsSpectral,dcldp,cl0)
 
      !now compute dCd/dp
@@ -199,7 +205,7 @@ subroutine computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
                    /         real(nTimeIntervalsSpectral,realType)
            enddo
         endif
-        !print *,'t',t
+        !if (myid==0)  print *,'t',t
 
         ! Compute the time derivative of the rotation angles around the
         ! z-axis. i.e. compute q
@@ -221,9 +227,14 @@ subroutine computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
              sinCoefFourZRot, t)
         !if(myID==0)print *,'dphizdot',dphizdot
      end do
-     if(myID==0)print *,'dphiz',dphiz
-     if(myID==0)print *,'dphizdot',dphizdot
+     !if(myID==0)print *,'dphiz',dphiz
+     !if(myID==0)print *,'dphizdot',dphizdot
 
+     if (myid==0) then
+        print *,'CL',CL
+        print *,'dphiz',dphiz
+        print *,'dphizdot',dphizdot
+     endif
      !now compute dCl/dq
 
      call computeLeastSquaresRegression(cl,dphiz,nTimeIntervalsSpectral,dcldq,cl0)
@@ -318,9 +329,13 @@ subroutine computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
 
      enddo
 
-     if(myID==0)print *,'dphiy',dphiy
-     if(myID==0)print *,'dphiydot',dphiydot
+     !if(myID==0)print *,'dphiy',dphiy
+     !if(myID==0)print *,'dphiydot',dphiydot
 
+     if (myid==0) then
+        print *,'CL',CL
+        print *,'dphiy',dphiy
+     endif
      !now compute dCl/dr
 
      call computeLeastSquaresRegression(cl,dphiy,nTimeIntervalsSpectral,dcldr,cl0)
@@ -379,7 +394,10 @@ subroutine computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
      end do
      !print *,'Alpha', intervalAlpha
      !now compute dCl/dalpha
-
+     if (myid==0) then
+        print *,'CL',CL
+        !print *,'intervalAlpha',intervalAlpha,sinCoefFourAlpha, t
+     endif
      call computeLeastSquaresRegression(cl,intervalAlpha,nTimeIntervalsSpectral,dcldalpha,cl0)
 
      !now compute dCd/dalpha
@@ -409,6 +427,8 @@ subroutine computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
      if(myID==0) print *,'ResCL',resCL
      if(myID==0) print *,'ResCd',resCd
      if(myID==0) print *,'resCMZ',resCMZ
+
+     if(myID==0) print *,'intervalAlphaDot',intervalAlphadot
      !now compute dCl/dqdot
 
      call computeLeastSquaresRegression(Rescl,intervalAlphadot,nTimeIntervalsSpectral,dcldalphadot,cl0dot)

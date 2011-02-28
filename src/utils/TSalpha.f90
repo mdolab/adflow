@@ -59,7 +59,6 @@
 
        ! Compute the polynomial contribution. If no polynomial was
        ! specified, the value of index 0 is set to zero automatically.
-
        alpha = coefPolAlpha(0)
        do nn=1,degreePolAlpha
          alpha = alpha + coefPolAlpha(nn)*(t**nn)

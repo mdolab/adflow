@@ -203,7 +203,7 @@ subroutine setupCouplingMatrixStruct(pts,npts)
                     grid_ptsb = 0.0
                     wadjb = 0.0
 
-                    call COMPUTEFORCECOUPLINGADJ_B(force, forceb, moment, momentb, grid_pts, &
+                    call COMPUTEFORCESADJ_B(force, forceb, moment, momentb, grid_pts, &
                          grid_ptsb, wadj, wadjb, refpoint, refpointb, fact, ibeg, iend, jbeg, jend, &
                          i, j, righthanded)
                

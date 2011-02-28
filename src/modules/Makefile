@@ -49,7 +49,8 @@ FF90_OBJECTS_2 = bleedFlows.o\
 	         costFunctions.o\
 
 FF90_OBJECTS_3 = ADjointPETSc.o\
-		 ADjointVars.o\
+	         ADjointVars.o\
+		 NKsolverVars.o\
 		 block.o\
 		 IOModule.o
 

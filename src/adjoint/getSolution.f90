@@ -20,8 +20,13 @@ subroutine getSolution(sps)
   !     Local variables.
   !
   real(kind=realType)   :: alpha, beta
-  real(kind=realType) :: cl0,cd0,cmz0,dcldalpha,dcddalpha,dcmzdalpha
-  real(kind=realType) :: dcmzdalphadot,dcmzdq
+
+  real(kind=realType) :: cl0,cd0,cmz0
+  real(kind=realType) :: dcldalpha,dcddalpha,dcmzdalpha
+  real(kind=realType) :: dcldalphaDot,dcddalphaDot,dcmzdalphaDot
+  real(kind=realType) :: dcldq,dcddq,dcmzdq
+  real(kind=realType) :: dcldqdot,dcddqdot,dcmzdqdot
+  real(kind=realType), dimension(nCostFunction)::globalCFVals
   real(kind=realType),dimension(:),allocatable :: localVal,globalVal
   ! Function values
 
@@ -30,32 +35,50 @@ subroutine getSolution(sps)
   end if
 
   functionValue(:) = 0.0
-  call computeAeroCoef(sps)
-  
-  if(TSStability)then
+  call computeAeroCoef(globalCFVals,sps)
+  functionValue(costFuncLift) = globalCFVals(costFuncLift) 
+  functionValue(costFuncDrag) = globalCFVals(costFuncDrag) 
+  functionValue(costFuncLiftCoef) = globalCFVals(costFuncLiftCoef) 
+  functionValue(costFuncDragCoef) = globalCFVals(costFuncDragCoef) 
+  functionValue(costFuncForceX) = globalCFVals(costFuncForceX) 
+  functionValue(costFuncForceY) = globalCFVals(costFuncForceY) 
+  functionValue(costFuncForceZ) = globalCFVals(costFuncForceZ) 
+  functionValue(costFuncForceXCoef) = globalCFVals(costFuncForceXCoef) 
+  functionValue(costFuncForceYCoef) = globalCFVals(costFuncForceYCoef) 
+  functionValue(costFuncForceZCoef) = globalCFVals(costFuncForceZCoef) 
+  functionValue(costFuncMomX) = globalCFVals(costFuncMomX) 
+  functionValue(costFuncMomY) = globalCFVals(costFuncMomY) 
+  functionValue(costFuncMomZ) = globalCFVals(costFuncMomZ) 
+  functionValue(costFuncMomXCoef) = globalCFVals(costFuncMomXCoef) 
+  functionValue(costFuncMomYCoef) = globalCFVals(costFuncMomYCoef)
+  functionValue(costFuncMomZCoef) = globalCFVals(costFuncMomZCoef)
 
+  if(TSStability)then
      call computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
-          dcmzdalpha,dcmzdalphadot,dcmzdq)
-     functionValue(costFuncCmzAlpha)     = dcmzdalpha
-     functionValue( costFuncCm0)         = cmz0
-     functionValue( costFuncClAlpha)     = dcldalpha
+          dcmzdalpha,dcldalphadot,dcddalphadot,dcmzdalphadot,dcldq,&
+          dcddq,dcmzdq,dcldqdot,dcddqdot,dcmzdqdot)
+
      functionValue( costFuncCl0  )       = cl0
-     functionValue( costFuncCdAlpha )    = dcmzdalpha
      functionValue( costFuncCd0 )        = cd0
-     functionValue( costFuncCmzAlphaDot) = dcmzdalphadot
-     functionValue( costFuncCmzq)         = dcmzdq
+     functionValue( costFuncCm0 )        = cmz0
+
+     functionValue( costFuncClAlpha)     = dcldalpha
+     functionValue( costFuncCdAlpha)     = dcddalpha
+     functionValue( costFuncCmzAlpha)    = dcmzdalpha
+
+     functionValue( costFuncClAlphaDot)     = dcldalphadot
+     functionValue( costFuncCdAlphaDot)     = dcddalphadot
+     functionValue( costFuncCmzAlphaDot)    = dcmzdalphadot
+     
+     functionValue( costFuncClq)         = dcldq
+     functionValue( costFuncCdq)         = dcddq
+     functionValue( costFuncCmzq)        = dcmzdq
+
+     functionValue( costFuncClqDot)         = dcldqDot
+     functionValue( costFuncCdqDot)         = dcddqDot
+     functionValue( costFuncCmzqDot)        = dcmzdqDot
+
   end if
 
-  ! Now we will mpi_allReduce them
-  allocate(localVal(nCostFunction),globalVal(nCostFunction))
-  ! Copy Everything into the list
-
-  localVal(:) = functionValue(:)
-  call mpi_allreduce(localVal, globalVal, nCostFunction, sumb_real, &
-       mpi_sum, SUmb_comm_world, ierr)
  
-  functionValue(:) = globalVal(:)
-
-  deallocate(localVal,globalVal)
-  
 end subroutine getSolution

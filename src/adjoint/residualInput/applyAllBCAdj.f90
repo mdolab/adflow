@@ -11,7 +11,8 @@
 !
        subroutine applyAllBCAdj(wInfAdj,pInfCorrAdj,wAdj, pAdj,sAdj, &
                               siAdj, sjAdj, skAdj, volAdj, normAdj, &
-                              rFaceAdj,iCell, jCell, kCell,secondHalo,nn,level,sps,sps2)
+                              rFaceAdj,iCell, jCell, kCell,secondHalo,&
+                              nn,level,sps,sps2)
 !
 !      ******************************************************************
 !      *                                                                *

@@ -172,5 +172,5 @@
    CASE DEFAULT
    kb(1:kk) = 0.0
    END SELECT
-   !gammaconstantb = 0.0
+
    END SUBROUTINE EINTARRAYADJ_B

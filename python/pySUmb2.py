@@ -74,20 +74,30 @@ class SUMB(AeroSolver):
             'reynoldsNumber':[float,1e6], 
             'reynoldsLength':[float,1.0], 
             'wallTreatment':[str,'Linear Pressure Extrapolation'],
+            'areaAxis':[list,[0.0,1.0,0.0]],
             'nCycles':[int,500],
+            'nCyclesCoarse':[int,500],
             'CFL':[float,1.7],
             'CFLCoarse':[float,1.0],
             'equationType': [str,'Euler'],
             'equationMode': [str,'Steady'],
             'flowType':[str,'External'],
-            'Mach':[float,0.5],
-            'machCoef':[float,0.5],
-            'machGrid':[float,0.0],
             'L2Convergence':[float,1e-6],
             'L2ConvergenceRel':[float,1e-16],
             'L2ConvergenceCoarse':[float,1e-2], 
             'maxL2DeviationFactor':[float,1.0],
             'MGCycle':[str,'3w'],
+            'useNKSolver':[bool,False],
+            'NKLinearSolver':[str,'gmres'],
+            'NKSwitchTol':[float,1e-2],
+            'NKSubspaceSize':[int,60],
+            'NKLinearSolveTol':[float,1e-1],
+            'NKPC':[str,'Additive Schwartz'],
+            'NKASMOverlap':[int,3],
+            'NKPCILUFill':[int,3],
+            'NKLocalPCOrdering':[str,'RCM'],
+            'NKMaxLinearKspIts':[int,500],
+            'NKJacobianLag':[int,10],
             'metricConversion':[float,1.0],
             'storeHistory':[bool,False],
             'numberSolutions':[bool,False],
@@ -107,11 +117,12 @@ class SUMB(AeroSolver):
             'adjointL2ConvergenceRel':[float,1e-16],
             'adjointL2ConvergenceAbs':[float,1e-16],
             'adjointDivTol':[float,1e5],
-            'monitorVariables':[list,['cl','cd','cmz']],
+            'monitorVariables':[list,['resrho','cl','cd']],
             'probName':[str,''],
             'outputDir':[str,'./'],
             'solRestart':[bool,False],
             'setMonitor':[bool,True],
+            'solveAdjoint':[bool,False],
             'writeSolution':[bool,True],
             'approxPC': [bool,False],
             'restartAdjoint':[bool,False],
@@ -189,7 +200,7 @@ class SUMB(AeroSolver):
             sys.exit(1)
         # end try
 
-        self.callCounter = 0
+        self.callCounter = -1
        
         
         self.sumb.iteration.standalonemode = False
@@ -216,12 +227,19 @@ class SUMB(AeroSolver):
              'cMx':self.sumb.costfunctions.costfuncmomxcoef,
              'cMy':self.sumb.costfunctions.costfuncmomycoef,
              'cMz':self.sumb.costfunctions.costfuncmomzcoef,
-             'cMzAlpha':self.sumb.costfunctions.costfunccmzalpha,
              'cM0':self.sumb.costfunctions.costfunccm0,
-             'clAlpha':self.sumb.costfunctions.costfuncclalpha,
+             'cMzAlpha':self.sumb.costfunctions.costfunccmzalpha,
+             'cMzAlphaDot':self.sumb.costfunctions.costfunccmzalphadot,
              'cl0':self.sumb.costfunctions.costfunccl0,
-             'cdAlpha':self.sumb.costfunctions.costfunccdalpha,
+             'clAlpha':self.sumb.costfunctions.costfuncclalpha,
+             'clAlphaDot':self.sumb.costfunctions.costfuncclalphadot,
              'cd0':self.sumb.costfunctions.costfunccd0,
+             'cdAlpha':self.sumb.costfunctions.costfunccdalpha,
+             'cdAlphaDot':self.sumb.costfunctions.costfunccdalphadot,
+             'cmzq':self.sumb.costfunctions.costfunccmzq,
+             'cmzqDot':self.sumb.costfunctions.costfunccmzqdot,
+             'clq':self.sumb.costfunctions.costfuncclq,
+             'clqDot':self.sumb.costfunctions.costfuncclqdot,
              }
         
         self.possibleObjectives = \
@@ -232,13 +250,23 @@ class SUMB(AeroSolver):
               'cfx':'cFx','cfy':'cFy','cfz':'cfz',
               'mx':'Mx','my':'My','mz':'Mz',
               'cmx':'cMx','cmy':'cMy','cmz':'cMz',
-              'cmzalpha':'cMzAlpha',
               'cm0':'cM0',
-              'clalpha':'clAlpha',
+              'cmzalpha':'cMzAlpha',
+              'cmzalphadot':'cMzAlphaDot',
               'cl0':'cl0',
+              'clalpha':'clAlpha',
+              'clalphadot':'clAlphaDot',
+              'cd0':'cd0',
               'cdalpha':'cdAlpha',
-              'cd0':'cd0'
+              'cdalphadot':'cdAlphaDot',
+              'cmzq':'cmzq',
+              'cmzqdot':'cmzqdot',
+              'clq':'clq',
+              'clqdot':'clqDot',
+              'area':'area',
+              'volume':'volume'
               }
+
 
         self.possibleAeroDVs = {
             'aofa':'adjointvars.ndesignaoa',
@@ -330,7 +358,33 @@ class SUMB(AeroSolver):
                                  self.sumb.inputphysics.externalflow,
                              'location':
                                  'inputphysics.flowtype'},
-                 
+                 'useNKSolver':{'location':'nksolvervars.usenksolver'},
+                 'NKLinearSolver':{'gmres':'gmres',
+                                   'fgmres':'fgmres',
+                                   'location':
+                                       'nksolvervars.ksp_solver_type',
+                                   'len':self.sumb.constants.maxstringlen},
+                 'NKLinearSolveTol':{'location':'nksolvervars.ksp_rtol'},
+                 'NKPC':{'BlockJacobi':'bjacobi',
+                         'Jacobi':'jacobi',
+                         'Additive Schwartz':'asm',
+                         'location':
+                             'nksolvervars.global_pc_type',
+                         'len':self.sumb.constants.maxstringlen},
+                 'NKLocalPCOrdering':{'Natural':'natural',
+                                      'RCM':'rcm',
+                                      'Nested Dissection':'nd',
+                                      'One Way Dissection':'1wd',
+                                      'Quotient Minimum Degree':'qmd',
+                                      'location':
+                                          'nksolvervars.local_pc_ordering',
+                                      'len':self.sumb.constants.maxstringlen},
+                 'NKJacobianLag':{'location':'nksolvervars.jacobian_lag'},
+                 'NKSwitchTol':{'location':'nksolvervars.nk_switch_tol'},
+                 'NKSubspaceSize':{'location':'nksolvervars.ksp_subspace'},
+                 'NKMaxLinearKspIts':{'location':'nksolvervars.ksp_max_it'},
+                 'NKASMOverlap':{'location':'nksolvervars.asm_overlap'},
+                 'NKPCILUFill':{'location':'nksolvervars.local_pc_ilu_level'},
                  'MGCycle':{'location':'localmg.mgdescription',
                             'len':self.sumb.constants.maxstringlen},
                  'gridFile':{'location':'inputio.gridfile',
@@ -342,11 +396,9 @@ class SUMB(AeroSolver):
                  'reynoldsLength':{'location':'inputphysics.reynoldslength'},
                  'solRestart':{'location':'inputio.restart'},
                  'nCycles':{'location':'inputiteration.ncycles'},
+                 'nCyclesCoarse':{'location':'inputiteration.ncyclescoarse'},
                  'CFL':{'location':'inputiteration.cfl'},        
                  'CFLCoarse':{'location':'inputiteration.cflcoarse'},        
-                 'Mach':{'location':'inputphysics.mach'},
-                 'machCoef':{'location':'inputphysics.machcoef'},
-                 'machGrid':{'location':'inputphysics.machgrid'},
                  'L2Convergence':{'location':'inputiteration.l2conv'},
                  'L2ConvergenceRel':{'location':'inputiteration.l2convrel'},
                  'L2ConvergenceCoarse':{'location':'inputiteration.l2convcoarse'},
@@ -438,6 +490,9 @@ class SUMB(AeroSolver):
                  }
         # end if
 
+        # These "ignore_options" are NOT actually, ignore, rather,
+        # they DO NOT GET SET IN THE FORTRAN CODE. Rather, they are
+        # used strictly in Python
         if 'ignore_options' in kwargs:
             self.ignore_options = kwargs['ignore_options']
         else:
@@ -447,6 +502,7 @@ class SUMB(AeroSolver):
                 'numberSolutions',
                 'writeSolution',
                 'familyRot',  # -> Not sure how to do
+                'areaAxis',
                 ]
         # end if
         
@@ -476,22 +532,21 @@ class SUMB(AeroSolver):
 
         # Setup the external Mesh Warping
         self._update_geom_info = False
+        print 'mesh test',('mesh' in kwargs)
         if 'mesh' in kwargs:
             self.mesh = kwargs['mesh']
         else:
-            print 'Mesh must be specified'
-            sys.exit(1)
+            self.mesh = SUmbDummyMesh()
         # end if
-
+        
         # Set Flags that are used to keep of track of what is "done"
         # in fortran
         self.allInitialized = False    # All flow solver initialization   
-        self.adjointInitialized = False # Petsc Mat/Vec/Ksp Object Creation
+        self.adjointPreprocessed = False
         self.adjointMatrixSetup = False # Adjoint matrices assembled
         self.adjointRHS         = None # When this is setup, it has
                                        # the current objective
         
-
         self._update_geom_info = True
         self._update_period_info = True
         self._update_vel_info = True
@@ -509,11 +564,10 @@ class SUMB(AeroSolver):
         
         Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
         '''
-
+        
         if self.allInitialized == True:
             return
-      
-        self.setPeriodicParams(aero_problem)
+        
   
         # Make sure all the params are ok
         for option in self.options:
@@ -521,17 +575,21 @@ class SUMB(AeroSolver):
                 self.setOption(option, self.options[option][1])
             # end if
         # end for
-      
-        self.sumb.dummyreadparamfile()
 
+        self.setMachNumber(aero_problem)
+        self.setPeriodicParams(aero_problem)
+        
+        self.sumb.dummyreadparamfile()
+       
         #This is just to flip the -1 to 1 possibly a memory issue?
         self.sumb.inputio.storeconvinneriter = \
             abs(self.sumb.inputio.storeconvinneriter)
 
         if(self.myid ==0):
             print ' -> Partitioning and Reading Grid'
+        
         self.sumb.partitionandreadgrid()
-
+       
         if(self.myid==0):
             print ' -> Preprocessing'
         self.sumb.preprocessing()
@@ -539,7 +597,8 @@ class SUMB(AeroSolver):
         if(self.myid==0):
             print ' -> Initializing flow'
         self.sumb.initflow()
-
+        if(self.myid==0):
+            print ' -> Flow initialized'
         # Create dictionary of variables we are monitoring
         nmon = self.sumb.monitor.nmon
         self.monnames = {}
@@ -547,7 +606,8 @@ class SUMB(AeroSolver):
             self.monnames[string.strip(
                     self.sumb.monitor.monnames[i].tostring())] = i
         # end for
-      
+        if(self.myid==0):
+            print ' -> Setting up external warping'
         # Setup External Warping
         meshInd = self.getMeshIndices()
         self.mesh.setExternalMeshIndices(meshInd)
@@ -557,7 +617,8 @@ class SUMB(AeroSolver):
         
         # Solver is initialize
         self.allInitialized = True
-
+        if(self.myid==0):
+            print ' -> Initialization Complete'
         return
 
     def setInflowAngle(self,aero_problem):
@@ -581,7 +642,7 @@ class SUMB(AeroSolver):
 
         #update the flow vars
         self.sumb.updateflow()
-
+        self._update_vel_info = True
         return
     
     def setReferencePoint(self,aero_problem):
@@ -603,7 +664,7 @@ class SUMB(AeroSolver):
             *self.metricConversion
         #update the flow vars
         self.sumb.updatereferencepoint()
-
+        self._update_vel_info = True
         return
 
     def setRotationRate(self,aero_problem):
@@ -620,7 +681,7 @@ class SUMB(AeroSolver):
         r = aero_problem._flows.rhat*V/aero_problem._refs.bref
 
         self.sumb.updaterotationrate(p,r,q)
-
+        self._update_vel_info = True
         return
     
     def setRefArea(self,aero_problem):
@@ -633,20 +694,26 @@ class SUMB(AeroSolver):
         '''
         Set the frequecy and amplitude of the oscillations
         '''
-
         if  self.getOption('alphaMode'):
+            self.sumb.inputmotion.degreepolalpha = int(aero_problem._flows.degreePol)
+            self.sumb.inputmotion.coefpolalpha = aero_problem._flows.coefPol
             self.sumb.inputmotion.omegafouralpha   = aero_problem._flows.omegaFourier
+            #if self.myid==0: print 'omega',aero_problem._flows.omegaFourier,self.sumb.inputmotion.gridmotionspecified
             self.sumb.inputmotion.degreefouralpha  = aero_problem._flows.degreeFourier
             self.sumb.inputmotion.coscoeffouralpha = aero_problem._flows.cosCoefFourier
             self.sumb.inputmotion.sincoeffouralpha = aero_problem._flows.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
         elif  self.getOption('betaMode'):
+            self.sumb.inputmotion.degreepolmach = int(aero_problem._flows.degreePol)
+            self.sumb.inputmotion.coefpolmach = aero_problem._flows.coefPol
             self.sumb.inputmotion.omegafourbeta   = aero_problem._flows.omegaFourier
             self.sumb.inputmotion.degreefourbeta  = aero_problem._flows.degreeFourier
             self.sumb.inputmotion.coscoeffourbeta = aero_problem._flows.cosCoefFourier
             self.sumb.inputmotion.sincoeffourbeta = aero_problem._flows.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
         elif self.getOption('machMode'):
+            self.sumb.inputmotion.degreepolmach = int(aero_problem._flows.degreePol)
+            self.sumb.inputmotion.coefpolmach = aero_problem._flows.coefPol
             self.sumb.inputmotion.omegafourmach   = aero_problem._flows.omegaFourier
             self.sumb.inputmotion.degreefourmach  = aero_problem._flows.degreeFourier
             self.sumb.inputmotion.coscoeffourmach = aero_problem._flows.cosCoefFourier
@@ -654,18 +721,24 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.gridmotionspecified = True
         elif  self.getOption('pMode'):
             ### add in lift axis dependence
+            self.sumb.inputmotion.degreepolxrot = int(aero_problem._flows.degreePol)
+            self.sumb.inputmotion.coefpolxrot = aero_problem._flows.coefPol
             self.sumb.inputmotion.omegafourxrot = aero_problem._flows.omegaFourier
             self.sumb.inputmotion.degreefourxrot  = aero_problem._flows.degreeFourier
             self.sumb.inputmotion.coscoeffourxrot = aero_problem._flows.cosCoefFourier
             self.sumb.inputmotion.sincoeffourxrot = aero_problem._flows.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
         elif self.getOption('qMode'):
+            self.sumb.inputmotion.degreepolzrot = int(aero_problem._flows.degreePol)
+            self.sumb.inputmotion.coefpolzrot = aero_problem._flows.coefPol
             self.sumb.inputmotion.omegafourzrot = aero_problem._flows.omegaFourier
             self.sumb.inputmotion.degreefourzrot  = aero_problem._flows.degreeFourier
             self.sumb.inputmotion.coscoeffourzrot = aero_problem._flows.cosCoefFourier
             self.sumb.inputmotion.sincoeffourzrot = aero_problem._flows.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
         elif self.getOption('rMode'):
+            self.sumb.inputmotion.degreepolyrot = int(aero_problem._flows.degreePol)
+            self.sumb.inputmotion.coefpolyrot = aero_problem._flows.coefPol
             self.sumb.inputmotion.omegafouryrot = aero_problem._flows.omegaFourier
             self.sumb.inputmotion.degreefouryrot  = aero_problem._flows.degreeFourier
             self.sumb.inputmotion.coscoeffouryrot = aero_problem._flows.cosCoefFourier
@@ -674,8 +747,31 @@ class SUMB(AeroSolver):
         #endif
 
         self._update_period_info = True
+        self._update_geom_info = True
         self._update_vel_info = True
  
+        return
+
+    def setMachNumber(self,aero_problem):
+        '''
+        Set the mach number for the problem...
+        '''
+        if self.getOption('familyRot')!='':
+            Rotating = True
+        else:
+            Rotating = False
+        #endif
+        #print 'Rotating',Rotating,self.getOption('familyRot'),self.getOption('equationMode').lower()
+        if Rotating or self.getOption('equationMode').lower()=='time spectral':
+            self.sumb.inputphysics.mach = 0.0
+            self.sumb.inputphysics.machcoef = aero_problem._flows.mach
+            self.sumb.inputphysics.machgrid = aero_problem._flows.mach
+        else:
+            self.sumb.inputphysics.mach = aero_problem._flows.mach 
+            self.sumb.inputphysics.machcoef = aero_problem._flows.mach
+            self.sumb.inputphysics.machgrid = 0.0
+        #end
+        
         return
 
     def resetFlow(self):
@@ -700,162 +796,77 @@ class SUMB(AeroSolver):
         # their flag to False
         self.adjointMatrixSetup = False 
         self.adjointRHS         = None
+        self.callCounter += 1
 
+        
+
+        # Run Initialize, if already run it just returns.
         self.initialize(aero_problem,sol_type,grid_file,*args,**kwargs)
 
         #set inflow angle,refpoint etc.
+        self.setMachNumber(aero_problem)
+        self.setPeriodicParams(aero_problem)
         self.setInflowAngle(aero_problem)
         self.setReferencePoint(aero_problem)
         self.setRotationRate(aero_problem)
         self.setRefArea(aero_problem)
-        self.setPeriodicParams(aero_problem)
 
         # Run Solver
-    
+        if(self.myid ==0): print ' -> Solving...'
         t0 = time.time()
-        self.sumb.monitor.niterold = self.sumb_comm_world.bcast(
-            self.sumb.monitor.niterold, root=0)
+        
+        #self.sumb.monitor.niterold = self.sumb_comm_world.bcast(
+        #    self.sumb.monitor.niterold, root=0)
 
-        ncycles = niterations
         storeHistory = self.getOption('storeHistory')
 
         if sol_type.lower() in ['steady', 'time spectral']:
             
             #set the number of cycles for this call
             self.sumb.inputiteration.ncycles = niterations
-            
+
+            # Cold Start -- First Run -- No Iterations Done
             if (self.sumb.monitor.niterold == 0 and 
                 self.sumb.monitor.nitercur == 0 and 
                 self.sumb.iteration.itertot == 0):
 
-                # No iterations have been done
-                if (self.sumb.inputio.storeconvinneriter):
+                if self.myid == 0:
+                    #max() handles case where ncyclescoarse is larger than ncycles
                     nn = self.sumb.inputiteration.nsgstartup + \
-                        self.sumb.inputiteration.ncycles
-                    if(self.myid==0):
-                        self.sumb.deallocconvarrays()
-                        self.sumb.allocconvarrays(nn)
-                    # end if
-                    # end if
-
-            elif(self.sumb.monitor.nitercur == 0 and  
-                 self.sumb.iteration.itertot == 0):
-                # Reallocate convergence history array and
-                # time array with new size, storing old values from restart
-                if (self.myid == 0):
-                    # number of time steps from restart
-                    ntimestepsrestart = self.sumb.monitor.ntimestepsrestart
-                    
-                    if (self.sumb.inputio.storeconvinneriter):
-                        # number of iterations from restart
-                        niterold = self.sumb.monitor.niterold#[0]
-                        if storeHistory:
-                            # store restart convergence history and
-                            # deallocate array
-                            temp = copy.deepcopy(
-                                self.sumb.monitor.convarray[:niterold+1,:])
-                            self.sumb.deallocconvarrays()
-                            # allocate convergence history array with
-                            # new extended size
-                            self.sumb.allocconvarrays(
-                                temp.shape[0]+self.sumb.inputiteration.ncycles-1)
-                            # recover values from restart and
-                            # deallocate temporary array
-                            self.sumb.monitor.convarray[\
-                                :temp.shape[0],:temp.shape[1]] = temp
-                            temp = None
-                        else:
-                            temp=copy.deepcopy(
-                                self.sumb.monitor.convarray[0,:,:])
-                            self.sumb.deallocconvarrays()
-                            # allocate convergence history array with
-                            # new extended size
-                            self.sumb.allocconvarrays(
-                                self.sumb.inputiteration.ncycles+1+niterold)
-                            self.sumb.monitor.convarray[0,:,:] = temp
-                            self.sumb.monitor.convarray[1,:,:] = temp
-                            temp = None
-                        #endif
-                    #endif
-                #endif
+                         max(self.sumb.inputiteration.ncycles,\
+                             self.sumb.inputiteration.ncyclescoarse)
+                    self.sumb.deallocconvarrays()
+                    self.sumb.allocconvarrays(nn)
+                # end if
             else:
-
-                # More Time Steps / Iterations in the same session
+                # More Time Steps / Iterations OR a restart
                 # Reallocate convergence history array and time array
                 # with new size, storing old values from previous runs
-                if (self.myid == 0):
-                    if (self.sumb.inputio.storeconvinneriter):
-                        if storeHistory:
-                            # store previous convergence history and
-                            # deallocate array
-                            temp = copy.deepcopy(self.sumb.monitor.convarray)
-
-                            self.sumb.deallocconvarrays()
-                            # allocate convergence history array with
-                            # new extended size
-                            nn = self.sumb.inputiteration.nsgstartup + \
-                                self.sumb.inputiteration.ncycles
-                            
-                            self.sumb.allocconvarrays(temp.shape[0]+nn-1)
-                        
-                            # recover values from previous runs and
-                            # deallocate temporary array
-                            self.sumb.monitor.convarray[:temp.shape[0],:] = \
-                                copy.deepcopy(temp)
-                            
-                            temp = None
-                        else:
-                            temp=copy.deepcopy(
-                                self.sumb.monitor.convarray[0,:,:])
-                            self.sumb.deallocconvarrays()
-                            self.sumb.allocconvarrays(
-                                self.sumb.inputiteration.ncycles+1)
-                            self.sumb.monitor.convarray[0,:,:] = temp
-                            temp = None
-                        #endif
-                    #endif
-                #endif
-
-                # re-initialize iteration variables
-                self.sumb.inputiteration.mgstartlevel = 1
-
                 if storeHistory:
-                    self.sumb.monitor.niterold  = self.sumb.monitor.nitercur
+                    self._extendConvArray(
+                        self.sumb.inputiteration.ncycles)
+                    self.sumb.monitor.niterold  = self.sumb.monitor.nitercur+1
                 else:
-                    self.sumb.monitor.niterold  = 1#0#self.sumb.monitor.nitercur
+                    self.sumb.monitor.nitercur  = 0
+                    self.sumb.monitor.niterold  = 1
+                    self._clearConvArray()
                 #endif
+               
+                self.sumb.iteration.itertot = 0
+                self.sumb.inputiteration.mgstartlevel = 1
+            # end if
 
-                self.sumb.monitor.nitercur  = 0#1
-                self.sumb.iteration.itertot = 0#1
-                
-                # update number of time steps from restart
-                self.sumb.monitor.ntimestepsrestart = \
-                    self.sumb.monitor.ntimestepsrestart + \
-                    self.sumb.monitor.timestepunsteady
-
-                # re-initialize number of time steps previously run
-                # (excluding restart)
-                self.sumb.monitor.timestepunsteady = 0
-
-                # update time previously run
-                self.sumb.monitor.timeunsteadyrestart = \
-                    self.sumb.monitor.timeunsteadyrestart + \
-                    self.sumb.monitor.timeunsteady
-
-                # re-initialize time run
-                self.sumb.monitor.timeunsteady = 0.0
-                
-            #endif
         elif sol_type.lower()=='unsteady':
             print 'unsteady not implemented yet...'
             sys.exit(0)
-        #endif
+        # end if
+
         self.sumb.killsignals.routinefailed = False
-        self._UpdatePeriodInfo()
-        self._UpdateGeometryInfo()
-        self._UpdateVelocityInfo()
+        self._updatePeriodInfo()
+        self._updateGeometryInfo()
+        self._updateVelocityInfo()
 
-
+        # Check to see if the above update routines failed.
         self.sumb.killsignals.routinefailed = \
             self.comm.allreduce(
             bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
@@ -864,23 +875,47 @@ class SUMB(AeroSolver):
             self.solve_failed = True
             return
 
-        # Now call the solver
-        
+        # Setup some residual values for reference
+
+        if self.callCounter == 0:
+            # We need to explicitly get the freestream residual, since
+            # we may have
+            self.sumb.preprocessingadjoint()
+            rhoRes0,totalRRes0 = self.sumb.getfreestreamresidual()
+            self.sumb.nksolvervars.totalres0 = real(totalRRes0)
+            self.sumb.nksolvervars.rhores0   = real(rhoRes0)
+            self.rhoRes0 = rhoRes0
+        # end if
+
+        if self.sumb.inputiteration.mgstartlevel != 1:
+            self.rhoResStart,self.totalRStart = \
+                self.sumb.getfreestreamresidual()
+        else:
+            self.rhoResStart,self.totalRStart = self.sumb.getcurrentresidual()
+        # end if
+
+        self.rhoResStart = real(self.rhoResStart)
+        self.totalRStart = real(self.totalRStart)
+
+        # Call the Solver
         self.sumb.solver()
 
+        # Record the final residual
+        self.rhoResFinal,self.totalRFinal = self.sumb.getcurrentresidual()
+ 
         if self.sumb.killsignals.routinefailed:
             self.solve_failed = True
         else:
             self.solve_failed = False
+        # end if
 
         sol_time = time.time() - t0
 
-        if self.getOption('printTiming'):
-            if(self.myid==0):
-                print 'Solution Time',sol_time
-        
-        # Post-Processing
-        #Write solutions
+        if self.getOption('printTiming') and self.myid == 0:
+            print 'Solution Time',sol_time
+        # end if
+
+        # Post-Processing -- Write Solutions
         if self.getOption('writeSolution'):
             base = self.getOption('outputDir') + self.getOption('probName')
             volname = base + '_vol.cgns'
@@ -890,20 +925,47 @@ class SUMB(AeroSolver):
                 volname = base + '_vol%d.cgns'%(self.callCounter)
                 surfname = base + '_surf%d.cgns'%(self.callCounter)
             #endif
-            self.WriteVolumeSolutionFile(volname)
-            self.WriteSurfaceSolutionFile(surfname)
+            self.writeVolumeSolutionFile(volname)
+            self.writeSurfaceSolutionFile(surfname)
         # end if
-        # get forces? from SUmb attributes
-       
+            
         if self.getOption('TSStability'):
             self.computeStabilityParameters()
         #endif
         
-        self.callCounter+=1
-
         # If we made it to the end, it did NOT fail so return False
         
-        return False
+        return
+
+    def _extendConvArray(self,nExtend):
+        '''Generic function to extend the current convInfo array by nExtend'''
+        if self.myid == 0:
+            # Copy Current Values
+            temp = copy.deepcopy(self.sumb.monitor.convarray)
+
+            # Deallocate Array
+            self.sumb.deallocconvarrays()
+
+            # Allocate New Size
+            self.sumb.allocconvarrays(temp.shape[0]+nExtend)
+
+            # Copy temp data back in
+            self.sumb.monitor.convarray[:temp.shape[0],:] = copy.deepcopy(temp)
+        # end if
+
+        return
+
+    def _clearConvArray(self):
+        '''Generic Function to clear the convInfo array. THIS KEEPS
+        THE FIRST value for future reference!!!'''
+        if self.myid == 0:
+            temp=copy.deepcopy(self.sumb.monitor.convarray[0,:,:])
+            self.sumb.deallocconvarrays()
+            self.sumb.allocconvarrays(self.sumb.inputiteration.ncycles+1)
+            self.sumb.monitor.convarray[0,:,:] = temp
+        # end if
+            
+        return
 
     def getSurfaceCoordinates(self,group_name):
         ''' 
@@ -920,18 +982,7 @@ class SUMB(AeroSolver):
 
         return 
 
-    def getResiduals(self):
-        if self.myid == 0:
-            return self.sumb.monitor.convarray[0,0,0],\
-                self.sumb.monitor.convarray[1,0,0],\
-                self.sumb.monitor.convarray[self.sumb.monitor.nitercur,0,0]
-        else:
-            return None,None,None
-        # end if
-
-        return
-        
-    def WriteVolumeSolutionFile(self,filename=None,writeGrid=True):
+    def writeVolumeSolutionFile(self,filename=None,writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS file.
                 Keyword arguments:
         
@@ -955,7 +1006,7 @@ class SUMB(AeroSolver):
 
         return
 
-    def WriteSurfaceSolutionFile(self,*filename):
+    def writeSurfaceSolutionFile(self,*filename):
         """Write the current state of the surface flow solution to a CGNS file.
         
         Keyword arguments:
@@ -1031,41 +1082,33 @@ class SUMB(AeroSolver):
         self.sumb.adjointvars.ndesignpointrefx = -1
         self.sumb.adjointvars.ndesignpointrefy = -1
         self.sumb.adjointvars.ndesignpointrefz = -1
-
+        
         # Set the required paramters for the aero-Only design vars:
-        self.nDVAero = len(self.aeroDVs)
+        self.nDVAero = len(self.aeroDVs)#for debuggin with check all...
+        
         self.sumb.adjointvars.ndesignextra = self.nDVAero
-        self.sumb.adjointvars.dida = numpy.zeros(self.nDVAero)
-
-        for i in xrange(self.nDVAero):
-            exec_str = 'self.sumb.' + self.possibleAeroDVs[self.aeroDVs[i]] + \
-                '= %d'%(i)
-            # Leave this zero-based since we only need to use it in petsc
-            exec(exec_str)
-        # end for
+        
+        if self.nDVAero >0:           
+            self.sumb.adjointvars.dida = numpy.zeros(self.nDVAero)
+            for i in xrange(self.nDVAero):
+                print 'execstring',i
+                exec_str = 'self.sumb.' + self.possibleAeroDVs[self.aeroDVs[i]] + \
+                           '= %d'%(i)
+                # Leave this zero-based since we only need to use it in petsc
+                exec(exec_str)
+            # end for
+        #endif
 
         #Set the mesh level and timespectral instance for this
         #computation
         
         self.sumb.iteration.currentlevel=1
         self.sumb.iteration.groundlevel=1
+        if not self.adjointPreprocessed:
+            self.sumb.preprocessingadjoint()
+        # end if
 
-        #Check to see if initialization has already been performed
-        if(self.adjointInitialized):
-            return
-        
-        #Run the preprocessing routine. Sets the node numbering and
-        #allocates memory.
-        self.sumb.preprocessingadjoint()
-        
-        # Create PETSc vars
-        self.sumb.initializepetsc()
-        self.sumb.createpetscvars()
-
-        self.adjointInitialized = True
-        if(self.myid==0):
-            print 'ADjoint Initialized Succesfully...'
-        #endif
+        #self.sumb.initializepetsc() -> I don't think we will need this
 
         return
 
@@ -1090,15 +1133,15 @@ class SUMB(AeroSolver):
         '''
         
         if not self.adjointMatrixSetup:
+            self.sumb.createpetscvars()
             self.sumb.setupallresidualmatrices()
             if forcePoints is None:
                 forcePoints = self.getForcePoints()
             # end if
             
-            self.sumb.setupcouplingmatrixstruct(forcePoints.T)
+            #self.sumb.setupcouplingmatrixstruct(forcePoints.T)
             self.sumb.setuppetscksp()
             self.mesh.setupWarpDeriv()
-
             self.adjointMatrixSetup = True
         # end if
 
@@ -1114,26 +1157,23 @@ class SUMB(AeroSolver):
 
         return
     
-    def releaseAdjointMemeory(self):
+    def releaseAdjointMemory(self):
         '''
-        release the KSP memory...
+        release the PETSc Memory...
         '''
+
+        self.sumb.destroypetscvars()
 
         return
 
     def _on_adjoint(self,objective,forcePoints=None,*args,**kwargs):
 
-        obj = self.possibleObjectives[objective.lower()]
+        # Solve ADjoint problem
+        self.initAdjoint()
 
-        if forcePoints is None:
-            forcePoints = self.getForcePoints()
-        # end if
-        
-        # Check to see if adjoint is initialized:
-        if not self.adjointInitialized:
-            self.initAdjoint()
-        # end if
-        
+        # Short form of objective--easier code reading
+        obj = self.possibleObjectives[objective.lower()]
+             
         # Check to see if the adjoint Matrix is setup:
         if not self.adjointMatrixSetup:
             self.setupAdjoint(forcePoints)
@@ -1143,7 +1183,7 @@ class SUMB(AeroSolver):
         if not self.adjointRHS == obj:
             self.computeObjPartials(obj,forcePoints)
         # end if
-            
+
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
         if 'structAdjoint' in kwargs and 'group_name' in kwargs:
@@ -1156,6 +1196,7 @@ class SUMB(AeroSolver):
         nw = self.sumb.flowvarrefstate.nw
         # If we have saved adjoints, 
         if self.getOption('restartAdjoint'):
+
             # Objective is already stored, so just set it
             if obj in self.storedADjoints.keys():
                 self.sumb.setadjoint(self.storedADjoints[obj])
@@ -1167,12 +1208,13 @@ class SUMB(AeroSolver):
             # end if
 
         # Actually Solve the adjoint system
+
         self.sumb.solveadjointtransposepetsc()
 
         if self.getOption('restartAdjoint'):
             self.storedADjoints[obj] =  self.sumb.getadjoint(self.sumb.adjointvars.ncellslocal*nw)
         # end if
-
+       
         return
 
     def totalSurfaceDerivative(self,objective):
@@ -1187,19 +1229,32 @@ class SUMB(AeroSolver):
 
         obj = self.possibleObjectives[objective.lower()]
         
-        if self.getOption('restartAdjoint'): # Selected stored adjoint
-            self.sumb.setadjoint(self.storedADjoints[obj])
+        if obj in ['area','volume']: # Possibly add more Direct objectives here...
+            if obj == 'area':
+                self.mesh.warp.computeareasensitivity(self.getOption('areaAxis'))
+                dIdXs = self.mesh.getdXs('all')
+            # end if
+
+            if obj == 'volume':
+                self.mesh.warp.computevolumesensitivity()
+                dIdXs = self.mesh.getdXs('all')
+            # end if
+
+        else:
+            if self.getOption('restartAdjoint'): # Selected stored adjoint
+                self.sumb.setadjoint(self.storedADjoints[obj])
+            # end if
+
+            # Direct partial derivative contibution 
+            dIdxs_1 = self.getdIdx(objective,'all')
+
+            # dIdx contribution for drdx^T * psi
+            dIdxs_2 = self.getdRdXvPsi('all')
+        
+            # Total derivative of the obective with surface coordinates
+            dIdXs = dIdxs_1 - dIdxs_2 
         # end if
 
-        # Direct partial derivative contibution 
-        dIdxs_1 = self.getdIdx(objective,'all')
-
-        ## dIdx contribution for drdx^T * psi
-        dIdxs_2 = self.getdRdXvPsi('all')
-        
-        # Total derivative of the obective with surface coordinates
-        dIdXs = dIdxs_1 - dIdxs_2 
-        
         return dIdXs
 
     def totalAeroDerivative(self,objective):
@@ -1208,47 +1263,62 @@ class SUMB(AeroSolver):
         # "aero" variables are intrinsic ONLY to the aero
         # discipline. Nothing in the structural process should depend
         # on these functions directly. 
-        restart = self.getOption('restartAdjoint')
-        obj = self.possibleObjectives[objective.lower()]
-        
-        if restart: # Selected stored adjoint
-            self.sumb.setadjoint(self.storedADjoints[obj])
-        # end if
 
-        # Direct partial derivative contibution 
-        dIda_1 = self.getdIda(objective)
+        obj = self.possibleObjectives[objective.lower()]
+
+        if obj in ['area','volume']: # Possibly add more Direct
+                                     # objectives here...  These by
+                                     # definition have zero dependance
+            dIda = numpy.zeros(self.nDVAero)
+        else:
+            if self.getOption('restartAdjoint'):
+                self.sumb.setadjoint(self.storedADjoints[obj])
+            # end if
+
+            # Direct partial derivative contibution 
+            dIda_1 = self.getdIda(objective)
         
-        # dIda contribution for drda^T * psi
-        dIda_2 = self.getdRdaPsi()
-        
-        # Total derivative of the obective wrt aero-only DVs
-        dIda = dIda_1 - dIda_2
+            # dIda contribution for drda^T * psi
+            dIda_2 = self.getdRdaPsi()
+
+            # Total derivative of the obective wrt aero-only DVs
+            dIda = dIda_1 - dIda_2
+        # end if
 
         return dIda
         
     def verifyPartials(self):
+        ''' Run verifyResiduals to verify that dRdw,dRdx and dRda are
+        computed correctly
         '''
-        Run solverADjoint to verify the partial derivatives in the ADjoint
-        '''
-        self.sumb.verifydcfdx(1)
+        self.sumb.verifypartials()
 
         return
     
+    def verifyResidual(self):
+        ''' Run verifyRAdjoint to make sure the node-based-stencil
+        routine gives the same results as the original routine
+        '''
+        self.sumb.verifyradj(1)
+
+        return 
+
     def computeStabilityParameters(self):
         '''
         run the stability derivative driver to compute the stability parameters
         from the time spectral solution
         '''
-
         self.sumb.stabilityderivativedriver()
-
         return
 
-    def _UpdateGeometryInfo(self):
+    def _updateGeometryInfo(self):
         """Update the SUmb internal geometry info, if necessary."""
         if (self._update_geom_info):
             self.mesh.warpMesh()
-            self.sumb.setgrid(self.mesh.getSolverGrid())
+            newGrid = self.mesh.getSolverGrid()
+            if newGrid is not None:
+                self.sumb.setgrid(self.mesh.getSolverGrid())
+
             self.sumb.updatecoordinatesalllevels()
             self.sumb.updatewalldistancealllevels()
             self.sumb.updateslidingalllevels()
@@ -1259,7 +1329,7 @@ class SUMB(AeroSolver):
 
         return 
 
-    def _UpdatePeriodInfo(self):
+    def _updatePeriodInfo(self):
         """Update the SUmb TS period info"""
         if (self._update_period_info):
             self.sumb.updateperiodicinfoalllevels()
@@ -1268,7 +1338,7 @@ class SUMB(AeroSolver):
 
         return 
 
-    def _UpdateVelocityInfo(self):
+    def _updateVelocityInfo(self):
         if (self._update_vel_info):
             self.sumb.updategridvelocitiesalllevels()
             self._update_vel_info = False
@@ -1276,7 +1346,7 @@ class SUMB(AeroSolver):
 
         return 
             
-    def GetMonitoringVariables(self):
+    def getMonitoringVariables(self):
         """Return a list of the text strings describing the variables being
         monitored.
 
@@ -1284,7 +1354,7 @@ class SUMB(AeroSolver):
         return self.monnames.keys()
     
 
-    def GetConvergenceHistory(self,name):
+    def getConvergenceHistory(self,name):
         """Return an array of the convergence history for a particular quantity.
 
         Keyword arguments:
@@ -1435,14 +1505,14 @@ class SUMB(AeroSolver):
         
         return
 
-    def getSolution(self):
+    def getSolution(self,sps=1):
         '''
         retrieve the solution variables from the solver.
         '''
 
         # We should return the list of results that is the same as the
         # possibleObjectives list
-        self.sumb.getsolution(1)
+        self.sumb.getsolution(sps)
 
         funcVals = self.sumb.costfunctions.functionvalue
         SUmbsolution =  \
@@ -1462,14 +1532,28 @@ class SUMB(AeroSolver):
              'cmx' :funcVals[self.sumb.costfunctions.costfuncmomxcoef-1],
              'cmy' :funcVals[self.sumb.costfunctions.costfuncmomycoef-1],
              'cmz' :funcVals[self.sumb.costfunctions.costfuncmomzcoef-1],
-             'cMzAlpha':funcVals[self.sumb.costfunctions.costfunccmzalpha-1],
-             'cM0'  :funcVals[self.sumb.costfunctions.costfunccm0-1],
-             'clAlpha':funcVals[self.sumb.costfunctions.costfuncclalpha-1],
-             'cl0':funcVals[self.sumb.costfunctions.costfunccl0-1],
-             'cdAlpha':funcVals[self.sumb.costfunctions.costfunccdalpha-1],
-             'cd0':funcVals[self.sumb.costfunctions.costfunccd0-1]
+             'cmzalphadot':funcVals[self.sumb.costfunctions.costfunccmzalphadot-1],
+             'cmzalpha'   :funcVals[self.sumb.costfunctions.costfunccmzalpha-1],
+             'cm0'        :funcVals[self.sumb.costfunctions.costfunccm0-1],
+             'clalphadot' :funcVals[self.sumb.costfunctions.costfuncclalphadot-1],
+             'clalpha'    :funcVals[self.sumb.costfunctions.costfuncclalpha-1],
+             'cl0'        :funcVals[self.sumb.costfunctions.costfunccl0-1],
+             'cdalphadot' :funcVals[self.sumb.costfunctions.costfunccdalphadot-1],
+             'cdalpha'    :funcVals[self.sumb.costfunctions.costfunccdalpha-1],
+             'cd0'        :funcVals[self.sumb.costfunctions.costfunccd0-1],
+             'cmzqdot'    :funcVals[self.sumb.costfunctions.costfunccmzqdot-1],
+             'cmzq'       :funcVals[self.sumb.costfunctions.costfunccmzq-1],
+             'clqdot'     :funcVals[self.sumb.costfunctions.costfuncclqdot-1],
+             'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1]
              }
+                                                 
+        # Also add in 'direct' solutions. Area etc
+        A_local = self.mesh.computeArea(self.getOption('areaAxis'))
+        SUmbsolution['area'] = self.comm.allreduce(A_local,op=MPI.SUM)
 
+        V_local = self.mesh.computeVolume()
+        SUmbsolution['volume'] = self.comm.allreduce(V_local,op=MPI.SUM)
+        
         return SUmbsolution
         
     def _on_setOption(self, name, value):
@@ -1510,10 +1594,24 @@ class SUMB(AeroSolver):
         # All other options do genericaly by setting value in module:
         # Check if there is an additional mapping to what actually
         # has to be set in the solver
-        try: 
-            value = self.optionMap[name][value]
+
+        temp = copy.copy(self.optionMap[name]) # This is the dictionary
+        temp.pop('location')
+        try:
+            temp.pop('len')
         except:
             pass
+        # end if
+
+        # If temp has anything left in it, we MUST be able to match to
+        # one of them.
+
+        if len(temp) == 0:
+            pass
+        else:
+            value = self.optionMap[name][value]
+        # end if
+            
 
         # If value is a string, put quotes around it and make it
         # the correct length, otherwise convert to string
@@ -1526,6 +1624,7 @@ class SUMB(AeroSolver):
       
         # Exec str is what is actually executed:
         exec_str = 'self.sumb.'+self.optionMap[name]['location'] + '=' + value
+
         exec(exec_str)
 
         return
@@ -1556,6 +1655,128 @@ class SUMB(AeroSolver):
         # 
         return self.informs[infocode]
 
+
+class SUmbDummyMesh(object):
+    """
+    Represents a dummy Multiblock structured Mesh for SUmb
+    """
+ 
+    def __init__(self):
+        """Initialize the object."""
+
+    def getSurfaceCoordinates(self,group_name):
+        ''' 
+        Returns a UNIQUE set of ALL surface points belonging to
+        group "group_name", that belong to blocks on THIS processor
+        '''
+
+        return 
+
+    def setSurfaceCoordinates(self,group_name,coordinates,reinitialize=True):
+        ''' 
+        Set the UNIQUE set of ALL surface points belonging to
+        group "group_name", that belong to blocks on THIS processor
+        This must be the same length as the list obtained from
+        getSurfaceCoordiantesLocal
+        '''
+
+        return 
+
+    def addFamilyGroup(self,group_name,families=None):
+
+        return 
+   
+# =========================================================================
+#                         Interface Functionality
+# =========================================================================
+
+    def setExternalMeshIndices(self,ind):
+        ''' Take in a set of external indices from another flow solver
+        and use this to setup the scatter contexts'''
+
+        return 
+
+    def setExternalForceIndices(self,ind):
+        ''' Take in a set of external indices from another flow solver
+        and use this to setup the scatter contexts'''
+
+        return 
+
+    def getSolverGrid(self):
+        '''
+        Return the grid as the external solver want it
+        '''
+        
+        return
+
+    def warp_to_solver_force(self,group_name,disp):
+
+        return 
+
+    def solver_to_warp_force(self,group_name,solver_forces):
+    
+        return
+
+    def getdXs(self,group_name):
+
+        return 
+
+    def computeArea(self,axis):
+        
+        return 0.0
+
+    def computeVolume(self):
+
+        return 0.0
+
+# ==========================================================================
+#                        Output Functionality
+# ==========================================================================
+
+    def writeVolumeGrid(self,file_name):
+        '''write volume mesh'''
+
+        return
+
+    def writeSurfaceGrid(self,file_name):
+        '''write surface mesh'''
+
+        return
+
+    def writeFEGrid(self,file_name):
+        ''' write the FE grid to file '''
+        return
+
+# =========================================================================
+#                         Utiliy Functions
+# =========================================================================
+
+    def getMeshQuality(self,bins=None):
+        
+        return
+
+# =========================================================================
+#                      Mesh Warping Functionality
+# =========================================================================
+
+    def warpMesh(self):
+        ''' 
+        Run either the solid warping scheme or the algebraic
+        warping scheme depending on the options
+        '''
+
+    def setupWarpDeriv(self):
+
+        return 
+
+    def WarpDeriv(self,solver_dxv):
+
+        return 
+
+    def verifySolidWarpDeriv(self):
+
+        return
+
 #==============================================================================
 # SUmb Analysis Test
 #==============================================================================
@@ -1565,4 +1786,6 @@ if __name__ == '__main__':
     print 'Testing ...'
     sumb = SUMB()
     print sumb
+
+
 

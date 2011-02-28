@@ -1,4 +1,4 @@
-/* $Id: testMemSizec.c 367 2006-11-29 00:47:02Z acmarta $ */
+/* $Id: testMemSizec.c 1142 2006-06-06 10:33:22Z bdauverg $ */
 #include <stdio.h>
 
 void allzero_(int *array) {

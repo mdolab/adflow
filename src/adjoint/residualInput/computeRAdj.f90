@@ -10,15 +10,15 @@
 !
 
 subroutine computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
-                          betaAdj,MachAdj, &
-                          MachCoefAdj,machGridAdj,iCell, jCell,  kCell, &
-                          nn,level,sps, correctForK,secondHalo,prefAdj,&
-                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-                          pointRefAdj,rotPointAdj,&
-                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
-  
-!      Set Use Modules
+     betaAdj,MachAdj, &
+     MachCoefAdj,machGridAdj,iCell, jCell,  kCell, &
+     nn,level,sps, correctForK,secondHalo,prefAdj,&
+     rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+     rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+     pointRefAdj,rotPointAdj,&
+     murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+
+  !      Set Use Modules
   use blockPointers
   use flowVarRefState
   use inputTimeSpectral !nTimeIntervalsSpectral
@@ -28,7 +28,7 @@ subroutine computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
   implicit none
 
 
-!      Set Passed in Variables
+  !      Set Passed in Variables
 
   integer(kind=intType), intent(in) :: iCell, jCell, kCell,nn,level,sps
   real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral), &
@@ -43,7 +43,7 @@ subroutine computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
 
   logical :: secondHalo, correctForK,useOldCoor=.false.
 
-!      Set Local Variables
+  !      Set Local Variables
 
   !variables for test loops
   integer(kind=intType)::i,j,k,ii,jj,kk,liftIndex,nnn,sps2
@@ -54,7 +54,7 @@ subroutine computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
   real(kind=realType), dimension(nBocos,-2:2,-2:2,3,nTimeIntervalsSpectral) :: normAdj
   real(kind=realType), dimension(nBocos,-2:2,-2:2,nTimeIntervalsSpectral) ::rFaceAdj
   real(kind=realType),dimension(nTimeIntervalsSpectral):: volAdj
-!  real(kind=realType), dimension(-2:2,-2:2,-2:2,3) :: siAdj, sjAdj, skAdj
+  !  real(kind=realType), dimension(-2:2,-2:2,-2:2,3) :: siAdj, sjAdj, skAdj
   real(kind=realType), dimension(-1:1,-1:1,-1:1,nTimeIntervalsSpectral) :: radIAdj,radJAdj,radKAdj
   real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral) :: siAdj, sjAdj, skAdj
   real(kind=realType), dimension(-2:2,-2:2,-2:2,nTimeIntervalsSpectral) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
@@ -86,87 +86,86 @@ subroutine computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
 !!$           call terminate("verifyResiduals", &
 !!$           "Something wrong when &
 !!$           &calling open")
-! *************************************************************************
-!      Begin Execution
-! *************************************************************************
+  ! *************************************************************************
+  !      Begin Execution
+  ! *************************************************************************
   !print *,'in computeRadj',wadj(:,:,:,irho)!
-!      call the initialization routines to calculate the effect of Mach and alpha
-       call adjustInflowAngleAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
-            liftDirectionAdj,dragDirectionAdj,liftIndex)
-  
-       call checkInputParamAdj(velDirFreestreamAdj,liftDirectionAdj,&
-            dragDirectionAdj, Machadj, MachCoefAdj)
+  !      call the initialization routines to calculate the effect of Mach and alpha
+  call adjustInflowAngleAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
+       liftDirectionAdj,dragDirectionAdj,liftIndex)
 
-       call referenceStateAdj(Machadj, MachCoefAdj,uInfAdj,prefAdj,&
-            rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
-            murefAdj, timerefAdj)
-       !call referenceStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
-       !     dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,prefAdj,&
-       !     rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
-       !     murefAdj, timerefAdj)
-       !(velDirFreestreamAdj,liftDirectionAdj,&
-       !     dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj)
+  call checkInputParamAdj(velDirFreestreamAdj,liftDirectionAdj,&
+       dragDirectionAdj, Machadj, MachCoefAdj)
 
-       call setFlowInfinityStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
-            dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,wInfAdj,prefAdj,&
-            rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
-            murefAdj, timerefAdj,pInfCorrAdj)
+  call referenceStateAdj(Machadj, MachCoefAdj,uInfAdj,prefAdj,&
+       rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
+       murefAdj, timerefAdj)
+  !call referenceStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
+  !     dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,prefAdj,&
+  !     rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
+  !     murefAdj, timerefAdj)
+  !(velDirFreestreamAdj,liftDirectionAdj,&
+  !     dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj)
 
-       do sps2 = 1,nTimeIntervalsSpectral
-!      Call the metric routines to generate the areas, volumes and surface normals for the stencil.
-       !   print *,'nn xhalo',nn,secondhalo
-       call xhaloAdj(xAdj,xBlockCornerAdj,icell,jcell,kcell,nn,level,sps,sps2)
-       !print *,'nn metric',nn,secondhalo
-       call metricAdj(xAdj,siAdj,sjAdj,skAdj,volAdj,normAdj, &
-            iCell,jCell,kCell,nn,level,sps,sps2)
-       !print *,'siAdj',siAdj(:,0,0,1,:)
-!call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
-
-       ! Compute the time, which corresponds to this spectral solution.
-       ! For steady and unsteady mode this is simply the restart time;
-       ! for the spectral mode the periodic time must be taken into
-       ! account, which can be different for every section.
-       
-       t = timeUnsteadyRestart
-       
-       if(equationMode == timeSpectral) then
-          do nnn=1,nSections
-             !t(nnn) = t(nnn) + (sps2-1)*sections(nnn)%timePeriod &
-             !     /         real(nTimeIntervalsSpectral,realType)
-             t(nnn) = t(nnn) + (sps2-1)*sections(nnn)%timePeriod &
-                   /         (nTimeIntervalsSpectral*1.0)!to make denomenator a real number...
-          enddo
-       endif
-       !first two arguments needed for time spectral.just set to initial values for the current steady case...
-       !print *,'grid velocities',il,jl,kl,nn,secondhalo
-       call gridVelocitiesFineLevelAdj(useOldCoor, t, sps,xAdj,&
-            siAdj, sjAdj, skAdj,rotCenterAdj, rotRateAdj,sAdj,sFaceIAdj,&
-            sFaceJAdj,sFaceKAdj,machGridAdj,velDirFreestreamAdj,&
-            liftDirectionAdj,alphaAdj,betaAdj,liftIndex,&
-            iCell, jCell, kCell,pointRefAdj,rotPointAdj,nn,level,sps2)
-       !print *,'gvsiAdj',siAdj(:,0,0,1,:)
-!for debugging intermediate stages      
-!       dwadj(1:3) = sAdj(0,0,0,:)
-!       return
-
-       !print *,'normalVelocities',il,jl,kl,nn,secondhalo
-
-       call normalVelocitiesAllLevelsAdj(sps,iCell, jCell, kCell,sFaceIAdj,&
-            sFaceJAdj,sFaceKAdj,siAdj, sjAdj, skAdj,rFaceAdj,nn,level,sps2)
-
-     ! print *,'nvsiAdj',siAdj(:,0,0,1,:)
+  call setFlowInfinityStateAdj(velDirFreestreamAdj,liftDirectionAdj,&
+       dragDirectionAdj, Machadj, MachCoefAdj,uInfAdj,wInfAdj,prefAdj,&
+       rhorefAdj, pinfdimAdj, rhoinfdimAdj, rhoinfAdj, pinfAdj,&
+       murefAdj, timerefAdj,pInfCorrAdj)
+ ! sadj = 0.0
  
-       !needed for uSlip in Viscous Calculations
-       !call slipVelocitiesFineLevel(.false., t, mm)
+  do sps2 = 1,nTimeIntervalsSpectral
+     !      Call the metric routines to generate the areas, volumes and surface normals for the stencil.
 
-!      Mimic the Residual calculation in the main code
+     call xhaloAdj(xAdj,xBlockCornerAdj,icell,jcell,kcell,nn,level,sps,sps2)
 
-       !Compute the Pressure in the stencil based on the current 
-       !States
-       
-       !print *,'Calling computepressure',il,jl,kl,nn,secondhalo!,wadj(:,:,:,irho)!
-       ! replace with Compute Pressure Adjoint!
-       call computePressureAdj(wAdj, pAdj,nn,level,sps,sps2)
+     call metricAdj(xAdj,siAdj,sjAdj,skAdj,volAdj,normAdj, &
+          iCell,jCell,kCell,nn,level,sps,sps2)
+
+     !call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
+
+     ! Compute the time, which corresponds to this spectral solution.
+     ! For steady and unsteady mode this is simply the restart time;
+     ! for the spectral mode the periodic time must be taken into
+     ! account, which can be different for every section.
+
+     t = timeUnsteadyRestart
+
+     if(equationMode == timeSpectral) then
+        do nnn=1,nSections
+           !t(nnn) = t(nnn) + (sps2-1)*sections(nnn)%timePeriod &
+           !     /         real(nTimeIntervalsSpectral,realType)
+           t(nnn) = t(nnn) + (sps2-1)*sections(nnn)%timePeriod &
+                /         (nTimeIntervalsSpectral*1.0)!to make denomenator a real number...
+        enddo
+     endif
+     !first two arguments needed for time spectral.just set to initial values for the current steady case...
+
+  
+     call gridVelocitiesFineLevelAdj(useOldCoor, t, sps,xAdj,&
+          siAdj, sjAdj, skAdj,rotCenterAdj, rotRateAdj,sAdj,sFaceIAdj,&
+          sFaceJAdj,sFaceKAdj,machGridAdj,velDirFreestreamAdj,&
+          liftDirectionAdj,alphaAdj,betaAdj,liftIndex,&
+          iCell, jCell, kCell,pointRefAdj,rotPointAdj,nn,level,sps2)
+
+     call normalVelocitiesAllLevelsAdj(sps,iCell, jCell, kCell,sFaceIAdj,&
+          sFaceJAdj,sFaceKAdj,siAdj, sjAdj, skAdj,rFaceAdj,nn,level,sps2)
+
+
+     !needed for uSlip in Viscous Calculations
+     !call slipVelocitiesFineLevel(.false., t, mm)
+
+     !      Mimic the Residual calculation in the main code
+
+     !Compute the Pressure in the stencil based on the current 
+     !States
+
+     !print *,'Calling computepressure',il,jl,kl,nn,secondhalo!,wadj(:,:,:,irho)!
+     ! replace with Compute Pressure Adjoint!
+
+
+
+     call computePressureAdj(wAdj, pAdj,nn,level,sps,sps2)
+
 
 
 !!$       !print out pAdj
@@ -203,121 +202,131 @@ subroutine computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
 !!$             enddo
 !!$          enddo
 !!$       enddo
-       
-       ! Apply all boundary conditions to stencil.
-       ! In case of a full mg mode, and a segegated turbulent solver,
-       ! first call the turbulent boundary conditions, such that the
-       ! turbulent kinetic energy is properly initialized in the halo's.
 
-!###! Ignore Viscous for now
-!###!       if(turbSegregated .and. (.not. corrections)) &
-!###!         call applyAllTurbBCAdj(secondHalo)
+     ! Apply all boundary conditions to stencil.
+     ! In case of a full mg mode, and a segegated turbulent solver,
+     ! first call the turbulent boundary conditions, such that the
+     ! turbulent kinetic energy is properly initialized in the halo's.
 
-       ! Apply all boundary conditions of the mean flow.
-       !print *,'applying bcs',nn,secondhalo,sps2
-!******************************************
-       call applyAllBCAdj(wInfAdj,pInfCorrAdj,wAdj, pAdj,sAdj, &
-            siAdj, sjAdj, skAdj, volAdj, normAdj, &
-            rFaceAdj,iCell, jCell, kCell,secondHalo,nn,level,sps,sps2)
-       !print *,'bcsiAdj',siAdj(:,0,0,1,:)
-!#!#Shouldn't need this section for derivatives...
-!#!$       ! In case this routine is called in full mg mode call the mean
-!#!$       ! flow boundary conditions again such that the normal momentum
-!#!$       ! boundary condition is treated correctly.
-!#!$
-!#!$       if(.not. corrections) call applyAllBCAdj(wAdj, pAdj, &
-!#!$                              siAdj, sjAdj, skAdj, volAdj, normAdj, &
-!#!$                              iCell, jCell, kCell,secondHalo)
+     !###! Ignore Viscous for now
+     !###!       if(turbSegregated .and. (.not. corrections)) &
+     !###!         call applyAllTurbBCAdj(secondHalo)
 
-       !Leave out State exchanges for now. If there are discrepancies 
-       !Later, this may be a source...
-!#!$       ! Exchange the solution. Either whalo1 or whalo2
-!#!$       ! must be called.
-!#!$
-!#!$       if( secondHalo ) then
-!#!$         call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-!#!$                     .true., .true.)
-!#!$       else
-!#!$         call whalo1(currentLevel, 1_intType, nVarInt, .true., &
-!#!$                     .true., .true.)
-!#!$       endif
+     ! Apply all boundary conditions of the mean flow.
+     !print *,'applying bcs',nn,secondhalo,sps2
+     !******************************************
 
-!Again this should not be required, so leave out for now...
-       ! For full multigrid mode the bleeds must be determined, the
-       ! boundary conditions must be applied one more time and the
-       ! solution must be exchanged again.
+     call applyAllBCAdj(wInfAdj,pInfCorrAdj,wAdj, pAdj,sAdj, &
+          siAdj, sjAdj, skAdj, volAdj, normAdj, &
+          rFaceAdj,iCell, jCell, kCell,secondHalo,nn,level,sps,sps2)
 
-!#!$       if(.not. corrections) then
-!#!$         call BCDataMassBleedOutflowAdj(.true., .true.)
-!#!$         call applyAllBCAdj(secondHalo)
-!#!$
-!#!$       !Leave out State exchanges for now. If there are discrepancies 
-!#!$       !Later, this may be a source...
 
-!#!$!         if( secondHalo ) then
-!#!$!           call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-!#!$!                       .true., .true.)
-!#!$!         else
-!#!!$           call whalo1(currentLevel, 1_intType, nVarInt, .true., &
-!#!!$                       .true., .true.)
-!#!!$         endif
-!#!$       endif
-!#!$
-!#!$
-!#!$
-!#!$       ! Reset the values of rkStage and currentLevel, such that
-!#!$       ! they correspond to a new iteration.
-!#!$
-!#!$       rkStage = 0
-!#!$       currentLevel = groundLevel
-!#!$
-!#!$       ! Compute the latest values of the skin friction velocity.
-!#!$       ! The currently stored values are of the previous iteration.
-!#!$
-!#!$       call computeUtauAdj
-!#!$
-!#!$       ! Apply an iteration to the turbulent transport equations in
-!#!$       ! case these must be solved segregatedly.
-!#!$
-!#!$       if( turbSegregated ) call turbSolveSegregatedAdj
-!#!$
-       ! Compute the time step.
+     !print *,'bcsiAdj',siAdj(:,0,0,1,:)
+     !#!#Shouldn't need this section for derivatives...
+     !#!$       ! In case this routine is called in full mg mode call the mean
+     !#!$       ! flow boundary conditions again such that the normal momentum
+     !#!$       ! boundary condition is treated correctly.
+     !#!$
+     !#!$       if(.not. corrections) call applyAllBCAdj(wAdj, pAdj, &
+     !#!$                              siAdj, sjAdj, skAdj, volAdj, normAdj, &
+     !#!$                              iCell, jCell, kCell,secondHalo)
 
-       !call timeStepAdj(.false.)
-       !print *,'nntimestep',nn
-       call timeStepAdj(.true.,wAdj,pAdj,siAdj, sjAdj, skAdj,&
-            sFaceIAdj,sFaceJAdj,sFaceKAdj,volAdj,radIAdj,radJAdj,radKAdj,&
-            iCell, jCell, kCell,pInfCorrAdj,rhoInfAdj,nn,level,sps,sps2)
-       !print *,'tstepsiAdj',siAdj(:,0,0,1,:)
-    end do
-!#!$
-!#!$       ! Compute the residual of the new solution on the ground level.
-!#!$
-!#!$       if( turbCoupled ) then
-!#!$         call initresAdj(nt1MG, nMGVar)
-!#!$         call turbResidualAdj
-!#!$       endif
-!#!$
- 
+     !Leave out State exchanges for now. If there are discrepancies 
+     !Later, this may be a source...
+     !#!$       ! Exchange the solution. Either whalo1 or whalo2
+     !#!$       ! must be called.
+     !#!$
+     !#!$       if( secondHalo ) then
+     !#!$         call whalo2(currentLevel, 1_intType, nVarInt, .true., &
+     !#!$                     .true., .true.)
+     !#!$       else
+     !#!$         call whalo1(currentLevel, 1_intType, nVarInt, .true., &
+     !#!$                     .true., .true.)
+     !#!$       endif
+
+     !Again this should not be required, so leave out for now...
+     ! For full multigrid mode the bleeds must be determined, the
+     ! boundary conditions must be applied one more time and the
+     ! solution must be exchanged again.
+
+     !#!$       if(.not. corrections) then
+     !#!$         call BCDataMassBleedOutflowAdj(.true., .true.)
+     !#!$         call applyAllBCAdj(secondHalo)
+     !#!$
+     !#!$       !Leave out State exchanges for now. If there are discrepancies 
+     !#!$       !Later, this may be a source...
+
+     !#!$!         if( secondHalo ) then
+     !#!$!           call whalo2(currentLevel, 1_intType, nVarInt, .true., &
+     !#!$!                       .true., .true.)
+     !#!$!         else
+     !#!!$           call whalo1(currentLevel, 1_intType, nVarInt, .true., &
+     !#!!$                       .true., .true.)
+     !#!!$         endif
+     !#!$       endif
+     !#!$
+     !#!$
+     !#!$
+     !#!$       ! Reset the values of rkStage and currentLevel, such that
+     !#!$       ! they correspond to a new iteration.
+     !#!$
+     !#!$       rkStage = 0
+     !#!$       currentLevel = groundLevel
+     !#!$
+     !#!$       ! Compute the latest values of the skin friction velocity.
+     !#!$       ! The currently stored values are of the previous iteration.
+     !#!$
+     !#!$       call computeUtauAdj
+     !#!$
+     !#!$       ! Apply an iteration to the turbulent transport equations in
+     !#!$       ! case these must be solved segregatedly.
+     !#!$
+     !#!$       if( turbSegregated ) call turbSolveSegregatedAdj
+     !#!$
+     ! Compute the time step.
+
+     !call timeStepAdj(.false.)
+     !print *,'nntimestep',nn
+     call timeStepAdj(.true.,wAdj,pAdj,siAdj, sjAdj, skAdj,&
+          sFaceIAdj,sFaceJAdj,sFaceKAdj,volAdj,radIAdj,radJAdj,radKAdj,&
+          iCell, jCell, kCell,pInfCorrAdj,rhoInfAdj,nn,level,sps,sps2)
+     !print *,'tstepsiAdj',siAdj(:,0,0,1,:)
+  end do
+  !#!$
+  !#!$       ! Compute the residual of the new solution on the ground level.
+  !#!$
+  !#!$       if( turbCoupled ) then
+  !#!$         call initresAdj(nt1MG, nMGVar)
+  !#!$         call turbResidualAdj
+  !#!$       endif
+  !#!$
+
 !!$   dwadj(:,sps) = wadj(0,0,0,:,sps)*voladj(sps)
 !!$     !do sps2 = 1,nTimeIntervalsSpectral
 !!$     !  print *,'calculating initres',nn
 !!$       !call initresAdj(1_intType, nwf,sps,dwAdj)
-!    dwAdj(:,sps) = 0.0
-!    dwAdj(1:3,sps) = sAdj(0,0,0,:,sps)!xAdj(0,0,0,:,sps)
-    !dwAdj(4,sps) = volAdj(sps)
-       call initresAdj(1, nwf,wAdj,volAdj,dwAdj,nn,level,sps)
-       !print *,'dwadj',dwadj,icell,jcell,kcell
-       
-    
-     !  print *,'calculating residuals',nn
-       call residualAdj(wAdj,pAdj,siAdj,sjAdj,skAdj,volAdj,normAdj,&
-                              sFaceIAdj,sFaceJAdj,sFaceKAdj,&
-                              radIAdj,radJAdj,radKAdj,&
-                              dwAdj, iCell, jCell, kCell,  &  
-                              rotRateAdj,correctForK,nn,level,sps)
-    !end do
-      ! print *,'nn end',nn
-!stop
-!close (UNIT=unitxAD)
-     end subroutine computeRAdjoint
+  !    dwAdj(:,sps) = 0.0
+  !    dwAdj(1:3,sps) = sAdj(0,0,0,:,sps)!xAdj(0,0,0,:,sps)
+  !dwAdj(4,sps) = volAdj(sps)
+  call initresAdj(1, nwf,wAdj,volAdj,dwAdj,nn,level,sps)
+  !print *,'dwadj',dwadj,icell,jcell,kcell
+
+
+  !  print *,'calculating residuals',nn
+  call residualAdj(wAdj,pAdj,siAdj,sjAdj,skAdj,volAdj,normAdj,&
+       sFaceIAdj,sFaceJAdj,sFaceKAdj,&
+       radIAdj,radJAdj,radKAdj,&
+       dwAdj, iCell, jCell, kCell,  &  
+       rotRateAdj,correctForK,nn,level,sps)
+  !end do
+  ! print *,'nn end',nn
+  !stop
+  !close (UNIT=unitxAD)
+
+  do sps2=1,ntimeintervalsspectral
+     dwAdj(:,sps2) =dwAdj(:,sps2)/voladj(sps2)
+  end do
+
+
+
+end subroutine computeRAdjoint

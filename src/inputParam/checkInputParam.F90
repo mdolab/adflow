@@ -885,6 +885,9 @@
        ! minimum size of 1 to avoid problems.
 
        oldSolWrittenSize = max(nOldLevels-1_intType, 1_intType)
+       
+       !check allocations for multipile succesive calls
+       if (allocated(oldSolWritten)) deallocate(oldSolWritten)
        allocate(oldSolWritten(oldSolWrittenSize), stat=ierr)
        if(ierr /= 0)                       &
          call terminate("checkInputParam", &
@@ -905,8 +908,14 @@
        ! memory.
 
        nRKStages = min(6_intType,max(1_intType,nRKStages))
+       
+       !check allocations for multipile succesive calls
+       if (allocated(etaRk)) deallocate(etaRk)
+       if (allocated(cdisRK)) deallocate(cdisRK)
+       if (allocated(cdisRKb)) deallocate(cdisRKb)
 
        allocate(etaRk(nRKStages), cdisRK(nRKStages), stat=ierr)
+       allocate(cdisRKb(nRKStages), stat=ierr)
        if(ierr /= 0) &
          call terminate("checkInputParam", &
                         "Memory allocation error for etaRK and cdisRK")
