@@ -27,6 +27,7 @@
        use localMG
        use couplerParam
        use killSignals
+       use NKSolverVars
        implicit none
 !
 !      ******************************************************************
@@ -117,7 +118,7 @@
        surfaceSolFile = ""          ! This will be corrected later if no
                                     ! surface solution file is specified.
 
-       storeRindLayer = .false.     ! No halo cells in solution files.
+       storeRindLayer = .True.     ! No halo cells in solution files.
 
        autoParameterUpdate = .true. ! Update the input parameter file
                                     ! when a restart file is written.
@@ -155,7 +156,7 @@
        smoother  = none
        nRKStages = 5
 
-       resAveraging = noResAveraging ! No residual averaging.
+       resAveraging =  noResAveraging ! No residual averaging.
        smoop        = 1.5_realType
 
        turbTreatment     = segregated     ! Segregated solver for the
@@ -408,7 +409,6 @@
        velDirIni(3) = zero
 
        printIterations = .True.
-
        routineFailed = .False.
-
+       nkSolverSetup = .False.
        end subroutine setDefaultValues

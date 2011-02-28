@@ -36,28 +36,16 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS = adjustinflowangleforcesadj_b.o\
-	       applyallbcforcesadj_b.o \
-               bceulerwallforcesadj_b.o \
-               bcfarfieldforcesadj_b.o \
-	       bcsymmforcesadj_b.o \
-	       checkinputparamforcesadj_b.o\
-	       computeforcesadj_b.o\
-	       computeforcespressureadj_b.o\
-	       derivativerotmatrixrigidforcesadj_b.o\
-	       eintarrayforcesadj_b.o\
-	       etotarrayforcesadj_b.o\
-	       extractbcstatesforcesadj_b.o \
-               extrapolate2ndhaloforcesadj_b.o\
-	       forcesandmomentsadj_b.o\
-	       getdirvectorforces_b.o\
-               getsurfacenormalsadj_b.o\
-               gridvelocitiesfinelevelforcesadj_b.o\
-	       referencestateforcesadj_b.o \
-	       replacebcstatesforcesadj_b.o \
-               rotmatrixrigidbodyforcesadj_b.o\
-               setflowinfinitystateforcesadj_b.o\
-	       vectorrotationforces_b.o
+FF90_OBJECTS = 	adjustinflowangleforcesadj_b.o\
+		bceulerwallforcesadj_b.o\
+		computeforceandmomentadj_b.o\
+		computeforcesadj_b.o\
+		computepressureforcesadj_b.o\
+		forcesadj_b.o\
+		getdirvectorforces_b.o\
+		getsurfacenormalsforcesadj_b.o\
+		vectorrotationforces_b.o\
+
 
 #CC_OBJECTS   = connect_signals.o
 

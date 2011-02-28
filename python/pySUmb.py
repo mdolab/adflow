@@ -50,10 +50,12 @@ from numpy import real
 # =============================================================================
 # Extension modules
 # =============================================================================
+from mdo_import_helper import *
+exec(import_modules('pyAero_solver'))
 #sys.path.append(os.path.abspath('../../../../pyACDT/pyACDT/Aerodynamics'))
-sys.path.append(os.path.abspath('../../../../../pyACDT/pyACDT/Aerodynamics'))
+#sys.path.append(os.path.abspath('../../../../../pyACDT/pyACDT/Aerodynamics'))
 
-from pyAero_solver import AeroSolver
+#from pyAero_solver import AeroSolver
 
 # =============================================================================
 # Misc Definitions
@@ -214,9 +216,11 @@ class SUMB(AeroSolver):
 	
 		#if(self.interface.myid==0):print ' ->Setting inflowangle'
 		#set inflow angle
+		self.interface.setPeriodicParams(aero_problem,self.getOption)
 		self.interface.setInflowAngle(aero_problem)
 		self.interface.setReferencePoint(aero_problem)
 		self.interface.setRotationRate(aero_problem)
+		
 		# Run Solver
 		#if(self.interface.myid==0):print ' ->Running iterations'
 		# get flow and ref from aero_problem
@@ -942,11 +946,12 @@ class SUMB(AeroSolver):
 # 		#endif
 # 		return
 
-	def getSolution(self):
+	def getSolution(self,sps):
 		'''
 		retrieve the solution variables from the solver.
 		'''
-		solution = self.interface.getFunctionValues()
+		#if self.myid==0:print 'getting solution pysumb',sps
+		solution = self.interface.getFunctionValues(sps)
 		
 		return solution
 

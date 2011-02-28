@@ -61,7 +61,7 @@
       integer(kind=intType) :: nNodesGlobal, nNodesLocal, nNodeOffsetLocal
       integer(kind=intType) :: nCellsGlobal, nCellsLocal, nCellOffsetLocal
       integer(kind=intType) :: nSurfNodesGlobal, nSurfNodesLocal
-
+      real(kind=realType) :: timings(20)
       ! ****************************************************************
       ! Finite-difference approximation step size.
 
@@ -72,4 +72,5 @@
       real(kind=realType), parameter :: adjRelFd = 1.0e-5_realType
       real(kind=realType), parameter :: adjAbsFd = 1.0e-5_realType
 
-      end module ADjointVars
+
+    end module ADjointVars

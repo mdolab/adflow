@@ -36,11 +36,10 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_MODULES = 
-
 FF90_OBJECTS = allocMemADjoint.o        \
 	       assertionsADjoint.o      \
                computeAeroCoef.o        \
+	       computeObjPartials.o\
 	       copyADjointStencil.o     \
 	       createPETScKsp.o         \
 	       createPETScMat.o         \
@@ -51,6 +50,10 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       getGlobalNodes.o         \
 	       getSolution.o            \
 	       getADjoint.o             \
+	       getdRdXvPsi.o            \
+	       getdRdaPsi.o             \
+	       getdRdwTPsi.o            \
+	       getdFdxVec.o             \
 	       haloIndexCommunication.o \
 	       initializePETSc.o        \
 	       indexHalo.o              \
@@ -68,15 +71,12 @@ FF90_OBJECTS = allocMemADjoint.o        \
                solverADjoint.o          \
 	       updateFlow.o             \
 	       updateReferencePoint.o   \
-	       updateRotationRate.o   \
-	       getdRdXvPsi.o\
-	       getdRdaPsi.o\
-	       getdRdwTPsi.o\
+	       updateRotationRate.o     \
 	       setupCouplingMatrixStruct.o\
 	       agumentRHS.o\
-	       getdFdxVec.o\
-	       computeObjPartials.o\
 	       matrixInfo.o\
+	       verifyRAdj.o\
+               adjoint_stencils.o\
 #	       verifyResiduals.o\
 #	       verifydRdw.o             \
 #              verifydRdwFile.o         \
@@ -87,38 +87,8 @@ FF90_OBJECTS = allocMemADjoint.o        \
 #	       verifydRdxFile.o             \
 #              verifydRdxsFile.o             \
 #	       verifydRdxFileFD.o             \
-#	       verifyRAdj.o\
-#	       solveDirectPETSc.o       \
-#	       setupSurfaceDirect.o     \
-#	       setupADjointTotalStruct.o\
-# 	       writeCGNSMesh.o\
-#              writeCGNSData.o\
-#	       setupGradientdCdExtra.o\
-#	       setupGradientdCdx.o \
-#	       setupGradientMatrixExtra.o\
-#	       setupGradientMatrixSpatial.o\
-#              setupGradientRHSFlow.o\
-#	       setupGradientRHSVolume.o\
-#	       setupGradientRHSExtra.o\
-#              setupADjointMatrixTranspose.o\
-# 	       computeAeroCoupling.o    \
-#	       setupADjointPCMatrix.o     
-# 	       setupADjointMatrix.o     \
-#   	       computeAeroExpCoupling.o  \	
-#	       computeADjointGradientExtra.o\
-#	       computeADjointGradientSpatial.o\
-#	       computeADjointGradientSurfaceDV.o\
-#              computeADjointGradientSurfaceDisp.o\
-#	       setupCouplingTotalStruct.o\
-#	       setupADjointRHSStruct.o  \
-#              setupADjointdCdwStability.o\
-#              setupADjointdIdCStability.o\
-#	       setupGradientRHSSpatial.o\
-#              setupGradientRHSStability.o\
-#	       setupADjointRHS.o        \
-#	       setupADjointRHSAeroCoeff.o\
-#	       setupADjointRHSAeroCoef2.o\
-#	       setupADjointRHSStability.o\
+
+
 
 CC_OBJECTS   = initPETScWrap.o
 
@@ -131,8 +101,6 @@ CC_OBJECTS   = initPETScWrap.o
 default: all
 
 all:
-	$(MAKE) mod
-#	cp -f *.mod $(SUMB_MODDIR)
 	$(MAKE) src
 
 clean:
@@ -145,5 +113,4 @@ clean:
 #      *                                                                *
 #      ******************************************************************
 
-mod:	$(FF90_MODULES)
 src:	$(FF90_OBJECTS) $(CC_OBJECTS)

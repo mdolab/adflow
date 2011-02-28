@@ -23,8 +23,10 @@
 !     *                                                                *
 !     ******************************************************************
 !
+       
       use ADjointPETSc
       use inputADjoint
+      use communication
       implicit none
 !
 !     Local variables.
@@ -46,7 +48,7 @@
 
       ! Send some feedback to screen.
 
-      if( PETScRank==0 .and. printTiming)  &
+      if( myid ==0 .and. printTiming)  &
            write(*,10) "Solving ADjoint Transpose with PETSc..."
 
       ! Get the initial time.
@@ -127,7 +129,7 @@
       call MatMult(dRdWT,psi,adjointRes,PETScIerr)
       call EChk(PETScIerr,__file__,__line__)
       
-      call VecAXPY(adjointRes,PETScNegOne,adjointRHS,PETScIerr)
+      call VecAXPY(adjointRes,-1.0,adjointRHS,PETScIerr)
       call EChk(PETScIerr,__file__,__line__)
       
       call VecNorm(adjointRes,NORM_2,norm,PETScIerr)
@@ -143,7 +145,7 @@
       ! Use the root processor to display the output summary, such as
       ! the norm of error and the number of iterations
 
-      if( PETScRank==0 .and. printTiming) then
+      if( myid ==0 .and. printTiming) then
         write(*,20) "Solving ADjoint Transpose with PETSc time (s) =", timeAdj
         write(*,30) "Norm of error =",norm,"Iterations =",adjConvIts
         write(*,*) "------------------------------------------------"
@@ -169,6 +171,5 @@
    40 format(1x,a,1x,i5,1x,a)
 
 #endif
-      
     end subroutine solveADjointTransposePETSc
       

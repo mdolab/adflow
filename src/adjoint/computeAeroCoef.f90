@@ -2,13 +2,13 @@
 !     ******************************************************************
 !     *                                                                *
 !     * File:          computeAeroCoef.f90                             *
-!     * Author:        Andre C. Marta,C.A.(Sandy) Mader                *
+!     * Author:        Andre C. Marta,C.A.(Sandy) Mader,Gaetan Kenway  *
 !     * Starting date: 01-14-2008                                      *
-!     * Last modified: 01-17-2008                                      *
+!     * Last modified: 01-13-2011                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine computeAeroCoef(sps)
+subroutine computeAeroCoef(globalCFVals,sps)
   !
   !     ******************************************************************
   !     *                                                                *
@@ -29,6 +29,7 @@ subroutine computeAeroCoef(sps)
   !
   !     Subroutine arguments.
   integer(kind=intType) :: sps
+  real(kind=realType), dimension(nCostFunction)::globalCFVals
   !      Local variables.
   !
   integer :: ierr, nn,mm
@@ -38,8 +39,7 @@ subroutine computeAeroCoef(sps)
   real(kind=realType) :: Moment(3),cMoment(3)
   real(kind=realType) :: alpha,beta
   integer(kind=intType) :: liftIndex
-  real(kind=realType), dimension(:),allocatable :: lVars
-  real(kind=realType), dimension(:),allocatable :: gVars 
+  real(kind=realType), dimension(nCostFunction)::localCFVals
   real(kind=realType),dimension(:,:),allocatable :: pts
 
   !     ******************************************************************
@@ -51,12 +51,14 @@ subroutine computeAeroCoef(sps)
   call getForceSize(npts)
   allocate(pts(3,npts))
   call getForcePoints(pts,npts)
-
   ii = 0
 
   call getDirAngle(velDirFreestream,LiftDirection,&
        liftIndex,alpha,beta)
- 
+  
+  !Zero the summing variable
+  localCFVals(:) = 0.0
+  globalCFVals(:) = 0.0
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
      bocos: do mm=1,nBocos
@@ -72,25 +74,32 @@ subroutine computeAeroCoef(sps)
                 iBeg,iEnd,jBeg,jEnd,ii)
            ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
 
-           functionValue(costFuncLift) = functionValue(costFuncLift) + Lift
-           functionValue(costFuncDrag) = functionValue(costFuncDrag) + Drag
-           functionValue(costFuncLiftCoef) = functionValue(costFuncLiftCoef) + Cl
-           functionValue(costFuncDragCoef) = functionValue(costFuncDragCoef) + Cd
-           functionValue(costFuncForceX) = functionValue(costFuncForceX) + Force(1)
-           functionValue(costFuncForceY) = functionValue(costFuncForceY) + Force(2)
-           functionValue(costFuncForceZ) = functionValue(costFuncForceZ) + Force(3)
-           functionValue(costFuncForceXCoef) = functionValue(costFuncForceXCoef) + cForce(1)
-           functionValue(costFuncForceYCoef) = functionValue(costFuncForceYCoef) + cForce(2)
-           functionValue(costFuncForceZCoef) = functionValue(costFuncForceZCoef) + cForce(3)
-           functionValue(costFuncMomX) = functionValue(costFuncMomX) + moment(1)
-           functionValue(costFuncMomY) = functionValue(costFuncMomY) + moment(2)
-           functionValue(costFuncMomZ) = functionValue(costFuncMomZ) + moment(3)
-           functionValue(costFuncMomXCoef) = functionValue(costFuncMomXCoef) + cmoment(1)
-           functionValue(costFuncMomYCoef) = functionValue(costFuncMomYCoef) + cmoment(2)
-           functionValue(costFuncMomZCoef) = functionValue(costFuncMomZCoef) + cmoment(3)
+           localCFVals(costFuncLift) = localCFVals(costFuncLift) + Lift
+           localCFVals(costFuncDrag) = localCFVals(costFuncDrag) + Drag
+           localCFVals(costFuncLiftCoef) = localCFVals(costFuncLiftCoef) + Cl
+           localCFVals(costFuncDragCoef) = localCFVals(costFuncDragCoef) + Cd
+           localCFVals(costFuncForceX) = localCFVals(costFuncForceX) + Force(1)
+           localCFVals(costFuncForceY) = localCFVals(costFuncForceY) + Force(2)
+           localCFVals(costFuncForceZ) = localCFVals(costFuncForceZ) + Force(3)
+           localCFVals(costFuncForceXCoef) = localCFVals(costFuncForceXCoef) + cForce(1)
+           localCFVals(costFuncForceYCoef) = localCFVals(costFuncForceYCoef) + cForce(2)
+           localCFVals(costFuncForceZCoef) = localCFVals(costFuncForceZCoef) + cForce(3)
+           localCFVals(costFuncMomX) = localCFVals(costFuncMomX) + moment(1)
+           localCFVals(costFuncMomY) = localCFVals(costFuncMomY) + moment(2)
+           localCFVals(costFuncMomZ) = localCFVals(costFuncMomZ) + moment(3)
+           localCFVals(costFuncMomXCoef) = localCFVals(costFuncMomXCoef) + cmoment(1)
+           localCFVals(costFuncMomYCoef) = localCFVals(costFuncMomYCoef) + cmoment(2)
+           localCFVals(costFuncMomZCoef) = localCFVals(costFuncMomZCoef) + cmoment(3)
+
         end if
      end do bocos
   end do domains
+
+  ! Now we will mpi_allReduce them into globalCFVals
+ 
+  call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, sumb_real, &
+       mpi_sum, SUmb_comm_world, ierr)
+ 
 
   deallocate(pts)
 end subroutine computeAeroCoef

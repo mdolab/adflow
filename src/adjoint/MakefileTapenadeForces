@@ -1,10 +1,9 @@
 #     ******************************************************************
 #     *                                                                *
-#     * File:          MakefileTapenadeForces                          *
-#     * Author:        Andre C. Marta, Sandy Mader                     *
-#     *                Seongim Choi                                    *
+#     * File:          MakefileTapenadeCoupling                        *
+#     * Author:        Gaetan Kenway                                   *
 #     * Starting date: 12-22-2007                                      *
-#     * Last modified: 10-29-2008                                      *
+#     * Last modified: 08-18-2008                                      *
 #     *                                                                *
 #     ******************************************************************
 
@@ -86,20 +85,7 @@
 #     *                                                                *
 #     ******************************************************************
 
-#JAVA_HOME = /nfs/opal/home/mader/jdk1.5.0_06
-#JAVA_HOME = /home/guysmiley/acmarta/software/tapenade/jre1.5.0_07
-#JAVA_HOME =/home/mader/UTIAS/SRC/jdk1.6.0_06
-
-#TAPENADE_HOME = /nfs/opal/home/mader/SRC/Tapenade/tapenade2.2
-#TAPENADE_HOME = /home/guysmiley/acmarta/software/tapenade/tapenade2.2
-#TAPENADE_HOME = /home/mader/UTIAS/SRC/tapenade2.2.4
-
-#SOLVER_DIRSRC = /nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src
-#SOLVER_DIRSRC = /usr/people/sichoi/SUmbADJ_NS_NEW/src/
-#SOLVER_DIRSRC = /home/guysmiley/acmarta/SVN/SUmbVertex/src
-#SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
-SOLVER_DIRSRC = /nfs/tuff/home/mader/hg/SUmbADjoint/src
-#SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
+SOLVER_DIRSRC = /nfs/mica/home/kenway/hg/SUmbADjoint/src
 
 #     ******************************************************************
 #     *                                                                *
@@ -111,15 +97,15 @@ TAPENADE_PARSERFILESEPARATOR = "/"
 
 # Dependent output variables (separator: white space, default: all)
 
-TAPENADE_OUTVARS = "CLAdj CDAdj cfxadj cfyadj cfzadj CmxAdj CmyAdj CmzAdj"
+TAPENADE_OUTVARS = "Force cForce Lift Drag Cl Cd moment cMoment"
 
 # Independent input variables (separator: white space, default: all)
 
-TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj machcoefadj machGridAdj rotrateadj rotcenteradj pointrefadj rotpointadj"
-
+TAPENADE_VARS = "alphaAdj betaAdj MachCoefAdj pointRefAdj pts wBlock"
+#TAPENADE_VARS = "pts"
 # Name of the top routine
 
-TAPENADE_HEADROUTINE = "computeForcesAdj"
+TAPENADE_HEADROUTINE = "computeForceandMomentAdj"
 
 # Differentiation mode
 
@@ -140,14 +126,9 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 #     *                                                                *
 #     ******************************************************************
 
-TAPENADE_DIRSRC1 = $(SOLVER_DIRSRC)/adjoint/residualInput
-#TAPENADE_DIRSRC2 = $(SOLVER_DIRSRC)/adjoint/metricInput
-
-TAPENADE_DIRSRC  = $(SOLVER_DIRSRC)/adjoint
-TAPENADE_DIRSRC3 = $(SOLVER_DIRSRC)/adjoint/forcesInput
-TAPENADE_DIRMOD  = $(SOLVER_DIRSRC)/modules
+TAPENADE_DIRSRC = $(SOLVER_DIRSRC)/adjoint/forcesInput
+TAPENADE_MODDIR = $(SOLVER_DIRSRC)/adjoint/residualInput
 SUMB_MODDIR      = $(SOLVER_DIRSRC)/modules
-TAPENADE_DIRUTILS     = $(SOLVER_DIRSRC)/utils
 
 TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
 
@@ -157,64 +138,23 @@ TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
 #     *                                                                *
 #     ******************************************************************
 
-TAPENADE_SRC = $(TAPENADE_DIRSRC3)/applyAllBCForcesAdj.f90 \
-               $(TAPENADE_DIRSRC3)/bcEulerWallForcesAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/bcFarfieldForcesAdj.f90\
-	       $(TAPENADE_DIRSRC3)/bcSymmForcesAdj.f90 \
-               $(TAPENADE_DIRSRC3)/extractBCStatesForcesAdj.f90\
-	       $(TAPENADE_DIRSRC3)/extrapolate2ndHaloForcesAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/getSurfaceNormalsAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/computeForcesPressureAdj.f90\
-	       $(TAPENADE_DIRSRC3)/computeForcesAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/forcesAndMomentsAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/etotArrayForcesAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/adjustInflowAngleForcesAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/checkInputParamForcesAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/referenceStateForcesAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/replaceBCStatesForcesAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/setFlowInfinityStateForcesAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/getDirVectorForces.f90 \
-	       $(TAPENADE_DIRSRC3)/getDirAngleForces.f90 \
-	       $(TAPENADE_DIRSRC1)/computeGammaAdj.f90 \
-	       $(TAPENADE_DIRSRC3)/vectorRotationForces.f90\
-	       $(TAPENADE_DIRSRC3)/normalVelocitiesForcesAdj.f90\
-	       $(TAPENADE_DIRSRC3)/gridVelocitiesFineLevelForcesAdj.f90\
-	       $(TAPENADE_DIRSRC3)/derivativeRigidRotAngleForcesAdj.f90\
-	       $(TAPENADE_DIRSRC3)/derivativeRotMatrixRigidForcesAdj.f90\
-               $(TAPENADE_DIRSRC3)/rigidRotAngleForcesAdj.f90\
-               $(TAPENADE_DIRSRC3)/rotMatrixRigidBodyForcesAdj.f90\
-	       $(TAPENADE_DIRUTILS)/TSalpha.f90\
-	       $(TAPENADE_DIRUTILS)/TSBeta.f90\
-	       $(TAPENADE_DIRUTILS)/TSMach.f90	
+TAPENADE_SRC = $(TAPENADE_DIRSRC)/adjustInflowAngleForcesAdj.f90\
+	       $(TAPENADE_DIRSRC)/bcEulerWallForcesAdj.f90\
+               $(TAPENADE_DIRSRC)/computeForceAndMomentAdj.f90\
+               $(TAPENADE_DIRSRC)/computeForcesAdj.f90\
+	       $(TAPENADE_DIRSRC)/computePressureForcesAdj.f90\
+               $(TAPENADE_DIRSRC)/forcesAdj.f90\
+	       $(TAPENADE_DIRSRC)/getDirVectorForces.f90\
+	       $(TAPENADE_DIRSRC)/getSurfaceNormalsForcesAdj.f90\
+	       $(TAPENADE_DIRSRC)/vectorRotationForces.f90\
 
-
-TAPENADE_MOD = $(TAPENADE_DIRSRC1)/BCTypes.f90 \
-	       $(TAPENADE_DIRSRC1)/block.f90 \
-	       $(TAPENADE_DIRMOD)/blockPointers.f90 \
-	       $(TAPENADE_DIRSRC1)/cgnsGrid.f90 \
-	       $(TAPENADE_DIRSRC1)/communication.f90 \
-	       $(TAPENADE_DIRSRC1)/constants.f90 \
-	       $(TAPENADE_DIRSRC1)/flowVarRefState.f90 \
-	       $(TAPENADE_DIRSRC1)/inputParam.f90 \
-	       $(TAPENADE_DIRSRC1)/iteration.f90\
-	       $(TAPENADE_DIRMOD)/monitor.f90 \
-	       $(TAPENADE_DIRSRC1)/precision.f90\
-	       $(TAPENADE_DIRMOD)/section.f90\
-               $(TAPENADE_DIRSRC1)/CpCurveFits.f90\
-	       $(TAPENADE_DIRSRC1)/su_mpi.f90\
-	       $(TAPENADE_DIRSRC1)/terminate.f90
-
-#TAPENADE_MOD = $(TAPENADE_DIRSRC1)/accuracy.f90 \
-#	       $(TAPENADE_DIRSRC1)/BCTypes.f90 \
-#	       $(TAPENADE_DIRSRC1)/block.f90 \
-#	       $(TAPENADE_DIRSRC1)/blockPointers.f90 \
-#	       $(TAPENADE_DIRSRC1)/cgnsGrid.f90 \
-#	       $(TAPENADE_DIRSRC1)/communication.f90 \
-#	       $(TAPENADE_DIRSRC1)/constants.f90 \
-#	       $(TAPENADE_DIRSRC1)/flowVarRefState.f90 \
-#	       $(TAPENADE_DIRSRC1)/inputParam.f90 \
-#	       $(TAPENADE_DIRSRC1)/precision.f90
-
+TAPENADE_MOD = $(TAPENADE_MODDIR)/constants.f90 \
+	       $(TAPENADE_MODDIR)/flowVarRefState.f90 \
+	       $(TAPENADE_MODDIR)/precision.f90\
+	       $(TAPENADE_MODDIR)/inputParam.f90\
+	       $(TAPENADE_MODDIR)/block.f90\
+	       $(SUMB_MODDIR)/blockPointers.f90\
+	       $(SUMB_MODDIR)/BCTypes.f90
 
 TAPENADE_SRC_ALL = $(TAPENADE_SRC) $(TAPENADE_MOD)
 
@@ -225,8 +165,8 @@ TAPENADE_SRC_ALL = $(TAPENADE_SRC) $(TAPENADE_MOD)
 #     ******************************************************************
 
 default:
-	@echo "TAPENADE - parsing and generating differentiated code"
-	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30  -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
+	@echo "TAPENADE - parsing and generating differentiated code bobby"
+	$(TAPENADE_HOME)/bin/tapenade  -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30  -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
 	@echo "deleting some unnecessary files..."
 	@rm -f $(TAPENADE_OUTDIR)/*__.f90 $(TAPENADE_OUTDIR)/*~
 
