@@ -66,8 +66,7 @@
        mm = 3*nn
        kk = nn - 1
 
-       if( allocated(dscalar))deallocate(dscalar)
-       if( allocated(dvector))deallocate(dvector)
+   
 
        allocate(dscalar(nSections,nn,nn),             &
                 dvector(nSections,mm,mm),             &

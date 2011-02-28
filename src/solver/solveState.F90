@@ -306,7 +306,7 @@ subroutine solveState
      else
         call getCurrentResidual(rhoResStart,totalRStart)
      end if
-
+     if (myID==0) print *,'Res check',rhoResStart,totalRStart,rhoResStart/rhoRes0 
      ! Store these values in the NKsolver Module
      !self.rhoResStart = real(self.rhoResStart)
      !self.totalRStart = real(self.totalRStart)

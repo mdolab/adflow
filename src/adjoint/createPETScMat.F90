@@ -27,7 +27,7 @@ subroutine createPETScMat
   !
   !     Local variables.
   !
-  integer       :: nDimW, nDimX,nDimS
+  integer       :: nDimW, nDimX,nDimS,nTS
   integer :: i
   integer, dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
   integer, dimension(:), allocatable :: nnzDiagonal2, nnzOffDiag2
@@ -59,8 +59,8 @@ subroutine createPETScMat
   ! Define matrix dFdx local size (number of Rows) for the
   ! Coupling derivatives.
 
-  call getForceSize(nDimS)
-  nDimS = nDimS * 3 ! Multiply by 3 for each dof on each point
+  call getForceSize(nDimS,nTS)
+  nDimS = nDimS * 3 *nTimeIntervalsSpectral! Multiply by 3 for each dof on each point
 
   !
   !     ******************************************************************
@@ -195,7 +195,7 @@ subroutine createPETScMat
   end if ! Approx PC
 
   ! dRda
-
+ ! print *,'nDesignExtra',nDesignExtra
   call MatCreate(SUMB_PETSC_COMM_WORLD, dRda, PETScIerr)
   call EChk(PETScIerr,__file__,__line__)
   call MatSetSizes(dRda, nDimW, PETSC_DECIDE, &
