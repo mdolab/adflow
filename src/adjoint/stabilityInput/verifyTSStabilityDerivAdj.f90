@@ -33,6 +33,7 @@
       use section             !nsections, sections%
       use bcTypes             ! EulerWall, NSWallAdiabatic, NSWallIsothermal
       use monitor             ! timeunsteady...
+      use costFunctions
       
       implicit none
 !
@@ -89,15 +90,21 @@
       logical :: contributeToForce, viscousSubface,secondhalo
 
       integer :: ierr
+      
+      real(kind=realType),dimension(nTimeIntervalsSpectral,8)::BaseCoef
+      real(kind=realType),dimension(8)::dcdp,dcdpdot,dcdq,dcdqdot,dcdr,dcdrdot
+      real(kind=realType),dimension(8)::dcdalpha,dcdalphadot,dcdbeta,dcdbetadot,dcdMach,dcdMachdot
+      real(kind=realType),dimension(8)::Coef0,Coef0dot
+      real(kind=realType), dimension(nCostFunction)::globalCFVals
 
-      real(kind=realType)::dcldp,dcldpdot,dcmzdp,dcmzdpdot         
-      real(kind=realType)::dcldq,dcldqdot,dcmzdq,dcmzdqdot
-      real(kind=realType)::dcldr,dcldrdot,dcmzdr,dcmzdrdot
-      real(kind=realType)::dcldalpha,dcldalphadot,dcmzdalpha,dcmzdalphadot
-      real(kind=realType)::dcldMach,dcldMachdot,dcmzdMach,dcmzdMachdot
-      real(kind=realType)::cl0,cl0dot,cmz0,cmz0dot
+!!$      real(kind=realType)::dcldp,dcldpdot,dcmzdp,dcmzdpdot         
+!!$      real(kind=realType)::dcldq,dcldqdot,dcmzdq,dcmzdqdot
+!!$      real(kind=realType)::dcldr,dcldrdot,dcmzdr,dcmzdrdot
+!!$      real(kind=realType)::dcldalpha,dcldalphadot,dcmzdalpha,dcmzdalphadot
+!!$      real(kind=realType)::dcldMach,dcldMachdot,dcmzdMach,dcmzdMachdot
+!!$      real(kind=realType)::cl0,cl0dot,cmz0,cmz0dot
 
-      real(kind=realType)::cl0Adj,cmz0Adj,dcldalphaAdj,dcmzdalphaAdj
+!!$      real(kind=realType)::cl0Adj,cmz0Adj,dcldalphaAdj,dcmzdalphaAdj
 
       real(kind=realType), dimension(nSections) :: t
 !for debug
@@ -182,7 +189,7 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 
       do sps =1,nTimeIntervalsSpectral
          
-         level = 1
+         
          call computeAeroCoef(globalCFVals,sps)
          
          BaseCoef(sps,1) = globalCFVals(costFuncLiftCoef)
@@ -206,12 +213,12 @@ real(kind=realType), dimension(3) :: cfpadjout, cmpadjout
 
       ! Root processor outputs results.
  !     print *,'printing results'
-      if(myID == 0) then
-         write(*,*) 'Stability Derivative verification results'
-         write(*,*) 'Cl0   cmz0   dcldalpha   dcmzdalpha'
-         write(*,20) "Original", cl0,cmz0,dcldalpha,dcmzdalpha
-         write(*,20) "Adjoint ", cl0Adj,cmz0Adj,dcldalphaAdj,dcmzdalphaAdj
-      endif
+!!$      if(myID == 0) then
+!!$         write(*,*) 'Stability Derivative verification results'
+!!$         write(*,*) 'Cl0   cmz0   dcldalpha   dcmzdalpha'
+!!$         write(*,20) "Original", cl0,cmz0,dcldalpha,dcmzdalpha
+!!$         write(*,20) "Adjoint ", cl0Adj,cmz0Adj,dcldalphaAdj,dcmzdalphaAdj
+!!$      endif
              
       !print *,'finished computing derivatives'
       ! Flush the output buffer and synchronize the processors.

@@ -170,7 +170,7 @@ subroutine verifyForces(pts,npts,nTS)
      do i=1,size(forces0,2)
         diff = norm(forces0(:,i,sps)-forcesAdj(:,i,sps),3)
         if (diff > tol) then
-           print *,'myid,i,diff:',myid,i,diff,forces0(1,i,sps),forcesAdj(0,i,sps)
+           print *,'myid,i,diff:',myid,i,diff,forces0(1,i,sps),forcesAdj(1,i,sps)
         end if
      end do
   end do

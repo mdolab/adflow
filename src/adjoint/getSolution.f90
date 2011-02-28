@@ -84,7 +84,7 @@ subroutine getSolution(sps)
      functionValue( costFuncClqDot)         = dcdqdot(1)!dcldqDot
      functionValue( costFuncCdqDot)         = dcdqdot(2)!dcddqDot
      functionValue( costFuncCmzqDot)        = dcdqdot(8)!dcmzdqDot
-
+     !print *,'function value',functionValue,'dcdq',dcdq
   end if
 
  

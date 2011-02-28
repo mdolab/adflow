@@ -252,15 +252,16 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
              sinCoefFourZRot, t)
         !if(myID==0)print *,'dphizdot',dphizdot
      end do
-!!$     print *,'MYID', myID
-!!$     if(myID==0)print *,'dphiz',dphiz
-!!$     !if(myID==0)print *,'dphizdot',dphizdot
-!!$     if(myID==0)print *,'BaseCoef',BaseCoef
+     !print *,'MYID', myID
+     !if(myID==0)print *,'dphiz',dphiz
+     !if(myID==0)print *,'dphizdot',dphizdot
+     !if(myID==0)print *,'BaseCoef',BaseCoef
 
      do i =1,8
         call computeLeastSquaresRegression(BaseCoef(:,i),dphiz,nTimeIntervalsSpectral,dcdq(i),coef0(i))
      end do
 
+     !if(myID==0)print *,'dcdq',dcdq
      ! now subtract off estimated cl,cmz and use remainder to compute 
      ! clqdot and cmzqdot.
      do i = 1,8
@@ -283,8 +284,10 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
 !!$        print *,'CMzq = : ',dcdq(8),' cmz0 = : ',coef0(8)
 !!$     endif
      !now normalize the results...
+     
+     a  = sqrt(gammaInf*pInfDim/rhoInfDim)
      dcdq = dcdq*timeRef*2*(machGrid*a)/lengthRef
-
+     if(myID==0)print *,'normalization',dcdq,timeRef,(machGrid*a),lengthRef
 !!$     if(myID==0)then
 !!$        a  = sqrt(gammaInf*pInfDim/rhoInfDim)
 !!$        print *,'normalization',timeRef,(machGrid*a),lengthRef

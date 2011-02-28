@@ -29,6 +29,7 @@
       use inputPhysics         ! equations
       use inputTimeSpectral    ! nTimeIntervalsSpectral!nTimeInstancesMax
       use inputTSStabDeriv
+      use flowvarrefstate      !timeref
       use monitor              !timeunsteadyrestart,timeunsteady
       use section              !nsections, sections%
       use inputMotion          ! degreePol*
