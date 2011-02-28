@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 
-subroutine computeObjPartials(costFunction,pts,npts)
+subroutine computeObjPartials(costFunction,pts,npts,nTS)
   !
   !     ******************************************************************
   !     *                                                                *
@@ -31,14 +31,15 @@ subroutine computeObjPartials(costFunction,pts,npts)
   use blockPointers    ! il,jl,kl,nViscBocos,nInvBocos
   use flowVarRefState  ! nw,LRef, pInf, gammaInf
   use inputPhysics     ! pointRef, equations, RANSEquations, 
-  use inputTimeSpectral    
+  use inputTimeSpectral 
+  use communication    !myID
   implicit none
   !
   ! Subroutine arguments.
   !
-  integer(kind=intType), intent(in) :: costFunction, npts
-  real(kind=realType), intent(in) :: pts(3,npts)
-  real(kind=realType) :: ptsb(3,npts)
+  integer(kind=intType), intent(in) :: costFunction, npts,nTS
+  real(kind=realType), intent(in) :: pts(3,npts,nTS)
+  real(kind=realType) :: ptsb(3,npts,nTS)
 
   ! Variables for computeforceandmomentadj_b
   real(kind=realtype) :: force(3), cforce(3)
@@ -96,8 +97,10 @@ subroutine computeObjPartials(costFunction,pts,npts)
      ! For non-timeSpectral type functions, just time average the
      ! objectives
 
-     dJdc(:) = 1/nTimeIntervalsSpectral
-
+     dJdc(:) = 1.0/nTimeIntervalsSpectral
+     !dJdc(:) = 0.0!1.0/nTimeIntervalsSpectral
+     !dJdc(1) = 1.0!/nTimeIntervalsSpectral
+     
   case(costFuncCl0,costFuncCd0,costFuncCm0, &
        costFuncClAlpha,costFuncCdAlpha,costFuncCmzAlpha,&
        costFuncClAlphaDot,costFuncCdAlphaDot,costFuncCmzAlphaDot,&
@@ -159,11 +162,11 @@ subroutine computeObjPartials(costFunction,pts,npts)
 
      do sps = 1,nTimeIntervalsSpectral
         select case(costFunction)
-        case(costfunccl0,costfuncclalpha)
+        case(costfunccl0,costfuncclalpha, costFuncClAlphaDot,costFuncClq,costFuncClqDot)
            dIdctemp = Cladjb(sps)
-        case(costfunccd0,costfunccdalpha)
+        case(costfunccd0,costfunccdalpha,costFuncCdAlphaDot,costFuncCdq,costFuncCdqDot)
            dIdctemp = Cdadjb(sps)
-        case(costfunccm0,costfunccmzalpha,costfunccmzalphadot,costfunccmzq)
+        case(costfunccm0,costfunccmzalpha,costfunccmzalphadot,costfunccmzq,costFuncCmzqDot)
            dIdctemp = cmzAdjb(sps)
         end select
 
@@ -217,9 +220,9 @@ subroutine computeObjPartials(costFunction,pts,npts)
                  liftb = 1.0
               case (costFuncDrag)
                  dragb = 1.0
-              case (costFuncLiftCoef,costFuncCL0,costFuncCLalpha)
+              case (costFuncLiftCoef,costFuncCL0,costFuncCLalpha,costFuncClAlphaDot,costFuncClq,costFuncClqDot)
                  clb = 1.0
-              case (costFuncDragCoef,costFuncCd0,costFuncCdAlpha)
+              case (costFuncDragCoef,costFuncCd0,costFuncCdAlpha,costFuncCdAlphaDot,costFuncCdq,costFuncCdqDot)
                  cdb = 1.0
               case (costFuncForceX)
                  forceb(1) = 1.0
@@ -243,8 +246,8 @@ subroutine computeObjPartials(costFunction,pts,npts)
                  cmomentb(1) = 1.0
               case (costFuncMomYCoef)
                  cmomentb(2) = 1.0
-              case (costFuncMomZCoef,costFuncCMzAlpha,costFuncCmzalphadot,&
-                   costFuncCmzq)
+              case (costFuncMomZCoef,costFuncCm0,costFuncCMzAlpha,costFuncCmzalphadot,&
+                   costFuncCmzq,costFuncCmzqDot)
                  cmomentb(3) = 1.0
               end select
 
@@ -260,7 +263,7 @@ subroutine computeObjPartials(costFunction,pts,npts)
                    lift, liftb, drag, dragb, cl, clb, cd, cdb, moment, momentb, &
                    cmoment,cmomentb, alphaadj, alphaadjb, betaadj, betaadjb, &
                    liftindex, machcoefadj, machcoefadjb, pointrefadj, &
-                   pointrefadjb, pts, ptsb, npts, wblock, wblockb, &
+                   pointrefadjb, pts(:,:,sps), ptsb(:,:,sps), npts, wblock, wblockb, &
                    righthandedadj, faceid, ibeg, iend, jbeg, jend,ii)
 
               ! Set the w-values derivatives in dJdw
@@ -268,6 +271,9 @@ subroutine computeObjPartials(costFunction,pts,npts)
                  do jcell = 2,jl
                     do icell = 2,il
                        idxmgb = globalCell(icell,jcell,kcell)
+!!$                       if (sum(wblockb(icell,jcell,kcell,:)).ne.0)then
+!!$                          print *,'wblock*djdc',wblockb(icell,jcell,kcell,:)*dJdc(sps),icell,jcell,kcell,sps
+!!$                       end if
                        call VecSetValuesBlocked(dJdw,1,idxmgb,&
                             wblockb(icell,jcell,kcell,:)*dJdc(sps),&
                             ADD_VALUES,PETScIerr)
@@ -284,7 +290,7 @@ subroutine computeObjPartials(costFunction,pts,npts)
                     ii = ii + 1
                     call VecSetValues(dJdx,3,&
                          (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/),&
-                         ptsb(:,ii),ADD_VALUES,PETScIerr)
+                         ptsb(:,ii,sps)*dJdc(sps),ADD_VALUES,PETScIerr)
                     call EChk(PETScIerr,__file__,__line__)
                  end do
               end do
@@ -294,27 +300,33 @@ subroutine computeObjPartials(costFunction,pts,npts)
               ! "AeroDVs" intrinsic aero design variables, alpha, beta etc
 
               if (nDesignAoA >=0) then
-                 dIda(nDesignAoA+1) = dIda(nDesignAoA+1) + alphaAdjb
+                 dIda(nDesignAoA+1) = dIda(nDesignAoA+1) + alphaAdjb*dJdc(sps)
+                 !print *,'dida alpha',dIda(nDesignAoA+1),alphaAdjb,dJdc(sps)
               end if
 
               if (nDesignSSA >= 0) then
-                 dIda(nDesignSSA+1) = dIda(nDesignSSA+1) + betaAdjb
+                 dIda(nDesignSSA+1) = dIda(nDesignSSA+1) + betaAdjb*dJdc(sps)
+              end if
+
+              if (nDesignMach >= 0) then
+                 dIda(nDesignMach+1) = dIda(nDesignMach+1) + machCoefAdjb*dJdc(sps)
               end if
 
               if (nDesignMachGrid >= 0) then
-                 dIda(nDesignMachGrid+1) = dIda(nDesignMachGrid+1) + machCoefAdjb
+                 dIda(nDesignMachGrid+1) = dIda(nDesignMachGrid+1) + machCoefAdjb*dJdc(sps)
               end if
-
+              
               if (nDesignPointRefX >=0) then
-                 dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefAdjb(1)
+                 !print *,'pointrefx',pointrefAdjb(1),dJdc(sps),nDesignPointRefX
+                 dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefAdjb(1)*dJdc(sps)
               end if
 
               if (nDesignPointRefY >=0) then
-                 dIda(nDesignPointRefY + 1) = dIda(nDesignPointRefY + 1) + pointrefAdjb(2)
+                 dIda(nDesignPointRefY + 1) = dIda(nDesignPointRefY + 1) + pointrefAdjb(2)*dJdc(sps)
               end if
 
               if (nDesignPointRefZ >=0) then
-                 dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefAdjb(3)
+                 dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefAdjb(3)*dJdc(sps)
               end if
 
            end if
@@ -322,6 +334,7 @@ subroutine computeObjPartials(costFunction,pts,npts)
 
         deallocate(wblock,wblockb,stat=ierr)
      end do domainLoopAD
+     
   end do spectralLoopAdj
 
   ! Assemble the petsc vectors
@@ -329,6 +342,10 @@ subroutine computeObjPartials(costFunction,pts,npts)
   call EChk(PETScIerr,__file__,__line__)
   call VecAssemblyEnd(dJdw,PETScIerr)
   call EChk(PETScIerr,__file__,__line__)
+
+!!$  call VecNorm(dJdw,NORM_2,val,PETScIerr)  
+!!$  call EChk(PETScIerr,__file__,__line__)
+!!$  if (myID ==0) print *,'Norm',val
 
   call VecAssemblyBegin(dJdx,PETScIerr)
   call EChk(PETScIerr,__file__,__line__)

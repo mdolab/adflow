@@ -50,6 +50,9 @@ subroutine setupADjointPCMatrixTranspose
 
   !Reference values of the dissipation coeff for the preconditioner
   real(kind=realType) :: vis2_ref, vis4_ref
+ 
+  !matrix norm check
+  real(kind=realType)               ::val
 
   ! Set the grid level of the current MG cycle, the value of the
   ! discretization and the logical correctForK.
@@ -221,6 +224,9 @@ subroutine setupADjointPCMatrixTranspose
   call EChk(ierr,__file__,__line__)
   call MatAssemblyEnd  (dRdwPreT,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__file__,__line__)
+
+
+
 #ifdef USE_PETSC_3
   call MatSetOption(dRdwPreT,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
   call EChk(ierr,__file__,__line__)

@@ -25,6 +25,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   use BCTypes
   !use monitor        ! monLoc, monGlob, nMonSum
   use costFunctions
+  use inputTimeSpectral
   implicit none
   !
   !     Subroutine arguments.
@@ -33,14 +34,14 @@ subroutine computeAeroCoef(globalCFVals,sps)
   !      Local variables.
   !
   integer :: ierr, nn,mm
-  integer :: iBeg,iEnd,jBeg,jEnd,ii,npts
+  integer :: iBeg,iEnd,jBeg,jEnd,ii,npts,nTS
 
   real(kind=realType) :: force(3),cforce(3),Lift,Drag,CL,CD
   real(kind=realType) :: Moment(3),cMoment(3)
   real(kind=realType) :: alpha,beta
   integer(kind=intType) :: liftIndex
   real(kind=realType), dimension(nCostFunction)::localCFVals
-  real(kind=realType),dimension(:,:),allocatable :: pts
+  real(kind=realType),dimension(:,:,:),allocatable :: pts
 
   !     ******************************************************************
   !     *                                                                *
@@ -48,9 +49,9 @@ subroutine computeAeroCoef(globalCFVals,sps)
   !     *                                                                *
   !     ******************************************************************
   !
-  call getForceSize(npts)
-  allocate(pts(3,npts))
-  call getForcePoints(pts,npts)
+  call getForceSize(npts,nTS)
+  allocate(pts(3,npts,nTimeIntervalsSpectral))
+  call getForcePoints(pts,npts,nTS)
   ii = 0
 
   call getDirAngle(velDirFreestream,LiftDirection,&
@@ -70,7 +71,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
 
            call computeForceAndMomentAdj(Force,cForce,Lift,Drag,Cl,Cd,&
                 moment,cMoment,alpha,beta,liftIndex,MachCoef,&
-                pointRef,pts,npts,w,rightHanded,bcfaceid(mm),&
+                pointRef,pts(:,:,sps),npts,w,rightHanded,bcfaceid(mm),&
                 iBeg,iEnd,jBeg,jEnd,ii)
            ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
 

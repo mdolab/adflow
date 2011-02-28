@@ -7,7 +7,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine setupCouplingMatrixStruct(pts,npts)
+subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   !
   !     ******************************************************************
   !     *                                                                *
@@ -25,13 +25,13 @@ subroutine setupCouplingMatrixStruct(pts,npts)
   use flowVarRefState     ! nw
   use inputDiscretization ! spaceDiscr, useCompactDiss
   use bcTypes             !imin,imax,jmin,jmax,kmin,kmax
-
+  use inputTimeSpectral
   implicit none
 
   ! Subroutine Arguments
 
-  real(kind=realType), intent(in) :: pts(3,npts)
-  integer(kind=intType),intent(in):: npts
+  real(kind=realType), intent(in) :: pts(3,npts,nTS)
+  integer(kind=intType),intent(in):: npts,nTS
 
   integer(kind=intType) :: i,j,k,ii,jj,kk,iii,jjj,kkk,idim,l,irow
   integer(kind=intType) :: rowStart,rowEnd
@@ -55,12 +55,13 @@ subroutine setupCouplingMatrixStruct(pts,npts)
   refPoint(:) = 0.0
   refPointb(:)= 0.0
 
-  ii=0
   call MatGetOwnershipRange(dfdw,rowStart,rowEnd,ierr)
   call EChk(ierr,__file__,__line__)
   call MatGetOwnershipRangeColumn(dFdx,colStart_x,colEnd_x,ierr)
   call EChk(ierr,__file__,__line__)
 
+  do sps = 1,nTimeIntervalsSpectral
+  ii=0
   domains: do nn=1,nDom
      call setPointersAdj(nn,1_intType,1_intType)
 
@@ -92,19 +93,19 @@ subroutine setupCouplingMatrixStruct(pts,npts)
                           upper_right = ii + iii + (jjj  )*iStride-istride
 
                           if (lower_left > 0) then
-                             grid_pts(:,iii  ,jjj  ) = pts(:,lower_left)
+                             grid_pts(:,iii  ,jjj  ) = pts(:,lower_left,sps)
                           end if
 
                           if (lower_right > 0) then
-                             grid_pts(:,iii+1,jjj  ) = pts(:,lower_right)
+                             grid_pts(:,iii+1,jjj  ) = pts(:,lower_right,sps)
                           end if
 
                           if (upper_left > 0) then
-                             grid_pts(:,iii  ,jjj+1) = pts(:,upper_left)
+                             grid_pts(:,iii  ,jjj+1) = pts(:,upper_left,sps)
                           end if
 
                           if (upper_right > 0) then
-                             grid_pts(:,iii+1,jjj+1) = pts(:,upper_right)
+                             grid_pts(:,iii+1,jjj+1) = pts(:,upper_right,sps)
                           end if
 
                           pts_ind (iii  ,jjj  ) = lower_left -1
@@ -208,7 +209,7 @@ subroutine setupCouplingMatrixStruct(pts,npts)
                          i, j, righthanded)
                
                     ! Set dFdw first
-                    irow = rowStart + ii*3+idim-1
+                    irow = rowStart + ii*3+idim-1+(sps-1)*npts*3
 
                     do l=1,nw                   
                        do kkk=1,2
@@ -232,7 +233,7 @@ subroutine setupCouplingMatrixStruct(pts,npts)
                        do iii=1,3
                           do kkk=1,3
                              call MatSetValue(dFdx,irow,&
-                                  colStart_x+pts_ind(iii,jjj)*3+kkk-1,grid_ptsb(kkk,iii,jjj),&
+                                  colStart_x+pts_ind(iii,jjj)*3+kkk-1+(sps-1)*npts*3,grid_ptsb(kkk,iii,jjj),&
                                   INSERT_VALUES,ierr)
                              call EChk(ierr,__file__,__line__)
                           end do
@@ -247,7 +248,7 @@ subroutine setupCouplingMatrixStruct(pts,npts)
         end if
      end do bocos
   end do domains
-
+end do
   call MatAssemblyBegin(dFdw,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__file__,__line__)
   call MatAssemblyEnd(dFdw,MAT_FINAL_ASSEMBLY,ierr)
