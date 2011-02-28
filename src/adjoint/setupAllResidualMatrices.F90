@@ -91,6 +91,8 @@ subroutine setupAllResidualMatrices
   integer(kind=intType) :: ind_node(3),cellstodo,iiCell,ind(3,56)
   character(len=2*maxStringLen) :: errorMessage
 
+  !matrix norm check
+  real(kind=realType)               ::val
 
   !
   !     ******************************************************************
@@ -272,7 +274,6 @@ subroutine setupAllResidualMatrices
                          &  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, pointrefadjb&
                          &  , rotpointadj, rotpointadjb, murefadj, timerefadj, pinfcorradj, &
                          &  liftindex)
-
                   !   ! Store the block Jacobians (by rows).
 
                     Aad(m,:,:)  = wAdjB( 0, 0, 0,:,:)
@@ -290,7 +291,6 @@ subroutine setupAllResidualMatrices
                     GGad(m,:,:) = wAdjB( 0, 0, 2,:,:)
 
                     idxres   = globalCell(iCell,jCell,kCell)*nw+ m - 1
-                    
                   !  call five_pt_node_stencil_all(icell,jcell,kcell,ind,cellstodo)
                     do sps2 = 1,nTimeIntervalsSpectral
 !                         do iiCell=1,CellsToDo
@@ -380,7 +380,6 @@ subroutine setupAllResidualMatrices
                           endif
                        enddo
                     end do
-                    
                     ! Transfer the block Jacobians to the global [dR/da]
                     ! matrix by setting the corresponding block entries of
                     ! the PETSc matrix dRda.
@@ -390,57 +389,66 @@ subroutine setupAllResidualMatrices
                   
                    !Angle of Attack
                     if (nDesignAoA >= 0) then
-                       !print *,'alphadjb:',alphaadjb
+                       !print *,'alphadjb:',alphaadjb,myID,ndesignAoA,idxres
                        call MatSetValues(dRda, 1, idxres, 1, nDesignAoA, &
                             alphaadjb, INSERT_VALUES, PETScIerr)
                        call EChk(PETScIerr,__file__,__line__)
+                       !print *,'alpha set'
                     end if
 
                     ! Side slip angle
                     if (nDesignSSA >= 0) then
-                       call MatSetValues(dRda, 1, idxres, nDesignSSA, &
+                       !print *,'betadjb:',betaadjb,myID,ndesignSSA,idxres
+                       call MatSetValues(dRda, 1, idxres,1, nDesignSSA, &
                             betaadjb, INSERT_VALUES, PETScIerr)
                        call EChk(PETScIerr,__file__,__line__)
+                       !print *,'betaset'
                     end if
 
                     !Mach Number
                     if (nDesignMach >= 0) then
-                       call MatSetValues(dRda, 1, idxres, nDesignMach, &
+                       !print *,'mach:',betaadjb,myID,1,ndesignmach
+                       call MatSetValues(dRda, 1, idxres,1, nDesignMach, &
                             machAdjb, INSERT_VALUES, PETScIerr)
                        call EChk(PETScIerr,__file__,__line__)
                     end if
 
                     !Mach NumberGrid
                     if (nDesignMachGrid >= 0) then
-                       call MatSetValues(dRda, 1, idxres, nDesignMachGrid, &
+                       !print *,'machgrid',myID,ndesignmachgrid
+                       call MatSetValues(dRda, 1, idxres,1, nDesignMachGrid, &
                             machGridAdjb, INSERT_VALUES, PETScIerr)
                        call EChk(PETScIerr,__file__,__line__)
                     end if
 
                     !X Rotation
                     if (nDesignRotX >= 0) then
-                       call MatSetValues(dRda, 1, idxres, nDesignRotX, &
+                       !print *,'rotx:',myID,ndesignrotx
+                       call MatSetValues(dRda, 1, idxres,1, nDesignRotX, &
                             rotrateadjb(1), INSERT_VALUES, PETScIerr)
                        call EChk(PETScIerr,__file__,__line__)
                     end if
 
                     !Y Rotation
                     if (nDesignRotY >= 0) then
-                       call MatSetValues(dRda, 1, idxres, nDesignRotY, &
+                       !print *,'roty:',myID,ndesignroty
+                       call MatSetValues(dRda, 1, idxres,1, nDesignRotY, &
                             rotrateadjb(2), INSERT_VALUES, PETScIerr)
                        call EChk(PETScIerr,__file__,__line__)
                     end if
 
                     !Z Rotation
                     if (nDesignRotZ >= 0) then
-                       call MatSetValues(dRda, 1, idxres, nDesignRotZ, &
+                       !print *,'rotz:',myID,ndesignrotz
+                       call MatSetValues(dRda, 1, idxres,1, nDesignRotZ, &
                             rotrateadjb(3), INSERT_VALUES, PETScIerr)
                        call EChk(PETScIerr,__file__,__line__)
                     end if
 
                     !X Rotation Center
                     if (nDesignRotCenX >= 0) then
-                       call MatSetValues(dRda, 1, idxres, nDesignRotCenX, &
+                       !print *,'rotcenx:',myID,ndesignrotcenx
+                       call MatSetValues(dRda, 1, idxres,1, nDesignRotCenX, &
                             rotcenteradjb(1)+rotpointadjb(1), INSERT_VALUES,&
                             PETScIerr)
                        call EChk(PETScIerr,__file__,__line__)
@@ -448,7 +456,8 @@ subroutine setupAllResidualMatrices
 
                     !Y Rotation Center
                     if (nDesignRotCenY >= 0) then
-                       call MatSetValues(dRda, 1, idxres, nDesignRotCenY, &
+                       !print *,'rotceny:',myID,ndesignrotceny
+                       call MatSetValues(dRda, 1, idxres,1, nDesignRotCenY, &
                             rotcenteradjb(2)+rotpointadjb(2), INSERT_VALUES,&
                             PETScIerr)
                        call EChk(PETScIerr,__file__,__line__)
@@ -456,7 +465,8 @@ subroutine setupAllResidualMatrices
 
                     !Z Rotation Center
                     if (nDesignRotCenZ >= 0) then
-                       call MatSetValues(dRda, 1, idxres, nDesignRotCenZ, &
+                       !print *,'rotcenterz:',myID,ndesignrotcenz
+                       call MatSetValues(dRda, 1, idxres,1, nDesignRotCenZ, &
                             rotcenteradjb(3)+rotpointadjb(3), INSERT_VALUES,&
                             PETScIerr)
                        call EChk(PETScIerr,__file__,__line__)
@@ -464,27 +474,30 @@ subroutine setupAllResidualMatrices
 
                     !X Point Ref
                     if (nDesignPointRefX >= 0) then
-                       call MatSetValues(dRda, 1, idxres, nDesignPointRefX, &
+!!$                       if (pointrefadjb(1) .ne.0) then
+!!$                          print *,'pointrefx:',myID,ndesignPointRefx,pointrefadjb(1)
+!!$                       end if
+                       call MatSetValues(dRda, 1, idxres, 1,nDesignPointRefX, &
                             pointrefadjb(1), INSERT_VALUES, PETScIerr)
                        call EChk(PETScIerr,__file__,__line__)
                     end if
 
                     !Y Point Ref
                     if (nDesignPointRefY >= 0) then
-                       call MatSetValues(dRda, 1, idxres, nDesignPointRefY, &
+                       !print *,'pointrefy:',myID,ndesignPointRefy
+                       call MatSetValues(dRda, 1, idxres,1, nDesignPointRefY, &
                             pointrefadjb(2), INSERT_VALUES, PETScIerr)
                        call EChk(PETScIerr,__file__,__line__)
                     end if
 
                     !Z Point Ref
                     if (nDesignPointRefZ >= 0) then
-                       call MatSetValues(dRda, 1, idxres, nDesignPointRefZ, &
+                       !print *,'pointrefz:',myID,ndesignPointRefZ
+                       call MatSetValues(dRda, 1, idxres,1, nDesignPointRefZ, &
                             pointrefadjb(3), INSERT_VALUES, PETScIerr)
                        call EChk(PETScIerr,__file__,__line__)
                     end if
-
                  enddo mLoop
-
                  if(PETScBlockMatrix) then
 
                     ! Global matrix block row mgb function of node indices.
@@ -667,6 +680,9 @@ subroutine setupAllResidualMatrices
   call EChk(PETScIerr,__file__,__line__)
   call MatAssemblyEnd(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
   call EChk(PETScIerr,__file__,__line__)
+
+ 
+
 
   ! Let PETSc know that the dRdW matrix retains the same nonzero 
   ! pattern, in case the matrix is assembled again, as for a new
