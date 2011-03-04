@@ -17,7 +17,6 @@ module NKsolverVars
   !     *                                                                *
   !     ******************************************************************
   !
-
   use constants
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -31,6 +30,7 @@ module NKsolverVars
   KSP                global_ksp,local_ksp
   PC                 global_pc ,local_pc
   SNESConvergedReason reason
+
 
   ! Non-linear Solver Options
   integer(kind=intType) :: jacobian_lag

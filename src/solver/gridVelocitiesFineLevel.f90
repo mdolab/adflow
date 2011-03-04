@@ -32,6 +32,7 @@
        use inputPhysics
        use inputTSStabDeriv
        use monitor
+       use communication
        implicit none
 !
 !      Subroutine arguments.
@@ -138,7 +139,6 @@
           elseif(tsAlphaMode)then
              ! get the baseline alpha and determine the liftIndex
              call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
-             
              !Determine the alpha for this time instance
              alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
                              degreeFourAlpha,  omegaFourAlpha,     &
@@ -153,7 +153,7 @@
              velxGrid0 = (aInf*machgrid)*(-velDir(1))
              velyGrid0 = (aInf*machgrid)*(-velDir(2))
              velzGrid0 = (aInf*machgrid)*(-velDir(3))
-             !print *,'base velocity',machgrid, velxGrid0 , velyGrid0 , velzGrid0 
+            ! if (myid ==0) print *,'base velocity',machgrid, velxGrid0 , velyGrid0 , velzGrid0 
 
           elseif(tsBetaMode)then
              ! get the baseline alpha and determine the liftIndex

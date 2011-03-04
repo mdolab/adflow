@@ -50,6 +50,9 @@ subroutine setupADjointPCMatrixTranspose
 
   !Reference values of the dissipation coeff for the preconditioner
   real(kind=realType) :: vis2_ref, vis4_ref
+ 
+  !matrix norm check
+  real(kind=realType)               ::val
 
   ! Set the grid level of the current MG cycle, the value of the
   ! discretization and the logical correctForK.
