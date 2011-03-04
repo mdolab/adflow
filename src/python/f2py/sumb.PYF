@@ -947,8 +947,9 @@ python module sumb ! in
          character parameter,optional :: ord_owd="owd"
          character parameter,optional :: ksp_fgmres="fgmres"
          character parameter,optional :: pc_asm="asm"
-         real(kind=realtype) :: totalres0
-         real(kind=realtype) :: rhores0
+         real(kind=realtype) :: totalr0
+         real(kind=realtype) :: totalrstart
+         real(kind=realtype) :: totalrfinal
        end module nksolvervars
        
 

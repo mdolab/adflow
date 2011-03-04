@@ -43,7 +43,6 @@ subroutine solveState
   character (len=7) :: numberString
   logical :: solve_NK, solve_RK
   real(kind=realType) :: rhoRes1,totalRRes1
-  real(kind=realType) :: totalRstart
   real(kind=realType) :: l2convsave
   !
   !      ******************************************************************
@@ -283,30 +282,31 @@ subroutine solveState
   
   ! Determine if we need to run the RK solver, the NK solver or Both.
 
-  if (groundLevel .ne. 1_intType .or. .not. useNKSolver) then !useNKSolver) then
+  if ( groundLevel .ne. 1_intType .or. .not. useNKSolver) then
      ! If we are not on the finest level, or if we don't want to use
      ! the NKsolver we will ALWAYS solve RK and NEVER NK.
      solve_RK = .True.
      solve_NK = .False.
      L2ConvSave = L2Conv
+     
+     if (groundLevel == 1) then
+        call getFreeStreamResidual(rhoRes0,totalR0)
+        call getCurrentResidual(rhoResStart,totalRStart)
+     end if
+
   else ! We want to use the NKsolver AND we are on the fine grid. 
 
      ! Now we must determine if the solution is converged sufficently
      ! to start directly into the NKsolver OR if we have to run the
      ! RKsolver first to improve the starting point aand then the NKsolver
 
-     ! Get Starting Residual
-     call preprocessingadjoint()
-     if (mgstartlevel .ne. 1_intType) then
-        call getFreeStreamResidual(rhoResStart,totalRStart)
-     else
-        call getCurrentResidual(rhoResStart,totalRStart)
-     end if
+     ! Get Frestream and starting residuals
+     call getFreeStreamResidual(rhoRes0,totalR0)
+     call getCurrentResidual(rhoResStart,totalRStart)
 
      ! Store these values in the NKsolver Module
      !self.rhoResStart = real(self.rhoResStart)
-     !self.totalRStart = real(self.totalRStart)
-
+     
      ! Determine if we need to run the RK solver, before we can
      ! run the NK solver 
 
@@ -456,6 +456,7 @@ subroutine solveState
         ! Run the NK solver down as far we need to go
         !call NKsolver()
         call setupNKsolver()     
+     
         
         if (solve_RK .or. .not. NKsolvedOnce) then 
            ! This is a little tricky...IF we had solved the RK or we
@@ -471,6 +472,11 @@ subroutine solveState
 
         call NKsolver()
      end if
+  end if
+
+  ! Finally...if we're on on the fine grid get the final residual
+  if (groundLevel == 1) then
+     call getCurrentResidual(rhoResFinal,totalRFinal)
   end if
 
   ! Release the memory of cycling.

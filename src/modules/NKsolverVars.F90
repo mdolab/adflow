@@ -101,8 +101,8 @@ module NKsolverVars
   character, parameter :: side_right = "right"
   
   ! Misc Parameters
-  real(kind=realType) :: totalRes0
-  real(kind=realType) :: rhoRes0,rhoResStart
+  real(kind=realType) :: totalR0,totalRStart,totalRFinal
+  real(kind=realType) :: rhoRes0,rhoResStart,rhoResFinal
   real(kind=realType) :: CFL0
   integer(kind=intType) :: iterTot0
 

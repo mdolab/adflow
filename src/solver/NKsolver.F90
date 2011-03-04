@@ -104,9 +104,14 @@ subroutine setupNKsolver
      call SNESKSPSetUseEW(snes,.True.,ierr)  
      call EChk(ierr,__FILE__,__LINE__)
      call SNESSetFromOptions(snes,ierr); call EChk(ierr,__FILE__,__LINE__)
-     !call SNESSetLagJacobian(snes, jacobian_lag, ierr); call EChk(ierr,__FILE__,__LINE__)
+
+     ! See the monitor function for more information as to why this is -2
      call SNESSetLagJacobian(snes, -2_intType, ierr); call EChk(ierr,__FILE__,__LINE__)
-     call SNESSetMaxLinearSolveFailures(snes, 25,ierr); call EChk(ierr,__FILE__,__LINE__)
+
+     ! Since we're limiting the gmres to no restarts...there's a good
+     ! chance that we're get lots of solve failues which is OK. Set
+     ! this to the ncycles....basically large enough that it never happens
+     call SNESSetMaxLinearSolveFailures(snes, ncycles,ierr); call EChk(ierr,__FILE__,__LINE__)
      
      ! We are going to have to compute what the tolerances should be
      ! since we are going to be using the same convergence criteria as
@@ -115,10 +120,6 @@ subroutine setupNKsolver
      ! after the RK solver has been run at least once to get a good
      ! starting point. 
 
-     snes_stol = 1e-10
-     snes_max_its = 1250_intType
-     snes_max_funcs = snes_max_its * 2
-     
      NKSolverSetup = .True.
      NKSolvedOnce = .False.
   end if
@@ -129,21 +130,24 @@ subroutine destroyNKsolver
   use NKsolverVars
   implicit none
   integer(kind=intType) :: ierr
-  ! We will destroy the PETSc variables created in setupNKsolver
-  call SNESDestroy(snes,ierr) ! Also destroys the underlying ksp and
+  
+  if (NKSolverSetup) then
+
+     ! We will destroy the PETSc variables created in setupNKsolver
+     call SNESDestroy(snes,ierr) ! Also destroys the underlying ksp and
                               ! pc contexts
-  call EChk(ierr,__FILE__,__LINE__)
-  call MatDestroy(dRdw,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  call MatDestroy(dRdwPre,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  call VecDestroy(wVec,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  call VecDestroy(rVec,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+     call EChk(ierr,__FILE__,__LINE__)
+     call MatDestroy(dRdw,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     call MatDestroy(dRdwPre,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     call VecDestroy(wVec,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     call VecDestroy(rVec,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
 
-  NKSolverSetup = .False.
-
+     NKSolverSetup = .False.
+  end if
 end subroutine DestroyNKsolver
 
 subroutine NKsolver
@@ -154,7 +158,7 @@ subroutine NKsolver
   use ADjointVars , only: nCellsLocal
   use NKSolverVars, only: snes,dRdw,dRdwPre,ctx,jacobian_lag,&
        snes_stol,snes_max_funcs,nksolversetup,rhoRes0,rhoresstart, &
-       snes_rtol,snes_atol,totalRes0,itertot0,wVec,rVec,reason,NKSolvedOnce
+       snes_rtol,snes_atol,totalR0,itertot0,wVec,rVec,reason,NKSolvedOnce
   use InputIO ! L2conv,l2convrel
   use inputIteration
   use monitor
@@ -174,29 +178,26 @@ subroutine NKsolver
   ! after the RK solver has been run at least once to get a good
   ! starting point. 
 
-  snes_stol = 1e-10
-  snes_max_its = 1250_intType
-  snes_max_funcs = snes_max_its * 2
+  snes_stol = 1e-14
+  snes_max_funcs = ncycles-iterTot
+  ! Since we're only interested in the maximum function evals, just
+  ! set the max its to the same value...it will always punch out on
+  ! funcs before iterations in this case
+
+  snes_max_its = ncycles-iterTot
 
   ! Determine the current level of convergence of the solution
 
   call getCurrentResidual(rhoRes,totalRRes)
 
-  if (myid == 0) then
-
-     ! We need to compute two convergences: One coorsponding to L2ConvRel
-     ! and one for L2Conv
+  ! We need to compute two convergences: One coorsponding to L2ConvRel
+  ! and one for L2Conv
      
-     snes_rtol = (rhoResStart * L2ConvRel)/ rhoRes  ! Target / Current
-  
-     ! Absolute Tol is the original totalR * L2conv
+  snes_rtol = (rhoResStart * L2ConvRel)/ rhoRes  ! Target / Current
+     
+  ! Absolute Tol is the original totalR * L2conv
 
-     snes_atol = totalRes0 * L2Conv
-  end if
-
-  ! BroadCast
-  call mpi_bcast(snes_rtol, 1, sumb_real, 0, SUmb_comm_world, ierr)
-  call mpi_bcast(snes_atol, 1, sumb_real, 0, SUmb_comm_world, ierr)
+  snes_atol = totalR0 * L2Conv
 
   call SNESSetTolerances(snes,snes_atol,snes_rtol,snes_stol,snes_max_its,&
        snes_max_funcs,ierr); call EChk(ierr,__FILE__,__LINE__)
@@ -797,10 +798,8 @@ subroutine getCurrentResidual(rhoRes,totalRRes)
   groundLevel = 1
   rkStage = 0
 
-  call timestep(.false.)
-  call initres(1_intType, nwf)
-  call residual 
- 
+  call computeResidualNK()
+
   r_sum = 0.0
   rho_sum = 0.0
   do sps=1,nTimeIntervalsSpectral
@@ -843,12 +842,15 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
   use flowVarRefState
   use inputIteration
   use blockpointers
+  use iteration
+
   implicit none
 
   real(kind=realType), intent(out) :: rhoRes,totalRRes
   real(kind=realType),dimension(:), allocatable :: wtemp
   real(kind=realType) :: temp1,temp2
-  integer(kind=intType) :: nDimW,ierr,tempStartLevel,counter
+  integer(kind=intType) :: nDimW,ierr,counter
+  integer(kind=intType) :: tempStartLevel,tempCurrentLevel,tempMGStartLevel
   integer(kind=intType) :: nn,sps,i,j,k,l
 
   ! Get the residual cooresponding to the free-stream on the fine grid-level
@@ -876,8 +878,13 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
      end do domains
   end do spectralLoop
   
-  tempStartLevel = mgStartLevel
+  tempMGStartLevel = mgStartLevel
+  tempCurrentLevel = currentLevel
+  !tempStartLevel   = startLevel
+
   mgStartLevel = 1
+  currentlevel = 1
+  !startLevel   = 1
 
   call setUniformFlow
   call getCurrentResidual(rhoRes,totalRRes)
@@ -898,7 +905,10 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
      end do domains2
   end do spectralLoop2
 
-  mgStartLevel = tempStartLevel
+  mgStartLevel = tempMGStartLevel
+  currentLevel = tempCurrentLevel
+  !startLevel   = tempStartLevel
+
   deallocate(wtemp)
   call getCurrentResidual(temp1,temp2)
 
@@ -910,7 +920,7 @@ subroutine snes_monitor(snes,its,norm,ctx,ierr)
   use iteration
   use inputIteration
   use NKsolverVars, only: ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,&
-       snes_atol,itertot0,jacobian_lag
+       snes_atol,itertot0,jacobian_lag,ksp_subspace
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -921,19 +931,22 @@ subroutine snes_monitor(snes,its,norm,ctx,ierr)
   PetscReal norm
   PetscFortranAddr ctx(*) ! This is probably going to be empty
 
-  integer(kind=intType) :: ksp_its,temp
+  integer(kind=intType) :: ksp_its,temp,nfuncs
   real(kind=realType) :: CFLNew,rhoRes,totalRRes
-  ! We want to get the number of iterations of the last KSP and
-  ! increment iterTot by this. This will give the user an indication
-  ! of how long each KSP is taking to solver
 
-  call SNESGetKSP(snes,ksp,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call SNESGetKSP(snes,ksp,ierr);  call EChk(ierr,__FILE__,__LINE__)
   call KSPGetTolerances(ksp,ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,ierr)
+  ! Set the ksp_atol to snes_atol...this lets the ksp exit early if we
+  ! have hit are desired non-linear tolerance
   ksp_atol = snes_atol
-  ksp_max_it = 100
+
+  ! Set the maximum iterations ot the subspace size...not really much
+  ! point to keep going...might as well do another non-linear iteration
+  ksp_max_it = ksp_subspace
+
   call KSPSetTolerances(ksp,ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,ierr)
 
+  ! We want to get the number of function evals 
   ! its == 1 AFTER the first iteration. Take this opportunity to set
   ! the preconditioner lag to the value we actually want
   if (its == 1) then
@@ -946,11 +959,10 @@ subroutine snes_monitor(snes,its,norm,ctx,ierr)
   end if
 
   if (its > 0 .or. iterTot0 == 0) then
-     call SNESGetLinearSolveIterations(snes,ksp_its,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     call SNESGetNumberFunctionEvals(snes, nfuncs,ierr);  call EChk(ierr,__FILE__,__LINE__)  
 
-     ksp_its = max(ksp_its,1)
-     iterTot = iterTot0 + ksp_its
+     nFuncs = max(nfuncs,1)
+     iterTot = iterTot0 + nFuncs
 
      call convergenceInfo
 
