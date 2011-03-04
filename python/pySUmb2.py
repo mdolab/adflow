@@ -77,6 +77,7 @@ class SUMB(AeroSolver):
             'Discretization':[str,'Central plus scalar dissipation'],
             'Smoother':[str,'Runge-Kutta'],
             'equationType': [str,'Euler'],
+            'equationMode': [str,'Steady'],
             'flowType':[str,'External'],
             'turblenceModel':[str,'SA'], 
             'useWallFunctions':[bool,False],
@@ -137,7 +138,6 @@ class SUMB(AeroSolver):
             'NKASMOverlap':[int,3],
             'NKPCILUFill':[int,3],
             'NKLocalPCOrdering':[str,'RCM'],
-            'NKMaxLinearKspIts':[int,500],
             'NKJacobianLag':[int,10],
 
             # Load Balance Paramters
@@ -349,6 +349,14 @@ class SUMB(AeroSolver):
                                      self.sumb.inputphysics.ransequations,
                                 'location':
                                     'inputphysics.equations'},
+                'equationMode':{'Steady':
+                                   self.sumb.inputphysics.steady,
+                               'Unsteady':
+                                   self.sumb.inputphysics.unsteady,
+                               'Time Spectral':
+                                   self.sumb.inputphysics.timespectral,
+                               'location':
+                                   'inputphysics.equationmode'},
                 'flowType':{'Internal':
                                 self.sumb.inputphysics.internalflow,
                             'External':
@@ -622,34 +630,7 @@ class SUMB(AeroSolver):
 
         if self.allInitialized == True:
             return
-      
-        # First we set the equationMode: steady, unsteady or time-spectral:
-        if 'equationMode' in kwargs.keys():
-            if kwargs['equationMode'] == 'Steady':
-                mode = self.sumb.inputphyiscs.steady
-            elif kwargs['equationMode'] == 'Time Spectral':
-                mode = self.sumb.inputphysics.timespectral
-            elif kwargs['equationMode'] == 'Unsteady':
-                mode = self.sumb.inputphysics.unsteady
-            else:
-                mpiPrint('Warning: equationMode: %s not reconginzed.'%(kwargs['equationMode']))
-                mode = self.sumb.inputphysics.steady
-            # end if 
-        else: 
-            mode = self.sumb.inputphysics.steady
-        # end if
-
-        # Set equation mode in SUmb and self.sol_type which is easy to read
-        self.sumb.inputphysics.equationmode = mode
-
-        if mode == self.sumb.inputphysics.steady:
-            self.sol_type = 'Steady'
-        elif mode == self.sumb.inputphysics.unsteady:
-            self.sol_type = 'Unsteady'
-        else:
-            self.sol_type = 'Time Spectral'
-        # end if
-
+        
         # Set periodic paramters
         self.setPeriodicParams(aero_problem)
   
@@ -827,7 +808,7 @@ class SUMB(AeroSolver):
 
         return
 
-    def __solve__(self, aero_problem, *args, **kwargs):
+    def __solve__(self, aero_problem, nIterations=500, *args, **kwargs):
         
         '''
         Run Analyzer (Analyzer Specific Routine)
@@ -857,8 +838,7 @@ class SUMB(AeroSolver):
         storeHistory = self.getOption('storeHistory')
 
         # set the number of cycles for this call
-        assert 'nIterations' in kwargs,'nIteration must be specified for SUmb'
-        self.sumb.inputiteration.ncycles = kwargs['nIterations']
+        self.sumb.inputiteration.ncycles = nIterations
 
         # Cold Start -- First Run -- No Iterations Done
         if (self.sumb.monitor.niterold == 0 and 
@@ -906,22 +886,18 @@ class SUMB(AeroSolver):
         # Setup some residual values for reference
         self.sumb.preprocessingadjoint()
 
-        if self.callCounter == 0:
-            self.initRhoRes,self.initTotalRRes = self.sumb.getfreestreamresidual()
+     #    # If we're doing fully multigrid set the starting resiudla to
+#         # the init residual
+#         if self.sumb.inputiteration.mgstartlevel != 1:
+#             self.startRhoRes = self.initRhoRes
+#             self.startTotalRRes = self.initTotalRRes
+#         else:
+#             self.startRhoRes,self.startTotalRRes = self.sumb.getcurrentresidual()
+#         # end if
 
-        self.sumb.nksolvervars.totalres0 = real(self.initTotalRRes)
-        self.sumb.nksolvervars.rhores0   = real(self.initRhoRes)
-        
-        if self.sumb.inputiteration.mgstartlevel != 1:
-            self.startRhoRes = self.initRhoRes
-            self.startTotalRRes = self.initTotalRRes
-        else:
-            self.startRhoRes,self.startTotalRRes = self.sumb.getcurrentresidual()
-        # end if
-
-        # Convert to real in case we're using a complex-solve
-        self.startRhoRes = real(self.startRhoRes)
-        self.startTotalRRes = real(self.startTotalRRes)
+#         # Convert to real in case we're using a complex-solve
+#         self.startRhoRes = real(self.startRhoRes)
+#         self.startTotalRRes = real(self.startTotalRRes)
 
         # Call the Solver
         if ('MDCallBack' in kwargs):
@@ -962,8 +938,6 @@ class SUMB(AeroSolver):
         if self.getOption('TSStability'):
             self.computeStabilityParameters()
         #endif
-        
-        # If we made it to the end, it did NOT fail so return False
         
         return
 
@@ -1170,6 +1144,9 @@ class SUMB(AeroSolver):
         Setup the adjoint matrix for the current solution
         '''
         
+        # Destroy the NKsolver to free memory
+        self.sumb.destroynksolver()
+
         if not self.adjointMatrixSetup:
             self.sumb.createpetscvars()
             self.sumb.setupallresidualmatrices()
@@ -1447,7 +1424,10 @@ class SUMB(AeroSolver):
     def getResNorms(self):
         '''Return the initial, starting and final Res Norms'''
         
-        return self.initTotalRRes,self.startTotalRRes,self.finalTotalRRes
+        return \
+            self.sumb.nksolvervars.totalr0, \
+            self.sumb.nksolvervars.totalrstart,\
+            self.sumb.nksolvervars.totalrfinal
 
     def getMeshIndices(self):
         ndof = self.sumb.getnumberlocalnodes()
