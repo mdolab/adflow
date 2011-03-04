@@ -89,36 +89,89 @@ python module sumb ! in
          integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
        end subroutine setgrid
 
-       subroutine getforces(forces,pts,npts) ! in :test:getForces.f90
-         real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: forces
-         real(kind=realtype) dimension(3,npts),intent(in) :: pts
+       subroutine getforces(forces,pts,npts,nts) ! in :sumb:../../warping/getForces.f90
+         use blockpointers
+         use warpingpetsc
+         use communication
+         use inputtimespectral
+         use bctypes
+         use flowvarrefstate
+         real(kind=realtype) dimension(3,npts,nts),intent(out),depend(npts,nts) :: forces
+         real(kind=realtype) dimension(3,npts,nts),intent(in) :: pts
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+         integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
        end subroutine getforces
-
-       subroutine verifyforces(pts,npts) ! in :test:getForces.f90
-         real(kind=realtype) dimension(3,npts),intent(in) :: pts
-         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
-       end subroutine verifyforces
-
-       subroutine setupcouplingmatrixstruct(pts,npts) ! in :test:getForces.f90
-         real(kind=realtype) dimension(3,npts),intent(in) :: pts
-         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
-       end subroutine setupcouplingmatrixstruct
        
+       subroutine verifyforces(pts,npts,nts) ! in :sumb:../../adjoint/forcesInput/verifyForces.F90
+            use blockpointers
+            use adjointpetsc
+            use bctypes
+            use communication
+            use inputtimespectral
+            use inputphysics
+            use flowvarrefstate
+            real(kind=realtype) dimension(3,npts,nts),intent(inout) :: pts
+            integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+            integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
+        end subroutine verifyforces
+
+       subroutine verifydcfdx(level,costfunction)
+         use blockpointers
+         use cgnsgrid            
+         use communication       
+         use inputphysics        
+         use flowvarrefstate     
+         use inputdiscretization 
+         use iteration           
+         use inputtimespectral   
+         use section
+         use monitor             
+         use bctypes             
+         use adjointvars         
+         use adjointpetsc
+         use costfunctions
+         implicit none
+         integer(kind=inttype) intent(in) :: level
+         integer(kind=inttype) intent(in) :: costfunction
+       end subroutine verifydcfdx
+
+       subroutine setupcouplingmatrixstruct(pts,npts,nts) ! in :sumb:../../adjoint/setupCouplingMatrixStruct.F90
+         use blockpointers
+         use adjointpetsc
+         use bctypes
+         use communication
+         use inputdiscretization
+         use inputtimespectral
+         use inputphysics
+         use adjointvars
+         use flowvarrefstate
+         real(kind=realtype) dimension(3,npts,nts),intent(in) :: pts
+         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+         integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
+       end subroutine setupcouplingmatrixstruct
+      
        subroutine agumentrhs(ndof,phi) ! in :test:agumentRHS.f90
          integer(kind=inttype) optional,intent(in),check(len(phi)>=ndof),depend(phi) :: ndof=len(phi)
          real(kind=realtype) dimension(ndof),intent(in) :: phi
-        end subroutine agumentrhs
-
-       subroutine getforcepoints(points,npts)
-         real(kind=realtype),intent(out), dimension(3,npts),depend(npts) :: points
+       end subroutine agumentrhs
+        
+       subroutine getforcepoints(points,npts,nts) ! in :sumb:../../warping/getForces.f90
+         use blockpointers
+         use inputtimespectral
+         use bctypes
+         real(kind=realtype) dimension(3,npts,nts),intent(out),depend(npts,nts) :: points
          integer(kind=inttype) intent(in) :: npts
+         integer(kind=inttype) intent(in) :: nts
        end subroutine getforcepoints
-
-       subroutine getforcesize(npts)
-         integer(kind=inttype) intent(out) :: npts
+        
+       subroutine getforcesize(size_bn,nts) ! in :sumb:../../warping/getForces.f90
+         use blockpointers
+         use bctypes
+         use inputtimespectral
+         integer(kind=inttype) intent(out) :: size_bn
+         integer(kind=inttype) intent(out) :: nts
        end subroutine getforcesize
-
+       
        subroutine solveradjoint
        end subroutine solveradjoint
        
@@ -268,11 +321,21 @@ python module sumb ! in
        subroutine setupadjointpcmatrixtranspose
        end subroutine setupadjointpcmatrixtranspose
 
-       subroutine computeobjpartials(costfunction,pts,npts) ! in :test:computeObjPartials.F90
+       subroutine computeobjpartials(costfunction,pts,npts,nts) ! in :sumb:../../adjoint/computeObjPartials.F90
+         use blockpointers
+         use adjointpetsc
+         use bctypes
+         use communication
+         use inputtimespectral
+         use inputphysics
+         use adjointvars
+         use flowvarrefstate
          integer(kind=inttype) intent(in) :: costfunction
-         real(kind=realtype) dimension(3,npts),intent(in) :: pts
+         real(kind=realtype) dimension(3,npts,nts),intent(in) :: pts
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+         integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
        end subroutine computeobjpartials
+
 
        subroutine getdidw(ndof,output) ! in :test:computeObjPartials.F90
          integer(kind=inttype) intent(in) :: ndof
@@ -379,6 +442,8 @@ python module sumb ! in
        !*****************
 
        subroutine stabilityderivativedriver
+         use precision
+         implicit none
        end subroutine stabilityderivativedriver
 
        ! ############################################################################
@@ -546,28 +611,86 @@ python module sumb ! in
 
        module inputmotion ! in :sumb:../../modules/inputParam.f90
          use precision
-         real(kind=realtype) dimension(3) :: rotpoint
-         integer(kind=inttype) :: degreepolxrot
-         integer(kind=inttype) :: degreepolyrot
-         integer(kind=inttype) :: degreepolzrot
-         real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
-         real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
-         real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
-         integer(kind=inttype) :: degreefourxrot
-         integer(kind=inttype) :: degreefouryrot
-         integer(kind=inttype) :: degreefourzrot
-         real(kind=realtype) :: omegafourxrot
-         real(kind=realtype) :: omegafouryrot
-         real(kind=realtype) :: omegafourzrot
-         real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
          real(kind=realtype) allocatable,dimension(:) :: coscoeffouryrot
+         real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
+         integer(kind=inttype) :: degreefourxrot
+         real(kind=realtype) allocatable,dimension(:) :: sincoeffouralpha
+         real(kind=realtype) :: omegafourbeta
+         real(kind=realtype) allocatable,dimension(:) :: coscoeffourbeta
+         real(kind=realtype) allocatable,dimension(:) :: sincoeffourbeta
+         integer(kind=inttype) :: degreepolbeta
+         real(kind=realtype) allocatable,dimension(:) :: sincoeffourmach
+         integer(kind=inttype) :: degreepolmach
+         real(kind=realtype) :: omegafourmach
+         integer(kind=inttype) :: degreepolalpha
+         real(kind=realtype) allocatable,dimension(:) :: coefpolmach
+         real(kind=realtype) allocatable,dimension(:) :: coscoeffouralpha
+         real(kind=realtype) allocatable,dimension(:) :: coscoeffourmach
+         real(kind=realtype) dimension(3) :: rotpoint
+         real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
+         logical :: gridmotionspecified
+         real(kind=realtype) :: omegafourzrot
+         integer(kind=inttype) :: degreefouryrot
+         real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
+         integer(kind=inttype) :: degreefourbeta
+         real(kind=realtype) :: omegafouralpha
          real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
+         integer(kind=inttype) :: degreepolzrot
+         real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
+         real(kind=realtype) :: omegafouryrot
+         integer(kind=inttype) :: degreefourzrot
+         integer(kind=inttype) :: degreefourmach
+         integer(kind=inttype) :: degreefouralpha
+         real(kind=realtype) allocatable,dimension(:) :: coefpolalpha
+         real(kind=realtype) :: omegafourxrot
+         integer(kind=inttype) :: degreepolyrot
          real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
          real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
-         real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
-         logical :: gridmotionspecified
+         integer(kind=inttype) :: degreepolxrot
+         real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
+         real(kind=realtype) allocatable,dimension(:) :: coefpolbeta
+!!$real(kind=realtype) dimension(3) :: rotpoint
+!!$         integer(kind=inttype) :: degreepolxrot
+!!$         integer(kind=inttype) :: degreepolyrot
+!!$         integer(kind=inttype) :: degreepolzrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
+!!$         integer(kind=inttype) :: degreefourxrot
+!!$         integer(kind=inttype) :: degreefouryrot
+!!$         integer(kind=inttype) :: degreefourzrot
+!!$         real(kind=realtype) :: omegafourxrot
+!!$         real(kind=realtype) :: omegafouryrot
+!!$         real(kind=realtype) :: omegafourzrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffouryrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
+!!$         logical :: gridmotionspecified
+!!$         real(kind=realtype) :: omegafourzrot
+!!$         integer(kind=inttype) :: degreefouryrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
+!!$         integer(kind=inttype) :: degreefourbeta
+!!$         real(kind=realtype) :: omegafouralpha
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
+!!$         integer(kind=inttype) :: degreepolalpha
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
+!!$         real(kind=realtype) :: omegafouryrot
+!!$         integer(kind=inttype) :: degreefourzrot
+!!$         integer(kind=inttype) :: degreefourmach
+!!$         integer(kind=inttype) :: degreefouralpha
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolalpha
+!!$         real(kind=realtype) :: omegafourxrot
+!!$         integer(kind=inttype) :: degreepolbeta
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
+!!$         integer(kind=inttype) :: degreepolmach
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolbeta
        end module inputmotion
-
+       
        module inputparallel ! in :sumb:../../modules/inputParam.f90
          use precision
          real(kind=realtype) :: loadimbalance

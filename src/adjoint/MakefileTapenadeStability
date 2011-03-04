@@ -3,7 +3,7 @@
 #     * File:          MakefileTapenadeForces                          *
 #     * Author:        Sandy Mader                                     *
 #     * Starting date: 11-26-2009                                      *
-#     * Last modified: 11-26-2009                                      *
+#     * Last modified: 02-28-2011                                      *
 #     *                                                                *
 #     ******************************************************************
 
@@ -90,7 +90,8 @@
 #TAPENADE_HOME = /home/mader/UTIAS/SRC/tapenade2.2.4
 
 #SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
-SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
+#SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
+SOLVER_DIRSRC = /nfs/tuff/home/mader/hgGK/SUmbADjoint/src
 
 #     ******************************************************************
 #     *                                                                *
@@ -102,11 +103,11 @@ TAPENADE_PARSERFILESEPARATOR = "/"
 
 # Dependent output variables (separator: white space, default: all)
 
-TAPENADE_OUTVARS = "cl0 cd0 cmz0 dcldalpha dcddalpha dcmzdalpha dcmzdalphadot dcmzdq"
+TAPENADE_OUTVARS = "coef0 dcdalpha dcdalphadot dcdq dcdqdot"
 
 # Independent input variables (separator: white space, default: all)
 
-TAPENADE_VARS = "CLAdj CDAdj cfxadj cfyadj cfzadj CmxAdj CmyAdj CmzAdj"
+TAPENADE_VARS = "basecoef"
 
 # Name of the top routine
 

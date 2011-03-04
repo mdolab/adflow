@@ -131,19 +131,32 @@ subroutine copyNKPCStencil(iCell, jCell, kCell, nn, level, sps, wAdj, &
            end do
         end do
      end do
+
+     kStart=-2; kEnd=2
+     jStart=-2; jEnd=2
+     iStart=-2; iEnd=2
+     
+     if(iCell==2)  iStart=-1
+     if(iCell==il) iEnd=1
+     
+     if(jCell==2)  jStart=-1
+     if(jCell==jl) jEnd=1 
+     
+     if(kCell==kl) kEnd=1
+     if(kCell==2)  kStart=-1
      testMoving: if( blockIsMoving ) then
-        do kk=-1,1
-           do jj=-1,1
-              do ii=-1,1
+        do kk=kstart,kend
+           do jj=jstart,jend
+              do ii=istart,iend
                  sadj(ii,jj,kk,:,sps2) = flowdoms(nn,level,sps)% &
                       s(icell+ii,jcell+jj,kcell+kk,:)
               end do
            end do
         end do
-
-        do kk=-2,2
-           do jj=-2,2
-              do ii=-2,2
+        
+        do kk=kstart,kend
+           do jj=jstart,jend
+              do ii=istart,iend
                  sfaceiadj(ii,jj,kk,sps2) = flowdoms(nn,level,sps2)% &
                       sfacei(icell+ii,jcell+jj,kcell+kk)
                  sfacejadj(ii,jj,kk,sps2) = flowdoms(nn,level,sps2)% &
