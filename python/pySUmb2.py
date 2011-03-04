@@ -406,6 +406,7 @@ class SUMB(AeroSolver):
                 
                 # Common Paramters
                 'nCycles':{'location':'inputiteration.ncycles'},
+                'nCyclesCoarse':{'location':'inputiteration.ncyclescoarse'},
                 'CFL':{'location':'inputiteration.cfl'},        
                 'CFLCoarse':{'location':'inputiteration.cflcoarse'},        
                 'Mach':{'location':'inputphysics.mach'},
@@ -647,12 +648,9 @@ class SUMB(AeroSolver):
         self.sumb.iteration.deforming_grid = True
         self.sumb.dummyreadparamfile()
 
-
         self.setMachNumber(aero_problem)
         self.setPeriodicParams(aero_problem)
-        
-        self.sumb.dummyreadparamfile()
-       
+
         #This is just to flip the -1 to 1 possibly a memory issue?
         self.sumb.inputio.storeconvinneriter = \
             abs(self.sumb.inputio.storeconvinneriter)
@@ -873,8 +871,7 @@ class SUMB(AeroSolver):
 
         return V
 
-    def __solve__(self, aero_problem, niterations, sol_type, 
-                  grid_file='default', *args, **kwargs):
+    def __solve__(self, aero_problem, nIterations=500, *args, **kwargs):
         
         '''
         Run Analyzer (Analyzer Specific Routine)
