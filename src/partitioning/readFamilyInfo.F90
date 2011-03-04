@@ -99,7 +99,7 @@
                         "Something wrong when calling cg_family_read_f")
 
          ! Determine the boundary condition for this family, if specified.
-
+ 
          select case (nFamBC)
 
            case (0)

@@ -28,7 +28,8 @@ To Do:
 import os, sys
 import pdb
 import time
-from cmath import pi,cos,sin
+import numpy
+#from cmath import pi,cos,sin
 
 # =============================================================================
 # Extension modules
@@ -50,7 +51,7 @@ def calculateThumbnailMethodConstraint(Wn,DampingRatio):
 
     #Various function valus to allow the ellipse to coincide with
     #the satisfactory level on the thumbnail plot
-    theta = 80 *pi/180.
+    theta = 80 *numpy.pi/180.
     xcen = 0.76
     ycen = 3.01
 
@@ -65,8 +66,8 @@ def calculateThumbnailMethodConstraint(Wn,DampingRatio):
     yp = Wn
 
     #simple cordinate transformation
-    x = (xp-xcen)*cos(theta)+(yp-ycen)*sin(theta)
-    y = (yp-ycen)*cos(theta)-(xp-xcen)*sin(theta)
+    x = (xp-xcen)*numpy.cos(theta)+(yp-ycen)*numpy.sin(theta)
+    y = (yp-ycen)*numpy.cos(theta)-(xp-xcen)*numpy.sin(theta)
 
     #Equation of ellipse whose zero contour is roughly alligned with the
     #Satisfactory contour on the thumbnail plot.
@@ -75,7 +76,7 @@ def calculateThumbnailMethodConstraint(Wn,DampingRatio):
 
     return z
 
-def calculateFrequencyAndDamping(Cmq,Clalpha,Cd,Cmalpha,CmalphaDot,mass,Iy,\
+def calculateFrequencyAndDamping(Cmq,Clalpha,Cd,Cmalpha,Cmalphadot,mass,Iy,\
                                  rho,Area,U,c):
     '''
     Calculates the natural frequncy and damping for the aircraft using the
@@ -92,14 +93,26 @@ def calculateFrequencyAndDamping(Cmq,Clalpha,Cd,Cmalpha,CmalphaDot,mass,Iy,\
     Malpha = Cmalpha*rho*Area*U**2*c/(2*Iy)
 
     Malphadot = Cmalphadot*rho*Area*U*c**2/(4*Iy)
-
+    print 'mq',Mq,Zw,Malpha
     #Short period approximation
-    Wsp = sqrt(Mq*Zw-Malpha)
-
+    #Wsp = numpy.sqrt(Mq*Zw-Malpha)
+    Wsp = numpy.sqrt(Mq*Zw)#-Malpha)
+    print 'wsp',Wsp
     Damping = -(Zw+Mq+Malphadot)/(2*Wsp)
-
+    print 'Damping',Damping
 
     return Wsp,Damping
+
+def calculateNAlpha(Clalpha,rho,Area,U,mass,g):
+
+    '''
+    calculate the g normalized lift derivative
+    '''
+
+    nalpha = rho*U**2*A*Clalpha/(2*mass*g)
+
+    return nalpha
+
 
 def calculateCAP(Wsp,nalpha):
     '''

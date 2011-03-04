@@ -17,7 +17,6 @@ module NKsolverVars
   !     *                                                                *
   !     ******************************************************************
   !
-
   use constants
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -31,6 +30,7 @@ module NKsolverVars
   KSP                global_ksp,local_ksp
   PC                 global_pc ,local_pc
   SNESConvergedReason reason
+
 
   ! Non-linear Solver Options
   integer(kind=intType) :: jacobian_lag
@@ -101,8 +101,8 @@ module NKsolverVars
   character, parameter :: side_right = "right"
   
   ! Misc Parameters
-  real(kind=realType) :: totalRes0
-  real(kind=realType) :: rhoRes0,rhoResStart
+  real(kind=realType) :: totalR0,totalRStart,totalRFinal
+  real(kind=realType) :: rhoRes0,rhoResStart,rhoResFinal
   real(kind=realType) :: CFL0
   integer(kind=intType) :: iterTot0
 
