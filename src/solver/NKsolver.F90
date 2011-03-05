@@ -218,11 +218,7 @@ subroutine NKsolver
 
   call SNESGetConvergedReason(snes,reason,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-  if (myid == 0) then
-     if (printIterations) then
-        print *,'Reason:',reason
-     end if
-  end if
+
   if (reason == SNES_CONVERGED_FNORM_ABS .or. &
       reason == SNES_CONVERGED_FNORM_RELATIVE .or. &
       reason == SNES_CONVERGED_PNORM_RELATIVE) then
@@ -523,17 +519,7 @@ subroutine setW(wVec)
                  do l=1,nw
                      call VecGetValues(wVec,1,globalCell(i,j,k)*nw+l-1,&
                           w(i,j,k,l),ierr)
-!                      call VecGetValues(wVec,1,globalCell(i,j,k)*nw+l-1,&
-!                           temp,ierr)
-!                      if (abs(temp-w(i,j,k,l) > 1e-3)) then
-!                         print *,'Erorr diff:'
-!                         print *,i,j,k,l
-!                         print *,temp,temp-w(i,j,k,l)
-!                         stop
-!                      else
-!                         w(i,j,k,l) = temp
-!                      end if
-                 end do
+                  end do
               end do
            end do
         end do
@@ -615,10 +601,6 @@ subroutine setupNK_KSP_PC(dRdwPre)
   !
   ! Send some feedback to screen.
 
-!   if (myid == 0) then
-!      print * ,"Assembling NK KSP PC matrix..."
-!   end if
- 
   !store the current values of vis2,vis4 and reset vis2 for preconditioner
   !method based on (Hicken and Zingg,2008) AIAA journal,vol46,no.11
   vis2_ref = vis2
@@ -776,10 +758,6 @@ subroutine setupNK_KSP_PC(dRdwPre)
   call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
        SUmb_comm_world, ierr)
 
-  ! if (myid == 0) then
-!      print *,'Done PC Assembly'
-!      print *,'Time:',setupTime
-!   end if
 end subroutine setupNK_KSP_PC
 
 subroutine getCurrentResidual(rhoRes,totalRRes)
