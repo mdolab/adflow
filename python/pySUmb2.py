@@ -949,21 +949,6 @@ class SUMB(AeroSolver):
             self.solve_failed = True
             return
 
-        # Setup some residual values for reference
-
-     #    # If we're doing fully multigrid set the starting resiudla to
-#         # the init residual
-#         if self.sumb.inputiteration.mgstartlevel != 1:
-#             self.startRhoRes = self.initRhoRes
-#             self.startTotalRRes = self.initTotalRRes
-#         else:
-#             self.startRhoRes,self.startTotalRRes = self.sumb.getcurrentresidual()
-#         # end if
-
-#         # Convert to real in case we're using a complex-solve
-#         self.startRhoRes = real(self.startRhoRes)
-#         self.startTotalRRes = real(self.startTotalRRes)
-
         # Call the Solver
         if ('MDCallBack' in kwargs):
             self.sumb.solverunsteadymd(kwargs['MDCallBack'])
@@ -971,9 +956,6 @@ class SUMB(AeroSolver):
             self.sumb.solver()
         # end if
 
-        # Record the final residual
-        self.finalRhoRes,self.finalTotalRRes = self.sumb.getcurrentresidual()
- 
         if self.sumb.killsignals.routinefailed:
             self.solve_failed = True
         else:
@@ -1652,7 +1634,7 @@ class SUMB(AeroSolver):
         
         return res
 
-    def getSolution(self):
+    def getSolution(self,sps=1):
         '''
         retrieve the solution variables from the solver.
         '''

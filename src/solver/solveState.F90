@@ -293,7 +293,6 @@ subroutine solveState
         call getFreeStreamResidual(rhoRes0,totalR0)
         call getCurrentResidual(rhoResStart,totalRStart)
      end if
-
   else ! We want to use the NKsolver AND we are on the fine grid. 
 
      ! Now we must determine if the solution is converged sufficently
@@ -309,6 +308,7 @@ subroutine solveState
      
      ! Determine if we need to run the RK solver, before we can
      ! run the NK solver 
+     L2ConvSave = L2Conv
 
      if (rhoResStart/rhoRes0 > NK_Switch_Tol) then
                 
@@ -316,7 +316,6 @@ subroutine solveState
         ! yet converged tightly enough to start with NK solver
               
         ! Try to run RK solver down to NKSwitchTol
-        L2ConvSave = L2Conv
         L2Conv = NK_Switch_Tol
 
         solve_RK = .True.
