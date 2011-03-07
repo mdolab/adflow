@@ -970,7 +970,7 @@ class SUMB(AeroSolver):
 
         # Post-Processing -- Write Solutions
         if self.getOption('writeSolution'):
-            base = self.getOption('outputDir') + self.getOption('probName')
+            base = self.getOption('outputDir') + '/' + self.getOption('probName')
             volname = base + '_vol.cgns'
             surfname = base + '_surf.cgns'
 
@@ -1213,7 +1213,8 @@ class SUMB(AeroSolver):
         Setup the adjoint matrix for the current solution
         '''
         
-        # Destroy the NKsolver to free memory
+        # Destroy the NKsolver to free memory -- Call this even if the
+        # solver is not used...a safeguard check is done in Fortran
         self.sumb.destroynksolver()
 
         if not self.adjointMatrixSetup:
