@@ -288,16 +288,16 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
      a  = sqrt(gammaInf*pInfDim/rhoInfDim)
      dcdq = dcdq*timeRef*2*(machGrid*a)/lengthRef
      if(myID==0)print *,'normalization',dcdq,timeRef,(machGrid*a),lengthRef
-!!$     if(myID==0)then
-!!$        a  = sqrt(gammaInf*pInfDim/rhoInfDim)
-!!$        print *,'normalization',timeRef,(machGrid*a),lengthRef
-!!$        print *,'CL estimates:'
-!!$        print *,'Clq = : ',dcdq(1),' cl0 = : ',coef0(1)
-!!$        print *,'CD estimates:'
-!!$        print *,'Cdq = : ',dcdq(2),' cd0 = : ',coef0(2)
-!!$        print *,'CMz estimates:'
-!!$        print *,'CMzq = : ',dcdq(8),' cmz0 = : ',coef0(8)
-!!$     endif
+     if(myID==0)then
+        !a  = sqrt(gammaInf*pInfDim/rhoInfDim)
+        print *,'normalization',timeRef,(machGrid*a),lengthRef
+        print *,'CL estimates:'
+        print *,'Clq = : ',dcdq(1),' cl0 = : ',coef0(1)
+        print *,'CD estimates:'
+        print *,'Cdq = : ',dcdq(2),' cd0 = : ',coef0(2)
+        print *,'CMz estimates:'
+        print *,'CMzq = : ',dcdq(8),' cmz0 = : ',coef0(8)
+     endif
 
     
 !!$     if(myID==0) print *,'ResCL',ResBaseCoef(:,1)!resCL
