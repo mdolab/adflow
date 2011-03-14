@@ -93,13 +93,12 @@ def calculateFrequencyAndDamping(Cmq,Clalpha,Cd,Cmalpha,Cmalphadot,mass,Iy,\
     Malpha = Cmalpha*rho*Area*U**2*c/(2*Iy)
 
     Malphadot = Cmalphadot*rho*Area*U*c**2/(4*Iy)
-    print 'mq',Mq,Zw,Malpha
+    #print 'mq',Mq,Zw,Malpha
     #Short period approximation
-    #Wsp = numpy.sqrt(Mq*Zw-Malpha)
-    Wsp = numpy.sqrt(Mq*Zw)#-Malpha)
-    print 'wsp',Wsp
+    Wsp = numpy.sqrt(Mq*Zw-Malpha)
+    #print 'wsp',Wsp
     Damping = -(Zw+Mq+Malphadot)/(2*Wsp)
-    print 'Damping',Damping
+    #print 'Damping',Damping
 
     return Wsp,Damping
 
