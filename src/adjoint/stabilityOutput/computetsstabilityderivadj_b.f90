@@ -2,11 +2,10 @@
 !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
 !  
 !  Differentiation of computetsstabilityderivadj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: cdadj dcldalpha
-!                dcmzdalphadot cladj cl0 dcmzdq dcddalpha cmzadj
-!                dcmzdalpha cd0 cmz0
-!   of linear combination of output variables: dcldalpha dcmzdalphadot
-!                cl0 dcmzdq dcddalpha dcmzdalpha cd0 cmz0
+!   gradient, with respect to input variables: dcdalphadot basecoef
+!                coef0 dcdq dcdqdot dcdalpha
+!   of linear combination of output variables: dcdalphadot coef0
+!                dcdq dcdqdot dcdalpha
 !
 !     ******************************************************************
 !     *                                                                *
@@ -17,11 +16,9 @@
 !     *                                                                *
 !     ******************************************************************
 !
-SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
-&  cmyadj, cmzadj, cmzadjb, cladj, cladjb, cdadj, cdadjb, cl0, cl0b, cd0&
-&  , cd0b, cmz0, cmz0b, dcldalpha, dcldalphab, dcddalpha, dcddalphab, &
-&  dcmzdalpha, dcmzdalphab, dcmzdalphadot, dcmzdalphadotb, dcmzdq, &
-&  dcmzdqb)
+SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
+&  coef0b, dcdalpha, dcdalphab, dcdalphadot, dcdalphadotb, dcdq, dcdqb, &
+&  dcdqdot, dcdqdotb)
   USE communication
   USE inputmotion
   USE inputphysics
@@ -30,46 +27,40 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
   USE monitor
   USE section
   IMPLICIT NONE
-  REAL(KIND=REALTYPE) :: cd0, cd0b, cl0, cl0b, cmz0, cmz0b
-  REAL(KIND=REALTYPE) :: cdadj(ntimeintervalsspectral), cdadjb(&
-&  ntimeintervalsspectral), cfxadj(ntimeintervalsspectral), cfyadj(&
-&  ntimeintervalsspectral), cfzadj(ntimeintervalsspectral), cladj(&
-&  ntimeintervalsspectral), cladjb(ntimeintervalsspectral), cmxadj(&
-&  ntimeintervalsspectral), cmyadj(ntimeintervalsspectral), cmzadj(&
-&  ntimeintervalsspectral), cmzadjb(ntimeintervalsspectral)
-  REAL(KIND=REALTYPE) :: dcddalpha, dcddalphab, dcldalpha, dcldalphab, &
-&  dcmzdalpha, dcmzdalphab, dcmzdalphadot, dcmzdalphadotb
-  REAL(KIND=REALTYPE) :: dcmzdq, dcmzdqb
+  REAL(KIND=REALTYPE) :: basecoef(ntimeintervalsspectral, 8), basecoefb(&
+&  ntimeintervalsspectral, 8)
+  REAL(KIND=REALTYPE) :: coef0(8), coef0b(8)
+  REAL(KIND=REALTYPE) :: dcdalpha(8), dcdalphab(8), dcdalphadot(8), &
+&  dcdalphadotb(8)
+  REAL(KIND=REALTYPE) :: dcdq(8), dcdqb(8), dcdqdot(8), dcdqdotb(8)
+  REAL(KIND=REALTYPE) :: a
   INTEGER :: branch
-  REAL(KIND=REALTYPE) :: cd0dot, cl0dot, cmz0dot, cmz0dotb
-  REAL(KIND=REALTYPE) :: dcddalphadot, dcldalphadot
-  REAL(KIND=REALTYPE) :: dcddq, dcddqb, dcddqdot, dcldq, dcldqb, &
-&  dcldqdot, dcmzdqdot
-  REAL(KIND=REALTYPE) :: dcddr, dcddrb, dcddrdot, dcldr, dcldrb, &
-&  dcldrdot, dcmzdr, dcmzdrb, dcmzdrdot
-  REAL(KIND=REALTYPE) :: dcddmach, dcddmachb, dcddmachdot, dcldmach, &
-&  dcldmachb, dcldmachdot, dcmzdmach, dcmzdmachb, dcmzdmachdot
-  REAL(KIND=REALTYPE) :: dcddp, dcddpb, dcddpdot, dcldp, dcldpb, &
-&  dcldpdot, dcmzdp, dcmzdpb, dcmzdpdot
-  REAL(KIND=REALTYPE) :: DERIVATIVERIGIDROTANGLE, res, res0, res1, &
+  REAL(KIND=REALTYPE) :: coef0dot(8), coef0dotb(8)
+  REAL(KIND=REALTYPE) :: dcdbeta(8), dcdbetadot(8), dcdmach(8), dcdmachb&
+&  (8), dcdmachdot(8)
+  REAL(KIND=REALTYPE) :: dcdp(8), dcdpb(8), dcdpdot(8), dcdr(8), dcdrb(8&
+&  ), dcdrdot(8)
+  REAL(KIND=REALTYPE) :: DERIVATIVERIGIDROTANGLE, res, res0, &
 &  SECONDDERIVATIVERIGIDROTANGLE
   REAL(KIND=REALTYPE) :: dphix(ntimeintervalsspectral), dphiy(&
 &  ntimeintervalsspectral), dphiz(ntimeintervalsspectral)
   REAL(KIND=REALTYPE) :: dphixdot(ntimeintervalsspectral), dphiydot(&
 &  ntimeintervalsspectral), dphizdot(ntimeintervalsspectral)
+  REAL :: gammainf
   REAL(KIND=REALTYPE) :: intervalalpha(ntimeintervalsspectral), &
 &  intervalalphadot(ntimeintervalsspectral)
   REAL(KIND=REALTYPE) :: intervalmach(ntimeintervalsspectral), &
 &  intervalmachdot(ntimeintervalsspectral)
   INTEGER(KIND=INTTYPE) :: i, nn, sps
-  REAL(KIND=REALTYPE) :: rescd(ntimeintervalsspectral), rescfx(&
-&  ntimeintervalsspectral), rescfy(ntimeintervalsspectral), rescfz(&
-&  ntimeintervalsspectral), rescl(ntimeintervalsspectral), rescmx(&
-&  ntimeintervalsspectral), rescmy(ntimeintervalsspectral), rescmz(&
-&  ntimeintervalsspectral), rescmzb(ntimeintervalsspectral)
+  REAL :: pinfdim
+  REAL(KIND=REALTYPE) :: resbasecoef(ntimeintervalsspectral, 8), &
+&  resbasecoefb(ntimeintervalsspectral, 8)
+  REAL :: rhoinfdim
   REAL(KIND=REALTYPE) :: t(nsections)
+  REAL :: timeref
   REAL(KIND=REALTYPE) :: TSALPHA, TSALPHADOT
-  REAL(KIND=REALTYPE) :: res2, result1, TSMACH, TSMACHDOT
+  REAL(KIND=REALTYPE) :: res1, result1, TSMACH, TSMACHDOT
+  INTRINSIC SQRT
   EXTERNAL TSALPHA, TSMACHDOT, DERIVATIVERIGIDROTANGLE, TSMACH, &
 &      TSALPHADOT, SECONDDERIVATIVERIGIDROTANGLE, TERMINATE
 !Given
@@ -101,32 +92,33 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
 &        , t)
     END DO
 !now compute dCl/dp
-    CALL COMPUTELEASTSQUARESREGRESSION(cladj, dphix, &
-&                                 ntimeintervalsspectral, dcldp, cl0)
-!now compute dCd/dp
-    CALL COMPUTELEASTSQUARESREGRESSION(cdadj, dphix, &
-&                                 ntimeintervalsspectral, dcddp, cd0)
-!now compute dCmz/dp
-    dcmzdpb = 0.0
-    cmzadjb(:) = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(cmzadj, cmzadjb, dphix, &
-&                                   ntimeintervalsspectral, dcmzdp, &
-&                                   dcmzdpb, cmz0, cmz0b)
-    dcddpb = 0.0
-    cdadjb(:) = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(cdadj, cdadjb, dphix, &
-&                                   ntimeintervalsspectral, dcddp, &
-&                                   dcddpb, cd0, cd0b)
-    dcldpb = 0.0
-    cladjb(:) = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(cladj, cladjb, dphix, &
-&                                   ntimeintervalsspectral, dcldp, &
-&                                   dcldpb, cl0, cl0b)
+    DO i=1,8
+      CALL COMPUTELEASTSQUARESREGRESSION(basecoef(:, i), dphix, &
+&                                   ntimeintervalsspectral, dcdp(i), &
+&                                   coef0(i))
+    END DO
+    basecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
+    DO i=8,1,-1
+      dcdpb(:) = 0.0
+      CALL COMPUTELEASTSQUARESREGRESSION_B(basecoef(:, i), basecoefb(:, &
+&                                     i), dphix, ntimeintervalsspectral&
+&                                     , dcdp(i), dcdpb(i), coef0(i), &
+&                                     coef0b(i))
+      coef0b(i) = 0.0
+    END DO
     DO sps=ntimeintervalsspectral,1,-1
       CALL POPINTEGER4(branch)
       IF (.NOT.branch .LT. 1) nn = 0
     END DO
   ELSE IF (tsqmode) THEN
+!!$         if(myID==0)then
+!!$            print *,'CL estimates:'
+!!$            print *,'Clpdot = : ',dcldpdot,' cl0dot = : ',cl0dot
+!!$            print *,'Cd estimates:'
+!!$            print *,'Cdpdot = : ',dcddpdot,' cd0dot = : ',cd0dot
+!!$            print *,'CMz estimates:'
+!!$            print *,'CMzpdot = : ',dcmzdpdot,' cmz0dot = : ',cmz0dot
+!!$         end if
 !q is pitch
     DO sps=1,ntimeintervalsspectral
 !compute the time of this interval
@@ -149,36 +141,71 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
 &        , t)
 !if(myID==0)print *,'dphiz',dphiz
 ! add in q_dot computation
-      res0 = SECONDDERIVATIVERIGIDROTANGLE(degreepolzrot, coefpolzrot, &
-&        degreefourzrot, omegafourzrot, coscoeffourzrot, sincoeffourzrot&
-&        , t)
+      dphizdot(sps) = SECONDDERIVATIVERIGIDROTANGLE(degreepolzrot, &
+&        coefpolzrot, degreefourzrot, omegafourzrot, coscoeffourzrot, &
+&        sincoeffourzrot, t)
     END DO
+!if(myID==0)print *,'dphizdot',dphizdot
+!!$         if(myID==0)print *,'dphiz',dphiz
+!!$         if(myID==0)print *,'dphizdot',dphizdot
 !now compute dCl/dq
-    CALL COMPUTELEASTSQUARESREGRESSION(cladj, dphiz, &
-&                                 ntimeintervalsspectral, dcldq, cl0)
-!now compute dCd/dq
-    CALL COMPUTELEASTSQUARESREGRESSION(cdadj, dphiz, &
-&                                 ntimeintervalsspectral, dcddq, cd0)
-!now compute dCmz/dq
-    cmzadjb(:) = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(cmzadj, cmzadjb, dphiz, &
-&                                   ntimeintervalsspectral, dcmzdq, &
-&                                   dcmzdqb, cmz0, cmz0b)
-    dcddqb = 0.0
-    cdadjb(:) = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(cdadj, cdadjb, dphiz, &
-&                                   ntimeintervalsspectral, dcddq, &
-&                                   dcddqb, cd0, cd0b)
-    dcldqb = 0.0
-    cladjb(:) = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(cladj, cladjb, dphiz, &
-&                                   ntimeintervalsspectral, dcldq, &
-&                                   dcldqb, cl0, cl0b)
+    DO i=1,8
+      CALL COMPUTELEASTSQUARESREGRESSION(basecoef(:, i), dphiz, &
+&                                   ntimeintervalsspectral, dcdq(i), &
+&                                   coef0(i))
+    END DO
+!ResCL(i) = Cl(i)-(dcldp*dphix(i)+cl0)
+!ResCD(i) = Cd(i)-(dcddp*dphix(i)+cd0)
+!ResCMz(i) = Cmz(i)-(dcmzdp*dphix(i)+cmz0)
+!now normalize the results...
+    a = SQRT(gammainf*pinfdim/rhoinfdim)
+!now compute dCl/dpdot
+    DO i=1,8
+      CALL COMPUTELEASTSQUARESREGRESSION(resbasecoef(:, i), dphizdot, &
+&                                   ntimeintervalsspectral, dcdqdot(i), &
+&                                   coef0dot(i))
+    END DO
+    resbasecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
+    DO i=8,1,-1
+      coef0dotb(:) = 0.0
+      CALL COMPUTELEASTSQUARESREGRESSION_B(resbasecoef(:, i), &
+&                                     resbasecoefb(:, i), dphizdot, &
+&                                     ntimeintervalsspectral, dcdqdot(i)&
+&                                     , dcdqdotb(i), coef0dot(i), &
+&                                     coef0dotb(i))
+      dcdqdotb(i) = 0.0
+    END DO
+    dcdqb = timeref*2*machgrid*a*dcdqb/lengthref
+    basecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
+    DO i=8,1,-1
+      DO sps=ntimeintervalsspectral,1,-1
+        basecoefb(sps, i) = basecoefb(sps, i) + resbasecoefb(sps, i)
+        dcdqb(i) = dcdqb(i) - dphiz(sps)*resbasecoefb(sps, i)
+        coef0b(i) = coef0b(i) - resbasecoefb(sps, i)
+        resbasecoefb(sps, i) = 0.0
+      END DO
+    END DO
+    DO i=8,1,-1
+      CALL COMPUTELEASTSQUARESREGRESSION_B(basecoef(:, i), basecoefb(:, &
+&                                     i), dphiz, ntimeintervalsspectral&
+&                                     , dcdq(i), dcdqb(i), coef0(i), &
+&                                     coef0b(i))
+      coef0b(i) = 0.0
+      dcdqb(i) = 0.0
+    END DO
     DO sps=ntimeintervalsspectral,1,-1
       CALL POPINTEGER4(branch)
       IF (.NOT.branch .LT. 1) nn = 0
     END DO
   ELSE IF (tsrmode) THEN
+!!$         if(myID==0)then
+!!$            print *,'CL estimates:'
+!!$            print *,'Clqdot = : ',dcldqdot,' cl0dot = : ',cl0dot
+!!$            print *,'Cd estimates:'
+!!$            print *,'Cdqdot = : ',dcddqdot,' cd0dot = : ',cd0dot
+!!$            print *,'CMz estimates:'
+!!$            print *,'CMzqdot = : ',dcmzdqdot,' cmz0dot = : ',cmz0dot
+!!$         end if
 !r is yaw
     DO sps=1,ntimeintervalsspectral
 !compute the time of this interval
@@ -201,32 +228,24 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
 &        , t)
 !if(myID==0)print *,'dphiy',dphiy
 ! add in r_dot computation
-      res1 = SECONDDERIVATIVERIGIDROTANGLE(degreepolyrot, coefpolyrot, &
+      res0 = SECONDDERIVATIVERIGIDROTANGLE(degreepolyrot, coefpolyrot, &
 &        degreefouryrot, omegafouryrot, coscoeffouryrot, sincoeffouryrot&
 &        , t)
     END DO
-!now compute dCl/dr
-    CALL COMPUTELEASTSQUARESREGRESSION(cladj, dphiy, &
-&                                 ntimeintervalsspectral, dcldr, cl0)
-!now compute dCD/dr
-    CALL COMPUTELEASTSQUARESREGRESSION(cdadj, dphiy, &
-&                                 ntimeintervalsspectral, dcddr, cd0)
-!now compute dCmz/dr
-    dcmzdrb = 0.0
-    cmzadjb(:) = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(cmzadj, cmzadjb, dphiy, &
-&                                   ntimeintervalsspectral, dcmzdr, &
-&                                   dcmzdrb, cmz0, cmz0b)
-    dcddrb = 0.0
-    cdadjb(:) = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(cdadj, cdadjb, dphiy, &
-&                                   ntimeintervalsspectral, dcddr, &
-&                                   dcddrb, cd0, cd0b)
-    dcldrb = 0.0
-    cladjb(:) = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(cladj, cladjb, dphiy, &
-&                                   ntimeintervalsspectral, dcldr, &
-&                                   dcldrb, cl0, cl0b)
+    DO i=1,8
+      CALL COMPUTELEASTSQUARESREGRESSION(basecoef(:, i), dphiy, &
+&                                   ntimeintervalsspectral, dcdr(i), &
+&                                   coef0(i))
+    END DO
+    basecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
+    DO i=8,1,-1
+      dcdrb(:) = 0.0
+      CALL COMPUTELEASTSQUARESREGRESSION_B(basecoef(:, i), basecoefb(:, &
+&                                     i), dphiy, ntimeintervalsspectral&
+&                                     , dcdr(i), dcdrb(i), coef0(i), &
+&                                     coef0b(i))
+      coef0b(i) = 0.0
+    END DO
     DO sps=ntimeintervalsspectral,1,-1
       CALL POPINTEGER4(branch)
       IF (.NOT.branch .LT. 1) nn = 0
@@ -247,6 +266,7 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
       ELSE
         CALL PUSHINTEGER4(0)
       END IF
+!print *,'t',t
       intervalalpha(sps) = TSALPHA(degreepolalpha, coefpolalpha, &
 &        degreefouralpha, omegafouralpha, coscoeffouralpha, &
 &        sincoeffouralpha, t)
@@ -254,56 +274,56 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
 &        degreefouralpha, omegafouralpha, coscoeffouralpha, &
 &        sincoeffouralpha, t)
     END DO
+!print *,'Alpha', intervalAlpha
 !now compute dCl/dalpha
-    CALL COMPUTELEASTSQUARESREGRESSION(cladj, intervalalpha, &
-&                                 ntimeintervalsspectral, dcldalpha, cl0&
-&                                )
-!now compute dCd/dalpha
-    CALL COMPUTELEASTSQUARESREGRESSION(cdadj, intervalalpha, &
-&                                 ntimeintervalsspectral, dcddalpha, cd0&
-&                                )
-!now compute dCmz/dq
-    CALL COMPUTELEASTSQUARESREGRESSION(cmzadj, intervalalpha, &
-&                                 ntimeintervalsspectral, dcmzdalpha, &
-&                                 cmz0)
-!now compute dCl/dqdot
-    CALL COMPUTELEASTSQUARESREGRESSION(rescl, intervalalphadot, &
-&                                 ntimeintervalsspectral, dcldalphadot, &
-&                                 cl0dot)
-!now compute dCd/dqdot
-    CALL COMPUTELEASTSQUARESREGRESSION(rescd, intervalalphadot, &
-&                                 ntimeintervalsspectral, dcddalphadot, &
-&                                 cd0dot)
-!now compute dCmz/dqdot
-    cmz0dotb = 0.0
-    rescmzb(:) = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(rescmz, rescmzb, &
-&                                   intervalalphadot, &
-&                                   ntimeintervalsspectral, &
-&                                   dcmzdalphadot, dcmzdalphadotb, &
-&                                   cmz0dot, cmz0dotb)
-    cmzadjb(1:ntimeintervalsspectral) = 0.0
-    DO i=ntimeintervalsspectral,1,-1
-      cmzadjb(i) = cmzadjb(i) + rescmzb(i)
-      dcmzdalphab = dcmzdalphab - intervalalpha(i)*rescmzb(i)
-      cmz0b = cmz0b - rescmzb(i)
-      rescmzb(i) = 0.0
+    DO i=1,8
+      CALL COMPUTELEASTSQUARESREGRESSION(basecoef(:, i), intervalalpha, &
+&                                   ntimeintervalsspectral, dcdalpha(i)&
+&                                   , coef0(i))
     END DO
-    CALL COMPUTELEASTSQUARESREGRESSION_B(cmzadj, cmzadjb, intervalalpha&
-&                                   , ntimeintervalsspectral, dcmzdalpha&
-&                                   , dcmzdalphab, cmz0, cmz0b)
-    cdadjb(:) = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(cdadj, cdadjb, intervalalpha, &
-&                                   ntimeintervalsspectral, dcddalpha, &
-&                                   dcddalphab, cd0, cd0b)
-    cladjb(:) = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(cladj, cladjb, intervalalpha, &
-&                                   ntimeintervalsspectral, dcldalpha, &
-&                                   dcldalphab, cl0, cl0b)
+!now compute dCi/dalphadot
+    DO i=1,8
+      CALL COMPUTELEASTSQUARESREGRESSION(resbasecoef(:, i), &
+&                                   intervalalphadot, &
+&                                   ntimeintervalsspectral, dcdalphadot(&
+&                                   i), coef0dot(i))
+    END DO
+    resbasecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
+    DO i=8,1,-1
+      coef0dotb(:) = 0.0
+      CALL COMPUTELEASTSQUARESREGRESSION_B(resbasecoef(:, i), &
+&                                     resbasecoefb(:, i), &
+&                                     intervalalphadot, &
+&                                     ntimeintervalsspectral, &
+&                                     dcdalphadot(i), dcdalphadotb(i), &
+&                                     coef0dot(i), coef0dotb(i))
+      dcdalphadotb(i) = 0.0
+    END DO
+    basecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
+    DO i=8,1,-1
+      DO sps=ntimeintervalsspectral,1,-1
+        basecoefb(sps, i) = basecoefb(sps, i) + resbasecoefb(sps, i)
+        dcdalphab(i) = dcdalphab(i) - intervalalpha(sps)*resbasecoefb(&
+&          sps, i)
+        coef0b(i) = coef0b(i) - resbasecoefb(sps, i)
+        resbasecoefb(sps, i) = 0.0
+      END DO
+    END DO
+    DO i=8,1,-1
+      CALL COMPUTELEASTSQUARESREGRESSION_B(basecoef(:, i), basecoefb(:, &
+&                                     i), intervalalpha, &
+&                                     ntimeintervalsspectral, dcdalpha(i&
+&                                     ), dcdalphab(i), coef0(i), coef0b(&
+&                                     i))
+      coef0b(i) = 0.0
+      dcdalphab(i) = 0.0
+    END DO
     DO sps=ntimeintervalsspectral,1,-1
       CALL POPINTEGER4(branch)
       IF (.NOT.branch .LT. 1) nn = 0
     END DO
+  ELSE IF (tsbetamode) THEN
+    basecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
   ELSE IF (tsmachmode) THEN
 !compute the alphas and alphadots
     DO sps=1,ntimeintervalsspectral
@@ -320,73 +340,40 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(cfxadj, cfyadj, cfzadj, cmxadj, &
       ELSE
         CALL PUSHINTEGER4(0)
       END IF
+!if(myID==0)print *,'t',t
       result1 = TSMACH(degreepolmach, coefpolmach, degreefourmach, &
 &        omegafourmach, coscoeffourmach, sincoeffourmach, t)
       intervalmach(sps) = machgrid + result1
-      res2 = TSMACHDOT(degreepolmach, coefpolmach, degreefourmach, &
+      res1 = TSMACHDOT(degreepolmach, coefpolmach, degreefourmach, &
 &        omegafourmach, coscoeffourmach, sincoeffourmach, t)
     END DO
+!if(myID==0) print *,'Mach', intervalMach,machgrid
 !now compute dCl/dalpha
-    CALL COMPUTELEASTSQUARESREGRESSION(cladj, intervalmach, &
-&                                 ntimeintervalsspectral, dcldmach, cl0)
-!now compute dCd/dalpha
-    CALL COMPUTELEASTSQUARESREGRESSION(cdadj, intervalmach, &
-&                                 ntimeintervalsspectral, dcddmach, cd0)
-!now compute dCmz/dq
-    CALL COMPUTELEASTSQUARESREGRESSION(cmzadj, intervalmach, &
-&                                 ntimeintervalsspectral, dcmzdmach, &
-&                                 cmz0)
-!now compute dCl/dqdot
-    CALL COMPUTELEASTSQUARESREGRESSION(rescl, intervalmachdot, &
-&                                 ntimeintervalsspectral, dcldmachdot, &
-&                                 cl0dot)
-!now compute dCl/dqdot
-    CALL COMPUTELEASTSQUARESREGRESSION(rescd, intervalmachdot, &
-&                                 ntimeintervalsspectral, dcddmachdot, &
-&                                 cd0dot)
-!now compute dCmz/dqdot
-    cmz0dotb = 0.0
-    rescmzb(:) = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(rescmz, rescmzb, &
-&                                   intervalalphadot, &
-&                                   ntimeintervalsspectral, &
-&                                   dcmzdalphadot, dcmzdalphadotb, &
-&                                   cmz0dot, cmz0dotb)
-    cmzadjb(1:ntimeintervalsspectral) = 0.0
-    DO i=ntimeintervalsspectral,1,-1
-      cmzadjb(i) = cmzadjb(i) + rescmzb(i)
-      cmz0b = cmz0b - rescmzb(i)
-      rescmzb(i) = 0.0
+    DO i=1,8
+      CALL COMPUTELEASTSQUARESREGRESSION(basecoef(:, i), intervalmach, &
+&                                   ntimeintervalsspectral, dcdmach(i), &
+&                                   coef0(i))
     END DO
-    dcmzdmachb = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(cmzadj, cmzadjb, intervalmach, &
-&                                   ntimeintervalsspectral, dcmzdmach, &
-&                                   dcmzdmachb, cmz0, cmz0b)
-    dcddmachb = 0.0
-    cdadjb(:) = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(cdadj, cdadjb, intervalmach, &
-&                                   ntimeintervalsspectral, dcddmach, &
-&                                   dcddmachb, cd0, cd0b)
-    dcldmachb = 0.0
-    cladjb(:) = 0.0
-    CALL COMPUTELEASTSQUARESREGRESSION_B(cladj, cladjb, intervalmach, &
-&                                   ntimeintervalsspectral, dcldmach, &
-&                                   dcldmachb, cl0, cl0b)
+    basecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
+    DO i=8,1,-1
+      dcdmachb(:) = 0.0
+      CALL COMPUTELEASTSQUARESREGRESSION_B(basecoef(:, i), basecoefb(:, &
+&                                     i), intervalmach, &
+&                                     ntimeintervalsspectral, dcdmach(i)&
+&                                     , dcdmachb(i), coef0(i), coef0b(i)&
+&                                    )
+      coef0b(i) = 0.0
+    END DO
     DO sps=ntimeintervalsspectral,1,-1
       CALL POPINTEGER4(branch)
       IF (.NOT.branch .LT. 1) nn = 0
     END DO
   ELSE
-    cdadjb(1:ntimeintervalsspectral) = 0.0
-    cladjb(1:ntimeintervalsspectral) = 0.0
-    cmzadjb(1:ntimeintervalsspectral) = 0.0
+    basecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
   END IF
-  dcldalphab = 0.0
-  dcmzdalphadotb = 0.0
-  cl0b = 0.0
-  dcmzdqb = 0.0
-  dcddalphab = 0.0
-  dcmzdalphab = 0.0
-  cd0b = 0.0
-  cmz0b = 0.0
+  dcdalphadotb(1:8) = 0.0
+  coef0b(1:8) = 0.0
+  dcdqb(1:8) = 0.0
+  dcdqdotb(1:8) = 0.0
+  dcdalphab(1:8) = 0.0
 END SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B

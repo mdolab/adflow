@@ -23,6 +23,7 @@
        use cgnsGrid
        use communication
        use inputIO
+       use killSignals
        implicit none
 !
 !      Subroutine arguments.
@@ -56,6 +57,8 @@
        ! uninitialized data. Also set the number of boundary data sets
        ! to 0.
 
+       if (fromPython) return 
+
        do nn=1,cgnsNFamilies
          cgnsFamilies(nn)%rotatingFrameSpecified = .false.
          cgnsFamilies(nn)%rotCenter = zero
@@ -73,7 +76,6 @@
        ! Print an error message if the file could not be opened.
        ! The message is only printed by processor 0, while the others
        ! wait to get killed.
-
        if(ios /= 0) then
 
          if(myID == 0) then

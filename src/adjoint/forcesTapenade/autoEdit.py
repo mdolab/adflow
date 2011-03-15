@@ -22,17 +22,16 @@ EXT = '_b.f90'
 
 # Specify directory containing the original source files
 # and the output directory for edited files
-DIR_ORI = os.getcwd()+'/forcesTapenade'
+DIR_ORI = os.getcwd()
 DIR_MOD = DIR_ORI + '/../forcesOutput'
 # Specify line identifier
 
 # Specifiy the list of LINE ID's to find, what to replace and with what
 
-LINE_ID = ['USE','USE']#,'CALL']
-STR_OLD = ['_B' ,'_b'  ]# ,'_CB'    ]
-STR_NEW = [''   ,''  ]# ,''       ]
-
-
+LINE_ID = ['USE','CALL']
+STR_OLD = ['_B','_CB']
+STR_NEW = [''  ,'']
+FILE_EXCL = 'MODULE'
 STR_REPLACE_ALL = {'_CB':''}
 
 # Some feedback
@@ -68,16 +67,19 @@ for f in os.listdir(DIR_ORI):
         # go to modified directory
         os.chdir(DIR_MOD)
         # open modified file in write mode
+        if string.find(all_src, FILE_EXCL) > -1 :
+            print " Module found -> discarded ! "
+            continue
+
         file_object_mod = open(f,'w')
 
         # read the original file, line-by-line
         nEdits = len(LINE_ID)
         for line in file_object_ori:
-
-            # parse original line for relevante identifier
+            # parse original line for relevante identifier      
             # and replace the string
             line_mod = line.lstrip()
-           
+
             for i in xrange(nEdits):
                 if line_mod[0:len(LINE_ID[i])] == LINE_ID[i]:
                     line_mod = string.replace(line_mod, STR_OLD[i], STR_NEW[i])
@@ -89,6 +91,7 @@ for f in os.listdir(DIR_ORI):
 
             # write the modified line to new file
             file_object_mod.write('   '+ line_mod)
+
 
         # close the files
         file_object_ori.close()

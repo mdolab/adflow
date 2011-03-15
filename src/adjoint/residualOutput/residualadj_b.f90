@@ -6,7 +6,7 @@
    !                padj radkadj radjadj dwadj wadj radiadj sfacekadj
    !                skadj sfacejadj sjadj sfaceiadj siadj vis2 vis4
    !                kappacoef cdisrk
-   !   of linear combination of output variables: dwadj massflowfamilydiss
+   !   of linear combination of output variables: voladj dwadj massflowfamilydiss
    !
    !      ******************************************************************
    !      *                                                                *
@@ -115,6 +115,8 @@
    CALL PUSHINTEGER4(1)
    END IF
    ! Initialize the local arrays to monitor the massflows to zero.
+   !!massFlowFamilyInv  = zero
+   !!massFlowFamilyDiss = zero
    ! Set the value of the discretization, depending on the grid level,
    ! and the logical fineGrid, which indicates whether or not this
    ! is the finest grid level of the current mg cycle.
@@ -296,8 +298,4 @@
    CALL POPINTEGER4(branch)
    CALL POPINTEGER4(branch)
    CALL POPINTEGER4(branch)
-!!$   cdisrkb(:) = 0.0
-!!$   kappacoefb = 0.0
-!!$   vis4b = 0.0
-!!$   vis2b = 0.0
    END SUBROUTINE RESIDUALADJ_B

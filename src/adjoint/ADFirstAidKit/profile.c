@@ -11,6 +11,8 @@
 #define rdtscll(val) \
      __asm__ __volatile__ ("rdtsc" : "=A" (val))
 
+#define ENABLE_LINE_RECORDING 1
+
 unsigned long long int mytime_() {
         unsigned long long int time;
 
@@ -31,6 +33,9 @@ struct event {
                 int len;
                 unsigned long long int time;
                 int stacksize;
+#ifdef ENABLE_LINE_RECORDING
+                int line;
+#endif
 };
 
 struct list_node {
@@ -66,15 +71,17 @@ enum { BEGIN = 1, END, ENDFWD, BEGINSNAPSHOT, ENDSNAPSHOT, ENDORIG };
 
 int init = 0;
 unsigned long long int beginning_of_time = 0;
-static void profile_real(char *function, int flen, int kind) {
+inline static void profile_real(char *function, int flen, int kind) {
+	static struct list_node *new = 0;
         if (cell_index >= ARRAY_SIZE) {
-                struct list_node *new = (struct list_node*)calloc(1, sizeof(struct list_node));
+                new = (struct list_node*)calloc(1, sizeof(struct list_node));
                 tlcell->next = new;
                 tlcell = new;
                 new->next = 0;
                 cell_index = 0;
         }
-        unsigned long long int time = mytime_();
+        static unsigned long long int time;
+	time = mytime_();
         if (init == 0)
           beginning_of_time = time, init = 1;
         tlcell->array[cell_index].kind = kind;
@@ -102,6 +109,14 @@ declare_profile(beginsnapshot,BEGINSNAPSHOT)
 declare_profile(endsnapshot,ENDSNAPSHOT)
 declare_profile(endorig,ENDORIG)
 
+#ifdef ENABLE_LINE_RECORDING
+static int current_line_number = 0;
+
+void profileline_(int *line) {
+    current_line_number = *line;
+}
+#endif
+
 // Hashtable data structure
 #define hashtbl_size 4093
 struct hash_cell {
@@ -111,15 +126,32 @@ struct hash_cell {
 // Count of the used element in the hashtable
 int hashtbl_count;
 
-static inline int hash(int u) {
+// Simple hash function
+static inline unsigned int hash(unsigned int u) {
   return ((u % hashtbl_size) * 1024 ) % hashtbl_size;
 }
+
+// Simple hash function on strings
+static inline unsigned int hash_string(char *string, int flen) {
+  unsigned int ret = 0x55555555;
+  while (flen--)
+    ret *= ((unsigned char)*string++ * hashtbl_size);
+  return hash(ret);
+}
+
+// Min macro
+#define min(a,b) (a < b ? a : b)
+
 // Get the id of a string address, allocate a bucket if new
-static int get(char *function) {
-  int h = hash((int)function);
-  while (hashtbl[h].function && hashtbl[h].function != function)
-    h = hash(h);
+static int get(char *function, int flen) {
+  int h = hash_string(function, flen);
+  while (hashtbl[h].function) {
+         if (strncmp(hashtbl[h].function, function, min(flen, hashtbl[h].len)) == 0)
+            break;
+         h = hash(h);
+  }
   hashtbl[h].function = function;
+  hashtbl[h].len = flen;
   return h;
 } 
 
@@ -151,8 +183,7 @@ static void build_hashtable() {
             hashtbl_count++;
 }
 static void add_event_to_hashtable(struct event *ev, void *data) {
-  int h = get(ev->function);
-  hashtbl[h].len = ev->len;
+  int h = get(ev->function, ev->len);
 }
 
 
@@ -204,7 +235,7 @@ void printprofile_() {
         // Use the return stack image to recreate EXIT events
         for (i=stack_counter; i>-1;i--) {
           struct event *cur = stack[i];
-          int h = get(cur->function);
+          int h = get(cur->function, cur->len);
           fwrite_int(prof, h);
           fwrite_int(prof, 2); // Explicit ending
           fwrite_llint(prof, cur->time);
@@ -218,7 +249,7 @@ static void print_an_event(struct event *ev, void *data) {
         struct print_args *args = (struct print_args*)data;
         static unsigned long long int last_time = 0;
         
-        int h = get(ev->function);
+        int h = get(ev->function, ev->len);
         // Keep trace of the return stack depth and values
         switch (ev->kind) {
           case 1:

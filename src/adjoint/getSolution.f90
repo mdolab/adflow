@@ -8,78 +8,84 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine getSolution
-!
-!     ******************************************************************
-!     *                                                                *
-!     * designExport compiles all the design data - functions and      *
-!     *   their gradients, and design variable values - to export to   *
-!     *   an optimizer.                                                *
-!     *                                                                *
-!     ******************************************************************
-!
-      use ADjointVars     ! functionValue, xDesignVar, nDesignDipoles
-      use flowVarRefState ! magnetic
-      use inputPhysics    ! velDirFreestream
-      use inputTSStabDeriv !TSStability
+subroutine getSolution(sps)
 
-      implicit none
-!
-!     Local variables.
-!
-      integer(kind=intType) :: level, sps, n, nn
-      real(kind=realType)   :: CL, CD, CFx, CFy, CFz, CMx, CMy, CMz
-      real(kind=realType)   :: alpha, beta
+  use costFunctions
+  use inputTSStabDeriv !TSStability
+  use communication
+  implicit none
 
-      real(kind=realType)::dcldp,dcldpdot,dcmzdp,dcmzdpdot         
-      real(kind=realType)::dcldq,dcldqdot,dcmzdq,dcmzdqdot
-      real(kind=realType)::dcldr,dcldrdot,dcmzdr,dcmzdrdot
-      real(kind=realType)::dcldalpha,dcldalphadot,dcddalpha,dcmzdalpha,dcmzdalphadot
-      real(kind=realType)::dcldMach,dcldMachdot,dcmzdMach,dcmzdMachdot
-      real(kind=realType)::cl0,cl0dot,cD0,cmz0,cmz0dot
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Begin execution.                                               *
-!     *                                                                *
-!     ******************************************************************
-!
-      ! Set the relevant grid level and time instance.
+  integer(kind=intType) :: sps,ierr
+  !
+  !     Local variables.
+  !
+  real(kind=realType)   :: alpha, beta
+  real(kind=realType),dimension(8)::dcdp,dcdpdot,dcdq,dcdqdot,dcdr,dcdrdot
+  real(kind=realType),dimension(8)::dcdalpha,dcdalphadot,dcdbeta,dcdbetadot,&
+       dcdMach,dcdMachdot
+  real(kind=realType),dimension(8)::Coef0,Coef0dot
+!!$  real(kind=realType) :: cl0,cd0,cmz0
+!!$  real(kind=realType) :: dcldalpha,dcddalpha,dcmzdalpha
+!!$  real(kind=realType) :: dcldalphaDot,dcddalphaDot,dcmzdalphaDot
+!!$  real(kind=realType) :: dcldq,dcddq,dcmzdq
+!!$  real(kind=realType) :: dcldqdot,dcddqdot,dcmzdqdot
+  real(kind=realType), dimension(nCostFunction)::globalCFVals
+  real(kind=realType),dimension(:),allocatable :: localVal,globalVal
+  ! Function values
 
-      level = 1 ! finest grid level
-      sps   = 1 ! first time instance
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Function mapping.                                              *
-!     *                                                                *
-!     ******************************************************************
-!
-      ! Function values
-      !print *,'calling computeAeroCoef'
+  if (.not. allocated(functionValue)) then
+     allocate(functionValue(nCostFunction))
+  end if
 
-      call computeAeroCoef(CL,CD, CFx, CFy, CFz,CMx,CMy,CMz,level,sps)
+  functionValue(:) = 0.0
+  call computeAeroCoef(globalCFVals,sps)
+  functionValue(costFuncLift) = globalCFVals(costFuncLift) 
+  functionValue(costFuncDrag) = globalCFVals(costFuncDrag) 
+  functionValue(costFuncLiftCoef) = globalCFVals(costFuncLiftCoef) 
+  functionValue(costFuncDragCoef) = globalCFVals(costFuncDragCoef) 
+  functionValue(costFuncForceX) = globalCFVals(costFuncForceX) 
+  functionValue(costFuncForceY) = globalCFVals(costFuncForceY) 
+  functionValue(costFuncForceZ) = globalCFVals(costFuncForceZ) 
+  functionValue(costFuncForceXCoef) = globalCFVals(costFuncForceXCoef) 
+  functionValue(costFuncForceYCoef) = globalCFVals(costFuncForceYCoef) 
+  functionValue(costFuncForceZCoef) = globalCFVals(costFuncForceZCoef) 
+  functionValue(costFuncMomX) = globalCFVals(costFuncMomX) 
+  functionValue(costFuncMomY) = globalCFVals(costFuncMomY) 
+  functionValue(costFuncMomZ) = globalCFVals(costFuncMomZ) 
+  functionValue(costFuncMomXCoef) = globalCFVals(costFuncMomXCoef) 
+  functionValue(costFuncMomYCoef) = globalCFVals(costFuncMomYCoef)
+  functionValue(costFuncMomZCoef) = globalCFVals(costFuncMomZCoef)
 
-      functionValue(costFuncLiftCoef) = CL
-      functionValue(costFuncDragCoef) = CD
-      functionValue(costFuncForceXCoef) = CFx
-      functionValue(costFuncForceYCoef) = CFy
-      functionValue(costFuncForceZCoef) = CFz
-      functionValue(costFuncMomXCoef) = CMx
-      functionValue(costFuncMomYCoef) = CMy
-      functionValue(costFuncMomZCoef) = CMz
-      
-      if(TSStability)then
-         
-         call computeTSDerivatives(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
-           dcmzdalpha,dcmzdalphadot,dcmzdq)
-         functionValue(costFuncCmzAlpha)     = dcmzdalpha
-         functionValue( costFuncCm0)         = cmz0
-         functionValue( costFuncClAlpha)     = dcldalpha
-         functionValue( costFuncCl0  )       = cl0
-         functionValue( costFuncCdAlpha )    = dcmzdalpha
-         functionValue( costFuncCd0 )        = cd0
-         functionValue( costFuncCmzAlphaDot) = dcmzdalphadot
-         functionValue( costFuncCmzq)         = dcmzdq
-      end if
-    end subroutine getSolution
+  if(TSStability)then
+     call computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
+     !(cl0,cd0,cmz0,dcldalpha,dcddalpha,&
+     !     dcmzdalpha,dcldalphadot,dcddalphadot,dcmzdalphadot,dcldq,&
+     !     dcddq,dcmzdq,dcldqdot,dcddqdot,dcmzdqdot)
+
+     functionValue( costFuncCl0  )       = coef0(1)!cl0
+     functionValue( costFuncCd0 )        = coef0(2)!cd0
+     functionValue( costFuncCFy0 )       = coef0(4)
+     functionValue( costFuncCm0 )        = coef0(8)!cmz0
+
+     functionValue( costFuncClAlpha)     = dcdalpha(1)!dcldalpha
+     functionValue( costFuncCdAlpha)     = dcdalpha(2)!dcddalpha
+     functionValue( costFuncCFyAlpha)    = dcdalpha(4)!dcddalpha
+     functionValue( costFuncCmzAlpha)    = dcdalpha(8)!dcmzdalpha
+
+     functionValue( costFuncClAlphaDot)     = dcdalphadot(1)!dcldalphadot
+     functionValue( costFuncCdAlphaDot)     = dcdalphadot(2)!dcddalphadot
+     functionValue( costFuncCFyAlphaDot)    = dcdalphadot(4)!dcddalphadot
+     functionValue( costFuncCmzAlphaDot)    = dcdalphadot(8)! dcmzdalphadot
+     
+     functionValue( costFuncClq)         = dcdq(1)!dcldq
+     functionValue( costFuncCdq)         = dcdq(2)!dcddq
+     functionValue( costFuncCmzq)        = dcdq(8)!dcmzdq
+
+     functionValue( costFuncClqDot)         = dcdqdot(1)!dcldqDot
+     functionValue( costFuncCdqDot)         = dcdqdot(2)!dcddqDot
+     functionValue( costFuncCmzqDot)        = dcdqdot(8)!dcmzdqDot
+     !print *,'function value',functionValue,'dcdq',dcdq
+  end if
+
+ 
+end subroutine getSolution

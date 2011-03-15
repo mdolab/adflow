@@ -719,7 +719,6 @@
       
          integer(kind=intType), dimension(:,:,:), pointer :: globalNode
          integer(kind=intType), dimension(:,:,:), pointer :: globalCell
-         real(kind=realType), dimension(:,:,:,:), pointer :: psiAdj
 
 !
 !        ****************************************************************

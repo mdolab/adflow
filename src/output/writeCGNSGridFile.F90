@@ -29,6 +29,8 @@
        use monitor
        use su_cgns
        use outputMod
+       use communication
+       use inputIteration
        implicit none
 !
 !      Local variables.
@@ -67,7 +69,7 @@
        ! Write a message that the grid file(s) are being written.
        ! Of course only processor 0 does this.
 
-       if(myID == 0) then
+       if(myID == 0 .and. printIterations) then
          print "(a)", "#"
          print "(a)", "# Writing grid file(s) ..."
        endif
@@ -109,6 +111,7 @@
            enddo
          endif
 
+
          ! Release the memory of fileIDs and cgnsBases.
 
          deallocate(fileIDs, cgnsBases, stat=ierr)
@@ -117,7 +120,7 @@
                           "Deallocation failure for fileIDs and &
                           &cgnsBases")
 
-       endif testGridOnly
+      endif testGridOnly
 
        ! Releases the memory of IOVar.
 
@@ -134,7 +137,7 @@
        ! Write a message that the grid file has been written.
        ! Of course only processor 0 does this.
 
-       if(myID == 0) then
+       if(myID == 0 .and. printIterations) then
          print "(a)", "# Grid file(s) written"
          print "(a)", "#"
        endif

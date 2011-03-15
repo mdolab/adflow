@@ -1,4 +1,4 @@
-C$Id: adBuffer.f 367 2006-11-29 00:47:02Z acmarta $
+C$Id: adBuffer.f 3285 2010-01-05 09:40:52Z llh $
 
 c===================== CHARACTERS =======================:
       BLOCK DATA CHARACTERS
@@ -19,7 +19,7 @@ c===================== CHARACTERS =======================:
       COMMON /ads1fbuf/ads1buf,ads1lbuf,
      +       ads1ibuf,ads1ilbuf,ads1inlbuf
 c
-c      call addftraffic(1)
+      call addftraffic(1)
       IF (ads1ilbuf.ne.-1) THEN
          ads1ilbuf = -1
          ads1inlbuf = .FALSE.
@@ -27,7 +27,7 @@ c      call addftraffic(1)
       IF (ads1ibuf.ge.512) THEN
          ads1buf(512) = x
          CALL PUSHCHARACTERARRAY(ads1buf, 512)
-c         call addftraffic(-512)
+      call addftraffic(-512)
          ads1ibuf = 1
       ELSE
          ads1buf(ads1ibuf) = x
@@ -42,7 +42,10 @@ c         call addftraffic(-512)
       COMMON /ads1fbuf/ads1buf,ads1lbuf,
      +       ads1ibuf,ads1ilbuf,ads1inlbuf
 c
-      IF (ads1ilbuf.eq.-1) ads1ilbuf=ads1ibuf
+      IF (ads1ilbuf.eq.-1) THEN
+         ads1ilbuf=ads1ibuf
+         call RESETADLOOKSTACK()
+      ENDIF
       IF (ads1ilbuf.le.1) THEN
          CALL LOOKCHARACTERARRAY(ads1lbuf, 512)
          ads1inlbuf = .TRUE.
@@ -98,7 +101,7 @@ c======================= BOOLEANS =========================
       COMMON /adl4fbuf/adl4buf,adl4lbuf,
      +       adl4ibuf,adl4ilbuf,adl4inlbuf
 c
-c      call addftraffic(4)
+      call addftraffic(4)
       IF (adl4ilbuf.ne.-1) THEN
          adl4ilbuf = -1
          adl4inlbuf = .FALSE.
@@ -106,7 +109,7 @@ c      call addftraffic(4)
       IF (adl4ibuf.ge.512) THEN
          adl4buf(512) = x
          CALL PUSHBOOLEANARRAY(adl4buf, 512)
-c         call addftraffic(-2048)
+      call addftraffic(-2048)
          adl4ibuf = 1
       ELSE
          adl4buf(adl4ibuf) = x
@@ -121,7 +124,10 @@ c         call addftraffic(-2048)
       COMMON /adl4fbuf/adl4buf,adl4lbuf,
      +       adl4ibuf,adl4ilbuf,adl4inlbuf
 c
-      IF (adl4ilbuf.eq.-1) adl4ilbuf=adl4ibuf
+      IF (adl4ilbuf.eq.-1) THEN
+         adl4ilbuf=adl4ibuf
+         call RESETADLOOKSTACK()
+      ENDIF
       IF (adl4ilbuf.le.1) THEN
          CALL LOOKBOOLEANARRAY(adl4lbuf, 512)
          adl4inlbuf = .TRUE.
@@ -177,7 +183,7 @@ c======================= INTEGER*4 =========================:
       COMMON /adi4fbuf/adi4buf,adi4lbuf,
      +       adi4ibuf,adi4ilbuf,adi4inlbuf
 c
-c      call addftraffic(4)
+      call addftraffic(4)
       IF (adi4ilbuf.ne.-1) THEN
          adi4ilbuf = -1
          adi4inlbuf = .FALSE.
@@ -185,7 +191,7 @@ c      call addftraffic(4)
       IF (adi4ibuf.ge.512) THEN
          adi4buf(512) = x
          CALL PUSHINTEGER4ARRAY(adi4buf, 512)
-c         call addftraffic(-2048)
+      call addftraffic(-2048)
          adi4ibuf = 1
       ELSE
          adi4buf(adi4ibuf) = x
@@ -200,7 +206,10 @@ c         call addftraffic(-2048)
       COMMON /adi4fbuf/adi4buf,adi4lbuf,
      +       adi4ibuf,adi4ilbuf,adi4inlbuf
 c
-      IF (adi4ilbuf.eq.-1) adi4ilbuf=adi4ibuf
+      IF (adi4ilbuf.eq.-1) THEN
+         adi4ilbuf=adi4ibuf
+         call RESETADLOOKSTACK()
+      ENDIF
       IF (adi4ilbuf.le.1) THEN
          CALL LOOKINTEGER4ARRAY(adi4lbuf, 512)
          adi4inlbuf = .TRUE.
@@ -256,7 +265,7 @@ c======================= INTEGER*8 =========================
       COMMON /adi8fbuf/adi8buf,adi8lbuf,
      +       adi8ibuf,adi8ilbuf,adi8inlbuf
 c
-c      call addftraffic(8)
+      call addftraffic(8)
       IF (adi8ilbuf.ne.-1) THEN
          adi8ilbuf = -1
          adi8inlbuf = .FALSE.
@@ -264,7 +273,7 @@ c      call addftraffic(8)
       IF (adi8ibuf.ge.512) THEN
          adi8buf(512) = x
          CALL PUSHINTEGER8ARRAY(adi8buf, 512)
-c         call addftraffic(-4096)
+      call addftraffic(-4096)
          adi8ibuf = 1
       ELSE
          adi8buf(adi8ibuf) = x
@@ -279,7 +288,10 @@ c         call addftraffic(-4096)
       COMMON /adi8fbuf/adi8buf,adi8lbuf,
      +       adi8ibuf,adi8ilbuf,adi8inlbuf
 c
-      IF (adi8ilbuf.eq.-1) adi8ilbuf=adi8ibuf
+      IF (adi8ilbuf.eq.-1) THEN
+         adi8ilbuf=adi8ibuf
+         call RESETADLOOKSTACK()
+      ENDIF
       IF (adi8ilbuf.le.1) THEN
          CALL LOOKINTEGER8ARRAY(adi8lbuf, 512)
          adi8inlbuf = .TRUE.
@@ -335,7 +347,7 @@ c======================= REAL*4 =========================
       COMMON /adr4fbuf/adr4buf,adr4lbuf,
      +       adr4ibuf,adr4ilbuf,adr4inlbuf
 c
-c      call addftraffic(4)
+      call addftraffic(4)
       IF (adr4ilbuf.ne.-1) THEN
          adr4ilbuf = -1
          adr4inlbuf = .FALSE.
@@ -343,7 +355,7 @@ c      call addftraffic(4)
       IF (adr4ibuf.ge.512) THEN
          adr4buf(512) = x
          CALL PUSHREAL4ARRAY(adr4buf, 512)
-c         call addftraffic(-2048)
+      call addftraffic(-2048)
          adr4ibuf = 1
       ELSE
          adr4buf(adr4ibuf) = x
@@ -358,7 +370,10 @@ c         call addftraffic(-2048)
       COMMON /adr4fbuf/adr4buf,adr4lbuf,
      +       adr4ibuf,adr4ilbuf,adr4inlbuf
 c
-      IF (adr4ilbuf.eq.-1) adr4ilbuf=adr4ibuf
+      IF (adr4ilbuf.eq.-1) THEN
+         adr4ilbuf=adr4ibuf
+         call RESETADLOOKSTACK()
+      ENDIF
       IF (adr4ilbuf.le.1) THEN
          CALL LOOKREAL4ARRAY(adr4lbuf, 512)
          adr4inlbuf = .TRUE.
@@ -414,7 +429,7 @@ c======================= REAL*8 =========================
       COMMON /adr8fbuf/adr8buf,adr8lbuf,
      +       adr8ibuf,adr8ilbuf,adr8inlbuf
 c
-c      call addftraffic(8)
+      call addftraffic(8)
       IF (adr8ilbuf.ne.-1) THEN
          adr8ilbuf = -1
          adr8inlbuf = .FALSE.
@@ -422,7 +437,7 @@ c      call addftraffic(8)
       IF (adr8ibuf.ge.512) THEN
          adr8buf(512) = x
          CALL PUSHREAL8ARRAY(adr8buf, 512)
-c         call addftraffic(-4096)
+      call addftraffic(-4096)
          adr8ibuf = 1
       ELSE
          adr8buf(adr8ibuf) = x
@@ -437,7 +452,10 @@ c         call addftraffic(-4096)
       COMMON /adr8fbuf/adr8buf,adr8lbuf,
      +       adr8ibuf,adr8ilbuf,adr8inlbuf
 c
-      IF (adr8ilbuf.eq.-1) adr8ilbuf=adr8ibuf
+      IF (adr8ilbuf.eq.-1) THEN
+         adr8ilbuf=adr8ibuf
+         call RESETADLOOKSTACK()
+      ENDIF
       IF (adr8ilbuf.le.1) THEN
          CALL LOOKREAL8ARRAY(adr8lbuf, 512)
          adr8inlbuf = .TRUE.
@@ -493,7 +511,7 @@ c======================= REAL*16 =========================
       COMMON /adr16fbuf/adr16buf,adr16lbuf,
      +       adr16ibuf,adr16ilbuf,adr16inlbuf
 c
-c      call addftraffic(16)
+      call addftraffic(16)
       IF (adr16ilbuf.ne.-1) THEN
          adr16ilbuf = -1
          adr16inlbuf = .FALSE.
@@ -501,7 +519,7 @@ c      call addftraffic(16)
       IF (adr16ibuf.ge.512) THEN
          adr16buf(512) = x
          CALL PUSHREAL16ARRAY(adr16buf, 512)
-c         call addftraffic(-8192)
+      call addftraffic(-8192)
          adr16ibuf = 1
       ELSE
          adr16buf(adr16ibuf) = x
@@ -516,7 +534,10 @@ c         call addftraffic(-8192)
       COMMON /adr16fbuf/adr16buf,adr16lbuf,
      +       adr16ibuf,adr16ilbuf,adr16inlbuf
 c
-      IF (adr16ilbuf.eq.-1) adr16ilbuf=adr16ibuf
+      IF (adr16ilbuf.eq.-1) THEN
+         adr16ilbuf=adr16ibuf
+         call RESETADLOOKSTACK()
+      ENDIF
       IF (adr16ilbuf.le.1) THEN
          CALL LOOKREAL16ARRAY(adr16lbuf, 512)
          adr16inlbuf = .TRUE.
@@ -572,7 +593,7 @@ c======================= COMPLEX*8 =========================
       COMMON /adc8fbuf/adc8buf,adc8lbuf,
      +       adc8ibuf,adc8ilbuf,adc8inlbuf
 c
-c      call addftraffic(8)
+      call addftraffic(8)
       IF (adc8ilbuf.ne.-1) THEN
          adc8ilbuf = -1
          adc8inlbuf = .FALSE.
@@ -580,7 +601,7 @@ c      call addftraffic(8)
       IF (adc8ibuf.ge.512) THEN
          adc8buf(512) = x
          CALL PUSHCOMPLEX8ARRAY(adc8buf, 512)
-c         call addftraffic(-4096)
+      call addftraffic(-4096)
          adc8ibuf = 1
       ELSE
          adc8buf(adc8ibuf) = x
@@ -595,7 +616,10 @@ c         call addftraffic(-4096)
       COMMON /adc8fbuf/adc8buf,adc8lbuf,
      +       adc8ibuf,adc8ilbuf,adc8inlbuf
 c
-      IF (adc8ilbuf.eq.-1) adc8ilbuf=adc8ibuf
+      IF (adc8ilbuf.eq.-1) THEN
+         adc8ilbuf=adc8ibuf
+         call RESETADLOOKSTACK()
+      ENDIF
       IF (adc8ilbuf.le.1) THEN
          CALL LOOKCOMPLEX8ARRAY(adc8lbuf, 512)
          adc8inlbuf = .TRUE.
@@ -651,7 +675,7 @@ c======================= COMPLEX*16 =========================
       COMMON /adc16fbuf/adc16buf,adc16lbuf,
      +       adc16ibuf,adc16ilbuf,adc16inlbuf
 c
-c      call addftraffic(16)
+      call addftraffic(16)
       IF (adc16ilbuf.ne.-1) THEN
          adc16ilbuf = -1
          adc16inlbuf = .FALSE.
@@ -659,7 +683,7 @@ c      call addftraffic(16)
       IF (adc16ibuf.ge.512) THEN
          adc16buf(512) = x
          CALL PUSHCOMPLEX16ARRAY(adc16buf, 512)
-c         call addftraffic(-8192)
+      call addftraffic(-8192)
          adc16ibuf = 1
       ELSE
          adc16buf(adc16ibuf) = x
@@ -674,7 +698,10 @@ c         call addftraffic(-8192)
       COMMON /adc16fbuf/adc16buf,adc16lbuf,
      +       adc16ibuf,adc16ilbuf,adc16inlbuf
 c
-      IF (adc16ilbuf.eq.-1) adc16ilbuf=adc16ibuf
+      IF (adc16ilbuf.eq.-1) THEN
+         adc16ilbuf=adc16ibuf
+         call RESETADLOOKSTACK()
+      ENDIF
       IF (adc16ilbuf.le.1) THEN
          CALL LOOKCOMPLEX16ARRAY(adc16lbuf, 512)
          adc16inlbuf = .TRUE.
@@ -726,16 +753,16 @@ C=========== MEASUREMENT OF PUSH/POP TRAFFIC ==========
       COMMON /mmcomtraffic/mmftraffic,mmftrafficM
 c
       mmftraffic = mmftraffic+n
-      if (mmftraffic.ge.1048576) then
- 100     mmftraffic = mmftraffic-1048576
+      if (mmftraffic.ge.1000000) then
+ 100     mmftraffic = mmftraffic-1000000
          mmftrafficM = mmftrafficM+1
-         if (mmftraffic.ge.1048576) then
+         if (mmftraffic.ge.1000000) then
             goto 100
          else
             goto 300
          endif
       else if (mmftraffic.lt.0) then
- 200     mmftraffic = mmftraffic+1048576
+ 200     mmftraffic = mmftraffic+1000000
          mmftrafficM = mmftrafficM-1
          if (mmftraffic.lt.0) then
             goto 200
@@ -750,8 +777,10 @@ c
       INTEGER*8 mmftraffic,mmftrafficM
       COMMON /mmcomtraffic/mmftraffic,mmftrafficM
       call printctraffic()
-      print *,'F Traffic: ',mmftrafficM,' Mb and ',
-     +     (((mmftraffic*1000)/1024)*1000)/1024, ' millionths'
+      call printftrafficinc(mmftrafficM, 1000000, mmftraffic)
+c       write (6,1001) ' F Traffic: ',mmftrafficM,' Mb and ',
+c      +     (((mmftraffic*1000)/1024)*1000)/1024, ' millionths'
+c 1001  format(a,i6,a,i6,a)
       END
 
 C ============ PRINTING THE SIZE OF STACKS AND BUFFERS ==========
@@ -954,6 +983,7 @@ c           LOGICAL adi16inlbuf
 c           COMMON /adi16fbuf/adi16buf,adi16lbuf,
 c          +       adi16ibuf,adi16ilbuf,adi16inlbuf
 c     c
+c           call addftraffic(16)
 c           IF (adi16ilbuf.ne.-1) THEN
 c              adi16ilbuf = -1
 c              adi16inlbuf = .FALSE.
@@ -961,6 +991,7 @@ c           ENDIF
 c           IF (adi16ibuf.ge.512) THEN
 c              adi16buf(512) = x
 c              CALL PUSHINTEGER16ARRAY(adi16buf, 512)
+c           call addftraffic(-8192)
 c              adi16ibuf = 1
 c           ELSE
 c              adi16buf(adi16ibuf) = x
@@ -975,7 +1006,10 @@ c           LOGICAL adi16inlbuf
 c           COMMON /adi16fbuf/adi16buf,adi16lbuf,
 c          +       adi16ibuf,adi16ilbuf,adi16inlbuf
 c     c
-c           IF (adi16ilbuf.eq.-1) adi16ilbuf=adi16ibuf
+c           IF (adi16ilbuf.eq.-1) THEN
+c              adi16ilbuf=adi16ibuf
+c              call RESETADLOOKSTACK()
+c           ENDIF
 c           IF (adi16ilbuf.le.1) THEN
 c              CALL LOOKINTEGER16ARRAY(adi16lbuf, 512)
 c              adi16inlbuf = .TRUE.
@@ -1031,6 +1065,7 @@ c           LOGICAL adr32inlbuf
 c           COMMON /adr32fbuf/adr32buf,adr32lbuf,
 c          +       adr32ibuf,adr32ilbuf,adr32inlbuf
 c     c
+c           call addftraffic(32)
 c           IF (adr32ilbuf.ne.-1) THEN
 c              adr32ilbuf = -1
 c              adr32inlbuf = .FALSE.
@@ -1038,6 +1073,7 @@ c           ENDIF
 c           IF (adr32ibuf.ge.512) THEN
 c              adr32buf(512) = x
 c              CALL PUSHREAL32ARRAY(adr32buf, 512)
+c           call addftraffic(-16384)
 c              adr32ibuf = 1
 c           ELSE
 c              adr32buf(adr32ibuf) = x
@@ -1052,7 +1088,10 @@ c           LOGICAL adr32inlbuf
 c           COMMON /adr32fbuf/adr32buf,adr32lbuf,
 c          +       adr32ibuf,adr32ilbuf,adr32inlbuf
 c     c
-c           IF (adr32ilbuf.eq.-1) adr32ilbuf=adr32ibuf
+c           IF (adr32ilbuf.eq.-1) THEN
+c              adr32ilbuf=adr32ibuf
+c              call RESETADLOOKSTACK()
+c           ENDIF
 c           IF (adr32ilbuf.le.1) THEN
 c              CALL LOOKREAL32ARRAY(adr32lbuf, 512)
 c              adr32inlbuf = .TRUE.
@@ -1108,6 +1147,7 @@ c           LOGICAL adc4inlbuf
 c           COMMON /adc4fbuf/adc4buf,adc4lbuf,
 c          +       adc4ibuf,adc4ilbuf,adc4inlbuf
 c     c
+c           call addftraffic(4)
 c           IF (adc4ilbuf.ne.-1) THEN
 c              adc4ilbuf = -1
 c              adc4inlbuf = .FALSE.
@@ -1115,6 +1155,7 @@ c           ENDIF
 c           IF (adc4ibuf.ge.512) THEN
 c              adc4buf(512) = x
 c              CALL PUSHCOMPLEX4ARRAY(adc4buf, 512)
+c           call addftraffic(-2048)
 c              adc4ibuf = 1
 c           ELSE
 c              adc4buf(adc4ibuf) = x
@@ -1129,7 +1170,10 @@ c           LOGICAL adc4inlbuf
 c           COMMON /adc4fbuf/adc4buf,adc4lbuf,
 c          +       adc4ibuf,adc4ilbuf,adc4inlbuf
 c     c
-c           IF (adc4ilbuf.eq.-1) adc4ilbuf=adc4ibuf
+c           IF (adc4ilbuf.eq.-1) THEN
+c              adc4ilbuf=adc4ibuf
+c              call RESETADLOOKSTACK()
+c           ENDIF
 c           IF (adc4ilbuf.le.1) THEN
 c              CALL LOOKCOMPLEX4ARRAY(adc4lbuf, 512)
 c              adc4inlbuf = .TRUE.
@@ -1185,6 +1229,7 @@ c           LOGICAL adc32inlbuf
 c           COMMON /adc32fbuf/adc32buf,adc32lbuf,
 c          +       adc32ibuf,adc32ilbuf,adc32inlbuf
 c     c
+c           call addftraffic(32)
 c           IF (adc32ilbuf.ne.-1) THEN
 c              adc32ilbuf = -1
 c              adc32inlbuf = .FALSE.
@@ -1192,6 +1237,7 @@ c           ENDIF
 c           IF (adc32ibuf.ge.512) THEN
 c              adc32buf(512) = x
 c              CALL PUSHCOMPLEX32ARRAY(adc32buf, 512)
+c           call addftraffic(-16384)
 c              adc32ibuf = 1
 c           ELSE
 c              adc32buf(adc32ibuf) = x
@@ -1206,7 +1252,10 @@ c           LOGICAL adc32inlbuf
 c           COMMON /adc32fbuf/adc32buf,adc32lbuf,
 c          +       adc32ibuf,adc32ilbuf,adc32inlbuf
 c     c
-c           IF (adc32ilbuf.eq.-1) adc32ilbuf=adc32ibuf
+c           IF (adc32ilbuf.eq.-1) THEN
+c              adc32ilbuf=adc32ibuf
+c              call RESETADLOOKSTACK()
+c           ENDIF
 c           IF (adc32ilbuf.le.1) THEN
 c              CALL LOOKCOMPLEX32ARRAY(adc32lbuf, 512)
 c              adc32inlbuf = .TRUE.
@@ -1277,6 +1326,7 @@ c           LOGICAL adz9inlbuf
 c           COMMON /adz9fbuf/adz9buf,adz9lbuf,
 c          +       adz9ibuf,adz9ilbuf,adz9inlbuf
 c     c
+c           call addftraffic(9)
 c           IF (adz9ilbuf.ne.-1) THEN
 c              adz9ilbuf = -1
 c              adz9inlbuf = .FALSE.
@@ -1284,6 +1334,7 @@ c           ENDIF
 c           IF (adz9ibuf.ge.512) THEN
 c              adz9buf(512) = x
 c              CALL PUSHTTTT9ARRAY(adz9buf, 512)
+c           call addftraffic(-9*512)
 c              adz9ibuf = 1
 c           ELSE
 c              adz9buf(adz9ibuf) = x
@@ -1298,7 +1349,10 @@ c           LOGICAL adz9inlbuf
 c           COMMON /adz9fbuf/adz9buf,adz9lbuf,
 c          +       adz9ibuf,adz9ilbuf,adz9inlbuf
 c     c
-c           IF (adz9ilbuf.eq.-1) adz9ilbuf=adz9ibuf
+c           IF (adz9ilbuf.eq.-1) THEN
+c              adz9ilbuf=adz9ibuf
+c              call RESETADLOOKSTACK()
+c           ENDIF
 c           IF (adz9ilbuf.le.1) THEN
 c              CALL LOOKTTTT9ARRAY(adz9lbuf, 512)
 c              adz9inlbuf = .TRUE.

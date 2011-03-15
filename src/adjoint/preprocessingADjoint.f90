@@ -9,50 +9,42 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine preprocessingADjoint(level)
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Perform the preprocessing tasks for the adjoint solver, such   *
-!     * as assertions testing, memory allocation and global indexing.  *
-!     *                                                                *
-!     ******************************************************************
-!
-      use communication
-      use precision
-      implicit none
-!
-!     Subroutine arguments.
-!
-      integer(kind=intType), intent(in) :: level
-!
-!     Local variables.
-!
-      integer :: ierr
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Begin execution.                                               *
-!     *                                                                *
-!     ******************************************************************
-!
-      !print *,' in preprocessing adjoint'
-      ! Test the discrete adjoint solver assertions.
+subroutine preprocessingADjoint
+  !
+  !     ******************************************************************
+  !     *                                                                *
+  !     * Perform the preprocessing tasks for the adjoint solver, such   *
+  !     * as assertions testing, memory allocation and global indexing.  *
+  !     *                                                                *
+  !     ******************************************************************
+  !
+  use communication
+  use precision
+  implicit none
 
-      call assertionsADjoint(level)
-      !print *,'assertions called'
-      ! Allocate the memory for the global cell indexing of the
-      ! computational mesh, later used to assemble the global
-      ! adjoint system of equations.
+  !     Local variables.
+  !
+  integer(kind=intType) :: ierr,level
+  !
+  !     ******************************************************************
+  !     *                                                                *
+  !     * Begin execution.                                               *
+  !     *                                                                *
+  !     ******************************************************************
+  !
 
-      call allocMemADjoint(level)
-      !print *,'memory allocated'
-      ! Determine the global cell and Node numbering.
+  ! Test the discrete adjoint solver assertions.
+  level = 1_intType
 
-      call setGlobalCellsAndNodes(level)
-      !print *,'global node indices set'
-      ! Synchronize the processors.
+  call assertionsADjoint(level)
+  
+  ! Allocate the memory for the global cell indexing of the
+  ! computational mesh, later used to assemble the global
+  ! adjoint system of equations.
 
-      call mpi_barrier(SUmb_comm_world, ierr)
+  call allocMemADjoint(level)
+     
+  ! Determine the global cell and Node numbering.
+  call setGlobalCellsAndNodes(level)
 
-      end subroutine preprocessingADjoint
+end subroutine preprocessingADjoint

@@ -580,6 +580,7 @@
                    ! This is a combination of rotation speed of this
                    ! block and the entire rigid body rotation.
 
+                  
                    sAdj(i,j,k,1,sps2) = sc(1) + velxGrid           &
                               + derivrotationMatrixAdj(1,1)*xxc(1) &
                               + derivrotationMatrixAdj(1,2)*xxc(2) &

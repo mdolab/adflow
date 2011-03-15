@@ -163,7 +163,8 @@
                     
                     call terminate("initRes", &
                                   "BDF ADjoint not yet implemented")
-                    
+                    print *,'here'
+                    stop
 
 !!$                   ! Store the inverse of the physical nonDimensional
 !!$                   ! time step a bit easier.

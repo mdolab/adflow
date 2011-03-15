@@ -168,6 +168,16 @@
            ! Set the number of grid files to be written.
            ! This depends on quite a few things.
 
+           ! GKK The logic below is seriously flawed must never had
+           ! been tested. If nGridsToWrite is set to 0 which is what
+           ! it should be set at if the time spectral grid files are
+           ! already written, then in writeCGNSGridFile, fileIDs are
+           ! and CGNSbases are NOT allocated at ALL. Then when you try
+           ! to write the volume grid, and index into fileIDs and
+           ! CGNSbases, you're fucked. nGridsToWrite MUST ALWAYS be
+           ! ntimeIntervalsSpectral regardless. 
+
+
            if( writeGrid ) then
 
              ! Need some additional checks.
@@ -194,7 +204,7 @@
                ! this is not necessary, because they have already been
                ! written earlier and they have not changed.
 
-               nGridsToWrite = 0
+               nGridsToWrite = nTimeIntervalsSpectral! 0
 
              endif
 
@@ -202,7 +212,7 @@
 
              ! It is not needed to write the grid files.
 
-             nGridsToWrite = 0
+             nGridsToWrite = nTimeIntervalsSpectral! 0
 
            endif
 
@@ -214,11 +224,11 @@
 !      *                                                                *
 !      ******************************************************************
 !
+
        if( writeGrid ) then
 
          ! Grid file(s) will be written. Compare the (base) names of the
          ! grid and solution files and set useLinksInCGNS accordingly.
-
          if(newGridFile == solFile) then
            useLinksInCGNS = .false.
          else
@@ -238,7 +248,7 @@
          endif
 
        endif
-!
+
 !      ******************************************************************
 !      *                                                                *
 !      * Set the pointers for IOVar if grid files need to be written.   *

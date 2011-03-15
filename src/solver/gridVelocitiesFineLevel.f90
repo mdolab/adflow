@@ -32,6 +32,7 @@
        use inputPhysics
        use inputTSStabDeriv
        use monitor
+       use communication
        implicit none
 !
 !      Subroutine arguments.
@@ -122,7 +123,10 @@
              ! well as the rotation point; the latter may vary in time due
              ! to rigid body translation.
              
+
+
              call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+
              velxgrid0 = rotationMatrix(1,1)*velxgrid0 &
                   + rotationMatrix(1,2)*velygrid0 &
                   + rotationMatrix(1,3)*velzgrid0
@@ -135,7 +139,6 @@
           elseif(tsAlphaMode)then
              ! get the baseline alpha and determine the liftIndex
              call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
-             
              !Determine the alpha for this time instance
              alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
                              degreeFourAlpha,  omegaFourAlpha,     &
@@ -150,7 +153,7 @@
              velxGrid0 = (aInf*machgrid)*(-velDir(1))
              velyGrid0 = (aInf*machgrid)*(-velDir(2))
              velzGrid0 = (aInf*machgrid)*(-velDir(3))
-             !print *,'base velocity',machgrid, velxGrid0 , velyGrid0 , velzGrid0 
+            ! if (myid ==0) print *,'base velocity',machgrid, velxGrid0 , velyGrid0 , velzGrid0 
 
           elseif(tsBetaMode)then
              ! get the baseline alpha and determine the liftIndex
@@ -187,15 +190,12 @@
           end if
        endif
 
-       !print *,'looping domains'
        ! Loop over the number of local blocks.
-
        domains: do nn=1,nDom
 
          ! Set the pointers for this block.
 
          call setPointers(nn, groundLevel, sps)
-
          ! Check for a moving block.
 
          testMoving: if( blockIsMoving ) then
@@ -293,7 +293,6 @@
                    s(i,j,k,1) = sc(1)*oneOver8dt
                    s(i,j,k,2) = sc(2)*oneOver8dt
                    s(i,j,k,3) = sc(3)*oneOver8dt
-
                  enddo
                enddo
              enddo

@@ -27,6 +27,7 @@
        use communication
        use su_cgns
        use outputMod
+       use inputIteration
        implicit none
 !
 !      Local parameter, the cell dimension.
@@ -63,7 +64,7 @@
        ! Write a message that the solution file(s) are being written.
        ! Of course only processor 0 does this.
 
-       if(myID == 0) then
+       if(myID == 0 .and. printIterations) then
          print "(a)", "#"
          print "(a)", "# Writing surface solution file(s) ..."
        endif
@@ -196,7 +197,7 @@
        ! Write a message that the solution file(s) have been written.
        ! Of course only processor 0 does this.
 
-       if(myID == 0) then
+       if(myID == 0 .and. printIterations) then
          print "(a)", "# Surface solution file(s) written"
          print "(a)", "#"
        endif

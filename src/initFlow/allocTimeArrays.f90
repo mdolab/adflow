@@ -39,6 +39,14 @@
 !
        ! Allocate the memory for both the time array as well as the
        ! data array.
+       print *,'ntimeTot,nmon:',ntimetot,nmon
+       if (allocated(timeArray)) then 
+          deallocate(timeArray) 
+       end if
+       if (allocated(timeDataArray)) then
+          deallocate(timeDataArray) 
+       end if
+          
        allocate(timeArray(nTimeTot), &
                 timeDataArray(nTimeTot,nMon), stat=ierr)
        if(ierr /= 0)                       &

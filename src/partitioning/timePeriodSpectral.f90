@@ -59,6 +59,7 @@
 
        timeDetermined = .false.
 
+
        externalTest: if(flowType == externalFlow) then
 
          ! X-rotation.
@@ -102,10 +103,10 @@
 
 
          ! Alpha
-
+         !print *,'degreeFourAlpha',degreefouralpha,omegafouralpha,sincoeffouralpha
          if(degreeFourAlpha > 0) then
            tt = two*pi/omegaFourAlpha
-
+           !print *,'timePeriod',tt
            ! Check if a time period was already determined. If so, try
            ! to determine a common time. Otherwise just copy the data.
 
@@ -172,9 +173,11 @@
        ! If it was possible to determine the time, copy it to the
        ! sections and return.
 
+
        if( timeDetermined ) then
          do nn=1,nSections
            sections(nn)%timePeriod = timePeriod/sections(nn)%nSlices
+           !print *,'sectionTimePeriod',sections(nn)%timePeriod,nn
          enddo
          return
        endif

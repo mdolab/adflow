@@ -2,12 +2,13 @@ MODULE TAPENADE_DP_TEST
 
   IMPLICIT NONE
   REAL*8 fwdarray(1000), revarray(1000)
-  CHARACTER*20 dppoints(1000)
+  CHARACTER*20 dppoints(0:1000)
   INTEGER :: indexinarray = 1
   INTEGER :: maxindexinarray = 0
   REAL*8 :: dotp=0.0
   INTEGER :: unitcallcount = 0
-  INTEGER :: triggercount = 3
+  INTEGER :: dptriggercount = 1
+  REAL*8 :: dpdelta
 
 CONTAINS
 
@@ -21,14 +22,16 @@ CONTAINS
     unitcallcount = unitcallcount - 1
   end subroutine DPREVUPDATECOUNT
 
-  LOGICAL FUNCTION DPFWDTESTCOUNT(unit)
+  LOGICAL FUNCTION DPFWDTESTCOUNT(unit, pos)
     CHARACTER unit*(*)
-    DPFWDTESTCOUNT = (unitcallcount.EQ.triggercount)
+    INTEGER pos
+    DPFWDTESTCOUNT = (unitcallcount.EQ.dptriggercount)
   end FUNCTION DPFWDTESTCOUNT
 
-  LOGICAL FUNCTION DPREVTESTCOUNT(unit)
+  LOGICAL FUNCTION DPREVTESTCOUNT(unit, pos)
     CHARACTER unit*(*)
-    DPREVTESTCOUNT = (unitcallcount.EQ.triggercount)
+    INTEGER pos
+    DPREVTESTCOUNT = (unitcallcount.EQ.dptriggercount)
   end FUNCTION DPREVTESTCOUNT
 
   subroutine DPFWDREAL8(xd)
@@ -113,6 +116,7 @@ CONTAINS
   subroutine DPFWDINITDISPLAY(point)
     CHARACTER point*(*) 
     dotp = 0.0
+    dppoints(0)=point
     print *, point,' call#',unitcallcount
   end subroutine DPFWDINITDISPLAY
 
@@ -145,13 +149,31 @@ CONTAINS
   subroutine DPPRINTSUMMARY()
     INTEGER i
     print *, 'Dot Product test summary:'
+    print *,dppoints(0)
     do i=1,maxindexinarray,1
        if (.not.(fwdarray(i).eq.revarray(i))) then
           print *,fwdarray(i)
           print *,revarray(i)
+       else
+          print *,fwdarray(i),'OK!'
        endif
        print *,dppoints(i)
     enddo
   end subroutine DPPRINTSUMMARY
+
+  subroutine DPPRINTPARTIALSUM(point)
+    CHARACTER point*(*)
+    print *, 'Partial sum at ',point,': ',dotp
+  end subroutine DPPRINTPARTIALSUM
+
+  subroutine DPINITDELTA()
+    dpdelta = 0.0_8
+  end subroutine DPINITDELTA
+
+  subroutine DPPRINTDELTA(point)
+    CHARACTER point*(*)
+    print *, 'Delta at ',point,': ',dotp-dpdelta
+    dpdelta = dotp
+  end subroutine DPPRINTDELTA
 
 END MODULE TAPENADE_DP_TEST

@@ -38,7 +38,7 @@ vpath %.o $(SUMB_OBJDIR)
 
 FF90_MODULES = 
 
-FF90_OBJECTS = delq3dm_d.o \
+FF90_OBJECTS = #delq3dm_d.o \
                warp_local_d.o \
 	       warpblk_d.o  \
                warpq3dm_d.o \

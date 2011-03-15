@@ -81,8 +81,8 @@
 
        ! Initialize the local arrays to monitor the massflows to zero.
 
-       massFlowFamilyInv  = zero
-       massFlowFamilyDiss = zero
+       !!massFlowFamilyInv  = zero
+       !!massFlowFamilyDiss = zero
 
        ! Set the value of the discretization, depending on the grid level,
        ! and the logical fineGrid, which indicates whether or not this

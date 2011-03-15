@@ -1,0 +1,1204 @@
+!
+!      ******************************************************************
+!      *                                                                *
+!      * File:          NKsolver.F90                                    *
+!      * Author:        Gaetan Kenway                                   *
+!      * Starting date: 11-27-2010                                      *
+!      * Last modified: 11-27-2010                                      *
+!      *                                                                *
+!      ******************************************************************
+
+!
+!      ******************************************************************
+!      *                                                                *
+!      * File:          NKsolver.F90                                    *
+!      * Author:        Gaetan Kenway                                   *
+!      * Starting date: 11-27-2010                                      *
+!      * Last modified: 11-27-2010                                      *
+!      *                                                                *
+!      ******************************************************************
+!
+subroutine setupNKsolver
+
+  ! Setup the PETSc objects for the Newton-Krylov
+  ! solver. destroyNKsolver can be used to destroy the objects created
+  ! in this function
+
+  use communication
+  use constants
+  use inputTimeSpectral
+  use flowVarRefState
+  use ADjointVars , only: nCellsLocal
+  use NKSolverVars, only: snes,dRdw,dRdwPre,ctx,jacobian_lag,NKsolvedOnce, &
+       snes_stol,snes_max_its,snes_max_funcs,nksolversetup,wVec,rVec,itertot0
+  use InputIO ! L2conv,l2convrel
+  use inputIteration
+  use monitor
+  use killSignals
+  use iteration
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
+  ! Working Variables
+  integer(kind=intType) :: ierr,nDimw
+  integer(kind=intType) , dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
+  real(kind=realType) :: rhoRes,rhoRes1,totalRRes
+
+  external FormFunction,FormJacobian,snes_monitor
+
+  if (.not. NKsolverSetup) then
+
+     !  Create nonlinear solver context
+     call SNESCreate(SUMB_PETSC_COMM_WORLD,snes,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     !  Create residual and state vectors
+     nDimW = nw * nCellsLocal * nTimeIntervalsSpectral
+     call VecCreateMPI(SUMB_PETSC_COMM_WORLD,nDimw,PETSC_DETERMINE,wVec,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     call VecSetBlockSize(wVec,nw,ierr);  call EChk(ierr,__FILE__,__LINE__)
+     call VecDuplicate(wVec, rVec, ierr);  call EChk(ierr,__FILE__,__LINE__)
+     
+     !  Set Non-linear Function
+     call SNESSetFunction(snes,rVec,FormFunction,ctx,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     !  Create Jacobian and Approximate Jacobian Matrices
+     call MatCreateSNESMF(snes,dRdw,ierr);  call EChk(ierr,__FILE__,__LINE__)
+     
+     ! Need to get correct Pre-allocation for dRdwPre; we can re-use
+     ! adjoint routines for this
+     allocate( nnzDiagonal(nCellsLocal*nTimeIntervalsSpectral),&
+          nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
+
+     call drdwPCPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal*nTimeIntervalsSpectral)
+     call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
+          nDimW, nDimW,                     &
+          PETSC_DETERMINE, PETSC_DETERMINE, &
+          0, nnzDiagonal,         &
+          0, nnzOffDiag,            &
+          dRdWPre, ierr); call EChk(ierr,__FILE__,__LINE__)
+     
+     deallocate(nnzDiagonal,nnzOffDiag)
+     
+#ifdef USE_PETSC_3
+     call MatSetOption(dRdWPre, MAT_ROW_ORIENTED,PETSC_FALSE, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+#else
+     call MatSetOption(dRdWPre, MAT_COLUMN_ORIENTED, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+#endif
+     
+     !  Set Jacobian Function 
+     call SNESSetJacobian(snes,dRdw,dRdwPre,FormJacobian,ctx,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     ! Set SNES Options
+     ! Store the number of iterations completed by the RK solver
+     iterTot0 = iterTot
+     call SNESMonitorSet(snes,snes_monitor,ctx,PETSC_NULL_FUNCTION,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Use Eisenstat-Walker convergence criteria for KSP solver. Recommended
+     call SNESKSPSetUseEW(snes,.True.,ierr)  
+     call EChk(ierr,__FILE__,__LINE__)
+     call SNESSetFromOptions(snes,ierr); call EChk(ierr,__FILE__,__LINE__)
+
+     ! See the monitor function for more information as to why this is -2
+     call SNESSetLagJacobian(snes, -2_intType, ierr); call EChk(ierr,__FILE__,__LINE__)
+
+     ! Since we're limiting the gmres to no restarts...there's a good
+     ! chance that we're get lots of solve failues which is OK. Set
+     ! this to the ncycles....basically large enough that it never happens
+     call SNESSetMaxLinearSolveFailures(snes, ncycles,ierr); call EChk(ierr,__FILE__,__LINE__)
+     
+     ! We are going to have to compute what the tolerances should be
+     ! since we are going to be using the same convergence criteria as
+     ! SUmb originally uses, that is L2Conv and L2ConvRel. This however,
+     ! gets a little trickier, since the NKsolver will always be called
+     ! after the RK solver has been run at least once to get a good
+     ! starting point. 
+
+     NKSolverSetup = .True.
+     NKSolvedOnce = .False.
+  end if
+end subroutine setupNKsolver
+
+subroutine destroyNKsolver
+
+  use NKsolverVars
+  implicit none
+  integer(kind=intType) :: ierr
+  
+  if (NKSolverSetup) then
+
+     ! We will destroy the PETSc variables created in setupNKsolver
+     call SNESDestroy(snes,ierr) ! Also destroys the underlying ksp and
+                              ! pc contexts
+     call EChk(ierr,__FILE__,__LINE__)
+     call MatDestroy(dRdw,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     call MatDestroy(dRdwPre,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     call VecDestroy(wVec,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     call VecDestroy(rVec,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     NKSolverSetup = .False.
+  end if
+end subroutine DestroyNKsolver
+
+subroutine NKsolver
+  use communication
+  use constants
+  use inputTimeSpectral
+  use flowVarRefState
+  use ADjointVars , only: nCellsLocal
+  use NKSolverVars, only: snes,dRdw,dRdwPre,ctx,jacobian_lag,&
+       snes_stol,snes_max_funcs,nksolversetup,rhoRes0,rhoresstart, &
+       snes_rtol,snes_atol,totalR0,itertot0,wVec,rVec,reason,NKSolvedOnce
+  use InputIO ! L2conv,l2convrel
+  use inputIteration
+  use monitor
+  use killSignals
+  use iteration
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
+  integer(kind=intTYpe) :: sns_max_its,ierr,snes_max_its,temp
+  real(kind=realType) :: rhoRes,totalRRes,rhoRes1
+
+  ! We are going to have to compute what the tolerances should be
+  ! since we are going to be using the same convergence criteria as
+  ! SUmb originally uses, that is L2Conv and L2ConvRel. This however,
+  ! gets a little trickier, since the NKsolver will always be called
+  ! after the RK solver has been run at least once to get a good
+  ! starting point. 
+
+  snes_stol = 1e-14
+  snes_max_funcs = ncycles-iterTot
+  ! Since we're only interested in the maximum function evals, just
+  ! set the max its to the same value...it will always punch out on
+  ! funcs before iterations in this case
+
+  snes_max_its = ncycles-iterTot
+
+  ! Determine the current level of convergence of the solution
+
+  call getCurrentResidual(rhoRes,totalRRes)
+
+  ! We need to compute two convergences: One coorsponding to L2ConvRel
+  ! and one for L2Conv
+     
+  snes_rtol = (rhoResStart * L2ConvRel)/ rhoRes  ! Target / Current
+     
+  ! Absolute Tol is the original totalR * L2conv
+
+  snes_atol = totalR0 * L2Conv
+
+  call SNESSetTolerances(snes,snes_atol,snes_rtol,snes_stol,snes_max_its,&
+       snes_max_funcs,ierr); call EChk(ierr,__FILE__,__LINE__)
+
+  ! Note: the krylov linear solver options are set in FormJacobian
+
+  ! Form the initial guess from the current w-vector
+  call setwVec(wVec)
+
+  ! Solve IT!
+  call SNESSolve(snes,PETSC_NULL_OBJECT,wVec,ierr) ! PETSC_NULL_OBJECT
+                                                   ! MAY GIVE MEMORY
+                                                   ! LEAK!!!!!!
+  
+  NKSolvedOnce = .True.
+  call EChk(ierr,__FILE__,__LINE__)
+  iterTot = iterTot0
+
+  call SNESGetConvergedReason(snes,reason,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  if (reason == SNES_CONVERGED_FNORM_ABS .or. &
+      reason == SNES_CONVERGED_FNORM_RELATIVE .or. &
+      reason == SNES_CONVERGED_PNORM_RELATIVE) then
+     routineFailed = .False. 
+  else
+     routineFailed = .True. 
+  end if
+
+end subroutine NKsolver
+
+subroutine FormFunction(snes,wVec,rVec,ctx,ierr)
+  ! ---------------------------------------------------------------------
+  !
+  !  FormFunction - Evaluates nonlinear function, f(x).
+  !
+  !  Input Parameters:
+  !  snes  - the SNES context
+  !  wVec  - input vector
+  !
+  !  Currnet ctx( ) doesn't have anythign in it
+  !
+  !  Output Parameter:
+  !  f     - vector with newly computed function
+  use precision
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
+  ! PETSc Variables
+  SNES    snes
+  Vec     wVec, rVec
+  PetscFortranAddr ctx(*)
+  integer(kind=intType) :: ierr
+
+  ! This is just a shell routine that runs the more broadly useful
+  ! computeResidualNK subroutine
+  call setW(wVec)
+  call computeResidualNK()
+  call setRVec(rVec)
+  ierr = 0
+end subroutine FormFunction
+
+
+subroutine FormFunction2(ctx,wVec,rVec,ierr)
+  ! This is basically a copy of FormFunction, however it has a
+  ! different calling sequence from PETSc. It performs the identical
+  ! function.
+
+  use precision
+  use flowVarRefState
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
+  ! PETSc Variables
+  PetscFortranAddr ctx(*)
+  Vec     wVec, rVec
+  integer(kind=intType) :: ierr
+
+  ! This is just a shell routine that runs the more broadly useful
+  ! computeResidualNK subroutine
+
+  call setW(wVec)
+  call computeResidualNK()
+  call setRVec(rVec)
+  ierr = 0
+end subroutine FormFunction2
+
+subroutine computeResidualNK()
+  use blockPointers
+  use inputTimeSpectral
+  use flowvarrefstate
+  use iteration
+  use inputPhysics 
+  implicit none
+  ! Local Variables
+  integer(kind=intType) :: ierr,i,j,k,l,sps,nn
+  logical secondHalo ,correctForK
+  real(kind=realType) :: gm1,v2,val
+
+  ! Next we Run the equilivent of the residual routine. Note that the
+  ! residual, dw is left in the fortran data structures. Separate
+  ! routines can be used to set this in PETSc (setRVec) or to return
+  ! the residuals to python getRes
+  secondHalo = .True. 
+
+  currentLevel = 1_intType
+  groundLevel = 1_intTYpe
+  ! Next we need to compute the pressures
+  gm1 = gammaConstant - one
+  spectralLoop: do sps=1,nTimeIntervalsSpectral
+     domainsState: do nn=1,nDom
+        ! Set the pointers to this block.
+        call setPointers(nn, currentLevel, sps)
+
+        do k=2,kl 
+           do j=2,jl
+              do i=2,il
+
+                 v2 = w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 &
+                      + w(i,j,k,ivz)**2
+
+                 p(i,j,k) = gm1*(w(i,j,k,irhoE) &
+                      - half*w(i,j,k,irho)*v2)
+                 p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
+              enddo
+           enddo
+        enddo
+     end do domainsState
+  end do spectralLoop
+
+  !   Apply BCs
+  call applyAllBC(secondHalo)
+
+  ! Exchange solution -- always the fine level
+   call whalo2(1_intType, 1_intType, nMGVar, .true., &
+       .true., .true.)
+
+   ! Why does this need to be set?
+  rkStage = 0
+ 
+  call timestep(.false.)
+  call initres(1_intType, nwf)
+  call residual 
+  
+end subroutine computeResidualNK
+
+subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
+  use communication
+  use precision 
+  use NKSolverVars,only : ksp_solver_type,ksp_subspace,global_pc_type,&
+       asm_overlap,local_pc_ilu_level,local_pc_ordering
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
+  SNES           snes
+  Mat            dRdw,dRdwPre 
+  KSP            ksp,subksp
+  PC             pc,subpc
+  Vec            wVec,rVec
+  PetscFortranAddr ctx(3)
+  MatStructure   flag 
+  PetscInt nlocal,first,Nsub,length
+  integer(kind=intType) ::ierr
+
+  ! Local Variables
+  logical secondHalo
+
+  ! Dummy assembly begin/end calls for the matrix-free Matrx
+  call MatAssemblyBegin(dRdw,MAT_FINAL_ASSEMBLY,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  call MatAssemblyEnd(dRdw,MAT_FINAL_ASSEMBLY,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Assemble the approximate PC
+  call setupNK_KSP_PC(dRdwPre)
+  flag = SAME_NONZERO_PATTERN
+  ! Setup the required options for the KSP solver
+  call SNESGetKSP(snes,ksp,ierr);                   call EChk(ierr,__FILE__,__LINE__)
+  call KSPSetType(ksp,ksp_solver_type,ierr);       call EChk(ierr,__FILE__,__LINE__)
+  call KSPGMRESSetRestart(ksp, ksp_subspace,ierr);  call EChk(ierr,__FILE__,__LINE__)
+  call KSPSetPreconditionerSide(ksp,PC_RIGHT,ierr); call EChk(ierr,__FILE__,__LINE__)
+
+  ! Setup the required options for the Global PC
+  call KSPGetPC(ksp,pc,ierr);                 call EChk(ierr,__FILE__,__LINE__)
+  call PCSetType(pc,global_pc_type,ierr);     call EChk(ierr,__FILE__,__LINE__)
+
+  if (trim(global_pc_type) == 'asm') then
+     call PCASMSetOverlap(pc,asm_overlap,ierr);  call EChk(ierr,__FILE__,__LINE__)
+     call PCSetup(pc,ierr);                      call EChk(ierr,__FILE__,__LINE__)
+     call PCASMGetSubKSP( pc, nlocal,  first, subksp, ierr );          call EChk(ierr,__FILE__,__LINE__)  
+  end if
+
+  if (trim(global_pc_type) == 'bjacobi') then
+     call PCSetup(pc,ierr);                      call EChk(ierr,__FILE__,__LINE__)
+     call PCBJacobiGetSubKSP(pc,nlocal,first,subksp,ierr);   call EChk(ierr,__FILE__,__LINE__)
+  end if
+
+
+  ! Setup the required options for the Local PC
+  call KSPGetPC(subksp, subpc, ierr );                              call EChk(ierr,__FILE__,__LINE__)
+  call PCSetType(subpc, 'ilu', ierr);                       call EChk(ierr,__FILE__,__LINE__)
+  call PCFactorSetLevels(subpc, local_pc_ilu_level, ierr);          call EChk(ierr,__FILE__,__LINE__)  
+  call PCFactorSetMatOrderingtype(subpc, local_pc_ordering, ierr ); call EChk(ierr,__FILE__,__LINE__) 
+  call KSPSetType(subksp, KSPPREONLY, ierr);    
+  call EChk(ierr,__FILE__,__LINE__)  
+
+  ierr = 0
+  
+end subroutine FormJacobian
+
+subroutine setWVec(wVec)
+
+  ! Set the petsc vector wVec from the current SUmb soltuion in w
+  use communication
+  use blockPointers
+  use inputTimeSpectral
+  use flowvarrefstate 
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+  
+  Vec     wVec
+  integer(kind=intType) :: ierr,nn,sps,i,j,k,l
+  real(kind=realType) :: states(nw)
+  
+  do sps=1,nTimeIntervalsSpectral
+     do nn=1,nDom
+        call setPointersAdj(nn,1_intType,sps)
+        ! Copy off w to wVec
+        do k=2,kl
+           do j=2,jl
+              do i=2,il
+                 do l=1,nw
+                    states(l) = w(i,j,k,l)
+                 end do
+                 call VecSetValuesBlocked(wVec,1,globalCell(i,j,k),states,&
+                      INSERT_VALUES,ierr)
+                 call EChk(ierr,__FILE__,__LINE__)
+              end do
+           end do
+        end do
+     end do
+  end do
+  call VecAssemblyBegin(wVec,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  call VecAssemblyEnd(wVec,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+end subroutine setWVec
+
+subroutine setRVec(rVec)
+  ! Set the current residual in dw into the PETSc Vector
+
+  use communication
+  use blockPointers
+  use inputtimespectral
+  use flowvarrefstate
+  use inputiteration
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
+  Vec     rVec
+  integer(kind=intType) :: ierr,nn,sps,i,j,k
+  real(kind=realType) :: ovv,temp
+
+  do sps=1,nTimeIntervalsSpectral
+     do nn=1,nDom
+        call setPointersAdj(nn,1_intType,sps)
+        ! Copy off dw/vol to rVec
+        do k=2,kl
+           do j=2,jl
+              do i=2,il
+                 ovv = 1/vol(i,j,k)
+                 call VecSetValuesBlocked(rVec,1,globalCell(i,j,k),&
+                      dw(i,j,k,:)*ovv, INSERT_VALUES,ierr)
+                 call EChk(ierr,__FILE__,__LINE__)
+              end do
+           end do
+        end do
+     end do
+  end do
+
+  call VecAssemblybegin(rVec,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  call VecAssemblyEnd(rVec,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+end subroutine setRVec
+
+subroutine setW(wVec)
+
+  ! Set the SUmb state vector, w, from the petsc vec wVec
+  use communication
+  use blockPointers
+  use inputTimeSpectral
+  use flowVarRefState
+  implicit none
+
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
+  Vec     wVec
+  integer(kind=intType) :: ierr,nn,sps,i,j,k,l
+  real(kind=realType) :: temp,diff
+
+  ! Note this is not ideal memory access but the values are stored by
+  ! block in PETSc (grouped in nw) but are stored separately in SUmb
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointersAdj(nn,1_intType,sps)
+        ! Copy off w to wVec
+        do k=2,kl
+           do j=2,jl
+              do i=2,il
+                 do l=1,nw
+                     call VecGetValues(wVec,1,globalCell(i,j,k)*nw+l-1,&
+                          w(i,j,k,l),ierr)
+                  end do
+              end do
+           end do
+        end do
+     end do
+  end do
+end subroutine setW
+
+subroutine setupNK_KSP_PC(dRdwPre)
+
+  !     ******************************************************************
+  !     *                                                                *
+  !     * Compute the dRdWPre matrix for the NK Solver                   *
+  !     ******************************************************************
+  !
+  use ADjointVars
+  use blockPointers       ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
+  use communication       ! procHalo(currentLevel)%nProcSend
+  use inputDiscretization ! spaceDiscr
+  USE inputTimeSpectral   ! nTimeIntervalsSpectral
+  use iteration           ! overset, currentLevel
+  use flowVarRefState     ! nw
+  use inputTimeSpectral   ! spaceDiscr
+  use inputADjoint        !sigma
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
+  Mat dRdwPre
+
+ !
+  !     Local variables.
+
+  integer(kind=intType) :: iCell, jCell, kCell, nn, level, m
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,nw, nTimeIntervalsSpectral) :: wAdj,wadjb
+  real(kind=realType), dimension(-3:2,-3:2,-3:2,3,&
+       nTimeIntervalsSpectral) :: siAdj, sjAdj, skAdj
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,&
+       nTimeIntervalsSpectral) ::sFaceIAdj,sFaceJAdj,sFaceKAdj
+  real(kind=realType), dimension(-2:2,-2:2,-2:2,3,&
+       nTimeIntervalsSpectral) :: sAdj
+  real(kind=realType),dimension(nTimeIntervalsSpectral) :: volAdj  
+  real(kind=realType),dimension(3) :: rotRateAdj
+  real(kind=realType), dimension(nw,nTimeIntervalsSpectral)  :: dwAdj,dwadjb
+  real(kind=realType), dimension(2) :: time
+  real(kind=realType)               ::setupTime
+
+  logical :: correctForK, secondHalo, exchangeTurb
+
+  ! dR/dw stencil
+
+  real(kind=realType), dimension(nw,nw,nTimeIntervalsSpectral) :: Aad, Bad, Cad, Dad, Ead, Fad, Gad
+  real(kind=realType) ::eye(nw,nw)
+  ! idxmgb - global block row index
+  ! idxngb - global block column index
+
+  integer(kind=intType) :: idxmgb, idxngb,ierr, sps, sps2,ilow,ihigh
+
+  !Reference values of the dissipation coeff for the preconditioner
+  real(kind=realType) :: vis2_ref, vis4_ref
+
+  ! Set the grid level of the current MG cycle, the value of the
+  ! discretization and the logical correctForK.
+  level = 1_intType
+  currentLevel = level
+  time(1) = mpi_wtime()
+  rkStage = 0
+  currentLevel = groundLevel
+
+  !     ******************************************************************
+  !     *                                                                *
+  !     * Compute the ADjoint matrix dR/dW using Tapenade's reverse mode *
+  !     * of Automatic Differentiation.  NOTE: This is the reason I have *
+  !     * been writing the word "ADjoint" with A and D capitalized. A    *
+  !     * simple play with letter so that:                               *
+  !     *                                                                *
+  !     * ADjoint = Automatically Differentiated adjoint                 *
+  !     *                                                                *
+  !     ******************************************************************
+  !
+  ! Send some feedback to screen.
+
+  !store the current values of vis2,vis4 and reset vis2 for preconditioner
+  !method based on (Hicken and Zingg,2008) AIAA journal,vol46,no.11
+  vis2_ref = vis2
+  vis4_ref = vis4
+  lumpedDiss=.True.
+  
+  call MatZeroEntries(dRdwPre,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  domainLoopAD: do nn=1,nDom
+
+     ! Loop over the number of time instances for this block.
+     spectralLoop: do sps=1,nTimeIntervalsSpectral
+        call setPointersAdj(nn,level,sps)
+        ! Loop over location of output (R) cell of residual
+        do kCell = 2, kl
+           do jCell = 2, jl
+              do iCell = 2, il
+                 ! Copy the state w to the wAdj array in the stencil
+                 call copyNKPCStencil(iCell, jCell, kCell, nn, level, sps, wAdj, &
+                      siAdj, sjAdj, skAdj, sAdj, sfaceIAdj, sfaceJAdj, sfaceKAdj, rotRateAdj,&
+                      voladj)
+                 Aad(:,:,:)  = zero
+                 Bad(:,:,:)  = zero
+                 Cad(:,:,:)  = zero
+                 Dad(:,:,:)  = zero
+                 Ead(:,:,:)  = zero
+                 Fad(:,:,:)  = zero
+                 Gad(:,:,:)  = zero
+
+                 mLoop: do m = 1, nw      ! Loop over output cell residuals (R)
+                    ! Initialize the seed for the reverse mode
+                    dwAdjb(:,:) = 0.
+                    dwAdjb(m,sps) = 1.
+                    dwAdj(:,:)  = 0.
+                    wAdjb(:,:,:,:,:)  = 0.  !dR(m)/dw
+
+                    ! Call the reverse mode of residual computation.
+                    !
+                    !                          dR(iCell,jCell,kCell,l)
+                    ! wAdjb(ii,jj,kk,n) = --------------------------------
+                    !                     dW(iCell+ii,jCell+jj,kCell+kk,n)
+
+                    ! Call reverse mode of residual computation
+
+                    call COMPUTERNKPC_B(wadj, wadjb, dwadj, dwadjb, siadj, sjadj, &
+                         &  skadj, sadj, voladj, sfaceiadj, sfacejadj, sfacekadj, rotrateadj, &
+                         &  icell, jcell, kcell, nn, level, sps)
+
+
+                    ! Store the block Jacobians (by rows).
+
+                    Aad(m,:,:)  = wAdjB( 0, 0, 0,:,:)
+                    Bad(m,:,:)  = wAdjB(-1, 0, 0,:,:)
+                    Cad(m,:,:)  = wAdjB( 1, 0, 0,:,:)
+                    Dad(m,:,:)  = wAdjB( 0,-1, 0,:,:)
+                    Ead(m,:,:)  = wAdjB( 0, 1, 0,:,:)
+                    Fad(m,:,:)  = wAdjB( 0, 0,-1,:,:)
+                    Gad(m,:,:)  = wAdjB( 0, 0, 1,:,:)
+                 enddo mLoop
+                 ! Global matrix block row mgb function of node indices.
+
+                 idxmgb = globalCell(iCell,jCell,kCell)
+
+                 ! >>> center block A < W(i,j,k)
+                 do sps2 = 1,nTimeIntervalsSpectral
+                    idxngb = flowDoms(nn,level,sps2)%globalCell(iCell,jCell,kCell)
+                    call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb,Aad(:,:,sps2), &
+                         ADD_VALUES,ierr)
+                    call EChk(ierr,__FILE__,__LINE__)
+                 enddo
+
+                 ! >>> west block B < W(i-1,j,k)
+                 if( (iCell-1) >= 0 ) then
+                    idxngb = globalCell(iCell-1,jCell,kCell)
+                    if (idxngb >=0 .and. idxngb.ne.-5) then
+                       call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, Bad(:,:,sps), &
+                            ADD_VALUES,ierr)
+                       call EChk(ierr,__FILE__,__LINE__)
+                    endif
+                 endif
+
+                 ! >>> east block C < W(i+1,j,k)
+                 if( (iCell+1) <= ib ) then
+                    idxngb = globalCell(iCell+1,jCell,kCell)
+                    if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
+                       call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, Cad(:,:,sps), &
+                            ADD_VALUES,ierr)
+                       call EChk(ierr,__FILE__,__LINE__)
+                    endif
+                 end if
+
+                 ! >>> south block D < W(i,j-1,k)
+                 if( (jCell-1) >= 0 ) then
+                    idxngb = globalCell(iCell,jCell-1,kCell)
+                    if (idxngb>=0 .and. idxngb.ne.-5) then
+                       call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, Dad(:,:,sps), &
+                            ADD_VALUES,ierr)
+                       call EChk(ierr,__FILE__,__LINE__)
+                    endif
+                 endif
+
+                 ! >>> north block E < W(i,j+1,k)
+                 if( (jCell+1) <= jb ) then
+                    idxngb = globalCell(iCell,jCell+1,kCell)
+                    if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
+                       call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, Ead(:,:,sps), &
+                            ADD_VALUES,ierr)
+                       call EChk(ierr,__FILE__,__LINE__)
+                    endif
+                 end if
+
+                 ! >>> back block F < W(i,j,k-1)
+                 if( (kCell-1) >= 0 ) then
+                    idxngb = globalCell(iCell,jCell,kCell-1)
+                    if (idxngb>=0 .and. idxngb.ne.-5) then
+                       call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, Fad(:,:,sps), &
+                            ADD_VALUES,ierr)
+                       call EChk(ierr,__FILE__,__LINE__)
+                    endif
+                 endif
+
+                 ! >>> front block G < W(i,j,k+1)
+                 if( (kCell+1) <= kb ) then
+                    idxngb = globalCell(iCell,jCell,kCell+1)
+                    if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
+                       call MatSetValuesBlocked(dRdWPre, 1, idxmgb, 1, idxngb, Gad(:,:,sps), &
+                            ADD_VALUES,ierr)
+                       call EChk(ierr,__FILE__,__LINE__)
+                    endif
+                 end if
+              enddo
+           enddo
+        enddo
+     enddo spectralLoop
+  enddo domainLoopad
+
+  !Return dissipation Parameters to normal
+  vis2 = vis2_ref
+  vis4 = vis4_ref
+
+  call MatAssemblyBegin(dRdWPre,MAT_FINAL_ASSEMBLY,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  call MatAssemblyEnd  (dRdWPre,MAT_FINAL_ASSEMBLY,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+#ifdef USE_PETSC_3
+  call MatSetOption(dRdWPre,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+#else
+  call MatSetOption(dRdWPre,MAT_NO_NEW_NONZERO_LOCATIONS,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+#endif
+
+  time(2) = mpi_wtime()
+  call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
+       SUmb_comm_world, ierr)
+
+end subroutine setupNK_KSP_PC
+
+subroutine getCurrentResidual(rhoRes,totalRRes)
+  use communication
+  use blockPointers
+  use flowVarRefState
+  use inputTimeSpectral
+  use iteration
+  use inputIteration
+  implicit none
+  ! Compute the current resdiual of w
+  real(kind=realType), intent(out) :: rhoRes,totalRRes
+  real(kind=realType) :: ovv,r_sum,rho_sum
+  integer(kind=intType) :: sps,nn,i,j,k,l,ierr
+  currentLevel = 1
+  groundLevel = 1
+  rkStage = 0
+
+  call computeResidualNK()
+
+  r_sum = 0.0
+  rho_sum = 0.0
+  do sps=1,nTimeIntervalsSpectral
+     do nn=1,nDom
+        call setPointers(nn,1_intType,sps)
+        ! Copy off dw/vol to rVec
+        do k=2,kl
+           do j=2,jl
+              do i=2,il
+                 ovv = 1/vol(i,j,k)
+                 do l=1,nw
+                    r_sum = r_sum + (dw(i,j,k,l)*ovv)**2
+                 end do
+                 rho_sum = rho_sum + (dw(i,j,k,irho)*ovv)**2
+              end do
+           end do
+        end do
+     end do
+  end do
+
+  call mpi_allreduce(r_sum,totalRRes,1,sumb_real,mpi_sum,&
+       SUmb_comm_world, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  call mpi_allreduce(rho_sum,rhoRes,1,sumb_real,mpi_sum,&
+       SUmb_comm_world, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  ! curRes now has the inverse-volume weighted sum squared of the
+  ! residuals, finally take the squareRoot
+
+ totalRRes = sqrt(totalRRes)
+ rhoRes = sqrt(rhoRes/nCellGlobal(currentLevel))
+
+end subroutine getCurrentResidual
+
+subroutine getFreeStreamResidual(rhoRes,totalRRes)
+  use communication
+  use ADjointVars
+  use precision
+  use inputTimeSpectral
+  use flowVarRefState
+  use inputIteration
+  use blockpointers
+  use iteration
+
+  implicit none
+
+  real(kind=realType), intent(out) :: rhoRes,totalRRes
+  real(kind=realType),dimension(:), allocatable :: wtemp
+  real(kind=realType) :: temp1,temp2
+  integer(kind=intType) :: nDimW,ierr,counter
+  integer(kind=intType) :: tempStartLevel,tempCurrentLevel,tempMGStartLevel
+  integer(kind=intType) :: nn,sps,i,j,k,l
+
+  ! Get the residual cooresponding to the free-stream on the fine grid-level
+
+  ! We need to copy the current wvector temporirly since it may be a
+  ! restart and actually useful
+  nDimW = nw * nCellsLocal * nTimeIntervalsSpectral
+  allocate(wtemp(nDimW))
+
+  ! Copy w to wTemp
+  counter = 0
+  spectralLoop: do sps=1,nTimeIntervalsSpectral
+     domains: do nn=1,nDom
+        call setPointers(nn,1,sps)
+        do l=1,nw
+           do k=2,kl
+              do j=2,jl
+                 do i=2,il
+                    counter = counter + 1
+                    wtemp(counter) = w(i,j,k,l)
+                 enddo
+              enddo
+           enddo
+        enddo
+     end do domains
+  end do spectralLoop
+  
+  tempMGStartLevel = mgStartLevel
+  tempCurrentLevel = currentLevel
+  !tempStartLevel   = startLevel
+
+  mgStartLevel = 1
+  currentlevel = 1
+  !startLevel   = 1
+
+  call setUniformFlow
+  call getCurrentResidual(rhoRes,totalRRes)
+  counter = 0
+  spectralLoop2: do sps=1,nTimeIntervalsSpectral
+     domains2: do nn=1,nDom
+        call setPointers(nn,1,sps)
+        do l=1,nw
+           do k=2,kl
+              do j=2,jl
+                 do i=2,il
+                    counter = counter + 1
+                    w(i,j,k,l) = wtemp(counter) 
+                 enddo
+              enddo
+           enddo
+        enddo
+     end do domains2
+  end do spectralLoop2
+
+  mgStartLevel = tempMGStartLevel
+  currentLevel = tempCurrentLevel
+  !startLevel   = tempStartLevel
+
+  deallocate(wtemp)
+  call getCurrentResidual(temp1,temp2)
+
+end subroutine getFreeStreamResidual
+
+subroutine snes_monitor(snes,its,norm,ctx,ierr)
+  use communication
+  use precision 
+  use iteration
+  use inputIteration
+  use NKsolverVars, only: ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,&
+       snes_atol,itertot0,jacobian_lag,ksp_subspace
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
+  SNES snes
+  KSP  ksp
+  PetscInt its, ierr
+  PetscReal norm
+  PetscFortranAddr ctx(*) ! This is probably going to be empty
+
+  integer(kind=intType) :: ksp_its,temp,nfuncs
+  real(kind=realType) :: CFLNew,rhoRes,totalRRes
+
+  call SNESGetKSP(snes,ksp,ierr);  call EChk(ierr,__FILE__,__LINE__)
+  call KSPGetTolerances(ksp,ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,ierr)
+  ! Set the ksp_atol to snes_atol...this lets the ksp exit early if we
+  ! have hit are desired non-linear tolerance
+  ksp_atol = snes_atol
+
+  ! Set the maximum iterations ot the subspace size...not really much
+  ! point to keep going...might as well do another non-linear iteration
+  ksp_max_it = ksp_subspace
+
+  call KSPSetTolerances(ksp,ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,ierr)
+
+  ! We want to get the number of function evals 
+  ! its == 1 AFTER the first iteration. Take this opportunity to set
+  ! the preconditioner lag to the value we actually want
+  if (its == 1) then
+     ! Reset the value of the preconditionerLag to what we actually want. It
+     ! had been set to -1 or -2 depending on if we wanted to recompute
+     ! the preconditioner on the first entry or not. 
+
+     call SNESSetLagJacobian(snes, jacobian_lag, ierr); call EChk(ierr,__FILE__,__LINE__)
+
+  end if
+
+  if (its > 0 .or. iterTot0 == 0) then
+     call SNESGetNumberFunctionEvals(snes, nfuncs,ierr);  call EChk(ierr,__FILE__,__LINE__)  
+
+     nFuncs = max(nfuncs,1)
+     iterTot = iterTot0 + nFuncs
+
+     call convergenceInfo
+
+     ierr = 0
+  end if
+end subroutine snes_monitor
+
+subroutine applyPC(in_vec,out_vec,N)
+  ! Apply the NK PC to the in_vec. This subroutine is ONLY used as a
+  ! preconditioner for a global Aero-Structural Newton-Krylov Method
+
+  use inputTimeSpectral
+  use flowVarRefState
+  use ADjointVars , only: nCellsLocal
+  use NKSolverVars, only: dRdw,dRdwPre,NKPCSetup,&
+       global_ksp,local_ksp,global_pc,local_pc, &
+       ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,ctx,&
+       ksp_subspace,global_pc_type,asm_overlap,local_pc_ilu_level,&
+       local_pc_ordering
+  use communication 
+  use inputIteration
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
+  ! Input/Output
+  integer(kind=intType) :: N
+  real(kind=realType), dimension(N), intent(in) :: in_vec(N)
+  real(kind=realTYpe), dimension(N), intent(out):: out_vec(N)
+  
+  ! PETSc 
+  Vec VecA, VecB,wVec,rVec
+  KSPConvergedReason ksp_reason
+
+  external KSPSkipConverged
+  external FormFunction2
+
+  ! Working Variables
+  integer(kind=intType) , dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
+  integer(kind=intTYpe) :: ierr,ndimw,nlocal,first,i,ilow,ihigh,size
+  real(kind=realType) :: value
+  integer(kind=intType) :: blksize
+
+  nDimW = nw * nCellsLocal * nTimeIntervalsSpectral
+  
+  ! Put a petsc wrapper around the input and output vectors
+  call VecCreateMPIWithArray(sumb_comm_world,N,PETSC_DETERMINE,in_vec,VecA,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  call VecSetBlockSize(vecA,nw,ierr);
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecCreateMPIWithArray(sumb_comm_world,N,PETSC_DETERMINE,out_vec,VecB,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  call VecSetBlockSize(vecB,nw,ierr);
+  call EChk(ierr,__FILE__,__LINE__)
+
+  if (not(NKPCSetup)) then
+
+     ! Setup Pre-Conditioning Matrix
+
+     allocate( nnzDiagonal(nCellsLocal*nTimeIntervalsSpectral),&
+          nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
+
+     call drdwPCPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal*nTimeIntervalsSpectral)
+     call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
+          nDimW, nDimW,                     &
+          PETSC_DETERMINE, PETSC_DETERMINE, &
+          0, nnzDiagonal,         &
+          0, nnzOffDiag,            &
+          dRdWPre, ierr); call EChk(ierr,__FILE__,__LINE__)
+     
+     deallocate(nnzDiagonal,nnzOffDiag)
+
+     ! Setup Matrix-Free dRdw matrix
+     call MatCreateMFFD(sumb_comm_world,nDimW,nDimW,&
+          PETSC_DETERMINE,PETSC_DETERMINE,dRdw,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call MatMFFDSetFunction(dRdw,FormFunction2,ctx,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call MatAssemblyBegin(dRdw,MAT_FINAL_ASSEMBLY,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     call MatAssemblyEnd(dRdw,MAT_FINAL_ASSEMBLY,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+             
+     call MatSetOption(dRdWPre, MAT_ROW_ORIENTED,PETSC_FALSE, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     call MatSetOption(dRdW   , MAT_ROW_ORIENTED,PETSC_FALSE, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call setupNK_KSP_PC(dRdwPre)
+    
+     call KSPCreate(SUMB_COMM_WORLD, global_ksp, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call KSPSetOperators(global_ksp,dRdW,dRdWPre,DIFFERENT_NONZERO_PATTERN,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     call KSPSetFromOptions(global_ksp,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call KSPGMRESSetRestart(global_ksp,ksp_subspace, ierr)
+     call EChk(ierr ,__FILE__,__LINE__)
+
+     call KSPSetPreconditionerSide(global_ksp, PC_RIGHT, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Setup the required options for the Global PC
+     call KSPSetup(global_ksp,ierr);      call EChk(ierr,__FILE__,__LINE__)
+     call KSPGetPC(global_ksp,global_pc,ierr);                 call EChk(ierr,__FILE__,__LINE__)
+     call PCSetType(global_pc,global_pc_type,ierr);     call EChk(ierr,__FILE__,__LINE__)
+ 
+     call KSPSetTolerances(global_ksp,L2ConvRel,1e-10,1e5,ksp_subspace,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     if (trim(global_pc_type) == 'asm') then
+        call PCASMSetOverlap(global_pc,asm_overlap,ierr);  call EChk(ierr,__FILE__,__LINE__)
+        call PCSetup(global_pc,ierr);                      call EChk(ierr,__FILE__,__LINE__)
+        call PCASMGetSubKSP(global_pc, nlocal,  first, local_ksp, ierr );          call EChk(ierr,__FILE__,__LINE__)  
+     end if
+
+     if (trim(global_pc_type) == 'bjacobi') then
+        call PCSetup(global_pc,ierr);                      call EChk(ierr,__FILE__,__LINE__)
+        call PCBJacobiGetSubKSP(global_pc,nlocal,first,local_ksp,ierr);   call EChk(ierr,__FILE__,__LINE__)
+     end if
+
+     ! Setup the required options for the Local PC
+     call KSPGetPC(local_ksp, local_pc, ierr );                              call EChk(ierr,__FILE__,__LINE__)
+     call PCSetType(local_pc, 'ilu', ierr);                       call EChk(ierr,__FILE__,__LINE__)
+     call PCFactorSetLevels(local_pc, local_pc_ilu_level, ierr);          call EChk(ierr,__FILE__,__LINE__)  
+     call PCFactorSetMatOrderingtype(local_pc, local_pc_ordering, ierr ); call EChk(ierr,__FILE__,__LINE__) 
+     call KSPSetType(local_ksp, KSPPREONLY, ierr);         call EChk(ierr,__FILE__,__LINE__)  
+
+     NKPCSetup = .True.
+  end if
+
+  ! Set the base vec
+  call VecDuplicate(vecA,wVec,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  call setwVec(wVec)
+  
+  call MatMFFDSetBase(dRdW,wVec,PETSC_NULL_OBJECT,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Actually do the Linear Krylov Solve
+  call KSPSolve(global_ksp,vecA,vecB,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Destroy the three petsc vectors
+   call VecDestroy(wVec,ierr);  call EChk(ierr,__FILE__,__LINE__)
+   call VecDestroy(VecA,ierr);  call EChk(ierr,__FILE__,__LINE__)
+   call VecDestroy(VecB,ierr);  call EChk(ierr,__FILE__,__LINE__)
+
+end subroutine applyPC
+
+!The folloiwng three functions are wrapped in Python to allow external
+!getting and setting of the states, and retrieving the current
+!residual values. All of these function only return/get the
+!states/residuals that are owned by this process (no halos)
+
+subroutine getStates(states,ndimw)
+  use ADjointPETSc
+  use blockPointers
+  use inputTimeSpectral
+  use flowvarrefstate
+  implicit none
+  !
+  !     Subroutine arguments.
+  !
+  integer(kind=intType),intent(in):: ndimw
+  real(kind=realType),dimension(ndimw),intent(out) :: states(ndimw)
+
+  ! Local Variables
+  integer(kind=intType) :: nn,i,j,k,l,counter,sps
+
+  counter = 0 
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn,1,sps)
+        do k=2,kl
+           do j=2,jl
+              do i=2,il
+                 do l=1,nw
+                    counter = counter + 1
+                    states(counter) = w(i,j,k,l)
+                 end do
+              end do
+           end do
+        end do
+     end do
+  end do
+end subroutine getStates
+
+subroutine getRes(res,ndimw)
+  use ADjointPETSc
+  use blockPointers
+  use inputTimeSpectral
+  use flowvarrefstate
+  implicit none
+  !
+  !     Subroutine arguments.
+  !
+  integer(kind=intType),intent(in):: ndimw
+  real(kind=realType),dimension(ndimw),intent(out) :: res(ndimw)
+
+  ! Local Variables
+  integer(kind=intType) :: nn,i,j,k,l,counter,sps
+
+  call computeResidualNK()
+  counter = 0 
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn,1,sps)
+        do k=2,kl
+           do j=2,jl
+              do i=2,il
+                 do l=1,nw
+                    counter = counter + 1
+                    res(counter) = dw(i,j,k,l)/vol(i,j,k)
+                 end do
+              end do
+           end do
+        end do
+     end do
+  end do
+end subroutine getRes
+
+subroutine setStates(states,ndimw)
+  use ADjointPETSc
+  use blockPointers
+  use inputTimeSpectral
+  use flowvarrefstate
+  implicit none
+  !
+  !     Subroutine arguments.
+  !
+  integer(kind=intType),intent(in):: ndimw
+  real(kind=realType),dimension(ndimw),intent(in) :: states(ndimw)
+
+  ! Local Variables
+  integer(kind=intType) :: nn,i,j,k,l,counter,sps
+
+  counter = 0 
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn,1,sps)
+        do k=2,kl
+           do j=2,jl
+              do i=2,il
+                 do l=1,nw
+                    counter = counter + 1
+                    w(i,j,k,l) = states(counter)
+                 end do
+              end do
+           end do
+        end do
+     end do
+  end do
+end subroutine setStates

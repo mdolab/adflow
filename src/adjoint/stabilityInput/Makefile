@@ -38,7 +38,7 @@ vpath %.o $(SUMB_OBJDIR)
 
 FF90_OBJECTS = computeTSStabilityDerivAdj.o\
 	       verifyTSStabilityDerivAdj.o\
-	       verifydIdwFile.o
+#	       verifydIdwFile.o
 
 #CC_OBJECTS   = connect_signals.o
 

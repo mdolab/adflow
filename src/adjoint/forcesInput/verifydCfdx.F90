@@ -4,11 +4,11 @@
 !     * File:          verifydCfdx.f90                                 *
 !     * Author:        Andre C. Marta, C.A.(Sandy) Mader               *
 !     * Starting date: 01-15-2007                                      *
-!     * Last modified: 05-08-2008                                      *
+!     * Last modified: 02-15-2011                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine verifydCfdx(level)
+subroutine verifydCfdx(level,costFunction)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -31,25 +31,57 @@ subroutine verifydCfdx(level)
       use monitor             ! monLoc, MonGlob, nMonSum
       use bcTypes             !imin,imax,jmin,jmax,kmin,kmax
       use adjointvars         !ndesignaoa,ndesignmach
+      use ADjointPETSc
+      use costFunctions
       implicit none
 !
 !     Subroutine arguments.
 !
-      integer(kind=intType), intent(in) :: level
+      integer(kind=intType), intent(in) :: level,costFunction
 !
 !     Local variables.
 !
-      integer(kind=intType) :: discr, nHalo, sps
-      integer(kind=intType) :: inode, jnode, knode, mm, nn, m, n,ll
-      integer(kind=intType) :: ii, jj, kk, i1, j1, k1, i2, j2, k2
+      integer(kind=intType) ::sps
+      integer(kind=intType) ::nn,mm,ii,npts,ll,nTS
 
-      integer(kind=intType) ::  i2Beg,  i2End,  j2Beg,  j2End
-      integer(kind=intType) :: iiBeg, iiEnd, jjBeg, jjEnd
-      integer(kind=intType) :: i,j,k,l
+      real(kind=realType), dimension(:,:,:),allocatable :: pts
+      real(kind=realType), dimension(:,:,:),allocatable  :: ptsb
 
-      logical :: fineGrid,correctForK, exchangeTurb
+      ! Variables for computeforceandmomentadj_b
+      real(kind=realtype) :: force(3), cforce(3)
+      real(kind=realtype) :: forceb(3), cforceb(3)
+      real(kind=realtype) :: lift, drag, cl, cd
+      real(kind=realtype) :: liftb, dragb, clb, cdb
+      real(kind=realtype) :: moment(3), cmoment(3)
+      real(kind=realtype) :: momentb(3), cmomentb(3)
+      
+      real(kind=realType) :: alphaadj,alphaadjb,betaadj,betaadjb
+      integer(kind=intType) :: liftindex
+      real(kind=realType) :: machcoefadj,machcoefadjb
+      real(kind=realType) :: pointrefadj(3),pointrefadjb(3)
+      logical :: righthandedadj
+      
+      real(kind=realType), dimension(:,:,:,:),allocatable :: wblock,wblockb
 
-      real(kind=realType) :: Cl,Cd,Cfx,Cfy,Cfz,Cmx,Cmy,Cmz
+      ! Working Variables
+      integer(kind=intTYpe) :: ii_start,ii_end,iInc,n
+      integer(kind=intTYpe) :: i,j,icell,jcell,kcell,idxmgb,&
+           faceID,ibeg,iend,jbeg,jend
+
+      integer(kind=intType) :: row_start,row_end,iLow,iHigh
+      real(kind=realType)::val
+      integer(kind=intType) ::k,l
+!!$      integer(kind=intType) :: discr, nHalo, sps
+!!$      integer(kind=intType) :: inode, jnode, knode, mm, nn, m, n,ll
+!!$      integer(kind=intType) :: ii, jj, kk, i1, j1, k1, i2, j2, k2
+!!$
+!!$      integer(kind=intType) ::  i2Beg,  i2End,  j2Beg,  j2End
+!!$      integer(kind=intType) :: iiBeg, iiEnd, jjBeg, jjEnd
+!!$      integer(kind=intType) :: i,j,k,l
+!!$
+!!$      logical :: fineGrid,correctForK, exchangeTurb
+!!$
+      real(kind=realType) :: Cfx,Cfy,Cfz,Cmx,Cmy,Cmz
       real(kind=realType) :: ClAdj,CdAdj,CfxAdj,CfyAdj,CfzAdj,&
                              &CmxAdj,CmyAdj,CmzAdj  
       real(kind=realType) :: CLAdjP,CLAdjM,CDAdjP,CDAdjM,dCLdxFD,dCDdxFD,&
@@ -59,72 +91,93 @@ subroutine verifydCfdx(level)
 
       real(kind=realType) :: CLP,CLM,CDP,CDM,CmxP,CmxM,CmyP,CmyM,CmzP,CmzM,&
                              &CfxP,CfxM,CfyP,CfyM,CfzP,CfzM
-
-      real(kind=realType), dimension(:,:,:,:), allocatable :: xAdj,xAdjB
-      real(kind=realType), dimension(:,:,:,:), allocatable :: wAdj,wAdjB
-      real(kind=realType), dimension(:,:,:), allocatable :: pAdj
-
-      real(kind=realType), dimension(3) :: cFpAdj, cFvAdj
-      real(kind=realType), dimension(3) :: cMpAdj, cMvAdj
-
+!!$
+!!$      real(kind=realType), dimension(:,:,:,:), allocatable :: xAdj,xAdjB
+!!$      real(kind=realType), dimension(:,:,:,:), allocatable :: wAdj,wAdjB
+!!$      real(kind=realType), dimension(:,:,:), allocatable :: pAdj
+!!$
+!!$      real(kind=realType), dimension(3) :: cFpAdj, cFvAdj
+!!$      real(kind=realType), dimension(3) :: cMpAdj, cMvAdj
+!!$
       real(kind=realType), dimension(3) :: cFp, cFv
       real(kind=realType), dimension(3) :: cMp, cMv
-
-
-      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj,machgridAdj
-      real(kind=realType) :: alphaAdjb, betaAdjb,MachAdjb,machCoefAdjb,machgridadjb
-      REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
-      REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
-      REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
-      REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
-
-
-      real(kind=realType) :: factI, factJ, factK, tmp
-
-      integer(kind=intType), dimension(0:nProc-1) :: offsetRecv
-
+!!$
+!!$
+!!$      real(kind=realType) :: alphaAdj, betaAdj,MachAdj,machCoefAdj,machgridAdj
+!!$      real(kind=realType) :: alphaAdjb, betaAdjb,MachAdjb,machCoefAdjb,machgridadjb
+!!$      REAL(KIND=REALTYPE) :: prefAdj, rhorefAdj,pInfCorrAdj
+!!$      REAL(KIND=REALTYPE) :: pinfdimAdj, rhoinfdimAdj
+!!$      REAL(KIND=REALTYPE) :: rhoinfAdj, pinfAdj
+!!$      REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
+!!$
+!!$
+!!$      real(kind=realType) :: factI, factJ, factK, tmp
+!!$
+!!$      integer(kind=intType), dimension(0:nProc-1) :: offsetRecv
+!!$
       real(kind=realType), dimension(4) :: time
       real(kind=realType)               :: timeAdj, timeFD
-
-      ! > derivative output
-
-      real(kind=realType), dimension(:,:,:,:,:), allocatable ::dCL, &
-           dCD,dCmx
-      real(kind=realType), dimension(:,:,:,:,:), allocatable :: dCLfd, &
-           dCDfd,dCmxfd
-      real(kind=realType), dimension(:,:,:,:,:), allocatable :: dCLer, &
-           dCDer,dCmxer
-
+!!$
+!!$      ! > derivative output
+!!$
+!!$      real(kind=realType), dimension(:,:,:,:,:), allocatable ::dCL, &
+!!$           dCD,dCmx
+!!$      real(kind=realType), dimension(:,:,:,:,:), allocatable :: dCLfd, &
+!!$           dCDfd,dCmxfd
+!!$      real(kind=realType), dimension(:,:,:,:,:), allocatable :: dCLer, &
+!!$           dCDer,dCmxer
+!!$
       real(kind=realType), parameter :: deltax = 1.e-6_realType
 
-      real(kind=realType) :: xAdjRef,xref,alpharef,machref,alpha,beta,machcoefref,rotratexref
-
-      real(kind=realType), dimension(:,:,:), pointer :: norm
-      real(kind=realType), dimension(:,:,:),allocatable:: normAdj
-      real(kind=realType), dimension(3) :: refPoint
+      real(kind=realType) :: xAdjRef,xref,alpharef,betaref,machref,alpha,beta,machcoefref,rotratexref,pointref_ref
+!!$
+!!$      real(kind=realType), dimension(:,:,:), pointer :: norm
+!!$      real(kind=realType), dimension(:,:,:),allocatable:: normAdj
+!!$      real(kind=realType), dimension(3) :: refPoint
       real(kind=realType) :: yplusMax
 
       real(kind=realType),  dimension(:), allocatable :: monLoc1, monGlob1
       real(kind=realType),  dimension(:), allocatable :: monLoc2, monGlob2
-
-      logical :: contributeToForce, viscousSubface,secondHalo
-      real(kind=realType), dimension(7) :: dCldextra,dcddextra,dCldextraFD,dcddextraFD,&
-           dCldextraerror,dcddextraerror, dCldextralocal,dcddextralocal,dcmdextra,&
-           dcmdextraFD,dcmdextralocal,dcmdextraerror
-
-      REAL(KIND=REALTYPE) :: rotcenteradj(3), rotrateadj(3), rotrateadjb(3)
-
+!!$
+!!$      logical :: contributeToForce, viscousSubface,secondHalo
+      logical ::secondHalo
+      real(kind=realType),  dimension(:,:), allocatable ::dIdaLoc,dIdaGlob,dIdaFD,dIdaError
+  
+!!$
+!!$      REAL(KIND=REALTYPE) :: rotcenteradj(3), rotcenteradjb(3), rotrateadj(3), rotrateadjb(3)
+!!$      REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3), rotpointadj(3)&
+!!$           &  , rotpointadjb(3)
+!!$
       real(kind=realType), dimension(nSections) :: t
 
-      integer :: ierr,nmonsum1,nmonsum2,liftindex
+      integer :: ierr,nmonsum1,nmonsum2
+
+
 
 !File Parameters
-      integer :: unit = 8,ierror
-      character(len = 10)::outfile
-      
-      outfile = "dcfdx.txt"
-      
-      open (UNIT=unit,File=outfile,status='replace',action='write',iostat=ierror)
+      integer :: unitdx,unitdw,ierror
+      character(len = 20)::outfile,testfile
+      write(testfile,100) myid!12
+100   format (i5)
+      testfile=adjustl(testfile)
+      write(outfile,101) trim(testfile)!testfile
+101   format("ADdCdxfile",a,".out")
+      unitdx = 8+myID
+
+      open (UNIT=unitdx,File=outfile,status='replace',action='write',iostat=ierror)
+      if(ierror /= 0)                        &
+           call terminate("verifydCfdx", &
+           "Something wrong when &
+           &calling open")
+
+      write(testfile,102) myid!12
+102   format (i5)
+      testfile=adjustl(testfile)
+      write(outfile,103) trim(testfile)!testfile
+103   format("ADdCdwfile",a,".out")
+      unitdw = 28+myID
+
+      open (UNIT=unitdw,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
            call terminate("verifydCfdx", &
            "Something wrong when &
@@ -137,38 +190,22 @@ subroutine verifydCfdx(level)
 !     ******************************************************************
 !
 #ifndef USE_NO_PETSC
-      print *,'in verifydcfdx'
- !     if( myID==0 ) write(*,*) "Running verifydCfdx...",sps
+       if( myID==0 ) write(*,*) "Running verifydCfdx...",sps
 
       ! Set the grid level of the current MG cycle, the value of the
       ! discretization and the logical correctForK.
 
       currentLevel = level
-      discr        = spaceDiscr
-      correctForK  = .false.
-      fineGrid     = .true.
+ 
 
       ! Determine whether or not the total energy must be corrected
       ! for the presence of the turbulent kinetic energy and whether
       ! or not turbulence variables should be exchanged.
 
-      correctForK  = .false.
-      exchangeTurb = .false.
+ 
       secondhalo = .true.
 
-      ! Allocate memory for the temporary arrays.
 
-      ie = maxval(flowDoms(:,currentLevel,1)%ie)
-      je = maxval(flowDoms(:,currentLevel,1)%je)
-      ke = maxval(flowDoms(:,currentLevel,1)%ke)
-
-      allocate(dCL(nDom,0:ie,0:je,0:ke,3), dCLfd(nDom,0:ie,0:je,0:ke,3))
-      allocate(dCD(nDom,0:ie,0:je,0:ke,3), dCDfd(nDom,0:ie,0:je,0:ke,3))
-      allocate(dCmx(nDom,0:ie,0:je,0:ke,3), dCmxfd(nDom,0:ie,0:je,0:ke,3))
-       
-      allocate(dCLer(nDom,0:ie,0:je,0:ke,3))
-      allocate(dCDer(nDom,0:ie,0:je,0:ke,3))
-      allocate(dCmxer(nDom,0:ie,0:je,0:ke,3))
 
       
       nmonsum1 = 8
@@ -176,14 +213,10 @@ subroutine verifydCfdx(level)
 
       allocate(monLoc1(nmonsum1), monGlob1(nmonsum1))
       allocate(monLoc2(nmonsum2), monGlob2(nmonsum2))
-
-      ! Initialize the temporary arrays.
-
-      dCL   = zero; dCLfd   = zero; dCLer   = zero;
-      dCD   = zero; dCDfd   = zero; dCDer   = zero;
-      dCmx  = zero; dCmxfd  = zero; dCmxer  = zero;
-      dCldextra=zero
-      dcddextra=zero
+      allocate(dIdaLoc(nDesignExtra,nTimeIntervalsSpectral))
+      allocate(dIdaGlob(nDesignExtra,nTimeIntervalsSpectral))
+      allocate(dIdaFD(nDesignExtra,nTimeIntervalsSpectral))
+      allocate(dIdaError(nDesignExtra,nTimeIntervalsSpectral))
 
      ! Exchange the pressure if the pressure must be exchanged early.
       ! Only the first halo's are needed, thus whalo1 is called.
@@ -211,815 +244,263 @@ subroutine verifydCfdx(level)
       call mpi_barrier(SUmb_comm_world, ierr)      
 
 
-      print *,"halo's updated"
+      if( myID==0 )print *,"halo's updated"
 !
 !     ******************************************************************
 !     *                                                                *
 !     * Compute the d(forces)/dx (partial) using the tapenade routines.*
 !     *                                                                *
 !     ******************************************************************
-         
-!*********************
-      !from ForcesAndMoments.f90
-       ! Determine the reference point for the moment computation in
-       ! meters.
-      print *,'setting refpoint'
-       refPoint(1) = LRef*pointRef(1)
-       refPoint(2) = LRef*pointRef(2)
-       refPoint(3) = LRef*pointRef(3)
+      call getForceSize(npts,nTS)
+      allocate(pts(3,npts,nTimeIntervalsSpectral),ptsb(3,npts,nTimeIntervalsSpectral))
+      call getForcePoints(pts,npts,nTS)   
 
-       ! Initialize the force and moment coefficients to 0 as well as
-       ! yplusMax.
+      ! Copy over values we need for the computeforcenadmoment call:
+      MachCoefAdj = MachCoef
+      pointRefAdj = pointRef
+      
+      call getDirAngle(velDirFreestream,LiftDirection,liftIndex,alphaAdj,betaAdj)
+      pointRefAdj(1) = pointRef(1)
+      pointRefAdj(2) = pointRef(2)
+      pointRefAdj(3) = pointRef(3)
 
-!!$       cFpAdj(1) = zero; cFpAdj(2) = zero; cFpAdj(3) = zero
-!!$       cFvAdj(1) = zero; cFvAdj(2) = zero; cFvAdj(3) = zero
-!!$       cMpAdj(1) = zero; cMpAdj(2) = zero; cMpAdj(3) = zero
-!!$       cMvAdj(1) = zero; cMvAdj(2) = zero; cMvAdj(3) = zero
-       print *,'zeroing output'
-       ClAdj = zero
-       CDAdj = zero
-       CmxAdj = zero 
-       CmyAdj = zero
-       CmzAdj = zero
-       CfxAdj = zero
-       CfyAdj = zero
-       CfzAdj = zero
-
-       yplusMax = zero
-
-   !    print *,'Adjoint forces initialized'
-!
 !***********************************
-       print *,' computing adjoint derivatives'
-       
-   spectralLoop1Adj: do sps=1,nTimeIntervalsSpectral
+    
+
+      dIdaLoc = 0.0
       
-      print *,'zeroing force output'
-      !zero the force components
-      cFpAdj(1) = zero; cFpAdj(2) = zero; cFpAdj(3) = zero
-      cFvAdj(1) = zero; cFvAdj(2) = zero; cFvAdj(3) = zero
-      cMpAdj(1) = zero; cMpAdj(2) = zero; cMpAdj(3) = zero
-      cMvAdj(1) = zero; cMvAdj(2) = zero; cMvAdj(3) = zero
-      ! Loop over the number of local blocks.
-      print *,'starting domain loop',ndom
-      domainLoop1AD: do nn=1,nDom
+      if( myID==0 )print *,' computing adjoint derivatives'
+      spectralLoopAdj: do sps=1,nTimeIntervalsSpectral
 
-        ! Set some pointers to make the code more readable.
-         !print *,'setting pointers'
-        call setPointersAdj(nn,level,sps)
-        !print *,'allocating memory'
-        allocate(xAdj(0:ie,0:je,0:ke,3), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("Memory allocation failure for xAdj.")
-
-        allocate(xAdjB(0:ie,0:je,0:ke,3), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("Memory allocation failure for xAdjB.")
-        
-        allocate(wAdj(0:ib,0:jb,0:kb,nw), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("Memory allocation failure for wAdj.")
-
-        allocate(wAdjB(0:ib,0:jb,0:kb,nw), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("Memory allocation failure for wAdjB.")
-        
-        allocate(pAdj(0:ib,0:jb,0:kb), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("Memory allocation failure for pAdj.")
-        
-        !print *,'finished allocating',nn,level,sps
-        righthanded = flowDoms(nn,level,sps)%righthanded
-        
-
-        
-!!$        nViscBocos = flowDoms(nn,groundLevel,sps)%nViscBocos
-!!$        nInvBocos  = flowDoms(nn,groundLevel,sps)%nInvBocos
-!!$        
-!!$        BCFaceID => flowDoms(nn,groundLevel,  1)%BCFaceID
-!!$        groupNum => flowDoms(nn,groundLevel,  1)%groupNum
-!!$
-!!$        d2Wall   => flowDoms(nn,groundLevel,sps)%d2Wall
-!!$        muLam    => flowDoms(nn,groundLevel,sps)%muLam
-           
-!!$        ! Determine the number of time instances for this block and
-!!$        ! store the block dimensions a bit easier.
-!!$        
-!!$        sectionID = flowDoms(nn,level,1)%sectionID
-!!$        nTime     = sections(sectionID)%nTimeInstances
-!!$
-!!$        print *,'Pointers set',sectionID,nTime
-!!$        stop
-!!$        
-!!$        il = flowDoms(nn,level,1)%il
-!!$        jl = flowDoms(nn,level,1)%jl
-!!$        kl = flowDoms(nn,level,1)%kl
-!!$
-!!$        
-!!$        !Allocate the full grid stencil for the x
-!!$        allocate(xAdj(ib:ie,jb:jE,kb:ke,3), stat=ierr)
-!!$        if(ierr /= 0)                              &
-!!$             call terminate("verifydCfdx", &
-!!$             "Memory allocation failure for xAdj.")
-!!$
-!!$        allocate(xAdjB(ib:ie,jb:jE,kb:ke,3), stat=ierr)
-!!$        if(ierr /= 0)                              &
-!!$             call terminate("verifydCfdx", &
-!!$             "Memory allocation failure for xAdjB.")  
-!!$
-!!$        !Copy the values of x to the Stencil
-!!$        call copyADjointForcesStencil(xAdj,level,nn,sps)
-
-        ! Copy the coordinates into xAdj and
-        ! Compute the face normals on the subfaces
-        call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-           MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
-           rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
-           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
-        !copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-        !     MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-        !     rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
-        !     pInfCorrAdj,nn,level,sps,liftIndex)
-
-        machadjb=zero
-        machcoefadjb=zero
-        alphaadjb=zero
-        betaadjb=zero
-        rotrateadjb=zero
-        xAdjB(:,:,:,:) = zero ! > return dCf/dx
-        bocoLoop: do mm=1,nBocos
-
-           ! Determine the range of cell indices of the owned cells
-           ! Notice these are not the node indices
-           iiBeg = BCData(mm)%icBeg
-           iiEnd = BCData(mm)%icEnd
-           jjBeg = BCData(mm)%jcBeg
-           jjEnd = BCData(mm)%jcEnd
-           
-           i2Beg= BCData(mm)%inBeg+1; i2End = BCData(mm)%inEnd
-           j2Beg= BCData(mm)%jnBeg+1; j2End = BCData(mm)%jnEnd
-!!$
-!!$        !zero the inviscid and viscous force terms 
-!!$
-!!$        cFpAdj(1) = zero; cFpAdj(2) = zero; cFpAdj(3) = zero
-!!$        cFvAdj(1) = zero; cFvAdj(2) = zero; cFvAdj(3) = zero
-!!$        cMpAdj(1) = zero; cMpAdj(2) = zero; cMpAdj(3) = zero
-!!$        cMvAdj(1) = zero; cMvAdj(2) = zero; cMvAdj(3) = zero
-!!$
-!!$        ! Count the number of wall boundary conditions
-!!$
-!!$        nBocos         = nViscBocos + nInvBocos
-!!$        viscousSubface = .true. 
-!!$
-!!$        ! Loop over the number of boundary conditions for this block.
-!!$
-!!$
-!!$        bocoLoop: do mm=1,nBocos
-!!$           
-!!$           !set some face dimensions
-!!$           i2Beg = flowDoms(nn,level,1)%BCData(mm)%iBeg
-!!$           j2Beg = flowDoms(nn,level,1)%BCData(mm)%jBeg
-!!$           i2End = flowDoms(nn,level,1)%BCData(mm)%iEnd
-!!$           j2End = flowDoms(nn,level,1)%BCData(mm)%jEnd
-!!$           
-!!$           
-!!$           select case (flowDoms(nn,level,1)%BCFaceID(mm))
-!!$           case (iMin, iMax)
-!!$              if(i2End == jl) i2End = min(jl+1,je)
-!!$              if(j2End == kl) j2End = min(kl+1,ke)
-!!$              
-!!$           case (jMin, jMax)
-!!$              if(i2End == il) i2End = min(il+1,ie)
-!!$              if(j2End == kl) j2End = min(kl+1,ke)
-!!$
-!!$           case (kMin, kMax)
-!!$              if(i2End == il) i2End = min(il+1,ie)
-!!$              if(j2End == jl) j2End = min(jl+1,je)
-!!$           end select
-!!$           
-!!$           ! Determine the nodal range of the owned nodes. Due to block
-!!$           ! splitting iBeg and jBeg may correspond to a halo.
-!!$           iiBeg = max(i2Beg, 1_intType)
-!!$           jjBeg = max(j2Beg, 1_intType)
-!!$           iiEnd = i2End
-!!$           jjEnd = j2End
-!!$
-!!$           iiBeg = max(i2Beg, 1_intType)
-!!$           jjBeg = max(j2Beg, 1_intType)
-!!$           iiEnd = min(i2End, flowDoms(nn,level,1)%BCData(mm)%iEnd)
-!!$           jjEnd = min(j2End, flowDoms(nn,level,1)%BCData(mm)%jEnd)
-!!$
-!!$           
-!!$           !Allocate the vector of cell normals in the full grid stencil
-!!$           allocate(normAdj(iiBeg:iiEnd,jjBeg:jjEnd,3), stat=ierr)
-!!$           if(ierr /= 0)                              &
-!!$                call terminate("verifydCfdx", &
-!!$                "Memory allocation failure for normAdj.")
-           
-           ! Initialize the seed for reverse mode. Cl is the first one
-           ClAdjB = 1
-           CDAdjB = 0
-           CmxAdjB = 0
-           CmyAdjB = 0
-           CmzAdjB = 0
-!!$        CfxAdjB = 0
-!!$        CfyAdjB = 0
-!!$        CfzAdjB = 0
-           
-          
-           
-           
-           !===============================================================
-           !           
-!           print *,'Initial Parameters Calculated,Computing Lift Partials...'
-           
-           !===============================================================
-           ! Compute the force derivatives
-           print *,'input',machadjb, machcoefadjb,alphaadjb,betaadjb,mm         
-           call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
-&  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
-&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
-&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
-&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
-&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
-&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
-&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex)
-
-           print *,'output',machadjb, machcoefadjb,alphaadjb,betaadjb,mm
-
-           
-           
-           !loop over cells to store the jacobian
-           do k = 0,ke
-              do j = 0,je
-                 do i = 0,ie
-                    
-                    ! Store the dervatives for comparison.
-                   
-                    dCL(nn,i,j,k,:)=dCL(nn,i,j,k,:)+& 
-                         & xAdjB( i,j,k,:)
-
-                    write(unit,*) xAdjB( i,j,k,:)
-                 enddo
-              enddo
-           enddo
-
-          
-        end do bocoLoop
-!!$        dCldextralocal(ndesignmach) =dCldextralocal(ndesignmach)+ machadjb+machcoefadjb
-!!$        dCldextralocal(ndesignaoa) = dCldextralocal(ndesignaoa)+alphaadjb
-!!$        dCldextralocal(ndesignssa) = dCldextralocal(ndesignssa)+betaadjb
-!!$        dCldextralocal(ndesignrotx) = dCldextralocal(ndesignrotx)+rotrateadjb(1)
-!!$        dCldextralocal(ndesignroty) = dCldextralocal(ndesignroty)+rotrateadjb(2)
-!!$        dCldextralocal(ndesignrotz) = dCldextralocal(ndesignrotz)+rotrateadjb(3)
-        dCldextralocal(ndesignmach) = machadjb+machcoefadjb
-        dCldextralocal(ndesignmachgrid) = machgridadjb+machcoefadjb
-        dCldextralocal(ndesignaoa) = alphaadjb
-        dCldextralocal(ndesignssa) = betaadjb
-        dCldextralocal(ndesignrotx) = rotrateadjb(1)
-        dCldextralocal(ndesignroty) = rotrateadjb(2)
-        dCldextralocal(ndesignrotz) = rotrateadjb(3)
-        print *,'nn',nn,'dcldextralocal',dcldextralocal(1),dcldextralocal(2),dcldextralocal(3), machadjb,machcoefadjb
-        !dCldextra(ndesignmach) = machadjb+machcoefadjb
-        !!dCldextra(ndesignmach) = dCldextra(ndesignmach)+machadjb+machcoefadjb
-        !print *,'ADcdldmach2', dCldextra(ndesignmach),machadjb,machcoefadjb
-        !dCldextra(ndesignaoa) = dCldextra(ndesignaoa)+alphaadjb
-        !dCldextra(ndesignssa) = dCldextra(ndesignssa)+betaadjb
-
-       !===============================================================
-        
-        !print *,' deallocating'
-        ! Deallocate the xAdj.
-        deallocate(pAdj, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.")
-             
-        ! Deallocate the xAdj.
-        deallocate(wAdj, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-
-         deallocate(wAdjB, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-        ! Deallocate the xAdj.
-        deallocate(xAdj, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-
-         deallocate(xAdjB, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-        !print *,'finishhed deallocating'
-       
-     enddo domainLoop1AD
-      
-      print *,'dcldextralocal',dcldextralocal(1),dcldextralocal(2),dcldextralocal(3)
-      monLoc2(1) = dcldextralocal(1)
-      monLoc2(2) = dcldextralocal(2)
-      monLoc2(3) = dcldextralocal(3)
-      monLoc2(4) = dcldextralocal(4)
-      monLoc2(5) = dcldextralocal(5)
-      monLoc2(6) = dcldextralocal(6)
-      monLoc2(7) = dcldextralocal(7)
-      monLoc2(8) = 1!dcddextralocal(2)
+         ! entries into dJdw
+         call VecZeroEntries(dJdw,ierr)
+         call EChk(ierr,__file__,__line__)
          
-         ! Determine the global sum of the summation monitoring
-         ! variables. The sum is made known to all processors.
-!         write(*,*)'adj ',myID,monLoc2(1)
-         !write(*,*)'nmonsum',nMonSum
-         call mpi_allreduce(monLoc2, monGlob2, nMonSum2, sumb_real, &
+         call VecZeroEntries(dJdx,ierr)
+         call EChk(ierr,__file__,__line__)
+         
+         call VecGetOwnershipRange(dJdx,row_start,row_end,ierr)
+         call EChk(ierr,__file__,__line__)
+         ii = 0 
+         domainLoopAD: do nn=1,nDom
+            call setPointersadj(nn,1_intType,sps)
+            bocos: do mm=1,nBocos
+               !if( myID==0 )print*,'current index',sps,nn,mm
+               if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
+                    BCType(mm) == NSWallIsothermal) then
+                  
+                  jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
+                  iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
+                  
+                  ! Zero all the backward-mode seeds
+                  forceb = 0.0
+                  cforceb = 0.0
+                  liftb = 0.0
+                  dragb = 0.0
+                  clb = 0.0
+                  cdb = 0.0
+                  momentb = 0.0
+                  cmomentb = 0.0
+                  alphaadjb = 0.0
+                  betaadjb = 0.0
+                  machcoefadjb = 0.0
+                  pointrefadjb = 0.0
+                  ptsb = 0.0
+                  
+                  ! Seed the correct value based on the cost function
+                  select case (costFunction)
+                     
+                  case (costFuncLift)
+                     liftb = 1.0
+                  case (costFuncDrag)
+                     dragb = 1.0
+                  case (costFuncLiftCoef,costFuncCL0,costFuncCLalpha)
+                     clb = 1.0
+                  case (costFuncDragCoef,costFuncCd0,costFuncCdAlpha)
+                     cdb = 1.0
+                  case (costFuncForceX)
+                     forceb(1) = 1.0
+                  case (costFuncForceY)
+                     forceb(2) = 1.0
+                  case (costFuncForceZ)
+                     forceb(3) = 1.0
+                  case (costFuncForceXCoef)
+                     cforceb(1) = 1.0
+                  case (costFuncForceYCoef)
+                     cforceb(2) = 1.0
+                  case (costFuncForceZCoef)
+                     cforceb(3) = 1.0
+                  case (costFuncMomX)
+                     momentb(1) = 1.0
+                  case (costFuncMomY)
+                     momentb(2) = 1.0
+                  case (costFuncMomZ)
+                     momentb(3) = 1.0
+                  case (costFuncMomXCoef)
+                     cmomentb(1) = 1.0
+                  case (costFuncMomYCoef)
+                     cmomentb(2) = 1.0
+                  case (costFuncMomZCoef,costFuncCMzAlpha,costFuncCmzalphadot,&
+                       costFuncCmzq)
+                     cmomentb(3) = 1.0
+                  end select
+                  
+                  allocate(wblock(0:ib,0:jb,0:kb,nw),&
+                       wblockb(0:ib,0:jb,0:kb,nw))
+                  wblock(:,:,:,:) = w(:,:,:,:)
+                  wblockb(:,:,:,:) = 0.0
+                  righthandedadj = righthanded
+                  
+                  faceID = bcfaceid(mm)
+                  !if( myID==0 )print *,'computing force derivatives'
+                  call COMPUTEFORCEANDMOMENTADJ_B(force, forceb, cforce, cforceb, &
+                       lift, liftb, drag, dragb, cl, clb, cd, cdb, moment, momentb, &
+                       cmoment,cmomentb, alphaadj, alphaadjb, betaadj, betaadjb, &
+                       liftindex, machcoefadj, machcoefadjb, pointrefadj, &
+                       pointrefadjb, pts(:,:,sps), ptsb(:,:,sps), npts, wblock, wblockb, &
+                       righthandedadj, faceid, ibeg, iend, jbeg, jend,ii)
+                  !if( myID==0 )print *,'forces computed'
+                  ! Set the w-values derivatives in dJdw
+                  do kcell = 2,kl
+                     do jcell = 2,jl
+                        do icell = 2,il
+                           idxmgb = globalCell(icell,jcell,kcell)
+                           
+                           call VecSetValuesBlocked(dJdw,1,idxmgb,&
+                                wblockb(icell,jcell,kcell,:),&
+                                ADD_VALUES,PETScIerr)
+!!$                           call VecSetValuesBlocked(dJdw,1,idxmgb,&
+!!$                                wblockb(icell,jcell,kcell,:)*dJdc(sps),&
+!!$                                ADD_VALUES,PETScIerr)
+                           call EChk(PETScIerr,__file__,__line__)
+                        enddo
+                     enddo
+                  enddo
+                  !if( myID==0 )print *,'state deriv set'
+                  ! Set the pt derivative values in dIdpt
+                  do j=jBeg,jEnd
+                     do i=iBeg,iEnd
+                        ! This takes care of the ii increments -- 
+                        ! DO NOT NEED INCREMENT ON LINE BELOW
+                        ii = ii + 1
+                        call VecSetValues(dJdx,3,&
+                             (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/),&
+                             ptsb(:,ii,sps),ADD_VALUES,PETScIerr)
+                        call EChk(PETScIerr,__file__,__line__)
+                     end do
+                  end do
+                  !ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
+                  !if( myID==0 )print *,'coord deriv set'
+                  ! We also have the derivative of the Objective wrt the
+                  ! "AeroDVs" intrinsic aero design variables, alpha, beta etc
+                  
+                  if (nDesignAoA >=0) then
+                     print *,'aoa deriv',alphaAdjb,sps, myID
+                     dIdaloc(nDesignAoA+1,sps) = dIdaloc(nDesignAoA+1,sps) + alphaAdjb
+                  end if
+                  !if( myID==0 )print *,'aoa deriv set'
+                  if (nDesignSSA >= 0) then
+                     dIdaloc(nDesignSSA+1,sps) = dIdaloc(nDesignSSA+1,sps) + betaAdjb
+                  end if
+                  !if( myID==0 )print *,'ssa deriv set'
+                  if (nDesignMach >= 0) then
+                     dIdaloc(nDesignMach+1,sps) = dIdaloc(nDesignMach+1,sps) + machCoefAdjb!+machadjb
+                  end if
+                  !if( myID==0 )print *,'mach deriv set'
+                  if (nDesignMachGrid >= 0) then
+                     dIdaloc(nDesignMachGrid+1,sps) = dIdaloc(nDesignMachGrid+1,sps) + machCoefAdjb!+machgridadjb
+                  end if
+                  !if( myID==0 )print *,'machgrid deriv set'
+                  if (nDesignPointRefX >=0) then
+                     dIdaloc(nDesignPointRefX + 1,sps) = dIdaloc(nDesignPointRefX + 1,sps) + pointrefAdjb(1)
+                  end if
+                  !if( myID==0 )print *,'refx deriv set'
+                  if (nDesignPointRefY >=0) then
+                     dIdaloc(nDesignPointRefY + 1,sps) = dIdaloc(nDesignPointRefY + 1,sps) + pointrefAdjb(2)
+                  end if
+                  !if( myID==0 )print *,'refy deriv set'
+                  if (nDesignPointRefZ >=0) then
+                     dIdaloc(nDesignPointRefZ + 1,sps) = dIdaloc(nDesignPointRefZ + 1,sps) + pointrefAdjb(3)
+                  end if
+                  !if( myID==0 )print *,'extra derivs set'
+               end if
+            end do bocos
+            
+            deallocate(wblock,wblockb,stat=ierr)
+         end do domainLoopAD
+         ! Assemble the petsc vectors
+         call VecAssemblyBegin(dJdw,PETScIerr)
+         call EChk(PETScIerr,__file__,__line__)
+         call VecAssemblyEnd(dJdw,PETScIerr)
+         call EChk(PETScIerr,__file__,__line__)
+         
+         call VecAssemblyBegin(dJdx,PETScIerr)
+         call EChk(PETScIerr,__file__,__line__)
+         call VecAssemblyEnd(dJdx,PETScIerr)
+         call EChk(PETScIerr,__file__,__line__) 
+
+         call VecGetOwnershipRange(djdw, iLow, iHigh, PETScIerr)
+         call EChk(PETScIerr,__file__,__line__)
+         do nn = 1,ndom
+            call setPointersadj(nn,1_intType,sps)
+            do k = 2,kl!0,kb
+               do j = 2,jl!0,jb
+                  do i = 2,il!0,ib
+                     do l = 1,nw
+                        idxmgb   = globalCell(i,j,k)*nw+l
+                                                
+                        if( (idxmgb>=iLow).and.(idxmgb<=iHigh)) then
+                           call VecGetValues(djdw, 1, idxmgb, &
+                                val, PETScIerr)
+                           call EChk(PETScIerr,__file__,__line__)
+ 
+                           write(unitdw,11) val,sps,nn,i,j,k,l,idxmgb
+11                         format(1x,'dcdw ',f18.10,7I8)
+                        endif
+                     enddo
+                  enddo
+               enddo
+            enddo
+         end do
+
+         call VecGetOwnershipRange(djdx, iLow, iHigh, PETScIerr)
+         call EChk(PETScIerr,__file__,__line__)
+         do nn = 1,ndom
+            call setPointersadj(nn,1_intType,sps)
+            do k = 1,ke!0,kb
+               do j = 1,je!0,jb
+                  do i = 1,ie!0,ib
+                     do l = 1,3
+                        idxmgb   = globalnode(i,j,k)*3+l
+                                                
+                        if( (idxmgb>=iLow).and.(idxmgb<=iHigh)) then
+                           call VecGetValues(djdx, 1, idxmgb, &
+                                val, PETScIerr)
+                           call EChk(PETScIerr,__file__,__line__)
+ 
+                           write(unitdx,12) val,sps,nn,i,j,k,l,idxmgb
+12                         format(1x,'dcdx ',f18.10,7I8)
+                        endif
+                     enddo
+                  enddo
+               enddo
+            enddo
+         end do
+
+      end do spectralLoopAdj
+
+      print *,'local',dIdaloc(nDesignAoA+1,:)
+      do sps =1,nTimeintervalsSpectral
+         call mpi_allreduce(dIdaLoc(:,sps), dIdaGlob(:,sps), nDesignExtra, sumb_real, &
               mpi_sum, SUmb_comm_world, ierr)
-         
-         ! Transfer the cost function values to output arguments.
-         
-         dcldextra(1) = monGlob2(1)
-         dcldextra(2) = monGlob2(2)
-         dcldextra(3) = monGlob2(3)
-         dcldextra(4) = monGlob2(4)
-         dcldextra(5) = monGlob2(5) 
-         dcldextra(6) = monGlob2(6)
-         dcldextra(7) = monGlob2(7)
-         !dcddextra(2) = monGlob2(8)
-
-      enddo spectralLoop1Adj
-
-!****************************
-!Drag loop
-!*************************
-       print *,'zeroing output'
-       ClAdj = zero
-       CDAdj = zero
-       CmxAdj = zero 
-       CmyAdj = zero
-       CmzAdj = zero
-       CfxAdj = zero
-       CfyAdj = zero
-       CfzAdj = zero
-
-       yplusMax = zero
-
-   !    print *,'Adjoint forces initialized'
-!
-!***********************************
-       print *,' computing adjoint derivatives'
-       
-   spectralLoopAdj2: do sps=1,nTimeIntervalsSpectral
+      enddo
+      if(myid==0) print *,'global',dIdaglob(nDesignAoA+1,:)
+     
+      deallocate(pts,ptsb)
+      deallocate(dIdaLoc)
       
-      print *,'zeroing force output'
-      !zero the force components
-      cFpAdj(1) = zero; cFpAdj(2) = zero; cFpAdj(3) = zero
-      cFvAdj(1) = zero; cFvAdj(2) = zero; cFvAdj(3) = zero
-      cMpAdj(1) = zero; cMpAdj(2) = zero; cMpAdj(3) = zero
-      cMvAdj(1) = zero; cMvAdj(2) = zero; cMvAdj(3) = zero
-      ! Loop over the number of local blocks.
-      print *,'starting domain loop'
-      domainLoopAD2: do nn=1,nDom
-
-        ! Set some pointers to make the code more readable.
-         !print *,'setting pointers'
-        call setPointersAdj(nn,level,sps)
-        !print *,'allocating memory'
-        allocate(xAdj(0:ie,0:je,0:ke,3), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("Memory allocation failure for xAdj.")
-
-        allocate(xAdjB(0:ie,0:je,0:ke,3), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("Memory allocation failure for xAdjB.")
-        
-        allocate(wAdj(0:ib,0:jb,0:kb,nw), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("Memory allocation failure for wAdj.")
-
-        allocate(wAdjB(0:ib,0:jb,0:kb,nw), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("Memory allocation failure for wAdjB.")
-        
-        allocate(pAdj(0:ib,0:jb,0:kb), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("Memory allocation failure for pAdj.")
-        
-        !print *,'finished allocating',nn,level,sps
-        righthanded = flowDoms(nn,level,sps)%righthanded
-        
-
-        
-!!$        nViscBocos = flowDoms(nn,groundLevel,sps)%nViscBocos
-!!$        nInvBocos  = flowDoms(nn,groundLevel,sps)%nInvBocos
-!!$        
-!!$        BCFaceID => flowDoms(nn,groundLevel,  1)%BCFaceID
-!!$        groupNum => flowDoms(nn,groundLevel,  1)%groupNum
-!!$
-!!$        d2Wall   => flowDoms(nn,groundLevel,sps)%d2Wall
-!!$        muLam    => flowDoms(nn,groundLevel,sps)%muLam
-           
-!!$        ! Determine the number of time instances for this block and
-!!$        ! store the block dimensions a bit easier.
-!!$        
-!!$        sectionID = flowDoms(nn,level,1)%sectionID
-!!$        nTime     = sections(sectionID)%nTimeInstances
-!!$
-!!$        print *,'Pointers set',sectionID,nTime
-!!$        stop
-!!$        
-!!$        il = flowDoms(nn,level,1)%il
-!!$        jl = flowDoms(nn,level,1)%jl
-!!$        kl = flowDoms(nn,level,1)%kl
-!!$
-!!$        
-!!$        !Allocate the full grid stencil for the x
-!!$        allocate(xAdj(ib:ie,jb:jE,kb:ke,3), stat=ierr)
-!!$        if(ierr /= 0)                              &
-!!$             call terminate("verifydCfdx", &
-!!$             "Memory allocation failure for xAdj.")
-!!$
-!!$        allocate(xAdjB(ib:ie,jb:jE,kb:ke,3), stat=ierr)
-!!$        if(ierr /= 0)                              &
-!!$             call terminate("verifydCfdx", &
-!!$             "Memory allocation failure for xAdjB.")  
-!!$
-!!$        !Copy the values of x to the Stencil
-!!$        call copyADjointForcesStencil(xAdj,level,nn,sps)
-
-        ! Copy the coordinates into xAdj and
-        ! Compute the face normals on the subfaces
-        call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-           MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
-           rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
-           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
-        !copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-        !     MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-        !     rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
-        !     pInfCorrAdj,nn,level,sps,liftIndex)
-
-        machadjb=zero
-        machcoefadjb=zero
-        alphaadjb=zero
-        betaadjb=zero
-        rotrateadjb=zero
-        bocoLoop2: do mm=1,nBocos
-
-           ! Determine the range of cell indices of the owned cells
-           ! Notice these are not the node indices
-           iiBeg = BCData(mm)%icBeg
-           iiEnd = BCData(mm)%icEnd
-           jjBeg = BCData(mm)%jcBeg
-           jjEnd = BCData(mm)%jcEnd
-           
-           i2Beg= BCData(mm)%inBeg+1; i2End = BCData(mm)%inEnd
-           j2Beg= BCData(mm)%jnBeg+1; j2End = BCData(mm)%jnEnd
-
-           ! Initialize the seed for reverse mode. Cd second
-           ClAdjB = 0
-           CDAdjB = 1
-           CmxAdjB = 0
-           CmyAdjB = 0
-           CmzAdjB = 0
-!!$        CfxAdjB = 0
-!!$        CfyAdjB = 0
-!!$        CfzAdjB = 0
-       
-           xAdjB(:,:,:,:) = zero ! > return dCf/dx
-           
-           !===============================================================
-           !           
-!           print *,'Calculating Drag Partials...'
-           
-           !===============================================================
-           ! Compute the force derivatives
-           
-           call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
-&  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
-&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
-&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
-&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
-&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
-&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
-&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex)
-
-           
-           
-           !loop over cells to store the jacobian
-           do k = 0,ke
-              do j = 0,je
-                 do i = 0,ie
-                    
-                    ! Store the derivatives for comparison.
-                    
-                    dCD(nn,i,j,k,:)=dCD(nn,i,j,k,:)+& 
-                         & xAdjB( i,j,k,:)
-
-                 enddo
-              enddo
-           enddo
-           
-
-        enddo bocoLoop2
-!!$        dCddextralocal(ndesignmach) = dCddextralocal(ndesignmach)+machadjb+machcoefadjb
-!!$        dCddextralocal(ndesignaoa) = dCddextralocal(ndesignaoa)+alphaadjb
-!!$        dCddextralocal(ndesignssa) = dCddextralocal(ndesignssa)+betaadjb
-!!$        dCddextralocal(ndesignrotx) = dCddextralocal(ndesignrotx)+rotrateadjb(1)
-!!$        dCddextralocal(ndesignroty) = dCddextralocal(ndesignroty)+rotrateadjb(2)
-!!$        dCddextralocal(ndesignrotz) = dCddextralocal(ndesignrotz)+rotrateadjb(3)
-        dCddextralocal(ndesignmach) = machadjb+machcoefadjb
-        dCddextralocal(ndesignmachgrid) = machgridadjb+machcoefadjb
-        dCddextralocal(ndesignaoa) = alphaadjb
-        dCddextralocal(ndesignssa) = betaadjb
-        dCddextralocal(ndesignrotx) = rotrateadjb(1)
-        dCddextralocal(ndesignroty) = rotrateadjb(2)
-        dCddextralocal(ndesignrotz) = rotrateadjb(3)
-
-       !===============================================================
-        
-        !print *,' deallocating'
-        ! Deallocate the xAdj.
-        deallocate(pAdj, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.")
-             
-        ! Deallocate the xAdj.
-        deallocate(wAdj, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-
-         deallocate(wAdjB, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-        ! Deallocate the xAdj.
-        deallocate(xAdj, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-
-         deallocate(xAdjB, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-        !print *,'finishhed deallocating'
-       
-     enddo domainLoopAD2
-      
-      print *,'dcddextralocal',dcddextralocal(1),dcddextralocal(2),dcddextralocal(3)
-      monLoc2(1) = dcddextralocal(1)
-      monLoc2(2) = dcddextralocal(2)
-      monLoc2(3) = dcddextralocal(3)
-      monLoc2(4) = dcddextralocal(4)
-      monLoc2(5) = dcddextralocal(5)
-      monLoc2(6) = dcddextralocal(6)
-      monLoc2(7) = dcddextralocal(7)
-      monLoc2(8) = 1!dcddextralocal(2)
-         
-         ! Determine the global sum of the summation monitoring
-         ! variables. The sum is made known to all processors.
-!         write(*,*)'adj ',myID,monLoc2(1)
-         !write(*,*)'nmonsum',nMonSum
-         call mpi_allreduce(monLoc2, monGlob2, nMonSum2, sumb_real, &
-              mpi_sum, SUmb_comm_world, ierr)
-         
-         ! Transfer the cost function values to output arguments.
-         
-         dcddextra(1) = monGlob2(1)
-         dcddextra(2) = monGlob2(2)
-         dcddextra(3) = monGlob2(3)
-         dcddextra(4) = monGlob2(4)
-         dcddextra(5) = monGlob2(5) 
-         dcddextra(6) = monGlob2(6)
-         dcddextra(7) = monGlob2(7)
-         !dcddextra(2) = monGlob2(8)
-
-      enddo spectralLoopAdj2
-
-
-!*******************
-!cmxloop
-!*******************
-
-       print *,'zeroing output'
-       ClAdj = zero
-       CDAdj = zero
-       CmxAdj = zero 
-       CmyAdj = zero
-       CmzAdj = zero
-       CfxAdj = zero
-       CfyAdj = zero
-       CfzAdj = zero
-
-       yplusMax = zero
-
-   !    print *,'Adjoint forces initialized'
-!
-!***********************************
-       print *,' computing adjoint derivatives'
-       
-   spectralLoopAdj3: do sps=1,nTimeIntervalsSpectral
-      
-      print *,'zeroing force output'
-      !zero the force components
-      cFpAdj(1) = zero; cFpAdj(2) = zero; cFpAdj(3) = zero
-      cFvAdj(1) = zero; cFvAdj(2) = zero; cFvAdj(3) = zero
-      cMpAdj(1) = zero; cMpAdj(2) = zero; cMpAdj(3) = zero
-      cMvAdj(1) = zero; cMvAdj(2) = zero; cMvAdj(3) = zero
-      ! Loop over the number of local blocks.
-      print *,'starting domain loop'
-      domainLoopAD3: do nn=1,nDom
-
-        ! Set some pointers to make the code more readable.
-         !print *,'setting pointers'
-        call setPointersAdj(nn,level,sps)
-        !print *,'allocating memory'
-        allocate(xAdj(0:ie,0:je,0:ke,3), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("Memory allocation failure for xAdj.")
-
-        allocate(xAdjB(0:ie,0:je,0:ke,3), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("Memory allocation failure for xAdjB.")
-        
-        allocate(wAdj(0:ib,0:jb,0:kb,nw), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("Memory allocation failure for wAdj.")
-
-        allocate(wAdjB(0:ib,0:jb,0:kb,nw), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("Memory allocation failure for wAdjB.")
-        
-        allocate(pAdj(0:ib,0:jb,0:kb), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("Memory allocation failure for pAdj.")
-        
-        !print *,'finished allocating',nn,level,sps
-        righthanded = flowDoms(nn,level,sps)%righthanded
-
-        ! Copy the coordinates into xAdj and
-        ! Compute the face normals on the subfaces
-        call copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-           MachAdj,machCoefAdj,machGridAdj,prefAdj,rhorefAdj, pinfdimAdj,&
-           rhoinfdimAdj,rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj,&
-           timerefAdj,pInfCorrAdj,nn,level,sps,liftIndex)
-        !copyADjointForcesStencil(wAdj,xAdj,alphaAdj,betaAdj,&
-        !     MachAdj,machCoefAdj,prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-        !     rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,murefAdj, timerefAdj,&
-        !     pInfCorrAdj,nn,level,sps,liftIndex)
-
-        machadjb=zero
-        machcoefadjb=zero
-        alphaadjb=zero
-        betaadjb=zero
-        rotrateadjb=zero
-        bocoLoop3: do mm=1,nBocos
-
-           ! Determine the range of cell indices of the owned cells
-           ! Notice these are not the node indices
-           iiBeg = BCData(mm)%icBeg
-           iiEnd = BCData(mm)%icEnd
-           jjBeg = BCData(mm)%jcBeg
-           jjEnd = BCData(mm)%jcEnd
-           
-           i2Beg= BCData(mm)%inBeg+1; i2End = BCData(mm)%inEnd
-           j2Beg= BCData(mm)%jnBeg+1; j2End = BCData(mm)%jnEnd
-
-           ! Initialize the seed for reverse mode. Cmx third
-           ClAdjB = 0
-           CDAdjB = 0
-           CmxAdjB = 1
-           CmyAdjB = 0
-           CmzAdjB = 0
- !       CfxAdjB = 0
- !       CfyAdjB = 0
- !       CfzAdjB = 0
-       
-           xAdjB(:,:,:,:) = zero ! > return dCf/dx
-           
-           !===============================================================
-           !           
-!           print *,'Calculating MomX Partials...'
-           
-           !===============================================================
-           ! Compute the force derivatives
-           
-           call COMPUTEFORCESADJ_B(xadj, xadjb, wadj, wadjb, padj, iibeg, &
-&  iiend, jjbeg, jjend, i2beg, i2end, j2beg, j2end, mm, cfxadj, cfxadjb&
-&  , cfyadj, cfyadjb, cfzadj, cfzadjb, cmxadj, cmxadjb, cmyadj, cmyadjb&
-&  , cmzadj, cmzadjb, yplusmax, refpoint, cladj, cladjb, cdadj, cdadjb, &
-&  nn, level, sps, cfpadj, cmpadj, righthanded, secondhalo, alphaadj, &
-&  alphaadjb, betaadj, betaadjb, machadj, machadjb, machcoefadj, &
-&  machcoefadjb, machgridadj, machgridadjb, prefadj, rhorefadj, &
-&  pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, murefadj, timerefadj, &
-&  pinfcorradj, rotcenteradj, rotrateadj, rotrateadjb, liftindex)
-
-           
-           !loop over cells to store the jacobian
-           do k = 0,ke
-              do j = 0,je
-                 do i = 0,ie
-                    
-                    ! Store the derivatives for comparison.
-                   
-
-                    dCMx(nn,i,j,k,:)=dCMx(nn,i,j,k,:)+& 
-                         & xAdjB( i,j,k,:)
-                    
-                 enddo
-              enddo
-           enddo
-!!$                     
-!!$           deallocate(normAdj, stat=ierr)
-!!$           if(ierr /= 0)                              &
-!!$                call terminate("verifydCfdx", &
-!!$                "Deallocation failure for normAdj.") 
-           
-        enddo bocoLoop3
-!!$        dCmdextralocal(ndesignmach) = dCmdextralocal(ndesignmach)+machadjb+machcoefadjb
-!!$        dCmdextralocal(ndesignaoa) = dCmdextralocal(ndesignaoa)+alphaadjb
-!!$        dCmdextralocal(ndesignssa) = dCmdextralocal(ndesignssa)+betaadjb
-!!$        dCmdextralocal(ndesignrotx) = dCmdextralocal(ndesignrotx)+rotrateadjb(1)
-!!$        dCmdextralocal(ndesignroty) = dCmdextralocal(ndesignroty)+rotrateadjb(2)
-!!$        dCmdextralocal(ndesignrotz) = dCmdextralocal(ndesignrotz)+rotrateadjb(3)
-        dCmdextralocal(ndesignmach) = machadjb+machcoefadjb
-        dCmdextralocal(ndesignmachgrid) = machgridadjb+machcoefadjb
-        dCmdextralocal(ndesignaoa) = alphaadjb
-        dCmdextralocal(ndesignssa) = betaadjb
-        dCmdextralocal(ndesignrotx) = rotrateadjb(1)
-        dCmdextralocal(ndesignroty) = rotrateadjb(2)
-        dCmdextralocal(ndesignrotz) = rotrateadjb(3)
-        
-        !===============================================================
-        
-        !print *,' deallocating'
-        ! Deallocate the xAdj.
-        deallocate(pAdj, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.")
-             
-        ! Deallocate the xAdj.
-        deallocate(wAdj, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-
-         deallocate(wAdjB, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-        ! Deallocate the xAdj.
-        deallocate(xAdj, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-
-         deallocate(xAdjB, stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("verifydCfdx", &
-             "Deallocation failure for xAdj.") 
-        !print *,'finishhed deallocating'
-       
-     enddo domainLoopAD3
-      
-      print *,'dcmdextralocal',dcmdextralocal(1),dcmdextralocal(2),dcmdextralocal(3)
-      monLoc2(1) = dcmdextralocal(1)
-      monLoc2(2) = dcmdextralocal(2)
-      monLoc2(3) = dcmdextralocal(3)
-      monLoc2(4) = dcmdextralocal(4)
-      monLoc2(5) = dcmdextralocal(5)
-      monLoc2(6) = dcmdextralocal(6)
-      monLoc2(7) = dcmdextralocal(7)
-      monLoc2(8) = 1!dcddextralocal(2)
-         
-         ! Determine the global sum of the summation monitoring
-         ! variables. The sum is made known to all processors.
-!         write(*,*)'adj ',myID,monLoc2(1)
-         !write(*,*)'nmonsum',nMonSum
-         call mpi_allreduce(monLoc2, monGlob2, nMonSum2, sumb_real, &
-              mpi_sum, SUmb_comm_world, ierr)
-         
-         ! Transfer the cost function values to output arguments.
-         
-         dcmdextra(1) = monGlob2(1)
-         dcmdextra(2) = monGlob2(2)
-         dcmdextra(3) = monGlob2(3)
-         dcmdextra(4) = monGlob2(4)
-         dcmdextra(5) = monGlob2(5) 
-         dcmdextra(6) = monGlob2(6)
-         dcmdextra(7) = monGlob2(7)
-         !dcmdextra(2) = monGlob2(8)
-
-      enddo spectralLoopAdj3
-
-
-      
-   print *,'AD loop finished'
+     
+      !
       ! Get new time and compute the elapsed AD time.
 
       call mpi_barrier(SUmb_comm_world, ierr)
@@ -1041,1059 +522,1273 @@ subroutine verifydCfdx(level)
 
 !version using original routines!
 !!$      ! Loop over the number of local blocks.
+!!$      print *,'starting FD loop',nTimeIntervalsSpectral
+!!$      do sps=1,nTimeIntervalsSpectral
+!!$         
+!!$         domainForcesLoopFDorig: do nn=1,nDom   
+!!$            print *,'fd in domain',nn,sps
+!!$            call setPointers(nn,level,sps)
+!!$            
+!!$            !loop over all points
+!!$            
+!!$            do i = 0,ie
+!!$               print *,'i',i
+!!$               do j = 0,je
+!!$                  do k = 0,ke
+!!$                     do l = 1,3
+!!$                        xref = x(i,j,k,l)
+!!$                        
+!!$                        x(i,j,k,l) = xref+deltax
+!!$                        
+!!$                        !*************************************************************
+!!$                        !Original force and metric calculation....
+!!$                        !     ******************************************************************
+!!$                        !     *                                                                *
+!!$                        !     * Update the force coefficients using the usual flow solver      *
+!!$                        !     * routine.                                                       *
+!!$                        !     *                                                                *
+!!$                        !     ******************************************************************
+!!$                        !
+!!$                        
+!!$                        call metric(level)
+!!$                        call setPointers(nn,level,sps)
+!!$                        call computeForcesPressureAdj(w,p)
+!!$                        call applyAllBC(secondHalo)
+!!$                        call setPointers(nn,level,sps)
+!!$                        call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+!!$                        
+!!$                        Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+!!$                             + (cfp(2) + cfv(2))*liftDirection(2) &
+!!$                             + (cfp(3) + cfv(3))*liftDirection(3)
+!!$                        
+!!$                        Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+!!$                             + (cfp(2) + cfv(2))*dragDirection(2) &
+!!$                             + (cfp(3) + cfv(3))*dragDirection(3)
+!!$                        
+!!$                        Cfx = cfp(1) + cfv(1)
+!!$                        Cfy = cfp(2) + cfv(2)
+!!$                        Cfz = cfp(3) + cfv(3)
+!!$                        
+!!$                        Cmx = cmp(1) + cmv(1)
+!!$                        Cmy = cmp(2) + cmv(2)
+!!$                        Cmz = cmp(3) + cmv(3)
+!!$                        
+!!$                        nmonsum = 8
+!!$                        
+!!$                        monLoc1(1) = Cl
+!!$                        monLoc1(2) = Cd
+!!$                        monLoc1(3) = cfx
+!!$                        monLoc1(4) = cfy
+!!$                        monLoc1(5) = cfz
+!!$                        monLoc1(6) = cmx
+!!$                        monLoc1(7) = cmy
+!!$                        monLoc1(8) = cmz
+!!$                        
+!!$                     
+!!$                        ! Determine the global sum of the summation monitoring
+!!$                        ! variables. The sum is made known to all processors.
+!!$                        
+!!$                        call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
+!!$                             mpi_sum, SUmb_comm_world, ierr)
+!!$                        
+!!$                        ! Transfer the cost function values to output arguments.
+!!$                        
+!!$                        CLp  = monGlob1(1)
+!!$                        CDp  = monGlob1(2)
+!!$                        Cfxp = monGlob1(3)
+!!$                        Cfyp = monGlob1(4)
+!!$                        Cfzp = monGlob1(5) 
+!!$                        CMxp = monGlob1(6)
+!!$                        CMyp = monGlob1(7)
+!!$                        CMzp = monGlob1(8)
+!!$                        
+!!$                        
+!!$                        !*********************
+!!$                        !Now calculate other perturbation
+!!$                        x(i,j,k,l) = xref-deltax
+!!$                        
+!!$                        !*************************************************************
+!!$                        !Original force and metric calculation....
+!!$                        !     ******************************************************************
+!!$                        !     *                                                                *
+!!$                        !     * Update the force coefficients using the usual flow solver      *
+!!$                        !     * routine.                                                       *
+!!$                        !     *                                                                *
+!!$                        !     ******************************************************************
+!!$                        !
+!!$                        
+!!$                        call metric(level)
+!!$                        call setPointers(nn,level,sps)
+!!$                        call computeForcesPressureAdj(w,p)
+!!$                        call applyAllBC(secondHalo)
+!!$                        call setPointers(nn,level,sps)
+!!$                        call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+!!$                        
+!!$                        Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+!!$                             + (cfp(2) + cfv(2))*liftDirection(2) &
+!!$                             + (cfp(3) + cfv(3))*liftDirection(3)
+!!$                        
+!!$                        Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+!!$                             + (cfp(2) + cfv(2))*dragDirection(2) &
+!!$                             + (cfp(3) + cfv(3))*dragDirection(3)
+!!$                        
+!!$                        Cfx = cfp(1) + cfv(1)
+!!$                        Cfy = cfp(2) + cfv(2)
+!!$                        Cfz = cfp(3) + cfv(3)
+!!$                        
+!!$                        Cmx = cmp(1) + cmv(1)
+!!$                        Cmy = cmp(2) + cmv(2)
+!!$                        Cmz = cmp(3) + cmv(3)
+!!$                        
+!!$                        nmonsum = 8
+!!$                        
+!!$                        monLoc2(1) = Cl
+!!$                        monLoc2(2) = Cd
+!!$                        monLoc2(3) = cfx
+!!$                        monLoc2(4) = cfy
+!!$                        monLoc2(5) = cfz
+!!$                        monLoc2(6) = cmx
+!!$                        monLoc2(7) = cmy
+!!$                        monLoc2(8) = cmz
+!!$                        
+!!$                        ! Determine the global sum of the summation monitoring
+!!$                        ! variables. The sum is made known to all processors.
+!!$                        
+!!$                        call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
+!!$                             mpi_sum, SUmb_comm_world, ierr)
+!!$                        
+!!$                        ! Transfer the cost function values to output arguments.
+!!$                        
+!!$                        CLm  = monGlob2(1)
+!!$                        CDm  = monGlob2(2)
+!!$                        Cfxm = monGlob2(3)
+!!$                        Cfym = monGlob2(4)
+!!$                        Cfzm = monGlob2(5) 
+!!$                        CMxm = monGlob2(6)
+!!$                        CMym = monGlob2(7)
+!!$                        CMzm = monGlob2(8)
+!!$                        
+!!$                        
+!!$                        x(i,j,k,l) = xref
+!!$                        
+!!$                        
+!!$                        dCLdxFD = (CLP-CLM)/(two*deltax)  
+!!$                        dCDdxFD = (CDP-CDM)/(two*deltax) 
+!!$                        dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
+!!$                        
+!!$                        dCLFD(nn,i,j,k,l)=dCLdxFD
+!!$                        
+!!$                        dCDFD(nn,i,j,k,l)=dCDdxFD
+!!$                        
+!!$                        dCmxFD(nn,i,j,k,l)=dCmxdxFD
+!!$                        write (unit,*) dCLdxFD,i,j,k,l
+!!$                        
+!!$                     enddo
+!!$                  enddo
+!!$               enddo
+!!$            enddo
+!!$         enddo domainForcesLoopFDorig
+!!$      enddo
+
+      if (nDesignMach >= 0) then
+      ! Loop over the number of local blocks.
+      
+      if( myID==0 )print *,'starting FD loop',nTimeIntervalsSpectral
+      do sps = 1, nTimeIntervalsSpectral
+         monloc1=0.0
+         monloc2=0.0
+         domainMachLoopFDorig: do nn=1,nDom   
+            
+            call setPointers(nn,level,sps)
+            
+            !loop over all points
+            
+            machref = mach
+            machcoefref=machcoef
+            !if( myID==0 )print *,'mach before',mach,machcoef
+            mach= machref+deltax
+            machcoef = machcoefref+deltax
+            !if( myID==0 )print *,'mach after',mach,machcoef
+            !*************************************************************
+            !Original force and metric calculation....
+            !     ******************************************************************
+            !     *                                                                *
+            !     * Update the force coefficients using the usual flow solver      *
+            !     * routine.                                                       *
+            !     *                                                                *
+            !     ******************************************************************
+            !
+            
+            call metric(level)
+            call setPointers(nn,level,sps)
+            call computeForcesPressureAdj(w,p)
+            call applyAllBC(secondHalo)
+            call setPointers(nn,level,sps)
+            call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+            !if( myID==0 )print *,'routines complete'
+            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+                 + (cfp(2) + cfv(2))*liftDirection(2) &
+                 + (cfp(3) + cfv(3))*liftDirection(3)
+            
+            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+                 + (cfp(2) + cfv(2))*dragDirection(2) &
+                 + (cfp(3) + cfv(3))*dragDirection(3)
+            
+            Cfx = cfp(1) + cfv(1)
+            Cfy = cfp(2) + cfv(2)
+            Cfz = cfp(3) + cfv(3)
+            
+            Cmx = cmp(1) + cmv(1)
+            Cmy = cmp(2) + cmv(2)
+            Cmz = cmp(3) + cmv(3)
+            
+            nmonsum = 8
+            
+            monLoc1(1) =monLoc1(1) + Cl
+            monLoc1(2) =monLoc1(2)+ Cd
+            monLoc1(3) =monLoc1(3)+ cfx
+            monLoc1(4) =monLoc1(4) +cfy
+            monLoc1(5) =monLoc1(5) +cfz
+            monLoc1(6) =monLoc1(6) +cmx
+            monLoc1(7) = monLoc1(7)+ cmy
+            monLoc1(8) = monLoc1(8)+cmz
+            
+            
+            ! Determine the global sum of the summation monitoring
+            ! variables. The sum is made known to all processors.
+            
+            call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
+                 mpi_sum, SUmb_comm_world, ierr)
+            !if( myID==0 )print *,'alrreduce complete'
+            ! Transfer the cost function values to output arguments.
+            
+            CLp  = monGlob1(1)
+            CDp  = monGlob1(2)
+            Cfxp = monGlob1(3)
+            Cfyp = monGlob1(4)
+            Cfzp = monGlob1(5) 
+            CMxp = monGlob1(6)
+            CMyp = monGlob1(7)
+            CMzp = monGlob1(8)
+            
+            
+            !*********************
+            !Now calculate other perturbation
+            mach = machref-deltax
+            machcoef = machcoefref-deltax
+            !*************************************************************
+            !Original force and metric calculation....
+            !     ******************************************************************
+            !     *                                                                *
+            !     * Update the force coefficients using the usual flow solver      *
+            !     * routine.                                                       *
+            !     *                                                                *
+            !     ******************************************************************
+            !
+            
+            call metric(level)
+            call setPointers(nn,level,sps)
+            call computeForcesPressureAdj(w,p)
+            call applyAllBC(secondHalo)
+            call setPointers(nn,level,sps)
+            call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+            !if( myID==0 )print *,'routines complete 2',nn,level,sps
+            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+                 + (cfp(2) + cfv(2))*liftDirection(2) &
+                 + (cfp(3) + cfv(3))*liftDirection(3)
+            
+            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+                 + (cfp(2) + cfv(2))*dragDirection(2) &
+                 + (cfp(3) + cfv(3))*dragDirection(3)
+            
+            Cfx = cfp(1) + cfv(1)
+            Cfy = cfp(2) + cfv(2)
+            Cfz = cfp(3) + cfv(3)
+            
+            Cmx = cmp(1) + cmv(1)
+            Cmy = cmp(2) + cmv(2)
+            Cmz = cmp(3) + cmv(3)
+            
+            nmonsum = 8
+            
+            monLoc2(1) = monLoc2(1)+Cl
+            monLoc2(2) = monLoc2(2)+Cd
+            monLoc2(3) = monLoc2(3)+cfx
+            monLoc2(4) = monLoc2(4)+cfy
+            monLoc2(5) = monLoc2(5)+cfz
+            monLoc2(6) = monLoc2(6)+cmx
+            monLoc2(7) = monLoc2(7)+cmy
+            monLoc2(8) = monLoc2(8)+cmz
+            
+            ! Determine the global sum of the summation monitoring
+            ! variables. The sum is made known to all processors.
+            
+            call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
+                 mpi_sum, SUmb_comm_world, ierr)
+            if( myID==0 )print *,'allreduce complete 2'
+            ! Transfer the cost function values to output arguments.
+            
+            CLm  = monGlob2(1)
+            CDm  = monGlob2(2)
+            Cfxm = monGlob2(3)
+            Cfym = monGlob2(4)
+            Cfzm = monGlob2(5) 
+            CMxm = monGlob2(6)
+            CMym = monGlob2(7)
+            CMzm = monGlob2(8)
+            
+            
+            mach = machref
+            machcoef = machcoefref
+            
+        
+         enddo domainMachLoopFDorig
+         
+         !if( myID==0 )print *,'setting derivatives'
+         ! Store the correct value based on the cost function
+         select case (costFunction)
+
+         case (costFuncLiftCoef)
+            dIdaFD(nDesignMach+1,sps) = (CLP-CLM)/(two*deltax) 
+         case (costFuncDragCoef)
+            dIdaFD(nDesignMach+1,sps) = (CDP-CDM)/(two*deltax) 
+         case (costFuncForceXCoef)
+            dIdaFD(nDesignMach+1,sps) = (cfxp-cfxm)/(two*deltax)
+         case (costFuncForceYCoef)
+            dIdaFD(nDesignMach+1,sps) = (cfxp-cfxm)/(two*deltax)
+         case (costFuncForceZCoef)
+            dIdaFD(nDesignMach+1,sps) = (cfxp-cfxm)/(two*deltax)
+         case (costFuncMomXCoef)
+            dIdaFD(nDesignMach+1,sps) = (cmxp-cmxm)/(two*deltax)
+         case (costFuncMomYCoef)
+            dIdaFD(nDesignMach+1,sps) = (cmyp-cmym)/(two*deltax)
+         case (costFuncMomZCoef)
+            dIdaFD(nDesignMach+1,sps) = (cmzp-cmzm)/(two*deltax)
+         end select
+      enddo
+      call f77flush()
+      call mpi_barrier(SUmb_comm_world, ierr)
+      !if( myID==0 )print *,'mach derivatives complete'
+   endif
+
+
+    if (nDesignAoA >= 0) then
+      !get reference conditions
+      call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+      
+      
+      print *,'starting alpha FD loop',nTimeIntervalsSpectral
+      do sps = 1,nTimeIntervalsSpectral
+         monloc1=0.0
+         monloc2=0.0
+         domainalphaLoopFDorig: do nn=1,nDom   
+
+            call setPointers(nn,level,sps)
+
+            !loop over all points
+            alpharef = alpha
+
+            alpha = alpharef+deltax
+
+            !*************************************************************
+            !Original force and metric calculation....
+            !     ******************************************************************
+            !     *                                                                *
+            !     * Update the force coefficients using the usual flow solver      *
+            !     * routine.                                                       *
+            !     *                                                                *
+            !     ******************************************************************
+            !
+            call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+            do mm=1,nTimeIntervalsSpectral
+
+               ! Compute the time, which corresponds to this spectral solution.
+               ! For steady and unsteady mode this is simply the restart time;
+               ! for the spectral mode the periodic time must be taken into
+               ! account, which can be different for every section.
+
+               t = timeUnsteadyRestart
+
+               if(equationMode == timeSpectral) then
+                  do ll=1,nSections
+                     t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
+                          /         real(nTimeIntervalsSpectral,realType)
+                  enddo
+               endif
+
+               call gridVelocitiesFineLevel(.false., t, mm)
+               call gridVelocitiesCoarseLevels(mm)
+               call normalVelocitiesAllLevels(mm)
+
+               call slipVelocitiesFineLevel(.false., t, mm)
+               call slipVelocitiesCoarseLevels(mm)
+
+            enddo
+            call metric(level)
+            call setPointers(nn,level,sps)
+            call computeForcesPressureAdj(w,p)
+            call applyAllBC(secondHalo)
+            call setPointers(nn,level,sps)
+            call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+
+            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+                 + (cfp(2) + cfv(2))*liftDirection(2) &
+                 + (cfp(3) + cfv(3))*liftDirection(3)
+            !(1.0/float(ndom))*liftDirection(1)
+
+            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+                 + (cfp(2) + cfv(2))*dragDirection(2) &
+                 + (cfp(3) + cfv(3))*dragDirection(3)
+
+            Cfx = cfp(1) + cfv(1)
+            Cfy = cfp(2) + cfv(2)
+            Cfz = cfp(3) + cfv(3)
+
+            Cmx = cmp(1) + cmv(1)
+            Cmy = cmp(2) + cmv(2)
+            Cmz = cmp(3) + cmv(3)
+            !(1.0/float(ndom))*liftDirection(3)!
+
+            nmonsum = 8
+
+            monLoc1(1) = monLoc1(1)+Cl
+            monLoc1(2) = monLoc1(2)+Cd
+            monLoc1(3) = monLoc1(3)+ cfx
+            monLoc1(4) = monLoc1(4)+ cfy
+            monLoc1(5) = monLoc1(5)+ cfz
+            monLoc1(6) = monLoc1(6)+cmx
+            monLoc1(7) = monLoc1(7)+cmy
+            monLoc1(8) = monLoc1(8)+cmz
+
+
+            ! Determine the global sum of the summation monitoring
+            ! variables. The sum is made known to all processors.
+
+            call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
+                 mpi_sum, SUmb_comm_world, ierr)
+
+            ! Transfer the cost function values to output arguments.
+
+            CLp  = monGlob1(1)
+            CDp  = monGlob1(2)
+            Cfxp = monGlob1(3)
+            Cfyp = monGlob1(4)
+            Cfzp = monGlob1(5) 
+            CMxp = monGlob1(6)
+            CMyp = monGlob1(7)
+            CMzp = monGlob1(8)
+
+
+            !*********************
+            !Now calculate other perturbation
+            alpha = alpharef-deltax
+
+            !*************************************************************
+            !Original force and metric calculation....
+            !     ******************************************************************
+            !     *                                                                *
+            !     * Update the force coefficients using the usual flow solver      *
+            !     * routine.                                                       *
+            !     *                                                                *
+            !     ******************************************************************
+            !
+
+            call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+            do mm=1,nTimeIntervalsSpectral
+
+               ! Compute the time, which corresponds to this spectral solution.
+               ! For steady and unsteady mode this is simply the restart time;
+               ! for the spectral mode the periodic time must be taken into
+               ! account, which can be different for every section.
+
+               t = timeUnsteadyRestart
+
+               if(equationMode == timeSpectral) then
+                  do ll=1,nSections
+                     t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
+                          /         real(nTimeIntervalsSpectral,realType)
+                  enddo
+               endif
+
+               call gridVelocitiesFineLevel(.false., t, mm)
+               call gridVelocitiesCoarseLevels(mm)
+               call normalVelocitiesAllLevels(mm)
+
+               call slipVelocitiesFineLevel(.false., t, mm)
+               call slipVelocitiesCoarseLevels(mm)
+
+            enddo
+            call metric(level)
+            call setPointers(nn,level,sps)
+            call computeForcesPressureAdj(w,p)
+            call applyAllBC(secondHalo)
+            call setPointers(nn,level,sps)
+            call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+            !if( myID==0 )print *,'routines complete 2',nn,level,sps
+            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+                 + (cfp(2) + cfv(2))*liftDirection(2) &
+                 + (cfp(3) + cfv(3))*liftDirection(3)
+            !(1.0/float(ndom))*liftDirection(1)!
+
+            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+                 + (cfp(2) + cfv(2))*dragDirection(2) &
+                 + (cfp(3) + cfv(3))*dragDirection(3)
+
+            Cfx = cfp(1) + cfv(1)
+            Cfy = cfp(2) + cfv(2)
+            Cfz = cfp(3) + cfv(3)
+
+            Cmx = cmp(1) + cmv(1)
+            Cmy = cmp(2) + cmv(2)
+            Cmz = cmp(3) + cmv(3)
+            !(1.0/float(ndom))*liftDirection(3)!
+
+            nmonsum = 8
+
+            monLoc2(1) = monLoc2(1)+Cl
+            monLoc2(2) = monLoc2(2)+Cd
+            monLoc2(3) = monLoc2(3)+cfx
+            monLoc2(4) = monLoc2(4)+ cfy
+            monLoc2(5) = monLoc2(5)+cfz
+            monLoc2(6) = monLoc2(6) +cmx
+            monLoc2(7) = monLoc2(7) +cmy
+            monLoc2(8) = monLoc2(8)+cmz
+
+            ! Determine the global sum of the summation monitoring
+            ! variables. The sum is made known to all processors.
+
+            call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
+                 mpi_sum, SUmb_comm_world, ierr)
+
+            ! Transfer the cost function values to output arguments.
+
+            CLm  = monGlob2(1)
+            CDm  = monGlob2(2)
+            Cfxm = monGlob2(3)
+            Cfym = monGlob2(4)
+            Cfzm = monGlob2(5) 
+            CMxm = monGlob2(6)
+            CMym = monGlob2(7)
+            CMzm = monGlob2(8)
+
+
+            alpha = alpharef
+
+            call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+
+         enddo domainalphaLoopFDorig
+         !if( myID==0 )print *,'setting derivative',nn,level,sps,costFunction,nDesignAoA+1
+         ! Store the correct value based on the cost function
+         select case (costFunction)
+
+         case (costFuncLiftCoef)
+            dIdaFD(nDesignAoA+1,sps) = (CLP-CLM)/(two*deltax) 
+         case (costFuncDragCoef)
+            dIdaFD(nDesignAoA+1,sps) = (CDP-CDM)/(two*deltax) 
+         case (costFuncForceXCoef)
+            dIdaFD(nDesignAoA+1,sps) = (cfxp-cfxm)/(two*deltax)
+         case (costFuncForceYCoef)
+            dIdaFD(nDesignAoA+1,sps) = (cfxp-cfxm)/(two*deltax)
+         case (costFuncForceZCoef)
+            dIdaFD(nDesignAoA+1,sps) = (cfxp-cfxm)/(two*deltax)
+         case (costFuncMomXCoef)
+            dIdaFD(nDesignAoA+1,sps) = (cmxp-cmxm)/(two*deltax)
+         case (costFuncMomYCoef)
+            dIdaFD(nDesignAoA+1,sps) = (cmyp-cmym)/(two*deltax)
+         case (costFuncMomZCoef)
+            dIdaFD(nDesignAoA+1,sps) = (cmzp-cmzm)/(two*deltax)
+         end select
+      end do
+  
+      call f77flush()
+      call mpi_barrier(SUmb_comm_world, ierr)
+   end if
+
+   if (nDesignssA >= 0) then
+      !get reference conditions
+      call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+      print *,'dirangle',liftDirection,beta
+      
+      print *,'starting beta FD loop',sps
+      do sps = 1,nTimeIntervalsSpectral
+         monloc1=0.0
+         monloc2=0.0
+         domainbetaLoopFDorig: do nn=1,nDom   
+
+            call setPointers(nn,level,sps)
+
+            !loop over all points
+            betaref = beta
+
+            beta = betaref+deltax!*1000
+
+            !*************************************************************
+            !Original force and metric calculation....
+            !     ******************************************************************
+            !     *                                                                *
+            !     * Update the force coefficients using the usual flow solver      *
+            !     * routine.                                                       *
+            !     *                                                                *
+            !     ******************************************************************
+            !
+            !print *,'betaplus', beta
+            call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+
+            !call checkInputParam
+            !print *,'adjflowangleplus',liftDirection
+            do mm=1,nTimeIntervalsSpectral
+
+               ! Compute the time, which corresponds to this spectral solution.
+               ! For steady and unsteady mode this is simply the restart time;
+               ! for the spectral mode the periodic time must be taken into
+               ! account, which can be different for every section.
+
+               t = timeUnsteadyRestart
+
+               if(equationMode == timeSpectral) then
+                  do ll=1,nSections
+                     t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
+                          /         real(nTimeIntervalsSpectral,realType)
+                  enddo
+               endif
+
+               call gridVelocitiesFineLevel(.false., t, mm)
+               call gridVelocitiesCoarseLevels(mm)
+               call normalVelocitiesAllLevels(mm)
+
+               call slipVelocitiesFineLevel(.false., t, mm)
+               call slipVelocitiesCoarseLevels(mm)
+
+            enddo
+            call metric(level)
+            call setPointers(nn,level,sps)
+            call computeForcesPressureAdj(w,p)
+            call applyAllBC(secondHalo)
+            call setPointers(nn,level,sps)
+            call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+
+            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+                 + (cfp(2) + cfv(2))*liftDirection(2) &
+                 + (cfp(3) + cfv(3))*liftDirection(3)
+            ! (1.0/float(ndom))*liftDirection(1)!        
+            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+                 + (cfp(2) + cfv(2))*dragDirection(2) &
+                 + (cfp(3) + cfv(3))*dragDirection(3)
+            !(1.0/float(ndom))*liftDirection(2)!
+
+            Cfx = cfp(1) + cfv(1)
+            Cfy = cfp(2) + cfv(2)
+            Cfz = cfp(3) + cfv(3)
+
+            Cmx = cmp(1) + cmv(1)
+            Cmy = cmp(2) + cmv(2)
+            Cmz = cmp(3) + cmv(3)
+            !(1.0/float(ndom))*liftDirection(3)!      
+            nmonsum = 8
+
+            monLoc1(1) = monLoc1(1)+Cl
+            monLoc1(2) = monLoc1(2)+Cd
+            monLoc1(3) = monLoc1(3)+ cfx
+            monLoc1(4) = monLoc1(4)+ cfy
+            monLoc1(5) = monLoc1(5)+ cfz
+            monLoc1(6) = monLoc1(6)+cmx
+            monLoc1(7) = monLoc1(7)+cmy
+            monLoc1(8) = monLoc1(8)+cmz
+
+
+            ! Determine the global sum of the summation monitoring
+            ! variables. The sum is made known to all processors.
+
+            call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
+                 mpi_sum, SUmb_comm_world, ierr)
+
+            ! Transfer the cost function values to output arguments.
+
+            CLp  = monGlob1(1)
+            CDp  = monGlob1(2)
+            Cfxp = monGlob1(3)
+            Cfyp = monGlob1(4)
+            Cfzp = monGlob1(5) 
+            CMxp = monGlob1(6)
+            CMyp = monGlob1(7)
+            CMzp = monGlob1(8)
+
+
+            !*********************
+            !Now calculate other perturbation
+            beta = betaref-deltax!*1000
+
+            !*************************************************************
+            !Original force and metric calculation....
+            !     ******************************************************************
+            !     *                                                                *
+            !     * Update the force coefficients using the usual flow solver      *
+            !     * routine.                                                       *
+            !     *                                                                *
+            !     ******************************************************************
+            !
+            !print *,'betaminus',beta
+            call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+            !call checkInputParam
+            !print *,'adjflowangleminus',liftDirection
+            do mm=1,nTimeIntervalsSpectral
+
+               ! Compute the time, which corresponds to this spectral solution.
+               ! For steady and unsteady mode this is simply the restart time;
+               ! for the spectral mode the periodic time must be taken into
+               ! account, which can be different for every section.
+
+               t = timeUnsteadyRestart
+
+               if(equationMode == timeSpectral) then
+                  do ll=1,nSections
+                     t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
+                          /         real(nTimeIntervalsSpectral,realType)
+                  enddo
+               endif
+
+               call gridVelocitiesFineLevel(.false., t, mm)
+               call gridVelocitiesCoarseLevels(mm)
+               call normalVelocitiesAllLevels(mm)
+
+               call slipVelocitiesFineLevel(.false., t, mm)
+               call slipVelocitiesCoarseLevels(mm)
+
+            enddo
+            call metric(level)
+            call setPointers(nn,level,sps)
+            call computeForcesPressureAdj(w,p)
+            call applyAllBC(secondHalo)
+            call setPointers(nn,level,sps)
+            call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+
+            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+                 + (cfp(2) + cfv(2))*liftDirection(2) &
+                 + (cfp(3) + cfv(3))*liftDirection(3)
+            !(1.0/float(ndom))*liftDirection(1)!
+
+            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+                 + (cfp(2) + cfv(2))*dragDirection(2) &
+                 + (cfp(3) + cfv(3))*dragDirection(3)
+            !(1.0/float(ndom))*liftDirection(2)!
+
+            Cfx = cfp(1) + cfv(1)
+            Cfy = cfp(2) + cfv(2)
+            Cfz = cfp(3) + cfv(3)
+
+            Cmx = cmp(1) + cmv(1)
+            Cmy = cmp(2) + cmv(2)
+            Cmz = cmp(3) + cmv(3)
+            ! (1.0/float(ndom))*liftDirection(3)!
+
+            nmonsum = 8
+
+            monLoc2(1) = monLoc2(1)+Cl
+            monLoc2(2) = monLoc2(2)+Cd
+            monLoc2(3) = monLoc2(3)+cfx
+            monLoc2(4) = monLoc2(4)+ cfy
+            monLoc2(5) = monLoc2(5)+cfz
+            monLoc2(6) =monLoc2(6) +cmx
+            monLoc2(7) =monLoc2(7) +cmy
+            monLoc2(8) = monLoc2(8)+cmz
+
+            ! Determine the global sum of the summation monitoring
+            ! variables. The sum is made known to all processors.
+
+            call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
+                 mpi_sum, SUmb_comm_world, ierr)
+
+            ! Transfer the cost function values to output arguments.
+
+            CLm  = monGlob2(1)
+            CDm  = monGlob2(2)
+            Cfxm = monGlob2(3)
+            Cfym = monGlob2(4)
+            Cfzm = monGlob2(5) 
+            CMxm = monGlob2(6)
+            CMym = monGlob2(7)
+            CMzm = monGlob2(8)
+
+
+            beta = betaref
+
+            call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+            !call checkInputParam
+          
+
+         enddo domainbetaLoopFDorig
+    
+         
+         ! Store the correct value based on the cost function
+         select case (costFunction)
+
+         case (costFuncLiftCoef)
+            dIdaFD(nDesignSSA+1,sps) = (CLP-CLM)/(two*deltax) 
+         case (costFuncDragCoef)
+            dIdaFD(nDesignSSA+1,sps) = (CDP-CDM)/(two*deltax) 
+         case (costFuncForceXCoef)
+            dIdaFD(nDesignSSA+1,sps) = (cfxp-cfxm)/(two*deltax)
+         case (costFuncForceYCoef)
+            dIdaFD(nDesignSSA+1,sps) = (cfxp-cfxm)/(two*deltax)
+         case (costFuncForceZCoef)
+            dIdaFD(nDesignSSA+1,sps) = (cfxp-cfxm)/(two*deltax)
+         case (costFuncMomXCoef)
+            dIdaFD(nDesignSSA+1,sps) = (cmxp-cmxm)/(two*deltax)
+         case (costFuncMomYCoef)
+            dIdaFD(nDesignSSA+1,sps) = (cmyp-cmym)/(two*deltax)
+         case (costFuncMomZCoef)
+            dIdaFD(nDesignSSA+1,sps) = (cmzp-cmzm)/(two*deltax)
+         end select
+      end do
+      
+      call f77flush()
+      call mpi_barrier(SUmb_comm_world, ierr)
+   end if
+
+   if (nDesignPointRefX >= 0) then
+     
+     
+      
+      print *,'starting beta FD loop',sps
+      do sps = 1,nTimeIntervalsSpectral
+         monloc1=0.0
+         monloc2=0.0
+         domainpointrefxLoopFDorig: do nn=1,nDom   
+
+            call setPointers(nn,level,sps)
+
+            !loop over all points
+            pointref_ref = pointref(1)
+
+            pointref(1) = pointref_ref+deltax!*1000
+
+            !*************************************************************
+            !Original force and metric calculation....
+            !     ******************************************************************
+            !     *                                                                *
+            !     * Update the force coefficients using the usual flow solver      *
+            !     * routine.                                                       *
+            !     *                                                                *
+            !     ******************************************************************
+            !
+           
+            !call checkInputParam
+            !print *,'adjflowangleplus',liftDirection
+            do mm=1,nTimeIntervalsSpectral
+
+               ! Compute the time, which corresponds to this spectral solution.
+               ! For steady and unsteady mode this is simply the restart time;
+               ! for the spectral mode the periodic time must be taken into
+               ! account, which can be different for every section.
+
+               t = timeUnsteadyRestart
+
+               if(equationMode == timeSpectral) then
+                  do ll=1,nSections
+                     t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
+                          /         real(nTimeIntervalsSpectral,realType)
+                  enddo
+               endif
+
+               call gridVelocitiesFineLevel(.false., t, mm)
+               call gridVelocitiesCoarseLevels(mm)
+               call normalVelocitiesAllLevels(mm)
+
+               call slipVelocitiesFineLevel(.false., t, mm)
+               call slipVelocitiesCoarseLevels(mm)
+
+            enddo
+            call metric(level)
+            call setPointers(nn,level,sps)
+            call computeForcesPressureAdj(w,p)
+            call applyAllBC(secondHalo)
+            call setPointers(nn,level,sps)
+            call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+
+            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+                 + (cfp(2) + cfv(2))*liftDirection(2) &
+                 + (cfp(3) + cfv(3))*liftDirection(3)
+            ! (1.0/float(ndom))*liftDirection(1)!        
+            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+                 + (cfp(2) + cfv(2))*dragDirection(2) &
+                 + (cfp(3) + cfv(3))*dragDirection(3)
+            !(1.0/float(ndom))*liftDirection(2)!
+
+            Cfx = cfp(1) + cfv(1)
+            Cfy = cfp(2) + cfv(2)
+            Cfz = cfp(3) + cfv(3)
+
+            Cmx = cmp(1) + cmv(1)
+            Cmy = cmp(2) + cmv(2)
+            Cmz = cmp(3) + cmv(3)
+            !(1.0/float(ndom))*liftDirection(3)!      
+            nmonsum = 8
+
+            monLoc1(1) = monLoc1(1)+Cl
+            monLoc1(2) = monLoc1(2)+Cd
+            monLoc1(3) = monLoc1(3)+ cfx
+            monLoc1(4) = monLoc1(4)+ cfy
+            monLoc1(5) = monLoc1(5)+ cfz
+            monLoc1(6) = monLoc1(6)+cmx
+            monLoc1(7) = monLoc1(7)+cmy
+            monLoc1(8) = monLoc1(8)+cmz
+
+
+            ! Determine the global sum of the summation monitoring
+            ! variables. The sum is made known to all processors.
+
+            call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
+                 mpi_sum, SUmb_comm_world, ierr)
+
+            ! Transfer the cost function values to output arguments.
+
+            CLp  = monGlob1(1)
+            CDp  = monGlob1(2)
+            Cfxp = monGlob1(3)
+            Cfyp = monGlob1(4)
+            Cfzp = monGlob1(5) 
+            CMxp = monGlob1(6)
+            CMyp = monGlob1(7)
+            CMzp = monGlob1(8)
+
+
+            !*********************
+            !Now calculate other perturbation
+            pointref(1) = pointref_ref-deltax!*1000
+
+            !*************************************************************
+            !Original force and metric calculation....
+            !     ******************************************************************
+            !     *                                                                *
+            !     * Update the force coefficients using the usual flow solver      *
+            !     * routine.                                                       *
+            !     *                                                                *
+            !     ******************************************************************
+            !
+            !print *,'adjflowangleminus',liftDirection
+            do mm=1,nTimeIntervalsSpectral
+
+               ! Compute the time, which corresponds to this spectral solution.
+               ! For steady and unsteady mode this is simply the restart time;
+               ! for the spectral mode the periodic time must be taken into
+               ! account, which can be different for every section.
+
+               t = timeUnsteadyRestart
+
+               if(equationMode == timeSpectral) then
+                  do ll=1,nSections
+                     t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
+                          /         real(nTimeIntervalsSpectral,realType)
+                  enddo
+               endif
+
+               call gridVelocitiesFineLevel(.false., t, mm)
+               call gridVelocitiesCoarseLevels(mm)
+               call normalVelocitiesAllLevels(mm)
+
+               call slipVelocitiesFineLevel(.false., t, mm)
+               call slipVelocitiesCoarseLevels(mm)
+
+            enddo
+            call metric(level)
+            call setPointers(nn,level,sps)
+            call computeForcesPressureAdj(w,p)
+            call applyAllBC(secondHalo)
+            call setPointers(nn,level,sps)
+            call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+
+            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+                 + (cfp(2) + cfv(2))*liftDirection(2) &
+                 + (cfp(3) + cfv(3))*liftDirection(3)
+            !(1.0/float(ndom))*liftDirection(1)!
+
+            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+                 + (cfp(2) + cfv(2))*dragDirection(2) &
+                 + (cfp(3) + cfv(3))*dragDirection(3)
+            !(1.0/float(ndom))*liftDirection(2)!
+
+            Cfx = cfp(1) + cfv(1)
+            Cfy = cfp(2) + cfv(2)
+            Cfz = cfp(3) + cfv(3)
+
+            Cmx = cmp(1) + cmv(1)
+            Cmy = cmp(2) + cmv(2)
+            Cmz = cmp(3) + cmv(3)
+            ! (1.0/float(ndom))*liftDirection(3)!
+
+            nmonsum = 8
+
+            monLoc2(1) = monLoc2(1)+Cl
+            monLoc2(2) = monLoc2(2)+Cd
+            monLoc2(3) = monLoc2(3)+cfx
+            monLoc2(4) = monLoc2(4)+ cfy
+            monLoc2(5) = monLoc2(5)+cfz
+            monLoc2(6) =monLoc2(6) +cmx
+            monLoc2(7) =monLoc2(7) +cmy
+            monLoc2(8) = monLoc2(8)+cmz
+
+            ! Determine the global sum of the summation monitoring
+            ! variables. The sum is made known to all processors.
+
+            call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
+                 mpi_sum, SUmb_comm_world, ierr)
+
+            ! Transfer the cost function values to output arguments.
+
+            CLm  = monGlob2(1)
+            CDm  = monGlob2(2)
+            Cfxm = monGlob2(3)
+            Cfym = monGlob2(4)
+            Cfzm = monGlob2(5) 
+            CMxm = monGlob2(6)
+            CMym = monGlob2(7)
+            CMzm = monGlob2(8)
+
+
+            pointref(1) = pointref_ref
+
+                     
+
+         enddo domainpointrefxLoopFDorig
+    
+         
+         ! Store the correct value based on the cost function
+         select case (costFunction)
+
+         case (costFuncLiftCoef)
+            dIdaFD(nDesignPointRefX+1,sps) = (CLP-CLM)/(two*deltax) 
+         case (costFuncDragCoef)
+            dIdaFD(nDesignPointRefX+1,sps) = (CDP-CDM)/(two*deltax) 
+         case (costFuncForceXCoef)
+            dIdaFD(nDesignPointRefX+1,sps) = (cfxp-cfxm)/(two*deltax)
+         case (costFuncForceYCoef)
+            dIdaFD(nDesignPointRefX+1,sps) = (cfxp-cfxm)/(two*deltax)
+         case (costFuncForceZCoef)
+            dIdaFD(nDesignPointRefX+1,sps) = (cfxp-cfxm)/(two*deltax)
+         case (costFuncMomXCoef)
+            dIdaFD(nDesignPointRefX+1,sps) = (cmxp-cmxm)/(two*deltax)
+         case (costFuncMomYCoef)
+            dIdaFD(nDesignPointRefX+1,sps) = (cmyp-cmym)/(two*deltax)
+         case (costFuncMomZCoef)
+            dIdaFD(nDesignPointRefX+1,sps) = (cmzp-cmzm)/(two*deltax)
+         end select
+      end do
+      
+      call f77flush()
+      call mpi_barrier(SUmb_comm_world, ierr)
+   end if
+!!$   if (nDesignrotx >= 0) then
+!!$      ! Loop over the number of local blocks.
 !!$      
+!!$        monloc1=0.0
+!!$        monloc2=0.0
 !!$      sps=1
-!!$      print *,'starting FD loop',sps
-!!$      domainForcesLoopFDorig: do nn=1,nDom   
-!!$         print *,'fd in domain',nn
-!!$         !cycle
+!!$      print *,'starting rotx FD loop',sps
+!!$      domainrotxLoopFDorig: do nn=1,nDom   
+!!$         
 !!$         call setPointers(nn,level,sps)
 !!$
 !!$         !loop over all points
-!!$
-!!$         do i = 0,ie
-!!$            print *,'i',i
-!!$            do j = 0,je
-!!$               do k = 0,ke
-!!$                  do l = 1,3
-!!$                     xref = x(i,j,k,l)
-!!$
-!!$                     x(i,j,k,l) = xref+deltax
-!!$
-!!$                     !*************************************************************
-!!$                     !Original force and metric calculation....
-!!$                     !     ******************************************************************
-!!$                     !     *                                                                *
-!!$                     !     * Update the force coefficients using the usual flow solver      *
-!!$                     !     * routine.                                                       *
-!!$                     !     *                                                                *
-!!$                     !     ******************************************************************
-!!$                     !
-!!$ 
-!!$                     call metric(level)
-!!$                     call setPointers(nn,level,sps)
-!!$                     call computeForcesPressureAdj(w,p)
-!!$                     call applyAllBC(secondHalo)
-!!$                     call setPointers(nn,level,sps)
-!!$                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
-!!$                     
-!!$                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-!!$                          + (cfp(2) + cfv(2))*liftDirection(2) &
-!!$                          + (cfp(3) + cfv(3))*liftDirection(3)
-!!$                     
-!!$                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-!!$                          + (cfp(2) + cfv(2))*dragDirection(2) &
-!!$                          + (cfp(3) + cfv(3))*dragDirection(3)
-!!$                     
-!!$                     Cfx = cfp(1) + cfv(1)
-!!$                     Cfy = cfp(2) + cfv(2)
-!!$                     Cfz = cfp(3) + cfv(3)
-!!$                     
-!!$                     Cmx = cmp(1) + cmv(1)
-!!$                     Cmy = cmp(2) + cmv(2)
-!!$                     Cmz = cmp(3) + cmv(3)
-!!$                     
-!!$                     nmonsum = 8
-!!$                     
-!!$                     monLoc1(1) = Cl
-!!$                     monLoc1(2) = Cd
-!!$                     monLoc1(3) = cfx
-!!$                     monLoc1(4) = cfy
-!!$                     monLoc1(5) = cfz
-!!$                     monLoc1(6) = cmx
-!!$                     monLoc1(7) = cmy
-!!$                     monLoc1(8) = cmz
-!!$                     
-!                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sps)
-!                     
-!                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-!                          + (cfp(2) + cfv(2))*liftDirection(2) &
-!                          + (cfp(3) + cfv(3))*liftDirection(3)
-!                     
-!                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-!                          + (cfp(2) + cfv(2))*dragDirection(2) &
-!                          + (cfp(3) + cfv(3))*dragDirection(3)
-!                     
-!                     Cfx = cfp(1) + cfv(1)
-!                     Cfy = cfp(2) + cfv(2)
-!                     Cfz = cfp(3) + cfv(3)
-!                     
-!                     Cmx = cmp(1) + cmv(1)
-!                     Cmy = cmp(2) + cmv(2)
-!                     Cmz = cmp(3) + cmv(3)
-!                     
-!                     nmonsum = 8
-!                     
-!                     monLoc(1) = Cl
-!                     monLoc(2) = Cd
-!                     monLoc(3) = cfx
-!                     monLoc(4) = cfy
-!                     monLoc(5) = cfz
-!                     monLoc(6) = cmx
-!                     monLoc(7) = cmy
-!                     monLoc(8) = cmz
-!                     
-!!$                     
-!!$                     ! Determine the global sum of the summation monitoring
-!!$                     ! variables. The sum is made known to all processors.
-!!$                     
-!!$                     call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
-!!$                          mpi_sum, SUmb_comm_world, ierr)
-!!$                     
-!!$                     ! Transfer the cost function values to output arguments.
-!!$                     
-!!$                     CLp  = monGlob1(1)
-!!$                     CDp  = monGlob1(2)
-!!$                     Cfxp = monGlob1(3)
-!!$                     Cfyp = monGlob1(4)
-!!$                     Cfzp = monGlob1(5) 
-!!$                     CMxp = monGlob1(6)
-!!$                     CMyp = monGlob1(7)
-!!$                     CMzp = monGlob1(8)
-!!$                     
-!!$                     
-!!$                     !*********************
-!!$                     !Now calculate other perturbation
-!!$                     x(i,j,k,l) = xref-deltax
-!!$                     
-!!$                     !*************************************************************
-!!$                     !Original force and metric calculation....
-!!$                     !     ******************************************************************
-!!$                     !     *                                                                *
-!!$                     !     * Update the force coefficients using the usual flow solver      *
-!!$                     !     * routine.                                                       *
-!!$                     !     *                                                                *
-!!$                     !     ******************************************************************
-!!$                     !
-!!$  
-!!$                     call metric(level)
-!!$                     call setPointers(nn,level,sps)
-!!$                     call computeForcesPressureAdj(w,p)
-!!$                     call applyAllBC(secondHalo)
-!!$                     call setPointers(nn,level,sps)
-!!$                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
-!!$                     
-!!$                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-!!$                          + (cfp(2) + cfv(2))*liftDirection(2) &
-!!$                          + (cfp(3) + cfv(3))*liftDirection(3)
-!!$                     
-!!$                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-!!$                          + (cfp(2) + cfv(2))*dragDirection(2) &
-!!$                          + (cfp(3) + cfv(3))*dragDirection(3)
-!!$                     
-!!$                     Cfx = cfp(1) + cfv(1)
-!!$                     Cfy = cfp(2) + cfv(2)
-!!$                     Cfz = cfp(3) + cfv(3)
-!!$                     
-!!$                     Cmx = cmp(1) + cmv(1)
-!!$                     Cmy = cmp(2) + cmv(2)
-!!$                     Cmz = cmp(3) + cmv(3)
-!!$                     
-!!$                     nmonsum = 8
-!!$                     
-!!$                     monLoc2(1) = Cl
-!!$                     monLoc2(2) = Cd
-!!$                     monLoc2(3) = cfx
-!!$                     monLoc2(4) = cfy
-!!$                     monLoc2(5) = cfz
-!!$                     monLoc2(6) = cmx
-!!$                     monLoc2(7) = cmy
-!!$                     monLoc2(8) = cmz
-!!$                  
-!                     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sps)
-!                     
-!                     Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-!                          + (cfp(2) + cfv(2))*liftDirection(2) &
-!                          + (cfp(3) + cfv(3))*liftDirection(3)
-!                     
-!                     Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-!                          + (cfp(2) + cfv(2))*dragDirection(2) &
-!                          + (cfp(3) + cfv(3))*dragDirection(3)
-!                     
-!                     Cfx = cfp(1) + cfv(1)
-!                     Cfy = cfp(2) + cfv(2)
-!                     Cfz = cfp(3) + cfv(3)
-!                     
-!                     Cmx = cmp(1) + cmv(1)
-!                     Cmy = cmp(2) + cmv(2)
-!                     Cmz = cmp(3) + cmv(3)
-!                     
-!                     nmonsum = 8
-!                     
-!                     monLoc(1) = Cl
-!                     monLoc(2) = Cd
-!                     monLoc(3) = cfx
-!                     monLoc(4) = cfy
-!                     monLoc(5) = cfz
-!                     monLoc(6) = cmx
-!                     monLoc(7) = cmy
-!                     monLoc(8) = cmz
-!!$                     
-!!$                     
-!!$                     ! Determine the global sum of the summation monitoring
-!!$                     ! variables. The sum is made known to all processors.
-!!$                     
-!!$                     call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
-!!$                          mpi_sum, SUmb_comm_world, ierr)
-!!$                     
-!!$                     ! Transfer the cost function values to output arguments.
-!!$                     
-!!$                     CLm  = monGlob2(1)
-!!$                     CDm  = monGlob2(2)
-!!$                     Cfxm = monGlob2(3)
-!!$                     Cfym = monGlob2(4)
-!!$                     Cfzm = monGlob2(5) 
-!!$                     CMxm = monGlob2(6)
-!!$                     CMym = monGlob2(7)
-!!$                     CMzm = monGlob2(8)
-!!$                     
-!!$                     
-!!$                     x(i,j,k,l) = xref
-!!$                  
-!!$
-!!$                     dCLdxFD = (CLP-CLM)/(two*deltax)  
-!!$                    dCDdxFD = (CDP-CDM)/(two*deltax) 
-!!$                    dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
-!!$
-!!$                    dCLFD(nn,i,j,k,l)=dCLdxFD
-!!$
-!!$                    dCDFD(nn,i,j,k,l)=dCDdxFD
-!!$                    
-!!$                    dCmxFD(nn,i,j,k,l)=dCmxdxFD
-!!$                    write (unit,*) dCLdxFD,i,j,k,l
-!!$                    
-!!$                    enddo
-!!$                 enddo
-!!$              enddo
-!!$           enddo
-!!$        enddo domainForcesLoopFDorig
-
-      ! Loop over the number of local blocks.
-      
-        monloc1=0.0
-        monloc2=0.0
-      sps=1
-      print *,'starting FD loop',sps
-      domainMachLoopFDorig: do nn=1,nDom   
-         
-         call setPointers(nn,level,sps)
-
-         !loop over all points
-         
-         machref = mach
-         machcoefref=machcoef
-         !print *,'mach before',mach,machcoef
-         mach= machref+deltax
-         machcoef = machcoefref+deltax
-         !print *,'mach after',mach,machcoef
-         !*************************************************************
-         !Original force and metric calculation....
-         !     ******************************************************************
-         !     *                                                                *
-         !     * Update the force coefficients using the usual flow solver      *
-         !     * routine.                                                       *
-         !     *                                                                *
-         !     ******************************************************************
-         !
- 
-         call metric(level)
-         call setPointers(nn,level,sps)
-         call computeForcesPressureAdj(w,p)
-         call applyAllBC(secondHalo)
-         call setPointers(nn,level,sps)
-         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
-         
-         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-              + (cfp(2) + cfv(2))*liftDirection(2) &
-              + (cfp(3) + cfv(3))*liftDirection(3)
-         
-         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-              + (cfp(2) + cfv(2))*dragDirection(2) &
-              + (cfp(3) + cfv(3))*dragDirection(3)
-         
-         Cfx = cfp(1) + cfv(1)
-         Cfy = cfp(2) + cfv(2)
-         Cfz = cfp(3) + cfv(3)
-         
-         Cmx = cmp(1) + cmv(1)
-         Cmy = cmp(2) + cmv(2)
-         Cmz = cmp(3) + cmv(3)
-         
-         nmonsum = 8
-         
-         monLoc1(1) =monLoc1(1) + Cl
-         monLoc1(2) =monLoc1(2)+ Cd
-         monLoc1(3) =monLoc1(3)+ cfx
-         monLoc1(4) =monLoc1(4) +cfy
-         monLoc1(5) =monLoc1(5) +cfz
-         monLoc1(6) =monLoc1(6) +cmx
-         monLoc1(7) = monLoc1(7)+ cmy
-         monLoc1(8) = monLoc1(8)+cmz
-         
-         
-         ! Determine the global sum of the summation monitoring
-         ! variables. The sum is made known to all processors.
-         
-         call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
-              mpi_sum, SUmb_comm_world, ierr)
-         
-         ! Transfer the cost function values to output arguments.
-         
-         CLp  = monGlob1(1)
-         CDp  = monGlob1(2)
-         Cfxp = monGlob1(3)
-         Cfyp = monGlob1(4)
-         Cfzp = monGlob1(5) 
-         CMxp = monGlob1(6)
-         CMyp = monGlob1(7)
-         CMzp = monGlob1(8)
-         
-         
-         !*********************
-         !Now calculate other perturbation
-         mach = machref-deltax
-         machcoef = machcoefref-deltax
-         !*************************************************************
-         !Original force and metric calculation....
-         !     ******************************************************************
-         !     *                                                                *
-         !     * Update the force coefficients using the usual flow solver      *
-         !     * routine.                                                       *
-         !     *                                                                *
-         !     ******************************************************************
-         !
-         
-         call metric(level)
-         call setPointers(nn,level,sps)
-         call computeForcesPressureAdj(w,p)
-         call applyAllBC(secondHalo)
-         call setPointers(nn,level,sps)
-         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
-                     
-         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-              + (cfp(2) + cfv(2))*liftDirection(2) &
-              + (cfp(3) + cfv(3))*liftDirection(3)
-         
-         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-              + (cfp(2) + cfv(2))*dragDirection(2) &
-              + (cfp(3) + cfv(3))*dragDirection(3)
-         
-         Cfx = cfp(1) + cfv(1)
-         Cfy = cfp(2) + cfv(2)
-         Cfz = cfp(3) + cfv(3)
-         
-         Cmx = cmp(1) + cmv(1)
-         Cmy = cmp(2) + cmv(2)
-         Cmz = cmp(3) + cmv(3)
-         
-         nmonsum = 8
-         
-         monLoc2(1) = monLoc2(1)+Cl
-         monLoc2(2) = monLoc2(2)+Cd
-         monLoc2(3) = monLoc2(3)+cfx
-         monLoc2(4) = monLoc2(4)+cfy
-         monLoc2(5) = monLoc2(5)+cfz
-         monLoc2(6) = monLoc2(6)+cmx
-         monLoc2(7) = monLoc2(7)+cmy
-         monLoc2(8) = monLoc2(8)+cmz
-         
-         ! Determine the global sum of the summation monitoring
-         ! variables. The sum is made known to all processors.
-         
-         call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
-              mpi_sum, SUmb_comm_world, ierr)
-         
-         ! Transfer the cost function values to output arguments.
-         
-         CLm  = monGlob2(1)
-         CDm  = monGlob2(2)
-         Cfxm = monGlob2(3)
-         Cfym = monGlob2(4)
-         Cfzm = monGlob2(5) 
-         CMxm = monGlob2(6)
-         CMym = monGlob2(7)
-         CMzm = monGlob2(8)
-         
-         
-         mach = machref
-         machcoef = machcoefref
-         !print *,'clp',CLP,CLM,CLP-CLM
-         dCLdextraFD(ndesignmach) = (CLP-CLM)/(two*deltax)  
-         dCDdextraFD(ndesignmach) = (CDP-CDM)/(two*deltax) 
-         dcmdextrafd(ndesignmach) = (cmxp-cmxm)/(two*deltax)
-         !dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
-        
-      enddo domainMachLoopFDorig
-     
-      call f77flush()
-      call mpi_barrier(SUmb_comm_world, ierr)
-      !barrier
-      !get reference conditions
-      call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
-      monloc1=0.0
-      monloc2=0.0
-      
-      sps=1
-      print *,'starting alpha FD loop',sps
-      domainalphaLoopFDorig: do nn=1,nDom   
-         
-         call setPointers(nn,level,sps)
-
-         !loop over all points
-         alpharef = alpha
-         
-         alpha = alpharef+deltax
-         
-         !*************************************************************
-         !Original force and metric calculation....
-         !     ******************************************************************
-         !     *                                                                *
-         !     * Update the force coefficients using the usual flow solver      *
-         !     * routine.                                                       *
-         !     *                                                                *
-         !     ******************************************************************
-         !
-         call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
-              do mm=1,nTimeIntervalsSpectral
-            
-            ! Compute the time, which corresponds to this spectral solution.
-            ! For steady and unsteady mode this is simply the restart time;
-            ! for the spectral mode the periodic time must be taken into
-            ! account, which can be different for every section.
-            
-            t = timeUnsteadyRestart
-            
-            if(equationMode == timeSpectral) then
-               do ll=1,nSections
-                  t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
-                       /         real(nTimeIntervalsSpectral,realType)
-               enddo
-            endif
-            
-            call gridVelocitiesFineLevel(.false., t, mm)
-            call gridVelocitiesCoarseLevels(mm)
-            call normalVelocitiesAllLevels(mm)
-            
-            call slipVelocitiesFineLevel(.false., t, mm)
-            call slipVelocitiesCoarseLevels(mm)
-            
-         enddo
-         call metric(level)
-         call setPointers(nn,level,sps)
-         call computeForcesPressureAdj(w,p)
-         call applyAllBC(secondHalo)
-         call setPointers(nn,level,sps)
-         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
-         
-         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-              + (cfp(2) + cfv(2))*liftDirection(2) &
-              + (cfp(3) + cfv(3))*liftDirection(3)
-         
-         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-              + (cfp(2) + cfv(2))*dragDirection(2) &
-              + (cfp(3) + cfv(3))*dragDirection(3)
-         
-         Cfx = cfp(1) + cfv(1)
-         Cfy = cfp(2) + cfv(2)
-         Cfz = cfp(3) + cfv(3)
-         
-         Cmx = cmp(1) + cmv(1)
-         Cmy = cmp(2) + cmv(2)
-         Cmz = cmp(3) + cmv(3)
-         
-         nmonsum = 8
-         
-         monLoc1(1) = monLoc1(1)+Cl
-         monLoc1(2) = monLoc1(2)+Cd
-         monLoc1(3) = monLoc1(3)+ cfx
-         monLoc1(4) = monLoc1(4)+ cfy
-         monLoc1(5) = monLoc1(5)+ cfz
-         monLoc1(6) = monLoc1(6)+cmx
-         monLoc1(7) = monLoc1(7)+cmy
-         monLoc1(8) = monLoc1(8)+cmz
-         
-         
-         ! Determine the global sum of the summation monitoring
-         ! variables. The sum is made known to all processors.
-         
-         call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
-              mpi_sum, SUmb_comm_world, ierr)
-         
-         ! Transfer the cost function values to output arguments.
-         
-         CLp  = monGlob1(1)
-         CDp  = monGlob1(2)
-         Cfxp = monGlob1(3)
-         Cfyp = monGlob1(4)
-         Cfzp = monGlob1(5) 
-         CMxp = monGlob1(6)
-         CMyp = monGlob1(7)
-         CMzp = monGlob1(8)
-                     
-         
-         !*********************
-         !Now calculate other perturbation
-         alpha = alpharef-deltax
-                     
-         !*************************************************************
-         !Original force and metric calculation....
-         !     ******************************************************************
-         !     *                                                                *
-         !     * Update the force coefficients using the usual flow solver      *
-         !     * routine.                                                       *
-         !     *                                                                *
-         !     ******************************************************************
-         !
-         
-         call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
-              do mm=1,nTimeIntervalsSpectral
-            
-            ! Compute the time, which corresponds to this spectral solution.
-            ! For steady and unsteady mode this is simply the restart time;
-            ! for the spectral mode the periodic time must be taken into
-            ! account, which can be different for every section.
-            
-            t = timeUnsteadyRestart
-            
-            if(equationMode == timeSpectral) then
-               do ll=1,nSections
-                  t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
-                       /         real(nTimeIntervalsSpectral,realType)
-               enddo
-            endif
-            
-            call gridVelocitiesFineLevel(.false., t, mm)
-            call gridVelocitiesCoarseLevels(mm)
-            call normalVelocitiesAllLevels(mm)
-            
-            call slipVelocitiesFineLevel(.false., t, mm)
-            call slipVelocitiesCoarseLevels(mm)
-            
-         enddo
-         call metric(level)
-         call setPointers(nn,level,sps)
-         call computeForcesPressureAdj(w,p)
-         call applyAllBC(secondHalo)
-         call setPointers(nn,level,sps)
-         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
-         
-         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-              + (cfp(2) + cfv(2))*liftDirection(2) &
-              + (cfp(3) + cfv(3))*liftDirection(3)
-         
-         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-              + (cfp(2) + cfv(2))*dragDirection(2) &
-              + (cfp(3) + cfv(3))*dragDirection(3)
-         
-         Cfx = cfp(1) + cfv(1)
-         Cfy = cfp(2) + cfv(2)
-         Cfz = cfp(3) + cfv(3)
-         
-         Cmx = cmp(1) + cmv(1)
-         Cmy = cmp(2) + cmv(2)
-         Cmz = cmp(3) + cmv(3)
-         
-         nmonsum = 8
-         
-         monLoc2(1) = monLoc2(1)+Cl
-         monLoc2(2) = monLoc2(2)+Cd
-         monLoc2(3) = monLoc2(3)+cfx
-         monLoc2(4) = monLoc2(4)+ cfy
-         monLoc2(5) = monLoc2(5)+cfz
-         monLoc2(6) =monLoc2(6) +cmx
-         monLoc2(7) =monLoc2(7) +cmy
-         monLoc2(8) = monLoc2(8)+cmz
-         
-         ! Determine the global sum of the summation monitoring
-         ! variables. The sum is made known to all processors.
-         
-         call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
-              mpi_sum, SUmb_comm_world, ierr)
-         
-         ! Transfer the cost function values to output arguments.
-         
-         CLm  = monGlob2(1)
-         CDm  = monGlob2(2)
-         Cfxm = monGlob2(3)
-         Cfym = monGlob2(4)
-         Cfzm = monGlob2(5) 
-         CMxm = monGlob2(6)
-         CMym = monGlob2(7)
-         CMzm = monGlob2(8)
-         
-         
-         alpha = alpharef
-                  
-         call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
-
-         dCLdextraFD(ndesignaoa) = (CLP-CLM)/(two*deltax)  
-         dCDdextraFD(ndesignaoa) = (CDP-CDM)/(two*deltax) 
-         dcmdextrafd(ndesignaoa) = (cmxp-cmxm)/(two*deltax)
-         !dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
-
-      enddo domainalphaLoopFDorig
-
-      
-      call f77flush()
-      call mpi_barrier(SUmb_comm_world, ierr)
-      ! Loop over the number of local blocks.
-      
-        monloc1=0.0
-        monloc2=0.0
-      sps=1
-      print *,'starting rotx FD loop',sps
-      domainrotxLoopFDorig: do nn=1,nDom   
-         
-         call setPointers(nn,level,sps)
-
-         !loop over all points
-         
-         rotratexref = rotrateadj(1)
-              
-         
-         !print *,'mach before',mach,machcoef
-         rotrateadj(1)= rotratexref+deltax
-        
-         cgnsDoms(nbkglobal)%rotRate(1) = RotRateAdj(1)/timeRef
-         !print *,'mach after',mach,machcoef
-         !*************************************************************
-         !Original force and metric calculation....
-         !     ******************************************************************
-         !     *                                                                *
-         !     * Update the force coefficients using the usual flow solver      *
-         !     * routine.                                                       *
-         !     *                                                                *
-         !     ******************************************************************
-         !
- 
-         call metric(level)
-         do mm=1,nTimeIntervalsSpectral
-            
-            ! Compute the time, which corresponds to this spectral solution.
-            ! For steady and unsteady mode this is simply the restart time;
-            ! for the spectral mode the periodic time must be taken into
-            ! account, which can be different for every section.
-            
-            t = timeUnsteadyRestart
-            
-            if(equationMode == timeSpectral) then
-               do ll=1,nSections
-                  t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
-                       /         real(nTimeIntervalsSpectral,realType)
-               enddo
-            endif
-            
-            call gridVelocitiesFineLevel(.false., t, mm)
-            call gridVelocitiesCoarseLevels(mm)
-            call normalVelocitiesAllLevels(mm)
-            
-            call slipVelocitiesFineLevel(.false., t, mm)
-            call slipVelocitiesCoarseLevels(mm)
-            
-         enddo
-         call setPointers(nn,level,sps)
-         call computeForcesPressureAdj(w,p)
-         call applyAllBC(secondHalo)
-         call setPointers(nn,level,sps)
-         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
-         
-         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-              + (cfp(2) + cfv(2))*liftDirection(2) &
-              + (cfp(3) + cfv(3))*liftDirection(3)
-         
-         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-              + (cfp(2) + cfv(2))*dragDirection(2) &
-              + (cfp(3) + cfv(3))*dragDirection(3)
-         
-         Cfx = cfp(1) + cfv(1)
-         Cfy = cfp(2) + cfv(2)
-         Cfz = cfp(3) + cfv(3)
-         
-         Cmx = cmp(1) + cmv(1)
-         Cmy = cmp(2) + cmv(2)
-         Cmz = cmp(3) + cmv(3)
-         
-         nmonsum = 8
-         
-         monLoc1(1) =monLoc1(1) + Cl
-         monLoc1(2) =monLoc1(2)+ Cd
-         monLoc1(3) =monLoc1(3)+ cfx
-         monLoc1(4) =monLoc1(4) +cfy
-         monLoc1(5) =monLoc1(5) +cfz
-         monLoc1(6) =monLoc1(6) +cmx
-         monLoc1(7) = monLoc1(7)+ cmy
-         monLoc1(8) = monLoc1(8)+cmz
-         
-         
-         ! Determine the global sum of the summation monitoring
-         ! variables. The sum is made known to all processors.
-         
-         call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
-              mpi_sum, SUmb_comm_world, ierr)
-         
-         ! Transfer the cost function values to output arguments.
-         
-         CLp  = monGlob1(1)
-         CDp  = monGlob1(2)
-         Cfxp = monGlob1(3)
-         Cfyp = monGlob1(4)
-         Cfzp = monGlob1(5) 
-         CMxp = monGlob1(6)
-         CMyp = monGlob1(7)
-         CMzp = monGlob1(8)
-         
-         
-         !*********************
-         !Now calculate other perturbation
-         rotrateadj(1)= rotratexref-deltax
-        
-         cgnsDoms(nbkglobal)%rotRate(1) = RotRateAdj(1)/timeRef
-        
-         !*************************************************************
-         !Original force and metric calculation....
-         !     ******************************************************************
-         !     *                                                                *
-         !     * Update the force coefficients using the usual flow solver      *
-         !     * routine.                                                       *
-         !     *                                                                *
-         !     ******************************************************************
-         !
-         
-         call metric(level)
-         do mm=1,nTimeIntervalsSpectral
-            
-            ! Compute the time, which corresponds to this spectral solution.
-            ! For steady and unsteady mode this is simply the restart time;
-            ! for the spectral mode the periodic time must be taken into
-            ! account, which can be different for every section.
-            
-            t = timeUnsteadyRestart
-            
-            if(equationMode == timeSpectral) then
-               do ll=1,nSections
-                  t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
-                       /         real(nTimeIntervalsSpectral,realType)
-               enddo
-            endif
-            
-            call gridVelocitiesFineLevel(.false., t, mm)
-            call gridVelocitiesCoarseLevels(mm)
-            call normalVelocitiesAllLevels(mm)
-            
-            call slipVelocitiesFineLevel(.false., t, mm)
-            call slipVelocitiesCoarseLevels(mm)
-            
-         enddo
-         call setPointers(nn,level,sps)
-         call computeForcesPressureAdj(w,p)
-         call applyAllBC(secondHalo)
-         call setPointers(nn,level,sps)
-         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
-                     
-         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-              + (cfp(2) + cfv(2))*liftDirection(2) &
-              + (cfp(3) + cfv(3))*liftDirection(3)
-         
-         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-              + (cfp(2) + cfv(2))*dragDirection(2) &
-              + (cfp(3) + cfv(3))*dragDirection(3)
-         
-         Cfx = cfp(1) + cfv(1)
-         Cfy = cfp(2) + cfv(2)
-         Cfz = cfp(3) + cfv(3)
-         
-         Cmx = cmp(1) + cmv(1)
-         Cmy = cmp(2) + cmv(2)
-         Cmz = cmp(3) + cmv(3)
-         
-         nmonsum = 8
-         
-         monLoc2(1) = monLoc2(1)+Cl
-         monLoc2(2) = monLoc2(2)+Cd
-         monLoc2(3) = monLoc2(3)+cfx
-         monLoc2(4) = monLoc2(4)+cfy
-         monLoc2(5) = monLoc2(5)+cfz
-         monLoc2(6) = monLoc2(6)+cmx
-         monLoc2(7) = monLoc2(7)+cmy
-         monLoc2(8) = monLoc2(8)+cmz
-         
-         ! Determine the global sum of the summation monitoring
-         ! variables. The sum is made known to all processors.
-         
-         call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
-              mpi_sum, SUmb_comm_world, ierr)
-         
-         ! Transfer the cost function values to output arguments.
-         
-         CLm  = monGlob2(1)
-         CDm  = monGlob2(2)
-         Cfxm = monGlob2(3)
-         Cfym = monGlob2(4)
-         Cfzm = monGlob2(5) 
-         CMxm = monGlob2(6)
-         CMym = monGlob2(7)
-         CMzm = monGlob2(8)
-         
-         rotrateadj(1)= rotratexref
-         
-         cgnsDoms(nbkglobal)%rotRate(1) = RotRateAdj(1)/timeRef
-         
-         !print *,'clp',CLP,CLM,CLP-CLM
-         dCLdextraFD(ndesignrotx) = (CLP-CLM)/(two*deltax)  
-         dCDdextraFD(ndesignrotx) = (CDP-CDM)/(two*deltax) 
-         dcmdextrafd(ndesignrotx) = (cmxp-cmxm)/(two*deltax)
-         !dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
-        
-      enddo domainrotxLoopFDorig
-
-!!$      !from ForcesAndMoments.f90
-!!$       ! Determine the reference point for the moment computation in
-!!$       ! meters.
-!!$
-!!$       refPoint(1) = LRef*pointRef(1)
-!!$       refPoint(2) = LRef*pointRef(2)
-!!$       refPoint(3) = LRef*pointRef(3)
-!!$
-!!$       ! Initialize the force and moment coefficients to 0 as well as
-!!$       ! yplusMax.
-!!$
-!!$!!!$       cFpAdj(1) = zero; cFpAdj(2) = zero; cFpAdj(3) = zero
-!!$!!!$       cFvAdj(1) = zero; cFvAdj(2) = zero; cFvAdj(3) = zero
-!!$!!!$       cMpAdj(1) = zero; cMpAdj(2) = zero; cMpAdj(3) = zero
-!!$!!!$       cMvAdj(1) = zero; cMvAdj(2) = zero; cMvAdj(3) = zero
-!!$!
-!!$!***********************************
-!!$
-!!$      ! Loop over the number of local blocks.
-!!$
-!!$      domainForcesLoopFD: do nn=1,nDom   
-!!$
-!!$        ! Set some pointers to make the code more readable.
-!!$
-!!$        call setPointersAdj(nn,level,sps)
-!!$
-!!$        nViscBocos = flowDoms(nn,groundLevel,sps)%nViscBocos
-!!$        nInvBocos  = flowDoms(nn,groundLevel,sps)%nInvBocos
-!!$        BCFaceID => flowDoms(nn,groundLevel,  1)%BCFaceID
-!!$        groupNum => flowDoms(nn,groundLevel,  1)%groupNum
-!!$
-!!$        d2Wall   => flowDoms(nn,groundLevel,sps)%d2Wall
-!!$        muLam    => flowDoms(nn,groundLevel,sps)%muLam
-!!$           
-!!$!!!$        ! Determine the number of time instances for this block and
-!!$!!!$        ! store the block dimensions a bit easier.
-!!$!!!$        
-!!$!!!$        sectionID = flowDoms(nn,level,1)%sectionID
-!!$!!!$        nTime     = sections(sectionID)%nTimeInstances
-!!$!!!$
+!!$         
+!!$         rotratexref = rotrateadj(1)
+!!$              
+!!$         
+!!$         !print *,'mach before',mach,machcoef
+!!$         rotrateadj(1)= rotratexref+deltax
 !!$        
-!!$        il = flowDoms(nn,level,1)%il
-!!$        jl = flowDoms(nn,level,1)%jl
-!!$        kl = flowDoms(nn,level,1)%kl
-!!$
-!!$        allocate(xAdj(ib:ie,jb:jE,kb:ke,3), stat=ierr)
-!!$           if(ierr /= 0)                              &
-!!$                call terminate("boundarySurfaceNormals", &
-!!$                            "Memory allocation failure for xAdj.")
-!!$
-!!$        call copyADjointForcesStencil(xAdj,level,nn,sps)
+!!$         cgnsDoms(nbkglobal)%rotRate(1) = RotRateAdj(1)/timeRef
+!!$         !print *,'mach after',mach,machcoef
+!!$         !*************************************************************
+!!$         !Original force and metric calculation....
+!!$         !     ******************************************************************
+!!$         !     *                                                                *
+!!$         !     * Update the force coefficients using the usual flow solver      *
+!!$         !     * routine.                                                       *
+!!$         !     *                                                                *
+!!$         !     ******************************************************************
+!!$         !
+!!$ 
+!!$         call metric(level)
+!!$         do mm=1,nTimeIntervalsSpectral
+!!$            
+!!$            ! Compute the time, which corresponds to this spectral solution.
+!!$            ! For steady and unsteady mode this is simply the restart time;
+!!$            ! for the spectral mode the periodic time must be taken into
+!!$            ! account, which can be different for every section.
+!!$            
+!!$            t = timeUnsteadyRestart
+!!$            
+!!$            if(equationMode == timeSpectral) then
+!!$               do ll=1,nSections
+!!$                  t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
+!!$                       /         real(nTimeIntervalsSpectral,realType)
+!!$               enddo
+!!$            endif
+!!$            
+!!$            call gridVelocitiesFineLevel(.false., t, mm)
+!!$            call gridVelocitiesCoarseLevels(mm)
+!!$            call normalVelocitiesAllLevels(mm)
+!!$            
+!!$            call slipVelocitiesFineLevel(.false., t, mm)
+!!$            call slipVelocitiesCoarseLevels(mm)
+!!$            
+!!$         enddo
+!!$         call setPointers(nn,level,sps)
+!!$         call computeForcesPressureAdj(w,p)
+!!$         call applyAllBC(secondHalo)
+!!$         call setPointers(nn,level,sps)
+!!$         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+!!$         
+!!$         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+!!$              + (cfp(2) + cfv(2))*liftDirection(2) &
+!!$              + (cfp(3) + cfv(3))*liftDirection(3)
+!!$         
+!!$         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+!!$              + (cfp(2) + cfv(2))*dragDirection(2) &
+!!$              + (cfp(3) + cfv(3))*dragDirection(3)
+!!$         
+!!$         Cfx = cfp(1) + cfv(1)
+!!$         Cfy = cfp(2) + cfv(2)
+!!$         Cfz = cfp(3) + cfv(3)
+!!$         
+!!$         Cmx = cmp(1) + cmv(1)
+!!$         Cmy = cmp(2) + cmv(2)
+!!$         Cmz = cmp(3) + cmv(3)
+!!$         
+!!$         nmonsum = 8
+!!$         
+!!$         monLoc1(1) =monLoc1(1) + Cl
+!!$         monLoc1(2) =monLoc1(2)+ Cd
+!!$         monLoc1(3) =monLoc1(3)+ cfx
+!!$         monLoc1(4) =monLoc1(4) +cfy
+!!$         monLoc1(5) =monLoc1(5) +cfz
+!!$         monLoc1(6) =monLoc1(6) +cmx
+!!$         monLoc1(7) = monLoc1(7)+ cmy
+!!$         monLoc1(8) = monLoc1(8)+cmz
+!!$         
+!!$         
+!!$         ! Determine the global sum of the summation monitoring
+!!$         ! variables. The sum is made known to all processors.
+!!$         
+!!$         call mpi_allreduce(monLoc1, monGlob1, nMonSum, sumb_real, &
+!!$              mpi_sum, SUmb_comm_world, ierr)
+!!$         
+!!$         ! Transfer the cost function values to output arguments.
+!!$         
+!!$         CLp  = monGlob1(1)
+!!$         CDp  = monGlob1(2)
+!!$         Cfxp = monGlob1(3)
+!!$         Cfyp = monGlob1(4)
+!!$         Cfzp = monGlob1(5) 
+!!$         CMxp = monGlob1(6)
+!!$         CMyp = monGlob1(7)
+!!$         CMzp = monGlob1(8)
+!!$         
+!!$         
+!!$         !*********************
+!!$         !Now calculate other perturbation
+!!$         rotrateadj(1)= rotratexref-deltax
 !!$        
-!!$     
-!!$        nBocos         = nViscBocos + nInvBocos
-!!$        viscousSubface = .true.
+!!$         cgnsDoms(nbkglobal)%rotRate(1) = RotRateAdj(1)/timeRef
 !!$        
-!!$        !loop over cells to store the jacobian
-!!$        do l = 1,3
-!!$           do k = kb,ke
-!!$              do j = jb,je
-!!$                 do i = ib,ie
-!!$                    !zero the forces
-!!$                    cFpAdj(1) = zero; cFpAdj(2) = zero; cFpAdj(3) = zero
-!!$                    cFvAdj(1) = zero; cFvAdj(2) = zero; cFvAdj(3) = zero
-!!$                    cMpAdj(1) = zero; cMpAdj(2) = zero; cMpAdj(3) = zero
-!!$                    cMvAdj(1) = zero; cMvAdj(2) = zero; cMvAdj(3) = zero
-!!$                    
-!!$                    
-!!$                    ClAdjP = 0
-!!$                    CDAdjP = 0
-!!$                    CmxAdjP = 0
-!!$                    CmyAdj = 0
-!!$                    CmzAdj = 0
-!!$                    CfxAdj = 0
-!!$                    CfyAdj = 0
-!!$                    CfzAdj = 0
-!!$                    
-!!$                    yplusMax = zero
-!!$                    
-!!$                    ! Store baseline x.
-!!$                    
-!!$                    xAdjRef = xAdj(i,j,k,l)
-!!$                    
-!!$                    ! Perturb x (forward) and compute dx.
-!!$                    
-!!$                    xAdj(i,j,k,l) = xAdjRef + deltax
-!!$                    
-!!$                    bocoLoop1: do mm=1,nBocos!flowDoms(nn,level,1)%nBocos
-!!$                    
-!!$                       
-!!$                       i2Beg = flowDoms(nn,level,1)%BCData(mm)%iBeg
-!!$                       j2Beg = flowDoms(nn,level,1)%BCData(mm)%jBeg
-!!$                       i2End = flowDoms(nn,level,1)%BCData(mm)%iEnd
-!!$                       j2End = flowDoms(nn,level,1)%BCData(mm)%jEnd
-!!$                       
-!!$
-!!$                       select case (flowDoms(nn,level,1)%BCFaceID(mm))
-!!$                       case (iMin, iMax)
-!!$                          if(i2End == jl) i2End = min(jl+1,je)
-!!$                          if(j2End == kl) j2End = min(kl+1,ke)
-!!$                          
-!!$                       case (jMin, jMax)
-!!$                          if(i2End == il) i2End = min(il+1,ie)
-!!$                          if(j2End == kl) j2End = min(kl+1,ke)
-!!$                          
-!!$                       case (kMin, kMax)
-!!$                          if(i2End == il) i2End = min(il+1,ie)
-!!$                          if(j2End == jl) j2End = min(jl+1,je)
-!!$                       end select
-!!$                       
-!!$
-!!$                       ! Determine the nodal range of the owned nodes. Due to block
-!!$                       ! splitting iBeg and jBeg may correspond to a halo.
-!!$!!!$                       iiBeg = max(i2Beg, 1_intType)
-!!$!!!$                       jjBeg = max(j2Beg, 1_intType)
-!!$!!!$                       iiEnd = i2End
-!!$!!!$                       jjEnd = j2End   
-!!$                       iiBeg = max(i2Beg, 1_intType)
-!!$                       jjBeg = max(j2Beg, 1_intType)
-!!$                       iiEnd = min(i2End, flowDoms(nn,level,1)%BCData(mm)%iEnd)
-!!$                       jjEnd = min(j2End, flowDoms(nn,level,1)%BCData(mm)%jEnd)
-!!$
-!!$                 
-!!$                       allocate(normAdj(iiBeg:iiEnd,jjBeg:jjEnd,3), stat=ierr)
-!!$                       if(ierr /= 0)                              &
-!!$                            call terminate("boundarySurfaceNormals", &
-!!$                            "Memory allocation failure for normAdj.")
-!!$                       
-!!$                       !======================================================
-!!$                       ! Compute the forces.
-!!$                       
-!!$                       call computeForcesAdj(level,i2Beg,j2Beg,i2End,j2End,iiBeg,&
-!!$                            & jjBeg,iiEnd,jjEnd,xAdj,mm,cFxAdj, cFyAdj, cFzAdj, cMxAdjP,&
-!!$                            & cMyAdj,cMzAdj, yplusMax, refPoint, sps, CLAdjP, CDAdjP, nn,&
-!!$                            & CfpAdj,cMpAdj,cFvAdj, cMvAdj)
-!!$                       
-!!$ 
-!!$                       ! Release the memory of normAdj again.
-!!$                       
-!!$                       deallocate(normAdj, stat=ierr)
-!!$                       if(ierr /= 0)                              &
-!!$                            call terminate("boundarySurfaceNormals", &
-!!$                            "Deallocation failure for normAdj.") 
-!!$                       
-!!$                    enddo bocoLoop1
-!!$
-!!$                    !zero the forces
-!!$                    cFpAdj(1) = zero; cFpAdj(2) = zero; cFpAdj(3) = zero
-!!$                    cFvAdj(1) = zero; cFvAdj(2) = zero; cFvAdj(3) = zero
-!!$                    cMpAdj(1) = zero; cMpAdj(2) = zero; cMpAdj(3) = zero
-!!$                    cMvAdj(1) = zero; cMvAdj(2) = zero; cMvAdj(3) = zero
-!!$
-!!$                    ClAdjM = 0
-!!$                    CDAdjM = 0
-!!$                    CmxAdjM = 0
-!!$                    CmyAdj = 0
-!!$                    CmzAdj = 0
-!!$                    CfxAdj = 0
-!!$                    CfyAdj = 0
-!!$                    CfzAdj = 0
-!!$                    
-!!$                    ! Perturb x (backward) and compute dx.
-!!$                    
-!!$                    xAdj(i,j,k,l) = xAdjRef - deltax
-!!$                    
-!!$                    bocoLoop2: do mm=1,nBocos!flowDoms(nn,level,1)%nBocos
-!!$                       !       print *,'In bocoloop...',mm
-!!$                       
-!!$                       
-!!$                       i2Beg = flowDoms(nn,level,1)%BCData(mm)%iBeg
-!!$                       j2Beg = flowDoms(nn,level,1)%BCData(mm)%jBeg
-!!$                       i2End = flowDoms(nn,level,1)%BCData(mm)%iEnd
-!!$                       j2End = flowDoms(nn,level,1)%BCData(mm)%jEnd
-!!$       
-!!$                       select case (flowDoms(nn,level,1)%BCFaceID(mm))
-!!$                       case (iMin, iMax)
-!!$                          if(i2End == jl) i2End = min(jl+1,je)
-!!$                          if(j2End == kl) j2End = min(kl+1,ke)
-!!$                          
-!!$                       case (jMin, jMax)
-!!$                          if(i2End == il) i2End = min(il+1,ie)
-!!$                          if(j2End == kl) j2End = min(kl+1,ke)
-!!$                          
-!!$                       case (kMin, kMax)
-!!$                          if(i2End == il) i2End = min(il+1,ie)
-!!$                          if(j2End == jl) j2End = min(jl+1,je)
-!!$                       end select
-!!$    
-!!$                       ! Determine the nodal range of the owned nodes. Due to block
-!!$                       ! splitting iBeg and jBeg may correspond to a halo.
-!!$!!!$                       iiBeg = max(i2Beg, 1_intType)
-!!$!!!$                       jjBeg = max(j2Beg, 1_intType)
-!!$!!!$                       iiEnd = i2End
-!!$!!!$                       jjEnd = j2End
-!!$
-!!$                       iiBeg = max(i2Beg, 1_intType)
-!!$                       jjBeg = max(j2Beg, 1_intType)
-!!$                       iiEnd = min(i2End, flowDoms(nn,level,1)%BCData(mm)%iEnd)
-!!$                       jjEnd = min(j2End, flowDoms(nn,level,1)%BCData(mm)%jEnd)
-!!$
-!!$                       allocate(normAdj(iiBeg:iiEnd,jjBeg:jjEnd,3), stat=ierr)
-!!$                       if(ierr /= 0)                              &
-!!$                            call terminate("boundarySurfaceNormals", &
-!!$                            "Memory allocation failure for normAdj.")
-!!$                       
-!!$                       !======================================================
-!!$                       ! Compute the forces.
-!!$                       
-!!$                       call computeForcesAdj(level,i2Beg,j2Beg,i2End,j2End,iiBeg,&
-!!$                            & jjBeg,iiEnd,jjEnd,xAdj,mm,cFxAdj, cFyAdj, cFzAdj, cMxAdjM,&
-!!$                            & cMyAdj,cMzAdj, yplusMax, refPoint, sps, CLAdjM, CDAdjM, nn,&
-!!$                            & CfpAdj,cMpAdj,cFvAdj, cMvAdj)
-!!$                       
-!!$ 
-!!$                       ! Release the memory of normAdj again.
-!!$                       
-!!$                       deallocate(normAdj, stat=ierr)
-!!$                       if(ierr /= 0)                              &
-!!$                            call terminate("boundarySurfaceNormals", &
-!!$                            "Deallocation failure for normAdj.") 
-!!$                       
-!!$                    enddo bocoLoop2
-!!$
-!!$                    xAdj(i,j,k,l) = xAdjRef
-!!$
-!!$
-!!$                    dCLdxFD = (CLAdjP-CLAdjM)/(two*deltax)  
-!!$                    dCDdxFD = (CDAdjP-CDAdjM)/(two*deltax) 
-!!$                    dCmxdxFD = (CmxAdjP-CmxAdjM)/(two*deltax) 
-!!$
-!!$                    dCLFD(nn,i,j,k,l)=dCLdxFD
-!!$
-!!$                    dCDFD(nn,i,j,k,l)=dCDdxFD
-!!$                    
-!!$                    dCmxFD(nn,i,j,k,l)=dCmxdxFD
-!!$                    
-!!$ 
-!!$                 enddo
-!!$              enddo
-!!$           enddo
-!!$        enddo
-!!$        deallocate(xAdj, stat=ierr)
-!!$        if(ierr /= 0)                              &
-!!$             call terminate("boundarySurfaceNormals", &
-!!$             "Deallocation failure for xAdj.") 
-!!$     enddo domainForcesLoopFD
+!!$         !*************************************************************
+!!$         !Original force and metric calculation....
+!!$         !     ******************************************************************
+!!$         !     *                                                                *
+!!$         !     * Update the force coefficients using the usual flow solver      *
+!!$         !     * routine.                                                       *
+!!$         !     *                                                                *
+!!$         !     ******************************************************************
+!!$         !
+!!$         
+!!$         call metric(level)
+!!$         do mm=1,nTimeIntervalsSpectral
+!!$            
+!!$            ! Compute the time, which corresponds to this spectral solution.
+!!$            ! For steady and unsteady mode this is simply the restart time;
+!!$            ! for the spectral mode the periodic time must be taken into
+!!$            ! account, which can be different for every section.
+!!$            
+!!$            t = timeUnsteadyRestart
+!!$            
+!!$            if(equationMode == timeSpectral) then
+!!$               do ll=1,nSections
+!!$                  t(ll) = t(ll) + (mm-1)*sections(ll)%timePeriod &
+!!$                       /         real(nTimeIntervalsSpectral,realType)
+!!$               enddo
+!!$            endif
+!!$            
+!!$            call gridVelocitiesFineLevel(.false., t, mm)
+!!$            call gridVelocitiesCoarseLevels(mm)
+!!$            call normalVelocitiesAllLevels(mm)
+!!$            
+!!$            call slipVelocitiesFineLevel(.false., t, mm)
+!!$            call slipVelocitiesCoarseLevels(mm)
+!!$            
+!!$         enddo
+!!$         call setPointers(nn,level,sps)
+!!$         call computeForcesPressureAdj(w,p)
+!!$         call applyAllBC(secondHalo)
+!!$         call setPointers(nn,level,sps)
+!!$         call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+!!$                     
+!!$         Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+!!$              + (cfp(2) + cfv(2))*liftDirection(2) &
+!!$              + (cfp(3) + cfv(3))*liftDirection(3)
+!!$         
+!!$         Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+!!$              + (cfp(2) + cfv(2))*dragDirection(2) &
+!!$              + (cfp(3) + cfv(3))*dragDirection(3)
+!!$         
+!!$         Cfx = cfp(1) + cfv(1)
+!!$         Cfy = cfp(2) + cfv(2)
+!!$         Cfz = cfp(3) + cfv(3)
+!!$         
+!!$         Cmx = cmp(1) + cmv(1)
+!!$         Cmy = cmp(2) + cmv(2)
+!!$         Cmz = cmp(3) + cmv(3)
+!!$         
+!!$         nmonsum = 8
+!!$         
+!!$         monLoc2(1) = monLoc2(1)+Cl
+!!$         monLoc2(2) = monLoc2(2)+Cd
+!!$         monLoc2(3) = monLoc2(3)+cfx
+!!$         monLoc2(4) = monLoc2(4)+cfy
+!!$         monLoc2(5) = monLoc2(5)+cfz
+!!$         monLoc2(6) = monLoc2(6)+cmx
+!!$         monLoc2(7) = monLoc2(7)+cmy
+!!$         monLoc2(8) = monLoc2(8)+cmz
+!!$         
+!!$         ! Determine the global sum of the summation monitoring
+!!$         ! variables. The sum is made known to all processors.
+!!$         
+!!$         call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
+!!$              mpi_sum, SUmb_comm_world, ierr)
+!!$         
+!!$         ! Transfer the cost function values to output arguments.
+!!$         
+!!$         CLm  = monGlob2(1)
+!!$         CDm  = monGlob2(2)
+!!$         Cfxm = monGlob2(3)
+!!$         Cfym = monGlob2(4)
+!!$         Cfzm = monGlob2(5) 
+!!$         CMxm = monGlob2(6)
+!!$         CMym = monGlob2(7)
+!!$         CMzm = monGlob2(8)
+!!$         
+!!$         rotrateadj(1)= rotratexref
+!!$         
+!!$         cgnsDoms(nbkglobal)%rotRate(1) = RotRateAdj(1)/timeRef
+!!$         
+!!$         !print *,'clp',CLP,CLM,CLP-CLM
+!!$         dCLdextraFD(ndesignrotx) = (CLP-CLM)/(two*deltax)  
+!!$         dCDdextraFD(ndesignrotx) = (CDP-CDM)/(two*deltax) 
+!!$         dcmdextrafd(ndesignrotx) = (cmzp-cmzm)/(two*deltax)
+!!$         !dCmxdxFD = (CmxP-CmxM)/(two*deltax) 
+!!$        
+!!$      enddo domainrotxLoopFDorig
+!!$  endif
 
-  
       ! Get new time and compute the elapsed FD time.
 
       call mpi_barrier(SUmb_comm_world, ierr)
@@ -2108,102 +1803,7 @@ subroutine verifydCfdx(level)
 !     *                                                                *
 !     ******************************************************************
 !
-!!$      ! Output debug information.
-!!$
-!!$      domainDebugLoop: do nn=1,nDom
-!!$
-!!$        ! Set the variables, which are related to the dimensions of the
-!!$        ! block. In this way the dimensions of the automatic arrays used
-!!$        ! in the flux routines are set a bit easier.
-!!$         print *,'setting pointers',nn,level,sps
-!!$         call setPointers(nn,level,sps)
-!!$
-!!!$        il = flowDoms(nn,currentLevel,1)%il
-!!!$        jl = flowDoms(nn,currentLevel,1)%jl
-!!!$        kl = flowDoms(nn,currentLevel,1)%kl
-
-!!$        ! Loop over the location of the output node.
-!!$
-!!$        do kNode=0,ke
-!!$          do jNode=0,je
-!!$            do iNode=0,ie
-!!$
-!!$              ! Relative error
-!!$
-!!$              do n=1,3
-!!$
-!!$                 if ( dCL(nn,iNode,jNode,kNode,n) < 1e-10 ) then
-!!$                    dCLer(nn,iNode,jNode,kNode,n)  = zero
-!!$                 else
-!!$                    dCLer(nn,iNode,jNode,kNode,n)  =                   &
-!!$                         (  dCL(nn,iNode,jNode,kNode,n)      &
-!!$                         - dCLfd(nn,iNode,jNode,kNode,n) )  &
-!!$                         /  dCL(nn,iNode,jNode,kNode,n)
-!!$                 endif
-!!$                 
-!!$                 if ( dCD(nn,iNode,jNode,kNode,n) < 1e-10 ) then
-!!$                    dCDer(nn,iNode,jNode,kNode,n)  = zero
-!!$                 else
-!!$                    dCDer(nn,iNode,jNode,kNode,n)  =                   &
-!!$                         (  dCD(nn,iNode,jNode,kNode,n)      &
-!!$                         - dCDfd(nn,iNode,jNode,kNode,n) )  &
-!!$                         /  dCD(nn,iNode,jNode,kNode,n)
-!!$                 endif
-!!$                 
-!!$                 if ( dCmxer(nn,iNode,jNode,kNode,n) < 1e-10 ) then
-!!$                    dCmxer(nn,iNode,jNode,kNode,n)  = zero
-!!$                 else
-!!$                    dCmxer(nn,iNode,jNode,kNode,n)  =                   &
-!!$                         (  dCmx(nn,iNode,jNode,kNode,n)      &
-!!$                         - dCmxfd(nn,iNode,jNode,kNode,n) )  &
-!!$                         /  dCmx(nn,iNode,jNode,kNode,n)
-!!$                 endif
-!!$                 
-!!$              enddo
-!!$              
-!!$              ! Output if error
-!!$
-!!$              !if(sum(dCLer(nn,iNode,jNode,kNode,:))/=0)then
-!!$              if(sum(dCL(nn,iNode,jNode,kNode,:))/=0)then
-!!$                 write(*,10) "Jacobian dCLer,dCL,dCLfd @ proc/block", &
-!!$                      myID, nn, "for node", iNode,jNode,kNode
-!!$                 do m=1,3
-!!$                    !if (dCLer(nn,iNode,jNode,kNode,m)/=0)          &
-!!$                    !     write(*,20) (dCLer(nn,iNode,jNode,kNode,m)), &
-!!$                    !     (dCL(nn,iNode,jNode,kNode,m)),   &
-!!$                    !     (dCLfd(nn,iNode,jNode,kNode,m))
-!!$                    if (dCL(nn,iNode,jNode,kNode,m)/=0)          &
-!!$                         write(*,20) (dCLer(nn,iNode,jNode,kNode,m)), &
-!!$                         (dCL(nn,iNode,jNode,kNode,m)),   &
-!!$                         (dCLfd(nn,iNode,jNode,kNode,m))
-!!$                 enddo
-!!$              endif
-!!$              if(sum(dCder(nn,iNode,jNode,kNode,:))/=0)then 
-!!$                 write(*,10) "Jacobian dCDer,dCD,dCDfd @ proc/block", &
-!!$                      myID, nn, "for node", iNode,jNode,kNode
-!!$                 do m=1,3
-!!$                    if (dCDer(nn,iNode,jNode,kNode,m)/=0)          &
-!!$                         write(*,20) (dCDer(nn,iNode,jNode,kNode,m)), &
-!!$                         (dCD(nn,iNode,jNode,kNode,m)),   &
-!!$                         (dCDfd(nn,iNode,jNode,kNode,m))
-!!$                 enddo
-!!$              end if
-!!$              if(sum(dCmxer(nn,iNode,jNode,kNode,:))/=0)then 
-!!$                 write(*,10) "Jacobian dCmxer,dCmx,dCmxfd @ proc/block", &
-!!$                      myID, nn, "for node", iNode,jNode,kNode
-!!$                 do m=1,3
-!!$                    if (dCmxer(nn,iNode,jNode,kNode,m)/=0)          &
-!!$                         write(*,20) (dCmxer(nn,iNode,jNode,kNode,m)), &
-!!$                         (dCmx(nn,iNode,jNode,kNode,m)),   &
-!!$                         (dCmxfd(nn,iNode,jNode,kNode,m))
-!!$                 enddo
-!!$              endif
-!!$           enddo
-!!$        enddo
-!!$     enddo
-!!$     
-!!$  enddo domainDebugLoop
-!!$  
+ 
   ! Flush the output buffer and synchronize the processors.
   
   call f77flush()
@@ -2218,36 +1818,27 @@ subroutine verifydCfdx(level)
      print *, " Factor                      =", timeFD/timeAdj
      print *, "====================================================="
   endif
-  !
+
+!
 !     ******************************************************************
 !     *                                                                *
 !     * Compute the errors in dCf/dx.                                   *
 !     *                                                                *
 !     ******************************************************************
 !
-      write(*,*)
-      write(*,30) "dCLer : proc, min/loc, max/loc =", myID,          &
-                 minval(dCLer(:,:,:,:,:)), minloc(dCLer(:,:,:,:,:)), &
-                 maxval(dCLer(:,:,:,:,:)), maxloc(dCLer(:,:,:,:,:))
-      write(*,30) "dCDer : proc, min/loc, max/loc =", myID,          &
-                 minval(dCDer(:,:,:,:,:)), minloc(dCDer(:,:,:,:,:)), &
-                 maxval(dCDer(:,:,:,:,:)), maxloc(dCDer(:,:,:,:,:))
-      write(*,30) "dCmxer : proc, min/loc, max/loc =", myID,          &
-                 minval(dCmxer(:,:,:,:,:)), minloc(dCmxer(:,:,:,:,:)), &
-                 maxval(dCmxer(:,:,:,:,:)), maxloc(dCmxer(:,:,:,:,:))
+
 
       ! Flush the output buffer and synchronize the processors.
-
-      dcldextraerror= dcldextra- dcldextraFD
-      dcddextraerror= dcddextra- dcddextraFD
-      dcmdextraerror= dcmdextra- dcmdextraFD
-      
-      do i=1,7
-         print *,'i',i
-         print *,'dcldextra',i,dcldextraerror(i), dcldextra(i), dcldextraFD(i)
-         print *,'dcddextra',i,dcddextraerror(i), dcddextra(i), dcddextraFD(i)
-         print *,'dcmdextra',i,dcmdextraerror(i), dcmdextra(i), dcmdextraFD(i)
-      end do
+  if( myID==0 ) then
+      dIdaError = dIdaGlob-dIdaFD
+     
+      do sps = 1,nTimeIntervalsSpectral
+         do i=1,nDesignExtra
+            print *,'i',i,sps
+            print *,'dcdextra',i,dIdaError(i,sps), dIdaGlob(i,sps),dIdaFD(i,sps)
+         end do
+      enddo
+   end if
 
       
       call f77flush()
@@ -2258,14 +1849,9 @@ subroutine verifydCfdx(level)
       
       deallocate(monLoc1, monGlob1)
       deallocate(monLoc2, monGlob2)
-      
-      ! Deallocate memory for the temporary arrays.
-      print *,'deallocating dcl'
-      deallocate(dCl,  dCLfd,  dCLer)
-      deallocate(dCD,  dCDfd,  dCDer)
-      deallocate(dCmx, dCmxfd, dCmxer)
-      print *,'finished deallocating dcl'
-  
+      deallocate(dIdaFD)
+      deallocate(dIdaError)
+      deallocate(dIdaGlob)
       ! Output formats.
 
   10  format(1x,a,1x,i3,1x,i3,1x,a,1x,i3,1x,i3,1x,i3)           
