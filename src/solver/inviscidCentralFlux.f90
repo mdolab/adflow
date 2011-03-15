@@ -68,7 +68,6 @@
              vnm = w(i,  j,k,ivx)*sI(i,j,k,1) &
                  + w(i,  j,k,ivy)*sI(i,j,k,2) &
                  + w(i,  j,k,ivz)*sI(i,j,k,3)
-
              ! Set the values of the porosities for this face.
              ! porVel defines the porosity w.r.t. velocity;
              ! porFlux defines the porosity w.r.t. the entire flux.

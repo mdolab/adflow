@@ -694,5 +694,5 @@
    &      rhoinfadj
    END IF
    CALL POPINTEGER4(branch)
-   !adisb = 0.0
+
    END SUBROUTINE TIMESTEPADJ_B

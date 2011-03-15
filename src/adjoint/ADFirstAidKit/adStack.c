@@ -1,4 +1,4 @@
-static char adSid[]="$Id: adStack.c 367 2006-11-29 00:47:02Z acmarta $";
+static char adSid[]="$Id: adStack.c 3285 2010-01-05 09:40:52Z llh $";
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -38,16 +38,16 @@ void pushNarray(char *x, unsigned int nbChars) {
 #ifdef STACK_SIZE_TRACING
   bigStackSize += nbChars;
 #endif
-  /*
+
   mmctraffic += nbChars ;
-  while (mmctraffic >= 1048576) {
-     mmctraffic -= 1048576 ;
+  while (mmctraffic >= 1000000) {
+     mmctraffic -= 1000000 ;
      mmctrafficM++ ;
   }
-  */     
+
   lookStack = NULL ;
   if (nbChars <= nbmax) {
-    memcpy(curStackTop,x,nbChars);
+    memcpy(curStackTop,x,nbChars) ;
     curStackTop+=nbChars ;
   } else {
     char *inx = x+(nbChars-nbmax) ;
@@ -155,6 +155,10 @@ void lookNarray(char *x, unsigned int nbChars) {
       }
     }
   }
+}
+
+void resetadlookstack_() {
+  lookStack=NULL ;
 }
 
 /****** Exported PUSH/POP/LOOK functions for ARRAYS: ******/
@@ -289,10 +293,120 @@ void lookcomplex32array_(char *x, unsigned int *n) {
   lookNarray(x,(*n*32)) ;
 }
 
+/****** Exported PUSH/POP/LOOK functions for F95 POINTERS: ******/
+
+/* IMPORTANT: Don't forget to add the following interface into each calling routines:
+
+      INTERFACE
+         SUBROUTINE PUSHPOINTER(pp)
+           REAL, POINTER :: pp
+         END SUBROUTINE PUSHPOINTER
+         SUBROUTINE POPPOINTER(pp)
+           REAL, POINTER :: pp
+         END SUBROUTINE POPPOINTER
+      END INTERFACE
+
+*/
+
+void pushpointer_(char *ppp) {
+  pushNarray(ppp, 4) ;
+}
+
+void poppointer_(char *ppp) {
+  popNarray(ppp, 4) ;  
+}
+
+
 /************* Debug displays of the state of the stack: ***********/
 
+void printbigbytes(long int nbblocks, long int blocksz, long int nbunits) {
+  long int a3, b3, res3, res6, res9, res12 ;
+  int a0, b0, res0 ;
+  int printzeros = 0 ;
+  a0 = (int)nbblocks%1000 ;
+  a3 = nbblocks/1000 ;
+  b0 = (int)blocksz%1000 ;
+  b3 = blocksz/1000 ;
+  res0 = ((int)(nbunits%1000)) + a0*b0 ;
+  res3 = nbunits/1000 + a3*b0 + a0*b3 ;
+  res6 = a3*b3 ;
+  res3 += ((long int)(res0/1000)) ;
+  res0 = res0%1000 ;
+  res6 += res3/1000 ;
+  res3 = res3%1000 ;
+  res9 = res6/1000 ;
+  res6 = res6%1000 ;
+  res12 = res9/1000 ;
+  res9 = res9%1000 ;
+  if (res12>0) {
+    printf("%li ", res12) ;
+    printzeros = 1 ;
+  }
+  if ((res9/100)>0 || printzeros) {
+    printf("%li",res9/100) ;
+    printzeros = 1 ;
+    res9 = res9%100 ;
+  }
+  if ((res9/10)>0 || printzeros) {
+    printf("%li",res9/10) ;
+    printzeros = 1 ;
+    res9 = res9%10 ;
+  }
+  if (res9>0 || printzeros) {
+    printf("%li ",res9) ;
+    printzeros = 1 ;
+  }
+  if ((res6/100)>0 || printzeros) {
+    printf("%li",res6/100) ;
+    printzeros = 1 ;
+    res6 = res6%100 ;
+  }
+  if ((res6/10)>0 || printzeros) {
+    printf("%li",res6/10) ;
+    printzeros = 1 ;
+    res6 = res6%10 ;
+  }
+  if (res6>0 || printzeros) {
+    printf("%li ",res6) ;
+    printzeros = 1 ;
+  }
+  if ((res3/100)>0 || printzeros) {
+    printf("%li",res3/100) ;
+    printzeros = 1 ;
+    res3 = res3%100 ;
+  }
+  if ((res3/10)>0 || printzeros) {
+    printf("%li",res3/10) ;
+    printzeros = 1 ;
+    res3 = res3%10 ;
+  }
+  if (res3>0 || printzeros) {
+    printf("%li ",res3) ;
+    printzeros = 1 ;
+  }
+  if ((res0/100)>0 || printzeros) {
+    printf("%i",res0/100) ;
+    printzeros = 1 ;
+    res0 = res0%100 ;
+  }
+  if ((res0/10)>0 || printzeros) {
+    printf("%i",res0/10) ;
+    printzeros = 1 ;
+    res0 = res0%10 ;
+  }
+  printf("%i",res0) ;
+}
+
 void printctraffic_() {
-    printf(" C Traffic: %i Mb and %i millionths\n", mmctrafficM, (((mmctraffic*1000)/1024)*1000)/1024) ;
+  printf(" C Traffic: ") ;
+  printbigbytes(mmctrafficM, 1000000, mmctraffic) ;
+  printf(" bytes\n") ;
+}
+
+void printftrafficinc_(long int *mmfM, int *mmfsz, int *mmf) {
+  printf(" F Traffic: ") ;
+  printbigbytes(*mmfM, (long int)*mmfsz, (long int)*mmf) ;
+  printf(" bytes\n") ;
 }
 
 void printtopplace_() {
@@ -304,8 +418,9 @@ void printtopplace_() {
 	nbBlocks++ ;
     }
     if (curStack && curStackTop) remainder = curStackTop-(curStack->contents) ;
-    printf(" Stack size: %f Kbytes\n",
-           nbBlocks*(ONE_BLOCK_SIZE/1024)+((float)remainder)/1024) ;
+    printf(" Stack size: ") ;
+    printbigbytes((long int)nbBlocks, ONE_BLOCK_SIZE, (long int)remainder) ;
+    printf(" bytes\n") ;
 }
 
 void printtopplacenum_(int *n) {
@@ -317,14 +432,16 @@ void printtopplacenum_(int *n) {
 	nbBlocks++ ;
     }
     if (curStack && curStackTop) remainder = curStackTop-(curStack->contents) ;
-    printf(" Stack size at location %i : %f Kbytes\n",
-           *n, nbBlocks*(ONE_BLOCK_SIZE/1024)+((float)remainder)/1024) ;
+    printf(" Stack size at location %i : ", *n) ;
+    printbigbytes((long int)nbBlocks, ONE_BLOCK_SIZE, (long int)remainder) ;
+    printf(" bytes\n") ;
 }
 
 void printstackmax_() {
     DoubleChainedBlock *stack = curStack ;
     int nbBlocks = (stack?-2:0) ;
     int remainder = 0;
+    long int totalsz ;
     while(stack) {
 	stack = stack->prev ;
 	nbBlocks++ ;
@@ -334,8 +451,10 @@ void printstackmax_() {
 	stack = stack->next ;
 	nbBlocks++ ;
     }
-    printf(" Max Stack size: %i blocks of %i bytes => total:%f Mbytes\n",
-           nbBlocks,ONE_BLOCK_SIZE,(nbBlocks*(((float)ONE_BLOCK_SIZE)/1024))/1024) ;
+    
+    printf(" Max Stack size (%i blocks): ", nbBlocks) ;
+    printbigbytes((long int)nbBlocks, ONE_BLOCK_SIZE, (long int)0) ;
+    printf(" bytes\n") ;
 }
 
 void printlookingplace_() {
@@ -348,6 +467,9 @@ void printlookingplace_() {
 	    stack = stack->prev ;
 	    nbBlocks++ ;
 	}
-	printf(" Stack look: %i*%i+%i\n",nbBlocks,ONE_BLOCK_SIZE,lookStackTop-(lookStack->contents)) ;
+        printf(" Stack look at: ") ;
+        printbigbytes((long int)nbBlocks, ONE_BLOCK_SIZE,
+                      ((long int)(lookStackTop-(lookStack->contents)))) ;
+        printf(" bytes\n") ;
     }
 }

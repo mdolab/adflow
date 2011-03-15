@@ -74,7 +74,7 @@
        ! rFil : coefficient to control the fraction of the dissipation
        !        residual of the previous runge-kutta stage.
 
-       real(kind=realType) :: rFil
+       real(kind=realType) :: rFil,rfilb
 
        ! t0Solver: Reference time for the solver.
 

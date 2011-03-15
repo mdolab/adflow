@@ -22,12 +22,16 @@
        use iteration
        use killSignals
        use monitor
+       use blockPointers
+       use inputTimeSpectral
        implicit none
 !
 !      Local variables.
 !
        integer(kind=intType) :: iter, nTimeSteps
-!
+
+       integer(kind=intType) :: i,j,k,nn,kk
+
 !      ******************************************************************
 !      *                                                                *
 !      * Begin execution                                                *
@@ -47,6 +51,36 @@
 
        nTimeSteps = nTimeStepsCoarse
        if(groundLevel == 1) nTimeSteps = nTimeStepsFine
+
+       ! Fill up old xold and volold
+       
+       spectralLoop: do kk=1,nTimeIntervalsSpectral
+          domains: do nn=1,nDom
+             
+             ! Set the pointers for this block on the ground level.
+             
+             call setPointers(nn, groundLevel,kk)
+
+             do k=0,ke
+                do j=0,je
+                   do i=0,ie
+                      xOld(:,i,j,k,1) = x(i,j,k,1)
+                      xOld(:,i,j,k,2) = x(i,j,k,2)
+                      xOld(:,i,j,k,3) = x(i,j,k,3)
+                   enddo
+                enddo
+             enddo
+             
+             do k=2,kl
+                do j=2,jl
+                   do i=2,il
+                      volOld(:,i,j,k) = vol(i,j,k)
+                   enddo
+                enddo
+             enddo
+          end do domains
+       end do spectralLoop
+
 
        ! Loop over the number of time steps to be computed.
 
@@ -152,8 +186,11 @@
          ! Shift the coordinates and volumes and advance the
          ! coordinates 1 time step for deforming meshes.
          ! The shift only takes place for deforming meshes.
+         
+         if( deforming_Grid )  then
+            call shiftCoorAndVolumes
+         end if
 
-         if( deforming_Grid ) call shiftCoorAndVolumes
          call updateCoorFineMesh(deltaTSec, 1_intType)
 
          ! Adapt the geometric info on all grid levels needed for the
@@ -318,8 +355,8 @@
        ! Check whether a solution file, either volume or surface, must
        ! be written. Only on the finest grid level in stand alone mode.
 
-       if(standAloneMode .and. groundLevel == 1) then
-
+       !if(standAloneMode .and. groundLevel == 1) then
+       if (groundLevel == 1) then
          if(mod(timeStepUnsteady, nSaveVolume) == 0)  &
            writeVolume  = .true.
          if(mod(timeStepUnsteady, nSaveSurface) == 0) &

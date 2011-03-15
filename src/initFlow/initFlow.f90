@@ -60,7 +60,6 @@
        call releaseExtraMemBcs
 
        ! Determine the reference state.
-
        call referenceState
 
        ! Determine the prescribed data on the coarse grid levels
@@ -69,7 +68,6 @@
        call setBCDataCoarseGrid
 
        ! Set the infinity state.
-
        call setFlowInfinityState
 
        ! Non-dimensionalize the boundary data.
@@ -90,12 +88,10 @@
 
        ! Determine for the time spectral mode the matrices for the
        ! time derivatives.
-
        call timeSpectralMatrices
 
        ! Loop over the number of spectral solutions to allocate
        ! the memory for the w-variables and p on the fine grid.
-
        do sps=1,nTimeIntervalsSpectral
          call allocMemFlovarPart1(sps, 1_intType)
        enddo
@@ -106,7 +102,6 @@
        halosRead = .false.
 
        ! If a restart is performed, read the solution from file.
-
        testRestart: if( restart ) then
 
          ! Determine the number and names of the solution files and
@@ -173,7 +168,6 @@
        ! Allocate the memory for the solution variables on the coarse
        ! grid levels and the memory for the dependent flow variables,
        ! residuals, etc, on all multigrid levels.
-
        do sps=1,nTimeIntervalsSpectral
          call allocMemFlovarPart2(sps, 1_intType)
 
@@ -200,7 +194,6 @@
        call initBCDataDomainInterfaces
 
        ! Initialize the dependent flow variables and the halo values.
-
        call initDepvarAndHalos(halosRead)
-
-       end subroutine initFlow
+  
+     end subroutine initFlow

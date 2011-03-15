@@ -349,7 +349,8 @@
        ! obtain the correct coefficients.
 
        fact = two/(gammaInf*pInf*MachCoef*MachCoef &
-            *      surfaceRef*LRef*LRef)
+            *surfaceRef*LRef*LRef)
+
        cFp(1) = cFp(1)*fact; cFp(2) = cFp(2)*fact; cFp(3) = cFp(3)*fact
        cFv(1) = cFv(1)*fact; cFv(2) = cFv(2)*fact; cFv(3) = cFv(3)*fact
 

@@ -1,4 +1,4 @@
-c$Id: validityTest.f 367 2006-11-29 00:47:02Z acmarta $
+c$Id: validityTest.f 1443 2006-10-24 11:21:23Z llh $
       BLOCK DATA validityTestBD
 C Keeps the current bounds of the validity interval
 C Initial value is ]-infinity, +infinity[
@@ -8,14 +8,43 @@ C Initial value is ]-infinity, +infinity[
      +     gmin, gmax, infmin, infmax
       DATA infmin/.TRUE./
       DATA infmax/.TRUE./
-      DATA gmin/999.99/
-      DATA gmax/-999.99/
+      DATA gmin/-999.99/
+      DATA gmax/999.99/
       END
 
-      SUBROUTINE validity_test(t, td)
+      SUBROUTINE validity_domain_real8(t, td)
 C Updates the bounds of the validity interval
 C with the new constraint that t keeps its sign.
-      real t, td
+      real*8 t, td
+      real gmin, gmax, temp
+      logical infmin, infmax
+      COMMON /validity_test_common/ 
+     +     gmin, gmax, infmin, infmax
+
+      if(td .ne. 0.0) then
+       temp = -(t/td)
+       if ( temp .lt. 0.0 ) then
+         if ( infmin ) then
+            gmin = temp
+            infmin = .FALSE.
+         else
+            gmin = max(gmin,temp)
+         endif
+       else
+         if ( infmax ) then
+            gmax = temp
+            infmax = .FALSE.
+         else
+            gmax = min(gmax,temp)
+         endif
+       endif
+      endif
+      end
+
+      SUBROUTINE validity_domain_real4(t, td)
+C Updates the bounds of the validity interval
+C with the new constraint that t keeps its sign.
+      real*4 t, td
       real gmin, gmax, temp
       logical infmin, infmax
       COMMON /validity_test_common/ 

@@ -78,7 +78,7 @@
        do rkStage=1,(nRKStages-1)
 
          ! Execute a Runge Kutta stage and exchange the externals.
-
+          
          call executeRkStage
 
          ! Compute the residuals for the next stage.
@@ -97,6 +97,7 @@
        ! clarity; after the previous loop rkStage == nRKStages.
 
        rkStage = nRKStages
+
        call executeRkStage
 
        end subroutine RungeKuttaSmoother
@@ -186,7 +187,7 @@
 !      ******************************************************************
 !
        ! Loop over the local number of blocks.
-
+    
        domainsUpdate: do nn=1,nDom
 
          ! Determine the equation mode solved.
@@ -323,8 +324,9 @@
 
            ! Possibility to smooth the updates.
 
-           if( smoothResidual ) call residualAveraging
-
+           if( smoothResidual ) then
+              call residualAveraging
+           end if
            ! Flow variables.
 
            factK = zero

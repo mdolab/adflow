@@ -59,17 +59,12 @@
 #if PETSC_VERSION_MAJOR==2
 #include "include/finclude/petsc.h"
 #include "include/finclude/petscvec.h"
-!#f90##include "include/finclude/petscvec.h90"
 #include "include/finclude/petscmat.h"
-!#f90##include "include/finclude/petscmat.h90"
 #include "include/finclude/petscksp.h"
 #include "include/finclude/petscpc.h"
 #include "include/finclude/petscviewer.h"
 #include "include/finclude/petscis.h"
 #include "include/finclude/petscis.h90"
-!#include "include/finclude/petscdraw.h"
-!PETSC_VERSION_MAJOR==2#include "include/finclude/petscmg.h"
-!#include "include/finclude/petscsys.h"
 #endif
 
 #if PETSC_VERSION_MAJOR==3
@@ -102,7 +97,7 @@
       PetscErrorCode PETScIerr
       PetscMPIInt    PETScRank, PETScSize
 
-      ! dRdW  Adjoint matrix that defines the linear system dR/dW.
+      ! dRdWT Adjoint matrix that defines the (transpose) linear system dR/dW.
       !       dRdW(il,jl,kl,nw) in each local domain mapped to a matrix.
       !       Size[nNodes*nw, nNodes*nw], where nNodes is the global
       !       number of grid nodes and nw is the number of equations.
@@ -117,67 +112,45 @@
       !       dJdW(il,jl,kl,nw) in each local domain mapped to a vector.
       !       Size[nNodes*nw].
       !            
-      ! pvr   Residual vector (r=Ax-b) used to verify the adjoint 
-      !       vector solution ( residual = [dRdW]^T {psi} - {dJdw} ).
-      !       Size[nNodes*nw].
+
       ! phic  Structural adjoint vector cast through the mapping onto
       !        the CFD surface. Size [nSurfNodes*3]...Possible changes to 
       !       this defintion in the future
-	
-
-      Mat     dRdW ,dRdWFD,dRdWPre,dRdWT,dRdWPreT
-      Vec     psi, dJdW, pvr,phic,dJcdW
-      Vec     gridVec
-      ! ksp   Linear solver (Krylov subspace method) context
-      ! pc    Preconditioner context
-
-      KSP     ksp
-      PC      pc
-
-      !Subcontexts for ASM preconditioner
-      PC subpc
-      !KSP, dimension(:),allocatable :: subksp!(*)! = PETSC_NULL
-      KSP subksp
-
-      !index sets for the ASM preconditioner
-      !IS,    dimension(10) ::  is
-      IS  is
-
-      !Additional variables for the ASM preconditioner
-      PetscInt nlocal,first,Nsub,length
-      !PetscInt ,    dimension(10) :: idx
-
+      !
       ! dRda  Residual R partial sensitivity w.r.t. the design
       !       variable vector alpha: dR/da
       !       dRda(il,jl,kl,nw,n) - d R(i,j,k,nw) / d alpha(n)
       !       in each local domain is mapped to a matrix (m,n)
       !       Size[nNodes*nw,nDesign],where nDesign is the number
       !       of design variables.
-
-      Mat     dRda, dRdsigma, dRdx,dRdxFD, dRdy, dRdz,dSdw,dSdx,dSdxfd2
-      Mat     dCda, dCdx, dCdw
-      Vec     dJdC
-!###      ! Variables for the insertion of dRdx
-!###      ! row           Row number
-!###      ! row_size      Number of elements in each row of dRdx
-!###      ! column(n)     Column indices for each row
-!###      ! row_values(n) Values for each column of the given row
-!###
-!###      PetscInt    row, row_size, column(100)
-!###      PetscReal   row_values(100)
-!###
-      ! dJda  Cost function J partial sensitivity w.r.t. the design
-      !       variable vector alpha: dJ/da. Row vector.
-      !       Size[nDesign].
       !
-      ! dIda  Cost function I total sensitivity w.r.t. the design
-      !       variable vector alpha: dI/da, computed as
-      !       {dIdW} = {dJdW} - {psi}^T [dRda]. Row vector.
-      !       Size[nDesign].
 
-      Vec     dJda, dIda ,selector
-      Vec     dJdx, dJcdx,dJdy, dJdz, dIdx, dIdy, dIdz,dIdxsDisp,dIdxsdv
+      Mat     dRdWT,dRdWPreT
+      Mat     dRda, dRdx,dFdw,dFdx
+      Vec     psi, dJdW, adjointRHS,adjointRes
+      Vec     dJdx
+      Vec     gridVec
+      Vec     dRdaTPsi,dRdaTPsi_local
+      Vec     wVec,xVec
+      Vec     fVec1,fVec2
+      Vec     phic,dJcdW
+      ! ksp   Linear solver (Krylov subspace method) context
+      ! pc    Preconditioner context
+      VecScatter dRdaTpsi_scatter
+      
+      KSP     ksp
+      PC      pc
 
+      !Subcontexts for ASM preconditioner
+      PC subpc
+      KSP subksp
+
+      !index sets for the ASM preconditioner
+      IS  is
+
+      !Additional variables for the ASM preconditioner
+      PetscInt nlocal,first,Nsub,length
+   
       ! Some useful real constants
 
       PetscScalar   PETScNegOne, PETScZero, PETScOne
@@ -205,29 +178,6 @@
 
       logical :: PETScBlockMatrix
 
-!moved to inputADjoint
-!!$      ! Convergence tolerances and monitor parameters used by PETSc to
-!!$      ! solve the adjoint equations. These are set by the routine
-!!$      ! "KSPSetTolerances" and "KSPGMRESSetRestart".
-!!$      !
-!!$      ! adjRelTol    Relative tolerance
-!!$      ! adjAbsTol    Absolute tolerance
-!!$      ! adjDivTol    Relative tolerance increase to divergence
-!!$      ! adjMaxIter   Maximum number of iterations
-!!$      ! adjRestart   Maximum number of steps before restart
-!!$      !              It has a high impact on the required memory!
-!!$      ! adjMonStep   Convergence monitor step
-!!$
-!!$      real(kind=realType),   parameter :: adjRelTol  = 1.0e-12_realType
-!!$      real(kind=realType),   parameter :: adjAbsTol  = 1.0e-25_realType
-!!$      real(kind=realType),   parameter :: adjDivTol  = 1.0e+5_realType
-!!$      integer(kind=intType), parameter :: adjMaxIter = 500_intType!128_intType
-!!$      integer(kind=intType), parameter :: adjRestart = 80_intType!128_intType
-!!$      integer(kind=intType), parameter :: adjMonStep = 10_intType
-
-      ! adjResHist   Linear solver residual history [adjMaxIter]
-      ! adjConvIts   Number of iterations to convergence
-
       real(kind=realType), allocatable, dimension(:) :: adjResHist
       integer(kind=intType)                          :: adjConvIts
 
@@ -241,7 +191,9 @@
 
       !Binary Viewer
       PetscViewer Bin_Viewer
-      real(kind=realType) :: info(MAT_INFO_SIZE)
+      real(kind=realType) :: localInfo(MAT_INFO_SIZE)
+      real(kind=realType) :: sumInfo(MAT_INFO_SIZE)
+      real(kind=realType) :: maxInfo(MAT_INFO_SIZE)
 
 #endif
 

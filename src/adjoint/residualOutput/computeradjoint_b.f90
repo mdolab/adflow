@@ -31,10 +31,6 @@
    USE monitor
    USE section
    IMPLICIT NONE
-   !end do
-   ! print *,'nn end',nn
-   !stop
-   !close (UNIT=unitxAD)
    REAL(KIND=REALTYPE) :: alphaadj, alphaadjb, betaadj, betaadjb
    LOGICAL :: correctfork, secondhalo
    REAL(KIND=REALTYPE) :: dwadj(nw, ntimeintervalsspectral), dwadjb(nw, &
@@ -106,6 +102,7 @@
    &  ntimeintervalsspectral), skadjb(-3:2, -3:2, -3:2, 3, &
    &  ntimeintervalsspectral)
    REAL(KIND=REALTYPE) :: t(nsections)
+   REAL(KIND=REALTYPE) :: tempb(nw)
    REAL(KIND=REALTYPE) :: pinfcorradjb, uinfadj, uinfadjb
    LOGICAL :: useoldcoor=.false.
    REAL(KIND=REALTYPE) :: veldirfreestreamadj(3), veldirfreestreamadjb(3)
@@ -159,10 +156,10 @@
    &                         uinfadj, winfadj, prefadj, rhorefadj, &
    &                         pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, &
    &                         murefadj, timerefadj, pinfcorradj)
+   ! sadj = 0.0
    DO sps2=1,ntimeintervalsspectral
    CALL PUSHREAL8ARRAY(xadj, 6**3*3*ntimeintervalsspectral)
    !      Call the metric routines to generate the areas, volumes and surface normals for the stencil.
-   !   print *,'nn xhalo',nn,secondhalo
    CALL XHALOADJ(xadj, xblockcorneradj, icell, jcell, kcell, nn, level&
    &            , sps, sps2)
    CALL PUSHREAL8ARRAY(normadj, nbocos*5**2*3*ntimeintervalsspectral)
@@ -170,11 +167,9 @@
    CALL PUSHREAL8ARRAY(skadj, 6**3*3*ntimeintervalsspectral)
    CALL PUSHREAL8ARRAY(sjadj, 6**3*3*ntimeintervalsspectral)
    CALL PUSHREAL8ARRAY(siadj, 6**3*3*ntimeintervalsspectral)
-   !print *,'nn metric',nn,secondhalo
    CALL METRICADJ(xadj, siadj, sjadj, skadj, voladj, normadj, icell, &
    &             jcell, kcell, nn, level, sps, sps2)
    CALL PUSHREAL8ARRAY(t, nsections)
-   !print *,'siAdj',siAdj(:,0,0,1,:)
    !call the gridVelocities function to get the cell center ,face center and boundary mesh velocities.
    ! Compute the time, which corresponds to this spectral solution.
    ! For steady and unsteady mode this is simply the restart time;
@@ -199,7 +194,6 @@
    CALL PUSHREAL8ARRAY(sadj, 5**3*3*ntimeintervalsspectral)
    CALL PUSHREAL8ARRAY(rotrateadj, 3)
    !first two arguments needed for time spectral.just set to initial values for the current steady case...
-   !print *,'grid velocities',il,jl,kl,nn,secondhalo
    CALL GRIDVELOCITIESFINELEVELADJ(useoldcoor, t, sps, xadj, siadj, &
    &                              sjadj, skadj, rotcenteradj, rotrateadj, &
    &                              sadj, sfaceiadj, sfacejadj, sfacekadj, &
@@ -209,17 +203,11 @@
    &                              pointrefadj, rotpointadj, nn, level, sps2&
    &                             )
    CALL PUSHREAL8ARRAY(rfaceadj, nbocos*5**2*ntimeintervalsspectral)
-   !print *,'gvsiAdj',siAdj(:,0,0,1,:)
-   !for debugging intermediate stages      
-   !       dwadj(1:3) = sAdj(0,0,0,:)
-   !       return
-   !print *,'normalVelocities',il,jl,kl,nn,secondhalo
    CALL NORMALVELOCITIESALLLEVELSADJ(sps, icell, jcell, kcell, &
    &                                sfaceiadj, sfacejadj, sfacekadj, siadj&
    &                                , sjadj, skadj, rfaceadj, nn, level, &
    &                                sps2)
    CALL PUSHREAL8ARRAY(padj, 5**3*ntimeintervalsspectral)
-   ! print *,'nvsiAdj',siAdj(:,0,0,1,:)
    !needed for uSlip in Viscous Calculations
    !call slipVelocitiesFineLevel(.false., t, mm)
    !      Mimic the Residual calculation in the main code
@@ -364,8 +352,30 @@
    !    dwAdj(1:3,sps) = sAdj(0,0,0,:,sps)!xAdj(0,0,0,:,sps)
    !dwAdj(4,sps) = volAdj(sps)
    CALL INITRESADJ(1, nwf, wadj, voladj, dwadj, nn, level, sps)
+   CALL PUSHREAL8ARRAY(wadj, 5**3*nw*ntimeintervalsspectral)
    !print *,'dwadj',dwadj,icell,jcell,kcell
    !  print *,'calculating residuals',nn
+   CALL RESIDUALADJ(wadj, padj, siadj, sjadj, skadj, voladj, normadj, &
+   &             sfaceiadj, sfacejadj, sfacekadj, radiadj, radjadj, radkadj&
+   &             , dwadj, icell, jcell, kcell, rotrateadj, correctfork, nn&
+   &             , level, sps)
+   !end do
+   ! print *,'nn end',nn
+   !stop
+   !close (UNIT=unitxAD)
+   DO sps2=1,ntimeintervalsspectral
+   CALL PUSHREAL8ARRAY(dwadj(:, sps2), nw)
+   dwadj(:, sps2) = dwadj(:, sps2)/voladj(sps2)
+   END DO
+   voladjb(1:ntimeintervalsspectral) = 0.0
+   DO sps2=ntimeintervalsspectral,1,-1
+   CALL POPREAL8ARRAY(dwadj(:, sps2), nw)
+   tempb = dwadjb(:, sps2)/voladj(sps2)
+   voladjb(sps2) = voladjb(sps2) + SUM(-(dwadj(:, sps2)*tempb/voladj(&
+   &      sps2)))
+   dwadjb(:, sps2) = tempb
+   END DO
+   CALL POPREAL8ARRAY(wadj, 5**3*nw*ntimeintervalsspectral)
    CALL RESIDUALADJ_B(wadj, wadjb, padj, padjb, siadj, siadjb, sjadj, &
    &               sjadjb, skadj, skadjb, voladj, voladjb, normadj, &
    &               sfaceiadj, sfaceiadjb, sfacejadj, sfacejadjb, sfacekadj&

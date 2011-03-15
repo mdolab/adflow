@@ -38,27 +38,26 @@ vpath %.o $(SUMB_OBJDIR)
 
 FF90_MODULES = warpingPETSc.o
 
-FF90_OBJECTS = warp_local.o        \
-	       warp-mb.o      \
-	       warpMesh.o\
-               initializeWarping.o\
-               updateFacesGlobal.o\
-               createWarpingPETScMat.o\
-               flagImplicitFacesAndEdges_Surface.o\
-	       mdCreateGlobalReducedSurfaceList.o\
-	       blockRelations.o\
-	       blockLogicalFunctions.o\
-               storeGlobalSurfaceIndices.o\
-               synchronizeIndices.o\
-               synchronizeSurfaceIndices.o\
-	       setupVolumeSurfaceDerivativeDisp.o\
-               setupVolumeSurfaceDerivativeDV.o\
-               warpingInitializePetsc.o\
-	       verifyWarpDerivFD.o\
-	       getForces.o\
-	       getAreas.o\
+FF90_OBJECTS = getForces.o\
 	       setGrid.o\
 	       initializeExternalWarping.o\
+#              warp_local.o        \
+#              warp-mb.o      \
+#	       warpMesh.o\
+#              initializeWarping.o\
+#              updateFacesGlobal.o\
+#              createWarpingPETScMat.o\
+#              flagImplicitFacesAndEdges_Surface.o\
+#	       mdCreateGlobalReducedSurfaceList.o\
+#	       blockRelations.o\
+#	       blockLogicalFunctions.o\
+#              storeGlobalSurfaceIndices.o\
+#              synchronizeIndices.o\
+#              synchronizeSurfaceIndices.o\
+#	       setupVolumeSurfaceDerivativeDisp.o\
+#              setupVolumeSurfaceDerivativeDV.o\
+#              warpingInitializePetsc.o\
+#	       verifyWarpDerivFD.o\
 #               integratedWarp.o\
 #               updateFaces.o\
 #               synchronizeFaces.o\

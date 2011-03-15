@@ -5,8 +5,9 @@
    !   gradient, with respect to input variables: rotrateadj voladj
    !                padj dwadj wadj sfacekadj skadj sfacejadj sjadj
    !                sfaceiadj siadj
-   !   of linear combination of output variables: padj dwadj wadj
-   !                sfacekadj skadj sfacejadj sjadj sfaceiadj siadj
+   !   of linear combination of output variables: voladj padj dwadj
+   !                wadj sfacekadj skadj sfacejadj sjadj sfaceiadj
+   !                siadj
    !
    !      ******************************************************************
    !      *                                                                *
@@ -384,17 +385,16 @@
    wadjb(0, 0, 0, ivz, sps) = wadjb(0, 0, 0, ivz, sps) + wy*tempb4 - wx&
    &      *tempb3
    wadjb(0, 0, 0, ivy, sps) = wadjb(0, 0, 0, ivy, sps) - wz*tempb4
-   voladjb(0:0, 0:0, 0:0, 1:ntimeintervalsspectral) = 0.0
    wadjb(0, 0, 0, irho, sps) = wadjb(0, 0, 0, irho, sps) + voladj(0, 0&
    &      , 0, sps)*rvolb
-   voladjb(0, 0, 0, sps) = wadj(0, 0, 0, irho, sps)*rvolb
+   voladjb(0, 0, 0, sps) = voladjb(0, 0, 0, sps) + wadj(0, 0, 0, irho, &
+   &      sps)*rvolb
    rotrateadjb(1:3) = 0.0
    rotrateadjb(3) = wzb
    rotrateadjb(2) = rotrateadjb(2) + wyb
    rotrateadjb(1) = rotrateadjb(1) + wxb
    ELSE
    rotrateadjb(1:3) = 0.0
-   voladjb(0:0, 0:0, 0:0, 1:ntimeintervalsspectral) = 0.0
    END IF
    sfaceb = 0.0
    DO kk=0,-1,-1

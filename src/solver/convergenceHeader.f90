@@ -39,7 +39,7 @@ subroutine convergenceHeader
   !
   ! Determine whether or not the iterations must be written.
 
-  if (printIterations .eqv. .True.) then
+  if (printIterations) then
      writeIterations = .true.
      if(equationMode          == unsteady .and. &
           timeIntegrationScheme == explicitRK) writeIterations = .false.
@@ -94,6 +94,9 @@ subroutine convergenceHeader
         ! corresponding text.
 
         select case (monNames(i))
+
+        case ("totalR")
+           write(*,"(a)",advance="no") "  totalRes  |"
 
         case (cgnsL2resRho)
            write(*,"(a)",advance="no") "   Res rho  |"

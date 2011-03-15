@@ -58,9 +58,16 @@
        ! Allocate the memory for the matrices as well as the help
        ! variables needed to construct these matrices.
 
+       !added to allow second call in mdUpdateRoutines
+       if( allocated(dscalar))deallocate(dscalar)
+       if( allocated(dvector))deallocate(dvector)
+
        nn = nTimeIntervalsSpectral
        mm = 3*nn
        kk = nn - 1
+
+   
+
        allocate(dscalar(nSections,nn,nn),             &
                 dvector(nSections,mm,mm),             &
                 coefSpectral(nSections,kk),           &

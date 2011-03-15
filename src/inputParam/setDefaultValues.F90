@@ -26,6 +26,8 @@
        use allInputParam
        use localMG
        use couplerParam
+       use killSignals
+       use NKSolverVars
        implicit none
 !
 !      ******************************************************************
@@ -116,7 +118,7 @@
        surfaceSolFile = ""          ! This will be corrected later if no
                                     ! surface solution file is specified.
 
-       storeRindLayer = .false.     ! No halo cells in solution files.
+       storeRindLayer = .True.     ! No halo cells in solution files.
 
        autoParameterUpdate = .true. ! Update the input parameter file
                                     ! when a restart file is written.
@@ -148,13 +150,13 @@
        nSubIterTurb  =  0    ! No additional turbulent subiterations.
        nUpdateBleeds = 50    ! Update the bleeds every 50 iterations.
 
-       nSaveVolume  = 0      ! Only save at the end of the computation.
-       nSaveSurface = 0
+       nSaveVolume  = 1      ! Only save at the end of the computation.
+       nSaveSurface = 1
 
        smoother  = none
        nRKStages = 5
 
-       resAveraging = noResAveraging ! No residual averaging.
+       resAveraging =  noResAveraging ! No residual averaging.
        smoop        = 1.5_realType
 
        turbTreatment     = segregated     ! Segregated solver for the
@@ -178,6 +180,7 @@
        L2ConvCoarse = 1.e-2_realType      ! Only two on coarse grids in
                                           ! full mg.
 
+       maxL2DeviationFactor = 1_realType
        nCyclesCoarse = -1             ! If these parameters are not
        cflCoarse     = -one           ! specified the corresponding fine
                                       ! grid values are taken.
@@ -405,6 +408,10 @@
        velDirIni(2) = zero
        velDirIni(3) = zero
 
-       printIterations = .True.
+       ! Additional Paramters Requiring Defaults
 
+       printIterations = .True.
+       routineFailed = .False.
+       nkSolverSetup = .False.
+       NKPCSetup     = .False.
        end subroutine setDefaultValues

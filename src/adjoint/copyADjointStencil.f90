@@ -68,7 +68,8 @@
       integer(kind=intType) :: sps2
       integer(kind=intType) :: ii, jj, kk, i1, j1, k1, i2, j2, k2, l,j
       integer(kind=intType) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
-
+      integer(kind=intType) :: ind(3,56),cellstodo,iiCell
+      
 !
 !     ******************************************************************
 !     *                                                                *
@@ -77,49 +78,55 @@
 !     ******************************************************************
 !
 
-      ! Initialize the auxiliary array wAdj 
-      do l=1,nw
-        do kk=-2,2
-          do jj=-2,2
-            do ii=-2,2
-              wAdj(ii,jj,kk,l,:) = 0.0
-            enddo
-          enddo
-        enddo
-      enddo
+ !       call five_point_cell_stencil(ind,cellstodo)
 
-      ! Initialize the auxiliary array xAdj 
-      do l=1,3
-        do kk=-3,2
-          do jj=-3,2
-            do ii=-3,2
-              xAdj(ii,jj,kk,l,:) = 0.0
-            enddo
-          enddo
-        enddo
-      enddo
+! !       ! Zero w and x
+!        wAdj = 0.0
+!        xAdj = 0.0
 
-      ! Copy the wAdj from w
+!       do sps2 = 1,nTimeIntervalsSpectral
+!          do l=1,nw
+!             do iiCell = 1,cellsToDo
+!                ii = ind(1,iiCell)
+!                jj = ind(2,iiCell)
+!                kk = ind(3,iiCell)
+!                wAdj(ii,jj,kk,l,sps2) = flowDoms(nn,level,sps2)%w(iCell+ii,jCell+jj,kCell+kk,l)
+!             end do
+!          end do
+!       end do
+
+
+!       ! Copy the wAdj from w
       do sps2 = 1,nTimeIntervalsSpectral
-         call setPointers(nn,level,sps2)
+         !call setPointers(nn,level,sps2)
          do l=1,nw
             do kk=-2,2
                do jj=-2,2
                   do ii=-2,2
-                     !print *,'wadj',wAdj(ii,jj,kk,l), iCell+ii, jCell+jj, kCell+kk
-                     wAdj(ii,jj,kk,l,sps2) = w(iCell+ii, jCell+jj, kCell+kk,l)
+                     wAdj(ii,jj,kk,l,sps2) = flowdoms(nn,level,sps2)%w(iCell+ii, jCell+jj, kCell+kk,l)
                   enddo
                enddo
             enddo
          enddo
-         call setPointers(nn,level,sps)
+         !call setPointers(nn,level,sps)
       end do
 
       ! Copy xAdj from x
+      
+   !   call five_pt_node_stencil_all(icell,jcell,kcell,ind,CellsToDo)
+      
+!       do sps2 = 1,nTimeIntervalsSpectral
+!           do l=1,3
+!             do iiCell = 1,cellsToDo
+!                ii = ind(1,iiCell)
+!                jj = ind(2,iiCell)
+!                kk = ind(3,iiCell)
+               
+!                xAdj(ii,jj,kk,l,sps2) = flowDoms(nn,level,sps2)%x(iCell+ii, jCell+jj, kCell+kk,l)
+!             end do
+!          end do
+!       end do
 
-!!$      iStart=-2; iEnd=3
-!!$      jStart=-2; jEnd=3
-!!$      kStart=-2; kEnd=3
 
       iStart=-3; iEnd=2
       jStart=-3; jEnd=2
@@ -132,37 +139,39 @@
       if(jCell==2) jStart=-2; if(jCell==jl) jEnd=1
       if(kCell==2) kStart=-2; if(kCell==kl) kEnd=1
      do sps2 = 1,nTimeIntervalsSpectral
-         call setPointers(nn,level,sps2)
+        !call setPointers(nn,level,sps2)
          do l=1,3
             do kk=kStart,kEnd
                do jj=jStart,jEnd
                   do ii=iStart,iEnd
-                     xAdj(ii,jj,kk,l,sps2) = x(iCell+ii, jCell+jj, kCell+kk,l)
+                     xAdj(ii,jj,kk,l,sps2) = flowDoms(nn,level,sps2)%x(iCell+ii, jCell+jj, kCell+kk,l)
                   enddo
                enddo
             enddo
          enddo
-         call setPointers(nn,level,sps)
+         !call setPointers(nn,level,sps)
       end do
     
       do sps2 = 1,nTimeIntervalsSpectral
-         call setPointers(nn,level,sps2)     
-         xBlockCornerAdj(1,1,1,:,sps2) = x(1, 1, 1,:)
-         xBlockCornerAdj(2,1,1,:,sps2) = x(il, 1, 1,:)
-         xBlockCornerAdj(1,2,1,:,sps2) = x(1,jl,1,:)
-         xBlockCornerAdj(2,2,1,:,sps2) = x(il,jl,1,:)
-         xBlockCornerAdj(1,2,2,:,sps2) = x(1,jl,kl,:)
-         xBlockCornerAdj(2,2,2,:,sps2) = x(il,jl,kl,:)
-         xBlockCornerAdj(1,1,2,:,sps2) = x(1, 1,kl,:)
-         xBlockCornerAdj(2,1,2,:,sps2) = x(il, 1,kl,:)
-         call setPointers(nn,level,sps)
+         !call setPointers(nn,level,sps2)     
+         xBlockCornerAdj(1,1,1,:,sps2) = flowDoms(nn,level,sps2)%x(1 , 1, 1,:)
+         xBlockCornerAdj(2,1,1,:,sps2) = flowDoms(nn,level,sps2)%x(il, 1, 1,:)
+         xBlockCornerAdj(1,2,1,:,sps2) = flowDoms(nn,level,sps2)%x(1 ,jl, 1,:)
+         xBlockCornerAdj(2,2,1,:,sps2) = flowDoms(nn,level,sps2)%x(il,jl, 1,:)
+         xBlockCornerAdj(1,2,2,:,sps2) = flowDoms(nn,level,sps2)%x(1 ,jl,kl,:)
+         xBlockCornerAdj(2,2,2,:,sps2) = flowDoms(nn,level,sps2)%x(il,jl,kl,:)
+         xBlockCornerAdj(1,1,2,:,sps2) = flowDoms(nn,level,sps2)%x(1 , 1,kl,:)
+         xBlockCornerAdj(2,1,2,:,sps2) = flowDoms(nn,level,sps2)%x(il, 1,kl,:)
+         !call setPointers(nn,level,sps)
       end do
       
       MachAdj = Mach
       MachCoefAdj = MachCoef
       MachGridAdj = MachGrid
-!      print *,'getting angle',liftDirection,shape(liftDirection)
+
       call getDirAngle(velDirFreestream,liftDirection,liftIndex,alphaAdj,betaAdj)
+
+
 !      call getDirAngle(velDirFreestream,velDirFreestream,liftIndex,alphaAdj,betaAdj)
       !call getDirAngle(velDirFreestream(1), velDirFreestream(2),&
       !     velDirFreestream(3), alphaAdj, betaAdj)
@@ -176,9 +185,8 @@
       murefAdj = muref
       timerefAdj = timeref
       pInfCorrAdj = pInfCorr
-
       
-      ! Store the rotation center and determine the
+      ! Store the rotation center and determine the 
       ! nonDimensional rotation rate of this block. As the
       ! reference length is 1 timeRef == 1/uRef and at the end
       ! the nonDimensional velocity is computed.

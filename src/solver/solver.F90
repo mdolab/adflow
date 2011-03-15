@@ -28,6 +28,7 @@
        use iteration
        use monitor
        use section
+       use blockPointers
        implicit none
 !
 !      Local variables.
@@ -110,7 +111,9 @@
 
                case (implicitRK)
                  call solverUnsteadyImplicitRK
-             end select
+              case (MD)
+                 call solverUnsteadyMD
+              end select
          end select
 
          ! If this is not the finest grid level, interpolate the

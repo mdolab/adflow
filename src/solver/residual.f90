@@ -93,7 +93,7 @@
                if( fineGrid ) then
                  call inviscidDissFluxScalar
                else
-                 call inviscidDissFluxScalarCoarse
+                  call inviscidDissFluxScalarCoarse
                endif
 
              !===========================================================
