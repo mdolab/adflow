@@ -599,7 +599,7 @@ class SUMB(AeroSolver):
 
         # Setup the external Mesh Warping
         self._update_geom_info = False
-        if 'mesh' in kwargs:
+        if 'mesh' in kwargs and kwargs['mesh']:
             self.mesh = kwargs['mesh']
         else:
             self.mesh = SUmbDummyMesh()
@@ -1032,6 +1032,25 @@ class SUMB(AeroSolver):
         self.mesh.setSurfaceCoordinates(group_name,coordinates,reinitialize)
 
         return 
+
+    def writeMeshFile(self,filename=None):
+        self.sumb.monitor.writegrid = True
+        self.sumb.monitor.writevolume = False
+        self.sumb.monitor.writesurface = False
+
+        if (filename):
+            self.sumb.inputio.solfile[:] = ''
+            self.sumb.inputio.solfile[0:len(filename)] = filename
+
+            self.sumb.inputio.newgridfile[:] = ''
+            self.sumb.inputio.newgridfile[0:len(filename)] = filename
+        # end if
+
+        self.sumb.writesol()
+
+        return
+
+
 
     def writeVolumeSolutionFile(self,filename=None,writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS file.
