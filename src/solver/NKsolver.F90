@@ -214,7 +214,7 @@ subroutine NKsolver
   
   NKSolvedOnce = .True.
   call EChk(ierr,__FILE__,__LINE__)
-  iterTot = iterTot0
+  !iterTot = iterTot0
 
   call SNESGetConvergedReason(snes,reason,ierr)
   call EChk(ierr,__FILE__,__LINE__)
