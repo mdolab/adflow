@@ -617,6 +617,7 @@ class SUMB(AeroSolver):
         self._update_period_info = True
         self._update_vel_info = True
         self.solve_failed = False
+        self.adjoint_failed = False
         self.dtype = 'd'
         # Write the intro message
         self.sumb.writeintromessage()
@@ -961,6 +962,10 @@ class SUMB(AeroSolver):
         else:
             self.solve_failed = False
         # end if
+
+        # If the solve failed, reset the flow for the next time through
+        if self.solve_failed:
+            self.resetFlow()
 
         sol_time = time.time() - t0
 
@@ -1316,8 +1321,21 @@ class SUMB(AeroSolver):
         # Actually Solve the adjoint system
         self.sumb.solveadjointtransposepetsc()
 
-        if self.getOption('restartAdjoint'):
-            self.storedADjoints[obj] =  self.sumb.getadjoint(self.sumb.adjointvars.ncellslocal*nw*nTS)
+        # Get the failed flag
+        if self.sumb.killsignals.adjointfailed:
+            self.adjoint_failed = True
+        else:
+            self.adjoint_failed = False
+        # end if
+
+        if self.adjoint_failed == False:
+            # Copy out the adjoint to store
+            if self.getOption('restartAdjoint'):
+                self.storedADjoints[obj] =  self.sumb.getadjoint(self.sumb.adjointvars.ncellslocal*nw*nTS)
+            # end if
+        else:
+            # Reset stored adjoint
+            self.storedAdjoints[obj][:] = 0.0
         # end if
        
         return

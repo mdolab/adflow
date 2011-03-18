@@ -945,6 +945,7 @@ python module sumb ! in
          integer(kind=inttype) :: globalsignal
          logical :: frompython
          logical :: routinefailed
+         logical :: adjointfailed
        end module killsignals
 
        module adjointpetsc ! in :sumb:ADjointPETSc.F90

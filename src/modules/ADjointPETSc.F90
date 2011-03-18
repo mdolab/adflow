@@ -145,6 +145,9 @@
       PC subpc
       KSP subksp
 
+      ! KSP Converged Reason
+      KSPConvergedReason adjointConvergedReason
+
       !index sets for the ASM preconditioner
       IS  is
 
