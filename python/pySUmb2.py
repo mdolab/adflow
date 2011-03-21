@@ -723,11 +723,11 @@ class SUMB(AeroSolver):
             *self.metricConversion
         self.sumb.inputphysics.pointref[2] = aero_problem._refs.zref\
             *self.metricConversion
-        self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xref\
+        self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xrot\
             *self.metricConversion
-        self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yref\
+        self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yrot\
             *self.metricConversion
-        self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zref\
+        self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zrot\
             *self.metricConversion
         #update the flow vars
         self.sumb.updatereferencepoint()
@@ -1031,7 +1031,29 @@ class SUMB(AeroSolver):
         self._update_geom_info = True
         self.mesh.setSurfaceCoordinates(group_name,coordinates,reinitialize)
 
-        return 
+        return
+
+    def WriteMeshFile(self,filename=None):
+        """Write the current state of the mesh to a CGNS file.
+ 
+        Keyword arguments:
+        
+        filename -- the name of the file (optional)
+         
+        """
+
+        if self.myid==0: print 'Writing Mesh File'
+        self.sumb.iteration.groundlevel = 1
+        if (filename):
+            self.sumb.inputio.newgridfile[:] = ''
+            self.sumb.inputio.newgridfile[0:len(filename)] = filename
+        
+        self.sumb.monitor.writegrid=True
+        self.sumb.monitor.writevolume=False#True#False
+        self.sumb.monitor.writesurface=False#True
+        self.sumb.iteration.timespectralgridsnotwritten = True
+        self.sumb.writesol()
+
 
     def writeVolumeSolutionFile(self,filename=None,writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS file.
