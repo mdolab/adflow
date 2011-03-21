@@ -217,7 +217,7 @@
 !!$!come back to later
   !         ! Compute the viscous flux in case of a viscous computation.
 !
- !          if( viscous ) call viscousFlux
+          if( viscous ) call viscousFlux
 
            ! Add the dissipative and possibly viscous fluxes to the
            ! Euler fluxes. Loop over the owned cells and add fw to dw.
@@ -238,8 +238,8 @@
 
            do l=1,nwf
 
-              dwAdj(l,sps) =dwAdj(l,sps)! (dwAdj(l) + fwAdj(l)) &
-                               !* real(iblank(iCell,jCell,kCell), realType)
+              dwAdj(l,sps) = (dwAdj(l) + fwAdj(l)) &
+                               * real(iblank(iCell,jCell,kCell), realType)
            enddo
 
 
