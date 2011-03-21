@@ -407,14 +407,14 @@ subroutine setupPETScKsp
         call KSPSetType(subksp, KSPGMRES, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
         
-        call KSPGMRESSetRestart(subksp, 10, PETScIerr)
+        call KSPGMRESSetRestart(subksp, subkspsubspacesize, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
      
         call KSPSetPreconditionerSide(ksp, PC_RIGHT, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
 
         call KSPSetTolerances(subksp, adjRelTol, adjAbsTol, adjDivTol, &
-             10, PETScIerr)
+             subkspsubspacesize, PETScIerr)
 
      case default ! All other solvers:
         call KSPSetType(subksp, KSPPREONLY, PETScIerr)
