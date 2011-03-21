@@ -25,6 +25,7 @@
 !
        
       use ADjointPETSc
+      use killsignals
       use inputADjoint
       use communication
       implicit none
@@ -158,6 +159,21 @@
         endif
         write(*,*) "------------------------------------------------"
       endif
+
+
+      ! Get the petsc converged reason and set the fail flag
+
+      call KSPGetConvergedReason(ksp, adjointConvergedReason,PETScIerr)
+      call EChk(PETScIerr,__FILE__,__LINE__)
+
+      if (adjointConvergedReason ==  KSP_CONVERGED_RTOL .or. &
+          adjointConvergedReason ==  KSP_CONVERGED_ATOL .or. &
+          adjointConvergedReason ==  KSP_CONVERGED_HAPPY_BREAKDOWN) then
+         adjointFailed = .False.
+      else
+         adjointFailed = .True.
+      end if
+
 
       ! Flush the output buffer and synchronize the processors.
 

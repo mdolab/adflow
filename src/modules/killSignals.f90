@@ -50,4 +50,6 @@
        ! routineFailed: was terminate called from a routine?
        logical :: routineFailed
 
+       logical :: adjointFailed
+
        end module killSignals

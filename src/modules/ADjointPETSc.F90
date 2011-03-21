@@ -145,8 +145,14 @@
       PC subpc
       KSP subksp
 
+      ! KSP Converged Reason
+      KSPConvergedReason adjointConvergedReason
+
       !index sets for the ASM preconditioner
       IS  is
+
+      PetscFortranAddr,dimension(:),allocatable :: is_local
+      PetscFortranAddr,dimension(:),allocatable :: sub_ksp_list
 
       !Additional variables for the ASM preconditioner
       PetscInt nlocal,first,Nsub,length
