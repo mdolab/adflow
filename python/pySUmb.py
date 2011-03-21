@@ -147,6 +147,8 @@ class SUMB(AeroSolver):
        
             # Misc Paramters
             'metricConversion':[float,1.0],
+            'autoSolveRetry':[bool,False],
+            'autoAdjointRetry':[bool,False],
             'storeHistory':[bool,False],
             'numberSolutions':[bool,False],
             'printIterations':[bool,False],
@@ -180,7 +182,8 @@ class SUMB(AeroSolver):
             'localPreconditioner' : [str,'ILU'],
             'ILUFill': [int,2],
             'ASMOverlap' : [int,5],
-         }
+            'subKSPSubspaceSize':[int,10],
+            }
 
         informs = {
             }
@@ -555,7 +558,8 @@ class SUMB(AeroSolver):
                                        'location':
                                            'inputadjoint.localpctype'},
                 'ILUFill':{'location':'inputadjoint.filllevel'},
-                'ASMOverlap':{'location':'inputadjoint.overlap'},                                
+                'ASMOverlap':{'location':'inputadjoint.overlap'},
+                'subKSPSubspaceSize':{'location':'inputadjoint.subkspsubspacesize'},
                 }                
         # end if
 
@@ -572,6 +576,8 @@ class SUMB(AeroSolver):
                 'writeSolution',
                 'familyRot',  # -> Not sure how to do
                 'areaAxis',
+                'autoSolveRetry',
+                'autoAdjointRetry'
                 ]
         # end if
         
@@ -957,15 +963,25 @@ class SUMB(AeroSolver):
             self.sumb.solver()
         # end if
 
+
+        # If the solve failed, reset the flow for the next time through
+        if self.sumb.killsignals.routinefailed:
+            self.resetFlow() # Always reset flow if it failed
+            if self.getOption('autoSolveRetry'): # Try the solver again
+                self.sumb.solver()
+                if self.sumb.killsignals.routinefailed:
+                    self.solve_failed = True
+                else:
+                    self.solve_failed = False
+                # end if
+            # end if
+        # end if 
+
         if self.sumb.killsignals.routinefailed:
             self.solve_failed = True
         else:
             self.solve_failed = False
         # end if
-
-        # If the solve failed, reset the flow for the next time through
-        if self.solve_failed:
-            self.resetFlow()
 
         sol_time = time.time() - t0
 
@@ -1321,21 +1337,34 @@ class SUMB(AeroSolver):
         # Actually Solve the adjoint system
         self.sumb.solveadjointtransposepetsc()
 
-        # Get the failed flag
-        if self.sumb.killsignals.adjointfailed:
-            self.adjoint_failed = True
-        else:
-            self.adjoint_failed = False
+        # Possibly try another solve
+        if self.sumb.killsignals.adjointfailed and self.getOption('restartAdjoint'):
+            # Only retry if the following conditions are met:
+            # 1. restartAdjoint is true -> that is we were starting from a non-zero starting point
+            # 2. The stored adjoint must have been already set at least once; that is we've already tried one solve
+            
+            if  obj in self.storedADjoints.keys():
+                self.storedADjoints[obj][:] = 0.0 # Always reset a stored adjoint 
+
+                if self.getOption('autoAdjointRetry'):
+                    self.sumb.solveadjointtransposepetsc()
+                # end if
+            # end if
         # end if
 
-        if self.adjoint_failed == False:
+        # Now set the flags and possibly reset adjoint
+        if self.sumb.killsignals.adjointfailed == False:
+            self.adjoint_failed = False
             # Copy out the adjoint to store
             if self.getOption('restartAdjoint'):
                 self.storedADjoints[obj] =  self.sumb.getadjoint(self.sumb.adjointvars.ncellslocal*nw*nTS)
             # end if
         else:
+            self.adjoint_failed = True
             # Reset stored adjoint
-            self.storedAdjoints[obj][:] = 0.0
+            if self.getOption('restartAdjoint'):
+                self.storedADjoints[obj][:] = 0.0
+            # end if
         # end if
        
         return

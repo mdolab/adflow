@@ -796,6 +796,7 @@ python module sumb ! in
          real(kind=realtype) :: sigma
          integer(kind=inttype) :: scaletype
          logical :: printtiming
+         integer(kind=inttype) :: subkspsubspacesize
        end module inputadjoint
 
        module inputtimespectral ! in :sumb:../../modules/inputParam.f90
