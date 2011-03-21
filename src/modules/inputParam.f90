@@ -1012,6 +1012,7 @@
        real(kind=realType)    :: sigma,sigmab
        logical :: printTiming
 
+       integer(kind=intType) :: subKSPSubspaceSize
      end module inputADjoint
 
      module inputTSStabDeriv
