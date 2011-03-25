@@ -450,9 +450,7 @@
          !  sFaceJ(ie,0:je,ke) - Idem in j-direction.
          !  sFaceK(ie,je,0:ke) - Idem in k-direction.
 
-         real(kind=realType), dimension(:,:,:,:),   pointer :: x,xInit,xSW
-         integer(kind=intType), dimension(:,:,:,:), pointer :: fe_id
-         real(kind=realType), dimension(:,:,:,:),   pointer :: xplus,xminus
+         real(kind=realType), dimension(:,:,:,:),   pointer :: x
          real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
 
          real(kind=realType), dimension(:,:,:,:), pointer :: sI, sJ, sK
@@ -520,6 +518,7 @@
          !                                problems.
 
          real(kind=realType), dimension(:,:,:,:),   pointer :: w,wtmp
+         real(kind=realType), dimension(:,:,:,:,:), pointer :: dw_FD
          real(kind=realType), dimension(:,:,:,:,:), pointer :: wOld
          real(kind=realType), dimension(:,:,:),     pointer :: p,ptmp, gamma
          real(kind=realType), dimension(:,:,:),     pointer :: rlv, rev
@@ -565,7 +564,7 @@
          !                               at least for the flow variables.
 
          real(kind=realType), dimension(:,:,:),     pointer :: p1
-         real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw,dwp,dwm,dwtemp,dwtmp
+         real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw,dwtmp
          real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
          real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
 
@@ -763,6 +762,7 @@
        integer(kind=intType) :: nDom
 
        type(blockType), allocatable, dimension(:,:,:) :: flowDoms
+       type(blockType), allocatable, dimension(:)     :: flowDomsd
 !
 !      ******************************************************************
 !      *                                                                *

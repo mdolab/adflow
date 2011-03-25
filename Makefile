@@ -36,6 +36,7 @@ SUBDIR_SRC    = src/modules       \
 	        src/preprocessing \
 	        src/slidingComm   \
 	        src/solver        \
+		src/solver/residualOutput\
 	        src/stabilityDerivatives \
 	        src/turbulence    \
 	        src/utils         \

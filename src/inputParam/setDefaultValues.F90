@@ -28,6 +28,7 @@
        use couplerParam
        use killSignals
        use NKSolverVars
+       use inputDiscretization
        implicit none
 !
 !      ******************************************************************
@@ -414,4 +415,5 @@
        routineFailed = .False.
        nkSolverSetup = .False.
        NKPCSetup     = .False.
+       lumpedDiss    = .False.
        end subroutine setDefaultValues

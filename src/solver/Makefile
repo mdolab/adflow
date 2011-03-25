@@ -89,6 +89,13 @@ FF90_OBJECTS = applyAllBC.o\
 	       solveState.o\
 	       solver.o\
 	       NKsolver.o\
+	       new_pc_setup.o\
+	       new_pc_setup2.o\
+	       timeStep_block.o\
+	       applyAllBC_block.o\
+	       initres_block.o\
+	       residual_block.o\
+	       block_res.o\
 	       solverSteady.o\
                solverUnsteadyExplicitRK.o\
                solverUnsteadyImplicitRK.o\

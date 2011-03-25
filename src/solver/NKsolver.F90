@@ -211,7 +211,6 @@ subroutine NKsolver
   call SNESSolve(snes,PETSC_NULL_OBJECT,wVec,ierr) ! PETSC_NULL_OBJECT
                                                    ! MAY GIVE MEMORY
                                                    ! LEAK!!!!!!
-  
   NKSolvedOnce = .True.
   call EChk(ierr,__FILE__,__LINE__)
   !iterTot = iterTot0
@@ -334,16 +333,16 @@ subroutine computeResidualNK()
   call applyAllBC(secondHalo)
 
   ! Exchange solution -- always the fine level
-   call whalo2(1_intType, 1_intType, nMGVar, .true., &
+  call whalo2(1_intType, 1_intType, nMGVar, .true., &
        .true., .true.)
 
-   ! Why does this need to be set?
+  ! Why does this need to be set?
   rkStage = 0
  
   call timestep(.false.)
   call initres(1_intType, nwf)
   call residual 
-  
+
 end subroutine computeResidualNK
 
 subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
@@ -375,7 +374,8 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Assemble the approximate PC
-  call setupNK_KSP_PC(dRdwPre)
+  call setupNK_KSP_PC3(dRdwPre)
+  
   flag = SAME_NONZERO_PATTERN
   ! Setup the required options for the KSP solver
   call SNESGetKSP(snes,ksp,ierr);                   call EChk(ierr,__FILE__,__LINE__)
@@ -542,7 +542,7 @@ subroutine setupNK_KSP_PC(dRdwPre)
   use iteration           ! overset, currentLevel
   use flowVarRefState     ! nw
   use inputTimeSpectral   ! spaceDiscr
-  use inputADjoint        !sigma
+  use inputDiscretization ! sigma,lumpedDiss
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -741,7 +741,7 @@ subroutine setupNK_KSP_PC(dRdwPre)
   !Return dissipation Parameters to normal
   vis2 = vis2_ref
   vis4 = vis4_ref
-
+  lumpedDiss=.False.
   call MatAssemblyBegin(dRdWPre,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
   call MatAssemblyEnd  (dRdWPre,MAT_FINAL_ASSEMBLY,ierr)
@@ -757,7 +757,9 @@ subroutine setupNK_KSP_PC(dRdwPre)
   time(2) = mpi_wtime()
   call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
        SUmb_comm_world, ierr)
-
+  if (myid == 0) then
+     print *,'Assembly time:',setupTime
+  end if
 end subroutine setupNK_KSP_PC
 
 subroutine getCurrentResidual(rhoRes,totalRRes)

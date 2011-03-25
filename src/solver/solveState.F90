@@ -468,7 +468,6 @@ subroutine solveState
            ! jacobian lag we want after the first iteration.
            call SNESSetLagJacobian(snes, -1, ierr); call EChk(ierr,__FILE__,__LINE__)
         end if
-
         call NKsolver()
      end if
   end if

@@ -520,7 +520,7 @@ class SUMB(AeroSolver):
                 'adjointMaxIter':{'location':'inputadjoint.adjmaxiter'},
                 'adjointSubspaceSize':{'location':'inputadjoint.adjrestart'},
                 'adjointMonitorStep':{'location':'inputadjoint.adjmonstep'},
-                'dissipationLumpingParameter':{'location':'inputadjoint.sigma'},
+                'dissipationLumpingParameter':{'location':'inputdiscretization.sigma'},
                 'preconditionerSide':{'LEFT':
                                            self.sumb.inputadjoint.left,
                                        'RIGHT':

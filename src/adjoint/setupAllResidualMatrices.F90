@@ -36,7 +36,7 @@ subroutine setupAllResidualMatrices
   use iteration           ! overset, currentLevel
   use flowVarRefState     ! nw
   !      use inputTimeSpectral ! spaceDiscr
-  use inputADjoint        !lumpedDiss
+  use inputDiscretization
   implicit none
   !
   !     Local variables.
