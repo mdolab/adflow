@@ -526,6 +526,8 @@ python module sumb ! in
          logical :: dirscaling
          logical :: radiineededfine
          logical :: radiineededcoarse
+         logical :: lumpeddiss
+         real(kind=realtype) :: sigma
        end module inputdiscretization
 
        module inputio ! in :sumb:../../modules/inputParam.f90
@@ -785,7 +787,6 @@ python module sumb ! in
          integer(kind=inttype) parameter,optional :: blockjacobi=1
          integer(kind=inttype) parameter,optional :: natural=1
          integer(kind=inttype) :: adjrestart
-         logical :: lumpeddiss
          integer(kind=inttype) :: localpctype
          logical :: solveadjoint
          integer(kind=inttype) parameter,optional :: rowmax=2
@@ -793,7 +794,6 @@ python module sumb ! in
          logical :: setmonitor
          integer(kind=inttype) parameter,optional :: ilu=1
          integer(kind=inttype) parameter,optional :: reversecuthillmckee=2
-         real(kind=realtype) :: sigma
          integer(kind=inttype) :: scaletype
          logical :: printtiming
          integer(kind=inttype) :: subkspsubspacesize
