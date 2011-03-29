@@ -90,8 +90,7 @@ FF90_OBJECTS = applyAllBC.o\
 	       solveState.o\
 	       solver.o\
 	       NKsolver.o\
-	       new_pc_setup.o\
-	       new_pc_setup2.o\
+	       forwardModePC.o\
 	       timeStep_block.o\
 	       applyAllBC_block.o\
 	       initres_block.o\
