@@ -72,6 +72,7 @@ FF90_OBJECTS_4 = BCTypes.o\
 		 section.o\
 	         mdData.o\
 	         mdDataLocal.o\
+		 stencils.o\
 
 #      ******************************************************************
 #      *                                                                *

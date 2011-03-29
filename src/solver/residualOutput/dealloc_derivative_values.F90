@@ -5,14 +5,11 @@ subroutine dealloc_derivative_values(nn)
 
   use blockPointers_d ! This modules includes blockPointers
   use inputtimespectral
+  use flowvarrefstate
+  use inputPhysics
+  implicit none
+  integer(kind=intType) :: nn,sps,ierr
 
-  integer(kind=intType) :: sps
-
-  ! First create a flowdoms-like structure that is of length
-  ! ntimeintervalspectral for the current block
-
-  allocate(flowDomsd(ntimeItervalsSpectral)
-    
   ! Call setPointers to get the size info we need
 
   do sps=1,nTimeIntervalsSpectral
@@ -57,10 +54,10 @@ subroutine dealloc_derivative_values(nn)
         call EChk(ierr,__FILE__,__LINE__)
      end if
 
-     deallocate(flowDoms(sps)%dtl, &
-              flowDomsd(sps)%radI,     &
-              flowDomsd(sps)%radJ,     &
-              flowDomsd(sps)%radK,stat=ierr)
+     deallocate(flowDomsd(sps)%dtl, &
+                flowDomsd(sps)%radI,     &
+                flowDomsd(sps)%radJ,     &
+                flowDomsd(sps)%radK,stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
      ! It appears these values only require 1 sps instance
@@ -94,4 +91,4 @@ subroutine dealloc_derivative_values(nn)
   deallocate(flowdomsd,stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-end subroutine alloc_derivative_values
+end subroutine dealloc_derivative_values

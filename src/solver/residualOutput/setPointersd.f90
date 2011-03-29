@@ -17,7 +17,7 @@ subroutine setPointersd(sps)
   !      *                                                                *
   !      ******************************************************************
   !
-  use blockPointers
+  use blockPointers_d
   implicit none
   !
   !      Subroutine arguments
@@ -34,22 +34,22 @@ subroutine setPointersd(sps)
   ! module blockPointers it is known to which block the data
   ! belongs.
 
-  viscSubfaced => flowDoms(sps)%viscSubface
+  viscSubfaced => flowDomsd(sps)%viscSubface
 
 
   xd    => flowDomsd(sps)%x
 
-  sid     => flowDoms(sps)%si
-  sjd     => flowDoms(sps)%sj
-  skd     => flowDoms(sps)%sk
+  sid     => flowDomsd(sps)%si
+  sjd     => flowDomsd(sps)%sj
+  skd     => flowDomsd(sps)%sk
 
-  rotMatrixId => flowDoms(sps)%rotMatrixI
-  rotMatrixJd => flowDoms(sps)%rotMatrixJ
-  rotMatrixKd => flowDoms(sps)%rotMatrixK
+  rotMatrixId => flowDomsd(sps)%rotMatrixI
+  rotMatrixJd => flowDomsd(sps)%rotMatrixJ
+  rotMatrixKd => flowDomsd(sps)%rotMatrixK
 
-  sFaceId => flowDoms(sps)%sFaceI
-  sFaceJd => flowDoms(sps)%sFaceJ
-  sFaceKd => flowDoms(sps)%sFaceK
+  sFaceId => flowDomsd(sps)%sFaceI
+  sFaceJd => flowDomsd(sps)%sFaceJ
+  sFaceKd => flowDomsd(sps)%sFaceK
 
   ! Flow variables. Note that wOld, gamma and the laminar viscosity
   ! point to the entries on the finest mesh. The reason is that
@@ -57,53 +57,53 @@ subroutine setPointersd(sps)
   ! viscosity this is not the case because in a segregated solver
   ! its values are obtained from the fine grid level.
 
-  wd     => flowDoms(sps)%w
-  wOldd  => flowDoms(sps)%wOld
-  pd     => flowDoms(sps)%p
+  wd     => flowDomsd(sps)%w
+  wOldd  => flowDomsd(sps)%wOld
+  pd     => flowDomsd(sps)%p
 
-  gammad => flowDoms(sps)%gamma
-  rlvd   => flowDoms(sps)%rlv
-  revd   => flowDoms(sps)%rev
-  sd     => flowDoms(sps)%s
+  gammad => flowDomsd(sps)%gamma
+  rlvd   => flowDomsd(sps)%rlv
+  revd   => flowDomsd(sps)%rev
+  sd     => flowDomsd(sps)%s
 
   ! Residual and multigrid variables. The residual point to the
   ! finest grid entry, the multigrid variables to their own level.
 
-  dwd => flowDoms(sps)%dw
-  fwd => flowDoms(sps)%fw
+  dwd => flowDomsd(sps)%dw
+  fwd => flowDomsd(sps)%fw
 
-  w1d => flowDoms(sps)%w1
-  wrd => flowDoms(sps)%wr
+  w1d => flowDomsd(sps)%w1
+  wrd => flowDomsd(sps)%wr
 
   ! Time-stepping variables and spectral radIi.
   ! They asps point to the fine mesh entry.
 
-  wnd  => flowDoms(sps)%wn
-  dtld => flowDoms(sps)%dtl
+  wnd  => flowDomsd(sps)%wn
+  dtld => flowDomsd(sps)%dtl
 
-  radId => flowDoms(sps)%radI
-  radJd => flowDoms(sps)%radJ
-  radKd => flowDoms(sps)%radK
+  radId => flowDomsd(sps)%radI
+  radJd => flowDomsd(sps)%radJ
+  radKd => flowDomsd(sps)%radK
 
-  d2Walld => flowDoms(sps)%d2Wall
+  d2Walld => flowDomsd(sps)%d2Wall
 
   ! Arrays used for the implicit treatment of the turbulent wasps
   ! boundary conditions. As these variables are only aspocated for
   ! the 1st spectral solution of the fine mesh, the pointers point
   ! to those arrays.
 
-  bmti1d => flowDoms(1)%bmti1
-  bmti2d => flowDoms(1)%bmti2
-  bmtj1d => flowDoms(1)%bmtj1
-  bmtj2d => flowDoms(1)%bmtj2
-  bmtk1d => flowDoms(1)%bmtk1
-  bmtk2d => flowDoms(1)%bmtk2
+  bmti1d => flowDomsd(1)%bmti1
+  bmti2d => flowDomsd(1)%bmti2
+  bmtj1d => flowDomsd(1)%bmtj1
+  bmtj2d => flowDomsd(1)%bmtj2
+  bmtk1d => flowDomsd(1)%bmtk1
+  bmtk2d => flowDomsd(1)%bmtk2
 
-  bvti1d => flowDoms(1)%bvti1
-  bvti2d => flowDoms(1)%bvti2
-  bvtj1d => flowDoms(1)%bvtj1
-  bvtj2d => flowDoms(1)%bvtj2
-  bvtk1d => flowDoms(1)%bvtk1
-  bvtk2d => flowDoms(1)%bvtk2
+  bvti1d => flowDomsd(1)%bvti1
+  bvti2d => flowDomsd(1)%bvti2
+  bvtj1d => flowDomsd(1)%bvtj1
+  bvtj2d => flowDomsd(1)%bvtj2
+  bvtk1d => flowDomsd(1)%bvtk1
+  bvtk2d => flowDomsd(1)%bvtk2
 
 end subroutine setPointersd
