@@ -36,6 +36,7 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS =  blockpointers_d.o\
+		diffSizes.o\
 		applyallbc_block_d.o\
 		bcsymm_d.o\
                 computeetot_d.o\
@@ -56,7 +57,6 @@ FF90_OBJECTS =  blockpointers_d.o\
 		utauwf_d.o \
 		bcnswalladiabatic_d.o \
 		block_res_d.o  \
-		eintarray_d.o  \
 		invisciddissfluxmatrixcoarse_d.o \
 		residual_block_d.o \
 		viscousflux_d.o \
@@ -68,6 +68,7 @@ FF90_OBJECTS =  blockpointers_d.o\
 		alloc_derivative_values.o\
 		dealloc_derivative_values.o\
 		setPointersd.o\
+		eintarray_d.o  \
 
 #      ******************************************************************
 #      *                                                                *

@@ -303,9 +303,6 @@ subroutine solveState
      call getFreeStreamResidual(rhoRes0,totalR0)
      call getCurrentResidual(rhoResStart,totalRStart)
 
-     ! Store these values in the NKsolver Module
-     !self.rhoResStart = real(self.rhoResStart)
-     
      ! Determine if we need to run the RK solver, before we can
      ! run the NK solver 
      L2ConvSave = L2Conv
@@ -316,7 +313,9 @@ subroutine solveState
         ! yet converged tightly enough to start with NK solver
               
         ! Try to run RK solver down to NKSwitchTol
-        L2Conv = NK_Switch_Tol
+        L2Conv = NK_Switch_Tol*rhoRes0/rhoResStart
+        print *,'l2Conv is now:',l2conv
+        print *,'rhores0:',rhores0
 
         solve_RK = .True.
         solve_NK = .True.

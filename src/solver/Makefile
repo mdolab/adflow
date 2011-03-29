@@ -54,6 +54,7 @@ FF90_OBJECTS = applyAllBC.o\
 	       computeInletMassFlowFullWheel.o\
 	       computeLamViscosity.o\
 	       computeUtau.o\
+	       computeUtau_block.o\
 	       convergenceHeader.o\
 	       convergenceInfo.o\
 	       derivativeRotMatrixRigid.o\

@@ -2,17 +2,21 @@
 ! in blockpointers_d for use with the AD code.
 
 subroutine alloc_derivative_values(nn)
-
+  
   use blockPointers_d ! This modules includes blockPointers
   use inputtimespectral
+  use flowvarrefstate
+  use inputPhysics
+  implicit none
 
-  integer(kind=intType) :: sps
+  integer(kind=intType) :: nn,sps,ierr
 
   ! First create a flowdoms-like structure that is of length
   ! ntimeintervalspectral for the current block
 
-  allocate(flowDomsd(ntimeItervalsSpectral)
-    
+  allocate(flowDomsd(nTimeIntervalsSpectral),stat=ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
   ! Call setPointers to get the size info we need
 
   do sps=1,nTimeIntervalsSpectral
@@ -44,7 +48,7 @@ subroutine alloc_derivative_values(nn)
      call EChk(ierr,__FILE__,__LINE__)
 
      allocate(flowDomsd(sps)%p(0:ib,0:jb,0:kb), &
-          flowDomsd(sps)%gamma(0:ib,0:jb,0:kb, stat=ierr)
+          flowDomsd(sps)%gamma(0:ib,0:jb,0:kb), stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      if( viscous ) then
@@ -57,9 +61,9 @@ subroutine alloc_derivative_values(nn)
         call EChk(ierr,__FILE__,__LINE__)
      end if
 
-     allocate(flowDoms(sps)%dtl(1:ie,1:je,1:ke), &
+     allocate(flowDomsd(sps)%dtl(1:ie,1:je,1:ke), &
               flowDomsd(sps)%radI(1:ie,1:je,1:ke),     &
-              fwlowDomsd(sps)%radJ(1:ie,1:je,1:ke),     &
+              flowDomsd(sps)%radJ(1:ie,1:je,1:ke),     &
               flowDomsd(sps)%radK(1:ie,1:je,1:ke),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
      

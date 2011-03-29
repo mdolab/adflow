@@ -71,8 +71,12 @@ subroutine setupNKsolver
      ! adjoint routines for this
      allocate( nnzDiagonal(nCellsLocal*nTimeIntervalsSpectral),&
           nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
+     if (viscous) then
+        call drdwPCPreAllocation     (nnzDiagonal,nnzOffDiag,nCellsLocal*nTimeIntervalsSpectral)
+     else
+        call drdwPCPreAllocation     (nnzDiagonal,nnzOffDiag,nCellsLocal*nTimeIntervalsSpectral)
+     end if
 
-     call drdwPCPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal*nTimeIntervalsSpectral)
      call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
           nDimW, nDimW,                     &
           PETSC_DETERMINE, PETSC_DETERMINE, &
@@ -212,16 +216,17 @@ subroutine NKsolver
                                                    ! MAY GIVE MEMORY
                                                    ! LEAK!!!!!!
   NKSolvedOnce = .True.
+  print *,'ierr is:',ierr
   call EChk(ierr,__FILE__,__LINE__)
   !iterTot = iterTot0
 
   call SNESGetConvergedReason(snes,reason,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-
+  print *,'reason:',reason
   if (reason == SNES_CONVERGED_FNORM_ABS .or. &
       reason == SNES_CONVERGED_FNORM_RELATIVE .or. &
       reason == SNES_CONVERGED_PNORM_RELATIVE) then
-     routineFailed = .False. 
+     routineFailed = .False.
   else
      routineFailed = .True. 
   end if
@@ -293,6 +298,7 @@ subroutine computeResidualNK()
   use iteration
   use inputPhysics 
   implicit none
+
   ! Local Variables
   integer(kind=intType) :: ierr,i,j,k,l,sps,nn
   logical secondHalo ,correctForK
@@ -308,12 +314,13 @@ subroutine computeResidualNK()
   groundLevel = 1_intTYpe
   ! Next we need to compute the pressures
   gm1 = gammaConstant - one
+  correctForK = .False.
   spectralLoop: do sps=1,nTimeIntervalsSpectral
      domainsState: do nn=1,nDom
         ! Set the pointers to this block.
         call setPointers(nn, currentLevel, sps)
 
-        do k=2,kl 
+        do k=2,kl
            do j=2,jl
               do i=2,il
 
@@ -326,8 +333,16 @@ subroutine computeResidualNK()
               enddo
            enddo
         enddo
+
+        call computeEtot(2_intType,il, 2_intType,jl, &
+             2_intType,kl, correctForK)
+        
      end do domainsState
   end do spectralLoop
+
+  
+  call computeLamViscosity
+  call computeEddyViscosity
 
   !   Apply BCs
   call applyAllBC(secondHalo)
@@ -335,12 +350,29 @@ subroutine computeResidualNK()
   ! Exchange solution -- always the fine level
   call whalo2(1_intType, 1_intType, nMGVar, .true., &
        .true., .true.)
+  if (equations == RANSEquations) then
+     call whalo2(1_intType, nt1, nt2, .false., .false., .true.)  
+  end if
 
   ! Why does this need to be set?
   rkStage = 0
- 
+  
+  ! Compute the skin-friction velocity
+  call computeUtau
+
+  ! Compute time step
   call timestep(.false.)
+
+  ! Possible Turblent Equations
+  if( equations == RANSEquations ) then
+     call initres(nt1MG, nMGVar) ! Initialize only the Turblent Variables
+     call turbResidual
+  endif
+  
+  ! Initialize Flow residuals
   call initres(1_intType, nwf)
+
+  ! Actual Residual Calc
   call residual 
 
 end subroutine computeResidualNK
