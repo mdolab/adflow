@@ -35,73 +35,18 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS = applyAllBC.o\
-	       bcBleedInflow.o\
-	       bcDomainInterface.o\
-	       bcEulerWall.o\
-	       bcExtrap.o\
-	       bcFarfield.o\
-	       bcMdot.o\
-	       bcNSWallAdiabatic.o\
-	       bcNSWallIsothermal.o\
-	       bcSubsonicInflow.o\
-	       bcSubsonicOutflow.o\
-	       bcSupersonicInflow.o\
-	       bcSymm.o\
-	       bcSymmPolar.o\
-	       bcThrust.o\
-	       bleedFlowParameters.o\
-	       computeInletMassFlowFullWheel.o\
-	       computeLamViscosity.o\
-	       computeUtau.o\
-	       convergenceHeader.o\
-	       convergenceInfo.o\
-	       derivativeRotMatrixRigid.o\
-	       eulerWallsPresent.o\
-	       executeMGCycle.o\
-	       extrapolate2ndHalo.o\
-	       forcesAndMoments.o\
-	       gridVelocitiesCoarseLevels.o\
-	       gridVelocitiesFineLevel.o\
-	       initres.o\
-	       inviscidCentralFlux.o\
-	       inviscidDissFluxCusp.o\
-	       inviscidDissFluxCuspCoarse.o\
-	       inviscidDissFluxMatrix.o\
-	       inviscidDissFluxMatrixCoarse.o\
-	       inviscidDissFluxScalar.o\
-	       inviscidDissFluxScalarCoarse.o\
-	       inviscidUpwindFlux.o\
-	       killFunctions.o\
-	       level0CoolingModel.o\
-	       maxEddyv.o\
-	       maxHdiffMach.o\
-	       normalVelocities.o\
-	       residual.o\
-	       residualAveraging.o\
-	       rungeKuttaSmoother.o\
-	       setCoefTimeIntegrator.o\
-	       setCornerRowHalos.o\
-	       setCorrectionsCoarseHalos.o\
-	       setCycleStrategy.o\
-	       shiftSolution.o\
-	       slipVelocities.o\
-	       solveState.o\
-	       solver.o\
-	       solverSteady.o\
-               solverUnsteadyExplicitRK.o\
-               solverUnsteadyImplicitRK.o\
-	       solverUnsteadyBDF.o\
-	       solverUnsteadyMD.o\
-	       timeStep.o\
-	       transferToCoarseGrid.o\
-	       transferToFineGrid.o\
-	       unsteadyHeader.o\
-	       utauWF.o\
-	       viscousFlux.o\
-	       writeFamilyMassflow.o
-
-CC_OBJECTS   = connect_signals.o
+FF90_OBJECTS = applyPC.o\
+	       computeResidualNK.o\
+	       destroyNKSolver.o\
+	       formFunction.o\
+	       formJacobian.o\
+	       getCurrentResidual.o\
+	       getFreeStreamResidual.o\
+	       NKSolver.o\
+	       NKUtilities.o\
+	       setupNK_PC.o\
+	       setupNKSolver.o\
+	       snesMonitor.o\
 
 #      ******************************************************************
 #      *                                                                *
@@ -124,4 +69,4 @@ clean:
 #      *                                                                *
 #      ******************************************************************
 
-src:   $(FF90_OBJECTS) $(CC_OBJECTS)
+src:   $(FF90_OBJECTS)
