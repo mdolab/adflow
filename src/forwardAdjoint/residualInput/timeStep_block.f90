@@ -187,45 +187,45 @@ subroutine timeStep_block(onlyRadii)
   !          *                                                            *
   !          **************************************************************
   !
-!   if(dirScaling .and. currentLevel <= groundLevel) then
-!      ! if( dirScaling ) then
+  if(dirScaling .and. currentLevel <= groundLevel) then
+     ! if( dirScaling ) then
 
-!      do k=1,ke
-!         do j=1,je
-!            do i=1,ie
+     do k=1,ke
+        do j=1,je
+           do i=1,ie
 
-!               ! Avoid division by zero by clipping radi, radJ and
-!               ! radK.
+              ! Avoid division by zero by clipping radi, radJ and
+              ! radK.
 
-!               ri = max(radi(i,j,k),eps)
-!               rj = max(radJ(i,j,k),eps)
-!               rk = max(radK(i,j,k),eps)
+              ri = max(radi(i,j,k),eps)
+              rj = max(radJ(i,j,k),eps)
+              rk = max(radK(i,j,k),eps)
 
-!               ! Compute the scaling in the three coordinate
-!               ! directions.
+              ! Compute the scaling in the three coordinate
+              ! directions.
 
-!               rij = (ri/rj)**adis
-!               rjk = (rj/rk)**adis
-!               rki = (rk/ri)**adis
+              rij = (ri/rj)**adis
+              rjk = (rj/rk)**adis
+              rki = (rk/ri)**adis
 
-!               ! Create the scaled versions of the aspect ratios.
-!               ! Note that the multiplication is done with radi, radJ
-!               ! and radK, such that the influence of the clipping
-!               ! is negligible.
+              ! Create the scaled versions of the aspect ratios.
+              ! Note that the multiplication is done with radi, radJ
+              ! and radK, such that the influence of the clipping
+              ! is negligible.
 
-!               !   radi(i,j,k) = third*radi(i,j,k)*(one + one/rij + rki)
-!               !   radJ(i,j,k) = third*radJ(i,j,k)*(one + one/rjk + rij)
-!               !   radK(i,j,k) = third*radK(i,j,k)*(one + one/rki + rjk)
+              !   radi(i,j,k) = third*radi(i,j,k)*(one + one/rij + rki)
+              !   radJ(i,j,k) = third*radJ(i,j,k)*(one + one/rjk + rij)
+              !   radK(i,j,k) = third*radK(i,j,k)*(one + one/rki + rjk)
 
-!               radi(i,j,k) = radi(i,j,k)*(one + one/rij + rki)
-!               radJ(i,j,k) = radJ(i,j,k)*(one + one/rjk + rij)
-!               radK(i,j,k) = radK(i,j,k)*(one + one/rki + rjk)
+              radi(i,j,k) = radi(i,j,k)*(one + one/rij + rki)
+              radJ(i,j,k) = radJ(i,j,k)*(one + one/rjk + rij)
+              radK(i,j,k) = radK(i,j,k)*(one + one/rki + rjk)
 
-!            enddo
-!         enddo
-!      enddo
+           enddo
+        enddo
+     enddo
 
-!   endif
+  endif
 
   ! The rest of this file can be skipped if only the spectral
   ! radii need to be computed.

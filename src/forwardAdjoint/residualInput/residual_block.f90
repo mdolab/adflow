@@ -75,7 +75,7 @@ subroutine residual_block
      print *,'Fine Grid should not be false here'
      stop
   end if
-  !call inviscidCentralFlux_mod ! This MAY be required for AD
+ 
   call inviscidCentralFlux
 
   ! Compute the artificial dissipation fluxes.

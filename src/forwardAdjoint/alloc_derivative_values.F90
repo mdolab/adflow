@@ -128,11 +128,13 @@ subroutine alloc_derivative_values(nn)
   allocspectralLoop: do sps=1,nTimeIntervalsSpectral
 
      call setPointersAdj(nn,1,sps)
-     !call block_res(nn,sps)
+     call block_res(nn,sps)
      allocate(flowDomsd(sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
+
      allocate(flowDomsd(sps)%dw_deriv(0:ib,0:jb,0:kb,1:nw,1:nw),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
+
      allocate(flowDomsd(sps)%dwtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
@@ -156,22 +158,13 @@ subroutine alloc_derivative_values(nn)
         do k=2,kl
            do j=2,jl
               do i=2,il
-                 flowdomsd(sps)%dwtmp(i,j,k,l) = dw(i,j,k,l)/vol(i,j,k)
+                 flowdomsd(sps)%dwtmp(i,j,k,l) = dw(i,j,k,l)
               end do
            end do
         end do
      end do
-     print *,'starting dw is:'
-     print *,dw(2,2,2,:)
-
-
-     call block_res(nn,sps)
-
-     print *,'fucked dw is:'
-     print *,dw(2,2,2,:)
-     stop
-
-    call initRes_block(1,nwf,nn,sps)
+  
+     call initRes_block(1,nwf,nn,sps)
    
      do l=1,nw
         do k=0,kb 
