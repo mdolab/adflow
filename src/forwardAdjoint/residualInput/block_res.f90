@@ -21,6 +21,7 @@ subroutine block_res(nn,sps)
 
   implicit none
 
+
   real(kind=realType) :: gm1,v2
   integer(kind=intType) :: nn,sps,i,j,k,sps2,mm,l
   logical :: correctForK
@@ -45,7 +46,7 @@ subroutine block_res(nn,sps)
      enddo
   enddo
 
-  call computeEtot(0,ib,0,jb,0,kb,correctForK)
+  !call computeEtot(0,ib,0,jb,0,kb,correctForK)
   
   !  Apply all BC's
   call applyAllBC_block(.True.)
@@ -56,7 +57,7 @@ subroutine block_res(nn,sps)
   ! Compute time step and spectral radius
   call timeStep_block(.false.)
   
-!   if( equations == RANSEquations ) then
+  !   if( equations == RANSEquations ) then
   !      call initres_block(nt1MG, nMGVar,nn,sps) ! Initialize only the Turblent Variables
   !      call turbResidual_block
   !   endif

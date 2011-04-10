@@ -1,21 +1,16 @@
-subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
+subroutine setupSpatialResidualMatrix(matrix,useAD)
 
   !     ******************************************************************
   !     *                                                                *
-  !     * Compute the state derivative matrix using a forward mode calc  *
-  !     * There are three different flags that determine how this        *
-  !     * routine is run:                                                *
+  !     * Compute the spatial derivative matrix using a forward mode calc*
+  !     * There is one flag to determine how this routine is run:        *
+  !     *                                                                *
   !     * useAD: if True, AD is used for derivative calculation, if      *
   !     *        False, FD is used.                                      *
-  !     * usePC: if True, the reduced 1st order stencil with dissipation *
-  !     *        lumping is assembled instead of the actual exact        *
-  !     *        full stencil jacobian                                   *
-  !     * useTranspose: If true, the transpose of dRdw is assembled.     *
-  !     *               For use with the adjoint this must be true.      *
+  !     *                                                                *
   !     ******************************************************************
   !
   use ADjointVars
-  use ADjointPETSc , only:localInfo
   use blockPointers       ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
   use communication       ! procHalo(currentLevel)%nProcSend
   use inputDiscretization ! spaceDiscr
@@ -36,7 +31,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   Mat mat_copy
 
   ! Input Variables
-  logical :: useAD,usePC,useTranspose
+  logical :: useAD
 
   !     Local variables.
   integer(kind=intType) :: ierr,nn,sps,sps2,i,j,k,l,ll,ii,jj,kk
@@ -208,7 +203,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
            ! all states in "color"
 
            ! Loop over the peturbed "colored" cells and set the values
-           ! in matrix cooresponding to a 7 point stencil for a PC, 13
+           ! in matrix cooresponding to a 7 point coloring for a PC, 13
            ! for Euler dRdW or 25 for Viscous/RANS
            call setPointersAdj(nn,1,sps)
 

@@ -33,8 +33,8 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   useTranspose = .False.
 
   call setupNK_PC(dRdwPre)
-  call setupStateResidualMatrix(dRdwPre,useAD,usePC,useTranspose)
-  stop
+  !call setupStateResidualMatrix(dRdwPre,useAD,usePC,useTranspose)
+
   flag = SAME_NONZERO_PATTERN
   ! Setup the required options for the KSP solver
   call SNESGetKSP(snes,ksp,ierr);                   call EChk(ierr,__FILE__,__LINE__)

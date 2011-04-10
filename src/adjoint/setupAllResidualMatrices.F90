@@ -715,7 +715,7 @@ subroutine setupAllResidualMatrices
   useAD = .False.
   usePC = .False.
   useTranspose = .True.
- call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
+  call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
 
 10 format(a)
 20 format(a,1x,f8.2)
