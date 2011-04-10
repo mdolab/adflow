@@ -3,8 +3,7 @@
    !
    !  Differentiation of initres_block in forward (tangent) mode:
    !   variations   of useful results: *dw
-   !   with respect to varying inputs: *w *coeftime deltat *dscalar
-   !                *dvector
+   !   with respect to varying inputs: *w deltat
    !
    !      ******************************************************************
    !      *                                                                *
@@ -46,6 +45,9 @@
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: ww, wsp, wsp1
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wwd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: volsp
+   EXTERNAL FLOWDOMS
+   TYPE(#UNKNOWNDERIVEDTYPE0#) :: FLOWDOMS
+   TYPE(#UNKNOWNDERIVEDTYPE0#) :: result1
    !
    !      ******************************************************************
    !      *                                                                *
@@ -290,8 +292,10 @@
    ! compute the unsteady source term and the volume.
    ! Also store in ii the offset needed for vector
    ! quantities.
-   wsp => flowdoms(nn, currentlevel, mm)%w
-   volsp => flowdoms(nn, currentlevel, mm)%vol
+   result1 = FLOWDOMS(nn, currentlevel, mm)
+   wsp => result1%w
+   result1 = FLOWDOMS(nn, currentlevel, mm)
+   volsp => result1%vol
    ii = 3*(mm-1)
    ! Loop over the number of variables to be set.
    varloopfine:DO l=varstart,varend
@@ -366,9 +370,12 @@
    ! and for the volume.
    ! Furthermore store in ii the offset needed for
    ! vector quantities.
-   wsp => flowdoms(nn, currentlevel, mm)%w
-   wsp1 => flowdoms(nn, currentlevel, mm)%w1
-   volsp => flowdoms(nn, currentlevel, mm)%vol
+   result1 = FLOWDOMS(nn, currentlevel, mm)
+   wsp => result1%w
+   result1 = FLOWDOMS(nn, currentlevel, mm)
+   wsp1 => result1%w1
+   result1 = FLOWDOMS(nn, currentlevel, mm)
+   volsp => result1%vol
    ii = 3*(mm-1)
    ! Loop over the number of variables to be set.
    varloopcoarse:DO l=varstart,varend

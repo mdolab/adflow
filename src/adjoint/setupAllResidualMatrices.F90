@@ -47,7 +47,7 @@ subroutine setupAllResidualMatrices
   integer(kind=intType) :: ii, jj, kk, i, j, k,liftIndex,l
 
   logical :: fineGrid, correctForK, exchangeTurb,secondhalo
-
+  logical :: useAD,useTranspose,usePC
   real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral) :: wAdj, wAdjB
   real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral)  :: xAdj, xAdjB
 
@@ -672,6 +672,7 @@ subroutine setupAllResidualMatrices
   call EChk(PETScIerr,__FILE__,__LINE__)
   call MatAssemblyBegin(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
+
   call MatAssemblyEnd  (dRdWT,MAT_FINAL_ASSEMBLY,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
   call MatAssemblyEnd  (dRdx,MAT_FINAL_ASSEMBLY,PETScIerr)
@@ -709,6 +710,12 @@ subroutine setupAllResidualMatrices
   ! Output formats.
 #endif
 
+
+  ! Redo drdw with FD
+  useAD = .False.
+  usePC = .False.
+  useTranspose = .True.
+ call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
 
 10 format(a)
 20 format(a,1x,f8.2)

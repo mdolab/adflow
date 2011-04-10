@@ -30,6 +30,7 @@ subroutine FormFunction(snes,wVec,rVec,ctx,ierr)
 
   ! We don't check an error here, so just pass back zero
   ierr = 0
+
 end subroutine FormFunction
 
 

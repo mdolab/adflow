@@ -453,8 +453,8 @@ subroutine drdwPCPreAllocation(onProc,offProc,wSize)
   ii = 0
   onProc(:) = 1+(nTimeIntervalsSpectral) ! ALWAYS have the center cell ON-PROCESSOR
   offProc(:) = 0_intType 
-  do sps=1,nTimeIntervalsSpectral
-     do nn=1,nDom
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
         call setPointersAdj(nn,1_intType,sps)
         ! Loop over each Cell
         do k=2,kl
@@ -531,8 +531,8 @@ subroutine drdwPCPreAllocation_visc(onProc,offProc,wSize)
   onProc(:) = 1+(nTimeIntervalsSpectral) ! ALWAYS have the center cell ON-PROCESSOR
   offProc(:) = 0_intType 
   call initialize_stencils
-  do sps=1,nTimeIntervalsSpectral
-     do nn=1,nDom
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
         call setPointersAdj(nn,1_intType,sps)
         ! Loop over each Cell
         do k=2,kl

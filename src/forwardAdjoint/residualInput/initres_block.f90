@@ -50,7 +50,6 @@ subroutine initres_block(varStart, varEnd,nn,sps)
 
   if(varEnd < varStart) return
 
-
   ! Determine the equation mode and act accordingly.
 
   select case (equationMode)

@@ -46,13 +46,12 @@ FF90_OBJECTS =  blockpointers_d.o\
 		bceulerwall_d.o\
 	        bcsymmpolar_d.o\
 		curveupre_d.o\
-		initres_block_d.o\
 		invisciddissfluxscalar_d.o\
 		turbbcnswall_d.o\
 		bcfarfield_d.o\
 		bcturbwall_d.o\
 		dim_d.o\
-		inviscidcentralflux_d.o \
+		inviscidcentralflux_mod_d.o \
 		inviscidupwindflux_d.o  \
 		utauwf_d.o \
 		bcnswalladiabatic_d.o \
@@ -64,11 +63,11 @@ FF90_OBJECTS =  blockpointers_d.o\
 		computeetotcellcpfit_d.o \
 		etotarray_d.o \
 		invisciddissfluxmatrix_d.o \
-		setbcpointers_d.o\
-		alloc_derivative_values.o\
-		dealloc_derivative_values.o\
-		setPointersd.o\
 		eintarray_d.o  \
+		setbcpointers_d.o\
+		turbresidual_block_d.o\
+		sa_block_d.o\
+		initres_block_ts_d.o\
 
 #      ******************************************************************
 #      *                                                                *

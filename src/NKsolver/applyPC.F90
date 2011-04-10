@@ -82,7 +82,7 @@ subroutine applyPC(in_vec,out_vec,N)
      call MatSetOption(dRdW   , MAT_ROW_ORIENTED,PETSC_FALSE, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     call setupNK_KSP_PC(dRdwPre)
+     call setupNK_PC(dRdwPre)
     
      call KSPCreate(SUMB_COMM_WORLD, global_ksp, ierr)
      call EChk(ierr,__FILE__,__LINE__)

@@ -89,6 +89,9 @@ python module sumb ! in
          integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
        end subroutine setgrid
 
+       subroutine determinestencil
+       end subroutine determinestencil
+
        subroutine getforces(forces,pts,npts,nts) ! in :sumb:../../warping/getForces.f90
          use blockpointers
          use warpingpetsc

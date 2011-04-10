@@ -29,6 +29,7 @@ subroutine initialize_stencils
 
   use stencils
 
+
   ! Euler PC Stencil
 
   euler_pc_stencil(1,:) = (/ 0, 0, 0 /)
@@ -39,7 +40,7 @@ subroutine initialize_stencils
   euler_pc_stencil(6,:) = (/ 0, 0,-1 /)
   euler_pc_stencil(7,:) = (/ 0, 0, 1 /)
 
- ! Euler PC Stencil
+ ! Euler drdw Stencil
 
   euler_drdw_stencil(1 ,:) = (/ 0, 0, 0 /)
   euler_drdw_stencil(2 ,:) = (/-2, 0, 0 /)
@@ -55,7 +56,7 @@ subroutine initialize_stencils
   euler_drdw_stencil(12,:) = (/ 0, 0, 1 /)
   euler_drdw_stencil(13,:) = (/ 0, 0, 2 /)
 
-  ! NS PC Stencil - All of the 3x3 ECEPT corners
+  ! NS PC Stencil - All of the 3x3 EXCEPT corners
 
   rans_pc_stencil(1,:) = (/ 0, 0, 0 /)
 

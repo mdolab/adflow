@@ -3,7 +3,7 @@
    !
    !  Differentiation of timestep_block in forward (tangent) mode:
    !   variations   of useful results: *radi *radj *radk
-   !   with respect to varying inputs: *p *w adis
+   !   with respect to varying inputs: *p *gamma *w
    !
    !      ******************************************************************
    !      *                                                                *
@@ -53,7 +53,6 @@
    REAL(kind=realtype) :: ux, uy, uz, cc2, qs, sx, sy, sz, rmu
    REAL(kind=realtype) :: uxd, uyd, uzd, cc2d, qsd
    REAL(kind=realtype) :: ri, rj, rk, rij, rjk, rki
-   REAL(kind=realtype) :: rid, rjd, rkd, rijd, rjkd, rkid
    REAL(kind=realtype) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
    REAL(kind=realtype) :: sface, tmp
    LOGICAL :: radiineeded
@@ -61,10 +60,7 @@
    REAL(kind=realtype) :: arg1d
    REAL(kind=realtype) :: result1
    REAL(kind=realtype) :: result1d
-   REAL(kind=realtype) :: pwx1
-   REAL(kind=realtype) :: pwx1d
    REAL(kind=realtype) :: abs1d
-   INTRINSIC MAX
    INTRINSIC ABS
    REAL(kind=realtype) :: abs3d
    REAL(kind=realtype) :: abs6
@@ -129,15 +125,11 @@
    uy = w(i, j, k, ivy)
    uzd = wd(i, j, k, ivz)
    uz = w(i, j, k, ivz)
-   cc2d = (gamma(i, j, k)*pd(i, j, k)*w(i, j, k, irho)-gamma(i&
-   &              , j, k)*p(i, j, k)*wd(i, j, k, irho))/w(i, j, k, irho)**2
+   cc2d = ((gammad(i, j, k)*p(i, j, k)+gamma(i, j, k)*pd(i, j, &
+   &              k))*w(i, j, k, irho)-gamma(i, j, k)*p(i, j, k)*wd(i, j, k&
+   &              , irho))/w(i, j, k, irho)**2
    cc2 = gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho)
-   IF (cc2 .LT. clim2) THEN
-   cc2 = clim2
-   cc2d = 0.0
-   ELSE
-   cc2 = cc2
-   END IF
+   !cc2 = max(cc2,clim2)
    ! Set the dot product of the grid velocity and the
    ! normal in i-direction for a moving face. To avoid
    ! a number of multiplications by 0.5 simply the sum
@@ -249,87 +241,35 @@
    !          *                                                            *
    !          **************************************************************
    !
-   IF (dirscaling .AND. currentlevel .LE. groundlevel) THEN
-   ! if( dirScaling ) then
-   DO k=1,ke
-   DO j=1,je
-   DO i=1,ie
-   IF (radi(i, j, k) .LT. eps) THEN
-   ri = eps
-   rid = 0.0
-   ELSE
-   rid = radid(i, j, k)
-   ri = radi(i, j, k)
-   END IF
-   IF (radj(i, j, k) .LT. eps) THEN
-   rj = eps
-   rjd = 0.0
-   ELSE
-   rjd = radjd(i, j, k)
-   rj = radj(i, j, k)
-   END IF
-   IF (radk(i, j, k) .LT. eps) THEN
-   rk = eps
-   rkd = 0.0
-   ELSE
-   rkd = radkd(i, j, k)
-   rk = radk(i, j, k)
-   END IF
-   ! Compute the scaling in the three coordinate
-   ! directions.
-   pwx1d = (rid*rj-ri*rjd)/rj**2
-   pwx1 = ri/rj
-   IF (pwx1 .GT. 0.0 .OR. (pwx1 .LT. 0.0 .AND. adis .EQ. INT(&
-   &                adis))) THEN
-   rijd = adis*pwx1**(adis-1)*pwx1d
-   ELSE IF (pwx1 .EQ. 0.0 .AND. adis .EQ. 1.0) THEN
-   rijd = pwx1d
-   ELSE
-   rijd = 0.0
-   END IF
-   rij = pwx1**adis
-   pwx1d = (rjd*rk-rj*rkd)/rk**2
-   pwx1 = rj/rk
-   IF (pwx1 .GT. 0.0 .OR. (pwx1 .LT. 0.0 .AND. adis .EQ. INT(&
-   &                adis))) THEN
-   rjkd = adis*pwx1**(adis-1)*pwx1d
-   ELSE IF (pwx1 .EQ. 0.0 .AND. adis .EQ. 1.0) THEN
-   rjkd = pwx1d
-   ELSE
-   rjkd = 0.0
-   END IF
-   rjk = pwx1**adis
-   pwx1d = (rkd*ri-rk*rid)/ri**2
-   pwx1 = rk/ri
-   IF (pwx1 .GT. 0.0 .OR. (pwx1 .LT. 0.0 .AND. adis .EQ. INT(&
-   &                adis))) THEN
-   rkid = adis*pwx1**(adis-1)*pwx1d
-   ELSE IF (pwx1 .EQ. 0.0 .AND. adis .EQ. 1.0) THEN
-   rkid = pwx1d
-   ELSE
-   rkid = 0.0
-   END IF
-   rki = pwx1**adis
-   ! Create the scaled versions of the aspect ratios.
-   ! Note that the multiplication is done with radi, radJ
-   ! and radK, such that the influence of the clipping
-   ! is negligible.
-   !   radi(i,j,k) = third*radi(i,j,k)*(one + one/rij + rki)
-   !   radJ(i,j,k) = third*radJ(i,j,k)*(one + one/rjk + rij)
-   !   radK(i,j,k) = third*radK(i,j,k)*(one + one/rki + rjk)
-   radid(i, j, k) = radid(i, j, k)*(one+one/rij+rki) + radi(i, &
-   &              j, k)*(rkid-one*rijd/rij**2)
-   radi(i, j, k) = radi(i, j, k)*(one+one/rij+rki)
-   radjd(i, j, k) = radjd(i, j, k)*(one+one/rjk+rij) + radj(i, &
-   &              j, k)*(rijd-one*rjkd/rjk**2)
-   radj(i, j, k) = radj(i, j, k)*(one+one/rjk+rij)
-   radkd(i, j, k) = radkd(i, j, k)*(one+one/rki+rjk) + radk(i, &
-   &              j, k)*(rjkd-one*rkid/rki**2)
-   radk(i, j, k) = radk(i, j, k)*(one+one/rki+rjk)
-   END DO
-   END DO
-   END DO
-   END IF
+   !   if(dirScaling .and. currentLevel <= groundLevel) then
+   !      ! if( dirScaling ) then
+   !      do k=1,ke
+   !         do j=1,je
+   !            do i=1,ie
+   !               ! Avoid division by zero by clipping radi, radJ and
+   !               ! radK.
+   !               ri = max(radi(i,j,k),eps)
+   !               rj = max(radJ(i,j,k),eps)
+   !               rk = max(radK(i,j,k),eps)
+   !               ! Compute the scaling in the three coordinate
+   !               ! directions.
+   !               rij = (ri/rj)**adis
+   !               rjk = (rj/rk)**adis
+   !               rki = (rk/ri)**adis
+   !               ! Create the scaled versions of the aspect ratios.
+   !               ! Note that the multiplication is done with radi, radJ
+   !               ! and radK, such that the influence of the clipping
+   !               ! is negligible.
+   !               !   radi(i,j,k) = third*radi(i,j,k)*(one + one/rij + rki)
+   !               !   radJ(i,j,k) = third*radJ(i,j,k)*(one + one/rjk + rij)
+   !               !   radK(i,j,k) = third*radK(i,j,k)*(one + one/rki + rjk)
+   !               radi(i,j,k) = radi(i,j,k)*(one + one/rij + rki)
+   !               radJ(i,j,k) = radJ(i,j,k)*(one + one/rjk + rij)
+   !               radK(i,j,k) = radK(i,j,k)*(one + one/rki + rjk)
+   !            enddo
+   !         enddo
+   !      enddo
+   !   endif
    ! The rest of this file can be skipped if only the spectral
    ! radii need to be computed.
    IF (.NOT.onlyradii) THEN

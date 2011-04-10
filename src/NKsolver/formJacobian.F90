@@ -19,7 +19,8 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
 
   ! Local Variables
   logical secondHalo
-
+  logical :: useAD,usePC,useTranspose
+ 
   ! Dummy assembly begin/end calls for the matrix-free Matrx
   call MatAssemblyBegin(dRdw,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -27,8 +28,13 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Assemble the approximate PC
-  call setupNK_KSP_PC3(dRdwPre)
-  
+  useAD = .False.
+  usePC = .True.
+  useTranspose = .False.
+
+  call setupNK_PC(dRdwPre)
+  call setupStateResidualMatrix(dRdwPre,useAD,usePC,useTranspose)
+  stop
   flag = SAME_NONZERO_PATTERN
   ! Setup the required options for the KSP solver
   call SNESGetKSP(snes,ksp,ierr);                   call EChk(ierr,__FILE__,__LINE__)

@@ -19,7 +19,7 @@ subroutine setupNK_PC(dRdwPre)
 #include "include/finclude/petsc.h"
 
   Mat dRdwPre
-
+  Vec aVec,bVec
  !
   !     Local variables.
 
@@ -35,7 +35,7 @@ subroutine setupNK_PC(dRdwPre)
   real(kind=realType),dimension(3) :: rotRateAdj
   real(kind=realType), dimension(nw,nTimeIntervalsSpectral)  :: dwAdj,dwadjb
   real(kind=realType), dimension(2) :: time
-  real(kind=realType)               ::setupTime
+  real(kind=realType)               ::setupTime,trace
 
   logical :: correctForK, secondHalo, exchangeTurb
 
@@ -46,7 +46,7 @@ subroutine setupNK_PC(dRdwPre)
   ! idxmgb - global block row index
   ! idxngb - global block column index
 
-  integer(kind=intType) :: idxmgb, idxngb,ierr, sps, sps2,ilow,ihigh
+  integer(kind=intType) :: idxmgb, idxngb,ierr, sps, sps2,ilow,ihigh,i
 
   !Reference values of the dissipation coeff for the preconditioner
   real(kind=realType) :: vis2_ref, vis4_ref
@@ -231,6 +231,7 @@ subroutine setupNK_PC(dRdwPre)
   if (myid == 0) then
      print *,'Assembly time:',setupTime
   end if
+
 end subroutine setupNK_PC
 
 

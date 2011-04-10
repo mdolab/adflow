@@ -52,6 +52,7 @@ SUBDIR_ADJOINT = src/adjoint               \
 	         src/adjoint/forcesOutput\
 		 src/adjoint/residualNKPCInput \
 	         src/adjoint/residualNKPCOutput \
+		 src/forwardAdjoint \
 		 src/forwardAdjoint/residualInput \
 		 src/forwardAdjoint/residualOutput
 
