@@ -41,7 +41,7 @@ subroutine residual_block
   !
   ! Add the source terms from the level 0 cooling model.
 
-  call level0CoolingModel
+  !call level0CoolingModel
 
   ! Set the value of rFil, which controls the fraction of the old
   ! dissipation residual to be used. This is only for the runge-kutta
@@ -70,6 +70,12 @@ subroutine residual_block
   fineGrid = .false.
   if(currentLevel == groundLevel) fineGrid = .true.
 
+
+  if (fineGrid == .false.) then
+     print *,'Fine Grid should not be false here'
+     stop
+  end if
+  !call inviscidCentralFlux_mod ! This MAY be required for AD
   call inviscidCentralFlux
 
   ! Compute the artificial dissipation fluxes.
@@ -117,7 +123,7 @@ subroutine residual_block
 
   if( viscous ) call viscousFlux
 
-  ! Add the dissipative and possibly viscous fluxes to the
+  ! add the dissipative and possibly viscous fluxes to the
   ! Euler fluxes. Loop over the owned cells and add fw to dw.
   ! Also multiply by iblank so that no updates occur in holes
   ! or on the overset boundary.

@@ -89,9 +89,6 @@ FF90_OBJECTS_2 = applyAllTurbBC.o\
 		 vfScale.o\
 		 vfSolve.o\
 		 writeLoglaw.o\
-		 turbResidual_block.o\
-		 sa_block.o\
-		 saSolve_mod.o\
 
 #      ******************************************************************
 #      *                                                                *

@@ -518,7 +518,7 @@
          !                                problems.
 
          real(kind=realType), dimension(:,:,:,:),   pointer :: w,wtmp
-         real(kind=realType), dimension(:,:,:,:,:), pointer :: dw_FD
+         real(kind=realType), dimension(:,:,:,:,:), pointer :: dw_deriv
          real(kind=realType), dimension(:,:,:,:,:), pointer :: wOld
          real(kind=realType), dimension(:,:,:),     pointer :: p,ptmp, gamma
          real(kind=realType), dimension(:,:,:),     pointer :: rlv, rev
@@ -564,7 +564,7 @@
          !                               at least for the flow variables.
 
          real(kind=realType), dimension(:,:,:),     pointer :: p1
-         real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw,dwtmp
+         real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw,dwtmp,dwtmp2
          real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
          real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
 
@@ -712,12 +712,11 @@
 !
          ! globalNode(ib:ie,jb:je,kb:ke):  Global node numbering.
          ! globalCell(0:ib,0:jb,0:kb):     Global cell numbering.
-         ! psiAdj(ib:ie,jb:je,kb:ke,1:nw): The adjoint variables.
-         !                                 Correspond to the flow field
-         !                                 variables w(i,j,k,1:nw).
-      
+         ! color(0:ib,0:jb,0:kb)     :     Temporary coloring array used for 
+         !                                 forward mode AD/FD calculations
          integer(kind=intType), dimension(:,:,:), pointer :: globalNode
          integer(kind=intType), dimension(:,:,:), pointer :: globalCell
+         integer(kind=intType), dimension(:,:,:), pointer :: color
 
 !
 !        ****************************************************************

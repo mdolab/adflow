@@ -1261,6 +1261,7 @@ class SUMB(AeroSolver):
             self.sumb.createpetscvars()
  
             self.sumb.setupallresidualmatrices()
+
             if forcePoints is None:
                 forcePoints = self.getForcePoints()
             # end if
@@ -1269,6 +1270,7 @@ class SUMB(AeroSolver):
             self.sumb.setuppetscksp()
             self.mesh.setupWarpDeriv()
             self.adjointMatrixSetup = True
+
         # end if
 
         return
@@ -1304,12 +1306,12 @@ class SUMB(AeroSolver):
         if not self.adjointMatrixSetup:
             self.setupAdjoint(forcePoints)
         # end if
-       
+
         # Check to see if the RHS Partials have been computed
         if not self.adjointRHS == obj:
             self.computeObjPartials(obj,forcePoints)
         # end if
-
+           
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
         if 'structAdjoint' in kwargs and 'group_name' in kwargs:
@@ -1322,6 +1324,7 @@ class SUMB(AeroSolver):
         nw = self.sumb.flowvarrefstate.nw
         nTS = self.sumb.inputtimespectral.ntimeintervalsspectral
         # If we have saved adjoints, 
+
         if self.getOption('restartAdjoint'):
 
             # Objective is already stored, so just set it
@@ -1335,6 +1338,7 @@ class SUMB(AeroSolver):
             # end if
 
         # Actually Solve the adjoint system
+
         self.sumb.solveadjointtransposepetsc()
 
         # Possibly try another solve

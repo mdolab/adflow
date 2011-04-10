@@ -7,10 +7,30 @@ subroutine dealloc_derivative_values(nn)
   use inputtimespectral
   use flowvarrefstate
   use inputPhysics
+  use forwardAdjointVars
   implicit none
   integer(kind=intType) :: nn,sps,ierr
 
-  ! Call setPointers to get the size info we need
+  ! Reset w and dw -> Its like nothing happened...
+  deallocatespectral: do sps=1,nTimeIntervalsSpectral
+     call setPointersAdj(nn,1,sps)
+     ! Reset w 
+     flowDoms(nn,1,sps)%w = flowDomsd(sps)%wtmp
+
+     ! Set dw
+     flowDoms(nn,1,sps)%dw =flowDomsd(sps)%dwtmp
+     
+     ! Deallocate memtory
+     deallocate(flowDomsd(sps)%dwtmp,stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     deallocate(flowDomsd(sps)%dwtmp2,stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     deallocate(flowDomsd(sps)%dw_deriv,stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     deallocate(flowDomsd(sps)%wtmp,stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+  end do deallocatespectral
 
   do sps=1,nTimeIntervalsSpectral
      call setPointers(nn,1,sps)
@@ -61,9 +81,9 @@ subroutine dealloc_derivative_values(nn)
      call EChk(ierr,__FILE__,__LINE__)
      
      ! It appears these values only require 1 sps instance
-     sps1RansTest: if(sps == 1 .and. &
-          equations == RANSEquations) then
-        
+!      sps1RansTest: if(sps == 1 .and. &
+!           equations == RANSEquations) then
+        if (sps==1) then
         deallocate(flowDomsd(sps)%bmti1,&
                  flowDomsd(sps)%bmti2,&
                  flowDomsd(sps)%bmtj1,&
@@ -78,7 +98,7 @@ subroutine dealloc_derivative_values(nn)
                  flowDomsd(sps)%bvtk2,&
                  stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-     end if sps1RansTest
+     end if
      
      if (viscous) then
         deallocate(flowDomsd(sps)%d2Wall, &
@@ -87,8 +107,13 @@ subroutine dealloc_derivative_values(nn)
      end if
   end do
 
+  ! Deallocate the color array in flowDoms
+ 
+  deallocate(flowDomsd(1)%color,stat=ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
   ! Finally deallocate flowdomsd
   deallocate(flowdomsd,stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
-
+ 
 end subroutine dealloc_derivative_values

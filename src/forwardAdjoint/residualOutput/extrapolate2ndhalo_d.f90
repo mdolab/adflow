@@ -221,7 +221,7 @@
    crange(idim, 1) = ddim
    crange(idim, 2) = ddim
    ! Compute the energy for this halo range.
-   
+
    CALL COMPUTEETOT_D(crange(1, 1), crange(1, 2), crange(2, 1), crange(2&
    &               , 2), crange(3, 1), crange(3, 2), correctfork)
    END SUBROUTINE EXTRAPOLATE2NDHALO_D

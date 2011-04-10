@@ -86,7 +86,6 @@
 #     *                                                                *
 #     ******************************************************************
 
-TAPENADE_HOME = /nfs/mica/home/kenway/Downloads/tapenade3.4
 SOLVER_DIRSRC = /nfs/mica/home/kenway/hg/SUmbADjoint/src
 
 #     ******************************************************************
@@ -103,7 +102,7 @@ TAPENADE_OUTVARS = "dw w"
 
 # Independent input variables (separator: white space, default: all)
 
-TAPENADE_VARS = "w"
+TAPENADE_VARS = "w w_offTimeInstance"
 
 # Name of the top routine
 
@@ -115,7 +114,7 @@ TAPENADE_MODE = -forward
 
 # Output directory
 
-TAPENADE_OUTDIR = $(SOLVER_DIRSRC)/solver/residualTapenade
+TAPENADE_OUTDIR = $(SOLVER_DIRSRC)/forwardAdjoint/residualTapenade
 
 # Integer, double and real precision (bytes)
 
@@ -140,29 +139,72 @@ TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
 #     *                                                                *
 #     ******************************************************************
 
-TAPENADE_SRC_SOLVER =  block_res.f90\
-		       timeStep_block.f90\
-		       initres_block.f90\
-		       residual_block.f90\
-		       inviscidCentralFlux.f90\
-		       inviscidDissFluxCusp.f90\
-		       inviscidDissFluxCuspCoarse.f90\
-		       inviscidDissFluxMatrix.f90\
-		       inviscidDissFluxMatrixCoarse.f90\
-		       inviscidDissFluxScalar.f90\
-		       inviscidDissFluxScalarCoarse.f90\
-		       inviscidUpwindFlux.f90\
-		       viscousFlux.f90\
-		       utauWF.f90\
-		       applyAllBC_block.f90\
-		       bcSymm.f90\
-		       bcEulerWall.f90\
-		       bcSymmPolar.f90\
-		       bcFarfield.f90\
-		       bcNSWallAdiabatic.f90\
-		       bcNSWallIsothermal.f90\
-		       extrapolate2ndHalo.f90\
-		       computeUtau_block.f90\
+TAPENADE_SRC_SOLVER =  $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/block_res.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/timeStep_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/initres_block_mod.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/residual_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/applyAllBC_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/computeUtau_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/sa_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/turbResidual_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/setPointers_dummy.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/setPointersOffTSInstance.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidCentralFlux_mod.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxCusp.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxCuspCoarse.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxMatrix.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxMatrixCoarse.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxScalar.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxScalarCoarse.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidUpwindFlux.f90\
+		       $(SOLVER_DIRSRC)/solver/viscousFlux.f90\
+		       $(SOLVER_DIRSRC)/solver/utauWF.f90\
+		       $(SOLVER_DIRSRC)/solver/bcSymm.f90\
+		       $(SOLVER_DIRSRC)/solver/bcEulerWall.f90\
+		       $(SOLVER_DIRSRC)/solver/bcSymmPolar.f90\
+		       $(SOLVER_DIRSRC)/solver/bcFarfield.f90\
+		       $(SOLVER_DIRSRC)/solver/bcNSWallAdiabatic.f90\
+		       $(SOLVER_DIRSRC)/solver/bcNSWallIsothermal.f90\
+		       $(SOLVER_DIRSRC)/solver/extrapolate2ndHalo.f90\
+		       $(SOLVER_DIRSRC)/adjoint/residualInput/constants.f90 \
+		       $(SOLVER_DIRSRC)/adjoint/residualInput/precision.f90 \
+		       $(SOLVER_DIRSRC)/adjoint/residualInput/block.f90\
+		       $(SOLVER_DIRSRC)/adjoint/residualInput/su_mpi.f90\
+		       $(SOLVER_DIRSRC)/adjoint/residualInput/terminate.f90\
+		       $(SOLVER_DIRSRC)/adjoint/residualInput/communication.f90\
+		       $(SOLVER_DIRSRC)/adjoint/residualInput/cgnsGrid.f90 \
+		       $(SOLVER_DIRSRC)/turbulence/curveFit.f90\
+		       $(SOLVER_DIRSRC)/turbulence/turbBCNSWall.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcTurbWall.f90\
+		       $(SOLVER_DIRSRC)/turbulence/turbMod.f90\
+		       $(SOLVER_DIRSRC)/turbulence/saSolve.f90\
+		       $(SOLVER_DIRSRC)/turbulence/unsteadyTurbSpectral.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcTurbTreatment.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcEddyNoWall.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcEddyWall.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcTurbFarfield.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcTurbInflow.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcTurbOutflow.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcTurbSymm.f90\
+		       $(SOLVER_DIRSRC)/turbulence/computeEddyViscosity.f90\
+		       $(SOLVER_DIRSRC)/turbulence/prodSmag2.f90\
+		       $(SOLVER_DIRSRC)/turbulence/prodWmag2.f90\
+		       $(SOLVER_DIRSRC)/turbulence/applyAllTurbBC.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bl.f90\
+		       $(TAPENADE_DIRMOD)/flowVarRefState.f90 \
+		       $(TAPENADE_DIRMOD)/inputParam.f90 \
+		       $(TAPENADE_DIRMOD)/section.f90 \
+		       $(TAPENADE_DIRMOD)/iteration.f90 \
+		       $(TAPENADE_DIRUTILS)/computeEtot.f90\
+		       $(TAPENADE_DIRUTILS)/dummy_dim.f90\
+		       $(TAPENADE_DIRUTILS)/setBCPointers.f90\
+		       $(TAPENADE_DIRMOD)/CpCurveFits.f90\
+		       $(TAPENADE_DIRMOD)/BCTypes.f90\
+		       $(TAPENADE_DIRMOD)/paramTurb.f90\
+		       $(TAPENADE_DIRMOD)/blockPointers.f90 \
+		       $(TAPENADE_DIRMOD)/forwardAdjointVars.f90\
+
+#	               $(SOLVER_DIRSRC)/forwardAdjoint/saSolve_mod.f90\
 #		       level0CoolingModel.f90\
 #		       bcBleedInflow.f90\
 		       bcEulerWall.f90\
@@ -192,44 +234,6 @@ TAPENADE_SRC_SOLVER =  block_res.f90\
 		       writeFamilyMassflow.f90
 
 
-TAPENADE_MOD =  $(TAPENADE_DIRMOD)/blockPointers.f90 \
-	       $(TAPENADE_DIRMOD)/block.f90 \
-	       $(SOLVER_DIRSRC)/adjoint/residualInput/constants.f90 \
-	       $(SOLVER_DIRSRC)/adjoint/residualInput/precision.f90 \
-	       $(SOLVER_DIRSRC)/adjoint/residualInput/su_mpi.f90\
-	       $(SOLVER_DIRSRC)/adjoint/residualInput/terminate.f90\
-	       $(SOLVER_DIRSRC)/adjoint/residualInput/communication.f90\
-	       $(SOLVER_DIRSRC)/adjoint/residualInput/cgnsGrid.f90 \
-	       $(SOLVER_DIRSRC)/turbulence/curveFit.f90\
-	       $(SOLVER_DIRSRC)/turbulence/turbBCNSWall.f90\
-	       $(SOLVER_DIRSRC)/turbulence/bcTurbWall.f90\
-	       $(SOLVER_DIRSRC)/turbulence/turbResidual_block.f90\
-	       $(SOLVER_DIRSRC)/turbulence/turbMod.f90\
-	       $(SOLVER_DIRSRC)/turbulence/sa_block.f90\
-	       $(SOLVER_DIRSRC)/turbulence/saSolve.f90\
-	       $(SOLVER_DIRSRC)/turbulence/unsteadyTurbSpectral.f90\
-	       $(SOLVER_DIRSRC)/turbulence/bcTurbTreatment.f90\
-	       $(SOLVER_DIRSRC)/turbulence/bcEddyNoWall.f90\
-	       $(SOLVER_DIRSRC)/turbulence/bcEddyWall.f90\
-	       $(SOLVER_DIRSRC)/turbulence/bcTurbFarfield.f90\
-	       $(SOLVER_DIRSRC)/turbulence/bcTurbInflow.f90\
-	       $(SOLVER_DIRSRC)/turbulence/bcTurbOutflow.f90\
-	       $(SOLVER_DIRSRC)/turbulence/bcTurbSymm.f90\
-	       $(SOLVER_DIRSRC)/turbulence/computeEddyViscosity.f90\
-	       $(SOLVER_DIRSRC)/turbulence/prodSmag2.f90\
-	       $(SOLVER_DIRSRC)/turbulence/prodWmag2.f90\
-	       $(SOLVER_DIRSRC)/turbulence/applyAllTurbBC.f90\
-	       $(SOLVER_DIRSRC)/turbulence/bl.f90\
-	       $(TAPENADE_DIRMOD)/flowVarRefState.f90 \
-	       $(TAPENADE_DIRMOD)/inputParam.f90 \
-	       $(TAPENADE_DIRMOD)/section.f90 \
-	       $(TAPENADE_DIRMOD)/iteration.f90 \
-	       $(TAPENADE_DIRUTILS)/computeEtot.f90\
-	       $(TAPENADE_DIRUTILS)/dummy_dim.f90\
-	       $(TAPENADE_DIRUTILS)/setBCPointers.f90\
-	       $(TAPENADE_DIRMOD)/CpCurveFits.f90\
-	       $(TAPENADE_DIRMOD)/BCTypes.f90\
-	       $(TAPENADE_DIRMOD)/paramTurb.f90\
 
 #	       $(SOLVER_DIRSRC)/turbulence/bcTurbInterface.f90\
 #	       $(SOLVER_DIRSRC)/adjoint/residualInput/cgnsGrid.f90\
@@ -252,7 +256,7 @@ TAPENADE_MOD =  $(TAPENADE_DIRMOD)/blockPointers.f90 \
 
 
 
-TAPENADE_SRC_ALL = $(TAPENADE_SRC_SOLVER) $(TAPENADE_MOD)
+TAPENADE_SRC_ALL = $(TAPENADE_SRC_SOLVER)
 
 #     ******************************************************************
 #     *                                                                *

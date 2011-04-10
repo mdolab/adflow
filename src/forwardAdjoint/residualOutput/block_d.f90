@@ -126,24 +126,6 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslip
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: tns_wall
    END TYPE BCDATATYPE_D
-   ! sendBuffer:      array to hold face data for MPI send
-   ! recvBuffer:      array to receive face data for MPI recv
-   ! 
-   ! recvreq:         value to indicate that face recv is finished
-   ! sendreq:         value to indicate that face send is finished
-   !
-   !        ****************************************************************
-   !        *                                                              *
-   !        * Communication Data Type for the integrated warping algorithm *
-   !        * Located her because it contains data for each block locally  *
-   !        *                                                              *
-   !        ****************************************************************
-   !
-   TYPE WARP_COMM_TYPE
-   REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: sendbuffer, &
-   &      recvbuffer
-   INTEGER(kind=inttype) :: recvreq, sendreq
-   END TYPE WARP_COMM_TYPE
    !
    !        ****************************************************************
    !        *                                                              *
@@ -179,9 +161,6 @@
    !                         possible values are: iMin, iMax, jMin,
    !                         jMax, kMin, kMax. see also module
    !                         BCTypes.
-   !  nNodesSubface        - Total nuber of nodes on this subface.
-   !                         Added for the integrated warping
-   !                         algorithm(used in synchronizeFaces)
    !  cgnsSubface(:)       - The subface in the corresponding cgns
    !                         block. As cgns distinguishes between
    !                         boundary and internal boundaries, the
@@ -228,7 +207,6 @@
    !                         sliding mesh interface. One side of
    !                         the interface gets a positive number,
    !                         the other side a negative one.
-   !integer(kind=intType), dimension(:), allocatable :: nNodesSubface
    !
    !        ****************************************************************
    !        *                                                              *
@@ -297,12 +275,6 @@
    !        ****************************************************************
    !
    !  x(0:ie,0:je,0:ke,3)  - xyz locations of grid points in block.
-   !  xInit(0:ie,0:je,0:ke,3) - initial xyz locations of grid points
-   !                         in block. Used in mesh warping.
-   !  xplus(0:ie,0:je,0:ke,3) - temporary block arrays for warping FD
-   !                         Used in mesh warping.
-   !  xminus(0:ie,0:je,0:ke,3) - temporary block arrays for warping FD
-   !                         Used in mesh warping.
    !  xOld(nOld,:,:,:,:)   - Coordinates on older time levels;
    !                         only needed for unsteady problems on
    !                         deforming grids. Only allocated on
@@ -542,23 +514,6 @@
    !                                 Correspond to the flow field
    !                                 variables w(i,j,k,1:nw).
    !
-   !        ****************************************************************
-   !        *                                                              *
-   !        * Integrated warping variables                                 *
-   !        *                                                              *
-   !        ****************************************************************
-   !
-   !incrementI,J,K(nSubface): Indicator for the direction of indices
-   !                          for this subface
-   !incrementdI,dJ,dK(nSubface): Indicator for the direction of indices
-   !                          for the donor to this subface
-   ! warp_comm(nSubface):  Subface comm storage for warp
-   !INTEGER(KIND=INTTYPE),dimension(:),allocatable :: incrementI,&
-   !    IncrementJ,incrementK
-   !INTEGER(KIND=INTTYPE),dimension(:),allocatable :: incrementdI,&
-   !    IncrementdJ,incrementdK
-   !TYPE(warp_comm_type), ALLOCATABLE, DIMENSION(:) :: warp_comm
-   !
    !      ******************************************************************
    !      *                                                                *
    !      * The definition of the derived data type block_type, which      *
@@ -575,7 +530,6 @@
    INTEGER(kind=inttype) :: nsubface, n1to1, nbocos, nviscbocos
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: bctype
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: bcfaceid
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: nnodessubface
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: cgnssubface
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: inbeg, inend
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: jnbeg, jnend
@@ -630,15 +584,13 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacei
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacej
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacek
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w, wtmp
-   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: dw_fd
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: wold
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p, ptmp, gamma
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p, gamma
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rlv, rev
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: s
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p1
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dw, fw, &
-   &      dwtmp
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dw, fw
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: dwoldrk
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w1, wr
    INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: mgifine
@@ -673,9 +625,7 @@
    INTEGER(kind=inttype) :: kbegor, kendor
    INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: globalnode
    INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: globalcell
-   TYPE(WARP_COMM_TYPE), DIMENSION(:), POINTER :: warp_comm
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: ifaceptb
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: iedgeptb
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: psiadj
    END TYPE BLOCKTYPE
    !
    !      ******************************************************************
@@ -688,9 +638,7 @@
    ! flowDoms(:,:,:): array of blocks. Dimensions are
    !                  (nDom,nLevels,nTimeIntervalsSpectral)
    INTEGER(kind=inttype) :: ndom
-   TYPE(BLOCKTYPE), DIMENSION(:, :, :), ALLOCATABLE :: flowdoms
-   TYPE(BLOCKTYPE), DIMENSION(:, :, :), ALLOCATABLE :: flowdomsd0
-   TYPE(BLOCKTYPE), DIMENSION(:), ALLOCATABLE :: flowdomsd
+   !Tapenade!       type(blockType), allocatable, dimension(:,:,:) :: flowDoms
    !
    !      ******************************************************************
    !      *                                                                *
@@ -700,4 +648,5 @@
    !
    ! nCellGlobal(nLev) - Global number of cells on every mg level.
    INTEGER(kind=inttype), DIMENSION(:), ALLOCATABLE :: ncellglobal
+   INTEGER(kind=inttype), DIMENSION(:), ALLOCATABLE :: ncellglobald
    END MODULE BLOCK_D

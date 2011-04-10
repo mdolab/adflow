@@ -127,6 +127,12 @@
 !     *                                                                *
 !     ******************************************************************
 !
+      call VecNorm(psi,NORM_2,norm,PETScIerr)
+      call EChk(PETScIerr,__FILE__,__LINE__)
+      if (myid == 0) then
+         print *,'psi norm:',norm
+      end if
+
       call MatMult(dRdWT,psi,adjointRes,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
       

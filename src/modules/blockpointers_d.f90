@@ -61,5 +61,8 @@ MODULE BLOCKPOINTERS_D
   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtk1d, bvtk2d
 
   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: d2walld
- 
+
+  real(kind=realType), dimension(:,:,:,:), pointer :: w_offTimeInstanced
+  real(kind=realType), dimension(:,:,:), pointer :: vol_offTimeInstanced
+
 END MODULE BLOCKPOINTERS_D

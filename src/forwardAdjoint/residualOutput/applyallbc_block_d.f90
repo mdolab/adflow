@@ -2,7 +2,7 @@
    !  Tapenade 3.4 (r3375) - 10 Feb 2010 15:08
    !
    !  Differentiation of applyallbc_block in forward (tangent) mode:
-   !   variations   of useful results: *p *gamma *w
+   !   variations   of useful results: *p *w
    !   with respect to varying inputs: *p *w
    !
    !      ******************************************************************
@@ -21,24 +21,6 @@
    USE INPUTDISCRETIZATION
    USE ITERATION
    IMPLICIT NONE
-   !   ! Subsonic outflow and bleed outflow boundaries.
-   !   call bcSubsonicOutflow(secondHalo, correctForK)
-   !   ! Subsonic inflow boundary.
-   !   call bcSubsonicInflow(secondHalo, correctForK)
-   !   ! Bleed inflow regions.
-   !   call bcBleedInflow( secondHalo, correctForK)
-   !   ! Engine boundary conditions. Not implemented yet.
-   !   call bcMdot(secondHalo, correctForK)
-   !   call bcThrust(secondHalo, correctForK)
-   !   ! Extrapolation boundary conditions; this also includes
-   !   ! the supersonic outflow boundary conditions. The difference
-   !   ! between the two is that the extrap boundary conditions
-   !   ! correspond to singular lines and supersonic outflow
-   !   ! boundaries to physical boundaries. The treatment however
-   !   ! is identical.
-   !   call bcExtrap(secondHalo, correctForK)
-   !   ! Inviscid wall boundary conditions.
-   !   call bcEulerWall(secondHalo, correctForK)
    !   ! Domain-interface boundary conditions,
    !   ! when coupled with other solvers.
    !   call bcDomainInterface(secondHalo, correctForK)
@@ -102,4 +84,22 @@
    &                'Farfield boundary conditions for Choi and ', &
    &                'Merkle preconditioner not implemented')
    END SELECT
+   !   ! Subsonic outflow and bleed outflow boundaries.
+   !   call bcSubsonicOutflow(secondHalo, correctForK)
+   !   ! Subsonic inflow boundary.
+   !   call bcSubsonicInflow(secondHalo, correctForK)
+   !   ! Bleed inflow regions.
+   !   call bcBleedInflow( secondHalo, correctForK)
+   !   ! Engine boundary conditions. Not implemented yet.
+   !   call bcMdot(secondHalo, correctForK)
+   !   call bcThrust(secondHalo, correctForK)
+   !   ! Extrapolation boundary conditions; this also includes
+   !   ! the supersonic outflow boundary conditions. The difference
+   !   ! between the two is that the extrap boundary conditions
+   !   ! correspond to singular lines and supersonic outflow
+   !   ! boundaries to physical boundaries. The treatment however
+   !   ! is identical.
+   !   call bcExtrap(secondHalo, correctForK)
+   ! Inviscid wall boundary conditions.
+   CALL BCEULERWALL_D(secondhalo, correctfork)
    END SUBROUTINE APPLYALLBC_BLOCK_D

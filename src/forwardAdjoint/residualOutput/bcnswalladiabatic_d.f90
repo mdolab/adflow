@@ -100,6 +100,7 @@
    bmtj1d = 0.0
    bmtj2d = 0.0
    CALL TURBBCNSWALL_D(.false.)
+   PRINT*, 'called turbcnswall'
    ELSE
    bvtj1d = 0.0
    bvtj2d = 0.0
@@ -117,6 +118,7 @@
    ! Loop over the viscous subfaces of this block. Note that
    ! these are numbered first.
    bocos:DO nn=1,nviscbocos
+   PRINT*, 'inside a viscboco loop'
    ! Check for adiabatic viscous wall boundary conditions.
    IF (bctype(nn) .EQ. nswalladiabatic) THEN
    ! Set the pointer for uSlip to make the code more readable.

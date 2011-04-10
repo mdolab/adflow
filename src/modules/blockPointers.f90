@@ -191,4 +191,7 @@
        !INTEGER(KIND=INTTYPE),dimension(:),pointer :: incrementdI,&
        !       IncrementdJ,incrementdK
        integer(kind=intType), dimension(:), pointer ::ifaceptb,iedgeptb
+
+       real(kind=realType), dimension(:,:,:,:), pointer :: w_offTimeInstance
+       real(kind=realType), dimension(:,:,:), pointer :: vol_offTimeInstance
        end module blockPointers

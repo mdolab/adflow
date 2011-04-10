@@ -256,6 +256,7 @@
              ! Modification for FD Preconditioner
              if (lumpedDiss) then
                 dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))+sigma*fis4*rrad
+                !dis2 = sigma*fis4*rrad
                 dis4 = 0.0
              else
                 dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
@@ -356,6 +357,7 @@
              ! Modification for FD Preconditioner
              if (lumpedDiss) then
                 dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))+sigma*fis4*rrad
+                !dis2 = sigma*fis4*rrad
                 dis4 = 0.0
              else
                 dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
@@ -456,6 +458,7 @@
              ! Modification for FD Preconditioner
              if (lumpedDiss) then
                 dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))+sigma*fis4*rrad
+                !dis2 = sigma*fis4*rrad
                 dis4 = 0.0
              else
                 dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
