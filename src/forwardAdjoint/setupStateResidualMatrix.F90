@@ -160,7 +160,9 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
               ! Block-based residual
               if (useAD) then
-                 call block_res_d(nn,sps)
+                 !call block_res_d(nn,sps)
+                 print *,'AD Not Implmented Yet'
+                 stop
               else
                  call block_res(nn,sps)
               end if

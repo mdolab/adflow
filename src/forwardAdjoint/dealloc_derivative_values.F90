@@ -7,7 +7,7 @@ subroutine dealloc_derivative_values(nn)
   use inputtimespectral
   use flowvarrefstate
   use inputPhysics
-  use forwardAdjointVars
+
   implicit none
   integer(kind=intType) :: nn,sps,ierr
 

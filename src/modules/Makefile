@@ -75,7 +75,7 @@ FF90_OBJECTS_4 = BCTypes.o\
 		 stencils.o\
 	         blockpointers_d.o\
 	         diffSizes.o\
-	         forwardAdjointVars.o\
+
 
 #      ******************************************************************
 #      *                                                                *

@@ -8,7 +8,6 @@ subroutine alloc_derivative_values(nn)
   use inputtimespectral
   use flowvarrefstate
   use inputPhysics
-  use forwardAdjointVars
 
   implicit none
 
