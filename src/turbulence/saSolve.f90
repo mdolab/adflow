@@ -595,10 +595,6 @@
                ! Set the wall flag to .true.
 
                flag(i,j) = .true.
-
-!                if (resonly) then
-!                   ddw(i,j,itu1) = ddvt(i,j,1)
-!                end if
                
              enddo
            enddo

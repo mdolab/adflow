@@ -13,9 +13,9 @@ module stencils
   ! First define the sizes of the stncils
   integer(kind=intType), parameter :: N_euler_pc   = 7
   integer(kind=intType), parameter :: N_euler_drdw = 13
-  integer(kind=intType), parameter :: N_euelr_drdx = 32
+  integer(kind=intType), parameter :: N_euler_drdx = 32
 
-  integer(kind=intType), dimension(7,3),target :: euler_pc_stencil
+  integer(kind=intType), dimension(7 ,3),target :: euler_pc_stencil
   integer(kind=intType), dimension(13,3),target :: euler_drdw_stencil
   integer(kind=intType), dimension(32,3),target :: euler_drdx_stencil
 

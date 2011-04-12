@@ -65,9 +65,9 @@ subroutine setRVec(rVec)
 #include "include/finclude/petsc.h"
 
   Vec     rVec
-  integer(kind=intType) :: ierr,nn,sps,i,j,k
-  real(kind=realType) :: ovv,temp
-
+  integer(kind=intType) :: ierr,nn,sps,i,j,k,l
+  real(kind=realType) :: ovv,temp(nw)
+  
   do sps=1,nTimeIntervalsSpectral
      do nn=1,nDom
         call setPointersAdj(nn,1_intType,sps)
@@ -76,6 +76,14 @@ subroutine setRVec(rVec)
            do j=2,jl
               do i=2,il
                  ovv = 1/vol(i,j,k)
+                 do l=1,nwf
+                    temp(l) = dw(i,j,k,l)*ovv
+                 end do
+
+                 do l=nt1,nt2
+                    temp(l) = dw(i,j,k,l)*ovv!*1e-3
+                 end do
+
                  call VecSetValuesBlocked(rVec,1,globalCell(i,j,k),&
                       dw(i,j,k,:)*ovv, INSERT_VALUES,ierr)
                  call EChk(ierr,__FILE__,__LINE__)

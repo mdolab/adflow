@@ -56,13 +56,13 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   ! Start Timer
   time(1) = mpi_wtime()
 
-  open (UNIT=13,File="fd.out",status='replace',action='write',iostat=ierr) 
-  call EChk(ierr,__FILE__,__LINE__)
-  open (UNIT=14,File="ad.out",status='replace',action='write',iostat=ierr) 
-  call EChk(ierr,__FILE__,__LINE__)
+!   open (UNIT=13,File="fd.out",status='replace',action='write',iostat=ierr) 
+!   call EChk(ierr,__FILE__,__LINE__)
+!   open (UNIT=14,File="ad.out",status='replace',action='write',iostat=ierr) 
+!   call EChk(ierr,__FILE__,__LINE__)
 
-  call MatConvert(matrix,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+!   call MatConvert(matrix,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
+!   call EChk(ierr,__FILE__,__LINE__)
 
   ! Zero out the matrix before we start
   call MatZeroEntries(matrix,ierr)
@@ -111,7 +111,11 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
      !call setup_BF_coloring(nn,nColor)
      
      if (usePC) then
-        call setup_PC_coloring(nn,nColor)
+        ! Note: The lumped dissipation doesn't quite result in a
+        !3-cell stencil in each direction so we we still use the
+        !5-cell coloring. Not really a big deal. 
+        !call setup_PC_coloring(nn,nColor)
+        call setup_dRdw_euler_coloring(nn,nColor) ! Euler Colorings
      else
         if( .not. viscous ) then
            call setup_dRdw_euler_coloring(nn,nColor) ! Euler Colorings
@@ -143,7 +147,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
               do k=0,kb
                  do j=0,jb
                     do i=0,ib
-                       if (flowdomsd(1)%color(i,j,k) == icolor) then! .and. flowDoms(nn,1,sps)%globalCell(i,j,k) >= 0) then
+                       if (flowdomsd(1)%color(i,j,k) == icolor) then
                           if (useAD) then
                              flowdomsd(sps)%w(i,j,k,l) = 1.0
                           else
@@ -207,9 +211,6 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
            ! Set derivatives by block in "matrix" after we've peturbed
            ! all states in "color"
 
-           ! Loop over the peturbed "colored" cells and set the values
-           ! in matrix cooresponding to a 7 point stencil for a PC, 13
-           ! for Euler dRdW or 25 for Viscous/RANS
            call setPointersAdj(nn,1,sps)
 
            do k=0,kb

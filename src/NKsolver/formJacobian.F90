@@ -2,7 +2,7 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   use communication
   use precision 
   use NKSolverVars,only : ksp_solver_type,ksp_subspace,global_pc_type,&
-       asm_overlap,local_pc_ilu_level,local_pc_ordering
+       asm_overlap,local_pc_ilu_level,local_pc_ordering,NKfinitedifferencepc
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -28,12 +28,16 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Assemble the approximate PC
-  useAD = .False.
-  usePC = .True.
-  useTranspose = .False.
 
-  call setupNK_PC(dRdwPre)
-  !call setupStateResidualMatrix(dRdwPre,useAD,usePC,useTranspose)
+  if (NKFiniteDifferencePC) then
+     useAD = .False.
+     usePC = .True.
+     useTranspose = .False.
+     call setupStateResidualMatrix(dRdwPre,useAD,usePC,useTranspose)
+  else
+     call setupNK_PC(dRdwPre)
+  end if
+
 
   flag = SAME_NONZERO_PATTERN
   ! Setup the required options for the KSP solver

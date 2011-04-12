@@ -450,7 +450,7 @@
          !  sFaceJ(ie,0:je,ke) - Idem in j-direction.
          !  sFaceK(ie,je,0:ke) - Idem in k-direction.
 
-         real(kind=realType), dimension(:,:,:,:),   pointer :: x
+         real(kind=realType), dimension(:,:,:,:),   pointer :: x,xtmp
          real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
 
          real(kind=realType), dimension(:,:,:,:), pointer :: sI, sJ, sK

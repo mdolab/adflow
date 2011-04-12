@@ -23,6 +23,8 @@ subroutine dealloc_derivative_values(nn)
      ! Deallocate memtory
      deallocate(flowDomsd(sps)%dwtmp,stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
+     deallocate(flowDomsd(sps)%xtmp,stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
      deallocate(flowDomsd(sps)%dwtmp2,stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
      deallocate(flowDomsd(sps)%dw_deriv,stat=ierr)
