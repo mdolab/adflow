@@ -26,7 +26,7 @@ subroutine initres_block_TS(varStart, varEnd,nn,sps,mm)
   use inputTimeSpectral
   use inputUnsteady
   use iteration
-  use forwardAdjointVars
+
   implicit none
   !
   !      Subroutine arguments.
