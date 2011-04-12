@@ -314,9 +314,7 @@ subroutine solveState
               
         ! Try to run RK solver down to NKSwitchTol
         L2Conv = NK_Switch_Tol*rhoRes0/rhoResStart
-        print *,'l2Conv is now:',l2conv
-        print *,'rhores0:',rhores0
-
+        
         solve_RK = .True.
         solve_NK = .True.
      else 

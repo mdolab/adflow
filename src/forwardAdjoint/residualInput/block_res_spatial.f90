@@ -11,7 +11,7 @@
 ! block/sps loop is outside the calculation. This routine is suitable
 ! for forward mode AD with Tapenade
 
-subroutine block_res(nn,sps)
+subroutine block_res_spatial(nn,sps)!,x_peturb)
 
   use blockPointers       ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
   use flowVarRefState     ! nw
@@ -25,9 +25,17 @@ subroutine block_res(nn,sps)
   real(kind=realType) :: gm1,v2
   integer(kind=intType) :: nn,sps,i,j,k,sps2,mm,l
   logical :: correctForK
+!  logical :: x_peturb(0:ie,0:je,0:ke,3)
+  call setPointersOffTSInstance(nn,sps,sps)
+
+  ! Do the spatial things first:
+  call xhalo_block(1)!,x_peturb)
+  call metric_block(nn,1,sps)
+
+  ! call gridVelocities(useOldCoor, t, sps) ! Required for TS
+  ! call normalVelocitiesAllLevels(sps) ! Required for TS
 
   ! Compute the pressures
-  call setPointersOffTSInstance(nn,sps,sps)
 
   gm1 = gammaConstant - one
   correctForK = .False.
@@ -57,15 +65,14 @@ subroutine block_res(nn,sps)
   ! Compute time step and spectral radius
   call timeStep_block(.false.)
   
-  if( equations == RANSEquations ) then
-     call initres_block(nt1MG, nMGVar,nn,sps) ! Initialize only the Turblent Variables
-     call turbResidual_block
-  endif
+  !   if( equations == RANSEquations ) then
+  !      call initres_block(nt1MG, nMGVar,nn,sps) ! Initialize only the Turblent Variables
+  !      call turbResidual_block
+  !   endif
   
   select case (equationMode)
   case (steady)
-     ! Zero out just the flow variables
-     dw(:,:,:,1:nwf) = 0.0
+     dw = 0.0
   case(timeSpectral)
      do sps2=1,nTimeIntervalsSpectral
         call setPointersOffTSInstance(nn,sps2,sps2)
@@ -86,7 +93,7 @@ subroutine block_res(nn,sps)
   ! Divide through by the volume
   do sps2 = 1,nTimeIntervalsSpectral
      call setPointersOffTSInstance(nn,sps2,sps2)
-     do l=1,nwf
+     do l=1,nw
         do k=2,kl
            do j=2,jl
               do i=2,il
@@ -95,20 +102,7 @@ subroutine block_res(nn,sps)
            end do
         end do
      end do
-   
-     do l=nt1,nt2
-        do k=2,kl
-           do j=2,jl
-              do i=2,il
-                 dw(i,j,k,l) = dw(i,j,k,l) / vol(i,j,k)! * 1e-3
-              end do
-           end do
-        end do
-     end do
-
-
-
   end do
 
-  call setPointersOffTSInstance(nn,sps,sps)
-end subroutine block_res
+
+end subroutine block_res_spatial

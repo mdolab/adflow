@@ -440,8 +440,6 @@
              fact = -half
            endif
 
-           print *,'Fact in metric is:',fact
-
            ! Check if both positive and negative volumes occur. If so,
            ! the block is bad and the counter nBlockBad is updated.
 

@@ -140,6 +140,7 @@ class SUMB(AeroSolver):
             'NKPCILUFill':[int,3],
             'NKLocalPCOrdering':[str,'RCM'],
             'NKJacobianLag':[int,10],
+            'NKFiniteDifferencePC':[bool,True],
 
             # Load Balance Paramters
             'blockSplitting':[bool,False],
@@ -484,6 +485,7 @@ class SUMB(AeroSolver):
                                      'len':self.sumb.constants.maxstringlen},
                 'NKMaxLinearKspIts':{'location':'nksolvervars.ksp_max_it'},
                 'NKJacobianLag':{'location':'nksolvervars.jacobian_lag'},
+                'NKFiniteDifferencePC':{'location':'nksolvervars.nkfinitedifferencepc'},
                 
                 # Load Balance Paramters
                 'blockSplitting':{'location':'inputparallel.splitblocks'},
@@ -846,7 +848,6 @@ class SUMB(AeroSolver):
             self.sumb.inputphysics.machcoef = aero_problem._flows.mach
             self.sumb.inputphysics.machgrid = 0.0
         #end
-        #sys.exit(0)
 
         return
 

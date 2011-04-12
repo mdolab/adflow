@@ -1043,6 +1043,7 @@ python module sumb ! in
          use constants
          integer(kind=inttype) :: jacobian_lag
          logical :: usenksolver
+         logical :: nkfinitedifferencepc
          character parameter,optional :: pc_lu="lu"
          character parameter,optional :: ord_nd="nd"
          character parameter,optional :: pc_blockjacobi="bjacobi"

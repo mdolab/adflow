@@ -129,7 +129,11 @@ subroutine alloc_derivative_values(nn)
 
      call setPointersAdj(nn,1,sps)
      call block_res(nn,sps)
+
      allocate(flowDomsd(sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     allocate(flowDomsd(sps)%xtmp(0:ie,0:je,0:ke,3),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      allocate(flowDomsd(sps)%dw_deriv(0:ib,0:jb,0:kb,1:nw,1:nw),stat=ierr)
@@ -163,9 +167,21 @@ subroutine alloc_derivative_values(nn)
            end do
         end do
      end do
-  
+
+     do l=1,3
+        do k=0,ke
+           do j=0,je
+              do i=0,ie
+                 flowdomsd(sps)%xtmp(i,j,k,l) = x(i,j,k,l)
+              end do
+           end do
+        end do
+     end do
+
      call initRes_block(1,nwf,nn,sps)
    
+     ! Note: we have to divide by the volume for dwtmp2 since
+     ! normally, dw would have been mulitpiled by 1/Vol in block_res 
      do l=1,nw
         do k=0,kb 
            do j=0,jb
