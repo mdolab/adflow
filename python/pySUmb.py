@@ -184,6 +184,7 @@ class SUMB(AeroSolver):
             'ILUFill': [int,2],
             'ASMOverlap' : [int,5],
             'subKSPSubspaceSize':[int,10],
+            'finiteDifferencePC':[bool,True],
             }
 
         informs = {
@@ -561,7 +562,9 @@ class SUMB(AeroSolver):
                                            'inputadjoint.localpctype'},
                 'ILUFill':{'location':'inputadjoint.filllevel'},
                 'ASMOverlap':{'location':'inputadjoint.overlap'},
+                'finiteDifferencePC':{'location':'inputadjoint.finitedifferencepc'},
                 'subKSPSubspaceSize':{'location':'inputadjoint.subkspsubspacesize'},
+                
                 }                
         # end if
 

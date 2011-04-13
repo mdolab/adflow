@@ -1014,7 +1014,7 @@
        
        real(kind=realType)    :: sigmab
        logical :: printTiming
-
+       logical :: finitedifferencepc
        integer(kind=intType) :: subKSPSubspaceSize
      end module inputADjoint
 

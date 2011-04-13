@@ -769,6 +769,7 @@ python module sumb ! in
          integer(kind=inttype) parameter,optional :: additiveschwartz=3
          integer(kind=inttype) :: adjmaxiter
          logical :: approxpc
+         logical :: finitedifferencepc
          integer(kind=inttype) parameter,optional :: cholesky=4
          integer(kind=inttype) parameter,optional :: icc=2
          integer(kind=inttype) parameter,optional :: rowsum=3
