@@ -388,6 +388,7 @@ subroutine setupAllResidualMatrices
                     ! (note: index displaced by previous design variables)
                   
                    !Angle of Attack
+
                     if (nDesignAoA >= 0) then
                        !print *,'alphadjb:',alphaadjb,myID,ndesignAoA,idxres
                        call MatSetValues(dRda, 1, idxres, 1, nDesignAoA, &

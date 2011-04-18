@@ -9,7 +9,7 @@ subroutine applyPC(in_vec,out_vec,N)
        global_ksp,local_ksp,global_pc,local_pc, &
        ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,ctx,&
        ksp_subspace,global_pc_type,asm_overlap,local_pc_ilu_level,&
-       local_pc_ordering
+       local_pc_ordering,nkfinitedifferencepc
   use communication 
   use inputIteration
   implicit none
@@ -33,7 +33,8 @@ subroutine applyPC(in_vec,out_vec,N)
   integer(kind=intTYpe) :: ierr,ndimw,nlocal,first,i,ilow,ihigh,size
   real(kind=realType) :: value
   integer(kind=intType) :: blksize
-
+  logical :: useAD,usePC,useTranspose
+  
   nDimW = nw * nCellsLocal * nTimeIntervalsSpectral
   
   ! Put a petsc wrapper around the input and output vectors
@@ -82,8 +83,15 @@ subroutine applyPC(in_vec,out_vec,N)
      call MatSetOption(dRdW   , MAT_ROW_ORIENTED,PETSC_FALSE, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     call setupNK_PC(dRdwPre)
-    
+     if (NKFiniteDifferencePC) then
+        useAD = .False.
+        usePC = .True.
+        useTranspose = .False.
+        call setupStateResidualMatrix(dRdwPre,useAD,usePC,useTranspose)
+     else
+        call setupNK_PC(dRdwPre)
+     end if
+     
      call KSPCreate(SUMB_COMM_WORLD, global_ksp, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 

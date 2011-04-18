@@ -81,13 +81,13 @@ subroutine NKsolver
                                                    ! MAY GIVE MEMORY
                                                    ! LEAK!!!!!!
   NKSolvedOnce = .True.
-  print *,'ierr is:',ierr
+
   call EChk(ierr,__FILE__,__LINE__)
   !iterTot = iterTot0
 
   call SNESGetConvergedReason(snes,reason,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-  print *,'reason:',reason
+
   if (reason == SNES_CONVERGED_FNORM_ABS .or. &
       reason == SNES_CONVERGED_FNORM_RELATIVE .or. &
       reason == SNES_CONVERGED_PNORM_RELATIVE) then

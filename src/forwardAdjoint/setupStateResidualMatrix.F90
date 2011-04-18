@@ -290,9 +290,10 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
        SUmb_comm_world, ierr)
 
   if (myid == 0) then
-     print *,'Assembly time:',setupTime
+     if (usePC == .False. .or. useTranspose == .True.) then
+        print *,'Assembly time:',setupTime
+     end if
   end if
-
   ! Debugging ONLY!
   !call writeOutMatrix()
 

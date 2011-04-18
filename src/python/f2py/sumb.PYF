@@ -93,12 +93,6 @@ python module sumb ! in
        end subroutine determinestencil
 
        subroutine getforces(forces,pts,npts,nts) ! in :sumb:../../warping/getForces.f90
-         use blockpointers
-         use warpingpetsc
-         use communication
-         use inputtimespectral
-         use bctypes
-         use flowvarrefstate
          real(kind=realtype) dimension(3,npts,nts),intent(out),depend(npts,nts) :: forces
          real(kind=realtype) dimension(3,npts,nts),intent(in) :: pts
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
@@ -106,17 +100,10 @@ python module sumb ! in
        end subroutine getforces
        
        subroutine verifyforces(pts,npts,nts) ! in :sumb:../../adjoint/forcesInput/verifyForces.F90
-            use blockpointers
-            use adjointpetsc
-            use bctypes
-            use communication
-            use inputtimespectral
-            use inputphysics
-            use flowvarrefstate
-            real(kind=realtype) dimension(3,npts,nts),intent(inout) :: pts
-            integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
-            integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
-        end subroutine verifyforces
+         real(kind=realtype) dimension(3,npts,nts),intent(inout) :: pts
+         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+         integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
+       end subroutine verifyforces
 
        subroutine verifydcfdx(level,costfunction)
          use blockpointers
