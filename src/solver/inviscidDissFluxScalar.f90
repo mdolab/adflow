@@ -253,8 +253,19 @@
              if(porI(i,j,k) == normalFlux) ppor = half
              rrad = ppor*(radI(i,j,k) + radI(i+1,j,k))
 
-             dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
-             dis4 = dim(fis4*rrad, dis2)
+             ! Modification for FD Preconditioner Note: This lumping
+             ! actually still results in a greater than 3 cell stencil
+             ! in any direction. Since this seems to work slightly
+             ! better than the dis2=sigma*fis4*rrad, we will just use
+             ! a 5-cell stencil for doing the PC
+             if (lumpedDiss) then
+                dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))+sigma*fis4*rrad
+                !dis2 = sigma*fis4*rrad 
+                dis4 = 0.0
+             else
+                dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
+                dis4 = dim(fis4*rrad, dis2)
+             end if
 
              ! Compute and scatter the dissipative flux.
              ! Density. Store it in the mass flow of the
@@ -347,8 +358,15 @@
              if(porJ(i,j,k) == normalFlux) ppor = half
              rrad = ppor*(radJ(i,j,k) + radJ(i,j+1,k))
 
-             dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
-             dis4 = dim(fis4*rrad, dis2)
+             ! Modification for FD Preconditioner
+             if (lumpedDiss) then
+                dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))+sigma*fis4*rrad
+                !dis2 = sigma*fis4*rrad 
+                dis4 = 0.0
+             else
+                dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
+                dis4 = dim(fis4*rrad, dis2)
+             end if
 
              ! Compute and scatter the dissipative flux.
              ! Density. Store it in the mass flow of the
@@ -441,8 +459,15 @@
              if(porK(i,j,k) == normalFlux) ppor = half
              rrad = ppor*(radK(i,j,k) + radK(i,j,k+1))
 
-             dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
-             dis4 = dim(fis4*rrad, dis2)
+             ! Modification for FD Preconditioner
+             if (lumpedDiss) then
+                dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))+sigma*fis4*rrad
+                !dis2 = sigma*fis4*rrad 
+                dis4 = 0.0
+             else
+                dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
+                dis4 = dim(fis4*rrad, dis2)
+             end if
 
              ! Compute and scatter the dissipative flux.
              ! Density. Store it in the mass flow of the

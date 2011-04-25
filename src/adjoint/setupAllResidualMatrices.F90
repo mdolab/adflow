@@ -36,7 +36,7 @@ subroutine setupAllResidualMatrices
   use iteration           ! overset, currentLevel
   use flowVarRefState     ! nw
   !      use inputTimeSpectral ! spaceDiscr
-  use inputADjoint        !lumpedDiss
+  use inputDiscretization
   implicit none
   !
   !     Local variables.
@@ -47,7 +47,7 @@ subroutine setupAllResidualMatrices
   integer(kind=intType) :: ii, jj, kk, i, j, k,liftIndex,l
 
   logical :: fineGrid, correctForK, exchangeTurb,secondhalo
-
+  logical :: useAD,useTranspose,usePC
   real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral) :: wAdj, wAdjB
   real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral)  :: xAdj, xAdjB
 
@@ -388,6 +388,7 @@ subroutine setupAllResidualMatrices
                     ! (note: index displaced by previous design variables)
                   
                    !Angle of Attack
+
                     if (nDesignAoA >= 0) then
                        !print *,'alphadjb:',alphaadjb,myID,ndesignAoA,idxres
                        call MatSetValues(dRda, 1, idxres, 1, nDesignAoA, &
@@ -672,6 +673,7 @@ subroutine setupAllResidualMatrices
   call EChk(PETScIerr,__FILE__,__LINE__)
   call MatAssemblyBegin(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
+
   call MatAssemblyEnd  (dRdWT,MAT_FINAL_ASSEMBLY,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
   call MatAssemblyEnd  (dRdx,MAT_FINAL_ASSEMBLY,PETScIerr)
@@ -709,6 +711,15 @@ subroutine setupAllResidualMatrices
   ! Output formats.
 #endif
 
+
+  ! Redo drdw with FD
+  useAD = .False.
+  usePC = .False.
+  useTranspose = .True.
+  !print *,'Doing FD dRdw'
+  !call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
+  !print *,'doing FD dRdx'
+  !call setupSpatialResidualMatrix(drdx,useAD)
 
 10 format(a)
 20 format(a,1x,f8.2)
