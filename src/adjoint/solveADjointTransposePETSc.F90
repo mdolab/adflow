@@ -34,7 +34,7 @@
 !
       ! norm - Norm of error
 
-      real(kind=realType)   :: norm
+      real(kind=realType)   :: norm,temp
 
       real(kind=realType), dimension(2) :: time
       real(kind=realType)               :: timeAdjLocal, timeAdj,l2abs,curRes
@@ -52,15 +52,18 @@
       if( myid ==0 .and. printTiming)  &
            write(*,10) "Solving ADjoint Transpose with PETSc..."
 
-      ! Get the initial time.
+      ! Allocate resHist of not already done so
+      if (.not. allocated(adjResHist))then
+         allocate(adjResHist(adjMaxIter))
+      endif
 
       call cpu_time(time(1))
 
+      !Get the initial time.
       if (restartADjoint) then
          !The user wants to restart the adjoint from the last point. Set
          !initial guess non-zero to true instead of zeroing the vector
          call KSPSetInitialGuessNonzero(ksp,PETSC_TRUE,PETScIerr)
-
       else
          call VecSet(psi,PETScZero,PETScIerr)
          call EChk(PETScIerr,__FILE__,__LINE__)
@@ -88,27 +91,35 @@
       call VecAYPX(adjointRHS,-1.0,dJdw,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
 
+
       ! Get Current Residual
       call MatMult(dRdWT,psi,adjointRes,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
-      call VecAXPY(adjointRes,PETScNegOne,adjointRHS,PETScIerr)
+      
+      ! AdjointRes = AdjointRes - adjointRHS
+      call VecAXPY(adjointRes,-1.0,adjointRHS,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
-      call VecNorm(adjointRHS,NORM_2,curRes,PETScIerr)  
+      
+      ! Norm of adjoint Residual
+      call VecNorm(adjointRes,NORM_2,curRes,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
 
-      ! We are only going to overwrite adjRelTol and adjAbsTol
-
+      ! L2Abs is used to stipulate an exit criteria for adjreltolrel
       L2abs = curRes * adjreltolrel
       
+      ! If L2Abs is less that what we actually want as the absolute
+      ! tolerance, clip it
       if (L2Abs < adjAbsTol) then
          L2abs = adjabstol
       end if
 
-      ! Solve the adjoint system of equations [dR/dW]T psi = dJ/dW. 
-
+      ! Set the tolerances
       call KSPSetTolerances(ksp,adjRelTol,L2Abs,adjDivTol,adjMaxIter,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
-      call KSPSolve(ksp,dJdW,psi,PETScIerr)
+
+    
+      ! Solve the adjoint system of equations [dR/dW]T psi = adjointRHS
+      call KSPSolve(ksp,adjointRHS,psi,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
 
       ! Get new time and compute the elapsed time.
@@ -160,7 +171,6 @@
         write(*,*) "------------------------------------------------"
       endif
 
-
       ! Get the petsc converged reason and set the fail flag
 
       call KSPGetConvergedReason(ksp, adjointConvergedReason,PETScIerr)
@@ -175,10 +185,7 @@
       end if
 
 
-      ! Flush the output buffer and synchronize the processors.
-
-      call f77flush()
-
+   
       ! Output formats.
 
    10 format(a)
