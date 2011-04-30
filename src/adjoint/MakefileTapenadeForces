@@ -101,7 +101,7 @@ TAPENADE_OUTVARS = "Force cForce Lift Drag Cl Cd moment cMoment"
 
 # Independent input variables (separator: white space, default: all)
 
-TAPENADE_VARS = "alphaAdj betaAdj MachCoefAdj pointRefAdj pts wBlock"
+TAPENADE_VARS = "alphaAdj betaAdj MachCoefAdj pointRefAdj pts wBlock lengthRefAdj surfaceRefAdj"
 #TAPENADE_VARS = "pts"
 # Name of the top routine
 

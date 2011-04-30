@@ -1,4 +1,4 @@
-!
+  !
 !     ******************************************************************
 !     *                                                                *
 !     * File:          computeTSdetrivatives.f90                       *
@@ -17,6 +17,8 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
   !     *                                                                *
   !     ******************************************************************
   !
+  use blockPointers
+  use iteration
   use precision
   use inputMotion
   use inputPhysics
@@ -38,6 +40,9 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
   !
 !  real(kind=realType),dimension(nTimeIntervalsSpectral)  :: CL, CD,&
  !      CFx, CFy,CFz, CMx, CMy, CMz
+  real(kind=realType), dimension(3) :: cfp, cfv, cmp, cmv
+  real(kind=realType) ::  yplusMax
+  integer :: ierr
 
   real(kind=realType),dimension(nTimeIntervalsSpectral)  :: dPhix,&
        dPhiy,dPhiz
@@ -75,7 +80,7 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
   !real(kind=realType)::cl0,cd0,cfx0,cfy0,cfz0,cmx0,cmy0,cmz0
   !real(kind=realType)::cl0dot,cd0dot,cfx0dot,cfy0dot,cfz0dot,cmx0dot,cmy0dot,cmz0dot
   !real(kind=realType)::cl0,cl0dot,cd0,cd0dot,cmz0,cmz0dot
-  real(kind=realType),dimension(nTimeIntervalsSpectral,8)::BaseCoef,ResBaseCoef
+  real(kind=realType),dimension(nTimeIntervalsSpectral,8)::BaseCoef,ResBaseCoef, BaseCoefLocal
 
   real(kind=realType), dimension(nSections) :: t
   integer(kind=inttype)::level,sps,i,nn
@@ -84,12 +89,31 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
   real(kind=realType)::derivativeRigidRotAngle,&
        secondDerivativeRigidRotAngle
   !real(kind=realType)::t
-  real(kind=realType):: TSAlpha,TSAlphadot
-  real(kind=realType):: TSMach,TSMachdot
+  !real(kind=realType):: TSAlpha,TSAlphadot
+  !real(kind=realType):: TSMach,TSMachdot
   real(kind=realType), dimension(nCostFunction)::globalCFVals
+
+  ! updated lift and drag directions
+  real(kind=realType), dimension(3)::velDir,liftDirTS,DragDirTS
+
+  !Rotation variables
+  real(kind=realType), dimension(3)   :: rotationPoint
+  real(kind=realType), dimension(3,3) :: rotationMatrix,&
+       derivRotationMatrix
+
+  !lift direction variables
+  integer(kind=intType) :: liftIndex
+  real(kind=realType) :: alpha,beta,alphaTS,alphaIncrement,&
+       betaTS,betaIncrement
+
+  !Time Variables
+  real(kind=realType) :: tNew, tOld
+
   !speed of sound: for normalization of q derivatives
   real(kind=realType)::a
-
+  !Function Definitions
+       
+  real(kind=realType) :: TSAlpha,TSBeta,TSMach,TSAlphadot,TSMachdot
   !
   !     ******************************************************************
   !     *                                                                *
@@ -104,18 +128,149 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
 
   do sps =1,nTimeIntervalsSpectral
      
-     level = 1
-     call computeAeroCoef(globalCFVals,sps)
+!!$     level = 1
+!!$     call computeAeroCoef(globalCFVals,sps)
+!!$
+!!$     BaseCoef(sps,1) = globalCFVals(costFuncLiftCoef)
+!!$     BaseCoef(sps,2) = globalCFVals(costFuncDragCoef)
+!!$     BaseCoef(sps,3) = globalCFVals(costFuncForceXCoef)
+!!$     BaseCoef(sps,4) = globalCFVals(costFuncForceYCoef)
+!!$     BaseCoef(sps,5) = globalCFVals(costFuncForceZCoef)
+!!$     BaseCoef(sps,6) = globalCFVals(costFuncMomXCoef)
+!!$     BaseCoef(sps,7) = globalCFVals(costFuncMomYCoef)
+!!$     BaseCoef(sps,8) = globalCFVals(costFuncMomZCoef)
 
-     BaseCoef(sps,1) = globalCFVals(costFuncLiftCoef)
-     BaseCoef(sps,2) = globalCFVals(costFuncDragCoef)
-     BaseCoef(sps,3) = globalCFVals(costFuncForceXCoef)
-     BaseCoef(sps,4) = globalCFVals(costFuncForceYCoef)
-     BaseCoef(sps,5) = globalCFVals(costFuncForceZCoef)
-     BaseCoef(sps,6) = globalCFVals(costFuncMomXCoef)
-     BaseCoef(sps,7) = globalCFVals(costFuncMomYCoef)
-     BaseCoef(sps,8) = globalCFVals(costFuncMomZCoef)
+     !update the lift vector and drag vector to account for changing 
+     !angles of attack
+     
+     ! compute the time of this interval
+     t = timeUnsteadyRestart
+     
+     if(equationMode == timeSpectral) then
+        do nn=1,nSections
+           t(nn) = t(nn) + (sps-1)*sections(nn)%timePeriod &
+                /         real(nTimeIntervalsSpectral,realType)
+        enddo
+     endif
+     ! Determine the time values of the old and new time level.
+     ! It is assumed that the rigid body rotation of the mesh is only
+     ! used when only 1 section is present.
+     tNew = timeUnsteady + timeUnsteadyRestart
+     tOld = tNew - t(1)
     
+    
+     if(TSpMode.or. TSqMode .or.TSrMode) then
+        ! Compute the rotation matrix of the rigid body rotation as
+        ! well as the rotation point; the latter may vary in time due
+        ! to rigid body translation.
+                
+        call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+        
+        liftDirTS(1) = rotationMatrix(1,1)*liftDirection(1) &
+                  + rotationMatrix(1,2)*liftDirection(2) &
+                  + rotationMatrix(1,3)*liftDirection(3)
+        liftDirTS(2) = rotationMatrix(2,1)*liftDirection(1) &
+                  + rotationMatrix(2,2)*liftDirection(2) &
+                  + rotationMatrix(2,3)*liftDirection(3)
+        liftDirTS(3) = rotationMatrix(3,1)*liftDirection(1) &
+                  + rotationMatrix(3,2)*liftDirection(2) &
+                  + rotationMatrix(3,3)*liftDirection(3)
+        dragDirTS(1) = rotationMatrix(1,1)*dragDirection(1) &
+                  + rotationMatrix(1,2)*dragDirection(2) &
+                  + rotationMatrix(1,3)*dragDirection(3)
+        dragDirTS(2) = rotationMatrix(2,1)*dragDirection(1) &
+                  + rotationMatrix(2,2)*dragDirection(2) &
+                  + rotationMatrix(2,3)*dragDirection(3)
+        dragDirTS(3) = rotationMatrix(3,1)*dragDirection(1) &
+                  + rotationMatrix(3,2)*dragDirection(2) &
+                  + rotationMatrix(3,3)*dragDirection(3)
+     elseif(tsAlphaMode)then
+        ! get the baseline alpha and determine the liftIndex
+        call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+             !Determine the alpha for this time instance
+        alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+             degreeFourAlpha,  omegaFourAlpha,     &
+             cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+        
+        alphaTS = alpha+alphaIncrement
+        !Determine the grid velocity for this alpha
+        call adjustInflowAngleAdj(alphaTS,beta,velDir,liftDirTS,dragDirTS,&
+                  liftIndex)
+        !do I need to update the lift direction and drag direction as well? yes!!!
+        !if (myID==0) print *,'LiftDirTS',liftDirTS
+        
+        
+     elseif(tsBetaMode)then
+        ! get the baseline alpha and determine the liftIndex
+        call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+        
+        !Determine the alpha for this time instance
+        betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
+             degreeFourBeta,  omegaFourBeta,     &
+             cosCoefFourBeta, sinCoefFourBeta, t(1))
+        
+        betaTS = beta+betaIncrement
+        !Determine the grid velocity for this alpha
+        call adjustInflowAngleAdj(alpha,betaTS,velDir,liftDirTS,dragDirTS,&
+             liftIndex)
+       
+     elseif(TSMachMode)then
+        !determine the mach number at this time interval
+        IntervalMach = TSMach(degreePolMach,   coefPolMach,       &
+             degreeFourMach,  omegaFourMach,     &
+             cosCoefFourMach, sinCoefFourMach, t(1))
+        !no update needed
+        
+     elseif(TSAltitudeMode)then
+        call terminate('gridVelocityFineLevel','altitude motion not yet implemented...')
+     else
+        call terminate('gridVelocityFineLevel','Not a recognized Stability Motion')
+     end if
+  
+     ! Initialize the local monitoring variables to zero.
+     !print *,'zeroing',sps,groundlevel
+     groundlevel = 1
+     BaseCoeflocal(sps,:) = zero
+     BaseCoef(sps,:) = zero
+     ! Loop over the blocks.
+     
+     domains: do nn=1,nDom
+        !print *,'in domain',nn
+        ! Set the pointers for this block.
+        
+        call setPointers(nn, groundLevel, sps)
+        
+        ! Compute the forces and moments for this block.
+        
+        call forcesAndMoments(cfp, cfv, cmp, cmv, yplusMax)
+        BaseCoeflocal(sps,1) = BaseCoeflocal(sps,1)                       &
+                          + (cfp(1) + cfv(1))*liftDirTS(1) &
+                          + (cfp(2) + cfv(2))*liftDirTS(2) &
+                          + (cfp(3) + cfv(3))*liftDirTS(3)
+
+        BaseCoeflocal(sps,2) = BaseCoeflocal(sps,2)                        &
+                          + (cfp(1) + cfv(1))*dragDirTS(1) &
+                          + (cfp(2) + cfv(2))*dragDirTS(2) &
+                          + (cfp(3) + cfv(3))*dragDirTS(3)
+        
+        BaseCoeflocal(sps,3) = BaseCoeflocal(sps,3) + cfp(1) + cfv(1)
+
+        BaseCoeflocal(sps,4) = BaseCoeflocal(sps,4) + cfp(2) + cfv(2)
+
+        BaseCoeflocal(sps,5) = BaseCoeflocal(sps,5) + cfp(3) + cfv(3)
+
+        BaseCoeflocal(sps,6) = BaseCoeflocal(sps,6) + cmp(1) + cmv(1)
+
+        BaseCoeflocal(sps,7) = BaseCoeflocal(sps,7) + cmp(2) + cmv(2)
+
+        BaseCoeflocal(sps,8) = BaseCoeflocal(sps,8) + cmp(3) + cmv(3)
+     enddo domains
+
+     ! Determine the global sum of the coefficient
+     ! variables. 
+     
+     call mpi_allreduce(BaseCoefLocal(sps,:), BaseCoef(sps,:), 8, sumb_real, &
+                           mpi_sum, SUmb_comm_world, ierr)
 
   end do
 
@@ -253,9 +408,9 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
         !if(myID==0)print *,'dphizdot',dphizdot
      end do
      !print *,'MYID', myID
-     !if(myID==0)print *,'dphiz',dphiz
-     !if(myID==0)print *,'dphizdot',dphizdot
-     !if(myID==0)print *,'BaseCoef',BaseCoef
+!!$     if(myID==0)print *,'dphiz',dphiz
+!!$     if(myID==0)print *,'dphizdot',dphizdot
+!!$     if(myID==0)print *,'BaseCoef',BaseCoef
 
      do i =1,8
         call computeLeastSquaresRegression(BaseCoef(:,i),dphiz,nTimeIntervalsSpectral,dcdq(i),coef0(i))
@@ -287,17 +442,17 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
      
      a  = sqrt(gammaInf*pInfDim/rhoInfDim)
      dcdq = dcdq*timeRef*2*(machGrid*a)/lengthRef
-     if(myID==0)print *,'normalization',dcdq,timeRef,(machGrid*a),lengthRef
-     if(myID==0)then
-        !a  = sqrt(gammaInf*pInfDim/rhoInfDim)
-        print *,'normalization',timeRef,(machGrid*a),lengthRef
-        print *,'CL estimates:'
-        print *,'Clq = : ',dcdq(1),' cl0 = : ',coef0(1)
-        print *,'CD estimates:'
-        print *,'Cdq = : ',dcdq(2),' cd0 = : ',coef0(2)
-        print *,'CMz estimates:'
-        print *,'CMzq = : ',dcdq(8),' cmz0 = : ',coef0(8)
-     endif
+!!$     if(myID==0)print *,'normalization',dcdq,timeRef,(machGrid*a),lengthRef
+!!$     if(myID==0)then
+!!$        !a  = sqrt(gammaInf*pInfDim/rhoInfDim)
+!!$        print *,'normalization',timeRef,(machGrid*a),lengthRef
+!!$        print *,'CL estimates:'
+!!$        print *,'Clq = : ',dcdq(1),' cl0 = : ',coef0(1)
+!!$        print *,'CD estimates:'
+!!$        print *,'Cdq = : ',dcdq(2),' cd0 = : ',coef0(2)
+!!$        print *,'CMz estimates:'
+!!$        print *,'CMzq = : ',dcdq(8),' cmz0 = : ',coef0(8)
+!!$     endif
 
     
 !!$     if(myID==0) print *,'ResCL',ResBaseCoef(:,1)!resCL
@@ -439,7 +594,7 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
              degreeFourAlpha,  omegaFourAlpha,     &
              cosCoefFourAlpha, sinCoefFourAlpha, t)
      end do
- 
+     !if(myID==0)print *,'intervalAlpha',intervalAlpha
      do i =1,8
         call computeLeastSquaresRegression(BaseCoef(:,i),intervalAlpha,nTimeIntervalsSpectral,dcdAlpha(i),coef0(i))
      end do
@@ -474,8 +629,10 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
         call computeLeastSquaresRegression(ResBaseCoef(:,i),intervalAlphadot,nTimeIntervalsSpectral,dcdalphadot(i),Coef0dot(i))
      enddo
 
-
+     a  = sqrt(gammaInf*pInfDim/rhoInfDim)
+     dcdalphadot = dcdalphadot*2*(machGrid*a)/lengthRef
 !!$     if(myID==0)then
+!!$        print *,'normalization',timeRef,(machGrid*a),lengthRef
 !!$        print *,'CL estimates:'
 !!$        print *,'ClAlphadot = : ',dcdalphadot(1),' cl0dot = : ',coef0dot(1)
 !!$        print *,'Normal Force Coef: CFy'

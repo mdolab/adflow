@@ -9,7 +9,7 @@
 !     ******************************************************************
 !
       subroutine computeTSStabilityDerivAdj(BaseCoef,coef0,dcdalpha,&
-           dcdalphadot,dcdq,dcdqdot)
+           dcdalphadot,dcdq,dcdqdot,lengthRefAdj)
 !!$        computeTSStabilityDerivAdj(cFxAdj,cFyAdj,cFzAdj,cMxAdj,&
 !!$                       cMyAdj,cMzAdj,CLAdj,CDAdj,&
 !!$                       cl0,cd0,cmz0,dcldalpha,dcddalpha,dcmzdalpha,&
@@ -56,6 +56,7 @@
       real(kind=realType),dimension(8)::dcdalpha,dcdalphadot,dcdbeta,dcdbetadot,dcdMach,dcdMachdot
       real(kind=realType),dimension(8)::Coef0,Coef0dot
       real(kind=realType),dimension(nTimeIntervalsSpectral,8)::ResBaseCoef
+      real(kind=realType):: lengthRefAdj
 !
 !     Local variables.
 !
@@ -238,7 +239,7 @@
      
          !now normalize the results...
          a  = sqrt(gammaInf*pInfDim/rhoInfDim)
-         dcdq = dcdq*timeRef*2*(machGrid*a)/lengthRef
+         dcdq = dcdq*timeRef*2*(machGrid*a)/lengthRefAdj
     
          
          !now compute dCl/dpdot
@@ -371,6 +372,9 @@
          do i = 1,8
             call computeLeastSquaresRegression(ResBaseCoef(:,i),intervalAlphadot,nTimeIntervalsSpectral,dcdalphadot(i),Coef0dot(i))
          enddo
+
+         a  = sqrt(gammaInf*pInfDim/rhoInfDim)
+         dcdalphadot = dcdalphadot*2*(machGrid*a)/lengthRefAdj
    
       elseif(TSBetaMode)then
          print *,'Beta mode not yet implemented'   

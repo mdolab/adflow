@@ -48,6 +48,7 @@ FF90_OBJECTS = 	computePressureForcesAdj.o\
 		getDirVectorForces.o\
 		vectorRotationForces.o\
                 verifydCfdx.o
+#                verifydCfdwFile.o
 
 #      ******************************************************************
 #      *                                                                *

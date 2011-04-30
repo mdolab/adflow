@@ -119,7 +119,7 @@ subroutine getdRdXvPsi(ndof,dXv)
         call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
 
         ! Take rotation Matrix Transpose
-        rotationMatrix = transpose(rotationMatrix)
+        !rotationMatrix = transpose(rotationMatrix)
 
         counter = 0
         do nn=1,nDom

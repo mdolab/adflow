@@ -4,11 +4,11 @@
 !     * File:          verifydIdwFile.f90                              *
 !     * Author:        C.A.(Sandy) Mader                               *
 !     * Starting date: 12-04-2009                                      *
-!     * Last modified: 12-04-2009                                      *
+!     * Last modified: 04-05-2011                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine verifydIdwfile(level)
+subroutine verifydIdwfile(level,costfunction,filename)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -36,7 +36,8 @@ subroutine verifydIdwfile(level)
 !
 !     Subroutine arguments.
 !
-      integer(kind=intType), intent(in) :: level
+      integer(kind=intType), intent(in) :: level,costfunction
+      character(len = 64):: filename
 !
 !     Local variables.
 !
@@ -44,7 +45,7 @@ subroutine verifydIdwfile(level)
       integer(kind=intType) ::  n,nn
       integer(kind=intType) :: i,j,k
 
-      logical :: fineGrid,correctForK, exchangeTurb
+  
 
       real(kind=realType), dimension(4) :: time
       real(kind=realType)               :: timeAdj, timeFD,timeAdjLocal
@@ -52,50 +53,31 @@ subroutine verifydIdwfile(level)
       ! > derivative output
 
 
-      logical :: contributeToForce, viscousSubface,secondHalo
+  
 
-      integer :: ierr,idxmgb,costFunction
+      integer :: ierr,idxmgb
 
       character(len=2*maxStringLen) :: errorMessage
-
+      character(len = 128)::outfile,testfile
  
 
 !File Parameters
-      integer :: unitWcl0 = 8,unitWcmz0 = 9,unitWdcldalpha = 10,&
-           unitWdcmzdalpha = 11,ierror
-      character(len = 20)::outfile
+      integer :: unit = 8,ierror
+   
+      write(testfile,100) myid
+100   format (i5)  
+      testfile=adjustl(testfile)
+      write(outfile,101) trim(filename),trim(testfile)
+101   format(a,a,".out")
+      unit = 8+myID
       
-      outfile = "ADWcl0.txt"
-      
-      open (UNIT=unitWcl0,File=outfile,status='replace',action='write',iostat=ierror)
+      open (UNIT=unit,File=outfile,status='replace',action='write',iostat=ierror)
       if(ierror /= 0)                        &
            call terminate("verifydIdwFile", &
            "Something wrong when &
            &calling open")
 
-      outfile = "ADWcmz0.txt"
-      
-      open (UNIT=unitWcmz0,File=outfile,status='replace',action='write',iostat=ierror)
-      if(ierror /= 0)                        &
-           call terminate("verifydIdwFile", &
-           "Something wrong when &
-           &calling open")
-
-      outfile = "ADWdcldalpha.txt"
-      
-      open (UNIT=unitWdcldalpha,File=outfile,status='replace',action='write',iostat=ierror)
-      if(ierror /= 0)                        &
-           call terminate("verifydIdwFile", &
-           "Something wrong when &
-           &calling open")
-
-      outfile = "ADWdcmzdalpha.txt"
-      
-      open (UNIT=unitWdcmzdalpha,File=outfile,status='replace',action='write',iostat=ierror)
-      if(ierror /= 0)                        &
-           call terminate("verifydIdwFile", &
-           "Something wrong when &
-           &calling open")
+ 
 !
 !     ******************************************************************
 !     *                                                                *
@@ -105,190 +87,97 @@ subroutine verifydIdwfile(level)
 !
 #ifndef USE_NO_PETSC
       !print *,'in verifydIdw'
-      if( myID==0 ) write(*,*) "Running verifydIdw..."!,sps
+      if( myID==0 ) write(*,*) "printing dIdw..."!,sps
 
-
+      !assume that dJdw is already populated
 
       call cpu_time(time(1))
 
-      do costFunction = 9,12
 
-         ! Reset the RHS vector dJ/dW by assigning the value zero to all
-         ! its components.
          
-         ! VecSet - Sets all components of vector to a single scalar value.
-         !
-         ! Synopsis
-         !
-         ! #include "petscvec.h" 
-         ! call VecSet(Vec x,PetscScalar alpha, PetscErrorCode ierr)
-         !
-         ! Collective on Vec
-         !
-         ! Input Parameters
-         !   x     - the vector
-         !   alpha	- the scalar
-         !
-         ! Output Parameter
-         !   x -the vector
-         !
-         ! Note
-         ! For a vector of dimension n, VecSet() computes
-         ! x[i] = alpha, for i=1,...,n,
-         ! so that all vector entries then equal the identical scalar
-         ! value, alpha. Use the more general routine VecSetValues() to
-         ! set different vector entries.
-         !
-         ! You CANNOT call this after you have called VecSetValues() but
-         ! before you call VecAssemblyBegin/End(). 
-         !
-         ! see .../petsc/docs/manualpages/Vec/VecSet.html
-         ! or PETSc users manual, pp.36
-         
-         call VecSet(dJdC,PETScZero,PETScIerr)
-         
-         if( PETScIerr/=0 ) &
-              call terminate("verifydIdwFile", "Error in VecSet")
-
-         call VecSet(dJdw,PETScZero,PETScIerr)
-         
-         if( PETScIerr/=0 ) &
-              call terminate("verifydIdwFile", "Error in VecSet")
-
-         !zero the matrix for dCdW Insert call
-         call MatZeroEntries(dCdwT,PETScIerr)
-         
-         if( PETScIerr/=0 ) &
-              call terminate("verifydIdwFile",&
-              "Error in MatZeroEntries dCdw")
-
-         !Compute dCdw 
-         call setupADjointdCdwStability(level,costFunction)
-!!$         !write solution to file....
-!!$         do sps = 1,nTimeIntervalsSpectral
-!!$            do nn = 1, nDom
-!!$               call setPointersAdj(nn,level,sps)
-!!$               do k = 0,kb
-!!$                  do j = 0,jb
-!!$                     do i = 0,ib
-!!$                        do n = 1,nw
-!!$                           idxmgb = globalCell(i,j,k)*nw+n
-!!$
-!!$                           if( idxmgb>=0) then
-!!$                              
-!!$                              call MatGetValues(dCdw, 1,sps-1,1, idxmgb-1, &
-!!$                                   value, PETScIerr)
-!!$                              
-!!$                              if( PETScIerr/=0 ) then
-!!$                                 write(errorMessage,99) &
-!!$                                      "Error in matGetValues for global cell", idxmgb
-!!$                                 call terminate("verifydIdwFile",&
-!!$                                      errorMessage)
-!!$                              endif
-!!$                              
-!!$                              if(costfunction==costFuncCl0)then
-!!$                                 write(unitwcl0,10) value,sps,nn,i,j,k,n,idxmgb
-!!$10                               format(1x,'wcl ',f18.10,7I8)
-!!$                              elseif(costfunction==costFuncCm0)then
-!!$                                 write(unitwcmz0,11) value,sps,nn,i,j,k,n,idxmgb
-!!$11                               format(1x,'wcm ',f18.10,7I8)
-!!$                              elseif(costfunction==costFuncClAlpha)then
-!!$                                 !write(unitwdcldalpha,12) value,sps,nn,i,j,k,n,idxmgb
-!!$12                               format(1x,'wdcldalpha ',f18.10,7I8)
-!!$                              elseif(costfunction==costFuncCmzAlpha)then
-!!$                                 !write(unitwdcmzdalpha,13) value,sps,nn,i,j,k,n,idxmgb
-!!$13                               format(1x,'wdcmzdalpha ',f18.10,7I8)
-!!$                              else
-!!$                                 print *,'not a valid cost function in this context'
-!!$                              endif
-!!$                           endif
-!!$                       
-!!$
-!!$                     enddo
-!!$                  enddo
-!!$               end do
-!!$            end do
-!!$         end do
-!!$      end do
-
-         !compute dIdc
-         call setupADjointdIdCStability(level,costFunction)
-         
-         !multiply to get djdw
-         call MatMultTranspose(dCdwT,dJdc,dJdw,PETScIerr)
-         
-         !write solution to file....
-         do sps = 1,nTimeIntervalsSpectral
-            do nn = 1, nDom
-               call setPointersAdj(nn,level,sps)
-               do k = 2,kl!0,kb
-                  do j = 2,jl!0,jb
-                     do i = 2,il!0,ib
-                        do n = 1,nw
-                           idxmgb = globalCell(i,j,k)*nw+n
-
-                           if( idxmgb>=0) then
+      !write solution to file....
+      do sps = 1,nTimeIntervalsSpectral
+         do nn = 1, nDom
+            call setPointersAdj(nn,level,sps)
+            do k = 2,kl!0,kb
+               do j = 2,jl!0,jb
+                  do i = 2,il!0,ib
+                     do n = 1,nw
+                        idxmgb = globalCell(i,j,k)*nw+n
+                        
+                        if( idxmgb>=0) then
                            
-                              call VecGetValues(dJdw, 1, idxmgb-1, &
-                                   value, PETScIerr)
-                              
-                              if( PETScIerr/=0 ) then
-                                 write(errorMessage,99) &
-                                      "Error in VecGetValues for global cell", idxmgb
-                                 call terminate("verifydIdwFile",&
-                                      errorMessage)
-                              endif
-                              !if (abs(value).ne.0)then
-                              !   print *,'values',value,idxmgb,nn,sps,globalCell(i,j,k),i,j,k
-                              !endif
-                              if(costfunction==costFuncCl0)then
-                                 write(unitwcl0,10) value,sps,nn,i,j,k,n,idxmgb
-10                               format(1x,'wcl0 ',f18.10,7I8)
-                              elseif(costfunction==costFuncCm0)then
-                                 write(unitwcmz0,11) value,sps,nn,i,j,k,n,idxmgb
-11                               format(1x,'wcmz0 ',f18.10,7I8)
-                              elseif(costfunction==costFuncClAlpha)then
-                                 write(unitwdcldalpha,12) value,sps,nn,i,j,k,n,idxmgb
-12                               format(1x,'wdcldalpha ',f18.10,7I8)
-                              elseif(costfunction==costFuncCmzAlpha)then
-                                 write(unitwdcmzdalpha,13) value,sps,nn,i,j,k,n,idxmgb
-13                               format(1x,'wdcmzdalpha ',f18.10,7I8)
-                              else
-                                 print *,'not a valid cost function in this context'
-                              endif
+                           call VecGetValues(dJdw, 1, idxmgb-1, &
+                                value, PETScIerr)
+                           
+                           if( PETScIerr/=0 ) then
+                              write(errorMessage,99) &
+                                   "Error in VecGetValues for global cell", idxmgb
+                              call terminate("verifydIdwFile",&
+                                   errorMessage)
                            endif
-                       
-
+                           !if (abs(value).ne.0)then
+                           !   print *,'values',value,idxmgb,nn,sps,globalCell(i,j,k),i,j,k
+                           !endif
+                           if(costfunction==costFuncCl0)then
+                              write(unit,10) value,sps,nn,i,j,k,n,idxmgb,flowdoms(nn,level,sps)%cgnsblockid
+10                            format(1x,'wcl0 ',f18.10,8I8)
+                           elseif(costfunction==costFuncLiftCoef)then
+                              write(unit,102) value,sps,nn,i,j,k,n,idxmgb
+102                            format(1x,'wcl ',f18.10,7I8)
+                           elseif(costfunction==costFuncMomZCoef)then
+                              write(unit,103) value,sps,nn,i,j,k,n,idxmgb
+103                            format(1x,'wcmz ',f18.10,7I8)
+                           elseif(costfunction==costFuncCm0)then
+                              write(unit,11) value,sps,nn,i,j,k,n,idxmgb
+11                            format(1x,'wcmz0 ',f18.10,7I8)
+                           elseif(costfunction==costFuncClAlpha)then
+                              write(unit,12) value,sps,nn,i,j,k,n,idxmgb
+12                            format(1x,'wdcldalpha ',f18.10,7I8)
+                           elseif(costfunction==costFuncCmzAlpha)then
+                              write(unit,13) value,sps,nn,i,j,k,n,idxmgb
+13                            format(1x,'wdcmzdalpha ',f18.10,7I8)
+                           elseif(costfunction==costFuncCmzq)then
+                              write(unit,14) value,sps,nn,i,j,k,n,idxmgb
+14                            format(1x,'wdcmzdq ',f18.10,7I8)
+                           elseif(costfunction==costFuncClq)then
+                              write(unit,15) value,sps,nn,i,j,k,n,idxmgb
+15                            format(1x,'wdcldq ',f18.10,7I8)
+                           else
+                              print *,'not a valid cost function in this context'
+                           endif
+                        endif
+                        
+                        
                      enddo
                   enddo
                end do
             end do
          end do
       end do
-
-
-   
-      end do
+      
+      close(unit)
+      
       call cpu_time(time(2))
       timeAdjLocal = time(2)-time(1)
-
+      
       ! Determine the maximum time using MPI reduce
       ! with operation mpi_max.
-
+      
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-                      mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
-
-      if( PETScRank==0 ) &
-        write(*,20) "Assembling ADjoint TS RHS vector time (s) = ", timeAdj
-   
-   
-   ! Flush the output buffer and synchronize the processors.
-   
-   call f77flush()
-   call mpi_barrier(SUmb_comm_world, ierr)
-!
-!     ******************************************************************
-!
+           mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
+      
+      if( myID==0 ) &
+           write(*,20) "Printing ADjoint TS RHS vector time (s) = ", timeAdj
+      
+      
+      ! Flush the output buffer and synchronize the processors.
+      
+      call f77flush()
+      call mpi_barrier(SUmb_comm_world, ierr)
+      !
+      !     ******************************************************************
+      !
 
       
       ! Deallocate memory for the temporary arrays.

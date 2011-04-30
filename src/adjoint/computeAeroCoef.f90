@@ -71,8 +71,8 @@ subroutine computeAeroCoef(globalCFVals,sps)
 
            call computeForceAndMomentAdj(Force,cForce,Lift,Drag,Cl,Cd,&
                 moment,cMoment,alpha,beta,liftIndex,MachCoef,&
-                pointRef,pts(:,:,sps),npts,w,rightHanded,bcfaceid(mm),&
-                iBeg,iEnd,jBeg,jEnd,ii)
+                pointRef,lengthRef,surfaceRef,pts(:,:,sps),npts,w,&
+                rightHanded,bcfaceid(mm),iBeg,iEnd,jBeg,jEnd,ii)
            ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
 
            localCFVals(costFuncLift) = localCFVals(costFuncLift) + Lift

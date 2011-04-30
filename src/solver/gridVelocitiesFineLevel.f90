@@ -422,11 +422,12 @@
              j = nbkGlobal
 
              rotCenter = cgnsDoms(j)%rotCenter
-             !print *,'rotcenter',rotCenter,'rotpoint',rotpoint
-             offSetVector= (rotCenter-pointRef)
-             !print *,'offset vector',offSetVector, rotCenter,pointRef
+             !if (myid==0)print *,'rotcenter',rotCenter,'rotpoint',rotpoint
+             !offSetVector= (rotCenter-pointRef)
+             offSetVector= (rotCenter-rotPoint)
+             !if (myid==0)print *,'offset vector',offSetVector, rotCenter,pointRef
              rotRate   = timeRef*cgnsDoms(j)%rotRate
-             !print *,'rotrate, gridvelocity',rotRate,cgnsDoms(j)%rotRate
+             !if (myid==0) print *,'rotrate, gridvelocity',rotRate,cgnsDoms(j)%rotRate
 
              if (useWindAxis)then
                 !determine the current angles from the free stream velocity
@@ -503,22 +504,22 @@
 !             velxGrid =velxgrid0+ 1*(rotRate(2)*rotCenter(3) - rotRate(3)*rotCenter(2))
 !             velyGrid =velygrid0+ 1*(rotRate(3)*rotCenter(1) - rotRate(1)*rotCenter(3))
 !             velzGrid =velzgrid0+ 1*(rotRate(1)*rotCenter(2) - rotRate(2)*rotCenter(1))
-             
+             !if (myid==0) print *,'velocity update',offSetVector,rotPoint,'matrix',derivRotationMatrix
              velxGrid =velxgrid0+ 1*(rotRate(2)*offSetVector(3) &
                                   - rotRate(3)*offSetVector(2)) &
-                              + derivRotationMatrix(1,1)*rotPoint(1) &
-                              + derivRotationMatrix(1,2)*rotPoint(2) &
-                              + derivRotationMatrix(1,3)*rotPoint(3)
+                              + derivRotationMatrix(1,1)*offSetVector(1) &
+                              + derivRotationMatrix(1,2)*offSetVector(2) &
+                              + derivRotationMatrix(1,3)*offSetVector(3)
              velyGrid =velygrid0+ 1*(rotRate(3)*offSetVector(1)&
                                   - rotRate(1)*offSetVector(3))&
-                              + derivRotationMatrix(2,1)*rotPoint(1) &
-                              + derivRotationMatrix(2,2)*rotPoint(2) &
-                              + derivRotationMatrix(2,3)*rotPoint(3)
+                              + derivRotationMatrix(2,1)*offSetVector(1) &
+                              + derivRotationMatrix(2,2)*offSetVector(2) &
+                              + derivRotationMatrix(2,3)*offSetVector(3)
              velzGrid =velzgrid0+ 1*(rotRate(1)*offSetVector(2) &
                                   - rotRate(2)*offSetVector(1)) &
-                              + derivRotationMatrix(3,1)*rotPoint(1) &
-                              + derivRotationMatrix(3,2)*rotPoint(2) &
-                              + derivRotationMatrix(3,3)*rotPoint(3)
+                              + derivRotationMatrix(3,1)*offSetVector(1) &
+                              + derivRotationMatrix(3,2)*offSetVector(2) &
+                              + derivRotationMatrix(3,3)*offSetVector(3)
 
            !add in rotmatrix*rotpoint....
              !print *,'velgrid',velxGrid,velyGrid , velzGrid

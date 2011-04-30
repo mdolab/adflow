@@ -140,6 +140,8 @@ class SUMB(AeroSolver):
             'NKPCILUFill':[int,3],
             'NKLocalPCOrdering':[str,'RCM'],
             'NKJacobianLag':[int,10],
+            'RKReset':[bool,False],
+            'nRKReset':[int,5],
 
             # Load Balance Paramters
             'blockSplitting':[bool,False],
@@ -263,6 +265,9 @@ class SUMB(AeroSolver):
              'cl0':self.sumb.costfunctions.costfunccl0,
              'clAlpha':self.sumb.costfunctions.costfuncclalpha,
              'clAlphaDot':self.sumb.costfunctions.costfuncclalphadot,
+             'cfy0':self.sumb.costfunctions.costfunccfy0,
+             'cfyAlpha':self.sumb.costfunctions.costfunccfyalpha,
+             'cfyAlphaDot':self.sumb.costfunctions.costfunccfyalphadot,
              'cd0':self.sumb.costfunctions.costfunccd0,
              'cdAlpha':self.sumb.costfunctions.costfunccdalpha,
              'cdAlphaDot':self.sumb.costfunctions.costfunccdalphadot,
@@ -730,11 +735,11 @@ class SUMB(AeroSolver):
             *self.metricConversion
         self.sumb.inputphysics.pointref[2] = aero_problem._refs.zref\
             *self.metricConversion
-        self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xref\
+        self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xrot\
             *self.metricConversion
-        self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yref\
+        self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yrot\
             *self.metricConversion
-        self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zref\
+        self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zrot\
             *self.metricConversion
         #update the flow vars
         self.sumb.updatereferencepoint()
@@ -751,7 +756,7 @@ class SUMB(AeroSolver):
         V = (self.sumb.inputphysics.machgrid+self.sumb.inputphysics.mach)*a
         
         p = aero_problem._flows.phat*V/aero_problem._refs.bref
-        q = aero_problem._flows.qhat*V/aero_problem._refs.cref
+        q = aero_problem._flows.qhat*2*V/aero_problem._refs.cref
         r = aero_problem._flows.rhat*V/aero_problem._refs.bref
 
         self.sumb.updaterotationrate(p,r,q)
@@ -1181,6 +1186,32 @@ class SUMB(AeroSolver):
         costFunc =  self.SUmbCostfunctions[obj]
         if self.myid==0: print 'costfunc',costFunc
         self.sumb.verifydcfdx(1,costFunc)
+        
+        return
+
+    def verifydCdw(self,objective,**kwargs):
+	
+	self.sumb.verifydcdwfile(1)
+
+	return
+    def verifydIdw(self,objective,**kwargs):
+        '''
+        run compute obj partials, then print to a file...
+        '''
+        if self.myid==0: print 'setting up vector'
+        if not self.adjointMatrixSetup:
+            self.sumb.createpetscvars()
+            #self.setupAdjoint(forcePoints)
+        # end if
+        if self.myid==0:print 'computing partials'
+        self.computeObjPartials(objective)
+        obj = self.possibleObjectives[objective.lower()]
+        filename= self.getOption('outputDir') + '/' +'ADw%s'%(obj)
+        if self.myid==0:print 'filename',filename
+        costFunc =  self.SUmbCostfunctions[obj]
+        level = 1
+        if self.myid==0:print 'calling verify',level,costFunc,filename
+        self.sumb.verifydidwfile(level,costFunc,filename)
         
         return
 
@@ -1632,17 +1663,19 @@ class SUMB(AeroSolver):
 
         temp = forcePoints.shape
         
-        sizeForcePoints = temp[0]*temp[1]*temp[2]
+        sizeForcePoints = temp[1]*temp[2]#temp[0]*temp[1]#*temp[2]
+        
         #if len(forcePoints > 0):
         if sizeForcePoints > 0:
             dIdpts = self.sumb.getdidx(sizeForcePoints)
-            dIdpts.reshape(forcePoints.shape)
+        
+            dIdpts.reshape(forcePoints[0,:,:].shape)
+        
         else:
             dIdpts = numpy.zeros((0),self.dtype)
         # end if
 
         dIdpts = self.mesh.solver_to_warp_force(group_name,dIdpts)
-
         return dIdpts
 
     def getdIda(self,objective,forcePoints=None):
@@ -1734,6 +1767,9 @@ class SUMB(AeroSolver):
              'clalphadot' :funcVals[self.sumb.costfunctions.costfuncclalphadot-1],
              'clalpha'    :funcVals[self.sumb.costfunctions.costfuncclalpha-1],
              'cl0'        :funcVals[self.sumb.costfunctions.costfunccl0-1],
+             'cfyalphadot':funcVals[self.sumb.costfunctions.costfunccfyalphadot-1],
+             'cfyalpha'   :funcVals[self.sumb.costfunctions.costfunccfyalpha-1],
+             'cfy0'       :funcVals[self.sumb.costfunctions.costfunccfy0-1],
              'cdalphadot' :funcVals[self.sumb.costfunctions.costfunccdalphadot-1],
              'cdalpha'    :funcVals[self.sumb.costfunctions.costfunccdalpha-1],
              'cd0'        :funcVals[self.sumb.costfunctions.costfunccd0-1],
