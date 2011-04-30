@@ -23,6 +23,7 @@
    USE inputphysics
    USE inputtimespectral
    USE inputtsstabderiv
+   USE section
    IMPLICIT NONE
    REAL(KIND=REALTYPE), INTENT(IN) :: alphaadj
    REAL(KIND=REALTYPE), INTENT(IN) :: betaadj
@@ -52,9 +53,6 @@
    REAL(KIND=REALTYPE), DIMENSION(0:ib, 0:jb, 0:kb, nw), INTENT(IN) :: &
    &  wblock
    REAL(KIND=REALTYPE) :: wblockb(0:ib, 0:jb, 0:kb, nw)
-   TYPE UNKNOWNDERIVEDTYPE0
-   REAL :: timeperiod
-   END TYPE UNKNOWNDERIVEDTYPE0
    REAL(KIND=REALTYPE) :: addforce(3), addforceb(3), addmoment(3), &
    &  addmomentb(3), refpoint(3)
    REAL(KIND=REALTYPE) :: alphaincrement, alphats, alphatsb, &
@@ -69,8 +67,6 @@
    REAL(KIND=REALTYPE) :: dragdirtmp(3), dragdirtmpb(3), liftdirtmp(3), &
    &  liftdirtmpb(3)
    INTEGER(KIND=INTTYPE) :: nn
-   INTEGER :: nsections
-   TYPE(UNKNOWNDERIVEDTYPE0) :: res, result1, SECTIONS
    REAL(KIND=REALTYPE) :: derivrotationmatrix(3, 3), rotationmatrix(3, 3)
    REAL(KIND=REALTYPE) :: rotationpoint(3)
    REAL(KIND=REALTYPE) :: t(nsections)
@@ -85,7 +81,7 @@
    REAL(KIND=REALTYPE) :: grid_pts(3, 3, 3), grid_ptsb(3, 3, 3), wadj(2, &
    &  2, 2, nw), wadjb(2, 2, 2, nw)
    EXTERNAL TSALPHA, ADJUSTINFLOWANGLEADJ, ROTMATRIXRIGIDBODY, &
-   &      ADJUSTINFLOWANGLEADJ_B, SECTIONS, TSBETA
+   &      ADJUSTINFLOWANGLEADJ_B, TSBETA
    !     ******************************************************************
    !     *                                                                *
    !     * Compute the sum of the forces and moments on all blocks on     *
@@ -273,10 +269,8 @@
    t = timeunsteadyrestart
    IF (equationmode .EQ. timespectral) THEN
    DO nn=1,nsections
-   res = SECTIONS(nn)
-   t(nn) = t(nn) + (sps-1)*result1%timeperiod/&
+   t(nn) = t(nn) + (sps-1)*sections(nn)%timeperiod/&
    &          ntimeintervalsspectral*1.0
-   CALL PUSHINTEGER4(nn)
    END DO
    CALL PUSHINTEGER4(1)
    ELSE
@@ -455,11 +449,7 @@
    betaadjb = betatsb
    END IF
    CALL POPINTEGER4(branch)
-   IF (.NOT.branch .LT. 1) THEN
-   DO nn=nsections,1,-1
-   CALL POPINTEGER4(nn)
-   END DO
-   END IF
+   IF (.NOT.branch .LT. 1) nn = 0
    100 CALL ADJUSTINFLOWANGLEFORCESADJ_B(alphaadj, alphaadjb, betaadj, &
    &                                 betaadjb, veldirfreestreamadj, &
    &                                 veldirfreestreamadjb, liftdir, &
