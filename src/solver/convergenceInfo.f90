@@ -30,6 +30,7 @@
        use iteration
        use killSignals
        use flowVarRefState
+       use NKsolverVars
        implicit none
 !
 !      Local variables.
@@ -43,6 +44,8 @@
        real(kind=realType) :: L2ConvThisLevel
        real(kind=realType) :: L2ConvThisLevelRel
        real(kind=realType), dimension(3) :: cfp, cfv, cmp, cmv
+       integer(kind=intType) :: tempStartLevel,tempCurrentLevel,&
+            tempMGStartLevel
 
        logical :: nanOccurred, writeIterations
        logical :: relNotConv,absNotConv
@@ -467,8 +470,20 @@
        call mpi_bcast(nanOccurred, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
        if( nanOccurred )then
           !reset flow and exit!
-          print *,'nanOccured',myID
-          call initflow
+          if (myID==0) print *,'nanOccured'!,myID
+          !call initflow
+          ! Initialize the flow field to uniform flow.
+          tempMGStartLevel = mgStartLevel
+          tempCurrentLevel = currentLevel
+          
+          mgStartLevel = 1
+          currentlevel = 1
+          
+          call setUniformFlow
+
+          mgStartLevel = tempMGStartLevel
+          currentLevel = tempCurrentLevel
+  
           !print *,'terminating'
           call terminate("convergenceInfo", &
                "A NaN occurred during the computation.")

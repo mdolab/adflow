@@ -450,6 +450,9 @@
 !!$
 !!$             rotCenter = cgnsDoms(j)%rotCenter
 !!$             rotRate   = timeRef*cgnsDoms(j)%rotRate
+
+              offSetVector= (rotCenterAdj-rotPointAdj)
+
               if (useWindAxis)then
                  alpha =alphaAdj
                  beta= betaAdj
@@ -469,7 +472,7 @@
                     
                  elseif(liftIndex ==3) then
                     ! Wing is in y- direction
-                    !Rotate the rotation rate from the winsd axis back to the local body axis
+                    !Rotate the rotation rate from the wind axis back to the local body axis
                     rotRateTrans(1,1)=cos(alpha)*cos(beta)
                     rotRateTrans(1,2)=-cos(alpha)*sin(beta)
                     rotRateTrans(1,3)=-sin(alpha)
@@ -501,24 +504,23 @@
                  end do
               end if
 
-              offSetVector= (rotCenterAdj-pointRefAdj)
-             !subtract off the rotational velocity of the center gravity of the grid
+              !subtract off the rotational velocity of the center gravity of the grid
              ! to account for the added overall velocity.
              velxGrid =velxgrid0+ 1*(rotRateAdj(2)*offSetVector(3)&
                                  - rotRateAdj(3)*offSetVector(2)) &
-                                 + derivRotationMatrixAdj(1,1)*rotPointAdj(1) &
-                                 + derivRotationMatrixAdj(1,2)*rotPointAdj(2) &
-                                 + derivRotationMatrixAdj(1,3)*rotPointAdj(3)
+                                 + derivRotationMatrixAdj(1,1)*offSetVector(1)&
+                                 + derivRotationMatrixAdj(1,2)*offSetVector(2)&
+                                 + derivRotationMatrixAdj(1,3)*offSetVector(3)
              velyGrid = velygrid0+ 1*(rotRateAdj(3)*offSetVector(1) &
                               - rotRateAdj(1)*offSetVector(3)) &
-                              + derivRotationMatrixAdj(2,1)*rotPointAdj(1) &
-                              + derivRotationMatrixAdj(2,2)*rotPointAdj(2) &
-                              + derivRotationMatrixAdj(2,3)*rotPointAdj(3)
+                              + derivRotationMatrixAdj(2,1)*offSetVector(1) &
+                              + derivRotationMatrixAdj(2,2)*offSetVector(2) &
+                              + derivRotationMatrixAdj(2,3)*offSetVector(3)
              velzGrid =velzgrid0+ 1*(rotRateAdj(1)*offSetVector(2)&
                               - rotRateAdj(2)*offSetVector(1)) &
-                              + derivRotationMatrixAdj(3,1)*rotPointAdj(1) &
-                              + derivRotationMatrixAdj(3,2)*rotPointAdj(2) &
-                              + derivRotationMatrixAdj(3,3)*rotPointAdj(3)
+                              + derivRotationMatrixAdj(3,1)*offSetVector(1) &
+                              + derivRotationMatrixAdj(3,2)*offSetVector(2) &
+                              + derivRotationMatrixAdj(3,3)*offSetVector(3)
 
 !
 !            ************************************************************

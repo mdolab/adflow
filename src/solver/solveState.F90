@@ -323,6 +323,12 @@ subroutine solveState
      else 
         solve_NK = .True.
         solve_RK = .False.
+        if (RKreset) then
+           !for difficult restarts during optimization
+           solve_RK = .True.
+           !run a small number of RK iterations to re-globalize the solution
+           nMGCycles = nRKreset
+        end if
      end if
   end if
 
@@ -368,6 +374,9 @@ subroutine solveState
            if(ierr /= 0)                 &
                 call terminate("solveState", &
                 "Deallocation failure for cycling")
+           ! Reset the L2Convergence in case it had been changed above
+           L2Conv = L2ConvSave
+
            return
         endif
 
@@ -441,13 +450,12 @@ subroutine solveState
 
   ! Now we have run the RK solver. We will run the NK solver only if
   ! the solve_NK flag is set:
-  
   if (solve_NK) then
 
      ! We have to check to see if NKSwitchtol was LOWER than
      ! l2convrel. This means that the RK solution is already good
      ! enough for what we want so we're done
-
+    
      call getcurrentResidual(rhoRes1,totalRRes1)
      if (rhoRes1 < rhoResStart * l2convrel) then
         ! We no not have to run the NK solver so do nothing

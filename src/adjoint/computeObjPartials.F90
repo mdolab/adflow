@@ -162,6 +162,8 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
         dcdalphab(8) = 1.0
      case(costfunccmzalphadot)
         dcdalphadotb(8) =1.0
+     case(costfuncclq)
+        dcdqb(1) = 1.0
      case(costfunccmzq)
         dcdqb(8) = 1.0 
      end select
@@ -185,7 +187,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
 
      end do
   end select
-
+  
   ! Now we have dJdc on each processor...when we go through the
   ! reverse mode AD we can take the dot-products on the fly SUM the
   ! entries into dJdw
@@ -259,6 +261,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
                  cmomentb(2) = 1.0
               case (costFuncMomZCoef,costFuncCm0,costFuncCMzAlpha,costFuncCmzalphadot,&
                    costFuncCmzq,costFuncCmzqDot)
+                
                  cmomentb(3) = 1.0
               end select
 
@@ -390,19 +393,63 @@ subroutine getdIdx(ndof,output)
 
   use ADjointPETSc
   use ADjointVars
+  use inputTimeSpectral
+  use section
+  use monitor
 
   implicit none
 
   integer(kind=intType),intent(in) :: ndof
   real(kind=realType),intent(out)  :: output(ndof)
-
-  integer(kind=intType) :: ilow,ihigh,i
+  integer(kind=intType),dimension(3) :: idx
+  real(kind=realType),dimension(3) ::temp
+  !rotation matrix variables
+  real(kind=realType), dimension(3)   :: rotationPoint,r
+  real(kind=realType), dimension(3,3) :: rotationMatrix  
+  real(kind=realType) :: t(nSections),dt(nSections)
+  real(kind=realType) :: tOld,tNew
+  integer(kind=intType) :: ilow,ihigh,i,sps,nn
   output(:) = 0.0
   call VecGetOwnershipRange(dJdx,ilow,ihigh,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
-  do i=1,ndof
-     call VecGetValues(dJdx,1,ilow+i-1,output(i),PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-  end do
 
+  ! Comput rotation from each time instance back to a single surface
+  
+  do nn=1,nSections
+     dt(nn) = sections(nn)%timePeriod &
+          / real(nTimeIntervalsSpectral,realType)
+  enddo
+  
+  timeUnsteady = zero
+  
+  do sps = 1,nTimeIntervalsSpectral
+     do nn=1,nSections
+        t(nn) = (sps-1)*dt(nn)
+     enddo
+     
+     ! Compute the displacements due to the rigid motion of the mesh.
+     
+     tNew = timeUnsteady + timeUnsteadyRestart
+     tOld = tNew - t(1)
+     
+     call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+     
+     ! Take rotation Matrix Transpose
+     !rotationMatrix = transpose(rotationMatrix)
+     !print *,'indices',ndof, ihigh,ilow,ihigh-ilow
+     do i=1,ndof/3
+        !print *,'i',i,sps
+        idx = (/ilow+ndof*(sps-1)+(3*(i-1)),&
+                ilow+ndof*(sps-1)+(3*(i-1))+1,&
+                ilow+ndof*(sps-1)+(3*(i-1))+2/)
+!!$        if (idx(1)>ihigh)then
+!!$           print *,'index',idx,ilow,ndof*(sps-1),(3*(i-1))
+!!$        end if
+        call VecGetValues(dJdx,3,idx,temp,PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+        !print *,'temp',temp,i,sps,idx,ilow,ihigh
+        output((i-1)*3+1:(i-1)*3+3) = output((i-1)*3+1:(i-1)*3+3)+matmul(rotationMatrix,temp)
+        !print *,'output',output((i-1)*3+1:(i-1)*3+3),(i-1)*3+1,(i-1)*3+3,idx,ilow,ihigh,i,sps,rotationMatrix
+     end do
+  end do
 end subroutine getdIdx

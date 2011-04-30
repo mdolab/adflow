@@ -135,6 +135,44 @@ python module sumb ! in
          integer(kind=inttype) intent(in) :: costfunction
        end subroutine verifydcfdx
 
+!!$       subroutine verifydcfdwfile(level)
+!!$       use adjointpetsc        !djdw
+!!$       use adjointvars         !nCellsGlobal
+!!$      use blockpointers
+!!$      use cgnsgrid            ! cgnsDoms
+!!$      use communication       ! procHalo(currentLevel)%nProcSend, myID
+!!$      use inputphysics        ! equations
+!!$      use flowvarrefstate     ! nw
+!!$      use inputdiscretization ! spaceDiscr, useCompactDiss
+!!$      use iteration           ! overset, currentLevel
+!!$      use inputtimespectral   ! nTimeIntervalsSpectral
+!!$      use section
+!!$      use monitor             ! monLoc, MonGlob, nMonSum
+!!$      use bctypes             !imin,imax,jmin,jmax,kmin,kmax
+!!$      implicit none
+!!$      integer(kind=inttype), intent(in) :: level
+!!$	end subroutine verifydcfdwfile
+
+       subroutine verifydidwfile(level,costfunction,filename)
+         use adjointpetsc        !djdw
+         use adjointvars         !nCellsGlobal
+         use blockpointers
+         use cgnsgrid            ! cgnsDoms
+         use communication       ! procHalo(currentLevel)%nProcSend, myID
+         use inputphysics        ! equations
+         use flowvarrefstate     ! nw
+         use inputdiscretization ! spaceDiscr, useCompactDiss
+         use iteration           ! overset, currentLevel
+         use inputtimespectral   ! nTimeIntervalsSpectral
+         use section
+         use monitor             ! monLoc, MonGlob, nMonSum
+         use bctypes             !imin,imax,jmin,jmax,kmin,kmax
+         implicit none
+         integer(kind=inttype) intent(in) :: level
+         integer(kind=inttype) intent(in) :: costfunction
+         character(len = 64)   :: filename
+       end subroutine verifydidwfile
+
        subroutine setupcouplingmatrixstruct(pts,npts,nts) ! in :sumb:../../adjoint/setupCouplingMatrixStruct.F90
          use blockpointers
          use adjointpetsc
@@ -987,10 +1025,15 @@ python module sumb ! in
             integer(kind=inttype) parameter,optional :: costfunccmzalpha=18
             integer(kind=inttype) parameter,optional :: costfuncdragcoef=4
             integer(kind=inttype) parameter,optional :: costfuncclalphadot=24
-            integer(kind=inttype) parameter,optional :: ncostfunction=31
+            integer(kind=inttype) parameter,optional :: ncostfunction=36
             integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
             integer(kind=inttype) parameter,optional :: costfuncclalpha=23
             integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
+            integer(kind=inttype) parameter,optional :: costfunccfy0=32	
+            integer(kind=inttype) parameter,optional :: costfunccfyalpha=33 
+            integer(kind=inttype) parameter,optional :: costfunccfyalphadot=34
+            integer(kind=inttype) parameter,optional :: costfunccfyq=35
+            integer(kind=inttype) parameter,optional :: costfunccfyqdot=36
        end module costfunctions
 
        module adjointvars ! in :test:ADjointVars.F90
@@ -1075,6 +1118,8 @@ python module sumb ! in
          real(kind=realtype) :: totalr0
          real(kind=realtype) :: totalrstart
          real(kind=realtype) :: totalrfinal
+         logical :: rkreset
+         integer(kind=inttype) :: nrkreset
        end module nksolvervars
        
 

@@ -39,6 +39,8 @@ module NKsolverVars
   logical :: NKSolverSetup
   logical :: NKSolvedOnce
   logical :: NKPCSetup
+  logical :: RKreset
+  integer(kind=intType) :: nRKreset
   ! Non-linear Solver Tolerances
   real(kind=realType) :: snes_atol 
   real(kind=realType) :: snes_rtol
