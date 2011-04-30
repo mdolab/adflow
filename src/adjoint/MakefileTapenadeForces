@@ -154,7 +154,8 @@ TAPENADE_MOD = $(TAPENADE_MODDIR)/constants.f90 \
 	       $(TAPENADE_MODDIR)/inputParam.f90\
 	       $(TAPENADE_MODDIR)/block.f90\
 	       $(SUMB_MODDIR)/blockPointers.f90\
-	       $(SUMB_MODDIR)/BCTypes.f90
+	       $(SUMB_MODDIR)/BCTypes.f90\
+               $(SUMB_MODDIR)/section.f90
 
 TAPENADE_SRC_ALL = $(TAPENADE_SRC) $(TAPENADE_MOD)
 
