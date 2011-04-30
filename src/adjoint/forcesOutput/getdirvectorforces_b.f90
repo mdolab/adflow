@@ -16,7 +16,7 @@
    !
    SUBROUTINE GETDIRVECTORFORCES_B(refdirection, alpha, alphab, beta, betab&
    &  , winddirection, winddirectionb, liftindex)
-   USE constants_b
+   USE constants
    IMPLICIT NONE
    REAL(KIND=REALTYPE), INTENT(IN) :: alpha
    REAL(KIND=REALTYPE) :: alphab, betab

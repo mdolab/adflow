@@ -15,8 +15,8 @@
    !      ******************************************************************
    !
    SUBROUTINE COMPUTEPRESSUREFORCESADJ_B(wadj, wadjb, padj, padjb)
-   USE flowvarrefstate_b
-   USE inputphysics_b
+   USE flowvarrefstate
+   USE inputphysics
    IMPLICIT NONE
    REAL(KIND=REALTYPE) :: padj(2, 2, 2), padjb(2, 2, 2)
    REAL(KIND=REALTYPE), DIMENSION(2, 2, 2, nw), INTENT(IN) :: wadj

@@ -6,7 +6,7 @@
    !   of linear combination of output variables: pts normadj
    SUBROUTINE GETSURFACENORMALSFORCESADJ_B(pts, ptsb, normadj, normadjb, &
    &  righthanded)
-   USE constants_b
+   USE constants
    IMPLICIT NONE
    REAL(KIND=REALTYPE) :: normadj(3, 2, 2), normadjb(3, 2, 2)
    REAL(KIND=REALTYPE), DIMENSION(3, 3, 3), INTENT(IN) :: pts

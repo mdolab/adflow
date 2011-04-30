@@ -19,7 +19,7 @@
    SUBROUTINE FORCESADJ_B(padj, padjb, pts, ptsb, normadj, normadjb, &
    &  refpoint, refpointb, force, forceb, moment, momentb, fact, ibeg, iend&
    &  , jbeg, jend, inode, jnode)
-   USE flowvarrefstate_b
+   USE flowvarrefstate
    IMPLICIT NONE
    REAL(KIND=REALTYPE), INTENT(IN) :: fact
    REAL(KIND=REALTYPE) :: force(3), forceb(3)

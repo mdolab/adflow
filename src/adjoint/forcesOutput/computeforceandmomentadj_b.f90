@@ -15,14 +15,14 @@
    &  lengthrefadjb, surfacerefadj, surfacerefadjb, pts, ptsb, npts, wblock&
    &  , wblockb, righthandedadj, faceid, ibeg, iend, jbeg, jend, ii_start, &
    &  sps)
-   USE bctypes_b
-   USE blockpointers_b
-   USE flowvarrefstate_b
-   USE inputdiscretization_b
-   USE inputmotion_b
-   USE inputphysics_b
-   USE inputtimespectral_b
-   USE inputtsstabderiv_b
+   USE bctypes
+   USE blockpointers
+   USE flowvarrefstate
+   USE inputdiscretization
+   USE inputmotion
+   USE inputphysics
+   USE inputtimespectral
+   USE inputtsstabderiv
    IMPLICIT NONE
    REAL(KIND=REALTYPE), INTENT(IN) :: alphaadj
    REAL(KIND=REALTYPE), INTENT(IN) :: betaadj
