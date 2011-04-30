@@ -18,8 +18,8 @@
    SUBROUTINE COMPUTEFORCESADJ_B(force, forceb, moment, momentb, pts, ptsb&
    &  , wadj, wadjb, refpoint, refpointb, fact, ibeg, iend, jbeg, jend, &
    &  inode, jnode, righthanded)
-   USE constants_b
-   USE flowvarrefstate_b
+   USE constants
+   USE flowvarrefstate
    IMPLICIT NONE
    REAL(KIND=REALTYPE), INTENT(IN) :: fact
    REAL(KIND=REALTYPE) :: force(3), forceb(3)

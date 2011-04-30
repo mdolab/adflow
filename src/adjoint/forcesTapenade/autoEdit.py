@@ -30,9 +30,9 @@ DIR_MOD = DIR_ORI + '/../forcesOutput'
 
 # Specifiy the list of LINE ID's to find, what to replace and with what
 
-LINE_ID = ['USE','CALL']
-STR_OLD = ['_B','_CB']
-STR_NEW = [''  ,'']
+LINE_ID = ['USE','USE','CALL']
+STR_OLD = ['_B','_b','_CB']
+STR_NEW = ['' ,'','']
 FILE_EXCL = 'MODULE'
 STR_REPLACE_ALL = {'_CB':''}
 

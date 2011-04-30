@@ -16,7 +16,7 @@
    !
    SUBROUTINE VECTORROTATIONFORCES_B(xp, xpb, yp, ypb, zp, zpb, iaxis, &
    &  angle, angleb, x, xb, y, yb, z, zb)
-   USE precision_b
+   USE precision
    IMPLICIT NONE
    REAL(KIND=REALTYPE), INTENT(IN) :: angle
    INTEGER(KIND=INTTYPE), INTENT(IN) :: iaxis

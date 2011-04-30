@@ -18,7 +18,7 @@
    SUBROUTINE ADJUSTINFLOWANGLEFORCESADJ_B(alphaadj, alphaadjb, betaadj, &
    &  betaadjb, veldirfreestreamadj, veldirfreestreamadjb, liftdirectionadj&
    &  , liftdirectionadjb, dragdirectionadj, dragdirectionadjb, liftindex)
-   USE constants_b
+   USE constants
    IMPLICIT NONE
    REAL(KIND=REALTYPE) :: alphaadj, alphaadjb, betaadj, betaadjb
    REAL(KIND=REALTYPE) :: dragdirectionadj(3), dragdirectionadjb(3)

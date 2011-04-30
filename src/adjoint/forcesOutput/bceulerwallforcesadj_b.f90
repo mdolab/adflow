@@ -16,8 +16,8 @@
    !      ******************************************************************
    !
    SUBROUTINE BCEULERWALLFORCESADJ_B(wadj, padj, padjb)
-   USE flowvarrefstate_b
-   USE inputdiscretization_b
+   USE flowvarrefstate
+   USE inputdiscretization
    IMPLICIT NONE
    REAL(KIND=REALTYPE) :: padj(3, 2, 2), padjb(3, 2, 2)
    REAL(KIND=REALTYPE), DIMENSION(2, 2, 2, nw), INTENT(IN) :: wadj
