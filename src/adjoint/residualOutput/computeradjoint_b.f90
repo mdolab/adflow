@@ -2,9 +2,9 @@
    !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
    !  
    !  Differentiation of computeradjoint in reverse (adjoint) mode:
-   !   gradient, with respect to input variables: pointrefadj rotrateadj
-   !                machadj alphaadj rotpointadj xadj xblockcorneradj
-   !                dwadj wadj betaadj machgridadj rotcenteradj
+   !   gradient, with respect to input variables: rotrateadj machadj
+   !                alphaadj rotpointadj xadj xblockcorneradj dwadj
+   !                wadj betaadj machgridadj rotcenteradj
    !   of linear combination of output variables: dwadj
    !
    !      ******************************************************************
@@ -21,9 +21,8 @@
    &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
    &  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
    &  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
-   &  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, pointrefadjb&
-   &  , rotpointadj, rotpointadjb, murefadj, timerefadj, pinfcorradj, &
-   &  liftindex)
+   &  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, rotpointadj&
+   &  , rotpointadjb, murefadj, timerefadj, pinfcorradj, liftindex)
    USE blockpointers
    USE flowvarrefstate
    USE inputphysics
@@ -49,8 +48,7 @@
    REAL(KIND=REALTYPE) :: prefadj, rhorefadj
    REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: rotcenteradj
    REAL(KIND=REALTYPE) :: rotcenteradjb(3), rotrateadjb(3)
-   REAL(KIND=REALTYPE) :: pointrefadj(3), pointrefadjb(3), rotpointadj(3)&
-   &  , rotpointadjb(3)
+   REAL(KIND=REALTYPE) :: pointrefadj(3), rotpointadj(3), rotpointadjb(3)
    REAL(KIND=REALTYPE), DIMENSION(3), INTENT(IN) :: rotrateadj
    INTEGER(KIND=INTTYPE), INTENT(IN) :: sps
    REAL(KIND=REALTYPE), DIMENSION(-2:2, -2:2, -2:2, nw, &
@@ -384,7 +382,6 @@
    &               rotrateadj, rotrateadjb, correctfork, nn, level, sps)
    CALL INITRESADJ_B(1, nwf, wadj, wadjb, voladj, voladjb, dwadj, dwadjb&
    &              , nn, level, sps)
-   pointrefadjb(1:3) = 0.0
    alphaadjb = 0.0
    pinfcorradjb = 0.0
    rotpointadjb(1:3) = 0.0
@@ -442,9 +439,8 @@
    &                                veldirfreestreamadjb, liftdirectionadj&
    &                                , alphaadj, alphaadjb, betaadj, &
    &                                betaadjb, liftindex, icell, jcell, &
-   &                                kcell, pointrefadj, pointrefadjb, &
-   &                                rotpointadj, rotpointadjb, nn, level, &
-   &                                sps2)
+   &                                kcell, pointrefadj, rotpointadj, &
+   &                                rotpointadjb, nn, level, sps2)
    CALL POPINTEGER4(branch)
    IF (.NOT.branch .LT. 1) nnn = 0
    CALL POPREAL8ARRAY(t, nsections)

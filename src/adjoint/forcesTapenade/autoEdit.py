@@ -7,7 +7,9 @@ autoEdit - A Python tool to automatically edit a set of files
 
            2) Rename module names in subroutines
 
-Written by Andre C. Marta          Last updated: Apr 6, 2007
+Written by Andre C. Marta          Last updated: Apr 30, 2011
+Updated by C.A.(Sandy) Mader 
+           Gaetan Kenway
 
 """
 
@@ -22,7 +24,7 @@ EXT = '_b.f90'
 
 # Specify directory containing the original source files
 # and the output directory for edited files
-DIR_ORI = os.getcwd()
+DIR_ORI = os.getcwd()+'/forcesTapenade'
 DIR_MOD = DIR_ORI + '/../forcesOutput'
 # Specify line identifier
 

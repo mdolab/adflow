@@ -91,14 +91,15 @@
 #JAVA_HOME =/home/mader/UTIAS/SRC/jdk1.6.0_06
 #TAPENADE_HOME = /nfs/opal/home/mader/SRC/Tapenade/tapenade2.2
 #TAPENADE_HOME = /home/guysmiley/acmarta/software/tapenade/tapenade2.2
-TAPENADE_HOME = /nfs/mica/home/kenway/Downloads/tapenade2.2
+#TAPENADE_HOME = /nfs/mica/home/kenway/Downloads/tapenade2.2
 
 #SOLVER_DIRSRC = /nfs/opal/home/mader/SRC/SUmbVertex/SUmbVertex/src
 #SOLVER_DIRSRC = /home/guysmiley/acmarta/SVN/SUmbVertex/src
 #SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/SUmbVertex/trunk/src
 #SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
 #SOLVER_DIRSRC = /nfs/tuff/home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
-SOLVER_DIRSRC = /nfs/mica/home/kenway/hg/SUmbADjoint/src
+#SOLVER_DIRSRC = /nfs/mica/home/kenway/hg/SUmbADjoint/src
+SOLVER_DIRSRC = /nfs/tuff/home/mader/hg/SUmbADjoint/src
 #SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
 
 #     ******************************************************************

@@ -91,7 +91,7 @@
 
 #SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
 #SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
-SOLVER_DIRSRC = /nfs/tuff/home/mader/hgGK/SUmbADjoint/src
+SOLVER_DIRSRC = /nfs/tuff/home/mader/hg/SUmbADjoint/src
 
 #     ******************************************************************
 #     *                                                                *
@@ -107,7 +107,7 @@ TAPENADE_OUTVARS = "coef0 dcdalpha dcdalphadot dcdq dcdqdot"
 
 # Independent input variables (separator: white space, default: all)
 
-TAPENADE_VARS = "basecoef"
+TAPENADE_VARS = "basecoef lengthRefAdj"
 
 # Name of the top routine
 
