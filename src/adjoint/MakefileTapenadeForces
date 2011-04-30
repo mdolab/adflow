@@ -85,7 +85,7 @@
 #     *                                                                *
 #     ******************************************************************
 
-SOLVER_DIRSRC = /nfs/mica/home/kenway/hg/SUmbADjoint/src
+SOLVER_DIRSRC = /nfs/tuff/home/mader/hg/SUmbADjoint/src
 
 #     ******************************************************************
 #     *                                                                *
@@ -166,7 +166,7 @@ TAPENADE_SRC_ALL = $(TAPENADE_SRC) $(TAPENADE_MOD)
 
 default:
 	@echo "TAPENADE - parsing and generating differentiated code bobby"
-	$(TAPENADE_HOME)/bin/tapenade  -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30  -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
+	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30  -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
 	@echo "deleting some unnecessary files..."
 	@rm -f $(TAPENADE_OUTDIR)/*__.f90 $(TAPENADE_OUTDIR)/*~
 

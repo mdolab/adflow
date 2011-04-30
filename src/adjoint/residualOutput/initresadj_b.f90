@@ -129,9 +129,181 @@
    !             case (steady)
    IF (.NOT.equationmode .EQ. steady) THEN
    !===========================================================
-   IF (.NOT.equationmode .EQ. unsteady) THEN
+   IF (equationmode .EQ. unsteady) THEN
+   !!$                   ! Store the inverse of the physical nonDimensional
+   !!$                   ! time step a bit easier.
+   !!$
+   !!$                   oneOverDt = timeRef/deltaT
+   !!$
+   !!$                   ! Store the pointer for the variable to be used to compute
+   !!$                   ! the unsteady source term. For a runge-kutta smoother this
+   !!$                   ! is the solution of the zeroth runge-kutta stage. As for
+   !!$                   ! rkStage == 0 this variable is not yet set w is used.
+   !!$                   ! For other smoothers w is to be used as well.
+   !!$
+   !!$                   if(smoother == RungeKutta .and. rkStage > 0) then
+   !!$                     ww => wn
+   !!$                   else
+   !!$                     ww => w
+   !!$                   endif
+   !!$
+   !!$                   ! Determine the currently active multigrid level.
+   !!$
+   !!$                   unsteadyLevelTest: if(currentLevel == groundLevel) then
+   !!$
+   !!$                     ! Ground level of the multigrid cycle. Initialize the
+   !!$                     ! owned cells to the unsteady source term. First the
+   !!$                     ! term for the current time level. Note that in w the
+   !!$                     ! velocities are stored and not the momentum variables.
+   !!$                     ! Therefore the if-statement is present to correct this.
+   !!$
+   !!$                     do l=varStart,varEnd
+   !!$
+   !!$                       if(l == ivx .or. l == ivy .or. l == ivz) then
+   !!$
+   !!$                         ! Momentum variables.
+   !!$
+   !!$                         do k=2,kl
+   !!$                           do j=2,jl
+   !!$                             do i=2,il
+   !!$                               dw(i,j,k,l) = coefTime(0)*vol(i,j,k) &
+   !!$                                           * ww(i,j,k,l)*ww(i,j,k,irho)
+   !!$                             enddo
+   !!$                           enddo
+   !!$                         enddo
+   !!$
+   !!$                       else
+   !!$
+   !!$                         ! Non-momentum variables, for which the variable
+   !!$                         ! to be solved is stored; for the flow equations this
+   !!$                         ! is the conservative variable, for the turbulent
+   !!$                         ! equations the primitive variable.
+   !!$
+   !!$                         do k=2,kl
+   !!$                           do j=2,jl
+   !!$                             do i=2,il
+   !!$                               dw(i,j,k,l) = coefTime(0)*vol(i,j,k) &
+   !!$                                           * ww(i,j,k,l)
+   !!$                             enddo
+   !!$                           enddo
+   !!$                         enddo
+   !!$
+   !!$                       endif
+   !!$
+   !!$                     enddo
+   !!$
+   !!$                     ! The terms from the older time levels. Here the
+   !!$                     ! conservative variables are stored. In case of a
+   !!$                     ! deforming mesh, also the old volumes must be taken.
+   !!$
+   !!$                     deformingTest: if( deforming_Grid ) then
+   !!$
+   !!$                       ! Mesh is deforming and thus the volumes can change.
+   !!$                       ! Use the old volumes as well.
+   !!$
+   !!$                       do m=1,nOldLevels
+   !!$                         do l=varStart,varEnd
+   !!$                           do k=2,kl
+   !!$                             do j=2,jl
+   !!$                               do i=2,il
+   !!$                                 dw(i,j,k,l) = dw(i,j,k,l)                 &
+   !!$                                             + coefTime(m)*volOld(m,i,j,k) &
+   !!$                                             * wOld(m,i,j,k,l)
+   !!$                               enddo
+   !!$                             enddo
+   !!$                           enddo
+   !!$                         enddo
+   !!$                       enddo
+   !!$
+   !!$                     else deformingTest
+   !!$
+   !!$                       ! Rigid mesh. The volumes remain constant.
+   !!$
+   !!$                       do m=1,nOldLevels
+   !!$                         do l=varStart,varEnd
+   !!$                           do k=2,kl
+   !!$                             do j=2,jl
+   !!$                               do i=2,il
+   !!$                                 dw(i,j,k,l) = dw(i,j,k,l)            &
+   !!$                                             + coefTime(m)*vol(i,j,k) &
+   !!$                                             * wOld(m,i,j,k,l)
+   !!$                               enddo
+   !!$                             enddo
+   !!$                           enddo
+   !!$                         enddo
+   !!$                       enddo
+   !!$
+   !!$                     endif deformingTest
+   !!$
+   !!$                     ! Multiply the time derivative by the inverse of the
+   !!$                     ! time step to obtain the true time derivative.
+   !!$                     ! This is done after the summation has been done, because
+   !!$                     ! otherwise you run into finite accuracy problems for
+   !!$                     ! very small time steps.
+   !!$
+   !!$                     do l=varStart,varEnd
+   !!$                       do k=2,kl
+   !!$                         do j=2,jl
+   !!$                           do i=2,il
+   !!$                             dw(i,j,k,l) = oneOverDt*dw(i,j,k,l)
+   !!$                          enddo
+   !!$                         enddo
+   !!$                       enddo
+   !!$                     enddo
+   !!$
+   !!$                   else unsteadyLevelTest
+   !!$
+   !!$                     ! Coarse grid level. Initialize the owned cells to the
+   !!$                     ! residual forcing term plus a correction for the
+   !!$                     ! multigrid treatment of the time derivative term.
+   !!$                     ! As the velocities are stored instead of the momentum,
+   !!$                     ! these terms must be multiplied by the density.
+   !!$
+   !!$                     tmp = oneOverDt*coefTime(0)
+   !!$
+   !!$                     do l=varStart,varEnd
+   !!$
+   !!$                       if(l == ivx .or. l == ivy .or. l == ivz) then
+   !!$
+   !!$                         ! Momentum variables.
+   !!$
+   !!$                         do k=2,kl
+   !!$                           do j=2,jl
+   !!$                             do i=2,il
+   !!$                               dw(i,j,k,l) = tmp*vol(i,j,k)               &
+   !!$                                           * (ww(i,j,k,l)*ww(i,j,k,irho)  &
+   !!$                                           -  w1(i,j,k,l)*w1(i,j,k,irho))
+   !!$                               dw(i,j,k,l) = dw(i,j,k,l) + wr(i,j,k,l)
+   !!$                             enddo
+   !!$                           enddo
+   !!$                         enddo
+   !!$
+   !!$                       else
+   !!$
+   !!$                         ! Non-momentum variables.
+   !!$
+   !!$                         do k=2,kl
+   !!$                           do j=2,jl
+   !!$                             do i=2,il
+   !!$                               dw(i,j,k,l) = tmp*vol(i,j,k)             &
+   !!$                                           * (ww(i,j,k,l) - w1(i,j,k,l))
+   !!$                               dw(i,j,k,l) =  dw(i,j,k,l) + wr(i,j,k,l)
+   !!$                             enddo
+   !!$                           enddo
+   !!$                         enddo
+   !!$
+   !!$                       endif
+   !!$
+   !!$                     enddo
+   !!$
+   !!$                   endif unsteadyLevelTest
+   !case (unsteady)
+   ! Unsteady computation.
+   ! A further distinction must be made.
+   SELECT CASE  (timeintegrationscheme) 
+      END SELECT
+   ELSE IF (equationmode .EQ. timespectral) THEN
    !===========================================================
-   IF (equationmode .EQ. timespectral) THEN
    !case (timeSpectral)
    !!$!
    !!$!                call terminate("initRes", &
@@ -159,7 +331,7 @@
    CALL PUSHINTEGER4(ii)
    ii = 3*(mm-1)
    ! Loop over the number of variables to be set.
-   varloopfine: DO l=varstart,varend
+   varloopfine:DO l=varstart,varend
    ! Test for a momentum variable.
    IF (l .EQ. ivx .OR. l .EQ. ivy .OR. l .EQ. ivz) THEN
    ! Momentum variable. A special treatment is
@@ -200,8 +372,8 @@
    !          + dvector(jj,ll,ii+2)*wsp(i,j,k,ivy) &
    !          + dvector(jj,ll,ii+3)*wsp(i,j,k,ivz)
    tmp = dvector(jj, ll, ii+1)*wspadj(0, 0, 0, ivx) + &
-   &                    dvector(jj, ll, ii+2)*wspadj(0, 0, 0, ivy) + &
-   &                    dvector(jj, ll, ii+3)*wspadj(0, 0, 0, ivz)
+   &                  dvector(jj, ll, ii+2)*wspadj(0, 0, 0, ivy) + dvector(&
+   &                  jj, ll, ii+3)*wspadj(0, 0, 0, ivz)
    ! Update the residual. Note the
    ! multiplication with the density to obtain
    ! the correct time derivative for the
@@ -228,14 +400,14 @@
    tmpb = volspadj*tempb
    volspadjb = volspadjb + tmp*tempb
    wspadjb(0, 0, 0, irho) = wspadjb(0, 0, 0, irho) + tmp*&
-   &                    volspadj*dwadjb(l, sps)
+   &                  volspadj*dwadjb(l, sps)
    CALL POPREAL8(tmp)
-   wspadjb(0, 0, 0, ivx) = wspadjb(0, 0, 0, ivx) + &
-   &                    dvector(jj, ll, ii+1)*tmpb
-   wspadjb(0, 0, 0, ivy) = wspadjb(0, 0, 0, ivy) + &
-   &                    dvector(jj, ll, ii+2)*tmpb
-   wspadjb(0, 0, 0, ivz) = wspadjb(0, 0, 0, ivz) + &
-   &                    dvector(jj, ll, ii+3)*tmpb
+   wspadjb(0, 0, 0, ivx) = wspadjb(0, 0, 0, ivx) + dvector(&
+   &                  jj, ll, ii+1)*tmpb
+   wspadjb(0, 0, 0, ivy) = wspadjb(0, 0, 0, ivy) + dvector(&
+   &                  jj, ll, ii+2)*tmpb
+   wspadjb(0, 0, 0, ivz) = wspadjb(0, 0, 0, ivz) + dvector(&
+   &                  jj, ll, ii+3)*tmpb
    CALL POPINTEGER4(branch)
    IF (.NOT.branch .LT. 1) CALL POPINTEGER4(ll)
    CALL POPINTEGER4(branch)
@@ -246,7 +418,7 @@
    tempb0 = dscalar(jj, sps, mm)*dwadjb(l, sps)
    volspadjb = volspadjb + wspadj(0, 0, 0, l)*tempb0
    wspadjb(0, 0, 0, l) = wspadjb(0, 0, 0, l) + volspadj*&
-   &                    tempb0
+   &                  tempb0
    END IF
    END DO
    CALL POPINTEGER4(ii)
@@ -255,7 +427,6 @@
    CALL POPREAL8ARRAY(wspadj, 5**3*nw)
    wadjb(:, :, :, :, mm) = wadjb(:, :, :, :, mm) + wspadjb
    END DO
-   END IF
    END IF
    END IF
    END IF

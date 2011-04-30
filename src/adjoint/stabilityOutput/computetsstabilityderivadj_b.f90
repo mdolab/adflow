@@ -2,8 +2,8 @@
 !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
 !  
 !  Differentiation of computetsstabilityderivadj in reverse (adjoint) mode:
-!   gradient, with respect to input variables: dcdalphadot basecoef
-!                coef0 dcdq dcdqdot dcdalpha
+!   gradient, with respect to input variables: lengthrefadj dcdalphadot
+!                basecoef coef0 dcdq dcdqdot dcdalpha
 !   of linear combination of output variables: dcdalphadot coef0
 !                dcdq dcdqdot dcdalpha
 !
@@ -18,13 +18,13 @@
 !
 SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
 &  coef0b, dcdalpha, dcdalphab, dcdalphadot, dcdalphadotb, dcdq, dcdqb, &
-&  dcdqdot, dcdqdotb)
+&  dcdqdot, dcdqdotb, lengthrefadj, lengthrefadjb)
   USE communication
+  USE flowvarrefstate
   USE inputmotion
   USE inputphysics
   USE inputtimespectral
   USE inputtsstabderiv
-  use flowvarrefstate
   USE monitor
   USE section
   IMPLICIT NONE
@@ -34,13 +34,12 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
   REAL(KIND=REALTYPE) :: dcdalpha(8), dcdalphab(8), dcdalphadot(8), &
 &  dcdalphadotb(8)
   REAL(KIND=REALTYPE) :: dcdq(8), dcdqb(8), dcdqdot(8), dcdqdotb(8)
+  REAL(KIND=REALTYPE) :: lengthrefadj, lengthrefadjb
   REAL(KIND=REALTYPE) :: a
   INTEGER :: branch
   REAL(KIND=REALTYPE) :: coef0dot(8), coef0dotb(8)
-  REAL(KIND=REALTYPE) :: dcdbeta(8), dcdbetadot(8), dcdmach(8), dcdmachb&
-&  (8), dcdmachdot(8)
   REAL(KIND=REALTYPE) :: dcdp(8), dcdpb(8), dcdpdot(8), dcdr(8), dcdrb(8&
-&  ), dcdrdot(8)
+&  ), dcdrdot(8), tempb(8)
   REAL(KIND=REALTYPE) :: DERIVATIVERIGIDROTANGLE, res, res0, &
 &  SECONDDERIVATIVERIGIDROTANGLE
   REAL(KIND=REALTYPE) :: dphix(ntimeintervalsspectral), dphiy(&
@@ -55,6 +54,8 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
   REAL(KIND=REALTYPE) :: resbasecoef(ntimeintervalsspectral, 8), &
 &  resbasecoefb(ntimeintervalsspectral, 8)
   REAL(KIND=REALTYPE) :: t(nsections)
+  REAL(KIND=REALTYPE) :: dcdbeta(8), dcdbetadot(8), dcdmach(8), dcdmachb&
+&  (8), dcdmachdot(8), tempb0(8)
   REAL(KIND=REALTYPE) :: TSALPHA, TSALPHADOT
   REAL(KIND=REALTYPE) :: res1, result1, TSMACH, TSMACHDOT
   INTRINSIC SQRT
@@ -107,6 +108,7 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
       CALL POPINTEGER4(branch)
       IF (.NOT.branch .LT. 1) nn = 0
     END DO
+    lengthrefadjb = 0.0
   ELSE IF (tsqmode) THEN
 !!$         if(myID==0)then
 !!$            print *,'CL estimates:'
@@ -172,7 +174,9 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
 &                                     coef0dotb(i))
       dcdqdotb(i) = 0.0
     END DO
-    dcdqb = timeref*2*machgrid*a*dcdqb/lengthref
+    tempb = timeref*2*machgrid*a*dcdqb/lengthrefadj
+    lengthrefadjb = SUM(-(dcdq*tempb/lengthrefadj))
+    dcdqb = tempb
     basecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
     DO i=8,1,-1
       DO sps=ntimeintervalsspectral,1,-1
@@ -247,6 +251,7 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
       CALL POPINTEGER4(branch)
       IF (.NOT.branch .LT. 1) nn = 0
     END DO
+    lengthrefadjb = 0.0
   ELSE IF (tsalphamode) THEN
 !compute the alphas and alphadots
     DO sps=1,ntimeintervalsspectral
@@ -278,6 +283,14 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
 &                                   ntimeintervalsspectral, dcdalpha(i)&
 &                                   , coef0(i))
     END DO
+! now subtract off estimated cl,cmz and use remainder to compute 
+! clalphadot and cmzalphadot.
+    DO i=1,8
+      DO sps=1,ntimeintervalsspectral
+        resbasecoef(sps, i) = basecoef(sps, i) - (dcdalpha(i)*&
+&          intervalalpha(sps)+coef0(i))
+      END DO
+    END DO
 !now compute dCi/dalphadot
     DO i=1,8
       CALL COMPUTELEASTSQUARESREGRESSION(resbasecoef(:, i), &
@@ -285,6 +298,10 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
 &                                   ntimeintervalsspectral, dcdalphadot(&
 &                                   i), coef0dot(i))
     END DO
+    a = SQRT(gammainf*pinfdim/rhoinfdim)
+    tempb0 = machgrid*2*a*dcdalphadotb/lengthrefadj
+    lengthrefadjb = SUM(-(dcdalphadot*tempb0/lengthrefadj))
+    dcdalphadotb = tempb0
     resbasecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
     DO i=8,1,-1
       coef0dotb(:) = 0.0
@@ -319,54 +336,57 @@ SUBROUTINE COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
       CALL POPINTEGER4(branch)
       IF (.NOT.branch .LT. 1) nn = 0
     END DO
-  ELSE IF (tsbetamode) THEN
-    basecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
-  ELSE IF (tsmachmode) THEN
+  ELSE
+    IF (tsbetamode) THEN
+      basecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
+    ELSE IF (tsmachmode) THEN
 !compute the alphas and alphadots
-    DO sps=1,ntimeintervalsspectral
+      DO sps=1,ntimeintervalsspectral
 !compute the time of this interval
-      t = timeunsteadyrestart
-      IF (equationmode .EQ. timespectral) THEN
-        DO nn=1,nsections
+        t = timeunsteadyrestart
+        IF (equationmode .EQ. timespectral) THEN
+          DO nn=1,nsections
 !t(nn) = t(nn) + (sps-1)*sections(nn)%timePeriod &
 !     /         real(nTimeIntervalsSpectral,realType)
-          t(nn) = t(nn) + (sps-1)*sections(nn)%timeperiod/(&
-&            ntimeintervalsspectral*1.0)
-        END DO
-        CALL PUSHINTEGER4(1)
-      ELSE
-        CALL PUSHINTEGER4(0)
-      END IF
+            t(nn) = t(nn) + (sps-1)*sections(nn)%timeperiod/(&
+&              ntimeintervalsspectral*1.0)
+          END DO
+          CALL PUSHINTEGER4(1)
+        ELSE
+          CALL PUSHINTEGER4(0)
+        END IF
 !if(myID==0)print *,'t',t
-      result1 = TSMACH(degreepolmach, coefpolmach, degreefourmach, &
-&        omegafourmach, coscoeffourmach, sincoeffourmach, t)
-      intervalmach(sps) = machgrid + result1
-      res1 = TSMACHDOT(degreepolmach, coefpolmach, degreefourmach, &
-&        omegafourmach, coscoeffourmach, sincoeffourmach, t)
-    END DO
+        result1 = TSMACH(degreepolmach, coefpolmach, degreefourmach, &
+&          omegafourmach, coscoeffourmach, sincoeffourmach, t)
+        intervalmach(sps) = machgrid + result1
+        res1 = TSMACHDOT(degreepolmach, coefpolmach, degreefourmach, &
+&          omegafourmach, coscoeffourmach, sincoeffourmach, t)
+      END DO
 !if(myID==0) print *,'Mach', intervalMach,machgrid
 !now compute dCl/dalpha
-    DO i=1,8
-      CALL COMPUTELEASTSQUARESREGRESSION(basecoef(:, i), intervalmach, &
-&                                   ntimeintervalsspectral, dcdmach(i), &
-&                                   coef0(i))
-    END DO
-    basecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
-    DO i=8,1,-1
-      dcdmachb(:) = 0.0
-      CALL COMPUTELEASTSQUARESREGRESSION_B(basecoef(:, i), basecoefb(:, &
-&                                     i), intervalmach, &
-&                                     ntimeintervalsspectral, dcdmach(i)&
-&                                     , dcdmachb(i), coef0(i), coef0b(i)&
-&                                    )
-      coef0b(i) = 0.0
-    END DO
-    DO sps=ntimeintervalsspectral,1,-1
-      CALL POPINTEGER4(branch)
-      IF (.NOT.branch .LT. 1) nn = 0
-    END DO
-  ELSE
-    basecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
+      DO i=1,8
+        CALL COMPUTELEASTSQUARESREGRESSION(basecoef(:, i), intervalmach&
+&                                     , ntimeintervalsspectral, dcdmach(&
+&                                     i), coef0(i))
+      END DO
+      basecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
+      DO i=8,1,-1
+        dcdmachb(:) = 0.0
+        CALL COMPUTELEASTSQUARESREGRESSION_B(basecoef(:, i), basecoefb(:&
+&                                       , i), intervalmach, &
+&                                       ntimeintervalsspectral, dcdmach(&
+&                                       i), dcdmachb(i), coef0(i), &
+&                                       coef0b(i))
+        coef0b(i) = 0.0
+      END DO
+      DO sps=ntimeintervalsspectral,1,-1
+        CALL POPINTEGER4(branch)
+        IF (.NOT.branch .LT. 1) nn = 0
+      END DO
+    ELSE
+      basecoefb(1:ntimeintervalsspectral, 1:8) = 0.0
+    END IF
+    lengthrefadjb = 0.0
   END IF
   dcdalphadotb(1:8) = 0.0
   coef0b(1:8) = 0.0
