@@ -1065,6 +1065,8 @@ python module sumb ! in
          integer(kind=inttype) :: ndesignmachgrid
          integer(kind=inttype) :: nsurfnodeslocal
          integer(kind=inttype) :: ndesignmach
+         integer(kind=inttype) :: ndesignlengthref
+         integer(kind=inttype) :: ndesignsurfaceref
        end module adjointvars
 
        module inputtsstabderiv ! in :test:inputParam.f90

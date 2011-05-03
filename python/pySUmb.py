@@ -1,3 +1,4 @@
+
 #!/usr/local/bin/python
 '''
 pySUmb - A Python interface to SUmb.
@@ -315,7 +316,9 @@ class SUMB(AeroSolver):
             'rotcenz':'adjointvars.ndesignrotcenz',
             'pointrefx':'adjointvars.ndesignpointrefx',
             'pointrefy':'adjointvars.ndesignpointrefy',
-            'pointrefz':'adjointvars.ndesignpointrefzy'
+            'pointrefz':'adjointvars.ndesignpointrefzy',
+            'lengthref':'adjointvars.ndesignlengthref',
+            'surfaceref':'adjointvars.ndesignsurfaceref'
             }
 
         self.aeroDVs = []
@@ -489,6 +492,8 @@ class SUMB(AeroSolver):
                                      'len':self.sumb.constants.maxstringlen},
                 'NKMaxLinearKspIts':{'location':'nksolvervars.ksp_max_it'},
                 'NKJacobianLag':{'location':'nksolvervars.jacobian_lag'},
+                'RKReset':{'location':'nksolvervars.rkreset'},
+                'nRKReset':{'location':'nksolvervars.nrkreset'},
                 
                 # Load Balance Paramters
                 'blockSplitting':{'location':'inputparallel.splitblocks'},
@@ -1236,6 +1241,8 @@ class SUMB(AeroSolver):
         self.sumb.adjointvars.ndesignpointrefx = -1
         self.sumb.adjointvars.ndesignpointrefy = -1
         self.sumb.adjointvars.ndesignpointrefz = -1
+        self.sumb.adjointvars.ndesignlengthref = -1
+        self.sumb.adjointvars.ndesignsurfaceref = -1
         
         # Set the required paramters for the aero-Only design vars:
         self.nDVAero = len(self.aeroDVs)#for debuggin with check all...
@@ -1335,12 +1342,12 @@ class SUMB(AeroSolver):
         if not self.adjointMatrixSetup:
             self.setupAdjoint(forcePoints)
         # end if
-       
+        if (self.myid == 0): print 'before rhs'
         # Check to see if the RHS Partials have been computed
         if not self.adjointRHS == obj:
             self.computeObjPartials(obj,forcePoints)
         # end if
-
+        if (self.myid == 0): print 'after rhs'
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
         if 'structAdjoint' in kwargs and 'group_name' in kwargs:

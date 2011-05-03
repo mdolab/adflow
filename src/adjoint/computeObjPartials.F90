@@ -75,6 +75,9 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
   real(kind=realType),dimension(8)::dcdalphab,dcdalphadotb,dcdbetab,dcdbetadotb,dcdMachb,dcdMachdotb
   real(kind=realType),dimension(8)::Coef0b,Coef0dotb
   real(kind=realType), dimension(nCostFunction)::globalCFVals
+
+  real(kind=realType) :: lengthRefAdj,lengthRefAdjb
+  real(kind=realType) :: surfaceRefAdj,surfaceRefAdjb
 !!$  real(kind=realType) :: cl0,cd0,cmz0,dcldalpha,dcddalpha,dcmzdalpha
 !!$  real(kind=realType) :: cl0b,cd0b,cmz0b,dcldalphab,dcddalphab,dcmzdalphab
 !!$  real(kind=realType) :: dcmzdqb,dcmzdq
@@ -139,13 +142,15 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
         
      end do
 
+     lengthRefAdj = lengthRef
+
      ! Set Reverse Mode Seeds
      coef0b= 0.0
      dcdalphab= 0.0
      dcdalphadotb= 0.0
      dcdqb= 0.0
      dcdqdotb= 0.0
-   
+     lengthrefadjb = 0.0
 
      select case(costFunction)
      case(costfunccl0)
@@ -170,7 +175,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
 
      call COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
 &  coef0b, dcdalpha, dcdalphab, dcdalphadot, dcdalphadotb, dcdq, dcdqb, &
-&  dcdqdot, dcdqdotb)
+&  dcdqdot, dcdqdotb, lengthrefadj, lengthrefadjb)
 
 
      do sps = 1,nTimeIntervalsSpectral
@@ -184,7 +189,9 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
         end select
 
         dJdc(sps) = dIdctemp
-
+        if (nDesignLengthRef >=0) then
+           dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb
+        end if
      end do
   end select
   
@@ -272,14 +279,15 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               righthandedadj = righthanded
 
               faceID = bcfaceid(mm)
-
+              if(myID==0) print *,'liftindex',liftindex
               call COMPUTEFORCEANDMOMENTADJ_B(force, forceb, cforce, cforceb, &
-                   lift, liftb, drag, dragb, cl, clb, cd, cdb, moment, momentb, &
-                   cmoment,cmomentb, alphaadj, alphaadjb, betaadj, betaadjb, &
-                   liftindex, machcoefadj, machcoefadjb, pointrefadj, &
-                   pointrefadjb, pts(:,:,sps), ptsb(:,:,sps), npts, wblock, wblockb, &
-                   righthandedadj, faceid, ibeg, iend, jbeg, jend,ii)
-
+                   &  lift, liftb, drag, dragb, cl, clb, cd, cdb, moment, momentb, cmoment&
+                   &  , cmomentb, alphaadj, alphaadjb, betaadj, betaadjb, liftindex, &
+                   &  machcoefadj, machcoefadjb, pointrefadj, pointrefadjb, lengthrefadj, &
+                   &  lengthrefadjb, surfacerefadj, surfacerefadjb, pts(:,:,sps), ptsb(:,:,sps), npts, wblock&
+                   &  , wblockb, righthandedadj, faceid, ibeg, iend, jbeg, jend, ii_start, &
+                   &  sps)
+              if(myID==0) print *,'liftindexafter',liftindex
               ! Set the w-values derivatives in dJdw
               do kcell = 2,kl
                  do jcell = 2,jl
@@ -342,7 +350,12 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               if (nDesignPointRefZ >=0) then
                  dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefAdjb(3)*dJdc(sps)
               end if
-
+              if (nDesignLengthRef >=0) then
+                 dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb
+              end if
+              if (nDesignSurfaceRef >=0) then
+                 dIda(nDesignSurfaceRef+1) = dIda(nDesignSurfaceRef+1) + SurfaceRefAdjb
+              end if
            end if
         end do bocos
 
