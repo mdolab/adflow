@@ -32,6 +32,8 @@ subroutine verifydCfdx(level,costFunction)
       use bcTypes             !imin,imax,jmin,jmax,kmin,kmax
       use adjointvars         !ndesignaoa,ndesignmach
       use ADjointPETSc
+      use inputMotion
+      use inputTSStabDeriv
       use costFunctions
       implicit none
 !
@@ -130,6 +132,9 @@ subroutine verifydCfdx(level,costFunction)
       real(kind=realType), parameter :: deltax = 1.e-6_realType
 
       real(kind=realType) :: xAdjRef,xref,alpharef,betaref,machref,alpha,beta,machcoefref,rotratexref,pointref_ref
+      REAL(KIND=REALTYPE) :: lengthrefadjb, surfacerefadjb
+      REAL(KIND=REALTYPE) :: lengthrefadj
+      REAL(KIND=REALTYPE) :: surfacerefadj
 !!$
 !!$      real(kind=realType), dimension(:,:,:), pointer :: norm
 !!$      real(kind=realType), dimension(:,:,:),allocatable:: normAdj
@@ -149,6 +154,20 @@ subroutine verifydCfdx(level,costFunction)
 !!$           &  , rotpointadjb(3)
 !!$
       real(kind=realType), dimension(nSections) :: t
+      real(kind=realType) :: liftDirTmp(3),dragDirTmp(3)
+      real(kind=realType) :: velDirFreestreamAdj(3)
+      real(kind=realType) :: liftDir(3),dragDir(3)
+      real(kind=realType) :: tNew, tOld
+      real(kind=realType) :: alphaTS,alphaIncrement,&
+           betaTS,betaIncrement
+      !Rotation variables
+      real(kind=realType), dimension(3)   :: rotationPoint
+      real(kind=realType), dimension(3,3) :: rotationMatrix,&
+           derivRotationMatrix
+      
+      !Function Definitions
+      real(kind=realType) :: TSAlpha,TSBeta
+
 
       integer :: ierr,nmonsum1,nmonsum2
 
@@ -156,12 +175,12 @@ subroutine verifydCfdx(level,costFunction)
 
 !File Parameters
       integer :: unitdx,unitdw,ierror
-      character(len = 20)::outfile,testfile
+      character(len = 64)::outfile,testfile
       write(testfile,100) myid!12
 100   format (i5)
       testfile=adjustl(testfile)
       write(outfile,101) trim(testfile)!testfile
-101   format("ADdCdxfile",a,".out")
+101   format("/scratch/mader/ADdCdxfile",a,".out")
       unitdx = 8+myID
 
       open (UNIT=unitdx,File=outfile,status='replace',action='write',iostat=ierror)
@@ -174,7 +193,7 @@ subroutine verifydCfdx(level,costFunction)
 102   format (i5)
       testfile=adjustl(testfile)
       write(outfile,103) trim(testfile)!testfile
-103   format("ADdCdwfile",a,".out")
+103   format("/scratch/mader/ADdCdwfile",a,".out")
       unitdw = 28+myID
 
       open (UNIT=unitdw,File=outfile,status='replace',action='write',iostat=ierror)
@@ -258,6 +277,8 @@ subroutine verifydCfdx(level,costFunction)
       ! Copy over values we need for the computeforcenadmoment call:
       MachCoefAdj = MachCoef
       pointRefAdj = pointRef
+      lengthRefAdj = lengthRef
+      SurfaceRefAdj = SurfaceRef
       
       call getDirAngle(velDirFreestream,LiftDirection,liftIndex,alphaAdj,betaAdj)
       pointRefAdj(1) = pointRef(1)
@@ -268,6 +289,7 @@ subroutine verifydCfdx(level,costFunction)
     
 
       dIdaLoc = 0.0
+     
       
       if( myID==0 )print *,' computing adjoint derivatives'
       spectralLoopAdj: do sps=1,nTimeIntervalsSpectral
@@ -357,8 +379,9 @@ subroutine verifydCfdx(level,costFunction)
                        lift, liftb, drag, dragb, cl, clb, cd, cdb, moment, momentb, &
                        cmoment,cmomentb, alphaadj, alphaadjb, betaadj, betaadjb, &
                        liftindex, machcoefadj, machcoefadjb, pointrefadj, &
-                       pointrefadjb, pts(:,:,sps), ptsb(:,:,sps), npts, wblock, wblockb, &
-                       righthandedadj, faceid, ibeg, iend, jbeg, jend,ii)
+                       pointrefadjb, lengthrefadj, lengthrefadjb, surfacerefadj,&
+                       surfacerefadjb, pts(:,:,sps), ptsb(:,:,sps), npts, wblock,&
+                       wblockb, righthandedadj, faceid, ibeg, iend, jbeg, jend,ii,sps)
                   !if( myID==0 )print *,'forces computed'
                   ! Set the w-values derivatives in dJdw
                   do kcell = 2,kl
@@ -412,6 +435,7 @@ subroutine verifydCfdx(level,costFunction)
                   end if
                   !if( myID==0 )print *,'machgrid deriv set'
                   if (nDesignPointRefX >=0) then
+                     print *,'pointrefx', dIdaloc(nDesignPointRefX + 1,sps) , pointrefAdjb(1),sps, myID
                      dIdaloc(nDesignPointRefX + 1,sps) = dIdaloc(nDesignPointRefX + 1,sps) + pointrefAdjb(1)
                   end if
                   !if( myID==0 )print *,'refx deriv set'
@@ -697,6 +721,8 @@ subroutine verifydCfdx(level,costFunction)
       do sps = 1, nTimeIntervalsSpectral
          monloc1=0.0
          monloc2=0.0
+         monglob1=0.0
+         monglob2=0.0
          domainMachLoopFDorig: do nn=1,nDom   
             
             call setPointers(nn,level,sps)
@@ -881,6 +907,8 @@ subroutine verifydCfdx(level,costFunction)
       do sps = 1,nTimeIntervalsSpectral
          monloc1=0.0
          monloc2=0.0
+         monglob1=0.0
+         monglob2=0.0
          domainalphaLoopFDorig: do nn=1,nDom   
 
             call setPointers(nn,level,sps)
@@ -889,7 +917,7 @@ subroutine verifydCfdx(level,costFunction)
             alpharef = alpha
 
             alpha = alpharef+deltax
-
+            if (myid==0)print *,'alpha',alpha
             !*************************************************************
             !Original force and metric calculation....
             !     ******************************************************************
@@ -915,6 +943,72 @@ subroutine verifydCfdx(level,costFunction)
                           /         real(nTimeIntervalsSpectral,realType)
                   enddo
                endif
+               
+               if(TSStability)then
+                  ! Determine the time values of the old and new time level.
+                  ! It is assumed that the rigid body rotation of the mesh is only
+                  ! used when only 1 section is present.
+                  tNew = timeUnsteady + timeUnsteadyRestart
+                  tOld = tNew - t(1)
+                  
+                  
+                  if(TSpMode.or. TSqMode .or.TSrMode) then
+                     ! Compute the rotation matrix of the rigid body rotation as
+                     ! well as the rotation point; the latter may vary in time due
+                     ! to rigid body translation.
+                     
+                     call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+        
+                     liftDirTmp(1) = rotationMatrix(1,1)*liftDir(1) &
+                          + rotationMatrix(1,2)*liftDir(2) &
+                          + rotationMatrix(1,3)*liftDir(3)
+                     liftDirTmp(2) = rotationMatrix(2,1)*liftDir(1) &
+                          + rotationMatrix(2,2)*liftDir(2) &
+                          + rotationMatrix(2,3)*liftDir(3)
+                     liftDirTmp(3) = rotationMatrix(3,1)*liftDir(1) &
+                          + rotationMatrix(3,2)*liftDir(2) &
+                          + rotationMatrix(3,3)*liftDir(3)
+                     dragDirTmp(1) = rotationMatrix(1,1)*dragDir(1) &
+                          + rotationMatrix(1,2)*dragDir(2) &
+                          + rotationMatrix(1,3)*dragDir(3)
+                     dragDirTmp(2) = rotationMatrix(2,1)*dragDir(1) &
+                          + rotationMatrix(2,2)*dragDir(2) &
+                          + rotationMatrix(2,3)*dragDir(3)
+                     dragDirTmp(3) = rotationMatrix(3,1)*dragDir(1) &
+                          + rotationMatrix(3,2)*dragDir(2) &
+                          + rotationMatrix(3,3)*dragDir(3)
+
+                     liftDir = liftDirTmp
+                     dragDir = dragDirTmp
+                  elseif(tsAlphaMode)then
+                     
+                     !Determine the alpha for this time instance
+                     alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+                          degreeFourAlpha,  omegaFourAlpha,     &
+                          cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+                     
+                     alphaTS = alphaAdj+alphaIncrement
+                     !Determine the grid velocity for this alpha
+                     if(myID==0) print *,'liftindex sub2',liftindex
+                     call adjustInflowAngleAdj(alphaTS,betaAdj,velDirFreestreamAdj,liftDir,dragDir,&
+                          liftIndex)
+                     !do I need to update the lift direction and drag direction as well? yes!!!
+                     
+                  elseif(tsBetaMode)then
+                     
+                     !Determine the alpha for this time instance
+                     betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
+                          degreeFourBeta,  omegaFourBeta,     &
+                          cosCoefFourBeta, sinCoefFourBeta, t(1))
+                     
+                     betaTS = betaAdj+betaIncrement
+                     if(myID==0) print *,'liftindex sub3',liftindex
+                     !Determine the grid velocity for this alpha
+                     call adjustInflowAngleAdj(alphaAdj,betaTS,velDirFreestreamAdj,liftDir,dragDir,&
+                          liftIndex)
+                     
+                  end if
+               end if
 
                call gridVelocitiesFineLevel(.false., t, mm)
                call gridVelocitiesCoarseLevels(mm)
@@ -935,6 +1029,7 @@ subroutine verifydCfdx(level,costFunction)
                  + (cfp(2) + cfv(2))*liftDirection(2) &
                  + (cfp(3) + cfv(3))*liftDirection(3)
             !(1.0/float(ndom))*liftDirection(1)
+            if (myid==0)print *,'cl',cl
 
             Cd = (cfp(1) + cfv(1))*dragDirection(1) &
                  + (cfp(2) + cfv(2))*dragDirection(2) &
@@ -970,6 +1065,7 @@ subroutine verifydCfdx(level,costFunction)
             ! Transfer the cost function values to output arguments.
 
             CLp  = monGlob1(1)
+            if (myid==0)print *,'Clp',clp
             CDp  = monGlob1(2)
             Cfxp = monGlob1(3)
             Cfyp = monGlob1(4)
@@ -982,7 +1078,7 @@ subroutine verifydCfdx(level,costFunction)
             !*********************
             !Now calculate other perturbation
             alpha = alpharef-deltax
-
+            if (myid==0)print *,'alpha2',alpha
             !*************************************************************
             !Original force and metric calculation....
             !     ******************************************************************
@@ -1009,7 +1105,71 @@ subroutine verifydCfdx(level,costFunction)
                           /         real(nTimeIntervalsSpectral,realType)
                   enddo
                endif
-
+!!$               if(TSStability)then
+!!$                  ! Determine the time values of the old and new time level.
+!!$                  ! It is assumed that the rigid body rotation of the mesh is only
+!!$                  ! used when only 1 section is present.
+!!$                  tNew = timeUnsteady + timeUnsteadyRestart
+!!$                  tOld = tNew - t(1)
+!!$                  
+!!$                  
+!!$                  if(TSpMode.or. TSqMode .or.TSrMode) then
+!!$                     ! Compute the rotation matrix of the rigid body rotation as
+!!$                     ! well as the rotation point; the latter may vary in time due
+!!$                     ! to rigid body translation.
+!!$                     
+!!$                     call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+!!$        
+!!$                     liftDirTmp(1) = rotationMatrix(1,1)*liftDir(1) &
+!!$                          + rotationMatrix(1,2)*liftDir(2) &
+!!$                          + rotationMatrix(1,3)*liftDir(3)
+!!$                     liftDirTmp(2) = rotationMatrix(2,1)*liftDir(1) &
+!!$                          + rotationMatrix(2,2)*liftDir(2) &
+!!$                          + rotationMatrix(2,3)*liftDir(3)
+!!$                     liftDirTmp(3) = rotationMatrix(3,1)*liftDir(1) &
+!!$                          + rotationMatrix(3,2)*liftDir(2) &
+!!$                          + rotationMatrix(3,3)*liftDir(3)
+!!$                     dragDirTmp(1) = rotationMatrix(1,1)*dragDir(1) &
+!!$                          + rotationMatrix(1,2)*dragDir(2) &
+!!$                          + rotationMatrix(1,3)*dragDir(3)
+!!$                     dragDirTmp(2) = rotationMatrix(2,1)*dragDir(1) &
+!!$                          + rotationMatrix(2,2)*dragDir(2) &
+!!$                          + rotationMatrix(2,3)*dragDir(3)
+!!$                     dragDirTmp(3) = rotationMatrix(3,1)*dragDir(1) &
+!!$                          + rotationMatrix(3,2)*dragDir(2) &
+!!$                          + rotationMatrix(3,3)*dragDir(3)
+!!$
+!!$                     liftDir = liftDirTmp
+!!$                     dragDir = dragDirTmp
+!!$                  elseif(tsAlphaMode)then
+!!$                     
+!!$                     !Determine the alpha for this time instance
+!!$                     alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+!!$                          degreeFourAlpha,  omegaFourAlpha,     &
+!!$                          cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+!!$                     
+!!$                     alphaTS = alphaAdj+alphaIncrement
+!!$                     !Determine the grid velocity for this alpha
+!!$                     if(myID==0) print *,'liftindex sub2',liftindex
+!!$                     call adjustInflowAngleAdj(alphaTS,betaAdj,velDirFreestreamAdj,liftDir,dragDir,&
+!!$                          liftIndex)
+!!$                     !do I need to update the lift direction and drag direction as well? yes!!!
+!!$                     
+!!$                  elseif(tsBetaMode)then
+!!$                     
+!!$                     !Determine the alpha for this time instance
+!!$                     betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
+!!$                          degreeFourBeta,  omegaFourBeta,     &
+!!$                          cosCoefFourBeta, sinCoefFourBeta, t(1))
+!!$                     
+!!$                     betaTS = betaAdj+betaIncrement
+!!$                     if(myID==0) print *,'liftindex sub3',liftindex
+!!$                     !Determine the grid velocity for this alpha
+!!$                     call adjustInflowAngleAdj(alphaAdj,betaTS,velDirFreestreamAdj,liftDir,dragDir,&
+!!$                          liftIndex)
+!!$                     
+!!$                  end if
+!!$               end if
                call gridVelocitiesFineLevel(.false., t, mm)
                call gridVelocitiesCoarseLevels(mm)
                call normalVelocitiesAllLevels(mm)
@@ -1029,7 +1189,7 @@ subroutine verifydCfdx(level,costFunction)
                  + (cfp(2) + cfv(2))*liftDirection(2) &
                  + (cfp(3) + cfv(3))*liftDirection(3)
             !(1.0/float(ndom))*liftDirection(1)!
-
+            if (myid==0)print *,'cl2',cl
             Cd = (cfp(1) + cfv(1))*dragDirection(1) &
                  + (cfp(2) + cfv(2))*dragDirection(2) &
                  + (cfp(3) + cfv(3))*dragDirection(3)
@@ -1063,6 +1223,7 @@ subroutine verifydCfdx(level,costFunction)
             ! Transfer the cost function values to output arguments.
 
             CLm  = monGlob2(1)
+            if (myid==0)print *,'clm',clm
             CDm  = monGlob2(2)
             Cfxm = monGlob2(3)
             Cfym = monGlob2(4)
@@ -1081,7 +1242,7 @@ subroutine verifydCfdx(level,costFunction)
          ! Store the correct value based on the cost function
          select case (costFunction)
 
-         case (costFuncLiftCoef)
+         case (costFuncLiftCoef,costFuncCl0)
             dIdaFD(nDesignAoA+1,sps) = (CLP-CLM)/(two*deltax) 
          case (costFuncDragCoef)
             dIdaFD(nDesignAoA+1,sps) = (CDP-CDM)/(two*deltax) 
@@ -1113,6 +1274,8 @@ subroutine verifydCfdx(level,costFunction)
       do sps = 1,nTimeIntervalsSpectral
          monloc1=0.0
          monloc2=0.0
+         monglob1=0.0
+         monglob2=0.0
          domainbetaLoopFDorig: do nn=1,nDom   
 
             call setPointers(nn,level,sps)
@@ -1353,6 +1516,8 @@ subroutine verifydCfdx(level,costFunction)
       do sps = 1,nTimeIntervalsSpectral
          monloc1=0.0
          monloc2=0.0
+         monglob1=0.0
+         monglob2=0.0
          domainpointrefxLoopFDorig: do nn=1,nDom   
 
             call setPointers(nn,level,sps)
