@@ -194,7 +194,8 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
         end if
      end do
   end select
-  
+  dJdc(:) =0.0
+  djdc(1) = 1.0
   ! Now we have dJdc on each processor...when we go through the
   ! reverse mode AD we can take the dot-products on the fly SUM the
   ! entries into dJdw
@@ -218,6 +219,8 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
               iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
 
+              lengthRefAdj = lengthRef
+              SurfaceRefAdj = SurfaceRef
               ! Zero all the backward-mode seeds
               forceb = 0.0
               cforceb = 0.0
@@ -232,6 +235,8 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               machcoefadjb = 0.0
               pointrefadjb = 0.0
               ptsb = 0.0
+              lengthRefAdjb= 0.0
+              SurfaceRefAdjb = 0.0
 
               ! Seed the correct value based on the cost function
               select case (costFunction)
@@ -279,7 +284,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               righthandedadj = righthanded
 
               faceID = bcfaceid(mm)
-              if(myID==0) print *,'liftindex',liftindex
+ !             if(myID==0) print *,'liftindex',liftindex
               call COMPUTEFORCEANDMOMENTADJ_B(force, forceb, cforce, cforceb, &
                    &  lift, liftb, drag, dragb, cl, clb, cd, cdb, moment, momentb, cmoment&
                    &  , cmomentb, alphaadj, alphaadjb, betaadj, betaadjb, liftindex, &
@@ -287,14 +292,14 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
                    &  lengthrefadjb, surfacerefadj, surfacerefadjb, pts(:,:,sps), ptsb(:,:,sps), npts, wblock&
                    &  , wblockb, righthandedadj, faceid, ibeg, iend, jbeg, jend, ii_start, &
                    &  sps)
-              if(myID==0) print *,'liftindexafter',liftindex
+!              if(myID==0) print *,'liftindexafter',liftindex
               ! Set the w-values derivatives in dJdw
               do kcell = 2,kl
                  do jcell = 2,jl
                     do icell = 2,il
                        idxmgb = globalCell(icell,jcell,kcell)
 !!$                       if (sum(wblockb(icell,jcell,kcell,:)).ne.0)then
-!!$                          print *,'wblock*djdc',wblockb(icell,jcell,kcell,:)*dJdc(sps),icell,jcell,kcell,sps
+!!$                          if(myid==0) print *,'wblock*djdc',wblockb(icell,jcell,kcell,:)*dJdc(sps),icell,jcell,kcell,sps
 !!$                       end if
                        call VecSetValuesBlocked(dJdw,1,idxmgb,&
                             wblockb(icell,jcell,kcell,:)*dJdc(sps),&
