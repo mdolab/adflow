@@ -2,9 +2,10 @@
    !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
    !  
    !  Differentiation of adjustinflowangleforcesadj in reverse (adjoint) mode:
-   !   gradient, with respect to input variables: alphaadj betaadj
+   !   gradient, with respect to input variables: alphaadj liftdirectionadj
+   !                betaadj dragdirectionadj
    !   of linear combination of output variables: alphaadj liftdirectionadj
-   !                betaadj dragdirectionadj veldirfreestreamadj
+   !                betaadj dragdirectionadj
    !
    !      ******************************************************************
    !      *                                                                *
@@ -16,15 +17,15 @@
    !      ******************************************************************
    !
    SUBROUTINE ADJUSTINFLOWANGLEFORCESADJ_B(alphaadj, alphaadjb, betaadj, &
-   &  betaadjb, veldirfreestreamadj, veldirfreestreamadjb, liftdirectionadj&
-   &  , liftdirectionadjb, dragdirectionadj, dragdirectionadjb, liftindex)
+   &  betaadjb, veldirfreestreamadj, liftdirectionadj, liftdirectionadjb, &
+   &  dragdirectionadj, dragdirectionadjb, liftindex)
    USE constants
    IMPLICIT NONE
    REAL(KIND=REALTYPE) :: alphaadj, alphaadjb, betaadj, betaadjb
    REAL(KIND=REALTYPE) :: dragdirectionadj(3), dragdirectionadjb(3)
    REAL(KIND=REALTYPE) :: liftdirectionadj(3), liftdirectionadjb(3)
    INTEGER(KIND=INTTYPE) :: liftindex
-   REAL(KIND=REALTYPE) :: veldirfreestreamadj(3), veldirfreestreamadjb(3)
+   REAL(KIND=REALTYPE) :: veldirfreestreamadj(3)
    REAL(KIND=REALTYPE) :: refdirection(3)
    REAL(KIND=REALTYPE) :: temp1, temp2, temp3
    !Subroutine Vars
@@ -38,9 +39,7 @@
    refdirection(1) = one
    CALL GETDIRVECTORFORCES(refdirection, alphaadj, betaadj, &
    &                    veldirfreestreamadj, liftindex)
-   CALL PUSHREAL8ARRAY(refdirection, 3)
    refdirection(:) = zero
-   CALL PUSHREAL8(refdirection(1))
    refdirection(1) = one
    CALL GETDIRVECTORFORCES(refdirection, alphaadj, betaadj, &
    &                    dragdirectionadj(1), liftindex)
@@ -56,9 +55,4 @@
    CALL GETDIRVECTORFORCES_B(refdirection, alphaadj, alphaadjb, betaadj, &
    &                      betaadjb, dragdirectionadj(1), dragdirectionadjb(&
    &                      1), liftindex)
-   CALL POPREAL8(refdirection(1))
-   CALL POPREAL8ARRAY(refdirection, 3)
-   CALL GETDIRVECTORFORCES_B(refdirection, alphaadj, alphaadjb, betaadj, &
-   &                      betaadjb, veldirfreestreamadj, &
-   &                      veldirfreestreamadjb, liftindex)
    END SUBROUTINE ADJUSTINFLOWANGLEFORCESADJ_B

@@ -2,7 +2,7 @@
    !  Tapenade - Version 2.2 (r1239) - Wed 28 Jun 2006 04:59:55 PM CEST
    !  
    !  Differentiation of getdirvectorforces in reverse (adjoint) mode:
-   !   gradient, with respect to input variables: alpha beta
+   !   gradient, with respect to input variables: alpha beta winddirection
    !   of linear combination of output variables: alpha beta winddirection
    !
    !     ******************************************************************
@@ -112,6 +112,7 @@
    ywb = winddirectionb(2)
    winddirectionb(2) = 0.0
    xwb = winddirectionb(1)
+   winddirectionb(1) = 0.0
    CALL POPINTEGER4(branch)
    IF (branch .LT. 2) THEN
    IF (branch .LT. 1) THEN
