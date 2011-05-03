@@ -24,9 +24,10 @@
    USE inputtimespectral
    USE inputtsstabderiv
    USE section
+   use communication !myid
    IMPLICIT NONE
-   REAL(KIND=REALTYPE), INTENT(IN) :: alphaadj
-   REAL(KIND=REALTYPE), INTENT(IN) :: betaadj
+   REAL(KIND=REALTYPE) :: alphaadj
+   REAL(KIND=REALTYPE):: betaadj
    REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
    REAL(KIND=REALTYPE) :: cd, cdb, cl, clb, drag, dragb, lift, liftb
    REAL(KIND=REALTYPE) :: cmoment(3), cmomentb(3), moment(3), momentb(3)
@@ -39,7 +40,7 @@
    INTEGER(KIND=INTTYPE), INTENT(IN) :: jend
    REAL(KIND=REALTYPE), INTENT(IN) :: lengthrefadj
    REAL(KIND=REALTYPE) :: lengthrefadjb, surfacerefadjb
-   INTEGER(KIND=INTTYPE), INTENT(IN) :: liftindex
+   INTEGER(KIND=INTTYPE) :: liftindex
    REAL(KIND=REALTYPE), INTENT(IN) :: machcoefadj
    REAL(KIND=REALTYPE) :: machcoefadjb
    INTEGER(KIND=INTTYPE), INTENT(IN) :: npts
@@ -105,6 +106,7 @@
    !TS variables
    !Rotation variables
    !Function Definitions
+   if (myid==0) print *,'in compute force and moment',liftindex
    ! Only need to zero force and moment -> these are summed again
    force = 0.0
    moment = 0.0
@@ -258,6 +260,7 @@
    ! First get cForce -> Coefficient of FOrce
    fact = two/(gammainf*pinf*pref*machcoefadj*machcoefadj*surfacerefadj*&
    &    lref*lref)
+   if (myid==0) print *,'in compute force and moment2',liftindex
    ! To get Lift,Drag,Cl and Cd get lift and drag directions
    CALL ADJUSTINFLOWANGLEFORCESADJ(alphaadj, betaadj, veldirfreestreamadj&
    &                            , liftdir, dragdir, liftindex)
@@ -305,7 +308,9 @@
    &        degreefouralpha, omegafouralpha, coscoeffouralpha, &
    &        sincoeffouralpha, t(1))
    alphats = alphaadj + alphaincrement
+if (myid==0) print *,'in compute force and moment3',liftindex
    CALL PUSHINTEGER4(liftindex)
+ if (myid==0) print *,'in compute force and moment4',liftindex
    CALL PUSHREAL8(betaadj)
    CALL PUSHREAL8ARRAY(dragdir, 3)
    CALL PUSHREAL8ARRAY(liftdir, 3)
@@ -314,6 +319,7 @@
    !Determine the grid velocity for this alpha
    CALL ADJUSTINFLOWANGLEADJ(alphats, betaadj, veldirfreestreamadj, &
    &                          liftdir, dragdir, liftindex)
+if (myid==0) print *,'in compute force and moment5',liftindex
    !do I need to update the lift direction and drag direction as well? yes!!!
    CALL PUSHINTEGER4(2)
    ELSE IF (tsbetamode) THEN
@@ -328,6 +334,7 @@
    CALL PUSHREAL8ARRAY(veldirfreestreamadj, 3)
    CALL PUSHREAL8(betats)
    !Determine the grid velocity for this alpha
+ if (myid==0) print *,'in compute force and moment6',liftindex
    CALL ADJUSTINFLOWANGLEADJ(alphaadj, betats, veldirfreestreamadj, &
    &                          liftdir, dragdir, liftindex)
    CALL PUSHINTEGER4(4)
@@ -415,6 +422,7 @@
    CALL POPREAL8ARRAY(dragdir, 3)
    CALL LOOKREAL8(betaadj)
    CALL LOOKINTEGER4(liftindex)
+if (myid==0) print *,'in compute force and moment7',liftindex
    veldirfreestreamadjb(:) = 0.0
    betaadjb = 0.0
    alphatsb = 0.0
@@ -424,6 +432,7 @@
    &                            liftindex)
    CALL POPREAL8(betaadj)
    CALL POPINTEGER4(liftindex)
+ if (myid==0) print *,'in compute force and moment8',liftindex
    alphaadjb = alphatsb
    END IF
    ELSE IF (branch .LT. 4) THEN
@@ -437,6 +446,7 @@
    CALL POPREAL8ARRAY(dragdir, 3)
    CALL LOOKREAL8(alphaadj)
    CALL LOOKINTEGER4(liftindex)
+if (myid==0) print *,'in compute force and moment9',liftindex
    veldirfreestreamadjb(:) = 0.0
    betatsb = 0.0
    alphaadjb = 0.0
@@ -446,6 +456,7 @@
    &                          liftindex)
    CALL POPREAL8(alphaadj)
    CALL POPINTEGER4(liftindex)
+if (myid==0) print *,'in compute force and moment10',liftindex
    betaadjb = betatsb
    END IF
    CALL POPINTEGER4(branch)

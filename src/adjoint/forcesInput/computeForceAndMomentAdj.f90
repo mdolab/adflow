@@ -22,6 +22,7 @@ subroutine computeForceAndMomentAdj(Force,cForce,Lift,Drag,Cl,Cd,&
   use inputMotion         !degreePol etc...
   use monitor             !TimeunsteadyRestart
   use section             !nSections
+  use communication       !myID
 
   implicit none
 
@@ -184,7 +185,7 @@ subroutine computeForceAndMomentAdj(Force,cForce,Lift,Drag,Cl,Cd,&
   cForce = fact*Force
 
   ! To get Lift,Drag,Cl and Cd get lift and drag directions
-
+  if(myID==0) print *,'liftindex sub1',liftindex
   call adjustInflowAngleForcesAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
        liftDir,dragDir,liftIndex)
   !This computation is time dependent for TSStability so update for time instance
@@ -246,7 +247,8 @@ subroutine computeForceAndMomentAdj(Force,cForce,Lift,Drag,Cl,Cd,&
         
         alphaTS = alphaAdj+alphaIncrement
         !Determine the grid velocity for this alpha
-        call adjustInflowAngleAdj(alphaTS,betaAdj,velDirFreestreamAdj,liftDir,dragDir,&
+        if(myID==0) print *,'liftindex sub2',liftindex
+        call adjustInflowAngleForcesAdj(alphaTS,betaAdj,velDirFreestreamAdj,liftDir,dragDir,&
                   liftIndex)
         !do I need to update the lift direction and drag direction as well? yes!!!
        
@@ -258,8 +260,9 @@ subroutine computeForceAndMomentAdj(Force,cForce,Lift,Drag,Cl,Cd,&
              cosCoefFourBeta, sinCoefFourBeta, t(1))
         
         betaTS = betaAdj+betaIncrement
+        if(myID==0) print *,'liftindex sub3',liftindex
         !Determine the grid velocity for this alpha
-        call adjustInflowAngleAdj(alphaAdj,betaTS,velDirFreestreamAdj,liftDir,dragDir,&
+        call adjustInflowAngleForcesAdj(alphaAdj,betaTS,velDirFreestreamAdj,liftDir,dragDir,&
              liftIndex)
        
      end if

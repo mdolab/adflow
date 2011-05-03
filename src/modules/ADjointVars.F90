@@ -43,6 +43,8 @@
       integer(kind=intType) :: nDesignPointRefX  
       integer(kind=intType) :: nDesignPointRefY   
       integer(kind=intType) :: nDesignPointRefZ   
+      integer(kind=intType) :: nDesignLengthRef
+      integer(kind=intType) :: nDesignSurfaceRef
       
       integer(kind=intType) :: nDesignExtra
 

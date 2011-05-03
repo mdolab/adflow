@@ -267,13 +267,20 @@ subroutine setupAllResidualMatrices
 
 
                call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
-                         &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
-                         &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
-                         &  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
-                         &  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
-                         &  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, pointrefadjb&
-                         &  , rotpointadj, rotpointadjb, murefadj, timerefadj, pinfcorradj, &
-                         &  liftindex)
+                    &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+                    &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+                    &  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
+                    &  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
+                    &  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, rotpointadj&
+                    &  , rotpointadjb, murefadj, timerefadj, pinfcorradj, liftindex)
+               !COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+               !     &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+               !          &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+               !          &  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
+               !          &  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
+               !          &  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, pointrefadjb&
+               !          &  , rotpointadj, rotpointadjb, murefadj, timerefadj, pinfcorradj, &
+               !          &  liftindex)
                   !   ! Store the block Jacobians (by rows).
 
                     Aad(m,:,:)  = wAdjB( 0, 0, 0,:,:)
