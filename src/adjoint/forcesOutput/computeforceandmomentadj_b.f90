@@ -24,10 +24,9 @@
    USE inputtimespectral
    USE inputtsstabderiv
    USE section
-   use communication !myid
    IMPLICIT NONE
-   REAL(KIND=REALTYPE) :: alphaadj
-   REAL(KIND=REALTYPE):: betaadj
+   REAL(KIND=REALTYPE), INTENT(IN) :: alphaadj
+   REAL(KIND=REALTYPE), INTENT(IN) :: betaadj
    REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
    REAL(KIND=REALTYPE) :: cd, cdb, cl, clb, drag, dragb, lift, liftb
    REAL(KIND=REALTYPE) :: cmoment(3), cmomentb(3), moment(3), momentb(3)
@@ -40,7 +39,7 @@
    INTEGER(KIND=INTTYPE), INTENT(IN) :: jend
    REAL(KIND=REALTYPE), INTENT(IN) :: lengthrefadj
    REAL(KIND=REALTYPE) :: lengthrefadjb, surfacerefadjb
-   INTEGER(KIND=INTTYPE) :: liftindex
+   INTEGER(KIND=INTTYPE), INTENT(IN) :: liftindex
    REAL(KIND=REALTYPE), INTENT(IN) :: machcoefadj
    REAL(KIND=REALTYPE) :: machcoefadjb
    INTEGER(KIND=INTTYPE), INTENT(IN) :: npts
@@ -67,6 +66,7 @@
    INTEGER(KIND=INTTYPE) :: i, istride, j, jstride
    REAL(KIND=REALTYPE) :: dragdirtmp(3), dragdirtmpb(3), liftdirtmp(3), &
    &  liftdirtmpb(3)
+   INTEGER :: myid
    INTEGER(KIND=INTTYPE) :: nn
    REAL(KIND=REALTYPE) :: derivrotationmatrix(3, 3), rotationmatrix(3, 3)
    REAL(KIND=REALTYPE) :: rotationpoint(3)
@@ -75,14 +75,13 @@
    REAL :: timeunsteady
    REAL :: timeunsteadyrestart
    REAL(KIND=REALTYPE) :: tnew, told
-   REAL(KIND=REALTYPE) :: TSALPHA, TSBETA
+   REAL(KIND=REALTYPE) :: TSALPHA
+   REAL(KIND=REALTYPE) :: TSBETA
    INTEGER(KIND=INTTYPE) :: lower_left, lower_right, upper_left, &
    &  upper_right
-   REAL(KIND=REALTYPE) :: veldirfreestreamadj(3), veldirfreestreamadjb(3)
+   REAL(KIND=REALTYPE) :: veldirfreestreamadj(3)
    REAL(KIND=REALTYPE) :: grid_pts(3, 3, 3), grid_ptsb(3, 3, 3), wadj(2, &
    &  2, 2, nw), wadjb(2, 2, 2, nw)
-   EXTERNAL TSALPHA, ADJUSTINFLOWANGLEADJ, ROTMATRIXRIGIDBODY, &
-   &      ADJUSTINFLOWANGLEADJ_B, TSBETA
    !     ******************************************************************
    !     *                                                                *
    !     * Compute the sum of the forces and moments on all blocks on     *
@@ -99,6 +98,7 @@
    !degreePol etc...
    !TimeunsteadyRestart
    !nSections
+   !myID
    ! Subroutine Arguments
    ! Output
    ! Input
@@ -106,7 +106,6 @@
    !TS variables
    !Rotation variables
    !Function Definitions
-   if (myid==0) print *,'in compute force and moment',liftindex
    ! Only need to zero force and moment -> these are summed again
    force = 0.0
    moment = 0.0
@@ -260,7 +259,6 @@
    ! First get cForce -> Coefficient of FOrce
    fact = two/(gammainf*pinf*pref*machcoefadj*machcoefadj*surfacerefadj*&
    &    lref*lref)
-   if (myid==0) print *,'in compute force and moment2',liftindex
    ! To get Lift,Drag,Cl and Cd get lift and drag directions
    CALL ADJUSTINFLOWANGLEFORCESADJ(alphaadj, betaadj, veldirfreestreamadj&
    &                            , liftdir, dragdir, liftindex)
@@ -282,6 +280,8 @@
    ! Determine the time values of the old and new time level.
    ! It is assumed that the rigid body rotation of the mesh is only
    ! used when only 1 section is present.
+   tnew = timeunsteady + timeunsteadyrestart
+   told = tnew - t(1)
    IF (tspmode .OR. tsqmode .OR. tsrmode) THEN
    ! Compute the rotation matrix of the rigid body rotation as
    ! well as the rotation point; the latter may vary in time due
@@ -308,18 +308,10 @@
    &        degreefouralpha, omegafouralpha, coscoeffouralpha, &
    &        sincoeffouralpha, t(1))
    alphats = alphaadj + alphaincrement
-if (myid==0) print *,'in compute force and moment3',liftindex
-   CALL PUSHINTEGER4(liftindex)
- if (myid==0) print *,'in compute force and moment4',liftindex
-   CALL PUSHREAL8(betaadj)
-   CALL PUSHREAL8ARRAY(dragdir, 3)
-   CALL PUSHREAL8ARRAY(liftdir, 3)
-   CALL PUSHREAL8ARRAY(veldirfreestreamadj, 3)
-   CALL PUSHREAL8(alphats)
    !Determine the grid velocity for this alpha
-   CALL ADJUSTINFLOWANGLEADJ(alphats, betaadj, veldirfreestreamadj, &
-   &                          liftdir, dragdir, liftindex)
-if (myid==0) print *,'in compute force and moment5',liftindex
+   CALL ADJUSTINFLOWANGLEFORCESADJ(alphats, betaadj, &
+   &                                veldirfreestreamadj, liftdir, dragdir, &
+   &                                liftindex)
    !do I need to update the lift direction and drag direction as well? yes!!!
    CALL PUSHINTEGER4(2)
    ELSE IF (tsbetamode) THEN
@@ -327,16 +319,10 @@ if (myid==0) print *,'in compute force and moment5',liftindex
    betaincrement = TSBETA(degreepolbeta, coefpolbeta, degreefourbeta&
    &        , omegafourbeta, coscoeffourbeta, sincoeffourbeta, t(1))
    betats = betaadj + betaincrement
-   CALL PUSHINTEGER4(liftindex)
-   CALL PUSHREAL8(alphaadj)
-   CALL PUSHREAL8ARRAY(dragdir, 3)
-   CALL PUSHREAL8ARRAY(liftdir, 3)
-   CALL PUSHREAL8ARRAY(veldirfreestreamadj, 3)
-   CALL PUSHREAL8(betats)
    !Determine the grid velocity for this alpha
- if (myid==0) print *,'in compute force and moment6',liftindex
-   CALL ADJUSTINFLOWANGLEADJ(alphaadj, betats, veldirfreestreamadj, &
-   &                          liftdir, dragdir, liftindex)
+   CALL ADJUSTINFLOWANGLEFORCESADJ(alphaadj, betats, &
+   &                                veldirfreestreamadj, liftdir, dragdir, &
+   &                                liftindex)
    CALL PUSHINTEGER4(4)
    ELSE
    CALL PUSHINTEGER4(3)
@@ -380,7 +366,6 @@ if (myid==0) print *,'in compute force and moment5',liftindex
    IF (branch .LT. 1) THEN
    alphaadjb = 0.0
    betaadjb = 0.0
-   veldirfreestreamadjb(1:3) = 0.0
    GOTO 100
    ELSE
    dragdirtmpb(1:3) = 0.0
@@ -413,59 +398,33 @@ if (myid==0) print *,'in compute force and moment5',liftindex
    liftdirb(3) = liftdirb(3) + rotationmatrix(1, 3)*liftdirtmpb(1)
    alphaadjb = 0.0
    betaadjb = 0.0
-   veldirfreestreamadjb(1:3) = 0.0
    END IF
    ELSE
-   CALL POPREAL8(alphats)
-   CALL POPREAL8ARRAY(veldirfreestreamadj, 3)
-   CALL POPREAL8ARRAY(liftdir, 3)
-   CALL POPREAL8ARRAY(dragdir, 3)
-   CALL LOOKREAL8(betaadj)
-   CALL LOOKINTEGER4(liftindex)
-if (myid==0) print *,'in compute force and moment7',liftindex
-   veldirfreestreamadjb(:) = 0.0
    betaadjb = 0.0
    alphatsb = 0.0
-   CALL ADJUSTINFLOWANGLEADJ_B(alphats, alphatsb, betaadj, betaadjb, &
-   &                            veldirfreestreamadj, veldirfreestreamadjb, &
-   &                            liftdir, liftdirb, dragdir, dragdirb, &
-   &                            liftindex)
-   CALL POPREAL8(betaadj)
-   CALL POPINTEGER4(liftindex)
- if (myid==0) print *,'in compute force and moment8',liftindex
+   CALL ADJUSTINFLOWANGLEFORCESADJ_B(alphats, alphatsb, betaadj, &
+   &                                  betaadjb, veldirfreestreamadj, &
+   &                                  liftdir, liftdirb, dragdir, dragdirb&
+   &                                  , liftindex)
    alphaadjb = alphatsb
    END IF
    ELSE IF (branch .LT. 4) THEN
    alphaadjb = 0.0
    betaadjb = 0.0
-   veldirfreestreamadjb(1:3) = 0.0
    ELSE
-   CALL POPREAL8(betats)
-   CALL POPREAL8ARRAY(veldirfreestreamadj, 3)
-   CALL POPREAL8ARRAY(liftdir, 3)
-   CALL POPREAL8ARRAY(dragdir, 3)
-   CALL LOOKREAL8(alphaadj)
-   CALL LOOKINTEGER4(liftindex)
-if (myid==0) print *,'in compute force and moment9',liftindex
-   veldirfreestreamadjb(:) = 0.0
    betatsb = 0.0
    alphaadjb = 0.0
-   CALL ADJUSTINFLOWANGLEADJ_B(alphaadj, alphaadjb, betats, betatsb, &
-   &                          veldirfreestreamadj, veldirfreestreamadjb, &
-   &                          liftdir, liftdirb, dragdir, dragdirb, &
-   &                          liftindex)
-   CALL POPREAL8(alphaadj)
-   CALL POPINTEGER4(liftindex)
-if (myid==0) print *,'in compute force and moment10',liftindex
+   CALL ADJUSTINFLOWANGLEFORCESADJ_B(alphaadj, alphaadjb, betats, &
+   &                                betatsb, veldirfreestreamadj, liftdir, &
+   &                                liftdirb, dragdir, dragdirb, liftindex)
    betaadjb = betatsb
    END IF
    CALL POPINTEGER4(branch)
    IF (.NOT.branch .LT. 1) nn = 0
    100 CALL ADJUSTINFLOWANGLEFORCESADJ_B(alphaadj, alphaadjb, betaadj, &
-   &                                 betaadjb, veldirfreestreamadj, &
-   &                                 veldirfreestreamadjb, liftdir, &
-   &                                 liftdirb, dragdir, dragdirb, liftindex&
-   &                                )
+   &                                 betaadjb, veldirfreestreamadj, liftdir&
+   &                                 , liftdirb, dragdir, dragdirb, &
+   &                                 liftindex)
    factb = factb + SUM(force*cforceb)
    forceb = forceb + fact*cforceb
    CALL POPREAL8(fact)

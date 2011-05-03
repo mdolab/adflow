@@ -147,6 +147,9 @@ TAPENADE_SRC = $(TAPENADE_DIRSRC)/adjustInflowAngleForcesAdj.f90\
 	       $(TAPENADE_DIRSRC)/getDirVectorForces.f90\
 	       $(TAPENADE_DIRSRC)/getSurfaceNormalsForcesAdj.f90\
 	       $(TAPENADE_DIRSRC)/vectorRotationForces.f90\
+               $(SOLVER_DIRSRC)/utils/TSalpha.f90\
+               $(SOLVER_DIRSRC)/utils/TSBeta.f90\
+               $(SOLVER_DIRSRC)/utils/rotMatrixRigidBody.f90	
 
 TAPENADE_MOD = $(TAPENADE_MODDIR)/constants.f90 \
 	       $(TAPENADE_MODDIR)/flowVarRefState.f90 \
