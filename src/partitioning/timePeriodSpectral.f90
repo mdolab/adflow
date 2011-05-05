@@ -103,10 +103,10 @@
 
 
          ! Alpha
-         !print *,'degreeFourAlpha',degreefouralpha,omegafouralpha,sincoeffouralpha
+         print *,'degreeFourAlpha',degreefouralpha,omegafouralpha,sincoeffouralpha
          if(degreeFourAlpha > 0) then
            tt = two*pi/omegaFourAlpha
-           !print *,'timePeriod',tt
+           print *,'timePeriod',tt
            ! Check if a time period was already determined. If so, try
            ! to determine a common time. Otherwise just copy the data.
 
