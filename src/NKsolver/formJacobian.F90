@@ -48,6 +48,11 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
 
   ! Setup the required options for the Global PC
   call KSPGetPC(ksp,pc,ierr);                 call EChk(ierr,__FILE__,__LINE__)
+!   call PCSetType(pc,'hypre',ierr);            call EChk(ierr,__FILE__,__LINE__)
+!   call PCHYPRESetType(pc,'euclid',ierr);   call EChk(ierr,__FILE__,__LINE__)
+!   call PCFactorSetMatOrderingtype(pc, local_pc_ordering, ierr ); call EChk(ierr,__FILE__,__LINE__) 
+
+
   call PCSetType(pc,global_pc_type,ierr);     call EChk(ierr,__FILE__,__LINE__)
 
   if (trim(global_pc_type) == 'asm') then
