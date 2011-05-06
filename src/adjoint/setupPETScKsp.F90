@@ -38,7 +38,7 @@ subroutine setupPETScKsp
   real(kind=realType)   :: rTol, aTol, dTol
   integer(kind=intType) :: mIts
   character(len=10)     :: kspType, pcType
-
+  logical ::useAD,usePC,useTranspose 
 #ifndef USE_NO_PETSC
 
   ! PETSc macros are lost and have to be redefined.
@@ -77,8 +77,14 @@ subroutine setupPETScKsp
 
      !setup the approximate PC Matrix
      !call setupADjointPCMatrix(level)
-     call setupADjointPCMatrixTranspose()
-
+     if (finitedifferencePC) then
+        useAD = .False.
+        useTranspose = .True.
+        usePC = .True.
+        call setupStateResidualMatrix(drdwpret,useAD,usePC,useTranspose)
+     else
+        call setupADjointPCMatrixTranspose()
+     end if
      !now set up KSP Context
      !call KSPSetOperators(ksp,dRdW,dRdWPre, &
      !                  DIFFERENT_NONZERO_PATTERN,PETScIerr)

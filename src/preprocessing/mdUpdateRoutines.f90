@@ -39,7 +39,7 @@ subroutine updateCoordinatesAllLevels
   !      ******************************************************************
   !
   ! Determine the halo coordinates of the fine level.
-
+  groundLevel = 1
   call xhalo(groundLevel)
 
   ! Loop over the coarse grid levels; first the owned coordinates

@@ -150,11 +150,6 @@
        ! grid level.
 
        x    => flowDoms(nn,mm,ll)%x
-       xInit=> flowDoms(nn,1,ll)%xInit
-       !if(debug)then
-       xplus=> flowDoms(nn,1,ll)%xplus
-       xminus=> flowDoms(nn,1,ll)%xminus
-       !end if
        xOld => flowDoms(nn,1,ll)%xOld
 
        si     => flowDoms(nn,mm,ll)%si
@@ -194,14 +189,9 @@
        ! its values are obtained from the fine grid level.
 
        w     => flowDoms(nn,mm,ll)%w
-       !if(debug)then
-          wtmp     => flowDoms(nn,1,ll)%wtmp
-       !endif
        wOld  => flowDoms(nn,1, ll)%wOld
        p     => flowDoms(nn,mm,ll)%p
-       !if(debug)then
-          ptmp     => flowDoms(nn,mm,ll)%ptmp
-       !end if
+
        gamma => flowDoms(nn,1, ll)%gamma
        rlv   => flowDoms(nn,1, ll)%rlv
        rev   => flowDoms(nn,mm,ll)%rev
@@ -211,11 +201,6 @@
        ! finest grid entry, the multigrid variables to their own level.
 
        dw => flowDoms(nn,1,ll)%dw
-       !if(debug)then
-          dwtmp => flowDoms(nn,1,ll)%dwtmp
-          dwp => flowDoms(nn,1,ll)%dwp
-          dwm => flowDoms(nn,1,ll)%dwm
-       !end if
        fw => flowDoms(nn,1,ll)%fw
 
        dwOldRK => flowDoms(nn,1,ll)%dwOldRK
