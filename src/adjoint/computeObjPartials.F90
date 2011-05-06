@@ -83,7 +83,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
 !!$  real(kind=realType) :: dcmzdqb,dcmzdq
 !!$  real(kind=realType) :: dcmzdalphadot,dcmzdalphadotb
   ! Working Variables
-  integer(kind=intTYpe) :: sps,ii,ii_start,ii_end,iInc,ierr,n
+  integer(kind=intTYpe) :: sps,ii,iInc,ierr,n
   integer(kind=intTYpe) :: i,j,icell,jcell,kcell,nn,mm,idxmgb,faceID,ibeg,iend,jbeg,jend
   real(kind=realType) :: dIdctemp,val
   real(kind=realType) :: dJdc(nTimeIntervalsSpectral)
@@ -190,12 +190,13 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
 
         dJdc(sps) = dIdctemp
         if (nDesignLengthRef >=0) then
-           dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb
+           !if (myID==0) print *,'lengthref',lengthRefAdjb,dIda(nDesignLengthRef+1)
+           dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb*dJdc(sps)
         end if
      end do
   end select
-  dJdc(:) =0.0
-  djdc(1) = 1.0
+!!$  dJdc(:) =0.0
+!!$  djdc(1) = 1.0
   ! Now we have dJdc on each processor...when we go through the
   ! reverse mode AD we can take the dot-products on the fly SUM the
   ! entries into dJdw
@@ -290,7 +291,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
                    &  , cmomentb, alphaadj, alphaadjb, betaadj, betaadjb, liftindex, &
                    &  machcoefadj, machcoefadjb, pointrefadj, pointrefadjb, lengthrefadj, &
                    &  lengthrefadjb, surfacerefadj, surfacerefadjb, pts(:,:,sps), ptsb(:,:,sps), npts, wblock&
-                   &  , wblockb, righthandedadj, faceid, ibeg, iend, jbeg, jend, ii_start, &
+                   &  , wblockb, righthandedadj, faceid, ibeg, iend, jbeg, jend, ii, &
                    &  sps)
 !              if(myID==0) print *,'liftindexafter',liftindex
               ! Set the w-values derivatives in dJdw
@@ -356,10 +357,11 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
                  dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefAdjb(3)*dJdc(sps)
               end if
               if (nDesignLengthRef >=0) then
-                 dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb
+                 !if (myID==0) print *,'lengthref2',lengthRefAdjb,dIda(nDesignLengthRef+1),nn,sps
+                 dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb*dJdc(sps)
               end if
               if (nDesignSurfaceRef >=0) then
-                 dIda(nDesignSurfaceRef+1) = dIda(nDesignSurfaceRef+1) + SurfaceRefAdjb
+                 dIda(nDesignSurfaceRef+1) = dIda(nDesignSurfaceRef+1) + SurfaceRefAdjb*dJdc(sps)
               end if
            end if
         end do bocos
@@ -451,9 +453,12 @@ subroutine getdIdx(ndof,output)
      tOld = tNew - t(1)
      
      call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
-     
+     rotationMatrix(:,:) = 0.0
+     rotationMatrix(1,1) = 1.0
+     rotationMatrix(2,2) = 1.0
+     rotationMatrix(3,3) = 1.0
      ! Take rotation Matrix Transpose
-     !rotationMatrix = transpose(rotationMatrix)
+     rotationMatrix = transpose(rotationMatrix)
      !print *,'indices',ndof, ihigh,ilow,ihigh-ilow
      do i=1,ndof/3
         !print *,'i',i,sps

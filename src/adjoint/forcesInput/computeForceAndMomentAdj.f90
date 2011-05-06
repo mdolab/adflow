@@ -181,11 +181,12 @@ subroutine computeForceAndMomentAdj(Force,cForce,Lift,Drag,Cl,Cd,&
   
   ! First get cForce -> Coefficient of FOrce
   fact = two/(gammaInf*pInf*pRef*MachCoefAdj*MachCoefAdj*surfaceRefAdj*LRef*LRef)
+  !fact = two/(gammaInf*pInf*pRef*MachCoefAdj*MachCoefAdj*surfaceRef*LRef*LRef)
  
   cForce = fact*Force
 
   ! To get Lift,Drag,Cl and Cd get lift and drag directions
-  if(myID==0) print *,'liftindex sub1',liftindex
+  !if(myID==0) print *,'liftindex sub1',liftindex
   call adjustInflowAngleForcesAdj(alphaAdj,betaAdj,velDirFreestreamAdj,&
        liftDir,dragDir,liftIndex)
   !This computation is time dependent for TSStability so update for time instance
@@ -247,7 +248,7 @@ subroutine computeForceAndMomentAdj(Force,cForce,Lift,Drag,Cl,Cd,&
         
         alphaTS = alphaAdj+alphaIncrement
         !Determine the grid velocity for this alpha
-        if(myID==0) print *,'liftindex sub2',liftindex
+        !if(myID==0) print *,'liftindex sub2',liftindex
         call adjustInflowAngleForcesAdj(alphaTS,betaAdj,velDirFreestreamAdj,liftDir,dragDir,&
                   liftIndex)
         !do I need to update the lift direction and drag direction as well? yes!!!
@@ -280,6 +281,7 @@ subroutine computeForceAndMomentAdj(Force,cForce,Lift,Drag,Cl,Cd,&
 
   ! Update fact for moment normalization
   fact = fact/(lengthRefAdj*LRef)
+  !fact = fact/(lengthRef*LRef)
   
   cMoment = moment * fact
 

@@ -1219,6 +1219,26 @@ class SUMB(AeroSolver):
         self.sumb.verifydidwfile(level,costFunc,filename)
         
         return
+    def verifydIdx(self,objective,**kwargs):
+        '''
+        run compute obj partials, then print to a file...
+        '''
+        if self.myid==0: print 'setting up vector'
+        if not self.adjointMatrixSetup:
+            self.sumb.createpetscvars()
+            #self.setupAdjoint(forcePoints)
+        # end if
+        if self.myid==0:print 'computing partials'
+        self.computeObjPartials(objective)
+        obj = self.possibleObjectives[objective.lower()]
+        filename= self.getOption('outputDir') + '/' +'ADx%s'%(obj)
+        if self.myid==0:print 'filename',filename
+        costFunc =  self.SUmbCostfunctions[obj]
+        level = 1
+        if self.myid==0:print 'calling verify',level,costFunc,filename
+        self.sumb.verifydidxfile(level,costFunc,filename)
+
+        return
 
     def initAdjoint(self, *args, **kwargs):
         '''
@@ -1342,12 +1362,10 @@ class SUMB(AeroSolver):
         if not self.adjointMatrixSetup:
             self.setupAdjoint(forcePoints)
         # end if
-        if (self.myid == 0): print 'before rhs'
         # Check to see if the RHS Partials have been computed
         if not self.adjointRHS == obj:
             self.computeObjPartials(obj,forcePoints)
         # end if
-        if (self.myid == 0): print 'after rhs'
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
         if 'structAdjoint' in kwargs and 'group_name' in kwargs:

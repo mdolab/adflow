@@ -35,6 +35,8 @@ subroutine verifydCfdx(level,costFunction)
       use inputMotion
       use inputTSStabDeriv
       use costFunctions
+      use inputMotion         !degreePol etc...
+      use inputTSStabDeriv
       implicit none
 !
 !     Subroutine arguments.
@@ -132,9 +134,9 @@ subroutine verifydCfdx(level,costFunction)
       real(kind=realType), parameter :: deltax = 1.e-6_realType
 
       real(kind=realType) :: xAdjRef,xref,alpharef,betaref,machref,alpha,beta,machcoefref,rotratexref,pointref_ref
-      REAL(KIND=REALTYPE) :: lengthrefadjb, surfacerefadjb
-      REAL(KIND=REALTYPE) :: lengthrefadj
-      REAL(KIND=REALTYPE) :: surfacerefadj
+
+      real(kind=realType) ::valueold,valuenew
+
 !!$
 !!$      real(kind=realType), dimension(:,:,:), pointer :: norm
 !!$      real(kind=realType), dimension(:,:,:),allocatable:: normAdj
@@ -154,9 +156,11 @@ subroutine verifydCfdx(level,costFunction)
 !!$           &  , rotpointadjb(3)
 !!$
       real(kind=realType), dimension(nSections) :: t
+ 
+      REAL(kind=realtype):: lengthrefadj, surfacerefadj
+      REAL(kind=realtype) :: lengthrefadjb, surfacerefadjb
+      !TS variables
       real(kind=realType) :: liftDirTmp(3),dragDirTmp(3)
-      real(kind=realType) :: velDirFreestreamAdj(3)
-      real(kind=realType) :: liftDir(3),dragDir(3)
       real(kind=realType) :: tNew, tOld
       real(kind=realType) :: alphaTS,alphaIncrement,&
            betaTS,betaIncrement
@@ -168,6 +172,8 @@ subroutine verifydCfdx(level,costFunction)
       !Function Definitions
       real(kind=realType) :: TSAlpha,TSBeta
 
+      real(kind=realType) :: liftDir(3),dragDir(3)
+      !real(kind=realType) :: velDirFreestreamAdj(3)
 
       integer :: ierr,nmonsum1,nmonsum2
 
@@ -314,6 +320,8 @@ subroutine verifydCfdx(level,costFunction)
                   jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
                   iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
                   
+                  lengthrefadj = lengthRef
+                  surfacerefAdj = SurfaceRef
                   ! Zero all the backward-mode seeds
                   forceb = 0.0
                   cforceb = 0.0
@@ -328,6 +336,8 @@ subroutine verifydCfdx(level,costFunction)
                   machcoefadjb = 0.0
                   pointrefadjb = 0.0
                   ptsb = 0.0
+                  lengthrefadjb = 0.0
+                  surfacerefAdjb = 0.0
                   
                   ! Seed the correct value based on the cost function
                   select case (costFunction)
@@ -363,7 +373,7 @@ subroutine verifydCfdx(level,costFunction)
                   case (costFuncMomYCoef)
                      cmomentb(2) = 1.0
                   case (costFuncMomZCoef,costFuncCMzAlpha,costFuncCmzalphadot,&
-                       costFuncCmzq)
+                       costFuncCmzq,costFuncCm0)
                      cmomentb(3) = 1.0
                   end select
                   
@@ -374,14 +384,14 @@ subroutine verifydCfdx(level,costFunction)
                   righthandedadj = righthanded
                   
                   faceID = bcfaceid(mm)
-                  !if( myID==0 )print *,'computing force derivatives'
-                  call COMPUTEFORCEANDMOMENTADJ_B(force, forceb, cforce, cforceb, &
-                       lift, liftb, drag, dragb, cl, clb, cd, cdb, moment, momentb, &
-                       cmoment,cmomentb, alphaadj, alphaadjb, betaadj, betaadjb, &
-                       liftindex, machcoefadj, machcoefadjb, pointrefadj, &
-                       pointrefadjb, lengthrefadj, lengthrefadjb, surfacerefadj,&
-                       surfacerefadjb, pts(:,:,sps), ptsb(:,:,sps), npts, wblock,&
-                       wblockb, righthandedadj, faceid, ibeg, iend, jbeg, jend,ii,sps)
+
+                  call  COMPUTEFORCEANDMOMENTADJ_B(force, forceb, cforce, cforceb, &
+   &  lift, liftb, drag, dragb, cl, clb, cd, cdb, moment, momentb, cmoment, &
+   &  cmomentb, alphaadj, alphaadjb, betaadj, betaadjb, liftindex, &
+   &  machcoefadj, machcoefadjb, pointrefadj, pointrefadjb, lengthrefadj, &
+   &  lengthrefadjb,surfacerefadj, surfacerefadjb, pts(:,:,sps), ptsb(:,:,sps), npts&
+   &  , wblock, wblockb, righthandedadj, faceid, ibeg, iend, jbeg, jend, &
+   &  ii, sps)
                   !if( myID==0 )print *,'forces computed'
                   ! Set the w-values derivatives in dJdw
                   do kcell = 2,kl
@@ -416,9 +426,8 @@ subroutine verifydCfdx(level,costFunction)
                   !if( myID==0 )print *,'coord deriv set'
                   ! We also have the derivative of the Objective wrt the
                   ! "AeroDVs" intrinsic aero design variables, alpha, beta etc
-                  
                   if (nDesignAoA >=0) then
-                     print *,'aoa deriv',alphaAdjb,sps, myID
+                     print *,'aoa deriv',alphaAdjb,nn,sps, myID
                      dIdaloc(nDesignAoA+1,sps) = dIdaloc(nDesignAoA+1,sps) + alphaAdjb
                   end if
                   !if( myID==0 )print *,'aoa deriv set'
@@ -472,9 +481,9 @@ subroutine verifydCfdx(level,costFunction)
                   do i = 2,il!0,ib
                      do l = 1,nw
                         idxmgb   = globalCell(i,j,k)*nw+l
-                                                
+                        
                         if( (idxmgb>=iLow).and.(idxmgb<=iHigh)) then
-                           call VecGetValues(djdw, 1, idxmgb, &
+                           call VecGetValues(djdw, 1, idxmgb-1, &
                                 val, PETScIerr)
                            call EChk(PETScIerr,__file__,__line__)
  
@@ -498,7 +507,7 @@ subroutine verifydCfdx(level,costFunction)
                         idxmgb   = globalnode(i,j,k)*3+l
                                                 
                         if( (idxmgb>=iLow).and.(idxmgb<=iHigh)) then
-                           call VecGetValues(djdx, 1, idxmgb, &
+                           call VecGetValues(djdx, 1, idxmgb-1, &
                                 val, PETScIerr)
                            call EChk(PETScIerr,__file__,__line__)
  
@@ -713,16 +722,22 @@ subroutine verifydCfdx(level,costFunction)
 !!$            enddo
 !!$         enddo domainForcesLoopFDorig
 !!$      enddo
-
+!get reference conditions
+      call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+      alpharef = alpha
+      betaref = beta
+      !if( myID==0 )print *,'machalpha',alpha
       if (nDesignMach >= 0) then
+         
       ! Loop over the number of local blocks.
       
       if( myID==0 )print *,'starting FD loop',nTimeIntervalsSpectral
       do sps = 1, nTimeIntervalsSpectral
          monloc1=0.0
          monloc2=0.0
-         monglob1=0.0
-         monglob2=0.0
+         monGlob1 = 0.0
+         monGlob2 = 0.0
+
          domainMachLoopFDorig: do nn=1,nDom   
             
             call setPointers(nn,level,sps)
@@ -752,13 +767,105 @@ subroutine verifydCfdx(level,costFunction)
             call setPointers(nn,level,sps)
             call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
             !if( myID==0 )print *,'routines complete'
-            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-                 + (cfp(2) + cfv(2))*liftDirection(2) &
-                 + (cfp(3) + cfv(3))*liftDirection(3)
-            
-            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-                 + (cfp(2) + cfv(2))*dragDirection(2) &
-                 + (cfp(3) + cfv(3))*dragDirection(3)
+            !compute the lift vector update
+            call adjustInflowAngleForcesAdj(alpha,beta,velDirFreestream,&
+                 liftDir,dragDir,liftIndex)
+            !This computation is time dependent for TSStability so update for time instance
+            if(TSStability)then
+               
+               !update the lift vector and drag vector to account for changing 
+               !angles of attack
+               
+               ! compute the time of this interval
+               t = timeUnsteadyRestart
+               
+               if(equationMode == timeSpectral) then
+                  do ll=1,nSections
+                     t(ll) = t(ll) + (sps-1)*sections(ll)%timePeriod &
+                          /         nTimeIntervalsSpectral*1.0
+                  enddo
+               endif
+               ! Determine the time values of the old and new time level.
+               ! It is assumed that the rigid body rotation of the mesh is only
+               ! used when only 1 section is present.
+               tNew = timeUnsteady + timeUnsteadyRestart
+               tOld = tNew - t(1)
+               
+               
+               if(TSpMode.or. TSqMode .or.TSrMode) then
+                  ! Compute the rotation matrix of the rigid body rotation as
+                  ! well as the rotation point; the latter may vary in time due
+                  ! to rigid body translation.
+                  
+                  call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+                  
+                  liftDirTmp(1) = rotationMatrix(1,1)*liftDir(1) &
+                  + rotationMatrix(1,2)*liftDir(2) &
+                  + rotationMatrix(1,3)*liftDir(3)
+                  liftDirTmp(2) = rotationMatrix(2,1)*liftDir(1) &
+                       + rotationMatrix(2,2)*liftDir(2) &
+                       + rotationMatrix(2,3)*liftDir(3)
+                  liftDirTmp(3) = rotationMatrix(3,1)*liftDir(1) &
+                       + rotationMatrix(3,2)*liftDir(2) &
+                       + rotationMatrix(3,3)*liftDir(3)
+                  dragDirTmp(1) = rotationMatrix(1,1)*dragDir(1) &
+                       + rotationMatrix(1,2)*dragDir(2) &
+                       + rotationMatrix(1,3)*dragDir(3)
+                  dragDirTmp(2) = rotationMatrix(2,1)*dragDir(1) &
+                       + rotationMatrix(2,2)*dragDir(2) &
+                       + rotationMatrix(2,3)*dragDir(3)
+                  dragDirTmp(3) = rotationMatrix(3,1)*dragDir(1) &
+                       + rotationMatrix(3,2)*dragDir(2) &
+                       + rotationMatrix(3,3)*dragDir(3)
+                  
+                  liftDir = liftDirTmp
+                  dragDir = dragDirTmp
+               elseif(tsAlphaMode)then
+        
+                  !Determine the alpha for this time instance
+                  alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+                       degreeFourAlpha,  omegaFourAlpha,     &
+                       cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+                  
+                  alphaTS = alpha+alphaIncrement
+                  !if(myID==0) print *,'alpha2',alphaTS,alphaIncrement
+                  !Determine the grid velocity for this alpha
+                  !if(myID==0) print *,'liftindex sub2',liftindex
+                  call adjustInflowAngleForcesAdj(alphaTS,beta,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  !do I need to update the lift direction and drag direction as well? yes!!!
+                  !if(myID==0) print *,'liftDir',liftDir 
+               elseif(tsBetaMode)then
+                  
+                  !Determine the alpha for this time instance
+                  betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
+                       degreeFourBeta,  omegaFourBeta,     &
+                       cosCoefFourBeta, sinCoefFourBeta, t(1))
+        
+                  betaTS = betaAdj+betaIncrement
+                  !if(myID==0) print *,'liftindex sub3',liftindex
+                  !Determine the grid velocity for this alpha
+                  call adjustInflowAngleForcesAdj(alpha,betaTS,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  
+               end if
+            end if
+            !if( myID==0 )print *,'routines complete 2',nn,level,sps
+            Cl = (cfp(1) + cfv(1))*liftDir(1) &
+                 + (cfp(2) + cfv(2))*liftDir(2) &
+                 + (cfp(3) + cfv(3))*liftDir(3)
+            !(1.0/float(ndom))*liftDirection(1)!
+
+            Cd = (cfp(1) + cfv(1))*dragDir(1) &
+                 + (cfp(2) + cfv(2))*dragDir(2) &
+                 + (cfp(3) + cfv(3))*dragDir(3)
+!            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+!                 + (cfp(2) + cfv(2))*liftDirection(2) &
+!                 + (cfp(3) + cfv(3))*liftDirection(3)
+!            
+!            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+!                 + (cfp(2) + cfv(2))*dragDirection(2) &
+!                 + (cfp(3) + cfv(3))*dragDirection(3)
             
             Cfx = cfp(1) + cfv(1)
             Cfy = cfp(2) + cfv(2)
@@ -819,13 +926,105 @@ subroutine verifydCfdx(level,costFunction)
             call setPointers(nn,level,sps)
             call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
             !if( myID==0 )print *,'routines complete 2',nn,level,sps
-            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-                 + (cfp(2) + cfv(2))*liftDirection(2) &
-                 + (cfp(3) + cfv(3))*liftDirection(3)
-            
-            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-                 + (cfp(2) + cfv(2))*dragDirection(2) &
-                 + (cfp(3) + cfv(3))*dragDirection(3)
+            !compute the lift vector update
+            call adjustInflowAngleForcesAdj(alpha,beta,velDirFreestream,&
+                 liftDir,dragDir,liftIndex)
+            !This computation is time dependent for TSStability so update for time instance
+            if(TSStability)then
+               
+               !update the lift vector and drag vector to account for changing 
+               !angles of attack
+               
+               ! compute the time of this interval
+               t = timeUnsteadyRestart
+               
+               if(equationMode == timeSpectral) then
+                  do ll=1,nSections
+                     t(ll) = t(ll) + (sps-1)*sections(ll)%timePeriod &
+                          /         nTimeIntervalsSpectral*1.0
+                  enddo
+               endif
+               ! Determine the time values of the old and new time level.
+               ! It is assumed that the rigid body rotation of the mesh is only
+               ! used when only 1 section is present.
+               tNew = timeUnsteady + timeUnsteadyRestart
+               tOld = tNew - t(1)
+               
+               
+               if(TSpMode.or. TSqMode .or.TSrMode) then
+                  ! Compute the rotation matrix of the rigid body rotation as
+                  ! well as the rotation point; the latter may vary in time due
+                  ! to rigid body translation.
+                  
+                  call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+                  
+                  liftDirTmp(1) = rotationMatrix(1,1)*liftDir(1) &
+                  + rotationMatrix(1,2)*liftDir(2) &
+                  + rotationMatrix(1,3)*liftDir(3)
+                  liftDirTmp(2) = rotationMatrix(2,1)*liftDir(1) &
+                       + rotationMatrix(2,2)*liftDir(2) &
+                       + rotationMatrix(2,3)*liftDir(3)
+                  liftDirTmp(3) = rotationMatrix(3,1)*liftDir(1) &
+                       + rotationMatrix(3,2)*liftDir(2) &
+                       + rotationMatrix(3,3)*liftDir(3)
+                  dragDirTmp(1) = rotationMatrix(1,1)*dragDir(1) &
+                       + rotationMatrix(1,2)*dragDir(2) &
+                       + rotationMatrix(1,3)*dragDir(3)
+                  dragDirTmp(2) = rotationMatrix(2,1)*dragDir(1) &
+                       + rotationMatrix(2,2)*dragDir(2) &
+                       + rotationMatrix(2,3)*dragDir(3)
+                  dragDirTmp(3) = rotationMatrix(3,1)*dragDir(1) &
+                       + rotationMatrix(3,2)*dragDir(2) &
+                       + rotationMatrix(3,3)*dragDir(3)
+                  
+                  liftDir = liftDirTmp
+                  dragDir = dragDirTmp
+               elseif(tsAlphaMode)then
+        
+                  !Determine the alpha for this time instance
+                  alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+                       degreeFourAlpha,  omegaFourAlpha,     &
+                       cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+                  
+                  alphaTS = alpha+alphaIncrement
+                  !if(myID==0) print *,'alpha2',alphaTS,alphaIncrement
+                  !Determine the grid velocity for this alpha
+                  !if(myID==0) print *,'liftindex sub2',liftindex
+                  call adjustInflowAngleForcesAdj(alphaTS,beta,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  !do I need to update the lift direction and drag direction as well? yes!!!
+                  !if(myID==0) print *,'liftDir',liftDir 
+               elseif(tsBetaMode)then
+                  
+                  !Determine the alpha for this time instance
+                  betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
+                       degreeFourBeta,  omegaFourBeta,     &
+                       cosCoefFourBeta, sinCoefFourBeta, t(1))
+        
+                  betaTS = betaAdj+betaIncrement
+                  !if(myID==0) print *,'liftindex sub3',liftindex
+                  !Determine the grid velocity for this alpha
+                  call adjustInflowAngleForcesAdj(alpha,betaTS,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  
+               end if
+            end if
+            !if( myID==0 )print *,'routines complete 2',nn,level,sps
+            Cl = (cfp(1) + cfv(1))*liftDir(1) &
+                 + (cfp(2) + cfv(2))*liftDir(2) &
+                 + (cfp(3) + cfv(3))*liftDir(3)
+            !(1.0/float(ndom))*liftDirection(1)!
+
+            Cd = (cfp(1) + cfv(1))*dragDir(1) &
+                 + (cfp(2) + cfv(2))*dragDir(2) &
+                 + (cfp(3) + cfv(3))*dragDir(3)
+            !Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+            !     + (cfp(2) + cfv(2))*liftDirection(2) &
+            !     + (cfp(3) + cfv(3))*liftDirection(3)
+            !
+            !Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+            !     + (cfp(2) + cfv(2))*dragDirection(2) &
+            !     + (cfp(3) + cfv(3))*dragDirection(3)
             
             Cfx = cfp(1) + cfv(1)
             Cfy = cfp(2) + cfv(2)
@@ -851,7 +1050,7 @@ subroutine verifydCfdx(level,costFunction)
             
             call mpi_allreduce(monLoc2, monGlob2, nMonSum, sumb_real, &
                  mpi_sum, SUmb_comm_world, ierr)
-            if( myID==0 )print *,'allreduce complete 2'
+            !if( myID==0 )print *,'allreduce complete 2'
             ! Transfer the cost function values to output arguments.
             
             CLm  = monGlob2(1)
@@ -874,7 +1073,7 @@ subroutine verifydCfdx(level,costFunction)
          ! Store the correct value based on the cost function
          select case (costFunction)
 
-         case (costFuncLiftCoef)
+         case (costFuncLiftCoef,costfunccl0)
             dIdaFD(nDesignMach+1,sps) = (CLP-CLM)/(two*deltax) 
          case (costFuncDragCoef)
             dIdaFD(nDesignMach+1,sps) = (CDP-CDM)/(two*deltax) 
@@ -888,29 +1087,31 @@ subroutine verifydCfdx(level,costFunction)
             dIdaFD(nDesignMach+1,sps) = (cmxp-cmxm)/(two*deltax)
          case (costFuncMomYCoef)
             dIdaFD(nDesignMach+1,sps) = (cmyp-cmym)/(two*deltax)
-         case (costFuncMomZCoef)
+         case (costFuncMomZCoef,costFuncCm0)
             dIdaFD(nDesignMach+1,sps) = (cmzp-cmzm)/(two*deltax)
          end select
       enddo
       call f77flush()
       call mpi_barrier(SUmb_comm_world, ierr)
       !if( myID==0 )print *,'mach derivatives complete'
+      alpha = alpharef
    endif
 
+   !if( myID==0 )print *,'alphaalpha',alpha
 
     if (nDesignAoA >= 0) then
       !get reference conditions
-      call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+      !call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
       
       
       print *,'starting alpha FD loop',nTimeIntervalsSpectral
       do sps = 1,nTimeIntervalsSpectral
          monloc1=0.0
          monloc2=0.0
-         monglob1=0.0
-         monglob2=0.0
+         monGlob1 = 0.0
+         monGlob2 = 0.0
          domainalphaLoopFDorig: do nn=1,nDom   
-
+            !print *,'in domain loop',nn,level,sps
             call setPointers(nn,level,sps)
 
             !loop over all points
@@ -927,7 +1128,7 @@ subroutine verifydCfdx(level,costFunction)
             !     *                                                                *
             !     ******************************************************************
             !
-            call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+           
             do mm=1,nTimeIntervalsSpectral
 
                ! Compute the time, which corresponds to this spectral solution.
@@ -944,71 +1145,7 @@ subroutine verifydCfdx(level,costFunction)
                   enddo
                endif
                
-               if(TSStability)then
-                  ! Determine the time values of the old and new time level.
-                  ! It is assumed that the rigid body rotation of the mesh is only
-                  ! used when only 1 section is present.
-                  tNew = timeUnsteady + timeUnsteadyRestart
-                  tOld = tNew - t(1)
-                  
-                  
-                  if(TSpMode.or. TSqMode .or.TSrMode) then
-                     ! Compute the rotation matrix of the rigid body rotation as
-                     ! well as the rotation point; the latter may vary in time due
-                     ! to rigid body translation.
-                     
-                     call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
-        
-                     liftDirTmp(1) = rotationMatrix(1,1)*liftDir(1) &
-                          + rotationMatrix(1,2)*liftDir(2) &
-                          + rotationMatrix(1,3)*liftDir(3)
-                     liftDirTmp(2) = rotationMatrix(2,1)*liftDir(1) &
-                          + rotationMatrix(2,2)*liftDir(2) &
-                          + rotationMatrix(2,3)*liftDir(3)
-                     liftDirTmp(3) = rotationMatrix(3,1)*liftDir(1) &
-                          + rotationMatrix(3,2)*liftDir(2) &
-                          + rotationMatrix(3,3)*liftDir(3)
-                     dragDirTmp(1) = rotationMatrix(1,1)*dragDir(1) &
-                          + rotationMatrix(1,2)*dragDir(2) &
-                          + rotationMatrix(1,3)*dragDir(3)
-                     dragDirTmp(2) = rotationMatrix(2,1)*dragDir(1) &
-                          + rotationMatrix(2,2)*dragDir(2) &
-                          + rotationMatrix(2,3)*dragDir(3)
-                     dragDirTmp(3) = rotationMatrix(3,1)*dragDir(1) &
-                          + rotationMatrix(3,2)*dragDir(2) &
-                          + rotationMatrix(3,3)*dragDir(3)
-
-                     liftDir = liftDirTmp
-                     dragDir = dragDirTmp
-                  elseif(tsAlphaMode)then
-                     
-                     !Determine the alpha for this time instance
-                     alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
-                          degreeFourAlpha,  omegaFourAlpha,     &
-                          cosCoefFourAlpha, sinCoefFourAlpha, t(1))
-                     
-                     alphaTS = alphaAdj+alphaIncrement
-                     !Determine the grid velocity for this alpha
-                     if(myID==0) print *,'liftindex sub2',liftindex
-                     call adjustInflowAngleAdj(alphaTS,betaAdj,velDirFreestreamAdj,liftDir,dragDir,&
-                          liftIndex)
-                     !do I need to update the lift direction and drag direction as well? yes!!!
-                     
-                  elseif(tsBetaMode)then
-                     
-                     !Determine the alpha for this time instance
-                     betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
-                          degreeFourBeta,  omegaFourBeta,     &
-                          cosCoefFourBeta, sinCoefFourBeta, t(1))
-                     
-                     betaTS = betaAdj+betaIncrement
-                     if(myID==0) print *,'liftindex sub3',liftindex
-                     !Determine the grid velocity for this alpha
-                     call adjustInflowAngleAdj(alphaAdj,betaTS,velDirFreestreamAdj,liftDir,dragDir,&
-                          liftIndex)
-                     
-                  end if
-               end if
+              
 
                call gridVelocitiesFineLevel(.false., t, mm)
                call gridVelocitiesCoarseLevels(mm)
@@ -1024,16 +1161,108 @@ subroutine verifydCfdx(level,costFunction)
             call applyAllBC(secondHalo)
             call setPointers(nn,level,sps)
             call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+ !compute the lift vector update
+            call adjustInflowAngleForcesAdj(alpha,beta,velDirFreestream,&
+                 liftDir,dragDir,liftIndex)
+            !This computation is time dependent for TSStability so update for time instance
+            if(TSStability)then
+               
+               !update the lift vector and drag vector to account for changing 
+               !angles of attack
+               
+               ! compute the time of this interval
+               t = timeUnsteadyRestart
+               
+               if(equationMode == timeSpectral) then
+                  do ll=1,nSections
+                     !if(myID==0) print *,'time', t(ll) , (sps-1),sections(ll)%timePeriod,  nTimeIntervalsSpectral,1.0
+                     t(ll) = t(ll) + (sps-1)*sections(ll)%timePeriod &
+                          /         nTimeIntervalsSpectral*1.0
+                  enddo
+               endif
+               ! Determine the time values of the old and new time level.
+               ! It is assumed that the rigid body rotation of the mesh is only
+               ! used when only 1 section is present.
+               tNew = timeUnsteady + timeUnsteadyRestart
+               tOld = tNew - t(1)
+               
+               
+               if(TSpMode.or. TSqMode .or.TSrMode) then
+                  ! Compute the rotation matrix of the rigid body rotation as
+                  ! well as the rotation point; the latter may vary in time due
+                  ! to rigid body translation.
+                  
+                  call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+                  
+                  liftDirTmp(1) = rotationMatrix(1,1)*liftDir(1) &
+                  + rotationMatrix(1,2)*liftDir(2) &
+                  + rotationMatrix(1,3)*liftDir(3)
+                  liftDirTmp(2) = rotationMatrix(2,1)*liftDir(1) &
+                       + rotationMatrix(2,2)*liftDir(2) &
+                       + rotationMatrix(2,3)*liftDir(3)
+                  liftDirTmp(3) = rotationMatrix(3,1)*liftDir(1) &
+                       + rotationMatrix(3,2)*liftDir(2) &
+                       + rotationMatrix(3,3)*liftDir(3)
+                  dragDirTmp(1) = rotationMatrix(1,1)*dragDir(1) &
+                       + rotationMatrix(1,2)*dragDir(2) &
+                       + rotationMatrix(1,3)*dragDir(3)
+                  dragDirTmp(2) = rotationMatrix(2,1)*dragDir(1) &
+                       + rotationMatrix(2,2)*dragDir(2) &
+                       + rotationMatrix(2,3)*dragDir(3)
+                  dragDirTmp(3) = rotationMatrix(3,1)*dragDir(1) &
+                       + rotationMatrix(3,2)*dragDir(2) &
+                       + rotationMatrix(3,3)*dragDir(3)
+                  
+                  liftDir = liftDirTmp
+                  dragDir = dragDirTmp
+               elseif(tsAlphaMode)then
+        
+                  !Determine the alpha for this time instance
+                  alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+                       degreeFourAlpha,  omegaFourAlpha,     &
+                       cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+                  
+                  alphaTS = alpha+alphaIncrement
+                  !if(myID==0) print *,'alpha1',alphaTS,alphaIncrement,t(1)
+                  !Determine the grid velocity for this alpha
+                  !if(myID==0) print *,'liftindex sub2',liftindex
+                  call adjustInflowAngleForcesAdj(alphaTS,beta,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  !do I need to update the lift direction and drag direction as well? yes!!!
+                  !if(myID==0) print *,'liftDir',liftDir 
+               elseif(tsBetaMode)then
+                  
+                  !Determine the alpha for this time instance
+                  betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
+                       degreeFourBeta,  omegaFourBeta,     &
+                       cosCoefFourBeta, sinCoefFourBeta, t(1))
+        
+                  betaTS = beta+betaIncrement
+                  !if(myID==0) print *,'liftindex sub3',liftindex
+                  !Determine the grid velocity for this alpha
+                  call adjustInflowAngleForcesAdj(alpha,betaTS,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  
+               end if
+            end if
+            !if( myID==0 )print *,'routines complete 2',nn,level,sps
+            Cl = (cfp(1) + cfv(1))*liftDir(1) &
+                 + (cfp(2) + cfv(2))*liftDir(2) &
+                 + (cfp(3) + cfv(3))*liftDir(3)
+            !(1.0/float(ndom))*liftDirection(1)!
+            !if( myID==0 )print *,'alphacl',cfp(1) , cfv(1),liftDir(1)
+            Cd = (cfp(1) + cfv(1))*dragDir(1) &
+                 + (cfp(2) + cfv(2))*dragDir(2) &
+                 + (cfp(3) + cfv(3))*dragDir(3)
+!!$            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+!!$                 + (cfp(2) + cfv(2))*liftDirection(2) &
+!!$                 + (cfp(3) + cfv(3))*liftDirection(3)
+!!$            !(1.0/float(ndom))*liftDirection(1)
+!!$
+!!$            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+!!$                 + (cfp(2) + cfv(2))*dragDirection(2) &
+!!$                 + (cfp(3) + cfv(3))*dragDirection(3)
 
-            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-                 + (cfp(2) + cfv(2))*liftDirection(2) &
-                 + (cfp(3) + cfv(3))*liftDirection(3)
-            !(1.0/float(ndom))*liftDirection(1)
-            if (myid==0)print *,'cl',cl
-
-            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-                 + (cfp(2) + cfv(2))*dragDirection(2) &
-                 + (cfp(3) + cfv(3))*dragDirection(3)
 
             Cfx = cfp(1) + cfv(1)
             Cfy = cfp(2) + cfv(2)
@@ -1089,7 +1318,6 @@ subroutine verifydCfdx(level,costFunction)
             !     ******************************************************************
             !
 
-            call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
             do mm=1,nTimeIntervalsSpectral
 
                ! Compute the time, which corresponds to this spectral solution.
@@ -1105,71 +1333,7 @@ subroutine verifydCfdx(level,costFunction)
                           /         real(nTimeIntervalsSpectral,realType)
                   enddo
                endif
-!!$               if(TSStability)then
-!!$                  ! Determine the time values of the old and new time level.
-!!$                  ! It is assumed that the rigid body rotation of the mesh is only
-!!$                  ! used when only 1 section is present.
-!!$                  tNew = timeUnsteady + timeUnsteadyRestart
-!!$                  tOld = tNew - t(1)
-!!$                  
-!!$                  
-!!$                  if(TSpMode.or. TSqMode .or.TSrMode) then
-!!$                     ! Compute the rotation matrix of the rigid body rotation as
-!!$                     ! well as the rotation point; the latter may vary in time due
-!!$                     ! to rigid body translation.
-!!$                     
-!!$                     call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
-!!$        
-!!$                     liftDirTmp(1) = rotationMatrix(1,1)*liftDir(1) &
-!!$                          + rotationMatrix(1,2)*liftDir(2) &
-!!$                          + rotationMatrix(1,3)*liftDir(3)
-!!$                     liftDirTmp(2) = rotationMatrix(2,1)*liftDir(1) &
-!!$                          + rotationMatrix(2,2)*liftDir(2) &
-!!$                          + rotationMatrix(2,3)*liftDir(3)
-!!$                     liftDirTmp(3) = rotationMatrix(3,1)*liftDir(1) &
-!!$                          + rotationMatrix(3,2)*liftDir(2) &
-!!$                          + rotationMatrix(3,3)*liftDir(3)
-!!$                     dragDirTmp(1) = rotationMatrix(1,1)*dragDir(1) &
-!!$                          + rotationMatrix(1,2)*dragDir(2) &
-!!$                          + rotationMatrix(1,3)*dragDir(3)
-!!$                     dragDirTmp(2) = rotationMatrix(2,1)*dragDir(1) &
-!!$                          + rotationMatrix(2,2)*dragDir(2) &
-!!$                          + rotationMatrix(2,3)*dragDir(3)
-!!$                     dragDirTmp(3) = rotationMatrix(3,1)*dragDir(1) &
-!!$                          + rotationMatrix(3,2)*dragDir(2) &
-!!$                          + rotationMatrix(3,3)*dragDir(3)
-!!$
-!!$                     liftDir = liftDirTmp
-!!$                     dragDir = dragDirTmp
-!!$                  elseif(tsAlphaMode)then
-!!$                     
-!!$                     !Determine the alpha for this time instance
-!!$                     alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
-!!$                          degreeFourAlpha,  omegaFourAlpha,     &
-!!$                          cosCoefFourAlpha, sinCoefFourAlpha, t(1))
-!!$                     
-!!$                     alphaTS = alphaAdj+alphaIncrement
-!!$                     !Determine the grid velocity for this alpha
-!!$                     if(myID==0) print *,'liftindex sub2',liftindex
-!!$                     call adjustInflowAngleAdj(alphaTS,betaAdj,velDirFreestreamAdj,liftDir,dragDir,&
-!!$                          liftIndex)
-!!$                     !do I need to update the lift direction and drag direction as well? yes!!!
-!!$                     
-!!$                  elseif(tsBetaMode)then
-!!$                     
-!!$                     !Determine the alpha for this time instance
-!!$                     betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
-!!$                          degreeFourBeta,  omegaFourBeta,     &
-!!$                          cosCoefFourBeta, sinCoefFourBeta, t(1))
-!!$                     
-!!$                     betaTS = betaAdj+betaIncrement
-!!$                     if(myID==0) print *,'liftindex sub3',liftindex
-!!$                     !Determine the grid velocity for this alpha
-!!$                     call adjustInflowAngleAdj(alphaAdj,betaTS,velDirFreestreamAdj,liftDir,dragDir,&
-!!$                          liftIndex)
-!!$                     
-!!$                  end if
-!!$               end if
+
                call gridVelocitiesFineLevel(.false., t, mm)
                call gridVelocitiesCoarseLevels(mm)
                call normalVelocitiesAllLevels(mm)
@@ -1184,15 +1348,106 @@ subroutine verifydCfdx(level,costFunction)
             call applyAllBC(secondHalo)
             call setPointers(nn,level,sps)
             call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+            !compute the lift vector update
+            call adjustInflowAngleForcesAdj(alpha,beta,velDirFreestream,&
+                 liftDir,dragDir,liftIndex)
+            !This computation is time dependent for TSStability so update for time instance
+            if(TSStability)then
+               
+               !update the lift vector and drag vector to account for changing 
+               !angles of attack
+               
+               ! compute the time of this interval
+               t = timeUnsteadyRestart
+               
+               if(equationMode == timeSpectral) then
+                  do ll=1,nSections
+                     t(ll) = t(ll) + (sps-1)*sections(ll)%timePeriod &
+                          /         nTimeIntervalsSpectral*1.0
+                  enddo
+               endif
+               ! Determine the time values of the old and new time level.
+               ! It is assumed that the rigid body rotation of the mesh is only
+               ! used when only 1 section is present.
+               tNew = timeUnsteady + timeUnsteadyRestart
+               tOld = tNew - t(1)
+               
+               
+               if(TSpMode.or. TSqMode .or.TSrMode) then
+                  ! Compute the rotation matrix of the rigid body rotation as
+                  ! well as the rotation point; the latter may vary in time due
+                  ! to rigid body translation.
+                  
+                  call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+                  
+                  liftDirTmp(1) = rotationMatrix(1,1)*liftDir(1) &
+                  + rotationMatrix(1,2)*liftDir(2) &
+                  + rotationMatrix(1,3)*liftDir(3)
+                  liftDirTmp(2) = rotationMatrix(2,1)*liftDir(1) &
+                       + rotationMatrix(2,2)*liftDir(2) &
+                       + rotationMatrix(2,3)*liftDir(3)
+                  liftDirTmp(3) = rotationMatrix(3,1)*liftDir(1) &
+                       + rotationMatrix(3,2)*liftDir(2) &
+                       + rotationMatrix(3,3)*liftDir(3)
+                  dragDirTmp(1) = rotationMatrix(1,1)*dragDir(1) &
+                       + rotationMatrix(1,2)*dragDir(2) &
+                       + rotationMatrix(1,3)*dragDir(3)
+                  dragDirTmp(2) = rotationMatrix(2,1)*dragDir(1) &
+                       + rotationMatrix(2,2)*dragDir(2) &
+                       + rotationMatrix(2,3)*dragDir(3)
+                  dragDirTmp(3) = rotationMatrix(3,1)*dragDir(1) &
+                       + rotationMatrix(3,2)*dragDir(2) &
+                       + rotationMatrix(3,3)*dragDir(3)
+                  
+                  liftDir = liftDirTmp
+                  dragDir = dragDirTmp
+               elseif(tsAlphaMode)then
+        
+                  !Determine the alpha for this time instance
+                  alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+                       degreeFourAlpha,  omegaFourAlpha,     &
+                       cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+                  
+                  alphaTS = alpha+alphaIncrement
+                  !if(myID==0) print *,'alpha2',alphaTS,alphaIncrement
+                  !Determine the grid velocity for this alpha
+                  !if(myID==0) print *,'liftindex sub2',liftindex
+                  call adjustInflowAngleForcesAdj(alphaTS,beta,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  !do I need to update the lift direction and drag direction as well? yes!!!
+                  !if(myID==0) print *,'liftDir',liftDir 
+               elseif(tsBetaMode)then
+                  
+                  !Determine the alpha for this time instance
+                  betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
+                       degreeFourBeta,  omegaFourBeta,     &
+                       cosCoefFourBeta, sinCoefFourBeta, t(1))
+        
+                  betaTS = betaAdj+betaIncrement
+                  !if(myID==0) print *,'liftindex sub3',liftindex
+                  !Determine the grid velocity for this alpha
+                  call adjustInflowAngleForcesAdj(alpha,betaTS,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  
+               end if
+            end if
             !if( myID==0 )print *,'routines complete 2',nn,level,sps
-            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-                 + (cfp(2) + cfv(2))*liftDirection(2) &
-                 + (cfp(3) + cfv(3))*liftDirection(3)
+            Cl = (cfp(1) + cfv(1))*liftDir(1) &
+                 + (cfp(2) + cfv(2))*liftDir(2) &
+                 + (cfp(3) + cfv(3))*liftDir(3)
             !(1.0/float(ndom))*liftDirection(1)!
-            if (myid==0)print *,'cl2',cl
-            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-                 + (cfp(2) + cfv(2))*dragDirection(2) &
-                 + (cfp(3) + cfv(3))*dragDirection(3)
+            Cd = (cfp(1) + cfv(1))*dragDir(1) &
+                 + (cfp(2) + cfv(2))*dragDir(2) &
+                 + (cfp(3) + cfv(3))*dragDir(3)
+!!$            !if( myID==0 )print *,'routines complete 2',nn,level,sps
+!!$            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+!!$                 + (cfp(2) + cfv(2))*liftDirection(2) &
+!!$                 + (cfp(3) + cfv(3))*liftDirection(3)
+!!$            !(1.0/float(ndom))*liftDirection(1)!
+!!$
+!!$            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+!!$                 + (cfp(2) + cfv(2))*dragDirection(2) &
+!!$                 + (cfp(3) + cfv(3))*dragDirection(3)
 
             Cfx = cfp(1) + cfv(1)
             Cfy = cfp(2) + cfv(2)
@@ -1236,13 +1491,17 @@ subroutine verifydCfdx(level,costFunction)
             alpha = alpharef
 
             call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
-
+            !print *,'cl',clp,clm
+            !valuenew = (CLP-CLM)/(two*deltax) 
+            !print *,'testderiv',nn,sps,valuenew,valueold,valuenew-valueold
+            !valueold = valuenew 
          enddo domainalphaLoopFDorig
-         !if( myID==0 )print *,'setting derivative',nn,level,sps,costFunction,nDesignAoA+1
+         !if( myID==0 )print *,'setting derivative',nn,level,sps,costFunction,nDesignAoA+1,costfunccl0
          ! Store the correct value based on the cost function
          select case (costFunction)
 
-         case (costFuncLiftCoef,costFuncCl0)
+
+         case (costFuncLiftCoef,costfunccl0)
             dIdaFD(nDesignAoA+1,sps) = (CLP-CLM)/(two*deltax) 
          case (costFuncDragCoef)
             dIdaFD(nDesignAoA+1,sps) = (CDP-CDM)/(two*deltax) 
@@ -1256,7 +1515,7 @@ subroutine verifydCfdx(level,costFunction)
             dIdaFD(nDesignAoA+1,sps) = (cmxp-cmxm)/(two*deltax)
          case (costFuncMomYCoef)
             dIdaFD(nDesignAoA+1,sps) = (cmyp-cmym)/(two*deltax)
-         case (costFuncMomZCoef)
+         case (costFuncMomZCoef,costFuncCm0)
             dIdaFD(nDesignAoA+1,sps) = (cmzp-cmzm)/(two*deltax)
          end select
       end do
@@ -1267,15 +1526,15 @@ subroutine verifydCfdx(level,costFunction)
 
    if (nDesignssA >= 0) then
       !get reference conditions
-      call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
-      print *,'dirangle',liftDirection,beta
+      !call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+      !print *,'dirangle',liftDirection,beta
       
       print *,'starting beta FD loop',sps
       do sps = 1,nTimeIntervalsSpectral
          monloc1=0.0
          monloc2=0.0
-         monglob1=0.0
-         monglob2=0.0
+         monGlob1 = 0.0
+         monGlob2 = 0.0
          domainbetaLoopFDorig: do nn=1,nDom   
 
             call setPointers(nn,level,sps)
@@ -1329,14 +1588,101 @@ subroutine verifydCfdx(level,costFunction)
             call applyAllBC(secondHalo)
             call setPointers(nn,level,sps)
             call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+            if(TSStability)then
+               
+               !update the lift vector and drag vector to account for changing 
+               !angles of attack
+               
+               ! compute the time of this interval
+               t = timeUnsteadyRestart
+               
+               if(equationMode == timeSpectral) then
+                  do ll=1,nSections
+                     t(ll) = t(ll) + (sps-1)*sections(ll)%timePeriod &
+                          /         nTimeIntervalsSpectral*1.0
+                  enddo
+               endif
+               ! Determine the time values of the old and new time level.
+               ! It is assumed that the rigid body rotation of the mesh is only
+               ! used when only 1 section is present.
+               tNew = timeUnsteady + timeUnsteadyRestart
+               tOld = tNew - t(1)
+               
+               
+               if(TSpMode.or. TSqMode .or.TSrMode) then
+                  ! Compute the rotation matrix of the rigid body rotation as
+                  ! well as the rotation point; the latter may vary in time due
+                  ! to rigid body translation.
+                  
+                  call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+                  
+                  liftDirTmp(1) = rotationMatrix(1,1)*liftDir(1) &
+                  + rotationMatrix(1,2)*liftDir(2) &
+                  + rotationMatrix(1,3)*liftDir(3)
+                  liftDirTmp(2) = rotationMatrix(2,1)*liftDir(1) &
+                       + rotationMatrix(2,2)*liftDir(2) &
+                       + rotationMatrix(2,3)*liftDir(3)
+                  liftDirTmp(3) = rotationMatrix(3,1)*liftDir(1) &
+                       + rotationMatrix(3,2)*liftDir(2) &
+                       + rotationMatrix(3,3)*liftDir(3)
+                  dragDirTmp(1) = rotationMatrix(1,1)*dragDir(1) &
+                       + rotationMatrix(1,2)*dragDir(2) &
+                       + rotationMatrix(1,3)*dragDir(3)
+                  dragDirTmp(2) = rotationMatrix(2,1)*dragDir(1) &
+                       + rotationMatrix(2,2)*dragDir(2) &
+                       + rotationMatrix(2,3)*dragDir(3)
+                  dragDirTmp(3) = rotationMatrix(3,1)*dragDir(1) &
+                       + rotationMatrix(3,2)*dragDir(2) &
+                       + rotationMatrix(3,3)*dragDir(3)
+                  
+                  liftDir = liftDirTmp
+                  dragDir = dragDirTmp
+               elseif(tsAlphaMode)then
+        
+                  !Determine the alpha for this time instance
+                  alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+                       degreeFourAlpha,  omegaFourAlpha,     &
+                       cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+                  
+                  alphaTS = alpha+alphaIncrement
+                  !if(myID==0) print *,'alpha2',alphaTS,alphaIncrement
+                  !Determine the grid velocity for this alpha
+                  !if(myID==0) print *,'liftindex sub2',liftindex
+                  call adjustInflowAngleForcesAdj(alphaTS,beta,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  !do I need to update the lift direction and drag direction as well? yes!!!
+                  !if(myID==0) print *,'liftDir',liftDir 
+               elseif(tsBetaMode)then
+                  
+                  !Determine the alpha for this time instance
+                  betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
+                       degreeFourBeta,  omegaFourBeta,     &
+                       cosCoefFourBeta, sinCoefFourBeta, t(1))
+        
+                  betaTS = betaAdj+betaIncrement
+                  !if(myID==0) print *,'liftindex sub3',liftindex
+                  !Determine the grid velocity for this alpha
+                  call adjustInflowAngleForcesAdj(alpha,betaTS,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  
+               end if
+            end if
+            !if( myID==0 )print *,'routines complete 2',nn,level,sps
+            Cl = (cfp(1) + cfv(1))*liftDir(1) &
+                 + (cfp(2) + cfv(2))*liftDir(2) &
+                 + (cfp(3) + cfv(3))*liftDir(3)
+            !(1.0/float(ndom))*liftDirection(1)!
 
-            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-                 + (cfp(2) + cfv(2))*liftDirection(2) &
-                 + (cfp(3) + cfv(3))*liftDirection(3)
-            ! (1.0/float(ndom))*liftDirection(1)!        
-            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-                 + (cfp(2) + cfv(2))*dragDirection(2) &
-                 + (cfp(3) + cfv(3))*dragDirection(3)
+            Cd = (cfp(1) + cfv(1))*dragDir(1) &
+                 + (cfp(2) + cfv(2))*dragDir(2) &
+                 + (cfp(3) + cfv(3))*dragDir(3)
+            !Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+            !     + (cfp(2) + cfv(2))*liftDirection(2) &
+            !     + (cfp(3) + cfv(3))*liftDirection(3)
+            !! (1.0/float(ndom))*liftDirection(1)!        
+            !Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+            !     + (cfp(2) + cfv(2))*dragDirection(2) &
+            !     + (cfp(3) + cfv(3))*dragDirection(3)
             !(1.0/float(ndom))*liftDirection(2)!
 
             Cfx = cfp(1) + cfv(1)
@@ -1424,15 +1770,102 @@ subroutine verifydCfdx(level,costFunction)
             call applyAllBC(secondHalo)
             call setPointers(nn,level,sps)
             call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
-
-            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-                 + (cfp(2) + cfv(2))*liftDirection(2) &
-                 + (cfp(3) + cfv(3))*liftDirection(3)
+            if(TSStability)then
+               
+               !update the lift vector and drag vector to account for changing 
+               !angles of attack
+               
+               ! compute the time of this interval
+               t = timeUnsteadyRestart
+               
+               if(equationMode == timeSpectral) then
+                  do ll=1,nSections
+                     t(ll) = t(ll) + (sps-1)*sections(ll)%timePeriod &
+                          /         nTimeIntervalsSpectral*1.0
+                  enddo
+               endif
+               ! Determine the time values of the old and new time level.
+               ! It is assumed that the rigid body rotation of the mesh is only
+               ! used when only 1 section is present.
+               tNew = timeUnsteady + timeUnsteadyRestart
+               tOld = tNew - t(1)
+               
+               
+               if(TSpMode.or. TSqMode .or.TSrMode) then
+                  ! Compute the rotation matrix of the rigid body rotation as
+                  ! well as the rotation point; the latter may vary in time due
+                  ! to rigid body translation.
+                  
+                  call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+                  
+                  liftDirTmp(1) = rotationMatrix(1,1)*liftDir(1) &
+                  + rotationMatrix(1,2)*liftDir(2) &
+                  + rotationMatrix(1,3)*liftDir(3)
+                  liftDirTmp(2) = rotationMatrix(2,1)*liftDir(1) &
+                       + rotationMatrix(2,2)*liftDir(2) &
+                       + rotationMatrix(2,3)*liftDir(3)
+                  liftDirTmp(3) = rotationMatrix(3,1)*liftDir(1) &
+                       + rotationMatrix(3,2)*liftDir(2) &
+                       + rotationMatrix(3,3)*liftDir(3)
+                  dragDirTmp(1) = rotationMatrix(1,1)*dragDir(1) &
+                       + rotationMatrix(1,2)*dragDir(2) &
+                       + rotationMatrix(1,3)*dragDir(3)
+                  dragDirTmp(2) = rotationMatrix(2,1)*dragDir(1) &
+                       + rotationMatrix(2,2)*dragDir(2) &
+                       + rotationMatrix(2,3)*dragDir(3)
+                  dragDirTmp(3) = rotationMatrix(3,1)*dragDir(1) &
+                       + rotationMatrix(3,2)*dragDir(2) &
+                       + rotationMatrix(3,3)*dragDir(3)
+                  
+                  liftDir = liftDirTmp
+                  dragDir = dragDirTmp
+               elseif(tsAlphaMode)then
+        
+                  !Determine the alpha for this time instance
+                  alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+                       degreeFourAlpha,  omegaFourAlpha,     &
+                       cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+                  
+                  alphaTS = alpha+alphaIncrement
+                  !if(myID==0) print *,'alpha2',alphaTS,alphaIncrement
+                  !Determine the grid velocity for this alpha
+                  !if(myID==0) print *,'liftindex sub2',liftindex
+                  call adjustInflowAngleForcesAdj(alphaTS,beta,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  !do I need to update the lift direction and drag direction as well? yes!!!
+                  !if(myID==0) print *,'liftDir',liftDir 
+               elseif(tsBetaMode)then
+                  
+                  !Determine the alpha for this time instance
+                  betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
+                       degreeFourBeta,  omegaFourBeta,     &
+                       cosCoefFourBeta, sinCoefFourBeta, t(1))
+        
+                  betaTS = betaAdj+betaIncrement
+                  !if(myID==0) print *,'liftindex sub3',liftindex
+                  !Determine the grid velocity for this alpha
+                  call adjustInflowAngleForcesAdj(alpha,betaTS,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  
+               end if
+            end if
+            !if( myID==0 )print *,'routines complete 2',nn,level,sps
+            Cl = (cfp(1) + cfv(1))*liftDir(1) &
+                 + (cfp(2) + cfv(2))*liftDir(2) &
+                 + (cfp(3) + cfv(3))*liftDir(3)
             !(1.0/float(ndom))*liftDirection(1)!
 
-            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-                 + (cfp(2) + cfv(2))*dragDirection(2) &
-                 + (cfp(3) + cfv(3))*dragDirection(3)
+            Cd = (cfp(1) + cfv(1))*dragDir(1) &
+                 + (cfp(2) + cfv(2))*dragDir(2) &
+                 + (cfp(3) + cfv(3))*dragDir(3)
+            !Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+            !     + (cfp(2) + cfv(2))*liftDirection(2) &
+            !     + (cfp(3) + cfv(3))*liftDirection(3)
+            !!(1.0/float(ndom))*liftDirection(1)!!
+            !
+            !Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+            !     + (cfp(2) + cfv(2))*dragDirection(2) &
+            !     + (cfp(3) + cfv(3))*dragDirection(3)
             !(1.0/float(ndom))*liftDirection(2)!
 
             Cfx = cfp(1) + cfv(1)
@@ -1485,7 +1918,7 @@ subroutine verifydCfdx(level,costFunction)
          ! Store the correct value based on the cost function
          select case (costFunction)
 
-         case (costFuncLiftCoef)
+         case (costFuncLiftCoef,costFuncCl0)
             dIdaFD(nDesignSSA+1,sps) = (CLP-CLM)/(two*deltax) 
          case (costFuncDragCoef)
             dIdaFD(nDesignSSA+1,sps) = (CDP-CDM)/(two*deltax) 
@@ -1499,7 +1932,7 @@ subroutine verifydCfdx(level,costFunction)
             dIdaFD(nDesignSSA+1,sps) = (cmxp-cmxm)/(two*deltax)
          case (costFuncMomYCoef)
             dIdaFD(nDesignSSA+1,sps) = (cmyp-cmym)/(two*deltax)
-         case (costFuncMomZCoef)
+         case (costFuncMomZCoef,costFuncCm0)
             dIdaFD(nDesignSSA+1,sps) = (cmzp-cmzm)/(two*deltax)
          end select
       end do
@@ -1507,7 +1940,8 @@ subroutine verifydCfdx(level,costFunction)
       call f77flush()
       call mpi_barrier(SUmb_comm_world, ierr)
    end if
-
+   alpha = alpharef
+   beta = betaref
    if (nDesignPointRefX >= 0) then
      
      
@@ -1516,8 +1950,8 @@ subroutine verifydCfdx(level,costFunction)
       do sps = 1,nTimeIntervalsSpectral
          monloc1=0.0
          monloc2=0.0
-         monglob1=0.0
-         monglob2=0.0
+         monGlob1 = 0.0
+         monGlob2 = 0.0
          domainpointrefxLoopFDorig: do nn=1,nDom   
 
             call setPointers(nn,level,sps)
@@ -1569,14 +2003,101 @@ subroutine verifydCfdx(level,costFunction)
             call applyAllBC(secondHalo)
             call setPointers(nn,level,sps)
             call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+            if(TSStability)then
+               
+               !update the lift vector and drag vector to account for changing 
+               !angles of attack
+               
+               ! compute the time of this interval
+               t = timeUnsteadyRestart
+               
+               if(equationMode == timeSpectral) then
+                  do ll=1,nSections
+                     t(ll) = t(ll) + (sps-1)*sections(ll)%timePeriod &
+                          /         nTimeIntervalsSpectral*1.0
+                  enddo
+               endif
+               ! Determine the time values of the old and new time level.
+               ! It is assumed that the rigid body rotation of the mesh is only
+               ! used when only 1 section is present.
+               tNew = timeUnsteady + timeUnsteadyRestart
+               tOld = tNew - t(1)
+               
+               
+               if(TSpMode.or. TSqMode .or.TSrMode) then
+                  ! Compute the rotation matrix of the rigid body rotation as
+                  ! well as the rotation point; the latter may vary in time due
+                  ! to rigid body translation.
+                  
+                  call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+                  
+                  liftDirTmp(1) = rotationMatrix(1,1)*liftDir(1) &
+                  + rotationMatrix(1,2)*liftDir(2) &
+                  + rotationMatrix(1,3)*liftDir(3)
+                  liftDirTmp(2) = rotationMatrix(2,1)*liftDir(1) &
+                       + rotationMatrix(2,2)*liftDir(2) &
+                       + rotationMatrix(2,3)*liftDir(3)
+                  liftDirTmp(3) = rotationMatrix(3,1)*liftDir(1) &
+                       + rotationMatrix(3,2)*liftDir(2) &
+                       + rotationMatrix(3,3)*liftDir(3)
+                  dragDirTmp(1) = rotationMatrix(1,1)*dragDir(1) &
+                       + rotationMatrix(1,2)*dragDir(2) &
+                       + rotationMatrix(1,3)*dragDir(3)
+                  dragDirTmp(2) = rotationMatrix(2,1)*dragDir(1) &
+                       + rotationMatrix(2,2)*dragDir(2) &
+                       + rotationMatrix(2,3)*dragDir(3)
+                  dragDirTmp(3) = rotationMatrix(3,1)*dragDir(1) &
+                       + rotationMatrix(3,2)*dragDir(2) &
+                       + rotationMatrix(3,3)*dragDir(3)
+                  
+                  liftDir = liftDirTmp
+                  dragDir = dragDirTmp
+               elseif(tsAlphaMode)then
+        
+                  !Determine the alpha for this time instance
+                  alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+                       degreeFourAlpha,  omegaFourAlpha,     &
+                       cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+                  
+                  alphaTS = alpha+alphaIncrement
+                  !if(myID==0) print *,'alpha2',alphaTS,alphaIncrement
+                  !Determine the grid velocity for this alpha
+                  !if(myID==0) print *,'liftindex sub2',liftindex
+                  call adjustInflowAngleForcesAdj(alphaTS,beta,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  !do I need to update the lift direction and drag direction as well? yes!!!
+                  !if(myID==0) print *,'liftDir',liftDir 
+               elseif(tsBetaMode)then
+                  
+                  !Determine the alpha for this time instance
+                  betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
+                       degreeFourBeta,  omegaFourBeta,     &
+                       cosCoefFourBeta, sinCoefFourBeta, t(1))
+        
+                  betaTS = betaAdj+betaIncrement
+                  !if(myID==0) print *,'liftindex sub3',liftindex
+                  !Determine the grid velocity for this alpha
+                  call adjustInflowAngleForcesAdj(alpha,betaTS,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  
+               end if
+            end if
+            !if( myID==0 )print *,'routines complete 2',nn,level,sps
+            Cl = (cfp(1) + cfv(1))*liftDir(1) &
+                 + (cfp(2) + cfv(2))*liftDir(2) &
+                 + (cfp(3) + cfv(3))*liftDir(3)
+            !(1.0/float(ndom))*liftDirection(1)!
 
-            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-                 + (cfp(2) + cfv(2))*liftDirection(2) &
-                 + (cfp(3) + cfv(3))*liftDirection(3)
-            ! (1.0/float(ndom))*liftDirection(1)!        
-            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-                 + (cfp(2) + cfv(2))*dragDirection(2) &
-                 + (cfp(3) + cfv(3))*dragDirection(3)
+            Cd = (cfp(1) + cfv(1))*dragDir(1) &
+                 + (cfp(2) + cfv(2))*dragDir(2) &
+                 + (cfp(3) + cfv(3))*dragDir(3)
+            !Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+            !     + (cfp(2) + cfv(2))*liftDirection(2) &
+            !     + (cfp(3) + cfv(3))*liftDirection(3)
+            !! (1.0/float(ndom))*liftDirection(1)!        
+            !Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+            !     + (cfp(2) + cfv(2))*dragDirection(2) &
+            !     + (cfp(3) + cfv(3))*dragDirection(3)
             !(1.0/float(ndom))*liftDirection(2)!
 
             Cfx = cfp(1) + cfv(1)
@@ -1661,15 +2182,102 @@ subroutine verifydCfdx(level,costFunction)
             call applyAllBC(secondHalo)
             call setPointers(nn,level,sps)
             call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
-
-            Cl = (cfp(1) + cfv(1))*liftDirection(1) &
-                 + (cfp(2) + cfv(2))*liftDirection(2) &
-                 + (cfp(3) + cfv(3))*liftDirection(3)
+            if(TSStability)then
+               
+               !update the lift vector and drag vector to account for changing 
+               !angles of attack
+               
+               ! compute the time of this interval
+               t = timeUnsteadyRestart
+               
+               if(equationMode == timeSpectral) then
+                  do ll=1,nSections
+                     t(ll) = t(ll) + (sps-1)*sections(ll)%timePeriod &
+                          /         nTimeIntervalsSpectral*1.0
+                  enddo
+               endif
+               ! Determine the time values of the old and new time level.
+               ! It is assumed that the rigid body rotation of the mesh is only
+               ! used when only 1 section is present.
+               tNew = timeUnsteady + timeUnsteadyRestart
+               tOld = tNew - t(1)
+               
+               
+               if(TSpMode.or. TSqMode .or.TSrMode) then
+                  ! Compute the rotation matrix of the rigid body rotation as
+                  ! well as the rotation point; the latter may vary in time due
+                  ! to rigid body translation.
+                  
+                  call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+                  
+                  liftDirTmp(1) = rotationMatrix(1,1)*liftDir(1) &
+                  + rotationMatrix(1,2)*liftDir(2) &
+                  + rotationMatrix(1,3)*liftDir(3)
+                  liftDirTmp(2) = rotationMatrix(2,1)*liftDir(1) &
+                       + rotationMatrix(2,2)*liftDir(2) &
+                       + rotationMatrix(2,3)*liftDir(3)
+                  liftDirTmp(3) = rotationMatrix(3,1)*liftDir(1) &
+                       + rotationMatrix(3,2)*liftDir(2) &
+                       + rotationMatrix(3,3)*liftDir(3)
+                  dragDirTmp(1) = rotationMatrix(1,1)*dragDir(1) &
+                       + rotationMatrix(1,2)*dragDir(2) &
+                       + rotationMatrix(1,3)*dragDir(3)
+                  dragDirTmp(2) = rotationMatrix(2,1)*dragDir(1) &
+                       + rotationMatrix(2,2)*dragDir(2) &
+                       + rotationMatrix(2,3)*dragDir(3)
+                  dragDirTmp(3) = rotationMatrix(3,1)*dragDir(1) &
+                       + rotationMatrix(3,2)*dragDir(2) &
+                       + rotationMatrix(3,3)*dragDir(3)
+                  
+                  liftDir = liftDirTmp
+                  dragDir = dragDirTmp
+               elseif(tsAlphaMode)then
+        
+                  !Determine the alpha for this time instance
+                  alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+                       degreeFourAlpha,  omegaFourAlpha,     &
+                       cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+                  
+                  alphaTS = alpha+alphaIncrement
+                  !if(myID==0) print *,'alpha2',alphaTS,alphaIncrement
+                  !Determine the grid velocity for this alpha
+                  !if(myID==0) print *,'liftindex sub2',liftindex
+                  call adjustInflowAngleForcesAdj(alphaTS,beta,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  !do I need to update the lift direction and drag direction as well? yes!!!
+                  !if(myID==0) print *,'liftDir',liftDir 
+               elseif(tsBetaMode)then
+                  
+                  !Determine the alpha for this time instance
+                  betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
+                       degreeFourBeta,  omegaFourBeta,     &
+                       cosCoefFourBeta, sinCoefFourBeta, t(1))
+        
+                  betaTS = betaAdj+betaIncrement
+                  !if(myID==0) print *,'liftindex sub3',liftindex
+                  !Determine the grid velocity for this alpha
+                  call adjustInflowAngleForcesAdj(alpha,betaTS,velDirFreestream,liftDir,dragDir,&
+                       liftIndex)
+                  
+               end if
+            end if
+            !if( myID==0 )print *,'routines complete 2',nn,level,sps
+            Cl = (cfp(1) + cfv(1))*liftDir(1) &
+                 + (cfp(2) + cfv(2))*liftDir(2) &
+                 + (cfp(3) + cfv(3))*liftDir(3)
             !(1.0/float(ndom))*liftDirection(1)!
 
-            Cd = (cfp(1) + cfv(1))*dragDirection(1) &
-                 + (cfp(2) + cfv(2))*dragDirection(2) &
-                 + (cfp(3) + cfv(3))*dragDirection(3)
+            Cd = (cfp(1) + cfv(1))*dragDir(1) &
+                 + (cfp(2) + cfv(2))*dragDir(2) &
+                 + (cfp(3) + cfv(3))*dragDir(3)
+            !Cl = (cfp(1) + cfv(1))*liftDirection(1) &
+            !     + (cfp(2) + cfv(2))*liftDirection(2) &
+            !     + (cfp(3) + cfv(3))*liftDirection(3)
+            !!(1.0/float(ndom))*liftDirection(1)!!
+            !
+            !Cd = (cfp(1) + cfv(1))*dragDirection(1) &
+            !     + (cfp(2) + cfv(2))*dragDirection(2) &
+            !     + (cfp(3) + cfv(3))*dragDirection(3)
             !(1.0/float(ndom))*liftDirection(2)!
 
             Cfx = cfp(1) + cfv(1)
@@ -1712,7 +2320,10 @@ subroutine verifydCfdx(level,costFunction)
 
             pointref(1) = pointref_ref
 
-                     
+            !print *,'cl',clp,clm
+            !valuenew = (CLP-CLM)/(two*deltax) 
+            !print *,'testderiv',nn,sps,valuenew,valueold,valuenew-valueold
+            !valueold = valuenew         
 
          enddo domainpointrefxLoopFDorig
     
@@ -1720,7 +2331,7 @@ subroutine verifydCfdx(level,costFunction)
          ! Store the correct value based on the cost function
          select case (costFunction)
 
-         case (costFuncLiftCoef)
+         case (costFuncLiftCoef,costFuncCl0)
             dIdaFD(nDesignPointRefX+1,sps) = (CLP-CLM)/(two*deltax) 
          case (costFuncDragCoef)
             dIdaFD(nDesignPointRefX+1,sps) = (CDP-CDM)/(two*deltax) 
@@ -1734,7 +2345,7 @@ subroutine verifydCfdx(level,costFunction)
             dIdaFD(nDesignPointRefX+1,sps) = (cmxp-cmxm)/(two*deltax)
          case (costFuncMomYCoef)
             dIdaFD(nDesignPointRefX+1,sps) = (cmyp-cmym)/(two*deltax)
-         case (costFuncMomZCoef)
+         case (costFuncMomZCoef,costFuncCm0)
             dIdaFD(nDesignPointRefX+1,sps) = (cmzp-cmzm)/(two*deltax)
          end select
       end do
@@ -2017,6 +2628,9 @@ subroutine verifydCfdx(level,costFunction)
       deallocate(dIdaFD)
       deallocate(dIdaError)
       deallocate(dIdaGlob)
+
+      close(unitdw)
+      close(unitdx)
       ! Output formats.
 
   10  format(1x,a,1x,i3,1x,i3,1x,a,1x,i3,1x,i3,1x,i3)           
