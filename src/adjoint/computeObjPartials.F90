@@ -317,7 +317,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
                     ! DO NOT NEED INCREMENT ON LINE BELOW
                     ii = ii + 1
                     call VecSetValues(dJdx,3,&
-                         (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/),&
+                         (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/)+(sps-1)*npts*3,&
                          ptsb(:,ii,sps)*dJdc(sps),ADD_VALUES,PETScIerr)
                     call EChk(PETScIerr,__file__,__line__)
                  end do
