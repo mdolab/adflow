@@ -229,12 +229,12 @@ subroutine verifyForces(pts,npts,nTS)
   !           Check dFdx
   ! -----------------------------
 
-  ! Currently Broken
-
-  call MatGetOwnershipRange(dFdx,rowStart,rowEnd,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  call MatGetOwnershipRangeColumn(dFdx,colStart,colEnd,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+!!$  ! Currently Broken
+!!$
+!!$  call MatGetOwnershipRange(dFdx,rowStart,rowEnd,ierr)
+!!$  call EChk(ierr,__FILE__,__LINE__)
+!!$  call MatGetOwnershipRangeColumn(dFdx,colStart,colEnd,ierr)
+!!$  call EChk(ierr,__FILE__,__LINE__)
 
   ! if (myid == 0) then 
 !      print *,'------------ dfdx verification ----------'

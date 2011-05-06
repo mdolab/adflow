@@ -173,6 +173,26 @@ python module sumb ! in
          character(len = 64)   :: filename
        end subroutine verifydidwfile
 
+       subroutine verifydidxfile(level,costfunction,filename)
+         use adjointpetsc        !djdw
+         use adjointvars         !nCellsGlobal
+         use blockpointers
+         use cgnsgrid            ! cgnsDoms
+         use communication       ! procHalo(currentLevel)%nProcSend, myID
+         use inputphysics        ! equations
+         use flowvarrefstate     ! nw
+         use inputdiscretization ! spaceDiscr, useCompactDiss
+         use iteration           ! overset, currentLevel
+         use inputtimespectral   ! nTimeIntervalsSpectral
+         use section
+         use monitor             ! monLoc, MonGlob, nMonSum
+         use bctypes             !imin,imax,jmin,jmax,kmin,kmax
+         implicit none
+         integer(kind=inttype) intent(in) :: level
+         integer(kind=inttype) intent(in) :: costfunction
+         character(len = 64)   :: filename
+       end subroutine verifydidxfile
+
        subroutine setupcouplingmatrixstruct(pts,npts,nts) ! in :sumb:../../adjoint/setupCouplingMatrixStruct.F90
          use blockpointers
          use adjointpetsc
