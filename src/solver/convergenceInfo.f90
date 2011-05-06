@@ -301,7 +301,7 @@
              end select
 
              ! Write the convergence info to stdout.
-             if ( printIterations .eqv. .True.) then
+             if ( printIterations) then
                 write(*,"(e24.16,1x)",advance="no") monGlob(mm)
              end if
           enddo

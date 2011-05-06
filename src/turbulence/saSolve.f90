@@ -575,10 +575,10 @@
            do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
              do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
 
-               ! Set ddw to zero.
-
-               ddw(i,j,itu1) = zero
-
+                ! Set ddw to zero.
+                
+                ddw(i,j,itu1) = zero
+                
                ! Enforce nu tilde in the 1st internal cell from the
                ! wall function table. There is an offset of -1 in the
                ! wall distance. Note that the offset compared to the
@@ -595,7 +595,7 @@
                ! Set the wall flag to .true.
 
                flag(i,j) = .true.
-
+               
              enddo
            enddo
 

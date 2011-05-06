@@ -72,6 +72,10 @@ FF90_OBJECTS_4 = BCTypes.o\
 		 section.o\
 	         mdData.o\
 	         mdDataLocal.o\
+		 stencils.o\
+	         blockpointers_d.o\
+	         diffSizes.o\
+
 
 #      ******************************************************************
 #      *                                                                *
