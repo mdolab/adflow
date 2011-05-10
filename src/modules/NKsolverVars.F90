@@ -39,6 +39,7 @@ module NKsolverVars
   logical :: NKSolverSetup
   logical :: NKSolvedOnce
   logical :: NKPCSetup
+  logical :: NKFiniteDifferencePC
   logical :: RKreset
   integer(kind=intType) :: nRKreset
   ! Non-linear Solver Tolerances
