@@ -743,12 +743,12 @@ class SUMB(AeroSolver):
             *self.metricConversion
         self.sumb.inputphysics.pointref[2] = aero_problem._refs.zref\
             *self.metricConversion
-        self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xrot\
-            *self.metricConversion
-        self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yrot\
-            *self.metricConversion
-        self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zrot\
-            *self.metricConversion
+#         self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xrot\
+#             *self.metricConversion
+#         self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yrot\
+#             *self.metricConversion
+#         self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zrot\
+#             *self.metricConversion
         #update the flow vars
         self.sumb.updatereferencepoint()
         self._update_vel_info = True
@@ -904,8 +904,6 @@ class SUMB(AeroSolver):
         self.adjointRHS         = None
         self.callCounter += 1
 
-        
-
         # Run Initialize, if already run it just returns.
         self.initialize(aero_problem,*args,**kwargs)
 
@@ -1052,6 +1050,65 @@ class SUMB(AeroSolver):
             
         return
 
+    def solveCL(self,aeroProblem,CL_star,nIterations=500,alpha0=0,
+                delta=0.5,tol=1e-3):
+        '''This is a simple secant method search for solving for a
+        fixed CL. This really should only be used to determine the
+        starting alpha for a lift constraint in an optimization.
+
+        Input:  aeroProblem -> aerodynamic problem definition
+                CL_star     -> Target CL
+                nIterations -> Number of CFD iterations to run (same as 
+                               input to __solve__
+                alpha0      -> Initial guess for secant search (deg)
+                delta       -> Initial step direction (deg)
+                tol         -> Absolute tolerance for CL convergence
+        Output: aeroProblem._flows.alpha is updated with correct alpha
+        '''
+
+        anm2 = alpha0
+        anm1 = alpha0 + delta
+
+        # Solve for the n-2 value:
+        aeroProblem._flows.alpha = anm2
+        self.__solve__(aeroProblem,nIterations=nIterations)
+        sol = self.getSolution()
+        fnm2 =  sol['cl'] - CL_star
+
+        for iIter in xrange(20):
+            # We need to reset the flow since changing the alpha leads
+            # to problems with the NK solver
+            self.resetFlow()
+
+            # Set current alpha
+            aeroProblem._flows.alpha = anm1
+
+            # Solve for n-1 value (anm1)
+            self.__solve__(aeroProblem,nIterations=nIterations)
+            sol = self.getSolution()
+            fnm1 =  sol['cl'] - CL_star
+            
+            # Secant Update
+            anew = anm1 - fnm1*(anm1-anm2)/(fnm1-fnm2)
+
+            # Shift n-1 values to n-2 values
+            fnm2 = fnm1
+            anm2 = anm1
+     
+            # Se the n-1 alpha value from update
+            anm1 = anew
+            
+            # Check for convergence
+            if abs(fnm1) < tol:
+                break
+            # end if
+        # end for
+
+        # Set the new alpha in the aeroProblem
+        aeroProblem._flows.alpha = anew
+      
+        return
+
     def getSurfaceCoordinates(self,group_name):
         ''' 
         See MultiBlockMesh.py for more info
@@ -1083,8 +1140,6 @@ class SUMB(AeroSolver):
         self.sumb.writesol()
 
         return
-
-
 
     def writeVolumeSolutionFile(self,filename=None,writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS file.
