@@ -289,7 +289,7 @@ subroutine solveState
      solve_NK = .False.
      L2ConvSave = L2Conv
      
-     if (groundLevel == 1) then
+     if (groundLevel == 1 .and. fromPython) then
         call getFreeStreamResidual(rhoRes0,totalR0)
         call getCurrentResidual(rhoResStart,totalRStart)
      end if

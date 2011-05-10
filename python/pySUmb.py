@@ -688,6 +688,7 @@ class SUMB(AeroSolver):
             print ' -> Initializing flow'
         self.sumb.initflow()
 
+
         # Create dictionary of variables we are monitoring
         nmon = self.sumb.monitor.nmon
         self.monnames = {}
@@ -866,9 +867,11 @@ class SUMB(AeroSolver):
         '''
         Reset the flow for the complex derivative calculation
         '''
-
+        mgLvlSave =  self.sumb.inputiteration.mgstartlevel
+        self.sumb.inputiteration.mgstartlevel = 1
         self.sumb.setuniformflow()
-
+        self.sumb.inputiteration.mgstartlevel = mgLvlSave
+        
         return
 
     def getDensity(self):
