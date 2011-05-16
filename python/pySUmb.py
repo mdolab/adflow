@@ -75,6 +75,7 @@ class SUMB(AeroSolver):
 
             # Physics Paramters
             'Discretization':[str,'Central plus scalar dissipation'],
+            'Limiter':[str,'VanAlbeda'],
             'Smoother':[str,'Runge-Kutta'],
             'equationType': [str,'Euler'],
             'equationMode': [str,'Steady'],
@@ -344,6 +345,14 @@ class SUMB(AeroSolver):
                                       self.sumb.inputdiscretization.upwind,
                                   'location':
                                       'inputdiscretization.spacediscr'},
+                'Limiter':{'VanAlbeda':
+                               self.sumb.inputdiscretization.vanalbeda,
+                           'MinMod':
+                               self.sumb.inputdiscretization.minmod,
+                           'NoLimiter':
+                               self.sumb.inputdiscretization.nolimiter,
+                           'location':
+                               'inputdiscretization.limiter'},
                 'Smoother':{'Runge-Kutta':
                                 self.sumb.inputiteration.rungekutta,
                             'LU-SGS':
