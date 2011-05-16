@@ -117,6 +117,11 @@
        limUsed = firstOrder
        if( fineGrid ) limUsed = limiter
 
+       ! Lumped diss is true for doing approx PC
+       if(lumpedDiss) then
+          limUsed = firstOrder
+       end if
+
        ! Determine the riemann solver which must be used.
 
        riemannUsed = riemannCoarse
