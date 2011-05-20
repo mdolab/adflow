@@ -37,6 +37,7 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS = applyPC.o\
 	       computeResidualNK.o\
+	       computeResidualNK2.o\
 	       destroyNKSolver.o\
 	       formFunction.o\
 	       formJacobian.o\
@@ -47,6 +48,7 @@ FF90_OBJECTS = applyPC.o\
 	       setupNK_PC.o\
 	       setupNKSolver.o\
 	       snesMonitor.o\
+	       LSCheck.o\
 
 #      ******************************************************************
 #      *                                                                *

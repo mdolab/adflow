@@ -78,6 +78,7 @@ FF90_OBJECTS = applyAllBC.o\
 	       maxHdiffMach.o\
 	       normalVelocities.o\
 	       residual.o\
+	       residual2.o\
 	       residualAveraging.o\
 	       rungeKuttaSmoother.o\
 	       setCoefTimeIntegrator.o\

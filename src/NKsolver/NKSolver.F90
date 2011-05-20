@@ -80,6 +80,7 @@ subroutine NKsolver
   call SNESSolve(snes,PETSC_NULL_OBJECT,wVec,ierr) ! PETSC_NULL_OBJECT
                                                    ! MAY GIVE MEMORY
                                                    ! LEAK!!!!!!
+
   NKSolvedOnce = .True.
 
   call EChk(ierr,__FILE__,__LINE__)
