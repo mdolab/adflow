@@ -983,6 +983,7 @@ class SUMB(AeroSolver):
             self.sumb.solverunsteadymd(kwargs['MDCallBack'])
         else:
             self.sumb.solver()
+            print 'Fuck back in python'
         # end if
 
 

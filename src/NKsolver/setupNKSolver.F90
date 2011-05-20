@@ -10,7 +10,8 @@ subroutine setupNKsolver
   use flowVarRefState
   use ADjointVars , only: nCellsLocal
   use NKSolverVars, only: snes,dRdw,dRdwPre,ctx,jacobian_lag,NKsolvedOnce, &
-       snes_stol,snes_max_its,snes_max_funcs,nksolversetup,wVec,rVec,itertot0
+       snes_stol,snes_max_its,snes_max_funcs,nksolversetup,wVec,rVec,itertot0, &
+       lsctx
   use InputIO ! L2conv,l2convrel
   use inputIteration
   use monitor
@@ -25,7 +26,7 @@ subroutine setupNKsolver
   integer(kind=intType) , dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
   real(kind=realType) :: rhoRes,rhoRes1,totalRRes
 
-  external FormFunction,FormJacobian,snes_monitor
+  external FormFunction,FormJacobian,snes_monitor,LSCheck
 
   if (.not. NKsolverSetup) then
 
@@ -43,7 +44,8 @@ subroutine setupNKsolver
      !  Set Non-linear Function
      call SNESSetFunction(snes,rVec,FormFunction,ctx,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     
+
+   
      !  Create Jacobian and Approximate Jacobian Matrices
      call MatCreateSNESMF(snes,dRdw,ierr);  call EChk(ierr,__FILE__,__LINE__)
      
@@ -86,6 +88,12 @@ subroutine setupNKsolver
      call SNESKSPSetUseEW(snes,.True.,ierr)  
      call EChk(ierr,__FILE__,__LINE__)
      call SNESSetFromOptions(snes,ierr); call EChk(ierr,__FILE__,__LINE__)
+
+     ! Set the Checking Function to use at the start of line search to
+     ! make sure we dont have nans
+     print *,'Setting preCheck'
+     call SNESLineSearchSetPreCheck(snes,LSCheck,lsctx,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
 
      ! See the monitor function for more information as to why this is -2
      call SNESSetLagJacobian(snes, -2_intType, ierr); call EChk(ierr,__FILE__,__LINE__)
