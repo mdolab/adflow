@@ -91,9 +91,9 @@ subroutine setupNKsolver
 
      ! Set the Checking Function to use at the start of line search to
      ! make sure we dont have nans
-     print *,'Setting preCheck'
-     call SNESLineSearchSetPreCheck(snes,LSCheck,lsctx,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+!      print *,'Setting preCheck'
+!      call SNESLineSearchSetPreCheck(snes,LSCheck,lsctx,ierr)
+!      call EChk(ierr,__FILE__,__LINE__)
 
      ! See the monitor function for more information as to why this is -2
      call SNESSetLagJacobian(snes, -2_intType, ierr); call EChk(ierr,__FILE__,__LINE__)

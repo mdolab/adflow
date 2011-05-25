@@ -876,10 +876,20 @@ class SUMB(AeroSolver):
         '''
         Reset the flow for the complex derivative calculation
         '''
-        mgLvlSave =  self.sumb.inputiteration.mgstartlevel
-        self.sumb.inputiteration.mgstartlevel = 1
+        #mgLvlSave =  self.sumb.inputiteration.mgstartlevel
+        #self.sumb.inputiteration.mgstartlevel = 1
+        strLvl =  self.getOption('MGStartLevel')
+        nLevels = self.sumb.inputiteration.nmglevels
+        if strLvl < 0 or strLvl > nLevels :
+            strLvl = nLevels
+        # end if
+        self.sumb.inputiteration.mgstartlevel = strLvl
+        self.sumb.inputiteration.groundlevel = strLvl
+        self.sumb.inputiteration.currentlevle = strLvl
+        self.sumb.monitor.niterold = 0
+        self.sumb.monitor.nitercur = 0
+        self.sumb.iteration.itertot = 0
         self.sumb.setuniformflow()
-        self.sumb.inputiteration.mgstartlevel = mgLvlSave
         
         return
 
@@ -990,7 +1000,7 @@ class SUMB(AeroSolver):
         # If the solve failed, reset the flow for the next time through
         if self.sumb.killsignals.routinefailed:
             mpiPrint('Resetting flow due to failed flow solve...')
-            self.resetFlow() # Always reset flow if it failed
+            #self.resetFlow() # Always reset flow if it failed
             if self.getOption('autoSolveRetry'): # Try the solver again
                 self.sumb.solver()
                 if self.sumb.killsignals.routinefailed:
