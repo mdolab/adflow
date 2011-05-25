@@ -24,7 +24,7 @@ subroutine setupNKsolver
   ! Working Variables
   integer(kind=intType) :: ierr,nDimw
   integer(kind=intType) , dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
-  real(kind=realType) :: rhoRes,rhoRes1,totalRRes
+  real(kind=realType) :: rhoRes,rhoRes1,totalRRes,alpha,max_step
 
   external FormFunction,FormJacobian,snes_monitor,LSCheck
 
@@ -91,8 +91,17 @@ subroutine setupNKsolver
 
      ! Set the Checking Function to use at the start of line search to
      ! make sure we dont have nans
-     print *,'Setting preCheck'
+     !print *,'Setting preCheck'
      call SNESLineSearchSetPreCheck(snes,LSCheck,lsctx,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call SNESLineSearchGetParams(snes,alpha,max_step,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     if (myid == 0) then
+        print *,'alpha,max_step:',alpha,max_step
+     end if
+     max_step = 10.0
+     call SNESLineSearchSetParams(snes,alpha,max_step,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! See the monitor function for more information as to why this is -2
