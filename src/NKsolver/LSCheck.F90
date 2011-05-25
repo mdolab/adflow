@@ -33,95 +33,117 @@ subroutine LSCheck(snes,VecX,VecY,lsctx,changed_Y,ierr)
   integer(kind=intType) :: iter
   integer(kind=intType) :: i,j,k,l,nn,sps
   real(kind=realType) :: value
-  print *,'Inside formPreCheck,ierr is:',ierr
   ierr = 0
   ! Basically what we need to know is does Residual(X+Y) give us a nan?
 
   ! First check to see if petsc is fucking with us, and run it on the just VecX
 !   call setW(vecX)
      
-!   print *,'Computing Residual on x vec'
 !   call computeResidualNK2()
 
-  ! First generate the actual new iterate:
-  call VecDuplicate(vecX,VecXTemp,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  call VecCopy(vecX,VecXTemp,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  call VecAXPY(vecXTemp,1.0,vecY,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+!   ! First generate the actual new iterate:
+!   call VecDuplicate(vecX,VecXTemp,ierr)
+!   call EChk(ierr,__FILE__,__LINE__)
+!   call VecCopy(vecX,VecXTemp,ierr)
+!   call EChk(ierr,__FILE__,__LINE__)
+!   call VecAXPY(vecXTemp,-1,vecY,ierr)
+!   call EChk(ierr,__FILE__,__LINE__)
 
-  changed_y = .False.
-  backTrack: do iter=1,10
-     ! Set the vector and compute the residual
-     print *,'---------------- Iter ---------------'
-     print *,iter
-     
-     print *,'Setting w'
-     call setW(vecXTemp)
-     
-     print *,'Computing Residual'
-     call computeResidualNK2()
+  
 
-     ! Check for Nan's:
-     print *,'Checking for nan'
-     call checkdwForNan(foundNan)
-     print *,'Found Nan is:',foundNan
-     if (foundNan .ne. 0) then
-        ! We have a found a nan, so we have to keep looping by halving
-        ! the y value until we find a point that works
-        ! We will scale the value of Y by 0.5, then SUBTRACT it from
-        ! X+Y. The series of iterates is therefore
-        ! X+Y, X+Y-0.5Y, X+Y-0.5Y-0.25Y, X+Y-0.5Y-0.25Y-.125Y... = 
-        ! X+Y, X+0.5Y, X+0.25Y, X+0.125Y ...
-        ! Which is precisely our 0.5 backtrack we want
-        !print *,'scaling y'
+!   changed_y = .False.
+!   backTrack: do iter=1,10
+!      ! Set the vector and compute the residual
+!      if (myid == 0) then
+!         print *,'---------------- Iter ---------------'
+!         print *,iter
+!      end if
+
+!      call VecNorm(vecY,NORM_2,value,ierr)
+!      if (myid == 0) then
+!         print *,'Y0 VecNorm:',value
+!      end if
+
+!      call setW(vecXTemp)
+     
+!      if (myid == 0) then
+!         print *,'Computing Residual'
+!      end if
+!      call computeResidualNK2()
+
+!      ! Check for Nan's:
+
+!      call checkdwForNan(foundNan)
+!      if (myid == 0) then
+!         print *,'Found Nan is:',foundNan
+!      end if
+!      if (foundNan .ne. 0) then
+!         ! We have a found a nan, so we have to keep looping by halving
+!         ! the y value until we find a point that works
+!         ! We will scale the value of Y by 0.5, then SUBTRACT it from
+!         ! X+Y. The series of iterates is therefore
+!         ! X+Y, X+Y-0.5Y, X+Y-0.5Y-0.25Y, X+Y-0.5Y-0.25Y-.125Y... = 
+!         ! X+Y, X+0.5Y, X+0.25Y, X+0.125Y ...
+!         ! Which is precisely our 0.5 backtrack we want
+!         !print *,'scaling y'
         
-        call VecScale(vecY,0.5,ierr)
-        call EChk(ierr,__FILE__,__LINE__)
-        call VecNorm(vecY,NORM_2,value,ierr)
+!         call VecScale(vecY,0.1,ierr)
+!         call EChk(ierr,__FILE__,__LINE__)
+!         call VecNorm(vecY,NORM_2,value,ierr)
+!         if (myid == 0) then
+!            print *,'Y VecNorm:',value
+!         end if
+!         call EChk(ierr,__FILE__,__LINE__)
+!         call VecAXPY(vecXTemp,1.0,vecY,ierr)
+!         call EChk(ierr,__FILE__,__LINE__)
 
-        print *,'Y VecNorm:',value
+!         ! Try to get rid of fucking nan:
+!         do sps=1,ntimeintervalsspectral
+!            do nn=1,nDom
+!               call setPointers(nn,1,sps)
+!               do l=1,nw
+!                  w(:,:,:,l) = wInf(l)
+!               end do
+!               P = PinfCorr
+!               dw = 0.0
+!               fw = 0.0
+!            end do
+!         end do
 
-        call EChk(ierr,__FILE__,__LINE__)
-        call VecAXPY(vecXTemp,-1.0,vecY,ierr)
-        call EChk(ierr,__FILE__,__LINE__)
+!         changed_y = .True.
+!         if (iter == 5) then
+!            print *,'Were good and fucked so stop'
+!            stop
+!         end if
+!      else
+!         ! Its ok, so just break loop
+!         exit backTrack
+!      end if
+!   end do backTrack
+!   if (myid == 0) then
+!      print *,'ierr,ichanged_y:',ierr,changed_y
+!   end if
 
-        ! Try to get rid of fucking nan:
-        call setUniformFlow()
-        ! Set dw to zero 
-        do sps=1,nTimeIntervalsSpectral
-           do nn=1,nDom
-              call setPointers(nn,1,sps)
-              dw = 0.0
-              fw = 0.0
-           end do
-        end do
-        call EChk(ierr,__FILE__,__LINE__)
-        changed_y = .True.
-     else
-        ! Its ok, so just break loop
-        exit backTrack
-     end if
-  end do backTrack
-  print *,'ierr,ichanged_y:',ierr,changed_y
+! !   ! Reset the correct 'x' vector back, since weve been screwing with it
+! !   call setUniformFlow()
+! !   ! Set dw to zero 
+! !   do sps=1,nTimeIntervalsSpectral
+! !      do nn=1,nDom
+! !         call setPointers(nn,1,sps)
+! !         dw = 0.0
+! !         fw = 0.0
+! !      end do
+! !   end do
+!   call setW(VecX)
 
-  ! Reset the correct 'x' vector back, since weve been screwing with it
-  call setUniformFlow()
-  ! Set dw to zero 
-  do sps=1,nTimeIntervalsSpectral
-     do nn=1,nDom
-        call setPointers(nn,1,sps)
-        dw = 0.0
-        fw = 0.0
-     end do
-  end do
-  call setW(VecX)
+!   ! Destroy the temporary vector
+!   call VecDestroy(VecXTemp,ierr)
+!   call EChk(ierr,__FILE__,__LINE__)
 
-  ! Destroy the temporary vector
-  call VecDestroy(VecXTemp,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
 
+  !call VecScale(vecY,0.125,ierr)
+  !changed_y = .True.
+  changed_y = .False.
 
 end subroutine LSCheck
 
@@ -165,12 +187,14 @@ subroutine checkdwForNan(foundNan)
   else
      local_nan= 0
   end if
-  print *,'dw local Nan:',myid,local_nan
+  !print *,'dw local Nan:',myid,local_nan
   ! All reduce with a logical or:
   call mpi_allreduce(local_nan, foundNan, 1, sumb_integer, &
        mpi_sum, SUmb_comm_world, ierr)
   call EChk(ierr,__FILE__,__LINE__)  
-  print *,'dw global Nan:',foundNan
+!  if (myid == 0) then
+!     print *,'dw global Nan:',foundNan
+!  end if
 end subroutine checkdwForNan
 
 subroutine checkwForNan(foundNan)

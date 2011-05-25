@@ -84,23 +84,23 @@
            call setPointers(nn, currentLevel, sps)
            
            call inviscidCentralFlux
-           do l=1,nw
-              do k=0,kb
-                 do j=0,jb
-                    do i=0,ib
-                       if (myisnan(w(i,j,k,l))) then
-                          print *,'Error in w at:',myid, nbkGlobal,i,j,k,l
-                       end if
-                       if (myisnan(dw(i,j,k,l))) then
-                          print *,'Error in dw at:',myid, nbkGlobal,i,j,k,l
-                       end if
-                       if (myisnan(p(i,j,k))) then
-                          print *,'Error in p at:',myid, nbkGlobal,i,j,k
-                       end if
-                    end do
-                 end do
-              end do
-           end do
+!            do l=1,nw
+!               do k=0,kb
+!                  do j=0,jb
+!                     do i=0,ib
+!                        if (myisnan(w(i,j,k,l))) then
+!                           print *,'Error in w at:',myid, nbkGlobal,i,j,k,l
+!                        end if
+!                        if (myisnan(dw(i,j,k,l))) then
+!                           print *,'Error in dw at:',myid, nbkGlobal,i,j,k,l
+!                        end if
+!                        if (myisnan(p(i,j,k))) then
+!                           print *,'Error in p at:',myid, nbkGlobal,i,j,k
+!                        end if
+!                     end do
+!                  end do
+!               end do
+!            end do
 
            ! Compute the artificial dissipation fluxes.
            ! This depends on the parameter discr.
@@ -138,47 +138,47 @@
              !===========================================================
 
              case (upwind) ! Dissipation via an upwind scheme.
-                print *,'Before upwind check'
-                do l=1,nw
-                   do k=0,kb
-                      do j=0,jb
-                         do i=0,ib
-                            if (myisnan(w(i,j,k,l))) then
-                               print *,'Error(2) in w at:',myid, nbkGlobal,i,j,k,l
-                            end if
-                            if (myisnan(p(i,j,k))) then
-                               print *,'Error(2) in p at:',myid, nbkGlobal,i,j,k
-                            end if
+!                 print *,'Before upwind check'
+!                 do l=1,nw
+!                    do k=0,kb
+!                       do j=0,jb
+!                          do i=0,ib
+!                             if (myisnan(w(i,j,k,l))) then
+!                                print *,'Error(2) in w at:',myid, nbkGlobal,i,j,k,l
+!                             end if
+!                             if (myisnan(p(i,j,k))) then
+!                                print *,'Error(2) in p at:',myid, nbkGlobal,i,j,k
+!                             end if
 
-                            if (myisnan(dw(i,j,k,l))) then
-                               print *,'Error(2) in dw at:',myid, nbkGlobal,i,j,k
-                            end if
+!                             if (myisnan(dw(i,j,k,l))) then
+!                                print *,'Error(2) in dw at:',myid, nbkGlobal,i,j,k
+!                             end if
 
 
-                         end do
-                      end do
-                   end do
-                end do
+!                          end do
+!                       end do
+!                    end do
+!                 end do
 
 
                call inviscidUpwindFlux(fineGrid)
-               print *,'after upwind check'
-               do l=1,nw
-                  do k=0,kb
-                     do j=0,jb
-                        do i=0,ib
-                           if (myisnan(fw(i,j,k,l))) then
-                              print *,'Error(2) in fw at:',myid, nbkGlobal,i,j,k,l
-                           end if
-                           if (myisnan(dw(i,j,k,l))) then
-                              print *,'Error(2) in dw at:',myid, nbkGlobal,i,j,k,l
-                           end if
+!                print *,'after upwind check'
+!                do l=1,nw
+!                   do k=0,kb
+!                      do j=0,jb
+!                         do i=0,ib
+!                            if (myisnan(fw(i,j,k,l))) then
+!                               print *,'Error(2) in fw at:',myid, nbkGlobal,i,j,k,l
+!                            end if
+!                            if (myisnan(dw(i,j,k,l))) then
+!                               print *,'Error(2) in dw at:',myid, nbkGlobal,i,j,k,l
+!                            end if
 
 
-                        end do
-                     end do
-                  end do
-               end do
+!                         end do
+!                      end do
+!                   end do
+!                end do
                
 
 
