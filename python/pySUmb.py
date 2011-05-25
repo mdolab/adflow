@@ -993,9 +993,7 @@ class SUMB(AeroSolver):
             self.sumb.solverunsteadymd(kwargs['MDCallBack'])
         else:
             self.sumb.solver()
-            print 'Fuck back in python'
         # end if
-
 
         # If the solve failed, reset the flow for the next time through
         if self.sumb.killsignals.routinefailed:

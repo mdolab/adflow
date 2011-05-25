@@ -24,7 +24,7 @@ subroutine setupNKsolver
   ! Working Variables
   integer(kind=intType) :: ierr,nDimw
   integer(kind=intType) , dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
-  real(kind=realType) :: rhoRes,rhoRes1,totalRRes
+  real(kind=realType) :: rhoRes,rhoRes1,totalRRes,alpha,max_step
 
   external FormFunction,FormJacobian,snes_monitor,LSCheck
 

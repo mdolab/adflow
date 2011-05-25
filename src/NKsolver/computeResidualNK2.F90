@@ -20,10 +20,10 @@ subroutine computeResidualNK2()
   ! Next we need to compute the pressures
   gm1 = gammaConstant - one
   correctForK = .False.
-  call checkwforNan(w_nan)
-  call checkpforNan(p_nan)
-  call checkdwforNan(dw_nan)
-  print *, 'Check1:',w_nan,p_nan,dw_nan
+  !call checkwforNan(w_nan)
+  !call checkpforNan(p_nan)
+  !call checkdwforNan(dw_nan)
+  !print *, 'Check1:',w_nan,p_nan,dw_nan
 
   spectralLoop: do sps=1,nTimeIntervalsSpectral
      domainsState: do nn=1,nDom
@@ -50,28 +50,28 @@ subroutine computeResidualNK2()
      end do domainsState
   end do spectralLoop
 
-  call checkwforNan(w_nan)
-  call checkpforNan(p_nan)
-  call checkdwforNan(dw_nan)
-  print *, 'Check2:',w_nan,p_nan,dw_nan
+  !call checkwforNan(w_nan)
+  !call checkpforNan(p_nan)
+  !call checkdwforNan(dw_nan)
+  !print *, 'Check2:',w_nan,p_nan,dw_nan
 
   
   call computeLamViscosity
   call computeEddyViscosity
 
-  call checkwforNan(w_nan)
-  call checkpforNan(p_nan)
-  call checkdwforNan(dw_nan)
-  print *, 'Check3:',w_nan,p_nan,dw_nan
+  !call checkwforNan(w_nan)
+  !call checkpforNan(p_nan)
+  !call checkdwforNan(dw_nan)
+  !print *, 'Check3:',w_nan,p_nan,dw_nan
   
 
   !   Apply BCs
   call applyAllBC(secondHalo)
 
-  call checkwforNan(w_nan)
-  call checkpforNan(p_nan)
-  call checkdwforNan(dw_nan)
-  print *, 'Check4:',w_nan,p_nan,dw_nan
+  !call checkwforNan(w_nan)
+  !call checkpforNan(p_nan)
+  !call checkdwforNan(dw_nan)
+  !print *, 'Check4:',w_nan,p_nan,dw_nan
 
   ! Exchange solution -- always the fine level
   call whalo2(1_intType, 1_intType, nMGVar, .true., &
@@ -80,10 +80,10 @@ subroutine computeResidualNK2()
      call whalo2(1_intType, nt1, nt2, .false., .false., .true.)  
   end if
 
-  call checkwforNan(w_nan)
-  call checkpforNan(p_nan)
-  call checkdwforNan(dw_nan)
-  print *, 'Check5:',w_nan,p_nan,dw_nan
+  !call checkwforNan(w_nan)
+  !call checkpforNan(p_nan)
+  !call checkdwforNan(dw_nan)
+  !print *, 'Check5:',w_nan,p_nan,dw_nan
 
 
   ! Why does this need to be set?
@@ -92,19 +92,19 @@ subroutine computeResidualNK2()
   ! Compute the skin-friction velocity
   call computeUtau
 
-  call checkwforNan(w_nan)
-  call checkpforNan(p_nan)
-  call checkdwforNan(dw_nan)
-  print *, 'Check6:',w_nan,p_nan,dw_nan
+  !call checkwforNan(w_nan)
+  !call checkpforNan(p_nan)
+  !call checkdwforNan(dw_nan)
+  !print *, 'Check6:',w_nan,p_nan,dw_nan
 
 
   ! Compute time step
   call timestep(.false.)
 
-  call checkwforNan(w_nan)
-  call checkpforNan(p_nan)
-  call checkdwforNan(dw_nan)
-  print *, 'Check7:',w_nan,p_nan,dw_nan
+  !call checkwforNan(w_nan)
+  !call checkpforNan(p_nan)
+  !call checkdwforNan(dw_nan)
+  !print *, 'Check7:',w_nan,p_nan,dw_nan
 
   ! Possible Turblent Equations
   if( equations == RANSEquations ) then
@@ -114,19 +114,19 @@ subroutine computeResidualNK2()
   
   ! Initialize Flow residuals
   call initres(1_intType, nwf)
-
-  call checkwforNan(w_nan)
-  call checkpforNan(p_nan)
-  call checkdwforNan(dw_nan)
-  print *, 'Check8:',w_nan,p_nan,dw_nan
+  
+  !call checkwforNan(w_nan)
+  !call checkpforNan(p_nan)
+  !call checkdwforNan(dw_nan)
+  !print *, 'Check8:',w_nan,p_nan,dw_nan
 
   ! Actual Residual Calc
   call residual2
 
-  call checkwforNan(w_nan)
-  call checkpforNan(p_nan)
-  call checkdwforNan(dw_nan)
-  print *, 'Check9:',w_nan,p_nan,dw_nan
+  !call checkwforNan(w_nan)
+  !call checkpforNan(p_nan)
+  !call checkdwforNan(dw_nan)
+  !print *, 'Check9:',w_nan,p_nan,dw_nan
   
 
 

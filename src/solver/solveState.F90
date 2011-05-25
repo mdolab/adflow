@@ -313,10 +313,7 @@ subroutine solveState
         ! yet converged tightly enough to start with NK solver
               
         ! Try to run RK solver down to NKSwitchTol
-        print *,'RhoRes0:,rhoResStart:',rhoRes0,rhoResStart
-        print *,'fuck switch tol:',nk_switch_tol
         L2Conv = NK_Switch_Tol*rhoRes0/rhoResStart
-        print *,'Fuck L2:',L2Conv
         solve_RK = .True.
         solve_NK = .True.
      else 
