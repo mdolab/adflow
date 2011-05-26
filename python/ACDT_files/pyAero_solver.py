@@ -113,17 +113,7 @@ class AeroSolver(object):
 		self.__solve__(aero_problem, sol_type, *args, **kwargs)
 		
 		return 
-		
-		
-	def _mesh(self, flow):
-		
-		'''
-		Geometry Mesh
-		'''
-		
-		# 
-		
-		
+
 		
 	def _solve(self, flow):
 		
@@ -133,31 +123,115 @@ class AeroSolver(object):
 		Documentation last updated:  May. 26, 2008 - Ruben E. Perez
 		'''
 		
-		# 
-		
-		
-		
-	def _forces(self, flow):
-		
+		pass
+
+
+	def resetFlow(self):
 		'''
-		Calculate Forces and Moments
-		
-		Documentation last updated:  May. 26, 2008 - Ruben E. Perez
+		Reset the flow to a uniform state
 		'''
 		
-		# 
-		
-		
-		
-	def _get_loads(self, flow):
-		
+		pass
+
+
+	def getSurfaceCoordinates(self,group_name):
 		'''
-		Get Aerodynamic Loads
+		Return the set of surface coordinates cooresponding to a
+		Particular group name
+		'''
 		
-		Documentation last updated:  May. 26, 2008 - Ruben E. Perez
-		'''	
+		pass
+
+
+	def setSurfaceCoordinates(self,group_name,coordinates):
+		'''
+		Set the set of surface coordinates cooresponding to a
+		Particular group name
+		'''
 		
-		#
+		pass
+
+	def getForces(self,group_name):
+		'''
+		Return the set of forces at the locations defined by 
+		getSurfaceCoordinates
+		'''
+		
+		pass
+
+
+	def globalNKPreCon(self,in_vec):
+		'''
+		Precondition the residual in in_vec for a coupled 
+		Newton-Krylov Method
+		'''
+
+		pass
+
+	def totalSurfaceDerivative(self,objective):
+		'''
+		Return the total derivative of the objective at surface
+		coordinates
+		'''
+
+		pass
+
+
+	def totalAeroDerivative(self,objective):
+		'''
+		Return the total derivative of the objective with respect 
+		to aerodynamic-only variables
+		'''
+
+		pass
+
+
+	def getResNorms(self):
+		'''
+		Return the inital,starting and final residual norms for 
+		the solver
+		'''
+		
+		pass
+
+
+	def getStateSize(self):
+		'''
+		Return the number of degrees of freedom (states) that are
+		on this processor
+		'''
+
+		pass
+
+
+	def getStates(self):
+		'''
+		Return the states on this processor.
+		'''
+
+		pass
+
+
+	def setStates(self,states):
+		''' Set the states on this processor.'''
+
+		pass
+
+	def getResidual(self):
+		'''
+		Return the reisudals on this processor.
+		'''
+
+		pass
+
+
+	def getSolution(self):
+		'''
+		Retrieve the solution dictionary from the solver
+		'''
+		
+		pass
+
 
 	def initAdjoint(self, *args, **kwargs):
 		'''
@@ -165,40 +239,24 @@ class AeroSolver(object):
 		'''
 		pass
 
+
 	def setupAdjointMatrix(self, *args, **kwargs):
 		'''
 		Setup the adjoint matrix for the current solution
 		'''
 		pass
 		
+
 	def solveAdjoint(self,objective, *args, **kwargs):
 		'''
 		Solve the adjoint problem for the desired objective functions.
 
 		objectives - List of objective functions
-		possibleObjectives - Generic objectives dictinoary
+	
 		'''
-		possibleObjectives = { 'lift':'cl','Lift':'cl','CL':'cl','cl':'cl',\
-				       'drag':'cd','Drag':'cd','CD':'cd','cd':'cd',\
-				       'forcx':'cFx','xForce':'cFx','CFX':'cFx','cFx':'cFx',\
-				       'forcey':'cFy','yForce':'cFy','CFY':'cFy','cFy':'cFy',\
-				       'forcez':'cFz','zForce':'cFz','CFZ':'cFz','cFz':'cFz',\
-				       'momentx':'cMx','xMoment':'cMx','CMX':'cMx','cMx':'cMx',\
-				       'momenty':'cMy','yMoment':'cMy','CMY':'cMy','cMy':'cMy',\
-				       'momentz':'cMz','zMoment':'cMz','CMZ':'cMz','cMz':'cMz',\
-				       'cMzAlpha':'cMzAlpha',\
-				       'cM0':'cM0','cm0':'cM0',\
-				       'clAlpha':'clAlpha',\
-				       'cl0':'cl0',\
-				       'cdAlpha':'cdAlpha',\
-				       'cd0':'cd0'
-				       }
-		#for items in objectives:
-
+	
 		self._on_adjoint(objective,*args,**kwargs)
-		#endfor
-		
-		
+			
 		
 	def _on_adjoint(self, objective, *args, **kwargs):
 		
@@ -211,44 +269,7 @@ class AeroSolver(object):
 		# 
 		pass
 		
-	def computeSurfaceDerivative(self, objective, *args, **kwargs):
-		'''
-		Compute the derivative of the objective function wrt the surface.
-		'''
-		
-		pass
-		
-	def computeDerivitiveCoupling(self, objective, *args, **kwargs):
-		'''
-		Compute the Aerodynmics portion of the augmented RHS in the 
-			structural adjoint.
-		This Boils down to dIdx_oml
-		
-		objective - objective function of interest.
-		
-		'''
-		
-		pass
-		
-	def getDerivativeCoupling(self, objective, *args, **kwargs):
-		'''
-		Retrieve the derivative vector computed and stored in 
-			computeDerivative Coupling.
-		
-		objective - objective function of interest.
-		'''
-		
-		pass
-		
-	def augmentAdjointRHS(self, aug_vector,objective, *args, **kwargs):
-		'''
-		Augment the RHS of the adjoint computation.
-		
-		aug_vector - the sensitivity vector from the other discipline with which to augment the RHS objective - objective function of interest.
-		'''
-		
-		pass
-		
+
 	def _on_setOption(self, name, value):
 		
 		'''
@@ -259,7 +280,7 @@ class AeroSolver(object):
 		
 		raise NotImplementedError()
 		
-		
+
 	def setOption(self, name, value):
 		
 		'''
@@ -290,7 +311,6 @@ class AeroSolver(object):
 	
 		self._on_setOption(name, value)
 		
-		
 	def _on_getOption(self, name):
 		
 		'''
@@ -300,7 +320,6 @@ class AeroSolver(object):
 		'''
 		
 		raise NotImplementedError()
-		
 		
 	def getOption(self, name):
 		
@@ -324,7 +343,6 @@ class AeroSolver(object):
 		
 		# 
 		self._on_getOption(name)
-		
 		
 	def _on_getInform(self, info):
 		
