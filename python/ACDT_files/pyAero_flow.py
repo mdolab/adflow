@@ -55,12 +55,12 @@ class Flow(object):
 	'''
 	Abstract Class for Flow Object
 	'''
-	
-	def __init__(self, name={}, mach=0.0, alpha=0.0, beta=0.0,liftIndex=2,\
-		     phat=0.0, rhat=0.0, qhat=0.0, degreePol = 0,\
-		     coefPol = [0.0], degreeFourier = 0,\
-		     omegaFourier = 0.0, cosCoefFourier = [0.0], \
-		     sinCoefFourier = [0.0], *args, **kwargs):
+	def __init__(self, name={}, mach=0.0, alpha=0.0, beta=0.0,liftIndex=2,
+		     phat=0.0, rhat=0.0, qhat=0.0, degreePol = 0,
+		     coefPol = [0.0], degreeFourier = 0,
+		     omegaFourier = 0.0, cosCoefFourier = [0.0], 
+		     sinCoefFourier = [0.0],rho=1.225,P=101325.0,gamma=1.4,
+		     mu=1.80e-5, *args, **kwargs):
 		
 		'''
 		Flow Class Initialization
@@ -104,7 +104,11 @@ class Flow(object):
 		self.cosCoefFourier = cosCoefFourier
 		self.sinCoefFourier = sinCoefFourier
 		
-		
+		self.rho = rho
+		self.P   = P
+		self.gamma = gamma
+		self.mu = mu
+
 	def ListAttributes(self):
 		
 		'''
