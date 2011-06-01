@@ -401,8 +401,8 @@ contains
 !        print *,'offending block is:'
 !        print *,blk
 !        print *,'icolor is:',icolor
-!        print *,'color of this fucking cell:',flowdomsd(1)%color(i,j,k)
-!        print *,'dw at this fucked block is:'
+!        print *,'color of this cell:',flowdomsd(1)%color(i,j,k)
+!        print *,'dw at this screwed block is:'
 !        print *,flowDoms(nn,1,sps)%dw(i,j,k,:)/flowdoms(nn,1,sps)%vol(i,j,k)
 !        print *,flowDomsd(sps2)%dwtmp(i,j,k,:)
 !        print *,'Peturbed w:'
@@ -412,7 +412,7 @@ contains
 !     end if
 
 !     if (has_nan) then
-!        print *,'Block is fucked with a nan'
+!        print *,'Block is screwed with a nan'
 !        print *,ii,jj,kk
 !        stop
 !     end if
