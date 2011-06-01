@@ -1,6 +1,7 @@
 subroutine computeResidualNK2()
 
-  ! Debug copy of computeResidualNK to figure out where the fucking nans are comming from
+  ! Debug copy of computeResidualNK to figure out where the nans are
+  ! comming from
   use blockPointers
   use inputTimeSpectral
   use flowvarrefstate

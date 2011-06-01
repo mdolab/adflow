@@ -36,8 +36,8 @@ subroutine LSCheck(snes,VecX,VecY,lsctx,changed_Y,ierr)
   ierr = 0
   ! Basically what we need to know is does Residual(X+Y) give us a nan?
 
-  ! First check to see if petsc is fucking with us, and run it on the just VecX
-!   call setW(vecX)
+  ! First check to see if petsc is screwing with us, and run it on the
+!   just VecX call setW(vecX)
      
 !   call computeResidualNK2()
 
@@ -97,7 +97,7 @@ subroutine LSCheck(snes,VecX,VecY,lsctx,changed_Y,ierr)
 !         call VecAXPY(vecXTemp,1.0,vecY,ierr)
 !         call EChk(ierr,__FILE__,__LINE__)
 
-!         ! Try to get rid of fucking nan:
+!         ! Try to get rid of nan:
 !         do sps=1,ntimeintervalsspectral
 !            do nn=1,nDom
 !               call setPointers(nn,1,sps)
@@ -112,7 +112,7 @@ subroutine LSCheck(snes,VecX,VecY,lsctx,changed_Y,ierr)
 
 !         changed_y = .True.
 !         if (iter == 5) then
-!            print *,'Were good and fucked so stop'
+!            print *,'Were screwed so stop'
 !            stop
 !         end if
 !      else
