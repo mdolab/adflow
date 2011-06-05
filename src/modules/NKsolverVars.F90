@@ -21,17 +21,20 @@ module NKsolverVars
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
+#include "include/finclude/petscts.h"
 
   ! PETSc Variables
+
   SNES               snes 
+  TS                 pts
   PetscFortranAddr   ctx(3)
   PetscFortranAddr   lsctx(1)
   Mat                dRdw,dRdwPre 
-  Vec wVec,rVec
+  Vec wVec,rVec,deltaW
+  KSP                ksp
   KSP                global_ksp,local_ksp
   PC                 global_pc ,local_pc
   SNESConvergedReason reason
-
 
   ! Non-linear Solver Options
   integer(kind=intType) :: jacobian_lag
