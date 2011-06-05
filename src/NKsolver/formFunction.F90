@@ -33,13 +33,12 @@ subroutine FormFunction(snes,wVec,rVec,ctx,ierr)
 
 end subroutine FormFunction
 
-
 subroutine FormFunction2(ctx,wVec,rVec,ierr)
   ! This is basically a copy of FormFunction, however it has a
   ! different calling sequence from PETSc. It performs the identical
   ! function. This is used for linear solve application for the
   ! aerostructural system pre-conditioner
-
+  use communication
   use precision
   use flowVarRefState
   implicit none
@@ -53,7 +52,7 @@ subroutine FormFunction2(ctx,wVec,rVec,ierr)
 
   ! This is just a shell routine that runs the more broadly useful
   ! computeResidualNK subroutine
-
+ 
   call setW(wVec)
   call computeResidualNK()
   call setRVec(rVec)
@@ -61,3 +60,34 @@ subroutine FormFunction2(ctx,wVec,rVec,ierr)
   ierr = 0
 
 end subroutine FormFunction2
+
+subroutine FormFunction3(pts,t,wVec,rVec,ctx,ierr)
+  ! This is basically a copy of FormFunction, however it has a
+  ! different calling sequence from PETSc. It performs the identical
+  ! function. This is used for Pseudo time stepping. 
+  use communication
+  use precision
+  use flowVarRefState
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+#include "include/finclude/petscts.h"
+
+  ! PETSc Variables
+  TS pts
+  real(kind=realType) :: t
+  PetscFortranAddr ctx(*)
+  Vec     wVec, rVec
+  integer(kind=intType) :: ierr
+  
+  ! This is just a shell routine that runs the more broadly useful
+  ! computeResidualNK subroutine
+  if (myid == 0) then
+     print *,'Form Func 3'
+  end if
+  call setW(wVec)
+  call computeResidualNK()
+  call setRVec(rVec)
+  ! We don't check an error here, so just pass back zero
+  ierr = 0
+end subroutine FormFunction3

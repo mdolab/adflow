@@ -41,12 +41,15 @@ FF90_OBJECTS = applyPC.o\
 	       destroyNKSolver.o\
 	       formFunction.o\
 	       formJacobian.o\
+	       formJacobian_custom.o\
 	       getCurrentResidual.o\
 	       getFreeStreamResidual.o\
 	       NKSolver.o\
+	       NKSolver_custom.o\
 	       NKUtilities.o\
 	       setupNK_PC.o\
 	       setupNKSolver.o\
+	       setupNKSolver_custom.o\
 	       snesMonitor.o\
 	       LSCheck.o\
 

@@ -3,6 +3,9 @@ subroutine setupNK_PC(dRdwPre)
   !     ******************************************************************
   !     *                                                                *
   !     * Compute the dRdWPre matrix for the NK Solver                   *
+  !     * This uses the reverse AD routines. The FD routines are MUCH    *
+  !     * faster and SHOULD be used unless the problems warrants using   *
+  !     * AD for the preconditioner.                                     *
   !     ******************************************************************
   !
   use ADjointVars
@@ -20,7 +23,7 @@ subroutine setupNK_PC(dRdwPre)
 
   Mat dRdwPre
   Vec aVec,bVec
- !
+  !
   !     Local variables.
 
   integer(kind=intType) :: iCell, jCell, kCell, nn, level, m
