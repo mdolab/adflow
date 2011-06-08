@@ -17,6 +17,7 @@ subroutine setupNKsolver
   use monitor
   use killSignals
   use iteration
+  use stencils
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -26,6 +27,8 @@ subroutine setupNKsolver
   integer(kind=intType) , dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
   real(kind=realType) :: rhoRes,rhoRes1,totalRRes
   integer(kind=intType) :: version
+  integer(kind=intType) :: n_stencil,nCellTotal
+  integer(kind=intType), dimension(:,:), allocatable :: stencil
 
   external FormFunction,FormJacobian,snes_monitor,LSCheck
 
@@ -52,12 +55,21 @@ subroutine setupNKsolver
      
      ! Need to get correct Pre-allocation for dRdwPre; we can re-use
      ! adjoint routines for this
-     allocate( nnzDiagonal(nCellsLocal*nTimeIntervalsSpectral),&
-          nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
+     allocate( nnzDiagonal(nDimW/nw),nnzOffDiag(nDimW/nw))
 
-     call drdwPCPreAllocation(nnzDiagonal,nnzOffDiag,&
-          nCellsLocal*nTimeIntervalsSpectral)
- 
+     call initialize_stencils
+     if (not(viscous)) then
+        n_stencil = N_euler_drdw
+        allocate(stencil(n_stencil,3))
+        stencil = euler_drdw_stencil
+     else
+        n_stencil = N_visc_pc
+        allocate(stencil(n_stencil,3))
+        stencil = visc_pc_stencil
+     end if
+
+     call statePreAllocation(nnzDiagonal,nnzOffDiag,nDimW/nw,stencil,n_stencil)
+  
      call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,&
           nDimW, nDimW,                     &
           PETSC_DETERMINE, PETSC_DETERMINE, &
@@ -65,7 +77,7 @@ subroutine setupNKsolver
           0, nnzOffDiag,            &
           dRdWPre, ierr); call EChk(ierr,__FILE__,__LINE__)
      
-     deallocate(nnzDiagonal,nnzOffDiag)
+     deallocate(nnzDiagonal,nnzOffDiag,stencil)
      
 #ifdef USE_PETSC_3
      call MatSetOption(dRdWPre, MAT_ROW_ORIENTED,PETSC_FALSE, ierr)
@@ -91,8 +103,8 @@ subroutine setupNKsolver
 
      call SNESSetFromOptions(snes,ierr); call EChk(ierr,__FILE__,__LINE__)
 
-     !call SNESLineSearchSet(snes,SNESLineSearchNo,ierr)
-     !call EChk(ierr,__FILE__,__LINE__)
+     call SNESLineSearchSet(snes,SNESLineSearchNo,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
 
      ! Set the Checking Function to use at the start of line search to
      ! make sure we dont have nans

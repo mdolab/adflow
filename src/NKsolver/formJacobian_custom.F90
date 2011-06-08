@@ -2,7 +2,8 @@ subroutine FormJacobian_custom()
   use communication
   use precision 
   use NKSolverVars, only: dRdw,dRdwPre,NKFiniteDifferencePC,ksp,&
-       global_pc_type,asm_overlap,local_pc_ordering,local_pc_ilu_level
+       global_pc_type,asm_overlap,local_pc_ordering,local_pc_ilu_level,&
+       diagV
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -29,9 +30,21 @@ subroutine FormJacobian_custom()
      usePC = .True.
      useTranspose = .False.
      call setupStateResidualMatrix(dRdwPre,useAD,usePC,useTranspose)
+
   else
      call setupNK_PC(dRdwPre)
   end if
+
+  ! Add diagV to the diagonal
+  !call MatDiagonalSet(dRdwPre,diagV,ADD_VALUES,ierr)
+  !call EChk(ierr,__FILE__,__LINE__)
+  
+!   ! Redo Assembly
+!   call MatAssemblyBegin(dRdwPre,MAT_FINAL_ASSEMBLY,ierr)
+!   call EChk(ierr,__FILE__,__LINE__)
+!   call MatAssemblyEnd  (dRdwPre,MAT_FINAL_ASSEMBLY,ierr)
+!   call EChk(ierr,__FILE__,__LINE__)
+
 
   ! Setup the required options for the Global PC
   call KSPGetPC(ksp,pc,ierr);             

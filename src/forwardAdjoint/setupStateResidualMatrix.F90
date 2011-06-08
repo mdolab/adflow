@@ -75,8 +75,14 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   ! using the first order stencil or the full jacobian
 
   if (usePC) then
-     stencil => euler_pc_stencil
-     n_stencil = N_euler_pc
+
+     if (not(viscous)) then
+        stencil => euler_pc_stencil
+        n_stencil = N_euler_pc
+     else
+        stencil => euler_pc_stencil
+        n_stencil = N_euler_pc
+     end if
      ! Very important to use only second Order dissipation for PC 
      lumpedDiss=.True.
   else
@@ -115,7 +121,17 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
         !3-cell stencil in each direction so we we still use the
         !5-cell coloring. Not really a big deal. 
         !call setup_PC_coloring(nn,nColor)
-        call setup_dRdw_euler_coloring(nn,nColor) ! Euler Colorings
+
+        if (not (viscous)) then
+           call setup_dRdw_euler_coloring(nn,nColor) ! Euler Colorings
+        end if
+        
+        if (viscous) then
+           !call setup_5x5x5_coloring(nn,nColor)
+           call setup_3x3x3_coloring(nn,nColor) ! dense 3x3x3 coloring
+           !call setup_dRdw_euler_coloring(nn,nColor) ! Euler Colorings
+        end if
+
      else
         if( .not. viscous ) then
            call setup_dRdw_euler_coloring(nn,nColor) ! Euler Colorings
@@ -288,7 +304,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   time(2) = mpi_wtime()
   call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
        SUmb_comm_world, ierr)
-
+  
   if (myid == 0) then
      if (usePC == .False. .or. useTranspose == .True.) then
         print *,'Assembly time:',setupTime

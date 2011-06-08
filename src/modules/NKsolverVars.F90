@@ -29,8 +29,8 @@ module NKsolverVars
   TS                 pts
   PetscFortranAddr   ctx(3)
   PetscFortranAddr   lsctx(1)
-  Mat                dRdw,dRdwPre 
-  Vec wVec,rVec,deltaW
+  Mat                dRdw,dRdwPre,dRdwPseudo
+  Vec wVec,rVec,deltaW,diagV
   KSP                ksp
   KSP                global_ksp,local_ksp
   PC                 global_pc ,local_pc
