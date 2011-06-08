@@ -451,7 +451,7 @@ subroutine drdwPCPreAllocation(onProc,offProc,wSize)
 
   integer(kind=intType) :: nn,i,j,k,sps,ii
   ii = 0
-  onProc(:) = 1+(nTimeIntervalsSpectral) ! ALWAYS have the center cell ON-PROCESSOR
+  onProc(:) = (nTimeIntervalsSpectral) ! ALWAYS have the center cell ON-PROCESSOR
   offProc(:) = 0_intType 
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
@@ -719,3 +719,118 @@ subroutine checkCellSym(i,j,k,onProc,addVal)
      end if
   end do n1to1Loop
 end subroutine checkCellSym
+
+subroutine statePreAllocation(onProc,offProc,wSize,stencil,N_stencil)
+
+  ! This is a generic function that determines the correct
+  ! pre-allocation for on and off processor parts. It take in a
+  ! "stencil" definition (look at modules/stencil.f90 for the
+  ! definitions) and uses this to determine on and off proc values. 
+
+  use blockPointers
+  use ADjointPETSc
+  use ADjointVars    
+  use communication   
+  use inputTimeSpectral 
+  use flowVarRefState 
+  use inputADjoint    
+  use BCTypes
+
+  implicit none
+
+  ! Subroutine Arguments
+  integer(kind=intType),intent(in)  :: wSize
+  integer(kind=intType),intent(in)  :: N_stencil
+  integer(kind=intType),intent(in)  :: stencil(N_stencil,3)
+  integer(kind=intType),intent(out) :: onProc(wSize),offProc(wSize)
+
+  ! Local Variables
+
+  integer(kind=intType) :: nn,i,j,k,sps,ii,jj
+  integer(kind=intType) :: cell(3)
+  integer(kind=intTYpe) :: onAdd,offAdd
+  ii = 0
+  ! Set the onProc values for each cell to the number of "OFF" time
+  ! spectral instances. The "on" spectral instances are accounted for
+  ! in the stencil
+
+  onProc(:) = nTimeIntervalsSpectral-1
+  offProc(:) = 0_intType 
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointersAdj(nn,1_intType,sps)
+        ! Loop over each Cell
+        do k=2,kl
+           do j=2,jl
+              do i=2,il 
+                 
+                 ! Increment ii ONLY for each each movement of center cell
+                 ii = ii + 1
+
+                 ! Loop over the cells in the provided stencil:
+                 do jj=1,N_stencil
+                                  
+                    ! Determine the cell we are dealing with 
+                    cell = (/i,j,k/) + stencil(jj,:)
+
+                    ! Fully inside:
+                    if (cell(1) >=2 .and. cell(1) <= il .and. &
+                        cell(2) >=2 .and. cell(2) <= jl .and. &
+                        cell(3) >=2 .and. cell(3) <= kl) then
+                       
+                       onProc(ii) = onProc(ii) + 1
+
+                    else ! BC or B2B
+
+                       onAdd = 0
+                       offAdd = 0
+                  
+                       ! Basically what we need to determine if
+                       ! "cell_to_check" is on this proc or an off proc
+
+                       ! Low I check
+                       if (cell(1) < 2) then
+                          call checkCell(iMin,j,k,onAdd,offAdd,1)
+                       end if
+
+                       ! High I Check
+                       if (cell(1) > il) then
+                          call checkCell(iMax,j,k,onAdd,offAdd,1)
+                       end if
+
+                       ! Low J check
+                       if (cell(2) < 2) then
+                          call checkCell(jMin,i,k,onAdd,offAdd,1)
+                       end if
+                    
+                       ! High J Check
+                       if (cell(2) > jl) then
+                          call checkCell(jMax,i,k,onAdd,offAdd,1)
+                       end if
+                    
+                       ! Low K check
+                       if (cell(3) < 2) then
+                          call checkCell(kMin,i,j,onAdd,offAdd,1)
+                       end if
+
+                       ! High K check
+                       if (cell(3) > kl) then
+                          call checkCell(kMax,i,j,onAdd,offAdd,1)
+                       end if
+
+                       if (offAdd >= 1) then
+                          offProc(ii) = offProc(ii) + 1
+                       else if (onAdd > 0) then
+                          onProc(ii) = onProc(ii) + 1
+                       end if
+                          
+                    end if
+
+                 end do ! Stencil Loop
+              end do ! I loop
+           end do ! J loop
+        end do ! K loop
+     end do ! sps loop
+  end do ! Domain Loop
+  
+end subroutine statePreAllocation

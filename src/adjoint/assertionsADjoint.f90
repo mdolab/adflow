@@ -65,9 +65,9 @@ subroutine assertionsADjoint(level)
 
   ! Assert that it is an inviscid problem.
 
-  if( viscous ) &
-       call terminate("assertionsADjoint", &
-       "Cannot handle viscous terms yet.")
+ !  if( viscous ) &
+!        call terminate("assertionsADjoint", &
+!        "Cannot handle viscous terms yet.")
 
   ! Assert that there are no overset grids.
 
@@ -96,8 +96,8 @@ subroutine assertionsADjoint(level)
            boundary = BCType(mm)
 
            if( boundary == SymmPolar        .or. &
-                boundary == NSWallAdiabatic  .or. &
-                boundary == NSWallIsothermal .or. &
+                !boundary == NSWallAdiabatic  .or. &
+                !boundary == NSWallIsothermal .or. &
                 boundary == SubsonicInflow   .or. &
                 boundary == SubsonicOutflow  .or. &
                 boundary == MassBleedInflow  .or. &

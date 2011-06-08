@@ -14,17 +14,20 @@ module stencils
   integer(kind=intType), parameter :: N_euler_pc   = 7
   integer(kind=intType), parameter :: N_euler_drdw = 13
   integer(kind=intType), parameter :: N_euler_drdx = 32
+  integer(kind=intType), parameter :: N_visc_pc     = 27
 
   integer(kind=intType), dimension(7 ,3),target :: euler_pc_stencil
   integer(kind=intType), dimension(13,3),target :: euler_drdw_stencil
   integer(kind=intType), dimension(32,3),target :: euler_drdx_stencil
-
+  integer(kind=intType), dimension(27,3),target :: visc_pc_stencil
+  
 end module stencils
        
 
 subroutine initialize_stencils
 
   use stencils
+  integer(kind=intType) :: i,j,k,counter
 
   ! Euler PC Stencil
 
@@ -85,6 +88,17 @@ subroutine initialize_stencils
   euler_drdx_stencil(30,:) = (/    2,  0,  1 /)
   euler_drdx_stencil(31,:) = (/    2,  1,  0 /)
   euler_drdx_stencil(32,:) = (/    2,  1,  1 /)
+
+  ! Viscous 3x3x3 stencil:
+  counter = 0
+  do i=-1,1
+     do j=-1,1
+        do k=-1,1
+           counter = counter + 1
+           visc_pc_stencil(counter,:) = (/i,j,k/)
+        end do
+     end do
+  end do
 
 end subroutine initialize_stencils
 

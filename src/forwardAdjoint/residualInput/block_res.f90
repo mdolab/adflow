@@ -21,7 +21,6 @@ subroutine block_res(nn,sps)
 
   implicit none
 
-
   real(kind=realType) :: gm1,v2
   integer(kind=intType) :: nn,sps,i,j,k,sps2,mm,l
   logical :: correctForK
@@ -48,6 +47,9 @@ subroutine block_res(nn,sps)
 
   !call computeEtot(0,ib,0,jb,0,kb,correctForK)
   
+  call computeLamViscosity
+  call computeEddyViscosity
+
   !  Apply all BC's
   call applyAllBC_block(.True.)
   
@@ -58,7 +60,8 @@ subroutine block_res(nn,sps)
   call timeStep_block(.false.)
   
   if( equations == RANSEquations ) then
-     call initres_block(nt1MG, nMGVar,nn,sps) ! Initialize only the Turblent Variables
+     ! Initialize only the Turblent Variables
+     call initres_block(nt1MG, nMGVar,nn,sps) 
      call turbResidual_block
   endif
   
@@ -96,18 +99,16 @@ subroutine block_res(nn,sps)
         end do
      end do
    
+     ! Possibly scale turblent variables by 1e-3
      do l=nt1,nt2
         do k=2,kl
            do j=2,jl
               do i=2,il
-                 dw(i,j,k,l) = dw(i,j,k,l) / vol(i,j,k)! * 1e-3
+                 dw(i,j,k,l) = dw(i,j,k,l) / vol(i,j,k) !* 1e3
               end do
            end do
         end do
      end do
-
-
-
   end do
 
   call setPointersOffTSInstance(nn,sps,sps)

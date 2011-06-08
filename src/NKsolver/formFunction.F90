@@ -41,6 +41,8 @@ subroutine FormFunction2(ctx,wVec,rVec,ierr)
   use communication
   use precision
   use flowVarRefState
+  use inputtimespectral
+  use blockPointers
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -48,8 +50,8 @@ subroutine FormFunction2(ctx,wVec,rVec,ierr)
   ! PETSc Variables
   PetscFortranAddr ctx(*)
   Vec     wVec, rVec
-  integer(kind=intType) :: ierr
-
+  integer(kind=intType) :: ierr,sps,nn
+  real(kind=realType) :: ovr_CFL
   ! This is just a shell routine that runs the more broadly useful
   ! computeResidualNK subroutine
  
