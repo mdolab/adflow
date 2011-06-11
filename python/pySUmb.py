@@ -1280,7 +1280,6 @@ class SUMB(AeroSolver):
 
         return
 
-
     def globalNKPreCon(self,in_vec):
         '''This function is ONLY used as a preconditioner to the
         global Aero-Structural system'''
@@ -1440,7 +1439,7 @@ class SUMB(AeroSolver):
             if forcePoints is None:
                 forcePoints = self.getForcePoints()
             # end if
-            
+
             self.sumb.setupcouplingmatrixstruct(forcePoints.T)
             self.sumb.setuppetscksp()
             self.mesh.setupWarpDeriv()
@@ -1730,9 +1729,9 @@ class SUMB(AeroSolver):
         '''Return the initial, starting and final Res Norms'''
         
         return \
-            self.sumb.nksolvervars.totalr0, \
-            self.sumb.nksolvervars.totalrstart,\
-            self.sumb.nksolvervars.totalrfinal
+            numpy.real(self.sumb.nksolvervars.totalr0), \
+            numpy.real(self.sumb.nksolvervars.totalrstart),\
+            numpy.real(self.sumb.nksolvervars.totalrfinal)
 
     def getMeshIndices(self):
         ndof = self.sumb.getnumberlocalnodes()
@@ -1806,12 +1805,9 @@ class SUMB(AeroSolver):
         
         sizeForcePoints = temp[1]*temp[2]#temp[0]*temp[1]#*temp[2]
         
-        #if len(forcePoints > 0):
         if sizeForcePoints > 0:
             dIdpts = self.sumb.getdidx(sizeForcePoints)
-        
             dIdpts.reshape(forcePoints[0,:,:].shape)
-        
         else:
             dIdpts = numpy.zeros((0),self.dtype)
         # end if

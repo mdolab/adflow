@@ -61,202 +61,204 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   call EChk(ierr,__FILE__,__LINE__)
 
   do sps = 1,nTimeIntervalsSpectral
-  ii=0
-  domains: do nn=1,nDom
-     call setPointersAdj(nn,1_intType,1_intType)
+     ii=0
+     domains: do nn=1,nDom
+        call setPointersAdj(nn,1_intType,sps)
 
-     rightHanded = flowDoms(nn,1_intType,1_intType)%rightHanded
+        rightHanded = flowDoms(nn,1_intType,sps)%rightHanded
 
-     bocos: do mm=1,nBocos
-        if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
-             BCType(mm) == NSWallIsothermal) then
-           jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
-           iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
-           iStride = iEnd-iBeg+1
-           jStride = jEnd-jBeg+1
+        bocos: do mm=1,nBocos
+           if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
+                BCType(mm) == NSWallIsothermal) then
+              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
+              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
+              iStride = iEnd-iBeg+1
+              jStride = jEnd-jBeg+1
 
-           
-           do j=jBeg,jEnd
-              do i=iBeg,iEnd
-                
-                 grid_pts(:,:,:) = 0.0
-                 wAdj(:,:,:,:)   = 0.0
-                
-                 do iii =1,2
-                    do jjj=1,2
-                       if (.not.(i+iii-2 < iBeg .or. i+iii-1 > iEnd .or. &
-                            j+jjj-2 < jBeg .or. j+jjj-1 > jEnd)) then
- 
-                          lower_left  = ii + iii + (jjj-1)*iStride-istride-1
-                          lower_right = ii + iii + (jjj-1)*iStride-istride
-                          upper_left  = ii + iii + (jjj  )*iStride-istride-1
-                          upper_right = ii + iii + (jjj  )*iStride-istride
 
-                          if (lower_left > 0) then
-                             grid_pts(:,iii  ,jjj  ) = pts(:,lower_left,sps)
+              do j=jBeg,jEnd
+                 do i=iBeg,iEnd
+
+                    grid_pts(:,:,:) = 0.0
+                    wAdj(:,:,:,:)   = 0.0
+
+                    do iii =1,2
+                       do jjj=1,2
+                          if (.not.(i+iii-2 < iBeg .or. i+iii-1 > iEnd .or. &
+                               j+jjj-2 < jBeg .or. j+jjj-1 > jEnd)) then
+
+                             lower_left  = ii + iii + (jjj-1)*iStride-istride-1
+                             lower_right = ii + iii + (jjj-1)*iStride-istride
+                             upper_left  = ii + iii + (jjj  )*iStride-istride-1
+                             upper_right = ii + iii + (jjj  )*iStride-istride
+
+                             if (lower_left > 0) then
+                                grid_pts(:,iii  ,jjj  ) = pts(:,lower_left,sps)
+                             end if
+
+                             if (lower_right > 0) then
+                                grid_pts(:,iii+1,jjj  ) = pts(:,lower_right,sps)
+                             end if
+
+                             if (upper_left > 0) then
+                                grid_pts(:,iii  ,jjj+1) = pts(:,upper_left,sps)
+                             end if
+
+                             if (upper_right > 0) then
+                                grid_pts(:,iii+1,jjj+1) = pts(:,upper_right,sps)
+                             end if
+
+                             pts_ind (iii  ,jjj  ) = lower_left -1
+                             pts_ind (iii+1,jjj  ) = lower_right-1
+                             pts_ind (iii  ,jjj+1) = upper_left -1
+                             pts_ind (iii+1,jjj+1) = upper_right-1
+
                           end if
-
-                          if (lower_right > 0) then
-                             grid_pts(:,iii+1,jjj  ) = pts(:,lower_right,sps)
-                          end if
-
-                          if (upper_left > 0) then
-                             grid_pts(:,iii  ,jjj+1) = pts(:,upper_left,sps)
-                          end if
-
-                          if (upper_right > 0) then
-                             grid_pts(:,iii+1,jjj+1) = pts(:,upper_right,sps)
-                          end if
-
-                          pts_ind (iii  ,jjj  ) = lower_left -1
-                          pts_ind (iii+1,jjj  ) = lower_right-1
-                          pts_ind (iii  ,jjj+1) = upper_left -1
-                          pts_ind (iii+1,jjj+1) = upper_right-1
-                          
-                       end if
+                       end do
                     end do
-                 end do
 
 
-                 ! Copy over the states
+                    ! Copy over the states
 
-                 select case (BCFaceID(mm))
-                 case (iMin)
-                    fact = -1_realType
-                    do kkk=1,2
-                       wadj(kkk,1,1,:) = w(kkk+1,i  ,j  ,:)
-                       wadj(kkk,2,1,:) = w(kkk+1,i+1,j  ,:)
-                       wadj(kkk,1,2,:) = w(kkk+1,i  ,j+1,:)
-                       wadj(kkk,2,2,:) = w(kkk+1,i+1,j+1,:)
-                       w_ind(kkk,1,1)  = globalCell(kkk+1,i  ,j  ) 
-                       w_ind(kkk,2,1)  = globalCell(kkk+1,i+1,j  ) 
-                       w_ind(kkk,1,2)  = globalCell(kkk+1,i  ,j+1) 
-                       w_ind(kkk,2,2)  = globalCell(kkk+1,i+1,j+1) 
-                    end do
-                 case (iMax)
-                    fact = 1_realType
-                    do kkk=1,2
-                       wadj(kkk,1,1,:) = w(ib-kkk-1,i  ,j  ,:)
-                       wadj(kkk,2,1,:) = w(ib-kkk-1,i+1,j  ,:)
-                       wadj(kkk,1,2,:) = w(ib-kkk-1,i  ,j+1,:)
-                       wadj(kkk,2,2,:) = w(ib-kkk-1,i+1,j+1,:)
-                       w_ind(kkk,1,1)  = globalCell(ib-kkk-1,i  ,j  ) 
-                       w_ind(kkk,2,1)  = globalCell(ib-kkk-1,i+1,j  ) 
-                       w_ind(kkk,1,2)  = globalCell(ib-kkk-1,i  ,j+1) 
-                       w_ind(kkk,2,2)  = globalCell(ib-kkk-1,i+1,j+1) 
-                    end do
-                 case (jMin)
-                    fact = 1_realType
-                    do kkk=1,2
-                       wadj(kkk,1,1,:) = w(i  ,kkk+1,j  ,:)
-                       wadj(kkk,2,1,:) = w(i+1,kkk+1,j  ,:)
-                       wadj(kkk,1,2,:) = w(i  ,kkk+1,j+1,:)
-                       wadj(kkk,2,2,:) = w(i+1,kkk+1,j+1,:)
-                       w_ind(kkk,1,1)  = globalCell(i  ,kkk+1,j  )
-                       w_ind(kkk,2,1)  = globalCell(i+1,kkk+1,j  )
-                       w_ind(kkk,1,2)  = globalCell(i  ,kkk+1,j+1)
-                       w_ind(kkk,2,2)  = globalCell(i+1,kkk+1,j+1)
-                    end do
-                 case (jMax)
-                    fact = -1_realType
-                    do kkk=1,2
-                       wadj(kkk,1,1,:) = w(i  ,jb-kkk-1,j  ,:)
-                       wadj(kkk,2,1,:) = w(i+1,jb-kkk-1,j  ,:)
-                       wadj(kkk,1,2,:) = w(i  ,jb-kkk-1,j+1,:)
-                       wadj(kkk,2,2,:) = w(i+1,jb-kkk-1,j+1,:)
-                       w_ind(kkk,1,1)  = globalCell(i  ,jb-kkk-1,j  ) 
-                       w_ind(kkk,2,1)  = globalCell(i+1,jb-kkk-1,j  ) 
-                       w_ind(kkk,1,2)  = globalCell(i  ,jb-kkk-1,j+1) 
-                       w_ind(kkk,2,2)  = globalCell(i+1,jb-kkk-1,j+1) 
-                    end do
-                 case (kMin)
-                    fact = -1_realType
-                    do kkk=1,2
-                       wadj(kkk,1,1,:) = w(i  ,j  ,kkk+1,:)
-                       wadj(kkk,2,1,:) = w(i+1,j  ,kkk+1,:)
-                       wadj(kkk,1,2,:) = w(i  ,j+1,kkk+1,:)
-                       wadj(kkk,2,2,:) = w(i+1,j+1,kkk+1,:)
-                       w_ind(kkk,1,1)  = globalCell(i  ,j  ,kkk+1) 
-                       w_ind(kkk,2,1)  = globalCell(i+1,j  ,kkk+1) 
-                       w_ind(kkk,1,2)  = globalCell(i  ,j+1,kkk+1) 
-                       w_ind(kkk,2,2)  = globalCell(i+1,j+1,kkk+1) 
-                    end do
-                 case (kMax)
-                    fact = 1_realType
-                    do kkk=1,2
-                       wadj(kkk,1,1,:) = w(i  ,j  ,kb-kkk-1,:)
-                       wadj(kkk,2,1,:) = w(i+1,j  ,kb-kkk-1,:)
-                       wadj(kkk,1,2,:) = w(i  ,j+1,kb-kkk-1,:)
-                       wadj(kkk,2,2,:) = w(i+1,j+1,kb-kkk-1,:)
-                       w_ind(kkk,1,1)  = globalCell(i  ,j  ,kb-kkk-1) 
-                       w_ind(kkk,2,1)  = globalCell(i+1,j  ,kb-kkk-1) 
-                       w_ind(kkk,1,2)  = globalCell(i  ,j+1,kb-kkk-1) 
-                       w_ind(kkk,2,2)  = globalCell(i+1,j+1,kb-kkk-1) 
-                    end do
-                 end select
-
-                 ! Call the reverse mode AD routine
-
-                 do idim =1,3
-                    forceb(:)    = 0.0_realType
-                    forceb(idim) = 1.0_realType
-                    force = 0.0
-                    grid_ptsb = 0.0
-                    wadjb = 0.0
-
-                    call COMPUTEFORCESADJ_B(force, forceb, moment, momentb, grid_pts, &
-                         grid_ptsb, wadj, wadjb, refpoint, refpointb, fact, ibeg, iend, jbeg, jend, &
-                         i, j, righthanded)
-               
-                    ! Set dFdw first
-                    irow = rowStart + ii*3+idim-1+(sps-1)*npts*3
-
-                    do l=1,nw                   
+                    select case (BCFaceID(mm))
+                    case (iMin)
+                       fact = -1_realType
                        do kkk=1,2
-                          do iii=1,2
-                             do jjj=1,2
-                                if (.not.(i+iii-2 < iBeg .or. i+iii-1 > iEnd .or. &
-                                     j+jjj-2 < jBeg .or. j+jjj-1 > jEnd)) then
-                                   
-                                   call MatSetValue(dFdw,irow,&
-                                        w_ind(kkk,iii,jjj)*nw+l-1,&
-                                        wadjb(kkk,iii,jjj,l),&
-                                        INSERT_VALUES, ierr)
-                                   call EChk(ierr,__FILE__,__LINE__)
-                                end if
+                          wadj(kkk,1,1,:) = w(kkk+1,i  ,j  ,:)
+                          wadj(kkk,2,1,:) = w(kkk+1,i+1,j  ,:)
+                          wadj(kkk,1,2,:) = w(kkk+1,i  ,j+1,:)
+                          wadj(kkk,2,2,:) = w(kkk+1,i+1,j+1,:)
+                          w_ind(kkk,1,1)  = globalCell(kkk+1,i  ,j  ) 
+                          w_ind(kkk,2,1)  = globalCell(kkk+1,i+1,j  ) 
+                          w_ind(kkk,1,2)  = globalCell(kkk+1,i  ,j+1) 
+                          w_ind(kkk,2,2)  = globalCell(kkk+1,i+1,j+1) 
+                       end do
+                    case (iMax)
+                       fact = 1_realType
+                       do kkk=1,2
+                          wadj(kkk,1,1,:) = w(ib-kkk-1,i  ,j  ,:)
+                          wadj(kkk,2,1,:) = w(ib-kkk-1,i+1,j  ,:)
+                          wadj(kkk,1,2,:) = w(ib-kkk-1,i  ,j+1,:)
+                          wadj(kkk,2,2,:) = w(ib-kkk-1,i+1,j+1,:)
+                          w_ind(kkk,1,1)  = globalCell(ib-kkk-1,i  ,j  ) 
+                          w_ind(kkk,2,1)  = globalCell(ib-kkk-1,i+1,j  ) 
+                          w_ind(kkk,1,2)  = globalCell(ib-kkk-1,i  ,j+1) 
+                          w_ind(kkk,2,2)  = globalCell(ib-kkk-1,i+1,j+1) 
+                       end do
+                    case (jMin)
+                       fact = 1_realType
+                       do kkk=1,2
+                          wadj(kkk,1,1,:) = w(i  ,kkk+1,j  ,:)
+                          wadj(kkk,2,1,:) = w(i+1,kkk+1,j  ,:)
+                          wadj(kkk,1,2,:) = w(i  ,kkk+1,j+1,:)
+                          wadj(kkk,2,2,:) = w(i+1,kkk+1,j+1,:)
+                          w_ind(kkk,1,1)  = globalCell(i  ,kkk+1,j  )
+                          w_ind(kkk,2,1)  = globalCell(i+1,kkk+1,j  )
+                          w_ind(kkk,1,2)  = globalCell(i  ,kkk+1,j+1)
+                          w_ind(kkk,2,2)  = globalCell(i+1,kkk+1,j+1)
+                       end do
+                    case (jMax)
+                       fact = -1_realType
+                       do kkk=1,2
+                          wadj(kkk,1,1,:) = w(i  ,jb-kkk-1,j  ,:)
+                          wadj(kkk,2,1,:) = w(i+1,jb-kkk-1,j  ,:)
+                          wadj(kkk,1,2,:) = w(i  ,jb-kkk-1,j+1,:)
+                          wadj(kkk,2,2,:) = w(i+1,jb-kkk-1,j+1,:)
+                          w_ind(kkk,1,1)  = globalCell(i  ,jb-kkk-1,j  ) 
+                          w_ind(kkk,2,1)  = globalCell(i+1,jb-kkk-1,j  ) 
+                          w_ind(kkk,1,2)  = globalCell(i  ,jb-kkk-1,j+1) 
+                          w_ind(kkk,2,2)  = globalCell(i+1,jb-kkk-1,j+1) 
+                       end do
+                    case (kMin)
+                       fact = -1_realType
+                       do kkk=1,2
+                          wadj(kkk,1,1,:) = w(i  ,j  ,kkk+1,:)
+                          wadj(kkk,2,1,:) = w(i+1,j  ,kkk+1,:)
+                          wadj(kkk,1,2,:) = w(i  ,j+1,kkk+1,:)
+                          wadj(kkk,2,2,:) = w(i+1,j+1,kkk+1,:)
+                          w_ind(kkk,1,1)  = globalCell(i  ,j  ,kkk+1) 
+                          w_ind(kkk,2,1)  = globalCell(i+1,j  ,kkk+1) 
+                          w_ind(kkk,1,2)  = globalCell(i  ,j+1,kkk+1) 
+                          w_ind(kkk,2,2)  = globalCell(i+1,j+1,kkk+1) 
+                       end do
+                    case (kMax)
+                       fact = 1_realType
+                       do kkk=1,2
+                          wadj(kkk,1,1,:) = w(i  ,j  ,kb-kkk-1,:)
+                          wadj(kkk,2,1,:) = w(i+1,j  ,kb-kkk-1,:)
+                          wadj(kkk,1,2,:) = w(i  ,j+1,kb-kkk-1,:)
+                          wadj(kkk,2,2,:) = w(i+1,j+1,kb-kkk-1,:)
+                          w_ind(kkk,1,1)  = globalCell(i  ,j  ,kb-kkk-1) 
+                          w_ind(kkk,2,1)  = globalCell(i+1,j  ,kb-kkk-1) 
+                          w_ind(kkk,1,2)  = globalCell(i  ,j+1,kb-kkk-1) 
+                          w_ind(kkk,2,2)  = globalCell(i+1,j+1,kb-kkk-1) 
+                       end do
+                    end select
+
+                    ! Call the reverse mode AD routine
+
+                    do idim =1,3
+                       forceb(:)    = 0.0_realType
+                       forceb(idim) = 1.0_realType
+                       force = 0.0
+                       grid_ptsb = 0.0
+                       wadjb = 0.0
+
+                       call COMPUTEFORCESADJ_B(force, forceb, moment, momentb, grid_pts, &
+                            grid_ptsb, wadj, wadjb, refpoint, refpointb, fact, ibeg, iend, jbeg, jend, &
+                            i, j, righthanded)
+
+                       ! Set dFdw first
+                       irow = rowStart + ii*3+idim-1+(sps-1)*npts*3
+
+                       do l=1,nw                   
+                          do kkk=1,2
+                             do iii=1,2
+                                do jjj=1,2
+                                   if (.not.(i+iii-2 < iBeg .or. i+iii-1 > iEnd .or. &
+                                        j+jjj-2 < jBeg .or. j+jjj-1 > jEnd)) then
+
+                                      call MatSetValue(dFdw,irow,&
+                                           w_ind(kkk,iii,jjj)*nw+l-1,&
+                                           wadjb(kkk,iii,jjj,l),&
+                                           INSERT_VALUES, ierr)
+                                      call EChk(ierr,__FILE__,__LINE__)
+                                   end if
+                                end do
                              end do
                           end do
                        end do
-                    end do
-                    ! Now Set dFdx
-                    do jjj=1,3
-                       do iii=1,3
-                          do kkk=1,3
-                             call MatSetValue(dFdx,irow,&
-                                  colStart_x+pts_ind(iii,jjj)*3+kkk-1+(sps-1)*npts*3,grid_ptsb(kkk,iii,jjj),&
-                                  INSERT_VALUES,ierr)
-                             call EChk(ierr,__FILE__,__LINE__)
+                       ! Now Set dFdx
+                       do jjj=1,3
+                          do iii=1,3
+                             do kkk=1,3
+                                call MatSetValue(dFdx,irow,&
+                                     colStart_x+pts_ind(iii,jjj)*3+kkk-1+(sps-1)*npts*3,&
+                                     grid_ptsb(kkk,iii,jjj),&
+                                     INSERT_VALUES,ierr)
+                                call EChk(ierr,__FILE__,__LINE__)
+                             end do
                           end do
                        end do
-                    end do
 
-                 end do ! idim loop
-                
-                 ii = ii + 1
-              enddo
-           end do
-        end if
-     end do bocos
-  end do domains
-end do
+                    end do ! idim loop
+
+                    ii = ii + 1
+                 enddo
+              end do
+           end if
+        end do bocos
+     end do domains
+  end do ! sps loop
   call MatAssemblyBegin(dFdw,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
   call MatAssemblyEnd(dFdw,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
+
   call MatAssemblyBegin(dFdx,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
   call MatAssemblyEnd(dFdx,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-    
+
 end subroutine setupCouplingMatrixStruct
 

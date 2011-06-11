@@ -30,13 +30,14 @@ subroutine agumentRHS(ndof,phi)
   integer(kind=intType) :: ierr,ndims
   real(kind=realType) :: val
   call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DETERMINE,phi,phic,ierr)
-  !call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr,__FILE__,__LINE__)
+
   ! Dump the result into adjointRHS
   call MatMultTranspose(dFdw,phic,adjointRHS,ierr)
   !call EChk(ierr,__FILE__,__LINE__)
 
   call vecDestroy(phic,ierr)
-  !call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr,__FILE__,__LINE__)
 end subroutine agumentRHS
 
 
