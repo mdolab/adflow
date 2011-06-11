@@ -103,8 +103,8 @@ subroutine setupNKsolver
 
      call SNESSetFromOptions(snes,ierr); call EChk(ierr,__FILE__,__LINE__)
 
-     call SNESLineSearchSet(snes,SNESLineSearchNo,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     !call SNESLineSearchSet(snes,SNESLineSearchNo,ierr)
+     !call EChk(ierr,__FILE__,__LINE__)
 
      ! Set the Checking Function to use at the start of line search to
      ! make sure we dont have nans
