@@ -37,6 +37,8 @@ subroutine setupAllResidualMatrices
   use flowVarRefState     ! nw
   !      use inputTimeSpectral ! spaceDiscr
   use inputADjoint        !lumpedDiss
+  use section             !sections
+  use monitor             !TimeUnsteady
   implicit none
   !
   !     Local variables.
@@ -44,7 +46,7 @@ subroutine setupAllResidualMatrices
   integer(kind=intType) :: discr, nHalo,level
   integer(kind=intType) :: iCell, jCell, kCell
   integer(kind=intType) :: mm, nn, m, n,idxstate,idxres,idxnode
-  integer(kind=intType) :: ii, jj, kk, i, j, k,liftIndex,l
+  integer(kind=intType) :: ii, jj, kk, i, j, k,liftIndex,l,ll
 
   logical :: fineGrid, correctForK, exchangeTurb,secondhalo
 
@@ -93,6 +95,17 @@ subroutine setupAllResidualMatrices
 
   !matrix norm check
   real(kind=realType)               ::val
+
+  !correction to rotPoint
+  real(kind=realType),dimension(3):: r,RpXCorrection,RpYCorrection,RpZCorrection
+  real(kind=realType)::rotpointxcorrection,rotpointycorrection,rotpointzcorrection
+
+  real(kind=realType) :: t(nSections),dt(nSections)
+  real(kind=realType) :: displ(3)
+  real(kind=realType) :: tOld,tNew
+
+  real(kind=realType), dimension(3)   :: rotationPoint
+  real(kind=realType), dimension(3,3) :: rotationMatrix
 
   !
   !     ******************************************************************
@@ -203,6 +216,14 @@ subroutine setupAllResidualMatrices
   call MatZeroEntries(dRdx,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
+  !needed for rotpoint correction
+  do nn=1,nSections
+     dt(nn) = sections(nn)%timePeriod &
+          / real(nTimeIntervalsSpectral,realType)
+  enddo
+  
+  timeUnsteady = zero
+
   domainLoopAD: do nn=1,nDom
 
      ! Loop over the number of time instances for this block.
@@ -299,16 +320,38 @@ subroutine setupAllResidualMatrices
 
                     idxres   = globalCell(iCell,jCell,kCell)*nw+ m - 1
                   !  call five_pt_node_stencil_all(icell,jcell,kcell,ind,cellstodo)
+                    rotpointxcorrection = 0.0
+                    rotpointycorrection = 0.0
+                    rotpointzcorrection = 0.0
+
                     do sps2 = 1,nTimeIntervalsSpectral
 !                         do iiCell=1,CellsToDo
 !                            ii = ind(1,iiCell)
 !                            jj = ind(2,iiCell)
 !                            kk = ind(3,iiCell)
+                       !for rotpoint correction
+                       do ll=1,nSections
+                          t(ll) = (sps2-1)*dt(ll)
+                       enddo
 
+                       ! Compute the displacements due to the rigid motion of the mesh.
                        
+                       displ(:) = zero
+                       
+                       tNew = timeUnsteady + timeUnsteadyRestart
+                       tOld = tNew - t(1)
+                       
+                       call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+                       !rotation Point correction for rotPoint derivative
+                       r = (/-1,0,0/)
+                       RpXCorrection = matmul(rotationMatrix,r)
+                       r = (/0,-1,0/)
+                       RpYCorrection = matmul(rotationMatrix,r)
+                       r = (/0,0,-1/)
+                       RpZCorrection = matmul(rotationMatrix,r)
                        do kk = -3,2!1,kl-1
                           do jj = -3,2!1,jl-1
-                             do ii=-3,2!1,il-1
+                             do ii= -3,2!1,il-1
 
                                 i = iCell + ii
                                 j = jCell + jj
@@ -328,7 +371,13 @@ subroutine setupAllResidualMatrices
                                               xAdjb(ii,jj,kk,:,sps2), ADD_VALUES, PETScIerr)
                                             ! NO error check here for speed purposes
 !                                            call ECHk(PETScIerr,__FILE__,__LINE__)
+                                         
+                                         rotpointxcorrection = rotpointxcorrection+ DOT_PRODUCT(xAdjb(ii,jj,kk,:,sps2),((/1,0,0/)+ RpXCorrection))
+                                         rotpointycorrection = rotpointycorrection+ DOT_PRODUCT(xAdjb(ii,jj,kk,:,sps2),((/0,1,0/)+ RpYCorrection))
+                                         rotpointzcorrection = rotpointzcorrection+ DOT_PRODUCT(xAdjb(ii,jj,kk,:,sps2),((/0,0,1/)+ RpZCorrection))
                                       endif
+                                      
+
                                    endif
                                 endif
                              enddo
@@ -342,48 +391,96 @@ subroutine setupAllResidualMatrices
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(1,1,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
+                             r = (/1,0,0/)
+                             rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(1,1,1,l,sps)*(r(l)+ RpXCorrection(l))
+                             r = (/0,1,0/)
+                             rotpointycorrection = rotpointycorrection+ xblockcorneradjb(1,1,1,l,sps)*(r(l)+ RpYCorrection(l))
+                             r = (/0,0,1/)
+                             rotpointzcorrection = rotpointzcorrection+ xblockcorneradjb(1,1,1,l,sps)*(r(l)+ RpZCorrection(l))
                           endif
                           if (xblockcorneradjb(2,1,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalNode(il,1,1)*3+1
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(2,1,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
+                             r = (/1,0,0/)
+                             rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(2,1,1,l,sps)*(r(l)+ RpXCorrection(l))
+                             r = (/0,1,0/)
+                             rotpointycorrection = rotpointycorrection+ xblockcorneradjb(2,1,1,l,sps)*(r(l)+ RpYCorrection(l))
+                             r = (/0,0,1/)
+                             rotpointzcorrection = rotpointzcorrection+ xblockcorneradjb(2,1,1,l,sps)*(r(l)+ RpZCorrection(l))
                           endif
                           if (xblockcorneradjb(1,2,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(1,jl,1)*3+l
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(1,2,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
+                             r = (/1,0,0/)
+                             rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(1,2,1,l,sps)*(r(l)+ RpXCorrection(l))
+                             r = (/0,1,0/)
+                             rotpointycorrection = rotpointycorrection+ xblockcorneradjb(1,2,1,l,sps)*(r(l)+ RpYCorrection(l))
+                             r = (/0,0,1/)
+                             rotpointzcorrection = rotpointzcorrection+ xblockcorneradjb(1,2,1,l,sps)*(r(l)+ RpZCorrection(l))
                           endif
                           if (xblockcorneradjb(2,2,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(il,jl,1)*3+l
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(2,2,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
+                             r = (/1,0,0/)
+                             rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(2,2,1,l,sps)*(r(l)+ RpXCorrection(l))
+                             r = (/0,1,0/)
+                             rotpointycorrection = rotpointycorrection+ xblockcorneradjb(2,2,1,l,sps)*(r(l)+ RpYCorrection(l))
+                             r = (/0,0,1/)
+                             rotpointzcorrection = rotpointzcorrection+ xblockcorneradjb(2,2,1,l,sps)*(r(l)+ RpZCorrection(l))
                           endif
                           if (xblockcorneradjb(1,1,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(1,1,kl)*3+l
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(1,1,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
+                             r = (/1,0,0/)
+                             rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(1,1,2,l,sps)*(r(l)+ RpXCorrection(l))
+                             r = (/0,1,0/)
+                             rotpointycorrection = rotpointycorrection+ xblockcorneradjb(1,1,2,l,sps)*(r(l)+ RpYCorrection(l))
+                             r = (/0,0,1/)
+                             rotpointzcorrection = rotpointzcorrection+ xblockcorneradjb(1,1,2,l,sps)*(r(l)+ RpZCorrection(l))
                           endif
                           if (xblockcorneradjb(1,2,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(1,jl,kl)*3+l
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(1,2,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
+                             r = (/1,0,0/)
+                             rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(1,2,2,l,sps)*(r(l)+ RpXCorrection(l))
+                             r = (/0,1,0/)
+                             rotpointycorrection = rotpointycorrection+ xblockcorneradjb(1,1,1,l,sps)*(r(l)+ RpYCorrection(l))
+                             r = (/0,0,1/)
+                             rotpointzcorrection = rotpointzcorrection+ xblockcorneradjb(1,1,1,l,sps)*(r(l)+ RpZCorrection(l))
                           endif
                           if (xblockcorneradjb(2,1,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(il,1,kl)*3+l
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(2,1,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
+                             r = (/1,0,0/)
+                             rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(2,1,2,l,sps)*(r(l)+ RpXCorrection(l))
+                             r = (/0,1,0/)
+                             rotpointycorrection = rotpointycorrection+ xblockcorneradjb(2,1,2,l,sps)*(r(l)+ RpYCorrection(l))
+                             r = (/0,0,1/)
+                             rotpointzcorrection = rotpointzcorrection+ xblockcorneradjb(2,1,2,l,sps)*(r(l)+ RpZCorrection(l))
                           endif
                           if (xblockcorneradjb(2,2,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(il,jl,kl)*3+l
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(2,2,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
+                             r = (/1,0,0/)
+                             rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(2,2,2,l,sps)*(r(l)+ RpXCorrection(l))
+                             r = (/0,1,0/)
+                             rotpointycorrection = rotpointycorrection+ xblockcorneradjb(2,2,2,l,sps)*(r(l)+ RpYCorrection(l))
+                             r = (/0,0,1/)
+                             rotpointzcorrection = rotpointzcorrection+ xblockcorneradjb(2,2,2,l,sps)*(r(l)+ RpZCorrection(l))
                           endif
                        enddo
                     end do
@@ -452,18 +549,22 @@ subroutine setupAllResidualMatrices
 
                     !X Rotation Center
                     if (nDesignRotCenX >= 0) then
-                       !print *,'rotcenx:',myID,ndesignrotcenx
+                       !print *,'rotcenx:',myID,ndesignrotcenx,rotcenteradjb(1),rotpointadjb(1),rotpointcorrection(1)
                        call MatSetValues(dRda, 1, idxres,1, nDesignRotCenX, &
-                            rotcenteradjb(1)+rotpointadjb(1), INSERT_VALUES,&
+                            rotcenteradjb(1)+rotpointadjb(1)+rotpointxcorrection, INSERT_VALUES,&
                             PETScIerr)
+                       
                        call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
 
                     !Y Rotation Center
                     if (nDesignRotCenY >= 0) then
                        !print *,'rotceny:',myID,ndesignrotceny
+                       !call MatSetValues(dRda, 1, idxres,1, nDesignRotCenY, &
+                       !     rotpointadjb(2)+rotpointcorrection(2), INSERT_VALUES,&
+                       !     PETScIerr)
                        call MatSetValues(dRda, 1, idxres,1, nDesignRotCenY, &
-                            rotcenteradjb(2)+rotpointadjb(2), INSERT_VALUES,&
+                            rotcenteradjb(2)+rotpointadjb(2)+rotpointycorrection, INSERT_VALUES,&
                             PETScIerr)
                        call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
@@ -471,9 +572,13 @@ subroutine setupAllResidualMatrices
                     !Z Rotation Center
                     if (nDesignRotCenZ >= 0) then
                        !print *,'rotcenterz:',myID,ndesignrotcenz
+                       !call MatSetValues(dRda, 1, idxres,1, nDesignRotCenZ, &
+                       !     rotpointadjb(3)+rotpointcorrection(3), INSERT_VALUES,&
+                       !     PETScIerr)
                        call MatSetValues(dRda, 1, idxres,1, nDesignRotCenZ, &
-                            rotcenteradjb(3)+rotpointadjb(3), INSERT_VALUES,&
+                            rotcenteradjb(3)+rotpointadjb(3)+rotpointzcorrection, INSERT_VALUES,&
                             PETScIerr)
+
                        call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
 
