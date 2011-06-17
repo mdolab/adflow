@@ -18,7 +18,7 @@ subroutine setupADjointPCMatrixTranspose
   use iteration           ! overset, currentLevel
   use flowVarRefState     ! nw
   use inputTimeSpectral   ! spaceDiscr
-  use inputADjoint        !sigma
+  use inputDiscretization
   implicit none
 
   !     Local variables.

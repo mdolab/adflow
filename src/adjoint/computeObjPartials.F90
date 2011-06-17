@@ -328,7 +328,8 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               end select
 
               allocate(wblock(0:ib,0:jb,0:kb,nw),&
-                   wblockb(0:ib,0:jb,0:kb,nw))
+                   wblockb(0:ib,0:jb,0:kb,nw),stat=ierr)
+    
               wblock(:,:,:,:) = w(:,:,:,:)
               wblockb(:,:,:,:) = 0.0
               righthandedadj = righthanded
@@ -428,9 +429,11 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
                  dIda(nDesignSurfaceRef+1) = dIda(nDesignSurfaceRef+1) + SurfaceRefAdjb*dJdc(sps)
               end if
            end if
-        end do bocos
+           deallocate(wblock,wblockb,stat=ierr)
 
-        deallocate(wblock,wblockb,stat=ierr)
+        end do bocos
+        
+     
      end do domainLoopAD
      
   end do spectralLoopAdj

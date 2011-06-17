@@ -281,32 +281,32 @@
 
        !=================================================================
 
-       contains
+!       contains
 
          !===============================================================
 
-         double precision function MPI_Wtime()
-!
-!        ****************************************************************
-!        *                                                              *
-!        * The subroutine MPI_Wtime returns the elapsed wall-clock time *
-!        * in seconds since some time in the past. A C-function is      *
-!        * called to do the actual work.                                *
-!        *                                                              *
-!        ****************************************************************
-!
-         implicit none
-!
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
-!
-         double precision :: my_time
-         MPI_Wtime = my_time()
+!          double precision function MPI_Wtime()
+! !
+! !        ****************************************************************
+! !        *                                                              *
+! !        * The subroutine MPI_Wtime returns the elapsed wall-clock time *
+! !        * in seconds since some time in the past. A C-function is      *
+! !        * called to do the actual work.                                *
+! !        *                                                              *
+! !        ****************************************************************
+! !
+!          implicit none
+! !
+! !        ****************************************************************
+! !        *                                                              *
+! !        * Begin execution                                              *
+! !        *                                                              *
+! !        ****************************************************************
+! !
+!          double precision :: my_time
+!          MPI_Wtime = my_time()
 
-         end function MPI_Wtime
+!          end function MPI_Wtime
 
 !!##else
 !!$!

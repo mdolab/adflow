@@ -138,7 +138,21 @@
 !close(unitxAD)
 !close(unitx)
 
-
+ !allocate memory for FD
+      allocatedomains: do nn = 1,ndom
+         print *,'domain',nn
+         groundLevel = 1
+         sps = 1
+         call setPointersAdj(nn,1,sps)
+         allocate(flowDoms(nn,level,sps)%dwp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+         allocate(flowDoms(nn,level,sps)%dwm(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+         allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+         allocate(flowDoms(nn,level,sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+         allocate(flowDoms(nn,level,sps)%ptmp(0:ib,0:jb,0:kb),stat=ierr)
+         dwtemp = zero
+         dwp = zero
+         dwm = zero
+      end do allocatedomains
 
 
 
@@ -832,6 +846,17 @@
       close(unitResAD)
       close(unitRes)
  
-
+   !deallocate memory for FD
+      deallocatedomains: do nn = 1,ndom
+         print *,'domain',nn
+         groundLevel = 1
+         sps = 1
+         call setPointersAdj(nn,1,sps)
+         deallocate(flowDoms(nn,level,sps)%dwp)
+         deallocate(flowDoms(nn,level,sps)%dwm)
+         deallocate(flowDoms(nn,level,sps)%dwtemp)
+         deallocate(flowDoms(nn,level,sps)%wtmp)
+         deallocate(flowDoms(nn,level,sps)%ptmp)
+      end do deallocatedomains
 
     end subroutine verifyResiduals

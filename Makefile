@@ -36,6 +36,7 @@ SUBDIR_SRC    = src/modules       \
 	        src/preprocessing \
 	        src/slidingComm   \
 	        src/solver        \
+		src/NKsolver      \
 	        src/stabilityDerivatives \
 	        src/turbulence    \
 	        src/utils         \
@@ -51,6 +52,9 @@ SUBDIR_ADJOINT = src/adjoint               \
 	         src/adjoint/forcesOutput\
 		 src/adjoint/residualNKPCInput \
 	         src/adjoint/residualNKPCOutput \
+		 src/forwardAdjoint \
+		 src/forwardAdjoint/residualInput \
+		 src/forwardAdjoint/residualOutput
 
 
 SUBDIR_WARPING = src/warping \

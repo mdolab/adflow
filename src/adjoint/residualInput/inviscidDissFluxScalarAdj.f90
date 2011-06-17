@@ -29,7 +29,7 @@
        use inputPhysics
        use iteration
        use inputTimeSpectral !nTimeIntervalsSpectral
-       use inputADjoint
+       use inputDiscretization
        implicit none
 
 !

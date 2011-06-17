@@ -19,7 +19,6 @@ subroutine getdFdxVec(ndof,vec_in,vec_out)
   real(kind=realType), intent(out)  :: vec_out(ndof)
   real(kind=realType) :: val,val2
   integer(kind=intType) :: ierr,rowstart,rowend,i
-  real(kind=realType) :: fuckSum
   vec_out(:) = 0.0
 
   call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DECIDE,vec_in,fVec1,ierr)
