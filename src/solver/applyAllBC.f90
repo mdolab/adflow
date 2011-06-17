@@ -72,7 +72,7 @@
            call bcSymm(secondHalo)
            call bcSymmPolar(secondHalo)
 
-           ! call bcEulerWall(secondHalo, correctForK)
+           !call bcEulerWall(secondHalo, correctForK)
 
            ! The viscous wall boundary conditions.
 

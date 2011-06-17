@@ -76,6 +76,7 @@ class SUMB(AeroSolver):
 
             # Physics Paramters
             'Discretization':[str,'Central plus scalar dissipation'],
+            'Limiter':[str,'VanAlbeda'],
             'Smoother':[str,'Runge-Kutta'],
             'equationType': [str,'Euler'],
             'equationMode': [str,'Steady'],
@@ -186,6 +187,7 @@ class SUMB(AeroSolver):
             'ILUFill': [int,2],
             'ASMOverlap' : [int,5],
             'subKSPSubspaceSize':[int,10],
+            'finiteDifferencePC':[bool,True],
             }
 
         informs = {
@@ -344,6 +346,14 @@ class SUMB(AeroSolver):
                                       self.sumb.inputdiscretization.upwind,
                                   'location':
                                       'inputdiscretization.spacediscr'},
+                'Limiter':{'VanAlbeda':
+                               self.sumb.inputdiscretization.vanalbeda,
+                           'MinMod':
+                               self.sumb.inputdiscretization.minmod,
+                           'NoLimiter':
+                               self.sumb.inputdiscretization.nolimiter,
+                           'location':
+                               'inputdiscretization.limiter'},
                 'Smoother':{'Runge-Kutta':
                                 self.sumb.inputiteration.rungekutta,
                             'LU-SGS':
@@ -494,6 +504,7 @@ class SUMB(AeroSolver):
                 'NKJacobianLag':{'location':'nksolvervars.jacobian_lag'},
                 'RKReset':{'location':'nksolvervars.rkreset'},
                 'nRKReset':{'location':'nksolvervars.nrkreset'},
+                'NKFiniteDifferencePC':{'location':'nksolvervars.nkfinitedifferencepc'},
                 
                 # Load Balance Paramters
                 'blockSplitting':{'location':'inputparallel.splitblocks'},
@@ -530,7 +541,7 @@ class SUMB(AeroSolver):
                 'adjointMaxIter':{'location':'inputadjoint.adjmaxiter'},
                 'adjointSubspaceSize':{'location':'inputadjoint.adjrestart'},
                 'adjointMonitorStep':{'location':'inputadjoint.adjmonstep'},
-                'dissipationLumpingParameter':{'location':'inputadjoint.sigma'},
+                'dissipationLumpingParameter':{'location':'inputdiscretization.sigma'},
                 'preconditionerSide':{'LEFT':
                                            self.sumb.inputadjoint.left,
                                        'RIGHT':
@@ -569,7 +580,9 @@ class SUMB(AeroSolver):
                                            'inputadjoint.localpctype'},
                 'ILUFill':{'location':'inputadjoint.filllevel'},
                 'ASMOverlap':{'location':'inputadjoint.overlap'},
+                'finiteDifferencePC':{'location':'inputadjoint.finitedifferencepc'},
                 'subKSPSubspaceSize':{'location':'inputadjoint.subkspsubspacesize'},
+                
                 }                
         # end if
 
@@ -685,6 +698,7 @@ class SUMB(AeroSolver):
             print ' -> Initializing flow'
         self.sumb.initflow()
 
+
         # Create dictionary of variables we are monitoring
         nmon = self.sumb.monitor.nmon
         self.monnames = {}
@@ -740,12 +754,12 @@ class SUMB(AeroSolver):
             *self.metricConversion
         self.sumb.inputphysics.pointref[2] = aero_problem._refs.zref\
             *self.metricConversion
-        self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xrot\
-            *self.metricConversion
-        self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yrot\
-            *self.metricConversion
-        self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zrot\
-            *self.metricConversion
+#         self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xrot\
+#             *self.metricConversion
+#         self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yrot\
+#             *self.metricConversion
+#         self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zrot\
+#             *self.metricConversion
         #update the flow vars
         self.sumb.updatereferencepoint()
         self._update_vel_info = True
@@ -856,7 +870,6 @@ class SUMB(AeroSolver):
             self.sumb.inputphysics.machcoef = aero_problem._flows.mach
             self.sumb.inputphysics.machgrid = 0.0
         #end
-        #sys.exit(0)
 
         return
 
@@ -864,9 +877,21 @@ class SUMB(AeroSolver):
         '''
         Reset the flow for the complex derivative calculation
         '''
-
+        #mgLvlSave =  self.sumb.inputiteration.mgstartlevel
+        #self.sumb.inputiteration.mgstartlevel = 1
+        strLvl =  self.getOption('MGStartLevel')
+        nLevels = self.sumb.inputiteration.nmglevels
+        if strLvl < 0 or strLvl > nLevels :
+            strLvl = nLevels
+        # end if
+        self.sumb.inputiteration.mgstartlevel = strLvl
+        self.sumb.inputiteration.groundlevel = strLvl
+        self.sumb.inputiteration.currentlevle = strLvl
+        self.sumb.monitor.niterold = 0
+        self.sumb.monitor.nitercur = 0
+        self.sumb.iteration.itertot = 0
         self.sumb.setuniformflow()
-
+        
         return
 
     def getDensity(self):
@@ -901,8 +926,6 @@ class SUMB(AeroSolver):
         self.adjointMatrixSetup = False 
         self.adjointRHS         = None
         self.callCounter += 1
-
-        
 
         # Run Initialize, if already run it just returns.
         self.initialize(aero_problem,*args,**kwargs)
@@ -973,10 +996,10 @@ class SUMB(AeroSolver):
             self.sumb.solver()
         # end if
 
-
         # If the solve failed, reset the flow for the next time through
         if self.sumb.killsignals.routinefailed:
-            self.resetFlow() # Always reset flow if it failed
+            mpiPrint('Resetting flow due to failed flow solve...')
+            #self.resetFlow() # Always reset flow if it failed
             if self.getOption('autoSolveRetry'): # Try the solver again
                 self.sumb.solver()
                 if self.sumb.killsignals.routinefailed:
@@ -1049,6 +1072,65 @@ class SUMB(AeroSolver):
             
         return
 
+    def solveCL(self,aeroProblem,CL_star,nIterations=500,alpha0=0,
+                delta=0.5,tol=1e-3):
+        '''This is a simple secant method search for solving for a
+        fixed CL. This really should only be used to determine the
+        starting alpha for a lift constraint in an optimization.
+
+        Input:  aeroProblem -> aerodynamic problem definition
+                CL_star     -> Target CL
+                nIterations -> Number of CFD iterations to run (same as 
+                               input to __solve__
+                alpha0      -> Initial guess for secant search (deg)
+                delta       -> Initial step direction (deg)
+                tol         -> Absolute tolerance for CL convergence
+        Output: aeroProblem._flows.alpha is updated with correct alpha
+        '''
+
+        anm2 = alpha0
+        anm1 = alpha0 + delta
+
+        # Solve for the n-2 value:
+        aeroProblem._flows.alpha = anm2
+        self.__solve__(aeroProblem,nIterations=nIterations)
+        sol = self.getSolution()
+        fnm2 =  sol['cl'] - CL_star
+
+        for iIter in xrange(20):
+            # We need to reset the flow since changing the alpha leads
+            # to problems with the NK solver
+            self.resetFlow()
+
+            # Set current alpha
+            aeroProblem._flows.alpha = anm1
+
+            # Solve for n-1 value (anm1)
+            self.__solve__(aeroProblem,nIterations=nIterations)
+            sol = self.getSolution()
+            fnm1 =  sol['cl'] - CL_star
+            
+            # Secant Update
+            anew = anm1 - fnm1*(anm1-anm2)/(fnm1-fnm2)
+
+            # Shift n-1 values to n-2 values
+            fnm2 = fnm1
+            anm2 = anm1
+     
+            # Se the n-1 alpha value from update
+            anm1 = anew
+            
+            # Check for convergence
+            if abs(fnm1) < tol:
+                break
+            # end if
+        # end for
+
+        # Set the new alpha in the aeroProblem
+        aeroProblem._flows.alpha = anew
+      
+        return
+
     def getSurfaceCoordinates(self,group_name):
         ''' 
         See MultiBlockMesh.py for more info
@@ -1080,8 +1162,6 @@ class SUMB(AeroSolver):
         self.sumb.writesol()
 
         return
-
-
 
     def writeVolumeSolutionFile(self,filename=None,writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS file.
@@ -1124,6 +1204,44 @@ class SUMB(AeroSolver):
         self.sumb.writesol()
 
         return
+
+    def writeForceFile(self,file_name,TSInstance=0):
+        '''This function collects all the forces and locations and
+        writes them to a file with each line having: X Y Z Fx Fy Fz.
+        This can then be used to set a set of structural loads in TACS
+        for structural only optimization'''
+      
+        pts = self.getForcePoints()
+        nPts = pts.shape[1]
+        if nPts > 0:
+            forces =  self.sumb.getforces(pts.T).T
+        else:
+            forces = numpy.empty(pts.shape,dtype=self.dtype)
+        # end if
+
+        # Now take the desired time instance
+        pts = pts[TSInstance,:,:]
+        forces = forces[TSInstance,:,:]
+        
+        # Now we need to gather the data:
+        pts = self.comm.gather(pts, root=0)
+        forces = self.comm.gather(forces, root=0)
+
+        # Write out Data only on root proc:
+        if self.myid == 0:
+            f = open(file_name,'w')
+            for iproc in xrange(len(pts)):
+                for ipt in xrange(len(pts[iproc])):
+                    f.write('%20.15g %20.15g %20.15g %20.15g %20.15g %20.15g\n'%(
+                            pts[iproc][ipt,0],pts[iproc][ipt,1],
+                            pts[iproc][ipt,2],forces[iproc][ipt,0],
+                            forces[iproc][ipt,1],forces[iproc][ipt,2]))
+                # end for
+            # end for
+            f.close()
+        # end if
+
+        return 
 
     def getForces(self,group_name,cfd_force_pts=None):
         ''' Return the forces on this processor. Use
@@ -1266,7 +1384,7 @@ class SUMB(AeroSolver):
         
         # Set the required paramters for the aero-Only design vars:
         self.nDVAero = len(self.aeroDVs)#for debuggin with check all...
-        
+
         self.sumb.adjointvars.ndesignextra = self.nDVAero
         
         if self.nDVAero >0:           
@@ -1319,14 +1437,16 @@ class SUMB(AeroSolver):
             self.sumb.createpetscvars()
  
             self.sumb.setupallresidualmatrices()
+
             if forcePoints is None:
                 forcePoints = self.getForcePoints()
             # end if
             
-            #self.sumb.setupcouplingmatrixstruct(forcePoints.T)
+            self.sumb.setupcouplingmatrixstruct(forcePoints.T)
             self.sumb.setuppetscksp()
             self.mesh.setupWarpDeriv()
             self.adjointMatrixSetup = True
+
         # end if
 
         return
@@ -1352,7 +1472,7 @@ class SUMB(AeroSolver):
 
     def _on_adjoint(self,objective,forcePoints=None,*args,**kwargs):
 
-        # Solve ADjoint problem
+        # Make sure adjoint is initialize
         self.initAdjoint()
 
         # Short form of objective--easier code reading
@@ -1362,6 +1482,7 @@ class SUMB(AeroSolver):
         if not self.adjointMatrixSetup:
             self.setupAdjoint(forcePoints)
         # end if
+       
         # Check to see if the RHS Partials have been computed
         if not self.adjointRHS == obj:
             self.computeObjPartials(obj,forcePoints)
@@ -1375,20 +1496,17 @@ class SUMB(AeroSolver):
             self.sumb.agumentrhs(solver_phi)
         # end if
 
-        nw = self.sumb.flowvarrefstate.nw
-        nTS = self.sumb.inputtimespectral.ntimeintervalsspectral
         # If we have saved adjoints, 
         if self.getOption('restartAdjoint'):
-
             # Objective is already stored, so just set it
             if obj in self.storedADjoints.keys():
                 self.sumb.setadjoint(self.storedADjoints[obj])
             else:
                 # Objective is not yet run, allocated zeros and set
-                self.storedADjoints[obj]=numpy.zeros([self.sumb.adjointvars.ncellslocal*nw*nTS],float)
+                self.storedADjoints[obj]= numpy.zeros(self.getStateSize(),float)
                 self.sumb.setadjoint(self.storedADjoints[obj])
             # end if
-            # end if
+        # end if
 
         # Actually Solve the adjoint system
         self.sumb.solveadjointtransposepetsc()
@@ -1413,7 +1531,8 @@ class SUMB(AeroSolver):
             self.adjoint_failed = False
             # Copy out the adjoint to store
             if self.getOption('restartAdjoint'):
-                self.storedADjoints[obj] =  self.sumb.getadjoint(self.sumb.adjointvars.ncellslocal*nw*nTS)
+                self.storedADjoints[obj] =  \
+                    self.sumb.getadjoint(self.getStateSize())
             # end if
         else:
             self.adjoint_failed = True
@@ -1527,7 +1646,7 @@ class SUMB(AeroSolver):
 	    #print numpy.real(newGrid)
             if newGrid is not None:
                 self.sumb.setgrid(self.mesh.getSolverGrid())
-
+                
             self.sumb.updatecoordinatesalllevels()
             self.sumb.updatewalldistancealllevels()
             self.sumb.updateslidingalllevels()
@@ -1603,15 +1722,9 @@ class SUMB(AeroSolver):
         '''
         
         startRes = self.sumb.adjointpetsc.adjreshist[0]
-
         finalIt  = self.sumb.adjointpetsc.adjconvits
         finalRes = self.sumb.adjointpetsc.adjreshist[finalIt]
-
-        if (finalIt < 0):
-            fail = True
-        else:
-            fail = False
-        # end if
+        fail = self.sumb.killsignals.adjointfailed
 
         return startRes,finalRes,fail
 
@@ -1648,7 +1761,11 @@ class SUMB(AeroSolver):
         return pforces
 
     def getdRdaPsi(self):
-        dIda = self.sumb.getdrdapsi(self.nDVAero)
+        if self.nDVAero > 0:
+            dIda = self.sumb.getdrdapsi(self.nDVAero)
+        else:
+            dIda = numpy.zeros((0))
+        # end if
 
         return dIda
 
@@ -1708,13 +1825,15 @@ class SUMB(AeroSolver):
         if forcePoints is None:
             forcePoints = self.getForcePoints()
         # end if
-
-        self.computeObjPartials(objective,forcePoints)
+        if self.nDVAero > 0:
+            self.computeObjPartials(objective,forcePoints)
         
-        dIda_local = self.sumb.adjointvars.dida
+            dIda_local = self.sumb.adjointvars.dida
     
-        # We must MPI all reuduce
-        dIda = self.comm.allreduce(dIda_local, op=MPI.SUM)
+            # We must MPI all reuduce
+            dIda = self.comm.allreduce(dIda_local, op=MPI.SUM)
+        else:
+            dIda = numpy.zeros((0))
     
         return dIda
         

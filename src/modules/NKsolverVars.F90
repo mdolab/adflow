@@ -25,6 +25,7 @@ module NKsolverVars
   ! PETSc Variables
   SNES               snes 
   PetscFortranAddr   ctx(3)
+  PetscFortranAddr   lsctx(1)
   Mat                dRdw,dRdwPre 
   Vec wVec,rVec
   KSP                global_ksp,local_ksp
@@ -39,6 +40,7 @@ module NKsolverVars
   logical :: NKSolverSetup
   logical :: NKSolvedOnce
   logical :: NKPCSetup
+  logical :: NKFiniteDifferencePC
   logical :: RKreset
   integer(kind=intType) :: nRKreset
   ! Non-linear Solver Tolerances

@@ -174,7 +174,7 @@
            ! already written, then in writeCGNSGridFile, fileIDs are
            ! and CGNSbases are NOT allocated at ALL. Then when you try
            ! to write the volume grid, and index into fileIDs and
-           ! CGNSbases, you're fucked. nGridsToWrite MUST ALWAYS be
+           ! CGNSbases, you're screwed. nGridsToWrite MUST ALWAYS be
            ! ntimeIntervalsSpectral regardless. 
 
 

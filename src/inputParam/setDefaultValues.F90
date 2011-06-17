@@ -28,6 +28,7 @@
        use couplerParam
        use killSignals
        use NKSolverVars
+       use inputDiscretization
        implicit none
 !
 !      ******************************************************************
@@ -156,7 +157,8 @@
        smoother  = none
        nRKStages = 5
 
-       resAveraging =  noResAveraging ! No residual averaging.
+       !resAveraging =  noResAveraging ! No residual averaging.
+       resAveraging =  alwaysResAveraging
        smoop        = 1.5_realType
 
        turbTreatment     = segregated     ! Segregated solver for the
@@ -414,4 +416,6 @@
        routineFailed = .False.
        nkSolverSetup = .False.
        NKPCSetup     = .False.
+       lumpedDiss    = .False.
+       NKFiniteDifferencePC = .True.
        end subroutine setDefaultValues
