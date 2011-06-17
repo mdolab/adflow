@@ -1,4 +1,3 @@
-
 #!/usr/local/bin/python
 '''
 pySUmb - A Python interface to SUmb.
@@ -37,6 +36,7 @@ import copy
 # =============================================================================
 # External Python modules
 # =============================================================================
+
 import numpy
 from numpy import real,pi,sqrt
 
@@ -1347,7 +1347,7 @@ class SUMB(AeroSolver):
         '''
 
         self.sumb.destroypetscvars()
-
+        self.adjointMatrixSetup = False
         return
 
     def _on_adjoint(self,objective,forcePoints=None,*args,**kwargs):
@@ -1488,7 +1488,7 @@ class SUMB(AeroSolver):
 
             # dIda contribution for drda^T * psi
             dIda_2 = self.getdRdaPsi()
-
+         
             # Total derivative of the obective wrt aero-only DVs
             dIda = dIda_1 - dIda_2
         # end if
@@ -1524,6 +1524,7 @@ class SUMB(AeroSolver):
         if (self._update_geom_info):
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
+	    #print numpy.real(newGrid)
             if newGrid is not None:
                 self.sumb.setgrid(self.mesh.getSolverGrid())
 
