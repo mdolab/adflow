@@ -428,6 +428,10 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               if (nDesignSurfaceRef >=0) then
                  dIda(nDesignSurfaceRef+1) = dIda(nDesignSurfaceRef+1) + SurfaceRefAdjb*dJdc(sps)
               end if
+              if (nDesignDissError >=0) then
+                 dIda(nDesignDissError+1) = 0
+              end if
+                  
            end if
            deallocate(wblock,wblockb,stat=ierr)
 

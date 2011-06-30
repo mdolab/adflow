@@ -94,6 +94,9 @@ subroutine setupAllResidualMatrices
   integer(kind=intType) :: ind_node(3),cellstodo,iiCell,ind(3,56)
   character(len=2*maxStringLen) :: errorMessage
 
+  !temporary storage for current dissipation coefficients. Used in error check
+  real(kind=realType)::vis2ref,vis4ref
+
   !matrix norm check
   real(kind=realType)               ::val
 
@@ -773,6 +776,63 @@ subroutine setupAllResidualMatrices
      !===============================================================
 
   enddo domainLoopad
+
+  if (nDesignDissError >= 0) then
+     !==================================
+     !Compute Dissipation error estimate
+     !==================================
+     
+     !store dissipation coefficients
+     vis2ref = vis2
+     vis4ref = vis4
+     
+     !set dissipation coefficients to zero
+     vis2 = 0.0
+     vis4 = 0.0
+     
+     !evaluate new residual
+     call computeResidualNK
+     
+     !Store updated residual. This is an indication of how much error the dissipation scheme is causing
+     
+     do nn=1,nDom
+        
+        ! Loop over the number of time instances for this block.
+        do sps=1,nTimeIntervalsSpectral
+           
+           call setPointersAdj(nn,level,sps)
+           
+           ! Loop over location of output (R) cell of residual
+           
+           do kCell = 2, kl
+              do jCell = 2, jl
+                 do iCell = 2, il
+                    do m = 1, nw 
+                       idxres   = globalCell(iCell,jCell,kCell)*nw+ m - 1
+                       
+                       call MatSetValues(dRda, 1, idxres,1, nDesignDissError, &
+                            dw(icell,jcell,kcell,m), INSERT_VALUES,&
+                            PETScIerr)
+                       
+                       call EChk(PETScIerr,__FILE__,__LINE__)
+
+                    end do
+                 end do
+              end do
+           end do
+        end do
+     end do
+
+     !Now restore the original residual
+
+     !reset the original dissipation coefficients
+     vis2 = vis2ref
+     vis4 = vis4ref
+
+     !reevaluate residual
+     call  computeResidualNK
+     
+  end if
 
   !     ******************************************************************
   !     *                                                                *

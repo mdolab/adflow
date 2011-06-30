@@ -321,7 +321,8 @@ class SUMB(AeroSolver):
             'pointrefy':'adjointvars.ndesignpointrefy',
             'pointrefz':'adjointvars.ndesignpointrefzy',
             'lengthref':'adjointvars.ndesignlengthref',
-            'surfaceref':'adjointvars.ndesignsurfaceref'
+            'surfaceref':'adjointvars.ndesignsurfaceref',
+            'disserror':'adjointvars.ndesigndisserror'
             }
 
         self.aeroDVs = []
@@ -1411,6 +1412,7 @@ class SUMB(AeroSolver):
         self.sumb.adjointvars.ndesignpointrefz = -1
         self.sumb.adjointvars.ndesignlengthref = -1
         self.sumb.adjointvars.ndesignsurfaceref = -1
+        self.sumb.adjointvars.ndesigndisserror = -1
         
         # Set the required paramters for the aero-Only design vars:
         self.nDVAero = len(self.aeroDVs)#for debuggin with check all...
