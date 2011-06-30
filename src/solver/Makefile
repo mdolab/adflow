@@ -60,6 +60,7 @@ FF90_OBJECTS = applyAllBC.o\
 	       eulerWallsPresent.o\
 	       executeMGCycle.o\
 	       extrapolate2ndHalo.o\
+               farFieldDrag.o\
 	       forcesAndMoments.o\
 	       gridVelocitiesCoarseLevels.o\
 	       gridVelocitiesFineLevel.o\
