@@ -1098,6 +1098,7 @@ python module sumb ! in
          integer(kind=inttype) :: ndesignmach
          integer(kind=inttype) :: ndesignlengthref
          integer(kind=inttype) :: ndesignsurfaceref
+         integer(kind=inttype) :: ndesigndisserror
        end module adjointvars
 
        module inputtsstabderiv ! in :test:inputParam.f90
