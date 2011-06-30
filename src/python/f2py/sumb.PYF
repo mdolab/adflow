@@ -68,7 +68,7 @@ python module sumb ! in
 
        subroutine getcgnsmeshindices(ndof,indices)
          integer(kind=inttype) intent(in) :: ndof
-         integer(kind=intype) dimension(ndof),intent(out),depend(ndof) :: indices
+         integer(kind=inttype) dimension(ndof),intent(out),depend(ndof) :: indices
        end subroutine getcgnsmeshindices
 
        subroutine getnumberlocalnodes(ndof) ! in :test:initializeExternalWarping.f90
@@ -81,7 +81,7 @@ python module sumb ! in
 
        subroutine getcgnsforceindices(ndof,indices)
          integer(kind=inttype) intent(in) :: ndof
-         integer(kind=intype) dimension(ndof),intent(out),depend(ndof) :: indices
+         integer(kind=inttype) dimension(ndof),intent(out),depend(ndof) :: indices
        end subroutine getcgnsforceindices
 
        subroutine setgrid(grid,ndof) ! in :test:setGrid.f90
@@ -182,6 +182,26 @@ python module sumb ! in
          integer(kind=inttype) intent(in) :: costfunction
          character(len = 64)   :: filename
        end subroutine verifydidxfile
+
+       subroutine verifydrdwfile(level)
+         
+         use blockpointers ! block (nDoms,flowDoms), globalCell
+         use flowvarrefstate
+         use communication
+         use iteration     ! groundLevel
+         use inputtimespectral ! spaceDiscr,nTimeIntervalsSpectral
+         use inputio
+         !from old verify routine
+         use adjointpetsc, only: drdwt,petscone,insert_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world,add_values
+         use precision
+         use inputiteration
+         !implicit none
+                  
+         implicit none
+         
+         !     Subroutine arguments
+         integer(kind=inttype), intent(in) :: level
+       end subroutine verifydrdwfile
 
        subroutine setupcouplingmatrixstruct(pts,npts,nts) ! in :sumb:../../adjoint/setupCouplingMatrixStruct.F90
          use blockpointers
