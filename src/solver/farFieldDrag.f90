@@ -25,7 +25,7 @@ subroutine farFieldDrag()
   use communication
   implicit none
 
-  ! Woring Variables
+  ! Boring Variables
 
   integer(kind=intType) :: nn,level,sps
   integer(kind=intType) :: i,j,k,ierr,liftindex

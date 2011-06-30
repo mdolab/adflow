@@ -61,6 +61,7 @@ FF90_OBJECTS = applyAllBC.o\
 	       executeMGCycle.o\
 	       extrapolate2ndHalo.o\
                farFieldDrag.o\
+	       farFieldInducedDrag.o\
 	       forcesAndMoments.o\
 	       gridVelocitiesCoarseLevels.o\
 	       gridVelocitiesFineLevel.o\
