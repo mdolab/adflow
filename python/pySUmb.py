@@ -73,6 +73,7 @@ class SUMB(AeroSolver):
             'outputDir':[str,'./'],
             'solRestart':[bool,False],
             'writeSolution':[bool,True],
+            'writeMesh':[bool,False],
 
             # Physics Paramters
             'Discretization':[str,'Central plus scalar dissipation'],
@@ -597,6 +598,7 @@ class SUMB(AeroSolver):
                 'storeHistory',
                 'numberSolutions',
                 'writeSolution',
+                'writeMesh',
                 'familyRot',  # -> Not sure how to do
                 'areaAxis',
                 'autoSolveRetry',
@@ -979,6 +981,21 @@ class SUMB(AeroSolver):
         self._updatePeriodInfo()
         self._updateGeometryInfo()
         self._updateVelocityInfo()
+
+        #write out mesh file for volume debugging
+        if self.getOption('writeMesh'):
+            base = self.getOption('outputDir') + '/' + self.getOption('probName')
+            meshname = base + '_mesh.cgns'
+
+            if self.getOption('numberSolutions'):
+                meshname = base + '_mesh%d.cgns'%(self.callCounter)
+
+            #endif
+            self.writeMeshFile(meshname)
+            self.mesh.writeFEGrid(meshname[:-4]+'.dat')
+            if self.myid==0: print 'Warped Mesh written...exiting.'
+            sys.exit(0)
+        # end if
 
         # Check to see if the above update routines failed.
         self.sumb.killsignals.routinefailed = \
