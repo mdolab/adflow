@@ -51,6 +51,8 @@ subroutine farFieldDrag()
   real(kind=realType) :: wx, wy, wz, rvol
 
   ! Define coefficients:
+  gm1 = gammaConstant - 1.0_realType
+
   !mach needs to be mach+machgrid I think...
   
   ffp1 = -1/(gammaConstant*Mach**2)
@@ -71,7 +73,7 @@ subroutine farFieldDrag()
   call getDirAngle(velDirFreeStream,liftDirection,liftIndex,alpha,beta)
 
   level = 1
-  gm1 = gammaConstant - 1.0_realType
+ 
   drag_local = 0.0
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
