@@ -28,7 +28,7 @@ subroutine farFieldDrag()
   ! Woring Variables
 
   integer(kind=intType) :: nn,level,sps
-  integer(kind=intType) :: i,j,k,ierr,liftindex
+  integer(kind=intType) :: i,j,k,l,m,n,ierr,liftindex
 
   ! Temporary Real Arrays:
   real(kind=realType), dimension(:,:,:,:), allocatable :: V_wind,fvw
@@ -38,7 +38,7 @@ subroutine farFieldDrag()
 
   ! Expansion Coefficients:
   real(kind=realType) :: ffp1,ffs1,ffh1,ffp2,ffs2,ffh2,ffps2,ffph2,ffsh2
-
+  real(kind=realType) :: uouinf
   ! Ratios used in expansion:
   real(kind=realType) :: dPoP,dSoR,dHou2
 
@@ -49,10 +49,12 @@ subroutine farFieldDrag()
   real(kind=realType) :: qsp, qsm, rqsp, rqsm, porVel, porFlux
   real(kind=realType) :: pa, fs, sFace, vnp, vnm
   real(kind=realType) :: wx, wy, wz, rvol
-
+  real(kind=realType) :: vp1,vm1,v(3),left,right,face,v1(3),v2
   ! Define coefficients:
   !mach needs to be mach+machgrid I think...
   
+  gm1 = gammaConstant - 1.0_realType
+
   ffp1 = -1/(gammaConstant*Mach**2)
   ffs1 = -1/(gammaConstant*Mach**2)
   ffh1 = 1.0
@@ -64,14 +66,20 @@ subroutine farFieldDrag()
   ffps2 = -(1 + gm1*Mach**2)/(gammaConstant**2*Mach**4)
   ffph2 = 1/(gammaConstant * Mach**2)
   ffsh2 = 1/(gammaConstant * Mach**2)
- !  print *,'coefficients',ffp1,ffs1,ffh1
-!   print *,'coefficients2',ffp2,ffs2,ffh2
-!   print *,'coefficients3',ffps2,ffph2,ffsh2
+!    print *,'coefficients',ffp1,ffs1,ffh1
+!    print *,'coefficients2',ffp2,ffs2,ffh2
+!    print *,'coefficients3',ffps2,ffph2,ffsh2
+!    print *, 'uinf:',uinf
+!    print *,'Pinf:',Pinf
+!    print *,'rhoinf:',rhoinf
+!    print *,'Gam:',GammaConstant
+!    print *,'RGas:',RGas
+   call getDirAngle(velDirFreeStream,liftDirection,liftIndex,alpha,beta)
 
-  call getDirAngle(velDirFreeStream,liftDirection,liftIndex,alpha,beta)
+!   print *,'alpha,beta:',alpha,beta
 
   level = 1
-  gm1 = gammaConstant - 1.0_realType
+  
   drag_local = 0.0
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
@@ -92,35 +100,171 @@ subroutine farFieldDrag()
         res(:,:,:) = 0.0
         ! Loop over owned cells + 1 level of halos:
 
+        if (myid == 0 .and. nn==1) then
+           print *,'nx,ny,nz:',nx,ny,nz
+           print *,'il,jl,kl:',il,jl,kl
+           print *,'ie,je,ke:',ie,je,ke
+           print *,'ib,jb,kb:',ib,jb,kb
+        end if
 
-        do k=1,nz
-           do j=1,ny
-              do i=1,nx                 
+
+        do k=1,ke
+           do j=1,je
+              do i=1,ie
                  !make w relative velocity????w-sface?
                  ! Compute the three components of the wind-oriented velocities:
                  call getWindAxis(w(i,j,k,ivx:ivz),V_wind(i,j,k,:),alpha,liftIndex)
-                 
+
                  !The variation of Entropy wrt the free stream:
                  ds(i,j,k) = (RGas/gm1)*log((P(i,j,k)/Pinf)*(rhoInf/w(i,j,k,iRho))**gammaConstant)
 
                  ! The variation of Stagnation Enthalpy relative to free stream:
                  dH(i,j,k) = (gammaConstant/gm1)*(P(i,j,k)/w(i,j,k,iRho)-Pinf/rhoinf) + &
-                      0.5*(( V_wind(i,j,k,1)**2 + V_wind(i,j,k,2)**2 + V_wind(i,j,k,3)**2) - Uinf**2)
-                ! print *,'dh',(gammaConstant/gm1),P(i,j,k)/w(i,j,k,iRho),-Pinf/rhoinf,'v', 0.5, V_wind(i,j,k,1)**2, V_wind(i,j,k,2)**2 ,V_wind(i,j,k,3)**2, Uinf**2
+                      0.5*(V_wind(i,j,k,1)**2 + V_wind(i,j,k,2)**2 + V_wind(i,j,k,3)**2 - Uinf**2)
 
                  dPoP = (P(i,j,k)-Pinf)/Pinf
-                 !print *,'dpop',dpop
                  dSoR = ds(i,j,k)/RGas
-                 !print *,'dSoR',dsor
                  dHou2 = dH(i,j,k)/Uinf**2
-                 !print *,'dhou2',dhou2 ,dH(i,j,k),Uinf**2
-                 du_ir(i,j,k) = uInf*(ffp1*dPoP + ffs1*dSoR + ffH1*dHou2 + &
-                                      ffp2*dPoP + ffs2*dSoR + ffH2*dHou2 + &
-                                      ffps2*dPoP*dSoR + ffph2*dPoP*dHou2 + ffsh2*dSoR*dHou2)
-                 !print *,'du_ir1',ffph2*dPoP*dHou2,ffph2,dPoP,dHou2
-                 !print *,'du_ir1',uInf,ffp1*dPoP,ffs1*dSoR, ffH1*dHou2,ffp2*dPoP,ffs2*dSoR,ffH2*dHou2,ffps2*dPoP*dSoR,ffph2*dPoP**dHou2,ffsh2*dSoR*dHou2
-                 !print *,'du_ir2',du_ir(i,j,k),i,j,k
 
+                 du_ir(i,j,k)= uinf*sqrt(1 + 2*dH(i,j,k)/uinf**2 - 2/(gm1*Mach**2)*((dPoP + 1)**(gm1/gammaConstant)*exp(dSoR*(gm1/gammaconstant))-1))-uinf
+                 !du_ir(i,j,k)= uinf*sqrt(1 + 2*dH(i,j,k)/uinf**2 - 2/(gm1*Mach**2)*(exp(dSoR)**(gm1/gammaConstant)-1))-uinf
+                 
+!                  du_ir(i,j,k) = uInf*(ffp1*dPoP + ffs1*dSoR + ffH1*dHou2 + &
+!                                       ffp2*dPoP + ffs2*dSoR + ffH2*dHou2 + &
+!                                       ffps2*dPoP*dSoR + ffph2*dPoP*dHou2 + ffsh2*dSoR*dHou2)
+                 
+
+
+                 !if (myid == 0) then
+                    !print *,ds(i,j,k)
+                    !print *,dH(i,j,k)
+                  !  print *,du_ir(i,j,k)
+                 !end if
+                 fvw(i,j,k,:) = -w(i,j,k,iRho) * du_ir(i,j,k) * V_wind(i,j,k,:)
+                 !fvw(i,j,k,:) = w(i,j,k,ivx:ivz)
+                 !fvw(i,j,k,:) = 1.0
+!                  if (isnan(sum(fw(i,j,k,:)))) then
+!                     fw(i,j,k,:) = 0.0
+!                     print *,'Resetting a fucking nan'
+!                  end if
+              end do
+           end do
+        end do
+
+!         do k=2,kl
+!            do j=1,je
+!               do i=2,il
+!                  !make w relative velocity????w-sface?
+!                  ! Compute the three components of the wind-oriented velocities:
+!                  call getWindAxis(w(i,j,k,ivx:ivz),V_wind(i,j,k,:),alpha,liftIndex)
+
+!                  !The variation of Entropy wrt the free stream:
+!                  ds(i,j,k) = (RGas/gm1)*log((P(i,j,k)/Pinf)*(rhoInf/w(i,j,k,iRho))**gammaConstant)
+
+!                  ! The variation of Stagnation Enthalpy relative to free stream:
+!                  dH(i,j,k) = (gammaConstant/gm1)*(P(i,j,k)/w(i,j,k,iRho)-Pinf/rhoinf) + &
+!                       0.5*(V_wind(i,j,k,1)**2 + V_wind(i,j,k,2)**2 + V_wind(i,j,k,3)**2 - Uinf**2)
+
+!                  dPoP = (P(i,j,k)-Pinf)/Pinf
+!                  dSoR = ds(i,j,k)/RGas
+!                  dHou2 = dH(i,j,k)/Uinf**2
+
+!                  !du_ir(i,j,k)= uinf*sqrt(1 + 2*dH(i,j,k)/uinf**2 - 2/(gm1*Mach**2)*((dPoP + 1)**(gm1/gammaConstant)*exp(dSoR)**(gm1/gammaconstant)-1))-uinf
+!                  du_ir(i,j,k)= uinf*sqrt(1 + 2*dH(i,j,k)/uinf**2 - 2/(gm1*Mach**2)*(exp(dSoR)**(gm1/gammaConstant)-1))-uinf
+
+!                  if (isnan(du_ir(i,j,k))) then
+!                     print *,myid,i,j,k
+!                     print *,il,jl,kl
+!                     du_ir(i,j,k) = 0.0
+!                  end if
+
+
+
+!                  fvw(i,j,k,:) = -w(i,j,k,iRho) * du_ir(i,j,k) * V_wind(i,j,k,:)
+
+
+!               end do
+!            end do
+!         end do
+
+!         do k=1,ke
+!            do j=2,jl
+!               do i=2,il
+!                  !make w relative velocity????w-sface?
+!                  ! Compute the three components of the wind-oriented velocities:
+!                  call getWindAxis(w(i,j,k,ivx:ivz),V_wind(i,j,k,:),alpha,liftIndex)
+
+!                  !The variation of Entropy wrt the free stream:
+!                  ds(i,j,k) = (RGas/gm1)*log((P(i,j,k)/Pinf)*(rhoInf/w(i,j,k,iRho))**gammaConstant)
+
+!                  ! The variation of Stagnation Enthalpy relative to free stream:
+!                  dH(i,j,k) = (gammaConstant/gm1)*(P(i,j,k)/w(i,j,k,iRho)-Pinf/rhoinf) + &
+!                       0.5*(V_wind(i,j,k,1)**2 + V_wind(i,j,k,2)**2 + V_wind(i,j,k,3)**2 - Uinf**2)
+
+!                  dPoP = (P(i,j,k)-Pinf)/Pinf
+!                  dSoR = ds(i,j,k)/RGas
+!                  dHou2 = dH(i,j,k)/Uinf**2
+
+!                  !du_ir(i,j,k)= uinf*sqrt(1 + 2*dH(i,j,k)/uinf**2 - 2/(gm1*Mach**2)*((dPoP + 1)**(gm1/gammaConstant)*exp(dSoR)**(gm1/gammaconstant)-1))-uinf
+!                  du_ir(i,j,k)= uinf*sqrt(1 + 2*dH(i,j,k)/uinf**2 - 2/(gm1*Mach**2)*(exp(dSoR)**(gm1/gammaConstant)-1))-uinf
+ 
+!                  if (isnan(du_ir(i,j,k))) then
+!                     print *,myid,i,j,k
+!                     print *,il,jl,kl
+!                     du_ir(i,j,k) = 0.0
+!                  end if
+                 
+!                 fvw(i,j,k,:) = -w(i,j,k,iRho) * du_ir(i,j,k) * V_wind(i,j,k,:)
+                
+!               end do
+!            end do
+!         end do
+
+!        print *,'myid sum:',myid,sum(fvw(:,:,:,:))
+
+
+
+
+!                  du_ir(i,j,k) = uInf*(ffp1*dPoP + ffs1*dSoR + ffH1*dHou2 + &
+!                                       ffp2*dPoP + ffs2*dSoR + ffH2*dHou2 + &
+!                                       ffps2*dPoP*dSoR + ffph2*dPoP*dHou2 + ffsh2*dSoR*dHou2)
+
+
+!                  if (myid == 0 .and. nn==1 .and. i==2 .and. j==2 .and. k==2) then
+!                     print *,'Check ds calc:'
+!                     print *,'RGas=',RGas
+!                     print *,'gm1=',gm1
+!                     print *,'P=',P(i,j,k)
+!                     print *,'Pinf=',Pinf
+!                     print *,'rhoInf=',rhoInf
+!                     print *,'rho=',w(i,j,k,iRho)
+!                     print *,'ds=',ds(i,j,k)
+!                     print *,'Vwind[0]=',V_wind(i,j,k,1)
+!                     print *,'Vwind[1]=',V_wind(i,j,k,2)
+!                     print *,'Vwind[2]=',V_wind(i,j,k,3)
+!                     print *,'dH=',dH(i,j,k)
+!                     print *,'du1=',uouinf
+!                     print *,'du2=',du_ir(i,j,k)
+!                  end if
+
+!                  if (myid == 0 .and. nn==1 .and. i==2 .and. j==2 .and. k==2) then
+!                     print *,'P=',P(i,j,k)
+!                     print *,'RGas=',RGas
+!                     print *,'Pinf=',Pinf
+!                     print *,'rhoInf=',rhoInf
+!                     print *,'rho=',w(i,j,k,iRho)
+!                     print *,'ds=',ds(i,j,k)
+!                     print *,'V_wind(1)=',V_wind(i,j,k,1)
+!                     print *,'V_wind(2)=',V_wind(i,j,k,2)
+!                     print *,'V_wind(3)=',V_wind(i,j,k,3)
+!                     print *,'Uinf=',uinf
+!                     print *,'dH=',dH(i,j,k)
+!                     print *,'one=',uouinf
+!                     print *,'two=',du_ir(i,j,k)
+!                  end if
+
+                 !print *,uouinf,du_ir(i,j,k)
+                 
                  ! We should now be in a position to integrate the
                  ! irreversible drag over the volume:
                  !         /
@@ -129,114 +273,65 @@ subroutine farFieldDrag()
                  !          V
 
                  ! produce the fvw vector:
-                 fvw(i,j,k,:) = -w(i,j,k,iRho) * du_ir(i,j,k) * V_wind(i,j,k,:)
-              end do
-           end do
-        end do
+                 !fvw(i,j,k,:) = -w(i,j,k,iRho) * du_ir(i,j,k) * V_wind(i,j,k,:)
+                 !fvw(i,j,k,:) = 1.0
+                 !print *,myid,nn,du_ir(i,j,k)
+!                  if (myid == 0) then
+!                     print *,i,j,k
+!                     print *,fvw(i,j,k,:)
+!                  end if
+!               end do
+!            end do
+!         end do
 
-        sFace = zero
+
         do k=2,kl
+           n = k -1
            do j=2,jl
+              m = j -1
               do i=2,il
-                 ! Fluxes in I
-                 vnp = fvw(i+1,j,k,1)*sI(i,j,k,1) + fvw(i+1,j,k,2)*sI(i,j,k,2) + fvw(i+1,j,k,3)*sI(i,j,k,3)
-                 vnm = fvw(i  ,j,k,1)*sI(i,j,k,1) + fvw(i  ,j,k,2)*sI(i,j,k,2) + fvw(i  ,j,k,3)*sI(i,j,k,3)
-                 
-         !         if( addGridVelocities ) sFace = sFaceI(i,j,k)
+                 l = i -1
 
-                 porVel  = one
-                 porFlux = half
-                 if(porI(i,j,k) == noFlux)    porFlux = zero
-                 if(porI(i,j,k) == boundFlux) then
-                    porVel = zero
-                    vnp    = sFace
-                    vnm    = sFace
-                 endif
+                 ! I Left
+                 v = (fvw(i,j,k,:)+fvw(i-1,j,k,:))*0.5
+                 face  = v(1)*sI(l,j,k,1) + v(2)*sI(l,j,k,2) + v(3)*sI(l,j,k,3)
+                 res(i,j,k) = res(i,j,k) - face*porI(l,j,k)
 
-                  ! Incorporate porFlux in porVel.
+                 ! I Right
+                 v = (fvw(i+1,j,k,:)+fvw(i,j,k,:))*0.5
+                 face  = v(1)*sI(i,j,k,1) + v(2)*sI(i,j,k,2) + v(3)*sI(i,j,k,3)
+                 res(i,j,k) = res(i,j,k) + face*porI(i,j,k)
 
-                  porVel = porVel*porFlux
+                 ! J Left
+                 v = (fvw(i,j,k,:)+fvw(i,j-1,k,:))*0.5
+                 face  = v(1)*sJ(i,m,k,1) + v(2)*sJ(i,m,k,2) + v(3)*sJ(i,m,k,3)
+                 res(i,j,k) = res(i,j,k) - face*porJ(i,m,k)
 
-                 ! Compute the normal velocities relative to the grid for
-                 ! the face as well as the mass fluxes.
-                 !print *,'porval',porVel
-                 qsp = vnp*porVel!(vnp -sFace)*porVel
-                 qsm = vnm*porVel!(vnm -sFace)*porVel
+                 ! J Right
+                 v = (fvw(i,j+1,k,:)+fvw(i,j,k,:))*0.5
+                 face  = v(1)*sJ(i,j,k,1) + v(2)*sJ(i,j,k,2) + v(3)*sJ(i,j,k,3)
+                 res(i,j,k) = res(i,j,k) + face*porJ(i,j,k)
 
-                 fs = qsp + qsm
+                 ! K Left
+                 v = (fvw(i,j,k,:)+fvw(i,j,k-1,:))*0.5
+                 face  = v(1)*sK(i,j,n,1) + v(2)*sK(i,j,n,2) + v(3)*sK(i,j,n,3)
+                 res(i,j,k) = res(i,j,k) - face*porK(i,j,n)
 
-                 res(i+1,j,k) = res(i+1,j,k) - fs
-                 res(i  ,j,k) = res(i+1,j,k) + fs
-
-                 ! Fluxes in J
-                 vnp = fvw(i,j+1,k,1)*sJ(i,j,k,1) + fvw(i,j+1,k,2)*sJ(i,j,k,2) + fvw(i,j+1,k,3)*sJ(i,j,k,3)
-                 vnm = fvw(i,j  ,k,1)*sJ(i,j,k,1) + fvw(i,j  ,k,2)*sJ(i,j,k,2) + fvw(i,j  ,k,3)*sJ(i,j,k,3)
-                 
-               !   if( addGridVelocities ) sFace = sFaceJ(i,j,k)
-
-                 porVel  = one
-                 porFlux = half
-                 if(porJ(i,j,k) == noFlux)    porFlux = zero
-                 if(porJ(i,j,k) == boundFlux) then
-                    porVel = zero
-                    vnp    = sFace
-                    vnm    = sFace
-                 endif
-
-                 ! Incorporate porFlux in porVel.
-
-                 porVel = porVel*porFlux
-
-                 ! Compute the normal velocities relative to the grid for
-                 ! the face as well as the mass fluxes.
-                 
-                 qsp = vnp*porVel!(vnp -sFace)*porVel
-                 qsm = vnm*porVel!(vnm -sFace)*porVel
-
-                 fs = qsp + qsm
-
-                 res(i,j+1,k) = res(i,j+1,k) - fs
-                 res(i,j  ,k) = res(i,j  ,k) + fs
-
-                 ! Fluxes in K
-                 vnp = fvw(i,j,k+1,1)*sK(i,j,k,1) + fvw(i,j,k+1,2)*sK(i,j,k,2) + fvw(i,j,k+1,3)*sK(i,j,k,3)
-                 vnm = fvw(i,j,k  ,1)*sK(i,j,k,1) + fvw(i,j,k  ,2)*sK(i,j,k,2) + fvw(i,j,k  ,3)*sK(i,j,k,3)
-                 
-                 ! if( addGridVelocities ) sFace = sFaceK(i,j,k)
-
-                 porVel  = one
-                 porFlux = half
-                 if(porK(i,j,k) == noFlux)    porFlux = zero
-                 if(porK(i,j,k) == boundFlux) then
-                    porVel = zero
-                    vnp    = sFace
-                    vnm    = sFace
-                 endif
-
-                 ! Incorporate porFlux in porVel.
-
-                 porVel = porVel*porFlux
-
-                 ! Compute the normal velocities relative to the grid for
-                 ! the face as well as the mass fluxes.
-                 
-                 qsp = vnp*porVel!(vnp -sFace)*porVel
-                 qsm = vnm*porVel!(vnm -sFace)*porVel
-
-                 fs = qsp + qsm
-
-                 res(i,j,k+1) = res(i,j,k+1) - fs
-                 res(i,j,k  ) = res(i,j,k  ) + fs
+                 ! K Right
+                 v = (fvw(i,j,k+1,:)+fvw(i,j,k,:))*0.5
+                 face  = v(1)*sK(i,j,k,1) + v(2)*sK(i,j,k,2) + v(3)*sK(i,j,k,3)
+                 res(i,j,k) = res(i,j,k) + face*porK(i,j,k)
 
               end do
            end do
         end do
-
         ! Now we have the divergence of fvw computed in res, we simply sum up the contributions:
+
+        !print *,'b,d:',nbkglobal,sum(fvw)
         do k=2,kl
            do j=2,jl
               do i=2,il
-                 drag_local = drag_local + res(i,j,k)*vol(i,j,k)
+                 drag_local = drag_local + res(i,j,k)
               end do
            end do
         end do
@@ -248,9 +343,12 @@ subroutine farFieldDrag()
 
   ! Reduce the drag to root proc:
   call mpi_reduce(drag_local,drag,1,sumb_real,mpi_sum,0,SUmb_comm_world,ierr)
-  fact = two/(gammaInf*pInf*pRef*MachCoef*MachCoef &
+  fact = two/(gammaInf*pInf*MachCoef*MachCoef &
             *surfaceRef*LRef*LRef)
-  !print *,'fact',fact
+  fact = two/(surfaceRef)
+  if (myid == 0) then
+     print *,'fact',fact
+  end if
   !print *,'factff',fact,two,gammaInf,pInf,pRef,MachCoef,MachCoef,surfaceRef,LRef,LRef
   if (myid == 0) then
      print *,'Irreversable drag:',drag
