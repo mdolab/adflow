@@ -145,7 +145,6 @@ subroutine farFieldDrag()
                  !fvw(i,j,k,:) = 1.0
 !                  if (isnan(sum(fw(i,j,k,:)))) then
 !                     fw(i,j,k,:) = 0.0
-!                     print *,'Resetting a fucking nan'
 !                  end if
               end do
            end do
