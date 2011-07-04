@@ -40,6 +40,7 @@ subroutine getSolution(sps)
   functionValue(:) = 0.0
   call computeAeroCoef(globalCFVals,sps)
   call farFieldDrag
+  call farFieldInducedDrag
   functionValue(costFuncLift) = globalCFVals(costFuncLift) 
   functionValue(costFuncDrag) = globalCFVals(costFuncDrag) 
   functionValue(costFuncLiftCoef) = globalCFVals(costFuncLiftCoef) 
