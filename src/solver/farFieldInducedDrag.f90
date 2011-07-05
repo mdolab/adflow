@@ -47,6 +47,7 @@ subroutine farFieldInducedDrag()
   real(kind=realType) :: alpha,beta
   real(kind=realType), dimension(3,3) :: vTen,pTen
   real(kind=realType), dimension(3) :: force,force_local
+  real(kind=realType)::CD,CL
   !pointers
   real(kind=realType), dimension(:,:),   pointer :: pp2, pp1
   real(kind=realType), dimension(:,:),   pointer :: rho2, rho1
@@ -203,14 +204,16 @@ subroutine farFieldInducedDrag()
                 !create the outer produce tensor and the pressure tensor
                 do l = 1,3
                    do m = 1,3
-                      vTen(l,m)  = fact*rhoAvg*rhoRef*vAvg(l) * vAvg(m)*vRef**2
+                      !vTen(l,m)  = fact*rhoAvg*rhoRef*vAvg(l) * vAvg(m)*vRef**2
+                      vTen(l,m)  = fact*rhoAvg*vAvg(l) * vAvg(m)
                    end do
                 end do
                 !print *,'vten',vten
                 !stop
                 !print *,'refs',pref, rhoref*vref**2
                 do l = 1,3
-                   pTen(l,l) = fact*(pAvg-pInf)*pRef
+                   !pTen(l,l) = fact*(pAvg-pInf)*pRef
+                   pTen(l,l) = fact*(pAvg-pInf)
                 end do
                 
                 !add in tauTen for viscous
@@ -218,7 +221,7 @@ subroutine farFieldInducedDrag()
                 !Sum the tensors
                 vTen = vTen+pTen!+tauTen
                 
-                force_local = force_local+ matmul(vTen,ss(i,j,:))
+                force_local = force_local- matmul(vTen,ss(i,j,:))
                 
                 
                 
@@ -283,9 +286,19 @@ end do spectralLoop
   
   !print *,'fact',fact
   !print *,'factff',fact,two,gammaInf,pInf,pRef,MachCoef,MachCoef,surfaceRef,LRef,LRef
+  CL = force(1)*liftDirection(1) &
+       + force(2)*liftDirection(2) &
+       + force(3)*liftDirection(3)
+
+  CD = force(1)*dragDirection(1) &
+       + force(2)*dragDirection(2) &
+       + force(3)*dragDirection(3)
+  
   if (myid == 0) then
      print *,'Induced drag:',drag
      print *,'Induced CD',drag*fact
      print *,'force',force,force*fact,force/ovfact
+     print *,'force CL',CL,CL*fact,CL/ovfact
+     print *,'force CD',CD,CD*fact,CD/ovfact
   end if
 end subroutine farFieldInducedDrag
