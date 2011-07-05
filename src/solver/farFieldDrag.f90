@@ -344,7 +344,7 @@ subroutine farFieldDrag()
   call mpi_reduce(drag_local,drag,1,sumb_real,mpi_sum,0,SUmb_comm_world,ierr)
   fact = two/(gammaInf*pInf*MachCoef*MachCoef &
             *surfaceRef*LRef*LRef)
-  fact = two/(surfaceRef)
+  !fact = two/(surfaceRef)
   if (myid == 0) then
      print *,'fact',fact
   end if
