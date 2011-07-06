@@ -51,9 +51,26 @@
        real(kind=realType), parameter :: rkwK     = 0.41_realType
        real(kind=realType), parameter :: rkwSigk1 = 0.5_realType
        real(kind=realType), parameter :: rkwSigw1 = 0.5_realType
-       real(kind=realType), parameter :: rkwSigd1 = 0.5_realType
+!eran-kwmod       real(kind=realType), parameter :: rkwSigd1 = 0.5_realType
        real(kind=realType), parameter :: rkwBeta1 = 0.0750_realType
        real(kind=realType), parameter :: rkwBetas = 0.09_realType
+
+!------------eran-kwmod starts
+!
+!      ******************************************************************
+!      *                                                                *
+!      * K-omega modified constants.                                    *
+!      * only those modified from the original                          *
+!      *                                                                *
+!      ******************************************************************
+!
+       real(kind=realType), parameter :: rkwModSigk1 = 0.6_realType
+       real(kind=realType), parameter :: rkwModSigd1 = 0.125_realType
+       real(kind=realType), parameter :: rkwSigd1    = 0.125_realType
+       real(kind=realType), parameter :: rkwModBeta1 = 0.0708_realType
+
+!------------eran-kwmod ends
+
 !
 !      ******************************************************************
 !      *                                                                *

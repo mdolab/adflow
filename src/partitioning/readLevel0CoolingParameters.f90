@@ -29,6 +29,7 @@
        use inputIO
        use inputIteration
        use killSignals
+
        implicit none
 !
 !      Local parameter.

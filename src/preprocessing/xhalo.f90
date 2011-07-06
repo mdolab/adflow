@@ -34,8 +34,6 @@
 !
        integer(kind=intType) :: nn, mm, sps, i, j, k,ii,jj
        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iiMax, jjMax
-       !integer(kind=intType) :: iBeg2, iEnd2, jBeg2, jEnd2
-
        real(kind=realType), dimension(:,:,:), pointer :: x0, x1, x2
 
        real(kind=realType) :: length, dot
@@ -50,7 +48,7 @@
        LOGICAL :: opened=.false., named
        CHARACTER(LEN=80) :: fname
        
-       INQUIRE (UNIT=unitx, NAMED=named,  OPENED=opened, NAME=fname)
+       !INQUIRE (UNIT=unitx, NAMED=named,  OPENED=opened, NAME=fname)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -67,7 +65,7 @@
            ! Set the pointers to this block.
 
            call setPointers(nn, level, sps)
-           
+
 !
 !          **************************************************************
 !          *                                                            *
@@ -132,14 +130,16 @@
 
            loopBocos: do mm=1,nBocos
               !if(opened) write(unitx,*)'loopBocos',mm,nbocos
+
              ! The actual correction of the coordinates only takes
              ! place for symmetry planes.
 
              testSymmetry: if(BCType(mm) == Symm) then
+
                ! if(opened) write(unitx,*)'testSymmetry',bcfaceID(mm)
                ! Set some variables, depending on the block face on
                ! which the subface is located.
- 
+
                select case (BCFaceID(mm))
                  case (iMin)
                    iBeg = jnBeg(mm); iEnd = jnEnd(mm); iiMax = jl
@@ -171,23 +171,21 @@
                    jBeg = jnBeg(mm); jEnd = jnEnd(mm); jjMax = jl
                    x0 => x(:,:,ke,:); x1 => x(:,:,kl,:); x2 => x(:,:,nz,:)
                end select
- 
 
                ! Determine the vector from the lower left corner to
                ! the upper right corner. Due to the usage of pointers
                ! an offset of +1 must be used, because the original
                ! array x start at 0.
                
-               v1(1) = x1(iimax+1,jjmax+1,1) - x1(1+1,1+1,1)
-               v1(2) = x1(iimax+1,jjmax+1,2) - x1(1+1,1+1,2)
-               v1(3) = x1(iimax+1,jjmax+1,3) - x1(1+1,1+1,3)
-
+             
                ! And the vector from the upper left corner to the
                ! lower right corner.
                
                v2(1) = x1(iimax+1,1+1,1) - x1(1+1,jjmax+1,1)
                v2(2) = x1(iimax+1,1+1,2) - x1(1+1,jjmax+1,2)
                v2(3) = x1(iimax+1,1+1,3) - x1(1+1,jjmax+1,3)
+
+               norm = zero
 
                ! Determine the normal of the face by taking the cross
                ! product of v1 and v2 and add it to norm.
@@ -196,13 +194,42 @@
                norm(2) = v1(3)*v2(1) - v1(1)*v2(3)
                norm(3) = v1(1)*v2(2) - v1(2)*v2(1)
 
+               do j=(jBeg+1),jEnd
+                 do i=(iBeg+1),iEnd
+
+                   ! Determine the vector from the lower left corner to
+                   ! the upper right corner. Due to the usage of pointers
+                   ! an offset of +1 must be used, because the original
+                   ! array x start at 0.
+
+                   v1(1) = x1(i+1,j+1,1) - x1(i,j,1)
+                   v1(2) = x1(i+1,j+1,2) - x1(i,j,2)
+                   v1(3) = x1(i+1,j+1,3) - x1(i,j,3)
+
+                   ! And the vector from the upper left corner to the
+                   ! lower right corner.
+
+                   v2(1) = x1(i+1,j,1) - x1(i,j+1,1)
+                   v2(2) = x1(i+1,j,2) - x1(i,j+1,2)
+                   v2(3) = x1(i+1,j,3) - x1(i,j+1,3)
+
+                   ! Determine the normal of the face by taking the cross
+                   ! product of v1 and v2 and add it to norm.
+
+                   norm(1) = norm(1) + v1(2)*v2(3) - v1(3)*v2(2)
+                   norm(2) = norm(2) + v1(3)*v2(1) - v1(1)*v2(3)
+                   norm(3) = norm(3) + v1(1)*v2(2) - v1(2)*v2(1)
+
+                 enddo
+              enddo
+
                ! Compute the length of the normal and test if this is
                ! larger than eps. If this is the case this means that
                ! it is a nonsingular subface and the coordinates are
                ! corrected.
-               
+
                length = sqrt(norm(1)**2 + norm(2)**2 + norm(3)**2)
-               
+
                testSingular: if(length > eps) then
                   
                   ! Compute the unit normal of the subface.
@@ -246,7 +273,6 @@
                         x0(i+1,j+1,1) = x2(i+1,j+1,1) + dot*norm(1)
                         x0(i+1,j+1,2) = x2(i+1,j+1,2) + dot*norm(2)
                         x0(i+1,j+1,3) = x2(i+1,j+1,3) + dot*norm(3)
-                        !print *,'xhalo', x0(i+1,j+1,1) ,x2(i+1,j+1,1) , dot,norm(1),i,j,BCFaceID(mm)
 
                      enddo
                   enddo
@@ -254,8 +280,9 @@
             endif testSymmetry
          enddo loopBocos
       enddo domains
-   enddo spectralLoop 
+   enddo spectralLoop
   
+
 !
 !      ******************************************************************
 !      *                                                                *

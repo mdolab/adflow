@@ -89,7 +89,6 @@
 
            ! Open the cgns file for writing and check if it went okay.
            ! Store the file index for later purposes.
-            !print *,'calling open_f'
            call cg_open_f(surfSolFileNames(nn), mode_write, cgnsInd, &
                           ierr)
            if(ierr /= all_ok) then
@@ -112,7 +111,7 @@
                             &cg_base_write_f")
 
            ! Write the header in the cgns file.
-           !print *,'calling writecgnsheader'
+
            call writeCGNSHeader(cgnsInd, cgnsBases(nn))
 
          enddo solLoop
@@ -121,16 +120,15 @@
 
        ! Determine the number of variables to be written to the surface
        ! solution file as well as the cgns names.
-       !print *,'calling numberofsurfacesolvariables'
        call numberOfSurfSolVariables(nSolVar)
-       !print *,'numberofsurfacesolvariables',nSolVar
+
        allocate(solNames(nSolVar), stat=ierr)
        if(ierr /= 0)                           &
          call terminate("writeCGNSSurfaceSol", &
                         "Memory allocation failure for solNames")
-       !print *,'calling sursolnames'
+
        call surfSolNames(solNames)
-       !print *,'solnames',solNames
+
        ! Loop over the number of cgns blocks and its boundary subfaces
        ! and write the cell centered surface solution of the subface.
 
@@ -149,7 +147,7 @@
          do ll=1,cgnsDoms(nn)%nBocos
 
            ! Only write the solution to file if this is a true subface.
-            !print *,'calling writesurfsolcgnszone',ll,cgnsDoms(nn)%bocoInfo(ll)%actualFace
+
            if( cgnsDoms(nn)%bocoInfo(ll)%actualFace )                 &
              call writeSurfsolCGNSZone(nn, mm, ll, nSolVar, solNames, &
                                        nZonesWritten, .false.)
@@ -173,11 +171,19 @@
 
        if(myID == 0) then
          do nn=1,nSurfSolToWrite
-            !print *,'calling close_f'
+
            call cg_close_f(fileIDs(nn), ierr)
            if(ierr /= all_ok)                      &
-             call terminate("writeCGNSSurfaceSol", &
-                            "Something wrong when calling cg_close_f")
+
+              call terminate("writeCGNSSurfaceSol", &
+                             "Something wrong when calling cg_close_f")
+
+! 		write(*,*)'ERROR: writeCGNSSurfaceSol ', &
+! 		' Something wrong when calling cg_close_f' ! eran-closecgns
+
+    ! eran-closecgns       call terminate("writeCGNSSurfaceSol", &
+    ! eran-closecgns        "Something wrong when calling cg_close_f")
+
          enddo
        endif
 

@@ -27,6 +27,8 @@
        use flowVarRefState
        use inputPhysics
        use IOModule
+       use iteration ! eran-avf
+       use inputDES ! eran-des
        implicit none
 !
 !      Subroutine arguments.
@@ -47,6 +49,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: i, j, k, ii, jj, kk, nn
+       integer(kind=intType) :: var=1_intType  ! eran-avf
 
        real(kind=realType) :: uy, uz, vx, vz, wx, wy, tmp
        real(kind=realType) :: vortx, vorty, vortz, a2, ptotInf, ptot
@@ -80,31 +83,88 @@
            enddo
 
          case (cgnsMomx)
-           do k=kBeg,kEnd
-             do j=jBeg,jEnd
-               do i=iBeg,iEnd
-                 wIO(i,j,k,1) = w(i,j,k,irho)*w(i,j,k,ivx)
-               enddo
-             enddo
-           enddo
 
-         case (cgnsMomy)
-           do k=kBeg,kEnd
-             do j=jBeg,jEnd
-               do i=iBeg,iEnd
-                 wIO(i,j,k,1) = w(i,j,k,irho)*w(i,j,k,ivy)
+!--- starts eran-avf
+!
+!- store w(average,ivx0 instead of momx
+!
+            if(equationMode == unsteady)then
+               do k=kBeg,kEnd
+                  do j=jBeg,jEnd
+                     do i=iBeg,iEnd
+                        wIO(i,j,k,var) = wOld(noldLevels+1,i,j,k,ivx) 
+                     enddo
+                  enddo
                enddo
-             enddo
-           enddo
+               
+            else
+               
+               do k=kBeg,kEnd
+                  do j=jBeg,jEnd
+                     do i=iBeg,iEnd
+                        wIO(i,j,k,1) = w(i,j,k,irho)*w(i,j,k,ivx)
+                     enddo
+                  enddo
+               enddo
+            end if
+!
+!--------- ends eran-avf
+!
+            
+         case (cgnsMomy)
+
+
+!--- starts eran-avf
+!
+!- store w(average,ivx0 instead of momx
+!
+            if(equationMode == unsteady)then
+               do k=kBeg,kEnd
+                  do j=jBeg,jEnd
+                     do i=iBeg,iEnd
+                        wIO(i,j,k,var) = wOld(noldLevels+1,i,j,k,ivy) 
+                     enddo
+                  enddo
+               enddo
+
+            else
+               
+               do k=kBeg,kEnd
+                  do j=jBeg,jEnd
+                     do i=iBeg,iEnd
+                        wIO(i,j,k,1) = w(i,j,k,irho)*w(i,j,k,ivy)
+                     enddo
+                  enddo
+               enddo
+            end if
+!
+!--------- ends eran-avf
 
          case (cgnsMomz)
-           do k=kBeg,kEnd
-             do j=jBeg,jEnd
-               do i=iBeg,iEnd
-                 wIO(i,j,k,1) = w(i,j,k,irho)*w(i,j,k,ivz)
+
+!--- starts eran-avf
+!
+!- store w(average,ivx0 instead of momx
+!
+            if(equationMode == unsteady)then
+               do k=kBeg,kEnd
+                  do j=jBeg,jEnd
+                     do i=iBeg,iEnd
+                        wIO(i,j,k,var) = wOld(noldLevels+1,i,j,k,ivz) 
+                     enddo
+                  enddo
                enddo
-             enddo
-           enddo
+            else
+               do k=kBeg,kEnd
+                  do j=jBeg,jEnd
+                     do i=iBeg,iEnd
+                        wIO(i,j,k,1) = w(i,j,k,irho)*w(i,j,k,ivz)
+                     enddo
+                  enddo
+               enddo
+            end if
+!
+!--------- ends eran-avf
 
          case (cgnsEnergy)
            do k=kBeg,kEnd
@@ -205,6 +265,7 @@
              enddo
            enddo
 
+
          case (cgnsPressure)
            do k=kBeg,kEnd
              do j=jBeg,jEnd
@@ -291,16 +352,37 @@
            enddo
 
          case (cgNSWallDist)
-           do k=kBeg,kEnd
-             kk = max(2_intType,k); kk = min(kl,kk)
-             do j=jBeg,jEnd
-               jj = max(2_intType,j); jj = min(jl,jj)
-               do i=iBeg,iEnd
-                 ii = max(2_intType,i); ii = min(il,ii)
-                 wIO(i,j,k,1) = d2Wall(ii,jj,kk)
+
+!---------- eran-des starts
+
+            if(applyDES)then
+
+               do k=kBeg,kEnd
+                  kk = max(2_intType,k); kk = min(kl,kk)
+                  do j=jBeg,jEnd
+                     jj = max(2_intType,j); jj = min(jl,jj)
+                     do i=iBeg,iEnd
+                        ii = max(2_intType,i); ii = min(il,ii)
+                        wIO(i,j,k,var) = filterDES(ii,jj,kk)
+                     enddo
+                  enddo
                enddo
-             enddo
-           enddo
+            else ! applyDES
+
+               do k=kBeg,kEnd
+                  kk = max(2_intType,k); kk = min(kl,kk)
+                  do j=jBeg,jEnd
+                     jj = max(2_intType,j); jj = min(jl,jj)
+                     do i=iBeg,iEnd
+                        ii = max(2_intType,i); ii = min(il,ii)
+                        wIO(i,j,k,1) = d2Wall(ii,jj,kk)
+                     enddo
+                  enddo
+               enddo
+
+            end if ! applyDES
+
+!-----------------eran-des ends ------
 
          case (cgnsVortMagn)
 
@@ -554,14 +636,24 @@
              enddo
            enddo
 
+
+!----eran-vol
+! store vol instead of iblank, when blank volume monitoring is needed
+! useful for area-averaging of variables
+!
          case (cgnsBlank)
            do k=kBeg,kEnd
              do j=jBeg,jEnd
                do i=iBeg,iEnd
                  wIO(i,j,k,1) = real(min(iblank(i,j,k),1_intType),realType)
+ !eran-vol        wIO(i,j,k,1) = real(min(iblank(i,j,k),1_intType),realType)
+                 wIO(i,j,k,var) = vol(i,j,k) ! eran-vol
                enddo
              enddo
            enddo
+
+!
+!----eran-vol end ---------------
 
          case default
            call terminate("storeSolInBuffer", &

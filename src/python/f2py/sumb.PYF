@@ -1,6 +1,3 @@
-!    -*- f90 -*-
-
-
 python module solverunsteadymd__user__routines 
     interface solverunsteadymd_user_interface 
         subroutine mdcallback_python(timeunsteady,firstiter) ! in :test:solverUnsteadyMD.F90:solverunsteadymd:unknown_interface
@@ -395,6 +392,9 @@ python module sumb ! in
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: output
        end subroutine getdidx
 
+       subroutine zeroobjpartials
+       end subroutine zeroobjpartials
+
        subroutine matrixinfo(pdrdwt,pdrdwpret,pdrdx,pdrda,pdfdw,pdfdx,plocal,psum,pmax) ! in :test:matrixInfo.F90
          logical intent(in) :: pdrdwt
          logical intent(in) :: pdrdwpret
@@ -435,6 +435,12 @@ python module sumb ! in
          real(kind=realtype) dimension(ndof),intent(in) :: vec_in
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: vec_out
        end subroutine getdfdxvec
+
+       subroutine getdfdxtvec(ndof,vec_in,vec_out) ! in :test:getdFdxVec.f90
+         integer(kind=inttype) optional,intent(in),check(len(vec_in)>=ndof),depend(vec_in) :: ndof=len(vec_in)
+         real(kind=realtype) dimension(ndof),intent(in) :: vec_in
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: vec_out
+       end subroutine getdfdxtvec
 
        subroutine getglobalnodes(blocknum,idim,jdim,kdim,nodenumbers) ! in :sumb:../../adjoint/getGlobalNodes.f90
          integer(kind=inttype) intent(in) :: blocknum

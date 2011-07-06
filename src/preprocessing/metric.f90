@@ -541,7 +541,7 @@
                  v2(1) = x(l,j,k,1) - x(i,m,k,1)
                  v2(2) = x(l,j,k,2) - x(i,m,k,2)
                  v2(3) = x(l,j,k,3) - x(i,m,k,3)
-                 
+
                  ! The face normal, which is the cross product of the two
                  ! diagonal vectors times fact; remember that fact is
                  ! either -0.5 or 0.5.
