@@ -37,7 +37,7 @@
 !
        ! Determine the case we are having here and set the return
        ! value accordingly.
-      
+
        select case (BCNamePlot3D)
 
          case ("BCAxisymmetricWedge")

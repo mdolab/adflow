@@ -8,363 +8,317 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine graphPartitioning(emptyPartitions, commNeglected)
-!
-!      ******************************************************************
-!      *                                                                *
-!      * graphPartitioning partitions the corresponding graph of the    *
-!      * computational blocks such that both the number of cells and    *
-!      * number of faces is about equal on all processors.              *
-!      *                                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       use communication
-       use constants
-       use partitionMod
-       use inputParallel
-       implicit none
-!
-!      Subroutine arguments.
-!
-       logical, intent(out) :: emptyPartitions, commNeglected
-!
-!      Variables to store the graph in metis format.
-!
-       ! nVertex        : Number of vertices in the graph, equals nBlocks.
-       ! nCon           : Number of contraints, 2.
-       ! xadj(0:nVertex): Number of edges per vertex, cumulative storage
-       !                  format.
-       ! adjncy(:)      : End vertex of the edge; the size of adjncy is
-       !                  xadj(nVertex).
-       ! vwgt(:,:)      : Vertex weights, size equals nCon,nVertex. The
-       !                  vertex weights are stored contiguously.
-       ! adjwgt(:)      : Edge weights, size equals xadj(nVertex). Note
-       !                  that the edge weights of edge i-j can be
-       !                  different from the weight of edge j-i.
-       ! wgtflag        : Whether or not to use weights on edges. Here
-       !                  wgtflag should always be 1 to indicate that
-       !                  edge weights are used.
-       ! numflag        : Flag to indicate the numbering convention,
-       !                  starting from 0 or 1. Here we start from 0.
-       ! nParts         : Number of parts to split the graph. This is
-       !                  nProc.
-       ! ubvec(2)       : Tolerance for the constraints. Stored in the
-       !                  module dpartitionMod.
-       ! options(5)     : Option array; normally the default is used
-       !                  indicated by options(1) = 0.
-       ! edgecut        : On return it contains the edge cut of the
-       !                  distributed graph.
-       ! part(nVertex)  : On return the processor ID for each block.
-       !                  It will be returned in fortran numbering,
-       !                  i.e. starting at 1.  Stored in the module
-       !                  distributionMod.
+subroutine graphPartitioning(emptyPartitions, commNeglected)
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * graphPartitioning partitions the corresponding graph of the    *
+  !      * computational blocks such that both the number of cells and    *
+  !      * number of faces is about equal on all processors.              *
+  !      *                                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  use communication
+  use constants
+  use partitionMod
+  use inputParallel
+  implicit none
+  !
+  !      Subroutine arguments.
+  !
+  logical, intent(out) :: emptyPartitions, commNeglected
+  !
+  !      Variables to store the graph in metis format.
+  !
+  ! nVertex        : Number of vertices in the graph, equals nBlocks.
+  ! nCon           : Number of contraints, 2.
+  ! xadj(0:nVertex): Number of edges per vertex, cumulative storage
+  !                  format.
+  ! adjncy(:)      : End vertex of the edge; the size of adjncy is
+  !                  xadj(nVertex).
+  ! vwgt(:,:)      : Vertex weights, size equals nCon,nVertex. The
+  !                  vertex weights are stored contiguously.
+  ! adjwgt(:)      : Edge weights, size equals xadj(nVertex). Note
+  !                  that the edge weights of edge i-j can be
+  !                  different from the weight of edge j-i.
+  ! wgtflag        : Whether or not to use weights on edges. Here
+  !                  wgtflag should always be 1 to indicate that
+  !                  edge weights are used.
+  ! numflag        : Flag to indicate the numbering convention,
+  !                  starting from 0 or 1. Here we start from 0.
+  ! nParts         : Number of parts to split the graph. This is
+  !                  nProc.
+  ! ubvec(2)       : Tolerance for the constraints. Stored in the
+  !                  module dpartitionMod.
+  ! options(5)     : Option array; normally the default is used
+  !                  indicated by options(1) = 0.
+  ! edgecut        : On return it contains the edge cut of the
+  !                  distributed graph.
+  ! part(nVertex)  : On return the processor ID for each block.
+  !                  It will be returned in fortran numbering,
+  !                  i.e. starting at 1.  Stored in the module
+  !                  distributionMod.
 
-       integer :: nVertex, nCon, wgtflag, numflag, nParts, edgecut
-       integer, dimension(5) :: options
+  integer :: nVertex, nCon, wgtflag, numflag, nParts, edgecut
+  integer, dimension(5) :: options
 
-       integer(kind=intType), dimension(:),   allocatable :: xadj, adjncy
-       integer(kind=intType), dimension(:),   allocatable :: adjwgt
-       integer(kind=intType), dimension(:,:), allocatable :: vwgt
-!
-!      Local variables.
-!
-       integer :: ierr
+  integer(kind=intType), dimension(:),   allocatable :: xadj, adjncy
+  integer(kind=intType), dimension(:),   allocatable :: adjwgt
+  integer(kind=intType), dimension(:,:), allocatable :: vwgt
+  !
+  !      Local variables.
+  !
+  integer :: ierr
 
-       integer(kind=intType) :: i, j
-       integer(kind=intType) :: nEdges, nEdgesMax, ii, jj, kk
+  integer(kind=intType) :: i, j
+  integer(kind=intType) :: nEdges, nEdgesMax, ii, jj, kk
 
-       integer(kind=intType), dimension(0:nProc-1) :: nBlockPerProc
+  integer(kind=intType), dimension(0:nProc-1) :: nBlockPerProc
 
-       integer(kind=intType), dimension(:), allocatable :: tmp
+  integer(kind=intType), dimension(:), allocatable :: tmp
 
-       integer(kind=8) :: nCellsTotal    ! 8 byte integers to avoid
-       integer(kind=8) :: nFacesTotal    ! overflow.
-!
-!      Function definition
-!
-       integer(kind=intType) :: bsearchIntegers
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Check whether part is allocated from a previous call. If so,
-       ! release the memory.
+  integer(kind=8) :: nCellsTotal    ! 8 byte integers to avoid
+  integer(kind=8) :: nFacesTotal    ! overflow.
+  !
+  !      Function definition
+  !
+  integer(kind=intType) :: bsearchIntegers
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Begin execution                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  ! Check whether part is allocated from a previous call. If so,
+  ! release the memory.
 
-       !if(myid==0)print *,'allocating part'
+  if( allocated(part) ) then
+     deallocate(part, stat=ierr)
+     if(ierr /= 0)                       &
+          call terminate("graphPartitioning", &
+          "Deallocation failure for part")
+  endif
 
-       !print *,'allocating part'
-       if( allocated(part) ) then
-         deallocate(part, stat=ierr)
-         if(ierr /= 0)                       &
-         call terminate("graphPartitioning", &
-                        "Deallocation failure for part")
-       endif
-
-       ! Determine the number of edges in the graph and the maximum
-       ! number for a vertex in the graph.
-
-       !if(myid==0)print *,' determining edges'
+  ! Determine the number of edges in the graph and the maximum
+  ! number for a vertex in the graph.
 
 
-       nEdges = 0
-       nEdgesMax = 0
-       do i=1,nBlocks
-         ii        = blocks(i)%n1to1 + ubound(blocks(i)%overComm,1)
-         nEdges    = nedges + ii
-         !print *,'edges',nedges,ii,blocks(i)%n1to1,i
-         nEdgesMax = max(nedgesMax, ii)
-       enddo
+  nEdges = 0
+  nEdgesMax = 0
+  do i=1,nBlocks
+     ii        = blocks(i)%n1to1 + ubound(blocks(i)%overComm,1)
+     nEdges    = nedges + ii
 
-       ! Initialize some values for the graph.
+     nEdgesMax = max(nedgesMax, ii)
+  enddo
 
-       nVertex  = nBlocks
-       nCon     = 2
-       wgtflag  = 1
-       numflag  = 0
-       nParts   = nProc
-       ubvec(1) = one + loadImbalance
-       ubvec(2) = one + loadImbalance
-       options  = 0
+  ! Initialize some values for the graph.
 
-       !  Allocate the memory to store/build the graph.
-       !if(myid==0)print *,'allocating graph memory'
-       allocate(xadj(0:nVertex), vwgt(nCon,nVertex), adjncy(nEdges), &
-                adjwgt(nEdges), part(nVertex), tmp(nEdgesMax), stat=ierr)
-       if(ierr /= 0)                         &
-         call terminate("graphPartitioning", &
-                        "Memory allocation failure for graph variables")
+  nVertex  = nBlocks
+  nCon     = 2
+  wgtflag  = 1
+  numflag  = 0
+  nParts   = nProc
+  ubvec(1) = one + loadImbalance
+  ubvec(2) = one + loadImbalance
+  options  = 0
 
-       ! Initialize xadj(0) to 0.
-       ! Furthermore initialize adjwgt to 0, as these values are
-       ! accumulated due to multiple subfaces between blocks.
+  !  Allocate the memory to store/build the graph.
 
-       xadj(0) = 0
-       adjwgt  = 0
+  allocate(xadj(0:nVertex), vwgt(nCon,nVertex), adjncy(nEdges), &
+       adjwgt(nEdges), part(nVertex), tmp(nEdgesMax), stat=ierr)
+  if(ierr /= 0)                         &
+       call terminate("graphPartitioning", &
+       "Memory allocation failure for graph variables")
 
-       ! Loop over the number of blocks to build the graph.
+  ! Initialize xadj(0) to 0.
+  ! Furthermore initialize adjwgt to 0, as these values are
+  ! accumulated due to multiple subfaces between blocks.
 
-       !if(myid==0)print *,'looping blocks'
-!!$       !print *,'looping blocks',myID
-!!$       call mpi_barrier(SUmb_comm_world, ierr)
-!!$       do i =0, nProc-1
-!!$          !print *,'ufmyID',myID,nProc
-!!$          if (myID==i) then
-!!$             print *,'myID',myID,nProc
-!!$          end if
-!!$          call f77flush()
-!!$          call mpi_barrier(SUmb_comm_world, ierr)
-!!$       enddo
+  xadj(0) = 0
+  adjwgt  = 0
 
-       graphVertex: do i=1,nBlocks
+  ! Loop over the number of blocks to build the graph.
 
-         ! Store the both vertex weights.
+  graphVertex: do i=1,nBlocks
 
-         vwgt(1,i) = blocks(i)%nCell
-         vwgt(2,i) = blocks(i)%nFace
+     ! Store the both vertex weights.
 
-         ! Sort the neighbors in increasing order and neglect the
-         ! communication to myself, i.e. do not allow an edge to myself.
-         ! The sorting is necessary, because a block might have several
-         ! subfaces with another block
+     vwgt(1,i) = blocks(i)%nCell
+     vwgt(2,i) = blocks(i)%nFace
 
-         nEdges = 0
-         do j=1,blocks(i)%n1to1
-           ii = blocks(i)%nBocos + j
-           if(blocks(i)%neighBlock(ii) /= i) then
-             nEdges = nEdges +1
-             tmp(nEdges) = blocks(i)%neighBlock(ii)
-           endif
-         enddo
+     ! Sort the neighbors in increasing order and neglect the
+     ! communication to myself, i.e. do not allow an edge to myself.
+     ! The sorting is necessary, because a block might have several
+     ! subfaces with another block
 
-         do j = 1,ubound(blocks(i)%overComm,1)
-           if(blocks(i)%overComm(j,1) /= i) then
-             nedges = nedges +1
-             tmp(nedges) = blocks(i)%overComm(j,1)
-           endif
-         enddo
+     nEdges = 0
+     do j=1,blocks(i)%n1to1
+        ii = blocks(i)%nBocos + j
+        if(blocks(i)%neighBlock(ii) /= i) then
+           nEdges = nEdges +1
+           tmp(nEdges) = blocks(i)%neighBlock(ii)
+        endif
+     enddo
 
-         ! Sort tmp in increasing order and get rid of the possible
-         ! multiple entries.
+     do j = 1,ubound(blocks(i)%overComm,1)
+        if(blocks(i)%overComm(j,1) /= i) then
+           nedges = nedges +1
+           tmp(nedges) = blocks(i)%overComm(j,1)
+        endif
+     enddo
 
-         call qsortIntegers(tmp, nEdges)
+     ! Sort tmp in increasing order and get rid of the possible
+     ! multiple entries.
 
-         ii = min(nEdges,1_intType)  ! Be aware of nEdges == 0
-         do j=2,nEdges
-           if(tmp(j) /= tmp(ii)) then
-             ii = ii + 1
-             tmp(ii) = tmp(j)
-           endif
-         enddo
+     call qsortIntegers(tmp, nEdges)
 
-         ! Set nEdges to ii and update xadj(i).
+     ii = min(nEdges,1_intType)  ! Be aware of nEdges == 0
+     do j=2,nEdges
+        if(tmp(j) /= tmp(ii)) then
+           ii = ii + 1
+           tmp(ii) = tmp(j)
+        endif
+     enddo
 
-         nEdges  = ii
-         xadj(i) = xadj(i-1) + nEdges
+     ! Set nEdges to ii and update xadj(i).
 
-         ! Repeat the loop over the subfaces, but now store
-         ! the edge info.
+     nEdges  = ii
+     xadj(i) = xadj(i-1) + nEdges
 
-         Edges1to1: do j=1,blocks(i)%n1to1
+     ! Repeat the loop over the subfaces, but now store
+     ! the edge info.
 
-           ii = blocks(i)%nBocos + j
-           if(blocks(i)%neighBlock(ii) /= i) then
+     Edges1to1: do j=1,blocks(i)%n1to1
 
-             ! Search for the block ID and add the offset of xadj(i-1)
-             ! to obtain the correct index to store the edge info.
-             ! The -1 to the adjncy is present because C-numbering
-             ! is used when calling Metis.
+        ii = blocks(i)%nBocos + j
+        if(blocks(i)%neighBlock(ii) /= i) then
 
-             jj = xadj(i-1) &
+           ! Search for the block ID and add the offset of xadj(i-1)
+           ! to obtain the correct index to store the edge info.
+           ! The -1 to the adjncy is present because C-numbering
+           ! is used when calling Metis.
+
+           jj = xadj(i-1) &
                 + bsearchIntegers(blocks(i)%neighBlock(ii), tmp, nEdges)
-             adjncy(jj) = blocks(i)%neighBlock(ii) - 1
+           adjncy(jj) = blocks(i)%neighBlock(ii) - 1
 
-             ! The weight equals the number of 1st and 2nd level halo
-             ! cells to be communicated between the blocks. The weights
-             ! are accumulated, as multiple subfaces between blocks are
-             ! possible.
+           ! The weight equals the number of 1st and 2nd level halo
+           ! cells to be communicated between the blocks. The weights
+           ! are accumulated, as multiple subfaces between blocks are
+           ! possible.
 
-             kk = 1
-             adjwgt(jj) = adjwgt(jj) + 2 * &
-               ( max(abs(blocks(i)%inEnd(ii) - blocks(i)%inBeg(ii)), kk) &
-               * max(abs(blocks(i)%jnEnd(ii) - blocks(i)%jnBeg(ii)), kk) &
-               * max(abs(blocks(i)%knEnd(ii) - blocks(i)%knBeg(ii)), kk) )
-           endif
+           kk = 1
+           adjwgt(jj) = adjwgt(jj) + 2 * &
+                ( max(abs(blocks(i)%inEnd(ii) - blocks(i)%inBeg(ii)), kk) &
+                * max(abs(blocks(i)%jnEnd(ii) - blocks(i)%jnBeg(ii)), kk) &
+                * max(abs(blocks(i)%knEnd(ii) - blocks(i)%knBeg(ii)), kk) )
+        endif
 
-         enddo Edges1to1
+     enddo Edges1to1
 
-         ! Repeat the loop over the overset edges.
+     ! Repeat the loop over the overset edges.
 
-         EdgesOverset: do j = 1, ubound(blocks(i)%overComm,1)
+     EdgesOverset: do j = 1, ubound(blocks(i)%overComm,1)
 
-           if(blocks(i)%overComm(j,1) /= i) then
+        if(blocks(i)%overComm(j,1) /= i) then
 
-             ! Search for the block ID and add the offset of xadj(i-1)
-             ! to obtain the correct index to store the edge info.
-             ! The -1 to the adjncy is present because C-numbering
-             ! is used when calling Metis.
+           ! Search for the block ID and add the offset of xadj(i-1)
+           ! to obtain the correct index to store the edge info.
+           ! The -1 to the adjncy is present because C-numbering
+           ! is used when calling Metis.
 
-             jj = xadj(i-1) &
+           jj = xadj(i-1) &
                 + bsearchIntegers(blocks(i)%overComm(j,1), tmp, nedges)
-             adjncy(jj) = blocks(i)%overComm(j,1) - 1
+           adjncy(jj) = blocks(i)%overComm(j,1) - 1
 
-             ! The weight equals the number overset cells being
-             ! communicated to this block. The weights are
-             ! accumulated in case of repeats.
+           ! The weight equals the number overset cells being
+           ! communicated to this block. The weights are
+           ! accumulated in case of repeats.
 
-             adjwgt(jj) = adjwgt(jj) + blocks(i)%overComm(j,2)
-           endif
+           adjwgt(jj) = adjwgt(jj) + blocks(i)%overComm(j,2)
+        endif
 
-         enddo EdgesOverset
+     enddo EdgesOverset
 
-       enddo graphVertex
-
-       !if(myid==0) print *,'end graphvertex'
-
-       ! Metis has problems when the total number of cells or faces
-       ! used in the weights exceeds 2Gb. Therefore the sum of these
-       ! values is determined and an appropriate weight factor is 
-       ! determined. Note that the type of nCellsTotal and nFacesTotal
-       ! is integer*8.
-
-       nCellsTotal = 0
-       nFacesTotal = 0
-       do i=1,nBlocks
-         nCellsTotal = nCellsTotal + vwgt(1,i)
-         nFacesTotal = nFacesTotal + vwgt(2,i)
-       enddo
-       !if(myid==0) print *,'ncells total',nCellsTotal,nFacesTotal
-       if(nCellsTotal > 2147483647 .or. nFacesTotal > 2147483647) then
-         nCellsTotal = nCellsTotal/2147483647 + 1
-         nFacesTotal = nFacesTotal/2147483647 + 1
-
-         do i=1,nBlocks
-           vwgt(1,i) = vwgt(1,i)/nCellsTotal
-           vwgt(2,i) = vwgt(2,i)/nFacesTotal
-           !print *,'vwgt', vwgt(1,i),vwgt(2,i),i
-         enddo
-       endif
-
-       ! Loop over the number of attempts to partition the graph.
-       ! In the first attempt the communication is taken into account.
-       ! If not successful, i.e. empty partitions present, the metis
-       ! routine is called once more, but now with zero adjwgt. This
-       ! means that the communication cost is neglected and metis
-       ! normally gives a valid partitioning.
-       ! Initialize commNeglected to .false. This will change if in
-       ! the loop below the first call to metis is not successful.
-
-       !if(myid==0) print *,'starting metis'
-
-       commNeglected = .false.
-       attemptLoop: do ii=1,2
-
-          if(myid==0)print *,'looping',ii
+  enddo graphVertex
 
 
-         ! Call the graph partitioner.
-          !if(myid==0) print *,'calling metis',nVertex, nCon, xadj, adjncy, vwgt, &
-          !                   adjwgt, wgtflag, numflag, nParts,  &
-          !                   ubvec, options!, edgecut, part
+  ! Metis has problems when the total number of cells or faces
+  ! used in the weights exceeds 2Gb. Therefore the sum of these
+  ! values is determined and an appropriate weight factor is 
+  ! determined. Note that the type of nCellsTotal and nFacesTotal
+  ! is integer*8.
 
-         call metisInterface(nVertex, nCon, xadj, adjncy, vwgt, &
-                             adjwgt, wgtflag, numflag, nParts,  &
-                             ubvec, options, edgecut, part)
-         !if(myid==0) print *,'metis called', edgecut,'part',part,shape(part)
-         ! Determine the number of blocks per processor.
-         !if(myid==0)  print *,'nblocks',nblocks
-         if(myid==0)  print *,'nblocks',nblocks
-         nBlockPerProc = 0
-         do i=1,nBlocks
-            !if(myid==0)print *,'nblocksperproc',nBlockPerProc(part(i)), part(i)
-            nBlockPerProc(part(i)) = nBlockPerProc(part(i)) + 1
-            !if(myid==0)print *,'nblocksperproc',nBlockPerProc(part(i)), part(i)
-         enddo
+  nCellsTotal = 0
+  nFacesTotal = 0
+  do i=1,nBlocks
+     nCellsTotal = nCellsTotal + vwgt(1,i)
+     nFacesTotal = nFacesTotal + vwgt(2,i)
+  enddo
 
-         !if(myid==0)print *,'nblocksperprocFinal',nBlockPerProc
+  if(nCellsTotal > 2147483647 .or. nFacesTotal > 2147483647) then
+     nCellsTotal = nCellsTotal/2147483647 + 1
+     nFacesTotal = nFacesTotal/2147483647 + 1
 
-         ! Check for empty partitions.
+     do i=1,nBlocks
+        vwgt(1,i) = vwgt(1,i)/nCellsTotal
+        vwgt(2,i) = vwgt(2,i)/nFacesTotal
+     enddo
+  endif
 
-         emptyPartitions = .false.
-         do i=0,nProc-1
-           if(nBlockPerProc(i) == 0) emptyPartitions = .true.
-         enddo
+  ! Loop over the number of attempts to partition the graph.
+  ! In the first attempt the communication is taken into account.
+  ! If not successful, i.e. empty partitions present, the metis
+  ! routine is called once more, but now with zero adjwgt. This
+  ! means that the communication cost is neglected and metis
+  ! normally gives a valid partitioning.
+  ! Initialize commNeglected to .false. This will change if in
+  ! the loop below the first call to metis is not successful.
 
-         ! Exit the loop if no empty partitions are present or if
-         ! this is the second time this loop is executed.
+  commNeglected = .false.
+  attemptLoop: do ii=1,2
 
-         if(ii == 2 .or. (.not. emptyPartitions)) exit attemptLoop
+     if(myid==0)print *,'looping',ii
 
-         ! The first call to metis resulted in empty partitions.
-         ! Ignore the communication, i.e. set the number of
-         ! neighbors to 0, and try again.
+     ! Call the graph partitioner.
 
-         commNeglected = .true.
-         xadj          = 0
-         
-!!$         deallocate(adjncy)
-!!$         allocate(adjncy(2*nvertex))
-!!$         do i = 1,nvertex
-!!$            xadj(i)=2*i
-!!$            adjncy(2*i) = i
-!!$            adjncy(2*i-1)=i-2
-!!$         enddo
-!!$         adjncy(1)=nvertex
-!!$         adjncy(2*nvertex)=0
-!!$         ubvec = 1.03
-!!$         !wgtflag=0
-!!$         !options(1)=1
-!!$         !options(2) = 1
-       enddo attemptLoop
-       !if(myid==0)print *,'ending metis'
-       ! Deallocate the memory for the graph except part.
-       
-       deallocate(xadj, vwgt, adjncy, adjwgt, tmp, stat=ierr)
-       if(ierr /= 0)                         &
-         call terminate("graphPartitioning", &
-                        "Deallocation failure for graph variables")
-       !if(myid==0)print *,'deallocations finished'
-       end subroutine graphPartitioning
+     call metisInterface(nVertex, nCon, xadj, adjncy, vwgt, &
+          adjwgt, wgtflag, numflag, nParts,  &
+          ubvec, options, edgecut, part)
+
+     ! Determine the number of blocks per processor.
+     if(myid==0)  print *,'nblocks',nblocks
+     nBlockPerProc = 0
+     do i=1,nBlocks
+        nBlockPerProc(part(i)) = nBlockPerProc(part(i)) + 1
+     enddo
+
+     ! Check for empty partitions.
+
+     emptyPartitions = .false.
+     do i=0,nProc-1
+        if(nBlockPerProc(i) == 0) emptyPartitions = .true.
+     enddo
+
+     ! Exit the loop if no empty partitions are present or if
+     ! this is the second time this loop is executed.
+
+     if(ii == 2 .or. (.not. emptyPartitions)) exit attemptLoop
+
+     ! The first call to metis resulted in empty partitions.
+     ! Ignore the communication, i.e. set the number of
+     ! neighbors to 0, and try again.
+
+     commNeglected = .true.
+     xadj          = 0
+
+  enddo attemptLoop
+
+  deallocate(xadj, vwgt, adjncy, adjwgt, tmp, stat=ierr)
+  if(ierr /= 0)                         &
+       call terminate("graphPartitioning", &
+       "Deallocation failure for graph variables")
+end subroutine graphPartitioning

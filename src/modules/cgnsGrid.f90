@@ -380,6 +380,19 @@
 
          logical :: actualFace
 
+!
+!-- eran-CBD start
+!
+!         wallBCName ..... Name for wallBC for forces/moments breakDown
+!         idWBC      ......Identifier (counter) of wall-type surface
+!
+         character(len=80)     :: wallBCName
+         integer(kind=intType) ::  idWBC
+         logical :: contributeToForce
+!
+!------------ eran-CBD end
+!
+
        end type cgnsBocoType
 !
 !      ******************************************************************
@@ -507,7 +520,6 @@
 
          real(kind=realType), dimension(3) :: rotCenter, rotRate
 
-         
          ! Whether or not a the BCs in this zone have families.
 
          logical :: BCFamilies
@@ -559,6 +571,11 @@
          ! Whether or not the mass flow must be monitored for this family.
 
          logical :: monitorMassFlow
+
+
+         ! Whether or not the wall surface contributes to forces and moments
+
+         logical :: contributeToForce  ! eran-cbd
 
          ! Number of boundary condition datasets for this family.
 
@@ -652,5 +669,16 @@
 
        real(kind=realType), allocatable, dimension(:,:) :: massFlowFamilyInv
        real(kind=realType), allocatable, dimension(:,:) :: massFlowFamilyDiss
+!
+!------ eran-CBD starts -------------
+!
+       ! Number of wall-type surfaces (surfaces' names) in the cgns grid.
+       ! Array of wall-type surfaces names in the cgns grid
+
+       integer(kind=intType) :: cgnsNWallSurfaces = 0
+       character(len=80) :: WallBCNames(100)
+!
+!------ eran-CBD ends   -------------
+!
 
        end module cgnsGrid

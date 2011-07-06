@@ -31,6 +31,7 @@
        use cgnsGrid
        use communication
        use iteration
+       use monitor ! eran-cbd
        implicit none
 !
 !      Local variables.
@@ -110,13 +111,15 @@
 
        cgnsNDomainInterfaces = nDomainFam + nDomainBC
 
-       if(standAloneMode .and. cgnsNDomainInterfaces > 0) then
-         if(myID == 0) &
-           call terminate("determineInterfaceIDs", &
-                          "Domain interfaces are not allowed in &
-                          &stand alone mode.")
-         call mpi_barrier(SUmb_comm_world, ierr)
-       endif
+       if(.not.componentsBreakDown)then  !  eran-CBD
+          if(standAloneMode .and. cgnsNDomainInterfaces > 0) then
+             if(myID == 0) &
+                  call terminate("determineInterfaceIDs", &
+                  "Domain interfaces are not allowed in &
+                  &stand alone mode.")
+             call mpi_barrier(SUmb_comm_world, ierr)
+          endif
+       end if ! eran-CBD
 
        ! The number of sliding mesh interfaces must be even, because each
        ! sliding interface should have two sides. Check this.

@@ -3,7 +3,7 @@
 !      *                                                                *
 !      * File:          setDefaultValues.F90                            *
 !      * Author:        Edwin van der Weide, Steve Repsher,             *
-!      *                Seonghyeon Hahn                                 *
+!      *                Seonghyeon Hahn, Eran Arad                      *
 !      * Starting date: 12-11-2002                                      *
 !      * Last modified: 09-19-2007                                      *
 !      *                                                                *
@@ -29,6 +29,9 @@
        use killSignals
        use NKSolverVars
        use inputDiscretization
+       use inputDES  ! eran-des
+       use inputTDBC !eran-tdbc	
+
        implicit none
 !
 !      ******************************************************************
@@ -50,6 +53,9 @@
        monitorSpecified    = .false.
        surfaceOutSpecified = .false.
        volumeOutSpecified  = .false.
+       genCBDOUT           = .false.  ! eran-CBD
+       componentsBreakDown = .false.  ! eran-CBD
+
 !
 !      ******************************************************************
 !      *                                                                *
@@ -92,6 +98,9 @@
        hScalingInlet = .false.             ! No total enthalpy scaling.
 
        kappaCoef = third
+
+       epsilonUpwind = one  !   eran-ldiffroe
+
 !
 !      ******************************************************************
 !      *                                                                *
@@ -157,8 +166,8 @@
        smoother  = none
        nRKStages = 5
 
-       !resAveraging =  noResAveraging ! No residual averaging.
-       resAveraging =  alwaysResAveraging
+       resAveraging =  noResAveraging ! No residual averaging.
+
        smoop        = 1.5_realType
 
        turbTreatment     = segregated     ! Segregated solver for the
@@ -182,7 +191,14 @@
        L2ConvCoarse = 1.e-2_realType      ! Only two on coarse grids in
                                           ! full mg.
 
+       epsCoefConv  = zero               ! std/mean coeff convgence  eran-coeffConv
+       convCheckWindowSize = 100    ! size of coefficient-convergence -check window
+                                    ! (in iterations) for STD evaluation    eran-coeffConv
+       minIterNum   = 100           ! minimum number of iteration before 
+       		      		    ! convergence check. eran-coeffConv
+
        maxL2DeviationFactor = 1_realType
+
        nCyclesCoarse = -1             ! If these parameters are not
        cflCoarse     = -one           ! specified the corresponding fine
                                       ! grid values are taken.
@@ -268,6 +284,22 @@
 
        wallFunctions = .false.    ! No wall functions used.
 
+!
+! eran-tran starts
+!
+       forcedTransition = .false. ! flow is either laminar or turbulent
+       xTransition      =  zero   ! No meaning as long as forcedTransition=flase
+       TransHLength     =  zero   ! transition length not sepcified.
+				  ! either turbulnt of ft2 controlled transition
+!
+! eran-tran ends
+!
+! eran-ltemp starts 
+       limitLowTemprature = .false. ! apply/or not low limit on temprature
+       tempratureLowLimit = zero    ! not active
+! eran-ltemp ends
+!
+
        Mach     = -one            ! Both parameters must be specified
        Reynolds = -one            ! for external flows. The -1. serves
                                   ! as a check later on.
@@ -305,7 +337,45 @@
        pointRef(1) = zero
        pointRef(2) = zero
        pointRef(3) = zero
+
+
+!---eran-des starts
+
 !
+!      ******************************************************************
+!      *                                                                *
+!      * Set the default values for DES                                 *
+!      *                                                                *
+!      ******************************************************************
+!
+	applyDES    = .false.
+	CDES        =  0.65_realType
+	applyDDES   = .false.
+	xDESmin     = -large
+	xDESmax     =  large
+	distDESmin  =  zero
+	distDESmax  =  large
+	distRANSmax =  large
+
+!---eran-des ends
+!
+!---eran-tdbc starts
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Set the default values for TDBC (oscillatory inflow            *
+!      *                                                                *
+!      ******************************************************************
+!
+	applyTdbc   = .false.
+	C0Tdbc      =  zero
+	oscillFreq   =  1000.0_realType
+	cPhase      =  zero
+	cPhaseR     =  zero
+
+!---eran-tdbc ends
+!
+
 !      ******************************************************************
 !      *                                                                *
 !      * Set the default values for the time spectral parameters.       *
@@ -330,6 +400,9 @@
 !      *                                                                *
 !      ******************************************************************
 !
+
+       timeIntegrationScheme = BDF ! Backward Difference scheme is used   (eran-ins)
+                                   ! for the time integration.
        timeAccuracy = secondOrder  ! Second order time accuracy.
 
        nTimeStepsCoarse = -1       ! Serves as a check later on.
@@ -394,6 +467,8 @@
 !      *                                                                *
 !      ******************************************************************
 !
+
+       useCouplerForInitialization = .false.  ! eran-couplerinit
        codeName        = "SUmb"
        cplGetCoarseSol = .false.
 

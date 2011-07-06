@@ -42,11 +42,14 @@
        ! Return immediately if the convergence history (of the inner
        ! iterations) does not need to be stored. This logical can
        ! only be .false. for an unsteady computation.
+
        if(.not. storeConvInnerIter) return 
 
        if( allocated(convArray)) call deallocConvArrays
+
        ! Allocate the memory for convArray and initialize them,
        ! just to be sure.
+
        allocate(convArray(0:nIterTot,nTimeIntervalsSpectral,nMon), &
                 stat=ierr)
        if(ierr /= 0)                         &
@@ -56,7 +59,6 @@
        convArray = zero
 
        end subroutine allocConvArrays
-
 
        subroutine deallocConvArrays
 !

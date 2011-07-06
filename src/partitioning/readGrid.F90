@@ -178,7 +178,7 @@
                    do ii=1,il
                      IOVar(i,nn)%w(ii,jj,kk,ll) = buffer(ii,jj,kk) &
                                                 * cgnsDoms(cgnsZone)%LRef
-                     !print *,'iovar',IOVar(i,nn)%w(ii,jj,kk,ll),flowdoms(nn,1,1)%x(ii,jj,kk,ll),i,nn
+
                    enddo
                  enddo
                enddo

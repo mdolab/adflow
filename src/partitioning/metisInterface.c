@@ -30,11 +30,6 @@ void metisInterface(int *n, int *ncon, idxtype *xadj, idxtype *adjncy,
   /* used when the number of partitions is greater than 8. Otherwise */
   /* the recursive bisection is to be preferred.                     */
   /* Take care of the special case nparts == 1 here.                 */
-  /*printf("metisinterface: %d",*nparts); */
-
-  /* The PartGraphKway does NOT work with SUMB. Therefore ALWAYS use the */
-  /* the graphRecursive algorithm */
-
 
   if(*nparts == 1)
   {
@@ -42,20 +37,16 @@ void metisInterface(int *n, int *ncon, idxtype *xadj, idxtype *adjncy,
     for(i=0; i<(*n); i++) part[i] = 0;
   }
 
+  else if(*nparts > 8)
+    METIS_mCPartGraphKway(n, ncon, xadj, adjncy, vwgt, adjwgt, wgtflag,
+                          numflag, nparts, ubvec, options, edgecut,
+                          part);
   else
     METIS_mCPartGraphRecursive(n, ncon, xadj, adjncy, vwgt, adjwgt,
                                wgtflag, numflag, nparts, options,
                                edgecut, part);
 }
-/*   else if(*nparts > 8) */
-/*     METIS_mCPartGraphKway(n, ncon, xadj, adjncy, vwgt, adjwgt, wgtflag, */
-/*                           numflag, nparts, ubvec, options, edgecut, */
-/*                           part); */
-/*   else */
-/*     METIS_mCPartGraphRecursive(n, ncon, xadj, adjncy, vwgt, adjwgt, */
-/*                                wgtflag, numflag, nparts, options, */
-/*                                edgecut, part); */
-/* } */
+
 
 /*
        ******************************************************************
