@@ -12,8 +12,8 @@ subroutine agumentRHS(ndof,phi)
   !
   !     ******************************************************************
   !     *                                                                *
-  !     * Multiply the current adjoint vector by dRdXv to get a vector   *
-  !     * of length Xv. This is collective communication part            *
+  !     * Multiply the structural adjoint vector phi, by dFdw^T to       *
+  !     * produce the right hand side agumentation                       *
   !     *                                                                *
   !     ******************************************************************
   !
@@ -26,15 +26,15 @@ subroutine agumentRHS(ndof,phi)
 
   integer(kind=intType), intent(in) :: ndof
   real(kind=realType), intent(in) :: phi(ndof)
+  integer(kind=intType) :: ierr
 
-  integer(kind=intType) :: ierr,ndims
-  real(kind=realType) :: val
-  call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DETERMINE,phi,phic,ierr)
+  call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DETERMINE,&
+       phi,phic,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Dump the result into adjointRHS
   call MatMultTranspose(dFdw,phic,adjointRHS,ierr)
-  !call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr,__FILE__,__LINE__)
 
   call vecDestroy(phic,ierr)
   call EChk(ierr,__FILE__,__LINE__)

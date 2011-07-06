@@ -89,6 +89,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
   real(kind=realType) :: dJdc(nTimeIntervalsSpectral)
   integer(kind=intType) :: row_start,row_end
 
+
   ! Copy over values we need for the computeforcenadmoment call:
   MachCoefAdj = MachCoef
   pointRefAdj = pointRef
@@ -138,7 +139,6 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
         BaseCoef(sps,6) = globalCFVals(costFuncMomXCoef)
         BaseCoef(sps,7) = globalCFVals(costFuncMomYCoef)
         BaseCoef(sps,8) = globalCFVals(costFuncMomZCoef)
-        
         
      end do
 
@@ -195,8 +195,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
         end if
      end do
   end select
-!!$  dJdc(:) =0.0
-!!$  djdc(1) = 1.0
+
   ! Now we have dJdc on each processor...when we go through the
   ! reverse mode AD we can take the dot-products on the fly SUM the
   ! entries into dJdw
@@ -286,7 +285,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               righthandedadj = righthanded
 
               faceID = bcfaceid(mm)
- !             if(myID==0) print *,'liftindex',liftindex
+ 
               call COMPUTEFORCEANDMOMENTADJ_B(force, forceb, cforce, cforceb, &
                    &  lift, liftb, drag, dragb, cl, clb, cd, cdb, moment, momentb, cmoment&
                    &  , cmomentb, alphaadj, alphaadjb, betaadj, betaadjb, liftindex, &
@@ -294,15 +293,12 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
                    &  lengthrefadjb, surfacerefadj, surfacerefadjb, pts(:,:,sps), ptsb(:,:,sps), npts, wblock&
                    &  , wblockb, righthandedadj, faceid, ibeg, iend, jbeg, jend, ii, &
                    &  sps)
-!              if(myID==0) print *,'liftindexafter',liftindex
+              
               ! Set the w-values derivatives in dJdw
               do kcell = 2,kl
                  do jcell = 2,jl
                     do icell = 2,il
                        idxmgb = globalCell(icell,jcell,kcell)
-!!$                       if (sum(wblockb(icell,jcell,kcell,:)).ne.0)then
-!!$                          if(myid==0) print *,'wblock*djdc',wblockb(icell,jcell,kcell,:)*dJdc(sps),icell,jcell,kcell,sps
-!!$                       end if
                        call VecSetValuesBlocked(dJdw,1,idxmgb,&
                             wblockb(icell,jcell,kcell,:)*dJdc(sps),&
                             ADD_VALUES,PETScIerr)
@@ -318,8 +314,10 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
                     ! DO NOT NEED INCREMENT ON LINE BELOW
                     ii = ii + 1
                     call VecSetValues(dJdx,3,&
-                         (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/),&
-                         ptsb(:,ii,sps)*dJdc(sps),ADD_VALUES,PETScIerr)
+                         (/row_start+3*ii-3,&
+                           row_start+3*ii-2,&
+                           row_start+3*ii-1/),&
+                           ptsb(:,ii,sps)*dJdc(sps),ADD_VALUES,PETScIerr)
                     call EChk(PETScIerr,__file__,__line__)
                  end do
               end do
@@ -330,7 +328,6 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
 
               if (nDesignAoA >=0) then
                  dIda(nDesignAoA+1) = dIda(nDesignAoA+1) + alphaAdjb*dJdc(sps)
-                 !print *,'dida alpha',dIda(nDesignAoA+1),alphaAdjb,dJdc(sps)
               end if
 
               if (nDesignSSA >= 0) then
@@ -346,7 +343,6 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               end if
               
               if (nDesignPointRefX >=0) then
-                 !print *,'pointrefx',pointrefAdjb(1),dJdc(sps),nDesignPointRefX
                  dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefAdjb(1)*dJdc(sps)
               end if
 
@@ -358,7 +354,6 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
                  dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefAdjb(3)*dJdc(sps)
               end if
               if (nDesignLengthRef >=0) then
-                 !if (myID==0) print *,'lengthref2',lengthRefAdjb,dIda(nDesignLengthRef+1),nn,sps
                  dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb*dJdc(sps)
               end if
               if (nDesignSurfaceRef >=0) then
@@ -368,12 +363,9 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
            deallocate(wblock,wblockb,stat=ierr)
 
         end do bocos
-        
-     
      end do domainLoopAD
-     
   end do spectralLoopAdj
-
+  
   ! Assemble the petsc vectors
   call VecAssemblyBegin(dJdw,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
@@ -433,6 +425,7 @@ subroutine getdIdx(ndof,output)
   real(kind=realType) :: tOld,tNew
   integer(kind=intType) :: ilow,ihigh,i,sps,nn
   output(:) = 0.0
+
   call VecGetOwnershipRange(dJdx,ilow,ihigh,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
@@ -456,26 +449,37 @@ subroutine getdIdx(ndof,output)
      tOld = tNew - t(1)
      
      call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
-!!$     rotationMatrix(:,:) = 0.0
-!!$     rotationMatrix(1,1) = 1.0
-!!$     rotationMatrix(2,2) = 1.0
-!!$     rotationMatrix(3,3) = 1.0
+
      ! Take rotation Matrix Transpose
      rotationMatrix = transpose(rotationMatrix)
-     !print *,'indices',ndof, ihigh,ilow,ihigh-ilow
+
      do i=1,ndof/3
-        !print *,'i',i,sps
+
         idx = (/ilow+ndof*(sps-1)+(3*(i-1)),&
                 ilow+ndof*(sps-1)+(3*(i-1))+1,&
                 ilow+ndof*(sps-1)+(3*(i-1))+2/)
-!!$        if (idx(1)>ihigh)then
-!!$           print *,'index',idx,ilow,ndof*(sps-1),(3*(i-1))
-!!$        end if
         call VecGetValues(dJdx,3,idx,temp,PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
-        !print *,'temp',temp,i,sps,idx,ilow,ihigh
-        output((i-1)*3+1:(i-1)*3+3) = output((i-1)*3+1:(i-1)*3+3)+matmul(rotationMatrix,temp)
-        !print *,'output',output((i-1)*3+1:(i-1)*3+3),(i-1)*3+1,(i-1)*3+3,idx,ilow,ihigh,i,sps,rotationMatrix
+
+        output((i-1)*3+1:(i-1)*3+3) = output((i-1)*3+1:(i-1)*3+3)+ &
+             matmul(rotationMatrix,temp)
+
      end do
   end do
 end subroutine getdIdx
+
+subroutine zeroObjPartials
+
+  use precision 
+  use ADjointVars ! include costFunctions
+  use ADjointPETSc
+
+  integer(kind=intType) :: ierr
+
+  call VecZeroEntries(dJdw,ierr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
+  call VecZeroEntries(dJdx,ierr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
+end subroutine zeroObjPartials

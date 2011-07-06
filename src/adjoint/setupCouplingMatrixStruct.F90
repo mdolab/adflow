@@ -46,7 +46,7 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   integer(kind=intType) :: lower_left,lower_right,upper_left,upper_right
   integer(kind=intType) :: colStart_x,colEnd_x
   real(kind=realType)   :: fact
-  integer(kind=intType) :: ierr
+  integer(kind=intType) :: ierr,ind
 
   ! We are not concerned about moments and the refPoint here
   moment(:) = 0.0
@@ -59,6 +59,7 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   call EChk(ierr,__FILE__,__LINE__)
   call MatGetOwnershipRangeColumn(dFdx,colStart_x,colEnd_x,ierr)
   call EChk(ierr,__FILE__,__LINE__)
+
 
   do sps = 1,nTimeIntervalsSpectral
      ii=0
@@ -81,41 +82,66 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
 
                     grid_pts(:,:,:) = 0.0
                     wAdj(:,:,:,:)   = 0.0
-
-                    do iii =1,2
-                       do jjj=1,2
-                          if (.not.(i+iii-2 < iBeg .or. i+iii-1 > iEnd .or. &
-                               j+jjj-2 < jBeg .or. j+jjj-1 > jEnd)) then
-
-                             lower_left  = ii + iii + (jjj-1)*iStride-istride-1
-                             lower_right = ii + iii + (jjj-1)*iStride-istride
-                             upper_left  = ii + iii + (jjj  )*iStride-istride-1
-                             upper_right = ii + iii + (jjj  )*iStride-istride
-
-                             if (lower_left > 0) then
-                                grid_pts(:,iii  ,jjj  ) = pts(:,lower_left,sps)
+                    pts_ind(:,:) = -1
+                    ! This iii,jjj loop is over the nodes surrounding
+                    ! the pt of interst
+                    do iii =-1,1
+                       do jjj=-1,1
+                          if (.not.(i+iii < iBeg .or. i+iii > iEnd .or. &
+                               j+jjj < jBeg .or. j+jjj > jEnd)) then
+                             ! ii is the node we're after...ACTUALLY is 1
+                             ! less than the node we're intersted in
+                             ! since ii starts at 0 above. The two loops
+                             ! set the 9 coordindates into grid_pts
+                             
+                             ind = jjj*istride + iii + 1
+                             
+                             if (i+iii > 0 .and. i + iii <= iEnd .and. &
+                                  j+jjj > 0 .and. j + jjj <= jend) then
+                                grid_pts(:,iii+2,jjj+2) = pts(:,ind+ii,sps)
                              end if
-
-                             if (lower_right > 0) then
-                                grid_pts(:,iii+1,jjj  ) = pts(:,lower_right,sps)
-                             end if
-
-                             if (upper_left > 0) then
-                                grid_pts(:,iii  ,jjj+1) = pts(:,upper_left,sps)
-                             end if
-
-                             if (upper_right > 0) then
-                                grid_pts(:,iii+1,jjj+1) = pts(:,upper_right,sps)
-                             end if
-
-                             pts_ind (iii  ,jjj  ) = lower_left -1
-                             pts_ind (iii+1,jjj  ) = lower_right-1
-                             pts_ind (iii  ,jjj+1) = upper_left -1
-                             pts_ind (iii+1,jjj+1) = upper_right-1
+                             
+                             pts_ind (iii+2,jjj+2) = ind + ii - 1
 
                           end if
                        end do
                     end do
+
+
+!                     do iii =1,2
+!                        do jjj=1,2
+!                           if (.not.(i+iii-2 < iBeg .or. i+iii-1 > iEnd .or. &
+!                                j+jjj-2 < jBeg .or. j+jjj-1 > jEnd)) then
+
+!                              lower_left  = ii + iii + (jjj-1)*iStride-istride-1
+!                              lower_right = ii + iii + (jjj-1)*iStride-istride
+!                              upper_left  = ii + iii + (jjj  )*iStride-istride-1
+!                              upper_right = ii + iii + (jjj  )*iStride-istride
+
+!                              if (lower_left > 0) then
+!                                 grid_pts(:,iii  ,jjj  ) = pts(:,lower_left,sps)
+!                              end if
+
+!                              if (lower_right > 0) then
+!                                 grid_pts(:,iii+1,jjj  ) = pts(:,lower_right,sps)
+!                              end if
+
+!                              if (upper_left > 0) then
+!                                 grid_pts(:,iii  ,jjj+1) = pts(:,upper_left,sps)
+!                              end if
+
+!                              if (upper_right > 0) then
+!                                 grid_pts(:,iii+1,jjj+1) = pts(:,upper_right,sps)
+!                              end if
+
+!                              pts_ind (iii  ,jjj  ) = lower_left -1
+!                              pts_ind (iii+1,jjj  ) = lower_right-1
+!                              pts_ind (iii  ,jjj+1) = upper_left -1
+!                              pts_ind (iii+1,jjj+1) = upper_right-1
+
+!                           end if
+!                        end do
+!                     end do
 
 
                     ! Copy over the states

@@ -282,6 +282,10 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
   end do domainLoopAD
 
+  ! Redo the complete residual to make sure all the halos/pressures
+  ! are up to date
+  call computeResidualNK()
+
   !Return dissipation Parameters to normal -> VERY VERY IMPORTANT
   if (usePC) then
      lumpedDiss = .False.
