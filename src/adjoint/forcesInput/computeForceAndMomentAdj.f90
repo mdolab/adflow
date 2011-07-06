@@ -181,6 +181,7 @@ subroutine computeForceAndMomentAdj(Force,cForce,Lift,Drag,Cl,Cd,&
   
   ! First get cForce -> Coefficient of FOrce
   fact = two/(gammaInf*pInf*pRef*MachCoefAdj*MachCoefAdj*surfaceRefAdj*LRef*LRef)
+ 
   !fact = two/(gammaInf*pInf*pRef*MachCoefAdj*MachCoefAdj*surfaceRef*LRef*LRef)
  
   cForce = fact*Force

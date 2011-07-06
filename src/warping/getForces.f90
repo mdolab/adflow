@@ -66,10 +66,10 @@ subroutine getForces(forces,pts,npts,nTS)
 
   scaleDim = pRef
 
+  forces = 0.0
   do sps = 1,nTimeIntervalsSpectral
      ! Compute the local forces. Take the scaling factor into
      ! account to obtain the forces in SI-units, i.e. Newton.
-     forces = 0.0
      ii = 0 
      domains: do nn=1,nDom
         call setPointers(nn,1_intType,sps)
@@ -82,7 +82,7 @@ subroutine getForces(forces,pts,npts,nTS)
         ! Loop over the number of boundary subfaces of this block.
         bocos: do mm=1,nBocos
 
-           if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
+           if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
                 BCType(mm) == NSWallIsothermal) then
               select case (BCFaceID(mm))
 
@@ -222,10 +222,6 @@ subroutine getForcePoints(points,npts,nTS)
               ! NODE Based
               jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
               iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
-
-              ! Compute the inviscid force on each of the faces and
-              ! scatter it to the 4 nodes, whose forces are updated.
-
 
               do j=jBeg, jEnd ! This is a node loop
                  do i=iBeg, iEnd ! This is a node loop
