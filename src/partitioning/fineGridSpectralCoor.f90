@@ -45,20 +45,9 @@
 !
        ! This routine is only used for the spectral solutions. Return
        ! immediately if a different mode is solved.
- 
-       !do nn=1,nDom
-!
-!           do k=1,flowDoms(nn,1,1)%kl
-!             do j=1,flowDoms(nn,1,1)%jl
-!               do i=1,flowDoms(nn,1,1)%il
-!                 print *,'x1',flowDoms(nn,1,1)%x(i,j,k,1) 
-!               enddo
-!             enddo
-!           enddo
-!       enddo
-!       print *,'equation mode?',equationMode
+
        if(equationMode /= timeSpectral) return
-!       print *,'continuing...'
+
        ! Also return immediately if all coordinates were already read
        ! from the grid file.
 

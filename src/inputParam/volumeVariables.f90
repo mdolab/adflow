@@ -157,7 +157,7 @@
            case ("mach")
              volWriteMach = .true.
              nVarSpecified = nVarSpecified + 1
-          
+
            case ("rmach")
              volWriteRMach = .true.
              nVarSpecified = nVarSpecified + 1

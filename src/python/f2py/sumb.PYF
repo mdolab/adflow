@@ -1,6 +1,3 @@
-!    -*- f90 -*-
-
-
 python module solverunsteadymd__user__routines 
     interface solverunsteadymd_user_interface 
         subroutine mdcallback_python(timeunsteady,firstiter) ! in :test:solverUnsteadyMD.F90:solverunsteadymd:unknown_interface

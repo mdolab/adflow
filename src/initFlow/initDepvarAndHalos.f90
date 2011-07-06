@@ -80,6 +80,7 @@
                    /         real(nTimeIntervalsSpectral,realType)
            enddo
          endif
+
          call gridVelocitiesFineLevel(.false., t, mm)
          call gridVelocitiesCoarseLevels(mm)
          call normalVelocitiesAllLevels(mm)

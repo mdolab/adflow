@@ -54,7 +54,7 @@
 !
        ! Perform a check to see if this routine is called correctly.
        ! If not, terminate the program.
-       
+
        if(famID == 0 .and. cgnsNfamilies > 0) then
          if(myID == 0)                            &
            call terminate("mdCreateSurfCoorList", &

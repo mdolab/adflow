@@ -8,130 +8,128 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine SUmb_fortran(execName, lenExec, paramName, &
-                               lenParam, nArgs, sizeC_int)
-!
-!      ******************************************************************
-!      *                                                                *
-!      * SUmb_fortran is the fortran main, which is called from the     *
-!      * C main. The reason for splitting the main in a C and a Fortran *
-!      * part is that in c there is a standard to specify command line  *
-!      * arguments; in Fortran there is not.                            *
-!      * SUmb_fortran is a high level interface to the libraries        *
-!      * that perform the individual subtasks.                          *
-!      *                                                                *
-!      ******************************************************************
-!
-       use inputPhysics
-       use inputTimeSpectral
-       use inputADjoint
-       use inputTSStabDeriv
-       use communication
-       implicit none
-!
-!      Subroutine arguments
-!
-       integer, intent(in) :: lenExec, lenParam, nArgs
-       integer, intent(in) :: sizeC_int
+subroutine SUmb_fortran(execName, lenExec, paramName, &
+     lenParam, nArgs, sizeC_int)
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * SUmb_fortran is the fortran main, which is called from the     *
+  !      * C main. The reason for splitting the main in a C and a Fortran *
+  !      * part is that in c there is a standard to specify command line  *
+  !      * arguments; in Fortran there is not.                            *
+  !      * SUmb_fortran is a high level interface to the libraries        *
+  !      * that perform the individual subtasks.                          *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  use inputPhysics
+  use inputTimeSpectral
+  use inputADjoint
+  use inputTSStabDeriv
+  use communication
 
-       character(len=lenExec),  intent(in) :: execName
-       character(len=lenParam), intent(in) :: paramName
+  implicit none
+  !
+  !      Subroutine arguments
+  !
+  integer, intent(in) :: lenExec, lenParam, nArgs
+  integer, intent(in) :: sizeC_int
 
-       ! variable for timing
-       real(kind=realType) :: timer(10)
+  character(len=lenExec),  intent(in) :: execName
+  character(len=lenParam), intent(in) :: paramName
+  ! variable for timing
+  real(kind=realType) :: timer(10)
 
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Test if the program was called correctly and store the name of
-       ! the parameter file.
 
-       !set reference time
-!!$       if(myID==0)then
-!!$          print *, 'Set reference time ....'
-       call cpu_time(timer(1))
-!!$       endif
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Begin execution                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  ! Test if the program was called correctly and store the name of
+  ! the parameter file.
 
-       call initExec(execName, lenExec, paramName, lenParam, &
-                     nArgs, sizeC_int)
 
-       ! Read the parameter file.
+  call cpu_time(timer(1))
 
-       call readParamFile
+  call initExec(execName, lenExec, paramName, lenParam, &
+       nArgs, sizeC_int)
 
-       ! Partition the blocks and read the grid.
+  ! Read the parameter file.
 
-       call partitionAndReadGrid
+  call readParamFile
 
-       ! Perform the preprocessing task.
+  ! Partition the blocks and read the grid.
 
-       call preprocessing
+  call partitionAndReadGrid
 
-       ! Initialize of the flow variables.
+  ! Perform the preprocessing task.
 
-       call initFlow
+  call preprocessing
 
-       ! Solve the equations.
+  ! Initialize of the flow variables.
 
-       call solver
+  call initFlow
 
-       if(myID==0)then
-          call cpu_time(timer(2))
-          print *, "       time to end of solver = ", timer(2)-timer(1) 
-       endif
+  ! Solve the equations.
 
-     
-!stop
-       if(TSStability)then
-          call stabilityDerivativeDriver
-          !call computeTSDerivatives
-          
-          if(myID==0)then
-             call cpu_time(timer(4))
-             print *, "       time for tsDerivatives = ", timer(4)-timer(3)
-          endif
-       end if
+  call solver
 
-       ! Solve ADjoint
-       
-       if(solveADjoint) then
-          call solverADjoint
-          
-          if(myID==0)then
-             call cpu_time(timer(3))
-             print *, "       time for adjoint = ", timer(3)-timer(2)
-          endif
-       end if
-       !print *,'tsstability',TSStability
+  if(myID==0)then
+     call cpu_time(timer(2))
+     print *, "       time to end of solver = ", timer(2)-timer(1) 
+  endif
 
-       ! First part to release the memory.
-       !print *,'releasing memory'
-       call releaseMemoryPart1
-       !print *,'memory released'
-       ! Check if for the time spectral method additional solution
-       ! files must be written.
-       
-       if(equationMode == timeSpectral) then
-        !  print *,'writing ts 1'
-         if( writeUnsteadyRestartSpectral ) &
-           call writeUnsteadyFromSpectral
-         !print *,'writing ts 2'
-         if(writeUnsteadyVolSpectral .or. &
-            writeUnsteadySurfSpectral)    &
-           call writeInterpolFromSpectral
-         !print *,'written'
-       endif
+  ! First part to release the memory.
 
-       ! Second part to release the memory.
-       !print *,'releasing memory 2'
-       call releaseMemoryPart2
-       !print *,'memory released 2'
-       ! Write the parameters used for this run to stdout.
+  if(TSStability)then
+     call stabilityDerivativeDriver
+     !call computeTSDerivatives
 
-       call writeInputParam
+     if(myID==0)then
+        call cpu_time(timer(4))
+        print *, "       time for tsDerivatives = ", timer(4)-timer(3)
+     endif
+  end if
 
-       end subroutine SUmb_fortran
+  ! Solve ADjoint
+
+  if(solveADjoint) then
+     call solverADjoint
+
+     if(myID==0)then
+        call cpu_time(timer(3))
+        print *, "       time for adjoint = ", timer(3)-timer(2)
+     endif
+  end if
+  !print *,'tsstability',TSStability
+
+  ! First part to release the memory.
+  !print *,'releasing memory'
+  call releaseMemoryPart1
+  !print *,'memory released'
+
+  ! Check if for the time spectral method additional solution
+  ! files must be written.
+
+  if(equationMode == timeSpectral) then
+
+     if( writeUnsteadyRestartSpectral ) &
+          call writeUnsteadyFromSpectral
+
+     if(writeUnsteadyVolSpectral .or. &
+          writeUnsteadySurfSpectral)    &
+          call writeInterpolFromSpectral
+  endif
+
+  ! Second part to release the memory.
+
+  call releaseMemoryPart2
+
+  ! Write the parameters used for this run to stdout.
+
+  call writeInputParam
+  
+end subroutine SUmb_fortran
