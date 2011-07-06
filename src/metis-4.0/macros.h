@@ -8,7 +8,7 @@
  * Started 9/25/94
  * George
  *
- * $Id$
+ * $Id: macros.h 1 2008-01-14 19:16:54Z vdweide $
  *
  */
 

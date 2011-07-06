@@ -24,11 +24,14 @@
        use inputUnsteady
        use iteration
        use monitor
+       use monitor ! eran-avf
+
+       implicit none ! eran
 !
 !      Local variables.
 !
        integer(kind=intType) :: i, j, k, l, sps, nn, mm, ll
-
+       integer(kind=intType) :: nstep  ! eran-avf
        real(kind=realType) :: tOld, tNew
        real(kind=realType) :: vX, vY, vZ, vXi, vEta, vZeta
        real(kind=realType) :: t, angleX, angleY, angleZ
@@ -225,7 +228,50 @@
              enddo
 
            endif rotTest
+!
+! ------------------eran-avf start: compute and store time-averaged solution
+!
+           mm    = noldLevels + 1
+           nstep = timeStepUnsteady !  + ntimeSstepsRestart
 
+! use average of this run only. 
+           
+           if (nstep >= 2) then
+              do k=1,ke
+                 do j=1,je
+                    do i=1,ie
+
+                       wOld(mm,i,j,k,ivx) = (w(i,j,k,ivx) + float(nstep -1)* &
+                            wOld(mm,i,j,k,ivx))/float(nstep)
+                       wOld(mm,i,j,k,ivy) = (w(i,j,k,ivy) + float(nstep -1)* &
+                            wOld(mm,i,j,k,ivy))/float(nstep)
+                       wOld(mm,i,j,k,ivz) = (w(i,j,k,ivz) + float(nstep -1)* &
+                            wOld(mm,i,j,k,ivz))/float(nstep)
+                       wOld(mm,i,j,k,irho) = (p(i,j,k) + float(nstep -1)* &
+                            wOld(mm,i,j,k,irho))/float(nstep)
+                          
+                    end do ! i
+                 end do ! j
+              end do ! k
+
+           else ! nstep
+
+              do k=1,ke
+                 do j=1,je
+                    do i=1,ie
+
+                       wOld(mm,i,j,k,ivx) = w(i,j,k,ivx) 
+                       wOld(mm,i,j,k,ivy) = w(i,j,k,ivy)
+                       wOld(mm,i,j,k,ivz) = w(i,j,k,ivz)
+                       wOld(mm,i,j,k,irho) = p(i,j,k) 
+
+                    end do ! i
+                 end do ! j
+              end do ! k
+           end if ! nstep
+
+
+!-------------------- eran-avf: end 
          enddo domains
        enddo spectralLoop
 
