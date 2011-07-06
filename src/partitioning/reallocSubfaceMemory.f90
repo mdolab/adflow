@@ -86,5 +86,6 @@
        call reallocateInteger(blocks(ii)%l1, nNew, nOld, .true.)
        call reallocateInteger(blocks(ii)%l2, nNew, nOld, .true.)
        call reallocateInteger(blocks(ii)%l3, nNew, nOld, .true.)
+       call reallocateInteger(blocks(ii)%idWBC, nNew, nOld, .true.) ! eran-cbd
  
        end subroutine reallocSubfaceMemory

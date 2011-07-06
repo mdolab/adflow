@@ -38,20 +38,38 @@ include ${SUMB_MD_COMMON_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_MD_OBJDIR)
+<<<<<<< local
 FF90_OBJECTS_1 = 
+=======
+FF90_OBJECTS_1 = mdData.o\
+
+>>>>>>> other
 FF90_OBJECTS_2 = mdFamilyNames.o\
 		 mdNSurfNodes.o\
+<<<<<<< local
 		 mdNSurfNodesLocal.o\
+=======
+>>>>>>> other
 		 mdSetCoor.o\
 		 mdSurfCoorList.o\
+<<<<<<< local
 		 mdSurfCoorListLocal.o\
+=======
+>>>>>>> other
 		 mdSurfForceList.o\
+<<<<<<< local
 	      	 mdSurfForceListLocal.o\
+=======
+>>>>>>> other
 		 mdSurfIndList.o\
+<<<<<<< local
 		 mdSurfIndListLocal.o\
+=======
+>>>>>>> other
 		 mdSurfVarList.o\
 		 mdSurfacePatchDim.o\
 		 mdWriteTecfile.o
+<<<<<<< local
 #FF90_OBJECTS_1 = mdData.o\
 #
 #FF90_OBJECTS_2 = mdFamilyNames.o\
@@ -63,6 +81,8 @@ FF90_OBJECTS_2 = mdFamilyNames.o\
 #		 mdSurfVarList.o\
 #		 mdSurfacePatchDim.o\
 #		 mdWriteTecfile.o
+=======
+>>>>>>> other
 
 #      ******************************************************************
 #      *                                                                *

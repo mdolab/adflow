@@ -190,6 +190,7 @@
           case("totalr")
              nMon = nMon + 1; nMonSum = nMonSum + 1
              tmpNames(nMon) = 'totalR'
+
            case default
              write(errorMessage,"(3a)") "Unknown monitoring variable, ", &
                                         trim(keyword), ", specified"
