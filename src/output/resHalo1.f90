@@ -128,7 +128,6 @@
              ! in the buffer. Update the counter jj accordingly.
 
              do k=start,end
-                !print *,'sendbuf',jj,dd1,level,s,ii1,jj1,kk1,k, shape(sendbuffer), shape(flowDoms),shape(flowDoms(dd1,level,sps)%dw)
                sendBuffer(jj) = flowDoms(dd1,level,sps)%dw(ii1,jj1,kk1,k)
                jj = jj + 1
              enddo

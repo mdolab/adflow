@@ -124,7 +124,7 @@
          ! equal to the number of blocks.
 
          if(nBlocks >= nProc) exit
-         
+
          ! The number of blocks is smaller than the number of processors.
          ! Set the tolerance for splitting to the desired number of
          ! cells on a processor.
@@ -141,29 +141,28 @@
        if( splitBlocks ) iterMax = 2
 
        ! Loop to determine a good load balance.
-       !if(myid==0)print *,'itermax=',itermax
        distributionLoop: do iter=1,iterMax
-          
+
          ! Determine the computational blocks from the splitting info of
          ! the original blocks.
-         
          call determineComputeBlocks(splitInfo)
 
          ! Apply the graph partitioning to the computational blocks.
+
          if(myid==0) print *,'graph partitioning',iter
          call graphPartitioning(emptyPartitions, commNeglected)
-         !if(myid==0) print *,'finished gp',iter
+
          ! Determine whether the load balance is okay. If empty
          ! partitions are present the load balance is per definition
          ! not okay and there is no need to call checkLoadBalance.
-         
+
          if( emptyPartitions ) then
            cellsBalanced = .false.
            facesBalanced = .false.
          else
            call checkLoadBalance(cellsBalanced, facesBalanced)
          endif
-         !if(myid==0) print *,'lb checked',iter
+
          ! Exit the loop if the cells or the faces are load balanced
          ! or if the maximum number of iterations have been reached.
 
@@ -173,7 +172,7 @@
          ! exit
 
          ! Split some blocks on the processors with too many cells/faces.
-         !if(myid==0) print *,'splitblockslb',iter
+
          call splitBlocksLoadBalance
 
        enddo distributionLoop
@@ -205,7 +204,7 @@
          print "(a)", "#                    Warning"
          print "(a)", "# Communication costs neglected to obtain&
                        & a valid partitioning."
-         print "(a)", "#print 'pySciPlot not available'#"
+         print "(a)", "#"
        endif
 
        ! If the load imbalance tolerance was not met, print a warning
@@ -280,7 +279,7 @@
            ! Check whether this number is smaller or equal to the
            ! maximum allowed number. If not, set splittingIsOkay to
            ! .false. and exit the loop.
-           !print *,'splitting is ok',ncells,nCellsPerProcMax,i
+
            if(nCells > nCellsPerProcMax) then
              splittingIsOkay = .false.
              exit

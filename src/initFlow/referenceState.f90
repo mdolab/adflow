@@ -360,8 +360,7 @@
        uInf   = Mach*sqrt(gammaInf*pInf/rhoInf)
        RGas   = RGasDim*rhoRef*TRef/pRef
        muInf  = muDim/muRef
-!!$       print *,'pinf,rhoinf,uinf',pinf,rhoinf,uinf, gammainf,uinf/mach,timeref
-!!$       stop
+
        !=================================================================
 
        contains

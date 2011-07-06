@@ -100,7 +100,12 @@ FF90_OBJECTS = applyAllBC.o\
 	       unsteadyHeader.o\
 	       utauWF.o\
 	       viscousFlux.o\
-	       writeFamilyMassflow.o
+	       writeFamilyMassflow.o\
+	       tdbc.o \
+               calMassFlux.o \
+               componentsBreakDownPrintout.o \
+               forcesAndMomentsCBD.o \
+	       coeffConvergenceCheck.o
 
 CC_OBJECTS   = connect_signals.o
 
