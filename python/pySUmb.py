@@ -1728,7 +1728,6 @@ class SUMB(AeroSolver):
         startCFD Norm: Norm at the start of adjoint call
         finalCFD Norm: Norm at the end of adjoint call
         '''
-        
         startRes = self.sumb.adjointpetsc.adjreshist[0]
         finalIt  = self.sumb.adjointpetsc.adjconvits
         finalRes = self.sumb.adjointpetsc.adjreshist[finalIt]
@@ -1924,8 +1923,8 @@ class SUMB(AeroSolver):
         return res
 
     def getSolution(self,sps=1):
-        '''
-        retrieve the solution variables from the solver.
+        ''' Retrieve the solution variables from the solver. Note this
+        is a collective function and must be called on all processors
         '''
 
         # We should return the list of results that is the same as the

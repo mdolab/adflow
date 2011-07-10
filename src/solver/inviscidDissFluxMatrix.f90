@@ -146,9 +146,13 @@
              ppor = zero
              if(porI(i,j,k) == normalFlux) ppor = one
 
-             dis2 = ppor*fis2*min(dpMax, max(dp1,dp2))
-             dis4 = dim(ppor*fis4, dis2)
-
+             if (lumpedDiss) then
+                dis2 = fis2*ppor*min(dpMax,max(dp1,dp2))+sigma*fis4*ppor
+                dis4 = 0.0
+             else
+                dis2 = ppor*fis2*min(dpMax, max(dp1,dp2))
+                dis4 = dim(ppor*fis4, dis2)
+             end if
              ! Construct the vector of the first and third differences
              ! multiplied by the appropriate constants.
 
@@ -344,8 +348,13 @@
              ppor = zero
              if(porJ(i,j,k) == normalFlux) ppor = one
 
-             dis2 = ppor*fis2*min(dpMax, max(dp1,dp2))
-             dis4 = dim(ppor*fis4, dis2)
+             if (lumpedDiss) then
+                dis2 = fis2*ppor*min(dpMax,max(dp1,dp2))+sigma*fis4*ppor
+                dis4 = 0.0
+             else
+                dis2 = ppor*fis2*min(dpMax, max(dp1,dp2))
+                dis4 = dim(ppor*fis4, dis2)
+             end if
 
              ! Construct the vector of the first and third differences
              ! multiplied by the appropriate constants.
@@ -542,8 +551,13 @@
              ppor = zero
              if(porK(i,j,k) == normalFlux) ppor = one
 
-             dis2 = ppor*fis2*min(dpMax, max(dp1,dp2))
-             dis4 = dim(ppor*fis4, dis2)
+             if (lumpedDiss) then
+                dis2 = fis2*ppor*min(dpMax,max(dp1,dp2))+sigma*fis4*ppor
+                dis4 = 0.0
+             else
+                dis2 = ppor*fis2*min(dpMax, max(dp1,dp2))
+                dis4 = dim(ppor*fis4, dis2)
+             end if
 
              ! Construct the vector of the first and third differences
              ! multiplied by the appropriate constants.
