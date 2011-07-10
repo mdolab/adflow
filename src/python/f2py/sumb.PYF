@@ -819,6 +819,7 @@ python module sumb ! in
          real(kind=realtype) dimension(3) :: liftdirection
          real(kind=realtype) dimension(3) :: dragdirection
          real(kind=realtype) dimension(3) :: pointref
+         real(kind=realtype) dimension(3) :: pointrefec
        end module inputphysics
        module inputadjoint ! in :sumb:../modules/inputParam.f90
          use precision

@@ -26,6 +26,7 @@
 
 SUBDIR_SRC    = src/modules       \
 		src/bcdata        \
+                src/bendingMomentAnalysis\
 	        src/initFlow      \
 	        src/inputParam    \
 	        src/metis-4.0     \

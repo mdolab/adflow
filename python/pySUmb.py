@@ -745,6 +745,19 @@ class SUMB(AeroSolver):
         self.sumb.updateflow()
         self._update_vel_info = True
         return
+
+    def setElasticCenter(self,aero_problem):
+        '''
+        set the value of pointRefEC for the bending moment calculation
+        '''
+        aero_problem._geometry.ListAttributes()
+        
+        self.sumb.inputphysics.pointrefec[0] = aero_problem._geometry.xRootec\
+            *self.metricConversion
+        self.sumb.inputphysics.pointrefec[1] = aero_problem._geometry.yRootec\
+            *self.metricConversion
+        self.sumb.inputphysics.pointrefec[2] = aero_problem._geometry.zRootec\
+            *self.metricConversion
     
     def setReferencePoint(self,aero_problem):
         '''
@@ -938,6 +951,7 @@ class SUMB(AeroSolver):
         self.setPeriodicParams(aero_problem)
         self.setInflowAngle(aero_problem)
         self.setReferencePoint(aero_problem)
+        self.setElasticCenter(aero_problem)
         self.setRotationRate(aero_problem)
         self.setRefArea(aero_problem)
 

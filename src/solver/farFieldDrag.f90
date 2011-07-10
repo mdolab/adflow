@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine farFieldDrag()
+subroutine farFieldDrag(value)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -25,6 +25,8 @@ subroutine farFieldDrag()
   use communication
   implicit none
 
+
+  real(kind=realType) :: value
   ! Boring Variables
 
   integer(kind=intType) :: nn,level,sps
@@ -38,7 +40,7 @@ subroutine farFieldDrag()
 
   ! Expansion Coefficients:
   real(kind=realType) :: ffp1,ffs1,ffh1,ffp2,ffs2,ffh2,ffps2,ffph2,ffsh2
-  real(kind=realType) :: uouinf
+  real(kind=realType) :: uouinf,ovfact,a,vref
   ! Ratios used in expansion:
   real(kind=realType) :: dPoP,dSoR,dHou2
 
@@ -140,7 +142,9 @@ subroutine farFieldDrag()
                     !print *,dH(i,j,k)
                   !  print *,du_ir(i,j,k)
                  !end if
-                 fvw(i,j,k,:) = -w(i,j,k,iRho) * du_ir(i,j,k) * V_wind(i,j,k,:)
+                 vRef =sqrt(gammaInf*pRef/rhoRef)/sqrt(gammaInf*pInf/rhoInf)
+                 !fvw(i,j,k,:) = -w(i,j,k,iRho) * du_ir(i,j,k) * V_wind(i,j,k,:)
+                 fvw(i,j,k,:) = -w(i,j,k,iRho)*rhoref * v_wind(i,j,k,1) * V_wind(i,j,k,:)*vref**2
                  !fvw(i,j,k,:) = w(i,j,k,ivx:ivz)
                  !fvw(i,j,k,:) = 1.0
 !                  if (isnan(sum(fw(i,j,k,:)))) then
@@ -344,15 +348,18 @@ subroutine farFieldDrag()
   call mpi_reduce(drag_local,drag,1,sumb_real,mpi_sum,0,SUmb_comm_world,ierr)
   fact = two/(gammaInf*pInf*MachCoef*MachCoef &
             *surfaceRef*LRef*LRef)
+  a = sqrt(gammaInf*pRef/rhoRef)
+  ovfact = 0.5*rhoref*(machCoef*a)**2*surfaceRef
   !fact = two/(surfaceRef)
   if (myid == 0) then
-     print *,'fact',fact
+     print *,'fact',fact,ovfact
   end if
   !print *,'factff',fact,two,gammaInf,pInf,pRef,MachCoef,MachCoef,surfaceRef,LRef,LRef
   if (myid == 0) then
      print *,'Irreversable drag:',drag
-     print *,'Irreversable CD',drag*fact
+     print *,'Irreversable CD',drag*fact,drag/ovfact
   end if
+  value = drag/ovfact
 
 end subroutine farFieldDrag
 
