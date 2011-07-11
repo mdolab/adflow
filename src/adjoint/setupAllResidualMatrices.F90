@@ -886,11 +886,11 @@ subroutine setupAllResidualMatrices
 
 
   ! Redo drdw with FD
-  useAD = .False.
+  useAD = .True.!.False.
   usePC = .False.
   useTranspose = .True.
   !print *,'Doing FD dRdw'
-  !call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
+  call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
   !print *,'doing FD dRdx'
   !call setupSpatialResidualMatrix(drdx,useAD)
 

@@ -59,7 +59,7 @@ subroutine block_res(nn,sps)
   
   if( equations == RANSEquations ) then
      call initres_block(nt1MG, nMGVar,nn,sps) ! Initialize only the Turblent Variables
-     call turbResidual_block
+     !call turbResidual_block
   endif
   
   select case (equationMode)
@@ -77,7 +77,7 @@ subroutine block_res(nn,sps)
      end do
   end select
   
-  ! Rest the pointers the the "on time instance"
+  ! Reset the pointers the the "on time instance"
   call setPointersOffTSInstance(nn,sps,sps)  
   
   ! Actual residual calc
@@ -109,6 +109,5 @@ subroutine block_res(nn,sps)
 
 
   end do
-
   call setPointersOffTSInstance(nn,sps,sps)
 end subroutine block_res

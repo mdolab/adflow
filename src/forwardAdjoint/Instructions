@@ -1,0 +1,33 @@
+#These are instructions to generate the forward mode derivatives using Tapenade.
+#The forward mode derivatives are currenly using tapenade release 3.4.
+
+#change directories to:
+cd /SUmb/src/forwardAdjoint/
+
+#open the file:
+
+Makefile_tapenade
+
+#update the SOLVER_DIRSRC to your local /SUmb/src directory
+
+#run the command:
+
+make -f Makefile_tapenade
+
+#change directories to:
+cd /src/forwardAdjoint/residualTapenade
+
+#run the command
+python autoEdit.py
+
+#change directories to:
+cd /src/forwardAdjoint/residualOutput
+
+#make the following manual corrections:
+eintarray_d.f90: comment out 3 instances of: eintd = 0.0
+
+block_res_d.f90: change all SETPOINTERSOFFTSINSTANCE calls to
+                            SETPOINTERSOFFTSINSTANCE_D
+
+
+the code should now compile and run

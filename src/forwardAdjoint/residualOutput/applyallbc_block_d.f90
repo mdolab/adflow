@@ -2,7 +2,7 @@
    !  Tapenade 3.4 (r3375) - 10 Feb 2010 15:08
    !
    !  Differentiation of applyallbc_block in forward (tangent) mode:
-   !   variations   of useful results: *p *w
+   !   variations   of useful results: *p *gamma *w
    !   with respect to varying inputs: *p *w
    !
    !      ******************************************************************
@@ -65,24 +65,29 @@
    ! The symmetry boundary conditions.
    CALL BCSYMM_D(secondhalo)
    CALL BCSYMMPOLAR_D(secondhalo)
-   CALL BCEULERWALL_D(secondhalo, correctfork)
+   !call bcEulerWall(secondHalo, correctForK)
    ! The viscous wall boundary conditions.
-   CALL BCNSWALLADIABATIC_D(secondhalo, correctfork)
-   CALL BCNSWALLISOTHERMAL_D(secondhalo, correctfork)
+   !call bcNSWallAdiabatic( secondHalo, correctForK)
+   !call bcNSWallIsothermal(secondHalo, correctForK)
    ! The farfield is a special case, because the treatment
    ! differs when preconditioning is used. Make that distinction
    ! and call the appropriate routine.
    SELECT CASE  (precond) 
    CASE (noprecond) 
    CALL BCFARFIELD_D(secondhalo, correctfork)
+   !print *,'istates_farfield',wd(8:12,3,2,:)
    CASE (turkel) 
    CALL TERMINATE('applyAllBC', &
    &                'Farfield boundary conditions for Turkel ', &
    &                'preconditioner not implemented')
+   gammad = 0.0
    CASE (choimerkle) 
    CALL TERMINATE('applyAllBC', &
    &                'Farfield boundary conditions for Choi and ', &
    &                'Merkle preconditioner not implemented')
+   gammad = 0.0
+   CASE DEFAULT
+   gammad = 0.0
    END SELECT
    !   ! Subsonic outflow and bleed outflow boundaries.
    !   call bcSubsonicOutflow(secondHalo, correctForK)

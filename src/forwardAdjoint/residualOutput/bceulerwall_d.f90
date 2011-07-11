@@ -3,7 +3,7 @@
    !
    !  Differentiation of bceulerwall in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w
-   !   with respect to varying inputs: *p *w gammaconstant
+   !   with respect to varying inputs: *p *gamma *w gammaconstant
    !
    !      ******************************************************************
    !      *                                                                *
@@ -100,12 +100,7 @@
    ! Make sure that on the coarser grids the constant pressure
    ! boundary condition is used.
    walltreatment = wallbctreatment
-   IF (currentlevel .GT. groundlevel) THEN
-   walltreatment = constantpressure
-   gammad = 0.0
-   ELSE
-   gammad = 0.0
-   END IF
+   IF (currentlevel .GT. groundlevel) walltreatment = constantpressure
    ! Loop over the boundary condition subfaces of this block.
    bocos:DO nn=1,nbocos
    ! Check for Euler wall boundary condition.
@@ -428,15 +423,11 @@
    END DO
    END DO
    ! Compute the energy for these halo's.
-
    CALL COMPUTEETOT_D(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                   kcbeg(nn), kcend(nn), correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) THEN
-
-   CALL EXTRAPOLATE2NDHALO_D(nn, correctfork)
-   END IF
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_D(nn, correctfork)
    END IF
    END DO bocos
    END SUBROUTINE BCEULERWALL_D
