@@ -117,18 +117,18 @@
 
          case (NSEquations, RANSEquations)
 
-            print *,'NSEquations and RANSEquations not yet supported'
-            stop
+!!            print *,'NSEquations and RANSEquations not yet supported'
+!!            stop
+!!$
+           ! Viscous case. Pressure switch is based on the entropy.
+           ! Also set the value of sslim. To be fully consistent this
+           ! must have the dimension of entropy and it is therefore
+           ! set to a fraction of the free stream value.
 
-!!$           ! Viscous case. Pressure switch is based on the entropy.
-!!$           ! Also set the value of sslim. To be fully consistent this
-!!$           ! must have the dimension of entropy and it is therefore
-!!$           ! set to a fraction of the free stream value.
-!!$
-!!$           sslim = 0.001_realType*pInfCorr/(rhoInf**gammaInf)
-!!$
-!!$           ! Store the entropy in ss. Only fill the entries used in
-!!$           ! the discretization, i.e. ignore the corner halo's.
+           sslim = 0.001_realType*pInfCorr/(rhoInf**gammaInf)
+
+           ! Store the entropy in ss. Only fill the entries used in
+           ! the discretization, i.e. ignore the corner halo's.
 !!$
 !!$           do k=0,kb
 !!$             do j=2,jl
@@ -137,6 +137,14 @@
 !!$               enddo
 !!$             enddo
 !!$           enddo
+
+           do k = -2,2
+              do j = -2,2
+                 do i = -2,2
+                    ss(i,j,k) = pAdj(i,j,k,sps)/(wAdj(i,j,k,irho,sps)**gamma(iCell+i,jCell+j,kCell+k))
+                 enddo
+              enddo
+           enddo
 !!$
 !!$           do k=2,kl
 !!$             do j=2,jl

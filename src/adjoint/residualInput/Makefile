@@ -63,6 +63,7 @@ FF90_OBJECTS = adjustInflowAngleAdj.o   \
 	       inviscidUpwindFluxAdj.o  \
 	       leftRightStateAdj.o      \
 	       metricAdj.o              \
+	       nodalGradientsAdj.o      \
 	       normalVelocitiesAdj.o    \
 	       referenceStateAdj.o      \
 	       replaceBCStatesAdj.o     \
@@ -73,6 +74,7 @@ FF90_OBJECTS = adjustInflowAngleAdj.o   \
 	       setFlowInfinityStateAdj.o\
 	       timeStepAdj.o            \
 	       vectorRotation.o         \
+	       viscousFluxAdj.o \
 	       xhaloAdj.o
 
 #FF90_OBJECTS = allocMemADjoint.o\
