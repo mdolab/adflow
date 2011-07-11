@@ -1392,9 +1392,11 @@ class SUMB(AeroSolver):
 
     def verifydRdw(self,**kwargs):
         ''' run the verify drdw scripts in fortran'''
+        # Make sure adjoint is initialize
+        self.initAdjoint()
         if not self.adjointMatrixSetup:
-            self.sumb.createpetscvars()
-            #self.setupAdjoint(forcePoints)
+            #self.sumb.createpetscvars()
+            self.setupAdjoint(None)#(forcePoints)
         # end if
 	level = 1
         self.sumb.iteration.currentlevel=level

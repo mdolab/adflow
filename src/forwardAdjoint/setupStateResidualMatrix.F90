@@ -127,7 +127,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
         ! Do Coloring and perturb states
         do iColor = 1,nColor
-
+           !print *,'icolor',icolor
            do sps2 = 1,nTimeIntervalsSpectral
               flowDomsd(sps2)%dw_deriv(:,:,:,:,:) = 0.0
            end do
@@ -160,9 +160,9 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
               ! Block-based residual
               if (useAD) then
-                 !call block_res_d(nn,sps)
-                 print *,'AD Not Implmented Yet'
-                 stop
+                 call block_res_d(nn,sps)
+                 !print *,'AD Not Implmented Yet'
+                 !stop
               else
                  call block_res(nn,sps)
               end if
