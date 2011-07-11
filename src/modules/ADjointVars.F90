@@ -30,21 +30,21 @@
       ! nDesignExtra   Extra number of "extra" design variables 
       !                (listed below)
 
-      integer(kind=intType) :: nDesignAOA   
-      integer(kind=intType) :: nDesignSSA    
-      integer(kind=intType) :: nDesignMach    
-      integer(kind=intType) :: nDesignMachGrid
-      integer(kind=intType) :: nDesignRotX    
-      integer(kind=intType) :: nDesignRotY    
-      integer(kind=intType) :: nDesignRotZ    
-      integer(kind=intType) :: nDesignRotCenX 
-      integer(kind=intType) :: nDesignRotCenY  
-      integer(kind=intType) :: nDesignRotCenZ   
-      integer(kind=intType) :: nDesignPointRefX  
-      integer(kind=intType) :: nDesignPointRefY   
-      integer(kind=intType) :: nDesignPointRefZ   
+      integer(kind=intType) :: nDesignAOA = -1  
+      integer(kind=intType) :: nDesignSSA = -1   
+      integer(kind=intType) :: nDesignMach = -1   
+      integer(kind=intType) :: nDesignMachGrid = -1
+      integer(kind=intType) :: nDesignRotX = -1   
+      integer(kind=intType) :: nDesignRotY = -1    
+      integer(kind=intType) :: nDesignRotZ = -1    
+      integer(kind=intType) :: nDesignRotCenX = -1
+      integer(kind=intType) :: nDesignRotCenY = -1 
+      integer(kind=intType) :: nDesignRotCenZ = -1  
+      integer(kind=intType) :: nDesignPointRefX = -1  
+      integer(kind=intType) :: nDesignPointRefY = -1   
+      integer(kind=intType) :: nDesignPointRefZ = -1   
       
-      integer(kind=intType) :: nDesignExtra
+      integer(kind=intType) :: nDesignExtra = 0
 
       real(kind=realType),dimension(:),allocatable :: dIda
       

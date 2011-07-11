@@ -35,7 +35,7 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS =  #blockpointers_d.o\
+FF90_OBJECTS =  blockpointers_d.o\
 		diffSizes.o\
 		applyallbc_block_d.o\
 		bcsymm_d.o\
@@ -51,7 +51,6 @@ FF90_OBJECTS =  #blockpointers_d.o\
 		bcfarfield_d.o\
 		bcturbwall_d.o\
 		dim_d.o\
-		inviscidcentralflux_mod_d.o \
 		inviscidupwindflux_d.o  \
 		utauwf_d.o \
 		bcnswalladiabatic_d.o \
@@ -68,6 +67,16 @@ FF90_OBJECTS =  #blockpointers_d.o\
 		turbresidual_block_d.o\
 		sa_block_d.o\
 		initres_block_ts_d.o\
+		applyallturbbcthisblock_d.o\
+		saeddyviscosity_d.o\
+		bcturbtreatment_d.o\
+		bceddynowall_d.o\
+		bceddywall_d.o\
+		bcturbsymm_d.o\
+		bcturbfarfield_d.o\
+		bcturbinflow_d.o\
+		bcturboutflow_d.o\
+		inviscidcentralflux_d.o\
 
 #      ******************************************************************
 #      *                                                                *

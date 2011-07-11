@@ -3,8 +3,8 @@
 !
 !  Differentiation of block_res in forward (tangent) mode:
 !   variations   of useful results: *dw *w
-!   with respect to varying inputs: *w
-!   RW status of diff variables: *dw:out *w:in-out
+!   with respect to varying inputs: *w *w_offtimeinstance
+!   RW status of diff variables: *dw:out *w:in-out *w_offtimeinstance:in
 ! This is a super-combined function that combines the original
 ! functionality of: 
 ! Pressure Computation
@@ -23,66 +23,113 @@ SUBROUTINE BLOCK_RES_D(nn, sps)
   USE INPUTPHYSICS
   USE ITERATION
   IMPLICIT NONE
-  !  dw = w
   ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
   ! nw
   REAL(kind=realtype) :: gm1, v2
   REAL(kind=realtype) :: v2d
-  INTEGER(kind=inttype) :: nn, sps, i, j, k, sps2, mm
+  INTEGER(kind=inttype) :: nn, sps, i, j, k, sps2, mm, l
   LOGICAL :: correctfork
+  EXTERNAL INITRES_BLOCK
   INTRINSIC MAX
+
+
   ! Compute the pressures
-  CALL SETPOINTERSOFFTSINSTANCE_d(nn, sps, sps)
+  CALL SETPOINTERSOFFTSINSTANCE_D(nn, sps, sps)
   gm1 = gammaconstant - one
   correctfork = .false.
   pd = 0.0
+  40 format(1x,I4,I4,I4,E20.4)
+
   ! Compute P 
-  DO k=2,kl
-     DO j=2,jl
-        DO i=2,il
+  DO k=0,kb
+     DO j=0,jb
+        DO i=0,ib
+           !write(13,*),i,j,k,w(i, j, k, ivx)
            v2d = 2*w(i, j, k, ivx)*wd(i, j, k, ivx) + 2*w(i, j, k, ivy)*wd(&
                 &          i, j, k, ivy) + 2*w(i, j, k, ivz)*wd(i, j, k, ivz)
            v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**&
                 &          2
            pd(i, j, k) = gm1*(wd(i, j, k, irhoe)-half*(wd(i, j, k, irho)*v2&
                 &          +w(i, j, k, irho)*v2d))
+           
            p(i, j, k) = gm1*(w(i, j, k, irhoe)-half*w(i, j, k, irho)*v2)
+           
            IF (p(i, j, k) .LT. 1.e-4_realType*pinfcorr) THEN
               pd(i, j, k) = 0.0
               p(i, j, k) = 1.e-4_realType*pinfcorr
            ELSE
               p(i, j, k) = p(i, j, k)
            END IF
+           !write(13,40),i,j,k,p(i,j,k)
         END DO
      END DO
   END DO
-  ! Apply all BC's
+
+  !call computeEtot(0,ib,0,jb,0,kb,correctForK)
+  !  Apply all BC's
   CALL APPLYALLBC_BLOCK_D(.true.)
   ! Compute skin_friction Velocity
-  !call computeUtau_block
-  !   ! Compute time step and spectral radius
-  CALL TIMESTEP_BLOCK(.false.)
-  ! !   !if( equations == RANSEquations ) then
-  ! !   !call initres_block(nt1MG, nMGVar,nn,sps) ! Initialize only the Turblent Variables
-  ! !   !call turbResidual_block
-  ! !   !endif
-  !   select case (equationMode)
-  !   case (steady)
-  !      !call initRes_block(1,nwf,nn,sps)
-  !      dw = 0.0
-  !   case(timeSpectral)
-  !      do sps2=1,nTimeIntervalsSpectral
-  !         call setPointersOffTSInstance(nn,sps2,sps2)
-  !         dw = 0.0
-  !         do mm=1,nTimeIntervalsSpectral
-  !            call setPointersoffTSInstance(nn,sps2,mm)
-  !            call initRes_block_TS(1,nwf,nn,sps2,mm)
-  !         end do
-  !         ! Reset back to the correct time-instance  
-  !      end do
-  !   end select
-  !   ! Rest the pointers the the "on time instance"
-  !   call setPointersOffTSInstance(nn,sps,sps)  
-  !   ! Actual residual calc
+  CALL COMPUTEUTAU_BLOCK()
+  ! Compute time step and spectral radius
+  CALL TIMESTEP_BLOCK_D(.false.)
+  IF (equations .EQ. ransequations) THEN
+     CALL INITRES_BLOCK(nt1mg, nmgvar, nn, sps)
+     ! Initialize only the Turblent Variables
+     CALL TURBRESIDUAL_BLOCK_D()
+  ELSE
+     revd = 0.0
+  END IF
+  SELECT CASE  (equationmode) 
+  CASE (steady) 
+     ! Zero out just the flow variables
+     dwd(:, :, :, 1:nwf) = 0.0
+     dw(:, :, :, 1:nwf) = 0.0
+     dwd = 0.0
+  CASE (timespectral) 
+     dwd = 0.0
+     DO sps2=1,ntimeintervalsspectral
+        CALL SETPOINTERSOFFTSINSTANCE_D(nn, sps2, sps2)
+        dw = 0.0
+        dwd = 0.0
+        DO mm=1,ntimeintervalsspectral
+           CALL SETPOINTERSOFFTSINSTANCE_D(nn, sps2, mm)
+           CALL INITRES_BLOCK_TS_D(1, nwf, nn, sps2, mm)
+        END DO
+     END DO
+  CASE DEFAULT
+     dwd = 0.0
+  END SELECT
+  ! Rest the pointers the the "on time instance"
+  CALL SETPOINTERSOFFTSINSTANCE_D(nn, sps, sps)
+  ! Actual residual calc
   CALL RESIDUAL_BLOCK_D()
+  ! Divide through by the volume
+  DO sps2=1,ntimeintervalsspectral
+     CALL SETPOINTERSOFFTSINSTANCE_D(nn, sps2, sps2)
+     DO l=1,nwf
+        DO k=2,kl
+           DO j=2,jl
+              DO i=2,il
+                 dwd(i, j, k, l) = dwd(i, j, k, l)/vol(i, j, k)
+                 dw(i, j, k, l) = dw(i, j, k, l)/vol(i, j, k)
+                 !write(13,40),i,j,k,dw(i, j, k,l)
+              END DO
+           END DO
+        END DO
+     END DO
+     !write(13,*), flowDomsd(sps)%dw
+     DO l=nt1,nt2
+        DO k=2,kl
+           DO j=2,jl
+              DO i=2,il
+                 ! * 1e-3
+                 dwd(i, j, k, l) = dwd(i, j, k, l)/vol(i, j, k)
+                 dw(i, j, k, l) = dw(i, j, k, l)/vol(i, j, k)
+              END DO
+           END DO
+        END DO
+     END DO
+  END DO
+  CALL SETPOINTERSOFFTSINSTANCE_D(nn, sps, sps)
+  !write(13,*), flowDomsd(sps)%dw
 END SUBROUTINE BLOCK_RES_D

@@ -1304,14 +1304,17 @@ class SUMB(AeroSolver):
             self.sumb.createpetscvars()
  
             self.sumb.setupallresidualmatrices()
-
+            print 'matrices setup'
             if forcePoints is None:
                 forcePoints = self.getForcePoints()
             # end if
-            
+            print 'setting up auxiliary matrices'
             self.sumb.setupcouplingmatrixstruct(forcePoints.T)
+            print 'coupling matrix'
             self.sumb.setuppetscksp()
+            print 'ksp...'
             self.mesh.setupWarpDeriv()
+            print 'warping'
             self.adjointMatrixSetup = True
 
         # end if
@@ -1344,12 +1347,12 @@ class SUMB(AeroSolver):
 
         # Short form of objective--easier code reading
         obj = self.possibleObjectives[objective.lower()]
-
+        print 'initialized'
         # Check to see if the adjoint Matrix is setup:
         if not self.adjointMatrixSetup:
             self.setupAdjoint(forcePoints)
         # end if
-
+        print 'adjoint setup'
         # Check to see if the RHS Partials have been computed
         if not self.adjointRHS == obj:
             self.computeObjPartials(obj,forcePoints)
@@ -1489,6 +1492,19 @@ class SUMB(AeroSolver):
         self.sumb.verifypartials()
 
         return
+
+    def verifydRdw(self,**kwargs):
+        '''
+        run compute obj partials, then print to a file...
+        '''
+        level = 1 
+        self.sumb.createpetscvars()
+        self.sumb.iteration.currentlevel=1
+        self.sumb.iteration.groundlevel=1
+        self.sumb.verifydrdwfile(level)
+        
+        return
+
     
     def verifyResidual(self):
         ''' Run verifyRAdjoint to make sure the node-based-stencil
