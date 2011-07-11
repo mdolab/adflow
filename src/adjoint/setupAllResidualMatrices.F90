@@ -36,7 +36,7 @@ subroutine setupAllResidualMatrices
   use iteration           ! overset, currentLevel
   use flowVarRefState     ! nw
   !      use inputTimeSpectral ! spaceDiscr
-  use inputADjoint        !lumpedDiss
+  use inputDiscretization
   implicit none
   !
   !     Local variables.
@@ -47,7 +47,7 @@ subroutine setupAllResidualMatrices
   integer(kind=intType) :: ii, jj, kk, i, j, k,liftIndex,l
 
   logical :: fineGrid, correctForK, exchangeTurb,secondhalo
-
+  logical :: useAD,useTranspose,usePC
   real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral) :: wAdj, wAdjB
   real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral)  :: xAdj, xAdjB
 
@@ -94,6 +94,7 @@ subroutine setupAllResidualMatrices
   !matrix norm check
   real(kind=realType)               ::val
 
+
   !
   !     ******************************************************************
   !     *                                                                *
@@ -102,6 +103,7 @@ subroutine setupAllResidualMatrices
   !     ******************************************************************
   !
 #ifndef USE_NO_PETSC
+
 
   ! Set the grid level of the current MG cycle, the value of the
   ! discretization and the logical correctForK.
@@ -202,6 +204,7 @@ subroutine setupAllResidualMatrices
   !zero the matrix for dRdx ADD call
   call MatZeroEntries(dRdx,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
+
 
   domainLoopAD: do nn=1,nDom
 
@@ -380,6 +383,8 @@ subroutine setupAllResidualMatrices
                           endif
                        enddo
                     end do
+
+
                     ! Transfer the block Jacobians to the global [dR/da]
                     ! matrix by setting the corresponding block entries of
                     ! the PETSc matrix dRda.
@@ -388,6 +393,7 @@ subroutine setupAllResidualMatrices
                     ! (note: index displaced by previous design variables)
                   
                    !Angle of Attack
+
                     if (nDesignAoA >= 0) then
                        !print *,'alphadjb:',alphaadjb,myID,ndesignAoA,idxres
                        call MatSetValues(dRda, 1, idxres, 1, nDesignAoA, &
@@ -672,6 +678,7 @@ subroutine setupAllResidualMatrices
   call EChk(PETScIerr,__FILE__,__LINE__)
   call MatAssemblyBegin(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
+
   call MatAssemblyEnd  (dRdWT,MAT_FINAL_ASSEMBLY,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
   call MatAssemblyEnd  (dRdx,MAT_FINAL_ASSEMBLY,PETScIerr)
@@ -707,8 +714,31 @@ subroutine setupAllResidualMatrices
        write(*,20) "Assembling All Residaul Matrices time (s) = ", timeAdj
 
   ! Output formats.
-#endif
 
+
+   
+!!$   open (UNIT=16,File="ad.out",status='replace',action='write',iostat=ierr)
+!!$   print*,'openfile error 2',ierr 
+!!$   call EChk(ierr,__FILE__,__LINE__)
+!!$
+!!$   call MatConvert(drdwT,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
+!!$   call EChk(ierr,__FILE__,__LINE__)
+
+!!$   call writeOutMatrix(drdwT)
+!!$   CLOSE (16)
+
+#endif 
+
+
+  ! Redo drdw with FD
+  useAD = .False.
+  usePC = .False.
+  useTranspose = .False.
+  print *,'Doing FD dRdw'
+  call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
+ 
+  !print *,'doing FD dRdx'
+  !call setupSpatialResidualMatrix(drdx,useAD)
 
 10 format(a)
 20 format(a,1x,f8.2)
@@ -753,6 +783,5 @@ contains
     enddo
 
   end subroutine blockIndices
-
 
 end subroutine setupAllResidualMatrices

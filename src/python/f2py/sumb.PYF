@@ -89,13 +89,10 @@ python module sumb ! in
          integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
        end subroutine setgrid
 
+       subroutine determinestencil
+       end subroutine determinestencil
+
        subroutine getforces(forces,pts,npts,nts) ! in :sumb:../../warping/getForces.f90
-         use blockpointers
-         use warpingpetsc
-         use communication
-         use inputtimespectral
-         use bctypes
-         use flowvarrefstate
          real(kind=realtype) dimension(3,npts,nts),intent(out),depend(npts,nts) :: forces
          real(kind=realtype) dimension(3,npts,nts),intent(in) :: pts
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
@@ -103,17 +100,10 @@ python module sumb ! in
        end subroutine getforces
        
        subroutine verifyforces(pts,npts,nts) ! in :sumb:../../adjoint/forcesInput/verifyForces.F90
-            use blockpointers
-            use adjointpetsc
-            use bctypes
-            use communication
-            use inputtimespectral
-            use inputphysics
-            use flowvarrefstate
-            real(kind=realtype) dimension(3,npts,nts),intent(inout) :: pts
-            integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
-            integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
-        end subroutine verifyforces
+         real(kind=realtype) dimension(3,npts,nts),intent(inout) :: pts
+         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+         integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
+       end subroutine verifyforces
 
        subroutine verifydcfdx(level,costfunction)
          use blockpointers
@@ -134,6 +124,19 @@ python module sumb ! in
          integer(kind=inttype) intent(in) :: level
          integer(kind=inttype) intent(in) :: costfunction
        end subroutine verifydcfdx
+
+       subroutine verifydrdwfile(level)
+          use blockpointers ! block (nDoms,flowDoms), globalCell
+          use flowvarrefstate
+          use communication
+          use iteration     ! groundLevel
+          use inputtimespectral ! spaceDiscr
+          use inputio
+          use adjointpetsc, only: drdw,petscone,add_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world
+          use precision
+          use inputiteration
+          integer(kind=inttype) intent(in) :: level
+        end subroutine verifydrdwfile
 
        subroutine setupcouplingmatrixstruct(pts,npts,nts) ! in :sumb:../../adjoint/setupCouplingMatrixStruct.F90
          use blockpointers
@@ -526,6 +529,8 @@ python module sumb ! in
          logical :: dirscaling
          logical :: radiineededfine
          logical :: radiineededcoarse
+         logical :: lumpeddiss
+         real(kind=realtype) :: sigma
        end module inputdiscretization
 
        module inputio ! in :sumb:../../modules/inputParam.f90
@@ -764,6 +769,7 @@ python module sumb ! in
          integer(kind=inttype) parameter,optional :: additiveschwartz=3
          integer(kind=inttype) :: adjmaxiter
          logical :: approxpc
+         logical :: finitedifferencepc
          integer(kind=inttype) parameter,optional :: cholesky=4
          integer(kind=inttype) parameter,optional :: icc=2
          integer(kind=inttype) parameter,optional :: rowsum=3
@@ -785,7 +791,6 @@ python module sumb ! in
          integer(kind=inttype) parameter,optional :: blockjacobi=1
          integer(kind=inttype) parameter,optional :: natural=1
          integer(kind=inttype) :: adjrestart
-         logical :: lumpeddiss
          integer(kind=inttype) :: localpctype
          logical :: solveadjoint
          integer(kind=inttype) parameter,optional :: rowmax=2
@@ -793,9 +798,9 @@ python module sumb ! in
          logical :: setmonitor
          integer(kind=inttype) parameter,optional :: ilu=1
          integer(kind=inttype) parameter,optional :: reversecuthillmckee=2
-         real(kind=realtype) :: sigma
          integer(kind=inttype) :: scaletype
          logical :: printtiming
+         integer(kind=inttype) :: subkspsubspacesize
        end module inputadjoint
 
        module inputtimespectral ! in :sumb:../../modules/inputParam.f90
@@ -1039,6 +1044,7 @@ python module sumb ! in
          use constants
          integer(kind=inttype) :: jacobian_lag
          logical :: usenksolver
+         logical :: nkfinitedifferencepc
          character parameter,optional :: pc_lu="lu"
          character parameter,optional :: ord_nd="nd"
          character parameter,optional :: pc_blockjacobi="bjacobi"

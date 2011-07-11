@@ -88,7 +88,7 @@
 
              ! Nullify the pointers, because some compilers require that.
 
-             nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
+              !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
 
              ! Set the pointers to the correct subface.
 
@@ -135,6 +135,7 @@
                  ! Determine the flow variables in the halo cell.
 
                  ww1(i,j,irho) = ww2(i,j,irho)
+                 !write(14, *),i,j,kk,irho,ww2(i,j,irho)
 
                  ww1(i,j,ivx) = ww2(i,j,ivx) - vn*nnx
                  ww1(i,j,ivy) = ww2(i,j,ivy) - vn*nny

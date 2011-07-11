@@ -450,9 +450,7 @@
          !  sFaceJ(ie,0:je,ke) - Idem in j-direction.
          !  sFaceK(ie,je,0:ke) - Idem in k-direction.
 
-         real(kind=realType), dimension(:,:,:,:),   pointer :: x,xInit,xSW
-         integer(kind=intType), dimension(:,:,:,:), pointer :: fe_id
-         real(kind=realType), dimension(:,:,:,:),   pointer :: xplus,xminus
+         real(kind=realType), dimension(:,:,:,:),   pointer :: x,xtmp
          real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
 
          real(kind=realType), dimension(:,:,:,:), pointer :: sI, sJ, sK
@@ -520,6 +518,7 @@
          !                                problems.
 
          real(kind=realType), dimension(:,:,:,:),   pointer :: w,wtmp
+         real(kind=realType), dimension(:,:,:,:,:), pointer :: dw_deriv
          real(kind=realType), dimension(:,:,:,:,:), pointer :: wOld
          real(kind=realType), dimension(:,:,:),     pointer :: p,ptmp, gamma
          real(kind=realType), dimension(:,:,:),     pointer :: rlv, rev
@@ -565,7 +564,7 @@
          !                               at least for the flow variables.
 
          real(kind=realType), dimension(:,:,:),     pointer :: p1
-         real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw,dwp,dwm,dwtemp,dwtmp
+         real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw,dwtmp,dwtmp2
          real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
          real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
 
@@ -713,12 +712,11 @@
 !
          ! globalNode(ib:ie,jb:je,kb:ke):  Global node numbering.
          ! globalCell(0:ib,0:jb,0:kb):     Global cell numbering.
-         ! psiAdj(ib:ie,jb:je,kb:ke,1:nw): The adjoint variables.
-         !                                 Correspond to the flow field
-         !                                 variables w(i,j,k,1:nw).
-      
+         ! color(0:ib,0:jb,0:kb)     :     Temporary coloring array used for 
+         !                                 forward mode AD/FD calculations
          integer(kind=intType), dimension(:,:,:), pointer :: globalNode
          integer(kind=intType), dimension(:,:,:), pointer :: globalCell
+         integer(kind=intType), dimension(:,:,:), pointer :: color
 
 !
 !        ****************************************************************
@@ -756,13 +754,14 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       ! nDom:            total number of computational blocks.
+       ! nDom:            total number of computation blocks.
        ! flowDoms(:,:,:): array of blocks. Dimensions are
        !                  (nDom,nLevels,nTimeIntervalsSpectral)
 
        integer(kind=intType) :: nDom
 
        type(blockType), allocatable, dimension(:,:,:) :: flowDoms
+       type(blockType), allocatable, dimension(:)     :: flowDomsd
 !
 !      ******************************************************************
 !      *                                                                *

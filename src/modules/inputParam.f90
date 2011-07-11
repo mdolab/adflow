@@ -122,6 +122,10 @@
        ! radiiNeededFine:   Whether or not the spectral radii are needed
        !                    to compute the fluxes of the fine grid.
        ! radiiNeededCoarse: Idem for the coarse grid.
+       ! lumpedDiss :       logical factor for determining whether or not
+       !                    lumped dissipation is used for preconditioner
+       ! sigma    : Scaling parameter for dissipation lumping in approximate
+       !            precondtioner
 
        integer(kind=intType) :: spaceDiscr, spaceDiscrCoarse
        integer(kind=intType) :: orderTurb, limiter
@@ -134,10 +138,11 @@
 
        real(kind=realType) :: vis2b, vis4b, kappaCoefb,adisb
 
-
-
        logical :: vortexCorr, dirScaling, hScalingInlet
        logical :: radiiNeededFine, radiiNeededCoarse
+
+       logical :: lumpedDiss
+       real(kind=realType) :: sigma
 
        end module inputDiscretization
 
@@ -676,7 +681,7 @@
        real(kind=realType) :: Mach, MachCoef,MachGrid
        real(kind=realType) :: Reynolds, ReynoldsLength
        real(kind=realType) :: tempFreestream, gammaConstant, RGasDim
-       real(kind=realType) :: gammaconstantb
+       real(kind=realType) :: gammaconstantb, gammaconstantd
        real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset
        real(kind=realType) :: eddyVisInfRatio, turbIntensityInf
        real(kind=realType) :: surfaceRef, lengthRef
@@ -973,7 +978,7 @@
        !                preconditioner
        ! restartADjoint: Whether or not we want to restart the adjoint 
        !                 from the previous solution
-       logical :: solveADjoint, setMonitor, ApproxPC,lumpedDiss,restartADjoint
+       logical :: solveADjoint, setMonitor, ApproxPC,restartADjoint
 
        ! ADjointSolverType: Type of linear solver for the ADjoint
        ! PreCondType      : Type of Preconditioner to use
@@ -1006,12 +1011,11 @@
        integer(kind=intType)  :: adjRestart 
        integer(kind=intType)  :: adjMonStep 
 
-       ! sigma    : Scaling parameter for dissipation lumping in approximate
-       !            precondtioner
        
-       real(kind=realType)    :: sigma,sigmab
+       real(kind=realType)    :: sigmab
        logical :: printTiming
-
+       logical :: finitedifferencepc
+       integer(kind=intType) :: subKSPSubspaceSize
      end module inputADjoint
 
      module inputTSStabDeriv
