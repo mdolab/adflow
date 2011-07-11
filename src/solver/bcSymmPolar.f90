@@ -82,7 +82,7 @@
 
            ! Nullify the pointers, because some compilers require that.
 
-           nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
+            !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
 
            ! Set the pointers for for the coordinates of the centerline.
            ! Needed to determine the direction of the velocity.
