@@ -94,6 +94,7 @@ subroutine setupAllResidualMatrices
   !matrix norm check
   real(kind=realType)               ::val
 
+
   !
   !     ******************************************************************
   !     *                                                                *
@@ -102,6 +103,7 @@ subroutine setupAllResidualMatrices
   !     ******************************************************************
   !
 #ifndef USE_NO_PETSC
+
 
   ! Set the grid level of the current MG cycle, the value of the
   ! discretization and the logical correctForK.
@@ -202,6 +204,7 @@ subroutine setupAllResidualMatrices
   !zero the matrix for dRdx ADD call
   call MatZeroEntries(dRdx,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
+
 
   domainLoopAD: do nn=1,nDom
 
@@ -380,6 +383,8 @@ subroutine setupAllResidualMatrices
                           endif
                        enddo
                     end do
+
+
                     ! Transfer the block Jacobians to the global [dR/da]
                     ! matrix by setting the corresponding block entries of
                     ! the PETSc matrix dRda.
@@ -709,15 +714,29 @@ subroutine setupAllResidualMatrices
        write(*,20) "Assembling All Residaul Matrices time (s) = ", timeAdj
 
   ! Output formats.
-#endif
+
+
+   
+!!$   open (UNIT=16,File="ad.out",status='replace',action='write',iostat=ierr)
+!!$   print*,'openfile error 2',ierr 
+!!$   call EChk(ierr,__FILE__,__LINE__)
+!!$
+!!$   call MatConvert(drdwT,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
+!!$   call EChk(ierr,__FILE__,__LINE__)
+
+!!$   call writeOutMatrix(drdwT)
+!!$   CLOSE (16)
+
+#endif 
 
 
   ! Redo drdw with FD
   useAD = .False.
   usePC = .False.
-  useTranspose = .True.
-  !print *,'Doing FD dRdw'
-  !call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
+  useTranspose = .False.
+  print *,'Doing FD dRdw'
+  call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
+ 
   !print *,'doing FD dRdx'
   !call setupSpatialResidualMatrix(drdx,useAD)
 
@@ -764,6 +783,5 @@ contains
     enddo
 
   end subroutine blockIndices
-
 
 end subroutine setupAllResidualMatrices

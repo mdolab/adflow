@@ -125,6 +125,19 @@ python module sumb ! in
          integer(kind=inttype) intent(in) :: costfunction
        end subroutine verifydcfdx
 
+       subroutine verifydrdwfile(level)
+          use blockpointers ! block (nDoms,flowDoms), globalCell
+          use flowvarrefstate
+          use communication
+          use iteration     ! groundLevel
+          use inputtimespectral ! spaceDiscr
+          use inputio
+          use adjointpetsc, only: drdw,petscone,add_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world
+          use precision
+          use inputiteration
+          integer(kind=inttype) intent(in) :: level
+        end subroutine verifydrdwfile
+
        subroutine setupcouplingmatrixstruct(pts,npts,nts) ! in :sumb:../../adjoint/setupCouplingMatrixStruct.F90
          use blockpointers
          use adjointpetsc

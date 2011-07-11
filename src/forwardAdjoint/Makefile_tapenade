@@ -86,7 +86,7 @@
 #     *                                                                *
 #     ******************************************************************
 
-SOLVER_DIRSRC = /nfs/mica/home/kenway/hg/SUmbADjoint/src
+SOLVER_DIRSRC = /home/cody/hg/SUmbADjoint/src
 
 #     ******************************************************************
 #     *                                                                *
@@ -147,9 +147,7 @@ TAPENADE_SRC_SOLVER =  $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/block_res.f
 		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/computeUtau_block.f90\
 		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/sa_block.f90\
 		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/turbResidual_block.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/setPointers_dummy.f90\
 		       $(SOLVER_DIRSRC)/forwardAdjoint/setPointersOffTSInstance.f90\
-		       $(SOLVER_DIRSRC)/solver/inviscidCentralFlux_mod.f90\
 		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxCusp.f90\
 		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxCuspCoarse.f90\
 		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxMatrix.f90\
@@ -191,6 +189,7 @@ TAPENADE_SRC_SOLVER =  $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/block_res.f
 		       $(SOLVER_DIRSRC)/turbulence/prodWmag2.f90\
 		       $(SOLVER_DIRSRC)/turbulence/applyAllTurbBC.f90\
 		       $(SOLVER_DIRSRC)/turbulence/bl.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcTurbTreatment.f90\
 		       $(TAPENADE_DIRMOD)/flowVarRefState.f90 \
 		       $(TAPENADE_DIRMOD)/inputParam.f90 \
 		       $(TAPENADE_DIRMOD)/section.f90 \
@@ -202,7 +201,6 @@ TAPENADE_SRC_SOLVER =  $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/block_res.f
 		       $(TAPENADE_DIRMOD)/BCTypes.f90\
 		       $(TAPENADE_DIRMOD)/paramTurb.f90\
 		       $(TAPENADE_DIRMOD)/blockPointers.f90 \
-		       $(TAPENADE_DIRMOD)/forwardAdjointVars.f90\
 
 #	               $(SOLVER_DIRSRC)/forwardAdjoint/saSolve_mod.f90\
 #		       level0CoolingModel.f90\

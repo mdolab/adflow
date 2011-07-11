@@ -83,6 +83,8 @@
 !
        ! Some constants needed to compute the riemann inVariants.
 
+       40 format (1x,I4,I4,E20.6,E20.6,E20.6,E20.6)
+       50 format (1x,I4,I4,E20.5)
        gm1   = gammaInf -one
        ovgm1 = one/gm1
 
@@ -95,6 +97,8 @@
        w0  = wInf(ivz)
        c0  = sqrt(gammaInf*pInfCorr*r0)
        s0  = wInf(irho)**gammaInf/pInfCorr
+       !print*,irho
+       !write(14,*),gm1,ovgm1,r0,u0,v0,w0,c0,s0
 
        ! Loop over the boundary condition subfaces of this block.
 
@@ -142,6 +146,8 @@
                nny = BCData(nn)%norm(i,j,2)
                nnz = BCData(nn)%norm(i,j,3)
 
+               !write(14,*),i,j,nnx,nny,nnz
+
 !!$       !print out pAdj
 !!$       istart2 = -1!2
 !!$       jstart2 = -1!2
@@ -182,6 +188,8 @@
                qn0 = u0*nnx + v0*nny + w0*nnz
                vn0 = qn0 - BCData(nn)%rface(i,j)
 
+               !write(14,*),i,j,qn0,vn0
+
                ! Compute the three velocity components, the normal
                ! velocity and the speed of sound of the current state
                ! in the internal cell.
@@ -198,6 +206,8 @@
                ! is taken (positive sign of the corresponding
                ! eigenvalue) or the free stream value is taken
                ! (otherwise).
+               !write(14,*),i,j,re,ue
+               
 
                if(vn0 > -c0) then       ! Outflow or subsonic inflow.
                  ac1 = qne + two*ovgm1*ce
@@ -213,14 +223,16 @@
 
                qnf = half*  (ac1 + ac2)
                cf  = fourth*(ac1 - ac2)*gm1
+               !write(13,*),i,j,qnf,qne
 
                if(vn0 > zero) then            ! Outflow.
 
                  uf = ue + (qnf - qne)*nnx
                  vf = ve + (qnf - qne)*nny
                  wf = we + (qnf - qne)*nnz
+                 !write(14,40),i,j,uf,vf,wf,vn0
                  sf = ww2(i,j,irho)**gamma2(i,j)/pp2(i,j)
-
+                 !write(14,40),i,j,vf,wf,sf,vn0
                  do l=nt1MG,nt2MG
                    ww1(i,j,l) = ww2(i,j,l)
                  enddo
@@ -248,6 +260,7 @@
                ww1(i,j,ivy)  = vf
                ww1(i,j,ivz)  = wf
                pp1(i,j)      = ww1(i,j,irho)*cc
+               !write(14,50),i,j,pp1(i,j)
 
                ! Simply set the laminar and eddy viscosity to
                ! the value in the donor cell. Their values do
@@ -271,5 +284,6 @@
 
          endif testFarfield
        enddo bocos
+       
 !close (UNIT=unitx)
        end subroutine bcFarfield
