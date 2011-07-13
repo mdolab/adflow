@@ -241,20 +241,19 @@ subroutine verifyRAdj(level)
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
 
 
-                !  differ = (sum(dwAdj(:,sps))-sum(dw(iCell,jCell,kCell,:)))
-!                  relerr = differ/(.5*sum(dw(iCell,jCell,kCell,:)) + .5*sum(dwadj(:,sps)))
-
-!                  if( abs(differ) > 1e-10 .and. abs(relerr) > 1e-8) &
-!                       write(*,10) myID,sps, nn, iCell, jCell, kCell,               &
-!                       sum(dwAdj(:,sps)), sum(dw(iCell,jCell,kCell,:)), &
-!                       relerr,differ
+                  differ = (sum(dwAdj(:,sps))-sum(dw(iCell,jCell,kCell,:)))
+                  relerr = differ/(.5*sum(dw(iCell,jCell,kCell,:)) + .5*sum(dwadj(:,sps)))
+                  if( abs(differ) > 1e-10 .and. abs(relerr) > 1e-8) &
+                       write(*,10) myID,sps, nn, iCell, jCell, kCell,               &
+                       sum(dwAdj(:,sps)), sum(dw(iCell,jCell,kCell,:)), &
+                       relerr,differ
                  !,(dwAdj(2,sps)), (dw(iCell,jCell,kCell,2)),(dwAdj(1,sps))-(dw(iCell,jCell,kCell,1)),(dwAdj(2,sps))-(dw(iCell,jCell,kCell,2)),(dwAdj(3,sps))-(dw(iCell,jCell,kCell,3)),(dwAdj(4,sps))-(dw(iCell,jCell,kCell,4)),(dwAdj(5,sps))-(dw(iCell,jCell,kCell,5))
                  
 !                  ! Store difference to output to volume solution file.
 !                  ! (resrho, resmom, resrhoe) have to be added to the volume
 !                  ! output variables in the parameter file.
 
-                 dw(iCell,jCell,kCell,:) = dw(iCell,jCell,kCell,:) - dwAdj(:,sps)
+                 !dw(iCell,jCell,kCell,:) = dw(iCell,jCell,kCell,:) - dwAdj(:,sps)
 
               enddo
            enddo

@@ -43,6 +43,8 @@
        ! Initialize sFace to zero. This value will be used if the
        ! block is not moving.
 
+       40 format(1x,I4,I4,I4,E20.6)
+
        sFace = zero
 !
 !      ******************************************************************
@@ -138,6 +140,8 @@
                 + porFlux*(vnp*p(i+1,j,k) + vnm*p(i,j,k))
              dw(i+1,j,k,irhoE) = dw(i+1,j,k,irhoE) - fs
              dw(i,  j,k,irhoE) = dw(i,  j,k,irhoE) + fs
+
+             !write(14,40),i,j,k,dw(i,j,k,irhoE)
 
            enddo
          enddo
@@ -337,7 +341,7 @@
                 + porFlux*(vnp*p(i,j,k+1) + vnm*p(i,j,k))
              dw(i,j,k+1,irhoE) = dw(i,j,k+1,irhoE) - fs
              dw(i,j,k,  irhoE) = dw(i,j,k,  irhoE) + fs
-
+             !write(14,40),i,j,k,dw(i,j,k,irhoE)
            enddo
          enddo
        enddo
@@ -371,6 +375,7 @@
                              + rvol*(wz*w(i,j,k,ivx) - wx*w(i,j,k,ivz))
                dw(i,j,k,imz) = dw(i,j,k,imz) &
                              + rvol*(wx*w(i,j,k,ivy) - wy*w(i,j,k,ivx))
+               !write(14,40),i,j,k,dw(i,j,k,imx)
              enddo
            enddo
          enddo
