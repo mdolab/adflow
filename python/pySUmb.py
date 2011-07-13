@@ -750,7 +750,7 @@ class SUMB(AeroSolver):
         '''
         set the value of pointRefEC for the bending moment calculation
         '''
-        aero_problem._geometry.ListAttributes()
+        #aero_problem._geometry.ListAttributes()
         
         self.sumb.inputphysics.pointrefec[0] = aero_problem._geometry.xRootec\
             *self.metricConversion
@@ -1402,6 +1402,21 @@ class SUMB(AeroSolver):
         self.sumb.iteration.currentlevel=level
         self.sumb.iteration.groundlevel=level
 	self.sumb.verifydrdwfile(1)
+
+	return
+
+    def verifydRdx(self,**kwargs):
+        ''' run the verify drdw scripts in fortran'''
+        # Make sure adjoint is initialize
+        self.initAdjoint()
+        if not self.adjointMatrixSetup:
+            #self.sumb.createpetscvars()
+            self.setupAdjoint(None)#(forcePoints)
+        # end if
+	level = 1
+        self.sumb.iteration.currentlevel=level
+        self.sumb.iteration.groundlevel=level
+	self.sumb.verifydrdxfile(1)
 
 	return
     

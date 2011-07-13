@@ -74,6 +74,7 @@
    STOP
    ELSE
    CALL INVISCIDCENTRALFLUX_D()
+   !print *,'dwd0',dwd(2,4,4,:),fwd(2,4,4,:)
    ! Compute the artificial dissipation fluxes.
    ! This depends on the parameter discr.
    SELECT CASE  (discr) 
@@ -81,6 +82,7 @@
    ! Standard scalar dissipation scheme.
    IF (finegrid) THEN
    CALL INVISCIDDISSFLUXSCALAR_D()
+   !print *,'dwd1',dwd(2,4,4,:),fwd(2,4,4,:)
    ELSE
    CALL INVISCIDDISSFLUXSCALARCOARSE_D()
    END IF
@@ -89,6 +91,7 @@
    ! Matrix dissipation scheme.
    IF (finegrid) THEN
    CALL INVISCIDDISSFLUXMATRIX_D()
+   
    ELSE
    CALL INVISCIDDISSFLUXMATRIXCOARSE_D()
    END IF
@@ -126,5 +129,6 @@
    END DO
    END DO
    END DO
+   !print *,'dwd2',dwd(2,4,4,:),fwd(2,4,4,:)
    END IF
    END SUBROUTINE RESIDUAL_BLOCK_D

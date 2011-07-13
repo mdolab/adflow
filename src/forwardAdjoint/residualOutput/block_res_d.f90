@@ -58,11 +58,15 @@
    END DO
    !call computeEtot(0,ib,0,jb,0,kb,correctForK)
    !  Apply all BC's
+   !print *,'istates_before_bc',wd(2,3,4,:)
    CALL APPLYALLBC_BLOCK_D(.true.)
+   !print *,'istates_after_bc',wd(2,3,4,:)
    ! Compute skin_friction Velocity
    CALL COMPUTEUTAU_BLOCK()
    ! Compute time step and spectral radius
+   !print *,'rrad_befor',radId(2,3:5,4),radjd(2,3:5,4)
    CALL TIMESTEP_BLOCK_D(.false.)
+   !print *,'rrad_after',radId(2,3:5,4),radjd(2,3:5,4)
    IF (equations .EQ. ransequations) CALL INITRES_BLOCK(nt1mg, nmgvar, nn&
    &                                                 , sps)
    ! Initialize only the Turblent Variables
@@ -98,8 +102,12 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
+      !if( k==4 .and. j==3 .and. i ==2)then
+       !             print *,'dwd',dwd(i,j,k,l),l
+       !          end if
    dwd(i, j, k, l) = dwd(i, j, k, l)/vol(i, j, k)
    dw(i, j, k, l) = dw(i, j, k, l)/vol(i, j, k)
+   !print *,'dwd',dwd(i,j,k,l),i,j,k,l
    END DO
    END DO
    END DO
@@ -115,6 +123,8 @@
    END DO
    END DO
    END DO
+   !print *,'dwd2a',dwd(2,4,4,1)
+   !print *,'dwd2b',dwd(2,3,4,1)
    END DO
    CALL SETPOINTERSOFFTSINSTANCE_D(nn, sps, sps)
    END SUBROUTINE BLOCK_RES_D
