@@ -120,6 +120,7 @@ subroutine setupAllResidualMatrices
   !
 #ifndef USE_NO_PETSC
 
+
   ! Set the grid level of the current MG cycle, the value of the
   ! discretization and the logical correctForK.
 
@@ -488,6 +489,8 @@ subroutine setupAllResidualMatrices
                           endif
                        enddo
                     end do
+
+
                     ! Transfer the block Jacobians to the global [dR/da]
                     ! matrix by setting the corresponding block entries of
                     ! the PETSc matrix dRda.
@@ -937,6 +940,5 @@ contains
     enddo
 
   end subroutine blockIndices
-
 
 end subroutine setupAllResidualMatrices

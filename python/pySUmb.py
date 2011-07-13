@@ -701,7 +701,6 @@ class SUMB(AeroSolver):
             print ' -> Initializing flow'
         self.sumb.initflow()
 
-
         # Create dictionary of variables we are monitoring
         nmon = self.sumb.monitor.nmon
         self.monnames = {}
@@ -942,6 +941,8 @@ class SUMB(AeroSolver):
         self.adjointMatrixSetup = False 
         self.adjointRHS         = None
         self.callCounter += 1
+
+        
 
         # Run Initialize, if already run it just returns.
         self.initialize(aero_problem,*args,**kwargs)
@@ -1194,6 +1195,8 @@ class SUMB(AeroSolver):
         self.sumb.writesol()
 
         return
+
+
 
     def writeVolumeSolutionFile(self,filename=None,writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS file.
@@ -1545,11 +1548,12 @@ class SUMB(AeroSolver):
         if not self.adjointMatrixSetup:
             self.setupAdjoint(forcePoints)
         # end if
-       
+
         # Check to see if the RHS Partials have been computed
         if not self.adjointRHS == obj:
             self.computeObjPartials(obj,forcePoints)
         # end if
+
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
         if 'structAdjoint' in kwargs and 'group_name' in kwargs:
@@ -1670,7 +1674,7 @@ class SUMB(AeroSolver):
 
             # dIda contribution for drda^T * psi
             dIda_2 = self.getdRdaPsi()
-         
+
             # Total derivative of the obective wrt aero-only DVs
             dIda = dIda_1 - dIda_2
         # end if
@@ -1706,7 +1710,6 @@ class SUMB(AeroSolver):
         if (self._update_geom_info):
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
-	    #print numpy.real(newGrid)
             if newGrid is not None:
                 self.sumb.setgrid(self.mesh.getSolverGrid())
                 
@@ -1882,6 +1885,7 @@ class SUMB(AeroSolver):
         # end if
 
         dIdpts = self.mesh.solver_to_warp_force(group_name,dIdpts)
+
         return dIdpts
 
     def getdIda(self,objective,forcePoints=None):
