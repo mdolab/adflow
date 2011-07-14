@@ -224,6 +224,24 @@ python module sumb ! in
          integer(kind=inttype), intent(in) :: level
        end subroutine verifydrdwfile
 
+       subroutine verifydrdextrafile(level)
+         
+         use blockpointers ! block (nDoms,flowDoms), globalCell
+         use flowvarrefstate
+         use communication
+         use iteration     ! groundLevel
+         use inputtimespectral ! spaceDiscr,nTimeIntervalsSpectral
+         use inputio
+         use adjointpetsc, only: drda,petscone,insert_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world,add_values
+         use precision
+                          
+         implicit none
+         
+         !     Subroutine arguments
+         integer(kind=inttype), intent(in) :: level
+       end subroutine verifydrdextrafile
+       
+
        subroutine setupcouplingmatrixstruct(pts,npts,nts) ! in :sumb:../../adjoint/setupCouplingMatrixStruct.F90
          use blockpointers
          use adjointpetsc

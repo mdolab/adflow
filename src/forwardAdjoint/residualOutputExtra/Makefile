@@ -22,7 +22,7 @@
 #      *                                                                *
 #      ******************************************************************
 
-SUMB_DIR = ../../..
+SUMB_DIR = ../../../
 SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
 SUMB_RULES_FILE  = $(SUMB_DIR)/rulesSources.mk
 include ${SUMB_COMMON_FILE}
@@ -35,24 +35,38 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
+FF90_OBJECTS =  adjustinflowangle_extra_d.o\
+		applyallbc_block_extra_d.o\
+                bceulerwall_extra_d.o\
+                bcfarfield_extra_d.o\
+		bcsymm_extra_d.o\
+                bcsymmpolar_extra_d.o\
+                block_res_extra_extra_d.o\
+                checkinputparam_mod_extra_d.o\
+                computeetotcellcpfit_extra_d.o\
+                computeetot_extra_d.o\
+		curveupre_extra_d.o\
+                dim_extra_d.o\
+                eintarray_extra_d.o\
+                etotarray_extra_d.o\
+                extrapolate2ndhalo_extra_d.o\
+                getdirvector_extra_d.o\
+                inviscidcentralflux_extra_d.o\
+	        invisciddissfluxmatrixcoarse_extra_d.o\
+	        invisciddissfluxmatrix_extra_d.o\
+	        invisciddissfluxscalarcoarse_extra_d.o\
+	        invisciddissfluxscalar_extra_d.o\
+                inviscidupwindflux_extra_d.o\
+                referencestate_mod_extra_d.o\
+                residual_block_extra_d.o\
+                sanuknowneddyratio_extra_d.o\
+                setbcpointers_extra_d.o\
+                setflowinfinitystate_extra_d.o\
+                timestep_block_extra_d.o\
+                utauwf_extra_d.o \
+                vectorrotation_extra_d.o\
+                viscousflux_extra_d.o
 
-FF90_OBJECTS = adjustInflowAngle.o\
-               applyAllBC_block.o\
-	       block_res.o\
-               block_res_extra.o\
-               block_res_spatial.o\
-               checkInputParam_mod.o\
-	       computeUtau_block.o\
-	       initres_block.o\
-	       initres_block_mod.o\
-               metric_block.o\
-               referenceState_mod.o\
-	       residual_block.o\
-	       sa_block.o\
-	       saSolve_mod.o\
-	       timeStep_block.o\
-               turbResidual_block.o\
-	       xhalo_block.o\
 
 #      ******************************************************************
 #      *                                                                *
@@ -76,4 +90,3 @@ clean:
 #      ******************************************************************
 
 src:   $(FF90_OBJECTS) 
-

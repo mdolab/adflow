@@ -14,16 +14,16 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE TIMESTEP_BLOCK_D(onlyradii)
-   USE FLOWVARREFSTATE
-   USE INPUTITERATION
-   USE BLOCKPOINTERS_D
-   USE SECTION
+   SUBROUTINE TIMESTEP_BLOCK_EXTRA_D(onlyradii)
    USE INPUTTIMESPECTRAL
+   USE FLOWVARREFSTATE
    USE INPUTPHYSICS
-   USE INPUTDISCRETIZATION
-   USE CONSTANTS
+   USE BLOCKPOINTERS_D
    USE ITERATION
+   USE INPUTDISCRETIZATION
+   USE INPUTITERATION
+   USE CONSTANTS
+   USE SECTION
    IMPLICIT NONE
    !
    !      ******************************************************************
@@ -423,4 +423,4 @@
    END DO
    END IF
    END IF
-   END SUBROUTINE TIMESTEP_BLOCK_D
+   END SUBROUTINE TIMESTEP_BLOCK_EXTRA_D

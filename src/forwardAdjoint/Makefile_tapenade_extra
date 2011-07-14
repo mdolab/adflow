@@ -1,0 +1,300 @@
+#     ******************************************************************
+#     *                                                                *
+#     * File:          Makefile_tapenade_extra                         *
+#     * Author:        Sandy Mader                                     *
+#     * Starting date: 13-07-2011                                      *
+#     * Last modified: 13-07-2011                                      *
+#     *                                                                *
+#     ******************************************************************
+
+#     ******************************************************************
+#     *                                                                *
+#     * Description: Makefile to build the differentiated routines of  *
+#     * the SUmb flow residual with respect to extra design variables  *
+#     * such as alpha,beta,mach,pointref, etc., using Tapenade         *
+#     *                                                                *
+#     * http://www-sop.inria.fr/tropics/tapenade.html                  *
+#     *                                                                *
+#     * Upon local installation of Tapenade, typing tapenade -help     *
+#     * at the prompt gives the following information:                 *
+#     *                                                                *
+#     * Tapenade 3.4 (r3375) - 10 Feb 2010 15:08 - Java 1.6.0_14 Linux *
+#     *                                                                *
+#     *  Builds a differentiated program.                              *
+#     *  Usage: tapenade [options] filenames                           *
+#     *   options:                                                     *
+#     *    -tangent, -d            differentiate in the tangent mode   *
+#     *    -reverse, -b            differentiate in the reverse mode   *
+#     *    -multi                  turn on "vectorial" differentiation *
+#     *                            (multi-directional)                 *
+#     *    -directValid, -dV       tangent mode computing validity     *
+#     *                            interval                            *
+#     *    -preprocess, -p         turn off differentiation            *
+#     *    -head, -root <proc>     set the differentiation root        *
+#     *                            procedure                           *
+#     *    -outvars <vars>         set dependents, i.e. differentiate  *
+#     *                            these output variables              *
+#     *                            eg "x y z". Use the " delimitor.    *
+#     *                            (default all outputs)               *
+#     *    -vars <vars>            set independents, i.e.              *
+#     *                            differentiate wrt these input       *
+#     *                            variables                           *
+#     *                            eg "x y z". Use the " delimitor.    *
+#     *                            (default all inputs)                *
+#     *    -diffvarname <str>      set differentiation suffix for      *
+#     *                            variables (default d and b)         *
+#     *    -difffuncname <str>     set differentiation suffix for      *
+#     *                            procedures (default _D and _B)      *
+#     *    -inputlanguage <lang>   language of  input files (fortran, 
+#     *                            fortran90, fortran95, or C)
+#     *    -outputlanguage <lang>  language of output files (fortran,
+#     *                            fortran90, fortran95, or C)
+#     *    -output, -o <file>      put all generated procedures into a
+#     *                            single <file>
+#     *    -outputdirectory, -O <directory>  put all generated files 
+#     *                            in <directory> (default .)
+#     *                            (default one separate file per
+#     *                            differentiated procedure
+#     *    -nolib                  erase previous external libraries
+#     *                            descriptions
+#     *    -ext <file>             incorporate external library
+#     *                            description <file>
+#     *    -noADlib                erase previous external libraries 
+#     *                            AD descriptions
+#     *    -extAD <file>           incorporate external library AD description <file>
+#     *    -i<n>                   count <n> bytes for an integer (default 4)
+#     *    -r<n>                   count <n> bytes for a real (default 4)
+#     *    -dr<n>                  count <n> bytes for a double real (default 8)
+#     *    -nooptim <str>          turn off optimization <str>
+#     *    -noinclude              inline include files
+#     *    -I <includePath>        set includePath
+#     *    -traceactivevars <units>  insert debugging calls for the tangent mode of <units>
+#     *    -traceallactivevars     insert debugging calls for all tangent diff procedures
+#     *    -dptest <units>         insert debugging calls for the dot product test
+#     *    -debug <n>              set the level of detail of differentiation milestones
+#     *    -msglevel <n>           set the level of detail of error messages
+#     *    -dump <file>            write a dump <file>
+#     *    -html                   display results in a web browser
+#     * 
+#     *  Report bugs to <tapenade@lists-sop.inria.fr>.
+#     ******************************************************************
+
+#     ==================================================================
+
+#     ******************************************************************
+#     *                                                                *
+#     * Set some environment variables that otherwise would have to be *
+#     * set at the command prompt with "setenv".                       *
+#     *                                                                *
+#     ******************************************************************
+
+#SOLVER_DIRSRC = /nfs/mica/home/kenway/hg/SUmbADjoint/src
+SOLVER_DIRSRC = /nfs/tuff/home/mader/hg/SUmbADjoint/src
+
+#     ******************************************************************
+#     *                                                                *
+#     * Set Tapenade options.                                          *
+#     *                                                                *
+#     ******************************************************************
+
+TAPENADE_PARSERFILESEPARATOR = "/"
+
+# Dependent output variables (separator: white space, default: all)
+
+TAPENADE_OUTVARS = "dw w"
+
+# Independent input variables (separator: white space, default: all)
+
+TAPENADE_VARS = "alpha"
+
+# Name of the file Extension for these routined
+
+TAPENADE_EXTENSION = "_extra_d"
+
+# Name of the top routine
+
+TAPENADE_HEADROUTINE = "block_res_extra"
+
+# Differentiation mode
+
+TAPENADE_MODE = -forward
+
+# Output directory
+
+TAPENADE_OUTDIR = $(SOLVER_DIRSRC)/forwardAdjoint/residualTapenadeExtra
+
+# Integer, double and real precision (bytes)
+
+#TAPENADE_PRECISION = -i4 -dr8 -r4
+TAPENADE_PRECISION = -i4 -dr8 -r8
+
+#     ******************************************************************
+#     *                                                                *
+#     * The subdirectories where the sources are located.              *
+#     *                                                                *
+#     ******************************************************************
+
+TAPENADE_DIRSRC   = $(SOLVER_DIRSRC)/solver/
+TAPENADE_DIRMOD   = $(SOLVER_DIRSRC)/modules
+TAPENADE_DIRUTILS = $(SOLVER_DIRSRC)/utils/
+
+TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
+
+#     ******************************************************************
+#     *                                                                *
+#     * Routines to be differentiated (and dependencies).              *
+#     *                                                                *
+#     ******************************************************************
+
+TAPENADE_SRC_SOLVER =  $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/adjustInflowAngle.f90\
+                       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/block_res_extra.f90\
+                       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/checkInputParam_mod.f90\
+                       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/referenceState_mod.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/timeStep_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/initres_block_mod.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/residual_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/applyAllBC_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/computeUtau_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/sa_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/turbResidual_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/setPointersOffTSInstance.f90\
+                       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/flowVarRefState.f90 \
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/inputParam.f90 \
+                       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/block.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidCentralFlux.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxCusp.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxCuspCoarse.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxMatrix.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxMatrixCoarse.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxScalar.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxScalarCoarse.f90\
+		       $(SOLVER_DIRSRC)/solver/inviscidUpwindFlux.f90\
+		       $(SOLVER_DIRSRC)/solver/viscousFlux.f90\
+		       $(SOLVER_DIRSRC)/solver/utauWF.f90\
+		       $(SOLVER_DIRSRC)/solver/bcSymm.f90\
+		       $(SOLVER_DIRSRC)/solver/bcEulerWall.f90\
+		       $(SOLVER_DIRSRC)/solver/bcSymmPolar.f90\
+		       $(SOLVER_DIRSRC)/solver/bcFarfield.f90\
+		       $(SOLVER_DIRSRC)/solver/bcNSWallAdiabatic.f90\
+		       $(SOLVER_DIRSRC)/solver/bcNSWallIsothermal.f90\
+		       $(SOLVER_DIRSRC)/solver/extrapolate2ndHalo.f90\
+		       $(SOLVER_DIRSRC)/initFlow/setFlowInfinityState.f90\
+		       $(SOLVER_DIRSRC)/initFlow/referenceState.f90\
+                       $(SOLVER_DIRSRC)/inputParam/localModules.f90\
+                       $(SOLVER_DIRSRC)/adjoint/residualInput/getDirVector.f90\
+                       $(SOLVER_DIRSRC)/adjoint/residualInput/vectorRotation.f90\
+		       $(SOLVER_DIRSRC)/adjoint/residualInput/constants.f90 \
+		       $(SOLVER_DIRSRC)/adjoint/residualInput/precision.f90 \
+		       $(SOLVER_DIRSRC)/adjoint/residualInput/su_mpi.f90\
+		       $(SOLVER_DIRSRC)/adjoint/residualInput/terminate.f90\
+		       $(SOLVER_DIRSRC)/adjoint/residualInput/communication.f90\
+		       $(SOLVER_DIRSRC)/adjoint/residualInput/cgnsGrid.f90 \
+		       $(SOLVER_DIRSRC)/turbulence/curveFit.f90\
+		       $(SOLVER_DIRSRC)/turbulence/turbBCNSWall.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcTurbWall.f90\
+		       $(SOLVER_DIRSRC)/turbulence/turbMod.f90\
+		       $(SOLVER_DIRSRC)/turbulence/unsteadyTurbSpectral.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcTurbTreatment.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcEddyNoWall.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcEddyWall.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcTurbFarfield.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcTurbInflow.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcTurbOutflow.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bcTurbSymm.f90\
+		       $(SOLVER_DIRSRC)/turbulence/computeEddyViscosity.f90\
+		       $(SOLVER_DIRSRC)/turbulence/prodSmag2.f90\
+		       $(SOLVER_DIRSRC)/turbulence/prodWmag2.f90\
+		       $(SOLVER_DIRSRC)/turbulence/applyAllTurbBC.f90\
+		       $(SOLVER_DIRSRC)/turbulence/bl.f90\
+                       $(SOLVER_DIRSRC)/turbulence/saNuFromEddyRatio.f90\
+		       $(TAPENADE_DIRMOD)/section.f90 \
+		       $(TAPENADE_DIRMOD)/iteration.f90 \
+		       $(TAPENADE_DIRUTILS)/computeEtot.f90\
+		       $(TAPENADE_DIRUTILS)/dummy_dim.f90\
+		       $(TAPENADE_DIRUTILS)/setBCPointers.f90\
+		       $(TAPENADE_DIRMOD)/CpCurveFits.f90\
+		       $(TAPENADE_DIRMOD)/BCTypes.f90\
+		       $(TAPENADE_DIRMOD)/paramTurb.f90\
+		       $(TAPENADE_DIRMOD)/blockPointers.f90 \
+		       $(TAPENADE_DIRMOD)/monitor.f90\
+		       $(TAPENADE_DIRMOD)/couplerParam.f90\
+                       $(TAPENADE_DIRUTILS)/setPointers.f90\
+                       $(TAPENADE_DIRUTILS)/computeGamma.f90\
+
+#	               $(SOLVER_DIRSRC)/forwardAdjoint/saSolve_mod.f90\
+#		       level0CoolingModel.f90\
+#		       bcBleedInflow.f90\
+		       bcEulerWall.f90\
+		       bcExtrap.f90\
+		       bcMdot.f90\
+		       bcSubsonicInflow.f90\
+		       bcSubsonicOutflow.f90\
+		       bcSupersonicInflow.f90\
+		       bcThrust.f90\
+		       bleedFlowParameters.f90\
+		       computeInletMassFlowFullWheel.f90\
+		       computeLamViscosity.f90\
+		       computeUtau.f90\
+		       derivativeRotMatrixRigid.f90\
+		       eulerWallsPresent.f90\
+		       gridVelocitiesCoarseLevels.f90\
+		       gridVelocitiesFineLevel.f90\
+		       level0CoolingModel.f90\
+		       maxEddyv.f90\
+		       maxHdiffMach.f90\
+		       normalVelocities.f90\
+		       setCoefTimeIntegrator.f90\
+		       setCornerRowHalos.f90\
+		       setCorrectionsCoarseHalos.f90\
+		       slipVelocities.f90\
+		       timeStep_block.f90\
+		       writeFamilyMassflow.f90
+
+
+
+#	       $(SOLVER_DIRSRC)/turbulence/bcTurbInterface.f90\
+#	       $(SOLVER_DIRSRC)/adjoint/residualInput/cgnsGrid.f90\
+#	       $(TAPENADE_DIRMOD)/cgnsGrid.f90 \
+# 	       $(TAPENADE_DIRMOD)/iteration.f90 \
+# 	       $(TAPENADE_DIRMOD)/monitor.f90 \
+
+# 	       $(TAPENADE_DIRMOD)/communication.f90 \
+# 	       $(TAPENADE_DIRMOD)/section.f90\
+
+
+
+# 	       $(TAPENADE_DIRUTILS)/nullifyFlowDomPointers.f90\
+# 	       $(TAPENADE_DIRUTILS)/setPointers.f90\
+
+#	       $(TAPENADE_DIRMOD)/commsliding.f90 \
+#	       $(TAPENADE_DIRMOD)/coolingmodellevel0.f90 \
+#	       $(TAPENADE_DIRMOD)/couplerparam.f90\
+#	       $(TAPENADE_DIRMOD)/bleedflows.f90 \
+#$(SOLVER_DIRSRC)/adjoint/residualInput/block.f90\
+
+
+TAPENADE_SRC_ALL = $(TAPENADE_SRC_SOLVER)
+
+#     ******************************************************************
+#     *                                                                *
+#     * General targets.                                               *
+#     *                                                                *
+#     ******************************************************************
+
+default:
+	@echo "TAPENADE - parsing and generating differentiated code"
+	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -difffuncname $(TAPENADE_EXTENSION) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30 -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
+	@echo "deleting some unnecessary files..."
+	@rm -f $(TAPENADE_OUTDIR)/*__.f90 $(TAPENADE_OUTDIR)/*~
+
+all:	 default
+
+clean:
+	@echo " Making clean ... "
+	@for subdir in $(TAPENADE_CLEAN_DIRS) ; \
+		do \
+			echo; \
+			echo "making $@ in $$subdir"; \
+			echo; \
+			(cd $$subdir && rm -f *_b.f90 *_d.f90 *_cd.f90 *.msg *~) || exit 1; \
+		done

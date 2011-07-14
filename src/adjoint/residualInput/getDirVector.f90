@@ -40,7 +40,7 @@
 !     Subroutine arguments.
 !
       real(kind=realType),dimension(3), intent(in)  :: refDirection
-      real(kind=realType), intent(in)  :: alpha, beta
+      real(kind=realType)  :: alpha, beta
       real(kind=realType),dimension (3), intent(out) :: windDirection
       integer(kind=intType)::liftIndex
 !

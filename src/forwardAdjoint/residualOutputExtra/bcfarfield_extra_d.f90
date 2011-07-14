@@ -3,7 +3,7 @@
    !
    !  Differentiation of bcfarfield in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w
-   !   with respect to varying inputs: *p *w gammaconstant
+   !   with respect to varying inputs: gammaconstant *p rgas pinfcorr
    !
    !      ******************************************************************
    !      *                                                                *
@@ -14,13 +14,13 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE BCFARFIELD_D(secondhalo, correctfork)
+   SUBROUTINE BCFARFIELD_EXTRA_D(secondhalo, correctfork)
    USE FLOWVARREFSTATE
-   USE BLOCKPOINTERS_D
    USE BCTYPES
    USE INPUTPHYSICS
-   USE CONSTANTS
+   USE BLOCKPOINTERS_D
    USE ITERATION
+   USE CONSTANTS
    IMPLICIT NONE
    !close (UNIT=unitx)
    !
@@ -44,6 +44,7 @@
    REAL(kind=realtype) :: gm1, ovgm1, ac1, ac2
    REAL(kind=realtype) :: ac1d, ac2d
    REAL(kind=realtype) :: r0, u0, v0, w0, qn0, vn0, c0, s0
+   REAL(kind=realtype) :: c0d, s0d
    REAL(kind=realtype) :: re, ue, ve, we, qne, ce
    REAL(kind=realtype) :: red, ued, ved, wed, qned, ced
    REAL(kind=realtype) :: qnf, cf, uf, vf, wf, sf, cc, qq
@@ -67,6 +68,19 @@
    REAL(kind=realtype) :: pwx1d
    INTRINSIC SQRT
    INTERFACE 
+   SUBROUTINE SETBCPOINTERS_EXTRA_D(nn, ww1, ww1d, ww2, ww2d, pp1, &
+   &        pp1d, pp2, pp2d, rlv1, rlv2, rev1, rev2, offset)
+   USE BLOCKPOINTERS_D
+   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1d, pp2d
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   END SUBROUTINE SETBCPOINTERS_EXTRA_D
+   END INTERFACE
+      INTERFACE 
    SUBROUTINE SETBCPOINTERS2(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &        rev1, rev2, offset)
    USE BLOCKPOINTERS_D
@@ -76,19 +90,6 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
    END SUBROUTINE SETBCPOINTERS2
-   END INTERFACE
-      INTERFACE 
-   SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
-   &        pp2, pp2d, rlv1, rlv2, rev1, rev2, offset)
-   USE BLOCKPOINTERS_D
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1d, pp2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   END SUBROUTINE SETBCPOINTERS_D
    END INTERFACE
       !!$       !File Parameters remove for AD
    !!$       integer :: unitx = 12,ierror
@@ -118,11 +119,19 @@
    u0 = winf(ivx)
    v0 = winf(ivy)
    w0 = winf(ivz)
+   arg1d = gammainf*r0*pinfcorrd
    arg1 = gammainf*pinfcorr*r0
+   IF (arg1 .EQ. 0.0) THEN
+   c0d = 0.0
+   ELSE
+   c0d = arg1d/(2.0*SQRT(arg1))
+   END IF
    c0 = SQRT(arg1)
    pwr1 = winf(irho)**gammainf
+   s0d = -(pwr1*pinfcorrd/pinfcorr**2)
    s0 = pwr1/pinfcorr
    gammad = 0.0
+   wd = 0.0
    ! Loop over the boundary condition subfaces of this block.
    bocos:DO nn=1,nbocos
    ! Check for farfield boundary conditions.
@@ -131,8 +140,8 @@
    ! They are nullified first, because some compilers require
    ! that.
    !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
-   CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   &                     pp2d, rlv1, rlv2, rev1, rev2, 0_intType)
+   CALL SETBCPOINTERS_EXTRA_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
+   &                           pp2, pp2d, rlv1, rlv2, rev1, rev2, 0_intType)
    ! Set the additional pointer for gamma2.
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
@@ -234,8 +243,8 @@
    ac1 = qne + two*ovgm1*ce
    ELSE
    ! Supersonic inflow.
+   ac1d = two*ovgm1*c0d
    ac1 = qn0 + two*ovgm1*c0
-   ac1d = 0.0
    END IF
    IF (vn0 .GT. c0) THEN
    ! Supersonic outflow.
@@ -243,8 +252,8 @@
    ac2 = qne - two*ovgm1*ce
    ELSE
    ! Inflow or subsonic outflow.
+   ac2d = -(two*ovgm1*c0d)
    ac2 = qn0 - two*ovgm1*c0
-   ac2d = 0.0
    END IF
    qnfd = half*(ac1d+ac2d)
    qnf = half*(ac1+ac2)
@@ -287,12 +296,12 @@
    vf = v0 + (qnf-qn0)*nny
    wfd = nnz*qnfd
    wf = w0 + (qnf-qn0)*nnz
+   sfd = s0d
    sf = s0
    DO l=nt1mg,nt2mg
    ww1d(i, j, l) = 0.0
    ww1(i, j, l) = winf(l)
    END DO
-   sfd = 0.0
    END IF
    ! Compute the density, velocity and pressure in the
    ! halo cell.
@@ -327,11 +336,11 @@
    END DO
    END DO
    ! Compute the energy for these halo's.
-   CALL COMPUTEETOT_D(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
-   &                   kcbeg(nn), kcend(nn), correctfork)
+   CALL COMPUTEETOT_EXTRA_D(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn&
+   &                         ), kcbeg(nn), kcend(nn), correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_D(nn, correctfork)
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_EXTRA_D(nn, correctfork)
    END IF
    END DO bocos
-   END SUBROUTINE BCFARFIELD_D
+   END SUBROUTINE BCFARFIELD_EXTRA_D

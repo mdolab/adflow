@@ -687,9 +687,9 @@
        real(kind=realType) :: eddyVisInfRatio, turbIntensityInf
        real(kind=realType) :: surfaceRef, lengthRef
 
-       real(kind=realType), dimension(3) :: velDirFreestream,velDirFreestreamd
-       real(kind=realType), dimension(3) :: liftDirection,liftDirectiond
-       real(kind=realType), dimension(3) :: dragDirection,dragDirectiond
+       real(kind=realType), dimension(3) :: velDirFreestream
+       real(kind=realType), dimension(3) :: liftDirection
+       real(kind=realType), dimension(3) :: dragDirection
        real(kind=realType), dimension(3) :: pointRef
        real(kind=realType), dimension(3) :: pointRefEC
 
