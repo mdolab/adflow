@@ -60,17 +60,9 @@ subroutine block_res(nn,sps)
   call timeStep_block(.false.)
   
   if( equations == RANSEquations ) then
-<<<<<<< /nfs/tuff/home/mader/hg/SUmbADjoint/src/forwardAdjoint/residualInput/block_res.f90.orig.190369096
-     call initres_block(nt1MG, nMGVar,nn,sps) ! Initialize only the Turblent Variables
-     !call turbResidual_block
-||||||| /tmp/block_res.f90~base.8yBysI
-     call initres_block(nt1MG, nMGVar,nn,sps) ! Initialize only the Turblent Variables
-     call turbResidual_block
-=======
      ! Initialize only the Turblent Variables
-     call initres_block(nt1MG, nMGVar,nn,sps) 
+     call initres_block(nt1MG, nMGVar,nn,sps) ! Initialize only the Turblent Variables
      call turbResidual_block
->>>>>>> /tmp/block_res.f90~other.nvazU_
   endif
   
   select case (equationMode)
