@@ -52,13 +52,13 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
   time(1) = mpi_wtime()
 
 
-  open (UNIT=13,File="fd_drdx.out",status='replace',action='write',iostat=ierr) 
-  call EChk(ierr,__FILE__,__LINE__)
-  open (UNIT=14,File="ad_drdx.out",status='replace',action='write',iostat=ierr) 
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call MatConvert(matrix,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+!!$  open (UNIT=13,File="fd_drdx.out",status='replace',action='write',iostat=ierr) 
+!!$  call EChk(ierr,__FILE__,__LINE__)
+!!$  open (UNIT=14,File="ad_drdx.out",status='replace',action='write',iostat=ierr) 
+!!$  call EChk(ierr,__FILE__,__LINE__)
+!!$
+!!$  call MatConvert(matrix,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
+!!$  call EChk(ierr,__FILE__,__LINE__)
 
 
   ! Zero out the matrix before we start
@@ -396,7 +396,7 @@ contains
 !     end if
 
 !     if (has_nan) then
-!        print *,'Block is screwed with a nan'
+!        print *,'Block has a nan'
 !        print *,ii,jj,kk
 !        stop
 !     end if

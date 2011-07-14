@@ -60,9 +60,17 @@ subroutine block_res(nn,sps)
   call timeStep_block(.false.)
   
   if( equations == RANSEquations ) then
+<<<<<<< /nfs/tuff/home/mader/hg/SUmbADjoint/src/forwardAdjoint/residualInput/block_res.f90.orig.190369096
+     call initres_block(nt1MG, nMGVar,nn,sps) ! Initialize only the Turblent Variables
+     !call turbResidual_block
+||||||| /tmp/block_res.f90~base.8yBysI
+     call initres_block(nt1MG, nMGVar,nn,sps) ! Initialize only the Turblent Variables
+     call turbResidual_block
+=======
      ! Initialize only the Turblent Variables
      call initres_block(nt1MG, nMGVar,nn,sps) 
      call turbResidual_block
+>>>>>>> /tmp/block_res.f90~other.nvazU_
   endif
   
   select case (equationMode)
@@ -80,7 +88,7 @@ subroutine block_res(nn,sps)
      end do
   end select
   
-  ! Rest the pointers the the "on time instance"
+  ! Reset the pointers the the "on time instance"
   call setPointersOffTSInstance(nn,sps,sps)  
   
   ! Actual residual calc
@@ -110,6 +118,5 @@ subroutine block_res(nn,sps)
         end do
      end do
   end do
-
   call setPointersOffTSInstance(nn,sps,sps)
 end subroutine block_res

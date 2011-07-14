@@ -124,6 +124,8 @@
    ! scheme is computed.
    limused = firstorder
    IF (finegrid) limused = limiter
+   ! Lumped diss is true for doing approx PC
+   IF (lumpeddiss) limused = firstorder
    ! Determine the riemann solver which must be used.
    riemannused = riemanncoarse
    IF (finegrid) riemannused = riemann

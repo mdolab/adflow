@@ -56,7 +56,12 @@ class Geometry(object):
 	Abstract Class for Geometry Object
 	'''
 	
-	def __init__(self, name={}, *args, **kwargs):
+	def __init__(self, name={},CGPercent = 0.25,ForeSparPercent = 0.25,
+		     RearSparPercent = 0.75,StaticMarginPercent=0.05,
+		     ForeThickCon = 0.01, RearThickCon = 0.99,
+		     rootOffset = 0.01, tipOffset=0.01,
+		     xRootec=0.0, yRootec=0.0, zRootec=0.0,
+		     *args, **kwargs):
 		
 		'''
 		Flow Class Initialization
@@ -74,7 +79,17 @@ class Geometry(object):
 		
 		# 
 		self.name = name
-		
+		self.CGPercent = CGPercent
+		self.ForeSparPercent = ForeSparPercent 
+		self.RearSparPercent = RearSparPercent
+		self.StaticMarginPercent = StaticMarginPercent
+		self.ForeThickCon = ForeThickCon
+		self.RearThickCon = RearThickCon
+		self.tipOffset = tipOffset
+		self.rootOffset = rootOffset
+		self.xRootec = xRootec
+		self.yRootec = yRootec
+		self.zRootec = zRootec
 		
 	def ListAttributes(self):
 		
@@ -95,7 +110,7 @@ class Geometry(object):
 		Documentation last updated:  May. 21, 2008 - Ruben E. Perez
 		'''
 		
-		return ('name    mach	alpha	beta	phat	rhat	qhat\n'+'	 '+str(self.name).center(9) +'%8.2f %8.2f %8.2f %8.2f %8.2f %8.2f\n' %(self.mach, self.alpha, self.beta, self.phat, self.rhat, self.qhat))
+		return ('name    \n'+'	 '+str(self.name).center(9) )
 	
 
 
@@ -131,6 +146,6 @@ if __name__ == '__main__':
 	print 'Testing ...'
 	
 	# Test Variable
-	flow = Flow()
-	flow.ListAttributes()
-	
+	geo = Geometry(name = 'test')
+	geo.ListAttributes()
+	print geo

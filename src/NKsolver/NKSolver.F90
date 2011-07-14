@@ -75,12 +75,12 @@ subroutine NKsolver
 
   ! Form the initial guess from the current w-vector
   call setwVec(wVec)
-
+  print *,'solving'
   ! Solve IT!
   call SNESSolve(snes,PETSC_NULL_OBJECT,wVec,ierr) ! PETSC_NULL_OBJECT
                                                    ! MAY GIVE MEMORY
                                                    ! LEAK!!!!!!
-
+  print *,'ierr',ierr
   NKSolvedOnce = .True.
 
   call EChk(ierr,__FILE__,__LINE__)
@@ -88,7 +88,7 @@ subroutine NKsolver
 
   call SNESGetConvergedReason(snes,reason,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-
+  print *,'reason',reason
   if (reason == SNES_CONVERGED_FNORM_ABS .or. &
       reason == SNES_CONVERGED_FNORM_RELATIVE .or. &
       reason == SNES_CONVERGED_PNORM_RELATIVE) then

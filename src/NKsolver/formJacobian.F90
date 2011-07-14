@@ -2,7 +2,7 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   use communication
   use precision 
   use NKSolverVars,only : ksp_solver_type,ksp_subspace,global_pc_type,&
-       asm_overlap,local_pc_ilu_level,local_pc_ordering,NKfinitedifferencepc
+       asm_overlap,local_pc_ilu_level,local_pc_ordering,NKfinitedifferencepc!,rvec
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -34,6 +34,28 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
      usePC = .True.
      useTranspose = .False.
      call setupStateResidualMatrix(dRdwPre,useAD,usePC,useTranspose)
+    !  ! Zero out the matrix before we start
+!      call MatZeroEntries(dRdwPre,ierr)
+!      call EChk(ierr,__FILE__,__LINE__)
+
+!      !call matGetDiagonal(dRdwPre,rVec,ierr)
+!      !call EChk(ierr,__FILE__,__LINE__)
+!      call vecSet(rvec,1.0,ierr)
+!      call EChk(ierr,__FILE__,__LINE__)
+!      ! Assemble the petsc vectors
+!      call VecAssemblyBegin(rvec,Ierr)
+!      call EChk(Ierr,__FILE__,__LINE__)
+!      call VecAssemblyEnd(rvec,Ierr)
+!      call EChk(Ierr,__FILE__,__LINE__)
+
+!      call matDiagonalSet(dRdwPre,rvec,insert_values,ierr)
+!      call EChk(ierr,__FILE__,__LINE__)
+
+!      ! PETSc Matrix Assembly and Options Set
+!      call MatAssemblyBegin(dRdwPre,MAT_FINAL_ASSEMBLY,ierr)
+!      call EChk(ierr,__FILE__,__LINE__)
+!      call MatAssemblyEnd  (dRdwPre,MAT_FINAL_ASSEMBLY,ierr)
+!      call EChk(ierr,__FILE__,__LINE__)
   else
      call setupNK_PC(dRdwPre)
   end if

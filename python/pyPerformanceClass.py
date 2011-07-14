@@ -150,7 +150,7 @@ class PERFORMANCE(object):
         
         return CAP
     
-    def thumbprintDriver(self,acg,wbc,geom,averagesol,rho,V,A,c,thickness):
+    def thumbprintDriver(self,acg,wbc,geom,averagesol,rho,V,A,thickness):
         '''
         Driver to compute thumbprint constraint
 
@@ -179,11 +179,11 @@ class PERFORMANCE(object):
         #Calculate Moment of Inertia
         [Ix,Iy,Iz]=wbc.calculateWingInertias(acg,xcg)
 
-        #Calculate Frequency and Damping
+        #Calculate Frequency and Damping, use MAC as ref chord
         [Wn,DampingRatio]=self.calculateFrequencyAndDamping(averagesol['cmq'],averagesol['clalpha'],
                                             averagesol['cd0'],averagesol['cmalpha'],
                                             averagesol['cmalphadot'],m,Iy*2,
-                                            rho,A,V,c)
+                                            rho,A,V,MAC)
 
         #Calculate Dynamic Stability constraint
         val = self.calculateThumbnailMethodConstraint(Wn,DampingRatio)
@@ -192,7 +192,7 @@ class PERFORMANCE(object):
         return val
 
 
-    def CAPDriver(self,acg,wbc,geom,averagesol,rho,V,A,c,thickness):
+    def CAPDriver(self,acg,wbc,geom,averagesol,rho,V,A,thickness):
         '''
         run the routines to calculate the CAP values
         '''
@@ -218,11 +218,11 @@ class PERFORMANCE(object):
         [Ix,Iy,Iz]=wbc.calculateWingInertias(acg,xcg)
 
 
-        #Calculate the freqency and Damping for the aircraft
+        #Calculate the freqency and Damping for the aircraft, use MAC as ref chord
         [Wn,DampingRatio]=self.calculateFrequencyAndDamping(averagesol['cmq'],averagesol['clalpha'],
                                                             averagesol['cd0'],averagesol['cmalpha'],
                                                             averagesol['cmalphadot'],m,Iy*2,
-                                                            rho,A,V,c)
+                                                            rho,A,V,MAC)
 
         #Compute the change in g with alpha
         nalpha = self.calculateNAlpha(averagesol['clalpha'],rho,A,V,m,wbc.g)
@@ -264,7 +264,7 @@ class PERFORMANCE(object):
         #print 'SM',SM,MAC,-averagesol['cmalpha'],averagesol['clalpha']
         return SMderiv
 
-    def CAPDerivativeDriver(self,x,geo,con,acg,wbc,geom,dvFunc,rho,V,A,c):
+    def CAPDerivativeDriver(self,x,geo,con,acg,wbc,geom,dvFunc,rho,V,A):
         '''
         compute the derivative of the thumbprint function...
         '''
@@ -303,7 +303,7 @@ class PERFORMANCE(object):
                     #print 'thick',type(thick_con_c),thick_con_c,dCondx[:,geo.DV_namesGlobal[key]]*deltax
                 #end
                 CAP,Damp = self.CAPDriver(acg,wbc,geom,averagesol,
-                                            rho,V,A,c,
+                                            rho,V,A,
                                             thick_con_c.reshape(con.thickConSizes[0]))              
           
    
@@ -319,7 +319,7 @@ class PERFORMANCE(object):
 
         return CAPderiv,Dampderiv
 
-    def thumbprintDerivativeDriver(self,x,geo,con,acg,wbc,geom,dvFunc,rho,V,A,c):
+    def thumbprintDerivativeDriver(self,x,geo,con,acg,wbc,geom,dvFunc,rho,V,A):
         '''
         compute the derivative of the thumbprint function...
         '''
@@ -357,7 +357,7 @@ class PERFORMANCE(object):
                     #print 'thick',type(thick_con_c),thick_con_c,dCondx[:,geo.DV_namesGlobal[key]]*deltax
                 #end
                 val = self.thumbprintDriver(acg,wbc,geom,averagesol,
-                                            rho,V,A,c,
+                                            rho,V,A,
                                             thick_con_c.reshape(con.thickConSizes[0]))              
           
    
