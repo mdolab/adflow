@@ -91,7 +91,6 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
   real(kind=realType) :: dJdc(nTimeIntervalsSpectral)
   integer(kind=intType) :: row_start,row_end
 
-<<<<<<< /nfs/tuff/home/mader/hg/SUmbADjoint/src/adjoint/computeObjPartials.F90.orig.146093511
   !rotation matrix variables
   real(kind=realType),dimension(3):: RpXCorrection,RpYCorrection,RpZCorrection
   real(kind=realType)::rotpointxcorrection,rotpointycorrection,rotpointzcorrection
@@ -101,10 +100,6 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
   real(kind=realType) :: t(nSections),dt(nSections)
   real(kind=realType) :: tOld,tNew
 
-||||||| /tmp/computeObjPartials.F90~base.4I8zSr
-=======
-
->>>>>>> /tmp/computeObjPartials.F90~other.Ah-uhx
   ! Copy over values we need for the computeforcenadmoment call:
   MachCoefAdj = MachCoef
   pointRefAdj = pointRef
@@ -367,22 +362,13 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
                     ! DO NOT NEED INCREMENT ON LINE BELOW
                     ii = ii + 1
                     call VecSetValues(dJdx,3,&
-<<<<<<< /nfs/tuff/home/mader/hg/SUmbADjoint/src/adjoint/computeObjPartials.F90.orig.146093511
                          (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/)+(sps-1)*npts*3,&
                          ptsb(:,ii,sps)*dJdc(sps),ADD_VALUES,PETScIerr)
                    
                     rotpointxcorrection = rotpointxcorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/1,0,0/)+RpXCorrection))
                     rotpointycorrection = rotpointycorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,1,0/)+RpYCorrection))
                     rotpointzcorrection = rotpointzcorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,0,1/)+RpZCorrection))
-||||||| /tmp/computeObjPartials.F90~base.4I8zSr
-                         (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/),&
-                         ptsb(:,ii,sps)*dJdc(sps),ADD_VALUES,PETScIerr)
-=======
-                         (/row_start+3*ii-3,&
-                           row_start+3*ii-2,&
-                           row_start+3*ii-1/),&
-                           ptsb(:,ii,sps)*dJdc(sps),ADD_VALUES,PETScIerr)
->>>>>>> /tmp/computeObjPartials.F90~other.Ah-uhx
+
                     call EChk(PETScIerr,__file__,__line__)
                  end do
               end do
@@ -393,10 +379,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
 
               if (nDesignAoA >=0) then
                  dIda(nDesignAoA+1) = dIda(nDesignAoA+1) + alphaAdjb*dJdc(sps)
-<<<<<<< /tmp/computeObjPartials.F90~base.4I8zSr
-                 !print *,'dida alpha',dIda(nDesignAoA+1),alphaAdjb,dJdc(sps)
-=======
->>>>>>> /tmp/computeObjPartials.F90~other.Ah-uhx
+
               end if
 
               if (nDesignSSA >= 0) then
@@ -412,10 +395,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               end if
               
               if (nDesignPointRefX >=0) then
-<<<<<<< /tmp/computeObjPartials.F90~base.4I8zSr
-                 !print *,'pointrefx',pointrefAdjb(1),dJdc(sps),nDesignPointRefX
-=======
->>>>>>> /tmp/computeObjPartials.F90~other.Ah-uhx
+
                  dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefAdjb(1)*dJdc(sps)
               end if
 
@@ -439,12 +419,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               endif
 
               if (nDesignLengthRef >=0) then
-<<<<<<< /nfs/tuff/home/mader/hg/SUmbADjoint/src/adjoint/computeObjPartials.F90.orig.146093511
-                
-||||||| /tmp/computeObjPartials.F90~base.4I8zSr
-                 !if (myID==0) print *,'lengthref2',lengthRefAdjb,dIda(nDesignLengthRef+1),nn,sps
-=======
->>>>>>> /tmp/computeObjPartials.F90~other.Ah-uhx
+
                  dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb*dJdc(sps)
                  
               end if
