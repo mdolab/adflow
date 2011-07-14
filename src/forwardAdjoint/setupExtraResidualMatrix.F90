@@ -58,7 +58,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
   real(kind=realType), dimension(3) :: rotPointRef,pointRefRef
 
   !Seed values for AD
-  real(kind=realType)::alphad,betad,machd, machGridd
+  real(kind=realType)::alphad,betad!,machd, machGridd
   real(kind=realType), dimension(3) :: rotRated,rotcenterd
   real(kind=realType), dimension(3) :: rotPointd,pointRefd
   
@@ -103,8 +103,8 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
 
      !let the DV number be the color
      nColor = nDesignExtra
-     print *,'nColor',nColor
-     print *,'Alpha',alpha
+     !print *,'nColor',nColor
+     !print *,'Alpha',alpha
      alpharef = alpha
      betaref = beta
      machref = mach
@@ -134,7 +134,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
 
         if (useAD) then
            !Set the seeds by color
-
+           !print *,'icolor',icolor-1
            if (nDesignAoA ==icolor-1) then
               !Angle of Attack
               alphad = 1.0
@@ -187,7 +187,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
            rotcenter = rotCenterRef
            rotPoint = rotPointRef
            pointRef = pointRefRef
-           print *,'icolor',icolor-1,nDesignAoA
+           !print *,'icolor',icolor-1,nDesignAoA
            if (nDesignAoA ==icolor-1) then
               !Angle of Attack
               alpha = alphaRef+delta_x
@@ -236,8 +236,9 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
         do sps = 1,nTimeIntervalsSpectral
            ! Block-based residual
            if (useAD) then
-              print *,'alpha',alpha,alphad,beta,liftIndex
+              !print *,'alpha',alpha,alphad,beta,liftIndex,mach,machd
               call block_res_extra_extra_d(nn,sps,alpha,alphad,beta,liftIndex)
+              !print *,'liftdir',liftDirection
               !print *,'AD Not Implmented Yet'
               !stop
            else
@@ -261,7 +262,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
                           flowDomsd(sps)%dw_deriv(i,j,k,ll,1) = &
                                one_over_dx*(flowDoms(nn,1,sps)%dw(i,j,k,ll) - &
                                flowDomsd(sps)%dwtmp(i,j,k,ll))
-                          print *,'deriv',flowDomsd(sps)%dw_deriv(i,j,k,ll,1)
+                          !print *,'deriv',flowDomsd(sps)%dw_deriv(i,j,k,ll,1)
                        end if
                        
                     end do
@@ -293,7 +294,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
      call dealloc_derivative_values(nn)
      
   end do domainLoopAD
-
+  
   ! PETSc Matrix Assembly and Options Set
   call MatAssemblyBegin(matrix,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -327,9 +328,9 @@ contains
     implicit none
     real(kind=realType), dimension(nw,1) :: blk
     integer(kind=intType) :: iii
-    
+       
     do iii=1,nw
-       print *,'output',abs(blk(iii,1))
+       !print *,'output',abs(blk(iii,1)),irow,icol
        if (abs(blk(iii,1)).ne. 0.0)then
           call MatSetValues(matrix,1,irow*nw+iii-1,1,icol,blk(iii,1),ADD_VALUES,ierr)
           call EChk(ierr,__FILE__,__LINE__)

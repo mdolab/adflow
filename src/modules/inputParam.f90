@@ -680,6 +680,8 @@
        logical :: wallFunctions, wallDistanceNeeded
 
        real(kind=realType) :: Mach, MachCoef,MachGrid
+       !AD derivative values
+       real(kind=realType) :: Machd, MachCoefd,MachGridd
        real(kind=realType) :: Reynolds, ReynoldsLength
        real(kind=realType) :: tempFreestream, gammaConstant, RGasDim
        real(kind=realType) :: gammaconstantb, gammaconstantd

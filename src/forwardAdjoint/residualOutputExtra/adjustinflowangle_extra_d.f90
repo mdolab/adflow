@@ -15,10 +15,10 @@
    !      ******************************************************************
    !
    SUBROUTINE ADJUSTINFLOWANGLE_EXTRA_D(alpha, alphad, beta, liftindex)
-   USE INPUTPHYSICS
+   USE ALLINPUTPARAM
    USE CONSTANTS
    IMPLICIT NONE
-   !veldirFreestream, liftDiretion, dragDirection
+   !inputPhysics !veldirFreestream, liftDiretion, dragDirection
    !Subroutine Vars
    REAL(kind=realtype) :: alpha, beta
    REAL(kind=realtype) :: alphad
@@ -52,4 +52,5 @@
    refdirection(liftindex) = one
    CALL GETDIRVECTOR(refdirection, alpha, beta, liftdirection, &
    &                 liftindex)
+   liftdirspecified = .true.
    END SUBROUTINE ADJUSTINFLOWANGLE_EXTRA_D

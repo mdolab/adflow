@@ -77,7 +77,9 @@
 
        real(kind=realType) :: rhoInf, uInf, pInf, pInfCorr
        real(kind=realType) :: RGas, muInf, gammaInf
-       real(kind=realType), dimension(:), allocatable :: wInf
+       !real(kind=realType), dimension(:), allocatable :: wInf
+       !bug in tapenade, does not trace this properly when it is allocatable
+       real(kind=realType), dimension(nw) :: wInf
 
        ! viscous:   whether or not this is a viscous computation.
        ! kPresent:  whether or not a turbulent kinetic energy is present

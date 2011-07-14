@@ -189,6 +189,7 @@ class SUMB(AeroSolver):
             'ASMOverlap' : [int,5],
             'subKSPSubspaceSize':[int,10],
             'finiteDifferencePC':[bool,True],
+            'useReverseModeAD':[bool,True],
             }
 
         informs = {
@@ -603,7 +604,8 @@ class SUMB(AeroSolver):
                 'familyRot',  # -> Not sure how to do
                 'areaAxis',
                 'autoSolveRetry',
-                'autoAdjointRetry'
+                'autoAdjointRetry',
+                'useReverseModeAD'
                 ]
         # end if
         
@@ -1514,8 +1516,13 @@ class SUMB(AeroSolver):
         if not self.adjointMatrixSetup:
             self.sumb.createpetscvars()
  
-            self.sumb.setupallresidualmatrices()
-
+            if  self.getOption('useReverseModeAD'):
+                if self.myid==0:print 'computing with reverse mode...'
+                self.sumb.setupallresidualmatrices()
+            else:
+                if self.myid==0:print 'computing with forward mode...'
+                self.sumb.setupallresidualmatricesfwd()
+            #end
             if forcePoints is None:
                 forcePoints = self.getForcePoints()
             # end if

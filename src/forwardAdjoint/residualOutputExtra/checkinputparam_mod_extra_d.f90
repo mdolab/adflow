@@ -2,8 +2,8 @@
    !  Tapenade 3.4 (r3375) - 10 Feb 2010 15:08
    !
    !  Differentiation of checkinputparam_mod in forward (tangent) mode:
-   !   variations   of useful results: veldirfreestream
-   !   with respect to varying inputs: veldirfreestream
+   !   variations   of useful results: machcoef veldirfreestream
+   !   with respect to varying inputs: veldirfreestream mach
    !
    !      ******************************************************************
    !      *                                                                *
@@ -1064,5 +1064,10 @@
    ! Set the Mach number for the coefficients equal to the Mach
    ! number if it was not specified. For internal flow field this
    ! will again be changed in initFlo.
-   IF (machcoef .LT. zero) machcoef = mach
+   IF (machcoef .LT. zero) THEN
+   machcoefd = machd
+   machcoef = mach
+   ELSE
+   machcoefd = 0.0
+   END IF
    END SUBROUTINE CHECKINPUTPARAM_MOD_EXTRA_D

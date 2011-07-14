@@ -425,6 +425,9 @@ python module sumb ! in
        subroutine setupallresidualmatrices ! in :sumb:../../adjoint/setupADjointMatrix.F90
        end subroutine setupallresidualmatrices
 
+       subroutine setupallresidualmatricesfwd ! in :sumb:../../forwardadjoint/setupAllresidualMatricesFwd.F90
+       end subroutine setupallresidualmatricesfwd
+
        subroutine setupadjointpcmatrixtranspose
        end subroutine setupadjointpcmatrixtranspose
 

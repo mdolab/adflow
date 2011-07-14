@@ -1618,6 +1618,7 @@
    ptmp(1) = left(irhoe)
    ptmpd(2) = rightd(irhoe)
    ptmp(2) = right(irhoe)
+   etmpd = 0.0
    CALL ETOTARRAY_EXTRA_D(rhotmp, rhotmpd, utmp, utmpd, vtmp, vtmpd&
    &                         , wtmp, wtmpd, ptmp, ptmpd, ktmp, ktmpd, etmp, &
    &                         etmpd, correctfork, 2_intType)

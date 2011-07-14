@@ -11,7 +11,7 @@
 subroutine adjustInflowAngle(alpha,beta,liftIndex)
 
   use constants
-  use inputPhysics !veldirFreestream, liftDiretion, dragDirection
+  use allInputParam !inputPhysics !veldirFreestream, liftDiretion, dragDirection
   implicit none
 
   !Subroutine Vars
@@ -59,5 +59,6 @@ subroutine adjustInflowAngle(alpha,beta,liftIndex)
   call getDirVector(refDirection, alpha, beta,liftDirection, &
        liftIndex)
 
+  liftDirSpecified=.True.
 
 end subroutine adjustInflowAngle

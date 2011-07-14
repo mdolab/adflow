@@ -2,9 +2,9 @@
    !  Tapenade 3.4 (r3375) - 10 Feb 2010 15:08
    !
    !  Differentiation of block_res_extra in forward (tangent) mode:
-   !   variations   of useful results: *dw *w
-   !   with respect to varying inputs: alpha
-   !   RW status of diff variables: *dw:out *w:out alpha:in
+   !   variations   of useful results: mach *dw *w
+   !   with respect to varying inputs: mach alpha
+   !   RW status of diff variables: mach:in-out *dw:out *w:out alpha:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -37,7 +37,6 @@
    INTRINSIC MAX
    !Begin execution
    !get some basic info about extra variables
-   print *,'liftindex',liftIndex
    CALL ADJUSTINFLOWANGLE_EXTRA_D(alpha, alphad, beta, liftindex)
    CALL CHECKINPUTPARAM_MOD_EXTRA_D()
    CALL REFERENCESTATE_MOD_EXTRA_D()
