@@ -2,10 +2,10 @@
    !  Tapenade 3.4 (r3375) - 10 Feb 2010 15:08
    !
    !  Differentiation of referencestate_mod in forward (tangent) mode:
-   !   variations   of useful results: veldirfreestream rgas uinf
-   !                muinf rhoinf timeref pinf
-   !   with respect to varying inputs: veldirfreestream machini rhoini
-   !                pini veldirini
+   !   variations   of useful results: machcoef veldirfreestream mach
+   !                rgas uinf muinf rhoinf timeref pinf
+   !   with respect to varying inputs: machcoef veldirfreestream mach
+   !                machini rhoini pini veldirini
    !
    !      ******************************************************************
    !      *                                                                *
@@ -294,13 +294,17 @@
    IF (rhoref .LE. zero) rhoref = one
    IF (tref .LE. zero) THEN
    tref = one
+   machcoefd = 0.0
    veldirfreestreamd = 0.0
+   machd = 0.0
    rhorefd = 0.0
    prefd = 0.0
    pinfdimd = 0.0
    rhoinfdimd = 0.0
    ELSE
+   machcoefd = 0.0
    veldirfreestreamd = 0.0
+   machd = 0.0
    rhorefd = 0.0
    prefd = 0.0
    pinfdimd = 0.0
@@ -316,11 +320,14 @@
    ! Compute the x, y, and z-components of the Mach number
    ! relative to the body; i.e. the mesh velocity must be
    ! taken into account here.
-   mxd = machcoef*veldirfreestreamd(1)
+   mxd = machcoefd*veldirfreestream(1) + machcoef*veldirfreestreamd(1&
+   &        )
    mx = machcoef*veldirfreestream(1)
-   myd = machcoef*veldirfreestreamd(2)
+   myd = machcoefd*veldirfreestream(2) + machcoef*veldirfreestreamd(2&
+   &        )
    my = machcoef*veldirfreestream(2)
-   mzd = machcoef*veldirfreestreamd(3)
+   mzd = machcoefd*veldirfreestream(3) + machcoef*veldirfreestreamd(3&
+   &        )
    mz = machcoef*veldirfreestream(3)
    ! Reynolds number per meter, the viscosity using sutherland's
    ! law and the free stream velocity relative to the body.
@@ -399,7 +406,7 @@
    result1d = arg1d/(2.0*SQRT(arg1))
    END IF
    result1 = SQRT(arg1)
-   uinfd = mach*result1d
+   uinfd = machd*result1 + mach*result1d
    uinf = mach*result1
    !print *,'mach',mach,uinf,sqrt(gammaInf*pInf/rhoInf)
    !stop

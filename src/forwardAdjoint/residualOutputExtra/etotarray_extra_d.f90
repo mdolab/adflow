@@ -3,7 +3,7 @@
    !
    !  Differentiation of etotarray in forward (tangent) mode:
    !   variations   of useful results: etot
-   !   with respect to varying inputs: k p u v w rho
+   !   with respect to varying inputs: k p u v w etot rho
    !      ==================================================================
    SUBROUTINE ETOTARRAY_EXTRA_D(rho, rhod, u, ud, v, vd, w, wd, p, pd, k, &
    &  kd, etot, etotd, correctfork, kk)

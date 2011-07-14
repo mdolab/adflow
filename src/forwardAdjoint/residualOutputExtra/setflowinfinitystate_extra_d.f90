@@ -2,9 +2,9 @@
    !  Tapenade 3.4 (r3375) - 10 Feb 2010 15:08
    !
    !  Differentiation of setflowinfinitystate in forward (tangent) mode:
-   !   variations   of useful results: pinfcorr
-   !   with respect to varying inputs: veldirfreestream uinf muinf
-   !                rhoinf pinf
+   !   variations   of useful results: pinfcorr winf
+   !   with respect to varying inputs: machcoef veldirfreestream rgas
+   !                uinf muinf rhoinf pinf
    !
    !      ******************************************************************
    !      *                                                                *
@@ -36,7 +36,7 @@
    !
    INTEGER :: ierr
    REAL(kind=realtype) :: nuinf, ktmp, uinf2
-   REAL(kind=realtype) :: nuinfd, uinf2d
+   REAL(kind=realtype) :: nuinfd, ktmpd, uinf2d
    !
    !      Function definition
    !
@@ -53,16 +53,19 @@
    ! Compute the velocity squared based on MachCoef;
    ! needed for the initialization of the turbulent energy,
    ! especially for moving geometries.
-   uinf2d = (machcoef**2*gammainf*pinfd*rhoinf-machcoef**2*gammainf*pinf*&
-   &    rhoinfd)/rhoinf**2
+   uinf2d = (gammainf*((machcoefd*machcoef+machcoef*machcoefd)*pinf+&
+   &    machcoef**2*pinfd)*rhoinf-machcoef**2*gammainf*pinf*rhoinfd)/rhoinf&
+   &    **2
    uinf2 = machcoef*machcoef*gammainf*pinf/rhoinf
    ! Allocate the memory for wInf.
-   IF (ALLOCATED(winf)) THEN
-   DEALLOCATE(winfd)
-   DEALLOCATE(winf)
-   END IF
-   ALLOCATE(winfd(nw))
+   if (ALLOCATED(winf)) then
+      DEALLOCATE(winf)
+   END if
    ALLOCATE(winf(nw), stat=ierr)
+   if (ALLOCATED(winfd)) then
+      DEALLOCATE(winfd)
+   END if
+   ALLOCATE(winfd(nw), stat=ierr)
    IF (ierr .NE. 0) CALL TERMINATE('setFlowReferenceState', &
    &                               'Memory allocation failure for wInf')
    ! Set the reference value of the flow variables, except the total
@@ -124,7 +127,13 @@
    END IF
    ! Compute the free stream total energy.
    ktmp = zero
-   IF (kpresent) ktmp = winf(itu1)
-   CALL ETOTARRAY(rhoinf, uinf, zero, zero, pinfcorr, ktmp, winf(irhoe&
-   &              ), kpresent, 1_intType)
+   IF (kpresent) THEN
+   ktmpd = winfd(itu1)
+   ktmp = winf(itu1)
+   ELSE
+   ktmpd = 0.0
+   END IF
+   CALL ETOTARRAY_EXTRA_D(rhoinf, rhoinfd, uinf, uinfd, zero, 0.0, zero, &
+   &                   0.0, pinfcorr, pinfcorrd, ktmp, ktmpd, winf(irhoe), &
+   &                   winfd(irhoe), kpresent, 1_intType)
    END SUBROUTINE SETFLOWINFINITYSTATE_EXTRA_D

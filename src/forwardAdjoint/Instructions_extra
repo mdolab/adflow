@@ -24,12 +24,16 @@ python autoEdit.py
 cd /src/forwardAdjoint/residualOutputExtra
 
 #make the following manual corrections:
-eintarray_extra_d.f90: comment out 3 instances of: eintd = 0.0
+eintarray_extra_d.f90: comment out 3 instances of: eintd = 0.0 fixed!
 
-referencestate_mod_extra_d.f90: comment out REAL(kind=realtype) :: MAXVALUESUBFACE
+referencestate_mod_extra_d.f90: comment out REAL(kind=realtype) :: MAXVALUESUBFACE 
 
-block_res_d.f90: change all SETPOINTERSOFFTSINSTANCE calls to
-                            SETPOINTERSOFFTSINSTANCE_D
+setflowinfinitystate_extra_d.f90:  modify WHERE structure to if() then for wInf
+				   add if (ALLOCATED(winfd)) then	   
+                                      DEALLOCATE(winfd)
+				      END if
+				      ALLOCATE(winfd(nw), stat=ierr)
+				  after corresponding winf allocate block.
 
 
 the code should now compile and run

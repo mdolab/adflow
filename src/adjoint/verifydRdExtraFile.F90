@@ -75,8 +75,8 @@
                            call MatGetValues(drda,1,idxres-1,1,icolor-1,value1,ierr)
                            !call MatGetValues(drdw,1,idxres-1,1,idxstate-1,value1,ierr)
                            call EChk(ierr,__FILE__,__LINE__)
-                           if(abs(value1)>1e-7)then!-10)then!
-                              
+                           if(abs(value1)>1e-10)then!-7)then!
+                              !print *,'value',value1,icolor,idxres
                               write(unitdrda,13) icolor,idxres,n,k,j,i,nn,sps,real(value1)
 13                            format(1x,'drda',8I8,f18.10)
                            endif

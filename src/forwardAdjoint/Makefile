@@ -38,6 +38,7 @@ vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS = determineStencil.o\
 		setPointersOffTSInstance.o\
 		setPointersOffTSInstance_d.o\
+                setupAllResidualMatricesFwd.o\
                 setupExtraResidualMatrix.o\
 		setupStateResidualMatrix.o\
 		setupSpatialResidualMatrix.o\

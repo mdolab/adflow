@@ -5,7 +5,7 @@
    !   variations   of useful results: eint
    !   with respect to varying inputs: cv0 *cptrange *cpeint *(*cptempfit.constants)
    !                *cptempfit.eint0 cvn gammaconstant rgas tref k
-   !                p rho
+   !                p eint rho
    !      ==================================================================
    SUBROUTINE EINTARRAY_EXTRA_D(rho, rhod, p, pd, k, kd, eint, eintd, &
    &  correctfork, kk)
@@ -59,7 +59,6 @@
    CASE (cpconstant) 
    ! Abbreviate 1/(gamma -1) a bit easier.
    ovgm1 = one/(gammaconstant-one)
-   !eintd = 0.0
    ! Loop over the number of elements of the array and compute
    ! the total energy.
    DO i=1,kk
@@ -82,7 +81,6 @@
    ! internal energy.
    scaled = rgasd/tref
    scale = rgas/tref
-   !eintd = 0.0
    ! Loop over the number of elements of the array
    DO i=1,kk
    ! Compute the dimensional temperature.
@@ -161,7 +159,5 @@
    eint(i) = eint(i) + k(i)
    END IF
    END DO
-   CASE DEFAULT
-      !eintd = 0.0
    END SELECT
    END SUBROUTINE EINTARRAY_EXTRA_D

@@ -3,7 +3,7 @@
    !
    !  Differentiation of applyallbc_block in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w
-   !   with respect to varying inputs: *p rgas pinfcorr
+   !   with respect to varying inputs: *p rgas pinfcorr winf
    !
    !      ******************************************************************
    !      *                                                                *

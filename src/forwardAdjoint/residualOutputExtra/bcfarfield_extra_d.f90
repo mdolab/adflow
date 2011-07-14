@@ -4,6 +4,7 @@
    !  Differentiation of bcfarfield in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w
    !   with respect to varying inputs: gammaconstant *p rgas pinfcorr
+   !                winf
    !
    !      ******************************************************************
    !      *                                                                *
@@ -44,7 +45,7 @@
    REAL(kind=realtype) :: gm1, ovgm1, ac1, ac2
    REAL(kind=realtype) :: ac1d, ac2d
    REAL(kind=realtype) :: r0, u0, v0, w0, qn0, vn0, c0, s0
-   REAL(kind=realtype) :: c0d, s0d
+   REAL(kind=realtype) :: r0d, u0d, v0d, w0d, qn0d, c0d, s0d
    REAL(kind=realtype) :: re, ue, ve, we, qne, ce
    REAL(kind=realtype) :: red, ued, ved, wed, qned, ced
    REAL(kind=realtype) :: qnf, cf, uf, vf, wf, sf, cc, qq
@@ -115,11 +116,15 @@
    ovgm1 = one/gm1
    ! Compute the three velocity components, the speed of sound and
    ! the entropy of the free stream.
+   r0d = -(one*winfd(irho)/winf(irho)**2)
    r0 = one/winf(irho)
+   u0d = winfd(ivx)
    u0 = winf(ivx)
+   v0d = winfd(ivy)
    v0 = winf(ivy)
+   w0d = winfd(ivz)
    w0 = winf(ivz)
-   arg1d = gammainf*r0*pinfcorrd
+   arg1d = gammainf*(pinfcorrd*r0+pinfcorr*r0d)
    arg1 = gammainf*pinfcorr*r0
    IF (arg1 .EQ. 0.0) THEN
    c0d = 0.0
@@ -127,8 +132,16 @@
    c0d = arg1d/(2.0*SQRT(arg1))
    END IF
    c0 = SQRT(arg1)
+   IF (winf(irho) .GT. 0.0 .OR. (winf(irho) .LT. 0.0 .AND. gammainf .EQ. &
+   &      INT(gammainf))) THEN
+   pwr1d = gammainf*winf(irho)**(gammainf-1)*winfd(irho)
+   ELSE IF (winf(irho) .EQ. 0.0 .AND. gammainf .EQ. 1.0) THEN
+   pwr1d = winfd(irho)
+   ELSE
+   pwr1d = 0.0
+   END IF
    pwr1 = winf(irho)**gammainf
-   s0d = -(pwr1*pinfcorrd/pinfcorr**2)
+   s0d = (pwr1d*pinfcorr-pwr1*pinfcorrd)/pinfcorr**2
    s0 = pwr1/pinfcorr
    gammad = 0.0
    wd = 0.0
@@ -208,6 +221,7 @@
    !!$          end do
    ! Compute the normal velocity of the free stream and
    ! substract the normal velocity of the mesh.
+   qn0d = nnx*u0d + nny*v0d + nnz*w0d
    qn0 = u0*nnx + v0*nny + w0*nnz
    vn0 = qn0 - bcdata(nn)%rface(i, j)
    ! Compute the three velocity components, the normal
@@ -243,7 +257,7 @@
    ac1 = qne + two*ovgm1*ce
    ELSE
    ! Supersonic inflow.
-   ac1d = two*ovgm1*c0d
+   ac1d = qn0d + two*ovgm1*c0d
    ac1 = qn0 + two*ovgm1*c0
    END IF
    IF (vn0 .GT. c0) THEN
@@ -252,7 +266,7 @@
    ac2 = qne - two*ovgm1*ce
    ELSE
    ! Inflow or subsonic outflow.
-   ac2d = -(two*ovgm1*c0d)
+   ac2d = qn0d - two*ovgm1*c0d
    ac2 = qn0 - two*ovgm1*c0
    END IF
    qnfd = half*(ac1d+ac2d)
@@ -290,16 +304,16 @@
    END DO
    ELSE
    ! Inflow
-   ufd = nnx*qnfd
+   ufd = u0d + nnx*(qnfd-qn0d)
    uf = u0 + (qnf-qn0)*nnx
-   vfd = nny*qnfd
+   vfd = v0d + nny*(qnfd-qn0d)
    vf = v0 + (qnf-qn0)*nny
-   wfd = nnz*qnfd
+   wfd = w0d + nnz*(qnfd-qn0d)
    wf = w0 + (qnf-qn0)*nnz
    sfd = s0d
    sf = s0
    DO l=nt1mg,nt2mg
-   ww1d(i, j, l) = 0.0
+   ww1d(i, j, l) = winfd(l)
    ww1(i, j, l) = winf(l)
    END DO
    END IF
