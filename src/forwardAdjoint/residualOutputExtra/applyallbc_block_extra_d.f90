@@ -3,7 +3,7 @@
    !
    !  Differentiation of applyallbc_block in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w
-   !   with respect to varying inputs: *p *w
+   !   with respect to varying inputs: *p rgas pinfcorr
    !
    !      ******************************************************************
    !      *                                                                *
@@ -14,12 +14,12 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE APPLYALLBC_BLOCK_D(secondhalo)
+   SUBROUTINE APPLYALLBC_BLOCK_EXTRA_D(secondhalo)
+   USE INPUTTIMESPECTRAL
    USE FLOWVARREFSTATE
    USE BLOCKPOINTERS_D
-   USE INPUTTIMESPECTRAL
-   USE INPUTDISCRETIZATION
    USE ITERATION
+   USE INPUTDISCRETIZATION
    IMPLICIT NONE
    !   ! Domain-interface boundary conditions,
    !   ! when coupled with other solvers.
@@ -63,8 +63,8 @@
    END IF
    ! Apply all the boundary conditions. The order is important.
    ! The symmetry boundary conditions.
-   CALL BCSYMM_D(secondhalo)
-   CALL BCSYMMPOLAR_D(secondhalo)
+   CALL BCSYMM_EXTRA_D(secondhalo)
+   CALL BCSYMMPOLAR_EXTRA_D(secondhalo)
    !call bcEulerWall(secondHalo, correctForK)
    ! The viscous wall boundary conditions.
    !call bcNSWallAdiabatic( secondHalo, correctForK)
@@ -74,19 +74,22 @@
    ! and call the appropriate routine.
    SELECT CASE  (precond) 
    CASE (noprecond) 
-   CALL BCFARFIELD_D(secondhalo, correctfork)
+   CALL BCFARFIELD_EXTRA_D(secondhalo, correctfork)
    CASE (turkel) 
    CALL TERMINATE('applyAllBC', &
    &                'Farfield boundary conditions for Turkel ', &
    &                'preconditioner not implemented')
    gammad = 0.0
+   wd = 0.0
    CASE (choimerkle) 
    CALL TERMINATE('applyAllBC', &
    &                'Farfield boundary conditions for Choi and ', &
    &                'Merkle preconditioner not implemented')
    gammad = 0.0
+   wd = 0.0
    CASE DEFAULT
    gammad = 0.0
+   wd = 0.0
    END SELECT
    !   ! Subsonic outflow and bleed outflow boundaries.
    !   call bcSubsonicOutflow(secondHalo, correctForK)
@@ -105,5 +108,5 @@
    !   ! is identical.
    !   call bcExtrap(secondHalo, correctForK)
    ! Inviscid wall boundary conditions.
-   CALL BCEULERWALL_D(secondhalo, correctfork)
-   END SUBROUTINE APPLYALLBC_BLOCK_D
+   CALL BCEULERWALL_EXTRA_D(secondhalo, correctfork)
+   END SUBROUTINE APPLYALLBC_BLOCK_EXTRA_D

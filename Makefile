@@ -55,7 +55,8 @@ SUBDIR_ADJOINT = src/adjoint               \
 	         src/adjoint/residualNKPCOutput \
 		 src/forwardAdjoint \
 		 src/forwardAdjoint/residualInput \
-		 src/forwardAdjoint/residualOutput
+		 src/forwardAdjoint/residualOutput\
+		 src/forwardAdjoint/residualOutputExtra
 
 
 SUBDIR_WARPING = src/warping \

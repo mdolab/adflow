@@ -3,8 +3,9 @@
    !
    !  Differentiation of residual_block in forward (tangent) mode:
    !   variations   of useful results: *dw *w
-   !   with respect to varying inputs: *p *gamma *dw *w *radi *radj
-   !                *radk *cdisrk vis4 vis2 vis2coarse sigma
+   !   with respect to varying inputs: *p *gamma *w *radi *radj *radk
+   !                rgas pinfcorr rhoinf timeref *cdisrk vis4 vis2
+   !                vis2coarse sigma
    !
    !      ******************************************************************
    !      *                                                                *
@@ -15,14 +16,14 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE RESIDUAL_BLOCK_D()
+   SUBROUTINE RESIDUAL_BLOCK_EXTRA_D()
+   USE INPUTTIMESPECTRAL
    USE FLOWVARREFSTATE
    USE CGNSGRID
-   USE INPUTITERATION
    USE BLOCKPOINTERS_D
-   USE INPUTTIMESPECTRAL
-   USE INPUTDISCRETIZATION
    USE ITERATION
+   USE INPUTDISCRETIZATION
+   USE INPUTITERATION
    IMPLICIT NONE
    !
    !      ******************************************************************
@@ -73,24 +74,24 @@
    PRINT*, 'Fine Grid should not be false here'
    STOP
    ELSE
-   CALL INVISCIDCENTRALFLUX_D()
+   CALL INVISCIDCENTRALFLUX_EXTRA_D()
    ! Compute the artificial dissipation fluxes.
    ! This depends on the parameter discr.
    SELECT CASE  (discr) 
    CASE (dissscalar) 
    ! Standard scalar dissipation scheme.
    IF (finegrid) THEN
-   CALL INVISCIDDISSFLUXSCALAR_D()
+   CALL INVISCIDDISSFLUXSCALAR_EXTRA_D()
    ELSE
-   CALL INVISCIDDISSFLUXSCALARCOARSE_D()
+   CALL INVISCIDDISSFLUXSCALARCOARSE_EXTRA_D()
    END IF
    CASE (dissmatrix) 
    !===========================================================
    ! Matrix dissipation scheme.
    IF (finegrid) THEN
-   CALL INVISCIDDISSFLUXMATRIX_D()
+   CALL INVISCIDDISSFLUXMATRIX_EXTRA_D()
    ELSE
-   CALL INVISCIDDISSFLUXMATRIXCOARSE_D()
+   CALL INVISCIDDISSFLUXMATRIXCOARSE_EXTRA_D()
    END IF
    CASE (disscusp) 
    !===========================================================
@@ -105,12 +106,12 @@
    CASE (upwind) 
    !===========================================================
    ! Dissipation via an upwind scheme.
-   CALL INVISCIDUPWINDFLUX_D(finegrid)
+   CALL INVISCIDUPWINDFLUX_EXTRA_D(finegrid)
    CASE DEFAULT
    fwd = 0.0
    END SELECT
    ! Compute the viscous flux in case of a viscous computation.
-   IF (viscous) CALL VISCOUSFLUX_D()
+   IF (viscous) CALL VISCOUSFLUX_EXTRA_D()
    ! add the dissipative and possibly viscous fluxes to the
    ! Euler fluxes. Loop over the owned cells and add fw to dw.
    ! Also multiply by iblank so that no updates occur in holes
@@ -127,4 +128,4 @@
    END DO
    END DO
    END IF
-   END SUBROUTINE RESIDUAL_BLOCK_D
+   END SUBROUTINE RESIDUAL_BLOCK_EXTRA_D

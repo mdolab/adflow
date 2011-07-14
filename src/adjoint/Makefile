@@ -78,7 +78,8 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       verifyRAdj.o\
                adjoint_stencils.o\
                verifydRdwFile.o\
-               verifydRdxFile.o    
+               verifydRdxFile.o  \
+               verifydRdExtraFile.o    
 #	       verifyResiduals.o\
 #	       verifydRdw.o             \
 #              verifydRdwFile.o         \
