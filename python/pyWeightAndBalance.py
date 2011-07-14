@@ -373,6 +373,30 @@ class WEIGHTANDBALANCE(object):
    
         return Ix,Iy,Iz
 
+    def computeRootBendingMoment(self,sol,ref,geom,liftIndex):
+        #sum up the moments about the root elastic center to determine the effect of sweep on the moment
+        momx = sol['mx']
+        momy = sol['my']
+        momz = sol['mz']
+        fx = sol['fx']
+        fy = sol['fy']
+        fz = sol['fz']
+        if liftIndex == 2:
+            #z out wing sum momentx,momentz
+            elasticMomentx = momx + fy*(geom.zRootec-ref.zref)-fz*(geom.yRootec-ref.yref)
+            elasticMomentz = momz - fy*(geom.xRootec-ref.xref)+fx*(geom.yRootec-ref.yref)
+                         
+            BendingMoment = numpy.sqrt(elasticMomentx**2+elasticMomentz**2)
+
+        elif liftIndex == 3:
+            #y out wing sum momentx,momenty
+            elasticMomentx = momx + fz*(geom.yRootec-ref.yref)+fy*(geom.zRootec-ref.zref)
+            elasticMomenty = momy + fz*(geom.xRootec-ref.xref)+fx*(geom.zRootec-ref.zref)
+                         
+            BendingMoment = numpy.sqrt(elasticMomentx**2+elasticMomenty**2)
+            
+        return BendingMoment
+
 ## def getAverageThickness(acg,surface,forwardSparPercent,rearSparPercent,npts):
 ##     percentchord = numpy.zeros([npts],numpy.float)
 ##     for i in xrange(npts):
@@ -576,6 +600,85 @@ class WEIGHTANDBALANCE(object):
         geo.update('wing')
 
         return CGderiv
+
+    def computeWingMACDerivatives(self,x,geo,acg,geom):
+        '''
+        Run the complex step derivatives required for the CG derivatives.
+        '''
+        #print 'DVs',x
+        xw = copy.deepcopy(x)
+        for i in xw.keys():
+            xw[i] = numpy.atleast_1d(xw[i]).astype('D')
+        #endfor
+        xref = copy.deepcopy(xw)
+        deltax = 1.0e-40j
+        MACDeriv = {}
+        MACc4Deriv = {}
+        #geo.complex = True
+        for key in xw.keys():
+            MACDeriv[key] =[]
+            MACc4Deriv[key] =[]
+            for i in xrange(len(xw[key])):
+                #if comm.rank == 0: print 'test',xw[key][i],xref[key][i],deltax,key,i
+                xw[key][i] = xref[key][i]+deltax
+                #if comm.rank == 0:print 'xw',xw
+                geo.setValues(xw,scaled=True)
+                geo.update('wing')
+                
+                [MAC,C4MAC] = self.calculateWingMAC(acg)
+                
+                #if comm.rank == 0:print 'cgderiv',CGderiv,xcg
+                MACDeriv[key].append(numpy.imag(MAC)/numpy.imag(deltax))
+                MACc4Deriv[key].append(numpy.imag(C4MAC)/numpy.imag(deltax))
+                xw = copy.deepcopy(xref)
+                #if comm.rank == 0:print 'xw2',xw
+            #end
+            
+        #endfor
+        #geo.complex = False
+        geo.setValues(x,scaled=True)
+        geo.update('wing')
+
+        return MACDeriv,MACc4Deriv
+
+    def calculateBendingMomentDerivatives(self,x,geo,dvFunc,ref,geom,flow):
+        '''
+        Run the complex step derivatives required for the CG derivatives.
+        '''
+        #print 'DVs',x
+        xw = copy.deepcopy(x)
+        for i in xw.keys():
+            xw[i] = numpy.atleast_1d(xw[i]).astype('D')
+        #endfor
+        xref = copy.deepcopy(xw)
+        deltax = 1.0e-40j
+        BMderiv = {}
+        #geo.complex = True
+        for key in xw.keys():
+            BMderiv[key] =[]
+            for i in xrange(len(xw[key])):
+                #if comm.rank == 0: print 'test',xw[key][i],xref[key][i],deltax,key,i
+                xw[key][i] = xref[key][i]+deltax
+                #if comm.rank == 0:print 'xw',xw
+                geo.setValues(xw,scaled=True)
+                geo.update('wing')
+                averagesol = dvFunc(xw)
+                ref.xref = xw['xref']
+                
+                BM = self.computeRootBendingMoment(averagesol,ref,geom,flow.liftIndex)
+               
+                #if comm.rank == 0:print 'cgderiv',CGderiv,xcg
+                BMderiv[key].append(numpy.imag(BM)/numpy.imag(deltax))
+                xw = copy.deepcopy(xref)
+                #if comm.rank == 0:print 'xw2',xw
+            #end
+            
+        #endfor
+        #geo.complex = False
+        geo.setValues(x,scaled=True)
+        geo.update('wing')
+
+        return BMderiv
 
 #==============================================================================
 # weight and balance Analysis Test

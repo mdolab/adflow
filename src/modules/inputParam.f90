@@ -670,6 +670,7 @@
        !                      computation.
        ! lengthRef:           Reference length for the moments computation.
        ! pointRef(3):         Moment reference point.
+       ! pointRefEC(3):       Elastic center. Bending moment refernce point
 
        integer(kind=intType) :: equations, equationMode, flowType
        integer(kind=intType) :: turbModel, cpModel, turbProd
@@ -679,6 +680,8 @@
        logical :: wallFunctions, wallDistanceNeeded
 
        real(kind=realType) :: Mach, MachCoef,MachGrid
+       !AD derivative values
+       real(kind=realType) :: Machd, MachCoefd,MachGridd
        real(kind=realType) :: Reynolds, ReynoldsLength
        real(kind=realType) :: tempFreestream, gammaConstant, RGasDim
        real(kind=realType) :: gammaconstantb, gammaconstantd
@@ -686,10 +689,11 @@
        real(kind=realType) :: eddyVisInfRatio, turbIntensityInf
        real(kind=realType) :: surfaceRef, lengthRef
 
-       real(kind=realType), dimension(3) :: velDirFreestream
-       real(kind=realType), dimension(3) :: liftDirection
-       real(kind=realType), dimension(3) :: dragDirection
+       real(kind=realType), dimension(3) :: velDirFreestream,velDirFreestreamd
+       real(kind=realType), dimension(3) :: liftDirection,liftDirectiond
+       real(kind=realType), dimension(3) :: dragDirection,dragDirectiond
        real(kind=realType), dimension(3) :: pointRef
+       real(kind=realType), dimension(3) :: pointRefEC
 
        end module inputPhysics
 

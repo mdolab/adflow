@@ -534,7 +534,11 @@
    IF (pori(i, j, k) .EQ. normalflux) ppor = half
    rradd = ppor*(radid(i, j, k)+radid(i+1, j, k))
    rrad = ppor*(radi(i, j, k)+radi(i+1, j, k))
-   ! Modification for FD Preconditioner
+   ! Modification for FD Preconditioner Note: This lumping
+   ! actually still results in a greater than 3 cell stencil
+   ! in any direction. Since this seems to work slightly
+   ! better than the dis2=sigma*fis4*rrad, we will just use
+   ! a 5-cell stencil for doing the PC
    IF (lumpeddiss) THEN
    IF (dss1 .LT. dss2) THEN
    y1d = dss2d
@@ -552,6 +556,7 @@
    END IF
    dis2d = fis2*(rradd*min1+rrad*min1d) + sigma*fis4*rradd
    dis2 = fis2*rrad*min1 + sigma*fis4*rrad
+   !dis2 = sigma*fis4*rrad 
    dis4 = 0.0
    dis4d = 0.0
    ELSE
@@ -705,6 +710,7 @@
    END IF
    dis2d = fis2*(rradd*min3+rrad*min3d) + sigma*fis4*rradd
    dis2 = fis2*rrad*min3 + sigma*fis4*rrad
+   !dis2 = sigma*fis4*rrad 
    dis4 = 0.0
    dis4d = 0.0
    ELSE
@@ -858,6 +864,7 @@
    END IF
    dis2d = fis2*(rradd*min5+rrad*min5d) + sigma*fis4*rradd
    dis2 = fis2*rrad*min5 + sigma*fis4*rrad
+   !dis2 = sigma*fis4*rrad 
    dis4 = 0.0
    dis4d = 0.0
    ELSE

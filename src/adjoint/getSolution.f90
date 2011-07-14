@@ -31,6 +31,9 @@ subroutine getSolution(sps)
 !!$  real(kind=realType) :: dcldqdot,dcddqdot,dcmzdqdot
   real(kind=realType), dimension(nCostFunction)::globalCFVals
   real(kind=realType),dimension(:),allocatable :: localVal,globalVal
+  real(kind=realType)::bendingMoment
+
+  real(kind=realType) :: value1,value2
   ! Function values
 
   if (.not. allocated(functionValue)) then
@@ -39,6 +42,16 @@ subroutine getSolution(sps)
 
   functionValue(:) = 0.0
   call computeAeroCoef(globalCFVals,sps)
+
+  call computeRootBendingMoment(globalCFVals,bendingMoment)
+  if(myid==0)then
+     print *,'Bending Coefficient',bendingMoment
+  end if
+ !  call farFieldDrag(value1)
+!   call farFieldInducedDrag(value2)
+!   if (myID==0)then
+!      print *,'Total Drag:',value2-value1
+!   end if
   functionValue(costFuncLift) = globalCFVals(costFuncLift) 
   functionValue(costFuncDrag) = globalCFVals(costFuncDrag) 
   functionValue(costFuncLiftCoef) = globalCFVals(costFuncLiftCoef) 

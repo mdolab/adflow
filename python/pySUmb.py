@@ -36,6 +36,7 @@ import copy
 # =============================================================================
 # External Python modules
 # =============================================================================
+
 import numpy
 from numpy import real,pi,sqrt
 
@@ -72,6 +73,7 @@ class SUMB(AeroSolver):
             'outputDir':[str,'./'],
             'solRestart':[bool,False],
             'writeSolution':[bool,True],
+            'writeMesh':[bool,False],
 
             # Physics Paramters
             'Discretization':[str,'Central plus scalar dissipation'],
@@ -187,6 +189,7 @@ class SUMB(AeroSolver):
             'ASMOverlap' : [int,5],
             'subKSPSubspaceSize':[int,10],
             'finiteDifferencePC':[bool,True],
+            'useReverseModeAD':[bool,True],
             }
 
         informs = {
@@ -319,7 +322,8 @@ class SUMB(AeroSolver):
             'pointrefy':'adjointvars.ndesignpointrefy',
             'pointrefz':'adjointvars.ndesignpointrefzy',
             'lengthref':'adjointvars.ndesignlengthref',
-            'surfaceref':'adjointvars.ndesignsurfaceref'
+            'surfaceref':'adjointvars.ndesignsurfaceref',
+            'disserror':'adjointvars.ndesigndisserror'
             }
 
         self.aeroDVs = []
@@ -596,10 +600,12 @@ class SUMB(AeroSolver):
                 'storeHistory',
                 'numberSolutions',
                 'writeSolution',
+                'writeMesh',
                 'familyRot',  # -> Not sure how to do
                 'areaAxis',
                 'autoSolveRetry',
-                'autoAdjointRetry'
+                'autoAdjointRetry',
+                'useReverseModeAD'
                 ]
         # end if
         
@@ -741,6 +747,19 @@ class SUMB(AeroSolver):
         self.sumb.updateflow()
         self._update_vel_info = True
         return
+
+    def setElasticCenter(self,aero_problem):
+        '''
+        set the value of pointRefEC for the bending moment calculation
+        '''
+        #aero_problem._geometry.ListAttributes()
+        
+        self.sumb.inputphysics.pointrefec[0] = aero_problem._geometry.xRootec\
+            *self.metricConversion
+        self.sumb.inputphysics.pointrefec[1] = aero_problem._geometry.yRootec\
+            *self.metricConversion
+        self.sumb.inputphysics.pointrefec[2] = aero_problem._geometry.zRootec\
+            *self.metricConversion
     
     def setReferencePoint(self,aero_problem):
         '''
@@ -934,6 +953,7 @@ class SUMB(AeroSolver):
         self.setPeriodicParams(aero_problem)
         self.setInflowAngle(aero_problem)
         self.setReferencePoint(aero_problem)
+        self.setElasticCenter(aero_problem)
         self.setRotationRate(aero_problem)
         self.setRefArea(aero_problem)
 
@@ -978,6 +998,21 @@ class SUMB(AeroSolver):
         self._updatePeriodInfo()
         self._updateGeometryInfo()
         self._updateVelocityInfo()
+
+        #write out mesh file for volume debugging
+        if self.getOption('writeMesh'):
+            base = self.getOption('outputDir') + '/' + self.getOption('probName')
+            meshname = base + '_mesh.cgns'
+
+            if self.getOption('numberSolutions'):
+                meshname = base + '_mesh%d.cgns'%(self.callCounter)
+
+            #endif
+            self.writeMeshFile(meshname)
+            self.mesh.writeFEGrid(meshname[:-4]+'.dat')
+            if self.myid==0: print 'Warped Mesh written...exiting.'
+            sys.exit(0)
+        # end if
 
         # Check to see if the above update routines failed.
         self.sumb.killsignals.routinefailed = \
@@ -1357,6 +1392,51 @@ class SUMB(AeroSolver):
 
         return
 
+    def verifydRdw(self,**kwargs):
+        ''' run the verify drdw scripts in fortran'''
+        # Make sure adjoint is initialize
+        self.initAdjoint()
+        if not self.adjointMatrixSetup:
+            #self.sumb.createpetscvars()
+            self.setupAdjoint(None)#(forcePoints)
+        # end if
+	level = 1
+        self.sumb.iteration.currentlevel=level
+        self.sumb.iteration.groundlevel=level
+	self.sumb.verifydrdwfile(1)
+
+	return
+
+    def verifydRdx(self,**kwargs):
+        ''' run the verify drdw scripts in fortran'''
+        # Make sure adjoint is initialize
+        self.initAdjoint()
+        if not self.adjointMatrixSetup:
+            #self.sumb.createpetscvars()
+            self.setupAdjoint(None)#(forcePoints)
+        # end if
+	level = 1
+        self.sumb.iteration.currentlevel=level
+        self.sumb.iteration.groundlevel=level
+	self.sumb.verifydrdxfile(1)
+
+	return
+
+    def verifydRda(self,**kwargs):
+        ''' run the verify drdw scripts in fortran'''
+        # Make sure adjoint is initialize
+        self.initAdjoint()
+        if not self.adjointMatrixSetup:
+            #self.sumb.createpetscvars()
+            self.setupAdjoint(None)#(forcePoints)
+        # end if
+        level = 1
+        self.sumb.iteration.currentlevel=level
+        self.sumb.iteration.groundlevel=level
+	self.sumb.verifydrdextrafile(1)
+
+	return
+    
     def initAdjoint(self, *args, **kwargs):
         '''
         Initialize the Ajoint problem for this test case
@@ -1380,6 +1460,7 @@ class SUMB(AeroSolver):
         self.sumb.adjointvars.ndesignpointrefz = -1
         self.sumb.adjointvars.ndesignlengthref = -1
         self.sumb.adjointvars.ndesignsurfaceref = -1
+        self.sumb.adjointvars.ndesigndisserror = -1
         
         # Set the required paramters for the aero-Only design vars:
         self.nDVAero = len(self.aeroDVs)#for debuggin with check all...
@@ -1436,8 +1517,13 @@ class SUMB(AeroSolver):
         if not self.adjointMatrixSetup:
             self.sumb.createpetscvars()
  
-            self.sumb.setupallresidualmatrices()
-
+            if  self.getOption('useReverseModeAD'):
+                if self.myid==0:print 'computing with reverse mode...'
+                self.sumb.setupallresidualmatrices()
+            else:
+                if self.myid==0:print 'computing with forward mode...'
+                self.sumb.setupallresidualmatricesfwd()
+            #end
             if forcePoints is None:
                 forcePoints = self.getForcePoints()
             # end if
@@ -1467,7 +1553,7 @@ class SUMB(AeroSolver):
         '''
 
         self.sumb.destroypetscvars()
-
+        self.adjointMatrixSetup = False
         return
 
     def _on_adjoint(self,objective,forcePoints=None,*args,**kwargs):
@@ -1615,7 +1701,7 @@ class SUMB(AeroSolver):
 
             # dIda contribution for drda^T * psi
             dIda_2 = self.getdRdaPsi()
-
+         
             # Total derivative of the obective wrt aero-only DVs
             dIda = dIda_1 - dIda_2
 
@@ -1652,6 +1738,7 @@ class SUMB(AeroSolver):
         if (self._update_geom_info):
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
+	    #print numpy.real(newGrid)
             if newGrid is not None:
                 self.sumb.setgrid(self.mesh.getSolverGrid())
                 

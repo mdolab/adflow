@@ -143,7 +143,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
         ! Do Coloring and perturb states
         do iColor = 1,nColor
-
+           !print *,'icolor',icolor
            do sps2 = 1,nTimeIntervalsSpectral
               flowDomsd(sps2)%dw_deriv(:,:,:,:,:) = 0.0
            end do
@@ -176,9 +176,9 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
               ! Block-based residual
               if (useAD) then
-                 !call block_res_d(nn,sps)
-                 print *,'AD Not Implmented Yet'
-                 stop
+                 call block_res_d(nn,sps)
+                 !print *,'AD Not Implmented Yet'
+                 !stop
               else
                  call block_res(nn,sps)
               end if
@@ -422,7 +422,7 @@ contains
 !        print *,blk
 !        print *,'icolor is:',icolor
 !        print *,'color of this cell:',flowdomsd(1)%color(i,j,k)
-!        print *,'dw at this screwed block is:'
+!        print *,'dw at this block is:'
 !        print *,flowDoms(nn,1,sps)%dw(i,j,k,:)/flowdoms(nn,1,sps)%vol(i,j,k)
 !        print *,flowDomsd(sps2)%dwtmp(i,j,k,:)
 !        print *,'Peturbed w:'
@@ -432,7 +432,7 @@ contains
 !     end if
 
 !     if (has_nan) then
-!        print *,'Block is screwed with a nan'
+!        print *,'Block has a nan'
 !        print *,ii,jj,kk
 !        stop
 !     end if

@@ -26,6 +26,7 @@
 
 SUBDIR_SRC    = src/modules       \
 		src/bcdata        \
+                src/bendingMomentAnalysis\
 	        src/initFlow      \
 	        src/inputParam    \
 	        src/metis-4.0     \
@@ -54,7 +55,8 @@ SUBDIR_ADJOINT = src/adjoint               \
 	         src/adjoint/residualNKPCOutput \
 		 src/forwardAdjoint \
 		 src/forwardAdjoint/residualInput \
-		 src/forwardAdjoint/residualOutput
+		 src/forwardAdjoint/residualOutput\
+		 src/forwardAdjoint/residualOutputExtra
 
 
 SUBDIR_WARPING = src/warping \
