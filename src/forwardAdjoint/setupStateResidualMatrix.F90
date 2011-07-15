@@ -336,23 +336,11 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
   end do domainLoopAD
 
-<<<<<<< /nfs/tuff/home/mader/hg/SUmbADjoint/src/forwardAdjoint/setupStateResidualMatrix.F90.orig.211473228
   ! Redo the complete residual to make sure all the halos/pressures
   ! are up to date
   call computeResidualNK()
 
-||||||| /tmp/setupStateResidualMatrix.F90~base.CtsCbI
-=======
-  time(2) = mpi_wtime()
-  call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
-       SUmb_comm_world, ierr)
 
-  if (myid == 0) then
-     print *,'Assembly time:',setupTime
-  end if
-
-
->>>>>>> /tmp/setupStateResidualMatrix.F90~other.xkX6ZV
   !Return dissipation Parameters to normal -> VERY VERY IMPORTANT
   if (usePC) then
      lumpedDiss = .False.
@@ -364,27 +352,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   call MatAssemblyEnd  (matrix,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-<<<<<<< /nfs/tuff/home/mader/hg/SUmbADjoint/src/forwardAdjoint/setupStateResidualMatrix.F90.orig.211473228
-#ifdef USE_PETSC_3
-  call MatSetOption(matrix,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#else
-  call MatSetOption(matrix,MAT_NO_NEW_NONZERO_LOCATIONS,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#endif
 
-  time(2) = mpi_wtime()
-  call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
-       SUmb_comm_world, ierr)
-  
-  if (myid == 0) then
-     if (usePC == .False. .or. useTranspose == .True.) then
-        print *,'Assembly time:',setupTime
-     end if
-  end if
-  ! Debugging ONLY!
-  !call writeOutMatrix()
-||||||| /tmp/setupStateResidualMatrix.F90~base.CtsCbI
 #ifdef USE_PETSC_3
   call MatSetOption(matrix,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -404,29 +372,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   end if
   ! Debugging ONLY!
   !call writeOutMatrix()
-=======
-!#ifdef USE_PETSC_3
-!!$  if (assembled == 0) then
-!!$     stop
-!!$  end if
 
-!!$  if (assembled == 1) then
-!!$     call writeOutMatrix()
-!!$
-!!$     if (useAD) then
-!!$        CLOSE (18)
-!!$        CLOSE (13)
-!!$     else 
-!!$        CLOSE (16)
-!!$        CLOSE (14)
-!!$     end if
-!!$
-!!$     CLOSE (17)
-!!$  end if
-
-  
-  
->>>>>>> /tmp/setupStateResidualMatrix.F90~other.xkX6ZV
 
 contains
 

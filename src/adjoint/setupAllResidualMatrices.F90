@@ -888,42 +888,22 @@ subroutine setupAllResidualMatrices
 #endif
 
 
-<<<<<<< /nfs/tuff/home/mader/hg/SUmbADjoint/src/adjoint/setupAllResidualMatrices.F90.orig.823210853
 !!$  ! Redo drdw with FD
 !!$  useAD = .True.!.False.
 !!$  usePC = .False.
 !!$  useTranspose = .True.
 !!$  print *,'Doing FD dRdw'
 !!$  call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
-||||||| /tmp/setupAllResidualMatrices.F90~base.9t_cnD
-  ! Redo drdw with FD
-  useAD = .True.!.False.
-  usePC = .False.
-  useTranspose = .True.
-  !print *,'Doing FD dRdw'
-  call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
-=======
-  ! Redo drdw with FD
-  useAD = .True.!.False.
-  usePC = .False.
-  useTranspose = .True.
-  !print *,'Doing FD dRdw'
-  !call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
->>>>>>> /tmp/setupAllResidualMatrices.F90~other.sZk1Em
-  !print *,'doing FD dRdx'
-<<<<<<< /nfs/tuff/home/mader/hg/SUmbADjoint/src/adjoint/setupAllResidualMatrices.F90.orig.823210853
+
+ !print *,'doing FD dRdx'
+
   !call setupSpatialResidualMatrix(drdx,useAD)
 !!$  print *,'doing FD dRda'
 !!$  useAD = .True.!.False.
 !!$  call setupExtraResidualMatrix(drda,useAD)
 !!$  
-||||||| /tmp/setupAllResidualMatrices.F90~base.9t_cnD
-  !call setupSpatialResidualMatrix(drdx,useAD)
 
-=======
-  call setupSpatialResidualMatrix(drdx,useAD)
 
->>>>>>> /tmp/setupAllResidualMatrices.F90~other.sZk1Em
 10 format(a)
 20 format(a,1x,f8.2)
 99 format(a,1x,i6)
