@@ -23,7 +23,7 @@ subroutine determineStencil
   integer(kind=intType) :: stencil(-3:3,-3:3,-3:3)
   logical :: different
   delta_x = 1.0
- 
+
   stencil = 0
   call setPointers(1,1,1)
   ! Make sure the first block is big enough

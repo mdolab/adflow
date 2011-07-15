@@ -40,7 +40,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
   !     Local variables.
   integer(kind=intType) :: ierr,nn,sps,sps2,i,j,k,l,ll,ii,jj,kk
-  integer(kind=intType) :: irow,icol,ilow,ihigh
+  integer(kind=intType) :: irow,icol,ilow,ihigh,assembled
   real(kind=realType) :: delta_x,one_over_dx
 
   real(kind=realType), dimension(2) :: time
@@ -56,14 +56,40 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   ! Start Timer
   time(1) = mpi_wtime()
 
-!   open (UNIT=13,File="fd.out",status='replace',action='write',iostat=ierr) 
-!   call EChk(ierr,__FILE__,__LINE__)
-!   open (UNIT=14,File="ad.out",status='replace',action='write',iostat=ierr) 
-!   call EChk(ierr,__FILE__,__LINE__)
+!!$   if (useAD) then
+!!$      open (UNIT=18,File="fad.out",status='replace',action='write',iostat=ierr) 
+!!$      print *,'openfile error',ierr
+!!$      call EChk(ierr,__FILE__,__LINE__)
+!!$   else 
+!!$      open (UNIT=16,File="fd.out",status='replace',action='write',iostat=ierr) 
+!!$      print *,'openfile error',ierr
+!!$      call EChk(ierr,__FILE__,__LINE__)
+!!$   end if
+!!$
+!!$   if (useAD) then
+!!$      open (UNIT=13,File="fadtrial.out",status='replace',action='write',iostat=ierr) 
+!!$      print *,'openfile error',ierr
+!!$      call EChk(ierr,__FILE__,__LINE__)
+!!$   else 
+!!$      open (UNIT=14,File="fdtrial.out",status='replace',action='write',iostat=ierr) 
+!!$      print *,'openfile error',ierr
+!!$      call EChk(ierr,__FILE__,__LINE__)
+!!$   end if
 
-!   call MatConvert(matrix,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
-!   call EChk(ierr,__FILE__,__LINE__)
+   call MatAssembled(matrix,assembled,ierr)
+   call EChk(ierr,__FILE__,__LINE__)
+   print *,'assembled =',assembled
+  
+!!$   open (UNIT=17,File="ad.out",status='replace',action='write',iostat=ierr)
+!!$   print*,'openfile error 2',ierr
+!!$   call EChk(ierr,__FILE__,__LINE__)
 
+   if (assembled) then
+   call MatConvert(matrix,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
+   call EChk(ierr,__FILE__,__LINE__)
+   end if
+
+   
   ! Zero out the matrix before we start
   call MatZeroEntries(matrix,ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -135,10 +161,13 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
      else
         if( .not. viscous ) then
            call setup_dRdw_euler_coloring(nn,nColor) ! Euler Colorings
+           !call setup_5x5x5_coloring(nn,nColor)
+           !call setup_BF_coloring(nn,nColor)
         else 
            call setup_dRdw_visc_coloring(nn,nColor)! Viscous/RANS
         end if
      end if
+     
      spectralLoop: do sps=1,nTimeIntervalsSpectral
 
         ! Do Coloring and perturb states
@@ -166,14 +195,18 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
                        if (flowdomsd(1)%color(i,j,k) == icolor) then
                           if (useAD) then
                              flowdomsd(sps)%w(i,j,k,l) = 1.0
+                             !write(13,*),flowdomsd(sps)%w(i,j,k,l)
                           else
                              w(i,j,k,l) = w(i,j,k,l) + delta_x
+                             !write(14,*),w(i,j,k,l)
                           end if
                        end if
                     end do
                  end do
               end do
+              !print *, 'perturbation done'
 
+              
               ! Block-based residual
               if (useAD) then
                  call block_res_d(nn,sps)
@@ -182,7 +215,11 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
               else
                  call block_res(nn,sps)
               end if
+              
+              !print *, 'called block_res_d'
 
+
+              
               ! Set the computed residual in dw_deriv. If using FD,
               ! actually do the FD calculation if AD, just copy out dw
               ! in flowdomsd
@@ -194,8 +231,17 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
                        do j=2,jl
                           do i=2,il
                              if (useAD) then
+                                !write (13, *), i,j,k, flowDomsd(sps2)%w(i,j,k,ivx)
                                 flowDomsd(sps2)%dw_deriv(i,j,k,ll,l) = &
                                      flowdomsd(sps2)%dw(i,j,k,ll)
+!!$                                if (l == 1) then
+!!$                                if (ll == 1) then
+!!$                                   if (flowDomsd(sps2)%dw_deriv(i,j,k,ll,l) > 0.0001) then
+!!$                                      write(13,40),i,j,k,flowDomsd(sps2)%dw_deriv(i,j,k,ll,l)
+!!$                                   end if
+!!$                                end if
+!!$                                end if 
+                         
                              else
                                 if (sps2 == sps) then
                                    ! If the peturbation is on this
@@ -205,7 +251,14 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
                                    flowDomsd(sps2)%dw_deriv(i,j,k,ll,l) = &
                                         one_over_dx*(flowDoms(nn,1,sps2)%dw(i,j,k,ll) - &
                                         flowDomsd(sps2)%dwtmp(i,j,k,ll))
-
+!!$                                   if (l == 1) then
+!!$                                   if (ll == 1) then
+!!$                                      if (flowDomsd(sps2)%dw_deriv(i,j,k,ll,l) > 0.0001) then
+!!$                                         write(14,40),i,j,k,flowDomsd(sps2)%dw_deriv(i,j,k,ll,l)
+!!$                                      end if
+!!$                                   end if
+!!$                                   end if
+                                   
                                 else
 
                                    ! If the peturbation is on an off
@@ -261,6 +314,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
                                 do sps2=1,nTimeIntervalsSpectral
                                    irow = flowDoms(nn,1,sps2)%globalCell(i+ii,j+jj,k+kk)
                                    call setBlock(flowDomsd(sps2)%dw_deriv(i+ii,j+jj,k+kk,:,:))
+                                   !write (13,*),i,j,k,flowDomsd(sps2)%dw_deriv(i,j,k,:,:)
                                 end do
 
                              else
@@ -282,10 +336,23 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
   end do domainLoopAD
 
+<<<<<<< /nfs/tuff/home/mader/hg/SUmbADjoint/src/forwardAdjoint/setupStateResidualMatrix.F90.orig.211473228
   ! Redo the complete residual to make sure all the halos/pressures
   ! are up to date
   call computeResidualNK()
 
+||||||| /tmp/setupStateResidualMatrix.F90~base.CtsCbI
+=======
+  time(2) = mpi_wtime()
+  call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
+       SUmb_comm_world, ierr)
+
+  if (myid == 0) then
+     print *,'Assembly time:',setupTime
+  end if
+
+
+>>>>>>> /tmp/setupStateResidualMatrix.F90~other.xkX6ZV
   !Return dissipation Parameters to normal -> VERY VERY IMPORTANT
   if (usePC) then
      lumpedDiss = .False.
@@ -297,6 +364,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   call MatAssemblyEnd  (matrix,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
+<<<<<<< /nfs/tuff/home/mader/hg/SUmbADjoint/src/forwardAdjoint/setupStateResidualMatrix.F90.orig.211473228
 #ifdef USE_PETSC_3
   call MatSetOption(matrix,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -316,6 +384,49 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   end if
   ! Debugging ONLY!
   !call writeOutMatrix()
+||||||| /tmp/setupStateResidualMatrix.F90~base.CtsCbI
+#ifdef USE_PETSC_3
+  call MatSetOption(matrix,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+#else
+  call MatSetOption(matrix,MAT_NO_NEW_NONZERO_LOCATIONS,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+#endif
+
+  time(2) = mpi_wtime()
+  call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
+       SUmb_comm_world, ierr)
+
+  if (myid == 0) then
+     if (usePC == .False. .or. useTranspose == .True.) then
+        print *,'Assembly time:',setupTime
+     end if
+  end if
+  ! Debugging ONLY!
+  !call writeOutMatrix()
+=======
+!#ifdef USE_PETSC_3
+!!$  if (assembled == 0) then
+!!$     stop
+!!$  end if
+
+!!$  if (assembled == 1) then
+!!$     call writeOutMatrix()
+!!$
+!!$     if (useAD) then
+!!$        CLOSE (18)
+!!$        CLOSE (13)
+!!$     else 
+!!$        CLOSE (16)
+!!$        CLOSE (14)
+!!$     end if
+!!$
+!!$     CLOSE (17)
+!!$  end if
+
+  
+  
+>>>>>>> /tmp/setupStateResidualMatrix.F90~other.xkX6ZV
 
 contains
 
@@ -348,19 +459,19 @@ contains
     do nn=1,nDom
        call setPointersAdj(nn,1,1)
       
-
+     
        do kcell=2,kl
           do jcell=2,jl
              do icell=2,il
-
+                
                 irow = globalCell(icell,jcell,kcell)
-
+               
                 do i_stencil=1,n_stencil
                    ii = stencil(i_stencil,1)
                    jj = stencil(i_stencil,2)
                    kk = stencil(i_stencil,3)
 
-
+                   
                    if ( icell+ii >= 2 .and. icell+ii <= il .and. &
                         jcell+jj >= 2 .and. jcell+jj <= jl .and. &
                         kcell+kk >= 2 .and. kcell+kk <= kl) then 
@@ -370,11 +481,21 @@ contains
                       do i=1,nw
                          do j=1,nw
 
-                            call MatGetValues(matrix  ,1,irow*nw+i-1,1,icol*nw+j-1,val1(i,j),ierr)
+                            call MatGetValues(matrix  ,1,icol*nw+j-1,1,irow*nw+i-1,val1(i,j),ierr)
+                            call EChk(ierr,__FILE__,__LINE__)
                             call MatGetValues(mat_copy,1,irow*nw+i-1,1,icol*nw+j-1,val2(i,j),ierr)
+                            call EChk(ierr,__FILE__,__LINE__)
 
-                            write(13,30),nn,icell,jcell,kcell,icell+ii,jcell+jj,kcell+kk,i,j,val1(i,j)
-                            write(14,30),nn,icell,jcell,kcell,icell+ii,jcell+jj,kcell+kk,i,j,val2(i,j)
+                            if (useAD) then
+                               write(18,30),nn,icell,jcell,kcell,icell+ii,jcell+jj,kcell+kk,i,j,val1(i,j)
+                            else 
+!!$                               if (val1(i,j) > 0.00001) then
+                               write(16,30),nn,icell,jcell,kcell,icell+ii,jcell+jj,kcell+kk,i,j,val1(i,j)
+!!$                               end if
+                            end if
+!!$                            if (val2(i,j) > 0.00001) then
+                            write(17,30),nn,icell,jcell,kcell,icell+ii,jcell+jj,kcell+kk,i,j,val2(i,j)
+!!$                            end if
 
                          end do
                       end do
@@ -437,5 +558,7 @@ contains
 !        stop
 !     end if
 !   end subroutine checkBlock
+
+
 
 end subroutine setupStateResidualMatrix

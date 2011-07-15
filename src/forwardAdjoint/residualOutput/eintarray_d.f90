@@ -159,6 +159,6 @@
    END IF
    END DO
    CASE DEFAULT
-      !eintd = 0.0
+   !eintd = 0.0
    END SELECT
    END SUBROUTINE EINTARRAY_D

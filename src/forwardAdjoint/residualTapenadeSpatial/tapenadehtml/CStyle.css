@@ -1,0 +1,17 @@
+code           {font-weight:light; color:black}
+code.plain     {font-weight:light; color:black}
+code.string    {font-weight:light; color:brown}
+code.constant  {font-weight:light}
+code.comment   {font-weight:light; color:red}
+code.keyword   {font-weight:light; color:violet}
+code.funcname  {font-weight:light; color:blue}
+code.external  {font-weight:light; color:black}
+code.typename  {font-weight:light; color:green}
+code.label     {font-weight:light; color:red}
+code.modifier  {font-weight:light; color:green}
+code.vardecl   {font-weight:light; color:purple}
+code.include  {font-weight:light; color:blue}
+
+A              {color:black; text-decoration:none} 
+A:hover        {} 
+A:visited      {color:black}

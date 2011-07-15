@@ -87,7 +87,8 @@
 #     ******************************************************************
 
 #SOLVER_DIRSRC = /nfs/mica/home/kenway/hg/SUmbADjoint/src
-SOLVER_DIRSRC = /nfs/tuff/home/mader/hg/SUmbADjoint/src
+#SOLVER_DIRSRC = /nfs/tuff/home/mader/hg/SUmbADjoint/src
+SOLVER_DIRSRC = /home/cody/hg/SUmbADjoint/src
 
 #     ******************************************************************
 #     *                                                                *

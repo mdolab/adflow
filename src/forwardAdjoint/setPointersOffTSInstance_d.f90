@@ -24,7 +24,7 @@ subroutine setPointersOffTSInstance_d(nn,sps,sps2)
   integer(kind=intType), intent(in) :: nn,sps,sps2
   
   call setPointersOffTSInstance(nn,sps,sps2)
-
+  
   viscSubfaced => flowDomsd(sps)%viscSubface
 
   xd    => flowDomsd(sps)%x
@@ -50,6 +50,7 @@ subroutine setPointersOffTSInstance_d(nn,sps,sps2)
   wd     => flowDomsd(sps)%w
   wOldd  => flowDomsd(sps)%wOld
   pd     => flowDomsd(sps)%p
+  !write(13,*),flowDomsd(sps)%w
 
   gammad => flowDomsd(sps)%gamma
   rlvd   => flowDomsd(sps)%rlv

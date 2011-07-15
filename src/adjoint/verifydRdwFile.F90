@@ -135,40 +135,40 @@
 !     *  Begin execution                                               *
 !     *                                                                *
 !     ******************************************************************
-
-      if( myID==0 ) write(*,*) "Running verifydRdWFile..."
-
-      currentLevel = level
-      !discr        = spaceDiscr
-      fineGrid     = .true.
-
-      ! Determine whether or not the total energy must be corrected
-      ! for the presence of the turbulent kinetic energy.
-
-      if( kPresent ) then
-         if((currentLevel <= groundLevel) .or. turbCoupled) then
-            correctForK = .true.
-         else
-            correctForK = .false.
-         endif
-      else
-         correctForK = .false.
-      endif
-
-      ! and whether or not turbulence variables should be exchanged
-      exchangeTurb = .false.
-
-      
-      ! Set the value of secondHalo, depending on the situation.
-      ! In the full MG (currentLevel < groundLevel) the second halo is
-      ! always set; otherwise only on the finest mesh in the current mg
-      ! cycle.
-
-      if(currentLevel <= groundLevel) then
-         secondHalo = .true.
-      else
-         secondHalo = .false.
-      endif
+!!$
+!!$      if( myID==0 ) write(*,*) "Running verifydRdWFile..."
+!!$
+!!$      currentLevel = level
+!!$      !discr        = spaceDiscr
+!!$      fineGrid     = .true.
+!!$
+!!$      ! Determine whether or not the total energy must be corrected
+!!$      ! for the presence of the turbulent kinetic energy.
+!!$
+!!$      if( kPresent ) then
+!!$         if((currentLevel <= groundLevel) .or. turbCoupled) then
+!!$            correctForK = .true.
+!!$         else
+!!$            correctForK = .false.
+!!$         endif
+!!$      else
+!!$         correctForK = .false.
+!!$      endif
+!!$
+!!$      ! and whether or not turbulence variables should be exchanged
+!!$      exchangeTurb = .false.
+!!$
+!!$      
+!!$      ! Set the value of secondHalo, depending on the situation.
+!!$      ! In the full MG (currentLevel < groundLevel) the second halo is
+!!$      ! always set; otherwise only on the finest mesh in the current mg
+!!$      ! cycle.
+!!$
+!!$      if(currentLevel <= groundLevel) then
+!!$         secondHalo = .true.
+!!$      else
+!!$         secondHalo = .false.
+!!$      endif
 
 
 !
@@ -182,31 +182,31 @@
       ! Exchange the pressure if the pressure must be exchanged early.
       ! Only the first halo's are needed, thus whalo1 is called.
       ! Only on the fine grid.
-      
-      if(exchangePressureEarly .and. currentLevel <= groundLevel) &
-           call whalo1(currentLevel, 1_intType, 0_intType, .true.,&
-           .false., .false.)
-      
-      ! Apply all boundary conditions to all blocks on this level.
-      !print *,'second halo',secondhalo,exchangePressureEarly
-      call applyAllBC(secondHalo)
-      
-      ! Exchange the solution. Either whalo1 or whalo2
-      ! must be called.
-      
-      if( secondHalo ) then
-         call whalo2(currentLevel, 1_intType, nMGVar, .true., &
-              .true., .true.)
-      else
-         call whalo1(currentLevel, 1_intType, nMGVar, .true., &
-              .true., .true.)
-      endif
-
-     ! Reset the values of rkStage and currentLevel, such that
-      ! they correspond to a new iteration.
-
-      rkStage = 0
-      currentLevel = groundLevel
+!!$      
+!!$      if(exchangePressureEarly .and. currentLevel <= groundLevel) &
+!!$           call whalo1(currentLevel, 1_intType, 0_intType, .true.,&
+!!$           .false., .false.)
+!!$      
+!!$      ! Apply all boundary conditions to all blocks on this level.
+!!$      !print *,'second halo',secondhalo,exchangePressureEarly
+!!$      call applyAllBC(secondHalo)
+!!$      
+!!$      ! Exchange the solution. Either whalo1 or whalo2
+!!$      ! must be called.
+!!$      
+!!$      if( secondHalo ) then
+!!$         call whalo2(currentLevel, 1_intType, nMGVar, .true., &
+!!$              .true., .true.)
+!!$      else
+!!$         call whalo1(currentLevel, 1_intType, nMGVar, .true., &
+!!$              .true., .true.)
+!!$      endif
+!!$
+!!$     ! Reset the values of rkStage and currentLevel, such that
+!!$      ! they correspond to a new iteration.
+!!$
+!!$      rkStage = 0
+!!$      currentLevel = groundLevel
 
 !!$      ! Compute the latest values of the skin friction velocity.
 !!$      ! The currently stored values are of the previous iteration.
@@ -248,8 +248,8 @@
 
       ! Get the initial AD time.
 
-      call mpi_barrier(SUmb_comm_world, ierr)
-      if( myID==0 ) call cpu_time(time(1))
+!!$      call mpi_barrier(SUmb_comm_world, ierr)
+!!$      if( myID==0 ) call cpu_time(time(1))
 
       !zero the matrix for dRdW Insert call
 !!$      call MatZeroEntries(dRdwt,PETScIerr)
