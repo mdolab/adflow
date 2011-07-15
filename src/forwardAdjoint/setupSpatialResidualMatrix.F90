@@ -39,7 +39,7 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
 
   real(kind=realType), dimension(2) :: time
   real(kind=realType)               ::setupTime,trace,nrm
-  integer(kind=intType) :: n_stencil,i_stencil
+  integer(kind=intType) :: n_stencil,i_stencil, assembled
   integer(kind=intType), dimension(:,:), pointer :: stencil
   integer(kind=intType) :: nColor,iColor
   logical :: secondHalo
@@ -67,7 +67,7 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
 
   ! Run the  initialize_stencils routine just in case
   call initialize_stencils
-
+  print *, 'after initialize stencils'
   ! Set a pointer to the correct set of stencil depending on if we are
   ! using the first order stencil or the full jacobian
 
@@ -115,6 +115,8 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
         stop
      end if
 
+     print*,'after colouring'
+
      spectralLoop: do sps=1,nTimeIntervalsSpectral
 
         ! Do Coloring and perturb states
@@ -157,12 +159,15 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
                  end do
               end do
 
+              print*,'after perturbation'
               ! Block-based residual
               if (useAD) then
-                 !call block_res_spatial_d(nn,sps)
+                 call block_res_spatial_spatial_d(nn,sps)
               else
-                 call block_res_spatial(nn,sps,x_peturb)
+                 call block_res_spatial(nn,sps)
               end if
+
+              print*,'after block_res_spatial_spatial_d'
 
               ! Set the computed residual in dw_deriv. If using FD,
               ! actually do the FD calculation if AD, just copy out dw
@@ -177,6 +182,7 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
                              if (useAD) then
                                 flowDomsd(sps2)%dw_deriv(i,j,k,ll,l) = &
                                      flowdomsd(sps2)%dw(i,j,k,ll)
+
                              else
                                 if (sps2 == sps) then
                                    ! If the peturbation is on this
@@ -262,6 +268,10 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
   call MatAssemblyEnd  (matrix,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
+  call MatAssembled(matrix,assembled,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  print *,'assembled spatial =',assembled
+
 #ifdef USE_PETSC_3
   call MatSetOption(matrix,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -294,6 +304,7 @@ contains
     do jjj=1,3
        do iii=1,nw
           call MatSetValues(matrix,1,irow*nw+iii-1,1,icol*3+jjj-1,blk(iii,jjj),ADD_VALUES,ierr)
+          !print *, blk(iii,jjj)
           call EChk(ierr,__FILE__,__LINE__)
        end do
     end do

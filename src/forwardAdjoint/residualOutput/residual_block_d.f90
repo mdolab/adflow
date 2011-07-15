@@ -24,6 +24,7 @@
    USE INPUTDISCRETIZATION
    USE ITERATION
    IMPLICIT NONE
+   !write(14,40),i,j,k,dw(i,j,k,l),fw(i,j,k,l)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -40,20 +41,6 @@
    LOGICAL :: finegrid
    REAL :: result1
    INTRINSIC REAL
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Begin execution                                                *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   ! Add the source terms from the level 0 cooling model.
-   !call level0CoolingModel
-   ! Set the value of rFil, which controls the fraction of the old
-   ! dissipation residual to be used. This is only for the runge-kutta
-   ! schemes; for other smoothers rFil is simply set to 1.0.
-   ! Note the index rkStage+1 for cdisRK. The reason is that the
-   ! residual computation is performed before rkStage is incremented.
    IF (smoother .EQ. rungekutta) THEN
    rfil = cdisrk(rkstage+1)
    ELSE
@@ -74,7 +61,6 @@
    STOP
    ELSE
    CALL INVISCIDCENTRALFLUX_D()
-   !print *,'dwd0',dwd(2,4,4,:),fwd(2,4,4,:)
    ! Compute the artificial dissipation fluxes.
    ! This depends on the parameter discr.
    SELECT CASE  (discr) 
@@ -82,7 +68,6 @@
    ! Standard scalar dissipation scheme.
    IF (finegrid) THEN
    CALL INVISCIDDISSFLUXSCALAR_D()
-   !print *,'dwd1',dwd(2,4,4,:),fwd(2,4,4,:)
    ELSE
    CALL INVISCIDDISSFLUXSCALARCOARSE_D()
    END IF
@@ -91,7 +76,6 @@
    ! Matrix dissipation scheme.
    IF (finegrid) THEN
    CALL INVISCIDDISSFLUXMATRIX_D()
-   
    ELSE
    CALL INVISCIDDISSFLUXMATRIXCOARSE_D()
    END IF
@@ -129,6 +113,20 @@
    END DO
    END DO
    END DO
-   !print *,'dwd2',dwd(2,4,4,:),fwd(2,4,4,:)
    END IF
+   !
+   !      ******************************************************************
+   !      *                                                                *
+   !      * Begin execution                                                *
+   !      *                                                                *
+   !      ******************************************************************
+   !
+   ! Add the source terms from the level 0 cooling model.
+   !call level0CoolingModel
+   ! Set the value of rFil, which controls the fraction of the old
+   ! dissipation residual to be used. This is only for the runge-kutta
+   ! schemes; for other smoothers rFil is simply set to 1.0.
+   ! Note the index rkStage+1 for cdisRK. The reason is that the
+   ! residual computation is performed before rkStage is incremented.
+   40 FORMAT(1x,i4,i4,i4,e20.6,e20.6)
    END SUBROUTINE RESIDUAL_BLOCK_D

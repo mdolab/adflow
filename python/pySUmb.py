@@ -952,7 +952,7 @@ class SUMB(AeroSolver):
         self.setPeriodicParams(aero_problem)
         self.setInflowAngle(aero_problem)
         self.setReferencePoint(aero_problem)
-        self.setElasticCenter(aero_problem)
+        #self.setElasticCenter(aero_problem)
         self.setRotationRate(aero_problem)
         self.setRefArea(aero_problem)
 

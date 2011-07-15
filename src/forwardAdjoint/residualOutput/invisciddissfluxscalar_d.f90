@@ -490,7 +490,6 @@
    END DO
    END DO
    END DO
-   !print *,'fw0',fwd(2,4,4,:)
    fwd = 0.0
    !
    !      ******************************************************************
@@ -650,7 +649,6 @@
    END DO
    END DO
    END DO
-   !print *,'fw1',fwd(2,4,4,:)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -658,7 +656,6 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   !print *,'istates',wd(2,2:6,4,:),'ent',ssd(2,2:6,4),'spect',radId(2,3:5,4),radjd(2,3:5,4)
    DO k=2,kl
    DO i=2,il
    x3d = ((ssd(i, 2, k)-two*ssd(i, 1, k)+ssd(i, 0, k))*(ss(i, 2, k)&
@@ -806,7 +803,6 @@
    END DO
    END DO
    END DO
-   !print *,'fw2',fwd(2,4,4,:)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -961,7 +957,6 @@
    END DO
    END DO
    END DO
-   !print *,'fw3',fwd(2,4,4,:)
    ! Replace rho times the total enthalpy by the total energy and
    ! store the velocities again instead of the momentum. Only for
    ! those entries that have been altered, i.e. ignore the
