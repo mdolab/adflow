@@ -3,8 +3,9 @@
    !
    !  Differentiation of computeetotcellcpfit in forward (tangent) mode:
    !   variations   of useful results: *gamma *w
-   !   with respect to varying inputs: cv0 *cptrange *cpeint *(*cptempfit.constants)
-   !                *cptempfit.eint0 cvn *p *gamma *w rgas scale
+   !   with respect to varying inputs: rgas cv0 *cptrange *cpeint
+   !                *(*cptempfit.constants) *cptempfit.eint0 cvn *p
+   !                *gamma *w scale
    !      ==================================================================
    SUBROUTINE COMPUTEETOTCELLCPFIT_EXTRA_D(i, j, k, scale, scaled, &
    &  correctfork)

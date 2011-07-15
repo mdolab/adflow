@@ -3,7 +3,8 @@
    !
    !  Differentiation of timestep_block in forward (tangent) mode:
    !   variations   of useful results: *radi *radj *radk
-   !   with respect to varying inputs: *p *gamma *w adis
+   !   with respect to varying inputs: *p *sfacei *sfacej *gamma *sfacek
+   !                *w adis
    !
    !      ******************************************************************
    !      *                                                                *
@@ -56,6 +57,7 @@
    REAL(kind=realtype) :: rid, rjd, rkd, rijd, rjkd, rkid
    REAL(kind=realtype) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
    REAL(kind=realtype) :: sface, tmp
+   REAL(kind=realtype) :: sfaced
    LOGICAL :: radiineeded
    REAL(kind=realtype) :: arg1
    REAL(kind=realtype) :: arg1d
@@ -117,6 +119,7 @@
    radid = 0.0
    radjd = 0.0
    radkd = 0.0
+   sfaced = 0.0
    ! No preconditioner. Simply the standard spectral radius.
    ! Loop over the cells, including the first level halo.
    DO k=1,ke
@@ -138,13 +141,15 @@
    ! normal in i-direction for a moving face. To avoid
    ! a number of multiplications by 0.5 simply the sum
    ! is taken.
-   IF (addgridvelocities) sface = sfacei(i-1, j, k) + sfacei(i&
-   &                , j, k)
+   IF (addgridvelocities) THEN
+   sfaced = sfaceid(i-1, j, k) + sfaceid(i, j, k)
+   sface = sfacei(i-1, j, k) + sfacei(i, j, k)
+   END IF
    ! Spectral radius in i-direction.
    sx = si(i-1, j, k, 1) + si(i, j, k, 1)
    sy = si(i-1, j, k, 2) + si(i, j, k, 2)
    sz = si(i-1, j, k, 3) + si(i, j, k, 3)
-   qsd = sx*uxd + sy*uyd + sz*uzd
+   qsd = sx*uxd + sy*uyd + sz*uzd - sfaced
    qs = ux*sx + uy*sy + uz*sz - sface
    IF (qs .GE. 0.) THEN
    abs1d = qsd
@@ -164,13 +169,15 @@
    radid(i, j, k) = half*(abs1d+result1d)
    radi(i, j, k) = half*(abs1+result1)
    ! The grid velocity in j-direction.
-   IF (addgridvelocities) sface = sfacej(i, j-1, k) + sfacej(i&
-   &                , j, k)
+   IF (addgridvelocities) THEN
+   sfaced = sfacejd(i, j-1, k) + sfacejd(i, j, k)
+   sface = sfacej(i, j-1, k) + sfacej(i, j, k)
+   END IF
    ! Spectral radius in j-direction.
    sx = sj(i, j-1, k, 1) + sj(i, j, k, 1)
    sy = sj(i, j-1, k, 2) + sj(i, j, k, 2)
    sz = sj(i, j-1, k, 3) + sj(i, j, k, 3)
-   qsd = sx*uxd + sy*uyd + sz*uzd
+   qsd = sx*uxd + sy*uyd + sz*uzd - sfaced
    qs = ux*sx + uy*sy + uz*sz - sface
    IF (qs .GE. 0.) THEN
    abs2d = qsd
@@ -190,13 +197,15 @@
    radjd(i, j, k) = half*(abs2d+result1d)
    radj(i, j, k) = half*(abs2+result1)
    ! The grid velocity in k-direction.
-   IF (addgridvelocities) sface = sfacek(i, j, k-1) + sfacek(i&
-   &                , j, k)
+   IF (addgridvelocities) THEN
+   sfaced = sfacekd(i, j, k-1) + sfacekd(i, j, k)
+   sface = sfacek(i, j, k-1) + sfacek(i, j, k)
+   END IF
    ! Spectral radius in k-direction.
    sx = sk(i, j, k-1, 1) + sk(i, j, k, 1)
    sy = sk(i, j, k-1, 2) + sk(i, j, k, 2)
    sz = sk(i, j, k-1, 3) + sk(i, j, k, 3)
-   qsd = sx*uxd + sy*uyd + sz*uzd
+   qsd = sx*uxd + sy*uyd + sz*uzd - sfaced
    qs = ux*sx + uy*sy + uz*sz - sface
    IF (qs .GE. 0.) THEN
    abs3d = qsd

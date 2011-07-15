@@ -3,7 +3,7 @@
    !
    !  Differentiation of applyallbc_block in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w
-   !   with respect to varying inputs: *p rgas pinfcorr winf
+   !   with respect to varying inputs: rgas pinfcorr winf *p *s *(*bcdata.rface)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -67,8 +67,8 @@
    CALL BCSYMMPOLAR_EXTRA_D(secondhalo)
    !call bcEulerWall(secondHalo, correctForK)
    ! The viscous wall boundary conditions.
-   !call bcNSWallAdiabatic( secondHalo, correctForK)
-   !call bcNSWallIsothermal(secondHalo, correctForK)
+   !CALL BCNSWALLADIABATIC_EXTRA_D(secondhalo, correctfork)
+   !CALL BCNSWALLISOTHERMAL_EXTRA_D(secondhalo, correctfork)
    ! The farfield is a special case, because the treatment
    ! differs when preconditioning is used. Make that distinction
    ! and call the appropriate routine.
@@ -79,17 +79,10 @@
    CALL TERMINATE('applyAllBC', &
    &                'Farfield boundary conditions for Turkel ', &
    &                'preconditioner not implemented')
-   gammad = 0.0
-   wd = 0.0
    CASE (choimerkle) 
    CALL TERMINATE('applyAllBC', &
    &                'Farfield boundary conditions for Choi and ', &
    &                'Merkle preconditioner not implemented')
-   gammad = 0.0
-   wd = 0.0
-   CASE DEFAULT
-   gammad = 0.0
-   wd = 0.0
    END SELECT
    !   ! Subsonic outflow and bleed outflow boundaries.
    !   call bcSubsonicOutflow(secondHalo, correctForK)

@@ -3,7 +3,7 @@
    !
    !  Differentiation of getdirvector in forward (tangent) mode:
    !   variations   of useful results: winddirection
-   !   with respect to varying inputs: alpha
+   !   with respect to varying inputs: alpha beta
    !
    !     ******************************************************************
    !     *                                                                *
@@ -14,8 +14,8 @@
    !     *                                                                *
    !     ******************************************************************
    !
-   SUBROUTINE GETDIRVECTOR_EXTRA_D(refdirection, alpha, alphad, beta, &
-   &  winddirection, winddirectiond, liftindex)
+   SUBROUTINE GETDIRVECTOR_EXTRA_D(refdirection, alpha, alphad, beta, betad&
+   &  , winddirection, winddirectiond, liftindex)
    USE CONSTANTS
    IMPLICIT NONE
    !(xb,yb,zb,alpha,beta,xw,yw,zw)
@@ -94,8 +94,8 @@
    &                          alphad, xbn, xbnd, ybn, ybnd, zbn, zbnd)
    ! 2) rotate beta radians ccw about y-axis
    !    ( <=> rotate z-axis -beta radians ccw)
-   CALL VECTORROTATION_EXTRA_D(xw, xwd, yw, ywd, zw, zwd, 2, -beta, 0.0&
-   &                          , x1, x1d, y1, y1d, z1, z1d)
+   CALL VECTORROTATION_EXTRA_D(xw, xwd, yw, ywd, zw, zwd, 2, -beta, -&
+   &                          betad, x1, x1d, y1, y1d, z1, z1d)
    ELSE IF (liftindex .EQ. 3) THEN
    ! Compute the wind direction vector.Aerosurf axes different!!
    ! 1) rotate alpha radians cw about z-axis
@@ -107,7 +107,6 @@
    &                          alphad, xbn, xbnd, ybn, ybnd, zbn, zbnd)
    ! 2) rotate beta radians ccw about y-axis
    !    ( <=> rotate z-axis -beta radians ccw)
-   betad = 0.0
    CALL VECTORROTATION_EXTRA_D(xw, xwd, yw, ywd, zw, zwd, 3, beta, &
    &                          betad, x1, x1d, y1, y1d, z1, z1d)
    ELSE

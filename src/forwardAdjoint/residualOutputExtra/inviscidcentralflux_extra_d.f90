@@ -3,7 +3,8 @@
    !
    !  Differentiation of inviscidcentralflux in forward (tangent) mode:
    !   variations   of useful results: *dw
-   !   with respect to varying inputs: *p *w timeref
+   !   with respect to varying inputs: timeref *p *sfacei *sfacej
+   !                *sfacek *w cgnsdoms.rotrate
    !
    !      ******************************************************************
    !      *                                                                *
@@ -38,9 +39,10 @@
    REAL(kind=realtype) :: qsp, qsm, rqsp, rqsm, porvel, porflux
    REAL(kind=realtype) :: qspd, qsmd, rqspd, rqsmd
    REAL(kind=realtype) :: pa, fs, sface, vnp, vnm
-   REAL(kind=realtype) :: pad, fsd, vnpd, vnmd
+   REAL(kind=realtype) :: pad, fsd, sfaced, vnpd, vnmd
    REAL(kind=realtype) :: wx, wy, wz, rvol
    REAL(kind=realtype) :: wxd, wyd, wzd, rvold
+   !REAL :: massflowfamilyinv(:, :)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -52,6 +54,7 @@
    ! block is not moving.
    sface = zero
    dwd = 0.0
+   sfaced = 0.0
    !
    !      ******************************************************************
    !      *                                                                *
@@ -64,7 +67,10 @@
    DO i=1,il
    ! Set the dot product of the grid velocity and the
    ! normal in i-direction for a moving face.
-   IF (addgridvelocities) sface = sfacei(i, j, k)
+   IF (addgridvelocities) THEN
+   sfaced = sfaceid(i, j, k)
+   sface = sfacei(i, j, k)
+   END IF
    ! Compute the normal velocities of the left and right state.
    vnpd = si(i, j, k, 1)*wd(i+1, j, k, ivx) + si(i, j, k, 2)*wd(i+1&
    &          , j, k, ivy) + si(i, j, k, 3)*wd(i+1, j, k, ivz)
@@ -88,18 +94,18 @@
    IF (pori(i, j, k) .EQ. noflux) porflux = zero
    IF (pori(i, j, k) .EQ. boundflux) THEN
    porvel = zero
+   vnpd = sfaced
    vnp = sface
+   vnmd = sfaced
    vnm = sface
-   vnmd = 0.0
-   vnpd = 0.0
    END IF
    ! Incorporate porFlux in porVel.
    porvel = porvel*porflux
    ! Compute the normal velocities relative to the grid for
    ! the face as well as the mass fluxes.
-   qspd = porvel*vnpd
+   qspd = porvel*(vnpd-sfaced)
    qsp = (vnp-sface)*porvel
-   qsmd = porvel*vnmd
+   qsmd = porvel*(vnmd-sfaced)
    qsm = (vnm-sface)*porvel
    rqspd = qspd*w(i+1, j, k, irho) + qsp*wd(i+1, j, k, irho)
    rqsp = qsp*w(i+1, j, k, irho)
@@ -170,7 +176,10 @@
    DO i=2,il
    ! Set the dot product of the grid velocity and the
    ! normal in j-direction for a moving face.
-   IF (addgridvelocities) sface = sfacej(i, j, k)
+   IF (addgridvelocities) THEN
+   sfaced = sfacejd(i, j, k)
+   sface = sfacej(i, j, k)
+   END IF
    ! Compute the normal velocities of the left and right state.
    vnpd = sj(i, j, k, 1)*wd(i, j+1, k, ivx) + sj(i, j, k, 2)*wd(i, &
    &          j+1, k, ivy) + sj(i, j, k, 3)*wd(i, j+1, k, ivz)
@@ -194,18 +203,18 @@
    IF (porj(i, j, k) .EQ. noflux) porflux = zero
    IF (porj(i, j, k) .EQ. boundflux) THEN
    porvel = zero
+   vnpd = sfaced
    vnp = sface
+   vnmd = sfaced
    vnm = sface
-   vnmd = 0.0
-   vnpd = 0.0
    END IF
    ! Incorporate porFlux in porVel.
    porvel = porvel*porflux
    ! Compute the normal velocities for the face as well as the
    ! mass fluxes.
-   qspd = porvel*vnpd
+   qspd = porvel*(vnpd-sfaced)
    qsp = (vnp-sface)*porvel
-   qsmd = porvel*vnmd
+   qsmd = porvel*(vnmd-sfaced)
    qsm = (vnm-sface)*porvel
    rqspd = qspd*w(i, j+1, k, irho) + qsp*wd(i, j+1, k, irho)
    rqsp = qsp*w(i, j+1, k, irho)
@@ -276,7 +285,10 @@
    DO i=2,il
    ! Set the dot product of the grid velocity and the
    ! normal in k-direction for a moving face.
-   IF (addgridvelocities) sface = sfacek(i, j, k)
+   IF (addgridvelocities) THEN
+   sfaced = sfacekd(i, j, k)
+   sface = sfacek(i, j, k)
+   END IF
    ! Compute the normal velocities of the left and right state.
    vnpd = sk(i, j, k, 1)*wd(i, j, k+1, ivx) + sk(i, j, k, 2)*wd(i, &
    &          j, k+1, ivy) + sk(i, j, k, 3)*wd(i, j, k+1, ivz)
@@ -300,18 +312,18 @@
    IF (pork(i, j, k) .EQ. noflux) porflux = zero
    IF (pork(i, j, k) .EQ. boundflux) THEN
    porvel = zero
+   vnpd = sfaced
    vnp = sface
+   vnmd = sfaced
    vnm = sface
-   vnmd = 0.0
-   vnpd = 0.0
    END IF
    ! Incorporate porFlux in porVel.
    porvel = porvel*porflux
    ! Compute the normal velocities for the face as well as the
    ! mass fluxes.
-   qspd = porvel*vnpd
+   qspd = porvel*(vnpd-sfaced)
    qsp = (vnp-sface)*porvel
-   qsmd = porvel*vnmd
+   qsmd = porvel*(vnmd-sfaced)
    qsm = (vnm-sface)*porvel
    rqspd = qspd*w(i, j, k+1, irho) + qsp*wd(i, j, k+1, irho)
    rqsp = qsp*w(i, j, k+1, irho)
@@ -378,11 +390,14 @@
    ! normally find in a text book.
    IF (blockismoving .AND. equationmode .EQ. steady) THEN
    ! Compute the three nonDimensional angular velocities.
-   wxd = cgnsdoms(nbkglobal)%rotrate(1)*timerefd
+   wxd = timerefd*cgnsdoms(nbkglobal)%rotrate(1) + timeref*cgnsdomsd(&
+   &      nbkglobal)%rotrate(1)
    wx = timeref*cgnsdoms(nbkglobal)%rotrate(1)
-   wyd = cgnsdoms(nbkglobal)%rotrate(2)*timerefd
+   wyd = timerefd*cgnsdoms(nbkglobal)%rotrate(2) + timeref*cgnsdomsd(&
+   &      nbkglobal)%rotrate(2)
    wy = timeref*cgnsdoms(nbkglobal)%rotrate(2)
-   wzd = cgnsdoms(nbkglobal)%rotrate(3)*timerefd
+   wzd = timerefd*cgnsdoms(nbkglobal)%rotrate(3) + timeref*cgnsdomsd(&
+   &      nbkglobal)%rotrate(3)
    wz = timeref*cgnsdoms(nbkglobal)%rotrate(3)
    ! Loop over the internal cells of this block to compute the
    ! rotational terms for the momentum equations.

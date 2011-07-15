@@ -3,8 +3,8 @@
    !
    !  Differentiation of bcfarfield in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w
-   !   with respect to varying inputs: gammaconstant *p rgas pinfcorr
-   !                winf
+   !   with respect to varying inputs: gammaconstant rgas pinfcorr
+   !                winf *p *gamma *w
    !
    !      ******************************************************************
    !      *                                                                *
@@ -143,8 +143,6 @@
    pwr1 = winf(irho)**gammainf
    s0d = (pwr1d*pinfcorr-pwr1*pinfcorrd)/pinfcorr**2
    s0 = pwr1/pinfcorr
-   gammad = 0.0
-   wd = 0.0
    ! Loop over the boundary condition subfaces of this block.
    bocos:DO nn=1,nbocos
    ! Check for farfield boundary conditions.
@@ -350,11 +348,15 @@
    END DO
    END DO
    ! Compute the energy for these halo's.
+   !gammaconstantd0 = 0.0
    CALL COMPUTEETOT_EXTRA_D(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn&
    &                         ), kcbeg(nn), kcend(nn), correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_EXTRA_D(nn, correctfork)
+   IF (secondhalo) THEN
+!   gammaconstantd0 = 0.0
+   CALL EXTRAPOLATE2NDHALO_EXTRA_D(nn, correctfork)
+   END IF
    END IF
    END DO bocos
    END SUBROUTINE BCFARFIELD_EXTRA_D

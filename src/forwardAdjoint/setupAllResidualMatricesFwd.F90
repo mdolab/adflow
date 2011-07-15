@@ -181,7 +181,7 @@ subroutine setupAllResidualMatricesfwd
   !if( myid ==0 ) print *,'Computing Forward AD dRdx'
   !call setupSpatialResidualMatrix(drdx,useAD)
   if( myid ==0 ) print *,'Computing Forward AD dRda'
-  useAD = .True.!.False.
+  useAD = .True.!.False.!
   call setupExtraResidualMatrix(drda,useAD)
 
 

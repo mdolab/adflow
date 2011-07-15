@@ -64,5 +64,7 @@ MODULE BLOCKPOINTERS_D
 
   real(kind=realType), dimension(:,:,:,:), pointer :: w_offTimeInstanced
   real(kind=realType), dimension(:,:,:), pointer :: vol_offTimeInstanced
+  
+  type(BCDataType),      dimension(:), pointer :: BCDatad
 
 END MODULE BLOCKPOINTERS_D

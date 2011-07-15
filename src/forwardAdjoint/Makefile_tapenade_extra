@@ -105,7 +105,7 @@ TAPENADE_OUTVARS = "dw w"
 
 # Independent input variables (separator: white space, default: all)
 
-TAPENADE_VARS = "alpha mach "
+TAPENADE_VARS = "alpha beta mach machgrid cgnsdoms%rotrate cgnsdoms%rotcenter rotpoint"
 
 # Name of the file Extension for these routined
 
@@ -154,6 +154,8 @@ TAPENADE_SRC_SOLVER =  $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/adjustInflo
 		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/initres_block_mod.f90\
 		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/residual_block.f90\
 		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/applyAllBC_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/gridVelocitiesFineLevel_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/normalVelocities_block.f90\
 		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/computeUtau_block.f90\
 		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/sa_block.f90\
 		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/turbResidual_block.f90\
@@ -161,6 +163,7 @@ TAPENADE_SRC_SOLVER =  $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/adjustInflo
                        $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/flowVarRefState.f90 \
 		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/inputParam.f90 \
                        $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/block.f90\
+                       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/cgnsGrid.f90\
 		       $(SOLVER_DIRSRC)/solver/inviscidCentralFlux.f90\
 		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxCusp.f90\
 		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxCuspCoarse.f90\
@@ -178,17 +181,20 @@ TAPENADE_SRC_SOLVER =  $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/adjustInflo
 		       $(SOLVER_DIRSRC)/solver/bcNSWallAdiabatic.f90\
 		       $(SOLVER_DIRSRC)/solver/bcNSWallIsothermal.f90\
 		       $(SOLVER_DIRSRC)/solver/extrapolate2ndHalo.f90\
+                       $(SOLVER_DIRSRC)/solver/derivativeRotMatrixRigid.f90\
+                       $(SOLVER_DIRSRC)/solver/setCoefTimeIntegrator.f90\
 		       $(SOLVER_DIRSRC)/initFlow/setFlowInfinityState.f90\
 		       $(SOLVER_DIRSRC)/initFlow/referenceState.f90\
                        $(SOLVER_DIRSRC)/inputParam/localModules.f90\
+                       $(SOLVER_DIRSRC)/adjoint/residualInput/adjustInflowAngleAdj.f90\
                        $(SOLVER_DIRSRC)/adjoint/residualInput/getDirVector.f90\
+                       $(SOLVER_DIRSRC)/adjoint/residualInput/getDirAngle.f90\
                        $(SOLVER_DIRSRC)/adjoint/residualInput/vectorRotation.f90\
 		       $(SOLVER_DIRSRC)/adjoint/residualInput/constants.f90 \
 		       $(SOLVER_DIRSRC)/adjoint/residualInput/precision.f90 \
 		       $(SOLVER_DIRSRC)/adjoint/residualInput/su_mpi.f90\
 		       $(SOLVER_DIRSRC)/adjoint/residualInput/terminate.f90\
 		       $(SOLVER_DIRSRC)/adjoint/residualInput/communication.f90\
-		       $(SOLVER_DIRSRC)/adjoint/residualInput/cgnsGrid.f90 \
 		       $(SOLVER_DIRSRC)/turbulence/curveFit.f90\
 		       $(SOLVER_DIRSRC)/turbulence/turbBCNSWall.f90\
 		       $(SOLVER_DIRSRC)/turbulence/bcTurbWall.f90\
@@ -220,6 +226,12 @@ TAPENADE_SRC_SOLVER =  $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/adjustInflo
 		       $(TAPENADE_DIRMOD)/couplerParam.f90\
                        $(TAPENADE_DIRUTILS)/setPointers.f90\
                        $(TAPENADE_DIRUTILS)/computeGamma.f90\
+                       $(TAPENADE_DIRUTILS)/rotMatrixRigidBody.f90\
+                       $(TAPENADE_DIRUTILS)/rigidRotAngle.f90\
+                       $(TAPENADE_DIRUTILS)/derivativeRigidRotAngle.f90\
+                       $(TAPENADE_DIRUTILS)/TSalpha.f90\
+                       $(TAPENADE_DIRUTILS)/TSBeta.f90\
+                       $(TAPENADE_DIRUTILS)/TSMach.f90\
 
 #	               $(SOLVER_DIRSRC)/forwardAdjoint/saSolve_mod.f90\
 #		       level0CoolingModel.f90\
@@ -260,8 +272,9 @@ TAPENADE_SRC_SOLVER =  $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/adjustInflo
 
 # 	       $(TAPENADE_DIRMOD)/communication.f90 \
 # 	       $(TAPENADE_DIRMOD)/section.f90\
-
-
+#                       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/cgnsGrid.f90\
+#		       $(TAPENADE_DIRMOD)/cgnsGrid.f90\
+#		       $(SOLVER_DIRSRC)/adjoint/residualInput/cgnsGrid.f90 \
 
 # 	       $(TAPENADE_DIRUTILS)/nullifyFlowDomPointers.f90\
 # 	       $(TAPENADE_DIRUTILS)/setPointers.f90\

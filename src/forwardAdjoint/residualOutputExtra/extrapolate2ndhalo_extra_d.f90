@@ -3,7 +3,8 @@
    !
    !  Differentiation of extrapolate2ndhalo in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w
-   !   with respect to varying inputs: *p *gamma *w rgas
+   !   with respect to varying inputs: gammaconstant rgas *p *gamma
+   !                *w
    !
    !      ******************************************************************
    !      *                                                                *
@@ -221,6 +222,7 @@
    crange(idim, 1) = ddim
    crange(idim, 2) = ddim
    ! Compute the energy for this halo range.
+   !gammaconstantd0 = 0.0
    CALL COMPUTEETOT_EXTRA_D(crange(1, 1), crange(1, 2), crange(2, 1), &
    &                     crange(2, 2), crange(3, 1), crange(3, 2), &
    &                     correctfork)

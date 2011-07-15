@@ -99,6 +99,9 @@ subroutine setPointersOffTSInstance_d(nn,sps,sps2)
   w_offTimeInstanced => flowDomsd(sps2)%w
   vol_offTimeInstanced => flowDomsd(sps2)%vol
 
+  !BCData Array
+  BCDatad => flowDomsd(sps)%BCdata
+
 end subroutine setPointersOffTSInstance_d
 
 

@@ -20,8 +20,9 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
   use inputTimeSpectral   ! spaceDiscr
   use inputDiscretization
   use inputPhysics 
+  use inputMotion         ! rotpoint,rotpointd
   use stencils
-  !use cgnsGrid
+  use cgnsGrid
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -46,12 +47,9 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
   real(kind=realType)               ::setupTime,trace
   integer(kind=intType) :: n_stencil,i_stencil
   integer(kind=intType), dimension(:,:), pointer :: stencil
-  integer(kind=intType) :: nColor,iColor
+  integer(kind=intType) :: nColor,iColor,idxblk
   logical :: secondHalo
   
-  !real values...how do we deal with these? they are actually in cgnsDom....
-  real(kind=realType), dimension(3) :: rotCenter, rotRate,rotPoint
-
   !Reference values for FD
   real(kind=realType)::alpharef,betaref,machref, machGridRef
   real(kind=realType), dimension(3) :: rotRateRef,rotcenterRef
@@ -59,8 +57,8 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
 
   !Seed values for AD
   real(kind=realType)::alphad,betad!,machd, machGridd
-  real(kind=realType), dimension(3) :: rotRated,rotcenterd
-  real(kind=realType), dimension(3) :: rotPointd,pointRefd
+  !real(kind=realType), dimension(3) :: rotRated,rotcenterd
+  !real(kind=realType), dimension(3) :: rotPointd!,pointRefd
   
 
   if (myid==0) print *,'Setting up dRda in forward Mode...'
@@ -93,7 +91,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
 
      ! Set pointers to the first timeInstance...just to getSizes
      call setPointers(nn,1,1)
-
+     idxblk = nbkGlobal
      ! Allocate the memory we need for this block to do the forward
      ! mode derivatives and copy reference values
      call alloc_derivative_values(nn)
@@ -103,20 +101,20 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
 
      !let the DV number be the color
      nColor = nDesignExtra
-     !print *,'nColor',nColor
+     print *,'nColor',nColor
      !print *,'Alpha',alpha
      alpharef = alpha
      betaref = beta
      machref = mach
      machGridRef = machGrid
-     rotRateRef = rotRate
-     rotcenterRef = rotCenter
+     rotRateRef = cgnsDoms(idxblk)%rotRate
+     rotcenterRef = cgnsDoms(idxblk)%rotCenter
      rotPointRef = rotPoint
      pointRefRef = pointRef
 
      ! Do Coloring and perturb states
      do iColor = 1,nColor !set colors based on extra vars....
-        !print *,'icolor',icolor
+        print *,'icolor',icolor
         !zero derivatives
         do sps = 1,nTimeIntervalsSpectral
            flowDomsd(sps)%dw_deriv(:,:,:,:,:) = 0.0
@@ -127,10 +125,10 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
         betad = 0.0
         machd = 0.0
         machGridd = 0.0
-        rotrated(:) = 0.0
-        rotcenterd(:) = 0.0
+        cgnsDomsd(idxblk)%rotrate(:) = 0.0
+        cgnsDomsd(idxblk)%rotcenter(:) = 0.0
         rotpointd(:) = 0.0
-        pointrefd(:) = 0.0
+        !pointrefd(:) = 0.0
 
         if (useAD) then
            !Set the seeds by color
@@ -149,33 +147,30 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
               machGridd = 1.0
            elseif(nDesignRotX==icolor-1) then
               !X Rotation
-              rotrated(1) = 1.0
+              cgnsDomsd(idxblk)%rotrate(1) = 1.0
            elseif(nDesignRotY==icolor-1) then
               !Y Rotation
-              rotrated(2) = 1.0
+              cgnsDomsd(idxblk)%rotrate(2) = 1.0
            elseif(nDesignRotZ==icolor-1) then
               !Z Rotation
-              rotrated(3) = 1.0 
+              cgnsDomsd(idxblk)%rotrate(3) = 1.0 
            elseif(nDesignRotCenX==icolor-1) then
               !X Rotation Center
+              cgnsDomsd(idxblk)%rotcenter(1) = 1.0
+              rotpointd(1) = 1.0
               !consider this!
-              !rotcenteradjb(1)+rotpointadjb(1)+rotpointxcorrection
+              !+rotpointxcorrection
            elseif(nDesignRotCenY==icolor-1)then
               !Y Rotation Center
-              !consider this!
-              !rotcenteradjb(2)+rotpointadjb(2)+rotpointxcorrection
+              
+              cgnsDomsd(idxblk)%rotcenter(2) = 1.0
+              rotpointd(2) = 1.0
+              !consider this!+rotpointxcorrection
            elseif(nDesignRotCenZ==icolor-1)then      
               !Z Rotation Center
-              !rotcenteradjb(3)+rotpointadjb(3)+rotpointzcorrection
-           elseif(nDesignPointRefX==icolor-1)then  
-              !X Point Ref
-              pointrefd(1) = 1.0
-           elseif(nDesignPointRefY==icolor-1)then
-              !Y Point Ref
-              pointrefd(2) = 1.0
-           elseif(nDesignPointRefZ==icolor-1)then
-              !Z Point Ref
-              pointrefd(3) = 1.0
+              cgnsDomsd(idxblk)%rotcenter(3)=1.0
+              rotpointd(3) = 1.0
+              !+rotpointzcorrection
            end if
 
         else
@@ -183,8 +178,8 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
            beta = betaref
            mach = machref
            machGrid = machGridRef
-           rotRate = rotRateRef
-           rotcenter = rotCenterRef
+           cgnsDoms(idxblk)%rotRate = rotRateRef
+           cgnsDoms(idxblk)%rotcenter = rotCenterRef
            rotPoint = rotPointRef
            pointRef = pointRefRef
            !print *,'icolor',icolor-1,nDesignAoA
@@ -202,42 +197,40 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
               machGrid = machGridRef+delta_x
            elseif(nDesignRotX==icolor-1) then
               !X Rotation
-              rotrated(1) = rotrateref(1)+delta_x
+              cgnsDoms(idxblk)%rotrate(1) = rotrateref(1)+delta_x
            elseif(nDesignRotY==icolor-1) then
               !Y Rotation
-              rotrated(2) = rotrateref(2)+delta_x
+              cgnsDoms(idxblk)%rotrate(2) = rotrateref(2)+delta_x
            elseif(nDesignRotZ==icolor-1) then
               !Z Rotation
-              rotrated(3) = rotrateref(3)+delta_x 
+              cgnsDoms(idxblk)%rotrate(3) = rotrateref(3)+delta_x 
            elseif(nDesignRotCenX==icolor-1) then
               !X Rotation Center
               !consider this!
+              cgnsDoms(idxblk)%rotcenter(1) = rotcenterRef(1)+delta_x
+              rotpoint(1)=rotPointRef(1)+delta_x
               !rotcenteradjb(1)+rotpointadjb(1)+rotpointxcorrection
            elseif(nDesignRotCenY==icolor-1)then
               !Y Rotation Center
               !consider this!
+              cgnsDoms(idxblk)%rotcenter(2) = rotcenterRef(2)+delta_x
+              rotpoint(2)=rotPointRef(2)+delta_x
               !rotcenteradjb(2)+rotpointadjb(2)+rotpointxcorrection
            elseif(nDesignRotCenZ==icolor-1)then      
               !Z Rotation Center
-              !rotcenteradjb(3)+rotpointadjb(3)+rotpointzcorrection
-           elseif(nDesignPointRefX==icolor-1)then  
-              !X Point Ref
-              pointref(1) = pointRefRef(1)+delta_x
-           elseif(nDesignPointRefY==icolor-1)then
-              !Y Point Ref
-              pointrefd(2) = pointRefRef(2)+delta_x
-           elseif(nDesignPointRefZ==icolor-1)then
-              !Z Point Ref
-              pointrefd(3) = pointRefRef(3)+delta_x
-           end if              
+              cgnsDoms(idxblk)%rotcenter(3) = rotcenterRef(3)+delta_x
+              rotpoint(3)=rotPointRef(3)+delta_x
+              !+rotpointzcorrection
+           end if
         end if
 
         ! Take all Derivatives
         do sps = 1,nTimeIntervalsSpectral
            ! Block-based residual
            if (useAD) then
-              !print *,'alpha',alpha,alphad,beta,liftIndex,mach,machd
-              call block_res_extra_extra_d(nn,sps,alpha,alphad,beta,liftIndex)
+              print *,'alpha',alpha,alphad,beta,liftIndex,mach,machd
+              call block_res_extra_extra_d(nn,sps,alpha,alphad,beta,&
+                                          &betad,liftIndex)
               !print *,'liftdir',liftDirection
               !print *,'AD Not Implmented Yet'
               !stop
