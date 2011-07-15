@@ -1579,10 +1579,7 @@ class SUMB(AeroSolver):
         if not self.adjointRHS == obj:
             self.computeObjPartials(obj,forcePoints)
         # end if
-<<<<<<< /tmp/pySUmb.py~base.uu1XR2
-=======
 
->>>>>>> /tmp/pySUmb.py~other.wqTO5i
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
         if 'structAdjoint' in kwargs and 'group_name' in kwargs:
@@ -1945,10 +1942,7 @@ class SUMB(AeroSolver):
         # end if
 
         dIdpts = self.mesh.solver_to_warp_force(group_name,dIdpts)
-<<<<<<< /tmp/pySUmb.py~base.uu1XR2
-=======
 
->>>>>>> /tmp/pySUmb.py~other.wqTO5i
         return dIdpts
 
     def getdIda(self,objective,forcePoints=None):

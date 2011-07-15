@@ -65,19 +65,11 @@ subroutine assertionsADjoint(level)
 
   ! Assert that it is an inviscid problem.
 
-<<<<<<< /nfs/tuff/home/mader/hg/SUmbADjoint/src/adjoint/assertionsADjoint.f90.orig.3009727430
+
  !  if( viscous ) &
 !        call terminate("assertionsADjoint", &
 !        "Cannot handle viscous terms yet.")
-||||||| /tmp/assertionsADjoint.f90~base.vtbFnA
-  if( viscous ) &
-       call terminate("assertionsADjoint", &
-       "Cannot handle viscous terms yet.")
-=======
-!!$  if( viscous ) &
-!!$       call terminate("assertionsADjoint", &
-!!$       "Cannot handle viscous terms yet.")
->>>>>>> /tmp/assertionsADjoint.f90~other.CkNubm
+
 
   ! Assert that there are no overset grids.
 

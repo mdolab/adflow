@@ -61,10 +61,7 @@
    STOP
    ELSE
    CALL INVISCIDCENTRALFLUX_D()
-<<<<<<< /tmp/residual_block_d.f90~base.SQRXhV
-   !print *,'dwd0',dwd(2,4,4,:),fwd(2,4,4,:)
-=======
->>>>>>> /tmp/residual_block_d.f90~other.kaFIX2
+
    ! Compute the artificial dissipation fluxes.
    ! This depends on the parameter discr.
    SELECT CASE  (discr) 
