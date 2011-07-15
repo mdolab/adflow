@@ -43,9 +43,11 @@ FF90_OBJECTS = adjustInflowAngle.o\
                block_res_spatial.o\
                checkInputParam_mod.o\
 	       computeUtau_block.o\
+               gridVelocitiesFineLevel_block.o\
 	       initres_block.o\
 	       initres_block_mod.o\
                metric_block.o\
+               normalVelocities_block.o\
                referenceState_mod.o\
 	       residual_block.o\
 	       sa_block.o\

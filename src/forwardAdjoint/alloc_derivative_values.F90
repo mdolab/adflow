@@ -2,16 +2,19 @@
 ! in blockpointers_d for use with the AD code.
 
 subroutine alloc_derivative_values(nn)
-  
+
   use blockPointers_d ! This modules includes blockPointers
 
   use inputtimespectral
   use flowvarrefstate
   use inputPhysics
+  use BCTypes
 
   implicit none
 
   integer(kind=intType) :: nn,sps,ierr,i,j,k,l
+  integer(kind=intType) :: mm
+  integer(kind=intType) :: iBeg, jBeg, iEnd, jEnd
 
   ! First create a flowdoms-like structure that is of length
   ! ntimeintervalspectral for the current block
@@ -49,7 +52,7 @@ subroutine alloc_derivative_values(nn)
      flowDomsd(sps)%sFaceI = 0
      flowDomsd(sps)%sFaceJ = 0
      flowDomsd(sps)%sFaceK(ie,je,0:ke) = 0
-     
+
      allocate(flowDomsd(sps)%w(0:ib,0:jb,0:kb,1:nw), &
           flowDomsd(sps)%dw(0:ib,0:jb,0:kb,1:nw), &
           flowDomsd(sps)%fw(0:ib,0:jb,0:kb,1:nw), &
@@ -63,7 +66,7 @@ subroutine alloc_derivative_values(nn)
      allocate(flowDomsd(sps)%p(0:ib,0:jb,0:kb), &
           flowDomsd(sps)%gamma(0:ib,0:jb,0:kb), stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     
+
      flowDomsd(sps)%p = 0.0
      flowDomsd(sps)%gamma = 0.0
 
@@ -78,49 +81,288 @@ subroutine alloc_derivative_values(nn)
      end if
 
      allocate(flowDomsd(sps)%dtl(1:ie,1:je,1:ke), &
-              flowDomsd(sps)%radI(1:ie,1:je,1:ke),     &
-              flowDomsd(sps)%radJ(1:ie,1:je,1:ke),     &
-              flowDomsd(sps)%radK(1:ie,1:je,1:ke),stat=ierr)
+          flowDomsd(sps)%radI(1:ie,1:je,1:ke),     &
+          flowDomsd(sps)%radJ(1:ie,1:je,1:ke),     &
+          flowDomsd(sps)%radK(1:ie,1:je,1:ke),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     
+
      flowDomsd(sps)%dtl = 0.0
      flowDomsd(sps)%radI = 0.0
      flowDomsd(sps)%radJ = 0.0
      flowDomsd(sps)%radK = 0.0
 
+     !allocate memory for boundary conditions
+     j = nBocos
+     allocate(flowDomsd(sps)%BCData(j), stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     print *,'shape', shape(flowDomsd(sps)%BCData),nbocos
+
+     bcdatad =>flowDomsd(sps)%BCData
+     bocoLoop: do mm=1,nBocos
+        
+        ! Store the cell range of the boundary subface
+        ! a bit easier.
+
+        iBeg = BCData(mm)%icbeg; iEnd = BCData(mm)%icend
+        jBeg = BCData(mm)%jcbeg; jEnd = BCData(mm)%jcend
+
+        ! Determine the boundary condition we are having here
+        ! and allocate the memory accordingly.
+
+        select case (BCType(mm))
+
+        case (NSWallAdiabatic)
+
+           ! Adiabatic wall. Just allocate the memory for uSlip.
+
+           allocate(BCDatad(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), &
+                stat=ierr)
+           if(ierr /= 0)                      &
+                call terminate("allocMemBCData", &
+                "Memory allocation failure for &
+                &an adiabatic wall")
+
+           !=======================================================
+
+        case (NSWallIsothermal)
+
+           ! Isothermal wall. Allocate the memory for uSlip
+           ! and TNS_Wall.
+
+           allocate(BCDatad(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3),  &
+                BCDatad(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
+                stat=ierr)
+           if(ierr /= 0)                      &
+                call terminate("allocMemBCData", &
+                "Memory allocation failure for &
+                &an isothermal wall")
+
+           !=======================================================
+
+        case (EulerWall,farField)
+
+           ! Euler wall or farfield. Just allocate the memory for
+           ! the normal mesh velocity.
+           print *,'allocatind rface'
+           allocate(BCDatad(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
+                stat=ierr)
+           if(ierr /= 0)                      &
+                call terminate("allocMemBCData", &
+                "Memory allocation failure for &
+                &an Euler wall or a farfield")
+
+           !=======================================================
+
+        case (SupersonicInflow, DomainInterfaceAll)
+
+           ! Supersonic inflow or a domain interface with
+           ! all the data prescribed. Allocate the memory for
+           ! the entire state vector to be prescribed.
+
+           allocate(BCDatad(mm)%rho(iBeg:iEnd,jBeg:jEnd),   &
+                BCDatad(mm)%velx(iBeg:iEnd,jBeg:jEnd),  &
+                BCDatad(mm)%vely(iBeg:iEnd,jBeg:jEnd),  &
+                BCDatad(mm)%velz(iBeg:iEnd,jBeg:jEnd),  &
+                BCDatad(mm)%ps(iBeg:iEnd,jBeg:jEnd),    &
+                stat=ierr)
+           if(ierr /= 0)                      &
+                call terminate("allocMemBCData", &
+                "Memory allocation failure for &
+                &a supersonic inflow")
+
+           ! Check if memory for the turbulent variables must
+           ! be allocated. If so, do so.
+
+           if(nt2 >= nt1) then
+              allocate(&
+                   BCDatad(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
+                   stat=ierr)
+              if(ierr /= 0)                      &
+                   call terminate("allocMemBCData", &
+                   "Memory allocation failure for &
+                   &turbInlet for a supersonic &
+                   &inflow")
+           endif
+
+           !=======================================================
+
+        case (SubsonicInflow)
+
+           ! Subsonic inflow. Allocate the memory for the
+           ! variables needed. Note the there are two ways to
+           ! specify boundary conditions for a subsonic inflow.
+
+           allocate(BCDatad(mm)%flowXdirInlet(iBeg:iEnd,jBeg:jEnd), &
+                BCDatad(mm)%flowYdirInlet(iBeg:iEnd,jBeg:jEnd), &
+                BCDatad(mm)%flowZdirInlet(iBeg:iEnd,jBeg:jEnd), &
+                BCDatad(mm)%ptInlet(iBeg:iEnd,jBeg:jEnd),       &
+                BCDatad(mm)%ttInlet(iBeg:iEnd,jBeg:jEnd),       &
+                BCDatad(mm)%htInlet(iBeg:iEnd,jBeg:jEnd),       &
+                BCDatad(mm)%rho(iBeg:iEnd,jBeg:jEnd),           &
+                BCDatad(mm)%velx(iBeg:iEnd,jBeg:jEnd),          &
+                BCDatad(mm)%vely(iBeg:iEnd,jBeg:jEnd),          &
+                BCDatad(mm)%velz(iBeg:iEnd,jBeg:jEnd),          &
+                stat=ierr)
+           if(ierr /= 0)                      &
+                call terminate("allocMemBCData", &
+                "Memory allocation failure for &
+                &a subsonic inflow")
+
+           ! Check if memory for the turbulent variables must
+           ! be allocated. If so, do so.
+
+           if(nt2 >= nt1) then
+              allocate(&
+                   BCDatad(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
+                   stat=ierr)
+              if(ierr /= 0)                      &
+                   call terminate("allocMemBCData", &
+                   "Memory allocation failure for &
+                   &turbInlet for a subsonic inflow")
+           endif
+
+           !=======================================================
+
+        case (SubsonicOutflow, MassBleedOutflow, &
+             DomainInterfaceP)
+
+           ! Subsonic outflow, outflow mass bleed or domain
+           ! interface with prescribed pressure. Allocate the
+           ! memory for the static pressure.
+
+           allocate(BCDatad(mm)%ps(iBeg:iEnd,jBeg:jEnd), &
+                stat=ierr)
+           if(ierr /= 0)                      &
+                call terminate("allocMemBCData", &
+                "Memory allocation failure for &
+                &a subsonic outflow, outflow mass &
+                &bleed or domain interface with &
+                &prescribed pressure.")
+
+           ! Initialize the pressure to avoid problems for
+           ! the bleed flows.
+
+           BCDatad(mm)%ps = zero
+
+           !=======================================================
+
+        case (DomainInterfaceRhoUVW)
+
+           ! Domain interface with prescribed density and 
+           ! velocities, i.e. mass flow is prescribed. Allocate
+           ! the memory for the variables needed.
+
+           allocate(BCDatad(mm)%rho(iBeg:iEnd,jBeg:jEnd),  &
+                BCDatad(mm)%velx(iBeg:iEnd,jBeg:jEnd), &
+                BCDatad(mm)%vely(iBeg:iEnd,jBeg:jEnd), &
+                BCDatad(mm)%velz(iBeg:iEnd,jBeg:jEnd), &
+                stat=ierr)
+           if(ierr /= 0)                      &
+                call terminate("allocMemBCData", &
+                "Memory allocation failure for &
+                &a domain interface with a &
+                &prescribed mass flow")
+
+           ! Check if memory for the turbulent variables must
+           ! be allocated. If so, do so.
+
+           if(nt2 >= nt1) then
+              allocate(&
+                   BCDatad(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
+                   stat=ierr)
+              if(ierr /= 0)                      &
+                   call terminate("allocMemBCData", &
+                   "Memory allocation failure for &
+                   &turbInlet for a domain interface &
+                   &with a prescribed mass flow")
+           endif
+
+           !=======================================================
+
+        case (DomainInterfaceTotal)
+
+           ! Domain interface with prescribed total conditions.
+           ! Allocate the memory for the variables needed.
+
+           allocate(BCDatad(mm)%flowXdirInlet(iBeg:iEnd,jBeg:jEnd), &
+                BCDatad(mm)%flowYdirInlet(iBeg:iEnd,jBeg:jEnd), &
+                BCDatad(mm)%flowZdirInlet(iBeg:iEnd,jBeg:jEnd), &
+                BCDatad(mm)%ptInlet(iBeg:iEnd,jBeg:jEnd),       &
+                BCDatad(mm)%ttInlet(iBeg:iEnd,jBeg:jEnd),       &
+                BCDatad(mm)%htInlet(iBeg:iEnd,jBeg:jEnd),       &
+                stat=ierr)
+           if(ierr /= 0)                      &
+                call terminate("allocMemBCData", &
+                "Memory allocation failure for &
+                &a domain interface with total &
+                &conditions")
+
+           ! Check if memory for the turbulent variables must
+           ! be allocated. If so, do so.
+
+           if(nt2 >= nt1) then
+              allocate(&
+                   BCDatad(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
+                   stat=ierr)
+              if(ierr /= 0)                      &
+                   call terminate("allocMemBCData", &
+                   "Memory allocation failure for &
+                   &turbInlet for a domain interface &
+                   &with a prescribed mass flow")
+           endif
+
+           !=======================================================
+
+        case (domainInterfaceRho)
+
+           ! Domain interface with prescribed density. 
+           ! Allocate the memory for the density.
+
+           allocate(BCDatad(mm)%rho(iBeg:iEnd,jBeg:jEnd), &
+                stat=ierr)
+           if(ierr /= 0)                      &
+                call terminate("allocMemBCData", &
+                "Memory allocation failure for &
+                &a domain interface")
+
+        end select
+
+     enddo bocoLoop
+
+
      ! It appears these values only require 1 sps instance
-  !    sps1RansTest: if(sps == 1 .and. &
-!           equations == RANSEquations) then
-        if (sps == 1) then
+     !    sps1RansTest: if(sps == 1 .and. &
+     !           equations == RANSEquations) then
+     if (sps == 1) then
         allocate(flowDomsd(sps)%bmti1(je,ke,nt1:nt2,nt1:nt2), &
-                 flowDomsd(sps)%bmti2(je,ke,nt1:nt2,nt1:nt2), &
-                 flowDomsd(sps)%bmtj1(ie,ke,nt1:nt2,nt1:nt2), &
-                 flowDomsd(sps)%bmtj2(ie,ke,nt1:nt2,nt1:nt2), &
-                 flowDomsd(sps)%bmtk1(ie,je,nt1:nt2,nt1:nt2), &
-                 flowDomsd(sps)%bmtk2(ie,je,nt1:nt2,nt1:nt2), &
-                 flowDomsd(sps)%bvti1(je,ke,nt1:nt2), &
-                 flowDomsd(sps)%bvti2(je,ke,nt1:nt2), &
-                 flowDomsd(sps)%bvtj1(ie,ke,nt1:nt2), &
-                 flowDomsd(sps)%bvtj2(ie,ke,nt1:nt2), &
-                 flowDomsd(sps)%bvtk1(ie,je,nt1:nt2), &
-                 flowDomsd(sps)%bvtk2(ie,je,nt1:nt2), &
-                 stat=ierr)
+             flowDomsd(sps)%bmti2(je,ke,nt1:nt2,nt1:nt2), &
+             flowDomsd(sps)%bmtj1(ie,ke,nt1:nt2,nt1:nt2), &
+             flowDomsd(sps)%bmtj2(ie,ke,nt1:nt2,nt1:nt2), &
+             flowDomsd(sps)%bmtk1(ie,je,nt1:nt2,nt1:nt2), &
+             flowDomsd(sps)%bmtk2(ie,je,nt1:nt2,nt1:nt2), &
+             flowDomsd(sps)%bvti1(je,ke,nt1:nt2), &
+             flowDomsd(sps)%bvti2(je,ke,nt1:nt2), &
+             flowDomsd(sps)%bvtj1(ie,ke,nt1:nt2), &
+             flowDomsd(sps)%bvtj2(ie,ke,nt1:nt2), &
+             flowDomsd(sps)%bvtk1(ie,je,nt1:nt2), &
+             flowDomsd(sps)%bvtk2(ie,je,nt1:nt2), &
+             stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
      end if
-     
+
      if (viscous) then
         allocate(flowDomsd(sps)%d2Wall(2:il,2:jl,2:kl), &
              stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
      end if
   end do
- 
+
   ! Also allocate a "color" array for the derivative calcs. Only do
   ! this on flowDomsd, only on the 1st timeInstance
-  
+
   allocate(flowDomsd(1)%color(0:ib,0:jb,0:kb),stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
- 
+
   ! Finally Allocate wtmp,dw_deriv and dwtmp in the flowDomsd structure
   ! Allocate Memory and copy out w and dw for reference
 
@@ -178,7 +420,7 @@ subroutine alloc_derivative_values(nn)
      end do
 
      call initRes_block(1,nwf,nn,sps)
-   
+
      ! Note: we have to divide by the volume for dwtmp2 since
      ! normally, dw would have been mulitpiled by 1/Vol in block_res 
      do l=1,nw
@@ -192,5 +434,5 @@ subroutine alloc_derivative_values(nn)
      end do
 
   end do allocspectralLoop
-  
+
 end subroutine alloc_derivative_values

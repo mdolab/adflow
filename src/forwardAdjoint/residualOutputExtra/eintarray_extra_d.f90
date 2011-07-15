@@ -3,9 +3,9 @@
    !
    !  Differentiation of eintarray in forward (tangent) mode:
    !   variations   of useful results: eint
-   !   with respect to varying inputs: cv0 *cptrange *cpeint *(*cptempfit.constants)
-   !                *cptempfit.eint0 cvn gammaconstant rgas tref k
-   !                p eint rho
+   !   with respect to varying inputs: gammaconstant rgas tref cv0
+   !                *cptrange *cpeint *(*cptempfit.constants) *cptempfit.eint0
+   !                cvn k p eint rho
    !      ==================================================================
    SUBROUTINE EINTARRAY_EXTRA_D(rho, rhod, p, pd, k, kd, eint, eintd, &
    &  correctfork, kk)

@@ -3,7 +3,7 @@
    !
    !  Differentiation of inviscidupwindflux in forward (tangent) mode:
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: gammaconstant *p *w rgas
+   !   with respect to varying inputs: gammaconstant rgas *p *w
    !
    !      ******************************************************************
    !      *                                                                *
@@ -59,6 +59,7 @@
    REAL(kind=realtype), DIMENSION(nwf) :: fluxd
    LOGICAL :: firstorderk, correctfork, rotationalperiodic
    INTRINSIC MAX
+   !REAL :: massflowfamilydiss(:, :)
    INTRINSIC ASSOCIATED
    REAL(realType) :: max1
    !

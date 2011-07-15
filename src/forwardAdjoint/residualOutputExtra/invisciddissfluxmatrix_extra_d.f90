@@ -3,7 +3,8 @@
    !
    !  Differentiation of invisciddissfluxmatrix in forward (tangent) mode:
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: *p *gamma *w pinfcorr
+   !   with respect to varying inputs: pinfcorr *p *sfacei *sfacej
+   !                *gamma *sfacek *w
    !
    !      ******************************************************************
    !      *                                                                *
@@ -48,7 +49,7 @@
    !
    INTEGER(kind=inttype) :: i, j, k, ind
    REAL(kind=realtype) :: plim, sface
-   REAL(kind=realtype) :: plimd
+   REAL(kind=realtype) :: plimd, sfaced
    REAL(kind=realtype) :: sfil, fis2, fis4
    REAL(kind=realtype) :: gammaavg, gm1, ovgm1, gm53
    REAL(kind=realtype) :: gammaavgd, gm1d, ovgm1d, gm53d
@@ -70,14 +71,20 @@
    REAL(kind=realtype) :: DIM
    REAL(kind=realtype) :: DIM_EXTRA_D
    REAL(kind=realtype) :: arg1
+   REAL(kind=realtype) :: min5d
    REAL(kind=realtype) :: x6d
+   REAL(kind=realtype) :: y4d
    REAL(kind=realtype) :: abs1d
+   REAL(kind=realtype) :: min6
+   REAL(kind=realtype) :: min5
+   REAL(kind=realtype) :: min4
    REAL(kind=realtype) :: min3
    REAL(kind=realtype) :: min2
    REAL(kind=realtype) :: min1
    REAL(kind=realtype) :: abs4d
    REAL(kind=realtype) :: abs11d
    INTRINSIC MAX
+   !REAL :: massflowfamilydiss(:, :)
    REAL(kind=realtype) :: abs7d
    REAL(kind=realtype) :: x6
    REAL(kind=realtype) :: x5
@@ -88,8 +95,10 @@
    REAL(kind=realtype) :: x2
    REAL(kind=realtype) :: x2d
    REAL(kind=realtype) :: x1
+   REAL(kind=realtype) :: min4d
    REAL(kind=realtype) :: x5d
    REAL(kind=realtype) :: y3d
+   REAL(kind=realtype) :: y6d
    REAL(kind=realtype) :: abs3d
    REAL(kind=realtype) :: abs10d
    REAL(kind=realtype) :: abs6d
@@ -101,10 +110,12 @@
    REAL(kind=realtype) :: min3d
    REAL(kind=realtype) :: x4d
    REAL(kind=realtype) :: y2d
+   REAL(kind=realtype) :: min6d
    REAL(kind=realtype) :: abs9
    REAL(kind=realtype) :: abs8
    REAL(kind=realtype) :: abs7
    REAL(kind=realtype) :: abs6
+   REAL(kind=realtype) :: y5d
    REAL(kind=realtype) :: abs5
    REAL(kind=realtype) :: abs4
    REAL(kind=realtype) :: abs3
@@ -119,7 +130,10 @@
    REAL(realType) :: max2
    REAL(kind=realtype) :: abs8d
    REAL(realType) :: max1
+   REAL(kind=realtype) :: y6
+   REAL(kind=realtype) :: y5
    REAL(kind=realtype) :: min2d
+   REAL(kind=realtype) :: y4
    REAL(kind=realtype) :: y3
    REAL(kind=realtype) :: y2
    REAL(kind=realtype) :: x3d
@@ -181,6 +195,7 @@
    END DO
    END DO
    fwd = 0.0
+   sfaced = 0.0
    !
    !      ******************************************************************
    !      *                                                                *
@@ -254,6 +269,7 @@
    ! Compute the dissipation coefficients for this face.
    ppor = zero
    IF (pori(i, j, k) .EQ. normalflux) ppor = one
+   IF (lumpeddiss) THEN
    IF (dp1 .LT. dp2) THEN
    y1d = dp2d
    y1 = dp2
@@ -268,9 +284,29 @@
    min1 = dpmax
    min1d = 0.0
    END IF
-   dis2d = ppor*fis2*min1d
-   dis2 = ppor*fis2*min1
+   dis2d = fis2*ppor*min1d
+   dis2 = fis2*ppor*min1 + sigma*fis4*ppor
+   dis4 = 0.0
+   dis4d = 0.0
+   ELSE
+   IF (dp1 .LT. dp2) THEN
+   y2d = dp2d
+   y2 = dp2
+   ELSE
+   y2d = dp1d
+   y2 = dp1
+   END IF
+   IF (dpmax .GT. y2) THEN
+   min2d = y2d
+   min2 = y2
+   ELSE
+   min2 = dpmax
+   min2d = 0.0
+   END IF
+   dis2d = ppor*fis2*min2d
+   dis2 = ppor*fis2*min2
    dis4d = DIM_EXTRA_D(ppor*fis4, 0.0, dis2, dis2d, dis4)
+   END IF
    ! Construct the vector of the first and third differences
    ! multiplied by the appropriate constants.
    ddwd = wd(i+1, j, k, irho) - wd(i, j, k, irho)
@@ -407,26 +443,29 @@
    ova2avg = one/a2avg
    ! The mesh velocity if the face is moving. It must be
    ! divided by the area to obtain a true velocity.
-   IF (addgridvelocities) sface = sfacei(i, j, k)*tmp
+   IF (addgridvelocities) THEN
+   sfaced = tmp*sfaceid(i, j, k)
+   sface = sfacei(i, j, k)*tmp
+   END IF
    IF (unavg - sface + aavg .GE. 0.) THEN
-   lam1d = unavgd + aavgd
+   lam1d = unavgd - sfaced + aavgd
    lam1 = unavg - sface + aavg
    ELSE
-   lam1d = -(unavgd+aavgd)
+   lam1d = -(unavgd-sfaced+aavgd)
    lam1 = -(unavg-sface+aavg)
    END IF
    IF (unavg - sface - aavg .GE. 0.) THEN
-   lam2d = unavgd - aavgd
+   lam2d = unavgd - sfaced - aavgd
    lam2 = unavg - sface - aavg
    ELSE
-   lam2d = -(unavgd-aavgd)
+   lam2d = -(unavgd-sfaced-aavgd)
    lam2 = -(unavg-sface-aavg)
    END IF
    IF (unavg - sface .GE. 0.) THEN
-   lam3d = unavgd
+   lam3d = unavgd - sfaced
    lam3 = unavg - sface
    ELSE
-   lam3d = -unavgd
+   lam3d = -(unavgd-sfaced)
    lam3 = -(unavg-sface)
    END IF
    rradd = lam3d + aavgd
@@ -600,23 +639,44 @@
    ! Compute the dissipation coefficients for this face.
    ppor = zero
    IF (porj(i, j, k) .EQ. normalflux) ppor = one
+   IF (lumpeddiss) THEN
    IF (dp1 .LT. dp2) THEN
-   y2d = dp2d
-   y2 = dp2
+   y3d = dp2d
+   y3 = dp2
    ELSE
-   y2d = dp1d
-   y2 = dp1
+   y3d = dp1d
+   y3 = dp1
    END IF
-   IF (dpmax .GT. y2) THEN
-   min2d = y2d
-   min2 = y2
+   IF (dpmax .GT. y3) THEN
+   min3d = y3d
+   min3 = y3
    ELSE
-   min2 = dpmax
-   min2d = 0.0
+   min3 = dpmax
+   min3d = 0.0
    END IF
-   dis2d = ppor*fis2*min2d
-   dis2 = ppor*fis2*min2
+   dis2d = fis2*ppor*min3d
+   dis2 = fis2*ppor*min3 + sigma*fis4*ppor
+   dis4 = 0.0
+   dis4d = 0.0
+   ELSE
+   IF (dp1 .LT. dp2) THEN
+   y4d = dp2d
+   y4 = dp2
+   ELSE
+   y4d = dp1d
+   y4 = dp1
+   END IF
+   IF (dpmax .GT. y4) THEN
+   min4d = y4d
+   min4 = y4
+   ELSE
+   min4 = dpmax
+   min4d = 0.0
+   END IF
+   dis2d = ppor*fis2*min4d
+   dis2 = ppor*fis2*min4
    dis4d = DIM_EXTRA_D(ppor*fis4, 0.0, dis2, dis2d, dis4)
+   END IF
    ! Construct the vector of the first and third differences
    ! multiplied by the appropriate constants.
    ddwd = wd(i, j+1, k, irho) - wd(i, j, k, irho)
@@ -753,26 +813,29 @@
    ova2avg = one/a2avg
    ! The mesh velocity if the face is moving. It must be
    ! divided by the area to obtain a true velocity.
-   IF (addgridvelocities) sface = sfacej(i, j, k)*tmp
+   IF (addgridvelocities) THEN
+   sfaced = tmp*sfacejd(i, j, k)
+   sface = sfacej(i, j, k)*tmp
+   END IF
    IF (unavg - sface + aavg .GE. 0.) THEN
-   lam1d = unavgd + aavgd
+   lam1d = unavgd - sfaced + aavgd
    lam1 = unavg - sface + aavg
    ELSE
-   lam1d = -(unavgd+aavgd)
+   lam1d = -(unavgd-sfaced+aavgd)
    lam1 = -(unavg-sface+aavg)
    END IF
    IF (unavg - sface - aavg .GE. 0.) THEN
-   lam2d = unavgd - aavgd
+   lam2d = unavgd - sfaced - aavgd
    lam2 = unavg - sface - aavg
    ELSE
-   lam2d = -(unavgd-aavgd)
+   lam2d = -(unavgd-sfaced-aavgd)
    lam2 = -(unavg-sface-aavg)
    END IF
    IF (unavg - sface .GE. 0.) THEN
-   lam3d = unavgd
+   lam3d = unavgd - sfaced
    lam3 = unavg - sface
    ELSE
-   lam3d = -unavgd
+   lam3d = -(unavgd-sfaced)
    lam3 = -(unavg-sface)
    END IF
    rradd = lam3d + aavgd
@@ -946,23 +1009,44 @@
    ! Compute the dissipation coefficients for this face.
    ppor = zero
    IF (pork(i, j, k) .EQ. normalflux) ppor = one
+   IF (lumpeddiss) THEN
    IF (dp1 .LT. dp2) THEN
-   y3d = dp2d
-   y3 = dp2
+   y5d = dp2d
+   y5 = dp2
    ELSE
-   y3d = dp1d
-   y3 = dp1
+   y5d = dp1d
+   y5 = dp1
    END IF
-   IF (dpmax .GT. y3) THEN
-   min3d = y3d
-   min3 = y3
+   IF (dpmax .GT. y5) THEN
+   min5d = y5d
+   min5 = y5
    ELSE
-   min3 = dpmax
-   min3d = 0.0
+   min5 = dpmax
+   min5d = 0.0
    END IF
-   dis2d = ppor*fis2*min3d
-   dis2 = ppor*fis2*min3
+   dis2d = fis2*ppor*min5d
+   dis2 = fis2*ppor*min5 + sigma*fis4*ppor
+   dis4 = 0.0
+   dis4d = 0.0
+   ELSE
+   IF (dp1 .LT. dp2) THEN
+   y6d = dp2d
+   y6 = dp2
+   ELSE
+   y6d = dp1d
+   y6 = dp1
+   END IF
+   IF (dpmax .GT. y6) THEN
+   min6d = y6d
+   min6 = y6
+   ELSE
+   min6 = dpmax
+   min6d = 0.0
+   END IF
+   dis2d = ppor*fis2*min6d
+   dis2 = ppor*fis2*min6
    dis4d = DIM_EXTRA_D(ppor*fis4, 0.0, dis2, dis2d, dis4)
+   END IF
    ! Construct the vector of the first and third differences
    ! multiplied by the appropriate constants.
    ddwd = wd(i, j, k+1, irho) - wd(i, j, k, irho)
@@ -1099,26 +1183,29 @@
    ova2avg = one/a2avg
    ! The mesh velocity if the face is moving. It must be
    ! divided by the area to obtain a true velocity.
-   IF (addgridvelocities) sface = sfacek(i, j, k)*tmp
+   IF (addgridvelocities) THEN
+   sfaced = tmp*sfacekd(i, j, k)
+   sface = sfacek(i, j, k)*tmp
+   END IF
    IF (unavg - sface + aavg .GE. 0.) THEN
-   lam1d = unavgd + aavgd
+   lam1d = unavgd - sfaced + aavgd
    lam1 = unavg - sface + aavg
    ELSE
-   lam1d = -(unavgd+aavgd)
+   lam1d = -(unavgd-sfaced+aavgd)
    lam1 = -(unavg-sface+aavg)
    END IF
    IF (unavg - sface - aavg .GE. 0.) THEN
-   lam2d = unavgd - aavgd
+   lam2d = unavgd - sfaced - aavgd
    lam2 = unavg - sface - aavg
    ELSE
-   lam2d = -(unavgd-aavgd)
+   lam2d = -(unavgd-sfaced-aavgd)
    lam2 = -(unavg-sface-aavg)
    END IF
    IF (unavg - sface .GE. 0.) THEN
-   lam3d = unavgd
+   lam3d = unavgd - sfaced
    lam3 = unavg - sface
    ELSE
-   lam3d = -unavgd
+   lam3d = -(unavgd-sfaced)
    lam3 = -(unavg-sface)
    END IF
    rradd = lam3d + aavgd

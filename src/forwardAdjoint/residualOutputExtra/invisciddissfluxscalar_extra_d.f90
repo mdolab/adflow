@@ -3,8 +3,8 @@
    !
    !  Differentiation of invisciddissfluxscalar in forward (tangent) mode:
    !   variations   of useful results: *w *fw
-   !   with respect to varying inputs: *p *gamma *w *radi *radj *radk
-   !                pinfcorr rhoinf
+   !   with respect to varying inputs: pinfcorr rhoinf *p *gamma *w
+   !                *radi *radj *radk
    !
    !      ******************************************************************
    !      *                                                                *
@@ -64,6 +64,7 @@
    REAL(kind=realtype) :: min1
    REAL(kind=realtype) :: DIM_EXTRA_D
    INTRINSIC MAX
+   !REAL :: massflowfamilydiss(:, :)
    REAL(kind=realtype) :: x6
    REAL(kind=realtype) :: x5
    REAL(kind=realtype) :: min1d

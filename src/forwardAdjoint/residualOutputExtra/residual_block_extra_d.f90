@@ -3,9 +3,9 @@
    !
    !  Differentiation of residual_block in forward (tangent) mode:
    !   variations   of useful results: *dw *w
-   !   with respect to varying inputs: *p *gamma *w *radi *radj *radk
-   !                rgas pinfcorr rhoinf timeref *cdisrk vis4 vis2
-   !                vis2coarse sigma
+   !   with respect to varying inputs: rgas pinfcorr rhoinf timeref
+   !                *p *sfacei *sfacej *gamma *sfacek *w *radi *radj
+   !                *radk *cdisrk vis4 vis2 vis2coarse sigma cgnsdoms.rotrate
    !
    !      ******************************************************************
    !      *                                                                *
@@ -40,6 +40,8 @@
    INTEGER(kind=inttype) :: i, j, k, l
    LOGICAL :: finegrid
    REAL :: result1
+   !REAL :: massflowfamilyinv
+   !REAL :: massflowfamilydiss
    INTRINSIC REAL
    !
    !      ******************************************************************

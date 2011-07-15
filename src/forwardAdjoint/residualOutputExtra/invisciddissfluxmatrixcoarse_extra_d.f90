@@ -3,7 +3,8 @@
    !
    !  Differentiation of invisciddissfluxmatrixcoarse in forward (tangent) mode:
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: *p *gamma *w
+   !   with respect to varying inputs: *p *sfacei *sfacej *gamma *sfacek
+   !                *w
    !
    !      ******************************************************************
    !      *                                                                *
@@ -45,7 +46,7 @@
    !
    INTEGER(kind=inttype) :: i, j, k
    REAL(kind=realtype) :: sfil, fis0, dis0, ppor, rrad, sface
-   REAL(kind=realtype) :: rradd
+   REAL(kind=realtype) :: rradd, sfaced
    REAL(kind=realtype) :: gammaavg, gm1, ovgm1, gm53, tmp, fs
    REAL(kind=realtype) :: gammaavgd, gm1d, ovgm1d, gm53d, fsd
    REAL(kind=realtype) :: dr, dru, drv, drw, dre, drk, sx, sy, sz
@@ -116,6 +117,7 @@
    END DO
    END DO
    fwd = 0.0
+   sfaced = 0.0
    !
    !      ******************************************************************
    !      *                                                                *
@@ -227,26 +229,29 @@
    ova2avg = one/a2avg
    ! The mesh velocity if the face is moving. It must be
    ! divided by the area to obtain a true velocity.
-   IF (addgridvelocities) sface = sfacei(i, j, k)*tmp
+   IF (addgridvelocities) THEN
+   sfaced = tmp*sfaceid(i, j, k)
+   sface = sfacei(i, j, k)*tmp
+   END IF
    IF (unavg - sface + aavg .GE. 0.) THEN
-   lam1d = unavgd + aavgd
+   lam1d = unavgd - sfaced + aavgd
    lam1 = unavg - sface + aavg
    ELSE
-   lam1d = -(unavgd+aavgd)
+   lam1d = -(unavgd-sfaced+aavgd)
    lam1 = -(unavg-sface+aavg)
    END IF
    IF (unavg - sface - aavg .GE. 0.) THEN
-   lam2d = unavgd - aavgd
+   lam2d = unavgd - sfaced - aavgd
    lam2 = unavg - sface - aavg
    ELSE
-   lam2d = -(unavgd-aavgd)
+   lam2d = -(unavgd-sfaced-aavgd)
    lam2 = -(unavg-sface-aavg)
    END IF
    IF (unavg - sface .GE. 0.) THEN
-   lam3d = unavgd
+   lam3d = unavgd - sfaced
    lam3 = unavg - sface
    ELSE
-   lam3d = -unavgd
+   lam3d = -(unavgd-sfaced)
    lam3 = -(unavg-sface)
    END IF
    rradd = lam3d + aavgd
@@ -452,26 +457,29 @@
    ova2avg = one/a2avg
    ! The mesh velocity if the face is moving. It must be
    ! divided by the area to obtain a true velocity.
-   IF (addgridvelocities) sface = sfacej(i, j, k)*tmp
+   IF (addgridvelocities) THEN
+   sfaced = tmp*sfacejd(i, j, k)
+   sface = sfacej(i, j, k)*tmp
+   END IF
    IF (unavg - sface + aavg .GE. 0.) THEN
-   lam1d = unavgd + aavgd
+   lam1d = unavgd - sfaced + aavgd
    lam1 = unavg - sface + aavg
    ELSE
-   lam1d = -(unavgd+aavgd)
+   lam1d = -(unavgd-sfaced+aavgd)
    lam1 = -(unavg-sface+aavg)
    END IF
    IF (unavg - sface - aavg .GE. 0.) THEN
-   lam2d = unavgd - aavgd
+   lam2d = unavgd - sfaced - aavgd
    lam2 = unavg - sface - aavg
    ELSE
-   lam2d = -(unavgd-aavgd)
+   lam2d = -(unavgd-sfaced-aavgd)
    lam2 = -(unavg-sface-aavg)
    END IF
    IF (unavg - sface .GE. 0.) THEN
-   lam3d = unavgd
+   lam3d = unavgd - sfaced
    lam3 = unavg - sface
    ELSE
-   lam3d = -unavgd
+   lam3d = -(unavgd-sfaced)
    lam3 = -(unavg-sface)
    END IF
    rradd = lam3d + aavgd
@@ -677,26 +685,29 @@
    ova2avg = one/a2avg
    ! The mesh velocity if the face is moving. It must be
    ! divided by the area to obtain a true velocity.
-   IF (addgridvelocities) sface = sfacek(i, j, k)*tmp
+   IF (addgridvelocities) THEN
+   sfaced = tmp*sfacekd(i, j, k)
+   sface = sfacek(i, j, k)*tmp
+   END IF
    IF (unavg - sface + aavg .GE. 0.) THEN
-   lam1d = unavgd + aavgd
+   lam1d = unavgd - sfaced + aavgd
    lam1 = unavg - sface + aavg
    ELSE
-   lam1d = -(unavgd+aavgd)
+   lam1d = -(unavgd-sfaced+aavgd)
    lam1 = -(unavg-sface+aavg)
    END IF
    IF (unavg - sface - aavg .GE. 0.) THEN
-   lam2d = unavgd - aavgd
+   lam2d = unavgd - sfaced - aavgd
    lam2 = unavg - sface - aavg
    ELSE
-   lam2d = -(unavgd-aavgd)
+   lam2d = -(unavgd-sfaced-aavgd)
    lam2 = -(unavg-sface-aavg)
    END IF
    IF (unavg - sface .GE. 0.) THEN
-   lam3d = unavgd
+   lam3d = unavgd - sfaced
    lam3 = unavg - sface
    ELSE
-   lam3d = -unavgd
+   lam3d = -(unavgd-sfaced)
    lam3 = -(unavg-sface)
    END IF
    rradd = lam3d + aavgd

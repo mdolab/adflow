@@ -3,8 +3,8 @@
    !
    !  Differentiation of bceulerwall in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w
-   !   with respect to varying inputs: gammaconstant *p *gamma *w
-   !                rgas
+   !   with respect to varying inputs: gammaconstant rgas *p *s *gamma
+   !                *w *(*bcdata.rface)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -61,7 +61,9 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssi, ssj, ssk
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rface
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rfaced
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd
    REAL(kind=realtype) :: DIM_EXTRA_D
    INTRINSIC MAX
    INTRINSIC MIN
@@ -109,6 +111,7 @@
    ! Set the pointers for the unit normal and the normal
    ! velocity to make the code more readable.
    norm => bcdata(nn)%norm
+   rfaced => bcdatad(nn)%rface
    rface => bcdata(nn)%rface
    ! Nullify the pointers and set them to the correct subface.
    ! They are nullified first, because some compilers require
@@ -226,6 +229,7 @@
    ssj => sj(2, :, :, :)
    ssk => sk(2, :, :, :)
    IF (addgridvelocities) THEN
+   ssd => sd(2, :, :, :)
    ss => s(2, :, :, :)
    END IF
    CASE (imax) 
@@ -234,6 +238,7 @@
    ssj => sj(il, :, :, :)
    ssk => sk(il, :, :, :)
    IF (addgridvelocities) THEN
+   ssd => sd(il, :, :, :)
    ss => s(il, :, :, :)
    END IF
    CASE (jmin) 
@@ -242,6 +247,7 @@
    ssj => si(:, 2, :, :)
    ssk => sk(:, 2, :, :)
    IF (addgridvelocities) THEN
+   ssd => sd(:, 2, :, :)
    ss => s(:, 2, :, :)
    END IF
    CASE (jmax) 
@@ -250,6 +256,7 @@
    ssj => si(:, jl, :, :)
    ssk => sk(:, jl, :, :)
    IF (addgridvelocities) THEN
+   ssd => sd(:, jl, :, :)
    ss => s(:, jl, :, :)
    END IF
    CASE (kmin) 
@@ -258,6 +265,7 @@
    ssj => si(:, :, 2, :)
    ssk => sj(:, :, 2, :)
    IF (addgridvelocities) THEN
+   ssd => sd(:, :, 2, :)
    ss => s(:, :, 2, :)
    END IF
    CASE (kmax) 
@@ -266,6 +274,7 @@
    ssj => si(:, :, kl, :)
    ssk => sj(:, :, kl, :)
    IF (addgridvelocities) THEN
+   ssd => sd(:, :, kl, :)
    ss => s(:, :, kl, :)
    END IF
    END SELECT
@@ -367,8 +376,11 @@
    uzd = ww2d(j, k, ivz)
    uz = ww2(j, k, ivz)
    IF (addgridvelocities) THEN
+   uxd = uxd - ssd(j, k, 1)
    ux = ux - ss(j, k, 1)
+   uyd = uyd - ssd(j, k, 2)
    uy = uy - ss(j, k, 2)
+   uzd = uzd - ssd(j, k, 3)
    uz = uz - ss(j, k, 3)
    END IF
    ! Compute the velocity components in j and
@@ -401,8 +413,8 @@
    ! pointing.
    pp1d(j, k) = DIM_EXTRA_D(pp2(j, k), pp2d(j, k), pp1(j, k), &
    &            pp1d(j, k), pp1(j, k))
-   vnd = two*(-(norm(j, k, 1)*ww2d(j, k, ivx))-norm(j, k, 2)*ww2d&
-   &            (j, k, ivy)-norm(j, k, 3)*ww2d(j, k, ivz))
+   vnd = two*(rfaced(j, k)-norm(j, k, 1)*ww2d(j, k, ivx)-norm(j, &
+   &            k, 2)*ww2d(j, k, ivy)-norm(j, k, 3)*ww2d(j, k, ivz))
    vn = two*(rface(j, k)-ww2(j, k, ivx)*norm(j, k, 1)-ww2(j, k, &
    &            ivy)*norm(j, k, 2)-ww2(j, k, ivz)*norm(j, k, 3))
    ww1d(j, k, irho) = ww2d(j, k, irho)
@@ -424,11 +436,15 @@
    END DO
    END DO
    ! Compute the energy for these halo's.
+   !gammaconstantd0 = 0.0
    CALL COMPUTEETOT_EXTRA_D(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn&
    &                         ), kcbeg(nn), kcend(nn), correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_EXTRA_D(nn, correctfork)
+   IF (secondhalo) THEN
+!   gammaconstantd0 = 0.0
+   CALL EXTRAPOLATE2NDHALO_EXTRA_D(nn, correctfork)
+   END IF
    END IF
    END DO bocos
    END SUBROUTINE BCEULERWALL_EXTRA_D

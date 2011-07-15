@@ -3,7 +3,8 @@
    !
    !  Differentiation of computeetot in forward (tangent) mode:
    !   variations   of useful results: *gamma *w
-   !   with respect to varying inputs: *p *gamma *w rgas
+   !   with respect to varying inputs: gammaconstant rgas *p *gamma
+   !                *w
    !
    !      ******************************************************************
    !      *                                                                *

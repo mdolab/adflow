@@ -35,7 +35,8 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS =  adjustinflowangle_extra_d.o\
+FF90_OBJECTS =  adjustinflowangleadj_extra_d.o\
+                adjustinflowangle_extra_d.o\
 		applyallbc_block_extra_d.o\
                 bceulerwall_extra_d.o\
                 bcfarfield_extra_d.o\
@@ -46,19 +47,25 @@ FF90_OBJECTS =  adjustinflowangle_extra_d.o\
                 computeetotcellcpfit_extra_d.o\
                 computeetot_extra_d.o\
 		curveupre_extra_d.o\
+                derivativerigidrotangle_extra_d.o\
+                derivativerotmatrixrigid_extra_d.o\
                 dim_extra_d.o\
                 eintarray_extra_d.o\
                 etotarray_extra_d.o\
                 extrapolate2ndhalo_extra_d.o\
+                getdirangle_extra_d.o\
                 getdirvector_extra_d.o\
+                gridvelocitiesfinelevel_block_extra_d.o\
                 inviscidcentralflux_extra_d.o\
 	        invisciddissfluxmatrixcoarse_extra_d.o\
 	        invisciddissfluxmatrix_extra_d.o\
 	        invisciddissfluxscalarcoarse_extra_d.o\
 	        invisciddissfluxscalar_extra_d.o\
                 inviscidupwindflux_extra_d.o\
+                normalvelocities_block_extra_d.o\
                 referencestate_mod_extra_d.o\
                 residual_block_extra_d.o\
+                rotmatrixrigidbody_extra_d.o\
                 sanuknowneddyratio_extra_d.o\
                 setbcpointers_extra_d.o\
                 setflowinfinitystate_extra_d.o\
