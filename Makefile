@@ -55,8 +55,15 @@ SUBDIR_ADJOINT = src/adjoint               \
 	         src/adjoint/residualNKPCOutput \
 		 src/forwardAdjoint \
 		 src/forwardAdjoint/residualInput \
+<<<<<<< /nfs/tuff/home/mader/hg/SUmbADjoint/Makefile.orig.265216230
 		 src/forwardAdjoint/residualOutput\
 		 src/forwardAdjoint/residualOutputExtra
+||||||| /tmp/Makefile~base.F9vKn9
+		 src/forwardAdjoint/residualOutput
+=======
+		 src/forwardAdjoint/residualOutput \
+		 src/forwardAdjoint/residualOutputSpatial
+>>>>>>> /tmp/Makefile~other.FIcg_0
 
 
 SUBDIR_WARPING = src/warping \
