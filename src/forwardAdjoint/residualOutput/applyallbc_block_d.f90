@@ -75,7 +75,6 @@
    SELECT CASE  (precond) 
    CASE (noprecond) 
    CALL BCFARFIELD_D(secondhalo, correctfork)
-   !print *,'istates_farfield',wd(8:12,3,2,:)
    CASE (turkel) 
    CALL TERMINATE('applyAllBC', &
    &                'Farfield boundary conditions for Turkel ', &

@@ -46,7 +46,7 @@
 !
 !     Local variables 
 !
-      integer(kind=intType) :: i, j, k, n
+      integer(kind=intType) :: i, j, k, n, assembled,mmmm,nnnn
       integer(kind=intType) :: iCell,jCell,kCell,liftIndex
       !real(kind=realType), dimension(nw) :: dwL2
       !real(kind=realType), dimension(nx, ny, nz, nw) :: dwerr
@@ -96,7 +96,7 @@
 
       integer :: ierr, testnode
       logical :: fineGrid, correctForK, exchangeTurb,secondHalo
-      REAL(KIND=REALTYPE) ::value
+      REAL(KIND=REALTYPE) ::value1
  
 
       integer :: unitdRdx = 8,ierror
@@ -135,8 +135,8 @@
 !     *                                                                *
 !     ******************************************************************
 
-      if( myID==0 ) write(*,*) "Running verifydRdxFile..."
-
+!!$      if( myID==0 ) write(*,*) "Running verifydRdxFile..."
+!!$
 !!$      currentLevel = level
 !!$      !discr        = spaceDiscr
 !!$      fineGrid     = .true.
@@ -246,7 +246,7 @@
 !!$!     ******************************************************************
 !!$
 !!$      ! Get the initial AD time.
-!!$
+
 !!$      call mpi_barrier(SUmb_comm_world, ierr)
 !!$      if( myID==0 ) call cpu_time(time(1))
 !!$
@@ -479,6 +479,10 @@
 !       call cpu_time(time(4))
 !       timeFD = time(4)-time(3)
 
+      print *, 'in verifydRdxFile'
+      call MatAssembled(drdx,assembled,ierr)
+      call EChk(ierr,__FILE__,__LINE__)
+      print *,'assembled spatial =',assembled
 !      !now extract and write to a file
        do sps = 1,nTimeIntervalsSpectral
        do nn = 1,nDom
@@ -501,16 +505,21 @@
                                  do n = 1,nw
                                     idxres = globalCell(i,j,k)*nw+n
                                     if ((idxres-1)>=0 .and. (idxnode-1)>=0)then
-                                       call MatGetValues(drdx,1,idxres-1,1,idxnode-1,value,PETScIerr)
+                                       call MatGetValues(drdx,1,idxnode-1,1,idxres-1,value1,PETScIerr)
+                                       !call MatGetOwnershipRange(drdx,mmmm,nnnn)
+                                       !print *, mmmm,nnnn
+                                       !print *,'idxres = ', idxres, 'idxnode =',idxnode
+                                       !call EChk(PETScIerr,__FILE__,__LINE__)
                                        !print *,'value',value,i,j,k
                                        !if(value.ne.0)then
-                                       if(abs(value)>1e-10)then
+                                       !if(abs(value1)>1e-10)then
                                           !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
                                           !12                                     format(1x,'Face',6I2,'edge',12I2)
-                                          write(unitdrdx,13) idxnode,idxres,m,icell,jcell,kcell,nn,sps,n,k,j,i,nnn,sps2,value
+                                          write(unitdrdx,13) idxnode,idxres,m,icell,jcell,kcell,nn,sps,n,k,j,i,nnn,sps2,value1
+                                          !print*,idxnode,idxres,m,icell,jcell,kcell,nn,sps,n,k,j,i,nnn,sps2,value1
                                           !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
 13                                        format(1x,'drdx',14I8,f18.10)
-                                       endif
+                                       !endif
                                     end if
                                  enddo
                               END DO
@@ -528,6 +537,7 @@ end do
 !Print *,'barriercall',myID
 call mpi_barrier(SUmb_comm_world, ierr)
 
+ print *, 'closing unitdrdx'
  close(unitdrdx)
 
  call mpi_barrier(SUmb_comm_world, ierr)

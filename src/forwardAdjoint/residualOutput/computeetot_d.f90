@@ -44,7 +44,6 @@
    !
    INTEGER(kind=inttype) :: i, j, k
    REAL(kind=realtype) :: ovgm1, factk, scale
-   !
    !      ******************************************************************
    !      *                                                                *
    !      * Begin execution                                                *
@@ -72,6 +71,7 @@
    END DO
    END DO
    END DO
+   !write(14,40),i,j,k,w(i,j,k,irhoe)
    ! Second step. Correct the energy in case a turbulent kinetic
    ! energy is present.
    IF (correctfork) THEN
@@ -89,6 +89,7 @@
    END DO
    END IF
    CASE (cptempcurvefits) 
+   !write(14,*),i,j,k,w(i,j,k,irhoE)
    !        ================================================================
    ! Cp as function of the temperature is given via curve fits.
    ! Store a scale factor to compute the nonDimensional
@@ -103,4 +104,6 @@
    END DO
    END DO
    END SELECT
+   !
+   40 FORMAT(1x,i4,i4,i4,e20.6)
    END SUBROUTINE COMPUTEETOT_D

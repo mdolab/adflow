@@ -3,7 +3,7 @@
    !
    !  Differentiation of viscousflux in forward (tangent) mode:
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: *rev *p *gamma *w *fw prandtlturb
+   !   with respect to varying inputs: *p *gamma *w *fw prandtlturb
    !                prandtl
    !
    !      ******************************************************************
@@ -43,7 +43,7 @@
    INTEGER(kind=inttype) :: i, j, k, nn
    INTEGER(kind=inttype) :: k1, k2, kk
    REAL(kind=realtype) :: rfilv, por, mul, mue, mut, heatcoef
-   REAL(kind=realtype) :: mued, mutd, heatcoefd
+   REAL(kind=realtype) :: heatcoefd
    REAL(kind=realtype) :: gm1, factlamheat, factturbheat
    REAL(kind=realtype) :: gm1d, factlamheatd, factturbheatd
    REAL(kind=realtype) :: u_x, u_y, u_z, v_x, v_y, v_z, w_x, w_y, w_z
@@ -68,17 +68,24 @@
    REAL(kind=realtype), DIMENSION(il, jl, 2) :: qx, qy, qz
    REAL(kind=realtype), DIMENSION(il, jl, 2) :: qxd, qyd, qzd
    LOGICAL :: correctfork, storewalltensor
-   REAL(kind=realtype) :: arg1
-   REAL(kind=realtype) :: result1
-   INTEGER :: ii1
-   INTRINSIC SQRT
    !
    !      ******************************************************************
    !      *                                                                *
    !      * Begin execution                                                *
    !      *                                                                *
    !      ******************************************************************
-   !
+   ! 
+   INTEGER :: unitvf=1011, ierror
+   REAL(kind=realtype) :: arg1
+   REAL(kind=realtype) :: result1
+   INTEGER :: ii1
+   INTRINSIC SQRT
+   OPEN(unit=unitvf, file='verifyvf.out', status='replace', action=&
+   & 'write', iostat=ierror) 
+   IF (ierror .NE. 0) CALL TERMINATE('verifyvf', &
+   &                                 'Something wrong when ', 'calling open'&
+   &                                )
+   PRINT*, 'ierror:', ierror
    ! Set rFilv to rFil to indicate that this is the viscous part.
    ! If rFilv == 0 the viscous residuals need not to be computed
    ! and a return can be made.
@@ -150,7 +157,6 @@
    DO ii1=1,ISIZE3OFviscsubface
    viscsubfaced(ii1)%tau = 0.0
    END DO
-   mued = 0.0
    DO j=2,jl
    DO i=2,il
    ! Set the value of the porosity. If not zero, it is set
@@ -163,11 +169,7 @@
    ! the gradients of the speed of sound squared for the heat
    ! flux.
    mul = por*(rlv(i, j, 1)+rlv(i, j, 2))
-   IF (eddymodel) THEN
-   mued = por*(revd(i, j, 1)+revd(i, j, 2))
-   mue = por*(rev(i, j, 1)+rev(i, j, 2))
-   END IF
-   mutd = mued
+   IF (eddymodel) mue = por*(rev(i, j, 1)+rev(i, j, 2))
    mut = mul + mue
    gm1d = half*(gammad(i, j, 1)+gammad(i, j, 2))
    gm1 = half*(gamma(i, j, 1)+gamma(i, j, 2)) - one
@@ -175,8 +177,7 @@
    factlamheat = one/(prandtl*gm1)
    factturbheatd = -(one*prandtlturb*gm1d/(prandtlturb*gm1)**2)
    factturbheat = one/(prandtlturb*gm1)
-   heatcoefd = mul*factlamheatd + mued*factturbheat + mue*&
-   &          factturbheatd
+   heatcoefd = mul*factlamheatd + mue*factturbheatd
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the gradients at the face by averaging the four
    ! nodal values.
@@ -293,17 +294,17 @@
    ! Compute the stress tensor and the heat flux vector.
    fracdivd = twothird*(u_xd+v_yd+w_zd)
    fracdiv = twothird*(u_x+v_y+w_z)
-   tauxxd = mutd*(two*u_x-fracdiv) + mut*(two*u_xd-fracdivd)
+   tauxxd = mut*(two*u_xd-fracdivd)
    tauxx = mut*(two*u_x-fracdiv)
-   tauyyd = mutd*(two*v_y-fracdiv) + mut*(two*v_yd-fracdivd)
+   tauyyd = mut*(two*v_yd-fracdivd)
    tauyy = mut*(two*v_y-fracdiv)
-   tauzzd = mutd*(two*w_z-fracdiv) + mut*(two*w_zd-fracdivd)
+   tauzzd = mut*(two*w_zd-fracdivd)
    tauzz = mut*(two*w_z-fracdiv)
-   tauxyd = mutd*(u_y+v_x) + mut*(u_yd+v_xd)
+   tauxyd = mut*(u_yd+v_xd)
    tauxy = mut*(u_y+v_x)
-   tauxzd = mutd*(u_z+w_x) + mut*(u_zd+w_xd)
+   tauxzd = mut*(u_zd+w_xd)
    tauxz = mut*(u_z+w_x)
-   tauyzd = mutd*(v_z+w_y) + mut*(v_zd+w_yd)
+   tauyzd = mut*(v_zd+w_yd)
    tauyz = mut*(v_z+w_y)
    q_xd = heatcoefd*q_x + heatcoef*q_xd
    q_x = heatcoef*q_x
@@ -403,11 +404,7 @@
    ! the gradients of the speed of sound squared for the heat
    ! flux.
    mul = por*(rlv(i, j, k)+rlv(i, j, k+1))
-   IF (eddymodel) THEN
-   mued = por*(revd(i, j, k)+revd(i, j, k+1))
-   mue = por*(rev(i, j, k)+rev(i, j, k+1))
-   END IF
-   mutd = mued
+   IF (eddymodel) mue = por*(rev(i, j, k)+rev(i, j, k+1))
    mut = mul + mue
    gm1d = half*(gammad(i, j, k)+gammad(i, j, k+1))
    gm1 = half*(gamma(i, j, k)+gamma(i, j, k+1)) - one
@@ -415,8 +412,7 @@
    factlamheat = one/(prandtl*gm1)
    factturbheatd = -(one*prandtlturb*gm1d/(prandtlturb*gm1)**2)
    factturbheat = one/(prandtlturb*gm1)
-   heatcoefd = mul*factlamheatd + mued*factturbheat + mue*&
-   &            factturbheatd
+   heatcoefd = mul*factlamheatd + mue*factturbheatd
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the gradients at the face by averaging the four
    ! nodal values.
@@ -468,6 +464,7 @@
    &            k1)+qzd(i, j, k1))
    q_z = fourth*(qz(i-1, j-1, k1)+qz(i, j-1, k1)+qz(i-1, j, k1)+&
    &            qz(i, j, k1))
+   !!$             write(unitvf,*) i,j,k, u_x, u_y, u_z
    ! The gradients in the normal direction are corrected, such
    ! that no averaging takes places here.
    ! First determine the vector in the direction from the
@@ -533,17 +530,17 @@
    ! Compute the stress tensor and the heat flux vector.
    fracdivd = twothird*(u_xd+v_yd+w_zd)
    fracdiv = twothird*(u_x+v_y+w_z)
-   tauxxd = mutd*(two*u_x-fracdiv) + mut*(two*u_xd-fracdivd)
+   tauxxd = mut*(two*u_xd-fracdivd)
    tauxx = mut*(two*u_x-fracdiv)
-   tauyyd = mutd*(two*v_y-fracdiv) + mut*(two*v_yd-fracdivd)
+   tauyyd = mut*(two*v_yd-fracdivd)
    tauyy = mut*(two*v_y-fracdiv)
-   tauzzd = mutd*(two*w_z-fracdiv) + mut*(two*w_zd-fracdivd)
+   tauzzd = mut*(two*w_zd-fracdivd)
    tauzz = mut*(two*w_z-fracdiv)
-   tauxyd = mutd*(u_y+v_x) + mut*(u_yd+v_xd)
+   tauxyd = mut*(u_yd+v_xd)
    tauxy = mut*(u_y+v_x)
-   tauxzd = mutd*(u_z+w_x) + mut*(u_zd+w_xd)
+   tauxzd = mut*(u_zd+w_xd)
    tauxz = mut*(u_z+w_x)
-   tauyzd = mutd*(v_z+w_y) + mut*(v_zd+w_yd)
+   tauyzd = mut*(v_zd+w_yd)
    tauyz = mut*(v_z+w_y)
    q_xd = heatcoefd*q_x + heatcoef*q_xd
    q_x = heatcoef*q_x
@@ -641,11 +638,7 @@
    ! the gradients of the speed of sound squared for the heat
    ! flux.
    mul = por*(rlv(i, j, k)+rlv(i, j+1, k))
-   IF (eddymodel) THEN
-   mued = por*(revd(i, j, k)+revd(i, j+1, k))
-   mue = por*(rev(i, j, k)+rev(i, j+1, k))
-   END IF
-   mutd = mued
+   IF (eddymodel) mue = por*(rev(i, j, k)+rev(i, j+1, k))
    mut = mul + mue
    gm1d = half*(gammad(i, j, k)+gammad(i, j+1, k))
    gm1 = half*(gamma(i, j, k)+gamma(i, j+1, k)) - one
@@ -653,8 +646,7 @@
    factlamheat = one/(prandtl*gm1)
    factturbheatd = -(one*prandtlturb*gm1d/(prandtlturb*gm1)**2)
    factturbheat = one/(prandtlturb*gm1)
-   heatcoefd = mul*factlamheatd + mued*factturbheat + mue*&
-   &            factturbheatd
+   heatcoefd = mul*factlamheatd + mue*factturbheatd
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the gradients at the face by averaging the four
    ! nodal values.
@@ -771,17 +763,17 @@
    ! Compute the stress tensor and the heat flux vector.
    fracdivd = twothird*(u_xd+v_yd+w_zd)
    fracdiv = twothird*(u_x+v_y+w_z)
-   tauxxd = mutd*(two*u_x-fracdiv) + mut*(two*u_xd-fracdivd)
+   tauxxd = mut*(two*u_xd-fracdivd)
    tauxx = mut*(two*u_x-fracdiv)
-   tauyyd = mutd*(two*v_y-fracdiv) + mut*(two*v_yd-fracdivd)
+   tauyyd = mut*(two*v_yd-fracdivd)
    tauyy = mut*(two*v_y-fracdiv)
-   tauzzd = mutd*(two*w_z-fracdiv) + mut*(two*w_zd-fracdivd)
+   tauzzd = mut*(two*w_zd-fracdivd)
    tauzz = mut*(two*w_z-fracdiv)
-   tauxyd = mutd*(u_y+v_x) + mut*(u_yd+v_xd)
+   tauxyd = mut*(u_yd+v_xd)
    tauxy = mut*(u_y+v_x)
-   tauxzd = mutd*(u_z+w_x) + mut*(u_zd+w_xd)
+   tauxzd = mut*(u_zd+w_xd)
    tauxz = mut*(u_z+w_x)
-   tauyzd = mutd*(v_z+w_y) + mut*(v_zd+w_yd)
+   tauyzd = mut*(v_zd+w_yd)
    tauyz = mut*(v_z+w_y)
    q_xd = heatcoefd*q_x + heatcoef*q_xd
    q_x = heatcoef*q_x
@@ -900,11 +892,7 @@
    ! the gradients of the speed of sound squared for the heat
    ! flux.
    mul = por*(rlv(i, j, k)+rlv(i+1, j, k))
-   IF (eddymodel) THEN
-   mued = por*(revd(i, j, k)+revd(i+1, j, k))
-   mue = por*(rev(i, j, k)+rev(i+1, j, k))
-   END IF
-   mutd = mued
+   IF (eddymodel) mue = por*(rev(i, j, k)+rev(i+1, j, k))
    mut = mul + mue
    gm1d = half*(gammad(i, j, k)+gammad(i+1, j, k))
    gm1 = half*(gamma(i, j, k)+gamma(i+1, j, k)) - one
@@ -912,8 +900,7 @@
    factlamheat = one/(prandtl*gm1)
    factturbheatd = -(one*prandtlturb*gm1d/(prandtlturb*gm1)**2)
    factturbheat = one/(prandtlturb*gm1)
-   heatcoefd = mul*factlamheatd + mued*factturbheat + mue*&
-   &            factturbheatd
+   heatcoefd = mul*factlamheatd + mue*factturbheatd
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the gradients at the face by averaging the four
    ! nodal values.
@@ -1030,17 +1017,17 @@
    ! Compute the stress tensor and the heat flux vector.
    fracdivd = twothird*(u_xd+v_yd+w_zd)
    fracdiv = twothird*(u_x+v_y+w_z)
-   tauxxd = mutd*(two*u_x-fracdiv) + mut*(two*u_xd-fracdivd)
+   tauxxd = mut*(two*u_xd-fracdivd)
    tauxx = mut*(two*u_x-fracdiv)
-   tauyyd = mutd*(two*v_y-fracdiv) + mut*(two*v_yd-fracdivd)
+   tauyyd = mut*(two*v_yd-fracdivd)
    tauyy = mut*(two*v_y-fracdiv)
-   tauzzd = mutd*(two*w_z-fracdiv) + mut*(two*w_zd-fracdivd)
+   tauzzd = mut*(two*w_zd-fracdivd)
    tauzz = mut*(two*w_z-fracdiv)
-   tauxyd = mutd*(u_y+v_x) + mut*(u_yd+v_xd)
+   tauxyd = mut*(u_yd+v_xd)
    tauxy = mut*(u_y+v_x)
-   tauxzd = mutd*(u_z+w_x) + mut*(u_zd+w_xd)
+   tauxzd = mut*(u_zd+w_xd)
    tauxz = mut*(u_z+w_x)
-   tauyzd = mutd*(v_z+w_y) + mut*(v_zd+w_yd)
+   tauyzd = mut*(v_zd+w_yd)
    tauyz = mut*(v_z+w_y)
    q_xd = heatcoefd*q_x + heatcoef*q_xd
    q_x = heatcoef*q_x
@@ -1162,6 +1149,7 @@
    END IF
    ! Possibly correct the wall shear stress.
    CALL UTAUWF_D(rfilv)
+   CLOSE(unitvf) 
    END IF
       CONTAINS
    !  Differentiation of nodalgradients in forward (tangent) mode:

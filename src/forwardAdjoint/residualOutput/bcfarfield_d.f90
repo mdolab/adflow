@@ -273,8 +273,6 @@
    pwr1 = rho**gamma2(i, j)
    sfd = (pwr1d*pp2(i, j)-pwr1*pp2d(i, j))/pp2(i, j)**2
    sf = pwr1/pp2(i, j)
-   !print *,'sf1',sfd,ww2d(i, j, irho),gamma2d(i, j),pp2d(i, j)
-   !print *,'pwr1d',pwr1d,gamma2(i,j)*ww2(i, j, irho)**(gamma2(i, j)-1)*ww2d(i, j, irho)
    !old version
    !sf2 = ww2(i,j,irho)**gamma2(i,j)/pp2(i,j)
    DO l=nt1mg,nt2mg
@@ -321,7 +319,6 @@
    ww1(i, j, ivz) = wf
    pp1d(i, j) = ww1d(i, j, irho)*cc + ww1(i, j, irho)*ccd
    pp1(i, j) = ww1(i, j, irho)*cc
-   !print *,'state1',ww1d(i,j,irho),i,j
    ! Simply set the laminar and eddy viscosity to
    ! the value in the donor cell. Their values do
    ! not matter too much in the far field.

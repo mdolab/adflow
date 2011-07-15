@@ -217,11 +217,11 @@
 !!$!come back to later
   !         ! Compute the viscous flux in case of a viscous computation.
 !!$!
-          if( viscous ) call viscousFluxAdj(wAdj,  pAdj,  fwAdj,         &
-                                 siAdj, sjAdj, skAdj, volAdj, &
-                                 sFaceIAdj,sFaceJAdj,sFaceKAdj,&
-                                 rotRateAdj,iCell, jCell, kCell, &
-                                 nn,level,sps)
+!!$          if( viscous ) call viscousFluxAdj(wAdj,  pAdj,  fwAdj,         &
+!!$                                 siAdj, sjAdj, skAdj, volAdj, &
+!!$                                 sFaceIAdj,sFaceJAdj,sFaceKAdj,&
+!!$                                 rotRateAdj,iCell, jCell, kCell, &
+!!$                                 nn,level,sps)
 
            ! Add the dissipative and possibly viscous fluxes to the
            ! Euler fluxes. Loop over the owned cells and add fw to dw.
