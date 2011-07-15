@@ -56,7 +56,7 @@ SUBDIR_ADJOINT = src/adjoint               \
 		 src/forwardAdjoint \
 		 src/forwardAdjoint/residualInput \
 		 src/forwardAdjoint/residualOutput\
-		 src/forwardAdjoint/residualOutputExtra
+		 src/forwardAdjoint/residualOutputExtra\
 		 src/forwardAdjoint/residualOutputSpatial
 
 
