@@ -34,6 +34,8 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
   use inputTimeSpectral 
   use communication    !myID
   use costFunctions
+  use section          !sections
+  use monitor          !TimeUnsteady
   implicit none
   !
   ! Subroutine arguments.
@@ -89,6 +91,14 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
   real(kind=realType) :: dJdc(nTimeIntervalsSpectral)
   integer(kind=intType) :: row_start,row_end
 
+  !rotation matrix variables
+  real(kind=realType),dimension(3):: RpXCorrection,RpYCorrection,RpZCorrection
+  real(kind=realType)::rotpointxcorrection,rotpointycorrection,rotpointzcorrection
+  !real(kind=realType), dimension(3)   :: RpCorrection, rotPointCorrection
+  real(kind=realType), dimension(3)   :: rotationPoint,r
+  real(kind=realType), dimension(3,3) :: rotationMatrix  
+  real(kind=realType) :: t(nSections),dt(nSections)
+  real(kind=realType) :: tOld,tNew
 
   ! Copy over values we need for the computeforcenadmoment call:
   MachCoefAdj = MachCoef
@@ -189,11 +199,18 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
         end select
 
         dJdc(sps) = dIdctemp
-        if (nDesignLengthRef >=0) then
-           !if (myID==0) print *,'lengthref',lengthRefAdjb,dIda(nDesignLengthRef+1)
-           dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb*dJdc(sps)
-        end if
+       
      end do
+     if (nDesignLengthRef >=0) then
+        !Because the above calculation is based on globally reduced coef., 
+        !we only need to store the derivative on the root process,
+        !otherwise we end up with nProc times the derivative
+        if (myID==0) then
+
+           !print *,'lengthref',lengthRefAdjb,dIda(nDesignLengthRef+1),myid
+           dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb!*dJdc(sps)
+        end if
+     end if
   end select
 
   ! Now we have dJdc on each processor...when we go through the
@@ -207,12 +224,43 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
 
   call VecGetOwnershipRange(dJdx,row_start,row_end,ierr)
   call EChk(ierr,__FILE__,__LINE__)
+  
+  !for correction to rotPoint derivatives
+  do nn=1,nSections
+     dt(nn) = sections(nn)%timePeriod &
+          / real(nTimeIntervalsSpectral,realType)
+  enddo
+  
+  timeUnsteady = zero
+
 
   spectralLoopAdj: do sps=1,nTimeIntervalsSpectral
+
+     do nn=1,nSections
+        t(nn) = (sps-1)*dt(nn)
+     enddo
+     
+     ! Compute the displacements due to the rigid motion of the mesh.
+     
+     tNew = timeUnsteady + timeUnsteadyRestart
+     tOld = tNew - t(1)
+     
+     call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+     !r = (/-1,-1,-1/)
+     !RpCorrection = matmul(rotationMatrix,r)
+     r = (/-1,0,0/)
+     RpXCorrection = matmul(rotationMatrix,r)
+     r = (/0,-1,0/)
+     RpYCorrection = matmul(rotationMatrix,r)
+     r = (/0,0,-1/)
+     RpZCorrection = matmul(rotationMatrix,r)
      ii = 0 
      domainLoopAD: do nn=1,nDom
         call setPointersadj(nn,1_intType,sps)
         bocos: do mm=1,nBocos
+           rotpointxcorrection = 0.0
+           rotpointycorrection = 0.0
+           rotpointzcorrection = 0.0
            if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
                 BCType(mm) == NSWallIsothermal) then
 
@@ -314,10 +362,14 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
                     ! DO NOT NEED INCREMENT ON LINE BELOW
                     ii = ii + 1
                     call VecSetValues(dJdx,3,&
-                         (/row_start+3*ii-3,&
-                           row_start+3*ii-2,&
-                           row_start+3*ii-1/),&
-                           ptsb(:,ii,sps)*dJdc(sps),ADD_VALUES,PETScIerr)
+
+                         (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/)+(sps-1)*npts*3,&
+                         ptsb(:,ii,sps)*dJdc(sps),ADD_VALUES,PETScIerr)
+                   
+                    rotpointxcorrection = rotpointxcorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/1,0,0/)+RpXCorrection))
+                    rotpointycorrection = rotpointycorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,1,0/)+RpYCorrection))
+                    rotpointzcorrection = rotpointzcorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,0,1/)+RpZCorrection))
+
                     call EChk(PETScIerr,__file__,__line__)
                  end do
               end do
@@ -353,12 +405,29 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               if (nDesignPointRefZ >=0) then
                  dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefAdjb(3)*dJdc(sps)
               end if
+
+              if (nDesignRotCenX >= 0) then
+                 dIda(nDesignRotCenX+1) = dIda(nDesignRotCenX+1)+rotpointxcorrection
+              endif
+              
+              if (nDesignRotCenY >= 0) then
+                  dIda(nDesignRotCenY+1) = dIda(nDesignRotCenY+1)+rotpointycorrection
+              end if
+              if (nDesignRotCenZ >= 0) then
+                  dIda(nDesignRotCenZ+1) = dIda(nDesignRotCenZ+1)+rotpointzcorrection
+              endif
+
               if (nDesignLengthRef >=0) then
                  dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb*dJdc(sps)
+                 
               end if
               if (nDesignSurfaceRef >=0) then
                  dIda(nDesignSurfaceRef+1) = dIda(nDesignSurfaceRef+1) + SurfaceRefAdjb*dJdc(sps)
               end if
+              if (nDesignDissError >=0) then
+                 dIda(nDesignDissError+1) = 0
+              end if
+                  
            end if
            deallocate(wblock,wblockb,stat=ierr)
 

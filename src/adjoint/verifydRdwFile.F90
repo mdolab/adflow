@@ -26,7 +26,7 @@
       use inputIO
 
       !from old verify routine
-      use ADjointPETSc, only: drdw,drdwfd,petscone,insert_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world,add_values
+      use ADjointPETSc, only: drdwt,petscone,insert_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world,add_values
       !use FDPETSc, only: DRDWFD
       use precision
       !use blockPointers
@@ -74,6 +74,8 @@
       REAL(KIND=REALTYPE) :: murefadj, timerefadj
       REAL(KIND=REALTYPE) :: alphaadj, betaadj
       REAL(KIND=REALTYPE) :: alphaadjb, betaadjb
+      REAL(KIND=REALTYPE) :: rotcenteradjb(3)
+      REAL(KIND=REALTYPE) :: pointrefadj(3), rotpointadj(3), rotpointadjb(3)
 
       character fileName*32, dataName*32
       real(kind=realType), dimension(nw,nTimeIntervalsSpectral) :: dwAdj,dwAdjb,dwAdjRef
@@ -250,7 +252,7 @@
       if( myID==0 ) call cpu_time(time(1))
 
       !zero the matrix for dRdW Insert call
-      call MatZeroEntries(dRdwFD,PETScIerr)
+      call MatZeroEntries(dRdwt,PETScIerr)
 
       if( PETScIerr/=0 ) &
         call terminate("setupADjointMatrix", "Error in MatZeroEntries drdwfd")
@@ -272,7 +274,7 @@
 !                     call copyADjointStencil(wAdj, xAdj, iCell, jCell, kCell)                  
                      call copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
                           betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
-                          nn,level,sps,&
+                          nn,level,sps,pointRefAdj,rotPointAdj,&
                           prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
                           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
                           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
@@ -305,8 +307,8 @@
                              &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
                              &  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
                              &  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
-                             &  , rotrateadjb, rotcenteradj, murefadj, timerefadj, pinfcorradj, &
-                             &  liftindex)
+                             &  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, rotpointadj&
+                             &  , rotpointadjb, murefadj, timerefadj, pinfcorradj, liftindex)
                         
                         ! Store the block Jacobians (by rows).
                         !print *,'entering storage loop'
@@ -348,7 +350,7 @@
 !!$                                                write(*,13) idxstate,idxres,l,icell,jcell,kcell,nn,m,k,j,i,nnn,wAdjb(ii,jj,kk,l)
 !!$                                             endif
                                              !print *,'setting values'
-                                             call MatSetValues(drdwfd, 1, idxres-1, 1, idxstate-1,   &
+                                             call MatSetValues(drdwt, 1, idxres-1, 1, idxstate-1,   &
                                                   wAdjb(ii,jj,kk,l,sps2), ADD_VALUES, PETScIerr)
                                              if( PETScIerr/=0 ) &
                                                   print *,'matrix setting error'!call errAssemb("MatSetValues", "verifydrdw")
@@ -380,13 +382,13 @@
          timeAdj = time(2)-time(1)
       endif
       
-      call MatAssemblyBegin(drdwfd,MAT_FINAL_ASSEMBLY,PETScIerr)
+      call MatAssemblyBegin(drdwt,MAT_FINAL_ASSEMBLY,PETScIerr)
       
       if( PETScIerr/=0 ) &
            call terminate("verifydrdwfdFile","Error in MatAssemblyBegin")
       
       
-      call MatAssemblyEnd(drdwfd,MAT_FINAL_ASSEMBLY,PETScIerr)
+      call MatAssemblyEnd(drdwt,MAT_FINAL_ASSEMBLY,PETScIerr)
        
        if( PETScIerr/=0 ) &
             call terminate("verifydrdwfdFile","Error in MatAssemblyEnd")
@@ -421,7 +423,7 @@
                                      DO K=2,Kl
                                         do n = 1,nw
                                            idxres = globalCell(i,j,k)*nw+n                                    
-                                           call MatGetValues(drdwfd,1,idxres-1,1,idxstate-1,value,PETScIerr)
+                                           call MatGetValues(drdwt,1,idxres-1,1,idxstate-1,value,PETScIerr)
 
 !!$                                    if(nn==1.and.icell==2.and.jcell==3.and.kcell==2.and.m==3)then
 !!$                                      print *,'mat value'
