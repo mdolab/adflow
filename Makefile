@@ -53,6 +53,7 @@ SUBDIR_ADJOINT = src/adjoint               \
 	         src/adjoint/forcesOutput\
 		 src/adjoint/residualNKPCInput \
 	         src/adjoint/residualNKPCOutput \
+                 src/bendingMomentAnalysis/bendingOutput\
 		 src/forwardAdjoint \
 		 src/forwardAdjoint/residualInput \
 		 src/forwardAdjoint/residualOutput\

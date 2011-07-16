@@ -95,7 +95,7 @@ subroutine alloc_derivative_values(nn)
      j = nBocos
      allocate(flowDomsd(sps)%BCData(j), stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     print *,'shape', shape(flowDomsd(sps)%BCData),nbocos
+     !print *,'shape', shape(flowDomsd(sps)%BCData),nbocos
 
      bcdatad =>flowDomsd(sps)%BCData
      bocoLoop: do mm=1,nBocos
@@ -143,7 +143,7 @@ subroutine alloc_derivative_values(nn)
 
            ! Euler wall or farfield. Just allocate the memory for
            ! the normal mesh velocity.
-           print *,'allocatind rface'
+           !print *,'allocatind rface'
            allocate(BCDatad(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
                 stat=ierr)
            if(ierr /= 0)                      &

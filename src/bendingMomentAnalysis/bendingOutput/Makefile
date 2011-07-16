@@ -22,7 +22,7 @@
 #      *                                                                *
 #      ******************************************************************
 
-SUMB_DIR = ../..
+SUMB_DIR = ../../..
 SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
 SUMB_RULES_FILE  = $(SUMB_DIR)/rulesSources.mk
 include ${SUMB_COMMON_FILE}
@@ -38,8 +38,7 @@ vpath %.o $(SUMB_OBJDIR)
 
 FF90_MODULES = 
 
-FF90_OBJECTS = rootBendingMomentAnalysis.o\
-               verifyBendingDerivatives.o
+FF90_OBJECTS = computerootbendingmoment_b.o
 
 CC_OBJECTS   = 
 

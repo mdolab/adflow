@@ -280,6 +280,7 @@ class SUMB(AeroSolver):
              'cmzqDot':self.sumb.costfunctions.costfunccmzqdot,
              'clq':self.sumb.costfunctions.costfuncclq,
              'clqDot':self.sumb.costfunctions.costfuncclqdot,
+             'cBend':self.sumb.costfunctions.costfuncbendingcoef,
              }
         
         self.possibleObjectives = \
@@ -303,6 +304,7 @@ class SUMB(AeroSolver):
               'cmzqdot':'cmzqdot',
               'clq':'clq',
               'clqdot':'clqDot',
+              'cbend':'cBend',
               'area':'area',
               'volume':'volume',
               }
@@ -1318,6 +1320,11 @@ class SUMB(AeroSolver):
 
         return
 
+    def verifyBendingPartial(self):
+        self.sumb.verifybendingderivatives()
+        #end
+
+
     def globalNKPreCon(self,in_vec):
         '''This function is ONLY used as a preconditioner to the
         global Aero-Structural system'''
@@ -2053,7 +2060,8 @@ class SUMB(AeroSolver):
              'cmzqdot'    :funcVals[self.sumb.costfunctions.costfunccmzqdot-1],
              'cmzq'       :funcVals[self.sumb.costfunctions.costfunccmzq-1],
              'clqdot'     :funcVals[self.sumb.costfunctions.costfuncclqdot-1],
-             'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1]
+             'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1],
+             'cbend'        :funcVals[self.sumb.costfunctions.costfuncbendingcoef-1]
              }
                                                  
         # Also add in 'direct' solutions. Area etc

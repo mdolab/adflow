@@ -105,6 +105,15 @@ python module sumb ! in
          integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
        end subroutine verifyforces
 
+       subroutine verifybendingderivatives()
+
+         use costfunctions
+         use inputphysics
+         use inputtimespectral
+         use communication
+         implicit none
+       end subroutine verifybendingderivatives
+
        subroutine verifydcfdx(level,costfunction)
          use blockpointers
          use cgnsgrid            
@@ -1108,7 +1117,7 @@ python module sumb ! in
             integer(kind=inttype) parameter,optional :: costfunccmzalpha=18
             integer(kind=inttype) parameter,optional :: costfuncdragcoef=4
             integer(kind=inttype) parameter,optional :: costfuncclalphadot=24
-            integer(kind=inttype) parameter,optional :: ncostfunction=36
+            integer(kind=inttype) parameter,optional :: ncostfunction=37
             integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
             integer(kind=inttype) parameter,optional :: costfuncclalpha=23
             integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
@@ -1117,6 +1126,7 @@ python module sumb ! in
             integer(kind=inttype) parameter,optional :: costfunccfyalphadot=34
             integer(kind=inttype) parameter,optional :: costfunccfyq=35
             integer(kind=inttype) parameter,optional :: costfunccfyqdot=36
+            integer(kind=inttype) parameter,optional :: costfuncbendingcoef=37
        end module costfunctions
 
        module adjointvars ! in :test:ADjointVars.F90
