@@ -694,6 +694,8 @@
        real(kind=realType), dimension(3) :: liftDirection,liftDirectiond
        real(kind=realType), dimension(3) :: dragDirection,dragDirectiond
        real(kind=realType), dimension(3) :: pointRef
+       !bending moment derivative
+       real(kind=realType), dimension(3) :: pointRefb
        real(kind=realType), dimension(3) :: pointRefEC
 
        end module inputPhysics

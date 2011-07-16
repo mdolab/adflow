@@ -1,0 +1,176 @@
+#     ******************************************************************
+#     *                                                                *
+#     * File:          MakefileTapenadeBending                         *
+#     * Author:        Sandy Mader                                     *
+#     * Starting date: 07-16-2011                                      *
+#     * Last modified: 07-16-2011                                      *
+#     *                                                                *
+#     ******************************************************************
+
+#     ******************************************************************
+#     *                                                                *
+#     * Description: Makefile to build the differentiated routines of  *
+#     * the SUmb forces with respect to xAdj using Tapenade            *
+#     *                                                                *
+#     * http://www-sop.inria.fr/tropics/tapenade.html                  *
+#     *                                                                *
+#     * Upon local installation of Tapenade, typing tapenade -help     *
+#     * at the prompt gives the following information:                 *
+#     *                                                                *
+#     * Tapenade - Version 3.4                                          *
+#     *                                                                *
+#     *  Builds a differentiated program.                              *
+#     *                                                                *
+#     *  Usage: tapenade [options] filenames                           *
+#     *                                                                *
+#     *   options:                                                     *
+#     *                                                                *
+#     * -tangent, -d          differentiate in the tangent mode        *
+#     * -reverse, -b          differentiate in the reverse mode        *
+#     * -multi                turn on "vectorial" differentiation      *
+#     *                       (multi-directional)                      *
+#     * -directValid, -dV     tangent mode computing validity interval *
+#     * -preprocess, -p       turn off differentiation                 *
+#     * -head, -root <proc>   set the differentiation root procedure   *
+#     * -outvars <vars>       set dependents, i.e. differentiate these *
+#     *                       output variables, eg "x y z". Use the "  *
+#     *                       delimitor. (default all outputs)         *
+#     * -vars <vars>          set independents, i.e. differentiate wrt *
+#     *                       these input variables, eg "x y z". Use   *
+#     *                       the " delimitor. (default all inputs)    *
+#     * -diffvarname <str>    set differentiation suffix for variables *
+#     *                       (default d and b)                        *   
+#     * -difffuncname <str>   set differentiation suffix for procedures*
+#     *                       (default _D and _B)                      *
+#     * -inputlanguage <lang> language of  input files                 *
+#     *                       (fortran, fortran90, or fortran95)       *
+#     * -outputlanguage <lang>language of output files                 *
+#     *                       (fortran, fortran90, or fortran95)       *
+#     * -output, -o <file>    put all generated procedures into a      *
+#     *                       single <file>                            *
+#     * -outputdirectory, -O <directory>  put all generated files in   *
+#     *                       <directory> (default .) (default one     *
+#     *                       separate file per differentiated procedur*
+#     * -nolib                erase previous external libraries        *
+#     *                       descriptions                             *
+#     * -ext <file>           incorporate external library description *
+#     *                       <file>                                   *
+#     * -noADlib              erase previous external libraries AD     *
+#     *                       descriptions                             *
+#     * -extAD <file>         incorporate external library AD          *
+#     *                       description <file>                       *
+#     * -i<n>                 count <n> bytes for an integer (default4)*
+#     * -r<n>                 count <n> bytes for a real (default 4)   *
+#     * -dr<n>                count <n> bytes for a double real (def 8)*
+#     * -nooptim <str>        turn off optimization <str>              *
+#     * -traceactivevars <units>  insert debugging calls for the       *
+#     *                       tangent mode of <units>                  *
+#     * -traceallactivevars   insert debugging calls for all tangent   *
+#     *                       diff procedures                          *
+#     * -dptest <units>       insert debugging calls for the dot       *
+#     *                       product test                             *
+#     * -msglevel <n>         set the level of detail of               *
+#     *                       differentiation milestones               *
+#     * -dump <file>          write a dump <file>                      *
+#     * -html                 display results in a web browser         *
+#     *                                                                *
+#     ******************************************************************
+
+#     ==================================================================
+
+#     ******************************************************************
+#     *                                                                *
+#     * Set some environment variables that otherwise would have to be *
+#     * set at the command prompt with "setenv".                       *
+#     *                                                                *
+#     ******************************************************************
+
+#JAVA_HOME =/home/mader/UTIAS/SRC/jdk1.6.0_06
+
+#TAPENADE_HOME = /home/mader/UTIAS/SRC/tapenade2.2.4
+
+SOLVER_DIRSRC = /nfs/tuff/home/mader/hg/SUmbADjoint/src
+
+#     ******************************************************************
+#     *                                                                *
+#     * Set Tapenade options.                                          *
+#     *                                                                *
+#     ******************************************************************
+
+TAPENADE_PARSERFILESEPARATOR = "/"
+
+# Dependent output variables (separator: white space, default: all)
+
+TAPENADE_OUTVARS = "bendingMoment"
+
+# Independent input variables (separator: white space, default: all)
+
+TAPENADE_VARS = "sol pointref"
+
+# Name of the top routine
+
+TAPENADE_HEADROUTINE = "computeRootBendingMoment"
+
+# Differentiation mode
+
+TAPENADE_MODE = -reverse
+
+# Output directory
+
+TAPENADE_OUTDIR = $(SOLVER_DIRSRC)/bendingMomentAnalysis/bendingTapenade
+
+# Integer, double and real precision (bytes)
+
+#TAPENADE_PRECISION = -i4 -dr8 -r4
+TAPENADE_PRECISION = -i4 -dr8 -r8
+
+#     ******************************************************************
+#     *                                                                *
+#     * The subdirectories where the sources are located.              *
+#     *                                                                *
+#     ******************************************************************
+TAPENADE_DIRSRC = $(SOLVER_DIRSRC)/bendingMomentAnalysis
+TAPENADE_DIRMOD  = $(SOLVER_DIRSRC)/modules
+
+TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
+
+#     ******************************************************************
+#     *                                                                *
+#     * Routines to be differentiated (and dependencies).              *
+#     *                                                                *
+#     ******************************************************************
+
+TAPENADE_SRC = $(TAPENADE_DIRSRC)/rootBendingMomentAnalysis.f90\
+               $(SOLVER_DIRSRC)/adjoint/residualInput/getDirAngle.f90
+
+TAPENADE_MOD = $(TAPENADE_DIRMOD)/costFunctions.F90\
+               $(SOLVER_DIRSRC)/adjoint/residualInput/constants.f90\
+               $(SOLVER_DIRSRC)/adjoint/residualInput/precision.f90\
+               $(SOLVER_DIRSRC)/adjoint/residualInput/inputParam.f90
+
+
+TAPENADE_SRC_ALL = $(TAPENADE_SRC) $(TAPENADE_MOD)
+
+#     ******************************************************************
+#     *                                                                *
+#     * General targets.                                               *
+#     *                                                                *
+#     ******************************************************************
+
+default:
+	@echo "TAPENADE - parsing and generating differentiated code"
+	$(TAPENADE_HOME)/bin/tapenade -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30  -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
+	@echo "deleting some unnecessary files..."
+	@rm -f $(TAPENADE_OUTDIR)/*__.f90 $(TAPENADE_OUTDIR)/*~
+
+all:	 default
+
+clean:
+	@echo " Making clean ... "
+	@for subdir in $(TAPENADE_CLEAN_DIRS) ; \
+		do \
+			echo; \
+			echo "making $@ in $$subdir"; \
+			echo; \
+			(cd $$subdir && rm -f *_b.f90 *.msg *~) || exit 1; \
+		done

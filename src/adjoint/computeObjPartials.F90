@@ -77,6 +77,9 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
   real(kind=realType),dimension(8)::dcdalphab,dcdalphadotb,dcdbetab,dcdbetadotb,dcdMachb,dcdMachdotb
   real(kind=realType),dimension(8)::Coef0b,Coef0dotb
   real(kind=realType), dimension(nCostFunction)::globalCFVals
+  !bending derivatives
+  real(kind=realType), dimension(nCostFunction)::globalCFValsb
+  real(kind=realType)::bendingMoment,bendingMomentb
 
   real(kind=realType) :: lengthRefAdj,lengthRefAdjb
   real(kind=realType) :: surfaceRefAdj,surfaceRefAdjb
@@ -116,7 +119,8 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
        costFuncForceX,costFuncForceY,costFuncForceZ, &
        costFuncForceXCoef,costFuncForceYCoef,costFuncForceZCoef, &
        costFuncMomX,costFuncMomY,costFuncMomZ,&
-       costFuncMomXCoef,costFuncMomYCoef,costFuncMomZCoef)
+       costFuncMomXCoef,costFuncMomYCoef,costFuncMomZCoef,&
+       costFuncBendingCoef)
 
      ! For non-timeSpectral type functions, just time average the
      ! objectives
@@ -255,6 +259,18 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
      r = (/0,0,-1/)
      RpZCorrection = matmul(rotationMatrix,r)
      ii = 0 
+
+     !zero out the pointrefb value in the module
+     pointRefb(:) = 0.0
+     if (costfunction==costFuncBendingCoef)then
+        level = 1
+        call computeAeroCoef(globalCFVals,sps)
+        bendingmomentb = 1.0
+        call COMPUTEROOTBENDINGMOMENT_B(globalCFVals, globalCFValsb, bendingmoment, &
+             &  bendingmomentb)
+        
+     endif
+
      domainLoopAD: do nn=1,nDom
         call setPointersadj(nn,1_intType,sps)
         bocos: do mm=1,nBocos
@@ -323,6 +339,13 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
                    costFuncCmzq,costFuncCmzqDot)
                 
                  cmomentb(3) = 1.0
+              case(costFuncBendingCoef)
+                 cforceb(1) = globalCFValsb(costFuncForceXCoef)
+                 cforceb(2) = globalCFValsb(costFuncForceYCoef)
+                 cforceb(3) = globalCFValsb(costFuncForceZCoef)
+                 cmomentb(1) = globalCFValsb(costFuncMomXCoef)
+                 cmomentb(2) = globalCFValsb(costFuncMomYCoef)
+                 cmomentb(3) = globalCFValsb(costFuncMomZCoef)
               end select
 
               allocate(wblock(0:ib,0:jb,0:kb,nw),&
@@ -396,15 +419,15 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               
               if (nDesignPointRefX >=0) then
 
-                 dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefAdjb(1)*dJdc(sps)
+                 dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefAdjb(1)*dJdc(sps)+pointrefb(1)*dJdc(sps)
               end if
 
               if (nDesignPointRefY >=0) then
-                 dIda(nDesignPointRefY + 1) = dIda(nDesignPointRefY + 1) + pointrefAdjb(2)*dJdc(sps)
+                 dIda(nDesignPointRefY + 1) = dIda(nDesignPointRefY + 1) + pointrefAdjb(2)*dJdc(sps)+pointrefb(2)*dJdc(sps)
               end if
 
               if (nDesignPointRefZ >=0) then
-                 dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefAdjb(3)*dJdc(sps)
+                 dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefAdjb(3)*dJdc(sps)+pointrefb(3)*dJdc(sps)
               end if
 
               if (nDesignRotCenX >= 0) then
