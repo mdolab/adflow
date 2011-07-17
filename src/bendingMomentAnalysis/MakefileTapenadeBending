@@ -105,7 +105,7 @@ TAPENADE_OUTVARS = "bendingMoment"
 
 # Independent input variables (separator: white space, default: all)
 
-TAPENADE_VARS = "sol pointref"
+TAPENADE_VARS = "sol pointref lengthref"
 
 # Name of the top routine
 

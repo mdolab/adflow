@@ -689,6 +689,8 @@
        real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset
        real(kind=realType) :: eddyVisInfRatio, turbIntensityInf
        real(kind=realType) :: surfaceRef, lengthRef
+       !bending moment derivative
+       real(kind=realType) :: lengthrefb
 
        real(kind=realType), dimension(3) :: velDirFreestream,velDirFreestreamd
        real(kind=realType), dimension(3) :: liftDirection,liftDirectiond

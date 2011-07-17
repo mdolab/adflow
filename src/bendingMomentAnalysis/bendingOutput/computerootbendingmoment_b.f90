@@ -3,8 +3,9 @@
    !
    !  Differentiation of computerootbendingmoment in reverse (adjoint) mode:
    !   gradient     of useful results: bendingmoment
-   !   with respect to varying inputs: pointref sol bendingmoment
-   !   RW status of diff variables: pointref:out sol:out bendingmoment:in-out
+   !   with respect to varying inputs: pointref lengthref sol bendingmoment
+   !   RW status of diff variables: pointref:out lengthref:out sol:out
+   !                bendingmoment:in-out
    !
    !****************************************************
    !
@@ -41,6 +42,14 @@
    &  elasticmomentzb
    INTEGER(kind=inttype) :: liftindex
    REAL(kind=realtype) :: alpha, beta
+   REAL(kind=realtype) :: tempb8
+   REAL(kind=realtype) :: tempb7
+   REAL(kind=realtype) :: tempb6
+   REAL(kind=realtype) :: tempb5
+   REAL(kind=realtype) :: tempb4
+   REAL(kind=realtype) :: tempb3
+   REAL(kind=realtype) :: tempb2
+   REAL(kind=realtype) :: tempb1
    REAL(kind=realtype) :: tempb0
    REAL(kind=realtype) :: tempb
    INTRINSIC SQRT
@@ -59,10 +68,10 @@
    !sum up the moments about the root elastic center to determine the effect of sweep on the moment
    IF (liftindex .EQ. 2) THEN
    !z out wing sum momentx,momentz
-   elasticmomentx = cmx + cfy*(pointrefec(3)-pointref(3)) - cfz*(&
-   &      pointrefec(2)-pointref(2))
-   elasticmomentz = cmz - cfy*(pointrefec(1)-pointref(1)) + cfx*(&
-   &      pointrefec(2)-pointref(2))
+   elasticmomentx = cmx + cfy*(pointrefec(3)-pointref(3))/lengthref - &
+   &      cfz*(pointrefec(2)-pointref(2))/lengthref
+   elasticmomentz = cmz - cfy*(pointrefec(1)-pointref(1))/lengthref + &
+   &      cfx*(pointrefec(2)-pointref(2))/lengthref
    IF (elasticmomentx**2 + elasticmomentz**2 .EQ. 0.0) THEN
    tempb = 0.0
    ELSE
@@ -72,47 +81,58 @@
    elasticmomentxb = 2*elasticmomentx*tempb
    elasticmomentzb = 2*elasticmomentz*tempb
    pointrefb = 0.0
+   tempb0 = -((pointrefec(1)-pointref(1))*elasticmomentzb/lengthref)
+   tempb1 = (pointrefec(2)-pointref(2))*elasticmomentzb/lengthref
    cmzb = elasticmomentzb
-   cfyb = (pointrefec(3)-pointref(3))*elasticmomentxb - (pointrefec(1)-&
-   &      pointref(1))*elasticmomentzb
-   pointrefb(1) = cfy*elasticmomentzb
-   cfxb = (pointrefec(2)-pointref(2))*elasticmomentzb
-   pointrefb(2) = -(cfx*elasticmomentzb)
+   pointrefb(1) = cfy*elasticmomentzb/lengthref
+   tempb2 = (pointrefec(3)-pointref(3))*elasticmomentxb/lengthref
+   cfyb = tempb2 + tempb0
+   tempb3 = -((pointrefec(2)-pointref(2))*elasticmomentxb/lengthref)
+   lengthrefb = -(cfy*tempb2/lengthref) - cfz*tempb3/lengthref - cfx*&
+   &      tempb1/lengthref - cfy*tempb0/lengthref
+   pointrefb(2) = -(cfx*elasticmomentzb/lengthref)
+   cfxb = tempb1
    cmxb = elasticmomentxb
-   pointrefb(3) = pointrefb(3) - cfy*elasticmomentxb
-   cfzb = -((pointrefec(2)-pointref(2))*elasticmomentxb)
-   pointrefb(2) = pointrefb(2) + cfz*elasticmomentxb
+   pointrefb(3) = pointrefb(3) - cfy*elasticmomentxb/lengthref
+   pointrefb(2) = pointrefb(2) + cfz*elasticmomentxb/lengthref
+   cfzb = tempb3
    bendingmomentb = 0.0
    cmyb = 0.0
    ELSE
    IF (liftindex .EQ. 3) THEN
    !y out wing sum momentx,momenty
-   elasticmomentx = cmx + cfz*(pointrefec(2)-pointref(2)) + cfy*(&
-   &        pointrefec(3)-pointref(3))
-   elasticmomenty = cmy + cfz*(pointrefec(1)-pointref(1)) + cfx*(&
-   &        pointrefec(3)-pointref(3))
+   elasticmomentx = cmx + cfz*(pointrefec(2)-pointref(2))/lengthref +&
+   &        cfy*(pointrefec(3)-pointref(3))/lengthref
+   elasticmomenty = cmy + cfz*(pointrefec(1)-pointref(1))/lengthref +&
+   &        cfx*(pointrefec(3)-pointref(3))/lengthref
    IF (elasticmomentx**2 + elasticmomenty**2 .EQ. 0.0) THEN
-   tempb0 = 0.0
+   tempb4 = 0.0
    ELSE
-   tempb0 = bendingmomentb/(2.0*SQRT(elasticmomentx**2+&
+   tempb4 = bendingmomentb/(2.0*SQRT(elasticmomentx**2+&
    &          elasticmomenty**2))
    END IF
-   elasticmomentxb = 2*elasticmomentx*tempb0
-   elasticmomentyb = 2*elasticmomenty*tempb0
+   elasticmomentxb = 2*elasticmomentx*tempb4
+   elasticmomentyb = 2*elasticmomenty*tempb4
    pointrefb = 0.0
+   tempb5 = (pointrefec(1)-pointref(1))*elasticmomentyb/lengthref
+   tempb6 = (pointrefec(3)-pointref(3))*elasticmomentyb/lengthref
    cmyb = elasticmomentyb
-   cfzb = (pointrefec(2)-pointref(2))*elasticmomentxb + (pointrefec(1&
-   &        )-pointref(1))*elasticmomentyb
-   pointrefb(1) = -(cfz*elasticmomentyb)
-   cfxb = (pointrefec(3)-pointref(3))*elasticmomentyb
-   pointrefb(3) = -(cfx*elasticmomentyb)
+   pointrefb(1) = -(cfz*elasticmomentyb/lengthref)
+   tempb7 = (pointrefec(2)-pointref(2))*elasticmomentxb/lengthref
+   cfzb = tempb7 + tempb5
+   tempb8 = (pointrefec(3)-pointref(3))*elasticmomentxb/lengthref
+   lengthrefb = -(cfz*tempb7/lengthref) - cfy*tempb8/lengthref - cfx*&
+   &        tempb6/lengthref - cfz*tempb5/lengthref
+   pointrefb(3) = -(cfx*elasticmomentyb/lengthref)
+   cfxb = tempb6
    cmxb = elasticmomentxb
-   pointrefb(2) = pointrefb(2) - cfz*elasticmomentxb
-   cfyb = (pointrefec(3)-pointref(3))*elasticmomentxb
-   pointrefb(3) = pointrefb(3) - cfy*elasticmomentxb
+   pointrefb(2) = pointrefb(2) - cfz*elasticmomentxb/lengthref
+   pointrefb(3) = pointrefb(3) - cfy*elasticmomentxb/lengthref
+   cfyb = tempb8
    bendingmomentb = 0.0
    ELSE
    pointrefb = 0.0
+   lengthrefb = 0.0
    cfxb = 0.0
    cfyb = 0.0
    cfzb = 0.0
