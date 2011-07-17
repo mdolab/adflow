@@ -262,6 +262,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
 
      !zero out the pointrefb value in the module
      pointRefb(:) = 0.0
+     lengthRefb = 0.0
      if (costfunction==costFuncBendingCoef)then
         level = 1
         call computeAeroCoef(globalCFVals,sps)
@@ -443,7 +444,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
 
               if (nDesignLengthRef >=0) then
 
-                 dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb*dJdc(sps)
+                 dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb*dJdc(sps)+lengthRefb*dJdc(sps)
                  
               end if
               if (nDesignSurfaceRef >=0) then

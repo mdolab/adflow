@@ -12,10 +12,11 @@ subroutine getSolution(sps)
 
   use costFunctions
   use inputTSStabDeriv !TSStability
+  use inputTimeSpectral !nTimeIntervalsSpectral
   use communication
   implicit none
 
-  integer(kind=intType) :: sps,ierr
+  integer(kind=intType) :: sps,ierr,i
   !
   !     Local variables.
   !
@@ -24,14 +25,10 @@ subroutine getSolution(sps)
   real(kind=realType),dimension(8)::dcdalpha,dcdalphadot,dcdbeta,dcdbetadot,&
        dcdMach,dcdMachdot
   real(kind=realType),dimension(8)::Coef0,Coef0dot
-!!$  real(kind=realType) :: cl0,cd0,cmz0
-!!$  real(kind=realType) :: dcldalpha,dcddalpha,dcmzdalpha
-!!$  real(kind=realType) :: dcldalphaDot,dcddalphaDot,dcmzdalphaDot
-!!$  real(kind=realType) :: dcldq,dcddq,dcmzdq
-!!$  real(kind=realType) :: dcldqdot,dcddqdot,dcmzdqdot
+
   real(kind=realType), dimension(nCostFunction)::globalCFVals
   real(kind=realType),dimension(:),allocatable :: localVal,globalVal
-  real(kind=realType)::bendingMoment
+  real(kind=realType)::bendingMoment,bendingSum
 
   real(kind=realType) :: value1,value2
   ! Function values
@@ -41,12 +38,24 @@ subroutine getSolution(sps)
   end if
 
   functionValue(:) = 0.0
-  call computeAeroCoef(globalCFVals,sps)
-
-  call computeRootBendingMoment(globalCFVals,bendingMoment)
+  bendingSum = 0.0
+  do i =1,nTimeIntervalsSpectral
+     call computeAeroCoef(globalCFVals,i)
+     
+     call computeRootBendingMoment(globalCFVals,bendingMoment)
+     bendingsum = bendingsum+bendingMoment
+     if(myid==0)then
+        print *,'Bending Coefficient',bendingMoment,i
+     end if
+  end do
   if(myid==0)then
-     print *,'Bending Coefficient',bendingMoment
+     print *,'bending average',bendingSum/nTimeIntervalsSpectral
   end if
+  functionValue(costFuncBendingCoef)=bendingSum/nTimeIntervalsSpectral
+
+  
+  call computeAeroCoef(globalCFVals,sps)
+  
  !  call farFieldDrag(value1)
 !   call farFieldInducedDrag(value2)
 !   if (myID==0)then
