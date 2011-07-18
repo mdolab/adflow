@@ -6,34 +6,40 @@ cd /SUmb/src/forwardAdjoint/
 
 #open the file:
 
-Makefile_tapenade_extra
+Makefile_tapenade_spatial
 
 #update the SOLVER_DIRSRC to your local /SUmb/src directory
 
 #run the command:
 
-make -f Makefile_tapenade_extra
+make -f Makefile_tapenade_spatial
 
 #change directories to:
-cd /src/forwardAdjoint/residualTapenadeExtra
+cd /src/forwardAdjoint/residualTapenadeSpatial
 
 #run the command
 python autoEdit.py
 
 #change directories to:
-cd /src/forwardAdjoint/residualOutputExtra
+cd /src/forwardAdjoint/residualOutputSpatial
 
 #make the following manual corrections:
-referencestate_mod_extra_d.f90: comment out REAL(kind=realtype) :: MAXVALUESUBFACE 
+emacs eintarray_spatial_d.f90: comment out all instances of eintd = 0.0
 
-setflowinfinitystate_extra_d.f90:  modify WHERE structure to if() then for wInf
-				   add if (ALLOCATED(winfd)) then	   
-                                      DEALLOCATE(winfd)
-				      END if
-				      ALLOCATE(winfd(nw), stat=ierr)
-				  after corresponding winf allocate block.
+metric_block_spatial_d.f90: change:
+  DO ii1=1,ISIZE3OFbcdata
+   bcdatad(ii1)%norm = 0.0
+   END DO
+to
+  DO ii1=1,nbocos
+   bcdatad(ii1)%norm = 0.0
+   END DO
 
-normalvelocities_block_extra_d.f90:
+comment out:
+  REAL(kind=realtype) :: VOLPYM
+  REAL(kind=realtype) :: VOLPYM_SPATIAL_D
+
+normalvelocities_block_spatial_d.f90:
 remove 1 of the 2:INTEGER :: ii1
 change:
      DO ii1=1,ISIZE2OFbcdata
@@ -41,21 +47,14 @@ change:
      END DO
 
 to: 
-     DO ii1=1,nbocos!ISIZE2OFbcdata
+     DO ii1=1,nbocos
      IF (ASSOCIATED(bcdata(ii1)%rface)) THEN
          bcdatad(ii1)%rface = 0.0
      endif
      END DO
 
 and change:
-DO ii1=1,ISIZE2OFbcdata
-      bcdatad(ii1)%rface = 0.0
-END DO
 
-DO mm=1,nbocos
-    bcdatad(mm)%rface = 0.0
-    bcdata(mm)%rface = zero
-END DO
 
 DO ii1=1,ISIZE2OFbcdata
      bcdatad(ii1)%rface = 0.0
@@ -63,18 +62,11 @@ END DO
 
 to:
 
-DO mm=1,nbocos
-   IF (ASSOCIATED(bcdata(mm)%rface)) THEN
-      bcdatad(mm)%rface = 0.0
-        bcdata(mm)%rface = zero
-   END IF
-END DO
 
 DO ii1=1,nbocos
    IF (ASSOCIATED(bcdata(ii1)%rface)) THEN
       bcdatad(ii1)%rface = 0.0
    END IF
 END DO
-
 
 the code should now compile and run

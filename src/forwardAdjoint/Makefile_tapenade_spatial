@@ -87,8 +87,8 @@
 #     ******************************************************************
 
 #SOLVER_DIRSRC = /nfs/mica/home/kenway/hg/SUmbADjoint/src
-#SOLVER_DIRSRC = /nfs/tuff/home/mader/hg/SUmbADjoint/src
-SOLVER_DIRSRC = /home/cody/hg/SUmbADjoint/src
+SOLVER_DIRSRC = /nfs/tuff/home/mader/hg/SUmbADjoint/src
+#SOLVER_DIRSRC = /home/cody/hg/SUmbADjoint/src
 
 #     ******************************************************************
 #     *                                                                *
@@ -155,6 +155,8 @@ TAPENADE_SRC_SOLVER =  $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/block_res_s
 		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/turbResidual_block.f90\
                        $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/xhalo_block.f90\
                        $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/metric_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/gridVelocitiesFineLevel_block.f90\
+		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/normalVelocities_block.f90\
 		       $(SOLVER_DIRSRC)/forwardAdjoint/setPointersOffTSInstance.f90\
 		       $(SOLVER_DIRSRC)/solver/inviscidCentralFlux.f90\
 		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxCusp.f90\

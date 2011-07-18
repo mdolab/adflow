@@ -341,6 +341,10 @@
    LOGICAL :: rotatingframespecified
    REAL(kind=realtype), DIMENSION(3) :: rotcenter, rotrate
    END TYPE CGNSBLOCKINFOTYPE
+   TYPE CGNSBLOCKINFOTYPE_SPATIAL_D
+   REAL(kind=realtype), DIMENSION(3) :: rotcenter
+   REAL(kind=realtype), DIMENSION(3) :: rotrate
+   END TYPE CGNSBLOCKINFOTYPE_SPATIAL_D
    ! Name of the family.
    ! Type of the boundary condition and family BC name.
    ! Name of the CGNS user defined data node if the CGNS
@@ -398,7 +402,8 @@
    INTEGER(kind=inttype) :: cgnsndom
    ! Array of cgns blocks.
    TYPE(CGNSBLOCKINFOTYPE), DIMENSION(:), ALLOCATABLE :: cgnsdoms
-   TYPE(CGNSBLOCKINFOTYPE), DIMENSION(:), ALLOCATABLE :: cgnsdomsd
+   TYPE(CGNSBLOCKINFOTYPE_SPATIAL_D), DIMENSION(:), ALLOCATABLE :: &
+   &  cgnsdomsd
    ! Number of families in the cgns grid.
    INTEGER(kind=inttype) :: cgnsnfamilies
    ! Array of families.

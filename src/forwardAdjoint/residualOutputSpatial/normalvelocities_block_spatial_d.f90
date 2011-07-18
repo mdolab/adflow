@@ -3,7 +3,7 @@
    !
    !  Differentiation of normalvelocities_block in forward (tangent) mode:
    !   variations   of useful results: *(*bcdata.rface)
-   !   with respect to varying inputs: *sfacei *sfacej *sfacek
+   !   with respect to varying inputs: *si *sj *sk
    !
    !      ******************************************************************
    !      *                                                                *
@@ -14,10 +14,10 @@
    !      *                                                                *
    !      ******************************************************************
    !
-SUBROUTINE NORMALVELOCITIES_BLOCK_EXTRA_D(sps)
+SUBROUTINE NORMALVELOCITIES_BLOCK_SPATIAL_D(sps)
   USE BCTYPES
-  USE BLOCKPOINTERS_D
   USE ITERATION
+  USE BLOCKPOINTERS_D
   USE DIFFSIZES
   !  Hint: ISIZE2OFbcdata should be the size of dimension 2 of array bcdata
   IMPLICIT NONE
@@ -42,12 +42,14 @@ SUBROUTINE NORMALVELOCITIES_BLOCK_EXTRA_D(sps)
   INTEGER(kind=inttype) :: nlevels, level, nn, mm
   INTEGER(kind=inttype) :: i, j
   REAL(kind=realtype) :: weight, mult
+  REAL(kind=realtype) :: weightd
   REAL(kind=realtype), DIMENSION(:, :), POINTER :: sface
-  REAL(kind=realtype), DIMENSION(:, :), POINTER :: sfaced
   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd
   REAL(kind=realtype) :: arg1
-  INTEGER :: ii1
+  REAL(kind=realtype) :: arg1d
   !INTEGER :: ii1
+  INTEGER :: ii1
   INTRINSIC ASSOCIATED
   INTRINSIC SQRT
   !
@@ -57,16 +59,17 @@ SUBROUTINE NORMALVELOCITIES_BLOCK_EXTRA_D(sps)
   !      *                                                                *
   !      ******************************************************************
   !
-  !print *,'in normal',addgridvelocities
   ! Check for a moving block. As it is possible that in a
   ! multidisicplinary environment additional grid velocities
   ! are set, the test should be done on addGridVelocities
   ! and not on blockIsMoving.
   IF (addgridvelocities) THEN
+     !print *,'ii1'
      DO ii1=1,nbocos!ISIZE2OFbcdata
-         IF (ASSOCIATED(bcdata(ii1)%rface)) THEN
-            bcdatad(ii1)%rface = 0.0
-         end IF
+        !print *,'ii1 2',ii1,ASSOCIATED(bcdatad(ii1)%rface),ASSOCIATED(bcdata(ii1)%rface)!,bcdatad(ii1)%rface
+        IF (ASSOCIATED(bcdata(ii1)%rface)) THEN
+           bcdatad(ii1)%rface = 0.0
+        end IF
      END DO
      !
      !            ************************************************************
@@ -81,8 +84,8 @@ SUBROUTINE NORMALVELOCITIES_BLOCK_EXTRA_D(sps)
      !            *                                                          *
      !            ************************************************************
      !
-     !print *,'looping'
      ! Loop over the boundary subfaces.
+     !print *,'bocoloop'
      bocoloop:DO mm=1,nbocos
         ! Check whether rFace is allocated.
         IF (ASSOCIATED(bcdata(mm)%rface)) THEN
@@ -91,33 +94,33 @@ SUBROUTINE NORMALVELOCITIES_BLOCK_EXTRA_D(sps)
            SELECT CASE  (bcfaceid(mm)) 
            CASE (imin) 
               mult = -one
+              ssd => sid(1, :, :, :)
               ss => si(1, :, :, :)
-              sfaced => sfaceid(1, :, :)
               sface => sfacei(1, :, :)
            CASE (imax) 
               mult = one
+              ssd => sid(il, :, :, :)
               ss => si(il, :, :, :)
-              sfaced => sfaceid(il, :, :)
               sface => sfacei(il, :, :)
            CASE (jmin) 
               mult = -one
+              ssd => sjd(:, 1, :, :)
               ss => sj(:, 1, :, :)
-              sfaced => sfacejd(:, 1, :)
               sface => sfacej(:, 1, :)
            CASE (jmax) 
               mult = one
+              ssd => sjd(:, jl, :, :)
               ss => sj(:, jl, :, :)
-              sfaced => sfacejd(:, jl, :)
               sface => sfacej(:, jl, :)
            CASE (kmin) 
               mult = -one
+              ssd => skd(:, :, 1, :)
               ss => sk(:, :, 1, :)
-              sfaced => sfacekd(:, :, 1)
               sface => sfacek(:, :, 1)
            CASE (kmax) 
               mult = one
+              ssd => skd(:, :, kl, :)
               ss => sk(:, :, kl, :)
-              sfaced => sfacekd(:, :, kl)
               sface => sfacek(:, :, kl)
            END SELECT
            ! Loop over the faces of the subface.
@@ -125,17 +128,28 @@ SUBROUTINE NORMALVELOCITIES_BLOCK_EXTRA_D(sps)
               DO i=bcdata(mm)%icbeg,bcdata(mm)%icend
                  ! Compute the inverse of the length of the normal
                  ! vector and possibly correct for inward pointing.
+                 arg1d = 2*ss(i, j, 1)*ssd(i, j, 1) + 2*ss(i, j, 2)*ssd(i, j&
+                      &              , 2) + 2*ss(i, j, 3)*ssd(i, j, 3)
                  arg1 = ss(i, j, 1)**2 + ss(i, j, 2)**2 + ss(i, j, 3)**2
+                 IF (arg1 .EQ. 0.0) THEN
+                    weightd = 0.0
+                 ELSE
+                    weightd = arg1d/(2.0*SQRT(arg1))
+                 END IF
                  weight = SQRT(arg1)
-                 IF (weight .GT. zero) weight = mult/weight
+                 IF (weight .GT. zero) THEN
+                    weightd = -(mult*weightd/weight**2)
+                    weight = mult/weight
+                 END IF
                  ! Compute the normal velocity based on the outward
                  ! pointing unit normal.
-                 bcdatad(mm)%rface(i, j) = weight*sfaced(i, j)
+                 bcdatad(mm)%rface(i, j) = sface(i, j)*weightd
                  bcdata(mm)%rface(i, j) = weight*sface(i, j)
               END DO
            END DO
         END IF
      END DO bocoloop
+     !print *,'endloop'
   ELSE
      ! Block is not moving. Loop over the boundary faces and set
      ! the normal grid velocity to zero if allocated.
@@ -145,13 +159,10 @@ SUBROUTINE NORMALVELOCITIES_BLOCK_EXTRA_D(sps)
            bcdata(mm)%rface = zero
         END IF
      END DO
-     !print *,'endloop'
-     DO ii1=1,nbocos!ISIZE2OFbcdata
+     DO ii1=1,nbocos
         IF (ASSOCIATED(bcdata(ii1)%rface)) THEN
-           bcdatad(ii1)%rface = 0.0
-        END IF
+        bcdatad(ii1)%rface = 0.0
+     end IF
      END DO
- 
   END IF
-  !print *,'leaving normal'
-END SUBROUTINE NORMALVELOCITIES_BLOCK_EXTRA_D
+END SUBROUTINE NORMALVELOCITIES_BLOCK_SPATIAL_D

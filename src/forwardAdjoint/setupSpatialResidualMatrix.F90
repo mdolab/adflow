@@ -52,13 +52,13 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
   time(1) = mpi_wtime()
 
 
-  open (UNIT=13,File="fd_drdx.out",status='replace',action='write',iostat=ierr) 
-  call EChk(ierr,__FILE__,__LINE__)
-  open (UNIT=14,File="ad_drdx.out",status='replace',action='write',iostat=ierr) 
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call MatConvert(matrix,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+!!$  open (UNIT=13,File="fd_drdx.out",status='replace',action='write',iostat=ierr) 
+!!$  call EChk(ierr,__FILE__,__LINE__)
+!!$  open (UNIT=14,File="ad_drdx.out",status='replace',action='write',iostat=ierr) 
+!!$  call EChk(ierr,__FILE__,__LINE__)
+!!$
+!!$  call MatConvert(matrix,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
+!!$  call EChk(ierr,__FILE__,__LINE__)
 
 
   ! Zero out the matrix before we start
@@ -121,7 +121,7 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
 
         ! Do Coloring and perturb states
         do iColor = 1,nColor
-
+           !print *,'color',icolor,ncolor
            do sps2 = 1,nTimeIntervalsSpectral
               flowDomsd(sps2)%dw_deriv(:,:,:,:,:) = 0.0
            end do
@@ -144,6 +144,7 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
                     do i=0,ie
                        if (flowdomsd(1)%color(i,j,k) == icolor .and. globalnode(i,j,k) >= 0) then
                           if (useAD) then
+                             !print *,'usingAD'
                              flowdomsd(sps)%x(i,j,k,l) = 1.0
                           else
                              !nrm = sqrt(x(i,j,k,1)**2 + x(i,j,k,2)**2 + x(i,j,k,3))
@@ -270,7 +271,7 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
 
   call MatAssembled(matrix,assembled,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-  print *,'assembled spatial =',assembled
+  !print *,'assembled spatial =',assembled
 
 #ifdef USE_PETSC_3
   call MatSetOption(matrix,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
@@ -288,11 +289,11 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
      print *,'Assembly time:',setupTime
   end if
 
-  ! Debugging ONLY!
-  call writeOutMatrix()
-
-  close(13)
-  close(14)
+!!$  ! Debugging ONLY!
+!!$  call writeOutMatrix()
+!!$
+!!$  close(13)
+!!$  close(14)
 
 contains
 

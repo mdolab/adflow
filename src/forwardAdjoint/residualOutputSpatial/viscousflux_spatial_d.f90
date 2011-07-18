@@ -3,8 +3,8 @@
    !
    !  Differentiation of viscousflux in forward (tangent) mode:
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: *p *gamma *w *x *vol *fw prandtlturb
-   !                prandtl
+   !   with respect to varying inputs: *p *gamma *w *x *vol *si *sj
+   !                *sk *fw *(*bcdata.norm) prandtlturb prandtl
    !
    !      ******************************************************************
    !      *                                                                *
@@ -347,24 +347,31 @@
    wbard = half*(wd(i, j, 1, ivz)+wd(i, j, 2, ivz))
    wbar = half*(w(i, j, 1, ivz)+w(i, j, 2, ivz))
    ! Compute the viscous fluxes for this k-face.
-   fmxd = sk(i, j, 1, 1)*tauxxd + sk(i, j, 1, 2)*tauxyd + sk(i, j, &
-   &          1, 3)*tauxzd
+   fmxd = tauxxd*sk(i, j, 1, 1) + tauxx*skd(i, j, 1, 1) + tauxyd*sk&
+   &          (i, j, 1, 2) + tauxy*skd(i, j, 1, 2) + tauxzd*sk(i, j, 1, 3) +&
+   &          tauxz*skd(i, j, 1, 3)
    fmx = tauxx*sk(i, j, 1, 1) + tauxy*sk(i, j, 1, 2) + tauxz*sk(i, &
    &          j, 1, 3)
-   fmyd = sk(i, j, 1, 1)*tauxyd + sk(i, j, 1, 2)*tauyyd + sk(i, j, &
-   &          1, 3)*tauyzd
+   fmyd = tauxyd*sk(i, j, 1, 1) + tauxy*skd(i, j, 1, 1) + tauyyd*sk&
+   &          (i, j, 1, 2) + tauyy*skd(i, j, 1, 2) + tauyzd*sk(i, j, 1, 3) +&
+   &          tauyz*skd(i, j, 1, 3)
    fmy = tauxy*sk(i, j, 1, 1) + tauyy*sk(i, j, 1, 2) + tauyz*sk(i, &
    &          j, 1, 3)
-   fmzd = sk(i, j, 1, 1)*tauxzd + sk(i, j, 1, 2)*tauyzd + sk(i, j, &
-   &          1, 3)*tauzzd
+   fmzd = tauxzd*sk(i, j, 1, 1) + tauxz*skd(i, j, 1, 1) + tauyzd*sk&
+   &          (i, j, 1, 2) + tauyz*skd(i, j, 1, 2) + tauzzd*sk(i, j, 1, 3) +&
+   &          tauzz*skd(i, j, 1, 3)
    fmz = tauxz*sk(i, j, 1, 1) + tauyz*sk(i, j, 1, 2) + tauzz*sk(i, &
    &          j, 1, 3)
-   frhoed = sk(i, j, 1, 1)*(ubard*tauxx+ubar*tauxxd+vbard*tauxy+&
-   &          vbar*tauxyd+wbard*tauxz+wbar*tauxzd) + sk(i, j, 1, 2)*(ubard*&
-   &          tauxy+ubar*tauxyd+vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*&
-   &          tauyzd) + sk(i, j, 1, 3)*(ubard*tauxz+ubar*tauxzd+vbard*tauyz+&
-   &          vbar*tauyzd+wbard*tauzz+wbar*tauzzd) - sk(i, j, 1, 1)*q_xd - &
-   &          sk(i, j, 1, 2)*q_yd - sk(i, j, 1, 3)*q_zd
+   frhoed = (ubard*tauxx+ubar*tauxxd+vbard*tauxy+vbar*tauxyd+wbard*&
+   &          tauxz+wbar*tauxzd)*sk(i, j, 1, 1) + (ubar*tauxx+vbar*tauxy+&
+   &          wbar*tauxz)*skd(i, j, 1, 1) + (ubard*tauxy+ubar*tauxyd+vbard*&
+   &          tauyy+vbar*tauyyd+wbard*tauyz+wbar*tauyzd)*sk(i, j, 1, 2) + (&
+   &          ubar*tauxy+vbar*tauyy+wbar*tauyz)*skd(i, j, 1, 2) + (ubard*&
+   &          tauxz+ubar*tauxzd+vbard*tauyz+vbar*tauyzd+wbard*tauzz+wbar*&
+   &          tauzzd)*sk(i, j, 1, 3) + (ubar*tauxz+vbar*tauyz+wbar*tauzz)*&
+   &          skd(i, j, 1, 3) - q_xd*sk(i, j, 1, 1) - q_x*skd(i, j, 1, 1) - &
+   &          q_yd*sk(i, j, 1, 2) - q_y*skd(i, j, 1, 2) - q_zd*sk(i, j, 1, 3&
+   &          ) - q_z*skd(i, j, 1, 3)
    frhoe = (ubar*tauxx+vbar*tauxy+wbar*tauxz)*sk(i, j, 1, 1) + (&
    &          ubar*tauxy+vbar*tauyy+wbar*tauyz)*sk(i, j, 1, 2) + (ubar*tauxz&
    &          +vbar*tauyz+wbar*tauzz)*sk(i, j, 1, 3) - q_x*sk(i, j, 1, 1) - &
@@ -607,24 +614,31 @@
    wbard = half*(wd(i, j, k, ivz)+wd(i, j, k+1, ivz))
    wbar = half*(w(i, j, k, ivz)+w(i, j, k+1, ivz))
    ! Compute the viscous fluxes for this k-face.
-   fmxd = sk(i, j, k, 1)*tauxxd + sk(i, j, k, 2)*tauxyd + sk(i, j&
-   &            , k, 3)*tauxzd
+   fmxd = tauxxd*sk(i, j, k, 1) + tauxx*skd(i, j, k, 1) + tauxyd*&
+   &            sk(i, j, k, 2) + tauxy*skd(i, j, k, 2) + tauxzd*sk(i, j, k, &
+   &            3) + tauxz*skd(i, j, k, 3)
    fmx = tauxx*sk(i, j, k, 1) + tauxy*sk(i, j, k, 2) + tauxz*sk(i&
    &            , j, k, 3)
-   fmyd = sk(i, j, k, 1)*tauxyd + sk(i, j, k, 2)*tauyyd + sk(i, j&
-   &            , k, 3)*tauyzd
+   fmyd = tauxyd*sk(i, j, k, 1) + tauxy*skd(i, j, k, 1) + tauyyd*&
+   &            sk(i, j, k, 2) + tauyy*skd(i, j, k, 2) + tauyzd*sk(i, j, k, &
+   &            3) + tauyz*skd(i, j, k, 3)
    fmy = tauxy*sk(i, j, k, 1) + tauyy*sk(i, j, k, 2) + tauyz*sk(i&
    &            , j, k, 3)
-   fmzd = sk(i, j, k, 1)*tauxzd + sk(i, j, k, 2)*tauyzd + sk(i, j&
-   &            , k, 3)*tauzzd
+   fmzd = tauxzd*sk(i, j, k, 1) + tauxz*skd(i, j, k, 1) + tauyzd*&
+   &            sk(i, j, k, 2) + tauyz*skd(i, j, k, 2) + tauzzd*sk(i, j, k, &
+   &            3) + tauzz*skd(i, j, k, 3)
    fmz = tauxz*sk(i, j, k, 1) + tauyz*sk(i, j, k, 2) + tauzz*sk(i&
    &            , j, k, 3)
-   frhoed = sk(i, j, k, 1)*(ubard*tauxx+ubar*tauxxd+vbard*tauxy+&
-   &            vbar*tauxyd+wbard*tauxz+wbar*tauxzd) + sk(i, j, k, 2)*(ubard&
-   &            *tauxy+ubar*tauxyd+vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*&
-   &            tauyzd) + sk(i, j, k, 3)*(ubard*tauxz+ubar*tauxzd+vbard*&
-   &            tauyz+vbar*tauyzd+wbard*tauzz+wbar*tauzzd) - sk(i, j, k, 1)*&
-   &            q_xd - sk(i, j, k, 2)*q_yd - sk(i, j, k, 3)*q_zd
+   frhoed = (ubard*tauxx+ubar*tauxxd+vbard*tauxy+vbar*tauxyd+&
+   &            wbard*tauxz+wbar*tauxzd)*sk(i, j, k, 1) + (ubar*tauxx+vbar*&
+   &            tauxy+wbar*tauxz)*skd(i, j, k, 1) + (ubard*tauxy+ubar*tauxyd&
+   &            +vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*tauyzd)*sk(i, j, k&
+   &            , 2) + (ubar*tauxy+vbar*tauyy+wbar*tauyz)*skd(i, j, k, 2) + &
+   &            (ubard*tauxz+ubar*tauxzd+vbard*tauyz+vbar*tauyzd+wbard*tauzz&
+   &            +wbar*tauzzd)*sk(i, j, k, 3) + (ubar*tauxz+vbar*tauyz+wbar*&
+   &            tauzz)*skd(i, j, k, 3) - q_xd*sk(i, j, k, 1) - q_x*skd(i, j&
+   &            , k, 1) - q_yd*sk(i, j, k, 2) - q_y*skd(i, j, k, 2) - q_zd*&
+   &            sk(i, j, k, 3) - q_z*skd(i, j, k, 3)
    frhoe = (ubar*tauxx+vbar*tauxy+wbar*tauxz)*sk(i, j, k, 1) + (&
    &            ubar*tauxy+vbar*tauyy+wbar*tauyz)*sk(i, j, k, 2) + (ubar*&
    &            tauxz+vbar*tauyz+wbar*tauzz)*sk(i, j, k, 3) - q_x*sk(i, j, k&
@@ -864,24 +878,31 @@
    wbard = half*(wd(i, j, k, ivz)+wd(i, j+1, k, ivz))
    wbar = half*(w(i, j, k, ivz)+w(i, j+1, k, ivz))
    ! Compute the viscous fluxes for this j-face.
-   fmxd = sj(i, j, k, 1)*tauxxd + sj(i, j, k, 2)*tauxyd + sj(i, j&
-   &            , k, 3)*tauxzd
+   fmxd = tauxxd*sj(i, j, k, 1) + tauxx*sjd(i, j, k, 1) + tauxyd*&
+   &            sj(i, j, k, 2) + tauxy*sjd(i, j, k, 2) + tauxzd*sj(i, j, k, &
+   &            3) + tauxz*sjd(i, j, k, 3)
    fmx = tauxx*sj(i, j, k, 1) + tauxy*sj(i, j, k, 2) + tauxz*sj(i&
    &            , j, k, 3)
-   fmyd = sj(i, j, k, 1)*tauxyd + sj(i, j, k, 2)*tauyyd + sj(i, j&
-   &            , k, 3)*tauyzd
+   fmyd = tauxyd*sj(i, j, k, 1) + tauxy*sjd(i, j, k, 1) + tauyyd*&
+   &            sj(i, j, k, 2) + tauyy*sjd(i, j, k, 2) + tauyzd*sj(i, j, k, &
+   &            3) + tauyz*sjd(i, j, k, 3)
    fmy = tauxy*sj(i, j, k, 1) + tauyy*sj(i, j, k, 2) + tauyz*sj(i&
    &            , j, k, 3)
-   fmzd = sj(i, j, k, 1)*tauxzd + sj(i, j, k, 2)*tauyzd + sj(i, j&
-   &            , k, 3)*tauzzd
+   fmzd = tauxzd*sj(i, j, k, 1) + tauxz*sjd(i, j, k, 1) + tauyzd*&
+   &            sj(i, j, k, 2) + tauyz*sjd(i, j, k, 2) + tauzzd*sj(i, j, k, &
+   &            3) + tauzz*sjd(i, j, k, 3)
    fmz = tauxz*sj(i, j, k, 1) + tauyz*sj(i, j, k, 2) + tauzz*sj(i&
    &            , j, k, 3)
-   frhoed = sj(i, j, k, 1)*(ubard*tauxx+ubar*tauxxd+vbard*tauxy+&
-   &            vbar*tauxyd+wbard*tauxz+wbar*tauxzd) + sj(i, j, k, 2)*(ubard&
-   &            *tauxy+ubar*tauxyd+vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*&
-   &            tauyzd) + sj(i, j, k, 3)*(ubard*tauxz+ubar*tauxzd+vbard*&
-   &            tauyz+vbar*tauyzd+wbard*tauzz+wbar*tauzzd) - sj(i, j, k, 1)*&
-   &            q_xd - sj(i, j, k, 2)*q_yd - sj(i, j, k, 3)*q_zd
+   frhoed = (ubard*tauxx+ubar*tauxxd+vbard*tauxy+vbar*tauxyd+&
+   &            wbard*tauxz+wbar*tauxzd)*sj(i, j, k, 1) + (ubar*tauxx+vbar*&
+   &            tauxy+wbar*tauxz)*sjd(i, j, k, 1) + (ubard*tauxy+ubar*tauxyd&
+   &            +vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*tauyzd)*sj(i, j, k&
+   &            , 2) + (ubar*tauxy+vbar*tauyy+wbar*tauyz)*sjd(i, j, k, 2) + &
+   &            (ubard*tauxz+ubar*tauxzd+vbard*tauyz+vbar*tauyzd+wbard*tauzz&
+   &            +wbar*tauzzd)*sj(i, j, k, 3) + (ubar*tauxz+vbar*tauyz+wbar*&
+   &            tauzz)*sjd(i, j, k, 3) - q_xd*sj(i, j, k, 1) - q_x*sjd(i, j&
+   &            , k, 1) - q_yd*sj(i, j, k, 2) - q_y*sjd(i, j, k, 2) - q_zd*&
+   &            sj(i, j, k, 3) - q_z*sjd(i, j, k, 3)
    frhoe = (ubar*tauxx+vbar*tauxy+wbar*tauxz)*sj(i, j, k, 1) + (&
    &            ubar*tauxy+vbar*tauyy+wbar*tauyz)*sj(i, j, k, 2) + (ubar*&
    &            tauxz+vbar*tauyz+wbar*tauzz)*sj(i, j, k, 3) - q_x*sj(i, j, k&
@@ -1142,24 +1163,31 @@
    wbard = half*(wd(i, j, k, ivz)+wd(i+1, j, k, ivz))
    wbar = half*(w(i, j, k, ivz)+w(i+1, j, k, ivz))
    ! Compute the viscous fluxes for this i-face.
-   fmxd = si(i, j, k, 1)*tauxxd + si(i, j, k, 2)*tauxyd + si(i, j&
-   &            , k, 3)*tauxzd
+   fmxd = tauxxd*si(i, j, k, 1) + tauxx*sid(i, j, k, 1) + tauxyd*&
+   &            si(i, j, k, 2) + tauxy*sid(i, j, k, 2) + tauxzd*si(i, j, k, &
+   &            3) + tauxz*sid(i, j, k, 3)
    fmx = tauxx*si(i, j, k, 1) + tauxy*si(i, j, k, 2) + tauxz*si(i&
    &            , j, k, 3)
-   fmyd = si(i, j, k, 1)*tauxyd + si(i, j, k, 2)*tauyyd + si(i, j&
-   &            , k, 3)*tauyzd
+   fmyd = tauxyd*si(i, j, k, 1) + tauxy*sid(i, j, k, 1) + tauyyd*&
+   &            si(i, j, k, 2) + tauyy*sid(i, j, k, 2) + tauyzd*si(i, j, k, &
+   &            3) + tauyz*sid(i, j, k, 3)
    fmy = tauxy*si(i, j, k, 1) + tauyy*si(i, j, k, 2) + tauyz*si(i&
    &            , j, k, 3)
-   fmzd = si(i, j, k, 1)*tauxzd + si(i, j, k, 2)*tauyzd + si(i, j&
-   &            , k, 3)*tauzzd
+   fmzd = tauxzd*si(i, j, k, 1) + tauxz*sid(i, j, k, 1) + tauyzd*&
+   &            si(i, j, k, 2) + tauyz*sid(i, j, k, 2) + tauzzd*si(i, j, k, &
+   &            3) + tauzz*sid(i, j, k, 3)
    fmz = tauxz*si(i, j, k, 1) + tauyz*si(i, j, k, 2) + tauzz*si(i&
    &            , j, k, 3)
-   frhoed = si(i, j, k, 1)*(ubard*tauxx+ubar*tauxxd+vbard*tauxy+&
-   &            vbar*tauxyd+wbard*tauxz+wbar*tauxzd) + si(i, j, k, 2)*(ubard&
-   &            *tauxy+ubar*tauxyd+vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*&
-   &            tauyzd) + si(i, j, k, 3)*(ubard*tauxz+ubar*tauxzd+vbard*&
-   &            tauyz+vbar*tauyzd+wbard*tauzz+wbar*tauzzd) - si(i, j, k, 1)*&
-   &            q_xd - si(i, j, k, 2)*q_yd - si(i, j, k, 3)*q_zd
+   frhoed = (ubard*tauxx+ubar*tauxxd+vbard*tauxy+vbar*tauxyd+&
+   &            wbard*tauxz+wbar*tauxzd)*si(i, j, k, 1) + (ubar*tauxx+vbar*&
+   &            tauxy+wbar*tauxz)*sid(i, j, k, 1) + (ubard*tauxy+ubar*tauxyd&
+   &            +vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*tauyzd)*si(i, j, k&
+   &            , 2) + (ubar*tauxy+vbar*tauyy+wbar*tauyz)*sid(i, j, k, 2) + &
+   &            (ubard*tauxz+ubar*tauxzd+vbard*tauyz+vbar*tauyzd+wbard*tauzz&
+   &            +wbar*tauzzd)*si(i, j, k, 3) + (ubar*tauxz+vbar*tauyz+wbar*&
+   &            tauzz)*sid(i, j, k, 3) - q_xd*si(i, j, k, 1) - q_x*sid(i, j&
+   &            , k, 1) - q_yd*si(i, j, k, 2) - q_y*sid(i, j, k, 2) - q_zd*&
+   &            si(i, j, k, 3) - q_z*sid(i, j, k, 3)
    frhoe = (ubar*tauxx+vbar*tauxy+wbar*tauxz)*si(i, j, k, 1) + (&
    &            ubar*tauxy+vbar*tauyy+wbar*tauyz)*si(i, j, k, 2) + (ubar*&
    &            tauxz+vbar*tauyz+wbar*tauzz)*si(i, j, k, 3) - q_x*si(i, j, k&
@@ -1253,8 +1281,8 @@
    !  Differentiation of nodalgradients in forward (tangent) mode:
    !   variations   of useful results: wx wy wz qx qy qz ux uy uz
    !                vx vy vz
-   !   with respect to varying inputs: *p *w *vol wx wy wz qx qy qz
-   !                ux uy uz vx vy vz
+   !   with respect to varying inputs: *p *w *vol *si *sj *sk wx wy
+   !                wz qx qy qz ux uy uz vx vy vz
    SUBROUTINE NODALGRADIENTS_SPATIAL_D(ux, uxd, uy, uyd, uz, uzd, vx, vxd&
    &    , vy, vyd, vz, vzd, wx, wxd, wy, wyd, wz, wzd, qx, qxd, qy, qyd, qz&
    &    , qzd)
@@ -1272,6 +1300,7 @@
    REAL(kind=realtype) :: oneoverv, ubar, vbar, wbar, a2
    REAL(kind=realtype) :: oneovervd, ubard, vbard, wbard, a2d
    REAL(kind=realtype) :: sx, sx1, sy, sy1, sz, sz1
+   REAL(kind=realtype) :: sxd, sx1d, syd, sy1d, szd, sz1d
    !
    !        ****************************************************************
    !        *                                                              *
@@ -1289,16 +1318,28 @@
    ! Store 8 times the average normal for the contribution from
    ! the k-layer of cells. The factor 8 drops out later when
    ! dividing by the volume.
+   sx1d = skd(i, j, k, 1) + skd(i+1, j, k, 1) + skd(i, j+1, k, 1) +&
+   &          skd(i+1, j+1, k, 1)
    sx1 = sk(i, j, k, 1) + sk(i+1, j, k, 1) + sk(i, j+1, k, 1) + sk(&
    &          i+1, j+1, k, 1)
+   sy1d = skd(i, j, k, 2) + skd(i+1, j, k, 2) + skd(i, j+1, k, 2) +&
+   &          skd(i+1, j+1, k, 2)
    sy1 = sk(i, j, k, 2) + sk(i+1, j, k, 2) + sk(i, j+1, k, 2) + sk(&
    &          i+1, j+1, k, 2)
+   sz1d = skd(i, j, k, 3) + skd(i+1, j, k, 3) + skd(i, j+1, k, 3) +&
+   &          skd(i+1, j+1, k, 3)
    sz1 = sk(i, j, k, 3) + sk(i+1, j, k, 3) + sk(i, j+1, k, 3) + sk(&
    &          i+1, j+1, k, 3)
+   sxd = sx1d + skd(i, j, k-1, 1) + skd(i+1, j, k-1, 1) + skd(i, j+&
+   &          1, k-1, 1) + skd(i+1, j+1, k-1, 1)
    sx = sx1 + sk(i, j, k-1, 1) + sk(i+1, j, k-1, 1) + sk(i, j+1, k-&
    &          1, 1) + sk(i+1, j+1, k-1, 1)
+   syd = sy1d + skd(i, j, k-1, 2) + skd(i+1, j, k-1, 2) + skd(i, j+&
+   &          1, k-1, 2) + skd(i+1, j+1, k-1, 2)
    sy = sy1 + sk(i, j, k-1, 2) + sk(i+1, j, k-1, 2) + sk(i, j+1, k-&
    &          1, 2) + sk(i+1, j+1, k-1, 2)
+   szd = sz1d + skd(i, j, k-1, 3) + skd(i+1, j, k-1, 3) + skd(i, j+&
+   &          1, k-1, 3) + skd(i+1, j+1, k-1, 3)
    sz = sz1 + sk(i, j, k-1, 3) + sk(i+1, j, k-1, 3) + sk(i, j+1, k-&
    &          1, 3) + sk(i+1, j+1, k-1, 3)
    ! Compute the average velocities and speed of sound squared
@@ -1325,37 +1366,43 @@
    ! pointing for the nodal k-layer. The exception is a2,
    ! because the gradient of -a2 is stored, as this is needed
    ! in the heat fluxes.
-   uxd(i, j, k1) = -(sx*ubard)
+   uxd(i, j, k1) = -(ubard*sx+ubar*sxd)
    ux(i, j, k1) = -(ubar*sx)
-   uyd(i, j, k1) = -(sy*ubard)
+   uyd(i, j, k1) = -(ubard*sy+ubar*syd)
    uy(i, j, k1) = -(ubar*sy)
-   uzd(i, j, k1) = -(sz*ubard)
+   uzd(i, j, k1) = -(ubard*sz+ubar*szd)
    uz(i, j, k1) = -(ubar*sz)
-   vxd(i, j, k1) = -(sx*vbard)
+   vxd(i, j, k1) = -(vbard*sx+vbar*sxd)
    vx(i, j, k1) = -(vbar*sx)
-   vyd(i, j, k1) = -(sy*vbard)
+   vyd(i, j, k1) = -(vbard*sy+vbar*syd)
    vy(i, j, k1) = -(vbar*sy)
-   vzd(i, j, k1) = -(sz*vbard)
+   vzd(i, j, k1) = -(vbard*sz+vbar*szd)
    vz(i, j, k1) = -(vbar*sz)
-   wxd(i, j, k1) = -(sx*wbard)
+   wxd(i, j, k1) = -(wbard*sx+wbar*sxd)
    wx(i, j, k1) = -(wbar*sx)
-   wyd(i, j, k1) = -(sy*wbard)
+   wyd(i, j, k1) = -(wbard*sy+wbar*syd)
    wy(i, j, k1) = -(wbar*sy)
-   wzd(i, j, k1) = -(sz*wbard)
+   wzd(i, j, k1) = -(wbard*sz+wbar*szd)
    wz(i, j, k1) = -(wbar*sz)
-   qxd(i, j, k1) = sx*a2d
+   qxd(i, j, k1) = a2d*sx + a2*sxd
    qx(i, j, k1) = a2*sx
-   qyd(i, j, k1) = sy*a2d
+   qyd(i, j, k1) = a2d*sy + a2*syd
    qy(i, j, k1) = a2*sy
-   qzd(i, j, k1) = sz*a2d
+   qzd(i, j, k1) = a2d*sz + a2*szd
    qz(i, j, k1) = a2*sz
    ! Store 8 times the average normal for the contribution from
    ! the k+1 layer of cells. The factor 8 drops out later when
    ! dividing by the volume.
+   sxd = sx1d + skd(i, j, k+1, 1) + skd(i+1, j, k+1, 1) + skd(i, j+&
+   &          1, k+1, 1) + skd(i+1, j+1, k+1, 1)
    sx = sx1 + sk(i, j, k+1, 1) + sk(i+1, j, k+1, 1) + sk(i, j+1, k+&
    &          1, 1) + sk(i+1, j+1, k+1, 1)
+   syd = sy1d + skd(i, j, k+1, 2) + skd(i+1, j, k+1, 2) + skd(i, j+&
+   &          1, k+1, 2) + skd(i+1, j+1, k+1, 2)
    sy = sy1 + sk(i, j, k+1, 2) + sk(i+1, j, k+1, 2) + sk(i, j+1, k+&
    &          1, 2) + sk(i+1, j+1, k+1, 2)
+   szd = sz1d + skd(i, j, k+1, 3) + skd(i+1, j, k+1, 3) + skd(i, j+&
+   &          1, k+1, 3) + skd(i+1, j+1, k+1, 3)
    sz = sz1 + sk(i, j, k+1, 3) + sk(i+1, j, k+1, 3) + sk(i, j+1, k+&
    &          1, 3) + sk(i+1, j+1, k+1, 3)
    ! Compute the average velocities and speed of sound squared
@@ -1382,29 +1429,29 @@
    ! the nodes in the k-layer, there is a plus sign for the
    ! velocity gradients and a minus sign for minus the speed
    ! of sound squared.
-   uxd(i, j, k1) = uxd(i, j, k1) + sx*ubard
+   uxd(i, j, k1) = uxd(i, j, k1) + ubard*sx + ubar*sxd
    ux(i, j, k1) = ux(i, j, k1) + ubar*sx
-   uyd(i, j, k1) = uyd(i, j, k1) + sy*ubard
+   uyd(i, j, k1) = uyd(i, j, k1) + ubard*sy + ubar*syd
    uy(i, j, k1) = uy(i, j, k1) + ubar*sy
-   uzd(i, j, k1) = uzd(i, j, k1) + sz*ubard
+   uzd(i, j, k1) = uzd(i, j, k1) + ubard*sz + ubar*szd
    uz(i, j, k1) = uz(i, j, k1) + ubar*sz
-   vxd(i, j, k1) = vxd(i, j, k1) + sx*vbard
+   vxd(i, j, k1) = vxd(i, j, k1) + vbard*sx + vbar*sxd
    vx(i, j, k1) = vx(i, j, k1) + vbar*sx
-   vyd(i, j, k1) = vyd(i, j, k1) + sy*vbard
+   vyd(i, j, k1) = vyd(i, j, k1) + vbard*sy + vbar*syd
    vy(i, j, k1) = vy(i, j, k1) + vbar*sy
-   vzd(i, j, k1) = vzd(i, j, k1) + sz*vbard
+   vzd(i, j, k1) = vzd(i, j, k1) + vbard*sz + vbar*szd
    vz(i, j, k1) = vz(i, j, k1) + vbar*sz
-   wxd(i, j, k1) = wxd(i, j, k1) + sx*wbard
+   wxd(i, j, k1) = wxd(i, j, k1) + wbard*sx + wbar*sxd
    wx(i, j, k1) = wx(i, j, k1) + wbar*sx
-   wyd(i, j, k1) = wyd(i, j, k1) + sy*wbard
+   wyd(i, j, k1) = wyd(i, j, k1) + wbard*sy + wbar*syd
    wy(i, j, k1) = wy(i, j, k1) + wbar*sy
-   wzd(i, j, k1) = wzd(i, j, k1) + sz*wbard
+   wzd(i, j, k1) = wzd(i, j, k1) + wbard*sz + wbar*szd
    wz(i, j, k1) = wz(i, j, k1) + wbar*sz
-   qxd(i, j, k1) = qxd(i, j, k1) - sx*a2d
+   qxd(i, j, k1) = qxd(i, j, k1) - a2d*sx - a2*sxd
    qx(i, j, k1) = qx(i, j, k1) - a2*sx
-   qyd(i, j, k1) = qyd(i, j, k1) - sy*a2d
+   qyd(i, j, k1) = qyd(i, j, k1) - a2d*sy - a2*syd
    qy(i, j, k1) = qy(i, j, k1) - a2*sy
-   qzd(i, j, k1) = qzd(i, j, k1) - sz*a2d
+   qzd(i, j, k1) = qzd(i, j, k1) - a2d*sz - a2*szd
    qz(i, j, k1) = qz(i, j, k1) - a2*sz
    END DO
    END DO
@@ -1416,12 +1463,21 @@
    ! Compute 8 times the average normal for this part of
    ! the control volume. The factor 8 is taken care of later
    ! on when the division by the volume takes place.
+   sxd = sjd(i, j-1, k, 1) + sjd(i+1, j-1, k, 1) + sjd(i, j-1, k+1&
+   &          , 1) + sjd(i+1, j-1, k+1, 1) + sjd(i, j, k, 1) + sjd(i+1, j, k&
+   &          , 1) + sjd(i, j, k+1, 1) + sjd(i+1, j, k+1, 1)
    sx = sj(i, j-1, k, 1) + sj(i+1, j-1, k, 1) + sj(i, j-1, k+1, 1) &
    &          + sj(i+1, j-1, k+1, 1) + sj(i, j, k, 1) + sj(i+1, j, k, 1) + &
    &          sj(i, j, k+1, 1) + sj(i+1, j, k+1, 1)
+   syd = sjd(i, j-1, k, 2) + sjd(i+1, j-1, k, 2) + sjd(i, j-1, k+1&
+   &          , 2) + sjd(i+1, j-1, k+1, 2) + sjd(i, j, k, 2) + sjd(i+1, j, k&
+   &          , 2) + sjd(i, j, k+1, 2) + sjd(i+1, j, k+1, 2)
    sy = sj(i, j-1, k, 2) + sj(i+1, j-1, k, 2) + sj(i, j-1, k+1, 2) &
    &          + sj(i+1, j-1, k+1, 2) + sj(i, j, k, 2) + sj(i+1, j, k, 2) + &
    &          sj(i, j, k+1, 2) + sj(i+1, j, k+1, 2)
+   szd = sjd(i, j-1, k, 3) + sjd(i+1, j-1, k, 3) + sjd(i, j-1, k+1&
+   &          , 3) + sjd(i+1, j-1, k+1, 3) + sjd(i, j, k, 3) + sjd(i+1, j, k&
+   &          , 3) + sjd(i, j, k+1, 3) + sjd(i+1, j, k+1, 3)
    sz = sj(i, j-1, k, 3) + sj(i+1, j-1, k, 3) + sj(i, j-1, k+1, 3) &
    &          + sj(i+1, j-1, k+1, 3) + sj(i, j, k, 3) + sj(i+1, j, k, 3) + &
    &          sj(i, j, k+1, 3) + sj(i+1, j, k+1, 3)
@@ -1449,55 +1505,55 @@
    ! is reversed, because the negative of the gradient of the
    ! speed of sound must be computed.
    IF (j .GT. 1) THEN
-   uxd(i, j-1, k1) = uxd(i, j-1, k1) + sx*ubard
+   uxd(i, j-1, k1) = uxd(i, j-1, k1) + ubard*sx + ubar*sxd
    ux(i, j-1, k1) = ux(i, j-1, k1) + ubar*sx
-   uyd(i, j-1, k1) = uyd(i, j-1, k1) + sy*ubard
+   uyd(i, j-1, k1) = uyd(i, j-1, k1) + ubard*sy + ubar*syd
    uy(i, j-1, k1) = uy(i, j-1, k1) + ubar*sy
-   uzd(i, j-1, k1) = uzd(i, j-1, k1) + sz*ubard
+   uzd(i, j-1, k1) = uzd(i, j-1, k1) + ubard*sz + ubar*szd
    uz(i, j-1, k1) = uz(i, j-1, k1) + ubar*sz
-   vxd(i, j-1, k1) = vxd(i, j-1, k1) + sx*vbard
+   vxd(i, j-1, k1) = vxd(i, j-1, k1) + vbard*sx + vbar*sxd
    vx(i, j-1, k1) = vx(i, j-1, k1) + vbar*sx
-   vyd(i, j-1, k1) = vyd(i, j-1, k1) + sy*vbard
+   vyd(i, j-1, k1) = vyd(i, j-1, k1) + vbard*sy + vbar*syd
    vy(i, j-1, k1) = vy(i, j-1, k1) + vbar*sy
-   vzd(i, j-1, k1) = vzd(i, j-1, k1) + sz*vbard
+   vzd(i, j-1, k1) = vzd(i, j-1, k1) + vbard*sz + vbar*szd
    vz(i, j-1, k1) = vz(i, j-1, k1) + vbar*sz
-   wxd(i, j-1, k1) = wxd(i, j-1, k1) + sx*wbard
+   wxd(i, j-1, k1) = wxd(i, j-1, k1) + wbard*sx + wbar*sxd
    wx(i, j-1, k1) = wx(i, j-1, k1) + wbar*sx
-   wyd(i, j-1, k1) = wyd(i, j-1, k1) + sy*wbard
+   wyd(i, j-1, k1) = wyd(i, j-1, k1) + wbard*sy + wbar*syd
    wy(i, j-1, k1) = wy(i, j-1, k1) + wbar*sy
-   wzd(i, j-1, k1) = wzd(i, j-1, k1) + sz*wbard
+   wzd(i, j-1, k1) = wzd(i, j-1, k1) + wbard*sz + wbar*szd
    wz(i, j-1, k1) = wz(i, j-1, k1) + wbar*sz
-   qxd(i, j-1, k1) = qxd(i, j-1, k1) - sx*a2d
+   qxd(i, j-1, k1) = qxd(i, j-1, k1) - a2d*sx - a2*sxd
    qx(i, j-1, k1) = qx(i, j-1, k1) - a2*sx
-   qyd(i, j-1, k1) = qyd(i, j-1, k1) - sy*a2d
+   qyd(i, j-1, k1) = qyd(i, j-1, k1) - a2d*sy - a2*syd
    qy(i, j-1, k1) = qy(i, j-1, k1) - a2*sy
-   qzd(i, j-1, k1) = qzd(i, j-1, k1) - sz*a2d
+   qzd(i, j-1, k1) = qzd(i, j-1, k1) - a2d*sz - a2*szd
    qz(i, j-1, k1) = qz(i, j-1, k1) - a2*sz
    END IF
    IF (j .LT. je) THEN
-   uxd(i, j, k1) = uxd(i, j, k1) - sx*ubard
+   uxd(i, j, k1) = uxd(i, j, k1) - ubard*sx - ubar*sxd
    ux(i, j, k1) = ux(i, j, k1) - ubar*sx
-   uyd(i, j, k1) = uyd(i, j, k1) - sy*ubard
+   uyd(i, j, k1) = uyd(i, j, k1) - ubard*sy - ubar*syd
    uy(i, j, k1) = uy(i, j, k1) - ubar*sy
-   uzd(i, j, k1) = uzd(i, j, k1) - sz*ubard
+   uzd(i, j, k1) = uzd(i, j, k1) - ubard*sz - ubar*szd
    uz(i, j, k1) = uz(i, j, k1) - ubar*sz
-   vxd(i, j, k1) = vxd(i, j, k1) - sx*vbard
+   vxd(i, j, k1) = vxd(i, j, k1) - vbard*sx - vbar*sxd
    vx(i, j, k1) = vx(i, j, k1) - vbar*sx
-   vyd(i, j, k1) = vyd(i, j, k1) - sy*vbard
+   vyd(i, j, k1) = vyd(i, j, k1) - vbard*sy - vbar*syd
    vy(i, j, k1) = vy(i, j, k1) - vbar*sy
-   vzd(i, j, k1) = vzd(i, j, k1) - sz*vbard
+   vzd(i, j, k1) = vzd(i, j, k1) - vbard*sz - vbar*szd
    vz(i, j, k1) = vz(i, j, k1) - vbar*sz
-   wxd(i, j, k1) = wxd(i, j, k1) - sx*wbard
+   wxd(i, j, k1) = wxd(i, j, k1) - wbard*sx - wbar*sxd
    wx(i, j, k1) = wx(i, j, k1) - wbar*sx
-   wyd(i, j, k1) = wyd(i, j, k1) - sy*wbard
+   wyd(i, j, k1) = wyd(i, j, k1) - wbard*sy - wbar*syd
    wy(i, j, k1) = wy(i, j, k1) - wbar*sy
-   wzd(i, j, k1) = wzd(i, j, k1) - sz*wbard
+   wzd(i, j, k1) = wzd(i, j, k1) - wbard*sz - wbar*szd
    wz(i, j, k1) = wz(i, j, k1) - wbar*sz
-   qxd(i, j, k1) = qxd(i, j, k1) + sx*a2d
+   qxd(i, j, k1) = qxd(i, j, k1) + a2d*sx + a2*sxd
    qx(i, j, k1) = qx(i, j, k1) + a2*sx
-   qyd(i, j, k1) = qyd(i, j, k1) + sy*a2d
+   qyd(i, j, k1) = qyd(i, j, k1) + a2d*sy + a2*syd
    qy(i, j, k1) = qy(i, j, k1) + a2*sy
-   qzd(i, j, k1) = qzd(i, j, k1) + sz*a2d
+   qzd(i, j, k1) = qzd(i, j, k1) + a2d*sz + a2*szd
    qz(i, j, k1) = qz(i, j, k1) + a2*sz
    END IF
    END DO
@@ -1510,12 +1566,21 @@
    ! Compute 8 times the average normal for this part of
    ! the control volume. The factor 8 is taken care of later
    ! on when the division by the volume takes place.
+   sxd = sid(i-1, j, k, 1) + sid(i-1, j+1, k, 1) + sid(i-1, j, k+1&
+   &          , 1) + sid(i-1, j+1, k+1, 1) + sid(i, j, k, 1) + sid(i, j+1, k&
+   &          , 1) + sid(i, j, k+1, 1) + sid(i, j+1, k+1, 1)
    sx = si(i-1, j, k, 1) + si(i-1, j+1, k, 1) + si(i-1, j, k+1, 1) &
    &          + si(i-1, j+1, k+1, 1) + si(i, j, k, 1) + si(i, j+1, k, 1) + &
    &          si(i, j, k+1, 1) + si(i, j+1, k+1, 1)
+   syd = sid(i-1, j, k, 2) + sid(i-1, j+1, k, 2) + sid(i-1, j, k+1&
+   &          , 2) + sid(i-1, j+1, k+1, 2) + sid(i, j, k, 2) + sid(i, j+1, k&
+   &          , 2) + sid(i, j, k+1, 2) + sid(i, j+1, k+1, 2)
    sy = si(i-1, j, k, 2) + si(i-1, j+1, k, 2) + si(i-1, j, k+1, 2) &
    &          + si(i-1, j+1, k+1, 2) + si(i, j, k, 2) + si(i, j+1, k, 2) + &
    &          si(i, j, k+1, 2) + si(i, j+1, k+1, 2)
+   szd = sid(i-1, j, k, 3) + sid(i-1, j+1, k, 3) + sid(i-1, j, k+1&
+   &          , 3) + sid(i-1, j+1, k+1, 3) + sid(i, j, k, 3) + sid(i, j+1, k&
+   &          , 3) + sid(i, j, k+1, 3) + sid(i, j+1, k+1, 3)
    sz = si(i-1, j, k, 3) + si(i-1, j+1, k, 3) + si(i-1, j, k+1, 3) &
    &          + si(i-1, j+1, k+1, 3) + si(i, j, k, 3) + si(i, j+1, k, 3) + &
    &          si(i, j, k+1, 3) + si(i, j+1, k+1, 3)
@@ -1543,55 +1608,55 @@
    ! is reversed, because the negative of the gradient of the
    ! speed of sound must be computed.
    IF (i .GT. 1) THEN
-   uxd(i-1, j, k1) = uxd(i-1, j, k1) + sx*ubard
+   uxd(i-1, j, k1) = uxd(i-1, j, k1) + ubard*sx + ubar*sxd
    ux(i-1, j, k1) = ux(i-1, j, k1) + ubar*sx
-   uyd(i-1, j, k1) = uyd(i-1, j, k1) + sy*ubard
+   uyd(i-1, j, k1) = uyd(i-1, j, k1) + ubard*sy + ubar*syd
    uy(i-1, j, k1) = uy(i-1, j, k1) + ubar*sy
-   uzd(i-1, j, k1) = uzd(i-1, j, k1) + sz*ubard
+   uzd(i-1, j, k1) = uzd(i-1, j, k1) + ubard*sz + ubar*szd
    uz(i-1, j, k1) = uz(i-1, j, k1) + ubar*sz
-   vxd(i-1, j, k1) = vxd(i-1, j, k1) + sx*vbard
+   vxd(i-1, j, k1) = vxd(i-1, j, k1) + vbard*sx + vbar*sxd
    vx(i-1, j, k1) = vx(i-1, j, k1) + vbar*sx
-   vyd(i-1, j, k1) = vyd(i-1, j, k1) + sy*vbard
+   vyd(i-1, j, k1) = vyd(i-1, j, k1) + vbard*sy + vbar*syd
    vy(i-1, j, k1) = vy(i-1, j, k1) + vbar*sy
-   vzd(i-1, j, k1) = vzd(i-1, j, k1) + sz*vbard
+   vzd(i-1, j, k1) = vzd(i-1, j, k1) + vbard*sz + vbar*szd
    vz(i-1, j, k1) = vz(i-1, j, k1) + vbar*sz
-   wxd(i-1, j, k1) = wxd(i-1, j, k1) + sx*wbard
+   wxd(i-1, j, k1) = wxd(i-1, j, k1) + wbard*sx + wbar*sxd
    wx(i-1, j, k1) = wx(i-1, j, k1) + wbar*sx
-   wyd(i-1, j, k1) = wyd(i-1, j, k1) + sy*wbard
+   wyd(i-1, j, k1) = wyd(i-1, j, k1) + wbard*sy + wbar*syd
    wy(i-1, j, k1) = wy(i-1, j, k1) + wbar*sy
-   wzd(i-1, j, k1) = wzd(i-1, j, k1) + sz*wbard
+   wzd(i-1, j, k1) = wzd(i-1, j, k1) + wbard*sz + wbar*szd
    wz(i-1, j, k1) = wz(i-1, j, k1) + wbar*sz
-   qxd(i-1, j, k1) = qxd(i-1, j, k1) - sx*a2d
+   qxd(i-1, j, k1) = qxd(i-1, j, k1) - a2d*sx - a2*sxd
    qx(i-1, j, k1) = qx(i-1, j, k1) - a2*sx
-   qyd(i-1, j, k1) = qyd(i-1, j, k1) - sy*a2d
+   qyd(i-1, j, k1) = qyd(i-1, j, k1) - a2d*sy - a2*syd
    qy(i-1, j, k1) = qy(i-1, j, k1) - a2*sy
-   qzd(i-1, j, k1) = qzd(i-1, j, k1) - sz*a2d
+   qzd(i-1, j, k1) = qzd(i-1, j, k1) - a2d*sz - a2*szd
    qz(i-1, j, k1) = qz(i-1, j, k1) - a2*sz
    END IF
    IF (i .LT. ie) THEN
-   uxd(i, j, k1) = uxd(i, j, k1) - sx*ubard
+   uxd(i, j, k1) = uxd(i, j, k1) - ubard*sx - ubar*sxd
    ux(i, j, k1) = ux(i, j, k1) - ubar*sx
-   uyd(i, j, k1) = uyd(i, j, k1) - sy*ubard
+   uyd(i, j, k1) = uyd(i, j, k1) - ubard*sy - ubar*syd
    uy(i, j, k1) = uy(i, j, k1) - ubar*sy
-   uzd(i, j, k1) = uzd(i, j, k1) - sz*ubard
+   uzd(i, j, k1) = uzd(i, j, k1) - ubard*sz - ubar*szd
    uz(i, j, k1) = uz(i, j, k1) - ubar*sz
-   vxd(i, j, k1) = vxd(i, j, k1) - sx*vbard
+   vxd(i, j, k1) = vxd(i, j, k1) - vbard*sx - vbar*sxd
    vx(i, j, k1) = vx(i, j, k1) - vbar*sx
-   vyd(i, j, k1) = vyd(i, j, k1) - sy*vbard
+   vyd(i, j, k1) = vyd(i, j, k1) - vbard*sy - vbar*syd
    vy(i, j, k1) = vy(i, j, k1) - vbar*sy
-   vzd(i, j, k1) = vzd(i, j, k1) - sz*vbard
+   vzd(i, j, k1) = vzd(i, j, k1) - vbard*sz - vbar*szd
    vz(i, j, k1) = vz(i, j, k1) - vbar*sz
-   wxd(i, j, k1) = wxd(i, j, k1) - sx*wbard
+   wxd(i, j, k1) = wxd(i, j, k1) - wbard*sx - wbar*sxd
    wx(i, j, k1) = wx(i, j, k1) - wbar*sx
-   wyd(i, j, k1) = wyd(i, j, k1) - sy*wbard
+   wyd(i, j, k1) = wyd(i, j, k1) - wbard*sy - wbar*syd
    wy(i, j, k1) = wy(i, j, k1) - wbar*sy
-   wzd(i, j, k1) = wzd(i, j, k1) - sz*wbard
+   wzd(i, j, k1) = wzd(i, j, k1) - wbard*sz - wbar*szd
    wz(i, j, k1) = wz(i, j, k1) - wbar*sz
-   qxd(i, j, k1) = qxd(i, j, k1) + sx*a2d
+   qxd(i, j, k1) = qxd(i, j, k1) + a2d*sx + a2*sxd
    qx(i, j, k1) = qx(i, j, k1) + a2*sx
-   qyd(i, j, k1) = qyd(i, j, k1) + sy*a2d
+   qyd(i, j, k1) = qyd(i, j, k1) + a2d*sy + a2*syd
    qy(i, j, k1) = qy(i, j, k1) + a2*sy
-   qzd(i, j, k1) = qzd(i, j, k1) + sz*a2d
+   qzd(i, j, k1) = qzd(i, j, k1) + a2d*sz + a2*szd
    qz(i, j, k1) = qz(i, j, k1) + a2*sz
    END IF
    END DO
@@ -1600,11 +1665,11 @@
    DO j=1,jl
    DO i=1,il
    ! Compute the inverse of 8 times the volume for this node.
-   oneovervd = -(one*(vold0(i, j, k)+vold0(i, j, k+1)+vold0(i+1, j&
-   &          , k)+vold0(i+1, j, k+1)+vold0(i, j+1, k)+vold0(i, j+1, k+1)+&
-   &          vold0(i+1, j+1, k)+vold0(i+1, j+1, k+1))/(vol(i, j, k)+vol(i, &
-   &          j, k+1)+vol(i+1, j, k)+vol(i+1, j, k+1)+vol(i, j+1, k)+vol(i, &
-   &          j+1, k+1)+vol(i+1, j+1, k)+vol(i+1, j+1, k+1))**2)
+   oneovervd = -(one*(vold(i, j, k)+vold(i, j, k+1)+vold(i+1, j, k)&
+   &          +vold(i+1, j, k+1)+vold(i, j+1, k)+vold(i, j+1, k+1)+vold(i+1&
+   &          , j+1, k)+vold(i+1, j+1, k+1))/(vol(i, j, k)+vol(i, j, k+1)+&
+   &          vol(i+1, j, k)+vol(i+1, j, k+1)+vol(i, j+1, k)+vol(i, j+1, k+1&
+   &          )+vol(i+1, j+1, k)+vol(i+1, j+1, k+1))**2)
    oneoverv = one/(vol(i, j, k)+vol(i, j, k+1)+vol(i+1, j, k)+vol(i&
    &          +1, j, k+1)+vol(i, j+1, k)+vol(i, j+1, k+1)+vol(i+1, j+1, k)+&
    &          vol(i+1, j+1, k+1))

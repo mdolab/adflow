@@ -87,7 +87,9 @@ FF90_OBJECTS =  accuracy_spatial_d.o\
 		turbmod_spatial_d.o\
 		utauwf_spatial_d.o\
 		viscousflux_spatial_d.o\
-		xhalo_block_spatial_d.o
+		xhalo_block_spatial_d.o\
+                normalvelocities_block_spatial_d.o\
+                gridvelocitiesfinelevel_block_spatial_d.o
 
 
 #      ******************************************************************

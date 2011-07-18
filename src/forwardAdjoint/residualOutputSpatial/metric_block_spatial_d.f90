@@ -2,7 +2,7 @@
    !  Tapenade 3.4 (r3375) - 10 Feb 2010 15:08
    !
    !  Differentiation of metric_block in forward (tangent) mode:
-   !   variations   of useful results: *vol
+   !   variations   of useful results: *vol *si *sj *sk *(*bcdata.norm)
    !   with respect to varying inputs: *x
    SUBROUTINE METRIC_BLOCK_SPATIAL_D(nn, level, sps)
    USE BCTYPES
@@ -10,6 +10,8 @@
    USE COMMUNICATION
    USE INPUTTIMESPECTRAL
    USE BLOCKPOINTERS_D
+   USE DIFFSIZES
+   !  Hint: ISIZE3OFbcdata should be the size of dimension 3 of array bcdata
    IMPLICIT NONE
    !
    !      ******************************************************************
@@ -45,16 +47,24 @@
    INTEGER(kind=inttype) :: nvolbad, nvolbadglobal
    INTEGER(kind=inttype) :: nblockbad, nblockbadglobal
    REAL(kind=realtype) :: fact, mult
+   REAL(kind=realtype) :: factd
    REAL(kind=realtype) :: xp, yp, zp, vp1, vp2, vp3, vp4, vp5, vp6
-   REAL(kind=realtype) :: vp1d, vp2d, vp3d, vp4d, vp5d, vp6d
+   REAL(kind=realtype) :: xpd, ypd, zpd, vp1d, vp2d, vp3d, vp4d, vp5d, &
+   &  vp6d
    REAL(kind=realtype), DIMENSION(3) :: v1, v2
+   REAL(kind=realtype), DIMENSION(3) :: v1d, v2d
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd
    CHARACTER(len=10) :: integerstring
    LOGICAL :: checkk, checkj, checki, checkall
    LOGICAL :: badvolume
-   REAL(kind=realtype) :: VOLPYM
-   REAL(kind=realtype) :: VOLPYM_SPATIAL_D
+   !REAL(kind=realtype) :: VOLPYM
+   !REAL(kind=realtype) :: VOLPYM_SPATIAL_D
+   REAL(kind=realtype) :: arg1
+   REAL(kind=realtype) :: arg1d
    INTRINSIC ABS
+   INTEGER :: ii1
+   INTRINSIC SQRT
    !
    !      ******************************************************************
    !      *                                                                *
@@ -69,7 +79,7 @@
    ! level halo's must be initialized to zero and for convenience
    ! all the volumes are set to zero.
    vol = zero
-   vold0 = 0.0
+   vold = 0.0
    DO k=1,ke
    n = k - 1
    checkk = .true.
@@ -87,18 +97,12 @@
    checkall = .false.
    IF (checkk .AND. checkj .AND. checki) checkall = .true.
    ! Compute the coordinates of the center of gravity.
-   !!$           xp = eighth*(x(i,j,k,1) + x(i,m,k,1) &
-   !!$                +         x(i,m,n,1) + x(i,j,n,1) &
-   !!$                +         x(l,j,k,1) + x(l,m,k,1) &
-   !!$                +         x(l,m,n,1) + x(l,j,n,1))
-   !!$           yp = eighth*(x(i,j,k,2) + x(i,m,k,2) &
-   !!$                +         x(i,m,n,2) + x(i,j,n,2) &
-   !!$                +         x(l,j,k,2) + x(l,m,k,2) &
-   !!$                +         x(l,m,n,2) + x(l,j,n,2))
-   !!$           zp = eighth*(x(i,j,k,3) + x(i,m,k,3) &
-   !!$                +         x(i,m,n,3) + x(i,j,n,3) &
-   !!$                +         x(l,j,k,3) + x(l,m,k,3) &
-   !!$                +         x(l,m,n,3) + x(l,j,n,3))
+   xp = eighth*(x(i, j, k, 1)+x(i, m, k, 1)+x(i, m, n, 1)+x(i, j, n&
+   &          , 1)+x(l, j, k, 1)+x(l, m, k, 1)+x(l, m, n, 1)+x(l, j, n, 1))
+   yp = eighth*(x(i, j, k, 2)+x(i, m, k, 2)+x(i, m, n, 2)+x(i, j, n&
+   &          , 2)+x(l, j, k, 2)+x(l, m, k, 2)+x(l, m, n, 2)+x(l, j, n, 2))
+   zp = eighth*(x(i, j, k, 3)+x(i, m, k, 3)+x(i, m, n, 3)+x(i, j, n&
+   &          , 3)+x(l, j, k, 3)+x(l, m, k, 3)+x(l, m, n, 3)+x(l, j, n, 3))
    ! Compute the volumes of the 6 sub pyramids. The
    ! arguments of volpym must be such that for a (regular)
    ! right handed hexahedron all volumes are positive.
@@ -147,225 +151,273 @@
    ! Set the volume to 1/6 of the sum of the volumes of the
    ! pyramid. Remember that volpym computes 6 times the
    ! volume.
-   vold0(i, j, k) = sixth*(vp1d+vp2d+vp3d+vp4d+vp5d+vp6d)
+   vold(i, j, k) = sixth*(vp1d+vp2d+vp3d+vp4d+vp5d+vp6d)
    vol(i, j, k) = sixth*(vp1+vp2+vp3+vp4+vp5+vp6)
    IF (vol(i, j, k) .GE. 0.) THEN
    vol(i, j, k) = vol(i, j, k)
    ELSE
-   vold0(i, j, k) = -vold0(i, j, k)
+   vold(i, j, k) = -vold(i, j, k)
    vol(i, j, k) = -vol(i, j, k)
    END IF
    END DO
    END DO
    END DO
+   ! Some additional safety stuff for halo volumes.
+   DO k=2,kl
+   DO j=2,jl
+   IF (vol(1, j, k) .LE. eps) THEN
+   vold(1, j, k) = vold(2, j, k)
+   vol(1, j, k) = vol(2, j, k)
+   END IF
+   IF (vol(ie, j, k) .LE. eps) THEN
+   vold(ie, j, k) = vold(il, j, k)
+   vol(ie, j, k) = vol(il, j, k)
+   END IF
+   END DO
+   END DO
+   DO k=2,kl
+   DO i=1,ie
+   IF (vol(i, 1, k) .LE. eps) THEN
+   vold(i, 1, k) = vold(i, 2, k)
+   vol(i, 1, k) = vol(i, 2, k)
+   END IF
+   IF (vol(i, je, k) .LE. eps) THEN
+   vold(i, je, k) = vold(i, jl, k)
+   vol(i, je, k) = vol(i, jl, k)
+   END IF
+   END DO
+   END DO
+   DO j=1,je
+   DO i=1,ie
+   IF (vol(i, j, 1) .LE. eps) THEN
+   vold(i, j, 1) = vold(i, j, 2)
+   vol(i, j, 1) = vol(i, j, 2)
+   END IF
+   IF (vol(i, j, ke) .LE. eps) THEN
+   vold(i, j, ke) = vold(i, j, kl)
+   vol(i, j, ke) = vol(i, j, kl)
+   END IF
+   END DO
+   END DO
+   ! Set the factor in the surface normals computation. For a
+   ! left handed block this factor is negative, such that the
+   ! normals still point in the direction of increasing index.
+   ! The formulae used later on assume a right handed block
+   ! and fact is used to correct this for a left handed block,
+   ! as well as the scaling factor of 0.5
+   IF (righthanded) THEN
+   !( flowDoms(nn,level,sps)%rightHanded ) then
+   fact = half
+   sid = 0.0
+   v1d = 0.0
+   v2d = 0.0
+   ELSE
+   fact = -half
+   sid = 0.0
+   v1d = 0.0
+   v2d = 0.0
+   END IF
+   ! Check if both positive and negative volumes occur. If so,
+   ! the block is bad and the counter nBlockBad is updated.
+   !
+   !          **************************************************************
+   !          *                                                            *
+   !          * Computation of the face normals in i-, j- and k-direction. *
+   !          * Formula's are valid for a right handed block; for a left   *
+   !          * handed block the correct orientation is obtained via fact. *
+   !          * The normals point in the direction of increasing index.    *
+   !          * The absolute value of fact is 0.5, because the cross       *
+   !          * product of the two diagonals is twice the normal vector.   *
+   !          *                                                            *
+   !          * Note that also the normals of the first level halo cells   *
+   !          * are computed. These are needed for the viscous fluxes.     *
+   !          *                                                            *
+   !          **************************************************************
+   !
+   ! Projected areas of cell faces in the i direction.
+   DO k=1,ke
+   n = k - 1
+   DO j=1,je
+   m = j - 1
+   DO i=0,ie
+   ! Determine the two diagonal vectors of the face.
+   v1d(1) = xd(i, j, n, 1) - xd(i, m, k, 1)
+   v1(1) = x(i, j, n, 1) - x(i, m, k, 1)
+   v1d(2) = xd(i, j, n, 2) - xd(i, m, k, 2)
+   v1(2) = x(i, j, n, 2) - x(i, m, k, 2)
+   v1d(3) = xd(i, j, n, 3) - xd(i, m, k, 3)
+   v1(3) = x(i, j, n, 3) - x(i, m, k, 3)
+   v2d(1) = xd(i, j, k, 1) - xd(i, m, n, 1)
+   v2(1) = x(i, j, k, 1) - x(i, m, n, 1)
+   v2d(2) = xd(i, j, k, 2) - xd(i, m, n, 2)
+   v2(2) = x(i, j, k, 2) - x(i, m, n, 2)
+   v2d(3) = xd(i, j, k, 3) - xd(i, m, n, 3)
+   v2(3) = x(i, j, k, 3) - x(i, m, n, 3)
+   ! The face normal, which is the cross product of the two
+   ! diagonal vectors times fact; remember that fact is
+   ! either -0.5 or 0.5.
+   sid(i, j, k, 1) = fact*(v1d(2)*v2(3)+v1(2)*v2d(3)-v1d(3)*v2(2)-&
+   &          v1(3)*v2d(2))
+   si(i, j, k, 1) = fact*(v1(2)*v2(3)-v1(3)*v2(2))
+   sid(i, j, k, 2) = fact*(v1d(3)*v2(1)+v1(3)*v2d(1)-v1d(1)*v2(3)-&
+   &          v1(1)*v2d(3))
+   si(i, j, k, 2) = fact*(v1(3)*v2(1)-v1(1)*v2(3))
+   sid(i, j, k, 3) = fact*(v1d(1)*v2(2)+v1(1)*v2d(2)-v1d(2)*v2(1)-&
+   &          v1(2)*v2d(1))
+   si(i, j, k, 3) = fact*(v1(1)*v2(2)-v1(2)*v2(1))
+   END DO
+   END DO
+   END DO
+   sjd = 0.0
+   ! Projected areas of cell faces in the j direction.
+   DO k=1,ke
+   n = k - 1
+   DO j=0,je
+   DO i=1,ie
+   l = i - 1
+   ! Determine the two diagonal vectors of the face.
+   v1d(1) = xd(i, j, n, 1) - xd(l, j, k, 1)
+   v1(1) = x(i, j, n, 1) - x(l, j, k, 1)
+   v1d(2) = xd(i, j, n, 2) - xd(l, j, k, 2)
+   v1(2) = x(i, j, n, 2) - x(l, j, k, 2)
+   v1d(3) = xd(i, j, n, 3) - xd(l, j, k, 3)
+   v1(3) = x(i, j, n, 3) - x(l, j, k, 3)
+   v2d(1) = xd(l, j, n, 1) - xd(i, j, k, 1)
+   v2(1) = x(l, j, n, 1) - x(i, j, k, 1)
+   v2d(2) = xd(l, j, n, 2) - xd(i, j, k, 2)
+   v2(2) = x(l, j, n, 2) - x(i, j, k, 2)
+   v2d(3) = xd(l, j, n, 3) - xd(i, j, k, 3)
+   v2(3) = x(l, j, n, 3) - x(i, j, k, 3)
+   ! The face normal, which is the cross product of the two
+   ! diagonal vectors times fact; remember that fact is
+   ! either -0.5 or 0.5.
+   sjd(i, j, k, 1) = fact*(v1d(2)*v2(3)+v1(2)*v2d(3)-v1d(3)*v2(2)-&
+   &          v1(3)*v2d(2))
+   sj(i, j, k, 1) = fact*(v1(2)*v2(3)-v1(3)*v2(2))
+   sjd(i, j, k, 2) = fact*(v1d(3)*v2(1)+v1(3)*v2d(1)-v1d(1)*v2(3)-&
+   &          v1(1)*v2d(3))
+   sj(i, j, k, 2) = fact*(v1(3)*v2(1)-v1(1)*v2(3))
+   sjd(i, j, k, 3) = fact*(v1d(1)*v2(2)+v1(1)*v2d(2)-v1d(2)*v2(1)-&
+   &          v1(2)*v2d(1))
+   sj(i, j, k, 3) = fact*(v1(1)*v2(2)-v1(2)*v2(1))
+   END DO
+   END DO
+   END DO
+   skd = 0.0
+   ! Projected areas of cell faces in the k direction.
+   DO k=0,ke
+   DO j=1,je
+   m = j - 1
+   DO i=1,ie
+   l = i - 1
+   ! Determine the two diagonal vectors of the face.
+   v1d(1) = xd(i, j, k, 1) - xd(l, m, k, 1)
+   v1(1) = x(i, j, k, 1) - x(l, m, k, 1)
+   v1d(2) = xd(i, j, k, 2) - xd(l, m, k, 2)
+   v1(2) = x(i, j, k, 2) - x(l, m, k, 2)
+   v1d(3) = xd(i, j, k, 3) - xd(l, m, k, 3)
+   v1(3) = x(i, j, k, 3) - x(l, m, k, 3)
+   v2d(1) = xd(l, j, k, 1) - xd(i, m, k, 1)
+   v2(1) = x(l, j, k, 1) - x(i, m, k, 1)
+   v2d(2) = xd(l, j, k, 2) - xd(i, m, k, 2)
+   v2(2) = x(l, j, k, 2) - x(i, m, k, 2)
+   v2d(3) = xd(l, j, k, 3) - xd(i, m, k, 3)
+   v2(3) = x(l, j, k, 3) - x(i, m, k, 3)
+   ! The face normal, which is the cross product of the two
+   ! diagonal vectors times fact; remember that fact is
+   ! either -0.5 or 0.5.
+   skd(i, j, k, 1) = fact*(v1d(2)*v2(3)+v1(2)*v2d(3)-v1d(3)*v2(2)-&
+   &          v1(3)*v2d(2))
+   sk(i, j, k, 1) = fact*(v1(2)*v2(3)-v1(3)*v2(2))
+   skd(i, j, k, 2) = fact*(v1d(3)*v2(1)+v1(3)*v2d(1)-v1d(1)*v2(3)-&
+   &          v1(1)*v2d(3))
+   sk(i, j, k, 2) = fact*(v1(3)*v2(1)-v1(1)*v2(3))
+   skd(i, j, k, 3) = fact*(v1d(1)*v2(2)+v1(1)*v2d(2)-v1d(2)*v2(1)-&
+   &          v1(2)*v2d(1))
+   sk(i, j, k, 3) = fact*(v1(1)*v2(2)-v1(2)*v2(1))
+   END DO
+   END DO
+   END DO
+   DO ii1=1,nbocos!ISIZE3OFbcdata
+   bcdatad(ii1)%norm = 0.0
+   END DO
+   !
+   !          **************************************************************
+   !          *                                                            *
+   !          * The unit normals on the boundary faces. These always point *
+   !          * out of the domain, so a multiplication by -1 is needed for *
+   !          * the iMin, jMin and kMin boundaries.                        *
+   !          *                                                            *
+   !          **************************************************************
+   !
+   ! Loop over the boundary subfaces of this block.
+   bocoloop:DO mm=1,nbocos
+   ! Determine the block face on which this subface is located
+   ! and set ss and mult accordingly.
+   SELECT CASE  (bcfaceid(mm)) 
+   CASE (imin) 
+   mult = -one
+   ssd => sid(1, :, :, :)
+   ss => si(1, :, :, :)
+   CASE (imax) 
+   mult = one
+   ssd => sid(il, :, :, :)
+   ss => si(il, :, :, :)
+   CASE (jmin) 
+   mult = -one
+   ssd => sjd(:, 1, :, :)
+   ss => sj(:, 1, :, :)
+   CASE (jmax) 
+   mult = one
+   ssd => sjd(:, jl, :, :)
+   ss => sj(:, jl, :, :)
+   CASE (kmin) 
+   mult = -one
+   ssd => skd(:, :, 1, :)
+   ss => sk(:, :, 1, :)
+   CASE (kmax) 
+   mult = one
+   ssd => skd(:, :, kl, :)
+   ss => sk(:, :, kl, :)
+   END SELECT
+   ! Loop over the boundary faces of the subface.
+   DO j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+   DO i=bcdata(mm)%icbeg,bcdata(mm)%icend
+   ! Compute the inverse of the length of the normal vector
+   ! and possibly correct for inward pointing.
+   xpd = ssd(i, j, 1)
+   xp = ss(i, j, 1)
+   ypd = ssd(i, j, 2)
+   yp = ss(i, j, 2)
+   zpd = ssd(i, j, 3)
+   zp = ss(i, j, 3)
+   arg1d = xpd*xp + xp*xpd + ypd*yp + yp*ypd + zpd*zp + zp*zpd
+   arg1 = xp*xp + yp*yp + zp*zp
+   IF (arg1 .EQ. 0.0) THEN
+   factd = 0.0
+   ELSE
+   factd = arg1d/(2.0*SQRT(arg1))
+   END IF
+   fact = SQRT(arg1)
+   IF (fact .GT. zero) THEN
+   factd = -(mult*factd/fact**2)
+   fact = mult/fact
+   END IF
+   ! Compute the unit normal.
+   bcdatad(mm)%norm(i, j, 1) = factd*xp + fact*xpd
+   bcdata(mm)%norm(i, j, 1) = fact*xp
+   bcdatad(mm)%norm(i, j, 2) = factd*yp + fact*ypd
+   bcdata(mm)%norm(i, j, 2) = fact*yp
+   bcdatad(mm)%norm(i, j, 3) = factd*zp + fact*zpd
+   bcdata(mm)%norm(i, j, 3) = fact*zp
+   END DO
+   END DO
+   END DO bocoloop
       CONTAINS
    !  Differentiation of volpym in forward (tangent) mode:
    !   variations   of useful results: volpym
    !   with respect to varying inputs: xa xb xc xd ya yb yc yd za
    !                zb zc zd
-   !!$  ! Some additional safety stuff for halo volumes.
-   !!$
-   !!$  do k=2,kl
-   !!$     do j=2,jl
-   !!$        if(vol(1, j,k) <= eps) vol(1, j,k) = vol(2, j,k)
-   !!$        if(vol(ie,j,k) <= eps) vol(ie,j,k) = vol(il,j,k)
-   !!$     enddo
-   !!$  enddo
-   !!$
-   !!$  do k=2,kl
-   !!$     do i=1,ie
-   !!$        if(vol(i,1, k) <= eps) vol(i,1, k) = vol(i,2, k)
-   !!$        if(vol(i,je,k) <= eps) vol(i,je,k) = vol(i,jl,k)
-   !!$     enddo
-   !!$  enddo
-   !!$
-   !!$  do j=1,je
-   !!$     do i=1,ie
-   !!$        if(vol(i,j,1)  <= eps) vol(i,j,1)  = vol(i,j,2)
-   !!$        if(vol(i,j,ke) <= eps) vol(i,j,ke) = vol(i,j,kl)
-   !!$     enddo
-   !!$  enddo
-   !!$
-   !!$  ! Set the factor in the surface normals computation. For a
-   !!$  ! left handed block this factor is negative, such that the
-   !!$  ! normals still point in the direction of increasing index.
-   !!$  ! The formulae used later on assume a right handed block
-   !!$  ! and fact is used to correct this for a left handed block,
-   !!$  ! as well as the scaling factor of 0.5
-   !!$
-   !!$  if (rightHanded) then!( flowDoms(nn,level,sps)%rightHanded ) then
-   !!$     fact =  half
-   !!$  else
-   !!$     fact = -half
-   !!$  endif
-   !!$
-   !!$  ! Check if both positive and negative volumes occur. If so,
-   !!$  ! the block is bad and the counter nBlockBad is updated.
-   !!$
-   !!$  !
-   !!$  !          **************************************************************
-   !!$  !          *                                                            *
-   !!$  !          * Computation of the face normals in i-, j- and k-direction. *
-   !!$  !          * Formula's are valid for a right handed block; for a left   *
-   !!$  !          * handed block the correct orientation is obtained via fact. *
-   !!$  !          * The normals point in the direction of increasing index.    *
-   !!$  !          * The absolute value of fact is 0.5, because the cross       *
-   !!$  !          * product of the two diagonals is twice the normal vector.   *
-   !!$  !          *                                                            *
-   !!$  !          * Note that also the normals of the first level halo cells   *
-   !!$  !          * are computed. These are needed for the viscous fluxes.     *
-   !!$  !          *                                                            *
-   !!$  !          **************************************************************
-   !!$  !
-   !!$  ! Projected areas of cell faces in the i direction.
-   !!$
-   !!$  do k=1,ke
-   !!$     n = k -1
-   !!$     do j=1,je
-   !!$        m = j -1
-   !!$        do i=0,ie
-   !!$
-   !!$           ! Determine the two diagonal vectors of the face.
-   !!$
-   !!$           v1(1) = x(i,j,n,1) - x(i,m,k,1)
-   !!$           v1(2) = x(i,j,n,2) - x(i,m,k,2)
-   !!$           v1(3) = x(i,j,n,3) - x(i,m,k,3)
-   !!$
-   !!$           v2(1) = x(i,j,k,1) - x(i,m,n,1)
-   !!$           v2(2) = x(i,j,k,2) - x(i,m,n,2)
-   !!$           v2(3) = x(i,j,k,3) - x(i,m,n,3)
-   !!$
-   !!$           ! The face normal, which is the cross product of the two
-   !!$           ! diagonal vectors times fact; remember that fact is
-   !!$           ! either -0.5 or 0.5.
-   !!$        
-   !!$           si(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
-   !!$           si(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
-   !!$           si(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
-   !!$         
-   !!$        enddo
-   !!$     enddo
-   !!$  enddo
-   !!$
-   !!$  ! Projected areas of cell faces in the j direction.
-   !!$
-   !!$  do k=1,ke
-   !!$     n = k -1
-   !!$     do j=0,je
-   !!$        do i=1,ie
-   !!$           l = i -1
-   !!$
-   !!$           ! Determine the two diagonal vectors of the face.
-   !!$
-   !!$           v1(1) = x(i,j,n,1) - x(l,j,k,1)
-   !!$           v1(2) = x(i,j,n,2) - x(l,j,k,2)
-   !!$           v1(3) = x(i,j,n,3) - x(l,j,k,3)
-   !!$
-   !!$           v2(1) = x(l,j,n,1) - x(i,j,k,1)
-   !!$           v2(2) = x(l,j,n,2) - x(i,j,k,2)
-   !!$           v2(3) = x(l,j,n,3) - x(i,j,k,3)
-   !!$
-   !!$           ! The face normal, which is the cross product of the two
-   !!$           ! diagonal vectors times fact; remember that fact is
-   !!$           ! either -0.5 or 0.5.
-   !!$
-   !!$           sj(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
-   !!$           sj(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
-   !!$           sj(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
-   !!$
-   !!$        enddo
-   !!$     enddo
-   !!$  enddo
-   !!$
-   !!$  ! Projected areas of cell faces in the k direction.
-   !!$
-   !!$  do k=0,ke
-   !!$     do j=1,je
-   !!$        m = j -1
-   !!$        do i=1,ie
-   !!$           l = i -1
-   !!$
-   !!$           ! Determine the two diagonal vectors of the face.
-   !!$
-   !!$           v1(1) = x(i,j,k,1) - x(l,m,k,1)
-   !!$           v1(2) = x(i,j,k,2) - x(l,m,k,2)
-   !!$           v1(3) = x(i,j,k,3) - x(l,m,k,3)
-   !!$
-   !!$           v2(1) = x(l,j,k,1) - x(i,m,k,1)
-   !!$           v2(2) = x(l,j,k,2) - x(i,m,k,2)
-   !!$           v2(3) = x(l,j,k,3) - x(i,m,k,3)
-   !!$
-   !!$           ! The face normal, which is the cross product of the two
-   !!$           ! diagonal vectors times fact; remember that fact is
-   !!$           ! either -0.5 or 0.5.
-   !!$
-   !!$           sk(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
-   !!$           sk(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
-   !!$           sk(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
-   !!$
-   !!$        enddo
-   !!$     enddo
-   !!$  enddo
-   !!$  !
-   !!$  !          **************************************************************
-   !!$  !          *                                                            *
-   !!$  !          * The unit normals on the boundary faces. These always point *
-   !!$  !          * out of the domain, so a multiplication by -1 is needed for *
-   !!$  !          * the iMin, jMin and kMin boundaries.                        *
-   !!$  !          *                                                            *
-   !!$  !          **************************************************************
-   !!$  !
-   !!$  ! Loop over the boundary subfaces of this block.
-   !!$
-   !!$  bocoLoop: do mm=1,nBocos
-   !!$
-   !!$     ! Determine the block face on which this subface is located
-   !!$     ! and set ss and mult accordingly.
-   !!$
-   !!$     select case (BCFaceID(mm))
-   !!$
-   !!$     case (iMin)
-   !!$        mult = -one; ss => si(1,:,:,:)
-   !!$
-   !!$     case (iMax)
-   !!$        mult = one;  ss => si(il,:,:,:)
-   !!$
-   !!$     case (jMin)
-   !!$        mult = -one; ss => sj(:,1,:,:)
-   !!$
-   !!$     case (jMax)
-   !!$        mult = one;  ss => sj(:,jl,:,:)
-   !!$
-   !!$     case (kMin)
-   !!$        mult = -one; ss => sk(:,:,1,:)
-   !!$
-   !!$     case (kMax)
-   !!$        mult = one;  ss => sk(:,:,kl,:)
-   !!$
-   !!$     end select
-   !!$
-   !!$     ! Loop over the boundary faces of the subface.
-   !!$
-   !!$     do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
-   !!$        do i=BCData(mm)%icBeg, BCData(mm)%icEnd
-   !!$
-   !!$           ! Compute the inverse of the length of the normal vector
-   !!$           ! and possibly correct for inward pointing.
-   !!$
-   !!$           xp = ss(i,j,1);  yp = ss(i,j,2);  zp = ss(i,j,3)
-   !!$           fact = sqrt(xp*xp + yp*yp + zp*zp)
-   !!$           if(fact > zero) fact = mult/fact
-   !!$
-   !!$           ! Compute the unit normal.
-   !!$
-   !!$           BCData(mm)%norm(i,j,1) = fact*xp
-   !!$           BCData(mm)%norm(i,j,2) = fact*yp
-   !!$           BCData(mm)%norm(i,j,3) = fact*zp
-   !!$
-   !!$        enddo
-   !!$     enddo
-   !!$
-   !!$  enddo bocoLoop
    !        ================================================================
    FUNCTION VOLPYM_SPATIAL_D(xa, xad, ya, yad, za, zad, xb, xbd, yb, ybd&
    &    , zb, zbd, xc, xcd, yc, ycd, zc, zcd, xd, xdd, yd, ydd, zd, zdd, &
@@ -416,209 +468,6 @@
    &      + (yp-fourth*(ya+yb+yc+yd))*((za-zc)*(xb-xd)-(xa-xc)*(zb-zd)) + (&
    &      zp-fourth*(za+zb+zc+zd))*((xa-xc)*(yb-yd)-(ya-yc)*(xb-xd))
    END FUNCTION VOLPYM_SPATIAL_D
-   !!$  ! Some additional safety stuff for halo volumes.
-   !!$
-   !!$  do k=2,kl
-   !!$     do j=2,jl
-   !!$        if(vol(1, j,k) <= eps) vol(1, j,k) = vol(2, j,k)
-   !!$        if(vol(ie,j,k) <= eps) vol(ie,j,k) = vol(il,j,k)
-   !!$     enddo
-   !!$  enddo
-   !!$
-   !!$  do k=2,kl
-   !!$     do i=1,ie
-   !!$        if(vol(i,1, k) <= eps) vol(i,1, k) = vol(i,2, k)
-   !!$        if(vol(i,je,k) <= eps) vol(i,je,k) = vol(i,jl,k)
-   !!$     enddo
-   !!$  enddo
-   !!$
-   !!$  do j=1,je
-   !!$     do i=1,ie
-   !!$        if(vol(i,j,1)  <= eps) vol(i,j,1)  = vol(i,j,2)
-   !!$        if(vol(i,j,ke) <= eps) vol(i,j,ke) = vol(i,j,kl)
-   !!$     enddo
-   !!$  enddo
-   !!$
-   !!$  ! Set the factor in the surface normals computation. For a
-   !!$  ! left handed block this factor is negative, such that the
-   !!$  ! normals still point in the direction of increasing index.
-   !!$  ! The formulae used later on assume a right handed block
-   !!$  ! and fact is used to correct this for a left handed block,
-   !!$  ! as well as the scaling factor of 0.5
-   !!$
-   !!$  if (rightHanded) then!( flowDoms(nn,level,sps)%rightHanded ) then
-   !!$     fact =  half
-   !!$  else
-   !!$     fact = -half
-   !!$  endif
-   !!$
-   !!$  ! Check if both positive and negative volumes occur. If so,
-   !!$  ! the block is bad and the counter nBlockBad is updated.
-   !!$
-   !!$  !
-   !!$  !          **************************************************************
-   !!$  !          *                                                            *
-   !!$  !          * Computation of the face normals in i-, j- and k-direction. *
-   !!$  !          * Formula's are valid for a right handed block; for a left   *
-   !!$  !          * handed block the correct orientation is obtained via fact. *
-   !!$  !          * The normals point in the direction of increasing index.    *
-   !!$  !          * The absolute value of fact is 0.5, because the cross       *
-   !!$  !          * product of the two diagonals is twice the normal vector.   *
-   !!$  !          *                                                            *
-   !!$  !          * Note that also the normals of the first level halo cells   *
-   !!$  !          * are computed. These are needed for the viscous fluxes.     *
-   !!$  !          *                                                            *
-   !!$  !          **************************************************************
-   !!$  !
-   !!$  ! Projected areas of cell faces in the i direction.
-   !!$
-   !!$  do k=1,ke
-   !!$     n = k -1
-   !!$     do j=1,je
-   !!$        m = j -1
-   !!$        do i=0,ie
-   !!$
-   !!$           ! Determine the two diagonal vectors of the face.
-   !!$
-   !!$           v1(1) = x(i,j,n,1) - x(i,m,k,1)
-   !!$           v1(2) = x(i,j,n,2) - x(i,m,k,2)
-   !!$           v1(3) = x(i,j,n,3) - x(i,m,k,3)
-   !!$
-   !!$           v2(1) = x(i,j,k,1) - x(i,m,n,1)
-   !!$           v2(2) = x(i,j,k,2) - x(i,m,n,2)
-   !!$           v2(3) = x(i,j,k,3) - x(i,m,n,3)
-   !!$
-   !!$           ! The face normal, which is the cross product of the two
-   !!$           ! diagonal vectors times fact; remember that fact is
-   !!$           ! either -0.5 or 0.5.
-   !!$        
-   !!$           si(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
-   !!$           si(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
-   !!$           si(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
-   !!$         
-   !!$        enddo
-   !!$     enddo
-   !!$  enddo
-   !!$
-   !!$  ! Projected areas of cell faces in the j direction.
-   !!$
-   !!$  do k=1,ke
-   !!$     n = k -1
-   !!$     do j=0,je
-   !!$        do i=1,ie
-   !!$           l = i -1
-   !!$
-   !!$           ! Determine the two diagonal vectors of the face.
-   !!$
-   !!$           v1(1) = x(i,j,n,1) - x(l,j,k,1)
-   !!$           v1(2) = x(i,j,n,2) - x(l,j,k,2)
-   !!$           v1(3) = x(i,j,n,3) - x(l,j,k,3)
-   !!$
-   !!$           v2(1) = x(l,j,n,1) - x(i,j,k,1)
-   !!$           v2(2) = x(l,j,n,2) - x(i,j,k,2)
-   !!$           v2(3) = x(l,j,n,3) - x(i,j,k,3)
-   !!$
-   !!$           ! The face normal, which is the cross product of the two
-   !!$           ! diagonal vectors times fact; remember that fact is
-   !!$           ! either -0.5 or 0.5.
-   !!$
-   !!$           sj(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
-   !!$           sj(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
-   !!$           sj(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
-   !!$
-   !!$        enddo
-   !!$     enddo
-   !!$  enddo
-   !!$
-   !!$  ! Projected areas of cell faces in the k direction.
-   !!$
-   !!$  do k=0,ke
-   !!$     do j=1,je
-   !!$        m = j -1
-   !!$        do i=1,ie
-   !!$           l = i -1
-   !!$
-   !!$           ! Determine the two diagonal vectors of the face.
-   !!$
-   !!$           v1(1) = x(i,j,k,1) - x(l,m,k,1)
-   !!$           v1(2) = x(i,j,k,2) - x(l,m,k,2)
-   !!$           v1(3) = x(i,j,k,3) - x(l,m,k,3)
-   !!$
-   !!$           v2(1) = x(l,j,k,1) - x(i,m,k,1)
-   !!$           v2(2) = x(l,j,k,2) - x(i,m,k,2)
-   !!$           v2(3) = x(l,j,k,3) - x(i,m,k,3)
-   !!$
-   !!$           ! The face normal, which is the cross product of the two
-   !!$           ! diagonal vectors times fact; remember that fact is
-   !!$           ! either -0.5 or 0.5.
-   !!$
-   !!$           sk(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
-   !!$           sk(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
-   !!$           sk(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
-   !!$
-   !!$        enddo
-   !!$     enddo
-   !!$  enddo
-   !!$  !
-   !!$  !          **************************************************************
-   !!$  !          *                                                            *
-   !!$  !          * The unit normals on the boundary faces. These always point *
-   !!$  !          * out of the domain, so a multiplication by -1 is needed for *
-   !!$  !          * the iMin, jMin and kMin boundaries.                        *
-   !!$  !          *                                                            *
-   !!$  !          **************************************************************
-   !!$  !
-   !!$  ! Loop over the boundary subfaces of this block.
-   !!$
-   !!$  bocoLoop: do mm=1,nBocos
-   !!$
-   !!$     ! Determine the block face on which this subface is located
-   !!$     ! and set ss and mult accordingly.
-   !!$
-   !!$     select case (BCFaceID(mm))
-   !!$
-   !!$     case (iMin)
-   !!$        mult = -one; ss => si(1,:,:,:)
-   !!$
-   !!$     case (iMax)
-   !!$        mult = one;  ss => si(il,:,:,:)
-   !!$
-   !!$     case (jMin)
-   !!$        mult = -one; ss => sj(:,1,:,:)
-   !!$
-   !!$     case (jMax)
-   !!$        mult = one;  ss => sj(:,jl,:,:)
-   !!$
-   !!$     case (kMin)
-   !!$        mult = -one; ss => sk(:,:,1,:)
-   !!$
-   !!$     case (kMax)
-   !!$        mult = one;  ss => sk(:,:,kl,:)
-   !!$
-   !!$     end select
-   !!$
-   !!$     ! Loop over the boundary faces of the subface.
-   !!$
-   !!$     do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
-   !!$        do i=BCData(mm)%icBeg, BCData(mm)%icEnd
-   !!$
-   !!$           ! Compute the inverse of the length of the normal vector
-   !!$           ! and possibly correct for inward pointing.
-   !!$
-   !!$           xp = ss(i,j,1);  yp = ss(i,j,2);  zp = ss(i,j,3)
-   !!$           fact = sqrt(xp*xp + yp*yp + zp*zp)
-   !!$           if(fact > zero) fact = mult/fact
-   !!$
-   !!$           ! Compute the unit normal.
-   !!$
-   !!$           BCData(mm)%norm(i,j,1) = fact*xp
-   !!$           BCData(mm)%norm(i,j,2) = fact*yp
-   !!$           BCData(mm)%norm(i,j,3) = fact*zp
-   !!$
-   !!$        enddo
-   !!$     enddo
-   !!$
-   !!$  enddo bocoLoop
    !        ================================================================
    FUNCTION VOLPYM(xa, ya, za, xb, yb, zb, xc, yc, zc, xd, yd, zd)
    USE PRECISION

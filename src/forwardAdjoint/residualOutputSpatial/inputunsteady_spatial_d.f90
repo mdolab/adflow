@@ -33,6 +33,7 @@
    INTEGER(kind=inttype) :: timeaccuracy
    INTEGER(kind=inttype) :: ntimestepscoarse, ntimestepsfine
    REAL(kind=realtype) :: deltat
+   REAL(kind=realtype) :: deltatd
    ! nRKStagesUnsteady:   Number of stages used in the Runge-Kutta
    !                      schemes for a time accurate computation.
    ! betaRKUnsteady(:,:): Matrix with the Runge-Kutta coefficients

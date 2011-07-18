@@ -105,6 +105,7 @@
    !                   for unsteady applications.
    INTEGER(kind=inttype) :: noldsolavail, noldlevels
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coeftime
+   REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coeftimed
    ! timeSpectralGridsNotWritten: Whether or not grid files have
    !                              already been written in time
    !                              spectral mode. In this way

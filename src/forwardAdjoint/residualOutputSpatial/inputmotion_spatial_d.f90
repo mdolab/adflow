@@ -18,6 +18,7 @@
    SAVE 
    ! rotPoint(3): Rotation point of the rigid body rotation.
    REAL(kind=realtype), DIMENSION(3) :: rotpoint
+   REAL(kind=realtype), DIMENSION(3) :: rotpointd0
    REAL(kind=realtype), DIMENSION(3) :: rotpointd
    ! degreePolXRot: Degree of the x-rotation polynomial.
    ! degreePolYRot: Degree of the y-rotation polynomial.
@@ -66,55 +67,67 @@
    INTEGER(kind=inttype) :: degreepolalpha
    ! coefPolAlpha(0:): coefficients of the Alpha polynomial.
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coefpolalpha
+   REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coefpolalphad
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coefpolalphab
    ! degreeFourAlpha: Degree of the Alpha fourier series.
    INTEGER(kind=inttype) :: degreefouralpha
    ! omegaFourAlpha: Fourier frequency of the Alpha; the
    !                   period of the motion is 2*pi/omega.
    REAL(kind=realtype) :: omegafouralpha, omegafouralphab
+   REAL(kind=realtype) :: omegafouralphad
    ! cosCoefFourAlpha(0:): cosine coefficients of the
    !                      x-rotation fourier series.
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coscoeffouralpha
+   REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coscoeffouralphad
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coscoeffouralphab
    ! sinCoefFourAlpha(1:): sine coefficients of the
    !                      Alpha fourier series.
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: sincoeffouralpha
+   REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: sincoeffouralphad
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: sincoeffouralphab
    ! degreePolXRot: Degree of the Beta polynomial.
    INTEGER(kind=inttype) :: degreepolbeta
    ! coefPolXRot(0:): coefficients of the Beta polynomial.
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coefpolbeta
+   REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coefpolbetad
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coefpolbetab
    ! degreeFourBeta: Degree of the Beta fourier series.
    INTEGER(kind=inttype) :: degreefourbeta
    ! omegaFourBeta: Fourier frequency of the Beta; the
    !                   period of the motion is 2*pi/omega.
    REAL(kind=realtype) :: omegafourbeta, omegafourbetab
+   REAL(kind=realtype) :: omegafourbetad
    ! cosCoefFourBeta(0:): cosine coefficients of the
    !                      Beta fourier series.
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coscoeffourbeta
+   REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coscoeffourbetad
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coscoeffourbetab
    ! sinCoefFourBeta(1:): sine coefficients of the
    !                      Beta fourier series.
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: sincoeffourbeta
+   REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: sincoeffourbetad
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: sincoeffourbetab
    ! degreePolMach: Degree of the Mach polynomial.
    INTEGER(kind=inttype) :: degreepolmach
    ! coefPolMach(0:): coefficients of the Mach polynomial.
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coefpolmach
+   REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coefpolmachd
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coefpolmachb
    ! degreeFourMach: Degree of the Mach fourier series.
    INTEGER(kind=inttype) :: degreefourmach
    ! omegaFourMach: Fourier frequency of the Mach Number; the
    !                   period of the motion is 2*pi/omega.
    REAL(kind=realtype) :: omegafourmach, omegafourmachb
+   REAL(kind=realtype) :: omegafourmachd
    ! cosCoefFourMach(0:): cosine coefficients of the
    !                      Mach Number fourier series.
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coscoeffourmach
+   REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coscoeffourmachd
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: coscoeffourmachb
    ! sinCoefFourMach(1:): sine coefficients of the
    !                      Mach Number fourier series.
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: sincoeffourmach
+   REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: sincoeffourmachd
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: sincoeffourmachb
    ! gridMotionSpecified: Whether or not a rigid body motion of
    !                      the grid has been specified.

@@ -59,7 +59,7 @@
    CASE (cpconstant) 
    ! Abbreviate 1/(gamma -1) a bit easier.
    ovgm1 = one/(gammaconstant-one)
-   eintd = 0.0
+   !eintd = 0.0
    ! Loop over the number of elements of the array and compute
    ! the total energy.
    DO i=1,kk
@@ -81,7 +81,7 @@
    ! Store a scale factor to compute the nonDimensional
    ! internal energy.
    scale = rgas/tref
-   eintd = 0.0
+   !eintd = 0.0
    ! Loop over the number of elements of the array
    DO i=1,kk
    ! Compute the dimensional temperature.
@@ -159,6 +159,6 @@
    END IF
    END DO
    CASE DEFAULT
-   eintd = 0.0
+      !eintd = 0.0
    END SELECT
    END SUBROUTINE EINTARRAY_SPATIAL_D

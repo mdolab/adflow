@@ -3,7 +3,8 @@
    !
    !  Differentiation of applyallbc_block in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w
-   !   with respect to varying inputs: *x
+   !   with respect to varying inputs: *s *x *si *sj *sk *(*bcdata.norm)
+   !                *(*bcdata.rface)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -63,7 +64,7 @@
    END IF
    ! Apply all the boundary conditions. The order is important.
    ! The symmetry boundary conditions.
-   CALL BCSYMM(secondhalo)
+   CALL BCSYMM_SPATIAL_D(secondhalo)
    CALL BCSYMMPOLAR_SPATIAL_D(secondhalo)
    !call bcEulerWall(secondHalo, correctForK)
    ! The viscous wall boundary conditions.

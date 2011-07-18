@@ -17,6 +17,7 @@
    ! block/sps loop is outside the calculation. This routine is suitable
    ! for forward mode AD with Tapenade
    SUBROUTINE BLOCK_RES_SPATIAL_SPATIAL_D(nn, sps)
+   USE SECTION
    USE INPUTPHYSICS
    USE ITERATION
    USE INPUTTIMESPECTRAL
@@ -26,19 +27,49 @@
    !,x_peturb)
    ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
    ! nw
+   !nsections
+   !timeunsteadyrestart
    REAL(kind=realtype) :: gm1, v2
    INTEGER(kind=inttype) :: nn, sps, i, j, k, sps2, mm, l
-   LOGICAL :: correctfork
+   LOGICAL :: correctfork, useoldcoor=.false.
+   !for grid velocities computation
+   REAL(kind=realtype), DIMENSION(nsections) :: t
+   REAL(kind=realtype), DIMENSION(nsections) :: td
+   REAL :: result1
    INTRINSIC MAX
+   INTRINSIC REAL
+   REAL :: timeunsteadyrestart
    !  logical :: x_peturb(0:ie,0:je,0:ke,3)
+   !print *,'setpointers'
    CALL SETPOINTERSOFFTSINSTANCE_D(nn, sps, sps)
    ! Do the spatial things first:
+   !print *,'xhalo'
    CALL XHALO_BLOCK_SPATIAL_D(1)
    !,x_peturb)
+   !print *,'metric'
    CALL METRIC_BLOCK_SPATIAL_D(nn, 1, sps)
-   ! call gridVelocities(useOldCoor, t, sps) ! Required for TS
-   ! call normalVelocitiesAllLevels(sps) ! Required for TS
+   ! Compute the time, which corresponds to this spectral solution.
+   ! For steady and unsteady mode this is simply the restart time;
+   ! for the spectral mode the periodic time must be taken into
+   ! account, which can be different for every section.
+   !print *,'time'
+   t = timeunsteadyrestart
+   IF (equationmode .EQ. timespectral) THEN
+   DO nn=1,nsections
+   result1 = REAL(ntimeintervalsspectral, realtype)
+   td(nn) = 0.0
+   t(nn) = t(nn) + (sps-1)*sections(nn)%timeperiod/result1
+   END DO
+   END IF
+   !print *,'gridvel'
+   CALL GRIDVELOCITIESFINELEVEL_BLOCK_SPATIAL_D(useoldcoor, t, sps)
+   ! Required for TS
+   !print *,'normalv'
+   CALL NORMALVELOCITIES_BLOCK_SPATIAL_D(sps)
+   ! Required for TS
+   !call slipVelocitiesFineLevel(.false., t, mm) !required for viscous
    ! Compute the pressures
+   !print *,'computep'
    gm1 = gammaconstant - one
    correctfork = .false.
    ! Compute P 
@@ -95,7 +126,7 @@
    DO j=2,jl
    DO i=2,il
    dwd(i, j, k, l) = (dwd(i, j, k, l)*vol(i, j, k)-dw(i, j, k, &
-   &              l)*vold0(i, j, k))/vol(i, j, k)**2
+   &              l)*vold(i, j, k))/vol(i, j, k)**2
    dw(i, j, k, l) = dw(i, j, k, l)/vol(i, j, k)
    END DO
    END DO

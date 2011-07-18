@@ -53,21 +53,21 @@
    INTRINSIC REAL
    !Begin execution
    !get some basic info about extra variables
-   print *,'adjust'
+   !print *,'adjust'
    CALL ADJUSTINFLOWANGLE_EXTRA_D(alpha, alphad, beta, betad, liftindex)
- print *,'check'
+   !print *,'check'
    CALL CHECKINPUTPARAM_MOD_EXTRA_D()
- print *,'ref'
+   !print *,'ref'
    CALL REFERENCESTATE_MOD_EXTRA_D()
- print *,'setflow'
+   !print *,'setflow'
    CALL SETFLOWINFINITYSTATE_EXTRA_D()
- print *,'setpointers'
+   !print *,'setpointers'
    CALL SETPOINTERSOFFTSINSTANCE_D(nn, sps, sps)
    ! Compute the time, which corresponds to this spectral solution.
    ! For steady and unsteady mode this is simply the restart time;
    ! for the spectral mode the periodic time must be taken into
    ! account, which can be different for every section.
- print *,'time sps'
+   !print *,'time sps'
    t = timeunsteadyrestart
    IF (equationmode .EQ. timespectral) THEN
    DO nn=1,nsections
@@ -76,15 +76,15 @@
    t(nn) = t(nn) + (sps-1)*sections(nn)%timeperiod/result1
    END DO
    END IF
- print *,'gridvel'
+   !print *,'gridvel'
    CALL GRIDVELOCITIESFINELEVEL_BLOCK_EXTRA_D(useoldcoor, t, sps)
    ! Required for TS
- print *,'normalvel'
+   !print *,'normalvel'
    CALL NORMALVELOCITIES_BLOCK_EXTRA_D(sps)
    ! Required for TS
    !call slipVelocitiesFineLevel(.false., t, mm) !required for viscous
    ! Compute the pressures
-   print *,'computep'
+   !print *,'computep'
    gm1 = gammaconstant - one
    correctfork = .false.
    pd = 0.0
@@ -107,13 +107,13 @@
    END DO
    !call computeEtot(0,ib,0,jb,0,kb,correctForK)
    !  Apply all BC's
-   print *,'bcs'
+   !print *,'bcs'
    CALL APPLYALLBC_BLOCK_EXTRA_D(.true.)
    ! Compute skin_friction Velocity
-   print *,'utau'
+!   print *,'utau'
    CALL COMPUTEUTAU_BLOCK()
    ! Compute time step and spectral radius
-   print *,'timestep'
+!   print *,'timestep'
    CALL TIMESTEP_BLOCK_EXTRA_D(.false.)
    !   if( equations == RANSEquations ) then
    !      call initres_block(nt1MG, nMGVar,nn,sps) ! Initialize only the Turblent Variables
@@ -128,7 +128,7 @@
    dw = 0.0
    DO mm=1,ntimeintervalsspectral
    CALL SETPOINTERSOFFTSINSTANCE_D(nn, sps2, mm)
-   print *,'initres'
+   !print *,'initres'
    CALL INITRES_BLOCK_TS(1, nwf, nn, sps2, mm)
    END DO
    END DO
@@ -136,7 +136,7 @@
    ! Rest the pointers the the "on time instance"
    CALL SETPOINTERSOFFTSINSTANCE_D(nn, sps, sps)
    ! Actual residual calc
-   print *,'res'
+   !print *,'res'
    CALL RESIDUAL_BLOCK_EXTRA_D()
    ! Divide through by the volume
    DO sps2=1,ntimeintervalsspectral
@@ -152,5 +152,5 @@
    END DO
    END DO
    END DO
-    print *,'end'
+   !print *,'end'
    END SUBROUTINE BLOCK_RES_EXTRA_EXTRA_D

@@ -31,11 +31,15 @@ subroutine alloc_derivative_values(nn)
 
      allocate(flowDomsd(sps)%si(0:ie,1:je,1:ke,3), &
           flowDomsd(sps)%sj(1:ie,0:je,1:ke,3), &
-          flowDomsd(sps)%sk(1:ie,1:je,0:ke,3),stat=ierr)
+          flowDomsd(sps)%sk(1:ie,1:je,0:ke,3),&
+          flowDomsd(sps)%vol(0:ib,0:jb,0:kb),&
+          stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
      flowDomsd(sps)%si = 0
      flowDomsd(sps)%sj = 0
      flowDomsd(sps)%sk = 0
+     flowDomsd(sps)%vol = 0
+
 
      allocate(flowDomsd(sps)%rotMatrixI(il,2:jl,2:kl,3,3), &
           flowDomsd(sps)%rotMatrixJ(2:il,jl,2:kl,3,3), &
@@ -105,6 +109,11 @@ subroutine alloc_derivative_values(nn)
 
         iBeg = BCData(mm)%icbeg; iEnd = BCData(mm)%icend
         jBeg = BCData(mm)%jcbeg; jEnd = BCData(mm)%jcend
+
+        allocate(BCDatad(mm)%norm(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
+        if(ierr /= 0)                      &
+             call terminate("allocate_derivative_values", &
+             "Memory allocation failure for norm")
 
         ! Determine the boundary condition we are having here
         ! and allocate the memory accordingly.

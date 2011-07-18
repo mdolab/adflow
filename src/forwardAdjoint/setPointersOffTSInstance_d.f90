@@ -33,6 +33,8 @@ subroutine setPointersOffTSInstance_d(nn,sps,sps2)
   sjd     => flowDomsd(sps)%sj
   skd     => flowDomsd(sps)%sk
 
+  vold    => flowDomsd(sps)%vol
+
   rotMatrixId => flowDomsd(sps)%rotMatrixI
   rotMatrixJd => flowDomsd(sps)%rotMatrixJ
   rotMatrixKd => flowDomsd(sps)%rotMatrixK
