@@ -105,7 +105,7 @@
 100   format (i5)  
       testfile=adjustl(testfile)
       write(outfile,101) trim(testfile)!testfile
-101   format("ADdRdxfile",a,".out")
+101   format("FDdRdxfile",a,".out")
       unitdrdx = 8+myID
 
       
@@ -512,14 +512,14 @@
                                        !call EChk(PETScIerr,__FILE__,__LINE__)
                                        !print *,'value',value,i,j,k
                                        !if(value.ne.0)then
-                                       !if(abs(value1)>1e-10)then
+                                       if(abs(value1)>1e-10)then
                                           !write(unitWarp,12)ifaceptb,iedgeptb !'face',ifaceptb,'edge',iedgeptb
                                           !12                                     format(1x,'Face',6I2,'edge',12I2)
                                           write(unitdrdx,13) idxnode,idxres,m,icell,jcell,kcell,nn,sps,n,k,j,i,nnn,sps2,value1
                                           !print*,idxnode,idxres,m,icell,jcell,kcell,nn,sps,n,k,j,i,nnn,sps2,value1
                                           !write(unitWarp,13) xderiv,i,j,k,n,nnn,nn,mm,ll
 13                                        format(1x,'drdx',14I8,f18.10)
-                                       !endif
+                                       endif
                                     end if
                                  enddo
                               END DO

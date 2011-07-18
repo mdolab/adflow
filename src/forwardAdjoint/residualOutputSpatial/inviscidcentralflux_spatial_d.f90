@@ -3,7 +3,7 @@
    !
    !  Differentiation of inviscidcentralflux in forward (tangent) mode:
    !   variations   of useful results: *dw
-   !   with respect to varying inputs: *p *w *vol *si *sj *sk
+   !   with respect to varying inputs: *p *w *vol
    !
    !      ******************************************************************
    !      *                                                                *
@@ -58,16 +58,12 @@
    ! normal in i-direction for a moving face.
    IF (addgridvelocities) sface = sfacei(i, j, k)
    ! Compute the normal velocities of the left and right state.
-   vnpd = wd(i+1, j, k, ivx)*si(i, j, k, 1) + w(i+1, j, k, ivx)*sid&
-   &          (i, j, k, 1) + wd(i+1, j, k, ivy)*si(i, j, k, 2) + w(i+1, j, k&
-   &          , ivy)*sid(i, j, k, 2) + wd(i+1, j, k, ivz)*si(i, j, k, 3) + w&
-   &          (i+1, j, k, ivz)*sid(i, j, k, 3)
+   vnpd = si(i, j, k, 1)*wd(i+1, j, k, ivx) + si(i, j, k, 2)*wd(i+1&
+   &          , j, k, ivy) + si(i, j, k, 3)*wd(i+1, j, k, ivz)
    vnp = w(i+1, j, k, ivx)*si(i, j, k, 1) + w(i+1, j, k, ivy)*si(i&
    &          , j, k, 2) + w(i+1, j, k, ivz)*si(i, j, k, 3)
-   vnmd = wd(i, j, k, ivx)*si(i, j, k, 1) + w(i, j, k, ivx)*sid(i, &
-   &          j, k, 1) + wd(i, j, k, ivy)*si(i, j, k, 2) + w(i, j, k, ivy)*&
-   &          sid(i, j, k, 2) + wd(i, j, k, ivz)*si(i, j, k, 3) + w(i, j, k&
-   &          , ivz)*sid(i, j, k, 3)
+   vnmd = si(i, j, k, 1)*wd(i, j, k, ivx) + si(i, j, k, 2)*wd(i, j&
+   &          , k, ivy) + si(i, j, k, 3)*wd(i, j, k, ivz)
    vnm = w(i, j, k, ivx)*si(i, j, k, 1) + w(i, j, k, ivy)*si(i, j, &
    &          k, 2) + w(i, j, k, ivz)*si(i, j, k, 3)
    ! Set the values of the porosities for this face.
@@ -119,8 +115,7 @@
    massflowfamilyinv(ind, spectralsol) = massflowfamilyinv(ind, &
    &          spectralsol) + factfamilyi(i, j, k)*fs
    fsd = rqspd*w(i+1, j, k, ivx) + rqsp*wd(i+1, j, k, ivx) + rqsmd*&
-   &          w(i, j, k, ivx) + rqsm*wd(i, j, k, ivx) + pad*si(i, j, k, 1) +&
-   &          pa*sid(i, j, k, 1)
+   &          w(i, j, k, ivx) + rqsm*wd(i, j, k, ivx) + si(i, j, k, 1)*pad
    fs = rqsp*w(i+1, j, k, ivx) + rqsm*w(i, j, k, ivx) + pa*si(i, j&
    &          , k, 1)
    dwd(i+1, j, k, imx) = dwd(i+1, j, k, imx) - fsd
@@ -128,8 +123,7 @@
    dwd(i, j, k, imx) = dwd(i, j, k, imx) + fsd
    dw(i, j, k, imx) = dw(i, j, k, imx) + fs
    fsd = rqspd*w(i+1, j, k, ivy) + rqsp*wd(i+1, j, k, ivy) + rqsmd*&
-   &          w(i, j, k, ivy) + rqsm*wd(i, j, k, ivy) + pad*si(i, j, k, 2) +&
-   &          pa*sid(i, j, k, 2)
+   &          w(i, j, k, ivy) + rqsm*wd(i, j, k, ivy) + si(i, j, k, 2)*pad
    fs = rqsp*w(i+1, j, k, ivy) + rqsm*w(i, j, k, ivy) + pa*si(i, j&
    &          , k, 2)
    dwd(i+1, j, k, imy) = dwd(i+1, j, k, imy) - fsd
@@ -137,8 +131,7 @@
    dwd(i, j, k, imy) = dwd(i, j, k, imy) + fsd
    dw(i, j, k, imy) = dw(i, j, k, imy) + fs
    fsd = rqspd*w(i+1, j, k, ivz) + rqsp*wd(i+1, j, k, ivz) + rqsmd*&
-   &          w(i, j, k, ivz) + rqsm*wd(i, j, k, ivz) + pad*si(i, j, k, 3) +&
-   &          pa*sid(i, j, k, 3)
+   &          w(i, j, k, ivz) + rqsm*wd(i, j, k, ivz) + si(i, j, k, 3)*pad
    fs = rqsp*w(i+1, j, k, ivz) + rqsm*w(i, j, k, ivz) + pa*si(i, j&
    &          , k, 3)
    dwd(i+1, j, k, imz) = dwd(i+1, j, k, imz) - fsd
@@ -172,16 +165,12 @@
    ! normal in j-direction for a moving face.
    IF (addgridvelocities) sface = sfacej(i, j, k)
    ! Compute the normal velocities of the left and right state.
-   vnpd = wd(i, j+1, k, ivx)*sj(i, j, k, 1) + w(i, j+1, k, ivx)*sjd&
-   &          (i, j, k, 1) + wd(i, j+1, k, ivy)*sj(i, j, k, 2) + w(i, j+1, k&
-   &          , ivy)*sjd(i, j, k, 2) + wd(i, j+1, k, ivz)*sj(i, j, k, 3) + w&
-   &          (i, j+1, k, ivz)*sjd(i, j, k, 3)
+   vnpd = sj(i, j, k, 1)*wd(i, j+1, k, ivx) + sj(i, j, k, 2)*wd(i, &
+   &          j+1, k, ivy) + sj(i, j, k, 3)*wd(i, j+1, k, ivz)
    vnp = w(i, j+1, k, ivx)*sj(i, j, k, 1) + w(i, j+1, k, ivy)*sj(i&
    &          , j, k, 2) + w(i, j+1, k, ivz)*sj(i, j, k, 3)
-   vnmd = wd(i, j, k, ivx)*sj(i, j, k, 1) + w(i, j, k, ivx)*sjd(i, &
-   &          j, k, 1) + wd(i, j, k, ivy)*sj(i, j, k, 2) + w(i, j, k, ivy)*&
-   &          sjd(i, j, k, 2) + wd(i, j, k, ivz)*sj(i, j, k, 3) + w(i, j, k&
-   &          , ivz)*sjd(i, j, k, 3)
+   vnmd = sj(i, j, k, 1)*wd(i, j, k, ivx) + sj(i, j, k, 2)*wd(i, j&
+   &          , k, ivy) + sj(i, j, k, 3)*wd(i, j, k, ivz)
    vnm = w(i, j, k, ivx)*sj(i, j, k, 1) + w(i, j, k, ivy)*sj(i, j, &
    &          k, 2) + w(i, j, k, ivz)*sj(i, j, k, 3)
    ! Set the values of the porosities for this face.
@@ -233,8 +222,7 @@
    massflowfamilyinv(ind, spectralsol) = massflowfamilyinv(ind, &
    &          spectralsol) + factfamilyj(i, j, k)*fs
    fsd = rqspd*w(i, j+1, k, ivx) + rqsp*wd(i, j+1, k, ivx) + rqsmd*&
-   &          w(i, j, k, ivx) + rqsm*wd(i, j, k, ivx) + pad*sj(i, j, k, 1) +&
-   &          pa*sjd(i, j, k, 1)
+   &          w(i, j, k, ivx) + rqsm*wd(i, j, k, ivx) + sj(i, j, k, 1)*pad
    fs = rqsp*w(i, j+1, k, ivx) + rqsm*w(i, j, k, ivx) + pa*sj(i, j&
    &          , k, 1)
    dwd(i, j+1, k, imx) = dwd(i, j+1, k, imx) - fsd
@@ -242,8 +230,7 @@
    dwd(i, j, k, imx) = dwd(i, j, k, imx) + fsd
    dw(i, j, k, imx) = dw(i, j, k, imx) + fs
    fsd = rqspd*w(i, j+1, k, ivy) + rqsp*wd(i, j+1, k, ivy) + rqsmd*&
-   &          w(i, j, k, ivy) + rqsm*wd(i, j, k, ivy) + pad*sj(i, j, k, 2) +&
-   &          pa*sjd(i, j, k, 2)
+   &          w(i, j, k, ivy) + rqsm*wd(i, j, k, ivy) + sj(i, j, k, 2)*pad
    fs = rqsp*w(i, j+1, k, ivy) + rqsm*w(i, j, k, ivy) + pa*sj(i, j&
    &          , k, 2)
    dwd(i, j+1, k, imy) = dwd(i, j+1, k, imy) - fsd
@@ -251,8 +238,7 @@
    dwd(i, j, k, imy) = dwd(i, j, k, imy) + fsd
    dw(i, j, k, imy) = dw(i, j, k, imy) + fs
    fsd = rqspd*w(i, j+1, k, ivz) + rqsp*wd(i, j+1, k, ivz) + rqsmd*&
-   &          w(i, j, k, ivz) + rqsm*wd(i, j, k, ivz) + pad*sj(i, j, k, 3) +&
-   &          pa*sjd(i, j, k, 3)
+   &          w(i, j, k, ivz) + rqsm*wd(i, j, k, ivz) + sj(i, j, k, 3)*pad
    fs = rqsp*w(i, j+1, k, ivz) + rqsm*w(i, j, k, ivz) + pa*sj(i, j&
    &          , k, 3)
    dwd(i, j+1, k, imz) = dwd(i, j+1, k, imz) - fsd
@@ -285,16 +271,12 @@
    ! normal in k-direction for a moving face.
    IF (addgridvelocities) sface = sfacek(i, j, k)
    ! Compute the normal velocities of the left and right state.
-   vnpd = wd(i, j, k+1, ivx)*sk(i, j, k, 1) + w(i, j, k+1, ivx)*skd&
-   &          (i, j, k, 1) + wd(i, j, k+1, ivy)*sk(i, j, k, 2) + w(i, j, k+1&
-   &          , ivy)*skd(i, j, k, 2) + wd(i, j, k+1, ivz)*sk(i, j, k, 3) + w&
-   &          (i, j, k+1, ivz)*skd(i, j, k, 3)
+   vnpd = sk(i, j, k, 1)*wd(i, j, k+1, ivx) + sk(i, j, k, 2)*wd(i, &
+   &          j, k+1, ivy) + sk(i, j, k, 3)*wd(i, j, k+1, ivz)
    vnp = w(i, j, k+1, ivx)*sk(i, j, k, 1) + w(i, j, k+1, ivy)*sk(i&
    &          , j, k, 2) + w(i, j, k+1, ivz)*sk(i, j, k, 3)
-   vnmd = wd(i, j, k, ivx)*sk(i, j, k, 1) + w(i, j, k, ivx)*skd(i, &
-   &          j, k, 1) + wd(i, j, k, ivy)*sk(i, j, k, 2) + w(i, j, k, ivy)*&
-   &          skd(i, j, k, 2) + wd(i, j, k, ivz)*sk(i, j, k, 3) + w(i, j, k&
-   &          , ivz)*skd(i, j, k, 3)
+   vnmd = sk(i, j, k, 1)*wd(i, j, k, ivx) + sk(i, j, k, 2)*wd(i, j&
+   &          , k, ivy) + sk(i, j, k, 3)*wd(i, j, k, ivz)
    vnm = w(i, j, k, ivx)*sk(i, j, k, 1) + w(i, j, k, ivy)*sk(i, j, &
    &          k, 2) + w(i, j, k, ivz)*sk(i, j, k, 3)
    ! Set the values of the porosities for this face.
@@ -346,8 +328,7 @@
    massflowfamilyinv(ind, spectralsol) = massflowfamilyinv(ind, &
    &          spectralsol) + factfamilyk(i, j, k)*fs
    fsd = rqspd*w(i, j, k+1, ivx) + rqsp*wd(i, j, k+1, ivx) + rqsmd*&
-   &          w(i, j, k, ivx) + rqsm*wd(i, j, k, ivx) + pad*sk(i, j, k, 1) +&
-   &          pa*skd(i, j, k, 1)
+   &          w(i, j, k, ivx) + rqsm*wd(i, j, k, ivx) + sk(i, j, k, 1)*pad
    fs = rqsp*w(i, j, k+1, ivx) + rqsm*w(i, j, k, ivx) + pa*sk(i, j&
    &          , k, 1)
    dwd(i, j, k+1, imx) = dwd(i, j, k+1, imx) - fsd
@@ -355,8 +336,7 @@
    dwd(i, j, k, imx) = dwd(i, j, k, imx) + fsd
    dw(i, j, k, imx) = dw(i, j, k, imx) + fs
    fsd = rqspd*w(i, j, k+1, ivy) + rqsp*wd(i, j, k+1, ivy) + rqsmd*&
-   &          w(i, j, k, ivy) + rqsm*wd(i, j, k, ivy) + pad*sk(i, j, k, 2) +&
-   &          pa*skd(i, j, k, 2)
+   &          w(i, j, k, ivy) + rqsm*wd(i, j, k, ivy) + sk(i, j, k, 2)*pad
    fs = rqsp*w(i, j, k+1, ivy) + rqsm*w(i, j, k, ivy) + pa*sk(i, j&
    &          , k, 2)
    dwd(i, j, k+1, imy) = dwd(i, j, k+1, imy) - fsd
@@ -364,8 +344,7 @@
    dwd(i, j, k, imy) = dwd(i, j, k, imy) + fsd
    dw(i, j, k, imy) = dw(i, j, k, imy) + fs
    fsd = rqspd*w(i, j, k+1, ivz) + rqsp*wd(i, j, k+1, ivz) + rqsmd*&
-   &          w(i, j, k, ivz) + rqsm*wd(i, j, k, ivz) + pad*sk(i, j, k, 3) +&
-   &          pa*skd(i, j, k, 3)
+   &          w(i, j, k, ivz) + rqsm*wd(i, j, k, ivz) + sk(i, j, k, 3)*pad
    fs = rqsp*w(i, j, k+1, ivz) + rqsm*w(i, j, k, ivz) + pa*sk(i, j&
    &          , k, 3)
    dwd(i, j, k+1, imz) = dwd(i, j, k+1, imz) - fsd
@@ -401,8 +380,8 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   rvold = wd(i, j, k, irho)*vol(i, j, k) + w(i, j, k, irho)*vold&
-   &            (i, j, k)
+   rvold = wd(i, j, k, irho)*vol(i, j, k) + w(i, j, k, irho)*&
+   &            vold0(i, j, k)
    rvol = w(i, j, k, irho)*vol(i, j, k)
    dwd(i, j, k, imx) = dwd(i, j, k, imx) + rvold*(wy*w(i, j, k, &
    &            ivz)-wz*w(i, j, k, ivy)) + rvol*(wy*wd(i, j, k, ivz)-wz*wd(i&

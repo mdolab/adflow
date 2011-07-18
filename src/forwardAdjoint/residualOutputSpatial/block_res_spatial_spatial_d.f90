@@ -31,14 +31,11 @@
    LOGICAL :: correctfork
    INTRINSIC MAX
    !  logical :: x_peturb(0:ie,0:je,0:ke,3)
-   print*,'in block_res'
    CALL SETPOINTERSOFFTSINSTANCE_D(nn, sps, sps)
    ! Do the spatial things first:
    CALL XHALO_BLOCK_SPATIAL_D(1)
-   print*,'after xhalo'
    !,x_peturb)
    CALL METRIC_BLOCK_SPATIAL_D(nn, 1, sps)
-   print*,'after metric'
    ! call gridVelocities(useOldCoor, t, sps) ! Required for TS
    ! call normalVelocitiesAllLevels(sps) ! Required for TS
    ! Compute the pressures
@@ -64,9 +61,7 @@
    END DO
    !call computeEtot(0,ib,0,jb,0,kb,correctForK)
    !  Apply all BC's
-   print*,'before applyallbc'
    CALL APPLYALLBC_BLOCK_SPATIAL_D(.true.)
-   print*,'after applyallbc'
    ! Compute skin_friction Velocity
    CALL COMPUTEUTAU_BLOCK()
    ! Compute time step and spectral radius
@@ -92,7 +87,6 @@
    CALL SETPOINTERSOFFTSINSTANCE_D(nn, sps, sps)
    ! Actual residual calc
    CALL RESIDUAL_BLOCK_SPATIAL_D()
-   print*,'after residual block'
    ! Divide through by the volume
    DO sps2=1,ntimeintervalsspectral
    CALL SETPOINTERSOFFTSINSTANCE_D(nn, sps2, sps2)
@@ -101,7 +95,7 @@
    DO j=2,jl
    DO i=2,il
    dwd(i, j, k, l) = (dwd(i, j, k, l)*vol(i, j, k)-dw(i, j, k, &
-   &              l)*vold(i, j, k))/vol(i, j, k)**2
+   &              l)*vold0(i, j, k))/vol(i, j, k)**2
    dw(i, j, k, l) = dw(i, j, k, l)/vol(i, j, k)
    END DO
    END DO

@@ -2,8 +2,8 @@
    !  Tapenade 3.4 (r3375) - 10 Feb 2010 15:08
    !
    !  Differentiation of bcsymm in forward (tangent) mode:
-   !   variations   of useful results: *p *w
-   !   with respect to varying inputs: *p *w
+   !   variations   of useful results: *w
+   !   with respect to varying inputs: *(*bcdata.norm)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -44,14 +44,15 @@
    !
    INTEGER(kind=inttype) :: kk, mm, nn, i, j, l
    REAL(kind=realtype) :: vn, nnx, nny, nnz
-   REAL(kind=realtype) :: vnd
+   REAL(kind=realtype) :: vnd, nnxd, nnyd, nnzd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1d, pp2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: gamma1, gamma2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp2d
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1d
    INTERFACE 
    SUBROUTINE SETBCPOINTERS_SPATIAL_D(nn, ww1, ww1d, ww2, ww2d, pp1, &
    &        pp1d, pp2, pp2d, rlv1, rlv2, rev1, rev2, offset)
@@ -86,7 +87,12 @@
    ! Set the value of kk; kk == 0 means only single halo, kk == 1
    ! double halo.
    kk = 0
-   IF (secondhalo) kk = 1
+   IF (secondhalo) THEN
+   kk = 1
+   wd = 0.0
+   ELSE
+   wd = 0.0
+   END IF
    ! Loop over the number of times the halo computation must be done.
    nhalo:DO mm=0,kk
    ! Loop over the boundary condition subfaces of this block.
@@ -125,25 +131,29 @@
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    ! Store the three components of the unit normal a
    ! bit easier.
+   nnxd = bcdatad(nn)%norm(i, j, 1)
    nnx = bcdata(nn)%norm(i, j, 1)
+   nnyd = bcdatad(nn)%norm(i, j, 2)
    nny = bcdata(nn)%norm(i, j, 2)
+   nnzd = bcdatad(nn)%norm(i, j, 3)
    nnz = bcdata(nn)%norm(i, j, 3)
    ! Determine twice the normal velocity component,
    ! which must be substracted from the donor velocity
    ! to obtain the halo velocity.
-   vnd = two*(nnx*ww2d(i, j, ivx)+nny*ww2d(i, j, ivy)+nnz*ww2d(&
-   &              i, j, ivz))
+   vnd = two*(ww2d(i, j, ivx)*nnx+ww2(i, j, ivx)*nnxd+ww2d(i, j&
+   &              , ivy)*nny+ww2(i, j, ivy)*nnyd+ww2d(i, j, ivz)*nnz+ww2(i, &
+   &              j, ivz)*nnzd)
    vn = two*(ww2(i, j, ivx)*nnx+ww2(i, j, ivy)*nny+ww2(i, j, &
    &              ivz)*nnz)
    ! Determine the flow variables in the halo cell.
    ww1d(i, j, irho) = ww2d(i, j, irho)
    ww1(i, j, irho) = ww2(i, j, irho)
    !write(14, *),i,j,kk,irho,ww2(i,j,irho)
-   ww1d(i, j, ivx) = ww2d(i, j, ivx) - nnx*vnd
+   ww1d(i, j, ivx) = ww2d(i, j, ivx) - vnd*nnx - vn*nnxd
    ww1(i, j, ivx) = ww2(i, j, ivx) - vn*nnx
-   ww1d(i, j, ivy) = ww2d(i, j, ivy) - nny*vnd
+   ww1d(i, j, ivy) = ww2d(i, j, ivy) - vnd*nny - vn*nnyd
    ww1(i, j, ivy) = ww2(i, j, ivy) - vn*nny
-   ww1d(i, j, ivz) = ww2d(i, j, ivz) - nnz*vnd
+   ww1d(i, j, ivz) = ww2d(i, j, ivz) - vnd*nnz - vn*nnzd
    ww1(i, j, ivz) = ww2(i, j, ivz) - vn*nnz
    ww1d(i, j, irhoe) = ww2d(i, j, irhoe)
    ww1(i, j, irhoe) = ww2(i, j, irhoe)
@@ -155,7 +165,6 @@
    ! Set the pressure and gamma and possibly the
    ! laminar and eddy viscosity in the halo.
    gamma1(i, j) = gamma2(i, j)
-   pp1d(i, j) = pp2d(i, j)
    pp1(i, j) = pp2(i, j)
    IF (viscous) rlv1(i, j) = rlv2(i, j)
    IF (eddymodel) rev1(i, j) = rev2(i, j)

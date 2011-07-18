@@ -101,6 +101,8 @@
    LOGICAL :: rvfb
    LOGICAL :: wallfunctions, walldistanceneeded
    REAL(kind=realtype) :: mach, machcoef, machgrid
+   !AD derivative values
+   REAL(kind=realtype) :: machd, machcoefd, machgridd
    REAL(kind=realtype) :: reynolds, reynoldslength
    REAL(kind=realtype) :: tempfreestream, gammaconstant, rgasdim
    REAL(kind=realtype) :: gammaconstantd0
@@ -109,9 +111,14 @@
    REAL(kind=realtype) :: prandtld, prandtlturbd
    REAL(kind=realtype) :: eddyvisinfratio, turbintensityinf
    REAL(kind=realtype) :: surfaceref, lengthref
-   REAL(kind=realtype), DIMENSION(3) :: veldirfreestream
-   REAL(kind=realtype), DIMENSION(3) :: liftdirection
-   REAL(kind=realtype), DIMENSION(3) :: dragdirection
+   !bending moment derivative
+   REAL(kind=realtype) :: lengthrefb
+   REAL(kind=realtype), DIMENSION(3) :: veldirfreestream, &
+   &  veldirfreestreamd
+   REAL(kind=realtype), DIMENSION(3) :: liftdirection, liftdirectiond
+   REAL(kind=realtype), DIMENSION(3) :: dragdirection, dragdirectiond
    REAL(kind=realtype), DIMENSION(3) :: pointref
+   !bending moment derivative
+   REAL(kind=realtype), DIMENSION(3) :: pointrefb
    REAL(kind=realtype), DIMENSION(3) :: pointrefec
    END MODULE INPUTPHYSICS_SPATIAL_D
