@@ -78,7 +78,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
    call MatAssembled(matrix,assembled,ierr)
    call EChk(ierr,__FILE__,__LINE__)
-   print *,'assembled =',assembled
+   !print *,'assembled =',assembled
   
 !!$   open (UNIT=17,File="ad.out",status='replace',action='write',iostat=ierr)
 !!$   print*,'openfile error 2',ierr
