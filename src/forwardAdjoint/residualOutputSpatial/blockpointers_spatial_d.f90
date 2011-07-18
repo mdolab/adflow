@@ -116,10 +116,11 @@
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: x
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: xd
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: xold
+   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: xoldd
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: si, sj, sk
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sid, sjd, skd
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vol, vold
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vold0
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vol
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vold
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: volold
    INTEGER(kind=portype), DIMENSION(:, :, :), POINTER :: pori
    INTEGER(kind=portype), DIMENSION(:, :, :), POINTER :: porid
@@ -160,6 +161,7 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rlv, rev
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rlvd, revd
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: s
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p1
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dw, fw
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dwd, fwd
@@ -212,5 +214,4 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: &
    &  vol_offtimeinstanced
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: d2walld
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sd
    END MODULE BLOCKPOINTERS_SPATIAL_D

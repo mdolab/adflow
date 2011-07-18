@@ -178,8 +178,9 @@ subroutine setupAllResidualMatricesfwd
   useTranspose = .True.
   if( myid ==0 ) print *,'Computing Forward AD dRdw...'
   call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
-  !if( myid ==0 ) print *,'Computing Forward AD dRdx'
-  !call setupSpatialResidualMatrix(drdx,useAD)
+  
+  if( myid ==0 ) print *,'Computing Forward AD dRdx'
+  call setupSpatialResidualMatrix(drdx,useAD)
   if( myid ==0 ) print *,'Computing Forward AD dRda'
   useAD = .True.!.False.!
   call setupExtraResidualMatrix(drda,useAD)

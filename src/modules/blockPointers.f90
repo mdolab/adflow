@@ -113,7 +113,7 @@
        real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
 
        real(kind=realType), dimension(:,:,:,:), pointer :: sI, sJ, sK
-       real(kind=realType), dimension(:,:,:),   pointer :: vol,vold
+       real(kind=realType), dimension(:,:,:),   pointer :: vol
        real(kind=realType), dimension(:,:,:,:), pointer :: volOld
 
        integer(kind=porType), dimension(:,:,:), pointer :: porI

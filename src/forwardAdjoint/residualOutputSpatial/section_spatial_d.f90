@@ -56,4 +56,5 @@
    ! sections(nSections): The info of the corresponding sections.
    INTEGER(kind=inttype) :: nsections
    TYPE(SECTIONTYPE), DIMENSION(:), ALLOCATABLE :: sections
+   TYPE(SECTIONTYPE), DIMENSION(:), ALLOCATABLE :: sectionsd
    END MODULE SECTION_SPATIAL_D

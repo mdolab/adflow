@@ -3,7 +3,7 @@
    !
    !  Differentiation of bcsymmpolar in forward (tangent) mode:
    !   variations   of useful results: *w
-   !   with respect to varying inputs: *x
+   !   with respect to varying inputs: *w *x
    !
    !      ******************************************************************
    !      *                                                                *
@@ -91,12 +91,7 @@
    ! Set the value of kk; kk == 0 means only single halo, kk == 1
    ! double halo.
    kk = 0
-   IF (secondhalo) THEN
-   kk = 1
-   wd = 0.0
-   ELSE
-   wd = 0.0
-   END IF
+   IF (secondhalo) kk = 1
    ! Loop over the boundary condition subfaces of this block.
    bocos:DO nn=1,nbocos
    ! Check for the polar symmetry boundary condition.

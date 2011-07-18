@@ -3,8 +3,9 @@
    !
    !  Differentiation of residual_block in forward (tangent) mode:
    !   variations   of useful results: *dw *w
-   !   with respect to varying inputs: *p *gamma *w *x *vol *radi
-   !                *radj *radk *cdisrk vis4 vis2 vis2coarse sigma
+   !   with respect to varying inputs: *p *gamma *w *x *vol *si *sj
+   !                *sk *(*bcdata.norm) *radi *radj *radk *cdisrk
+   !                vis4 vis2 vis2coarse sigma
    !
    !      ******************************************************************
    !      *                                                                *

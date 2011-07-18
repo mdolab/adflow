@@ -101,7 +101,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
 
      !let the DV number be the color
      nColor = nDesignExtra
-     print *,'nColor',nColor
+     !print *,'nColor',nColor
      !print *,'Alpha',alpha
      alpharef = alpha
      betaref = beta
@@ -114,7 +114,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
 
      ! Do Coloring and perturb states
      do iColor = 1,nColor !set colors based on extra vars....
-        print *,'icolor',icolor
+        !print *,'icolor',icolor
         !zero derivatives
         do sps = 1,nTimeIntervalsSpectral
            flowDomsd(sps)%dw_deriv(:,:,:,:,:) = 0.0
@@ -228,7 +228,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
         do sps = 1,nTimeIntervalsSpectral
            ! Block-based residual
            if (useAD) then
-              print *,'alpha',alpha,alphad,beta,liftIndex,mach,machd
+              !print *,'alpha',alpha,alphad,beta,liftIndex,mach,machd
               call block_res_extra_extra_d(nn,sps,alpha,alphad,beta,&
                                           &betad,liftIndex)
               !print *,'liftdir',liftDirection
