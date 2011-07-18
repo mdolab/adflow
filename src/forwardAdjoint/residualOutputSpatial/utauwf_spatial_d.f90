@@ -3,7 +3,7 @@
    !
    !  Differentiation of utauwf in forward (tangent) mode:
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: *w *si *sj *sk *fw *(*viscsubface.tau)
+   !   with respect to varying inputs: *w *fw *(*viscsubface.tau)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -58,7 +58,7 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, rres
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, rresd
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rresd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rrlv2, dd2wall2
    !
@@ -94,7 +94,6 @@
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
    fact = -one
-   ssd => sid(1, :, :, :)
    ss => si(1, :, :, :)
    rresd => fwd(2, 1:, 1:, :)
    rres => fw(2, 1:, 1:, :)
@@ -107,7 +106,6 @@
    CASE (imax) 
    !===========================================================
    fact = one
-   ssd => sid(il, :, :, :)
    ss => si(il, :, :, :)
    rresd => fwd(il, 1:, 1:, :)
    rres => fw(il, 1:, 1:, :)
@@ -120,7 +118,6 @@
    CASE (jmin) 
    !===========================================================
    fact = -one
-   ssd => sjd(:, 1, :, :)
    ss => sj(:, 1, :, :)
    rresd => fwd(1:, 2, 1:, :)
    rres => fw(1:, 2, 1:, :)
@@ -133,7 +130,6 @@
    CASE (jmax) 
    !===========================================================
    fact = one
-   ssd => sjd(:, jl, :, :)
    ss => sj(:, jl, :, :)
    rresd => fwd(1:, jl, 1:, :)
    rres => fw(1:, jl, 1:, :)
@@ -146,7 +142,6 @@
    CASE (kmin) 
    !===========================================================
    fact = -one
-   ssd => skd(:, :, 1, :)
    ss => sk(:, :, 1, :)
    rresd => fwd(1:, 1:, 2, :)
    rres => fw(1:, 1:, 2, :)
@@ -159,7 +154,6 @@
    CASE (kmax) 
    !===========================================================
    fact = one
-   ssd => skd(:, :, kl, :)
    ss => sk(:, :, kl, :)
    rresd => fwd(1:, 1:, kl, :)
    rres => fw(1:, 1:, kl, :)
@@ -324,29 +318,23 @@
    tauyzd = tautnd*(tynz+tzny) + tautn*(tynzd+tznyd)
    tauyz = tautn*(tynz+tzny)
    ! Compute the correction to the viscous flux at the wall.
-   fmxd = tauxxd*ss(i, j, 1) + tauxx*ssd(i, j, 1) + tauxyd*ss(i, &
-   &            j, 2) + tauxy*ssd(i, j, 2) + tauxzd*ss(i, j, 3) + tauxz*ssd(&
-   &            i, j, 3)
+   fmxd = ss(i, j, 1)*tauxxd + ss(i, j, 2)*tauxyd + ss(i, j, 3)*&
+   &            tauxzd
    fmx = tauxx*ss(i, j, 1) + tauxy*ss(i, j, 2) + tauxz*ss(i, j, 3&
    &            )
-   fmyd = tauxyd*ss(i, j, 1) + tauxy*ssd(i, j, 1) + tauyyd*ss(i, &
-   &            j, 2) + tauyy*ssd(i, j, 2) + tauyzd*ss(i, j, 3) + tauyz*ssd(&
-   &            i, j, 3)
+   fmyd = ss(i, j, 1)*tauxyd + ss(i, j, 2)*tauyyd + ss(i, j, 3)*&
+   &            tauyzd
    fmy = tauxy*ss(i, j, 1) + tauyy*ss(i, j, 2) + tauyz*ss(i, j, 3&
    &            )
-   fmzd = tauxzd*ss(i, j, 1) + tauxz*ssd(i, j, 1) + tauyzd*ss(i, &
-   &            j, 2) + tauyz*ssd(i, j, 2) + tauzzd*ss(i, j, 3) + tauzz*ssd(&
-   &            i, j, 3)
+   fmzd = ss(i, j, 1)*tauxzd + ss(i, j, 2)*tauyzd + ss(i, j, 3)*&
+   &            tauzzd
    fmz = tauxz*ss(i, j, 1) + tauyz*ss(i, j, 2) + tauzz*ss(i, j, 3&
    &            )
-   frhoed = (ubard*tauxx+ubar*tauxxd+vbard*tauxy+vbar*tauxyd+&
-   &            wbard*tauxz+wbar*tauxzd)*ss(i, j, 1) + (ubar*tauxx+vbar*&
-   &            tauxy+wbar*tauxz)*ssd(i, j, 1) + (ubard*tauxy+ubar*tauxyd+&
-   &            vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*tauyzd)*ss(i, j, 2)&
-   &            + (ubar*tauxy+vbar*tauyy+wbar*tauyz)*ssd(i, j, 2) + (ubard*&
-   &            tauxz+ubar*tauxzd+vbard*tauyz+vbar*tauyzd+wbard*tauzz+wbar*&
-   &            tauzzd)*ss(i, j, 3) + (ubar*tauxz+vbar*tauyz+wbar*tauzz)*ssd&
-   &            (i, j, 3)
+   frhoed = ss(i, j, 1)*(ubard*tauxx+ubar*tauxxd+vbard*tauxy+vbar&
+   &            *tauxyd+wbard*tauxz+wbar*tauxzd) + ss(i, j, 2)*(ubard*tauxy+&
+   &            ubar*tauxyd+vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*tauyzd)&
+   &            + ss(i, j, 3)*(ubard*tauxz+ubar*tauxzd+vbard*tauyz+vbar*&
+   &            tauyzd+wbard*tauzz+wbar*tauzzd)
    frhoe = (ubar*tauxx+vbar*tauxy+wbar*tauxz)*ss(i, j, 1) + (ubar&
    &            *tauxy+vbar*tauyy+wbar*tauyz)*ss(i, j, 2) + (ubar*tauxz+vbar&
    &            *tauyz+wbar*tauzz)*ss(i, j, 3)

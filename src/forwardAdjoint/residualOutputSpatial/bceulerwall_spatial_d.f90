@@ -3,7 +3,7 @@
    !
    !  Differentiation of bceulerwall in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w
-   !   with respect to varying inputs: *p *gamma *w *si *sj *sk gammaconstant
+   !   with respect to varying inputs: *p *gamma *w gammaconstant
    !
    !      ******************************************************************
    !      *                                                                *
@@ -43,12 +43,10 @@
    INTEGER(kind=inttype) :: jm1, jp1, km1, kp1
    INTEGER(kind=inttype) :: walltreatment
    REAL(kind=realtype) :: sixa, siya, siza, sjxa, sjya, sjza
-   REAL(kind=realtype) :: sixad, siyad, sizad, sjxad, sjyad, sjzad
    REAL(kind=realtype) :: skxa, skya, skza, a1, b1
-   REAL(kind=realtype) :: skxad, skyad, skzad
    REAL(kind=realtype) :: rxj, ryj, rzj, rxk, ryk, rzk
    REAL(kind=realtype) :: dpj, dpk, ri, rj, rk, qj, qk, vn
-   REAL(kind=realtype) :: dpjd, dpkd, rid, rjd, rkd, qjd, qkd, vnd
+   REAL(kind=realtype) :: dpjd, dpkd, qjd, qkd, vnd
    REAL(kind=realtype) :: ux, uy, uz
    REAL(kind=realtype) :: uxd, uyd, uzd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
@@ -60,7 +58,6 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssi, ssj, ssk
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssid, ssjd, sskd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rface
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss
@@ -225,66 +222,48 @@
    ! the 1st cell center from the wall is needed.
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
-   ssid => sid(1, :, :, :)
    ssi => si(1, :, :, :)
-   ssjd => sjd(2, :, :, :)
    ssj => sj(2, :, :, :)
-   sskd => skd(2, :, :, :)
    ssk => sk(2, :, :, :)
    IF (addgridvelocities) THEN
    ss => s(2, :, :, :)
    END IF
    CASE (imax) 
    !=======================================================
-   ssid => sid(il, :, :, :)
    ssi => si(il, :, :, :)
-   ssjd => sjd(il, :, :, :)
    ssj => sj(il, :, :, :)
-   sskd => skd(il, :, :, :)
    ssk => sk(il, :, :, :)
    IF (addgridvelocities) THEN
    ss => s(il, :, :, :)
    END IF
    CASE (jmin) 
    !=======================================================
-   ssid => sjd(:, 1, :, :)
    ssi => sj(:, 1, :, :)
-   ssjd => sid(:, 2, :, :)
    ssj => si(:, 2, :, :)
-   sskd => skd(:, 2, :, :)
    ssk => sk(:, 2, :, :)
    IF (addgridvelocities) THEN
    ss => s(:, 2, :, :)
    END IF
    CASE (jmax) 
    !=======================================================
-   ssid => sjd(:, jl, :, :)
    ssi => sj(:, jl, :, :)
-   ssjd => sid(:, jl, :, :)
    ssj => si(:, jl, :, :)
-   sskd => skd(:, jl, :, :)
    ssk => sk(:, jl, :, :)
    IF (addgridvelocities) THEN
    ss => s(:, jl, :, :)
    END IF
    CASE (kmin) 
    !=======================================================
-   ssid => skd(:, :, 1, :)
    ssi => sk(:, :, 1, :)
-   ssjd => sid(:, :, 2, :)
    ssj => si(:, :, 2, :)
-   sskd => sjd(:, :, 2, :)
    ssk => sj(:, :, 2, :)
    IF (addgridvelocities) THEN
    ss => s(:, :, 2, :)
    END IF
    CASE (kmax) 
    !=======================================================
-   ssid => skd(:, :, kl, :)
    ssi => sk(:, :, kl, :)
-   ssjd => sid(:, :, kl, :)
    ssj => si(:, :, kl, :)
-   sskd => sjd(:, :, kl, :)
    ssk => sj(:, :, kl, :)
    IF (addgridvelocities) THEN
    ss => s(:, :, kl, :)
@@ -346,23 +325,14 @@
    ! the indices of 1 and therefore now the correct
    ! average is obtained with the indices j and j+1
    ! (k and k+1).
-   sixad = two*ssid(j, k, 1)
    sixa = two*ssi(j, k, 1)
-   siyad = two*ssid(j, k, 2)
    siya = two*ssi(j, k, 2)
-   sizad = two*ssid(j, k, 3)
    siza = two*ssi(j, k, 3)
-   sjxad = ssjd(j, k, 1) + ssjd(j+1, k, 1)
    sjxa = ssj(j, k, 1) + ssj(j+1, k, 1)
-   sjyad = ssjd(j, k, 2) + ssjd(j+1, k, 2)
    sjya = ssj(j, k, 2) + ssj(j+1, k, 2)
-   sjzad = ssjd(j, k, 3) + ssjd(j+1, k, 3)
    sjza = ssj(j, k, 3) + ssj(j+1, k, 3)
-   skxad = sskd(j, k, 1) + sskd(j, k+1, 1)
    skxa = ssk(j, k, 1) + ssk(j, k+1, 1)
-   skyad = sskd(j, k, 2) + sskd(j, k+1, 2)
    skya = ssk(j, k, 2) + ssk(j, k+1, 2)
-   skzad = sskd(j, k, 3) + sskd(j, k+1, 3)
    skza = ssk(j, k, 3) + ssk(j, k+1, 3)
    ! Compute the difference of the normal vector and
    ! pressure in j and k-direction. As the indices are
@@ -382,16 +352,10 @@
    dpk = b1*(pp2(j, kp1)-pp2(j, km1))
    ! Compute the dot product between the unit vector
    ! and the normal vectors in i, j and k-direction.
-   rid = norm(j, k, 1)*sixad + norm(j, k, 2)*siyad + norm(j, k&
-   &              , 3)*sizad
    ri = norm(j, k, 1)*sixa + norm(j, k, 2)*siya + norm(j, k, 3)&
    &              *siza
-   rjd = norm(j, k, 1)*sjxad + norm(j, k, 2)*sjyad + norm(j, k&
-   &              , 3)*sjzad
    rj = norm(j, k, 1)*sjxa + norm(j, k, 2)*sjya + norm(j, k, 3)&
    &              *sjza
-   rkd = norm(j, k, 1)*skxad + norm(j, k, 2)*skyad + norm(j, k&
-   &              , 3)*skzad
    rk = norm(j, k, 1)*skxa + norm(j, k, 2)*skya + norm(j, k, 3)&
    &              *skza
    ! Store the velocity components in ux, uy and uz and
@@ -409,23 +373,19 @@
    END IF
    ! Compute the velocity components in j and
    ! k-direction.
-   qjd = uxd*sjxa + ux*sjxad + uyd*sjya + uy*sjyad + uzd*sjza +&
-   &              uz*sjzad
+   qjd = sjxa*uxd + sjya*uyd + sjza*uzd
    qj = ux*sjxa + uy*sjya + uz*sjza
-   qkd = uxd*skxa + ux*skxad + uyd*skya + uy*skyad + uzd*skza +&
-   &              uz*skzad
+   qkd = skxa*uxd + skya*uyd + skza*uzd
    qk = ux*skxa + uy*skya + uz*skza
    ! Compute the pressure gradient, which is stored
    ! in pp1. I'm not entirely sure whether this
    ! formulation is correct for moving meshes. It could
    ! be that an additional term is needed there.
-   pp1d(j, k) = (((qjd*(ux*rxj+uy*ryj+uz*rzj)+qj*(rxj*uxd+ryj*&
+   pp1d(j, k) = ((qjd*(ux*rxj+uy*ryj+uz*rzj)+qj*(rxj*uxd+ryj*&
    &              uyd+rzj*uzd)+qkd*(ux*rxk+uy*ryk+uz*rzk)+qk*(rxk*uxd+ryk*&
    &              uyd+rzk*uzd))*ww2(j, k, irho)+(qj*(ux*rxj+uy*ryj+uz*rzj)+&
-   &              qk*(ux*rxk+uy*ryk+uz*rzk))*ww2d(j, k, irho)-rjd*dpj-rj*&
-   &              dpjd-rkd*dpk-rk*dpkd)*ri-((qj*(ux*rxj+uy*ryj+uz*rzj)+qk*(&
-   &              ux*rxk+uy*ryk+uz*rzk))*ww2(j, k, irho)-rj*dpj-rk*dpk)*rid)&
-   &              /ri**2
+   &              qk*(ux*rxk+uy*ryk+uz*rzk))*ww2d(j, k, irho)-rj*dpjd-rk*&
+   &              dpkd)/ri
    pp1(j, k) = ((qj*(ux*rxj+uy*ryj+uz*rzj)+qk*(ux*rxk+uy*ryk+uz&
    &              *rzk))*ww2(j, k, irho)-rj*dpj-rk*dpk)/ri
    END DO
