@@ -52,13 +52,13 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
   time(1) = mpi_wtime()
 
 
-!!$  open (UNIT=13,File="fd_drdx.out",status='replace',action='write',iostat=ierr) 
-!!$  call EChk(ierr,__FILE__,__LINE__)
-!!$  open (UNIT=14,File="ad_drdx.out",status='replace',action='write',iostat=ierr) 
-!!$  call EChk(ierr,__FILE__,__LINE__)
-!!$
-!!$  call MatConvert(matrix,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
-!!$  call EChk(ierr,__FILE__,__LINE__)
+  open (UNIT=13,File="fd_drdx.out",status='replace',action='write',iostat=ierr) 
+  call EChk(ierr,__FILE__,__LINE__)
+  open (UNIT=14,File="ad_drdx.out",status='replace',action='write',iostat=ierr) 
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call MatConvert(matrix,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
 
   ! Zero out the matrix before we start
@@ -67,7 +67,7 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
 
   ! Run the  initialize_stencils routine just in case
   call initialize_stencils
-  print *, 'after initialize stencils'
+  !print *, 'after initialize stencils'
   ! Set a pointer to the correct set of stencil depending on if we are
   ! using the first order stencil or the full jacobian
 
@@ -115,7 +115,7 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
         stop
      end if
 
-     print*,'after colouring'
+     !print*,'after colouring'
 
      spectralLoop: do sps=1,nTimeIntervalsSpectral
 
@@ -159,7 +159,7 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
                  end do
               end do
 
-              print*,'after perturbation'
+              !print*,'after perturbation'
               ! Block-based residual
               if (useAD) then
                  call block_res_spatial_spatial_d(nn,sps)
@@ -167,7 +167,7 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
                  call block_res_spatial(nn,sps)
               end if
 
-              print*,'after block_res_spatial_spatial_d'
+              !print*,'after block_res_spatial_spatial_d'
 
               ! Set the computed residual in dw_deriv. If using FD,
               ! actually do the FD calculation if AD, just copy out dw
@@ -289,7 +289,10 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
   end if
 
   ! Debugging ONLY!
-  !call writeOutMatrix()
+  call writeOutMatrix()
+
+  close(13)
+  close(14)
 
 contains
 

@@ -18,6 +18,7 @@
    SAVE 
    ! rotPoint(3): Rotation point of the rigid body rotation.
    REAL(kind=realtype), DIMENSION(3) :: rotpoint
+   REAL(kind=realtype), DIMENSION(3) :: rotpointd
    ! degreePolXRot: Degree of the x-rotation polynomial.
    ! degreePolYRot: Degree of the y-rotation polynomial.
    ! degreePolZRot: Degree of the z-rotation polynomial.

@@ -118,8 +118,8 @@
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: xold
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: si, sj, sk
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sid, sjd, skd
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vol
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vold
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vol, vold
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vold0
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: volold
    INTEGER(kind=portype), DIMENSION(:, :, :), POINTER :: pori
    INTEGER(kind=portype), DIMENSION(:, :, :), POINTER :: porid
