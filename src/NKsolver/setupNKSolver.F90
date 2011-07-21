@@ -31,7 +31,7 @@ subroutine setupNKsolver
   integer(kind=intType), dimension(:,:), allocatable :: stencil
 
   external FormFunction,FormJacobian,snes_monitor,LSCheck
-
+  if(myid==0) print *,'nksolversetup',nksolversetup
   if (.not. NKsolverSetup) then
 
      !  Create nonlinear solver context
@@ -162,7 +162,7 @@ subroutine setupNKsolverPseudo
   real(kind=realType) :: rhoRes,rhoRes1,totalRRes
 
   external FormFunction2,FormFunction3,FormJacobian2,ts_monitor,LSCheck
-
+ !if(myid==0) print *,'nksolversetup',nksolversetup
   if (.not. NKsolverSetup) then
 
      ! Create Time-stepping context
