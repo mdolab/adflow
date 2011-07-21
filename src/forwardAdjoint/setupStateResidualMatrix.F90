@@ -76,18 +76,18 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 !!$      call EChk(ierr,__FILE__,__LINE__)
 !!$   end if
 
-   call MatAssembled(matrix,assembled,ierr)
-   call EChk(ierr,__FILE__,__LINE__)
-   !print *,'assembled =',assembled
+  ! call MatAssembled(matrix,assembled,ierr)
+  ! call EChk(ierr,__FILE__,__LINE__)
+  ! !print *,'assembled =',assembled
   
 !!$   open (UNIT=17,File="ad.out",status='replace',action='write',iostat=ierr)
 !!$   print*,'openfile error 2',ierr
 !!$   call EChk(ierr,__FILE__,__LINE__)
 
-   if (assembled) then
-   call MatConvert(matrix,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
-   call EChk(ierr,__FILE__,__LINE__)
-   end if
+  ! if (assembled) then
+  ! call MatConvert(matrix,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
+  ! call EChk(ierr,__FILE__,__LINE__)
+  ! end if
 
    
   ! Zero out the matrix before we start
