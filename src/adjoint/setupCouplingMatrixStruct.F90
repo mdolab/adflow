@@ -47,6 +47,9 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   integer(kind=intType) :: colStart_x,colEnd_x
   real(kind=realType)   :: fact
   integer(kind=intType) :: ierr,ind
+  real(kind=realType), dimension(2) :: time
+  real(kind=realType) :: localTime, globalTime
+  call cpu_time(time(1))
 
   ! We are not concerned about moments and the refPoint here
   moment(:) = 0.0
@@ -54,6 +57,7 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
 
   refPoint(:) = 0.0
   refPointb(:)= 0.0
+
 
   call MatGetOwnershipRange(dfdw,rowStart,rowEnd,ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -286,5 +290,16 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   call MatAssemblyEnd(dFdx,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
+  call cpu_time(time(2))
+
+  localTime = time(2)-time(1)
+  call mpi_reduce(localTime,globalTime, 1, sumb_real, &
+       mpi_max, 0, SUMB_PETSC_COMM_WORLD, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  if(myid ==0)  then
+     write(*,20) "Setup Coupling Matrix Time (s) = ", globalTime
+  end if
+
+20 format(a,1x,f8.2)
 end subroutine setupCouplingMatrixStruct
 

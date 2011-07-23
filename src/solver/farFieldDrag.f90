@@ -234,9 +234,9 @@ subroutine farFieldDrag()
   ! Reduce the drag to root proc:
   call mpi_reduce(drag_local,drag,1,sumb_real,mpi_sum,0,SUmb_comm_world,ierr)
 
-  if (myid == 0) then
-     print *,'Irreversable drag:',drag
-  end if
+!   if (myid == 0) then
+!      print *,'Irreversable drag:',drag
+!   end if
 
 end subroutine farFieldDrag
 
