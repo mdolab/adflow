@@ -459,11 +459,17 @@ python module sumb ! in
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: vec_out
        end subroutine getdfdxvec
 
+       subroutine getdfdxvec_null()
+       end subroutine getdfdxvec_null
+
        subroutine getdfdxtvec(ndof,vec_in,vec_out) ! in :test:getdFdxVec.f90
          integer(kind=inttype) optional,intent(in),check(len(vec_in)>=ndof),depend(vec_in) :: ndof=len(vec_in)
          real(kind=realtype) dimension(ndof),intent(in) :: vec_in
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: vec_out
        end subroutine getdfdxtvec
+
+       subroutine getdfdxtvec_null()
+       end subroutine getdfdxtvec_null
 
        subroutine getglobalnodes(blocknum,idim,jdim,kdim,nodenumbers) ! in :sumb:../../adjoint/getGlobalNodes.f90
          integer(kind=inttype) intent(in) :: blocknum
