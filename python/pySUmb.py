@@ -1016,8 +1016,6 @@ class SUMB(AeroSolver):
 
         # If the solve failed, reset the flow for the next time through
         if self.sumb.killsignals.routinefailed:
-            mpiPrint('Resetting flow due to failed flow solve...')
-            #self.resetFlow() # Always reset flow if it failed
             if self.getOption('autoSolveRetry'): # Try the solver again
                 self.sumb.solver()
                 if self.sumb.killsignals.routinefailed:
@@ -1830,15 +1828,25 @@ class SUMB(AeroSolver):
         # Calculate dFdx * vec and return the result
 
         solver_vec = self.mesh.warp_to_solver_force(group_name,vec)
-        dFdxVec = self.sumb.getdfdxvec(solver_vec)
-
+        if len(solver_vec) > 0:
+            dFdxVec = self.sumb.getdfdxvec(solver_vec)
+        else:
+            self.sumb.getdfdxvec_null()
+            dFdxVec = numpy.zeros_like(solver_vec)
+        # end if
+            
         return self.mesh.solver_to_warp_force(group_name,dFdxVec)
 
     def getdFdxTVec(self,group_name,vec):
         # Calculate dFdx^T * vec and return the result
 
         solver_vec = self.mesh.warp_to_solver_force(group_name,vec)
-        dFdxTVec = self.sumb.getdfdxtvec(solver_vec)
+        if len(solver_vec) > 0:
+            dFdxTVec = self.sumb.getdfdxtvec(solver_vec)
+        else:
+            self.sumb.getdfdxvec_null()
+            dFdxTVec = numpy.zeros_like(solver_vec)
+        # end if
 
         return self.mesh.solver_to_warp_force(group_name,dFdxTVec)
 
