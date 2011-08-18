@@ -1,4 +1,4 @@
-subroutine FormFunction(snes,wVec,rVec,ctx,ierr)
+subroutine FormFunction_snes(snes,wVec,rVec,ctx,ierr)
   ! ---------------------------------------------------------------------
   !
   !  FormFunction - Evaluates nonlinear function, f(x).
@@ -31,9 +31,9 @@ subroutine FormFunction(snes,wVec,rVec,ctx,ierr)
   ! We don't check an error here, so just pass back zero
   ierr = 0
 
-end subroutine FormFunction
+end subroutine FormFunction_snes
 
-subroutine FormFunction2(ctx,wVec,rVec,ierr)
+subroutine FormFunction_mf(ctx,wVec,rVec,ierr)
   ! This is basically a copy of FormFunction, however it has a
   ! different calling sequence from PETSc. It performs the identical
   ! function. This is used for linear solve application for the
@@ -61,9 +61,9 @@ subroutine FormFunction2(ctx,wVec,rVec,ierr)
   ! We don't check an error here, so just pass back zero
   ierr = 0
 
-end subroutine FormFunction2
+end subroutine FormFunction_mf
 
-subroutine FormFunction3(pts,t,wVec,rVec,ctx,ierr)
+subroutine FormFunction_ts(pts,t,wVec,rVec,ctx,ierr)
   ! This is basically a copy of FormFunction, however it has a
   ! different calling sequence from PETSc. It performs the identical
   ! function. This is used for Pseudo time stepping. 
@@ -92,4 +92,4 @@ subroutine FormFunction3(pts,t,wVec,rVec,ctx,ierr)
   call setRVec(rVec)
   ! We don't check an error here, so just pass back zero
   ierr = 0
-end subroutine FormFunction3
+end subroutine FormFunction_ts

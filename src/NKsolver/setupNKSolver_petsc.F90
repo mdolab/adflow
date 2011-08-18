@@ -1,4 +1,4 @@
-subroutine setupNKsolver
+subroutine setupNKsolver_petsc
 
   ! Setup the PETSc objects for the Newton-Krylov
   ! solver. destroyNKsolver can be used to destroy the objects created
@@ -130,7 +130,7 @@ subroutine setupNKsolver
      NKSolverSetup = .True.
      NKSolvedOnce = .False.
   end if
-end subroutine setupNKsolver
+end subroutine setupNKsolver_petsc
 
 
 ! subroutine setupNKsolverPseudo
