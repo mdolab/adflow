@@ -37,7 +37,7 @@ subroutine destroyNKsolver
   if (NKSolverSetup) then
 
      ! We will destroy the PETSc variables created in setupNKsolver
-     call KSPDestroy(ksp,ierr) ! Also destroys the underlying PC
+     call KSPDestroy(global_ksp,ierr) ! Also destroys the underlying PC
 
      ! and pc contexts
      call EChk(ierr,__FILE__,__LINE__)

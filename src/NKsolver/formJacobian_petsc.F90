@@ -9,8 +9,7 @@ subroutine FormJacobian_petsc(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
 
   SNES           snes
   Mat            dRdw,dRdwPre 
-  KSP            ksp,subksp
-  PC             pc,subpc
+  KSP            ksp
   Vec            wVec,rVec
   PetscFortranAddr ctx(3)
   MatStructure   flag 

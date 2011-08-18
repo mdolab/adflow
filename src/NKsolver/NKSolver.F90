@@ -1,23 +1,23 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * File:          NKsolver_custom.F90                             *
+!      * File:          NKsolver.F90                                    *
 !      * Author:        Gaetan Kenway                                   *
 !      * Starting date: 11-27-2010                                      *
 !      * Last modified: 11-27-2010                                      *
 !      *                                                                *
 !      ******************************************************************
 
-subroutine NKsolver_custom
+subroutine NKsolver
   use communication
   use constants
   use inputTimeSpectral
   use flowVarRefState
   use ADjointVars , only: nCellsLocal
-  use NKSolverVars, only: dRdw,dRdwPre,dRdwPseudo,diagV,ctx,jacobian_lag,&
-       nksolversetup,rhoRes0,rhoresstart, &
-       totalR0,totalRStart,itertot0,wVec,rVec,deltaW,reason,NKSolvedOnce,&
-       ksp,ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,ksp_subspace,reason
+  use NKSolverVars, only: dRdw,dRdwPre,jacobian_lag,&
+       totalR0,totalRStart,wVec,rVec,deltaW,reason,global_ksp,reason,&
+       ksp_rtol,ksp_atol,ksp_max_it,ksp_subspace,ksp_div_tol,&
+       nksolvedonce
 
   use InputIO ! L2conv,l2convrel
   use inputIteration
@@ -78,8 +78,8 @@ subroutine NKsolver_custom
      call EChk(ierr,__FILE__,__LINE__)
      
      ! Determine if if we need to form the Preconditioner: 
-     if ((mod(iter-1,jacobian_lag) == 0) then
-        call FormJacobian_custom()
+     if (mod(iter-1,jacobian_lag) == 0) then
+        call FormJacobian()
      else
         ! Else just call assmebly begin/end on dRdW
         call MatAssemblyBegin(dRdw,MAT_FINAL_ASSEMBLY,ierr)
@@ -121,15 +121,16 @@ subroutine NKsolver_custom
      ! Set all tolerances for linear solve:
      ksp_atol = 1e-12
      ksp_max_it = ksp_subspace
-     call KSPSetTolerances(ksp,ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,ierr)
+     call KSPSetTolerances(global_ksp,ksp_rtol,ksp_atol,ksp_div_tol,&
+          ksp_max_it,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Actually do the Linear Krylov Solve
-     call KSPSolve(ksp,rVec,deltaW,ierr)
+     call KSPSolve(global_ksp,rVec,deltaW,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Get convergence reason:
-     call KSPGetConvergedReason(ksp,reason,ierr)
+     call KSPGetConvergedReason(global_ksp,reason,ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
      ! Linesearching:
@@ -144,7 +145,7 @@ subroutine NKsolver_custom
      call EChk(ierr,__FILE__,__LINE__)
      
      ! Get the number of iterations to use with Convergence Info
-     call KSPGetIterationNumber(ksp,ksp_iterations,ierr)
+     call KSPGetIterationNumber(global_ksp,ksp_iterations,ierr)
      call EChk(ierr,__FILE__,__LINE__)
   
   end do NonLinearLoop
@@ -159,7 +160,7 @@ subroutine NKsolver_custom
   call VecDestroy(work,ierr)
   call EChk(ierr,__FILE__,__LINE__)
   
-end subroutine NKsolver_custom
+end subroutine NKsolver
 
 subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
   use precision 
@@ -331,7 +332,6 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
  ! Optional user-defined check for line search step validity */
 
 end subroutine LSCubic
-
 
 subroutine LSNone(x,f,g,y,w,nfevals)
   use precision 
