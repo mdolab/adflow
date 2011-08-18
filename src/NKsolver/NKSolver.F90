@@ -1,33 +1,24 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * File:          NKsolver.F90                                    *
+!      * File:          NKsolver_custom.F90                             *
 !      * Author:        Gaetan Kenway                                   *
 !      * Starting date: 11-27-2010                                      *
 !      * Last modified: 11-27-2010                                      *
 !      *                                                                *
 !      ******************************************************************
 
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          NKsolver.F90                                    *
-!      * Author:        Gaetan Kenway                                   *
-!      * Starting date: 11-27-2010                                      *
-!      * Last modified: 11-27-2010                                      *
-!      *                                                                *
-!      ******************************************************************
-!
-
-subroutine NKsolver
+subroutine NKsolver_custom
   use communication
   use constants
   use inputTimeSpectral
   use flowVarRefState
   use ADjointVars , only: nCellsLocal
-  use NKSolverVars, only: snes,dRdw,dRdwPre,ctx,jacobian_lag,&
-       snes_stol,snes_max_funcs,nksolversetup,rhoRes0,rhoresstart, &
-       snes_rtol,snes_atol,totalR0,itertot0,wVec,rVec,reason,NKSolvedOnce
+  use NKSolverVars, only: dRdw,dRdwPre,dRdwPseudo,diagV,ctx,jacobian_lag,&
+       nksolversetup,rhoRes0,rhoresstart, &
+       totalR0,totalRStart,itertot0,wVec,rVec,deltaW,reason,NKSolvedOnce,&
+       ksp,ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,ksp_subspace,reason
+
   use InputIO ! L2conv,l2convrel
   use inputIteration
   use monitor
@@ -37,139 +28,432 @@ subroutine NKsolver
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
 
-  integer(kind=intTYpe) :: sns_max_its,ierr,snes_max_its,temp
-  real(kind=realType) :: rhoRes,totalRRes,rhoRes1
+  ! PETSc Variables:
+  Vec g,work
 
-  ! We are going to have to compute what the tolerances should be
-  ! since we are going to be using the same convergence criteria as
-  ! SUmb originally uses, that is L2Conv and L2ConvRel. This however,
-  ! gets a little trickier, since the NKsolver will always be called
-  ! after the RK solver has been run at least once to get a good
-  ! starting point. 
+  ! Working Variables
+  integer(kind=intType) :: iter,ierr,ksp_iterations
+  integer(kind=intType) :: maxNonLinearIts,nfevals
+  real(kind=realType) :: norm,old_norm,rtol_last
+  real(kind=realType) :: fnorm,ynorm,gnorm
 
-  snes_stol = 1e-14
-  snes_max_funcs = ncycles-iterTot
-  ! Since we're only interested in the maximum function evals, just
-  ! set the max its to the same value...it will always punch out on
-  ! funcs before iterations in this case
+  ! maxNonLinearIts is (far) larger that necessary. The "iteration"
+  ! limit is really set from the maxmimum number of funcEvals
+  maxNonLinearIts = ncycles-iterTot
+  routineFailed = .True.
+  ksp_iterations = 0
+  norm = 0.0
+  old_norm=0.0
+  rtol_last =0.0
+  nfevals = 0
 
-  snes_max_its = ncycles-iterTot
-
-  ! Determine the current level of convergence of the solution
-
-  call getCurrentResidual(rhoRes,totalRRes)
-
-  ! We need to compute two convergences: One coorsponding to L2ConvRel
-  ! and one for L2Conv
-     
-  snes_rtol = (rhoResStart * L2ConvRel)/ rhoRes  ! Target / Current
-     
-  ! Absolute Tol is the original totalR * L2conv
-
-  snes_atol = totalR0 * L2Conv
-
-  call SNESSetTolerances(snes,snes_atol,snes_rtol,snes_stol,snes_max_its,&
-       snes_max_funcs,ierr); call EChk(ierr,__FILE__,__LINE__)
-
-  ! Note: the krylov linear solver options are set in FormJacobian
-
-  ! Form the initial guess from the current w-vector
+  ! Set the inital wVec
   call setwVec(wVec)
 
-  ! Solve IT!
-  call SNESSolve(snes,PETSC_NULL_OBJECT,wVec,ierr) ! PETSC_NULL_OBJECT
-                                                   ! MAY GIVE MEMORY
-                                                   ! LEAK!!!!!!
+  ! Create the two additional work vectors for the line search:
+  call VecDuplicate(wVec,g,ierr); call EChk(ierr,__FILE__,__LINE__)
+  call VecDuplicate(wVec,work,ierr);  call EChk(ierr,__FILE__,__LINE__)
+ 
+  ! Evaluate the residual before we start and copy the value into g
+  call setW(wVec)
+  call computeResidualNK()
+  call setRVec(rVec)
+  call vecCopy(rVec,g,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  iterTot = iterTot + 1 ! Add this function evaluation
+  
+  ! Master Non-Linear Loop:
+  NonLinearLoop: do iter= 1,maxNonLinearIts
+     
+     ! Increment the function evals from the Krylov Iterations and the
+     ! line search iterations
+     if (iter .ne. 1) then
+        iterTot = iterTot + ksp_iterations + nfevals 
+        call convergenceInfo
+     end if
+
+     ! Use the result from the last line search
+     call vecCopy(g,rVec,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     ! Determine if if we need to form the Preconditioner: 
+     if ((mod(iter-1,jacobian_lag) == 0) then
+        call FormJacobian_custom()
+     else
+        ! Else just call assmebly begin/end on dRdW
+        call MatAssemblyBegin(dRdw,MAT_FINAL_ASSEMBLY,ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        call MatAssemblyEnd(dRdw,MAT_FINAL_ASSEMBLY,ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+     end if
+
+     ! Set the BaseVector of the matrix-free matrix:
+     call MatMFFDSetBase(dRdW,wVec,PETSC_NULL_OBJECT,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Compute the norm of rVec for use in EW Criteria
+     old_norm = norm
+     rtol_last = ksp_rtol
+     call VecNorm(rVec,NORM_2,norm,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Check to see if we're converged: We need to check if we've meet
+     ! L2Conv or L2ConvRel
+     if (norm / totalR0 < L2Conv) then
+        routineFailed = .False.
+        exit NonLinearLoop
+     end if
+     
+     if (norm / totalRStart < L2ConvRel) then
+        routineFailed = .False.
+        exit NonLinearLoop
+     end if
+
+     ! Check to see if we've done too many function Evals:
+     if (iterTot > ncycles) then
+        exit NonLinearLoop
+     end if
+
+     ! Get the EW Forcing tolerance ksp_rtol
+     call getEWTol(iter,norm,old_norm,rtol_last,ksp_rtol)
+
+     ! Set all tolerances for linear solve:
+     ksp_atol = 1e-12
+     ksp_max_it = ksp_subspace
+     call KSPSetTolerances(ksp,ksp_rtol,ksp_atol,ksp_div_tol,ksp_max_it,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Actually do the Linear Krylov Solve
+     call KSPSolve(ksp,rVec,deltaW,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Get convergence reason:
+     call KSPGetConvergedReason(ksp,reason,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     ! Linesearching:
+     if (.False.) then! Check for type of line search:
+        call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals)
+     else ! No Linesearch, just accept the new step
+        call LSNone(wVec,rVec,g,deltaW,work,nfevals)
+     end if
+
+     ! Copy the work vector to wVec
+     call VecCopy(work,wVec,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     ! Get the number of iterations to use with Convergence Info
+     call KSPGetIterationNumber(ksp,ksp_iterations,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+  
+  end do NonLinearLoop
+     
+  ! Not really anything else to do...
 
   NKSolvedOnce = .True.
 
+  ! Destroy the additional two vecs:
+  call VecDestroy(g,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-  !iterTot = iterTot0
+  call VecDestroy(work,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+end subroutine NKsolver_custom
 
-  call SNESGetConvergedReason(snes,reason,ierr)
+subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
+  use precision 
+  use communication
+  use NKSolverVars, only: dRdw
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
+  ! Input/Output
+  Vec x,f,g,y,w
+  !x 	- current iterate
+  !f 	- residual evaluated at x
+  !y 	- search direction
+  !w 	- work vector -> On output, new iterate
+  !g    - residual evaluated at new iterate y
+
+  real(kind=realType) :: fnorm,gnorm,ynorm
+  real(kind=realType) :: alpha
+  logical :: flag
+  integer(kind=intType) :: nfevals
+  !   Note that for line search purposes we work with with the related
+  !   minimization problem:
+  !      min  z(x):  R^n -> R,
+  !   where z(x) = .5 * fnorm*fnorm, and fnorm = || f ||_2.
+  !         
+
+  real(kind=realType) :: initslope,lambdaprev,gnormprev,a,b,d,t1,t2,rellength
+  real(kind=realType) :: minlambda,lambda,lambdatemp
+
+  integer(kind=intType) :: ierr
+
+  ! Set some defaults:
+  alpha		= 1.e-4
+  minlambda     = 1.e-12
+  nfevals = 0
+  flag = .True. 
+
+  ! Compute the two norms we need:
+  call VecNorm(y,NORM_2,ynorm,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  if (reason == SNES_CONVERGED_FNORM_ABS .or. &
-      reason == SNES_CONVERGED_FNORM_RELATIVE .or. &
-      reason == SNES_CONVERGED_PNORM_RELATIVE) then
-     routineFailed = .False.
-  else
-     routineFailed = .True. 
+  call VecNorm(f,NORM_2,fnorm,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecMaxPointwiseDivide(y,x,rellength,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  minlambda = minlambda/rellength ! Fix this
+  call MatMult(dRdw,y,w,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  nfevals = nfevals + 1
+
+  call VecDot(f,w,initslope,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  if (initslope > 0.0)  then
+     initslope = -initslope
   end if
 
-end subroutine NKsolver
+  if (initslope == 0.0) then
+     initslope = -1.0
+  end if
+
+  call VecWAXPY(w,-1.0,y,x,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Compute Function:
+  call setW(w)
+  call computeResidualNK()
+  call setRVec(g)
+  nfevals = nfevals + 1
+
+  call VecNorm(g,NORM_2,gnorm,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Sufficient reduction 
+  if (.5*gnorm*gnorm <= .5*fnorm*fnorm + alpha*initslope) then
+     goto 100
+  end if
+
+  ! Fit points with quadratic 
+  lambda     = 1.0
+  lambdatemp = -initslope/(gnorm*gnorm - fnorm*fnorm - 2.0*initslope)
+  lambdaprev = lambda
+  gnormprev  = gnorm
+
+  if (lambdatemp > .5*lambda) then
+     lambdatemp = .5*lambda
+  end if
+
+  if (lambdatemp <= .1*lambda) then
+     lambda = .1*lambda
+  else                 
+     lambda = lambdatemp
+  end if
+
+  call VecWAXPY(w,-lambda,y,x,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Compute new function again:
+  call setW(w)
+  call computeResidualNK()
+  call setRVec(g)
+  nfevals = nfevals + 1
+
+  call VecNorm(g,NORM_2,gnorm,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Sufficient reduction 
+  if (.5*gnorm*gnorm <= .5*fnorm*fnorm + lambda*alpha*initslope) then
+     goto 100
+  end if
+
+  ! Fit points with cubic 
+  cubic_loop: do while (.True.) 
+    if (lambda <= minlambda) then 
+       flag = .False.
+       exit cubic_loop
+    end if
+    t1 = .5*(gnorm*gnorm - fnorm*fnorm) - lambda*initslope
+    t2 = .5*(gnormprev*gnormprev  - fnorm*fnorm) - lambdaprev*initslope
+
+    a  = (t1/(lambda*lambda) - t2/(lambdaprev*lambdaprev))/(lambda-lambdaprev)
+    b  = (-lambdaprev*t1/(lambda*lambda) + lambda*t2/(lambdaprev*lambdaprev))/(lambda-lambdaprev)
+    d  = b*b - 3*a*initslope
+    if (d < 0.0) then
+       d = 0.0
+    end if
+
+    if (a == 0.0) then
+       lambdatemp = -initslope/(2.0*b)
+    else
+       lambdatemp = (-b + sqrt(d))/(3.0*a)
+    end if
+
+    lambdaprev = lambda
+    gnormprev  = gnorm
+
+    if (lambdatemp > .5*lambda)  then
+       lambdatemp = .5*lambda
+    end if
+    if (lambdatemp <= .1*lambda) then
+       lambda = .1*lambda
+    else           
+       lambda = lambdatemp
+    end if
+
+    call  VecWAXPY(w,-lambda,y,x,ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    ! Compute new function again:
+    call setW(w)
+    call computeResidualNK()
+    call setRVec(g)
+    nfevals = nfevals + 1
+
+    call VecNorm(g,NORM_2,gnorm,ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    ! Is reduction enough?
+    if (.5*gnorm*gnorm <= .5*fnorm*fnorm + lambda*alpha*initslope) then
+       exit cubic_loop
+  end if
+ end do cubic_loop
+
+100 continue
+
+ ! Optional user-defined check for line search step validity */
+
+end subroutine LSCubic
 
 
-subroutine NKsolverPseudo
+subroutine LSNone(x,f,g,y,w,nfevals)
+  use precision 
   use communication
-  use constants
-  use inputTimeSpectral
-  use flowVarRefState
-  use ADjointVars , only: nCellsLocal
-  use NKSolverVars, only: pts,snes,dRdw,dRdwPre,ctx,jacobian_lag,&
-       snes_stol,snes_max_funcs,nksolversetup,rhoRes0,rhoresstart, &
-       snes_rtol,snes_atol,totalR0,itertot0,wVec,rVec,reason,NKSolvedOnce
-  use InputIO ! L2conv,l2convrel
-  use inputIteration
-  use monitor
-  use killSignals
-  use iteration
+  use NKSolverVars, only: dRdw
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-
-  integer(kind=intTYpe) :: sns_max_its,ierr,snes_max_its,temp,steps
-  real(kind=realType) :: rhoRes,totalRRes,rhoRes1,ftime
-
-  ! We are going to have to compute what the tolerances should be
-  ! since we are going to be using the same convergence criteria as
-  ! SUmb originally uses, that is L2Conv and L2ConvRel. This however,
-  ! gets a little trickier, since the NKsolver will always be called
-  ! after the RK solver has been run at least once to get a good
-  ! starting point. 
-
-  snes_stol = 1e-14
-  snes_max_funcs = ncycles-iterTot
-  ! Since we're only interested in the maximum function evals, just
-  ! set the max its to the same value...it will always punch out on
-  ! funcs before iterations in this case
-
-  snes_max_its = ncycles-iterTot
-
-  ! Determine the current level of convergence of the solution
-
-  call getCurrentResidual(rhoRes,totalRRes)
-
-  ! We need to compute two convergences: One coorsponding to L2ConvRel
-  ! and one for L2Conv
-     
-  snes_rtol = (rhoResStart * L2ConvRel)/ rhoRes  ! Target / Current
-     
-  ! Absolute Tol is the original totalR * L2conv
-
-  snes_atol = totalR0 * L2Conv
-  !call TSgetSNES(pts,snes,ierr)
   
-  
-  !call SNESSetTolerances(snes,snes_atol,snes_rtol,snes_stol,snes_max_its,&
-  !     snes_max_funcs,ierr); 
-  !call EChk(ierr,__FILE__,__LINE__)
+  ! Input/Output
+  Vec x,f,g,y,w
+  !x 	- current iterate
+  !f 	- residual evaluated at x
+  !y 	- search direction
+  !w 	- work vector -> On output, new iterate
+  !g    - residual evaluated at new iterate y
 
-  ! Note: the krylov linear solver options are set in FormJacobian
+  integer(kind=intType) :: nfevals
+  integer(kind=intType) :: ierr
 
-  ! Form the initial guess from the current w-vector
-  call setwVec(wVec)
-
-  call TSSetup(pts,ierr)
+  ! We just accept the step and compute the new residual at the new iterate
+  nfevals = 0
+  call VecWAXPY(w,-1.0,y,x,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  ! Solve IT!
-  steps=1000
-  call TSStep(pts,steps,ftime,ierr)
+  ! Compute new function:
+  call setW(w)
+  call computeResidualNK()
+  call setRVec(g)
+  nfevals = nfevals + 1
+
+end subroutine LSNone
+
+
+! subroutine setdiagV(dt_pseudo)
+
+!   use flowVarRefState
+!   use inputTimeSpectral
+!   use blockPointers
+!   use NKSolverVars, only: diagV
+
+!   implicit none
+! #define PETSC_AVOID_MPIF_H
+! #include "include/finclude/petsc.h"
+
+!   ! Input
+!   real(kind=realType) :: dt_pseudo
+
+!   ! Working
+!   integer(kind=intType) :: nn,sps,i,j,k,ierr
+!   real(kind=realType) :: vals(nw),dt_loc,L_loc
   
-  NKSolvedOnce = .True.
+ 
+!   spectralLoop: do sps=1,nTimeIntervalsSpectral
+!      domainLoop: do nn=1,nDom
+!         ! Set the pointers to this block.
+!         call setPointersAdj(nn, 1, sps)
 
-  call EChk(ierr,__FILE__,__LINE__)
-  routineFailed = .False.
+!         do k=2,kl
+!            do j=2,jl
+!               do i=2,il
+!                  ! Set the I/dt term in diagV according to CFL_pseudo
+! !                  L_loc = vol(i,j,k)**(1/3)
+! !                  dt_loc = (L_loc + 1)/L_loc
+! !                  vals(:) = -dt_loc*dt_pseudo
 
-end subroutine NKsolverPseudo
+!                  vals(:) = -1/(dt_pseudo * dtl(i,j,k))
+!                  call VecSetValuesBlocked(diagV,1,globalCell(i,j,k),vals,&
+!                       INSERT_VALUES,ierr)
+!                  call EChk(ierr,__FILE__,__LINE__)
+!               end do
+!            end do
+!         end do
+!      end do domainLoop
+!   end do spectralLoop
+
+ 
+!   call VecAssemblyBegin(diagV,ierr)
+!   call EChk(ierr,__FILE__,__LINE__)
+!   call VecAssemblyEnd(diagV,ierr)
+!   call EChk(ierr,__FILE__,__LINE__)
+! end subroutine setdiagV
+
+subroutine getEWTol(iter,norm,old_norm,rtol_last,rtol)
+
+  use precision
+  implicit none
+
+   ! There are the default EW Parameters from PETSc. They seem to work well
+   !version:           2
+   !rtol_0:  0.300000000000000     
+   !rtol_max:  0.900000000000000     
+   !gamma:   1.00000000000000     
+   !alpha:   1.61803398874989     
+   !alpha2:   1.61803398874989     
+   !threshold:  0.100000000000000     
+
+  integer(kind=intType) :: iter
+  real(kind=realType), intent(in) :: norm,old_norm,rtol_last
+  real(kind=realType), intent(out) :: rtol
+  real(kind=realType) :: rtol_0,rtol_max,gamma,alpha,alpha2,threshold,stol
+
+  rtol_0    = 0.30
+  rtol_max  = 0.9
+  gamma     = 1.0
+  alpha     = (1+sqrt(5.0))/2.0
+  alpha2    = (1+sqrt(5.0))/2.0
+  threshold = 0.10
+
+  if (iter == 1) then
+     rtol = rtol_0
+  else
+     ! We use version 2:
+     rtol = gamma*(norm/old_norm)**alpha
+     stol = gamma*(rtol_last)**alpha
+
+     if (stol > threshold) then
+        rtol = max(rtol,stol)
+     end if
+     
+     ! Safeguard: avoid rtol greater than one
+     rtol = min(rtol,rtol_max)
+  end if
+ 
+end subroutine getEWTol
