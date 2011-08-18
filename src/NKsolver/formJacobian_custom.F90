@@ -1,6 +1,7 @@
 subroutine FormJacobian_custom()
   use communication
   use precision 
+  use iteration
   use NKSolverVars, only: dRdw,dRdwPre,NKFiniteDifferencePC,ksp,&
        global_pc_type,asm_overlap,local_pc_ordering,local_pc_ilu_level,&
        diagV
@@ -30,7 +31,6 @@ subroutine FormJacobian_custom()
      usePC = .True.
      useTranspose = .False.
      call setupStateResidualMatrix(dRdwPre,useAD,usePC,useTranspose)
-
   else
      call setupNK_PC(dRdwPre)
   end if

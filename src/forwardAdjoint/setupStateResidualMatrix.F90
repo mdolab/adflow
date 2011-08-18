@@ -123,7 +123,8 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
         !call setup_PC_coloring(nn,nColor)
 
         if (not (viscous)) then
-           call setup_dRdw_euler_coloring(nn,nColor) ! Euler Colorings
+           !call setup_dRdw_euler_coloring(nn,nColor) ! Euler Colorings
+           call setup_PC_coloring(nn,nColor) ! Euler Colorings
         end if
         
         if (viscous) then
@@ -305,12 +306,12 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   call EChk(ierr,__FILE__,__LINE__)
 #endif
 
-  time(2) = mpi_wtime()
-  call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
-       SUmb_comm_world, ierr)
-  
-  if (myid == 0) then
-     if (usePC == .False. .or. useTranspose == .True.) then
+  if (.not. usePC .and. useTranspose) then
+     time(2) = mpi_wtime()
+     call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
+          SUmb_comm_world, ierr)
+     
+     if (myid == 0) then
         print *,'Assembly time:',setupTime
      end if
   end if

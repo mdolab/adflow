@@ -38,64 +38,13 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
      call setupNK_PC(dRdwPre)
   end if
 
-
   flag = SAME_NONZERO_PATTERN
   ! Setup the required options for the KSP solver
   call SNESGetKSP(snes,ksp,ierr);  
   call EChk(ierr,__FILE__,__LINE__)
 
-  call KSPSetType(ksp,ksp_solver_type,ierr);
-  call EChk(ierr,__FILE__,__LINE__)
-  call KSPGMRESSetRestart(ksp, ksp_subspace,ierr); 
-  call EChk(ierr,__FILE__,__LINE__)
-  call KSPSetPreconditionerSide(ksp,PC_RIGHT,ierr);
-  call EChk(ierr,__FILE__,__LINE__)
+  call setupNK_KSP(ksp)
 
-  ! Setup the required options for the Global PC
-  call KSPGetPC(ksp,pc,ierr);             
-  call EChk(ierr,__FILE__,__LINE__)
-
-!   call PCSetType(pc,'hypre',ierr)
-!   call EChk(ierr,__FILE__,__LINE__)
-!   call PCHYPRESetType(pc,'euclid',ierr)
-!   call EChk(ierr,__FILE__,__LINE__)
-!   call PCFactoSetMatOrderingtype(pc, local_pc_ordering, ierr )
-!   call EChk(ierr,__FILE__,__LINE__) 
-
-  call PCSetType(pc,global_pc_type,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  if (trim(global_pc_type) == 'asm') then
-     call PCASMSetOverlap(pc,asm_overlap,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-     call PCSetup(pc,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-     call PCASMGetSubKSP( pc, nlocal,  first, subksp, ierr )
-     call EChk(ierr,__FILE__,__LINE__)  
-  end if
-
-  if (trim(global_pc_type) == 'bjacobi') then
-     call PCSetup(pc,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-     call PCBJacobiGetSubKSP(pc,nlocal,first,subksp,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-  end if
-
-  ! Setup the required options for the Local PC
-  call KSPGetPC(subksp, subpc, ierr )
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call PCSetType(subpc, 'ilu', ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  call PCFactorSetLevels(subpc, local_pc_ilu_level, ierr)
-  call EChk(ierr,__FILE__,__LINE__)  
-  call PCFactorSetMatOrderingtype(subpc, local_pc_ordering, ierr )
-  call EChk(ierr,__FILE__,__LINE__) 
-  call KSPSetType(subksp, KSPPREONLY, ierr)
-  call EChk(ierr,__FILE__,__LINE__)  
-
-  ierr = 0
-  
 end subroutine FormJacobian
 
 
@@ -176,3 +125,85 @@ subroutine FormJacobian2(pts,t,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   call FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 end subroutine FormJacobian2
+
+
+
+
+
+
+
+
+
+subroutine setupNK_KSP(ksp)
+
+! This is a shell-type routine to setup the KSP object for the newton
+! Krylov solver. Since there are a number of formJacobian functions,
+! this eliminates repetition. 
+
+  KSP ksp
+
+  use NKSolverVars,only : ksp_solver_type,ksp_subspace,global_pc_type,&
+       asm_overlap,local_pc_ilu_level,local_pc_ordering,NKfinitedifferencepc
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
+  call KSPSetType(ksp,ksp_solver_type,ierr);
+  call EChk(ierr,__FILE__,__LINE__)
+  call KSPGMRESSetRestart(ksp, ksp_subspace,ierr); 
+  call EChk(ierr,__FILE__,__LINE__)
+  call KSPSetPreconditionerSide(ksp,PC_RIGHT,ierr);
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Setup the required options for the Global PC
+  call KSPGetPC(ksp,pc,ierr);             
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Set the global PC Type:
+  call PCSetType(pc,global_pc_type,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  if (trim(global_pc_type) == 'asm') then
+     ! Set overlap
+     call PCASMSetOverlap(pc,asm_overlap,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Setup the global PC so we can extract subKSP objects
+     call PCSetup(pc,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     call PCASMGetSubKSP( pc, nlocal,  first, subksp, ierr )
+     call EChk(ierr,__FILE__,__LINE__)  
+
+  else  if (trim(global_pc_type) == 'bjacobi') then
+     ! Setup the global PC so we can extract subKSP objects
+     call PCSetup(pc,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     call PCBJacobiGetSubKSP(pc,nlocal,first,subksp,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+  end if
+
+  ! Additional setup for subpc when block jacobi or asm are used:
+  if (trim(global_pc_type) == 'bjacobi' .or. &
+      trim(global_pc_type) == 'asm') then
+
+     ! Setup the required options for the Local PC
+     call KSPGetPC(subksp, subpc, ierr )
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call PCSetType(subpc, 'ilu', ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     call PCFactorSetLevels(subpc, local_pc_ilu_level, ierr)
+     call EChk(ierr,__FILE__,__LINE__)  
+
+     call PCFactorSetMatOrderingtype(subpc, local_pc_ordering, ierr )
+     call EChk(ierr,__FILE__,__LINE__) 
+     call KSPSetType(subksp, KSPPREONLY, ierr)
+     call EChk(ierr,__FILE__,__LINE__)  
+
+  end if
+
+  ierr = 0
+
+end subroutine setupNK_KSP
