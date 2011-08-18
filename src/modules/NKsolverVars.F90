@@ -31,7 +31,6 @@ module NKsolverVars
   PetscFortranAddr   lsctx(1)
   Mat                dRdw,dRdwPre,dRdwPseudo
   Vec wVec,rVec,deltaW,diagV
-  KSP                ksp
   KSP                global_ksp,local_ksp
   PC                 global_pc ,local_pc
   SNESConvergedReason reason

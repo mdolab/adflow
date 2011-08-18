@@ -11,9 +11,8 @@ subroutine setupNKsolver
   use inputPhysics
   use stencils
   use ADjointVars , only: nCellsLocal
-  use NKSolverVars, only: ksp,dRdw,dRdwPre,dRdwPseudo,ctx,&
-       wVec,rVec,diagV,deltaW,&
-       NKsolvedOnce,nksolversetup,ksp_subspace,ksp_solver_type
+  use NKSolverVars, only: dRdw,dRdwPre,dRdwPseudo, ctx, wVec,rVec,deltaW,&
+       NKsolvedOnce,nksolversetup,ksp_subspace,ksp_solver_type,global_ksp
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -86,11 +85,11 @@ subroutine setupNKsolver
      call EChk(ierr,__FILE__,__LINE__)
      
      !  Create the linear solver context
-     call KSPCreate(SUMB_PETSC_COMM_WORLD,ksp,ierr)
+     call KSPCreate(SUMB_PETSC_COMM_WORLD,global_ksp,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Set operators for the solver
-     call KSPSetOperators(ksp,dRdw,dRdWPre, DIFFERENT_NONZERO_PATTERN,ierr)
+     call KSPSetOperators(global_ksp,dRdw,dRdWPre, DIFFERENT_NONZERO_PATTERN,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      NKSolverSetup = .True.
