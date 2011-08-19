@@ -132,9 +132,11 @@ subroutine NKsolver
      ! Get convergence reason:
      call KSPGetConvergedReason(global_ksp,reason,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     
+!      if (myid == 0) then
+!         print *,'Reason:',reason
+!      end if
      ! Linesearching:
-     if (.False.) then! Check for type of line search:
+     if (.True.) then! Check for type of line search:
         call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals)
      else ! No Linesearch, just accept the new step
         call LSNone(wVec,rVec,g,deltaW,work,nfevals)

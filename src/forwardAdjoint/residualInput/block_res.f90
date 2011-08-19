@@ -104,7 +104,7 @@ subroutine block_res(nn,sps)
         do k=2,kl
            do j=2,jl
               do i=2,il
-                 dw(i,j,k,l) = dw(i,j,k,l) / vol(i,j,k) !* 1e3
+                 dw(i,j,k,l) = dw(i,j,k,l) / vol(i,j,k)! * 1e-3
               end do
            end do
         end do

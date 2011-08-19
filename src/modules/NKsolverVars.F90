@@ -25,15 +25,41 @@ module NKsolverVars
 
   ! PETSc Variables
 
+  ! PETSc SNES: 
+  ! snes: Non-linear solver solution context for NK problem. Not used. 
+
   SNES               snes 
-  TS                 pts
-  PetscFortranAddr   ctx(3)
-  PetscFortranAddr   lsctx(1)
+
+  ! PETSc Matrices:
+  ! dRdw: This is a matrix-free matrix for the state residal matrix. 
+  !       Matrix-vector products are computed with finite differences
+  ! dRdwPre: The preconditoner matrix for NK method. This matrix is stored
+  ! dRdwPseudo: Shell matrix used with the pseudo-transient 
+  !             continuation method
+
   Mat                dRdw,dRdwPre,dRdwPseudo
+
+  ! PETSc Vectors:
+  ! wVec: PETsc version of SUmb 'w'
+  ! rVec: PETSc versin of SUmb 'dw', but divided by volume
+  ! deltaW: Update to the wVec from linear solution
+  ! diagV: Diagonal lumping term
+
   Vec wVec,rVec,deltaW,diagV
+
+  ! PETSc KSP/PC 
+  ! global_ksp: The ksp object for solving the newton udpate
+  ! global_pc : The preconditioner context for the above ksp
+  ! local_ksp:  The ksp object associated with the asm or block
+  !             jacobi sub blocks
+  ! local_pc:   THe pc object associated with the above ksp object
+
   KSP                global_ksp,local_ksp
   PC                 global_pc ,local_pc
+
+  ! PETSc Misc:
   SNESConvergedReason reason
+  PetscFortranAddr   ctx(3)
 
   ! Non-linear Solver Options
   integer(kind=intType) :: jacobian_lag
