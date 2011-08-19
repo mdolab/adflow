@@ -94,7 +94,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   call computeResidualNK ! This is the easiest way to do this
 
   ! Set delta_x
-  delta_x = 1e-8
+  delta_x = 1e-6
   one_over_dx = 1.0/delta_x
   rkStage = 0
   secondHalo = .True. 
@@ -110,27 +110,26 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
      ! Setup the coloring for this block depending on if its
      ! drdw or a PC
-
-     ! Debugging Colorings Below:
-     !call setup_3x3x3_coloring(nn,nColor)
-     !call setup_5x5x5_coloring(nn,nColor)
-     !call setup_BF_coloring(nn,nColor)
+     
+     ! List of all Coloring Routines:
+     !   Debugging Colorings Below:
+     !       call setup_3x3x3_coloring(nn,nColor)
+     !       call setup_5x5x5_coloring(nn,nColor)
+     !       call setup_BF_coloring(nn,nColor)
+     !   Regular:
+     !       call setup_PC_coloring(nn,nColor)
+     !       call setup_dRdw_euler_coloring(nn,nColor)
+     !       call setup_dRdw_visc_coloring(nn,nColor)
      
      if (usePC) then
         ! Note: The lumped dissipation doesn't quite result in a
-        !3-cell stencil in each direction so we we still use the
-        !5-cell coloring. Not really a big deal. 
-        !call setup_PC_coloring(nn,nColor)
-
+        !3-cell stencil in each direction but we will still use PC
+        !coloring. Not really a big deal.
+     
         if (not (viscous)) then
-           !call setup_dRdw_euler_coloring(nn,nColor) ! Euler Colorings
            call setup_PC_coloring(nn,nColor) ! Euler Colorings
-        end if
-        
-        if (viscous) then
-           !call setup_5x5x5_coloring(nn,nColor)
+        else
            call setup_3x3x3_coloring(nn,nColor) ! dense 3x3x3 coloring
-           !call setup_dRdw_euler_coloring(nn,nColor) ! Euler Colorings
         end if
 
      else
@@ -151,6 +150,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
            ! Master State Loop
            do l = 1,nw
+
               call setPointersAdj(nn,1,sps)
               ! Reset All States and possibe AD seeds
               do sps2 = 1,nTimeIntervalsSpectral
@@ -306,7 +306,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   call EChk(ierr,__FILE__,__LINE__)
 #endif
 
-  if (.not. usePC .and. useTranspose) then
+  !if (.not. usePC .and. useTranspose) then
      time(2) = mpi_wtime()
      call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
           SUmb_comm_world, ierr)
@@ -314,7 +314,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
      if (myid == 0) then
         print *,'Assembly time:',setupTime
      end if
-  end if
+ ! end if
   ! Debugging ONLY!
   !call writeOutMatrix()
 

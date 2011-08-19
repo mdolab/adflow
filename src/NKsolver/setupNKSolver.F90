@@ -96,6 +96,7 @@ subroutine setupNKsolver
      NKSolvedOnce = .False.
      if(equations == RANSEquations)  then
         turbCoupled = .True.
+        turbSegregated = .False.
      end if
   end if
 end subroutine setupNKsolver
