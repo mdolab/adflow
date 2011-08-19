@@ -26,7 +26,7 @@ subroutine applyPC(in_vec,out_vec,N)
   KSPConvergedReason ksp_reason
 
   external KSPSkipConverged
-  external FormFunction2
+  external FormFunction_mf
 
   ! Working Variables
   integer(kind=intType) , dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
@@ -70,7 +70,7 @@ subroutine applyPC(in_vec,out_vec,N)
           PETSC_DETERMINE,PETSC_DETERMINE,dRdw,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     call MatMFFDSetFunction(dRdw,FormFunction2,ctx,ierr)
+     call MatMFFDSetFunction(dRdw,FormFunction_mf,ctx,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      call MatAssemblyBegin(dRdw,MAT_FINAL_ASSEMBLY,ierr)
@@ -83,14 +83,10 @@ subroutine applyPC(in_vec,out_vec,N)
      call MatSetOption(dRdW   , MAT_ROW_ORIENTED,PETSC_FALSE, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     if (NKFiniteDifferencePC) then
-        useAD = .False.
-        usePC = .True.
-        useTranspose = .False.
-        call setupStateResidualMatrix(dRdwPre,useAD,usePC,useTranspose)
-     else
-        call setupNK_PC(dRdwPre)
-     end if
+     useAD = .False.
+     usePC = .True.
+     useTranspose = .False.
+     call setupStateResidualMatrix(dRdwPre,useAD,usePC,useTranspose)
      
      call KSPCreate(SUMB_COMM_WORLD, global_ksp, ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -107,31 +103,7 @@ subroutine applyPC(in_vec,out_vec,N)
      call KSPSetPreconditionerSide(global_ksp, PC_RIGHT, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     ! Setup the required options for the Global PC
-     call KSPSetup(global_ksp,ierr);      call EChk(ierr,__FILE__,__LINE__)
-     call KSPGetPC(global_ksp,global_pc,ierr);                 call EChk(ierr,__FILE__,__LINE__)
-     call PCSetType(global_pc,global_pc_type,ierr);     call EChk(ierr,__FILE__,__LINE__)
- 
-     call KSPSetTolerances(global_ksp,L2ConvRel,1e-10,1e5,ksp_subspace,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-     if (trim(global_pc_type) == 'asm') then
-        call PCASMSetOverlap(global_pc,asm_overlap,ierr);  call EChk(ierr,__FILE__,__LINE__)
-        call PCSetup(global_pc,ierr);                      call EChk(ierr,__FILE__,__LINE__)
-        call PCASMGetSubKSP(global_pc, nlocal,  first, local_ksp, ierr );          call EChk(ierr,__FILE__,__LINE__)  
-     end if
-
-     if (trim(global_pc_type) == 'bjacobi') then
-        call PCSetup(global_pc,ierr);                      call EChk(ierr,__FILE__,__LINE__)
-        call PCBJacobiGetSubKSP(global_pc,nlocal,first,local_ksp,ierr);   call EChk(ierr,__FILE__,__LINE__)
-     end if
-
-     ! Setup the required options for the Local PC
-     call KSPGetPC(local_ksp, local_pc, ierr );                              call EChk(ierr,__FILE__,__LINE__)
-     call PCSetType(local_pc, 'ilu', ierr);                       call EChk(ierr,__FILE__,__LINE__)
-     call PCFactorSetLevels(local_pc, local_pc_ilu_level, ierr);          call EChk(ierr,__FILE__,__LINE__)  
-     call PCFactorSetMatOrderingtype(local_pc, local_pc_ordering, ierr ); call EChk(ierr,__FILE__,__LINE__) 
-     call KSPSetType(local_ksp, KSPPREONLY, ierr);         call EChk(ierr,__FILE__,__LINE__)  
+     call NKSetup_KSP(global_ksp)
 
      NKPCSetup = .True.
   end if

@@ -4,14 +4,14 @@
 ! which cells in the output are change. This is (by defination) the
 ! stencil.
 
-subroutine determineStencil
+subroutine determineStencil(lumped)
   use inputDiscretization 
   use blockPointers
   use flowvarrefstate
   use inputPhysics
   use iteration
   implicit none
-
+  logical :: lumped
   integer(kind=intType) :: ncellx,ncelly,ncellz
   integer(kind=intType) :: nnodex,nnodey,nnodez
 
@@ -24,6 +24,12 @@ subroutine determineStencil
   logical :: different
   delta_x = 1.0
  
+  if (lumped) then
+     lumpedDiss=.True.
+  end if
+  
+
+
   stencil = 0
   call setPointers(1,1,1)
   ! Make sure the first block is big enough
@@ -165,4 +171,10 @@ subroutine determineStencil
         end do
      end do
   end do
+
+  if (lumped) then
+     lumpedDiss=.False.
+  end if
+
+
 end subroutine determineStencil

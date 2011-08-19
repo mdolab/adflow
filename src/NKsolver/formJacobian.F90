@@ -1,19 +1,13 @@
-subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
+subroutine FormJacobian()
   use communication
   use precision 
-  use NKSolverVars,only : ksp_solver_type,ksp_subspace,global_pc_type,&
-       asm_overlap,local_pc_ilu_level,local_pc_ordering,NKfinitedifferencepc
+  use iteration
+  use NKSolverVars, only: dRdw,dRdwPre,global_ksp
+    
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
 
-  SNES           snes
-  Mat            dRdw,dRdwPre 
-  KSP            ksp,subksp
-  PC             pc,subpc
-  Vec            wVec,rVec
-  PetscFortranAddr ctx(3)
-  MatStructure   flag 
   PetscInt nlocal,first,Nsub,length
   integer(kind=intType) ::ierr
 
@@ -29,150 +23,79 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
 
   ! Assemble the approximate PC
 
-  if (NKFiniteDifferencePC) then
-     useAD = .False.
-     usePC = .True.
-     useTranspose = .False.
-     call setupStateResidualMatrix(dRdwPre,useAD,usePC,useTranspose)
-  else
-     call setupNK_PC(dRdwPre)
-  end if
+  useAD = .False.
+  usePC = .True.
+  useTranspose = .False.
+  call setupStateResidualMatrix(dRdwPre,useAD,usePC,useTranspose)
 
+  ! Setup the required options for the KSP object
+  call NKSetup_KSP(global_ksp)
+  
+end subroutine FormJacobian
 
-  flag = SAME_NONZERO_PATTERN
-  ! Setup the required options for the KSP solver
-  call SNESGetKSP(snes,ksp,ierr);  
-  call EChk(ierr,__FILE__,__LINE__)
+subroutine NKSetup_KSP(ksp)
 
+  ! Common routine for setting up the KSP solver for NK solver. This
+  ! can be called from multiple places.
+  use precision 
+  use NKSolverVars, only: ksp_solver_type,ksp_subspace,global_pc,local_pc, &
+       global_ksp,local_ksp,asm_overlap,local_pc_ordering,local_pc_ilu_level,&
+       ksp_solver_type,global_pc_type
+  
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
+  ! Input variables
+  KSP ksp
+  integer(kind=intType) :: ierr,nlocal,first
+
+  ! Set Solver Type
   call KSPSetType(ksp,ksp_solver_type,ierr);
   call EChk(ierr,__FILE__,__LINE__)
+
+  ! Set Subspace Size
   call KSPGMRESSetRestart(ksp, ksp_subspace,ierr); 
   call EChk(ierr,__FILE__,__LINE__)
+
+  ! Set PC Side as RIGHT only
   call KSPSetPreconditionerSide(ksp,PC_RIGHT,ierr);
   call EChk(ierr,__FILE__,__LINE__)
 
-  ! Setup the required options for the Global PC
-  call KSPGetPC(ksp,pc,ierr);             
+  ! Get the PC Handle to make modifications:
+  call KSPGetPC(ksp,global_pc,ierr);             
   call EChk(ierr,__FILE__,__LINE__)
 
-!   call PCSetType(pc,'hypre',ierr)
-!   call EChk(ierr,__FILE__,__LINE__)
-!   call PCHYPRESetType(pc,'euclid',ierr)
-!   call EChk(ierr,__FILE__,__LINE__)
-!   call PCFactoSetMatOrderingtype(pc, local_pc_ordering, ierr )
-!   call EChk(ierr,__FILE__,__LINE__) 
-
-  call PCSetType(pc,global_pc_type,ierr)
+  call PCSetType(global_pc,global_pc_type,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   if (trim(global_pc_type) == 'asm') then
-     call PCASMSetOverlap(pc,asm_overlap,ierr)
+     call PCASMSetOverlap(global_pc,asm_overlap,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     call PCSetup(pc,ierr)
+     call PCSetup(global_pc,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     call PCASMGetSubKSP( pc, nlocal,  first, subksp, ierr )
+     call PCASMGetSubKSP(global_pc, nlocal,  first, local_ksp, ierr )
      call EChk(ierr,__FILE__,__LINE__)  
   end if
 
   if (trim(global_pc_type) == 'bjacobi') then
-     call PCSetup(pc,ierr)
+     call PCSetup(global_pc,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     call PCBJacobiGetSubKSP(pc,nlocal,first,subksp,ierr)
+     call PCBJacobiGetSubKSP(global_pc,nlocal,first,local_ksp,ierr)
      call EChk(ierr,__FILE__,__LINE__)
   end if
 
   ! Setup the required options for the Local PC
-  call KSPGetPC(subksp, subpc, ierr )
+  call KSPGetPC(local_ksp, local_pc, ierr )
   call EChk(ierr,__FILE__,__LINE__)
 
-  call PCSetType(subpc, 'ilu', ierr)
+  call PCSetType(local_pc, 'ilu', ierr)
   call EChk(ierr,__FILE__,__LINE__)
-  call PCFactorSetLevels(subpc, local_pc_ilu_level, ierr)
+  call PCFactorSetLevels(local_pc, local_pc_ilu_level, ierr)
   call EChk(ierr,__FILE__,__LINE__)  
-  call PCFactorSetMatOrderingtype(subpc, local_pc_ordering, ierr )
+  call PCFactorSetMatOrderingtype(local_pc, local_pc_ordering, ierr )
   call EChk(ierr,__FILE__,__LINE__) 
-  call KSPSetType(subksp, KSPPREONLY, ierr)
+  call KSPSetType(local_ksp, KSPPREONLY, ierr)
   call EChk(ierr,__FILE__,__LINE__)  
 
-  ierr = 0
-  
-end subroutine FormJacobian
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-subroutine FormJacobian2(pts,t,wVec,dRdw,dRdwPre,flag,ctx,ierr)
-  ! This is a wrapper for the formJacobian function. The formJacobian
-  ! for the time stepping routine is slightly different. Basically it
-  ! calls with the TimeStepping Context instead of SNES. We are just
-  ! going to pull ou the SNES context and call the formJacobian
-  ! function which will do all the required calculations/option
-  ! setting.
-  use NKSolverVars, only: snes_stol,snes_max_its,snes_max_funcs,snes_rtol,&
-       snes_atol
-
-  use precision 
-  use inputIteration
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "include/finclude/petsc.h"
-#include "include/finclude/petscts.h"
-  TS             pts
-  SNES           snes
-  Mat            dRdw,dRdwPre 
-  real(kind=realType) :: t
-  Vec            wVec
-  PetscFortranAddr ctx(3)
-  MatStructure   flag 
-  integer(kind=intType) ::ierr
-  external formfunction2
-
-  call TSGetSNES(pts,snes,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call MatMFFDSetFunction(dRdw,FormFunction2,ctx,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  
-  call MatSetOption(dRdW   , MAT_ROW_ORIENTED,PETSC_FALSE, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call MatMFFDSetBase(dRdW,wVec,PETSC_NULL_OBJECT,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-
-  !Use Eisenstat-Walker convergence criteria for KSP solver. Recommended
-  call SNESKSPSetUseEW(snes,.True.,ierr)  
-  call EChk(ierr,__FILE__,__LINE__)
-
-  ! See the monitor function for more information as to why this is -2
-  call SNESSetLagJacobian(snes, -2_intType, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call SNESSetTolerances(snes,snes_atol,snes_rtol,snes_stol,1,&
-       100,ierr); call EChk(ierr,__FILE__,__LINE__)
-
-  ! Since we're limiting the gmres to no restarts...there's a good
-  ! chance that we're get lots of solve failues which is OK. Set
-  ! this to the ncycles....basically large enough that it never happens
-  call SNESSetMaxLinearSolveFailures(snes, ncycles,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-     
-  
-
-  call FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-end subroutine FormJacobian2
+end subroutine NKSetup_KSP

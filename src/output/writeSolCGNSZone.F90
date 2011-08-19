@@ -477,7 +477,7 @@
                                                    subRanges(1,1,mm))
                end select
 
-             enddo
+            enddo
 
              ! Write the solution variable to file. Source is just used
              ! as a dummy variable and does not have a meaning.
