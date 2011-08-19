@@ -269,9 +269,9 @@ class SUMB(AeroSolver):
              'cl0':self.sumb.costfunctions.costfunccl0,
              'clAlpha':self.sumb.costfunctions.costfuncclalpha,
              'clAlphaDot':self.sumb.costfunctions.costfuncclalphadot,
-             'cfy0':self.sumb.costfunctions.costfunccfy0,
-             'cfyAlpha':self.sumb.costfunctions.costfunccfyalpha,
-             'cfyAlphaDot':self.sumb.costfunctions.costfunccfyalphadot,
+             #'cfy0':self.sumb.costfunctions.costfunccfy0,
+             #'cfyAlpha':self.sumb.costfunctions.costfunccfyalpha,
+             #'cfyAlphaDot':self.sumb.costfunctions.costfunccfyalphadot,
              'cd0':self.sumb.costfunctions.costfunccd0,
              'cdAlpha':self.sumb.costfunctions.costfunccdalpha,
              'cdAlphaDot':self.sumb.costfunctions.costfunccdalphadot,
@@ -489,15 +489,16 @@ class SUMB(AeroSolver):
                 'NKPC':{'BlockJacobi':'bjacobi',
                          'Jacobi':'jacobi',
                         'Additive Schwartz':'asm',
+                        'Hypre':'hypre',
                         'location':
                             'nksolvervars.global_pc_type',
                         'len':self.sumb.constants.maxstringlen},
                 'NKASMOverlap':{'location':'nksolvervars.asm_overlap'},
                 'NKPCILUFill':{'location':'nksolvervars.local_pc_ilu_level'},               
                 'NKLocalPCOrdering':{'Natural':'natural',
-                                     'RCM':'rcm',
                                      'Nested Dissection':'nd',
                                      'One Way Dissection':'1wd',
+                                     'RCM':'rcm',
                                      'Quotient Minimum Degree':'qmd',
                                      'location':
                                          'nksolvervars.local_pc_ordering',
@@ -1268,6 +1269,8 @@ class SUMB(AeroSolver):
             cfd_force_pts = self.getForcePoints()
         # end if
         [npts,nTS] = self.sumb.getforcesize()
+
+        nTS = 1
         if npts > 0:
             forces = self.sumb.getforces(cfd_force_pts.T).T
         else:
@@ -1278,6 +1281,7 @@ class SUMB(AeroSolver):
 
     def getForcePoints(self):
         [npts,nTS] = self.sumb.getforcesize()
+        nTS = 1
         if npts > 0:
             return self.sumb.getforcepoints(npts,nTS).T
         else:
@@ -1643,13 +1647,13 @@ class SUMB(AeroSolver):
 
             # Direct partial derivative contibution 
             dIda_1 = self.getdIda(objective)
-
+            print 'one:',dIda_1
             # dIda contribution for drda^T * psi
             dIda_2 = self.getdRdaPsi()
-         
+            print 'two:',dIda_2
             # Total derivative of the obective wrt aero-only DVs
             dIda = dIda_1 - dIda_2
-
+            
         # end if
 
         return dIda
@@ -1769,11 +1773,11 @@ class SUMB(AeroSolver):
 
     def getResNorms(self):
         '''Return the initial, starting and final Res Norms'''
-        
         return \
             numpy.real(self.sumb.nksolvervars.totalr0), \
             numpy.real(self.sumb.nksolvervars.totalrstart),\
             numpy.real(self.sumb.nksolvervars.totalrfinal)
+
 
     def setResNorms(self,initNorm=None,startNorm=None,finalNorm=None):
         ''' Set one of these norms if not none'''
@@ -1997,9 +2001,9 @@ class SUMB(AeroSolver):
              'clalphadot' :funcVals[self.sumb.costfunctions.costfuncclalphadot-1],
              'clalpha'    :funcVals[self.sumb.costfunctions.costfuncclalpha-1],
              'cl0'        :funcVals[self.sumb.costfunctions.costfunccl0-1],
-             'cfyalphadot':funcVals[self.sumb.costfunctions.costfunccfyalphadot-1],
-             'cfyalpha'   :funcVals[self.sumb.costfunctions.costfunccfyalpha-1],
-             'cfy0'       :funcVals[self.sumb.costfunctions.costfunccfy0-1],
+             #'cfyalphadot':funcVals[self.sumb.costfunctions.costfunccfyalphadot-1],
+             #'cfyalpha'   :funcVals[self.sumb.costfunctions.costfunccfyalpha-1],
+             #'cfy0'       :funcVals[self.sumb.costfunctions.costfunccfy0-1],
              'cdalphadot' :funcVals[self.sumb.costfunctions.costfunccdalphadot-1],
              'cdalpha'    :funcVals[self.sumb.costfunctions.costfunccdalpha-1],
              'cd0'        :funcVals[self.sumb.costfunctions.costfunccd0-1],

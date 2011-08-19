@@ -503,6 +503,8 @@
            do i=2,il
              rblank = real(iblank(i,j,k), realType)
              dw(i,j,k,itu1) = -vol(i,j,k)*dvt(i,j,k,1)*rblank
+             !dw(i,j,k,itu1) = -vol(i,j,k)*rblank
+
            enddo
          enddo
        enddo
