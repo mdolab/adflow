@@ -120,6 +120,7 @@ subroutine setupAllResidualMatrices
   !
 #ifndef USE_NO_PETSC
 
+
   ! Set the grid level of the current MG cycle, the value of the
   ! discretization and the logical correctForK.
 
@@ -391,7 +392,7 @@ subroutine setupAllResidualMatrices
                        !set values for symmtery plane normal derivatives
                        do l = 1,3
                           if (xblockcorneradjb(1,1,1,l,sps).ne.0.0)then
-                             idxnode = flowDoms(nn,level,sps)%globalNode(1,1,1)*3+1
+                             idxnode = flowDoms(nn,level,sps)%globalNode(1,1,1)*3+l
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(1,1,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
@@ -403,7 +404,7 @@ subroutine setupAllResidualMatrices
                              rotpointzcorrection = rotpointzcorrection+ xblockcorneradjb(1,1,1,l,sps)*(r(l)+ RpZCorrection(l))
                           endif
                           if (xblockcorneradjb(2,1,1,l,sps).ne.0.0)then
-                             idxnode = flowDoms(nn,level,sps)%globalNode(il,1,1)*3+1
+                             idxnode = flowDoms(nn,level,sps)%globalNode(il,1,1)*3+l
                              call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
                                   xblockcorneradjb(2,1,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
@@ -488,6 +489,8 @@ subroutine setupAllResidualMatrices
                           endif
                        enddo
                     end do
+
+
                     ! Transfer the block Jacobians to the global [dR/da]
                     ! matrix by setting the corresponding block entries of
                     ! the PETSc matrix dRda.
@@ -885,14 +888,22 @@ subroutine setupAllResidualMatrices
 #endif
 
 
-  ! Redo drdw with FD
-  useAD = .False.
-  usePC = .False.
-  useTranspose = .True.
-  !print *,'Doing FD dRdw'
-  !call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
-  !print *,'doing FD dRdx'
-  !call setupSpatialResidualMatrix(drdx,useAD)
+!!$  ! Redo drdw with FD
+!!$  useAD = .True.!.False.
+!!$  usePC = .False.
+!!$  useTranspose = .True.
+!!$  print *,'Doing FD dRdx'
+!!$  !call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
+!!$  call setupSpatialResidualMatrix(drdx,useAD)
+!!$
+!!$ !print *,'doing FD dRdx'
+!!$
+!!$  !call setupSpatialResidualMatrix(drdx,useAD)
+!!$  print *,'doing FD dRda'
+!!$  useAD = .True.!.False.
+!!$  call setupExtraResidualMatrix(drda,useAD)
+!!$  
+
 
 10 format(a)
 20 format(a,1x,f8.2)
@@ -937,6 +948,5 @@ contains
     enddo
 
   end subroutine blockIndices
-
 
 end subroutine setupAllResidualMatrices

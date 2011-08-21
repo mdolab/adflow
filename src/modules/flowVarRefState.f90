@@ -47,7 +47,11 @@
        !           length, see the comments for muRef.
 
        real(kind=realType) :: pRef, rhoRef, TRef
+       !AD derivative values
+       REAL(kind=realtype) :: prefd, rhorefd, trefd
        real(kind=realType) :: muRef, timeRef
+       !AD derivative values
+       REAL(kind=realtype) :: murefd, timerefd
 
        ! LRef:          Conversion factor of the length unit of the
        !                grid to meter. e.g. if the grid is in mm.,
@@ -63,7 +67,8 @@
        ! muDim:     Free stream molecular viscosity in kg/(m s)
 
        real(kind=realType) :: pInfDim, rhoInfDim, muDim
-
+       !AD derivative values
+       REAL(kind=realtype) :: pinfdimd, rhoinfdimd
        ! wInf(nw): Nondimensional free stream state vector.
        !           Variables stored are rho, u, v, w and rhoE.
        ! pInf:     Nondimensional free stream pressure.
@@ -76,9 +81,14 @@
        ! gammaInf: Free stream specific heat ratio.
 
        real(kind=realType) :: rhoInf, uInf, pInf, pInfCorr
+       !AD derivative values
+       REAL(kind=realtype) :: rhoinfd, uinfd, pinfd, pinfcorrd
        real(kind=realType) :: RGas, muInf, gammaInf
+       !AD derivative values
+       REAL(kind=realtype) :: rgasd, muinfd
        real(kind=realType), dimension(:), allocatable :: wInf
-
+       !AD derivative values
+       real(kind=realType), dimension(:), allocatable :: wInfd
        ! viscous:   whether or not this is a viscous computation.
        ! kPresent:  whether or not a turbulent kinetic energy is present
        !            in the turbulence model.

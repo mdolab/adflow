@@ -47,7 +47,7 @@
       integer(kind=intType) :: nDesignSurfaceRef
       integer(kind=intType) :: nDesignDissError
       
-      integer(kind=intType) :: nDesignExtra
+      integer(kind=intType) :: nDesignExtra = 0
 
       real(kind=realType),dimension(:),allocatable :: dIda
       

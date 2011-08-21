@@ -754,7 +754,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       ! nDom:            total number of computational blocks.
+       ! nDom:            total number of computation blocks.
        ! flowDoms(:,:,:): array of blocks. Dimensions are
        !                  (nDom,nLevels,nTimeIntervalsSpectral)
 
