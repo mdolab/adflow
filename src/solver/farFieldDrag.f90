@@ -44,7 +44,7 @@ subroutine farFieldDrag(value)
   real(kind=realType) :: dPoP,dSoR,dHou2
 
   ! Drag Values:
-  real(kind=realType) :: drag_local,drag
+  real(kind=realType) :: drag_local,drag,value
 
   ! Temp Variables for divergence calc
   real(kind=realType) :: qsp, qsm, rqsp, rqsm, porVel, porFlux
