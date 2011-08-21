@@ -211,16 +211,17 @@
        ! If the load imbalance tolerance was not met, print a warning
        ! message if I am processor 0.
 
-       if(.not.(cellsBalanced .and. facesBalanced) .and. &
-          myID == 0) then
-         print "(a)", "#"
-         print "(a)", "#                    Warning"
-         print 100, loadImbalance
-         print 101, ubvec(1), ubvec(2)
-         print "(a)", "#"
- 100     format("# Specified load imbalance tolerance",1X,F6.3,1X,"not &
-                &achieved.")
- 101     format("# I continue with",1X,F6.3,1X,"load imbalance for the &
+       !if(.not.(cellsBalanced .and. facesBalanced) .and. &
+       !   myID == 0) then
+       if (myid == 0) then
+          print "(a)", "#"
+          print "(a)", "#                    Warning"
+          print 100, loadImbalance
+          print 101, ubvec(1), ubvec(2)
+          print "(a)", "#"
+100       format("# Specified load imbalance tolerance",1X,F6.3,1X,"not &
+               &achieved.")
+101       format("# I continue with",1X,F6.3,1X,"load imbalance for the &
                 &cells and",1X,F6.3,1X,"for the faces")
        endif
 

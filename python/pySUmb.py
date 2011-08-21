@@ -1215,6 +1215,7 @@ class SUMB(AeroSolver):
         if (filename):
             self.sumb.inputio.surfacesolfile[:] = ''
             self.sumb.inputio.surfacesolfile[0:len(filename[0])] = filename[0]
+        # end if
         self.sumb.monitor.writegrid=False
         self.sumb.monitor.writevolume=False
         self.sumb.monitor.writesurface=True

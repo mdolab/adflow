@@ -89,76 +89,76 @@ subroutine NKsolver
 end subroutine NKsolver
 
 
-subroutine NKsolverPseudo
-  use communication
-  use constants
-  use inputTimeSpectral
-  use flowVarRefState
-  use ADjointVars , only: nCellsLocal
-  use NKSolverVars, only: pts,snes,dRdw,dRdwPre,ctx,jacobian_lag,&
-       snes_stol,snes_max_funcs,nksolversetup,rhoRes0,rhoresstart, &
-       snes_rtol,snes_atol,totalR0,itertot0,wVec,rVec,reason,NKSolvedOnce
-  use InputIO ! L2conv,l2convrel
-  use inputIteration
-  use monitor
-  use killSignals
-  use iteration
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "include/finclude/petsc.h"
+! subroutine NKsolverPseudo
+!   use communication
+!   use constants
+!   use inputTimeSpectral
+!   use flowVarRefState
+!   use ADjointVars , only: nCellsLocal
+!   use NKSolverVars, only: snes,dRdw,dRdwPre,ctx,jacobian_lag,&
+!        snes_stol,snes_max_funcs,nksolversetup,rhoRes0,rhoresstart, &
+!        snes_rtol,snes_atol,totalR0,itertot0,wVec,rVec,reason,NKSolvedOnce
+!   use InputIO ! L2conv,l2convrel
+!   use inputIteration
+!   use monitor
+!   use killSignals
+!   use iteration
+!   implicit none
+! #define PETSC_AVOID_MPIF_H
+! #include "include/finclude/petsc.h"
 
-  integer(kind=intTYpe) :: sns_max_its,ierr,snes_max_its,temp,steps
-  real(kind=realType) :: rhoRes,totalRRes,rhoRes1,ftime
+!   integer(kind=intTYpe) :: sns_max_its,ierr,snes_max_its,temp,steps
+!   real(kind=realType) :: rhoRes,totalRRes,rhoRes1,ftime
 
-  ! We are going to have to compute what the tolerances should be
-  ! since we are going to be using the same convergence criteria as
-  ! SUmb originally uses, that is L2Conv and L2ConvRel. This however,
-  ! gets a little trickier, since the NKsolver will always be called
-  ! after the RK solver has been run at least once to get a good
-  ! starting point. 
+!   ! We are going to have to compute what the tolerances should be
+!   ! since we are going to be using the same convergence criteria as
+!   ! SUmb originally uses, that is L2Conv and L2ConvRel. This however,
+!   ! gets a little trickier, since the NKsolver will always be called
+!   ! after the RK solver has been run at least once to get a good
+!   ! starting point. 
 
-  snes_stol = 1e-14
-  snes_max_funcs = ncycles-iterTot
-  ! Since we're only interested in the maximum function evals, just
-  ! set the max its to the same value...it will always punch out on
-  ! funcs before iterations in this case
+!   snes_stol = 1e-14
+!   snes_max_funcs = ncycles-iterTot
+!   ! Since we're only interested in the maximum function evals, just
+!   ! set the max its to the same value...it will always punch out on
+!   ! funcs before iterations in this case
 
-  snes_max_its = ncycles-iterTot
+!   snes_max_its = ncycles-iterTot
 
-  ! Determine the current level of convergence of the solution
+!   ! Determine the current level of convergence of the solution
 
-  call getCurrentResidual(rhoRes,totalRRes)
+!   call getCurrentResidual(rhoRes,totalRRes)
 
-  ! We need to compute two convergences: One coorsponding to L2ConvRel
-  ! and one for L2Conv
+!   ! We need to compute two convergences: One coorsponding to L2ConvRel
+!   ! and one for L2Conv
      
-  snes_rtol = (rhoResStart * L2ConvRel)/ rhoRes  ! Target / Current
+!   snes_rtol = (rhoResStart * L2ConvRel)/ rhoRes  ! Target / Current
      
-  ! Absolute Tol is the original totalR * L2conv
+!   ! Absolute Tol is the original totalR * L2conv
 
-  snes_atol = totalR0 * L2Conv
-  !call TSgetSNES(pts,snes,ierr)
+!   snes_atol = totalR0 * L2Conv
+!   !call TSgetSNES(pts,snes,ierr)
   
   
-  !call SNESSetTolerances(snes,snes_atol,snes_rtol,snes_stol,snes_max_its,&
-  !     snes_max_funcs,ierr); 
-  !call EChk(ierr,__FILE__,__LINE__)
+!   !call SNESSetTolerances(snes,snes_atol,snes_rtol,snes_stol,snes_max_its,&
+!   !     snes_max_funcs,ierr); 
+!   !call EChk(ierr,__FILE__,__LINE__)
 
-  ! Note: the krylov linear solver options are set in FormJacobian
+!   ! Note: the krylov linear solver options are set in FormJacobian
 
-  ! Form the initial guess from the current w-vector
-  call setwVec(wVec)
+!   ! Form the initial guess from the current w-vector
+!   call setwVec(wVec)
 
-  call TSSetup(pts,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+!   call TSSetup(pts,ierr)
+!   call EChk(ierr,__FILE__,__LINE__)
 
-  ! Solve IT!
-  steps=1000
-  call TSStep(pts,steps,ftime,ierr)
+!   ! Solve IT!
+!   steps=1000
+!   call TSStep(pts,steps,ftime,ierr)
   
-  NKSolvedOnce = .True.
+!   NKSolvedOnce = .True.
 
-  call EChk(ierr,__FILE__,__LINE__)
-  routineFailed = .False.
+!   call EChk(ierr,__FILE__,__LINE__)
+!   routineFailed = .False.
 
-end subroutine NKsolverPseudo
+! end subroutine NKsolverPseudo

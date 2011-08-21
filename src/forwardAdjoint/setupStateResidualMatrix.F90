@@ -129,6 +129,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
         if (not (viscous)) then
            call setup_PC_coloring(nn,nColor) ! Euler Colorings
         else
+           !call setup_PC_coloring(nn,nColor) ! Euler Colorings
            call setup_3x3x3_coloring(nn,nColor) ! dense 3x3x3 coloring
         end if
 

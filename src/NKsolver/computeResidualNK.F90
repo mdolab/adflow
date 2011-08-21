@@ -55,7 +55,6 @@ subroutine computeResidualNK()
         
      end do domainsState
   end do spectralLoop
-
   
   call computeLamViscosity
   call computeEddyViscosity

@@ -81,7 +81,7 @@ subroutine setRVec(rVec)
                  end do
 
                  do l=nt1,nt2
-                    temp(l) = dw(i,j,k,l)*ovv!*1e-3
+                    temp(l) = dw(i,j,k,l)*ovv!*1e4
                  end do
 
                  call VecSetValuesBlocked(rVec,1,globalCell(i,j,k),&
