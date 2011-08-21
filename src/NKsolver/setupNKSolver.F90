@@ -92,6 +92,32 @@ subroutine setupNKsolver
      call KSPSetOperators(global_ksp,dRdw,dRdWPre, DIFFERENT_NONZERO_PATTERN,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
+     call SNESSetFromOptions(snes,ierr); call EChk(ierr,__FILE__,__LINE__)
+
+     !call SNESLineSearchSet(snes,SNESLineSearchNo,ierr)
+     !call EChk(ierr,__FILE__,__LINE__)
+
+     ! Set the Checking Function to use at the start of line search to
+     ! make sure we dont have nans
+!      print *,'Setting preCheck'
+!      call SNESLineSearchSetPreCheck(snes,LSCheck,lsctx,ierr)
+!      call EChk(ierr,__FILE__,__LINE__)
+
+     ! See the monitor function for more information as to why this is -2
+     call SNESSetLagJacobian(snes, -2_intType, ierr); call EChk(ierr,__FILE__,__LINE__)
+
+     ! Since we're limiting the gmres to no restarts...there's a good
+     ! chance that we're get lots of solve failues which is OK. Set
+     ! this to the ncycles....basically large enough that it never happens
+     call SNESSetMaxLinearSolveFailures(snes, ncycles,ierr); call EChk(ierr,__FILE__,__LINE__)
+     
+     ! We are going to have to compute what the tolerances should be
+     ! since we are going to be using the same convergence criteria as
+     ! SUmb originally uses, that is L2Conv and L2ConvRel. This however,
+     ! gets a little trickier, since the NKsolver will always be called
+     ! after the RK solver has been run at least once to get a good
+     ! starting point. 
+
      NKSolverSetup = .True.
      NKSolvedOnce = .False.
      if(equations == RANSEquations)  then

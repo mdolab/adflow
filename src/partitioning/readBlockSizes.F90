@@ -206,6 +206,8 @@
        ! store the info of the cgns grid, and nullify its pointers.
 
        allocate(cgnsDoms(cgnsNDom), stat=ierr)
+       !and a second variable for the forwardAD
+       allocate(cgnsDomsd(cgnsNDom), stat=ierr)
        if(ierr /= 0)                      &
          call terminate("readBlockSizes", &
                         "Memory allocation failure for cgnsDoms")

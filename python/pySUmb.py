@@ -189,6 +189,7 @@ class SUMB(AeroSolver):
             'ASMOverlap' : [int,5],
             'subKSPSubspaceSize':[int,10],
             'finiteDifferencePC':[bool,True],
+            'useReverseModeAD':[bool,True],
             }
 
         informs = {
@@ -269,9 +270,9 @@ class SUMB(AeroSolver):
              'cl0':self.sumb.costfunctions.costfunccl0,
              'clAlpha':self.sumb.costfunctions.costfuncclalpha,
              'clAlphaDot':self.sumb.costfunctions.costfuncclalphadot,
-             #'cfy0':self.sumb.costfunctions.costfunccfy0,
-             #'cfyAlpha':self.sumb.costfunctions.costfunccfyalpha,
-             #'cfyAlphaDot':self.sumb.costfunctions.costfunccfyalphadot,
+             'cfy0':self.sumb.costfunctions.costfunccfy0,
+             'cfyAlpha':self.sumb.costfunctions.costfunccfyalpha,
+             'cfyAlphaDot':self.sumb.costfunctions.costfunccfyalphadot,
              'cd0':self.sumb.costfunctions.costfunccd0,
              'cdAlpha':self.sumb.costfunctions.costfunccdalpha,
              'cdAlphaDot':self.sumb.costfunctions.costfunccdalphadot,
@@ -279,6 +280,7 @@ class SUMB(AeroSolver):
              'cmzqDot':self.sumb.costfunctions.costfunccmzqdot,
              'clq':self.sumb.costfunctions.costfuncclq,
              'clqDot':self.sumb.costfunctions.costfuncclqdot,
+             'cBend':self.sumb.costfunctions.costfuncbendingcoef,
              }
         
         self.possibleObjectives = \
@@ -302,6 +304,7 @@ class SUMB(AeroSolver):
               'cmzqdot':'cmzqdot',
               'clq':'clq',
               'clqdot':'clqDot',
+              'cbend':'cBend',
               'area':'area',
               'volume':'volume',
               }
@@ -489,16 +492,15 @@ class SUMB(AeroSolver):
                 'NKPC':{'BlockJacobi':'bjacobi',
                          'Jacobi':'jacobi',
                         'Additive Schwartz':'asm',
-                        'Hypre':'hypre',
                         'location':
                             'nksolvervars.global_pc_type',
                         'len':self.sumb.constants.maxstringlen},
                 'NKASMOverlap':{'location':'nksolvervars.asm_overlap'},
                 'NKPCILUFill':{'location':'nksolvervars.local_pc_ilu_level'},               
                 'NKLocalPCOrdering':{'Natural':'natural',
+                                     'RCM':'rcm',
                                      'Nested Dissection':'nd',
                                      'One Way Dissection':'1wd',
-                                     'RCM':'rcm',
                                      'Quotient Minimum Degree':'qmd',
                                      'location':
                                          'nksolvervars.local_pc_ordering',
@@ -604,7 +606,8 @@ class SUMB(AeroSolver):
                 'familyRot',  # -> Not sure how to do
                 'areaAxis',
                 'autoSolveRetry',
-                'autoAdjointRetry'
+                'autoAdjointRetry',
+                'useReverseModeAD'
                 ]
         # end if
         
@@ -702,7 +705,6 @@ class SUMB(AeroSolver):
             print ' -> Initializing flow'
         self.sumb.initflow()
 
-
         # Create dictionary of variables we are monitoring
         nmon = self.sumb.monitor.nmon
         self.monnames = {}
@@ -746,6 +748,19 @@ class SUMB(AeroSolver):
         self.sumb.updateflow()
         self._update_vel_info = True
         return
+
+    def setElasticCenter(self,aero_problem):
+        '''
+        set the value of pointRefEC for the bending moment calculation
+        '''
+        #aero_problem._geometry.ListAttributes()
+        
+        self.sumb.inputphysics.pointrefec[0] = aero_problem._geometry.xRootec\
+            *self.metricConversion
+        self.sumb.inputphysics.pointrefec[1] = aero_problem._geometry.yRootec\
+            *self.metricConversion
+        self.sumb.inputphysics.pointrefec[2] = aero_problem._geometry.zRootec\
+            *self.metricConversion
     
     def setReferencePoint(self,aero_problem):
         '''
@@ -931,6 +946,8 @@ class SUMB(AeroSolver):
         self.adjointRHS         = None
         self.callCounter += 1
 
+        
+
         # Run Initialize, if already run it just returns.
         self.initialize(aero_problem,*args,**kwargs)
 
@@ -939,6 +956,7 @@ class SUMB(AeroSolver):
         self.setPeriodicParams(aero_problem)
         self.setInflowAngle(aero_problem)
         self.setReferencePoint(aero_problem)
+        #self.setElasticCenter(aero_problem)
         self.setRotationRate(aero_problem)
         self.setRefArea(aero_problem)
 
@@ -1180,6 +1198,8 @@ class SUMB(AeroSolver):
 
         return
 
+
+
     def writeVolumeSolutionFile(self,filename=None,writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS file.
                 Keyword arguments:
@@ -1302,6 +1322,11 @@ class SUMB(AeroSolver):
 
         return
 
+    def verifyBendingPartial(self):
+        self.sumb.verifybendingderivatives()
+        #end
+
+
     def globalNKPreCon(self,in_vec):
         '''This function is ONLY used as a preconditioner to the
         global Aero-Structural system'''
@@ -1381,14 +1406,47 @@ class SUMB(AeroSolver):
 
     def verifydRdw(self,**kwargs):
         ''' run the verify drdw scripts in fortran'''
+        # Make sure adjoint is initialize
+        self.initAdjoint()
         if not self.adjointMatrixSetup:
-            self.sumb.createpetscvars()
-            #self.setupAdjoint(forcePoints)
+            #self.sumb.createpetscvars()
+            self.setupAdjoint(None)#(forcePoints)
         # end if
 	level = 1
         self.sumb.iteration.currentlevel=level
         self.sumb.iteration.groundlevel=level
 	self.sumb.verifydrdwfile(1)
+
+	return
+
+    def verifydRdx(self,**kwargs):
+        ''' run the verify drdw scripts in fortran'''
+        # Make sure adjoint is initialize
+        self.initAdjoint()
+        if not self.adjointMatrixSetup:
+            #self.sumb.createpetscvars()
+            self.setupAdjoint(None)#(forcePoints)
+        # end if
+	level = 1
+        self.sumb.iteration.currentlevel=level
+        self.sumb.iteration.groundlevel=level
+	self.sumb.verifydrdxfile(1)
+        
+
+	return
+
+    def verifydRda(self,**kwargs):
+        ''' run the verify drdw scripts in fortran'''
+        # Make sure adjoint is initialize
+        self.initAdjoint()
+        if not self.adjointMatrixSetup:
+            #self.sumb.createpetscvars()
+            self.setupAdjoint(None)#(forcePoints)
+        # end if
+        level = 1
+        self.sumb.iteration.currentlevel=level
+        self.sumb.iteration.groundlevel=level
+	self.sumb.verifydrdextrafile(1)
 
 	return
     
@@ -1472,8 +1530,13 @@ class SUMB(AeroSolver):
         if not self.adjointMatrixSetup:
             self.sumb.createpetscvars()
  
-            self.sumb.setupallresidualmatrices()
-
+            if  self.getOption('useReverseModeAD'):
+                if self.myid==0:print 'computing with reverse mode...'
+                self.sumb.setupallresidualmatrices()
+            else:
+                if self.myid==0:print 'computing with forward mode...'
+                self.sumb.setupallresidualmatricesfwd()
+            #end
             if forcePoints is None:
                 forcePoints = self.getForcePoints()
             # end if
@@ -1521,7 +1584,7 @@ class SUMB(AeroSolver):
         if not self.adjointMatrixSetup:
             self.setupAdjoint(forcePoints)
         # end if
-       
+
         # Check to see if the RHS Partials have been computed
         if not self.adjointRHS == obj:
             self.computeObjPartials(obj,forcePoints)
@@ -1651,10 +1714,9 @@ class SUMB(AeroSolver):
             print 'one:',dIda_1
             # dIda contribution for drda^T * psi
             dIda_2 = self.getdRdaPsi()
-            print 'two:',dIda_2
+         
             # Total derivative of the obective wrt aero-only DVs
             dIda = dIda_1 - dIda_2
-            
         # end if
 
         return dIda
@@ -1688,7 +1750,6 @@ class SUMB(AeroSolver):
         if (self._update_geom_info):
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
-	    #print numpy.real(newGrid)
             if newGrid is not None:
                 self.sumb.setgrid(self.mesh.getSolverGrid())
                 
@@ -1778,7 +1839,6 @@ class SUMB(AeroSolver):
             numpy.real(self.sumb.nksolvervars.totalr0), \
             numpy.real(self.sumb.nksolvervars.totalrstart),\
             numpy.real(self.sumb.nksolvervars.totalrfinal)
-
 
     def setResNorms(self,initNorm=None,startNorm=None,finalNorm=None):
         ''' Set one of these norms if not none'''
@@ -2002,16 +2062,17 @@ class SUMB(AeroSolver):
              'clalphadot' :funcVals[self.sumb.costfunctions.costfuncclalphadot-1],
              'clalpha'    :funcVals[self.sumb.costfunctions.costfuncclalpha-1],
              'cl0'        :funcVals[self.sumb.costfunctions.costfunccl0-1],
-             #'cfyalphadot':funcVals[self.sumb.costfunctions.costfunccfyalphadot-1],
-             #'cfyalpha'   :funcVals[self.sumb.costfunctions.costfunccfyalpha-1],
-             #'cfy0'       :funcVals[self.sumb.costfunctions.costfunccfy0-1],
+             'cfyalphadot':funcVals[self.sumb.costfunctions.costfunccfyalphadot-1],
+             'cfyalpha'   :funcVals[self.sumb.costfunctions.costfunccfyalpha-1],
+             'cfy0'       :funcVals[self.sumb.costfunctions.costfunccfy0-1],
              'cdalphadot' :funcVals[self.sumb.costfunctions.costfunccdalphadot-1],
              'cdalpha'    :funcVals[self.sumb.costfunctions.costfunccdalpha-1],
              'cd0'        :funcVals[self.sumb.costfunctions.costfunccd0-1],
              'cmzqdot'    :funcVals[self.sumb.costfunctions.costfunccmzqdot-1],
              'cmzq'       :funcVals[self.sumb.costfunctions.costfunccmzq-1],
              'clqdot'     :funcVals[self.sumb.costfunctions.costfuncclqdot-1],
-             'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1]
+             'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1],
+             'cbend'        :funcVals[self.sumb.costfunctions.costfuncbendingcoef-1]
              }
                                                  
         # Also add in 'direct' solutions. Area etc

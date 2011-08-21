@@ -22,6 +22,7 @@ MODULE BLOCKPOINTERS_D
 
   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: xd
   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sid, sjd, skd
+  real(kind=realType), dimension(:,:,:),   pointer ::vold
   
   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: rotmatrixid
   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: rotmatrixjd
@@ -64,5 +65,7 @@ MODULE BLOCKPOINTERS_D
 
   real(kind=realType), dimension(:,:,:,:), pointer :: w_offTimeInstanced
   real(kind=realType), dimension(:,:,:), pointer :: vol_offTimeInstanced
+  
+  type(BCDataType),      dimension(:), pointer :: BCDatad
 
 END MODULE BLOCKPOINTERS_D

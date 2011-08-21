@@ -25,12 +25,14 @@ subroutine block_res(nn,sps)
   integer(kind=intType) :: nn,sps,i,j,k,sps2,mm,l
   logical :: correctForK
 
+
   ! Compute the pressures
   call setPointersOffTSInstance(nn,sps,sps)
 
   gm1 = gammaConstant - one
   correctForK = .False.
   ! Compute P 
+  40 format(1x,I4,I4,I4,E20.4)
 
   do k=0,kb
      do j=0,jb
@@ -40,7 +42,7 @@ subroutine block_res(nn,sps)
            p(i,j,k) = gm1*(w(i,j,k,irhoE) &
                 - half*w(i,j,k,irho)*v2)
            p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
-
+           !write(14,40),i,j,k,p(i,j,k)          
         enddo
      enddo
   enddo
@@ -80,7 +82,7 @@ subroutine block_res(nn,sps)
      end do
   end select
   
-  ! Rest the pointers the the "on time instance"
+  ! Reset the pointers the the "on time instance"
   call setPointersOffTSInstance(nn,sps,sps)  
   
   ! Actual residual calc
@@ -94,6 +96,7 @@ subroutine block_res(nn,sps)
            do j=2,jl
               do i=2,il
                  dw(i,j,k,l) = dw(i,j,k,l) / vol(i,j,k)
+                 !write(14,40),i,j,k,dw(i,j,k,l)
               end do
            end do
         end do
@@ -110,6 +113,6 @@ subroutine block_res(nn,sps)
         end do
      end do
   end do
-
   call setPointersOffTSInstance(nn,sps,sps)
+  !write(14,*),flowDomsd(sps)%w
 end subroutine block_res
