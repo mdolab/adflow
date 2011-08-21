@@ -63,6 +63,11 @@ subroutine NKsolver
 
   iterTot = iterTot + 1 ! Add this function evaluation
   
+!   if (myid == 0) then
+!      print *,'totalRStart:',totalRStart
+!      print *,'l2conv:',l2conv
+!      print *,'l2convrel:',l2convrel
+!   end if
   ! Master Non-Linear Loop:
   NonLinearLoop: do iter= 1,maxNonLinearIts
      
@@ -97,6 +102,11 @@ subroutine NKsolver
      rtol_last = ksp_rtol
      call VecNorm(rVec,NORM_2,norm,ierr)
      call EChk(ierr,__FILE__,__LINE__)
+
+
+!      if (myid == 0) then
+!         print *,'norm:',norm
+!      end if
 
      ! Check to see if we're converged: We need to check if we've meet
      ! L2Conv or L2ConvRel
@@ -241,6 +251,9 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
 
   ! Sufficient reduction 
   if (.5*gnorm*gnorm <= .5*fnorm*fnorm + alpha*initslope) then
+!      if (myid == 0) then
+!         print *,'exit 1 LS:',fnorm,gnorm,alpha,initslope
+!      end if
      goto 100
   end if
 
@@ -274,6 +287,10 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
 
   ! Sufficient reduction 
   if (.5*gnorm*gnorm <= .5*fnorm*fnorm + lambda*alpha*initslope) then
+   !   if (myid == 0) then
+!         print *,'exit 2 LS:',fnorm,gnorm,lambda,alpha,initslope
+!      end if
+
      goto 100
   end if
 
@@ -325,6 +342,9 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
 
     ! Is reduction enough?
     if (.5*gnorm*gnorm <= .5*fnorm*fnorm + lambda*alpha*initslope) then
+!        if (myid == 0) then
+!           print *,'exit 3 LS:',fnorm,gnorm,lambda,alpha,initslope
+!        end if
        exit cubic_loop
   end if
  end do cubic_loop
