@@ -456,7 +456,7 @@ subroutine solveState
      if (rhoRes1 < rhoResStart * l2convrel) then
         ! We no not have to run the NK solver so do nothing
      else
-        print *,'setting up NKSolver'
+	!        print *,'setting up NKSolver'
         ! Run the NK solver down as far we need to go
         call setupNKsolver()  
        
