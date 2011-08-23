@@ -1320,6 +1320,15 @@ class SUMB(AeroSolver):
 
         return
 
+    def verifyResiduals(self):
+        '''
+        run the residual verify routines
+        '''
+        level = 1
+        #self.sumb.verifyradj(level)
+        self.sumb.verifyresiduals(level)
+        return
+
     def verifyBendingPartial(self):
         self.sumb.verifybendingderivatives()
         #end
@@ -1360,6 +1369,7 @@ class SUMB(AeroSolver):
 	self.sumb.verifydcdwfile(1)
 
 	return
+
     def verifydIdw(self,objective,**kwargs):
         '''
         run compute obj partials, then print to a file...
