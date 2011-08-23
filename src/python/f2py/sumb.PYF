@@ -390,6 +390,10 @@ python module sumb ! in
        subroutine verifyradj(level)
          integer(kind=inttype) intent(in) :: level
        end subroutine verifyradj
+       
+       subroutine verifyresiduals(level)
+         integer(kind=inttype) intent(in) :: level
+       end subroutine verifyresiduals
 
        subroutine verifyrnkpc
        end subroutine verifyrnkpc
