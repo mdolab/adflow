@@ -145,6 +145,7 @@ class SUMB(AeroSolver):
             'NKJacobianLag':[int,10],
             'RKReset':[bool,False],
             'nRKReset':[int,5],
+            'NKFiniteDifferencePC':[bool,True],
 
             # Load Balance Paramters
             'blockSplitting':[bool,False],
@@ -913,6 +914,15 @@ class SUMB(AeroSolver):
         
         return
 
+    def reInitFlow(self):
+        '''
+        Reset the flow to recover from a nan
+        '''
+        self.sumb.initflow()
+        
+        return
+
+
     def getDensity(self):
         '''
         Get the density for this flow solution
@@ -1037,6 +1047,7 @@ class SUMB(AeroSolver):
         if self.sumb.killsignals.routinefailed:
             mpiPrint('Resetting flow due to failed flow solve...')
             #self.resetFlow() # Always reset flow if it failed
+            self.reInitFlow()
             if self.getOption('autoSolveRetry'): # Try the solver again
                 self.sumb.solver()
                 if self.sumb.killsignals.routinefailed:

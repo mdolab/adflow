@@ -269,7 +269,29 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
         bendingmomentb = 1.0
         call COMPUTEROOTBENDINGMOMENT_B(globalCFVals, globalCFValsb, bendingmoment, &
              &  bendingmomentb)
+
+        if (nDesignPointRefX >=0) then
+           if (myID==0)then
+              dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefb(1)*dJdc(sps)
+           end if
+        end if
         
+        if (nDesignPointRefY >=0) then
+           if (myID==0)then
+              dIda(nDesignPointRefY + 1) = dIda(nDesignPointRefY + 1) +pointrefb(2)*dJdc(sps)
+           end if
+        end if
+        
+        if (nDesignPointRefZ >=0) then
+           if (myID==0)then
+              dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) +pointrefb(3)*dJdc(sps)
+           end if
+        end if
+        if (nDesignLengthRef >=0) then
+           if (myID==0)then
+              dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefb*dJdc(sps)
+           end if
+        end if
      endif
 
      domainLoopAD: do nn=1,nDom
@@ -419,16 +441,17 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               end if
               
               if (nDesignPointRefX >=0) then
-
-                 dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefAdjb(1)*dJdc(sps)+pointrefb(1)*dJdc(sps)
+                 
+                 dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefAdjb(1)*dJdc(sps)
+                
               end if
 
               if (nDesignPointRefY >=0) then
-                 dIda(nDesignPointRefY + 1) = dIda(nDesignPointRefY + 1) + pointrefAdjb(2)*dJdc(sps)+pointrefb(2)*dJdc(sps)
+                 dIda(nDesignPointRefY + 1) = dIda(nDesignPointRefY + 1) + pointrefAdjb(2)*dJdc(sps)
               end if
 
               if (nDesignPointRefZ >=0) then
-                 dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefAdjb(3)*dJdc(sps)+pointrefb(3)*dJdc(sps)
+                 dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefAdjb(3)*dJdc(sps)
               end if
 
               if (nDesignRotCenX >= 0) then
@@ -444,7 +467,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
 
               if (nDesignLengthRef >=0) then
 
-                 dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb*dJdc(sps)+lengthRefb*dJdc(sps)
+                 dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb*dJdc(sps)
                  
               end if
               if (nDesignSurfaceRef >=0) then
