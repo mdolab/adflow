@@ -12,6 +12,7 @@ subroutine applyPC(in_vec,out_vec,N)
        local_pc_ordering,nkfinitedifferencepc
   use communication 
   use inputIteration
+  use stencils
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -34,7 +35,9 @@ subroutine applyPC(in_vec,out_vec,N)
   real(kind=realType) :: value
   integer(kind=intType) :: blksize
   logical :: useAD,usePC,useTranspose
-  
+  integer(kind=intType) :: n_stencil,totalCells
+  integer(kind=intType), dimension(:,:), allocatable :: stencil
+
   nDimW = nw * nCellsLocal * nTimeIntervalsSpectral
   
   ! Put a petsc wrapper around the input and output vectors
@@ -51,19 +54,31 @@ subroutine applyPC(in_vec,out_vec,N)
   if (not(NKPCSetup)) then
 
      ! Setup Pre-Conditioning Matrix
+     totalCells = nCellsLocal*nTimeIntervalsSpectral
+     allocate( nnzDiagonal(totalCells),nnzOffDiag(totalCells))
 
-     allocate( nnzDiagonal(nCellsLocal*nTimeIntervalsSpectral),&
-          nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
+     call initialize_stencils
+     if (not(viscous)) then
+        n_stencil = N_euler_drdw
+        allocate(stencil(n_stencil,3))
+        stencil = euler_drdw_stencil
+     else
+        n_stencil = N_visc_pc
+        allocate(stencil(n_stencil,3))
+        stencil = visc_pc_stencil
+     end if
 
-     call drdwPCPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal*nTimeIntervalsSpectral)
+     call statePreAllocation(nnzDiagonal,nnzOffDiag,nDimW/nw,stencil,n_stencil)
+  
      call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
           nDimW, nDimW,                     &
           PETSC_DETERMINE, PETSC_DETERMINE, &
           0, nnzDiagonal,         &
           0, nnzOffDiag,            &
-          dRdWPre, ierr); call EChk(ierr,__FILE__,__LINE__)
+          dRdWPre, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
      
-     deallocate(nnzDiagonal,nnzOffDiag)
+     deallocate(nnzDiagonal,nnzOffDiag,stencil)
 
      ! Setup Matrix-Free dRdw matrix
      call MatCreateMFFD(sumb_comm_world,nDimW,nDimW,&

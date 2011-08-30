@@ -74,6 +74,8 @@ FF90_OBJECTS = adjustInflowAngleAdj.o   \
 	       timeStepAdj.o            \
 	       vectorRotation.o         \
 	       xhaloAdj.o
+	       #nodalGradientsAdj.o      \
+	       #viscousFluxAdj.o \
 
 #FF90_OBJECTS = allocMemADjoint.o\
 #	       assertionsADjoint.o\

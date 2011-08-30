@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 
-subroutine computeObjPartials(costFunction,pts,npts,nTS)
+subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
   !
   !     ******************************************************************
   !     *                                                                *
@@ -43,7 +43,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
   integer(kind=intType), intent(in) :: costFunction, npts,nTS
   real(kind=realType), intent(in) :: pts(3,npts,nTS)
   real(kind=realType) :: ptsb(3,npts,nTS)
-
+  logical, intent(in) :: usedjdx,usedjdw
   ! Variables for computeforceandmomentadj_b
   real(kind=realtype) :: force(3), cforce(3)
   real(kind=realtype) :: forceb(3), cforceb(3)
@@ -77,6 +77,9 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
   real(kind=realType),dimension(8)::dcdalphab,dcdalphadotb,dcdbetab,dcdbetadotb,dcdMachb,dcdMachdotb
   real(kind=realType),dimension(8)::Coef0b,Coef0dotb
   real(kind=realType), dimension(nCostFunction)::globalCFVals
+  !bending derivatives
+  real(kind=realType), dimension(nCostFunction)::globalCFValsb
+  real(kind=realType)::bendingMoment,bendingMomentb
 
   real(kind=realType) :: lengthRefAdj,lengthRefAdjb
   real(kind=realType) :: surfaceRefAdj,surfaceRefAdjb
@@ -116,7 +119,8 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
        costFuncForceX,costFuncForceY,costFuncForceZ, &
        costFuncForceXCoef,costFuncForceYCoef,costFuncForceZCoef, &
        costFuncMomX,costFuncMomY,costFuncMomZ,&
-       costFuncMomXCoef,costFuncMomYCoef,costFuncMomZCoef)
+       costFuncMomXCoef,costFuncMomYCoef,costFuncMomZCoef,&
+       costFuncBendingCoef)
 
      ! For non-timeSpectral type functions, just time average the
      ! objectives
@@ -216,15 +220,19 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
   ! Now we have dJdc on each processor...when we go through the
   ! reverse mode AD we can take the dot-products on the fly SUM the
   ! entries into dJdw
-  call VecZeroEntries(dJdw,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call VecZeroEntries(dJdx,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call VecGetOwnershipRange(dJdx,row_start,row_end,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  if (usedJdw) then
+     call VecZeroEntries(dJdw,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+  end if
   
+  if (usedJdx) then
+     call VecZeroEntries(dJdx,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     call VecGetOwnershipRange(dJdx,row_start,row_end,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+  end if
+
   !for correction to rotPoint derivatives
   do nn=1,nSections
      dt(nn) = sections(nn)%timePeriod &
@@ -255,6 +263,19 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
      r = (/0,0,-1/)
      RpZCorrection = matmul(rotationMatrix,r)
      ii = 0 
+
+     !zero out the pointrefb value in the module
+     pointRefb(:) = 0.0
+     lengthRefb = 0.0
+     if (costfunction==costFuncBendingCoef)then
+        level = 1
+        call computeAeroCoef(globalCFVals,sps)
+        bendingmomentb = 1.0
+        call COMPUTEROOTBENDINGMOMENT_B(globalCFVals, globalCFValsb, bendingmoment, &
+             &  bendingmomentb)
+        
+     endif
+
      domainLoopAD: do nn=1,nDom
         call setPointersadj(nn,1_intType,sps)
         bocos: do mm=1,nBocos
@@ -323,6 +344,13 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
                    costFuncCmzq,costFuncCmzqDot)
                 
                  cmomentb(3) = 1.0
+              case(costFuncBendingCoef)
+                 cforceb(1) = globalCFValsb(costFuncForceXCoef)
+                 cforceb(2) = globalCFValsb(costFuncForceYCoef)
+                 cforceb(3) = globalCFValsb(costFuncForceZCoef)
+                 cmomentb(1) = globalCFValsb(costFuncMomXCoef)
+                 cmomentb(2) = globalCFValsb(costFuncMomYCoef)
+                 cmomentb(3) = globalCFValsb(costFuncMomZCoef)
               end select
 
               allocate(wblock(0:ib,0:jb,0:kb,nw),&
@@ -343,36 +371,40 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
                    &  sps)
               
               ! Set the w-values derivatives in dJdw
-              do kcell = 2,kl
-                 do jcell = 2,jl
-                    do icell = 2,il
-                       idxmgb = globalCell(icell,jcell,kcell)
-                       call VecSetValuesBlocked(dJdw,1,idxmgb,&
-                            wblockb(icell,jcell,kcell,:)*dJdc(sps),&
-                            ADD_VALUES,PETScIerr)
-                       call EChk(PETScIerr,__FILE__,__LINE__)
+              if (usedJdw) then
+                 do kcell = 2,kl
+                    do jcell = 2,jl
+                       do icell = 2,il
+                          idxmgb = globalCell(icell,jcell,kcell)
+                          call VecSetValuesBlocked(dJdw,1,idxmgb,&
+                               wblockb(icell,jcell,kcell,:)*dJdc(sps),&
+                               ADD_VALUES,PETScIerr)
+                          call EChk(PETScIerr,__FILE__,__LINE__)
+                       enddo
                     enddo
                  enddo
-              enddo
-
-              ! Set the pt derivative values in dIdpt
-              do j=jBeg,jEnd
-                 do i=iBeg,iEnd
-                    ! This takes care of the ii increments -- 
-                    ! DO NOT NEED INCREMENT ON LINE BELOW
-                    ii = ii + 1
-                    call VecSetValues(dJdx,3,&
-
-                         (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/)+(sps-1)*npts*3,&
-                         ptsb(:,ii,sps)*dJdc(sps),ADD_VALUES,PETScIerr)
-                   
-                    rotpointxcorrection = rotpointxcorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/1,0,0/)+RpXCorrection))
-                    rotpointycorrection = rotpointycorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,1,0/)+RpYCorrection))
-                    rotpointzcorrection = rotpointzcorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,0,1/)+RpZCorrection))
-
-                    call EChk(PETScIerr,__file__,__line__)
+              end if
+              
+              if (usedJdx) then
+                 ! Set the pt derivative values in dIdpt
+                 do j=jBeg,jEnd
+                    do i=iBeg,iEnd
+                       ! This takes care of the ii increments -- 
+                       ! DO NOT NEED INCREMENT ON LINE BELOW
+                       ii = ii + 1
+                       call VecSetValues(dJdx,3,&
+                            
+                            (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/)+(sps-1)*npts*3,&
+                            ptsb(:,ii,sps)*dJdc(sps),ADD_VALUES,PETScIerr)
+                       
+                       rotpointxcorrection = rotpointxcorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/1,0,0/)+RpXCorrection))
+                       rotpointycorrection = rotpointycorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,1,0/)+RpYCorrection))
+                       rotpointzcorrection = rotpointzcorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,0,1/)+RpZCorrection))
+                       
+                       call EChk(PETScIerr,__file__,__line__)
+                    end do
                  end do
-              end do
+              end if
               !ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
 
               ! We also have the derivative of the Objective wrt the
@@ -380,6 +412,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
 
               if (nDesignAoA >=0) then
                  dIda(nDesignAoA+1) = dIda(nDesignAoA+1) + alphaAdjb*dJdc(sps)
+
               end if
 
               if (nDesignSSA >= 0) then
@@ -395,15 +428,16 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               end if
               
               if (nDesignPointRefX >=0) then
-                 dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefAdjb(1)*dJdc(sps)
+
+                 dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefAdjb(1)*dJdc(sps)+pointrefb(1)*dJdc(sps)
               end if
 
               if (nDesignPointRefY >=0) then
-                 dIda(nDesignPointRefY + 1) = dIda(nDesignPointRefY + 1) + pointrefAdjb(2)*dJdc(sps)
+                 dIda(nDesignPointRefY + 1) = dIda(nDesignPointRefY + 1) + pointrefAdjb(2)*dJdc(sps)+pointrefb(2)*dJdc(sps)
               end if
 
               if (nDesignPointRefZ >=0) then
-                 dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefAdjb(3)*dJdc(sps)
+                 dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefAdjb(3)*dJdc(sps)+pointrefb(3)*dJdc(sps)
               end if
 
               if (nDesignRotCenX >= 0) then
@@ -418,7 +452,8 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
               endif
 
               if (nDesignLengthRef >=0) then
-                 dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb*dJdc(sps)
+
+                 dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb*dJdc(sps)+lengthRefb*dJdc(sps)
                  
               end if
               if (nDesignSurfaceRef >=0) then
@@ -436,16 +471,19 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS)
   end do spectralLoopAdj
   
   ! Assemble the petsc vectors
-  call VecAssemblyBegin(dJdw,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-  call VecAssemblyEnd(dJdw,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
+  if (usedJdw) then
+     call VecAssemblyBegin(dJdw,PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
+     call VecAssemblyEnd(dJdw,PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
+  end if
 
-  call VecAssemblyBegin(dJdx,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-  call VecAssemblyEnd(dJdx,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-
+  if (usedJdx) then
+     call VecAssemblyBegin(dJdx,PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
+     call VecAssemblyEnd(dJdx,PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
+  end if
 end subroutine computeObjPartials
 
 

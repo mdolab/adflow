@@ -42,10 +42,13 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       computeObjPartials.o\
 	       copyADjointStencil.o     \
 	       createPETScKsp.o         \
-	       createPETScMat.o         \
 	       createPETScVars.o        \
-	       createPETScVec.o         \
+	       createStatePETScVars.o   \
+	       createSpatialPETScVars.o \
+	       createCouplingPETScVars.o\
+	       createExtraPETScVars.o   \
 	       destroyPETScVars.o       \
+	       preallocation.o          \
                finalizePETSc.o          \
 	       getGlobalNodes.o         \
 	       getSolution.o            \
@@ -77,7 +80,9 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       matrixInfo.o\
 	       verifyRAdj.o\
                adjoint_stencils.o\
-               verifydRdwFile.o     
+               verifydRdwFile.o\
+               verifydRdxFile.o  \
+               verifydRdExtraFile.o    
 #	       verifyResiduals.o\
 #	       verifydRdw.o             \
 #              verifydRdwFile.o         \

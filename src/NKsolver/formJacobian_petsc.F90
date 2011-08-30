@@ -2,7 +2,7 @@ subroutine FormJacobian_petsc(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   use communication
   use precision 
   use NKSolverVars,only : ksp_solver_type,ksp_subspace,global_pc_type,&
-       asm_overlap,local_pc_ilu_level,local_pc_ordering,NKfinitedifferencepc
+       asm_overlap,local_pc_ilu_level,local_pc_ordering,NKfinitedifferencepc!,rvec
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"

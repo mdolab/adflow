@@ -55,7 +55,18 @@
 !      * Begin execution                                                *
 !      *                                                                *
 !      ******************************************************************
-!
+! 
+integer :: unitvf = 1011,ierror
+
+      
+      open (UNIT=unitvf,File='verifyvf.out',status='replace',action='write',iostat=ierror)
+      if(ierror /= 0)                        &
+           call terminate("verifyvf", &
+           "Something wrong when &
+           &calling open")
+      print *, "ierror:", ierror
+      
+
        ! Set rFilv to rFil to indicate that this is the viscous part.
        ! If rFilv == 0 the viscous residuals need not to be computed
        ! and a return can be made.
@@ -362,6 +373,9 @@
                  +         qy(i-1,j,  k1) + qy(i,j,  k1))
              q_z = fourth*(qz(i-1,j-1,k1) + qz(i,j-1,k1) &
                  +         qz(i-1,j,  k1) + qz(i,j,  k1))
+
+!!$             write(unitvf,*) i,j,k, u_x, u_y, u_z
+         
 
              ! The gradients in the normal direction are corrected, such
              ! that no averaging takes places here.
@@ -917,6 +931,8 @@
        ! Possibly correct the wall shear stress.
 
        call utauWF(rFilv)
+
+close(unitvf)
 
        contains
 

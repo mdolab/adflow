@@ -36,19 +36,25 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS = applyAllBC_block.o\
+FF90_OBJECTS = adjustInflowAngle.o\
+               applyAllBC_block.o\
 	       block_res.o\
+               block_res_extra.o\
+               block_res_spatial.o\
+               checkInputParam_mod.o\
 	       computeUtau_block.o\
+               gridVelocitiesFineLevel_block.o\
 	       initres_block.o\
 	       initres_block_mod.o\
+               metric_block.o\
+               normalVelocities_block.o\
+               referenceState_mod.o\
 	       residual_block.o\
 	       sa_block.o\
 	       saSolve_mod.o\
 	       timeStep_block.o\
                turbResidual_block.o\
-	       metric_block.o\
 	       xhalo_block.o\
-	       block_res_spatial.o\
 
 #      ******************************************************************
 #      *                                                                *

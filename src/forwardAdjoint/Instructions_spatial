@@ -1,0 +1,72 @@
+#These are instructions to generate the forward mode derivatives using Tapenade.
+#The forward mode derivatives are currenly using tapenade release 3.4.
+
+#change directories to:
+cd /SUmb/src/forwardAdjoint/
+
+#open the file:
+
+Makefile_tapenade_spatial
+
+#update the SOLVER_DIRSRC to your local /SUmb/src directory
+
+#run the command:
+
+make -f Makefile_tapenade_spatial
+
+#change directories to:
+cd /src/forwardAdjoint/residualTapenadeSpatial
+
+#run the command
+python autoEdit.py
+
+#change directories to:
+cd /src/forwardAdjoint/residualOutputSpatial
+
+#make the following manual corrections:
+emacs eintarray_spatial_d.f90: comment out all instances of eintd = 0.0
+
+metric_block_spatial_d.f90: change:
+  DO ii1=1,ISIZE3OFbcdata
+   bcdatad(ii1)%norm = 0.0
+   END DO
+to
+  DO ii1=1,nbocos
+   bcdatad(ii1)%norm = 0.0
+   END DO
+
+comment out:
+  REAL(kind=realtype) :: VOLPYM
+  REAL(kind=realtype) :: VOLPYM_SPATIAL_D
+
+normalvelocities_block_spatial_d.f90:
+remove 1 of the 2:INTEGER :: ii1
+change:
+     DO ii1=1,ISIZE2OFbcdata
+         bcdatad(ii1)%rface = 0.0
+     END DO
+
+to: 
+     DO ii1=1,nbocos
+     IF (ASSOCIATED(bcdata(ii1)%rface)) THEN
+         bcdatad(ii1)%rface = 0.0
+     endif
+     END DO
+
+and change:
+
+
+DO ii1=1,ISIZE2OFbcdata
+     bcdatad(ii1)%rface = 0.0
+END DO
+
+to:
+
+
+DO ii1=1,nbocos
+   IF (ASSOCIATED(bcdata(ii1)%rface)) THEN
+      bcdatad(ii1)%rface = 0.0
+   END IF
+END DO
+
+the code should now compile and run

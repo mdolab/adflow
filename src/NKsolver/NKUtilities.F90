@@ -13,111 +13,27 @@
 ! w. Only used for the coupled NK Aerostructural solver. 
 
 subroutine setWVec(wVec)
-
-  ! Set the petsc vector wVec from the current SUmb soltuion in w
-  use communication
-  use blockPointers
-  use inputTimeSpectral
-  use flowvarrefstate 
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "include/finclude/petsc.h"
-
-  Vec     wVec
-  integer(kind=intType) :: ierr,nn,sps,i,j,k,l
-  real(kind=realType) :: states(nw)
-
-  do sps=1,nTimeIntervalsSpectral
-     do nn=1,nDom
-        call setPointersAdj(nn,1_intType,sps)
-        ! Copy off w to wVec
-        do k=2,kl
-           do j=2,jl
-              do i=2,il
-                 do l=1,nw
-                    states(l) = w(i,j,k,l)
-                 end do
-                 call VecSetValuesBlocked(wVec,1,globalCell(i,j,k),states,&
-                      INSERT_VALUES,ierr)
-                 call EChk(ierr,__FILE__,__LINE__)
-              end do
-           end do
-        end do
-     end do
-  end do
-  call VecAssemblyBegin(wVec,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  call VecAssemblyEnd(wVec,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-end subroutine setWVec
-
-subroutine setRVec(rVec)
   ! Set the current residual in dw into the PETSc Vector
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petscdef.h"
 
   use communication
   use blockPointers
   use inputtimespectral
   use flowvarrefstate
   use inputiteration
+  use NKsolvervars, only : times
+  use petscvec
+
   implicit none
-#define PETSC_AVOID_MPIF_H
-#include "include/finclude/petsc.h"
-
-  Vec     rVec
-  integer(kind=intType) :: ierr,nn,sps,i,j,k,l
-  real(kind=realType) :: ovv,temp(nw)
-
-  do sps=1,nTimeIntervalsSpectral
-     do nn=1,nDom
-        call setPointersAdj(nn,1_intType,sps)
-        ! Copy off dw/vol to rVec
-        do k=2,kl
-           do j=2,jl
-              do i=2,il
-                 ovv = 1/vol(i,j,k)
-                 do l=1,nwf
-                    temp(l) = dw(i,j,k,l)*ovv
-                 end do
-
-                 do l=nt1,nt2
-                    temp(l) = dw(i,j,k,l)*ovv!*1e-3
-                 end do
-
-                 call VecSetValuesBlocked(rVec,1,globalCell(i,j,k),&
-                      dw(i,j,k,:)*ovv, INSERT_VALUES,ierr)
-                 call EChk(ierr,__FILE__,__LINE__)
-              end do
-           end do
-        end do
-     end do
-  end do
-
-  call VecAssemblybegin(rVec,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  call VecAssemblyEnd(rVec,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-end subroutine setRVec
-
-subroutine setW(wVec)
-
-  ! Set the SUmb state vector, w, from the petsc vec wVec
-  use communication
-  use blockPointers
-  use inputTimeSpectral
-  use flowVarRefState
-  implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "include/finclude/petsc.h"
 
   Vec     wVec
-  integer(kind=intType) :: ierr,nn,sps,i,j,k,l
-  real(kind=realType) :: temp,diff
+  integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
+  real(kind=realType),pointer :: wvec_pointer(:)
 
-  ! Note this is not ideal memory access but the values are stored by
-  ! block in PETSc (grouped in nw) but are stored separately in SUmb
+  call VecGetArrayF90(wVec,wvec_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  ii = 1
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
         call setPointersAdj(nn,1_intType,sps)
@@ -125,28 +41,290 @@ subroutine setW(wVec)
         do k=2,kl
            do j=2,jl
               do i=2,il
-                 do l=1,nw
-                    call VecGetValues(wVec,1,globalCell(i,j,k)*nw+l-1,&
-                         w(i,j,k,l),ierr)
+                 do l=1,nwf
+                    wvec_pointer(ii) = w(i,j,k,l)
+                    ii = ii + 1
                  end do
               end do
            end do
         end do
      end do
   end do
+
+  call VecRestoreArrayF90(wVec,wvec_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+end subroutine setWVec
+
+subroutine setRVec(rVec)
+  ! Set the current residual in dw into the PETSc Vector
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petscdef.h"
+
+  use communication
+  use blockPointers
+  use inputtimespectral
+  use flowvarrefstate
+  use inputiteration
+  use NKsolvervars, only : times
+  use petscvec
+
+  implicit none
+
+  Vec     rVec
+  integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
+  real(kind=realType) :: ovv
+  real(kind=realType),pointer :: rvec_pointer(:)
+
+  call VecGetArrayF90(rVec,rvec_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  ii = 1
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointersAdj(nn,1_intType,sps)
+        ! Copy off dw/vol to rVec
+        do k=2,kl
+           do j=2,jl
+              do i=2,il
+                 ovv = 1/vol(i,j,k)
+                 do l=1,nwf
+                    rvec_pointer(ii) = dw(i,j,k,l)*ovv
+                    ii = ii + 1
+                 end do
+
+                 do l=nt1,nt2
+                    rvec_pointer(ii) = dw(i,j,k,l)*ovv
+                    ii = ii + 1
+                 end do
+              end do
+           end do
+        end do
+     end do
+  end do
+
+  call VecRestoreArrayF90(rVec,rvec_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+end subroutine setRVec
+
+subroutine setW(wVec)
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petscdef.h"
+
+  ! Set the SUmb state vector, w, from the petsc vec wVec
+  use communication
+  use blockPointers
+  use inputTimeSpectral
+  use flowVarRefState
+  use NKsolvervars, only : times
+  use petscvec
+
+  implicit none
+
+  Vec     wVec
+  integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
+  real(kind=realType) :: temp,diff
+  real(kind=realType),pointer :: wvec_pointer(:)
+
+  ! Note this is not ideal memory access but the values are stored by
+  ! block in PETSc (grouped in nw) but are stored separately in SUmb
+
+  call VecGetArrayF90(wVec,wvec_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  ii = 1
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointersAdj(nn,1_intType,sps)
+
+        do k=2,kl
+           do j=2,jl
+              do i=2,il
+                 do l=1,nw
+                    w(i,j,k,l) = wvec_pointer(ii) 
+                    ii = ii + 1
+                 end do
+              end do
+           end do
+        end do
+     end do
+  end do
+
+  call VecRestoreArrayF90(wVec,wvec_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+ 
 end subroutine setW
 
+subroutine setW_ghost(wVec)
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petscdef.h"
+
+  ! Set the SUmb state vector, w, from the petsc vec wVec
+  use communication
+  use blockPointers
+  use inputTimeSpectral
+  use flowVarRefState
+  use NKsolvervars, only : times
+  use petscvec
+
+  implicit none
+
+  Vec     wVec
+  Vec     wVec_l
+  integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
+  real(kind=realType) :: temp,diff
+  real(kind=realType),pointer :: wvec_pointer(:)
+
+  ! Note this is not ideal memory access but the values are stored by
+  ! block in PETSc (grouped in nw) but are stored separately in SUmb
+
+  call cpu_time(times(1))
+  call VecGhostUpdateBegin(wVec,INSERT_VALUES,SCATTER_FORWARD,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  call VecGhostUpdateEnd(wVec,INSERT_VALUES,SCATTER_FORWARD,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  call cpu_time(times(2))
+
+  times(10) = times(10) + times(2)-times(1)
+  call VecGhostGetLocalForm(wVec,wVec_l,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecGetArrayF90(wVec_l,wvec_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  ii = 1
+  ! First do the "Owned" cells
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointersAdj(nn,1_intType,sps)
+
+        do k=2,kl
+           do j=2,jl
+              do i=2,il
+                 do l=1,nw
+                    w(i,j,k,l) = wvec_pointer(ii) 
+                    ii = ii + 1
+                 end do
+              end do
+           end do
+        end do
+     end do
+  end do
+
+  ! Next do the halos:
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointersAdj(nn,1_intType,sps)
+        
+        ! Loop over all 6 faces doubly extruded faces and add to
+        ! list if necessary:
+        
+        ! I-Low Face
+        do k=0,kb
+           do j=0,jb
+              do i=0,1
+                 if (globalCell(i,j,k) .ge. 0) then
+                    do l=1,nw
+                       w(i,j,k,l) = wvec_pointer(ii)
+                       ii = ii + 1
+                    end do
+                 end if
+              end do
+           end do
+        end do
+           
+        ! I-High Face
+        do k=0,kb
+           do j=0,jb
+              do i=ib-1,ib
+                 if (globalCell(i,j,k) .ge. 0) then
+                    do l=1,nw
+                       w(i,j,k,l) = wvec_pointer(ii)
+                       ii = ii + 1
+                    end do
+                 end if
+              end do
+           end do
+        end do
+
+        ! J-Low Face
+        do k=0,kb
+           do j=0,1
+              do i=0,ib
+                 if (globalCell(i,j,k) .ge. 0) then
+                    do l=1,nw
+                       w(i,j,k,l) = wvec_pointer(ii)
+                       ii = ii + 1
+                    end do
+                 end if
+              end do
+           end do
+        end do
+
+        ! J-High Face
+        do k=0,kb
+           do j=jb-1,jb
+              do i=0,ib
+                 if (globalCell(i,j,k) .ge. 0) then
+                    do l=1,nw
+                       w(i,j,k,l) = wvec_pointer(ii)
+                       ii = ii + 1
+                    end do
+                 end if
+              end do
+           end do
+        end do
+
+        ! K-Low Face
+        do k=0,1
+           do j=0,jb
+              do i=0,ib
+                 if (globalCell(i,j,k) .ge. 0) then
+                    do l=1,nw
+                       w(i,j,k,l) = wvec_pointer(ii)
+                       ii = ii + 1
+                    end do
+                 end if
+              end do
+           end do
+        end do
+
+        ! K-High Face
+        do k=kb-1,kb
+           do j=0,jb
+              do i=0,ib
+                 if (globalCell(i,j,k) .ge. 0) then
+                    do l=1,nw
+                       w(i,j,k,l) = wvec_pointer(ii)
+                       ii = ii + 1
+                    end do
+                 end if
+              end do
+           end do
+        end do
+     end do
+  end do
+  
+  ! Restore pointer to local array
+  call VecRestoreArrayF90(wVec_l,wvec_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+ 
+  ! Restore the ghosted form of the array
+  call VecGhostRestoreLocalForm(wVec,wVec_l,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+end subroutine setW_ghost
 
 subroutine getStates(states,ndimw)
-
+ 
   ! Return the state vector, w to Python
-
+  
   use ADjointPETSc
   use blockPointers
   use inputTimeSpectral
   use flowvarrefstate
   implicit none
-
+ 
   integer(kind=intType),intent(in):: ndimw
   real(kind=realType),dimension(ndimw),intent(out) :: states(ndimw)
 
@@ -172,7 +350,7 @@ subroutine getStates(states,ndimw)
 end subroutine getStates
 
 subroutine getRes(res,ndimw)
-
+  
   ! Compute the residual and return result to Python
 
   use ADjointPETSc
@@ -180,7 +358,7 @@ subroutine getRes(res,ndimw)
   use inputTimeSpectral
   use flowvarrefstate
   implicit none
-
+ 
   integer(kind=intType),intent(in):: ndimw
   real(kind=realType),dimension(ndimw),intent(out) :: res(ndimw)
 
@@ -207,7 +385,7 @@ subroutine getRes(res,ndimw)
 end subroutine getRes
 
 subroutine setStates(states,ndimw)
-
+  
   ! Take in externallly generated states and set them in SUmb
 
   use ADjointPETSc
@@ -215,7 +393,7 @@ subroutine setStates(states,ndimw)
   use inputTimeSpectral
   use flowvarrefstate
   implicit none
-
+ 
   integer(kind=intType),intent(in):: ndimw
   real(kind=realType),dimension(ndimw),intent(in) :: states(ndimw)
 
@@ -240,149 +418,101 @@ subroutine setStates(states,ndimw)
   end do
 end subroutine setStates
 
+subroutine setRVec_old(rVec)
+  ! Set the current residual in dw into the PETSc Vector
 
-subroutine weak_scaling_test(useComm,setPETSCVecs,niterations)
+  use communication
+  use blockPointers
+  use inputtimespectral
+  use flowvarrefstate
+  use inputiteration
+  use NKsolvervars, only : times
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
 
+  Vec     rVec
+  integer(kind=intType) :: ierr,nn,sps,i,j,k,l
+  real(kind=realType) :: ovv,temp(nw)
+  
+  times(1) = mpi_wtime()
 
+  do sps=1,nTimeIntervalsSpectral
+     do nn=1,nDom
+        call setPointersAdj(nn,1_intType,sps)
+        ! Copy off dw/vol to rVec
+        do k=2,kl
+           do j=2,jl
+              do i=2,il
+                 ovv = 1/vol(i,j,k)
+                 do l=1,nwf
+                    temp(l) = dw(i,j,k,l)*ovv
+                 end do
+
+                 do l=nt1,nt2
+                    temp(l) = dw(i,j,k,l)*ovv!*1e4
+                 end do
+
+                 call VecSetValuesBlocked(rVec,1,globalCell(i,j,k),&
+                      dw(i,j,k,:)*ovv, INSERT_VALUES,ierr)
+                 call EChk(ierr,__FILE__,__LINE__)
+              end do
+           end do
+        end do
+     end do
+  end do
+
+  call VecAssemblybegin(rVec,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  call VecAssemblyEnd(rVec,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  times(2) = mpi_wtime()
+  times(10) = times(10) + times(2)-times(1)
+
+end subroutine setRVec_old
+
+subroutine setW_old(wVec)
+
+  ! Set the SUmb state vector, w, from the petsc vec wVec
+  use communication
   use blockPointers
   use inputTimeSpectral
-  use flowvarrefstate
-  use iteration
-  use inputPhysics 
-  use nksolvervars
-  use communication
+  use flowVarRefState
+  use NKsolvervars, only : times
   implicit none
 
-  ! do a weak scaling test by running the computeResidual NK function a number of times:
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
 
-  logical, intent(in) :: useComm, setPETScVecs
-  integer(kind=intType) :: niterations
+  Vec     wVec
+  integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
+  real(kind=realType) :: temp,diff
 
-  ! Local Variables
-  integer(kind=intType) :: ierr,i,j,k,l,sps,nn,iter
-  logical secondHalo ,correctForK
-  real(kind=realType) :: gm1,v2,val
-  real(kind=realType) :: comm_time,time(4),total_time_local,total_time
-  real(kind=realType),dimension(:),allocatable :: all_times
-  secondHalo = .True. 
-  currentLevel = 1_intType
-  groundLevel = 1_intTYpe
-  ! Next we need to compute the pressures
-  gm1 = gammaConstant - one
-  correctForK = .False.
+  times(1) = mpi_wtime()
+  ! Note this is not ideal memory access but the values are stored by
+  ! block in PETSc (grouped in nw) but are stored separately in SUmb
 
-  ! --------------- Master Loop -------------------
-  comm_time  = 0.0
-  if (myid == 0) then
-     print *,'Running ',niterations, ' of the residual routine'
-  end if
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointersAdj(nn,1_intType,sps)
+        
+        ! Copy off w to wVec
+        do k=2,kl
+           do j=2,jl
+              do i=2,il
+                 do l=1,nw
+                    call VecGetValues(wVec,1,globalCell(i,j,k)*nw+l-1,&
+                         w(i,j,k,l),ierr)
+                  end do
+              end do
+           end do
+        end do
 
-  call mpi_barrier(sumb_comm_world,ierr)
-  
-  time(3) = mpi_wtime()
-
-  do iter=1,niterations
-
-     if (setPETScVecs) then
-        call setW(wVec)
-     end if
-
-     spectralLoop: do sps=1,nTimeIntervalsSpectral
-        domainsState: do nn=1,nDom
-           ! Set the pointers to this block.
-           call setPointers(nn, currentLevel, sps)
-
-           do k=2,kl
-              do j=2,jl
-                 do i=2,il
-
-                    v2 = w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 &
-                         + w(i,j,k,ivz)**2
-
-                    p(i,j,k) = gm1*(w(i,j,k,irhoE) &
-                         - half*w(i,j,k,irho)*v2)
-                    p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
-                 enddo
-              enddo
-           enddo
-
-           call computeEtot(2_intType,il, 2_intType,jl, &
-                2_intType,kl, correctForK)
-
-        end do domainsState
-     end do spectralLoop
-
-
-     call computeLamViscosity
-     call computeEddyViscosity
-
-     !   Apply BCs
-     call applyAllBC(secondHalo)
-
-     ! Exchange solution -- always the fine level
-     if (useComm) then
-        time(1) = mpi_wtime()
-        call whalo1(1_intType, 1_intType, nMGVar, .true., &
-             .true., .true.)
-
-        if (equations == RANSEquations) then
-           call whalo2(1_intType, nt1, nt2, .false., .false., .true.)  
-        end if
-        time(2) = mpi_wtime()
-        comm_time = comm_time + time(2)-time(1)
-     end if
-
-     ! Why does this need to be set?
-     rkStage = 0
-
-     ! Compute the skin-friction velocity
-     call computeUtau
-
-     ! Compute time step
-     call timestep(.false.)
-
-     ! Possible Turblent Equations
-     if( equations == RANSEquations ) then
-        call initres(nt1MG, nMGVar) ! Initialize only the Turblent Variables
-        call turbResidual
-     endif
-
-     ! Initialize Flow residuals
-     call initres(1_intType, nwf)
-
-     ! Actual Residual Calc
-     call residual 
-
-     if (setPETScVecs) then
-        call setRVec(rVec)
-     end if
-
-  end do ! Iteration Loop
-
-  time(4) = mpi_wtime()
-
-  ! Do a nice reduction on the times:
-
-  allocate(all_times(nProc))
-  call MPI_Gather (comm_time,1,sumb_real,all_times,1,sumb_real,0,sumb_comm_world,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  
-
-  total_time_local = time(4)-time(3)
-  
-  call  MPI_Reduce(total_time_local,total_time,1,sumb_real,MPI_MAX,sumb_comm_world,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  if (myid == 0) then
-     do i=1,nProc
-        print *,'Proc',i,' comm time:',all_times(i)
      end do
-     print *,  ' '
-     print *,'Total Time:',total_time
-  end if
+  end do
 
+  times(2) = mpi_wtime()
+  times(20) = times(20) + times(2)-times(1)
 
-
-
-  deallocate(all_times)
-end subroutine weak_scaling_test
+end subroutine setW_old

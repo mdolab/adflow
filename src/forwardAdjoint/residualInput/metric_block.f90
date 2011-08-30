@@ -109,6 +109,7 @@ subroutine metric_block(nn,level,sps)
                 +         x(l,j,k,3) + x(l,m,k,3) &
                 +         x(l,m,n,3) + x(l,j,n,3))
 
+
            ! Compute the volumes of the 6 sub pyramids. The
            ! arguments of volpym must be such that for a (regular)
            ! right handed hexahedron all volumes are positive.
@@ -190,7 +191,7 @@ subroutine metric_block(nn,level,sps)
   ! and fact is used to correct this for a left handed block,
   ! as well as the scaling factor of 0.5
 
-  if( flowDoms(nn,level,sps)%rightHanded ) then
+  if (rightHanded) then!( flowDoms(nn,level,sps)%rightHanded ) then
      fact =  half
   else
      fact = -half

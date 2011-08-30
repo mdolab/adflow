@@ -40,6 +40,9 @@
        real(kind=realType) :: re, ue, ve, we, qne, ce
        real(kind=realType) :: qnf, cf, uf, vf, wf, sf, cc, qq
 
+       ! Variables Added for forward AD
+       real(kind=realType) :: rho,sf2
+
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
        real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
        real(kind=realType), dimension(:,:),   pointer :: gamma2
@@ -219,8 +222,14 @@
                  uf = ue + (qnf - qne)*nnx
                  vf = ve + (qnf - qne)*nny
                  wf = we + (qnf - qne)*nnz
-                 sf = ww2(i,j,irho)**gamma2(i,j)/pp2(i,j)
-
+                 
+                 !Intermediate rho variable added to fix AD bug,ww2 
+                 ! was not getting picked up here.
+                 rho = ww2(i,j,irho)
+                 sf = rho**gamma2(i,j)/pp2(i,j)
+                 !old version
+                 !sf2 = ww2(i,j,irho)**gamma2(i,j)/pp2(i,j)
+                
                  do l=nt1MG,nt2MG
                    ww1(i,j,l) = ww2(i,j,l)
                  enddo

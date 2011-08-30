@@ -33,10 +33,10 @@ subroutine createPETScVars
   !
 #ifndef USE_NO_PETSC
 
-  ! Send some feedback to screen.
-
-  call createPETScMat
-  call createPETScVec
+  call createStatePETScVars
+  call createSpatialPETScVars
+  call createExtraPETScVars
+  call createCouplingPETScVars
   call createPETScKsp
 
 #endif
