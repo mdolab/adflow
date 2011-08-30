@@ -66,12 +66,6 @@ subroutine NKsolver
   ! Master Non-Linear Loop:
   NonLinearLoop: do iter= 1,maxNonLinearIts
      
-     ! Increment the function evals from the Krylov Iterations and the
-     ! line search iterations
-     if (iter .ne. 1) then
-        iterTot = iterTot + ksp_iterations + nfevals 
-        call convergenceInfo
-     end if
 
      ! Use the result from the last line search
      call vecCopy(g,rVec,ierr)
@@ -110,17 +104,16 @@ subroutine NKsolver
         exit NonLinearLoop
      end if
 
-     ! Check to see if we've done too many function Evals:
-     if (iterTot > ncycles) then
-        exit NonLinearLoop
-     end if
 
      ! Get the EW Forcing tolerance ksp_rtol
      call getEWTol(iter,norm,old_norm,rtol_last,ksp_rtol)
 
      ! Set all tolerances for linear solve:
-     ksp_atol = 1e-12
-     ksp_max_it = ksp_subspace
+     ksp_max_it = min(ksp_subspace,ncycles-iterTot)
+
+     ! Set absolve tolerance so we don't go past our target:
+     ksp_atol = totalR0 * L2Conv
+
      call KSPSetTolerances(global_ksp,ksp_rtol,ksp_atol,ksp_div_tol,&
           ksp_max_it,ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -132,9 +125,21 @@ subroutine NKsolver
      ! Get convergence reason:
      call KSPGetConvergedReason(global_ksp,reason,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-!      if (myid == 0) then
-!         print *,'Reason:',reason
-!      end if
+
+     ! Get the number of iterations to use with Convergence Info
+     call KSPGetIterationNumber(global_ksp,ksp_iterations,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Increment iterTot from krylov iterations
+     iterTot = iterTot + ksp_iterations
+
+     ! Check to see if we've done too many function Evals:
+     if (iterTot >= ncycles) then
+        call convergenceInfo
+        iterTot = ncycles
+        exit NonLinearLoop
+     end if
+
      ! Linesearching:
      if (.True.) then! Check for type of line search:
         call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals)
@@ -142,14 +147,22 @@ subroutine NKsolver
         call LSNone(wVec,rVec,g,deltaW,work,nfevals)
      end if
 
+     ! Increment the function evals from the line search iterations
+     iterTot = iterTot + nfevals 
+
+     ! Check to see if we've done too many function Evals:
+     if (iterTot >= ncycles) then
+        call convergenceInfo
+        iterTot = ncycles
+        exit NonLinearLoop
+     end if
+
      ! Copy the work vector to wVec
      call VecCopy(work,wVec,ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
-     ! Get the number of iterations to use with Convergence Info
-     call KSPGetIterationNumber(global_ksp,ksp_iterations,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-  
+     ! Print current convergence info
+     call convergenceInfo
   end do NonLinearLoop
      
   ! Not really anything else to do...

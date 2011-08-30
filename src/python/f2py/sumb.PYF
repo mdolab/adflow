@@ -262,6 +262,9 @@ python module sumb ! in
          logical :: eulerwallspresent
        end subroutine solver
 
+       subroutine computeresidualnk
+       end subroutine computeresidualnk
+
        subroutine solverunsteadymd(mdcallback_python) ! in :test:solverUnsteadyMD.F90
          use solverunsteadymd__user__routines
          external mdcallback_python
@@ -273,6 +276,12 @@ python module sumb ! in
        subroutine destroynksolver
        end subroutine destroynksolver
        
+       subroutine weak_scaling_test(usecomm,setpetscvecs,niterations)
+         logical :: usecomm
+         logical :: setpetscvecs
+         integer(kind=inttype) :: niterations
+       end subroutine weak_scaling_test
+
        subroutine applypc(in_vec,out_vec,n) ! in :test:NKsolver.F90
          real(kind=realtype) dimension(n),intent(in) :: in_vec
          real(kind=realtype) dimension(n),intent(out),depend(n) :: out_vec

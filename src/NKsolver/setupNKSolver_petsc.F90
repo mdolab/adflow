@@ -10,8 +10,8 @@ subroutine setupNKsolver_petsc
   use flowVarRefState
   use ADjointVars , only: nCellsLocal
   use NKSolverVars, only: snes,dRdw,dRdwPre,ctx,jacobian_lag,NKsolvedOnce, &
-       snes_stol,snes_max_its,snes_max_funcs,nksolversetup,wVec,rVec,itertot0, &
-       lsctx
+       snes_stol,snes_max_its,snes_max_funcs,nksolversetup,wVec,rVec,itertot0
+
   use InputIO ! L2conv,l2convrel
   use inputIteration
   use monitor
