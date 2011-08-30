@@ -43,6 +43,7 @@ subroutine FormFunction_mf(ctx,wVec,rVec,ierr)
   use flowVarRefState
   use inputtimespectral
   use blockPointers
+  use nksolvervars, only : times,petscComm
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -55,8 +56,16 @@ subroutine FormFunction_mf(ctx,wVec,rVec,ierr)
   ! This is just a shell routine that runs the more broadly useful
   ! computeResidualNK subroutine
  
-  call setW(wVec)
-  call computeResidualNK()
+  ! Also try doing the built-in vec scats
+
+  if (petscComm) then
+     call setW_ghost(wVec)
+     call computeResidualNK2()
+  else
+     call setW(wVec)
+     call computeResidualNK()
+  end if
+
   call setRVec(rVec)
   ! We don't check an error here, so just pass back zero
   ierr = 0

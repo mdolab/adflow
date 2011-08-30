@@ -17,7 +17,7 @@ subroutine NKsolver
   use NKSolverVars, only: dRdw,dRdwPre,jacobian_lag,&
        totalR0,totalRStart,wVec,rVec,deltaW,reason,global_ksp,reason,&
        ksp_rtol,ksp_atol,ksp_max_it,ksp_subspace,ksp_div_tol,&
-       nksolvedonce
+       nksolvedonce,times,petsccomm
 
   use InputIO ! L2conv,l2convrel
   use inputIteration
@@ -47,6 +47,9 @@ subroutine NKsolver
   rtol_last =0.0
   nfevals = 0
 
+  times(10) = 0.0
+  times(20) = 0.0
+
   ! Set the inital wVec
   call setwVec(wVec)
 
@@ -55,19 +58,20 @@ subroutine NKsolver
   call VecDuplicate(wVec,work,ierr);  call EChk(ierr,__FILE__,__LINE__)
  
   ! Evaluate the residual before we start and copy the value into g
-  call setW(wVec)
-  call computeResidualNK()
+  if (petscComm) then
+     call setW_ghost(wVec)
+     call computeResidualNK2()
+  else
+     call setW(wVec)
+     call computeResidualNK()
+  end if
   call setRVec(rVec)
+
   call vecCopy(rVec,g,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   iterTot = iterTot + 1 ! Add this function evaluation
   
-!   if (myid == 0) then
-!      print *,'totalRStart:',totalRStart
-!      print *,'l2conv:',l2conv
-!      print *,'l2convrel:',l2convrel
-!   end if
   ! Master Non-Linear Loop:
   NonLinearLoop: do iter= 1,maxNonLinearIts
      
@@ -103,11 +107,6 @@ subroutine NKsolver
      call VecNorm(rVec,NORM_2,norm,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-
-!      if (myid == 0) then
-!         print *,'norm:',norm
-!      end if
-
      ! Check to see if we're converged: We need to check if we've meet
      ! L2Conv or L2ConvRel
      if (norm / totalR0 < L2Conv) then
@@ -129,8 +128,9 @@ subroutine NKsolver
      call getEWTol(iter,norm,old_norm,rtol_last,ksp_rtol)
 
      ! Set all tolerances for linear solve:
-     ksp_atol = 1e-12
+     ksp_atol = totalR0*L2Conv
      ksp_max_it = ksp_subspace
+
      call KSPSetTolerances(global_ksp,ksp_rtol,ksp_atol,ksp_div_tol,&
           ksp_max_it,ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -142,9 +142,7 @@ subroutine NKsolver
      ! Get convergence reason:
      call KSPGetConvergedReason(global_ksp,reason,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-!      if (myid == 0) then
-!         print *,'Reason:',reason
-!      end if
+
      ! Linesearching:
      if (.True.) then! Check for type of line search:
         call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals)
@@ -172,12 +170,16 @@ subroutine NKsolver
   call VecDestroy(work,ierr)
   call EChk(ierr,__FILE__,__LINE__)
   
+  print *,'myid, times(10)', myid,times(10)
+  print *,'myid, times(20)', myid,times(20)
+
+
 end subroutine NKsolver
 
 subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
   use precision 
   use communication
-  use NKSolverVars, only: dRdw
+  use NKSolverVars, only: dRdw,petsccomm
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -241,9 +243,14 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Compute Function:
-  call setW(w)
-  call computeResidualNK()
-  call setRVec(g)
+  if (petscComm) then
+     call setW_ghost(w)
+     call computeResidualNK2()
+  else
+     call setW(w)
+     call computeResidualNK()
+  end if
+
   nfevals = nfevals + 1
 
   call VecNorm(g,NORM_2,gnorm,ierr)
@@ -277,9 +284,15 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Compute new function again:
-  call setW(w)
-  call computeResidualNK()
+  if (petscComm) then
+     call setW_ghost(w)
+     call computeResidualNK2()
+  else
+     call setW(w)
+     call computeResidualNK()
+  end if
   call setRVec(g)
+
   nfevals = nfevals + 1
 
   call VecNorm(g,NORM_2,gnorm,ierr)
@@ -332,8 +345,13 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Compute new function again:
-    call setW(w)
-    call computeResidualNK()
+    if (petscComm) then
+       call setW_ghost(w)
+       call computeResidualNK2()
+    else
+       call setW(w)
+       call computeResidualNK()
+    end if
     call setRVec(g)
     nfevals = nfevals + 1
 
@@ -380,8 +398,8 @@ subroutine LSNone(x,f,g,y,w,nfevals)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Compute new function:
-  call setW(w)
-  call computeResidualNK()
+  call setW_ghost(w)
+  call computeResidualNK2()
   call setRVec(g)
   nfevals = nfevals + 1
 

@@ -42,10 +42,13 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       computeObjPartials.o\
 	       copyADjointStencil.o     \
 	       createPETScKsp.o         \
-	       createPETScMat.o         \
 	       createPETScVars.o        \
-	       createPETScVec.o         \
+	       createStatePETScVars.o   \
+	       createSpatialPETScVars.o \
+	       createCouplingPETScVars.o\
+	       createExtraPETScVars.o   \
 	       destroyPETScVars.o       \
+	       preallocation.o          \
                finalizePETSc.o          \
 	       getGlobalNodes.o         \
 	       getSolution.o            \

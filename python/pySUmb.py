@@ -190,6 +190,7 @@ class SUMB(AeroSolver):
             'subKSPSubspaceSize':[int,10],
             'finiteDifferencePC':[bool,True],
             'useReverseModeAD':[bool,True],
+            'lowMemory':[bool,True],
             }
 
         informs = {
@@ -591,7 +592,7 @@ class SUMB(AeroSolver):
                 }                
         # end if
 
-        # These "ignore_options" are NOT actually, ignore, rather,
+        # These "ignore_options" are NOT actually, ignored, rather,
         # they DO NOT GET SET IN THE FORTRAN CODE. Rather, they are
         # used strictly in Python
         if 'ignore_options' in kwargs:
@@ -607,7 +608,8 @@ class SUMB(AeroSolver):
                 'areaAxis',
                 'autoSolveRetry',
                 'autoAdjointRetry',
-                'useReverseModeAD'
+                'useReverseModeAD',
+                'lowMemory'
                 ]
         # end if
         
@@ -645,7 +647,12 @@ class SUMB(AeroSolver):
         # in fortran
         self.allInitialized = False    # All flow solver initialization   
         self.adjointPreprocessed = False
-        self.adjointMatrixSetup = False # Adjoint matrices assembled
+
+        # Matrix Setup Flags
+        self.spatialSetup = False 
+        self.stateSetup = False 
+        self.extraSetup = False
+        self.couplingSetup = False
         self.adjointRHS         = None # When this is setup, it has
                                        # the current objective
         
@@ -942,7 +949,10 @@ class SUMB(AeroSolver):
         # As soon as we run more iterations, adjoint matrices and
         # objective partials (dIdw,dIdx,dIda) are not valid so set
         # their flag to False
-        self.adjointMatrixSetup = False 
+        self.spatialSetup = False 
+        self.stateSetup = False
+        self.couplingSetup = False
+        self.extraSetup = False
         self.adjointRHS         = None
         self.callCounter += 1
 
@@ -1343,9 +1353,8 @@ class SUMB(AeroSolver):
         '''
         # Check to see if the adjoint Matrix is setup:
         if self.myid==0: print 'setting up matrix'
-        if not self.adjointMatrixSetup:
-            self.sumb.createpetscvars()
-            #self.setupAdjoint(forcePoints)
+        if not self.stateSetup:
+            self.sumb.setupstatepetscvars()
         # end if
         # Short form of objective--easier code reading
         if self.myid==0: print 'possible objectives',objective
@@ -1367,9 +1376,8 @@ class SUMB(AeroSolver):
         run compute obj partials, then print to a file...
         '''
         if self.myid==0: print 'setting up vector'
-        if not self.adjointMatrixSetup:
-            self.sumb.createpetscvars()
-            #self.setupAdjoint(forcePoints)
+        if not self.stateSetup:
+            self.sumb.setupstatepetscvars()
         # end if
         if self.myid==0:print 'computing partials'
         self.computeObjPartials(objective)
@@ -1388,9 +1396,8 @@ class SUMB(AeroSolver):
         run compute obj partials, then print to a file...
         '''
         if self.myid==0: print 'setting up vector'
-        if not self.adjointMatrixSetup:
-            self.sumb.createpetscvars()
-            #self.setupAdjoint(forcePoints)
+        if not self.stateSetup:
+            self.sumb.createstatepetscvars()
         # end if
         if self.myid==0:print 'computing partials'
         self.computeObjPartials(objective)
@@ -1408,9 +1415,7 @@ class SUMB(AeroSolver):
         ''' run the verify drdw scripts in fortran'''
         # Make sure adjoint is initialize
         self.initAdjoint()
-        if not self.adjointMatrixSetup:
-            #self.sumb.createpetscvars()
-            self.setupAdjoint(None)#(forcePoints)
+        self.setupAdjoint()
         # end if
 	level = 1
         self.sumb.iteration.currentlevel=level
@@ -1423,8 +1428,7 @@ class SUMB(AeroSolver):
         ''' run the verify drdw scripts in fortran'''
         # Make sure adjoint is initialize
         self.initAdjoint()
-        if not self.adjointMatrixSetup:
-            #self.sumb.createpetscvars()
+        if not self.dRdxSetup:
             self.setupAdjoint(None)#(forcePoints)
         # end if
 	level = 1
@@ -1432,16 +1436,15 @@ class SUMB(AeroSolver):
         self.sumb.iteration.groundlevel=level
 	self.sumb.verifydrdxfile(1)
         
-
 	return
 
     def verifydRda(self,**kwargs):
         ''' run the verify drdw scripts in fortran'''
         # Make sure adjoint is initialize
         self.initAdjoint()
-        if not self.adjointMatrixSetup:
-            #self.sumb.createpetscvars()
-            self.setupAdjoint(None)#(forcePoints)
+        #if not self.adjointMatrixSetup:
+        #    #self.sumb.createpetscvars()
+        #    self.setupAdjoint(None)#(forcePoints)
         # end if
         level = 1
         self.sumb.iteration.currentlevel=level
@@ -1517,35 +1520,100 @@ class SUMB(AeroSolver):
         # end for
         return
 
-    def setupAdjoint(self, forcePoints=None, **kwargs):
+    def setupAdjoint(self):
         '''
-        Setup the adjoint matrix for the current solution
+        Setup the data structures required to solve the adjoint problem
         '''
         
         # Destroy the NKsolver to free memory -- Call this even if the
         # solver is not used...a safeguard check is done in Fortran
         self.sumb.destroynksolver()
-        self.initAdjoint()
 
-        if not self.adjointMatrixSetup:
-            self.sumb.createpetscvars()
- 
-            if  self.getOption('useReverseModeAD'):
-                if self.myid==0:print 'computing with reverse mode...'
+        # Run initAdjoint incase this is the first adjoint solve
+        self.initAdjoint()
+        
+        if self.getOption('useReverseModeAD'):
+            # We must create the state,spatial and extra matrices
+            # if we're using reverse mode:
+            compute = False
+            if not self.stateSetup:
+                self.sumb.createstatepetscvars()
+                self.sumb.createpetscksp()
+                compute = True
+            # end fi
+
+            if not self.spatialSetup:
+                self.sumb.createspatialpetscvars()
+                compute = True
+            # end if
+
+            if not self.extraSetup:
+                self.sumb.createextrapetscvars()
+                compute = True
+            # end if
+
+            if compute:
                 self.sumb.setupallresidualmatrices()
-            else:
-                if self.myid==0:print 'computing with forward mode...'
-                self.sumb.setupallresidualmatricesfwd()
-            #end
+                self.mesh.setupWarpDeriv()
+
+                # Set the flags as true
+                self.stateSetup = True
+                self.spatialSetup = True
+                self.extraSetup = True
+            # end if
+        else:
+            # Otherwise, we just setup the state variables to save
+            # memory:
+            
+            if not self.stateSetup:
+                self.sumb.createstatepetscvars()
+                self.sumb.createpetscksp()
+
+                self.sumb.setupadjointmatrix()
+                self.stateSetup = True
+            # end if
+        # end if
+        
+        # Finally setup the KSP object for the solve
+        self.sumb.setuppetscksp()
+            
+        return
+
+    def setupCouplingMatrices(self,forcePoints=None):
+        '''Setup the coupling matrices if required:'''
+
+        if not self.couplingSetup:
             if forcePoints is None:
                 forcePoints = self.getForcePoints()
             # end if
+            self.sumb.createcouplingpetscvars()
 
             self.sumb.setupcouplingmatrixstruct(forcePoints.T)
-            self.sumb.setuppetscksp()
-            self.mesh.setupWarpDeriv()
-            self.adjointMatrixSetup = True
 
+            self.couplingSetup = True
+        # end if
+
+        return
+
+    def setupSpatialMatrices(self):
+
+        if not self.spatialSetup:
+            if self.getOption('lowMemory'):
+                # If we're using the low memory option we will destroy
+                # the KSP object and residual matrices BEFORE
+                # assemblng the spatial residual matrices:
+
+                self.sumb.destroystatepetscvars()
+                self.sumb.destroypetscksp()
+                self.stateSetup = False
+            # end if
+
+            self.sumb.createspatialpetscvars()
+
+            self.sumb.setupspatialmatrix()
+            self.mesh.setupWarpDeriv()
+            
+            self.spatialSetup = True
         # end if
 
         return
@@ -1562,11 +1630,30 @@ class SUMB(AeroSolver):
     
     def releaseAdjointMemory(self):
         '''
-        release the PETSc Memory...
+        release the PETSc Memory that have been allocated
         '''
+        
+        if self.stateSetup:
+            self.sumb.destroystatepetscvars()
+            self.sumb.destroypetscksp()
+            self.stateSetup = False
+        # end if
 
-        self.sumb.destroypetscvars()
-        self.adjointMatrixSetup = False
+        if self.spatialSetup:
+            self.sumb.destroyspatialpetscvars()
+            self.spatialSetup = False
+        # end if
+
+        if self.extraSetup:
+            self.sumb.destroyextrapetscvars()
+            self.extraSetup = False
+        # end if
+
+        if self.couplingSetup:
+            self.sumb.destroycouplingpetscvars()
+            self.couplingSetup = False
+        # end if
+
         return
 
     def _on_adjoint(self,objective,forcePoints=None,*args,**kwargs):
@@ -1580,10 +1667,8 @@ class SUMB(AeroSolver):
 
         obj,aeroObj = self._getObjective(objective)
 
-        # Check to see if the adjoint Matrix is setup:
-        if not self.adjointMatrixSetup:
-            self.setupAdjoint(forcePoints)
-        # end if
+        # Setup adjoint matrices/vector as required
+        self.setupAdjoint()
 
         # Check to see if the RHS Partials have been computed
         if not self.adjointRHS == obj:
@@ -1596,11 +1681,12 @@ class SUMB(AeroSolver):
             group_name = kwargs['group_name']
             phi = kwargs['structAdjoint']
             solver_phi = self.mesh.warp_to_solver_force(group_name,phi)
+            self.setupCouplingMatrices(forcePoints)
             self.sumb.agumentrhs(solver_phi)
         # end if
 
         # If we have saved adjoints, 
-        if self.getOption('restartAdjoint'):
+        if self.getOption('restartAdjoint') or self.getOption('lowMemory'):
             # Objective is already stored, so just set it
             if obj in self.storedADjoints.keys():
                 self.sumb.setadjoint(self.storedADjoints[obj])
@@ -1625,7 +1711,7 @@ class SUMB(AeroSolver):
             # least once; that is we've already tried one solve
             
             if  obj in self.storedADjoints.keys():
-                self.storedADjoints[obj][:] = 0.0 # Always reset a stored adjoint 
+                self.storedADjoints[obj][:o] = 0.0 # Always reset a stored adjoint 
 
                 if self.getOption('autoAdjointRetry'):
                     self.sumb.solveadjointtransposepetsc()
@@ -1637,14 +1723,14 @@ class SUMB(AeroSolver):
         if self.sumb.killsignals.adjointfailed == False:
             self.adjoint_failed = False
             # Copy out the adjoint to store
-            if self.getOption('restartAdjoint'):
+            if self.getOption('restartAdjoint') or self.getOption('lowMemory'):
                 self.storedADjoints[obj] =  \
                     self.sumb.getadjoint(self.getStateSize())
             # end if
         else:
             self.adjoint_failed = True
             # Reset stored adjoint
-            if self.getOption('restartAdjoint'):
+            if self.getOption('restartAdjoint') or self.getOption('lowMemory'):
                 self.storedADjoints[obj][:] = 0.0
             # end if
         # end if
@@ -1675,18 +1761,17 @@ class SUMB(AeroSolver):
             # end if
 
         else:
-            if self.getOption('restartAdjoint'): # Selected stored adjoint
-                self.sumb.setadjoint(self.storedADjoints[obj])
-            # end if
-
+            # NOTE: do dRdxvPsi MUST be done first since this
+            # allocates spatial memory if required.
+            dIdxs_2 = self.getdRdXvPsi('all',objective)
+          
             # Direct partial derivative contibution 
             dIdxs_1 = self.getdIdx(objective,'all')
 
-            # dIdx contribution for drdx^T * psi
-            dIdxs_2 = self.getdRdXvPsi('all')
-        
             # Total derivative of the obective with surface coordinates
-            dIdXs = dIdxs_1 - dIdxs_2 
+
+            #dIdXs = dIdxs_1 - dIdxs_2
+            dIdXs = dIdxs_2
         # end if
 
         return dIdXs
@@ -1711,7 +1796,7 @@ class SUMB(AeroSolver):
 
             # Direct partial derivative contibution 
             dIda_1 = self.getdIda(objective)
-            print 'one:',dIda_1
+
             # dIda contribution for drda^T * psi
             dIda_2 = self.getdRdaPsi()
          
@@ -1867,13 +1952,34 @@ class SUMB(AeroSolver):
 
         return indices
 
-    def getdRdXvPsi(self,group_name):
+    def getdRdXvPsi(self,group_name,objective):
+
+        # Setup spatial matrices if required:
+        self.setupSpatialMatrices()
+
+        # Get objective
+        obj,aeroObj = self._getObjective(objective)
+
+        if self.getOption('lowMemory') or self.getOption('restartAdjoint'):
+            if obj in self.storedADjoints.keys():
+                psi = self.storedADjoints[obj]
+            else:
+                mpiPrint('%s adjoint is not computed.'%(obj),comm=self.comm)
+                sys.exit(1)
+            # end if
+        else:
+            psi = self.sumb.getadjoint(self.getStateSize())
+        # end if
+
         ndof = self.sumb.adjointvars.nnodeslocal*3
-        dxv_solver = self.sumb.getdrdxvpsi(ndof)
+
+        # Now call getdrdxvpsi WITH the psi vector:
+        dxv_solver = self.sumb.getdrdxvpsi(ndof,psi)
+
         self.mesh.WarpDeriv(dxv_solver)
-        pforces = self.mesh.getdXs(group_name)
+        dxs = self.mesh.getdXs(group_name)
         
-        return pforces
+        return dxs
 
     def getdRdaPsi(self):
         if self.nDVAero > 0:
@@ -1909,7 +2015,7 @@ class SUMB(AeroSolver):
         if len(solver_vec) > 0:
             dFdxTVec = self.sumb.getdfdxtvec(solver_vec)
         else:
-            self.sumb.getdfdxvec_null()
+            self.sumb.getdfdxtvec_null()
             dFdxTVec = numpy.zeros_like(solver_vec)
         # end if
 
@@ -1925,10 +2031,9 @@ class SUMB(AeroSolver):
 
         if aeroObj:
             obj_num = self.SUmbCostfunctions[obj]
-            if not obj == self.adjointRHS:
-                self.sumb.computeobjpartials(obj_num,forcePoints.T)
-                self.adjointRHS = obj
-            # end if
+            self.sumb.computeobjpartials(
+                obj_num,forcePoints.T,self.stateSetup,self.spatialSetup)
+            self.adjointRHS = obj
         else:
             self.sumb.zeroobjpartials()
         # end if
@@ -1947,7 +2052,7 @@ class SUMB(AeroSolver):
         temp = forcePoints.shape
         
         sizeForcePoints = temp[1]*temp[2]#temp[0]*temp[1]#*temp[2]
-        
+
         if sizeForcePoints > 0:
             if aeroObj:
                 dIdpts = self.sumb.getdidx(sizeForcePoints)
