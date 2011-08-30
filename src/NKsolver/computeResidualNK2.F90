@@ -1,19 +1,30 @@
 subroutine computeResidualNK2()
 
-  ! Debug copy of computeResidualNK to figure out where the nans are
-  ! comming from
+  ! This is the residual evaluation driver for the NK solver. The
+  ! actual function that is passed to petsc is FormFunction (see
+  ! formFunction.F90). This the routine that actually computes the
+  ! residual. This works with Euler,Laminar and NS equation
+  ! modes. This function ONLY OPERATES ON THE FINEST GRID LEVEL. It
+  ! does not coarser grid levels.
+
+  ! This function uses the w that is currently stored in the flowDoms
+  ! datastructure and leaves the resulting residual dw, in the same
+  ! structure. setW() and setRVec() is used in formFunction to
+  ! set/extract these values for communication with PETSc. 
+
   use blockPointers
   use inputTimeSpectral
   use flowvarrefstate
   use iteration
   use inputPhysics 
+  use NKsolverVars, only : times
   implicit none
 
   ! Local Variables
   integer(kind=intType) :: ierr,i,j,k,l,sps,nn
   logical secondHalo ,correctForK
   real(kind=realType) :: gm1,v2,val
-  integer(kind=intType) :: w_nan,p_nan,dw_nan
+
   secondHalo = .True. 
 
   currentLevel = 1_intType
@@ -21,19 +32,29 @@ subroutine computeResidualNK2()
   ! Next we need to compute the pressures
   gm1 = gammaConstant - one
   correctForK = .False.
-  !call checkwforNan(w_nan)
-  !call checkpforNan(p_nan)
-  !call checkdwforNan(dw_nan)
-  !print *, 'Check1:',w_nan,p_nan,dw_nan
+
+  ! Why does this need to be set?
+  rkStage = 0
+
+  !times(1) = mpi_wtime()
+  !call whalo2(1_intType, 1_intType, nMGVar, .False., &
+  !     .False.,.False.)
+  !times(2) =  mpi_wtime()
+  !times(20) = times(20) + times(2)-times(1)
+
+
+  if (equations == RANSEquations) then
+     call whalo2(1_intType, nt1, nt2, .false., .false., .False.)
+  end if
 
   spectralLoop: do sps=1,nTimeIntervalsSpectral
      domainsState: do nn=1,nDom
         ! Set the pointers to this block.
         call setPointers(nn, currentLevel, sps)
 
-        do k=2,kl
-           do j=2,jl
-              do i=2,il
+        do k=0,kb
+           do j=0,jb
+              do i=0,ib
 
                  v2 = w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 &
                       + w(i,j,k,ivz)**2
@@ -45,67 +66,20 @@ subroutine computeResidualNK2()
            enddo
         enddo
 
-        call computeEtot(2_intType,il, 2_intType,jl, &
-             2_intType,kl, correctForK)
-        
      end do domainsState
   end do spectralLoop
-
-  !call checkwforNan(w_nan)
-  !call checkpforNan(p_nan)
-  !call checkdwforNan(dw_nan)
-  !print *, 'Check2:',w_nan,p_nan,dw_nan
-
   
-  call computeLamViscosity
-  call computeEddyViscosity
-
-  !call checkwforNan(w_nan)
-  !call checkpforNan(p_nan)
-  !call checkdwforNan(dw_nan)
-  !print *, 'Check3:',w_nan,p_nan,dw_nan
-  
+  call computeLamViscosity  ! These should be done over the whole block with halos
+  call computeEddyViscosity ! These should be dond over the whole block with halos
 
   !   Apply BCs
   call applyAllBC(secondHalo)
-
-  !call checkwforNan(w_nan)
-  !call checkpforNan(p_nan)
-  !call checkdwforNan(dw_nan)
-  !print *, 'Check4:',w_nan,p_nan,dw_nan
-
-  ! Exchange solution -- always the fine level
-  call whalo2(1_intType, 1_intType, nMGVar, .true., &
-       .true., .true.)
-  if (equations == RANSEquations) then
-     call whalo2(1_intType, nt1, nt2, .false., .false., .true.)  
-  end if
-
-  !call checkwforNan(w_nan)
-  !call checkpforNan(p_nan)
-  !call checkdwforNan(dw_nan)
-  !print *, 'Check5:',w_nan,p_nan,dw_nan
-
-
-  ! Why does this need to be set?
-  rkStage = 0
-  
+ 
   ! Compute the skin-friction velocity
   call computeUtau
 
-  !call checkwforNan(w_nan)
-  !call checkpforNan(p_nan)
-  !call checkdwforNan(dw_nan)
-  !print *, 'Check6:',w_nan,p_nan,dw_nan
-
-
   ! Compute time step
   call timestep(.false.)
-
-  !call checkwforNan(w_nan)
-  !call checkpforNan(p_nan)
-  !call checkdwforNan(dw_nan)
-  !print *, 'Check7:',w_nan,p_nan,dw_nan
 
   ! Possible Turblent Equations
   if( equations == RANSEquations ) then
@@ -115,20 +89,8 @@ subroutine computeResidualNK2()
   
   ! Initialize Flow residuals
   call initres(1_intType, nwf)
-  
-  !call checkwforNan(w_nan)
-  !call checkpforNan(p_nan)
-  !call checkdwforNan(dw_nan)
-  !print *, 'Check8:',w_nan,p_nan,dw_nan
 
   ! Actual Residual Calc
-  call residual2
-
-  !call checkwforNan(w_nan)
-  !call checkpforNan(p_nan)
-  !call checkdwforNan(dw_nan)
-  !print *, 'Check9:',w_nan,p_nan,dw_nan
-  
-
+  call residual 
 
 end subroutine computeResidualNK2

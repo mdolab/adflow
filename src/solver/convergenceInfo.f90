@@ -562,6 +562,7 @@
 !
        use blockPointers
        use monitor
+       use flowvarrefstate
        implicit none
 !
 !      Subroutine arguments.
@@ -584,7 +585,12 @@
        do k=2,kl
          do j=2,jl
            do i=2,il
-              monLoc(mm) = monLoc(mm) + (dw(i,j,k,nn)/vol(i,j,k))**2
+              if (nn==nt1) then
+                 !monLoc(mm) = monLoc(mm) + (dw(i,j,k,nn)/vol(i,j,k)*1e4)**2
+                 monLoc(mm) = monLoc(mm) + (dw(i,j,k,nn)/vol(i,j,k))**2
+              else
+                 monLoc(mm) = monLoc(mm) + (dw(i,j,k,nn)/vol(i,j,k))**2
+              end if
            enddo
          enddo
        enddo
@@ -628,9 +634,14 @@
            do i=2,il
               state_sum = 0.0
               ovv = 1/vol(i,j,k)
-              do l=1,nw
+              do l=1,nwf
                  state_sum = state_sum + (dw(i,j,k,l)*ovv)**2
               end do
+              
+              do l=nt1,nt2
+                 state_sum = state_sum + (dw(i,j,k,l)*ovv)**2
+              end do
+
 
               monLoc(mm) = monLoc(mm) + state_sum
 

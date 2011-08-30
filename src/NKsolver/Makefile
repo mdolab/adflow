@@ -47,11 +47,11 @@ FF90_OBJECTS = applyPC.o\
 	       NKSolver.o\
 	       NKSolver_petsc.o\
 	       NKUtilities.o\
-	       setupNK_PC.o\
 	       setupNKSolver.o\
 	       setupNKSolver_petsc.o\
 	       snesMonitor.o\
 	       LSCheck.o\
+	       temp.o\
 
 #      ******************************************************************
 #      *                                                                *

@@ -106,6 +106,15 @@ python module sumb ! in
          integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
        end subroutine verifyforces
 
+       subroutine verifybendingderivatives()
+
+         use costfunctions
+         use inputphysics
+         use inputtimespectral
+         use communication
+         implicit none
+       end subroutine verifybendingderivatives
+
        subroutine verifydcfdx(level,costfunction)
          use blockpointers
          use cgnsgrid            
@@ -203,6 +212,45 @@ python module sumb ! in
          !     Subroutine arguments
          integer(kind=inttype), intent(in) :: level
        end subroutine verifydrdwfile
+
+
+       subroutine verifydrdxfile(level)
+         
+         use blockpointers ! block (nDoms,flowDoms), globalCell
+         use flowvarrefstate
+         use communication
+         use iteration     ! groundLevel
+         use inputtimespectral ! spaceDiscr,nTimeIntervalsSpectral
+         use inputio
+         !from old verify routine
+         use adjointpetsc, only: drdx,drdxfd,petscone,insert_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world,add_values
+         use precision
+         use inputiteration
+         !implicit none
+                  
+         implicit none
+         
+         !     Subroutine arguments
+         integer(kind=inttype), intent(in) :: level
+       end subroutine verifydrdwfile
+
+       subroutine verifydrdextrafile(level)
+         
+         use blockpointers ! block (nDoms,flowDoms), globalCell
+         use flowvarrefstate
+         use communication
+         use iteration     ! groundLevel
+         use inputtimespectral ! spaceDiscr,nTimeIntervalsSpectral
+         use inputio
+         use adjointpetsc, only: drda,petscone,insert_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world,add_values
+         use precision
+                          
+         implicit none
+         
+         !     Subroutine arguments
+         integer(kind=inttype), intent(in) :: level
+       end subroutine verifydrdextrafile
+       
 
        subroutine setupcouplingmatrixstruct(pts,npts,nts) ! in :sumb:../../adjoint/setupCouplingMatrixStruct.F90
          use blockpointers
@@ -381,39 +429,69 @@ python module sumb ! in
        subroutine initializepetsc ! in :sumb:../../adjoint/initializePETSc.F90
        end subroutine initializepetsc
 
-       subroutine createpetscksp ! in :sumb:../../adjoint/createPETScVars.F90
+    
+       ! State Variables
+       subroutine createstatepetscvars
+       end subroutine createstatepetscvars
+
+       subroutine destroystatepetscvars
+       end subroutine destroystatepetscvars
+
+       ! Spatial Variables
+       subroutine createspatialpetscvars
+       end subroutine createspatialpetscvars
+
+       subroutine destroyspatialpetscvars
+       end subroutine destroyspatialpetscvars
+       
+       ! Extra Variables
+       
+       subroutine createextrapetscvars
+       end subroutine createextrapetscvars
+
+       subroutine destroyextrapetscvars
+       end subroutine destroyextrapetscvars
+       
+       ! Coupling Variables
+
+       subroutine createcouplingpetscvars
+       end subroutine createcouplingpetscvars
+       
+       subroutine destroycouplingpetscvars
+       end subroutine destroycouplingpetscvars
+
+       ! KSP 
+       subroutine createpetscksp 
        end subroutine createpetscksp
 
-       subroutine setuppetscksp ! in :sumb:../../adjoint/createPETScVars.F90
+       subroutine setuppetscksp 
        end subroutine setuppetscksp
+       
+       subroutine destroypetscksp
+       end subroutine destroypetscksp
 
-       subroutine createpetscvars ! in :sumb:../../adjoint/createPETScVars.F90
-       end subroutine createpetscvars
-
-       subroutine createpetscmat
-       end subroutine createpetscmat
-
+       ! Residual Assembly Functions
+       
        subroutine setupallresidualmatrices ! in :sumb:../../adjoint/setupADjointMatrix.F90
        end subroutine setupallresidualmatrices
+
+       subroutine setupadjointmatrix
+       end subroutine setupadjointmatrix
+
+       subroutine setupspatialmatrix
+       end subroutine setupspatialmatrix
 
        subroutine setupadjointpcmatrixtranspose
        end subroutine setupadjointpcmatrixtranspose
 
-       subroutine computeobjpartials(costfunction,pts,npts,nts) ! in :sumb:../../adjoint/computeObjPartials.F90
-         use blockpointers
-         use adjointpetsc
-         use bctypes
-         use communication
-         use inputtimespectral
-         use inputphysics
-         use adjointvars
-         use flowvarrefstate
+       subroutine computeobjpartials(costfunction,pts,npts,nts,usedjdw,usedjdx) ! in :sumb:../../adjoint/computeObjPartials.F90
          integer(kind=inttype) intent(in) :: costfunction
          real(kind=realtype) dimension(3,npts,nts),intent(in) :: pts
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
          integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
+         logical :: usedjdw
+         logical :: usedjdx
        end subroutine computeobjpartials
-
 
        subroutine getdidw(ndof,output) ! in :test:computeObjPartials.F90
          integer(kind=inttype) intent(in) :: ndof
@@ -443,11 +521,13 @@ python module sumb ! in
        subroutine solveadjointtransposepetsc ! in :sumb:../../adjoint/solveADjointPETSc.F90
        end subroutine solveadjointtransposepetsc
 
-       subroutine getdrdxvpsi(ndof,dxv)
-         integer(kind=inttype) intent(in) :: ndof
+       subroutine getdrdxvpsi(dxv,ndof,adjoint,nstate) ! in :test:getdRdXvPsi.F90
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
+         integer(kind=inttype) intent(in) :: ndof
+         real(kind=realtype) dimension(nstate),intent(in) :: adjoint
+         integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
        end subroutine getdrdxvpsi
-
+       
        subroutine getdrdapsi(ndv,output) ! in :test:getdRdaPsi.F90
             integer(kind=inttype) intent(in) :: ndv
             real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
@@ -488,9 +568,6 @@ python module sumb ! in
          integer(kind=inttype) intent(in) :: kdim
          integer(kind=inttype) dimension(idim,jdim,kdim),intent(out),depend(idim,jdim,kdim) :: nodenumbers
        end subroutine getglobalnodes
-
-       subroutine destroypetscvars ! in :sumb:../../adjoint/destroyPETScVars.F90
-       end subroutine destroypetscvars
 
        subroutine getadjoint(nnodes,functiongradlocal) ! in :test:getADjoint.F90
          integer(kind=inttype) intent(in) :: nnodes
@@ -844,6 +921,7 @@ python module sumb ! in
          real(kind=realtype) dimension(3) :: liftdirection
          real(kind=realtype) dimension(3) :: dragdirection
          real(kind=realtype) dimension(3) :: pointref
+         real(kind=realtype) dimension(3) :: pointrefec
        end module inputphysics
        module inputadjoint ! in :sumb:../modules/inputParam.f90
          use precision
@@ -1081,7 +1159,7 @@ python module sumb ! in
             integer(kind=inttype) parameter,optional :: costfunccmzalpha=18
             integer(kind=inttype) parameter,optional :: costfuncdragcoef=4
             integer(kind=inttype) parameter,optional :: costfuncclalphadot=24
-            integer(kind=inttype) parameter,optional :: ncostfunction=36
+            integer(kind=inttype) parameter,optional :: ncostfunction=37
             integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
             integer(kind=inttype) parameter,optional :: costfuncclalpha=23
             integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
@@ -1090,6 +1168,7 @@ python module sumb ! in
             integer(kind=inttype) parameter,optional :: costfunccfyalphadot=34
             integer(kind=inttype) parameter,optional :: costfunccfyq=35
             integer(kind=inttype) parameter,optional :: costfunccfyqdot=36
+            integer(kind=inttype) parameter,optional :: costfuncbendingcoef=37
        end module costfunctions
 
        module adjointvars ! in :test:ADjointVars.F90

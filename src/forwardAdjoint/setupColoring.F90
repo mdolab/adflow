@@ -86,26 +86,53 @@ end subroutine setup_dRdw_visc_coloring
 
 subroutine setup_dRdx_euler_coloring(nn,nColor)
   use blockPointers
+  use communication
   implicit none
 
   ! We assume that setPointers has already been called for this block, nn
 
   integer(kind=intType) :: i,j,k,nn
   integer(kind=intType) :: nColor
-
+  integer(kind=intType) :: k_plane
   call setPointers(nn,1,1) ! Just to get the correct sizes
-  do k=0,kb
-     do j=0,jb
-        do i=0,ib
-           ! Add the extra one for 1-based numbering (as opposed to zero-based)
+  do k=0,ke
+     ! Determine what k-plane we're on:
+     k_plane = mod(k,4)
 
-           flowDomsd(1)%color(i,j,k) = 0
-        
+     do j=0,je
+        do i=0,ie
+
+           if     (k_plane == 0) then
+              flowdomsd(1)%color(i,j,k) = mod(i + mod(j/2,2)*3    ,6) + 6*mod(j,2) 
+           else if(k_plane == 1) then
+              flowdomsd(1)%color(i,j,k) = mod(i + mod(j/2,2)*3    ,6) + 6*mod(j,2) +12
+           else if(k_plane == 2) then
+              flowdomsd(1)%color(i,j,k) = mod(i + mod(j/2,2)*3    ,6) + 6*mod(j,2) +24
+           else if(k_plane == 3) then
+              flowdomsd(1)%color(i,j,k) = mod(i + mod(j/2,2)*3    ,6) + 6*mod(j,2) +36
+           end if
+
+                      
+        !    if     (k_plane == 0) then
+!               flowDomsd(1)%color(i,j,k) = mod(i + mod(j/3,2)*3    ,6) + 6*mod(j,3)
+!            else if(k_plane == 1) then
+!               flowdomsd(1)%color(i,j,k) = mod(i + mod(j/2,2)*3    ,6) + 6*mod(j,2) +18
+!            else if(k_plane == 2) then
+!               flowdomsd(1)%color(i,j,k) = mod(i + mod(j/2,2)*3,    6) + 6*mod(j,2) +30
+!            else if(k_plane == 3) then
+!               flowDomsd(1)%color(i,j,k) = mod(i + mod(j/3,2)*3 + 3,6) + 6*mod(j,3)
+!            end if
+           
+           ! Add the extra one for 1-based numbering (as opposed to zero-based)! 
+           flowDomsd(1)%color(i,j,k) = flowDomsd(1)%color(i,j,k) + 1
+!            if (myid == 0 .and. nn == 1) then
+!               print *,i,j,k,flowdomsd(1)%color(i,j,k)-1
+!            end if
         end do
      end do
   end do
   
-  nColor = 32
+  nColor = 48
 
 end subroutine setup_dRdx_euler_coloring
 
@@ -152,9 +179,9 @@ subroutine setup_4x4x4_coloring(nn,nColor)
 
   call setPointers(nn,1,1) ! Just to get the correct sizes
 
-  do k=0,kb
-     do j=0,jb
-        do i=0,ib
+  do k=0,ke
+     do j=0,je
+        do i=0,ie
            ! Add the extra one for 1-based numbering (as opposed to zero-based)
            modi = mod(i,4)
            modj = mod(j,4)
@@ -168,7 +195,6 @@ subroutine setup_4x4x4_coloring(nn,nColor)
   
   nColor = 64
 end subroutine setup_4x4x4_coloring
-
 
 subroutine setup_5x5x5_coloring(nn,nColor)
   use blockPointers
@@ -198,8 +224,6 @@ subroutine setup_5x5x5_coloring(nn,nColor)
   nColor = 125
 end subroutine setup_5x5x5_coloring
 
-
-
 subroutine setup_BF_coloring(nn,nColor)
   use blockPointers
   implicit none
@@ -224,8 +248,6 @@ subroutine setup_BF_coloring(nn,nColor)
   
   nColor = (ib+1)*(jb+1)*(kb+1)
 end subroutine setup_BF_coloring
-
-
 
 subroutine setup_BF_node_coloring(nn,nColor)
   use blockPointers

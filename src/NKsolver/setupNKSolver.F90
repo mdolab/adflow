@@ -3,7 +3,7 @@ subroutine setupNKsolver
   ! Setup the PETSc objects for the Newton-Krylov
   ! solver. destroyNKsolver can be used to destroy the objects created
   ! in this function
-
+  use blockPointers
   use communication
   use inputTimeSpectral
   use flowVarRefState
@@ -23,26 +23,161 @@ subroutine setupNKsolver
   integer(kind=intType) , dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
   integer(kind=intType) :: n_stencil
   integer(kind=intType), dimension(:,:), allocatable :: stencil
+  integer(kind=intType),dimension(:),allocatable :: ghostInd
+  integer(kind=intType) :: nghost
 
+  integer(kind=intType) :: i,j,k,nn,i2,j2,k2,d2,l,sps
   external FormFunction_mf
 
+  nGhost = 0
   if (not(NKSolverSetup)) then
-     
-     !  Create residual and state vectors
      nDimW = nw * nCellsLocal * nTimeIntervalsSpectral
-     call VecCreateMPI(SUMB_PETSC_COMM_WORLD,nDimw,PETSC_DETERMINE,wVec,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-     call VecSetBlockSize(wVec,nw,ierr)
+
+     allocate(ghostInd(size(recvBuffer)),stat=ierr)
+ 
+     ! W is going to be a ghosted vector. This means that it will take
+     ! care of the communication of the halo data instead of using
+     ! whalo2.  We already have all the required information for the
+     ! transfers in the communication object. 
+     
+     ! Loop over all procs second-level halos will receive from:
+     do nn=1,nDom
+        do sps=1,nTimeIntervalsSpectral
+           call setPointersAdj(nn,1_intType,sps)
+           
+           ! Loop over all 6 faces doubly extruded faces and add to
+           ! list if necessary:
+           
+           ! I-Low Face
+           do k=0,kb
+              do j=0,jb
+                 do i=0,1
+                    if (globalCell(i,j,k) .ge. 0) then
+                       nGhost = nGhost + 1
+                       ghostInd(nGhost) = globalCell(i,j,k)*nw
+                    end if
+                 end do
+              end do
+           end do
+           
+           ! I-High Face
+           do k=0,kb
+              do j=0,jb
+                 do i=ib-1,ib
+                    if (globalCell(i,j,k) .ge. 0) then
+                       nGhost = nGhost + 1
+                       ghostInd(nGhost) = globalCell(i,j,k)*nw
+                    end if
+                 end do
+              end do
+           end do
+
+           ! J-Low Face
+           do k=0,kb
+              do j=0,1
+                 do i=0,ib
+                    if (globalCell(i,j,k) .ge. 0) then
+                       nGhost = nGhost + 1
+                       ghostInd(nGhost) = globalCell(i,j,k)*nw 
+                    end if
+                 end do
+              end do
+           end do
+
+           ! J-High Face
+           do k=0,kb
+              do j=jb-1,jb
+                 do i=0,ib
+                    if (globalCell(i,j,k) .ge. 0) then
+                       nGhost = nGhost + 1
+                       ghostInd(nGhost) = globalCell(i,j,k)*nw
+                    end if
+                 end do
+              end do
+           end do
+
+           ! K-Low Face
+           do k=0,1
+              do j=0,jb
+                 do i=0,ib
+                    if (globalCell(i,j,k) .ge. 0) then
+                       nGhost = nGhost + 1
+                       ghostInd(nGhost) = globalCell(i,j,k)*nw                    
+                    end if
+                 end do
+              end do
+           end do
+
+           ! K-High Face
+           do k=kb-1,kb
+              do j=0,jb
+                 do i=0,ib
+                    if (globalCell(i,j,k) .ge. 0) then
+                       nGhost = nGhost + 1
+                       ghostInd(nGhost) = globalCell(i,j,k)*nw
+                   end if
+                 end do
+              end do
+           end do
+        end do
+     end do
+
+!      do sps=1,nTimeIntervalsSpectral
+!         completeRecvs: do i=1,commPatternCell_2nd(1_intType)%nProcRecv
+           
+!            do j=1,commPatternCell_2nd(1_intType)%nrecv(i)
+              
+!               d2 = commPatternCell_2nd(1_intType)%recvList(i)%block(j)
+!               i2 = commPatternCell_2nd(1_intType)%recvList(i)%indices(j,1)
+!               j2 = commPatternCell_2nd(1_intType)%recvList(i)%indices(j,2)
+!               k2 = commPatternCell_2nd(1_intType)%recvList(i)%indices(j,3)
+
+!               nGhost = nGhost + 1
+!               ghostInd(nGhost) = flowDoms(d2,1_intType,sps)%globalCell(i2,j2,k2)
+             
+
+!               if (myid == 0) then
+!                  !print *,d2,flowDoms(d2,1,sps)%il,flowDoms(d2,1,sps)%jl,flowDoms(d2,1,sps)%kl
+!                  print *,i2,j2,k2,ghostInd(nGhost)
+!               end if
+!            end do
+           
+!         end do completeRecvs
+!      end do
+
+!      if (myid == 0) then
+!         do i=1,nGhost
+!            print *,ghostInd(i)
+!         end do
+!      end if
+     
+
+     call VecCreateGhostBlock(SUMB_PETSC_COMM_WORLD,nw,nDimw,PETSC_DECIDE,&
+          nghost,ghostInd,wVec,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     ! Use the wVec Template to create deltaW and rVec
-     call VecDuplicate(wVec, rVec, ierr)
+     
+     !call VecDestroy(wVec,ierr)
+     !call EChk(ierr,__FILE__,__LINE__)
+     deallocate(ghostInd)
+
+     ! call VecCreateMPI(SUMB_PETSC_COMM_WORLD,nDimw,PETSC_DETERMINE,wVec,ierr)
+!      call EChk(ierr,__FILE__,__LINE__)
+!      call VecSetBlockSize(wVec,nw,ierr)
+!      call EChk(ierr,__FILE__,__LINE__)
+
+
+     !  Create residual and state vectors
+     call VecCreateMPI(SUMB_PETSC_COMM_WORLD,nDimw,PETSC_DETERMINE,rVec,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     call VecSetBlockSize(rVec,nw,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     call VecDuplicate(wVec, deltaW, ierr)
+     ! Use the rVec Template to create deltaW 
+     call VecDuplicate(rVec, deltaW, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     ! Setup Pre-Conditioning Matrix
+     ! Create Pre-Conditioning Matrix
      totalCells = nCellsLocal*nTimeIntervalsSpectral
      allocate( nnzDiagonal(totalCells),nnzOffDiag(totalCells))
 

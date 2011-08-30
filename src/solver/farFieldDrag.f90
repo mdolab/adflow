@@ -1,14 +1,15 @@
+
 !
 !      ******************************************************************
 !      *                                                                *
 !      * File:          farField Drag.f90                               *
-!      * Author:        Gaetan Kenway                                   *
+!      * Author:        Gaetan Kenway,C.A.(Sandy) Mader                 *
 !      * Starting date: 06-30-2011                                      *
 !      * Last modified: 06-30-2011                                      *
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine farFieldDrag()
+subroutine farFieldDrag(value)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -43,7 +44,7 @@ subroutine farFieldDrag()
   real(kind=realType) :: dPoP,dSoR,dHou2
 
   ! Drag Values:
-  real(kind=realType) :: drag_local,drag
+  real(kind=realType) :: drag_local,drag,value
 
   ! Temp Variables for divergence calc
   real(kind=realType) :: qsp, qsm, rqsp, rqsm, porVel, porFlux
@@ -76,7 +77,7 @@ subroutine farFieldDrag()
         allocate(V_wind(0:ib,0:jb,0:kb,3))
         allocate(ds(0:ib,0:jb,0:kb), &
                  dH(0:ib,0:jb,0:kb), &
-                 du_ir(0:ib,0:jb,0:Kb),&
+                 du_ir(0:ib,0:jb,0:kb),&
                  fvw(0:ib,0:jb,0:kb,3),&
                  res(0:ib,0:jb,0:kb))
         res(:,:,:) = 0.0

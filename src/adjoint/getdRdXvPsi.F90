@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine getdRdXvPsi(ndof,dXv)
+subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
   !
   !     ******************************************************************
   !     *                                                                *
@@ -39,7 +39,7 @@ subroutine getdRdXvPsi(ndof,dXv)
   !     ******************************************************************
   !
   use communication
-  use ADjointPETSc, only: dRdx,psi,xVec,wVec
+  use ADjointPETSc, only: dRdx,xVec,wVec
   use ADjointVars
   use blockPointers
   use warpingPETSC 
@@ -50,21 +50,33 @@ subroutine getdRdXvPsi(ndof,dXv)
  
   implicit none
 
-  integer(kind=intType), intent(in) :: ndof
+  integer(kind=intType), intent(in) :: ndof,nstate
   real(kind=realType), intent(out)  :: dXv(ndof)
+  real(kind=realType), intent(in)   :: adjoint(nstate)
 
-  integer(kind=intType) :: ierr,sps,i,j,k,ind(3),nn,counter
+  integer(kind=intType) :: ierr,sps,i,j,k,ind(3),nn,counter,nDimx
   real(kind=realType), dimension(3)   :: rotationPoint,r
   real(kind=realType), dimension(3,3) :: rotationMatrix  
   real(kind=realType) :: t(nSections),dt(nSections)
   real(kind=realType) :: tOld,tNew,pt(3)
 
-  ! Create a temporary vector which is the size of the grid*nTimeInstances
-  call MatGetVecs(dRdx,xVec,wVec,ierr)
+  ! Create a dummy vector, wVec to put the adjoint into
+  call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,nstate,PETSC_DECIDE,&
+       adjoint,wVec,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+ 
+  call VecNorm(wVec,NORM_2,tOld,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  ! Create a temporary vector, xVec to put the result of the
+  ! matmulttranspose in:
+  
+  nDimX = 3 * nNodesLocal*nTimeIntervalsSpectral
+  call VecCreateMPI(SUMB_PETSC_COMM_WORLD,nDimX,PETSC_DECIDE,xVec,ierr)
   call EChk(ierr,__FILE__,__LINE__)
   
   ! Do the matMultTranspose and put result into xVec
-  call MatMultTranspose(dRdX,psi,xVec,ierr)
+  call MatMultTranspose(dRdX,wVec,xVec,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   dXv = 0.0
@@ -149,7 +161,7 @@ subroutine getdRdXvPsi(ndof,dXv)
      end do ! Sps loop
   end if
 
-  ! No longer need xVec
+  ! No longer need xVec or wVec
   call VecDestroy(xVec,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 

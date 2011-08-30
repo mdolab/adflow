@@ -48,6 +48,7 @@ subroutine residual_block
   ! schemes; for other smoothers rFil is simply set to 1.0.
   ! Note the index rkStage+1 for cdisRK. The reason is that the
   ! residual computation is performed before rkStage is incremented.
+  40 format(1x,I4,I4,I4,E20.6,E20.6)
 
   if(smoother == RungeKutta) then
      rFil = cdisRK(rkStage+1)
@@ -134,6 +135,7 @@ subroutine residual_block
            do i=2,il
               dw(i,j,k,l) = (dw(i,j,k,l) + fw(i,j,k,l)) &
                    * real(iblank(i,j,k), realType)
+              !write(14,40),i,j,k,dw(i,j,k,l),fw(i,j,k,l)
            enddo
         enddo
      enddo

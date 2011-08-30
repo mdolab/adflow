@@ -68,17 +68,24 @@
    REAL(kind=realtype), DIMENSION(il, jl, 2) :: qx, qy, qz
    REAL(kind=realtype), DIMENSION(il, jl, 2) :: qxd, qyd, qzd
    LOGICAL :: correctfork, storewalltensor
-   REAL(kind=realtype) :: arg1
-   REAL(kind=realtype) :: result1
-   INTEGER :: ii1
-   INTRINSIC SQRT
    !
    !      ******************************************************************
    !      *                                                                *
    !      * Begin execution                                                *
    !      *                                                                *
    !      ******************************************************************
-   !
+   ! 
+   INTEGER :: unitvf=1011, ierror
+   REAL(kind=realtype) :: arg1
+   REAL(kind=realtype) :: result1
+   INTEGER :: ii1
+   INTRINSIC SQRT
+   OPEN(unit=unitvf, file='verifyvf.out', status='replace', action=&
+   & 'write', iostat=ierror) 
+   IF (ierror .NE. 0) CALL TERMINATE('verifyvf', &
+   &                                 'Something wrong when ', 'calling open'&
+   &                                )
+   PRINT*, 'ierror:', ierror
    ! Set rFilv to rFil to indicate that this is the viscous part.
    ! If rFilv == 0 the viscous residuals need not to be computed
    ! and a return can be made.
@@ -457,6 +464,7 @@
    &            k1)+qzd(i, j, k1))
    q_z = fourth*(qz(i-1, j-1, k1)+qz(i, j-1, k1)+qz(i-1, j, k1)+&
    &            qz(i, j, k1))
+   !!$             write(unitvf,*) i,j,k, u_x, u_y, u_z
    ! The gradients in the normal direction are corrected, such
    ! that no averaging takes places here.
    ! First determine the vector in the direction from the
@@ -1141,6 +1149,7 @@
    END IF
    ! Possibly correct the wall shear stress.
    CALL UTAUWF_D(rfilv)
+   CLOSE(unitvf) 
    END IF
       CONTAINS
    !  Differentiation of nodalgradients in forward (tangent) mode:

@@ -447,7 +447,7 @@ subroutine solveState
   ! Now we have run the RK solver. We will run the NK solver only if
   ! the solve_NK flag is set:
   if (solve_NK) then
-
+     
      ! We have to check to see if NKSwitchtol was LOWER than
      ! l2convrel. This means that the RK solution is already good
      ! enough for what we want so we're done
