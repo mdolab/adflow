@@ -17,6 +17,7 @@ subroutine computeResidualNK()
   use flowvarrefstate
   use iteration
   use inputPhysics 
+  use NKsolverVars, only : times
   implicit none
 
   ! Local Variables
@@ -31,14 +32,28 @@ subroutine computeResidualNK()
   ! Next we need to compute the pressures
   gm1 = gammaConstant - one
   correctForK = .False.
+
+  ! Why does this need to be set?
+  rkStage = 0
+
+  times(1) = mpi_wtime()
+  call whalo2(1_intType, 1_intType, nMGVar, .False., &
+       .False.,.False.)
+  times(2) =  mpi_wtime()
+  times(20) = times(20) + times(2)-times(1)
+
+  if (equations == RANSEquations) then
+     call whalo2(1_intType, nt1, nt2, .false., .false., .False.)
+  end if
+
   spectralLoop: do sps=1,nTimeIntervalsSpectral
      domainsState: do nn=1,nDom
         ! Set the pointers to this block.
         call setPointers(nn, currentLevel, sps)
 
-        do k=2,kl
-           do j=2,jl
-              do i=2,il
+        do k=0,kb
+           do j=0,jb
+              do i=0,ib
 
                  v2 = w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 &
                       + w(i,j,k,ivz)**2
@@ -50,28 +65,15 @@ subroutine computeResidualNK()
            enddo
         enddo
 
-        call computeEtot(2_intType,il, 2_intType,jl, &
-             2_intType,kl, correctForK)
-        
      end do domainsState
   end do spectralLoop
   
-  call computeLamViscosity
-  call computeEddyViscosity
+  call computeLamViscosity  ! These should be done over the whole block with halos
+  call computeEddyViscosity ! These should be dond over the whole block with halos
 
   !   Apply BCs
   call applyAllBC(secondHalo)
-
-  ! Exchange solution -- always the fine level
-  call whalo2(1_intType, 1_intType, nMGVar, .true., &
-       .true., .true.)
-  if (equations == RANSEquations) then
-     call whalo2(1_intType, nt1, nt2, .false., .false., .true.)  
-  end if
-
-  ! Why does this need to be set?
-  rkStage = 0
-  
+ 
   ! Compute the skin-friction velocity
   call computeUtau
 

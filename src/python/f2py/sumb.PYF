@@ -310,6 +310,9 @@ python module sumb ! in
          logical :: eulerwallspresent
        end subroutine solver
 
+       subroutine computeresidualnk
+       end subroutine computeresidualnk
+
        subroutine solverunsteadymd(mdcallback_python) ! in :test:solverUnsteadyMD.F90
          use solverunsteadymd__user__routines
          external mdcallback_python
@@ -420,42 +423,69 @@ python module sumb ! in
        subroutine initializepetsc ! in :sumb:../../adjoint/initializePETSc.F90
        end subroutine initializepetsc
 
-       subroutine createpetscksp ! in :sumb:../../adjoint/createPETScVars.F90
+    
+       ! State Variables
+       subroutine createstatepetscvars
+       end subroutine createstatepetscvars
+
+       subroutine destroystatepetscvars
+       end subroutine destroystatepetscvars
+
+       ! Spatial Variables
+       subroutine createspatialpetscvars
+       end subroutine createspatialpetscvars
+
+       subroutine destroyspatialpetscvars
+       end subroutine destroyspatialpetscvars
+       
+       ! Extra Variables
+       
+       subroutine createextrapetscvars
+       end subroutine createextrapetscvars
+
+       subroutine destroyextrapetscvars
+       end subroutine destroyextrapetscvars
+       
+       ! Coupling Variables
+
+       subroutine createcouplingpetscvars
+       end subroutine createcouplingpetscvars
+       
+       subroutine destroycouplingpetscvars
+       end subroutine destroycouplingpetscvars
+
+       ! KSP 
+       subroutine createpetscksp 
        end subroutine createpetscksp
 
-       subroutine setuppetscksp ! in :sumb:../../adjoint/createPETScVars.F90
+       subroutine setuppetscksp 
        end subroutine setuppetscksp
+       
+       subroutine destroypetscksp
+       end subroutine destroypetscksp
 
-       subroutine createpetscvars ! in :sumb:../../adjoint/createPETScVars.F90
-       end subroutine createpetscvars
-
-       subroutine createpetscmat
-       end subroutine createpetscmat
-
+       ! Residual Assembly Functions
+       
        subroutine setupallresidualmatrices ! in :sumb:../../adjoint/setupADjointMatrix.F90
        end subroutine setupallresidualmatrices
 
-       subroutine setupallresidualmatricesfwd ! in :sumb:../../forwardadjoint/setupAllresidualMatricesFwd.F90
-       end subroutine setupallresidualmatricesfwd
+       subroutine setupadjointmatrix
+       end subroutine setupadjointmatrix
+
+       subroutine setupspatialmatrix
+       end subroutine setupspatialmatrix
 
        subroutine setupadjointpcmatrixtranspose
        end subroutine setupadjointpcmatrixtranspose
 
-       subroutine computeobjpartials(costfunction,pts,npts,nts) ! in :sumb:../../adjoint/computeObjPartials.F90
-         use blockpointers
-         use adjointpetsc
-         use bctypes
-         use communication
-         use inputtimespectral
-         use inputphysics
-         use adjointvars
-         use flowvarrefstate
+       subroutine computeobjpartials(costfunction,pts,npts,nts,usedjdw,usedjdx) ! in :sumb:../../adjoint/computeObjPartials.F90
          integer(kind=inttype) intent(in) :: costfunction
          real(kind=realtype) dimension(3,npts,nts),intent(in) :: pts
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
          integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
+         logical :: usedjdw
+         logical :: usedjdx
        end subroutine computeobjpartials
-
 
        subroutine getdidw(ndof,output) ! in :test:computeObjPartials.F90
          integer(kind=inttype) intent(in) :: ndof
@@ -485,11 +515,13 @@ python module sumb ! in
        subroutine solveadjointtransposepetsc ! in :sumb:../../adjoint/solveADjointPETSc.F90
        end subroutine solveadjointtransposepetsc
 
-       subroutine getdrdxvpsi(ndof,dxv)
-         integer(kind=inttype) intent(in) :: ndof
+       subroutine getdrdxvpsi(dxv,ndof,adjoint,nstate) ! in :test:getdRdXvPsi.F90
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
+         integer(kind=inttype) intent(in) :: ndof
+         real(kind=realtype) dimension(nstate),intent(in) :: adjoint
+         integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
        end subroutine getdrdxvpsi
-
+       
        subroutine getdrdapsi(ndv,output) ! in :test:getdRdaPsi.F90
             integer(kind=inttype) intent(in) :: ndv
             real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
@@ -524,9 +556,6 @@ python module sumb ! in
          integer(kind=inttype) intent(in) :: kdim
          integer(kind=inttype) dimension(idim,jdim,kdim),intent(out),depend(idim,jdim,kdim) :: nodenumbers
        end subroutine getglobalnodes
-
-       subroutine destroypetscvars ! in :sumb:../../adjoint/destroyPETScVars.F90
-       end subroutine destroypetscvars
 
        subroutine getadjoint(nnodes,functiongradlocal) ! in :test:getADjoint.F90
          integer(kind=inttype) intent(in) :: nnodes

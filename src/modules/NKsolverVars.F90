@@ -138,4 +138,6 @@ module NKsolverVars
   real(kind=realType) :: CFL0
   integer(kind=intType) :: iterTot0
 
+  real(kind=realType) :: times(50)
+  logical :: petscComm
 end module NKsolverVars
