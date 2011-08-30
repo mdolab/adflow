@@ -22,11 +22,11 @@ subroutine setWVec(wVec)
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-  
+
   Vec     wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l
   real(kind=realType) :: states(nw)
-  
+
   do sps=1,nTimeIntervalsSpectral
      do nn=1,nDom
         call setPointersAdj(nn,1_intType,sps)
@@ -67,7 +67,7 @@ subroutine setRVec(rVec)
   Vec     rVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l
   real(kind=realType) :: ovv,temp(nw)
-  
+
   do sps=1,nTimeIntervalsSpectral
      do nn=1,nDom
         call setPointersAdj(nn,1_intType,sps)
@@ -126,9 +126,9 @@ subroutine setW(wVec)
            do j=2,jl
               do i=2,il
                  do l=1,nw
-                     call VecGetValues(wVec,1,globalCell(i,j,k)*nw+l-1,&
-                          w(i,j,k,l),ierr)
-                  end do
+                    call VecGetValues(wVec,1,globalCell(i,j,k)*nw+l-1,&
+                         w(i,j,k,l),ierr)
+                 end do
               end do
            end do
         end do
@@ -138,15 +138,15 @@ end subroutine setW
 
 
 subroutine getStates(states,ndimw)
- 
+
   ! Return the state vector, w to Python
-  
+
   use ADjointPETSc
   use blockPointers
   use inputTimeSpectral
   use flowvarrefstate
   implicit none
- 
+
   integer(kind=intType),intent(in):: ndimw
   real(kind=realType),dimension(ndimw),intent(out) :: states(ndimw)
 
@@ -172,7 +172,7 @@ subroutine getStates(states,ndimw)
 end subroutine getStates
 
 subroutine getRes(res,ndimw)
-  
+
   ! Compute the residual and return result to Python
 
   use ADjointPETSc
@@ -180,7 +180,7 @@ subroutine getRes(res,ndimw)
   use inputTimeSpectral
   use flowvarrefstate
   implicit none
- 
+
   integer(kind=intType),intent(in):: ndimw
   real(kind=realType),dimension(ndimw),intent(out) :: res(ndimw)
 
@@ -207,7 +207,7 @@ subroutine getRes(res,ndimw)
 end subroutine getRes
 
 subroutine setStates(states,ndimw)
-  
+
   ! Take in externallly generated states and set them in SUmb
 
   use ADjointPETSc
@@ -215,7 +215,7 @@ subroutine setStates(states,ndimw)
   use inputTimeSpectral
   use flowvarrefstate
   implicit none
- 
+
   integer(kind=intType),intent(in):: ndimw
   real(kind=realType),dimension(ndimw),intent(in) :: states(ndimw)
 
@@ -239,3 +239,150 @@ subroutine setStates(states,ndimw)
      end do
   end do
 end subroutine setStates
+
+
+subroutine weak_scaling_test(useComm,setPETSCVecs,niterations)
+
+
+  use blockPointers
+  use inputTimeSpectral
+  use flowvarrefstate
+  use iteration
+  use inputPhysics 
+  use nksolvervars
+  use communication
+  implicit none
+
+  ! do a weak scaling test by running the computeResidual NK function a number of times:
+
+  logical, intent(in) :: useComm, setPETScVecs
+  integer(kind=intType) :: niterations
+
+  ! Local Variables
+  integer(kind=intType) :: ierr,i,j,k,l,sps,nn,iter
+  logical secondHalo ,correctForK
+  real(kind=realType) :: gm1,v2,val
+  real(kind=realType) :: comm_time,time(4),total_time_local,total_time
+  real(kind=realType),dimension(:),allocatable :: all_times
+  secondHalo = .True. 
+  currentLevel = 1_intType
+  groundLevel = 1_intTYpe
+  ! Next we need to compute the pressures
+  gm1 = gammaConstant - one
+  correctForK = .False.
+
+  ! --------------- Master Loop -------------------
+  comm_time  = 0.0
+  if (myid == 0) then
+     print *,'Running ',niterations, ' of the residual routine'
+  end if
+
+  call mpi_barrier(sumb_comm_world,ierr)
+  
+  time(3) = mpi_wtime()
+
+  do iter=1,niterations
+
+     if (setPETScVecs) then
+        call setW(wVec)
+     end if
+
+     spectralLoop: do sps=1,nTimeIntervalsSpectral
+        domainsState: do nn=1,nDom
+           ! Set the pointers to this block.
+           call setPointers(nn, currentLevel, sps)
+
+           do k=2,kl
+              do j=2,jl
+                 do i=2,il
+
+                    v2 = w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 &
+                         + w(i,j,k,ivz)**2
+
+                    p(i,j,k) = gm1*(w(i,j,k,irhoE) &
+                         - half*w(i,j,k,irho)*v2)
+                    p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
+                 enddo
+              enddo
+           enddo
+
+           call computeEtot(2_intType,il, 2_intType,jl, &
+                2_intType,kl, correctForK)
+
+        end do domainsState
+     end do spectralLoop
+
+
+     call computeLamViscosity
+     call computeEddyViscosity
+
+     !   Apply BCs
+     call applyAllBC(secondHalo)
+
+     ! Exchange solution -- always the fine level
+     if (useComm) then
+        time(1) = mpi_wtime()
+        call whalo1(1_intType, 1_intType, nMGVar, .true., &
+             .true., .true.)
+
+        if (equations == RANSEquations) then
+           call whalo2(1_intType, nt1, nt2, .false., .false., .true.)  
+        end if
+        time(2) = mpi_wtime()
+        comm_time = comm_time + time(2)-time(1)
+     end if
+
+     ! Why does this need to be set?
+     rkStage = 0
+
+     ! Compute the skin-friction velocity
+     call computeUtau
+
+     ! Compute time step
+     call timestep(.false.)
+
+     ! Possible Turblent Equations
+     if( equations == RANSEquations ) then
+        call initres(nt1MG, nMGVar) ! Initialize only the Turblent Variables
+        call turbResidual
+     endif
+
+     ! Initialize Flow residuals
+     call initres(1_intType, nwf)
+
+     ! Actual Residual Calc
+     call residual 
+
+     if (setPETScVecs) then
+        call setRVec(rVec)
+     end if
+
+  end do ! Iteration Loop
+
+  time(4) = mpi_wtime()
+
+  ! Do a nice reduction on the times:
+
+  allocate(all_times(nProc))
+  call MPI_Gather (comm_time,1,sumb_real,all_times,1,sumb_real,0,sumb_comm_world,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+
+  total_time_local = time(4)-time(3)
+  
+  call  MPI_Reduce(total_time_local,total_time,1,sumb_real,MPI_MAX,sumb_comm_world,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  if (myid == 0) then
+     do i=1,nProc
+        print *,'Proc',i,' comm time:',all_times(i)
+     end do
+     print *,  ' '
+     print *,'Total Time:',total_time
+  end if
+
+
+
+
+  deallocate(all_times)
+end subroutine weak_scaling_test

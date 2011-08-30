@@ -104,6 +104,8 @@ default:
 	@echo "                         LINUX_INTEL_OPENMPI"
 	@echo "                         LINUX_INTEL_OPENMPI_SCINET"
 	@echo "                         LINUX_INTEL_OPENMPI_SCINET_PYTHON"
+	@echo "                         LINUX_INTEL_INTELMPI_SCINET"
+	@echo "                         LINUX_INTEL_INTELMPI_SCINET_PYTHON"
 	@echo "                         LINUX_PG"
 	@echo "                         LINUX_PG_MPICH"
 	@echo "                         REDHOT_IFC_ETHERNET"
@@ -394,6 +396,23 @@ LINUX_INTEL_OPENMPI_SCINET_PYTHON:
 	(cd externals/SU_MPI && gmake LINUX_INTEL_OPENMPI_SCINET)
 	(cd externals/ADT && gmake LINUX_INTEL_OPENMPI_SCINET)
 	ln -sf config/config.LINUX_INTEL_OPENMPI_SCINET.mk config.mk
+	gmake sumb
+	(cd src/python/f2py && gmake)
+
+LINUX_INTEL_INTELMPI_SCINET:
+	make dirs
+	if [ ! -f "config/config.LINUX_INTEL_INTELMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_INTELMPI_SCINET.mk" ./config; fi
+	(cd externals/SU_MPI && gmake LINUX_INTEL_OPENMPI_SCINET)
+	(cd externals/ADT && gmake LINUX_INTEL_OPENMPI_SCINET)
+	ln -sf config/config.LINUX_INTEL_INTELMPI_SCINET.mk config.mk
+	gmake sumb
+
+LINUX_INTEL_INTELMPI_SCINET_PYTHON:
+	make dirs
+	if [ ! -f "config/config.LINUX_INTEL_INTELMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_INTELMPI_SCINET.mk" ./config; fi
+	(cd externals/SU_MPI && gmake LINUX_INTEL_OPENMPI_SCINET)
+	(cd externals/ADT && gmake LINUX_INTEL_OPENMPI_SCINET)
+	ln -sf config/config.LINUX_INTEL_INTELMPI_SCINET.mk config.mk
 	gmake sumb
 	(cd src/python/f2py && gmake)
 
