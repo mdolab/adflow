@@ -58,6 +58,7 @@ subroutine NKsolver
   call VecDuplicate(wVec,work,ierr);  call EChk(ierr,__FILE__,__LINE__)
  
   ! Evaluate the residual before we start and copy the value into g
+
   if (petscComm) then
      call setW_ghost(wVec)
      call computeResidualNK2()
@@ -128,8 +129,9 @@ subroutine NKsolver
      call getEWTol(iter,norm,old_norm,rtol_last,ksp_rtol)
 
      ! Set all tolerances for linear solve:
+     ! Set absolve tolerance so we don't go past our target:
      ksp_atol = totalR0*L2Conv
-     ksp_max_it = ksp_subspace
+     ksp_max_it = min(ksp_subspace,ncycles-iterTot)
 
      call KSPSetTolerances(global_ksp,ksp_rtol,ksp_atol,ksp_div_tol,&
           ksp_max_it,ierr)
@@ -143,6 +145,20 @@ subroutine NKsolver
      call KSPGetConvergedReason(global_ksp,reason,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
+     ! Get the number of iterations to use with Convergence Info
+     call KSPGetIterationNumber(global_ksp,ksp_iterations,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Increment iterTot from krylov iterations
+     iterTot = iterTot + ksp_iterations
+
+     ! Check to see if we've done too many function Evals:
+     if (iterTot >= ncycles) then
+        call convergenceInfo
+        iterTot = ncycles
+        exit NonLinearLoop
+     end if
+
      ! Linesearching:
      if (.True.) then! Check for type of line search:
         call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals)
@@ -150,14 +166,23 @@ subroutine NKsolver
         call LSNone(wVec,rVec,g,deltaW,work,nfevals)
      end if
 
+     ! Increment the function evals from the line search iterations
+     iterTot = iterTot + nfevals 
+
+     ! Check to see if we've done too many function Evals:
+     if (iterTot >= ncycles) then
+        call convergenceInfo
+        iterTot = ncycles
+        exit NonLinearLoop
+     end if
+
      ! Copy the work vector to wVec
      call VecCopy(work,wVec,ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
-     ! Get the number of iterations to use with Convergence Info
-     call KSPGetIterationNumber(global_ksp,ksp_iterations,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-  
+     ! Print current convergence info
+     call convergenceInfo
+
   end do NonLinearLoop
      
   ! Not really anything else to do...
@@ -173,13 +198,13 @@ subroutine NKsolver
   print *,'myid, times(10)', myid,times(10)
   print *,'myid, times(20)', myid,times(20)
 
-
 end subroutine NKsolver
 
 subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
   use precision 
   use communication
   use NKSolverVars, only: dRdw,petsccomm
+
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -243,6 +268,7 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Compute Function:
+
   if (petscComm) then
      call setW_ghost(w)
      call computeResidualNK2()
@@ -250,6 +276,7 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
      call setW(w)
      call computeResidualNK()
   end if
+  call setRVec(g)
 
   nfevals = nfevals + 1
 
@@ -258,9 +285,6 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
 
   ! Sufficient reduction 
   if (.5*gnorm*gnorm <= .5*fnorm*fnorm + alpha*initslope) then
-!      if (myid == 0) then
-!         print *,'exit 1 LS:',fnorm,gnorm,alpha,initslope
-!      end if
      goto 100
   end if
 
@@ -300,10 +324,6 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
 
   ! Sufficient reduction 
   if (.5*gnorm*gnorm <= .5*fnorm*fnorm + lambda*alpha*initslope) then
-   !   if (myid == 0) then
-!         print *,'exit 2 LS:',fnorm,gnorm,lambda,alpha,initslope
-!      end if
-
      goto 100
   end if
 
@@ -360,9 +380,6 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
 
     ! Is reduction enough?
     if (.5*gnorm*gnorm <= .5*fnorm*fnorm + lambda*alpha*initslope) then
-!        if (myid == 0) then
-!           print *,'exit 3 LS:',fnorm,gnorm,lambda,alpha,initslope
-!        end if
        exit cubic_loop
   end if
  end do cubic_loop

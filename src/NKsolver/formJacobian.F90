@@ -39,6 +39,7 @@ subroutine NKSetup_KSP(ksp)
   ! can be called from multiple places.
   use precision 
   use communication
+
   use NKSolverVars, only: ksp_solver_type,ksp_subspace,global_pc,local_pc, &
        global_ksp,local_ksp,asm_overlap,local_pc_ordering,local_pc_ilu_level,&
        ksp_solver_type,global_pc_type,dRdwPre
@@ -99,26 +100,4 @@ subroutine NKSetup_KSP(ksp)
   call KSPSetType(local_ksp, KSPPREONLY, ierr)
   call EChk(ierr,__FILE__,__LINE__)  
 
-!   call KSPSetup(global_ksp,ierr)
-!   call EChk(ierr,__FILE__,__LINE__)  
-!   call KSPSetup(local_ksp,ierr)
-!   call EChk(ierr,__FILE__,__LINE__)  
-
-
-!   call PCSetUpOnBlocks(global_pc,ierr)
-!   call EChk(ierr,__FILE__,__LINE__)  
-
-
-!   call PCSetUpOnBlocks(local_pc,ierr)
-!   call EChk(ierr,__FILE__,__LINE__)  
-
-  ! Free Memory
-  !call mpi_Barrier(sumb_comm_world,ierr)
-  !call PCASMFreeSpace(global_pc)
-  !call PCASMFreeSpace(local_pc)
-  !call mpi_Barrier(sumb_comm_world,ierr)
-
-  !call MatDestroy(dRdwPre,ierr)
-  !call EChk(ierr,__FILE__,__LINE__)  
- 
 end subroutine NKSetup_KSP
