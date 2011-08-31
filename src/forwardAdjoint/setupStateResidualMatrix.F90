@@ -115,7 +115,9 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
      n_stencil = N_euler_drdw
   end if
 
-  ! Call the residual to make sure its up to date withe current w
+  ! Exchange data and call the residual to make sure its up to date
+  ! withe current w
+  call whalo2(1_intType, 1_intType, nw, .True.,.True.,.True.)
   call computeResidualNK ! This is the easiest way to do this
 
   ! Set delta_x
@@ -339,6 +341,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
   ! Redo the complete residual to make sure all the halos/pressures
   ! are up to date
+  call whalo2(1_intType, 1_intType, nw, .True.,.True.,.True.)
   call computeResidualNK()
 
   !Return dissipation Parameters to normal -> VERY VERY IMPORTANT

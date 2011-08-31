@@ -52,6 +52,7 @@ FF90_OBJECTS = applyPC.o\
 	       snesMonitor.o\
 	       LSCheck.o\
 	       temp.o\
+	       NKBenchmark.o\
 
 #      ******************************************************************
 #      *                                                                *

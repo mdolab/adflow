@@ -200,7 +200,8 @@ subroutine setupAllResidualMatricesfwd
      vis4 = 0.0
      
      !evaluate new residual
-     call computeResidualNK
+     call whalo2(1_intType, 1_intType, nw, .True.,.True.,.True.)
+     call computeResidualNK ! This is the easiest way to do this
      
      !Store updated residual. This is an indication of how much error the dissipation scheme is causing
      
@@ -239,7 +240,8 @@ subroutine setupAllResidualMatricesfwd
      vis4 = vis4ref
 
      !reevaluate residual
-     call  computeResidualNK
+     call whalo2(1_intType, 1_intType, nw, .True.,.True.,.True.)
+     call computeResidualNK
      
      !reassemble dRda with error term included  
      call MatAssemblyBegin(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)

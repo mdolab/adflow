@@ -36,7 +36,7 @@ subroutine NKsolver
   integer(kind=intType) :: maxNonLinearIts,nfevals
   real(kind=realType) :: norm,old_norm,rtol_last
   real(kind=realType) :: fnorm,ynorm,gnorm
-
+  logical :: flag
   ! maxNonLinearIts is (far) larger that necessary. The "iteration"
   ! limit is really set from the maxmimum number of funcEvals
   maxNonLinearIts = ncycles-iterTot
@@ -47,34 +47,31 @@ subroutine NKsolver
   rtol_last =0.0
   nfevals = 0
 
-  times(10) = 0.0
-  times(20) = 0.0
-
   ! Set the inital wVec
   call setwVec(wVec)
 
   ! Create the two additional work vectors for the line search:
   call VecDuplicate(wVec,g,ierr); call EChk(ierr,__FILE__,__LINE__)
   call VecDuplicate(wVec,work,ierr);  call EChk(ierr,__FILE__,__LINE__)
- 
+
   ! Evaluate the residual before we start and copy the value into g
   if (petscComm) then
      call setW_ghost(wVec)
-     call computeResidualNK2()
   else
      call setW(wVec)
-     call computeResidualNK()
   end if
+  call computeResidualNK()
+
   call setRVec(rVec)
 
   call vecCopy(rVec,g,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   iterTot = iterTot + 1 ! Add this function evaluation
-  
+
   ! Master Non-Linear Loop:
   NonLinearLoop: do iter= 1,maxNonLinearIts
-     
+
      ! Increment the function evals from the Krylov Iterations and the
      ! line search iterations
      if (iter .ne. 1) then
@@ -85,7 +82,7 @@ subroutine NKsolver
      ! Use the result from the last line search
      call vecCopy(g,rVec,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     
+
      ! Determine if if we need to form the Preconditioner: 
      if (mod(iter-1,jacobian_lag) == 0) then
         call FormJacobian()
@@ -113,7 +110,7 @@ subroutine NKsolver
         routineFailed = .False.
         exit NonLinearLoop
      end if
-     
+
      if (norm / totalRStart < L2ConvRel) then
         routineFailed = .False.
         exit NonLinearLoop
@@ -145,21 +142,25 @@ subroutine NKsolver
 
      ! Linesearching:
      if (.True.) then! Check for type of line search:
-        call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals)
+        call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
      else ! No Linesearch, just accept the new step
-        call LSNone(wVec,rVec,g,deltaW,work,nfevals)
+        call LSNone(wVec,rVec,g,deltaW,work,nfevals,flag)
+     end if
+
+     if (.not. flag) then
+        exit NonLinearLoop
      end if
 
      ! Copy the work vector to wVec
      call VecCopy(work,wVec,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     
+
      ! Get the number of iterations to use with Convergence Info
      call KSPGetIterationNumber(global_ksp,ksp_iterations,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-  
+
   end do NonLinearLoop
-     
+
   ! Not really anything else to do...
 
   NKSolvedOnce = .True.
@@ -169,14 +170,10 @@ subroutine NKsolver
   call EChk(ierr,__FILE__,__LINE__)
   call VecDestroy(work,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-  
-  print *,'myid, times(10)', myid,times(10)
-  print *,'myid, times(20)', myid,times(20)
-
 
 end subroutine NKsolver
 
-subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
+subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   use precision 
   use communication
   use NKSolverVars, only: dRdw,petsccomm
@@ -208,8 +205,8 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
   integer(kind=intType) :: ierr
 
   ! Set some defaults:
-  alpha		= 1.e-4
-  minlambda     = 1.e-12
+  alpha		= 1.e-2
+  minlambda     = 1.e-5
   nfevals = 0
   flag = .True. 
 
@@ -245,11 +242,10 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
   ! Compute Function:
   if (petscComm) then
      call setW_ghost(w)
-     call computeResidualNK2()
   else
      call setW(w)
-     call computeResidualNK()
   end if
+  call computeResidualNK()
 
   nfevals = nfevals + 1
 
@@ -258,9 +254,9 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
 
   ! Sufficient reduction 
   if (.5*gnorm*gnorm <= .5*fnorm*fnorm + alpha*initslope) then
-!      if (myid == 0) then
-!         print *,'exit 1 LS:',fnorm,gnorm,alpha,initslope
-!      end if
+     !      if (myid == 0) then
+     !         print *,'exit 1 LS:',fnorm,gnorm,alpha,initslope
+     !      end if
      goto 100
   end if
 
@@ -286,11 +282,11 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
   ! Compute new function again:
   if (petscComm) then
      call setW_ghost(w)
-     call computeResidualNK2()
   else
      call setW(w)
-     call computeResidualNK()
   end if
+  call computeResidualNK()
+
   call setRVec(g)
 
   nfevals = nfevals + 1
@@ -300,87 +296,88 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals)
 
   ! Sufficient reduction 
   if (.5*gnorm*gnorm <= .5*fnorm*fnorm + lambda*alpha*initslope) then
-   !   if (myid == 0) then
-!         print *,'exit 2 LS:',fnorm,gnorm,lambda,alpha,initslope
-!      end if
+     !   if (myid == 0) then
+     !         print *,'exit 2 LS:',fnorm,gnorm,lambda,alpha,initslope
+     !      end if
 
      goto 100
   end if
 
   ! Fit points with cubic 
   cubic_loop: do while (.True.) 
-    if (lambda <= minlambda) then 
-       flag = .False.
-       exit cubic_loop
-    end if
-    t1 = .5*(gnorm*gnorm - fnorm*fnorm) - lambda*initslope
-    t2 = .5*(gnormprev*gnormprev  - fnorm*fnorm) - lambdaprev*initslope
+     
+     if (lambda <= minlambda) then 
+        flag = .False.
+        exit cubic_loop
+     end if
+     t1 = .5*(gnorm*gnorm - fnorm*fnorm) - lambda*initslope
+     t2 = .5*(gnormprev*gnormprev  - fnorm*fnorm) - lambdaprev*initslope
 
-    a  = (t1/(lambda*lambda) - t2/(lambdaprev*lambdaprev))/(lambda-lambdaprev)
-    b  = (-lambdaprev*t1/(lambda*lambda) + lambda*t2/(lambdaprev*lambdaprev))/(lambda-lambdaprev)
-    d  = b*b - 3*a*initslope
-    if (d < 0.0) then
-       d = 0.0
-    end if
+     a  = (t1/(lambda*lambda) - t2/(lambdaprev*lambdaprev))/(lambda-lambdaprev)
+     b  = (-lambdaprev*t1/(lambda*lambda) + lambda*t2/(lambdaprev*lambdaprev))/(lambda-lambdaprev)
+     d  = b*b - 3*a*initslope
+     if (d < 0.0) then
+        d = 0.0
+     end if
 
-    if (a == 0.0) then
-       lambdatemp = -initslope/(2.0*b)
-    else
-       lambdatemp = (-b + sqrt(d))/(3.0*a)
-    end if
+     if (a == 0.0) then
+        lambdatemp = -initslope/(2.0*b)
+     else
+        lambdatemp = (-b + sqrt(d))/(3.0*a)
+     end if
 
-    lambdaprev = lambda
-    gnormprev  = gnorm
+     lambdaprev = lambda
+     gnormprev  = gnorm
 
-    if (lambdatemp > .5*lambda)  then
-       lambdatemp = .5*lambda
-    end if
-    if (lambdatemp <= .1*lambda) then
-       lambda = .1*lambda
-    else           
-       lambda = lambdatemp
-    end if
+     if (lambdatemp > .5*lambda)  then
+        lambdatemp = .5*lambda
+     end if
+     if (lambdatemp <= .1*lambda) then
+        lambda = .1*lambda
+     else           
+        lambda = lambdatemp
+     end if
 
-    call  VecWAXPY(w,-lambda,y,x,ierr)
-    call EChk(ierr,__FILE__,__LINE__)
+     call  VecWAXPY(w,-lambda,y,x,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
 
-    ! Compute new function again:
-    if (petscComm) then
-       call setW_ghost(w)
-       call computeResidualNK2()
-    else
-       call setW(w)
-       call computeResidualNK()
-    end if
-    call setRVec(g)
-    nfevals = nfevals + 1
+     ! Compute new function again:
+     if (petscComm) then
+        call setW_ghost(w)
+     else
+        call setW(w)
+     end if
+     call computeResidualNK()
 
-    call VecNorm(g,NORM_2,gnorm,ierr)
-    call EChk(ierr,__FILE__,__LINE__)
+     call setRVec(g)
+     nfevals = nfevals + 1
 
-    ! Is reduction enough?
-    if (.5*gnorm*gnorm <= .5*fnorm*fnorm + lambda*alpha*initslope) then
-!        if (myid == 0) then
-!           print *,'exit 3 LS:',fnorm,gnorm,lambda,alpha,initslope
-!        end if
-       exit cubic_loop
-  end if
- end do cubic_loop
+     call VecNorm(g,NORM_2,gnorm,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Is reduction enough?
+     if (.5*gnorm*gnorm <= .5*fnorm*fnorm + lambda*alpha*initslope) then
+        !        if (myid == 0) then
+        !           print *,'exit 3 LS:',fnorm,gnorm,lambda,alpha,initslope
+        !        end if
+        exit cubic_loop
+     end if
+  end do cubic_loop
 
 100 continue
 
- ! Optional user-defined check for line search step validity */
+  ! Optional user-defined check for line search step validity */
 
 end subroutine LSCubic
 
-subroutine LSNone(x,f,g,y,w,nfevals)
+subroutine LSNone(x,f,g,y,w,nfevals,flag)
   use precision 
   use communication
-  use NKSolverVars, only: dRdw
+  use NKSolverVars, only: dRdw,petscComm
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-  
+
   ! Input/Output
   Vec x,f,g,y,w
   !x 	- current iterate
@@ -391,15 +388,21 @@ subroutine LSNone(x,f,g,y,w,nfevals)
 
   integer(kind=intType) :: nfevals
   integer(kind=intType) :: ierr
-
+  logical :: flag
+  flag = .True. 
   ! We just accept the step and compute the new residual at the new iterate
   nfevals = 0
   call VecWAXPY(w,-1.0,y,x,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Compute new function:
-  call setW_ghost(w)
-  call computeResidualNK2()
+  if (petscComm) then
+     call setW_ghost(w)
+  else
+     call setW(w)
+  end if
+  call computeResidualNK()
+  
   call setRVec(g)
   nfevals = nfevals + 1
 
@@ -423,8 +426,8 @@ end subroutine LSNone
 !   ! Working
 !   integer(kind=intType) :: nn,sps,i,j,k,ierr
 !   real(kind=realType) :: vals(nw),dt_loc,L_loc
-  
- 
+
+
 !   spectralLoop: do sps=1,nTimeIntervalsSpectral
 !      domainLoop: do nn=1,nDom
 !         ! Set the pointers to this block.
@@ -448,7 +451,7 @@ end subroutine LSNone
 !      end do domainLoop
 !   end do spectralLoop
 
- 
+
 !   call VecAssemblyBegin(diagV,ierr)
 !   call EChk(ierr,__FILE__,__LINE__)
 !   call VecAssemblyEnd(diagV,ierr)
@@ -460,14 +463,14 @@ subroutine getEWTol(iter,norm,old_norm,rtol_last,rtol)
   use precision
   implicit none
 
-   ! There are the default EW Parameters from PETSc. They seem to work well
-   !version:           2
-   !rtol_0:  0.300000000000000     
-   !rtol_max:  0.900000000000000     
-   !gamma:   1.00000000000000     
-   !alpha:   1.61803398874989     
-   !alpha2:   1.61803398874989     
-   !threshold:  0.100000000000000     
+  ! There are the default EW Parameters from PETSc. They seem to work well
+  !version:           2
+  !rtol_0:  0.300000000000000     
+  !rtol_max:  0.900000000000000     
+  !gamma:   1.00000000000000     
+  !alpha:   1.61803398874989     
+  !alpha2:   1.61803398874989     
+  !threshold:  0.100000000000000     
 
   integer(kind=intType) :: iter
   real(kind=realType), intent(in) :: norm,old_norm,rtol_last
@@ -491,9 +494,9 @@ subroutine getEWTol(iter,norm,old_norm,rtol_last,rtol)
      if (stol > threshold) then
         rtol = max(rtol,stol)
      end if
-     
+
      ! Safeguard: avoid rtol greater than one
      rtol = min(rtol,rtol_max)
   end if
- 
+
 end subroutine getEWTol

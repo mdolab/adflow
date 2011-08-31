@@ -85,7 +85,8 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   end if
 
   ! Call the residual to make sure its up to date withe current w
-  call computeResidualNK ! This is the easiest way to do this
+  call whalo2(1_intType, 1_intType, nw, .True.,.True.,.True.)
+  call computeResidualNK
 
   ! Set delta_x
   delta_x = 1e-8

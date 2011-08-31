@@ -153,6 +153,10 @@ subroutine setW(wVec)
   call VecRestoreArrayF90(wVec,wvec_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
  
+  ! Run the double halo:
+  call whalo2(1_intType, 1_intType, nw, .False., &
+       .False.,.False.)
+
 end subroutine setW
 
 subroutine setW_ghost(wVec)

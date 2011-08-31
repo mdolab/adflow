@@ -36,17 +36,6 @@ subroutine computeResidualNK2()
   ! Why does this need to be set?
   rkStage = 0
 
-  !times(1) = mpi_wtime()
-  !call whalo2(1_intType, 1_intType, nMGVar, .False., &
-  !     .False.,.False.)
-  !times(2) =  mpi_wtime()
-  !times(20) = times(20) + times(2)-times(1)
-
-
-  if (equations == RANSEquations) then
-     call whalo2(1_intType, nt1, nt2, .false., .false., .False.)
-  end if
-
   spectralLoop: do sps=1,nTimeIntervalsSpectral
      domainsState: do nn=1,nDom
         ! Set the pointers to this block.

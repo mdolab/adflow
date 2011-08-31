@@ -324,6 +324,13 @@ python module sumb ! in
        subroutine destroynksolver
        end subroutine destroynksolver
        
+       subroutine nkbenchmark(ep,res,applypc,niter)
+         logical :: ep
+         logical :: res
+         logical :: applypc
+         integer(kind=inttype) :: niter
+       end subroutine nkbenchmark
+
        subroutine applypc(in_vec,out_vec,n) ! in :test:NKsolver.F90
          real(kind=realtype) dimension(n),intent(in) :: in_vec
          real(kind=realtype) dimension(n),intent(out),depend(n) :: out_vec
