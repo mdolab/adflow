@@ -76,7 +76,8 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
   !The Extra variables are sometimes dense, therfore no stencil will be used
 
   ! Call the residual to make sure its up to date withe current w
-  call computeResidualNK ! This is the easiest way to do this
+  call whalo2(1_intType, 1_intType, nw, .True.,.True.,.True.)
+  call computeResidualNK
 
   ! call getDirAngle to get the baseline values for alpha and beta
   call getDirAngle(velDirFreestream,LiftDirection,liftIndex,alpha,beta)

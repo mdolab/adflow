@@ -794,7 +794,9 @@ subroutine setupAllResidualMatrices
      vis4 = 0.0
      
      !evaluate new residual
-     call computeResidualNK
+     call whalo2(1_intType, 1_intType, nw, .True.,.True.,.True.)
+     call computeResidualNK()
+
      
      !Store updated residual. This is an indication of how much error the dissipation scheme is causing
      
@@ -833,7 +835,8 @@ subroutine setupAllResidualMatrices
      vis4 = vis4ref
 
      !reevaluate residual
-     call  computeResidualNK
+     call whalo2(1_intType, 1_intType, nw, .True.,.True.,.True.)
+     call computeResidualNK()
      
   end if
 

@@ -12,6 +12,7 @@ subroutine FormFunction_snes(snes,wVec,rVec,ctx,ierr)
   !  Output Parameter:
   !  f     - vector with newly computed function
   use precision
+  use NKsolverVars, only: petscComm
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -23,8 +24,13 @@ subroutine FormFunction_snes(snes,wVec,rVec,ctx,ierr)
   integer(kind=intType) :: ierr
 
   ! This is just a shell routine that runs the more broadly useful
-  ! computeResidualNK subroutine
-  call setW(wVec)
+  ! computeResidualNK subroutin
+
+  if (petscComm) then
+     call setW_ghost(wVec)
+  else
+     call setW(wVec)
+  end if
   call computeResidualNK()
   call setRVec(rVec)
 
@@ -60,11 +66,10 @@ subroutine FormFunction_mf(ctx,wVec,rVec,ierr)
 
   if (petscComm) then
      call setW_ghost(wVec)
-     call computeResidualNK2()
   else
      call setW(wVec)
-     call computeResidualNK()
   end if
+  call computeResidualNK()
 
   call setRVec(rVec)
   ! We don't check an error here, so just pass back zero
@@ -79,6 +84,7 @@ subroutine FormFunction_ts(pts,t,wVec,rVec,ctx,ierr)
   use communication
   use precision
   use flowVarRefState
+  use NKsolverVars, only: petscComm
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -96,9 +102,12 @@ subroutine FormFunction_ts(pts,t,wVec,rVec,ctx,ierr)
   if (myid == 0) then
      print *,'Form Func 3'
   end if
-  call setW(wVec)
+ if (petscComm) then
+     call setW_ghost(wVec)
+  else
+     call setW(wVec)
+  end if
   call computeResidualNK()
-  call setRVec(rVec)
   ! We don't check an error here, so just pass back zero
   ierr = 0
 end subroutine FormFunction_ts
