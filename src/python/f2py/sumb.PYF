@@ -1254,6 +1254,7 @@ python module sumb ! in
          real(kind=realtype) :: totalrfinal
          logical :: rkreset
          integer(kind=inttype) :: nrkreset
+         logical :: petsccomm
        end module nksolvervars
        
 
