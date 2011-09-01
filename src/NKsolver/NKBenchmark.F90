@@ -92,24 +92,17 @@ subroutine NKBenchmark(EP,res,applyPC,niter)
   call MPI_Gather (haloTime,1,sumb_real,all_times,1,sumb_real,0,&
        SUMB_COMM_WORLD,ierr) 
   if (myid == 0) then
-     do i=1,nproc
-        print *,i-1,'Halo Time: ',all_times(i)/niter
-     end do
-     print *,' '
+     print *,'Min Halo Time:',minval(all_times)/niter,minloc(all_times)-1
+     print *,'Max Halo Time:',maxval(all_times)/niter,maxloc(all_times)-1
      print *,'Average Halo Time:',sum(all_times)/nproc/niter
-     print *,' '
-
   end if
   ! Collect all the Restimes
   call MPI_Gather (resTime,1,sumb_real,all_times,1,sumb_real,0,&
        SUMB_COMM_WORLD,ierr) 
   if (myid == 0) then
-     do i=1,nproc
-        print *,i-1,'Res Time: ',all_times(i)/niter
-     end do
-     print *,' '
+     print *,'Min Res Time:',minval(all_times)/niter,minloc(all_times)-1
+     print *,'Max Res Time:',maxval(all_times)/niter,maxloc(all_times)-1
      print *,'Average Res Time:',sum(all_times)/nproc/niter
-     print *,' '
   end if
   deallocate(all_times)
 
@@ -118,9 +111,8 @@ subroutine NKBenchmark(EP,res,applyPC,niter)
        SUMB_COMM_WORLD,ierr)
 
   if (myid == 0) then
-     print *, ' '
      print *,'Total Time:',totalTime/niter
-     print *, ' '
+   print *, ' '
   end if
 
 end subroutine NKBenchmark
