@@ -182,132 +182,129 @@ subroutine setW_ghost(wVec)
   ! Note this is not ideal memory access but the values are stored by
   ! block in PETSc (grouped in nw) but are stored separately in SUmb
 
-  call cpu_time(times(1))
   call VecGhostUpdateBegin(wVec,INSERT_VALUES,SCATTER_FORWARD,ierr)
   call EChk(ierr,__FILE__,__LINE__)
   call VecGhostUpdateEnd(wVec,INSERT_VALUES,SCATTER_FORWARD,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-  call cpu_time(times(2))
 
-  times(10) = times(10) + times(2)-times(1)
   call VecGhostGetLocalForm(wVec,wVec_l,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   call VecGetArrayF90(wVec_l,wvec_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
   
-  ii = 1
-  ! First do the "Owned" cells
-  do nn=1,nDom
-     do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+!   ii = 1
+!   ! First do the "Owned" cells
+!   do nn=1,nDom
+!      do sps=1,nTimeIntervalsSpectral
+!         call setPointersAdj(nn,1_intType,sps)
 
-        do k=2,kl
-           do j=2,jl
-              do i=2,il
-                 do l=1,nw
-                    w(i,j,k,l) = wvec_pointer(ii) 
-                    ii = ii + 1
-                 end do
-              end do
-           end do
-        end do
-     end do
-  end do
+!         do k=2,kl
+!            do j=2,jl
+!               do i=2,il
+!                  do l=1,nw
+!                     w(i,j,k,l) = wvec_pointer(ii) 
+!                     ii = ii + 1
+!                  end do
+!               end do
+!            end do
+!         end do
+!      end do
+!   end do
 
-  ! Next do the halos:
-  do nn=1,nDom
-     do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+!   ! Next do the halos:
+!   do nn=1,nDom
+!      do sps=1,nTimeIntervalsSpectral
+!         call setPointersAdj(nn,1_intType,sps)
         
-        ! Loop over all 6 faces doubly extruded faces and add to
-        ! list if necessary:
+!         ! Loop over all 6 faces doubly extruded faces and add to
+!         ! list if necessary:
         
-        ! I-Low Face
-        do k=0,kb
-           do j=0,jb
-              do i=0,1
-                 if (globalCell(i,j,k) .ge. 0) then
-                    do l=1,nw
-                       w(i,j,k,l) = wvec_pointer(ii)
-                       ii = ii + 1
-                    end do
-                 end if
-              end do
-           end do
-        end do
+!         ! I-Low Face
+!         do k=0,kb
+!            do j=0,jb
+!               do i=0,1
+!                  if (globalCell(i,j,k) .ge. 0) then
+!                     do l=1,nw
+!                        w(i,j,k,l) = wvec_pointer(ii)
+!                        ii = ii + 1
+!                     end do
+!                  end if
+!               end do
+!            end do
+!         end do
            
-        ! I-High Face
-        do k=0,kb
-           do j=0,jb
-              do i=ib-1,ib
-                 if (globalCell(i,j,k) .ge. 0) then
-                    do l=1,nw
-                       w(i,j,k,l) = wvec_pointer(ii)
-                       ii = ii + 1
-                    end do
-                 end if
-              end do
-           end do
-        end do
+!         ! I-High Face
+!         do k=0,kb
+!            do j=0,jb
+!               do i=ib-1,ib
+!                  if (globalCell(i,j,k) .ge. 0) then
+!                     do l=1,nw
+!                        w(i,j,k,l) = wvec_pointer(ii)
+!                        ii = ii + 1
+!                     end do
+!                  end if
+!               end do
+!            end do
+!         end do
 
-        ! J-Low Face
-        do k=0,kb
-           do j=0,1
-              do i=0,ib
-                 if (globalCell(i,j,k) .ge. 0) then
-                    do l=1,nw
-                       w(i,j,k,l) = wvec_pointer(ii)
-                       ii = ii + 1
-                    end do
-                 end if
-              end do
-           end do
-        end do
+!         ! J-Low Face
+!         do k=0,kb
+!            do j=0,1
+!               do i=0,ib
+!                  if (globalCell(i,j,k) .ge. 0) then
+!                     do l=1,nw
+!                        w(i,j,k,l) = wvec_pointer(ii)
+!                        ii = ii + 1
+!                     end do
+!                  end if
+!               end do
+!            end do
+!         end do
 
-        ! J-High Face
-        do k=0,kb
-           do j=jb-1,jb
-              do i=0,ib
-                 if (globalCell(i,j,k) .ge. 0) then
-                    do l=1,nw
-                       w(i,j,k,l) = wvec_pointer(ii)
-                       ii = ii + 1
-                    end do
-                 end if
-              end do
-           end do
-        end do
+!         ! J-High Face
+!         do k=0,kb
+!            do j=jb-1,jb
+!               do i=0,ib
+!                  if (globalCell(i,j,k) .ge. 0) then
+!                     do l=1,nw
+!                        w(i,j,k,l) = wvec_pointer(ii)
+!                        ii = ii + 1
+!                     end do
+!                  end if
+!               end do
+!            end do
+!         end do
 
-        ! K-Low Face
-        do k=0,1
-           do j=0,jb
-              do i=0,ib
-                 if (globalCell(i,j,k) .ge. 0) then
-                    do l=1,nw
-                       w(i,j,k,l) = wvec_pointer(ii)
-                       ii = ii + 1
-                    end do
-                 end if
-              end do
-           end do
-        end do
+!         ! K-Low Face
+!         do k=0,1
+!            do j=0,jb
+!               do i=0,ib
+!                  if (globalCell(i,j,k) .ge. 0) then
+!                     do l=1,nw
+!                        w(i,j,k,l) = wvec_pointer(ii)
+!                        ii = ii + 1
+!                     end do
+!                  end if
+!               end do
+!            end do
+!         end do
 
-        ! K-High Face
-        do k=kb-1,kb
-           do j=0,jb
-              do i=0,ib
-                 if (globalCell(i,j,k) .ge. 0) then
-                    do l=1,nw
-                       w(i,j,k,l) = wvec_pointer(ii)
-                       ii = ii + 1
-                    end do
-                 end if
-              end do
-           end do
-        end do
-     end do
-  end do
+!         ! K-High Face
+!         do k=kb-1,kb
+!            do j=0,jb
+!               do i=0,ib
+!                  if (globalCell(i,j,k) .ge. 0) then
+!                     do l=1,nw
+!                        w(i,j,k,l) = wvec_pointer(ii)
+!                        ii = ii + 1
+!                     end do
+!                  end if
+!               end do
+!            end do
+!         end do
+!      end do
+!   end do
   
   ! Restore pointer to local array
   call VecRestoreArrayF90(wVec_l,wvec_pointer,ierr)
