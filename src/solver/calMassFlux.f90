@@ -48,7 +48,7 @@
 !
        ! Return immediately if no 
 
-       if(nOutflowBleeds + nOutflowSubsonic == 0) return
+       if(nOutflowBleeds + nOutflowSubsonic + nInflowSubsonic  == 0) return
 
  ! Initialize the local contribution to the mass fluxes to 0.
 
@@ -68,10 +68,10 @@
 
           bocos: do mm=1,nBocos
 
-         ! Check for  outflow boundary condition.
+         ! Check for  outfloww/inflow  boundary condition.
 
              outflowSubsonic: if(BCType(mm) == SubsonicOutflow  .or. &
-                  BCType(mm) == MassBleedOutflow) then
+                  BCType(mm) == MassBleedOutflow .or. BCType(mm) == SubsonicInflow) then
 
                 select case( BCFaceID(mm) )
                     case (iMin)

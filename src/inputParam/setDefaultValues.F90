@@ -128,7 +128,7 @@
        surfaceSolFile = ""          ! This will be corrected later if no
                                     ! surface solution file is specified.
 
-       storeRindLayer = .True.     ! No halo cells in solution files.
+       storeRindLayer = .False.     ! No halo cells in solution files.
 
        autoParameterUpdate = .true. ! Update the input parameter file
                                     ! when a restart file is written.
@@ -160,8 +160,8 @@
        nSubIterTurb  =  0    ! No additional turbulent subiterations.
        nUpdateBleeds = 50    ! Update the bleeds every 50 iterations.
 
-       nSaveVolume  = 1      ! Only save at the end of the computation.
-       nSaveSurface = 1
+       nSaveVolume  = 0      ! Only save at the end of the computation.
+       nSaveSurface = 0
 
        smoother  = none
        nRKStages = 5
