@@ -42,6 +42,13 @@
        character(len=maxCGNSNameLen) :: message
        character, dimension(:), allocatable :: writeBuf
 !
+!-- eran-tconv
+       logical :: tconv_file_exist
+       integer :: nnr
+       character :: formatString*30
+!-- eran-tconv
+!
+!
 !      ******************************************************************
 !      *                                                                *
 !      * Begin execution                                                *
@@ -262,7 +269,65 @@
          ii = 1
 
        enddo monitorLoop
+!
+!--eran-tconv starts
+! 
+       write(*,*)'# writing time monitoring on su_tconv.dat'
+       if(nMon <= 8)then
+          write(formatString,'("(i8,1x,",i1,"(1pg14.7,1x))")')nMon+1
+       else
+          write(formatString,'("(i8,1x,",i2,"(1pg14.7,1x))")')nMon+1
+       end if
+!
+       inquire(file='su_tconv.dat',exist=tconv_file_exist)
 
+       if(tconv_file_exist)then
+          open(unit=89,file='su_tconv.dat',form='formatted',status='old')
+! skip the 2 header lines
+          do ii=1,3
+             read(89,*,iostat=ierr)
+             if(ierr > 0)then
+                close(89)
+                go to 111
+             end if
+          end do ! ii
+!
+! read convergence data of previous run
+!
+          do nn=1,nTimeStepsRestart
+             read(89,*,iostat=ierr)nnr,timeArray(nn),&
+                  (timeDataArray(nn,mm),mm=1,nMon)
+             if(ierr > 0)then
+                close(89)
+                go to 111
+             end if
+          end do! nn
+             rewind(89)
+       else ! tconv_file_exist
+111       continue
+          if(nTimeStepsRestart > 0)then
+             write(*,*)'# WARNING: This is a restart run ',&
+               'but something wrong with old  su_tconv.dat.'
+             write(*,*)'Monitoring will be corrupted due to a bug in PL3D data'
+          end if
+          
+             open(unit=89,file='su_tconv.dat',form='formatted',status='new')
+
+       end if ! tconv_file_exist
+!
+       write(89,*)'Title: "Time Convergence file of SUMB"'
+       write(89,&
+            '("VARIABLES = ",1h","Nstep",1h",1x,1h","Time",1h",1x,50(1h",a,1h",1x))')& 
+            (monNames(mm)(1:len_trim(monNames(mm))),mm=1,nMon)
+       write(89,*)'-------------'
+       
+       do nn=1,nStepsTotal
+          write(89,formatString)nn,timeArray(nn),(timeDataArray(nn,mm),mm=1,nMon)
+       end do ! nn
+       close(89)
+!
+!-- end eran-tconv
+!
        ! Release the memory of the temporary buffers.
 
        select case (precisionSol)

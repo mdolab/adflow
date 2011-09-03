@@ -101,11 +101,8 @@
          do nn=1,nVolSolToWrite
            call cg_close_f(fileIDs(nn), ierr)
            if(ierr /= all_ok)                     &
-             call terminate("writeCGNSVolumeSol", &
-                            "Something wrong when calling cg_close_f")
-
-! 		write(*,*)'ERROR:writeCGNSVolumeSol ', &
-! 		' Something wrong when calling cg_close_f' ! eran-closecgns
+ 		write(*,*)'ERROR:writeCGNSVolumeSol ', &
+ 		' Something wrong when calling cg_close_f' ! eran-closecgns
  ! eran-closecgns            call terminate("writeCGNSVolumeSol", &
  ! eran-closecgns                           "Something wrong when calling cg_close_f")
          enddo

@@ -27,6 +27,7 @@
        use IOModule
        use iteration
        use restartMod
+!!        use inputDES ! eran-des  (not needed here without reading wall-dis
        implicit none
 !
 !      Local variables.
@@ -69,6 +70,7 @@
        call setBCDataCoarseGrid
 
        ! Set the infinity state.
+
        call setFlowInfinityState
 
        ! Non-dimensionalize the boundary data.
@@ -164,6 +166,14 @@
 
        endif testRestart
 
+! eran-des: next lines are commented. They are related to reading
+!           wall-distance from restart file which doesnt exist
+!           in this version
+       ! Compute the wall distance of the finest grid if it was not read.
+!!       if(applyDES)wallDistanceRead=.false. !  eran-des
+!!       if(.not. wallDistanceRead) call wallDistance(1_intType, .true.)
+!-------------------------------------------------------------
+
        ! Initialize the bleed regions from the halos if the halos
        ! were read.
 
@@ -202,5 +212,4 @@
 
        call initDepvarAndHalos(halosRead)
 
-     end subroutine initFlow
-
+       end subroutine initFlow

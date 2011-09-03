@@ -8,7 +8,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-
 subroutine solveState
   !
   !      ******************************************************************
@@ -28,7 +27,6 @@ subroutine solveState
   use iteration
   use killSignals
   use monitor
-
   implicit none
   !
   !      Local parameter
@@ -519,24 +517,28 @@ subroutine solveState
   testSteady3: if(equationMode == steady .or. &
        equationMode == timeSpectral) then
 
-     if(standAloneMode .and. groundLevel == 1) then
+     notCBD : if(.not.componentsBreakDown)then   !  eran-CDB
+       if(standAloneMode .and. groundLevel == 1) then
 
-        writeVolume  = .not. writeVolume
-        writeSurface = .not. writeSurface
+          writeVolume  = .not. writeVolume
+          writeSurface = .not. writeSurface
 
         ! Make a distinction between steady and spectral
         ! mode. In the former case the grid will never
         ! be written; in the latter case when only when
         ! the volume is written.
 
-        writeGrid = .false.
-        if(equationMode == timeSpectral .and. writeVolume) &
+          writeGrid = .false.
+          if(equationMode == timeSpectral .and. writeVolume) &
              writeGrid = .true.
 
-        if(writeGrid .or. writeVolume .or. writeSurface) &
-             call writeSol
+          if(writeGrid .or. writeVolume .or. writeSurface) &
+               call writeSol
 
-     endif
+
+	   if(genCBDOUT)call componentsBreakDownPrintout(1) ! eran-CBD
+       endif  ! standAloneMode .and. groundLevel 
+     end if notCBD    !   eran-CDB
   endif testSteady3
 
 end subroutine solveState

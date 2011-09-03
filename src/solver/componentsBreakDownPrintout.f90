@@ -28,7 +28,8 @@
        use iteration
        use cgnsGrid 
        use inputIO
- 
+       use BCTypes
+
        implicit none
 
        integer :: writeToFile
@@ -38,7 +39,9 @@
        integer :: ierr, lenParamFile, iPoint,nameLength, CBDUnit=37, ios=0, &
             outUnit 
 
-       integer(kind=intType) :: sps, nn, i, j, dataTransSize
+       integer(kind=IntType), dimension(:), allocatable :: symBuf
+
+       integer(kind=intType) :: sps, nn, i, j, dataTransSize,mm, SymmetrySurExist
 
        character(len=maxStringLen) :: cbdFileName
 
@@ -86,6 +89,8 @@
 !
 !  Initialize the force and moment coefficients to 0
 !
+          SymmetrySurExist = 0 ! nullify the symmetry indicator, to start with
+
           direction : do j=1,3
              surfacesCounter : do i=0,cgnsNWallSurfaces
                 cfpL(j,i)= zero ; cfvL(j,i) = zero
@@ -101,6 +106,21 @@
            ! Set the pointers for this block.
 
              call setPointers(nn, groundLevel, sps)
+!
+! check if symmetry surface exist in the mesh
+!
+             if (SymmetrySurExist == 0)then
+
+                 bocos: do mm=1,nBocos
+                    symmetry: if(BCType(mm) == symm) then
+                       SymmetrySurExist = 1
+
+                       exit
+                    end if symmetry
+
+                 end do bocos
+
+             end if
 
            ! Compute the forces and moments for this block.
 
@@ -131,6 +151,17 @@
 
          end if GroundLevelCh
          
+!
+! now send the symmetry information to root node
+!
+         if (myID /= 0)then
+            call mpi_gather(SymmetrySurExist,1, sumb_integer,symBuf,1,sumb_integer,0, SUmb_comm_world, ierr)
+         else
+            allocate(symBuf(nProc))
+            call mpi_gather(SymmetrySurExist,1, sumb_integer,symBuf,1,sumb_integer,0, SUmb_comm_world, ierr)
+            SymmetrySurExist = max(maxval(symBuf ),SymmetrySurExist)
+            deallocate(symBuf)
+         end if
 
          ! Write the convergence info; only processor 0 does this.
 
@@ -166,6 +197,12 @@
 !
               write(outUnit,'("#     ======== COMPONENTS BREAK DOWN: @Iteration ",i5," ============")')&
                    nIterCur
+              if(SymmetrySurExist ==1)then
+                 write(outUnit,'("    Symmetry surface : yes ")')
+              else
+                 write(outUnit,'("    Symmetry surface : no  ")')
+              end if
+
               write(outUnit,'("    convergenceQuality : ",i2)')convergenceQuality
               write(outUnit,'("#====================================================================")') 
               write(outUnit,'("# ")')
@@ -197,6 +234,8 @@
                    "     --------     --------     -------- ")')
               write(outUnit,'("  ",6(1pg12.5,1x))')&
                     (cFpG(j,i)+cFvG(j,i),j=1,3),(cMpG(j,i)+cMvG(j,i),j=1,3  )
+
+              call flush(outUnit)
 
               if(writeToFile == 1)then
                  close(unit=CBDUnit,status='keep', iostat=ios)

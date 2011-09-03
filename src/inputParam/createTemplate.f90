@@ -3,7 +3,7 @@
 !      *                                                                *
 !      * File:          createTemplate.f90                              *
 !      * Author:        Edwin van der Weide, Steve Repsher,             *
-!      *                Seonghyeon Hahn                                 *
+!      *                Seonghyeon Hahn, Eran Arad                      *
 !      * Starting date: 12-12-2002                                      *
 !      * Last modified: 11-28-2007                                      *
 !      *                                                                *

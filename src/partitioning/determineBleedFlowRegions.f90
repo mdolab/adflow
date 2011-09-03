@@ -43,6 +43,7 @@
        nInflowBleeds  = 0
        nOutflowBleeds = 0
        nOutflowSubsonic = 0  ! eran-massf
+       nInflowSubsonic = 0  ! eran-massf
 
        do nn=1,cgnsNFamilies
          select case (cgnsFamilies(nn)%BCType)
@@ -55,13 +56,18 @@
            case (SubsonicOutflow)                     ! eran-massf
               nOutflowSubsonic = nOutflowSubsonic + 1 ! eran-massf
 
+           case (SubsonicInflow)                     ! eran-massf
+              nInflowSubsonic = nInflowSubsonic + 1 ! eran-massf
+
          end select
        enddo
 
        if (myRank == 0)then
-          if(nOutflowBleeds+ nOutflowSubsonic > 0 ) &
-            write(*,*)'OUTFLOW BC: Nbleeds = ',nOutflowBleeds, &
-            ' N subsonicOutflow = ',nOutflowSubsonic    ! eran-massf
+          if(nOutflowBleeds+ nOutflowSubsonic + nInflowSubsonic > 0 ) &
+            write(*,*)'OUTFLOW/INFLOW BC: Nbleeds = ',nOutflowBleeds, &
+            ' N subsonicOutflow = ',nOutflowSubsonic, &
+            ' nInflowSubsonic = ',nInflowSubsonic    ! eran-massf
+
        end if
 
        ! Allocate the memory for the arrays to store the bleed flow
