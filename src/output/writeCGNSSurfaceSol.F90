@@ -175,11 +175,9 @@
            call cg_close_f(fileIDs(nn), ierr)
            if(ierr /= all_ok)                      &
 
-              call terminate("writeCGNSSurfaceSol", &
-                             "Something wrong when calling cg_close_f")
 
-! 		write(*,*)'ERROR: writeCGNSSurfaceSol ', &
-! 		' Something wrong when calling cg_close_f' ! eran-closecgns
+ 		write(*,*)'ERROR: writeCGNSSurfaceSol ', &
+ 		' Something wrong when calling cg_close_f' ! eran-closecgns
 
     ! eran-closecgns       call terminate("writeCGNSSurfaceSol", &
     ! eran-closecgns        "Something wrong when calling cg_close_f")

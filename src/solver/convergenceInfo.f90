@@ -32,7 +32,7 @@
        use NKsolverVars
        use flowVarRefState  ! eran-massf 
        use bleedFlows       ! eran-massf 
-
+       use couplerParam     ! eran_idendifyname
        implicit none
 !
 !      Local variables.
@@ -276,7 +276,7 @@
 !
           GroundLevelCh : if(groundLevel == 1 )then
 
-             if(nOutflowSubsonic + nOutflowBleeds > 0 )then
+             if(nOutflowSubsonic + nOutflowBleeds + nInflowSubsonic > 0 )then
 !
 ! calculate mass flux through bcOutflowSubsonic boundaries
 !
@@ -292,8 +292,15 @@
 
           testRootProc: if(myID == 0) then
 
-           ! The variables which must always be written.
+             if(.not.standAloneMode)then
+!
+! ---------- eran_idendifyname ------  For CHIMPS run print identifier infront each line (code-name)
+!
+                write(*,'(a15)',advance="no")trim(codeName)
+             end if
+!----------end eran_idendifyname ---
 
+           ! The variables which must always be written.
 
             if(printIterations) then
              write(*,"(1x,i6,2x)",advance="no") groundLevel
@@ -347,7 +354,7 @@
 !
              !--- eran-massf ---
 
-             if(nOutflowSubsonic + nOutflowBleeds > 0 )& 
+             if(nOutflowSubsonic + nOutflowBleeds + nInflowSubsonic > 0 )& 
                   write(*,"(e12.5,1x)",advance="no")massFluxG
 ! 
              ! ----eran-massf end
@@ -384,8 +391,6 @@
                   absNotConv = .False.
                end if
 
- !----eran-coeffConv starts
-
                if(fromPython) then
                   if (convArray(iConv,sps,1) > L2ConvThisLevelRel*convArray(1,sps,1)) then
                      relNotConv = .True.
@@ -400,52 +405,54 @@
                   converged = .False.
                end if
 
-              !   convergenceQuality = 0 ! that is no convergence
-!                 converged          = .false. 
+!----eran-coeffConv starts
 
-!                 if (iterTot >= minIterNum) then
+                convergenceQuality = 0 ! that is no convergence
+                converged          = .false. 
 
-!                    if (iterTot == minIterNum)then
-!                       write(*,*)'#***************************************************************'
-!                       write(*,*)'# Note: at step ',iterTot,&
-!                            ' Starting to test for convergence'
-!                       write(*,*)'#***************************************************************'
-!                    end if
+                if (iterTot >= minIterNum) then
 
-!                    if(convArray(iConv,sps,1) <= L2ConvThisLevel*convArray(0,sps,1)) then
-!                       converged = .true.
-!                       convergenceQuality = 10
-!                    end if 
+                   if (iterTot == minIterNum)then
+                      write(*,*)'#***************************************************************'
+                      write(*,*)'# Note: at step ',iterTot,&
+                           ' Starting to test for convergence'
+                      write(*,*)'#***************************************************************'
+                   end if
+
+                   if(convArray(iConv,sps,1) <= L2ConvThisLevel*convArray(0,sps,1)) then
+                      converged = .true.
+                      convergenceQuality = 10
+                   end if
  
-!                    if (epsCoefConv > zero   .and.&
-!                         (groundLevel == 1 .and. converged == .false.)  )then
+                   if (epsCoefConv > zero   .and.&
+                        (groundLevel == 1 .and. converged == .false.)  )then
 ! !
 ! ! ---- Check if coefficients reached a cconstant value
 ! !
-!                       call coeffConvergenceCheck(iConv,iterTot,sps)
-!                       if(convergenceQuality > 0) then
-!                          converged = .true.
-!                          write(*,*)&
-!                            'convegenceInfo: Coefficients convergence criterion reached'
-!                       end if
-!                    end if ! epsCoefConv > zero
+                      call coeffConvergenceCheck(iConv,iterTot,sps)
+                      if(convergenceQuality > 0) then
+                         converged = .true.
+                         write(*,*)&
+                              'convegenceInfo: Coefficients convergence criterion reached'
+                      end if
+                   end if ! epsCoefConv > zero
 
-!                    if(converged)then
-!                       select case (convergenceQuality)
-!                          case(10)
-!                             write(*,*)'Convergence: Residual < Convergence criterion'
-!                          case(6)
-!                             write(*,*)'Coefficient uniform (up to criterion) in ',ConvCheckWindowSize,&
-!                                  ' iterations'
-!                          case(4)
-!                             write(*,*)'Coefficient uniform (up to criterion in ',10*ConvCheckWindowSize,&
-!                                  ' iterations'
-!                          case(2)
-!                             write(*,*)'Coefficient uniform (up to criterion in ',100*ConvCheckWindowSize,&
-!                                  ' iterations'
-!                       end select
-!                    end if ! converged
-!                 end if ! iterTot >= minIterNum
+                   if(converged)then
+                      select case (convergenceQuality)
+                      case(10)
+                         write(*,*)'Convergence: Residual < Convergence criterion'
+                      case(6)
+                         write(*,*)'Coefficient uniform (up to criterion) in ',ConvCheckWindowSize,&
+                              ' iterations'
+                      case(4)
+                         write(*,*)'Coefficient uniform (up to criterion in ',10*ConvCheckWindowSize,&
+                              ' iterations'
+                      case(2)
+                         write(*,*)'Coefficient uniform (up to criterion in ',100*ConvCheckWindowSize,&
+                              ' iterations'
+                      end select
+                   end if ! converged
+                end if ! iterTot >= minIterNum
 ! ! ------- end eran-coeffConv
 
              !===========================================================

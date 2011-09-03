@@ -56,9 +56,10 @@
 
        integer(kind=intType) :: nInflowBleeds
        integer(kind=intType) :: nOutflowBleeds
-       integer(kind=intType) :: nOutflowSubsonic ! eran-massf
+       integer(kind=intType) :: nOutflowSubsonic, nInflowSubsonic ! eran-massf
 
        type(bleedflowType), dimension(:), allocatable :: inflowBleeds
        type(bleedflowType), dimension(:), allocatable :: outflowBleeds
+       
 
        end module bleedFlows

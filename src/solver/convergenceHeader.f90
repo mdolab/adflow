@@ -25,6 +25,8 @@ subroutine convergenceHeader
   use iteration
   use inputIteration
   use BleedFlows
+  use bleedFlows ! eran-massf 
+  use couplerParam     ! eran_idendifyname 
   implicit none
   !
   !      Local variables.
@@ -62,7 +64,7 @@ subroutine convergenceHeader
 
        nCharWrite = nCharWrite + nMon*(fieldWidth+1)
        if( showCPU ) nCharWrite = nCharWrite + fieldWidth + 1
-       if(nOutflowSubsonic + nOutflowBleeds > 0 ) &
+       if(nOutflowSubsonic + nOutflowBleeds+ nInflowSubsonic > 0 ) &
             nCharWrite = nCharWrite +  fieldWidth + 1 ! eran-massf
 
        ! Write the line of - signs. This line starts with a #, such
@@ -76,6 +78,16 @@ subroutine convergenceHeader
        ! Write the first line of the header. First the variables that
        ! will always be written. Some extra variables must be written
        ! for unsteady and time spectral problems.
+       if(.not.standAloneMode)then
+!
+! ---------- eran_idendifyname ------  For CHIMPS run print identifier infront each line (code-name)
+!
+          write(*,'("#  CODE         ")',advance="no")
+
+       else
+           write(*,'("# ")',advance="no")
+       end if
+!----------end eran_idendifyname ---
        write(*,"(a)",advance="no") "#  Grid |"
 
        if(equationMode == unsteady) then
@@ -175,17 +187,31 @@ subroutine convergenceHeader
 
            case (cgnsYplusMax)
              write(*,"(a)",advance="no") "   Y+_max   |"
+
+           case (cgnsEddyMax)
+             write(*,"(a)",advance="no") "  Eddyv_max |"
+
           end select
        enddo
 
-       if(nOutflowSubsonic + nOutflowBleeds > 0 )  & 
+       if(nOutflowSubsonic + nOutflowBleeds+ nInflowSubsonic > 0 )  & 
             write(*,"(a)",advance='no')"  MassFlux     |"  ! eran-massf
        print "(1x)"
 
        ! Write the second line of the header. Most of them are empty,
        ! but some variables require a second line.
+       if(.not.standAloneMode)then
+!
+! ---------- eran_idendifyname ------  For CHIMPS run print identifier infront each line (code-name)
+!
+          write(*,'("#               ")',advance="no")
 
-       write(*,"(a)",advance="no")   "# level |"
+       else
+          write(*,'("# ")',advance="no")
+       end if
+!----------end eran_idendifyname ---
+
+       write(*,"(a)",advance="no")   "  level |"
 
        if(equationMode == unsteady) then
          write(*,"(a)",advance="no") " Step |            |"
@@ -216,9 +242,10 @@ subroutine convergenceHeader
 
          end select
       end do
+
    end if
 
-   if(nOutflowSubsonic + nOutflowBleeds > 0 ) & 
+   if(nOutflowSubsonic + nOutflowBleeds + nInflowSubsonic  > 0 ) & 
         write(*,"(a)",advance="no") "               |" ! eran-massf
 
    print "(1x)"

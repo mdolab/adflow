@@ -62,6 +62,13 @@
           open(unit=fTempMon,file='temporalMonitor.dat',status='unknown',&
                         position='rewind',buffered='no' ,iostat=ierr)
 
+          if(ierr /= 0) call terminate("solverUnsteadyBDF", &
+                             "Failure in open of temporalMonitor.dat file") 
+ 	  write(*,*)" temporal monitoring file: temporalMonitor.dat was initiated" 
+                   
+          write(fTempMon,'("%")')
+          write(fTempMon,'("% ntstep    time   ")',advance="no")
+
        ! Fill up old xold and volold
        
        spectralLoop: do kk=1,nTimeIntervalsSpectral
@@ -71,12 +78,7 @@
              
              call setPointers(nn, groundLevel,kk)
 
-!           if(ierr /= 0) call terminate("solverUnsteadyBDF", &
-!                             "Failure in open of temporalMonitor.dat file") 
-! 	  write(*,*)" temporal monitoring file: temporalMonitor.dat was initiated" 
-                   
-!           write(fTempMon,'("%")')
-!           write(fTempMon,'("% ntstep    time   ")',advance="no")
+
 
              do k=0,ke
                 do j=0,je
@@ -144,7 +146,7 @@
 
           enddo ! mm
 
-          if(nOutflowSubsonic + nOutflowBleeds > 0 )  & 
+          if(nOutflowSubsonic + nOutflowBleeds + nInflowSubsonic > 0 )  & 
                    write(fTempMon,"(a)",advance='no')"  MassFlux     |"  
 
           write(fTempMon, "(1x)")
@@ -427,8 +429,7 @@
        ! Check whether a solution file, either volume or surface, must
        ! be written. Only on the finest grid level in stand alone mode.
 
-       !if(standAloneMode .and. groundLevel == 1) then
-       if (groundLevel == 1) then
+       if(standAloneMode .and. groundLevel == 1) then
 
          if(mod(timeStepUnsteady, nSaveVolume) == 0)  &
            writeVolume  = .true.

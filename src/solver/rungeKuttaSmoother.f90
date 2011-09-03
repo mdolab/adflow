@@ -384,7 +384,6 @@
 
                  p(i,j,k) = pn(i,j,k) - dp
                  p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
-                 !eran-ltemp    p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
 
                enddo
              enddo
