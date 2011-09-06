@@ -57,7 +57,6 @@ subroutine NKBenchmark(EP,res,applyPC,niter)
 
         timeA = mpi_wtime()
         if (.not. EP) then
-           call MPI_barrier(sumb_comm_world,ierr)
 
            if (petscComm) then
               call setW_ghost(wVec)
@@ -71,14 +70,14 @@ subroutine NKBenchmark(EP,res,applyPC,niter)
 
         ! Run the 'core' computeResidualNK
      
-        call MPI_barrier(sumb_comm_world,ierr)
+
 
         timeA = mpi_wtime()
         call computeResidualNK()
         timeB = mpi_wtime()
 
         resTime = resTime + timeB - timeA
-
+        call MPI_BARRIER(sumb_comm_world,ierr)
      end if
 
      if (applyPC .and. .not. EP) then
