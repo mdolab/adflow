@@ -12,7 +12,6 @@ subroutine FormFunction_snes(snes,wVec,rVec,ctx,ierr)
   !  Output Parameter:
   !  f     - vector with newly computed function
   use precision
-  use NKsolverVars, only: petscComm
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -26,12 +25,8 @@ subroutine FormFunction_snes(snes,wVec,rVec,ctx,ierr)
   ! This is just a shell routine that runs the more broadly useful
   ! computeResidualNK subroutin
 
-  if (petscComm) then
-     call setW_ghost(wVec)
-  else
-     call setW(wVec)
-  end if
-  call computeResidualNK()
+  call setW(wVec)
+    call computeResidualNK()
   call setRVec(rVec)
 
   ! We don't check an error here, so just pass back zero
@@ -49,7 +44,7 @@ subroutine FormFunction_mf(ctx,wVec,rVec,ierr)
   use flowVarRefState
   use inputtimespectral
   use blockPointers
-  use nksolvervars, only : times,petscComm
+  use nksolvervars, only : times
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -64,13 +59,8 @@ subroutine FormFunction_mf(ctx,wVec,rVec,ierr)
  
   ! Also try doing the built-in vec scats
 
-  if (petscComm) then
-     call setW_ghost(wVec)
-  else
-     call setW(wVec)
-  end if
+  call setW(wVec)
   call computeResidualNK()
-
   call setRVec(rVec)
   ! We don't check an error here, so just pass back zero
   ierr = 0
@@ -84,7 +74,6 @@ subroutine FormFunction_ts(pts,t,wVec,rVec,ctx,ierr)
   use communication
   use precision
   use flowVarRefState
-  use NKsolverVars, only: petscComm
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -102,11 +91,7 @@ subroutine FormFunction_ts(pts,t,wVec,rVec,ctx,ierr)
   if (myid == 0) then
      print *,'Form Func 3'
   end if
- if (petscComm) then
-     call setW_ghost(wVec)
-  else
-     call setW(wVec)
-  end if
+  call setW(wVec)
   call computeResidualNK()
   ! We don't check an error here, so just pass back zero
   ierr = 0

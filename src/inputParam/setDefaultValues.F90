@@ -418,5 +418,5 @@
        NKPCSetup     = .False.
        lumpedDiss    = .False.
        NKFiniteDifferencePC = .True.
-       petscComm = .False.
+
        end subroutine setDefaultValues

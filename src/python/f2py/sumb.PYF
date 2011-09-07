@@ -324,10 +324,8 @@ python module sumb ! in
        subroutine destroynksolver
        end subroutine destroynksolver
        
-       subroutine nkbenchmark(ep,res,applypc,niter)
-         logical :: ep
-         logical :: res
-         logical :: applypc
+       subroutine nkbenchmark(nkres,niter)
+         logical :: nkres
          integer(kind=inttype) :: niter
        end subroutine nkbenchmark
 
@@ -1260,7 +1258,6 @@ python module sumb ! in
          real(kind=realtype) :: totalrfinal
          logical :: rkreset
          integer(kind=inttype) :: nrkreset
-         logical :: petsccomm
        end module nksolvervars
        
 

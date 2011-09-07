@@ -139,5 +139,5 @@ module NKsolverVars
   integer(kind=intType) :: iterTot0
 
   real(kind=realType) :: times(50)
-  logical :: petscComm
+
 end module NKsolverVars
