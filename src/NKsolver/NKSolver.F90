@@ -17,7 +17,7 @@ subroutine NKsolver
   use NKSolverVars, only: dRdw,dRdwPre,jacobian_lag,&
        totalR0,totalRStart,wVec,rVec,deltaW,reason,global_ksp,reason,&
        ksp_rtol,ksp_atol,ksp_max_it,ksp_subspace,ksp_div_tol,&
-       nksolvedonce,times,petsccomm
+       nksolvedonce,times
 
   use InputIO ! L2conv,l2convrel
   use inputIteration
@@ -55,11 +55,7 @@ subroutine NKsolver
   call VecDuplicate(wVec,work,ierr);  call EChk(ierr,__FILE__,__LINE__)
 
   ! Evaluate the residual before we start and copy the value into g
-  if (petscComm) then
-     call setW_ghost(wVec)
-  else
-     call setW(wVec)
-  end if
+  call setW(wVec)
   call computeResidualNK()
 
   call setRVec(rVec)
@@ -118,6 +114,7 @@ subroutine NKsolver
 
      ! Check to see if we've done too many function Evals:
      if (iterTot > ncycles) then
+        iterTot = ncycles 
         exit NonLinearLoop
      end if
 
@@ -126,8 +123,9 @@ subroutine NKsolver
 
      ! Set all tolerances for linear solve:
      ksp_atol = totalR0*L2Conv
-     ksp_max_it = ksp_subspace
-
+     ksp_max_it = min(ksp_subspace,ncycles-iterTot)
+     ksp_max_it = max(ksp_max_it,1)
+    
      call KSPSetTolerances(global_ksp,ksp_rtol,ksp_atol,ksp_div_tol,&
           ksp_max_it,ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -176,7 +174,7 @@ end subroutine NKsolver
 subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   use precision 
   use communication
-  use NKSolverVars, only: dRdw,petsccomm
+  use NKSolverVars, only: dRdw
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -240,11 +238,7 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Compute Function:
-  if (petscComm) then
-     call setW_ghost(w)
-  else
-     call setW(w)
-  end if
+  call setW(w)
   call computeResidualNK()
 
   nfevals = nfevals + 1
@@ -280,11 +274,7 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Compute new function again:
-  if (petscComm) then
-     call setW_ghost(w)
-  else
-     call setW(w)
-  end if
+  call setW(w)
   call computeResidualNK()
 
   call setRVec(g)
@@ -342,11 +332,7 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Compute new function again:
-     if (petscComm) then
-        call setW_ghost(w)
-     else
-        call setW(w)
-     end if
+     call setW(w)
      call computeResidualNK()
 
      call setRVec(g)
@@ -373,7 +359,7 @@ end subroutine LSCubic
 subroutine LSNone(x,f,g,y,w,nfevals,flag)
   use precision 
   use communication
-  use NKSolverVars, only: dRdw,petscComm
+  use NKSolverVars, only: dRdw
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -396,11 +382,7 @@ subroutine LSNone(x,f,g,y,w,nfevals,flag)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Compute new function:
-  if (petscComm) then
-     call setW_ghost(w)
-  else
-     call setW(w)
-  end if
+  call setW(w)
   call computeResidualNK()
   
   call setRVec(g)

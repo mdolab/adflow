@@ -20,20 +20,22 @@
 ! niter: Number of iterations to run
 
 
-subroutine NKBenchmark(EP,res,applyPC,niter)
+subroutine NKBenchmark(NKRes,niter)
 
   use communication
-  use precision
   use flowVarRefState
   use inputtimespectral
   use blockPointers
-  use nksolvervars, only : petscComm,wVec
+  use nksolvervars, only :wVec,rVec,ctx,drdw,global_pc,deltaw
+  use inputPhysics
+  use iteration
+  use inputiteration
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
 
   ! Input
-  logical, intent(in) :: EP,res,applyPC
+  logical, intent(in) :: NKRes
   integer(kind=intType), intent(in) :: niter
 
   ! Working
@@ -48,53 +50,48 @@ subroutine NKBenchmark(EP,res,applyPC,niter)
   call setwVec(wVec)
   
   ! Reset all times
-  haloTime = 0.0
+
   resTime = 0.0
+ 
+
+  if (.not. NKres) then
+     allocate(cycling(nMGSteps), stat=ierr)
+     call setCycleStrategy
+  else
+     call setupNKSolver()
+     call FormJacobian()
+     call MatMFFDSetBase(dRdW,wVec,PETSC_NULL_OBJECT,ierr)
+  end if
   timeX = mpi_wtime()
   do iter=1,niter
    
-     if (res) then
-
-        timeA = mpi_wtime()
-        if (.not. EP) then
-
-           if (petscComm) then
-              call setW_ghost(wVec)
-           else
-              call setW(wVec)
-           end if
-
-        end if
-        timeB = mpi_wtime()
-        haloTime = haloTime + timeB - timeA
+     if (NKres) then
 
         ! Run the 'core' computeResidualNK
-     
-
-
         timeA = mpi_wtime()
-        call computeResidualNK()
+
+        call formFunction_mf(ctx,wVec,rVec,ierr)
+        call PCApply(global_pc,rVec,deltaW,ierr)
+        
         timeB = mpi_wtime()
 
         resTime = resTime + timeB - timeA
-        call MPI_BARRIER(sumb_comm_world,ierr)
+
+     else ! Use the MG Res
+
+        ! Run the core of the MG solver...executeMGcycle
+        timeA = mpi_wtime()
+        call executeMGCycle()
+        timeB = mpi_wtime()
+        
+        resTime = resTime + timeB - timeA
+
      end if
 
-     if (applyPC .and. .not. EP) then
-        print *,'Applying PC...'
-     end if
   end do
   timeY = mpi_wtime()
   allocate(all_times(nproc))
 
-  ! Collect all the Halotimes
-  call MPI_Gather (haloTime,1,sumb_real,all_times,1,sumb_real,0,&
-       SUMB_COMM_WORLD,ierr) 
-  if (myid == 0) then
-     print *,'Min Halo Time:',minval(all_times)/niter,minloc(all_times)-1
-     print *,'Max Halo Time:',maxval(all_times)/niter,maxloc(all_times)-1
-     print *,'Average Halo Time:',sum(all_times)/nproc/niter
-  end if
   ! Collect all the Restimes
   call MPI_Gather (resTime,1,sumb_real,all_times,1,sumb_real,0,&
        SUMB_COMM_WORLD,ierr) 
@@ -112,6 +109,10 @@ subroutine NKBenchmark(EP,res,applyPC,niter)
   if (myid == 0) then
      print *,'Total Time:',totalTime/niter
    print *, ' '
+  end if
+
+  if (.not. NKres) then
+     deallocate(cycling)
   end if
 
 end subroutine NKBenchmark
