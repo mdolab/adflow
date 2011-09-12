@@ -221,7 +221,7 @@ class PERFORMANCE(object):
         #Calculate the freqency and Damping for the aircraft, use MAC as ref chord
         [Wn,DampingRatio]=self.calculateFrequencyAndDamping(averagesol['cmq'],averagesol['clalpha'],
                                                             averagesol['cd0'],averagesol['cmalpha'],
-                                                            averagesol['cmalphadot'],m,Iy,
+                                                            averagesol['cmalphadot'],m,Iy/10.0,
                                                             rho,A,V,MAC)
 
         #Compute the change in g with alpha
