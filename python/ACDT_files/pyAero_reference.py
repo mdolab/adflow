@@ -56,7 +56,7 @@ class Reference(object):
 	Abstract Class for Aerodynamic Reference Object
 	'''
 	
-	def __init__(self, name={}, sref=None, bref=None, cref=None, xref=0.0, yref=0.0, zref=0.0, *args, **kwargs):
+	def __init__(self, name={}, sref=None, bref=None, cref=None, xref=0.0, yref=0.0, zref=0.0, xrot=0.0, yrot=0.0, zrot=0.0, *args, **kwargs):
 		
 		'''
 		Reference Class Initialization
@@ -85,6 +85,9 @@ class Reference(object):
 		self.xref = xref
 		self.yref = yref
 		self.zref = zref
+		self.xrot = xrot
+		self.yrot = yrot
+		self.zrot = zrot
 	
 		
 	def ListAttributes(self):
