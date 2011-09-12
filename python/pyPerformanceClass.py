@@ -78,7 +78,7 @@ class PERFORMANCE(object):
         c=0
         d=0.
         e=0.
-        f=-1
+        f=-1.1
         
         xp = DampingRatio
         yp = Wn
@@ -182,7 +182,7 @@ class PERFORMANCE(object):
         #Calculate Frequency and Damping, use MAC as ref chord
         [Wn,DampingRatio]=self.calculateFrequencyAndDamping(averagesol['cmq'],averagesol['clalpha'],
                                             averagesol['cd0'],averagesol['cmalpha'],
-                                            averagesol['cmalphadot'],m,Iy*2,
+                                            averagesol['cmalphadot'],m,Iy,
                                             rho,A,V,MAC)
 
         #Calculate Dynamic Stability constraint
@@ -221,7 +221,7 @@ class PERFORMANCE(object):
         #Calculate the freqency and Damping for the aircraft, use MAC as ref chord
         [Wn,DampingRatio]=self.calculateFrequencyAndDamping(averagesol['cmq'],averagesol['clalpha'],
                                                             averagesol['cd0'],averagesol['cmalpha'],
-                                                            averagesol['cmalphadot'],m,Iy*2,
+                                                            averagesol['cmalphadot'],m,Iy,
                                                             rho,A,V,MAC)
 
         #Compute the change in g with alpha
@@ -304,8 +304,7 @@ class PERFORMANCE(object):
                 #end
                 CAP,Damp = self.CAPDriver(acg,wbc,geom,averagesol,
                                             rho,V,A,
-                                            thick_con_c.reshape(con.thickConSizes[0]))              
-          
+                                            thick_con_c.reshape(con.thickConSizes[0]))          
    
                 CAPderiv[key].append(numpy.imag(CAP)/numpy.imag(deltax))
                 Dampderiv[key].append(numpy.imag(Damp)/numpy.imag(deltax))
