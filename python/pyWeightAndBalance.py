@@ -61,7 +61,7 @@ class WEIGHTANDBALANCE(Base):
         def_opts = {'dtype':[str,'d'],
                     't':[float,0.001],
                     'rho':[float,2600],
-                    'inertiaModifier':[1.5,float]
+                    'inertiaModifier':[float,1.5]
             }
         informs = {
             }
@@ -480,7 +480,7 @@ class WEIGHTANDBALANCE(Base):
             totalInertia = totalInertia+SurfaceInertia[:,i]
         #end
         temp = self.getOption('inertiaModifier')
-
+        
         totalInertia = totalInertia*temp
         #print totalInertia
         #b = time.time()
