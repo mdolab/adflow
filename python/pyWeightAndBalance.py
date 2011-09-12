@@ -35,6 +35,7 @@ import numpy
 # Extension modules
 # =============================================================================
 from mdo_import_helper import *
+exec(import_modules('pyBase_class'))
 exec(import_modules('pyGeometry_liftingsurface_c'))
 #exec(import_modules('pyGeometry_liftingsurface'))
 from pyGeometry_complex import catan,cabs,cmin,cmax
@@ -42,7 +43,7 @@ from pyGeometry_complex import catan,cabs,cmin,cmax
 # Misc Definitions
 # =============================================================================
 
-class WEIGHTANDBALANCE(object):
+class WEIGHTANDBALANCE(Base):
 
     '''
     Implementation of basic preliminary level CG and inertia
@@ -57,10 +58,16 @@ class WEIGHTANDBALANCE(object):
         '''
         name = 'WEIGHTANDBALANCE'
         category = 'CG and I estimation'
-        def_opts = {
+        def_opts = {'dtype':[str,'d'],
+                    't':[float,0.001],
+                    'rho':[float,2600],
+                    'inertiaModifier':[1.5,float]
             }
         informs = {
             }
+
+        #run the Generic surface defintion
+        Base.__init__(self, name, category, def_opts, informs, *args, **kwargs)
 
         if 'g' in kwargs:
             self.g = kwargs['g']
@@ -295,6 +302,7 @@ class WEIGHTANDBALANCE(object):
                         #Weight
                         if self.Units=='metric':
                             W = acg[i][j].Weight/self.g
+                            #print 'mass',W
                         else:
                             W = acg[i][j].Weight
                         #end
@@ -307,10 +315,11 @@ class WEIGHTANDBALANCE(object):
                         #I1x =(t_root*(C_root/3.0+(Span*tan(SweepTE)/4.0)-Span*tan(SweepLE)/4.0))
                         #print 'I1x2',I1x
                         I1x = (W*Span**3/(3*V))*(((t_root-t_tip)*(C_root/4.0+(Span*numpy.tan(SweepTE)/5.0)-Span*numpy.tan(SweepLE)/5.0))+(t_root*(C_root/3.0+(Span*numpy.tan(SweepTE)/4.0)-Span*numpy.tan(SweepLE)/4.0)))
+                        #print 'Check',(W*Span**3/(3*V)),((t_root-t_tip)*(C_root/4.0+(Span*numpy.tan(SweepTE)/5.0)-Span*numpy.tan(SweepLE)/5.0)),(t_root*(C_root/3.0+(Span*numpy.tan(SweepTE)/4.0)-Span*numpy.tan(SweepLE)/4.0)),(((t_root-t_tip)*(C_root/4.0+(Span*numpy.tan(SweepTE)/5.0)-Span*numpy.tan(SweepLE)/5.0))+(t_root*(C_root/3.0+(Span*numpy.tan(SweepTE)/4.0)-Span*numpy.tan(SweepLE)/4.0))),(W*Span**3/(3*V))*(((t_root-t_tip)*(C_root/4.0+(Span*numpy.tan(SweepTE)/5.0)-Span*numpy.tan(SweepLE)/5.0))+(t_root*(C_root/3.0+(Span*numpy.tan(SweepTE)/4.0)-Span*numpy.tan(SweepLE)/4.0)))
                         #I1x1 =27028033000
                         #Note: changed(W*Span**3/(V)) to (W*Span**3/(3*V))
                         #to match published results
-                        #print 'I1x',I1x,I1x1,I1x/I1x1
+                        #print 'I1x',I1x#,I1x1,I1x/I1x1
                         #Ok, except for I1x!!!!
                         I1y = ((W*Span)/V)*((t_root*((C_root**3/3.0)+Span*C_root*numpy.tan(SweepTE)*((C_root/2.0)+(Span*numpy.tan(SweepTE))/3.0)+(Span**3/12.0)*(numpy.tan(SweepTE)**3-numpy.tan(SweepLE)**3)))-((t_root-t_tip)*((C_root**3/6.0)+Span*C_root*numpy.tan(SweepTE)*((C_root/3.0)+(Span*numpy.tan(SweepTE)/4.0))+(Span**3/15.0)*(numpy.tan(SweepTE)**3-numpy.tan(SweepLE)**3))))
                         #print 'I1y',I1y
@@ -343,7 +352,7 @@ class WEIGHTANDBALANCE(object):
  
                         Xs = acg[i][j].x_Centroid
                         Xs4 = xrLE-xcg
-
+                        
                         Ys = acg[i][j].y_Centroid
                         Ys_dot = acg[i][j].y_Centroid*numpy.cos(Dihedral)
                         #print 'ydot',Ys_dot
@@ -354,7 +363,7 @@ class WEIGHTANDBALANCE(object):
                         Zs3 = acg[i][j].z_Centroid
                         #print 'zs3',Zs3
                         Zs4 = acg[i][j].z_Centroid
-                   
+                        #print 'centroids',Xs,Ys,Zs3
                         
                         Ix = Ix+I1x-W*(Ys_dot**2)-W*(Zs3**2)+W*(Ys_dot+Ysoff)**2 + W*(Zs3+Zs1)**2
                         #print 'w',W,(Ys_dot),W*(Ys_dot**2)
@@ -372,6 +381,112 @@ class WEIGHTANDBALANCE(object):
 
    
         return Ix,Iy,Iz
+
+    def calculateWingInertiaspyGeo(self,surface,xcg):
+        '''
+        Calculates the Wing mass moments of inertia from the pyGeo Surface
+        
+        wing - instance of pyGeo Surface
+        
+        note:
+        x is chord direction
+        y is vertical direction
+        z is span direction
+        t is thickness in meters
+        rho is density of material in kg/m^3
+        '''
+        dtype = self.getOption('dtype')#'d'
+        #a = time.time()
+        X = surface.Xs
+        Xc = surface.Xc
+        nu = X.shape[2]#10#5#10
+        nv = X.shape[1]#10#3#5
+        nSurf = X.shape[0]
+        #u = numpy.linspace(0,1,nu)
+        #v = numpy.linspace(0,1,nv)
+        t = self.getOption('t')#0.001 #thickness in meters
+        rho = self.getOption('rho')#2700 #density of material in kg/m^3
+        #[V,U] = numpy.meshgrid(u,v)
+        #print 'u,v',u,v,'U',U,V
+        v1 = numpy.zeros([3],dtype)
+        v2 = numpy.zeros([3],dtype)
+        s = numpy.zeros([nv-1,nu-1,3],dtype)
+        r2 = numpy.zeros([nv-1,nu-1,3],dtype)
+        inertia = numpy.zeros([nv-1,nu-1,3],dtype)
+        sTot =numpy.zeros([nv-1,nu-1],dtype)
+        Vol = numpy.zeros([nv-1,nu-1],dtype)
+        mass = numpy.zeros([nv-1,nu-1],dtype)
+        Area = numpy.zeros([3,nSurf],dtype)
+        SurfaceInertia = numpy.zeros([3,nSurf],dtype)
+        totalMass = 0
+        totalInertia = numpy.zeros([3],dtype)
+       #  Uc = numpy.zeros([nv-1,nu-1],dtype)
+#         Vc = numpy.zeros([nv-1,nu-1],dtype)
+#         for i in xrange(nv-1):
+#             for j in xrange(nu-1):
+#                 #print 'UV',V[i,j],V[i,j+1],U[i,j],U[i+1,j]
+#                 Uc[i,j] = U[i,j]+0.5*(U[i+1,j]-U[i,j])
+#                 #print 'Uc',Uc[i,j],i,j
+#                 Vc[i,j] = V[i,j]+0.5*(V[i,j+1]-V[i,j])
+#                 #print 'Vc',Vc[i,j]
+#             #end
+#         #end
+        Xcg = [xcg,0.0,0.0]
+        for i in xrange(nSurf):
+            tempX =  X[i,:,:,:]
+            tempXc = Xc[i,:,:,:]
+            sz = tempX.shape
+            for j in xrange(sz[0]-1):
+                for k in xrange(sz[1]-1):
+                    #print temp[j,k],j,k
+                    v1[0] = tempX[j+1,k+1,0]-tempX[j,k,0]
+                    v1[1] = tempX[j+1,k+1,1]-tempX[j,k,1]
+                    v1[2] = tempX[j+1,k+1,2]-tempX[j,k,2]
+                    #print 'v1',v1
+                    v2[0] = tempX[j,k+1,0]-tempX[j+1,k,0]
+                    v2[1] = tempX[j,k+1,1]-tempX[j+1,k,1]
+                    v2[2] = tempX[j,k+1,2]-tempX[j+1,k,2]
+                    s[j,k,0] = 0.5*(v1[1]*v2[2] - v1[2]*v2[1])
+                    s[j,k,1] = 0.5*(v1[2]*v2[0] - v1[0]*v2[2])
+                    s[j,k,2] = 0.5*(v1[0]*v2[1] - v1[1]*v2[0])
+                    #s[j,k,:] = 0.5* numpy.cross(v1,v2)
+                    sTot[j,k] = s[j,k,0]+s[j,k,1]+s[j,k,2]
+                    #sTot[j,k] = numpy.sum(s[j,k,:])
+                    Vol[j,k] = cabs(sTot[j,k])*t
+                    mass[j,k] = Vol[j,k]*rho
+                    totalMass = totalMass+mass[j,k]
+                    dx = tempXc[j,k,0]-Xcg[0]
+                    dy = tempXc[j,k,1]-Xcg[1]
+                    dz = tempXc[j,k,2]-Xcg[2]
+                    #print 'dist.',dx,dy,dz
+                    r2[j,k,0] = (dy**2+dz**2)#aboutx axis
+                    r2[j,k,1] = (dx**2+dz**2)# about y axis
+                    r2[j,k,2] = (dy**2+dx**2)# about z axis
+                    #print 'r2',r2[j,k,:]
+                    inertia[j,k,0] = mass[j,k]*r2[j,k,0]#Ixx
+                    inertia[j,k,1] = mass[j,k]*r2[j,k,1]#Iyy
+                    inertia[j,k,2] = mass[j,k]*r2[j,k,2]#Izz
+                    #inertia[j,k,:] = mass[j,k]*r2[j,k,:]
+                    Area[:,i] = Area[:,i]+cabs(s[j,k,:])
+                    SurfaceInertia[:,i] = SurfaceInertia[:,i]+inertia[j,k,:]
+                #end
+            #end
+        #end     
+        
+        #print 'mass2',totalMass
+        #print 'area2',Area
+        #print SurfaceInertia
+        for i in xrange(nSurf):
+            totalInertia = totalInertia+SurfaceInertia[:,i]
+        #end
+        temp = self.getOption('inertiaModifier')
+
+        totalInertia = totalInertia*temp
+        #print totalInertia
+        #b = time.time()
+        #print 'total time:',b-a   
+        
+        return totalInertia
 
     def computeRootBendingMoment(self,sol,ref,geom,liftIndex):
         #sum up the moments about the root elastic center to determine the effect of sweep on the moment
@@ -679,6 +794,26 @@ class WEIGHTANDBALANCE(object):
         geo.update('wing')
 
         return BMderiv
+
+    def _on_setOption(self, name, value):
+
+        '''
+        Get Optimizer Option Value (Optimizer Specific Routine)
+
+        Documentation last updated:  May. 21, 2008 - Ruben E. Perez
+        '''
+
+        pass
+
+    def _on_getOption(self, name):
+
+        '''
+        Get Optimizer Option Value (Optimizer Specific Routine)
+
+        Documentation last updated:  May. 21, 2008 - Ruben E. Perez
+        '''
+
+        pass
 
 #==============================================================================
 # weight and balance Analysis Test
