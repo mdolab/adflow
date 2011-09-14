@@ -157,10 +157,10 @@
              ! destruction terms are linearized to increase the diagonal
              ! dominance of the matrix. Furthermore minus the source
              ! term jacobian is stored.
-                   qq(i,j,k,itu1,itu1) = rkwBetas*w(i,j,k,itu2)*decayTermFunc 
-                   qq(i,j,k,itu1,itu2) = zero
-                   qq(i,j,k,itu2,itu1) = zero
-                   qq(i,j,k,itu2,itu2) = two*Beta1*w(i,j,k,itu2)
+                   qq(i,j,k,1,1) = rkwBetas*w(i,j,k,itu2)*decayTermFunc 
+                   qq(i,j,k,1,2) = zero
+                   qq(i,j,k,2,1) = zero
+                   qq(i,j,k,2,2) = two*Beta1*w(i,j,k,itu2)
                 enddo
              enddo
           enddo
