@@ -2,9 +2,9 @@
 !      ******************************************************************
 !      *                                                                *
 !      * File:          determineBleedFlowRegions.f90                   *
-!      * Author:        Edwin van der Weide                             *
+!      * Author:        Edwin van der Weide,C.A.(Sandy) Mader           *
 !      * Starting date: 08-11-2005                                      *
-!      * Last modified: 08-16-2005                                      *
+!      * Last modified: 09-14-2011                                      *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -21,6 +21,10 @@
        use BCTypes
        use bleedFlows
        use cgnsGrid
+!---CAM-----
+       use communication
+!---CAM-----
+       implicit none
 !
 !      Local variables.
 !
@@ -61,8 +65,9 @@
 
          end select
        enddo
-
-       if (myRank == 0)then
+!-----CAM ------
+       if (myID == 0)then
+!-----CAM ------
           if(nOutflowBleeds+ nOutflowSubsonic + nInflowSubsonic > 0 ) &
             write(*,*)'OUTFLOW/INFLOW BC: Nbleeds = ',nOutflowBleeds, &
             ' N subsonicOutflow = ',nOutflowSubsonic, &
