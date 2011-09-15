@@ -65,8 +65,8 @@ subroutine applyAllBC_block(secondHalo)
 
   ! The viscous wall boundary conditions.
 
-  call bcNSWallAdiabatic( secondHalo, correctForK)
-  call bcNSWallIsothermal(secondHalo, correctForK)
+  !call bcNSWallAdiabatic( secondHalo, correctForK)
+  !call bcNSWallIsothermal(secondHalo, correctForK)
 
   ! The farfield is a special case, because the treatment
   ! differs when preconditioning is used. Make that distinction

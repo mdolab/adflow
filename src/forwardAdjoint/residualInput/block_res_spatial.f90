@@ -18,13 +18,18 @@ subroutine block_res_spatial(nn,sps)!,x_peturb)
   use inputPhysics 
   use iteration
   use inputTimeSpectral
+  use section             !nsections
+  use monitor             !timeunsteadyrestart
 
   implicit none
 
 
   real(kind=realType) :: gm1,v2
   integer(kind=intType) :: nn,sps,i,j,k,sps2,mm,l
-  logical :: correctForK
+  logical :: correctForK,useOldCoor=.false.
+  !for grid velocities computation
+  real(kind=realType), dimension(nSections) :: t
+
 !  logical :: x_peturb(0:ie,0:je,0:ke,3)
   call setPointersOffTSInstance(nn,sps,sps)
 
@@ -32,8 +37,22 @@ subroutine block_res_spatial(nn,sps)!,x_peturb)
   call xhalo_block(1)!,x_peturb)
   call metric_block(nn,1,sps)
 
-  ! call gridVelocities(useOldCoor, t, sps) ! Required for TS
-  ! call normalVelocitiesAllLevels(sps) ! Required for TS
+  ! Compute the time, which corresponds to this spectral solution.
+  ! For steady and unsteady mode this is simply the restart time;
+  ! for the spectral mode the periodic time must be taken into
+  ! account, which can be different for every section.
+  
+  t = timeUnsteadyRestart
+  
+  if(equationMode == timeSpectral) then
+     do nn=1,nSections
+        t(nn) = t(nn) + (sps-1)*sections(nn)%timePeriod &
+             /         real(nTimeIntervalsSpectral,realType)
+     enddo
+  endif
+  call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
+  call normalVelocities_block(sps) ! Required for TS
+  !call slipVelocitiesFineLevel(.false., t, mm) !required for viscous
 
   ! Compute the pressures
 

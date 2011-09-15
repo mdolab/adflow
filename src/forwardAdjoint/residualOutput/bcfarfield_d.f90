@@ -2,8 +2,8 @@
    !  Tapenade 3.4 (r3375) - 10 Feb 2010 15:08
    !
    !  Differentiation of bcfarfield in forward (tangent) mode:
-   !   variations   of useful results: *p *w
-   !   with respect to varying inputs: *p *gamma *w gammaconstant
+   !   variations   of useful results: *p *gamma *w
+   !   with respect to varying inputs: *p *w gammaconstant
    !
    !      ******************************************************************
    !      *                                                                *
@@ -22,6 +22,7 @@
    USE CONSTANTS
    USE ITERATION
    IMPLICIT NONE
+   !close (UNIT=unitx)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -47,6 +48,9 @@
    REAL(kind=realtype) :: red, ued, ved, wed, qned, ced
    REAL(kind=realtype) :: qnf, cf, uf, vf, wf, sf, cc, qq
    REAL(kind=realtype) :: qnfd, cfd, ufd, vfd, wfd, sfd, ccd
+   ! Variables Added for forward AD
+   REAL(kind=realtype) :: rho, sf2
+   REAL(kind=realtype) :: rhod
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
@@ -86,7 +90,19 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
    END SUBROUTINE SETBCPOINTERS_D
    END INTERFACE
-      !
+      !!$       !File Parameters remove for AD
+   !!$       integer :: unitx = 12,ierror
+   !!$      integer ::iii,iiii,jjj,jjjj,kkk,kkkk,nnnn,istart2,jstart2,kstart2,iend2,jend2,kend2,n,ii,jj
+   !!$      character(len = 16)::outfile
+   !!$      
+   !!$      outfile = "xoriginal.txt"
+   !!$      
+   !!$      open (UNIT=unitx,File=outfile,status='old',position='append',action='write',iostat=ierror)
+   !!$      if(ierror /= 0)                        &
+   !!$           call terminate("verifyResiduals", &
+   !!$           "Something wrong when &
+   !!$           &calling open")
+   !
    !      ******************************************************************
    !      *                                                                *
    !      * Begin execution                                                *
@@ -106,6 +122,7 @@
    c0 = SQRT(arg1)
    pwr1 = winf(irho)**gammainf
    s0 = pwr1/pinfcorr
+   gammad = 0.0
    ! Loop over the boundary condition subfaces of this block.
    bocos:DO nn=1,nbocos
    ! Check for farfield boundary conditions.
@@ -146,6 +163,40 @@
    nnx = bcdata(nn)%norm(i, j, 1)
    nny = bcdata(nn)%norm(i, j, 2)
    nnz = bcdata(nn)%norm(i, j, 3)
+   !!$       !print out pAdj
+   !!$       istart2 = -1!2
+   !!$       jstart2 = -1!2
+   !!$       kstart2 = -1!2
+   !!$       iend2 = 1!2
+   !!$       jend2 = 1!2
+   !!$       kend2 = 1!2 
+   !!$       if(i==BCData(nn)%icBeg) istart2=0
+   !!$       if(j==BCData(nn)%jcBeg) jstart2= 0
+   !!$       !if(i==BCData(nn)%icBeg+1) istart2=-1
+   !!$       !if(j==BCData(nn)%jcBeg+1) jstart2=-1
+   !!$!       if(kcell==2) kstart2=-1
+   !!$       !if(i==BCData(nn)%icEnd-1) iend2=1
+   !!$       !if(j==BCData(nn)%jcEnd-1) jend2=1
+   !!$       if(i==BCData(nn)%icEnd) iend2=0
+   !!$       if(j==BCData(nn)%jcEnd) jend2=0
+   !!$!       if(kcell==kl) kend2=1
+   !!$       do jjjj = jstart2,jend2
+   !!$          do iiii = istart2,iend2
+   !!$             !do kkkk = kstart2,kend2
+   !!$               ! do n = 1,3!nw
+   !!$                   !do n = 1,1!nw
+   !!$                   !do n = 1,nw 
+   !!$                   !do sps2 = 1,nTimeIntervalsSpectral
+   !!$                   ii = i+iiii
+   !!$                   jj = j+jjjj
+   !!$                   !k = kcell+kkkk
+   !!$                   !print *,'indices',i,j,iiii,jjjj,ii,jj,BCData(nn)%jcEnd, BCData(nn)%icEnd
+   !!$
+   !!$                   write(unitx,11)i,j,ii,jj,nn,BCData(nn)%norm(ii,jj,1), BCData(nn)%rface(ii,jj)
+   !!$11               format(1x,'wadj',5I8,2f20.14) 
+   !!$               ! end do
+   !!$             end do
+   !!$          end do
    ! Compute the normal velocity of the free stream and
    ! substract the normal velocity of the mesh.
    qn0 = u0*nnx + v0*nny + w0*nnz
@@ -207,10 +258,23 @@
    vf = ve + (qnf-qne)*nny
    wfd = wed + nnz*(qnfd-qned)
    wf = we + (qnf-qne)*nnz
+   !Intermediate rho variable added to fix AD bug,ww2 
+   ! was not getting picked up here.
+   rhod = ww2d(i, j, irho)
+   rho = ww2(i, j, irho)
+   IF (rho .GT. 0.0 .OR. (rho .LT. 0.0 .AND. gamma2(i, j) .EQ. &
+   &                INT(gamma2(i, j)))) THEN
+   pwr1d = gamma2(i, j)*rho**(gamma2(i, j)-1)*rhod
+   ELSE IF (rho .EQ. 0.0 .AND. gamma2(i, j) .EQ. 1.0) THEN
+   pwr1d = rhod
+   ELSE
    pwr1d = 0.0
-   pwr1 = ww2(i, j, irho)**gamma2(i, j)
+   END IF
+   pwr1 = rho**gamma2(i, j)
    sfd = (pwr1d*pp2(i, j)-pwr1*pp2d(i, j))/pp2(i, j)**2
    sf = pwr1/pp2(i, j)
+   !old version
+   !sf2 = ww2(i,j,irho)**gamma2(i,j)/pp2(i,j)
    DO l=nt1mg,nt2mg
    ww1d(i, j, l) = ww2d(i, j, l)
    ww1(i, j, l) = ww2(i, j, l)
@@ -263,15 +327,11 @@
    END DO
    END DO
    ! Compute the energy for these halo's.
-
    CALL COMPUTEETOT_D(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                   kcbeg(nn), kcend(nn), correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) THEN
-
-   CALL EXTRAPOLATE2NDHALO_D(nn, correctfork)
-   END IF
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_D(nn, correctfork)
    END IF
    END DO bocos
    END SUBROUTINE BCFARFIELD_D

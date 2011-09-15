@@ -614,6 +614,7 @@
        ! Array of cgns blocks.
 
        type(cgnsBlockInfoType), allocatable, dimension(:) :: cgnsDoms
+       type(cgnsBlockInfoType), allocatable, dimension(:) :: cgnsDomsd
 
        ! Number of families in the cgns grid.
 
