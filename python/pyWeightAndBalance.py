@@ -476,6 +476,7 @@ class WEIGHTANDBALANCE(Base):
         #print 'mass2',totalMass
         #print 'area2',Area
         #print SurfaceInertia
+        self.totalMass = totalMass
         for i in xrange(nSurf):
             totalInertia = totalInertia+SurfaceInertia[:,i]
         #end
