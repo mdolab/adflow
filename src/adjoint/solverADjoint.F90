@@ -125,10 +125,17 @@
       !print *,'creating'
       !create all of the various matricies
       call createPETScVars()
-      
-      !print *,'setting up residual derivatives..'
-      call setupAllResidualMatrices
 
+      !call verifyRAdj(level)
+      !return
+      !print *,'setting up residual derivatives..'
+
+      call setupAllResidualMatricests
+      !call setupAllResidualMatrices
+
+      !call verifydRdwfile(level)
+      call verifydRdxfile(level)
+      return
 
       ! Reordered for ASM preconditioner
       ! Create the Krylov subspace linear solver context,
