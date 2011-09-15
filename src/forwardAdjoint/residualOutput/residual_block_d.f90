@@ -2,8 +2,9 @@
    !  Tapenade 3.4 (r3375) - 10 Feb 2010 15:08
    !
    !  Differentiation of residual_block in forward (tangent) mode:
-   !   variations   of useful results: *dw
-   !   with respect to varying inputs: *p *w
+   !   variations   of useful results: *dw *w
+   !   with respect to varying inputs: *p *gamma *dw *w *radi *radj
+   !                *radk *cdisrk vis4 vis2 vis2coarse sigma
    !
    !      ******************************************************************
    !      *                                                                *
@@ -23,6 +24,7 @@
    USE INPUTDISCRETIZATION
    USE ITERATION
    IMPLICIT NONE
+   !write(14,40),i,j,k,dw(i,j,k,l),fw(i,j,k,l)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -39,20 +41,6 @@
    LOGICAL :: finegrid
    REAL :: result1
    INTRINSIC REAL
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Begin execution                                                *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   ! Add the source terms from the level 0 cooling model.
-   !call level0CoolingModel
-   ! Set the value of rFil, which controls the fraction of the old
-   ! dissipation residual to be used. This is only for the runge-kutta
-   ! schemes; for other smoothers rFil is simply set to 1.0.
-   ! Note the index rkStage+1 for cdisRK. The reason is that the
-   ! residual computation is performed before rkStage is incremented.
    IF (smoother .EQ. rungekutta) THEN
    rfil = cdisrk(rkstage+1)
    ELSE
@@ -68,36 +56,49 @@
    IF (currentlevel .EQ. 1) discr = spacediscr
    finegrid = .false.
    IF (currentlevel .EQ. groundlevel) finegrid = .true.
-   CALL INVISCIDCENTRALFLUX_MOD_D()
+   IF (finegrid .EQV. .false.) THEN
+   PRINT*, 'Fine Grid should not be false here'
+   STOP
+   ELSE
+   CALL INVISCIDCENTRALFLUX_D()
+
    ! Compute the artificial dissipation fluxes.
    ! This depends on the parameter discr.
-   !   select case (discr)
-   !   case (dissScalar) ! Standard scalar dissipation scheme.
-   !      if( fineGrid ) then
-   !         call inviscidDissFluxScalar
-   !      else
-   !         call inviscidDissFluxScalarCoarse
-   !      endif
-   !      !===========================================================
-   !   case (dissMatrix) ! Matrix dissipation scheme.
-   !      if( fineGrid ) then
-   !         call inviscidDissFluxMatrix
-   !      else
-   !         call inviscidDissFluxMatrixCoarse
-   !      endif
-   !      !===========================================================
-   !   case (dissCusp) ! Cusp dissipation scheme.
-   !      if( fineGrid ) then
-   !         call inviscidDissFluxCusp
-   !      else
-   !         call inviscidDissFluxCuspCoarse
-   !      endif
-   !      !===========================================================
-   !   case (upwind) ! Dissipation via an upwind scheme.
-   !      call inviscidUpwindFlux(fineGrid)
-   !   end select
-   !   ! Compute the viscous flux in case of a viscous computation.
-   !   if( viscous ) call viscousFlux
+   SELECT CASE  (discr) 
+   CASE (dissscalar) 
+   ! Standard scalar dissipation scheme.
+   IF (finegrid) THEN
+   CALL INVISCIDDISSFLUXSCALAR_D()
+   ELSE
+   CALL INVISCIDDISSFLUXSCALARCOARSE_D()
+   END IF
+   CASE (dissmatrix) 
+   !===========================================================
+   ! Matrix dissipation scheme.
+   IF (finegrid) THEN
+   CALL INVISCIDDISSFLUXMATRIX_D()
+   ELSE
+   CALL INVISCIDDISSFLUXMATRIXCOARSE_D()
+   END IF
+   CASE (disscusp) 
+   !===========================================================
+   ! Cusp dissipation scheme.
+   IF (finegrid) THEN
+   CALL INVISCIDDISSFLUXCUSP()
+   fwd = 0.0
+   ELSE
+   CALL INVISCIDDISSFLUXCUSPCOARSE()
+   fwd = 0.0
+   END IF
+   CASE (upwind) 
+   !===========================================================
+   ! Dissipation via an upwind scheme.
+   CALL INVISCIDUPWINDFLUX_D(finegrid)
+   CASE DEFAULT
+   fwd = 0.0
+   END SELECT
+   ! Compute the viscous flux in case of a viscous computation.
+   IF (viscous) CALL VISCOUSFLUX_D()
    ! add the dissipative and possibly viscous fluxes to the
    ! Euler fluxes. Loop over the owned cells and add fw to dw.
    ! Also multiply by iblank so that no updates occur in holes
@@ -107,10 +108,26 @@
    DO j=2,jl
    DO i=2,il
    result1 = REAL(iblank(i, j, k), realtype)
-   dwd(i, j, k, l) = result1*dwd(i, j, k, l)
+   dwd(i, j, k, l) = result1*(dwd(i, j, k, l)+fwd(i, j, k, l))
    dw(i, j, k, l) = (dw(i, j, k, l)+fw(i, j, k, l))*result1
    END DO
    END DO
    END DO
    END DO
+   END IF
+   !
+   !      ******************************************************************
+   !      *                                                                *
+   !      * Begin execution                                                *
+   !      *                                                                *
+   !      ******************************************************************
+   !
+   ! Add the source terms from the level 0 cooling model.
+   !call level0CoolingModel
+   ! Set the value of rFil, which controls the fraction of the old
+   ! dissipation residual to be used. This is only for the runge-kutta
+   ! schemes; for other smoothers rFil is simply set to 1.0.
+   ! Note the index rkStage+1 for cdisRK. The reason is that the
+   ! residual computation is performed before rkStage is incremented.
+   40 FORMAT(1x,i4,i4,i4,e20.6,e20.6)
    END SUBROUTINE RESIDUAL_BLOCK_D

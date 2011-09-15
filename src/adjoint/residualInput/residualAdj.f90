@@ -61,7 +61,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-
+       fwAdj = 0.0
 !   Come back to this later....
 !!$       ! Add the source terms from the level 0 cooling model.
 !!$
@@ -216,8 +216,12 @@
 !!$
 !!$!come back to later
   !         ! Compute the viscous flux in case of a viscous computation.
-!
- !          if( viscous ) call viscousFlux
+!!$!
+!!$          if( viscous ) call viscousFluxAdj(wAdj,  pAdj,  fwAdj,         &
+!!$                                 siAdj, sjAdj, skAdj, volAdj, &
+!!$                                 sFaceIAdj,sFaceJAdj,sFaceKAdj,&
+!!$                                 rotRateAdj,iCell, jCell, kCell, &
+!!$                                 nn,level,sps)
 
            ! Add the dissipative and possibly viscous fluxes to the
            ! Euler fluxes. Loop over the owned cells and add fw to dw.
@@ -238,8 +242,8 @@
 
            do l=1,nwf
 
-              dwAdj(l,sps) =dwAdj(l,sps)! (dwAdj(l) + fwAdj(l)) &
-                               !* real(iblank(iCell,jCell,kCell), realType)
+              dwAdj(l,sps) = (dwAdj(l,sps) + fwAdj(l,sps)) &
+                               * real(iblank(iCell,jCell,kCell), realType)
            enddo
 
 

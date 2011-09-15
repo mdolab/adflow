@@ -32,6 +32,8 @@
 !      Local variables.
 !
        integer :: ierr
+       real(kind=realType),dimension(nTimeIntervalsSpectral)::convTemp
+       logical :: storingPrev=.false.
 !
 !      ******************************************************************
 !      *                                                                *
@@ -44,7 +46,11 @@
        ! only be .false. for an unsteady computation.
 
        if(.not. storeConvInnerIter) return 
-
+       if( allocated(convArray)) then
+          convTemp(:) = convArray(0,:,1)
+          storingPrev = .True.
+       end if
+       
        if( allocated(convArray)) call deallocConvArrays
 
        ! Allocate the memory for convArray and initialize them,
@@ -57,6 +63,9 @@
                         "Memory allocation failure for convArray")
 
        convArray = zero
+       if (storingPrev)then
+          convArray(0,:,1)=convTemp(:)
+       end if
 
        end subroutine allocConvArrays
 

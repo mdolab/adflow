@@ -36,6 +36,7 @@ import copy
 # =============================================================================
 # External Python modules
 # =============================================================================
+
 import numpy
 from numpy import real,pi,sqrt
 
@@ -72,6 +73,7 @@ class SUMB(AeroSolver):
             'outputDir':[str,'./'],
             'solRestart':[bool,False],
             'writeSolution':[bool,True],
+            'writeMesh':[bool,False],
 
             # Physics Paramters
             'Discretization':[str,'Central plus scalar dissipation'],
@@ -143,6 +145,7 @@ class SUMB(AeroSolver):
             'NKJacobianLag':[int,10],
             'RKReset':[bool,False],
             'nRKReset':[int,5],
+            'NKFiniteDifferencePC':[bool,True],
 
             # Load Balance Paramters
             'blockSplitting':[bool,False],
@@ -187,6 +190,7 @@ class SUMB(AeroSolver):
             'ASMOverlap' : [int,5],
             'subKSPSubspaceSize':[int,10],
             'finiteDifferencePC':[bool,True],
+            'useReverseModeAD':[bool,True],
             }
 
         informs = {
@@ -277,6 +281,7 @@ class SUMB(AeroSolver):
              'cmzqDot':self.sumb.costfunctions.costfunccmzqdot,
              'clq':self.sumb.costfunctions.costfuncclq,
              'clqDot':self.sumb.costfunctions.costfuncclqdot,
+             'cBend':self.sumb.costfunctions.costfuncbendingcoef,
              }
         
         self.possibleObjectives = \
@@ -300,6 +305,7 @@ class SUMB(AeroSolver):
               'cmzqdot':'cmzqdot',
               'clq':'clq',
               'clqdot':'clqDot',
+              'cbend':'cBend',
               'area':'area',
               'volume':'volume',
               }
@@ -319,7 +325,8 @@ class SUMB(AeroSolver):
             'pointrefy':'adjointvars.ndesignpointrefy',
             'pointrefz':'adjointvars.ndesignpointrefzy',
             'lengthref':'adjointvars.ndesignlengthref',
-            'surfaceref':'adjointvars.ndesignsurfaceref'
+            'surfaceref':'adjointvars.ndesignsurfaceref',
+            'disserror':'adjointvars.ndesigndisserror'
             }
 
         self.aeroDVs = []
@@ -596,10 +603,12 @@ class SUMB(AeroSolver):
                 'storeHistory',
                 'numberSolutions',
                 'writeSolution',
+                'writeMesh',
                 'familyRot',  # -> Not sure how to do
                 'areaAxis',
                 'autoSolveRetry',
-                'autoAdjointRetry'
+                'autoAdjointRetry',
+                'useReverseModeAD'
                 ]
         # end if
         
@@ -697,7 +706,6 @@ class SUMB(AeroSolver):
             print ' -> Initializing flow'
         self.sumb.initflow()
 
-
         # Create dictionary of variables we are monitoring
         nmon = self.sumb.monitor.nmon
         self.monnames = {}
@@ -741,6 +749,19 @@ class SUMB(AeroSolver):
         self.sumb.updateflow()
         self._update_vel_info = True
         return
+
+    def setElasticCenter(self,aero_problem):
+        '''
+        set the value of pointRefEC for the bending moment calculation
+        '''
+        #aero_problem._geometry.ListAttributes()
+        
+        self.sumb.inputphysics.pointrefec[0] = aero_problem._geometry.xRootec\
+            *self.metricConversion
+        self.sumb.inputphysics.pointrefec[1] = aero_problem._geometry.yRootec\
+            *self.metricConversion
+        self.sumb.inputphysics.pointrefec[2] = aero_problem._geometry.zRootec\
+            *self.metricConversion
     
     def setReferencePoint(self,aero_problem):
         '''
@@ -753,12 +774,12 @@ class SUMB(AeroSolver):
             *self.metricConversion
         self.sumb.inputphysics.pointref[2] = aero_problem._refs.zref\
             *self.metricConversion
-#         self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xrot\
-#             *self.metricConversion
-#         self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yrot\
-#             *self.metricConversion
-#         self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zrot\
-#             *self.metricConversion
+        self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xrot\
+                                            *self.metricConversion
+        self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yrot\
+                                            *self.metricConversion
+        self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zrot\
+                                            *self.metricConversion
         #update the flow vars
         self.sumb.updatereferencepoint()
         self._update_vel_info = True
@@ -893,6 +914,15 @@ class SUMB(AeroSolver):
         
         return
 
+    def reInitFlow(self):
+        '''
+        Reset the flow to recover from a nan
+        '''
+        self.sumb.initflow()
+        
+        return
+
+
     def getDensity(self):
         '''
         Get the density for this flow solution
@@ -926,6 +956,8 @@ class SUMB(AeroSolver):
         self.adjointRHS         = None
         self.callCounter += 1
 
+        
+
         # Run Initialize, if already run it just returns.
         self.initialize(aero_problem,*args,**kwargs)
 
@@ -934,6 +966,7 @@ class SUMB(AeroSolver):
         self.setPeriodicParams(aero_problem)
         self.setInflowAngle(aero_problem)
         self.setReferencePoint(aero_problem)
+        #self.setElasticCenter(aero_problem)
         self.setRotationRate(aero_problem)
         self.setRefArea(aero_problem)
 
@@ -979,6 +1012,21 @@ class SUMB(AeroSolver):
         self._updateGeometryInfo()
         self._updateVelocityInfo()
 
+        #write out mesh file for volume debugging
+        if self.getOption('writeMesh'):
+            base = self.getOption('outputDir') + '/' + self.getOption('probName')
+            meshname = base + '_mesh.cgns'
+
+            if self.getOption('numberSolutions'):
+                meshname = base + '_mesh%d.cgns'%(self.callCounter)
+
+            #endif
+            self.writeMeshFile(meshname)
+            self.mesh.writeFEGrid(meshname[:-4]+'.dat')
+            if self.myid==0: print 'Warped Mesh written...exiting.'
+            sys.exit(0)
+        # end if
+
         # Check to see if the above update routines failed.
         self.sumb.killsignals.routinefailed = \
             self.comm.allreduce(
@@ -999,6 +1047,7 @@ class SUMB(AeroSolver):
         if self.sumb.killsignals.routinefailed:
             mpiPrint('Resetting flow due to failed flow solve...')
             #self.resetFlow() # Always reset flow if it failed
+            self.reInitFlow()
             if self.getOption('autoSolveRetry'): # Try the solver again
                 self.sumb.solver()
                 if self.sumb.killsignals.routinefailed:
@@ -1162,6 +1211,8 @@ class SUMB(AeroSolver):
 
         return
 
+
+
     def writeVolumeSolutionFile(self,filename=None,writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS file.
                 Keyword arguments:
@@ -1280,6 +1331,20 @@ class SUMB(AeroSolver):
 
         return
 
+    def verifyResiduals(self):
+        '''
+        run the residual verify routines
+        '''
+        level = 1
+        #self.sumb.verifyradj(level)
+        self.sumb.verifyresiduals(level)
+        return
+
+    def verifyBendingPartial(self):
+        self.sumb.verifybendingderivatives()
+        #end
+
+
     def globalNKPreCon(self,in_vec):
         '''This function is ONLY used as a preconditioner to the
         global Aero-Structural system'''
@@ -1315,6 +1380,7 @@ class SUMB(AeroSolver):
 	self.sumb.verifydcdwfile(1)
 
 	return
+
     def verifydIdw(self,objective,**kwargs):
         '''
         run compute obj partials, then print to a file...
@@ -1357,6 +1423,52 @@ class SUMB(AeroSolver):
 
         return
 
+    def verifydRdw(self,**kwargs):
+        ''' run the verify drdw scripts in fortran'''
+        # Make sure adjoint is initialize
+        self.initAdjoint()
+        if not self.adjointMatrixSetup:
+            #self.sumb.createpetscvars()
+            self.setupAdjoint(None)#(forcePoints)
+        # end if
+	level = 1
+        self.sumb.iteration.currentlevel=level
+        self.sumb.iteration.groundlevel=level
+	self.sumb.verifydrdwfile(1)
+
+	return
+
+    def verifydRdx(self,**kwargs):
+        ''' run the verify drdw scripts in fortran'''
+        # Make sure adjoint is initialize
+        self.initAdjoint()
+        if not self.adjointMatrixSetup:
+            #self.sumb.createpetscvars()
+            self.setupAdjoint(None)#(forcePoints)
+        # end if
+	level = 1
+        self.sumb.iteration.currentlevel=level
+        self.sumb.iteration.groundlevel=level
+	self.sumb.verifydrdxfile(1)
+        
+
+	return
+
+    def verifydRda(self,**kwargs):
+        ''' run the verify drdw scripts in fortran'''
+        # Make sure adjoint is initialize
+        self.initAdjoint()
+        if not self.adjointMatrixSetup:
+            #self.sumb.createpetscvars()
+            self.setupAdjoint(None)#(forcePoints)
+        # end if
+        level = 1
+        self.sumb.iteration.currentlevel=level
+        self.sumb.iteration.groundlevel=level
+	self.sumb.verifydrdextrafile(1)
+
+	return
+    
     def initAdjoint(self, *args, **kwargs):
         '''
         Initialize the Ajoint problem for this test case
@@ -1380,6 +1492,7 @@ class SUMB(AeroSolver):
         self.sumb.adjointvars.ndesignpointrefz = -1
         self.sumb.adjointvars.ndesignlengthref = -1
         self.sumb.adjointvars.ndesignsurfaceref = -1
+        self.sumb.adjointvars.ndesigndisserror = -1
         
         # Set the required paramters for the aero-Only design vars:
         self.nDVAero = len(self.aeroDVs)#for debuggin with check all...
@@ -1436,8 +1549,13 @@ class SUMB(AeroSolver):
         if not self.adjointMatrixSetup:
             self.sumb.createpetscvars()
  
-            self.sumb.setupallresidualmatrices()
-
+            if  self.getOption('useReverseModeAD'):
+                if self.myid==0:print 'computing with reverse mode...'
+                self.sumb.setupallresidualmatrices()
+            else:
+                if self.myid==0:print 'computing with forward mode...'
+                self.sumb.setupallresidualmatricesfwd()
+            #end
             if forcePoints is None:
                 forcePoints = self.getForcePoints()
             # end if
@@ -1467,7 +1585,7 @@ class SUMB(AeroSolver):
         '''
 
         self.sumb.destroypetscvars()
-
+        self.adjointMatrixSetup = False
         return
 
     def _on_adjoint(self,objective,forcePoints=None,*args,**kwargs):
@@ -1485,7 +1603,7 @@ class SUMB(AeroSolver):
         if not self.adjointMatrixSetup:
             self.setupAdjoint(forcePoints)
         # end if
-       
+
         # Check to see if the RHS Partials have been computed
         if not self.adjointRHS == obj:
             self.computeObjPartials(obj,forcePoints)
@@ -1728,7 +1846,6 @@ class SUMB(AeroSolver):
         startCFD Norm: Norm at the start of adjoint call
         finalCFD Norm: Norm at the end of adjoint call
         '''
-        
         startRes = self.sumb.adjointpetsc.adjreshist[0]
         finalIt  = self.sumb.adjointpetsc.adjconvits
         finalRes = self.sumb.adjointpetsc.adjreshist[finalIt]
@@ -1924,8 +2041,8 @@ class SUMB(AeroSolver):
         return res
 
     def getSolution(self,sps=1):
-        '''
-        retrieve the solution variables from the solver.
+        ''' Retrieve the solution variables from the solver. Note this
+        is a collective function and must be called on all processors
         '''
 
         # We should return the list of results that is the same as the
@@ -1965,7 +2082,8 @@ class SUMB(AeroSolver):
              'cmzqdot'    :funcVals[self.sumb.costfunctions.costfunccmzqdot-1],
              'cmzq'       :funcVals[self.sumb.costfunctions.costfunccmzq-1],
              'clqdot'     :funcVals[self.sumb.costfunctions.costfuncclqdot-1],
-             'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1]
+             'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1],
+             'cbend'        :funcVals[self.sumb.costfunctions.costfuncbendingcoef-1]
              }
                                                  
         # Also add in 'direct' solutions. Area etc

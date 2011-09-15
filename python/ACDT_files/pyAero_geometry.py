@@ -56,7 +56,12 @@ class Geometry(object):
 	Abstract Class for Geometry Object
 	'''
 	
-	def __init__(self, name={}, *args, **kwargs):
+	def __init__(self, name={},CGPercent = 0.25,ForeSparPercent = 0.25,
+		     RearSparPercent = 0.75,StaticMarginPercent=0.05,
+		     ForeThickCon = 0.01, RearThickCon = 0.99,
+		     rootOffset = 0.01, tipOffset=0.01,
+		     xRootec=0.0, yRootec=0.0, zRootec=0.0,
+		     *args, **kwargs):
 		
 		'''
 		Flow Class Initialization
@@ -64,17 +69,38 @@ class Geometry(object):
 		Keyword Arguments:
 		------------------
 		name -> STRING: Geometry Instance Name
-		
+                CGPercent -> SCALAR: Center of gravity(CG) location in percent MAC
+		ForeSparPercent -> SCALAR: Forward spar location for CG calculation
+                RearSparPercent -> SCALAR: Rearward spar location for CG calculation
+		StaticMarginPercen -> SCALAR: Desired static margin in %
+		ForeThickCon -> SCALAR: Percent chord of forward limit of thickness constraints
+		RearThickCon -> SCALAR: Percent chord of rearward limit of thickness constraints
+		rootOffset -> SCALAR: Outward offset of box outlining thickness constraint at the wing root
+		tipOffset -> SCALAR: Inward offset of box outlining thickness constraint at the wing tip
+		xRootec	 -> SCALAR: Location of the elastic center at the wing root	
+		yRootec -> SCALAR: Location of the elastic center at the wing root
+		zRootec -> SCALAR: Location of the elastic center at the wing root
+
 		Attributes:
 		-----------
 		
 		
-		Documentation last updated:  May. 21, 2008 - Ruben E. Perez
+		Documentation last updated:  July 22, 2011 - C.A.(Sandy) Mader
 		'''
 		
 		# 
 		self.name = name
-		
+		self.CGPercent = CGPercent
+		self.ForeSparPercent = ForeSparPercent 
+		self.RearSparPercent = RearSparPercent
+		self.StaticMarginPercent = StaticMarginPercent
+		self.ForeThickCon = ForeThickCon
+		self.RearThickCon = RearThickCon
+		self.tipOffset = tipOffset
+		self.rootOffset = rootOffset
+		self.xRootec = xRootec
+		self.yRootec = yRootec
+		self.zRootec = zRootec
 		
 	def ListAttributes(self):
 		
@@ -95,7 +121,7 @@ class Geometry(object):
 		Documentation last updated:  May. 21, 2008 - Ruben E. Perez
 		'''
 		
-		return ('name    mach	alpha	beta	phat	rhat	qhat\n'+'	 '+str(self.name).center(9) +'%8.2f %8.2f %8.2f %8.2f %8.2f %8.2f\n' %(self.mach, self.alpha, self.beta, self.phat, self.rhat, self.qhat))
+		return ('name    \n'+'	 '+str(self.name).center(9) )
 	
 
 
@@ -131,6 +157,6 @@ if __name__ == '__main__':
 	print 'Testing ...'
 	
 	# Test Variable
-	flow = Flow()
-	flow.ListAttributes()
-	
+	geo = Geometry(name = 'test')
+	geo.ListAttributes()
+	print geo

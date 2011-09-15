@@ -65,9 +65,11 @@ subroutine assertionsADjoint(level)
 
   ! Assert that it is an inviscid problem.
 
+
  !  if( viscous ) &
 !        call terminate("assertionsADjoint", &
 !        "Cannot handle viscous terms yet.")
+
 
   ! Assert that there are no overset grids.
 
