@@ -121,7 +121,7 @@ TAPENADE_VARS = "xadj wadj alphaadj betaadj machadj machGridAdj rotRateAdj xBloc
 
 # Name of the top routine
 
-TAPENADE_HEADROUTINE = "computeRAdjoint"
+TAPENADE_HEADROUTINE = "computeRAdjointTS"
 
 # Differentiation mode
 
@@ -130,7 +130,7 @@ TAPENADE_MODE = -reverse
 
 # Output directory
 
-TAPENADE_OUTDIR = $(SOLVER_DIRSRC)/adjoint/residualTapenade
+TAPENADE_OUTDIR = $(SOLVER_DIRSRC)/adjoint/residualTapenadeTS
 
 # Integer, double and real precision (bytes)
 
@@ -143,8 +143,7 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 #     *                                                                *
 #     ******************************************************************
 
-TAPENADE_DIRSRC_RES = $(SOLVER_DIRSRC)/adjoint/residualInput
-#TAPENADE_DIRSRC_MET = $(SOLVER_DIRSRC)/adjoint/metricInput
+TAPENADE_DIRSRC_RES = $(SOLVER_DIRSRC)/adjoint/residualInputTS
 TAPENADE_DIRMOD     = $(SOLVER_DIRSRC)/modules
 TAPENADE_DIRUTILS     = $(SOLVER_DIRSRC)/utils
 
@@ -156,47 +155,44 @@ TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
 #     *                                                                *
 #     ******************************************************************
 
-TAPENADE_SRC_COMMON = $(TAPENADE_DIRSRC_RES)/residualAdj.f90 \
-		      $(TAPENADE_DIRSRC_RES)/computeRAdj.f90 
+TAPENADE_SRC_COMMON = $(TAPENADE_DIRSRC_RES)/residualAdjTS.f90 \
+		      $(TAPENADE_DIRSRC_RES)/computeRAdjTS.f90 
 
-#TAPENADE_SRC_METRIC = $(TAPENADE_DIRSRC_MET)/computedRAdj.f90 \
-#	       $(TAPENADE_DIRSRC_MET)/correctMetricDegenerateFacesAdj.f90 \
-#	       $(TAPENADE_DIRSRC_MET)/metricAdj.f90
-
-TAPENADE_SRC_SOLVER = $(TAPENADE_DIRSRC_RES)/applyAllBCAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/bcFarfieldAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/bcSymmAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/checkOverlapAdj.f90\
-	       $(TAPENADE_DIRSRC_RES)/checkXOverlapAdj.f90\
-	       $(TAPENADE_DIRSRC_RES)/computePressureAdj.f90 \
-               $(TAPENADE_DIRSRC_RES)/rotMatrixRigidBodyAdj.f90\
-               $(TAPENADE_DIRSRC_RES)/derivativeRigidRotAngleAdj.f90\
-               $(TAPENADE_DIRSRC_RES)/derivativeRotMatrixRigidAdj.f90\
-	       $(TAPENADE_DIRSRC_RES)/etotArrayAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/extractBCStatesAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/extrapolate2ndHaloAdj.f90 \
-               $(TAPENADE_DIRSRC_RES)/gridVelocitiesFineLevelAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/initresAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/inviscidCentralFluxAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/inviscidUpwindFluxAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/inviscidDissFluxScalarAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/leftRightStateAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/metricAdj.f90 \
-               $(TAPENADE_DIRSRC_RES)/normalVelocitiesAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/replaceBCStatesAdj.f90\
-	       $(TAPENADE_DIRSRC_RES)/riemannFluxAdj.f90\
-               $(TAPENADE_DIRSRC_RES)/rigidRotAngleAdj.f90      \
-	       $(TAPENADE_DIRSRC_RES)/bcEulerWallAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/adjustInflowAngleAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/checkInputParamAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/referenceStateAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/setFlowInfinityStateAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/getDirAngle.f90 \
-	       $(TAPENADE_DIRSRC_RES)/getDirVector.f90 \
-	       $(TAPENADE_DIRSRC_RES)/computeGammaAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/timeStepAdj.f90 \
-	       $(TAPENADE_DIRSRC_RES)/vectorRotation.f90\
-	       $(TAPENADE_DIRSRC_RES)/xhaloAdj.f90\
+TAPENADE_SRC_SOLVER = $(TAPENADE_DIRSRC_RES)/applyAllBCAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/bcFarfieldAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/bcSymmAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/checkOverlapAdjTS.f90\
+	       $(TAPENADE_DIRSRC_RES)/checkXOverlapAdjTS.f90\
+	       $(TAPENADE_DIRSRC_RES)/computePressureAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/computeVolAdjTS.f90\
+               $(TAPENADE_DIRSRC_RES)/rotMatrixRigidBodyAdjTS.f90\
+               $(TAPENADE_DIRSRC_RES)/derivativeRigidRotAngleAdjTS.f90\
+               $(TAPENADE_DIRSRC_RES)/derivativeRotMatrixRigidAdjTS.f90\
+	       $(TAPENADE_DIRSRC_RES)/etotArrayAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/extractBCStatesAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/extrapolate2ndHaloAdjTS.f90 \
+               $(TAPENADE_DIRSRC_RES)/gridVelocitiesFineLevelAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/initresAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/inviscidCentralFluxAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/inviscidUpwindFluxAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/inviscidDissFluxScalarAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/leftRightStateAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/metricAdjTS.f90 \
+               $(TAPENADE_DIRSRC_RES)/normalVelocitiesAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/replaceBCStatesAdjTS.f90\
+	       $(TAPENADE_DIRSRC_RES)/riemannFluxAdjTS.f90\
+               $(TAPENADE_DIRSRC_RES)/rigidRotAngleAdjTS.f90      \
+	       $(TAPENADE_DIRSRC_RES)/bcEulerWallAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/adjustInflowAngleAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/checkInputParamAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/referenceStateAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/setFlowInfinityStateAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/getDirAngleTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/getDirVectorTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/computeGammaAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/timeStepAdjTS.f90 \
+	       $(TAPENADE_DIRSRC_RES)/vectorRotationTS.f90\
+	       $(TAPENADE_DIRSRC_RES)/xhaloAdjTS.f90\
 	       $(TAPENADE_DIRUTILS)/TSalpha.f90\
 	       $(TAPENADE_DIRUTILS)/TSBeta.f90\
 	       $(TAPENADE_DIRUTILS)/TSMach.f90	
@@ -219,11 +215,7 @@ TAPENADE_MOD = $(TAPENADE_DIRSRC_RES)/block.f90 \
 	       $(TAPENADE_DIRSRC_RES)/su_mpi.f90\
 	       $(TAPENADE_DIRSRC_RES)/terminate.f90
 
-#	       $(TAPENADE_DIRSRC_RES)/inputParam.f90 \
 
-#TAPENADE_SRC_ALL = $(TAPENADE_SRC_COMMON) $(TAPENADE_SRC_METRIC) \
-#		   $(TAPENADE_SRC_SOLVER) $(TAPENADE_SRC_MAGNETIC) \
-#		   $(TAPENADE_MOD)
 TAPENADE_SRC_ALL = $(TAPENADE_SRC_COMMON) $(TAPENADE_SRC_SOLVER)\
 	  	   $(TAPENADE_MOD)
 
