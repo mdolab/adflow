@@ -404,6 +404,7 @@
        ! rotPoint(3): Rotation point of the rigid body rotation.
 
        real(kind=realType), dimension(3) :: rotPoint
+       real(kind=realType), dimension(3) :: rotPointd
 
        ! degreePolXRot: Degree of the x-rotation polynomial.
        ! degreePolYRot: Degree of the y-rotation polynomial.
@@ -682,6 +683,7 @@
        !                      computation.
        ! lengthRef:           Reference length for the moments computation.
        ! pointRef(3):         Moment reference point.
+       ! pointRefEC(3):       Elastic center. Bending moment refernce point
 
 !
 !-----eran-tran starts
@@ -712,6 +714,8 @@
        logical :: wallFunctions, wallDistanceNeeded
 
        real(kind=realType) :: Mach, MachCoef,MachGrid
+       !AD derivative values
+       real(kind=realType) :: Machd, MachCoefd,MachGridd
 
        real(kind=realType) :: Reynolds, ReynoldsLength
        real(kind=realType) :: tempFreestream, gammaConstant, RGasDim
@@ -720,11 +724,16 @@
        real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset
        real(kind=realType) :: eddyVisInfRatio, turbIntensityInf
        real(kind=realType) :: surfaceRef, lengthRef
+       !bending moment derivative
+       real(kind=realType) :: lengthrefb
 
-       real(kind=realType), dimension(3) :: velDirFreestream
-       real(kind=realType), dimension(3) :: liftDirection
-       real(kind=realType), dimension(3) :: dragDirection
+       real(kind=realType), dimension(3) :: velDirFreestream,velDirFreestreamd
+       real(kind=realType), dimension(3) :: liftDirection,liftDirectiond
+       real(kind=realType), dimension(3) :: dragDirection,dragDirectiond
        real(kind=realType), dimension(3) :: pointRef
+       !bending moment derivative
+       real(kind=realType), dimension(3) :: pointRefb
+       real(kind=realType), dimension(3) :: pointRefEC
 !
 !-----eran-tran starts
 !

@@ -972,7 +972,7 @@
            end select
 
            ! Allocate the memory for coefTime.
-
+           if( allocated(coefTime)) deallocate(coefTime)
            allocate(coefTime(0:nOldLevels), stat=ierr)
            if(ierr /= 0)                       &
              call terminate("checkInputParam", &

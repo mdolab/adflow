@@ -12,10 +12,12 @@ Revision: 1.1   $Date: 21/05/2008 21:00$
 Developers:
 -----------
 - Dr. Ruben E. Perez (RP)
+- C.A.(Sandy) Mader (CM)
 
 History
 -------
 	v. 1.0	- Initial Class Creation (RP, 2008)
+        v. 1.1  - Addition of parameters for time-spectral analysis
 '''
 
 __version__ = '$Revision: $'
@@ -74,12 +76,23 @@ class Flow(object):
 		phat -> SCALAR: Non-Dimensional Roll Rate
 		rhat -> SCALAR: Non-Dimensional Yaw Rate
 		qhat -> SCALAR: Non-Dimensional Pitch Rate
+		degreePol -> INTEGER: Degree of polynomial describing grid motion
+		coefPol -> ARRAY(degreePol) -> list of polynomial coefficients for the polynomial describing the grid motion
+		degreeFourier -> INTEGER: Degree of fourier series describing grid motion
+		omegaFourier -> SCALAR: base frequency of the fourier series describing grid motion
+		cosCoefFourier -> ARRAY(degreeFourier):list of fourier coefficients for the above fourier series
+		sinCoefFourier -> ARRAY(degreeFourier):list of fourier coefficients for the above fourier series
 		
+		rho -> SCALAR:Density
+		P -> SCALAR:Pressure
+		gamma -> SCALAR:Specific heat ratio
+		mu -> SCALAR:dynamic viscosity
+
 		Attributes:
 		-----------
 		
 		
-		Documentation last updated:  May. 21, 2008 - Ruben E. Perez
+		Documentation last updated:  July. 22, 2011 - C.A.(Sandy) Mader
 		'''
 		
 		# 

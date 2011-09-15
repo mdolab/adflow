@@ -21,6 +21,7 @@
    USE INPUTPHYSICS
    USE CONSTANTS
    IMPLICIT NONE
+   !write(14,40),i,j,k,dw(i,j,k,imx)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -41,15 +42,6 @@
    REAL(kind=realtype) :: pad, fsd, vnpd, vnmd
    REAL(kind=realtype) :: wx, wy, wz, rvol
    REAL(kind=realtype) :: rvold
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Begin execution                                                *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   ! Initialize sFace to zero. This value will be used if the
-   ! block is not moving.
    sface = zero
    !
    !      ******************************************************************
@@ -157,6 +149,7 @@
    END DO
    END DO
    END DO
+   !write(14,40),i,j,k,dw(i,j,k,irhoE)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -369,6 +362,7 @@
    END DO
    END DO
    END DO
+   !write(14,40),i,j,k,dw(i,j,k,irhoE)
    ! Add the rotational source terms for a moving block in a
    ! steady state computation. These source terms account for the
    ! centrifugal acceleration and the coriolis term. However, as
@@ -406,4 +400,14 @@
    END DO
    END DO
    END IF
+   !
+   !      ******************************************************************
+   !      *                                                                *
+   !      * Begin execution                                                *
+   !      *                                                                *
+   !      ******************************************************************
+   !
+   ! Initialize sFace to zero. This value will be used if the
+   ! block is not moving.
+   40 FORMAT(1x,i4,i4,i4,e20.6)
    END SUBROUTINE INVISCIDCENTRALFLUX_D
