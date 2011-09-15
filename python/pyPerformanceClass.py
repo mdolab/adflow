@@ -191,6 +191,37 @@ class PERFORMANCE(object):
 
         return val
 
+    def thumbprintDriverpyGeo(self,acg,wbc,geom,averagesol,rho,V,A,surface):
+        '''
+        run the routines to calculate the CAP values
+        '''
+        #Get Aircraft weight
+        W = wbc.estimateWeight(acg)
+               
+        #Compute the mass from the weight
+        m = W/wbc.g
+
+        #Compute the CG location as reference for the Iy calculation
+        [MAC,MACc4] = wbc.calculateWingMAC(acg)
+
+        xcg = wbc.calculateWingCenterOfGravity(geom.ForeSparPercent,geom.RearSparPercent,geom.CGPercent,MAC,MACc4)
+        #print 'xcg Inertia',xcg,geom.ForeSparPercent,geom.RearSparPercent,geom.CGPercent,MAC,MACc4
+               
+        #Calculate Moment of Inertia
+        [Ix,Iz,Iy]=wbc.calculateWingInertiaspyGeo(surface,xcg)#acg,xcg)
+
+
+        #Calculate the freqency and Damping for the aircraft, use MAC as ref chord
+        [Wn,DampingRatio]=self.calculateFrequencyAndDamping(averagesol['cmq'],averagesol['clalpha'],
+                                                            averagesol['cd0'],averagesol['cmalpha'],
+                                                            averagesol['cmalphadot'],m,Iy,
+                                                            rho,A,V,MAC)   
+        #Calculate Dynamic Stability constraint
+        val = self.calculateThumbnailMethodConstraint(Wn,DampingRatio)
+
+       
+        return val
+
 
     def CAPDriver(self,acg,wbc,geom,averagesol,rho,V,A,thickness):
         '''
@@ -301,7 +332,7 @@ class PERFORMANCE(object):
 
     def CAPDerivativeDriver(self,x,geo,con,acg,wbc,geom,dvFunc,rho,V,A):
         '''
-        compute the derivative of the thumbprint function...
+        compute the derivative of the CAP function...
         '''
         #print 'dvlists',geo.DV_listGlobal,geo.DV_namesGlobal,'local', geo.DV_listLocal,geo.DV_namesLocal
         dCondx = con.getThicknessSensitivity(geo,'con')
@@ -355,7 +386,7 @@ class PERFORMANCE(object):
 
     def CAPDerivativeDriverpyGeo(self,x,geo,con,acg,wbc,geom,dvFunc,rho,V,A,surface,surfInst):
         '''
-        compute the derivative of the thumbprint function...
+        compute the derivative of the CAP function...
         '''
         #print 'dvlists',geo.DV_listGlobal,geo.DV_namesGlobal,'local', geo.DV_listLocal,geo.DV_namesLocal
 #        dCondx = con.getThicknessSensitivity(geo,'con')
@@ -416,7 +447,7 @@ class PERFORMANCE(object):
 
     def CAPDerivativeDriverpyGeoFD(self,x,geo,con,acg,wbc,geom,dvFunc,rho,V,A,surface,surfInst):
         '''
-        compute the derivative of the thumbprint function...
+        compute the derivative of the CAP function...
         '''
         #print 'dvlists',geo.DV_listGlobal,geo.DV_namesGlobal,'local', geo.DV_listLocal,geo.DV_namesLocal
 #        dCondx = con.getThicknessSensitivity(geo,'con')
@@ -535,7 +566,51 @@ class PERFORMANCE(object):
 
         return TPderiv
     
+    def thumbprintDerivativeDriverpyGeo(self,x,geo,con,acg,wbc,geom,dvFunc,rho,V,A,surface,surfInst):
+        '''
+        compute the derivative of the thumbprint function...
+        '''
+        #print 'dvlists',geo.DV_listGlobal,geo.DV_namesGlobal,'local', geo.DV_listLocal,geo.DV_namesLocal
+#        dCondx = con.getThicknessSensitivity(geo,'con')
+        xw = copy.deepcopy(x)
+        for i in xw.keys():
+            xw[i] = numpy.atleast_1d(xw[i]).astype('D')
+        #endfor
+        wbc.setOption('dtype','D')
+        geo.complex = True
+        xref = copy.deepcopy(xw)
+        deltax = 1.0e-40j
 
+        TPderiv = {}
+        
+        #geo.complex = True
+        for key in xw.keys():
+            TPderiv[key] =[]
+            for i in xrange(len(xw[key])):
+                #print 'key',key
+                xw[key][i] = xref[key][i]+deltax
+                geo.setValues(xw,scaled=True)
+                geo.update('wing')
+                averagesol = dvFunc(xw)
+                surface.setSurfaceCoordinates(surfInst,geo.update('X_coord'))#.reshape([wing.nSurf,nv,nu,3])
+                surface.setCellCentroidCoordinates(surfInst,geo.update('Cent_coord'))
+                
+                val  = self.thumbprintDriverpyGeo(acg,wbc,geom,averagesol,rho,V,A,surfInst)
+                   
+                TPderiv[key].append(numpy.imag(val)/numpy.imag(deltax))
+                
+                xw = copy.deepcopy(xref)
+            #end
+        #endfor
+        #geo.complex = False
+        geo.setValues(x,scaled=True)
+        geo.update('wing')
+        wbc.setOption('dtype','d')
+        geo.complex = False
+        geo.update('X_coord')
+        geo.update('Cent_coord')
+
+        return TPderiv
 #==============================================================================
 # PERFOMANCE Analysis Test
 #==============================================================================
