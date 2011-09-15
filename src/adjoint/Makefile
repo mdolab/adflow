@@ -66,6 +66,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       setPointersAdj.o         \
 	       setupADjointPCMatrixTranspose.o \
 	       setupAllResidualMatrices.o\
+	       setupAllResidualMatricesTS.o\
                setupExtraDVsFortran.o\
                setupPETScKsp.o         \
                solveADjointTransposePETSc.o\
