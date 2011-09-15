@@ -147,11 +147,13 @@ class Base(object):
 		# 
 		def_options = self.options['defaults']
 		if def_options.has_key(name):
-			if (type(value) == def_options[name][0]):
-				self.options[name] = [type(value),value]
-			else:
-				raise IOError('Incorrect ' + repr(name) + ' value type')
-			#end
+		## 	print 'Type',name,type(value),
+## 			if (type(value) == def_options[name][0] or type(value)=='D'):
+## 				self.options[name] = [type(value),value]
+## 			else:
+## 				raise IOError('Incorrect ' + repr(name) + ' value type')
+## 			#end
+			self.options[name] = [type(value),value]
 		else:
 			print '%s is not a valid option name'%(name)
 			raise InputError('Not a valid option name')
