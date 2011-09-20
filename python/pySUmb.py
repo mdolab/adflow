@@ -704,8 +704,11 @@ class SUMB(AeroSolver):
 
         self.sumb.partitionandreadgrid()
 
-        if 'partitionOnly':
-            return
+        if 'partitionOnly' in kwargs:
+            if kwargs['partitionOnly']:
+                return
+            # end if
+        # end if
 
         if(self.myid==0):
             print ' -> Preprocessing'
