@@ -28,6 +28,8 @@
 !      Subroutine arguments.
 !
        logical, intent(out) :: emptyPartitions, commNeglected
+ 
+
 !
 !      Variables to store the graph in metis format.
 !
@@ -80,6 +82,8 @@
 
        integer(kind=8) :: nCellsTotal    ! 8 byte integers to avoid
        integer(kind=8) :: nFacesTotal    ! overflow.
+
+       real(kind=4) :: ubvec_temp(2) ! Explict float for ubvec
 !
 !      Function definition
 !
@@ -94,9 +98,6 @@
        ! Check whether part is allocated from a previous call. If so,
        ! release the memory.
 
-       !if(myid==0)print *,'allocating part'
-
-       !print *,'allocating part'
        if( allocated(part) ) then
          deallocate(part, stat=ierr)
          if(ierr /= 0)                       &
@@ -107,15 +108,11 @@
        ! Determine the number of edges in the graph and the maximum
        ! number for a vertex in the graph.
 
-       !if(myid==0)print *,' determining edges'
-
-
        nEdges = 0
        nEdgesMax = 0
        do i=1,nBlocks
          ii        = blocks(i)%n1to1 + ubound(blocks(i)%overComm,1)
          nEdges    = nedges + ii
-         !print *,'edges',nedges,ii,blocks(i)%n1to1,i
          nEdgesMax = max(nedgesMax, ii)
        enddo
 
@@ -131,7 +128,7 @@
        options  = 0
 
        !  Allocate the memory to store/build the graph.
-       !if(myid==0)print *,'allocating graph memory'
+  
        allocate(xadj(0:nVertex), vwgt(nCon,nVertex), adjncy(nEdges), &
                 adjwgt(nEdges), part(nVertex), tmp(nEdgesMax), stat=ierr)
        if(ierr /= 0)                         &
@@ -146,18 +143,6 @@
        adjwgt  = 0
 
        ! Loop over the number of blocks to build the graph.
-
-       !if(myid==0)print *,'looping blocks'
-!!$       !print *,'looping blocks',myID
-!!$       call mpi_barrier(SUmb_comm_world, ierr)
-!!$       do i =0, nProc-1
-!!$          !print *,'ufmyID',myID,nProc
-!!$          if (myID==i) then
-!!$             print *,'myID',myID,nProc
-!!$          end if
-!!$          call f77flush()
-!!$          call mpi_barrier(SUmb_comm_world, ierr)
-!!$       enddo
 
        graphVertex: do i=1,nBlocks
 
@@ -276,7 +261,7 @@
          nCellsTotal = nCellsTotal + vwgt(1,i)
          nFacesTotal = nFacesTotal + vwgt(2,i)
        enddo
-       !if(myid==0) print *,'ncells total',nCellsTotal,nFacesTotal
+    
        if(nCellsTotal > 2147483647 .or. nFacesTotal > 2147483647) then
          nCellsTotal = nCellsTotal/2147483647 + 1
          nFacesTotal = nFacesTotal/2147483647 + 1
@@ -284,8 +269,7 @@
          do i=1,nBlocks
            vwgt(1,i) = vwgt(1,i)/nCellsTotal
            vwgt(2,i) = vwgt(2,i)/nFacesTotal
-           !print *,'vwgt', vwgt(1,i),vwgt(2,i),i
-         enddo
+        enddo
        endif
 
        ! Loop over the number of attempts to partition the graph.
@@ -297,34 +281,23 @@
        ! Initialize commNeglected to .false. This will change if in
        ! the loop below the first call to metis is not successful.
 
-       !if(myid==0) print *,'starting metis'
-
        commNeglected = .false.
        attemptLoop: do ii=1,2
 
-          if(myid==0)print *,'looping',ii
-
-
-         ! Call the graph partitioner.
-          !if(myid==0) print *,'calling metis',nVertex, nCon, xadj, adjncy, vwgt, &
-          !                   adjwgt, wgtflag, numflag, nParts,  &
-          !                   ubvec, options!, edgecut, part
-
+          ! Copy ubvec to a float since if you use -r8 flag it gets
+          ! converted to real
+          ubvec_temp(1) = real(ubvec(1))
+          ubvec_temp(2) = real(ubvec(2))
+          
          call metisInterface(nVertex, nCon, xadj, adjncy, vwgt, &
                              adjwgt, wgtflag, numflag, nParts,  &
-                             ubvec, options, edgecut, part)
-         !if(myid==0) print *,'metis called', edgecut,'part',part,shape(part)
+                             ubvec_temp, options, edgecut, part)
          ! Determine the number of blocks per processor.
-         !if(myid==0)  print *,'nblocks',nblocks
-         if(myid==0)  print *,'nblocks',nblocks
+
          nBlockPerProc = 0
          do i=1,nBlocks
-            !if(myid==0)print *,'nblocksperproc',nBlockPerProc(part(i)), part(i)
             nBlockPerProc(part(i)) = nBlockPerProc(part(i)) + 1
-            !if(myid==0)print *,'nblocksperproc',nBlockPerProc(part(i)), part(i)
          enddo
-
-         !if(myid==0)print *,'nblocksperprocFinal',nBlockPerProc
 
          ! Check for empty partitions.
 
@@ -345,26 +318,13 @@
          commNeglected = .true.
          xadj          = 0
          
-!!$         deallocate(adjncy)
-!!$         allocate(adjncy(2*nvertex))
-!!$         do i = 1,nvertex
-!!$            xadj(i)=2*i
-!!$            adjncy(2*i) = i
-!!$            adjncy(2*i-1)=i-2
-!!$         enddo
-!!$         adjncy(1)=nvertex
-!!$         adjncy(2*nvertex)=0
-!!$         ubvec = 1.03
-!!$         !wgtflag=0
-!!$         !options(1)=1
-!!$         !options(2) = 1
        enddo attemptLoop
-       !if(myid==0)print *,'ending metis'
+
        ! Deallocate the memory for the graph except part.
        
        deallocate(xadj, vwgt, adjncy, adjwgt, tmp, stat=ierr)
        if(ierr /= 0)                         &
          call terminate("graphPartitioning", &
                         "Deallocation failure for graph variables")
-       !if(myid==0)print *,'deallocations finished'
+
        end subroutine graphPartitioning

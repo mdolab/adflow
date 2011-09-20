@@ -54,6 +54,7 @@ FF90_OBJECTS_2 = allocCoorFineGrid.o\
 		 check1to1Subfaces.o\
 		 checkFaces.o\
 		 checkLoadBalance.o\
+		 checkPartitioning.o\
 		 checkTransform.o\
 		 countConnectivities.o\
 		 determineBleedFlowRegions.o\

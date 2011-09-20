@@ -329,6 +329,12 @@ python module sumb ! in
          integer(kind=inttype) :: niter
        end subroutine nkbenchmark
 
+       subroutine checkpartitioning(np,load_inbalance,face_inbalance) ! in :test:checkPartitioning.f90
+         integer(kind=inttype) intent(in) :: np
+         real(kind=realtype) intent(out) :: load_inbalance
+         real(kind=realtype) intent(out) :: face_inbalance
+       end subroutine checkpartitioning
+
        subroutine applypc(in_vec,out_vec,n) ! in :test:NKsolver.F90
          real(kind=realtype) dimension(n),intent(in) :: in_vec
          real(kind=realtype) dimension(n),intent(out),depend(n) :: out_vec

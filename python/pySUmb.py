@@ -701,9 +701,12 @@ class SUMB(AeroSolver):
 
         if(self.myid ==0):
             print ' -> Partitioning and Reading Grid'
-        
+
         self.sumb.partitionandreadgrid()
-       
+
+        if 'partitionOnly':
+            return
+
         if(self.myid==0):
             print ' -> Preprocessing'
         self.sumb.preprocessing()
@@ -1627,6 +1630,19 @@ class SUMB(AeroSolver):
                              printLocal,printSum,printMax)
 
         return
+
+    def checkPartitioning(self,nprocs):
+        '''This function determine the potential load balancing for
+        nprocs. The intent is this function can be run in serial with
+        to determine the best number of procs for load balancing. The
+        grid is never actually loaded so this function can be run with
+        VERY large grids without issue.'''
+  
+        load_inbalance = 0
+        face_inbalance = 0
+        load_inbalance,face_inbalance = self.sumb.checkpartitioning(nprocs)
+                
+        return load_inbalance,face_inbalance
     
     def releaseAdjointMemory(self):
         '''
