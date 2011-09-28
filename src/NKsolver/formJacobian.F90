@@ -61,7 +61,7 @@ subroutine NKSetup_KSP(ksp)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Set PC Side as RIGHT only
-  call KSPSetPreconditionerSide(ksp,PC_RIGHT,ierr);
+  call KSPSetPCSide(ksp,PC_RIGHT,ierr);
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Get the PC Handle to make modifications:
