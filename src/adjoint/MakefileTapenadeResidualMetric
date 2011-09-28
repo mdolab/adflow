@@ -1,4 +1,4 @@
-_-#     ******************************************************************
+#     ******************************************************************
 #     *                                                                *
 #     * File:          MakefileResidualMetric                          *
 #     * Author:        Andre C. Marta, Sandy Mader                     *
@@ -99,7 +99,7 @@ _-#     ******************************************************************
 #SOLVER_DIRSRC = /home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
 #SOLVER_DIRSRC = /nfs/tuff/home/mader/UTIAS/pyMDO/pyHF/SUmbADjoint/trunk/src
 #SOLVER_DIRSRC = /nfs/mica/home/kenway/hg/SUmbADjoint/src
-SOLVER_DIRSRC = /nfs/tuff/home/mader/hg/SUmbADjoint/src
+SOLVER_DIRSRC = /nfs/mica/home/kenway/hg/SUmb/src
 #SOLVER_DIRSRC = /nfs/basalt/home/mdo/mader/svn/pyHF/SUmbADjoint/trunk/src
 
 #     ******************************************************************
@@ -235,7 +235,7 @@ TAPENADE_SRC_ALL = $(TAPENADE_SRC_COMMON) $(TAPENADE_SRC_SOLVER)\
 
 default:
 	@echo "TAPENADE - parsing and generating differentiated code"
-	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30 -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
+	$(TAPENADE_HOME)/bin/tapenade -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30 -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
 	@echo "deleting some unnecessary files..."
 	@rm -f $(TAPENADE_OUTDIR)/*__.f90 $(TAPENADE_OUTDIR)/*~
 

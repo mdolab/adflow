@@ -115,7 +115,7 @@ subroutine applyPC(in_vec,out_vec,N)
      call KSPGMRESSetRestart(global_ksp,ksp_subspace, ierr)
      call EChk(ierr ,__FILE__,__LINE__)
 
-     call KSPSetPreconditionerSide(global_ksp, PC_RIGHT, ierr)
+     call KSPSetPCSide(global_ksp, PC_RIGHT, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      call NKSetup_KSP(global_ksp)
