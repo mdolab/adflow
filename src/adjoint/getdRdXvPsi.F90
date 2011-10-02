@@ -9,7 +9,8 @@
 !     ******************************************************************
 !
 subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
-  !
+#ifndef USE_NO_PETSC
+  
   !     ******************************************************************
   !     *                                                                *
   !     * Multiply the current adjoint vector by dRdXv to get a vector   *
@@ -167,5 +168,5 @@ subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
 
   call VecDestroy(wVec,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-  
+#endif
 end subroutine getdRdXvPsi

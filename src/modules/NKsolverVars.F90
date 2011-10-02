@@ -19,9 +19,12 @@ module NKsolverVars
   !
   use constants
   implicit none
+
+
+#ifndef USE_NO_PETSC
+
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-#include "include/finclude/petscts.h"
 
   ! PETSc Variables
 
@@ -60,6 +63,7 @@ module NKsolverVars
   ! PETSc Misc:
   SNESConvergedReason reason
   PetscFortranAddr   ctx(3)
+#endif
 
   ! Non-linear Solver Options
   integer(kind=intType) :: jacobian_lag

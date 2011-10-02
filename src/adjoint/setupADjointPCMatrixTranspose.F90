@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 subroutine setupADjointPCMatrixTranspose
-
+#ifndef USE_NO_PETSC
   use ADjointVars
   use ADjointPetsc
   use blockPointers       ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
@@ -224,13 +224,9 @@ subroutine setupADjointPCMatrixTranspose
   call EChk(ierr,__FILE__,__LINE__)
   call MatAssemblyEnd  (dRdwPreT,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#ifdef USE_PETSC_3
+
   call MatSetOption(dRdwPreT,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#else
-  call MatSetOption(dRdwPreT,MAT_NO_NEW_NONZERO_LOCATIONS,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#endif
 
   time(2) = mpi_wtime()
   call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
@@ -240,6 +236,7 @@ subroutine setupADjointPCMatrixTranspose
      print *,'Done PC Assembly'
      print *,'Time:',setupTime
   end if
+#endif
 end subroutine setupADjointPCMatrixTranspose
 
 

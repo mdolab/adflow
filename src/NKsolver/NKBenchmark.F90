@@ -21,7 +21,7 @@
 
 
 subroutine NKBenchmark(NKRes,niter)
-
+#ifndef USE_NO_PETSC
   use communication
   use flowVarRefState
   use inputtimespectral
@@ -114,7 +114,7 @@ subroutine NKBenchmark(NKRes,niter)
   if (.not. NKres) then
      deallocate(cycling)
   end if
-
+#endif
 end subroutine NKBenchmark
 
 

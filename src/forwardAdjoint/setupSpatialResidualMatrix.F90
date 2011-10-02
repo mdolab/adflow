@@ -1,5 +1,5 @@
 subroutine setupSpatialResidualMatrix(matrix,useAD)
-
+#ifndef USE_NO_PETSC
   !     ******************************************************************
   !     *                                                                *
   !     * Compute the spatial derivative matrix using a forward mode calc*
@@ -266,13 +266,8 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
   call EChk(ierr,__FILE__,__LINE__)
   !print *,'assembled spatial =',assembled
 
-#ifdef USE_PETSC_3
   call MatSetOption(matrix,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#else
-  call MatSetOption(matrix,MAT_NO_NEW_NONZERO_LOCATIONS,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#endif
 
   time(2) = mpi_wtime()
   call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
@@ -347,5 +342,5 @@ contains
 
 30  format(1x,I4,' | ', I4,' ',I4,'  ',I4,' | ',I4,' ',I4,' ',I4,' | ',I4,'  ',I4,' ',f20.4)
   end subroutine writeOutMatrix
-
+#endif
 end subroutine setupSpatialResidualMatrix

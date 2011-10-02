@@ -8,6 +8,7 @@
 !     ******************************************************************
 !
 subroutine setupCouplingMatrixStruct(pts,npts,nTS)
+#ifndef USE_NO_PETSC
   !
   !     ******************************************************************
   !     *                                                                *
@@ -301,5 +302,6 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   end if
 
 20 format(a,1x,f8.2)
+#endif
 end subroutine setupCouplingMatrixStruct
 

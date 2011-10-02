@@ -1,5 +1,5 @@
 subroutine setupNKsolver
-
+#ifndef USE_NO_PETSC
   ! Setup the PETSc objects for the Newton-Krylov
   ! solver. destroyNKsolver can be used to destroy the objects created
   ! in this function
@@ -102,11 +102,12 @@ subroutine setupNKsolver
         turbSegregated = .False.
      end if
   end if
+#endif
 end subroutine setupNKsolver
 
 
 subroutine MyMult(matrix,X,F,ierr)
-
+#ifndef USE_NO_PETSC
   !   Input Parameters:
   !.  X - input vector
   !
@@ -135,6 +136,6 @@ subroutine MyMult(matrix,X,F,ierr)
 
   !call VecAXPY(F,1.0,diagV,ierr)
   !call EChk(ierr,__FILE__,__LINE__)
-
+#endif
 end subroutine MyMult
 

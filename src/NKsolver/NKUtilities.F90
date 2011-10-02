@@ -14,6 +14,7 @@
 
 subroutine setWVec(wVec)
   ! Set the current residual in dw into the PETSc Vector
+#ifndef USE_NO_PETSC
 #define PETSC_AVOID_MPIF_H
 #include "finclude/petscdef.h"
 
@@ -53,10 +54,11 @@ subroutine setWVec(wVec)
 
   call VecRestoreArrayF90(wVec,wvec_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-
+#endif
 end subroutine setWVec
 
 subroutine setRVec(rVec)
+#ifndef USE_NO_PETSC
   ! Set the current residual in dw into the PETSc Vector
 #define PETSC_AVOID_MPIF_H
 #include "finclude/petscdef.h"
@@ -104,10 +106,11 @@ subroutine setRVec(rVec)
 
   call VecRestoreArrayF90(rVec,rvec_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-
+#endif
 end subroutine setRVec
 
 subroutine setW(wVec)
+#ifndef USE_NO_PETSC
 #define PETSC_AVOID_MPIF_H
 #include "finclude/petscdef.h"
 
@@ -156,11 +159,10 @@ subroutine setW(wVec)
   ! Run the double halo:
   call whalo2(1_intType, 1_intType, nw, .False., &
        .False.,.False.)
-
+#endif
 end subroutine setW
 
 subroutine getStates(states,ndimw)
- 
   ! Return the state vector, w to Python
   
   use ADjointPETSc
@@ -196,7 +198,6 @@ end subroutine getStates
 subroutine getRes(res,ndimw)
   
   ! Compute the residual and return result to Python
-
   use ADjointPETSc
   use blockPointers
   use inputTimeSpectral
@@ -226,10 +227,11 @@ subroutine getRes(res,ndimw)
         end do
      end do
   end do
+
 end subroutine getRes
 
 subroutine setStates(states,ndimw)
-  
+
   ! Take in externallly generated states and set them in SUmb
 
   use ADjointPETSc
@@ -262,101 +264,3 @@ subroutine setStates(states,ndimw)
   end do
 end subroutine setStates
 
-subroutine setRVec_old(rVec)
-  ! Set the current residual in dw into the PETSc Vector
-
-  use communication
-  use blockPointers
-  use inputtimespectral
-  use flowvarrefstate
-  use inputiteration
-  use NKsolvervars, only : times
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "include/finclude/petsc.h"
-
-  Vec     rVec
-  integer(kind=intType) :: ierr,nn,sps,i,j,k,l
-  real(kind=realType) :: ovv,temp(nw)
-  
-  times(1) = mpi_wtime()
-
-  do sps=1,nTimeIntervalsSpectral
-     do nn=1,nDom
-        call setPointersAdj(nn,1_intType,sps)
-        ! Copy off dw/vol to rVec
-        do k=2,kl
-           do j=2,jl
-              do i=2,il
-                 ovv = 1/vol(i,j,k)
-                 do l=1,nwf
-                    temp(l) = dw(i,j,k,l)*ovv
-                 end do
-
-                 do l=nt1,nt2
-                    temp(l) = dw(i,j,k,l)*ovv!*1e4
-                 end do
-
-                 call VecSetValuesBlocked(rVec,1,globalCell(i,j,k),&
-                      dw(i,j,k,:)*ovv, INSERT_VALUES,ierr)
-                 call EChk(ierr,__FILE__,__LINE__)
-              end do
-           end do
-        end do
-     end do
-  end do
-
-  call VecAssemblybegin(rVec,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  call VecAssemblyEnd(rVec,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  times(2) = mpi_wtime()
-  times(10) = times(10) + times(2)-times(1)
-
-end subroutine setRVec_old
-
-subroutine setW_old(wVec)
-
-  ! Set the SUmb state vector, w, from the petsc vec wVec
-  use communication
-  use blockPointers
-  use inputTimeSpectral
-  use flowVarRefState
-  use NKsolvervars, only : times
-  implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "include/finclude/petsc.h"
-
-  Vec     wVec
-  integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
-  real(kind=realType) :: temp,diff
-
-  times(1) = mpi_wtime()
-  ! Note this is not ideal memory access but the values are stored by
-  ! block in PETSc (grouped in nw) but are stored separately in SUmb
-
-  do nn=1,nDom
-     do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
-        
-        ! Copy off w to wVec
-        do k=2,kl
-           do j=2,jl
-              do i=2,il
-                 do l=1,nw
-                    call VecGetValues(wVec,1,globalCell(i,j,k)*nw+l-1,&
-                         w(i,j,k,l),ierr)
-                  end do
-              end do
-           end do
-        end do
-
-     end do
-  end do
-
-  times(2) = mpi_wtime()
-  times(20) = times(20) + times(2)-times(1)
-
-end subroutine setW_old

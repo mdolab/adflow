@@ -1,5 +1,5 @@
 subroutine setupNKsolver_petsc
-
+#ifndef USE_NO_PETSC
   ! Setup the PETSc objects for the Newton-Krylov
   ! solver. destroyNKsolver can be used to destroy the objects created
   ! in this function
@@ -79,13 +79,8 @@ subroutine setupNKsolver_petsc
      
      deallocate(nnzDiagonal,nnzOffDiag,stencil)
      
-#ifdef USE_PETSC_3
      call MatSetOption(dRdWPre, MAT_ROW_ORIENTED,PETSC_FALSE, ierr)
      call EChk(ierr,__FILE__,__LINE__)
-#else
-     call MatSetOption(dRdWPre, MAT_COLUMN_ORIENTED, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-#endif
      
      !  Set Jacobian Function 
      call SNESSetJacobian(snes,dRdw,dRdwPre,FormJacobian,ctx,ierr)
@@ -130,6 +125,7 @@ subroutine setupNKsolver_petsc
      NKSolverSetup = .True.
      NKSolvedOnce = .False.
   end if
+#endif
 end subroutine setupNKsolver_petsc
 
 

@@ -9,6 +9,7 @@
 !     ******************************************************************
 !
 subroutine getdRdaPsi(ndv,output)
+#ifndef USE_NO_PETSC
   !
   !     ******************************************************************
   !     *                                                                *
@@ -68,5 +69,5 @@ subroutine getdRdaPsi(ndv,output)
 
   call VecDestroy(wVec,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-  
+#endif
 end subroutine getdRdaPsi

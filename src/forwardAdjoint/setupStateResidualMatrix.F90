@@ -1,5 +1,5 @@
 subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
-
+#ifndef USE_NO_PETSC
   !     ******************************************************************
   !     *                                                                *
   !     * Compute the state derivative matrix using a forward mode calc  *
@@ -355,14 +355,8 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   call MatAssemblyEnd  (matrix,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-
-#ifdef USE_PETSC_3
   call MatSetOption(matrix,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#else
-  call MatSetOption(matrix,MAT_NO_NEW_NONZERO_LOCATIONS,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#endif
 
   ! Debugging ONLY!
   !call writeOutMatrix()
@@ -500,5 +494,5 @@ contains
 !   end subroutine checkBlock
 
 
-
+#endif
 end subroutine setupStateResidualMatrix

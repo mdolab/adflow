@@ -1,4 +1,5 @@
 subroutine FormJacobian_custom()
+#ifndef USE_NO_PETSC
   use communication
   use precision 
   use NKSolverVars, only: dRdw,dRdwPre,NKFiniteDifferencePC,ksp,&
@@ -83,6 +84,6 @@ subroutine FormJacobian_custom()
   call EChk(ierr,__FILE__,__LINE__)  
 
   ierr = 0
-  
+#endif
 end subroutine FormJacobian_custom
 

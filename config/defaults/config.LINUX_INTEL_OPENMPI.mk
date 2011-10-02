@@ -31,9 +31,7 @@ SHELL      = /bin/bash
 RM         = /bin/rm -rf
 MV         = /bin/mv -f
 SYM_LINK   = ln -sf
-#MAKE       = make
-#MAKE_CLEAN = make
-MAKE = make -j 1
+MAKE = make -j 4
 
 
 #      ******************************************************************
@@ -51,8 +49,6 @@ EXEC_SUFFIX = _linux_intel_openmpi
 #      *                                                                *
 #      ******************************************************************
 
-#FF90 = /usr/local/mpich-intel/bin/mpif90
-#CC   = /usr/local/mpich-intel/bin/mpicc
 FF90 = mpif90
 CC   = mpicc
 
@@ -62,15 +58,10 @@ CC   = mpicc
 #      * CGNS include and linker flags.                                 *
 #      *                                                                *
 #      ******************************************************************
-#CGNS_INCLUDE_FLAGS = -I$(HOME)/Ubunto_setup_files/cgnslib_2.4
-#CGNS_LINKER_FLAGS  = -L$(HOME)/Ubunto_setup_files/cgnslib_2.4/LINUX -lcgns
-#CGNS_INCLUDE_FLAGS = -I$(HOME)/Ubunto_setup_files/cgnslib_2.4_back
-#CGNS_LINKER_FLAGS  = -L$(HOME)/Ubunto_setup_files/cgnslib_2.4_back/LINUX -lcgns
 #CGNS_INCLUDE_FLAGS = -I/usr/local/include
-#CGNS_LINKER_FLAGS  = -L/usr/local/lib64 -lcgns.intel
-#CGNS_LINKER_FLAGS  = -L/usr/local/lib -lcgns.intel
-#CGNS_INCLUDE_FLAGS = 
+#CGNS_LINKER_FLAGS  = -L/usr/local/lib -lcgns
 CGNS_LINKER_FLAGS = -lcgns
+
 #      ******************************************************************
 #      *                                                                *
 #      * Precision flags. When nothing is specified 4 byte integer and  *
@@ -105,21 +96,14 @@ CC_PRECISION_FLAGS   = $(CC_INTEGER_PRECISION_FLAG) \
 
 COMMAND_SEARCH_PATH_MODULES = -I
 
-FF90_GEN_FLAGS = -DHAS_ISNAN -DUSE_PETSC_3
-CC_GEN_FLAGS   =
+FF90_GEN_FLAGS = -DHAS_ISNAN  # -DUSE_NO_PETSC
+CC_GEN_FLAGS   = -DHAS_ISNAN  # -DUSE_NO_PETSC
 
-#FF90_OPTFLAGS   = -O3 -ipo -ipo_obj
-
-FF90_OPTFLAGS   =  -fpic -r8 -O1 -g  #-pg #-check-all #-r8 -O2 # -g #-check-all #-O2 #-tpp7 -xW -unroll -ip
-
-#CC_OPTFLAGS     = -O3 -fexpensive-optimizations -frerun-cse-after-loop \
-#		  -fthread-jumps -funroll-loops -finline-functions
+FF90_OPTFLAGS   =  -fpic -r8 -O1 -g 
 CC_OPTFLAGS     = -O -fpic
 
-#FF90_DEBUGFLAGS = -g -C -implicitnone -ftrapuv -debug extended \
-#		  -traceback -DDEBUG_MODE
-#FF90_DEBUGFLAGS = -g -implicitnone -DDEBUG_MODE
-#CC_DEBUGFLAGS   = -g -Wall -pedantic -DDEBUG_MODE
+FF90_DEBUGFLAGS = #-check bounds -check all
+CC_DEBUGFLAGS   = #-g -Wall -pedantic -DDEBUG_MODE
 
 FF90_FLAGS = $(FF90_GEN_FLAGS) $(FF90_OPTFLAGS) $(FF90_DEBUGFLAGS)
 CC_FLAGS   = $(CC_GEN_FLAGS)   $(CC_OPTFLAGS)   $(CC_DEBUGFLAGS)
@@ -146,17 +130,7 @@ CC_FLAGS   = $(CC_GEN_FLAGS)   $(CC_OPTFLAGS)   $(CC_DEBUGFLAGS)
 #      *                                                                *
 #      ******************************************************************
 
-#PETSC_ROOT_DIR      = /usr/local/petsc-2.3.1-p15
-#PETSC_INCLUDE_FLAGS = -DUSE_NO_PETSC
-#PETSC_INCLUDE_FLAGS = -I$(PETSC_ROOT_DIR) \
-#		      -I$(PETSC_ROOT_DIR)/bmake/<platform> \
-#		      -I$(PETSC_ROOT_DIR)/include
-#PETSC_LINKER_FLAGS  = -L$(PETSC_ROOT_DIR)/lib/<platform> \
-#		      -lpetscksp -lpetscdm -lpetscmat -lpetscvec -lpetsc
-
 X11_DIR = /usr/X11R6/lib
-
-
 include ${PETSC_DIR}/conf/variables
 PETSC_INCLUDE_FLAGS=${PETSC_CC_INCLUDES} -I$(PETSC_DIR)
 PETSC_LINKER_FLAGS=${PETSC_LIB}
@@ -181,4 +155,4 @@ AR_FLAGS = -rvs
 #      ******************************************************************
 
 LINKER       = $(FF90)
-LINKER_FLAGS = $(FF90_OPTFLAGS) -nofor_main -llapack
+LINKER_FLAGS = $(FF90_OPTFLAGS) -nofor_main # -llapack

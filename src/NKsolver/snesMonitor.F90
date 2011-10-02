@@ -1,4 +1,5 @@
 subroutine snes_monitor(snes,its,norm,ctx,ierr)
+#ifndef USE_NO_PETSC
   use communication
   use precision 
   use iteration
@@ -52,11 +53,12 @@ subroutine snes_monitor(snes,its,norm,ctx,ierr)
 
      ierr = 0
   end if
+#endif
 end subroutine snes_monitor
 
 
 subroutine ts_monitor(pts,steps,t,wVec,ctx,ierr)
-
+#ifndef USE_NO_PETSC
 !subroutine snes_monitor(snes,its,norm,ctx,ierr)
 
   use communication
@@ -126,5 +128,5 @@ subroutine ts_monitor(pts,steps,t,wVec,ctx,ierr)
      ierr = 0
   end if
 
-
+#endif
 end subroutine ts_monitor

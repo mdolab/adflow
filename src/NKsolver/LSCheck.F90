@@ -1,4 +1,5 @@
 subroutine LSCheck(snes,VecX,VecY,lsctx,changed_Y,ierr)
+#ifndef USE_NO_PETSC
   ! ---------------------------------------------------------------------
   !
   !  FormPreCheck - checks the validity of a new direction given by the linear solve 
@@ -144,7 +145,7 @@ subroutine LSCheck(snes,VecX,VecY,lsctx,changed_Y,ierr)
   !call VecScale(vecY,0.125,ierr)
   !changed_y = .True.
   changed_y = .False.
-
+#endif
 end subroutine LSCheck
 
 subroutine checkdwForNan(foundNan)

@@ -1,5 +1,5 @@
 subroutine destroyNKsolver_petsc
-
+#ifndef USE_NO_PETSC
   ! Destroy all the PETSc objects for the Newton-Krylov
   ! solver. 
 
@@ -21,12 +21,12 @@ subroutine destroyNKsolver_petsc
 
      NKSolverSetup = .False.
   end if
-  
+#endif
 end subroutine destroyNKsolver_petsc
 
 
 subroutine destroyNKsolver
-
+#ifndef USE_NO_PETSC
   ! Destroy all the PETSc objects for the Newton-Krylov
   ! solver. 
 
@@ -49,5 +49,5 @@ subroutine destroyNKsolver
 
      NKSolverSetup = .False.
   end if
-  
+#endif
 end subroutine destroyNKsolver

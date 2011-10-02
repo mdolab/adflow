@@ -9,6 +9,7 @@
 !      ******************************************************************
 
 subroutine NKsolver
+#ifndef USE_NO_PETSC
   use communication
   use constants
   use inputTimeSpectral
@@ -120,7 +121,7 @@ subroutine NKsolver
 
      ! Get the EW Forcing tolerance ksp_rtol
      call getEWTol(iter,norm,old_norm,rtol_last,ksp_rtol)
-
+  
      ! Set all tolerances for linear solve:
      ksp_atol = totalR0*L2Conv
      ksp_max_it = min(ksp_subspace,ncycles-iterTot)
@@ -168,10 +169,11 @@ subroutine NKsolver
   call EChk(ierr,__FILE__,__LINE__)
   call VecDestroy(work,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-
+#endif
 end subroutine NKsolver
 
 subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
+#ifndef USE_NO_PETSC
   use precision 
   use communication
   use NKSolverVars, only: dRdw
@@ -353,10 +355,11 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
 100 continue
 
   ! Optional user-defined check for line search step validity */
-
+#endif
 end subroutine LSCubic
 
 subroutine LSNone(x,f,g,y,w,nfevals,flag)
+#ifndef USE_NO_PETSC
   use precision 
   use communication
   use NKSolverVars, only: dRdw
@@ -387,7 +390,7 @@ subroutine LSNone(x,f,g,y,w,nfevals,flag)
   
   call setRVec(g)
   nfevals = nfevals + 1
-
+#endif
 end subroutine LSNone
 
 

@@ -9,6 +9,7 @@
 !      ******************************************************************
 
 subroutine NKsolver
+#ifndef USE_NO_PETSC
   use communication
   use constants
   use inputTimeSpectral
@@ -85,7 +86,7 @@ subroutine NKsolver
   else
      routineFailed = .True. 
   end if
-
+#endif
 end subroutine NKsolver
 
 
