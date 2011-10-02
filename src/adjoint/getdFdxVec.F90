@@ -1,5 +1,7 @@
 
 subroutine getdFdxVec(ndof,vec_in,vec_out)
+#ifndef USE_NO_PETSC
+
   !
   !     ******************************************************************
   !     *                                                                *
@@ -34,9 +36,12 @@ subroutine getdFdxVec(ndof,vec_in,vec_out)
   call VecDestroy(fVec2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
+#endif
 end subroutine getdFdxVec
 
 subroutine getdFdxVec_NULL
+#ifndef USE_NO_PETSC
+
   !
   !     ******************************************************************
   !     *                                                                *
@@ -70,10 +75,11 @@ subroutine getdFdxVec_NULL
 
   call VecDestroy(fVec2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-
+#endif
 end subroutine getdFdxVec_NULL
 
 subroutine getdFdxTVec(ndof,vec_in,vec_out)
+#ifndef USE_NO_PETSC
   !
   !     ******************************************************************
   !     *                                                                *
@@ -107,11 +113,12 @@ subroutine getdFdxTVec(ndof,vec_in,vec_out)
 
   call VecDestroy(fVec2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-
+#endif
 end subroutine getdFdxTVec
 
 
 subroutine getdFdxTVec_NULL
+#ifndef USE_NO_PETSC
   !
   !     ******************************************************************
   !     *                                                                *
@@ -145,5 +152,5 @@ subroutine getdFdxTVec_NULL
 
   call VecDestroy(fVec2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-
+#endif
 end subroutine getdFdxTVec_NULL

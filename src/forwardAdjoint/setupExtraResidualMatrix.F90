@@ -1,5 +1,5 @@
 subroutine setupExtraResidualMatrix(matrix,useAD)
-
+#ifndef USE_NO_PETSC
   !     ******************************************************************
   !     *                                                                *
   !     * Compute the extra derivative matrix using a forward mode calc  *
@@ -9,6 +9,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
   !     *        False, FD is used.                                      *
   !     ******************************************************************
   !
+
   use ADjointVars
   use ADjointPETSc , only:localInfo
   use blockPointers       ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
@@ -295,13 +296,8 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
   call MatAssemblyEnd  (matrix,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-#ifdef USE_PETSC_3
   call MatSetOption(matrix,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#else
-  call MatSetOption(matrix,MAT_NO_NEW_NONZERO_LOCATIONS,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#endif
 
   time(2) = mpi_wtime()
   call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
@@ -335,5 +331,5 @@ contains
   end subroutine setBlock
 
 
-
+#endif
 end subroutine setupExtraResidualMatrix

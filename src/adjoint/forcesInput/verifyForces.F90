@@ -4,7 +4,7 @@ subroutine verifyForces(pts,npts,nTS)
   ! 1. Check that getForces and computeForcesAdj give the same results
   ! 2. Check that dFdw matrix is correct
   ! 3. Check that dFdx matrix is correct
-
+#ifndef USE_NO_PETSC
   use adjointpetsc
   use BCTypes
   use blockPointers
@@ -363,6 +363,7 @@ subroutine verifyForces(pts,npts,nTS)
         
      end do ! ndom loop
   end do ! sps loop
+#endif
 end subroutine verifyForces
 
 function norm(X,n)

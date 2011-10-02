@@ -63,13 +63,8 @@ subroutine createSpatialPETScVars
   deallocate( nnzDiagonal, nnzOffDiag )
 
   ! Set column major order for the matrix dRdx.
-#ifdef USE_PETSC_3
   call MatSetOption(dRdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
-#else
-  call MatSetOption(dRdx, MAT_COLUMN_ORIENTED, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-#endif
 
   ! Vectors
   call VecCreateMPI(SUMB_PETSC_COMM_WORLD,nDimX,PETSC_DETERMINE,dJdx,PETScIerr)

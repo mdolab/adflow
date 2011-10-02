@@ -56,17 +56,6 @@
 !      *                                                                *
 !      ******************************************************************
 ! 
-integer :: unitvf = 1011,ierror
-
-      
-      open (UNIT=unitvf,File='verifyvf.out',status='replace',action='write',iostat=ierror)
-      if(ierror /= 0)                        &
-           call terminate("verifyvf", &
-           "Something wrong when &
-           &calling open")
-      print *, "ierror:", ierror
-      
-
        ! Set rFilv to rFil to indicate that this is the viscous part.
        ! If rFilv == 0 the viscous residuals need not to be computed
        ! and a return can be made.
@@ -932,7 +921,6 @@ integer :: unitvf = 1011,ierror
 
        call utauWF(rFilv)
 
-close(unitvf)
 
        contains
 

@@ -1,7 +1,7 @@
 subroutine applyPC(in_vec,out_vec,N)
+#ifndef USE_NO_PETSC
   ! Apply the NK PC to the in_vec. This subroutine is ONLY used as a
   ! preconditioner for a global Aero-Structural Newton-Krylov Method
-
   use inputTimeSpectral
   use flowVarRefState
   use ADjointVars , only: nCellsLocal
@@ -141,4 +141,5 @@ subroutine applyPC(in_vec,out_vec,N)
    call VecDestroy(VecA,ierr);  call EChk(ierr,__FILE__,__LINE__)
    call VecDestroy(VecB,ierr);  call EChk(ierr,__FILE__,__LINE__)
 
+#endif
 end subroutine applyPC

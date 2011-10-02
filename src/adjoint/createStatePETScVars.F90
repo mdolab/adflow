@@ -115,13 +115,9 @@ subroutine createStatePETScVars
   ! the insertion of values in column major order, one can call the
   ! command MatSetOption(Mat A,MAT COLUMN ORIENTED);
 
-#ifdef USE_PETSC_3
   call MatSetOption(dRdWt, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
-#else
-  call MatSetOption(dRdWt, MAT_COLUMN_ORIENTED, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-#endif
+
 
   !****************
   !create dRdWPre
@@ -188,13 +184,9 @@ subroutine createStatePETScVars
 
      ! Set the matrix dRdWPre options.
 
-#ifdef USE_PETSC_3
      call MatSetOption(dRdWPret, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
-#else
-     call MatSetOption(dRdWPret, MAT_COLUMN_ORIENTED, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-#endif
+
   end if ! Approx PC
 
   ! Vectors:

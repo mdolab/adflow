@@ -122,13 +122,9 @@ subroutine createPETScMat
   ! the insertion of values in column major order, one can call the
   ! command MatSetOption(Mat A,MAT COLUMN ORIENTED);
 
-#ifdef USE_PETSC_3
   call MatSetOption(dRdWt, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
-#else
-  call MatSetOption(dRdWt, MAT_COLUMN_ORIENTED, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-#endif
+
   !****************
   !create dRdWPre
   !***************
@@ -185,13 +181,9 @@ subroutine createPETScMat
 
      ! Set the matrix dRdWPre options.
 
-#ifdef USE_PETSC_3
      call MatSetOption(dRdWPret, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
-#else
-     call MatSetOption(dRdWPret, MAT_COLUMN_ORIENTED, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-#endif
+
   end if ! Approx PC
 
   ! dRda
@@ -205,13 +197,9 @@ subroutine createPETScMat
   call EChk(PETScIerr,__FILE__,__LINE__)
 
   ! Set column major order for the matrix dRda.
-#ifdef USE_PETSC_3
   call MatSetOption(dRda, MAT_ROW_ORIENTED,PETSC_TRUE, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
-#else
-  call MatSetOption(dRda, MAT_COLUMN_ORIENTED, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-#endif
+
   !
   !     ******************************************************************
   !     *                                                                *
@@ -244,15 +232,11 @@ subroutine createPETScMat
   call EChk(PETScIerr,__FILE__,__LINE__)
 
   ! Set column major order for the matrix dRdx.
-#ifdef USE_PETSC_3
+
   call MatSetOption(dRdx, MAT_ROW_ORIENTED,PETSC_FALSE, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
   call MatSetOption(dRdx,MAT_NEW_NONZERO_LOCATIONS,PETSC_TRUE,PETScIErr)
   call EChk(PETScIerr,__FILE__,__LINE__)
-#else
-  call MatSetOption(dRdx, MAT_COLUMN_ORIENTED, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-#endif
 
   ! Create dFdx and dFdw
 

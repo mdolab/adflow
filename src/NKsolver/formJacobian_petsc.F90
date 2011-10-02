@@ -1,4 +1,5 @@
 subroutine FormJacobian_petsc(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
+#ifndef USE_NO_PETSC
   use communication
   use precision 
   use NKSolverVars,only : ksp_solver_type,ksp_subspace,global_pc_type,&
@@ -38,25 +39,8 @@ subroutine FormJacobian_petsc(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   call NKSetup_KSP(ksp)
-
+#endif
 end subroutine FormJacobian_petsc
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 subroutine FormJacobian2(pts,t,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   ! This is a wrapper for the formJacobian function. The formJacobian
@@ -65,6 +49,7 @@ subroutine FormJacobian2(pts,t,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   ! going to pull ou the SNES context and call the formJacobian
   ! function which will do all the required calculations/option
   ! setting.
+#ifndef USE_NO_PETSC
   use NKSolverVars, only: snes_stol,snes_max_its,snes_max_funcs,snes_rtol,&
        snes_atol
 
@@ -118,6 +103,7 @@ subroutine FormJacobian2(pts,t,wVec,dRdw,dRdwPre,flag,ctx,ierr)
 
   call FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   call EChk(ierr,__FILE__,__LINE__)
+#endif
 end subroutine FormJacobian2
 
 

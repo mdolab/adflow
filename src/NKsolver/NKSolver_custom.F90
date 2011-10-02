@@ -9,6 +9,7 @@
 !      ******************************************************************
 
 subroutine NKsolver_custom
+#ifndef USE_NO_PETSC
   use communication
   use constants
   use inputTimeSpectral
@@ -155,7 +156,7 @@ subroutine NKsolver_custom
   ! Not really anything else to do...
 
   NKSolvedOnce = .True.
-
+#endif
 end subroutine NKsolver_custom
 
 subroutine getEWTol(iter,norm,old_norm,rtol_last,rtol)
@@ -202,7 +203,7 @@ subroutine getEWTol(iter,norm,old_norm,rtol_last,rtol)
 end subroutine getEWTol
 
 subroutine setdiagV(dt_pseudo)
-
+#ifndef USE_NO_PETSC
   use flowVarRefState
   use inputTimeSpectral
   use blockPointers
@@ -248,6 +249,7 @@ subroutine setdiagV(dt_pseudo)
   call EChk(ierr,__FILE__,__LINE__)
   call VecAssemblyEnd(diagV,ierr)
   call EChk(ierr,__FILE__,__LINE__)
+#endif
 end subroutine setdiagV
 
 

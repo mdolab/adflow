@@ -1,4 +1,5 @@
 subroutine FormJacobian()
+#ifndef USE_NO_PETSC
   use communication
   use precision 
   use iteration
@@ -30,11 +31,11 @@ subroutine FormJacobian()
 
   ! Setup the required options for the KSP object
   call NKSetup_KSP(global_ksp)
-  
+#endif  
 end subroutine FormJacobian
 
 subroutine NKSetup_KSP(ksp)
-
+#ifndef USE_NO_PETSC
   ! Common routine for setting up the KSP solver for NK solver. This
   ! can be called from multiple places.
   use precision 
@@ -99,5 +100,5 @@ subroutine NKSetup_KSP(ksp)
   call EChk(ierr,__FILE__,__LINE__) 
   call KSPSetType(local_ksp, KSPPREONLY, ierr)
   call EChk(ierr,__FILE__,__LINE__)  
-
+#endif
 end subroutine NKSetup_KSP

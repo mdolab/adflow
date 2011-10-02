@@ -9,6 +9,7 @@
 !     ******************************************************************
 !
 module warpingPETSc
+#ifndef USE_NO_PETSC
   !
   !     ******************************************************************
   !     *                                                                *
@@ -128,10 +129,11 @@ module warpingPETSc
       
   !VecScatter cgnsTOsumbGrid
   !VecScatter sumbTOcgnsForce
+  Vec     dIdxDisp,dIdxs2,dJdxs2
 
   integer(kind=intType) ,allocatable,dimension(:) :: cumdofproc
   integer(kind=intType) ,allocatable,dimension(:) :: cumdofblock
-  Vec     dIdxDisp,dIdxs2,dJdxs2
 
 
+#endif
 end module warpingPETSc

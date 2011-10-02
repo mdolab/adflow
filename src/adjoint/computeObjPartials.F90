@@ -9,6 +9,7 @@
 !     ******************************************************************
 
 subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
+#ifndef USE_NO_PETSC
   !
   !     ******************************************************************
   !     *                                                                *
@@ -25,6 +26,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
   !     * warping first before it can be used with the actual shape      *
   !     * design variables                                               *
   !     ******************************************************************
+
   use ADjointVars ! include costFunctions
   use ADjointPETSc
   use BCTypes          ! i/j/k/max/min
@@ -484,6 +486,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
      call VecAssemblyEnd(dJdx,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
   end if
+#endif
 end subroutine computeObjPartials
 
 
@@ -491,7 +494,7 @@ end subroutine computeObjPartials
 ! directly in python in dIda in the adjointVars module. 
 
 subroutine getdIdw(ndof,output)
-
+#ifndef USE_NO_PETSC
   use ADjointPETSc
   use ADjointVars
   use precision 
@@ -508,11 +511,11 @@ subroutine getdIdw(ndof,output)
      call VecGetValues(dJdw,1,ilow+i-1,output(i),PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
   end do
-
+#endif
 end subroutine getdIdw
 
 subroutine getdIdx(ndof,output)
-
+#ifndef USE_NO_PETSC
   use ADjointPETSc
   use ADjointVars
   use inputTimeSpectral
@@ -573,10 +576,11 @@ subroutine getdIdx(ndof,output)
 
      end do
   end do
+#endif
 end subroutine getdIdx
 
 subroutine zeroObjPartials
-
+#ifndef USE_NO_PETSC
   use precision 
   use ADjointVars ! include costFunctions
   use ADjointPETSc
@@ -588,5 +592,5 @@ subroutine zeroObjPartials
 
   call VecZeroEntries(dJdx,ierr)
   call EChk(PETScIerr,__FILE__,__LINE__)
-
+#endif
 end subroutine zeroObjPartials

@@ -34,13 +34,8 @@ subroutine createExtraPETScVars
   call EChk(PETScIerr,__FILE__,__LINE__)
 
   ! Set column major order for the matrix dRda.
-#ifdef USE_PETSC_3
   call MatSetOption(dRda, MAT_ROW_ORIENTED,PETSC_TRUE, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
-#else
-  call MatSetOption(dRda, MAT_COLUMN_ORIENTED, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-#endif
 
 #endif
 end subroutine createExtraPETScVars

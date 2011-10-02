@@ -9,7 +9,7 @@
 !     ******************************************************************
 !
       module ADjointPETSc
-!
+#ifndef USE_NO_PETSC
 !     ******************************************************************
 !     *                                                                *
 !     * This module contains the objects used by PETSc for the         *
@@ -21,7 +21,6 @@
       use communication 
       implicit none
 
-#ifndef USE_NO_PETSC
 
 #define PETSC_AVOID_MPIF_H
 !

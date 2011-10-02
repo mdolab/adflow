@@ -9,7 +9,8 @@
 !     ******************************************************************
 !
 subroutine agumentRHS(ndof,phi)
-  !
+#ifndef USE_NO_PETSC 
+ !
   !     ******************************************************************
   !     *                                                                *
   !     * Multiply the structural adjoint vector phi, by dFdw^T to       *
@@ -38,6 +39,7 @@ subroutine agumentRHS(ndof,phi)
 
   call vecDestroy(phic,ierr)
   call EChk(ierr,__FILE__,__LINE__)
+#endif
 end subroutine agumentRHS
 
 
