@@ -21,16 +21,22 @@ subroutine dealloc_derivative_values(nn)
      flowDoms(nn,1,sps)%dw =flowDomsd(sps)%dwtmp
      
      ! Deallocate memtory
-     deallocate(flowDomsd(sps)%dwtmp,stat=ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-     deallocate(flowDomsd(sps)%xtmp,stat=ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-     deallocate(flowDomsd(sps)%dwtmp2,stat=ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-     deallocate(flowDomsd(sps)%dw_deriv,stat=ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+
      deallocate(flowDomsd(sps)%wtmp,stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
+
+     deallocate(flowDomsd(sps)%dwtmp,stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     deallocate(flowDomsd(sps)%dwtmp2,stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     deallocate(flowDomsd(sps)%xtmp,stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     deallocate(flowDomsd(sps)%dw_deriv,stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
      
   end do deallocatespectral
 
@@ -42,7 +48,8 @@ subroutine dealloc_derivative_values(nn)
 
      deallocate(flowDomsd(sps)%si, &
                 flowDomsd(sps)%sj, &
-                flowDomsd(sps)%sk,stat=ierr)
+                flowDomsd(sps)%sk, &
+                flowDomsd(sps)%vol, stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      deallocate(flowDomsd(sps)%rotMatrixI, &
@@ -150,7 +157,7 @@ subroutine dealloc_derivative_values(nn)
         if( associated(BCDatad(i)%turbInlet) ) &
              deallocate(BCDatad(i)%turbInlet, stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        !print *,'nullify bcdata'
+  
         nullify(BCDatad(i)%norm)
         nullify(BCDatad(i)%rface)
         nullify(BCDatad(i)%uSlip)

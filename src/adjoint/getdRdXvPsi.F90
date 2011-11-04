@@ -66,9 +66,6 @@ subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
        adjoint,wVec,ierr)
   call EChk(ierr,__FILE__,__LINE__)
  
-  call VecNorm(wVec,NORM_2,tOld,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  
   ! Create a temporary vector, xVec to put the result of the
   ! matmulttranspose in:
   

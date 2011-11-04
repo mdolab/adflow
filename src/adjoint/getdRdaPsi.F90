@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine getdRdaPsi(ndv,output)
+subroutine getdRdaPsi(output,ndv,adjoint,nstate)
 #ifndef USE_NO_PETSC
   !
   !     ******************************************************************
@@ -27,15 +27,22 @@ subroutine getdRdaPsi(ndv,output)
   use monitor 
  
   implicit none
-  integer(kind=intType), intent(in) :: ndv
+  integer(kind=intType), intent(in) :: ndv,nstate
+  real(kind=realType), intent(in) :: adjoint(nstate)
   real(kind=realType),intent(out) :: output(ndv)
   integer(kind=intType) :: ierr,i
 
-  ! Create the result vector for dRda^T * psi
-
-  call MatGetVecs(dRda,dRdaTPsi,wVec,ierr)
+  ! Create a dummy vector, wVec to put the adjoint into
+  call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,nstate,PETSC_DECIDE,&
+       adjoint,wVec,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-  call MatMultTranspose(dRda,psi,dRdaTPsi,ierr)
+
+  ! Create the result vector for dRda^T * psi
+  call VecCreateMPI(SUMB_PETSC_COMM_WORLD,PETSC_DECIDE,ndv,dRdaTPsi,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Do the Multiplication
+  call MatMultTranspose(dRda,wVec,dRdaTPsi,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! This is a little wonkly, since dRdaTPsi only contains a handful of
@@ -69,5 +76,6 @@ subroutine getdRdaPsi(ndv,output)
 
   call VecDestroy(wVec,ierr)
   call EChk(ierr,__FILE__,__LINE__)
+
 #endif
 end subroutine getdRdaPsi

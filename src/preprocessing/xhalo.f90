@@ -34,7 +34,6 @@
 !
        integer(kind=intType) :: nn, mm, sps, i, j, k,ii,jj
        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iiMax, jjMax
-       !integer(kind=intType) :: iBeg2, iEnd2, jBeg2, jEnd2
 
        real(kind=realType), dimension(:,:,:), pointer :: x0, x1, x2
 
@@ -42,16 +41,7 @@
 
        real(kind=realType), dimension(3) :: v1, v2, norm
 
-       !File IO
-       integer ::iii,iiii,jjj,jjjj,kkk,kkkk,nnnn,istart,jstart,kstart,iend2,jend2,kend2,n
-       integer ::unitx = 12
-       !logical ::isopen 
 
-       LOGICAL :: opened=.false., named
-       CHARACTER(LEN=80) :: fname
-       
-       INQUIRE (UNIT=unitx, NAMED=named,  OPENED=opened, NAME=fname)
-!
 !      ******************************************************************
 !      *                                                                *
 !      * Begin execution                                                *
@@ -131,12 +121,10 @@
            ! Loop over boundary subfaces.
 
            loopBocos: do mm=1,nBocos
-              !if(opened) write(unitx,*)'loopBocos',mm,nbocos
              ! The actual correction of the coordinates only takes
              ! place for symmetry planes.
 
              testSymmetry: if(BCType(mm) == Symm) then
-               ! if(opened) write(unitx,*)'testSymmetry',bcfaceID(mm)
                ! Set some variables, depending on the block face on
                ! which the subface is located.
  
@@ -246,7 +234,6 @@
                         x0(i+1,j+1,1) = x2(i+1,j+1,1) + dot*norm(1)
                         x0(i+1,j+1,2) = x2(i+1,j+1,2) + dot*norm(2)
                         x0(i+1,j+1,3) = x2(i+1,j+1,3) + dot*norm(3)
-                        !print *,'xhalo', x0(i+1,j+1,1) ,x2(i+1,j+1,1) , dot,norm(1),i,j,BCFaceID(mm)
 
                      enddo
                   enddo

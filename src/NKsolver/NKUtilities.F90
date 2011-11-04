@@ -15,7 +15,7 @@
 subroutine setWVec(wVec)
   ! Set the current residual in dw into the PETSc Vector
 #ifndef USE_NO_PETSC
-#define PETSC_AVOID_MPIF_H
+#define PETSC_AVOID_MPIF_
 #include "finclude/petscdef.h"
 
   use communication

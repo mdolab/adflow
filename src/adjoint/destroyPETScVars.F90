@@ -75,6 +75,9 @@ subroutine destroyExtraPETScVars
 
   call MatDestroy(dRda, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
+
+  deallocate(drda_data)
+
 #endif
   
 end subroutine destroyExtraPETScVars

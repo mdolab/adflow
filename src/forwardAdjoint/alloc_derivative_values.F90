@@ -383,16 +383,16 @@ subroutine alloc_derivative_values(nn)
      allocate(flowDomsd(sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     allocate(flowDomsd(sps)%xtmp(0:ie,0:je,0:ke,3),stat=ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-     allocate(flowDomsd(sps)%dw_deriv(0:ib,0:jb,0:kb,1:nw,1:nw),stat=ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
      allocate(flowDomsd(sps)%dwtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      allocate(flowDomsd(sps)%dwtmp2(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     allocate(flowDomsd(sps)%xtmp(0:ie,0:je,0:ke,3),stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     allocate(flowDomsd(sps)%dw_deriv(0:ib,0:jb,0:kb,1:nw,1:nw),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
 

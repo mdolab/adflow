@@ -31,7 +31,6 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
 
   ! PETSc Matrix Variable
   Mat matrix
-  Mat mat_copy
 
   ! Input Variables
   logical :: useAD
@@ -44,8 +43,6 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
   real(kind=realType)::alpha,beta
   integer(kind=intType)::liftIndex
 
-  real(kind=realType), dimension(2) :: time
-  real(kind=realType)               ::setupTime,trace
   integer(kind=intType) :: n_stencil,i_stencil
   integer(kind=intType), dimension(:,:), pointer :: stencil
   integer(kind=intType) :: nColor,iColor,idxblk
@@ -67,8 +64,6 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
   rkStage = 0
   currentLevel =1 
   groundLevel = 1
-  ! Start Timer
-  time(1) = mpi_wtime()
 
   ! Zero out the matrix before we start
   call MatZeroEntries(matrix,ierr)
@@ -103,8 +98,6 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
 
      !let the DV number be the color
      nColor = nDesignExtra
-     !print *,'nColor',nColor
-     !print *,'Alpha',alpha
      alpharef = alpha
      betaref = beta
      machref = mach
@@ -116,7 +109,6 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
 
      ! Do Coloring and perturb states
      do iColor = 1,nColor !set colors based on extra vars....
-        !print *,'icolor',icolor
         !zero derivatives
         do sps = 1,nTimeIntervalsSpectral
            flowDomsd(sps)%dw_deriv(:,:,:,:,:) = 0.0
@@ -134,7 +126,6 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
 
         if (useAD) then
            !Set the seeds by color
-           !print *,'icolor',icolor-1
            if (nDesignAoA ==icolor-1) then
               !Angle of Attack
               alphad = 1.0
@@ -164,7 +155,6 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
               !+rotpointxcorrection
            elseif(nDesignRotCenY==icolor-1)then
               !Y Rotation Center
-              
               cgnsDomsd(idxblk)%rotcenter(2) = 1.0
               rotpointd(2) = 1.0
               !consider this!+rotpointxcorrection
@@ -184,7 +174,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
            cgnsDoms(idxblk)%rotcenter = rotCenterRef
            rotPoint = rotPointRef
            pointRef = pointRefRef
-           !print *,'icolor',icolor-1,nDesignAoA
+
            if (nDesignAoA ==icolor-1) then
               !Angle of Attack
               alpha = alphaRef+delta_x
@@ -230,12 +220,8 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
         do sps = 1,nTimeIntervalsSpectral
            ! Block-based residual
            if (useAD) then
-              !print *,'alpha',alpha,alphad,beta,liftIndex,mach,machd
               call block_res_extra_extra_d(nn,sps,alpha,alphad,beta,&
                                           &betad,liftIndex)
-              !print *,'liftdir',liftDirection
-              !print *,'AD Not Implmented Yet'
-              !stop
            else
               call block_res_extra(nn,sps,alpha,beta,liftIndex)
            end if
@@ -257,9 +243,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
                           flowDomsd(sps)%dw_deriv(i,j,k,ll,1) = &
                                one_over_dx*(flowDoms(nn,1,sps)%dw(i,j,k,ll) - &
                                flowDomsd(sps)%dwtmp(i,j,k,ll))
-                          !print *,'deriv',flowDomsd(sps)%dw_deriv(i,j,k,ll,1)
                        end if
-                       
                     end do
                  end do
               end do
@@ -299,16 +283,6 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
   call MatSetOption(matrix,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  time(2) = mpi_wtime()
-  call mpi_reduce(time(2)-time(1),setupTime,1,sumb_real,mpi_max,0,&
-       SUmb_comm_world, ierr)
-
-  if (myid == 0) then
-     print *,'Assembly time:',setupTime
-  end if
-  ! Debugging ONLY!
-  !call writeOutMatrix()
-
 contains
 
   subroutine setBlock(blk)
@@ -320,16 +294,12 @@ contains
     integer(kind=intType) :: iii
        
     do iii=1,nw
-       !print *,'output',abs(blk(iii,1)),irow,icol
        if (abs(blk(iii,1)).ne. 0.0)then
           call MatSetValues(matrix,1,irow*nw+iii-1,1,icol,blk(iii,1),ADD_VALUES,ierr)
           call EChk(ierr,__FILE__,__LINE__)
        end if
     end do
-    
-    
   end subroutine setBlock
-
 
 #endif
 end subroutine setupExtraResidualMatrix
