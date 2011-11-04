@@ -298,6 +298,9 @@ python module sumb ! in
        subroutine setupspatialmatrix
        end subroutine setupspatialmatrix
 
+       subroutine setupextramatrix
+       end subroutine setupextramatrix
+
        subroutine setupadjointpcmatrixtranspose
        end subroutine setupadjointpcmatrixtranspose
 
@@ -351,9 +354,11 @@ python module sumb ! in
          integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
        end subroutine getdrdxvpsi
        
-       subroutine getdrdapsi(ndv,output) ! in :test:getdRdaPsi.F90
-            integer(kind=inttype) intent(in) :: ndv
+        subroutine getdrdapsi(output,ndv,adjoint,nstate) ! in :test:getdRdaPsi.F90
             real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
+            integer(kind=inttype) intent(in) :: ndv
+            real(kind=realtype) dimension(nstate),intent(in) :: adjoint
+            integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
         end subroutine getdrdapsi
 
        subroutine getdrdwtpsi(ndof,drdwtpsi)

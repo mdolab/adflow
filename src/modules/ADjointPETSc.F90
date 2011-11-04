@@ -179,6 +179,9 @@
       PetscScalar PetscAdd	
       PetscScalar ILULevels 
 
+      ! Data for dRda
+      real(kind=realType), allocatable, dimension(:,:) :: dRda_data
+
       ! Logical identifying the type of PETSc matrix being used for dRdW
 
       logical :: PETScBlockMatrix

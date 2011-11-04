@@ -28,7 +28,7 @@ To Do:
 # =============================================================================
 # Standard Python modules
 # =============================================================================
-import os, sys
+import os, sys, string
 import pdb
 import time
 import copy
@@ -38,7 +38,7 @@ import copy
 # =============================================================================
 
 import numpy
-from numpy import real,pi,sqrt
+from numpy import real,pi,sqrt,arange
 
 # =============================================================================
 # Extension modules
@@ -73,7 +73,6 @@ class SUMB(AeroSolver):
             'outputDir':[str,'./'],
             'solRestart':[bool,False],
             'writeSolution':[bool,True],
-            'writeMesh':[bool,False],
 
             # Physics Paramters
             'Discretization':[str,'Central plus scalar dissipation'],
@@ -603,7 +602,6 @@ class SUMB(AeroSolver):
                 'storeHistory',
                 'numberSolutions',
                 'writeSolution',
-                'writeMesh',
                 'familyRot',  # -> Not sure how to do
                 'areaAxis',
                 'autoSolveRetry',
@@ -725,17 +723,17 @@ class SUMB(AeroSolver):
             self.monnames[string.strip(
                     self.sumb.monitor.monnames[i].tostring())] = i
         # end for
-      
+
         # Setup External Warping
         meshInd = self.getMeshIndices()
         self.mesh.setExternalMeshIndices(meshInd)
-       
         forceInd = self.getForceIndices()
         self.mesh.setExternalForceIndices(forceInd)
-        
+       
         # Solver is initialize
         self.allInitialized = True
         self.sumb.preprocessingadjoint()
+
         return
 
     def setInflowAngle(self,aero_problem):
@@ -962,8 +960,6 @@ class SUMB(AeroSolver):
         self.adjointRHS         = None
         self.callCounter += 1
 
-        
-
         # Run Initialize, if already run it just returns.
         self.initialize(aero_problem,*args,**kwargs)
 
@@ -1017,21 +1013,6 @@ class SUMB(AeroSolver):
         self._updatePeriodInfo()
         self._updateGeometryInfo()
         self._updateVelocityInfo()
-
-        #write out mesh file for volume debugging
-        if self.getOption('writeMesh'):
-            base = self.getOption('outputDir') + '/' + self.getOption('probName')
-            meshname = base + '_mesh.cgns'
-
-            if self.getOption('numberSolutions'):
-                meshname = base + '_mesh%d.cgns'%(self.callCounter)
-
-            #endif
-            self.writeMeshFile(meshname)
-            self.mesh.writeFEGrid(meshname[:-4]+'.dat')
-            if self.myid==0: print 'Warped Mesh written...exiting.'
-            sys.exit(0)
-        # end if
 
         # Check to see if the above update routines failed.
         self.sumb.killsignals.routinefailed = \
@@ -1188,12 +1169,12 @@ class SUMB(AeroSolver):
         '''
         return self.mesh.getSurfaceCoordinates(group_name)
 
-    def setSurfaceCoordinates(self,group_name,coordinates,reinitialize=True):
+    def setSurfaceCoordinates(self,group_name,coordinates):
         ''' 
         See MultiBlockMesh.py for more info
         '''
-        self._update_geom_info = True
-        self.mesh.setSurfaceCoordinates(group_name,coordinates,reinitialize)
+
+        self.mesh.setSurfaceCoordinates(group_name,coordinates)
 
         return 
 
@@ -1615,11 +1596,17 @@ class SUMB(AeroSolver):
             # end if
 
             self.sumb.createspatialpetscvars()
-
             self.sumb.setupspatialmatrix()
-            self.mesh.setupWarpDeriv()
-            
             self.spatialSetup = True
+        # end if
+
+        return
+
+    def setupExtraMatrices(self):
+        if not self.extraSetup:
+            self.sumb.createextrapetscvars()
+            self.sumb.setupextramatrix()
+            self.extraSetup = True
         # end if
 
         return
@@ -1770,12 +1757,14 @@ class SUMB(AeroSolver):
         
         if obj in ['area','volume']: # Possibly add more Direct objectives here...
             if obj == 'area':
-                self.mesh.warp.computeareasensitivity(self.getOption('areaAxis'))
+                self.mesh.warp.computeareasensitivity(
+                    self.getOption('areaAxis'))
                 dIdXs = self.mesh.getdXs('all')
             # end if
 
             if obj == 'volume':
-                self.mesh.warp.computevolumesensitivity()
+                self.mesh.warp.computevolumesensitivity(
+                    self.getOption('areaAxis'))
                 dIdXs = self.mesh.getdXs('all')
             # end if
 
@@ -1789,8 +1778,7 @@ class SUMB(AeroSolver):
 
             # Total derivative of the obective with surface coordinates
 
-            #dIdXs = dIdxs_1 - dIdxs_2
-            dIdXs = dIdxs_2
+            dIdXs = dIdxs_1 - dIdxs_2
         # end if
 
         return dIdXs
@@ -1809,15 +1797,22 @@ class SUMB(AeroSolver):
                                      # definition have zero dependance
             dIda = numpy.zeros(self.nDVAero)
         else:
-            if self.getOption('restartAdjoint'):
-                self.sumb.setadjoint(self.storedADjoints[obj])
+            if self.getOption('lowMemory') or self.getOption('restartAdjoint'):
+                if obj in self.storedADjoints.keys():
+                    psi = self.storedADjoints[obj]
+                else:
+                    mpiPrint('%s adjoint is not computed.'%(obj),comm=self.comm)
+                    sys.exit(1)
+                # end if
+            else:
+                psi = self.sumb.getadjoint(self.getStateSize())
             # end if
 
             # Direct partial derivative contibution 
             dIda_1 = self.getdIda(objective)
 
             # dIda contribution for drda^T * psi
-            dIda_2 = self.getdRdaPsi()
+            dIda_2 = self.getdRdaPsi(psi)
          
             # Total derivative of the obective wrt aero-only DVs
             dIda = dIda_1 - dIda_2
@@ -1854,8 +1849,10 @@ class SUMB(AeroSolver):
         if (self._update_geom_info):
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
+
             if newGrid is not None:
-                self.sumb.setgrid(self.mesh.getSolverGrid())
+                self.sumb.setgrid(newGrid)
+            # end if
                 
             self.sumb.updatecoordinatesalllevels()
             self.sumb.updatewalldistancealllevels()
@@ -1994,15 +1991,19 @@ class SUMB(AeroSolver):
 
         # Now call getdrdxvpsi WITH the psi vector:
         dxv_solver = self.sumb.getdrdxvpsi(ndof,psi)
-
-        self.mesh.WarpDeriv(dxv_solver)
+       
+        self.mesh.warpDeriv(dxv_solver)
         dxs = self.mesh.getdXs(group_name)
         
         return dxs
 
-    def getdRdaPsi(self):
+    def getdRdaPsi(self, psi):
+
+        # Setup extra matrices if required
+        self.setupExtraMatrices()
+        
         if self.nDVAero > 0:
-            dIda = self.sumb.getdrdapsi(self.nDVAero)
+            dIda = self.sumb.getdrdapsi(self.nDVAero,psi)
         else:
             dIda = numpy.zeros((0))
         # end if
@@ -2200,11 +2201,10 @@ class SUMB(AeroSolver):
              }
                                                  
         # Also add in 'direct' solutions. Area etc
-        A_local = self.mesh.computeArea(self.getOption('areaAxis'))
-        SUmbsolution['area'] = self.comm.allreduce(A_local,op=MPI.SUM)
-
-        V_local = self.mesh.computeVolume()
-        SUmbsolution['volume'] = self.comm.allreduce(V_local,op=MPI.SUM)
+        SUmbsolution['area'] =  self.mesh.computeArea(
+            self.getOption('areaAxis'))
+        SUmbsolution['volume'] = self.mesh.computeVolume(
+            self.getOption('areaAxis'))
         
         return SUmbsolution
 
@@ -2219,7 +2219,7 @@ class SUMB(AeroSolver):
             aeroObj = True
         except: 
             obj = objective 
-            aeroObj = False # end if
+            aeroObj = False
         # end try
 
         return obj,aeroObj
@@ -2340,7 +2340,7 @@ class SUmbDummyMesh(object):
 
         return 
 
-    def setSurfaceCoordinates(self,group_name,coordinates,reinitialize=True):
+    def setSurfaceCoordinates(self,group_name,coordinates):
         ''' 
         Set the UNIQUE set of ALL surface points belonging to
         group "group_name", that belong to blocks on THIS processor
@@ -2385,15 +2385,15 @@ class SUmbDummyMesh(object):
     
         return
 
-    def getdXs(self,group_name):
+    def getdXs(self, group_name):
 
         return 
 
-    def computeArea(self,axis):
+    def computeArea(self, axis):
         
         return 0.0
 
-    def computeVolume(self):
+    def computeVolume(self, axis):
 
         return 0.0
 

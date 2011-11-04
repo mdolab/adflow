@@ -44,6 +44,7 @@ FF90_OBJECTS = determineStencil.o\
 		setupSpatialResidualMatrix.o\
 		setupAdjointMatrix.o\
 		setupSpatialMatrix.o\
+		setupExtraMatrix.o\
 		alloc_derivative_values.o\
 		dealloc_derivative_values.o\
 		setupColoring.o\

@@ -55,39 +55,6 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   groundLevel = 1
   ! Start Timer
   !time(1) = mpi_wtime()
-
-!!$   if (useAD) then
-!!$      open (UNIT=18,File="fad.out",status='replace',action='write',iostat=ierr) 
-!!$      print *,'openfile error',ierr
-!!$      call EChk(ierr,__FILE__,__LINE__)
-!!$   else 
-!!$      open (UNIT=16,File="fd.out",status='replace',action='write',iostat=ierr) 
-!!$      print *,'openfile error',ierr
-!!$      call EChk(ierr,__FILE__,__LINE__)
-!!$   end if
-!!$
-!!$   if (useAD) then
-!!$      open (UNIT=13,File="fadtrial.out",status='replace',action='write',iostat=ierr) 
-!!$      print *,'openfile error',ierr
-!!$      call EChk(ierr,__FILE__,__LINE__)
-!!$   else 
-!!$      open (UNIT=14,File="fdtrial.out",status='replace',action='write',iostat=ierr) 
-!!$      print *,'openfile error',ierr
-!!$      call EChk(ierr,__FILE__,__LINE__)
-!!$   end if
-
-   call MatAssembled(matrix,assembled,ierr)
-   call EChk(ierr,__FILE__,__LINE__)
-   !print *,'assembled =',assembled
-  
-!!$   open (UNIT=17,File="ad.out",status='replace',action='write',iostat=ierr)
-!!$   print*,'openfile error 2',ierr
-!!$   call EChk(ierr,__FILE__,__LINE__)
-
-   if (assembled) then
-      call MatConvert(matrix,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
-      call EChk(ierr,__FILE__,__LINE__)
-   end if
    
   ! Zero out the matrix before we start
   call MatZeroEntries(matrix,ierr)

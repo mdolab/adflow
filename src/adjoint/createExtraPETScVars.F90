@@ -16,7 +16,6 @@ subroutine createExtraPETScVars
   !     Local variables.
   !
   integer(kind=intType) :: nDimW
-
   !
   !     ******************************************************************
   !     *                                                                *
@@ -29,12 +28,16 @@ subroutine createExtraPETScVars
   nDimW = nw * nCellsLocal*nTimeIntervalsSpectral
  
   ! dRda
-  call MatCreateMPIDense(SUMB_PETSC_COMM_WORLD,nDimW,PETSC_DECIDE,&
-       PETSC_DETERMINE,nDesignExtra,PETSC_NULL_SCALAR,dRda,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
 
-  ! Set column major order for the matrix dRda.
-  call MatSetOption(dRda, MAT_ROW_ORIENTED,PETSC_TRUE, PETScIerr)
+  ! Once again, PETSC is royally screwed up. You CANNOT use PETSC_NULL
+  ! arguments. They simply do NOT work in Fortran. The PETSc
+  ! documentation lies to you. We have to allocate our own data. 
+
+  allocate(dRda_data(nDimw,nDesignExtra))
+
+
+  call MatCreateMPIDense(SUMB_PETSC_COMM_WORLD,nDimW,PETSC_DECIDE,&
+       PETSC_DETERMINE,nDesignExtra,dRda_data,dRda,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
 #endif

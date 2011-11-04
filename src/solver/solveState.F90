@@ -458,7 +458,7 @@ subroutine solveState
      else
         !  ! Run the NK solver down as far we need to go
         
-        call setupNKsolver()  
+        call setupNKsolver() 
         call NKsolver()
 
 !         call setupNKsolver_snes()  
