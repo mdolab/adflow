@@ -73,6 +73,9 @@ subroutine NKsolver
      ! line search iterations
      if (iter .ne. 1) then
         iterTot = iterTot + ksp_iterations + nfevals 
+        if (iterTot > ncycles) then
+           iterTot = ncycles
+        end if
         call convergenceInfo
      end if
 
@@ -114,7 +117,7 @@ subroutine NKsolver
      end if
 
      ! Check to see if we've done too many function Evals:
-     if (iterTot > ncycles) then
+     if (iterTot >= ncycles) then
         iterTot = ncycles 
         exit NonLinearLoop
      end if
