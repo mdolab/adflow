@@ -36,7 +36,6 @@ subroutine setADjoint(ncells,functionGradLocal)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
   n = 0
-  print *,ilow,ihigh
   do idxmg=iLow, iHigh-1
      n = n + 1
      call VecSetValue(psi, idxmg, &
