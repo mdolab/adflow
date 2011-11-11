@@ -77,6 +77,7 @@
        call convertToLowerCase(variables)
 
        ! Loop to extract the info from the string variables.
+       tmpNames(:) = ""
 
        do
          ! Condition to exit the loop.
@@ -95,8 +96,10 @@
            variables = variables(pos+1:)
          endif
 
-         ! Check the keyword.
+     
 
+         ! Check the keyword.
+         
          select case (keyword)
            case ("")
              ! Multiple occurence of "_". Just ignore it.
@@ -219,6 +222,7 @@
          call terminate("monitorVariables", &
                         "Memory allocation failure for monNames")
 
+       monNames(:) = ""
        ! Copy the monitoring names into monNames.
 
        do pos=1,nMon
