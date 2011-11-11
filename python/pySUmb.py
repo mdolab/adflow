@@ -1717,7 +1717,7 @@ class SUMB(AeroSolver):
             # least once; that is we've already tried one solve
             
             if  obj in self.storedADjoints.keys():
-                self.storedADjoints[obj][:o] = 0.0 # Always reset a stored adjoint 
+                self.storedADjoints[obj][:] = 0.0 # Always reset a stored adjoint 
 
                 if self.getOption('autoAdjointRetry'):
                     self.sumb.solveadjointtransposepetsc()
