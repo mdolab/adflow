@@ -15,10 +15,10 @@ subroutine NKsolver
   use inputTimeSpectral
   use flowVarRefState
   use ADjointVars , only: nCellsLocal
-  use NKSolverVars, only: dRdw,dRdwPre,jacobian_lag,&
-       totalR0,totalRStart,wVec,rVec,deltaW,reason,global_ksp,reason,&
-       ksp_rtol,ksp_atol,ksp_max_it,ksp_subspace,ksp_div_tol,&
-       nksolvedonce,times
+  use NKSolverVars, only: dRdw, dRdwPre, jacobian_lag, &
+       totalR0, totalRStart, wVec, rVec, deltaW, reason, global_ksp, reason,&
+       ksp_rtol, ksp_atol, ksp_max_it, ksp_subspace, ksp_div_tol, &
+       nksolvedonce, times, func_evals, Mmax, iter_k, iter_m
 
   use InputIO ! L2conv,l2convrel
   use inputIteration
@@ -48,6 +48,12 @@ subroutine NKsolver
   rtol_last =0.0
   nfevals = 0
 
+  Mmax = 15
+  iter_k = 1
+  iter_m = 0
+
+  allocate(func_evals(1000))
+  func_evals = 0.0
   ! Set the inital wVec
   call setwVec(wVec)
 
@@ -141,7 +147,12 @@ subroutine NKsolver
 
      ! Linesearching:
      if (.True.) then! Check for type of line search:
+        iter_k = iter
+        iter_m = min(iter_m+1,Mmax)
+        !call LSNM(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
         call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
+        !call LSNone(wVec,rVec,g,deltaW,work,nfevals,flag)
+
      else ! No Linesearch, just accept the new step
         call LSNone(wVec,rVec,g,deltaW,work,nfevals,flag)
      end if
@@ -169,12 +180,15 @@ subroutine NKsolver
   call EChk(ierr,__FILE__,__LINE__)
   call VecDestroy(work,ierr)
   call EChk(ierr,__FILE__,__LINE__)
+
+  deallocate(func_evals)
+
 #endif
 end subroutine NKsolver
 
 subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
 #ifndef USE_NO_PETSC
-  use precision 
+  use constants
   use communication
   use NKSolverVars, only: dRdw
   implicit none
@@ -249,10 +263,10 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Sufficient reduction 
-  if (.5*gnorm*gnorm <= .5*fnorm*fnorm + alpha*initslope) then
-     !      if (myid == 0) then
-     !         print *,'exit 1 LS:',fnorm,gnorm,alpha,initslope
-     !      end if
+  if (half*gnorm*gnorm <= half*fnorm*fnorm + alpha*initslope) then
+!      if (myid == 0) then
+!         print *,'lambda:',1.0
+!      end if
      goto 100
   end if
 
@@ -262,8 +276,8 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   lambdaprev = lambda
   gnormprev  = gnorm
 
-  if (lambdatemp > .5*lambda) then
-     lambdatemp = .5*lambda
+  if (lambdatemp > half*lambda) then
+     lambdatemp = half*lambda
   end if
 
   if (lambdatemp <= .1*lambda) then
@@ -287,11 +301,10 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Sufficient reduction 
-  if (.5*gnorm*gnorm <= .5*fnorm*fnorm + lambda*alpha*initslope) then
-     !   if (myid == 0) then
-     !         print *,'exit 2 LS:',fnorm,gnorm,lambda,alpha,initslope
-     !      end if
-
+  if (half*gnorm*gnorm <= half*fnorm*fnorm + lambda*alpha*initslope) then
+!      if (myid == 0) then
+!         print *,'lambda:',lambda
+!      end if
      goto 100
   end if
 
@@ -302,8 +315,8 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
         flag = .False.
         exit cubic_loop
      end if
-     t1 = .5*(gnorm*gnorm - fnorm*fnorm) - lambda*initslope
-     t2 = .5*(gnormprev*gnormprev  - fnorm*fnorm) - lambdaprev*initslope
+     t1 = half*(gnorm*gnorm - fnorm*fnorm) - lambda*initslope
+     t2 = half*(gnormprev*gnormprev  - fnorm*fnorm) - lambdaprev*initslope
 
      a  = (t1/(lambda*lambda) - t2/(lambdaprev*lambdaprev))/(lambda-lambdaprev)
      b  = (-lambdaprev*t1/(lambda*lambda) + lambda*t2/(lambdaprev*lambdaprev))/(lambda-lambdaprev)
@@ -321,8 +334,8 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
      lambdaprev = lambda
      gnormprev  = gnorm
 
-     if (lambdatemp > .5*lambda)  then
-        lambdatemp = .5*lambda
+     if (lambdatemp > half*lambda)  then
+        lambdatemp = half*lambda
      end if
      if (lambdatemp <= .1*lambda) then
         lambda = .1*lambda
@@ -330,7 +343,7 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
         lambda = lambdatemp
      end if
 
-     call  VecWAXPY(w,-lambda,y,x,ierr)
+     call VecWAXPY(w,-lambda,y,x,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Compute new function again:
@@ -345,9 +358,9 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
 
      ! Is reduction enough?
      if (.5*gnorm*gnorm <= .5*fnorm*fnorm + lambda*alpha*initslope) then
-        !        if (myid == 0) then
-        !           print *,'exit 3 LS:',fnorm,gnorm,lambda,alpha,initslope
-        !        end if
+!         if (myid == 0) then
+!            print *,'lambda:',lambda
+!         end if
         exit cubic_loop
      end if
   end do cubic_loop
@@ -393,6 +406,158 @@ subroutine LSNone(x,f,g,y,w,nfevals,flag)
 #endif
 end subroutine LSNone
 
+
+! Implement a simple backgra
+subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
+#ifndef USE_NO_PETSC
+  use precision 
+  use communication
+  use NKSolverVars, only: dRdw, func_evals, iter_k,iter_m
+  use constants
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
+  ! Input/Output
+  Vec x,f,g,y,w
+  !x 	- current iterate
+  !f 	- residual evaluated at x
+  !y 	- search direction
+  !w 	- work vector -> On output, new iterate
+  !g    - residual evaluated at new iterate y
+
+  real(kind=realType) :: fnorm,gnorm,ynorm
+  logical :: flag
+  integer(kind=intType) :: nfevals
+  !   Note that for line search purposes we work with with the related
+  !   minimization problem:
+  !      min  z(x):  R^n -> R,
+  !   where z(x) = .5 * fnorm*fnorm, and fnorm = || f ||_2.
+  !         
+
+  real(kind=realType) :: initslope,c1,c2,gamma,sigma,alpha,max_val
+  integer(kind=intType) :: ierr,iter,j
+
+  ! Set some defaults:
+  c1 = 1e-5
+  c2 = 1e5
+  gamma = 1e-3
+  sigma = 0.5
+
+  nfevals = 0
+  flag = .True. 
+
+  ! Compute the two norms we need:
+  call VecNorm(y,NORM_2,ynorm,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecNorm(f,NORM_2,fnorm,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  func_evals(iter_k) = half*fnorm*fnorm
+
+  call MatMult(dRdw,y,w,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  nfevals = nfevals + 1
+
+  call VecDot(f,w,initslope,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  if (initslope > 0.0)  then
+     initslope = -initslope
+  end if
+
+  if (initslope == 0.0) then
+     initslope = -1.0
+  end if
+
+!   IF (myid == 0) then
+!      print *,'initslope:',initslope
+!   end IF
+  alpha = 1.0 ! Initial step length:
+  backtrack: do iter=1,10
+!      IF (myid == 0) then
+!         print *,'-------------- backtrack iter:',iter
+!      end IF
+          
+
+     ! Compute new x value:
+     call VecWAXPY(w,-alpha,y,x,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Compute Function @ new x (w is the work vector
+     call setW(w)
+     call computeResidualNK()
+     call setRVec(g)
+     nfevals = nfevals + 1
+     
+     ! Compute the norm at the new trial location
+     call VecNorm(g,NORM_2,gnorm,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     max_val = func_evals(iter_k) + alpha*gamma*initSlope
+     ! Loop over the previous, m function values and find the max:
+     do j=iter_k-1,iter_k-iter_m,-1
+        max_val = max(max_val,func_evals(j) + alpha*gamma*initSlope)
+     end do
+        
+     ! Sufficient reduction 
+     if (half*gnorm*gnorm <= max_val) then
+!         if (myid == 0) then
+!            print *,'Done:,iter_k,iter_m:',iter_k,iter_m
+!            print *,'max_val,sigma:',max_val,alpha
+!         end if
+        exit backtrack
+     else
+        alpha = alpha * sigma
+     end if
+  end do backtrack
+
+#endif
+end subroutine LSNM
+
+subroutine getEWTol(iter,norm,old_norm,rtol_last,rtol)
+
+  use constants
+  implicit none
+
+  ! There are the default EW Parameters from PETSc. They seem to work well
+  !version:           2
+  !rtol_0:  0.300000000000000     
+  !rtol_max:  0.900000000000000     
+  !gamma:   1.00000000000000     
+  !alpha:   1.61803398874989     
+  !alpha2:   1.61803398874989     
+  !threshold:  0.100000000000000     
+
+  integer(kind=intType) :: iter
+  real(kind=realType), intent(in) :: norm,old_norm,rtol_last
+  real(kind=realType), intent(out) :: rtol
+  real(kind=realType) :: rtol_0,rtol_max,gamma,alpha,alpha2,threshold,stol
+
+  rtol_0    = 0.30_realType
+  rtol_max  = 0.9_realType
+  gamma     = 1.0_realType
+  alpha     = (one+sqrt(five))/two
+  alpha2    = (one+sqrt(five))/two
+  threshold = 0.10_realType
+
+  if (iter == 1) then
+     rtol = rtol_0
+  else
+     ! We use version 2:
+     rtol = gamma*(norm/old_norm)**alpha
+     stol = gamma*(rtol_last)**alpha
+
+     if (stol > threshold) then
+        rtol = max(rtol,stol)
+     end if
+
+     ! Safeguard: avoid rtol greater than one
+     rtol = min(rtol,rtol_max)
+  end if
+
+end subroutine getEWTol
 
 ! subroutine setdiagV(dt_pseudo)
 
@@ -443,45 +608,3 @@ end subroutine LSNone
 !   call EChk(ierr,__FILE__,__LINE__)
 ! end subroutine setdiagV
 
-subroutine getEWTol(iter,norm,old_norm,rtol_last,rtol)
-
-  use precision
-  implicit none
-
-  ! There are the default EW Parameters from PETSc. They seem to work well
-  !version:           2
-  !rtol_0:  0.300000000000000     
-  !rtol_max:  0.900000000000000     
-  !gamma:   1.00000000000000     
-  !alpha:   1.61803398874989     
-  !alpha2:   1.61803398874989     
-  !threshold:  0.100000000000000     
-
-  integer(kind=intType) :: iter
-  real(kind=realType), intent(in) :: norm,old_norm,rtol_last
-  real(kind=realType), intent(out) :: rtol
-  real(kind=realType) :: rtol_0,rtol_max,gamma,alpha,alpha2,threshold,stol
-
-  rtol_0    = 0.30
-  rtol_max  = 0.9
-  gamma     = 1.0
-  alpha     = (1+sqrt(5.0))/2.0
-  alpha2    = (1+sqrt(5.0))/2.0
-  threshold = 0.10
-
-  if (iter == 1) then
-     rtol = rtol_0
-  else
-     ! We use version 2:
-     rtol = gamma*(norm/old_norm)**alpha
-     stol = gamma*(rtol_last)**alpha
-
-     if (stol > threshold) then
-        rtol = max(rtol,stol)
-     end if
-
-     ! Safeguard: avoid rtol greater than one
-     rtol = min(rtol,rtol_max)
-  end if
-
-end subroutine getEWTol
