@@ -63,6 +63,9 @@
        nullify(flowDoms(nn,level,sps)%l3)
        nullify(flowDoms(nn,level,sps)%groupNum)
 
+       nullify(flowDoms(nn,level,sps)%idWBC) ! eran-cbd
+       nullify(flowDoms(nn,level,sps)%contributeToForce)  ! eran-cbd
+
        nullify(flowDoms(nn,level,sps)%ibndry)
        nullify(flowDoms(nn,level,sps)%idonor)
        nullify(flowDoms(nn,level,sps)%overint)
@@ -168,6 +171,5 @@
        nullify(flowDoms(nn,level,sps)%globalNode)
 
        nullify(flowDoms(nn,level,sps)%warp_comm)
-  
 
        end subroutine nullifyFlowDomPointers

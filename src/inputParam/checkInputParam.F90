@@ -36,6 +36,9 @@
        use iteration
        use monitor
        use localMG
+       use inputDES  ! eran-des
+       use inputTDBC ! eran-tdbc
+
        implicit none
 !
 !      Local variables
@@ -238,13 +241,16 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       if(flowType == internalFlow .and. gridMotionSpecified) then
-         if(myID == 0) &
-           call terminate("checkInputParam", &
-                          "Grid motion specified for an internal flow; &
-                          &this is not possible")
-         call mpi_barrier(SUmb_comm_world, ierr)
-       endif
+	if(standAloneMode)then  !eran-mvgrid
+       		if(flowType == internalFlow .and. gridMotionSpecified) then
+         		    if(myID == 0) &
+           		    call terminate("checkInputParam", &
+                            "Grid motion specified for an internal flow; &
+                            &this is not possible")
+         		call mpi_barrier(SUmb_comm_world, ierr)
+       		endif
+        end if ! standalone
+
 !
 !      ******************************************************************
 !      *                                                                *
@@ -293,6 +299,109 @@
                           "Turbulence model not specified")
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
+!
+!---- eran-tran starts
+!
+       if( forcedTransition)then
+          if( equations .ne. RANSEquations)then
+             if(myID == 0)                        &
+                  call terminate("checkInputParam", &
+                  "Forced transition can be set only for RANS formulation")
+             call mpi_barrier(SUmb_comm_world, ierr)
+          endif
+          if( turbModel .ne. spalartAllmaras .and. &
+               turbModel .ne. spalartAllmarasEdwards)then
+             if(myID == 0)                        &
+                  call terminate("checkInputParam", &
+                  "Forced transition presently impleented only for SA formulation")
+             call mpi_barrier(SUmb_comm_world, ierr)
+          endif
+       end if
+!
+!---- eran-tran ends
+!          
+! ----eran-ltemp starts
+!
+!--- perform these tests only when limitLowTemprature is active
+!
+       if (limitLowTemprature)then
+
+		if (tempFreestream <= zero)then
+			if(myID == 0) then
+				write(*,'(" tempFreestream = ",f12.3)')tempFreestream
+				call terminate("checkInputParam", &
+                "Check input file: tempFreestream  not defined but limitLowTemprature was applied")
+                        endif	
+                 end if
+		
+       		if (tempratureLowLimit > tempFreestream)then
+           		if(myID == 0) then
+	        		write(*,'("tempratureLowLimit = ",f12.3,"tempFreestream  = ",f12.3)')&
+				tempratureLowLimit, tempFreestream
+                		call terminate("checkInputParam", &
+                		"Check input file: tempratureLowLimit > tempFreestream")
+           		end if
+        	end if
+ 	end if	
+!
+!------eran-ltemp ends
+!
+!
+!-----eran-des starts
+
+	if(applyDES)then
+
+	  if( equationMode == steady)then
+	    if(myID == 0)then
+	      write(*,*)&
+	      "WARNING: DES requested in a steady-state mode: Oxymoron"
+	      write(*,*)" cancell DES mode"
+            end if
+	    applyDES = .false.
+          end if ! equationMode
+        end if ! applyDDES
+
+	if(applyDES)then
+
+	  if(xDESmin >= xDESmax)then
+	     if(myID == 0)call terminate("ERROR: check xDESmin, xDESmax")
+          end if ! xDESmin, xDESmax
+	  if(distDESmin >= distDESmax)then
+	     if(myID == 0)call terminate("ERROR: check distDESmin, distDESmin")
+          end if
+
+	  if(applyDDES)then
+	    if(turbModel .ne. spalartAllmaras)then
+	      if(myID == 0)then
+	           write(*,*)&
+	      	   "WARNING: DDES requested but not with SA model. Not implemented yet"
+	      	   write(*,*)" cancell DDES mode"
+              end if
+	      applyDDES = .false.  
+            end if ! turbModel
+
+	  end if ! applyDDES
+	    
+   	end if	! applyDES
+
+	if( epsilonUpwind .ne. one  .and.  spaceDiscr .ne. upwind)then    !   eran-ldiffroe
+	      if(myID == 0)write(*,'("Warning: Low Diffusion Flux Split epsilonUpwind = ",&
+		f10.4," while not using Upwind. No effect")')epsilonUpwind   !   eran-ldiffroe
+ 	end if	!   eran-ldiffroe
+
+!-----eran-des ends
+
+!-----eran-tdbc starts
+
+	if(applyTdbc)then
+
+	   if( equationMode == steady)then
+	      if(myID == 0)call terminate("checkInputParam",&
+	                   " TDBC requested in a steady-state mode ")
+           end if ! equationMode
+ 	end if ! applyTdbc
+
+!--------eran-tdbc ends 
 
        ! Create a unit vector for the free stream velocity. It is checked
        ! if the vector specified is a valid one. If not processor 0 prints
@@ -759,6 +868,8 @@
 !      ******************************************************************
 !
        if(nsgStartup < 0)    nsgStartup    = 0
+       if(nsgStartup > 0  .and. nsgStartup == minIterNum)&
+       		     minIterNum = minIterNum + 10 !----eran-coeffConv
        if(ncyclesCoarse < 0) nCyclesCoarse = nCycles
        if(cflCoarse < zero)  cflCoarse     = cfl
        if(betaTurb  < zero)  betaTurb      = alfaTurb
@@ -888,6 +999,7 @@
        
        !check allocations for multipile succesive calls
        if (allocated(oldSolWritten)) deallocate(oldSolWritten)
+
        allocate(oldSolWritten(oldSolWrittenSize), stat=ierr)
        if(ierr /= 0)                       &
          call terminate("checkInputParam", &
@@ -916,6 +1028,7 @@
 
        allocate(etaRk(nRKStages), cdisRK(nRKStages), stat=ierr)
        allocate(cdisRKb(nRKStages), stat=ierr)
+
        if(ierr /= 0) &
          call terminate("checkInputParam", &
                         "Memory allocation error for etaRK and cdisRK")

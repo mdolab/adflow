@@ -8,36 +8,32 @@
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine updateCoordinatesAllLevels
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * updateCoordinatesAllLevels updates the coordinates of all      *
-  !      * grid levels, assuming that the owned coordinates of the fine   *
-  !      * grid are known.                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !
-  use block
-  use iteration
 
-  !temp
-  use inputTimeSpectral
-  use blockPointers
-  implicit none
-  !
-  !      Local variables.
-  !
-  integer(kind=intType) :: nLevels, nn
-  !temporary!
-  integer(kind=intType) :: sps,i,j,k,n
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !
+       subroutine updateCoordinatesAllLevels
+!
+!      ******************************************************************
+!      *                                                                *
+!      * updateCoordinatesAllLevels updates the coordinates of all      *
+!      * grid levels, assuming that the owned coordinates of the fine   *
+!      * grid are known.                                                *
+!      *                                                                *
+!      ******************************************************************
+!
+       use block
+       use iteration
+       implicit none
+!
+!      Local variables.
+!
+       integer(kind=intType) :: nLevels, nn
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Begin execution                                                *
+!      *                                                                *
+!      ******************************************************************
+!
+       
   ! Determine the halo coordinates of the fine level.
   groundLevel = 1
   call xhalo(groundLevel)
@@ -51,21 +47,6 @@ subroutine updateCoordinatesAllLevels
      call xhalo(nn)
   enddo
 
-!!$       do sps = 1,nTimeIntervalsSpectral
-!!$          do nn = 1,nDom
-!!$             !call setpointers(nn,groundLevel,sps)
-!!$             call setPointersAdj(nn,groundLevel,sps)
-!!$             do i = 1,ie
-!!$                do j = 1,je
-!!$                   do k = 1,ke
-!!$                      do n = 1,3
-!!$                         print *,'xpost',x(i,j,k,n),globalNode(i,j,k),sps,nn,i,j,k,n
-!!$                      end do
-!!$                   end do
-!!$                end do
-!!$             end do
-!!$          end do
-!!$       end do
 end subroutine updateCoordinatesAllLevels
 
 !      ==================================================================

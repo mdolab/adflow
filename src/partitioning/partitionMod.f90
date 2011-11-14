@@ -105,6 +105,16 @@
          !                         belongs. If this subface does not
          !                         belong to any group, the corresponding
          !                         entry in this array is zeroed out.
+!
+!-- eran-CBD start
+!
+         ! idWBC(:)                Wall family locator for components
+         !                         forces/moment contribution break-down
+         !  contributeToForce      Defines if a certain surfac family contributes to forces
+         !                         and moments
+!
+!-- eran-CBD ends
+
 
          integer(kind=intType) :: nSubface, n1to1, nBocos
 
@@ -123,6 +133,9 @@
          integer(kind=intType), dimension(:), pointer :: neighBlock
          integer(kind=intType), dimension(:), pointer :: l1, l2, l3
          integer(kind=intType), dimension(:), pointer :: groupNum
+
+         integer(kind=intType), dimension(:), pointer :: idWBC !-- eran-CBD
+         logical , dimension(:), pointer ::  contributeToForce  ! eran-cbd
 !
 !        ****************************************************************
 !        *                                                              *

@@ -60,6 +60,7 @@ FF90_OBJECTS_4 = BCTypes.o\
 		 cgnsNames.o\
 		 commMixing.o\
 		 commSliding.o\
+		 communication.o\
 		 couplerParam.o\
 		 CpCurveFits.o\
 		 extraOutput.o\
@@ -75,6 +76,7 @@ FF90_OBJECTS_4 = BCTypes.o\
 		 stencils.o\
 	         blockpointers_d.o\
 	         diffSizes.o\
+		 NKsolverVars.o\
 
 
 #      ******************************************************************

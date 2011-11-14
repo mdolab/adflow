@@ -205,6 +205,7 @@
                ! written earlier and they have not changed.
 
                nGridsToWrite = nTimeIntervalsSpectral! 0
+               !nGridsToWrite = 0
 
              endif
 
@@ -213,7 +214,7 @@
              ! It is not needed to write the grid files.
 
              nGridsToWrite = nTimeIntervalsSpectral! 0
-
+             !nGridsToWrite = 0
            endif
 
        end select
@@ -229,6 +230,7 @@
 
          ! Grid file(s) will be written. Compare the (base) names of the
          ! grid and solution files and set useLinksInCGNS accordingly.
+
          if(newGridFile == solFile) then
            useLinksInCGNS = .false.
          else

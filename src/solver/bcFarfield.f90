@@ -64,19 +64,6 @@
            real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
          end subroutine setBCPointers
        end interface
-
-!!$       !File Parameters remove for AD
-!!$       integer :: unitx = 12,ierror
-!!$      integer ::iii,iiii,jjj,jjjj,kkk,kkkk,nnnn,istart2,jstart2,kstart2,iend2,jend2,kend2,n,ii,jj
-!!$      character(len = 16)::outfile
-!!$      
-!!$      outfile = "xoriginal.txt"
-!!$      
-!!$      open (UNIT=unitx,File=outfile,status='old',position='append',action='write',iostat=ierror)
-!!$      if(ierror /= 0)                        &
-!!$           call terminate("verifyResiduals", &
-!!$           "Something wrong when &
-!!$           &calling open")
 !
 !      ******************************************************************
 !      *                                                                *
@@ -145,40 +132,6 @@
                nny = BCData(nn)%norm(i,j,2)
                nnz = BCData(nn)%norm(i,j,3)
 
-!!$       !print out pAdj
-!!$       istart2 = -1!2
-!!$       jstart2 = -1!2
-!!$       kstart2 = -1!2
-!!$       iend2 = 1!2
-!!$       jend2 = 1!2
-!!$       kend2 = 1!2 
-!!$       if(i==BCData(nn)%icBeg) istart2=0
-!!$       if(j==BCData(nn)%jcBeg) jstart2= 0
-!!$       !if(i==BCData(nn)%icBeg+1) istart2=-1
-!!$       !if(j==BCData(nn)%jcBeg+1) jstart2=-1
-!!$!       if(kcell==2) kstart2=-1
-!!$       !if(i==BCData(nn)%icEnd-1) iend2=1
-!!$       !if(j==BCData(nn)%jcEnd-1) jend2=1
-!!$       if(i==BCData(nn)%icEnd) iend2=0
-!!$       if(j==BCData(nn)%jcEnd) jend2=0
-!!$!       if(kcell==kl) kend2=1
-!!$       do jjjj = jstart2,jend2
-!!$          do iiii = istart2,iend2
-!!$             !do kkkk = kstart2,kend2
-!!$               ! do n = 1,3!nw
-!!$                   !do n = 1,1!nw
-!!$                   !do n = 1,nw 
-!!$                   !do sps2 = 1,nTimeIntervalsSpectral
-!!$                   ii = i+iiii
-!!$                   jj = j+jjjj
-!!$                   !k = kcell+kkkk
-!!$                   !print *,'indices',i,j,iiii,jjjj,ii,jj,BCData(nn)%jcEnd, BCData(nn)%icEnd
-!!$
-!!$                   write(unitx,11)i,j,ii,jj,nn,BCData(nn)%norm(ii,jj,1), BCData(nn)%rface(ii,jj)
-!!$11               format(1x,'wadj',5I8,2f20.14) 
-!!$               ! end do
-!!$             end do
-!!$          end do
                ! Compute the normal velocity of the free stream and
                ! substract the normal velocity of the mesh.
 
@@ -280,5 +233,4 @@
 
          endif testFarfield
        enddo bocos
-!close (UNIT=unitx)
        end subroutine bcFarfield
