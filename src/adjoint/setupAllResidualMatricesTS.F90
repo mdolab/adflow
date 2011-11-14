@@ -860,15 +860,11 @@ subroutine setupAllResidualMatricesTS
   ! Let PETSc know that the dRdW matrix retains the same nonzero 
   ! pattern, in case the matrix is assembled again, as for a new
   ! point in the design space.
-#ifdef USE_PETSC_3
+
   call MatSetOption(dRdWT,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
   call MatSetOption(dRdx,MAT_NEW_NONZERO_LOCATIONS,PETSC_TRUE,PETScIerr)    
   call EChk(PETScIerr,__FILE__,__LINE__)
-#else
-  call MatSetOption(dRdWT,MAT_NO_NEW_NONZERO_LOCATIONS,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-#endif
 
   ! Get new time and compute the elapsed time.
 

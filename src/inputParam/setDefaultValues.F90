@@ -194,7 +194,7 @@
        epsCoefConv  = zero               ! std/mean coeff convgence  eran-coeffConv
        convCheckWindowSize = 100    ! size of coefficient-convergence -check window
                                     ! (in iterations) for STD evaluation    eran-coeffConv
-       minIterNum   = 100           ! minimum number of iteration before 
+       minIterNum   = 000           ! minimum number of iteration before 
        		      		    ! convergence check. eran-coeffConv
 
        maxL2DeviationFactor = 1_realType

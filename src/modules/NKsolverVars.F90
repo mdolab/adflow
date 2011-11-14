@@ -144,4 +144,10 @@ module NKsolverVars
 
   real(kind=realType) :: times(50)
 
+  real(kind=realType), dimension(:), allocatable :: func_evals
+  integer(kind=intType) :: Mmax
+  integer(kind=intType) :: iter_k
+  integer(kind=intType) :: iter_m
+
+
 end module NKsolverVars

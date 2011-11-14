@@ -412,12 +412,12 @@
 
                 if (iterTot >= minIterNum) then
 
-                   if (iterTot == minIterNum)then
-                      write(*,*)'#***************************************************************'
-                      write(*,*)'# Note: at step ',iterTot,&
-                           ' Starting to test for convergence'
-                      write(*,*)'#***************************************************************'
-                   end if
+!                    if (iterTot == minIterNum)then
+!                       write(*,*)'#***************************************************************'
+!                       write(*,*)'# Note: at step ',iterTot,&
+!                            ' Starting to test for convergence'
+!                       write(*,*)'#***************************************************************'
+!                    end if
 
                    if(convArray(iConv,sps,1) <= L2ConvThisLevel*convArray(0,sps,1)) then
                       converged = .true.
