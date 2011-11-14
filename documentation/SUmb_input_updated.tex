@@ -1,0 +1,926 @@
+%
+
+\documentclass[12pt,epsf,colordvi]{article}
+
+\usepackage{color}
+
+\pagestyle{headings}
+\textwidth 6.36in
+\textheight 9.48in
+\voffset -0.6truein     
+\hoffset -0.6truein     
+\baselineskip 3ex       
+\parskip 1ex       
+%\pagestyle{myheadings}
+
+
+\begin{document}
+\title{\bf The Complete, Thorough and Non-Censored SUmb Input Description  } 
+\author{ Eran Arad\footnote{Large parts of this document were collected from various input descriptions by sevral authors} }
+  \maketitle
+\begin{center}
+	{\it Version ADL021 } \\
+
+\end{center}
+%
+\noindent 
+\section{Introduction}
+%-----------------------
+%
+Input parameter file is divided into several sections.
+In each section, list of parameters may be specified.
+Each parameter should be specified in a separated line, with the following structure:
+%
+	\begin{center}{\it key-word   :  value} \end{center}
+%
+\noindent 
+Comments are indicated by \#. All info following a \# is ignored.
+ The sequence of the parameters is arbitrary and keywords are case insensitive.
+ When a keyword occurs multiple times, the last value is taken.
+Parameters marked in \textcolor{red}{red} must be specified in input file,
+or the program will exit with an error message.
+
+When starting from scratch, you may create a template parameter file that contains all  the possible input parameters for SUmb with their default values. The template file is produced by providing a file name  (this file must not exist already in the current directory) as a command line argument to the solver. This file should be edited by the user for the test case considered in order to have a valid input set. 
+
+\parindent=0pt 
+
+%
+\noindent 
+\section{New Features}
+%-----------------------
+%
+\begin{description}
+%
+\item{\it ADL021 } A switch for generation of CBDOUT (components-break-down output file) was added, with default {\it FALSE}.
+     Note that while using polar-sweep ({\it polaraRun.py}), the script rewrites this parameter to TRUE, since the CBDOUT files are required in that mode.
+%
+\item{\it ADL015: }Refinement of coefficients convergence criterion: evaluation window size is now an input parameter. Convergence checks are performed at three levels: In the second and third levels both the convergence criterion and the window size (user input) are multiplied by 10 and 100. This procedure is intended to deal with cases where oscillations develop about a constant mean value. Once solution is stopped, the type of convergence is printed out. Furthermore, in the CBD output file a comment is added with a parameter convergenceQuality. Its values are the following:
+10: relative residual smaller than convergence criterion; 6: Coefficients are uniform for 1xwindowSize iterations;
+4: Coefficients are uniform for 10xwindowSize iterations; 2: Coefficients are uniform for 100xwindowSize iterations;
+%
+%
+\item{\it ADL012: } A convergence criterion added: Once all monitored coefficients are uniform up to a prescribed criterion, 
+convergence is declared (see section \ref{sec:iter-par}). 
+This is useful for polar-sweeps, for cases where the residue hang up locally and do not converge properly,
+though all monitored coefficients do not change any more. This criterion should be applied with extreme caution since it might
+lead to non-converged solutions.
+%
+\item{\it ADL008:} Option to impose  transition added. Eddy viscosity is nullified for \(x< x_{transition}\). This mode is currently implemented only within the SA model versions. Control parameters are described in section \ref{sec:phys}.
+%
+\item{\it ADL008:}Time dependent boundary condition (subsonic-inflow) option available. Intended for enabling active flow control representation (pulsating jets of zero-mass-flow jets) . Available only for unsteady run. Control parameters are listed in section \ref{sec:tdbc}
+%
+\item{\it ADL008:} A low limiter for temperature is added. It is useful in high Mach number flow, where oscillations during convergence process might reach a negative temperature at a certain location, which blows up the solution. Care should be taken that the limit is well below free-flow temperature and the lowest values of temperature in the converged solution.
+%
+\item{\it ADL008:} DES extensions for the SA and Menter \(k-\omega\) SST turbulence models is included.See control parameters in section  \ref{sec:des}
+%
+ \item{\it ADL008:} After the successful conclusion of a run, a special output file, containing \textcolor{blue}{\bf C}omponents \textcolor{blue}{\bf B}reak \textcolor{blue}{\bf D}own (CBD) results is produced. Forces and moments coefficients are printed in {\it body coordinates system}. The name of the output file is printed by the code on standard output (usually screen). It is constructed by input file name (without suffix) + the extension {\it \_CBDOUT.dat}.
+%
+\item{\it ADL008:}  User can control which wall-type-surface families contribute to the monitored forces and moments coefficients. Using {\it Family Parameters} option (section \ref{sec:fampar}), the user can mark certain family(ies) so that its (their) contribution to the monitored forces and moments is disregarded. 
+%
+\item{\it ADL008:}  Coupler initial conditions (relevant for a CHIMPS run) can be activated also for an instance with internal flow type (see details in section \ref{sec:coupler}  )
+%
+ \item{\it ADL006:} Add temporal monitoring option for unsteady cases. A file named  {\it “temporalMonitor.dat”} is written during time integration. The file includes all monitored force and moment coefficients + temperature on wall and can be plotted during run. This file is created only for BDF time-dependent scheme.
+%
+ \item{\it ADL004:} The code computes and stores time-averaged value of variables in unsteady solution
+
+%
+\end{description}
+\
+%
+\noindent 
+\section{Warnings and Known Errors}
+%-----------------------
+%
+None
+%\begin{enumerate}
+% \item  
+%\end{enumerate}
+
+\noindent 
+\section{IO setup}
+%-----------------------
+%
+The I/O Parameters define the names of the files to be read and written and how these files are read and written. 
+
+\begin{description}
+%
+\item{\bf File format read:} Format of input grid file. CGNS (default) or PLOT3D
+%
+\item{\bf File format write:} Format of output grid file. CGNS (default) or PLOT3D
+%
+    \item{  \bf \textcolor{red}{ Grid file}:  }  Name of the file which contains the multiblock grid.
+%
+    \item{  \bf \textcolor{red}{PLOT3D Connectivity file}: } Needed if PLOT3D format is used
+%
+    \item{ \bf Restart file:}   Name of the file that contains a pre-computed volume solution; it must only be specified if a restart is performed.
+%
+   \item{\bf  Restart:} Whether or not to continue from a previously computed solution. Options are yes or no.\\ 
+	{\it Def. no} 
+%
+   \item{ \bf Check nondimensionalization:}  Whether or not to check the solution in the restart file for correct nondimensionalization. Options are yes or no.\\ 
+	{\it Def. yes}
+%
+   \item{ \bf New grid file:} Name of the file to which the modified grid (due to mesh motion) is written. Needed for moving and/or deforming geometries. For unsteady problems this is a prefix to which the time step information is added.\\ 
+	{\it Def. NewGrid.cgns}.
+%
+   \item{\bf Solution file: } Name of the file to which the volume solution is written. For unsteady problems this is a prefix to which the time step information is added.\\ 
+	{\it Def. Sol.cgns}.
+%
+    \item{\bf Surface solution file:} Name of the file to which the surface solution is written. For unsteady problems this is a prefix to which the time step information is added. \\ 
+	{\it Def. \(Sol\_surface.cgns\)}.
+%
+     \item{\bf Rind layer in solution files: } Whether or not to store 1 layer of halo cells in the solution files. This does not impact the restart capability, but it may have some influence on the quality of the post processing (for averaging the cell centered quantities to the nodes in the mesh). Options are yes or no. \\ 
+	{\it Def. no}\\  
+\textcolor{red}{In some cases rind layers caused restart failure, so please avoid this }
+%
+     \item{\bf Write coordinates in meter: }Whether or not to write the coordinates in the surface solution and new grid file in meters. Options are yes or no. \\ 
+	{\it Def. no} , i.e. the original units are used. \textcolor{blue}{recommended: always yes}.
+%
+     \item{\bf Automatic parameter update:} Whether or not to update the parameter file after a solution file is written out such that a restart will be made automatically. Options are yes or no. \\ 
+	{\it Def. yes} \\
+\textcolor{red}{Notice that this default behavior can be sometimes confusing since resubmitting the "exact same run" can result in different results: the input file has actually been modified (look at the end of it)}.
+%
+     \item{\bf Cp curve fit file:} Name of the ASCII file which contains the curve fit information of Cp/R as function of the temperature. Only needed if the variable Cp option has been chosen. For a description of the format of this file click here. 
+%
+      \item{\bf  Write precision grid: } Possibilities: single or double  \\
+       {\it Def. is executable precision}.
+%
+     \item{ \bf Write precision solution: } Possibilities: single or double  \\
+       {\it Def. is executable precision}. 
+%
+      \item{\bf Store convergence inner iterations: } Relevant for time dependent problems only \\
+	{\it Def. no}  \textcolor{blue}{recommended: yes}
+%
+\end{description}
+
+\noindent 
+\section{Physical Parameters}  \label{sec:phys}
+%-----------------------
+%
+Input parameters which are related to the physics of the flow, like governing equations, 
+mode of the equations, turbulence  model and free stream conditions.
+%
+\begin{description}
+%
+   \item{ \bf  \textcolor{red}{ Equations}:} Governing equations to be solved. Options are Euler, Laminar NS and RANS. \\
+   {\it Def. NONE } must be specified
+%
+    \item{ \bf \textcolor{red}{ Mode}:} Mode of the equations to be solved. Options are Steady, Unsteady, and Time Spectral. \\
+   {\it Def. NONE } must be specified
+%
+     \item{ \bf \textcolor{red}{Flow type}:} Type of flow to be solved. Either Internal flow or External flow. \\
+   {\it Def. NONE } must be specified
+%
+    \item{ \bf Cp model:} Which model should be used for the specific heat at constant pressure. Valid values are either Constant or Temperature curve fits. In the latter case, the Cp curve fit file must be specified. \\
+   {\it Def. Constant }.
+%
+    \item{ \bf \textcolor{red}{ Turbulence model}:} The turbulence model for the RANS equations. Valid options are Spalart Allmaras, Spalart Allmaras Edwards, KOmega Wilcox, KOmega Modified, KTau (not very stable), Menter SST and V2F. \\
+   {\it Def. NONE } must be specified if the RANS equations are solved.
+%
+    \item{ \bf KOmega production term:} Which production term to use in the \(k-\omega\) type of turbulence models. Possibilities are Strain, Vorticity and Kato-Launder.  
+\textcolor{red}{ Care must be taken when rotating geometries are present, because the Vorticity and Kato-Launder methods depend on the rotation rate}.\\
+   {\it Def. Strain }.
+%
+     \item{ \bf Use wall functions:} Whether or not to use wall functions to model the lower portion of the turbulent boundary layer. Only relevant for the RANS equations. Options are yes or no. In previous versions there was an impression that the results in combination with the Central-scalar dissipation scheme are not that good. It was recommended to use an upwind discretization when wall functions are used. Present status seems better, but caution should be applied \\
+   {\it Def. no }.
+%
+    \item{ \bf Offset from wall in wall functions: } Offset from the wall (in meters) when wall functions are used. This parameter is normally used to check the implementation of the wall function formulation and should not be used for normal production runs. \\
+   {\it Def. 0.0}.
+%
+     \item{ \bf Constant specific heat ratio:} The value of the specific heat ratio (\(\gamma\)). This parameter is only relevant if the constant Cp model is used to model the specific heat at constant pressure.\\
+   {\it Def. 1.4 (air)  }.
+%
+    \item{ \bf  Gas constant (J/(kg K)):} The gas constant of the gas (mixture) simulated in SI Units.\\
+   {\it Def. 287.87 (air)  }. 
+%
+    \item{ \bf  Prandtl number:}  Laminar Prandtl number, where \(Pr = {{\mu*Cp} \over k}\). Here \(\mu\) is the dynamic coefficient of (laminar) viscosity (modeled by Sutherland's law), Cp is the specific heat at constant pressure and k is thermal conductivity. The Prandtl number is assumed to be constant in the temperature range of the flow, even if \(\mu\) and, possibly, Cp are functions of the temperature.\\
+   {\it Def. 0.72 (air)  }. 
+%
+    \item{ \bf  Turbulent Prandtl number:} Identical to the laminar version described above, but now with \(\mu_t \) (the eddy viscosity) instead of \(\mu\). Only for RANS computations. \\
+   {\it Def. 0.90  }.
+%
+     \item{ \bf  Max ratio k-prod/dest: } Limiter for the production term of the k-equation such that the maximum value of the production is this number times the destruction term. This limiter is used to avoid unphysical creation of turbulent kinetic energy in stagnation regions and through shocks. It is especially needed if Strain is used for the \(k-\omega\) production term. \\
+   {\it Def. 20.0  }.
+%
+	\item{\bf V2F version (N1 or N6): } Version o V2F model ({\it RVF\_N}). Selector between original model (=1) and user-friendly model (=6).  \\ 
+{\it Def.  1 }.
+%
+	\item{\bf V2F with upper bound :} Limiter for V2F model ({\it RVF\_B}) \\
+ {\it Def.  yes }.
+%
+  \item{\bf Forced transition  : } Transition is enforced at a certain location. Applied by removing turbulence production before transition. \\
+	{\it Def.  No}
+% 
+  \item{ \bf  X transition : } Location of forced transition. \\
+	{\it Def.  0.0 }.
+%
+    \item{ \bf  Transition half Length : } Width of transition region. In this region the production grows smoothly from null to its normal value \\
+	 {\it Def.  0.0 }.
+%
+
+   \item{ \bf  Temperature low Limit [K] : } Limiter on temperature. Intended to avoid negative values due to oscillations during convergence. Useful mainly for fast and cold flow (like one that occurs at wind tunnels at high Mach and no heating).  \textcolor{red}{Apply with caution to verify that no physical low temperature is prevented by this limiter }  \\
+	{\it Def.  0.0   (not active)}.  
+%
+\end{description}
+%
+\noindent
+\section{ DES Parameters} \label{sec:des}
+%-----------------------
+%
+For time-dependent cases, DES (Detached Eddy Simulation) model can applied. This formulation is currently working with the Spalart Allmaras and \(k-\omega\) SST models.
+%
+\begin{description}
+ \item { \bf Apply DES :}  Switch for turning on DES. Applicable only for time dependent mode \\
+ { \it Def. No }
+%
+ \item{ \bf DES scale coefficient : } Coefficient the multiplies the filter size \(l_{DES} = C_{DES} \Delta\) \\
+{\it Def.  0.65}
+%
+ \item { \bf DDES model (yes/no) :}  Switch for using DDES (Delayed DES). Based on Spalart et al. (Theor. Compt. Fluid Mech., 
+       2006, vol 20, pp 181-195). The purpose of this modification is preservation of the RANS mode inside the boundary layer. 
+       The conventional switch (DES97)
+       \(\tilde d = min(d,C_{DES} \Delta )\) is replaced by 
+       \(\tilde d = d-f_d max(0,d-C_{DES} \Delta) \). Here d is the distance to the wall. \(f_d\) is a  decay function, 
+       changing fast from zero inside a boundary layer to unity outside: \(f_d=1-tanh([8r_d]^3) \). \(r_d\) represents the 
+       ratio of the model length scale and the distance to the wall. In \(k-\omega \) SST model the term 
+         \(\sqrt{k} / \omega d\) is used for this purpose. Since a one-equation model like {\it SA} does not have an internal
+       length scale, the following term is used to compute this ratio: 
+        \(r_d = {{(\nu_t + \nu) } / { (S \kappa^2 d^2 )}}\), where \(S = \sqrt{U_{i,j} U_{i,j} }  \). At the present version,
+        {\it DDES } is implemented only with {\it SA} formulation. It will be included later also with the \(k-\omega \) SST model.
+  \\        
+ { \it Def. No }
+% 
+ \item{ \bf DES region low X :} Limit in X for DES application \\
+{\it Def.  \(-1.0\times10^10\) inactive }
+% 
+\item{ \bf DES region high X:}  Limit in X for DES application \\
+{\it Def.  \(1.0\times10^10\) inactive } 
+%
+\item{ \bf  DES region low wall-distance limit :} Limit in wall-distance for DES application \\
+{\it Def.  \(-1.0\times10^10\) inactive } 
+%
+ \item{ \bf  DES region high wall-distance limit  :} Limit in wall-distance for DES application \\
+{\it Def.  \(1.0\times10^10\) inactive }  
+%
+ \item{ \bf  RANS region high wall-distance limit :} Limit in wall-distance for RANS region \\
+{\it Def.  \(1.0\times10^10\) inactive }  1.E10 
+%
+\end{description}
+%
+%
+\noindent
+\section{ TDBC Parameters}  \label{sec:tdbc}
+%-----------------------
+%
+Time Dependent Boundary Conditions options were implemented to allow simulation of various active flow control devices. This implementation is relevant only for time-dependent mode. TDBC are applied at subsonic inflow conditions. Hence, a boundary family of the type {\it BCInflowSubsonic } has to be defined in mesh file. In the input file, parameters for such a family should be given in the following form:
+\begin{verse}
+      { \it \# Subsonic inflow  boundary  \\
+Boundary family [NAME] : Density VelocityX VelocityY VelocityZ \\
+            \(Npoints = 1 \)\\
+            \([\rho]\) [Vx]     [Vy]     [Vz]  }
+\end{verse}
+Square brackets means that a numerical value should be specified. The density and velocity components are specified here in MKS dimensional system. Negative density means a phase lag of \(180^o\). The actual input is \(V=C_0 + \sin ( \omega t + \phi ) \) where \(\omega= 2\pi f\). This formulation is multiplied, for each velocity components by the values set in the family input above.
+%
+\begin{description}
+%
+      \item{\bf  Apply oscillatory inflow :} Switch (yes/no) for activation of TDBC \\
+{\it Def.  No}
+%
+ \item{\bf Steady coefficient in inflow :} \(C_0\) in the formulation listed above \\
+{\it Def.  0.0 }
+%
+  \item{\bf Oscillatory inflow frequency  : } f in the formulation listed above [Hz] \\
+{\it Def.  1000.0 }
+%
+\item{\bf  Oscillatory inflow phase  :} \(\phi\) in the formulation listed above [deg] \\
+{\it Def.  0.0  }
+%
+\end{description}
+%
+%
+\noindent
+\section{ Free Stream Parameters}
+%-----------------------
+%
+The Free Stream Parameters define the values of the undisturbed free stream. The majority of these parameters are only meaningful for external flow computations and are ignored for internal flow problems. 
+%
+\begin{description}
+%
+      \item{\bf  \textcolor{red}{ Mach}:} Free stream Mach number. This parameter must always be specified for external flow computations; for internal flow computations the value, if present, is ignored. \\
+{\it Def.-1}
+%
+    \item{\bf   Mach for coefficients:} Mach number used to compute the non-dimensional aerodynamic coefficients. Only relevant for translating bodies. \\
+	{\it Def.  Mach}.
+%
+     \item{\bf  \textcolor{red}{Reynolds}:} Reynolds number of the flow considered. This parameter must always be specified for external viscous flow computations. \\
+{\it Def.-1}
+%
+     \item{\bf Reynolds length (in meter):} Length in meters which is used to compute the Reynolds number.  This parameter is only relevant for external viscous flow computations. \\
+{\it Def. 1.0 (i.e. the Reynolds number is given per meter)}
+%
+     \item{\bf Free stream velocity direction:} Direction of the free stream velocity.  This parameter is only relevant for external flow computations. Internally this vector is scaled to a unit vector, so there is no need to specify a vector of unit magnitude. Specifying this vector solves the problem of ambiguities in the angle of attack and yaw angle definitions as well as the direction of the axis (e.g. y- or z-axis) in the spanwise direction. For case of z-axis in spanwise direction, use \( ( \  \cos (\beta) , \tan(\alpha) \cos (\beta) , \sin (\beta) \  )\)  where  \(\alpha \) is angle of attack and \(\beta\) is yaw angle. If roll angle \(\phi\) is used, then for z-axis in spanwise direction use \( ( \  1.0 , \tan(\alpha) \cos (\phi) , \tan(\alpha)\sin (\phi) \  )\)   \\
+{\it Def. (1,0,0) (i.e. the x-direction)}.
+%
+     \item{\bf Lift direction:}  Direction of the lift force.  Again there is no need to specify a unit vector. This parameter is only relevant for external flow computations, when monitoring of lift coefficient is required. \\
+{\it Def. normal to the free stream without y-component}
+%
+    \item{\bf Free stream temperature (in K):} Temperature in K of the free stream. This is needed to apply Sutherland's law to compute the laminar viscosity.  This parameter is only relevant for external viscous flow computations.\\
+{\it Def.  288.15 }
+%
+    \item{\bf Free stream eddy viscosity ratio: }Ratio of eddy and laminar viscosity \({\mu_t \over \mu } \) at the inflow boundaries. The default value is turbulence model dependent.  Only relevant for RANS computations. Note that this parameter is used for both internal and external flow computations.\\
+{\it Def. 0.009 (SA model) ; 0.01 for all other models }
+%
+     \item{\bf Free stream turbulent intensity: }Value of the turbulence intensity at the inflow boundaries, from which the turbulent kinetic energy can be computed.  Only relevant for RANS computations with a turbulence model with a k-equation. Note that this parameter is used for both internal and external flow computations.  \\
+{\it Def. 0.001 }
+%
+\end{description}
+%
+\noindent
+\section{Reference State  }
+%-----------------------
+The Reference State Parameters define the reference pressure, density and temperature used to nondimenionalize the governing equations. When all of these values are set to 1.0 a dimensional computation is performed. 
+%
+\begin{description}
+	\item{ \bf Reference pressure (in Pa):}  Pressure in SI units used to nondimenionalize the governing equations. \\ 
+{ \it Def. 101325.0 } 
+%
+    \item{ \bf Reference density (in \(kg/m^3\)):} Density in SI units used to nondimenionalize the governing equations. Together with \(P_{ref}\) they define the velocity scale:
+ \( V_{SCALE} = \sqrt{P_{ref} \over \rho_{ref} } \) \\
+
+{\it Def. \(\rho_{ref} = {{ Re \ \mu (T_{ref}) } \over { V(M)}}\) }   
+%
+    \item{ \bf  Reference temperature (in K):} Temperature in SI units used to nondimenionalize the governing equations. \\
+{\it Def. \(T_\infty \) (TFreeStream) }
+%
+     \item{ \bf  Conversion factor grid units to meter:} The global conversion factor of the grid to meters. If  the grid is in mm. then this value is 0.001.   It is only relevant for viscous computations (Reynolds number related). If, however, the solver is used in a multidisciplinary computation, this value is also important for an inviscid computations since the output of the computation (to other solvers) is assumed to be in SI units. This parameter is only used if no unit information is present for the coordinates in the CGNS grid file. \textcolor{blue}{This parameter can be used for geometrical scaling, like switching between full-size and wind tunnel model}.\\
+ {\it Def. 1.0 }
+%
+
+\end{description}
+%
+%
+\noindent
+\section{Geometrical Parameters }
+%-----------------------
+%
+The Geometric Parameters define the reference area and length as well as the reference point for the force and moment coefficients.
+%
+\begin{description}
+%
+       \item{\bf  Reference surface:}     Reference area for the force and moments computation. Use size after the conversion (e.g. to meters or model size). \\
+	    {\it Def.  1.0 }
+%
+       \item{\bf Reference length:}     Reference length for the moments computation. Use size after the conversion (e.g. to meters or model size).\\
+	    {\it Def.  1.0 }
+%
+       \item{\bf Moment reference point x:}  X-coordinate of the point used for the computation of the moments and moment coefficients. Use size after the conversion (e.g. to meters or model size).\\ {\it Def. 0.0}  
+%
+       \item{\bf Moment reference point y:} Y-coordinate of the point used for the computation of the moments and moment coefficients. Use size after the conversion (e.g. to meters or model size).\\   {\it Def. 0.0}  
+%
+       \item{\bf Moment reference point z:} Z-coordinate of the point used for the computation of the moments and moment coefficients. Use size after the conversion (e.g. to meters or model size).\\   {\it Def. 0.0}  
+\end{description}      
+%
+\noindent 
+\section{Fine grid Discretization Parameters}
+%-----------------------
+% 
+The Discretization Parameters are parameters which influence the final numerical solution on the finest grid. Note that some options are presently only place-holders, and are not actually implemented (When such input is encountered, the code aborts and a message about that is issued) 
+%
+\begin{description}
+	\item{\bf \textcolor{red}{Discretization scheme:}} Fine grid discretization scheme for the convective terms of the mean flow equations. Possibilities are Central plus scalar dissipation, Central plus matrix dissipation, Central plus CUSP dissipation, and Upwind. \\
+{ \it Def.  NONE }.
+%
+    \item{\bf Order turbulent equations:} Order of the discretization of the convective terms for the turbulent transport equations. Possibilities are First order and Second order. \\
+{\it Def.  First order}.
+%
+    \item{\bf Riemann solver:} Riemann solver for the upwind discretization. Possibilities are Roe, Van Leer and Ausmdv. \textcolor{red}{Presently  (July 09) only Roe scheme is implemented } \\
+{\it Def.  Roe}.
+%
+     \item{\bf Limiter:}  Limiter for the upwind discretization. Possibilities are First order, Van Albeda, Minmod and No Limiter. \textcolor{blue}{House recommendation: Van Albeda }\\
+{\it Def. No Limiter}.
+%
+    \item{\bf Preconditioner:} Low Mach number preconditioner for the convective terms. Possibilities are No preconditioner,  Turkel,  Choi Merkle.   \textcolor{red}{At the moment only No preconditioner works}. \\
+{\it Def. No preconditioner }
+%
+     \item{\bf Wall boundary treatment: } Wall pressure boundary condition treatment. Possibilities are Normal momentum, Constant pressure, Linear extrapolation pressure and Quadratic extrapolation pressure. The default is Normal momentum, because this normally gives the best results and is very stable. However it is not suited for singular surface grids; in those cases use Linear extrapolation pressure instead.\\
+{\it Def.  Normal momentum }
+%
+  \item{\bf Outflow boundary treatment:}  Constant extrapolation or  Linear extrapolation. \\
+{\it Def. Constant extrapolation }
+%
+ \item{\bf non-matching block to block treatment: } NonConservative or Conservative. \\
+{\it Def. NonConservative}
+%
+     \item{\bf Vis2:}  Coefficient of the first order dissipation term for the scalar and matrix dissipation schemes. \\
+{\it Def. 0.5}
+%.
+    \item{\bf Vis4:}  Coefficient of the third order dissipation term for the scalar and matrix dissipation schemes. \textcolor{blue}{House recommendation: 1/32} \\ 
+{\it Def.  1/64}
+%
+     \item{\bf Directional dissipation scaling:} Whether or not directional (high aspect ratio) scaling must be applied for the central-scalar (JST) scheme. Options are yes or no. \\
+{\it Def. yes}.
+%
+     \item{\bf Exponent dissipation scaling:} The corresponding exponent in the directional scaling. Only relevant for the central-scalar (JST) scheme. \\ 
+{\it Def. 2/3}
+%
+     \item{\bf Kappa interpolation value:} Coefficient in the upwind reconstruction. The value 1/3 results in a third-order accurate reconstruction. This however does not mean that the discretization of the convective terms is third order; it is only second order, because a second-order integration rule (midpoint) is used in the flux computation. \\
+{\it Def.  1/3}
+%
+      \item{\bf Relaxation factor upwind dissipation: } Based upon T. T. Bui, "A Parallel, finite volume algorithm for large eddy   simulations of turbulent flows",  NASA-TM-1999-206570. Use of  lower-dissipation Roe Flux splitting, by multiplication the  dissipative flux  by a reduction coefficient, typically 0.1.  \\
+{\it Def. 1.0}
+%
+    \item{\bf  Vortex correction:} Whether or not a vortex correction must be applied in the far-field boundary conditions. Only meaningful for steady external flows. Options are yes or no. \textcolor{red}{Not been implemented yet}. \\
+{\it Def. no}.  
+
+\end{description}
+%
+%
+\noindent 
+\section{Unsteady Flow Parameters}
+%-----------------------
+% 
+The Unsteady Parameters define the physical time step, the number of time steps to take and the accuracy of the time integration scheme. For computations of time-periodic flows these parameters also specify whether to use the time-spectral solution method and its properties. Of course these parameters are only relevant for unsteady problems.
+%
+\begin{description}	
+%
+        \item{\bf  Time integration scheme:} Backward Differentiation Formulation (BDF), explicit Runge-Kutta or implicit Runge-Kutta (\textcolor{red}{last option not implemented yet}).\\
+{\it Def. BDF}
+%
+        \item{\bf Time accuracy unsteady:} Accuracy of the backward difference scheme for the time integration. Possibilities are First, Second and Third. The first and second order schemes are unconditionally stable; the third-order scheme is only stiffly stable. \\
+{\it Def.  Second}
+%
+        \item{\bf Number of unsteady time steps coarse grid:} Number of physical time steps to take on the coarse grid, before the solution is transferred to the finer grid. This may be useful for initialization purposes for periodic problems.  If the multigrid start level is the finest grid, this parameter is ignored. \\
+{\it Def.  same as on the fine grid}
+%
+        \item{\bf \textcolor{red}{Number of unsteady time steps fine grid}:} Number of physical time steps to take on the fine grid. \\
+{\it Def. NONE}
+%
+         \item{\bf \textcolor{red}{Unsteady time step (in sec)}:} The time the solution is integrated every time step. At the moment this value is constant for the entire computation. \\
+{\it Def. NONE}
+%
+          \item{\bf Update wall distance unsteady mode:} Expensive option that is required only for cases of moving mesh. The default value is overruled for models that are wall distance free.\\
+{\it Def. yes} 
+%
+\end{description}
+%
+\noindent 
+\section{ Time Spectral Parameters}
+%-----------------------
+% 
+The time spectral parameters define the number of spectral modes and various inputs for capability to do an unsteady restart. 
+% 
+\begin{description}	
+%
+	\item{\bf \textcolor{red}{Number time intervals spectral}:}  \\
+{\it Def. NONE}
+%
+ 	\item{\bf Write file for unsteady restart:} \\
+{\it Def. no}
+%
+	\item{\bf \textcolor{red}{Time step (in sec) for unsteady restart}:} \\
+{\it Def. NONE}
+%
+ 	\item{\bf  Write unsteady volume solution files:}  \\
+{\it Def. no}
+%
+  	\item{\bf      Write unsteady surface solution files:} \\
+{\it Def. no}
+%
+	\item{\bf \textcolor{red}{Number of unsteady solution files}:} \\
+{\it Def. NONE}
+%
+\end{description}
+%
+\noindent 
+\section{Iteration Parameters}  \label{sec:iter-par}
+%-----------------------
+% 
+Iteration Parameters are parameters related to the iteration process to solve the set of equations. This excludes parameters related to the multigrid procedure which are presented below.
+%
+\begin{description}
+%
+      	\item{\bf \textcolor{red}{Smoother}:} Iterative method to use as smoother in the corresponding multigrid step. Possibilities are Runge Kutta, Nonlinear LUSGS and Nonlinear LUSGS Line.  At the moment only the explicit Runge Kutta scheme has been implemented.\\
+{\it Def. NONE}
+%
+    \item{\bf Number of Runge Kutta stages:} Number of stages in the Runge Kutta explicit time-integration scheme. \\
+{\it Def.  5}
+%
+     \item{\bf Treatment turbulent equations:} Treatment of the turbulent transport equations. Possibilities are Segregated and Coupled; the latter has not been implemented yet. \\
+{\it Def.  Segregated}
+%
+     \item{\bf   Number additional turbulence iterations: } Number of iterations of turbulence model equations performed for each momentum solution iteration. \\
+{\it Def. 0 }
+%
+    \item{\bf  Turbulent smoother:} Iterative scheme for the turbulent transport equations if these equations are solved in a segregated manner. Possibilities are ADI and GMRES; the latter has not been implemented yet. \\
+{\t Def.  ADI}
+%
+          \item{\bf  Update bleeds every: } Bleed BC are used to define a preset bleed (outflow rate). The solver iteratively update the exit pressure aiming at the rate of bleed value. This practice is not too safe for oscillatory time-dependent case. \\
+{\it Def. 50 }
+%
+    \item{\bf Relaxation factor bleed boundary conditions:} \\
+{\it Def.  0.1}
+%
+    \item{\bf Residual averaging:} What kind of residual averaging to use in the Runge Kutta schemes. Possibilities are No, All stages and Alternate stages.  For difficult problems residual averaging can be unstable. \\
+{\it Def. All stages}
+%
+    \item{\bf Residual averaging smoothing parameter:} Smoothing parameter used in the residual averaging.\\
+{\it Def.   1.5}
+%
+    \item{\bf \textcolor{red}{Number of multigrid cycles}:} Maximum number of multigrid cycles to be performed. \\
+{\it Def. NONE }
+%
+    \item{\bf \textcolor{red}{Number of single grid startup iterations}:} Number of single grid iterations to perform before switching to multigrid. Could be useful for supersonic problems with strong shocks. \\
+{\it Def 0 }
+%
+     \item{\bf Save every:} Number of fine grid multigrid cycles after which a volume solution is written. A 0 means that a solution is written at the end of the computation. \\
+{\it Def. 0 }
+%
+     \item{\bf Save surface every:}  Number of fine grid multigrid cycles after which a surface solution is written. A 0 means that a solution is written at the end of the computation. \\
+{\it Def.  number of cycles after which a volume solution is written}
+%
+    \item{\bf \textcolor{red}{CFL number}:} Fine grid CFL number for the mean flow equations. \\
+{\it Def. -1.0 }
+%
+    \item{\bf Alpha turbulent DD-ADI: } The implicit relaxation coefficient used in the diagonally-dominant ADI scheme to solve the turbulent transport equations if these are solved in a segregated manner. The relation with the CFL number is: \(CFL = {\alpha \over {1.0 - \alpha}} \). Consequently \(0 < \alpha < 1\).  \\
+{\it Def.  0.8}
+%
+    \item{\bf Beta turbulent DD-ADI: } Relaxation coefficient used in the diagonally-dominant ADI scheme to solve the turbulent transport equations. \\
+{\it Def.   -1 : same as Alpha }
+%
+    \item{\bf Minimum number of iterations:} Minimum number of iterations that have to be performed after solution beginning (that is after a restart or after a fresh-new beginning), before convergence tests (residue and coefficient) are performed. For cases with small CFL (typically high Mach number flow on a single-grid, restarting from a different angle-of-attack),  this parameter should be pretty large, since without MG the propagation of BC information is slow. {\it Def. 100 }
+%
+    \item{\bf Relative L2 norm for convergence:} Relative L2 norm of the density residuals for which the computation is assumed to be converged. \\
+{\it Def. 1.e-6}
+%
+   \item{\bf Coefficients convergence criterion : } A criterion for convergence, based on uniform value of coefficients. After a prescribed number of iterations is completed (see {\it Minimum number of iterations } above), the mean value and standard deviation of all monitored coefficients are computed. This computation is performed over a prescribed iterations margin (see next input parameter). Then the maximum of \({{\sigma (\phi_i) } \over \overline{ \phi_i}} \)  (\(\sigma\) is standard deviation, \(\overline{\phi}\) is mean value and \(\phi_i\) designates the monitored coefficients)  is compared with the convergence criterion, and convergence is declared if it is smaller.
+   This criterion is applicable only for steady cases. It should be applied with extreme caution since it might lead to non-converged
+   solutions. Whenever possible try to reach proper residue reduction. Recommended value, if applied  is 0.001  \\
+ {\it Def. 0 (inactive)}
+%
+   \item{\bf Coefficients convergence check window size :} Size of iterations margin for computation of mean values and standard deviations of  monitored coefficients (see above).
+ {\it Def. 100}
+%
+%
+\end{description}
+%
+%
+\noindent 
+\section{Multigrid  Parameters} \label{sec:mg}
+%-----------------------
+%
+The Multigrid Parameters define the multigrid scheme to be used to accelerate the convergence. SUmb uses a FAS (Full Approximation Storage) multigrid algorithm where solutions can be computed in coarser meshes (using multigrid themselves) and transferred / interpolated to a finer mesh to start with a better initial condition. Multigrid levels are numbered sequentially from 1 (finest mesh stored in the input mesh CGNS file) onwards. Each increment of the multigrid level value (by 1) indicates a mesh that is created by roughly taking every other point in each of the coordinate directions (factor of 8 fewer cells). SUmb allows the use of multigrid even in meshes that do not have properly divisible numbers of cells/nodes, but some times this leads to errors, so it is advised to avoid that option.
+% 
+\begin{description}
+% 
+     	\item{\bf Number of multigrid cycles coarse grid:} Maximum number of multigrid cycles to be performed on a coarse grid before the solution is transferred to the next finer grid. This parameter is only relevant if the multigrid start level is not the finest grid. \\
+{\it Def.  the number of multigrid cycles on the fine grid}
+%
+    \item{\bf CFL number coarse grid:} Coarse grid CFL number for the mean flow equations. \\
+{\it Def.  fine grid CFL number}
+%
+    \item{\bf Relative L2 norm for convergence coarse grid:} Relative L2 norm of the density residuals for which the computation is assumed to be converged on the coarse grid. The solution is then transferred to the next finer grid. \\
+{\it Def. 0.01 }
+%
+    \item{\bf Discretization scheme coarse grid:} Discretization scheme of the convection terms of the mean flow equations on the coarse grids. \\
+{\it Def. fine grid discretization}
+%
+     \item{\bf Riemann solver coarse grid:} Coarse grid Riemann solver for the upwind discretization of the mean flow equations. \\
+{\it Def. fine grid Riemann solver}
+%
+      \item{\bf Vis2 coarse grid:} Coefficient of the first-order dissipation term for the Central Scalar and Matrix Dissipation schemes on the coarse grid during a multigrid cycle (so NOT during FAS multigrid).  Note that on the coarse grids in the multigrid cycle a first-order discretization is used. \\
+{\it Def 0.5}
+%
+      \item{\bf Freeze turbulent source terms in MG:} Whether or not to freeze the turbulent source terms in the multigrid cycle when the turbulence transport equations are solved in a coupled manner with the mean flow equations. Options are yes and no. \textcolor{blue}{However, since coupled formulation is not implemented at present, this switch leads to nowhere}. \\
+{\t Def  yes }
+%
+      \item{\bf Treatment boundary multigrid corrections:} Treatment of the boundary halo cells for the multigrid corrections. Options are Zero Dirichlet or Neumann. \\
+{\it Def.  Zero Dirichlet}
+%
+      \item{\bf Restriction relaxation factor:} Relaxation factor for the restricted residuals. Values less than 1 normally lead to slower convergence, but they can increase stability. \\
+{\it Def.  1.0. }
+%
+       \item{\bf  Multigrid start level:} Grid level on which the multigrid must be started in the full multigrid cycle. In case of a restart this info is overruled and the start level will be the fine grid. 
+\\
+{\it Def. the coarsest grid which occurs in the multigrid cycle strategy specified}
+%
+       \item{\bf  Multigrid cycle strategy:} The multigrid strategy used. There are 3 types of predefined strings, sg, single grid, nv, n level V-cycle (e.g. 2v, 3v, etc.), and nw, n level W-cycle (e.g. 2w, 3w, etc.). Alternatively it is possible to specify your own cycle strategy using a sequence of -1, 0 and 1s. Here a -1 indicates prolongation of the correction to the next finer grid level, 0 indicates a smoothing step on the current grid level and 1 indicates a restriction to the next coarser grid level. In order for a string to be a valid cycling strategy, the sum of its elements should be 0 and the sum up until a given entry should never be negative. Examples are 0 1 0 1 0 -1 -1 and 0 1 0 1 0 -1 0 1 0 -1 0 -1. \\
+{\it Def. sg}
+% 
+\end{description}
+%
+\noindent 
+\section{Overset Parameters}
+%-----------------------
+% 
+The overset parameters define all things related specifically to cases with overset connectivity such as the interpolation type. \textcolor{blue}{Note that presently (July 09) Overset is only partially programed in and is not ready for use yet. Use CHIMPS for cases where overset mesh is required}
+\begin{description}
+% 
+	\item{\bf  Input overset donors are guesses:} How to treat the overset donors that are given in the input file. Options are yes or no. If yes, any interpolants in the input file will be ignored and the donor indices are used as guesses to start a donor search using the given interpolation type for the fine grid. \\
+{\it Def.  no }
+%
+ 	\item{\bf Overset interpolation type: } The type of interpolation to use for overset connectivity on the finest grid level. Currently the only option is TriLinear. \\
+{\it Def.  TriLinear}
+%
+ 	\item{\bf Overset interpolation type coarse grid: } The type of interpolation to use for overset connectivity on coarse grids. Currently the only option is TriLinear. \\
+{\it Def.  TriLinear}
+%
+ 	\item{\bf Average restricted residual for blanks: }Whether or not to average the restricted residual because the field cells on a coarse level may contain part of the blanked finer grid overset boundary. The amplification factor is the ratio of the total cell volume to the unblanked cell volume, effectively replacing the blanked restricted residual with the average of the unblanked. Limited testing shows a minor increase in convergence by doing this. Options are yes or no. \\
+{\it Def. no}
+%
+ 	\item{\bf Allowable donor quality:} Allowable or cut-off value of donor quality. The quality of a donor stencil is one minus the sum of the weights of any fringe cells in the stencil. If the stencil contains any holes, the quality is 0. Boundary cells with bad donor stencils are always removed wherever possible, so this value only comes into play when it is not possible (i.e. the boundary cell is a halo). \\
+{\it Def.  1.0 (perfect quality)}
+%
+\end{description}
+%
+\noindent 
+\section{ Coupler  Parameters} \label{sec:coupler}
+%-----------------------
+% 
+Set of parameters that are active only in a coupled mode with additional instance(s) or codes via CHIMPS. 
+%
+\begin{description}
+% 
+	\item{\bf Code name:}  A given name for the present instance, to be used in the CHIMPS frame.\\
+{\it Def. SUmb }
+%
+        \item{\bf Get coarse-level sol: } \\ 
+{\it Def. no}
+%
+         \item{\bf  Use coupler initialization:} yes/no to overrule the standard initialization by conditions listed in this section. Might be important in verifying that same IC are used for all instances. Also might be useful for cases when it is desired to initialize with conditions that are different from the free flow conditions. \\
+{\it Def. no}
+%
+        \item{\bf Mach for initialization: } \\
+{\it Def. 0.5 }
+%
+        \item{\bf Pressure for initialization: } \\
+{\it Def. 101325.0 [pa] }
+%
+        \item{\bf  Density for initialization: } \\
+{\it Def.  1.2 }
+%
+        \item{\bf Velocity direction for initialization: } See description in the Free-Stream-parameters section. \\
+{\it Def. 1.0 0.0 0.0}
+%
+\end{description}
+%
+\noindent 
+\section{Load Balancing Parameters}
+%-----------------------
+% 
+Load Balancing Parameters define how well the computational problem should be balanced over the multiple processors. SUmb uses the METIS graph partitioning software to get a reasonable load balance. The load balancing/domain decomposition strategy is to distribute entire blocks to processors. If the number of processor is larger than the number of blocks in the mesh or the target load balance cannot be achieved, SUmb attempts to split blocks itself to solve these problems.
+%
+\begin{description}
+% 
+	\item{\bf Allowable load imbalance:} The tolerated load imbalance between processors when mapping the blocks onto these processors. \\
+{\it Def 0.1  (i.e. 10 percent) }
+%
+	\item{\bf Split blocks for load balance:} Whether or not it is allowed to split blocks during runtime to obtain a better load balance. This leads to an increase in the overall number of floating point operations performed, but the improved load balance should lead to a shorter wall clock time. Note that this splitting is only done for the computation; the solution files correspond to the original (non-split) blocks. Options are yes or no. \\
+{\it Def. yes}
+%
+\end{description}
+%
+\noindent 
+\section{Visualization Parameters}
+%-----------------------
+% 
+PV3 visualization. Can be applied only when the appropriate compilation switch is used. Requires implementations of PVM and PV3 on both server and client. Currently inactive.
+%
+\begin{description}
+%
+	\item{\bf pV3 visualization only: } \\
+{\it Def.  no }
+%
+\end{description}
+%
+\noindent 
+\section{Monitoring and output variables} \label{sec:monvarout}
+%-----------------------
+% 
+This section defines which variables' convergence should be monitored and the Output Parameters define the variables to be written to the volume and surface solution files. 
+A list of variables, separated by \_  is required.
+\begin{description}
+%
+	\item{\bf Monitoring variables:}
+List of the variables whose convergence should be monitored. They are given by a string where the keywords are separated by an underscore (\_), e.g. {\it resrho\_cl\_cd } will set monitoring of the convergence of density residual, the lift coefficient and the drag coefficient. Keywords that are meaningless for the case considered are ignored. The default monitoring variables depend on the governing equations to be solved. 
+
+\textcolor{red}{\bf Important comment about components contribution to forces and moments:}  During mesh generation, for each surface or a group of surfaces (say nose, wing, body etc. ) a different name may be assigned ({\it family } in {\it ANSYS-ICEM-CFD} lingo). By default, the contributions of all wall surfaces are included in the monitored forces and moments coefficients. This feature can be changed (e.g. the contribution of a certain family is not included) using the {\it Family Parameters} option (section \ref{sec:fampar}). After the successful conclusion of a run, a special output file, containing \textcolor{blue}{\bf C}omponents \textcolor{blue}{\bf B}reak \textcolor{blue}{\bf D}own (CBD) results is produced. Forces and moments coefficients are printed in {\it body coordinates system}. The name of the output file is printed by the code on standard output (usually screen). It is constructed by input file name (without suffix) + the extension {\it \_CBDOUT.dat}. 
+
+The currently available keywords are: 
+		\begin{itemize}
+			\item	{\it resrho, resmom, resrhoe, resturb} \\
+Norms of residuals of various equations.
+			\item {\it 	cl, clp, clv, cd, cdp, cdv } \\
+Total, pressure part and viscous part of lift and drag (wind system).
+			\item {\it 	cfx, cfy, cfz, cmx, cmy, cmz  } \\
+Force and Moment coefficients in body system.
+			\item	{\it hdiff } \\
+Maximum relative difference between H and \(H_\infty\)
+			\item {\it  mach, yplus, eddyv } \\
+Maximum of Mach number, \(Y_+\) and \({\mu_t \over \mu } \)
+		\end{itemize} 
+	Density residual will always be monitored, specified here or not. \\
+ 	{\it Def.  resrho\_cl\_cd}
+%
+	\item{\bf Surface output variables:}  
+The variables which are written to the CGNS surface solution file. Again these are specified by a string where the keywords are separated by an underscore (\_), e.g. rho\_cp\_vx\_vy\_vz\_mach will write the density, the pressure coefficient and the three velocity components to the surface solution file. Keywords that are meaningless for the case considered are ignored. The default monitoring variables depend on the governing equations to be solved. Currently available keywords are 
+		\begin{itemize}
+			\item {\it rho,  temp } \\
+Density and temperature
+			\item {\it p } \\
+Pressure (for steady-state mode) or \(\overline{Cp}\) (time-averaged) for time-dependent mode.  \textcolor{blue}{Note: Averaging is done over the time-steps since last restart}.
+			\item {\it vx, vy, vz } \\
+Three velocity components. 
+			\item {\it cp } \\
+Pressure coefficient \(Cp={{p - p_\infty } \over Q_\infty } \)
+			\item {\it ptloss } \\
+Relative total pressure loss \(1-{P_t \over P_t^\infty }={{P_t^\infty - P_t } \over P_t^\infty } \)
+			\item {\it mach, ch, yplus} \\
+Mach Number, Stanton number (\(C_h = { h \over { \rho U_\infty C_p }} = {{Nu_x} \over {Re_x P_r }} \) ),\(Y_+\)
+			\item {\it cf,cfx, cfy,cfz } \\
+Magnitude and components of the skin friction. Components are needed if surface ``oil flow'' is intended.
+		\end{itemize}
+	{\it Def.  rho\_cp\_vx\_vy\_vz\_mach}
+%
+	\item{\bf Volume output variables:} 
+The variables which are, additionally to the variables needed for the restart, written to the CGNS volume solution file. As before, these are specified by a string where the keywords are separated by an underscore (\_), e.g. ptloss\_resrho, will additionally write the relative total pressure loss and the density residual to the volume solution file. Keywords that are meaningless for the case considered are ignored. The default monitoring variables depend on the governing equations to be solved. Currently available keywords include: 
+		\begin{itemize}
+			\item {\it	mx, my, mz } \\
+Momentum components (steady-state mode) or time-averaged velocity components (\(\overline{V_x},\overline{V_y}, \overline{V_z}\)) (time-dependent mode). \textcolor{blue}{Note: Averaging is done over the time-steps since last restart}.
+			\item {\it rho,  temp } \\
+Density and temperature
+			\item {\it p } \\
+Pressure (for steady-state mode) or \(\overline{Cp}\) (time-averaged) for time-dependent mode.  \textcolor{blue}{Note: Averaging is done over the time-steps since last restart}.
+%
+			\item {\it cp } \\
+Pressure coefficient \(Cp={{p - p_\infty } \over Q_\infty } \)
+%
+			\item {\it ptloss } \\
+Relative total pressure loss \(1-{P_t \over P_t^\infty }={{P_t^\infty - P_t } \over P_t^\infty } \)
+%
+			\item	{\it vort, vortx, vorty, vortz } \\
+Magnitude and components of the vorticity.
+%
+			\item	{\it mach, macht } \\
+Mach and turbulent Mach number
+%
+			\item	{\it  eddy, eddyratio} \\
+Eddy viscosity \(\mu_t \), Eddy viscosity ratio \({\mu_t \over \mu}  \).
+%
+			\item	{\it dist } \\
+Distance to the nearest wall (RANS and URANS formulations) of filter size (DES mode).
+%
+			\item {\it resrho, resmom, resrhoe, resturb }
+Residue of the various equations.
+%
+			\item	{\it blank } \\
+Cell volume. Might be required for cell-size-based averaging during post-processing.
+%
+		\end{itemize}	
+	{\it Def. = } ptloss\_resrho
+%
+		      \item{\bf Generate CBD-output file :} Switch (yes/no) for generation of CBDOUT (components-break-down 
+			file. Be sure to set to yes for polar-sweep (Python scripts) run. \\
+{\it Def.   no }
+%
+			\item {\bf Components break down :} Switch (yes/no) for printing components contribution to forces and moments. When yes is selected, {\it restart=yes} is required, and a proper solution file should be designated. The code than works as a post-processor: Mesh and solution read, forces and moments computed, than printed and than the program stops. No solution update. Forces and moments are computed in body system\footnote{This option was made obsolete by the automatic production of CBD file at the end of each run. Is is kept for conformity with previous practices, for the joy of ultra-conservative users}. \\
+{\it Def.   no }
+%
+ \end{description}
+%
+%----------------------------------------------------------------------
+%
+\noindent 
+\section{Grid Motion Parameters}
+%-----------------------
+%
+The Grid Motion Parameters define the rigid body motion of the entire grid. The translation is assumed to be of constant velocity at the moment (will likely change) while the rotation is described by a combination of a polynomial and a Fourier series. For the rotation the sequence of rotation is first around the x-axis, then around the new y-axis and finally around the new z-axis.
+%
+\begin{description}
+%
+	\item{\bf  Rotation point body (x,y,z): } The point (in the same units as the grid- {\bf after scaling}) around which the rotation takes place. If a translation is present this point will move in time and the value specified is the rotation point when the computation starts. \\
+{\it Def.   (0,0,0)}
+%
+	\item{\bf Degree polynomial x-rotation: } The degree of the polynomial part of the x-rotation. The polynomial part is given by \(\phi = \sum _{k=0} ^{degree} c_k t^k\). \\
+{\it Def.  -1 : no polynomial motion for the x-rotation}
+%
+	\item{\bf  Degree polynomial y-rotation: } Idem for the y-rotation.
+%
+	\item{\bf  Degree polynomial z-rotation: }Idem for the z-rotation.
+%
+	\item{\bf  Polynomial coefficients x-rotation:} The coefficients \(c_k\) for the x-rotation polynomial. The number of coefficients specified should be equal to Degree polynomial x-rotation + 1. \\
+{\it Def. NONE . Not allocated}
+%
+	\item{\bf Polynomial coefficients y-rotation:}  Idem for the y-rotation.
+%
+	\item{\bf Polynomial coefficients z-rotation: Idem for the z-rotation. }
+%
+	\item{\bf Degree fourier x-rotation:} The degree of the Fourier part of the x-rotation. The Fourier part is given by \(\phi = d_0 + \sum _{k=1} ^{degree} d_k \cos(k\; \omega\; t) + e_k \sin(k\; \omega\; t)\). \\
+{\it Def.  -1  :  no Fourier component for the x-rotation}
+%
+	\item{\bf Degree fourier y-rotation: } Idem for the y-rotation.
+%
+	\item{\bf Degree fourier z-rotation:} Idem for the z-rotation.
+%
+	\item{\bf  Omega fourier x-rotation:} The frequency \(\omega\) in the Fourier series for the x-rotation. \\
+{\it Def.  0.0}
+
+	\item{\bf Omega fourier y-rotation:} Idem for the y-rotation.
+%
+	\item{\bf Omega fourier z-rotation:} Idem for the z-rotation.
+%
+	\item{\bf Fourier cosine coefficients x-rotation:} The coefficients \(d_k\) for the x-rotation Fourier series. The number of coefficients specified should be equal to Degree fourier x-rotation + 1.\\
+{\it Def. NONE . Not allocated}
+%
+	\item{\bf Fourier cosine coefficients y-rotation:} Idem for the y-rotation.
+%
+	\item{\bf Fourier cosine coefficients z-rotation:} Idem for the z-rotation.
+%
+	\item{\bf Fourier sine coefficients x-rotation:} The coefficients \(e_k\) for the x-rotation Fourier series. The number of coefficients specified should be equal to Degree fourier x-rotation.\\
+{\it Def. NONE . Not allocated}
+%
+	\item{\bf Fourier sine coefficients y-rotation:} Idem for the y-rotation.
+%
+	\item{ \bf Fourier sine coefficients z-rotation:} Idem for the z-rotation. 
+%
+ \end{description}
+%
+%----------------------------------------------------------------------
+%
+\noindent 
+\section{ Family Parameters} \label{sec:fampar}
+%----------------------------------------------------------------------
+%
+The Family Parameters option allows the user to define or overwrite (values included in the CGNS file) boundary condition data sets and rotation rates on a per family basis. The families must be defined in the CGNS file which contains the grid\footnote{With the exception of setup of wall boundary contribution, discussed in section \ref{sec:wbcfam}}. There are two types of family info, namely \textcolor{blue}{Rotating family} and \textcolor{blue}{Boundary family}. The former allows the user to specify the rotation center and rotation rate of a family (usually for turbo machinery applications) and the latter allows the user to prescribe values of the flow variables for the boundary conditions.
+%
+\begin{description}
+%
+	\item{\bf Rotating family family\_name:} family\_name is the name of the family for which the rotation information is prescribed. Six real values must be given, the first three define the rotation center for this family in the original grid coordinates, the last three define the rotation rate vector in rad/s. If not specified explicitly the rotation rate of the boundaries of a certain blade row is identical to the rotation rate of the blade row. If this is not the case, e.g. the casing of a rotor, this must be specified separately.
+%
+	\item{\bf Boundary family family\_name:} family\_name is the name of the family for which boundary condition information is specified. Quite a few possibilities exist how to do this, List of examples are created in the input template. Also, see the sub-section below.
+%
+ \end{description}
+%
+%----------------------------------------------------------------------
+%
+\noindent 
+\subsection{FAMILY Boundary Conditions}
+%-----------------------
+%
+Family boundary conditions are needed to allow definitions of profiles in the BC, or
+to modify the BC in the input file, and not on the grid-generation phase. This is needed since some BC are either not included in the CGNS standard or their introduction by ICEM-CFD is faulty. In these cases, in addition to the family input the CGNS file has to be modified. The modifications are applied by  {\it ADFVIEWER } as follows:
+\begin{enumerate}
+  \item In ICEM, in the BC specification phase, specify BC of the type
+	{\it BcGeneral} without any data. Continue everything else as
+	usual. The {\it SUmb} replaces {\it BcGeneral}  with {\it FamilySpecified}.
+%
+  \item	Open the CGNS file with ADFVIEWER. Under base, insert families with the names of families BC (e.g. INLET, 	OUTLET etc). 
+%
+  \item Under each family enter a family\_BC (such as INLET\_BC,
+	OUTLET\_BC etc).
+%
+  \item In the same BC entity, modify {\it Data Type} to {\it C1}. Then, write in
+	{\it Node Data} field the BC type, according to CGNS definitions 
+	(such as BCInflowSubsonic, BCOutflwSubsonic). Modify the {\it dimensions} from 4 to the appropriate length. Hit {\bf modify} to activate the change.
+%
+\end{enumerate}
+Bon-Voyage.
+
+\subsection{Family Inflow and Outflow in input file}
+
+In {\it Outflow} BC, you just specify {\it Pressure}. In Inflow you
+can specify one of two option:
+
+\begin{enumerate}
+  \item {\bf Stagnation conditions:} Specify \(T_t , P_t\) and velocity angles (in radians). Mach
+   number is limited to be \(M \ge 0.1\). This means that for low velocities
+   Reynolds number can be made smaller only by using the 
+  {\it Conversion factor grid units to meter}.
+%
+ \item {\bf Mass flow rate:} Specify \(\rho\) and 3 velocity components. Here there is
+   no limit on the Mach number. 
+\end{enumerate}
+%
+For inflow/outflow it is possible to add another line (or several) that activates mass-flow-rate per a given family. See template for format.
+%------------------------------------------------
+
+\subsection{Wall BC Family } \label{sec:wbcfam}
+%
+This option is designated to supply the user with control over contribution of wall-boundaries families to the monitored forces and moments coefficients. As stated in section \ref{sec:monvarout}, by default, the contribution of all wall-type surfaces is summed up in the monitored forces and moments coefficients. This includes all types of wall-BC ({\it BCWall, BCWallInviscid, BCWallViscous, BCWallViscousHeatFlux } and {\it BCWallViscousIsothermal} ) and all wall families (as defined during mesh generation at the grid file). However, using the present option it is possible to overwrite this specification and count out the contribution of a family (or several families) to the monitored forces and moments coefficients. This option is important for cases like time-defendant flow over a model in a wind-tunnel. In such cases the temporal development of forces and moments over the model is of interest, while the contribution of the tunnel walls to the forces and moments in counted out. It should be stated clearly that canceling contribution of a certain family by the present method affects only the monitored forces and moments coefficients. The surfaces family under discussion still affects the flow field through the flow-field solution, and in the CBD output file (section \ref{sec:monvarout}) its contribution is included.
+
+The format of wall-BC contribution overwrite is the following:\\
+{\it Wall BC family [NAME] :  Contribute to forces: no   \#no, yes} \\
+Here, {\it [NAME]} is a name of a wall-type family in the grid. Like the other families definitions, \textcolor{red}{family name should be written in UPPER CASE only}. The present overwrite option is applicable for the three available options of wall boundary definitions:
+\begin{enumerate}
+ \item Wall-BC type in the CGNS file ({\it BC\_t} = any wall-BC type)
+ \item Family definition in a {\it PLOT3D} connection file, with any wall-BC type
+\item Explicit family definition in a CGNS, with {\it FamilyBC\_t} = any wall-BC type
+\end{enumerate}
+Last option is usually the result of a conversion from a {\it PLOT3D} format to a CGNS format. It should be noted that in such cases the original family name in grid file changes from {\it NAME} to {\it NAME\_BC}.
+
+Note that the removal of contribution of a certain family to monitored forces and moments is active only on the finest mesh. In case a grid-sequencing is used during solution ({\it Multigrid start level \(>\) 1}), the contribution of all wall-families is included in monitored forces and moments on the coarse mesh, until fine mesh is reached.
+
+
+% 
+%------------------------------------
+ \end{document}
+

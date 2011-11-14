@@ -76,6 +76,8 @@
        ! Print an error message if the file could not be opened.
        ! The message is only printed by processor 0, while the others
        ! wait to get killed.
+
+
        if(ios /= 0) then
 
          if(myID == 0) then
@@ -219,7 +221,7 @@
 
          nn = famID(nn)
          cgnsFamilies(nn)%rotatingFrameSpecified = .true.
-         
+
          read(value,*) cgnsFamilies(nn)%rotCenter(1), &
                        cgnsFamilies(nn)%rotCenter(2), &
                        cgnsFamilies(nn)%rotCenter(3), &

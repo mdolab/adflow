@@ -46,7 +46,9 @@ SUBDIR_SRC    = src/modules       \
 SUBDIR_ADJOINT = src/adjoint               \
 		 src/adjoint/ADFirstAidKit \
 		 src/adjoint/residualInput \
+                 src/adjoint/residualInputTS \
 		 src/adjoint/residualOutput\
+                 src/adjoint/residualOutputTS\
                  src/adjoint/stabilityInput\
 	         src/adjoint/stabilityOutput\
 		 src/adjoint/forcesInput\
