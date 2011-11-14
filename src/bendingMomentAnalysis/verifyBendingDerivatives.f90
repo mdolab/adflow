@@ -33,29 +33,32 @@ subroutine verifyBendingDerivatives()
      globalCFValsRef = GlobalCFVals
      bendingMomentRef = bendingMoment
      if(myid==0)then
-        print *,'Bending Coefficient',bendingMoment
+        print *,'Bending Coefficient',bendingMoment,sps
      end if
      pointrefb =0.0
      bendingmomentb = 1.0
      call COMPUTEROOTBENDINGMOMENT_B(globalCFVals, globalCFValsb, bendingmoment, &
           &  bendingmomentb)
-     
-     print *,'AD derivatives',globalCFValsb,pointrefb
+     if(myid==0)then
+        print *,'AD derivatives',globalCFValsb,pointrefb
+     endif
      
      do i =1,nCostfunction
         globalCFVals = globalCFValsRef
         globalCFVals(i) = globalCFValsRef(i)+deltax
         call computerootBendingMoment(globalCFVals,bendingMoment)
-        
-        print *,'derivative',i,(bendingMoment-bendingMomentRef)/deltax
+        if(myid==0)then
+           print *,'derivative',i,(bendingMoment-bendingMomentRef)/deltax
+        endif
      end do
      pointrefref = pointref
      do i =1,3
         pointref = pointrefref
         pointref(i) = pointrefRef(i)+deltax
         call computerootBendingMoment(globalCFVals,bendingMoment)
-        
-        print *,'Pointref derivative',i,(bendingMoment-bendingMomentRef)/deltax
+        if(myid==0)then
+           print *,'Pointref derivative',i,(bendingMoment-bendingMomentRef)/deltax
+        endif
      end do
   end do
 

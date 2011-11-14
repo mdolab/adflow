@@ -46,7 +46,6 @@
          i = flowDoms(n,1,1)%ib
          j = flowDoms(n,1,1)%jb
          k = flowDoms(n,1,1)%kb
-         !print *,'iblank', i,j,k
          allocate(flowDoms(n,1,1)%iblank(0:i,0:j,0:k), &
                   stat=ierr)
          if(ierr /= 0)                             &

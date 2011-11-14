@@ -89,6 +89,8 @@ FF90_OBJECTS_2 = applyAllTurbBC.o\
 		 vfScale.o\
 		 vfSolve.o\
 		 writeLoglaw.o\
+		forcedTransDecFunc.o
+
 
 #      ******************************************************************
 #      *                                                                *
