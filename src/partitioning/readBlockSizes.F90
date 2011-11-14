@@ -135,6 +135,10 @@
        ! the entries in the original numbering. FamID is initialized
        ! to -1, which serves as a check later on.
 
+       ! Initialization so valgrind doesn't complain
+       famID = -1
+       sortedFamName = "" 
+
        do i=1,cgnsNFamilies
          sortedFamName(i) = cgnsFamilies(i)%familyName
          famID(i)         = -1
