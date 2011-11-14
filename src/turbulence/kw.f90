@@ -21,6 +21,7 @@
        use blockPointers
        use inputTimeSpectral
        use iteration
+       use inputPhysics !  eran-kwmod
        implicit none
 !
 !      Subroutine argument.
@@ -65,7 +66,16 @@
 
              ! Compute the corresponding eddy viscosity.
 
-             call kwEddyViscosity
+              select case (turbModel) !  eran-kwmod
+                 case (komegaWilcox)  !  eran-kwmod
+
+                    call kwEddyViscosity
+
+                 case (komegaModified) !  eran-kwmod
+
+                    call kwModifiedEddyViscosity !  eran-kwmod
+
+              end select
 
              ! Set the halo values for the turbulent variables.
              ! We are on the finest mesh, so the second layer of halo

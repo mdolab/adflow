@@ -59,6 +59,7 @@
        kb = flowDoms(nn,mm,ll)%kb
 
        rightHanded = flowDoms(nn,mm,ll)%righthanded
+
        ! Point range in the corresponding cgns block
 
        iBegor = flowDoms(nn,mm,ll)%iBegor
@@ -78,6 +79,7 @@
        nViscBocos = flowDoms(nn,mm,ll)%nViscBocos
 
        nNodesSubface  => flowDoms(nn,1,ll)%nNodesSubface
+
        BCType      => flowDoms(nn,mm,1)%BCType
        BCFaceID    => flowDoms(nn,mm,1)%BCFaceID
        cgnsSubface => flowDoms(nn,mm,1)%cgnsSubface
@@ -109,6 +111,8 @@
        l2         => flowDoms(nn,mm,1)%l2
        l3         => flowDoms(nn,mm,1)%l3
        groupNum   => flowDoms(nn,mm,1)%groupNum
+       idWBC      => flowDoms(nn,mm,1)%idWBC  !-- eran-CBD
+       contributeToForce => flowDoms(nn,mm,1)%contributeToForce  !-- eran-CBD
 
        ! Overset boundary and hole info.
 
@@ -239,6 +243,7 @@
        ! Wall distance for the turbulence models.
 
        d2Wall => flowDoms(nn,mm,ll)%d2Wall
+       filterDES   => flowDoms(nn,mm,ll)%filterDES  ! eran-des
 
        ! Arrays used for the implicit treatment of the turbulent wall
        ! boundary conditions. As these variables are only allocated for

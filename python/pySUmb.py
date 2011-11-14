@@ -784,12 +784,12 @@ class SUMB(AeroSolver):
             *self.metricConversion
         self.sumb.inputphysics.pointref[2] = aero_problem._refs.zref\
             *self.metricConversion
-#         self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xrot\
-#             *self.metricConversion
-#         self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yrot\
-#             *self.metricConversion
-#         self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zrot\
-#             *self.metricConversion
+        self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xrot\
+                                            *self.metricConversion
+        self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yrot\
+                                            *self.metricConversion
+        self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zrot\
+                                            *self.metricConversion
         #update the flow vars
         self.sumb.updatereferencepoint()
         self._update_vel_info = True
@@ -923,6 +923,15 @@ class SUMB(AeroSolver):
         self.sumb.setuniformflow()
         
         return
+
+    def reInitFlow(self):
+        '''
+        Reset the flow to recover from a nan
+        '''
+        self.sumb.initflow()
+        
+        return
+
 
     def getDensity(self):
         '''
@@ -1287,8 +1296,6 @@ class SUMB(AeroSolver):
             cfd_force_pts = self.getForcePoints()
         # end if
         [npts,nTS] = self.sumb.getforcesize()
-
-        nTS = 1
         if npts > 0:
             forces = self.sumb.getforces(cfd_force_pts.T).T
         else:
@@ -1299,7 +1306,6 @@ class SUMB(AeroSolver):
 
     def getForcePoints(self):
         [npts,nTS] = self.sumb.getforcesize()
-        nTS = 1
         if npts > 0:
             return self.sumb.getforcepoints(npts,nTS).T
         else:
@@ -1317,6 +1323,15 @@ class SUMB(AeroSolver):
 
         self.sumb.verifyforces(cfd_force_pts.T)
 
+        return
+
+    def verifyResiduals(self):
+        '''
+        run the residual verify routines
+        '''
+        level = 1
+        #self.sumb.verifyradj(level)
+        self.sumb.verifyresiduals(level)
         return
 
     def verifyBendingPartial(self):

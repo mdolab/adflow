@@ -37,7 +37,6 @@
 !      * Begin execution                                                *
 !      *                                                                *
 !      ******************************************************************
-!
        ! Store the variables of the zeroth runge kutta stage.
 
        spectralLoop: do sps=1,nTimeIntervalsSpectral
@@ -78,7 +77,6 @@
        do rkStage=1,(nRKStages-1)
 
          ! Execute a Runge Kutta stage and exchange the externals.
-          
          call executeRkStage
 
          ! Compute the residuals for the next stage.
@@ -97,7 +95,6 @@
        ! clarity; after the previous loop rkStage == nRKStages.
 
        rkStage = nRKStages
-
        call executeRkStage
 
        end subroutine RungeKuttaSmoother
@@ -121,6 +118,7 @@
        use inputTimeSpectral
        use inputUnsteady
        use iteration
+       use inputPhysics ! eran-ltemp
        implicit none
 !
 !      Local parameter.
@@ -134,7 +132,7 @@
        real(kind=realType) :: tmp, unsteadyImpl, mult
        real(kind=realType) :: dt, currentCfl, gm1, gm53
        real(kind=realType) :: v2, ovr, dp, factK, ru, rv, rw
-
+       real(kind=realType) :: pLim, pLimTlim, rhoLim  !eran-ltemp
        logical :: secondHalo, smoothResidual, correctForK
 !
 !      ******************************************************************
@@ -143,6 +141,15 @@
 !      *                                                                *
 !      ******************************************************************
 !
+
+! eran-ltemp starts
+       ! Compute the threshold values for rho and p.
+
+       rhoLim = 1.e-4_realType*rhoInf
+       pLim   = 1.e-4_realType*pInfCorr
+!- eran-ltemp ends
+
+
        ! Set the value of secondHalo and the current cfl number,
        ! depending on the situation. On the finest grid in the mg cycle
        ! the second halo is computed, otherwise not.
@@ -187,7 +194,7 @@
 !      ******************************************************************
 !
        ! Loop over the local number of blocks.
-    
+
        domainsUpdate: do nn=1,nDom
 
          ! Determine the equation mode solved.
@@ -324,9 +331,11 @@
 
            ! Possibility to smooth the updates.
 
+
            if( smoothResidual ) then
               call residualAveraging
            end if
+
            ! Flow variables.
 
            factK = zero
@@ -358,7 +367,7 @@
                  ! Compute the density. Correct for negative values.
 
                  w(i,j,k,irho) = wn(i,j,k,irho) - dw(i,j,k,irho)
-                 w(i,j,k,irho) = max(w(i,j,k,irho), 1.e-4_realType*rhoInf)
+                 w(i,j,k,irho) = max(w(i,j,k,irho), rhoLim)  !eran-ltemp 
 
                  ! Compute the velocities.
 
@@ -379,7 +388,35 @@
                enddo
              enddo
            enddo
+!
+!--------- eran-ltemp starts -------
+!
+           T_limit : if(limitLowTemprature)then
+              do k=2,kl
+                 do j=2,jl
+                    do i=2,il
+                       pLimTlim = max(rGasTlim*w(i,j,k,irho),pLim)
+                       p(i,j,k) = max(p(i,j,k),pLimTlim)
+                    end do
+                 end do
+              end do
 
+           else ! T_limit
+              
+               do k=2,kl
+                 do j=2,jl
+                    do i=2,il
+
+                       p(i,j,k) = max(p(i,j,k), pLim)
+
+                     end do
+                 end do
+              end do
+
+           end if T_limit
+!
+!--------- eran-ltemp ends -------
+!
            ! Possible turbulent variables.
 
            do l=nt1MG,nMGVar

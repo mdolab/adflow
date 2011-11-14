@@ -67,7 +67,9 @@
 
        integer(kind=intType), dimension(:), pointer :: BCType
        integer(kind=intType), dimension(:), pointer :: BCFaceID
+
        integer(kind=intType), dimension(:), pointer :: nNodesSubface
+
        integer(kind=intType), dimension(:), pointer :: cgnsSubface
 
        integer(kind=intType), dimension(:), pointer :: inBeg, inEnd
@@ -86,6 +88,9 @@
        integer(kind=intType), dimension(:), pointer :: neighProc
        integer(kind=intType), dimension(:), pointer :: l1, l2, l3
        integer(kind=intType), dimension(:), pointer :: groupNum
+
+       integer(kind=intType), dimension(:), pointer :: idWBC ! eran-CBD
+       logical , dimension(:), pointer ::  contributeToForce  ! eran-cbd
 
        integer(kind=intType) :: nCellsOverset, nCellsOversetAll
        integer(kind=intType) :: nHoles, nOrphans
@@ -138,14 +143,15 @@
        real(kind=realType), dimension(:,:,:), pointer :: sFaceJ
        real(kind=realType), dimension(:,:,:), pointer :: sFaceK
 
-       real(kind=realType), dimension(:,:,:,:),   pointer :: w
+       real(kind=realType), dimension(:,:,:,:),   pointer :: w,wtmp
        real(kind=realType), dimension(:,:,:,:,:), pointer :: wOld
-       real(kind=realType), dimension(:,:,:),     pointer :: p,gamma
+       real(kind=realType), dimension(:,:,:),     pointer :: p,gamma,ptmp
+
        real(kind=realType), dimension(:,:,:),     pointer :: rlv, rev
        real(kind=realType), dimension(:,:,:,:),   pointer :: s
 
        real(kind=realType), dimension(:,:,:),     pointer :: p1
-       real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw
+       real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw,dwtmp
        real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
        real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
 
@@ -170,6 +176,7 @@
 
        real(kind=realType), dimension(:,:,:), pointer :: d2Wall
 
+       real(kind=realType), dimension(:,:,:),   pointer :: filterDES  ! eran-des
        real(kind=realType), dimension(:,:,:,:), pointer :: bmti1
        real(kind=realType), dimension(:,:,:,:), pointer :: bmti2
        real(kind=realType), dimension(:,:,:,:), pointer :: bmtj1
@@ -194,4 +201,5 @@
 
        real(kind=realType), dimension(:,:,:,:), pointer :: w_offTimeInstance
        real(kind=realType), dimension(:,:,:), pointer :: vol_offTimeInstance
+
        end module blockPointers

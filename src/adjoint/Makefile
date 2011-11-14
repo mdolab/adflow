@@ -69,6 +69,8 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       setPointersAdj.o         \
 	       setupADjointPCMatrixTranspose.o \
 	       setupAllResidualMatrices.o\
+	       setupAllResidualMatricesTS.o\
+               setupExtraDVsFortran.o\
                setupPETScKsp.o         \
                solveADjointTransposePETSc.o\
                solverADjoint.o          \
@@ -81,9 +83,9 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       verifyRAdj.o\
                adjoint_stencils.o\
                verifydRdwFile.o\
-               verifydRdxFile.o  \
-               verifydRdExtraFile.o    
-#	       verifyResiduals.o\
+               verifydRdxFile.o\
+               verifydRdExtraFile.o\
+	       verifyResiduals.o
 #	       verifydRdw.o             \
 #              verifydRdwFile.o         \
 #              verifydRdwFileFD.o       \
