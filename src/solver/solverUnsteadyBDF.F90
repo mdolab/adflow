@@ -24,14 +24,18 @@
        use monitor
        use blockPointers
        use inputTimeSpectral
+       use communication   ! eran-tempmon
+       use cgnsNames       ! eran-tempmon
+       use bleedFlows      ! eran-tempmon
+
        implicit none
 !
 !      Local variables.
 !
        integer(kind=intType) :: iter, nTimeSteps
-
        integer(kind=intType) :: i,j,k,nn,kk
-
+       integer(kind=intType) :: fTempMon=87, ierr, mm ! !eran-tempmon
+!
 !      ******************************************************************
 !      *                                                                *
 !      * Begin execution                                                *
@@ -51,6 +55,19 @@
 
        nTimeSteps = nTimeStepsCoarse
        if(groundLevel == 1) nTimeSteps = nTimeStepsFine
+!
+! add temporal monitoring option for unsteady cases  ! eran-tempmon starts
+!
+       if(myID == 0) then
+          open(unit=fTempMon,file='temporalMonitor.dat',status='unknown',&
+                        position='rewind',buffered='no' ,iostat=ierr)
+
+          if(ierr /= 0) call terminate("solverUnsteadyBDF", &
+                             "Failure in open of temporalMonitor.dat file") 
+ 	  write(*,*)" temporal monitoring file: temporalMonitor.dat was initiated" 
+                   
+          write(fTempMon,'("%")')
+          write(fTempMon,'("% ntstep    time   ")',advance="no")
 
        ! Fill up old xold and volold
        
@@ -60,6 +77,8 @@
              ! Set the pointers for this block on the ground level.
              
              call setPointers(nn, groundLevel,kk)
+
+
 
              do k=0,ke
                 do j=0,je
@@ -80,7 +99,62 @@
              enddo
           end do domains
        end do spectralLoop
+       do mm=1,nMon
 
+         ! Determine the variable name and write the
+         ! corresponding text.
+
+                      select case (monNames(mm))
+
+                        case (cgnsCl)
+                           write(fTempMon,"(a)",advance="no") "   C_lift   |"
+
+                        case (cgnsClp)
+                           write(fTempMon,"(a)",advance="no") "  C_lift_p  |"
+
+                        case (cgnsClv)
+                           write(fTempMon,"(a)",advance="no") "  C_lift_v  |"
+
+                        case (cgnsCd)
+                           write(fTempMon,"(a)",advance="no") "   C_drag   |"
+
+                        case (cgnsCdp)
+                           write(fTempMon,"(a)",advance="no") "  C_drag_p  |"
+
+                        case (cgnsCdv)
+                           write(fTempMon,"(a)",advance="no") "  C_drag_v  |"
+
+                        case (cgnsCfx)
+                           write(fTempMon,"(a)",advance="no") "    C_Fx    |"
+
+                        case (cgnsCfy)
+                           write(fTempMon,"(a)",advance="no") "    C_Fy    |"
+
+                        case (cgnsCfz)
+                           write(fTempMon,"(a)",advance="no") "    C_Fz    |"
+
+                        case (cgnsCmx)
+                           write(fTempMon,"(a)",advance="no") "    C_Mx    |"
+
+                        case (cgnsCmy)
+                           write(fTempMon,"(a)",advance="no") "    C_My    |"
+
+                        case (cgnsCmz)
+                           write(fTempMon,"(a)",advance="no") "    C_Mz    |"
+
+                      end select
+
+          enddo ! mm
+
+          if(nOutflowSubsonic + nOutflowBleeds + nInflowSubsonic > 0 )  & 
+                   write(fTempMon,"(a)",advance='no')"  MassFlux     |"  
+
+          write(fTempMon, "(1x)")
+          write(fTempMon,'("%")')
+
+       end if ! myID
+
+ ! ------------------------------------------eran-tempmon ends
 
        ! Loop over the number of time steps to be computed.
 
@@ -95,9 +169,9 @@
 
          ! Solve the state for the current time step and 
          ! update nOldSolAvail.
-	
+
          call solveState
-	
+
          nOldSolAvail = nOldSolAvail + 1
 
          ! Update PV3 solution if PV3 support is required.
@@ -355,8 +429,8 @@
        ! Check whether a solution file, either volume or surface, must
        ! be written. Only on the finest grid level in stand alone mode.
 
-       !if(standAloneMode .and. groundLevel == 1) then
-       if (groundLevel == 1) then
+       if(standAloneMode .and. groundLevel == 1) then
+
          if(mod(timeStepUnsteady, nSaveVolume) == 0)  &
            writeVolume  = .true.
          if(mod(timeStepUnsteady, nSaveSurface) == 0) &
@@ -447,5 +521,7 @@
          endif
 
        endif
+
+       if(genCBDOUT)call componentsBreakDownPrintout(1)	! eran-CBD	
 
        end subroutine checkWriteUnsteadyEndLoop

@@ -1,0 +1,24 @@
+# ------------------------------------------------------ #
+# Run the makefile that clears Tapenade output directory #
+# ------------------------------------------------------ #
+
+make -f MakefileTapenadeResidualMetricTS clean
+
+# ------------------------------------------------------ #
+#         Run the makefile that calls Tapenade           #
+# ------------------------------------------------------ #
+
+# Differentiate the single-node residual, residualpenalty and metric routines
+
+make -f MakefileTapenadeResidualMetricTS
+
+# Run python script that automatically edits the tapenade 
+# output files, discard module files and renaming module
+# names in subroutines
+
+python residualTapenadeTS/autoEdit.py
+
+echo "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+echo "Refer to INSTRUCTIONS file for subsequent steps..."
+echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+

@@ -31,6 +31,8 @@
        real(kind=realType) :: sqrt3
        real(kind=realType) :: tkea, tepa, tv2a, supi, rn2
        real(kind=realType) :: rsct, rscl2, rnu, rstrain
+       real(kind=realType) :: wallProximityLimit = 1.E6 ! eran-v2f
+       !             eran: large value here actually cancel this option
 !
 !      ******************************************************************
 !      *                                                                *
@@ -93,7 +95,16 @@
                supi        = tepa*tkea/max(sqrt3*tv2a*rvfCmu*rstrain,eps)
                rn2         = rvfCn**2*(rnu*tepa)**1.5_realType
 
-               rsct        = max(tkea,six*sqrt(rnu*tepa))
+
+! eran-v2f               rsct        = max(tkea,six*sqrt(rnu*tepa))
+!----- eran-v2f: next if prevents Kolomorov limit away from wall, to avoid neg. k
+!
+               if(d2wall(i,j,k) <= wallProximityLimit)then
+                  rsct        = max(tkea,six*sqrt(rnu*tepa))
+               else
+                  rsct        = tkea
+               end if
+!-----eran-v2f: end
                sct(i,j,k)  = min(rsct,0.6_realType*supi)
                rscl2       = tkea*min(tkea**2,supi**2)
                scl2(i,j,k) = rvfCl**2*max(rscl2,rn2)
@@ -115,7 +126,16 @@
                tepa        = abs(w(i,j,k,itu2))
                rn2         = rvfCn**2*(rnu*tepa)**1.5_realType
 
-               rsct        = max(tkea,six*sqrt(rnu*tepa))
+
+!eran-v2f               rsct        = max(tkea,six*sqrt(rnu*tepa))
+!----- eran-v2f: next if prevents Kolomorov limit away from wall, to avoid neg. k
+!
+               if(d2wall(i,j,k) <= wallProximityLimit)then
+                  rsct        = max(tkea,six*sqrt(rnu*tepa))
+               else
+                  rsct        = tkea
+               end if
+!-----eran-v2f: end 
                sct(i,j,k)  = rsct
                rscl2       = tkea**3
                scl2(i,j,k) = rvfCl**2*max(rscl2,rn2)

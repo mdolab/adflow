@@ -69,12 +69,23 @@ class Geometry(object):
 		Keyword Arguments:
 		------------------
 		name -> STRING: Geometry Instance Name
-		
+                CGPercent -> SCALAR: Center of gravity(CG) location in percent MAC
+		ForeSparPercent -> SCALAR: Forward spar location for CG calculation
+                RearSparPercent -> SCALAR: Rearward spar location for CG calculation
+		StaticMarginPercen -> SCALAR: Desired static margin in %
+		ForeThickCon -> SCALAR: Percent chord of forward limit of thickness constraints
+		RearThickCon -> SCALAR: Percent chord of rearward limit of thickness constraints
+		rootOffset -> SCALAR: Outward offset of box outlining thickness constraint at the wing root
+		tipOffset -> SCALAR: Inward offset of box outlining thickness constraint at the wing tip
+		xRootec	 -> SCALAR: Location of the elastic center at the wing root	
+		yRootec -> SCALAR: Location of the elastic center at the wing root
+		zRootec -> SCALAR: Location of the elastic center at the wing root
+
 		Attributes:
 		-----------
 		
 		
-		Documentation last updated:  May. 21, 2008 - Ruben E. Perez
+		Documentation last updated:  July 22, 2011 - C.A.(Sandy) Mader
 		'''
 		
 		# 

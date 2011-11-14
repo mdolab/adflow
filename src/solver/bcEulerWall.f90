@@ -100,6 +100,7 @@
            ! that.
 
            !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
+
            call setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                               rev1, rev2, 0_intType)
 !
@@ -378,7 +379,6 @@
                vn = two*(rface(j,k) - ww2(j,k,ivx)*norm(j,k,1) &
                                     - ww2(j,k,ivy)*norm(j,k,2) &
                                     - ww2(j,k,ivz)*norm(j,k,3))
-               
                ww1(j,k,irho) = ww2(j,k,irho)
                ww1(j,k,ivx)  = ww2(j,k,ivx) + vn*norm(j,k,1)
                ww1(j,k,ivy)  = ww2(j,k,ivy) + vn*norm(j,k,2)

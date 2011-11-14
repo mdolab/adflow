@@ -301,6 +301,13 @@
                             &360 degrees")
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
+!
+!----- eran-massf starts
+!
+         if(myID == 0)then
+            write(*,'("massf: domain ",i4," nSlices = ",i2," (multiply flux)")')ii,nSlices
+         end if ! myID
+!-------end eran-massf
 
          ! Set the number of slices for this section.
 
