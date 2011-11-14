@@ -41,7 +41,6 @@ subroutine NKsolver
   ! maxNonLinearIts is (far) larger that necessary. The "iteration"
   ! limit is really set from the maxmimum number of funcEvals
   maxNonLinearIts = ncycles-iterTot
-  routineFailed = .True.
   ksp_iterations = 0
   norm = 0.0
   old_norm=0.0
@@ -79,7 +78,17 @@ subroutine NKsolver
      ! line search iterations
      if (iter .ne. 1) then
         iterTot = iterTot + ksp_iterations + nfevals 
-        call convergenceInfo
+        
+        ! If iterTot is anywhere near ncycles...we're cooked
+        if (iterTot >= ncycles) then
+           iterTot = ncycles
+           ! We need to call convergence Info since this has the
+           ! "approximate" convergence check
+           call convergenceInfo
+           exit NonLinearLoop
+        else
+           call convergenceInfo
+        end if
      end if
 
      ! Use the result from the last line search
@@ -120,7 +129,7 @@ subroutine NKsolver
      end if
 
      ! Check to see if we've done too many function Evals:
-     if (iterTot > ncycles) then
+     if (iterTot >= ncycles) then
         iterTot = ncycles 
         exit NonLinearLoop
      end if
@@ -158,6 +167,7 @@ subroutine NKsolver
      end if
 
      if (.not. flag) then
+        routineFailed = .True.
         exit NonLinearLoop
      end if
 

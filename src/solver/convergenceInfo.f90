@@ -91,6 +91,11 @@
        converged   = .true.
        nanOccurred = .false.
 
+       ! make sure iterTot is NEVER NEVER EVER bigger than ncycles. 
+       if (iterTot > ncycles) then
+          iterTot = ncycles
+       end if
+
        ! Set the L2 norm for convergence for this level.
 
        L2ConvThisLevel = L2ConvCoarse
@@ -104,6 +109,10 @@
        nIterCur = iterTot
        if(groundLevel == 1) nIterCur = nIterCur + nIterOld
 
+       if (nIterCur > ncycles) then
+          niterCur = ncycles
+       end if
+       
        ! Set the value of iConv, the place in the convergence array.
        ! On the finest level this is nIterCur. On the coarser grids this
        ! would be a logical choice as well. However it is theoretically
@@ -116,6 +125,7 @@
        ! is overwritten anyway by the fine mesh.
 
        iConv = nIterCur
+
        if(groundLevel > 1) iConv = min(iConv,1_intType)
 
        ! Set the value of iConvStdout. For a steady and a spectral
@@ -368,6 +378,10 @@
 
            if( storeConvInnerIter ) then
              do mm=1,nMon
+                if (iconv > ncycles) then
+                   print *,'There has been an error: iconv is somehow larger than ncycles'
+                   stop
+                end if
                convArray(iConv,sps,mm) = monGlob(mm)
              enddo
            endif
@@ -628,7 +642,7 @@
           ! python level...
           return
        endif
-       if((fromPython).and. (nIterCur==nCycles))then
+       if((fromPython).and. (nIterCur>=nCycles))then
           
           !Check to see if residuals are diverging or stalled for python
           select case (equationMode)
