@@ -158,8 +158,8 @@ subroutine NKsolver
      if (.True.) then! Check for type of line search:
         iter_k = iter
         iter_m = min(iter_m+1,Mmax)
-        call LSNM(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
-        !call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
+        !call LSNM(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
+        call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
         !call LSNone(wVec,rVec,g,deltaW,work,nfevals,flag)
 
      else ! No Linesearch, just accept the new step
