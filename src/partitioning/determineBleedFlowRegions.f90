@@ -2,9 +2,9 @@
 !      ******************************************************************
 !      *                                                                *
 !      * File:          determineBleedFlowRegions.f90                   *
-!      * Author:        Edwin van der Weide                             *
+!      * Author:        Edwin van der Weide,C.A.(Sandy) Mader           *
 !      * Starting date: 08-11-2005                                      *
-!      * Last modified: 08-16-2005                                      *
+!      * Last modified: 09-14-2011                                      *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -21,6 +21,10 @@
        use BCTypes
        use bleedFlows
        use cgnsGrid
+!---CAM-----
+       use communication
+!---CAM-----
+       implicit none
 !
 !      Local variables.
 !
@@ -42,6 +46,8 @@
 
        nInflowBleeds  = 0
        nOutflowBleeds = 0
+       nOutflowSubsonic = 0  ! eran-massf
+       nInflowSubsonic = 0  ! eran-massf
 
        do nn=1,cgnsNFamilies
          select case (cgnsFamilies(nn)%BCType)
@@ -51,8 +57,23 @@
            case (MassBleedOutflow)
              nOutflowBleeds = nOutflowBleeds + 1
 
+           case (SubsonicOutflow)                     ! eran-massf
+              nOutflowSubsonic = nOutflowSubsonic + 1 ! eran-massf
+
+           case (SubsonicInflow)                     ! eran-massf
+              nInflowSubsonic = nInflowSubsonic + 1 ! eran-massf
+
          end select
        enddo
+!-----CAM ------
+       if (myID == 0)then
+!-----CAM ------
+          if(nOutflowBleeds+ nOutflowSubsonic + nInflowSubsonic > 0 ) &
+            write(*,*)'OUTFLOW/INFLOW BC: Nbleeds = ',nOutflowBleeds, &
+            ' N subsonicOutflow = ',nOutflowSubsonic, &
+            ' nInflowSubsonic = ',nInflowSubsonic    ! eran-massf
+
+       end if
 
        ! Allocate the memory for the arrays to store the bleed flow
        ! information.

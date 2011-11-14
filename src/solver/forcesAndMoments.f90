@@ -25,6 +25,7 @@
        use BCTypes
        use flowVarRefState
        use inputPhysics
+       use cgnsGrid  ! eran-CBD 
        implicit none
 !
 !      Subroutine arguments
@@ -94,38 +95,37 @@
 !        *                                                              *
 !        ****************************************************************
 !
-        
+
          invForce: if(BCType(nn) == EulerWall        .or. &
                        BCType(nn) == NSWallAdiabatic .or. &
                        BCType(nn) == NSWallIsothermal) then
 
+            contribute:    if(contributeToForce(nn))then  ! eran-CBD
            ! Subface is a wall. Check if it is a viscous wall.
 
            viscousSubface = .true.
            if(BCType(nn) == EulerWall) viscousSubface = .false.
 
+
            ! Set a bunch of pointers depending on the face id to make
            ! a generic treatment possible. The routine setBcPointers
            ! is not used, because quite a few other ones are needed.
 
-           select case (BCFaceID(nn))
+             select case (BCFaceID(nn))
 
              case (iMin)
-                 !print *,'imin'
                pp2  => p(2,1:,1:);      pp1  => p(1,1:,1:)
                rho2 => w(2,1:,1:,irho); rho1 => w(1,1:,1:,irho)
                ss   => si(1,:,:,:);     xx   => x(1,:,:,:)
                fact = -one
+
 
                if(equations == RANSEquations) dd2Wall => d2Wall(2,:,:)
                if( viscousSubface ) then
                  rlv2 => rlv(2,1:,1:); rlv1 => rlv(1,1:,1:)
                endif
 
-             !===========================================================
-
              case (iMax)
-                !print *,'imax'
                pp2  => p(il,1:,1:);      pp1  => p(ie,1:,1:)
                rho2 => w(il,1:,1:,irho); rho1 => w(ie,1:,1:,irho)
                ss   => si(il,:,:,:);     xx   => x(il,:,:,:)
@@ -133,41 +133,34 @@
 
                if(equations == RANSEquations) dd2Wall => d2Wall(il,:,:)
                if( viscousSubface ) then
-                 rlv2 => rlv(il,1:,1:); rlv1 => rlv(ie,1:,1:)
+                  rlv2 => rlv(il,1:,1:); rlv1 => rlv(ie,1:,1:)
                endif
 
-             !===========================================================
 
-             case (jMin)
-                  !print *,'jmin'
+               case (jMin)
                pp2  => p(1:,2,1:);      pp1  => p(1:,1,1:)
                rho2 => w(1:,2,1:,irho); rho1 => w(1:,1,1:,irho)
                ss   => sj(:,1,:,:);     xx   => x(:,1,:,:)
                fact = -one
 
-               if(equations == RANSEquations) dd2Wall => d2Wall(:,2,:)
-               if( viscousSubface ) then
-                 rlv2 => rlv(1:,2,1:); rlv1 => rlv(1:,1,1:)
-               endif
 
-             !===========================================================
+                  if(equations == RANSEquations) dd2Wall => d2Wall(:,2,:)
+                  if( viscousSubface ) then
+                     rlv2 => rlv(1:,2,1:); rlv1 => rlv(1:,1,1:)
+                  endif
 
-             case (jMax)
-                !print *,'jmax'
-               pp2  => p(1:,jl,1:);      pp1  => p(1:,je,1:)
-               rho2 => w(1:,jl,1:,irho); rho1 => w(1:,je,1:,irho)
-               ss   => sj(:,jl,:,:);     xx   => x(:,jl,:,:)
-               fact = one
+               case (jMax)
+                  pp2  => p(1:,jl,1:);      pp1  => p(1:,je,1:)
+                  rho2 => w(1:,jl,1:,irho); rho1 => w(1:,je,1:,irho)
+                  ss   => sj(:,jl,:,:);     xx   => x(:,jl,:,:)
+                  fact = one
 
-               if(equations == RANSEquations) dd2Wall => d2Wall(:,jl,:)
-               if( viscousSubface ) then
-                 rlv2 => rlv(1:,jl,1:); rlv1 => rlv(1:,je,1:)
-               endif
-
-             !===========================================================
+                  if(equations == RANSEquations) dd2Wall => d2Wall(:,jl,:)
+                  if( viscousSubface ) then
+                     rlv2 => rlv(1:,jl,1:); rlv1 => rlv(1:,je,1:)
+                  endif
 
              case (kMin)
-                !   print *,'kmin'
                pp2  => p(1:,1:,2);      pp1  => p(1:,1:,1)
                rho2 => w(1:,1:,2,irho); rho1 => w(1:,1:,1,irho)
                ss   => sk(:,:,1,:);     xx   => x(:,:,1,:)
@@ -178,10 +171,7 @@
                  rlv2 => rlv(1:,1:,2); rlv1 => rlv(1:,1:,1)
                endif
 
-             !===========================================================
-
              case (kMax)
-                ! print *,'kmax'
                pp2  => p(1:,1:,kl);      pp1  => p(1:,1:,ke)
                rho2 => w(1:,1:,kl,irho); rho1 => w(1:,1:,ke,irho)
                ss   => sk(:,:,kl,:);     xx   => x(:,:,kl,:)
@@ -199,10 +189,10 @@
            ! cell range, because the latter may include the halo's in i
            ! and j-direction. The offset +1 is there, because inBeg and
            ! jnBeg refer to nodal ranges and not to cell ranges.
-           
-           do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
-             do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
-                
+
+               do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
+                  do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
+
                ! Compute the average pressure minus 1 and the coordinates
                ! of the centroid of the face relative from from the
                ! moment reference point. Due to the usage of pointers for
@@ -211,33 +201,35 @@
                ! fact to account for the possibility of an inward or
                ! outward pointing normal.
 
-               pm1 = fact*(half*(pp2(i,j) + pp1(i,j)) - pInf)
-               !print *,'pm1',fact,half,pp2(i,j),pp1(i,j),pInf
-               xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
-                  +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
-               yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
-                  +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
-               zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
-                  +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
+
+                     pm1 = fact*(half*(pp2(i,j) + pp1(i,j)) - pInf)
+                     
+                     xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+                          +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
+                     yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+                          +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
+                     zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+                          +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
 
                ! Compute the force components.
 
-               fx = pm1*ss(i,j,1)
-               fy = pm1*ss(i,j,2)
-               fz = pm1*ss(i,j,3)
-               !print *,'fx',fx,pm1,ss(i,j,1)
+                     fx = pm1*ss(i,j,1)
+                     fy = pm1*ss(i,j,2)
+                     fz = pm1*ss(i,j,3)
+
                ! Update the inviscid force and moment coefficients.
 
-               cFp(1) = cFp(1) + fx
-               cFp(2) = cFp(2) + fy
-               cFp(3) = cFp(3) + fz
+                     cFp(1) = cFp(1) + fx
+                     cFp(2) = cFp(2) + fy
+                     cFp(3) = cFp(3) + fz
 
-               cMp(1) = cMp(1) + yc*fz - zc*fy
-               cMp(2) = cMp(2) + zc*fx - xc*fz
-               cMp(3) = cMp(3) + xc*fy - yc*fx
+                     cMp(1) = cMp(1) + yc*fz - zc*fy
+                     cMp(2) = cMp(2) + zc*fx - xc*fz
+                     cMp(3) = cMp(3) + xc*fy - yc*fx
 
-             enddo
-           enddo
+                  enddo
+               enddo
+
 !
 !          **************************************************************
 !          *                                                            *
@@ -246,61 +238,68 @@
 !          *                                                            *
 !          **************************************************************
 !
-           visForce: if( viscousSubface ) then
+               visForce: if( viscousSubface ) then
 
              ! Initialize dwall for the laminar case and set the pointer
              ! for the unit normals.
 
-             dwall = zero
-             norm => BCData(nn)%norm
+                  dwall = zero
+                  norm => BCData(nn)%norm
 
              ! Loop over the quadrilateral faces of the subface and
              ! compute the viscous contribution to the force and
              ! moment and update the maximum value of y+.
 
-             do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
-               do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
+                  do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
+                     do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
 
                  ! Store the viscous stress tensor a bit easier.
 
-                 tauXx = viscSubface(nn)%tau(i,j,1)
-                 tauYy = viscSubface(nn)%tau(i,j,2)
-                 tauZz = viscSubface(nn)%tau(i,j,3)
-                 tauXy = viscSubface(nn)%tau(i,j,4)
-                 tauXz = viscSubface(nn)%tau(i,j,5)
-                 tauYz = viscSubface(nn)%tau(i,j,6)
+
+                        tauXx = viscSubface(nn)%tau(i,j,1)
+                        tauYy = viscSubface(nn)%tau(i,j,2)
+                        tauZz = viscSubface(nn)%tau(i,j,3)
+                        tauXy = viscSubface(nn)%tau(i,j,4)
+                        tauXz = viscSubface(nn)%tau(i,j,5)
+                        tauYz = viscSubface(nn)%tau(i,j,6)
 
                  ! Compute the viscous force on the face. A minus sign
                  ! is now present, due to the definition of this force.
 
-                 fx = -fact*(tauXx*ss(i,j,1) + tauXy*ss(i,j,2) &
-                    +        tauXz*ss(i,j,3))
-                 fy = -fact*(tauXy*ss(i,j,1) + tauYy*ss(i,j,2) &
-                    +        tauYz*ss(i,j,3))
-                 fz = -fact*(tauXz*ss(i,j,1) + tauYz*ss(i,j,2) &
-                    +        tauZz*ss(i,j,3))
+
+                        fx = -fact*(tauXx*ss(i,j,1) + tauXy*ss(i,j,2) &
+                             +        tauXz*ss(i,j,3))
+                        fy = -fact*(tauXy*ss(i,j,1) + tauYy*ss(i,j,2) &
+                             +        tauYz*ss(i,j,3))
+                        fz = -fact*(tauXz*ss(i,j,1) + tauYz*ss(i,j,2) &
+                             +        tauZz*ss(i,j,3))
 
                  ! Compute the coordinates of the centroid of the face
                  ! relative from the moment reference point. Due to the
                  ! usage of pointers for xx and offset of 1 is present,
                  ! because x originally starts at 0.
 
-                 xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
-                    +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
-                 yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
-                    +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
-                 zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
-                    +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
+
+                        xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+                             +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
+                        yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+                             +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
+                        zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+                             +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
+
 
                  ! Update the viscous force and moment coefficients.
 
-                 cFv(1) = cFv(1) + fx
-                 cFv(2) = cFv(2) + fy
-                 cFv(3) = cFv(3) + fz
 
-                 cMv(1) = cMv(1) + yc*fz - zc*fy
-                 cMv(2) = cMv(2) + zc*fx - xc*fz
-                 cMv(3) = cMv(3) + xc*fy - yc*fx
+                        cFv(1) = cFv(1) + fx
+                        cFv(2) = cFv(2) + fy
+                        cFv(3) = cFv(3) + fz
+
+
+                        cMv(1) = cMv(1) + yc*fz - zc*fy
+                        cMv(2) = cMv(2) + zc*fx - xc*fz
+                        cMv(3) = cMv(3) + xc*fy - yc*fx
+
 
                  ! Compute the tangential component of the stress tensor,
                  ! which is needed to monitor y+. The result is stored
@@ -309,41 +308,45 @@
                  ! component is important, there is no need to take the
                  ! sign into account (it should be a minus sign).
 
-                 fx = tauXx*norm(i,j,1) + tauXy*norm(i,j,2) &
-                    + tauXz*norm(i,j,3)
-                 fy = tauXy*norm(i,j,1) + tauYy*norm(i,j,2) &
-                    + tauYz*norm(i,j,3)
-                 fz = tauXz*norm(i,j,1) + tauYz*norm(i,j,2) &
-                    + tauZz*norm(i,j,3)
 
-                 fn = fx*norm(i,j,1) + fy*norm(i,j,2) + fz*norm(i,j,3)
+                        fx = tauXx*norm(i,j,1) + tauXy*norm(i,j,2) &
+                             + tauXz*norm(i,j,3)
+                        fy = tauXy*norm(i,j,1) + tauYy*norm(i,j,2) &
+                             + tauYz*norm(i,j,3)
+                        fz = tauXz*norm(i,j,1) + tauYz*norm(i,j,2) &
+                             + tauZz*norm(i,j,3)
 
-                 fx = fx - fn*norm(i,j,1)
-                 fy = fy - fn*norm(i,j,2)
-                 fz = fz - fn*norm(i,j,3)
+
+                        fn = fx*norm(i,j,1) + fy*norm(i,j,2) + fz*norm(i,j,3)
+                        fx = fx - fn*norm(i,j,1)
+                        fy = fy - fn*norm(i,j,2)
+                        fz = fz - fn*norm(i,j,3)
 
                  ! Compute the local value of y+. Due to the usage
                  ! of pointers there is on offset of -1 in dd2Wall..
 
-                 if(equations == RANSEquations) dwall = dd2Wall(i-1,j-1)
 
-                 rho   = half*(rho2(i,j) + rho1(i,j))
-                 mul   = half*(rlv2(i,j) + rlv1(i,j))
-                 yplus = sqrt(rho*sqrt(fx*fx + fy*fy + fz*fz))*dwall/mul
+                        if(equations == RANSEquations) dwall = dd2Wall(i-1,j-1)
+
+                        rho   = half*(rho2(i,j) + rho1(i,j))
+                        mul   = half*(rlv2(i,j) + rlv1(i,j))
+                        yplus = sqrt(rho*sqrt(fx*fx + fy*fy + fz*fz))*dwall/mul
+
 
                  ! Store this value if this value is larger than the
                  ! currently stored value.
 
-                 yplusMax = max(yplusMax, yplus)
 
-               enddo
-             enddo
-
-           endif visForce
+                        yplusMax = max(yplusMax, yplus)
+                     enddo
+                  enddo
+                  
+               endif visForce
+            endif contribute   ! eran-cbd
          endif invForce
 
-       enddo bocos
-       !print *,'x',x
+      enddo bocos
+
        ! Currently the coefficients only contain the surface integral
        ! of the pressure tensor. These values must be scaled to
        ! obtain the correct coefficients.

@@ -80,7 +80,7 @@
            ! inviscid flux.
 
            call setPointers(nn, currentLevel, sps)
-           
+
            call inviscidCentralFlux
 
            ! Compute the artificial dissipation fluxes.

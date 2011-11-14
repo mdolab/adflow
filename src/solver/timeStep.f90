@@ -211,7 +211,6 @@
 
                    ! Compute the scaling in the three coordinate
                    ! directions.
-                 
                    rij = (ri/rj)**adis
                    rjk = (rj/rk)**adis
                    rki = (rk/ri)**adis

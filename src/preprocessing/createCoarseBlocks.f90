@@ -25,6 +25,7 @@
        use inputTimeSpectral
        use coarse1to1Subface
        use coarseningInfo
+       use BCTypes ! eran-cbd
        implicit none
 !
 !      Subroutine arguments.
@@ -494,7 +495,9 @@
                   flowDoms(nn,level,1)%l1(mm),          &
                   flowDoms(nn,level,1)%l2(mm),          &
                   flowDoms(nn,level,1)%l3(mm),          &
-                  stat=ierr)
+                  flowDoms(nn,level,1)%idWBC(mm),       &
+                  flowDoms(nn,level,1)%contributeToForce(mm), &
+                  stat=ierr) ! eran-CBD 
          if(ierr /= 0)                          &
            call terminate("createCoarseBlocks", &
                           "Memory allocation failure for subface info")
@@ -533,6 +536,16 @@
                    flowDoms(nn,levm1,1)%groupNum(mm)
            flowDoms(nn,level,1)%cgnsSubface(mm) = &
                    flowDoms(nn,levm1,1)%cgnsSubface(mm)
+!
+!------------- eran-CBD start --
+!
+             if(flowDoms(nn,level,1)%BCType(mm)  == EulerWall .or. &
+                flowDoms(nn,level,1)%BCType(mm)  == NSWallAdiabatic .or. &
+                flowDoms(nn,level,1)%BCType(mm) == NSWallIsothermal)&
+                flowDoms(nn,level,1)%contributeToForce(mm)=.true. 
+!
+!------------- eran-CBD- end --------
+!
 
            flowDoms(nn,level,1)%l1(mm) = flowDoms(nn,levm1,1)%l1(mm)
            flowDoms(nn,level,1)%l2(mm) = flowDoms(nn,levm1,1)%l2(mm)

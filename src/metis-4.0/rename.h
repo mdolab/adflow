@@ -8,7 +8,7 @@
  * Started 10/2/97
  * George
  *
- * $Id$
+ * $Id: rename.h 1 2008-01-14 19:16:54Z vdweide $
  *
  */
 
