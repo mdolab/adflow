@@ -18,7 +18,8 @@ subroutine NKsolver
   use NKSolverVars, only: dRdw, dRdwPre, jacobian_lag, &
        totalR0, totalRStart, wVec, rVec, deltaW, reason, global_ksp, reason,&
        ksp_rtol, ksp_atol, ksp_max_it, ksp_subspace, ksp_div_tol, &
-       nksolvedonce, times, func_evals, Mmax, iter_k, iter_m
+       nksolvedonce, times, func_evals, Mmax, iter_k, iter_m, NKLS, &
+       nolinesearch, cubiclinesearch, nonmonotonelinesearch
 
   use InputIO ! L2conv,l2convrel
   use inputIteration
@@ -47,7 +48,7 @@ subroutine NKsolver
   rtol_last =0.0
   nfevals = 0
 
-  Mmax = 15
+  Mmax = 10
   iter_k = 1
   iter_m = 0
 
@@ -155,15 +156,14 @@ subroutine NKsolver
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Linesearching:
-     if (.True.) then! Check for type of line search:
-        iter_k = iter
-        iter_m = min(iter_m+1,Mmax)
-        !call LSNM(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
-        call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
-        !call LSNone(wVec,rVec,g,deltaW,work,nfevals,flag)
-
-     else ! No Linesearch, just accept the new step
+     iter_k = iter
+     iter_m = min(iter_m+1,Mmax)
+     if (NKLS == noLineSearch) then
         call LSNone(wVec,rVec,g,deltaW,work,nfevals,flag)
+     else if(NKLS == cubicLineSearch) then
+        call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
+     else if (NKLS == nonMonotoneLineSearch) then
+        call LSNM(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
      end if
 
      if (.not. flag) then

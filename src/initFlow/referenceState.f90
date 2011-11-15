@@ -34,6 +34,7 @@
        use inputPhysics
        use inputTimeSpectral
        use iteration
+       use inputIteration ! printValues
        implicit none
 !
 !      Local variables.
@@ -426,7 +427,7 @@
          flowTypeDescriptor   ='External Flow'
       end if
 
-      if(myID == 0)&
+      if(myID == 0 .and. printIterations)&
            write(*,'("Ref Values: FT = ",a13," pInfDim = ",1pg12.5," PtInf = ",&
            1pg12.5," rhoInfDim = ",1pg12.5," M = ",1pg12.5," MachCoef = ",1pg12.5,&
            " muDim = ",1pg12.5," TinfDim = ",1pg12.5)') &
