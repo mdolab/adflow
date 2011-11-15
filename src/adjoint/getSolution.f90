@@ -44,13 +44,13 @@ subroutine getSolution(sps)
      
      call computeRootBendingMoment(globalCFVals,bendingMoment)
      bendingsum = bendingsum+bendingMoment
-     if(myid==0)then
-        print *,'Bending Coefficient',bendingMoment,i
-     end if
+     !if(myid==0)then
+     !   print *,'Bending Coefficient',bendingMoment,i
+     !end if
   end do
-  if(myid==0)then
-     print *,'bending average',bendingSum/nTimeIntervalsSpectral
-  end if
+  !if(myid==0)then
+  !   print *,'bending average',bendingSum/nTimeIntervalsSpectral
+  !end if
   functionValue(costFuncBendingCoef)=bendingSum/nTimeIntervalsSpectral
 
   

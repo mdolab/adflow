@@ -144,6 +144,7 @@ class SUMB(AeroSolver):
             'NKJacobianLag':[int,10],
             'RKReset':[bool,False],
             'nRKReset':[int,5],
+            'NKLineSearch':[str,'nonMonotone'],
 
             # Load Balance Paramters
             'blockSplitting':[bool,False],
@@ -510,7 +511,10 @@ class SUMB(AeroSolver):
                 'RKReset':{'location':'nksolvervars.rkreset'},
                 'nRKReset':{'location':'nksolvervars.nrkreset'},
                 'NKFiniteDifferencePC':{'location':'nksolvervars.nkfinitedifferencepc'},
-                
+                'NKLineSearch':{'None':self.sumb.nksolvervars.nolinesearch,
+                                'Cubic':self.sumb.nksolvervars.cubiclinesearch,
+                                'nonMonotone':self.sumb.nksolvervars.nonmonotonelinesearch,
+                                'location':'nksolvervars.nkls'},
                 # Load Balance Paramters
                 'blockSplitting':{'location':'inputparallel.splitblocks'},
                 'loadImbalance':{'location':'inputparallel.loadimbalance'},
@@ -1141,7 +1145,7 @@ class SUMB(AeroSolver):
         for iIter in xrange(20):
             # We need to reset the flow since changing the alpha leads
             # to problems with the NK solver
-            self.resetFlow()
+            #self.resetFlow()
 
             # Set current alpha
             aeroProblem._flows.alpha = anm1
