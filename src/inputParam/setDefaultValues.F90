@@ -493,5 +493,6 @@
        NKPCSetup     = .False.
        lumpedDiss    = .False.
        NKFiniteDifferencePC = .True.
+       NKLS = nonMonotoneLineSearch 
 
        end subroutine setDefaultValues
