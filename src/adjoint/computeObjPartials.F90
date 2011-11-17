@@ -38,6 +38,8 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
   use costFunctions
   use section          !sections
   use monitor          !TimeUnsteady
+  use iteration
+  use inputDiscretization ! spaceDiscr
   implicit none
   !
   ! Subroutine arguments.
@@ -104,6 +106,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
   real(kind=realType), dimension(3,3) :: rotationMatrix  
   real(kind=realType) :: t(nSections),dt(nSections)
   real(kind=realType) :: tOld,tNew
+
 
   ! Copy over values we need for the computeforcenadmoment call:
   MachCoefAdj = MachCoef
@@ -409,13 +412,14 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
                  enddo
               end if
               
-              if (usedJdx) then
-                 ! Set the pt derivative values in dIdpt
-                 do j=jBeg,jEnd
-                    do i=iBeg,iEnd
-                       ! This takes care of the ii increments -- 
-                       ! DO NOT NEED INCREMENT ON LINE BELOW
-                       ii = ii + 1
+             
+              ! Set the pt derivative values in dIdpt
+              do j=jBeg,jEnd
+                 do i=iBeg,iEnd
+                    ! This takes care of the ii increments -- 
+                    ! DO NOT NEED INCREMENT ON LINE BELOW
+                    ii = ii + 1
+                    if (usedJdx) then
                        call VecSetValues(dJdx,3,&
                             
                             (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/)+(sps-1)*npts*3,&
@@ -426,11 +430,11 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
                        rotpointzcorrection = rotpointzcorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,0,1/)+RpZCorrection))
                        
                        call EChk(PETScIerr,__file__,__line__)
-                    end do
+                    end if
                  end do
-              end if
+              end do
               !ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
-
+              
               ! We also have the derivative of the Objective wrt the
               ! "AeroDVs" intrinsic aero design variables, alpha, beta etc
 
@@ -509,6 +513,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
      call VecAssemblyEnd(dJdx,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
   end if
+
 #endif
 end subroutine computeObjPartials
 

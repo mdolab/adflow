@@ -1360,7 +1360,7 @@ class SUMB(AeroSolver):
         # Check to see if the adjoint Matrix is setup:
         if self.myid==0: print 'setting up matrix'
         if not self.stateSetup:
-            self.sumb.setupstatepetscvars()
+            self.sumb.createstatepetscvars()
         # end if
         # Short form of objective--easier code reading
         if self.myid==0: print 'possible objectives',objective
@@ -1383,7 +1383,7 @@ class SUMB(AeroSolver):
         '''
         if self.myid==0: print 'setting up vector'
         if not self.stateSetup:
-            self.sumb.setupstatepetscvars()
+            self.sumb.createstatepetscvars()
         # end if
         if self.myid==0:print 'computing partials'
         self.computeObjPartials(objective)
@@ -1535,7 +1535,7 @@ class SUMB(AeroSolver):
         # solver is not used...a safeguard check is done in Fortran
         self.sumb.destroynksolver()
 
-        # Run initAdjoint incase this is the first adjoint solve
+        # Run initAdjoint in case this is the first adjoint solve
         self.initAdjoint()
         
         if self.getOption('useReverseModeAD'):
@@ -1560,7 +1560,6 @@ class SUMB(AeroSolver):
 
             if compute:
                 self.sumb.setupallresidualmatrices()
-                self.mesh.setupWarpDeriv()
 
                 # Set the flags as true
                 self.stateSetup = True
