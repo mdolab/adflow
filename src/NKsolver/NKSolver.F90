@@ -158,12 +158,18 @@ subroutine NKsolver
      ! Linesearching:
      iter_k = iter
      iter_m = min(iter_m+1,Mmax)
-     if (NKLS == noLineSearch) then
-        call LSNone(wVec,rVec,g,deltaW,work,nfevals,flag)
-     else if(NKLS == cubicLineSearch) then
+
+     if (iter == 1) then
         call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
-     else if (NKLS == nonMonotoneLineSearch) then
-        call LSNM(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
+     else
+     
+        if (NKLS == noLineSearch) then
+           call LSNone(wVec,rVec,g,deltaW,work,nfevals,flag)
+        else if(NKLS == cubicLineSearch) then
+           call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
+        else if (NKLS == nonMonotoneLineSearch) then
+           call LSNM(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
+        end if
      end if
 
      if (.not. flag) then
