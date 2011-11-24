@@ -50,12 +50,10 @@
        ! monGlob(nMon): Idem, but for the global summation/maximum.
        ! monRef(nMon):  Idem, but for the reference values needed
        !                for an unsteady computation.
-       ! MassFluxL, G   Massflux out of bcOutflowSubsonic  (eran-msf)
 
        real(kind=realType), dimension(:), allocatable :: monLoc
        real(kind=realType), dimension(:), allocatable :: monGlob
        real(kind=realType), dimension(:), allocatable :: monRef
-       real(kind=realType) :: MassFluxL, MassFluxG  ! eran-msf
 
        ! monNames(nMon): The names of the variables to be monitored.
 
@@ -70,8 +68,6 @@
 
        logical :: monMachOrHMax
        logical :: showCPU
-       logical :: genCBDOUT             !eran-CBD
-       logical :: componentsBreakDown   !eran-CBD
 
        ! monMassSliding:  Whether or not to monitor the mass flow of
        !                  the sliding interfaces.
@@ -140,16 +136,5 @@
        ! writeSurface: Idem for a surface solution file.
 
        logical :: writeGrid, writeVolume, writeSurface
-
-       ! convergenceQuality: information about quality of convergence 
-       ! as the program exits. Set by routine convergenceInfo:
-       !
-       !  convergenceQuality = 0   No convergence 
-       !  convergenceQuality = 2   Coefficient-convergence X100
-       !  convergenceQuality = 4   Coefficient-convergence X10
-       !  convergenceQuality = 6   Coefficient-convergence X1
-       !  convergenceQuality = 10  residue convergence
-       
-       integer :: convergenceQuality   ! eran-coeffConv
 
        end module monitor

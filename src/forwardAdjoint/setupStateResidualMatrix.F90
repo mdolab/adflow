@@ -88,7 +88,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   call computeResidualNK ! This is the easiest way to do this
 
   ! Set delta_x
-  delta_x = 1e-8
+  delta_x = 1e-6
   one_over_dx = 1.0/delta_x
   rkStage = 0
   secondHalo = .True. 

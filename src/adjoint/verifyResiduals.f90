@@ -82,7 +82,6 @@
       REAL(KIND=REALTYPE) :: murefAdj, timerefAdj
       real(kind=realType), dimension(3) ::rotRateAdj,rotCenterAdj,rotrateadjb
       real(kind=realType), dimension(2,2,2,3,nTimeIntervalsSpectral)::xBlockCornerAdj
-      real(kind=realType), dimension(3) ::pointRefAdj,rotPointAdj
 
       !********************************
       logical :: secondHalo =.true.! .false.!.true.
@@ -140,22 +139,21 @@
 !close(unitx)
 
  !allocate memory for FD
-do sps = 1,nTimeIntervalsSpectral
-   allocatedomains: do nn = 1,ndom
-      print *,'domain',nn
-      groundLevel = 1
-      call setPointersAdj(nn,1,sps)
-      !allocate(flowDoms(nn,level,sps)%dwp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-      !allocate(flowDoms(nn,level,sps)%dwm(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-      !allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-      allocate(flowDoms(nn,level,sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-      allocate(flowDoms(nn,level,sps)%ptmp(0:ib,0:jb,0:kb),stat=ierr)
-      allocate(flowDoms(nn,level,sps)%dwtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-      flowDoms(nn,level,sps)%dwtmp = zero
-      flowDoms(nn,level,sps)%wtmp = zero
-      flowDoms(nn,level,sps)%ptmp = zero
-   end do allocatedomains
-end do
+      allocatedomains: do nn = 1,ndom
+         print *,'domain',nn
+         groundLevel = 1
+         sps = 1
+         call setPointersAdj(nn,1,sps)
+         allocate(flowDoms(nn,level,sps)%dwp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+         allocate(flowDoms(nn,level,sps)%dwm(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+         allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+         allocate(flowDoms(nn,level,sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+         allocate(flowDoms(nn,level,sps)%ptmp(0:ib,0:jb,0:kb),stat=ierr)
+         dwtemp = zero
+         dwp = zero
+         dwm = zero
+      end do allocatedomains
+
 
 
 
@@ -278,9 +276,6 @@ end do
          do nn=1,ndom
             !print *,'domains 1',nn
             call setPointersAdj(nn,level,sps)
-            wtmp => flowDoms(nn,level,sps)%wtmp
-            ptmp => flowDoms(nn,level,sps)%ptmp
-            dwtmp => flowDoms(nn,level,sps)%dwtmp
             wtmp = w
             ptmp = p
             dwtmp = dw
@@ -299,7 +294,7 @@ end do
 !     Compute difference in residuals
       deltax(:) = 0.!0.05
       deltax(3) = 0.0
-       ii = 2!11!1!5
+       ii = 6!11!1!5
        jj = 2!6!1!4
        kk = 2!6!1!3
        ssps=1
@@ -643,7 +638,7 @@ end do
           call initres(nt1MG, nMGVar)
           call turbResidual
        endif
-       print *,'init res'
+       
        call initres(1_intType, nwf) 
 !!$     do sps = 1,nTimeIntervalsSpectral
 !!$        do nnn =1,ndom
@@ -668,7 +663,6 @@ end do
 !!$                end do
 !!$             end do
 !!$          end do
-       print *,'residual'
        call residual
        
 
@@ -680,7 +674,7 @@ end do
                 do j = 2,jl
                    do k = 2,kl
                       do n = 1,nw
-                         write(unitRes,10) i,j,k,n,nnn,sps,dw(i,j,k,n)/vol(i,j,k)
+                         write(unitRes,10) i,j,k,n,nnn,sps,dw(i,j,k,n)
 10                       format(1x,'res',6I8,f20.14)
                       enddo
                    enddo
@@ -689,12 +683,8 @@ end do
           end do
           
           do nnn=1,ndom
-             print *,'domains reset',nnn
-             
-             call setPointersAdj(nnn,level,sps)
-             wtmp => flowDoms(nnn,level,sps)%wtmp
-             ptmp => flowDoms(nnn,level,sps)%ptmp
-             dwtmp => flowDoms(nnn,level,sps)%dwtmp
+          !print *,'domains reset',nnn
+             call setPointersAdj(nnn,1,sps)
              w = wtmp
              p = ptmp
              dw = dwtmp
@@ -714,7 +704,7 @@ end do
 
        call cpu_time(time(1))
     do sps = 1,nTimeintervalsSpectral
-       print *,'nn',nn,ii,jj,kk! = 1
+       print *,'nn',nn! = 1
        call setPointers(nn,level,ssps)
        x(ii,jj,kk,:) = xref+deltax
 
@@ -722,21 +712,21 @@ end do
 !Now compute residuals using ADjoint routines
 !***********************************
 
-      do nnn = 1,1!ndom
+      do nnn = 1,ndom
          call setPointersAdj(nnn ,level,sps)
-         print *,'in AD loop',nnn,ndom 
+         !print *,'in AD loop',nnn 
          !write(unitxAD,*) 'block Num',nnn
          do icell= 2, il
             do jcell= 2, jl
                do kcell= 2, kl
                   
-                  print *,'index',icell,jcell,kcell
+                  !print *,'index',i,j,k
                   call  copyADjointStencil(wAdj, xAdj,xBlockCornerAdj,alphaAdj,&
-           betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
-           nnn,level,sps,pointRefAdj,rotPointAdj,&
-           prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-           rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-           murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+                          betaAdj,MachAdj,machCoefAdj,machGridAdj,iCell, jCell, kCell,&
+                          nnn,level,sps,&
+                          prefAdj,rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
 
 
 !!$                  !print out xAdj
@@ -771,16 +761,15 @@ end do
                   ! Compute the total residual.
                   ! This includes inviscid and viscous fluxes, artificial
                   ! dissipation, and boundary conditions.                   
-                  print *,'Calling compute ADjoint' 
+                  !print *,'Calling compute ADjoint' 
 
-                  call  computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
-     betaAdj,MachAdj, &
-     MachCoefAdj,machGridAdj,iCell, jCell,  kCell, &
-     nnn,level,sps, correctForK,secondHalo,prefAdj,&
-     rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
-     rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
-     pointRefAdj,rotPointAdj,&
-     murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
+                  call computeRAdjoint(wAdj,xAdj,xBlockCornerAdj,dwAdj,alphaAdj,&
+                          betaAdj,MachAdj, &
+                          MachCoefAdj,machGridAdj,iCell, jCell,  kCell, &
+                          nnn,level,sps, correctForK,secondHalo,prefAdj,&
+                          rhorefAdj, pinfdimAdj, rhoinfdimAdj,&
+                          rhoinfAdj, pinfAdj,rotRateAdj,rotCenterAdj,&
+                          murefAdj, timerefAdj,pInfCorrAdj,liftIndex)
 
                   !print out xAdj
                   istart = -3
@@ -858,16 +847,16 @@ end do
       close(unitRes)
  
    !deallocate memory for FD
-      do sps = 1,nTimeIntervalsSpectral
       deallocatedomains: do nn = 1,ndom
          print *,'domain',nn
          groundLevel = 1
+         sps = 1
          call setPointersAdj(nn,1,sps)
-         !deallocate(flowDoms(nn,level,sps)%dwp)
-         !deallocate(flowDoms(nn,level,sps)%dwm)
-         deallocate(flowDoms(nn,level,sps)%dwtmp)
+         deallocate(flowDoms(nn,level,sps)%dwp)
+         deallocate(flowDoms(nn,level,sps)%dwm)
+         deallocate(flowDoms(nn,level,sps)%dwtemp)
          deallocate(flowDoms(nn,level,sps)%wtmp)
          deallocate(flowDoms(nn,level,sps)%ptmp)
       end do deallocatedomains
-   end do
+
     end subroutine verifyResiduals

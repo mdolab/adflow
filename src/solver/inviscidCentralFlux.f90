@@ -70,7 +70,6 @@
              vnm = w(i,  j,k,ivx)*sI(i,j,k,1) &
                  + w(i,  j,k,ivy)*sI(i,j,k,2) &
                  + w(i,  j,k,ivz)*sI(i,j,k,3)
-
              ! Set the values of the porosities for this face.
              ! porVel defines the porosity w.r.t. velocity;
              ! porFlux defines the porosity w.r.t. the entire flux.
@@ -97,8 +96,8 @@
              ! Compute the normal velocities relative to the grid for
              ! the face as well as the mass fluxes.
 
-             qsp = (vnp - sFace)*porVel
-             qsm = (vnm - sFace)*porVel
+             qsp = (vnp -sFace)*porVel
+             qsm = (vnm -sFace)*porVel
 
              rqsp = qsp*w(i+1,j,k,irho)
              rqsm = qsm*w(i,  j,k,irho)

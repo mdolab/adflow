@@ -931,12 +931,10 @@
 !        *                                                              *
 !        ****************************************************************
 !
-         ! Set the porosity for the flux. The default value, 0.5*epsilonUpwind*rFil, is
+         ! Set the porosity for the flux. The default value, 0.5*rFil, is
          ! a scaling factor where an rFil != 1 is taken into account.
 
-
-         porFlux = half*epsilonUpwind*rFil  !   eran-ldiffroe
-
+         porFlux = half*rFil
          if(por == noFlux .or. por == boundFlux)    porFlux = zero
 
          ! Abbreviate some expressions in which gamma occurs.

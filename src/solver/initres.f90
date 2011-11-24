@@ -76,7 +76,7 @@
                  do l=varStart,varEnd
                    do k=2,kl
                      do j=2,jl
-                       do i=2,il
+                        do i=2,il
                          dw(i,j,k,l) = zero
                        enddo
                      enddo
@@ -406,7 +406,7 @@
                              dw(i,j,k,l) = dw(i,j,k,l)        &
                                          + dscalar(jj,sps,mm) &
                                          * volsp(i,j,k)*wsp(i,j,k,l)
-
+                             
                            enddo
                          enddo
                        enddo
@@ -563,6 +563,7 @@
                enddo
              enddo
            enddo
+
 
          enddo domains
 

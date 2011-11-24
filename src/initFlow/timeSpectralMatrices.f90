@@ -66,6 +66,8 @@
        mm = 3*nn
        kk = nn - 1
 
+   
+
        allocate(dscalar(nSections,nn,nn),             &
                 dvector(nSections,mm,mm),             &
                 coefSpectral(nSections,kk),           &

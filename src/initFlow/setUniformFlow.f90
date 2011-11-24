@@ -66,7 +66,6 @@
            call setPointers(nn,mgStartlevel,mm)
 
            ! Set the w-variables to the ones of the uniform flow field.
-
            do l=1,nw
              do k=0,kb
                do j=0,jb
