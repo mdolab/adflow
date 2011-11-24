@@ -27,8 +27,6 @@
        use inputPhysics
        use paramTurb
        use turbMod
-       use inputDES ! eran-des
-
        implicit none
 !
 !      Subroutine arguments.
@@ -47,8 +45,6 @@
        real(kind=realType) :: c1m, c1p, c10, c2m, c2p, c20
        real(kind=realType) :: b1, b2, c1, c2, d1, d2
        real(kind=realType) :: qs, uu, um, up, factor, utau, rblank
-       real(kind=realType) :: Beta1 ! eran-kwmod
-       real(kind=realType) :: LengthScaleKW, decayTermFunc ! eran-des
 
        real(kind=realType), dimension(itu1:itu2) :: tup
 
@@ -74,20 +70,9 @@
 !
        ! Set model constants
 
-!--------------------------- eran-kwmod starts 
+       rkwGam1  = rkwBeta1/rkwBetas - rkwSigw1*rkwK*rkwK/sqrt(rkwBetas)
        sig1     = rkwSigk1
-       sig2     = rkwSigw1 
-       Beta1    = rkwBeta1
-
-
-       if(turbModel == komegaModified) then
-          sig1     = rkwModSigk1
-          Beta1    = rkwModBeta1
-       end if
-
-       rkwGam1  = Beta1/rkwBetas - rkwSigw1*rkwK*rkwK/sqrt(rkwBetas)
-! ------------------------eran-kwmod ends
-
+       sig2     = rkwSigw1
 
        ! Set the pointer for dvt in dw, such that the code is more
        ! readable. Also set the pointers for the production term,
@@ -125,66 +110,23 @@
 !      *                                                                *
 !      ******************************************************************
 !
-
-! ----eran-des start
-
-       if(applyDES)then
-!
-!----- modification of k equation decay term, for DES 
-!
-          do k=2,kl
-             do j=2,jl
-                do i=2,il
-
-               ! Compute the source terms for both the k and the omega
-               ! equation. Note that prod contains the unscaled production
-               ! term. Furthermore the production term of k is limited to
-               ! a certain times the destruction term.
-
-                   LengthScaleKW = sqrt(w(i,j,k,itu1) + eps )/(rkwBetas*w(i,j,k,itu2) )
-                   decayTermFunc  = max(LengthScaleKW/(cDES*filterDES(i,j,k)),one)
-                      
-                   rhoi = one/w(i,j,k,irho)
-                   ss   = prod(i,j,k)
-                   spk  = rev(i,j,k)*ss*rhoi
-                   sdk  = rkwBetas*w(i,j,k,itu1)*w(i,j,k,itu2)*decayTermFunc
-                   spk  = min(spk, pklim*sdk)
-                      
-                   dvt(i,j,k,1) =  spk - sdk
-                   dvt(i,j,k,2) =  rkwGam1*ss- Beta1*w(i,j,k,itu2)**2    ! eran-kwmod
-
-             ! Compute the source term jacobian. Note that only the
-             ! destruction terms are linearized to increase the diagonal
-             ! dominance of the matrix. Furthermore minus the source
-             ! term jacobian is stored.
-                   qq(i,j,k,1,1) = rkwBetas*w(i,j,k,itu2)*decayTermFunc 
-                   qq(i,j,k,1,2) = zero
-                   qq(i,j,k,2,1) = zero
-                   qq(i,j,k,2,2) = two*Beta1*w(i,j,k,itu2)
-                enddo
-             enddo
-          enddo
-
-       else ! applyDES
-
-!--- RANS formulation
-          do k=2,kl
-             do j=2,jl
-                do i=2,il
+       do k=2,kl
+         do j=2,jl
+           do i=2,il
 
              ! Compute the source terms for both the k and the omega
              ! equation. Note that prod contains the unscaled production
              ! term. Furthermore the production term of k is limited to
              ! a certain times the destruction term.
 
-                   rhoi = one/w(i,j,k,irho)
-                   ss   = prod(i,j,k)
-                   spk  = rev(i,j,k)*ss*rhoi
-                   sdk  = rkwBetas*w(i,j,k,itu1)*w(i,j,k,itu2)
-                   spk  = min(spk, pklim*sdk)
+             rhoi = one/w(i,j,k,irho)
+             ss   = prod(i,j,k)
+             spk  = rev(i,j,k)*ss*rhoi
+             sdk  = rkwBetas*w(i,j,k,itu1)*w(i,j,k,itu2)
+             spk  = min(spk, pklim*sdk)
 
-                   dvt(i,j,k,1) = spk - sdk
-                   dvt(i,j,k,2) = rkwGam1*ss - Beta1*w(i,j,k,itu2)**2  ! eran-kwmod
+             dvt(i,j,k,1) = spk - sdk
+             dvt(i,j,k,2) = rkwGam1*ss - rkwBeta1*w(i,j,k,itu2)**2
 
              ! Compute the source term jacobian. Note that only the
              ! destruction terms are linearized to increase the diagonal
@@ -195,11 +137,11 @@
            ! qq(i,j,k,1,2) = rkwBetas*w(i,j,k,itu1)
              qq(i,j,k,1,2) = zero
              qq(i,j,k,2,1) = zero
-             qq(i,j,k,2,2) = two*Beta1*w(i,j,k,itu2) ! eran-kwmod
+             qq(i,j,k,2,2) = two*rkwBeta1*w(i,j,k,itu2)
+
            enddo
          enddo
        enddo
-    end if ! DES
 !
 !      ******************************************************************
 !      *                                                                *
@@ -545,36 +487,6 @@
            enddo
          enddo
        enddo
-
-
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Compute the cross-diffusion term for the modified version of   *
-!      * the k-omega model. It should cure the free-stream dependency   *
-!      * of the original model.                                         *
-!      *                                                                *
-!      ******************************************************************
-!
-       if(turbModel == komegaModified) then
-
-         ! Compute the cross diffusion term.
-
-          call kwCDterm
-
-         ! Multiply it with the correct constant and take it only into
-         ! account if it is positive.
-
-          do k=2,kl
-             do j=2,jl
-                do i=2,il
-                   dvt(i,j,k,2) =  dvt(i,j,k,2) &
-                              + rkwSigd1*max(zero, kwCD(i,j,k))
-                enddo
-             enddo
-          enddo
-
-       endif
 
        ! Multiply the residual by the volume and store this in dw; this
        ! is done for monitoring reasons only. The multiplication with the

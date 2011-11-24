@@ -59,6 +59,7 @@
 
        timeDetermined = .false.
 
+
        externalTest: if(flowType == externalFlow) then
 
          ! X-rotation.
@@ -99,6 +100,7 @@
              timeDetermined = .true.
            endif
          endif
+
 
          ! Alpha
          !print *,'degreeFourAlpha',degreefouralpha,omegafouralpha,sincoeffouralpha
@@ -175,7 +177,7 @@
        if( timeDetermined ) then
          do nn=1,nSections
            sections(nn)%timePeriod = timePeriod/sections(nn)%nSlices
-
+           !print *,'sectionTimePeriod',sections(nn)%timePeriod,nn
          enddo
          return
        endif

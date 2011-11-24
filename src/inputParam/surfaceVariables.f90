@@ -55,10 +55,12 @@
        surfWriteRVx   = .false.
        surfWriteRVy   = .false.
        surfWriteRVz   = .false.
+
        surfWriteCp       = .false.
        surfWritePtotloss = .false.
        surfWriteMach     = .false.
        surfWriteRMach     = .false.
+
        surfWriteCf    = .false.
        surfWriteCh    = .false.
        surfWriteYplus = .false.
@@ -150,7 +152,7 @@
              surfWriteRMach = .true.
              nVarSpecified = nVarSpecified + 1
 
-          case ("cf")
+           case ("cf")
              surfWriteCf = .true.
              nVarSpecified = nVarSpecified + 1
 

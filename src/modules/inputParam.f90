@@ -111,9 +111,6 @@
        !                                 adis == 1: isotropic dissipation.
        ! kappaCoef:         Coefficient in the upwind reconstruction
        !                    schemes, both linear and nonlinear.
-       ! epsilonUpwind:     Correction factor to the upwind dissipation
-       !                    to make it suitable for DES, see
-       !                    NASA-TM-1999-206570.      (   eran-ldiffroe)
        ! vortexCorr:        Whether or not a vortex correction must be
        !                    applied. Steady flow only.
        ! dirScaling:        Whether or not directional scaling must be
@@ -137,8 +134,9 @@
        integer(kind=intType) :: nonMatchTreatment
 
        real(kind=realType) :: vis2, vis4, vis2Coarse, adis
+       real(kind=realType) :: kappaCoef
+
        real(kind=realType) :: vis2b, vis4b, kappaCoefb,adisb
-       real(kind=realType) :: kappaCoef , epsilonUpwind   ! eran-ldiffroe
 
        logical :: vortexCorr, dirScaling, hScalingInlet
        logical :: radiiNeededFine, radiiNeededCoarse
@@ -204,7 +202,7 @@
        !                      not necesarrily.
        ! solFile:             Solution file; for cgns this could be the
        !                      same as the grid or restart file, but not
-       !                      necesarily.
+       !                      necesarrily.
        ! surfaceSolFile:      Surface solution file.
        ! cpFile:              File which contains the curve fits for cp.
        ! precisionGrid:       Precision of the grid file to be written.
@@ -343,21 +341,12 @@
        ! L2Conv:           Relative L2 norm of the density residuals for
        !                   which the computation is assumed converged.
        ! L2ConvCoarse:     Idem, but on the coarse grids during full mg.
-       ! epsCoefConv:      criterion for convergence, based on 
-       !                   uniformity of coefficients 
-       ! minIterNum        minimal number of iterations that should be 
-       !                   performed before convergence is tested
-       !                   (see subroutine coeffConvegenceCheck)   eran-coeffConv
-       ! convCheckWindowSize:
-       !                   Size of window (in iterations) for checking for
-       !                   uniform monitored coefficicients (see epsCoefConv)
        ! etaRk:            Coefficients in the runge kutta scheme. The
        !                   values depend on the number of stages specified.
        ! cdisRk:           Dissipative coefficients in the runge kutta
        !                   scheme. The values depend on the number of
        !                   stages specified.
        ! printIterations: If True, iterations are printed to stdout
-
        integer(kind=intType) :: nCycles, nCyclesCoarse
        integer(kind=intType) :: nSaveVolume, nSaveSurface
        integer(kind=intType) :: nsgStartup, smoother, nRKStages
@@ -366,7 +355,6 @@
        integer(kind=intType) :: turbTreatment, turbSmoother, turbRelax
        integer(kind=intType) :: mgBoundCorr, mgStartlevel
        integer(kind=intType) :: nMGSteps, nMGLevels
-       integer(kind=intType) :: minIterNum, convCheckWindowSize !----eran-coeffConv
 
        integer(kind=intType), allocatable, dimension(:) :: cycleStrategy
 
@@ -375,10 +363,10 @@
        real(kind=realType) :: L2Conv, L2ConvCoarse
        real(kind=realType) :: L2ConvRel
        real(kind=realType) :: maxL2DeviationFactor
-       real(kind=realType) :: epsCoefConv   !----eran-coeffConv
        real(kind=realType) :: relaxBleeds
 
        real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK,cdisrkb
+
        logical :: freezeTurbSource
        logical :: printIterations
 
@@ -685,27 +673,6 @@
        ! pointRef(3):         Moment reference point.
        ! pointRefEC(3):       Elastic center. Bending moment refernce point
 
-!
-!-----eran-tran starts
-!
-!      ! forcedTransition     Forcing no turbulence production for x<xTransition
-       !                      Presently implemented only for SA model
-       ! xTransition          "transition strip" location
-       ! TransHLength         Transition region 1/2 length
-!                             if =0 then the ft2 control is applied
-!                             if > 0, then Cb1 control is applied
-!
-!-----eran-tran ends
-!
-!----- eran-ltemp starts 
-!
-!       tempratureLowLimit    Input parameter: low limit for temprature
-!       limitLowTemprature    Logical that activates the limt on low temprature
-!                             Set true when tempratureLowLimit > 0
-!
-!----- eran-ltemp ends
-!
-
        integer(kind=intType) :: equations, equationMode, flowType
        integer(kind=intType) :: turbModel, cpModel, turbProd
        integer(kind=intType) :: rvfN
@@ -716,11 +683,9 @@
        real(kind=realType) :: Mach, MachCoef,MachGrid
        !AD derivative values
        real(kind=realType) :: Machd, MachCoefd,MachGridd
-
        real(kind=realType) :: Reynolds, ReynoldsLength
        real(kind=realType) :: tempFreestream, gammaConstant, RGasDim
        real(kind=realType) :: gammaconstantb, gammaconstantd
-       
        real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset
        real(kind=realType) :: eddyVisInfRatio, turbIntensityInf
        real(kind=realType) :: surfaceRef, lengthRef
@@ -734,103 +699,8 @@
        !bending moment derivative
        real(kind=realType), dimension(3) :: pointRefb
        real(kind=realType), dimension(3) :: pointRefEC
-!
-!-----eran-tran starts
-!
-       logical             :: forcedtransition
-       real(kind=realType) :: xTransition , TransHLength
-!
-!-----eran-tran ends
-!
-!
-!----- eran-ltemp starts 
-!
-       real(kind=realType) :: tempratureLowLimit, rGasTLim    
-       logical             :: limitLowTemprature   
-!
-!----- eran-ltemp ends
-!
+
        end module inputPhysics
-!
-!      eran-des - startss
-!
-!      ==================================================================
-
-   
-
-       module inputDES
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Input parameters which are related to DES model                *
-!      * eran-des (all module) start                                         *
-!      *                                                                *
-!      ******************************************************************
-!
-       use precision
-       implicit none
-       save
-!
-!      applyDES        Whether or not to apply DES. Relevant only for
-!                      time-dependent problems. Presently installed only
-!                      with SA model.
-!      applyDDES       yes: DDES (delayed) based on Spalart et al., 
-!                        Theor. Compt. Fluid Mech., 
-!                        2006, vol 20, pp 181-195," A new version of detached eddy
-!                         simulation, resistant to ambiguous grid definitions" 
-!                      no:   DES97 riginal concept of Spalart 
-! 
-!      CDES            DES scale coefficient (default is 0.65)
-!      xDESmin, xDESmax
-!                      zone (in X) for DES lengthscale modification
-!      distDESmax, distDESmin
-!                      zone (in wall-distance)
-!      distRANSmax     Hihg limit of RANS region. beyonds, it is all DES, regardless
-!                      of cell size to distance ratio
-!
-!
-       logical :: applyDES, applyDDES
-       real(kind=realType) :: CDES, xDESmin, xDESmax, distDESmax, distDESmin,&
-            distRANSmax
-
-     end module inputDES
-!
-!      eran-des - ends
-!
-!
-!      eran-tdbc - startss
-!
-!      ==================================================================
-
-       module inputTDBC
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Input parameters which are related to time-dependent           *
-!      * (oscillatory) inflow   (only for unsteady solution)            *
-!      * author: Eran Arad                                              *
-!      * Start date: April 20, 2009                                     *
-!      * modified  :                                                    *
-!      *                                                                *
-!      ******************************************************************
-!
-       use precision
-       implicit none
-       save
-!
-!      for U_i= V_i* ( C0Tdbc + sin(2*pi*oscillFreq*time + cPhaseR) )
-!
-!      applyTdbc       Whether or not to apply TD BC (oscillatory). Relevant only for
-!                      time-dependent problems. 
-!      cPhase          phase in degrees
-
-       logical :: applyTdbc
-       real(kind=realType) :: C0Tdbc, oscillFreq, cPhase, cPhaseR
-
-     end module inputTDBC
-!
-!      eran-tdbc - ends
-!
 
 !      ==================================================================
 
@@ -924,7 +794,6 @@
                                            implicitRK = 3_intType, &
                                            MD         = 4_intType
        
-
        ! timeIntegrationScheme: Time integration scheme to be used for
        !                        unsteady problems. Possibilities are
        !                        Backward difference schemes, explicit
@@ -971,7 +840,7 @@
        !                             this should be done if the
        !                             turbulence model requires the wall
        !                             distance. However, the user may
-       !                             overrule this if he/she thinks it is
+       !                             overrule this if he thinks it is
        !                             not necessary.
 
        logical :: updateWallDistanceUnsteady
@@ -1180,4 +1049,3 @@
        logical:: useWindAxis
 
      end module inputTSStabDeriv
-

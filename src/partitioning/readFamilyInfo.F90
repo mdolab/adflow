@@ -60,7 +60,7 @@
          call terminate("readFamilyInfo", &
                         "Something wrong when calling cg_nfamilies_f")
        cgnsNFamilies = nn
-
+	
        ! Allocate the memory for cgnsFamilies.
 
        allocate(cgnsFamilies(nn), stat=ierr)
@@ -93,12 +93,13 @@
          call cg_family_read_f(cgnsInd, cgnsBase, nn,       &
                                cgnsFamilies(nn)%familyName, &
                                nFamBC, nGeo, ierr)
-
+	
          if(ierr /= all_ok)               &
          call terminate("readFamilyInfo", &
                         "Something wrong when calling cg_family_read_f")
 
          ! Determine the boundary condition for this family, if specified.
+ 
          select case (nFamBC)
 
            case (0)

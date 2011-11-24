@@ -33,7 +33,6 @@
        use inputTSStabDeriv
        use monitor
        use communication
-
        implicit none
 !
 !      Subroutine arguments.
@@ -76,7 +75,6 @@
        !Function Definitions
        
        real(kind=realType) :: TSAlpha,TSBeta,TSMach
-
 !
 !      ******************************************************************
 !      *                                                                *
@@ -91,7 +89,8 @@
     !  velyGrid = aInf*MachGrid(2)
     !  velzGrid = aInf*MachGrid(3)
 
-
+       !print *,'machgrid',machgrid
+       !stop
        !velxGrid = zero
        !velyGrid = zero
        !velzGrid = zero
@@ -100,7 +99,6 @@
        velxGrid0 = (aInf*machgrid)*(-velDirFreestream(1))
        velyGrid0 = (aInf*machgrid)*(-velDirFreestream(2))
        velzGrid0 = (aInf*machgrid)*(-velDirFreestream(3))
-
 
        ! Compute the derivative of the rotation matrix and the rotation
        ! point; needed for velocity due to the rigid body rotation of
@@ -193,17 +191,15 @@
        endif
 
        ! Loop over the number of local blocks.
-
        domains: do nn=1,nDom
 
          ! Set the pointers for this block.
 
          call setPointers(nn, groundLevel, sps)
-
          ! Check for a moving block.
 
          testMoving: if( blockIsMoving ) then
-
+           ! print *,'block is moving',blockIsMoving,useOldCoor 
            ! Determine the situation we are having here.
 
            testUseOldCoor: if( useOldCoor ) then
@@ -297,7 +293,6 @@
                    s(i,j,k,1) = sc(1)*oneOver8dt
                    s(i,j,k,2) = sc(2)*oneOver8dt
                    s(i,j,k,3) = sc(3)*oneOver8dt
-
                  enddo
                enddo
              enddo
@@ -427,8 +422,12 @@
              j = nbkGlobal
 
              rotCenter = cgnsDoms(j)%rotCenter
+             !if (myid==0)print *,'rotcenter',rotCenter,'rotpoint',rotpoint
+             !offSetVector= (rotCenter-pointRef)
              offSetVector= (rotCenter-rotPoint)
+             !if (myid==0)print *,'offset vector',offSetVector, rotCenter,pointRef
              rotRate   = timeRef*cgnsDoms(j)%rotRate
+             !if (myid==0) print *,'rotrate, gridvelocity',rotRate,cgnsDoms(j)%rotRate
 
              if (useWindAxis)then
                 !determine the current angles from the free stream velocity
@@ -561,39 +560,44 @@
                    xxc(1) = xc(1) - rotCenter(1)
                    xxc(2) = xc(2) - rotCenter(2)
                    xxc(3) = xc(3) - rotCenter(3)
-
+                   !print *,'xxc1',- rotRate(3)+ derivRotationMatrix(1,2),xxc
                    ! Determine the rotation speed of the cell center,
                    ! which is omega*r.
 
                    sc(1) = rotRate(2)*xxc(3) - rotRate(3)*xxc(2)
                    sc(2) = rotRate(3)*xxc(1) - rotRate(1)*xxc(3)
                    sc(3) = rotRate(1)*xxc(2) - rotRate(2)*xxc(1)
-
+                 
+!                   print *,'sc(1)',rotRate(2),xxc(3), -rotRate(3),xxc(2)
                    ! Determine the coordinates relative to the
                    ! rigid body rotation point.
 
                    xxc(1) = xc(1) - rotationPoint(1)
                    xxc(2) = xc(2) - rotationPoint(2)
                    xxc(3) = xc(3) - rotationPoint(3)
-
+                   !print *,'xxc2',- rotRate(3)+ derivRotationMatrix(1,2),xxc
                    ! Determine the total velocity of the cell center.
                    ! This is a combination of rotation speed of this
                    ! block and the entire rigid body rotation.
-
+                   !print *,'velgridx',velxGrid,rotRate(2)*xxc(3)+derivRotationMatrix(1,3)*xxc(3),- rotRate(3)+ derivRotationMatrix(1,2),xxc(2) 
                    s(i,j,k,1) = sc(1) + velxGrid           &
                               + derivRotationMatrix(1,1)*xxc(1) &
                               + derivRotationMatrix(1,2)*xxc(2) &
                               + derivRotationMatrix(1,3)*xxc(3)
-
                    s(i,j,k,2) = sc(2) + velyGrid           &
                               + derivRotationMatrix(2,1)*xxc(1) &
                               + derivRotationMatrix(2,2)*xxc(2) &
                               + derivRotationMatrix(2,3)*xxc(3)
-
                    s(i,j,k,3) = sc(3) + velzGrid           &
                               + derivRotationMatrix(3,1)*xxc(1) &
                               + derivRotationMatrix(3,2)*xxc(2) &
                               + derivRotationMatrix(3,3)*xxc(3)
+                   !print *,'s1',i,j,k,s(i,j,k,1)!,sc(1), &
+!                        derivRotationMatrix(1,1)*xxc(1) &
+!                        + derivRotationMatrix(1,2)*xxc(2) &
+!                        + derivRotationMatrix(1,3)*xxc(3)
+!                   print *,'rm1',derivRotationMatrix(1,3),xxc(3),&
+!                        derivRotationMatrix(1,2),xxc(2)
                  enddo
                enddo
              enddo

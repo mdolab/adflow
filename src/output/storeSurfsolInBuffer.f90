@@ -31,8 +31,6 @@
        use flowVarRefState
        use inputPhysics
        use inputIO
-       use iteration ! eran-avf
-
        implicit none
 !
 !      Subroutine arguments.
@@ -66,9 +64,6 @@
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
        real(kind=realType), dimension(:,:,:), pointer :: ss1, ss2
        real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
-
-       real(kind=realType), dimension(:,:),   pointer :: avpp1, avpp2
-
        real(kind=realType), dimension(:,:),   pointer :: gamma1, gamma2
        real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
        real(kind=realType), dimension(:,:),   pointer :: dd2Wall
@@ -147,11 +142,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-
-!  eran-avf: for unsteady solution, instead of P on surface, Cp averaged is saved
-!            It was calculated in shiftSolution and saved in  wOld(noldLevels+1,i,j,k,irho)
-!
-
        select case (faceID)
 
          case (iMin)
@@ -161,21 +151,8 @@
 
            ww1    => w(1,1:,1:,:);   ww2    => w(2,1:,1:,:)
            pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)
-
-!  eran-avf starts
-
-           if(equationMode == unsteady)then
-
-              avpp1  => wOld(noldLevels+1,1,1:,1:,irho)
-              avpp2  => wOld(noldLevels+1,2,1:,1:,irho)
-
-           end if ! equationMode
-
-!  eran-avf ends
-
-           pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)           
            gamma1 => gamma(1,1:,1:); gamma2 => gamma(2,1:,1:)
-
+           !print *,'block is moving imin',blockIsMoving
            if( blockIsMoving)then
               ss1    => s(1,1:,1:,:);   ss2    => s(2,1:,1:,:)
            end if
@@ -197,21 +174,9 @@
            iiMax = jl; jjMax = kl
 
            ww1    => w(ie,1:,1:,:);   ww2    => w(il,1:,1:,:)
-
-!  eran-avf starts
-
-           if(equationMode == unsteady)then
-
-              avpp1  => wOld(noldLevels+1,ie,1:,1:,irho)
-              avpp2  => wOld(noldLevels+1,il,1:,1:,irho)
-
-           end if ! equationMode
-
-!  eran-avf ends
-
            pp1    => p(ie,1:,1:);     pp2    => p(il,1:,1:)
            gamma1 => gamma(ie,1:,1:); gamma2 => gamma(il,1:,1:)
-
+           !print *,'block is moving imax',blockIsMoving
            if( blockIsMoving)then
               ss1    => s(ie-1,1:,1:,:);   ss2    => s(ie,1:,1:,:)
            end if
@@ -233,21 +198,9 @@
            iiMax = il; jjMax = kl
 
            ww1    => w(1:,1,1:,:);   ww2    => w(1:,2,1:,:)
-
-!  eran-avf starts
-
-           if(equationMode == unsteady)then
-
-              avpp1  => wOld(noldLevels+1,1:,1,1:,irho)
-              avpp2  => wOld(noldLevels+1,1:,2,1:,irho)
-
-           end if ! equationMode
-
-!  eran-avf ends
-
            pp1    => p(1:,1,1:);     pp2    => p(1:,2,1:)
            gamma1 => gamma(1:,1,1:); gamma2 => gamma(1:,2,1:)
-
+           !print *,'block is moving jmin',blockIsMoving
            if( blockIsMoving)then
               ss1    => s(1:,1,1:,:);   ss2    => s(1:,2,1:,:)
            end if
@@ -269,21 +222,9 @@
            iiMax = il; jjMax = kl
 
            ww1    => w(1:,je,1:,:);   ww2    => w(1:,jl,1:,:)
-
-!  eran-avf starts
-
-           if(equationMode == unsteady)then
-
-              avpp1  => wOld(noldLevels+1,1:,je,1:,irho)
-              avpp2  => wOld(noldLevels+1,1:,jl,1:,irho)
-
-           end if ! equationMode
-
-!  eran-avf ends
-
            pp1    => p(1:,je,1:);     pp2    => p(1:,jl,1:)
            gamma1 => gamma(1:,je,1:); gamma2 => gamma(1:,jl,1:)
-
+           !print *,'block is moving jmax',blockIsMoving
            if( blockIsMoving)then
               ss1    => s(1:,je-1,1:,:);   ss2    => s(1:,je,1:,:)
            end if
@@ -305,21 +246,9 @@
            iiMax = il; jjMax = jl
 
            ww1    => w(1:,1:,1,:);   ww2    => w(1:,1:,2,:)
-
-!  eran-avf starts
-
-           if(equationMode == unsteady)then
-
-              avpp1  => wOld(noldLevels+1,1:,1:,1,irho)
-              avpp2  => wOld(noldLevels+1,1:,1:,2,irho)
-
-           end if ! equationMode
-
-!  eran-avf ends
-           
            pp1    => p(1:,1:,1);     pp2    => p(1:,1:,2)
            gamma1 => gamma(1:,1:,1); gamma2 => gamma(1:,1:,2)
-
+           !print *,'block is moving kmin',blockIsMoving
            if( blockIsMoving)then
               ss1    => s(1:,1:,1,:);   ss2    => s(1:,1:,2,:)
            end if
@@ -341,21 +270,9 @@
            iiMax = il; jjMax = jl
 
            ww1    => w(1:,1:,ke,:);   ww2    => w(1:,1:,kl,:)
-
-!  eran-avf starts
-
-           if(equationMode == unsteady)then
-
-              avpp1  => wOld(noldLevels+1,1:,1:,ke,irho)
-              avpp2  => wOld(noldLevels+1,1:,1:,kl,irho)
-
-           end if ! equationMode
-
-!  eran-avf ends
-           
            pp1    => p(1:,1:,ke);     pp2    => p(1:,1:,kl)
            gamma1 => gamma(1:,1:,ke); gamma2 => gamma(1:,1:,kl)
-
+           !print *,'block is moving kmax',blockIsMoving
            if( blockIsMoving)then
               ss1    => s(1:,1:,ke-1,:);   ss2    => s(1:,1:,ke,:)
            end if
@@ -395,35 +312,12 @@
 
          case (cgnsPressure)
 
-            !  eran-avf starts
-
-            if(equationMode == unsteady)then
-               
-           ! set here mean(Cp) actually
-
-               fact = two/(gammaInf*pInf*MachCoef*MachCoef)
-
-               do j=rangeFace(2,1), rangeFace(2,2)
-                  do i=rangeFace(1,1), rangeFace(1,2)
-                     nn = nn + 1
-                     buffer(nn) = fact*(half*(avpp1(i,j) + avpp2(i,j)) - pInf)
-                  enddo
-               enddo
-
-            else
-
-               ! ------ this is indeed P for SS solution
-
-               do j=rangeFace(2,1), rangeFace(2,2)
-                  do i=rangeFace(1,1), rangeFace(1,2)
-                     nn = nn + 1
-                     buffer(nn) = half*(pp1(i,j) + pp2(i,j))
-                  enddo
-               enddo
-
-            end if ! equationMode
-
-! --------- eran-avf ends ---
+           do j=rangeFace(2,1), rangeFace(2,2)
+             do i=rangeFace(1,1), rangeFace(1,2)
+               nn = nn + 1
+               buffer(nn) = half*(pp1(i,j) + pp2(i,j))
+             enddo
+           enddo
 
          !===============================================================
 
@@ -440,7 +334,6 @@
          !===============================================================
 
          case (cgnsVelx)
-
            do j=rangeFace(2,1), rangeFace(2,2)
              do i=rangeFace(1,1), rangeFace(1,2)
                nn = nn + 1
@@ -502,7 +395,6 @@
                buffer(nn) = half*(ww1(i,j,ivz) + ww2(i,j,ivz))-half*(ss1(i,j,3) + ss2(i,j,3))
              enddo
            enddo
-
 
          !================================================================
 

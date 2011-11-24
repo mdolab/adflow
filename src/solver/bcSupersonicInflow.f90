@@ -95,7 +95,7 @@
              do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
                do i=BCData(nn)%icBeg, BCData(nn)%icEnd
 
-                 ww1(i,j,irho) = abs(BCData(nn)%rho(i,j))  ! eran-tdbc
+                 ww1(i,j,irho) = BCData(nn)%rho(i,j)
                  ww1(i,j,ivx)  = BCData(nn)%velx(i,j)
                  ww1(i,j,ivy)  = BCData(nn)%vely(i,j)
                  ww1(i,j,ivz)  = BCData(nn)%velz(i,j)

@@ -78,7 +78,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-
+       !print *,'in writesurfsolncgnszone'
        ! Store the offset in blocksCGNSblock for this zone in offset.
 
        offset  = nBlocksCGNSblock(zone-1)
@@ -112,7 +112,7 @@
                     cgnsDoms(zone)%conn1to1(subface)%kEnd)
 
        else
-
+          !print *,'true physical boundary...'
          ! True physical boundary.
          ! If this is an extrapolation boundary (usually singular line),
          ! return. You don't want that info in the solution file.
@@ -181,7 +181,7 @@
        ! Allocate the memory for buffer, which is used to communicate
        ! the coordinates and solution. Assume that rind layers are
        ! present, such that the solution uses most memory.
-
+       !print *,'allocating buffer'
        size = (il+1)*(jl+1)
        allocate(buffer(size), stat=ierr)
        if(ierr /= 0)                            &
@@ -192,14 +192,14 @@
        ! subface of the original cgns block. Note that nBlocks and
        ! blocksCGNSblock contain information of the entire cgns block,
        ! but not of the subface.
-
+       !print *,'looping over blocks'
        mBlocks = 0
        do i=1,nBlocks
 
          ! Store the current local block ID a bit easier.
-
+          
          mm = blocksCGNSblock(i+offset)
-
+         !print *,'block number',mm
          ! Determine whether or not the cgns subface is (partially)
          ! part of the subblock mm. Initialize the overlaps to .false.
 
@@ -349,15 +349,15 @@
            cgnsBase = cgnsBases(ind)
 
            ! Create the surface zone.
-
+           !print *,'createzone',ind
            call createSurfaceZone
 
            ! Write the nodal coordinates.
-
+           !print *,'write coord'
            call writeSurfaceCoord
 
            ! Write the cell centered surface solution.
-
+           !print *,'writesol'
            call writeSurfaceSol
 
          enddo solLoopRoot
@@ -1033,7 +1033,7 @@
                ! Store the surface solution for this contribution in
                ! buffer. Note that the counter jj is updated in the
                ! routine storeSurfsolInBuffer.
-
+               !print *,'storeSurfsolinbuffer',ll
                call storeSurfsolInBuffer(ind, buffer, jj, ii,       &
                                          faceID, cellRange(1,1,kk), &
                                          solNames(mm),              &

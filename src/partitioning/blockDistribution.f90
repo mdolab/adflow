@@ -124,7 +124,7 @@
          ! equal to the number of blocks.
 
          if(nBlocks >= nProc) exit
-
+         
          ! The number of blocks is smaller than the number of processors.
          ! Set the tolerance for splitting to the desired number of
          ! cells on a processor.
@@ -146,6 +146,7 @@
           
          ! Determine the computational blocks from the splitting info of
          ! the original blocks.
+         
          call determineComputeBlocks(splitInfo)
 
          ! Apply the graph partitioning to the computational blocks.
@@ -155,7 +156,7 @@
          ! Determine whether the load balance is okay. If empty
          ! partitions are present the load balance is per definition
          ! not okay and there is no need to call checkLoadBalance.
-
+         
          if( emptyPartitions ) then
            cellsBalanced = .false.
            facesBalanced = .false.

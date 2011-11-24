@@ -21,7 +21,7 @@ subroutine computeRootBendingMoment(sol,bendingMoment)
 
   use inputPhysics   ! liftDirection, dragDirection,pointref,pointrefec
   use costFunctions
-   
+ 
   implicit none
 
   !input/output variables
@@ -52,7 +52,7 @@ subroutine computeRootBendingMoment(sol,bendingMoment)
      !z out wing sum momentx,momentz
      elasticMomentx = cmx + cfy*(pointRefEC(3)-pointRef(3))/lengthref-cfz*(pointRefEC(2)-pointRef(2))/lengthref
      elasticMomentz = cmz - cfy*(pointRefEC(1)-pointref(1))/lengthref+cfx*(pointRefEC(2)-pointRef(2))/lengthref
-    
+     
      BendingMoment = sqrt(elasticMomentx**2+elasticMomentz**2)
      
   elseif (liftIndex == 3) then

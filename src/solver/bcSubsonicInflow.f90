@@ -4,7 +4,7 @@
 !      * File:          bcSubsonicInflow.f90                            *
 !      * Author:        Edwin van der Weide                             *
 !      * Starting date: 06-03-2003                                      *
-!      * Last modified: 04-20-2009  (Eran)                              *
+!      * Last modified: 09-27-2005                                      *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -27,8 +27,6 @@
        use inputDiscretization
        use inputPhysics
        use iteration
-       use monitor   ! eran-tdbc
-       use inputTDBC ! eran-tdbc
        implicit none
 !
 !      Subroutine arguments.
@@ -50,7 +48,6 @@
        real(kind=realType), dimension(:,:),   pointer :: gamma2
        real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
        real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
-       real(kind=realType) :: velM  ! eran-tdbc
 !
 !      Interfaces
 !
@@ -257,33 +254,18 @@
 
                ! Loop over the generic subface to set the state in the
                ! halo cells.
-!
-!--------- eran-tdbc start ----
-                velM = 1.0
-                if (applyTdbc) then
-                   i=BCData(nn)%icBeg
-                   j=BCData(nn)%jcBeg
-                   rho  = BCData(nn)%rho(i,j)/abs(BCData(nn)%rho(i,j))
-                   call tdbc(timeUnsteady,rho,velM)
-                end if
-!---------eran-tdbc end ---
-!
+
                do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
                  do i=BCData(nn)%icBeg, BCData(nn)%icEnd
 
                    ! Store a couple of variables, such as the density,
                    ! velocity and grid unit outward normal, a bit easier.
 
-! ------ eran-tdbc ------------
+                   rho  = BCData(nn)%rho(i,j)
+                   velx = BCData(nn)%velx(i,j)
+                   vely = BCData(nn)%vely(i,j)
+                   velz = BCData(nn)%velz(i,j)
 
-                   rho  = abs(BCData(nn)%rho(i,j)) ! abs by eran-tdbc
-                   velx = BCData(nn)%velx(i,j)*velM ! multiplier by eran-tdbc
-                   vely = BCData(nn)%vely(i,j)*velM
-                   velz = BCData(nn)%velz(i,j)*velM
-!
-!------------eran-tdbc: ends
-!                        
-!
                    nnx = BCData(nn)%norm(i,j,1)
                    nny = BCData(nn)%norm(i,j,2)
                    nnz = BCData(nn)%norm(i,j,3)
