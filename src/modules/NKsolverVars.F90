@@ -144,15 +144,4 @@ module NKsolverVars
 
   real(kind=realType) :: times(50)
 
-  real(kind=realType), dimension(:), allocatable :: func_evals
-  integer(kind=intType) :: Mmax
-  integer(kind=intType) :: iter_k
-  integer(kind=intType) :: iter_m
-
-  ! Line search parameters
-  integer(kind=intType), parameter :: noLineSearch = 0_intType, &
-                                      cubicLineSearch = 1_intType, &
-                                      nonMonotoneLineSearch = 2_intType
-  integer(kind=intType) :: NKLS
-
 end module NKsolverVars

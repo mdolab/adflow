@@ -97,7 +97,6 @@ FF90_OBJECTS = bsearchIntegers.o\
 CC_OBJECTS   = myIsNaNC.o\
 	       f77flush.o
 
-
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *

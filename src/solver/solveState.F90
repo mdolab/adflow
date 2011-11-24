@@ -27,6 +27,7 @@ subroutine solveState
   use iteration
   use killSignals
   use monitor
+
   implicit none
   !
   !      Local parameter
@@ -36,7 +37,6 @@ subroutine solveState
   !      Local variables.
   !
   integer :: ierr
-
 
   integer(kind=intType) :: iter, nMGCycles
   real(kind=realType) :: curRes
@@ -53,12 +53,10 @@ subroutine solveState
   !
   ! Allocate the memory for cycling.
 
-
   allocate(cycling(nMGSteps), stat=ierr)
   if(ierr /= 0)                  &
        call terminate("solveState", &
        "Memory allocation failure for cycling")
-
 
   ! Some initializations.
 
@@ -70,6 +68,7 @@ subroutine solveState
   iterTot      = 0
 
   ! Determine the initial residual.
+
   rkStage = 0
   currentLevel = groundLevel
   call timeStep(.false.)
@@ -104,7 +103,6 @@ subroutine solveState
            print "(a)", "#"
            print 100, groundLevel, trim(numberString)
            print "(a)", "#"
-
 100        format("# Grid",1X,I1,": Performing",1X,A,1X, "single grid &
                 &startup iterations, unless converged earlier")
         end if
@@ -112,7 +110,6 @@ subroutine solveState
 
      ! Write the sliding mesh mass flow parameters (not for
      ! unsteady) and the convergence header.
-
 
      if(equationMode == steady .or. &
           equationMode == timeSpectral) call writeFamilyMassflow
@@ -125,7 +122,6 @@ subroutine solveState
   endif
 
   ! Loop over the number of single grid start up iterations.
-
 
   singleGrid: do iter=1,nsgStartup
 
@@ -149,11 +145,10 @@ subroutine solveState
      ! is required. For unsteady mode the PV3 stuff is updated
      ! after every physical time step.
 
-
 #ifdef USE_PV3
-     !eran-viz         if(equationMode == steady .or.    &
-     !eran-viz            equationMode == timeSpectral) &
-     call pv_update(real(iterTot,realPV3Type))
+     if(equationMode == steady .or.    &
+          equationMode == timeSpectral) &
+          call pv_update(real(iterTot,realPV3Type))
 #endif
 
      ! Determine and write the convergence info.
@@ -171,7 +166,6 @@ subroutine solveState
         ! if signals are supported.
 
 #ifndef USE_NO_SIGNALS
-
         call mpi_allreduce(localSignal, globalSignal, 1,         &
              sumb_integer, mpi_max, SUmb_comm_world, &
              ierr)
@@ -182,6 +176,7 @@ subroutine solveState
         ! alone mode.
 
         if(standAloneMode .and. groundLevel == 1) then
+
            writeVolume  = .false.
            writeSurface = .false.
 
@@ -190,7 +185,6 @@ subroutine solveState
 
            if(globalSignal == signalWrite .or. &
                 globalSignal == signalWriteQuit) then
-
               writeVolume  = .true.
               writeSurface = .true.
            endif
@@ -199,8 +193,6 @@ subroutine solveState
            ! mode. In the former case the grid will never
            ! be written; in the latter case when only when
            ! the volume is written.
-
-           ! Check this: NOT true for optimization?
 
            writeGrid = .false.
            if(equationMode == timeSpectral .and. writeVolume) &
@@ -253,48 +245,41 @@ subroutine solveState
      ! that from now on multigrid is turned on.
 
      if(nsgStartup > 0) then
-        print "(a)", "#"
-        print 101, groundLevel
-        print "(a)", "#"
-101     format("# Grid",1X,I1,": Switching to multigrid iterations")
-     endif
+        if (printIterations) then
+           print "(a)", "#"
+           print 101, groundLevel
+           print "(a)", "#"
+101        format("# Grid",1X,I1,": Switching to multigrid iterations")
+        endif
+     end if
+     ! Write a message about the number of multigrid iterations
+     ! to be performed.
 
-     notCDB1 : if(.not.componentsBreakDown)then  !  eran-CBD
-        ! Write a message about the number of multigrid iterations
-        ! to be performed.
+     write(numberString,"(i6)") nMGCycles
+     numberString = adjustl(numberString)
+     numberString = trim(numberString)
 
-        write(numberString,"(i6)") nMGCycles		
-        numberString = adjustl(numberString)
-        numberString = trim(numberString)
-
+     if (printIterations) then
         print "(a)", "#"
         print 102, groundLevel, trim(numberString)
         print "(a)", "#"
 102     format("# Grid",1X,I1,": Performing",1X,A,1X, &
              "multigrid iterations, unless converged earlier")
-     end if notCDB1  !  eran-CBD
-  endif
+     endif
+  end if
+  ! Write the sliding mesh mass flow parameters (not for unsteady)
+  ! and the convergence header.
 
-  notCDB2 : if(.not.componentsBreakDown)then  !  eran-CBD
-
-     ! Write the sliding mesh mass flow parameters (not for unsteady)
-     ! and the convergence header.
-
-     if(equationMode == steady .or. &
-          equationMode == timeSpectral) call writeFamilyMassflow
-     if(myID == 0) call convergenceHeader
-  end if	notCDB2 !  eran-CBD
+  if(equationMode == steady .or. &
+       equationMode == timeSpectral) call writeFamilyMassflow
+  if(myID == 0) call convergenceHeader
 
   ! Determine and write the initial convergence info.
   ! Note that if single grid startup iterations were made, this
   ! value is printed twice.
-
+  
   call convergenceInfo
-  !
-  !         In a components-break-down run, do not execute MG, but exit
-  !
-  if(componentsBreakDown)go to 99 !  eran-CBD
-
+  
   ! Determine if we need to run the RK solver, the NK solver or Both.
 
   if ( groundLevel .ne. 1_intType .or. .not. useNKSolver) then
@@ -303,7 +288,7 @@ subroutine solveState
      solve_RK = .True.
      solve_NK = .False.
      L2ConvSave = L2Conv
-
+     
      if (groundLevel == 1 .and. fromPython) then
         call getFreeStreamResidual(rhoRes0,totalR0)
         call getCurrentResidual(rhoResStart,totalRStart)
@@ -323,10 +308,10 @@ subroutine solveState
      L2ConvSave = L2Conv
 
      if (rhoResStart/rhoRes0 > NK_Switch_Tol) then
-
+                
         ! We haven't run anything yet OR the solution is not
         ! yet converged tightly enough to start with NK solver
-
+              
         ! Try to run RK solver down to NKSwitchTol
         L2Conv = NK_Switch_Tol*rhoRes0/rhoResStart
         solve_RK = .True.
@@ -344,15 +329,15 @@ subroutine solveState
   end if
 
   if (solve_RK) then
-
+            
      ! Loop over the number of multigrid cycles.
 
      multiGrid: do iter=1,nMGCycles
-
+        
         ! Rewrite the sliding mesh mass flow parameters (not for
         ! unsteady) and the convergence header after a certain number
         ! of iterations. The latter is only done by processor 0.
-
+        
         if(mod(iter,nWriteConvHeader) == 0) then
            if(equationMode == steady .or. &
                 equationMode == timeSpectral) call writeFamilyMassflow
@@ -360,7 +345,7 @@ subroutine solveState
         endif
 
         ! Update iterTot and call executeMGCycle.
-
+        
         iterTot = iterTot + 1
         call executeMGCycle
 
@@ -375,7 +360,7 @@ subroutine solveState
 #endif
 
         ! Determine and write the convergence info.
-
+        
         call convergenceInfo
 
         !check for divergence or nan here
@@ -397,25 +382,25 @@ subroutine solveState
 
         testSteady2: if(equationMode == steady .or. &
              equationMode == timeSpectral) then
-
+           
            ! Determine the global kill parameter.
 
            call mpi_allreduce(localSignal, globalSignal, 1,         &
                 sumb_integer, mpi_max, SUmb_comm_world, &
                 ierr)
-
+           
            ! Check whether a solution file, either volume or surface,
            ! must be written. Only on the finest grid level in stand
            ! alone mode.
-
+           
            if(standAloneMode .and. groundLevel == 1) then
-
+              
               writeVolume  = .false.
               writeSurface = .false.
-
+              
               if(mod(iterTot, nSaveVolume)  == 0) writeVolume  = .true.
               if(mod(iterTot, nSaveSurface) == 0) writeSurface = .true.
-
+              
               if(globalSignal == signalWrite .or. &
                    globalSignal == signalWriteQuit) then
                  writeVolume  = .true.
@@ -430,14 +415,14 @@ subroutine solveState
               writeGrid = .false.
               if(equationMode == timeSpectral .and. writeVolume) &
                    writeGrid = .true.
-
+              
               if(writeGrid .or. writeVolume .or. writeSurface) &
                    call writeSol
 
            endif
 
            ! Reset the value of localSignal.
-
+           
            localSignal = noSignal
 
         endif testSteady2
@@ -449,10 +434,10 @@ subroutine solveState
 
         ! Check if the bleed boundary conditions must be updated and
         ! do so if needed.
-
+        
         if(mod(iter, nUpdateBleeds) == 0) &
              call BCDataMassBleedOutflow(.false., .false.)
-
+        
      enddo multiGrid
   end if
 
@@ -466,7 +451,7 @@ subroutine solveState
      ! We have to check to see if NKSwitchtol was LOWER than
      ! l2convrel. This means that the RK solution is already good
      ! enough for what we want so we're done
-
+    
      call getcurrentResidual(rhoRes1,totalRRes1)
      if (rhoRes1 < rhoResStart * l2convrel) then
         ! We no not have to run the NK solver so do nothing
@@ -518,28 +503,24 @@ subroutine solveState
   testSteady3: if(equationMode == steady .or. &
        equationMode == timeSpectral) then
 
-     notCBD : if(.not.componentsBreakDown)then   !  eran-CDB
-       if(standAloneMode .and. groundLevel == 1) then
+     if(standAloneMode .and. groundLevel == 1) then
 
-          writeVolume  = .not. writeVolume
-          writeSurface = .not. writeSurface
+        writeVolume  = .not. writeVolume
+        writeSurface = .not. writeSurface
 
         ! Make a distinction between steady and spectral
         ! mode. In the former case the grid will never
         ! be written; in the latter case when only when
         ! the volume is written.
 
-          writeGrid = .false.
-          if(equationMode == timeSpectral .and. writeVolume) &
+        writeGrid = .false.
+        if(equationMode == timeSpectral .and. writeVolume) &
              writeGrid = .true.
 
-          if(writeGrid .or. writeVolume .or. writeSurface) &
-               call writeSol
+        if(writeGrid .or. writeVolume .or. writeSurface) &
+             call writeSol
 
-
-	   if(genCBDOUT)call componentsBreakDownPrintout(1) ! eran-CBD
-       endif  ! standAloneMode .and. groundLevel 
-     end if notCBD    !   eran-CDB
+     endif
   endif testSteady3
 
 end subroutine solveState

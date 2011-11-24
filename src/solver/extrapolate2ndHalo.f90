@@ -75,7 +75,6 @@
        ! Note that rlv0 and rev0 are used here as dummies.
 
        !nullify(ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, rev0)
-
        call setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, &
                           rev1, rev0, 0_intType)
 

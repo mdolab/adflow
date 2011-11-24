@@ -3,9 +3,9 @@
 !      *                                                                *
 !      * File:          readBocos.F90                                   *
 !      * Author:        Edwin van der Weide, Steve Repsher,             *
-!      *                Seonghyeon Hahn, Eran Arad                      *
+!      *                Seonghyeon Hahn                                 *
 !      * Starting date: 12-17-2002                                      *
-!      * Last modified: 08-15-2009                                      *
+!      * Last modified: 08-09-2005                                      *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -115,16 +115,6 @@
          cgnsDoms(nZone)%bocoInfo(i)%npnts = cgnsNpnts
 
          ! Nullify the pointer for dataSet.
-!
-!------------------ eran-fam starts ----------------------------------------
-!
-         ! IF bocoType is BCGeneral change it to FamilySpecified. In this way
-         ! General will be reserved for family bc (via input file).
-         if(cgnsDoms(nZone)%bocoInfo(i)%BCTypeCGNS == BCGeneral) &
-            cgnsDoms(nZone)%bocoInfo(i)%BCTypeCGNS = FamilySpecified
-!
-!------------------ eran-fam ends ------------------------------------------
-!
 
          nullify(cgnsDoms(nZone)%bocoInfo(i)%dataSet)
 
@@ -229,30 +219,6 @@
            endif
          endif
 !
-
-!--- eran-CBD start
-!
-            select case (cgnsDoms(nZone)%bocoInfo(i)%BCTypeCGNS)
-
-            case(BCWall,BCWallInviscid,BCWallViscous,&
-                 BCWallViscousHeatFlux,BCWallViscousIsothermal)
-
-               call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, &
-                    "ZoneBC_t", 1, "BC_t", i, "end")
-               if(ierr /= all_ok)             &
-                    call terminate("readBocos", &
-                    "Something wrong when calling cg_goto_f")
-               call cg_famname_read_f(familyName, ierr)
-
-              call  wallComponentsAssignment(nZone,i,familyName)
-	      
-            end select
-
-!
-!-- eran-CBD end
-!
-!
-
 !        ****************************************************************
 !        *                                                              *
 !        * Determine the internally used boundary condition and whether *
@@ -315,20 +281,6 @@
                                           cgnsFamilies(ii)%BCTypeCGNS
                cgnsDoms(nZone)%bocoInfo(i)%BCType = &
                                           cgnsFamilies(ii)%BCType
-!--- eran-cbd starts
-
-            select case (cgnsDoms(nZone)%bocoInfo(i)%BCTypeCGNS)
-
-            case(BCWall,BCWallInviscid,BCWallViscous,&
-                 BCWallViscousHeatFlux,BCWallViscousIsothermal)
-              
-	        familyName = cgnsFamilies(ii)%bcName
-
- 		call  wallComponentsAssignment(nZone,i,familyName)
- 
-            end select
-
-!--- eran-cbd ends
 
              !===========================================================
 
@@ -574,8 +526,6 @@
          endif testFamilySpecified
 
        enddo bocoLoop
-
-       if(cgnsNBocos > 0)call overwriteWallBCData(nZone,cgnsNBocos) ! eran-cbd : set contributions
 
        ! Format statements.
 

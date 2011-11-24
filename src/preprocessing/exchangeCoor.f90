@@ -137,16 +137,13 @@
            i1 = internalNode_1st(level)%donorIndices(i,1)
            j1 = internalNode_1st(level)%donorIndices(i,2)
            k1 = internalNode_1st(level)%donorIndices(i,3)
-
            ! Idem for the halo's.
 
            d2 = internalNode_1st(level)%haloBlock(i)
            i2 = internalNode_1st(level)%haloIndices(i,1)
            j2 = internalNode_1st(level)%haloIndices(i,2)
            k2 = internalNode_1st(level)%haloIndices(i,3)
-
            ! Copy the coordinates.
-
            flowDoms(d2,level,mm)%x(i2,j2,k2,1) = &
                                 flowDoms(d1,level,mm)%x(i1,j1,k1,1)
            flowDoms(d2,level,mm)%x(i2,j2,k2,2) = &

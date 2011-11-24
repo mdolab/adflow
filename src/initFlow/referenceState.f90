@@ -34,7 +34,6 @@
        use inputPhysics
        use inputTimeSpectral
        use iteration
-       use inputIteration ! printValues
        implicit none
 !
 !      Local variables.
@@ -50,10 +49,6 @@
        real(kind=realType), dimension(5) :: valLoc, valGlob
 
        type(BCDataType), dimension(:), pointer :: BCData
-
-       real(kind=realType) :: ptotInf  ! eran-ptinf
-       character(len=20)  :: flowTypeDescriptor ! eran-ptinf
-
 !
 !      Interfaces
 !
@@ -69,8 +64,6 @@
            type(BCDataType), dimension(:), pointer :: BCData
          end subroutine velMagnAndDirectionSubface
        end interface
-       
-       logical :: notEnoughDataPresent  ! eran-couplerinit
 !
 !      ******************************************************************
 !      *                                                                *
@@ -78,11 +71,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       ! Initialization of notEnoughDataPresent to .false. This is only
-       ! used when running in coupled mode.
-
-       notEnoughDataPresent = .false. ! eran-couplerinit
-
        ! Initialize the dimensional free stream temperature and pressure.
        ! From these values the density and viscosity is computed. For
        ! external viscous and internal computation this is corrected
@@ -94,8 +82,8 @@
 
        rhoInfDim = pInfDim/(RGasDim*TInfDim)
        muDim     = muSuthDim                                    &
-            * ((TSuthDim + SSuthDim)/(TInfDim + SSuthDim)) &
-            * ((TInfDim/TSuthDim)**1.5_realType)
+                 * ((TSuthDim + SSuthDim)/(TInfDim + SSuthDim)) &
+                 * ((TInfDim/TSuthDim)**1.5_realType)
 
        ! Check the flow type we are having here.
 
@@ -106,79 +94,77 @@
          ! density pressure and velocity magnitude to -1. Also initialize
          ! the sum of the local flow direction to zero.
 
-          valLoc = -one
-          dirLoc = zero
+         valLoc = -one
+         dirLoc = zero
 
          ! Loop over the number od spectral modes and local blocks
          ! to  determine the variables described above.
 
-          do sps=1,nTimeIntervalsSpectral
-             do nn=1,nDom
+         do sps=1,nTimeIntervalsSpectral
+           do nn=1,nDom
 
              ! Set the pointer for the boundary conditions to make the
              ! code more readable.
 
-                BCData => flowDoms(nn,1,sps)%BCData
+             BCData => flowDoms(nn,1,sps)%BCData
 
              ! Loop over the number of boundary faces of the
              ! computational block.
 
-                do mm=1,flowDoms(nn,1,sps)%nBocos
+             do mm=1,flowDoms(nn,1,sps)%nBocos
 
                ! Determine the maximum value of the scalar quantities
                ! for this subface and store them if these are larger
                ! than the currently stored values.
 
-                   tmp = maxValueSubface(BCData(mm)%ptInlet)
-                   valLoc(1) = max(valLoc(1),tmp)
+               tmp = maxValueSubface(BCData(mm)%ptInlet)
+               valLoc(1) = max(valLoc(1),tmp)
 
-                   tmp = maxValueSubface(BCData(mm)%ttInlet)
-                   valLoc(2) = max(valLoc(2),tmp)
+               tmp = maxValueSubface(BCData(mm)%ttInlet)
+               valLoc(2) = max(valLoc(2),tmp)
 
-                   tmp = maxValueSubface(BCData(mm)%rho)
-                   valLoc(3) = max(valLoc(3),tmp)
+               tmp = maxValueSubface(BCData(mm)%rho)
+               valLoc(3) = max(valLoc(3),tmp)
 
-                   tmp = maxValueSubface(BCData(mm)%ps)
-                   valLoc(4) = max(valLoc(4),tmp)
+               tmp = maxValueSubface(BCData(mm)%ps)
+               valLoc(4) = max(valLoc(4),tmp)
 
                ! Determine the velocity magnitude and sum up the
                ! direction.
 
-                   call velMagnAndDirectionSubface(tmp, dirLoc, &
+               call velMagnAndDirectionSubface(tmp, dirLoc, &
                                                BCData, mm)
-                   valLoc(5) = max(valLoc(5),tmp)
+               valLoc(5) = max(valLoc(5),tmp)
 
-                enddo !  mm=1,flowDoms(nn,1,sps)%nBocos
-             enddo !nn=1,nDom
-          enddo ! sps=1,nTimeIntervalsSpectral
+             enddo
+           enddo
+         enddo
 
          ! Determine the global maxima of valLoc and the sum
          ! of dirLoc.
 
-          call mpi_allreduce(valLoc, valGlob, 5, sumb_real, mpi_max, &
-               SUmb_comm_world, ierr)
+         call mpi_allreduce(valLoc, valGlob, 5, sumb_real, mpi_max, &
+                            SUmb_comm_world, ierr)
 
-          call mpi_allreduce(dirLoc, dirGlob, 3, sumb_real, mpi_sum, &
-               SUmb_comm_world, ierr)
+         call mpi_allreduce(dirLoc, dirGlob, 3, sumb_real, mpi_sum, &
+                            SUmb_comm_world, ierr)
 
          ! Create a unit vector for the global direction.
 
-          tmp         = one/max(eps,sqrt(dirGlob(1)**2 + dirGlob(2)**2 &
-               +                  dirGlob(3)**2))
-          dirGlob(1) = tmp*dirGlob(1)
-          dirGlob(2) = tmp*dirGlob(2)
-          dirGlob(3) = tmp*dirGlob(3)
+         tmp         = one/max(eps,sqrt(dirGlob(1)**2 + dirGlob(2)**2 &
+                     +                  dirGlob(3)**2))
+         dirGlob(1) = tmp*dirGlob(1)
+         dirGlob(2) = tmp*dirGlob(2)
+         dirGlob(3) = tmp*dirGlob(3)
 
          ! Store this direction for the free stream; this will only be
          ! used for initialization.
 
-          velDirFreestream = dirGlob
+         velDirFreestream = dirGlob
 
          ! Determine the situation we are having here.
 
-          if(.not. useCouplerForInitialization)then ! eran-couplerinit
-
-             if(valGlob(1) > zero .and. valGlob(2) > zero) then
+         if(valGlob(1) > zero .and. valGlob(2) > zero) then
 
            ! Total conditions are present.
            ! Compute the value of gamma, which is gammaInf.
@@ -186,151 +172,111 @@
            ! a difference between the static and total temperature,
            ! but it is only used for an initialization.
 
-                call computeGamma(valGlob(2), gammaInf, 1_intType)
-                gm1 = gammaInf - one
+           call computeGamma(valGlob(2), gammaInf, 1_intType)
+           gm1 = gammaInf - one
 
            ! Check if a static pressure is present. If so, estimate
            ! a much number. If not present, set Mach to 0.5.
            ! Limit the estimated Mach number to 0.5 for stability
            ! reasons.
 
-                if(valGlob(4) > zero) then
-                   ratio = max((valGlob(1)/valGlob(4)), 1.007017518_realType)
+           if(valGlob(4) > zero) then
+             ratio = max((valGlob(1)/valGlob(4)), 1.007017518_realType)
        !     ratio = max((valGlob(1)/valGlob(4)), 1.0000007_realType)
-                   tmp   = ratio**(gm1/gammaInf)
+             tmp   = ratio**(gm1/gammaInf)
 
-                   Mach = sqrt(two*(tmp-one)/gm1)
-                else
-                   Mach = half
-                endif
+             Mach = sqrt(two*(tmp-one)/gm1)
+             Mach = min(Mach,half)
+           else
+             Mach = half
+           endif
 
            ! Set a value of pInfDim and TInfDim. This is just for
            ! initialization. The final solution is independent of it.
 
-                tmp = one + half*gm1*Mach*Mach
-                pInfDim = valGlob(1)/(tmp**(gammaInf/gm1))
-                TInfDim = valGlob(2)/tmp
+           tmp = one + half*gm1*Mach*Mach
+           pInfDim = valGlob(1)/(tmp**(gammaInf/gm1))
+           TInfDim = valGlob(2)/tmp
 
            ! Compute the density.
 
-                rhoInfDim = pInfDim/(RGasDim*TInfDim)
+           rhoInfDim = pInfDim/(RGasDim*TInfDim)
 
-             else if(valGlob(3) > zero .and. valGlob(4) > zero .and. &
-                  valGlob(5) > zero) then
+         else if(valGlob(3) > zero .and. valGlob(4) > zero .and. &
+                 valGlob(5) > zero) then
 
            ! Density, pressure and velocity magnitude are present.
            ! Compute the dimensional temperature and the corresponding
            ! value of gamma.
 
-                rhoInfDim = valGlob(3)
-                pInfDim   = valGlob(4)
-                TInfDim   = pInfDim/(RGasDim*rhoInfDim)
+           rhoInfDim = valGlob(3)
+           pInfDim   = valGlob(4)
+           TInfDim   = pInfDim/(RGasDim*rhoInfDim)
 
-                call computeGamma(TInfDim, gammaInf, 1_intType)
+           call computeGamma(TInfDim, gammaInf, 1_intType)
 
            ! Compute the Mach number.
 
-                Mach = valGlob(5)/sqrt(gammaInf*pInfDim/rhoInfDim)
+           Mach = valGlob(5)/sqrt(gammaInf*pInfDim/rhoInfDim)
 
-             else ! ValGlob = ...
+         else
 
            ! Not enough boundary data is present for initialization.
            ! This typically occurs when running the code in coupled
            ! mode with another CFD code from which it gets the data.
            ! If the code is run in stand alone mode, terminate.
 
-! ----- eran-couplerinit begins: cancel the next abort, to allow for Coupler initialization
-!                               also for stand alone mode
-
-!               if( standAloneMode ) then
-!                  if(myID == 0)                      &
-!                       call terminate("referenceState", &
-!                       "Not enough boundary data is present to &
-!                       &define a well posed problem for an &
-!                       &internal flow computation")
-!                  call mpi_barrier(SUmb_comm_world, ierr)
-!               endif
-! ----- eran-couplerinit ends
+           if( standAloneMode ) then
+             if(myID == 0)                      &
+               call terminate("referenceState", &
+                              "Not enough boundary data is present to &
+                              &define a well posed problem for an &
+                              &internal flow computation")
+             call mpi_barrier(SUmb_comm_world, ierr)
+           endif
 
            ! Multi-disciplinary mode.
            ! Use rhoIni, pIni, MachIni and velDirIni for initialization.
            ! Processor 0 prints a warning message.
 
-                notEnoughDataPresent = .true. ! eran-couplerinit
- ! eran-couplerinit: initiation of vars from here was moved below
- 
-                if(myID == 0) then
+           rhoInfDim        = rhoIni
+           pInfDim          = pIni
+           TInfDim          = pInfDim/(RGasDim*rhoInfDim)
+           Mach             = MachIni
+           velDirFreestream = velDirIni
 
-                   print "(a)", "#"
-                   print "(a)", "#*==================== !!! Warning !!! &
-                        &======================"
-                   print "(a)", "# Not enough boundary data is present to &
-                        &define a well posed problem for"
-                   print "(a)", "# an internal flow computation"
-                   print "(a)", "# It is assumed that the data is supplied &
-                        &from a different code"
-                   print "(a)", "#*=====================================&
-                        &======================"
-                   print "(a)", "#"
-                   
-                endif
+           ! Compute the corresponding value of gamma.
 
-             endif !  if(valGlob(1) > zero .and
+           call computeGamma(TInfDim, gammaInf, 1_intType)
 
-          end if ! useCouplerForInitialization  
+           if(myID == 0) then
 
-          !---------------eran-couplerinit starts
+             print "(a)", "#"
+             print "(a)", "#*==================== !!! Warning !!! &
+                          &======================"
+             print "(a)", "# Not enough boundary data is present to &
+                          &define a well posed problem for"
+             print "(a)", "# an internal flow computation"
+             print "(a)", "# It is assumed that the data is supplied &
+                          &from a different code"
+             print "(a)", "#*=====================================&
+                          &======================"
+             print "(a)", "#"
 
-          ! Check if the Coupler input should be used for
-           ! initialization. This can only occur when running in
-           ! coupled mode.
+           endif
 
-          if(notEnoughDataPresent .or. useCouplerForInitialization) then
-
-             ! Use rhoIni, pIni, MachIni and velDirIni for
-             ! initialization. Processor 0 prints a warning message.
-
-             rhoInfDim        = rhoIni
-             pInfDim          = pIni
-             TInfDim          = pInfDim/(RGasDim*rhoInfDim)
-             Mach             = MachIni
-             velDirFreestream = velDirIni
-
-             ! Compute the corresponding value of gamma.
-
-             call computeGamma(TInfDim, gammaInf, 1_intType)
-
-             ! Print a warning that the Coupler is used to initialize
-             ! the flow field.
-
-             if(myID == 0) then
-                print "(a)", "#"
-                print "(a)", "#*====================================="
-                print "(a)", "# Coupler Inf setup"
-                print "(a)", "#*====================================="
-                print "(a)", "#"
-             endif
-          endif  ! notEnoughDataPresent .or. useCouplerForInitialization
-
-! --------- eran-couplerinit ends
+         endif
 
          ! Set MachCoef to Mach. Seen the previous lines this is quite
          ! arbitrary, but for an internal flow the coefficients are not
          ! so important anyway.
-! starts  eran-couplerinit
-!
-! In contrast to the above comment, u might want coefficiets in internal flow
-! and MachCoef might be important. So use it, if defined
-!
-          if(MachCoef < zero) MachCoef = max(Mach,1.e-5_realType)
-!!original statement           MachCoef = Mach
-!
-!--- end eran-couplerinit
+
+         MachCoef = Mach
 
          ! Compute the value of the molecular viscosity corresponding
          ! to the computed TInfDim.
 
-          muDim = muSuthDim                                   &
+         muDim = muSuthDim                                    &
                * ((TSuthDim + SSuthDim)/(TInfDim + SSuthDim)) &
                * ((TInfDim/TSuthDim)**1.5_realType)
 
@@ -338,49 +284,49 @@
          ! not specified, set them to the 1.0, i.e. a dimensional
          ! computation is performed.
 
-          if(pRef   <= zero) pRef   = one
-          if(rhoRef <= zero) rhoRef = one
-          if(TRef   <= zero) TRef   = one
+         if(pRef   <= zero) pRef   = one
+         if(rhoRef <= zero) rhoRef = one
+         if(TRef   <= zero) TRef   = one
 
-       else ! flowTypeTest
+       else flowTypeTest
 
          ! External flow. Compute the value of gammaInf.
 
-          call computeGamma(tempFreestream, gammaInf, 1_intType)
+         call computeGamma(tempFreestream, gammaInf, 1_intType)
 
          ! In case of a viscous problem, compute the
          ! dimensional free stream density and pressure.
 
-          if(equations == NSEquations .or. &
-               equations == RANSEquations) then
+         if(equations == NSEquations .or. &
+            equations == RANSEquations) then
 
-            ! Compute the x, y, and z-components of the Mach number
-            ! relative to the body; i.e. the mesh velocity must be
-            ! taken into account here.
+           ! Compute the x, y, and z-components of the Mach number
+           ! relative to the body; i.e. the mesh velocity must be
+           ! taken into account here.
 
-             mx = MachCoef*velDirFreestream(1)
-             my = MachCoef*velDirFreestream(2)
-             mz = MachCoef*velDirFreestream(3)
+           mx = MachCoef*velDirFreestream(1)
+           my = MachCoef*velDirFreestream(2)
+           mz = MachCoef*velDirFreestream(3)
 
            ! Reynolds number per meter, the viscosity using sutherland's
            ! law and the free stream velocity relative to the body.
 
-            Re = Reynolds/ReynoldsLength
-            muDim = muSuthDim                    &
+           Re = Reynolds/ReynoldsLength
+           muDim = muSuthDim                    &
                  * ((TSuthDim + SSuthDim)       &
                  /  (tempFreestream + SSuthDim)) &
                  * ((tempFreestream/TSuthDim)**1.5)
-            v  = sqrt((mx*mx + my*my + mz*mz) &
-                 *      gammaInf*RGasDim*tempFreestream)
-            
+           v  = sqrt((mx*mx + my*my + mz*mz) &
+              *      gammaInf*RGasDim*tempFreestream)
+
            ! Compute the free stream density and pressure.
            ! Set TInfDim to tempFreestream.
 
-            rhoInfDim = Re*muDim/v
-            pInfDim   = rhoInfDim*RGasDim*tempFreestream
-            TInfDim   = tempFreestream
+           rhoInfDim = Re*muDim/v
+           pInfDim   = rhoInfDim*RGasDim*tempFreestream
+           TInfDim   = tempFreestream
 
-         endif   ! (equations == NSEquations
+         endif
 
          ! In case the reference pressure, density and temperature were
          ! not specified, set them to the infinity values.
@@ -389,7 +335,7 @@
          if(rhoRef <= zero) rhoRef = rhoInfDim
          if(TRef   <= zero) TRef   = TInfDim
 
-      endif flowTypeTest
+       endif flowTypeTest
 
        ! Compute the value of muRef, such that the nonDimensional
        ! equations are identical to the dimensional ones.
@@ -398,43 +344,26 @@
        ! in this code, because the coordinates are converted to
        ! meters.
 
-      muRef = sqrt(pRef*rhoRef)
+       muRef = sqrt(pRef*rhoRef)
 
        ! Compute timeRef for a correct nonDimensionalization of the
        ! unsteady equations. Some story as for the reference viscosity
        ! concerning the reference length.
 
-      timeRef = sqrt(rhoRef/pRef)
+       timeRef = sqrt(rhoRef/pRef)
 
        ! Compute the nonDimensional pressure, density, velocity,
        ! viscosity and gas constant.
 
-      pInf   = pInfDim/pRef
-      rhoInf = rhoInfDim/rhoRef
-      uInf   = Mach*sqrt(gammaInf*pInf/rhoInf)
-      RGas   = RGasDim*rhoRef*TRef/pRef
-      muInf  = muDim/muRef
-      rGasTLim = rGas*tempratureLowLimit/TRef ! eran-ltemp
-!
-!----- eran-ptinf
-!
-      call computePtot(rhoInf, uInf, zero, zero, &
-           pInf, ptotInf, 1_intType)
-      
-      if(flowType == 1)then
-         flowTypeDescriptor  ='Internal Flow'
-      else
-         flowTypeDescriptor   ='External Flow'
-      end if
-
-      if(myID == 0 .and. printIterations)&
-           write(*,'("Ref Values: FT = ",a13," pInfDim = ",1pg12.5," PtInf = ",&
-           1pg12.5," rhoInfDim = ",1pg12.5," M = ",1pg12.5," MachCoef = ",1pg12.5,&
-           " muDim = ",1pg12.5," TinfDim = ",1pg12.5)') &
-           flowTypeDescriptor ,pInfDim,ptotInf,rhoInfDim,Mach,MachCoef,muDim,TInfDim
-!
-!----- eran-ptinf
-
+       pInf   = pInfDim/pRef
+       rhoInf = rhoInfDim/rhoRef
+       uInf   = Mach*sqrt(gammaInf*pInf/rhoInf)
+       !print *,'mach',mach,uinf,sqrt(gammaInf*pInf/rhoInf)
+       !stop
+       RGas   = RGasDim*rhoRef*TRef/pRef
+       muInf  = muDim/muRef
+!!$       print *,'pinf,rhoinf,uinf',pinf,rhoinf,uinf, gammainf,uinf/mach,timeref
+!!$       stop
        !=================================================================
 
        contains

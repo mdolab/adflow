@@ -3,7 +3,7 @@
 !      *                                                                *
 !      * File:          analyzeString.f90                               *
 !      * Author:        Edwin van der Weide, Steve Repsher,             *
-!      *                Seonghyeon Hahn  , Eran Arad                    *
+!      *                Seonghyeon Hahn                                 *
 !      * Starting date: 12-12-2002                                      *
 !      * Last modified: 11-27-2007                                      *
 !      *                                                                *
@@ -27,8 +27,6 @@
        use localMG
        use couplerParam
        use monitor
-       use inputDES  ! eran-des
-       use inputTDBC ! eran-tdbc
        implicit none
 !
 !      Subroutine argument.
@@ -126,13 +124,6 @@
 
          case ("volume output variables")
            call volumeVariables(value)
-
-         case("generate cbd-output file")           ! eran-CBD
-            genCBDOUT = checkYesNo(value, keyword)  ! eran-CBD
-
-        case ("components break down")                       ! eran-CBD
-           componentsBreakDown = checkYesNo(value, keyword)  ! eran-CBD
-!
 !
 !        ****************************************************************
 !        *                                                              *
@@ -304,10 +295,6 @@
 
          case ("kappa interpolation value")
            read(value,*) kappaCoef
-
-         case ("relaxation factor upwind dissipation") !   eran-ldiffroe
-           read(value,*,iostat=ierr) epsilonUpwind     !   eran-ldiffroe
-           if(ierr /= 0) call errHandlerFloatingPointReader(keyword)  !   eran-ldiffroe
 !
 !        ****************************************************************
 !        *                                                              *
@@ -389,6 +376,7 @@
 
          case ("store convergence inner iterations")
            storeConvInnerIter = checkYesNo(value, keyword)
+
 !
 !        ****************************************************************
 !        *                                                              *
@@ -539,15 +527,6 @@
 
          case ("relative l2 norm for convergence")
            read(value,*) L2Conv
-
-         case ("coefficients convergence criterion")
-            read(value,*)epsCoefConv                 !----eran-coeffConv
-
-         case ("coefficients convergence check window size")
-            read(value,*)convCheckWindowSize         !----eran-coeffConv
-
-         case("minimum number of iterations")
-            read(value,*)minIterNum  !----eran-coeffConv
 
          case ("number of multigrid cycles coarse grid")
            read(value,*) nCyclesCoarse
@@ -892,6 +871,7 @@
            gridMotionSpecified = .true.
 
   
+
 !
 !        ****************************************************************
 !        *                                                              *
@@ -1071,30 +1051,7 @@
          case ("max ratio k-prod/dest")
            read(value,*) pklim
            if(pklim <= zero) pklim = 20.0_realType
-!
-! --- eran-tran starts
-!
-           case ("forced transition")
-              forcedTransition = checkYesNo(value, keyword)
-           
-           case ("x transition")
-              read(value,*)xTransition
 
-	   case ("transition half length")
-	       read(value,*)TransHLength
-!
-! --- eran-tran ends
-!
-!---- eran-ltemp starts
-!
-          case("temperature low limit [k]")
-             read(value,*)tempratureLowLimit 
-             if(tempratureLowLimit > zero)then
-                limitLowTemprature = .true.
-             end if
-!
-!---- eran-ltemp ends
-!
          case ("mach")
            read(value,*) Mach
 
@@ -1155,77 +1112,6 @@
 
          case ("moment reference point z")
            read(value,*) pointRef(3)
-!
-!----- eran-des start
-!
-!        ****************************************************************
-!        *                                                              *
-!        *         DES    parameters                                    *
-!        *                                                              *
-!        ****************************************************************
-!
-         case("apply des")
-            applyDES = checkYesNo(value, keyword)
-
-         case("des scale coefficient")
-            read(value,*,iostat=ierr) cdes
-            if(ierr /= 0) call errHandlerFloatingPointReader(keyword)
-            if(cdes <= zero) cdes=0.65_realType
-
-         case("ddes model (yes/no)")
-            applyDDes = checkYesNo(value, keyword)
-
-         case("des region low x")
-            read(value,*,iostat=ierr) xDESmin
-            if(ierr /= 0) call errHandlerFloatingPointReader(keyword)
-
-        case("des region high x")
-            read(value,*,iostat=ierr) xDESmax
-            if(ierr /= 0) call errHandlerFloatingPointReader(keyword)
-
-        case("des region low wall-distance limit")
-            read(value,*,iostat=ierr) distDESmin
-            if(ierr /= 0) call errHandlerFloatingPointReader(keyword)
-            distDESmin = max(zero,distDESmin)
-
-        case("des region high wall-distance limit")
-            read(value,*,iostat=ierr) distDESmax
-            if(ierr /= 0) call errHandlerFloatingPointReader(keyword)
-            if(distDESmax <= zero)distDESmax = large
-
-        case("rans region high wall-distance limit")
-            read(value,*,iostat=ierr) distRANSmax
-            if(ierr /= 0) call errHandlerFloatingPointReader(keyword)
-            if(distDESmax <= zero) distRANSmax = large
-
-!----- eran-des end
-!
-!
-!----- eran-tdbc start
-!
-!        ****************************************************************
-!        *                                                              *
-!        *         TDBC    parameters                                   *
-!        *                                                              *
-!        ****************************************************************
-!
-         case("apply oscillatory inflow")
-            applyTdbc = checkYesNo(value, keyword)
-
-         case("steady coefficient in inflow")
-            read(value,*,iostat=ierr)C0Tdbc 
-            if(ierr /= 0) call errHandlerFloatingPointReader(keyword)
-
-         case("oscillatory inflow frequency")
-            read(value,*,iostat=ierr) oscillFreq
-            if(ierr /= 0) call errHandlerFloatingPointReader(keyword)
-
-         case("oscillatory inflow phase")
-            read(value,*,iostat=ierr) cPhase
-            if(ierr /= 0) call errHandlerFloatingPointReader(keyword)
-            cPhaseR=pi/180.0*cPhase
-
-!----- eran-tdbc end
 !
 !        ****************************************************************
 !        *                                                              *
@@ -1310,7 +1196,7 @@
          case ("number of unsteady time steps fine grid")
            read(value,*) nTimeStepsFine
 
-         case ("unsteady time step (in sec)")
+        case ("unsteady time step (in sec)")
            read(value,*) deltaT
 
          case ("update wall distance unsteady mode")
@@ -1355,10 +1241,6 @@
 
          case ("get coarse-level sol")
            cplGetCoarseSol = checkYesNo(value, keyword)
-
-         case ("use coupler initialization")  ! eran-couplerinit
-           useCouplerForInitialization = checkYesNo(value, keyword) ! eran-couplerinit
-   ! eran-highintvel        if( standAloneMode ) useCouplerForInitialization = .false.
 
          case ("mach for initialization")
            read(value,*) MachIni
@@ -1937,6 +1819,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       !print *,'initial string',string,start,end
 
        ! Check if end >= 0, i.e. if the order of the polynomial/fourier
        ! series is specified before this subroutine is called.
@@ -1956,7 +1839,7 @@
        ! Loop over the number of coefficients to be read.
 
        do i=start,end
-
+          !print *,'i',i,start,end
          ! Check if the string still contains data. If not processor
          ! zero prints and error message, while the others wait to get
          ! killed.
@@ -1971,7 +1854,7 @@
          ! Read the i-th coefficient from the string.
 
          read(string,*) coef(i)
-
+         !print *,'coef',coef(i)
          ! Remove this coefficient from the string.
 
          pos = index(string, " ")
@@ -1987,7 +1870,7 @@
 
        ! The length of the string should be zero. If not too much data
        ! is specified. Print a warning to indicate this.
-
+       !print *,'string',string
        if(myID == 0 .and. len_trim(string) > 0) then
          print "(a)", "#"
          print "(a)", "#*==================== !!! Warning !!! &
@@ -2001,80 +1884,3 @@
        endif
 
        end subroutine readMotionCoef
-
-!      ==================================================================
-
-       subroutine errHandlerIntegerReader(keyword)
-!
-!      ******************************************************************
-!      *                                                                *
-!      * errHandlerIntegerReader writes a message that an integer value *
-!      * is expected for the given keyword and then terminates.         *
-!      *                                                                *
-!      ******************************************************************
-!
-       use communication
-       use constants
-       implicit none
-!
-!      Subroutine arguments.
-!
-       character(len=*), intent(in) :: keyword
-!
-!      Local variables.
-!
-       integer :: ierr
-       character(len=2*maxStringLen) :: errorMessage
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       write(errorMessage,*) "Integer value expected for ", &
-                             trim(keyword), "."
-       if(myID == 0) &
-         call terminate("errHandlerIntegerReader", errorMessage)
-       call mpi_barrier(SUmb_comm_world, ierr)
-
-       end subroutine errHandlerIntegerReader
-
-!      ==================================================================
-
-       subroutine errHandlerFloatingPointReader(keyword)
-!
-!      ******************************************************************
-!      *                                                                *
-!      * errHandlerFloatingPointReader writes a message that a floating *
-!      * point value is expected for the given keyword and then         *
-!      * terminates.                                                    *
-!      *                                                                *
-!      ******************************************************************
-!
-       use communication
-       use constants
-       implicit none
-!
-!      Subroutine arguments.
-!
-       character(len=*), intent(in) :: keyword
-!
-!      Local variables.
-!
-       integer :: ierr
-       character(len=2*maxStringLen) :: errorMessage
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       write(errorMessage,*) "Floating point value expected for ", &
-                             trim(keyword), "."
-       if(myID == 0) &
-         call terminate("errHandlerFloatingPointReader", errorMessage)
-       call mpi_barrier(SUmb_comm_world, ierr)
-
-       end subroutine errHandlerFloatingPointReader

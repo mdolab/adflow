@@ -8,7 +8,7 @@
  * Started 9/26/95
  * George
  *
- * $Id: struct.h 1 2008-01-14 19:16:54Z vdweide $
+ * $Id$
  */
 
 /* Modified by Edwin van der Weide, 02-12-2003, such that idxtype */

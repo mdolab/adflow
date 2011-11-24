@@ -3,7 +3,7 @@
 !      *                                                                *
 !      * File:          createTemplate.f90                              *
 !      * Author:        Edwin van der Weide, Steve Repsher,             *
-!      *                Seonghyeon Hahn, Eran Arad                      *
+!      *                Seonghyeon Hahn                                 *
 !      * Starting date: 12-12-2002                                      *
 !      * Last modified: 11-28-2007                                      *
 !      *                                                                *
@@ -82,8 +82,6 @@
        write(writeUnit,"(a)") "                  File format write: CGNS"
        write(writeUnit,"(a)") "               # Other possibility: &
                               &PLOT3D"
-
-
        write(writeUnit,"(a)")
        write(writeUnit,"(a)") "                         Grid file: &
                               &MISSING FILE NAME"
@@ -196,49 +194,6 @@
        write(writeUnit,"(a)") "   Turbulent Prandtl number    : 0.90"
        write(writeUnit,"(a)") "   Max ratio k-prod/dest       : 20.0"
        write(writeUnit,"(a)")
-
-!
-!--- eran-tran starts
-!
-       write(writeUnit,"(a)") "   Forced transition           : No "
-       write(writeUnit,"(a)") "   X transition                : 0.0 "
-       write(writeUnit,"(a)") "   Transition half Length      : 0.0"
-!
-!--- eran-tran ends
-!
-       write(writeUnit,"(a)") "   Temperature low Limit [K]    : 0.0 " ! eran-ltemp
-!
-!---------eran-des begins
-!
-       write(writeUnit,"(a)") "-----------------------------------------&
-            &--------------------------------------"
-       write(writeUnit,"(a)") "     DES parameters"
-       write(writeUnit,"(a)") "-----------------------------------------&
-                              &--------------------------------------" 
-       write(writeUnit,"(a)") " Apply DES                            : No"
-       write(writeUnit,"(a)") " DES scale coefficient                : 0.65 "
-       write(writeUnit,"(a)") " DDES model (yes/no)                  : No "
-       write(writeUnit,"(a)") " DES region low X                     : -1.0E10 "
-       write(writeUnit,"(a)") " DES region high X                    :  1.0E10 "
-       write(writeUnit,"(a)") " DES region low wall-distance limit   : 0.0 "
-       write(writeUnit,"(a)") " DES region high wall-distance limit  : 1.E10 "
-       write(writeUnit,"(a)") " RANS region high wall-distance limit : 1.E10 "
-
-!---------eran-des ends
-!
-!---------eran-tdbc begins
-!
-       write(writeUnit,"(a)") "-----------------------------------------&
-            &--------------------------------------"
-       write(writeUnit,"(a)") "    TDBC parameters"
-       write(writeUnit,"(a)") "-----------------------------------------&
-                              &--------------------------------------" 
-       write(writeUnit,"(a)") " Apply oscillatory inflow             : No"
-       write(writeUnit,"(a)") " Steady coefficient in inflow         : 0.0 "
-       write(writeUnit,"(a)") " Oscillatory inflow frequency         : 1000.0 "
-       write(writeUnit,"(a)") " Oscillatory inflow phase             : 0.0  "
-
-!---------eran-tdbc ends
 
        write(writeUnit,"(a)") "-----------------------------------------&
                               &--------------------------------------"
@@ -359,9 +314,7 @@
        write(writeUnit,"(a)")
        write(writeUnit,"(a)") "      Kappa interpolation value: 0.33333"
        write(writeUnit,"(a)")
-       write(writeUnit,"(a)") " Relaxation factor upwind dissipation: &  
-                              &1.0"                                         !   eran-ldiffroe 
-       write(writeUnit,"(a)")
+
        write(writeUnit,"(a)") "              Vortex correction: no"
        write(writeUnit,"(a)")
 
@@ -494,21 +447,8 @@
                               &0.8"
        write(writeUnit,"(a)") "                      Beta turbulent DD-ADI: &
                               &-1  # Same as alpha"
-
        write(writeUnit,"(a)") "           Relative L2 norm for convergence: &
-            &1.e-6"
-
-        write(writeUnit,"(a)") &
-             "          Minimum number of iterations     : &
-                              100 "   ! eran-coeffConv
-                           
-
-       write(writeUnit,"(a)") &
-            "       Coefficients convergence criterion  : &
-                              0.0"   ! eran-coeffConv
-        write(writeUnit,"(a)") &
-            " Coefficients convergence check window size: 100 " ! eran-coeffConv
-
+                              &1.e-6"
        write(writeUnit,"(a)")
 
        write(writeUnit,"(a)") "-----------------------------------------&
@@ -619,7 +559,6 @@
        write(writeUnit,"(a)") "            #                          RowSum"
        write(writeUnit,"(a)") "            #                          RowAbs\n"
 
-
        ! Write the keywords and default values for the overset parameters.
 
        write(writeUnit,"(a)") "-----------------------------------------&
@@ -648,9 +587,6 @@
                               &SUmb"
        write(writeUnit,"(a)") "                 Get coarse-level sol: &
                               &no"
-
-       write(writeUnit,"(a)") "           Use coupler initialization: &
-                              &no"      ! eran-couplerinit
        write(writeUnit,"(a)") "              Mach for initialization: &
                               &0.5"
        write(writeUnit,"(a)") "          Pressure for initialization: &
@@ -682,7 +618,6 @@
        write(writeUnit,"(a)") "   TS Altitude mode: no#yes"
        write(writeUnit,"(a)")
        write(writeUnit,"(a)") "   use wind axes: no#yes"
-
 
        ! Write the keywords and default values for the parallel, i.e.
        ! load balance parameters.
@@ -776,7 +711,6 @@
        write(writeUnit,"(a)") "Fourier sine coefficients Mach: 0.1"
        write(writeUnit,"(a)")
 
-
        ! Write the monitor, surface output and volume output variables.
 
        write(writeUnit,"(a)") "-----------------------------------------&
@@ -785,20 +719,12 @@
        write(writeUnit,"(a)") "-----------------------------------------&
                               &--------------------------------------"
        write(writeUnit,"(a)") "                Monitoring variables: &
-            &resrho_cl_cd"
-
+                              &resrho_cl_cd"
        write(writeUnit,"(a)") " Monitor massflow sliding interfaces: no"
        write(writeUnit,"(a)") "            Surface output variables: &
-            &rho_cp_vx_vy_vz_mach"
-
-
-       write(writeUnit,"(a)") "        Volume output variables            : &
+                              &rho_cp_vx_vy_vz_mach"
+       write(writeUnit,"(a)") "             Volume output variables: &
                               &ptloss_resrho"
-        write(writeUnit,"(a)")"        Generate CBD-output file           : &
-             no "   ! eran-CBD
-       write(writeUnit,"(a)") "        Components break down              : &
-                              &no"                   ! eran-CBD
-
        write(writeUnit,"(a)")
 
        ! The section to overwrite the rotation info for the families.
@@ -871,14 +797,6 @@
                               & for certain families."
        write(writeUnit,"(a)") "Boundary family <family_name4> : &
                               & monitor mass flow: yes   #no"
-       write(writeUnit,"(a)")
-
-       write(writeUnit,"(a)") " # Whether or not a wall boundary &
-                              &contributes to the forces (default is yes for all)."
-       write(writeUnit,"(a)") " # The default can be overwritten using &
-                              &the family mechanism."
-       write(writeUnit,"(a)") "   Wall BC family <family_name> : &
-                              & Contribute to forces: yes   #no / yes"
        write(writeUnit,"(a)")
 
        ! Write the header for updates, such that it is clear where the

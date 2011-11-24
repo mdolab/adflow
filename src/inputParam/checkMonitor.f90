@@ -289,11 +289,13 @@
                sortNumber(i) = 12004
                nMonMax       = nMonMax - 1
              endif
+
           case('totalR')
              sortNumber(i) = 300
                                           
-          case default
-             call terminate("checkMonitor", "This should not happen")
+
+           case default
+              call terminate("checkMonitor", "This should not happen")
          end select
 
        enddo

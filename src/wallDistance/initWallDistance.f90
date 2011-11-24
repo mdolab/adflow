@@ -19,8 +19,6 @@
 !
        use block
        use constants
-       use inputDES  ! eran-des
-
        implicit none
 !
 !      Subroutine arguments.
@@ -57,17 +55,6 @@
            if(ierr /= 0)                          &
              call terminate("initWallDistance", &
                             "Memory allocation failure for d2Wall")
-!----------eran-des start
-               if(applyDES)then
-                  allocate(flowDoms(nn,level,sps)%filterDES(2:il,2:jl,2:kl), &
-                       stat=ierr)
-                  if(ierr /= 0)                          &
-                       call terminate("initWallDistance", &
-                       "Memory allocation failure for filterDES")
-                  flowDoms(nn,level,sps)%filterDES = large
-               end if
-               
-!----------eran-des end
          endif
 
          ! Initialize the wall distances to a large value.
