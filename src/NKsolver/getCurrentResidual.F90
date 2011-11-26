@@ -14,6 +14,12 @@ subroutine getCurrentResidual(rhoRes,totalRRes)
   groundLevel = 1
   rkStage = 0
 
+  ! We have to explictly halo exchange the states since
+  ! computeResidualNK no longer does this
+
+  call whalo2(1_intType, 1_intType, nw, .False., &
+       .False.,.False.)
+
   call computeResidualNK()
 
   r_sum = 0.0
