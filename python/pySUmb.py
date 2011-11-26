@@ -73,6 +73,7 @@ class SUMB(AeroSolver):
             'outputDir':[str,'./'],
             'solRestart':[bool,False],
             'writeSolution':[bool,True],
+            'storeRindLayer':[bool,True],
 
             # Physics Paramters
             'Discretization':[str,'Central plus scalar dissipation'],
@@ -341,6 +342,8 @@ class SUMB(AeroSolver):
                 'restartFile':{'location':'inputio.restartfile',
                                'len':self.sumb.constants.maxstringlen},
                 'solRestart':{'location':'inputio.restart'},
+                'storeRindLayer':{'location':'inputio.storerindlayer'},
+
                 # Physics Paramters
                 'Discretization':{'Central plus scalar dissipation':
                                       self.sumb.inputdiscretization.dissscalar,
