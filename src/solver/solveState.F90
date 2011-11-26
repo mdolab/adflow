@@ -266,10 +266,11 @@ subroutine solveState
         write(numberString,"(i6)") nMGCycles		
         numberString = adjustl(numberString)
         numberString = trim(numberString)
-
-        print "(a)", "#"
-        print 102, groundLevel, trim(numberString)
-        print "(a)", "#"
+        if (printIterations) then
+           print "(a)", "#"
+           print 102, groundLevel, trim(numberString)
+           print "(a)", "#"
+        end if
 102     format("# Grid",1X,I1,": Performing",1X,A,1X, &
              "multigrid iterations, unless converged earlier")
      end if notCDB1  !  eran-CBD
@@ -282,7 +283,7 @@ subroutine solveState
 
      if(equationMode == steady .or. &
           equationMode == timeSpectral) call writeFamilyMassflow
-     if(myID == 0) call convergenceHeader
+     if(myID == 0 .and. printIterations) call convergenceHeader
   end if	notCDB2 !  eran-CBD
 
   ! Determine and write the initial convergence info.
@@ -305,8 +306,10 @@ subroutine solveState
      L2ConvSave = L2Conv
 
      if (groundLevel == 1 .and. fromPython) then
+
         call getFreeStreamResidual(rhoRes0,totalR0)
         call getCurrentResidual(rhoResStart,totalRStart)
+ 
      end if
   else ! We want to use the NKsolver AND we are on the fine grid. 
 
@@ -322,6 +325,7 @@ subroutine solveState
      ! run the NK solver 
      L2ConvSave = L2Conv
 
+  
      if (rhoResStart/rhoRes0 > NK_Switch_Tol) then
 
         ! We haven't run anything yet OR the solution is not
