@@ -907,6 +907,17 @@ class SUMB(AeroSolver):
 
         return
 
+    def resetAdjoint(self, obj):
+        '''
+        Reset a possible stored adjoint 'obj'
+        '''
+
+        if  obj in self.storedADjoints.keys():
+            self.storedADjoints[obj][:] = 0.0
+        # end if
+
+        return
+
     def resetFlow(self):
         '''
         Reset the flow for the complex derivative calculation
@@ -1145,7 +1156,7 @@ class SUMB(AeroSolver):
         for iIter in xrange(20):
             # We need to reset the flow since changing the alpha leads
             # to problems with the NK solver
-            #self.resetFlow()
+            self.resetFlow()
 
             # Set current alpha
             aeroProblem._flows.alpha = anm1
