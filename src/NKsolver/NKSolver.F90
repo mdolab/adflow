@@ -19,7 +19,8 @@ subroutine NKsolver
        totalR0, totalRStart, wVec, rVec, deltaW, reason, global_ksp, reason,&
        ksp_rtol, ksp_atol, ksp_max_it, ksp_subspace, ksp_div_tol, &
        nksolvedonce, times, func_evals, Mmax, iter_k, iter_m, NKLS, &
-       nolinesearch, cubiclinesearch, nonmonotonelinesearch
+       nolinesearch, cubiclinesearch, nonmonotonelinesearch, rhores0, &
+       NK_switch_tol, rhoresstart
 
   use InputIO ! L2conv,l2convrel
   use inputIteration
@@ -96,9 +97,28 @@ subroutine NKsolver
      call vecCopy(g,rVec,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     ! Determine if if we need to form the Preconditioner: 
+     ! Determine if if we need to form the Preconditioner: Here is the
+     ! logic: Every 'jacobian_lag' iterations, redo the
+     ! preconditioner. However, for the case of iter == 1, do NOT form
+     ! the PC if it has been solved once. The reason for this is
+     ! during an AeroStructural solution, the NK solver is called
+     ! repeadily, and it would normally recompute the jacobain at the
+     ! first iteration of every call. This is unnecessary, since
+     ! previous PCs are just fine. 
+
      if (mod(iter-1,jacobian_lag) == 0) then
-        call FormJacobian()
+        if (iter == 1) then
+           if (.not. NKsolvedOnce) then
+              call FormJacobian()
+           else
+              call MatAssemblyBegin(dRdw,MAT_FINAL_ASSEMBLY,ierr)
+              call EChk(ierr,__FILE__,__LINE__)
+              call MatAssemblyEnd(dRdw,MAT_FINAL_ASSEMBLY,ierr)
+              call EChk(ierr,__FILE__,__LINE__)
+           end if
+        else
+           call FormJacobian()
+        end if
      else
         ! Else just call assmebly begin/end on dRdW
         call MatAssemblyBegin(dRdw,MAT_FINAL_ASSEMBLY,ierr)
@@ -106,6 +126,7 @@ subroutine NKsolver
         call MatAssemblyEnd(dRdw,MAT_FINAL_ASSEMBLY,ierr)
         call EChk(ierr,__FILE__,__LINE__)
      end if
+     
 
      ! Set the BaseVector of the matrix-free matrix:
      call MatMFFDSetBase(dRdW,wVec,PETSC_NULL_OBJECT,ierr)

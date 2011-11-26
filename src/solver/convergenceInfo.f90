@@ -1,4 +1,4 @@
-!
+
 !      ******************************************************************
 !      *                                                                *
 !      * File:          convergenceInfo.f90                             *
@@ -421,55 +421,55 @@ subroutine convergenceInfo
               converged = .False.
            end if
 
-           !----eran-coeffConv starts
+!            !----eran-coeffConv starts
 
-           convergenceQuality = 0 ! that is no convergence
-           converged          = .false. 
+!            convergenceQuality = 0 ! that is no convergence
+!            converged          = .false. 
 
-           if (iterTot >= minIterNum) then
+!            if (iterTot >= minIterNum) then
 
-              ! if (iterTot == minIterNum)then
-              !   write(*,*)'#***************************************************************'
-              !   write(*,*)'# Note: at step ',iterTot,&
-              ! ' Starting to test for convergence'
-              !  write(*,*)'#***************************************************************'
-              !  end if
+!               ! if (iterTot == minIterNum)then
+!               !   write(*,*)'#***************************************************************'
+!               !   write(*,*)'# Note: at step ',iterTot,&
+!               ! ' Starting to test for convergence'
+!               !  write(*,*)'#***************************************************************'
+!               !  end if
 
-              if(convArray(iConv,sps,1) <= L2ConvThisLevel*convArray(0,sps,1)) then
-                 converged = .true.
-                 convergenceQuality = 10
-              end if
+!               if(convArray(iConv,sps,1) <= L2ConvThisLevel*convArray(0,sps,1)) then
+!                  converged = .true.
+!                  convergenceQuality = 10
+!               end if
 
-              if (epsCoefConv > zero   .and.&
-                   (groundLevel == 1 .and. converged == .false.)  )then
-                 ! !
-                 ! ! ---- Check if coefficients reached a cconstant value
-                 ! !
-                 call coeffConvergenceCheck(iConv,iterTot,sps)
-                 if(convergenceQuality > 0) then
-                    converged = .true.
-                    write(*,*)&
-                         'convegenceInfo: Coefficients convergence criterion reached'
-                 end if
-              end if ! epsCoefConv > zero
+!               if (epsCoefConv > zero   .and.&
+!                    (groundLevel == 1 .and. converged == .false.)  )then
+!                  ! !
+!                  ! ! ---- Check if coefficients reached a cconstant value
+!                  ! !
+!                  call coeffConvergenceCheck(iConv,iterTot,sps)
+!                  if(convergenceQuality > 0) then
+!                     converged = .true.
+!                     write(*,*)&
+!                          'convegenceInfo: Coefficients convergence criterion reached'
+!                  end if
+!               end if ! epsCoefConv > zero
 
-              if(converged .and. epsCoefConv > 0)then
-                 select case (convergenceQuality)
-                 case(10)
-                    write(*,*)'Convergence: Residual < Convergence criterion'
-                 case(6)
-                    write(*,*)'Coefficient uniform (up to criterion) in ',ConvCheckWindowSize,&
-                         ' iterations'
-                 case(4)
-                    write(*,*)'Coefficient uniform (up to criterion in ',10*ConvCheckWindowSize,&
-                         ' iterations'
-                 case(2)
-                    write(*,*)'Coefficient uniform (up to criterion in ',100*ConvCheckWindowSize,&
-                         ' iterations'
-                 end select
-              end if ! converged
-           end if ! iterTot >= minIterNum
-           ! ! ------- end eran-coeffConv
+!               if(converged .and. epsCoefConv > 0)then
+!                  select case (convergenceQuality)
+!                  case(10)
+!                     write(*,*)'Convergence: Residual < Convergence criterion'
+!                  case(6)
+!                     write(*,*)'Coefficient uniform (up to criterion) in ',ConvCheckWindowSize,&
+!                          ' iterations'
+!                  case(4)
+!                     write(*,*)'Coefficient uniform (up to criterion in ',10*ConvCheckWindowSize,&
+!                          ' iterations'
+!                  case(2)
+!                     write(*,*)'Coefficient uniform (up to criterion in ',100*ConvCheckWindowSize,&
+!                          ' iterations'
+!                  end select
+!               end if ! converged
+!            end if ! iterTot >= minIterNum
+!            ! ! ------- end eran-coeffConv
 
            !===========================================================
 

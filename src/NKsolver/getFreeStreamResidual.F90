@@ -74,6 +74,5 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
   !startLevel   = tempStartLevel
 
   deallocate(wtemp)
-  call getCurrentResidual(temp1,temp2)
 
 end subroutine getFreeStreamResidual

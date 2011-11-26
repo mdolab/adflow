@@ -60,8 +60,10 @@ subroutine computeResidualNK()
      end do domainsState
   end do spectralLoop
   
-  call computeLamViscosity  ! These should be done over the whole block with halos
-  call computeEddyViscosity ! These should be dond over the whole block with halos
+  call computeLamViscosity  ! These should be done over the whole
+                            ! block with halos
+  call computeEddyViscosity ! These should be dond over the whole
+                            ! block with halos
 
   !   Apply BCs
   call applyAllBC(secondHalo)

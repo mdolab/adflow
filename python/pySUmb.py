@@ -1145,7 +1145,7 @@ class SUMB(AeroSolver):
         for iIter in xrange(20):
             # We need to reset the flow since changing the alpha leads
             # to problems with the NK solver
-            #self.resetFlow()
+            self.resetFlow()
 
             # Set current alpha
             aeroProblem._flows.alpha = anm1
