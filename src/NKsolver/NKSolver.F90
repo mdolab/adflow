@@ -65,7 +65,6 @@ subroutine NKsolver
   ! Evaluate the residual before we start and copy the value into g
   call setW(wVec)
   call computeResidualNK()
-
   call setRVec(rVec)
 
   call vecCopy(rVec,g,ierr)
@@ -127,7 +126,6 @@ subroutine NKsolver
         call EChk(ierr,__FILE__,__LINE__)
      end if
      
-
      ! Set the BaseVector of the matrix-free matrix:
      call MatMFFDSetBase(dRdW,wVec,PETSC_NULL_OBJECT,ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -183,7 +181,6 @@ subroutine NKsolver
      if (iter == 1) then
         call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
      else
-     
         if (NKLS == noLineSearch) then
            call LSNone(wVec,rVec,g,deltaW,work,nfevals,flag)
         else if(NKLS == cubicLineSearch) then
@@ -301,9 +298,6 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
 
   ! Sufficient reduction 
   if (half*gnorm*gnorm <= half*fnorm*fnorm + alpha*initslope) then
-!      if (myid == 0) then
-!         print *,'lambda:',1.0
-!      end if
      goto 100
   end if
 
@@ -339,9 +333,6 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
 
   ! Sufficient reduction 
   if (half*gnorm*gnorm <= half*fnorm*fnorm + lambda*alpha*initslope) then
-!      if (myid == 0) then
-!         print *,'lambda:',lambda
-!      end if
      goto 100
   end if
 
@@ -395,9 +386,6 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
 
      ! Is reduction enough?
      if (.5*gnorm*gnorm <= .5*fnorm*fnorm + lambda*alpha*initslope) then
-!         if (myid == 0) then
-!            print *,'lambda:',lambda
-!         end if
         exit cubic_loop
      end if
   end do cubic_loop
@@ -443,8 +431,6 @@ subroutine LSNone(x,f,g,y,w,nfevals,flag)
 #endif
 end subroutine LSNone
 
-
-! Implement a simple backgra
 subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
 #ifndef USE_NO_PETSC
   use precision 
@@ -508,15 +494,8 @@ subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
      initslope = -1.0
   end if
 
-!   IF (myid == 0) then
-!      print *,'initslope:',initslope
-!   end IF
   alpha = 1.0 ! Initial step length:
   backtrack: do iter=1,10
-!      IF (myid == 0) then
-!         print *,'-------------- backtrack iter:',iter
-!      end IF
-          
 
      ! Compute new x value:
      call VecWAXPY(w,-alpha,y,x,ierr)
@@ -540,10 +519,6 @@ subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
         
      ! Sufficient reduction 
      if (half*gnorm*gnorm <= max_val) then
-!         if (myid == 0) then
-!            print *,'Done:,iter_k,iter_m:',iter_k,iter_m
-!            print *,'max_val,sigma:',max_val,alpha
-!         end if
         exit backtrack
      else
         alpha = alpha * sigma
@@ -584,7 +559,7 @@ subroutine getEWTol(iter,norm,old_norm,rtol_last,rtol)
   else
      ! We use version 2:
      rtol = gamma*(norm/old_norm)**alpha
-     stol = gamma*(rtol_last)**alpha
+     stol = gamma*rtol_last**alpha
 
      if (stol > threshold) then
         rtol = max(rtol,stol)
