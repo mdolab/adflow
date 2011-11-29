@@ -1,9 +1,11 @@
 subroutine getCurrentResidual(rhoRes,totalRRes)
+
   use communication
   use blockPointers
   use flowVarRefState
   use inputTimeSpectral
   use iteration
+  use inputPhysics
   use inputIteration
   implicit none
   ! Compute the current resdiual of w
@@ -14,14 +16,24 @@ subroutine getCurrentResidual(rhoRes,totalRRes)
   groundLevel = 1
   rkStage = 0
 
-  ! We have to explictly halo exchange the states since
-  ! computeResidualNK no longer does this
-
   call whalo2(1_intType, 1_intType, nw, .False., &
        .False.,.False.)
 
-  call computeResidualNK()
+  ! Compute time step
+  call timestep(.false.)
 
+  !  Possible Turblent Equations
+  if( equations == RANSEquations ) then
+     call initres(nt1MG, nMGVar) ! Initialize only the Turblent Variables
+     call turbResidual
+  endif
+  
+  !  Initialize Flow residuals
+  call initres(1_intType, nwf)
+  
+  ! Actual Residual Calc
+  call residual 
+  
   r_sum = 0.0
   rho_sum = 0.0
   do sps=1,nTimeIntervalsSpectral

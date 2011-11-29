@@ -27,6 +27,7 @@ subroutine solveState
   use iteration
   use killSignals
   use monitor
+  use blockPointers
   implicit none
   !
   !      Local parameter
@@ -38,7 +39,7 @@ subroutine solveState
   integer :: ierr
 
 
-  integer(kind=intType) :: iter, nMGCycles
+  integer(kind=intType) :: iter, nMGCycles, nn
   real(kind=realType) :: curRes
   character (len=7) :: numberString
   logical :: solve_NK, solve_RK
@@ -306,11 +307,10 @@ subroutine solveState
      L2ConvSave = L2Conv
 
      if (groundLevel == 1 .and. fromPython) then
-
         call getFreeStreamResidual(rhoRes0,totalR0)
         call getCurrentResidual(rhoResStart,totalRStart)
- 
      end if
+
   else ! We want to use the NKsolver AND we are on the fine grid. 
 
      ! Now we must determine if the solution is converged sufficently
@@ -360,7 +360,7 @@ subroutine solveState
         if(mod(iter,nWriteConvHeader) == 0) then
            if(equationMode == steady .or. &
                 equationMode == timeSpectral) call writeFamilyMassflow
-           if(myID == 0) call convergenceHeader
+           if(myID == 0 .and. printIterations) call convergenceHeader
         endif
 
         ! Update iterTot and call executeMGCycle.
