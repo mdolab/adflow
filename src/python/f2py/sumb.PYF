@@ -961,6 +961,13 @@ python module sumb ! in
             integer(kind=inttype) parameter,optional :: costfuncbendingcoef=37
        end module costfunctions
 
+       module adjointpetsc ! in :sumb:ADjointPETSc.F90
+         use constants
+         real(kind=realtype) allocatable,dimension(:) :: adjreshist
+         logical :: petscblockmatrix
+         integer(kind=inttype) :: adjconvits
+       end module adjointpetsc
+       
        module adjointvars ! in :test:ADjointVars.F90
          use constants
          use costfunctions
