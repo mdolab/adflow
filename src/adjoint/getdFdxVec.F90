@@ -21,19 +21,19 @@ subroutine getdFdxVec(ndof,vec_in,vec_out)
   integer(kind=intType) :: ierr
   vec_out(:) = 0.0
 
-  call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DECIDE,vec_in,fVec1,ierr)
+  call VecPlaceArray(fVec1,vec_in,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DECIDE,vec_out,fVec2,ierr)
+  call VecPlaceArray(fVec2,vec_out,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-     
+
   call MatMult(dFdx,fVec1,fVec2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecDestroy(fVec1,ierr)
+  call VecResetArray(fVec1,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecDestroy(fVec2,ierr)
+  call VecResetArray(fVec2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
 #endif
@@ -61,21 +61,22 @@ subroutine getdFdxVec_NULL
   integer(kind=intType) :: ierr
 
   ndof = 0
-  call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DECIDE,vec_in,fVec1,ierr)
+
+  call VecPlaceArray(fVec1,vec_in,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DECIDE,vec_out,fVec2,ierr)
+  call VecPlaceArray(fVec2,vec_out,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-     
+
   call MatMult(dFdx,fVec1,fVec2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecDestroy(fVec1,ierr)
+  call VecResetArray(fVec1,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecDestroy(fVec2,ierr)
+  call VecResetArray(fVec2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#endif
+
 end subroutine getdFdxVec_NULL
 
 subroutine getdFdxTVec(ndof,vec_in,vec_out)
@@ -98,21 +99,22 @@ subroutine getdFdxTVec(ndof,vec_in,vec_out)
   real(kind=realType), intent(out)  :: vec_out(ndof)
   integer(kind=intType) :: ierr
   vec_out(:) = 0.0
-
-  call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DECIDE,vec_in,fVec1,ierr)
+  
+  call VecPlaceArray(fVec1,vec_in,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DECIDE,vec_out,fVec2,ierr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-     
+  call VecPlaceArray(fVec2,vec_out,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
   call MatMultTranspose(dFdx,fVec1,fVec2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecDestroy(fVec1,ierr)
+  call VecResetArray(fVec1,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecDestroy(fVec2,ierr)
+  call VecResetArray(fVec2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
+
 #endif
 end subroutine getdFdxTVec
 
@@ -138,19 +140,21 @@ subroutine getdFdxTVec_NULL
   integer(kind=intType) :: ierr
 
   ndof = 0
-  call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DECIDE,vec_in,fVec1,ierr)
+
+  call VecPlaceArray(fVec1,vec_in,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DECIDE,vec_out,fVec2,ierr)
+  call VecPlaceArray(fVec2,vec_out,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-     
+
   call MatMultTranspose(dFdx,fVec1,fVec2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecDestroy(fVec1,ierr)
+  call VecResetArray(fVec1,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecDestroy(fVec2,ierr)
+  call VecResetArray(fVec2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
+
 #endif
 end subroutine getdFdxTVec_NULL
