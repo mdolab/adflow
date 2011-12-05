@@ -658,6 +658,7 @@ class SUMB(AeroSolver):
         self.stateSetup = False 
         self.extraSetup = False
         self.couplingSetup = False
+        self.kspSetup = False
         self.adjointRHS         = None # When this is setup, it has
                                        # the current objective
         
@@ -973,6 +974,7 @@ class SUMB(AeroSolver):
         self.stateSetup = False
         self.couplingSetup = False
         self.extraSetup = False
+        self.kspSetup = False
         self.adjointRHS         = None
         self.callCounter += 1
 
@@ -1583,7 +1585,9 @@ class SUMB(AeroSolver):
         # end if
         
         # Finally setup the KSP object for the solve
-        self.sumb.setuppetscksp()
+        if not self.kspSetup:
+            self.sumb.setuppetscksp()
+            self.kspSetup = True
             
         return
 
@@ -1684,9 +1688,6 @@ class SUMB(AeroSolver):
         return
 
     def _on_adjoint(self,objective,forcePoints=None,*args,**kwargs):
-
-        # Make sure adjoint is initialize
-        self.initAdjoint()
 
         # Try to see if obj is an aerodynamic objective. If it is, we
         # will have a non-zero RHS, otherwise its an objective with a
@@ -2038,7 +2039,6 @@ class SUMB(AeroSolver):
 
     def getdFdxVec(self,group_name,vec):
         # Calculate dFdx * vec and return the result
-
         solver_vec = self.mesh.warp_to_solver_force(group_name,vec)
         if len(solver_vec) > 0:
             dFdxVec = self.sumb.getdfdxvec(solver_vec)
@@ -2051,7 +2051,6 @@ class SUMB(AeroSolver):
 
     def getdFdxTVec(self,group_name,vec):
         # Calculate dFdx^T * vec and return the result
-
         solver_vec = self.mesh.warp_to_solver_force(group_name,vec)
         if len(solver_vec) > 0:
             dFdxTVec = self.sumb.getdfdxtvec(solver_vec)
@@ -2084,6 +2083,9 @@ class SUMB(AeroSolver):
     def getdIdx(self,objective,group_name,forcePoints=None):
 
         obj,aeroObj = self._getObjective(objective)
+
+        if not self.spatialSetup:
+            self.setupSpatialMatrices()
 
         if forcePoints is None:
             forcePoints = self.getForcePoints()

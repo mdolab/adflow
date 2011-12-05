@@ -64,6 +64,13 @@ subroutine destroyCouplingPETScVars
   call MatDestroy(dFdx, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
+  call VecDestroy(fVec1, PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
+  call VecDestroy(fVec2, PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
+
 #endif
 
 end subroutine destroyCouplingPETScVars
