@@ -740,7 +740,7 @@ class SUMB(AeroSolver):
        
         # Solver is initialize
         self.allInitialized = True
-        self.sumb.preprocessingadjoint()
+        self.initAdjoint()
 
         return
 
@@ -1511,6 +1511,7 @@ class SUMB(AeroSolver):
         self.sumb.iteration.groundlevel=1
         if not self.adjointPreprocessed:
             self.sumb.preprocessingadjoint()
+            self.adjointPreprocessed = True
         # end if
 
         #self.sumb.initializepetsc() -> I don't think we will need this
@@ -2013,10 +2014,9 @@ class SUMB(AeroSolver):
 
         # Now call getdrdxvpsi WITH the psi vector:
         dxv_solver = self.sumb.getdrdxvpsi(ndof,psi)
-       
         self.mesh.warpDeriv(dxv_solver)
         dxs = self.mesh.getdXs(group_name)
-        
+
         return dxs
 
     def getdRdaPsi(self, psi):
@@ -2139,8 +2139,8 @@ class SUMB(AeroSolver):
         '''
         destroy the PESTcKSP context
         '''
-        
-        self.releaseAdjointMemeory()
+        self.releaseAdjointMemory()
+        self.sumb.releasememadjoint()
         
         return
 

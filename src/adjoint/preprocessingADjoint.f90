@@ -19,12 +19,16 @@ subroutine preprocessingADjoint
   !     ******************************************************************
   !
   use communication
+  use adjointVars
   use precision
+  use flowVarRefState
+  use inputTimeSpectral
+  use ADjointPETSc
   implicit none
 
   !     Local variables.
   !
-  integer(kind=intType) :: ierr,level
+  integer(kind=intType) :: ierr,level,ndimW,ndimS,nTS
   !
   !     ******************************************************************
   !     *                                                                *
@@ -46,5 +50,22 @@ subroutine preprocessingADjoint
      
   ! Determine the global cell and Node numbering.
   call setGlobalCellsAndNodes(level)
+
+  ! Create PETSc Vectors that are actually empty. These do NOT take
+  ! any (substantial) memory. We want to keep these around inbetween
+  ! creations/deletions of adjoint/NKsolver memory
+
+  ! Create two (empty) Vectors for getdFdx(T)Vec operations
+  call getForceSize(nDimS,nTS)
+  nDimS = nDimS * 3 *nTimeIntervalsSpectral! Multiply by 3 for each
+                                           ! dof on each point
+
+
+  call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimS,PETSC_DECIDE, &
+       PETSC_NULL_SCALAR,fVec1,PETScIerr)
+
+  call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimS,PETSC_DECIDE, &
+       PETSC_NULL_SCALAR,fVec2,PETScIerr)
+
 
 end subroutine preprocessingADjoint

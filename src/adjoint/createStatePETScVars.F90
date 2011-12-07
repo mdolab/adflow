@@ -202,6 +202,7 @@ subroutine createStatePETScVars
   call VecDuplicate(dJdW, adjointRHS, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
+
 #endif
 
 end subroutine createStatePETScVars

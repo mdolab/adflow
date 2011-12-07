@@ -521,25 +521,41 @@ end subroutine computeObjPartials
 ! Add two functions to return dIdw and dIdx. dIda is available
 ! directly in python in dIda in the adjointVars module. 
 
-subroutine getdIdw(ndof,output)
-#ifndef USE_NO_PETSC
-  use ADjointPETSc
-  use ADjointVars
-  use precision 
+
+subroutine getdIdw(nstate,output)
+
+#ifndef USE_NO_PETSC	
+#define PETSC_AVOID_MPIF_
+#include "finclude/petscdef.h"
+
+  use ADjointPETSc, only : dJdw
+  use petscvec
+  use constants
+
   implicit none
+  !
+  !     Subroutine arguments.
+  !
+  integer(kind=intType),intent(in):: nstate
+  real(kind=realType),dimension(nstate),intent(out) :: output
+  real(kind=realType),pointer :: dJdw_pointer(:)
 
-  integer(kind=intType),intent(in) :: ndof
-  real(kind=realType),intent(out)  :: output(ndof)
+  ! Local Variables
+  integer(kind=intType) :: i, ierr
 
-  integer(kind=intType) :: ilow,ihigh,i
+  ! Copy out adjoint vector:
+  call VecGetArrayF90(dJdw,dJdw_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
-  call VecGetOwnershipRange(dJdw,ilow,ihigh,PETScIerr)
-
-  do i=1,(ihigh-ilow)
-     call VecGetValues(dJdw,1,ilow+i-1,output(i),PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
+  ! Do a straight copy:
+  do i=1,nstate
+     output(i) = dJdw_pointer(i)
   end do
+
+  call VecRestoreArrayF90(dJdw,dJdw_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 #endif
+
 end subroutine getdIdw
 
 subroutine getdIdx(ndof,output)
