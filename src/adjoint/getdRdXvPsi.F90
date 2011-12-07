@@ -43,69 +43,52 @@ subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
   use ADjointPETSc, only: dRdx,xVec,wVec
   use ADjointVars
   use blockPointers
-  use warpingPETSC 
   use inputADjoint
   use section
   use inputTimeSpectral 
   use monitor 
- 
+  use petscvec
   implicit none
 
   integer(kind=intType), intent(in) :: ndof,nstate
   real(kind=realType), intent(out)  :: dXv(ndof)
   real(kind=realType), intent(in)   :: adjoint(nstate)
 
-  integer(kind=intType) :: ierr,sps,i,j,k,ind(3),nn,counter,nDimx
+  integer(kind=intType) :: ierr,sps,i,nn,counter0,counter1
   real(kind=realType), dimension(3)   :: rotationPoint,r
   real(kind=realType), dimension(3,3) :: rotationMatrix  
   real(kind=realType) :: t(nSections),dt(nSections)
   real(kind=realType) :: tOld,tNew,pt(3)
-
-  ! Create a dummy vector, wVec to put the adjoint into
+  real(kind=realType),pointer :: xvec_pointer(:)
+  real(kind=realType) :: time(3)
+  ! Place adjoint in Vector
   call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,nstate,PETSC_DECIDE,&
        adjoint,wVec,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
- 
-  ! Create a temporary vector, xVec to put the result of the
-  ! matmulttranspose in:
-  
-  nDimX = 3 * nNodesLocal*nTimeIntervalsSpectral
-  call VecCreateMPI(SUMB_PETSC_COMM_WORLD,nDimX,PETSC_DECIDE,xVec,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  
-  ! Do the matMultTranspose and put result into xVec
-  call MatMultTranspose(dRdX,wVec,xVec,ierr)
+    
+  ! Do the matMult with dRdx and put result into xVec. NOTE dRdx is
+  ! already transposed and thus we just do a matMult NOT
+  ! a matMultTranspose
+
+  call MatMult(dRdx,wVec,xVec,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  dXv = 0.0
+  ! Extract pointer for xVec
+  call VecGetArrayF90(xVec,xvec_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
   ! If we only have 1 time instance (NOT TimeSpectral analysis, then
   ! xVec and gridVec would be the same, and dX_sps/dX would be the
   ! identity matrix and the calculation useless.
 
   if (nTimeIntervalsSpectral == 1) then 
-     counter = 0
-     do nn=1,nDom
-        call setPointersAdj(nn,1_intType,1_intType)
-        do k=1,kl
-           do j=1,jl
-              do i=1,il
-                 ind = (/globalNode(i,j,k)*3  ,&
-                        globalNode(i,j,k)*3+1,&
-                        globalNode(i,j,k)*3+2/)
-                 
-                 call VecGetValues(xVec,3,ind,pt,ierr)
-                 call EChk(ierr,__FILE__,__LINE__)
-                 
-                 dXv(counter*3+1:counter*3+3) = pt
-                 
-                 counter = counter + 1
-                    
-              end do
-           end do
-        end do
-     end do ! Domain Loop
+     do i=1,ndof
+        dXv(i) = xvec_pointer(i)
+     end do
   else
-  
+
+     ! Zero dXv for time spectral case since we add to array.
+     dXv = 0.0
+
      ! Now we loop over the number of timeInstances and reduce xVec
      ! into GridVec
   
@@ -115,7 +98,7 @@ subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
      enddo
   
      timeUnsteady = zero
-    
+     counter0 = 0
      do sps = 1,nTimeIntervalsSpectral
         do nn=1,nSections
            t(nn) = (sps-1)*dt(nn)
@@ -127,43 +110,34 @@ subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
         tOld = tNew - t(1)
 
         call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
-        !rotationMatrix(:,:) = 0.0
-        !rotationMatrix(1,1) = 1.0
-        !rotationMatrix(2,2) = 1.0
-        !rotationMatrix(3,3) = 1.0
+    
         ! Take rotation Matrix Transpose
         rotationMatrix = transpose(rotationMatrix)
 
-        counter = 0
-        do nn=1,nDom
-           call setPointersAdj(nn,1_intType,sps)
-           do k=1,kl
-              do j=1,jl
-                 do i=1,il
-                    ind = (/globalNode(i,j,k)*3  ,&
-                            globalNode(i,j,k)*3+1,&
-                            globalNode(i,j,k)*3+2/)
+        counter1 = 0
+        do i=1,nnodeslocal
 
-                    call VecGetValues(xVec,3,ind,pt,ierr)
-                    call EChk(ierr,__FILE__,__LINE__)
+           pt = (/xvec_pointer(3*counter0+1),&
+                  xvec_pointer(3*counter0+2),&
+                  xvec_pointer(3*counter0+3)/)
 
-                    dXv(counter*3+1:counter*3+3) = dXv(counter*3+1:3*counter+3) + &
-                         matmul(rotationMatrix,pt)
 
-                    counter = counter + 1
-                    
-                 end do
-              end do
-           end do
-        end do ! Domain Loop
-     end do ! Sps loop
+           dXv(3*counter1+1:3*counter1*+3) = &
+                dXv(3*counter1+1:3*counter1+3) + &
+                matmul(rotationMatrix,pt)
+           counter0 = counter0 + 1
+           counter1 = counter1 + 1
+
+        end do
+     end do
   end if
 
-  ! No longer need xVec or wVec
-  call VecDestroy(xVec,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
+  ! No longer need Vec and reset pointer
   call VecDestroy(wVec,ierr)
   call EChk(ierr,__FILE__,__LINE__)
+
+  call VecRestoreArrayF90(xVec,xvec_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
 #endif
 end subroutine getdRdXvPsi

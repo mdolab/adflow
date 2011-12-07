@@ -372,7 +372,7 @@ subroutine setupAllResidualMatrices
 
                                       if( (idxres)>=0 .and. ind_node(1)>=0) then ! replaced idxnode with ind(1)
 
-                                         call MatSetValues(dRdx, 1, idxres, 3, ind_node,   &
+                                         call MatSetValues(dRdx, 3, ind_node, 1, idxres,  &
                                               xAdjb(ii,jj,kk,:,sps2), ADD_VALUES, PETScIerr)
                                             ! NO error check here for speed purposes
 !                                            call ECHk(PETScIerr,__FILE__,__LINE__)
@@ -393,7 +393,7 @@ subroutine setupAllResidualMatrices
                        do l = 1,3
                           if (xblockcorneradjb(1,1,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalNode(1,1,1)*3+l
-                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1, idxnode-1, 1, idxres,  &
                                   xblockcorneradjb(1,1,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)
@@ -405,7 +405,7 @@ subroutine setupAllResidualMatrices
                           endif
                           if (xblockcorneradjb(2,1,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalNode(il,1,1)*3+l
-                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1, idxnode-1 , 1,idxres,   &
                                   xblockcorneradjb(2,1,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)
@@ -417,7 +417,7 @@ subroutine setupAllResidualMatrices
                           endif
                           if (xblockcorneradjb(1,2,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(1,jl,1)*3+l
-                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1, idxnode-1, 1, idxres, &
                                   xblockcorneradjb(1,2,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)
@@ -429,7 +429,7 @@ subroutine setupAllResidualMatrices
                           endif
                           if (xblockcorneradjb(2,2,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(il,jl,1)*3+l
-                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1, idxnode-1 , 1,idxres, &
                                   xblockcorneradjb(2,2,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)
@@ -441,7 +441,7 @@ subroutine setupAllResidualMatrices
                           endif
                           if (xblockcorneradjb(1,1,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(1,1,kl)*3+l
-                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1,idxnode-1, 1, idxres ,   &
                                   xblockcorneradjb(1,1,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)
@@ -453,7 +453,7 @@ subroutine setupAllResidualMatrices
                           endif
                           if (xblockcorneradjb(1,2,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(1,jl,kl)*3+l
-                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1, idxnode-1, 1, idxres,   &
                                   xblockcorneradjb(1,2,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)
@@ -465,7 +465,7 @@ subroutine setupAllResidualMatrices
                           endif
                           if (xblockcorneradjb(2,1,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(il,1,kl)*3+l
-                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1, idxnode-1, 1, idxres,   &
                                   xblockcorneradjb(2,1,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)
@@ -477,7 +477,7 @@ subroutine setupAllResidualMatrices
                           endif
                           if (xblockcorneradjb(2,2,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(il,jl,kl)*3+l
-                             call MatSetValues(drdx, 1, idxres, 1, idxnode-1,   &
+                             call MatSetValues(drdx, 1,idxnode-1, 1, idxres,   &
                                   xblockcorneradjb(2,2,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)

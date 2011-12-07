@@ -3,51 +3,44 @@
 !     *                                                                *
 !     * File:          setADjoint.f90                                  *
 !     * Author:        C.A.(Sandy) Mader                               *
-!     * Starting date: 10-04-2010                                      *
-!     * Last modified: 10-04-2010                                      *
+!     * Starting date: 08-18-2008                                      *
+!     * Last modified: 10-04-2008                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine setADjoint(ncells,functionGradLocal)
-  use ADjointPETSc
+subroutine setADjoint(nstate,adjoint)
+
+#ifndef USE_NO_PETSC	
+#define PETSC_AVOID_MPIF_
+#include "finclude/petscdef.h"
+
+  use ADjointPETSc, only : psi
+  use petscvec
+  use constants
 
   implicit none
   !
   !     Subroutine arguments.
-  ! 
-  integer(kind=intType),intent(in):: ncells
-  real(kind=realType),dimension(ncells),intent(in) :: functionGradLocal
   !
-  !     Local variables.
-  integer(kind=intType) :: idxmg, iLow, iHigh, n 		
+  integer(kind=intType),intent(in):: nstate
+  real(kind=realType),dimension(nstate),intent(in) :: adjoint
+  real(kind=realType),pointer :: psi_pointer(:)
 
-#ifndef USE_NO_PETSC		
-  !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Transfer stored adjoint to PETSc                               *
-  !     *                                                                *
-  !     ******************************************************************
-  !
-  ! Query about the ownership range.
-  ! iHigh is one more than the last element stored locally.
+  ! Local Variables
+  integer(kind=intType) :: i, ierr
 
-  call VecGetOwnershipRange(psi, iLow, iHigh, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
+  ! Copy out adjoint vector:
+  call VecGetArrayF90(psi,psi_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
-  n = 0
+  ! Do a straight copy:
+  do i=1,nstate
+     psi_pointer(i) = adjoint(i)
+  end do
 
-  do idxmg=iLow, iHigh-1
-     n = n + 1
-     call VecSetValue(psi, idxmg, &
-          functionGradLocal(n),INSERT_VALUES, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-  enddo
-
-  call VecAssemblyBegin(psi, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-  call VecAssemblyEnd(psi,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-
+  call VecRestoreArrayF90(psi,psi_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 #endif
+
 end subroutine setADjoint
+

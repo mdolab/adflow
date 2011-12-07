@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine releaseMemADjoint(level,sps)
+subroutine releaseMemADjoint()
   !
   !     ******************************************************************
   !     *                                                                *
@@ -21,16 +21,17 @@ subroutine releaseMemADjoint(level,sps)
   !     ******************************************************************
   !
   use BCTypes
+  use ADjointPETSc
   use blockPointers
+  use inputTimeSpectral
   implicit none
   !
-  !     Subroutine arguments.
   !
-  integer(kind=intType), intent(in) :: level, sps
+
   !
   !     Local variables.
   !
-  integer :: ierr
+  integer :: ierr, level,sps
 
   integer(kind=intType) :: nn, mm
 
@@ -44,8 +45,12 @@ subroutine releaseMemADjoint(level,sps)
   !
   ! Loop over the number of blocks.
 
+
+  level = 1_intType
+
   domainLoop: do nn=1,nDom
 
+     do sps=1,nTimeIntervalsSpectral
      ! Initialize deallocationFailure to .false.
 
      deallocationFailure = .false.
@@ -57,7 +62,6 @@ subroutine releaseMemADjoint(level,sps)
         deallocate(flowDoms(nn,level,sps)%globalNode, stat=ierr)
         if(ierr /= 0) deallocationFailure = .true.
      endif
-
 
      ! Deallocate the memory for the global Cell numbering, 
      ! including halos, if they exist.
@@ -78,7 +82,11 @@ subroutine releaseMemADjoint(level,sps)
      if( deallocationFailure ) &
           call terminate("releaseMemADjoint", &
           "Something went wrong when deallocating memory")
-
-  enddo domainLoop
+  end do
+enddo domainLoop
+  
+  ! Destroy the two empty vectors:
+  call vecDestroy(fVec1,PETScIerr)
+  call vecDestroy(fVec2,PETScIerr)
 
 end subroutine releaseMemADjoint

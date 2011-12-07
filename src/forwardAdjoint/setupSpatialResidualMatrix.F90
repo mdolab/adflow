@@ -51,16 +51,6 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
   ! Start Timer
   time(1) = mpi_wtime()
 
-
-!!$  open (UNIT=13,File="fd_drdx.out",status='replace',action='write',iostat=ierr) 
-!!$  call EChk(ierr,__FILE__,__LINE__)
-!!$  open (UNIT=14,File="ad_drdx.out",status='replace',action='write',iostat=ierr) 
-!!$  call EChk(ierr,__FILE__,__LINE__)
-!!$
-!!$  call MatConvert(matrix,MATSAME,MAT_INITIAL_MATRIX,mat_copy,ierr)
-!!$  call EChk(ierr,__FILE__,__LINE__)
-
-
   ! Zero out the matrix before we start
   call MatZeroEntries(matrix,ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -262,10 +252,6 @@ subroutine setupSpatialResidualMatrix(matrix,useAD)
   call MatAssemblyEnd  (matrix,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call MatAssembled(matrix,assembled,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  !print *,'assembled spatial =',assembled
-
   call MatSetOption(matrix,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
@@ -282,11 +268,18 @@ contains
 
     implicit none
     real(kind=realType), dimension(nw,nw) :: blk
-    integer(kind=intType) :: iii,jjj
+    integer(kind=intType) :: iii,jjj, nrows, ncols
+
     do jjj=1,3
        do iii=1,nw
-          call MatSetValues(matrix,1,irow*nw+iii-1,1,icol*3+jjj-1,blk(iii,jjj),ADD_VALUES,ierr)
+         
+          ! NOTE: We are setting the values in the tranpose
+          ! sense. That's why icol is followed by irow. 
+
+          call MatSetValues(matrix,1,icol*3+jjj-1,1,irow*nw+iii-1,&
+               blk(iii,jjj),ADD_VALUES,ierr)
           call EChk(ierr,__FILE__,__LINE__)
+
        end do
     end do
 
