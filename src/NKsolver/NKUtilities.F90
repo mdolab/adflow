@@ -23,7 +23,6 @@ subroutine setWVec(wVec)
   use inputtimespectral
   use flowvarrefstate
   use inputiteration
-  use NKsolvervars, only : times
   use petscvec
 
   implicit none

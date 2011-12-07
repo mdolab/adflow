@@ -41,6 +41,7 @@ FF90_MODULES = warpingPETSc.o
 FF90_OBJECTS = getForces.o\
 	       setGrid.o\
 	       initializeExternalWarping.o\
+	       blockLogicalFunctions.o\
 #              warp_local.o        \
 #              warp-mb.o      \
 #	       warpMesh.o\
@@ -50,7 +51,6 @@ FF90_OBJECTS = getForces.o\
 #              flagImplicitFacesAndEdges_Surface.o\
 #	       mdCreateGlobalReducedSurfaceList.o\
 #	       blockRelations.o\
-#	       blockLogicalFunctions.o\
 #              storeGlobalSurfaceIndices.o\
 #              synchronizeIndices.o\
 #              synchronizeSurfaceIndices.o\

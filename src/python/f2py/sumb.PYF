@@ -370,14 +370,14 @@ python module sumb ! in
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: drdwtpsi
        end subroutine getdrdwtpsi
 
-       subroutine getadjoint(nnodes,functiongradlocal) ! in :test:getADjoint.F90
-         integer(kind=inttype) intent(in) :: nnodes
-         real(kind=realtype) dimension(nnodes),intent(out),depend(nnodes) :: functiongradlocal
+       subroutine getadjoint(nstate,adjoint) ! in :test:getADjoint.F90
+         integer(kind=inttype) intent(in) :: nstate
+         real(kind=realtype) dimension(nstate),intent(out),depend(nstate) :: adjoint
        end subroutine getadjoint
 
-       subroutine setadjoint(nnodes,functiongradlocal) ! in :test:setADjoint.F90
-         integer(kind=inttype) optional,intent(in),check(len(functiongradlocal)>=nnodes),depend(functiongradlocal) :: nnodes=len(functiongradlocal)
-         real(kind=realtype) dimension(nnodes),intent(in) :: functiongradlocal
+       subroutine setadjoint(nstate,adjoint) ! in :test:setADjoint.F90
+         integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
+         real(kind=realtype) dimension(nstate),intent(in) :: adjoint
        end subroutine setadjoint
 
        ! ------------- Misc --------------------
@@ -394,6 +394,9 @@ python module sumb ! in
          logical intent(in) :: pmax
        end subroutine matrixinfo
       
+       subroutine releasememadjoint
+       end subroutine releasememadjoint
+
        ! ############################################################################
        ! SUmb Adjoint Coupling Routines
        ! ############################################################################

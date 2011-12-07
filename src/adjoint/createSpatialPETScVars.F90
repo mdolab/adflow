@@ -49,12 +49,13 @@ subroutine createSpatialPETScVars
   !     *                                                                *
   !     ******************************************************************
 
-  allocate( nnzDiagonal(nDimW), nnzOffDiag(nDimW) )
+  allocate( nnzDiagonal(nDimX), nnzOffDiag(nDimX) )
   ! Create the matrix dRdx.
-  call drdxPreAllocation(nnzDiagonal,nnzOffDiag,nDimW)
-
+  call drdxPreAllocation(nnzDiagonal,nnzOffDiag,nDimX)
+  
+  ! Note we are creating the TRANPOSE of dRdx. It is size dDimX by nDimW
   call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
-       nDimW, nDimX,                     &
+       nDimX, nDimW,                     &
        PETSC_DETERMINE, PETSC_DETERMINE, &
        8, nnzDiagonal,     &
        8, nnzOffDiag,            &
@@ -71,6 +72,10 @@ subroutine createSpatialPETScVars
   call EChk(PETScIerr,__FILE__,__LINE__)
 
   call VecSetBlockSize(dJdx,3,PETScIerr)
+  call EChk(PETScierr,__FILE__,__LINE__)
+
+  ! xVec
+  call VecDuplicate(dJdx,xVec,PETScIerr)
   call EChk(PETScierr,__FILE__,__LINE__)
 
 #endif

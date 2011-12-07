@@ -79,15 +79,6 @@ subroutine createCouplingPETScVars
   call MatSetOption(dFdx, MAT_ROW_ORIENTED,PETSC_TRUE, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
-  ! Create two (empty) Vectors for getdFdx(T)Vec operations
-  call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimS,PETSC_DECIDE, &
-       PETSC_NULL_SCALAR,fVec1,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-
-  call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimS,PETSC_DECIDE, &
-       PETSC_NULL_SCALAR,fVec2,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-
 #endif
 
 end subroutine createCouplingPETScVars

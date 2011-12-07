@@ -8,42 +8,38 @@
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine getADjoint(ncells,functionGradLocal)
-  use ADjointPETSc
+subroutine getADjoint(nstate,adjoint)
+
+#ifndef USE_NO_PETSC	
+#define PETSC_AVOID_MPIF_
+#include "finclude/petscdef.h"
+
+  use ADjointPETSc, only : psi
+  use petscvec
+  use constants
 
   implicit none
   !
   !     Subroutine arguments.
   !
-  integer(kind=intType),intent(in):: ncells
-  real(kind=realType),dimension(ncells),intent(out) :: functionGradLocal
+  integer(kind=intType),intent(in):: nstate
+  real(kind=realType),dimension(nstate),intent(out) :: adjoint
+  real(kind=realType),pointer :: psi_pointer(:)
 
   ! Local Variables
-  integer(kind=intType) :: idxmg, iLow, iHigh, n 		
+  integer(kind=intType) :: i, ierr
 
-#ifndef USE_NO_PETSC		
+  ! Copy out adjoint vector:
+  call VecGetArrayF90(psi,psi_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Transfer solution from PETSc context.                          *
-  !     *                                                                *
-  !     ******************************************************************
-  !
+  ! Do a straight copy:
+  do i=1,nstate
+     adjoint(i) = psi_pointer(i)
+  end do
 
-  ! Query about the ownership range.
-  ! iHigh is one more than the last element stored locally.
-
-  call VecGetOwnershipRange(psi, iLow, iHigh, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-
-  n = 0
-  do idxmg=iLow, iHigh-1
-     n = n + 1
-     call VecGetValues(psi, 1, idxmg, &
-          functionGradLocal(n), PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-  enddo
-
+  call VecRestoreArrayF90(psi,psi_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 #endif
 
 end subroutine getADjoint

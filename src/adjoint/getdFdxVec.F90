@@ -76,7 +76,7 @@ subroutine getdFdxVec_NULL
 
   call VecResetArray(fVec2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-
+#endif
 end subroutine getdFdxVec_NULL
 
 subroutine getdFdxTVec(ndof,vec_in,vec_out)
