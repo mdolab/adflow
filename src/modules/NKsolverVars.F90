@@ -70,7 +70,7 @@ module NKsolverVars
   logical :: useEW
   logical :: useNKSolver
   logical :: NKSolverSetup
-  logical :: NKSolvedOnce
+  integer(kind=intType) :: NKSolveCount
   logical :: NKPCSetup
   logical :: NKFiniteDifferencePC
   logical :: RKreset
