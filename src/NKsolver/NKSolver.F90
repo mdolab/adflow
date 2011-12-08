@@ -18,7 +18,7 @@ subroutine NKsolver
   use NKSolverVars, only: dRdw, dRdwPre, jacobian_lag, &
        totalR0, totalRStart, wVec, rVec, deltaW, reason, global_ksp, reason,&
        ksp_rtol, ksp_atol, ksp_max_it, ksp_subspace, ksp_div_tol, &
-       nksolvedonce, times, func_evals, Mmax, iter_k, iter_m, NKLS, &
+       nksolvecount, times, func_evals, Mmax, iter_k, iter_m, NKLS, &
        nolinesearch, cubiclinesearch, nonmonotonelinesearch, rhores0, &
        NK_switch_tol, rhoresstart
 
@@ -96,18 +96,19 @@ subroutine NKsolver
      call vecCopy(g,rVec,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     ! Determine if if we need to form the Preconditioner: Here is the
-     ! logic: Every 'jacobian_lag' iterations, redo the
-     ! preconditioner. However, for the case of iter == 1, do NOT form
-     ! the PC if it has been solved once. The reason for this is
-     ! during an AeroStructural solution, the NK solver is called
-     ! repeadily, and it would normally recompute the jacobain at the
-     ! first iteration of every call. This is unnecessary, since
-     ! previous PCs are just fine. 
+     ! Determine if if we need to form the Preconditioner: For a
+     ! normal aerodynamic solution, form the preconditioner every
+     ! 'jacobian_lag' iterations.  However, for an aerostructural
+     ! analysis (with Gauss Sidel) the NK solver is called
+     ! repedily. In this case we want the 'jacobian_lag' to refer to
+     ! the number of time the solver was called. So on first
+     ! iteration, we check the variable NKsolveCount. If THIS is a
+     ! multiple of jacobian lag, we then reform the preconditioner. 
+
 
      if (mod(iter-1,jacobian_lag) == 0) then
-        if (iter == 1) then
-           if (.not. NKsolvedOnce) then
+        if (iter == 1) then ! Special case check:
+           if (mod(NKsolveCount,jacobian_lag) == 0) then
               call FormJacobian()
            else
               call MatAssemblyBegin(dRdw,MAT_FINAL_ASSEMBLY,ierr)
@@ -207,7 +208,7 @@ subroutine NKsolver
 
   ! Not really anything else to do...
 
-  NKSolvedOnce = .True.
+  NKSolveCount = NKSolveCount + 1
 
   ! Destroy the additional two vecs:
   call VecDestroy(g,ierr)

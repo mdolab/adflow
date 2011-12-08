@@ -12,7 +12,7 @@ subroutine setupNKsolver
   use stencils
   use ADjointVars , only: nCellsLocal
   use NKSolverVars, only: dRdw,dRdwPre,dRdwPseudo, ctx, wVec,rVec,deltaW,&
-       NKsolvedOnce,nksolversetup,ksp_subspace,ksp_solver_type,global_ksp
+       NKsolvecount,nksolversetup,ksp_subspace,ksp_solver_type,global_ksp
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -103,7 +103,7 @@ subroutine setupNKsolver
      !      PETSC_NULL_FUNCTION, ierr) call EChk(ierr,__FILE__,__LINE__)
 
      NKSolverSetup = .True.
-     NKSolvedOnce = .False.
+     NKSolveCount = 0
      if(equations == RANSEquations)  then
         turbCoupled = .True.
         turbSegregated = .False.
