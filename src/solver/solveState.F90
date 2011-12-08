@@ -480,21 +480,6 @@ subroutine solveState
         call setupNKsolver() 
         call NKsolver()
 
-!         call setupNKsolver_snes()  
-       
-!         if (solve_RK .or. .not. NKsolvedOnce) then 
-!            ! This is a little tricky...IF we had solved the RK or we
-!            ! haven't  solved it all all, then there's a good chance we should rebuild
-!            ! the PC. So set it -2: Build on the next chance
-!            call SNESSetLagJacobian(snes, -2, ierr); call EChk(ierr,__FILE__,__LINE__)
-!         else
-!            ! Else, just set it -1, such that it WON't recompute on the
-!            ! first time through. This gets reset to the actual
-!            ! jacobian lag we want after the first iteration.
-!            call SNESSetLagJacobian(snes, -1, ierr); call EChk(ierr,__FILE__,__LINE__)
-!         end if
-!         call NKsolver_snes()
-
      end if
   end if
 
