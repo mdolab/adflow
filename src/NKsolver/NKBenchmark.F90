@@ -53,7 +53,6 @@ subroutine NKBenchmark(NKRes,niter)
 
   resTime = 0.0
  
-
   if (.not. NKres) then
      allocate(cycling(nMGSteps), stat=ierr)
      call setCycleStrategy
