@@ -23,6 +23,7 @@
        use cgnsGrid
        use communication
        use inputIO
+       use killSignals
        implicit none
 
        integer :: nZone, cgnsNBocosP
@@ -47,7 +48,8 @@
 !      * Begin execution                                                *
 !      *                                                                *
 !      ******************************************************************
-!
+
+       if (fromPython) return
 
        ! Open the parameter file for reading. This should normally be
        ! no problem, because the input parameters have already been read
@@ -65,7 +67,7 @@
          if(myID == 0) then
            write(errorMessage,*) "Parameter file ", trim(paramFile), &
                                  " not found anymore."
-           call terminate("overwriteFamilyData", errorMessage)
+           call terminate("overwriteWallBCData", errorMessage)
          endif
 
          call mpi_barrier(SUmb_comm_world, ierr)
