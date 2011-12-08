@@ -111,38 +111,3 @@ subroutine setupNKsolver
   end if
 #endif
 end subroutine setupNKsolver
-
-
-subroutine MyMult(matrix,X,F,ierr)
-#ifndef USE_NO_PETSC
-  !   Input Parameters:
-  !.  X - input vector
-  !
-  !   Output Parameter:
-  !.  F - function vector
-  !
-  use precision
-  use NKSolverVars, only: dRdw,diagV
-  implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "include/finclude/petsc.h"
-  
-  ! Input/Output Vars
-  Mat matrix
-  Vec X,F
-  integer(kind=intType) :: ierr
-
-  ! Do a matmult followed by an addition
-
-  call MatMult(dRdw,X,F,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  ! VecAXPY : Computes y = alpha x + y. 
-  ! VecAXPY(Vec y,PetscScalar alpha,Vec x)
-
-  !call VecAXPY(F,1.0,diagV,ierr)
-  !call EChk(ierr,__FILE__,__LINE__)
-#endif
-end subroutine MyMult
-
