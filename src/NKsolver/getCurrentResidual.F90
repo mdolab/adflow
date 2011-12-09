@@ -16,8 +16,7 @@ subroutine getCurrentResidual(rhoRes,totalRRes)
   groundLevel = 1
   rkStage = 0
 
-  call whalo2(1_intType, 1_intType, nw, .False., &
-       .False.,.False.)
+  call whalo2(1_intType, 1_intType, nw, .False., .False.,.False.)
 
   ! Compute time step
   call timestep(.false.)

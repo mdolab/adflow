@@ -24,7 +24,7 @@
 #      *                                                                *
 #      ******************************************************************
 
-MAKE = make -j 2
+MAKE = make -j 4
 
 #      ******************************************************************
 #      *                                                                *
@@ -61,7 +61,7 @@ FF90_GEN_FLAGS =
 #FF90_OPTFLAGS   = -O2 -tpp7 -xW -unroll -ipo -ipo_obj
 #FF90_OPTFLAGS   = -O2 -tpp7 -xW -unroll -ip
 #FF90_OPTFLAGS   = -O2
-FF90_OPTFLAGS   = -O2 -tpp7 -axW -ip
+FF90_OPTFLAGS   = -O2 -r8
 
 #FF90_DEBUGFLAGS = -g -C -implicitnone -e90 -e95\
 		 -fpe0 -fpstkchk -DDEBUG_MODE
