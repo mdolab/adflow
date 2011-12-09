@@ -53,15 +53,14 @@ SUBDIR_ADJOINT = src/adjoint               \
 	         src/adjoint/stabilityOutput\
 		 src/adjoint/forcesInput\
 	         src/adjoint/forcesOutput\
-		 src/adjoint/residualNKPCInput \
-	         src/adjoint/residualNKPCOutput \
                  src/bendingMomentAnalysis/bendingOutput\
 		 src/forwardAdjoint \
 		 src/forwardAdjoint/residualInput \
 		 src/forwardAdjoint/residualOutput\
 		 src/forwardAdjoint/residualOutputExtra\
 		 src/forwardAdjoint/residualOutputSpatial
-
+#		 src/adjoint/residualNKPCInput \
+	         src/adjoint/residualNKPCOutput \
 
 SUBDIR_WARPING = src/warping \
 		 src/warping/warpingOutput
@@ -71,7 +70,7 @@ SUBDIR_PYTHON = src/python/fortran
 SUBDIR_PV3    = src/pv3Interface
 CONFIG_DEFAULT_DIR = config/defaults
 CONFIG_DIR         = config
-#SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR)
+
 SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR)\
 		     $(SUBDIR_PYTHON) $(SUBDIR_WARPING)\
                      $(SUBDIR_ADJOINT)
@@ -165,7 +164,7 @@ sumb:
 		do \
 			echo "making $@ in $$subdir"; \
 			echo; \
-			(cd $$subdir && gmake) || exit 1; \
+			(cd $$subdir && make -j 4) || exit 1; \
 		done
 	(cd lib && gmake)
 	(cd $(SUBDIR_EXEC) && gmake)

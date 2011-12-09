@@ -12,7 +12,6 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
 
   real(kind=realType), intent(out) :: rhoRes,totalRRes
   real(kind=realType),dimension(:), allocatable :: wtemp,ptemp
-  real(kind=realType) :: temp1,temp2,v2,gm1
   integer(kind=intType) :: nDimW,nDimP,ierr,counter
   integer(kind=intType) :: tempStartLevel,tempCurrentLevel,tempMGStartLevel
   integer(kind=intType) :: nn,sps,i,j,k,l

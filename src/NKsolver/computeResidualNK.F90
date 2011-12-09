@@ -1,11 +1,11 @@
 subroutine computeResidualNK()
 
   ! This is the residual evaluation driver for the NK solver. The
-  ! actual function that is passed to petsc is FormFunction (see
-  ! formFunction.F90). This the routine that actually computes the
-  ! residual. This works with Euler,Laminar and NS equation
-  ! modes. This function ONLY OPERATES ON THE FINEST GRID LEVEL. It
-  ! does not coarser grid levels.
+  ! actual function that is used for the matrix free matrix-vector
+  ! products is FormFunction_mf (see formFunction.F90). This the
+  ! routine that actually computes the residual. This works with
+  ! Euler,Laminar and NS equation modes. This function ONLY OPERATES
+  ! ON THE FINEST GRID LEVEL. It does not coarser grid levels.
 
   ! This function uses the w that is currently stored in the flowDoms
   ! datastructure and leaves the resulting residual dw, in the same
@@ -17,18 +17,17 @@ subroutine computeResidualNK()
   use flowvarrefstate
   use iteration
   use inputPhysics 
-  use NKsolverVars, only : times
   implicit none
 
   ! Local Variables
   integer(kind=intType) :: ierr,i,j,k,l,sps,nn
   logical secondHalo ,correctForK
-  real(kind=realType) :: gm1,v2,val
+  real(kind=realType) :: gm1,v2
 
   secondHalo = .True. 
-
   currentLevel = 1_intType
   groundLevel = 1_intTYpe
+  
   ! Next we need to compute the pressures
   gm1 = gammaConstant - one
   correctForK = .False.
@@ -36,8 +35,7 @@ subroutine computeResidualNK()
   ! Why does this need to be set?
   rkStage = 0
 
-  ! Recompute pressure on ALL cells (including halos since we didn't
-  ! communicate the pressures
+  ! Recompute pressure on ALL cells 
   spectralLoop: do sps=1,nTimeIntervalsSpectral
      domainsState: do nn=1,nDom
         ! Set the pointers to this block.
@@ -59,11 +57,10 @@ subroutine computeResidualNK()
 
      end do domainsState
   end do spectralLoop
-  
-  call computeLamViscosity  ! These should be done over the whole
-                            ! block with halos
-  call computeEddyViscosity ! These should be dond over the whole
-                            ! block with halos
+
+  ! Compute Viscosity
+  call computeLamViscosity  
+  call computeEddyViscosity 
 
   !   Apply BCs
   call applyAllBC(secondHalo)

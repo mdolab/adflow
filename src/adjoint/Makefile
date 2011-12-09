@@ -67,7 +67,6 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       setADjoint.o             \
 	       setGlobalCellsAndNodes.o \
 	       setPointersAdj.o         \
-	       setupADjointPCMatrixTranspose.o \
 	       setupAllResidualMatrices.o\
 	       setupAllResidualMatricesTS.o\
                setupExtraDVsFortran.o\

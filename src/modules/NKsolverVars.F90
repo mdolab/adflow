@@ -48,7 +48,7 @@ module NKsolverVars
   ! deltaW: Update to the wVec from linear solution
   ! diagV: Diagonal lumping term
 
-  Vec wVec,rVec,deltaW,diagV
+  Vec wVec,rVec,deltaW,diagV,work,g
 
   ! PETSc KSP/PC 
   ! global_ksp: The ksp object for solving the newton udpate

@@ -16,11 +16,11 @@ subroutine NKsolver
   use flowVarRefState
   use ADjointVars , only: nCellsLocal
   use NKSolverVars, only: dRdw, dRdwPre, jacobian_lag, &
-       totalR0, totalRStart, wVec, rVec, deltaW, reason, global_ksp, reason,&
+       totalR0, totalRStart, wVec, rVec, deltaW, global_ksp, &
        ksp_rtol, ksp_atol, ksp_max_it, ksp_subspace, ksp_div_tol, &
        nksolvecount, times, func_evals, Mmax, iter_k, iter_m, NKLS, &
        nolinesearch, cubiclinesearch, nonmonotonelinesearch, rhores0, &
-       NK_switch_tol, rhoresstart
+       NK_switch_tol, rhoresstart, work, g
 
   use InputIO ! L2conv,l2convrel
   use inputIteration
@@ -30,9 +30,6 @@ subroutine NKsolver
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-
-  ! PETSc Variables:
-  Vec g,work
 
   ! Working Variables
   integer(kind=intType) :: iter,ierr,ksp_iterations
@@ -58,11 +55,7 @@ subroutine NKsolver
   ! Set the inital wVec
   call setwVec(wVec)
 
-  ! Create the two additional work vectors for the line search:
-  call VecDuplicate(wVec,g,ierr); call EChk(ierr,__FILE__,__LINE__)
-  call VecDuplicate(wVec,work,ierr);  call EChk(ierr,__FILE__,__LINE__)
-
-  ! Evaluate the residual before we start and copy the value into g
+   ! Evaluate the residual before we start and copy the value into g
   call setW(wVec)
   call computeResidualNK()
   call setRVec(rVec)
@@ -161,7 +154,7 @@ subroutine NKsolver
      ! Set all tolerances for linear solve:
      ksp_atol = totalR0*L2Conv
      ksp_max_it = min(ksp_subspace,ncycles-iterTot)
-     ksp_max_it = max(ksp_max_it,1)
+     ksp_max_it = max(ksp_max_it,1) ! At least one iteration!
     
      call KSPSetTolerances(global_ksp,ksp_rtol,ksp_atol,ksp_div_tol,&
           ksp_max_it,ierr)
@@ -169,10 +162,6 @@ subroutine NKsolver
 
      ! Actually do the Linear Krylov Solve
      call KSPSolve(global_ksp,rVec,deltaW,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-     ! Get convergence reason:
-     call KSPGetConvergedReason(global_ksp,reason,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Linesearching:
@@ -209,12 +198,6 @@ subroutine NKsolver
   ! Not really anything else to do...
 
   NKSolveCount = NKSolveCount + 1
-
-  ! Destroy the additional two vecs:
-  call VecDestroy(g,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  call VecDestroy(work,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
 
   deallocate(func_evals)
 
@@ -571,53 +554,3 @@ subroutine getEWTol(iter,norm,old_norm,rtol_last,rtol)
   end if
 
 end subroutine getEWTol
-
-! subroutine setdiagV(dt_pseudo)
-
-!   use flowVarRefState
-!   use inputTimeSpectral
-!   use blockPointers
-!   use NKSolverVars, only: diagV
-
-!   implicit none
-! #define PETSC_AVOID_MPIF_H
-! #include "include/finclude/petsc.h"
-
-!   ! Input
-!   real(kind=realType) :: dt_pseudo
-
-!   ! Working
-!   integer(kind=intType) :: nn,sps,i,j,k,ierr
-!   real(kind=realType) :: vals(nw),dt_loc,L_loc
-
-
-!   spectralLoop: do sps=1,nTimeIntervalsSpectral
-!      domainLoop: do nn=1,nDom
-!         ! Set the pointers to this block.
-!         call setPointersAdj(nn, 1, sps)
-
-!         do k=2,kl
-!            do j=2,jl
-!               do i=2,il
-!                  ! Set the I/dt term in diagV according to CFL_pseudo
-! !                  L_loc = vol(i,j,k)**(1/3)
-! !                  dt_loc = (L_loc + 1)/L_loc
-! !                  vals(:) = -dt_loc*dt_pseudo
-
-!                  vals(:) = -1/(dt_pseudo * dtl(i,j,k))
-!                  call VecSetValuesBlocked(diagV,1,globalCell(i,j,k),vals,&
-!                       INSERT_VALUES,ierr)
-!                  call EChk(ierr,__FILE__,__LINE__)
-!               end do
-!            end do
-!         end do
-!      end do domainLoop
-!   end do spectralLoop
-
-
-!   call VecAssemblyBegin(diagV,ierr)
-!   call EChk(ierr,__FILE__,__LINE__)
-!   call VecAssemblyEnd(diagV,ierr)
-!   call EChk(ierr,__FILE__,__LINE__)
-! end subroutine setdiagV
-

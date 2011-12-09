@@ -237,9 +237,6 @@ python module sumb ! in
          integer(kind=inttype) intent(in) :: level
        end subroutine verifyresiduals
 
-       subroutine verifyrnkpc
-       end subroutine verifyrnkpc
-       
        ! ############################################################################
        ! SUmb ADjoint Core Routines
        ! ############################################################################
@@ -304,9 +301,6 @@ python module sumb ! in
 
        subroutine setupextramatrix
        end subroutine setupextramatrix
-
-       subroutine setupadjointpcmatrixtranspose
-       end subroutine setupadjointpcmatrixtranspose
 
        subroutine solveadjointtransposepetsc ! in :sumb:../../adjoint/solveADjointPETSc.F90
        end subroutine solveadjointtransposepetsc
