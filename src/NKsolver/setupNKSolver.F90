@@ -12,7 +12,8 @@ subroutine setupNKsolver
   use stencils
   use ADjointVars , only: nCellsLocal
   use NKSolverVars, only: dRdw,dRdwPre,dRdwPseudo, ctx, wVec,rVec,deltaW,&
-       NKsolvecount,nksolversetup,ksp_subspace,ksp_solver_type,global_ksp
+       NKsolvecount,nksolversetup,ksp_subspace,ksp_solver_type,global_ksp, &
+       work, g
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -22,7 +23,7 @@ subroutine setupNKsolver
   integer(kind=intType) :: ierr,nDimw,totalCells
   integer(kind=intType) , dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
   integer(kind=intType) :: n_stencil
-  integer(kind=intType), dimension(:,:), allocatable :: stencil
+  integer(kind=intType), dimension(:,:), pointer :: stencil
 
   integer(kind=intType) :: i,j,k,nn,i2,j2,k2,d2,l,sps
   external FormFunction_mf, mykspmonitor
@@ -35,14 +36,18 @@ subroutine setupNKsolver
      call VecSetBlockSize(wVec,nw,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     !  Create residual and state vectors
-     call VecCreateMPI(SUMB_PETSC_COMM_WORLD,nDimw,PETSC_DETERMINE,rVec,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-     call VecSetBlockSize(rVec,nw,ierr)
+     !  Create duplicates for residual and delta
+     call VecDuplicate(wVec, rVec, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     ! Use the rVec Template to create deltaW 
-     call VecDuplicate(rVec, deltaW, ierr)
+     call VecDuplicate(wVec, deltaW, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Create the two additional work vectors for the line search:
+     call VecDuplicate(wVec,g,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     call VecDuplicate(wVec,work,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Create Pre-Conditioning Matrix
@@ -52,14 +57,14 @@ subroutine setupNKsolver
      call initialize_stencils
      if (not(viscous)) then
         n_stencil = N_euler_drdw
-        allocate(stencil(n_stencil,3))
-        stencil = euler_drdw_stencil
+        stencil => euler_drdw_stencil
      else
         n_stencil = N_visc_pc
-        allocate(stencil(n_stencil,3))
-        stencil = visc_pc_stencil
+        stencil => visc_pc_stencil
      end if
 
+     ! Note: Since we are using blocked matrices, we computed the
+     ! non-zero BLOCKS as opposed to the non-zero values. 
      call statePreAllocation(nnzDiagonal,nnzOffDiag,nDimW/nw,stencil,n_stencil)
   
      call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
@@ -70,7 +75,7 @@ subroutine setupNKsolver
           dRdWPre, ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
-     deallocate(nnzDiagonal,nnzOffDiag,stencil)
+     deallocate(nnzDiagonal,nnzOffDiag)
 
      ! Setup Matrix-Free dRdw matrix and its function
      call MatCreateMFFD(sumb_comm_world,nDimW,nDimW,&
@@ -92,7 +97,8 @@ subroutine setupNKsolver
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Set operators for the solver
-     call KSPSetOperators(global_ksp,dRdw,dRdWPre, DIFFERENT_NONZERO_PATTERN,ierr)
+     call KSPSetOperators(global_ksp,dRdw,dRdWPre, &
+          DIFFERENT_NONZERO_PATTERN,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Uncomment if you want to look at the KSP residual during the

@@ -3,7 +3,8 @@ subroutine applyPC(in_vec, out_vec, N)
   ! Apply the NK PC to the in_vec. This subroutine is ONLY used as a
   ! preconditioner for a global Aero-Structural Newton-Krylov Method
   use flowVarRefState
-  use NKSolverVars, only: dRdw, dRdwPre, NKSolverSetup, global_ksp, wVec
+  use NKSolverVars, only: dRdw, NKSolverSetup, global_ksp, wVec, &
+       NKSolveCount, jacobian_lag
   use communication 
   use inputIteration
   implicit none
@@ -20,24 +21,28 @@ subroutine applyPC(in_vec, out_vec, N)
 
   ! Working Variables
   integer(kind=intType) :: ierr
-  logical :: useAD,usePC,useTranspose
 
   ! Put a petsc wrapper around the input and output vectors
   call VecCreateMPIWithArray(sumb_comm_world, N, PETSC_DETERMINE, in_vec, &
        VecA, ierr)
   call EChk(ierr,__FILE__,__LINE__)
+
   call VecSetBlockSize(vecA, nw, ierr);
   call EChk(ierr,__FILE__,__LINE__)
 
   call VecCreateMPIWithArray(sumb_comm_world, N, PETSC_DETERMINE, out_vec, &
        VecB, ierr)
   call EChk(ierr,__FILE__,__LINE__)
+
   call VecSetBlockSize(vecB, nw, ierr);
   call EChk(ierr,__FILE__,__LINE__)
 
   if (not(NKSolverSetup)) then
      call setupNKSolver
-     call formJacobian
+  end if
+  
+  if (mod(NKsolveCount,jacobian_lag) == 0) then
+     call FormJacobian()
   end if
 
   ! Set the base vec
@@ -56,5 +61,7 @@ subroutine applyPC(in_vec, out_vec, N)
 
   call VecDestroy(VecB, ierr)
   call EChk(ierr,__FILE__,__LINE__)
+
+  NKSolveCount = NKSolveCount + 1
 #endif
 end subroutine applyPC

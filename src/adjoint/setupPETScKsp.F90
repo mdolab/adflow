@@ -76,15 +76,11 @@ subroutine setupPETScKsp
   if (ApproxPC)then
 
      !setup the approximate PC Matrix
-     !call setupADjointPCMatrix(level)
-     if (finitedifferencePC) then
-        useAD = .False.
-        useTranspose = .True.
-        usePC = .True.
-        call setupStateResidualMatrix(drdwpret,useAD,usePC,useTranspose)
-     else
-        call setupADjointPCMatrixTranspose()
-     end if
+     useAD = .False.
+     useTranspose = .True.
+     usePC = .True.
+     call setupStateResidualMatrix(drdwpret,useAD,usePC,useTranspose)
+
      !now set up KSP Context
      !call KSPSetOperators(ksp,dRdW,dRdWPre, &
      !                  DIFFERENT_NONZERO_PATTERN,PETScIerr)
