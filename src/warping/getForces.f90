@@ -32,7 +32,6 @@ subroutine getForces(forces,pts,npts,nTS)
   use BCTypes
   use blockPointers
   use flowVarRefState
-  use warpingPetsc
   use inputTimeSpectral
   use communication
   implicit none
