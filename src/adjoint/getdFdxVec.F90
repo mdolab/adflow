@@ -11,7 +11,6 @@ subroutine getdFdxVec(ndof,vec_in,vec_out)
   !
   use communication
   use ADjointPETSc, only: dFdx,fVec1,fVec2
-  use warpingPETSC 
   use inputADjoint
   implicit none
 
@@ -51,7 +50,6 @@ subroutine getdFdxVec_NULL
   !
   use communication
   use ADjointPETSc, only: dFdx,fVec1,fVec2
-  use warpingPETSC 
   use inputADjoint
   implicit none
 
@@ -90,7 +88,6 @@ subroutine getdFdxTVec(ndof,vec_in,vec_out)
   !
   use communication
   use ADjointPETSc, only: dFdx,fVec1,fVec2
-  use warpingPETSC 
   use inputADjoint
   implicit none
 
@@ -130,7 +127,6 @@ subroutine getdFdxTVec_NULL
   !
   use communication
   use ADjointPETSc, only: dFdx,fVec1,fVec2
-  use warpingPETSC 
   use inputADjoint
   implicit none
 

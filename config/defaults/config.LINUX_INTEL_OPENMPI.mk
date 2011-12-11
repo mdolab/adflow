@@ -99,7 +99,7 @@ COMMAND_SEARCH_PATH_MODULES = -I
 FF90_GEN_FLAGS = -DHAS_ISNAN  # -DUSE_NO_PETSC
 CC_GEN_FLAGS   = -DHAS_ISNAN  # -DUSE_NO_PETSC
 
-FF90_OPTFLAGS   =  -fpic -r8 -O1 -g 
+FF90_OPTFLAGS   =  -fpic -r8 -O2 -g -xHost
 CC_OPTFLAGS     = -O -fpic
 
 FF90_DEBUGFLAGS = #-check bounds -check all

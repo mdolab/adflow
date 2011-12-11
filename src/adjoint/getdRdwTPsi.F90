@@ -3,8 +3,7 @@ subroutine getdRdwTPsi(ndof,dRdwTPsi)
 
   !
   use communication
-  use ADjointPETSc, only: dRdwT,psi,wVec
-  use warpingPETSC 
+  use ADjointPETSc
   use inputADjoint
   implicit none
 
