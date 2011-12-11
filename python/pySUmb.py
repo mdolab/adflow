@@ -911,6 +911,17 @@ class SUMB(AeroSolver):
 
         return
 
+    def resetAdjoint(self, obj):
+        '''
+        Reset a possible stored adjoint 'obj'
+        '''
+
+        if  obj in self.storedADjoints.keys():
+            self.storedADjoints[obj][:] = 0.0
+        # end if
+
+        return
+
     def resetFlow(self):
         '''
         Reset the flow for the complex derivative calculation

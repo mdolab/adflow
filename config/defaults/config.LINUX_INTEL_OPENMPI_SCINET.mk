@@ -61,8 +61,9 @@ CC   = mpicc -fPIC
 #      * CGNS include and linker flags.                                 *
 #      *                                                                *
 #      ******************************************************************
-CGNS_INCLUDE_FLAGS = -I/home/kenway/packages/cgnslib_2.5
-CGNS_LINKER_FLAGS  = -L/home/kenway/packages/cgnslib_2.5/LINUX -lcgns
+CGNS_INCLUDE_FLAGS = -I$(HOME)/../kenway/packages/cgnslib_2.5
+CGNS_LINKER_FLAGS  = -Wl,-rpath,$(HOME)/../kenway/packages/cgnslib_2.5/LINUX -L$(HOME)/packages/cgnslib_2.5/LINUX -lcgns
+
 #CGNS_INCLUDE_FLAGS = -I$(HOME)/packages/cgnslib_2.5_debug
 #CGNS_LINKER_FLAGS  = -L$(HOME)/packages/cgnslib_2.5_debug/LINUX -lcgns
 #CGNS_INCLUDE_FLAGS = -I$(HOME)/packages/cgnslib_2.4
@@ -109,7 +110,7 @@ FF90_GEN_FLAGS = -DHAS_ISNAN -DUSE_PETSC_3
 CC_GEN_FLAGS   =
 
 #FF90_OPTFLAGS   = -O3 -ipo -ipo_obj
-FF90_OPTFLAGS   = -r8 -O1 #-g -check all#-O1 #-r8#-O1 -r8 #-check all# -O2 -r8 -fpic# -check all #-tpp7 -xW -unroll -ip
+FF90_OPTFLAGS   = -r8 -O1 -g #-xHost#-g -check all#-O1 #-r8#-O1 -r8 #-check all# -O2 -r8 -fpic# -check all #-tpp7 -xW -unroll -ip
 #CC_OPTFLAGS     = -O3 -fexpensive-optimizations -frerun-cse-after-loop \
 #		  -fthread-jumps -funroll-loops -finline-functions
 CC_OPTFLAGS     = -O -g
@@ -170,8 +171,8 @@ PETSC_LINKER_FLAGS=${PETSC_LIB}
 #      *                                                                *
 #      ******************************************************************
 
-PYTHON_INCLUDE_DIR = /scinet/gpc/tools/Python/Python262/include/python2.6
-NUMPY_ROOT_DIR = /scinet/gpc/tools/Python/Python262/lib/python2.6/site-packages/numpy-1.3.0-py2.6-linux-x86_64.egg
+PYTHON_INCLUDE_DIR = /scinet/gpc/tools/Python/Python271/include/python2.7
+NUMPY_ROOT_DIR = /scinet/gpc/tools/Python/Python271/lib/python2.7/site-packages/
 
 #      ******************************************************************
 #      *                                                                *
@@ -189,4 +190,4 @@ AR_FLAGS = -rvs
 #      ******************************************************************
 
 LINKER       = $(FF90)
-LINKER_FLAGS = $(FF90_OPTFLAGS) -nofor_main -lmkl
+LINKER_FLAGS = $(FF90_OPTFLAGS) -nofor_main
