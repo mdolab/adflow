@@ -41,7 +41,8 @@ SUBDIR_SRC    = src/modules       \
 	        src/stabilityDerivatives \
 	        src/turbulence    \
 	        src/utils         \
-	        src/wallDistance
+	        src/wallDistance  \
+		src/warping       \
 
 SUBDIR_ADJOINT = src/adjoint               \
 		 src/adjoint/ADFirstAidKit \
@@ -62,9 +63,6 @@ SUBDIR_ADJOINT = src/adjoint               \
 #		 src/adjoint/residualNKPCInput \
 	         src/adjoint/residualNKPCOutput \
 
-SUBDIR_WARPING = src/warping \
-		 src/warping/warpingOutput
-
 SUBDIR_EXEC   = src/exec
 SUBDIR_PYTHON = src/python/fortran
 SUBDIR_PV3    = src/pv3Interface
@@ -72,11 +70,10 @@ CONFIG_DEFAULT_DIR = config/defaults
 CONFIG_DIR         = config
 
 SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR)\
-		     $(SUBDIR_PYTHON) $(SUBDIR_WARPING)\
-                     $(SUBDIR_ADJOINT)
+		     $(SUBDIR_PYTHON) $(SUBDIR_ADJOINT)
 
 SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC) $(SUBDIR_PYTHON) $(SUBDIR_PV3) \
-		     $(SUBDIR_EXEC) $(SUBDIR_WARPING) $(SUBDIR_ADJOINT)
+		     $(SUBDIR_EXEC) $(SUBDIR_ADJOINT)
 
 #      ******************************************************************
 #      *                                                                *

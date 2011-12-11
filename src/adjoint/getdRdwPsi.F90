@@ -12,14 +12,12 @@ subroutine getdRdwTPsi(ndof,dRdwPsi)
   !
   !     ******************************************************************
   !     *                                                                *
-  !     * Multiply the current adjoint vector by dRdXv to get a vector   *
-  !     * of length Xv. This is collective communication part            *
+  !     * Multiply the current adjoint vector by dRdw^T                  *
   !     *                                                                *
   !     ******************************************************************
   !
   use communication
-  use ADjointPETSc, only: dRdwT,psi,wVec
-  use warpingPETSC 
+  use ADjointPETSc
   use inputADjoint
   implicit none
 

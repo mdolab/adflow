@@ -6,7 +6,6 @@ subroutine getArea(totalArea)
   use communication
   use flowVarRefState
   use mdDataLocal
-  use warpingPetsc
   use block
   implicit none
   !

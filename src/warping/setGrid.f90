@@ -16,7 +16,6 @@ subroutine setGrid(grid,ndof)
   use precision 
   use blockPointers
   use communication
-  use warpingPetsc
   use section
   use inputTimeSpectral
   use monitor 
