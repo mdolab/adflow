@@ -307,8 +307,11 @@ python module sumb ! in
 
        ! -------- Partial Derivative Functions -----------
        
-       subroutine zeroobjpartials
+       subroutine zeroobjpartials(statesetup,spatialsetup)
+         logical :: statesetup
+         logical :: spatialsetup
        end subroutine zeroobjpartials
+
 
        subroutine computeobjpartials(costfunction,pts,npts,nts,usedjdw,usedjdx) ! in :sumb:../../adjoint/computeObjPartials.F90
          integer(kind=inttype) intent(in) :: costfunction

@@ -1269,24 +1269,31 @@ class SUMB(AeroSolver):
 
         return
 
-    def writeForceFile(self,file_name,TSInstance=0):
+    def writeForceFile(self, file_name, TSInstance=0, group_name=None):
         '''This function collects all the forces and locations and
         writes them to a file with each line having: X Y Z Fx Fy Fz.
         This can then be used to set a set of structural loads in TACS
         for structural only optimization'''
       
-        pts = self.getForcePoints()
-        nPts = pts.shape[1]
-        if nPts > 0:
-            forces =  self.sumb.getforces(pts.T).T
-        else:
-            forces = numpy.empty(pts.shape,dtype=self.dtype)
+        if group_name is None: # We can just use all forces from SUmb:
+
+            pts = self.getForcePoints()
+            nPts = pts.shape[1]
+            if nPts > 0:
+                forces =  self.sumb.getforces(pts.T).T
+            else:
+                forces = numpy.empty(pts.shape,dtype=self.dtype)
+            # end if
+
+            # Now take the desired time instance
+            pts = pts[TSInstance,:,:]
+            forces = forces[TSInstance,:,:]
+        else: # We need to use the families in the warping
+            # TS instance not taken into account yet
+            forces = self.getForces(group_name)
+            pts    = self.mesh.getSurfaceCoordinates(group_name)
         # end if
 
-        # Now take the desired time instance
-        pts = pts[TSInstance,:,:]
-        forces = forces[TSInstance,:,:]
-        
         # Now we need to gather the data:
         pts = self.comm.gather(pts, root=0)
         forces = self.comm.gather(forces, root=0)
@@ -1296,7 +1303,8 @@ class SUMB(AeroSolver):
             f = open(file_name,'w')
             for iproc in xrange(len(pts)):
                 for ipt in xrange(len(pts[iproc])):
-                    f.write('%20.15g %20.15g %20.15g %20.15g %20.15g %20.15g\n'%(
+                    f.write(
+                        '%20.15g %20.15g %20.15g %20.15g %20.15g %20.15g\n'%(
                             pts[iproc][ipt,0],pts[iproc][ipt,1],
                             pts[iproc][ipt,2],forces[iproc][ipt,0],
                             forces[iproc][ipt,1],forces[iproc][ipt,2]))
@@ -1880,7 +1888,7 @@ class SUMB(AeroSolver):
 
     def _updateGeometryInfo(self):
         """Update the SUmb internal geometry info, if necessary."""
-        if (self._update_geom_info):
+        if self._update_geom_info:
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
 
@@ -2086,7 +2094,7 @@ class SUMB(AeroSolver):
                 obj_num,forcePoints.T,self.stateSetup,self.spatialSetup)
             self.adjointRHS = obj
         else:
-            self.sumb.zeroobjpartials()
+            self.sumb.zeroobjpartials(self.stateSetup, self.spatialSetup)
         # end if
 
         return 
@@ -2247,11 +2255,10 @@ class SUMB(AeroSolver):
         objective. If it is, return the obj value for SUmb and
         True. Otherwise simply return the objective string and
         False'''
-
-        try: 
-            obj = self.possibleObjectives[objective.lower()] 
+        if objective in self.possibleObjectives.keys():
+            obj = self.possibleObjectives[objective]
             aeroObj = True
-        except: 
+        else:
             obj = objective 
             aeroObj = False
         # end try
