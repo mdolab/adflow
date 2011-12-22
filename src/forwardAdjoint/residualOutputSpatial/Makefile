@@ -24,8 +24,8 @@
 
 SUMB_DIR = ../../../
 SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
-#SUMB_RULES_FILE  = $(SUMB_DIR)/rulesSources.mk
-SUMB_RULES_FILE  = adjointRules.mk
+SUMB_RULES_FILE  = $(SUMB_DIR)/rulesSources.mk
+#SUMB_RULES_FILE  = adjointRules.mk
 
 include ${SUMB_COMMON_FILE}
 include ${SUMB_RULES_FILE}
