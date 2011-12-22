@@ -623,18 +623,23 @@ subroutine getdIdx(ndof,output)
 #endif
 end subroutine getdIdx
 
-subroutine zeroObjPartials
+subroutine zeroObjPartials(stateSetup,spatialSetup)
 #ifndef USE_NO_PETSC
   use precision 
   use ADjointVars ! include costFunctions
   use ADjointPETSc
 
   integer(kind=intType) :: ierr
+  logical, intent(in) :: stateSetup, spatialSetup
 
-  call VecZeroEntries(dJdw,ierr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-
-  call VecZeroEntries(dJdx,ierr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
+  if (stateSetup) then
+     call VecZeroEntries(dJdw,ierr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
+  end if
+  
+  if (spatialSetup) then
+     call VecZeroEntries(dJdx,ierr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
+  end if
 #endif
 end subroutine zeroObjPartials
