@@ -915,6 +915,7 @@ python module sumb ! in
          integer(kind=inttype) :: globalsignal
          logical :: frompython
          logical :: routinefailed
+         logical :: fatalfail
          logical :: adjointfailed
        end module killsignals
 
