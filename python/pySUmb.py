@@ -166,8 +166,8 @@ class SUMB(AeroSolver):
 
             # Reference Paramters
             'refTemp':[float,398.0],
-            'refPressure':[float,17654.0],
-            'refDensity':[float,.28837],
+            #'refPressure':[float,17654.0],
+            #'refDensity':[float,.28837],
             'areaAxis':[list,[0.0,1.0,0.0]],
 
             # Adjoint Paramters
@@ -530,8 +530,8 @@ class SUMB(AeroSolver):
 
                 # Reference Params
                 'refTemp':{'location':'flowvarrefstate.tref'},
-                'refPressure':{'location':'flowvarrefstate.pref'},
-                'refDensity':{'location':'flowvarrefstate.rhoref'},
+                #'refPressure':{'location':'flowvarrefstate.pref'},
+                #'refDensity':{'location':'flowvarrefstate.rhoref'},
                
                 # Adjoint Params
                 'adjointL2Convergence':{'location':'inputadjoint.adjreltol'},
@@ -665,6 +665,7 @@ class SUMB(AeroSolver):
         self._update_geom_info = True
         self._update_period_info = True
         self._update_vel_info = True
+        self.fatalFail = False
         self.solve_failed = False
         self.adjoint_failed = False
         self.dtype = 'd'
@@ -699,6 +700,7 @@ class SUMB(AeroSolver):
         self.sumb.dummyreadparamfile()
 
         self.setMachNumber(aero_problem)
+        self.setRefState(aero_problem)
         self.setPeriodicParams(aero_problem)
 
         #This is just to flip the -1 to 1 possibly a memory issue?
@@ -911,6 +913,16 @@ class SUMB(AeroSolver):
 
         return
 
+    def setRefState(self, aero_problem):
+        '''
+        Set the Pressure, density and viscosity/reynolds number from the aero_problem
+        '''
+        self.sumb.flowvarrefstate.pref = aero_problem._flows.P
+        self.sumb.flowvarrefstate.rhoref = aero_problem._flows.rho
+
+        # Reynolds number info not setup yet...
+
+        return
     def resetAdjoint(self, obj):
         '''
         Reset a possible stored adjoint 'obj'
@@ -1039,16 +1051,19 @@ class SUMB(AeroSolver):
         # end if
 
         self.sumb.killsignals.routinefailed = False
+        self.sumb.killsignals.fatalfail = False
         self._updatePeriodInfo()
         self._updateGeometryInfo()
         self._updateVelocityInfo()
 
-        # Check to see if the above update routines failed.
+        # Check to see if the above update routines failed. This is a
+        # mesh failure so its both a solve and fatal fail.
         self.sumb.killsignals.routinefailed = \
             self.comm.allreduce(
             bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
 
         if self.sumb.killsignals.routinefailed:
+            self.fatalFail = True
             self.solve_failed = True
             return
 
@@ -1075,6 +1090,13 @@ class SUMB(AeroSolver):
             self.solve_failed = True
         else:
             self.solve_failed = False
+        # end if
+
+        if self.sumb.killsignals.fatalfail:
+            self.fatalFail = True
+            self.resetFlow()
+        else:
+            self.fatalFail = False
         # end if
 
         sol_time = time.time() - t0
@@ -1714,13 +1736,13 @@ class SUMB(AeroSolver):
         # zero aerodynamic RHS
 
         obj,aeroObj = self._getObjective(objective)
-
+        
         # Setup adjoint matrices/vector as required
         self.setupAdjoint()
 
         # Check to see if the RHS Partials have been computed
         if not self.adjointRHS == obj:
-            self.computeObjPartials(obj,forcePoints)
+            self.computeObjPartials(objective,forcePoints)
         # end if
 
         # Check to see if we need to agument the RHS with a structural
@@ -1747,6 +1769,9 @@ class SUMB(AeroSolver):
 
         # Actually Solve the adjoint system
         self.sumb.solveadjointtransposepetsc()
+
+        # Temporialy hard code fail to be false:
+        #self.sumb.killsignals.adjointfailed = False
 
         # Possibly try another solve
         if self.sumb.killsignals.adjointfailed and self.getOption('restartAdjoint'):
@@ -1971,7 +1996,7 @@ class SUMB(AeroSolver):
         '''
         startRes = self.sumb.adjointpetsc.adjreshist[0]
         finalIt  = self.sumb.adjointpetsc.adjconvits
-        finalRes = self.sumb.adjointpetsc.adjreshist[finalIt]
+        finalRes = self.sumb.adjointpetsc.adjreshist[finalIt-1]
         fail = self.sumb.killsignals.adjointfailed
 
         return startRes,finalRes,fail

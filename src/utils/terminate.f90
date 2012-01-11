@@ -139,6 +139,7 @@ subroutine terminate(routineName, errorMessage)
 
   if (fromPython)then
      routineFailed=.True.
+     fatalFail = .True.
   else
      call mpi_abort(SUmb_comm_world, 1, ierr)
      stop
