@@ -489,6 +489,7 @@
 
        printIterations = .True.
        routineFailed = .False.
+       fatalFail     = .False.
        nkSolverSetup = .False.
        NKPCSetup     = .False.
        lumpedDiss    = .False.
