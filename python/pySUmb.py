@@ -28,7 +28,7 @@ To Do:
 # =============================================================================
 # Standard Python modules
 # =============================================================================
-import os, sys, string
+import os, sys
 import pdb
 import time
 import copy
@@ -38,7 +38,7 @@ import copy
 # =============================================================================
 
 import numpy
-from numpy import real,pi,sqrt,arange
+from numpy import real,pi,sqrt
 
 # =============================================================================
 # Extension modules
@@ -73,6 +73,7 @@ class SUMB(AeroSolver):
             'outputDir':[str,'./'],
             'solRestart':[bool,False],
             'writeSolution':[bool,True],
+            'writeMesh':[bool,False],
             'storeRindLayer':[bool,True],
 
             # Physics Paramters
@@ -131,6 +132,8 @@ class SUMB(AeroSolver):
             'L2ConvergenceRel':[float,1e-16],
             'L2ConvergenceCoarse':[float,1e-2], 
             'maxL2DeviationFactor':[float,1.0],
+            'coeffConvCheck':[bool,False],
+            'minIterationNum':[int,10],
 
             # Newton-Krylov Paramters
             'useNKSolver':[bool,False],
@@ -176,6 +179,7 @@ class SUMB(AeroSolver):
             'adjointL2ConvergenceAbs':[float,1e-16],
             'adjointDivTol':[float,1e5],
             'approxPC': [bool,False],
+            'useDiagTSPC':[bool,False],
             'restartAdjoint':[bool,False],
             'adjointSolver': [str,'GMRES'],
             'adjointMaxIter': [int,500],
@@ -343,7 +347,6 @@ class SUMB(AeroSolver):
                                'len':self.sumb.constants.maxstringlen},
                 'solRestart':{'location':'inputio.restart'},
                 'storeRindLayer':{'location':'inputio.storerindlayer'},
-
                 # Physics Paramters
                 'Discretization':{'Central plus scalar dissipation':
                                       self.sumb.inputdiscretization.dissscalar,
@@ -481,7 +484,9 @@ class SUMB(AeroSolver):
                 'L2ConvergenceRel':{'location':'inputiteration.l2convrel'},
                 'L2ConvergenceCoarse':{'location':'inputiteration.l2convcoarse'},
                 'maxL2DeviationFactor':{'location':'inputiteration.maxl2deviationfactor'},
-
+                'coeffConvCheck':{'location':'monitor.coeffconvcheck'},
+                'minIterationNum':{'location':'inputiteration.miniternum'},
+            
                 # Newton-Krylov Paramters
                 'useNKSolver':{'location':'nksolvervars.usenksolver'},
                 'NKLinearSolver':{'gmres':'gmres',
@@ -539,6 +544,7 @@ class SUMB(AeroSolver):
                 'adjointL2ConvergenceAbs':{'location':'inputadjoint.adjabstol'},
                 'adjointDivTol':{'location':'inputadjoint.adjdivtol'},
                 'approxPC':{'location':'inputadjoint.approxpc'},
+                'useDiagTSPC':{'location':'inputadjoint.usediagtspc'},
                 'restartAdjoint':{'location':'inputadjoint.restartadjoint'},
                 'adjointSolver':{'GMRES':
                                      self.sumb.inputadjoint.petscgmres,
@@ -598,7 +604,7 @@ class SUMB(AeroSolver):
                 }                
         # end if
 
-        # These "ignore_options" are NOT actually, ignored, rather,
+        # These "ignore_options" are NOT actually, ignore, rather,
         # they DO NOT GET SET IN THE FORTRAN CODE. Rather, they are
         # used strictly in Python
         if 'ignore_options' in kwargs:
@@ -609,12 +615,12 @@ class SUMB(AeroSolver):
                 'storeHistory',
                 'numberSolutions',
                 'writeSolution',
+                'writeMesh',
                 'familyRot',  # -> Not sure how to do
                 'areaAxis',
                 'autoSolveRetry',
                 'autoAdjointRetry',
-                'useReverseModeAD',
-                'lowMemory'
+                'useReverseModeAD'
                 ]
         # end if
         
@@ -733,13 +739,14 @@ class SUMB(AeroSolver):
             self.monnames[string.strip(
                     self.sumb.monitor.monnames[i].tostring())] = i
         # end for
-
+      
         # Setup External Warping
         meshInd = self.getMeshIndices()
         self.mesh.setExternalMeshIndices(meshInd)
+       
         forceInd = self.getForceIndices()
         self.mesh.setExternalForceIndices(forceInd)
-       
+        
         # Solver is initialize
         self.allInitialized = True
         self.initAdjoint()
@@ -1001,6 +1008,8 @@ class SUMB(AeroSolver):
         self.adjointRHS         = None
         self.callCounter += 1
 
+        
+
         # Run Initialize, if already run it just returns.
         self.initialize(aero_problem,*args,**kwargs)
 
@@ -1056,8 +1065,22 @@ class SUMB(AeroSolver):
         self._updateGeometryInfo()
         self._updateVelocityInfo()
 
-        # Check to see if the above update routines failed. This is a
-        # mesh failure so its both a solve and fatal fail.
+        #write out mesh file for volume debugging
+        if self.getOption('writeMesh'):
+            base = self.getOption('outputDir') + '/' + self.getOption('probName')
+            meshname = base + '_mesh.cgns'
+
+            if self.getOption('numberSolutions'):
+                meshname = base + '_mesh%d.cgns'%(self.callCounter)
+
+            #endif
+            self.writeMeshFile(meshname)
+            self.mesh.writeFEGrid(meshname[:-4]+'.dat')
+            if self.myid==0: print 'Warped Mesh written...exiting.'
+            sys.exit(0)
+        # end if
+
+        # Check to see if the above update routines failed.
         self.sumb.killsignals.routinefailed = \
             self.comm.allreduce(
             bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
@@ -1769,9 +1792,6 @@ class SUMB(AeroSolver):
 
         # Actually Solve the adjoint system
         self.sumb.solveadjointtransposepetsc()
-
-        # Temporialy hard code fail to be false:
-        #self.sumb.killsignals.adjointfailed = False
 
         # Possibly try another solve
         if self.sumb.killsignals.adjointfailed and self.getOption('restartAdjoint'):

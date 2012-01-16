@@ -221,6 +221,7 @@ python module sumb ! in
          integer(kind=inttype), intent(in) :: level
        end subroutine verifydrdwfile
 
+
        subroutine verifydrdxfile(level)
          integer(kind=inttype), intent(in) :: level
        end subroutine verifydrdwfile
@@ -572,6 +573,7 @@ python module sumb ! in
        end module localmg
 
        module inputiteration ! in :sumb:../../modules/inputParam.f90
+         use precision
          integer(kind=inttype) parameter,optional :: rungekutta=1_inttype
          integer(kind=inttype) parameter,optional :: nllusgs=2_inttype
          integer(kind=inttype) parameter,optional :: nllusgsline=3_inttype
@@ -602,6 +604,8 @@ python module sumb ! in
          integer(kind=inttype) :: mgstartlevel
          integer(kind=inttype) :: nmgsteps
          integer(kind=inttype) :: nmglevels
+         integer(kind=inttype) :: miniternum
+         integer(kind=inttype) :: convcheckwindowsize
          integer(kind=inttype) allocatable,dimension(:) :: cyclestrategy
          real(kind=realtype) :: cfl
          real(kind=realtype) :: cflcoarse
@@ -612,6 +616,7 @@ python module sumb ! in
          real(kind=realtype) :: l2conv
          real(kind=realtype) :: l2convcoarse
          real(kind=realtype) :: l2convrel
+         real(kind=realtype) :: epscoefconv
          real(kind=realtype) allocatable,dimension(:) :: etark
          real(kind=realtype) allocatable,dimension(:) :: cdisrk
          logical :: freezeturbsource
@@ -734,6 +739,7 @@ python module sumb ! in
          integer(kind=inttype) parameter,optional :: additiveschwartz=3
          integer(kind=inttype) :: adjmaxiter
          logical :: approxpc
+         logical :: usediagtspc
          logical :: finitedifferencepc
          integer(kind=inttype) parameter,optional :: cholesky=4
          integer(kind=inttype) parameter,optional :: icc=2
@@ -862,6 +868,7 @@ python module sumb ! in
          logical :: writegrid
          logical :: writevolume
          logical :: writesurface
+         logical :: coeffconvcheck
        end module monitor
 
        module block ! in :sumb:../../modules/block.f90
