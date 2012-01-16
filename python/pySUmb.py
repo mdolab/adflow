@@ -28,7 +28,7 @@ To Do:
 # =============================================================================
 # Standard Python modules
 # =============================================================================
-import os, sys
+import os, sys, string
 import pdb
 import time
 import copy
@@ -617,6 +617,7 @@ class SUMB(AeroSolver):
                 'writeSolution',
                 'writeMesh',
                 'familyRot',  # -> Not sure how to do
+                'lowMemory',
                 'areaAxis',
                 'autoSolveRetry',
                 'autoAdjointRetry',
