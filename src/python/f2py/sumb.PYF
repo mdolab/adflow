@@ -432,8 +432,11 @@ python module sumb ! in
        subroutine createpetscmat
        end subroutine createpetscmat
 
-       subroutine setupallresidualmatrices ! in :sumb:../../adjoint/setupADjointMatrix.F90
+       subroutine setupallresidualmatrices ! in :sumb:../../adjoint/setupAllResidualMatrices.F90
        end subroutine setupallresidualmatrices
+       
+       subroutine setupallresidualmatricests ! in :sumb:../../adjoint/setupAllResidualMatricesTS.F90
+       end subroutine setupallresidualmatricests
 
        subroutine setupallresidualmatricesfwd ! in :sumb:../../forwardadjoint/setupAllresidualMatricesFwd.F90
        end subroutine setupallresidualmatricesfwd
@@ -724,6 +727,8 @@ python module sumb ! in
          integer(kind=inttype) :: mgstartlevel
          integer(kind=inttype) :: nmgsteps
          integer(kind=inttype) :: nmglevels
+         integer(kind=inttype) :: miniternum
+         integer(kind=inttype) :: convcheckwindowsize
          integer(kind=inttype) allocatable,dimension(:) :: cyclestrategy
          real(kind=realtype) :: cfl
          real(kind=realtype) :: cflcoarse
@@ -734,6 +739,7 @@ python module sumb ! in
          real(kind=realtype) :: l2conv
          real(kind=realtype) :: l2convcoarse
          real(kind=realtype) :: l2convrel
+         real(kind=realtype) :: epscoefconv
          real(kind=realtype) allocatable,dimension(:) :: etark
          real(kind=realtype) allocatable,dimension(:) :: cdisrk
          logical :: freezeturbsource
@@ -896,6 +902,7 @@ python module sumb ! in
          integer(kind=inttype) parameter,optional :: additiveschwartz=3
          integer(kind=inttype) :: adjmaxiter
          logical :: approxpc
+         logical :: usediagtspc
          logical :: finitedifferencepc
          integer(kind=inttype) parameter,optional :: cholesky=4
          integer(kind=inttype) parameter,optional :: icc=2
@@ -1024,6 +1031,7 @@ python module sumb ! in
          logical :: writegrid
          logical :: writevolume
          logical :: writesurface
+         logical :: coeffconvcheck
        end module monitor
 
        module block ! in :sumb:../../modules/block.f90

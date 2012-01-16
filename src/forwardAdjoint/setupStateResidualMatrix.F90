@@ -24,6 +24,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   use flowVarRefState     ! nw
   use inputTimeSpectral   ! spaceDiscr
   use inputDiscretization
+  use inputAdjoint        ! useDiagTSPC
   use inputPhysics 
   use stencils
 
@@ -308,20 +309,24 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
                                j+jj >= 2 .and. j+jj <= jl .and. &
                                k+kk >= 2 .and. k+kk <= kl) then 
 
-                             ! Center Stencil Cell has off time-instance dependancies
-                             if (ii == 0 .and. jj == 0 .and. kk == 0) then
-
-                                do sps2=1,nTimeIntervalsSpectral
-                                   irow = flowDoms(nn,1,sps2)%globalCell(i+ii,j+jj,k+kk)
-                                   call setBlock(flowDomsd(sps2)%dw_deriv(i+ii,j+jj,k+kk,:,:))
-                                   !write (13,*),i,j,k,flowDomsd(sps2)%dw_deriv(i,j,k,:,:)
-                                end do
-
-                             else
+                             if (usePC .and. useDiagTSPC)then
                                 irow = flowDoms(nn,1,sps)%globalCell(i+ii,j+jj,k+kk)
                                 call setBlock(flowDomsd(sps)%dw_deriv(i+ii,j+jj,k+kk,:,:))
-
-                             end if ! Center Cell Check
+                             else
+                                ! Center Stencil Cell has off time-instance dependancies
+                                if (ii == 0 .and. jj == 0 .and. kk == 0) then
+                                   
+                                   do sps2=1,nTimeIntervalsSpectral
+                                      irow = flowDoms(nn,1,sps2)%globalCell(i+ii,j+jj,k+kk)
+                                      call setBlock(flowDomsd(sps2)%dw_deriv(i+ii,j+jj,k+kk,:,:))
+                                      !write (13,*),i,j,k,flowDomsd(sps2)%dw_deriv(i,j,k,:,:)
+                                   end do
+                                   
+                                else 
+                                   irow = flowDoms(nn,1,sps)%globalCell(i+ii,j+jj,k+kk)
+                                   call setBlock(flowDomsd(sps)%dw_deriv(i+ii,j+jj,k+kk,:,:))
+                                end if ! Center Cell Check
+                             end if
                           end if ! On block Check
                        end do ! Stencil Loop
                     end if ! Color If check
