@@ -66,21 +66,45 @@ class PERFORMANCE(object):
         This constraint is satisfied when z <= 0.  
         
         '''
-
-        #Various function valus to allow the ellipse to coincide with
+        #original function
+       ##  #Various function valus to allow the ellipse to coincide with
+##         #the satisfactory level on the thumbnail plot
+##         theta = 80 *numpy.pi/180.
+##         xcen = 0.76
+##         ycen = 3.01
+        
+##         a = 2.2
+##         b=11
+##         c=0
+##         d=0.
+##         e=0.
+##         f=-1.1
+        
+##         xp = DampingRatio
+##         yp = Wn
+        
+##         #simple cordinate transformation
+##         x = (xp-xcen)*numpy.cos(theta)+(yp-ycen)*numpy.sin(theta)
+##         y = (yp-ycen)*numpy.cos(theta)-(xp-xcen)*numpy.sin(theta)
+        
+##         #Equation of ellipse whose zero contour is roughly alligned with the
+##         #Satisfactory contour on the thumbnail plot.
+##         z = a*(x-d)*(x-d)+b*(y-e)*(y-e)+c*x*y+f
+        #Updated function
+        #Various function values to allow the ellipse to coincide with
         #the satisfactory level on the thumbnail plot
-        theta = 80 *numpy.pi/180.
-        xcen = 0.76
+        theta = 55 *numpy.pi/180.
+        xcen = -0.4
         ycen = 3.01
         
-        a = 2.2
-        b=11
-        c=0
+        a = 0.3
+        b=0.75
+        c=-0.4
         d=0.
         e=0.
-        f=-1.1
+        f=-0.15
         
-        xp = DampingRatio
+        xp = numpy.log(DampingRatio)
         yp = Wn
         
         #simple cordinate transformation
@@ -135,7 +159,7 @@ class PERFORMANCE(object):
         [MAC,C4MAC] = wbc.calculateWingMAC(acg)
         SM = -averagesol['cmalpha']/averagesol['clalpha']
 
-        percentSM = SM/MAC
+        percentSM = SM#/MAC
         #print 'SM',SM,MAC,-averagesol['cmalpha'],averagesol['clalpha']
         return percentSM
 
@@ -189,6 +213,37 @@ class PERFORMANCE(object):
         val = self.calculateThumbnailMethodConstraint(Wn,DampingRatio)
         
 
+        return val
+
+    def thumbprintDriverpyGeo(self,acg,wbc,geom,averagesol,rho,V,A,surface):
+        '''
+        run the routines to calculate the CAP values
+        '''
+        #Get Aircraft weight
+        W = wbc.estimateWeight(acg)
+               
+        #Compute the mass from the weight
+        m = W/wbc.g
+
+        #Compute the CG location as reference for the Iy calculation
+        [MAC,MACc4] = wbc.calculateWingMAC(acg)
+
+        xcg = wbc.calculateWingCenterOfGravity(geom.ForeSparPercent,geom.RearSparPercent,geom.CGPercent,MAC,MACc4)
+        #print 'xcg Inertia',xcg,geom.ForeSparPercent,geom.RearSparPercent,geom.CGPercent,MAC,MACc4
+               
+        #Calculate Moment of Inertia
+        [Ix,Iz,Iy]=wbc.calculateWingInertiaspyGeo(surface,xcg)#acg,xcg)
+
+
+        #Calculate the freqency and Damping for the aircraft, use MAC as ref chord
+        [Wn,DampingRatio]=self.calculateFrequencyAndDamping(averagesol['cmq'],averagesol['clalpha'],
+                                                            averagesol['cd0'],averagesol['cmalpha'],
+                                                            averagesol['cmalphadot'],m,Iy,
+                                                            rho,A,V,MAC)   
+        #Calculate Dynamic Stability constraint
+        val = self.calculateThumbnailMethodConstraint(Wn,DampingRatio)
+
+       
         return val
 
 
@@ -301,7 +356,7 @@ class PERFORMANCE(object):
 
     def CAPDerivativeDriver(self,x,geo,con,acg,wbc,geom,dvFunc,rho,V,A):
         '''
-        compute the derivative of the thumbprint function...
+        compute the derivative of the CAP function...
         '''
         #print 'dvlists',geo.DV_listGlobal,geo.DV_namesGlobal,'local', geo.DV_listLocal,geo.DV_namesLocal
         dCondx = con.getThicknessSensitivity(geo,'con')
@@ -355,7 +410,7 @@ class PERFORMANCE(object):
 
     def CAPDerivativeDriverpyGeo(self,x,geo,con,acg,wbc,geom,dvFunc,rho,V,A,surface,surfInst):
         '''
-        compute the derivative of the thumbprint function...
+        compute the derivative of the CAP function...
         '''
         #print 'dvlists',geo.DV_listGlobal,geo.DV_namesGlobal,'local', geo.DV_listLocal,geo.DV_namesLocal
 #        dCondx = con.getThicknessSensitivity(geo,'con')
@@ -416,7 +471,7 @@ class PERFORMANCE(object):
 
     def CAPDerivativeDriverpyGeoFD(self,x,geo,con,acg,wbc,geom,dvFunc,rho,V,A,surface,surfInst):
         '''
-        compute the derivative of the thumbprint function...
+        compute the derivative of the CAP function...
         '''
         #print 'dvlists',geo.DV_listGlobal,geo.DV_namesGlobal,'local', geo.DV_listLocal,geo.DV_namesLocal
 #        dCondx = con.getThicknessSensitivity(geo,'con')
@@ -535,7 +590,51 @@ class PERFORMANCE(object):
 
         return TPderiv
     
+    def thumbprintDerivativeDriverpyGeo(self,x,geo,con,acg,wbc,geom,dvFunc,rho,V,A,surface,surfInst):
+        '''
+        compute the derivative of the thumbprint function...
+        '''
+        #print 'dvlists',geo.DV_listGlobal,geo.DV_namesGlobal,'local', geo.DV_listLocal,geo.DV_namesLocal
+#        dCondx = con.getThicknessSensitivity(geo,'con')
+        xw = copy.deepcopy(x)
+        for i in xw.keys():
+            xw[i] = numpy.atleast_1d(xw[i]).astype('D')
+        #endfor
+        wbc.setOption('dtype','D')
+        geo.complex = True
+        xref = copy.deepcopy(xw)
+        deltax = 1.0e-40j
 
+        TPderiv = {}
+        
+        #geo.complex = True
+        for key in xw.keys():
+            TPderiv[key] =[]
+            for i in xrange(len(xw[key])):
+                #print 'key',key
+                xw[key][i] = xref[key][i]+deltax
+                geo.setValues(xw,scaled=True)
+                geo.update('wing')
+                averagesol = dvFunc(xw)
+                surface.setSurfaceCoordinates(surfInst,geo.update('X_coord'))#.reshape([wing.nSurf,nv,nu,3])
+                surface.setCellCentroidCoordinates(surfInst,geo.update('Cent_coord'))
+                
+                val  = self.thumbprintDriverpyGeo(acg,wbc,geom,averagesol,rho,V,A,surfInst)
+                   
+                TPderiv[key].append(numpy.imag(val)/numpy.imag(deltax))
+                
+                xw = copy.deepcopy(xref)
+            #end
+        #endfor
+        #geo.complex = False
+        geo.setValues(x,scaled=True)
+        geo.update('wing')
+        wbc.setOption('dtype','d')
+        geo.complex = False
+        geo.update('X_coord')
+        geo.update('Cent_coord')
+
+        return TPderiv
 #==============================================================================
 # PERFOMANCE Analysis Test
 #==============================================================================
