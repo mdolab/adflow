@@ -357,13 +357,15 @@
        integer(kind=intType) :: nMGSteps, nMGLevels
 
        integer(kind=intType), allocatable, dimension(:) :: cycleStrategy
-
+       integer(kind=intType) :: miniterNum
        real(kind=realType) :: cfl, cflCoarse, fcoll, smoop
        real(kind=realType) :: alfaTurb, betaTurb
        real(kind=realType) :: L2Conv, L2ConvCoarse
        real(kind=realType) :: L2ConvRel
        real(kind=realType) :: maxL2DeviationFactor
        real(kind=realType) :: relaxBleeds
+       real(kind=realtype) :: epscoefconv
+       integer(kind=inttype) :: convcheckwindowsize
 
        real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK,cdisrkb
 
