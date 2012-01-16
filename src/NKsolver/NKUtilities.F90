@@ -67,7 +67,6 @@ subroutine setRVec(rVec)
   use inputtimespectral
   use flowvarrefstate
   use inputiteration
-  use NKsolvervars, only : times
   use petscvec
 
   implicit none
@@ -118,7 +117,6 @@ subroutine setW(wVec)
   use blockPointers
   use inputTimeSpectral
   use flowVarRefState
-  use NKsolvervars, only : times
   use petscvec
 
   implicit none
