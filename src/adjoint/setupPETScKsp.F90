@@ -135,10 +135,10 @@ subroutine setupPETScKsp
 
      select case(PCSide)
      case(Right)
-        call KSPSetPreconditionerSide(ksp, PC_RIGHT, PETScIerr)
+        call KSPSetPCSide(ksp, PC_RIGHT, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
      case(Left)
-        call KSPSetPreconditionerSide(ksp, PC_LEFT, PETScIerr)
+        call KSPSetPCSide(ksp, PC_LEFT, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
      end select
 
@@ -149,10 +149,10 @@ subroutine setupPETScKsp
 
      select case(PCSide)
      case(Right)
-        call KSPSetPreconditionerSide(ksp, PC_RIGHT, PETScIerr)
+        call KSPSetPCSide(ksp, PC_RIGHT, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
      case(Left)
-        call KSPSetPreconditionerSide(ksp, PC_LEFT, PETScIerr)
+        call KSPSetPCSide(ksp, PC_LEFT, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
      end select
 
@@ -163,10 +163,10 @@ subroutine setupPETScKsp
 
      select case(PCSide)
      case(Right)
-        call KSPSetPreconditionerSide(ksp, PC_RIGHT, PETScIerr)
+        call KSPSetPCSide(ksp, PC_RIGHT, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
      case(Left)
-        call KSPSetPreconditionerSide(ksp, PC_LEFT, PETScIerr)
+        call KSPSetPCSide(ksp, PC_LEFT, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
      end select
 
@@ -180,10 +180,10 @@ subroutine setupPETScKsp
 
      select case(PCSide)
      case(Right)
-        call KSPSetPreconditionerSide(ksp, PC_RIGHT, PETScIerr)
+        call KSPSetPCSide(ksp, PC_RIGHT, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
      case(Left)
-        call KSPSetPreconditionerSide(ksp, PC_LEFT, PETScIerr)
+        call KSPSetPCSide(ksp, PC_LEFT, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
      end select
   end select
@@ -416,7 +416,7 @@ subroutine setupPETScKsp
         call KSPGMRESSetRestart(subksp, subkspsubspacesize, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
      
-        call KSPSetPreconditionerSide(ksp, PC_RIGHT, PETScIerr)
+        call KSPSetPCSide(ksp, PC_RIGHT, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
 
         call KSPSetTolerances(subksp, adjRelTol, adjAbsTol, adjDivTol, &

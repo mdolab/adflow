@@ -70,7 +70,7 @@ subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   call EChk(ierr,__FILE__,__LINE__)
   call KSPGMRESSetRestart(ksp, ksp_subspace,ierr); 
   call EChk(ierr,__FILE__,__LINE__)
-  call KSPSetPreconditionerSide(ksp,PC_RIGHT,ierr);
+  call KSPSetPCSide(ksp,PC_RIGHT,ierr);
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Setup the required options for the Global PC

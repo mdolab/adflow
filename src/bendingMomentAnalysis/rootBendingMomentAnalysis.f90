@@ -21,7 +21,7 @@ subroutine computeRootBendingMoment(sol,bendingMoment)
 
   use inputPhysics   ! liftDirection, dragDirection,pointref,pointrefec
   use costFunctions
-   
+  use communication
   implicit none
 
   !input/output variables
@@ -62,6 +62,9 @@ subroutine computeRootBendingMoment(sol,bendingMoment)
      
      BendingMoment = sqrt(elasticMomentx**2+elasticMomenty**2)
      
+  end if
+  if( myid==0)then
+     print *,'Bending moment components',elasticMomentx,elasticMomenty,elasticMomentz
   end if
 
 end subroutine computeRootBendingMoment
