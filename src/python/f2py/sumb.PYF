@@ -1,4 +1,3 @@
-!    -*- f90 -*-
 python module solverunsteadymd__user__routines 
     interface solverunsteadymd_user_interface 
         subroutine mdcallback_python(timeunsteady,firstiter) ! in :test:solverUnsteadyMD.F90:solverunsteadymd:unknown_interface
@@ -11,19 +10,25 @@ end python module solverunsteadymd__user__routines
 python module sumb ! in 
     interface  ! in :sumb
 
-       ! ############################################################################
-       ! SUmb Routines
-       ! ############################################################################
+! ############################################################################
+! SUmb Routines
+! ############################################################################
 
+       subroutine connect_signals ! in :sumb:../../solver/connect_signals.c
+         intent(c) connect_signals
+       end subroutine connect_signals
+       
        subroutine writeintromessage ! in :sumb:../../utils/initExec.F90
+         use communication
+         use constants
        end subroutine writeintromessage
        
        subroutine readparamfile ! in :sumb:../../inputParam/readParamFile.f90
+         use communication
+         use constants
+         use allinputparam
        end subroutine readparamfile
        
-       subroutine setdefaultvalues()
-       end subroutine setdefaultvalues
-
        subroutine monitorvariables(variables) ! in :test:monitorVariables.f90
          character*(*) intent(inout) :: variables
        end subroutine monitorvariables
@@ -40,13 +45,11 @@ python module sumb ! in
        end subroutine dummyreadparamfile
        
        subroutine partitionandreadgrid ! in :sumb:../../partitioning/partitionAndReadGrid.f90
+         use inputio
        end subroutine partitionandreadgrid
 
        subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
        end subroutine preprocessing
-     
-       subroutine initflow ! in :sumb:../../initFlow/initFlow.f90
-       end subroutine initflow
 
        subroutine updatecoordinatesalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
        end subroutine updatecoordinatesalllevels
@@ -59,88 +62,6 @@ python module sumb ! in
 
        subroutine updateperiodicinfoalllevels
        end subroutine updateperiodicinfoalllevels
-
-       subroutine updateflow
-       end subroutine updateflow
-
-       subroutine updatereferencepoint
-       end subroutine updatereferencepoint
-
-       subroutine updaterotationrate(xrot,yrot,zrot)
-         real(kind=realtype) intent(in)::xrot,yrot,zrot
-       end subroutine updaterotationrate
-
-       subroutine adjustinflowangleadj(alphaadj,betaadj,veldirfreestreamadj,liftdirectionadj,dragdirectionadj,liftindex) ! in :sumb :adjustInflowAngleAdj.f90
-         use constants
-         real(kind=realtype) intent(in) :: alphaadj
-         real(kind=realtype) intent(in):: betaadj
-         real(kind=realtype) dimension(3),intent(out) :: veldirfreestreamadj
-         real(kind=realtype) dimension(3),intent(out) :: liftdirectionadj
-         real(kind=realtype) dimension(3),intent(out) :: dragdirectionadj
-         integer(kind=inttype) intent(in) :: liftindex
-       end subroutine adjustinflowangleadj
-
-       subroutine setuniformflow
-       end subroutine setuniformflow
-       subroutine allocconvarrays(nitertot) ! in :sumb:../../initFlow/allocConvArrays.f90
-         integer(kind=inttype) :: nitertot
-       end subroutine allocconvarrays
-
-       subroutine deallocconvarrays ! in :sumb:../../initFlow/allocConvArrays.f90
-       end subroutine deallocconvarrays
-
-       subroutine alloctimearrays(nitertot) ! in :sumb:../../initFlow/allocTimeArrays.f90
-         integer(kind=inttype) :: ntimetot
-       end subroutine alloctimearrays
-
-       subroutine solver ! in :sumb:../../solver/solver.F90
-       end subroutine solver
-
-       subroutine checkpartitioning(np,load_inbalance,face_inbalance) ! in :test:checkPartitioning.f90
-         integer(kind=inttype) intent(in) :: np
-         real(kind=realtype) intent(out) :: load_inbalance
-         real(kind=realtype) intent(out) :: face_inbalance
-       end subroutine checkpartitioning
-
-       subroutine writesol ! in :sumb:../../output/writeSol.f90
-       end subroutine writesol
-
-       subroutine updatewalldistancealllevels ! in :sumb:../../wallDistance/updateWallDistanceAllLevels.f90
-       end subroutine updatewalldistancealllevels
-
-       subroutine updateslidingalllevels ! in :sumb:../../slidingComm/updateSlidingAllLevels.f90
-       end subroutine updateslidingalllevels
-
-       subroutine solversteady ! in :sumb:../../solver/solverSteady.f90
-       end subroutine solversteady
-
-       subroutine inittimesteppart1 ! in :sumb:../../solver/solverUnsteady.F90
-       end subroutine inittimesteppart1
-
-       subroutine inittimesteppart2 ! in :sumb:../../solver/solverUnsteady.F90
-       end subroutine inittimesteppart2
-
-       subroutine solvestate ! in :sumb:../../solver/solveState.F90
-       end subroutine solvestate
-
-       subroutine checkwriteunsteadyinloop ! in :sumb:../../solver/solverUnsteady.F90
-       end subroutine checkwriteunsteadyinloop
-
-       subroutine checkwriteunsteadyendloop ! in :sumb:../../solver/solverUnsteady.F90
-       end subroutine checkwriteunsteadyendloop
-
-       subroutine getsolution(sps) ! in :sumb:../../adjoint/designExport.f90
-         integer(kind=inttype) intent(in) :: sps
-       end subroutine getsolution
-
-       subroutine solverunsteadymd(mdcallback_python) ! in :test:solverUnsteadyMD.F90
-         use solverunsteadymd__user__routines
-         external mdcallback_python
-       end subroutine solverunsteadymd
-
-       ! ############################################################################
-       ! SUmb Mesh/Forces Interface Routines
-       ! ############################################################################
 
        subroutine getcgnsmeshindices(ndof,indices)
          integer(kind=inttype) intent(in) :: ndof
@@ -164,7 +85,10 @@ python module sumb ! in
          real(kind=realtype) dimension(ndof),intent(in) :: grid
          integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
        end subroutine setgrid
-       
+
+       subroutine determinestencil
+       end subroutine determinestencil
+
        subroutine getforces(forces,pts,npts,nts) ! in :sumb:../../warping/getForces.f90
          real(kind=realtype) dimension(3,npts,nts),intent(out),depend(npts,nts) :: forces
          real(kind=realtype) dimension(3,npts,nts),intent(in) :: pts
@@ -178,259 +102,221 @@ python module sumb ! in
          integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
        end subroutine verifyforces
 
-       subroutine getforcepoints(points,npts,nts) ! in :sumb:../../warping/getForces.f90
-         real(kind=realtype) dimension(3,npts,nts),intent(out),depend(npts,nts) :: points
-         integer(kind=inttype) intent(in) :: npts
-         integer(kind=inttype) intent(in) :: nts
-       end subroutine getforcepoints
-        
-       subroutine getforcesize(size_bn,nts) ! in :sumb:../../warping/getForces.f90
-         integer(kind=inttype) intent(out) :: size_bn
-         integer(kind=inttype) intent(out) :: nts
-       end subroutine getforcesize
-
-       ! ############################################################################
-       ! SUmb ADjoint Debugging Routines
-       ! ############################################################################
-
-       subroutine determinestencil(lumped)
-         logical :: lumped 
-       end subroutine determinestencil
-
        subroutine verifybendingderivatives()
+
+         use costfunctions
+         use inputphysics
+         use inputtimespectral
+         use communication
+         implicit none
        end subroutine verifybendingderivatives
-   
+
        subroutine verifydcfdx(level,costfunction)
+         use blockpointers
+         use cgnsgrid            
+         use communication       
+         use inputphysics        
+         use flowvarrefstate     
+         use inputdiscretization 
+         use iteration           
+         use inputtimespectral   
+         use section
+         use monitor             
+         use bctypes             
+         use adjointvars         
+         use adjointpetsc
+         use costfunctions
+         implicit none
          integer(kind=inttype) intent(in) :: level
          integer(kind=inttype) intent(in) :: costfunction
        end subroutine verifydcfdx
 
+!!$       subroutine verifydcfdwfile(level)
+!!$       use adjointpetsc        !djdw
+!!$       use adjointvars         !nCellsGlobal
+!!$      use blockpointers
+!!$      use cgnsgrid            ! cgnsDoms
+!!$      use communication       ! procHalo(currentLevel)%nProcSend, myID
+!!$      use inputphysics        ! equations
+!!$      use flowvarrefstate     ! nw
+!!$      use inputdiscretization ! spaceDiscr, useCompactDiss
+!!$      use iteration           ! overset, currentLevel
+!!$      use inputtimespectral   ! nTimeIntervalsSpectral
+!!$      use section
+!!$      use monitor             ! monLoc, MonGlob, nMonSum
+!!$      use bctypes             !imin,imax,jmin,jmax,kmin,kmax
+!!$      implicit none
+!!$      integer(kind=inttype), intent(in) :: level
+!!$	end subroutine verifydcfdwfile
+
        subroutine verifydidwfile(level,costfunction,filename)
+         use adjointpetsc        !djdw
+         use adjointvars         !nCellsGlobal
+         use blockpointers
+         use cgnsgrid            ! cgnsDoms
+         use communication       ! procHalo(currentLevel)%nProcSend, myID
+         use inputphysics        ! equations
+         use flowvarrefstate     ! nw
+         use inputdiscretization ! spaceDiscr, useCompactDiss
+         use iteration           ! overset, currentLevel
+         use inputtimespectral   ! nTimeIntervalsSpectral
+         use section
+         use monitor             ! monLoc, MonGlob, nMonSum
+         use bctypes             !imin,imax,jmin,jmax,kmin,kmax
+         implicit none
          integer(kind=inttype) intent(in) :: level
          integer(kind=inttype) intent(in) :: costfunction
          character(len = 64)   :: filename
        end subroutine verifydidwfile
 
        subroutine verifydidxfile(level,costfunction,filename)
+         use adjointpetsc        !djdw
+         use adjointvars         !nCellsGlobal
+         use blockpointers
+         use cgnsgrid            ! cgnsDoms
+         use communication       ! procHalo(currentLevel)%nProcSend, myID
+         use inputphysics        ! equations
+         use flowvarrefstate     ! nw
+         use inputdiscretization ! spaceDiscr, useCompactDiss
+         use iteration           ! overset, currentLevel
+         use inputtimespectral   ! nTimeIntervalsSpectral
+         use section
+         use monitor             ! monLoc, MonGlob, nMonSum
+         use bctypes             !imin,imax,jmin,jmax,kmin,kmax
+         implicit none
          integer(kind=inttype) intent(in) :: level
          integer(kind=inttype) intent(in) :: costfunction
          character(len = 64)   :: filename
        end subroutine verifydidxfile
 
        subroutine verifydrdwfile(level)
+         
+         use blockpointers ! block (nDoms,flowDoms), globalCell
+         use flowvarrefstate
+         use communication
+         use iteration     ! groundLevel
+         use inputtimespectral ! spaceDiscr,nTimeIntervalsSpectral
+         use inputio
+         !from old verify routine
+         use adjointpetsc, only: drdwt,petscone,insert_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world,add_values
+         use precision
+         use inputiteration
+         !implicit none
+                  
+         implicit none
+         
+         !     Subroutine arguments
          integer(kind=inttype), intent(in) :: level
        end subroutine verifydrdwfile
 
+
        subroutine verifydrdxfile(level)
+         
+         use blockpointers ! block (nDoms,flowDoms), globalCell
+         use flowvarrefstate
+         use communication
+         use iteration     ! groundLevel
+         use inputtimespectral ! spaceDiscr,nTimeIntervalsSpectral
+         use inputio
+         !from old verify routine
+         use adjointpetsc, only: drdx,drdxfd,petscone,insert_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world,add_values
+         use precision
+         use inputiteration
+         !implicit none
+                  
+         implicit none
+         
+         !     Subroutine arguments
          integer(kind=inttype), intent(in) :: level
        end subroutine verifydrdwfile
 
        subroutine verifydrdextrafile(level)
+         
+         use blockpointers ! block (nDoms,flowDoms), globalCell
+         use flowvarrefstate
+         use communication
+         use iteration     ! groundLevel
+         use inputtimespectral ! spaceDiscr,nTimeIntervalsSpectral
+         use inputio
+         use adjointpetsc, only: drda,petscone,insert_values,petscierr,mat_final_assembly,petsc_viewer_draw_world,petsc_viewer_stdout_world,add_values
+         use precision
+                          
+         implicit none
+         
+         !     Subroutine arguments
          integer(kind=inttype), intent(in) :: level
        end subroutine verifydrdextrafile
-
-       subroutine verifyradj(level)
-         integer(kind=inttype) intent(in) :: level
-       end subroutine verifyradj
        
-       subroutine verifyresiduals(level)
-         integer(kind=inttype) intent(in) :: level
-       end subroutine verifyresiduals
-
-       subroutine verifyrnkpc
-       end subroutine verifyrnkpc
-       
-       ! ############################################################################
-       ! SUmb ADjoint Core Routines
-       ! ############################################################################
-
-       subroutine initializepetsc ! in :sumb:../../adjoint/initializePETSc.F90
-       end subroutine initializepetsc
-
-       subroutine preprocessingadjoint ! in :sumb:../../adjoint/preprocessingADjoint.f90
-       end subroutine preprocessingadjoint
-    
-       subroutine solveradjoint
-       end subroutine solveradjoint
-
-       ! State Variables
-       subroutine createstatepetscvars
-       end subroutine createstatepetscvars
-
-       subroutine destroystatepetscvars
-       end subroutine destroystatepetscvars
-
-       ! Spatial Variables
-       subroutine createspatialpetscvars
-       end subroutine createspatialpetscvars
-
-       subroutine destroyspatialpetscvars
-       end subroutine destroyspatialpetscvars
-       
-       ! Extra Variables
-       subroutine createextrapetscvars
-       end subroutine createextrapetscvars
-
-       subroutine destroyextrapetscvars
-       end subroutine destroyextrapetscvars
-       
-       ! Coupling Variables
-
-       subroutine createcouplingpetscvars
-       end subroutine createcouplingpetscvars
-       
-       subroutine destroycouplingpetscvars
-       end subroutine destroycouplingpetscvars
-
-       ! KSP 
-       subroutine createpetscksp 
-       end subroutine createpetscksp
-
-       subroutine setuppetscksp 
-       end subroutine setuppetscksp
-       
-       subroutine destroypetscksp
-       end subroutine destroypetscksp
-
-       ! Residual Assembly Functions
-       subroutine setupallresidualmatrices 
-       end subroutine setupallresidualmatrices
-
-       subroutine setupadjointmatrix
-       end subroutine setupadjointmatrix
-
-       subroutine setupspatialmatrix
-       end subroutine setupspatialmatrix
-
-       subroutine setupextramatrix
-       end subroutine setupextramatrix
-
-       subroutine setupadjointpcmatrixtranspose
-       end subroutine setupadjointpcmatrixtranspose
-
-       subroutine solveadjointtransposepetsc ! in :sumb:../../adjoint/solveADjointPETSc.F90
-       end subroutine solveadjointtransposepetsc
-
-       ! -------- Partial Derivative Functions -----------
-       
-       subroutine zeroobjpartials
-       end subroutine zeroobjpartials
-
-       subroutine computeobjpartials(costfunction,pts,npts,nts,usedjdw,usedjdx) ! in :sumb:../../adjoint/computeObjPartials.F90
-         integer(kind=inttype) intent(in) :: costfunction
-         real(kind=realtype) dimension(3,npts,nts),intent(in) :: pts
-         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
-         integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
-         logical :: usedjdw
-         logical :: usedjdx
-       end subroutine computeobjpartials
-
-       subroutine getdidw(ndof,output) ! in :test:computeObjPartials.F90
-         integer(kind=inttype) intent(in) :: ndof
-         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: output
-       end subroutine getdidw
-
-       subroutine getdidx(ndof,output) ! in :test:computeObjPartials.F90
-         integer(kind=inttype) intent(in) :: ndof
-         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: output
-       end subroutine getdidx
-
-       ! -------- Get/Set Functions --------------------
-       subroutine getstates(states,ndimw) ! in :test:getADjoint.F90
-         real(kind=realtype) dimension(ndimw),intent(out),depend(ndimw) :: states
-         integer(kind=inttype) intent(in) :: ndimw
-       end subroutine getstates
-
-       subroutine setstates(states,ndimw) ! in :test:getADjoint.F90
-         real(kind=realtype) dimension(ndimw),intent(in) :: states
-         integer(kind=inttype) optional,intent(in),check(len(states)>=ndimw),depend(states) :: ndimw=len(states)
-       end subroutine setstates
-
-       subroutine getres(res,ndimw) ! in :test:getADjoint.F90
-         real(kind=realtype) dimension(ndimw),intent(out),depend(ndimw) :: res
-         integer(kind=inttype) intent(in) :: ndimw
-       end subroutine getres
-
-       subroutine getdrdxvpsi(dxv,ndof,adjoint,nstate) ! in :test:getdRdXvPsi.F90
-         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
-         integer(kind=inttype) intent(in) :: ndof
-         real(kind=realtype) dimension(nstate),intent(in) :: adjoint
-         integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
-       end subroutine getdrdxvpsi
-       
-        subroutine getdrdapsi(output,ndv,adjoint,nstate) ! in :test:getdRdaPsi.F90
-            real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
-            integer(kind=inttype) intent(in) :: ndv
-            real(kind=realtype) dimension(nstate),intent(in) :: adjoint
-            integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
-        end subroutine getdrdapsi
-
-       subroutine getdrdwtpsi(ndof,drdwtpsi)
-         integer(kind=inttype) intent(in) :: ndof
-         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: drdwtpsi
-       end subroutine getdrdwtpsi
-
-       subroutine getadjoint(nnodes,functiongradlocal) ! in :test:getADjoint.F90
-         integer(kind=inttype) intent(in) :: nnodes
-         real(kind=realtype) dimension(nnodes),intent(out),depend(nnodes) :: functiongradlocal
-       end subroutine getadjoint
-
-       subroutine setadjoint(nnodes,functiongradlocal) ! in :test:setADjoint.F90
-         integer(kind=inttype) optional,intent(in),check(len(functiongradlocal)>=nnodes),depend(functiongradlocal) :: nnodes=len(functiongradlocal)
-         real(kind=realtype) dimension(nnodes),intent(in) :: functiongradlocal
-       end subroutine setadjoint
-
-       ! ------------- Misc --------------------
-    
-       subroutine matrixinfo(pdrdwt,pdrdwpret,pdrdx,pdrda,pdfdw,pdfdx,plocal,psum,pmax) ! in :test:matrixInfo.F90
-         logical intent(in) :: pdrdwt
-         logical intent(in) :: pdrdwpret
-         logical intent(in) :: pdrdx
-         logical intent(in) :: pdrda
-         logical intent(in) :: pdfdw
-         logical intent(in) :: pdfdx
-         logical intent(in) :: plocal
-         logical intent(in) :: psum
-         logical intent(in) :: pmax
-       end subroutine matrixinfo
-      
-       ! ############################################################################
-       ! SUmb Adjoint Coupling Routines
-       ! ############################################################################
 
        subroutine setupcouplingmatrixstruct(pts,npts,nts) ! in :sumb:../../adjoint/setupCouplingMatrixStruct.F90
+         use blockpointers
+         use adjointpetsc
+         use bctypes
+         use communication
+         use inputdiscretization
+         use inputtimespectral
+         use inputphysics
+         use adjointvars
+         use flowvarrefstate
          real(kind=realtype) dimension(3,npts,nts),intent(in) :: pts
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
          integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
        end subroutine setupcouplingmatrixstruct
-
-       subroutine getdfdxvec(ndof,vec_in,vec_out) ! in :test:getdFdxVec.f90
-         integer(kind=inttype) optional,intent(in),check(len(vec_in)>=ndof),depend(vec_in) :: ndof=len(vec_in)
-         real(kind=realtype) dimension(ndof),intent(in) :: vec_in
-         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: vec_out
-       end subroutine getdfdxvec
-
-       subroutine getdfdxvec_null()
-       end subroutine getdfdxvec_null
-
-       subroutine getdfdxtvec(ndof,vec_in,vec_out) ! in :test:getdFdxVec.f90
-         integer(kind=inttype) optional,intent(in),check(len(vec_in)>=ndof),depend(vec_in) :: ndof=len(vec_in)
-         real(kind=realtype) dimension(ndof),intent(in) :: vec_in
-         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: vec_out
-       end subroutine getdfdxtvec
-
-       subroutine getdfdxtvec_null()
-       end subroutine getdfdxtvec_null
-
+      
        subroutine agumentrhs(ndof,phi) ! in :test:agumentRHS.f90
          integer(kind=inttype) optional,intent(in),check(len(phi)>=ndof),depend(phi) :: ndof=len(phi)
          real(kind=realtype) dimension(ndof),intent(in) :: phi
        end subroutine agumentrhs
-      
-       ! ############################################################################
-       ! Newton-Krylov Solver Routines
-       ! ############################################################################
+        
+       subroutine getforcepoints(points,npts,nts) ! in :sumb:../../warping/getForces.f90
+         use blockpointers
+         use inputtimespectral
+         use bctypes
+         real(kind=realtype) dimension(3,npts,nts),intent(out),depend(npts,nts) :: points
+         integer(kind=inttype) intent(in) :: npts
+         integer(kind=inttype) intent(in) :: nts
+       end subroutine getforcepoints
+        
+       subroutine getforcesize(size_bn,nts) ! in :sumb:../../warping/getForces.f90
+         use blockpointers
+         use bctypes
+         use inputtimespectral
+         integer(kind=inttype) intent(out) :: size_bn
+         integer(kind=inttype) intent(out) :: nts
+       end subroutine getforcesize
+       
+       subroutine solveradjoint
+       end subroutine solveradjoint
+       
+       subroutine initflow ! in :sumb:../../initFlow/initFlow.f90
+       end subroutine initflow
 
+       subroutine allocconvarrays(nitertot) ! in :sumb:../../initFlow/allocConvArrays.f90
+         integer(kind=inttype) :: nitertot
+       end subroutine allocconvarrays
+
+       subroutine deallocconvarrays ! in :sumb:../../initFlow/allocConvArrays.f90
+       end subroutine deallocconvarrays
+
+       subroutine alloctimearrays(nitertot) ! in :sumb:../../initFlow/allocTimeArrays.f90
+         integer(kind=inttype) :: ntimetot
+       end subroutine alloctimearrays
+
+       subroutine solver ! in :sumb:../../solver/solver.F90
+         logical :: eulerwallspresent
+       end subroutine solver
+
+       subroutine solverunsteadymd(mdcallback_python) ! in :test:solverUnsteadyMD.F90
+         use solverunsteadymd__user__routines
+         external mdcallback_python
+       end subroutine solverunsteadymd
+       
+       subroutine setupnksolver
+       end subroutine setupnksolver
+       
+       subroutine destroynksolver
+       end subroutine destroynksolver
+       
        subroutine applypc(in_vec,out_vec,n) ! in :test:NKsolver.F90
          real(kind=realtype) dimension(n),intent(in) :: in_vec
          real(kind=realtype) dimension(n),intent(out),depend(n) :: out_vec
@@ -447,35 +333,254 @@ python module sumb ! in
          real(kind=realtype), intent(out) :: totalrres
        end subroutine getfreestreamresidual
 
-       subroutine computeresidualnk
-       end subroutine computeresidualnk
+       subroutine viscousflux ! in :sumb:../../solver/viscousFlux.f90
+       end subroutine viscousflux
 
-       subroutine setupnksolver
-       end subroutine setupnksolver
-       
-       subroutine destroynksolver
-       end subroutine destroynksolver
-       
-       subroutine nkbenchmark(nkres,niter)
-         logical :: nkres
-         integer(kind=inttype) :: niter
-       end subroutine nkbenchmark
+       subroutine inviscidcentralflux ! in :sumb:../../solver/inviscidCentralFlux.f90
+       end subroutine inviscidcentralflux
 
-   
+       subroutine writesol ! in :sumb:../../output/writeSol.f90
+       end subroutine writesol
+
+       subroutine updatewalldistancealllevels ! in :sumb:../../wallDistance/updateWallDistanceAllLevels.f90
+       end subroutine updatewalldistancealllevels
+
+       subroutine updateslidingalllevels ! in :sumb:../../slidingComm/updateSlidingAllLevels.f90
+       end subroutine updateslidingalllevels
+
+       function eulerwallspresent() ! in :sumb:../../solver/eulerWallsPresent.f90
+         logical :: eulerwallspresent
+       end function eulerwallspresent
+
+       subroutine solversteady ! in :sumb:../../solver/solverSteady.f90
+       end subroutine solversteady
+
+       subroutine transfertofinegrid(corrections) ! in :sumb:../../solver/transferToFineGrid.f90
+         logical intent(in) :: corrections
+       end subroutine transfertofinegrid
+
+       subroutine updatecoorfinemesh(dtadvance,sps) ! in :sumb:../../preprocessing/updateCoorFineMesh.f90
+         integer(kind=inttype) intent(in) :: sps
+         real(kind=realtype) intent(in) :: dtadvance
+       end subroutine updatecoorfinemesh
+
+!!!!!!!!Routines inside solverUnsteady 
+
+       subroutine inittimesteppart1 ! in :sumb:../../solver/solverUnsteady.F90
+       end subroutine inittimesteppart1
+
+       subroutine inittimesteppart2 ! in :sumb:../../solver/solverUnsteady.F90
+       end subroutine inittimesteppart2
+
+       subroutine solvestate ! in :sumb:../../solver/solveState.F90
+       end subroutine solvestate
+
+       subroutine checkwriteunsteadyinloop ! in :sumb:../../solver/solverUnsteady.F90
+       end subroutine checkwriteunsteadyinloop
+
+       subroutine checkwriteunsteadyendloop ! in :sumb:../../solver/solverUnsteady.F90
+       end subroutine checkwriteunsteadyendloop
        ! ############################################################################
-       ! Time Spectral Stability Routines
+       ! ADjoint Routines
        ! ############################################################################
-             subroutine stabilityderivativedriver
+
+       subroutine verifyradj(level)
+         integer(kind=inttype) intent(in) :: level
+       end subroutine verifyradj
+       
+       subroutine verifyresiduals(level)
+         integer(kind=inttype) intent(in) :: level
+       end subroutine verifyresiduals
+
+       subroutine verifyrnkpc
+       end subroutine verifyrnkpc
+
+       subroutine getsolution(sps) ! in :sumb:../../adjoint/designExport.f90
+         integer(kind=inttype) intent(in) :: sps
+       end subroutine getsolution
+
+       subroutine getstates(states,ndimw) ! in :test:getADjoint.F90
+         real(kind=realtype) dimension(ndimw),intent(out),depend(ndimw) :: states
+         integer(kind=inttype) intent(in) :: ndimw
+       end subroutine getstates
+
+       subroutine getres(res,ndimw) ! in :test:getADjoint.F90
+         real(kind=realtype) dimension(ndimw),intent(out),depend(ndimw) :: res
+         integer(kind=inttype) intent(in) :: ndimw
+       end subroutine getres
+
+       subroutine setstates(states,ndimw) ! in :test:getADjoint.F90
+         real(kind=realtype) dimension(ndimw),intent(in) :: states
+         integer(kind=inttype) optional,intent(in),check(len(states)>=ndimw),depend(states) :: ndimw=len(states)
+       end subroutine setstates
+
+       subroutine preprocessingadjoint ! in :sumb:../../adjoint/preprocessingADjoint.f90
+       end subroutine preprocessingadjoint
+
+       subroutine initializepetsc ! in :sumb:../../adjoint/initializePETSc.F90
+       end subroutine initializepetsc
+
+       subroutine createpetscksp ! in :sumb:../../adjoint/createPETScVars.F90
+       end subroutine createpetscksp
+
+       subroutine setuppetscksp ! in :sumb:../../adjoint/createPETScVars.F90
+       end subroutine setuppetscksp
+
+       subroutine createpetscvars ! in :sumb:../../adjoint/createPETScVars.F90
+       end subroutine createpetscvars
+
+       subroutine createpetscmat
+       end subroutine createpetscmat
+
+       subroutine setupallresidualmatrices ! in :sumb:../../adjoint/setupAllResidualMatrices.F90
+       end subroutine setupallresidualmatrices
+       
+       subroutine setupallresidualmatricests ! in :sumb:../../adjoint/setupAllResidualMatricesTS.F90
+       end subroutine setupallresidualmatricests
+
+       subroutine setupallresidualmatricesfwd ! in :sumb:../../forwardadjoint/setupAllresidualMatricesFwd.F90
+       end subroutine setupallresidualmatricesfwd
+
+       subroutine setupadjointpcmatrixtranspose
+       end subroutine setupadjointpcmatrixtranspose
+
+       subroutine computeobjpartials(costfunction,pts,npts,nts) ! in :sumb:../../adjoint/computeObjPartials.F90
+         use blockpointers
+         use adjointpetsc
+         use bctypes
+         use communication
+         use inputtimespectral
+         use inputphysics
+         use adjointvars
+         use flowvarrefstate
+         integer(kind=inttype) intent(in) :: costfunction
+         real(kind=realtype) dimension(3,npts,nts),intent(in) :: pts
+         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+         integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
+       end subroutine computeobjpartials
+
+
+       subroutine getdidw(ndof,output) ! in :test:computeObjPartials.F90
+         integer(kind=inttype) intent(in) :: ndof
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: output
+       end subroutine getdidw
+
+       subroutine getdidx(ndof,output) ! in :test:computeObjPartials.F90
+         integer(kind=inttype) intent(in) :: ndof
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: output
+       end subroutine getdidx
+
+       subroutine zeroobjpartials
+       end subroutine zeroobjpartials
+
+       subroutine matrixinfo(pdrdwt,pdrdwpret,pdrdx,pdrda,pdfdw,pdfdx,plocal,psum,pmax) ! in :test:matrixInfo.F90
+         logical intent(in) :: pdrdwt
+         logical intent(in) :: pdrdwpret
+         logical intent(in) :: pdrdx
+         logical intent(in) :: pdrda
+         logical intent(in) :: pdfdw
+         logical intent(in) :: pdfdx
+         logical intent(in) :: plocal
+         logical intent(in) :: psum
+         logical intent(in) :: pmax
+       end subroutine matrixinfo
+
+       subroutine solveadjointtransposepetsc ! in :sumb:../../adjoint/solveADjointPETSc.F90
+       end subroutine solveadjointtransposepetsc
+
+       subroutine getdrdxvpsi(ndof,dxv)
+         integer(kind=inttype) intent(in) :: ndof
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
+       end subroutine getdrdxvpsi
+
+       subroutine getdrdapsi(ndv,output) ! in :test:getdRdaPsi.F90
+            integer(kind=inttype) intent(in) :: ndv
+            real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
+        end subroutine getdrdapsi
+
+       subroutine getdrdwtpsi(ndof,drdwtpsi)
+         integer(kind=inttype) intent(in) :: ndof
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: drdwtpsi
+       end subroutine getdrdwtpsi
+
+       subroutine getdrdwtpsi2(ndof,drdwtpsi)
+         integer(kind=inttype) intent(in) :: ndof
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: drdwtpsi
+       end subroutine getdrdwtpsi2
+
+       subroutine getdfdxvec(ndof,vec_in,vec_out) ! in :test:getdFdxVec.f90
+         integer(kind=inttype) optional,intent(in),check(len(vec_in)>=ndof),depend(vec_in) :: ndof=len(vec_in)
+         real(kind=realtype) dimension(ndof),intent(in) :: vec_in
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: vec_out
+       end subroutine getdfdxvec
+
+       subroutine getdfdxtvec(ndof,vec_in,vec_out) ! in :test:getdFdxVec.f90
+         integer(kind=inttype) optional,intent(in),check(len(vec_in)>=ndof),depend(vec_in) :: ndof=len(vec_in)
+         real(kind=realtype) dimension(ndof),intent(in) :: vec_in
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: vec_out
+       end subroutine getdfdxtvec
+
+       subroutine getglobalnodes(blocknum,idim,jdim,kdim,nodenumbers) ! in :sumb:../../adjoint/getGlobalNodes.f90
+         integer(kind=inttype) intent(in) :: blocknum
+         integer(kind=inttype) intent(in) :: idim
+         integer(kind=inttype) intent(in) :: jdim
+         integer(kind=inttype) intent(in) :: kdim
+         integer(kind=inttype) dimension(idim,jdim,kdim),intent(out),depend(idim,jdim,kdim) :: nodenumbers
+       end subroutine getglobalnodes
+
+       subroutine destroypetscvars ! in :sumb:../../adjoint/destroyPETScVars.F90
+       end subroutine destroypetscvars
+
+       subroutine getadjoint(nnodes,functiongradlocal) ! in :test:getADjoint.F90
+         integer(kind=inttype) intent(in) :: nnodes
+         real(kind=realtype) dimension(nnodes),intent(out),depend(nnodes) :: functiongradlocal
+       end subroutine getadjoint
+
+       subroutine setadjoint(nnodes,functiongradlocal) ! in :test:setADjoint.F90
+         integer(kind=inttype) optional,intent(in),check(len(functiongradlocal)>=nnodes),depend(functiongradlocal) :: nnodes=len(functiongradlocal)
+         real(kind=realtype) dimension(nnodes),intent(in) :: functiongradlocal
+       end subroutine setadjoint
+
+       subroutine setdefaultvalues()
+       end subroutine setdefaultvalues
+
+       subroutine updateflow
+       end subroutine updateflow
+
+       subroutine updatereferencepoint
+       end subroutine updatereferencepoint
+
+       subroutine updaterotationrate(xrot,yrot,zrot)
+         real(kind=realtype) intent(in)::xrot,yrot,zrot
+       end subroutine updaterotationrate
+
+       ! ############################################################################
+       ! pyAero Adaptation Routines
+       ! ############################################################################
+       subroutine adjustinflowangleadj(alphaadj,betaadj,veldirfreestreamadj,liftdirectionadj,dragdirectionadj,liftindex) ! in :sumb :adjustInflowAngleAdj.f90
+         use constants
+         real(kind=realtype) intent(in) :: alphaadj
+         real(kind=realtype) intent(in):: betaadj
+         real(kind=realtype) dimension(3),intent(out) :: veldirfreestreamadj
+         real(kind=realtype) dimension(3),intent(out) :: liftdirectionadj
+         real(kind=realtype) dimension(3),intent(out) :: dragdirectionadj
+         integer(kind=inttype) intent(in) :: liftindex
+       end subroutine adjustinflowangleadj
+
+       subroutine setuniformflow
+       end subroutine setuniformflow
+       !*****************
+       ! Time spectral Stability routines
+       !*****************
+
+       subroutine stabilityderivativedriver
+         use precision
+         implicit none
        end subroutine stabilityderivativedriver
 
        ! ############################################################################
        ! SUmb Modules
        ! ############################################################################
-       module constants ! in :sumb:../../modules/constants.F90
-         use precision
-         integer parameter,optional :: maxstringlen   = 256
-         integer parameter,optional :: maxcgnsnamelen =  32
-       end module constants
 
        module communication ! in :sumb:../../modules/communication.f90
          use precision
@@ -494,6 +599,25 @@ python module sumb ! in
          integer allocatable,dimension(:) :: sendrequests
          integer allocatable,dimension(:) :: recvrequests
        end module communication
+
+       module cgnsgrid
+         use constants
+         implicit none
+         integer(kind=inttype) :: cgnsnfamilies
+       end module cgnsgrid
+
+       module constants ! in :sumb:../../modules/constants.F90
+         use precision
+         integer parameter,optional :: maxstringlen   = 256
+         integer parameter,optional :: maxcgnsnamelen =  32
+       end module constants
+
+       module accuracy ! in :sumb:../../modules/inputParam.f90
+         use precision
+         integer(kind=inttype) parameter,optional :: firstorder=1_inttype
+         integer(kind=inttype) parameter,optional :: secondorder=2_inttype
+         integer(kind=inttype) parameter,optional :: thirdorder=3_inttype
+       end module accuracy
 
        module inputdiscretization ! in :sumb:../../modules/inputParam.f90
          use accuracy
@@ -572,6 +696,7 @@ python module sumb ! in
        end module localmg
 
        module inputiteration ! in :sumb:../../modules/inputParam.f90
+         use precision
          integer(kind=inttype) parameter,optional :: rungekutta=1_inttype
          integer(kind=inttype) parameter,optional :: nllusgs=2_inttype
          integer(kind=inttype) parameter,optional :: nllusgsline=3_inttype
@@ -602,6 +727,8 @@ python module sumb ! in
          integer(kind=inttype) :: mgstartlevel
          integer(kind=inttype) :: nmgsteps
          integer(kind=inttype) :: nmglevels
+         integer(kind=inttype) :: miniternum
+         integer(kind=inttype) :: convcheckwindowsize
          integer(kind=inttype) allocatable,dimension(:) :: cyclestrategy
          real(kind=realtype) :: cfl
          real(kind=realtype) :: cflcoarse
@@ -612,6 +739,7 @@ python module sumb ! in
          real(kind=realtype) :: l2conv
          real(kind=realtype) :: l2convcoarse
          real(kind=realtype) :: l2convrel
+         real(kind=realtype) :: epscoefconv
          real(kind=realtype) allocatable,dimension(:) :: etark
          real(kind=realtype) allocatable,dimension(:) :: cdisrk
          logical :: freezeturbsource
@@ -658,9 +786,50 @@ python module sumb ! in
          integer(kind=inttype) :: degreepolxrot
          real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
          real(kind=realtype) allocatable,dimension(:) :: coefpolbeta
+!!$real(kind=realtype) dimension(3) :: rotpoint
+!!$         integer(kind=inttype) :: degreepolxrot
+!!$         integer(kind=inttype) :: degreepolyrot
+!!$         integer(kind=inttype) :: degreepolzrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolzrot
+!!$         integer(kind=inttype) :: degreefourxrot
+!!$         integer(kind=inttype) :: degreefouryrot
+!!$         integer(kind=inttype) :: degreefourzrot
+!!$         real(kind=realtype) :: omegafourxrot
+!!$         real(kind=realtype) :: omegafouryrot
+!!$         real(kind=realtype) :: omegafourzrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffouryrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
+!!$         logical :: gridmotionspecified
+!!$         real(kind=realtype) :: omegafourzrot
+!!$         integer(kind=inttype) :: degreefouryrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolyrot
+!!$         integer(kind=inttype) :: degreefourbeta
+!!$         real(kind=realtype) :: omegafouralpha
+!!$         real(kind=realtype) allocatable,dimension(:) :: coscoeffourzrot
+!!$         integer(kind=inttype) :: degreepolalpha
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourzrot
+!!$         real(kind=realtype) :: omegafouryrot
+!!$         integer(kind=inttype) :: degreefourzrot
+!!$         integer(kind=inttype) :: degreefourmach
+!!$         integer(kind=inttype) :: degreefouralpha
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolalpha
+!!$         real(kind=realtype) :: omegafourxrot
+!!$         integer(kind=inttype) :: degreepolbeta
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffourxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: sincoeffouryrot
+!!$         integer(kind=inttype) :: degreepolmach
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
+!!$         real(kind=realtype) allocatable,dimension(:) :: coefpolbeta
        end module inputmotion
        
        module inputparallel ! in :sumb:../../modules/inputParam.f90
+         use precision
          real(kind=realtype) :: loadimbalance
          logical :: splitblocks
        end module inputparallel
@@ -719,7 +888,6 @@ python module sumb ! in
          real(kind=realtype) dimension(3) :: pointref
          real(kind=realtype) dimension(3) :: pointrefec
        end module inputphysics
-
        module inputadjoint ! in :sumb:../modules/inputParam.f90
          use precision
          integer(kind=inttype) :: pcside
@@ -734,6 +902,7 @@ python module sumb ! in
          integer(kind=inttype) parameter,optional :: additiveschwartz=3
          integer(kind=inttype) :: adjmaxiter
          logical :: approxpc
+         logical :: usediagtspc
          logical :: finitedifferencepc
          integer(kind=inttype) parameter,optional :: cholesky=4
          integer(kind=inttype) parameter,optional :: icc=2
@@ -862,6 +1031,7 @@ python module sumb ! in
          logical :: writegrid
          logical :: writevolume
          logical :: writesurface
+         logical :: coeffconvcheck
        end module monitor
 
        module block ! in :sumb:../../modules/block.f90
@@ -917,6 +1087,13 @@ python module sumb ! in
          logical :: routinefailed
          logical :: adjointfailed
        end module killsignals
+
+       module adjointpetsc ! in :sumb:ADjointPETSc.F90
+         use constants
+         real(kind=realtype) allocatable,dimension(:) :: adjreshist
+         logical :: petscblockmatrix
+         integer(kind=inttype) :: adjconvits
+       end module adjointpetsc
 
        module costfunctions ! in :test:costFunctions.F90
           use constants

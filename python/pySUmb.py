@@ -28,7 +28,7 @@ To Do:
 # =============================================================================
 # Standard Python modules
 # =============================================================================
-import os, sys, string
+import os, sys
 import pdb
 import time
 import copy
@@ -38,7 +38,7 @@ import copy
 # =============================================================================
 
 import numpy
-from numpy import real,pi,sqrt,arange
+from numpy import real,pi,sqrt
 
 # =============================================================================
 # Extension modules
@@ -73,6 +73,8 @@ class SUMB(AeroSolver):
             'outputDir':[str,'./'],
             'solRestart':[bool,False],
             'writeSolution':[bool,True],
+            'writeMesh':[bool,False],
+            'storeRindLayer':[bool,True],
 
             # Physics Paramters
             'Discretization':[str,'Central plus scalar dissipation'],
@@ -130,6 +132,8 @@ class SUMB(AeroSolver):
             'L2ConvergenceRel':[float,1e-16],
             'L2ConvergenceCoarse':[float,1e-2], 
             'maxL2DeviationFactor':[float,1.0],
+            'coeffConvCheck':[bool,False],
+            'minIterationNum':[int,10],
 
             # Newton-Krylov Paramters
             'useNKSolver':[bool,False],
@@ -144,6 +148,7 @@ class SUMB(AeroSolver):
             'NKJacobianLag':[int,10],
             'RKReset':[bool,False],
             'nRKReset':[int,5],
+            'NKFiniteDifferencePC':[bool,True],
 
             # Load Balance Paramters
             'blockSplitting':[bool,False],
@@ -174,6 +179,7 @@ class SUMB(AeroSolver):
             'adjointL2ConvergenceAbs':[float,1e-16],
             'adjointDivTol':[float,1e5],
             'approxPC': [bool,False],
+            'useDiagTSPC':[bool,False],
             'restartAdjoint':[bool,False],
             'adjointSolver': [str,'GMRES'],
             'adjointMaxIter': [int,500],
@@ -189,7 +195,6 @@ class SUMB(AeroSolver):
             'subKSPSubspaceSize':[int,10],
             'finiteDifferencePC':[bool,True],
             'useReverseModeAD':[bool,True],
-            'lowMemory':[bool,True],
             }
 
         informs = {
@@ -340,6 +345,7 @@ class SUMB(AeroSolver):
                 'restartFile':{'location':'inputio.restartfile',
                                'len':self.sumb.constants.maxstringlen},
                 'solRestart':{'location':'inputio.restart'},
+                'storeRindLayer':{'location':'inputio.storerindlayer'},
                 # Physics Paramters
                 'Discretization':{'Central plus scalar dissipation':
                                       self.sumb.inputdiscretization.dissscalar,
@@ -477,7 +483,9 @@ class SUMB(AeroSolver):
                 'L2ConvergenceRel':{'location':'inputiteration.l2convrel'},
                 'L2ConvergenceCoarse':{'location':'inputiteration.l2convcoarse'},
                 'maxL2DeviationFactor':{'location':'inputiteration.maxl2deviationfactor'},
-
+                'coeffConvCheck':{'location':'monitor.coeffconvcheck'},
+                'minIterationNum':{'location':'inputiteration.miniternum'},
+            
                 # Newton-Krylov Paramters
                 'useNKSolver':{'location':'nksolvervars.usenksolver'},
                 'NKLinearSolver':{'gmres':'gmres',
@@ -532,6 +540,7 @@ class SUMB(AeroSolver):
                 'adjointL2ConvergenceAbs':{'location':'inputadjoint.adjabstol'},
                 'adjointDivTol':{'location':'inputadjoint.adjdivtol'},
                 'approxPC':{'location':'inputadjoint.approxpc'},
+                'useDiagTSPC':{'location':'inputadjoint.usediagtspc'},
                 'restartAdjoint':{'location':'inputadjoint.restartadjoint'},
                 'adjointSolver':{'GMRES':
                                      self.sumb.inputadjoint.petscgmres,
@@ -591,7 +600,7 @@ class SUMB(AeroSolver):
                 }                
         # end if
 
-        # These "ignore_options" are NOT actually, ignored, rather,
+        # These "ignore_options" are NOT actually, ignore, rather,
         # they DO NOT GET SET IN THE FORTRAN CODE. Rather, they are
         # used strictly in Python
         if 'ignore_options' in kwargs:
@@ -602,12 +611,12 @@ class SUMB(AeroSolver):
                 'storeHistory',
                 'numberSolutions',
                 'writeSolution',
+                'writeMesh',
                 'familyRot',  # -> Not sure how to do
                 'areaAxis',
                 'autoSolveRetry',
                 'autoAdjointRetry',
-                'useReverseModeAD',
-                'lowMemory'
+                'useReverseModeAD'
                 ]
         # end if
         
@@ -645,12 +654,7 @@ class SUMB(AeroSolver):
         # in fortran
         self.allInitialized = False    # All flow solver initialization   
         self.adjointPreprocessed = False
-
-        # Matrix Setup Flags
-        self.spatialSetup = False 
-        self.stateSetup = False 
-        self.extraSetup = False
-        self.couplingSetup = False
+        self.adjointMatrixSetup = False # Adjoint matrices assembled
         self.adjointRHS         = None # When this is setup, it has
                                        # the current objective
         
@@ -699,15 +703,9 @@ class SUMB(AeroSolver):
 
         if(self.myid ==0):
             print ' -> Partitioning and Reading Grid'
-
+        
         self.sumb.partitionandreadgrid()
-
-        if 'partitionOnly' in kwargs:
-            if kwargs['partitionOnly']:
-                return
-            # end if
-        # end if
-
+       
         if(self.myid==0):
             print ' -> Preprocessing'
         self.sumb.preprocessing()
@@ -723,17 +721,17 @@ class SUMB(AeroSolver):
             self.monnames[string.strip(
                     self.sumb.monitor.monnames[i].tostring())] = i
         # end for
-
+      
         # Setup External Warping
         meshInd = self.getMeshIndices()
         self.mesh.setExternalMeshIndices(meshInd)
+       
         forceInd = self.getForceIndices()
         self.mesh.setExternalForceIndices(forceInd)
-       
+        
         # Solver is initialize
         self.allInitialized = True
         self.sumb.preprocessingadjoint()
-
         return
 
     def setInflowAngle(self,aero_problem):
@@ -962,12 +960,11 @@ class SUMB(AeroSolver):
         # As soon as we run more iterations, adjoint matrices and
         # objective partials (dIdw,dIdx,dIda) are not valid so set
         # their flag to False
-        self.spatialSetup = False 
-        self.stateSetup = False
-        self.couplingSetup = False
-        self.extraSetup = False
+        self.adjointMatrixSetup = False 
         self.adjointRHS         = None
         self.callCounter += 1
+
+        
 
         # Run Initialize, if already run it just returns.
         self.initialize(aero_problem,*args,**kwargs)
@@ -1023,6 +1020,21 @@ class SUMB(AeroSolver):
         self._updateGeometryInfo()
         self._updateVelocityInfo()
 
+        #write out mesh file for volume debugging
+        if self.getOption('writeMesh'):
+            base = self.getOption('outputDir') + '/' + self.getOption('probName')
+            meshname = base + '_mesh.cgns'
+
+            if self.getOption('numberSolutions'):
+                meshname = base + '_mesh%d.cgns'%(self.callCounter)
+
+            #endif
+            self.writeMeshFile(meshname)
+            self.mesh.writeFEGrid(meshname[:-4]+'.dat')
+            if self.myid==0: print 'Warped Mesh written...exiting.'
+            sys.exit(0)
+        # end if
+
         # Check to see if the above update routines failed.
         self.sumb.killsignals.routinefailed = \
             self.comm.allreduce(
@@ -1041,6 +1053,9 @@ class SUMB(AeroSolver):
 
         # If the solve failed, reset the flow for the next time through
         if self.sumb.killsignals.routinefailed:
+            mpiPrint('Resetting flow due to failed flow solve...')
+            #self.resetFlow() # Always reset flow if it failed
+            self.reInitFlow()
             if self.getOption('autoSolveRetry'): # Try the solver again
                 self.sumb.solver()
                 if self.sumb.killsignals.routinefailed:
@@ -1178,12 +1193,12 @@ class SUMB(AeroSolver):
         '''
         return self.mesh.getSurfaceCoordinates(group_name)
 
-    def setSurfaceCoordinates(self,group_name,coordinates):
+    def setSurfaceCoordinates(self,group_name,coordinates,reinitialize=True):
         ''' 
         See MultiBlockMesh.py for more info
         '''
-
-        self.mesh.setSurfaceCoordinates(group_name,coordinates)
+        self._update_geom_info = True
+        self.mesh.setSurfaceCoordinates(group_name,coordinates,reinitialize)
 
         return 
 
@@ -1241,7 +1256,6 @@ class SUMB(AeroSolver):
         if (filename):
             self.sumb.inputio.surfacesolfile[:] = ''
             self.sumb.inputio.surfacesolfile[0:len(filename[0])] = filename[0]
-        # end if
         self.sumb.monitor.writegrid=False
         self.sumb.monitor.writevolume=False
         self.sumb.monitor.writesurface=True
@@ -1355,8 +1369,9 @@ class SUMB(AeroSolver):
         '''
         # Check to see if the adjoint Matrix is setup:
         if self.myid==0: print 'setting up matrix'
-        if not self.stateSetup:
-            self.sumb.setupstatepetscvars()
+        if not self.adjointMatrixSetup:
+            self.sumb.createpetscvars()
+            #self.setupAdjoint(forcePoints)
         # end if
         # Short form of objective--easier code reading
         if self.myid==0: print 'possible objectives',objective
@@ -1373,13 +1388,15 @@ class SUMB(AeroSolver):
 	self.sumb.verifydcdwfile(1)
 
 	return
+
     def verifydIdw(self,objective,**kwargs):
         '''
         run compute obj partials, then print to a file...
         '''
         if self.myid==0: print 'setting up vector'
-        if not self.stateSetup:
-            self.sumb.setupstatepetscvars()
+        if not self.adjointMatrixSetup:
+            self.sumb.createpetscvars()
+            #self.setupAdjoint(forcePoints)
         # end if
         if self.myid==0:print 'computing partials'
         self.computeObjPartials(objective)
@@ -1398,8 +1415,9 @@ class SUMB(AeroSolver):
         run compute obj partials, then print to a file...
         '''
         if self.myid==0: print 'setting up vector'
-        if not self.stateSetup:
-            self.sumb.createstatepetscvars()
+        if not self.adjointMatrixSetup:
+            self.sumb.createpetscvars()
+            #self.setupAdjoint(forcePoints)
         # end if
         if self.myid==0:print 'computing partials'
         self.computeObjPartials(objective)
@@ -1417,7 +1435,9 @@ class SUMB(AeroSolver):
         ''' run the verify drdw scripts in fortran'''
         # Make sure adjoint is initialize
         self.initAdjoint()
-        self.setupAdjoint()
+        if not self.adjointMatrixSetup:
+            #self.sumb.createpetscvars()
+            self.setupAdjoint(None)#(forcePoints)
         # end if
 	level = 1
         self.sumb.iteration.currentlevel=level
@@ -1430,7 +1450,8 @@ class SUMB(AeroSolver):
         ''' run the verify drdw scripts in fortran'''
         # Make sure adjoint is initialize
         self.initAdjoint()
-        if not self.dRdxSetup:
+        if not self.adjointMatrixSetup:
+            #self.sumb.createpetscvars()
             self.setupAdjoint(None)#(forcePoints)
         # end if
 	level = 1
@@ -1438,15 +1459,16 @@ class SUMB(AeroSolver):
         self.sumb.iteration.groundlevel=level
 	self.sumb.verifydrdxfile(1)
         
+
 	return
 
     def verifydRda(self,**kwargs):
         ''' run the verify drdw scripts in fortran'''
         # Make sure adjoint is initialize
         self.initAdjoint()
-        #if not self.adjointMatrixSetup:
-        #    #self.sumb.createpetscvars()
-        #    self.setupAdjoint(None)#(forcePoints)
+        if not self.adjointMatrixSetup:
+            #self.sumb.createpetscvars()
+            self.setupAdjoint(None)#(forcePoints)
         # end if
         level = 1
         self.sumb.iteration.currentlevel=level
@@ -1522,106 +1544,36 @@ class SUMB(AeroSolver):
         # end for
         return
 
-    def setupAdjoint(self):
+    def setupAdjoint(self, forcePoints=None, **kwargs):
         '''
-        Setup the data structures required to solve the adjoint problem
+        Setup the adjoint matrix for the current solution
         '''
         
         # Destroy the NKsolver to free memory -- Call this even if the
         # solver is not used...a safeguard check is done in Fortran
         self.sumb.destroynksolver()
-
-        # Run initAdjoint incase this is the first adjoint solve
         self.initAdjoint()
-        
-        if self.getOption('useReverseModeAD'):
-            # We must create the state,spatial and extra matrices
-            # if we're using reverse mode:
-            compute = False
-            if not self.stateSetup:
-                self.sumb.createstatepetscvars()
-                self.sumb.createpetscksp()
-                compute = True
-            # end fi
 
-            if not self.spatialSetup:
-                self.sumb.createspatialpetscvars()
-                compute = True
-            # end if
-
-            if not self.extraSetup:
-                self.sumb.createextrapetscvars()
-                compute = True
-            # end if
-
-            if compute:
-                self.sumb.setupallresidualmatrices()
-                self.mesh.setupWarpDeriv()
-
-                # Set the flags as true
-                self.stateSetup = True
-                self.spatialSetup = True
-                self.extraSetup = True
-            # end if
-        else:
-            # Otherwise, we just setup the state variables to save
-            # memory:
-            
-            if not self.stateSetup:
-                self.sumb.createstatepetscvars()
-                self.sumb.createpetscksp()
-
-                self.sumb.setupadjointmatrix()
-                self.stateSetup = True
-            # end if
-        # end if
-        
-        # Finally setup the KSP object for the solve
-        self.sumb.setuppetscksp()
-            
-        return
-
-    def setupCouplingMatrices(self,forcePoints=None):
-        '''Setup the coupling matrices if required:'''
-
-        if not self.couplingSetup:
+        if not self.adjointMatrixSetup:
+            self.sumb.createpetscvars()
+ 
+            if  self.getOption('useReverseModeAD'):
+                if self.myid==0:print 'computing with reverse mode...'
+                #self.sumb.setupallresidualmatrices()
+                self.sumb.setupallresidualmatricests()
+            else:
+                if self.myid==0:print 'computing with forward mode...'
+                self.sumb.setupallresidualmatricesfwd()
+            #end
             if forcePoints is None:
                 forcePoints = self.getForcePoints()
             # end if
-            self.sumb.createcouplingpetscvars()
 
             self.sumb.setupcouplingmatrixstruct(forcePoints.T)
+            self.sumb.setuppetscksp()
+            self.mesh.setupWarpDeriv()
+            self.adjointMatrixSetup = True
 
-            self.couplingSetup = True
-        # end if
-
-        return
-
-    def setupSpatialMatrices(self):
-
-        if not self.spatialSetup:
-            if self.getOption('lowMemory'):
-                # If we're using the low memory option we will destroy
-                # the KSP object and residual matrices BEFORE
-                # assemblng the spatial residual matrices:
-
-                self.sumb.destroystatepetscvars()
-                self.sumb.destroypetscksp()
-                self.stateSetup = False
-            # end if
-
-            self.sumb.createspatialpetscvars()
-            self.sumb.setupspatialmatrix()
-            self.spatialSetup = True
-        # end if
-
-        return
-
-    def setupExtraMatrices(self):
-        if not self.extraSetup:
-            self.sumb.createextrapetscvars()
-            self.sumb.setupextramatrix()
-            self.extraSetup = True
         # end if
 
         return
@@ -1635,46 +1587,14 @@ class SUMB(AeroSolver):
                              printLocal,printSum,printMax)
 
         return
-
-    def checkPartitioning(self,nprocs):
-        '''This function determine the potential load balancing for
-        nprocs. The intent is this function can be run in serial with
-        to determine the best number of procs for load balancing. The
-        grid is never actually loaded so this function can be run with
-        VERY large grids without issue.'''
-  
-        load_inbalance = 0
-        face_inbalance = 0
-        load_inbalance,face_inbalance = self.sumb.checkpartitioning(nprocs)
-                
-        return load_inbalance,face_inbalance
     
     def releaseAdjointMemory(self):
         '''
-        release the PETSc Memory that have been allocated
+        release the PETSc Memory...
         '''
-        
-        if self.stateSetup:
-            self.sumb.destroystatepetscvars()
-            self.sumb.destroypetscksp()
-            self.stateSetup = False
-        # end if
 
-        if self.spatialSetup:
-            self.sumb.destroyspatialpetscvars()
-            self.spatialSetup = False
-        # end if
-
-        if self.extraSetup:
-            self.sumb.destroyextrapetscvars()
-            self.extraSetup = False
-        # end if
-
-        if self.couplingSetup:
-            self.sumb.destroycouplingpetscvars()
-            self.couplingSetup = False
-        # end if
-
+        self.sumb.destroypetscvars()
+        self.adjointMatrixSetup = False
         return
 
     def _on_adjoint(self,objective,forcePoints=None,*args,**kwargs):
@@ -1688,8 +1608,10 @@ class SUMB(AeroSolver):
 
         obj,aeroObj = self._getObjective(objective)
 
-        # Setup adjoint matrices/vector as required
-        self.setupAdjoint()
+        # Check to see if the adjoint Matrix is setup:
+        if not self.adjointMatrixSetup:
+            self.setupAdjoint(forcePoints)
+        # end if
 
         # Check to see if the RHS Partials have been computed
         if not self.adjointRHS == obj:
@@ -1702,12 +1624,11 @@ class SUMB(AeroSolver):
             group_name = kwargs['group_name']
             phi = kwargs['structAdjoint']
             solver_phi = self.mesh.warp_to_solver_force(group_name,phi)
-            self.setupCouplingMatrices(forcePoints)
             self.sumb.agumentrhs(solver_phi)
         # end if
 
         # If we have saved adjoints, 
-        if self.getOption('restartAdjoint') or self.getOption('lowMemory'):
+        if self.getOption('restartAdjoint'):
             # Objective is already stored, so just set it
             if obj in self.storedADjoints.keys():
                 self.sumb.setadjoint(self.storedADjoints[obj])
@@ -1744,14 +1665,14 @@ class SUMB(AeroSolver):
         if self.sumb.killsignals.adjointfailed == False:
             self.adjoint_failed = False
             # Copy out the adjoint to store
-            if self.getOption('restartAdjoint') or self.getOption('lowMemory'):
+            if self.getOption('restartAdjoint'):
                 self.storedADjoints[obj] =  \
                     self.sumb.getadjoint(self.getStateSize())
             # end if
         else:
             self.adjoint_failed = True
             # Reset stored adjoint
-            if self.getOption('restartAdjoint') or self.getOption('lowMemory'):
+            if self.getOption('restartAdjoint'):
                 self.storedADjoints[obj][:] = 0.0
             # end if
         # end if
@@ -1772,28 +1693,28 @@ class SUMB(AeroSolver):
         
         if obj in ['area','volume']: # Possibly add more Direct objectives here...
             if obj == 'area':
-                self.mesh.warp.computeareasensitivity(
-                    self.getOption('areaAxis'))
+                self.mesh.warp.computeareasensitivity(self.getOption('areaAxis'))
                 dIdXs = self.mesh.getdXs('all')
             # end if
 
             if obj == 'volume':
-                self.mesh.warp.computevolumesensitivity(
-                    self.getOption('areaAxis'))
+                self.mesh.warp.computevolumesensitivity()
                 dIdXs = self.mesh.getdXs('all')
             # end if
 
         else:
-            # NOTE: do dRdxvPsi MUST be done first since this
-            # allocates spatial memory if required.
-            dIdxs_2 = self.getdRdXvPsi('all',objective)
-          
+            if self.getOption('restartAdjoint'): # Selected stored adjoint
+                self.sumb.setadjoint(self.storedADjoints[obj])
+            # end if
+
             # Direct partial derivative contibution 
             dIdxs_1 = self.getdIdx(objective,'all')
 
+            # dIdx contribution for drdx^T * psi
+            dIdxs_2 = self.getdRdXvPsi('all')
+        
             # Total derivative of the obective with surface coordinates
-
-            dIdXs = dIdxs_1 - dIdxs_2
+            dIdXs = dIdxs_1 - dIdxs_2 
         # end if
 
         return dIdXs
@@ -1812,25 +1733,19 @@ class SUMB(AeroSolver):
                                      # definition have zero dependance
             dIda = numpy.zeros(self.nDVAero)
         else:
-            if self.getOption('lowMemory') or self.getOption('restartAdjoint'):
-                if obj in self.storedADjoints.keys():
-                    psi = self.storedADjoints[obj]
-                else:
-                    mpiPrint('%s adjoint is not computed.'%(obj),comm=self.comm)
-                    sys.exit(1)
-                # end if
-            else:
-                psi = self.sumb.getadjoint(self.getStateSize())
+            if self.getOption('restartAdjoint'):
+                self.sumb.setadjoint(self.storedADjoints[obj])
             # end if
 
             # Direct partial derivative contibution 
             dIda_1 = self.getdIda(objective)
 
             # dIda contribution for drda^T * psi
-            dIda_2 = self.getdRdaPsi(psi)
-         
+            dIda_2 = self.getdRdaPsi()
+
             # Total derivative of the obective wrt aero-only DVs
             dIda = dIda_1 - dIda_2
+
         # end if
 
         return dIda
@@ -1864,10 +1779,8 @@ class SUMB(AeroSolver):
         if (self._update_geom_info):
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
-
             if newGrid is not None:
-                self.sumb.setgrid(newGrid)
-            # end if
+                self.sumb.setgrid(self.mesh.getSolverGrid())
                 
             self.sumb.updatecoordinatesalllevels()
             self.sumb.updatewalldistancealllevels()
@@ -1951,6 +1864,7 @@ class SUMB(AeroSolver):
 
     def getResNorms(self):
         '''Return the initial, starting and final Res Norms'''
+        
         return \
             numpy.real(self.sumb.nksolvervars.totalr0), \
             numpy.real(self.sumb.nksolvervars.totalrstart),\
@@ -1983,42 +1897,17 @@ class SUMB(AeroSolver):
 
         return indices
 
-    def getdRdXvPsi(self,group_name,objective):
-
-        # Setup spatial matrices if required:
-        self.setupSpatialMatrices()
-
-        # Get objective
-        obj,aeroObj = self._getObjective(objective)
-
-        if self.getOption('lowMemory') or self.getOption('restartAdjoint'):
-            if obj in self.storedADjoints.keys():
-                psi = self.storedADjoints[obj]
-            else:
-                mpiPrint('%s adjoint is not computed.'%(obj),comm=self.comm)
-                sys.exit(1)
-            # end if
-        else:
-            psi = self.sumb.getadjoint(self.getStateSize())
-        # end if
-
+    def getdRdXvPsi(self,group_name):
         ndof = self.sumb.adjointvars.nnodeslocal*3
-
-        # Now call getdrdxvpsi WITH the psi vector:
-        dxv_solver = self.sumb.getdrdxvpsi(ndof,psi)
-       
-        self.mesh.warpDeriv(dxv_solver)
-        dxs = self.mesh.getdXs(group_name)
+        dxv_solver = self.sumb.getdrdxvpsi(ndof)
+        self.mesh.WarpDeriv(dxv_solver)
+        pforces = self.mesh.getdXs(group_name)
         
-        return dxs
+        return pforces
 
-    def getdRdaPsi(self, psi):
-
-        # Setup extra matrices if required
-        self.setupExtraMatrices()
-        
+    def getdRdaPsi(self):
         if self.nDVAero > 0:
-            dIda = self.sumb.getdrdapsi(self.nDVAero,psi)
+            dIda = self.sumb.getdrdapsi(self.nDVAero)
         else:
             dIda = numpy.zeros((0))
         # end if
@@ -2034,25 +1923,15 @@ class SUMB(AeroSolver):
         # Calculate dFdx * vec and return the result
 
         solver_vec = self.mesh.warp_to_solver_force(group_name,vec)
-        if len(solver_vec) > 0:
-            dFdxVec = self.sumb.getdfdxvec(solver_vec)
-        else:
-            self.sumb.getdfdxvec_null()
-            dFdxVec = numpy.zeros_like(solver_vec)
-        # end if
-            
+        dFdxVec = self.sumb.getdfdxvec(solver_vec)
+
         return self.mesh.solver_to_warp_force(group_name,dFdxVec)
 
     def getdFdxTVec(self,group_name,vec):
         # Calculate dFdx^T * vec and return the result
 
         solver_vec = self.mesh.warp_to_solver_force(group_name,vec)
-        if len(solver_vec) > 0:
-            dFdxTVec = self.sumb.getdfdxtvec(solver_vec)
-        else:
-            self.sumb.getdfdxtvec_null()
-            dFdxTVec = numpy.zeros_like(solver_vec)
-        # end if
+        dFdxTVec = self.sumb.getdfdxtvec(solver_vec)
 
         return self.mesh.solver_to_warp_force(group_name,dFdxTVec)
 
@@ -2066,9 +1945,10 @@ class SUMB(AeroSolver):
 
         if aeroObj:
             obj_num = self.SUmbCostfunctions[obj]
-            self.sumb.computeobjpartials(
-                obj_num,forcePoints.T,self.stateSetup,self.spatialSetup)
-            self.adjointRHS = obj
+            if not obj == self.adjointRHS:
+                self.sumb.computeobjpartials(obj_num,forcePoints.T)
+                self.adjointRHS = obj
+            # end if
         else:
             self.sumb.zeroobjpartials()
         # end if
@@ -2087,7 +1967,7 @@ class SUMB(AeroSolver):
         temp = forcePoints.shape
         
         sizeForcePoints = temp[1]*temp[2]#temp[0]*temp[1]#*temp[2]
-
+        
         if sizeForcePoints > 0:
             if aeroObj:
                 dIdpts = self.sumb.getdidx(sizeForcePoints)
@@ -2216,10 +2096,11 @@ class SUMB(AeroSolver):
              }
                                                  
         # Also add in 'direct' solutions. Area etc
-        SUmbsolution['area'] =  self.mesh.computeArea(
-            self.getOption('areaAxis'))
-        SUmbsolution['volume'] = self.mesh.computeVolume(
-            self.getOption('areaAxis'))
+        A_local = self.mesh.computeArea(self.getOption('areaAxis'))
+        SUmbsolution['area'] = self.comm.allreduce(A_local,op=MPI.SUM)
+
+        V_local = self.mesh.computeVolume()
+        SUmbsolution['volume'] = self.comm.allreduce(V_local,op=MPI.SUM)
         
         return SUmbsolution
 
@@ -2234,7 +2115,7 @@ class SUMB(AeroSolver):
             aeroObj = True
         except: 
             obj = objective 
-            aeroObj = False
+            aeroObj = False # end if
         # end try
 
         return obj,aeroObj
@@ -2355,7 +2236,7 @@ class SUmbDummyMesh(object):
 
         return 
 
-    def setSurfaceCoordinates(self,group_name,coordinates):
+    def setSurfaceCoordinates(self,group_name,coordinates,reinitialize=True):
         ''' 
         Set the UNIQUE set of ALL surface points belonging to
         group "group_name", that belong to blocks on THIS processor
@@ -2400,15 +2281,15 @@ class SUmbDummyMesh(object):
     
         return
 
-    def getdXs(self, group_name):
+    def getdXs(self,group_name):
 
         return 
 
-    def computeArea(self, axis):
+    def computeArea(self,axis):
         
         return 0.0
 
-    def computeVolume(self, axis):
+    def computeVolume(self):
 
         return 0.0
 
