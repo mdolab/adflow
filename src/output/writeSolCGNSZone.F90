@@ -84,6 +84,7 @@
 !
        ! Set the cgns real type depending on the input option.
 
+
        select case (precisionSol)
          case (precisionSingle)
            realTypeCGNS      = RealSingle
@@ -234,11 +235,12 @@
              call cg_zone_write_f(cgnsInd, cgnsBase,              &
                                   cgnsDoms(zone)%zonename, sizes, &
                                   Structured, cgnsZone, ierr)
-             if(ierr /= all_ok)                   &
-               call terminate("writeSolCGNSZone", &
-                              "Something wrong when calling &
-                              &cg_zone_write_f")
-
+             if(ierr /= all_ok)                 then
+            
+             call terminate("writeSolCGNSZone", &
+                  "Something wrong when calling &
+                  &cg_zone_write_f")
+          end if
              ! Check if a link must actually be created.
 
              writeLinkTest: if( writeLink ) then
@@ -486,11 +488,11 @@
                                    cgnsSol, realTypeCGNS,       &
                                    solName, sol, source, ierr)
 
-             if(ierr /= all_ok)                   &
-               call terminate("writeSolCGNSZone", &
-                              "Something wrong when calling &
-                              &cg_field_write_f")
-           enddo varWriteLoop
+             if(ierr /= all_ok)    &
+                  call terminate("writeSolCGNSZone", &
+                  "Something wrong when calling &
+                  &cg_field_write_f")
+             enddo varWriteLoop
 
          enddo solLoopRoot
 

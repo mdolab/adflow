@@ -143,4 +143,9 @@
          solNames(nn) = cgnsBlank
        endif
 
+       if (surfWriteLift) then
+          nn = nn + 1
+          solNames(nn) = cgnsLift
+       end if
+
        end subroutine surfSolNames

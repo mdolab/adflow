@@ -57,5 +57,5 @@
        if( surfWriteCfy )      nSolVar = nSolVar +1
        if( surfWriteCfz )      nSolVar = nSolVar +1
        if( surfWriteBlank )    nSolVar = nSolVar +1
-
+       if( surfWriteLift )     nSolVar = nSolVar +1
        end subroutine numberOfSurfSolVariables

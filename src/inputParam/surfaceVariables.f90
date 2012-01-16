@@ -67,6 +67,7 @@
        surfWriteCfz   = .false.
 
        surfWriteBlank = .false.
+       surfWriteLift  = .false.
 
        ! Initialize nVarSpecified to 0. This serves as a test
        ! later on.
@@ -177,6 +178,10 @@
            case ("blank")
              surfWriteBlank = .true.
              nVarSpecified = nVarSpecified + 1
+
+           case ("lift")
+              surfWriteLift = .true. 
+              nVarSpecified = nVarSpecified + 1
 
            case default
              pos = len_trim(keyword)

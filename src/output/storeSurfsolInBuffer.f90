@@ -32,7 +32,7 @@
        use inputPhysics
        use inputIO
        use iteration ! eran-avf
-
+       use communication 
        implicit none
 !
 !      Subroutine arguments.
@@ -55,16 +55,16 @@
        integer(kind=intType), dimension(:,:), pointer :: viscPointer
        integer(kind=intType), dimension(:,:), pointer :: iblank2
 
-       real(kind=realType) :: fact, gm1, ptotInf, ptot, psurf, rsurf
+       real(kind=realType) :: fact, fact2, gm1, ptotInf, ptot, psurf, rsurf
        real(kind=realType) :: usurf, vsurf, wsurf, m2surf, musurf
        real(kind=realType) :: fx, fy, fz, fn, a2Tot, a2, qw
        real(kind=realType) :: tauxx, tauyy, tauzz
        real(kind=realType) :: tauxy, tauxz, tauyz
-
-       real(kind=realType), dimension(3) :: norm
+       real(kind=realType) :: cp
+       real(kind=realType), dimension(3) :: norm, v1,v2
 
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
-       real(kind=realType), dimension(:,:,:), pointer :: ss1, ss2
+       real(kind=realType), dimension(:,:,:), pointer :: ss1, ss2, ss
        real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
 
        real(kind=realType), dimension(:,:),   pointer :: avpp1, avpp2
@@ -82,6 +82,11 @@
        ! Set the pointers to this block.
 
        call setPointers(blockID, 1_intType, sps)
+       if (flowDoms(blockID, 1_intType,sps)%rightHanded) then
+          fact2 = one
+       else
+          fact2 = -one
+       end if
 
        ! Set the offset for the viscous data, such that the range is
        ! limited to the actual physical face. Viscous data, like skin
@@ -161,7 +166,7 @@
 
            ww1    => w(1,1:,1:,:);   ww2    => w(2,1:,1:,:)
            pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)
-
+           ss => si(1,:,:,:) ; fact = -one
 !  eran-avf starts
 
            if(equationMode == unsteady)then
@@ -197,7 +202,7 @@
            iiMax = jl; jjMax = kl
 
            ww1    => w(ie,1:,1:,:);   ww2    => w(il,1:,1:,:)
-
+           ss => si(il,:,:,:) ; fact = one
 !  eran-avf starts
 
            if(equationMode == unsteady)then
@@ -233,7 +238,7 @@
            iiMax = il; jjMax = kl
 
            ww1    => w(1:,1,1:,:);   ww2    => w(1:,2,1:,:)
-
+           ss => sj(:,1,:,:) ; fact = -one
 !  eran-avf starts
 
            if(equationMode == unsteady)then
@@ -269,7 +274,7 @@
            iiMax = il; jjMax = kl
 
            ww1    => w(1:,je,1:,:);   ww2    => w(1:,jl,1:,:)
-
+           ss => sj(:,jl,:,:); fact = one
 !  eran-avf starts
 
            if(equationMode == unsteady)then
@@ -305,7 +310,7 @@
            iiMax = il; jjMax = jl
 
            ww1    => w(1:,1:,1,:);   ww2    => w(1:,1:,2,:)
-
+           ss => sk(:,:,1,:);  fact = -one
 !  eran-avf starts
 
            if(equationMode == unsteady)then
@@ -341,8 +346,8 @@
            iiMax = il; jjMax = jl
 
            ww1    => w(1:,1:,ke,:);   ww2    => w(1:,1:,kl,:)
-
-!  eran-avf starts
+           ss => sk(:,:,kl,:);  fact = one
+           !  eran-avf starts
 
            if(equationMode == unsteady)then
 
@@ -765,6 +770,45 @@
              enddo
            enddo
 
+        case (cgnsLift) 
+
+           fact2 = fact2*two/(gammaInf*pInf*MachCoef*MachCoef)
+
+           do j=rangeFace(2,1), rangeFace(2,2)
+              if(j == rangeFace(2,1)) then
+                 jj = j + offVis
+              else if(j == rangeFace(2,2)) then
+                 jj = j - offVis
+              else
+                 jj = j
+              endif
+              
+              do i=rangeFace(1,1), rangeFace(1,2)
+                 if(i == rangeFace(1,1)) then
+                    ii = i + offVis
+                 else if(i == rangeFace(1,2)) then
+                    ii = i - offVis
+                 else
+                    ii = i
+                 endif
+                 
+                 nn = nn + 1
+
+                 norm(1) = ss(ii,jj,1)
+                 norm(2) = ss(ii,jj,2)
+                 norm(3) = ss(ii,jj,3)
+
+                 ! Make unit
+                 norm = norm/sqrt(norm(1)*norm(1) + norm(2)*norm(2) + norm(3)*norm(3))
+
+                 ! Take dot-product with lift vector
+                 cp = fact*fact2*(half*(pp1(ii,jj) + pp2(ii,jj)) - pInf)
+           
+                 buffer(nn) = dot_product(liftDirection,norm)*cp
+                 
+              end do
+           end do
+           
        end select varName
 
        end subroutine storeSurfsolInBuffer
