@@ -1,5 +1,4 @@
-subroutine FormJacobian()
-#ifndef USE_NO_PETSC
+subroutine FormJacobian(snes,wVec,dRdw,dRdwPre,flag,ctx,ierr)
   use communication
   use precision 
   use iteration
@@ -50,13 +49,13 @@ subroutine FormJacobian()
   call KSPGetPC(global_ksp,global_pc,ierr);             
   call EChk(ierr,__FILE__,__LINE__)
 
-  call PCSetType(global_pc,global_pc_type,ierr)
+  call PCSetType(pc,global_pc_type,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   if (trim(global_pc_type) == 'asm') then
-     call PCASMSetOverlap(global_pc,asm_overlap,ierr)
+     call PCASMSetOverlap(pc,asm_overlap,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     call PCSetup(global_pc,ierr)
+     call PCSetup(pc,ierr)
      call EChk(ierr,__FILE__,__LINE__)
      call PCASMGetSubKSP(global_pc, nlocal, first, local_ksp, ierr )
      call EChk(ierr,__FILE__,__LINE__)  
@@ -79,7 +78,7 @@ subroutine FormJacobian()
   call EChk(ierr,__FILE__,__LINE__)  
   call PCFactorSetMatOrderingtype(local_pc, local_pc_ordering, ierr )
   call EChk(ierr,__FILE__,__LINE__) 
-  call KSPSetType(local_ksp, KSPPREONLY, ierr)
+  call KSPSetType(subksp, KSPPREONLY, ierr)
   call EChk(ierr,__FILE__,__LINE__)  
 #endif
 end subroutine FormJacobian
