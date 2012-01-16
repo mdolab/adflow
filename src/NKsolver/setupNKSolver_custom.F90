@@ -123,7 +123,7 @@ subroutine setupNKsolver_custom
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Set PC Side as RIGHT only
-     call KSPSetPreconditionerSide(ksp,PC_RIGHT,ierr);
+     call KSPSetPCSide(ksp,PC_RIGHT,ierr);
      call EChk(ierr,__FILE__,__LINE__)
    
      NKSolverSetup = .True.

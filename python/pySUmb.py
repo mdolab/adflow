@@ -74,6 +74,7 @@ class SUMB(AeroSolver):
             'solRestart':[bool,False],
             'writeSolution':[bool,True],
             'writeMesh':[bool,False],
+            'storeRindLayer':[bool,True],
 
             # Physics Paramters
             'Discretization':[str,'Central plus scalar dissipation'],
@@ -131,6 +132,8 @@ class SUMB(AeroSolver):
             'L2ConvergenceRel':[float,1e-16],
             'L2ConvergenceCoarse':[float,1e-2], 
             'maxL2DeviationFactor':[float,1.0],
+            'coeffConvCheck':[bool,False],
+            'minIterationNum':[int,10],
 
             # Newton-Krylov Paramters
             'useNKSolver':[bool,False],
@@ -176,6 +179,7 @@ class SUMB(AeroSolver):
             'adjointL2ConvergenceAbs':[float,1e-16],
             'adjointDivTol':[float,1e5],
             'approxPC': [bool,False],
+            'useDiagTSPC':[bool,False],
             'restartAdjoint':[bool,False],
             'adjointSolver': [str,'GMRES'],
             'adjointMaxIter': [int,500],
@@ -341,6 +345,7 @@ class SUMB(AeroSolver):
                 'restartFile':{'location':'inputio.restartfile',
                                'len':self.sumb.constants.maxstringlen},
                 'solRestart':{'location':'inputio.restart'},
+                'storeRindLayer':{'location':'inputio.storerindlayer'},
                 # Physics Paramters
                 'Discretization':{'Central plus scalar dissipation':
                                       self.sumb.inputdiscretization.dissscalar,
@@ -478,7 +483,9 @@ class SUMB(AeroSolver):
                 'L2ConvergenceRel':{'location':'inputiteration.l2convrel'},
                 'L2ConvergenceCoarse':{'location':'inputiteration.l2convcoarse'},
                 'maxL2DeviationFactor':{'location':'inputiteration.maxl2deviationfactor'},
-
+                'coeffConvCheck':{'location':'monitor.coeffconvcheck'},
+                'minIterationNum':{'location':'inputiteration.miniternum'},
+            
                 # Newton-Krylov Paramters
                 'useNKSolver':{'location':'nksolvervars.usenksolver'},
                 'NKLinearSolver':{'gmres':'gmres',
@@ -533,6 +540,7 @@ class SUMB(AeroSolver):
                 'adjointL2ConvergenceAbs':{'location':'inputadjoint.adjabstol'},
                 'adjointDivTol':{'location':'inputadjoint.adjdivtol'},
                 'approxPC':{'location':'inputadjoint.approxpc'},
+                'useDiagTSPC':{'location':'inputadjoint.usediagtspc'},
                 'restartAdjoint':{'location':'inputadjoint.restartadjoint'},
                 'adjointSolver':{'GMRES':
                                      self.sumb.inputadjoint.petscgmres,
@@ -1551,7 +1559,8 @@ class SUMB(AeroSolver):
  
             if  self.getOption('useReverseModeAD'):
                 if self.myid==0:print 'computing with reverse mode...'
-                self.sumb.setupallresidualmatrices()
+                #self.sumb.setupallresidualmatrices()
+                self.sumb.setupallresidualmatricests()
             else:
                 if self.myid==0:print 'computing with forward mode...'
                 self.sumb.setupallresidualmatricesfwd()

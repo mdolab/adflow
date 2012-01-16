@@ -66,21 +66,45 @@ class PERFORMANCE(object):
         This constraint is satisfied when z <= 0.  
         
         '''
-
-        #Various function valus to allow the ellipse to coincide with
+        #original function
+       ##  #Various function valus to allow the ellipse to coincide with
+##         #the satisfactory level on the thumbnail plot
+##         theta = 80 *numpy.pi/180.
+##         xcen = 0.76
+##         ycen = 3.01
+        
+##         a = 2.2
+##         b=11
+##         c=0
+##         d=0.
+##         e=0.
+##         f=-1.1
+        
+##         xp = DampingRatio
+##         yp = Wn
+        
+##         #simple cordinate transformation
+##         x = (xp-xcen)*numpy.cos(theta)+(yp-ycen)*numpy.sin(theta)
+##         y = (yp-ycen)*numpy.cos(theta)-(xp-xcen)*numpy.sin(theta)
+        
+##         #Equation of ellipse whose zero contour is roughly alligned with the
+##         #Satisfactory contour on the thumbnail plot.
+##         z = a*(x-d)*(x-d)+b*(y-e)*(y-e)+c*x*y+f
+        #Updated function
+        #Various function values to allow the ellipse to coincide with
         #the satisfactory level on the thumbnail plot
-        theta = 80 *numpy.pi/180.
-        xcen = 0.76
+        theta = 55 *numpy.pi/180.
+        xcen = -0.4
         ycen = 3.01
         
-        a = 2.2
-        b=11
-        c=0
+        a = 0.3
+        b=0.75
+        c=-0.4
         d=0.
         e=0.
-        f=-1.1
+        f=-0.15
         
-        xp = DampingRatio
+        xp = numpy.log(DampingRatio)
         yp = Wn
         
         #simple cordinate transformation
