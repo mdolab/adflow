@@ -167,7 +167,7 @@ class SUMB(AeroSolver):
             'volumeVariables':[list,['resrho']],
 
             # Reference Paramters
-            'refTemp':[float,398.0],
+            #'refTemp':[float,398.0],
             #'refPressure':[float,17654.0],
             #'refDensity':[float,.28837],
             'areaAxis':[list,[0.0,1.0,0.0]],
@@ -530,7 +530,7 @@ class SUMB(AeroSolver):
                 'setMonitor':{'location':'inputadjoint.setmonitor'},
 
                 # Reference Params
-                'refTemp':{'location':'flowvarrefstate.tref'},
+                #'refTemp':{'location':'flowvarrefstate.tref'},
                 #'refPressure':{'location':'flowvarrefstate.pref'},
                 #'refDensity':{'location':'flowvarrefstate.rhoref'},
                
@@ -923,6 +923,7 @@ class SUMB(AeroSolver):
         '''
         self.sumb.flowvarrefstate.pref = aero_problem._flows.P
         self.sumb.flowvarrefstate.rhoref = aero_problem._flows.rho
+        self.sumb.flowvarrefstate.tref = aero_problem._flows.T
 
         # Reynolds number info not setup yet...
 
