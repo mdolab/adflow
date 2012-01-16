@@ -22,12 +22,6 @@
        implicit none
        save
 
-       ! useCouplerForInitialization: Whether or not to use the Coupler
-       !                              data for initialization even if
-       !                              enough boundary data is present.
-
-       logical :: useCouplerForInitialization ! eran-couplerinit
-
        ! MachIni  : Mach number for flow initialization.
        ! pIni     : Pressure for flow initialization.
        ! rhoIni   : Density for flow initialization.

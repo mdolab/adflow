@@ -124,7 +124,7 @@
 
          select case(i)
            case (1_intType)
-
+          
              call cg_array_write_f(cgnsVelVecX, realTypeCGNS, &
                                    1, 1, val, ierr)
 

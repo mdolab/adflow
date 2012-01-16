@@ -801,14 +801,13 @@
 !
        use inputPhysics
        use inputTimeSpectral
-       use monitor   ! eran-CBD
        implicit none
 !
 !      ******************************************************************
 !      *                                                                *
 !      * Begin execution                                                *
 !      *                                                                *
-!      ****************************************************************** 
+!      ******************************************************************
 !
        ! First part to release the memory.
 
@@ -827,11 +826,6 @@
            call writeInterpolFromSpectral
 
        endif
-
-	! write down components breakdown file at the end of CHIMPS run
-
-
-	if(genCBDOUT)call componentsBreakDownPrintout(1) ! eran-CBD
 
        ! Second part to release the memory.
 

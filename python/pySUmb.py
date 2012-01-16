@@ -148,7 +148,6 @@ class SUMB(AeroSolver):
             'NKJacobianLag':[int,10],
             'RKReset':[bool,False],
             'nRKReset':[int,5],
-            'NKLineSearch':[str,'nonMonotone'],
 
             # Load Balance Paramters
             'blockSplitting':[bool,False],
@@ -519,10 +518,7 @@ class SUMB(AeroSolver):
                 'RKReset':{'location':'nksolvervars.rkreset'},
                 'nRKReset':{'location':'nksolvervars.nrkreset'},
                 'NKFiniteDifferencePC':{'location':'nksolvervars.nkfinitedifferencepc'},
-                'NKLineSearch':{'None':self.sumb.nksolvervars.nolinesearch,
-                                'Cubic':self.sumb.nksolvervars.cubiclinesearch,
-                                'nonMonotone':self.sumb.nksolvervars.nonmonotonelinesearch,
-                                'location':'nksolvervars.nkls'},
+                
                 # Load Balance Paramters
                 'blockSplitting':{'location':'inputparallel.splitblocks'},
                 'loadImbalance':{'location':'inputparallel.loadimbalance'},
@@ -802,12 +798,12 @@ class SUMB(AeroSolver):
             *self.metricConversion
         self.sumb.inputphysics.pointref[2] = aero_problem._refs.zref\
             *self.metricConversion
-        self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xrot\
-                                            *self.metricConversion
-        self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yrot\
-                                            *self.metricConversion
-        self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zrot\
-                                            *self.metricConversion
+#         self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xrot\
+#             *self.metricConversion
+#         self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yrot\
+#             *self.metricConversion
+#         self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zrot\
+#             *self.metricConversion
         #update the flow vars
         self.sumb.updatereferencepoint()
         self._update_vel_info = True
@@ -962,15 +958,6 @@ class SUMB(AeroSolver):
         self.sumb.setuniformflow()
         
         return
-
-    def reInitFlow(self):
-        '''
-        Reset the flow to recover from a nan
-        '''
-        self.sumb.initflow()
-        
-        return
-
 
     def getDensity(self):
         '''
@@ -1370,6 +1357,8 @@ class SUMB(AeroSolver):
             cfd_force_pts = self.getForcePoints()
         # end if
         [npts,nTS] = self.sumb.getforcesize()
+
+        nTS = 1
         if npts > 0:
             forces = self.sumb.getforces(cfd_force_pts.T).T
         else:
@@ -1380,6 +1369,7 @@ class SUMB(AeroSolver):
 
     def getForcePoints(self):
         [npts,nTS] = self.sumb.getforcesize()
+        nTS = 1
         if npts > 0:
             return self.sumb.getforcepoints(npts,nTS).T
         else:
@@ -1397,15 +1387,6 @@ class SUMB(AeroSolver):
 
         self.sumb.verifyforces(cfd_force_pts.T)
 
-        return
-
-    def verifyResiduals(self):
-        '''
-        run the residual verify routines
-        '''
-        level = 1
-        #self.sumb.verifyradj(level)
-        self.sumb.verifyresiduals(level)
         return
 
     def verifyBendingPartial(self):
@@ -1430,7 +1411,7 @@ class SUMB(AeroSolver):
         # Check to see if the adjoint Matrix is setup:
         if self.myid==0: print 'setting up matrix'
         if not self.stateSetup:
-            self.sumb.createstatepetscvars()
+            self.sumb.setupstatepetscvars()
         # end if
         # Short form of objective--easier code reading
         if self.myid==0: print 'possible objectives',objective
@@ -1453,7 +1434,7 @@ class SUMB(AeroSolver):
         '''
         if self.myid==0: print 'setting up vector'
         if not self.stateSetup:
-            self.sumb.createstatepetscvars()
+            self.sumb.setupstatepetscvars()
         # end if
         if self.myid==0:print 'computing partials'
         self.computeObjPartials(objective)
@@ -1606,7 +1587,7 @@ class SUMB(AeroSolver):
         # solver is not used...a safeguard check is done in Fortran
         self.sumb.destroynksolver()
 
-        # Run initAdjoint in case this is the first adjoint solve
+        # Run initAdjoint incase this is the first adjoint solve
         self.initAdjoint()
         
         if self.getOption('useReverseModeAD'):
@@ -1631,6 +1612,7 @@ class SUMB(AeroSolver):
 
             if compute:
                 self.sumb.setupallresidualmatrices()
+                self.mesh.setupWarpDeriv()
 
                 # Set the flags as true
                 self.stateSetup = True

@@ -38,8 +38,6 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
   use costFunctions
   use section          !sections
   use monitor          !TimeUnsteady
-  use iteration
-  use inputDiscretization ! spaceDiscr
   implicit none
   !
   ! Subroutine arguments.
@@ -106,7 +104,6 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
   real(kind=realType), dimension(3,3) :: rotationMatrix  
   real(kind=realType) :: t(nSections),dt(nSections)
   real(kind=realType) :: tOld,tNew
-
 
   ! Copy over values we need for the computeforcenadmoment call:
   MachCoefAdj = MachCoef
@@ -278,29 +275,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
         bendingmomentb = 1.0
         call COMPUTEROOTBENDINGMOMENT_B(globalCFVals, globalCFValsb, bendingmoment, &
              &  bendingmomentb)
-
-        if (nDesignPointRefX >=0) then
-           if (myID==0)then
-              dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefb(1)*dJdc(sps)
-           end if
-        end if
         
-        if (nDesignPointRefY >=0) then
-           if (myID==0)then
-              dIda(nDesignPointRefY + 1) = dIda(nDesignPointRefY + 1) +pointrefb(2)*dJdc(sps)
-           end if
-        end if
-        
-        if (nDesignPointRefZ >=0) then
-           if (myID==0)then
-              dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) +pointrefb(3)*dJdc(sps)
-           end if
-        end if
-        if (nDesignLengthRef >=0) then
-           if (myID==0)then
-              dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefb*dJdc(sps)
-           end if
-        end if
      endif
 
      domainLoopAD: do nn=1,nDom
@@ -412,14 +387,13 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
                  enddo
               end if
               
-             
-              ! Set the pt derivative values in dIdpt
-              do j=jBeg,jEnd
-                 do i=iBeg,iEnd
-                    ! This takes care of the ii increments -- 
-                    ! DO NOT NEED INCREMENT ON LINE BELOW
-                    ii = ii + 1
-                    if (usedJdx) then
+              if (usedJdx) then
+                 ! Set the pt derivative values in dIdpt
+                 do j=jBeg,jEnd
+                    do i=iBeg,iEnd
+                       ! This takes care of the ii increments -- 
+                       ! DO NOT NEED INCREMENT ON LINE BELOW
+                       ii = ii + 1
                        call VecSetValues(dJdx,3,&
                             
                             (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/)+(sps-1)*npts*3,&
@@ -430,11 +404,11 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
                        rotpointzcorrection = rotpointzcorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,0,1/)+RpZCorrection))
                        
                        call EChk(PETScIerr,__file__,__line__)
-                    end if
+                    end do
                  end do
-              end do
+              end if
               !ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
-              
+
               ! We also have the derivative of the Objective wrt the
               ! "AeroDVs" intrinsic aero design variables, alpha, beta etc
 
@@ -456,17 +430,16 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
               end if
               
               if (nDesignPointRefX >=0) then
-                 
-                 dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefAdjb(1)*dJdc(sps)
-                
+
+                 dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefAdjb(1)*dJdc(sps)+pointrefb(1)*dJdc(sps)
               end if
 
               if (nDesignPointRefY >=0) then
-                 dIda(nDesignPointRefY + 1) = dIda(nDesignPointRefY + 1) + pointrefAdjb(2)*dJdc(sps)
+                 dIda(nDesignPointRefY + 1) = dIda(nDesignPointRefY + 1) + pointrefAdjb(2)*dJdc(sps)+pointrefb(2)*dJdc(sps)
               end if
 
               if (nDesignPointRefZ >=0) then
-                 dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefAdjb(3)*dJdc(sps)
+                 dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefAdjb(3)*dJdc(sps)+pointrefb(3)*dJdc(sps)
               end if
 
               if (nDesignRotCenX >= 0) then
@@ -482,7 +455,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
 
               if (nDesignLengthRef >=0) then
 
-                 dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb*dJdc(sps)
+                 dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb*dJdc(sps)+lengthRefb*dJdc(sps)
                  
               end if
               if (nDesignSurfaceRef >=0) then
@@ -513,7 +486,6 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
      call VecAssemblyEnd(dJdx,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
   end if
-
 #endif
 end subroutine computeObjPartials
 

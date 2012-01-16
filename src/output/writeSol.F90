@@ -27,6 +27,7 @@
        use killSignals
        use monitor
        use outputMod
+
        implicit none
 !
 !      Local variables.

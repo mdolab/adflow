@@ -53,8 +53,6 @@ subroutine getCurrentResidual(rhoRes,totalRRes)
      end do
   end do
 
-  totalRRes = zero ! Just to make valgrind happy...
-
   call mpi_allreduce(r_sum,totalRRes,1,sumb_real,mpi_sum,&
        SUmb_comm_world, ierr)
   call EChk(ierr,__FILE__,__LINE__)

@@ -233,10 +233,6 @@ python module sumb ! in
        subroutine verifyradj(level)
          integer(kind=inttype) intent(in) :: level
        end subroutine verifyradj
-       
-       subroutine verifyresiduals(level)
-         integer(kind=inttype) intent(in) :: level
-       end subroutine verifyresiduals
 
        ! ############################################################################
        ! SUmb ADjoint Core Routines
@@ -1064,10 +1060,6 @@ python module sumb ! in
          real(kind=realtype) :: totalrfinal
          logical :: rkreset
          integer(kind=inttype) :: nrkreset
-         integer(kind=inttype) parameter,optional :: nolinesearch=0_inttype         
-         integer(kind=inttype) parameter,optional :: cubiclinesearch=1_inttype         
-         integer(kind=inttype) parameter,optional :: nonmonotonelinesearch=2_inttype         
-         integer(kind=inttype) :: nkls
        end module nksolvervars
        
 

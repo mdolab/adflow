@@ -135,11 +135,6 @@ include ${PETSC_DIR}/conf/variables
 PETSC_INCLUDE_FLAGS=${PETSC_CC_INCLUDES} -I$(PETSC_DIR)
 PETSC_LINKER_FLAGS=${PETSC_LIB}
 
-#python 2.5
-#PYTHON_INCLUDE_DIR = /usr/include/python2.5/
-#NUMPY_ROOT_DIR =/usr/lib/python2.5/site-packages/
-
-#python 2.6
 PYTHON_INCLUDE_DIR = /usr/include/python2.6/
 NUMPY_ROOT_DIR =/usr/lib/python2.6/dist-packages/
 

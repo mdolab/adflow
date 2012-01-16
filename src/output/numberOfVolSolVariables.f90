@@ -15,7 +15,7 @@
 !      * numberOfVolSolVariables determines the number of volume        *
 !      * variables to be written to the solution file. A distinction is *
 !      * made between solution variables and discrete variables. The    *
-!      * former describes the actual solution, the latter is additional *
+!      * former discribes the actual solution, the latter is additional *
 !      * info such as equation residuals.                               *
 !      *                                                                *
 !      ******************************************************************

@@ -70,6 +70,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+	
 
        ! Set the cgns ID for the "master" file and read the size
        ! of the block as well as the zone name.
@@ -112,11 +113,11 @@
        ! Check the size of this zone for the other grids to be read.
        ! They should be equal. Note that familyName is only used as
        ! a dummy in this call.
-
+       !print *,'nGrids Read',nGridsRead
        do nn=2,nGridsRead
          call cg_zone_read_f(fileIDs(nn), cgnsBase, nZone, &
                              familyName, sizesBlock, ierr)
-
+	 !print *,'nn',nn,familyName
          if(ierr /= all_ok)               &
            call terminate("readZoneInfo", &
                           "Something wrong when calling cg_nZones_f")
@@ -135,7 +136,7 @@
        enddo
 
        ! Goto this zone.
-
+       !print *,'zoneIndex',nZone
        call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, "end")
        if(ierr /= all_ok)               &
          call terminate("readZoneInfo", &
@@ -162,7 +163,9 @@
          ! grid this name must be found.
 
          nn = cgnsNFamilies
-
+	
+         !print *,'family name ',familyName, sortedFamName(1:nn)
+	
          ii = bsearchStrings(familyName, sortedFamName, nn)
          if(ii == 0) then
 
@@ -322,7 +325,7 @@
           cgnsDoms(nZone)%rotatingFrameSpecified = .true.
           cgnsDoms(nZone)%rotRate   = cgnsFamilies(nn)%rotRate
           cgnsDoms(nZone)%rotCenter = cgnsFamilies(nn)%rotCenter
-
+          !print *,'in read,rotrate',cgnsDoms(nZone)%rotRate
        else testOverwrite
 
          ! Go to the correct location in the cgns file, where

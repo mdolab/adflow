@@ -143,16 +143,19 @@
 !
        ! Release the memory of flowDoms of the finest grid and of the
        ! array flowDoms afterwards.
-
+       !print *,'In release memory 2'
        do sps=1,nTimeIntervalsSpectral
          do nn=1,nDom
+            !print *,'deallocating block:',sps,nn
            call deallocateBlock(nn, 1_intType, sps)
          enddo
        enddo
+       !print *,'Blocks deallocated'
        deallocate(flowDoms, stat=ierr)
        if(ierr /= 0)                          &
          call terminate("releaseMemoryPart2", &
                         "Deallocation failure for flowDoms")
+       !print *,'flowdoms deallocated'
 
        ! Some more memory should be deallocated if this code is to
        ! be used in combination with adaptation.
@@ -203,6 +206,7 @@
        ! stored in there. Initialize ierr to 0, such that the terminate
        ! routine is only called at the end if a memory deallocation
        ! failure occurs.
+       !print *,'visc subface'
        ierr = 0
        viscSubface => flowDoms(nn,level,sps)%viscSubface
        do i=1,flowDoms(nn,level,sps)%nViscBocos
@@ -217,6 +221,7 @@
 
        ! Set the pointer for BCData and deallocate the memory
        ! stored in there.
+       !print *,'bcdata'
        BCData => flowDoms(nn,level,sps)%BCData
        do i=1,flowDoms(nn,level,sps)%nBocos
 
@@ -283,6 +288,7 @@
          if( associated(BCData(i)%turbInlet) ) &
            deallocate(BCData(i)%turbInlet, stat=ierr)
          if(ierr /= 0) deallocationFailure = .true.
+         !print *,'nullify bcdata'
          nullify(BCData(i)%norm)
          nullify(BCData(i)%rface)
          nullify(BCData(i)%uSlip)
@@ -302,7 +308,6 @@
 
        enddo
 
-
        do i=1,flowDoms(nn,level,sps)%nSubface
           warp_comm=>flowDoms(nn,level,sps)%warp_comm
           if (associated(warp_comm))then
@@ -317,6 +322,8 @@
           
        enddo
 
+       ! Deallocate all pointers of this block.
+       !print *,'pointers'
        if( associated(flowDoms(nn,level,sps)%BCType) ) &
          deallocate(flowDoms(nn,level,sps)%BCType, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
@@ -427,18 +434,6 @@
 
        if( associated(flowDoms(nn,level,sps)%groupNum) ) &
          deallocate(flowDoms(nn,level,sps)%groupNum, stat=ierr)
-       if(ierr /= 0) deallocationFailure = .true.
-
-       if( associated(flowDoms(nn,level,sps)%idWBC) ) &
-         deallocate(flowDoms(nn,level,sps)%idWBC, stat=ierr)   ! eran-cbd
-       if(ierr /= 0) deallocationFailure = .true.              ! eran-cbd
-
-       if( associated(flowDoms(nn,level,sps)%contributeToForce) ) &
-         deallocate(flowDoms(nn,level,sps)%contributeToForce, stat=ierr)   ! eran-cbd
-       if(ierr /= 0) deallocationFailure = .true.              ! eran-cbd
-
-       if( associated(flowDoms(nn,level,sps)%iblank) ) &
-         deallocate(flowDoms(nn,level,sps)%iblank, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
        if( associated(flowDoms(nn,level,sps)%ibndry) ) &
@@ -593,7 +588,7 @@
        if( associated(flowDoms(nn,level,sps)%p) ) &
          deallocate(flowDoms(nn,level,sps)%p, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
-
+       
        if( associated(flowDoms(nn,level,sps)%gamma) ) &
          deallocate(flowDoms(nn,level,sps)%gamma, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
@@ -625,7 +620,7 @@
        if( associated(flowDoms(nn,level,sps)%dwOldRK) ) &
          deallocate(flowDoms(nn,level,sps)%dwOldRK, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
-
+       
        if( associated(flowDoms(nn,level,sps)%w1) ) &
          deallocate(flowDoms(nn,level,sps)%w1, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
@@ -761,6 +756,9 @@
          deallocate(flowDoms(nn,level,sps)%bvtk2, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
+
+
+       !print *,'warp comm'
        if( associated(flowDoms(nn,level,sps)%warp_comm) ) &
          deallocate(flowDoms(nn,level,sps)%warp_comm, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
@@ -772,6 +770,7 @@
                         "Something went wrong when deallocating memory")
 
        ! Nullify the pointers of this block.
+       !print *,'nullifying flowdom pointers'
        call nullifyFlowDomPointers(nn,level,sps)
  
        end subroutine deallocateBlock

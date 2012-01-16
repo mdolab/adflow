@@ -60,16 +60,13 @@ subroutine terminate(routineName, errorMessage)
   print "(a)", "#=========================== !!! Error !!! &
        &============================"
 
-
   if(.not. SU_MPI_isSequential) then
      write(integerString,"(i8)") myID
      integerString = adjustl(integerString)
 
-
      print "(2a)", "#* Terminate called by processor ", &
           trim(integerString)
   endif
-
 
   ! Write the header of the error message.
 
@@ -85,11 +82,9 @@ subroutine terminate(routineName, errorMessage)
      ! If longer than the maximum number of characters allowed
      ! on a line, it is attempted to split the message.
 
-
      message = adjustl(message)
      len = len_trim(message)
      i2  = min(maxCharLine,len)
-
 
      if(i2 < len) i2 = index(message(:i2), " ", .true.) - 1
      if(i2 < 0)   i2 = index(message, " ") - 1
@@ -97,7 +92,6 @@ subroutine terminate(routineName, errorMessage)
 
      ! Write this part of the error message. If it is the first
      ! line of the message some additional stuff is printed.
-
 
      if( firstTime ) then
         print "(2a)", "#* Error message: ", &
@@ -108,31 +102,23 @@ subroutine terminate(routineName, errorMessage)
              trim(message(:i2))
      endif
 
-
      ! Exit the loop if the entire message has been written.
-
 
      if(i2 == len) exit
 
      ! Adapt the string for the next part to be written.
 
-
      message = message(i2+1:)
-
 
   enddo
 
-
   ! Write the trailing message.
-
 
   print "(a)", "#*"
   print "(a)", "#* Now exiting"
   print "(a)", "#==========================================&
        &============================"
   print "(a)", "#"
-
-
 
   ! Call abort and stop the program. This stop should be done in
   ! abort, but just to be sure.
@@ -144,7 +130,6 @@ subroutine terminate(routineName, errorMessage)
      call mpi_abort(SUmb_comm_world, 1, ierr)
      stop
   end if
-
 
 end subroutine terminate
 

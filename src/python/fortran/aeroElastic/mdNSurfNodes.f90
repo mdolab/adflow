@@ -90,7 +90,6 @@
             else 
                !no BC Families present, use the BCTypes to determine surface
 
-
                ! Subface does not belong to a family. It is possible that
                ! no family info is present in the grid. In that case all
                ! solid wall boundary points are accumulated.
@@ -98,6 +97,10 @@
              if((BCType(mm) == EulerWall       .or. &
                  BCType(mm) == NSWallAdiabatic .or. &
                  BCType(mm) == NSWallIsothermal)) then
+!!$             if(cgnsNfamilies == 0 .and.            &
+!!$                (BCType(mm) == EulerWall       .or. &
+!!$                 BCType(mm) == NSWallAdiabatic .or. &
+!!$                 BCType(mm) == NSWallIsothermal)) then
 
                 nni = inEnd(mm) - inBeg(mm) + 1
                 nnj = jnEnd(mm) - jnBeg(mm) + 1

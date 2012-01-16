@@ -162,7 +162,6 @@
           
        end type warp_comm_type
 
-
 !
 !      ******************************************************************
 !      *                                                                *
@@ -263,22 +262,13 @@
          !                         sliding mesh interface. One side of
          !                         the interface gets a positive number,
          !                         the other side a negative one.
-!
-!-- eran-CBD start
-!
-         ! idWBC(:)                Wall family locator for components
-         !                         forces/moment contribution break-down
-         !  contributeToForce      Defines if a certain surfac family contributes to forces
-         !                         and moments
-!
-!-- eran-CBD ends
-!
+
          integer(kind=intType) :: nSubface, n1to1, nBocos, nViscBocos
 
          integer(kind=intType), dimension(:), pointer :: BCType
          integer(kind=intType), dimension(:), pointer :: BCFaceID
          integer(kind=intType), dimension(:), pointer :: nNodesSubface
-
+         !integer(kind=intType), dimension(:), allocatable :: nNodesSubface
          integer(kind=intType), dimension(:), pointer :: cgnsSubface
 
          integer(kind=intType), dimension(:), pointer :: inBeg, inEnd
@@ -298,8 +288,6 @@
          integer(kind=intType), dimension(:), pointer :: l1, l2, l3
          integer(kind=intType), dimension(:), pointer :: groupNum
 
-         integer(kind=intType), dimension(:), pointer :: idWBC !-- eran-CBD
-         logical , dimension(:), pointer ::  contributeToForce  ! eran-cbd
 
 !
 !        ****************************************************************
@@ -659,7 +647,6 @@
          !                          to the nearest viscous wall.
 
          real(kind=realType), dimension(:,:,:), pointer :: d2Wall
-         real(kind=realType), dimension(:,:,:), pointer :: filterDES ! eran-des
 
          ! bmti1(je,ke,nt1:nt2,nt1:nt2): Matrix used for the implicit
          !                               boundary condition treatment of
@@ -756,9 +743,10 @@
          integer(kind=intType),dimension(:),pointer::ifaceptb
          integer(kind=intType),dimension(:),pointer::iedgeptb
 
-
        end type blockType
 
+
+   
 !
 !      ******************************************************************
 !      *                                                                *
@@ -774,7 +762,6 @@
 
        type(blockType), allocatable, dimension(:,:,:) :: flowDoms
        type(blockType), allocatable, dimension(:)     :: flowDomsd
-
 !
 !      ******************************************************************
 !      *                                                                *
