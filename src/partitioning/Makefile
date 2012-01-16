@@ -70,6 +70,7 @@ FF90_OBJECTS_2 = allocCoorFineGrid.o\
 		 internalBC.o\
 		 loadBalance.o\
 		 overwriteFamilyData.o\
+		 overwriteWallBCData.o\
 		 partitionAndReadGrid.o\
 		 qsortSubblocksOfCGNSType.o\
 		 qsortSubfaceNonMatchType.o\
@@ -95,7 +96,9 @@ FF90_OBJECTS_2 = allocCoorFineGrid.o\
 		 splitBlock.o\
                  storeReferenceMesh.o\
 		 timePeriodSpectral.o\
-		 timeRotMatricesSpectral.o
+		 timeRotMatricesSpectral.o\
+		 wallComponentsAssignments.o
+
 
 CC_OBJECTS     = metisInterface.o
 

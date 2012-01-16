@@ -51,11 +51,14 @@ FF90_OBJECTS = applyAllBC.o\
 	       bcSymmPolar.o\
 	       bcThrust.o\
 	       bleedFlowParameters.o\
+	       calMassFlux.o\
+	       coeffConvergenceCheck.o\
 	       computeInletMassFlowFullWheel.o\
 	       computeLamViscosity.o\
 	       computeUtau.o\
 	       convergenceHeader.o\
 	       convergenceInfo.o\
+	       componentsBreakDownPrintout.o\
 	       derivativeRotMatrixRigid.o\
 	       eulerWallsPresent.o\
 	       executeMGCycle.o\
@@ -63,6 +66,7 @@ FF90_OBJECTS = applyAllBC.o\
                farFieldDrag.o\
 	       farFieldInducedDrag.o\
 	       forcesAndMoments.o\
+	       forcesAndMomentsCBD.o\
 	       farFieldDrag.o\
 	       gridVelocitiesCoarseLevels.o\
 	       gridVelocitiesFineLevel.o\

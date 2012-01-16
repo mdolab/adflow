@@ -17,8 +17,8 @@ subroutine NKsolver
   use ADjointVars , only: nCellsLocal
   use NKSolverVars, only: dRdw, dRdwPre, jacobian_lag, &
        totalR0, totalRStart, wVec, rVec, deltaW, global_ksp, &
-       ksp_rtol, ksp_atol, ksp_max_it, ksp_subspace, ksp_div_tol, &
-       nksolvecount, times, func_evals, Mmax, iter_k, iter_m, NKLS, &
+       ksp_rtol, ksp_atol, func_evals, ksp_max_it, ksp_subspace, ksp_div_tol, &
+       nksolvecount, Mmax, iter_k, iter_m, NKLS, &
        nolinesearch, cubiclinesearch, nonmonotonelinesearch, rhores0, &
        NK_switch_tol, rhoresstart, work, g
 
