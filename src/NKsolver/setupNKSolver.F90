@@ -26,7 +26,7 @@ subroutine setupNKsolver
   integer(kind=intType), dimension(:,:), pointer :: stencil
 
   integer(kind=intType) :: i,j,k,nn,i2,j2,k2,d2,l,sps
-  external FormFunction_mf, mykspmonitor
+  external FormFunction_mf
 
   if (not(NKSolverSetup)) then
      nDimW = nw * nCellsLocal * nTimeIntervalsSpectral
@@ -100,13 +100,6 @@ subroutine setupNKsolver
      call KSPSetOperators(global_ksp,dRdw,dRdWPre, &
           DIFFERENT_NONZERO_PATTERN,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-
-     ! Uncomment if you want to look at the KSP residual during the
-     ! solve...this is a hack for debuggin only...it uses the adjoint
-     ! monitor function 
-
-     ! call KSPMonitorSet(global_ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
-     !      PETSC_NULL_FUNCTION, ierr) call EChk(ierr,__FILE__,__LINE__)
 
      NKSolverSetup = .True.
      NKSolveCount = 0

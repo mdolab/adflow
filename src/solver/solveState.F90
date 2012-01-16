@@ -453,10 +453,10 @@ subroutine solveState
 
         ! Check if the bleed boundary conditions must be updated and
         ! do so if needed.
-
+        
         if(mod(iter, nUpdateBleeds) == 0) &
              call BCDataMassBleedOutflow(.false., .false.)
-
+        
      enddo multiGrid
   end if
 
@@ -470,7 +470,7 @@ subroutine solveState
      ! We have to check to see if NKSwitchtol was LOWER than
      ! l2convrel. This means that the RK solution is already good
      ! enough for what we want so we're done
-
+    
      call getcurrentResidual(rhoRes1,totalRRes1)
      if (rhoRes1 < rhoResStart * l2convrel) then
         ! We no not have to run the NK solver so do nothing

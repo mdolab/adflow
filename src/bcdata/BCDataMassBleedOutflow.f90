@@ -25,8 +25,6 @@
        use inputIteration
        use inputTimeSpectral
        use iteration
-       use communication  !eran-massf
-
        implicit none
 !
 !      Subroutine arguments.
@@ -153,15 +151,9 @@
                ! Make sure that the factor is within reasonable limits.
 
                fact = max(0.9_realType,min(fact,1.1_realType))
-
-               write(*,'("# Outflowbleeds: fact = ",f10.4," des. mdot = ",&
-                    1pg12.5," curr. mdot = ",1pg12.5," Pb = ",1pg12.5)')&
-                    fact, outflowBleeds(ii)%massFlux,&
-                    outflowBleeds(ii)%curMassFlux,BCData(mm)%ps(2,2)   !eran-bleed
-  
-!eran-bleed                print 101, fact, outflowBleeds(ii)%massFlux, &
-!eran-bleed                           outflowBleeds(ii)%curMassFlux
-!eran-bleed  101           format("# Outflowbleeds: ", f9.6,2(1x,e12.5))
+               print 101, fact, outflowBleeds(ii)%massFlux, &
+                          outflowBleeds(ii)%curMassFlux
+ 101           format("# Outflowbleeds: ", f9.6,2(1x,e12.5))
 
                ! Multiply the prescribed pressure by fact.
 

@@ -77,7 +77,6 @@
        call convertToLowerCase(variables)
 
        ! Loop to extract the info from the string variables.
-       tmpNames(:) = ""
 
        do
          ! Condition to exit the loop.
@@ -96,10 +95,8 @@
            variables = variables(pos+1:)
          endif
 
-     
-
          ! Check the keyword.
-         
+
          select case (keyword)
            case ("")
              ! Multiple occurence of "_". Just ignore it.
@@ -193,7 +190,6 @@
           case("totalr")
              nMon = nMon + 1; nMonSum = nMonSum + 1
              tmpNames(nMon) = 'totalR'
-
            case default
              write(errorMessage,"(3a)") "Unknown monitoring variable, ", &
                                         trim(keyword), ", specified"
@@ -223,7 +219,6 @@
          call terminate("monitorVariables", &
                         "Memory allocation failure for monNames")
 
-       monNames(:) = ""
        ! Copy the monitoring names into monNames.
 
        do pos=1,nMon

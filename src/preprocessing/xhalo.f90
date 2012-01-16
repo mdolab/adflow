@@ -184,42 +184,13 @@
                norm(2) = v1(3)*v2(1) - v1(1)*v2(3)
                norm(3) = v1(1)*v2(2) - v1(2)*v2(1)
 
-               do j=(jBeg+1),jEnd
-                 do i=(iBeg+1),iEnd
-
-                   ! Determine the vector from the lower left corner to
-                   ! the upper right corner. Due to the usage of pointers
-                   ! an offset of +1 must be used, because the original
-                   ! array x start at 0.
-
-                   v1(1) = x1(i+1,j+1,1) - x1(i,j,1)
-                   v1(2) = x1(i+1,j+1,2) - x1(i,j,2)
-                   v1(3) = x1(i+1,j+1,3) - x1(i,j,3)
-
-                   ! And the vector from the upper left corner to the
-                   ! lower right corner.
-
-                   v2(1) = x1(i+1,j,1) - x1(i,j+1,1)
-                   v2(2) = x1(i+1,j,2) - x1(i,j+1,2)
-                   v2(3) = x1(i+1,j,3) - x1(i,j+1,3)
-
-                   ! Determine the normal of the face by taking the cross
-                   ! product of v1 and v2 and add it to norm.
-
-                   norm(1) = norm(1) + v1(2)*v2(3) - v1(3)*v2(2)
-                   norm(2) = norm(2) + v1(3)*v2(1) - v1(1)*v2(3)
-                   norm(3) = norm(3) + v1(1)*v2(2) - v1(2)*v2(1)
-
-                 enddo
-              enddo
-
                ! Compute the length of the normal and test if this is
                ! larger than eps. If this is the case this means that
                ! it is a nonsingular subface and the coordinates are
                ! corrected.
-
+               
                length = sqrt(norm(1)**2 + norm(2)**2 + norm(3)**2)
-
+               
                testSingular: if(length > eps) then
                   
                   ! Compute the unit normal of the subface.
@@ -270,9 +241,8 @@
             endif testSymmetry
          enddo loopBocos
       enddo domains
-   enddo spectralLoop
+   enddo spectralLoop 
   
-
 !
 !      ******************************************************************
 !      *                                                                *

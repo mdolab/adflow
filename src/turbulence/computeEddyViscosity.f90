@@ -60,12 +60,8 @@
          case (spalartAllmaras, spalartAllmarasEdwards)
            call saEddyViscosity
 
-         case (komegaWilcox) ! eran-kwmod starts
+         case (komegaWilcox, komegaModified)
            call kwEddyViscosity
-
-         case(komegaModified)
-            call kwModifiedEddyViscosity
-!----------------------------! eran-kwmod ends
 
          case (menterSST)
            call SSTEddyViscosity
@@ -300,92 +296,6 @@
        enddo
 
        end subroutine kwEddyViscosity
-
-       subroutine kwModifiedEddyViscosity
-!------------eran-kwmod starts
-!
-!      ******************************************************************
-!      *                                                                *
-!      * kwModifiedEddyViscosity computes the eddy viscosity according  *
-!      * to the k-omega models (modified version) for the block given   *
-!      * in blockPointers.                                              *
-!      *                                                                *
-!      ******************************************************************
-!
-       use blockPointers
-       use constants 
-       use paramTurb
-       use inputPhysics
-       use inputDES ! eran-des
-       use turbMod  !------------eran-kwmod
-       implicit none
-!
-!      Local variables.
-!
-       integer(kind=intType) :: i, j, k
-       real(kind=realType) :: ClimSL, stressLimiter,tildeOmega
-       real(kind=realType) :: kPositive, eddyViscosityDES   ! eran-des
-       
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-!-- Compute rate of strain or vorticity magnitude for Stress Limiter
-!
-       prod  => dw(1:,1:,1:,iprod) !------------eran-kwmod
-
-        select case (turbProd)
-           case (strain)
-             call prodSmag2
-             ClimSL = 0.875_realType/sqrt(rkwBetas)
-
-           case (vorticity)
-             call prodWmag2
-             ClimSL = 0.95_realType/sqrt(rkwBetas)
-
-           case (katoLaunder)
-             call prodKatoLaunder
-             ClimSL = 0.875_realType/sqrt(rkwBetas)  ! eran: my guess
-
-         end select
-
-       ! Loop over the cells of this block and compute the eddy viscosity.
-       ! Do not include halo's.
-
-       do k=2,kl
-         do j=2,jl
-           do i=2,il
-              stressLimiter = ClimSL*sqrt(prod(i,j,k))
-              tildeOmega = max(w(i,j,k,itu2),stressLimiter)
-             rev(i,j,k) = abs(w(i,j,k,irho)*w(i,j,k,itu1)/tildeOmega)
-           enddo
-         enddo
-       enddo
-
-!------------eran-kwmod ends
-
-!----------eran-des starts
-
-       if(applyDES)then
-          do k=2,kl
-             do j=2,jl
-                do i=2,il
-
-                   kPositive = max(w(i,j,k,itu1),eps)
-                   eddyViscosityDES = CDES*filterDES(i,j,k)*sqrt(kPositive)
-                   rev(i,j,k) = min(rev(i,j,k),eddyViscosityDES)
-          
-                enddo
-             enddo
-          enddo
-
-       end if ! aplyDES
-
-!----------eran-des ends
-       end subroutine kwModifiedEddyViscosity
 
 !      ==================================================================
 

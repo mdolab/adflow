@@ -483,11 +483,6 @@
       call MatAssembled(drdx,assembled,ierr)
       call EChk(ierr,__FILE__,__LINE__)
       print *,'assembled spatial =',assembled
-
-      call MatGetOwnershipRange(drdx,mmmm,nnnn,PETScIerr)
-      print *, mmmm,nnnn
-      !print *,'idxres = ', idxres, 'idxnode =',idxnode
-      call EChk(PETScIerr,__FILE__,__LINE__)
 !      !now extract and write to a file
        do sps = 1,nTimeIntervalsSpectral
        do nn = 1,nDom
@@ -510,9 +505,11 @@
                                  do n = 1,nw
                                     idxres = globalCell(i,j,k)*nw+n
                                     if ((idxres-1)>=0 .and. (idxnode-1)>=0)then
-                                       call MatGetValues(drdx,1,idxres-1,1,idxnode-1,value1,PETScIerr)
-                                       !call MatGetValues(drdx,1,idxnode-1,1,idxres-1,value1,PETScIerr)
-                                       call EChk(PETScIerr,__FILE__,__LINE__)
+                                       call MatGetValues(drdx,1,idxnode-1,1,idxres-1,value1,PETScIerr)
+                                       !call MatGetOwnershipRange(drdx,mmmm,nnnn)
+                                       !print *, mmmm,nnnn
+                                       !print *,'idxres = ', idxres, 'idxnode =',idxnode
+                                       !call EChk(PETScIerr,__FILE__,__LINE__)
                                        !print *,'value',value,i,j,k
                                        !if(value.ne.0)then
                                        if(abs(value1)>1e-10)then

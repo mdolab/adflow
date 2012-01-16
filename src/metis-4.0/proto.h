@@ -8,7 +8,7 @@
  * Started 10/19/95
  * George
  *
- * $Id: proto.h 1 2008-01-14 19:16:54Z vdweide $
+ * $Id$
  *
  */
 

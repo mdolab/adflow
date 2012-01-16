@@ -30,7 +30,6 @@
        use su_cgns
        use outputMod
        use inputIteration
-
        implicit none
 !
 !      Local variables.
@@ -101,10 +100,8 @@
          do nn=1,nVolSolToWrite
            call cg_close_f(fileIDs(nn), ierr)
            if(ierr /= all_ok)                     &
- 		write(*,*)'ERROR:writeCGNSVolumeSol ', &
- 		' Something wrong when calling cg_close_f' ! eran-closecgns
- ! eran-closecgns            call terminate("writeCGNSVolumeSol", &
- ! eran-closecgns                           "Something wrong when calling cg_close_f")
+             call terminate("writeCGNSVolumeSol", &
+                            "Something wrong when calling cg_close_f")
          enddo
 
       end if
@@ -121,15 +118,11 @@
       end if
 
       if(ierr /= 0)                          &
-         deallocate(fileIDs, cgnsBases, stat=ierr)
-         if(ierr /= 0)                          &
            call terminate("writeCGNSVolumeSol", &
                           "Deallocation error for fileIDs &
                           &and cgnsBases.")
-      
 
-       ! Deallocate the memory of solNames.
-
+      ! Deallocate the memory of solNames.
 
        deallocate(solNames, stat=ierr)
        if(ierr /= 0)                          &
@@ -158,7 +151,6 @@
 
        ! Write a message that the solution file has been written.
        ! Of course only processor 0 does this.
-
 
        if(myID == 0 .and. printIterations) then
          print "(a)", "# Volume solution file(s) written"

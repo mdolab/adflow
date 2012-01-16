@@ -23,7 +23,6 @@
        use inputPhysics
        use inputTimeSpectral
        use monitor
-       use flowVarRefState  ! eran-massf
        implicit none
 !
 !      Local variables.
@@ -85,13 +84,13 @@
          call mpi_reduce(massFlowFamilyInv(1,nn), tmp, nSize, &
                          sumb_real, mpi_sum, 0, SUmb_comm_world, ierr)
          do ii=1,nSize
-           massFlowFamilyInv(ii,nn) = tmp(ii)* sqrt(pRef*rhoRef) ! eran-massf
+           massFlowFamilyInv(ii,nn) = tmp(ii)
          enddo
 
          call mpi_reduce(massFlowFamilyDiss(1,nn), tmp, nSize, &
                          sumb_real, mpi_sum, 0, SUmb_comm_world, ierr)
          do ii=1,nSize
-           massFlowFamilyDiss(ii,nn) = tmp(ii) * sqrt(pRef*rhoRef) ! eran-massf
+           massFlowFamilyDiss(ii,nn) = tmp(ii)
          enddo
        enddo
 

@@ -2,10 +2,9 @@
 !      ******************************************************************
 !      *                                                                *
 !      * File:          readConnectivityPlot3D.f90                      *
-!      * Author:        Edwin van der Weide, Steve Repsher, Eran Arad   *
-!      *                Juan J. Alonso                                  *
+!      * Author:        Edwin van der Weide, Steve Repsher              *
 !      * Starting date: 02-18-2005                                      *
-!      * Last modified: 08-15-2009                                      *
+!      * Last modified: 10-29-2007                                      *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -19,79 +18,6 @@
 !      * both for internal and physical boundary subfaces.              *
 !      * This file is read by all processors and the information stored *
 !      * in this file is also stored on all processors                  *
-!      * The recognized structure for a Plot3D connectivity file is as  *
-!      *  follows:                                                      *
-!      *                                                                *
-!      * Number of Families                                             *
-!      * Family 1, BCType 1 (optional)                                  *
-!      * Family 2, BCType 2                                             *
-!      * Family 3, BCType 3                                             *
-!      *    .          .                                                *
-!      *    .          .                                                *
-!      *    .          .                                                *
-!      * Family N, BCType N                                             *
-!      * Number of Blocks                                               *
-!      * Block 1, Family 1 (optional)                                   *
-!      *  Face 1, NSfaces 1                                             *
-!      *   Family,ib,ie,jb,je,kb,ke,DonorBlock,ib,ie,jb,je,or1,or2,or3  *
-!      *     .                                                          *
-!      *     .                                                          *
-!      *  Face 2, NSfaces 2                                             *
-!      *   Family,ib,ie,jb,je,kb,ke,DonorBlock,ib,ie,jb,je,or1,or2,or3  *
-!      *     .                                                          *
-!      *     .                                                          *
-!      *  Face 6, NSfaces 6                                             *
-!      *   Family,ib,ie,jb,je,kb,ke,DonorBlock,ib,ie,jb,je,or1,or2,or3  *
-!      *     .                                                          *
-!      *     .                                                          *
-!      * Block 2, Family 2 (optional)                                   *
-!      *  Face 1, NSfaces 1                                             *
-!      *   Family,ib,ie,jb,je,kb,ke,DonorBlock,ib,ie,jb,je,or1,or2,or3  *
-!      *     .                                                          *
-!      *     .                                                          *
-!      *  Face 2, NSfaces 2                                             *
-!      *   Family,ib,ie,jb,je,kb,ke,DonorBlock,ib,ie,jb,je,or1,or2,or3  *
-!      *     .                                                          *
-!      *     .                                                          *
-!      *  Face 6, NSfaces 6                                             *
-!      *   Family,ib,ie,jb,je,kb,ke,DonorBlock,ib,ie,jb,je,or1,or2,or3  *
-!      *     .                                                          *
-!      *     .                                                          *
-!      *     .                                                          *
-!      *     .                                                          *
-!      *     .                                                          *
-!      *     .                                                          *
-!      * Block N, Family N (optional)                                   *
-!      *  Face 1, NSfaces 1                                             *
-!      *   Family,ib,ie,jb,je,kb,ke,DonorBlock,ib,ie,jb,je,or1,or2,or3  *
-!      *     .                                                          *
-!      *     .                                                          *
-!      *  Face 2, NSfaces 2                                             *
-!      *   Family,ib,ie,jb,je,kb,ke,DonorBlock,ib,ie,jb,je,or1,or2,or3  *
-!      *     .                                                          *
-!      *     .                                                          *
-!      *  Face 6, NSfaces 6                                             *
-!      *   Family,ib,ie,jb,je,kb,ke,DonorBlock,ib,ie,jb,je,or1,or2,or3  *
-!      *     .                                                          *
-!      *     .                                                          *
-!      *                                                                *
-!      * Note that some family/bc type names are optional.  Also note   *
-!      *  that the indices for the beginning and ending of each of the  *
-!      *  coordinate directions for a face need to match in the actual  *
-!      *  face and the donor face.  The orientation is a shorthand      *
-!      *  notation borrowed from the CGNS manual (+-1,+-2,+-3) to       *
-!      *  indicate the relative oriantation of the face and its donor   *
-!      *  face.  In other words, for the I, J, K directions in this     *
-!      *  face, what are the matching directions (I=1,J=2,K=3) in the   *
-!      *  donor face?  The minus sign indicates a reversal in direction *
-!      *                                                                *
-!      * Additional information is needed for periodic 1-to-1 faces,    *
-!      *  including the rotation center, rotation angle, and            *
-!      *  translation vector.                                           *
-!      *                                                                *
-!      * Blank lines and lines that start with a # are ignored.         *
-!      * Similarly, portions of a line after a # are ignored.           *
-!      *                                                                *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -133,14 +59,6 @@
 
        type(cgnsNonMatchAbuttingConnType), pointer, dimension(:) :: &
                                                             connNonMatch
-! eran-CBD  ----- start
-
-       integer(kind=intType)  :: iname, idWBCL
-       logical :: nameFound
-       character(len=maxCGNSNameLen)  :: LfamilyName
-
-! eran-CBD  ----- end
-
 !
 !      Function definitions.
 !
@@ -938,30 +856,6 @@
        ! Close the file.
 
        close(unit=readunit)
-
-!-  eran-cbd starts
-
-       do nn=1,cgnsNDom
-          bocoLoop: do ii=1,nBocos
-
-             select case (cgnsDoms(nn)%bocoInfo(ii)%BCTypeCGNS)
-
-                case(BCWall,BCWallInviscid,BCWallViscous,&
-                     BCWallViscousHeatFlux,BCWallViscousIsothermal)
-
-                   jj= cgnsDoms(nn)%bocoInfo(ii)%familyID
-                   LfamilyName = cgnsFamilies(jj)%familyName
-
-                   call  wallComponentsAssignment(nn,ii,LfamilyName)                 
-
-              end select
-          end do bocoLoop
-
-          call overwriteWallBCData(nn,nBocos) ! eran-cbd : set contributions
-
-       end do
-                      
-!-  eran-cbd ends 
 
        ! Format statements.
 

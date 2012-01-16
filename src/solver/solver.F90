@@ -29,7 +29,6 @@
        use monitor
        use section
        use blockPointers
-
        implicit none
 !
 !      Local variables.
@@ -101,7 +100,7 @@
          select case (equationMode)
            case (steady, timeSpectral)
              call solverSteady
-
+             
            case (unsteady)
              select case (timeIntegrationScheme)
                case (BDF)

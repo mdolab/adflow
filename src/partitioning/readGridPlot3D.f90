@@ -101,6 +101,7 @@
          if( P3D_ByteSwap ) &
            call byteswap(recordSize, sizeP3D_Record, 1_intType)
 
+         print *,'recordsize',recordsize
          ! Determine the situation. If the situation does not correspond
          ! to an expected one, print an error message and exit.
 

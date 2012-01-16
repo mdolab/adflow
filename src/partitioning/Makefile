@@ -95,9 +95,7 @@ FF90_OBJECTS_2 = allocCoorFineGrid.o\
 		 splitBlock.o\
                  storeReferenceMesh.o\
 		 timePeriodSpectral.o\
-		 timeRotMatricesSpectral.o\
-		 wallComponentsAssignment.o \
-		 overwriteWallBCData.o
+		 timeRotMatricesSpectral.o
 
 CC_OBJECTS     = metisInterface.o
 
