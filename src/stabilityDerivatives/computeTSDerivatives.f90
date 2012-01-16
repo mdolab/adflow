@@ -81,7 +81,8 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
   !real(kind=realType)::cl0dot,cd0dot,cfx0dot,cfy0dot,cfz0dot,cmx0dot,cmy0dot,cmz0dot
   !real(kind=realType)::cl0,cl0dot,cd0,cd0dot,cmz0,cmz0dot
   real(kind=realType),dimension(nTimeIntervalsSpectral,8)::BaseCoef,ResBaseCoef, BaseCoefLocal
-
+  real(kind=realType),dimension(nTimeIntervalsSpectral):: storeAlpha
+ 
   real(kind=realType), dimension(nSections) :: t
   integer(kind=inttype)::level,sps,i,nn
 
@@ -198,7 +199,7 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
                   liftIndex)
         !do I need to update the lift direction and drag direction as well? yes!!!
         !if (myID==0) print *,'LiftDirTS',liftDirTS
-        
+        storeAlpha(sps) = alphaTS
         
      elseif(tsBetaMode)then
         ! get the baseline alpha and determine the liftIndex
@@ -273,6 +274,12 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
                            mpi_sum, SUmb_comm_world, ierr)
 
   end do
+
+  if (myID==0)then
+     print *,'Lift coefficients: ', BaseCoef(:,1)
+     print *,'Drag coefficients: ', BaseCoef(:,2)
+     print *,'Alphas: ',storeAlpha
+  end if
 
   if (TSpMode)then
      !P is roll

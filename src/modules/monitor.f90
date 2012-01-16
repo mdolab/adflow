@@ -141,6 +141,11 @@
 
        logical :: writeGrid, writeVolume, writeSurface
 
+       ! coeffConvCheck: Whether or not to use the coefficients for the
+       !                 convergence check in steady,Time-spectral
+       
+       logical :: coeffConvCheck
+       
        ! convergenceQuality: information about quality of convergence 
        ! as the program exits. Set by routine convergenceInfo:
        !
