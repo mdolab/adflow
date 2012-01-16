@@ -125,16 +125,12 @@
            endif
 
            ! The state vectors in the past for unsteady computations.
-!
-! eran-avf: allocate to NOLD_LEVELS+1 instead of NOLD_LEVELS to make space for 
-!          averaged field.  Also enlarge wold from 2:il to 1:ie
 
            if(equationMode          == unsteady .and. &
               timeIntegrationScheme == BDF) then
              allocate( &
-               flowDoms(nn,level,sps)%wOld(nOldLevels+1,1:ie,1:je,1:ke,nw), &
-                       stat=ierr) !--- eran: end modifications --------------
-
+               flowDoms(nn,level,sps)%wOld(nOldLevels,2:il,2:jl,2:kl,nw), &
+                       stat=ierr)
              if(ierr /= 0)                           &
                call terminate("allocMemFlovarPart1", &
                               "Memory allocation failure for wOld")

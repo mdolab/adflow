@@ -34,8 +34,8 @@ include ${SUMB_MD_COMMON_FILE}
 #      ******************************************************************
 
 SUBDIR_SRC_MD = couplerAPI\
-		 hqp\
-		 suggar
+		hqp\
+		suggar\
 #		aeroElastic\
 
 #      ******************************************************************

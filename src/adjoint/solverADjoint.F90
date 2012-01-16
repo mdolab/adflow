@@ -71,12 +71,10 @@
 !
 !     Local variables.
 !
-      integer(kind=intType) :: level
+      integer(kind=intType) :: level, sps ,ierr,famID
+      integer(kind=intType) :: costFunction,cfstart,cfend
 
-      integer(kind=intType) :: npts,nTS,obj_num
-      real(kind=realType), allocatable,dimension(:,:,:) :: points
-
-      
+      real(kind=realType)   :: CL, CD, Cfx,Cfy,Cfz, CMx, CMy, CMz
 !
 !     ******************************************************************
 !     *                                                                *
@@ -98,10 +96,37 @@
                      &is selected.")
 
 #else
-      ! Set the relevant grid level.
-      level = 1
-      groundLevel = level
+      ! Set the relevant grid level and time instance.
 
+      level = 1 ! finest grid level
+      sps   = 1 ! first time instance
+
+      groundLevel = level
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Cost function values: aerodynamic coefficients.                *
+!     *                                                                *
+!     ******************************************************************
+!
+     !  do sps  = 1,nTimeIntervalsSpectral
+!          call computeAeroCoef(CL,CD,Cfx,Cfy,Cfz,CMx,CMy,CMz,level,sps)
+
+!          ! Write the cost function values; only processor 0 does this.
+         
+!          if(myID == 0) then
+!             write(*,*) "Cost function values: sps:",sps
+!             write(*,*) " CL  =", CL
+!             write(*,*) " CD  =", CD
+!             write(*,*) " CFx =", CFx   
+!             write(*,*) " CFy =", CFy
+!             write(*,*) " CFz =", CFz
+!             write(*,*) " CMx =", CMx
+!             write(*,*) " CMy =", CMy
+!             write(*,*) " CMz =", CMz
+!             write(*,*)
+!          endif
+!       enddo
 !
 !     ******************************************************************
 !     *                                                                *
@@ -109,66 +134,37 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      call InitializePETSc
-
-      !setup the extra design variabled for dRda
-      call setupExtraDVsFortran
-      
       ! Assertion testing, memory allocation and global number indexing.
-      !print *,'preprocessing...'
+
       call preprocessingADjoint(level)
 
-      !destroy the NK solver if it exists so that we don't have memory conflicts.
-      !print *,'destroying...'
-      call destroyNKSolver()
 
-      !print *,'creating'
-      !create all of the various matricies
-      call createPETScVars()
+      ! Determine the number of design variables, initialize the arrays
+      ! that store the cost functions (values,names,gradients) and
+      ! design variables (values,names,lower and upper bounds).
 
-      !call verifyRAdj(level)
-      !return
-      !print *,'setting up residual derivatives..'
 
-      call setupAllResidualMatricests
-      !call setupAllResidualMatrices
+      ! Initialize PETSc.
 
-      !call verifydRdwfile(level)
-      call verifydRdxfile(level)
-      return
+      call initializePETSc
+
+      call createPETScVars
+      call setupAllResidualMatrices
+
 
       ! Reordered for ASM preconditioner
       ! Create the Krylov subspace linear solver context,
       ! the preconditioner context, and set their various options.
 
+      !call createPETScKsp(level)
       call setupPETScKsp(level)
-      
-      !Get the surface points we will use to compute the objective
-      call getForceSize(npts,nTS)
-      
-      allocate(points(3,npts,nTS))
-      call getForcePoints(points,npts,nTS)
-
-      obj_num = 1
-      !compute the objective partial derivative
-      call computeobjpartials(obj_num,points,npts,nTS)
-
-      !Solve the system
-      call solveAdjointTransposePETSc()
-
-      call destroyPETScVars()
-
       ! Flush the output buffer and synchronize the processors.
 
       call f77flush()
       call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
-      deallocate(points)
-      if (allocated(dIda)) then
-         deallocate(dida)
-      end if
       if( PETScRank==0 ) &
-        print "(a)", "# ... Adjoint solution complete;"
+        print "(a)", "# ... Krylov subspace created;"
 
 #endif
 

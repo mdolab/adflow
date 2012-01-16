@@ -116,7 +116,7 @@
 
          call mpi_file_read(fh, recordSize, 1, &
                             sumb_integerRecordPLOT3D, status, ierr)
-
+         print *,'blocksizes',recordSize
          ! Determine whether or not byte swapping must be applied.
          ! It is stored for later purposes.
 
@@ -127,7 +127,7 @@
            call byteswap(recordSize, sizeP3D_Record, 1_intType)
            P3D_ByteSwap = .true.
          endif
-
+         print *,'blocksizes2',recordSize,'size',sizeP3D_Int
          byteSwapGrids(mm) = P3D_ByteSwap
 
          ! Determine the block format. If no valid format is found an

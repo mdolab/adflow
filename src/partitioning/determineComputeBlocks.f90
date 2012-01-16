@@ -46,11 +46,13 @@
 
        nSubPerCGNS(0) = 0
        do i=1,cgnsNDom
+          !print *,'nsubpercgns',nSubPerCGNS(i-1),splitInfo(i)%nSubblocks,i
          nSubPerCGNS(i) = nSubPerCGNS(i-1) + splitInfo(i)%nSubblocks
        enddo
 
        ! Check whether blocks are already allocated. If so, release
        ! the memory.
+       !print *,'allocated blocks',allocated(blocks)
        if( allocated(blocks) ) then
 
          ! Loop over the number of old blocks and release the memory.
@@ -69,8 +71,7 @@
                       blocks(i)%l3,          blocks(i)%groupNum,   &
                       blocks(i)%cgnsOver,    blocks(i)%ipntOver,   &
                       blocks(i)%neighOver,   blocks(i)%overComm,   &
-                      blocks(i)%idWBC, blocks(i)%contributeToForce,&
-                      stat=ierr) ! eran-cbd
+                      stat=ierr)
            if(ierr /= 0) &
              call terminate("determineComputeBlocks", &
                             "Deallocation error for subface info")
@@ -140,7 +141,7 @@
            ! that no reallocation is needed for the boundary info.
 
            nAlloc = cgnsDoms(i)%nBocos + cgnsDoms(i)%n1to1
-
+           !print *,'nalloc',nalloc
            allocate(blocks(ii)%BCType(nAlloc),      &
                     blocks(ii)%BCFaceID(nAlloc),    &
                     blocks(ii)%cgnsSubface(nAlloc), &
@@ -160,10 +161,7 @@
                     blocks(ii)%l1(nAlloc),          &
                     blocks(ii)%l2(nAlloc),          &
                     blocks(ii)%l3(nAlloc),          &
-                    blocks(ii)%groupNum(nAlloc),    &
-                    blocks(ii)%idWBC(nAlloc),       &
-                    blocks(ii)%contributeToForce(nAlloc),  &
-                    stat=ierr) ! eran-cbd
+                    blocks(ii)%groupNum(nAlloc),    stat=ierr)
            if(ierr /= 0) &
              call terminate("determineComputeBlocks", &
                             "Memory allocation failure for &
@@ -373,20 +371,6 @@
 
            blocks(ii)%cgnsSubface(jj) = j
 
-!------ eran-cbd starts
-           if(blocks(ii)%BCType(jj) == EulerWall .or. &
-                blocks(ii)%BCType(jj) == NSWallAdiabatic .or. &
-                blocks(ii)%BCType(jj) == NSWallIsothermal)then
-
-              blocks(ii)%idWBC(jj) = cgnsDoms(cgnsID)%bocoInfo(j)%idWBC
-              blocks(ii)%contributeToForce(jj) = &
-                   cgnsDoms(cgnsID)%bocoInfo(j)%contributeToForce
-           else
-              blocks(ii)%idWBC(jj) = 0
-               blocks(ii)%contributeToForce(jj) = .false.
-           end if
-!-------eran-cbd ends
- 
            ! Check whether this is a valid boundary condition for
            ! the current simulation.
 

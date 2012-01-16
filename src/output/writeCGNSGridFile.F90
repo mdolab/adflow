@@ -31,7 +31,6 @@
        use outputMod
        use communication
        use inputIteration
-
        implicit none
 !
 !      Local variables.
@@ -122,7 +121,6 @@
                           &cgnsBases")
 
       endif testGridOnly
-
 
        ! Releases the memory of IOVar.
 

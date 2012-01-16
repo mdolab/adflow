@@ -42,7 +42,6 @@ FF90_OBJECTS_1 = viscSurface.o
 
 FF90_OBJECTS_2 = computeNormalSpacing.o\
 		 determineDistance.o\
-		 determineDistanceDES.o\
 		 initWallDistance.o\
 		 localViscousSurfaceMesh.o\
 		 updateWallDistanceAllLevels.o\
