@@ -1118,7 +1118,9 @@
        !                preconditioner
        ! restartADjoint: Whether or not we want to restart the adjoint 
        !                 from the previous solution
-       logical :: solveADjoint, setMonitor, ApproxPC,restartADjoint
+       ! useDiagTSPC   : Whether or not the off time instance terms are
+       !                 included in the TS preconditioner.
+       logical :: solveADjoint, setMonitor, ApproxPC,restartADjoint,useDiagTSPC
 
        ! ADjointSolverType: Type of linear solver for the ADjoint
        ! PreCondType      : Type of Preconditioner to use

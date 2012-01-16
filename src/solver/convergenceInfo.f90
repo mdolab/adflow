@@ -91,11 +91,6 @@
        converged   = .true.
        nanOccurred = .false.
 
-       ! make sure iterTot is NEVER NEVER EVER bigger than ncycles. 
-       if (iterTot > ncycles) then
-          iterTot = ncycles
-       end if
-
        ! Set the L2 norm for convergence for this level.
 
        L2ConvThisLevel = L2ConvCoarse
@@ -109,10 +104,6 @@
        nIterCur = iterTot
        if(groundLevel == 1) nIterCur = nIterCur + nIterOld
 
-       if (nIterCur > ncycles) then
-          niterCur = ncycles
-       end if
-       
        ! Set the value of iConv, the place in the convergence array.
        ! On the finest level this is nIterCur. On the coarser grids this
        ! would be a logical choice as well. However it is theoretically
@@ -125,7 +116,6 @@
        ! is overwritten anyway by the fine mesh.
 
        iConv = nIterCur
-
        if(groundLevel > 1) iConv = min(iConv,1_intType)
 
        ! Set the value of iConvStdout. For a steady and a spectral
@@ -378,10 +368,6 @@
 
            if( storeConvInnerIter ) then
              do mm=1,nMon
-                if (iconv > ncycles) then
-                   print *,'There has been an error: iconv is somehow larger than ncycles'
-                   stop
-                end if
                convArray(iConv,sps,mm) = monGlob(mm)
              enddo
            endif
@@ -394,80 +380,83 @@
              select case (equationMode)
              case (steady, timeSpectral)
 
-               ! Steady or time spectral mode. The convergence histories
-               ! are stored and this info can be used. The logical
-               ! converged is set to .false. if the density residual
-               ! has not converged yet.
+                if (.not. coeffConvCheck) then
 
-                if(convArray(iConv,sps,1) > L2ConvThisLevel*convArray(0,sps,1)) then
-                  absNotConv = .True.
-               else
-                  absNotConv = .False.
-               end if
-
-               if(fromPython) then
-                  if (convArray(iConv,sps,1) > L2ConvThisLevelRel*convArray(1,sps,1)) then
-                     relNotConv = .True.
-                  else
-                     relNotConv = .False.
-                  end if
-               else
-                  relNotConv = .True.
-               end if
-                 
-               if (absNotConv .and. relNotConv) then ! Not converged if the absCheck is True and the rel Check is true.
-                  converged = .False.
-               end if
-
-!----eran-coeffConv starts
-
-                convergenceQuality = 0 ! that is no convergence
-                converged          = .false. 
-
-                if (iterTot >= minIterNum) then
-
-!                    if (iterTot == minIterNum)then
-!                       write(*,*)'#***************************************************************'
-!                       write(*,*)'# Note: at step ',iterTot,&
-!                            ' Starting to test for convergence'
-!                       write(*,*)'#***************************************************************'
-!                    end if
-
-                   if(convArray(iConv,sps,1) <= L2ConvThisLevel*convArray(0,sps,1)) then
-                      converged = .true.
-                      convergenceQuality = 10
+                   ! Steady or time spectral mode. The convergence histories
+                   ! are stored and this info can be used. The logical
+                   ! converged is set to .false. if the density residual
+                   ! has not converged yet.
+                   
+                   if(convArray(iConv,sps,1) > L2ConvThisLevel*convArray(0,sps,1)) then
+                      absNotConv = .True.
+                   else
+                      absNotConv = .False.
                    end if
- 
-                   if (epsCoefConv > zero   .and.&
-                        (groundLevel == 1 .and. converged == .false.)  )then
-! !
-! ! ---- Check if coefficients reached a cconstant value
-! !
-                      call coeffConvergenceCheck(iConv,iterTot,sps)
-                      if(convergenceQuality > 0) then
-                         converged = .true.
-                         write(*,*)&
-                              'convegenceInfo: Coefficients convergence criterion reached'
+                   
+                   if(fromPython) then
+                      if (convArray(iConv,sps,1) > L2ConvThisLevelRel*convArray(1,sps,1)) then
+                         relNotConv = .True.
+                      else
+                         relNotConv = .False.
                       end if
-                   end if ! epsCoefConv > zero
-
-                   if(converged)then
-                      select case (convergenceQuality)
-                      case(10)
-                         write(*,*)'Convergence: Residual < Convergence criterion'
-                      case(6)
-                         write(*,*)'Coefficient uniform (up to criterion) in ',ConvCheckWindowSize,&
-                              ' iterations'
-                      case(4)
-                         write(*,*)'Coefficient uniform (up to criterion in ',10*ConvCheckWindowSize,&
-                              ' iterations'
-                      case(2)
-                         write(*,*)'Coefficient uniform (up to criterion in ',100*ConvCheckWindowSize,&
-                              ' iterations'
-                      end select
-                   end if ! converged
-                end if ! iterTot >= minIterNum
-! ! ------- end eran-coeffConv
+                   else
+                      relNotConv = .True.
+                   end if
+                   
+                   if (absNotConv .and. relNotConv) then ! Not converged if the absCheck is True and the rel Check is true.
+                      converged = .False.
+                   end if
+                else
+!----eran-coeffConv starts
+                   
+                   convergenceQuality = 0 ! that is no convergence
+                   converged          = .false. 
+                   
+                   if (iterTot >= minIterNum) then
+                      
+                      if (iterTot == minIterNum)then
+                         write(*,*)'#***************************************************************'
+                         write(*,*)'# Note: at step ',iterTot,&
+                              ' Starting to test for convergence'
+                         write(*,*)'#***************************************************************'
+                      end if
+                      
+                      if(convArray(iConv,sps,1) <= L2ConvThisLevel*convArray(0,sps,1)) then
+                         converged = .true.
+                         convergenceQuality = 10
+                      end if
+                      
+                      if (epsCoefConv > zero   .and.&
+                           (groundLevel == 1 .and. converged == .false.)  )then
+                         ! !
+                         ! ! ---- Check if coefficients reached a cconstant value
+                         ! !
+                         call coeffConvergenceCheck(iConv,iterTot,sps)
+                         if(convergenceQuality > 0) then
+                            converged = .true.
+                            write(*,*)&
+                                 'convegenceInfo: Coefficients convergence criterion reached'
+                         end if
+                      end if ! epsCoefConv > zero
+                      
+                      if(converged)then
+                         select case (convergenceQuality)
+                         case(10)
+                            write(*,*)'Convergence: Residual < Convergence criterion'
+                         case(6)
+                            write(*,*)'Coefficient uniform (up to criterion) in ',ConvCheckWindowSize,&
+                                 ' iterations'
+                         case(4)
+                            write(*,*)'Coefficient uniform (up to criterion in ',10*ConvCheckWindowSize,&
+                                 ' iterations'
+                         case(2)
+                            write(*,*)'Coefficient uniform (up to criterion in ',100*ConvCheckWindowSize,&
+                                 ' iterations'
+                         end select
+                      end if ! converged
+                   end if ! iterTot >= minIterNum
+                   ! ! ------- end eran-coeffConv
+                end if
 
              !===========================================================
 
@@ -642,7 +631,7 @@
           ! python level...
           return
        endif
-       if((fromPython).and. (nIterCur>=nCycles))then
+       if((fromPython).and. (nIterCur==nCycles))then
           
           !Check to see if residuals are diverging or stalled for python
           select case (equationMode)
@@ -709,7 +698,6 @@
 !
        use blockPointers
        use monitor
-       use flowvarrefstate
        implicit none
 !
 !      Subroutine arguments.
@@ -776,14 +764,9 @@
            do i=2,il
               state_sum = 0.0
               ovv = 1/vol(i,j,k)
-              do l=1,nwf
+              do l=1,nw
                  state_sum = state_sum + (dw(i,j,k,l)*ovv)**2
               end do
-              
-              do l=nt1,nt2
-                 state_sum = state_sum + (dw(i,j,k,l)*ovv)**2
-              end do
-
 
               monLoc(mm) = monLoc(mm) + state_sum
 
