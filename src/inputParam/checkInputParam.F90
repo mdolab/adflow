@@ -183,8 +183,8 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * Iteration parameters. Check if the key parameters have been    *
-!      * specified and set some coarse grid parameters in case these    *
+!      * Iteration parameters. Check if the key parameters have specified    *
+!      * been and set some coarse grid parameters in case these    *
 !      * have not been specified.                                       *
 !      *                                                                *
 !      ******************************************************************

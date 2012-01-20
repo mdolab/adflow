@@ -73,9 +73,10 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
         stencil => euler_pc_stencil
         n_stencil = N_euler_pc
      else
-        stencil => euler_pc_stencil
-        n_stencil = N_euler_pc
+        stencil => visc_pc_stencil
+        n_stencil = N_visc_pc
      end if
+
      ! Very important to use only second Order dissipation for PC 
      lumpedDiss=.True.
   else
@@ -89,7 +90,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   call computeResidualNK ! This is the easiest way to do this
 
   ! Set delta_x
-  delta_x = 1e-6
+  delta_x = 1e-7
   one_over_dx = 1.0/delta_x
   rkStage = 0
   secondHalo = .True. 

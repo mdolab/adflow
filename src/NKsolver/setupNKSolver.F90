@@ -27,7 +27,7 @@ subroutine setupNKsolver
 
   integer(kind=intType) :: i,j,k,nn,i2,j2,k2,d2,l,sps
   external FormFunction_mf
-
+  external mykspmonitor
   if (not(NKSolverSetup)) then
      nDimW = nw * nCellsLocal * nTimeIntervalsSpectral
 
@@ -56,8 +56,8 @@ subroutine setupNKsolver
 
      call initialize_stencils
      if (not(viscous)) then
-        n_stencil = N_euler_drdw
-        stencil => euler_drdw_stencil
+        n_stencil = N_euler_pc
+        stencil => euler_pc_stencil
      else
         n_stencil = N_visc_pc
         stencil => visc_pc_stencil
@@ -100,6 +100,12 @@ subroutine setupNKsolver
      call KSPSetOperators(global_ksp,dRdw,dRdWPre, &
           DIFFERENT_NONZERO_PATTERN,ierr)
      call EChk(ierr,__FILE__,__LINE__)
+
+     ! DEBUGGING ONLY!
+     call KSPMonitorSet(global_ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
+          PETSC_NULL_FUNCTION, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
 
      NKSolverSetup = .True.
      NKSolveCount = 0

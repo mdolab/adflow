@@ -8,99 +8,91 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine allocConvArrays(nIterTot)
-!
-!      ******************************************************************
-!      *                                                                *
-!      * allocConvArrays allocates the memory for the convergence       *
-!      * arrays. The number of iterations allocated, nIterTot, is       *
-!      * enough to store the maximum number of iterations specified     *
-!      * plus possible earlier iterations read from the restart file.   *
-!      *                                                                *
-!      ******************************************************************
-!
-       use constants
-       use inputIO
-       use inputTimeSpectral
-       use monitor
-       implicit none
-!
-!      Subroutine argument.
-!
-       integer(kind=intType) :: nIterTot
-!
-!      Local variables.
-!
-       integer :: ierr
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Return immediately if the convergence history (of the inner
-       ! iterations) does not need to be stored. This logical can
-       ! only be .false. for an unsteady computation.
-       if(.not. storeConvInnerIter) return 
+subroutine allocConvArrays(nIterTot)
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * allocConvArrays allocates the memory for the convergence       *
+  !      * arrays. The number of iterations allocated, nIterTot, is       *
+  !      * enough to store the maximum number of iterations specified     *
+  !      * plus possible earlier iterations read from the restart file.   *
+  !      * This routine MAY be called with data already inside of         *
+  !      * convArray and this will be saved.                              *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  use constants
+  use inputIO
+  use inputTimeSpectral
+  use monitor
+  implicit none
+  !
+  !      Subroutine argument.
+  !
+  integer(kind=intType) :: nIterTot,ll,mm,nn,i,j,k
+  !
+  !      Local variables.
+  !
+  integer :: ierr
+  real(kind=realType), dimension(:,:,:),allocatable ::  tempArray
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Begin execution                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  ! Return immediately if the convergence history (of the inner
+  ! iterations) does not need to be stored. This logical can
+  ! only be .false. for an unsteady computation.
+  if(.not. storeConvInnerIter) return 
 
-       if( allocated(convArray)) call deallocConvArrays
-       ! Allocate the memory for convArray and initialize them,
-       ! just to be sure.
-       allocate(convArray(0:nIterTot,nTimeIntervalsSpectral,nMon), &
-                stat=ierr)
-       if(ierr /= 0)                         &
-         call terminate("allocConvArrays", &
-                        "Memory allocation failure for convArray")
+  if (allocated(convArray)) then
+     ! Its already allocated, so copy the data out first:
 
-       convArray = zero
+     ll = ubound(convArray,1)
+     mm = ubound(convArray,2)
+     nn = ubound(convArray,3)
+     allocate(tempArray(0:ll,1:mm,1:nn))
 
-       end subroutine allocConvArrays
+     do k=1,nn
+        do j=1,mm
+           do i=0,ll
+              tempArray(i,j,k) = convArray(i,j,k)
+           end do
+        end do
+     end do
 
+     deallocate(convArray)
 
-       subroutine deallocConvArrays
-!
-!      ******************************************************************
-!      *                                                                *
-!      * deallocConvArrays deallocates the memory for the convergence   *
-!      * arrays.                                                        *
-!      *                                                                *
-!      ******************************************************************
-!
-       use constants
-       use inputIO
-       use inputTimeSpectral
-       use monitor
-       implicit none
-!
-!      Subroutine argument.
-!
+     allocate(convArray(0:nIterTot,nTimeIntervalsSpectral,nMon), stat=ierr)
+     if(ierr /= 0) then
+        call terminate("allocConvArrays", &
+             "Memory allocation failure for convArray")
+     end if
+     
+     ! Copy Data back in:
+     
+     do k=1,nn
+        do j=1,mm
+           do i=1,ll
+              convArray(i,j,k) = tempArray(i,j,k)
+           end do
+        end do
+     end do
 
-!
-!      Local variables.
-!
-       integer :: ierr
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Return immediately if the convergence history (of the inner
-       ! iterations) does not need to be stored. This logical can
-       ! only be .false. for an unsteady computation.
+     deallocate(tempArray)
 
-       if(.not. storeConvInnerIter) return 
+  else ! Just allocate:
 
-       ! Allocate the memory for convArray and initialize them,
-       ! just to be sure.
+     allocate(convArray(0:nIterTot,nTimeIntervalsSpectral,nMon), stat=ierr)
+     if(ierr /= 0) then
+        call terminate("allocConvArrays", &
+             "Memory allocation failure for convArray")
+     end if
 
-       deallocate(convArray,stat=ierr)
-       
-       if(ierr /= 0)                         &
-         call terminate("deallocConvArrays", &
-                        "Memory deallocation failure for convArray")
+     ! Zero Array:
+     convArray = zero
+  end if
 
+end subroutine allocConvArrays
 
-     end subroutine deallocConvArrays
