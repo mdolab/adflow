@@ -71,6 +71,17 @@
                do j=0,jb
                  do i=0,ib
                    w(i,j,k,l) = wInf(l)
+                   dw(i,j,k,l) = zero
+                 enddo
+               enddo
+             enddo
+           enddo
+           !set this here for a reinitialize flow to eliminate possible NAN's
+           do l=1,nwf
+             do k=0,kb
+               do j=0,jb
+                 do i=0,ib
+                   fw(i,j,k,l) = zero
                  enddo
                enddo
              enddo
