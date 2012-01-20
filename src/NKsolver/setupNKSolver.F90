@@ -55,23 +55,24 @@ subroutine setupNKsolver
      allocate( nnzDiagonal(totalCells),nnzOffDiag(totalCells))
 
      call initialize_stencils
-     if (not(viscous)) then
-        n_stencil = N_euler_pc
-        stencil => euler_pc_stencil
-     else
+     if (viscous) then
         n_stencil = N_visc_pc
         stencil => visc_pc_stencil
+     else
+        n_stencil = N_euler_pc
+        stencil => euler_pc_stencil
      end if
 
      ! Note: Since we are using blocked matrices, we computed the
      ! non-zero BLOCKS as opposed to the non-zero values. 
-     call statePreAllocation(nnzDiagonal,nnzOffDiag,nDimW/nw,stencil,n_stencil)
+     call statePreAllocation(nnzDiagonal,nnzOffDiag,&
+          totalCells,stencil,n_stencil)
   
-     call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
+     call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw, &
           nDimW, nDimW,                     &
           PETSC_DETERMINE, PETSC_DETERMINE, &
-          0, nnzDiagonal,         &
-          0, nnzOffDiag,            &
+          0, nnzDiagonal,                   &
+          0, nnzOffDiag,                    &
           dRdWPre, ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
@@ -105,7 +106,6 @@ subroutine setupNKsolver
      !call KSPMonitorSet(global_ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
      !     PETSC_NULL_FUNCTION, ierr)
      !call EChk(ierr,__FILE__,__LINE__)
-
 
      NKSolverSetup = .True.
      NKSolveCount = 0
