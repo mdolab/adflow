@@ -379,7 +379,6 @@
 
              select case (equationMode)
              case (steady, timeSpectral)
-
                 if (.not. coeffConvCheck) then
 
                    ! Steady or time spectral mode. The convergence histories
@@ -461,15 +460,14 @@
              !===========================================================
 
              case (unsteady)
-
+             
                ! Unsteady mode. The array convArray may not be present
                ! and therefore something else must be done.
                ! First determine the position in the array timeDataArray
                ! that can be used. For the coarser grids this is 1,
                ! because the time evolution is overwritten. For the fine
                ! mesh the actual position is determined.
-
-
+             
                 nn = 1
                 if(groundLevel == 1) &
                      nn = timeStepUnsteady + nTimeStepsRestart
@@ -524,7 +522,7 @@
                          monRef(mm) = monGlob(mm)
                       enddo
 
-                     timeArray(nn) = timeUnsteady + timeUnsteadyRestart
+                      timeArray(nn) = timeUnsteady + timeUnsteadyRestart
                      converged     = .false.
 
                    else testInitUnsteady
@@ -565,7 +563,6 @@
                        converged = .false.
 
                    endif testInitUnsteady
-
                 end select ! temporal integration scheme
 !
 ! add temporal monitoring option for unsteady cases  ! eran-tempmon starts
@@ -616,7 +613,7 @@
           
           mgStartLevel = 1
           currentlevel = 1
-          
+          print *,'Calling setUniformFlow'
           call setUniformFlow
 
           mgStartLevel = tempMGStartLevel

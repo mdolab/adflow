@@ -99,9 +99,6 @@ class SUMB(AeroSolver):
             'nCyclesCoarse':[int,500],
             'CFL':[float,1.7],
             'CFLCoarse':[float,1.0],
-            'Mach':[float,0.5],
-            'machCoef':[float,0.5],
-            'machGrid':[float,0.0],
             'MGCycle':[str,'3w'],
             'MGStartLevel':[int,-1],
 
@@ -165,11 +162,6 @@ class SUMB(AeroSolver):
             'monitorVariables':[list,['resrho','cl','cd']],
             'surfaceVariables':[list,['cp','vx','vy','vz','mach']],
             'volumeVariables':[list,['resrho']],
-
-            # Reference Paramters
-            #'refTemp':[float,398.0],
-            #'refPressure':[float,17654.0],
-            #'refDensity':[float,.28837],
             'areaAxis':[list,[0.0,1.0,0.0]],
 
             # Adjoint Paramters
@@ -441,9 +433,6 @@ class SUMB(AeroSolver):
                 'nCyclesCoarse':{'location':'inputiteration.ncyclescoarse'},
                 'CFL':{'location':'inputiteration.cfl'},        
                 'CFLCoarse':{'location':'inputiteration.cflcoarse'},        
-                'Mach':{'location':'inputphysics.mach'},
-                'machCoef':{'location':'inputphysics.machcoef'},
-                'machGrid':{'location':'inputphysics.machgrid'},
                 'MGCycle':{'location':'localmg.mgdescription',
                            'len':self.sumb.constants.maxstringlen},
                 'MGStartLevel':{'location':'inputiteration.mgstartlevel'},
@@ -529,11 +518,6 @@ class SUMB(AeroSolver):
                 'printTiming':{'location':'inputadjoint.printtiming'},
                 'setMonitor':{'location':'inputadjoint.setmonitor'},
 
-                # Reference Params
-                #'refTemp':{'location':'flowvarrefstate.tref'},
-                #'refPressure':{'location':'flowvarrefstate.pref'},
-                #'refDensity':{'location':'flowvarrefstate.rhoref'},
-               
                 # Adjoint Params
                 'adjointL2Convergence':{'location':'inputadjoint.adjreltol'},
                 'adjointL2ConvergenceRel':{'location':'inputadjoint.adjreltolrel'},
@@ -600,7 +584,7 @@ class SUMB(AeroSolver):
                 }                
         # end if
 
-        # These "ignore_options" are NOT actually, ignore, rather,
+        # These "ignore_options" are NOT actually, ignored, rather,
         # they DO NOT GET SET IN THE FORTRAN CODE. Rather, they are
         # used strictly in Python
         if 'ignore_options' in kwargs:
@@ -662,8 +646,8 @@ class SUMB(AeroSolver):
         self.extraSetup = False
         self.couplingSetup = False
         self.kspSetup = False
-        self.adjointRHS         = None # When this is setup, it has
-                                       # the current objective
+        self.adjointRHS = None # When this is setup, it has
+                               # the current objective
         
         self._update_geom_info = True
         self._update_period_info = True
@@ -700,11 +684,12 @@ class SUMB(AeroSolver):
         # Do the remainder of the operations that would have been done
         # had we read in a param file
         self.sumb.iteration.deforming_grid = True
-        self.sumb.dummyreadparamfile()
 
         self.setMachNumber(aero_problem)
         self.setRefState(aero_problem)
         self.setPeriodicParams(aero_problem)
+
+        self.sumb.dummyreadparamfile()
 
         #This is just to flip the -1 to 1 possibly a memory issue?
         self.sumb.inputio.storeconvinneriter = \
@@ -997,8 +982,6 @@ class SUMB(AeroSolver):
         self.adjointRHS         = None
         self.callCounter += 1
 
-        
-
         # Run Initialize, if already run it just returns.
         self.initialize(aero_problem,*args,**kwargs)
 
@@ -1019,34 +1002,40 @@ class SUMB(AeroSolver):
         # set the number of cycles for this call
         self.sumb.inputiteration.ncycles = nIterations
 
-        # Cold Start -- First Run -- No Iterations Done
-        if (self.sumb.monitor.niterold == 0 and 
-            self.sumb.monitor.nitercur == 0 and 
-            self.sumb.iteration.itertot == 0):
-
+        # Cold Start:
+        if self.sumb.monitor.niterold == 0 and \
+            self.sumb.monitor.nitercur == 0 and \
+            self.sumb.iteration.itertot == 0:
             if self.myid == 0:
-                nn = self.sumb.inputiteration.nsgstartup + \
+                desired_size = self.sumb.inputiteration.nsgstartup + \
                     self.sumb.inputiteration.ncycles
-                self.sumb.deallocconvarrays()
-                self.sumb.allocconvarrays(nn)
+                self.sumb.allocconvarrays(desired_size)
             # end if
         else:
             # More Time Steps / Iterations OR a restart
             # Reallocate convergence history array and time array
             # with new size, storing old values from previous runs
+
             if storeHistory:
-                self._extendConvArray(
-                    self.sumb.inputiteration.ncycles)
+                current_size = len(self.sumb.monitor.convarray)
+                desired_size = current_size + self.sumb.inputiteration.ncycles
                 self.sumb.monitor.niterold  = self.sumb.monitor.nitercur+1
             else:
                 self.sumb.monitor.nitercur  = 0
                 self.sumb.monitor.niterold  = 1
-                self._clearConvArray()
-            #endif
+                desired_size = self.sumb.inputiteration.nsgstartup + \
+                    self.sumb.inputiteration.ncycles
+            # end if
 
-            self.sumb.iteration.itertot = 0
+            # Allocate Arrays
+            self.sumb.allocconvarrays(desired_size)
+
             self.sumb.inputiteration.mgstartlevel = 1
+            self.sumb.iteration.itertot = 0
         # end if
+
+        if self.getOption('equationMode') == 'Unsteady':
+            self.sumb.alloctimearrays(self.getOption('nTimeStepsFine'))
 
         self.sumb.killsignals.routinefailed = False
         self.sumb.killsignals.fatalfail = False
@@ -1078,6 +1067,8 @@ class SUMB(AeroSolver):
             self.fatalFail = True
             self.solve_failed = True
             return
+     
+  
 
         # Call the Solver
         if ('MDCallBack' in kwargs):
@@ -1106,7 +1097,9 @@ class SUMB(AeroSolver):
 
         if self.sumb.killsignals.fatalfail:
             self.fatalFail = True
+            print 'resetting flow!'
             self.resetFlow()
+            sys.exit(0)
         else:
             self.fatalFail = False
         # end if
@@ -1135,36 +1128,6 @@ class SUMB(AeroSolver):
             self.computeStabilityParameters()
         #endif
         
-        return
-
-    def _extendConvArray(self,nExtend):
-        '''Generic function to extend the current convInfo array by nExtend'''
-        if self.myid == 0:
-            # Copy Current Values
-            temp = copy.deepcopy(self.sumb.monitor.convarray)
-
-            # Deallocate Array
-            self.sumb.deallocconvarrays()
-
-            # Allocate New Size
-            self.sumb.allocconvarrays(temp.shape[0]+nExtend)
-
-            # Copy temp data back in
-            self.sumb.monitor.convarray[:temp.shape[0],:] = copy.deepcopy(temp)
-        # end if
-
-        return
-
-    def _clearConvArray(self):
-        '''Generic Function to clear the convInfo array. THIS KEEPS
-        THE FIRST value for future reference!!!'''
-        if self.myid == 0:
-            temp=copy.deepcopy(self.sumb.monitor.convarray[0,:,:])
-            self.sumb.deallocconvarrays()
-            self.sumb.allocconvarrays(self.sumb.inputiteration.ncycles+1)
-            self.sumb.monitor.convarray[0,:,:] = temp
-        # end if
-            
         return
 
     def solveCL(self,aeroProblem,CL_star,nIterations=500,alpha0=0,

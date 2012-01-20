@@ -39,7 +39,7 @@
 !
        ! Allocate the memory for both the time array as well as the
        ! data array.
-       print *,'ntimeTot,nmon:',ntimetot,nmon
+
        if (allocated(timeArray)) then 
           deallocate(timeArray) 
        end if

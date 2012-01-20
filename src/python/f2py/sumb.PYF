@@ -86,9 +86,6 @@ python module sumb ! in
          integer(kind=inttype) :: nitertot
        end subroutine allocconvarrays
 
-       subroutine deallocconvarrays ! in :sumb:../../initFlow/allocConvArrays.f90
-       end subroutine deallocconvarrays
-
        subroutine alloctimearrays(nitertot) ! in :sumb:../../initFlow/allocTimeArrays.f90
          integer(kind=inttype) :: ntimetot
        end subroutine alloctimearrays
