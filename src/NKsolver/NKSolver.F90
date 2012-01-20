@@ -41,9 +41,9 @@ subroutine NKsolver
   ! limit is really set from the maxmimum number of funcEvals
   maxNonLinearIts = ncycles-iterTot
   ksp_iterations = 0
-  norm = 0.0
-  old_norm=0.0
-  rtol_last =0.0
+  norm = zero
+  old_norm=  zero
+  rtol_last = zero
   nfevals = 0
 
   Mmax = 10
@@ -51,7 +51,8 @@ subroutine NKsolver
   iter_m = 0
 
   allocate(func_evals(1000))
-  func_evals = 0.0
+  func_evals = zero
+
   ! Set the inital wVec
   call setwVec(wVec)
 
@@ -97,7 +98,6 @@ subroutine NKsolver
      ! the number of time the solver was called. So on first
      ! iteration, we check the variable NKsolveCount. If THIS is a
      ! multiple of jacobian lag, we then reform the preconditioner. 
-
 
      if (mod(iter-1,jacobian_lag) == 0) then
         if (iter == 1) then ! Special case check:
@@ -237,8 +237,8 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   integer(kind=intType) :: ierr
 
   ! Set some defaults:
-  alpha		= 1.e-2
-  minlambda     = 1.e-5
+  alpha		= 1.e-2_realType
+  minlambda     = 1.e-5_realType
   nfevals = 0
   flag = .True. 
 
@@ -260,15 +260,15 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   call VecDot(f,w,initslope,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  if (initslope > 0.0)  then
+  if (initslope > zero)  then
      initslope = -initslope
   end if
 
-  if (initslope == 0.0) then
-     initslope = -1.0
+  if (initslope == zero) then
+     initslope = -one
   end if
 
-  call VecWAXPY(w,-1.0,y,x,ierr)
+  call VecWAXPY(w,-one,y,x,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Compute Function:
@@ -286,8 +286,8 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   end if
 
   ! Fit points with quadratic 
-  lambda     = 1.0
-  lambdatemp = -initslope/(gnorm*gnorm - fnorm*fnorm - 2.0*initslope)
+  lambda     = one
+  lambdatemp = -initslope/(gnorm*gnorm - fnorm*fnorm - two*initslope)
   lambdaprev = lambda
   gnormprev  = gnorm
 
@@ -295,8 +295,8 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
      lambdatemp = half*lambda
   end if
 
-  if (lambdatemp <= .1*lambda) then
-     lambda = .1*lambda
+  if (lambdatemp <= .1_realType*lambda) then
+     lambda = .1_realType*lambda
   else                 
      lambda = lambdatemp
   end if
@@ -332,15 +332,15 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
 
      a  = (t1/(lambda*lambda) - t2/(lambdaprev*lambdaprev))/(lambda-lambdaprev)
      b  = (-lambdaprev*t1/(lambda*lambda) + lambda*t2/(lambdaprev*lambdaprev))/(lambda-lambdaprev)
-     d  = b*b - 3*a*initslope
-     if (d < 0.0) then
-        d = 0.0
+     d  = b*b - three*a*initslope
+     if (d < zero) then
+        d = zero
      end if
 
      if (a == 0.0) then
-        lambdatemp = -initslope/(2.0*b)
+        lambdatemp = -initslope/(two*b)
      else
-        lambdatemp = (-b + sqrt(d))/(3.0*a)
+        lambdatemp = (-b + sqrt(d))/(three*a)
      end if
 
      lambdaprev = lambda
@@ -349,8 +349,8 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
      if (lambdatemp > half*lambda)  then
         lambdatemp = half*lambda
      end if
-     if (lambdatemp <= .1*lambda) then
-        lambda = .1*lambda
+     if (lambdatemp <= .1_realType*lambda) then
+        lambda = .1_realType*lambda
      else           
         lambda = lambdatemp
      end if
@@ -369,23 +369,21 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Is reduction enough?
-     if (.5*gnorm*gnorm <= .5*fnorm*fnorm + lambda*alpha*initslope) then
+     if (half*gnorm*gnorm <= half*fnorm*fnorm + lambda*alpha*initslope) then
         exit cubic_loop
      end if
   end do cubic_loop
 
 100 continue
-
-  ! Optional user-defined check for line search step validity */
+ 
 #endif
 end subroutine LSCubic
 
 subroutine LSNone(x,f,g,y,w,nfevals,flag)
 #ifndef USE_NO_PETSC
-  use precision 
-  use communication
-  use NKSolverVars, only: dRdw
+  use constants
   implicit none
+
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
 
@@ -403,15 +401,16 @@ subroutine LSNone(x,f,g,y,w,nfevals,flag)
   flag = .True. 
   ! We just accept the step and compute the new residual at the new iterate
   nfevals = 0
-  call VecWAXPY(w,-1.0,y,x,ierr)
+  call VecWAXPY(w,-one,y,x,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Compute new function:
   call setW(w)
   call computeResidualNK()
-  
   call setRVec(g)
+  
   nfevals = nfevals + 1
+
 #endif
 end subroutine LSNone
 
@@ -419,7 +418,7 @@ subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
 #ifndef USE_NO_PETSC
   use precision 
   use communication
-  use NKSolverVars, only: dRdw, func_evals, iter_k,iter_m
+  use NKSolverVars, only: dRdw, func_evals, iter_k, iter_m
   use constants
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -442,14 +441,12 @@ subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   !   where z(x) = .5 * fnorm*fnorm, and fnorm = || f ||_2.
   !         
 
-  real(kind=realType) :: initslope,c1,c2,gamma,sigma,alpha,max_val
+  real(kind=realType) :: initslope,gamma,sigma,alpha,max_val
   integer(kind=intType) :: ierr,iter,j
 
   ! Set some defaults:
-  c1 = 1e-5
-  c2 = 1e5
-  gamma = 1e-3
-  sigma = 0.5
+  gamma = 1e-3_realType
+  sigma = 0.5_realType
 
   nfevals = 0
   flag = .True. 
@@ -470,15 +467,15 @@ subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   call VecDot(f,w,initslope,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  if (initslope > 0.0)  then
+  if (initslope > zero)  then
      initslope = -initslope
   end if
 
-  if (initslope == 0.0) then
-     initslope = -1.0
+  if (initslope == zero) then
+     initslope = -one
   end if
 
-  alpha = 1.0 ! Initial step length:
+  alpha = one ! Initial step length:
   backtrack: do iter=1,10
 
      ! Compute new x value:
