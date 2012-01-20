@@ -102,9 +102,9 @@ subroutine setupNKsolver
      call EChk(ierr,__FILE__,__LINE__)
 
      ! DEBUGGING ONLY!
-     call KSPMonitorSet(global_ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
-          PETSC_NULL_FUNCTION, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     !call KSPMonitorSet(global_ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
+     !     PETSC_NULL_FUNCTION, ierr)
+     !call EChk(ierr,__FILE__,__LINE__)
 
 
      NKSolverSetup = .True.
