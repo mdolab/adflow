@@ -29,9 +29,7 @@ subroutine FormJacobian()
   usePC = .True.
   useTranspose = .False.
   call setupStateResidualMatrix(dRdwPre,useAD,usePC,useTranspose)
-  if (myid == 0) then
-     print *,'dRdwPre is assembled'
-  end if
+
   ! ----------------------------------------------
   ! Setup the required options for the KSP object
   ! ----------------------------------------------
