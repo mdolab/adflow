@@ -107,6 +107,7 @@ subroutine setupNKsolver
      !     PETSC_NULL_FUNCTION, ierr)
      !call EChk(ierr,__FILE__,__LINE__)
 
+    
      NKSolverSetup = .True.
      NKSolveCount = 0
      if(equations == RANSEquations)  then

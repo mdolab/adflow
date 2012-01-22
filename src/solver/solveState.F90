@@ -325,8 +325,7 @@ subroutine solveState
      ! run the NK solver 
      L2ConvSave = L2Conv
 
-  
-     if (rhoResStart/rhoRes0 > NK_Switch_Tol) then
+       if (rhoResStart/rhoRes0 > NK_Switch_Tol) then
 
         ! We haven't run anything yet OR the solution is not
         ! yet converged tightly enough to start with NK solver
@@ -475,8 +474,7 @@ subroutine solveState
      if (rhoRes1 < rhoResStart * l2convrel) then
         ! We no not have to run the NK solver so do nothing
      else
-        !  ! Run the NK solver down as far we need to go
-        
+        ! Run the NK solver down as far we need to go
         call setupNKsolver() 
         call NKsolver()
 

@@ -24,7 +24,6 @@ subroutine setupExtraMatrix
 #ifndef USE_NO_PETSC
 
   useAD = .True.
-  print *,'calling setupexraResidualMatrix'
   call setupExtraResidualMatrix(drda,useAD)
 
 #endif

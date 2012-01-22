@@ -1015,7 +1015,6 @@ class SUMB(AeroSolver):
             # More Time Steps / Iterations OR a restart
             # Reallocate convergence history array and time array
             # with new size, storing old values from previous runs
-
             if storeHistory:
                 current_size = len(self.sumb.monitor.convarray)
                 desired_size = current_size + self.sumb.inputiteration.ncycles
@@ -1026,9 +1025,9 @@ class SUMB(AeroSolver):
                 desired_size = self.sumb.inputiteration.nsgstartup + \
                     self.sumb.inputiteration.ncycles
             # end if
-
             # Allocate Arrays
-            self.sumb.allocconvarrays(desired_size)
+            if self.myid == 0:
+                self.sumb.allocconvarrays(desired_size)
 
             self.sumb.inputiteration.mgstartlevel = 1
             self.sumb.iteration.itertot = 0

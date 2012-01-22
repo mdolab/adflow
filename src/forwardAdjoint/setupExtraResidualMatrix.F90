@@ -59,8 +59,6 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
   !real(kind=realType), dimension(3) :: rotPointd!,pointRefd
   
 
-  if (myid==0) print *,'Setting up dRda in forward Mode...'
-
   rkStage = 0
   currentLevel =1 
   groundLevel = 1
