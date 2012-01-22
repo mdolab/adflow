@@ -34,7 +34,7 @@ subroutine allocConvArrays(nIterTot)
   !      Local variables.
   !
   integer :: ierr
-  real(kind=realType), dimension(:,:,:),allocatable ::  tempArray
+
   !      ******************************************************************
   !      *                                                                *
   !      * Begin execution                                                *
@@ -49,39 +49,18 @@ subroutine allocConvArrays(nIterTot)
   if (allocated(convArray)) then
      ! Its already allocated, so copy the data out first:
 
-     ll = ubound(convArray,1)
-     mm = ubound(convArray,2)
-     nn = ubound(convArray,3)
-     allocate(tempArray(0:ll,1:mm,1:nn))
-
-     do k=1,nn
-        do j=1,mm
-           do i=0,ll
-              tempArray(i,j,k) = convArray(i,j,k)
-           end do
-        end do
-     end do
-
-     deallocate(convArray)
+     deallocate(convArray,stat=ierr)
+     if(ierr /= 0) then
+        call terminate("allocConvArrays", &
+             "Memory deallocation failure for convArrya")
+     end if
 
      allocate(convArray(0:nIterTot,nTimeIntervalsSpectral,nMon), stat=ierr)
      if(ierr /= 0) then
         call terminate("allocConvArrays", &
              "Memory allocation failure for convArray")
      end if
-     
-     ! Copy Data back in:
-     
-     do k=1,nn
-        do j=1,mm
-           do i=1,ll
-              convArray(i,j,k) = tempArray(i,j,k)
-           end do
-        end do
-     end do
-
-     deallocate(tempArray)
-
+     convArray = zero
   else ! Just allocate:
 
      allocate(convArray(0:nIterTot,nTimeIntervalsSpectral,nMon), stat=ierr)

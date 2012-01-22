@@ -14,6 +14,7 @@ subroutine getSolution(sps)
   use inputTSStabDeriv !TSStability
   use inputTimeSpectral !nTimeIntervalsSpectral
   use communication
+  use inputIteration
   implicit none
 
   integer(kind=intType) :: sps,ierr,i
@@ -44,11 +45,11 @@ subroutine getSolution(sps)
      
      call computeRootBendingMoment(globalCFVals,bendingMoment)
      bendingsum = bendingsum+bendingMoment
-     if(myid==0)then
+     if(myid==0 .and. printIterations)then
         print *,'Bending Coefficient',bendingMoment,i
      end if
   end do
-  if(myid==0)then
+  if(myid==0 .and. printIterations)then
      print *,'bending average',bendingSum/nTimeIntervalsSpectral
   end if
   functionValue(costFuncBendingCoef)=bendingSum/nTimeIntervalsSpectral

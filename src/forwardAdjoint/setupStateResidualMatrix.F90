@@ -176,22 +176,14 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
                     end do
                  end do
               end do
-              !print *, 'perturbation done'
 
-              
               ! Block-based residual
               if (useAD) then
                  call block_res_d(nn,sps)
-                 !print *,'AD Not Implmented Yet'
-                 !stop
               else
                  call block_res(nn,sps)
               end if
-              
-              !print *, 'called block_res_d'
 
-
-              
               ! Set the computed residual in dw_deriv. If using FD,
               ! actually do the FD calculation if AD, just copy out dw
               ! in flowdomsd
