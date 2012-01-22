@@ -292,7 +292,7 @@
 
           testRootProc: if(myID == 0) then
 
-             if(.not.standAloneMode)then
+             if(.not.standAloneMode .and. printIterations )then
 !
 ! ---------- eran_idendifyname ------  For CHIMPS run print identifier infront each line (code-name)
 !

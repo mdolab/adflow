@@ -46,6 +46,11 @@ subroutine NKsolver
   rtol_last = zero
   nfevals = 0
 
+  ! Make sure we want ot do at least 1 iteration.
+  if (maxNonLinearIts < 1) then
+     return
+  end if
+
   Mmax = 10
   iter_k = 1
   iter_m = 0
@@ -80,6 +85,7 @@ subroutine NKsolver
            ! We need to call convergence Info since this has the
            ! "approximate" convergence check
            call convergenceInfo
+
            exit NonLinearLoop
         else
            call convergenceInfo
@@ -92,7 +98,7 @@ subroutine NKsolver
 
      ! Determine if if we need to form the Preconditioner: For a
      ! normal aerodynamic solution, form the preconditioner every
-     ! 'jacobian_lag' iterations.  However, for an aerostructural
+     ! 'jacobian_lag' iterations.  However, for an aerostrutural
      ! analysis (with Gauss Sidel) the NK solver is called
      ! repedily. In this case we want the 'jacobian_lag' to refer to
      ! the number of time the solver was called. So on first
@@ -167,6 +173,7 @@ subroutine NKsolver
      ! Linesearching:
      iter_k = iter
      iter_m = min(iter_m+1,Mmax)
+     NKLS = nonMonotoneLineSearch
 
      if (iter == 1) then
         call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
@@ -196,7 +203,6 @@ subroutine NKsolver
   end do NonLinearLoop
 
   ! Not really anything else to do...
-
   NKSolveCount = NKSolveCount + 1
 
   deallocate(func_evals)

@@ -78,10 +78,10 @@ subroutine convergenceHeader
        ! Write the first line of the header. First the variables that
        ! will always be written. Some extra variables must be written
        ! for unsteady and time spectral problems.
-       if(.not.standAloneMode)then
+       if(.not.standAloneMode) then
 !
 ! ---------- eran_idendifyname ------  For CHIMPS run print identifier infront each line (code-name)
-!
+
           write(*,'("#  CODE         ")',advance="no")
 
        else
