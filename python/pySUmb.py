@@ -162,7 +162,6 @@ class SUMB(AeroSolver):
             'monitorVariables':[list,['resrho','cl','cd']],
             'surfaceVariables':[list,['cp','vx','vy','vz','mach']],
             'volumeVariables':[list,['resrho']],
-            'areaAxis':[list,[0.0,1.0,0.0]],
 
             # Adjoint Paramters
             'adjointL2Convergence':[float,1e-10],
@@ -302,8 +301,6 @@ class SUMB(AeroSolver):
               'clq':'clq',
               'clqdot':'clqDot',
               'cbend':'cBend',
-              'area':'area',
-              'volume':'volume',
               }
 
         self.possibleAeroDVs = {
@@ -598,7 +595,6 @@ class SUMB(AeroSolver):
                 'writeMesh',
                 'familyRot',  # -> Not sure how to do
                 'lowMemory',
-                'areaAxis',
                 'autoSolveRetry',
                 'autoAdjointRetry',
                 'useReverseModeAD'
@@ -1787,32 +1783,17 @@ class SUMB(AeroSolver):
         # the surface. 
 
         obj,aeroObj = self._getObjective(objective)
-        
-        if obj in ['area','volume']: # Possibly add more Direct objectives here...
-            if obj == 'area':
-                self.mesh.warp.computeareasensitivity(
-                    self.getOption('areaAxis'))
-                dIdXs = self.mesh.getdXs('all')
-            # end if
 
-            if obj == 'volume':
-                self.mesh.warp.computevolumesensitivity(
-                    self.getOption('areaAxis'))
-                dIdXs = self.mesh.getdXs('all')
-            # end if
-
-        else:
-            # NOTE: do dRdxvPsi MUST be done first since this
-            # allocates spatial memory if required.
-            dIdxs_2 = self.getdRdXvPsi('all',objective)
+        # NOTE: do dRdxvPsi MUST be done first since this
+        # allocates spatial memory if required.
+        dIdxs_2 = self.getdRdXvPsi('all',objective)
           
-            # Direct partial derivative contibution 
-            dIdxs_1 = self.getdIdx(objective,'all')
+        # Direct partial derivative contibution 
+        dIdxs_1 = self.getdIdx(objective,'all')
 
-            # Total derivative of the obective with surface coordinates
+        # Total derivative of the obective with surface coordinates
 
-            dIdXs = dIdxs_1 - dIdxs_2
-        # end if
+        dIdXs = dIdxs_1 - dIdxs_2
 
         return dIdXs
 
@@ -1825,31 +1806,25 @@ class SUMB(AeroSolver):
 
         obj,aeroObj = self._getObjective(objective)
 
-        if obj in ['area','volume']: # Possibly add more Direct
-                                     # objectives here...  These by
-                                     # definition have zero dependance
-            dIda = numpy.zeros(self.nDVAero)
-        else:
-            if self.getOption('lowMemory') or self.getOption('restartAdjoint'):
-                if obj in self.storedADjoints.keys():
-                    psi = self.storedADjoints[obj]
-                else:
-                    mpiPrint('%s adjoint is not computed.'%(obj),comm=self.comm)
-                    sys.exit(1)
-                # end if
+        if self.getOption('lowMemory') or self.getOption('restartAdjoint'):
+            if obj in self.storedADjoints.keys():
+                psi = self.storedADjoints[obj]
             else:
-                psi = self.sumb.getadjoint(self.getStateSize())
+                mpiPrint('%s adjoint is not computed.'%(obj),comm=self.comm)
+                sys.exit(1)
             # end if
-
-            # Direct partial derivative contibution 
-            dIda_1 = self.getdIda(objective)
-
-            # dIda contribution for drda^T * psi
-            dIda_2 = self.getdRdaPsi(psi)
-         
-            # Total derivative of the obective wrt aero-only DVs
-            dIda = dIda_1 - dIda_2
+        else:
+            psi = self.sumb.getadjoint(self.getStateSize())
         # end if
+
+        # Direct partial derivative contibution 
+        dIda_1 = self.getdIda(objective)
+
+        # dIda contribution for drda^T * psi
+        dIda_2 = self.getdRdaPsi(psi)
+         
+        # Total derivative of the obective wrt aero-only DVs
+        dIda = dIda_1 - dIda_2
 
         return dIda
         
@@ -2233,11 +2208,6 @@ class SUMB(AeroSolver):
              'cbend'        :funcVals[self.sumb.costfunctions.costfuncbendingcoef-1]
              }
                                                  
-        # Also add in 'direct' solutions. Area etc
-        SUmbsolution['area'] =  self.mesh.computeArea(
-            self.getOption('areaAxis'))
-        SUmbsolution['volume'] = self.mesh.computeVolume(
-            self.getOption('areaAxis'))
         
         return SUmbsolution
 
@@ -2421,11 +2391,19 @@ class SUmbDummyMesh(object):
 
         return 
 
-    def computeArea(self, axis):
+    def computeArea(self, axis, group_name):
         
         return 0.0
 
+    def computeAreaSensitivity(self, axis, group_name):
+
+        return 
+
     def computeVolume(self, axis):
+
+        return 0.0
+
+    def computeVolumeSensitivity(self, axis):
 
         return 0.0
 

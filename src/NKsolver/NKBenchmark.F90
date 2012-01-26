@@ -51,7 +51,7 @@ subroutine NKBenchmark(NKRes,niter)
   
   ! Reset all times
 
-  resTime = 0.0
+  resTime = zero
  
   if (.not. NKres) then
      allocate(cycling(nMGSteps), stat=ierr)
