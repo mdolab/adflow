@@ -14,18 +14,12 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   !     *               For use with the adjoint this must be true.      *
   !     ******************************************************************
   !
-  use ADjointVars
-  use ADjointPETSc , only:localInfo
   use blockPointers       ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
-  use communication       ! procHalo(currentLevel)%nProcSend
   use inputDiscretization ! spaceDiscr
-  USE inputTimeSpectral   ! nTimeIntervalsSpectral
+  use inputTimeSpectral   ! nTimeIntervalsSpectral
   use iteration           ! overset, currentLevel
   use flowVarRefState     ! nw
-  use inputTimeSpectral   ! spaceDiscr
-  use inputDiscretization
   use inputAdjoint        ! useDiagTSPC
-  use inputPhysics 
   use stencils
 
   implicit none
@@ -34,28 +28,22 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
   ! PETSc Matrix Variable
   Mat matrix
-  Mat mat_copy
 
   ! Input Variables
   logical :: useAD,usePC,useTranspose
 
-  !     Local variables.
-  integer(kind=intType) :: ierr,nn,sps,sps2,i,j,k,l,ll,ii,jj,kk
-  integer(kind=intType) :: irow,icol,ilow,ihigh,assembled
-  real(kind=realType) :: delta_x,one_over_dx
-
-  real(kind=realType), dimension(2) :: time
-  real(kind=realType)               ::setupTime,trace
-  integer(kind=intType) :: n_stencil,i_stencil
+  ! Local variables.
+  integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
+  integer(kind=intType) :: nColor, iColor, irow, icol
+  integer(kind=intType) :: n_stencil, i_stencil
   integer(kind=intType), dimension(:,:), pointer :: stencil
-  integer(kind=intType) :: nColor,iColor
-  logical :: secondHalo
+  real(kind=realType) :: delta_x, one_over_dx
+
+  useDiagTSPC = .False.
 
   rkStage = 0
   currentLevel =1 
   groundLevel = 1
-  ! Start Timer
-  !time(1) = mpi_wtime()
    
   ! Zero out the matrix before we start
   call MatZeroEntries(matrix,ierr)
@@ -68,13 +56,12 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   ! using the first order stencil or the full jacobian
 
   if (usePC) then
-
-     if (not(viscous)) then
-        stencil => euler_pc_stencil
-        n_stencil = N_euler_pc
-     else
+     if (viscous) then
         stencil => visc_pc_stencil
         n_stencil = N_visc_pc
+     else
+        stencil => euler_pc_stencil
+        n_stencil = N_euler_pc
      end if
 
      ! Very important to use only second Order dissipation for PC 
@@ -90,10 +77,10 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   call computeResidualNK ! This is the easiest way to do this
 
   ! Set delta_x
-  delta_x = 1e-7
-  one_over_dx = 1.0/delta_x
+  delta_x = 1e-6_realType
+  one_over_dx = one/delta_x
   rkStage = 0
-  secondHalo = .True. 
+
   ! Master Domain Loop
   domainLoopAD: do nn=1,nDom
 
@@ -125,15 +112,11 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
         if (not (viscous)) then
            call setup_PC_coloring(nn,nColor) ! Euler Colorings
         else
-           !call setup_PC_coloring(nn,nColor) ! Euler Colorings
            call setup_3x3x3_coloring(nn,nColor) ! dense 3x3x3 coloring
         end if
-
      else
         if( .not. viscous ) then
            call setup_dRdw_euler_coloring(nn,nColor) ! Euler Colorings
-           !call setup_5x5x5_coloring(nn,nColor)
-           !call setup_BF_coloring(nn,nColor)
         else 
            call setup_dRdw_visc_coloring(nn,nColor)! Viscous/RANS
         end if
@@ -143,9 +126,8 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
         ! Do Coloring and perturb states
         do iColor = 1,nColor
-           !print *,'icolor',icolor
            do sps2 = 1,nTimeIntervalsSpectral
-              flowDomsd(sps2)%dw_deriv(:,:,:,:,:) = 0.0
+              flowDomsd(sps2)%dw_deriv(:,:,:,:,:) = zero
            end do
 
            ! Master State Loop
@@ -156,7 +138,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
               do sps2 = 1,nTimeIntervalsSpectral
                  flowDoms(nn,1,sps2)%w(:,:,:,:) =  flowDomsd(sps2)%wtmp
                  if (useAD) then
-                    flowdomsd(sps2)%w = 0.0 ! This is actually w seed
+                    flowdomsd(sps2)%w = zero ! This is actually w seed
                  end if
               end do
 
@@ -166,11 +148,9 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
                     do i=0,ib
                        if (flowdomsd(1)%color(i,j,k) == icolor) then
                           if (useAD) then
-                             flowdomsd(sps)%w(i,j,k,l) = 1.0
-                             !write(13,*),flowdomsd(sps)%w(i,j,k,l)
+                             flowdomsd(sps)%w(i,j,k,l) = one
                           else
                              w(i,j,k,l) = w(i,j,k,l) + delta_x
-                             !write(14,*),w(i,j,k,l)
                           end if
                        end if
                     end do
@@ -195,17 +175,8 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
                        do j=2,jl
                           do i=2,il
                              if (useAD) then
-                                !write (13, *), i,j,k, flowDomsd(sps2)%w(i,j,k,ivx)
                                 flowDomsd(sps2)%dw_deriv(i,j,k,ll,l) = &
                                      flowdomsd(sps2)%dw(i,j,k,ll)
-!!$                                if (l == 1) then
-!!$                                if (ll == 1) then
-!!$                                   if (flowDomsd(sps2)%dw_deriv(i,j,k,ll,l) > 0.0001) then
-!!$                                      write(13,40),i,j,k,flowDomsd(sps2)%dw_deriv(i,j,k,ll,l)
-!!$                                   end if
-!!$                                end if
-!!$                                end if 
-                         
                              else
                                 if (sps2 == sps) then
                                    ! If the peturbation is on this
@@ -213,28 +184,20 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
                                    ! contribution so subtrace dwtmp
 
                                    flowDomsd(sps2)%dw_deriv(i,j,k,ll,l) = &
-                                        one_over_dx*(flowDoms(nn,1,sps2)%dw(i,j,k,ll) - &
+                                        one_over_dx*&
+                                        (flowDoms(nn,1,sps2)%dw(i,j,k,ll) - &
                                         flowDomsd(sps2)%dwtmp(i,j,k,ll))
-!!$                                   if (l == 1) then
-!!$                                   if (ll == 1) then
-!!$                                      if (flowDomsd(sps2)%dw_deriv(i,j,k,ll,l) > 0.0001) then
-!!$                                         write(14,40),i,j,k,flowDomsd(sps2)%dw_deriv(i,j,k,ll,l)
-!!$                                      end if
-!!$                                   end if
-!!$                                   end if
-                                   
                                 else
-
                                    ! If the peturbation is on an off
                                    ! instance, only subtract dwtmp2
                                    ! which is the reference result
                                    ! after initres
 
                                    flowDomsd(sps2)%dw_deriv(i,j,k,ll,l) = &
-                                        one_over_dx*(flowDoms(nn,1,sps2)%dw(i,j,k,ll) - &
+                                        one_over_dx*(&
+                                        flowDoms(nn,1,sps2)%dw(i,j,k,ll) - &
                                         flowDomsd(sps2)%dwtmp2(i,j,k,ll))
                                 end if
-
                              end if
                           end do
                        end do
@@ -252,7 +215,8 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
               do j=0,jb
                  do i=0,ib
                     icol = flowDoms(nn,1,sps)%globalCell(i,j,k)
-                    if (flowdomsd(1)%color(i,j,k) == icolor .and. icol >= 0) then
+                    if (flowdomsd(1)%color(i,j,k) == icolor .and.&
+                         icol >= 0) then
 
                        ! i,j,k are now the "Center" cell that we
                        ! actually petrubed. From knowledge of the
@@ -272,22 +236,33 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
                                j+jj >= 2 .and. j+jj <= jl .and. &
                                k+kk >= 2 .and. k+kk <= kl) then 
 
+                             ! If we're doing the PC and we want to
+                             ! use the diagonal version we ONLY set
+                             ! values from the ON-time instance
                              if (usePC .and. useDiagTSPC)then
-                                irow = flowDoms(nn,1,sps)%globalCell(i+ii,j+jj,k+kk)
-                                call setBlock(flowDomsd(sps)%dw_deriv(i+ii,j+jj,k+kk,:,:))
+                                irow = flowDoms(nn,1,sps)%&
+                                     globalCell(i+ii,j+jj,k+kk)
+                                call setBlock(flowDomsd(sps)%&
+                                     dw_deriv(i+ii,j+jj,k+kk,:,:))
                              else
-                                ! Center Stencil Cell has off time-instance dependancies
+                                ! Center Stencil Cell has off
+                                ! time-instance dependancies
                                 if (ii == 0 .and. jj == 0 .and. kk == 0) then
                                    
                                    do sps2=1,nTimeIntervalsSpectral
-                                      irow = flowDoms(nn,1,sps2)%globalCell(i+ii,j+jj,k+kk)
-                                      call setBlock(flowDomsd(sps2)%dw_deriv(i+ii,j+jj,k+kk,:,:))
-                                      !write (13,*),i,j,k,flowDomsd(sps2)%dw_deriv(i,j,k,:,:)
+                                      irow = flowDoms(nn,1,sps2)%&
+                                           globalCell(i+ii,j+jj,k+kk)
+                                      call setBlock(&
+                                           flowDomsd(sps2)%&
+                                           dw_deriv(i+ii,j+jj,k+kk,:,:))
                                    end do
                                    
                                 else 
-                                   irow = flowDoms(nn,1,sps)%globalCell(i+ii,j+jj,k+kk)
-                                   call setBlock(flowDomsd(sps)%dw_deriv(i+ii,j+jj,k+kk,:,:))
+                                   irow = flowDoms(nn,1,sps)%&
+                                        globalCell(i+ii,j+jj,k+kk)
+                                   call setBlock(&
+                                        flowDomsd(sps)%&
+                                        dw_deriv(i+ii,j+jj,k+kk,:,:))
                                 end if ! Center Cell Check
                              end if
                           end if ! On block Check
@@ -306,7 +281,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
   ! Redo the complete residual to make sure all the halos/pressures
   ! are up to date
-  call whalo2(1_intType, 1_intType, nw, .True.,.True.,.True.)
+  call whalo2(1_intType, 1_intType, nw, .True., .True., .True.)
   call computeResidualNK()
 
   !Return dissipation Parameters to normal -> VERY VERY IMPORTANT
@@ -323,10 +298,6 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   call MatSetOption(matrix,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  ! Debugging ONLY!
-  !call writeOutMatrix()
-
-
 contains
 
   subroutine setBlock(blk)
@@ -337,10 +308,12 @@ contains
     real(kind=realType), dimension(nw,nw) :: blk
 
     if (useTranspose) then
-       call MatSetValuesBlocked(matrix,1,icol,1,irow,transpose(blk),ADD_VALUES,ierr)
+       call MatSetValuesBlocked(matrix,1,icol,1,irow,transpose(blk),&
+            ADD_VALUES,ierr)
        call EChk(ierr,__FILE__,__LINE__)
     else
-       call MatSetValuesBlocked(matrix,1,irow,1,icol,blk,ADD_VALUES,ierr)
+       call MatSetValuesBlocked(matrix,1,irow,1,icol,blk,&
+            ADD_VALUES,ierr)
        call EChk(ierr,__FILE__,__LINE__)
     end if
 
@@ -382,8 +355,8 @@ contains
 
                             call MatGetValues(matrix  ,1,icol*nw+j-1,1,irow*nw+i-1,val1(i,j),ierr)
                             call EChk(ierr,__FILE__,__LINE__)
-                            call MatGetValues(mat_copy,1,irow*nw+i-1,1,icol*nw+j-1,val2(i,j),ierr)
-                            call EChk(ierr,__FILE__,__LINE__)
+!                            call MatGetValues(mat_copy,1,irow*nw+i-1,1,icol*nw+j-1,val2(i,j),ierr)
+!                            call EChk(ierr,__FILE__,__LINE__)
 
                             if (useAD) then
                                write(18,30),nn,icell,jcell,kcell,icell+ii,jcell+jj,kcell+kk,i,j,val1(i,j)
@@ -407,56 +380,6 @@ contains
 
 30  format(1x,I4,' | ', I4,' ',I4,'  ',I4,' | ',I4,' ',I4,' ',I4,' | ',I4,'  ',I4,' ',f20.6)
   end subroutine writeOutMatrix
-
-!   subroutine checkBlock(blk)
-!     use flowvarrefstate
-!     use communication
-!     implicit none
-
-!     real(kind=realType) :: blk(nw,nw)
-!     logical :: is_zero,has_nan
-!     integer(kind=intType) :: iii,jjj
-!     ! Just check to see if any of the diags on blk are zero
-
-!     is_zero = .True.
-!     has_nan  = .True.
-!     do iii=1,nw
-!        do jjj=1,nw
-!           if (abs(blk(iii,jjj)) > 1e-10) then
-!              is_zero = .False.
-!           end if
-!           if(.not. isNan(blk(iii,jjj))) then
-!              has_nan = .False.
-!           end if
-
-!        end do
-!     end do
-
-!     if (is_zero) then
-
-!        print *,'Setting a zero block at cell:'
-!        print *,i,j,k
-!        print *,'Offset is:'
-!        print *,ii,jj,kk
-!        print *,'offending block is:'
-!        print *,blk
-!        print *,'icolor is:',icolor
-!        print *,'color of this cell:',flowdomsd(1)%color(i,j,k)
-!        print *,'dw at this block is:'
-!        print *,flowDoms(nn,1,sps)%dw(i,j,k,:)/flowdoms(nn,1,sps)%vol(i,j,k)
-!        print *,flowDomsd(sps2)%dwtmp(i,j,k,:)
-!        print *,'Peturbed w:'
-!        print *,w(i,j,k,:)
-!        print *,flowDomsd(sps2)%wtmp(i,j,k,:)
-!        stop
-!     end if
-
-!     if (has_nan) then
-!        print *,'Block has a nan'
-!        print *,ii,jj,kk
-!        stop
-!     end if
-!   end subroutine checkBlock
 
 
 #endif

@@ -55,12 +55,12 @@ subroutine computeResidualNK()
            enddo
         enddo
 
+        ! Compute Viscosity
+        call computeLamViscosity  
+        call computeEddyViscosity 
+
      end do domainsState
   end do spectralLoop
-
-  ! Compute Viscosity
-  call computeLamViscosity  
-  call computeEddyViscosity 
 
   !   Apply BCs
   call applyAllBC(secondHalo)

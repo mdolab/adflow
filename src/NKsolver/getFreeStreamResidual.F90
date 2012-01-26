@@ -1,7 +1,6 @@
 subroutine getFreeStreamResidual(rhoRes,totalRRes)
+
   use communication
-  use ADjointVars
-  use precision
   use inputTimeSpectral
   use flowVarRefState
   use inputIteration
@@ -69,15 +68,13 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
      end do domains2
   end do spectralLoop2
 
-  
+
   tempMGStartLevel = mgStartLevel
   tempCurrentLevel = currentLevel
-  !tempStartLevel   = startLevel
 
   mgStartLevel = 1
   currentlevel = 1
-  !startLevel   = 1
-  
+
   call setUniformFlow
   call getCurrentResidual(rhoRes,totalRRes)
 
@@ -115,7 +112,6 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
 
   mgStartLevel = tempMGStartLevel
   currentLevel = tempCurrentLevel
-  !startLevel   = tempStartLevel
 
   deallocate(wtemp,ptemp)
 

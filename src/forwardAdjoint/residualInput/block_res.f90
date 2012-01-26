@@ -25,15 +25,13 @@ subroutine block_res(nn,sps)
   integer(kind=intType) :: nn,sps,i,j,k,sps2,mm,l
   logical :: correctForK
 
-
   ! Compute the pressures
   call setPointersOffTSInstance(nn,sps,sps)
 
   gm1 = gammaConstant - one
   correctForK = .False.
-  ! Compute P 
-  40 format(1x,I4,I4,I4,E20.4)
 
+  ! Compute P 
   do k=0,kb
      do j=0,jb
         do i=0,ib
@@ -42,13 +40,10 @@ subroutine block_res(nn,sps)
            p(i,j,k) = gm1*(w(i,j,k,irhoE) &
                 - half*w(i,j,k,irho)*v2)
            p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
-           !write(14,40),i,j,k,p(i,j,k)          
         enddo
      enddo
   enddo
 
-  !call computeEtot(0,ib,0,jb,0,kb,correctForK)
-  
   call computeLamViscosity
   call computeEddyViscosity
 

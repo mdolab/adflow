@@ -52,7 +52,6 @@ subroutine setPointersOffTSInstance_d(nn,sps,sps2)
   wd     => flowDomsd(sps)%w
   wOldd  => flowDomsd(sps)%wOld
   pd     => flowDomsd(sps)%p
-  !write(13,*),flowDomsd(sps)%w
 
   gammad => flowDomsd(sps)%gamma
   rlvd   => flowDomsd(sps)%rlv

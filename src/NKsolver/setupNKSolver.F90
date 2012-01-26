@@ -3,6 +3,7 @@ subroutine setupNKsolver
   ! Setup the PETSc objects for the Newton-Krylov
   ! solver. destroyNKsolver can be used to destroy the objects created
   ! in this function
+
   use blockPointers
   use communication
   use inputTimeSpectral
@@ -106,7 +107,6 @@ subroutine setupNKsolver
      !call KSPMonitorSet(global_ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
      !     PETSC_NULL_FUNCTION, ierr)
      !call EChk(ierr,__FILE__,__LINE__)
-
     
      NKSolverSetup = .True.
      NKSolveCount = 0
