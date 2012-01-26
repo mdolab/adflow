@@ -33,8 +33,8 @@ subroutine getCurrentResidual(rhoRes,totalRRes)
   ! Actual Residual Calc
   call residual 
   
-  r_sum = 0.0
-  rho_sum = 0.0
+  r_sum = zero
+  rho_sum = zero
   do sps=1,nTimeIntervalsSpectral
      do nn=1,nDom
         call setPointers(nn,1_intType,sps)

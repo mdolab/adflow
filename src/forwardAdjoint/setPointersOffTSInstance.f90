@@ -28,5 +28,4 @@ subroutine setPointersOffTSInstance(nn,sps,sps2)
   w_offTimeInstance  => flowDoms(nn,1,sps2)%w
   vol_offTimeInstance  => flowDoms(nn,1,sps2)%vol
 
-  !write(14, *),flowDoms(nn,1,sps2)%w,flowDoms(nn,1,sps2)%vol
 end subroutine setPointersOffTSInstance

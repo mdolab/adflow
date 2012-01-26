@@ -18,8 +18,6 @@ subroutine FormFunction_mf(ctx,wVec,rVec,ierr)
   ! This is just a shell routine that runs the more broadly useful
   ! computeResidualNK subroutine
  
-  ! Also try doing the built-in vec scats
-
   call setW(wVec)
   call computeResidualNK()
   call setRVec(rVec)
