@@ -645,7 +645,7 @@ class SUMB(AeroSolver):
         self.adjointRHS = None # When this is setup, it has
                                # the current objective
         
-        self._update_geom_info = True
+        self._update_geom_info = False
         self._update_period_info = True
         self._update_vel_info = True
         self.fatalFail = False
@@ -1063,8 +1063,6 @@ class SUMB(AeroSolver):
             self.solve_failed = True
             return
      
-  
-
         # Call the Solver
         if ('MDCallBack' in kwargs):
             self.sumb.solverunsteadymd(kwargs['MDCallBack'])
@@ -1328,7 +1326,7 @@ class SUMB(AeroSolver):
 
     def getForcePoints(self):
         [npts,nTS] = self.sumb.getforcesize()
-        nTS = 1
+
         if npts > 0:
             return self.sumb.getforcepoints(npts,nTS).T
         else:
@@ -1646,7 +1644,7 @@ class SUMB(AeroSolver):
     def printMatrixInfo(self, dRdwT=True, dRdwPre=True, dRdx=True,
                         dRda=True, dSdw=True, dSdx=True,
                         printLocal=False,printSum=True,printMax=False):
-        
+        OA
         # Call sumb matrixinfo function
         self.sumb.matrixinfo(dRdwT,dRdwPre,dRdx,dRda,dSdw,dSdx,
                              printLocal,printSum,printMax)
@@ -2056,6 +2054,7 @@ class SUMB(AeroSolver):
 
         if aeroObj:
             obj_num = self.SUmbCostfunctions[obj]
+
             self.sumb.computeobjpartials(
                 obj_num,forcePoints.T,self.stateSetup,self.spatialSetup)
             self.adjointRHS = obj
