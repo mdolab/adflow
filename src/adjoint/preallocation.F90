@@ -96,9 +96,11 @@ subroutine statePreAllocation(onProc,offProc,wSize,stencil,N_stencil)
                           call checkCell(kMax,i,j,onAdd,offAdd,1)
                        end if
 
-                       if (offAdd >= 1) then
+                       if (offAdd > 0) then
                           offProc(ii) = offProc(ii) + 1
-                       else if (onAdd > 0) then
+                       end if
+
+                       if  (onAdd > 0) then
                           onProc(ii) = onProc(ii) + 1
                        end if
                           
@@ -112,7 +114,6 @@ subroutine statePreAllocation(onProc,offProc,wSize,stencil,N_stencil)
   end do ! Domain Loop
   
 end subroutine statePreAllocation
-
 
 subroutine drdxPreAllocation(onProc,offProc,xSize)
 
@@ -144,7 +145,8 @@ subroutine drdxPreAllocation(onProc,offProc,xSize)
   integer(kind=intType) :: ijk(3),cells_on_face
   logical :: faces(6)
   logical :: is_corner, is_a_corner
-  onProc(:) = 0_intType
+
+  onProc(:) = 8_intType*nw*(nTimeIntervalsSpectral-1)
   offProc(:) = 0_intType 
 
   ii = 0  
