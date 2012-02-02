@@ -374,8 +374,8 @@ subroutine setupAllResidualMatrices
 
                                          call MatSetValues(dRdx, 3, ind_node, 1, idxres,  &
                                               xAdjb(ii,jj,kk,:,sps2), ADD_VALUES, PETScIerr)
-                                            ! NO error check here for speed purposes
-!                                            call ECHk(PETScIerr,__FILE__,__LINE__)
+                                         ! NO error check here for speed purposes
+                                         ! call ECHk(PETScIerr,__FILE__,__LINE__)
                                          
                                          rotpointxcorrection = rotpointxcorrection+ DOT_PRODUCT(xAdjb(ii,jj,kk,:,sps2),((/1,0,0/)+ RpXCorrection))
                                          rotpointycorrection = rotpointycorrection+ DOT_PRODUCT(xAdjb(ii,jj,kk,:,sps2),((/0,1,0/)+ RpYCorrection))
