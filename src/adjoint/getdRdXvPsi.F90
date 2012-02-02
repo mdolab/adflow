@@ -72,6 +72,7 @@ subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
   call MatMult(dRdx,wVec,xVec,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
+
   ! Extract pointer for xVec
   call VecGetArrayF90(xVec,xvec_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -122,7 +123,7 @@ subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
                   xvec_pointer(3*counter0+3)/)
 
 
-           dXv(3*counter1+1:3*counter1*+3) = &
+           dXv(3*counter1+1:3*counter1+3) = &
                 dXv(3*counter1+1:3*counter1+3) + &
                 matmul(rotationMatrix,pt)
            counter0 = counter0 + 1

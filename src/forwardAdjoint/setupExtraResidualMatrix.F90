@@ -82,6 +82,8 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
   rkStage = 0
   secondHalo = .True. 
   ! Master Domain Loop
+
+  nColor = nDesignExtra
   domainLoopAD: do nn=1,nDom
 
      ! Set pointers to the first timeInstance...just to getSizes
@@ -95,7 +97,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
      ! drdw or a PC
 
      !let the DV number be the color
-     nColor = nDesignExtra
+    
      alpharef = alpha
      betaref = beta
      machref = mach
@@ -104,6 +106,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
      rotcenterRef = cgnsDoms(idxblk)%rotCenter
      rotPointRef = rotPoint
      pointRefRef = pointRef
+
 
      ! Do Coloring and perturb states
      do iColor = 1,nColor !set colors based on extra vars....
@@ -219,10 +222,11 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
            ! Block-based residual
            if (useAD) then
               call block_res_extra_extra_d(nn,sps,alpha,alphad,beta,&
-                                          &betad,liftIndex)
+                   betad,liftIndex)
            else
               call block_res_extra(nn,sps,alpha,beta,liftIndex)
            end if
+
 
            ! Set the computed residual in dw_deriv. If using FD,
            ! actually do the FD calculation if AD, just copy out dw
@@ -247,7 +251,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
               end do
            end do
         end do
-     
+        
         ! Set derivatives by block in "matrix" after we've peturbed
         ! all states in "color"
         do sps = 1,nTimeIntervalsSpectral
@@ -292,10 +296,8 @@ contains
     integer(kind=intType) :: iii
        
     do iii=1,nw
-       if (abs(blk(iii,1)).ne. 0.0)then
-          call MatSetValues(matrix,1,irow*nw+iii-1,1,icol,blk(iii,1),ADD_VALUES,ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-       end if
+       call MatSetValues(matrix,1,irow*nw+iii-1,1,icol,blk(iii,1),ADD_VALUES,ierr)
+       call EChk(ierr,__FILE__,__LINE__)
     end do
   end subroutine setBlock
 
