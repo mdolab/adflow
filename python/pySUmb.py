@@ -1989,7 +1989,6 @@ class SUMB(AeroSolver):
         ndof = self.sumb.adjointvars.nnodeslocal*3
 
         # Now call getdrdxvpsi WITH the psi vector:
-        print 'calling getdrdxvpsi'
         dxv_solver = self.sumb.getdrdxvpsi(ndof,psi)
         self.mesh.warpDeriv(dxv_solver)
         dxs = self.mesh.getdXs(group_name)
