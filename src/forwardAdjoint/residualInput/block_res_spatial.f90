@@ -45,8 +45,8 @@ subroutine block_res_spatial(nn,sps)!,x_peturb)
   t = timeUnsteadyRestart
   
   if(equationMode == timeSpectral) then
-     do nn=1,nSections
-        t(nn) = t(nn) + (sps-1)*sections(nn)%timePeriod &
+     do mm=1,nSections
+        t(mm) = t(mm) + (sps-1)*sections(mm)%timePeriod &
              /         real(nTimeIntervalsSpectral,realType)
      enddo
   endif
