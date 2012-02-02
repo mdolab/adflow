@@ -55,10 +55,10 @@
    !print *,'time'
    t = timeunsteadyrestart
    IF (equationmode .EQ. timespectral) THEN
-   DO nn=1,nsections
+   DO mm=1,nsections
    result1 = REAL(ntimeintervalsspectral, realtype)
-   td(nn) = 0.0
-   t(nn) = t(nn) + (sps-1)*sections(nn)%timeperiod/result1
+   td(mm) = 0.0
+   t(mm) = t(mm) + (sps-1)*sections(mm)%timeperiod/result1
    END DO
    END IF
    !print *,'gridvel'
