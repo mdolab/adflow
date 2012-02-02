@@ -1366,16 +1366,12 @@ class SUMB(AeroSolver):
         against FD
         '''
         # Check to see if the adjoint Matrix is setup:
-        if self.myid==0: print 'setting up matrix'
         if not self.stateSetup:
             self.sumb.setupstatepetscvars()
         # end if
         # Short form of objective--easier code reading
-        if self.myid==0: print 'possible objectives',objective
         obj = self.possibleObjectives[objective.lower()]
-        if self.myid==0: print 'obj',obj
         costFunc =  self.SUmbCostfunctions[obj]
-        if self.myid==0: print 'costfunc',costFunc
         self.sumb.verifydcfdx(1,costFunc)
         
         return
@@ -1389,18 +1385,16 @@ class SUMB(AeroSolver):
         '''
         run compute obj partials, then print to a file...
         '''
-        if self.myid==0: print 'setting up vector'
         if not self.stateSetup:
             self.sumb.setupstatepetscvars()
         # end if
-        if self.myid==0:print 'computing partials'
+
         self.computeObjPartials(objective)
         obj = self.possibleObjectives[objective.lower()]
         filename= self.getOption('outputDir') + '/' +'ADw%s'%(obj)
-        if self.myid==0:print 'filename',filename
         costFunc =  self.SUmbCostfunctions[obj]
         level = 1
-        if self.myid==0:print 'calling verify',level,costFunc,filename
+
         self.sumb.verifydidwfile(level,costFunc,filename)
         
         return
@@ -1409,18 +1403,17 @@ class SUMB(AeroSolver):
         '''
         run compute obj partials, then print to a file...
         '''
-        if self.myid==0: print 'setting up vector'
         if not self.stateSetup:
             self.sumb.createstatepetscvars()
         # end if
-        if self.myid==0:print 'computing partials'
+
         self.computeObjPartials(objective)
         obj = self.possibleObjectives[objective.lower()]
         filename= self.getOption('outputDir') + '/' +'ADx%s'%(obj)
-        if self.myid==0:print 'filename',filename
+
         costFunc =  self.SUmbCostfunctions[obj]
         level = 1
-        if self.myid==0:print 'calling verify',level,costFunc,filename
+
         self.sumb.verifydidxfile(level,costFunc,filename)
 
         return
@@ -1569,7 +1562,6 @@ class SUMB(AeroSolver):
 
             if compute:
                 self.sumb.setupallresidualmatrices()
-                self.mesh.setupWarpDeriv()
 
                 # Set the flags as true
                 self.stateSetup = True
@@ -1641,10 +1633,10 @@ class SUMB(AeroSolver):
 
         return
 
-    def printMatrixInfo(self, dRdwT=True, dRdwPre=True, dRdx=True,
-                        dRda=True, dSdw=True, dSdx=True,
-                        printLocal=False,printSum=True,printMax=False):
-        OA
+    def printMatrixInfo(self, dRdwT=False, dRdwPre=False, dRdx=False,
+                        dRda=False, dSdw=False, dSdx=False,
+                        printLocal=False,printSum=False,printMax=False):
+        
         # Call sumb matrixinfo function
         self.sumb.matrixinfo(dRdwT,dRdwPre,dRdx,dRda,dSdw,dSdx,
                              printLocal,printSum,printMax)
@@ -1897,7 +1889,8 @@ class SUMB(AeroSolver):
     
 
     def getConvergenceHistory(self,name):
-        """Return an array of the convergence history for a particular quantity.
+        """Return an array of the convergence history for a particular
+        quantity.
 
         Keyword arguments:
 
@@ -1996,6 +1989,7 @@ class SUMB(AeroSolver):
         ndof = self.sumb.adjointvars.nnodeslocal*3
 
         # Now call getdrdxvpsi WITH the psi vector:
+        print 'calling getdrdxvpsi'
         dxv_solver = self.sumb.getdrdxvpsi(ndof,psi)
         self.mesh.warpDeriv(dxv_solver)
         dxs = self.mesh.getdXs(group_name)
@@ -2006,7 +2000,7 @@ class SUMB(AeroSolver):
 
         # Setup extra matrices if required
         self.setupExtraMatrices()
-        
+
         if self.nDVAero > 0:
             dIda = self.sumb.getdrdapsi(self.nDVAero,psi)
         else:
