@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine residualAdj(wAdj,pAdj,siAdj,sjAdj,skAdj,volAdj,normAdj,&
+       subroutine residualAdjTS(wAdj,pAdj,siAdj,sjAdj,skAdj,volAdj,normAdj,&
                               sFaceIAdj,sFaceJAdj,sFaceKAdj,&
                               radIAdj,radJAdj,radKAdj,&
                               dwAdj, iCell, jCell, kCell,  &  
@@ -108,7 +108,7 @@
 !!$           call setPointers(nn, currentLevel, sps)
 !********************
        !print *,'before central',wAdj(:,:,:,irho)!
-           call inviscidCentralFluxAdj(wAdj,  pAdj,  dwAdj,         &
+           call inviscidCentralFluxAdjTs(wAdj,  pAdj,  dwAdj,         &
                                          siAdj, sjAdj, skAdj, volAdj, &
                                          sFaceIAdj,sFaceJAdj,sFaceKAdj,&
                                          rotRateAdj,                  &
@@ -129,7 +129,7 @@
                   !fw(:,:,:,:) = 0.0
                   
                   !call inviscidDissFluxScalar()
-                  call inviscidDissFluxScalarAdj(wAdj,  pAdj,  dwadj,&
+                  call inviscidDissFluxScalarAdjTS(wAdj,  pAdj,  dwadj,&
                                                 radIAdj,radJAdj,radKAdj, &
                                                 iCell, jCell, kCell,nn,level,sps)
 
@@ -179,10 +179,11 @@
                                        ! siAdj, sjAdj, skAdj, &
                                        ! sFaceIAdj,sFaceJAdj,sFaceKAdj,&
                                        ! iCell, jCell, kCell,finegrid
-               call inviscidUpwindFluxAdj(wAdj,  pAdj,  dwAdj, &
-                                        siAdj, sjAdj, skAdj, &
-                                        sFaceIAdj,sFaceJAdj,sFaceKAdj,&
-                                        iCell, jCell, kCell,finegrid,nn,level,sps)
+!select case in riemann solver is an issue
+!!$               call inviscidUpwindFluxAdjTS(wAdj,  pAdj,  dwAdj, &
+!!$                                        siAdj, sjAdj, skAdj, &
+!!$                                        sFaceIAdj,sFaceJAdj,sFaceKAdj,&
+!!$                                        iCell, jCell, kCell,finegrid,nn,level,sps)
 
                !print *,'After inviscid upwind',dwAdj
 !               call inviscidUpwindFluxAdj2(wAdj,  pAdj,  dwAdj2, &
@@ -242,9 +243,8 @@
 
            do l=1,nwf
 
-              dwAdj(l,sps) = (dwAdj(l,sps) + fwAdj(l,sps)) &
-                               * real(iblank(iCell,jCell,kCell), realType)
+              dwAdj(l,sps) = (dwAdj(l,sps) + fwAdj(l,sps))!* real(iblank(iCell,jCell,kCell), realType)
            enddo
 
 
-         end subroutine residualAdj
+         end subroutine residualAdjTS
