@@ -54,7 +54,8 @@ subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
   real(kind=realType), intent(out)  :: dXv(ndof)
   real(kind=realType), intent(in)   :: adjoint(nstate)
 
-  integer(kind=intType) :: ierr,sps,i,nn,counter0,counter1
+  integer(kind=intType) :: ierr,sps,i,nn,mm,counter0,counter1
+  integer(kind=intType) :: nodes_on_block, cum_nodes_on_block
   real(kind=realType), dimension(3)   :: rotationPoint,r
   real(kind=realType), dimension(3,3) :: rotationMatrix  
   real(kind=realType) :: t(nSections),dt(nSections)
@@ -100,36 +101,54 @@ subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
   
      timeUnsteady = zero
      counter0 = 0
-     do sps = 1,nTimeIntervalsSpectral
-        do nn=1,nSections
-           t(nn) = (sps-1)*dt(nn)
-        enddo
-     
-        ! Compute the displacements due to the rigid motion of the mesh.
-     
-        tNew = timeUnsteady + timeUnsteadyRestart
-        tOld = tNew - t(1)
+     cum_nodes_on_block = 0
+     ! The nDom loop followed by the sps loop is required to follow
+     ! the globalNode ordering such that we can use the pointer from
+     ! vecGetArrayF90
 
-        call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+     do nn=1,nDom
+        do sps = 1,nTimeIntervalsSpectral
+
+           call setPointers(nn,1,sps)
+           nodes_on_block = il*jl*kl
+
+           do mm=1,nSections
+              t(mm) = (sps-1)*dt(mm)
+           enddo
+     
+           ! Compute the displacements due to the rigid motion of the mesh.
+     
+           tNew = timeUnsteady + timeUnsteadyRestart
+           tOld = tNew - t(1)
+
+           call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
     
-        ! Take rotation Matrix Transpose
-        rotationMatrix = transpose(rotationMatrix)
+           ! Take rotation Matrix Transpose
+           rotationMatrix = transpose(rotationMatrix)
 
-        counter1 = 0
-        do i=1,nnodeslocal
+           counter1 = cum_nodes_on_block        
 
-           pt = (/xvec_pointer(3*counter0+1),&
-                  xvec_pointer(3*counter0+2),&
-                  xvec_pointer(3*counter0+3)/)
+           ! Loop over the localally owned nodes:
+         
 
+           do i=1,nodes_on_block
 
-           dXv(3*counter1+1:3*counter1+3) = &
-                dXv(3*counter1+1:3*counter1+3) + &
-                matmul(rotationMatrix,pt)
-           counter0 = counter0 + 1
-           counter1 = counter1 + 1
+              pt = (/xvec_pointer(3*counter0+1),&
+                     xvec_pointer(3*counter0+2),&
+                     xvec_pointer(3*counter0+3)/)
+
+              dXv(3*counter1+1:3*counter1+3) = &
+                   dXv(3*counter1+1:3*counter1+3) + &
+                   matmul(rotationMatrix,pt)
+              
+              counter0 = counter0 + 1
+              counter1 = counter1 + 1
+           end do
 
         end do
+        ! Increment the cumulative number of nodes by the nodes on the
+        ! block we just did
+        cum_nodes_on_block = cum_nodes_on_block + nodes_on_block
      end do
   end if
 
