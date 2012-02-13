@@ -464,6 +464,7 @@
 
          real(kind=realType), dimension(:,:,:,:),   pointer :: x,xtmp
          real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
+         real(kind=realType), dimension(:,:)      , pointer :: tempHalo
 
          real(kind=realType), dimension(:,:,:,:), pointer :: sI, sJ, sK
          real(kind=realType), dimension(:,:,:),   pointer :: vol
@@ -773,7 +774,7 @@
        integer(kind=intType) :: nDom
 
        type(blockType), allocatable, dimension(:,:,:) :: flowDoms
-       type(blockType), allocatable, dimension(:)     :: flowDomsd
+       type(blockType), allocatable, dimension(:,:,:)     :: flowDomsd
 
 !
 !      ******************************************************************

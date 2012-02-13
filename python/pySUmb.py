@@ -1604,7 +1604,7 @@ class SUMB(AeroSolver):
 
         return
 
-    def setupSpatialMatrices(self):
+    def setupSpatialMatrices(self,useAD=True):
 
         if not self.spatialSetup:
             if self.getOption('lowMemory'):
@@ -1618,7 +1618,7 @@ class SUMB(AeroSolver):
             # end if
 
             self.sumb.createspatialpetscvars()
-            self.sumb.setupspatialmatrix()
+            self.sumb.setupspatialmatrix(useAD)
             self.spatialSetup = True
         # end if
 

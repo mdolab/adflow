@@ -61,6 +61,8 @@ subroutine allocConvArrays(nIterTot)
              "Memory allocation failure for convArray")
      end if
      convArray = zero
+
+
   else ! Just allocate:
 
      allocate(convArray(0:nIterTot,nTimeIntervalsSpectral,nMon), stat=ierr)
