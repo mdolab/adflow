@@ -112,7 +112,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
      do iColor = 1,nColor !set colors based on extra vars....
         !zero derivatives
         do sps = 1,nTimeIntervalsSpectral
-           flowDomsd(sps)%dw_deriv(:,:,:,:,:) = 0.0
+           flowDomsd(nn,1,sps)%dw_deriv(:,:,:,:,:) = 0.0
         end do
        
         !reset all of the seeds
@@ -238,13 +238,13 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
                  do j=2,jl
                     do i=2,il
                        if (useAD) then
-                          flowDomsd(sps)%dw_deriv(i,j,k,ll,1) = &
-                               flowdomsd(sps)%dw(i,j,k,ll)
+                          flowDomsd(nn,1,sps)%dw_deriv(i,j,k,ll,1) = &
+                               flowdomsd(nn,1,sps)%dw(i,j,k,ll)
                        else
                           
-                          flowDomsd(sps)%dw_deriv(i,j,k,ll,1) = &
+                          flowDomsd(nn,1,sps)%dw_deriv(i,j,k,ll,1) = &
                                one_over_dx*(flowDoms(nn,1,sps)%dw(i,j,k,ll) - &
-                               flowDomsd(sps)%dwtmp(i,j,k,ll))
+                               flowDomsd(nn,1,sps)%dwtmp(i,j,k,ll))
                        end if
                     end do
                  end do
@@ -263,7 +263,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
                     irow = flowDoms(nn,1,sps)%globalCell(i,j,k)
                     if ( irow >= 0) then
                        icol = icolor-1
-                       call setBlock(flowDomsd(sps)%dw_deriv(i,j,k,:,1))
+                       call setBlock(flowDomsd(nn,1,sps)%dw_deriv(i,j,k,:,1))
                     end if ! Color If check
                  end do ! i loop
               end do ! j loop

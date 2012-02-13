@@ -114,35 +114,35 @@ subroutine metric_block(nn,level,sps)
            ! arguments of volpym must be such that for a (regular)
            ! right handed hexahedron all volumes are positive.
 
-           vp1 = volpym(x(i,j,k,1), x(i,j,k,2), x(i,j,k,3), &
+           call volpym(x(i,j,k,1), x(i,j,k,2), x(i,j,k,3), &
                 x(i,j,n,1), x(i,j,n,2), x(i,j,n,3), &
                 x(i,m,n,1), x(i,m,n,2), x(i,m,n,3), &
-                x(i,m,k,1), x(i,m,k,2), x(i,m,k,3))
+                x(i,m,k,1), x(i,m,k,2), x(i,m,k,3),vp1)
 
-           vp2 = volpym(x(l,j,k,1), x(l,j,k,2), x(l,j,k,3), &
+           call volpym(x(l,j,k,1), x(l,j,k,2), x(l,j,k,3), &
                 x(l,m,k,1), x(l,m,k,2), x(l,m,k,3), &
                 x(l,m,n,1), x(l,m,n,2), x(l,m,n,3), &
-                x(l,j,n,1), x(l,j,n,2), x(l,j,n,3))
+                x(l,j,n,1), x(l,j,n,2), x(l,j,n,3),vp2)
 
-           vp3 = volpym(x(i,j,k,1), x(i,j,k,2), x(i,j,k,3), &
+           call volpym(x(i,j,k,1), x(i,j,k,2), x(i,j,k,3), &
                 x(l,j,k,1), x(l,j,k,2), x(l,j,k,3), &
                 x(l,j,n,1), x(l,j,n,2), x(l,j,n,3), &
-                x(i,j,n,1), x(i,j,n,2), x(i,j,n,3))
+                x(i,j,n,1), x(i,j,n,2), x(i,j,n,3),vp3)
 
-           vp4 = volpym(x(i,m,k,1), x(i,m,k,2), x(i,m,k,3), &
+           call volpym(x(i,m,k,1), x(i,m,k,2), x(i,m,k,3), &
                 x(i,m,n,1), x(i,m,n,2), x(i,m,n,3), &
                 x(l,m,n,1), x(l,m,n,2), x(l,m,n,3), &
-                x(l,m,k,1), x(l,m,k,2), x(l,m,k,3))
+                x(l,m,k,1), x(l,m,k,2), x(l,m,k,3),vp4)
 
-           vp5 = volpym(x(i,j,k,1), x(i,j,k,2), x(i,j,k,3), &
+           call volpym(x(i,j,k,1), x(i,j,k,2), x(i,j,k,3), &
                 x(i,m,k,1), x(i,m,k,2), x(i,m,k,3), &
                 x(l,m,k,1), x(l,m,k,2), x(l,m,k,3), &
-                x(l,j,k,1), x(l,j,k,2), x(l,j,k,3))
+                x(l,j,k,1), x(l,j,k,2), x(l,j,k,3),vp5)
 
-           vp6 = volpym(x(i,j,n,1), x(i,j,n,2), x(i,j,n,3), &
+           call volpym(x(i,j,n,1), x(i,j,n,2), x(i,j,n,3), &
                 x(l,j,n,1), x(l,j,n,2), x(l,j,n,3), &
                 x(l,m,n,1), x(l,m,n,2), x(l,m,n,3), &
-                x(i,m,n,1), x(i,m,n,2), x(i,m,n,3))
+                x(i,m,n,1), x(i,m,n,2), x(i,m,n,3),vp6)
 
            ! Set the volume to 1/6 of the sum of the volumes of the
            ! pyramid. Remember that volpym computes 6 times the
@@ -370,7 +370,7 @@ contains
 
   !        ================================================================
 
-  function volpym(xa,ya,za,xb,yb,zb,xc,yc,zc,xd,yd,zd)
+  subroutine volpym(xa,ya,za,xb,yb,zb,xc,yc,zc,xd,yd,zd,volume)
     !
     !        ****************************************************************
     !        *                                                              *
@@ -389,7 +389,7 @@ contains
     !
     !        Function type.
     !
-    real(kind=realType) :: volpym
+    real(kind=realType) :: volume
     !
     !        Function arguments.
     !
@@ -402,13 +402,13 @@ contains
     !        *                                                              *
     !        ****************************************************************
     !
-    volpym = (xp - fourth*(xa + xb  + xc + xd))              &
+    volume = (xp - fourth*(xa + xb  + xc + xd))              &
          * ((ya - yc)*(zb - zd) - (za - zc)*(yb - yd))   + &
          (yp - fourth*(ya + yb  + yc + yd))              &
          * ((za - zc)*(xb - xd) - (xa - xc)*(zb - zd))   + &
          (zp - fourth*(za + zb  + zc + zd))              &
          * ((xa - xc)*(yb - yd) - (ya - yc)*(xb - xd))
 
-  end function volpym
+  end subroutine volpym
 
 end subroutine metric_block
