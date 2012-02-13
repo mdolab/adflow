@@ -117,7 +117,6 @@
       call KSPSetTolerances(ksp,adjRelTol,L2Abs,adjDivTol,adjMaxIter,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
 
-    
       ! Solve the adjoint system of equations [dR/dW]T psi = adjointRHS
       call KSPSolve(ksp,adjointRHS,psi,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)

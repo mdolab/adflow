@@ -28,15 +28,15 @@
 
        ! Parameters used for coarsening definition.
 
-       integer(kind=porType), parameter :: leftStarted  = -1_porType
-       integer(kind=porType), parameter :: regular      =  0_porType
-       integer(kind=porType), parameter :: rightStarted =  1_porType
+       integer(kind=porType), parameter :: leftStarted  = -1
+       integer(kind=porType), parameter :: regular      =  0
+       integer(kind=porType), parameter :: rightStarted =  1
 
        ! Parameters used for subsonic inlet bc treatment.
 
-       integer(kind=intType), parameter :: noSubInlet      = 0_intType
-       integer(kind=intType), parameter :: totalConditions = 1_intType
-       integer(kind=intType), parameter :: massFlow        = 2_intType
+       integer(kind=intType), parameter :: noSubInlet      = 0
+       integer(kind=intType), parameter :: totalConditions = 1
+       integer(kind=intType), parameter :: massFlow        = 2
 !
 !      ******************************************************************
 !      *                                                                *
@@ -452,6 +452,7 @@
 
          real(kind=realType), dimension(:,:,:,:),   pointer :: x,xtmp
          real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
+         real(kind=realType), dimension(:,:)      , pointer :: tempHalo
 
          real(kind=realType), dimension(:,:,:,:), pointer :: sI, sJ, sK
          real(kind=realType), dimension(:,:,:),   pointer :: vol
@@ -517,7 +518,7 @@
          !                                centers; only for moving mesh
          !                                problems.
 
-         real(kind=realType), dimension(:,:,:,:),   pointer :: w,wtmp
+         real(kind=realType), dimension(:,:,:,:)            :: w,wtmp
          real(kind=realType), dimension(:,:,:,:,:), pointer :: dw_deriv
          real(kind=realType), dimension(:,:,:,:,:), pointer :: wOld
          real(kind=realType), dimension(:,:,:),     pointer :: p,ptmp, gamma
@@ -564,7 +565,7 @@
          !                               at least for the flow variables.
 
          real(kind=realType), dimension(:,:,:),     pointer :: p1
-         real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw,dwtmp,dwtmp2
+         real(kind=realType), dimension(:,:,:,:)       :: dw, fw,dwtmp,dwtmp2
          real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
          real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
 
@@ -763,7 +764,7 @@
        ! This is a dummy statement to make Tapenade know what flowDoms
        ! is. The actual sizes of (1,1,1)
 
-       type(blockType), dimension(1,1,1) :: flowDoms
+       type(blockType), dimension(:,:,:) :: flowDoms
 
        !type(blockType), allocatable, dimension(:,:,:) :: flowDoms
        !type(blockType), allocatable, dimension(:)     :: flowDomsd

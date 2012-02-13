@@ -55,7 +55,7 @@ subroutine NKsolver
   iter_k = 1
   iter_m = 0
 
-  allocate(func_evals(1000))
+  allocate(func_evals(maxNonLinearIts))
   func_evals = zero
 
   ! Set the inital wVec
@@ -171,11 +171,9 @@ subroutine NKsolver
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Linesearching:
-     iter_k = iter
-     iter_m = min(iter_m+1,Mmax)
      NKLS = nonMonotoneLineSearch
 
-     if (iter == 1) then
+     if (iter <= 1 ) then
         call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
      else
         if (NKLS == noLineSearch) then
@@ -183,6 +181,10 @@ subroutine NKsolver
         else if(NKLS == cubicLineSearch) then
            call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
         else if (NKLS == nonMonotoneLineSearch) then
+
+           iter_k = iter
+           iter_m = min(iter_m+1,Mmax)
+
            call LSNM(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
         end if
      end if
@@ -499,8 +501,9 @@ subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
      call EChk(ierr,__FILE__,__LINE__)
 
      max_val = func_evals(iter_k) + alpha*gamma*initSlope
+
      ! Loop over the previous, m function values and find the max:
-     do j=iter_k-1,iter_k-iter_m,-1
+     do j=iter_k-1,iter_k-iter_m+1,-1
         max_val = max(max_val,func_evals(j) + alpha*gamma*initSlope)
      end do
         
