@@ -605,7 +605,7 @@
        call mpi_bcast(nanOccurred, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
        if( nanOccurred )then
           !reset flow and exit!
-          if (myID==0) print *,'nanOccured'!,myID
+          print *,'Nan occured in Convergence Info on proc:',myid
           !call initflow
           ! Initialize the flow field to uniform flow.
           tempMGStartLevel = mgStartLevel
@@ -613,15 +613,15 @@
           
           mgStartLevel = 1
           currentlevel = 1
-          print *,'Calling setUniformFlow'
+
           call setUniformFlow
 
           mgStartLevel = tempMGStartLevel
           currentLevel = tempCurrentLevel
   
-          !print *,'terminating'
           call terminate("convergenceInfo", &
                "A NaN occurred during the computation.")
+
           ! in a normal computation, code will simply exit.
           ! in a python based computation, code will set 
           ! routinedFailed to .True. and return to the 
