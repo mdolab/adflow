@@ -358,12 +358,9 @@
        pInf   = pInfDim/pRef
        rhoInf = rhoInfDim/rhoRef
        uInf   = Mach*sqrt(gammaInf*pInf/rhoInf)
-       !print *,'mach',mach,uinf,sqrt(gammaInf*pInf/rhoInf)
-       !stop
        RGas   = RGasDim*rhoRef*TRef/pRef
        muInf  = muDim/muRef
-!!$       print *,'pinf,rhoinf,uinf',pinf,rhoinf,uinf, gammainf,uinf/mach,timeref
-!!$       stop
+
        !=================================================================
 
        contains

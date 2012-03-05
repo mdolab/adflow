@@ -1305,7 +1305,7 @@ class SUMB(AeroSolver):
 
         return 
 
-    def getForces(self,group_name,cfd_force_pts=None):
+    def getForces(self, group_name=None, cfd_force_pts=None):
         ''' Return the forces on this processor. Use
         cfd_force_pts to compute the forces if given
         '''
@@ -1322,7 +1322,12 @@ class SUMB(AeroSolver):
             forces = numpy.empty((0),dtype=self.dtype)
         # end if
             
-        return self.mesh.solver_to_warp_force(group_name,forces)
+        if group_name is not None: # Extract out the forces we want:
+            forces = self.mesh.solver_to_warp_force(group_name, forces)
+        # end if
+
+        return forces
+
 
     def getForcePoints(self):
         [npts,nTS] = self.sumb.getforcesize()
