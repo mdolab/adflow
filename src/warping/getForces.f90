@@ -1,4 +1,4 @@
-subroutine getForceSize(size,nTS)
+psubroutine getForceSize(size,nTS)
 
   ! Compute the number of points that will be returned from getForces
   ! or getForcePoints
@@ -34,6 +34,7 @@ subroutine getForces(forces,pts,npts,nTS)
   use flowVarRefState
   use inputTimeSpectral
   use communication
+  use inputPhysics
   implicit none
   !
   !      Local variables.
@@ -52,7 +53,10 @@ subroutine getForces(forces,pts,npts,nTS)
   real(kind=realType), dimension(:,:),   pointer :: pp2, pp1
   real(kind=realType) :: sss(3),v2(3),v1(3)
   integer(kind=intType) :: lower_left,lower_right,upper_left,upper_right
-
+  logical :: viscousSubFace
+  real(kind=realType) :: tauXx, tauYy, tauZz
+  real(kind=realType) :: tauXy, tauXz, tauYz
+  real(kind=realType) :: tmp
   !      ******************************************************************
   !      *                                                                *
   !      * Begin execution                                                *
@@ -63,8 +67,7 @@ subroutine getForces(forces,pts,npts,nTS)
   ! force in newton. As the coordinates are already in meters,
   ! this scaling factor is pRef.
 
-  scaleDim = pRef
-
+  scaleDim = pRef/pInf
   forces = 0.0
   do sps = 1,nTimeIntervalsSpectral
      ! Compute the local forces. Take the scaling factor into
@@ -80,9 +83,13 @@ subroutine getForces(forces,pts,npts,nTS)
 
         ! Loop over the number of boundary subfaces of this block.
         bocos: do mm=1,nBocos
-
+           
            if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
                 BCType(mm) == NSWallIsothermal) then
+
+              viscousSubface = .true.
+              if(BCType(mm) == EulerWall) viscousSubface = .false.
+
               select case (BCFaceID(mm))
 
               case (iMin)
@@ -155,7 +162,32 @@ subroutine getForces(forces,pts,npts,nTS)
                     fx = pp*sss(1)
                     fy = pp*sss(2)
                     fz = pp*sss(3)
+                 
+                    ! If we have viscous forces, add these:
+                    if (viscousSubface) then
 
+                       ! Store the viscous stress tensor a bit easier.
+                       tauXx = viscSubface(mm)%tau(i,j,1)
+                       tauYy = viscSubface(mm)%tau(i,j,2)
+                       tauZz = viscSubface(mm)%tau(i,j,3)
+                       tauXy = viscSubface(mm)%tau(i,j,4)
+                       tauXz = viscSubface(mm)%tau(i,j,5)
+                       tauYz = viscSubface(mm)%tau(i,j,6)
+
+                       ! Compute the viscous force on the face. A minus sign
+                       ! is now present, due to the definition of this force.
+                       ! Also must multiply by scattering factor of 1/4
+                       fx = fx -fact*(tauXx*sss(1) + tauXy*sss(2) &
+                            +        tauXz*sss(3))*fourth*scaleDim
+
+                       fy = fy -fact*(tauXy*sss(1) + tauYy*sss(2) &
+                            +        tauYz*sss(3))*fourth*scaleDim
+
+                       fz = fz -fact*(tauXz*sss(1) + tauYz*sss(2) &
+                            +        tauZz*sss(3))*fourth*scaleDim
+
+                    end if
+                       
                     forces(1,lower_left,sps)  = forces(1,lower_left,sps)  + fx
                     forces(2,lower_left,sps)  = forces(2,lower_left,sps)  + fy
                     forces(3,lower_left,sps)  = forces(3,lower_left,sps)  + fz
@@ -174,6 +206,7 @@ subroutine getForces(forces,pts,npts,nTS)
 
                  end do
               end do
+
               ! Note how iBeg,iBeg is defined above... it is one MORE
               ! then the starting node (used for looping over faces, not
               ! nodes)
@@ -183,6 +216,7 @@ subroutine getForces(forces,pts,npts,nTS)
         end do bocos
      end do domains
   end do
+ 
 end subroutine getForces
 
 subroutine getForcePoints(points,npts,nTS)
