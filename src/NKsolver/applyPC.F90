@@ -50,6 +50,9 @@ subroutine applyPC(in_vec, out_vec, N)
   
   call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_OBJECT, ierr)
   call EChk(ierr,__FILE__,__LINE__)
+  
+  call KSPSetTolerances(global_ksp,.1,.00000000001,10.0,10,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
   ! Actually do the Linear Krylov Solve
   call KSPSolve(global_ksp, vecA, vecB,ierr)
