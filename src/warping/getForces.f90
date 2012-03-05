@@ -1,4 +1,4 @@
-psubroutine getForceSize(size,nTS)
+subroutine getForceSize(size,nTS)
 
   ! Compute the number of points that will be returned from getForces
   ! or getForcePoints
