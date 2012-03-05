@@ -292,13 +292,23 @@ subroutine setupAllResidualMatrices
                     ! Call reverse mode of residual computation
 
 
-               call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
-                    &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
-                    &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
-                    &  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
-                    &  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
-                    &  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, rotpointadj&
-                    &  , rotpointadjb, murefadj, timerefadj, pinfcorradj, liftindex)
+!                call COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
+!                     &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+!                     &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+!                     &  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
+!                     &  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
+!                     &  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, rotpointadj&
+!                     &  , rotpointadjb, murefadj, timerefadj, pinfcorradj, liftindex)
+
+                    call COMPUTERADJOINTTS_B(wadj, wadjb, xadj, xadjb, xblockcorneradj&
+                         &  , xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
+                         &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &
+                         &  icell, jcell, kcell, nn, level, sps, correctfork, secondhalo, prefadj&
+                         &  , rhorefadj, pinfdimadj, rhoinfdimadj, rhoinfadj, pinfadj, rotrateadj&
+                         &  , rotrateadjb, rotcenteradj, rotcenteradjb, pointrefadj, rotpointadj&
+                         &  , rotpointadjb, murefadj, timerefadj, pinfcorradj, liftindex)
+
+
                !COMPUTERADJOINT_B(wadj, wadjb, xadj, xadjb, xblockcorneradj, &
                !     &  xblockcorneradjb, dwadj, dwadjb, alphaadj, alphaadjb, betaadj, &
                !          &  betaadjb, machadj, machadjb, machcoefadj, machgridadj, machgridadjb, &

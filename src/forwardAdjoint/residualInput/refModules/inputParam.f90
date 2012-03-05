@@ -23,11 +23,11 @@
        implicit none
        save
 !
-       integer(kind=intType), parameter :: firstOrder  = 1_intType, &
-                                           secondOrder = 2_intType, &
-                                           thirdOrder  = 3_intType, &
-                                           fourthOrder = 4_intType, &
-                                           fifthOrder  = 5_intType
+       integer(kind=intType), parameter :: firstOrder  = 1, &
+                                           secondOrder = 2, &
+                                           thirdOrder  = 3, &
+                                           fourthOrder = 4, &
+                                           fifthOrder  = 5
        end module accuracy
 
 !      ==================================================================
@@ -54,31 +54,31 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       integer(kind=intType), parameter :: dissScalar = 1_intType,  &
-                                           dissMatrix = 2_intType,  &
-                                           dissCusp   = 3_intType,  &
-                                           upwind     = 9_intType
-       integer(kind=intType), parameter :: Roe     = 1_intType,     &
-                                           vanLeer = 2_intType,     &
-                                           ausmdv  = 3_intType
-       integer(kind=intType), parameter :: noLimiter  = 2_intType,  &
-                                           vanAlbeda  = 3_intType,  &
-                                           minmod     = 4_intType
-       integer(kind=intType), parameter :: noPrecond  = 1_intType,  &
-                                           Turkel     = 2_intType,  &
-                                           ChoiMerkle = 3_intType
+       integer(kind=intType), parameter :: dissScalar = 1,  &
+                                           dissMatrix = 2,  &
+                                           dissCusp   = 3,  &
+                                           upwind     = 9
+       integer(kind=intType), parameter :: Roe     = 1,     &
+                                           vanLeer = 2,     &
+                                           ausmdv  = 3
+       integer(kind=intType), parameter :: noLimiter  = 2,  &
+                                           vanAlbeda  = 3,  &
+                                           minmod     = 4
+       integer(kind=intType), parameter :: noPrecond  = 1,  &
+                                           Turkel     = 2,  &
+                                           ChoiMerkle = 3
        integer(kind=intType), parameter ::                          &
-                                  constantPressure     = 1_intType, &
-                                  linExtrapolPressure  = 2_intType, &
-                                  quadExtrapolPressure = 3_intType, &
-                                  normalMomentum       = 4_intType
+                                  constantPressure     = 1, &
+                                  linExtrapolPressure  = 2, &
+                                  quadExtrapolPressure = 3, &
+                                  normalMomentum       = 4
 
        integer(kind=intType), parameter ::                      &
-                                  constantExtrapol = 1_intType, &
-                                  linExtrapol      = 2_intType
+                                  constantExtrapol = 1, &
+                                  linExtrapol      = 2
 
-       integer(kind=intType), parameter :: NonConservative = 1_intType, &
-                                           Conservative    = 2_intType
+       integer(kind=intType), parameter :: NonConservative = 1, &
+                                           Conservative    = 2
 !
 !      ******************************************************************
 !      *                                                                *
@@ -169,12 +169,12 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       integer(kind=intType), parameter :: noFormat     = 0_intType, &
-                                           cgnsFormat   = 1_intType, &
-                                           plot3DFormat = 2_intType
+       integer(kind=intType), parameter :: noFormat     = 0, &
+                                           cgnsFormat   = 1, &
+                                           plot3DFormat = 2
 
-       integer(kind=intType), parameter :: precisionSingle = 1_intType, &
-                                           precisionDouble = 2_intType
+       integer(kind=intType), parameter :: precisionSingle = 1, &
+                                           precisionDouble = 2
 !
 !      ******************************************************************
 !      *                                                                *
@@ -269,23 +269,23 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       integer(kind=intType), parameter :: RungeKutta  = 1_intType,  &
-                                           nlLusgs     = 2_intType,  &
-                                           nlLusgsLine = 3_intType
-       integer(kind=intType), parameter :: segregated = 1_intType,   &
-                                           coupled    = 2_intType
-       integer(kind=intType), parameter :: gmres = 1_intType,        &
-                                           adi   = 2_intType
-       integer(kind=intType), parameter :: bcDirichlet0 = 0_intType, &
-                                           bcNeumann    = 1_intType
+       integer(kind=intType), parameter :: RungeKutta  = 1,  &
+                                           nlLusgs     = 2,  &
+                                           nlLusgsLine = 3
+       integer(kind=intType), parameter :: segregated = 1,   &
+                                           coupled    = 2
+       integer(kind=intType), parameter :: gmres = 1,        &
+                                           adi   = 2
+       integer(kind=intType), parameter :: bcDirichlet0 = 0, &
+                                           bcNeumann    = 1
        integer(kind=intType), parameter ::                           &
-                                  noResAveraging        = 0_intType, &
-                                  alwaysResAveraging    = 1_intType, &
-                                  alternateResAveraging = 2_intType
+                                  noResAveraging        = 0, &
+                                  alwaysResAveraging    = 1, &
+                                  alternateResAveraging = 2
        integer(kind=intType), parameter :: &
-                                   turbRelaxNotDefined = 0_intType,  &
-                                   turbRelaxExplicit   = 1_intType,  &
-                                   turbRelaxImplicit   = 2_intType
+                                   turbRelaxNotDefined = 0,  &
+                                   turbRelaxExplicit   = 1,  &
+                                   turbRelaxImplicit   = 2
 !
 !      ******************************************************************
 !      *                                                                *
@@ -357,13 +357,15 @@
        integer(kind=intType) :: nMGSteps, nMGLevels
 
        integer(kind=intType), allocatable, dimension(:) :: cycleStrategy
-
+       integer(kind=intType) :: miniterNum
        real(kind=realType) :: cfl, cflCoarse, fcoll, smoop
        real(kind=realType) :: alfaTurb, betaTurb
        real(kind=realType) :: L2Conv, L2ConvCoarse
        real(kind=realType) :: L2ConvRel
        real(kind=realType) :: maxL2DeviationFactor
        real(kind=realType) :: relaxBleeds
+       real(kind=realtype) :: epscoefconv
+       integer(kind=inttype) :: convcheckwindowsize
 
        real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK,cdisrkb
 
@@ -392,6 +394,7 @@
        ! rotPoint(3): Rotation point of the rigid body rotation.
 
        real(kind=realType), dimension(3) :: rotPoint
+       real(kind=realType), dimension(3) :: rotPointd
 
        ! degreePolXRot: Degree of the x-rotation polynomial.
        ! degreePolYRot: Degree of the y-rotation polynomial.
@@ -592,28 +595,28 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       integer(kind=intType), parameter :: EulerEquations = 1_intType,  &
-                                           NSEquations    = 2_intType,  &
-                                           RANSEquations  = 3_intType
-       integer(kind=intType), parameter :: steady        = 1_intType,   &
-                                           unsteady      = 2_intType,   &
-                                           timeSpectral  = 3_intType
-       integer(kind=intType), parameter :: internalFlow = 1_intType,    &
-                                           externalFlow = 2_intType
-       integer(kind=intType), parameter :: cpConstant      = 1_intType, &
-                                           cpTempCurveFits = 2_intType
+       integer(kind=intType), parameter :: EulerEquations = 1,  &
+                                           NSEquations    = 2,  &
+                                           RANSEquations  = 3
+       integer(kind=intType), parameter :: steady        = 1,   &
+                                           unsteady      = 2,   &
+                                           timeSpectral  = 3
+       integer(kind=intType), parameter :: internalFlow = 1,    &
+                                           externalFlow = 2
+       integer(kind=intType), parameter :: cpConstant      = 1, &
+                                           cpTempCurveFits = 2
        integer(kind=intType), parameter ::                              &
-                                  baldwinLomax           =  1_intType,  &
-                                  spalartAllmaras        =  2_intType,  &
-                                  spalartAllmarasEdwards =  3_intType,  &
-                                  komegaWilcox           =  4_intType,  &
-                                  komegaModified         =  5_intType,  &
-                                  ktau                   =  6_intType,  &
-                                  menterSST              =  7_intType,  &
-                                  v2f                    = 10_intType
-       integer(kind=intType), parameter :: strain       = 1_intType,    &
-                                           vorticity    = 2_intType,    &
-                                           katoLaunder  = 3_intType
+                                  baldwinLomax           =  1,  &
+                                  spalartAllmaras        =  2,  &
+                                  spalartAllmarasEdwards =  3,  &
+                                  komegaWilcox           =  4,  &
+                                  komegaModified         =  5,  &
+                                  ktau                   =  6,  &
+                                  menterSST              =  7,  &
+                                  v2f                    = 10
+       integer(kind=intType), parameter :: strain       = 1,    &
+                                           vorticity    = 2,    &
+                                           katoLaunder  = 3
 !
 !      ******************************************************************
 !      *                                                                *
@@ -680,17 +683,22 @@
        logical :: wallFunctions, wallDistanceNeeded
 
        real(kind=realType) :: Mach, MachCoef,MachGrid
+       !AD derivative values
+       real(kind=realType) :: Machd, MachCoefd,MachGridd
        real(kind=realType) :: Reynolds, ReynoldsLength
        real(kind=realType) :: tempFreestream, gammaConstant, RGasDim
-       real(kind=realType) :: gammaconstantb, gammaconstantd
        real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset
        real(kind=realType) :: eddyVisInfRatio, turbIntensityInf
        real(kind=realType) :: surfaceRef, lengthRef
+       !bending moment derivative
+       real(kind=realType) :: lengthrefb
 
-       real(kind=realType), dimension(3) :: velDirFreestream
-       real(kind=realType), dimension(3) :: liftDirection
-       real(kind=realType), dimension(3) :: dragDirection
+       real(kind=realType), dimension(3) :: velDirFreestream,velDirFreestreamd
+       real(kind=realType), dimension(3) :: liftDirection,liftDirectiond
+       real(kind=realType), dimension(3) :: dragDirection,dragDirectiond
        real(kind=realType), dimension(3) :: pointRef
+       !bending moment derivative
+       real(kind=realType), dimension(3) :: pointRefb
        real(kind=realType), dimension(3) :: pointRefEC
 
        end module inputPhysics
@@ -782,10 +790,10 @@
 
        ! Definition of the parameters for the time integration scheme.
 
-       integer(kind=intType), parameter :: BDF        = 1_intType, &
-                                           explicitRK = 2_intType, &
-                                           implicitRK = 3_intType, &
-                                           MD         = 4_intType
+       integer(kind=intType), parameter :: BDF        = 1, &
+                                           explicitRK = 2, &
+                                           implicitRK = 3, &
+                                           MD         = 4
        
        ! timeIntegrationScheme: Time integration scheme to be used for
        !                        unsteady problems. Possibilities are
@@ -882,7 +890,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       integer(kind=intType), parameter :: TriLinear    = 1_intType
+       integer(kind=intType), parameter :: TriLinear    = 1
 
        integer(kind=intType), dimension(1), parameter :: &
                                                 nDonorWeights = (/ 8 /)
@@ -934,38 +942,38 @@
 
        !definition of parameters for the ADjoint Linear Solver
 
-       integer(kind=intType), parameter :: PETSCBICGStab = 1_intType, &
-                                           PETSCGMRES    = 2_intType, &
-                                           PETSCCG       = 3_intType, &
-                                           PETSCFGMRES   = 4_intType
+       integer(kind=intType), parameter :: PETSCBICGStab = 1, &
+                                           PETSCGMRES    = 2, &
+                                           PETSCCG       = 3, &
+                                           PETSCFGMRES   = 4
        
        !Definitions for Global Preconditioners
-       integer(kind=intType), parameter :: BlockJacobi      = 1_intType, &
-                                           Jacobi           = 2_intType, &
-                                           AdditiveSchwartz = 3_intType
+       integer(kind=intType), parameter :: BlockJacobi      = 1, &
+                                           Jacobi           = 2, &
+                                           AdditiveSchwartz = 3
 
        !Definitions for local Preconditioners
-       integer(kind=intType), parameter :: ILU       = 1_intType, &
-                                           ICC       = 2_intType, &
-                                           LU        = 3_intType, &
-                                           Cholesky  = 4_intType
+       integer(kind=intType), parameter :: ILU       = 1, &
+                                           ICC       = 2, &
+                                           LU        = 3, &
+                                           Cholesky  = 4
 
        !Definitions for matrix ordering method
-       integer(kind=intType), parameter :: Natural               = 1_intType, &
-                                           ReverseCuthillMckee   = 2_intType, &
-                                           NestedDissection      = 3_intType, &
-                                           OnewayDissection      = 4_intType, &
-                                           QuotientMinimumDegree = 5_intType
+       integer(kind=intType), parameter :: Natural               = 1, &
+                                           ReverseCuthillMckee   = 2, &
+                                           NestedDissection      = 3, &
+                                           OnewayDissection      = 4, &
+                                           QuotientMinimumDegree = 5
 
        !Definitions for Preconditioner Side
-       integer(kind=intType), parameter :: Left  = 1_intType, &
-                                           Right = 2_intType
+       integer(kind=intType), parameter :: Left  = 1, &
+                                           Right = 2
        
        !Definitions for matrix ordering method
-       integer(kind=intType), parameter :: Normal = 1_intType, &
-                                           RowMax = 2_intType, &
-                                           RowSum = 3_intType, &
-                                           RowAbs = 4_intType
+       integer(kind=intType), parameter :: Normal = 1, &
+                                           RowMax = 2, &
+                                           RowSum = 3, &
+                                           RowAbs = 4
 !
 !      ******************************************************************
 !      *                                                                *
@@ -980,7 +988,9 @@
        !                preconditioner
        ! restartADjoint: Whether or not we want to restart the adjoint 
        !                 from the previous solution
-       logical :: solveADjoint, setMonitor, ApproxPC,restartADjoint
+       ! useDiagTSPC   : Whether or not the off time instance terms are
+       !                 included in the TS preconditioner.
+       logical :: solveADjoint, setMonitor, ApproxPC,restartADjoint,useDiagTSPC
 
        ! ADjointSolverType: Type of linear solver for the ADjoint
        ! PreCondType      : Type of Preconditioner to use

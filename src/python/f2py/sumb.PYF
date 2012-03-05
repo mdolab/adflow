@@ -193,6 +193,10 @@ python module sumb ! in
        subroutine determinestencil(lumped)
          logical :: lumped 
        end subroutine determinestencil
+       
+       subroutine writedrdx(file_name)
+         character*(*) :: file_name
+       end subroutine writedrdx
 
        subroutine verifybendingderivatives()
        end subroutine verifybendingderivatives
@@ -290,7 +294,8 @@ python module sumb ! in
        subroutine setupadjointmatrix
        end subroutine setupadjointmatrix
 
-       subroutine setupspatialmatrix
+       subroutine setupspatialmatrix(usead)
+         logical, intent(in) :: usead
        end subroutine setupspatialmatrix
 
        subroutine setupextramatrix

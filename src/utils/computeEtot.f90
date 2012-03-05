@@ -426,10 +426,10 @@
 !
 !      Subroutine arguments.
 !
-       real(kind=realType), dimension(*), intent(in)  :: rho, p, k
-       real(kind=realType), dimension(*), intent(out) :: eint
+       real(kind=realType), dimension(kk), intent(in)  :: rho, p, k
+       real(kind=realType), dimension(kk), intent(out) :: eint
        logical, intent(in)                             :: correctForK
-       integer(kind=intType), intent(in)              :: kk
+       integer(kind=intType), intent(in)               :: kk
 !
 !      Local parameter.
 !
