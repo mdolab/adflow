@@ -1013,13 +1013,13 @@ class SUMB(AeroSolver):
             # with new size, storing old values from previous runs
             if storeHistory:
                 current_size = len(self.sumb.monitor.convarray)
-                desired_size = current_size + self.sumb.inputiteration.ncycles
+                desired_size = current_size + self.sumb.inputiteration.ncycles +1
                 self.sumb.monitor.niterold  = self.sumb.monitor.nitercur+1
             else:
                 self.sumb.monitor.nitercur  = 0
                 self.sumb.monitor.niterold  = 1
                 desired_size = self.sumb.inputiteration.nsgstartup + \
-                    self.sumb.inputiteration.ncycles
+                    self.sumb.inputiteration.ncycles +1
             # end if
             # Allocate Arrays
             if self.myid == 0:
@@ -1090,9 +1090,8 @@ class SUMB(AeroSolver):
 
         if self.sumb.killsignals.fatalfail:
             self.fatalFail = True
-            print 'resetting flow!'
             self.resetFlow()
-            sys.exit(0)
+            return
         else:
             self.fatalFail = False
         # end if
@@ -1893,36 +1892,36 @@ class SUMB(AeroSolver):
         return self.monnames.keys()
     
 
-    def getConvergenceHistory(self,name):
-        """Return an array of the convergence history for a particular
-        quantity.
+#     def getConvergenceHistory(self,name):
+#         """Return an array of the convergence history for a particular
+#         quantity.
 
-        Keyword arguments:
+#         Keyword arguments:
 
-        name -- the text string for a particular quantity
+#         name -- the text string for a particular quantity
 
-        """
-        try:
-            index = self.monnames[name]
-        except KeyError:
-            print "Error: No such quantity '%s'" % name
-            return None
-        if (self.myid == 0):
-            if (self.sumb.monitor.niterold == 0 and
-                self.sumb.monitor.nitercur == 0 and
-                self.sumb.iteration.itertot == 0):
-                history = None
-            elif (self.sumb.monitor.nitercur == 0 and
-                  self.sumb.iteration.itertot == 0):
-                niterold = self.sumb.monitor.niterold[0]	    
-                history = self.sumb.monitor.convarray[:niterold+1,index]
-            else:
-                history = self.sumb.monitor.convarray[:,index]
-        else:
-            history = None
-        history = self.sumb_comm_world.bcast(history)
+#         """
+#         try:
+#             index = self.monnames[name]
+#         except KeyError:
+#             print "Error: No such quantity '%s'" % name
+#             return None
+#         if (self.myid == 0):
+#             if (self.sumb.monitor.niterold == 0 and
+#                 self.sumb.monitor.nitercur == 0 and
+#                 self.sumb.iteration.itertot == 0):
+#                 history = None
+#             elif (self.sumb.monitor.nitercur == 0 and
+#                   self.sumb.iteration.itertot == 0):
+#                 niterold = self.sumb.monitor.niterold[0]	    
+#                 history = self.sumb.monitor.convarray[:niterold+1,index]
+#             else:
+#                 history = self.sumb.monitor.convarray[:,index]
+#         else:
+#             history = None
+#         history = self.sumb_comm_world.bcast(history)
 	
-        return history
+#         return history
 
     def getAdjointResiduals(self):
         '''
