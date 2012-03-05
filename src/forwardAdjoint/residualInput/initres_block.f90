@@ -337,7 +337,10 @@ subroutine initres_block(varStart, varEnd,nn,sps)
            ! quantities.
 
            wsp   => flowDoms(nn,currentLevel,mm)%w
-           volsp => flowDoms(nn,currentLevel,mm)%vol
+           if (mm .ne. sps) then
+              volsp => flowDoms(nn,currentLevel,mm)%vol
+           end if
+           !vol => flowDoms(nn,currentLevel,mm)%vol
            ii    =  3*(mm-1)
 
            ! Loop over the number of variables to be set.
@@ -376,9 +379,15 @@ subroutine initres_block(varStart, varEnd,nn,sps)
                           ! multiplication with the density to obtain
                           ! the correct time derivative for the
                           ! momentum variable.
-
-                          dw(i,j,k,l) = dw(i,j,k,l) &
-                               + tmp*volsp(i,j,k)*wsp(i,j,k,irho)
+                          
+                          if (mm == sps) then
+                             
+                             dw(i,j,k,l) = dw(i,j,k,l) &
+                                  + tmp*vol(i,j,k)*wsp(i,j,k,irho)
+                          else
+                             dw(i,j,k,l) = dw(i,j,k,l) &
+                                  + tmp*volsp(i,j,k)*wsp(i,j,k,irho)
+                          end if
 
                        enddo
                     enddo
@@ -393,10 +402,15 @@ subroutine initres_block(varStart, varEnd,nn,sps)
                  do k=2,kl
                     do j=2,jl
                        do i=2,il
-                          dw(i,j,k,l) = dw(i,j,k,l)        &
-                               + dscalar(jj,sps,mm) &
-                               * volsp(i,j,k)*wsp(i,j,k,l)
-
+                          if (mm == sps) then
+                             dw(i,j,k,l) = dw(i,j,k,l)        &
+                                  + dscalar(jj,sps,mm) &
+                                  * vol(i,j,k)*wsp(i,j,k,l)
+                          else
+                             dw(i,j,k,l) = dw(i,j,k,l)        &
+                                  + dscalar(jj,sps,mm) &
+                                  * volsp(i,j,k)*wsp(i,j,k,l)
+                          end if
                        enddo
                     enddo
                  enddo

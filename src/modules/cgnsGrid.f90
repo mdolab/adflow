@@ -670,6 +670,10 @@
 
        real(kind=realType), allocatable, dimension(:,:) :: massFlowFamilyInv
        real(kind=realType), allocatable, dimension(:,:) :: massFlowFamilyDiss
+
+       real(kind=realType), allocatable, dimension(:,:) :: massFlowFamilyInvd
+       real(kind=realType), allocatable, dimension(:,:) :: massFlowFamilyDissd
+
 !
 !------ eran-CBD starts -------------
 !

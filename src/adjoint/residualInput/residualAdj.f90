@@ -61,7 +61,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-
+       fwAdj = 0.0
 !   Come back to this later....
 !!$       ! Add the source terms from the level 0 cooling model.
 !!$

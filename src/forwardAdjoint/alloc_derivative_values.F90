@@ -9,99 +9,108 @@ subroutine alloc_derivative_values(nn)
   use flowvarrefstate
   use inputPhysics
   use BCTypes
-
+  use cgnsGrid 
   implicit none
 
   integer(kind=intType) :: nn,sps,ierr,i,j,k,l
   integer(kind=intType) :: mm
   integer(kind=intType) :: iBeg, jBeg, iEnd, jEnd
+  integer(kind=intType) :: massShape(2), max_face_size
+  ! First create a flowdoms-like structure that is nominally the same
+  ! shape as flowDoms. However we will only ALLOCATE values for block
+  ! nn
 
-  ! First create a flowdoms-like structure that is of length
-  ! ntimeintervalspectral for the current block
-
-  allocate(flowDomsd(nTimeIntervalsSpectral),stat=ierr)
+  allocate(flowDomsd(nn,1,nTimeIntervalsSpectral),stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   do sps=1,nTimeIntervalsSpectral
      call setPointers(nn,1,sps)
 
-     allocate(flowDomsd(sps)%x(0:ie,0:je,0:ke,3), stat=ierr)
+     ! Allocate the tempHalo locations in BOTH the normal and AD calcs
+     ! Number of nodes including halos = ie+1 = ib, etc
+     max_face_size = 2*(ib*jb + ib*kb + jb*kb)
+     allocate(flowDoms (nn,1,sps)%tempHalo(3,max_face_size))
+     allocate(flowDomsd(nn,1,sps)%tempHalo(3,max_face_size))
+     flowDoms (nn,1,sps)%tempHalo = zero
+     flowDomsd(nn,1,sps)%tempHalo = zero
+     
+     allocate(flowDomsd(nn,1,sps)%x(0:ie,0:je,0:ke,3), stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     flowDomsd(sps)%x = 0
+     flowDomsd(nn,1,sps)%x = zero
 
-     allocate(flowDomsd(sps)%si(0:ie,1:je,1:ke,3), &
-          flowDomsd(sps)%sj(1:ie,0:je,1:ke,3), &
-          flowDomsd(sps)%sk(1:ie,1:je,0:ke,3),&
-          flowDomsd(sps)%vol(0:ib,0:jb,0:kb),&
-          stat=ierr)
+     allocate(  flowDomsd(nn,1,sps)%vol(0:ib,0:jb,0:kb),&
+          flowDomsd(nn,1,sps)%si(0:ie,1:je,1:ke,3), &
+          flowDomsd(nn,1,sps)%sj(1:ie,0:je,1:ke,3), &
+          flowDomsd(nn,1,sps)%sk(1:ie,1:je,0:ke,3), stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     flowDomsd(sps)%si = 0
-     flowDomsd(sps)%sj = 0
-     flowDomsd(sps)%sk = 0
-     flowDomsd(sps)%vol = 0
+     flowDomsd(nn,1,sps)%si = zero
+     flowDomsd(nn,1,sps)%sj = zero
+     flowDomsd(nn,1,sps)%sk = zero
+     flowDomsd(nn,1,sps)%vol = zero
 
-
-     allocate(flowDomsd(sps)%rotMatrixI(il,2:jl,2:kl,3,3), &
-          flowDomsd(sps)%rotMatrixJ(2:il,jl,2:kl,3,3), &
-          flowDomsd(sps)%rotMatrixK(2:il,2:jl,kl,3,3),stat=ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-     allocate(flowDomsd(sps)%s(ie,je,ke,3),      &
-          flowDomsd(sps)%sFaceI(0:ie,je,ke), &
-          flowDomsd(sps)%sFaceJ(ie,0:je,ke), &
-          flowDomsd(sps)%sFaceK(ie,je,0:ke), stat=ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-     flowDomsd(sps)%s = 0
-     flowDomsd(sps)%sFaceI = 0
-     flowDomsd(sps)%sFaceJ = 0
-     flowDomsd(sps)%sFaceK(ie,je,0:ke) = 0
-
-     allocate(flowDomsd(sps)%w(0:ib,0:jb,0:kb,1:nw), &
-          flowDomsd(sps)%dw(0:ib,0:jb,0:kb,1:nw), &
-          flowDomsd(sps)%fw(0:ib,0:jb,0:kb,1:nw), &
-          stat=ierr)
+     allocate(flowDomsd(nn,1,sps)%rotMatrixI(il,2:jl,2:kl,3,3), &
+          flowDomsd(nn,1,sps)%rotMatrixJ(2:il,jl,2:kl,3,3), &
+          flowDomsd(nn,1,sps)%rotMatrixK(2:il,2:jl,kl,3,3),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     flowDomsd(sps)%w = 0.0
-     flowDomsd(sps)%dw = 0.0
-     flowDomsd(sps)%fw = 0.0
-
-     allocate(flowDomsd(sps)%p(0:ib,0:jb,0:kb), &
-          flowDomsd(sps)%gamma(0:ib,0:jb,0:kb), stat=ierr)
+     allocate(flowDomsd(nn,1,sps)%s(ie,je,ke,3),      &
+          flowDomsd(nn,1,sps)%sFaceI(0:ie,je,ke), &
+          flowDomsd(nn,1,sps)%sFaceJ(ie,0:je,ke), &
+          flowDomsd(nn,1,sps)%sFaceK(ie,je,0:ke), stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     flowDomsd(sps)%p = 0.0
-     flowDomsd(sps)%gamma = 0.0
+     flowDomsd(nn,1,sps)%s = zero
+     flowDomsd(nn,1,sps)%sFaceI = zero
+     flowDomsd(nn,1,sps)%sFaceJ = zero
+     flowDomsd(nn,1,sps)%sFaceK = zero
+
+     allocate(&
+          flowDomsd(nn,1,sps)%w (0:ib,0:jb,0:kb,1:nw), &
+          flowDomsd(nn,1,sps)%dw(0:ib,0:jb,0:kb,1:nw), &
+          flowDomsd(nn,1,sps)%fw(0:ib,0:jb,0:kb,1:nw), stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     flowDomsd(nn,1,sps)%w = zero
+     flowDomsd(nn,1,sps)%dw = zero
+     flowDomsd(nn,1,sps)%fw = zero
+
+     allocate(flowDomsd(nn,1,sps)%p(0:ib,0:jb,0:kb), &
+          flowDomsd(nn,1,sps)%gamma(0:ib,0:jb,0:kb), stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     flowDomsd(nn,1,sps)%p = zero
+     flowDomsd(nn,1,sps)%gamma = zero
 
      if( viscous ) then
-        allocate(flowDomsd(sps)%rlv(0:ib,0:jb,0:kb), stat=ierr)
+        allocate(flowDomsd(nn,1,sps)%rlv(0:ib,0:jb,0:kb), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
+        flowDomsd(nn,1,sps)%rlv = zero
      end if
 
      if( eddyModel ) then
-        allocate(flowDomsd(sps)%rev(0:ib,0:jb,0:kb),stat=ierr)
+        allocate(flowDomsd(nn,1,sps)%rev(0:ib,0:jb,0:kb),stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
+        flowDomsd(nn,1,sps)%rev = zero
      end if
 
-     allocate(flowDomsd(sps)%dtl(1:ie,1:je,1:ke), &
-          flowDomsd(sps)%radI(1:ie,1:je,1:ke),     &
-          flowDomsd(sps)%radJ(1:ie,1:je,1:ke),     &
-          flowDomsd(sps)%radK(1:ie,1:je,1:ke),stat=ierr)
+     allocate(&
+          flowDomsd(nn,1,sps)%dtl (1:ie,1:je,1:ke), &
+          flowDomsd(nn,1,sps)%radI(1:ie,1:je,1:ke),     &
+          flowDomsd(nn,1,sps)%radJ(1:ie,1:je,1:ke),     &
+          flowDomsd(nn,1,sps)%radK(1:ie,1:je,1:ke),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     flowDomsd(sps)%dtl = 0.0
-     flowDomsd(sps)%radI = 0.0
-     flowDomsd(sps)%radJ = 0.0
-     flowDomsd(sps)%radK = 0.0
+     flowDomsd(nn,1,sps)%dtl  = zero
+     flowDomsd(nn,1,sps)%radI = zero
+     flowDomsd(nn,1,sps)%radJ = zero
+     flowDomsd(nn,1,sps)%radK = zero
 
-     !allocate memory for boundary conditions
+     !allocate memory for boundary condition derivatives
      j = nBocos
-     allocate(flowDomsd(sps)%BCData(j), stat=ierr)
+     allocate(flowDomsd(nn,1,sps)%BCData(j), stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     !print *,'shape', shape(flowDomsd(sps)%BCData),nbocos
-
-     bcdatad =>flowDomsd(sps)%BCData
+   
+     bcdatad =>flowDomsd(nn,1,sps)%BCData
      bocoLoop: do mm=1,nBocos
         
         ! Store the cell range of the boundary subface
@@ -111,10 +120,8 @@ subroutine alloc_derivative_values(nn)
         jBeg = BCData(mm)%jcbeg; jEnd = BCData(mm)%jcend
 
         allocate(BCDatad(mm)%norm(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
-        if(ierr /= 0)                      &
-             call terminate("allocate_derivative_values", &
-             "Memory allocation failure for norm")
-
+        call EChk(ierr,__FILE__,__LINE__)
+        bcDatad(mm)%norm = zero
         ! Determine the boundary condition we are having here
         ! and allocate the memory accordingly.
 
@@ -124,12 +131,9 @@ subroutine alloc_derivative_values(nn)
 
            ! Adiabatic wall. Just allocate the memory for uSlip.
 
-           allocate(BCDatad(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), &
-                stat=ierr)
-           if(ierr /= 0)                      &
-                call terminate("allocMemBCData", &
-                "Memory allocation failure for &
-                &an adiabatic wall")
+           allocate(BCDatad(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+           BCData(mm)%uSlip = zero
 
            !=======================================================
 
@@ -141,25 +145,18 @@ subroutine alloc_derivative_values(nn)
            allocate(BCDatad(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3),  &
                 BCDatad(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                 stat=ierr)
-           if(ierr /= 0)                      &
-                call terminate("allocMemBCData", &
-                "Memory allocation failure for &
-                &an isothermal wall")
-
+           call EChk(ierr,__FILE__,__LINE__)
+           BCData(mm)%uSlip = zero
            !=======================================================
 
         case (EulerWall,farField)
 
            ! Euler wall or farfield. Just allocate the memory for
            ! the normal mesh velocity.
-           !print *,'allocatind rface'
-           allocate(BCDatad(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
-                stat=ierr)
-           if(ierr /= 0)                      &
-                call terminate("allocMemBCData", &
-                "Memory allocation failure for &
-                &an Euler wall or a farfield")
-
+            allocate(BCDatad(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
+                 stat=ierr)
+            call EChk(ierr,__FILE__,__LINE__)
+            BCDatad(mm)%rface = zero
            !=======================================================
 
         case (SupersonicInflow, DomainInterfaceAll)
@@ -174,10 +171,7 @@ subroutine alloc_derivative_values(nn)
                 BCDatad(mm)%velz(iBeg:iEnd,jBeg:jEnd),  &
                 BCDatad(mm)%ps(iBeg:iEnd,jBeg:jEnd),    &
                 stat=ierr)
-           if(ierr /= 0)                      &
-                call terminate("allocMemBCData", &
-                "Memory allocation failure for &
-                &a supersonic inflow")
+           call EChk(ierr,__FILE__,__LINE__)
 
            ! Check if memory for the turbulent variables must
            ! be allocated. If so, do so.
@@ -186,11 +180,7 @@ subroutine alloc_derivative_values(nn)
               allocate(&
                    BCDatad(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
                    stat=ierr)
-              if(ierr /= 0)                      &
-                   call terminate("allocMemBCData", &
-                   "Memory allocation failure for &
-                   &turbInlet for a supersonic &
-                   &inflow")
+              call EChk(ierr,__FILE__,__LINE__)
            endif
 
            !=======================================================
@@ -212,10 +202,7 @@ subroutine alloc_derivative_values(nn)
                 BCDatad(mm)%vely(iBeg:iEnd,jBeg:jEnd),          &
                 BCDatad(mm)%velz(iBeg:iEnd,jBeg:jEnd),          &
                 stat=ierr)
-           if(ierr /= 0)                      &
-                call terminate("allocMemBCData", &
-                "Memory allocation failure for &
-                &a subsonic inflow")
+           call EChk(ierr,__FILE__,__LINE__)
 
            ! Check if memory for the turbulent variables must
            ! be allocated. If so, do so.
@@ -224,10 +211,7 @@ subroutine alloc_derivative_values(nn)
               allocate(&
                    BCDatad(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
                    stat=ierr)
-              if(ierr /= 0)                      &
-                   call terminate("allocMemBCData", &
-                   "Memory allocation failure for &
-                   &turbInlet for a subsonic inflow")
+              call EChk(ierr,__FILE__,__LINE__)
            endif
 
            !=======================================================
@@ -241,12 +225,7 @@ subroutine alloc_derivative_values(nn)
 
            allocate(BCDatad(mm)%ps(iBeg:iEnd,jBeg:jEnd), &
                 stat=ierr)
-           if(ierr /= 0)                      &
-                call terminate("allocMemBCData", &
-                "Memory allocation failure for &
-                &a subsonic outflow, outflow mass &
-                &bleed or domain interface with &
-                &prescribed pressure.")
+           call EChk(ierr,__FILE__,__LINE__)
 
            ! Initialize the pressure to avoid problems for
            ! the bleed flows.
@@ -266,11 +245,7 @@ subroutine alloc_derivative_values(nn)
                 BCDatad(mm)%vely(iBeg:iEnd,jBeg:jEnd), &
                 BCDatad(mm)%velz(iBeg:iEnd,jBeg:jEnd), &
                 stat=ierr)
-           if(ierr /= 0)                      &
-                call terminate("allocMemBCData", &
-                "Memory allocation failure for &
-                &a domain interface with a &
-                &prescribed mass flow")
+           call EChk(ierr,__FILE__,__LINE__)
 
            ! Check if memory for the turbulent variables must
            ! be allocated. If so, do so.
@@ -279,11 +254,7 @@ subroutine alloc_derivative_values(nn)
               allocate(&
                    BCDatad(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
                    stat=ierr)
-              if(ierr /= 0)                      &
-                   call terminate("allocMemBCData", &
-                   "Memory allocation failure for &
-                   &turbInlet for a domain interface &
-                   &with a prescribed mass flow")
+              call EChk(ierr,__FILE__,__LINE__)
            endif
 
            !=======================================================
@@ -300,11 +271,7 @@ subroutine alloc_derivative_values(nn)
                 BCDatad(mm)%ttInlet(iBeg:iEnd,jBeg:jEnd),       &
                 BCDatad(mm)%htInlet(iBeg:iEnd,jBeg:jEnd),       &
                 stat=ierr)
-           if(ierr /= 0)                      &
-                call terminate("allocMemBCData", &
-                "Memory allocation failure for &
-                &a domain interface with total &
-                &conditions")
+           call EChk(ierr,__FILE__,__LINE__)
 
            ! Check if memory for the turbulent variables must
            ! be allocated. If so, do so.
@@ -313,11 +280,7 @@ subroutine alloc_derivative_values(nn)
               allocate(&
                    BCDatad(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
                    stat=ierr)
-              if(ierr /= 0)                      &
-                   call terminate("allocMemBCData", &
-                   "Memory allocation failure for &
-                   &turbInlet for a domain interface &
-                   &with a prescribed mass flow")
+              call EChk(ierr,__FILE__,__LINE__)
            endif
 
            !=======================================================
@@ -329,11 +292,7 @@ subroutine alloc_derivative_values(nn)
 
            allocate(BCDatad(mm)%rho(iBeg:iEnd,jBeg:jEnd), &
                 stat=ierr)
-           if(ierr /= 0)                      &
-                call terminate("allocMemBCData", &
-                "Memory allocation failure for &
-                &a domain interface")
-
+           call EChk(ierr,__FILE__,__LINE__)
         end select
 
      enddo bocoLoop
@@ -343,34 +302,45 @@ subroutine alloc_derivative_values(nn)
      !    sps1RansTest: if(sps == 1 .and. &
      !           equations == RANSEquations) then
      if (sps == 1) then
-        allocate(flowDomsd(sps)%bmti1(je,ke,nt1:nt2,nt1:nt2), &
-             flowDomsd(sps)%bmti2(je,ke,nt1:nt2,nt1:nt2), &
-             flowDomsd(sps)%bmtj1(ie,ke,nt1:nt2,nt1:nt2), &
-             flowDomsd(sps)%bmtj2(ie,ke,nt1:nt2,nt1:nt2), &
-             flowDomsd(sps)%bmtk1(ie,je,nt1:nt2,nt1:nt2), &
-             flowDomsd(sps)%bmtk2(ie,je,nt1:nt2,nt1:nt2), &
-             flowDomsd(sps)%bvti1(je,ke,nt1:nt2), &
-             flowDomsd(sps)%bvti2(je,ke,nt1:nt2), &
-             flowDomsd(sps)%bvtj1(ie,ke,nt1:nt2), &
-             flowDomsd(sps)%bvtj2(ie,ke,nt1:nt2), &
-             flowDomsd(sps)%bvtk1(ie,je,nt1:nt2), &
-             flowDomsd(sps)%bvtk2(ie,je,nt1:nt2), &
+        allocate(flowDomsd(nn,1,sps)%bmti1(je,ke,nt1:nt2,nt1:nt2), &
+             flowDomsd(nn,1,sps)%bmti2(je,ke,nt1:nt2,nt1:nt2), &
+             flowDomsd(nn,1,sps)%bmtj1(ie,ke,nt1:nt2,nt1:nt2), &
+             flowDomsd(nn,1,sps)%bmtj2(ie,ke,nt1:nt2,nt1:nt2), &
+             flowDomsd(nn,1,sps)%bmtk1(ie,je,nt1:nt2,nt1:nt2), &
+             flowDomsd(nn,1,sps)%bmtk2(ie,je,nt1:nt2,nt1:nt2), &
+             flowDomsd(nn,1,sps)%bvti1(je,ke,nt1:nt2), &
+             flowDomsd(nn,1,sps)%bvti2(je,ke,nt1:nt2), &
+             flowDomsd(nn,1,sps)%bvtj1(ie,ke,nt1:nt2), &
+             flowDomsd(nn,1,sps)%bvtj2(ie,ke,nt1:nt2), &
+             flowDomsd(nn,1,sps)%bvtk1(ie,je,nt1:nt2), &
+             flowDomsd(nn,1,sps)%bvtk2(ie,je,nt1:nt2), &
              stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
      end if
 
      if (viscous) then
-        allocate(flowDomsd(sps)%d2Wall(2:il,2:jl,2:kl), &
+        allocate(flowDomsd(nn,1,sps)%d2Wall(2:il,2:jl,2:kl), &
              stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
      end if
   end do
 
+  ! Alloc massFlowFamily arrays. These should be empty for most calcs,
+  ! but we alloc them anyway, such that the AD code doesn't need to be
+  ! modified.
+
+  massShape = shape(massFlowFamilyInv)
+  allocate(massFlowFamilyInvd(0:massShape(1)-1,massShape(2)),stat=ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  allocate(massFlowFamilyDissd(0:massShape(1)-1,massShape(2)),stat=ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
   ! Also allocate a "color" array for the derivative calcs. Only do
   ! this on flowDomsd, only on the 1st timeInstance
-
-  allocate(flowDomsd(1)%color(0:ib,0:jb,0:kb),stat=ierr)
+  
+  allocate(flowDomsd(nn,1,1)%color(0:ib,0:jb,0:kb),stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
+  
 
   ! Finally Allocate wtmp,dw_deriv and dwtmp in the flowDomsd structure
   ! Allocate Memory and copy out w and dw for reference
@@ -378,69 +348,45 @@ subroutine alloc_derivative_values(nn)
   allocspectralLoop: do sps=1,nTimeIntervalsSpectral
 
      call setPointersAdj(nn,1,sps)
-     call block_res(nn,sps)
+     call block_res(nn,sps,.False.,.False.)
 
-     allocate(flowDomsd(sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+     allocate(flowDomsd(nn,1,sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     allocate(flowDomsd(sps)%dwtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+     allocate(flowDomsd(nn,1,sps)%dwtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     allocate(flowDomsd(sps)%dwtmp2(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+     allocate(flowDomsd(nn,1,sps)%dwtmp2(0:ib,0:jb,0:kb,1:nw),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     allocate(flowDomsd(sps)%xtmp(0:ie,0:je,0:ke,3),stat=ierr)
+     allocate(flowDomsd(nn,1,sps)%xtmp(0:ie,0:je,0:ke,3),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     allocate(flowDomsd(sps)%dw_deriv(0:ib,0:jb,0:kb,1:nw,1:nw),stat=ierr)
+     allocate(flowDomsd(nn,1,sps)%dw_deriv(0:ib,0:jb,0:kb,1:nw,1:nw),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
+     flowDomsd(nn,1,sps)%dw_deriv(:,:,:,:,:) = 0.0
 
-     flowDomsd(sps)%dw_deriv(:,:,:,:,:) = 0.0
      ! Set the values
-     do l=1,nw
-        do k=0,kb 
-           do j=0,jb
-              do i=0,ib
-                 flowdomsd(sps)%wtmp(i,j,k,l) = w(i,j,k,l)
-              end do
-           end do
-        end do
-     end do
-
-     do l=1,nw
-        do k=2,kl
-           do j=2,jl
-              do i=2,il
-                 flowdomsd(sps)%dwtmp(i,j,k,l) = dw(i,j,k,l)
-              end do
-           end do
-        end do
-     end do
-
-     do l=1,3
-        do k=0,ke
-           do j=0,je
-              do i=0,ie
-                 flowdomsd(sps)%xtmp(i,j,k,l) = x(i,j,k,l)
-              end do
-           end do
-        end do
-     end do
-
+     flowdomsd(nn,1,sps)%wtmp  = w
+     flowdomsd(nn,1,sps)%dwtmp = dw
+     flowdomsd(nn,1,sps)%xtmp  = x
+   
      call initRes_block(1,nwf,nn,sps)
 
      ! Note: we have to divide by the volume for dwtmp2 since
      ! normally, dw would have been mulitpiled by 1/Vol in block_res 
+
      do l=1,nw
         do k=0,kb 
            do j=0,jb
               do i=0,ib
-                 flowdomsd(sps)%dwtmp2(i,j,k,l) = dw(i,j,k,l)/vol(i,j,k)
+                 flowdomsd(nn,1,sps)%dwtmp2(i,j,k,l) = dw(i,j,k,l)/vol(i,j,k)
               end do
            end do
         end do
      end do
+
 
   end do allocspectralLoop
 
