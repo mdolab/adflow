@@ -168,8 +168,19 @@ subroutine NKsolver
 
      ! Actually do the Linear Krylov Solve
      call KSPSolve(global_ksp,rVec,deltaW,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     ! DON'T just check the error. We want to catch error code 72
+     ! which is a floating point error. This is ok, we just reset and
+     ! keep going
+     if (ierr == 72) then
+        print *,'NAN in PETSc on proc:',myid
 
+        fatalFail = .True.
+        routineFailed = .True.
+        call setUniformFlow
+        exit NonLinearLoop
+     else
+        call EChk(ierr,__FILE__,__LINE__)
+     end if
      ! Linesearching:
      iter_k = iter
      iter_m = min(iter_m+1,Mmax)
