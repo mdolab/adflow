@@ -48,9 +48,9 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
   ! ------------------------------------------------
 
   if (useExtra) then
-     call adjustInflowAngle(alpha,beta,liftIndex)
-     call referenceState_mod()
-     call setFlowInfinityState()
+!      call adjustInflowAngle(alpha,beta,liftIndex)
+!      call referenceState_mod()
+!      call setFlowInfinityState()
   end if
 
   ! ------------------------------------------------
