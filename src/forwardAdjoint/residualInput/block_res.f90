@@ -48,9 +48,9 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
   ! ------------------------------------------------
 
   if (useExtra) then
-    !  call adjustInflowAngle(alpha,beta,liftIndex)
-!      call referenceState_mod()
-!      call setFlowInfinityState()
+     call adjustInflowAngle(alpha,beta,liftIndex)
+     call referenceState_mod()
+     call setFlowInfinityState()
   end if
 
   ! ------------------------------------------------
@@ -71,9 +71,9 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
         enddo
      endif
 
-     !call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
-     !call normalVelocities_block(sps) ! Required for TS
-     !call slipVelocitiesFineLevel(.false., t, mm) !required for wall Functions
+     call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
+     call normalVelocities_block(sps) ! Required for TS
+     call slipVelocitiesFineLevel(.false., t, mm) !required for wall Functions
   end if
 
   ! ------------------------------------------------
@@ -95,11 +95,11 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
   enddo
 
   ! Compute Laminar/eddy viscosity if required
-  !call computeLamViscosity
-  !call computeEddyViscosity
+  call computeLamViscosity
+  call computeEddyViscosity
 
   !  Apply all BC's
-  !call applyAllBC_block(.True.)
+  call applyAllBC_block(.True.)
   
   ! Compute skin_friction Velocity
   !call computeUtau_block
@@ -115,46 +115,36 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
   
   ! Next initialize residual for flow variables. The is the only place
   ! where there is an n^2 dependance
- !  do sps2 = 1,nTimeIntervalsSpectral
-!      dw => flowDoms(nn,1,sps2)%dw
-     dw = zero
-     !call initRes_block(1,nwf, nn, sps2)
-!  end do
+  do sps2 = 1,nTimeIntervalsSpectral
+     dw => flowDoms(nn,1,sps2)%dw
+     call initRes_block(1,nwf, nn, sps2)
+  end do
 
   ! Reset dw pointer to sps instance
- ! dw => flowDoms(nn,1,sps)%dw
+  dw => flowDoms(nn,1,sps)%dw
 
   !  Actual residual calc
   call residual_block
 
   ! Divide through by the volume
-!  do sps2 = 1,nTimeIntervalsSpectral
+  do sps2 = 1,nTimeIntervalsSpectral
      ! Set dw and vol to looping sps2 instance
-     !dw => flowDoms(nn,1,sps2)%dw
-     !vol => flowDoms(nn,1,sps2)%vol
-     !si => flowDoms(nn,1,sps2)%si
-     !sj => flowDoms(nn,1,sps2)%sj
-     !sk => flowDoms(nn,1,sps2)%sk
+     dw => flowDoms(nn,1,sps2)%dw
+     vol => flowDoms(nn,1,sps2)%vol
 
      do l=1,nw
         do k=2,kl
            do j=2,jl
               do i=2,il
-                 !dw(i,j,k,l) = radI(i,j,k) + radJ(i,j,k) + radK(i,j,k)
                  dw(i,j,k,l) = dw(i,j,k,l) / vol(i,j,k)
-                 !dw(i,j,k,l) = vol(i,j,k) + sum(si(i,j,k,:)) + sum(sj(i,j,k,:)) + sum(sk(i,j,k,:))
               end do
            end do
         end do
      end do
-
-
-
-
- ! end do
+  end do
   
   ! Reset dw and vol to sps instance
-!  dw => flowDoms(nn,1,sps)%dw
-!  vol => flowDoms(nn,1,sps)%vol
+  dw => flowDoms(nn,1,sps)%dw
+  vol => flowDoms(nn,1,sps)%vol
 
 end subroutine block_res

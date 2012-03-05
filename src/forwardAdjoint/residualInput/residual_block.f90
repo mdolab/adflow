@@ -65,7 +65,7 @@ subroutine residual_block
   discr = spaceDiscr
   fineGrid = .True. 
  
-  !call inviscidCentralFlux
+  call inviscidCentralFlux
 
   ! Compute the artificial dissipation fluxes.
   ! This depends on the parameter discr.
