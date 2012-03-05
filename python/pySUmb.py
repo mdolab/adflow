@@ -1066,6 +1066,7 @@ class SUMB(AeroSolver):
             self.solve_failed = True
             return
      
+        t1 = time.time()
         # Call the Solver
         if ('MDCallBack' in kwargs):
             self.sumb.solverunsteadymd(kwargs['MDCallBack'])
@@ -1099,7 +1100,9 @@ class SUMB(AeroSolver):
             self.fatalFail = False
         # end if
 
-        sol_time = time.time() - t0
+        t2 = time.time()
+        sol_time = t2 - t0
+        self.update_time = t1 - t0
 
         if self.getOption('printTiming') and self.myid == 0:
             print 'Solution Time',sol_time
