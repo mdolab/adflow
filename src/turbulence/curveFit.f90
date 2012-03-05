@@ -238,9 +238,9 @@
 
                  case (itu2)  ! epsilon cannot be fitted logarithmically.
                    if( tuLogFit(mm) ) then
-                      call terminate("curveTupYp", &
-                                     "Check curveFit, &
-                                     &epsilon cannot be fitted with log")
+                      call terminate(&
+                           "curveTupYp", &
+                           "Check curveFit, epsilon cannot be fitted with log")
                    else
                       if(rvfN == 1) epsWall = 0.33_realType
                       if(rvfN == 6) epsWall = 0.27_realType
@@ -257,9 +257,9 @@
                  case (itu4)
                    if( tuLogFit(mm) ) then
                       if(rvfN == 1) &
-                        call terminate("curveTupYp", &
-                                     "Check curveFit, &
-                                     &f cannot be fitted with log")
+                        call terminate(&
+                        "curveTupYp", &
+                        "Check curveFit, f cannot be fitted with log")
                       if(rvfN == 6) tup(mm) = exp(tup(mm))*x
                    else
                       if(rvfN == 1) fWall =-0.0035_realType

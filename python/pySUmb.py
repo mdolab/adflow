@@ -1013,13 +1013,13 @@ class SUMB(AeroSolver):
             # with new size, storing old values from previous runs
             if storeHistory:
                 current_size = len(self.sumb.monitor.convarray)
-                desired_size = current_size + self.sumb.inputiteration.ncycles
+                desired_size = current_size + self.sumb.inputiteration.ncycles +1
                 self.sumb.monitor.niterold  = self.sumb.monitor.nitercur+1
             else:
                 self.sumb.monitor.nitercur  = 0
                 self.sumb.monitor.niterold  = 1
                 desired_size = self.sumb.inputiteration.nsgstartup + \
-                    self.sumb.inputiteration.ncycles
+                    self.sumb.inputiteration.ncycles +1
             # end if
             # Allocate Arrays
             if self.myid == 0:
@@ -1062,7 +1062,6 @@ class SUMB(AeroSolver):
             bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
 
         if self.sumb.killsignals.routinefailed:
-            print 'Fatal Failure during mesh warp'
             self.fatalFail = True
             self.solve_failed = True
             return
@@ -1095,7 +1094,7 @@ class SUMB(AeroSolver):
         if self.sumb.killsignals.fatalfail:
             self.fatalFail = True
             self.resetFlow()
-            return 
+            return
         else:
             self.fatalFail = False
         # end if
@@ -1308,7 +1307,7 @@ class SUMB(AeroSolver):
 
         return 
 
-    def getForces(self,group_name,cfd_force_pts=None):
+    def getForces(self, group_name=None, cfd_force_pts=None):
         ''' Return the forces on this processor. Use
         cfd_force_pts to compute the forces if given
         '''
@@ -1325,7 +1324,12 @@ class SUMB(AeroSolver):
             forces = numpy.empty((0),dtype=self.dtype)
         # end if
             
-        return self.mesh.solver_to_warp_force(group_name,forces)
+        if group_name is not None: # Extract out the forces we want:
+            forces = self.mesh.solver_to_warp_force(group_name, forces)
+        # end if
+
+        return forces
+
 
     def getForcePoints(self):
         [npts,nTS] = self.sumb.getforcesize()
@@ -1607,7 +1611,7 @@ class SUMB(AeroSolver):
 
         return
 
-    def setupSpatialMatrices(self):
+    def setupSpatialMatrices(self,useAD=True):
 
         if not self.spatialSetup:
             if self.getOption('lowMemory'):
@@ -1621,7 +1625,7 @@ class SUMB(AeroSolver):
             # end if
 
             self.sumb.createspatialpetscvars()
-            self.sumb.setupspatialmatrix()
+            self.sumb.setupspatialmatrix(useAD)
             self.spatialSetup = True
         # end if
 

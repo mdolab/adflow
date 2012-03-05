@@ -16,7 +16,7 @@ subroutine setup_PC_coloring(nn,nColor)
         do i=0,ib
            ! Add the extra one for 1-based numbering (as opposed to zero-based)
 
-           flowDomsd(1)%color(i,j,k) = &
+           flowDomsd(nn,1,1)%color(i,j,k) = &
                 mod( (i+1) + 5*(j+1) + 4*(k+1),7) + 1
 
         end do
@@ -44,7 +44,7 @@ subroutine setup_dRdw_euler_coloring(nn,nColor)
            ! Add the extra one for 1-based numbering (as opposed to zero-based)
 
 
-           flowDomsd(1)%color(i,j,k) = &
+           flowDomsd(nn,1,1)%color(i,j,k) = &
                 mod( i + 14*j + 4*k ,17) + 1
 
         end do
@@ -71,7 +71,7 @@ subroutine setup_dRdw_visc_coloring(nn,nColor)
         do i=0,ib
            ! Add the extra one for 1-based numbering (as opposed to zero-based)
 
-           flowDomsd(1)%color(i,j,k) = 0
+           flowDomsd(nn,1,1)%color(i,j,k) = 0
            print * ,'This coloring is not implemented yet'
            stop
 
@@ -103,30 +103,30 @@ subroutine setup_dRdx_euler_coloring(nn,nColor)
         do i=0,ie
 
            if     (k_plane == 0) then
-              flowdomsd(1)%color(i,j,k) = mod(i + mod(j/2,2)*3    ,6) + 6*mod(j,2) 
+              flowdomsd(nn,1,1)%color(i,j,k) = mod(i + mod(j/2,2)*3    ,6) + 6*mod(j,2) 
            else if(k_plane == 1) then
-              flowdomsd(1)%color(i,j,k) = mod(i + mod(j/2,2)*3    ,6) + 6*mod(j,2) +12
+              flowdomsd(nn,1,1)%color(i,j,k) = mod(i + mod(j/2,2)*3    ,6) + 6*mod(j,2) +12
            else if(k_plane == 2) then
-              flowdomsd(1)%color(i,j,k) = mod(i + mod(j/2,2)*3    ,6) + 6*mod(j,2) +24
+              flowdomsd(nn,1,1)%color(i,j,k) = mod(i + mod(j/2,2)*3    ,6) + 6*mod(j,2) +24
            else if(k_plane == 3) then
-              flowdomsd(1)%color(i,j,k) = mod(i + mod(j/2,2)*3    ,6) + 6*mod(j,2) +36
+              flowdomsd(nn,1,1)%color(i,j,k) = mod(i + mod(j/2,2)*3    ,6) + 6*mod(j,2) +36
            end if
 
                       
         !    if     (k_plane == 0) then
-!               flowDomsd(1)%color(i,j,k) = mod(i + mod(j/3,2)*3    ,6) + 6*mod(j,3)
+!               flowDomsd(nn,1,1)%color(i,j,k) = mod(i + mod(j/3,2)*3    ,6) + 6*mod(j,3)
 !            else if(k_plane == 1) then
-!               flowdomsd(1)%color(i,j,k) = mod(i + mod(j/2,2)*3    ,6) + 6*mod(j,2) +18
+!               flowdomsd(nn,1,1)%color(i,j,k) = mod(i + mod(j/2,2)*3    ,6) + 6*mod(j,2) +18
 !            else if(k_plane == 2) then
-!               flowdomsd(1)%color(i,j,k) = mod(i + mod(j/2,2)*3,    6) + 6*mod(j,2) +30
+!               flowdomsd(nn,1,1)%color(i,j,k) = mod(i + mod(j/2,2)*3,    6) + 6*mod(j,2) +30
 !            else if(k_plane == 3) then
-!               flowDomsd(1)%color(i,j,k) = mod(i + mod(j/3,2)*3 + 3,6) + 6*mod(j,3)
+!               flowDomsd(nn,1,1)%color(i,j,k) = mod(i + mod(j/3,2)*3 + 3,6) + 6*mod(j,3)
 !            end if
            
            ! Add the extra one for 1-based numbering (as opposed to zero-based)! 
-           flowDomsd(1)%color(i,j,k) = flowDomsd(1)%color(i,j,k) + 1
+           flowDomsd(nn,1,1)%color(i,j,k) = flowDomsd(nn,1,1)%color(i,j,k) + 1
 !            if (myid == 0 .and. nn == 1) then
-!               print *,i,j,k,flowdomsd(1)%color(i,j,k)-1
+!               print *,i,j,k,flowdomsd(nn,1,1)%color(i,j,k)-1
 !            end if
         end do
      end do
@@ -159,7 +159,7 @@ subroutine setup_3x3x3_coloring(nn,nColor)
            modj = mod(j,3)
            modk = mod(k,3)
 
-           flowDomsd(1)%color(i,j,k) = modi + 3*modj + 9*modk + 1
+           flowDomsd(nn,1,1)%color(i,j,k) = modi + 3*modj + 9*modk + 1
 
         end do
      end do
@@ -187,7 +187,7 @@ subroutine setup_4x4x4_coloring(nn,nColor)
            modj = mod(j,4)
            modk = mod(k,4)
 
-           flowDomsd(1)%color(i,j,k) = modi + 4*modj + 16*modk + 1
+           flowDomsd(nn,1,1)%color(i,j,k) = modi + 4*modj + 16*modk + 1
 
         end do
      end do
@@ -215,7 +215,7 @@ subroutine setup_5x5x5_coloring(nn,nColor)
            modj = mod(j,5)
            modk = mod(k,5)
 
-           flowDomsd(1)%color(i,j,k) = modi + 5*modj + 25*modk + 1
+           flowDomsd(nn,1,1)%color(i,j,k) = modi + 5*modj + 25*modk + 1
 
         end do
      end do
@@ -240,7 +240,7 @@ subroutine setup_BF_coloring(nn,nColor)
         do i=0,ib
            ! Add the extra one for 1-based numbering (as opposed to zero-based)
 
-           flowDomsd(1)%color(i,j,k) = i + j*(ib+1) + k*((ib+1)*(jb+1)) + 1
+           flowDomsd(nn,1,1)%color(i,j,k) = i + j*(ib+1) + k*((ib+1)*(jb+1)) + 1
 
         end do
      end do
@@ -265,7 +265,7 @@ subroutine setup_BF_node_coloring(nn,nColor)
         do i=0,ie
            ! Add the extra one for 1-based numbering (as opposed to zero-based)
 
-           flowDomsd(1)%color(i,j,k) = i + j*(ie+1) + k*((ie+1)*(je+1)) + 1
+           flowDomsd(nn,1,1)%color(i,j,k) = i + j*(ie+1) + k*((ie+1)*(je+1)) + 1
 
         end do
      end do

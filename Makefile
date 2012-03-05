@@ -52,14 +52,15 @@ SUBDIR_ADJOINT = src/adjoint               \
 	         src/adjoint/stabilityOutput\
 		 src/adjoint/forcesInput\
 	         src/adjoint/forcesOutput\
+		 src/adjoint/residualInputTS \
+		 src/adjoint/residualOutputTS\
                  src/bendingMomentAnalysis/bendingOutput\
 		 src/forwardAdjoint \
 		 src/forwardAdjoint/residualInput \
 		 src/forwardAdjoint/residualOutput\
 		 src/forwardAdjoint/residualOutputExtra\
 		 src/forwardAdjoint/residualOutputSpatial
-#		 src/adjoint/residualNKPCInput \
-	         src/adjoint/residualNKPCOutput \
+
 
 SUBDIR_EXEC   = src/exec
 SUBDIR_PYTHON = src/python/fortran
