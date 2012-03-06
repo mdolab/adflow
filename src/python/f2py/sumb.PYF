@@ -432,7 +432,7 @@ python module sumb ! in
 
        subroutine applypc(in_vec,out_vec,n) ! in :test:NKsolver.F90
          real(kind=realtype) dimension(n),intent(in) :: in_vec
-         real(kind=realtype) dimension(n),intent(out),depend(n) :: out_vec
+         real(kind=realtype) dimension(n),intent(in, out),depend(n) :: out_vec
          integer(kind=inttype) optional,check(len(in_vec)>=n),depend(in_vec) :: n=len(in_vec)
        end subroutine applypc
 

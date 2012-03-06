@@ -13,8 +13,8 @@ subroutine applyPC(in_vec, out_vec, N)
 
   ! Input/Output
   integer(kind=intType) :: N
-  real(kind=realType), dimension(N), intent(in) :: in_vec(N)
-  real(kind=realTYpe), dimension(N), intent(out):: out_vec(N)
+  real(kind=realType), dimension(N) :: in_vec(N)
+  real(kind=realTYpe), dimension(N) :: out_vec(N)
   
   ! PETSc 
   Vec VecA,VecB
@@ -30,6 +30,7 @@ subroutine applyPC(in_vec, out_vec, N)
   call VecSetBlockSize(vecA, nw, ierr);
   call EChk(ierr,__FILE__,__LINE__)
 
+
   call VecCreateMPIWithArray(sumb_comm_world, N, PETSC_DETERMINE, out_vec, &
        VecB, ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -37,10 +38,13 @@ subroutine applyPC(in_vec, out_vec, N)
   call VecSetBlockSize(vecB, nw, ierr);
   call EChk(ierr,__FILE__,__LINE__)
 
+
+  ! Setup the NKsolver if not already done so
   if (not(NKSolverSetup)) then
      call setupNKSolver
   end if
   
+  ! We possibly need to reform the jacobian
   if (mod(NKsolveCount,jacobian_lag) == 0) then
      call FormJacobian()
   end if
@@ -51,14 +55,15 @@ subroutine applyPC(in_vec, out_vec, N)
   call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_OBJECT, ierr)
   call EChk(ierr,__FILE__,__LINE__)
   
+  ! This needs to be a bit better...
   call KSPSetTolerances(global_ksp,.1,.00000000001,10.0,10,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Actually do the Linear Krylov Solve
-  call KSPSolve(global_ksp, vecA, vecB,ierr)
+  call KSPSolve(global_ksp, vecA, vecB, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  ! Destroy the three petsc vectors
+  ! 'Destroy' the two petsc vectors
   call VecDestroy(VecA, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
