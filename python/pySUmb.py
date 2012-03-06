@@ -1062,6 +1062,7 @@ class SUMB(AeroSolver):
             bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
 
         if self.sumb.killsignals.routinefailed:
+            print 'Fatal Failure during mesh warp'
             self.fatalFail = True
             self.solve_failed = True
             return
@@ -1096,6 +1097,7 @@ class SUMB(AeroSolver):
             self.fatalFail = True
             self.resetFlow()
             return
+
         else:
             self.fatalFail = False
         # end if
