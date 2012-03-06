@@ -1333,7 +1333,6 @@ class SUMB(AeroSolver):
 
         return forces
 
-
     def getForcePoints(self):
         [npts,nTS] = self.sumb.getforcesize()
 
@@ -1361,11 +1360,11 @@ class SUMB(AeroSolver):
         #end
 
 
-    def globalNKPreCon(self,in_vec):
+    def globalNKPreCon(self, in_vec, out_vec):
         '''This function is ONLY used as a preconditioner to the
         global Aero-Structural system'''
 
-        out_vec = self.sumb.applypc(in_vec)
+        out_vec = self.sumb.applypc(in_vec, out_vec)
         
         return out_vec
 
@@ -2160,7 +2159,7 @@ class SUMB(AeroSolver):
 
         '''Return the residual on this processor. Used in aerostructural
         analysis'''
-        res    = self.sumb.getres(self.getStateSize())
+        res = self.sumb.getres(self.getStateSize())
         
         return res
 
