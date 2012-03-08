@@ -1219,8 +1219,6 @@ class SUMB(AeroSolver):
 
         return
 
-
-
     def writeVolumeSolutionFile(self,filename=None,writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS file.
                 Keyword arguments:
@@ -1368,6 +1366,13 @@ class SUMB(AeroSolver):
         
         return out_vec
 
+    def globalAdjointPreCon(self, in_vec, out_vec):
+        ''' This function is ONLY used as a preconditioner for the
+        global Aero-Structural Adjoint system'''
+
+        out_vec = self.sumb.applyadjointpc(in_vec, out_vec)
+
+        return out_vec
 
     def verifydCdx(self,objective,**kwargs):
         '''
@@ -1577,6 +1582,7 @@ class SUMB(AeroSolver):
                 self.spatialSetup = True
                 self.extraSetup = True
             # end if
+
         else:
             # Otherwise, we just setup the state variables to save
             # memory:
@@ -1634,6 +1640,11 @@ class SUMB(AeroSolver):
         return
 
     def setupExtraMatrices(self):
+
+        if self.extraSetup:
+            self.sumb.destroyextrapetscvars()
+            self.extraSetup = False
+
         if not self.extraSetup:
             self.sumb.createextrapetscvars()
             self.sumb.setupextramatrix()
@@ -1654,13 +1665,11 @@ class SUMB(AeroSolver):
 
     def checkPartitioning(self,nprocs):
         '''This function determine the potential load balancing for
-        nprocs. The intent is this function can be run in serial with
+        nprocs. The intent is this function can be run in serial
         to determine the best number of procs for load balancing. The
         grid is never actually loaded so this function can be run with
         VERY large grids without issue.'''
   
-        load_inbalance = 0
-        face_inbalance = 0
         load_inbalance,face_inbalance = self.sumb.checkpartitioning(nprocs)
                 
         return load_inbalance,face_inbalance
@@ -2004,6 +2013,17 @@ class SUMB(AeroSolver):
 
         return dxs
 
+    def getdRdXvVec(self,in_vec, group_name):
+
+        ndof = self.sumb.adjointvars.nnodeslocal*3
+
+        # Now call getdrdxvpsi WITH the psi vector:
+        dxv_solver = self.sumb.getdrdxvpsi(ndof, in_vec)
+        self.mesh.warpDeriv(dxv_solver)
+        dxs = self.mesh.getdXs(group_name)
+
+        return dxs
+
     def getdRdaPsi(self, psi):
 
         # Setup extra matrices if required
@@ -2017,10 +2037,12 @@ class SUMB(AeroSolver):
 
         return dIda
 
-    def getdRdwPsi(self):
-        dRdwPsi = self.sumb.getdrdwtpsi(self.getStateSize())
+    def getdRdwVec(self, in_vec, out_vec):
+        ''' Compute the result: out_vec = dRdw^T * in_vec'''
+
+        out_vec = self.sumb.getdrdwtvec(in_vec, out_vec)
         
-        return dRdwPsi
+        return out_vec
 
     def getdFdxVec(self,group_name,vec):
         # Calculate dFdx * vec and return the result
@@ -2121,6 +2143,20 @@ class SUMB(AeroSolver):
 
         return dIda
         
+    def getdIdw(self, dIdw, objective, forcePoints=None):
+
+        obj, aeroObj = self._getObjective(objective)
+
+        if forcePoints is None:
+            forcePoints = self.getForcePoints()
+        # end for
+        if aeroObj:
+            self.computeObjPartials(objective,forcePoints)
+            dIdw = self.sumb.getdidw(dIdw)
+        # end if
+
+        return dIdw
+
     def finalizeAdjoint(self):
         '''
         destroy the PESTcKSP context
@@ -2155,13 +2191,47 @@ class SUMB(AeroSolver):
 
         return 
 
-    def getResidual(self):
+    def setAdjoint(self, adjoint, objective=None):
+        '''Sets the adjoint vector externally. Used in coupled solver'''
+        self.sumb.setadjoint(adjoint)
+
+        if objective is not None:
+            obj,aeroObj = self._getObjective(objective)
+            self.storedADjoints[obj]= adjoint.copy()
+        
+        return
+
+    def resetKSP(self): 
+        '''This function destroys the KSP solver and then immediately
+        reforms it. The reason this function exists is as follows: For
+        the coupled KSP solver, typically only a small number of
+        subspace vectors are requied. However, more vectors may have
+        already been allotated if the NKSolver was used in the
+        Gauss-Sidel startup. The extra vectors take up space that will
+        be needed on the outer KSP.  The net effect is simply to flush
+        the subspace vectors.'''
+
+        self.sumb.resetksp()
+
+        return
+
+    def getResidual(self, res=None):
 
         '''Return the residual on this processor. Used in aerostructural
         analysis'''
-        res = self.sumb.getres(self.getStateSize())
+        if res is None:
+            res = numpy.zeros(self.getStateSize())
+        res = self.sumb.getres(res)
         
         return res
+
+    def computedSdwTVec(self, in_vec, out_vec, group_name):
+        '''This function computes: out_vec = out_vec + dFdw^T*in_vec'''
+
+        solver_vec = self.mesh.warp_to_solver_force(group_name, in_vec)
+        out_vec = self.sumb.getdfdwtvec(solver_vec, out_vec)
+
+        return out_vec
 
     def getSolution(self,sps=1):
         ''' Retrieve the solution variables from the solver. Note this

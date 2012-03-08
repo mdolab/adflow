@@ -202,7 +202,7 @@ subroutine getRes(res,ndimw)
   implicit none
  
   integer(kind=intType),intent(in):: ndimw
-  real(kind=realType),dimension(ndimw),intent(out) :: res(ndimw)
+  real(kind=realType),dimension(ndimw),intent(inout) :: res(ndimw)
 
   ! Local Variables
   integer(kind=intType) :: nn,i,j,k,l,counter,sps

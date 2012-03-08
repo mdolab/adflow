@@ -45,6 +45,7 @@ FF90_OBJECTS = applyPC.o\
 	       NKBenchmark.o\
 	       NKSolver.o\
 	       NKUtilities.o\
+	       resetKSP.o\
 	       setupNKSolver.o\
 
 

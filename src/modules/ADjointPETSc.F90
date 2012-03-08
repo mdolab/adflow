@@ -112,10 +112,6 @@
       !       Size[nNodes*nw].
       !            
 
-      ! phic  Structural adjoint vector cast through the mapping onto
-      !        the CFD surface. Size [nSurfNodes*3]...Possible changes to 
-      !       this defintion in the future
-      !
       ! dRda  Residual R partial sensitivity w.r.t. the design
       !       variable vector alpha: dR/da
       !       dRda(il,jl,kl,nw,n) - d R(i,j,k,nw) / d alpha(n)
@@ -129,10 +125,11 @@
       Vec     psi, dJdW, adjointRHS,adjointRes
       Vec     dJdx
       Vec     gridVec
-      Vec     dRdaTPsi,dRdaTPsi_local
-      Vec     wVec,xVec
-      Vec     fVec1,fVec2
-      Vec     phic,dJcdW
+      Vec     dRdaTPsi, dRdaTPsi_local
+      Vec     xVec
+      Vec     fVec1, fVec2
+      Vec     w_like1, w_like2
+      Vec     dJcdW
       ! ksp   Linear solver (Krylov subspace method) context
       ! pc    Preconditioner context
       VecScatter dRdaTpsi_scatter
