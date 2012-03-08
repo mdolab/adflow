@@ -321,10 +321,10 @@ python module sumb ! in
          logical :: usedjdx
        end subroutine computeobjpartials
 
-       subroutine getdidw(ndof,output) ! in :test:computeObjPartials.F90
-         integer(kind=inttype) intent(in) :: ndof
-         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: output
-       end subroutine getdidw
+        subroutine getdidw(output,nstate) ! in :test:computeObjPartials.F90
+            real(kind=realtype) dimension(nstate),intent(inout) :: output
+            integer(kind=inttype) optional,intent(in,out),check(len(output)>=nstate),depend(output) :: nstate=len(output)
+        end subroutine getdidw
 
        subroutine getdidx(ndof,output) ! in :test:computeObjPartials.F90
          integer(kind=inttype) intent(in) :: ndof
@@ -342,10 +342,13 @@ python module sumb ! in
          integer(kind=inttype) optional,intent(in),check(len(states)>=ndimw),depend(states) :: ndimw=len(states)
        end subroutine setstates
 
-       subroutine getres(res,ndimw) ! in :test:getADjoint.F90
-         real(kind=realtype) dimension(ndimw),intent(out),depend(ndimw) :: res
-         integer(kind=inttype) intent(in) :: ndimw
+       subroutine getres(res,ndimw) ! in :test:NKUtilities.F90
+         real(kind=realtype) dimension(ndimw),intent(in,out) :: res
+         integer(kind=inttype) optional,intent(in),check(len(res)>=ndimw),depend(res) :: ndimw=len(res)
        end subroutine getres
+
+       subroutine resetksp
+       end subroutine resetksp
 
        subroutine getdrdxvpsi(dxv,ndof,adjoint,nstate) ! in :test:getdRdXvPsi.F90
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
@@ -360,11 +363,6 @@ python module sumb ! in
             real(kind=realtype) dimension(nstate),intent(in) :: adjoint
             integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
         end subroutine getdrdapsi
-
-       subroutine getdrdwtpsi(ndof,drdwtpsi)
-         integer(kind=inttype) intent(in) :: ndof
-         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: drdwtpsi
-       end subroutine getdrdwtpsi
 
        subroutine getadjoint(nstate,adjoint) ! in :test:getADjoint.F90
          integer(kind=inttype) intent(in) :: nstate
@@ -430,11 +428,31 @@ python module sumb ! in
        ! Newton-Krylov Solver Routines
        ! ############################################################################
 
-       subroutine applypc(in_vec,out_vec,n) ! in :test:NKsolver.F90
-         real(kind=realtype) dimension(n),intent(in) :: in_vec
-         real(kind=realtype) dimension(n),intent(in, out),depend(n) :: out_vec
-         integer(kind=inttype) optional,check(len(in_vec)>=n),depend(in_vec) :: n=len(in_vec)
+       subroutine applypc(in_vec,out_vec,ndof) ! in :test:NKsolver.F90
+         real(kind=realtype) dimension(ndof),intent(in) :: in_vec
+         real(kind=realtype) dimension(ndof),intent(in, out),depend(ndof) :: out_vec
+         integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: ndof=len(in_vec)
        end subroutine applypc
+
+       subroutine applyadjointpc(in_vec,out_vec,ndof) ! in :test:NKsolver.F90
+         real(kind=realtype) dimension(ndof),intent(in) :: in_vec
+         real(kind=realtype) dimension(ndof),intent(in, out),depend(ndof) :: out_vec
+         integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: ndof=len(in_vec)
+       end subroutine applyadjointpc
+
+        subroutine getdfdwtvec(in_vec,in_dof,out_vec,out_dof) ! in :test:agumentRHS.F90
+            real(kind=realtype) dimension(in_dof),intent(in) :: in_vec
+            integer(kind=inttype) optional,intent(in),check(len(in_vec)>=in_dof),depend(in_vec) :: in_dof=len(in_vec)
+            real(kind=realtype) dimension(out_dof),intent(in,out) :: out_vec
+            integer(kind=inttype) optional,intent(in),check(len(out_vec)>=out_dof),depend(out_vec) :: out_dof=len(out_vec)
+        end subroutine getdfdwtvec
+
+
+       subroutine getdrdwtvec(in_vec,out_vec,ndof) ! in :test:NKsolver.F90
+         real(kind=realtype) dimension(ndof),intent(in) :: in_vec
+         real(kind=realtype) dimension(ndof),intent(in, out),depend(ndof) :: out_vec
+         integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: n=len(in_vec)
+       end subroutine getdrdwtvec
 
        subroutine getcurrentresidual(rhores,totalrres)
          real(kind=realtype), intent(out) :: rhores

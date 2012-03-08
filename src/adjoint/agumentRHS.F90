@@ -29,17 +29,66 @@ subroutine agumentRHS(ndof,phi)
   real(kind=realType), intent(in) :: phi(ndof)
   integer(kind=intType) :: ierr
 
-  call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndof,PETSC_DETERMINE,&
-       phi,phic,ierr)
+  call VecPlaceArray(fVec1, phi, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Dump the result into adjointRHS
-  call MatMultTranspose(dFdw,phic,adjointRHS,ierr)
+  call MatMultTranspose(dFdw,fVec1,adjointRHS,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call vecDestroy(phic,ierr)
+  call vecResetArray(fVec1, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 #endif
 end subroutine agumentRHS
+
+
+subroutine getdFdwTVec(in_vec, in_dof, out_vec, out_dof)
+#ifndef USE_NO_PETSC 
+ !
+  !     ******************************************************************
+  !     *                                                                *
+  !     * Multiply the input_vector in_vec, by dFdw^T and return the     *
+  !     * resulting vector                                               *
+  !     *                                                                *
+  !     ******************************************************************
+  !
+  use ADjointPETSc
+  use communication
+
+  implicit none
+
+  ! Input/Ouput
+  integer(kind=intType), intent(in) :: in_dof, out_dof
+  real(kind=realType), intent(in) :: in_vec(in_dof)
+  real(kind=realType), intent(inout) :: out_vec(out_dof)
+
+  ! Working
+  integer(kind=intType) :: ierr
+  
+  ! Put petsc wrapper around arrays
+  call VecPlaceArray(fVec1, in_vec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecPlaceArray(w_like1, out_vec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+ 
+  ! Dump the result into adjointRHS
+  call MatMultTranspose(dFdw,fVec1,w_like1,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! do: w_like1 = w_like1 + adjointRHS
+  call VecAxpy(w_like1, one, adjointRHS, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call vecRestoreArray(fVec1, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecDestroy(w_like1,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+#endif
+
+end subroutine getdFdwTVec
+
+
 
 
