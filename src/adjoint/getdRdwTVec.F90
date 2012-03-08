@@ -1,7 +1,6 @@
 subroutine getdRdwTVec(in_vec, out_vec, ndof)
 #ifndef USE_NO_PETSC
 
-  use communication
   use ADjointPETSc
   implicit none
 
