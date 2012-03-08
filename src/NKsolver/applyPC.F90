@@ -92,7 +92,7 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Actually do the Linear Krylov Solve
-  call KSPSolve(ksp, adjointRes, psi, ierr)
+  call KSPSolve(ksp, w_vec1, w_vec2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Reset the array pointers:
