@@ -15,11 +15,6 @@ subroutine applyPC(in_vec, out_vec, ndof)
   ! Working Variables
   integer(kind=intType) :: ierr
 
-  ! We are going to reuse the 'work' and 'g' vectors that are
-  ! allocated for the line search. We don't need them for the line
-  ! search so we're going to hijack them and use a VecPlaceArray to
-  ! avoid copying or creating a new array.
-
   ! Setup the NKsolver if not already done so
   if (not(NKSolverSetup)) then
      call setupNKSolver
@@ -74,8 +69,8 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
 
   ! Input/Output
   integer(kind=intType) :: ndof
-  real(kind=realType), dimension(ndof), intent(in)    :: in_vec(ndof)
-  real(kind=realTYpe), dimension(ndof), intent(inout) :: out_vec(ndof)
+  real(kind=realType), dimension(ndof), intent(in)    :: in_vec
+  real(kind=realTYpe), dimension(ndof), intent(inout) :: out_vec
   
   ! Working Variables
   integer(kind=intType) :: ierr
@@ -92,7 +87,7 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Actually do the Linear Krylov Solve
-  call KSPSolve(ksp, w_vec1, w_vec2,ierr)
+  call KSPSolve(ksp, w_like1, w_like2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Reset the array pointers:

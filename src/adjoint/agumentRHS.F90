@@ -68,22 +68,23 @@ subroutine getdFdwTVec(in_vec, in_dof, out_vec, out_dof)
   ! Put petsc wrapper around arrays
   call VecPlaceArray(fVec1, in_vec, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-
+  
   call VecPlaceArray(w_like1, out_vec, ierr)
   call EChk(ierr,__FILE__,__LINE__)
- 
-  ! Dump the result into adjointRHS
-  call MatMultTranspose(dFdw,fVec1,w_like1,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
 
+  ! Dump the result into adjointRHS since the we want to ADD this
+  ! result to w_like1 below
+  call MatMultTranspose(dFdw,fVec1,adjointRHS,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+ 
   ! do: w_like1 = w_like1 + adjointRHS
   call VecAxpy(w_like1, one, adjointRHS, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call vecRestoreArray(fVec1, ierr)
+  call vecResetArray(fVec1, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecDestroy(w_like1,ierr)
+  call VecResetArray(w_like1,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 #endif
 
