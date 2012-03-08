@@ -14,7 +14,7 @@ subroutine setupNKsolver
   use ADjointVars , only: nCellsLocal
   use NKSolverVars, only: dRdw,dRdwPre,dRdwPseudo, ctx, wVec,rVec,deltaW,&
        NKsolvecount,nksolversetup,ksp_subspace,ksp_solver_type,global_ksp, &
-       work, g
+       work, g, w_like1, w_like2
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -49,6 +49,14 @@ subroutine setupNKsolver
      call EChk(ierr,__FILE__,__LINE__)
      
      call VecDuplicate(wVec,work,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Create two empty w-like vectors
+     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,nDimW,PETSC_DETERMINE,&
+          PETSC_NULL_SCALAR,w_like1,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,nDimW,PETSC_DETERMINE,&
+          PETSC_NULL_SCALAR,w_like2,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Create Pre-Conditioning Matrix
