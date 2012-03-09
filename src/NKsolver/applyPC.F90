@@ -83,7 +83,7 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
   call EChk(ierr,__FILE__,__LINE__)
  
   ! This needs to be a bit better...
-  call KSPSetTolerances(ksp,.1,.00000000001,10.0,10,ierr)
+  call KSPSetTolerances(ksp,.1,.00000000001,10.0,20,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Actually do the Linear Krylov Solve
