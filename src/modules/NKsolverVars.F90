@@ -48,8 +48,8 @@ module NKsolverVars
   ! deltaW: Update to the wVec from linear solution
   ! diagV: Diagonal lumping term
 
-  Vec wVec,rVec,deltaW,diagV,work,g
-
+  Vec wVec, rVec, deltaW, diagV, work, g
+  Vec w_like1, w_like2
   ! PETSc KSP/PC 
   ! global_ksp: The ksp object for solving the newton udpate
   ! global_pc : The preconditioner context for the above ksp
@@ -57,7 +57,7 @@ module NKsolverVars
   !             jacobi sub blocks
   ! local_pc:   THe pc object associated with the above ksp object
 
-  KSP                global_ksp,local_ksp
+  KSP                global_ksp,local_ksp, fucked_ksp
   PC                 global_pc ,local_pc
 
   ! PETSc Misc:

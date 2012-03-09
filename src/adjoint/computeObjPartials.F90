@@ -517,7 +517,7 @@ end subroutine computeObjPartials
 ! directly in python in dIda in the adjointVars module. 
 
 
-subroutine getdIdw(nstate,output)
+subroutine getdIdw(output,nstate)
 
 #ifndef USE_NO_PETSC	
 #define PETSC_AVOID_MPIF_
@@ -532,7 +532,7 @@ subroutine getdIdw(nstate,output)
   !     Subroutine arguments.
   !
   integer(kind=intType),intent(in):: nstate
-  real(kind=realType),dimension(nstate),intent(out) :: output
+  real(kind=realType),dimension(nstate),intent(inout) :: output
   real(kind=realType),pointer :: dJdw_pointer(:)
 
   ! Local Variables
@@ -629,12 +629,12 @@ subroutine zeroObjPartials(stateSetup,spatialSetup)
 
   if (stateSetup) then
      call VecZeroEntries(dJdw,ierr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
+     call EChk(ierr,__FILE__,__LINE__)
   end if
   
   if (spatialSetup) then
      call VecZeroEntries(dJdx,ierr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
+     call EChk(ierr,__FILE__,__LINE__)
   end if
 #endif
 end subroutine zeroObjPartials
