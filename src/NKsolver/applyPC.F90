@@ -1,75 +1,100 @@
-subroutine applyPC(in_vec, out_vec, N)
+subroutine applyPC(in_vec, out_vec, ndof)
 #ifndef USE_NO_PETSC
+
   ! Apply the NK PC to the in_vec. This subroutine is ONLY used as a
   ! preconditioner for a global Aero-Structural Newton-Krylov Method
-  use flowVarRefState
-  use NKSolverVars, only: dRdw, NKSolverSetup, global_ksp, wVec, &
-       NKSolveCount, jacobian_lag
-  use communication 
-  use inputIteration
+
+  use NKSolverVars
   implicit none
-#define PETSC_AVOID_MPIF_H
-#include "include/finclude/petsc.h"
 
   ! Input/Output
-  integer(kind=intType) :: N
-  real(kind=realType), dimension(N) :: in_vec(N)
-  real(kind=realTYpe), dimension(N) :: out_vec(N)
-  
-  ! PETSc 
-  Vec VecA,VecB
+  integer(kind=intType) :: ndof
+  real(kind=realType), dimension(ndof),intent(in)    :: in_vec
+  real(kind=realTYpe), dimension(ndof),intent(inout) :: out_vec
 
   ! Working Variables
   integer(kind=intType) :: ierr
-
-  ! Put a petsc wrapper around the input and output vectors
-  call VecCreateMPIWithArray(sumb_comm_world, N, PETSC_DETERMINE, in_vec, &
-       VecA, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call VecSetBlockSize(vecA, nw, ierr);
-  call EChk(ierr,__FILE__,__LINE__)
-
-
-  call VecCreateMPIWithArray(sumb_comm_world, N, PETSC_DETERMINE, out_vec, &
-       VecB, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call VecSetBlockSize(vecB, nw, ierr);
-  call EChk(ierr,__FILE__,__LINE__)
-
 
   ! Setup the NKsolver if not already done so
   if (not(NKSolverSetup)) then
      call setupNKSolver
   end if
   
-  ! We possibly need to reform the jacobian
+  ! We possibly need to re-form the jacobian
   if (mod(NKsolveCount,jacobian_lag) == 0) then
      call FormJacobian()
   end if
 
+  ! Place the two arrays in the vector
+  call VecPlaceArray(w_like1, in_vec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecPlaceArray(w_like2, out_vec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
   ! Set the base vec
   call setwVec(wVec)
   
   call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_OBJECT, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-  
-  ! This needs to be a bit better...
-  call KSPSetTolerances(global_ksp,.1,.00000000001,10.0,10,ierr)
+
+   ! This needs to be a bit better...
+  call KSPSetTolerances(global_ksp,.00000001,.00000000001,10.0,10,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Actually do the Linear Krylov Solve
-  call KSPSolve(global_ksp, vecA, vecB, ierr)
+  call KSPSolve(global_ksp, w_like1, w_like2, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  ! 'Destroy' the two petsc vectors
-  call VecDestroy(VecA, ierr)
+  ! Reset the array pointers:
+  call VecResetArray(w_like1, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecDestroy(VecB, ierr)
+  call VecResetArray(w_like2, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   NKSolveCount = NKSolveCount + 1
 #endif
 end subroutine applyPC
+
+subroutine applyAdjointPC(in_vec, out_vec, ndof)
+#ifndef USE_NO_PETSC
+  ! Apply the Adjoint PC to the in_vec. This subroutine is ONLY used as a
+  ! preconditioner for a global Aero-Structural Newton-Krylov Method
+
+  use communication
+  use ADjointPETSc
+
+  implicit none
+
+  ! Input/Output
+  integer(kind=intType) :: ndof
+  real(kind=realType), dimension(ndof), intent(in)    :: in_vec
+  real(kind=realTYpe), dimension(ndof), intent(inout) :: out_vec
+  
+  ! Working Variables
+  integer(kind=intType) :: ierr
+
+  ! Hijack adjoint and adjointRes with in_vec and out_vec
+  call VecPlaceArray(w_like1, in_vec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecPlaceArray(w_like2, out_vec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+ 
+  ! This needs to be a bit better...
+  call KSPSetTolerances(ksp,.1,.00000000001,10.0,10,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Actually do the Linear Krylov Solve
+  call KSPSolve(ksp, w_like1, w_like2,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Reset the array pointers:
+  call VecResetArray(w_like1, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecResetArray(w_like2, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+#endif
+end subroutine applyAdjointPC

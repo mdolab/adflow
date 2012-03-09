@@ -40,7 +40,7 @@ subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
   !     ******************************************************************
   !
   use communication
-  use ADjointPETSc, only: dRdx,xVec,wVec
+  use ADjointPETSc, only: dRdx,xVec, w_like1
   use ADjointVars
   use blockPointers
   use inputADjoint
@@ -62,21 +62,21 @@ subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
   real(kind=realType) :: tOld,tNew,pt(3)
   real(kind=realType),pointer :: xvec_pointer(:)
   real(kind=realType) :: time(3)
+
   ! Place adjoint in Vector
-  call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,nstate,PETSC_DECIDE,&
-       adjoint,wVec,ierr)
-    
+  call VecPlaceArray(w_like1, adjoint, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
   ! Do the matMult with dRdx and put result into xVec. NOTE dRdx is
   ! already transposed and thus we just do a matMult NOT
   ! a matMultTranspose
 
-  call MatMult(dRdx,wVec,xVec,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
+  call MatMult(dRdx, w_like1, xVec, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! Extract pointer for xVec
-  call VecGetArrayF90(xVec,xvec_pointer,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call VecGetArrayF90(xVec, xvec_pointer, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! If we only have 1 time instance (NOT TimeSpectral analysis, then
   ! xVec and gridVec would be the same, and dX_sps/dX would be the
@@ -153,7 +153,7 @@ subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
   end if
 
   ! No longer need Vec and reset pointer
-  call VecDestroy(wVec,ierr)
+  call VecResetArray(w_like1,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   call VecRestoreArrayF90(xVec,xvec_pointer,ierr)

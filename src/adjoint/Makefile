@@ -55,7 +55,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       getADjoint.o             \
 	       getdRdXvPsi.o            \
 	       getdRdaPsi.o             \
-	       getdRdwTPsi.o            \
+	       getdRdwTVec.o            \
 	       getdFdxVec.o             \
 	       haloIndexCommunication.o \
 	       initializePETSc.o        \
