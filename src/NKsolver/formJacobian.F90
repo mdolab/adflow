@@ -1,21 +1,11 @@
 subroutine FormJacobian()
 #ifndef USE_NO_PETSC
-  use communication
-  use precision 
-  use iteration
-  use NKSolverVars, only: dRdw,dRdwPre,ksp_solver_type,ksp_subspace, &
-      global_pc,local_pc, global_ksp,local_ksp,asm_overlap,&
-      local_pc_ordering,local_pc_ilu_level, ksp_solver_type,&
-      global_pc_type
 
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "include/finclude/petsc.h"
+  use NKSolverVars
 
   ! Local Variables
-  PetscInt nlocal,first
+
   integer(kind=intType) ::ierr
-  logical secondHalo
   logical :: useAD,usePC,useTranspose
 
   ! Dummy assembly begin/end calls for the matrix-free Matrx
@@ -30,6 +20,24 @@ subroutine FormJacobian()
   useTranspose = .False.
   call setupStateResidualMatrix(dRdwPre,useAD,usePC,useTranspose)
 
+  ! Setup KSP Options
+  call setupNKKSP()
+#endif
+end subroutine FormJacobian
+  
+subroutine setupNKKSP()
+
+#ifndef USE_NO_PETSC
+
+  use communication
+  use iteration
+  use NKSolverVars
+
+  implicit none
+
+  ! Local Variables
+  integer(kind=intType) ::ierr, nlocal, first
+ 
   ! ----------------------------------------------
   ! Setup the required options for the KSP object
   ! ----------------------------------------------
@@ -79,7 +87,7 @@ subroutine FormJacobian()
   call EChk(ierr,__FILE__,__LINE__)  
   call PCFactorSetMatOrderingtype(local_pc, local_pc_ordering, ierr )
   call EChk(ierr,__FILE__,__LINE__) 
-  call KSPSetType(local_ksp, KSPPREONLY, ierr)
+  call KSPSetType(local_ksp, 'preonly', ierr)
   call EChk(ierr,__FILE__,__LINE__)  
 #endif
-end subroutine FormJacobian
+end subroutine SetupNKKSP
