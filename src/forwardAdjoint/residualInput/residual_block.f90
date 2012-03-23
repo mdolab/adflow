@@ -110,7 +110,7 @@ subroutine residual_block
 
   ! Compute the viscous flux in case of a viscous computation.
 
-  !if( viscous ) call viscousFlux
+  if( viscous ) call viscousFlux
 
   ! add the dissipative and possibly viscous fluxes to the
   ! Euler fluxes. Loop over the owned cells and add fw to dw.

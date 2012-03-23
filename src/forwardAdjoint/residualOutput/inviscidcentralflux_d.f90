@@ -3,7 +3,7 @@
    !
    !  Differentiation of inviscidcentralflux in forward (tangent) mode:
    !   variations   of useful results: *dw
-   !   with respect to varying inputs: *p *w *vol *si *sj *sk
+   !   with respect to varying inputs: *p *dw *w *vol *si *sj *sk
    !   Plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
    !                dw:in w:in vol:in si:in sj:in sk:in
    !
@@ -45,7 +45,6 @@
    REAL(kind=realtype) :: wx, wy, wz, rvol
    REAL(kind=realtype) :: rvold
    sface = zero
-   dwd = 0.0
    !
    !      ******************************************************************
    !      *                                                                *

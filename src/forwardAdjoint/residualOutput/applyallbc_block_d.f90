@@ -3,8 +3,7 @@
    !
    !  Differentiation of applyallbc_block in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w *rlv
-   !   with respect to varying inputs: *p *s *w *rlv *x *si *sj *sk
-   !                *(*bcdata.norm) *(*bcdata.rface)
+   !   with respect to varying inputs: *p *w *rlv *x *si *sj *sk *(*bcdata.norm)
    !   Plus diff mem management of: winf:in rev:in p:in s:in gamma:in
    !                w:in rlv:in x:in si:in sj:in sk:in bcdata:in *bcdata.norm:in
    !                *bcdata.rface:in *bcdata.uslip:in *bcdata.tns_wall:in
