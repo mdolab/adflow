@@ -182,7 +182,7 @@ class SUMB(AeroSolver):
             'localPreconditioner' : [str,'ILU'],
             'ILUFill': [int,2],
             'ASMOverlap' : [int,5],
-            'subKSPSubspaceSize':[int,10],
+            'subKSPSubspaceSize':[int,20],
             'finiteDifferencePC':[bool,True],
             'useReverseModeAD':[bool,True],
             'lowMemory':[bool,True],
@@ -684,7 +684,6 @@ class SUMB(AeroSolver):
         self.setMachNumber(aero_problem)
         self.setRefState(aero_problem)
         self.setPeriodicParams(aero_problem)
-
         self.sumb.dummyreadparamfile()
 
         #This is just to flip the -1 to 1 possibly a memory issue?
@@ -708,6 +707,9 @@ class SUMB(AeroSolver):
 
         if(self.myid==0):
             print ' -> Initializing flow'
+
+        # Must set inflow angle first
+        self.setInflowAngle(aero_problem)
         self.sumb.initflow()
 
         # Create dictionary of variables we are monitoring
@@ -1037,6 +1039,8 @@ class SUMB(AeroSolver):
         self.solve_failed = False
         self.fatalFail = False
 
+
+
         self._updatePeriodInfo()
         self._updateGeometryInfo()
         self._updateVelocityInfo()
@@ -1055,7 +1059,9 @@ class SUMB(AeroSolver):
             if self.myid==0: print 'Warped Mesh written...exiting.'
             sys.exit(0)
         # end if
+        
 
+            
         # Check to see if the above update routines failed.
         self.sumb.killsignals.routinefailed = \
             self.comm.allreduce(
