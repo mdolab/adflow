@@ -85,7 +85,6 @@ subroutine NKsolver
            ! We need to call convergence Info since this has the
            ! "approximate" convergence check
            call convergenceInfo
-
            exit NonLinearLoop
         else
            call convergenceInfo

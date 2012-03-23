@@ -57,7 +57,7 @@ module NKsolverVars
   !             jacobi sub blocks
   ! local_pc:   THe pc object associated with the above ksp object
 
-  KSP                global_ksp,local_ksp, fucked_ksp
+  KSP                global_ksp,local_ksp
   PC                 global_pc ,local_pc
 
   ! PETSc Misc:

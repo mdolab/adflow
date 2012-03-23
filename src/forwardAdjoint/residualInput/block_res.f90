@@ -71,9 +71,9 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
         enddo
      endif
 
-     call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
-     call normalVelocities_block(sps) ! Required for TS
-     call slipVelocitiesFineLevel(.false., t, mm) !required for wall Functions
+     !call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
+     !call normalVelocities_block(sps) ! Required for TS
+     !call slipVelocitiesFineLevel(.false., t, mm) !required for wall Functions
   end if
 
   ! ------------------------------------------------
@@ -96,13 +96,13 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
 
   ! Compute Laminar/eddy viscosity if required
   call computeLamViscosity
-  call computeEddyViscosity
+  !call computeEddyViscosity # Required for turblence models
 
   !  Apply all BC's
   call applyAllBC_block(.True.)
   
   ! Compute skin_friction Velocity
-  !call computeUtau_block
+  !call computeUtau_block ! Required for turblence
   
   ! Compute time step and spectral radius
   call timeStep_block(.false.)
