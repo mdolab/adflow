@@ -177,7 +177,7 @@
 
              if (.not. unique_face_info(level,sps)%wallAssociated) then
                 ! Run association if required
-                call determineDistancQuickly2(level, sps)   
+                call determineDistance2(level, sps)   
                 unique_face_info(level,sps)%wallAssociated = .True. 
              else
                 ! Otherwise do fast calculation
