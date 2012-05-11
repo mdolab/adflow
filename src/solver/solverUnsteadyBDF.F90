@@ -161,7 +161,7 @@
 
        timeStepUnsteady = timeStepUnsteady + 1
        timeUnsteady     = timeUnsteady     + deltaT
-
+       print *,'timeUnsteady:',timeUnsteady
        ! Write the unsteady header. Only done by processor 0
        ! to avoid a messy output.
 
@@ -447,3 +447,116 @@
        endif
 
        end subroutine checkWriteUnsteadyEndLoop
+
+
+       subroutine initTimeStepPart1_md(callback)
+!
+!      ******************************************************************
+!      *                                                                *
+!      * initTimeStepPart1 performs the first part of the               *
+!      * initialization tasks before the actual computation of an       *
+!      * unsteady time step is performed. It is split into two parts,   *
+!      * such that some additional data can be set in multidisciplinary *
+!      * mode, i.e. this routine may be used in python mode, although   *
+!      * it is certainly possible to do this task via a python script.  *
+!      *                                                                *
+!      ******************************************************************
+!
+       use communication
+       use inputMotion
+       use inputUnsteady
+       use iteration
+       use monitor
+       use section
+       implicit none
+!
+!      Local variables.
+!
+       integer(kind=intType) :: nn
+       external callback
+       real(kind=realType), dimension(nSections) :: tNewSec, deltaTSec
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Begin execution                                                *
+!      *                                                                *
+!      ******************************************************************
+!
+       ! Increment timeStepUnsteady and update
+       ! timeUnsteady with the current time step.
+
+       timeStepUnsteady = timeStepUnsteady + 1
+       timeUnsteady     = timeUnsteady     + deltaT
+       print *,'timeUnsteady:',timeUnsteady
+       ! Write the unsteady header. Only done by processor 0
+       ! to avoid a messy output.
+
+       if(myID == 0) call unsteadyHeader
+
+       ! If the grid is changing a whole lot of geometric
+       ! info must be adapted.
+
+       testChanging: if(changing_Grid .or. gridMotionSpecified) then
+
+         ! Set the new time for all sections; also store their
+         ! time step. They are the same for all sections, but all
+         ! of them should be updated because of consistency.
+
+         do nn=1,nSections
+           tNewSec(nn)   = timeUnsteady + timeUnsteadyRestart
+           deltaTSec(nn) = deltaT
+         enddo
+
+         ! Shift the coordinates and volumes and advance the
+         ! coordinates 1 time step for deforming meshes.
+         ! The shift only takes place for deforming meshes.
+
+
+         if( deforming_Grid )  then
+            call shiftCoorAndVolumes
+         end if
+
+         call callback(timeUnsteady)
+         
+
+         call updateCoorFineMesh(deltaTSec, 1_intType)
+
+         ! Adapt the geometric info on all grid levels needed for the
+         ! current ground level and multigrid cycle.
+         ! The wall distance only needs to be recomputed when the
+         ! grid is changing; not when a rigid body motion is
+         ! specified. Furthermore, the user can choose not to update
+         ! the wall distance, because he may know a priori that the
+         ! changes in geometry happen quite far away from the boundary
+         ! layer. This is accomplished via updateWallDistanceUnsteady.
+         ! Also note changingOverset can be true only when the grid
+         ! is changing.
+
+         call updateCoordinatesAllLevels
+         if(changing_Grid .and. updateWallDistanceUnsteady) &
+           call updateWallDistanceAllLevels
+
+         if(changingOverset) call updateOversetAllLevels
+         call updateSlidingAllLevels
+         call updateMetricsAllLevels
+
+         ! Update the rotation matrices of the faces. Only needed
+         ! on the finest grid level.
+
+         call faceRotationMatrices(currentLevel, .false.)
+
+         ! Determine the velocities of the cell centers and faces
+         ! for the current ground level. Note that the spectral mode
+         ! is always 1 for unsteady mode.
+
+         call gridVelocitiesFineLevel(deforming_Grid, tNewSec, 1_intType)
+
+         ! Determine the new slip velocities on the viscous walls.
+
+         call slipVelocitiesFineLevel(deforming_Grid, tNewSec, 1_intType)
+
+       endif testChanging
+     
+
+
+       end subroutine initTimeStepPart1_md

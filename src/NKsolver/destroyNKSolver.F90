@@ -24,6 +24,9 @@ subroutine destroyNKsolver
      call VecDestroy(deltaW,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
+     call VecDestroy(scaleVec,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
      call VecDestroy(g,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 

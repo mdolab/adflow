@@ -31,6 +31,7 @@
        !                        quads.
        ! coorVisc(3,nNodeVisc): The coordinates of the local nodes.
 
+
        integer(kind=adtIntType) :: nquadVisc, nNodeVisc
        integer(kind=adtIntType) :: nquadViscGlob
 
@@ -46,5 +47,20 @@
 
        real(kind=realType), dimension(:,:,:), allocatable :: &
                                                     rotMatrixSections
+
+
+       type faceList
+          
+          ! n_unique_face        : The number of unique faces this processor
+          !                        requries
+          ! unique_elem_id       : The list of unique faces this processor 
+          !                        requires
+
+          integer(kind=intType) :: n
+          integer(kind=intType), dimension(:), allocatable :: id
+          logical               :: wallAssociated
+       end type faceList
+
+       type(faceList), allocatable, dimension(:,:) :: unique_face_info
 
        end module viscSurface

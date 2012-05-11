@@ -14,7 +14,7 @@ subroutine setupNKsolver
   use ADjointVars , only: nCellsLocal
   use NKSolverVars, only: dRdw,dRdwPre,dRdwPseudo, ctx, wVec,rVec,deltaW,&
        NKsolvecount,nksolversetup,ksp_subspace,ksp_solver_type,global_ksp, &
-       work, g, w_like1, w_like2
+       work, g, w_like1, w_like2, scaleVec
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -49,6 +49,9 @@ subroutine setupNKsolver
      call EChk(ierr,__FILE__,__LINE__)
      
      call VecDuplicate(wVec,work,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call VecDuplicate(wVec,scaleVec,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Create two empty w-like vectors
@@ -122,6 +125,7 @@ subroutine setupNKsolver
         turbCoupled = .True.
         turbSegregated = .False.
      end if
+     !print *,'Solver setup'
   end if
 #endif
 end subroutine setupNKsolver

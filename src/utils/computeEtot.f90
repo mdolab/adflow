@@ -67,7 +67,6 @@
                                 + half*w(i,j,k,irho)*(w(i,j,k,ivx)**2 &
                                 +                     w(i,j,k,ivy)**2 &
                                 +                     w(i,j,k,ivz)**2)
-                 !write(14,40),i,j,k,w(i,j,k,irhoe)
                enddo
              enddo
            enddo
@@ -84,7 +83,6 @@
                  do i=iStart,iEnd
                    w(i,j,k,irhoE) = w(i,j,k,irhoE) &
                                   - factK*w(i,j,k,irho)*w(i,j,k,itu1)
-                   !write(14,*),i,j,k,w(i,j,k,irhoE)
                  enddo
                enddo
              enddo

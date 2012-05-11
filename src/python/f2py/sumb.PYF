@@ -1,9 +1,8 @@
 !    -*- f90 -*-
 python module solverunsteadymd__user__routines 
     interface solverunsteadymd_user_interface 
-        subroutine mdcallback_python(timeunsteady,firstiter) ! in :test:solverUnsteadyMD.F90:solverunsteadymd:unknown_interface
-            real*8 :: timeunsteady
-            logical :: firstiter
+        subroutine mdcallback_python(t) ! in :test:solverUnsteadyMD.F90:solverunsteadymd:unknown_interface
+            real*8 :: t
         end subroutine mdcallback_python
     end interface solverunsteadymd_user_interface
 end python module solverunsteadymd__user__routines
@@ -161,6 +160,16 @@ python module sumb ! in
          real(kind=realtype) dimension(ndof),intent(in) :: grid
          integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
        end subroutine setgrid
+
+       subroutine setgridsimple(grid,ndof) ! in :test:setGrid.f90
+         real(kind=realtype) dimension(ndof),intent(in) :: grid
+         integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
+       end subroutine setgridsimple
+
+       subroutine getgrid(grid,ndof) ! in :test:setGrid.f90
+            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: grid
+            integer(kind=inttype) intent(in) :: ndof
+        end subroutine getgrid
        
        subroutine getforces(forces,pts,npts,nts) ! in :sumb:../../warping/getForces.f90
          real(kind=realtype) dimension(3,npts,nts),intent(out),depend(npts,nts) :: forces
@@ -553,6 +562,8 @@ python module sumb ! in
          logical :: radiineededcoarse
          logical :: lumpeddiss
          real(kind=realtype) :: sigma
+         logical :: useapproxwalldistance
+         logical :: updatewallassociation
        end module inputdiscretization
 
        module inputio ! in :sumb:../../modules/inputParam.f90
