@@ -89,12 +89,6 @@
     !  velyGrid = aInf*MachGrid(2)
     !  velzGrid = aInf*MachGrid(3)
 
-       !print *,'machgrid',machgrid
-       !stop
-       !velxGrid = zero
-       !velyGrid = zero
-       !velzGrid = zero
-
        aInf = sqrt(gammaInf*pInf/rhoInf)
        velxGrid0 = (aInf*machgrid)*(-velDirFreestream(1))
        velyGrid0 = (aInf*machgrid)*(-velDirFreestream(2))
@@ -106,10 +100,10 @@
        ! the grid is only specified if there is only 1 section present.
 
        call derivativeRotMatrixRigid(derivRotationMatrix, rotationPoint, t(1))
-       !print *,'rotation Matrix'!,derivRotationMatrix, rotationPoint,'t', t(1)
        
        !compute the rotation matrix to update the velocities for the time
        !spectral stability derivative case...
+       
        if(TSStability)then
           ! Determine the time values of the old and new time level.
           ! It is assumed that the rigid body rotation of the mesh is only
@@ -153,7 +147,6 @@
              velxGrid0 = (aInf*machgrid)*(-velDir(1))
              velyGrid0 = (aInf*machgrid)*(-velDir(2))
              velzGrid0 = (aInf*machgrid)*(-velDir(3))
-            ! if (myid ==0) print *,'base velocity',machgrid, velxGrid0 , velyGrid0 , velzGrid0 
 
           elseif(tsBetaMode)then
              ! get the baseline alpha and determine the liftIndex
@@ -199,7 +192,6 @@
          ! Check for a moving block.
 
          testMoving: if( blockIsMoving ) then
-           ! print *,'block is moving',blockIsMoving,useOldCoor 
            ! Determine the situation we are having here.
 
            testUseOldCoor: if( useOldCoor ) then
@@ -422,12 +414,9 @@
              j = nbkGlobal
 
              rotCenter = cgnsDoms(j)%rotCenter
-             !if (myid==0)print *,'rotcenter',rotCenter,'rotpoint',rotpoint
-             !offSetVector= (rotCenter-pointRef)
              offSetVector= (rotCenter-rotPoint)
-             !if (myid==0)print *,'offset vector',offSetVector, rotCenter,pointRef
              rotRate   = timeRef*cgnsDoms(j)%rotRate
-             !if (myid==0) print *,'rotrate, gridvelocity',rotRate,cgnsDoms(j)%rotRate
+
 
              if (useWindAxis)then
                 !determine the current angles from the free stream velocity
@@ -470,9 +459,6 @@
                    end do
                 end do
              end if
-            ! if (nn==1) then
-            !    print *,'rotRate',rotRate/timeref,'timeref',timeref
-            ! endif
 
 
 !!$             if (useWindAxis)then
@@ -504,7 +490,7 @@
 !             velxGrid =velxgrid0+ 1*(rotRate(2)*rotCenter(3) - rotRate(3)*rotCenter(2))
 !             velyGrid =velygrid0+ 1*(rotRate(3)*rotCenter(1) - rotRate(1)*rotCenter(3))
 !             velzGrid =velzgrid0+ 1*(rotRate(1)*rotCenter(2) - rotRate(2)*rotCenter(1))
-             !if (myid==0) print *,'velocity update',offSetVector,rotPoint,'matrix',derivRotationMatrix
+
              velxGrid =velxgrid0+ 1*(rotRate(2)*offSetVector(3) &
                                   - rotRate(3)*offSetVector(2)) &
                               + derivRotationMatrix(1,1)*offSetVector(1) &
@@ -522,7 +508,6 @@
                               + derivRotationMatrix(3,3)*offSetVector(3)
 
            !add in rotmatrix*rotpoint....
-             !print *,'velgrid',velxGrid,velyGrid , velzGrid
 
 !
 !            ************************************************************
@@ -560,7 +545,7 @@
                    xxc(1) = xc(1) - rotCenter(1)
                    xxc(2) = xc(2) - rotCenter(2)
                    xxc(3) = xc(3) - rotCenter(3)
-                   !print *,'xxc1',- rotRate(3)+ derivRotationMatrix(1,2),xxc
+
                    ! Determine the rotation speed of the cell center,
                    ! which is omega*r.
 
@@ -568,18 +553,17 @@
                    sc(2) = rotRate(3)*xxc(1) - rotRate(1)*xxc(3)
                    sc(3) = rotRate(1)*xxc(2) - rotRate(2)*xxc(1)
                  
-!                   print *,'sc(1)',rotRate(2),xxc(3), -rotRate(3),xxc(2)
                    ! Determine the coordinates relative to the
                    ! rigid body rotation point.
 
                    xxc(1) = xc(1) - rotationPoint(1)
                    xxc(2) = xc(2) - rotationPoint(2)
                    xxc(3) = xc(3) - rotationPoint(3)
-                   !print *,'xxc2',- rotRate(3)+ derivRotationMatrix(1,2),xxc
+
                    ! Determine the total velocity of the cell center.
                    ! This is a combination of rotation speed of this
                    ! block and the entire rigid body rotation.
-                   !print *,'velgridx',velxGrid,rotRate(2)*xxc(3)+derivRotationMatrix(1,3)*xxc(3),- rotRate(3)+ derivRotationMatrix(1,2),xxc(2) 
+                   
                    s(i,j,k,1) = sc(1) + velxGrid           &
                               + derivRotationMatrix(1,1)*xxc(1) &
                               + derivRotationMatrix(1,2)*xxc(2) &
@@ -592,12 +576,6 @@
                               + derivRotationMatrix(3,1)*xxc(1) &
                               + derivRotationMatrix(3,2)*xxc(2) &
                               + derivRotationMatrix(3,3)*xxc(3)
-                   !print *,'s1',i,j,k,s(i,j,k,1)!,sc(1), &
-!                        derivRotationMatrix(1,1)*xxc(1) &
-!                        + derivRotationMatrix(1,2)*xxc(2) &
-!                        + derivRotationMatrix(1,3)*xxc(3)
-!                   print *,'rm1',derivRotationMatrix(1,3),xxc(3),&
-!                        derivRotationMatrix(1,2),xxc(2)
                  enddo
                enddo
              enddo

@@ -48,7 +48,7 @@ module NKsolverVars
   ! deltaW: Update to the wVec from linear solution
   ! diagV: Diagonal lumping term
 
-  Vec wVec, rVec, deltaW, diagV, work, g
+  Vec wVec, rVec, deltaW, diagV, work, g, scaleVec
   Vec w_like1, w_like2
   ! PETSc KSP/PC 
   ! global_ksp: The ksp object for solving the newton udpate
@@ -75,6 +75,7 @@ module NKsolverVars
   logical :: NKFiniteDifferencePC
   logical :: RKreset
   integer(kind=intType) :: nRKreset
+  real(kind=realType) :: resSum(8)
   ! Non-linear Solver Tolerances
   real(kind=realType) :: snes_atol 
   real(kind=realType) :: snes_rtol
