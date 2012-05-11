@@ -320,20 +320,33 @@ subroutine setupPETScKsp
      call PCFactorSetLevels( subpc, fillLevel , PETScIerr)!
      call EChk(PETScIerr,__FILE__,__LINE__) 
 
-     !Set local contexts to preconditioner's only
-     call KSPSetType(subksp, KSPPREONLY, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     ! set tolerances on subksp (is this really needed???)
-     call KSPSetTolerances(subksp, 1.e-8, adjAbsTol, adjDivTol, &
-          adjMaxIter, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     if(setMonitor)then
-        !Set the convergence monitors
-        call KSPMonitorSet(subksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
-             PETSC_NULL_FUNCTION, PETScIerr)
+     select case (ADjointSolverType)
+     case(PETSCFGMRES)
+        
+        call KSPSetType(subksp, KSPGMRES, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
+        
+        call KSPGMRESSetRestart(subksp, subkspsubspacesize, PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+     
+        call KSPSetPCSide(ksp, PC_RIGHT, PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+
+        call KSPSetTolerances(subksp, adjRelTol, adjAbsTol, adjDivTol, &
+             subkspsubspacesize, PETScIerr)
+
+     case default ! All other solvers:
+        call KSPSetType(subksp, KSPPREONLY, PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+
+        ! set tolerances on subksp (is this really needed???)
+        call KSPSetTolerances(subksp, 1.e-8, adjAbsTol, adjDivTol, &
+             adjMaxIter, PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+        
+     end select
+     
+     if(setMonitor)then
         call KSPMonitorSet(ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
              PETSC_NULL_FUNCTION, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)

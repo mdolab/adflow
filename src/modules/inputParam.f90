@@ -1029,6 +1029,8 @@
        logical :: printTiming
        logical :: finitedifferencepc
        integer(kind=intType) :: subKSPSubspaceSize
+       integer(kind=intType) :: applyAdjointPCSubSpaceSize
+
      end module inputADjoint
 
      module inputTSStabDeriv
