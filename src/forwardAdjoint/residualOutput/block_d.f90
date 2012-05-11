@@ -122,6 +122,9 @@
    END TYPE BCDATATYPE
    TYPE BCDATATYPE_D
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rface
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslip
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: tns_wall
    END TYPE BCDATATYPE_D
    ! sendBuffer:      array to hold face data for MPI send
    ! recvBuffer:      array to receive face data for MPI recv

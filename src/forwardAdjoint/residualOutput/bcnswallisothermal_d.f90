@@ -5,7 +5,7 @@
    !   variations   of useful results: *p *gamma *w *rlv
    !   with respect to varying inputs: *p *gamma *w *rlv
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
-   !                bcdata:in *bcdata.uslip:in (global)cphint:in-out
+   !                bcdata:in (global)cphint:in-out
    !
    !      ******************************************************************
    !      *                                                                *

@@ -186,6 +186,12 @@
                                  procID, elementType, elementID,    &
                                  uvw,    dist2,       0_adtIntType, &
                                  dummy,  dummy)
+!        if (myid == 0) then
+!           print *,'procID = '
+!           print *,procID
+!           print *,'elemID:',elementID
+!        end if
+
 !
 !      ******************************************************************
 !      *                                                                *

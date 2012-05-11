@@ -3,11 +3,15 @@
    !
    !  Differentiation of residual_block in forward (tangent) mode:
    !   variations   of useful results: *dw *w
-   !   with respect to varying inputs: *p *w *si *sj *sk *radi *radj
-   !                *radk *cdisrk vis4 kappacoef vis2 vis2coarse sigma
-   !   Plus diff mem management of: p:in sfacei:in sfacej:in gamma:in
-   !                sfacek:in dw:in w:in si:in sj:in sk:in fw:in rotmatrixi:in
-   !                rotmatrixj:in rotmatrixk:in radi:in radj:in radk:in
+   !   with respect to varying inputs: *p *gamma *dw *w *rlv *x *vol
+   !                *si *sj *sk *(*bcdata.norm) *radi *radj *radk
+   !                *cdisrk vis4 kappacoef vis2 vis2coarse sigma
+   !   Plus diff mem management of: rev:in p:in sfacei:in sfacej:in
+   !                gamma:in sfacek:in dw:in w:in rlv:in x:in vol:in
+   !                d2wall:in si:in sj:in sk:in fw:in rotmatrixi:in
+   !                rotmatrixj:in rotmatrixk:in viscsubface:in *viscsubface.tau:in
+   !                *viscsubface.q:in *viscsubface.utau:in bcdata:in
+   !                *bcdata.norm:in radi:in radj:in radk:in massflowfamilyinv:in
    !                massflowfamilydiss:in
    !
    !      ******************************************************************
@@ -57,7 +61,7 @@
    ! This routine is only called on fine grid:
    discr = spacediscr
    finegrid = .true.
-   !call inviscidCentralFlux
+   CALL INVISCIDCENTRALFLUX_D()
    ! Compute the artificial dissipation fluxes.
    ! This depends on the parameter discr.
    SELECT CASE  (discr) 
@@ -65,44 +69,36 @@
    ! Standard scalar dissipation scheme.
    IF (finegrid) THEN
    CALL INVISCIDDISSFLUXSCALAR_D()
-   dwd = 0.0
    ELSE
    CALL INVISCIDDISSFLUXSCALARCOARSE_D()
-   dwd = 0.0
    END IF
    CASE (dissmatrix) 
    !===========================================================
    ! Matrix dissipation scheme.
    IF (finegrid) THEN
    CALL INVISCIDDISSFLUXMATRIX_D()
-   dwd = 0.0
    ELSE
    CALL INVISCIDDISSFLUXMATRIXCOARSE_D()
-   dwd = 0.0
    END IF
    CASE (disscusp) 
    !===========================================================
    ! Cusp dissipation scheme.
    IF (finegrid) THEN
    CALL INVISCIDDISSFLUXCUSP()
-   dwd = 0.0
    fwd = 0.0
    ELSE
    CALL INVISCIDDISSFLUXCUSPCOARSE()
-   dwd = 0.0
    fwd = 0.0
    END IF
    CASE (upwind) 
    !===========================================================
    ! Dissipation via an upwind scheme.
    CALL INVISCIDUPWINDFLUX_D(finegrid)
-   dwd = 0.0
    CASE DEFAULT
-   dwd = 0.0
    fwd = 0.0
    END SELECT
    ! Compute the viscous flux in case of a viscous computation.
-   !if( viscous ) call viscousFlux
+   IF (viscous) CALL VISCOUSFLUX_D()
    ! add the dissipative and possibly viscous fluxes to the
    ! Euler fluxes. Loop over the owned cells and add fw to dw.
    ! Also multiply by iblank so that no updates occur in holes

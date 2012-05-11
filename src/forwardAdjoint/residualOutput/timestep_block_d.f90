@@ -3,10 +3,10 @@
    !
    !  Differentiation of timestep_block in forward (tangent) mode:
    !   variations   of useful results: *radi *radj *radk
-   !   with respect to varying inputs: *p *w *si *sj *sk adis
-   !   Plus diff mem management of: p:in sfacei:in sfacej:in gamma:in
-   !                sfacek:in w:in vol:in si:in sj:in sk:in radi:in
-   !                radj:in radk:in
+   !   with respect to varying inputs: *p *gamma *w *si *sj *sk adis
+   !   Plus diff mem management of: rev:in p:in sfacei:in sfacej:in
+   !                gamma:in sfacek:in w:in rlv:in vol:in si:in sj:in
+   !                sk:in radi:in radj:in radk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -132,8 +132,9 @@
    uy = w(i, j, k, ivy)
    uzd = wd(i, j, k, ivz)
    uz = w(i, j, k, ivz)
-   cc2d = (gamma(i, j, k)*pd(i, j, k)*w(i, j, k, irho)-gamma(i&
-   &              , j, k)*p(i, j, k)*wd(i, j, k, irho))/w(i, j, k, irho)**2
+   cc2d = ((gammad(i, j, k)*p(i, j, k)+gamma(i, j, k)*pd(i, j, &
+   &              k))*w(i, j, k, irho)-gamma(i, j, k)*p(i, j, k)*wd(i, j, k&
+   &              , irho))/w(i, j, k, irho)**2
    cc2 = gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho)
    !cc2 = max(cc2,clim2)
    ! Set the dot product of the grid velocity and the

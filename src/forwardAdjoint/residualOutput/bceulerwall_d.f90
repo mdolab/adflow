@@ -3,11 +3,10 @@
    !
    !  Differentiation of bceulerwall in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w *rlv
-   !   with respect to varying inputs: gammaconstant *p *s *gamma
-   !                *w *rlv *si *sj *sk *(*bcdata.norm) *(*bcdata.rface)
-   !   Plus diff mem management of: rev:in p:in s:in gamma:in w:in
-   !                rlv:in si:in sj:in sk:in bcdata:in *bcdata.norm:in
-   !                *bcdata.rface:in (global)cphint:in-out
+   !   with respect to varying inputs: gammaconstant *p *gamma *w
+   !                *rlv *si *sj *sk *(*bcdata.norm)
+   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
+   !                si:in sj:in sk:in bcdata:in *bcdata.norm:in (global)cphint:in-out
    !
    !      ******************************************************************
    !      *                                                                *
@@ -70,9 +69,7 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: normd
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rface
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rfaced
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd
    REAL(kind=realtype) :: DIM
    REAL(kind=realtype) :: DIM_D
    INTRINSIC MAX
@@ -125,7 +122,6 @@
    ! velocity to make the code more readable.
    normd => bcdatad(nn)%norm
    norm => bcdata(nn)%norm
-   rfaced => bcdatad(nn)%rface
    rface => bcdata(nn)%rface
    ! Nullify the pointers and set them to the correct subface.
    ! They are nullified first, because some compilers require
@@ -247,7 +243,6 @@
    sskd => skd(2, :, :, :)
    ssk => sk(2, :, :, :)
    IF (addgridvelocities) THEN
-   ssd => sd(2, :, :, :)
    ss => s(2, :, :, :)
    END IF
    CASE (imax) 
@@ -259,7 +254,6 @@
    sskd => skd(il, :, :, :)
    ssk => sk(il, :, :, :)
    IF (addgridvelocities) THEN
-   ssd => sd(il, :, :, :)
    ss => s(il, :, :, :)
    END IF
    CASE (jmin) 
@@ -271,7 +265,6 @@
    sskd => skd(:, 2, :, :)
    ssk => sk(:, 2, :, :)
    IF (addgridvelocities) THEN
-   ssd => sd(:, 2, :, :)
    ss => s(:, 2, :, :)
    END IF
    CASE (jmax) 
@@ -283,7 +276,6 @@
    sskd => skd(:, jl, :, :)
    ssk => sk(:, jl, :, :)
    IF (addgridvelocities) THEN
-   ssd => sd(:, jl, :, :)
    ss => s(:, jl, :, :)
    END IF
    CASE (kmin) 
@@ -295,7 +287,6 @@
    sskd => sjd(:, :, 2, :)
    ssk => sj(:, :, 2, :)
    IF (addgridvelocities) THEN
-   ssd => sd(:, :, 2, :)
    ss => s(:, :, 2, :)
    END IF
    CASE (kmax) 
@@ -307,7 +298,6 @@
    sskd => sjd(:, :, kl, :)
    ssk => sj(:, :, kl, :)
    IF (addgridvelocities) THEN
-   ssd => sd(:, :, kl, :)
    ss => s(:, :, kl, :)
    END IF
    END SELECT
@@ -433,11 +423,8 @@
    uzd = ww2d(j, k, ivz)
    uz = ww2(j, k, ivz)
    IF (addgridvelocities) THEN
-   uxd = uxd - ssd(j, k, 1)
    ux = ux - ss(j, k, 1)
-   uyd = uyd - ssd(j, k, 2)
    uy = uy - ss(j, k, 2)
-   uzd = uzd - ssd(j, k, 3)
    uz = uz - ss(j, k, 3)
    END IF
    ! Compute the velocity components in j and
@@ -475,10 +462,10 @@
    pp1d(j, k) = DIM_D(pp2(j, k), pp2d(j, k), pp1(j, k), pp1d(j, k&
    &            ), tmpresult)
    pp1(j, k) = tmpresult
-   vnd = two*(rfaced(j, k)-ww2d(j, k, ivx)*norm(j, k, 1)-ww2(j, k&
-   &            , ivx)*normd(j, k, 1)-ww2d(j, k, ivy)*norm(j, k, 2)-ww2(j, k&
-   &            , ivy)*normd(j, k, 2)-ww2d(j, k, ivz)*norm(j, k, 3)-ww2(j, k&
-   &            , ivz)*normd(j, k, 3))
+   vnd = two*(-(ww2d(j, k, ivx)*norm(j, k, 1))-ww2(j, k, ivx)*&
+   &            normd(j, k, 1)-ww2d(j, k, ivy)*norm(j, k, 2)-ww2(j, k, ivy)*&
+   &            normd(j, k, 2)-ww2d(j, k, ivz)*norm(j, k, 3)-ww2(j, k, ivz)*&
+   &            normd(j, k, 3))
    vn = two*(rface(j, k)-ww2(j, k, ivx)*norm(j, k, 1)-ww2(j, k, &
    &            ivy)*norm(j, k, 2)-ww2(j, k, ivz)*norm(j, k, 3))
    ww1d(j, k, irho) = ww2d(j, k, irho)

@@ -419,5 +419,6 @@
        NKPCSetup     = .False.
        lumpedDiss    = .False.
        NKFiniteDifferencePC = .True.
-
+       useApproxWallDistance = .False.
+       updateWallAssociation = .False.
        end subroutine setDefaultValues

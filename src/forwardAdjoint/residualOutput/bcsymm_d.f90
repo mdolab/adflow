@@ -148,7 +148,6 @@
    ! Determine the flow variables in the halo cell.
    ww1d(i, j, irho) = ww2d(i, j, irho)
    ww1(i, j, irho) = ww2(i, j, irho)
-   !write(14, *),i,j,kk,irho,ww2(i,j,irho)
    ww1d(i, j, ivx) = ww2d(i, j, ivx) - vnd*nnx - vn*nnxd
    ww1(i, j, ivx) = ww2(i, j, ivx) - vn*nnx
    ww1d(i, j, ivy) = ww2d(i, j, ivy) - vnd*nny - vn*nnyd
@@ -164,7 +163,6 @@
    END DO
    ! Set the pressure and gamma and possibly the
    ! laminar and eddy viscosity in the halo.
-   gamma1d(i, j) = 0.0
    gamma1(i, j) = gamma2(i, j)
    pp1d(i, j) = pp2d(i, j)
    pp1(i, j) = pp2(i, j)
