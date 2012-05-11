@@ -3,10 +3,10 @@
    !
    !  Differentiation of inviscidupwindflux in forward (tangent) mode:
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: gammaconstant *p *w *si *sj
-   !                *sk
-   !   Plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
-   !                rotmatrixi:in rotmatrixj:in rotmatrixk:in
+   !   with respect to varying inputs: gammaconstant *p *gamma *w
+   !                *si *sj *sk
+   !   Plus diff mem management of: p:in gamma:in w:in si:in sj:in
+   !                sk:in fw:in rotmatrixi:in rotmatrixj:in rotmatrixk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -53,7 +53,7 @@
    INTEGER(kind=inttype) :: i, j, k, ind
    INTEGER(kind=inttype) :: limused, riemannused
    REAL(kind=realtype) :: sx, sy, sz, omk, opk, sfil, gammaface
-   REAL(kind=realtype) :: sxd, syd, szd
+   REAL(kind=realtype) :: sxd, syd, szd, gammafaced
    REAL(kind=realtype) :: factminmod, sface
    REAL(kind=realtype), DIMENSION(nw) :: left, right
    REAL(kind=realtype), DIMENSION(nw) :: leftd, rightd
@@ -223,6 +223,7 @@
    END IF
    ! Compute the value of gamma on the face. Take an
    ! arithmetic average of the two states.
+   gammafaced = half*(gammad(i, j, k)+gammad(i+1, j, k))
    gammaface = half*(gamma(i, j, k)+gamma(i+1, j, k))
    ! Compute the dissipative flux across the interface.
    CALL RIEMANNFLUX_D(left, leftd, right, rightd, flux, fluxd)
@@ -301,6 +302,7 @@
    END IF
    ! Compute the value of gamma on the face. Take an
    ! arithmetic average of the two states.
+   gammafaced = half*(gammad(i, j, k)+gammad(i, j+1, k))
    gammaface = half*(gamma(i, j, k)+gamma(i, j+1, k))
    ! Compute the dissipative flux across the interface.
    CALL RIEMANNFLUX_D(left, leftd, right, rightd, flux, fluxd)
@@ -379,6 +381,7 @@
    END IF
    ! Compute the value of gamma on the face. Take an
    ! arithmetic average of the two states.
+   gammafaced = half*(gammad(i, j, k)+gammad(i, j, k+1))
    gammaface = half*(gamma(i, j, k)+gamma(i, j, k+1))
    ! Compute the dissipative flux across the interface.
    CALL RIEMANNFLUX_D(left, leftd, right, rightd, flux, fluxd)
@@ -523,6 +526,7 @@
    IF (addgridvelocities) sface = sfacei(i, j, k)
    ! Compute the value of gamma on the face. Take an
    ! arithmetic average of the two states.
+   gammafaced = half*(gammad(i, j, k)+gammad(i+1, j, k))
    gammaface = half*(gamma(i, j, k)+gamma(i+1, j, k))
    ! Compute the dissipative flux across the interface.
    CALL RIEMANNFLUX_D(left, leftd, right, rightd, flux, fluxd)
@@ -645,6 +649,7 @@
    IF (addgridvelocities) sface = sfacej(i, j, k)
    ! Compute the value of gamma on the face. Take an
    ! arithmetic average of the two states.
+   gammafaced = half*(gammad(i, j, k)+gammad(i, j+1, k))
    gammaface = half*(gamma(i, j, k)+gamma(i, j+1, k))
    ! Compute the dissipative flux across the interface.
    CALL RIEMANNFLUX_D(left, leftd, right, rightd, flux, fluxd)
@@ -767,6 +772,7 @@
    IF (addgridvelocities) sface = sfacek(i, j, k)
    ! Compute the value of gamma on the face. Take an
    ! arithmetic average of the two states.
+   gammafaced = half*(gammad(i, j, k)+gammad(i, j, k+1))
    gammaface = half*(gamma(i, j, k)+gamma(i, j, k+1))
    ! Compute the dissipative flux across the interface.
    CALL RIEMANNFLUX_D(left, leftd, right, rightd, flux, fluxd)
@@ -1497,7 +1503,8 @@
    END SUBROUTINE LEFTRIGHTSTATE
    !  Differentiation of riemannflux in forward (tangent) mode:
    !   variations   of useful results: flux
-   !   with respect to varying inputs: sx sy sz flux left right
+   !   with respect to varying inputs: gammaface sx sy sz flux left
+   !                right
    !        ================================================================
    SUBROUTINE RIEMANNFLUX_D(left, leftd, right, rightd, flux, fluxd)
    IMPLICIT NONE
@@ -1524,6 +1531,7 @@
    REAL(kind=realtype) :: ovaavg, ova2avg, area, eta
    REAL(kind=realtype) :: ovaavgd, ova2avgd, aread, etad
    REAL(kind=realtype) :: gm1, gm53
+   REAL(kind=realtype) :: gm1d, gm53d
    REAL(kind=realtype) :: lam1, lam2, lam3
    REAL(kind=realtype) :: lam1d, lam2d, lam3d
    REAL(kind=realtype) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
@@ -1566,7 +1574,9 @@
    porflux = half*rfil
    IF (por .EQ. noflux .OR. por .EQ. boundflux) porflux = zero
    ! Abbreviate some expressions in which gamma occurs.
+   gm1d = gammafaced
    gm1 = gammaface - one
+   gm53d = gammafaced
    gm53 = gammaface - five*third
    ! Determine which riemann solver must be solved.
    SELECT CASE  (riemannused) 
@@ -1718,10 +1728,12 @@
    alphaavgd = half*(2*uavg*uavgd+2*vavg*vavgd+2*wavg*wavgd)
    alphaavg = half*(uavg**2+vavg**2+wavg**2)
    IF (gm1*(havg-alphaavg) - gm53*kavg .GE. 0.) THEN
-   a2avgd = gm1*(havgd-alphaavgd) - gm53*kavgd
+   a2avgd = gm1d*(havg-alphaavg) + gm1*(havgd-alphaavgd) - gm53d*&
+   &            kavg - gm53*kavgd
    a2avg = gm1*(havg-alphaavg) - gm53*kavg
    ELSE
-   a2avgd = -(gm1*(havgd-alphaavgd)-gm53*kavgd)
+   a2avgd = -(gm1d*(havg-alphaavg)+gm1*(havgd-alphaavgd)-gm53d*&
+   &            kavg-gm53*kavgd)
    a2avg = -(gm1*(havg-alphaavg)-gm53*kavg)
    END IF
    IF (a2avg .EQ. 0.0) THEN
@@ -1755,8 +1767,8 @@
    abs0d = -x1d
    abs0 = -x1
    END IF
-   arg1d = (gammaface*leftd(irhoe)*left(irho)-gammaface*left(irhoe)&
-   &          *leftd(irho))/left(irho)**2
+   arg1d = ((gammafaced*left(irhoe)+gammaface*leftd(irhoe))*left(&
+   &          irho)-gammaface*left(irhoe)*leftd(irho))/left(irho)**2
    arg1 = gammaface*left(irhoe)/left(irho)
    IF (arg1 .EQ. 0.0) THEN
    result1d = 0.0
@@ -1764,8 +1776,8 @@
    result1d = arg1d/(2.0*SQRT(arg1))
    END IF
    result1 = SQRT(arg1)
-   arg2d = (gammaface*rightd(irhoe)*right(irho)-gammaface*right(&
-   &          irhoe)*rightd(irho))/right(irho)**2
+   arg2d = ((gammafaced*right(irhoe)+gammaface*rightd(irhoe))*right&
+   &          (irho)-gammaface*right(irhoe)*rightd(irho))/right(irho)**2
    arg2 = gammaface*right(irhoe)/right(irho)
    IF (arg2 .EQ. 0.0) THEN
    result2d = 0.0
@@ -1848,8 +1860,9 @@
    abv2 = half*(lam1-lam2)
    abv3d = abv1d - lam3d
    abv3 = abv1 - lam3
-   abv4d = gm1*(alphaavgd*dr+alphaavg*drd-uavgd*dru-uavg*drud-vavgd&
-   &          *drv-vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53*drkd
+   abv4d = gm1d*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) + gm1*&
+   &          (alphaavgd*dr+alphaavg*drd-uavgd*dru-uavg*drud-vavgd*drv-vavg*&
+   &          drvd-wavgd*drw-wavg*drwd+dred) - gm53d*drk - gm53*drkd
    abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - gm53*&
    &          drk
    abv5d = sxd*dru + sx*drud + syd*drv + sy*drvd + szd*drw + sz*&

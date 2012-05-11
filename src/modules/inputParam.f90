@@ -124,8 +124,22 @@
        ! radiiNeededCoarse: Idem for the coarse grid.
        ! lumpedDiss :       logical factor for determining whether or not
        !                    lumped dissipation is used for preconditioner
-       ! sigma    : Scaling parameter for dissipation lumping in approximate
-       !            precondtioner
+       ! sigma      :       Scaling parameter for dissipation lumping in
+       !                    approximateprecondtioner
+       ! useApproxWallDistance : logical to determine if the user wants to 
+       !                         use the fast approximate wall distance
+       !                         computations. Typically only used for 
+       !                         repeated calls when the wall distance would
+       !                         not have changed significantly
+       ! updateWallAssociation : Logical to determine if the full wall distance
+       !                         assocation is to be performed on the next
+       !                         wall distance calculation. This is only
+       !                         significant when useApproxWallDistance is 
+       !                         set to True. This allows the user to 
+       !                         reassociate the face a cell is associated
+       !                         with. 
+       !                      
+
 
        integer(kind=intType) :: spaceDiscr, spaceDiscrCoarse
        integer(kind=intType) :: orderTurb, limiter
@@ -143,6 +157,9 @@
 
        logical :: lumpedDiss
        real(kind=realType) :: sigma
+
+       logical :: useApproxWallDistance
+       logical :: updateWallAssociation
 
        end module inputDiscretization
 

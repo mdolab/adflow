@@ -20,7 +20,7 @@ subroutine NKsolver
        ksp_rtol, ksp_atol, func_evals, ksp_max_it, ksp_subspace, ksp_div_tol, &
        nksolvecount, Mmax, iter_k, iter_m, NKLS, &
        nolinesearch, cubiclinesearch, nonmonotonelinesearch, rhores0, &
-       NK_switch_tol, rhoresstart, work, g
+       NK_switch_tol, rhoresstart, work, g, scaleVec
 
   use InputIO ! L2conv,l2convrel
   use inputIteration
@@ -50,6 +50,8 @@ subroutine NKsolver
   if (maxNonLinearIts < 1) then
      return
   end if
+
+  call calcScaling(scaleVec)
 
   Mmax = 10
   iter_k = 1
@@ -85,7 +87,6 @@ subroutine NKsolver
            ! We need to call convergence Info since this has the
            ! "approximate" convergence check
            call convergenceInfo
-
            exit NonLinearLoop
         else
            call convergenceInfo
@@ -104,10 +105,11 @@ subroutine NKsolver
      ! the number of time the solver was called. So on first
      ! iteration, we check the variable NKsolveCount. If THIS is a
      ! multiple of jacobian lag, we then reform the preconditioner. 
-
+     !print *,'doing jac'
      if (mod(iter-1,jacobian_lag) == 0) then
         if (iter == 1) then ! Special case check:
            if (mod(NKsolveCount,jacobian_lag) == 0) then
+              call calcScaling(scaleVec)
               call FormJacobian()
            else
               call MatAssemblyBegin(dRdw,MAT_FINAL_ASSEMBLY,ierr)
@@ -116,6 +118,7 @@ subroutine NKsolver
               call EChk(ierr,__FILE__,__LINE__)
            end if
         else
+           call calcScaling(scaleVec)
            call FormJacobian()
         end if
      else
@@ -125,7 +128,7 @@ subroutine NKsolver
         call MatAssemblyEnd(dRdw,MAT_FINAL_ASSEMBLY,ierr)
         call EChk(ierr,__FILE__,__LINE__)
      end if
-     
+     !print *,'Done jac'
      ! Set the BaseVector of the matrix-free matrix:
      call MatMFFDSetBase(dRdW,wVec,PETSC_NULL_OBJECT,ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -165,7 +168,7 @@ subroutine NKsolver
      call KSPSetTolerances(global_ksp,ksp_rtol,ksp_atol,ksp_div_tol,&
           ksp_max_it,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-
+     !print *,'Calling solve'
      ! Actually do the Linear Krylov Solve
      call KSPSolve(global_ksp,rVec,deltaW,ierr)
      ! DON'T just check the error. We want to catch error code 72
@@ -183,7 +186,7 @@ subroutine NKsolver
      end if
      ! Linesearching:
      NKLS = nonMonotoneLineSearch
-
+     !NKLS = cubicLineSearch
      if (iter <= 1 ) then
         call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
      else

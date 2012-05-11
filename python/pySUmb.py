@@ -726,7 +726,10 @@ class SUMB(AeroSolver):
 
         if(self.myid==0):
             print ' -> Initializing flow'
+
+        # Initialize Flow and set inflow angle
         self.sumb.initflow()
+        self.setInflowAngle(aero_problem)
 
         # Create dictionary of variables we are monitoring
         nmon = self.sumb.monitor.nmon
@@ -762,15 +765,15 @@ class SUMB(AeroSolver):
         self.sumb.inputphysics.liftdirection = liftDir
         self.sumb.inputphysics.dragdirection = dragDir
 
-        if self.sumb.inputiteration.printiterations:
-            if self.myid == 0:
-                print '-> Alpha...',
-                print aero_problem._flows.alpha*(numpy.pi/180.0),
-                print aero_problem._flows.alpha
+        if self.sumb.inputiteration.printiterations and self.myid == 0:
+            print '-> Alpha...',
+            print aero_problem._flows.alpha*(pi/180.0),
+            print aero_problem._flows.alpha
 
         #update the flow vars
         self.sumb.updateflow()
         self._update_vel_info = True
+
         return
 
     def setElasticCenter(self, aero_problem):
@@ -1051,7 +1054,8 @@ class SUMB(AeroSolver):
         self.solve_failed =  self.fatalFail = False
 
         self._updatePeriodInfo()
-        self._updateGeometryInfo()
+        if self.getOption('equationMode') == 'Steady':
+            self._updateGeometryInfo()
         self._updateVelocityInfo()
 
         # Check to see if the above update routines failed.

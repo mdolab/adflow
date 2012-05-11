@@ -21,7 +21,8 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
   use inputTimeSpectral
   use section
   use monitor
-
+  use iteration
+  use NKSolverVars, only : resSUm
   implicit none
 
   ! Input Arguments:
@@ -71,9 +72,9 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
         enddo
      endif
 
-     call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
-     call normalVelocities_block(sps) ! Required for TS
-     call slipVelocitiesFineLevel(.false., t, mm) !required for wall Functions
+     !call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
+     !call normalVelocities_block(sps) ! Required for TS
+     !call slipVelocitiesFineLevel(.false., t, mm) !required for wall Functions
   end if
 
   ! ------------------------------------------------
@@ -96,22 +97,22 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
 
   ! Compute Laminar/eddy viscosity if required
   call computeLamViscosity
-  call computeEddyViscosity
+  !call computeEddyViscosity # Required for turblence models
 
   !  Apply all BC's
   call applyAllBC_block(.True.)
   
   ! Compute skin_friction Velocity
-  !call computeUtau_block
+  !call computeUtau_block ! Required for turblence
   
   ! Compute time step and spectral radius
   call timeStep_block(.false.)
   
-! !   if( equations == RANSEquations ) then
-! !      ! Initialize only the Turblent Variables
-! !      call initres_block(nt1MG, nMGVar,nn,sps) 
-! !      call turbResidual_block
-! !   endif
+  if( equations == RANSEquations ) then
+     ! Initialize only the Turblent Variables
+     call initres_block(nt1MG, nMGVar,nn,sps) 
+     call turbResidual_block
+  endif
   
   ! Next initialize residual for flow variables. The is the only place
   ! where there is an n^2 dependance
@@ -136,7 +137,7 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
         do k=2,kl
            do j=2,jl
               do i=2,il
-                 dw(i,j,k,l) = dw(i,j,k,l) / vol(i,j,k)
+                 dw(i,j,k,l) = dw(i,j,k,l) / vol(i,j,k) * resSum(l)
               end do
            end do
         end do

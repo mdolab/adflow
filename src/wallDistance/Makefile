@@ -40,8 +40,10 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = viscSurface.o
 
-FF90_OBJECTS_2 = computeNormalSpacing.o\
+FF90_OBJECTS_2 = allocExtraWallDistanceMemory.o\
+		 computeNormalSpacing.o\
 		 determineDistance.o\
+		 determineDistanceQuickly.o\
 		 initWallDistance.o\
 		 localViscousSurfaceMesh.o\
 		 updateWallDistanceAllLevels.o\

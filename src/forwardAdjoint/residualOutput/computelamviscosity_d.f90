@@ -2,7 +2,7 @@
    !  Tapenade 3.6 (r4159) - 21 Sep 2011 10:11
    !
    !  Differentiation of computelamviscosity in forward (tangent) mode:
-   !   variations   of useful results: *p
+   !   variations   of useful results: *p *rlv
    !   with respect to varying inputs: *p *w
    !   Plus diff mem management of: p:in w:in rlv:in
    !
@@ -41,6 +41,7 @@
    !
    INTEGER(kind=inttype) :: i, j, k
    REAL(kind=realtype) :: musuth, tsuth, ssuth, t
+   REAL(kind=realtype) :: td
    LOGICAL :: correctfork
    !
    !      ******************************************************************
@@ -51,6 +52,7 @@
    !
    ! Return immediately if no laminar viscosity needs to be computed.
    IF (.NOT.viscous) THEN
+   rlvd = 0.0
    RETURN
    ELSE
    ! Determine whether or not the pressure must be corrected
@@ -81,6 +83,9 @@
    END DO
    END DO
    END DO
+   rlvd = 0.0
+   ELSE
+   rlvd = 0.0
    END IF
    ! Loop over the owned cells of this block and compute the
    ! laminar viscosity ratio.
@@ -89,8 +94,12 @@
    DO i=2,il
    ! Compute the nonDimensional temperature and the
    ! nonDimensional laminar viscosity.
+   td = (pd(i, j, k)*rgas*w(i, j, k, irho)-p(i, j, k)*rgas*wd(i, &
+   &            j, k, irho))/(rgas*w(i, j, k, irho))**2
    t = p(i, j, k)/(rgas*w(i, j, k, irho))
-   rlvd(i, j, k) = 0.0
+   rlvd(i, j, k) = musuth*((tsuth+ssuth)*1.5_realType*(t/tsuth)**&
+   &            0.5*td/((t+ssuth)*tsuth)-(tsuth+ssuth)*td*(t/tsuth)**&
+   &            1.5_realType/(t+ssuth)**2)
    rlv(i, j, k) = musuth*((tsuth+ssuth)/(t+ssuth))*(t/tsuth)**&
    &            1.5_realType
    END DO
