@@ -3,10 +3,11 @@
    !
    !  Differentiation of utauwf in forward (tangent) mode:
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: *w *si *sj *sk *fw *(*viscsubface.tau)
+   !   with respect to varying inputs: *w *rlv *si *sj *sk *fw *(*viscsubface.tau)
    !                *(*bcdata.norm)
-   !   Plus diff mem management of: w:in si:in sj:in sk:in fw:in viscsubface:in
-   !                *viscsubface.tau:in bcdata:in *bcdata.norm:in
+   !   Plus diff mem management of: w:in rlv:in si:in sj:in sk:in
+   !                fw:in viscsubface:in *viscsubface.tau:in bcdata:in
+   !                *bcdata.norm:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -65,6 +66,7 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: normd
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rrlv2, dd2wall2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rrlv2d
    !
    !      Function definition.
    !
@@ -107,6 +109,7 @@
    ww1d => wd(1, 1:, 1:, :)
    ww1 => w(1, 1:, 1:, :)
    dd2wall2 => d2wall(2, :, :)
+   rrlv2d => rlvd(2, 1:, 1:)
    rrlv2 => rlv(2, 1:, 1:)
    CASE (imax) 
    !===========================================================
@@ -120,6 +123,7 @@
    ww1d => wd(ie, 1:, 1:, :)
    ww1 => w(ie, 1:, 1:, :)
    dd2wall2 => d2wall(il, :, :)
+   rrlv2d => rlvd(il, 1:, 1:)
    rrlv2 => rlv(il, 1:, 1:)
    CASE (jmin) 
    !===========================================================
@@ -133,6 +137,7 @@
    ww1d => wd(1:, 1, 1:, :)
    ww1 => w(1:, 1, 1:, :)
    dd2wall2 => d2wall(:, 2, :)
+   rrlv2d => rlvd(1:, 2, 1:)
    rrlv2 => rlv(1:, 2, 1:)
    CASE (jmax) 
    !===========================================================
@@ -146,6 +151,7 @@
    ww1d => wd(1:, je, 1:, :)
    ww1 => w(1:, je, 1:, :)
    dd2wall2 => d2wall(:, jl, :)
+   rrlv2d => rlvd(1:, jl, 1:)
    rrlv2 => rlv(1:, jl, 1:)
    CASE (kmin) 
    !===========================================================
@@ -159,6 +165,7 @@
    ww1d => wd(1:, 1:, 1, :)
    ww1 => w(1:, 1:, 1, :)
    dd2wall2 => d2wall(:, :, 2)
+   rrlv2d => rlvd(1:, 1:, 2)
    rrlv2 => rlv(1:, 1:, 2)
    CASE (kmax) 
    !===========================================================
@@ -172,6 +179,7 @@
    ww1d => wd(1:, 1:, ke, :)
    ww1 => w(1:, 1:, ke, :)
    dd2wall2 => d2wall(:, :, kl)
+   rrlv2d => rlvd(1:, 1:, kl)
    rrlv2 => rlv(1:, 1:, kl)
    END SELECT
    ! Set the pointer for the unit outward normals.
@@ -294,8 +302,9 @@
    ! laminar viscosity and wall distance. Note that an offset
    ! of -1 must be used in dd2Wall2, because the original array
    ! d2Wall starts at 2.
-   red = dd2wall2(i-1, j-1)*(ww2d(i, j, irho)*veltmag+ww2(i, j, &
-   &            irho)*veltmagd)/rrlv2(i, j)
+   red = (dd2wall2(i-1, j-1)*(ww2d(i, j, irho)*veltmag+ww2(i, j, &
+   &            irho)*veltmagd)*rrlv2(i, j)-ww2(i, j, irho)*veltmag*dd2wall2&
+   &            (i-1, j-1)*rrlv2d(i, j))/rrlv2(i, j)**2
    re = ww2(i, j, irho)*veltmag*dd2wall2(i-1, j-1)/rrlv2(i, j)
    x1d = CURVEUPRE_D(re, red, x1)
    IF (x1 .LT. eps) THEN

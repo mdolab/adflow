@@ -14,7 +14,7 @@ subroutine setupNKsolver
   use ADjointVars , only: nCellsLocal
   use NKSolverVars, only: dRdw,dRdwPre,dRdwPseudo, ctx, wVec,rVec,deltaW,&
        NKsolvecount,nksolversetup,ksp_subspace,ksp_solver_type,global_ksp, &
-       work, g, w_like1, w_like2
+       work, g, w_like1, w_like2, scaleVec
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -32,7 +32,7 @@ subroutine setupNKsolver
   if (not(NKSolverSetup)) then
      nDimW = nw * nCellsLocal * nTimeIntervalsSpectral
 
-     call VecCreateMPI(SUMB_PETSC_COMM_WORLD,nDimw,PETSC_DETERMINE,wVec,ierr)
+     call VecCreateMPI(SUMB_COMM_WORLD,nDimw,PETSC_DETERMINE,wVec,ierr)
      call EChk(ierr,__FILE__,__LINE__)
      call VecSetBlockSize(wVec,nw,ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -51,11 +51,14 @@ subroutine setupNKsolver
      call VecDuplicate(wVec,work,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
+     call VecDuplicate(wVec,scaleVec,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
      ! Create two empty w-like vectors
-     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,nDimW,PETSC_DETERMINE,&
+     call VecCreateMPIWithArray(SUMB_COMM_WORLD,nDimW,PETSC_DETERMINE,&
           PETSC_NULL_SCALAR,w_like1,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,nDimW,PETSC_DETERMINE,&
+     call VecCreateMPIWithArray(SUMB_COMM_WORLD,nDimW,PETSC_DETERMINE,&
           PETSC_NULL_SCALAR,w_like2,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
@@ -77,7 +80,7 @@ subroutine setupNKsolver
      call statePreAllocation(nnzDiagonal,nnzOffDiag,&
           totalCells,stencil,n_stencil)
   
-     call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw, &
+     call MatCreateMPIBAIJ(SUMB_COMM_WORLD, nw, &
           nDimW, nDimW,                     &
           PETSC_DETERMINE, PETSC_DETERMINE, &
           0, nnzDiagonal,                   &
@@ -103,7 +106,7 @@ subroutine setupNKsolver
      call EChk(ierr,__FILE__,__LINE__)
      
      !  Create the linear solver context
-     call KSPCreate(SUMB_PETSC_COMM_WORLD,global_ksp,ierr)
+     call KSPCreate(SUMB_COMM_WORLD,global_ksp,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Set operators for the solver
@@ -112,9 +115,9 @@ subroutine setupNKsolver
      call EChk(ierr,__FILE__,__LINE__)
 
      ! DEBUGGING ONLY!
-     !call KSPMonitorSet(global_ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
-     !     PETSC_NULL_FUNCTION, ierr)
-     !call EChk(ierr,__FILE__,__LINE__)
+!      call KSPMonitorSet(global_ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
+!          PETSC_NULL_FUNCTION, ierr)
+!      call EChk(ierr,__FILE__,__LINE__)
     
      NKSolverSetup = .True.
      NKSolveCount = 0
@@ -122,6 +125,7 @@ subroutine setupNKsolver
         turbCoupled = .True.
         turbSegregated = .False.
      end if
+     !print *,'Solver setup'
   end if
 #endif
 end subroutine setupNKsolver

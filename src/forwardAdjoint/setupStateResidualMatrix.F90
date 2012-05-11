@@ -57,8 +57,11 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
   if (usePC) then
      if (viscous) then
-        stencil => visc_pc_stencil
-        n_stencil = N_visc_pc
+        !stencil => visc_pc_stencil
+        !n_stencil = N_visc_pc
+        stencil => euler_pc_stencil
+        n_stencil = N_euler_pc
+
      else
         stencil => euler_pc_stencil
         n_stencil = N_euler_pc
@@ -127,9 +130,21 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
      
      spectralLoop: do sps=1,nTimeIntervalsSpectral
 
+
         ! Set pointers and derivative pointers
         call setPointers_d(nn,1,sps)
         call setPointersAdj(nn,1,sps)
+
+!         do k=0,kb
+!            do j=0,jb
+!               do i=0,ib
+!                  w(i,j,k,imx) = w(i,j,k,ivx) * w(i,j,k,irho)
+!                  w(i,j,k,imy) = w(i,j,k,ivy) * w(i,j,k,irho)
+!                  w(i,j,k,imz) = w(i,j,k,ivz) * w(i,j,k,irho)
+!               end do
+!            end do
+!         end do
+        
 
         ! Do Coloring and perturb states
         colorLoop: do iColor = 1,nColor
@@ -163,6 +178,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
                  end do
               end do
 
+             
               ! Run Block-based residual 
               if (useAD) then
                  call block_res_d(nn,sps,.False.,.False.)
@@ -276,6 +292,22 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
               end do jLoop
            end do kLoop
         end do colorLoop
+
+
+!         do k=0,kb
+!            do j=0,jb
+!               do i=0,ib
+!                  w(i,j,k,ivx) = w(i,j,k,imx) / w(i,j,k,irho)
+!                  w(i,j,k,ivy) = w(i,j,k,imy) / w(i,j,k,irho)
+!                  w(i,j,k,ivz) = w(i,j,k,imz) / w(i,j,k,irho)
+!               end do
+!            end do
+!         end do
+
+
+
+
+
      end do spectralLoop
 
      ! Deallocate and reset values for block nn

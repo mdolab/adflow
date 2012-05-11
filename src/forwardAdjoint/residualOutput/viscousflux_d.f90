@@ -3,11 +3,12 @@
    !
    !  Differentiation of viscousflux in forward (tangent) mode:
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: prandtlturb prandtl *p *w *x
-   !                *vol *si *sj *sk *fw *(*bcdata.norm)
-   !   Plus diff mem management of: p:in w:in rlv:in x:in vol:in d2wall:in
-   !                si:in sj:in sk:in fw:in viscsubface:in *viscsubface.tau:in
-   !                *viscsubface.utau:in bcdata:in *bcdata.norm:in
+   !   with respect to varying inputs: prandtlturb prandtl *p *gamma
+   !                *w *rlv *x *vol *si *sj *sk *fw *(*bcdata.norm)
+   !   Plus diff mem management of: p:in gamma:in w:in rlv:in x:in
+   !                vol:in d2wall:in si:in sj:in sk:in fw:in viscsubface:in
+   !                *viscsubface.tau:in *viscsubface.utau:in bcdata:in
+   !                *bcdata.norm:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -46,7 +47,9 @@
    INTEGER(kind=inttype) :: i, j, k, nn
    INTEGER(kind=inttype) :: k1, k2, kk
    REAL(kind=realtype) :: rfilv, por, mul, mue, mut, heatcoef
+   REAL(kind=realtype) :: muld, mutd, heatcoefd
    REAL(kind=realtype) :: gm1, factlamheat, factturbheat
+   REAL(kind=realtype) :: gm1d, factlamheatd, factturbheatd
    REAL(kind=realtype) :: u_x, u_y, u_z, v_x, v_y, v_z, w_x, w_y, w_z
    REAL(kind=realtype) :: u_xd, u_yd, u_zd, v_xd, v_yd, v_zd, w_xd, w_yd&
    &  , w_zd
@@ -121,9 +124,9 @@
    p(i, j, k) = p(i, j, k) - twothird*w(i, j, k, irho)*w(i, j, &
    &              k, itu1)
    END IF
-   pd(i, j, k) = (gamma(i, j, k)*pd(i, j, k)*w(i, j, k, irho)-&
-   &            gamma(i, j, k)*p(i, j, k)*wd(i, j, k, irho))/w(i, j, k, irho&
-   &            )**2
+   pd(i, j, k) = ((gammad(i, j, k)*p(i, j, k)+gamma(i, j, k)*pd(i&
+   &            , j, k))*w(i, j, k, irho)-gamma(i, j, k)*p(i, j, k)*wd(i, j&
+   &            , k, irho))/w(i, j, k, irho)**2
    p(i, j, k) = gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho)
    END DO
    END DO
@@ -164,12 +167,19 @@
    ! multiplied by the porosity. Compute the factor in front of
    ! the gradients of the speed of sound squared for the heat
    ! flux.
+   muld = por*(rlvd(i, j, 1)+rlvd(i, j, 2))
    mul = por*(rlv(i, j, 1)+rlv(i, j, 2))
    IF (eddymodel) mue = por*(rev(i, j, 1)+rev(i, j, 2))
+   mutd = muld
    mut = mul + mue
+   gm1d = half*(gammad(i, j, 1)+gammad(i, j, 2))
    gm1 = half*(gamma(i, j, 1)+gamma(i, j, 2)) - one
+   factlamheatd = -(one*prandtl*gm1d/(prandtl*gm1)**2)
    factlamheat = one/(prandtl*gm1)
+   factturbheatd = -(one*prandtlturb*gm1d/(prandtlturb*gm1)**2)
    factturbheat = one/(prandtlturb*gm1)
+   heatcoefd = muld*factlamheat + mul*factlamheatd + mue*&
+   &          factturbheatd
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the gradients at the face by averaging the four
    ! nodal values.
@@ -310,23 +320,23 @@
    ! Compute the stress tensor and the heat flux vector.
    fracdivd = twothird*(u_xd+v_yd+w_zd)
    fracdiv = twothird*(u_x+v_y+w_z)
-   tauxxd = mut*(two*u_xd-fracdivd)
+   tauxxd = mutd*(two*u_x-fracdiv) + mut*(two*u_xd-fracdivd)
    tauxx = mut*(two*u_x-fracdiv)
-   tauyyd = mut*(two*v_yd-fracdivd)
+   tauyyd = mutd*(two*v_y-fracdiv) + mut*(two*v_yd-fracdivd)
    tauyy = mut*(two*v_y-fracdiv)
-   tauzzd = mut*(two*w_zd-fracdivd)
+   tauzzd = mutd*(two*w_z-fracdiv) + mut*(two*w_zd-fracdivd)
    tauzz = mut*(two*w_z-fracdiv)
-   tauxyd = mut*(u_yd+v_xd)
+   tauxyd = mutd*(u_y+v_x) + mut*(u_yd+v_xd)
    tauxy = mut*(u_y+v_x)
-   tauxzd = mut*(u_zd+w_xd)
+   tauxzd = mutd*(u_z+w_x) + mut*(u_zd+w_xd)
    tauxz = mut*(u_z+w_x)
-   tauyzd = mut*(v_zd+w_yd)
+   tauyzd = mutd*(v_z+w_y) + mut*(v_zd+w_yd)
    tauyz = mut*(v_z+w_y)
-   q_xd = heatcoef*q_xd
+   q_xd = heatcoefd*q_x + heatcoef*q_xd
    q_x = heatcoef*q_x
-   q_yd = heatcoef*q_yd
+   q_yd = heatcoefd*q_y + heatcoef*q_yd
    q_y = heatcoef*q_y
-   q_zd = heatcoef*q_zd
+   q_zd = heatcoefd*q_z + heatcoef*q_zd
    q_z = heatcoef*q_z
    ! Compute the average velocities for the face. Remember that
    ! the velocities are stored and not the momentum.
@@ -429,12 +439,19 @@
    ! multiplied by the porosity. Compute the factor in front of
    ! the gradients of the speed of sound squared for the heat
    ! flux.
+   muld = por*(rlvd(i, j, k)+rlvd(i, j, k+1))
    mul = por*(rlv(i, j, k)+rlv(i, j, k+1))
    IF (eddymodel) mue = por*(rev(i, j, k)+rev(i, j, k+1))
+   mutd = muld
    mut = mul + mue
+   gm1d = half*(gammad(i, j, k)+gammad(i, j, k+1))
    gm1 = half*(gamma(i, j, k)+gamma(i, j, k+1)) - one
+   factlamheatd = -(one*prandtl*gm1d/(prandtl*gm1)**2)
    factlamheat = one/(prandtl*gm1)
+   factturbheatd = -(one*prandtlturb*gm1d/(prandtlturb*gm1)**2)
    factturbheat = one/(prandtlturb*gm1)
+   heatcoefd = muld*factlamheat + mul*factlamheatd + mue*&
+   &            factturbheatd
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the gradients at the face by averaging the four
    ! nodal values.
@@ -576,23 +593,23 @@
    ! Compute the stress tensor and the heat flux vector.
    fracdivd = twothird*(u_xd+v_yd+w_zd)
    fracdiv = twothird*(u_x+v_y+w_z)
-   tauxxd = mut*(two*u_xd-fracdivd)
+   tauxxd = mutd*(two*u_x-fracdiv) + mut*(two*u_xd-fracdivd)
    tauxx = mut*(two*u_x-fracdiv)
-   tauyyd = mut*(two*v_yd-fracdivd)
+   tauyyd = mutd*(two*v_y-fracdiv) + mut*(two*v_yd-fracdivd)
    tauyy = mut*(two*v_y-fracdiv)
-   tauzzd = mut*(two*w_zd-fracdivd)
+   tauzzd = mutd*(two*w_z-fracdiv) + mut*(two*w_zd-fracdivd)
    tauzz = mut*(two*w_z-fracdiv)
-   tauxyd = mut*(u_yd+v_xd)
+   tauxyd = mutd*(u_y+v_x) + mut*(u_yd+v_xd)
    tauxy = mut*(u_y+v_x)
-   tauxzd = mut*(u_zd+w_xd)
+   tauxzd = mutd*(u_z+w_x) + mut*(u_zd+w_xd)
    tauxz = mut*(u_z+w_x)
-   tauyzd = mut*(v_zd+w_yd)
+   tauyzd = mutd*(v_z+w_y) + mut*(v_zd+w_yd)
    tauyz = mut*(v_z+w_y)
-   q_xd = heatcoef*q_xd
+   q_xd = heatcoefd*q_x + heatcoef*q_xd
    q_x = heatcoef*q_x
-   q_yd = heatcoef*q_yd
+   q_yd = heatcoefd*q_y + heatcoef*q_yd
    q_y = heatcoef*q_y
-   q_zd = heatcoef*q_zd
+   q_zd = heatcoefd*q_z + heatcoef*q_zd
    q_z = heatcoef*q_z
    ! Compute the average velocities for the face. Remember that
    ! the velocities are stored and not the momentum.
@@ -693,12 +710,19 @@
    ! multiplied by the porosity. Compute the factor in front of
    ! the gradients of the speed of sound squared for the heat
    ! flux.
+   muld = por*(rlvd(i, j, k)+rlvd(i, j+1, k))
    mul = por*(rlv(i, j, k)+rlv(i, j+1, k))
    IF (eddymodel) mue = por*(rev(i, j, k)+rev(i, j+1, k))
+   mutd = muld
    mut = mul + mue
+   gm1d = half*(gammad(i, j, k)+gammad(i, j+1, k))
    gm1 = half*(gamma(i, j, k)+gamma(i, j+1, k)) - one
+   factlamheatd = -(one*prandtl*gm1d/(prandtl*gm1)**2)
    factlamheat = one/(prandtl*gm1)
+   factturbheatd = -(one*prandtlturb*gm1d/(prandtlturb*gm1)**2)
    factturbheat = one/(prandtlturb*gm1)
+   heatcoefd = muld*factlamheat + mul*factlamheatd + mue*&
+   &            factturbheatd
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the gradients at the face by averaging the four
    ! nodal values.
@@ -839,23 +863,23 @@
    ! Compute the stress tensor and the heat flux vector.
    fracdivd = twothird*(u_xd+v_yd+w_zd)
    fracdiv = twothird*(u_x+v_y+w_z)
-   tauxxd = mut*(two*u_xd-fracdivd)
+   tauxxd = mutd*(two*u_x-fracdiv) + mut*(two*u_xd-fracdivd)
    tauxx = mut*(two*u_x-fracdiv)
-   tauyyd = mut*(two*v_yd-fracdivd)
+   tauyyd = mutd*(two*v_y-fracdiv) + mut*(two*v_yd-fracdivd)
    tauyy = mut*(two*v_y-fracdiv)
-   tauzzd = mut*(two*w_zd-fracdivd)
+   tauzzd = mutd*(two*w_z-fracdiv) + mut*(two*w_zd-fracdivd)
    tauzz = mut*(two*w_z-fracdiv)
-   tauxyd = mut*(u_yd+v_xd)
+   tauxyd = mutd*(u_y+v_x) + mut*(u_yd+v_xd)
    tauxy = mut*(u_y+v_x)
-   tauxzd = mut*(u_zd+w_xd)
+   tauxzd = mutd*(u_z+w_x) + mut*(u_zd+w_xd)
    tauxz = mut*(u_z+w_x)
-   tauyzd = mut*(v_zd+w_yd)
+   tauyzd = mutd*(v_z+w_y) + mut*(v_zd+w_yd)
    tauyz = mut*(v_z+w_y)
-   q_xd = heatcoef*q_xd
+   q_xd = heatcoefd*q_x + heatcoef*q_xd
    q_x = heatcoef*q_x
-   q_yd = heatcoef*q_yd
+   q_yd = heatcoefd*q_y + heatcoef*q_yd
    q_y = heatcoef*q_y
-   q_zd = heatcoef*q_zd
+   q_zd = heatcoefd*q_z + heatcoef*q_zd
    q_z = heatcoef*q_z
    ! Compute the average velocities for the face. Remember that
    ! the velocities are stored and not the momentum.
@@ -980,12 +1004,19 @@
    ! multiplied the porosity. Compute the factor in front of
    ! the gradients of the speed of sound squared for the heat
    ! flux.
+   muld = por*(rlvd(i, j, k)+rlvd(i+1, j, k))
    mul = por*(rlv(i, j, k)+rlv(i+1, j, k))
    IF (eddymodel) mue = por*(rev(i, j, k)+rev(i+1, j, k))
+   mutd = muld
    mut = mul + mue
+   gm1d = half*(gammad(i, j, k)+gammad(i+1, j, k))
    gm1 = half*(gamma(i, j, k)+gamma(i+1, j, k)) - one
+   factlamheatd = -(one*prandtl*gm1d/(prandtl*gm1)**2)
    factlamheat = one/(prandtl*gm1)
+   factturbheatd = -(one*prandtlturb*gm1d/(prandtlturb*gm1)**2)
    factturbheat = one/(prandtlturb*gm1)
+   heatcoefd = muld*factlamheat + mul*factlamheatd + mue*&
+   &            factturbheatd
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the gradients at the face by averaging the four
    ! nodal values.
@@ -1126,23 +1157,23 @@
    ! Compute the stress tensor and the heat flux vector.
    fracdivd = twothird*(u_xd+v_yd+w_zd)
    fracdiv = twothird*(u_x+v_y+w_z)
-   tauxxd = mut*(two*u_xd-fracdivd)
+   tauxxd = mutd*(two*u_x-fracdiv) + mut*(two*u_xd-fracdivd)
    tauxx = mut*(two*u_x-fracdiv)
-   tauyyd = mut*(two*v_yd-fracdivd)
+   tauyyd = mutd*(two*v_y-fracdiv) + mut*(two*v_yd-fracdivd)
    tauyy = mut*(two*v_y-fracdiv)
-   tauzzd = mut*(two*w_zd-fracdivd)
+   tauzzd = mutd*(two*w_z-fracdiv) + mut*(two*w_zd-fracdivd)
    tauzz = mut*(two*w_z-fracdiv)
-   tauxyd = mut*(u_yd+v_xd)
+   tauxyd = mutd*(u_y+v_x) + mut*(u_yd+v_xd)
    tauxy = mut*(u_y+v_x)
-   tauxzd = mut*(u_zd+w_xd)
+   tauxzd = mutd*(u_z+w_x) + mut*(u_zd+w_xd)
    tauxz = mut*(u_z+w_x)
-   tauyzd = mut*(v_zd+w_yd)
+   tauyzd = mutd*(v_z+w_y) + mut*(v_zd+w_yd)
    tauyz = mut*(v_z+w_y)
-   q_xd = heatcoef*q_xd
+   q_xd = heatcoefd*q_x + heatcoef*q_xd
    q_x = heatcoef*q_x
-   q_yd = heatcoef*q_yd
+   q_yd = heatcoefd*q_y + heatcoef*q_yd
    q_y = heatcoef*q_y
-   q_zd = heatcoef*q_zd
+   q_zd = heatcoefd*q_z + heatcoef*q_zd
    q_z = heatcoef*q_z
    ! Compute the average velocities for the face. Remember that
    ! the velocities are stored and not the momentum.
