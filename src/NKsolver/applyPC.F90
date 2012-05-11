@@ -5,6 +5,7 @@ subroutine applyPC(in_vec, out_vec, ndof)
   ! preconditioner for a global Aero-Structural Newton-Krylov Method
 
   use NKSolverVars
+  use communication
   implicit none
 
   ! Input/Output
@@ -39,7 +40,7 @@ subroutine applyPC(in_vec, out_vec, ndof)
   call EChk(ierr,__FILE__,__LINE__)
 
    ! This needs to be a bit better...
-  call KSPSetTolerances(global_ksp,.00000001,.00000000001,10.0,10,ierr)
+  call KSPSetTolerances(global_ksp,1e-8,1e-16,10.0,applyPCSubSpaceSize,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Actually do the Linear Krylov Solve
@@ -64,7 +65,7 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
 
   use communication
   use ADjointPETSc
-
+  use inputAdjoint
   implicit none
 
   ! Input/Output
@@ -83,7 +84,7 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
   call EChk(ierr,__FILE__,__LINE__)
  
   ! This needs to be a bit better...
-  call KSPSetTolerances(ksp,.1,.00000000001,10.0,20,ierr)
+  call KSPSetTolerances(ksp,1e-8,1e-16,10.0,applyAdjointPCSubSpaceSize,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Actually do the Linear Krylov Solve

@@ -614,6 +614,7 @@ python module sumb ! in
          integer(kind=inttype) :: nrkstages
          integer(kind=inttype) :: resaveraging
          integer(kind=inttype) :: turbtreatment
+         integer(kind=inttype) :: nsubiterturb
          integer(kind=inttype) :: turbsmoother
          integer(kind=inttype) :: turbrelax
          integer(kind=inttype) :: mgboundcorr
@@ -788,6 +789,7 @@ python module sumb ! in
          integer(kind=inttype) :: scaletype
          logical :: printtiming
          integer(kind=inttype) :: subkspsubspacesize
+         integer(kind=inttype) :: applyadjointpcsubspacesize
        end module inputadjoint
 
        module inputtimespectral ! in :sumb:../../modules/inputParam.f90
@@ -1080,6 +1082,7 @@ python module sumb ! in
          real(kind=realtype) :: totalrfinal
          logical :: rkreset
          integer(kind=inttype) :: nrkreset
+         integer(kind=inttype) :: applypcsubspacesize
        end module nksolvervars
        
 

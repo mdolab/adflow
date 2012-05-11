@@ -141,6 +141,7 @@ module NKsolverVars
   real(kind=realType) :: rhoRes0,rhoResStart,rhoResFinal
   real(kind=realType) :: CFL0
   integer(kind=intType) :: iterTot0
+  integer(kind=intType) :: applyPCSubSpaceSize
 
   real(kind=realType), dimension(:), allocatable :: func_evals
   integer(kind=intType) :: Mmax
