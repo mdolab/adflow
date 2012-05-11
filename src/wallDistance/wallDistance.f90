@@ -61,8 +61,6 @@
        ! distance. It may be needed for the boundary conditions and
        ! the monitoring of the y+. Return afterwards.
 
-       print *,'use is:',useapproxwalldistance
-
        if(.not. wallDistanceNeeded) then
 
          ! Loop over the number of spectral solutions, initialize the
