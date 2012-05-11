@@ -26,6 +26,9 @@
        use inputPhysics
        use inputTimeSpectral
        use viscSurface
+       use iteration
+       use inputDiscretization
+       use block
        implicit none
 !
 !      Subroutine arguments.
@@ -37,10 +40,9 @@
 !
        integer :: ierr
 
-       integer(kind=intType) :: sps
-
+       integer(kind=intType) :: sps, sps2, nn, ll, nLevels
+       logical :: tempLogical 
        double precision :: t0
-
        character(len=3) :: integerString
 !
 !      ******************************************************************
@@ -79,10 +81,10 @@
 
        write(integerString,"(i2)") level
        integerString = adjustl(integerString)
-       if(myID == 0) then
-         print 101, trim(integerString)
-       endif
- 101   format("# Start wall distances level",1X,A)
+!        if(myID == 0) then
+!          print 101, trim(integerString)
+!        endif
+!  101   format("# Start wall distances level",1X,A)
 
        ! Store the start time.
 
@@ -105,42 +107,111 @@
        else
          call deallocateTempMemory(.false.)
        endif
+       
+       if (useApproxWallDistance) then
+          nLevels = ubound(flowDoms,2)
+
+          ! Check that unique_face_info is allocated:
+          if (.not. allocated(unique_face_info)) then
+             allocate(unique_face_info(nLevels,nTimeIntervalsSpectral))
+             do ll=1,nLevels
+                do sps=1,nTimeIntervalsSpectral
+                   unique_face_info(ll,sps)%wallAssociated = .False.
+                end do
+             end do
+          end if
+       end if
+
+       ! There are two different searches we can do: the original code
+       ! always works and it capable to dealing with rotating/periodic
+       ! geometries. It uses constant memory and is slow. The
+       ! alternative method uses memory that scales with the size of
+       ! the surface grid per processor and only works for
+       ! steady/unsteady simulations without periodic/rotating
+       ! components. But it is fast. It is designed to be used for
+       ! updating the wall distances between iterations of
+       ! aerostructural solutions. 
 
        ! Loop over the number of spectral solutions.
 
        spectralLoop: do sps=1,nTimeIntervalsSpectral
 
-         ! Initialize the wall distances.
+          ! Normal, original wall distance calc
+          if (.not. useApproxWallDistance) then 
+          
+             ! Initialize the wall distances.
+             
+             call initWallDistance(level, sps, allocMem)
+             
+             ! Build the viscous surface mesh.
+             
+             call viscousSurfaceMesh(level, sps)
+             
+             ! If there are no viscous faces, processor 0 prints a warning
+             ! and the wall distances are not computed.
+             
+             if(nquadViscGlob == 0) then
+                
+                if(myID == 0) then
+                   print "(a)", "#"
+                   print "(a)", "#               Warning!!!!"
+                   print "(a)", "# No viscous boundary found. Wall &
+                        &distances are set to infinity"
+                   print "(a)", "#"
+                endif
+                
+             else
+                ! Determine the wall distances for the owned cells.
+                call determineDistance(level, sps)
+             end if
 
-         call initWallDistance(level, sps, allocMem)
+          else ! The user want to use approx wall distnace calcs:
 
-         ! Build the viscous surface mesh.
+             ! Initialize the wall distances.
+             
+             call initWallDistance(level, sps, allocMem)
+             
+             ! Build the viscous surface mesh.
+             
+             call viscousSurfaceMesh(level, sps)
 
-         call viscousSurfaceMesh(level, sps)
+             if (.not. unique_face_info(level,sps)%wallAssociated) then
+                ! Run association if required
+                call determineDistancQuickly2(level, sps)   
+                unique_face_info(level,sps)%wallAssociated = .True. 
+             else
+                ! Otherwise do fast calculation
+                call determineDistance3(level, sps)
+             end if
 
-         ! If there are no viscous faces, processor 0 prints a warning
-         ! and the wall distances are not computed.
+             ! Check to see if we've reset all %wallAssociated
+             ! values. If we have, we can then set
+             ! updateWallAssociation to .False. 
+             
+             if (updateWallAssociation) then
+                tempLogical = .True. 
+                do ll=1,nLevels
+                   do sps2=1,nTimeIntervalsSpectral
+                      tempLogical = tempLogical .and. &
+                           unique_face_info(ll,sps2)%wallAssociated
+                   end do
+                end do
+                
+                ! If tempLogical is still True, we've updated all
+                ! levels/sps and set the master updateWallAssociation
+                ! flag to flase. It will then remain false until the
+                ! user sets it to true
 
-         if(nquadViscGlob == 0) then
+                if (tempLogical) then
+                   updateWallAssociation = .False. 
+                end if
 
-           if(myID == 0) then
-             print "(a)", "#"
-             print "(a)", "#               Warning!!!!"
-             print "(a)", "# No viscous boundary found. Wall &
-                          &distances are set to infinity"
-             print "(a)", "#"
-           endif
+             end if
 
-         else
-
-           ! Determine the wall distances for the owned cells.
-
-           call determineDistance(level, sps)
-
-         endif
+          end if
 
        enddo spectralLoop
-
+              
        ! Allocate the temporarily released memory again. For more info
        ! see the comments at the beginning of this routine.
 
@@ -161,11 +232,11 @@
        ! Write a message to stdout with the amount of time it
        ! took to compute the distances.
 
-       if(myID == 0) then
-         print 102, trim(integerString)
-         print 103, mpi_wtime() - t0
-         print "(a)", "#"
-       endif
+!        if(myID == 0) then
+!          print 102, trim(integerString)
+!          print 103, mpi_wtime() - t0
+!          print "(a)", "#"
+!        endif
  102   format("# End wall distances level",1X,A)
  103   format("# Wall clock time:",E12.5," sec.")
 

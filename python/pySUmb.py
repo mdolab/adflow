@@ -78,6 +78,7 @@ class SUMB(AeroSolver):
 
             # Physics Paramters
             'Discretization':[str,'Central plus scalar dissipation'],
+            'useApproxWallDistance':[bool,True],
             'Limiter':[str,'VanAlbeda'],
             'Smoother':[str,'Runge-Kutta'],
             'equationType': [str,'Euler'],
@@ -346,6 +347,8 @@ class SUMB(AeroSolver):
                                       self.sumb.inputdiscretization.upwind,
                                   'location':
                                       'inputdiscretization.spacediscr'},
+                'useApproxWallDistance':{'location':
+                                             'inputdiscretization.useapproxwalldistance'},
                 'Limiter':{'VanAlbeda':
                                self.sumb.inputdiscretization.vanalbeda,
                            'MinMod':
@@ -708,9 +711,9 @@ class SUMB(AeroSolver):
         if(self.myid==0):
             print ' -> Initializing flow'
 
-        # Must set inflow angle first
-        self.setInflowAngle(aero_problem)
+        # Initialize Flow and set inflow angle
         self.sumb.initflow()
+        self.setInflowAngle(aero_problem)
 
         # Create dictionary of variables we are monitoring
         nmon = self.sumb.monitor.nmon
@@ -746,15 +749,15 @@ class SUMB(AeroSolver):
         self.sumb.inputphysics.liftdirection = liftDir
         self.sumb.inputphysics.dragdirection = dragDir
 
-        if self.sumb.inputiteration.printiterations:
-            if self.myid == 0:
-                print '-> Alpha...',
-                print aero_problem._flows.alpha*(pi/180.0),
-                print aero_problem._flows.alpha
+        if self.sumb.inputiteration.printiterations and self.myid == 0:
+            print '-> Alpha...',
+            print aero_problem._flows.alpha*(pi/180.0),
+            print aero_problem._flows.alpha
 
         #update the flow vars
         self.sumb.updateflow()
         self._update_vel_info = True
+
         return
 
     def setElasticCenter(self,aero_problem):
@@ -982,7 +985,6 @@ class SUMB(AeroSolver):
 
         # Run Initialize, if already run it just returns.
         self.initialize(aero_problem,*args,**kwargs)
-
         #set inflow angle,refpoint etc.
         self.setMachNumber(aero_problem)
         self.setPeriodicParams(aero_problem)
@@ -1039,10 +1041,9 @@ class SUMB(AeroSolver):
         self.solve_failed = False
         self.fatalFail = False
 
-
-
         self._updatePeriodInfo()
-        self._updateGeometryInfo()
+        if self.getOption('equationMode') == 'Steady':
+            self._updateGeometryInfo()
         self._updateVelocityInfo()
 
         #write out mesh file for volume debugging
@@ -1059,8 +1060,6 @@ class SUMB(AeroSolver):
             if self.myid==0: print 'Warped Mesh written...exiting.'
             sys.exit(0)
         # end if
-        
-
             
         # Check to see if the above update routines failed.
         self.sumb.killsignals.routinefailed = \
@@ -1957,12 +1956,20 @@ class SUMB(AeroSolver):
 
         return startRes,finalRes,fail
 
+#     def getResNorms(self):
+#         '''Return the initial, starting and final Res Norms'''
+#         return \
+#             numpy.real(self.sumb.nksolvervars.totalr0), \
+#             numpy.real(self.sumb.nksolvervars.totalrstart),\
+#             numpy.real(self.sumb.nksolvervars.totalrfinal)
+
     def getResNorms(self):
         '''Return the initial, starting and final Res Norms'''
         return \
-            numpy.real(self.sumb.nksolvervars.totalr0), \
-            numpy.real(self.sumb.nksolvervars.totalrstart),\
-            numpy.real(self.sumb.nksolvervars.totalrfinal)
+            self.sumb.nksolvervars.totalr0, \
+            self.sumb.nksolvervars.totalrstart,\
+            self.sumb.nksolvervars.totalrfinal
+
 
     def setResNorms(self,initNorm=None,startNorm=None,finalNorm=None):
         ''' Set one of these norms if not none'''
