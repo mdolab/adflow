@@ -85,6 +85,7 @@ class SUMB(AeroSolver):
             'turbulenceModel':[str, 'SA'], 
             'turbulenceOrder':[str,'First Order'],           
             'useWallFunctions':[bool, False],
+            'useApproxWallDistance':[bool, True],
             'reynoldsNumber':[float, 1e6], 
             'reynoldsLength':[float, 1.0], 
             'wallTreatment':[str, 'Linear Pressure Extrapolation'],
@@ -419,6 +420,7 @@ class SUMB(AeroSolver):
                                    'location':
                                        'inputdiscretization.orderturb'},
                 'useWallFunctions':{'location':'inputphysics.wallfunctions'},
+                'useApproxWallDistance':{'location':'inputdiscretization.useapproxwalldistance'},
                 'reynoldsNumber':{'location':'inputphysics.reynolds'},
                 'reynoldsLength':{'location':'inputphysics.reynoldslength'},
                 'wallTreatment':{'Linear Pressure Extrapolation':
@@ -767,7 +769,7 @@ class SUMB(AeroSolver):
 
         if self.sumb.inputiteration.printiterations and self.myid == 0:
             print '-> Alpha...',
-            print aero_problem._flows.alpha*(pi/180.0),
+            print aero_problem._flows.alpha*(numpy.pi/180.0),
             print aero_problem._flows.alpha
 
         #update the flow vars
