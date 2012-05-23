@@ -385,7 +385,7 @@
                    ! are stored and this info can be used. The logical
                    ! converged is set to .false. if the density residual
                    ! has not converged yet.
-                   
+
                    if(convArray(iConv,sps,1) > L2ConvThisLevel*convArray(0,sps,1)) then
                       absNotConv = .True.
                    else
