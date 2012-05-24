@@ -47,7 +47,6 @@ subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
   use section
   use inputTimeSpectral 
   use monitor 
-  use petscvec
   implicit none
 
   integer(kind=intType), intent(in) :: ndof,nstate

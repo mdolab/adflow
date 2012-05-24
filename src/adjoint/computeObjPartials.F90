@@ -425,7 +425,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
                        rotpointycorrection = rotpointycorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,1,0/)+RpYCorrection))
                        rotpointzcorrection = rotpointzcorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,0,1/)+RpZCorrection))
                        
-                       call EChk(PETScIerr,__file__,__line__)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                     end do
                  end do
               end if

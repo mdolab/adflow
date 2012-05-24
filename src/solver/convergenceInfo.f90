@@ -426,7 +426,7 @@
                       end if
                       
                       if (epsCoefConv > zero   .and.&
-                           (groundLevel == 1 .and. converged == .false.)  )then
+                           (groundLevel == 1 .and. converged .eqv. .false.)  )then
                          ! !
                          ! ! ---- Check if coefficients reached a cconstant value
                          ! !
@@ -567,7 +567,7 @@
 !
 ! add temporal monitoring option for unsteady cases  ! eran-tempmon starts
 !
-                if(nIterCur == nCycles .or. converged == .true.)then
+                if(nIterCur == nCycles .or. converged .eqv. .true.)then
 
                    write(fTempMon,"(i6,1x)",advance="no") timeStepUnsteady + &
                         nTimeStepsRestart

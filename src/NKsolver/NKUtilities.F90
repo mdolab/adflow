@@ -23,11 +23,10 @@ subroutine setWVec(wVec)
   use inputtimespectral
   use flowvarrefstate
   use inputiteration
-  use petscvec
 
   implicit none
 
-  Vec     wVec
+  PetscInt     wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
   real(kind=realType),pointer :: wvec_pointer(:)
 
@@ -67,11 +66,10 @@ subroutine setRVec(rVec)
   use inputtimespectral
   use flowvarrefstate
   use inputiteration
-  use petscvec
   use NKsolvervars, only: scalevec
   implicit none
 
-  Vec     rVec
+  PetscInt     rVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
   real(kind=realType) :: ovv
   real(kind=realType),pointer :: rvec_pointer(:)
@@ -117,11 +115,10 @@ subroutine setW(wVec)
   use blockPointers
   use inputTimeSpectral
   use flowVarRefState
-  use petscvec
 
   implicit none
 
-  Vec     wVec
+  PetscInt     wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
   real(kind=realType) :: temp,diff
   real(kind=realType),pointer :: wvec_pointer(:)
@@ -270,19 +267,20 @@ end subroutine setStates
 subroutine calcScaling(scaleVec)
 
 #ifndef USE_NO_PETSC
-#define PETSC_AVOID_MPIF_H
-#include "finclude/petscdef.h"
+
 
   use communication 
   use blockPointers
   use inputtimespectral
   use flowvarrefstate
   use inputiteration
-  use petscvec, only: NORM_2, vecGetArrayF90, vecRestoreArrayF90
   use NKSolverVars, only : resSum
   implicit none
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petscdef.h"
+#include "include/finclude/petsc.h"
 
-  Vec     scaleVec
+  PetscInt     scaleVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
   real(kind=realType) :: ovv
   real(kind=realType),pointer :: scale_pointer(:)
