@@ -302,13 +302,13 @@ subroutine verifydCfdx(level,costFunction)
 
          ! entries into dJdw
          call VecZeroEntries(dJdw,ierr)
-         call EChk(ierr,__file__,__line__)
+         call EChk(ierr,__FILE__,__LINE__)
          
          call VecZeroEntries(dJdx,ierr)
-         call EChk(ierr,__file__,__line__)
+         call EChk(ierr,__FILE__,__LINE__)
          
          call VecGetOwnershipRange(dJdx,row_start,row_end,ierr)
-         call EChk(ierr,__file__,__line__)
+         call EChk(ierr,__FILE__,__LINE__)
          ii = 0 
          domainLoopAD: do nn=1,nDom
             call setPointersadj(nn,1_intType,sps)
@@ -405,7 +405,7 @@ subroutine verifydCfdx(level,costFunction)
 !!$                           call VecSetValuesBlocked(dJdw,1,idxmgb,&
 !!$                                wblockb(icell,jcell,kcell,:)*dJdc(sps),&
 !!$                                ADD_VALUES,PETScIerr)
-                           call EChk(PETScIerr,__file__,__line__)
+                           call EChk(PETScIerr,__FILE__,__LINE__)
                         enddo
                      enddo
                   enddo
@@ -419,7 +419,7 @@ subroutine verifydCfdx(level,costFunction)
                         call VecSetValues(dJdx,3,&
                              (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/),&
                              ptsb(:,ii,sps),ADD_VALUES,PETScIerr)
-                        call EChk(PETScIerr,__file__,__line__)
+                        call EChk(PETScIerr,__FILE__,__LINE__)
                      end do
                   end do
                   !ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
@@ -463,17 +463,17 @@ subroutine verifydCfdx(level,costFunction)
          end do domainLoopAD
          ! Assemble the petsc vectors
          call VecAssemblyBegin(dJdw,PETScIerr)
-         call EChk(PETScIerr,__file__,__line__)
+         call EChk(PETScIerr,__FILE__,__LINE__)
          call VecAssemblyEnd(dJdw,PETScIerr)
-         call EChk(PETScIerr,__file__,__line__)
+         call EChk(PETScIerr,__FILE__,__LINE__)
          
          call VecAssemblyBegin(dJdx,PETScIerr)
-         call EChk(PETScIerr,__file__,__line__)
+         call EChk(PETScIerr,__FILE__,__LINE__)
          call VecAssemblyEnd(dJdx,PETScIerr)
-         call EChk(PETScIerr,__file__,__line__) 
+         call EChk(PETScIerr,__FILE__,__LINE__) 
 
          call VecGetOwnershipRange(djdw, iLow, iHigh, PETScIerr)
-         call EChk(PETScIerr,__file__,__line__)
+         call EChk(PETScIerr,__FILE__,__LINE__)
          do nn = 1,ndom
             call setPointersadj(nn,1_intType,sps)
             do k = 2,kl!0,kb
@@ -485,7 +485,7 @@ subroutine verifydCfdx(level,costFunction)
                         if( (idxmgb>=iLow).and.(idxmgb<=iHigh)) then
                            call VecGetValues(djdw, 1, idxmgb-1, &
                                 val, PETScIerr)
-                           call EChk(PETScIerr,__file__,__line__)
+                           call EChk(PETScIerr,__FILE__,__LINE__)
  
                            write(unitdw,11) val,sps,nn,i,j,k,l,idxmgb
 11                         format(1x,'dcdw ',f18.10,7I8)
@@ -497,7 +497,7 @@ subroutine verifydCfdx(level,costFunction)
          end do
 
          call VecGetOwnershipRange(djdx, iLow, iHigh, PETScIerr)
-         call EChk(PETScIerr,__file__,__line__)
+         call EChk(PETScIerr,__FILE__,__LINE__)
          do nn = 1,ndom
             call setPointersadj(nn,1_intType,sps)
             do k = 1,ke!0,kb
@@ -509,7 +509,7 @@ subroutine verifydCfdx(level,costFunction)
                         if( (idxmgb>=iLow).and.(idxmgb<=iHigh)) then
                            call VecGetValues(djdx, 1, idxmgb-1, &
                                 val, PETScIerr)
-                           call EChk(PETScIerr,__file__,__line__)
+                           call EChk(PETScIerr,__FILE__,__LINE__)
  
                            write(unitdx,12) val,sps,nn,i,j,k,l,idxmgb
 12                         format(1x,'dcdx ',f18.10,7I8)

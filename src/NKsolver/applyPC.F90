@@ -17,7 +17,7 @@ subroutine applyPC(in_vec, out_vec, ndof)
   integer(kind=intType) :: ierr
 
   ! Setup the NKsolver if not already done so
-  if (not(NKSolverSetup)) then
+  if (.not. NKSolverSetup) then
      call setupNKSolver
   end if
   
