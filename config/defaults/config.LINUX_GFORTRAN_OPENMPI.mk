@@ -1,184 +1,64 @@
-#      ******************************************************************
-#      *                                                                *
-#      * File:          config.LINUX_INTEL_MPICH.mk                     *
-#      * Author:        Edwin van der Weide, Andre C. Marta             *
-#      * Starting date: 12-07-2002                                      *
-#      * Last modified: 11-29-2006                                      *
-#      *                                                                *
-#      ******************************************************************
+# ----------------------------------------------------------------------
+# Config file for Intel ifort  with OpenMPI
+# ----------------------------------------------------------------------
 
-#      ******************************************************************
-#      *                                                                *
-#      * Description: Defines the compiler settings and other commands  *
-#      *              to have "make" function correctly. This file      *
-#      *              defines the settings for a parallel Linux         *
-#      *              executable in combination with MPICH. Assumed is  *
-#      *              that mpif90 and mpicc are based on the intel and  *
-#      *              gcc compilers respectively.                       *
-#      *                                                                *
-#      ******************************************************************
+# ------- Define a possible parallel make (use PMAKE = make otherwise)--
+PMAKE = make -j 4
 
-#      ==================================================================
-
-#      ******************************************************************
-#      *                                                                *
-#      * Possibly overrule the make command to allow for parallel make. *
-#      *                                                                *
-#      ******************************************************************
-
-SHELL      = /bin/bash
-
-RM         = /bin/rm -rf
-MV         = /bin/mv -f
-SYM_LINK   = ln -sf
-#MAKE       = make
-#MAKE_CLEAN = make
-MAKE = make -j 1
-
-
-#      ******************************************************************
-#      *                                                                *
-#      * Suffix of the executable such that binaries of multiple        *
-#      * platforms can be stored in the bin directory.                  *
-#      *                                                                *
-#      ******************************************************************
-
-EXEC_SUFFIX = _linux_gfortran_openmpi
-
-#      ******************************************************************
-#      *                                                                *
-#      * F90 and C compiler definitions.                                *
-#      *                                                                *
-#      ******************************************************************
-
-#FF90 = /usr/local/mpich-intel/bin/mpif90
-#CC   = /usr/local/mpich-intel/bin/mpicc
+# ------- Define the MPI Compilers--------------------------------------
 FF90 = mpif90
 CC   = mpicc
 
+#-------- Define Exec Suffix for executable ----------------------------
+EXEC_SUFFIX = _linux_gfortran_openmpi
 
-#      ******************************************************************
-#      *                                                                *
-#      * CGNS include and linker flags.                                 *
-#      *                                                                *
-#      ******************************************************************
-#CGNS_INCLUDE_FLAGS = -I$(HOME)/Ubunto_setup_files/cgnslib_2.4
-#CGNS_LINKER_FLAGS  = -L$(HOME)/Ubunto_setup_files/cgnslib_2.4/LINUX -lcgns
-#CGNS_INCLUDE_FLAGS = -I$(HOME)/Ubunto_setup_files/cgnslib_2.4_back
-#CGNS_LINKER_FLAGS  = -L$(HOME)/Ubunto_setup_files/cgnslib_2.4_back/LINUX -lcgns
-#CGNS_INCLUDE_FLAGS = -I/usr/local/include
-#CGNS_LINKER_FLAGS  = -L/usr/local/lib64 -lcgns.intel
-#CGNS_LINKER_FLAGS  = -L/usr/local/lib -lcgns.intel
-#CGNS_INCLUDE_FLAGS = -I/usr/local/include
-#CGNS_LINKER_FLAGS = -lcgns
-#      ******************************************************************
-#      *                                                                *
-#      * Precision flags. When nothing is specified 4 byte integer and  *
-#      * and 8 byte real types are used. The flag -DUSE_LONG_INT sets   *
-#      * the 8 byte integer to the standard integer type. The flag      *
-#      * -DUSE_SINGLE_PRECISION sets the 4 byte real to the standard    *
-#      * real type and -DUSE_QUADRUPLE_PRECISION will make 16 byte      *
-#      * reals the default type. The latter option may not work on all  *
-#      * platforms.                                                     *
-#      *                                                                *
-#      ******************************************************************
+# ------- Define Precision Flags ---------------------------------------
+# Options for Integer precision flags: -DUSE_LONG_INT
+# Options for Real precision flags: -DUSE_SINGLE_PRECISION, -DUSE_QUADRUPLE_PRECISION
+# Default (nothing specified) is 4 byte integers and 8 byte reals
 
-#FF90_INTEGER_PRECISION_FLAG = -DUSE_LONG_INT
-#CC_INTEGER_PRECISION_FLAG   = -DUSE_LONG_INT
+FF90_INTEGER_PRECISION_FLAG =
+FF90_REAL_PRECISION_FLAG    = 
+CC_INTEGER_PRECISION_FLAG   =
+CC_REAL_PRECISION_FLAG      = 
 
-#FF90_REAL_PRECISION_FLAG = -DUSE_SINGLE_PRECISION
-#FF90_REAL_PRECISION_FLAG = -DUSE_QUADRUPLE_PRECISION
-#CC_REAL_PRECISION_FLAG   = -DUSE_SINGLE_PRECISION
-#CC_REAL_PRECISION_FLAG   = -DUSE_QUADRUPLE_PRECISION
+# ------- Define CGNS Inlcude and linker flags -------------------------
+CGNS_INCLUDE_FLAGS = -I/usr/local/include
+CGNS_LINKER_FLAGS = -Wl,-rpath,/usr/local/lib -lcgns
 
-FF90_PRECISION_FLAGS = $(FF90_INTEGER_PRECISION_FLAG) \
-		       $(FF90_REAL_PRECISION_FLAG)
-CC_PRECISION_FLAGS   = $(CC_INTEGER_PRECISION_FLAG) \
-		       $(CC_REAL_PRECISION_FLAG)
+# ------- Define Compiler Flags ----------------------------------------
 
-#      ******************************************************************
-#      *                                                                *
-#      * Compiler flags. It is assumed that mpif90 is based on the      *
-#      * intel compiler ifort and mpicc on the gcc gnu compiler.        *
-#      *                                                                *
-#      ******************************************************************
+FF90_GEN_FLAGS = -DHAS_ISNAN 
+CC_GEN_FLAGS   = -DHAS_ISNAN  
 
-COMMAND_SEARCH_PATH_MODULES = -I
+FF90_OPT_FLAGS   =  -fpic -fdefault-real-8 -O1
+CC_OPT_FLAGS     = -O -fpic
 
-FF90_GEN_FLAGS = -DHAS_ISNAN -DUSE_PETSC_3
-CC_GEN_FLAGS   =
+FF90_DEBUG_FLAGS = #-check bounds -check all
+CC_DEBUG_FLAGS   = #-g -Wall -pedantic -DDEBUG_MODE
 
-#FF90_OPTFLAGS   = -O3 -ipo -ipo_obj
+# ------- Define Archiver  and Flags -----------------------------------
+AR       = ar
+AR_FLAGS = -rvs
 
-FF90_OPTFLAGS   =  -fpic -fdefault-real-8 -O1   #-pg #-check-all #-r8 -O2 # -g #-check-all #-O2 #-tpp7 -xW -unroll -ip
-
-#CC_OPTFLAGS     = -O3 -fexpensive-optimizations -frerun-cse-after-loop \
-#		  -fthread-jumps -funroll-loops -finline-functions
-CC_OPTFLAGS     = -O -fpic
-
-#FF90_DEBUGFLAGS = -g -C -implicitnone -ftrapuv -debug extended \
-#		  -traceback -DDEBUG_MODE
-#FF90_DEBUGFLAGS = -g -implicitnone -DDEBUG_MODE
-#CC_DEBUGFLAGS   = -g -Wall -pedantic -DDEBUG_MODE
-
-FF90_FLAGS = $(FF90_GEN_FLAGS) $(FF90_OPTFLAGS) $(FF90_DEBUGFLAGS)
-CC_FLAGS   = $(CC_GEN_FLAGS)   $(CC_OPTFLAGS)   $(CC_DEBUGFLAGS)
-
-#      ******************************************************************
-#      *                                                                *
-#      * pV3 and pvm3 linker flags.                                     *
-#      *                                                                *
-#      ******************************************************************
-
+# ------- Defin pV3 and pvm3 linker flags ------------------------------
 #PV3_FLAGS          = -DUSE_PV3
 #PV3_LINKER_FLAGS   = -L/usr/local/pV3/clients/LINUX-INTEL -lpV3
 #PVM3_LINKER_FLAGS  = -L/usr/local/pvm3/lib/LINUX -lgpvm3 -lpvm3
 #PV3_INT_SRC_DIR    = src/pv3Interface
 
-#      ******************************************************************
-#      *                                                                *
-#      * PETSc include and linker flags. The flag -DUSE_NO_PETSC        *
-#      * indicates that the PETSc libraries should not be included in   *
-#      * the built process. These are only needed when running ADjoint  *
-#      * problems, that use PETSc to solve the system of equations.     *
-#      * If -DUSE_NO_PETSC is uncommented then the PETSc include and    *
-#      * linker flags should be commented out.                          *
-#      *                                                                *
-#      ******************************************************************
+# ------- Define Linker Flags ------------------------------------------
+LINKER       = $(FF90)
+LINKER_FLAGS = 
 
-#PETSC_ROOT_DIR      = /usr/local/petsc-2.3.1-p15
-#PETSC_INCLUDE_FLAGS = -DUSE_NO_PETSC
-#PETSC_INCLUDE_FLAGS = -I$(PETSC_ROOT_DIR) \
-#		      -I$(PETSC_ROOT_DIR)/bmake/<platform> \
-#		      -I$(PETSC_ROOT_DIR)/include
-#PETSC_LINKER_FLAGS  = -L$(PETSC_ROOT_DIR)/lib/<platform> \
-#		      -lpetscksp -lpetscdm -lpetscmat -lpetscvec -lpetsc
-
-X11_DIR = /usr/X11R6/lib
-
-
+# ------- Define Petsc Info --- Should not need to modify this -----
 include ${PETSC_DIR}/conf/variables
 PETSC_INCLUDE_FLAGS=${PETSC_CC_INCLUDES} -I$(PETSC_DIR)
 PETSC_LINKER_FLAGS=${PETSC_LIB}
 
-PYTHON_INCLUDE_DIR = /usr/include/python2.6/
-NUMPY_ROOT_DIR =/usr/lib/python2.6/dist-packages/
+# Combine flags from above -- don't modify here
+FF90_FLAGS = $(FF90_GEN_FLAGS) $(FF90_OPT_FLAGS) $(FF90_DEBUG_FLAGS)
+CC_FLAGS   = $(CC_GEN_FLAGS)   $(CC_OPT_FLAGS)   $(CC_DEBUG_FLAGS)
+FF90_PRECISION_FLAGS = $(FF90_INTEGER_PRECISION_FLAG)$(FF90_REAL_PRECISION_FLAG)
+CC_PRECISION_FLAGS   = $(CC_INTEGER_PRECISION_FLAG) $(CC_REAL_PRECISION_FLAG)
 
-
-#      ******************************************************************
-#      *                                                                *
-#      * Archiver and archiver flags.                                   *
-#      *                                                                *
-#      ******************************************************************
-
-AR       = ar
-AR_FLAGS = -rvs
-
-#      ******************************************************************
-#      *                                                                *
-#      * Linker and linker flags.                                       *
-#      *                                                                *
-#      ******************************************************************
-
-LINKER       = $(FF90)
-LINKER_FLAGS = $(FF90_OPTFLAGS) -nofor_main -llapack

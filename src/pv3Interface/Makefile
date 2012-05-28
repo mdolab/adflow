@@ -51,8 +51,8 @@ FF90_OBJECTS_2 = pv3Routines.o
 default: all
 
 all:
-	$(MAKE) src_1
-	$(MAKE) src_2
+	$(PMAKE) src_1
+	$(PMAKE) src_2
 
 clean:
 	@echo "        Making clean in pv3Interface... "
