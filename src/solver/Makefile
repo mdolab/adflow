@@ -120,7 +120,7 @@ CC_OBJECTS   = connect_signals.o
 default: all
 
 all:
-	$(MAKE) src
+	$(PMAKE) src
 
 clean:
 	@echo "        Making clean in solver... "

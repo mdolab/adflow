@@ -61,7 +61,6 @@ SUBDIR_ADJOINT = src/adjoint               \
 		 src/forwardAdjoint/residualOutputExtra\
 		 src/forwardAdjoint/residualOutputSpatial
 
-
 SUBDIR_EXEC   = src/exec
 SUBDIR_PYTHON = src/python/fortran
 SUBDIR_PV3    = src/pv3Interface
@@ -81,8 +80,17 @@ SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC) $(SUBDIR_PYTHON) $(SUBDIR_PV3) \
 #      ******************************************************************
 
 default:
-	@echo "Usage: make <arch>"
-	@echo "Supported architectures: ABLATION_INTEL_IB"
+	@echo "Usage: make <arch> or make <arch>_PYTHON for python wrapper"
+	@echo "Currently Supported Architectures:"
+	@echo "                         LINUX_INTEL_OPENMPI"
+	@echo "                         LINUX_INTEL_OPENMPI_SCINET"
+	@echo "                         LINUX_INTEL_INTELMPI_SCINET"
+	@echo "                         LINUX_GFORTRAN_OPENMPI"
+	@echo "                         LINUX_INTEL_OPENMPI_NYX"
+	@echo " Previously Supported Architectures"
+	@echo "                         LINUX_INTEL_MPICH"
+	@echo "                         LINUX_INTEL"
+	@echo "                         ABLATION_INTEL_IB"
 	@echo "                         ABLATION_PG_IB"
 	@echo "                         ALC_INTEL"
 	@echo "                         ALTIX"
@@ -100,13 +108,6 @@ default:
 	@echo "                         LINUX_ABSOFT"
 	@echo "                         LINUX_G95"
 	@echo "                         LINUX_G95_MPICH"
-	@echo "                         LINUX_INTEL"
-	@echo "                         LINUX_INTEL_MPICH"
-	@echo "                         LINUX_INTEL_OPENMPI"
-	@echo "                         LINUX_INTEL_OPENMPI_SCINET"
-	@echo "                         LINUX_INTEL_OPENMPI_SCINET_PYTHON"
-	@echo "                         LINUX_INTEL_INTELMPI_SCINET"
-	@echo "                         LINUX_INTEL_INTELMPI_SCINET_PYTHON"
 	@echo "                         LINUX_PG"
 	@echo "                         LINUX_PG_MPICH"
 	@echo "                         REDHOT_IFC_ETHERNET"
@@ -160,16 +161,85 @@ sumb:
 		do \
 			echo "making $@ in $$subdir"; \
 			echo; \
-			(cd $$subdir && make -j 4) || exit 1; \
+			(cd $$subdir && make) || exit 1; \
 		done
 	(cd lib && make)
 	(cd $(SUBDIR_EXEC) && make)
 
 #      ******************************************************************
 #      *                                                                *
-#      * Platform specific targets.                                     *
+#      * Currently Supported Platforms                                  *
 #      *                                                                *
 #      ******************************************************************
+
+LINUX_INTEL_OPENMPI:
+	make dirs
+	if [ ! -f "config/config.LINUX_INTEL_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI.mk" ./config; fi
+	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI)
+	(cd externals/ADT && make LINUX_INTEL_OPENMPI)
+	ln -sf config/config.LINUX_INTEL_OPENMPI.mk config.mk
+	make sumb
+
+
+
+LINUX_INTEL_OPENMPI_PYTHON:
+	make LINUX_INTEL_OPENMPI
+	(cd src/python/f2py && make)
+
+LINUX_GFORTRAN_OPENMPI:
+	make dirs
+	if [ ! -f "config/config.LINUX_GFORTRAN_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_GFORTRAN_OPENMPI.mk" ./config; fi
+	(cd externals/SU_MPI && make LINUX_GFORTRAN)
+	(cd externals/ADT && make LINUX_GFORTRAN)
+	ln -sf config/config.LINUX_GFORTRAN_OPENMPI.mk config.mk
+	make sumb
+
+LINUX_GFORTRAN_OPENMPI_PYTHON:
+	make LINUX_GFORTRAN_OPENMPI_PYTHON
+	(cd src/python/f2py && make)
+
+LINUX_INTEL_OPENMPI_SCINET:
+	make dirs
+	if [ ! -f "config/config.LINUX_INTEL_OPENMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_SCINET.mk" ./config; fi
+	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI_SCINET)
+	(cd externals/ADT && make LINUX_INTEL_OPENMPI_SCINET)
+	ln -sf config/config.LINUX_INTEL_OPENMPI_SCINET.mk config.mk
+	make sumb
+
+LINUX_INTEL_OPENMPI_SCINET_PYTHON:
+	make LINUX_INTEL_OPENMPI_SCINET
+	(cd src/python/f2py && make)
+
+LINUX_INTEL_INTELMPI_SCINET:
+	make dirs
+	if [ ! -f "config/config.LINUX_INTEL_INTELMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_INTELMPI_SCINET.mk" ./config; fi
+	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI_SCINET)
+	(cd externals/ADT && make LINUX_INTEL_OPENMPI_SCINET)
+	ln -sf config/config.LINUX_INTEL_INTELMPI_SCINET.mk config.mk
+	make sumb
+
+LINUX_INTEL_INTELMPI_SCINET_PYTHON:
+	make LINUX_INTEL_INTELMPI_SCINET
+	(cd src/python/f2py && make)
+
+LINUX_INTEL_OPENMPI_NYX:
+	make dirs
+	if [ ! -f "config/config.LINUX_INTEL_OPENMPI_NYX.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_NYX.mk" ./config; fi
+	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI_SCINET)
+	(cd externals/ADT && make LINUX_INTEL_OPENMPI_SCINET)
+	ln -sf config/config.LINUX_INTEL_OPENMPI_NYX.mk config.mk
+	make sumb
+
+LINUX_INTEL_OPENMPI_NYX_PYTHON:
+	make LINUX_INTEL_OPENMPI_NYX_PYTHON
+	(cd src/python/f2py && make)
+
+#      ******************************************************************
+#      *                                                                *
+#      * Previously Supported Platforms                                 *
+#      *                                                                *
+#      ******************************************************************
+
 
 ABLATION_INTEL_IB:
 	make dirs
@@ -348,91 +418,6 @@ LINUX_INTEL_MPICH:
 	ln -sf config/config.LINUX_INTEL_MPICH.mk config.mk
 	make sumb
 
-LINUX_INTEL_OPENMPI:
-	make dirs
-	if [ ! -f "config/config.LINUX_INTEL_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI)
-	(cd externals/ADT && make LINUX_INTEL_OPENMPI)
-	ln -sf config/config.LINUX_INTEL_OPENMPI.mk config.mk
-	make sumb
-
-LINUX_INTEL_OPENMPI_PYTHON:
-	make dirs
-	if [ ! -f "config/config.LINUX_INTEL_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI)
-	(cd externals/ADT && make LINUX_INTEL_OPENMPI)
-	ln -sf config/config.LINUX_INTEL_OPENMPI.mk config.mk
-	make sumb
-	(cd src/python/f2py && make)
-
-LINUX_GFORTRAN_OPENMPI:
-	make dirs
-	if [ ! -f "config/config.LINUX_GFORTRAN_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_GFORTRAN_OPENMPI.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_GFORTRAN)
-	(cd externals/ADT && make LINUX_GFORTRAN)
-	ln -sf config/config.LINUX_GFORTRAN_OPENMPI.mk config.mk
-	make sumb
-
-LINUX_GFORTRAN_OPENMPI_PYTHON:
-	make dirs
-	if [ ! -f "config/config.LINUX_GFORTRAN_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_GFORTRAN_OPENMPI.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_GFORTRAN)
-	(cd externals/ADT && make LINUX_GFORTRAN)
-	ln -sf config/config.LINUX_GFORTRAN_OPENMPI.mk config.mk
-	make sumb
-	(cd src/python/f2py && make)
-
-
-LINUX_INTEL_OPENMPI_SCINET:
-	make dirs
-	if [ ! -f "config/config.LINUX_INTEL_OPENMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_SCINET.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI_SCINET)
-	(cd externals/ADT && make LINUX_INTEL_OPENMPI_SCINET)
-	ln -sf config/config.LINUX_INTEL_OPENMPI_SCINET.mk config.mk
-	make sumb
-
-LINUX_INTEL_OPENMPI_SCINET_PYTHON:
-	make dirs
-	if [ ! -f "config/config.LINUX_INTEL_OPENMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_SCINET.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI_SCINET)
-	(cd externals/ADT && make LINUX_INTEL_OPENMPI_SCINET)
-	ln -sf config/config.LINUX_INTEL_OPENMPI_SCINET.mk config.mk
-	make sumb
-	(cd src/python/f2py && make)
-
-LINUX_INTEL_INTELMPI_SCINET:
-	make dirs
-	if [ ! -f "config/config.LINUX_INTEL_INTELMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_INTELMPI_SCINET.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI_SCINET)
-	(cd externals/ADT && make LINUX_INTEL_OPENMPI_SCINET)
-	ln -sf config/config.LINUX_INTEL_INTELMPI_SCINET.mk config.mk
-	make sumb
-
-LINUX_INTEL_INTELMPI_SCINET_PYTHON:
-	make dirs
-	if [ ! -f "config/config.LINUX_INTEL_INTELMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_INTELMPI_SCINET.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI_SCINET)
-	(cd externals/ADT && make LINUX_INTEL_OPENMPI_SCINET)
-	ln -sf config/config.LINUX_INTEL_INTELMPI_SCINET.mk config.mk
-	make sumb
-	(cd src/python/f2py && make)
-
-LINUX_INTEL_OPENMPI_NYX:
-	make dirs
-	if [ ! -f "config/config.LINUX_INTEL_OPENMPI_NYX.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_NYX.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI_SCINET)
-	(cd externals/ADT && make LINUX_INTEL_OPENMPI_SCINET)
-	ln -sf config/config.LINUX_INTEL_OPENMPI_NYX.mk config.mk
-	make sumb
-
-LINUX_INTEL_OPENMPI_NYX_PYTHON:
-	make dirs
-	if [ ! -f "config/config.LINUX_INTEL_OPENMPI_NYX.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_NYX.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI_SCINET)
-	(cd externals/ADT && make LINUX_INTEL_OPENMPI_SCINET)
-	ln -sf config/config.LINUX_INTEL_OPENMPI_NYX.mk config.mk
-	make sumb
-	(cd src/python/f2py && make)
 
 LINUX_PG:
 	make dirs

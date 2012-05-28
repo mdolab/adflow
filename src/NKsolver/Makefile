@@ -58,7 +58,7 @@ FF90_OBJECTS = applyPC.o\
 default: all
 
 all:
-	$(MAKE) src
+	$(PMAKE) src
 
 clean:
 	@echo "        Making clean in solver... "

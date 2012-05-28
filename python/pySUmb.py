@@ -197,7 +197,7 @@ class SUMB(AeroSolver):
         if 'sumb' in kwargs:
             self.sumb = kwargs['sumb']
         else:
-            sumb_mod = MExt('sumb_parallel')
+            sumb_mod = MExt('sumb')
             self.sumb = sumb_mod._module
         # end if
         
