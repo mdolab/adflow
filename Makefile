@@ -195,7 +195,7 @@ LINUX_GFORTRAN_OPENMPI:
 	make sumb
 
 LINUX_GFORTRAN_OPENMPI_PYTHON:
-	make LINUX_GFORTRAN_OPENMPI_PYTHON
+	make LINUX_GFORTRAN_OPENMPI
 	(cd src/python/f2py && make)
 
 LINUX_INTEL_OPENMPI_SCINET:
@@ -231,7 +231,7 @@ LINUX_INTEL_OPENMPI_NYX:
 	make sumb
 
 LINUX_INTEL_OPENMPI_NYX_PYTHON:
-	make LINUX_INTEL_OPENMPI_NYX_PYTHON
+	make LINUX_INTEL_OPENMPI_NYX
 	(cd src/python/f2py && make)
 
 #      ******************************************************************
