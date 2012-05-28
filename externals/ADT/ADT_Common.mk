@@ -36,7 +36,7 @@ ADT_OBJDIR = $(ADT_DIR)/obj
 #      *                                                                *
 #      ******************************************************************
 
-MAKE = gmake
+MAKE = make
 
 ADT_COMPILERS = $(ADT_DIR)/config.mk
 ifneq ($(MAKECMDGOALS),clean)
