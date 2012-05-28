@@ -82,7 +82,7 @@ OBJECTS      = $(CC_OBJECTS) $(FF90_OBJECTS)
 default: all
 
 all:
-	$(MAKE) src
+	$(PMAKE) src
 	make SUmb
 
 clean:

@@ -46,7 +46,7 @@ FF90_OBJECTS = sumb_coupler_m.o
 default: all
 
 all:
-	$(MAKE) src
+	$(PMAKE) src
 	cp -f *.mod $(SUMB_MODDIR)
 
 clean:

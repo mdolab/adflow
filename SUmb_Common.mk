@@ -42,12 +42,11 @@ SUMB_LIBDIR = $(SUMB_DIR)/lib
 #      *                                                                *
 #      ******************************************************************
 
-MAKE = make
-
 SUMB_COMPILERS = $(SUMB_DIR)/config.mk
 ifneq ($(MAKECMDGOALS),clean)
 include ${SUMB_COMPILERS}
 endif
+
 
 #      ******************************************************************
 #      *                                                                *
@@ -75,12 +74,9 @@ MAKE_CLEAN_ARGUMENTS = *~ *.o *.mod *.il *.stb
 #      *                                                                *
 #      ******************************************************************
 
-FF90_LOCAL_FLAGS = $(COMMAND_SEARCH_PATH_MODULES)$(SUMB_MODDIR) \
-		   $(COMMAND_SEARCH_PATH_MODULES)$(SU_MPI_DIR)/mod \
-		   $(COMMAND_SEARCH_PATH_MODULES)$(ADT_DIR)/mod \
-		   $(COMMAND_SEARCH_PATH_MODULES)$(COUPLING_DIR)\
-		   $(COMMAND_SEARCH_PATH_MODULES)$(INPUT_DIR)\
-		   $(COMMAND_SEARCH_PATH_MODULES)$(TURB_DIR)\
+FF90_LOCAL_FLAGS = -I$(SUMB_MODDIR) -I$(SU_MPI_DIR)/mod \
+		   -I$(ADT_DIR)/mod -I$(COUPLING_DIR)\
+		   -I$(INPUT_DIR) -I$(TURB_DIR)\
 
 FF90_ALL_FLAGS   = $(FF90_LOCAL_FLAGS) $(CGNS_INCLUDE_FLAGS) \
 		   $(FF90_FLAGS) $(ADDITIONAL_FF90_FLAGS) $(PV3_FLAGS) \
