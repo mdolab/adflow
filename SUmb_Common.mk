@@ -42,7 +42,7 @@ SUMB_LIBDIR = $(SUMB_DIR)/lib
 #      *                                                                *
 #      ******************************************************************
 
-MAKE = gmake
+MAKE = make
 
 SUMB_COMPILERS = $(SUMB_DIR)/config.mk
 ifneq ($(MAKECMDGOALS),clean)

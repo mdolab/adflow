@@ -368,9 +368,10 @@ end subroutine verifyForces
 
 function norm(X,n)
   ! Compute the L2 nomr of X
+  use precision
   implicit none
-  double precision       :: X(n)
-  double precision       :: norm
+  real(kind=realType)       :: X(n)
+  real(kind=realType)    :: norm
   integer                :: i,n
   norm = 0.0
   do i=1,n
