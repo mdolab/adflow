@@ -83,7 +83,7 @@ default: all
 
 all:
 	$(MAKE) src
-	gmake SUmb
+	make SUmb
 
 clean:
 	@echo "        Making clean in exec... "

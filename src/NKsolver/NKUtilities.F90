@@ -15,9 +15,6 @@
 subroutine setWVec(wVec)
   ! Set the current residual in dw into the PETSc Vector
 #ifndef USE_NO_PETSC
-#define PETSC_AVOID_MPIF_
-#include "finclude/petscdef.h"
-
   use communication
   use blockPointers
   use inputtimespectral
@@ -25,8 +22,12 @@ subroutine setWVec(wVec)
   use inputiteration
 
   implicit none
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petscsys.h"
+#include "finclude/petscvec.h"
+#include "finclude/petscvec.h90"
 
-  PetscInt     wVec
+  Vec   wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
   real(kind=realType),pointer :: wvec_pointer(:)
 
@@ -53,23 +54,24 @@ subroutine setWVec(wVec)
   call VecRestoreArrayF90(wVec,wvec_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 #endif
+
 end subroutine setWVec
 
 subroutine setRVec(rVec)
 #ifndef USE_NO_PETSC
   ! Set the current residual in dw into the PETSc Vector
-#define PETSC_AVOID_MPIF_H
-#include "finclude/petscdef.h"
-
-  use communication
   use blockPointers
   use inputtimespectral
   use flowvarrefstate
   use inputiteration
   use NKsolvervars, only: scalevec
   implicit none
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petscsys.h"
+#include "finclude/petscvec.h"
+#include "finclude/petscvec.h90"
 
-  PetscInt     rVec
+  Vec    rVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
   real(kind=realType) :: ovv
   real(kind=realType),pointer :: rvec_pointer(:)
@@ -107,24 +109,22 @@ end subroutine setRVec
 
 subroutine setW(wVec)
 #ifndef USE_NO_PETSC
-#define PETSC_AVOID_MPIF_H
-#include "finclude/petscdef.h"
 
-  ! Set the SUmb state vector, w, from the petsc vec wVec
   use communication
   use blockPointers
   use inputTimeSpectral
   use flowVarRefState
 
   implicit none
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petscsys.h"
+#include "finclude/petscvec.h"
+#include "finclude/petscvec.h90"
 
-  PetscInt     wVec
+  Vec  wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
   real(kind=realType) :: temp,diff
   real(kind=realType),pointer :: wvec_pointer(:)
-  logical :: commPressure, commGamma, commViscous
-  ! Note this is not ideal memory access but the values are stored by
-  ! block in PETSc (grouped in nw) but are stored separately in SUmb
 
   call VecGetArrayF90(wVec,wvec_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -149,12 +149,6 @@ subroutine setW(wVec)
 
   call VecRestoreArrayF90(wVec,wvec_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
- 
-  ! Run the double halo exchange:
-!   commPressure = .False.
-!   commGamma = .False.
-!   commViscous = .True. 
-!   call whalo2(1_intType, 1_intType, nw, commPressure, commGamma, commViscous)
 #endif
 end subroutine setW
 
@@ -263,30 +257,28 @@ subroutine setStates(states,ndimw)
   end do
 end subroutine setStates
 
-
 subroutine calcScaling(scaleVec)
-
 #ifndef USE_NO_PETSC
-
-
-  use communication 
+  
+  use communication
   use blockPointers
   use inputtimespectral
   use flowvarrefstate
   use inputiteration
   use NKSolverVars, only : resSum
   implicit none
-#define PETSC_AVOID_MPIF_H
-#include "finclude/petscdef.h"
-#include "include/finclude/petsc.h"
 
-  PetscInt     scaleVec
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petscsys.h"
+#include "finclude/petscvec.h"
+#include "finclude/petscvec.h90"
+
+  Vec   scaleVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
   real(kind=realType) :: ovv
-  real(kind=realType),pointer :: scale_pointer(:)
   real(kind=realType) :: resSum_l(nw)
   real(kind=realTYpe) :: norm
-
+  real(kind=realType),pointer :: scale_pointer(:)
 
   ! Loop over current residual and determine the scaling for each of
   ! the nw equations:
@@ -339,7 +331,7 @@ subroutine calcScaling(scaleVec)
   resSum(:) = one
   call VecGetArrayF90(scaleVec,scale_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-
+  
   ii = 1
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral

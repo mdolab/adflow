@@ -114,7 +114,9 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
   pointRefAdj(2) = pointRef(2)
   pointRefAdj(3) = pointRef(3)
 
-  dIda = 0.0
+  if (ndesignextra > 0) then
+     dIda = 0.0
+  end if
   select case(costFunction)
   case(costFuncLift,costFuncDrag, &
        costFuncLiftCoef,costFuncDragCoef, &
@@ -520,14 +522,19 @@ end subroutine computeObjPartials
 subroutine getdIdw(output,nstate)
 
 #ifndef USE_NO_PETSC	
-#define PETSC_AVOID_MPIF_
-#include "finclude/petscdef.h"
+! #define PETSC_AVOID_MPIF_
+! #include "finclude/petscdef.h"
 
   use ADjointPETSc, only : dJdw
-  use petscvec
   use constants
 
   implicit none
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petscsys.h"
+#include "finclude/petscvec.h"
+#include "finclude/petscvec.h90"
+
+
   !
   !     Subroutine arguments.
   !
