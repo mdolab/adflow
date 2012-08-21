@@ -948,7 +948,7 @@
    END IF
    ! Compute the limiter argument rl1, rl2, rr1 and rr2.
    ! Note the cut off to 0.0.
-   tmpd = -(one*max2d*SIGN(1.d0, max2*du2(l))/SIGN(max2, du2(l))**2&
+   tmpd = -(one*max2d*SIGN(1.0, max2*du2(l))/SIGN(max2, du2(l))**2&
    &          )
    tmp = one/SIGN(max2, du2(l))
    IF (du1(l) .GE. 0.) THEN
@@ -965,7 +965,7 @@
    max4d = x3d
    max4 = x3
    END IF
-   y1d = (du2d(l)*SIGN(max4, du1(l))-du2(l)*max4d*SIGN(1.d0, max4*&
+   y1d = (du2d(l)*SIGN(max4, du1(l))-du2(l)*max4d*SIGN(1.0, max4*&
    &          du1(l)))/SIGN(max4, du1(l))**2
    y1 = du2(l)/SIGN(max4, du1(l))
    IF (zero .LT. y1) THEN
@@ -1003,7 +1003,7 @@
    max5d = x4d
    max5 = x4
    END IF
-   y2d = (du2d(l)*SIGN(max5, du3(l))-du2(l)*max5d*SIGN(1.d0, max5*&
+   y2d = (du2d(l)*SIGN(max5, du3(l))-du2(l)*max5d*SIGN(1.0, max5*&
    &          du3(l)))/SIGN(max5, du3(l))**2
    y2 = du2(l)/SIGN(max5, du3(l))
    IF (zero .LT. y2) THEN
@@ -1056,7 +1056,7 @@
    END IF
    ! Compute the limiter argument rl1, rl2, rr1 and rr2.
    ! Note the cut off to 0.0.
-   tmpd = -(one*max3d*SIGN(1.d0, max3*du2(l))/SIGN(max3, du2(l))**2&
+   tmpd = -(one*max3d*SIGN(1.0, max3*du2(l))/SIGN(max3, du2(l))**2&
    &          )
    tmp = one/SIGN(max3, du2(l))
    IF (du1(l) .GE. 0.) THEN
@@ -1073,7 +1073,7 @@
    max6d = x5d
    max6 = x5
    END IF
-   y3d = (du2d(l)*SIGN(max6, du1(l))-du2(l)*max6d*SIGN(1.d0, max6*&
+   y3d = (du2d(l)*SIGN(max6, du1(l))-du2(l)*max6d*SIGN(1.0, max6*&
    &          du1(l)))/SIGN(max6, du1(l))**2
    y3 = du2(l)/SIGN(max6, du1(l))
    IF (zero .LT. y3) THEN
@@ -1111,7 +1111,7 @@
    max7d = x6d
    max7 = x6
    END IF
-   y4d = (du2d(l)*SIGN(max7, du3(l))-du2(l)*max7d*SIGN(1.d0, max7*&
+   y4d = (du2d(l)*SIGN(max7, du3(l))-du2(l)*max7d*SIGN(1.0, max7*&
    &          du3(l)))/SIGN(max7, du3(l))**2
    y4 = du2(l)/SIGN(max7, du3(l))
    IF (zero .LT. y4) THEN

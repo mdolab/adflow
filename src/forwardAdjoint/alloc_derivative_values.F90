@@ -109,8 +109,10 @@ subroutine alloc_derivative_values(nn)
      j = nBocos
      allocate(flowDomsd(nn,1,sps)%BCData(j), stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
-   
+
+     flowdomsd(nn,1,sps)%nBocos = flowdoms(nn,1,sps)%nbocos   
      bcdatad =>flowDomsd(nn,1,sps)%BCData
+
      bocoLoop: do mm=1,nBocos
         
         ! Store the cell range of the boundary subface

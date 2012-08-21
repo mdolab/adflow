@@ -34,7 +34,7 @@ SU_MPI_OBJDIR = $(SU_MPI_DIR)/obj
 #      *                                                                *
 #      ******************************************************************
 
-MAKE = gmake
+MAKE = make
 
 SU_MPI_COMPILERS = $(SU_MPI_DIR)/config.mk
 ifneq ($(MAKECMDGOALS),clean)

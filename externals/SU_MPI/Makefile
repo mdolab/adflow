@@ -77,7 +77,7 @@ clean:
 			echo; \
 			echo "making $@ in $$subdir"; \
 			echo; \
-			(cd $$subdir && gmake $@) || exit 1; \
+			(cd $$subdir && make $@) || exit 1; \
 		done
 	rm -f *~ config.mk;
 	rm -f lib/lib* mod/* obj/*
@@ -94,18 +94,18 @@ parallel:
 		do \
 			echo "making $@ in $$subdir"; \
 			echo; \
-			(cd $$subdir && gmake) || exit 1; \
+			(cd $$subdir && make) || exit 1; \
 		done
-	(cd lib && gmake)
+	(cd lib && make)
 
 sequential:
 	@for subdir in $(SUBDIR_SRC_SEQ) ; \
 		do \
 			echo "making $@ in $$subdir"; \
 			echo; \
-			(cd $$subdir && gmake) || exit 1; \
+			(cd $$subdir && make) || exit 1; \
 		done
-	(cd lib && gmake)
+	(cd lib && make)
 
 #      ******************************************************************
 #      *                                                                *
@@ -115,59 +115,59 @@ sequential:
 
 ABLATION_INTEL_IB:
 	ln -sf config/config.ABLATION_INTEL_IB.mk config.mk
-	gmake parallel
+	make parallel
 
 ABLATION_PG_IB:
 	ln -sf config/config.ABLATION_PG_IB.mk config.mk
-	gmake parallel
+	make parallel
 
 ALC_INTEL:
 	ln -sf config/config.ALC_INTEL.mk config.mk
-	gmake parallel
+	make parallel
 
 ALTIX:
 	ln -sf config/config.ALTIX.mk config.mk
-	gmake sequential
+	make sequential
 
 ALTIX_MPI:
 	ln -sf config/config.ALTIX_MPI.mk config.mk
-	gmake parallel
+	make parallel
 
 ALTIX_MPICH2:
 	ln -sf config/config.ALTIX_MPICH2.mk config.mk
-	gmake parallel
+	make parallel
 
 APPLE_MAC_NAG:
 	ln -sf config/config.APPLE_MAC_NAG.mk config.mk
-	gmake sequential
+	make sequential
 
 APPLE_MAC_NAG_MPICH:
 	ln -sf config/config.APPLE_MAC_NAG_MPICH.mk config.mk
-	gmake parallel
+	make parallel
 
 APPLE_MAC_XLF:
 	ln -sf config/config.APPLE_MAC_XLF.mk config.mk
-	gmake sequential
+	make sequential
 
 APPLE_MAC_XLF_MPICH:
 	ln -sf config/config.APPLE_MAC_XLF_MPICH.mk config.mk
-	gmake parallel
+	make parallel
 
 ASCI_QSC:
 	ln -sf config/config.ASCI_QSC.mk config.mk
-	gmake parallel
+	make parallel
 
 CELL_G95:
 	ln -sf config/config.CELL_G95.mk config.mk
-	gmake sequential
+	make sequential
 
 FLASH_INTEL:
 	ln -sf config/config.FLASH_INTEL.mk config.mk
-	gmake parallel
+	make parallel
 
 FLASH_PG:
 	ln -sf config/config.FLASH_PG.mk config.mk
-	gmake parallel
+	make parallel
 
 GOUGING_INTEL_IB:
 	ln -sf config/config.GOUGING_INTEL_IB.mk config.mk
@@ -179,104 +179,104 @@ MELTING_INTEL:
 
 IBM_BLUEGENE:
 	ln -sf config/config.IBM_BLUEGENE.mk config.mk
-	gmake parallel
+	make parallel
 
 IBM_DATASTAR:
 	ln -sf config/config.IBM_DATASTAR.mk config.mk
-	gmake parallel
+	make parallel
 
 LINUX_ABSOFT:
 	ln -sf config/config.LINUX_ABSOFT.mk config.mk
-	gmake sequential
+	make sequential
 
 LINUX_G95:
 	ln -sf config/config.LINUX_G95.mk config.mk
-	gmake sequential
+	make sequential
 
 LINUX_G95_MPICH:
 	ln -sf config/config.LINUX_G95_MPICH.mk config.mk
-	gmake parallel
+	make parallel
 
 LINUX_G95_OPENMPI:
 	ln -sf config/config.LINUX_G95_OPENMPI.mk config.mk
-	gmake parallel
+	make parallel
 
 LINUX_INTEL:
 	ln -sf config/config.LINUX_INTEL.mk config.mk
-	gmake sequential
+	make sequential
 
 LINUX_INTEL_MPICH:
 	ln -sf config/config.LINUX_INTEL_MPICH.mk config.mk
-	gmake parallel
+	make parallel
 
 LINUX_INTEL_OPENMPI:
 	ln -sf config/config.LINUX_INTEL_OPENMPI.mk config.mk
-	gmake parallel
+	make parallel
 
 LINUX_INTEL_OPENMPI_SCINET:
 	ln -sf config/config.LINUX_INTEL_OPENMPI_SCINET.mk config.mk
-	gmake parallel
+	make parallel
 
 LINUX_GFORTRAN:
 	ln -sf config/config.LINUX_GFORTRAN.mk config.mk
-	gmake parallel
+	make parallel
 
 LINUX_PG:
 	ln -sf config/config.LINUX_PG.mk config.mk
-	gmake sequential
+	make sequential
 
 LINUX_PG_MPICH:
 	ln -sf config/config.LINUX_PG_MPICH.mk config.mk
-	gmake parallel
+	make parallel
 
 LINUX_XLF:
 	ln -sf config/config.LINUX_XLF.mk config.mk
-	gmake sequential
+	make sequential
 
 REDHOT_IFC_ETHERNET:
 	ln -sf config/config.REDHOT_IFC_ETHERNET.mk config.mk
-	gmake parallel
+	make parallel
 
 REDHOT_IFC_MYRINET:
 	ln -sf config/config.REDHOT_IFC_MYRINET.mk config.mk
-	gmake parallel
+	make parallel
 
 REDHOT_PG_ETHERNET:
 	ln -sf config/config.REDHOT_PG_ETHERNET.mk config.mk
-	gmake parallel
+	make parallel
 
 REDHOT_PG_MYRINET:
 	ln -sf config/config.REDHOT_PG_MYRINET.mk config.mk
-	gmake parallel
+	make parallel
 
 REDSTORM:
 	ln -sf config/config.REDSTORM.mk config.mk
-	gmake parallel
+	make parallel
 
 SGI:
 	ln -sf config/config.SGI.mk config.mk
-	gmake sequential
+	make sequential
 
 SGI_MPI_ORIGIN:
 	ln -sf config/config.SGI_MPI_ORIGIN.mk config.mk
-	gmake parallel
+	make parallel
 
 SGI_N32:
 	ln -sf config/config.SGI_N32.mk config.mk
-	gmake sequential
+	make sequential
 
 SGI_N32_MPICH:
 	ln -sf config/config.SGI_N32_MPICH.mk config.mk
-	gmake parallel
+	make parallel
 
 SGI_N32_MPI_ORIGIN:
 	ln -sf config/config.SGI_N32_MPI_ORIGIN.mk config.mk
-	gmake parallel
+	make parallel
 
 SICORTEX:
 	ln -sf config/config.SICORTEX.mk config.mk
-	gmake sequential
+	make sequential
 
 SICORTEX_MPI:
 	ln -sf config/config.SICORTEX_MPI.mk config.mk
-	gmake parallel
+	make parallel

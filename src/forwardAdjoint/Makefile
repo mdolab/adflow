@@ -60,7 +60,7 @@ FF90_OBJECTS = determineStencil.o\
 default: all
 
 all:
-	$(MAKE) src
+	$(PMAKE) src
 
 clean:
 	@echo "        Making clean in solver... "

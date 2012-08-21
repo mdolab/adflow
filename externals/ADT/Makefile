@@ -77,7 +77,7 @@ clean:
 			echo; \
 			echo "making $@ in $$subdir"; \
 			echo; \
-			(cd $$subdir && gmake $@) || exit 1; \
+			(cd $$subdir && make $@) || exit 1; \
 		done
 	rm -f *~ config.mk;
 	rm -f lib/lib* mod/* obj/*
@@ -94,9 +94,9 @@ adt:
 		do \
 			echo "making $@ in $$subdir"; \
 			echo; \
-			(cd $$subdir && gmake) || exit 1; \
+			(cd $$subdir && make) || exit 1; \
 		done
-	(cd lib && gmake)
+	(cd lib && make)
 
 #      ******************************************************************
 #      *                                                                *
@@ -109,63 +109,63 @@ adt:
 
 ABLATION_INTEL_IB:
 	ln -sf config/config.ABLATION_INTEL_IB.mk config.mk
-	gmake adt
+	make adt
 
 ABLATION_PG_IB:
 	ln -sf config/config.ABLATION_PG_IB.mk config.mk
-	gmake adt
+	make adt
 
 ALC_INTEL:
 	ln -sf config/config.ALC_INTEL.mk config.mk
-	gmake adt
+	make adt
 
 ALTIX:
 	ln -sf config/config.ALTIX.mk config.mk
-	gmake adt
+	make adt
 
 ALTIX_MPI:
 	ln -sf config/config.ALTIX.mk config.mk
-	gmake adt
+	make adt
 
 ALTIX_MPICH2:
 	ln -sf config/config.ALTIX.mk config.mk
-	gmake adt
+	make adt
 
 APPLE_MAC_NAG:
 	ln -sf config/config.APPLE_MAC_NAG.mk config.mk
-	gmake adt
+	make adt
 
 APPLE_MAC_NAG_MPICH:
 	ln -sf config/config.APPLE_MAC_NAG.mk config.mk
-	gmake adt
+	make adt
 
 APPLE_MAC_XLF:
 	ln -sf config/config.APPLE_MAC_XLF.mk config.mk
-	gmake adt
+	make adt
 
 APPLE_MAC_XLF_MPICH:
 	ln -sf config/config.APPLE_MAC_XLF.mk config.mk
-	gmake adt
+	make adt
 
 ASCI_QSC:
 	ln -sf config/config.ASCI_QSC.mk config.mk
-	gmake adt
+	make adt
 
 CELL_G95:
 	ln -sf config/config.CELL_G95.mk config.mk
-	gmake adt
+	make adt
 
 FLASH_INTEL:
 	ln -sf config/config.FLASH_INTEL.mk config.mk
-	gmake adt
+	make adt
 
 FLASH_PG:
 	ln -sf config/config.FLASH_PG.mk config.mk
-	gmake adt
+	make adt
 
 CYGWIN_INTEL:
 	ln -sf config/config.CYGWIN_INTEL.mk config.mk
-	gmake adt
+	make adt
 
 GOUGING_INTEL_IB:
 	ln -sf config/config.GOUGING_INTEL_IB.mk config.mk
@@ -177,105 +177,105 @@ MELTING_INTEL:
 
 IBM_BLUEGENE:
 	ln -sf config/config.IBM_BLUEGENE.mk config.mk
-	gmake adt
+	make adt
 
 IBM_DATASTAR:
 	ln -sf config/config.IBM_DATASTAR.mk config.mk
-	gmake adt
+	make adt
 
 LINUX_ABSOFT:
 	ln -sf config/config.LINUX_ABSOFT.mk config.mk
-	gmake adt
+	make adt
 
 LINUX_G95:
 	ln -sf config/config.LINUX_G95.mk config.mk
-	gmake adt
+	make adt
 
 LINUX_G95_MPICH:
 	ln -sf config/config.LINUX_G95.mk config.mk
-	gmake adt
+	make adt
 
 LINUX_G95_OPENMPI:
 	ln -sf config/config.LINUX_G95.mk config.mk
-	gmake adt
+	make adt
 
 LINUX_INTEL:
 	ln -sf config/config.LINUX_INTEL.mk config.mk
-	gmake adt
+	make adt
 
 LINUX_INTEL_MPICH:
 	ln -sf config/config.LINUX_INTEL.mk config.mk
-	gmake adt
+	make adt
 
 LINUX_INTEL_OPENMPI:
 	ln -sf config/config.LINUX_INTEL.mk config.mk
-	gmake adt
+	make adt
 
 LINUX_INTEL_OPENMPI_SCINET:
 	ln -sf config/config.LINUX_INTEL.mk config.mk
-	gmake adt
+	make adt
 
 LINUX_GFORTRAN:
 	ln -sf config/config.LINUX_GFORTRAN.mk config.mk
-	gmake adt
+	make adt
 
 LINUX_PG:
 	ln -sf config/config.LINUX_PG.mk config.mk
-	gmake adt
+	make adt
 
 LINUX_PG_MPICH:
 	ln -sf config/config.LINUX_PG.mk config.mk
-	gmake adt
+	make adt
 
 LINUX_XLF:
 	ln -sf config/config.LINUX_XLF.mk config.mk
-	gmake adt
+	make adt
 
 REDHOT_IFC_ETHERNET:
 	ln -sf config/config.REDHOT_INTEL.mk config.mk
-	gmake adt
+	make adt
 
 REDHOT_IFC_MYRINET:
 	ln -sf config/config.REDHOT_INTEL.mk config.mk
-	gmake adt
+	make adt
 
 REDHOT_PG_ETHERNET:
 	ln -sf config/config.REDHOT_PG.mk config.mk
-	gmake adt
+	make adt
 
 REDHOT_PG_MYRINET:
 	ln -sf config/config.REDHOT_PG.mk config.mk
-	gmake adt
+	make adt
 
 REDSTORM:
 	ln -sf config/config.REDSTORM.mk config.mk
-	gmake adt
+	make adt
 
 
 SGI:
 	ln -sf config/config.SGI.mk config.mk
-	gmake adt
+	make adt
 
 SGI_MPI_ORIGIN:
 	ln -sf config/config.SGI.mk config.mk
-	gmake adt
+	make adt
 
 SGI_N32:
 	ln -sf config/config.SGI_N32.mk config.mk
-	gmake adt
+	make adt
 
 SGI_N32_MPICH:
 	ln -sf config/config.SGI_N32.mk config.mk
-	gmake adt
+	make adt
 
 SGI_N32_MPI_ORIGIN:
 	ln -sf config/config.SGI_N32.mk config.mk
-	gmake adt
+	make adt
 
 SICORTEX:
 	ln -sf config/config.SICORTEX.mk config.mk
-	gmake adt
+	make adt
 
 SICORTEX_MPI:
 	ln -sf config/config.SICORTEX.mk config.mk
-	gmake adt
+	make adt
