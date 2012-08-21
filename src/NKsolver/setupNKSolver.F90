@@ -29,7 +29,7 @@ subroutine setupNKsolver
   integer(kind=intType) :: i,j,k,nn,i2,j2,k2,d2,l,sps
   external FormFunction_mf
   external mykspmonitor
-  if (not(NKSolverSetup)) then
+  if (.not. NKSolverSetup) then
      nDimW = nw * nCellsLocal * nTimeIntervalsSpectral
 
      call VecCreateMPI(SUMB_COMM_WORLD,nDimw,PETSC_DETERMINE,wVec,ierr)

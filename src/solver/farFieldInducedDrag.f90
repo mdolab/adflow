@@ -247,7 +247,9 @@ subroutine farFieldInducedDrag(value)
                      0.5*(( V_wind(1)**2 + V_wind(2)**2 + V_wind(3)**2) - (Uinf*vRef)**2)
                 !print *,'vels', 0.5*(( V_wind(1)**2 + V_wind(2)**2 + V_wind(3)**2) - Uinf**2),(PAvg/rhoAvg-Pinf/rhoinf), (gammaConstant/gm1)
                 
-                popInf  = exp(-ds/rgasdim)*(1+((gm1* Mach**2)/2.0)*(1-(V_wind(1)**2 + V_wind(2)**2 + V_wind(3)**2)/(Uinf*vRef)**2+2*(dh/(Uinf*vRef)**2)))**(gammaConstant/gm1)
+                popInf  = exp(-ds/rgasdim)*(1+((gm1* Mach**2)/2.0)*(1-(V_wind(1)**2 +&
+                     V_wind(2)**2 + V_wind(3)**2)/(Uinf*vRef)**2+&
+                     2*(dh/(Uinf*vRef)**2)))**(gammaConstant/gm1)
                 !print *,'t1',(gm1* Mach**2)/2.0
                 !print *,'t2',(V_wind(1)**2 + V_wind(2)**2 + V_wind(3)**2)/(Uinf*vRef)**2
                 !print *,'t3',2*(dh/(Uinf*vRef)**2)
@@ -255,7 +257,8 @@ subroutine farFieldInducedDrag(value)
                 !print *,'test2', (V_wind(2)**2 + V_wind(3)**2)/(Uinf*vRef)**2
                 !print *,'popInf',popInf,pAvg/(pInf*pref),(pAvg/(pInf*pref))/popInf
 
-                uouInf = sqrt(1+2*(dh/(Uinf*vRef)**2)-(2.0/(gm1* Mach**2))*(popInf**(gm1/gammaconstant)*exp(ds/rgasDim)**(gm1/gammaconstant)-1))
+                uouInf = sqrt(1+2*(dh/(Uinf*vRef)**2)-(2.0/(gm1* Mach**2))*&
+                     (popInf**(gm1/gammaconstant)*exp(ds/rgasDim)**(gm1/gammaconstant)-1))
                 
                 !print *,'dh',dh
                 

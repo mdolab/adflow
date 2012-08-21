@@ -52,7 +52,7 @@ FF90_OBJECTS = computeTSStabilityDerivAdj.o\
 default: all
 
 all:
-	$(MAKE) src
+	$(PMAKE) src
 
 clean:
 	@echo "        Making clean in adjoint... "

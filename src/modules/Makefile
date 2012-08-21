@@ -46,15 +46,15 @@ FF90_OBJECTS_2 = bleedFlows.o\
 		 coolingModelLevel0.o\
 		 killSignals.o\
 		 communication.o\
-	         costFunctions.o\
 
-FF90_OBJECTS_3 = ADjointPETSc.o\
-	         ADjointVars.o\
-		 NKsolverVars.o\
+FF90_OBJECTS_3 = NKsolverVars.o\
 		 block.o\
-		 IOModule.o
+		 IOModule.o\
+		 costFunctions.o\
 
-FF90_OBJECTS_4 = BCTypes.o\
+FF90_OBJECTS_4 = ADjointVars.o\
+		 ADjointPETSc.o\
+		 BCTypes.o\
 		 blockPointers.o\
 		 cgnsGrid.o\
 		 cgnsNames.o\
@@ -86,10 +86,10 @@ FF90_OBJECTS_4 = BCTypes.o\
 default: all
 
 all:
-	$(MAKE) src_1
-	$(MAKE) src_2
-	$(MAKE) src_3
-	$(MAKE) src_4
+	$(PMAKE) src_1
+	$(PMAKE) src_2
+	$(PMAKE) src_3
+	$(PMAKE) src_4
 	cp -f *.mod $(SUMB_MODDIR)
 
 clean:

@@ -56,7 +56,7 @@ FF90_OBJECTS = determineBytesCommChunk.o\
 default: all
 
 all:
-	$(MAKE) src
+	$(PMAKE) src
 
 clean:
 	@echo "        Making clean in parallelIO... "

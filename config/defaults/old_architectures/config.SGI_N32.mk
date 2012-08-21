@@ -1,8 +1,8 @@
 #      ******************************************************************
 #      *                                                                *
-#      * File:          config.SGI.mk                                   *
+#      * File:          config_N32.SGI.mk                               *
 #      * Author:        Edwin van der Weide                             *
-#      * Starting date: 12-09-2002                                      *
+#      * Starting date: 12-03-2003                                      *
 #      * Last modified: 02-23-2006                                      *
 #      *                                                                *
 #      ******************************************************************
@@ -11,7 +11,7 @@
 #      *                                                                *
 #      * Description: Defines the compiler settings and other commands  *
 #      *              to have "make" function correctly. This file      *
-#      *              defines the settings for a sequential 64 bit SGI  *
+#      *              defines the settings for a sequential 32 bit SGI  *
 #      *              executable.                                       *
 #      *                                                                *
 #      ******************************************************************
@@ -24,7 +24,7 @@
 #      *                                                                *
 #      ******************************************************************
 
-MAKE = gmake -j 8
+MAKE = make -j 8
 
 #      ******************************************************************
 #      *                                                                *
@@ -33,7 +33,7 @@ MAKE = gmake -j 8
 #      *                                                                *
 #      ******************************************************************
 
-EXEC_SUFFIX = _sgi
+EXEC_SUFFIX = _sgi_n32
 
 #      ******************************************************************
 #      *                                                                *
@@ -51,7 +51,7 @@ CC   = cc
 #      ******************************************************************
 
 CGNS_INCLUDE_FLAGS = -I/usr/local/CGNS2.3/include
-CGNS_LINKER_FLAGS  = -L/usr/local/CGNS2.3/lib64 -lcgns
+CGNS_LINKER_FLAGS  = -L/usr/local/CGNS2.3/libN32 -lcgns
 
 #      ******************************************************************
 #      *                                                                *
@@ -87,8 +87,8 @@ CC_PRECISION_FLAGS   = $(CC_INTEGER_PRECISION_FLAG) \
 
 COMMAND_SEARCH_PATH_MODULES = -I
 
-FF90_32_64_FLAGS = -mips4 -64
-CC_32_64_FLAGS   = -mips4 -64
+FF90_32_64_FLAGS = -mips4 -n32
+CC_32_64_FLAGS   = -mips4 -n32
 
 FF90_GEN_FLAGS = $(FF90_32_64_FLAGS)
 CC_GEN_FLAGS   = $(CC_32_64_FLAGS)
@@ -102,6 +102,8 @@ CC_OPTFLAGS     = -O
 DEBUGFLAGS      = -DEBUG:conform_check=ON:div_check=3:subscript_check=ON:trap_uninitialized=ON:varargs_interface_check=ON:verbose_runtime=ON
 #FF90_DEBUGFLAGS = -g -fullwarn -check_bounds $(DEBUGFLAGS) -DDEBUG_MODE
 #CC_DEBUGFLAGS   = -g -fullwarn $(DEBUGFLAGS) -DDEBUG_MODE
+#FF90_DEBUGFLAGS = -g
+#CC_DEBUGFLAGS   = -g
 
 FF90_FLAGS = $(FF90_GEN_FLAGS) $(FF90_OPTFLAGS) $(FF90_DEBUGFLAGS)
 CC_FLAGS   = $(CC_GEN_FLAGS)   $(CC_OPTFLAGS)   $(CC_DEBUGFLAGS)
@@ -113,8 +115,8 @@ CC_FLAGS   = $(CC_GEN_FLAGS)   $(CC_OPTFLAGS)   $(CC_DEBUGFLAGS)
 #      ******************************************************************
 
 #PV3_FLAGS          = -DUSE_PV3
-#PV3_LINKER_FLAGS   = -L/usr/local/pV3/clients/SGI64 -lpV3
-#PVM3_LINKER_FLAGS  = -L/usr/local/pvm3/lib/SGI64 -lgpvm3 -lpvm3
+#PV3_LINKER_FLAGS   = -L/usr/local/pV3/clients/SGI6 -lpV3
+#PVM3_LINKER_FLAGS  = -L/usr/local/pvm3/lib/SGI6 -lgpvm3 -lpvm3
 #PV3_INT_SRC_DIR    = src/pv3Interface
 
 #      ******************************************************************

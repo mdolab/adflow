@@ -1,8 +1,8 @@
 #      ******************************************************************
 #      *                                                                *
-#      * File:          config.SGI_N32_MPI_ORIGIN.mk                    *
+#      * File:          config.IBM_DATASTAR.mk                          *
 #      * Author:        Edwin van der Weide                             *
-#      * Starting date: 12-03-2003                                      *
+#      * Starting date: 07-03-2005                                      *
 #      * Last modified: 02-23-2006                                      *
 #      *                                                                *
 #      ******************************************************************
@@ -11,10 +11,9 @@
 #      *                                                                *
 #      * Description: Defines the compiler settings and other commands  *
 #      *              to have "make" function correctly. This file      *
-#      *              defines the settings for a parallel N32 bit SGI   *
-#      *              executable in combination with SGI MPI, i.e. a    *
-#      *              shared memory MPI version. This will typically    *
-#      *              run on machines of the Origin class.              *
+#      *              defines the settings for a parallel executable    *
+#      *              IBM xlf95 and cc compiler for the DataStar        *
+#      *              machine of the San Diego Supercomputer Center.    *
 #      *                                                                *
 #      ******************************************************************
 
@@ -26,7 +25,7 @@
 #      *                                                                *
 #      ******************************************************************
 
-MAKE = gmake -j 8
+#MAKE = make
 
 #      ******************************************************************
 #      *                                                                *
@@ -35,7 +34,7 @@ MAKE = gmake -j 8
 #      *                                                                *
 #      ******************************************************************
 
-EXEC_SUFFIX = _sgi_n32_origin_mpi
+EXEC_SUFFIX = _ibm_datastar
 
 #      ******************************************************************
 #      *                                                                *
@@ -43,8 +42,8 @@ EXEC_SUFFIX = _sgi_n32_origin_mpi
 #      *                                                                *
 #      ******************************************************************
 
-FF90 = f90
-CC   = cc
+FF90 = mpxlf95_r
+CC   = mpcc_r
 
 #      ******************************************************************
 #      *                                                                *
@@ -52,8 +51,9 @@ CC   = cc
 #      *                                                                *
 #      ******************************************************************
 
-CGNS_INCLUDE_FLAGS = -I/usr/local/CGNS2.3/include
-CGNS_LINKER_FLAGS  = -L/usr/local/CGNS2.3/libN32 -lcgns
+#CGNS_INCLUDE_FLAGS = -WF,-DUSE_NO_CGNS
+CGNS_INCLUDE_FLAGS = -I$(HOME)/CGNS2.4/include
+CGNS_LINKER_FLAGS  = -L$(HOME)/CGNS2.4/lib -lcgns.IBM64
 
 #      ******************************************************************
 #      *                                                                *
@@ -67,13 +67,13 @@ CGNS_LINKER_FLAGS  = -L/usr/local/CGNS2.3/libN32 -lcgns
 #      *                                                                *
 #      ******************************************************************
 
-#FF90_INTEGER_PRECISION_FLAG = -DUSE_LONG_INT
+#FF90_INTEGER_PRECISION_FLAG = -WF,-DUSE_LONG_INT
 #CC_INTEGER_PRECISION_FLAG   = -DUSE_LONG_INT
 
-#FF90_REAL_PRECISION_FLAG = -DUSE_SINGLE_PRECISION
-#FF90_REAL_PRECISION_FLAG = -DUSE_QUADRUPLE_PRECISION
-#CC_REAL_PRECISION_FLAG   = -DUSE_SINGLE_PRECISION
-#CC_REAL_PRECISION_FLAG   = -DUSE_QUADRUPLE_PRECISION
+#FF90_REAL_PRECISION_FLAG = -WF,-DUSE_SINGLE_PRECISION
+#FF90_REAL_PRECISION_FLAG = -WF,-DUSE_QUADRUPLE_PRECISION
+#CC_REAL_PRECISION_FLAG   = -WF,-DUSE_SINGLE_PRECISION
+#CC_REAL_PRECISION_FLAG   = -WF,-DUSE_QUADRUPLE_PRECISION
 
 FF90_PRECISION_FLAGS = $(FF90_INTEGER_PRECISION_FLAG) \
 		       $(FF90_REAL_PRECISION_FLAG)
@@ -83,33 +83,21 @@ CC_PRECISION_FLAGS   = $(CC_INTEGER_PRECISION_FLAG) \
 #      ******************************************************************
 #      *                                                                *
 #      * Compiler flags.                                                *
-#      * The Ofast option is based on the 600 MHZ IP35 processor.       *
 #      *                                                                *
 #      ******************************************************************
 
 COMMAND_SEARCH_PATH_MODULES = -I
 
-FF90_32_64_FLAGS = -mips4 -n32
-CC_32_64_FLAGS   = -mips4 -n32
+FF90_GEN_FLAGS = -qsuffix=f=f90 -qsuffix=cpp=F90 -qextname -q64 \
+		 -WF,-DUSE_NO_SIGNALS
+CC_GEN_FLAGS   = -q64 -DUSE_NO_SIGNALS
 
-FF90_GEN_FLAGS = $(FF90_32_64_FLAGS)
-CC_GEN_FLAGS   = $(CC_32_64_FLAGS)
-
-#FF90_OPTFLAGS   = -r14000 -Ofast=ip35 -IPA
-#CC_OPTFLAGS     = -r14000 -Ofast=ip35 -IPA
-
-#FF90_OPTFLAGS   = -O2
-#CC_OPTFLAGS     = -O2
-
-FF90_OPTFLAGS   = -O3
+FF90_OPTFLAGS   = -qtune=pwr4 -qarch=pwr4 -O3
+#CC_OPTFLAGS     = -qtune=pwr4 -qarch=pwr4 -O3
 CC_OPTFLAGS     = -O
 
-DEBUGFLAGS      = -DEBUG:conform_check=ON:div_check=3:subscript_check=ON:trap_uninitialized=ON:varargs_interface_check=ON:verbose_runtime=ON
-#FF90_DEBUGFLAGS = -g -fullwarn -check_bounds $(DEBUGFLAGS) -DDEBUG_MODE
-#FF90_DEBUGFLAGS = -g3 -O3 -DDEBUG_MODE
-#FF90_DEBUGFLAGS = -g -DDEBUG_MODE
-#CC_DEBUGFLAGS   = -g -fullwarn $(DEBUGFLAGS) -DDEBUG_MODE
-#CC_DEBUGFLAGS   = -g -DDEBUG_MODE
+#FF90_DEBUGFLAGS = -qsigtrap -g -C -qfullpath -qfloat=nans -WF,-DDEBUG_MODE
+#CC_DEBUGFLAGS   = -qsigtrap -g
 
 FF90_FLAGS = $(FF90_GEN_FLAGS) $(FF90_OPTFLAGS) $(FF90_DEBUGFLAGS)
 CC_FLAGS   = $(CC_GEN_FLAGS)   $(CC_OPTFLAGS)   $(CC_DEBUGFLAGS)
@@ -121,8 +109,8 @@ CC_FLAGS   = $(CC_GEN_FLAGS)   $(CC_OPTFLAGS)   $(CC_DEBUGFLAGS)
 #      ******************************************************************
 
 #PV3_FLAGS          = -DUSE_PV3
-#PV3_LINKER_FLAGS   = -L/usr/local/pV3/clients/SGI6 -lpV3
-#PVM3_LINKER_FLAGS  = -L/usr/local/pvm3/lib/SGI6 -lgpvm3 -lpvm3
+#PV3_LINKER_FLAGS   = -L/usr/local/pV3/clients/LINUX-INTEL -lpV3
+#PVM3_LINKER_FLAGS  = -L/usr/local/pvm3/lib/LINUX -lgpvm3 -lpvm3
 #PV3_INT_SRC_DIR    = src/pv3Interface
 
 #      ******************************************************************
@@ -131,8 +119,8 @@ CC_FLAGS   = $(CC_GEN_FLAGS)   $(CC_OPTFLAGS)   $(CC_DEBUGFLAGS)
 #      *                                                                *
 #      ******************************************************************
 
-AR       = ar
-AR_FLAGS = -rv
+AR       = ar -X64
+AR_FLAGS = -rvs
 
 #      ******************************************************************
 #      *                                                                *
@@ -141,4 +129,4 @@ AR_FLAGS = -rv
 #      ******************************************************************
 
 LINKER       = $(FF90)
-LINKER_FLAGS = $(FF90_32_64_FLAGS) $(FF90_OPTFLAGS) -lmpi
+LINKER_FLAGS = $(FF90_OPTFLAGS) -q64

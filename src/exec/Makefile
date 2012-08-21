@@ -82,8 +82,8 @@ OBJECTS      = $(CC_OBJECTS) $(FF90_OBJECTS)
 default: all
 
 all:
-	$(MAKE) src
-	gmake SUmb
+	$(PMAKE) src
+	make SUmb
 
 clean:
 	@echo "        Making clean in exec... "

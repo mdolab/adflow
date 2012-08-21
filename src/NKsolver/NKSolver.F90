@@ -338,7 +338,7 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Sufficient reduction 
-  if (half*gnorm*gnorm <= half*fnorm*fnorm + lambda*alpha*initslope) then
+    if (half*gnorm*gnorm <= half*fnorm*fnorm + lambda*alpha*initslope) then
      goto 100
   end if
 
