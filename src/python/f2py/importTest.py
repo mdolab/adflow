@@ -2,7 +2,7 @@
 
 import sys
 
-name = 'sumb%s'%(sys.argv[1])
+name = 'sumb'
 print "Testing if module %s can be imported..." % name
 import_cmd = "import %s" % name
 try:
@@ -13,3 +13,4 @@ except Exception, inst:
 # end try
 
 print "Module %s was successfully imported." % name
+
