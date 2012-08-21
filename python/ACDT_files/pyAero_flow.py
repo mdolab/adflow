@@ -60,7 +60,7 @@ class Flow(object):
 		     coefPol = [0.0], degreeFourier = 0,
 		     omegaFourier = 0.0, cosCoefFourier = [0.0], 
 		     sinCoefFourier = [0.0],rho=1.225,P=101325.0,T=273.15,gamma=1.4,
-		     mu=1.80e-5, *args, **kwargs):
+		     mu=1.80e-5,nu=1.46e-5, *args, **kwargs):
 		
 		'''
 		Flow Class Initialization
@@ -109,6 +109,7 @@ class Flow(object):
 		self.T = T
 		self.gamma = gamma
 		self.mu = mu
+		self.nu = nu
 
 	def ListAttributes(self):
 		
