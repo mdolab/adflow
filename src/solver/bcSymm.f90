@@ -135,7 +135,6 @@
                  ! Determine the flow variables in the halo cell.
 
                  ww1(i,j,irho) = ww2(i,j,irho)
-                 !write(14, *),i,j,kk,irho,ww2(i,j,irho)
 
                  ww1(i,j,ivx) = ww2(i,j,ivx) - vn*nnx
                  ww1(i,j,ivy) = ww2(i,j,ivy) - vn*nny

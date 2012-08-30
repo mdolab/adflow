@@ -87,6 +87,7 @@ FF90_OBJECTS = bsearchIntegers.o\
                TSBetadot.o\
                TSMach.o\
                TSMachdot.o\
+	       unique.o\
 	       whalo1to1.o\
 	       whalo.o\
 	       whaloMixing.o\
@@ -106,7 +107,7 @@ CC_OBJECTS   = myIsNaNC.o\
 default: all
 
 all:
-	$(MAKE) src
+	$(PMAKE) src
 
 clean:
 	@echo "        Making clean in utils... "

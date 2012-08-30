@@ -55,7 +55,7 @@ ADKIT_OBJECTS = adBuffer.o \
 default: all
 
 all:
-	$(MAKE) adkit
+	$(PMAKE) adkit
 
 clean:
 	@echo "        Making clean in adjoint/ADFirstAidKit... "

@@ -78,14 +78,11 @@ subroutine applyAllBC_block(secondHalo)
      call bcFarfield(secondHalo, correctForK)
 
   case (Turkel)
-     call terminate("applyAllBC", &
-          "Farfield boundary conditions for Turkel &
-          &preconditioner not implemented")
+     call terminate("applyAllBC",&
+          "Farfield boundary conditions for Turkel preconditioner not implemented")
 
   case (ChoiMerkle)
-     call terminate("applyAllBC", &
-          "Farfield boundary conditions for Choi and &
-          &Merkle preconditioner not implemented")
+     call terminate("applyAllBC","Farfield BC for Choi and Merkle preconditioner not implemented")
 
   end select
 

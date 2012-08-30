@@ -1,9 +1,8 @@
 !    -*- f90 -*-
 python module solverunsteadymd__user__routines 
     interface solverunsteadymd_user_interface 
-        subroutine mdcallback_python(timeunsteady,firstiter) ! in :test:solverUnsteadyMD.F90:solverunsteadymd:unknown_interface
-            real*8 :: timeunsteady
-            logical :: firstiter
+        subroutine mdcallback_python(t) ! in :test:solverUnsteadyMD.F90:solverunsteadymd:unknown_interface
+            real*8 :: t
         end subroutine mdcallback_python
     end interface solverunsteadymd_user_interface
 end python module solverunsteadymd__user__routines
@@ -161,6 +160,16 @@ python module sumb ! in
          real(kind=realtype) dimension(ndof),intent(in) :: grid
          integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
        end subroutine setgrid
+
+       subroutine setgridsimple(grid,ndof) ! in :test:setGrid.f90
+         real(kind=realtype) dimension(ndof),intent(in) :: grid
+         integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
+       end subroutine setgridsimple
+
+       subroutine getgrid(grid,ndof) ! in :test:setGrid.f90
+            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: grid
+            integer(kind=inttype) intent(in) :: ndof
+        end subroutine getgrid
        
        subroutine getforces(forces,pts,npts,nts) ! in :sumb:../../warping/getForces.f90
          real(kind=realtype) dimension(3,npts,nts),intent(out),depend(npts,nts) :: forces
@@ -193,6 +202,10 @@ python module sumb ! in
        subroutine determinestencil(lumped)
          logical :: lumped 
        end subroutine determinestencil
+       
+       subroutine writedrdx(file_name)
+         character*(*) :: file_name
+       end subroutine writedrdx
 
        subroutine verifybendingderivatives()
        end subroutine verifybendingderivatives
@@ -290,7 +303,8 @@ python module sumb ! in
        subroutine setupadjointmatrix
        end subroutine setupadjointmatrix
 
-       subroutine setupspatialmatrix
+       subroutine setupspatialmatrix(usead)
+         logical, intent(in) :: usead
        end subroutine setupspatialmatrix
 
        subroutine setupextramatrix
@@ -316,10 +330,10 @@ python module sumb ! in
          logical :: usedjdx
        end subroutine computeobjpartials
 
-       subroutine getdidw(ndof,output) ! in :test:computeObjPartials.F90
-         integer(kind=inttype) intent(in) :: ndof
-         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: output
-       end subroutine getdidw
+        subroutine getdidw(output,nstate) ! in :test:computeObjPartials.F90
+            real(kind=realtype) dimension(nstate),intent(inout) :: output
+            integer(kind=inttype) optional,intent(in,out),check(len(output)>=nstate),depend(output) :: nstate=len(output)
+        end subroutine getdidw
 
        subroutine getdidx(ndof,output) ! in :test:computeObjPartials.F90
          integer(kind=inttype) intent(in) :: ndof
@@ -337,10 +351,13 @@ python module sumb ! in
          integer(kind=inttype) optional,intent(in),check(len(states)>=ndimw),depend(states) :: ndimw=len(states)
        end subroutine setstates
 
-       subroutine getres(res,ndimw) ! in :test:getADjoint.F90
-         real(kind=realtype) dimension(ndimw),intent(out),depend(ndimw) :: res
-         integer(kind=inttype) intent(in) :: ndimw
+       subroutine getres(res,ndimw) ! in :test:NKUtilities.F90
+         real(kind=realtype) dimension(ndimw),intent(in,out) :: res
+         integer(kind=inttype) optional,intent(in),check(len(res)>=ndimw),depend(res) :: ndimw=len(res)
        end subroutine getres
+
+       subroutine resetksp
+       end subroutine resetksp
 
        subroutine getdrdxvpsi(dxv,ndof,adjoint,nstate) ! in :test:getdRdXvPsi.F90
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
@@ -355,11 +372,6 @@ python module sumb ! in
             real(kind=realtype) dimension(nstate),intent(in) :: adjoint
             integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
         end subroutine getdrdapsi
-
-       subroutine getdrdwtpsi(ndof,drdwtpsi)
-         integer(kind=inttype) intent(in) :: ndof
-         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: drdwtpsi
-       end subroutine getdrdwtpsi
 
        subroutine getadjoint(nstate,adjoint) ! in :test:getADjoint.F90
          integer(kind=inttype) intent(in) :: nstate
@@ -425,11 +437,31 @@ python module sumb ! in
        ! Newton-Krylov Solver Routines
        ! ############################################################################
 
-       subroutine applypc(in_vec,out_vec,n) ! in :test:NKsolver.F90
-         real(kind=realtype) dimension(n),intent(in) :: in_vec
-         real(kind=realtype) dimension(n),intent(out),depend(n) :: out_vec
-         integer(kind=inttype) optional,check(len(in_vec)>=n),depend(in_vec) :: n=len(in_vec)
+       subroutine applypc(in_vec,out_vec,ndof) ! in :test:NKsolver.F90
+         real(kind=realtype) dimension(ndof),intent(in) :: in_vec
+         real(kind=realtype) dimension(ndof),intent(in, out),depend(ndof) :: out_vec
+         integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: ndof=len(in_vec)
        end subroutine applypc
+
+       subroutine applyadjointpc(in_vec,out_vec,ndof) ! in :test:NKsolver.F90
+         real(kind=realtype) dimension(ndof),intent(in) :: in_vec
+         real(kind=realtype) dimension(ndof),intent(in, out),depend(ndof) :: out_vec
+         integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: ndof=len(in_vec)
+       end subroutine applyadjointpc
+
+        subroutine getdfdwtvec(in_vec,in_dof,out_vec,out_dof) ! in :test:agumentRHS.F90
+            real(kind=realtype) dimension(in_dof),intent(in) :: in_vec
+            integer(kind=inttype) optional,intent(in),check(len(in_vec)>=in_dof),depend(in_vec) :: in_dof=len(in_vec)
+            real(kind=realtype) dimension(out_dof),intent(in,out) :: out_vec
+            integer(kind=inttype) optional,intent(in),check(len(out_vec)>=out_dof),depend(out_vec) :: out_dof=len(out_vec)
+        end subroutine getdfdwtvec
+
+
+       subroutine getdrdwtvec(in_vec,out_vec,ndof) ! in :test:NKsolver.F90
+         real(kind=realtype) dimension(ndof),intent(in) :: in_vec
+         real(kind=realtype) dimension(ndof),intent(in, out),depend(ndof) :: out_vec
+         integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: n=len(in_vec)
+       end subroutine getdrdwtvec
 
        subroutine getcurrentresidual(rhores,totalrres)
          real(kind=realtype), intent(out) :: rhores
@@ -530,6 +562,8 @@ python module sumb ! in
          logical :: radiineededcoarse
          logical :: lumpeddiss
          real(kind=realtype) :: sigma
+         logical :: useapproxwalldistance
+         logical :: updatewallassociation
        end module inputdiscretization
 
        module inputio ! in :sumb:../../modules/inputParam.f90
@@ -591,6 +625,7 @@ python module sumb ! in
          integer(kind=inttype) :: nrkstages
          integer(kind=inttype) :: resaveraging
          integer(kind=inttype) :: turbtreatment
+         integer(kind=inttype) :: nsubiterturb
          integer(kind=inttype) :: turbsmoother
          integer(kind=inttype) :: turbrelax
          integer(kind=inttype) :: mgboundcorr
@@ -765,6 +800,7 @@ python module sumb ! in
          integer(kind=inttype) :: scaletype
          logical :: printtiming
          integer(kind=inttype) :: subkspsubspacesize
+         integer(kind=inttype) :: applyadjointpcsubspacesize
        end module inputadjoint
 
        module inputtimespectral ! in :sumb:../../modules/inputParam.f90
@@ -1057,6 +1093,7 @@ python module sumb ! in
          real(kind=realtype) :: totalrfinal
          logical :: rkreset
          integer(kind=inttype) :: nrkreset
+         integer(kind=inttype) :: applypcsubspacesize
        end module nksolvervars
        
 

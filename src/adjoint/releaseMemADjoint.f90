@@ -85,8 +85,12 @@ subroutine releaseMemADjoint()
   end do
 enddo domainLoop
   
-  ! Destroy the two empty vectors:
+  ! Destroy the empty vectors:
   call vecDestroy(fVec1,PETScIerr)
   call vecDestroy(fVec2,PETScIerr)
+
+  call vecDestroy(w_like1,PETScIerr)
+  call vecDestroy(w_like2,PETScIerr)
+
 
 end subroutine releaseMemADjoint

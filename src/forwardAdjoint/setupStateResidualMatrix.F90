@@ -14,13 +14,14 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   !     *               For use with the adjoint this must be true.      *
   !     ******************************************************************
   !
-  use blockPointers       ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
-  use inputDiscretization ! spaceDiscr
-  use inputTimeSpectral   ! nTimeIntervalsSpectral
-  use iteration           ! overset, currentLevel
-  use flowVarRefState     ! nw
-  use inputAdjoint        ! useDiagTSPC
+  use blockPointers      
+  use inputDiscretization 
+  use inputTimeSpectral 
+  use iteration         
+  use flowVarRefState     
+  use inputAdjoint       
   use stencils
+  use diffSizes
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -40,7 +41,6 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   real(kind=realType) :: delta_x, one_over_dx
 
   useDiagTSPC = .False.
-
   rkStage = 0
   currentLevel =1 
   groundLevel = 1
@@ -57,14 +57,17 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
   if (usePC) then
      if (viscous) then
-        stencil => visc_pc_stencil
-        n_stencil = N_visc_pc
+        !stencil => visc_pc_stencil
+        !n_stencil = N_visc_pc
+        stencil => euler_pc_stencil
+        n_stencil = N_euler_pc
+
      else
         stencil => euler_pc_stencil
         n_stencil = N_euler_pc
      end if
 
-     ! Very important to use only second Order dissipation for PC 
+     ! Very important to use only Second-Order dissipation for PC 
      lumpedDiss=.True.
   else
      stencil => euler_drdw_stencil
@@ -87,6 +90,9 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
      ! Set pointers to the first timeInstance...just to getSizes
      call setPointers(nn,1,1)
 
+     ! Set unknown sizes in diffSizes for AD routine
+     ISIZE1OFDrfbcdata = nBocos
+     ISIZE1OFDrfviscsubface = nViscBocos
      ! Allocate the memory we need for this block to do the forward
      ! mode derivatives and copy reference values
      call alloc_derivative_values(nn)
@@ -109,46 +115,61 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
         !3-cell stencil in each direction but we will still use PC
         !coloring. Not really a big deal.
      
-        if (not (viscous)) then
-           call setup_PC_coloring(nn,nColor) ! Euler Colorings
-        else
+        if (viscous) then
            call setup_3x3x3_coloring(nn,nColor) ! dense 3x3x3 coloring
+        else
+           call setup_PC_coloring(nn,nColor) ! Euler Colorings
         end if
      else
-        if( .not. viscous ) then
-           call setup_dRdw_euler_coloring(nn,nColor) ! Euler Colorings
-        else 
+        if(viscous ) then
            call setup_dRdw_visc_coloring(nn,nColor)! Viscous/RANS
+        else 
+           call setup_dRdw_euler_coloring(nn,nColor) ! Euler Colorings
         end if
      end if
      
      spectralLoop: do sps=1,nTimeIntervalsSpectral
 
+
+        ! Set pointers and derivative pointers
+        call setPointers_d(nn,1,sps)
+        call setPointersAdj(nn,1,sps)
+
+!         do k=0,kb
+!            do j=0,jb
+!               do i=0,ib
+!                  w(i,j,k,imx) = w(i,j,k,ivx) * w(i,j,k,irho)
+!                  w(i,j,k,imy) = w(i,j,k,ivy) * w(i,j,k,irho)
+!                  w(i,j,k,imz) = w(i,j,k,ivz) * w(i,j,k,irho)
+!               end do
+!            end do
+!         end do
+        
+
         ! Do Coloring and perturb states
-        do iColor = 1,nColor
+        colorLoop: do iColor = 1,nColor
            do sps2 = 1,nTimeIntervalsSpectral
-              flowDomsd(sps2)%dw_deriv(:,:,:,:,:) = zero
+              flowDomsd(nn,1,sps2)%dw_deriv(:,:,:,:,:) = zero
            end do
 
            ! Master State Loop
-           do l = 1,nw
+           stateLoop: do l = 1,nw
 
-              call setPointersAdj(nn,1,sps)
               ! Reset All States and possibe AD seeds
               do sps2 = 1,nTimeIntervalsSpectral
-                 flowDoms(nn,1,sps2)%w(:,:,:,:) =  flowDomsd(sps2)%wtmp
+                 flowDoms(nn,1,sps2)%w(:,:,:,:) =  flowDomsd(nn,1,sps2)%wtmp
                  if (useAD) then
-                    flowdomsd(sps2)%w = zero ! This is actually w seed
+                    flowdomsd(nn,1,sps2)%w = zero ! This is actually w seed
                  end if
               end do
 
-              ! Peturb w or set AD Seed
+              ! Peturb w or set AD Seed according to iColor
               do k=0,kb
                  do j=0,jb
                     do i=0,ib
-                       if (flowdomsd(1)%color(i,j,k) == icolor) then
+                       if (flowdomsd(nn,1,1)%color(i,j,k) == icolor) then
                           if (useAD) then
-                             flowdomsd(sps)%w(i,j,k,l) = one
+                             flowDomsd(nn,1,sps)%w(i,j,k,l) = one
                           else
                              w(i,j,k,l) = w(i,j,k,l) + delta_x
                           end if
@@ -157,46 +178,47 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
                  end do
               end do
 
-              ! Block-based residual
+             
+              ! Run Block-based residual 
               if (useAD) then
-                 call block_res_d(nn,sps)
+                 call block_res_d(nn,sps,.False.,.False.)
               else
-                 call block_res(nn,sps)
+                 call block_res(nn,sps,.False.,.False.)
               end if
 
               ! Set the computed residual in dw_deriv. If using FD,
               ! actually do the FD calculation if AD, just copy out dw
               ! in flowdomsd
 
-              ! Take all Derivatives
+              ! Compute/Copy all derivatives
               do sps2 = 1,nTimeIntervalsSpectral
                  do ll=1,nw
                     do k=2,kl 
                        do j=2,jl
                           do i=2,il
                              if (useAD) then
-                                flowDomsd(sps2)%dw_deriv(i,j,k,ll,l) = &
-                                     flowdomsd(sps2)%dw(i,j,k,ll)
+                                flowDomsd(nn,1,sps2)%dw_deriv(i,j,k,ll,l) = &
+                                     flowdomsd(nn,1,sps2)%dw(i,j,k,ll)
                              else
                                 if (sps2 == sps) then
                                    ! If the peturbation is on this
                                    ! instance, we've computed the spatial
                                    ! contribution so subtrace dwtmp
 
-                                   flowDomsd(sps2)%dw_deriv(i,j,k,ll,l) = &
+                                   flowDomsd(nn,1,sps2)%dw_deriv(i,j,k,ll,l) = &
                                         one_over_dx*&
                                         (flowDoms(nn,1,sps2)%dw(i,j,k,ll) - &
-                                        flowDomsd(sps2)%dwtmp(i,j,k,ll))
+                                        flowDomsd(nn,1,sps2)%dwtmp(i,j,k,ll))
                                 else
                                    ! If the peturbation is on an off
                                    ! instance, only subtract dwtmp2
                                    ! which is the reference result
                                    ! after initres
 
-                                   flowDomsd(sps2)%dw_deriv(i,j,k,ll,l) = &
+                                   flowDomsd(nn,1,sps2)%dw_deriv(i,j,k,ll,l) = &
                                         one_over_dx*(&
                                         flowDoms(nn,1,sps2)%dw(i,j,k,ll) - &
-                                        flowDomsd(sps2)%dwtmp2(i,j,k,ll))
+                                        flowDomsd(nn,1,sps2)%dwtmp2(i,j,k,ll))
                                 end if
                              end if
                           end do
@@ -204,19 +226,17 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
                     end do
                  end do
               end do
-           end do ! State Loop
+           end do stateLoop
 
            ! Set derivatives by block in "matrix" after we've peturbed
            ! all states in "color"
 
-           call setPointersAdj(nn,1,sps)
-
-           do k=0,kb
-              do j=0,jb
-                 do i=0,ib
+           kLoop: do k=0,kb
+              jLoop: do j=0,jb
+                 iLoop: do i=0,ib
                     icol = flowDoms(nn,1,sps)%globalCell(i,j,k)
-                    if (flowdomsd(1)%color(i,j,k) == icolor .and.&
-                         icol >= 0) then
+                    colorCheck: if (flowdomsd(nn,1,1)%color(i,j,k) == icolor&
+                         .and. icol >= 0) then
 
                        ! i,j,k are now the "Center" cell that we
                        ! actually petrubed. From knowledge of the
@@ -224,57 +244,73 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
                        ! using the stencil, set the values around it
                        ! in PETSc
 
-                       do i_stencil=1,n_stencil
+                       stencilLoop: do i_stencil=1,n_stencil
                           ii = stencil(i_stencil,1)
                           jj = stencil(i_stencil,2)
                           kk = stencil(i_stencil,3)
 
                           ! Check to see if the cell in this
                           ! sentcil is on a physical cell, not a
-                          ! halo
-                          if ( i+ii >= 2 .and. i+ii <= il .and. &
-                               j+jj >= 2 .and. j+jj <= jl .and. &
-                               k+kk >= 2 .and. k+kk <= kl) then 
+                          ! halo/BC halo
+                          onBlock: if ( i+ii >= 2 .and. i+ii <= il .and. &
+                                        j+jj >= 2 .and. j+jj <= jl .and. &
+                                        k+kk >= 2 .and. k+kk <= kl) then 
 
-                             ! If we're doing the PC and we want to
-                             ! use the diagonal version we ONLY set
-                             ! values from the ON-time instance
-                             if (usePC .and. useDiagTSPC)then
-                                irow = flowDoms(nn,1,sps)%&
-                                     globalCell(i+ii,j+jj,k+kk)
-                                call setBlock(flowDomsd(sps)%&
-                                     dw_deriv(i+ii,j+jj,k+kk,:,:))
-                             else
-                                ! Center Stencil Cell has off
-                                ! time-instance dependancies
-                                if (ii == 0 .and. jj == 0 .and. kk == 0) then
-                                   
+                             irow = flowDoms(nn,1,sps)%globalCell(&
+                                  i+ii,j+jj,k+kk)
+
+                             centerCell: if ( ii == 0 .and. jj == 0 &
+                                  .and. kk == 0) then
+                                useDiagPC: if (usePC .and. useDiagTSPC) then
+                                   ! If we're doing the PC and we want
+                                   ! to use TS diagonal form, only set
+                                   ! values for on-time insintance
+                                   call setBlock(&
+                                        flowDomsd(nn,1,sps)%&
+                                        dw_deriv(i+ii,j+jj,k+kk,:,:))
+                                else
+                                   ! Otherwise loop over spectral
+                                   ! instances and set all.
                                    do sps2=1,nTimeIntervalsSpectral
                                       irow = flowDoms(nn,1,sps2)%&
                                            globalCell(i+ii,j+jj,k+kk)
                                       call setBlock(&
-                                           flowDomsd(sps2)%&
+                                           flowDomsd(nn,1,sps2)%&
                                            dw_deriv(i+ii,j+jj,k+kk,:,:))
                                    end do
-                                   
-                                else 
-                                   irow = flowDoms(nn,1,sps)%&
-                                        globalCell(i+ii,j+jj,k+kk)
-                                   call setBlock(&
-                                        flowDomsd(sps)%&
-                                        dw_deriv(i+ii,j+jj,k+kk,:,:))
-                                end if ! Center Cell Check
-                             end if
-                          end if ! On block Check
-                       end do ! Stencil Loop
-                    end if ! Color If check
-                 end do ! i loop
-              end do ! j loop
-           end do ! k loop
-        end do ! Color Loop
+                                end if useDiagPC
+                             else
+                                ! ALl other cells just set.
+                                call setBlock(&
+                                     flowDomsd(nn,1,sps)%&
+                                     dw_deriv(i+ii,j+jj,k+kk,:,:))
+                             end if centerCell
+                          end if onBlock
+                       end do stencilLoop
+                    end if colorCheck
+                 end do iLoop
+              end do jLoop
+           end do kLoop
+        end do colorLoop
+
+
+!         do k=0,kb
+!            do j=0,jb
+!               do i=0,ib
+!                  w(i,j,k,ivx) = w(i,j,k,imx) / w(i,j,k,irho)
+!                  w(i,j,k,ivy) = w(i,j,k,imy) / w(i,j,k,irho)
+!                  w(i,j,k,ivz) = w(i,j,k,imz) / w(i,j,k,irho)
+!               end do
+!            end do
+!         end do
+
+
+
+
+
      end do spectralLoop
 
-     ! Deallocate and reset Values
+     ! Deallocate and reset values for block nn
      call dealloc_derivative_values(nn)
 
   end do domainLoopAD
@@ -306,6 +342,10 @@ contains
 
     implicit none
     real(kind=realType), dimension(nw,nw) :: blk
+ 
+    if (isnan(sum(blk))) then
+       call EChk(1,__FILE__,__LINE__)
+    end if
 
     if (useTranspose) then
        call MatSetValuesBlocked(matrix,1,icol,1,irow,transpose(blk),&
@@ -319,7 +359,6 @@ contains
 
   end subroutine setBlock
 
-
   subroutine writeOutMatrix()
 
     integer(kind=intType) :: nrows,ncols,icell,jcell,kcell
@@ -330,8 +369,6 @@ contains
 
     do nn=1,nDom
        call setPointersAdj(nn,1,1)
-      
-     
        do kcell=2,kl
           do jcell=2,jl
              do icell=2,il
@@ -361,14 +398,9 @@ contains
                             if (useAD) then
                                write(18,30),nn,icell,jcell,kcell,icell+ii,jcell+jj,kcell+kk,i,j,val1(i,j)
                             else 
-!!$                               if (val1(i,j) > 0.00001) then
                                write(16,30),nn,icell,jcell,kcell,icell+ii,jcell+jj,kcell+kk,i,j,val1(i,j)
-!!$                               end if
                             end if
-!!$                            if (val2(i,j) > 0.00001) then
                             write(17,30),nn,icell,jcell,kcell,icell+ii,jcell+jj,kcell+kk,i,j,val2(i,j)
-!!$                            end if
-
                          end do
                       end do
                    end if
@@ -380,7 +412,6 @@ contains
 
 30  format(1x,I4,' | ', I4,' ',I4,'  ',I4,' | ',I4,' ',I4,' ',I4,' | ',I4,'  ',I4,' ',f20.6)
   end subroutine writeOutMatrix
-
 
 #endif
 end subroutine setupStateResidualMatrix

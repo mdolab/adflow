@@ -77,3 +77,83 @@ subroutine setGrid(grid,ndof)
   end do
 
 end subroutine setGrid
+
+subroutine getGrid(grid,ndof)
+
+  ! Opposite of setGrid. This is ONLY a debugging function. NOT used
+  ! in regular usage. Really only useful for direct mesh manipulation
+  ! on single block and a single processor. s
+
+  use precision 
+  use blockPointers
+  use inputTimeSpectral
+  implicit none
+  integer(kind=intType),intent(in) :: ndof
+  real(kind=realType) ,intent(out) :: grid(ndof)
+
+  ! Local Variables
+  integer(kind=intType) :: nn,i,j,k,l,counter,sps
+  
+  ! This is very straight forward...loop over all domains and copy out
+  counter = 1
+  do sps = 1,nTimeIntervalsSpectral
+     do nn=1,nDom
+        call setPointers(nn,1_intType,sps)
+        do k=1,kl
+           do j=1,jl
+              do i=1,il
+                 do l=1,3
+                    grid(counter) = X(i,j,k,l)
+                    counter = counter + 1
+                 end do
+              end do
+           end do
+        end do
+     end do
+  end do
+
+end subroutine getGrid
+
+subroutine setGridSimple(grid,ndof)
+
+  ! The purpose of this routine is to set the grid dof as returned by
+  ! the external warping. This function takes the "Base" grid at the
+  ! first time instance and does rotation/translation operations to
+  ! get the grid at subsequent time instances
+
+  use precision 
+  use blockPointers
+  use communication
+  use section
+  use inputTimeSpectral
+  use monitor 
+
+  implicit none
+
+  integer(kind=intType),intent(in) :: ndof
+  real(kind=realType) ,intent(in) :: grid(ndof)
+
+  ! Local Variables
+
+  integer(kind=intType) :: nn,i,j,k,l,counter,sps
+
+  do sps = 1,nTimeIntervalsSpectral
+
+     counter = 1
+     do nn=1,nDom
+        call setPointers(nn,1_intType,sps)
+        do k=1,kl
+           do j=1,jl
+              do i=1,il
+                 do l=1,3
+                    X(i,j,k,l) = grid(counter)
+                    counter = counter + 1
+                 end do
+              end do
+           end do
+        end do
+     end do
+     call xhalo(1_intType)
+  end do
+
+end subroutine setGridSimple

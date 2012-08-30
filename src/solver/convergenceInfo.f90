@@ -385,7 +385,7 @@
                    ! are stored and this info can be used. The logical
                    ! converged is set to .false. if the density residual
                    ! has not converged yet.
-                   
+
                    if(convArray(iConv,sps,1) > L2ConvThisLevel*convArray(0,sps,1)) then
                       absNotConv = .True.
                    else
@@ -426,7 +426,7 @@
                       end if
                       
                       if (epsCoefConv > zero   .and.&
-                           (groundLevel == 1 .and. converged == .false.)  )then
+                           (groundLevel == 1 .and. converged .eqv. .false.)  )then
                          ! !
                          ! ! ---- Check if coefficients reached a cconstant value
                          ! !
@@ -567,7 +567,7 @@
 !
 ! add temporal monitoring option for unsteady cases  ! eran-tempmon starts
 !
-                if(nIterCur == nCycles .or. converged == .true.)then
+                if(nIterCur == nCycles .or. converged .eqv. .true.)then
 
                    write(fTempMon,"(i6,1x)",advance="no") timeStepUnsteady + &
                         nTimeStepsRestart
@@ -605,7 +605,7 @@
        call mpi_bcast(nanOccurred, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
        if( nanOccurred )then
           !reset flow and exit!
-          if (myID==0) print *,'nanOccured'!,myID
+          print *,'Nan occured in Convergence Info on proc:',myid
           !call initflow
           ! Initialize the flow field to uniform flow.
           tempMGStartLevel = mgStartLevel
@@ -613,15 +613,15 @@
           
           mgStartLevel = 1
           currentlevel = 1
-          print *,'Calling setUniformFlow'
+
           call setUniformFlow
 
           mgStartLevel = tempMGStartLevel
           currentLevel = tempCurrentLevel
   
-          !print *,'terminating'
           call terminate("convergenceInfo", &
                "A NaN occurred during the computation.")
+
           ! in a normal computation, code will simply exit.
           ! in a python based computation, code will set 
           ! routinedFailed to .True. and return to the 

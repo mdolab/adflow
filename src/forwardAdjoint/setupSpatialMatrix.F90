@@ -1,4 +1,4 @@
-subroutine setupSpatialMatrix
+subroutine setupSpatialMatrix(useAD)
   !
   !     ******************************************************************
   !     *                                                                *
@@ -13,7 +13,7 @@ subroutine setupSpatialMatrix
   !
   !     Local variables.
 
-  logical :: useAD
+  logical, intent(in) :: useAD
 
   real(kind=realType), dimension(2) :: time
   real(kind=realType)               :: timeAdjLocal, timeAdj
@@ -30,8 +30,6 @@ subroutine setupSpatialMatrix
        write(*,10) "Assembling dRdx Matrix..."
 
   call cpu_time(time(1))
-
-  useAD = .True.
 
   call setupSpatialResidualMatrix(drdx,useAD)
 

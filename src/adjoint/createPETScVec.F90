@@ -27,7 +27,7 @@ subroutine createPETScVec
   use flowVarRefState ! 
   use mdData          ! mdNSurfNodesCompact
   implicit none
-  integer(kind=intType) :: bs
+  integer(kind=intType) :: ndimS, nTS
 
 #ifndef USE_NO_PETSC
 
@@ -55,20 +55,16 @@ subroutine createPETScVec
   !     *                                                                *
   !     ******************************************************************
 
-  call MatGetVecs(dFdx,dJdx,wVec,PETScIerr)
+  call getForceSize(nDimS,nTS)
+  nDimS = nDimS * 3 *nTimeIntervalsSpectral! Multiply by 3 for each
+                                           ! dof on each point
+
+  call VecCreateMPI(SUMB_PETSC_COMM_WORLD,nDimS,PETSC_DETERMINE,dJdx,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
   call VecSetBlockSize(dJdx,3,PETScIerr)
   call EChk(PETScierr,__FILE__,__LINE__)
  
-  ! Destroy wVec created above. MatGetVecs DOES NOT WORK CORRECTLY IN
-  ! FORTRAN. You MUST provide two arguments to MatGetVecs (not a
-  ! PETSC_NULL_OBJECT) since this will LEAK MEMORY.
-
-  call VecDestroy(wVec,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-
-
 #endif
 
 end subroutine createPETScVec
