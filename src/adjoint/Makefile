@@ -55,7 +55,7 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       getADjoint.o             \
 	       getdRdXvPsi.o            \
 	       getdRdaPsi.o             \
-	       getdRdwTPsi.o            \
+	       getdRdwTVec.o            \
 	       getdFdxVec.o             \
 	       haloIndexCommunication.o \
 	       initializePETSc.o        \
@@ -106,7 +106,7 @@ CC_OBJECTS   = initPETScWrap.o
 default: all
 
 all:
-	$(MAKE) src
+	$(PMAKE) src
 
 clean:
 	@echo "        Making clean in adjoint... "

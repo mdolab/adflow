@@ -96,6 +96,7 @@
 
        if(level == 1) then
          nn = nTimeIntervalsSpectral
+
          allocate(massFlowFamilyInv(0:mm,nn), &
                   massFlowFamilyDiss(0:mm,nn), stat=ierr)
          if(ierr /= 0) &

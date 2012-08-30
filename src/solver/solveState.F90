@@ -334,10 +334,13 @@ subroutine solveState
         L2Conv = NK_Switch_Tol*rhoRes0/rhoResStart
         solve_RK = .True.
         solve_NK = .True.
+
      else 
         solve_NK = .True.
         solve_RK = .False.
         if (RKreset) then
+
+
            !for difficult restarts during optimization
            solve_RK = .True.
            !run a small number of RK iterations to re-globalize the solution

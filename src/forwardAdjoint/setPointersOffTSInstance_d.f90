@@ -25,23 +25,23 @@ subroutine setPointersOffTSInstance_d(nn,sps,sps2)
   
   call setPointersOffTSInstance(nn,sps,sps2)
   
-  viscSubfaced => flowDomsd(sps)%viscSubface
+  viscSubfaced => flowDomsd(nn,1,sps)%viscSubface
 
-  xd    => flowDomsd(sps)%x
+  xd    => flowDomsd(nn,1,sps)%x
 
-  sid     => flowDomsd(sps)%si
-  sjd     => flowDomsd(sps)%sj
-  skd     => flowDomsd(sps)%sk
+  sid     => flowDomsd(nn,1,sps)%si
+  sjd     => flowDomsd(nn,1,sps)%sj
+  skd     => flowDomsd(nn,1,sps)%sk
 
-  vold    => flowDomsd(sps)%vol
+  vold    => flowDomsd(nn,1,sps)%vol
 
-  rotMatrixId => flowDomsd(sps)%rotMatrixI
-  rotMatrixJd => flowDomsd(sps)%rotMatrixJ
-  rotMatrixKd => flowDomsd(sps)%rotMatrixK
+  rotMatrixId => flowDomsd(nn,1,sps)%rotMatrixI
+  rotMatrixJd => flowDomsd(nn,1,sps)%rotMatrixJ
+  rotMatrixKd => flowDomsd(nn,1,sps)%rotMatrixK
 
-  sFaceId => flowDomsd(sps)%sFaceI
-  sFaceJd => flowDomsd(sps)%sFaceJ
-  sFaceKd => flowDomsd(sps)%sFaceK
+  sFaceId => flowDomsd(nn,1,sps)%sFaceI
+  sFaceJd => flowDomsd(nn,1,sps)%sFaceJ
+  sFaceKd => flowDomsd(nn,1,sps)%sFaceK
 
   ! Flow variables. Note that wOld, gamma and the laminar viscosity
   ! point to the entries on the finest mesh. The reason is that
@@ -49,60 +49,60 @@ subroutine setPointersOffTSInstance_d(nn,sps,sps2)
   ! viscosity this is not the case because in a segregated solver
   ! its values are obtained from the fine grid level.
 
-  wd     => flowDomsd(sps)%w
-  wOldd  => flowDomsd(sps)%wOld
-  pd     => flowDomsd(sps)%p
+  wd     => flowDomsd(nn,1,sps)%w
+  wOldd  => flowDomsd(nn,1,sps)%wOld
+  pd     => flowDomsd(nn,1,sps)%p
 
-  gammad => flowDomsd(sps)%gamma
-  rlvd   => flowDomsd(sps)%rlv
-  revd   => flowDomsd(sps)%rev
-  sd     => flowDomsd(sps)%s
+  gammad => flowDomsd(nn,1,sps)%gamma
+  rlvd   => flowDomsd(nn,1,sps)%rlv
+  revd   => flowDomsd(nn,1,sps)%rev
+  sd     => flowDomsd(nn,1,sps)%s
 
   ! Residual and multigrid variables. The residual point to the
   ! finest grid entry, the multigrid variables to their own level.
 
-  dwd => flowDomsd(sps)%dw
-  fwd => flowDomsd(sps)%fw
+  dwd => flowDomsd(nn,1,sps)%dw
+  fwd => flowDomsd(nn,1,sps)%fw
 
-  w1d => flowDomsd(sps)%w1
-  wrd => flowDomsd(sps)%wr
+  w1d => flowDomsd(nn,1,sps)%w1
+  wrd => flowDomsd(nn,1,sps)%wr
 
   ! Time-stepping variables and spectral radIi.
   ! They asps point to the fine mesh entry.
 
-  wnd  => flowDomsd(sps)%wn
-  dtld => flowDomsd(sps)%dtl
+  wnd  => flowDomsd(nn,1,sps)%wn
+  dtld => flowDomsd(nn,1,sps)%dtl
 
-  radId => flowDomsd(sps)%radI
-  radJd => flowDomsd(sps)%radJ
-  radKd => flowDomsd(sps)%radK
+  radId => flowDomsd(nn,1,sps)%radI
+  radJd => flowDomsd(nn,1,sps)%radJ
+  radKd => flowDomsd(nn,1,sps)%radK
 
-  d2Walld => flowDomsd(sps)%d2Wall
+  d2Walld => flowDomsd(nn,1,sps)%d2Wall
 
   ! Arrays used for the implicit treatment of the turbulent wasps
   ! boundary conditions. As these variables are only aspocated for
   ! the 1st spectral solution of the fine mesh, the pointers point
   ! to those arrays.
 
-  bmti1d => flowDomsd(1)%bmti1
-  bmti2d => flowDomsd(1)%bmti2
-  bmtj1d => flowDomsd(1)%bmtj1
-  bmtj2d => flowDomsd(1)%bmtj2
-  bmtk1d => flowDomsd(1)%bmtk1
-  bmtk2d => flowDomsd(1)%bmtk2
+  bmti1d => flowDomsd(nn,1,1)%bmti1
+  bmti2d => flowDomsd(nn,1,1)%bmti2
+  bmtj1d => flowDomsd(nn,1,1)%bmtj1
+  bmtj2d => flowDomsd(nn,1,1)%bmtj2
+  bmtk1d => flowDomsd(nn,1,1)%bmtk1
+  bmtk2d => flowDomsd(nn,1,1)%bmtk2
 
-  bvti1d => flowDomsd(1)%bvti1
-  bvti2d => flowDomsd(1)%bvti2
-  bvtj1d => flowDomsd(1)%bvtj1
-  bvtj2d => flowDomsd(1)%bvtj2
-  bvtk1d => flowDomsd(1)%bvtk1
-  bvtk2d => flowDomsd(1)%bvtk2
+  bvti1d => flowDomsd(nn,1,1)%bvti1
+  bvti2d => flowDomsd(nn,1,1)%bvti2
+  bvtj1d => flowDomsd(nn,1,1)%bvtj1
+  bvtj2d => flowDomsd(nn,1,1)%bvtj2
+  bvtk1d => flowDomsd(nn,1,1)%bvtk1
+  bvtk2d => flowDomsd(nn,1,1)%bvtk2
 
-  w_offTimeInstanced => flowDomsd(sps2)%w
-  vol_offTimeInstanced => flowDomsd(sps2)%vol
+  w_offTimeInstanced => flowDomsd(nn,1,sps2)%w
+  vol_offTimeInstanced => flowDomsd(nn,1,sps2)%vol
 
   !BCData Array
-  BCDatad => flowDomsd(sps)%BCdata
+  BCDatad => flowDomsd(nn,1,sps)%BCdata
 
 end subroutine setPointersOffTSInstance_d
 

@@ -419,6 +419,9 @@
          !                         needed for unsteady problems on
          !                         deforming grids. Only allocated on
          !                         the finest grid level.
+         !  uv(2,2:il,2:jl,2:kl) - Parametric location on elemID for each cell. 
+         !                         Only used for fast wall distance calcs. 
+         ! elemID(2:il,2:jl,2:kl)- Element ID each face is attached it
          !  porI(1:il,2:jl,2:kl) - Porosity in the i direction.
          !  porJ(2:il,1:jl,2:kl) - Porosity in the j direction.
          !  porK(2:il,2:jl,1:kl) - Porosity in the k direction.
@@ -464,10 +467,14 @@
 
          real(kind=realType), dimension(:,:,:,:),   pointer :: x,xtmp
          real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
+         real(kind=realType), dimension(:,:)      , pointer :: tempHalo
 
          real(kind=realType), dimension(:,:,:,:), pointer :: sI, sJ, sK
          real(kind=realType), dimension(:,:,:),   pointer :: vol
          real(kind=realType), dimension(:,:,:,:), pointer :: volOld
+
+         real(kind=realType), dimension(:,:,:,:), pointer :: uv
+         integer(kind=intType), dimension(:,:,:), pointer :: elemID
 
          integer(kind=porType), dimension(:,:,:), pointer :: porI
          integer(kind=porType), dimension(:,:,:), pointer :: porJ
@@ -773,7 +780,7 @@
        integer(kind=intType) :: nDom
 
        type(blockType), allocatable, dimension(:,:,:) :: flowDoms
-       type(blockType), allocatable, dimension(:)     :: flowDomsd
+       type(blockType), allocatable, dimension(:,:,:)     :: flowDomsd
 
 !
 !      ******************************************************************

@@ -61,21 +61,9 @@ subroutine residual_block
   massFlowFamilyInv  = zero
   massFlowFamilyDiss = zero
 
-  ! Set the value of the discretization, depending on the grid level,
-  ! and the logical fineGrid, which indicates whether or not this
-  ! is the finest grid level of the current mg cycle.
-
-  discr = spaceDiscrCoarse
-  if(currentLevel == 1) discr = spaceDiscr
-
-  fineGrid = .false.
-  if(currentLevel == groundLevel) fineGrid = .true.
-
-
-  if (fineGrid == .false.) then
-     print *,'Fine Grid should not be false here'
-     stop
-  end if
+  ! This routine is only called on fine grid:
+  discr = spaceDiscr
+  fineGrid = .True. 
  
   call inviscidCentralFlux
 
@@ -135,7 +123,6 @@ subroutine residual_block
            do i=2,il
               dw(i,j,k,l) = (dw(i,j,k,l) + fw(i,j,k,l)) &
                    * real(iblank(i,j,k), realType)
-              !write(14,40),i,j,k,dw(i,j,k,l),fw(i,j,k,l)
            enddo
         enddo
      enddo

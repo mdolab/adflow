@@ -55,7 +55,7 @@ subroutine createStatePETScVars
        nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
 
   call initialize_stencils
-  if (not(viscous)) then
+  if (.not. viscous) then
      n_stencil = N_euler_drdw
      allocate(stencil(n_stencil,3))
      stencil = euler_drdw_stencil

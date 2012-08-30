@@ -51,9 +51,9 @@ all:
 		do \
 			echo "making $@ in $$subdir"; \
 			echo; \
-			(cd $$subdir && gmake) || exit 1; \
+			(cd $$subdir && make) || exit 1; \
 		done
-	gmake libpyfort
+	make libpyfort
 
 clean:
 	@echo "        Making clean in python/fortran... "
@@ -63,7 +63,7 @@ clean:
 			echo; \
 			echo "making $@ in $$subdir"; \
 			echo; \
-			(cd $$subdir && gmake $@) || exit 1; \
+			(cd $$subdir && make $@) || exit 1; \
 		done
 
 #      ******************************************************************

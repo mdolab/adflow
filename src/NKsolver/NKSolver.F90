@@ -20,7 +20,7 @@ subroutine NKsolver
        ksp_rtol, ksp_atol, func_evals, ksp_max_it, ksp_subspace, ksp_div_tol, &
        nksolvecount, Mmax, iter_k, iter_m, NKLS, &
        nolinesearch, cubiclinesearch, nonmonotonelinesearch, rhores0, &
-       NK_switch_tol, rhoresstart, work, g
+       NK_switch_tol, rhoresstart, work, g, scaleVec
 
   use InputIO ! L2conv,l2convrel
   use inputIteration
@@ -51,11 +51,13 @@ subroutine NKsolver
      return
   end if
 
+  call calcScaling(scaleVec)
+
   Mmax = 10
   iter_k = 1
   iter_m = 0
 
-  allocate(func_evals(1000))
+  allocate(func_evals(maxNonLinearIts))
   func_evals = zero
 
   ! Set the inital wVec
@@ -85,7 +87,6 @@ subroutine NKsolver
            ! We need to call convergence Info since this has the
            ! "approximate" convergence check
            call convergenceInfo
-
            exit NonLinearLoop
         else
            call convergenceInfo
@@ -104,10 +105,11 @@ subroutine NKsolver
      ! the number of time the solver was called. So on first
      ! iteration, we check the variable NKsolveCount. If THIS is a
      ! multiple of jacobian lag, we then reform the preconditioner. 
-
+     !print *,'doing jac'
      if (mod(iter-1,jacobian_lag) == 0) then
         if (iter == 1) then ! Special case check:
            if (mod(NKsolveCount,jacobian_lag) == 0) then
+              call calcScaling(scaleVec)
               call FormJacobian()
            else
               call MatAssemblyBegin(dRdw,MAT_FINAL_ASSEMBLY,ierr)
@@ -116,6 +118,7 @@ subroutine NKsolver
               call EChk(ierr,__FILE__,__LINE__)
            end if
         else
+           call calcScaling(scaleVec)
            call FormJacobian()
         end if
      else
@@ -125,7 +128,7 @@ subroutine NKsolver
         call MatAssemblyEnd(dRdw,MAT_FINAL_ASSEMBLY,ierr)
         call EChk(ierr,__FILE__,__LINE__)
      end if
-     
+     !print *,'Done jac'
      ! Set the BaseVector of the matrix-free matrix:
      call MatMFFDSetBase(dRdW,wVec,PETSC_NULL_OBJECT,ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -165,17 +168,26 @@ subroutine NKsolver
      call KSPSetTolerances(global_ksp,ksp_rtol,ksp_atol,ksp_div_tol,&
           ksp_max_it,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-
+     !print *,'Calling solve'
      ! Actually do the Linear Krylov Solve
      call KSPSolve(global_ksp,rVec,deltaW,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     ! DON'T just check the error. We want to catch error code 72
+     ! which is a floating point error. This is ok, we just reset and
+     ! keep going
+     if (ierr == 72) then
+        print *,'NAN in PETSc on proc:',myid
 
+        fatalFail = .True.
+        routineFailed = .True.
+        call setUniformFlow
+        exit NonLinearLoop
+     else
+        call EChk(ierr,__FILE__,__LINE__)
+     end if
      ! Linesearching:
-     iter_k = iter
-     iter_m = min(iter_m+1,Mmax)
      NKLS = nonMonotoneLineSearch
-
-     if (iter == 1) then
+     !NKLS = cubicLineSearch
+     if (iter <= 1 ) then
         call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
      else
         if (NKLS == noLineSearch) then
@@ -183,6 +195,10 @@ subroutine NKsolver
         else if(NKLS == cubicLineSearch) then
            call LSCubic(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
         else if (NKLS == nonMonotoneLineSearch) then
+
+           iter_k = iter
+           iter_m = min(iter_m+1,Mmax)
+
            call LSNM(wVec,rVec,g,deltaW,work,fnorm,ynorm,gnorm,nfevals,flag)
         end if
      end if
@@ -322,7 +338,7 @@ subroutine LSCubic(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Sufficient reduction 
-  if (half*gnorm*gnorm <= half*fnorm*fnorm + lambda*alpha*initslope) then
+    if (half*gnorm*gnorm <= half*fnorm*fnorm + lambda*alpha*initslope) then
      goto 100
   end if
 
@@ -499,8 +515,9 @@ subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
      call EChk(ierr,__FILE__,__LINE__)
 
      max_val = func_evals(iter_k) + alpha*gamma*initSlope
+
      ! Loop over the previous, m function values and find the max:
-     do j=iter_k-1,iter_k-iter_m,-1
+     do j=iter_k-1,iter_k-iter_m+1,-1
         max_val = max(max_val,func_evals(j) + alpha*gamma*initSlope)
      end do
         

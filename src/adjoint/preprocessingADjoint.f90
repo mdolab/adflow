@@ -60,12 +60,18 @@ subroutine preprocessingADjoint
   nDimS = nDimS * 3 *nTimeIntervalsSpectral! Multiply by 3 for each
                                            ! dof on each point
 
-
+  nDimW = nw * nCellsLocal*nTimeIntervalsSpectral
   call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimS,PETSC_DECIDE, &
        PETSC_NULL_SCALAR,fVec1,PETScIerr)
 
   call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimS,PETSC_DECIDE, &
        PETSC_NULL_SCALAR,fVec2,PETScIerr)
 
+  ! Two w-like vectors. 
+  call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimW,PETSC_DECIDE, &
+       PETSC_NULL_SCALAR,w_like1,PETScIerr)
+
+  call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimW,PETSC_DECIDE, &
+       PETSC_NULL_SCALAR,w_like2,PETScIerr)
 
 end subroutine preprocessingADjoint

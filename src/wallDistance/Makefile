@@ -40,8 +40,10 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = viscSurface.o
 
-FF90_OBJECTS_2 = computeNormalSpacing.o\
+FF90_OBJECTS_2 = allocExtraWallDistanceMemory.o\
+		 computeNormalSpacing.o\
 		 determineDistance.o\
+		 determineDistanceQuickly.o\
 		 initWallDistance.o\
 		 localViscousSurfaceMesh.o\
 		 updateWallDistanceAllLevels.o\
@@ -57,8 +59,8 @@ FF90_OBJECTS_2 = computeNormalSpacing.o\
 default: all
 
 all:
-	$(MAKE) src_1
-	$(MAKE) src_2
+	$(PMAKE) src_1
+	$(PMAKE) src_2
 
 clean:
 	@echo "        Making clean in wallDistance... "

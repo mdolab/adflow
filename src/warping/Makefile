@@ -53,8 +53,8 @@ CC_OBJECTS   =
 default: all
 
 all:
-	$(MAKE) mod
-	$(MAKE) src
+	$(PMAKE) mod
+	$(PMAKE) src
 
 clean:
 	@echo "        Making clean in adjoint... "

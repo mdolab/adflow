@@ -1,8 +1,8 @@
 #      ******************************************************************
 #      *                                                                *
-#      * File:          config.SGI_N32_MPICH.mk                         *
+#      * File:          config.SGI.mk                                   *
 #      * Author:        Edwin van der Weide                             *
-#      * Starting date: 04-03-2004                                      *
+#      * Starting date: 12-09-2002                                      *
 #      * Last modified: 02-23-2006                                      *
 #      *                                                                *
 #      ******************************************************************
@@ -11,8 +11,8 @@
 #      *                                                                *
 #      * Description: Defines the compiler settings and other commands  *
 #      *              to have "make" function correctly. This file      *
-#      *              defines the settings for a parallel N32 bit SGI   *
-#      *              executable in combination with MPICH.             *
+#      *              defines the settings for a sequential 64 bit SGI  *
+#      *              executable.                                       *
 #      *                                                                *
 #      ******************************************************************
 
@@ -24,7 +24,7 @@
 #      *                                                                *
 #      ******************************************************************
 
-MAKE = gmake -j 8
+MAKE = make -j 8
 
 #      ******************************************************************
 #      *                                                                *
@@ -33,7 +33,7 @@ MAKE = gmake -j 8
 #      *                                                                *
 #      ******************************************************************
 
-EXEC_SUFFIX = _sgi_n32_mpich
+EXEC_SUFFIX = _sgi
 
 #      ******************************************************************
 #      *                                                                *
@@ -41,8 +41,8 @@ EXEC_SUFFIX = _sgi_n32_mpich
 #      *                                                                *
 #      ******************************************************************
 
-FF90 = /usr/local/MPICH/N32/bin/mpif90
-CC   = /usr/local/MPICH/N32/bin/mpicc
+FF90 = f90
+CC   = cc
 
 #      ******************************************************************
 #      *                                                                *
@@ -50,8 +50,8 @@ CC   = /usr/local/MPICH/N32/bin/mpicc
 #      *                                                                *
 #      ******************************************************************
 
-CGNS_INCLUDE_FLAGS = -I$(HOME)/CGNS2.3/include
-CGNS_LINKER_FLAGS  = -L$(HOME)/CGNS2.3/lib -lcgns.SGI_n32
+CGNS_INCLUDE_FLAGS = -I/usr/local/CGNS2.3/include
+CGNS_LINKER_FLAGS  = -L/usr/local/CGNS2.3/lib64 -lcgns
 
 #      ******************************************************************
 #      *                                                                *
@@ -87,25 +87,20 @@ CC_PRECISION_FLAGS   = $(CC_INTEGER_PRECISION_FLAG) \
 
 COMMAND_SEARCH_PATH_MODULES = -I
 
-FF90_32_64_FLAGS = -mips4 -n32
-CC_32_64_FLAGS   = -mips4 -n32
+FF90_32_64_FLAGS = -mips4 -64
+CC_32_64_FLAGS   = -mips4 -64
 
-FF90_GEN_FLAGS = $(FF90_32_64_FLAGS) -DUSE_MPI_INCLUDE_FILE
+FF90_GEN_FLAGS = $(FF90_32_64_FLAGS)
 CC_GEN_FLAGS   = $(CC_32_64_FLAGS)
 
 #FF90_OPTFLAGS   = -r14000 -Ofast=ip35 -IPA
 #CC_OPTFLAGS     = -r14000 -Ofast=ip35 -IPA
-
-#FF90_OPTFLAGS   = -O2
-#CC_OPTFLAGS     = -O2
 
 FF90_OPTFLAGS   = -O3
 CC_OPTFLAGS     = -O
 
 DEBUGFLAGS      = -DEBUG:conform_check=ON:div_check=3:subscript_check=ON:trap_uninitialized=ON:varargs_interface_check=ON:verbose_runtime=ON
 #FF90_DEBUGFLAGS = -g -fullwarn -check_bounds $(DEBUGFLAGS) -DDEBUG_MODE
-#FF90_DEBUGFLAGS = -g3 -O3 -DDEBUG_MODE
-#FF90_DEBUGFLAGS = -g -DDEBUG_MODE
 #CC_DEBUGFLAGS   = -g -fullwarn $(DEBUGFLAGS) -DDEBUG_MODE
 
 FF90_FLAGS = $(FF90_GEN_FLAGS) $(FF90_OPTFLAGS) $(FF90_DEBUGFLAGS)
@@ -118,8 +113,8 @@ CC_FLAGS   = $(CC_GEN_FLAGS)   $(CC_OPTFLAGS)   $(CC_DEBUGFLAGS)
 #      ******************************************************************
 
 #PV3_FLAGS          = -DUSE_PV3
-#PV3_LINKER_FLAGS   = -L/usr/local/pV3/clients/SGI6 -lpV3
-#PVM3_LINKER_FLAGS  = -L/usr/local/pvm3/lib/SGI6 -lgpvm3 -lpvm3
+#PV3_LINKER_FLAGS   = -L/usr/local/pV3/clients/SGI64 -lpV3
+#PVM3_LINKER_FLAGS  = -L/usr/local/pvm3/lib/SGI64 -lgpvm3 -lpvm3
 #PV3_INT_SRC_DIR    = src/pv3Interface
 
 #      ******************************************************************

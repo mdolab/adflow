@@ -24,13 +24,21 @@ subroutine destroyNKsolver
      call VecDestroy(deltaW,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
+     call VecDestroy(scaleVec,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
      call VecDestroy(g,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call VecDestroy(w_like1,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call VecDestroy(w_like2,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      call VecDestroy(work,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     ! We will destroy the PETSc variables created in setupNKsolver
      call KSPDestroy(global_ksp,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
