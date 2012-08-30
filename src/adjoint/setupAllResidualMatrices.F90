@@ -391,9 +391,12 @@ subroutine setupAllResidualMatrices
                                          ! NO error check here for speed purposes
                                          ! call ECHk(PETScIerr,__FILE__,__LINE__)
                                          
-                                         rotpointxcorrection = rotpointxcorrection+ DOT_PRODUCT(xAdjb(ii,jj,kk,:,sps2),((/1,0,0/)+ RpXCorrection))
-                                         rotpointycorrection = rotpointycorrection+ DOT_PRODUCT(xAdjb(ii,jj,kk,:,sps2),((/0,1,0/)+ RpYCorrection))
-                                         rotpointzcorrection = rotpointzcorrection+ DOT_PRODUCT(xAdjb(ii,jj,kk,:,sps2),((/0,0,1/)+ RpZCorrection))
+                                         rotpointxcorrection = rotpointxcorrection+ &
+                                              DOT_PRODUCT(xAdjb(ii,jj,kk,:,sps2),((/1,0,0/)+ RpXCorrection))
+                                         rotpointycorrection = rotpointycorrection+&
+                                              DOT_PRODUCT(xAdjb(ii,jj,kk,:,sps2),((/0,1,0/)+ RpYCorrection))
+                                         rotpointzcorrection = rotpointzcorrection+ &
+                                              DOT_PRODUCT(xAdjb(ii,jj,kk,:,sps2),((/0,0,1/)+ RpZCorrection))
                                       endif
                                       
 

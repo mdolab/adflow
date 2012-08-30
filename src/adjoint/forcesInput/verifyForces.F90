@@ -285,7 +285,7 @@ subroutine verifyForces(pts,npts,nTS)
   tol = 1e-5
   h = 1e-8
   call MatGetOwnershipRange(dFdw,rowStart,rowEnd,ierr)
-  call EChk(ierr,__file__,__line__)
+  call EChk(ierr,__FILE__,__LINE__)
   do sps=1,nTimeIntervalsSpectral
      do nn=1,ndom
         max_rel_err = 0.0
@@ -325,7 +325,7 @@ subroutine verifyForces(pts,npts,nTS)
                           do jdim =1,3  !
                              irow = rowStart+(jpt-1)*3+jdim-1 + (sps2-1)*npts*3
                              call MatGetValues(dFdw,1,irow,1,icol,vec_value,ierr)
-                             call EChk(ierr,__file__,__line__)
+                             call EChk(ierr,__FILE__,__LINE__)
                              diff = abs(vec_value-deriv(jdim,jpt,sps2))
                              if (diff > 1e-16) then
                                 rel_err = diff/((vec_value+deriv(jdim,jpt,sps2)))
@@ -368,9 +368,10 @@ end subroutine verifyForces
 
 function norm(X,n)
   ! Compute the L2 nomr of X
+  use precision
   implicit none
-  double precision       :: X(n)
-  double precision       :: norm
+  real(kind=realType)       :: X(n)
+  real(kind=realType)    :: norm
   integer                :: i,n
   norm = 0.0
   do i=1,n

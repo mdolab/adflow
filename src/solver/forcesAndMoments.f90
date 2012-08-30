@@ -212,7 +212,7 @@
                ! outward pointing normal.
 
                pm1 = fact*(half*(pp2(i,j) + pp1(i,j)) - pInf)
-               !print *,'pm1',fact,half,pp2(i,j),pp1(i,j),pInf
+
                xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
                   +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
                yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &

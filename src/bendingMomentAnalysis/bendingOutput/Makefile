@@ -51,9 +51,9 @@ CC_OBJECTS   =
 default: all
 
 all:
-	$(MAKE) mod
+	$(PMAKE) mod
 #	cp -f *.mod $(SUMB_MODDIR)
-	$(MAKE) src
+	$(PMAKE) src
 
 clean:
 	@echo "        Making clean in adjoint... "

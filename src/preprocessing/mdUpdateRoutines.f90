@@ -83,6 +83,7 @@ subroutine updateMetricsAllLevels
   !
   use block
   use iteration
+  use inputphysics
   implicit none
   !
   !      Local variables.
@@ -99,7 +100,14 @@ subroutine updateMetricsAllLevels
 
   nLevels = ubound(flowDoms,2)
   do nn=groundLevel,nLevels
-     call metric(nn)
+     if(equationMode == unsteady) then
+        call metric(nn) 
+        call metric_gcl(nn) 
+     else
+        call metric(nn)
+     end if
+
+
      call checkSymmetry(nn)
   enddo
 

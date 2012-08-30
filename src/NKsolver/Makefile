@@ -45,6 +45,7 @@ FF90_OBJECTS = applyPC.o\
 	       NKBenchmark.o\
 	       NKSolver.o\
 	       NKUtilities.o\
+	       resetKSP.o\
 	       setupNKSolver.o\
 
 
@@ -57,7 +58,7 @@ FF90_OBJECTS = applyPC.o\
 default: all
 
 all:
-	$(MAKE) src
+	$(PMAKE) src
 
 clean:
 	@echo "        Making clean in solver... "

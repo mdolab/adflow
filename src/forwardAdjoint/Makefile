@@ -36,8 +36,6 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS = determineStencil.o\
-		setPointersOffTSInstance.o\
-		setPointersOffTSInstance_d.o\
                 setupAllResidualMatricesFwd.o\
                 setupExtraResidualMatrix.o\
 		setupStateResidualMatrix.o\
@@ -48,8 +46,10 @@ FF90_OBJECTS = determineStencil.o\
 		alloc_derivative_values.o\
 		dealloc_derivative_values.o\
 		setupColoring.o\
-
-
+		setPointersOffTSInstance.o\
+		setPointersOffTSInstance_d.o\
+		setPointers_d.o\
+		writeMatrices.o\
 
 #      ******************************************************************
 #      *                                                                *
@@ -60,7 +60,7 @@ FF90_OBJECTS = determineStencil.o\
 default: all
 
 all:
-	$(MAKE) src
+	$(PMAKE) src
 
 clean:
 	@echo "        Making clean in solver... "
