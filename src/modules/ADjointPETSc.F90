@@ -120,7 +120,7 @@
       !       of design variables.
       !
 
-      Mat     dRdWT,dRdWPreT
+      Mat     dRdWT,dRdWPreT, matTemp, matTemp2
       Mat     dRda, dRdx,dFdw,dFdx
       Vec     psi, dJdW, adjointRHS,adjointRes
       Vec     dJdx

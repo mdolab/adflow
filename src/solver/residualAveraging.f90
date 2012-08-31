@@ -107,7 +107,7 @@
 !      Hardwire cflim for the time being (=lambda*).  It should be
 !       defaulted to something else later on.
 !
-       cflim = 3.0
+       cflim = 1.0
 
        if(currentLevel <= groundLevel) then
          currentCfl = cfl
@@ -150,7 +150,7 @@
                 epz(i,j) = fourth*smoop*dim(r*r,one)*iblank(i,j,k)
              end do
            end do
-
+       
            ! Zero out coefficients for boundary condition treatment
 
            do j=2,jl
@@ -168,7 +168,7 @@
                d(i,j) = t(i,j)*epz(i,j)
              end do
            end do
-
+        
            ! Apply same transformation to the rhs vector of residuals
 
            do i=2,il
