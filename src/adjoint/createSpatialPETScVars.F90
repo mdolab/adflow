@@ -8,7 +8,7 @@ subroutine createSpatialPETScVars
   !     *                                                                *
   !     ******************************************************************
 
-  use ADjointPETSc
+  use ADjointPETSc, only : dRdx, PETScIerr, dJdx, Xvec
   use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
   use communication   ! myID, nProc
   use inputTimeSpectral !nTimeIntervalsSpectral
@@ -16,6 +16,10 @@ subroutine createSpatialPETScVars
   use inputADjoint    !ApproxPC
 
   implicit none
+
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
   !
   !     Local variables.
   !
@@ -54,13 +58,23 @@ subroutine createSpatialPETScVars
   call drdxPreAllocation(nnzDiagonal,nnzOffDiag,nDimX)
   
   ! Note we are creating the TRANPOSE of dRdx. It is size dDimX by nDimW
-  call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
-       nDimX, nDimW,                     &
-       PETSC_DETERMINE, PETSC_DETERMINE, &
-       8, nnzDiagonal,     &
-       8, nnzOffDiag,            &
-       dRdx, PETScIerr)
+  if (PETSC_VERSION_MINOR == 2) then
+     call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
+          nDimX, nDimW,                     &
+          PETSC_DETERMINE, PETSC_DETERMINE, &
+          8, nnzDiagonal,     &
+          8, nnzOffDiag,            &
+          dRdx, PETScIerr)
+  else
+     call MatCreateAIJ(SUMB_PETSC_COMM_WORLD,                 &
+          nDimX, nDimW,                     &
+          PETSC_DETERMINE, PETSC_DETERMINE, &
+          8, nnzDiagonal,     &
+          8, nnzOffDiag,            &
+          dRdx, PETScIerr)
+  end if
   call EChk(PETScIerr,__FILE__,__LINE__)
+
   deallocate( nnzDiagonal, nnzOffDiag )
 
   ! Set column major order for the matrix dRdx.
@@ -68,11 +82,17 @@ subroutine createSpatialPETScVars
   call EChk(PETScIerr,__FILE__,__LINE__)
 
   ! Vectors
-  call VecCreateMPI(SUMB_PETSC_COMM_WORLD,nDimX,PETSC_DETERMINE,dJdx,PETScIerr)
+  call VecCreate(SUMB_COMM_WORLD, dJdx, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
-
-  call VecSetBlockSize(dJdx,3,PETScIerr)
-  call EChk(PETScierr,__FILE__,__LINE__)
+  
+  call VecSetSizes(dJdx, nDimX, PETSC_DECIDE, PETScIerr)
+  call EChk(PETScIerr, __FILE__, __LINE__)
+  
+  call VecSetBlockSize(dJdx, 3, PETScIerr)
+  call EChk(PETScIerr, __FILE__, __LINE__)
+  
+  call VecSetType(dJdx, VECMPI, PETScIerr) 
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   ! xVec
   call VecDuplicate(dJdx,xVec,PETScIerr)
