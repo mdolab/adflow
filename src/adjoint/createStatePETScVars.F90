@@ -1,4 +1,6 @@
 subroutine createStatePETScVars
+
+#ifndef USE_NO_PETSC
   !
   !     ******************************************************************
   !     *                                                                *
@@ -7,14 +9,20 @@ subroutine createStatePETScVars
   !     *           Vectors: dRdw,psi,adjointRes,adjointRHS,             *                                                                *
   !     ******************************************************************
   !
-  use ADjointPETSc
+  use ADjointPETSc, only: dRdwT, drdwPreT, dJdw, psi, adjointRes, adjointRHS,&
+       PETScIerr, PETScBlockMatrix
   use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
   use communication   ! myID, nProc
   use inputTimeSpectral !nTimeIntervalsSpectral
   use flowVarRefState ! 
   use inputADjoint    !ApproxPC
   use stencils
+  
   implicit none
+
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
   !
   !     Local variables.
   !
@@ -31,7 +39,6 @@ subroutine createStatePETScVars
   !     *                                                                *
   !     ******************************************************************
   !
-#ifndef USE_NO_PETSC
 
   ! Define matrix dRdW local size, taking into account the total
   ! number of Cells owned by the processor and the number of 
@@ -74,12 +81,21 @@ subroutine createStatePETScVars
      PETScBlockMatrix = .true.
 
      ! Create a Block AIJ Matrix with block size nw, (number of states)
-     call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
-          nDimW, nDimW,                     &
-          PETSC_DETERMINE, PETSC_DETERMINE, &
-          0, nnzDiagonal,         &
-          0, nnzOffDiag,            &
-          dRdWT, PETScIerr)
+     if (PETSC_VERSION_MINOR == 2) then
+        call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
+             nDimW, nDimW,                     &
+             PETSC_DETERMINE, PETSC_DETERMINE, &
+             0, nnzDiagonal,         &
+             0, nnzOffDiag,            &
+             dRdWT, PETScIerr)
+     else
+        call MatCreateBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
+             nDimW, nDimW,                     &
+             PETSC_DETERMINE, PETSC_DETERMINE, &
+             0, nnzDiagonal,         &
+             0, nnzOffDiag,            &
+             dRdWT, PETScIerr)
+     end if
      call EChk(PETScIerr,__FILE__,__LINE__)
   else
 
@@ -93,13 +109,23 @@ subroutine createStatePETScVars
         nnzDiagonal2((i-1)*nw+1:(i-1)*nw+nw) = nnzDiagonal(i)
         nnzOffDiag((i-1)*nw+1:(i-1)*nw+nw) = nnzOffDiag(i)
      end do
-     call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
-          nDimW, nDimW,                     &
-          PETSC_DETERMINE, PETSC_DETERMINE, &
-          8, nnzDiagonal2,         &
-          8, nnzOffDiag2,            &
-          dRdWT, PETScIerr)
+     if (PETSC_VERSION_MINOR == 2) then
+        call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
+             nDimW, nDimW,                     &
+             PETSC_DETERMINE, PETSC_DETERMINE, &
+             8, nnzDiagonal2,         &
+             8, nnzOffDiag2,            &
+             dRdWT, PETScIerr)
+     else
+        call MatCreateAIJ(SUMB_PETSC_COMM_WORLD,                 &
+             nDimW, nDimW,                     &
+             PETSC_DETERMINE, PETSC_DETERMINE, &
+             8, nnzDiagonal2,         &
+             8, nnzOffDiag2,            &
+             dRdWT, PETScIerr)
+     end if
      call EChk(PETScIerr,__FILE__,__LINE__)
+
      deallocate(nnzDiagonal2,nnzOffDiag2)
   endif
 
@@ -150,13 +176,21 @@ subroutine createStatePETScVars
      if( nw <= 7 ) then
 
         PETScBlockMatrix = .true.
-
-        call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
-             nDimW, nDimW,                     &
-             PETSC_DETERMINE, PETSC_DETERMINE, &
-             0, nnzDiagonal,         &
-             0, nnzOffDiag,            &
-             dRdWPreT, PETScIerr)
+        if (PETSC_VERSION_MINOR == 2) then
+           call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
+                nDimW, nDimW,                     &
+                PETSC_DETERMINE, PETSC_DETERMINE, &
+                0, nnzDiagonal,         &
+                0, nnzOffDiag,            &
+                dRdWPreT, PETScIerr)
+        else
+           call MatCreateBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
+                nDimW, nDimW,                     &
+                PETSC_DETERMINE, PETSC_DETERMINE, &
+                0, nnzDiagonal,         &
+                0, nnzOffDiag,            &
+                dRdWPreT, PETScIerr)
+        end if
         call EChk(PETScIerr,__FILE__,__LINE__)
      else
 
@@ -169,14 +203,23 @@ subroutine createStatePETScVars
            nnzDiagonal2((i-1)*nw+1:(i-1)*nw+nw) = nnzDiagonal(i)
            nnzOffDiag((i-1)*nw+1:(i-1)*nw+nw) = nnzOffDiag(i)
         end do
-
-        call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
-             nDimW, nDimW,                     &
-             PETSC_DETERMINE, PETSC_DETERMINE, &
-             0, nnzDiagonal2,         &
-             0,nnzOffDiag2,            &
-             dRdWPret, PETScIerr)
+        if (PETSC_VERSION_MINOR == 2) then
+           call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
+                nDimW, nDimW,                     &
+                PETSC_DETERMINE, PETSC_DETERMINE, &
+                0, nnzDiagonal2,         &
+                0,nnzOffDiag2,            &
+                dRdWPret, PETScIerr)
+        else
+           call MatCreateAIJ(SUMB_PETSC_COMM_WORLD,                 &
+                nDimW, nDimW,                     &
+                PETSC_DETERMINE, PETSC_DETERMINE, &
+                0, nnzDiagonal2,         &
+                0,nnzOffDiag2,            &
+                dRdWPret, PETScIerr)
+        end if
         call EChk(PETScIerr,__FILE__,__LINE__)
+
         deallocate(nnzDiagonal2,nnzOffDiag2)
      endif
 

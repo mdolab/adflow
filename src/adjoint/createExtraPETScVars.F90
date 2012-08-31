@@ -6,12 +6,16 @@ subroutine createExtraPETScVars
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPETSc
+  use ADjointPETSc, only : dRda, dRda_data, PETScIerr
   use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
   use communication   ! myID, nProc
   use inputTimeSpectral !nTimeIntervalsSpectral
   use flowvarrefstate
   implicit none
+
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
   !
   !     Local variables.
   !
@@ -35,9 +39,13 @@ subroutine createExtraPETScVars
 
   allocate(dRda_data(nDimw,nDesignExtra))
 
-
-  call MatCreateMPIDense(SUMB_PETSC_COMM_WORLD,nDimW,PETSC_DECIDE,&
-       PETSC_DETERMINE,nDesignExtra,dRda_data,dRda,PETScIerr)
+  if (PETSC_VERSION_MINOR == 2) then
+     call MatCreateMPIDense(SUMB_PETSC_COMM_WORLD,nDimW,PETSC_DECIDE,&
+          PETSC_DETERMINE,nDesignExtra,dRda_data,dRda,PETScIerr)
+  else
+     call MatCreateDense(SUMB_PETSC_COMM_WORLD,nDimW,PETSC_DECIDE,&
+          PETSC_DETERMINE,nDesignExtra,dRda_data,dRda,PETScIerr)
+  end if
   call EChk(PETScIerr,__FILE__,__LINE__)
 
 #endif

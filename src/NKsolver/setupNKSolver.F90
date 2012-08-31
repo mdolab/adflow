@@ -32,9 +32,16 @@ subroutine setupNKsolver
   if (.not. NKSolverSetup) then
      nDimW = nw * nCellsLocal * nTimeIntervalsSpectral
 
-     call VecCreateMPI(SUMB_COMM_WORLD,nDimw,PETSC_DETERMINE,wVec,ierr)
+     call VecCreate(SUMB_COMM_WORLD, wVec, ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     call VecSetBlockSize(wVec,nw,ierr)
+     
+     call VecSetSizes(wVec, nDimW, PETSC_DECIDE, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+ 
+     call VecSetBlockSize(wVec, nw, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+
+     call VecSetType(wVec, VECMPI, ierr) 
      call EChk(ierr,__FILE__,__LINE__)
 
      !  Create duplicates for residual and delta
@@ -55,12 +62,21 @@ subroutine setupNKsolver
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Create two empty w-like vectors
-     call VecCreateMPIWithArray(SUMB_COMM_WORLD,nDimW,PETSC_DETERMINE,&
-          PETSC_NULL_SCALAR,w_like1,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-     call VecCreateMPIWithArray(SUMB_COMM_WORLD,nDimW,PETSC_DETERMINE,&
-          PETSC_NULL_SCALAR,w_like2,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     if (PETSC_VERSION_MINOR == 2) then
+        call VecCreateMPIWithArray(SUMB_COMM_WORLD,nDimW,PETSC_DETERMINE,&
+             PETSC_NULL_SCALAR,w_like1,ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        call VecCreateMPIWithArray(SUMB_COMM_WORLD,nDimW,PETSC_DETERMINE,&
+             PETSC_NULL_SCALAR,w_like2,ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+     else 
+        call VecCreateMPIWithArray(SUMB_COMM_WORLD,nw,nDimW,PETSC_DETERMINE,&
+             PETSC_NULL_SCALAR,w_like1,ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        call VecCreateMPIWithArray(SUMB_COMM_WORLD,nw,nDimW,PETSC_DETERMINE,&
+             PETSC_NULL_SCALAR,w_like2,ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+     end if
 
      ! Create Pre-Conditioning Matrix
      totalCells = nCellsLocal*nTimeIntervalsSpectral
@@ -79,13 +95,22 @@ subroutine setupNKsolver
      ! non-zero BLOCKS as opposed to the non-zero values. 
      call statePreAllocation(nnzDiagonal,nnzOffDiag,&
           totalCells,stencil,n_stencil)
-  
-     call MatCreateMPIBAIJ(SUMB_COMM_WORLD, nw, &
-          nDimW, nDimW,                     &
-          PETSC_DETERMINE, PETSC_DETERMINE, &
-          0, nnzDiagonal,                   &
-          0, nnzOffDiag,                    &
-          dRdWPre, ierr)
+     if (PETSC_VERSION_MINOR == 2) then
+        call MatCreateMPIBAIJ(SUMB_COMM_WORLD, nw, &
+             nDimW, nDimW,                     &
+             PETSC_DETERMINE, PETSC_DETERMINE, &
+             0, nnzDiagonal,                   &
+             0, nnzOffDiag,                    &
+             dRdWPre, ierr)
+     else
+        call MatCreateBAIJ(SUMB_COMM_WORLD, nw, &
+             nDimW, nDimW,                     &
+             PETSC_DETERMINE, PETSC_DETERMINE, &
+             0, nnzDiagonal,                   &
+             0, nnzOffDiag,                    &
+             dRdWPre, ierr)
+     end if
+
      call EChk(ierr,__FILE__,__LINE__)
      
      deallocate(nnzDiagonal,nnzOffDiag)
@@ -125,7 +150,7 @@ subroutine setupNKsolver
         turbCoupled = .True.
         turbSegregated = .False.
      end if
-     !print *,'Solver setup'
+
   end if
 #endif
 end subroutine setupNKsolver

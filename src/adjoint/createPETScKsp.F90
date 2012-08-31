@@ -20,6 +20,7 @@ subroutine createPETScKsp
   !     ******************************************************************
   !
   use ADjointPETSc
+  use communication
   implicit none
 
   
