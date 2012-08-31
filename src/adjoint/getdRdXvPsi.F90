@@ -45,6 +45,7 @@ subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
   use blockPointers
   use inputADjoint
   use section
+  use petscvec
   use inputTimeSpectral 
   use monitor 
   implicit none

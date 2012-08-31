@@ -45,22 +45,25 @@ default: all
 all:
 
 # Generate Python inlude directory
-	 $(eval PYTHON_INCLUDES = $(shell python-config --includes))
+	 $(eval PYTHON_INCLUDES = $(shell $(PYTHON-CONFIG) --includes))
+	 @echo "#------------------------------------------------------#"
 	 @echo Python Inclue Flags $(PYTHON_INCLUDES)
+	 @echo "#------------------------------------------------------#"
 
 # Generate Numpy inlude directory
-	$(eval NUMPY_INCLUDES = $(shell python -c 'import numpy; print numpy.get_include()'))
+	$(eval NUMPY_INCLUDES = $(shell $(PYTHON) -c 'import numpy; print numpy.get_include()'))
+	@echo "#------------------------------------------------------#"
 	@echo Numpy Include Directory: $(NUMPY_INCLUDES)
+	@echo "#------------------------------------------------------#"
 
 # Generate f2py root directory
-	$(eval F2PY_ROOT = $(shell python get_f2py.py))
-
+	$(eval F2PY_ROOT = $(shell $(PYTHON) get_f2py.py))
+	@echo "#------------------------------------------------------#"
 	@echo f2py root directory: $(F2PY_ROOT)
+	@echo "#------------------------------------------------------#"
 
 #       need to have f2py_f2cmap in this folder....
 	cp f2py_f2cmap.ref .f2py_f2cmap
-
-	ln -sf sumb.PYF sumb.pyf
 
 # Run f2py to get sumbmodule.c and sumb-f2pywrapper2.f90
 	f2py sumb.pyf
@@ -83,7 +86,6 @@ all:
 	python importTest.py
 
 	mv sumb.so ../../../python
-	-rm *.pyf
 	-rm *.o
 	-rm *.f90 *.f *.c
 	-rm .f2py_f2cmap

@@ -23,8 +23,13 @@ subroutine preprocessingADjoint
   use precision
   use flowVarRefState
   use inputTimeSpectral
-  use ADjointPETSc
+  use ADjointPETSc, only: w_like1, w_like2, fvec1, fvec2, PETScIerr
   implicit none
+
+#ifndef USE_NO_PETSC
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+#endif
 
   !     Local variables.
   !
@@ -61,17 +66,41 @@ subroutine preprocessingADjoint
                                            ! dof on each point
 
   nDimW = nw * nCellsLocal*nTimeIntervalsSpectral
-  call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimS,PETSC_DECIDE, &
-       PETSC_NULL_SCALAR,fVec1,PETScIerr)
 
-  call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimS,PETSC_DECIDE, &
-       PETSC_NULL_SCALAR,fVec2,PETScIerr)
+  if (PETSC_VERSION_MINOR == 2) then
+     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimS,PETSC_DECIDE, &
+          PETSC_NULL_SCALAR,fVec1,PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
-  ! Two w-like vectors. 
-  call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimW,PETSC_DECIDE, &
-       PETSC_NULL_SCALAR,w_like1,PETScIerr)
+     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimS,PETSC_DECIDE, &
+          PETSC_NULL_SCALAR,fVec2,PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
-  call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimW,PETSC_DECIDE, &
-       PETSC_NULL_SCALAR,w_like2,PETScIerr)
+     ! Two w-like vectors. 
+     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimW,PETSC_DECIDE, &
+          PETSC_NULL_SCALAR,w_like1,PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
+     
+     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimW,PETSC_DECIDE, &
+          PETSC_NULL_SCALAR,w_like2,PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
+  else
+     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,1,ndimS,PETSC_DECIDE, &
+          PETSC_NULL_SCALAR,fVec1,PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
 
+     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,1,ndimS,PETSC_DECIDE, &
+          PETSC_NULL_SCALAR,fVec2,PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
+
+     ! Two w-like vectors. 
+     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
+          PETSC_NULL_SCALAR,w_like1,PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
+     
+     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
+          PETSC_NULL_SCALAR,w_like2,PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
+  end if
+     
 end subroutine preprocessingADjoint

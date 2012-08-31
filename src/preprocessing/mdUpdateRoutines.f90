@@ -102,7 +102,6 @@ subroutine updateMetricsAllLevels
   do nn=groundLevel,nLevels
      if(equationMode == unsteady) then
         call metric(nn) 
-        call metric_gcl(nn) 
      else
         call metric(nn)
      end if
