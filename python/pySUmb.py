@@ -1056,7 +1056,7 @@ class SUMB(AeroSolver):
         self.solve_failed =  self.fatalFail = False
 
         self._updatePeriodInfo()
-        if self.getOption('equationMode') == 'Steady':
+        if (self.getOption('equationMode') == 'Steady' or self.getOption('equationMode') == 'Time Spectral'):
             self._updateGeometryInfo()
         self._updateVelocityInfo()
 
