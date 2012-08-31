@@ -22,7 +22,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
   use inputAdjoint       
   use stencils
   use diffSizes
-
+  use NKSolverVars, only : diag
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -57,10 +57,10 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
   if (usePC) then
      if (viscous) then
-        !stencil => visc_pc_stencil
-        !n_stencil = N_visc_pc
-        stencil => euler_pc_stencil
-        n_stencil = N_euler_pc
+        stencil => visc_pc_stencil
+        n_stencil = N_visc_pc
+        !stencil => euler_pc_stencil
+        !n_stencil = N_euler_pc
 
      else
         stencil => euler_pc_stencil
@@ -333,6 +333,10 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
   call MatSetOption(matrix,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,ierr)
   call EChk(ierr,__FILE__,__LINE__)
+
+!   call setdtl(diag)
+!   call MatDiagonalSet(matrix, diag, ADD_VALUES, ierr)
+!   call EChk(ierr,__FILE__,__LINE__)
 
 contains
 

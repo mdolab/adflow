@@ -13,6 +13,7 @@ subroutine setupAdjointMatrix
 
   ! Local variables.
   logical :: useAD,useTranspose,usePC
+  integer(kind=intType) :: ierr
   real(kind=realType), dimension(2) :: time
   real(kind=realType)               :: timeAdjLocal, timeAdj
 
@@ -27,7 +28,12 @@ subroutine setupAdjointMatrix
   useAD = .True.
   usePC = .False.
   useTranspose = .True.
-  call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
+
+
+
+  call setupStateResidualMatrix(drdwt,useAD,usePC,useTranspose)
+
+
 
   if (approxPC) then ! If we need to assemble an approximate PC
      useAD = .False.
