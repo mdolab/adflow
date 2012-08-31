@@ -68,7 +68,6 @@ FF90_OBJECTS_2 = allocMemHaloList.o\
 		 init2ndLevelCellHalos.o\
 		 mdUpdateRoutines.o\
 		 metric.o\
-		 metric_gcl.o\
 		 preprocessing.o\
 		 qsortHaloListType.o\
 		 qsortIndHaloType.o\

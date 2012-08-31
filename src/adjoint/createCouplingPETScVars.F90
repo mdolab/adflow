@@ -1,4 +1,5 @@
 subroutine createCouplingPETScVars
+#ifndef USE_NO_PETSC
   !
   !     ******************************************************************
   !     *                                                                *
@@ -6,17 +7,20 @@ subroutine createCouplingPETScVars
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPETSc
+  use ADjointPETSc, only: dFdx, dFdw, PETScIerr
   use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
   use communication   ! myID, nProc
   use inputTimeSpectral !nTimeIntervalsSpectral
   use flowVarRefState
   implicit none
+
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+
   !
   !     Local variables.
   !
   integer(kind=intType)  :: nDimW, nDimS, nTS
-
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
 
   !
@@ -26,7 +30,7 @@ subroutine createCouplingPETScVars
   !     *                                                                *
   !     ******************************************************************
   !
-#ifndef USE_NO_PETSC
+
 
   nDimW = nw * nCellsLocal*nTimeIntervalsSpectral
 
@@ -53,23 +57,42 @@ subroutine createCouplingPETScVars
   allocate( nnzDiagonal(nDimS), nnzOffDiag(nDimS) )
   nnzDiagonal = 8*nw
   nnzOffDiag  = 8*nw! Make the off diagonal the same, since we
-  call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,&
-       nDimS, nDimW,                     &
-       PETSC_DETERMINE, PETSC_DETERMINE, &
-       0, nnzDiagonal,         &
-       0, nnzOffDiag,            &
-       dFdw, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
+  if (PETSC_VERSION_MINOR == 2) then
+     call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,&
+          nDimS, nDimW,                     &
+          PETSC_DETERMINE, PETSC_DETERMINE, &
+          0, nnzDiagonal,         &
+          0, nnzOffDiag,            &
+          dFdw, PETScIerr)
+  else
+      call MatCreateAIJ(SUMB_PETSC_COMM_WORLD,&
+          nDimS, nDimW,                     &
+          PETSC_DETERMINE, PETSC_DETERMINE, &
+          0, nnzDiagonal,         &
+          0, nnzOffDiag,            &
+          dFdw, PETScIerr)
+   end if
+   call EChk(PETScIerr,__FILE__,__LINE__)
 
   ! Create the matrix dFdx
   nnzDiagonal = 27
   nnzOffDiag = 27
-  call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,&
-       nDimS, nDimS,                     &
-       PETSC_DETERMINE, PETSC_DETERMINE, &
-       0, nnzDiagonal,         &
-       0, nnzOffDiag,            &
-       dFdx, PETScIerr)
+  if (PETSC_VERSION_MINOR == 2) then
+     call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,&
+          nDimS, nDimS,                     &
+          PETSC_DETERMINE, PETSC_DETERMINE, &
+          0, nnzDiagonal,         &
+          0, nnzOffDiag,            &
+          dFdx, PETScIerr)
+  else
+     call MatCreateAIJ(SUMB_PETSC_COMM_WORLD,&
+          nDimS, nDimS,                     &
+          PETSC_DETERMINE, PETSC_DETERMINE, &
+          0, nnzDiagonal,         &
+          0, nnzOffDiag,            &
+          dFdx, PETScIerr)
+  end if
+
   call EChk(PETScIerr,__FILE__,__LINE__)
   deallocate( nnzDiagonal, nnzOffDiag )
 

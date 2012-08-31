@@ -210,7 +210,7 @@ subroutine setupAllResidualMatrices
 
   if( myid ==0 ) &
        write(*,10) "Assembling All Residual Matrices..."
-
+  
   call cpu_time(time(1))
 
   !zero the matrix for dRdW Insert call
@@ -219,6 +219,10 @@ subroutine setupAllResidualMatrices
 
   !zero the matrix for dRdx ADD call
   call MatZeroEntries(dRdx,PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
+  !zero the matrix for dRda ADD call
+  call MatZeroEntries(dRda,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
   !needed for rotpoint correction
@@ -512,7 +516,7 @@ subroutine setupAllResidualMatrices
                     ! (note: index displaced by previous design variables)
                   
                    !Angle of Attack
-
+                   
                     if (nDesignAoA >= 0) then
                        !print *,'alphadjb:',alphaadjb,myID,ndesignAoA,idxres
                        call MatSetValues(dRda, 1, idxres, 1, nDesignAoA, &
@@ -530,7 +534,7 @@ subroutine setupAllResidualMatrices
 
                     !Mach Number
                     if (nDesignMach >= 0) then
-                       !print *,'mach:',betaadjb,myID,1,ndesignmach
+                       !print *,'mach:',myID,1,ndesignmach
                        call MatSetValues(dRda, 1, idxres,1, nDesignMach, &
                             machAdjb, INSERT_VALUES, PETScIerr)
                        call EChk(PETScIerr,__FILE__,__LINE__)
@@ -570,7 +574,7 @@ subroutine setupAllResidualMatrices
 
                     !X Rotation Center
                     if (nDesignRotCenX >= 0) then
-                       !print *,'rotcenx:',myID,ndesignrotcenx,rotcenteradjb(1),rotpointadjb(1),rotpointcorrection(1)
+                       !print *,'rotcenx:',myID,ndesignrotcenx,rotcenteradjb(1),rotpointadjb(1),rotpointxcorrection!(1)
                        call MatSetValues(dRda, 1, idxres,1, nDesignRotCenX, &
                             rotcenteradjb(1)+rotpointadjb(1)+rotpointxcorrection, INSERT_VALUES,&
                             PETScIerr)
@@ -794,6 +798,7 @@ subroutine setupAllResidualMatrices
   enddo domainLoopad
 
   if (nDesignDissError >= 0) then
+     !print *,'nDesignDissError',nDesignDissError
      !==================================
      !Compute Dissipation error estimate
      !==================================
