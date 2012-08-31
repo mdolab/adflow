@@ -32,10 +32,17 @@ subroutine setupNKsolver
   if (.not. NKSolverSetup) then
      nDimW = nw * nCellsLocal * nTimeIntervalsSpectral
 
-     call VecCreateMPI(SUMB_COMM_WORLD,nDimw,PETSC_DETERMINE,wVec,ierr)
+     call VecCreate(SUMB_COMM_WORLD, wVec, ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     call VecSetBlockSize(wVec,nw,ierr)
+     
+     call VecSetSizes(wVec, nDimw, PETSC_DECIDE, ierr)
      call EChk(ierr,__FILE__,__LINE__)
+ 
+     call VecSetBlockSize(wVec, 5, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+
+     call VecSetFromOptions(wVec, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
 
      !  Create duplicates for residual and delta
      call VecDuplicate(wVec, rVec, ierr)
@@ -80,12 +87,22 @@ subroutine setupNKsolver
      call statePreAllocation(nnzDiagonal,nnzOffDiag,&
           totalCells,stencil,n_stencil)
   
-     call MatCreateMPIBAIJ(SUMB_COMM_WORLD, nw, &
-          nDimW, nDimW,                     &
-          PETSC_DETERMINE, PETSC_DETERMINE, &
-          0, nnzDiagonal,                   &
-          0, nnzOffDiag,                    &
-          dRdWPre, ierr)
+     call MatCreate(SUMB_PETSC_COMM_WORLD, dRdwPre, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call MatSetSizes(dRdwPre, nDimW, nDimW, &
+          PETSC_DETERMINE, PETSC_DETERMINE, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     call MatSetType(dRdwPre, "mpibaij", ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+        
+     call MatSetBlockSize(dRdwPre, nw, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+        
+     call MatMPIAIJSetPreallocation(dRdwPre, &
+          0, nnzDiagonal, &
+          0, nnzOffDiag, ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
      deallocate(nnzDiagonal,nnzOffDiag)
@@ -125,7 +142,7 @@ subroutine setupNKsolver
         turbCoupled = .True.
         turbSegregated = .False.
      end if
-     !print *,'Solver setup'
+
   end if
 #endif
 end subroutine setupNKsolver
