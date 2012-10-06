@@ -82,6 +82,9 @@ SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC) $(SUBDIR_PYTHON) $(SUBDIR_PV3) \
 default:
 	@echo "Usage: make <arch> or make <arch>_PYTHON for python wrapper"
 	@echo "Currently Supported Architectures:"
+	@echo " NOTE: There has been a change in the config files. Please "
+	@echo "       use a default config file or modifiy an existing one "
+	@echo "       to match the defaults"
 	@echo "                         LINUX_INTEL_OPENMPI"
 	@echo "                         LINUX_INTEL_OPENMPI_SCINET"
 	@echo "                         LINUX_INTEL_INTELMPI_SCINET"
