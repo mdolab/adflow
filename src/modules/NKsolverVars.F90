@@ -30,7 +30,7 @@ module NKsolverVars
   ! PETSc SNES: 
   ! snes: Non-linear solver solution context for NK problem. Not used. 
 
-  SNES               snes 
+  SNES               snes, psnes, outer_snes
 
   ! PETSc Matrices:
   ! dRdw: This is a matrix-free matrix for the state residal matrix. 
@@ -47,7 +47,7 @@ module NKsolverVars
   ! deltaW: Update to the wVec from linear solution
   ! diagV: Diagonal lumping term
 
-  Vec wVec, rVec, deltaW, diagV, work, g, scaleVec
+  Vec wVec, rVec, rvec2, deltaW, diagV, work, g, scaleVec, wBase, rBase, diag, rhs
   Vec w_like1, w_like2
   ! PETSc KSP/PC 
   ! global_ksp: The ksp object for solving the newton udpate
@@ -61,7 +61,7 @@ module NKsolverVars
 
   ! PETSc Misc:
   SNESConvergedReason reason
-  PetscFortranAddr   ctx(3)
+  PetscFortranAddr   ctx(3), ctx2(3)
 #endif
 
   ! Non-linear Solver Options
