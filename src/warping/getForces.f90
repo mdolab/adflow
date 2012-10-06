@@ -56,7 +56,7 @@ subroutine getForces(forces,pts,npts,nTS)
   logical :: viscousSubFace
   real(kind=realType) :: tauXx, tauYy, tauZz
   real(kind=realType) :: tauXy, tauXz, tauYz
-  real(kind=realType) :: tmp
+  real(kind=realType) :: tmp, sss_mag
   !      ******************************************************************
   !      *                                                                *
   !      * Begin execution                                                *
@@ -70,8 +70,10 @@ subroutine getForces(forces,pts,npts,nTS)
   scaleDim = pRef/pInf
   forces = 0.0
   do sps = 1,nTimeIntervalsSpectral
-     ! Compute the local forces. Take the scaling factor into
-     ! account to obtain the forces in SI-units, i.e. Newton.
+
+     ! Compute the local forces (or tractions). Take the scaling
+     ! factor into account to obtain the forces in SI-units,
+     ! i.e. Newton.
      ii = 0 
      domains: do nn=1,nDom
         call setPointers(nn,1_intType,sps)
@@ -140,7 +142,7 @@ subroutine getForces(forces,pts,npts,nTS)
                     ! into account).
 
                     pp = half*(pp2(i,j) + pp1(i,j))-Pinf
-                    pp = fourth*fact*scaleDim*pp
+                    pp = fact*scaleDim*pp
 
                     ! Compute Normal
 
@@ -178,32 +180,63 @@ subroutine getForces(forces,pts,npts,nTS)
                        ! is now present, due to the definition of this force.
                        ! Also must multiply by scattering factor of 1/4
                        fx = fx -fact*(tauXx*sss(1) + tauXy*sss(2) &
-                            +        tauXz*sss(3))*fourth*scaleDim
+                            +        tauXz*sss(3))*scaleDim
 
                        fy = fy -fact*(tauXy*sss(1) + tauYy*sss(2) &
-                            +        tauYz*sss(3))*fourth*scaleDim
+                            +        tauYz*sss(3))*scaleDim
 
                        fz = fz -fact*(tauXz*sss(1) + tauYz*sss(2) &
-                            +        tauZz*sss(3))*fourth*scaleDim
+                            +        tauZz*sss(3))*scaleDim
 
                     end if
                        
+                    if (.not. forcesAsTractions) then
+
+                       ! This is the normal computation. Divide the
+                       ! forces by 4 and scatter accordingly
+                       fx = fx * fourth
+                       fy = fy * fourth
+                       fz = fz * fourth
+                    else
+                       
+                       ! We want to get tractions (force per unit
+                       ! area) and not the forces. We just have to
+                       ! take fx and divide by the magnitude of ss
+                       ! Note the ACTUAL tractions taken from this
+                       ! routine are USELESS!!!! The nodal tractions
+                       ! MUST be divided by their nodal multiplicity
+                       ! (valance) in order to get the correct
+                       ! values. These should ONLY be used in
+                       ! conjunction with pyWarp that performs the
+                       ! required multiplications. 
+
+                       sss_mag = sqrt(sss(1)*sss(1) + &
+                                      sss(2)*sss(2) + &
+                                      sss(3)*sss(3))
+
+                       fx = fx / sss_mag
+                       fy = fy / sss_mag
+                       fz = fz / sss_mag
+                    end if
+
+                    ! Assigning the forces is the same in either case
+                    
                     forces(1,lower_left,sps)  = forces(1,lower_left,sps)  + fx
                     forces(2,lower_left,sps)  = forces(2,lower_left,sps)  + fy
                     forces(3,lower_left,sps)  = forces(3,lower_left,sps)  + fz
-
+                    
                     forces(1,lower_right,sps) = forces(1,lower_right,sps) + fx
                     forces(2,lower_right,sps) = forces(2,lower_right,sps) + fy
                     forces(3,lower_right,sps) = forces(3,lower_right,sps) + fz
-
+                    
                     forces(1,upper_left,sps)  = forces(1,upper_left,sps)  + fx
                     forces(2,upper_left,sps)  = forces(2,upper_left,sps)  + fy
                     forces(3,upper_left,sps)  = forces(3,upper_left,sps)  + fz
-
+                    
                     forces(1,upper_right,sps) = forces(1,upper_right,sps) + fx
                     forces(2,upper_right,sps) = forces(2,upper_right,sps) + fy
                     forces(3,upper_right,sps) = forces(3,upper_right,sps) + fz
-
+                       
                  end do
               end do
 

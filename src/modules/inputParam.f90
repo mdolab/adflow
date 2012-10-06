@@ -719,6 +719,9 @@
        real(kind=realType), dimension(3) :: pointRefb
        real(kind=realType), dimension(3) :: pointRefEC
 
+       ! Return forces as tractions instead of forces:
+       logical :: forcesAsTractions
+
        end module inputPhysics
 
 !      ==================================================================

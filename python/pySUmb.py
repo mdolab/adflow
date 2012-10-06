@@ -164,6 +164,9 @@ class SUMB(AeroSolver):
             'surfaceVariables':[list, ['cp','vx', 'vy','vz', 'mach']],
             'volumeVariables':[list, ['resrho']],
 
+            # Multidisciplinary Coupling Parameters:
+            'forcesAsTractions':[bool, True],
+
             # Adjoint Paramters
             'adjointL2Convergence':[float, 1e-10],
             'adjointL2ConvergenceRel':[float, 1e-16],
@@ -441,7 +444,7 @@ class SUMB(AeroSolver):
                 'vis2':{'location':'inputdiscretization.vis2'},
                 'vis2Coarse':{'location':'inputdiscretization.vis2coarse'},
                 'restrictionRelaxation':{'location':'inputiteration.fcoll'},
-                
+                'forcesAsTractions':{'location':'inputphysics.forcesastractions'},
                 # Common Paramters
                 'nCycles':{'location':'inputiteration.ncycles'},
                 'nCyclesCoarse':{'location':'inputiteration.ncyclescoarse'},
