@@ -65,6 +65,7 @@ subroutine createSpatialPETScVars
           8, nnzDiagonal,     &
           8, nnzOffDiag,            &
           dRdx, PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
   else
      call MatCreateAIJ(SUMB_PETSC_COMM_WORLD,                 &
           nDimX, nDimW,                     &
@@ -72,8 +73,9 @@ subroutine createSpatialPETScVars
           8, nnzDiagonal,     &
           8, nnzOffDiag,            &
           dRdx, PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
   end if
-  call EChk(PETScIerr,__FILE__,__LINE__)
+
 
   deallocate( nnzDiagonal, nnzOffDiag )
 
