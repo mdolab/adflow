@@ -36,7 +36,9 @@ subroutine createExtraPETScVars
   ! Once again, PETSC is royally screwed up. You CANNOT use PETSC_NULL
   ! arguments. They simply do NOT work in Fortran. The PETSc
   ! documentation lies to you. We have to allocate our own data. 
-
+  if (allocated(dRda_data)) then
+     deallocate(dRda_data)
+  end if
   allocate(dRda_data(nDimw,nDesignExtra))
 
   if (PETSC_VERSION_MINOR == 2) then
