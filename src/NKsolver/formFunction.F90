@@ -59,41 +59,41 @@ subroutine FormFunction_snes(snes, wVec, rVec, ctx, ierr)
 #endif
 end subroutine FormFunction_snes
 
-subroutine psnes_func(psnes, x, ierr)
-#ifndef USE_NO_PETSC
-  use communication
-  use precision
-  use flowvarrefstate
+! subroutine psnes_func(psnes, x, ierr)
+! #ifndef USE_NO_PETSC
+!   use communication
+!   use precision
+!   use flowvarrefstate
 
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "finclude/petsc.h"
+!   implicit none
+! #define PETSC_AVOID_MPIF_H
+! #include "finclude/petsc.h"
 
-  ! Input/Output
-  SNES psnes
-  Vec x, rvec
-  PetscErrorCode ierr
+!   ! Input/Output
+!   SNES psnes
+!   Vec x, rvec
+!   PetscErrorCode ierr
 
-  integer(kind=intType) :: i
-  real(kind=realType) :: val
-  ! Basically we have 'x' which is sumb's w. We just solve the sucker using RK
+!   integer(kind=intType) :: i
+!   real(kind=realType) :: val
+!   ! Basically we have 'x' which is sumb's w. We just solve the sucker using RK
 
-  call setW2(x)
+!   call setW2(x)
   
-  do i=1,3
-     call executeMGCycle
-   !  call convergenceInfo
-     end do
+!   do i=1,3
+!      call executeMGCycle
+!    !  call convergenceInfo
+!      end do
 
-  ! Set our current soultion back into x
-  call setWVec2(x)
+!   ! Set our current soultion back into x
+!   call setWVec2(x)
 
-  call SNESGetFunction(psnes, rVec, PETSC_NULL_FUNCTION, PETSC_NULL_OBJECT, ierr)
+!   call SNESGetFunction(psnes, rVec, PETSC_NULL_FUNCTION, PETSC_NULL_OBJECT, ierr)
 
-  call setRvec2(rVec)
-  call vecnorm(rVec, NORM_2, val, ierr)
-  call SNESSetFunctionNorm(psnes, val, ierr)
+!   call setRvec2(rVec)
+!   call vecnorm(rVec, NORM_2, val, ierr)
+!   call SNESSetFunctionNorm(psnes, val, ierr)
 
-  ierr = 0
-#endif
-end subroutine Psnes_func
+!   ierr = 0
+! #endif
+! end subroutine Psnes_func
