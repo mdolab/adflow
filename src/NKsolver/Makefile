@@ -44,11 +44,9 @@ FF90_OBJECTS = applyPC.o\
 	       getFreeStreamResidual.o\
 	       NKBenchmark.o\
 	       NKSolver.o\
-	       NKSolver2.o\
 	       NKUtilities.o\
 	       resetKSP.o\
 	       setupNKSolver.o\
-	       setupNKSolver2.o\
 
 
 #      ******************************************************************
