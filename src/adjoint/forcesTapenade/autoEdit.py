@@ -24,7 +24,7 @@ EXT = '_b.f90'
 
 # Specify directory containing the original source files
 # and the output directory for edited files
-DIR_ORI = os.getcwd()+'/forcesTapenade'
+DIR_ORI = os.getcwd()
 DIR_MOD = DIR_ORI + '/../forcesOutput'
 # Specify line identifier
 
