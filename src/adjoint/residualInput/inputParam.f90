@@ -673,7 +673,7 @@
        real(kind=realType), dimension(3) :: dragDirection
        real(kind=realType), dimension(3) :: pointRef
        real(kind=realType), dimension(3) :: pointRefEC
-
+       logical :: forcesastractions
        end module inputPhysics
 
 !      ==================================================================

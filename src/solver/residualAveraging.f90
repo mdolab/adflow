@@ -107,7 +107,7 @@
 !      Hardwire cflim for the time being (=lambda*).  It should be
 !       defaulted to something else later on.
 !
-       cflim = 1.0
+       cflim = 3.0
 
        if(currentLevel <= groundLevel) then
          currentCfl = cfl
