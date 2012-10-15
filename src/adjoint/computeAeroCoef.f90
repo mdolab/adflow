@@ -42,7 +42,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   integer(kind=intType) :: liftIndex
   real(kind=realType), dimension(nCostFunction)::localCFVals
   real(kind=realType),dimension(:,:,:),allocatable :: pts
-
+  logical :: forcesTypeSave
   !     ******************************************************************
   !     *                                                                *
   !     * Begin execution.                                               *
@@ -57,6 +57,8 @@ subroutine computeAeroCoef(globalCFVals,sps)
   call getDirAngle(velDirFreestream,LiftDirection,&
        liftIndex,alpha,beta)
   
+  forcesTypeSave = forcesAsTractions
+  forcesAsTractions = .False.
   !Zero the summing variable
   localCFVals(:) = 0.0
   globalCFVals(:) = 0.0
@@ -100,7 +102,8 @@ subroutine computeAeroCoef(globalCFVals,sps)
  
   call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, sumb_real, &
        mpi_sum, SUmb_comm_world, ierr)
- 
+
+  forcesAsTractions = forcesTypeSave
 
   deallocate(pts)
 end subroutine computeAeroCoef

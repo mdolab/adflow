@@ -94,6 +94,15 @@ subroutine getForces(forces,pts,npts,nTS)
 
               select case (BCFaceID(mm))
 
+
+              ! NOTE: The 'fact' here are NOT the same as you will
+              ! find in ForcesAndMoment.f90. The reason is that, we
+              ! are not using points to si, sj, sk. Those have teh
+              ! normals pointing in the direction of increasing
+              ! {i,j,k}. Here we are evaluating the normal from
+              ! directly from the coordinates on the faces. As it
+              ! happens, the normals for the jMin and jMax faces are
+              ! flipped. 
               case (iMin)
                  pp2 => p( 2,1:,1:); pp1 => p( 1,1:,1:)
                  fact = -one 
@@ -143,7 +152,7 @@ subroutine getForces(forces,pts,npts,nTS)
 
                     pp = half*(pp2(i,j) + pp1(i,j))-Pinf
                     pp = fact*scaleDim*pp
-
+                    
                     ! Compute Normal
 
                     lower_left  = ii + (j-jBeg)*(iEnd-iBeg+2) + i-iBeg + 1
@@ -213,10 +222,10 @@ subroutine getForces(forces,pts,npts,nTS)
                        sss_mag = sqrt(sss(1)*sss(1) + &
                                       sss(2)*sss(2) + &
                                       sss(3)*sss(3))
+                        fx = fx / sss_mag
+                        fy = fy / sss_mag
+                        fz = fz / sss_mag
 
-                       fx = fx / sss_mag
-                       fy = fy / sss_mag
-                       fz = fz / sss_mag
                     end if
 
                     ! Assigning the forces is the same in either case

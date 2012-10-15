@@ -1194,6 +1194,12 @@ class SUMB(AeroSolver):
 
         return 
 
+    def getSurfaceConnectivity(self, group_name):
+        '''
+        See MultiBlockMesh.py for more info
+        '''
+        return self.mesh.getSurfaceConnectivity(group_name)
+        
     def writeMeshFile(self, filename=None):
         self.sumb.monitor.writegrid = True
         self.sumb.monitor.writevolume = False
@@ -1822,7 +1828,7 @@ class SUMB(AeroSolver):
 
         # dIda contribution for drda^T * psi
         dIda_2 = self.getdRdaPsi(psi)
-         
+
         # Total derivative of the obective wrt aero-only DVs
         dIda = dIda_1 - dIda_2
 

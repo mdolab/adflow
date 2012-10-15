@@ -59,6 +59,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
   real(kind=realType) :: machcoefadj,machcoefadjb
   real(kind=realType) :: pointrefadj(3),pointrefadjb(3)
   logical :: righthandedadj
+  logical :: forcesTypeSave
 
   real(kind=realType), dimension(:,:,:,:),allocatable :: wblock,wblockb
 
@@ -192,9 +193,9 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
      end select
 
      call COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
-&  coef0b, dcdalpha, dcdalphab, dcdalphadot, dcdalphadotb, dcdq, dcdqb, &
-&  dcdqdot, dcdqdotb, lengthrefadj, lengthrefadjb)
-
+          &  coef0b, dcdalpha, dcdalphab, dcdalphadot, dcdalphadotb, dcdq, dcdqb, &
+          &  dcdqdot, dcdqdotb, lengthrefadj, lengthrefadjb)
+     
 
      do sps = 1,nTimeIntervalsSpectral
         select case(costFunction)
@@ -387,7 +388,9 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
               righthandedadj = righthanded
 
               faceID = bcfaceid(mm)
- 
+
+              forcesTypeSave = forcesAsTractions 
+              forcesAsTractions = .False.
               call COMPUTEFORCEANDMOMENTADJ_B(force, forceb, cforce, cforceb, &
                    &  lift, liftb, drag, dragb, cl, clb, cd, cdb, moment, momentb, cmoment&
                    &  , cmomentb, alphaadj, alphaadjb, betaadj, betaadjb, liftindex, &
@@ -395,7 +398,8 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
                    &  lengthrefadjb, surfacerefadj, surfacerefadjb, pts(:,:,sps), ptsb(:,:,sps), npts, wblock&
                    &  , wblockb, righthandedadj, faceid, ibeg, iend, jbeg, jend, ii, &
                    &  sps)
-              
+              forcesAsTractions = forcesTypeSave
+
               ! Set the w-values derivatives in dJdw
               if (usedJdw) then
                  do kcell = 2,kl
@@ -438,7 +442,6 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
 
               if (nDesignAoA >=0) then
                  dIda(nDesignAoA+1) = dIda(nDesignAoA+1) + alphaAdjb*dJdc(sps)
-
               end if
 
               if (nDesignSSA >= 0) then

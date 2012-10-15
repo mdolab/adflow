@@ -1,4 +1,4 @@
-static char adSid[]="$Id: adStack.c 3285 2010-01-05 09:40:52Z llh $";
+static char adSid[]="$Id: adStack.c 3988 2011-07-04 11:29:23Z llh $";
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -53,8 +53,8 @@ void pushNarray(char *x, unsigned int nbChars) {
     char *inx = x+(nbChars-nbmax) ;
     if (nbmax>0) memcpy(curStackTop,inx,nbmax) ;
     while (inx>x) {
-      /* Create new block: */
       if ((curStack == NULL) || (curStack->next == NULL)) {
+        /* Create new block: */
 	DoubleChainedBlock *newStack ;
 	char *contents = (char*)malloc(ONE_BLOCK_SIZE*sizeof(char)) ;
 	newStack = (DoubleChainedBlock*)malloc(sizeof(DoubleChainedBlock)) ;
@@ -74,9 +74,9 @@ void pushNarray(char *x, unsigned int nbChars) {
 	newStack->next = NULL ;
 	newStack->contents = contents ;
 	curStack = newStack ;
+        /* new block created! */
       } else
 	curStack = curStack->next ;
-      /* new block created! */
       inx -= ONE_BLOCK_SIZE ;
       if(inx>x)
 	memcpy(curStack->contents,inx,ONE_BLOCK_SIZE) ;
@@ -109,6 +109,7 @@ void popNarray(char *x, unsigned int nbChars) {
     x+=nbmax ;
     while (x<tlx) {
       curStack = curStack->prev ;
+      if (curStack==NULL) printf("Popping from an empty stack!!!") ;
       if (x+ONE_BLOCK_SIZE<tlx) {
 	memcpy(x,curStack->contents,ONE_BLOCK_SIZE) ;
 	x += ONE_BLOCK_SIZE ;
@@ -144,6 +145,7 @@ void lookNarray(char *x, unsigned int nbChars) {
     x+=nbmax ;
     while (x<tlx) {
       lookStack = lookStack->prev ;
+      if (lookStack==NULL) printf("Looking into an empty stack!!!") ;
       if (x+ONE_BLOCK_SIZE<tlx) {
 	memcpy(x,lookStack->contents,ONE_BLOCK_SIZE) ;
 	x += ONE_BLOCK_SIZE ;
@@ -162,6 +164,7 @@ void resetadlookstack_() {
 }
 
 /****** Exported PUSH/POP/LOOK functions for ARRAYS: ******/
+/*   --> Called from FORTRAN:                             */
 
 void pushcharacterarray_(char *x, unsigned int *n) {
   pushNarray(x,*n) ;
@@ -295,27 +298,181 @@ void lookcomplex32array_(char *x, unsigned int *n) {
 
 /****** Exported PUSH/POP/LOOK functions for F95 POINTERS: ******/
 
-/* IMPORTANT: Don't forget to add the following interface into each calling routines:
-
-      INTERFACE
-         SUBROUTINE PUSHPOINTER(pp)
-           REAL, POINTER :: pp
-         END SUBROUTINE PUSHPOINTER
-         SUBROUTINE POPPOINTER(pp)
-           REAL, POINTER :: pp
-         END SUBROUTINE POPPOINTER
-      END INTERFACE
-
-*/
-
-void pushpointer_(char *ppp) {
+void pushpointer4_(char *ppp) {
   pushNarray(ppp, 4) ;
 }
 
-void poppointer_(char *ppp) {
+void lookpointer4_(char *ppp) {
+  lookNarray(ppp, 4) ;
+}
+
+void poppointer4_(char *ppp) {
   popNarray(ppp, 4) ;  
 }
 
+void pushpointer8_(char *ppp) {
+  pushNarray(ppp, 8) ;
+}
+
+void lookpointer8_(char *ppp) {
+  lookNarray(ppp, 8) ;
+}
+
+void poppointer8_(char *ppp) {
+  popNarray(ppp, 8) ;  
+}
+
+/*   --> Called from C:                                   */
+
+void pushcharacterarray(char *x, int n) {
+  pushNarray((char*)x,(unsigned int)n) ;
+}
+void popcharacterarray(char *x, int n) {
+  popNarray((char*)x,(unsigned int)n) ;
+}
+void lookcharacterarray(char *x, int n) {
+  lookNarray((char*)x,(unsigned int)n) ;
+}
+
+void pushbooleanarray(char *x, int n) {
+  pushNarray((char*)x,(unsigned int)(n*4)) ;
+}
+void popbooleanarray(char *x, int n) {
+  popNarray((char*)x,(unsigned int)(n*4)) ;
+}
+void lookbooleanarray(char *x, int n) {
+  lookNarray((char*)x,(unsigned int)(n*4)) ;
+}
+
+void pushinteger4array(int *x, int n) {
+  pushNarray((char*)x,(unsigned int)(n*4)) ;
+}
+void popinteger4array(int *x, int n) {
+  popNarray((char*)x,(unsigned int)(n*4)) ;
+}
+void lookinteger4array(int *x, int n) {
+  lookNarray((char*)x,(unsigned int)(n*4)) ;
+}
+
+void pushinteger8array(long int *x, int n) {
+  pushNarray((char*)x,(unsigned int)(n*8)) ;
+}
+void popinteger8array(long int *x, int n) {
+  popNarray((char*)x,(unsigned int)(n*8)) ;
+}
+void lookinteger8array(long int *x, int n) {
+  lookNarray((char*)x,(unsigned int)(n*8)) ;
+}
+
+void pushinteger16array(long long int *x, int n) {
+  pushNarray((char*)x,(unsigned int)(n*16)) ;
+}
+void popinteger16array(long long int *x, int n) {
+  popNarray((char*)x,(unsigned int)(n*16)) ;
+}
+void lookinteger16array(long long int *x, int n) {
+  lookNarray((char*)x,(unsigned int)(n*16)) ;
+}
+
+void pushreal4array(float *x, int n) {
+  pushNarray((char*)x, (unsigned int)(n*4)) ;
+}
+void popreal4array(float *x, int n) {
+  popNarray((char*)x, (unsigned int)(n*4)) ;
+}
+void lookreal4array(float *x, int n) {
+  lookNarray((char*)x, (unsigned int)(n*4)) ;
+}
+
+void pushreal8array(double *x, int n) {
+  pushNarray((char*)x,(unsigned int)(n*8)) ;
+}
+void popreal8array(double *x, int n) {
+  popNarray((char*)x,(unsigned int)(n*8)) ;
+}
+void lookreal8array(double *x, int n) {
+  lookNarray((char*)x,(unsigned int)(n*8)) ;
+}
+
+void pushreal16array(char *x, int n) {
+  pushNarray((char*)x,(unsigned int)(n*16)) ;
+}
+void popreal16array(char *x, int n) {
+  popNarray((char*)x,(unsigned int)(n*16)) ;
+}
+void lookreal16array(char *x, int n) {
+  lookNarray((char*)x,(unsigned int)(n*16)) ;
+}
+
+void pushreal32array(char *x, int n) {
+  pushNarray((char*)x,(unsigned int)(n*32)) ;
+}
+void popreal32array(char *x, int n) {
+  popNarray((char*)x,(unsigned int)(n*32)) ;
+}
+void lookreal32array(char *x, int n) {
+  lookNarray((char*)x,(unsigned int)(n*32)) ;
+}
+
+void pushcomplex4array(char *x, int n) {
+  pushNarray((char*)x,(unsigned int)(n*4)) ;
+}
+void popcomplex4array(char *x, int n) {
+  popNarray((char*)x,(unsigned int)(n*4)) ;
+}
+void lookcomplex4array(char *x, int n) {
+  lookNarray((char*)x,(unsigned int)(n*4)) ;
+}
+
+void pushcomplex8array(char *x, int n) {
+  pushNarray((char*)x,(unsigned int)(n*8)) ;
+}
+void popcomplex8array(char *x, int n) {
+  popNarray((char*)x,(unsigned int)(n*8)) ;
+}
+void lookcomplex8array(char *x, int n) {
+  lookNarray((char*)x,(unsigned int)(n*8)) ;
+}
+
+void pushcomplex16array(char *x, int n) {
+  pushNarray((char*)x,(unsigned int)(n*16)) ;
+}
+void popcomplex16array(char *x, int n) {
+  popNarray((char*)x,(unsigned int)(n*16)) ;
+}
+void lookcomplex16array(char *x, int n) {
+  lookNarray((char*)x,(unsigned int)(n*16)) ;
+}
+
+void pushcomplex32array(char *x, int n) {
+  pushNarray((char*)x,(unsigned int)(n*32)) ;
+}
+void popcomplex32array(char *x, int n) {
+  popNarray((char*)x,(unsigned int)(n*32)) ;
+}
+void lookcomplex32array(char *x, int n) {
+  lookNarray((char*)x,(unsigned int)(n*32)) ;
+}
+
+void pushpointer4array(char *x, int n) {
+  pushNarray((char*)x, (unsigned int)(n*4)) ;
+}
+void poppointer4array(char *x, int n) {
+  popNarray((char*)x, (unsigned int)(n*4)) ;
+}
+void lookpointer4array(char *x, int n) {
+  lookNarray((char*)x, (unsigned int)(n*4)) ;
+}
+
+void pushpointer8array(char *x, int n) {
+  pushNarray((char*)x,(unsigned int)(n*8)) ;
+}
+void poppointer8array(char *x, int n) {
+  popNarray((char*)x,(unsigned int)(n*8)) ;
+}
+void lookpointer8array(char *x, int n) {
+  lookNarray((char*)x,(unsigned int)(n*8)) ;
+}
 
 /************* Debug displays of the state of the stack: ***********/
 
@@ -472,4 +629,78 @@ void printlookingplace_() {
                       ((long int)(lookStackTop-(lookStack->contents)))) ;
         printf(" bytes\n") ;
     }
+}
+
+void showrecentcstack_() {
+  if (curStack && curStackTop) {
+    int totalNumChars = 30 ;
+    DoubleChainedBlock *stack = curStack ;
+    char *stackTop = curStackTop ;
+    unsigned short int *st1 ;
+    printf("TOP OF C STACK  : ") ;
+    while (totalNumChars>0 && stackTop>(stack->contents)) {
+      stackTop-- ;
+      st1 = (unsigned short int *)stackTop ;
+      printf("%02X,",*st1%256) ;
+      totalNumChars-- ;
+    }
+    while (totalNumChars>0 && stack->prev) {
+      printf(" || ") ;
+      stack = stack->prev ;
+      stackTop = (stack->contents)+ONE_BLOCK_SIZE ;
+      while (totalNumChars>0 && stackTop>(stack->contents)) {
+        stackTop-- ;
+        st1 = (unsigned short int *)stackTop ;
+        printf("%02X,",*st1%256) ;
+        totalNumChars-- ;
+      }
+    }
+    if (stack->prev || stackTop>(stack->contents))
+      printf(" ...\n") ;
+    else
+      printf(" || BOTTOM\n") ;
+  } else {
+    printf("NOTHING IN C STACK.\n") ;
+  }
+}
+
+void getnbblocksinstack_(int *nbblocks) {
+  DoubleChainedBlock *stack = curStack ;
+  *nbblocks = 0 ;
+  while(stack) {
+    stack = stack->prev ;
+    (*nbblocks)++ ;
+  }
+}
+
+/* Computes (and returns into its args) the number of blocks below the current
+ * stack top (resp. look) position, and the number of bytes below
+ * the current top (resp. look) position in the topmost block of the current
+ * top (resp. look) position. */
+void getbigcsizes_(int *nbblocks, int *remainder, int *nbblockslook, int *lookremainder) {
+  DoubleChainedBlock *stack ;
+
+  stack = curStack ;
+  *nbblocks = (stack?-1:0) ;
+  while(stack) {
+    stack = stack->prev ;
+    (*nbblocks)++ ;
+  }
+  if (curStack && curStackTop)
+    *remainder = curStackTop-(curStack->contents) ;
+  else
+    *remainder = 0 ;
+
+  if (lookStack == NULL) {
+    *nbblockslook = -999 ;
+    *lookremainder = -999 ;
+  } else {
+    stack = lookStack ;
+    *nbblockslook = (stack?-1:0) ;
+    while(stack) {
+      stack = stack->prev ;
+      (*nbblockslook)++ ;
+    }
+    *lookremainder = lookStackTop-(lookStack->contents) ;
+  }
 }
