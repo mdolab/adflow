@@ -58,6 +58,15 @@ if __name__ == '__main__':
     ref_file = args.ref
     diff_cmd = args.diff
 
+    f = open('output.out.ref','r') 
+    g = open(ref_file,'r') 
+
+    if len(f.readlines())!=len(g.readlines()): 
+        print 'Local reference file different length than master reference\
+ file. Please update local reference file.'
+        sys.exit(1)
+    # end if
+
     serial = 1
     try:
         import multiprocessing
@@ -120,10 +129,10 @@ if __name__ == '__main__':
 
     # Comparison:
     try:
-        f = open('output.out.ref','r')
+        f = open(ref_file,'r')
     except:
-        print 'ERROR: output.out.ref is not found. This file should be \
-included on the repository and not revomed. Revert file to restore'
+        print 'ERROR: %s is not found. This file should be \
+included on the repository and not revomed. Revert file to restore'%ref_file
         sys.exit(1)
     # end try
 
@@ -160,9 +169,9 @@ included on the repository and not revomed. Revert file to restore'
 
     if diff_files:
         print '+'+'-'*78+'+'
-        print ' Running Diff of files. Reference Ouput on left, current on right'
+        print ' Running Diff of files. Reference Output on left, current on right'
         print '+'+'-'*78+'+'
-        cmd = '%s output.out.ref output.out &'%(diff_cmd)
+        cmd = '%s %s output.out &'%(diff_cmd,ref_file)
         os.system(cmd)
     else:
         print '+'+'-'*78+'+'
@@ -170,7 +179,7 @@ included on the repository and not revomed. Revert file to restore'
         print '+'+'-'*78+'+'
     # end if
         
-        
+    import datetime
+    new_name = 'output.out_%s'%(datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))
+    os.system('cp output.out %s'%(new_name))
     
-    
-
