@@ -170,7 +170,10 @@ CFDsolver(aeroProblem,500)
 # Get the solution and print:
 sol = CFDsolver.getSolution()
 if gcomm.rank == 0:
-    print 'sol:',sol
+    for key in sorted(sol.keys()):
+        print 'sol[%s]:'%(key),sol[key]
+    # end for
+# end if
 
 # We are going to run as many things as possible if for no other
 # reason to make sure they run
