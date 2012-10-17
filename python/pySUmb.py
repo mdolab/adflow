@@ -1324,7 +1324,10 @@ class SUMB(AeroSolver):
         # end if
             
         if group_name is not None: # Extract out the forces we want:
-            forces = self.mesh.solver_to_warp_force(group_name, forces)
+            forces = self.mesh.solver_to_warp_force(
+                group_name, forces, 
+                tractions=self.getOption('forcesAsTractions'))
+                                                    
         # end if
 
         return forces
@@ -1983,7 +1986,7 @@ class SUMB(AeroSolver):
 
         return indices
 
-    def getdRdXvPsi(self, group_name, objective):
+    def getdRdXvPsi(self, group_name=None, objective=None):
 
         # Setup spatial matrices if required:
         self.setupSpatialMatrices()
@@ -2006,10 +2009,14 @@ class SUMB(AeroSolver):
 
         # Now call getdrdxvpsi WITH the psi vector:
         dxv_solver = self.sumb.getdrdxvpsi(ndof, psi)
-        self.mesh.warpDeriv(dxv_solver)
-        dxs = self.mesh.getdXs(group_name)
 
-        return dxs
+        if group_name is not None:
+            self.mesh.warpDeriv(dxv_solver)
+            dxs = self.mesh.getdXs(group_name)
+            return dxs
+        else:
+            return dxv_solver
+        # end if
 
     def getdRdXvVec(self, in_vec, group_name):
 
@@ -2044,6 +2051,7 @@ class SUMB(AeroSolver):
 
     def getdFdxVec(self, group_name, vec):
         # Calculate dFdx * vec and return the result
+
         solver_vec = self.mesh.warp_to_solver_force(group_name, vec)
         if len(solver_vec) > 0:
             dFdxVec = self.sumb.getdfdxvec(solver_vec)
@@ -2051,8 +2059,9 @@ class SUMB(AeroSolver):
             self.sumb.getdfdxvec_null()
             dFdxVec = numpy.zeros_like(solver_vec)
         # end if
-            
-        return self.mesh.solver_to_warp_force(group_name, dFdxVec)
+
+        return self.mesh.solver_to_warp_force(
+            group_name, dFdxVec, self.getOption('forcesAsTractions'))
 
     def getdFdxTVec(self, group_name, vec):
         # Calculate dFdx^T * vec and return the result
@@ -2064,7 +2073,8 @@ class SUMB(AeroSolver):
             dFdxTVec = numpy.zeros_like(solver_vec)
         # end if
 
-        return self.mesh.solver_to_warp_force(group_name, dFdxTVec)
+        return self.mesh.solver_to_warp_force(
+                group_name, dFdxTVec, self.getOption('forcesAsTractions'))
 
     def computeObjPartials(self, objective, forcePoints=None):
 
@@ -2086,7 +2096,7 @@ class SUMB(AeroSolver):
 
         return 
 
-    def getdIdx(self, objective, group_name, forcePoints=None):
+    def getdIdx(self, objective, group_name=None, forcePoints=None):
 
         obj, aeroObj = self._getObjective(objective)
 
@@ -2112,8 +2122,9 @@ class SUMB(AeroSolver):
         else:
             dIdpts = numpy.zeros((0), self.dtype)
         # end if
-
-        dIdpts = self.mesh.solver_to_warp_force(group_name, dIdpts)
+            
+        if group_name is not None:
+            dIdpts = self.mesh.solver_to_warp_force(group_name, dIdpts)
 
         return dIdpts
 
@@ -2518,7 +2529,7 @@ class SUmbDummyMesh(object):
 
     def WarpDeriv(self, solver_dxv):
 
-        return 
+        return
 
     def verifySolidWarpDeriv(self):
 
