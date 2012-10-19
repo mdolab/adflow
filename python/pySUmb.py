@@ -1322,12 +1322,11 @@ class SUMB(AeroSolver):
         else:
             forces = numpy.empty((0), dtype=self.dtype)
         # end if
-            
+
         if group_name is not None: # Extract out the forces we want:
             forces = self.mesh.solver_to_warp_force(
                 group_name, forces, 
                 tractions=self.getOption('forcesAsTractions'))
-                                                    
         # end if
 
         return forces
@@ -2061,7 +2060,7 @@ class SUMB(AeroSolver):
         # end if
 
         return self.mesh.solver_to_warp_force(
-            group_name, dFdxVec, self.getOption('forcesAsTractions'))
+            group_name, dFdxVec, False)#self.getOption('forcesAsTractions'))
 
     def getdFdxTVec(self, group_name, vec):
         # Calculate dFdx^T * vec and return the result
@@ -2074,7 +2073,7 @@ class SUMB(AeroSolver):
         # end if
 
         return self.mesh.solver_to_warp_force(
-                group_name, dFdxTVec, self.getOption('forcesAsTractions'))
+                group_name, dFdxTVec, False)#self.getOption('forcesAsTractions'))
 
     def computeObjPartials(self, objective, forcePoints=None):
 

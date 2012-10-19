@@ -17,6 +17,7 @@
    SUBROUTINE FORCESADJ_B(padj, padjb, pts, ptsb, normadj, normadjb, &
    &  refpoint, refpointb, force, forceb, moment, momentb, fact, ibeg, iend&
    &  , jbeg, jend, inode, jnode)
+   USE INPUTPHYSICS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    ! Subroutine Arguments
@@ -41,8 +42,13 @@
    REAL(kind=realtype) :: ppb, xcb(3), rb(3), addforceb(3)
    REAL(kind=realtype) :: tauxx, tauyy, tauzz
    REAL(kind=realtype) :: tauxy, tauxz, tauyz
+   REAL(kind=realtype) :: normadjnorm
+   REAL(kind=realtype) :: normadjnormb
    INTEGER :: branch
-   REAL(kind=realtype) :: tempb(3)
+   REAL(kind=realtype) :: tempb1(3)
+   REAL(kind=realtype) :: tempb0
+   REAL(kind=realtype) :: tempb
+   INTRINSIC SQRT
    scaledim = pref
    ! Force is the contribution of each of 4 cells
    DO j=1,2
@@ -53,8 +59,20 @@
    CALL PUSHREAL8ARRAY(pp, realtype/8)
    ! Calculate the Pressure
    pp = half*(padj(1, i, j)+padj(2, i, j)) - pinf
-   pp = fourth*fact*scaledim*pp
+   pp = fact*scaledim*pp
    ! Incremental Force to Add
+   IF (.NOT.forcesastractions) THEN
+   CALL PUSHREAL8ARRAY(addforce, realtype*3/8)
+   addforce = fourth*pp*normadj(:, i, j)
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHREAL8ARRAY(normadjnorm, realtype/8)
+   normadjnorm = SQRT(normadj(1, i, j)**2 + normadj(2, i, j)**2 +&
+   &            normadj(3, i, j)**2)
+   CALL PUSHREAL8ARRAY(addforce, realtype*3/8)
+   addforce = pp*normadj(:, i, j)/normadjnorm
+   CALL PUSHCONTROL1B(1)
+   END IF
    ! Add increment to total Force for this node
    ! Cell Center, xc
    xc(:) = fourth*(pts(:, i, j)+pts(:, i+1, j)+pts(:, i, j+1)+pts(:&
@@ -104,7 +122,6 @@
    DO i=2,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   addforce = pp*normadj(:, i, j)
    addforceb = 0.0
    rb = 0.0
    rb(1) = rb(1) + addforce(2)*momentb(3)
@@ -121,15 +138,40 @@
    CALL POPREAL8ARRAY(r, realtype*3/8)
    xcb(:) = rb(:)
    refpointb = refpointb - rb
-   tempb = fourth*xcb(:)
-   ptsb(:, i, j) = ptsb(:, i, j) + tempb
-   ptsb(:, i+1, j) = ptsb(:, i+1, j) + tempb
-   ptsb(:, i, j+1) = ptsb(:, i, j+1) + tempb
-   ptsb(:, i+1, j+1) = ptsb(:, i+1, j+1) + tempb
+   tempb1 = fourth*xcb(:)
+   ptsb(:, i, j) = ptsb(:, i, j) + tempb1
+   ptsb(:, i+1, j) = ptsb(:, i+1, j) + tempb1
+   ptsb(:, i, j+1) = ptsb(:, i, j+1) + tempb1
+   ptsb(:, i+1, j+1) = ptsb(:, i+1, j+1) + tempb1
    addforceb = addforceb + forceb
-   ppb = SUM(normadj(:, i, j)*addforceb)
-   normadjb(:, i, j) = normadjb(:, i, j) + pp*addforceb
-   ppb = fourth*fact*scaledim*ppb
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPREAL8ARRAY(addforce, realtype*3/8)
+   ppb = fourth*SUM(normadj(:, i, j)*addforceb)
+   normadjb(:, i, j) = normadjb(:, i, j) + fourth*pp*addforceb
+   ELSE
+   CALL POPREAL8ARRAY(addforce, realtype*3/8)
+   tempb = SUM(normadj(:, i, j)*addforceb)/normadjnorm
+   normadjb(:, i, j) = normadjb(:, i, j) + pp*addforceb/&
+   &            normadjnorm
+   ppb = tempb
+   normadjnormb = -(pp*tempb/normadjnorm)
+   CALL POPREAL8ARRAY(normadjnorm, realtype/8)
+   IF (normadj(1, i, j)**2 + normadj(2, i, j)**2 + normadj(3, i, &
+   &              j)**2 .EQ. 0.0) THEN
+   tempb0 = 0.0
+   ELSE
+   tempb0 = normadjnormb/(2.0*SQRT(normadj(1, i, j)**2+normadj(&
+   &              2, i, j)**2+normadj(3, i, j)**2))
+   END IF
+   normadjb(1, i, j) = normadjb(1, i, j) + 2*normadj(1, i, j)*&
+   &            tempb0
+   normadjb(2, i, j) = normadjb(2, i, j) + 2*normadj(2, i, j)*&
+   &            tempb0
+   normadjb(3, i, j) = normadjb(3, i, j) + 2*normadj(3, i, j)*&
+   &            tempb0
+   END IF
+   ppb = fact*scaledim*ppb
    CALL POPREAL8ARRAY(pp, realtype/8)
    padjb(1, i, j) = padjb(1, i, j) + half*ppb
    padjb(2, i, j) = padjb(2, i, j) + half*ppb

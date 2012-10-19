@@ -26,7 +26,6 @@
 
 SUBDIR_SRC    = src/modules       \
 		src/bcdata        \
-                src/bendingMomentAnalysis\
 	        src/initFlow      \
 	        src/inputParam    \
 	        src/metis-4.0     \
@@ -43,23 +42,24 @@ SUBDIR_SRC    = src/modules       \
 	        src/utils         \
 	        src/wallDistance  \
 		src/warping       \
+		src/bendingMomentAnalysis 
 
 SUBDIR_ADJOINT = src/adjoint               \
-		 src/adjoint/ADFirstAidKit \
-		 src/adjoint/residualInput \
-		 src/adjoint/residualOutput\
+                 src/adjoint/ADFirstAidKit \
+                 src/adjoint/residualInput \
+                 src/adjoint/residualOutput\
                  src/adjoint/stabilityInput\
-	         src/adjoint/stabilityOutput\
-		 src/adjoint/forcesInput\
-	         src/adjoint/forcesOutput\
-		 src/adjoint/residualInputTS \
-		 src/adjoint/residualOutputTS\
+                 src/adjoint/stabilityOutput\
+                 src/adjoint/forcesInput\
+                 src/adjoint/forcesOutput\
+                 src/adjoint/residualInputTS \
+                 src/adjoint/residualOutputTS\
                  src/bendingMomentAnalysis/bendingOutput\
-		 src/forwardAdjoint \
-		 src/forwardAdjoint/residualInput \
-		 src/forwardAdjoint/residualOutput\
-		 src/forwardAdjoint/residualOutputExtra\
-		 src/forwardAdjoint/residualOutputSpatial
+                 src/forwardAdjoint \
+                 src/forwardAdjoint/residualInput \
+                 src/forwardAdjoint/residualOutput\
+                 src/forwardAdjoint/residualOutputExtra\
+                 src/forwardAdjoint/residualOutputSpatial
 
 SUBDIR_EXEC   = src/exec
 SUBDIR_PYTHON = src/python/fortran
