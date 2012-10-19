@@ -39,13 +39,12 @@ subroutine getdRdXvPsi(dXv,ndof,adjoint,nstate)
   !     *                                                                *
   !     ******************************************************************
   !
-  use communication
-  use ADjointPETSc, only: dRdx,xVec, w_like1
-  use ADjointVars
-  use blockPointers
-  use inputADjoint
-  use section
+
+#define PETSC_AVOID_MPIF_H
   use petscvec
+  use ADjointPETSc, only: dRdx,xVec, w_like1
+  use blockPointers
+  use section
   use inputTimeSpectral 
   use monitor 
   implicit none
