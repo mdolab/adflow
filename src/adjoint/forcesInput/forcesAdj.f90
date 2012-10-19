@@ -12,6 +12,7 @@ subroutine forcesAdj(pAdj,pts,normAdj,refPoint,force,moment,fact,&
      iBeg,iEnd,jBeg,jEnd,iNode,jNode)
   
   use flowVarRefState
+  use inputphysics
   implicit none
 
   ! Subroutine Arguments
@@ -29,7 +30,7 @@ subroutine forcesAdj(pAdj,pts,normAdj,refPoint,force,moment,fact,&
   real(kind=realType) :: pp,scaleDim,xc(3),r(3),addForce(3)
   real(kind=realType) :: tauXx, tauYy, tauZz
   real(kind=realType) :: tauXy, tauXz, tauYz
-
+  real(kind=realType) :: normAdjNorm
   scaleDim = pRef
   force(:) = 0.0
   moment(:) = 0.0
@@ -43,10 +44,17 @@ subroutine forcesAdj(pAdj,pts,normAdj,refPoint,force,moment,fact,&
 
            ! Calculate the Pressure
            pp = half*(pAdj(1,i,j) + pAdj(2,i,j)) - Pinf
-           pp = fourth*fact*scaleDim*pp
+           pp = fact*scaleDim*pp
            
            ! Incremental Force to Add
-           addForce = pp*normAdj(:,i,j)
+           if (.not. forcesAsTractions) then
+              addForce = fourth*pp*normAdj(:,i,j)
+           else
+              normAdjNorm = sqrt(normAdj(1,i,j)**2 + &
+                                 normAdj(2,i,j)**2 + &
+                                 normAdj(3,i,j)**2)
+              addForce = pp * normAdj(:,i,j)/normAdjNorm
+           end if
 
            ! Add increment to total Force for this node
            force(:) = force(:) + addForce(:)

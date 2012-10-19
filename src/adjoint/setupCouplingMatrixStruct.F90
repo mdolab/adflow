@@ -50,6 +50,7 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   integer(kind=intType) :: ierr,ind
   real(kind=realType), dimension(2) :: time
   real(kind=realType) :: localTime, globalTime
+
   call cpu_time(time(1))
 
   ! We are not concerned about moments and the refPoint here
@@ -303,5 +304,6 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
 
 20 format(a,1x,f8.2)
 #endif
+
 end subroutine setupCouplingMatrixStruct
 
