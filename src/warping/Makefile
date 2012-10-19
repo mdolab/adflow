@@ -41,6 +41,7 @@ FF90_OBJECTS = getForces.o\
 	       setGrid.o\
 	       initializeExternalWarping.o\
 	       blockLogicalFunctions.o\
+		blockRelations.o
 
 CC_OBJECTS   = 
 
