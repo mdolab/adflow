@@ -31,8 +31,8 @@ CGNS_LINKER_FLAGS = -Wl,-rpath,/usr/local/lib -lcgns
 FF90_GEN_FLAGS = -DHAS_ISNAN 
 CC_GEN_FLAGS   = -DHAS_ISNAN  
 
-FF90_OPT_FLAGS   =  -fpic -fdefault-real-8 -O1
-CC_OPT_FLAGS     = -O -fpic
+FF90_OPT_FLAGS   =  -fPIC -fdefault-real-8 -O1
+CC_OPT_FLAGS     = -O -fPIC
 
 FF90_DEBUG_FLAGS = #-check bounds -check all
 CC_DEBUG_FLAGS   = #-g -Wall -pedantic -DDEBUG_MODE
