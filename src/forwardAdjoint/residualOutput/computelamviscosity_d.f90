@@ -52,7 +52,7 @@
    !
    ! Return immediately if no laminar viscosity needs to be computed.
    IF (.NOT.viscous) THEN
-   rlvd = 0.0
+      !rlvd = 0.0
    RETURN
    ELSE
    ! Determine whether or not the pressure must be corrected
