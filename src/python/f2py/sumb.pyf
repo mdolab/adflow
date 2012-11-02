@@ -171,29 +171,52 @@ python module sumb ! in
             integer(kind=inttype) intent(in) :: ndof
         end subroutine getgrid
        
-       subroutine getforces(forces,pts,npts,nts) ! in :sumb:../../warping/getForces.f90
-         real(kind=realtype) dimension(3,npts,nts),intent(out),depend(npts,nts) :: forces
-         real(kind=realtype) dimension(3,npts,nts),intent(in) :: pts
-         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
-         integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
-       end subroutine getforces
-       
-       subroutine verifyforces(pts,npts,nts) ! in :sumb:../../adjoint/forcesInput/verifyForces.F90
+        subroutine verifyforces(pts,npts,nts) ! in :sumb:../../adjoint/forcesInput/verifyForces.F90
          real(kind=realtype) dimension(3,npts,nts),intent(inout) :: pts
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
          integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
        end subroutine verifyforces
 
-       subroutine getforcepoints(points,npts,nts) ! in :sumb:../../warping/getForces.f90
-         real(kind=realtype) dimension(3,npts,nts),intent(out),depend(npts,nts) :: points
-         integer(kind=inttype) intent(in) :: npts
-         integer(kind=inttype) intent(in) :: nts
-       end subroutine getforcepoints
-        
-       subroutine getforcesize(size_bn,nts) ! in :sumb:../../warping/getForces.f90
+       subroutine getnpatches(npatches) ! in :test:getForces.f90
+         integer(kind=inttype) intent(out) :: npatches
+       end subroutine getnpatches
+ 
+       subroutine getpatchname(ipatch,patchname) ! in :test:getForces.f90
+         integer(kind=inttype) intent(in) :: ipatch
+         character*(*) intent(inout) :: patchname
+       end subroutine getpatchname
+
+       subroutine getpatchsize(ipatch,patchsize) ! in :test:getForces.f90
+         integer(kind=inttype) intent(in) :: ipatch
+         integer(kind=inttype) dimension(2), intent(out) :: patchsize
+       end subroutine getpatchsize
+
+       subroutine getforcesize(size_bn,nts) ! in :test:getForces.f90
          integer(kind=inttype) intent(out) :: size_bn
          integer(kind=inttype) intent(out) :: nts
        end subroutine getforcesize
+
+       subroutine getforceconnectivitysize(size_bn) ! in :test:getForces.f90
+         integer(kind=inttype) intent(out) :: size_bn
+       end subroutine getforceconnectivitysize
+
+        subroutine getforceconnectivity(conn,ncell) ! in :test:getForces.f90
+          integer(kind=inttype) dimension(4 * ncell),intent(inout) :: conn
+          integer(kind=inttype) optional,intent(in),check((len(conn))/(4)>=ncell),depend(conn) :: ncell=(len(conn))/(4)
+        end subroutine getforceconnectivity
+
+        subroutine getforces(forces,pts,npts,sps_in) ! in :test:getForces.f90
+          real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: forces
+          real(kind=realtype) dimension(3,npts),intent(in) :: pts
+          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+          integer(kind=inttype) intent(in) :: sps_in
+        end subroutine getforces
+        
+        subroutine getforcepoints(points,npts,nts) ! in :test:getForces.f90
+         real(kind=realtype) dimension(3,npts,nts),intent(inout) :: points
+         integer(kind=inttype) optional,intent(in),check(shape(points,1)==npts),depend(points) :: npts=shape(points,1)
+         integer(kind=inttype) optional,intent(in),check(shape(points,2)==nts),depend(points) :: nts=shape(points,2)
+       end subroutine getforcepoints
 
        ! ############################################################################
        ! SUmb ADjoint Debugging Routines
@@ -335,10 +358,10 @@ python module sumb ! in
             integer(kind=inttype) optional,intent(in,out),check(len(output)>=nstate),depend(output) :: nstate=len(output)
         end subroutine getdidw
 
-       subroutine getdidx(ndof,output) ! in :test:computeObjPartials.F90
-         integer(kind=inttype) intent(in) :: ndof
-         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: output
-       end subroutine getdidx
+        subroutine getdidx(ndof,output) ! in :test:computeObjPartials.F90
+          integer(kind=inttype) optional,intent(in),check(len(output)>=ndof),depend(output) :: ndof=len(output)
+          real(kind=realtype) dimension(ndof),intent(inout) :: output
+        end subroutine getdidx
 
        ! -------- Get/Set Functions --------------------
        subroutine getstates(states,ndimw) ! in :test:getADjoint.F90
@@ -416,17 +439,11 @@ python module sumb ! in
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: vec_out
        end subroutine getdfdxvec
 
-       subroutine getdfdxvec_null()
-       end subroutine getdfdxvec_null
-
        subroutine getdfdxtvec(ndof,vec_in,vec_out) ! in :test:getdFdxVec.f90
          integer(kind=inttype) optional,intent(in),check(len(vec_in)>=ndof),depend(vec_in) :: ndof=len(vec_in)
          real(kind=realtype) dimension(ndof),intent(in) :: vec_in
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: vec_out
        end subroutine getdfdxtvec
-
-       subroutine getdfdxtvec_null()
-       end subroutine getdfdxtvec_null
 
        subroutine agumentrhs(ndof,phi) ! in :test:agumentRHS.f90
          integer(kind=inttype) optional,intent(in),check(len(phi)>=ndof),depend(phi) :: ndof=len(phi)
@@ -1137,49 +1154,6 @@ python module sumb ! in
          use communication
          implicit none
        end subroutine SUmb_finalize
-
-       ! ############################################################################
-       ! SUGGAR (Overset Assembly Software) Interface Routines
-       ! ############################################################################
-
-       module suggardata ! in :sumb:../fortran/suggar/suggarData.f90
-         use constants
-         use parallelIO
-         integer(kind=inttype) :: nzones
-         character(len=32) allocatable,dimension(:) :: zonenames
-         integer(kind=inttype) allocatable,dimension(:) :: unsortedzone
-       end module suggardata
-
-       subroutine initsuggarinterface() ! in :sumb:../fortran/suggar/initSuggarInterface.f90
-         use block
-         use cgnsgrid
-         use communication
-         use suggardata
-       end subroutine initsuggarinterface
-
-       subroutine writeplot3dzonefile(izone,zonefilename,sps,p3d_byteswap_suggar) ! in :sumb:../fortran/suggar/writePlot3DZoneFile.F90
-         use block
-         use cgnsgrid
-         use communication
-         use suggardata
-         integer(kind=inttype) intent(in) :: izone
-         integer(kind=inttype) intent(in) :: sps
-         logical intent(in) :: p3d_byteswap_suggar
-         character(len=*) intent(in) :: zonefilename
-       end subroutine writeplot3dzonefile
-
-       subroutine loadsuggardcifile(dcifile,sps) ! in :sumb:../fortran/suggar/loadSuggarDCIFile.f90
-         use block
-         use cgnsgrid
-         use communication
-         use suggardata
-         character(len=*) intent(in) :: dcifile
-         integer(kind=inttype) intent(in) :: sps
-       end subroutine loadsuggardcifile
-
-! ############################################################################
-! Helicopter Quieting Program (HQP) Routines
-! ############################################################################
 
     end interface 
 end python module sumb

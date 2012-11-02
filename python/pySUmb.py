@@ -743,13 +743,27 @@ class SUMB(AeroSolver):
             self.monnames[string.strip(
                     self.sumb.monitor.monnames[i].tostring())] = i
         # end for
-      
+
         # Setup External Warping
         meshInd = self.getMeshIndices()
         self.mesh.setExternalMeshIndices(meshInd)
-       
-        forceInd = self.getForceIndices()
-        self.mesh.setExternalForceIndices(forceInd)
+
+        # Setup Surface/Force info
+        npatch = self.sumb.getnpatches()
+        patchnames = []
+        patchsizes = []
+        for i in xrange(npatch):
+            tmp = numpy.zeros(256,'c')
+            self.sumb.getpatchname(i, tmp)
+            patchnames.append(
+                ''.join([tmp[j] for j in range(256)]).lower().strip())
+            patchsizes.append(self.sumb.getpatchsize(i))
+        # end for
+ 
+        conn = self.getForceConnectivity()
+        pts  = self.getForcePoints()
+
+        self.mesh.setExternalSurface(patchnames, patchsizes, conn, pts)
         
         # Solver is initialize
         self.allInitialized = True
@@ -1306,39 +1320,35 @@ class SUMB(AeroSolver):
 
         return 
 
-    def getForces(self, group_name=None, cfd_force_pts=None):
+    def getForces(self, group_name=None, cfd_force_pts=None, TS=0):
         ''' Return the forces on this processor. Use
         cfd_force_pts to compute the forces if given
         '''
 
         if cfd_force_pts is None:
-            cfd_force_pts = self.getForcePoints()
+            cfd_force_pts = self.getForcePoints(TS)
         # end if
-        [npts, nTS] = self.sumb.getforcesize()
+            
+        forces = self.sumb.getforces(cfd_force_pts.T, TS).T
 
-        nTS = 1
-        if npts > 0:
-            forces = self.sumb.getforces(cfd_force_pts.T).T
-        else:
-            forces = numpy.empty((0), dtype=self.dtype)
-        # end if
-
-        if group_name is not None: # Extract out the forces we want:
-            forces = self.mesh.solver_to_warp_force(
-                group_name, forces, 
-                tractions=self.getOption('forcesAsTractions'))
-        # end if
+        if group_name is not None:
+            forces = self.mesh.sectionVectorByFamily(group_name, forces)
 
         return forces
 
-    def getForcePoints(self):
+    def getForcePoints(self, TS=0):
         [npts, nTS] = self.sumb.getforcesize()
+        pts = numpy.zeros((nTS, npts, 3),self.dtype)
+        self.sumb.getforcepoints(pts.T)
+        
+        return pts[TS]
 
-        if npts > 0:
-            return self.sumb.getforcepoints(npts, nTS).T
-        else:
-            return numpy.empty((nTS, 0, 3), dtype=self.dtype)
-        # end if
+    def getForceConnectivity(self):
+        conn_size = self.sumb.getforceconnectivitysize()
+        conn =  numpy.zeros((conn_size, 4), dtype='intc')
+        self.sumb.getforceconnectivity(numpy.ravel(conn))
+
+        return conn
 
     def verifyForces(self, cfd_force_pts=None):
 
@@ -1516,15 +1526,11 @@ class SUMB(AeroSolver):
 
         #Set the mesh level and timespectral instance for this
         #computation
-        
-        self.sumb.iteration.currentlevel=1
-        self.sumb.iteration.groundlevel=1
+                
         if not self.adjointPreprocessed:
             self.sumb.preprocessingadjoint()
             self.adjointPreprocessed = True
         # end if
-
-        #self.sumb.initializepetsc() -> I don't think we will need this
 
         return
 
@@ -1721,11 +1727,10 @@ class SUMB(AeroSolver):
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
         if 'structAdjoint' in kwargs and 'group_name' in kwargs:
-            group_name = kwargs['group_name']
-            phi = kwargs['structAdjoint']
-            solver_phi = self.mesh.warp_to_solver_force(group_name, phi)
             self.setupCouplingMatrices(forcePoints)
-            self.sumb.agumentrhs(solver_phi)
+            phi = self.mesh.expandVectorByFamily(kwargs['group_name'],
+                                                 kwargs['structAdjoint'])
+            self.sumb.agumentrhs(numpy.ravel(phi))
         # end if
 
         # If we have saved adjoints, 
@@ -1797,7 +1802,7 @@ class SUMB(AeroSolver):
         dIdxs_2 = self.getdRdXvPsi('all', objective)
           
         # Direct partial derivative contibution 
-        dIdxs_1 = self.getdIdx(objective, 'all')
+        dIdxs_1 = self.getdIdx(objective)
 
         # Total derivative of the obective with surface coordinates
 
@@ -1865,7 +1870,7 @@ class SUMB(AeroSolver):
         if self._update_geom_info:
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
-
+        
             if newGrid is not None:
                 self.sumb.setgrid(newGrid)
             # end if
@@ -2050,37 +2055,30 @@ class SUMB(AeroSolver):
 
     def getdFdxVec(self, group_name, vec):
         # Calculate dFdx * vec and return the result
+        vec = self.mesh.sectionVectorByFamily(group_name, vec)
+        vec = self.sumb.getdfdxvec(numpy.ravel(vec))
+        vec = self.mesh.expandVectorByFamily(group_name, vec)
 
-        solver_vec = self.mesh.warp_to_solver_force(group_name, vec)
-        if len(solver_vec) > 0:
-            dFdxVec = self.sumb.getdfdxvec(solver_vec)
-        else:
-            self.sumb.getdfdxvec_null()
-            dFdxVec = numpy.zeros_like(solver_vec)
-        # end if
-
-        return self.mesh.solver_to_warp_force(
-            group_name, dFdxVec, False)#self.getOption('forcesAsTractions'))
+        return vec
 
     def getdFdxTVec(self, group_name, vec):
         # Calculate dFdx^T * vec and return the result
-        solver_vec = self.mesh.warp_to_solver_force(group_name, vec)
-        if len(solver_vec) > 0:
-            dFdxTVec = self.sumb.getdfdxtvec(solver_vec)
-        else:
-            self.sumb.getdfdxtvec_null()
-            dFdxTVec = numpy.zeros_like(solver_vec)
-        # end if
+        vec = self.mesh.sectionVectorByFamily(group_name, vec)
+        vec = self.sumb.getdfdxtvec(numpy.ravel(vec))
+        vec = self.mesh.expandVectorByFamily(group_name, vec)
 
-        return self.mesh.solver_to_warp_force(
-                group_name, dFdxTVec, False)#self.getOption('forcesAsTractions'))
+        return vec
 
     def computeObjPartials(self, objective, forcePoints=None):
 
         obj, aeroObj = self._getObjective(objective)
 
+        # Note: Computeobjective partials MUST be called with the full
+        # force pt list.
         if forcePoints is None:
-            forcePoints = self.getForcePoints()
+            [npts, nTS] = self.sumb.getforcesize()
+            forcePoints = numpy.zeros((nTS, npts, 3),self.dtype)
+            self.sumb.getforcepoints(forcePoints.T)
         # end if
 
         if aeroObj:
@@ -2095,45 +2093,27 @@ class SUMB(AeroSolver):
 
         return 
 
-    def getdIdx(self, objective, group_name=None, forcePoints=None):
+    def getdIdx(self, objective, forcePoints=None, TS=0):
 
         obj, aeroObj = self._getObjective(objective)
 
         if not self.spatialSetup:
             self.setupSpatialMatrices()
 
-        if forcePoints is None:
-            forcePoints = self.getForcePoints()
-        # end for
+        # Compute the partials
         self.computeObjPartials(objective, forcePoints)
 
-        temp = forcePoints.shape
-        
-        sizeForcePoints = temp[1]*temp[2]#temp[0]*temp[1]#*temp[2]
 
-        if sizeForcePoints > 0:
-            if aeroObj:
-                dIdpts = self.sumb.getdidx(sizeForcePoints)
-                dIdpts.reshape(forcePoints[0, :, :].shape)
-            else:
-                dIdpts = numpy.zeros_like(forcePoints[0, :, :])
-            # end if
-        else:
-            dIdpts = numpy.zeros((0), self.dtype)
-        # end if
+        [npts, nTS] = self.sumb.getforcesize()
+        dIdpts = numpy.zeros((nTS, npts, 3))
+        self.sumb.getdidx(numpy.ravel(dIdpts))
             
-        if group_name is not None:
-            dIdpts = self.mesh.solver_to_warp_force(group_name, dIdpts)
-
-        return dIdpts
+        return dIdpts[TS]
 
     def getdIda(self, objective, forcePoints=None):
 
         obj, aeroObj = self._getObjective(objective)
 
-        if forcePoints is None:
-            forcePoints = self.getForcePoints()
-        # end if
         if self.nDVAero > 0:
             
             self.computeObjPartials(objective, forcePoints)
@@ -2155,9 +2135,6 @@ class SUMB(AeroSolver):
 
         obj, aeroObj = self._getObjective(objective)
 
-        if forcePoints is None:
-            forcePoints = self.getForcePoints()
-        # end for
         if aeroObj:
             self.computeObjPartials(objective, forcePoints)
             dIdw = self.sumb.getdidw(dIdw)
@@ -2236,8 +2213,7 @@ class SUMB(AeroSolver):
     def computedSdwTVec(self, in_vec, out_vec, group_name):
         '''This function computes: out_vec = out_vec + dFdw^T*in_vec'''
 
-        solver_vec = self.mesh.warp_to_solver_force(group_name, in_vec)
-        out_vec = self.sumb.getdfdwtvec(solver_vec, out_vec)
+        out_vec = self.sumb.getdfdwtvec(in_vec, out_vec)
 
         return out_vec
 
@@ -2284,7 +2260,7 @@ class SUMB(AeroSolver):
              'cmzq'       :funcVals[self.sumb.costfunctions.costfunccmzq-1],
              'clqdot'     :funcVals[self.sumb.costfunctions.costfuncclqdot-1],
              'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1],
-             'cbend'        :funcVals[self.sumb.costfunctions.costfuncbendingcoef-1]
+             'cbend'      :funcVals[self.sumb.costfunctions.costfuncbendingcoef-1]
              }
                                                  
         
@@ -2411,24 +2387,18 @@ class SUmbDummyMesh(object):
     """
  
     def __init__(self):
-        """Initialize the object."""
-
+        return
+        
     def getSurfaceCoordinates(self, group_name):
-        ''' 
-        Returns a UNIQUE set of ALL surface points belonging to
-        group "group_name", that belong to blocks on THIS processor
-        '''
-
+    
         return 
 
-    def setSurfaceCoordinates(self, group_name, coordinates):
-        ''' 
-        Set the UNIQUE set of ALL surface points belonging to
-        group "group_name", that belong to blocks on THIS processor
-        This must be the same length as the list obtained from
-        getSurfaceCoordiantesLocal
-        '''
+    def getSurfaceConnectivity(self, group_name):
 
+        return
+
+    def setSurfaceCoordinates(self, group_name, coordinates):
+       
         return 
 
     def addFamilyGroup(self, group_name, families=None):
@@ -2440,51 +2410,20 @@ class SUmbDummyMesh(object):
 # =========================================================================
 
     def setExternalMeshIndices(self, ind):
-        ''' Take in a set of external indices from another flow solver
-        and use this to setup the scatter contexts'''
 
         return 
 
-    def setExternalForceIndices(self, ind):
-        ''' Take in a set of external indices from another flow solver
-        and use this to setup the scatter contexts'''
+    def setExternalSurface(self, patchNames, patchSizes, conn, pts):
 
-        return 
-
-    def getSolverGrid(self):
-        '''
-        Return the grid as the external solver want it
-        '''
-        
         return
 
-    def warp_to_solver_force(self, group_name, disp):
-
-        return 
-
-    def solver_to_warp_force(self, group_name, solver_forces):
-    
+    def getSolverGrid(self):
+      
         return
 
     def getdXs(self, group_name):
 
         return 
-
-    def computeArea(self, axis, group_name):
-        
-        return 0.0
-
-    def computeAreaSensitivity(self, axis, group_name):
-
-        return 
-
-    def computeVolume(self, axis):
-
-        return 0.0
-
-    def computeVolumeSensitivity(self, axis):
-
-        return 0.0
 
 # ==========================================================================
 #                        Output Functionality
@@ -2522,17 +2461,11 @@ class SUmbDummyMesh(object):
         warping scheme depending on the options
         '''
 
-    def setupWarpDeriv(self):
-
-        return 
-
     def WarpDeriv(self, solver_dxv):
 
         return
 
-    def verifySolidWarpDeriv(self):
-
-        return
+ 
 
 #==============================================================================
 # SUmb Analysis Test

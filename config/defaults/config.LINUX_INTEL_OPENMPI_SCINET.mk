@@ -32,8 +32,8 @@ CGNS_LINKER_FLAGS  = -Wl,-rpath,$(HOME)/../kenway/packages/cgnslib_2.5/LINUX -L$
 FF90_GEN_FLAGS = -DHAS_ISNAN 
 CC_GEN_FLAGS   = -DHAS_ISNAN  
 
-FF90_OPT_FLAGS   =  -fpic -r8 -O1  -xHost #fp-model precise
-CC_OPT_FLAGS     = -O -fpic
+FF90_OPT_FLAGS   =  -fPIC -r8 -O1  -xHost #fp-model precise
+CC_OPT_FLAGS     = -O -fPIC
 
 FF90_DEBUG_FLAGS = #-check bounds -check all
 CC_DEBUG_FLAGS   = #-g -Wall -pedantic -DDEBUG_MODE

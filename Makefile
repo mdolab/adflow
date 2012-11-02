@@ -62,15 +62,13 @@ SUBDIR_ADJOINT = src/adjoint               \
                  src/forwardAdjoint/residualOutputSpatial
 
 SUBDIR_EXEC   = src/exec
-SUBDIR_PYTHON = src/python/fortran
 SUBDIR_PV3    = src/pv3Interface
 CONFIG_DEFAULT_DIR = config/defaults
 CONFIG_DIR         = config
 
-SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR)\
-		     $(SUBDIR_PYTHON) $(SUBDIR_ADJOINT)
+SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR) $(SUBDIR_ADJOINT)
 
-SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC) $(SUBDIR_PYTHON) $(SUBDIR_PV3) \
+SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)  $(SUBDIR_PV3) \
 		     $(SUBDIR_EXEC) $(SUBDIR_ADJOINT)
 
 #      ******************************************************************
@@ -134,7 +132,6 @@ dirs:
 	mkdir -p externals/ADT/mod
 	mkdir -p externals/SU_MPI/obj
 	mkdir -p externals/SU_MPI/mod
-	mkdir -p src/python/fortran/obj
 
 clean:
 	@echo " Making clean ... "
@@ -182,8 +179,6 @@ LINUX_INTEL_OPENMPI:
 	(cd externals/ADT && make LINUX_INTEL_OPENMPI)
 	ln -sf config/config.LINUX_INTEL_OPENMPI.mk config.mk
 	make sumb
-
-
 
 LINUX_INTEL_OPENMPI_PYTHON:
 	make LINUX_INTEL_OPENMPI
