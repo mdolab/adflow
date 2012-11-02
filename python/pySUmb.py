@@ -2055,17 +2055,17 @@ class SUMB(AeroSolver):
 
     def getdFdxVec(self, group_name, vec):
         # Calculate dFdx * vec and return the result
-        vec = self.mesh.sectionVectorByFamily(group_name, vec)
-        vec = self.sumb.getdfdxvec(numpy.ravel(vec))
         vec = self.mesh.expandVectorByFamily(group_name, vec)
+        vec = self.sumb.getdfdxvec(numpy.ravel(vec))
+        vec = self.mesh.sectionVectorByFamily(group_name, vec)
 
         return vec
 
     def getdFdxTVec(self, group_name, vec):
         # Calculate dFdx^T * vec and return the result
-        vec = self.mesh.sectionVectorByFamily(group_name, vec)
-        vec = self.sumb.getdfdxtvec(numpy.ravel(vec))
         vec = self.mesh.expandVectorByFamily(group_name, vec)
+        vec = self.sumb.getdfdxtvec(numpy.ravel(vec))
+        vec = self.mesh.sectionVectorByFamily(group_name, vec)
 
         return vec
 
@@ -2093,7 +2093,7 @@ class SUMB(AeroSolver):
 
         return 
 
-    def getdIdx(self, objective, forcePoints=None, TS=0):
+    def getdIdx(self, objective, forcePoints=None, TS=0, group_name=None):
 
         obj, aeroObj = self._getObjective(objective)
 
@@ -2107,6 +2107,9 @@ class SUMB(AeroSolver):
         [npts, nTS] = self.sumb.getforcesize()
         dIdpts = numpy.zeros((nTS, npts, 3))
         self.sumb.getdidx(numpy.ravel(dIdpts))
+        
+        if group_name is not None:
+            return self.mesh.sectionVectorByFamily(group_name,dIdpts[TS])
             
         return dIdpts[TS]
 
