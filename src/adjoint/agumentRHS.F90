@@ -33,7 +33,7 @@ subroutine agumentRHS(ndof,phi)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Dump the result into adjointRHS
-  call MatMultTranspose(dFdw,fVec1,adjointRHS,ierr)
+  call MatMultTranspose(dFdw, fVec1, adjointRHS,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   call vecResetArray(fVec1, ierr)

@@ -251,6 +251,7 @@
                                 "Something wrong when calling cg_goto_f")
 
                call cg_famname_read_f(familyName, ierr)
+
                if(ierr /= all_ok) then
 
                  write(errorMessage,101) trim(cgnsDoms(nZone)%zoneName), &
@@ -382,6 +383,20 @@
                !added to accomodate case where a grid family is specified
                ! but BC's are specified in standard CGNS Format
                 cgnsDoms(nZone)%BCFamilies = .False.
+
+           
+                ! Try to Read off the Boundary Condition family
+                ! name.
+                call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, &
+                     "ZoneBC_t", 1, "BC_t", i, "end")
+
+                cgnsDoms(nZone)%bocoInfo(i)%wallBCName = ""
+                if (ierr == 0) then ! Node exits
+                   call cg_famname_read_f(familyName, ierr)
+                   if (ierr == 0) then
+                      cgnsDoms(nZone)%bocoInfo(i)%wallBCName = familyName
+                   end if
+                end if
 
            end select
 

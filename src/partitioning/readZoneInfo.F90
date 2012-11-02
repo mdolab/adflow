@@ -149,6 +149,7 @@
 !      ******************************************************************
 !
        call cg_famname_read_f(familyName, ierr)
+
        if(ierr == error)                &
          call terminate("readZoneInfo", &
                         "Something wrong when calling cg_famname_read_f")
@@ -163,8 +164,6 @@
          ! grid this name must be found.
 
          nn = cgnsNFamilies
-	
-         !print *,'family name ',familyName, sortedFamName(1:nn)
 	
          ii = bsearchStrings(familyName, sortedFamName, nn)
          if(ii == 0) then

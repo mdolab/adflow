@@ -574,7 +574,7 @@ subroutine getdIdx(ndof,output)
   implicit none
 
   integer(kind=intType),intent(in) :: ndof
-  real(kind=realType),intent(out)  :: output(ndof)
+  real(kind=realType),intent(inout)  :: output(ndof)
   integer(kind=intType),dimension(3) :: idx
   real(kind=realType),dimension(3) ::temp
   !rotation matrix variables

@@ -34,11 +34,10 @@ subroutine setGlobalCellsAndNodes(level)
   !     ******************************************************************
   !
   use ADjointVars ! nNodesGlobal, nNodesLocal, nOffsetLocal
-  !      use block
   use blockpointers
   use communication
   use inputTimeSpectral !nTimeIntervalsSpectral
-  use mddatalocal
+
   implicit none
   !
   !     Subroutine arguments.
