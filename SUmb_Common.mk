@@ -27,7 +27,6 @@
 #SUMB_DIR = ./
 SU_MPI_DIR = $(SUMB_DIR)/externals/SU_MPI
 ADT_DIR    = $(SUMB_DIR)/externals/ADT
-COUPLING_DIR = $(SUMB_DIR)/src/python/fortran/aeroElastic
 INPUT_DIR   = $(SUMB_DIR)/src/inputParam
 TURB_DIR   = $(SUMB_DIR)/src/turbulence
 
@@ -75,8 +74,7 @@ MAKE_CLEAN_ARGUMENTS = *~ *.o *.mod *.il *.stb
 #      ******************************************************************
 
 FF90_LOCAL_FLAGS = -I$(SUMB_MODDIR) -I$(SU_MPI_DIR)/mod \
-		   -I$(ADT_DIR)/mod -I$(COUPLING_DIR)\
-		   -I$(INPUT_DIR) -I$(TURB_DIR)\
+		   -I$(ADT_DIR)/mod -I$(INPUT_DIR) -I$(TURB_DIR)\
 
 FF90_ALL_FLAGS   = $(FF90_LOCAL_FLAGS) $(CGNS_INCLUDE_FLAGS) \
 		   $(FF90_FLAGS) $(ADDITIONAL_FF90_FLAGS) $(PV3_FLAGS) \

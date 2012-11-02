@@ -58,7 +58,7 @@ include ${SUMB_COMMON_FILE}
 #      ******************************************************************
 
 LINKER_ALL_FLAGS = -L$(SU_MPI_DIR)/lib -L$(ADT_DIR)/lib \
-		   -L$(SUMB_LIBDIR) -lsumb -lsumb_pyfort $(PV3_LINKER_FLAGS) -ladt \
+		   -L$(SUMB_LIBDIR) -lsumb $(PV3_LINKER_FLAGS) -ladt \
 		   -lsu_mpi $(CGNS_LINKER_FLAGS) $(PVM3_LINKER_FLAGS) \
 		    $(PETSC_LINKER_FLAGS) $(LINKER_FLAGS)
 

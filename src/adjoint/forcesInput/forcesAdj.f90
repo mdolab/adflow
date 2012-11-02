@@ -30,10 +30,11 @@ subroutine forcesAdj(pAdj,pts,normAdj,refPoint,force,moment,fact,&
   real(kind=realType) :: pp,scaleDim,xc(3),r(3),addForce(3)
   real(kind=realType) :: tauXx, tauYy, tauZz
   real(kind=realType) :: tauXy, tauXz, tauYz
-  real(kind=realType) :: normAdjNorm
+  real(kind=realType) :: normAdjNorm, area, addArea
   scaleDim = pRef
   force(:) = 0.0
   moment(:) = 0.0
+  area = 0.0
   ! Force is the contribution of each of 4 cells
 
   do j=1,2
@@ -47,18 +48,17 @@ subroutine forcesAdj(pAdj,pts,normAdj,refPoint,force,moment,fact,&
            pp = fact*scaleDim*pp
            
            ! Incremental Force to Add
-           if (.not. forcesAsTractions) then
-              addForce = fourth*pp*normAdj(:,i,j)
-           else
-              normAdjNorm = sqrt(normAdj(1,i,j)**2 + &
-                                 normAdj(2,i,j)**2 + &
-                                 normAdj(3,i,j)**2)
-              addForce = pp * normAdj(:,i,j)/normAdjNorm
-           end if
+           addForce = fourth*pp*normAdj(:,i,j)
+
+           ! Incremental Area to add
+           addArea = fourth*sqrt(&
+                normAdj(1,i,j)*normAdj(1,i,j) + &
+                normAdj(2,i,j)*normAdj(2,i,j) + &
+                normAdj(3,i,j)*normAdj(3,i,j))
 
            ! Add increment to total Force for this node
            force(:) = force(:) + addForce(:)
-
+           area = area + addArea
            ! Cell Center, xc
            xc(:) = fourth*(pts(:,i,j)   + pts(:,i+1,j) + &
                            pts(:,i,j+1) + pts(:,i+1,j+1))
@@ -107,4 +107,9 @@ subroutine forcesAdj(pAdj,pts,normAdj,refPoint,force,moment,fact,&
          end if
       end do
    end do
+
+   if (forcesAsTractions) then
+      force = force / area
+   end if
+
  end subroutine forcesAdj

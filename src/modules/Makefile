@@ -70,8 +70,6 @@ FF90_OBJECTS_4 = ADjointVars.o\
 		 monitor.o\
 		 paramTurb.o\
 		 section.o\
-	         mdData.o\
-	         mdDataLocal.o\
 		 stencils.o\
 	         blockpointers_d.o\
 	         diffSizes.o\
