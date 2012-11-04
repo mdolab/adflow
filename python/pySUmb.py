@@ -1274,49 +1274,75 @@ class SUMB(AeroSolver):
 
         return
 
-    def writeForceFile(self, file_name, TSInstance=0, group_name=None):
+    def writeForceFile(self, file_name, TS=0, group_name='all'):
         '''This function collects all the forces and locations and
         writes them to a file with each line having: X Y Z Fx Fy Fz.
         This can then be used to set a set of structural loads in TACS
         for structural only optimization'''
       
-        if group_name is None: # We can just use all forces from SUmb:
-
-            pts = self.getForcePoints()
-            nPts = pts.shape[1]
-            if nPts > 0:
-                forces =  self.sumb.getforces(pts.T).T
-            else:
-                forces = numpy.empty(pts.shape, dtype=self.dtype)
-            # end if
-
-            # Now take the desired time instance
-            pts = pts[TSInstance, :, :]
-            forces = forces[TSInstance, :, :]
-        else: # We need to use the families in the warping
-            # TS instance not taken into account yet
-            forces = self.getForces(group_name)
-            pts    = self.mesh.getSurfaceCoordinates(group_name)
-        # end if
+        if self.mesh is None:
+            mpiPrint('Error: The mesh must be specified to use writeForceFile',
+                     comm=self.comm)
+            return
 
         # Now we need to gather the data:
-        pts = self.comm.gather(pts, root=0)
-        forces = self.comm.gather(forces, root=0)
+        pts    = self.comm.gather(self.getForcePoints(TS), root=0)
+        forces = self.comm.gather(self.getForces(group_name, TS=TS), root=0)
+        conn   = self.comm.gather(self.mesh.getSurfaceConnectivity(group_name),
+                                  root=0)
 
         # Write out Data only on root proc:
         if self.myid == 0:
+            # First sum up the total number of nodes and elements:
+            nPt = 0
+            nCell = 0
+            for iProc in xrange(len(pts)):
+                nPt += len(pts[iProc])
+                nCell += len(conn[iProc])/4
+            # end for
+     
+            # Open output file
             f = open(file_name, 'w')
-            for iproc in xrange(len(pts)):
-                for ipt in xrange(len(pts[iproc])):
-                    f.write(
-                        '%20.15g %20.15g %20.15g %20.15g %20.15g %20.15g\n'%(
-                            pts[iproc][ipt, 0], pts[iproc][ipt, 1], 
-                            pts[iproc][ipt, 2], forces[iproc][ipt, 0], 
-                            forces[iproc][ipt, 1], forces[iproc][ipt, 2]))
+            
+            # Write header with number of nodes and number of cells
+            f.write("%d %d\n"%(nPt, nCell))
+
+            # Now write out all the Nodes and Forces (or tractions)
+            for iProc in xrange(len(pts)):
+                for i in xrange(len(pts[iProc])):
+                    f.write('%15.8g %15.8g %15.8g '%(
+                            numpy.real(pts[iProc][i,0]),
+                            numpy.real(pts[iProc][i,1]),
+                            numpy.real(pts[iProc][i,2])))
+                    f.write('%15.8g %15.8g %15.8g\n'%(
+                            numpy.real(forces[iProc][i,0]),
+                            numpy.real(forces[iProc][i,1]),
+
+
+                            numpy.real(forces[iProc][i,2])))
                 # end for
             # end for
+
+            # Now write out the connectivity information. We have to
+            # be a little careful, since the connectivitiy is given
+            # locally per proc. As we loop over the data from each
+            # proc, we need to increment the connectivity by the numer
+            # of nodes we've "used up" so far
+
+            nodeOffset = 0
+            for iProc in xrange(len(conn)):
+                for i in xrange(len(conn[iProc])/4):
+                    f.write('%d %d %d %d\n'%(
+                            conn[iProc][4*i+0]+nodeOffset,
+                            conn[iProc][4*i+1]+nodeOffset,
+                            conn[iProc][4*i+2]+nodeOffset,
+                            conn[iProc][4*i+3]+nodeOffset))
+                # end for
+                nodeOffset += len(pts[iProc])
+            # end for
+
             f.close()
-        # end if
+        # end if (root proc )
 
         return 
 
@@ -1328,7 +1354,7 @@ class SUMB(AeroSolver):
         if cfd_force_pts is None:
             cfd_force_pts = self.getForcePoints(TS)
         # end if
-            
+
         forces = self.sumb.getforces(cfd_force_pts.T, TS).T
 
         if group_name is not None:
