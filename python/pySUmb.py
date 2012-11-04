@@ -2269,6 +2269,64 @@ class SUMB(AeroSolver):
         
         return SUmbsolution
 
+    def computeArea(self, axis, group_name=None, cfd_force_pts=None, TS=0):
+        """                                                                                                                                                                                                     
+        Compute the projected area of the surface mesh                                                                                                                                                          
+                                                                                                                                                                                                                
+        Input Arguments:                                                                                                                                                                                        
+           axis, numpy array, size(3): The projection vector                                                                                                                                                    
+               along which to determine the shadow area                                                                                                                                                         
+           group_name, str: The group from which to obtain the coordinates.                                                                                                                                     
+               This name must have been obtained from addFamilyGroup() or                                                                                                                                       
+               be the default 'all' which contains all surface coordiantes                                                                                                                                      
+                                                                                                                                                                                                                
+        Output Arguments:                                                                                                                                                                                       
+            Area: The resulting area                                                                                                                                                                            
+            """
+
+        if cfd_force_pts is None:
+            cfd_force_pts = self.getForcePoints(TS)
+        # end if
+            
+        areas = self.sumb.getareas(cfd_force_pts.T, TS, axis).T
+
+        if group_name is not None:
+            areas = self.mesh.sectionVectorByFamily(group_name, areas)
+        # end if
+
+        # Now we do an mpiallreduce with sum:
+        area = self.comm.allreduce(numpy.sum(areas), op=MPI.SUM)
+        
+        return area
+
+    def computeAreaSensitivity(self, axis, group_name=None, cfd_force_pts=None, TS=0):
+        """                                                                                                                                                                                                     
+        Compute the projected area of the surface mesh                                                                                                                                                          
+                                                                                                                                                                                                                
+        Input Arguments:                                                                                                                                                                                        
+           axis, numpy array, size(3): The projection vector                                                                                                                                                    
+               along which to determine the shadow area                                                                                                                                                         
+           group_name, str: The group from which to obtain the coordinates.                                                                                                                                     
+               This name must have been obtained from addFamilyGroup() or                                                                                                                                       
+               be the default 'all' which contains all surface coordiantes                                                                                                                                      
+                                                                                                                                                                                                                
+        Output Arguments:                                                                                                                                                                                       
+            Area: The resulting area                                                                                                                                                                            
+            """
+
+        if cfd_force_pts is None:
+            cfd_force_pts = self.getForcePoints(TS)
+        # end if
+            
+        da = self.sumb.getareasensitivity(cfd_force_pts.T, TS, axis).T
+
+        if group_name is not None:
+            da = self.mesh.sectionVectorByFamily(group_name, da)
+        # end if
+
+        return da
+
+
     def _getObjective(self, objective):
         '''Check to see if objective is one of the possible
         objective. If it is, return the obj value for SUmb and
