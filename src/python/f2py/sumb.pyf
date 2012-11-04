@@ -218,6 +218,22 @@ python module sumb ! in
          integer(kind=inttype) optional,intent(in),check(shape(points,2)==nts),depend(points) :: nts=shape(points,2)
        end subroutine getforcepoints
 
+       subroutine getareas(areas,pts,npts,sps_in,axis) ! in :test:getAreas.f90
+         real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: areas
+         real(kind=realtype) dimension(3,npts),intent(in) :: pts
+         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+         integer(kind=inttype) intent(in) :: sps_in
+         real(kind=realtype) dimension(3),intent(in) :: axis
+       end subroutine getareas
+
+       subroutine getareasensitivity(darea,pts,npts,sps_in,axis) ! in :test:getAreas.f90
+         real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: darea
+         real(kind=realtype) dimension(3,npts),intent(in) :: pts
+         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+         integer(kind=inttype) intent(in) :: sps_in
+         real(kind=realtype) dimension(3),intent(in) :: axis
+       end subroutine getareasensitivity
+
        ! ############################################################################
        ! SUmb ADjoint Debugging Routines
        ! ############################################################################

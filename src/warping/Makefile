@@ -38,6 +38,7 @@ vpath %.o $(SUMB_OBJDIR)
 
 FF90_MODULES = 
 FF90_OBJECTS = getForces.o\
+	       getAreas.o\
 	       setGrid.o\
 	       initializeExternalWarping.o\
 	       blockLogicalFunctions.o\
