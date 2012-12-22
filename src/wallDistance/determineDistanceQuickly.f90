@@ -264,7 +264,6 @@ subroutine determineDistance3(level, sps)
   !      *                                                                *
   !      ******************************************************************
   !
-  use adtAPI
   use blockPointers
   use communication
   use inputPhysics

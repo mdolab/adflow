@@ -17,7 +17,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use adtAPI
+       use adtAPI, only:  adtIntType, adtRealType
        use precision
        implicit none
        save
