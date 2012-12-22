@@ -307,7 +307,9 @@ subroutine solveState
      L2ConvSave = L2Conv
 
      if (groundLevel == 1 .and. fromPython) then
-        call getFreeStreamResidual(rhoRes0,totalR0)
+        if (.not. freeStreamResSet)  then
+           call getFreeStreamResidual(rhoRes0,totalR0)
+        end if
         call getCurrentResidual(rhoResStart,totalRStart)
      end if
 
@@ -318,7 +320,9 @@ subroutine solveState
      ! RKsolver first to improve the starting point aand then the NKsolver
 
      ! Get Frestream and starting residuals
-     call getFreeStreamResidual(rhoRes0,totalR0)
+     if (.not. freeStreamResSet) then
+        call getFreeStreamResidual(rhoRes0,totalR0)
+     end if
      call getCurrentResidual(rhoResStart,totalRStart)
 
      ! Determine if we need to run the RK solver, before we can
