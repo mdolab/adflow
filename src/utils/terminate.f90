@@ -60,13 +60,11 @@ subroutine terminate(routineName, errorMessage)
   print "(a)", "#=========================== !!! Error !!! &
        &============================"
 
-  if(.not. SU_MPI_isSequential) then
-     write(integerString,"(i8)") myID
-     integerString = adjustl(integerString)
-
-     print "(2a)", "#* Terminate called by processor ", &
-          trim(integerString)
-  endif
+  write(integerString,"(i8)") myID
+  integerString = adjustl(integerString)
+  
+  print "(2a)", "#* Terminate called by processor ", &
+       trim(integerString)
 
   ! Write the header of the error message.
 

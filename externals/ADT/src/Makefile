@@ -6,16 +6,6 @@
 #      * Last modified: 04-26-2006                                      *
 #      *                                                                *
 #      ******************************************************************
-
-#      ******************************************************************
-#      *                                                                *
-#      * Description: Makefile to create the object files of this       *
-#      * directory.                                                     *
-#      *                                                                *
-#      ******************************************************************
-
-#      ==================================================================
-
 #      ******************************************************************
 #      *                                                                *
 #      * Include the common file.                                       *
@@ -24,7 +14,10 @@
 
 ADT_DIR = ..
 ADT_COMMON_FILE = $(ADT_DIR)/ADT_Common.mk
+ADT_RULES_FILE  = $(ADT_DIR)/rulesSources.mk
 include ${ADT_COMMON_FILE}
+include ${ADT_RULES_FILE}
+
 
 #      ******************************************************************
 #      *                                                                *
@@ -57,12 +50,12 @@ FF90_OBJECTS_6 = adtAPI.o
 default: all
 
 all: 
-	$(MAKE) src_1
-	$(MAKE) src_2
-	$(MAKE) src_3
-	$(MAKE) src_4
-	$(MAKE) src_5
-	$(MAKE) src_6
+	$(PMAKE) src_1
+	$(PMAKE) src_2
+	$(PMAKE) src_3
+	$(PMAKE) src_4
+	$(PMAKE) src_5
+	$(PMAKE) src_6
 	cp -f *.mod $(ADT_MODDIR)
 
 clean:
