@@ -139,6 +139,7 @@ module NKsolverVars
   ! Misc Parameters
   real(kind=realType) :: totalR0,totalRStart,totalRFinal
   real(kind=realType) :: rhoRes0,rhoResStart,rhoResFinal
+  logical :: freeStreamResSet
   real(kind=realType) :: CFL0
   integer(kind=intType) :: iterTot0
   integer(kind=intType) :: applyPCSubSpaceSize

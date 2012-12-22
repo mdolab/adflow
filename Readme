@@ -20,7 +20,7 @@ This is the SUmb README. Please read this before trying to compile.
  
    The CGNS library is used to provide input/output CGNS functionality
    for SUmb. This library MUST be installed before trying to compile
-   SUmb. CGNS version 2.5 is REQUIRED. Version 3.3 WILL NOT WORK. A
+   SUmb. CGNS version 2.5 is REQUIRED. Version 3.x WILL NOT WORK. A
    copy of the correct CGNS version is available on the sumb bitbucket
    site at 'https://bitbucket.org/mdolab/sumb/downloads'.  After
    cgns_2.5.tar.gz is downloaded untar using:
@@ -140,10 +140,25 @@ This is the SUmb README. Please read this before trying to compile.
 ---------------------
 
     SUmb contains a set of simple tests that can be run automatically
-    to ensure SUmb reproduces the expected reference results. These
-    "regression tests" can be run by:
+    to ensure SUmb reproduces the expected reference results. You should
+    a diff-viewer installed. xxdiff is used by default which can be installed
+    using 
 
+    $ sudo apt-get install xxdiff
+
+    Change to the regression tests directory at:
     $ cd python/reg_tests/
+
+    Command line arguemnts for run_reg_tests.py can be found by running:
+
+    $ python run_reg_tests.py --help
+
+    To run all regression tests, now simply run:
+    
     $ python run_reg_tests.py
 
-      
+    
+    If the tests are successful a 'sumb: Success!' message
+    will be printed, otherwise a diff window will appear hihglighting
+    the differences between the reference case and the most recently
+    completed verification run.
