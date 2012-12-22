@@ -19,9 +19,9 @@ include ${SUMB_RULES_FILE}
 #      *                                                                *
 #      ******************************************************************
 
-LINKER_ALL_FLAGS = -L$(SU_MPI_DIR)/lib -L$(ADT_DIR)/lib \
+LINKER_ALL_FLAGS = -L$(ADT_DIR)/lib \
 		   -L$(SUMB_LIBDIR) -lsumb $(PV3_LINKER_FLAGS)\
-		   -ladt -lsu_mpi $(CGNS_LINKER_FLAGS) $(PVM3_LINKER_FLAGS) \
+		   -ladt $(CGNS_LINKER_FLAGS) $(PVM3_LINKER_FLAGS) \
 		    $(PETSC_LINKER_FLAGS) $(LINKER_FLAGS)
 
 #      ******************************************************************

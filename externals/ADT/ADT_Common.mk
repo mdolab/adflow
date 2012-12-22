@@ -7,41 +7,18 @@
 #      *                                                                *
 #      ******************************************************************
 
-#      ******************************************************************
-#      *                                                                *
-#      * Description: Defines the root directory, includes the files    *
-#      *              describing the architecture and the compiler      *
-#      *              settings.                                         *
-#      *                                                                *
-#      ******************************************************************
-
-#      ==================================================================
-
-#      ******************************************************************
-#      *                                                                *
-#      * Set the root directory for SU_MPI and the modules and object   *
-#      * directories for ADT. Note that ADT_DIR must be set in the      *
-#      * Makefiles that include this common file.                       *
-#      *                                                                *
-#      ******************************************************************
-
-SU_MPI_DIR = $(ADT_DIR)/../SU_MPI
-
+SU_MPI_DIR = $(ADT_DIR)/../SU_MPI/mod
 ADT_MODDIR = $(ADT_DIR)/mod
 ADT_OBJDIR = $(ADT_DIR)/obj
 
-#      ******************************************************************
-#      *                                                                *
-#      * Include the file describing the compiler settings.             *
-#      *                                                                *
-#      ******************************************************************
+# We use the sumb config file which already has the necessary
+# information
+ADT_COMPILERS = $(ADT_DIR)/../../config.mk
 
-MAKE = make
-
-ADT_COMPILERS = $(ADT_DIR)/config.mk
 ifneq ($(MAKECMDGOALS),clean)
 include ${ADT_COMPILERS}
 endif
+
 
 #      ******************************************************************
 #      *                                                                *
@@ -66,43 +43,4 @@ MAKE_CLEAN_ARGUMENTS = *~ *.o *.mod *.il *.stb
 #      *                                                                *
 #      ******************************************************************
 
-FF90_LOCAL_FLAGS = $(COMMAND_SEARCH_PATH_MODULES)$(SU_MPI_DIR)/mod
-FF90_ALL_FLAGS   = $(FF90_LOCAL_FLAGS) $(FF90_FLAGS) \
-		   $(INTEGER_PRECISION_FLAG) $(REAL_PRECISION_FLAG)
-
-#      ******************************************************************
-#      *                                                                *
-#      * Rules to make objects.  Note that Cygwin requires a different  *
-#      * format.                                                        *
-#      *                                                                *
-#      ******************************************************************
-
-ifneq ($(origin CYGWIN), undefined)
-
-.F90.o: Makefile
-	$(FF90) $(FF90_ALL_FLAGS) -c $< -object:$(ADT_OBJDIR)/$(@F)
-	@echo
-	@echo "        --- Compiled $*.F90 successfully ---"
-	@echo
-
-.f90.o: Makefile
-	$(FF90) $(FF90_ALL_FLAGS) -c $< -object:$(ADT_OBJDIR)/$(@F)
-	@echo
-	@echo "        --- Compiled $*.f90 successfully ---"
-	@echo
-
-else
-
-.F90.o:	Makefile
-	$(FF90) $(FF90_ALL_FLAGS) -c $< -o $(ADT_OBJDIR)/$(@F)
-	@echo
-	@echo "        --- Compiled $*.F90 successfully ---"
-	@echo
-
-.f90.o:	Makefile
-	$(FF90) $(FF90_ALL_FLAGS) -c $< -o $(ADT_OBJDIR)/$(@F)
-	@echo
-	@echo "        --- Compiled $*.f90 successfully ---"
-	@echo
-
-endif
+FF90_ALL_FLAGS   = $(FF90_FLAGS) -I$(SU_MPI_DIR) $(FF90_PRECISION_FLAGS)

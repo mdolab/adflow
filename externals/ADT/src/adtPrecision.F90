@@ -40,10 +40,11 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      use su_mpi
       implicit none
       save
-!
+#include "mpif.h"
+
+      !
 !     ******************************************************************
 !     *                                                                *
 !     * Definition of the integer type. There might be a more elegant  *

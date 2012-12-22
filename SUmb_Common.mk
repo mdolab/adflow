@@ -25,7 +25,6 @@
 #      *                                                                *
 #      ******************************************************************
 #SUMB_DIR = ./
-SU_MPI_DIR = $(SUMB_DIR)/externals/SU_MPI
 ADT_DIR    = $(SUMB_DIR)/externals/ADT
 INPUT_DIR   = $(SUMB_DIR)/src/inputParam
 TURB_DIR   = $(SUMB_DIR)/src/turbulence
@@ -73,7 +72,7 @@ MAKE_CLEAN_ARGUMENTS = *~ *.o *.mod *.il *.stb
 #      *                                                                *
 #      ******************************************************************
 
-FF90_LOCAL_FLAGS = -I$(SUMB_MODDIR) -I$(SU_MPI_DIR)/mod \
+FF90_LOCAL_FLAGS = -I$(SUMB_MODDIR) \
 		   -I$(ADT_DIR)/mod -I$(INPUT_DIR) -I$(TURB_DIR)\
 
 FF90_ALL_FLAGS   = $(FF90_LOCAL_FLAGS) $(CGNS_INCLUDE_FLAGS) \

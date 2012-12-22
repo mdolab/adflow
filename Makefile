@@ -130,13 +130,13 @@ dirs:
 	mkdir -p mod
 	mkdir -p externals/ADT/obj
 	mkdir -p externals/ADT/mod
-	mkdir -p externals/SU_MPI/obj
-	mkdir -p externals/SU_MPI/mod
+#	mkdir -p externals/SU_MPI/obj
+#	mkdir -p externals/SU_MPI/mod
 
 clean:
 	@echo " Making clean ... "
 
-	(cd externals/SU_MPI && make clean)
+#	(cd externals/SU_MPI && make clean)
 	(cd externals/ADT && make clean)
 
 	@for subdir in $(SUMB_CLEAN_SUBDIRS) ; \
@@ -175,62 +175,63 @@ sumb:
 LINUX_INTEL_OPENMPI:
 	make dirs
 	if [ ! -f "config/config.LINUX_INTEL_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI)
-	(cd externals/ADT && make LINUX_INTEL_OPENMPI)
 	ln -sf config/config.LINUX_INTEL_OPENMPI.mk config.mk
+#	(cd externals/SU_MPI && make parallel)
+	(cd externals/ADT && make)
 	make sumb
+	(cd src/python/f2py && make)
 
 LINUX_INTEL_OPENMPI_PYTHON:
+	@echo "Calling with _PYTHON is no longer necessary"
 	make LINUX_INTEL_OPENMPI
-	(cd src/python/f2py && make)
 
 LINUX_GFORTRAN_OPENMPI:
 	make dirs
 	if [ ! -f "config/config.LINUX_GFORTRAN_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_GFORTRAN_OPENMPI.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_GFORTRAN)
-	(cd externals/ADT && make LINUX_GFORTRAN)
 	ln -sf config/config.LINUX_GFORTRAN_OPENMPI.mk config.mk
+	(cd externals/SU_MPI && make parallel)
+	(cd externals/ADT && make)
 	make sumb
+	(cd src/python/f2py &&  make)
 
 LINUX_GFORTRAN_OPENMPI_PYTHON:
 	make LINUX_GFORTRAN_OPENMPI
-	(cd src/python/f2py && make)
 
 LINUX_INTEL_OPENMPI_SCINET:
 	make dirs
 	if [ ! -f "config/config.LINUX_INTEL_OPENMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_SCINET.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI_SCINET)
-	(cd externals/ADT && make LINUX_INTEL_OPENMPI_SCINET)
 	ln -sf config/config.LINUX_INTEL_OPENMPI_SCINET.mk config.mk
-	make sumb
+	(cd externals/SU_MPI && make parallel)
+	(cd externals/ADT && make)
+	(cd src/python/f2py && make)	make sumb
 
 LINUX_INTEL_OPENMPI_SCINET_PYTHON:
 	make LINUX_INTEL_OPENMPI_SCINET
-	(cd src/python/f2py && make)
 
 LINUX_INTEL_INTELMPI_SCINET:
 	make dirs
 	if [ ! -f "config/config.LINUX_INTEL_INTELMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_INTELMPI_SCINET.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI_SCINET)
-	(cd externals/ADT && make LINUX_INTEL_OPENMPI_SCINET)
 	ln -sf config/config.LINUX_INTEL_INTELMPI_SCINET.mk config.mk
+	(cd externals/SU_MPI && make parallel)
+	(cd externals/ADT && make)
 	make sumb
+	(cd src/python/f2py && make)
 
 LINUX_INTEL_INTELMPI_SCINET_PYTHON:
 	make LINUX_INTEL_INTELMPI_SCINET
-	(cd src/python/f2py && make)
 
 LINUX_INTEL_OPENMPI_NYX:
 	make dirs
 	if [ ! -f "config/config.LINUX_INTEL_OPENMPI_NYX.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_NYX.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_INTEL_OPENMPI_SCINET)
-	(cd externals/ADT && make LINUX_INTEL_OPENMPI_SCINET)
 	ln -sf config/config.LINUX_INTEL_OPENMPI_NYX.mk config.mk
+	(cd externals/SU_MPI && make parallel)
+	(cd externals/ADT && make)
 	make sumb
+	(cd src/python/f2py && make)
 
 LINUX_INTEL_OPENMPI_NYX_PYTHON:
 	make LINUX_INTEL_OPENMPI_NYX
-	(cd src/python/f2py && make)
+
 
 #      ******************************************************************
 #      *                                                                *
@@ -240,291 +241,73 @@ LINUX_INTEL_OPENMPI_NYX_PYTHON:
 
 
 ABLATION_INTEL_IB:
-	make dirs
-	if [ ! -f "config/config.ABLATION_INTEL_IB.mk" ]; then cp "config/defaults/config.ABLATION_INTEL_IB.mk" ./config; fi
-	(cd externals/SU_MPI && make ABLATION_INTEL_IB)
-	(cd externals/ADT && make ABLATION_INTEL_IB)
-	ln -sf config/config.ABLATION_INTEL_IB.mk config.mk
-	make sumb
 
 ABLATION_PG_IB:
-	make dirs
-	if [ ! -f "config/config.ABLATION_PG_IB.mk" ]; then cp "config/defaults/config.ABLATION_PG_IB.mk" ./config; fi
-	(cd externals/SU_MPI && make ABLATION_PG_IB)
-	(cd externals/ADT && make ABLATION_PG_IB)
-	ln -sf config/config.ABLATION_PG_IB.mk config.mk
-	make sumb
 
 ALC_INTEL:
-	make dirs
-	if [ ! -f "config/config.ALC_INTEL.mk" ]; then cp "config/defaults/config.ALC_INTEL.mk" ./config; fi
-	(cd externals/SU_MPI && make ALC_INTEL)
-	(cd externals/ADT && make ALC_INTEL)
-	ln -sf config/config.ALC_INTEL.mk config.mk
-	make sumb
 
 ALTIX:
-	make dirs
-	if [ ! -f "config/config.ALTIX.mk" ]; then cp "config/defaults/config.ALTIX.mk" ./config; fi
-	(cd externals/SU_MPI && make ALTIX)
-	(cd externals/ADT && make ALTIX)
-	ln -sf config/config.ALTIX.mk config.mk
-	make sumb
 
 ALTIX_MPI:
-	make dirs
-	if [ ! -f "config/config.ALTIX_MPI.mk" ]; then cp "config/defaults/config.ALTIX_MPI.mk" ./config; fi
-	(cd externals/SU_MPI && make ALTIX_MPI)
-	(cd externals/ADT && make ALTIX_MPI)
-	ln -sf config/config.ALTIX_MPI.mk config.mk
-	make sumb
 
 ALTIX_MPICH2:
-	make dirs
-	if [ ! -f "config/config.ALTIX_MPICH2.mk" ]; then cp "config/defaults/config.ALTIX_MPICH2.mk" ./config; fi
-	(cd externals/SU_MPI && make ALTIX_MPICH2)
-	(cd externals/ADT && make ALTIX_MPICH2)
-	ln -sf config/config.ALTIX_MPICH2.mk config.mk
-	make sumb
 
 APPLE_MAC_NAG:
-	make dirs
-	if [ ! -f "config/config.APPLE_MAC_NAG.mk" ]; then cp "config/defaults/config.APPLE_MAC_NAG.mk" ./config; fi
-	(cd externals/SU_MPI && make APPLE_MAC_NAG)
-	(cd externals/ADT && make APPLE_MAC_NAG)
-	ln -sf config/config.APPLE_MAC_NAG.mk config.mk
-	make sumb
 
 APPLE_MAC_NAG_MPICH:
-	make dirs
-	if [ ! -f "config/config.APPLE_MAC_NAG_MPICH.mk" ]; then cp "config/defaults/config.APPLE_MAC_NAG_MPICH.mk" ./config; fi
-	(cd externals/SU_MPI && make APPLE_MAC_NAG_MPICH)
-	(cd externals/ADT && make APPLE_MAC_NAG_MPICH)
-	ln -sf config/config.APPLE_MAC_NAG_MPICH.mk config.mk
-	make sumb
 
 APPLE_MAC_XLF:
-	make dirs
-	if [ ! -f "config/config.APPLE_MAC_XLF.mk" ]; then cp "config/defaults/config.APPLE_MAC_XLF.mk" ./config; fi
-	(cd externals/SU_MPI && make APPLE_MAC_XLF)
-	(cd externals/ADT && make APPLE_MAC_XLF)
-	ln -sf config/config.APPLE_MAC_XLF.mk config.mk
-	make sumb
 
 APPLE_MAC_XLF_MPICH:
-	make dirs
-	if [ ! -f "config/config.APPLE_MAC_XLF_MPICH.mk" ]; then cp "config/defaults/config.APPLE_MAC_XLF_MPICH.mk" ./config; fi
-	(cd externals/SU_MPI && make APPLE_MAC_XLF_MPICH)
-	(cd externals/ADT && make APPLE_MAC_XLF_MPICH)
-	ln -sf config/config.APPLE_MAC_XLF_MPICH.mk config.mk
-	make sumb
 
 ASCI_QSC:
-	make dirs
-	if [ ! -f "config/config.ASCI_QSC.mk" ]; then cp "config/defaults/config.ASCI_QSC.mk" ./config; fi
-	(cd externals/SU_MPI && make ASCI_QSC)
-	(cd externals/ADT && make ASCI_QSC)
-	ln -sf config/config.ASCI_QSC.mk config.mk
-	make sumb
 
 FLASH_INTEL:
-	make dirs
-	if [ ! -f "config/config.FLASH_INTEL.mk" ]; then cp "config/defaults/config.FLASH_INTEL.mk" ./config; fi
-	(cd externals/SU_MPI && make FLASH_INTEL)
-	(cd externals/ADT && make FLASH_INTEL)
-	ln -sf config/config.FLASH_INTEL.mk config.mk
-	make sumb
 
 FLASH_PG:
-	make dirs
-	if [ ! -f "config/config.FLASH_PG.mk" ]; then cp "config/defaults/config.FLASH_PG.mk" ./config; fi
-	(cd externals/SU_MPI && make FLASH_PG)
-	(cd externals/ADT && make FLASH_PG)
-	ln -sf config/config.FLASH_PG.mk config.mk
-	make sumb
 
 IBM_BLUEGENE:
-	make dirs
-	if [ ! -f "config/config.IBM_BLUEGENE.mk" ]; then cp "config/defaults/config.IBM_BLUEGENE.mk" ./config; fi
-	(cd externals/SU_MPI && make IBM_BLUEGENE)
-	(cd externals/ADT && make IBM_BLUEGENE)
-	ln -sf config/config.IBM_BLUEGENE.mk config.mk
-	make sumb
 
 IBM_DATASTAR:
-	make dirs
-	if [ ! -f "config/config.IBM_DATASTAR.mk" ]; then cp "config/defaults/config.IBM_DATASTAR.mk" ./config; fi
-	(cd externals/SU_MPI && make IBM_DATASTAR)
-	(cd externals/ADT && make IBM_DATASTAR)
-	ln -sf config/config.IBM_DATASTAR.mk config.mk
-	make sumb
 
 LINUX_ABSOFT:
-	make dirs
-	if [ ! -f "config/config.LINUX_ABSOFT.mk" ]; then cp "config/defaults/config.LINUX_ABSOFT.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_ABSOFT)
-	(cd externals/ADT && make LINUX_ABSOFT)
-	ln -sf config/config.LINUX_ABSOFT.mk config.mk
-	make sumb
 
 LINUX_G95:
-	make dirs
-	if [ ! -f "config/config.LINUX_G95.mk" ]; then cp "config/defaults/config.LINUX_G95.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_G95)
-	(cd externals/ADT && make LINUX_G95)
-	ln -sf config/config.LINUX_G95.mk config.mk
-	make sumb
 
 LINUX_G95_MPICH:
-	make dirs
-	if [ ! -f "config/config.LINUX_G95_MPICH.mk" ]; then cp "config/defaults/config.LINUX_G95_MPICH.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_G95_MPICH)
-	(cd externals/ADT && make LINUX_G95_MPICH)
-	ln -sf config/config.LINUX_G95_MPICH.mk config.mk
-	make sumb
 
 LINUX_G95_OPENMPI:
-	make dirs
-	if [ ! -f "config/config.LINUX_G95_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_G95_OPENMPI.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_G95_OPENMPI)
-	(cd externals/ADT && make LINUX_G95_OPENMPI)
-	ln -sf config/config.LINUX_G95_OPENMPI.mk config.mk
-	make sumb
 
 LINUX_G95_OPENMPI_PYTHON:
-	make dirs
-	if [ ! -f "config/config.LINUX_G95_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_G95_OPENMPI.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_G95_OPENMPI)
-	(cd externals/ADT && make LINUX_G95_OPENMPI)
-	ln -sf config/config.LINUX_G95_OPENMPI.mk config.mk
-	make sumb
-	(cd src/python/f2py && make)
 
 LINUX_INTEL:
-	make dirs
-	if [ ! -f "config/config.LINUX_INTEL.mk" ]; then cp "config/defaults/config.LINUX_INTEL.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_INTEL)
-	(cd externals/ADT && make LINUX_INTEL)
-	ln -sf config/config.LINUX_INTEL.mk config.mk
-	make sumb
 
 LINUX_INTEL_MPICH:
-	make dirs
-	if [ ! -f "config/config.LINUX_INTEL_MPICH.mk" ]; then cp "config/defaults/config.LINUX_INTEL_MPICH.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_INTEL_MPICH)
-	(cd externals/ADT && make LINUX_INTEL_MPICH)
-	ln -sf config/config.LINUX_INTEL_MPICH.mk config.mk
-	make sumb
-
 
 LINUX_PG:
-	make dirs
-	if [ ! -f "config/config.LINUX_PG.mk" ]; then cp "config/defaults/config.LINUX_PG.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_PG)
-	(cd externals/ADT && make LINUX_PG)
-	ln -sf config/config.LINUX_PG.mk config.mk
-	make sumb
 
 LINUX_PG_MPICH:
-	make dirs
-	if [ ! -f "config/config.LINUX_PG_MPICH.mk" ]; then cp "config/defaults/config.LINUX_PG_MPICH.mk" ./config; fi
-	(cd externals/SU_MPI && make LINUX_PG_MPICH)
-	(cd externals/ADT && make LINUX_PG_MPICH)
-	ln -sf config/config.LINUX_PG_MPICH.mk config.mk
-	make sumb
 
 REDHOT_IFC_ETHERNET:
-	make dirs
-	if [ ! -f "config/config.REDHOT_IFC_ETHERNET.mk" ]; then cp "config/defaults/config.REDHOT_IFC_ETHERNET.mk" ./config; fi
-	(cd externals/SU_MPI && make REDHOT_IFC_ETHERNET)
-	(cd externals/ADT && make REDHOT_IFC_ETHERNET)
-	ln -sf config/config.REDHOT_IFC_ETHERNET.mk config.mk
-	make sumb
 
 REDHOT_IFC_MYRINET:
-	make dirs
-	if [ ! -f "config/config.REDHOT_IFC_MYRINET.mk" ]; then cp "config/defaults/config.REDHOT_IFC_MYRINET.mk" ./config; fi
-	(cd externals/SU_MPI && make REDHOT_IFC_MYRINET)
-	(cd externals/ADT && make REDHOT_IFC_MYRINET)
-	ln -sf config/config.REDHOT_IFC_MYRINET.mk config.mk
-	make sumb
 
 REDHOT_PG_ETHERNET:
-	make dirs
-	if [ ! -f "config/config.REDHOT_PG_ETHERNET.mk" ]; then cp "config/defaults/config.REDHOT_PG_ETHERNET.mk" ./config; fi
-	(cd externals/SU_MPI && make REDHOT_PG_ETHERNET)
-	(cd externals/ADT && make REDHOT_PG_ETHERNET)
-	ln -sf config/config.REDHOT_PG_ETHERNET.mk config.mk
-	make sumb
 
 REDHOT_PG_MYRINET:
-	make dirs
-	if [ ! -f "config/config.REDHOT_PG_MYRINET.mk" ]; then cp "config/defaults/config.REDHOT_PG_MYRINET.mk" ./config; fi
-	(cd externals/SU_MPI && make REDHOT_PG_MYRINET)
-	(cd externals/ADT && make REDHOT_PG_MYRINET)
-	ln -sf config/config.REDHOT_PG_MYRINET.mk config.mk
-	make sumb
 
 REDSTORM:
-	make dirs
-	if [ ! -f "config/config.REDSTORM.mk" ]; then cp "config/defaults/config.REDSTORM.mk" ./config; fi
-	(cd externals/SU_MPI && make REDSTORM)
-	(cd externals/ADT && make REDSTORM)
-	ln -sf config/config.REDSTORM.mk config.mk
-	make sumb
 
 SGI:
-	make dirs
-	if [ ! -f "config/config.SGI.mk" ]; then cp "config/defaults/config.SGI.mk" ./config; fi
-	(cd externals/SU_MPI && make SGI)
-	(cd externals/ADT && make SGI)
-	ln -sf config/config.SGI.mk config.mk
-	make sumb
 
 SGI_MPI_ORIGIN:
-	make dirs
-	if [ ! -f "config/config.SGI_MPI_ORIGIN.mk" ]; then cp "config/defaults/config.SGI_MPI_ORIGIN.mk" ./config; fi
-	(cd externals/SU_MPI && make SGI_MPI_ORIGIN)
-	(cd externals/ADT && make SGI_MPI_ORIGIN)
-	ln -sf config/config.SGI_MPI_ORIGIN.mk config.mk
-	make sumb
 
 SGI_N32:
-	make dirs
-	if [ ! -f "config/config.SGI_N32.mk" ]; then cp "config/defaults/config.SGI_N32.mk" ./config; fi
-	(cd externals/SU_MPI && make SGI_N32)
-	(cd externals/ADT && make SGI_N32)
-	ln -sf config/config.SGI_N32.mk config.mk
-	make sumb
 
 SGI_N32_MPICH:
-	make dirs
-	if [ ! -f "config/config.SGI_N32_MPICH.mk" ]; then cp "config/defaults/config.SGI_N32_MPICH.mk" ./config; fi
-	(cd externals/SU_MPI && make SGI_N32_MPICH)
-	(cd externals/ADT && make SGI_N32_MPICH)
-	ln -sf config/config.SGI_N32_MPICH.mk config.mk
-	make sumb
 
 SGI_N32_MPI_ORIGIN:
-	make dirs
-	if [ ! -f "config/config.SGI_N32_MPI_ORIGIN.mk" ]; then cp "config/defaults/config.SGI_N32_MPI_ORIGIN.mk" ./config; fi
-	(cd externals/SU_MPI && make SGI_N32_MPI_ORIGIN)
-	(cd externals/ADT && make SGI_N32_MPI_ORIGIN)
-	ln -sf config/config.SGI_N32_MPI_ORIGIN.mk config.mk
-	make sumb
 
 SICORTEX:
-	make dirs
-	if [ ! -f "config/config.SICORTEX.mk" ]; then cp "config/defaults/config.SICORTEX.mk" ./config; fi
-	(cd externals/SU_MPI && make SICORTEX)
-	(cd externals/ADT && make SICORTEX)
-	ln -sf config/config.SICORTEX.mk config.mk
-	make sumb
 
 SICORTEX_MPI:
-	make dirs
-	if [ ! -f "config/config.SICORTEX_MPI.mk" ]; then cp "config/defaults/config.SICORTEX_MPI.mk" ./config; fi
-	(cd externals/SU_MPI && make SICORTEX_MPI)
-	(cd externals/ADT && make SICORTEX_MPI)
-	ln -sf config/config.SICORTEX_MPI.mk config.mk
-	make sumb

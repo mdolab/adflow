@@ -80,7 +80,6 @@ FF90_OBJECTS =  accuracy_spatial_d.o\
 		iteration_spatial_d.o\
 		metric_block_spatial_d.o\
 		paramturb_spatial_d.o\
-		precision_spatial_d.o\
 		residual_block_spatial_d.o\
 		section_spatial_d.o\
 		setbcpointers_spatial_d.o\

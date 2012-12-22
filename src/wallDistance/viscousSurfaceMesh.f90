@@ -107,7 +107,7 @@
        ! Determine the global number of elements on the viscous
        ! surfaces. Return if there are no viscous quads present.
 
-       call mpi_allreduce(nQuadVisc, nquadViscGlob, 1, adt_integer, &
+       call mpi_allreduce(nQuadVisc, nquadViscGlob, 1, sumb_integer, &
                           mpi_sum, SUmb_comm_world, ierr)
 
        if(nquadViscGlob == 0) return
