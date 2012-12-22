@@ -19,7 +19,7 @@
 
 #      ******************************************************************
 #      *                                                                *
-#      * Set the root directory for SU_MPI and ADT and the modules,     *
+#      * Set the root directory for ADT and the modules,                *
 #      * object, lib and bin directories for SUmb. Note that SUMB_DIR   *
 #      * must be set in the Makefiles that include this common file.    *
 #      *                                                                *

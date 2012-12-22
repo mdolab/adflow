@@ -664,12 +664,13 @@
           routineFailed = .False.
        end if
 
-       ! Determine whether or not the solution is considered converged.
-       ! This info is only known at processor 0 and must therefore be
-       ! broadcast to the other processors. MPI supports the
-       ! communication of logicals, but the su_mpi interface does not.
-       ! Therefore send an integer and retrieve the information from it.
-       ! Remember that the logical converged was initialized to .true.
+       ! Determine whether or not the solution is considered
+       ! converged.  This info is only known at processor 0 and must
+       ! therefore be broadcast to the other processors. MPI supports
+       ! the communication of logicals, but this is done with
+       ! integers.  Therefore send an integer and retrieve the
+       ! information from it.  Remember that the logical converged was
+       ! initialized to .true.
 
        mm = 0
        if( converged ) mm = 1

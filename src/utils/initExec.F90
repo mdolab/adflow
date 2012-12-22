@@ -91,20 +91,6 @@
 
        endif
 
-       ! Check if a valid executable has been built, i.e. some form
-       ! of IO must be possible in parallel mode. Either CGNS or
-       ! parallel IO must have been enabled at compile time.
-
-#ifdef USE_NO_CGNS
-       if((SU_MPI_noMPIO) then
-         if(myID == 0) &
-           call terminate("initExec", &
-                          "Both CGNS and parallel IO were disabled at &
-                          &compile time. Not possible to perform IO")
-         call mpi_barrier(SUmb_comm_world, ierr)
-       endif
-#endif
-
        ! Set the name of the parameter file.
 
        paramFile = paramName(:lenParam)

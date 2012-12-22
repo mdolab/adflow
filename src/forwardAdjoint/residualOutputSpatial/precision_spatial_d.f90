@@ -12,7 +12,7 @@
    !      ******************************************************************
    !
    MODULE PRECISION_SPATIAL_D
-   USE SU_MPI
+
    IMPLICIT NONE
    !#endif
    !
@@ -35,16 +35,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Include the su_mpi module; inside this module it is            *
-   !      * controlled whether a sequential or a parallel executable is    *
-   !      * built. For the SUmb sources this is completely transparent,    *
-   !      * although a completely new build must be performed when a       *
-   !      * change is made from sequential to parallel and vice versa.     *
-   !      *                                                                *
-   !      ******************************************************************
-   !
+
    SAVE 
    !
    !      ******************************************************************

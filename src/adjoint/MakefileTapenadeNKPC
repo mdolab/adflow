@@ -179,7 +179,6 @@ TAPENADE_MOD = $(TAPENADE_DIRSRC_MOD_ADJOINT)/block.f90 \
 	       $(TAPENADE_DIRSRC_MOD_ADJOINT)/communication.f90 \
 	       $(TAPENADE_DIRMOD)/section.f90\
 	       $(TAPENADE_DIRSRC_MOD_ADJOINT)/CpCurveFits.f90\
-	       $(TAPENADE_DIRSRC_MOD_ADJOINT)/su_mpi.f90\
 	       $(TAPENADE_DIRSRC_MOD_ADJOINT)/terminate.f90
 #	       $(TAPENADE_DIRSRC_MOD_ADJOINT)/inputParam.f90 \
 
