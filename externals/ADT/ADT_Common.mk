@@ -7,7 +7,6 @@
 #      *                                                                *
 #      ******************************************************************
 
-SU_MPI_DIR = $(ADT_DIR)/../SU_MPI/mod
 ADT_MODDIR = $(ADT_DIR)/mod
 ADT_OBJDIR = $(ADT_DIR)/obj
 
@@ -43,4 +42,4 @@ MAKE_CLEAN_ARGUMENTS = *~ *.o *.mod *.il *.stb
 #      *                                                                *
 #      ******************************************************************
 
-FF90_ALL_FLAGS   = $(FF90_FLAGS) -I$(SU_MPI_DIR) $(FF90_PRECISION_FLAGS)
+FF90_ALL_FLAGS   = $(FF90_FLAGS) $(FF90_PRECISION_FLAGS)
