@@ -657,6 +657,7 @@ python module sumb ! in
          integer(kind=inttype) :: smoother
          integer(kind=inttype) :: nrkstages
          integer(kind=inttype) :: resaveraging
+         real(kind=realtype) :: cfllimit
          integer(kind=inttype) :: turbtreatment
          integer(kind=inttype) :: nsubiterturb
          integer(kind=inttype) :: turbsmoother

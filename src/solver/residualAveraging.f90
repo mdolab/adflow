@@ -91,7 +91,7 @@
 
        real(kind=realType), parameter :: b = 2.0_realType
 
-       real(kind=realType) :: cflim, currentCfl, rfl0, plim
+       real(kind=realType) :: currentCfl, rfl0, plim
        real(kind=realType) :: dpi, dpj, dpk, r
        real(kind=realType), dimension(il,max(jl,kl)) :: epz, d, t, rfl
 
@@ -104,18 +104,13 @@
 !
 !      rfl0 is a measure of the ratio lambda/lambda*
 !
-!      Hardwire cflim for the time being (=lambda*).  It should be
-!       defaulted to something else later on.
-!
-       cflim = 3.0
-
        if(currentLevel <= groundLevel) then
          currentCfl = cfl
        else
          currentCfl = cflCoarse
        endif
 
-       rfl0  = half*currentCfl/cflim
+       rfl0  = half*currentCfl/cflLimit
 
        plim  = 0.001_realType*pInfCorr
 

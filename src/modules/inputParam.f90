@@ -349,6 +349,7 @@
        ! cycleStrategy:    Array which describes the mg cycle.
        ! cfl:              Cfl number on the fine grid.
        ! cflCoarse:        Idem, but on the coarse grids.
+       ! cfllimit          Limit used to determine how much residuals are smoothed
        ! alfaTurb:         Relaxation factor in turbulent dd-adi smoother.
        ! betaTurb:         Relaxation factor in vf dd-adi smoother.
        ! relaxBleeds:      Relaxation coefficient for the update
@@ -369,6 +370,7 @@
        integer(kind=intType) :: nsgStartup, smoother, nRKStages
        integer(kind=intType) :: nSubIterTurb, nUpdateBleeds
        integer(kind=intType) :: resAveraging
+       real(kind=realType) :: CFLLimit
        integer(kind=intType) :: turbTreatment, turbSmoother, turbRelax
        integer(kind=intType) :: mgBoundCorr, mgStartlevel
        integer(kind=intType) :: nMGSteps, nMGLevels
