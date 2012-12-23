@@ -12,12 +12,11 @@
 #      *                                                                *
 #      ******************************************************************
 
-ADT_DIR = ..
-ADT_COMMON_FILE = $(ADT_DIR)/ADT_Common.mk
-ADT_RULES_FILE  = $(ADT_DIR)/rulesSources.mk
-include ${ADT_COMMON_FILE}
-include ${ADT_RULES_FILE}
-
+SUMB_DIR = ../..
+SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
+SUMB_RULES_FILE  = $(SUMB_DIR)/rulesSources.mk
+include ${SUMB_COMMON_FILE}
+include ${SUMB_RULES_FILE}
 
 #      ******************************************************************
 #      *                                                                *
@@ -28,7 +27,7 @@ include ${ADT_RULES_FILE}
 #      *                                                                *
 #      ******************************************************************
 
-vpath %.o $(ADT_OBJDIR)
+vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = adtPrecision.o
 FF90_OBJECTS_2 = adtData.o\
 		 gradD2Hexa.o\
@@ -56,10 +55,10 @@ all:
 	$(PMAKE) src_4
 	$(PMAKE) src_5
 	$(PMAKE) src_6
-	cp -f *.mod $(ADT_MODDIR)
+	cp -f *.mod $(SUMB_MODDIR)
 
 clean:
-	@echo "        Making clean in ADT/src ... "
+	@echo "        Making clean in ADT ... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
 
 #      ******************************************************************
