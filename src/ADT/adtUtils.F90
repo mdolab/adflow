@@ -33,8 +33,8 @@
       !           This is a pointer, such that the reallocation
       !           is easier.
 
-      integer(kind=adtIntType) :: nStack
-      integer(kind=adtIntType), dimension(:), pointer :: stack
+      integer(kind=intType) :: nStack
+      integer(kind=intType), dimension(:), pointer :: stack
 
       !=================================================================
 
@@ -68,7 +68,7 @@
 !
 !       Subroutine arguments
 !
-        integer(kind=adtIntType), intent(in) :: jj
+        integer(kind=intType), intent(in) :: jj
 
         character(len=*), intent(in) :: routineName
         character(len=*), intent(in) :: errorMessage
@@ -250,7 +250,7 @@
 !
         integer :: ierr
 
-        integer(kind=adtIntType) :: jj, nn, nAlloc, nAllocNew
+        integer(kind=intType) :: jj, nn, nAlloc, nAllocNew
 
         type(adtType), dimension(:), allocatable :: tmpADTs
 !
@@ -413,21 +413,21 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=adtIntType), intent(in)  :: nn, jj, dir
+        integer(kind=intType), intent(in)  :: nn, jj, dir
 
-        integer(kind=adtIntType), dimension(:), intent(inout) :: arr
+        integer(kind=intType), dimension(:), intent(inout) :: arr
 !
 !       Local parameters.
 !
-        integer(kind=adtIntType), parameter :: m = 7
+        integer(kind=intType), parameter :: m = 7
 !
 !       Local variables.
 !
-        integer(kind=adtIntType) :: i, j, k, r, l, jStack
-        integer(kind=adtIntType) :: a, tmp
+        integer(kind=intType) :: i, j, k, r, l, jStack
+        integer(kind=intType) :: a, tmp
 
-        real(kind=adtRealType) :: ra
-        real(kind=adtRealType), dimension(:,:), pointer :: xBBox
+        real(kind=realType) :: ra
+        real(kind=realType), dimension(:,:), pointer :: xBBox
 !
 !       ****************************************************************
 !       *                                                              *
@@ -570,7 +570,7 @@
 
         ! Check in debug mode if the sort has been done correctly.
 
-        if( adtDebug ) then
+        if( debug ) then
           do i=1,(nn-1)
             if(xBBox(dir,arr(i+1)) < xBBox(dir,arr(i))) then
               call adtTerminate(jj, "qsortBBoxes", &
@@ -597,15 +597,15 @@
 !
 !       Subroutine arguments
 !
-        integer(kind=adtIntType), intent(in) :: nn, jj
+        integer(kind=intType), intent(in) :: nn, jj
 
         type(adtBBoxTargetType), dimension(:), pointer :: arr
 !
 !       Local variables
 !
-        integer(kind=adtIntType), parameter :: m = 7
+        integer(kind=intType), parameter :: m = 7
 
-        integer(kind=adtIntType) :: i, j, k, r, l, jStack
+        integer(kind=intType) :: i, j, k, r, l, jStack
 
         type(adtBBoxTargetType) :: a, tmp
 !
@@ -744,7 +744,7 @@
 
         ! Check in debug mode whether the array is really sorted.
 
-        if( adtDebug ) then
+        if( debug ) then
           do i=1,(nn-1)
             if(arr(i+1) < arr(i))                       &
               call adtTerminate(jj, "qsortBBoxTargets", &
@@ -782,13 +782,13 @@
 !       Subroutine arguments.
 !
         character(len=*), intent(in)          :: adtID
-        integer(kind=adtIntType), intent(out) :: jj
+        integer(kind=intType), intent(out) :: jj
 !
 !       Local variables.
 !
         integer :: ierr
 
-        integer(kind=adtIntType) :: nn, nAlloc
+        integer(kind=intType) :: nn, nAlloc
 
         type(adtType), dimension(:), allocatable :: tmpADTs
 !
@@ -920,15 +920,15 @@
 !       Subroutine arguments.
 !
         integer,                  intent(in)    :: nInc
-        integer(kind=adtIntType), intent(in)    :: jj
-        integer(kind=adtIntType), intent(inout) :: nSize
+        integer(kind=intType), intent(in)    :: jj
+        integer(kind=intType), intent(inout) :: nSize
 
         type(adtBBoxTargetType), dimension(:), pointer :: arr
 !
 !       Local variables.
 !
         integer :: ierr
-        integer(kind=adtIntType) :: i, nOld
+        integer(kind=intType) :: i, nOld
 
         type(adtBBoxTargetType), dimension(:), pointer :: tmp
 !
@@ -1000,17 +1000,17 @@
 !       Subroutine arguments.
 !
         integer,                  intent(in)    :: nInc
-        integer(kind=adtIntType), intent(in)    :: jj
-        integer(kind=adtIntType), intent(inout) :: nSize
+        integer(kind=intType), intent(in)    :: jj
+        integer(kind=intType), intent(inout) :: nSize
 
-        integer(kind=adtIntType), dimension(:), pointer :: arr
+        integer(kind=intType), dimension(:), pointer :: arr
 !
 !       Local variables.
 !
         integer :: ierr
-        integer(kind=adtIntType) :: i, nOld
+        integer(kind=intType) :: i, nOld
 
-        integer(kind=adtIntType), dimension(:), pointer :: tmp
+        integer(kind=intType), dimension(:), pointer :: tmp
 !
 !       ****************************************************************
 !       *                                                              *

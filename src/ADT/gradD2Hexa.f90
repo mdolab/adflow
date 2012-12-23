@@ -18,30 +18,30 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      use adtPrecision
+      use precision
 
       implicit none
 !
 !     Subroutine arguments.
 !
-      real(kind=adtRealType), intent(out)  :: x0, y0, z0
-      real(kind=adtRealType), dimension(3), intent(in)  :: xP, chi
-      real(kind=adtRealType), dimension(3), intent(in)  :: x1, x2, x3, x4
-      real(kind=adtRealType), dimension(3), intent(in)  :: x5, x6, x7, x8
-      real(kind=adtRealType), dimension(3), intent(out) :: grad
+      real(kind=realType), intent(out)  :: x0, y0, z0
+      real(kind=realType), dimension(3), intent(in)  :: xP, chi
+      real(kind=realType), dimension(3), intent(in)  :: x1, x2, x3, x4
+      real(kind=realType), dimension(3), intent(in)  :: x5, x6, x7, x8
+      real(kind=realType), dimension(3), intent(out) :: grad
 
-      integer(kind=adtIntType), intent(out) :: iErr
+      integer(kind=intType), intent(out) :: iErr
 
 !
 !     Local variables.
 !
-      integer(kind=adtIntType) :: i
+      integer(kind=intType) :: i
 
-      real(kind=adtRealType) :: ksi, eta, zeta
-      real(kind=adtRealType), dimension(8,3) :: alpha
-      real(kind=adtRealType) :: dxdksi, dxdeta, dxdzeta
-      real(kind=adtRealType) :: dydksi, dydeta, dydzeta
-      real(kind=adtRealType) :: dzdksi, dzdeta, dzdzeta
+      real(kind=realType) :: ksi, eta, zeta
+      real(kind=realType), dimension(8,3) :: alpha
+      real(kind=realType) :: dxdksi, dxdeta, dxdzeta
+      real(kind=realType) :: dydksi, dydeta, dydzeta
+      real(kind=realType) :: dzdksi, dzdeta, dzdzeta
 
 !
 !     ******************************************************************
@@ -103,15 +103,15 @@
 
       ! Compute the gradient components
 
-      grad(1) = -2.0_adtRealType*(xP(1) -x0)*dxdksi                               &
-                -2.0_adtRealType*(xP(2) -y0)*dydksi                               &
-                -2.0_adtRealType*(xP(3) -z0)*dzdksi
-      grad(2) = -2.0_adtRealType*(xP(1) -x0)*dxdeta                               &
-                -2.0_adtRealType*(xP(2) -y0)*dydeta                               &
-                -2.0_adtRealType*(xP(3) -z0)*dzdeta
-      grad(3) = -2.0_adtRealType*(xP(1) -x0)*dxdzeta                              &
-                -2.0_adtRealType*(xP(2) -y0)*dydzeta                              &
-                -2.0_adtRealType*(xP(3) -z0)*dzdzeta
+      grad(1) = -2.0_realType*(xP(1) -x0)*dxdksi                               &
+                -2.0_realType*(xP(2) -y0)*dydksi                               &
+                -2.0_realType*(xP(3) -z0)*dzdksi
+      grad(2) = -2.0_realType*(xP(1) -x0)*dxdeta                               &
+                -2.0_realType*(xP(2) -y0)*dydeta                               &
+                -2.0_realType*(xP(3) -z0)*dzdeta
+      grad(3) = -2.0_realType*(xP(1) -x0)*dxdzeta                              &
+                -2.0_realType*(xP(2) -y0)*dydzeta                              &
+                -2.0_realType*(xP(3) -z0)*dzdzeta
 
       ! Return iErr = 0 for the time being.
 

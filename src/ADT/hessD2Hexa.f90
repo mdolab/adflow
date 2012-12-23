@@ -18,32 +18,32 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      use adtPrecision
+      use precision
 
       implicit none
 !
 !     Subroutine arguments.
 !
-      real(kind=adtRealType), dimension(3), intent(in)  :: xP, chi
-      real(kind=adtRealType), dimension(3), intent(in)  :: x1, x2, x3, x4
-      real(kind=adtRealType), dimension(3), intent(in)  :: x5, x6, x7, x8
-      real(kind=adtRealType), dimension(3,3), intent(out) :: hess
+      real(kind=realType), dimension(3), intent(in)  :: xP, chi
+      real(kind=realType), dimension(3), intent(in)  :: x1, x2, x3, x4
+      real(kind=realType), dimension(3), intent(in)  :: x5, x6, x7, x8
+      real(kind=realType), dimension(3,3), intent(out) :: hess
 
-      integer(kind=adtIntType), intent(out) :: iErr
+      integer(kind=intType), intent(out) :: iErr
 
 !
 !     Local variables.
 !
-      integer(kind=adtIntType) :: i
+      integer(kind=intType) :: i
 
-      real(kind=adtRealType) :: ksi, eta, zeta, x0, y0, z0
-      real(kind=adtRealType), dimension(8,3) :: alpha
-      real(kind=adtRealType) :: dxdksi, dxdeta, dxdzeta
-      real(kind=adtRealType) :: dydksi, dydeta, dydzeta
-      real(kind=adtRealType) :: dzdksi, dzdeta, dzdzeta
-      real(kind=adtRealType) :: d2xdksideta, d2xdksidzeta, d2xdetadzeta
-      real(kind=adtRealType) :: d2ydksideta, d2ydksidzeta, d2ydetadzeta
-      real(kind=adtRealType) :: d2zdksideta, d2zdksidzeta, d2zdetadzeta
+      real(kind=realType) :: ksi, eta, zeta, x0, y0, z0
+      real(kind=realType), dimension(8,3) :: alpha
+      real(kind=realType) :: dxdksi, dxdeta, dxdzeta
+      real(kind=realType) :: dydksi, dydeta, dydzeta
+      real(kind=realType) :: dzdksi, dzdeta, dzdzeta
+      real(kind=realType) :: d2xdksideta, d2xdksidzeta, d2xdetadzeta
+      real(kind=realType) :: d2ydksideta, d2ydksidzeta, d2ydetadzeta
+      real(kind=realType) :: d2zdksideta, d2zdksidzeta, d2zdetadzeta
 
 !
 !     ******************************************************************
@@ -123,15 +123,15 @@
 
       ! Compute the elements of the Hessian matrix
 
-      hess(1,1) = 2.0_adtRealType*((dxdksi *dxdksi)  +(dydksi *dydksi)  +(dzdksi *dzdksi))
-      hess(2,2) = 2.0_adtRealType*((dxdeta *dxdeta)  +(dydeta *dydeta)  +(dzdeta *dzdeta))
-      hess(3,3) = 2.0_adtRealType*((dxdzeta*dxdzeta) +(dydzeta*dydzeta) +(dzdzeta*dzdzeta))
+      hess(1,1) = 2.0_realType*((dxdksi *dxdksi)  +(dydksi *dydksi)  +(dzdksi *dzdksi))
+      hess(2,2) = 2.0_realType*((dxdeta *dxdeta)  +(dydeta *dydeta)  +(dzdeta *dzdeta))
+      hess(3,3) = 2.0_realType*((dxdzeta*dxdzeta) +(dydzeta*dydzeta) +(dzdzeta*dzdzeta))
 
-      hess(1,2) = 2.0_adtRealType*((dxdksi*dxdeta) +(dydksi*dydeta) +(dzdksi*dzdeta)  &
+      hess(1,2) = 2.0_realType*((dxdksi*dxdeta) +(dydksi*dydeta) +(dzdksi*dzdeta)  &
                   -((xP(1) -x0)*d2xdksideta) -((xP(2) -y0)*d2ydksideta) -((xP(3) -z0)*d2zdksideta))
-      hess(1,3) = 2.0_adtRealType*((dxdksi*dxdzeta) +(dydksi*dydzeta) +(dzdksi*dzdzeta)  &
+      hess(1,3) = 2.0_realType*((dxdksi*dxdzeta) +(dydksi*dydzeta) +(dzdksi*dzdzeta)  &
                   -((xP(1) -x0)*d2xdksidzeta) -((xP(2) -y0)*d2ydksidzeta) -((xP(3) -z0)*d2zdksidzeta))
-      hess(2,3) = 2.0_adtRealType*((dxdeta*dxdzeta) +(dydeta*dydzeta) +(dzdeta*dzdzeta)  &
+      hess(2,3) = 2.0_realType*((dxdeta*dxdzeta) +(dydeta*dydzeta) +(dzdeta*dzdzeta)  &
                   -((xP(1) -x0)*d2xdetadzeta) -((xP(2) -y0)*d2ydetadzeta) -((xP(3) -z0)*d2zdetadzeta))
 
       hess(2,1) = hess(1,2)

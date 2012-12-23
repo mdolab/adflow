@@ -17,7 +17,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use adtAPI, only : adtIntType, adtRealType
+       use adtAPI
        use precision
        implicit none
        save
@@ -32,11 +32,11 @@
        ! coorVisc(3,nNodeVisc): The coordinates of the local nodes.
 
 
-       integer(kind=adtIntType) :: nquadVisc, nNodeVisc
-       integer(kind=adtIntType) :: nquadViscGlob
+       integer(kind=intType) :: nquadVisc, nNodeVisc
+       integer(kind=intType) :: nquadViscGlob
 
-       integer(kind=adtIntType), dimension(:,:), allocatable :: connVisc
-       real(kind=adtRealType),   dimension(:,:), allocatable :: coorVisc
+       integer(kind=intType), dimension(:,:), allocatable :: connVisc
+       real(kind=realType),   dimension(:,:), allocatable :: coorVisc
 
        ! rotMatrixSections(nSections,3,3): Rotation matrices needed
        !                                   for the alignment of the

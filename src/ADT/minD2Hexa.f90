@@ -53,34 +53,34 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      use adtPrecision
+      use precision
 
       implicit none
 !
 !     Subroutine arguments.
 !
-      real(kind=adtRealType), dimension(3), intent(in) :: xP
-      real(kind=adtRealType), dimension(3), intent(in) :: x1, x2, x3, x4
-      real(kind=adtRealType), dimension(3), intent(in) :: x5, x6, x7, x8
+      real(kind=realType), dimension(3), intent(in) :: xP
+      real(kind=realType), dimension(3), intent(in) :: x1, x2, x3, x4
+      real(kind=realType), dimension(3), intent(in) :: x5, x6, x7, x8
 
-      integer(kind=adtIntType), intent(out) :: iErr
+      integer(kind=intType), intent(out) :: iErr
 
-      real(kind=adtRealType), intent(out) :: d2
-      real(kind=adtRealType), dimension(3), intent(out) :: chi
+      real(kind=realType), intent(out) :: d2
+      real(kind=realType), dimension(3), intent(out) :: chi
 !
 !     Local variables.
 !
-      integer(kind=adtIntType) , parameter :: maxIt = 30
-      integer(kind=adtIntType) :: i, itCount = 0
-      integer(kind=adtIntType), dimension(3) :: actSet, chiGradConv
+      integer(kind=intType) , parameter :: maxIt = 30
+      integer(kind=intType) :: i, itCount = 0
+      integer(kind=intType), dimension(3) :: actSet, chiGradConv
 
-      real(kind=adtRealType) :: inactGradNorm, normDeltaChi, x0, y0, z0
-      real(kind=adtRealType), parameter :: gradTol = 1.0e-14_adtRealType
-      real(kind=adtRealType), parameter :: deltaChiTol = 1.0e-14_adtRealType
-      real(kind=adtRealType), dimension(3) :: deltaChi, actualDeltaChi
-      real(kind=adtRealType), dimension(3) :: lwrBnd, uppBnd
-      real(kind=adtRealType), dimension(3) :: grad, oldChi
-      real(kind=adtRealType), dimension(3,3) :: hess
+      real(kind=realType) :: inactGradNorm, normDeltaChi, x0, y0, z0
+      real(kind=realType), parameter :: gradTol = 1.0e-14_realType
+      real(kind=realType), parameter :: deltaChiTol = 1.0e-14_realType
+      real(kind=realType), dimension(3) :: deltaChi, actualDeltaChi
+      real(kind=realType), dimension(3) :: lwrBnd, uppBnd
+      real(kind=realType), dimension(3) :: grad, oldChi
+      real(kind=realType), dimension(3,3) :: hess
 
       logical :: convDeltaChi, convGradD2
 !
@@ -95,9 +95,9 @@
       ! minimum distance point.  One may be able to do better than this
       ! in the future, but this is probably a good guess.
 
-      chi(1) = 0.5_adtRealType
-      chi(2) = 0.5_adtRealType
-      chi(3) = 0.5_adtRealType
+      chi(1) = 0.5_realType
+      chi(2) = 0.5_realType
+      chi(3) = 0.5_realType
 
       ! Initialize the active set array, actSet(i), i=1,2,3
       ! actSet(i) =  0 if bound constraint i is inactive
@@ -108,14 +108,14 @@
 
       ! Initialize the upper and lower bounds for all chi variables
 
-      lwrBnd(:) = 0.0_adtRealType
-      uppBnd(:) = 1.0_adtRealType
+      lwrBnd(:) = 0.0_realType
+      uppBnd(:) = 1.0_realType
 
       ! Initialize actualDeltaChi (step size) to a large value so that the
       ! convergence criteria for the step size is guaranteed not to pass
       ! on the first iteration.
 
-      actualDeltaChi(:) = 1.0_adtRealType
+      actualDeltaChi(:) = 1.0_realType
 
 !
 !     ******************************************************************
@@ -171,7 +171,7 @@
          !     be smaller than gradTol
          !
 
-         inactGradNorm  = 0.0_adtRealType
+         inactGradNorm  = 0.0_realType
          chiGradConv(:) = 0
 
          do i=1,3
@@ -186,7 +186,7 @@
             ! if the gradient is pointing in the proper direction.
 
             if (actSet(i) == -1) then
-               if (grad(i) > 0.0_adtRealType) then
+               if (grad(i) > 0.0_realType) then
                   chiGradConv(i) = 1
                else
                   actSet(i) = 0
@@ -197,7 +197,7 @@
             ! for the convergence criterion.
 
             if (actSet(i) ==  1) then
-               if (grad(i) < 0.0_adtRealType) then
+               if (grad(i) < 0.0_realType) then
                   chiGradConv(i) = 1
                else
                   actSet(i) = 0

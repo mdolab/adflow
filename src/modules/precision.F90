@@ -120,7 +120,17 @@
 !      ******************************************************************
 !
        integer(kind=1), private :: dummyPor
+
+!     ******************************************************************
+!     *                                                                *
+!     * Definition of the integer type for the element types. As only  *
+!     * a limited number element types are present, a 1 byte integer   *
+!     * is enough.                                                     *
+!     *                                                                *
+!     ******************************************************************
 !
+      integer(kind=1), private :: adtDummyElementInt
+
 !      ******************************************************************
 !      *                                                                *
 !      * Definition of the cgns periodic type.                          *
@@ -139,6 +149,7 @@
        integer, parameter :: intType      = kind(dummyInt)
        integer, parameter :: porType      = kind(dummyPor)
        integer, parameter :: realType     = kind(dummyReal)
+       integer, parameter :: adtElementType = kind(adtDummyElementInt)
        integer, parameter :: cgnsRealType = kind(dummyCGNSReal)
        integer, parameter :: cgnsPerType  = kind(dummyCGNSPer)
 !
