@@ -40,16 +40,16 @@ subroutine determineDistance2(level, sps)
 
   integer, dimension(:), allocatable :: procID
 
-  integer(kind=adtIntType) :: nCell, nTria
+  integer(kind=intType) :: nCell, nTria
 
-  integer(kind=adtIntType), dimension(1,1) :: connTria
-  real(kind=adtRealType),   dimension(3,2) :: dummy
+  integer(kind=intType), dimension(1,1) :: connTria
+  real(kind=realType),   dimension(3,2) :: dummy
 
-  integer(kind=adtIntType), dimension(:), allocatable :: elementID
-  integer(kind=adtIntType), dimension(:), allocatable :: elemInverse
+  integer(kind=intType), dimension(:), allocatable :: elementID
+  integer(kind=intType), dimension(:), allocatable :: elemInverse
 
-  real(kind=adtRealType), dimension(:),   allocatable :: dist2
-  real(kind=adtRealType), dimension(:,:), allocatable :: coor, uvw
+  real(kind=realType), dimension(:),   allocatable :: dist2
+  real(kind=realType), dimension(:,:), allocatable :: coor, uvw
 
   integer(kind=adtElementType), dimension(:), allocatable :: elementType
 
@@ -178,7 +178,7 @@ subroutine determineDistance2(level, sps)
 
   call adtMinDistanceSearch(nCell,  coor,        viscAdt,      &
        procID, elementType, elementID,    &
-       uvw,    dist2,       0_adtIntType, &
+       uvw,    dist2,       0_intType, &
        dummy,  dummy)
 
   

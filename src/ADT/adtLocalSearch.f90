@@ -75,47 +75,47 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=adtIntType), intent(in) :: nCoor, jj
-        integer(kind=adtIntType), intent(in) :: nInterpol
+        integer(kind=intType), intent(in) :: nCoor, jj
+        integer(kind=intType), intent(in) :: nInterpol
 
-        real(kind=adtRealType), dimension(:,:), intent(in) :: coor
-        real(kind=adtRealType), dimension(:,:), intent(in) :: arrDonor
+        real(kind=realType), dimension(:,:), intent(in) :: coor
+        real(kind=realType), dimension(:,:), intent(in) :: arrDonor
 
-        integer(kind=adtIntType), dimension(:,:), intent(out) :: intInfo
-        real(kind=adtRealType),   dimension(:,:), intent(out) :: uvw
+        integer(kind=intType), dimension(:,:), intent(out) :: intInfo
+        real(kind=realType),   dimension(:,:), intent(out) :: uvw
 !
 !       Local parameters used in the Newton algorithm.
 !
-        integer(kind=adtIntType), parameter :: iterMax   = 15
-        real(kind=adtRealType),   parameter :: adtEps    = 1.e-25_adtRealType
-        real(kind=adtRealType),   parameter :: thresConv = 1.e-10_adtRealType
+        integer(kind=intType), parameter :: iterMax   = 15
+        real(kind=realType),   parameter :: adtEps    = 1.e-25_realType
+        real(kind=realType),   parameter :: thresConv = 1.e-10_realType
 !
 !       Local variables.
 !
         integer :: ierr
 
-        integer(kind=adtIntType) :: ii, kk, ll, mm, nn
-        integer(kind=adtIntType) :: nBB, nFrontLeaves, nFrontLeavesNew
-        integer(kind=adtIntType) :: nAllocBB, nAllocFront
-        integer(kind=adtIntType) :: i, nNodeElement
+        integer(kind=intType) :: ii, kk, ll, mm, nn
+        integer(kind=intType) :: nBB, nFrontLeaves, nFrontLeavesNew
+        integer(kind=intType) :: nAllocBB, nAllocFront
+        integer(kind=intType) :: i, nNodeElement
 
-        integer(kind=adtIntType), dimension(8) :: n
+        integer(kind=intType), dimension(8) :: n
 
-        integer(kind=adtIntType), dimension(:), pointer :: BB
-        integer(kind=adtIntType), dimension(:), pointer :: frontLeaves
-        integer(kind=adtIntType), dimension(:), pointer :: frontLeavesNew
+        integer(kind=intType), dimension(:), pointer :: BB
+        integer(kind=intType), dimension(:), pointer :: frontLeaves
+        integer(kind=intType), dimension(:), pointer :: frontLeavesNew
 
-        real(kind=adtRealType) :: u, v, w, uv, uw, vw, wvu, du, dv, dw
-        real(kind=adtRealType) :: oneMinusU, oneMinusV, oneMinusW
-        real(kind=adtRealType) :: oneMinusUMinusV
-        real(kind=adtRealType) :: a11, a12, a13, a21, a22, a23
-        real(kind=adtRealType) :: a31, a32, a33, val
+        real(kind=realType) :: u, v, w, uv, uw, vw, wvu, du, dv, dw
+        real(kind=realType) :: oneMinusU, oneMinusV, oneMinusW
+        real(kind=realType) :: oneMinusUMinusV
+        real(kind=realType) :: a11, a12, a13, a21, a22, a23
+        real(kind=realType) :: a31, a32, a33, val
 
-        real(kind=adtRealType), dimension(3)     :: x, f
-        real(kind=adtRealType), dimension(8)     :: weight
-        real(kind=adtRealType), dimension(3,2:8) :: xn
+        real(kind=realType), dimension(3)     :: x, f
+        real(kind=realType), dimension(8)     :: weight
+        real(kind=realType), dimension(3,2:8) :: xn
 
-        real(kind=adtRealType), dimension(:,:), pointer :: xBBox
+        real(kind=realType), dimension(:,:), pointer :: xBBox
 
         logical :: elementFound
 
@@ -840,46 +840,46 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=adtIntType), intent(in) :: nCoor, jj
-        integer(kind=adtIntType), intent(in) :: nInterpol
+        integer(kind=intType), intent(in) :: nCoor, jj
+        integer(kind=intType), intent(in) :: nInterpol
 
-        real(kind=adtRealType), dimension(:,:), intent(in) :: coor
-        real(kind=adtRealType), dimension(:,:), intent(in) :: arrDonor
+        real(kind=realType), dimension(:,:), intent(in) :: coor
+        real(kind=realType), dimension(:,:), intent(in) :: arrDonor
 
-        integer(kind=adtIntType), dimension(:,:), intent(out) :: intInfo
-        real(kind=adtRealType),   dimension(:,:), intent(out) :: uvw
+        integer(kind=intType), dimension(:,:), intent(out) :: intInfo
+        real(kind=realType),   dimension(:,:), intent(out) :: uvw
 !
 !       Local parameters used in the Newton algorithm.
 !
-        integer(kind=adtIntType), parameter :: iterMax   = 15
-        real(kind=adtRealType),   parameter :: adtEps    = 1.e-25_adtRealType
-        real(kind=adtRealType),   parameter :: thresConv = 1.e-10_adtRealType
+        integer(kind=intType), parameter :: iterMax   = 15
+        real(kind=realType),   parameter :: adtEps    = 1.e-25_realType
+        real(kind=realType),   parameter :: thresConv = 1.e-10_realType
 !
 !       Local variables.
 !
         integer :: ierr
 
-        integer(kind=adtIntType) :: ii, kk, ll, mm, nn, activeLeaf
-        integer(kind=adtIntType) :: nBB, nFrontLeaves, nFrontLeavesNew
-        integer(kind=adtIntType) :: nAllocBB, nAllocFront, nNodeElement
-        integer(kind=adtIntType) :: i, kkk
+        integer(kind=intType) :: ii, kk, ll, mm, nn, activeLeaf
+        integer(kind=intType) :: nBB, nFrontLeaves, nFrontLeavesNew
+        integer(kind=intType) :: nAllocBB, nAllocFront, nNodeElement
+        integer(kind=intType) :: i, kkk
 
-        integer(kind=adtIntType), dimension(8) :: n, m
+        integer(kind=intType), dimension(8) :: n, m
 
-        integer(kind=adtIntType), dimension(:), pointer :: frontLeaves
-        integer(kind=adtIntType), dimension(:), pointer :: frontLeavesNew
+        integer(kind=intType), dimension(:), pointer :: frontLeaves
+        integer(kind=intType), dimension(:), pointer :: frontLeavesNew
 
-        real(kind=adtRealType) :: dx, dy, dz, d1, d2, invLen, val
-        real(kind=adtRealType) :: u, v, w, uv, uold, vold, vn, du, dv
-        real(kind=adtRealType) :: uu, vv, ww
+        real(kind=realType) :: dx, dy, dz, d1, d2, invLen, val
+        real(kind=realType) :: u, v, w, uv, uold, vold, vn, du, dv
+        real(kind=realType) :: uu, vv, ww
 
-        real(kind=adtRealType), dimension(2) :: dd
-        real(kind=adtRealType), dimension(3) :: x1, x21, x41, x3142, xf
-        real(kind=adtRealType), dimension(3) :: vf, vt, a, b, norm, an, bn
-        real(kind=adtRealType), dimension(3) :: chi
-        real(kind=adtRealType), dimension(8) :: weight
+        real(kind=realType), dimension(2) :: dd
+        real(kind=realType), dimension(3) :: x1, x21, x41, x3142, xf
+        real(kind=realType), dimension(3) :: vf, vt, a, b, norm, an, bn
+        real(kind=realType), dimension(3) :: chi
+        real(kind=realType), dimension(8) :: weight
 
-        real(kind=adtRealType), dimension(:,:), pointer :: xBBox
+        real(kind=realType), dimension(:,:), pointer :: xBBox
 
         logical :: elementFound
 

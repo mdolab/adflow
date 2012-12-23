@@ -28,7 +28,7 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS_1 = adtPrecision.o
+
 FF90_OBJECTS_2 = adtData.o\
 		 gradD2Hexa.o\
 		 hessD2Hexa.o\
@@ -49,7 +49,6 @@ FF90_OBJECTS_6 = adtAPI.o
 default: all
 
 all: 
-	$(PMAKE) src_1
 	$(PMAKE) src_2
 	$(PMAKE) src_3
 	$(PMAKE) src_4
@@ -69,7 +68,6 @@ clean:
 #      *                                                                *
 #      ******************************************************************
 
-src_1:	$(FF90_OBJECTS_1)
 src_2:	$(FF90_OBJECTS_2)
 src_3:	$(FF90_OBJECTS_3)
 src_4:	$(FF90_OBJECTS_4)
