@@ -17,22 +17,22 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      use adtPrecision
+      use precision
 
       implicit none
 !
 !     Subroutine arguments.
 !
-      real(kind=adtRealType), dimension(3),   intent(in)  :: grad
-      real(kind=adtRealType), dimension(3),  intent(out)  :: step
-      real(kind=adtRealType), dimension(3,3), intent(in)  :: hess
+      real(kind=realType), dimension(3),   intent(in)  :: grad
+      real(kind=realType), dimension(3),  intent(out)  :: step
+      real(kind=realType), dimension(3,3), intent(in)  :: hess
 
-      integer(kind=adtIntType), intent(out) :: iErr
+      integer(kind=intType), intent(out) :: iErr
 
 !
 !     Local variables.
 !
-      real(kind=adtRealType) :: determinant
+      real(kind=realType) :: determinant
 
 !
 !     ******************************************************************

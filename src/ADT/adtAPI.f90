@@ -70,18 +70,18 @@
         integer, intent(in)          :: comm
         character(len=*), intent(in) :: adtID
 
-        integer(kind=adtIntType), intent(in) :: nTria
-        integer(kind=adtIntType), intent(in) :: nQuads
-        integer(kind=adtIntType), intent(in) :: nNodes
+        integer(kind=intType), intent(in) :: nTria
+        integer(kind=intType), intent(in) :: nQuads
+        integer(kind=intType), intent(in) :: nNodes
 
         logical, intent(in) :: useBBox
 
-        integer(kind=adtIntType), dimension(:,:), intent(in) :: triaConn
-        integer(kind=adtIntType), dimension(:,:), intent(in) :: quadsConn
+        integer(kind=intType), dimension(:,:), intent(in) :: triaConn
+        integer(kind=intType), dimension(:,:), intent(in) :: quadsConn
 
-        real(kind=adtRealType), dimension(3,2), intent(in) :: BBox
+        real(kind=realType), dimension(3,2), intent(in) :: BBox
 
-        real(kind=adtRealType), dimension(:,:), intent(in) :: coor
+        real(kind=realType), dimension(:,:), intent(in) :: coor
 
         !===============================================================
 
@@ -142,22 +142,22 @@
         integer, intent(in)          :: comm
         character(len=*), intent(in) :: adtID
 
-        integer(kind=adtIntType), intent(in) :: nTetra
-        integer(kind=adtIntType), intent(in) :: nPyra
-        integer(kind=adtIntType), intent(in) :: nPrisms
-        integer(kind=adtIntType), intent(in) :: nHexa
-        integer(kind=adtIntType), intent(in) :: nNodes
+        integer(kind=intType), intent(in) :: nTetra
+        integer(kind=intType), intent(in) :: nPyra
+        integer(kind=intType), intent(in) :: nPrisms
+        integer(kind=intType), intent(in) :: nHexa
+        integer(kind=intType), intent(in) :: nNodes
 
         logical, intent(in) :: useBBox
 
-        integer(kind=adtIntType), dimension(:,:), intent(in) :: tetraConn
-        integer(kind=adtIntType), dimension(:,:), intent(in) :: pyraConn
-        integer(kind=adtIntType), dimension(:,:), intent(in) :: prismsConn
-        integer(kind=adtIntType), dimension(:,:), intent(in) :: hexaConn
+        integer(kind=intType), dimension(:,:), intent(in) :: tetraConn
+        integer(kind=intType), dimension(:,:), intent(in) :: pyraConn
+        integer(kind=intType), dimension(:,:), intent(in) :: prismsConn
+        integer(kind=intType), dimension(:,:), intent(in) :: hexaConn
 
-        real(kind=adtRealType), dimension(3,2), intent(in) :: BBox
+        real(kind=realType), dimension(3,2), intent(in) :: BBox
 
-        real(kind=adtRealType), dimension(:,:), intent(in) :: coor
+        real(kind=realType), dimension(:,:), intent(in) :: coor
 
         !===============================================================
 
@@ -220,19 +220,19 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=adtIntType), intent(in) :: nCoor, nInterpol
+        integer(kind=intType), intent(in) :: nCoor, nInterpol
         character(len=*),         intent(in) :: adtID
 
-        real(kind=adtRealType), dimension(:,:), intent(in) :: coor
-        real(kind=adtRealType), dimension(:,:), intent(in) :: arrDonor
+        real(kind=realType), dimension(:,:), intent(in) :: coor
+        real(kind=realType), dimension(:,:), intent(in) :: arrDonor
 
         integer,                  dimension(:), intent(out) :: procID
-        integer(kind=adtIntType), dimension(:), intent(out) :: elementID
+        integer(kind=intType), dimension(:), intent(out) :: elementID
 
         integer(kind=adtElementType), dimension(:), intent(out) :: &
                                                             elementType
-        real(kind=adtRealType), dimension(:,:), intent(out) :: uvw
-        real(kind=adtRealType), dimension(:,:), intent(out) :: arrInterpol
+        real(kind=realType), dimension(:,:), intent(out) :: uvw
+        real(kind=realType), dimension(:,:), intent(out) :: arrInterpol
 
         !===============================================================
 
@@ -338,22 +338,22 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=adtIntType), intent(in) :: nCoor, nInterpol
+        integer(kind=intType), intent(in) :: nCoor, nInterpol
         character(len=*),         intent(in) :: adtID
 
-        real(kind=adtRealType), dimension(:,:), intent(in) :: coor
-        real(kind=adtRealType), dimension(:,:), intent(in) :: arrDonor
+        real(kind=realType), dimension(:,:), intent(in) :: coor
+        real(kind=realType), dimension(:,:), intent(in) :: arrDonor
 
         integer,                  dimension(:), intent(out) :: procID
-        integer(kind=adtIntType), dimension(:), intent(out) :: elementID
+        integer(kind=intType), dimension(:), intent(out) :: elementID
 
         integer(kind=adtElementType), dimension(:), intent(out) :: &
                                                               elementType
 
-        real(kind=adtRealType), dimension(:,:), intent(out) :: uvw
-        real(kind=adtRealType), dimension(:,:), intent(out) :: arrInterpol
+        real(kind=realType), dimension(:,:), intent(out) :: uvw
+        real(kind=realType), dimension(:,:), intent(out) :: arrInterpol
 
-        real(kind=adtRealType), dimension(:), intent(inout) :: dist2
+        real(kind=realType), dimension(:), intent(inout) :: dist2
 
         !===============================================================
 
@@ -425,22 +425,22 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=adtIntType), intent(in) :: nCoor, nInterpol
+        integer(kind=intType), intent(in) :: nCoor, nInterpol
         character(len=*),         intent(in) :: adtID
 
-        real(kind=adtRealType), dimension(:,:), intent(in) :: coor
-        real(kind=adtRealType), dimension(:,:), intent(in) :: arrDonor
+        real(kind=realType), dimension(:,:), intent(in) :: coor
+        real(kind=realType), dimension(:,:), intent(in) :: arrDonor
 
         integer, dimension(:), intent(out) :: procID
-        integer(kind=adtIntType), dimension(:), intent(out) :: elementID
+        integer(kind=intType), dimension(:), intent(out) :: elementID
 
         integer(kind=adtElementType), dimension(:), intent(out) :: &
                                                             elementType
 
-        real(kind=adtRealType), dimension(:,:), intent(out) :: uvw
-        real(kind=adtRealType), dimension(:,:), intent(out) :: arrInterpol
+        real(kind=realType), dimension(:,:), intent(out) :: uvw
+        real(kind=realType), dimension(:,:), intent(out) :: arrInterpol
 
-        real(kind=adtRealType), dimension(:), intent(inout) :: dist2
+        real(kind=realType), dimension(:), intent(inout) :: dist2
 
         !===============================================================
 

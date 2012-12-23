@@ -74,27 +74,27 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=adtIntType), intent(in) :: nCoor, nInterpol
+        integer(kind=intType), intent(in) :: nCoor, nInterpol
         character(len=*),         intent(in) :: adtID
 
-        real(kind=adtRealType), dimension(:,:), intent(in) :: coor
-        real(kind=adtRealType), dimension(:,:), intent(in) :: arrDonor
+        real(kind=realType), dimension(:,:), intent(in) :: coor
+        real(kind=realType), dimension(:,:), intent(in) :: arrDonor
 
         integer,                  dimension(:), intent(out) :: procID
-        integer(kind=adtIntType), dimension(:), intent(out) :: elementID
+        integer(kind=intType), dimension(:), intent(out) :: elementID
 
         integer(kind=adtElementType), dimension(:), intent(out) :: &
                                                              elementType
-        real(kind=adtRealType), dimension(:,:), intent(out) :: uvw
-        real(kind=adtRealType), dimension(:,:), intent(out) :: arrInterpol
+        real(kind=realType), dimension(:,:), intent(out) :: uvw
+        real(kind=realType), dimension(:,:), intent(out) :: arrInterpol
 !
 !       Local variables.
 !
         integer :: ierr
 
-        integer(kind=adtIntType) :: jj, nAlloc
+        integer(kind=intType) :: jj, nAlloc
 
-        real(kind=adtRealType), dimension(1) :: dummy
+        real(kind=realType), dimension(1) :: dummy
 !
 !       ****************************************************************
 !       *                                                              *
@@ -203,41 +203,41 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=adtIntType), intent(in) :: nCoor, nInterpol
+        integer(kind=intType), intent(in) :: nCoor, nInterpol
         character(len=*),         intent(in) :: adtID
 
-        real(kind=adtRealType), dimension(:,:), intent(in) :: coor
-        real(kind=adtRealType), dimension(:,:), intent(in) :: arrDonor
+        real(kind=realType), dimension(:,:), intent(in) :: coor
+        real(kind=realType), dimension(:,:), intent(in) :: arrDonor
 
         integer,                  dimension(:), intent(out) :: procID
-        integer(kind=adtIntType), dimension(:), intent(out) :: elementID
+        integer(kind=intType), dimension(:), intent(out) :: elementID
 
         integer(kind=adtElementType), dimension(:), intent(out) :: &
                                                               elementType
 
-        real(kind=adtRealType), dimension(:,:), intent(out) :: uvw
-        real(kind=adtRealType), dimension(:,:), intent(out) :: arrInterpol
+        real(kind=realType), dimension(:,:), intent(out) :: uvw
+        real(kind=realType), dimension(:,:), intent(out) :: arrInterpol
 
-        real(kind=adtRealType), dimension(:), intent(inout) :: dist2
+        real(kind=realType), dimension(:), intent(inout) :: dist2
 !
 !       Local variables.
 !
         integer :: ierr
         integer, dimension(:), allocatable :: tmpProcID
 
-        integer(kind=adtIntType) :: i, j, ii, jj, nAlloc, nFail
-        integer(kind=adtIntType), dimension(:), allocatable :: tmpElementID
-        integer(kind=adtIntType), dimension(:), allocatable :: coorIDs
+        integer(kind=intType) :: i, j, ii, jj, nAlloc, nFail
+        integer(kind=intType), dimension(:), allocatable :: tmpElementID
+        integer(kind=intType), dimension(:), allocatable :: coorIDs
 
         integer(kind=adtElementType), dimension(:), allocatable :: &
                                                           tmpElementType
 
-        real(kind=adtRealType), dimension(1) :: dummy
+        real(kind=realType), dimension(1) :: dummy
 
-        real(kind=adtRealType), dimension(:),   allocatable :: tmpDist2
-        real(kind=adtRealType), dimension(:,:), allocatable :: tmpCoor
-        real(kind=adtRealType), dimension(:,:), allocatable :: tmpUVW
-        real(kind=adtRealType), dimension(:,:), allocatable :: tmpArrInt
+        real(kind=realType), dimension(:),   allocatable :: tmpDist2
+        real(kind=realType), dimension(:,:), allocatable :: tmpCoor
+        real(kind=realType), dimension(:,:), allocatable :: tmpUVW
+        real(kind=realType), dimension(:,:), allocatable :: tmpArrInt
 !
 !       ****************************************************************
 !       *                                                              *
@@ -293,7 +293,7 @@
 
         ! Determine the global sum of nFail, which is stored in ii.
 
-        call mpi_allreduce(nFail, ii, 1, adt_integer, mpi_max, &
+        call mpi_allreduce(nFail, ii, 1, sumb_integer, mpi_max, &
                            ADTs(jj)%comm, ierr)
 
         ! Return if ii == 0, because the minimum distance search
@@ -413,11 +413,11 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=adtIntType), intent(in) :: nCoor
-        integer(kind=adtIntType), intent(in) :: jj
+        integer(kind=intType), intent(in) :: nCoor
+        integer(kind=intType), intent(in) :: jj
 
-        real(kind=adtRealType), dimension(:,:), intent(in) :: coor
-        real(kind=adtRealType), dimension(:),   intent(inout) :: dist2
+        real(kind=realType), dimension(:,:), intent(in) :: coor
+        real(kind=realType), dimension(:),   intent(inout) :: dist2
 
         logical, intent(in) :: containmentSearch
 !
@@ -428,14 +428,14 @@
 
         integer, dimension(:),   pointer :: rootLeavesProcs
 
-        integer(kind=adtIntType) :: i, j, k, mm, nn
+        integer(kind=intType) :: i, j, k, mm, nn
 
-        integer(kind=adtIntType), dimension(:), allocatable :: nCoorPerProc
-        integer(kind=adtIntType), dimension(:), allocatable :: nCoorFromProc
+        integer(kind=intType), dimension(:), allocatable :: nCoorPerProc
+        integer(kind=intType), dimension(:), allocatable :: nCoorFromProc
 
-        real(kind=adtRealType) :: d1, d2, dx, dy, dz
+        real(kind=realType) :: d1, d2, dx, dy, dz
 
-        real(kind=adtRealType), dimension(:,:,:), pointer :: rootBBoxes
+        real(kind=realType), dimension(:,:,:), pointer :: rootBBoxes
 !
 !       ****************************************************************
 !       *                                                              *
@@ -458,7 +458,7 @@
         ! as an upper bound for the number of points to be searched
         ! during a round.
 
-        call mpi_allreduce(nCoor, nCoorMax, 1, adt_integer, mpi_max, &
+        call mpi_allreduce(nCoor, nCoorMax, 1, sumb_integer, mpi_max, &
                            comm, ierr)
         nCoorMax = max(nCoorMax,nCoorMaxLowerLimit)
 !
@@ -720,8 +720,8 @@
 
         ! Communicate these numbers to the other processors.
 
-        call mpi_alltoall(nCoorPerProc,  1, adt_integer, &
-                          nCoorFromProc, 1, adt_integer, comm, ierr)
+        call mpi_alltoall(nCoorPerProc,  1, sumb_integer, &
+                          nCoorFromProc, 1, sumb_integer, comm, ierr)
 
         ! Determine the total number of coordinates I have to interpolate
         ! and the processor ID's I will receive coordinates from.
@@ -740,19 +740,19 @@
         ! Determine the number of rounds in the outer loop of the
         ! interpolation algorithm.
 
-        i = real(nn,adtRealType)/real(nCoorMax,adtRealType)
+        i = real(nn,realType)/real(nCoorMax,realType)
         if(i*nCoorMax < nn) i = i + 1
-        i = max(i, 1_adtIntType)
+        i = max(i, 1_intType)
 
-        call mpi_allreduce(i, nRounds, 1, adt_integer, mpi_max, &
+        call mpi_allreduce(i, nRounds, 1, sumb_integer, mpi_max, &
                            comm, ierr)
 
         ! Modify the sequence of procRecv, such that number of
         ! coordinates sent from processors during a certain round
         ! is more balanced.
 
-        nn = max(nRootLeaves,1_adtIntType)
-        j  = (real(myEntryInRootProcs,adtRealType)/real(nn,adtRealType)) &
+        nn = max(nRootLeaves,1_intType)
+        j  = (real(myEntryInRootProcs,realType)/real(nn,realType)) &
            * nProcRecv
 
         do i=1,nProcRecv
@@ -843,26 +843,26 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=adtIntType), intent(in) :: nCoor, nInterpol
+        integer(kind=intType), intent(in) :: nCoor, nInterpol
         character(len=*),         intent(in) :: adtID
 
-        real(kind=adtRealType), dimension(:,:), intent(in) :: coor
-        real(kind=adtRealType), dimension(:,:), intent(in) :: arrDonor
+        real(kind=realType), dimension(:,:), intent(in) :: coor
+        real(kind=realType), dimension(:,:), intent(in) :: arrDonor
 
         integer,                  dimension(:), intent(out) :: procID
-        integer(kind=adtIntType), dimension(:), intent(out) :: elementID
+        integer(kind=intType), dimension(:), intent(out) :: elementID
 
         integer(kind=adtElementType), dimension(:), intent(out) :: &
                                                              elementType
 
-        real(kind=adtRealType), dimension(:,:), intent(out) :: uvw
-        real(kind=adtRealType), dimension(:,:), intent(out) :: arrInterpol
+        real(kind=realType), dimension(:,:), intent(out) :: uvw
+        real(kind=realType), dimension(:,:), intent(out) :: arrInterpol
 
-        real(kind=adtRealType), dimension(:), intent(inout) :: dist2
+        real(kind=realType), dimension(:), intent(inout) :: dist2
 !
 !       Local variables.
 !
-        integer(kind=adtIntType) :: jj, nAlloc
+        integer(kind=intType) :: jj, nAlloc
 !
 !       ****************************************************************
 !       *                                                              *
@@ -965,23 +965,23 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=adtIntType), intent(in) :: nCoor
-        integer(kind=adtIntType), intent(in) :: jj
-        integer(kind=adtIntType), intent(in) :: nInterpol
+        integer(kind=intType), intent(in) :: nCoor
+        integer(kind=intType), intent(in) :: jj
+        integer(kind=intType), intent(in) :: nInterpol
 
-        real(kind=adtRealType), dimension(:,:), intent(in) :: coor
-        real(kind=adtRealType), dimension(:),   intent(inout) :: dist2
+        real(kind=realType), dimension(:,:), intent(in) :: coor
+        real(kind=realType), dimension(:),   intent(inout) :: dist2
 
-        real(kind=adtRealType), dimension(:,:), intent(in) :: arrDonor
+        real(kind=realType), dimension(:,:), intent(in) :: arrDonor
 
         integer,                  dimension(:), intent(out) :: procID
-        integer(kind=adtIntType), dimension(:), intent(out) :: elementID
+        integer(kind=intType), dimension(:), intent(out) :: elementID
 
         integer(kind=adtElementType), dimension(:), intent(out) :: &
                                                              elementType
 
-        real(kind=adtRealType), dimension(:,:), intent(out) :: uvw
-        real(kind=adtRealType), dimension(:,:), intent(out) :: arrInterpol
+        real(kind=realType), dimension(:,:), intent(out) :: uvw
+        real(kind=realType), dimension(:,:), intent(out) :: arrInterpol
 
         logical, intent(in) :: containmentSearch
 !
@@ -998,20 +998,20 @@
         integer, dimension(:),   allocatable :: sendRequest
         integer, dimension(:,:), allocatable :: sendRecvRequest
 
-        integer(kind=adtIntType) :: i, j, k, k1, l, m, ii, mm, nn
-        integer(kind=adtIntType) :: nLocalInterpolRound
-        integer(kind=adtIntType) :: iStartLocal, iEndLocal, nCoorRecv
+        integer(kind=intType) :: i, j, k, k1, l, m, ii, mm, nn
+        integer(kind=intType) :: nLocalInterpolRound
+        integer(kind=intType) :: iStartLocal, iEndLocal, nCoorRecv
 
-        integer(kind=adtIntType), dimension(:), allocatable :: nCoorPerProc
-        integer(kind=adtIntType), dimension(:), allocatable :: nCoorFromProc
+        integer(kind=intType), dimension(:), allocatable :: nCoorPerProc
+        integer(kind=intType), dimension(:), allocatable :: nCoorFromProc
 
-        integer(kind=adtIntType), dimension(:,:), allocatable :: intRecv
-        integer(kind=adtIntType), dimension(:,:), allocatable :: intBuf
+        integer(kind=intType), dimension(:,:), allocatable :: intRecv
+        integer(kind=intType), dimension(:,:), allocatable :: intBuf
 
-        real(kind=adtRealType), dimension(:,:), allocatable :: coorBuf
-        real(kind=adtRealType), dimension(:,:), allocatable :: coorRecv
-        real(kind=adtRealType), dimension(:,:), allocatable :: uvwRecv
-        real(kind=adtRealType), dimension(:,:), allocatable :: uvwBuf
+        real(kind=realType), dimension(:,:), allocatable :: coorBuf
+        real(kind=realType), dimension(:,:), allocatable :: coorRecv
+        real(kind=realType), dimension(:,:), allocatable :: uvwRecv
+        real(kind=realType), dimension(:,:), allocatable :: uvwBuf
 
         logical, dimension(:), allocatable :: coorRequested
 !
@@ -1040,7 +1040,7 @@
         ! And the size of the uvw buffers. These contain nVarCoor plus
         ! the number of variables to be interpolated.
 
-        nVarUVW = nVarCoor + max(nInterpol,0_adtIntType)
+        nVarUVW = nVarCoor + max(nInterpol,0_intType)
 
         ! Initialize procID to -1, which indicates failure.
 
@@ -1148,8 +1148,8 @@
           ! Do an all to all communication such that every processor
           ! knows the amount of data it should send to other processors.
 
-          call mpi_alltoall(nCoorFromProc, 1, adt_integer, &
-                            nCoorPerProc,  1, adt_integer, comm, ierr)
+          call mpi_alltoall(nCoorFromProc, 1, sumb_integer, &
+                            nCoorPerProc,  1, sumb_integer, comm, ierr)
 
           ! Set the non-zero entries of nCoorFromProc to zero again
           ! for the next round.
@@ -1298,7 +1298,7 @@
             ! Use nonblocking sends to avoid deadlock.
 
             sizeMessage = nVarCoor*(k-k1)
-            call mpi_isend(coorBuf(1,k1+1), sizeMessage, adt_real, &
+            call mpi_isend(coorBuf(1,k1+1), sizeMessage, sumb_real, &
                            procCur,         procCur,     comm,     &
                            sendRequest(i),  ierr)
 
@@ -1532,11 +1532,11 @@
             call mpi_probe(mpi_any_source, myID, comm, status, ierr)
 
             procCur = status(mpi_source)
-            call mpi_get_count(status, adt_real, sizeMessage, ierr)
+            call mpi_get_count(status, sumb_real, sizeMessage, ierr)
 
             ! Check in debug mode that the message is of correct size.
 
-            if( adtDebug ) then
+            if( debug ) then
               if(sizeMessage == mpi_undefined .or. &
                  mod(sizeMessage,nVarCoor) /= 0)   &
                 call adtTerminate(jj, "search",    &
@@ -1554,7 +1554,7 @@
                                 "Memory allocation failure for &
                                 &coorRecv.")
 
-            call mpi_recv(coorRecv, sizeMessage, adt_real, procCur, &
+            call mpi_recv(coorRecv, sizeMessage, sumb_real, procCur, &
                           myID,     comm,        status,   ierr)
 
             ! Search the corresponding elements in the local tree and
@@ -1581,12 +1581,12 @@
             ! the requesting processor.
 
             sizeMessage = 3*nn
-            call mpi_isend(intRecv(1,ii),        sizeMessage, adt_integer, &
+            call mpi_isend(intRecv(1,ii),        sizeMessage, sumb_integer, &
                            procCur,              procCur+1,   comm,        &
                            sendRecvRequest(1,i), ierr)
 
             sizeMessage = nVarUVW*nn
-            call mpi_isend(uvwRecv(1,ii),        sizeMessage, adt_real, &
+            call mpi_isend(uvwRecv(1,ii),        sizeMessage, sumb_real, &
                            procCur,              procCur+2,   comm,     &
                            sendRecvRequest(2,i), ierr)
 
@@ -1622,11 +1622,11 @@
             call mpi_probe(mpi_any_source, myID+1, comm, status, ierr)
 
             procCur = status(mpi_source)
-            call mpi_get_count(status, adt_integer, sizeMessage, ierr)
+            call mpi_get_count(status, sumb_integer, sizeMessage, ierr)
 
             ! Check in debug mode that the message is of correct size.
 
-            if( adtDebug ) then
+            if( debug ) then
               if(sizeMessage == mpi_undefined .or. &
                  mod(sizeMessage,3) /= 0)          &
                 call adtTerminate(jj, "search",    &
@@ -1643,11 +1643,11 @@
                                 "Memory allocation failure for intBuf &
                                 &and uvwBuf.")
 
-            call mpi_recv(intBuf, sizeMessage, adt_integer, procCur, &
+            call mpi_recv(intBuf, sizeMessage, sumb_integer, procCur, &
                           myID+1, comm,        status,      ierr)
 
             sizeMessage = nVarUVW*nn
-            call mpi_recv(uvwBuf, sizeMessage, adt_real, procCur, &
+            call mpi_recv(uvwBuf, sizeMessage, sumb_real, procCur, &
                           myID+2, comm,        status,   ierr)
 
             ! Store the interpolation data at the correct location in the

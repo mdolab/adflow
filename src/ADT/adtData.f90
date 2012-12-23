@@ -21,7 +21,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      use adtPrecision
+      use precision
       implicit none
       save
 !
@@ -44,10 +44,10 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      real(kind=adtRealType), parameter :: adtZero   = 0.0_adtRealType
-      real(kind=adtRealType), parameter :: adtFourth = 0.25_adtRealType
-      real(kind=adtRealType), parameter :: adtHalf   = 0.5_adtRealType
-      real(kind=adtRealType), parameter :: adtOne    = 1.0_adtRealType
+      real(kind=realType), parameter :: adtZero   = 0.0_realType
+      real(kind=realType), parameter :: adtFourth = 0.25_realType
+      real(kind=realType), parameter :: adtHalf   = 0.5_realType
+      real(kind=realType), parameter :: adtOne    = 1.0_realType
 !
 !     ******************************************************************
 !     *                                                                *
@@ -61,7 +61,7 @@
       integer, parameter :: adtSurfaceADT = 1
       integer, parameter :: adtVolumeADT  = 2
 
-      integer(kind=adtIntType), parameter :: nCoorMaxLowerLimit = 100000
+      integer(kind=intType), parameter :: nCoorMaxLowerLimit = 100000
 !
 !     ******************************************************************
 !     *                                                                *
@@ -95,8 +95,8 @@
         ! xMin(6):     The minimum coordinates of the leaf.
         ! xMax(6):     The maximum coordinates of the leaf.
 
-        integer(kind=adtIntType), dimension(2) :: children
-        real(kind=adtRealType),   dimension(6) :: xMin, xMax
+        integer(kind=intType), dimension(2) :: children
+        real(kind=realType),   dimension(6) :: xMin, xMax
 
       end type adtLeafType
 !
@@ -114,8 +114,8 @@
         ! posDist2: the possible minimum distance squared to the active
         !           coordinate.
 
-        integer(kind=adtIntType) :: ID
-        real(kind=adtRealType)   :: posDist2
+        integer(kind=intType) :: ID
+        real(kind=realType)   :: posDist2
 
       end type adtBBoxTargetType
 
@@ -165,14 +165,14 @@
         ! nPrisms: Idem for the prisms.
         ! nHexa:   Idem for the hexahedra.
 
-        integer(kind=adtIntType) :: nNodes, nTria, nQuads
-        integer(kind=adtIntType) :: nTetra, nPyra, nPrisms, nHexa
+        integer(kind=intType) :: nNodes, nTria, nQuads
+        integer(kind=intType) :: nTetra, nPyra, nPrisms, nHexa
 
         ! coor(3,nNodes): Nodal coordinates of the local grid.
         !                 To save memory this pointer is not
         !                 allocated, but set to the data given.
 
-        real(kind=adtRealType), dimension(:,:), pointer :: coor
+        real(kind=realType), dimension(:,:), pointer :: coor
 
         ! triaConn(3,nTria):     Local connectivity of the triangles.
         !                        To save memory this pointer is not
@@ -183,12 +183,12 @@
         ! prismsConn(6,nPrisms): Idem for the prisms.
         ! hexaConn(8,nHexa):     Idem for the hexahedra.
 
-        integer(kind=adtIntType), dimension(:,:), pointer :: triaConn
-        integer(kind=adtIntType), dimension(:,:), pointer :: quadsConn
-        integer(kind=adtIntType), dimension(:,:), pointer :: tetraConn
-        integer(kind=adtIntType), dimension(:,:), pointer :: pyraConn
-        integer(kind=adtIntType), dimension(:,:), pointer :: prismsConn
-        integer(kind=adtIntType), dimension(:,:), pointer :: hexaConn
+        integer(kind=intType), dimension(:,:), pointer :: triaConn
+        integer(kind=intType), dimension(:,:), pointer :: quadsConn
+        integer(kind=intType), dimension(:,:), pointer :: tetraConn
+        integer(kind=intType), dimension(:,:), pointer :: pyraConn
+        integer(kind=intType), dimension(:,:), pointer :: prismsConn
+        integer(kind=intType), dimension(:,:), pointer :: hexaConn
 
         ! nRootLeaves:        Number of non-empty root leaves.
         !                     This number is of course less than or
@@ -202,7 +202,7 @@
         integer :: nRootLeaves, myEntryInRootProcs
         integer, dimension(:), pointer :: rootLeavesProcs
 
-        real(kind=adtRealType), dimension(:,:,:), pointer :: rootBBoxes
+        real(kind=realType), dimension(:,:,:), pointer :: rootBBoxes
 
         ! nBBoxes:              Number of bounding boxes stored in
         !                       the ADT.
@@ -213,18 +213,18 @@
         ! xBBox(6,nBBoxes):     The coordinates of the bounding boxes
         !                       of the elements stored in the ADT.
 
-        integer(kind=adtIntType) :: nBBoxes
+        integer(kind=intType) :: nBBoxes
 
         integer(kind=adtElementType), dimension(:), pointer :: elementType
-        integer(kind=adtIntType),     dimension(:), pointer :: elementID
-        real(kind=adtRealType),     dimension(:,:), pointer :: xBBox
+        integer(kind=intType),     dimension(:), pointer :: elementID
+        real(kind=realType),     dimension(:,:), pointer :: xBBox
 
         ! nLeaves:         Number of present in the ADT. Due to the
         !                  variable splitting the tree is optimally
         !                  balanced and therefore nLeaves = nBBoxes -1.
         ! ADTree(nLeaves): The alternating digital tree.
 
-        integer(kind=adtIntType) :: nLeaves
+        integer(kind=intType) :: nLeaves
         type(adtLeafType), dimension(:), pointer :: ADTree
 
       end type adtType
@@ -256,9 +256,9 @@
 
       integer :: nProcRecv
 
-      integer(kind=adtIntType) :: nCoorMax
-      integer(kind=adtIntType) :: nRounds
-      integer(kind=adtIntType) :: nLocalInterpol
+      integer(kind=intType) :: nCoorMax
+      integer(kind=intType) :: nRounds
+      integer(kind=intType) :: nLocalInterpol
 
 
       ! procRecv:         Processor ID's from which I will receive
@@ -274,10 +274,10 @@
 
       integer, dimension(:), allocatable :: procRecv
 
-      integer(kind=adtIntType), dimension(:), allocatable :: nCoorProcRecv
-      integer(kind=adtIntType), dimension(:), allocatable :: nCoorPerRootLeaf
-      integer(kind=adtIntType), dimension(:), allocatable :: mCoorPerRootLeaf
-      integer(kind=adtIntType), dimension(:), allocatable :: coorPerRootLeaf
+      integer(kind=intType), dimension(:), allocatable :: nCoorProcRecv
+      integer(kind=intType), dimension(:), allocatable :: nCoorPerRootLeaf
+      integer(kind=intType), dimension(:), allocatable :: mCoorPerRootLeaf
+      integer(kind=intType), dimension(:), allocatable :: coorPerRootLeaf
 
       !=================================================================
 

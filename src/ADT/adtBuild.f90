@@ -45,31 +45,31 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=adtIntType), intent(in)  :: jj
+        integer(kind=intType), intent(in)  :: jj
 !
 !       Local variables.
 !
         integer :: ierr
 
-        integer(kind=adtIntType) :: i, j, k, ii, kk, ll, mm, nn, nfl, nfr
-        integer(kind=adtIntType) :: nLeaves, nBBoxes, splitDir
-        integer(kind=adtIntType) :: nLeavesToDivide, nLeavesToDivideNew
-        integer(kind=adtIntType) :: nLeavesTot
+        integer(kind=intType) :: i, j, k, ii, kk, ll, mm, nn, nfl, nfr
+        integer(kind=intType) :: nLeaves, nBBoxes, splitDir
+        integer(kind=intType) :: nLeavesToDivide, nLeavesToDivideNew
+        integer(kind=intType) :: nLeavesTot
 
-        integer(kind=adtIntType), dimension(:), pointer :: BB_IDs
-        integer(kind=adtIntType), dimension(:), pointer :: BB_IDsNew
-        integer(kind=adtIntType), dimension(:), pointer :: nBB_IDs
-        integer(kind=adtIntType), dimension(:), pointer :: nBB_IDsNew
-        integer(kind=adtIntType), dimension(:), pointer :: curLeaf
-        integer(kind=adtIntType), dimension(:), pointer :: curLeafNew
-        integer(kind=adtIntType), dimension(:), pointer :: tmpIntPointer
+        integer(kind=intType), dimension(:), pointer :: BB_IDs
+        integer(kind=intType), dimension(:), pointer :: BB_IDsNew
+        integer(kind=intType), dimension(:), pointer :: nBB_IDs
+        integer(kind=intType), dimension(:), pointer :: nBB_IDsNew
+        integer(kind=intType), dimension(:), pointer :: curLeaf
+        integer(kind=intType), dimension(:), pointer :: curLeafNew
+        integer(kind=intType), dimension(:), pointer :: tmpIntPointer
 
-        integer(kind=adtIntType), dimension(0:ADTs(jj)%nProcs-1) :: tmpArr
+        integer(kind=intType), dimension(0:ADTs(jj)%nProcs-1) :: tmpArr
 
-        real(kind=adtRealType), dimension(:,:), pointer :: xBBox
+        real(kind=realType), dimension(:,:), pointer :: xBBox
 
-        real(kind=adtRealType), dimension(3,2) :: rootLeafBBox
-        real(kind=adtRealType), dimension(3,2,0:ADTs(jj)%nProcs-1) :: &
+        real(kind=realType), dimension(3,2) :: rootLeafBBox
+        real(kind=realType), dimension(3,2,0:ADTs(jj)%nProcs-1) :: &
                                                          rootLeavesBBox
 
         type(adtLeafType), dimension(:), pointer :: ADTree
@@ -119,7 +119,7 @@
         ! subdivision of the leaves.
 
         nn = (nBBoxes+1)/2
-        nn = max(nn, 1_adtIntType)
+        nn = max(nn, 1_intType)
 
         allocate(BB_IDs(nBBoxes), BB_IDsNew(nBBoxes), &
                  nBB_IDs(0:nn),   nBB_IDsNew(0:nn),   &
@@ -141,7 +141,7 @@
           BB_IDs(i) = i
         enddo
 
-        nLeavesToDivide = min(nLeaves, 1_adtIntType)
+        nLeavesToDivide = min(nLeaves, 1_intType)
         nLeavesTot      = nLeavesToDivide
 
         ! Initialize splitDir to 0, such that the first time it will
@@ -343,7 +343,7 @@
         ii = 1
         if(nBBoxes == 0) ii = 0
 
-        call mpi_allgather(ii, 1, adt_integer, tmpArr, 1, adt_integer, &
+        call mpi_allgather(ii, 1, sumb_integer, tmpArr, 1, sumb_integer, &
                            ADTs(jj)%comm, ierr)
 
         ii = 0
@@ -394,8 +394,8 @@
 
         ! Gather the data of the root leaves.
 
-        call mpi_allgather(rootLeafBBox, 6, adt_real, rootLeavesBBox, &
-                           6, adt_real, ADTs(jj)%comm, ierr)
+        call mpi_allgather(rootLeafBBox, 6, sumb_real, rootLeavesBBox, &
+                           6, sumb_real, ADTs(jj)%comm, ierr)
 
         ! Store the 3D root bounding boxes of the non-empty trees in
         ! the data structure for the current ADT.
@@ -461,20 +461,20 @@
         integer, intent(in)          :: comm
         character(len=*), intent(in) :: adtID
 
-        integer(kind=adtIntType), intent(in) :: nTria
-        integer(kind=adtIntType), intent(in) :: nQuads
-        integer(kind=adtIntType), intent(in) :: nNodes
+        integer(kind=intType), intent(in) :: nTria
+        integer(kind=intType), intent(in) :: nQuads
+        integer(kind=intType), intent(in) :: nNodes
 
         logical, intent(in) :: useBBox
 
-        integer(kind=adtIntType), dimension(:,:), intent(in), &
+        integer(kind=intType), dimension(:,:), intent(in), &
                                                   target :: triaConn
-        integer(kind=adtIntType), dimension(:,:), intent(in), &
+        integer(kind=intType), dimension(:,:), intent(in), &
                                                   target :: quadsConn
 
-        real(kind=adtRealType), dimension(3,2), intent(in) :: BBox
+        real(kind=realType), dimension(3,2), intent(in) :: BBox
 
-        real(kind=adtRealType), dimension(:,:), intent(in), &
+        real(kind=realType), dimension(:,:), intent(in), &
                                                 target :: coor
 !
 !       Local variables.
@@ -483,11 +483,11 @@
 
         integer(kind=adtElementType) :: elType
 
-        integer(kind=adtIntType) :: i, j, ii, jj, mm, nn, nElem
+        integer(kind=intType) :: i, j, ii, jj, mm, nn, nElem
 
-        integer(kind=adtIntType), dimension(:,:), pointer :: conn
+        integer(kind=intType), dimension(:,:), pointer :: conn
 
-        real(kind=adtRealType), dimension(3) :: xMin, xMax
+        real(kind=realType), dimension(3) :: xMin, xMax
 
         logical, dimension(:), allocatable :: elementWithinBBox
 !
@@ -852,26 +852,26 @@
         integer, intent(in)          :: comm
         character(len=*), intent(in) :: adtID
 
-        integer(kind=adtIntType), intent(in) :: nTetra
-        integer(kind=adtIntType), intent(in) :: nPyra
-        integer(kind=adtIntType), intent(in) :: nPrisms
-        integer(kind=adtIntType), intent(in) :: nHexa
-        integer(kind=adtIntType), intent(in) :: nNodes
+        integer(kind=intType), intent(in) :: nTetra
+        integer(kind=intType), intent(in) :: nPyra
+        integer(kind=intType), intent(in) :: nPrisms
+        integer(kind=intType), intent(in) :: nHexa
+        integer(kind=intType), intent(in) :: nNodes
 
         logical, intent(in) :: useBBox
 
-        integer(kind=adtIntType), dimension(:,:), intent(in), &
+        integer(kind=intType), dimension(:,:), intent(in), &
                                                   target :: tetraConn
-        integer(kind=adtIntType), dimension(:,:), intent(in), &
+        integer(kind=intType), dimension(:,:), intent(in), &
                                                   target :: pyraConn
-        integer(kind=adtIntType), dimension(:,:), intent(in), &
+        integer(kind=intType), dimension(:,:), intent(in), &
                                                   target :: prismsConn
-        integer(kind=adtIntType), dimension(:,:), intent(in), &
+        integer(kind=intType), dimension(:,:), intent(in), &
                                                   target :: hexaConn
 
-        real(kind=adtRealType), dimension(3,2), intent(in) :: BBox
+        real(kind=realType), dimension(3,2), intent(in) :: BBox
 
-        real(kind=adtRealType), dimension(:,:), intent(in), &
+        real(kind=realType), dimension(:,:), intent(in), &
                                                 target :: coor
 !
 !       Local variables.
@@ -880,11 +880,11 @@
 
         integer(kind=adtElementType) :: elType
 
-        integer(kind=adtIntType) :: i, j, ii, jj, mm, nn, nElem
+        integer(kind=intType) :: i, j, ii, jj, mm, nn, nElem
 
-        integer(kind=adtIntType), dimension(:,:), pointer :: conn
+        integer(kind=intType), dimension(:,:), pointer :: conn
 
-        real(kind=adtRealType), dimension(3) :: xMin, xMax
+        real(kind=realType), dimension(3) :: xMin, xMax
 
         logical, dimension(:), allocatable :: elementWithinBBox
 !
