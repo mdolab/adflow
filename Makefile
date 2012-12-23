@@ -25,6 +25,7 @@
 #      ******************************************************************
 
 SUBDIR_SRC    = src/modules       \
+		src/ADT           \
 		src/bcdata        \
 	        src/initFlow      \
 	        src/inputParam    \
@@ -128,14 +129,9 @@ dirs:
 	mkdir -p bin
 	mkdir -p obj
 	mkdir -p mod
-	mkdir -p externals/ADT/obj
-	mkdir -p externals/ADT/mod
 
 clean:
 	@echo " Making clean ... "
-
-	(cd externals/ADT && make clean)
-
 	@for subdir in $(SUMB_CLEAN_SUBDIRS) ; \
 		do \
 			echo; \
@@ -173,7 +169,6 @@ LINUX_INTEL_OPENMPI:
 	make dirs
 	if [ ! -f "config/config.LINUX_INTEL_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI.mk" ./config; fi
 	ln -sf config/config.LINUX_INTEL_OPENMPI.mk config.mk
-	(cd externals/ADT && make)
 	make sumb
 	(cd src/python/f2py && make)
 
@@ -185,7 +180,6 @@ LINUX_GFORTRAN_OPENMPI:
 	make dirs
 	if [ ! -f "config/config.LINUX_GFORTRAN_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_GFORTRAN_OPENMPI.mk" ./config; fi
 	ln -sf config/config.LINUX_GFORTRAN_OPENMPI.mk config.mk
-	(cd externals/ADT && make)
 	make sumb
 	(cd src/python/f2py &&  make)
 
@@ -196,7 +190,6 @@ LINUX_INTEL_OPENMPI_SCINET:
 	make dirs
 	if [ ! -f "config/config.LINUX_INTEL_OPENMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_SCINET.mk" ./config; fi
 	ln -sf config/config.LINUX_INTEL_OPENMPI_SCINET.mk config.mk
-	(cd externals/ADT && make)
 	(cd src/python/f2py && make)	make sumb
 
 LINUX_INTEL_OPENMPI_SCINET_PYTHON:
@@ -206,7 +199,6 @@ LINUX_INTEL_INTELMPI_SCINET:
 	make dirs
 	if [ ! -f "config/config.LINUX_INTEL_INTELMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_INTELMPI_SCINET.mk" ./config; fi
 	ln -sf config/config.LINUX_INTEL_INTELMPI_SCINET.mk config.mk
-	(cd externals/ADT && make)
 	make sumb
 	(cd src/python/f2py && make)
 
@@ -217,7 +209,6 @@ LINUX_INTEL_OPENMPI_NYX:
 	make dirs
 	if [ ! -f "config/config.LINUX_INTEL_OPENMPI_NYX.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_NYX.mk" ./config; fi
 	ln -sf config/config.LINUX_INTEL_OPENMPI_NYX.mk config.mk
-	(cd externals/ADT && make)
 	make sumb
 	(cd src/python/f2py && make)
 
