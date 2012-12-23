@@ -102,6 +102,9 @@ class SUMB(AeroSolver):
             'CFLCoarse':[float, 1.0],
             'MGCycle':[str, '3w'],
             'MGStartLevel':[int, -1],
+            'resAveraging':[str,'alternateResAveraging'],
+            'smoothParameter':[float, 1.5],
+            'CFLLimit':[float, 1.5],
 
             # Unsteady Paramters           
             'timeIntegrationScheme':[str, 'BDF'],
@@ -453,6 +456,16 @@ class SUMB(AeroSolver):
                 'MGCycle':{'location':'localmg.mgdescription',
                            'len':self.sumb.constants.maxstringlen},
                 'MGStartLevel':{'location':'inputiteration.mgstartlevel'},
+                'resAveraging':{'noResAveraging':
+                                   self.sumb.inputiteration.noresaveraging,
+                               'alwaysResAveraging':
+                                   self.sumb.inputiteration.alwaysresaveraging,
+                               'alternateResAveraging':
+                                   self.sumb.inputiteration.alternateresaveraging,
+                               'location':
+                                   'inputiteration.resaveraging'},
+                'smoothParameter':{'location':'inputiteration.smoop'},
+                'CFLLimit':{'location':'inputiteration.cfllimit'},
 
                 # Unsteady Params
                 'timeIntegrationScheme':{'BDF':
