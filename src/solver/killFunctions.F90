@@ -45,30 +45,16 @@
 
        call connect_signals
 
-       ! Test for a sequential executable.
-
-       testSequential: if( SU_MPI_isSequential ) then
-
-         ! Sequential executable.  Write a general message that a write
-         ! signal has been received.
-
-         print "(a)", "#"
-         print 100
- 100     format("# Received write signal.")
-
-       else testSequential
-
-         ! Parallel executable.  Write a general message that this
-         ! processor has received a write signal.
-
-         write(integerString,'(i7)') myID
-         integerString = adjustl(integerString)
-         integerString = trim(integerString)
-         print "(a)", "#"
-         print 101, integerString(:len_trim(integerString))
- 101     format("# Processor",1X,A,": Received write signal.")
-
-       endif testSequential
+       ! Parallel executable.  Write a general message that this
+       ! processor has received a write signal.
+       
+       write(integerString,'(i7)') myID
+       integerString = adjustl(integerString)
+       integerString = trim(integerString)
+       print "(a)", "#"
+       print 101, integerString(:len_trim(integerString))
+101    format("# Processor",1X,A,": Received write signal.")
+       
 
        ! Check if a signal was set previously.
 
@@ -174,30 +160,15 @@
 
        call connect_signals
 
-       ! Test for a sequential executable.
+       ! Parallel executable. Write a general message that this
+       ! processor has received a write and quit signal.
 
-       testSequential: if( SU_MPI_isSequential ) then
-
-         ! Sequential executable. Write a general message that a write and
-         ! quit signal has been received.
-
-         print "(a)", "#"
-         print 200
- 200     format("# Received write and quit signal.")
-
-       else testSequential
-
-         ! Parallel executable. Write a general message that this
-         ! processor has received a write and quit signal.
-
-         write(integerString,'(i7)') myID
-         integerString = adjustl(integerString)
-         integerString = trim(integerString)
-         print "(a)", "#"
-         print 201, integerString(:len_trim(integerString))
- 201     format("# Processor",1X,A,": Received write and quit signal.")
-
-       endif testSequential
+       write(integerString,'(i7)') myID
+       integerString = adjustl(integerString)
+       integerString = trim(integerString)
+       print "(a)", "#"
+       print 201, integerString(:len_trim(integerString))
+201    format("# Processor",1X,A,": Received write and quit signal.")
 
        ! Check if a signal was set previously.
 

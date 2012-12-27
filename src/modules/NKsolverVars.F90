@@ -28,18 +28,18 @@ module NKsolverVars
   ! PETSc Variables
 
   ! PETSc SNES: 
-  ! snes: Non-linear solver solution context for NK problem. Not used. 
+  ! snes: Non-linear solver solution context for NK problem. Currently Unsued.
 
-  SNES               snes, psnes, outer_snes
+  SNES  snes, psnes, outer_snes
 
   ! PETSc Matrices:
   ! dRdw: This is a matrix-free matrix for the state residal matrix. 
   !       Matrix-vector products are computed with finite differences
   ! dRdwPre: The preconditoner matrix for NK method. This matrix is stored
   ! dRdwPseudo: Shell matrix used with the pseudo-transient 
-  !             continuation method
+  !             continuation method. Currently unused.
 
-  Mat                dRdw,dRdwPre,dRdwPseudo
+  Mat  dRdw, dRdwPre, dRdwPseudo
 
   ! PETSc Vectors:
   ! wVec: PETsc version of SUmb 'w'
@@ -66,15 +66,16 @@ module NKsolverVars
 
   ! Non-linear Solver Options
   integer(kind=intType) :: jacobian_lag
+  integer(kind=intType) :: NKSolveCount
   logical :: useEW
   logical :: useNKSolver
   logical :: NKSolverSetup
-  integer(kind=intType) :: NKSolveCount
   logical :: NKPCSetup
   logical :: NKFiniteDifferencePC
   logical :: RKreset
   integer(kind=intType) :: nRKreset
   real(kind=realType) :: resSum(8)
+
   ! Non-linear Solver Tolerances
   real(kind=realType) :: snes_atol 
   real(kind=realType) :: snes_rtol
@@ -110,35 +111,10 @@ module NKsolverVars
   ! Parameter from switching from RK to NK
   real(kind=realType) :: NK_switch_tol
 
-  ! Define some of the named constants for PETSc 
-
-  ! KSP Types
-  character, parameter :: ksp_gmres = "gmres"
-  character, parameter :: ksP_fgmres = "fgmres"
-  character, parameter :: ksp_bicgstab = "bcgs"
-
-  ! Global PC Types
-  character, parameter :: pc_blockjacobi = "bjacobi"
-  character, parameter :: pc_jacobi = "jacobi"
-  character, parameter :: pc_asm    = "asm"
-
-  ! Local PC Types
-  character, parameter :: pc_ilu = "ilu"
-  character, parameter :: pc_lu  = "lu"
-  
-  ! Local Orderings
-  character, parameter :: ord_natural = "natural"
-  character, parameter :: ord_rcm     = "rcm"
-  character, parameter :: ord_nd      = "nd"
-  character, parameter :: ord_owd     = "owd"
-
-  ! PC Side
-  character, parameter :: side_left = "left"
-  character, parameter :: side_right = "right"
-  
   ! Misc Parameters
-  real(kind=realType) :: totalR0,totalRStart,totalRFinal
-  real(kind=realType) :: rhoRes0,rhoResStart,rhoResFinal
+  real(kind=realType) :: totalR0, totalRStart, totalRFinal
+  real(kind=realType) :: rhoRes0, rhoResStart, rhoResFinal
+  logical :: freeStreamResSet
   real(kind=realType) :: CFL0
   integer(kind=intType) :: iterTot0
   integer(kind=intType) :: applyPCSubSpaceSize
@@ -153,6 +129,5 @@ module NKsolverVars
                                       cubicLineSearch = 1_intType, &
                                       nonMonotoneLineSearch = 2_intType
   integer(kind=intType) :: NKLS
-
 
 end module NKsolverVars

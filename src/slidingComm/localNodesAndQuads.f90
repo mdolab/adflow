@@ -42,13 +42,13 @@
        real(kind=realType), intent(out) :: thetapMin, thetanMin
        real(kind=realType), intent(out) :: thetapMax, thetanMax
 
-       integer(kind=adtIntType), intent(in) :: nQuad, nNode
+       integer(kind=intType), intent(in) :: nQuad, nNode
 
        integer(kind=intType), dimension(nQuad), intent(out) :: subface
        integer(kind=intType), dimension(nQuad), intent(out) :: quadID
 
-       integer(kind=adtIntType), dimension(4,nQuad), intent(out) :: conn
-       real(kind=adtRealType),   dimension(3,nNode), intent(out) :: coor
+       integer(kind=intType), dimension(4,nQuad), intent(out) :: conn
+       real(kind=realType),   dimension(3,nNode), intent(out) :: coor
 
        real(kind=realType), dimension(3,nNode), intent(out) :: coorInt
 !

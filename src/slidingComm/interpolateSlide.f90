@@ -71,7 +71,7 @@
 !
 !      Subroutine arguments.
 !
-       integer(kind=adtIntType), intent(in) :: nNode, nQuad
+       integer(kind=intType), intent(in) :: nNode, nQuad
 
        integer(kind=intType),   intent(in) :: nMySubfaces, color
        integer(kind=intType),   intent(in) :: level, sps, nSlices
@@ -80,10 +80,10 @@
        real(kind=realType),     intent(in) :: thetapMin, thetapMax
        real(kind=realType),     intent(in) :: thetanMin, thetanMax
 
-       integer(kind=adtIntType), dimension(4,nQuad), intent(in) :: conn
-       real(kind=adtRealType),   dimension(3,nNode), intent(in) :: coor
+       integer(kind=intType), dimension(4,nQuad), intent(in) :: conn
+       real(kind=realType),   dimension(3,nNode), intent(in) :: coor
 
-       real(kind=adtRealType), dimension(3,nNode), intent(in) :: coorInt
+       real(kind=realType), dimension(3,nNode), intent(in) :: coorInt
 
        type(localSubfaceType), dimension(nMySubfaces), &
                                            intent(inout) :: mySubfaces
@@ -98,14 +98,14 @@
        integer :: ierr, comm, myID, nProc
        integer, dimension(:), allocatable :: procID
 
-       integer(kind=adtIntType) :: nInter, nTria
+       integer(kind=intType) :: nInter, nTria
 
-       integer(kind=adtIntType), dimension(1,1) :: connTria
-       real(kind=adtRealType),   dimension(3,2) :: dummy
+       integer(kind=intType), dimension(1,1) :: connTria
+       real(kind=realType),   dimension(3,2) :: dummy
 
-       integer(kind=adtIntType), dimension(:), allocatable :: elementID
-       real(kind=adtRealType), dimension(:,:), allocatable :: uvw
-       real(kind=adtRealType), dimension(:,:), allocatable :: bufInterpol
+       integer(kind=intType), dimension(:), allocatable :: elementID
+       real(kind=realType), dimension(:,:), allocatable :: uvw
+       real(kind=realType), dimension(:,:), allocatable :: bufInterpol
 
        integer(kind=intType) :: bb, nn, mm, ii, jj, i, j, k
 
@@ -184,7 +184,7 @@
            ! Determine the interpolation data for the nodes.
            ! The coordinates of the halo nodes are interpolated.
 
-           call getInterpolationData(3_adtIntType, coorInt)
+           call getInterpolationData(3_intType, coorInt)
 
            ! Release the memory of the ADT, because all the searches
            ! have been done.
@@ -271,7 +271,7 @@
            ! Determine the interpolation data for the faces.
            ! No data needs to be interpolated.
 
-           call getInterpolationData(0_adtIntType, dummy)
+           call getInterpolationData(0_intType, dummy)
 
            ! Release the memory of the ADT, because all the searches
            ! have been done.
@@ -424,9 +424,9 @@
 !
 !        Subroutine arguments.
 !
-         integer(kind=adtIntType), intent(in) :: nInterpol
+         integer(kind=intType), intent(in) :: nInterpol
 
-         real(kind=adtRealType), dimension(:,:), intent(in) :: donorData
+         real(kind=realType), dimension(:,:), intent(in) :: donorData
 !
 !        Local variables.
 !
@@ -434,15 +434,15 @@
 
          integer(kind=intType), dimension(:), allocatable :: nRotations
 
-         integer(kind=adtIntType) :: nSearch
+         integer(kind=intType) :: nSearch
 
          integer(kind=adtElementType), dimension(:), allocatable :: &
                                                             elementType
 
          real(kind=realType) :: theta, thetaNew, angleRot, d2
 
-         real(kind=adtRealType), dimension(:),   allocatable :: dist2
-         real(kind=adtRealType), dimension(:,:), allocatable :: coorEnt
+         real(kind=realType), dimension(:),   allocatable :: dist2
+         real(kind=realType), dimension(:,:), allocatable :: coorEnt
 
          logical :: thetaCorrected
 !
