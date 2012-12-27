@@ -77,8 +77,8 @@
       ! pc    Preconditioner context
       VecScatter dRdaTpsi_scatter
       
-      KSP     ksp
-      PC      pc
+      KSP     ksp, master_PC_KSP
+      PC      pc, master_PC
 
       !Subcontexts for ASM preconditioner
       PC subpc

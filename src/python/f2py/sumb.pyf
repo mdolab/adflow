@@ -789,52 +789,30 @@ python module sumb ! in
        end module inputphysics
 
        module inputadjoint ! in :sumb:../modules/inputParam.f90
-         use precision
-         integer(kind=inttype) :: pcside
-         integer(kind=inttype) :: matrixordering
-         integer(kind=inttype) parameter,optional :: rowabs=4
-         integer(kind=inttype) parameter,optional :: right=2
-         integer(kind=inttype) :: filllevel
+         use constants
+         character(len=maxstringlen) :: pcside
+         character(len=maxstringlen) :: matrixordering
+         character(len=maxstringlen) :: adjointsolvertype
+         character(len=maxstringlen) :: localpctype
+         character(len=maxstringlen) :: precondtype
          real(kind=realtype) :: adjabstol
          real(kind=realtype) :: adjdivtol
-         integer(kind=inttype) parameter,optional :: petsccg=3
-         integer(kind=inttype) parameter,optional :: left=1
-         integer(kind=inttype) parameter,optional :: additiveschwartz=3
+         real(kind=realtype) :: adjreltol
+         real(kind=realtype) :: adjreltolrel
+         integer(kind=inttype) :: overlap
+         integer(kind=inttype) :: adjmonstep
+         integer(kind=inttype) :: filllevel
          integer(kind=inttype) :: adjmaxiter
+         integer(kind=inttype) :: adjrestart
+         integer(kind=inttype) :: innerpreconits
+         integer(kind=inttype) :: outerpreconits
          logical :: approxpc
          logical :: usediagtspc
          logical :: finitedifferencepc
-         integer(kind=inttype) parameter,optional :: cholesky=4
-         integer(kind=inttype) parameter,optional :: icc=2
-         integer(kind=inttype) parameter,optional :: rowsum=3
-         integer(kind=inttype) parameter,optional :: nesteddissection=3
-         integer(kind=inttype) :: overlap
-         integer(kind=inttype) parameter,optional :: lu=3
-         integer(kind=inttype) parameter,optional :: onewaydissection=4
-         integer(kind=inttype) parameter,optional :: jacobi=2
-         integer(kind=inttype) parameter,optional :: petscbicgstab=1
-         integer(kind=inttype) parameter,optional :: quotientminimumdegree=5
-         integer(kind=inttype) :: adjointsolvertype
-         integer(kind=inttype) parameter,optional :: normal=1
-         integer(kind=inttype) :: adjmonstep
-         integer(kind=inttype) parameter,optional :: petscfgmres=4
-         integer(kind=inttype) parameter,optional :: petscgmres=2
          logical :: restartadjoint
-         real(kind=realtype) :: adjreltol
-         real(kind=realtype) :: adjreltolrel
-         integer(kind=inttype) parameter,optional :: blockjacobi=1
-         integer(kind=inttype) parameter,optional :: natural=1
-         integer(kind=inttype) :: adjrestart
-         integer(kind=inttype) :: localpctype
          logical :: solveadjoint
-         integer(kind=inttype) parameter,optional :: rowmax=2
-         integer(kind=inttype) :: precondtype
          logical :: setmonitor
-         integer(kind=inttype) parameter,optional :: ilu=1
-         integer(kind=inttype) parameter,optional :: reversecuthillmckee=2
-         integer(kind=inttype) :: scaletype
          logical :: printtiming
-         integer(kind=inttype) :: subkspsubspacesize
          integer(kind=inttype) :: applyadjointpcsubspacesize
        end module inputadjoint
 
@@ -1091,27 +1069,16 @@ python module sumb ! in
          integer(kind=inttype) :: jacobian_lag
          logical :: usenksolver
          logical :: nkfinitedifferencepc
-         character parameter,optional :: pc_lu="lu"
-         character parameter,optional :: ord_nd="nd"
-         character parameter,optional :: pc_blockjacobi="bjacobi"
          integer(kind=inttype) :: snes_max_funcs
          real(kind=realtype) :: snes_rtol
          character(len=maxstringlen) :: global_pc_side
-         character parameter,optional :: ksp_bicgstab="bicgstab"
-         character parameter,optional :: pc_ilu="ilu"
          integer(kind=inttype) :: snes_max_its
-         character parameter,optional :: ord_rcm="rcm"
          character(len=maxstringlen) :: ksp_solver_type
-         character parameter,optional :: ksp_gmres="gmres"
-         character parameter,optional :: side_right="right"
-         character parameter,optional :: ord_natural="natural"
-         character parameter,optional :: pc_jacobi="jacobi"
          integer(kind=inttype) :: ksp_subspace
          integer(kind=inttype) :: asm_overlap
          character(len=maxstringlen) :: global_pc_type
          real(kind=realtype) :: ksp_atol
          integer(kind=inttype) :: ksp_max_it
-         character parameter,optional :: side_left="left"
          integer(kind=inttype) :: local_pc_ilu_level
          real(kind=realtype) :: snes_stol
          real(kind=realtype) :: snes_atol
@@ -1120,9 +1087,6 @@ python module sumb ! in
          character(len=maxstringlen) :: local_pc_type
          real(kind=realtype) :: nk_switch_tol
          real(kind=realtype) :: ksp_rtol
-         character parameter,optional :: ord_owd="owd"
-         character parameter,optional :: ksp_fgmres="fgmres"
-         character parameter,optional :: pc_asm="asm"
          real(kind=realtype) :: totalr0
          real(kind=realtype) :: totalrstart
          real(kind=realtype) :: totalrfinal
