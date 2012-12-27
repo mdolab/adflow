@@ -19,14 +19,12 @@
 
 #      ******************************************************************
 #      *                                                                *
-#      * Set the root directory for SU_MPI and ADT and the modules,     *
+#      * Set the root directory for ADT and the modules,                *
 #      * object, lib and bin directories for SUmb. Note that SUMB_DIR   *
 #      * must be set in the Makefiles that include this common file.    *
 #      *                                                                *
 #      ******************************************************************
-#SUMB_DIR = ./
-SU_MPI_DIR = $(SUMB_DIR)/externals/SU_MPI
-ADT_DIR    = $(SUMB_DIR)/externals/ADT
+
 INPUT_DIR   = $(SUMB_DIR)/src/inputParam
 TURB_DIR   = $(SUMB_DIR)/src/turbulence
 
@@ -73,8 +71,7 @@ MAKE_CLEAN_ARGUMENTS = *~ *.o *.mod *.il *.stb
 #      *                                                                *
 #      ******************************************************************
 
-FF90_LOCAL_FLAGS = -I$(SUMB_MODDIR) -I$(SU_MPI_DIR)/mod \
-		   -I$(ADT_DIR)/mod -I$(INPUT_DIR) -I$(TURB_DIR)\
+FF90_LOCAL_FLAGS = -I$(SUMB_MODDIR) -I$(INPUT_DIR) -I$(TURB_DIR)
 
 FF90_ALL_FLAGS   = $(FF90_LOCAL_FLAGS) $(CGNS_INCLUDE_FLAGS) \
 		   $(FF90_FLAGS) $(ADDITIONAL_FF90_FLAGS) $(PV3_FLAGS) \

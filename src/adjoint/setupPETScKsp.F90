@@ -2,470 +2,185 @@
 !     ******************************************************************
 !     *                                                                *
 !     * File:          setupPETScKsp.F90                               *
-!     * Author:        C.A.(Sandy) Mader                               *
-!     * Starting date: 11-05-2010                                      *
-!     * Last modified: 11-05-2010                                      *
+!     * Author:        Gaetan Kenway der                               *
+!     * Starting date: 26-12-2012                                      *
+!     * Last modified: 26-12-2012                                      *
 !     *                                                                *
 !     ******************************************************************
 !
 subroutine setupPETScKsp
-  !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Create the Krylov subspace linear solver context,              *
-  !     * the preconditioner context and set their various options.      *
-  !     * This defines the linear solver to be used to solve the adjoint *
-  !     * system of equations.                                           *
-  !     *                                                                *
-  !     ******************************************************************
-  !
+
   use ADjointPETSc
   use ADjointVars
-  use blockPointers
-  use flowVarRefState  !nw
   use inputADjoint
   use communication
   implicit none
 
-  !
-  !     User-defined Fortran routine.
-  !
+  !     Local variables.
+  character(len=10)  :: pcType
+  logical :: useAD, usePC, useTranspose 
+  integer(kind=intType) :: ierr
   external MyKSPMonitor
 
-  !
-  !     Local variables.
-  !
-  real(kind=realType)   :: rTol, aTol, dTol
-  integer(kind=intType) :: mIts
-  character(len=10)     :: kspType, pcType
-  logical ::useAD,usePC,useTranspose 
 #ifndef USE_NO_PETSC
 
-  ! PETSc macros are lost and have to be redefined.
-  ! They were extracted from: <PETSc root dir>/include/petscksp.h
-  !                                                   /petscpc.h
-  !Solvers
-#define KSPGMRES      "gmres"   
-#define KSPBCGS       "bcgs"
-#define KSPCG         "cg"
-#define KSPFGMRES     "fgmres"
-
-  !Global Preconditioners
-#define PCJACOBI      "jacobi"
-#define PCBJACOBI     "bjacobi"
-#define PCASM         "asm"
-
-  !Local Preconditioners
-#define PCILU         "ilu"
-#define PCICC         "icc"
-#define PCLU          "lu"
-#define PCCHOLESKY    "cholesky"
-
-  !Matrix Reorderings
-#define MATORDERING_NATURAL       "natural"
-#define MATORDERING_RCM       "rcm"
-#define MATORDERING_ND        "nd"
-#define MATORDERING_1WD       "1wd"
-#define MATORDERING_QMD       "qmd"
-
-  !Other miscellaneous definitions
-#define PETSC_NULL           0
-#define PETSC_DEFAULT        -2
-#define KSPPREONLY    "preonly"
-
   if (ApproxPC)then
-
      !setup the approximate PC Matrix
      useAD = .False.
      useTranspose = .True.
      usePC = .True.
-     call setupStateResidualMatrix(drdwpret,useAD,usePC,useTranspose)
+     call setupStateResidualMatrix(drdwpret, useAD, usePC, useTranspose)
 
      !now set up KSP Context
-     !call KSPSetOperators(ksp,dRdW,dRdWPre, &
-     !                  DIFFERENT_NONZERO_PATTERN,PETScIerr)
-     call KSPSetOperators(ksp,dRdWT,dRdWPreT, &
-          DIFFERENT_NONZERO_PATTERN,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
+     call KSPSetOperators(ksp, dRdWT, dRdWPreT, &
+          DIFFERENT_NONZERO_PATTERN, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
   else
-
-     ! Use the exact jacobian.
-     ! Here the matrix that defines the linear system
-     ! also serves as the preconditioning matrix.
-
-     call KSPSetOperators(ksp,dRdWT,dRdWT, &
-          DIFFERENT_NONZERO_PATTERN,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
+     ! Use the exact jacobian.  Here the matrix that defines the
+     ! linear system also serves as the preconditioning matrix.
+     call KSPSetOperators(ksp, dRdWT, dRdWT, &
+          SAME_NONZERO_PATTERN, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
   end if
 
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Set the various options for the KSP.                           *
-  !     *                                                                *
-  !     ******************************************************************
+  ! First, KSPSetFromOptions MUST be called
+  call KSPSetFromOptions(ksp, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  call KSPSetFromOptions(ksp, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
+  ! Set the type of solver to use:
+  call KSPSetType(ksp, ADJointSolverType, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
+  ! If we're using GMRES set the possible gmres restart
+  call KSPGMRESSetRestart(ksp, adjRestart, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  !     *****************************************************************
-  !     *                                                               *
-  !     * Now setup the specific options for the selected solver        *
-  !     *                                                               *
-  !     *****************************************************************
-  !
+  ! If you're using GMRES, set refinement type
+  call KSPGMRESSetCGSRefinementType(ksp, KSP_GMRES_CGS_REFINE_IFNEEDED, ierr)   
+  call EChk(ierr, __FILE__, __LINE__)
 
-  select case(ADjointSolverType)
+  ! Set the preconditioner side from option:
+  if (trim(PCSide) == 'right') then
+     call KSPSetPCSide(ksp, PC_RIGHT, ierr)
+  else
+     call KSPSetPCSide(ksp, PC_LEFT, ierr)
+  end if
+  call EChk(ierr, __FILE__, __LINE__)
 
-  case(PETSCGMRES)
-
-     call KSPSetType(ksp, KSPGMRES, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     call KSPGMRESSetRestart(ksp, adjRestart, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     call KSPGMRESSetCGSRefinementType(ksp, & 
-          KSP_GMRES_CGS_REFINE_IFNEEDED, PETScIerr)   
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     select case(PCSide)
-     case(Right)
-        call KSPSetPCSide(ksp, PC_RIGHT, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(Left)
-        call KSPSetPCSide(ksp, PC_LEFT, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     end select
-
-  case(PETSCBICGStab)
-
-     call KSPSetType(ksp, KSPBCGS, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     select case(PCSide)
-     case(Right)
-        call KSPSetPCSide(ksp, PC_RIGHT, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(Left)
-        call KSPSetPCSide(ksp, PC_LEFT, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     end select
-
-  case(PETSCCG)
-
-     call KSPSetType(ksp, KSPCG, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     select case(PCSide)
-     case(Right)
-        call KSPSetPCSide(ksp, PC_RIGHT, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(Left)
-        call KSPSetPCSide(ksp, PC_LEFT, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     end select
-
-  case(PETSCFGMRES)
-
-     call KSPSetType(ksp, KSPFGMRES, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     call KSPGMRESSetRestart(ksp, adjRestart, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     select case(PCSide)
-     case(Right)
-        call KSPSetPCSide(ksp, PC_RIGHT, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(Left)
-        call KSPSetPCSide(ksp, PC_LEFT, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     end select
-  end select
-
-  ! Non-solver specific options
-
+  ! Set the main tolerance for th main adjoint KSP solver
   call KSPSetTolerances(ksp, adjRelTol, adjAbsTol, adjDivTol, &
-       adjMaxIter, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
+       adjMaxIter, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  if( myid==0 ) then
-     call KSPGetTolerances(ksp, rTol, aTol, dTol, mIts, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-     write(*,20) rTol, aTol, dTol
-     write(*,21) mIts
+  ! Extract preconditioning context for main KSP solver: (master_PC)
+  call KSPGetPC(ksp, master_PC, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  call KSPGetPC(ksp, pc, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+   ! Set the type of master_PC to ksp. This lets us do multiple
+   ! iterations of preconditioner application
+  call PCSetType(master_PC, 'ksp', ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Get the ksp context from master_PC which is the actual preconditioner:
+  call PCKSPGetKSP(master_PC, master_PC_KSP, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! master_PC_KSP type will always be of type richardson. If the
+  ! number  of iterations is set to 1, this ksp object is transparent. 
+  call KSPSetType(master_PC_KSP, 'richardson', ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Important to set the norm-type to None for efficiency.
+  call kspsetnormtype(master_PC_KSP, KSP_NORM_NONE, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Do one iteration of the outer ksp preconditioners. Note the
+  ! tolerances are unsued since we have set KSP_NORM_NON
+  call KSPSetTolerances(master_PC_KSP, PETSC_DEFAULT_DOUBLE_PRECISION, &
+       PETSC_DEFAULT_DOUBLE_PRECISION, PETSC_DEFAULT_DOUBLE_PRECISION, &
+       outerPreConIts, ierr)
+
+  ! Get the 'preconditioner for master_PC_KSP, called 'pc'. This
+  ! preconditioner is potentially run multiple times. 
+  call KSPgetPC(master_PC_KSP, pc, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Set the type of 'pc'. This will almost always be additive schwarty
+  call PCSetType(pc, 'asm', ierr)!PreCondType, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Set the overlap required
+  call PCASMSetOverlap(pc, overlap, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  !Setup the main ksp context before extracting the subdomains
+  call KSPSetUp(ksp, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Extract the ksp objects for each subdomain
+  call PCASMGetSubKSP(pc, nlocal, first, subksp, ierr )
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! This 'subksp' object will ALSO be of type richardson so we can do
+  ! multiple iterations on the sub-domains
+  call KSPSetType(subksp, 'richardson', ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Again, norm_type is NONE since we don't want to check error
+  call kspsetnormtype(subksp, KSP_NORM_NONE, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Set the number of iterations to do on local blocks. Tolerances are ignored. 
+  call KSPSetTolerances(subksp, PETSC_DEFAULT_DOUBLE_PRECISION, &
+       PETSC_DEFAULT_DOUBLE_PRECISION, PETSC_DEFAULT_DOUBLE_PRECISION, &
+       innerPreConIts, ierr)
+
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Extract the preconditioner for subksp object.
+  call KSPGetPC(subksp, subpc, ierr )
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! The subpc type will almost always be ILU
+  call PCSetType(subpc, LocalPCType, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Setup the matrix ordering for the subpc object:
+  call PCFactorSetMatOrderingtype(subpc, matrixOrdering, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Set the ILU parameters
+  call PCFactorSetLevels(subpc, fillLevel , ierr)
+  call EChk(ierr, __FILE__, __LINE__) 
+
+  ! Setup monitor if necessary:
+  if (setMonitor) then
+     call KSPMonitorSet(ksp, MyKSPMonitor, PETSC_NULL_OBJECT, &
+          PETSC_NULL_FUNCTION, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
   endif
 
-  ! Setup Preconditioning 
-  call KSPGetPC(ksp, pc, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-  !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Select the preconditioning method.                             *
-  !     *                                                                *
-  !     ****************************************************************** 
-  !
-
-  select case(PreCondType)
-
-  case(Jacobi)
-
-     call PCSetType( pc, PCJACOBI, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-     ! set tolerances on subksp (is this really needed???)
-     call KSPSetTolerances(ksp, 1.e-8, adjAbsTol, adjDivTol, &
-          adjMaxIter, PETScIerr)
-
-     !set Scaling Factor Type
-     select case(ScaleType)
-     case(Normal)
-        continue
-     case(RowMax)
-        call PCJacobiSetUseRowMax(pc, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(RowSum)
-        call PCJacobiSetUseRowSum(pc, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(RowAbs)
-        call PCJacobiSetUseAbs(pc, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     end select
-
-     select case(MatrixOrdering)
-     case(Natural)
-        call PCFactorSetMatOrderingtype( pc, MATORDERING_NATURAL, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(ReverseCuthillMckee)
-        call PCFactorSetMatOrderingtype( pc, MATORDERING_RCM, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(NestedDissection)
-        call PCFactorSetMatOrderingtype( pc, MATORDERING_ND, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(OnewayDissection )
-        call PCFactorSetMatOrderingtype( pc, MATORDERING_1WD, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case( QuotientMinimumDegree)
-        call PCFactorSetMatOrderingtype( pc, MATORDERING_QMD, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     end select
-
-     !Set the iteration Monitor
-     if (setMonitor) then
-        call KSPMonitorSet(ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
-             PETSC_NULL_FUNCTION, PETScIerr)
-     endif
-
-  case(BlockJacobi)
-
-     call PCSetType( pc, PCBJACOBI, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-     call PCSetUp(pc,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     Nsub = 1!_intType
-     length = nCellsLocal*nw
-     call PCBJacobiSetLocalBlocks(pc,Nsub,length,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     !Setup KSP context before calling local subdomain ksp contexts
-     call KSPSetUp(ksp, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     !Setup local subcontexts
-     call PCBJacobiGetSubKSP(pc,nlocal,first,subksp,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     !Setup Local ILU precondtioner
-     call KSPGetPC( subksp, subpc, PETScIerr )
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     select case(LocalPCType)
-     case(ILU)
-        call PCSetType( subpc, PCILU, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(ICC)
-        call PCSetType( subpc, PCICC, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(LU)
-        call PCSetType( subpc, PCLU, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(Cholesky)
-        call PCSetType( subpc, PCCHOLESKY, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     end select
-
-     !set matrix ordering
-
-     select case(MatrixOrdering)
-     case(Natural)
-        call PCFactorSetMatOrderingtype( subpc, MATORDERING_NATURAL, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(ReverseCuthillMckee)
-        call PCFactorSetMatOrderingtype( subpc, MATORDERING_RCM, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(NestedDissection)
-        call PCFactorSetMatOrderingtype( subpc, MATORDERING_ND, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(OnewayDissection )
-        call PCFactorSetMatOrderingtype( subpc, MATORDERING_1WD, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case( QuotientMinimumDegree)
-        call PCFactorSetMatOrderingtype( subpc, MATORDERING_QMD, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     end select
-
-     !Set ILU parameters
-     call PCFactorSetLevels( subpc, fillLevel , PETScIerr)!
-     call EChk(PETScIerr,__FILE__,__LINE__) 
-
-     select case (ADjointSolverType)
-     case(PETSCFGMRES)
-        
-        call KSPSetType(subksp, KSPGMRES, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-        
-        call KSPGMRESSetRestart(subksp, subkspsubspacesize, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     
-        call KSPSetPCSide(ksp, PC_RIGHT, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-
-        call KSPSetTolerances(subksp, adjRelTol, adjAbsTol, adjDivTol, &
-             subkspsubspacesize, PETScIerr)
-
-     case default ! All other solvers:
-        call KSPSetType(subksp, KSPPREONLY, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-
-        ! set tolerances on subksp (is this really needed???)
-        call KSPSetTolerances(subksp, 1.e-8, adjAbsTol, adjDivTol, &
-             adjMaxIter, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-        
-     end select
-     
-     if(setMonitor)then
-        call KSPMonitorSet(ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
-             PETSC_NULL_FUNCTION, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     endif
-
-  case(AdditiveSchwartz)
-
-     call PCSetType( pc, PCASM, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     !setup a basic overlaping scheme, more detailed scheme to be used later
-     call PCASMSetOverlap(pc,overlap,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     !Setup KSP context before calling local subdomain ksp contexts
-     call KSPSetUp(ksp, PETScIerr);
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     !get the subdomain contexts
-     call PCASMGetSubKSP( pc, nlocal,  first, subksp, PETScIerr )
-     call EChk(PETScIerr,__FILE__,__LINE__)
-        
-     !Setup the subdomain preconditioner
-     call KSPGetPC( subksp, subpc, PETScIerr )
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     !Set subdomain preconditioner type
-
-     select case(LocalPCType)
-     case(ILU)
-        call PCSetType( subpc, PCILU, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(ICC)
-        call PCSetType( subpc, PCICC, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(LU)
-        call PCSetType( subpc, PCLU, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(Cholesky)
-        call PCSetType( subpc, PCCHOLESKY, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     end select
-
-     !set matrix ordering
-
-     select case(MatrixOrdering)
-     case(Natural)
-        call PCFactorSetMatOrderingtype( subpc, MATORDERING_NATURAL, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(ReverseCuthillMckee)
-        call PCFactorSetMatOrderingtype( subpc, MATORDERING_RCM, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(NestedDissection)
-        call PCFactorSetMatOrderingtype( subpc, MATORDERING_ND, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case(OnewayDissection )
-        call PCFactorSetMatOrderingtype( subpc, MATORDERING_1WD, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     case( QuotientMinimumDegree)
-        call PCFactorSetMatOrderingtype( subpc, MATORDERING_QMD, PETScIerr )
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     end select
-
-     !Set ILU parameters
-     call PCFactorSetLevels( subpc, fillLevel , PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     !Set local contexts to preconditioner's only
-
-     select case (ADjointSolverType)
-     case(PETSCFGMRES)
-        
-        call KSPSetType(subksp, KSPGMRES, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-        
-        call KSPGMRESSetRestart(subksp, subkspsubspacesize, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     
-        call KSPSetPCSide(ksp, PC_RIGHT, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-
-        call KSPSetTolerances(subksp, adjRelTol, adjAbsTol, adjDivTol, &
-             subkspsubspacesize, PETScIerr)
-
-     case default ! All other solvers:
-        call KSPSetType(subksp, KSPPREONLY, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-
-        ! set tolerances on subksp (is this really needed???)
-        call KSPSetTolerances(subksp, 1.e-8, adjAbsTol, adjDivTol, &
-             adjMaxIter, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-        
-     end select
-     
-
-     if(setMonitor)then
-        call KSPMonitorSet(ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
-             PETSC_NULL_FUNCTION, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     endif
-  end select
-
+  ! Send some feedback to screen
   if( myid==0 ) then
-     call PCGetType(pc, pcType, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-     write(*,30) pcType
+     write(*, 20) adjRelTol, adjAbsTol, adjDivTol
+     write(*, 21) adjMaxIter
+     call PCGetType(pc, pcType, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+     write(*, 30) pcType
   endif
 
   ! Output formats.
-
-10 format("# ... KSP properties:",/, &
-       "#",7x,"type        :",1x,a)
-20 format("#",7x,"tolerances  :",1x,"rel =",1x,es7.1,/, &
-       "#",21x,"abs =",1x,es7.1,/, &
-       "#",21x,"div =",1x,es7.1)
-21 format("#",7x,"max.iter.   :",1x,i4)
-30 format("#",7x,"precond.type:",1x,a)
-40 format(a,1x,i3,a,1x,i6,a,1x,i6,1x,a,1x,i6) ! ownership
+10 format("# ... KSP properties:", /, &
+       "#", 7x, "type        :", 1x, a)
+20 format("#", 7x, "tolerances  :", 1x, "rel =", 1x, es7.1, /, &
+       "#", 21x, "abs =", 1x, es7.1, /, &
+       "#", 21x, "div =", 1x, es7.1)
+21 format("#", 7x, "max.iter.   :", 1x, i4)
+30 format("#", 7x, "precond.type:", 1x, a)
+40 format(a, 1x, i3, a, 1x, i6, a, 1x, i6, 1x, a, 1x, i6) ! ownership
 #endif
 
 end subroutine setupPETScKsp
@@ -496,7 +211,7 @@ subroutine MyKSPMonitor(myKsp, n, rnorm, dummy, ierr)
   ! dummy - Optional user-defined monitor context (unused here)
   ! ierr  - Return error code
 
-  real(kind=realType), pointer, dimension(:,:) :: myKsp
+  real(kind=realType), pointer, dimension(:, :) :: myKsp
   integer(kind=intType) :: n, dummy, ierr
   real(kind=realType)   :: rnorm
   !
@@ -510,15 +225,15 @@ subroutine MyKSPMonitor(myKsp, n, rnorm, dummy, ierr)
 
   ! Write the residual norm to stdout every adjMonStep iterations.
 
-  if( mod(n,adjMonStep)==0 ) then
-     if( myid==0 ) write(*,10) n, rnorm
+  if( mod(n, adjMonStep)==0 ) then
+     if( myid==0 ) write(*, 10) n, rnorm
   end if
 
   ierr = 0
 
   ! Output format.
 
-10 format(i4,1x,'KSP Residual norm',1x,e16.10)
+10 format(i4, 1x, 'KSP Residual norm', 1x, e16.10)
 
 #endif
 

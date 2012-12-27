@@ -349,6 +349,7 @@
        ! cycleStrategy:    Array which describes the mg cycle.
        ! cfl:              Cfl number on the fine grid.
        ! cflCoarse:        Idem, but on the coarse grids.
+       ! cfllimit          Limit used to determine how much residuals are smoothed
        ! alfaTurb:         Relaxation factor in turbulent dd-adi smoother.
        ! betaTurb:         Relaxation factor in vf dd-adi smoother.
        ! relaxBleeds:      Relaxation coefficient for the update
@@ -369,6 +370,7 @@
        integer(kind=intType) :: nsgStartup, smoother, nRKStages
        integer(kind=intType) :: nSubIterTurb, nUpdateBleeds
        integer(kind=intType) :: resAveraging
+       real(kind=realType) :: CFLLimit
        integer(kind=intType) :: turbTreatment, turbSmoother, turbRelax
        integer(kind=intType) :: mgBoundCorr, mgStartlevel
        integer(kind=intType) :: nMGSteps, nMGLevels
@@ -957,44 +959,9 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use precision
+       use constants
        implicit none
        save
-
-       !definition of parameters for the ADjoint Linear Solver
-
-       integer(kind=intType), parameter :: PETSCBICGStab = 1_intType, &
-                                           PETSCGMRES    = 2_intType, &
-                                           PETSCCG       = 3_intType, &
-                                           PETSCFGMRES   = 4_intType
-       
-       !Definitions for Global Preconditioners
-       integer(kind=intType), parameter :: BlockJacobi      = 1_intType, &
-                                           Jacobi           = 2_intType, &
-                                           AdditiveSchwartz = 3_intType
-
-       !Definitions for local Preconditioners
-       integer(kind=intType), parameter :: ILU       = 1_intType, &
-                                           ICC       = 2_intType, &
-                                           LU        = 3_intType, &
-                                           Cholesky  = 4_intType
-
-       !Definitions for matrix ordering method
-       integer(kind=intType), parameter :: Natural               = 1_intType, &
-                                           ReverseCuthillMckee   = 2_intType, &
-                                           NestedDissection      = 3_intType, &
-                                           OnewayDissection      = 4_intType, &
-                                           QuotientMinimumDegree = 5_intType
-
-       !Definitions for Preconditioner Side
-       integer(kind=intType), parameter :: Left  = 1_intType, &
-                                           Right = 2_intType
-       
-       !Definitions for matrix ordering method
-       integer(kind=intType), parameter :: Normal = 1_intType, &
-                                           RowMax = 2_intType, &
-                                           RowSum = 3_intType, &
-                                           RowAbs = 4_intType
 !
 !      ******************************************************************
 !      *                                                                *
@@ -1011,18 +978,17 @@
        !                 from the previous solution
        ! useDiagTSPC   : Whether or not the off time instance terms are
        !                 included in the TS preconditioner.
-       logical :: solveADjoint, setMonitor, ApproxPC,restartADjoint,useDiagTSPC
+       logical :: solveADjoint, setMonitor, ApproxPC, restartADjoint, useDiagTSPC
 
        ! ADjointSolverType: Type of linear solver for the ADjoint
        ! PreCondType      : Type of Preconditioner to use
-       ! ScaleType        : Type of Scaling to use in Jacobi Preconditioner
        ! Matrix Ordering  : Type of matrix ordering to use
-       integer(kind=intType)::ADjointSolverType,PreCondType,ScaleType,&
-            MatrixOrdering
-       
-       ! PCSide  : Right or Left Preconditioning
-       ! LocalPC : Local preconditioning type 
-       integer(kind=intType):: PCSide,LocalPCType
+       ! LocalPCType      : Type of preconditioner to use on subdomains
+       character(maxStringLen) :: ADjointSolverType
+       character(maxStringLen) :: PreCondType
+       character(maxStringLen) :: matrixOrdering
+       character(maxStringLen) :: PCSide
+       character(maxStringLen) :: LocalPCType
 
        ! FillLevel     : Number of levels of fill for the ILU local PC
        ! Overlap       : Amount of overlap in the ASM PC
@@ -1044,7 +1010,11 @@
        integer(kind=intType)  :: adjRestart 
        integer(kind=intType)  :: adjMonStep 
 
-       
+       ! outerPCIts : Number of iterations to run for on (global) preconditioner
+       ! intterPCIts : Number of iterations to run on local preconditioner
+       integer(kind=intType) :: outerPreConIts
+       integer(kind=intType) :: innerPreConIts
+
        real(kind=realType)    :: sigmab
        logical :: printTiming
        logical :: finitedifferencepc

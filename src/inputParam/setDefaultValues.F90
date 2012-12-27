@@ -411,7 +411,7 @@
        velDirIni(3) = zero
 
        ! Additional Paramters Requiring Defaults
-
+       freeStreamResSet = .False.
        printIterations = .True.
        routineFailed = .False.
        fatalFail     = .False.
