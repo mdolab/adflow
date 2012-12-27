@@ -1063,7 +1063,7 @@ class SUMB(AeroSolver):
             self.sumb.iteration.itertot = 0
         # end if
 
-        if self.getOption('equationMode') == 'Unsteady':
+        if self.getOption('equationMode') == 'unsteady':
             self.sumb.alloctimearrays(self.getOption('nTimeStepsFine'))
 
         # Reset Fail Flags
@@ -1071,7 +1071,7 @@ class SUMB(AeroSolver):
         self.solve_failed =  self.fatalFail = False
 
         self._updatePeriodInfo()
-        if (self.getOption('equationMode') == 'Steady' or self.getOption('equationMode') == 'Time Spectral'):
+        if (self.getOption('equationMode') == 'steady' or self.getOption('equationMode') == 'time spectral'):
             self._updateGeometryInfo()
         self._updateVelocityInfo()
 
@@ -1891,10 +1891,11 @@ class SUMB(AeroSolver):
 
     def _updateGeometryInfo(self):
         """Update the SUmb internal geometry info, if necessary."""
+
         if self._update_geom_info:
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
-        
+
             if newGrid is not None:
                 self.sumb.setgrid(newGrid)
             # end if
