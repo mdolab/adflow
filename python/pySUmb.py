@@ -1354,8 +1354,12 @@ class SUMB(AeroSolver):
         if cfd_force_pts is None:
             cfd_force_pts = self.getForcePoints(TS)
         # end if
-
-        forces = self.sumb.getforces(cfd_force_pts.T, TS).T
+        
+        if len(cfd_force_pts) > 0:
+            forces = self.sumb.getforces(cfd_force_pts.T, TS).T
+        else:
+            forces = numpy.zeros((0,3),self.dtype)
+        # end if
 
         if group_name is not None:
             forces = self.mesh.sectionVectorByFamily(group_name, forces)
