@@ -178,7 +178,6 @@ TAPENADE_SRC_SOLVER =  $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/block_res_s
 		       $(SOLVER_DIRSRC)/adjoint/residualInput/constants.f90 \
 		       $(SOLVER_DIRSRC)/adjoint/residualInput/precision.f90 \
 		       $(SOLVER_DIRSRC)/adjoint/residualInput/block.f90\
-		       $(SOLVER_DIRSRC)/adjoint/residualInput/su_mpi.f90\
 		       $(SOLVER_DIRSRC)/adjoint/residualInput/terminate.f90\
 		       $(SOLVER_DIRSRC)/adjoint/residualInput/communication.f90\
 		       $(SOLVER_DIRSRC)/adjoint/residualInput/cgnsGrid.f90 \

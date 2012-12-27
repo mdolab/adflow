@@ -29,19 +29,10 @@
 !      *                                                                *
 !      ******************************************************************
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Include the su_mpi module; inside this module it is            *
-!      * controlled whether a sequential or a parallel executable is    *
-!      * built. For the SUmb sources this is completely transparent,    *
-!      * although a completely new build must be performed when a       *
-!      * change is made from sequential to parallel and vice versa.     *
-!      *                                                                *
-!      ******************************************************************
 !
-       use su_mpi
        implicit none
        save
+#include "mpif.h"
 !
 !      ******************************************************************
 !      *                                                                *
@@ -129,7 +120,17 @@
 !      ******************************************************************
 !
        integer(kind=1), private :: dummyPor
+
+!     ******************************************************************
+!     *                                                                *
+!     * Definition of the integer type for the element types. As only  *
+!     * a limited number element types are present, a 1 byte integer   *
+!     * is enough.                                                     *
+!     *                                                                *
+!     ******************************************************************
 !
+      integer(kind=1), private :: adtDummyElementInt
+
 !      ******************************************************************
 !      *                                                                *
 !      * Definition of the cgns periodic type.                          *
@@ -148,6 +149,7 @@
        integer, parameter :: intType      = kind(dummyInt)
        integer, parameter :: porType      = kind(dummyPor)
        integer, parameter :: realType     = kind(dummyReal)
+       integer, parameter :: adtElementType = kind(adtDummyElementInt)
        integer, parameter :: cgnsRealType = kind(dummyCGNSReal)
        integer, parameter :: cgnsPerType  = kind(dummyCGNSPer)
 !

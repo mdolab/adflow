@@ -36,7 +36,7 @@
        type(localSubfaceType), dimension(nMySubfaces), &
                                               intent(in) :: mySubfaces
 
-       integer(kind=adtIntType), intent(out) :: nQuad, nNode
+       integer(kind=intType), intent(out) :: nQuad, nNode
 !
 !      Local variables.
 !
