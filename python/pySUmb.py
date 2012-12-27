@@ -65,135 +65,137 @@ class SUMB(AeroSolver):
         category = 'Three Dimensional CFD'
         def_opts = {
             # Common Paramters
-            'gridFile':[str, 'default.cgns'],
-            'restartFile':[str, 'default_restart.cgns'],
-            'probName':[str, ''],
-            'outputDir':[str, './'],
-            'solRestart':[bool, False],
-            'writeSolution':[bool, True],
-            'writeMesh':[bool, False],
-            'storeRindLayer':[bool, True],
+            'gridfile':[str, 'default.cgns'],
+            'restartfile':[str, 'default_restart.cgns'],
+            'probname':[str, ''],
+            'outputdir':[str, './'],
+            'solrestart':[bool, False],
+            'writesolution':[bool, True],
+            'writemesh':[bool, False],
+            'storerindlayer':[bool, True],
 
             # Physics Paramters
-            'Discretization':[str, 'Central plus scalar dissipation'],
-            'coarseDiscretization':[str, 'Central plus scalar dissipation'],
-            'Limiter':[str, 'VanAlbeda'],
-            'Smoother':[str, 'Runge-Kutta'],
-            'equationType': [str, 'Euler'],
-            'equationMode': [str, 'Steady'],
-            'flowType':[str, 'External'],
-            'turbulenceModel':[str, 'SA'], 
-            'turbulenceOrder':[str,'First Order'],           
-            'useWallFunctions':[bool, False],
-            'useApproxWallDistance':[bool, True],
-            'reynoldsNumber':[float, 1e6], 
-            'reynoldsLength':[float, 1.0], 
-            'wallTreatment':[str, 'Linear Pressure Extrapolation'],
-            'dissipationScalingExponent':[float, 0.67],
+            'discretization':[str, 'central plus scalar dissipation'],
+            'coarsediscretization':[str, 'central plus scalar dissipation'],
+            'limiter':[str, 'vanalbeda'],
+            'smoother':[str, 'runge kutta'],
+            'equationtype': [str, 'euler'],
+            'equationmode': [str, 'steady'],
+            'flowtype':[str, 'external'],
+            'turbulencemodel':[str, 'sa'], 
+            'turbulenceorder':[str,'first order'],           
+            'usewallfunctions':[bool, False],
+            'useapproxwalldistance':[bool, True],
+            'reynoldsnumber':[float, 1e6], 
+            'reynoldslength':[float, 1.0], 
+            'walltreatment':[str, 'linear pressure extrapolation'],
+            'dissipationscalingexponent':[float, 0.67],
             'vis4':[float, 0.0156],
             'vis2':[float, 0.5],
-            'vis2Coarse':[float, 0.5], 
-            'restrictionRelaxation':[float, 1.0],
+            'vis2coarse':[float, 0.5], 
+            'restrictionrelaxation':[float, 1.0],
 
             # Common Paramters
-            'nCycles':[int, 500],
-            'nCyclesCoarse':[int, 500],
-            'CFL':[float, 1.7],
-            'CFLCoarse':[float, 1.0],
-            'MGCycle':[str, '3w'],
-            'MGStartLevel':[int, -1],
-            'resAveraging':[str,'alternateResAveraging'],
-            'smoothParameter':[float, 1.5],
-            'CFLLimit':[float, 1.5],
+            'ncycles':[int, 500],
+            'ncyclescoarse':[int, 500],
+            'cfl':[float, 1.7],
+            'cflcoarse':[float, 1.0],
+            'mgcycle':[str, '3w'],
+            'mgstartlevel':[int, -1],
+            'resaveraging':[str,'alternateresaveraging'],
+            'smoothparameter':[float, 1.5],
+            'cfllimit':[float, 1.5],
 
             # Unsteady Paramters           
-            'timeIntegrationScheme':[str, 'BDF'],
-            'timeAccuracy':[int, 2],
-            'nTimeStepsCoarse':[int, 48],
-            'nTimeStepsFine':[int, 400],
-            'deltaT':[float, .010],            
+            'timeintegrationscheme':[str, 'bdf'],
+            'timeaccuracy':[int, 2],
+            'ntimestepscoarse':[int, 48],
+            'ntimestepsfine':[int, 400],
+            'deltat':[float, .010],            
 
             # Time Spectral Paramters
-            'timeIntervals': [int, 1],
-            'alphaMode':[bool, False],
-            'betaMode':[bool, False],
-            'machMode':[bool, False],
-            'pMode':[bool, False],
-            'qMode':[bool, False],
-            'rMode':[bool, False],
-            'altitudeMode':[bool, False],
-            'windAxis':[bool, False],
-            'familyRot':[str, ''],
-            'rotCenter':[list, [0.0,0.0, 0.0]],
-            'rotRate':[list, [0.0,0.0, 0.0]],
-            'TSStability': [bool, False],
+            'timeintervals': [int, 1],
+            'alphamode':[bool, False],
+            'betamode':[bool, False],
+            'machmode':[bool, False],
+            'pmode':[bool, False],
+            'qmode':[bool, False],
+            'rmode':[bool, False],
+            'altitudemode':[bool, False],
+            'windaxis':[bool, False],
+            'familyrot':[str, ''],
+            'rotcenter':[list, [0.0,0.0, 0.0]],
+            'rotrate':[list, [0.0,0.0, 0.0]],
+            'tsstability': [bool, False],
 
             # Convergence Paramters
-            'L2Convergence':[float, 1e-6],
-            'L2ConvergenceRel':[float, 1e-16],
-            'L2ConvergenceCoarse':[float, 1e-2], 
-            'maxL2DeviationFactor':[float, 1.0],
-            'coeffConvCheck':[bool, False],
-            'minIterationNum':[int, 10],
+            'l2convergence':[float, 1e-6],
+            'l2convergencerel':[float, 1e-16],
+            'l2convergencecoarse':[float, 1e-2], 
+            'maxl2deviationfactor':[float, 1.0],
+            'coeffconvcheck':[bool, False],
+            'miniterationnum':[int, 10],
 
             # Newton-Krylov Paramters
-            'useNKSolver':[bool, False],
-            'NKLinearSolver':[str, 'gmres'],
-            'NKSwitchTol':[float, 1e-2],
-            'NKSubspaceSize':[int, 60],
-            'NKLinearSolveTol':[float, 1e-1],
-            'NKPC':[str, 'Additive Schwartz'],
-            'NKASMOverlap':[int, 3],
-            'NKPCILUFill':[int, 3],
-            'NKLocalPCOrdering':[str, 'RCM'],
-            'NKJacobianLag':[int, 10],
-            'RKReset':[bool, False],
-            'nRKReset':[int, 5],
-            'applyPCSubSpaceSize':[int, 10],
+            'usenksolver':[bool, False],
+            'nklinearsolver':[str, 'gmres'],
+            'nkswitchtol':[float, 1e-2],
+            'nksubspacesize':[int, 60],
+            'nklinearsolvetol':[float, 1e-1],
+            'nkpc':[str, 'additive schwartz'],
+            'nkasmoverlap':[int, 3],
+            'nkpcilufill':[int, 3],
+            'nklocalpcordering':[str, 'rcm'],
+            'nkjacobianlag':[int, 10],
+            'rkreset':[bool, False],
+            'nrkreset':[int, 5],
+            'applypcsubspacesize':[int, 10],
+
             # Load Balance Paramters
-            'blockSplitting':[bool, False],
-            'loadImbalance':[float, 0.1],
+            'blocksplitting':[bool, False],
+            'loadimbalance':[float, 0.1],
        
             # Misc Paramters
-            'metricConversion':[float, 1.0],
-            'autoSolveRetry':[bool, False],
-            'autoAdjointRetry':[bool, False],
-            'storeHistory':[bool, False],
-            'numberSolutions':[bool, False],
-            'printIterations':[bool, False],
-            'printTiming':[bool, True],
-            'setMonitor':[bool, True],        
-            'monitorVariables':[list, ['resrho','cl', 'cd']],
-            'surfaceVariables':[list, ['cp','vx', 'vy','vz', 'mach']],
-            'volumeVariables':[list, ['resrho']],
+            'metricconversion':[float, 1.0],
+            'autosolveretry':[bool, False],
+            'autoadjointretry':[bool, False],
+            'storehistory':[bool, False],
+            'numbersolutions':[bool, False],
+            'printiterations':[bool, False],
+            'printtiming':[bool, True],
+            'setmonitor':[bool, True],        
+            'monitorvariables':[list, ['resrho','cl', 'cd']],
+            'surfacevariables':[list, ['cp','vx', 'vy','vz', 'mach']],
+            'volumevariables':[list, ['resrho']],
 
             # Multidisciplinary Coupling Parameters:
-            'forcesAsTractions':[bool, True],
+            'forcesastractions':[bool, True],
 
             # Adjoint Paramters
-            'adjointL2Convergence':[float, 1e-10],
-            'adjointL2ConvergenceRel':[float, 1e-16],
-            'adjointL2ConvergenceAbs':[float, 1e-16],
-            'adjointDivTol':[float, 1e5],
-            'approxPC': [bool, False],
-            'useDiagTSPC':[bool, False],
-            'restartAdjoint':[bool, False],
-            'adjointSolver': [str, 'GMRES'],
-            'adjointMaxIter': [int, 500],
-            'adjointSubspaceSize' : [int, 80],
-            'adjointMonitorStep': [int, 10],
-            'dissipationLumpingParameter':[float, 6.0],
-            'preconditionerSide': [str, 'LEFT'],
-            'matrixOrdering': [str, 'Nested Dissection'],
-            'globalPreconditioner': [str, 'Additive Schwartz'],
-            'localPreconditioner' : [str, 'ILU'],
-            'ILUFill': [int, 2],
-            'ASMOverlap' : [int, 5],
-            'subKSPSubspaceSize':[int, 10],
-            'finiteDifferencePC':[bool, True],
-            'useReverseModeAD':[bool, True],
-            'lowMemory':[bool, True],
-            'applyAdjointPCSubSpaceSize':[int, 20]
+            'adjointl2convergence':[float, 1e-10],
+            'adjointl2convergencerel':[float, 1e-16],
+            'adjointl2convergenceabs':[float, 1e-16],
+            'adjointdivtol':[float, 1e5],
+            'approxpc': [bool, False],
+            'usediagtspc':[bool, False],
+            'restartadjoint':[bool, False],
+            'adjointsolver': [str, 'gmres'],
+            'adjointmaxiter': [int, 500],
+            'adjointsubspacesize' : [int, 80],
+            'adjointmonitorstep': [int, 10],
+            'dissipationlumpingparameter':[float, 6.0],
+            'preconditionerside': [str, 'Right'],
+            'matrixordering': [str, 'RCM'],
+            'globalpreconditioner': [str, 'Additive Schwartz'],
+            'localpreconditioner' : [str, 'ILU'],
+            'ilufill': [int, 1],
+            'asmoverlap' : [int, 1],
+            'innerpreconits':[int,1],
+            'outerpreconits':[int,1],
+            'finitedifferencepc':[bool, True],
+            'usereversemodead':[bool, True],
+            'lowmemory':[bool, True],
+            'applyadjointpcsubspacesize':[int, 20]
             }
 
         informs = {
@@ -337,282 +339,259 @@ class SUMB(AeroSolver):
         else:
             self.optionMap = {\
                 # Common Paramters
-                'gridFile':{'location':'inputio.gridfile',
+                'gridfile':{'location':'inputio.gridfile',
                             'len':self.sumb.constants.maxstringlen},
-                'restartFile':{'location':'inputio.restartfile',
+                'restartfile':{'location':'inputio.restartfile',
                                'len':self.sumb.constants.maxstringlen},
-                'solRestart':{'location':'inputio.restart'},
-                'storeRindLayer':{'location':'inputio.storerindlayer'},
+                'solrestart':{'location':'inputio.restart'},
+                'storerindlayer':{'location':'inputio.storerindlayer'},
                 # Physics Paramters
-                'Discretization':{'Central plus scalar dissipation':
+                'discretization':{'central plus scalar dissipation':
                                       self.sumb.inputdiscretization.dissscalar,
-                                  'Central plus matrix dissipation':
+                                  'central plus matrix dissipation':
                                       self.sumb.inputdiscretization.dissmatrix,
-                                  'Central plus CUSP dissipation':
+                                  'central plus cusp dissipation':
                                       self.sumb.inputdiscretization.disscusp,
-                                  'Upwind':
+                                  'upwind':
                                       self.sumb.inputdiscretization.upwind,
                                   'location':
                                       'inputdiscretization.spacediscr'},
-                'coarseDiscretization':{'Central plus scalar dissipation':
+                'coarsediscretization':{'central plus scalar dissipation':
                                             self.sumb.inputdiscretization.dissscalar,
-                                        'Central plus matrix dissipation':
+                                        'central plus matrix dissipation':
                                             self.sumb.inputdiscretization.dissmatrix,
-                                        'Central plus CUSP dissipation':
+                                        'central plus cusp dissipation':
                                             self.sumb.inputdiscretization.disscusp,
-                                        'Upwind':
+                                        'upwind':
                                             self.sumb.inputdiscretization.upwind,
                                         'location':
                                             'inputdiscretization.spacediscrcoarse'},
-                'Limiter':{'VanAlbeda':
+                'limiter':{'vanalbeda':
                                self.sumb.inputdiscretization.vanalbeda,
-                           'MinMod':
+                           'minmod':
                                self.sumb.inputdiscretization.minmod,
-                           'NoLimiter':
+                           'nolimiter':
                                self.sumb.inputdiscretization.nolimiter,
                            'location':
                                'inputdiscretization.limiter'},
-                'Smoother':{'Runge-Kutta':
+                'smoother':{'runge kutta':
                                 self.sumb.inputiteration.rungekutta,
-                            'LU-SGS':
+                            'lu sgs':
                                 self.sumb.inputiteration.nllusgs,
-                            'LU-SGS Line':
+                            'lu sgs line':
                                 self.sumb.inputiteration.nllusgsline,
                             'location':
                                 'inputiteration.smoother'},
 
-                'equationType':{'Euler':
+                'equationtype':{'euler':
                                     self.sumb.inputphysics.eulerequations,
-                                'Laminar NS':
+                                'laminar ns':
                                     self.sumb.inputphysics.nsequations,
-                                'RANS':
+                                'rans':
                                      self.sumb.inputphysics.ransequations,
                                 'location':
                                     'inputphysics.equations'},
-                'equationMode':{'Steady':
+                'equationmode':{'steady':
                                    self.sumb.inputphysics.steady,
-                               'Unsteady':
+                               'unsteady':
                                    self.sumb.inputphysics.unsteady,
-                               'Time Spectral':
+                               'time spectral':
                                    self.sumb.inputphysics.timespectral,
                                'location':
                                    'inputphysics.equationmode'},
-                'flowType':{'Internal':
+                'flowtype':{'internal':
                                 self.sumb.inputphysics.internalflow,
-                            'External':
+                            'external':
                                 self.sumb.inputphysics.externalflow,
                             'location':
                                 'inputphysics.flowtype'},
-                'turbulenceModel':{'Baldwin Lomax':
+                'turbulencemodel':{'baldwin lomax':
                                       self.sumb.inputphysics.baldwinlomax,
-                                  'SA':
+                                  'sa':
                                       self.sumb.inputphysics.spalartallmaras,
-                                  'SAE':
+                                  'sae':
                                       self.sumb.inputphysics.spalartallmarasedwards,
-                                  'K Omega Wilcox':
+                                  'k omega wilcox':
                                       self.sumb.inputphysics.komegawilcox,
-                                  'K Omega Modified':
+                                  'k omega modified':
                                       self.sumb.inputphysics.komegamodified,
-                                  'Ktau':
+                                  'ktau':
                                       self.sumb.inputphysics.ktau,
-                                  'Menter SST':
+                                  'menter sst':
                                       self.sumb.inputphysics.mentersst,
                                   'v2f':
                                       self.sumb.inputphysics.v2f,
                                   'location':
                                       'inputphysics.turbmodel'},
-                'turbulenceOrder':{'First Order':1,
-                                   'Second Order':2,
+                'turbulenceorder':{'first order':1,
+                                   'second order':2,
                                    'location':
                                        'inputdiscretization.orderturb'},
-                'useWallFunctions':{'location':'inputphysics.wallfunctions'},
-                'useApproxWallDistance':{'location':'inputdiscretization.useapproxwalldistance'},
-                'reynoldsNumber':{'location':'inputphysics.reynolds'},
-                'reynoldsLength':{'location':'inputphysics.reynoldslength'},
-                'wallTreatment':{'Linear Pressure Extrapolation':
+                'usewallfunctions':{'location':'inputphysics.wallfunctions'},
+                'useapproxwalldistance':{'location':'inputdiscretization.useapproxwalldistance'},
+                'reynoldsnumber':{'location':'inputphysics.reynolds'},
+                'reynoldslength':{'location':'inputphysics.reynoldslength'},
+                'walltreatment':{'linear pressure extrapolation':
                                      self.sumb.inputdiscretization.linextrapolpressure,
-                                 'Constant Pressure Extrapolation':
+                                 'constant pressure extrapolation':
                                      self.sumb.inputdiscretization.constantpressure,
-                                 'Quadratic Pressure Extrapolation':
+                                 'quadratic pressure extrapolation':
                                      self.sumb.inputdiscretization.quadextrapolpressure,
-                                 'Normal Momentum':
+                                 'normal momentum':
                                      self.sumb.inputdiscretization.normalmomentum,
                                  'location':
                                      'inputdiscretization.wallbctreatment'},
-          
-
-
-                'dissipationScalingExponent':{'location':'inputdiscretization.adis'},
+                'dissipationscalingexponent':{'location':'inputdiscretization.adis'},
                 'vis4':{'location':'inputdiscretization.vis4'},
                 'vis2':{'location':'inputdiscretization.vis2'},
-                'vis2Coarse':{'location':'inputdiscretization.vis2coarse'},
-                'restrictionRelaxation':{'location':'inputiteration.fcoll'},
-                'forcesAsTractions':{'location':'inputphysics.forcesastractions'},
+                'vis2coarse':{'location':'inputdiscretization.vis2coarse'},
+                'restrictionrelaxation':{'location':'inputiteration.fcoll'},
+                'forcesastractions':{'location':'inputphysics.forcesastractions'},
+
                 # Common Paramters
-                'nCycles':{'location':'inputiteration.ncycles'},
-                'nCyclesCoarse':{'location':'inputiteration.ncyclescoarse'},
-                'CFL':{'location':'inputiteration.cfl'},        
-                'CFLCoarse':{'location':'inputiteration.cflcoarse'},        
-                'MGCycle':{'location':'localmg.mgdescription',
+                'ncycles':{'location':'inputiteration.ncycles'},
+                'ncyclescoarse':{'location':'inputiteration.ncyclescoarse'},
+                'cfl':{'location':'inputiteration.cfl'},        
+                'cflcoarse':{'location':'inputiteration.cflcoarse'},        
+                'mgcycle':{'location':'localmg.mgdescription',
                            'len':self.sumb.constants.maxstringlen},
-                'MGStartLevel':{'location':'inputiteration.mgstartlevel'},
-                'resAveraging':{'noResAveraging':
+                'mgstartlevel':{'location':'inputiteration.mgstartlevel'},
+                'resaveraging':{'noresaveraging':
                                    self.sumb.inputiteration.noresaveraging,
-                               'alwaysResAveraging':
+                               'alwaysresaveraging':
                                    self.sumb.inputiteration.alwaysresaveraging,
-                               'alternateResAveraging':
+                               'alternateresaveraging':
                                    self.sumb.inputiteration.alternateresaveraging,
                                'location':
                                    'inputiteration.resaveraging'},
-                'smoothParameter':{'location':'inputiteration.smoop'},
-                'CFLLimit':{'location':'inputiteration.cfllimit'},
+                'smoothparameter':{'location':'inputiteration.smoop'},
+                'cfllimit':{'location':'inputiteration.cfllimit'},
 
                 # Unsteady Params
-                'timeIntegrationScheme':{'BDF':
+                'timeintegrationscheme':{'bdf':
                                              self.sumb.inputunsteady.bdf,
-                                         'explicitRK':
+                                         'explicitrk':
                                              self.sumb.inputunsteady.explicitrk,
-                                         'inplicitRK':
+                                         'inplicitrk':
                                              self.sumb.inputunsteady.implicitrk,
-                                         'MD':
+                                         'md':
                                              self.sumb.inputunsteady.md,
                                          'location':
                                              'inputunsteady.timeintegrationscheme'},
-                'timeAccuracy':{'location':'inputunsteady.timeaccuracy'},
-                'nTimeStepsCoarse':{'location':'inputunsteady.ntimestepscoarse'},
-                'nTimeStepsFine':{'location':'inputunsteady.ntimestepsfine'},
-                'deltaT':{'location':'inputunsteady.deltat'},
+                'timeaccuracy':{'location':'inputunsteady.timeaccuracy'},
+                'ntimestepscoarse':{'location':'inputunsteady.ntimestepscoarse'},
+                'ntimestepsfine':{'location':'inputunsteady.ntimestepsfine'},
+                'deltat':{'location':'inputunsteady.deltat'},
 
                 # Time Spectral Paramters
-                'timeIntervals':{'location':'inputtimespectral.ntimeintervalsspectral'},
-                'alphaMode':{'location':'inputtsstabderiv.tsalphamode'},
-                'betaMode':{'location':'inputtsstabderiv.tsbetamode'},
-                'machMode':{'location':'inputtsstabderiv.tsmachmode'},
-                'pMode':{'location':'inputtsstabderiv.tspmode'},
-                'qMode':{'location':'inputtsstabderiv.tsqmode'},
-                'rMode':{'location':'inputtsstabderiv.tsrmode'},
-                'altitudeMode':{'location':'inputtsstabderiv.tsaltitudemode'},
-                'windAxis':{'location':'inputtsstabderiv.usewindaxis'},
-                'rotCenter':{'location':'inputmotion.rotpoint'},
-                'rotRate':{'location':'inputmotion.rotrate'},
-                'TSStability':{'location':'inputtsstabderiv.tsstability'},
+                'timeintervals':{'location':'inputtimespectral.ntimeintervalsspectral'},
+                'alphamode':{'location':'inputtsstabderiv.tsalphamode'},
+                'betamode':{'location':'inputtsstabderiv.tsbetamode'},
+                'machmode':{'location':'inputtsstabderiv.tsmachmode'},
+                'pmode':{'location':'inputtsstabderiv.tspmode'},
+                'qmode':{'location':'inputtsstabderiv.tsqmode'},
+                'rmode':{'location':'inputtsstabderiv.tsrmode'},
+                'altitudemode':{'location':'inputtsstabderiv.tsaltitudemode'},
+                'windaxis':{'location':'inputtsstabderiv.usewindaxis'},
+                'rotcenter':{'location':'inputmotion.rotpoint'},
+                'rotrate':{'location':'inputmotion.rotrate'},
+                'tsstability':{'location':'inputtsstabderiv.tsstability'},
 
                 # Convergence Paramters
-                'L2Convergence':{'location':'inputiteration.l2conv'},
-                'L2ConvergenceRel':{'location':'inputiteration.l2convrel'},
-                'L2ConvergenceCoarse':{'location':'inputiteration.l2convcoarse'},
-                'maxL2DeviationFactor':{'location':'inputiteration.maxl2deviationfactor'},
-                'coeffConvCheck':{'location':'monitor.coeffconvcheck'},
-                'minIterationNum':{'location':'inputiteration.miniternum'},
+                'l2convergence':{'location':'inputiteration.l2conv'},
+                'l2convergencerel':{'location':'inputiteration.l2convrel'},
+                'l2convergencecoarse':{'location':'inputiteration.l2convcoarse'},
+                'maxl2deviationfactor':{'location':'inputiteration.maxl2deviationfactor'},
+                'coeffconvcheck':{'location':'monitor.coeffconvcheck'},
+                'miniterationnum':{'location':'inputiteration.miniternum'},
             
                 # Newton-Krylov Paramters
-                'useNKSolver':{'location':'nksolvervars.usenksolver'},
-                'NKLinearSolver':{'gmres':'gmres',
+                'usenksolver':{'location':'nksolvervars.usenksolver'},
+                'nklinearsolver':{'gmres':'gmres',
                                   'fgmres':'fgmres',
                                   'location':
                                       'nksolvervars.ksp_solver_type',
                                   'len':self.sumb.constants.maxstringlen},
 
-                'NKSwitchTol':{'location':'nksolvervars.nk_switch_tol'},
-                'NKSubspaceSize':{'location':'nksolvervars.ksp_subspace'},
-                'NKLinearSolveTol':{'location':'nksolvervars.ksp_rtol'},
-                'NKPC':{'BlockJacobi':'bjacobi',
-                         'Jacobi':'jacobi',
-                        'Additive Schwartz':'asm',
+                'nkswitchtol':{'location':'nksolvervars.nk_switch_tol'},
+                'nksubspacesize':{'location':'nksolvervars.ksp_subspace'},
+                'nklinearsolvetol':{'location':'nksolvervars.ksp_rtol'},
+                'nkpc':{'blockjacobi':'bjacobi',
+                         'jacobi':'jacobi',
+                        'additive schwartz':'asm',
                         'location':
                             'nksolvervars.global_pc_type',
                         'len':self.sumb.constants.maxstringlen},
-                'NKASMOverlap':{'location':'nksolvervars.asm_overlap'},
-                'NKPCILUFill':{'location':'nksolvervars.local_pc_ilu_level'},               
-                'NKLocalPCOrdering':{'Natural':'natural',
-                                     'RCM':'rcm',
-                                     'Nested Dissection':'nd',
-                                     'One Way Dissection':'1wd',
-                                     'Quotient Minimum Degree':'qmd',
+                'nkasmoverlap':{'location':'nksolvervars.asm_overlap'},
+                'nkpcilufill':{'location':'nksolvervars.local_pc_ilu_level'},               
+                'nklocalpcordering':{'natural':'natural',
+                                     'rcm':'rcm',
+                                     'nested dissection':'nd',
+                                     'one way dissection':'1wd',
+                                     'quotient minimum degree':'qmd',
                                      'location':
                                          'nksolvervars.local_pc_ordering',
                                      'len':self.sumb.constants.maxstringlen},
-                'NKMaxLinearKspIts':{'location':'nksolvervars.ksp_max_it'},
-                'NKJacobianLag':{'location':'nksolvervars.jacobian_lag'},
-                'RKReset':{'location':'nksolvervars.rkreset'},
-                'nRKReset':{'location':'nksolvervars.nrkreset'},
-                'NKFiniteDifferencePC':{'location':'nksolvervars.nkfinitedifferencepc'},
-                'applyPCSubSpaceSize':{'location':'nksolvervars.applypcsubspacesize'},
+                'nkmaxlinearkspits':{'location':'nksolvervars.ksp_max_it'},
+                'nkjacobianlag':{'location':'nksolvervars.jacobian_lag'},
+                'rkreset':{'location':'nksolvervars.rkreset'},
+                'nrkreset':{'location':'nksolvervars.nrkreset'},
+                'Nnkfnitedifferencepc':{'location':'nksolvervars.nkfinitedifferencepc'},
+                'applypcsubspacesize':{'location':'nksolvervars.applypcsubspacesize'},
 
                 # Load Balance Paramters
-                'blockSplitting':{'location':'inputparallel.splitblocks'},
-                'loadImbalance':{'location':'inputparallel.loadimbalance'},
+                'blocksplitting':{'location':'inputparallel.splitblocks'},
+                'loadimbalance':{'location':'inputparallel.loadimbalance'},
 
                 # Misc Paramters
-
-                'printIterations':{'location':'inputiteration.printiterations'},
-                'printTiming':{'location':'inputadjoint.printtiming'},
-                'setMonitor':{'location':'inputadjoint.setmonitor'},
+                'printiterations':{'location':'inputiteration.printiterations'},
+                'printtiming':{'location':'inputadjoint.printtiming'},
+                'setmonitor':{'location':'inputadjoint.setmonitor'},
 
                 # Adjoint Params
-                'adjointL2Convergence':{'location':'inputadjoint.adjreltol'},
-                'adjointL2ConvergenceRel':{'location':'inputadjoint.adjreltolrel'},
-                'adjointL2ConvergenceAbs':{'location':'inputadjoint.adjabstol'},
-                'adjointDivTol':{'location':'inputadjoint.adjdivtol'},
-                'approxPC':{'location':'inputadjoint.approxpc'},
-                'useDiagTSPC':{'location':'inputadjoint.usediagtspc'},
-                'restartAdjoint':{'location':'inputadjoint.restartadjoint'},
-                'adjointSolver':{'GMRES':
-                                     self.sumb.inputadjoint.petscgmres,
-                                 'FGMRES':
-                                     self.sumb.inputadjoint.petscfgmres,
-                                 'BiCGStab':
-                                     self.sumb.inputadjoint.petscbicgstab,
-                                 'CG':
-                                     self.sumb.inputadjoint.petsccg,
+                'adjointl2convergence':{'location':'inputadjoint.adjreltol'},
+                'adjointl2convergencerel':{'location':'inputadjoint.adjreltolrel'},
+                'adjointl2convergenceabs':{'location':'inputadjoint.adjabstol'},
+                'adjointdivtol':{'location':'inputadjoint.adjdivtol'},
+                'approxpc':{'location':'inputadjoint.approxpc'},
+                'usediagtspc':{'location':'inputadjoint.usediagtspc'},
+                'restartadjoint':{'location':'inputadjoint.restartadjoint'},
+                'adjointsolver':{'gmres':'gmres',
+                                 'tfqmr':'tfqmr',
                                  'location':
-                                     'inputadjoint.adjointsolvertype'},
-                'adjointMaxIter':{'location':'inputadjoint.adjmaxiter'},
-                'adjointSubspaceSize':{'location':'inputadjoint.adjrestart'},
-                'adjointMonitorStep':{'location':'inputadjoint.adjmonstep'},
-                'dissipationLumpingParameter':{'location':'inputdiscretization.sigma'},
-                'preconditionerSide':{'LEFT':
-                                           self.sumb.inputadjoint.left,
-                                       'RIGHT':
-                                           self.sumb.inputadjoint.right,
-                                       'location':
-                                          'inputadjoint.pcside'},
-                'matrixOrdering':{'Natural':
-                                      self.sumb.inputadjoint.natural,
-                                  'RCM':
-                                      self.sumb.inputadjoint.reversecuthillmckee,
-                                  'Nested Dissection':
-                                      self.sumb.inputadjoint.nesteddissection,
-                                  'One Way Dissection':
-                                       self.sumb.inputadjoint.onewaydissection,
-                                  'Quotient Minimum Degree':
-                                      self.sumb.inputadjoint.quotientminimumdegree,
+                                     'inputadjoint.adjointsolvertype',
+                                 'len':self.sumb.constants.maxstringlen},
+                'adjointmaxiter':{'location':'inputadjoint.adjmaxiter'},
+                'adjointsubspacesize':{'location':'inputadjoint.adjrestart'},
+                'adjointmonitorstep':{'location':'inputadjoint.adjmonstep'},
+                'dissipationlumpingparameter':{'location':'inputdiscretization.sigma'},
+                'preconditionerside':{'left':'left',
+                                      'right':'right',
+                                      'location':
+                                          'inputadjoint.pcside',
+                                      'len':self.sumb.constants.maxstringlen},
+                'matrixordering':{'natural':'natural',
+                                  'rcm':'rcm',
+                                  'nested dissection':'nd',
+                                  'one way dissection':'1wd',
+                                  'quotient minimum degree':'qmd',
                                   'location':
-                                      'inputadjoint.matrixordering'},
-                'globalPreconditioner':{'BlockJacobi':
-                                            self.sumb.inputadjoint.blockjacobi,
-                                        'Jacobi':
-                                            self.sumb.inputadjoint.jacobi,
-                                        'Additive Schwartz':
-                                            self.sumb.inputadjoint.additiveschwartz,
+                                      'inputadjoint.matrixordering',
+                                  'len':self.sumb.constants.maxstringlen},
+                'globalpreconditioner':{'additive schwartz':'asm',
                                         'location':
-                                            'inputadjoint.precondtype'},
-                'localPreconditioner':{'ILU':
-                                           self.sumb.inputadjoint.ilu,
-                                       'ICC':
-                                           self.sumb.inputadjoint.icc,
-                                       'LU':
-                                           self.sumb.inputadjoint.lu,
-                                       'Cholesky':
-                                           self.sumb.inputadjoint.cholesky,
+                                            'inputadjoint.precondtype',
+                                        'len':self.sumb.constants.maxstringlen},
+                'localpreconditioner':{'ilu':'ilu',
                                        'location':
-                                           'inputadjoint.localpctype'},
-                'ILUFill':{'location':'inputadjoint.filllevel'},
-                'applyAdjointPCSubSpaceSize':{'location':'inputadjoint.applyadjointpcsubspacesize'},
-                'ASMOverlap':{'location':'inputadjoint.overlap'},
-                'finiteDifferencePC':{'location':'inputadjoint.finitedifferencepc'},
-                'subKSPSubspaceSize':{'location':'inputadjoint.subkspsubspacesize'},
-                
+                                           'inputadjoint.localpctype',
+                                       'len':self.sumb.constants.maxstringlen},
+                'ilufill':{'location':'inputadjoint.filllevel'},
+                'applyadjointpcsubspacesize':{'location':'inputadjoint.applyadjointpcsubspacesize'},
+                'asmoverlap':{'location':'inputadjoint.overlap'},
+                'innerpreconits':{'location':'inputadjoint.innerpreconits'},
+                'outerpreconits':{'location':'inputadjoint.outerpreconits'},
+                'finitedifferencepc':{'location':'inputadjoint.finitedifferencepc'},
                 }                
         # end if
 
@@ -624,27 +603,27 @@ class SUMB(AeroSolver):
         else:
             self.ignore_options = [
                 'defaults',
-                'storeHistory',
-                'numberSolutions',
-                'writeSolution',
-                'writeMesh',
-                'familyRot',  # -> Not sure how to do
-                'lowMemory',
-                'autoSolveRetry',
-                'autoAdjointRetry',
-                'useReverseModeAD'
+                'storehistory',
+                'numbersolutions',
+                'writesolution',
+                'writemesh',
+                'familyrot',  # -> Not sure how to do
+                'lowmemory',
+                'autosolveretry',
+                'autoadjointretry',
+                'usereversemodead'
                 ]
         # end if
         
         if 'special_options' in kwargs:
             self.special_options = kwargs['special_options']
         else:
-            self.special_options = ['surfaceVariables',
-                                    'volumeVariables',
-                                    'monitorVariables',
-                                    'metricConversion',
-                                    'outputDir',
-                                    'probName']
+            self.special_options = ['surfacevariables',
+                                    'volumevariables',
+                                    'monitorvariables',
+                                    'metricconversion',
+                                    'outputdir',
+                                    'probname']
         # end if
 
         self.storedADjoints = {}
@@ -652,6 +631,12 @@ class SUMB(AeroSolver):
         # Set default values --- actual options will be set when
         # aero_solver is initialized
         self.sumb.setdefaultvalues()
+
+        # If 'options' is in kwargs, go through and make sure all keys
+        # are lower case:
+        if 'options' in kwargs:
+            for key in kwargs['options'].keys():
+                kwargs['options'][key.lower()] = kwargs['options'].pop(key)
 
         # Initialize the inherited aerosolver
         AeroSolver.__init__(\
@@ -709,7 +694,7 @@ class SUMB(AeroSolver):
         # Make sure all the params are ok
         for option in self.options:
             if option != 'defaults':
-                self.setOption(option, self.options[option][1])
+                self.setOption(option.lower(), self.options[option][1])
             # end if
         # end for
       
@@ -2386,28 +2371,26 @@ class SUMB(AeroSolver):
         '''
         Set Solver Option Value 
         '''
-
         # Ignored options do NOT get set in solver
-
         if name in self.ignore_options:
             return
 
         # Do special Options individually
         if name in self.special_options:
-            if name in ['monitorVariables','surfaceVariables','volumeVariables']:
+            if name in ['monitorvariables','surfacevariables','volumevariables']:
                 varStr = ''
                 for i in xrange(len(value)):
                     varStr = varStr + value[i] + '_'
                 # end if
                 varStr = varStr[0:-1] # Get rid of last '_'
-                if name == 'monitorVariables':
+                if name == 'monitorvariables':
                     self.sumb.monitorvariables(varStr)
-                if name == 'surfaceVariables':
+                if name == 'surfacevariables':
                     self.sumb.surfacevariables(varStr)
-                if name == 'volumeVariables':
+                if name == 'volumevariables':
                     self.sumb.volumevariables(varStr)
             # end if
-            if name == 'metricConversion':
+            if name == 'metricconversion':
                 self.sumb.flowvarrefstate.lref = value
                 self.sumb.flowvarrefstate.lrefspecified = True
                 self.metricConversion = value
@@ -2434,7 +2417,8 @@ class SUMB(AeroSolver):
         if len(temp) == 0:
             pass
         else:
-            value = self.optionMap[name][value]
+            #Convert the value to lower case:
+            value = self.optionMap[name][value.lower()]
         # end if
             
 
@@ -2454,16 +2438,20 @@ class SUMB(AeroSolver):
 
         return
         
-    def _on_getOption(self, name):
+    def getOption(self, name):
+
+        # Redefine the getOption def from the base class so we can
+        # mane sure the name is lowercase
+
+        def_options = self.options['defaults']
+        if def_options.has_key(name.lower()):
+            return self.options[name.lower()][1]
+        else:    
+            raise InputError(repr(name) + ' is not a valid option name')
+        #end
         
-        '''
-        Get Optimizer Option Value (Optimizer Specific Routine)
-        
-        Documentation last updated:  May. 21, 2008 - Ruben E. Perez
-        '''
-        
-        pass
-        
+        return
+    
         
     def _on_getInform(self, infocode):
         
