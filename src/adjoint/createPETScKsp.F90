@@ -33,7 +33,7 @@ subroutine createPETScKsp
   !     *                                                                *
   !     ******************************************************************
 
-  call KSPCreate(SUMB_PETSC_COMM_WORLD, ksp, PETScIerr)
+  call KSPCreate(SUMB_PETSC_COMM_WORLD, adjointKSP, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 #endif
 

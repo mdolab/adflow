@@ -10,19 +10,24 @@
 !
 subroutine setupPETScKsp
 
-  use ADjointPETSc
+  use ADjointPETSc, only: drdwpret, drdwt, adjointKSP
   use ADjointVars
   use inputADjoint
   use communication
   implicit none
+#ifndef USE_NO_PETSC
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petsc.h"
 
   !     Local variables.
+  KSP master_PC_KSP, subksp
+  PC  master_PC, subpc, pc
   character(len=10)  :: pcType
   logical :: useAD, usePC, useTranspose 
   integer(kind=intType) :: ierr
-  external MyKSPMonitor
+  integer(kind=intType) :: nlocal, first
 
-#ifndef USE_NO_PETSC
+  external MyKSPMonitor
 
   if (ApproxPC)then
      !setup the approximate PC Matrix
@@ -32,55 +37,52 @@ subroutine setupPETScKsp
      call setupStateResidualMatrix(drdwpret, useAD, usePC, useTranspose)
 
      !now set up KSP Context
-     call KSPSetOperators(ksp, dRdWT, dRdWPreT, &
+     call KSPSetOperators(adjointKSP, dRdWT, dRdWPreT, &
           DIFFERENT_NONZERO_PATTERN, ierr)
      call EChk(ierr, __FILE__, __LINE__)
   else
      ! Use the exact jacobian.  Here the matrix that defines the
      ! linear system also serves as the preconditioning matrix.
-     call KSPSetOperators(ksp, dRdWT, dRdWT, &
+     call KSPSetOperators(adjointKSP, dRdWT, dRdWT, &
           SAME_NONZERO_PATTERN, ierr)
      call EChk(ierr, __FILE__, __LINE__)
   end if
 
   ! First, KSPSetFromOptions MUST be called
-  call KSPSetFromOptions(ksp, ierr)
+  call KSPSetFromOptions(adjointKSP, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Set the type of solver to use:
-  call KSPSetType(ksp, ADJointSolverType, ierr)
+  call KSPSetType(adjointKSP, ADJointSolverType, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! If we're using GMRES set the possible gmres restart
-  call KSPGMRESSetRestart(ksp, adjRestart, ierr)
+  call KSPGMRESSetRestart(adjointKSP, adjRestart, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! If you're using GMRES, set refinement type
-  call KSPGMRESSetCGSRefinementType(ksp, KSP_GMRES_CGS_REFINE_IFNEEDED, ierr)   
+  call KSPGMRESSetCGSRefinementType(adjointKSP, KSP_GMRES_CGS_REFINE_IFNEEDED, ierr)   
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Set the preconditioner side from option:
-  if (trim(PCSide) == 'right') then
-     call KSPSetPCSide(ksp, PC_RIGHT, ierr)
+  if (trim(adjointPCSide) == 'right') then
+     call KSPSetPCSide(adjointKSP, PC_RIGHT, ierr)
   else
-     call KSPSetPCSide(ksp, PC_LEFT, ierr)
+     call KSPSetPCSide(adjointKSP, PC_LEFT, ierr)
   end if
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Set the main tolerance for th main adjoint KSP solver
-  call KSPSetTolerances(ksp, adjRelTol, adjAbsTol, adjDivTol, &
+  call KSPSetTolerances(adjointKSP, adjRelTol, adjAbsTol, adjDivTol, &
        adjMaxIter, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Extract preconditioning context for main KSP solver: (master_PC)
-  call KSPGetPC(ksp, master_PC, ierr)
+  call KSPGetPC(adjointKSP, master_PC, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call KSPGetPC(ksp, pc, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-   ! Set the type of master_PC to ksp. This lets us do multiple
-   ! iterations of preconditioner application
+  ! Set the type of master_PC to ksp. This lets us do multiple
+  ! iterations of preconditioner application
   call PCSetType(master_PC, 'ksp', ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
@@ -117,7 +119,7 @@ subroutine setupPETScKsp
   call EChk(ierr, __FILE__, __LINE__)
 
   !Setup the main ksp context before extracting the subdomains
-  call KSPSetUp(ksp, ierr)
+  call KSPSetUp(adjointKSP, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Extract the ksp objects for each subdomain
@@ -158,7 +160,7 @@ subroutine setupPETScKsp
 
   ! Setup monitor if necessary:
   if (setMonitor) then
-     call KSPMonitorSet(ksp, MyKSPMonitor, PETSC_NULL_OBJECT, &
+     call KSPMonitorSet(adjointKSP, MyKSPMonitor, PETSC_NULL_OBJECT, &
           PETSC_NULL_FUNCTION, ierr)
      call EChk(ierr, __FILE__, __LINE__)
   endif
