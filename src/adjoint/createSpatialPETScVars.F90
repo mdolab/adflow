@@ -35,8 +35,8 @@ subroutine createSpatialPETScVars
   !
 #ifndef USE_NO_PETSC
 
-  nDimW = nw * nCellsLocal*nTimeIntervalsSpectral
-  nDimX = 3 * nNodesLocal*nTimeIntervalsSpectral
+  nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
+  nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
 
   !     ******************************************************************
   !     *                                                                *

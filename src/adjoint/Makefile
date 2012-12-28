@@ -36,9 +36,7 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS = allocMemADjoint.o        \
-	       assertionsADjoint.o      \
-               computeAeroCoef.o        \
+FF90_OBJECTS = computeAeroCoef.o        \
 	       computeObjPartials.o\
 	       copyADjointStencil.o     \
 	       createPETScKsp.o         \
@@ -56,16 +54,11 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       getdRdaPsi.o             \
 	       getdRdwTVec.o            \
 	       getdFdxVec.o             \
-	       haloIndexCommunication.o \
 	       initializePETSc.o        \
-	       indexHalo.o              \
-	       indexHalo1to1.o          \
-	       indexHaloNode1to1.o      \
 	       preprocessingADjoint.o   \
 	       releaseMemADjoint.o      \
 	       setADjoint.o             \
 	       setGlobalCellsAndNodes.o \
-	       setPointersAdj.o         \
 	       setupAllResidualMatrices.o\
                setupPETScKsp.o         \
                solveADjointTransposePETSc.o\

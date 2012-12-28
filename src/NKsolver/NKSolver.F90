@@ -14,7 +14,6 @@ subroutine NKsolver
   use constants
   use inputTimeSpectral
   use flowVarRefState
-  use ADjointVars , only: nCellsLocal
   use NKSolverVars, only: dRdw, dRdwPre, jacobian_lag, &
        totalR0, totalRStart, wVec, rVec, deltaW, global_ksp, &
        ksp_rtol, ksp_atol, func_evals, ksp_max_it, ksp_subspace, ksp_div_tol, &

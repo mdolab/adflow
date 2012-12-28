@@ -7,9 +7,9 @@ subroutine createExtraPETScVars
   !     ******************************************************************
   !
   use ADjointPETSc, only : dRda, dRda_data, PETScIerr
-  use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
-  use communication   ! myID, nProc
-  use inputTimeSpectral !nTimeIntervalsSpectral
+  use ADjointVars     
+  use communication   
+  use inputTimeSpectral
   use flowvarrefstate
   implicit none
 
@@ -29,7 +29,7 @@ subroutine createExtraPETScVars
   !
 #ifndef USE_NO_PETSC
 
-  nDimW = nw * nCellsLocal*nTimeIntervalsSpectral
+  nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
  
   ! dRda
 

@@ -255,7 +255,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
         ! Set derivatives by block in "matrix" after we've peturbed
         ! all states in "color"
         do sps = 1,nTimeIntervalsSpectral
-           call setPointersAdj(nn,1,sps)
+           call setPointers(nn,1,sps)
            do k=0,kb
               do j=0,jb
                  do i=0,ib

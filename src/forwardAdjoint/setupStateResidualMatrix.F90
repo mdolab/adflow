@@ -133,7 +133,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
         ! Set pointers and derivative pointers
         call setPointers_d(nn,1,sps)
-        call setPointersAdj(nn,1,sps)
+        call setPointers(nn,1,sps)
 
 !         do k=0,kb
 !            do j=0,jb
@@ -372,7 +372,7 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
     do nn=1,nDom
-       call setPointersAdj(nn,1,1)
+       call setPointers(nn,1,1)
        do kcell=2,kl
           do jcell=2,jl
              do icell=2,il

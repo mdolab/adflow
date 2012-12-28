@@ -255,7 +255,7 @@
    !!$!
    !!$!         ! Set the pointers for this block.!
    !!$
-   !!$!         call setPointersAdj(nn, groundLevel, sps)!
+   !!$!         call setPointers(nn, groundLevel, sps)!
    !!$!
    ! Check for a moving block.
    IF (blockismoving) THEN

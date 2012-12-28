@@ -54,7 +54,7 @@ subroutine updateCoordinatesAllLevels
 !!$       do sps = 1,nTimeIntervalsSpectral
 !!$          do nn = 1,nDom
 !!$             !call setpointers(nn,groundLevel,sps)
-!!$             call setPointersAdj(nn,groundLevel,sps)
+!!$             call setPointers(nn,groundLevel,sps)
 !!$             do i = 1,ie
 !!$                do j = 1,je
 !!$                   do k = 1,ke

@@ -1021,31 +1021,22 @@ python module sumb ! in
        module adjointvars ! in :test:ADjointVars.F90
          use constants
          use costfunctions
-         integer(kind=inttype) :: nnodesglobal
-         integer(kind=inttype) :: ncelloffsetlocal
-         real(kind=realtype) parameter,optional :: adjrelfd=1.0e-5_realtype
+         integer(kind=inttype) :: ncellslocal(20)
+         integer(kind=inttype) :: nnodeslocal(20)
          integer(kind=inttype) :: ndesignpointrefz
-         real(kind=realtype) parameter,optional :: adjepsfd=1.0e-4_realtype
          integer(kind=inttype) :: ndesignpointrefy
          integer(kind=inttype) :: ndesignssa
          integer(kind=inttype) :: ndesignextra
          integer(kind=inttype) :: ndesignrotcenx
-         integer(kind=inttype) :: ncellslocal
          integer(kind=inttype) :: ndesignpointrefx
-         integer(kind=inttype) :: ncellsglobal
          integer(kind=inttype) :: ndesignrotz
-         integer(kind=inttype) :: nnodeslocal
          integer(kind=inttype) :: ndesignrotx
          integer(kind=inttype) :: ndesignroty
          integer(kind=inttype) :: ndesignrotcenz
-         integer(kind=inttype) :: nnodeoffsetlocal
          integer(kind=inttype) :: ndesignaoa
-         integer(kind=inttype) :: nsurfnodesglobal
          integer(kind=inttype) :: ndesignrotceny
-         real(kind=realtype) parameter,optional :: adjabsfd=1.0e-5_realtype
          real(kind=realtype) allocatable,dimension(:) :: dida
          integer(kind=inttype) :: ndesignmachgrid
-         integer(kind=inttype) :: nsurfnodeslocal
          integer(kind=inttype) :: ndesignmach
          integer(kind=inttype) :: ndesignlengthref
          integer(kind=inttype) :: ndesignsurfaceref

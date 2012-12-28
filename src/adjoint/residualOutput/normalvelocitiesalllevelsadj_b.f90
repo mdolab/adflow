@@ -108,7 +108,7 @@
    !!$
    !!$           ! Set the pointers for this block.
    !!$
-   !!$           call setPointersAdj(nn, level, sps)
+   !!$           call setPointers(nn, level, sps)
    ! Check for a moving block. As it is possible that in a
    ! multidisicplinary environment additional grid velocities
    ! are set, the test should be done on addGridVelocities
