@@ -43,7 +43,7 @@ subroutine verifyRAdj(level)
   logical :: fineGrid, correctForK, exchangeTurb
   logical :: secondHalo!, correctForK
 
-
+  real(kind=realType), dimension(20) :: timings
   real(kind=realType), dimension(-2:2,-2:2,-2:2,nw,nTimeIntervalsSpectral) :: wAdj
   !real(kind=realType), dimension(-2:3,-2:3,-2:3,3)  :: xAdj
   real(kind=realType), dimension(-3:2,-3:2,-3:2,3,nTimeIntervalsSpectral)  :: xAdj

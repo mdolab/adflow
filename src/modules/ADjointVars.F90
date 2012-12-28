@@ -9,14 +9,7 @@
 !     ******************************************************************
 !
       module ADjointVars
-!
-!     ******************************************************************
-!     *                                                                *
-!     * This module contains the variables used by discrete adjoint    *
-!     * solver, such as logicals, mappings, etc.                       *
-!     *                                                                *
-!     ******************************************************************
-!
+
       use constants
       use costFunctions
       implicit none
@@ -46,17 +39,9 @@
       integer(kind=intType) :: nDesignLengthRef
       integer(kind=intType) :: nDesignSurfaceRef
       integer(kind=intType) :: nDesignDissError
-      
       integer(kind=intType) :: nDesignExtra = 0
-
       real(kind=realType),dimension(:),allocatable :: dIda
       
-!     ******************************************************************
-!     *                                                                *
-!     * Global numbering.                                              *
-!     *                                                                *
-!     ******************************************************************
-!
       ! nNodesGlobal  Total number of nodes on each level
       ! nNodesLocal   Number of nodes owned by the processor on each level
       ! nOffsetLocal  Global node number offset per processor on each level
@@ -66,17 +51,5 @@
       integer(kind=intType), parameter :: maxLevels = 20
       integer(kind=intType), dimension(maxLevels) :: nNodesGlobal, nNodesLocal, nNodeOffsetLocal
       integer(kind=intType), dimension(maxLevels) :: nCellsGlobal, nCellsLocal, nCellOffsetLocal
-      !integer(kind=intType) :: nSurfNodesGlobal, nSurfNodesLocal
-      real(kind=realType) :: timings(20)
-      ! ****************************************************************
-      ! Finite-difference approximation step size.
-
-      ! Relative/absolute finite-difference step for design variables
-      ! to estimate d J / d alpha(n) and d R / d alpha(n)
-
-      real(kind=realType), parameter :: adjEpsFd = 1.0e-4_realType
-      real(kind=realType), parameter :: adjRelFd = 1.0e-5_realType
-      real(kind=realType), parameter :: adjAbsFd = 1.0e-5_realType
-
 
     end module ADjointVars
