@@ -297,7 +297,7 @@ subroutine verifyForces(pts,npts,nTS)
         err_count = 0
         ad_val = 0.0
         fd_val = 0.0
-        call setPointersAdj(nn,1_intType,sps)!-| 
+        call setPointers(nn,1_intType,sps)!-| 
         do l=1,nw                            ! |
            do k=2,kl                         ! |->Loop Over Columns
               do j=2,jl                      ! | 
@@ -308,10 +308,10 @@ subroutine verifyForces(pts,npts,nTS)
                     call computePressureAdjFullBlock(w,p) ! Full block
                     ! version
                     call applyAllBC(.True.)
-                    call setPointersAdj(nn,1_intType,sps)
+                    call setPointers(nn,1_intType,sps)
                     
                     call getForces(forces,pts,npts,nTS)
-                    call setPointersAdj(nn,1_intType,sps)
+                    call setPointers(nn,1_intType,sps)
                     
                     deriv = 0.0
                     deriv = (forces-forces0)/h

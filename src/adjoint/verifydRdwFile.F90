@@ -265,7 +265,7 @@
 !!$
 !!$         spectralLoop: do sps=1,nTimeIntervalsSpectral
 !!$            !print *,'Setting Pointers',nn,level,sps
-!!$            call setPointersAdj(nn,level,sps)
+!!$            call setPointers(nn,level,sps)
 !!$
 !!$            ! Loop over location of output (R) cell of residual
 !!$            do kCell = 2, kl
@@ -323,9 +323,9 @@
 !!$                                       j = jCell + jj
 !!$                                       k = kCell + kk
 !!$
-!!$                                    call setPointersAdj(nn,level,sps2)
+!!$                                    call setPointers(nn,level,sps2)
 !!$                                    idxstate = globalCell(i,j,k)*nw+l
-!!$                                    call setPointersAdj(nn,level,sps)
+!!$                                    call setPointers(nn,level,sps)
 !!$                                    idxres   = globalCell(iCell,jCell,kCell)*nw+m
 !!$
 !                                    !print *,'secondaryindicies',i,j,k,ii,jj,kk
@@ -409,17 +409,17 @@
 !      !now extract and write to a file
        do sps2 = 1,nTimeIntervalsSpectral
           do nn = 1,nDom
-             call setPointersAdj(nn,1,sps2)
+             call setPointers(nn,1,sps2)
              do kCell = 2, kl
                 do jCell = 2, jl
                    do iCell = 2, il
                       do m = 1, nw
                          do sps = 1,nTimeIntervalsSpectral
-                            call setPointersAdj(nn,1,sps2)
+                            call setPointers(nn,1,sps2)
                             idxstate   = globalCell(iCell,jCell,kCell)*nw+m 
-                            call setPointersAdj(nn,1,sps)
+                            call setPointers(nn,1,sps)
                             do nnn = 1,ndom
-                               call setPointersAdj(nnn,1,sps)
+                               call setPointers(nnn,1,sps)
                                DO I=2,Il
                                   DO J=2,Jl
                                      DO K=2,Kl
@@ -444,7 +444,7 @@
                                      END DO
                                   END DO
                                END DO
-                               call setPointersAdj(nn,1,sps)
+                               call setPointers(nn,1,sps)
                             end do
                          end do
                       end do

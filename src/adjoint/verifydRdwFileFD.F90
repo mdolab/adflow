@@ -254,7 +254,7 @@
          print *,'domain',nn
          groundLevel = 1
          sps = 1
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          allocate(flowDoms(nn,level,sps)%dwp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
          allocate(flowDoms(nn,level,sps)%dwm(0:ib,0:jb,0:kb,1:nw),stat=ierr)
          allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
@@ -269,7 +269,7 @@
       storedomains: do nn = 1,ndom
          groundLevel = 1
          sps = 1
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          dwtemp = dw
          ptmp = p
          wtmp = w
@@ -288,18 +288,18 @@
          print *,'domain',nn
          groundLevel = 1
          sps = 1
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          do kCell = 1,kl!0, ke
             do jCell = 1,jl!0, je
                do iCell = 1,il!0, ie
                   !print *,'ie',icell,ie,jcell,je,kcell,ke
                   do m = 1, nw
                      do nnn = 1,ndom
-                        call setPointersAdj(nnn,1,sps)
+                        call setPointers(nnn,1,sps)
                         w = wtmp
                         p = ptmp
                      enddo
-                     call setPointersAdj(nn,1,sps)
+                     call setPointers(nn,1,sps)
                      wref =w(icell,jcell,kcell,m) 
                      w(icell,jcell,kcell,m)  = wref+ deltaw
                   
@@ -308,10 +308,10 @@
                      call setFlowInfinityState
 
                      do nnn=1,ndom
-                        call setPointersAdj(nnn,1,sps)
+                        call setPointers(nnn,1,sps)
                         call computeForcesPressureAdj(w,p)
                      end do
-                     call setPointersAdj(nn,1,sps)
+                     call setPointers(nn,1,sps)
             ! Exchange the pressure if the pressure must be exchanged early.
             ! Only the first halo's are needed, thus whalo1 is called.
             ! Only on the fine grid.
@@ -351,21 +351,21 @@
                      do nnn = 1,ndom
                         groundLevel = 1
                         sps = 1
-                        call setPointersAdj(nnn,1,sps)
+                        call setPointers(nnn,1,sps)
                         dwp = dw
                      end do
                      
                      !reset states
                      !print *, "Called Residual =",nn,domain
                      do nnn = 1,ndom
-                        call setPointersAdj(nnn,1,sps)
+                        call setPointers(nnn,1,sps)
                         w = wtmp
                         p = ptmp
                      enddo
                      !nn=domain
                      groundlevel = 1
                      sps = 1
-                     call setPointersAdj(nn,1,sps)
+                     call setPointers(nn,1,sps)
                      w(icell,jcell,kcell,m)  = wref- deltaw
  
                      call referenceState
@@ -373,11 +373,11 @@
                      call setFlowInfinityState
                      
                      do nnn=1,ndom
-                        call setPointersAdj(nnn,1,sps)
+                        call setPointers(nnn,1,sps)
                         call computeForcesPressureAdj(w,p)
                      end do
                      
-                     call setPointersAdj(nn,1,sps)
+                     call setPointers(nn,1,sps)
             ! Exchange the pressure if the pressure must be exchanged early.
             ! Only the first halo's are needed, thus whalo1 is called.
             ! Only on the fine grid.
@@ -411,7 +411,7 @@
                      do nnn = 1,ndom
                         groundLevel = 1
                         sps = 1
-                        call setPointersAdj(nnn,1,sps)
+                        call setPointers(nnn,1,sps)
                         dwm = dw
                      end do
                      !print *, "Called Residual =",nn,domain
@@ -419,12 +419,12 @@
                      !nn=domain
                      groundlevel = 1
                      sps = 1
-                     call setPointersAdj(nn,1,sps)
+                     call setPointers(nn,1,sps)
 
                      idxstate   = globalcell(iCell,jCell,kCell)*nw+m 
                      
                      do nnn = 1,ndom
-                        call setPointersAdj(nnn,1,sps)
+                        call setPointers(nnn,1,sps)
                         DO I=2,Il
                            DO J=2,Jl
                               DO K=2,Kl
@@ -447,23 +447,23 @@
                               end do
                            end do
                         end do
-                        !call setPointersAdj(nn,1,sps)
+                        !call setPointers(nn,1,sps)
                      enddo
-                     call setPointersAdj(nn,1,sps)
+                     call setPointers(nn,1,sps)
                      !x(icell,jcell,kcell,m) =xref
                      !p = ptemp
                   end do
                enddo
             end do
          enddo
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          !x(:,:,:,:) = xtemp(:,:,:,:)
          !deallocate(xtemp,ptemp)
       enddo domains
       resetdomains: do nn = 1,ndom
          groundLevel = 1
          sps = 1
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          dw = dwtemp
          p = ptmp
          w = wtmp
@@ -474,7 +474,7 @@
          print *,'domain',nn
          groundLevel = 1
          sps = 1
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          deallocate(flowDoms(nn,level,sps)%dwp)
          deallocate(flowDoms(nn,level,sps)%dwm)
          deallocate(flowDoms(nn,level,sps)%dwtemp)

@@ -14,7 +14,7 @@ subroutine dealloc_derivative_values(nn)
 
   ! Reset w and dw -> Its like nothing happened...
   deallocatespectral: do sps=1,nTimeIntervalsSpectral
-     call setPointersAdj(nn,1,sps)
+     call setPointers(nn,1,sps)
      ! Reset w 
      flowDoms(nn,1,sps)%w = flowDomsd(nn,1,sps)%wtmp
 

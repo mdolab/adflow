@@ -94,6 +94,7 @@ FF90_OBJECTS_2 = allocConvArrays.o\
 		 scaleFactors.o\
 		 setFlowInfinityState.o\
 		 setIOVar.o\
+		 setGlobalCellsAndNodes.o\
 		 setPressureAndComputeEnergy.o\
 		 setUniformFlow.o\
 		 timeSpectralCoef.o\

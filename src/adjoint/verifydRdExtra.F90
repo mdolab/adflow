@@ -389,7 +389,7 @@
          print *,'Entering Domain loop'
          domainLoopAD: do nn=1,nDom!97,97!1,1!nDom
             print *,'Setting Pointers'
-            call setPointersAdj(nn,level,sps)
+            call setPointers(nn,level,sps)
 
             ! Loop over location of output (R) cell of residual
             do kCell = 2, kl
@@ -485,7 +485,7 @@
                 
                      test = sum(pvrlocal(:))
                      !print *,'test',test
-                     if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
+                     if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal(1_intType)) then
                         !print *,'setting PETSc Vector',sum(wAdjB(icell,jcell,kcell,:))
                         !pvrlocal(:) = wFD2(iCell-1, jCell-1, kCell-1,:)
                         
@@ -528,7 +528,7 @@
 !!$       groundLevel = 1
 !!$       sps = 1
 !!$       nn=97
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       ! if (istate==icell .or. jstate==jcell .or. kstate==kcell) then
 !!$       !Remember current values
 !!$       dwtemp(:,:,:,:) = dw(:,:,:,:)
@@ -578,7 +578,7 @@
 !!$       nn=97
 !!$       groundlevel = 1
 !!$       sps = 1
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       dwp(:,:,:,:) = dw(:,:,:,:)
 !!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
 !!$       
@@ -625,7 +625,7 @@
 !!$       nn=97
 !!$       groundlevel = 1
 !!$       sps = 1
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       dwm(:,:,:,:) = dw(:,:,:,:)
 !!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
 !!$       
@@ -662,7 +662,7 @@
 !!$                
 !                test = sum(wFD2(iCell-1, jCell-1, kCell-1,:))
 !                !print *,'test',test
-!                if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal) then
+!                if ( test.ne.0 .and. idxmgb.ne.-5 .and. idxmgb>=0 .and. idxmgb<nCellsGlobal(1_intType)) then
 !                   !print *,'setting PETSc Vector',sum(wAdjB(icell,jcell,kcell,:))
 !                   pvrlocal(:) = wFD2(iCell-1, jCell-1, kCell-1,:)
 !                   
@@ -702,7 +702,7 @@
 !!$       nn=97
 !!$       groundlevel = 1
 !!$       sps = 1
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
 !!$       w(:,:,:,:) = wtemp(:,:,:,:)
 !!$       p(:,:,:) = ptemp(:,:,:)
@@ -774,7 +774,7 @@
 !
 !         spectralLoop2: do sps=1,nTime
 !!            print *,'setting Pointers'
-!            call setPointersAdj(nn,level,sps)!
+!            call setPointers(nn,level,sps)!
 !
 !
 !               ! Loop over location of output (R) cell of residual
@@ -877,7 +877,7 @@
 !!$       sps = 1
 !!$       nn=97
 !!$
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       ! if (istate==icell .or. jstate==jcell .or. kstate==kcell) then
 !!$       !Remember current values
 !!$       dwtemp(:,:,:,:) = dw(:,:,:,:)
@@ -961,7 +961,7 @@
 !!$       sps = 1
 !!$       nn=97
 !!$
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       dwp(:,:,:,:) = dw(:,:,:,:)
 !!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
 !!$       
@@ -1041,7 +1041,7 @@
 !!$       sps = 1
 !!$       nn=97
 !!$
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       dwm(:,:,:,:) = dw(:,:,:,:)
 !!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
 !!$       
@@ -1081,7 +1081,7 @@
 !!$       sps = 1
 !!$       nn=97
 !!$
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
 !!$       w(:,:,:,:) = wtemp(:,:,:,:)
 !!$       p(:,:,:) = ptemp(:,:,:)
@@ -1110,7 +1110,7 @@
 !!$       sps = 1
 !!$       nn=97
 !!$       
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       ! if (istate==icell .or. jstate==jcell .or. kstate==kcell) then
 !!$       !Remember current values
 !!$       dwtemp(:,:,:,:) = dw(:,:,:,:)
@@ -1189,7 +1189,7 @@
 !!$       sps = 1
 !!$       nn=97
 !!$
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       dwp(:,:,:,:) = dw(:,:,:,:)
 !!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
 !!$       
@@ -1266,7 +1266,7 @@
 !!$       sps = 1
 !!$       nn=97
 !!$
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       dwm(:,:,:,:) = dw(:,:,:,:)
 !!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
 !!$       
@@ -1306,7 +1306,7 @@
 !!$       sps = 1
 !!$       nn=97
 !!$
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
 !!$       w(:,:,:,:) = wtemp(:,:,:,:)
 !!$       p(:,:,:) = ptemp(:,:,:)
@@ -1335,7 +1335,7 @@
 !!$       sps = 1
 !!$       nn=97
 !!$      
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       ! if (istate==icell .or. jstate==jcell .or. kstate==kcell) then
 !!$       !Remember current values
 !!$       dwtemp(:,:,:,:) = dw(:,:,:,:)
@@ -1421,7 +1421,7 @@
 !!$       sps = 1
 !!$       nn=97
 !!$
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       dwp(:,:,:,:) = dw(:,:,:,:)
 !!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
 !!$       
@@ -1503,7 +1503,7 @@
 !!$       sps = 1
 !!$       nn=97
 !!$
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       dwm(:,:,:,:) = dw(:,:,:,:)
 !!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
 !!$       
@@ -1540,7 +1540,7 @@
 !!$       sps = 1
 !!$       nn=97
 !!$
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$       dw(:,:,:,:) = dwtemp(:,:,:,:)
 !!$       w(:,:,:,:) = wtemp(:,:,:,:)
 !!$       p(:,:,:) = ptemp(:,:,:)
@@ -1565,7 +1565,7 @@
 !!$       sps = 1
 !!$       nn=97
 !!$       
-!!$       call setPointersAdj(nn,groundlevel,sps)
+!!$       call setPointers(nn,groundlevel,sps)
 !!$    do m=1,nw
 !!$      do iCell=2,il
 !!$        do jCell=2,jl
@@ -1621,7 +1621,7 @@
 !!$         print *,'domain',nn
 !!$         groundLevel = 1
 !!$         sps = 1
-!!$         call setPointersAdj(nn,1,sps)
+!!$         call setPointers(nn,1,sps)
 !!$         deallocate(flowDoms(nn,level,sps)%dwp)
 !!$         deallocate(flowDoms(nn,level,sps)%dwm)
 !!$         deallocate(flowDoms(nn,level,sps)%dwtemp)

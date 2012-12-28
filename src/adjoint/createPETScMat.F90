@@ -17,11 +17,11 @@ subroutine createPETScMat
   !     ******************************************************************
   !
   use ADjointPETSc
-  use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
-  use communication   ! myID, nProc
-  use inputTimeSpectral !nTimeIntervalsSpectral
+  use ADjointVars     
+  use communication   
+  use inputTimeSpectral
   use flowVarRefState ! 
-  use inputADjoint    !ApproxPC
+  use inputADjoint   
 
   implicit none
   !
@@ -49,12 +49,12 @@ subroutine createPETScMat
   ! number of Cells owned by the processor and the number of 
   ! equations.
 
-  nDimW = nw * nCellsLocal*nTimeIntervalsSpectral
+  nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
 
   ! Define matrix dRdx local size (number of columns) for the
   ! spatial derivatives.
 
-  nDimX = 3 * nNodesLocal*nTimeIntervalsSpectral
+  nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
 
   ! Define matrix dFdx local size (number of Rows) for the
   ! Coupling derivatives.
@@ -72,10 +72,10 @@ subroutine createPETScMat
   !     ******************************************************************
   !
 
-  allocate( nnzDiagonal(nCellsLocal*nTimeIntervalsSpectral),&
-       nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
+  allocate( nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral),&
+       nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
   
-  call drdwPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal*nTimeIntervalsSpectral)
+  call drdwPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal(1_intType)*nTimeIntervalsSpectral)
   if( nw <= 7 ) then
 
      PETScBlockMatrix = .true.
@@ -96,7 +96,7 @@ subroutine createPETScMat
      ! The drdw prealloc function is done per block, which we can use
      ! to compute the correct preallocation for the non-block matrix:
 
-     do i=1,nCellsLocal*nTimeIntervalsSpectral
+     do i=1,nCellsLocal(1_intType)*nTimeIntervalsSpectral
         nnzDiagonal2((i-1)*nw+1:(i-1)*nw+nw) = nnzDiagonal(i)
         nnzOffDiag((i-1)*nw+1:(i-1)*nw+nw) = nnzOffDiag(i)
      end do
@@ -139,10 +139,10 @@ subroutine createPETScMat
      !     ******************************************************************
      !
 
-     allocate( nnzDiagonal(nCellsLocal*nTimeIntervalsSpectral),&
-          nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
+     allocate( nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral),&
+          nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
      
-     call drdwPCPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal*nTimeIntervalsSpectral)
+     call drdwPCPreAllocation(nnzDiagonal,nnzOffDiag,nCellsLocal(1_intType)*nTimeIntervalsSpectral)
 
      if( nw <= 7 ) then
 
@@ -162,7 +162,7 @@ subroutine createPETScMat
         ! The drdwPC prealloc function is done per block, which we can use
         ! to compute the correct preallocation for the non-block matrix:
         
-        do i=1,nCellsLocal*nTimeIntervalsSpectral
+        do i=1,nCellsLocal(1_intType)*nTimeIntervalsSpectral
            nnzDiagonal2((i-1)*nw+1:(i-1)*nw+nw) = nnzDiagonal(i)
            nnzOffDiag((i-1)*nw+1:(i-1)*nw+nw) = nnzOffDiag(i)
         end do
@@ -326,7 +326,7 @@ subroutine drdwPreAllocation(onProc,offProc,wSize)
   
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
         ! Loop over each Cell
         do k=2,kl
            do j=2,jl
@@ -439,7 +439,7 @@ subroutine drdwPCPreAllocation(onProc,offProc,wSize)
   offProc(:) = 0_intType 
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
         ! Loop over each Cell
         do k=2,kl
            do j=2,jl
@@ -519,7 +519,7 @@ subroutine drdxPreAllocation(onProc,offProc,wSize)
  
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
         ! Loop over each Cell
         do k=2,kl
            do j=2,jl
@@ -577,7 +577,7 @@ subroutine drdxPreAllocation(onProc,offProc,wSize)
  
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
         ! Loop over each Cell
         do k=2,kl
            do j=2,jl
@@ -742,7 +742,7 @@ subroutine statePreAllocation(onProc,offProc,wSize,stencil,N_stencil)
   offProc(:) = 0_intType 
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
         ! Loop over each Cell
         do k=2,kl
            do j=2,jl

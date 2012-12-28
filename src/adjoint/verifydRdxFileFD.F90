@@ -254,7 +254,7 @@
          print *,'domain',nn
          groundLevel = 1
          sps = 1
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          allocate(flowDoms(nn,level,sps)%dwp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
          allocate(flowDoms(nn,level,sps)%dwm(0:ib,0:jb,0:kb,1:nw),stat=ierr)
          allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
@@ -267,7 +267,7 @@
       storedomains: do nn = 1,ndom
          groundLevel = 1
          sps = 1
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          dwtemp = dw
       end do storedomains
       !zero the matrix for dRdW Insert call
@@ -284,7 +284,7 @@
          print *,'domain',nn
          groundLevel = 1
          sps = 1
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          allocate(xtemp(0:ie,0:je,0:ke,1:3),ptemp(0:ib,0:jb,0:kb))
          xtemp(:,:,:,:) = x(:,:,:,:)
          ptemp = p
@@ -294,10 +294,10 @@
                   !print *,'ie',icell,ie,jcell,je,kcell,ke
                   do m = 1, 3
                      do nnn = 1,ndom
-                        call setPointersAdj(nnn,1,sps)
+                        call setPointers(nnn,1,sps)
                         dw = dwtemp
                      enddo
-                     call setPointersAdj(nn,1,sps)
+                     call setPointers(nn,1,sps)
                      
                      xref =x(icell,jcell,kcell,m) 
                      x(icell,jcell,kcell,m)  = xref+ deltax
@@ -338,19 +338,19 @@
                      do nnn = 1,ndom
                         groundLevel = 1
                         sps = 1
-                        call setPointersAdj(nnn,1,sps)
+                        call setPointers(nnn,1,sps)
                         dwp = dw
                      end do
                      !print *, "Called Residual =",nn,domain
                      do nnn = 1,ndom
-                        call setPointersAdj(nnn,1,sps)
+                        call setPointers(nnn,1,sps)
                         dw = dwtemp
                         
                      enddo
                      !nn=domain
                      groundlevel = 1
                      sps = 1
-                     call setPointersAdj(nn,1,sps)
+                     call setPointers(nn,1,sps)
                      p(:,:,:) = ptemp(:,:,:)
                      x(icell,jcell,kcell,m)  = xref- deltax
                      
@@ -390,7 +390,7 @@
                      do nnn = 1,ndom
                         groundLevel = 1
                         sps = 1
-                        call setPointersAdj(nnn,1,sps)
+                        call setPointers(nnn,1,sps)
                         dwm = dw
                      end do
                      !print *, "Called Residual =",nn,domain
@@ -398,12 +398,12 @@
                      !nn=domain
                      groundlevel = 1
                      sps = 1
-                     call setPointersAdj(nn,1,sps)
+                     call setPointers(nn,1,sps)
 
                      idxnode   = globalnode(iCell,jCell,kCell)*3+m 
                      !testnode =  globalnode(iCell,jCell,kCell)
                      do nnn = 1,ndom
-                        call setPointersAdj(nnn,1,sps)
+                        call setPointers(nnn,1,sps)
                         DO I=2,Il
                            DO J=2,Jl
                               DO K=2,Kl
@@ -426,16 +426,16 @@
                               end do
                            end do
                         end do
-                        !call setPointersAdj(nn,1,sps)
+                        !call setPointers(nn,1,sps)
                      enddo
-                     call setPointersAdj(nn,1,sps)
+                     call setPointers(nn,1,sps)
                      x(icell,jcell,kcell,m) =xref
                      p = ptemp
                   end do
                enddo
             end do
          enddo
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          x(:,:,:,:) = xtemp(:,:,:,:)
          deallocate(xtemp,ptemp)
       enddo domains
@@ -446,7 +446,7 @@
          print *,'domain',nn
          groundLevel = 1
          sps = 1
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          deallocate(flowDoms(nn,level,sps)%dwp)
          deallocate(flowDoms(nn,level,sps)%dwm)
          deallocate(flowDoms(nn,level,sps)%dwtemp)
