@@ -102,7 +102,6 @@ FF90_OBJECTS = adjustInflowAngleAdj.o   \
 #	       haloIndexCommunication.o\
 #	       initializePETSc.o\
 #	       preprocessingADjoint.o\
-#	       getGlobalNodes.o\
 #	       releaseMemADjoint.o\
 #	       sendIndexHalo.o\
 #	       setGlobalNodes.o\
