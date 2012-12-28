@@ -50,7 +50,6 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       destroyPETScVars.o       \
 	       preallocation.o          \
                finalizePETSc.o          \
-	       getGlobalNodes.o         \
 	       getSolution.o            \
 	       getADjoint.o             \
 	       getdRdXvPsi.o            \
