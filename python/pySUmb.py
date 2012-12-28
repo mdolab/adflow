@@ -2034,7 +2034,7 @@ class SUMB(AeroSolver):
             psi = self.sumb.getadjoint(self.getStateSize())
         # end if
 
-        ndof = self.sumb.adjointvars.nnodeslocal*3
+        ndof = self.sumb.adjointvars.nnodeslocal[0]*3
 
         # Now call getdrdxvpsi WITH the psi vector:
         dxv_solver = self.sumb.getdrdxvpsi(ndof, psi)
@@ -2049,7 +2049,7 @@ class SUMB(AeroSolver):
 
     def getdRdXvVec(self, in_vec, group_name):
 
-        ndof = self.sumb.adjointvars.nnodeslocal*3
+        ndof = self.sumb.adjointvars.nnodeslocal[0]*3
 
         # Now call getdrdxvpsi WITH the psi vector:
         dxv_solver = self.sumb.getdrdxvpsi(ndof, in_vec)
@@ -2184,7 +2184,7 @@ class SUMB(AeroSolver):
         on this processor'''
 
         nw     = self.sumb.flowvarrefstate.nw
-        ncells = self.sumb.adjointvars.ncellslocal
+        ncells = self.sumb.adjointvars.ncellslocal[0]
         ntime  = self.sumb.inputtimespectral.ntimeintervalsspectral
 
         return nw*ncells*ntime

@@ -311,7 +311,7 @@ subroutine verifydCfdx(level,costFunction)
          call EChk(ierr,__FILE__,__LINE__)
          ii = 0 
          domainLoopAD: do nn=1,nDom
-            call setPointersadj(nn,1_intType,sps)
+            call setPointers(nn,1_intType,sps)
             bocos: do mm=1,nBocos
                !if( myID==0 )print*,'current index',sps,nn,mm
                if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
@@ -475,7 +475,7 @@ subroutine verifydCfdx(level,costFunction)
          call VecGetOwnershipRange(djdw, iLow, iHigh, PETScIerr)
          call EChk(PETScIerr,__FILE__,__LINE__)
          do nn = 1,ndom
-            call setPointersadj(nn,1_intType,sps)
+            call setPointers(nn,1_intType,sps)
             do k = 2,kl!0,kb
                do j = 2,jl!0,jb
                   do i = 2,il!0,ib
@@ -499,7 +499,7 @@ subroutine verifydCfdx(level,costFunction)
          call VecGetOwnershipRange(djdx, iLow, iHigh, PETScIerr)
          call EChk(PETScIerr,__FILE__,__LINE__)
          do nn = 1,ndom
-            call setPointersadj(nn,1_intType,sps)
+            call setPointers(nn,1_intType,sps)
             do k = 1,ke!0,kb
                do j = 1,je!0,jb
                   do i = 1,ie!0,ib

@@ -66,7 +66,7 @@
       do icolor = 1,nDesignExtra
          do sps = 1,nTimeIntervalsSpectral
             do nn = 1,ndom
-               call setPointersAdj(nn,1,sps)
+               call setPointers(nn,1,sps)
                DO I=2,Il
                   DO J=2,Jl
                      DO K=2,Kl

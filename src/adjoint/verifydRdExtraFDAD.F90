@@ -321,7 +321,7 @@
 
          spectralLoop: do sps=1,nTimeIntervalsSpectral
   !          print *,'Setting Pointers'
-            call setPointersAdj(nn,level,sps)
+            call setPointers(nn,level,sps)
 
             ! Loop over location of output (R) cell of residual
             do kCell = 2, kl
@@ -399,7 +399,7 @@
 
          spectralLoop1: do sps=1,nTimeIntervalsSpectral
   !          print *,'Setting Pointers'
-            call setPointersAdj(nn,level,sps)
+            call setPointers(nn,level,sps)
 
             ! Loop over location of output (R) cell of residual
             do kCell = 2, kl
@@ -478,7 +478,7 @@
 
          spectralLoop2: do sps=1,nTimeIntervalsSpectral
   !          print *,'Setting Pointers'
-            call setPointersAdj(nn,level,sps)
+            call setPointers(nn,level,sps)
 
             ! Loop over location of output (R) cell of residual
             do kCell = 2, kl
@@ -559,7 +559,7 @@
 
          spectralLoop3: do sps=1,nTimeIntervalsSpectral
   !          print *,'Setting Pointers'
-            call setPointersAdj(nn,level,sps)
+            call setPointers(nn,level,sps)
 
             ! Loop over location of output (R) cell of residual
             do kCell = 2, kl
@@ -651,7 +651,7 @@
 
          spectralLoop4: do sps=1,nTimeIntervalsSpectral
   !          print *,'Setting Pointers'
-            call setPointersAdj(nn,level,sps)
+            call setPointers(nn,level,sps)
 
             ! Loop over location of output (R) cell of residual
             do kCell = 2, kl
@@ -729,7 +729,7 @@
 
          spectralLoop5: do sps=1,nTimeIntervalsSpectral
   !          print *,'Setting Pointers'
-            call setPointersAdj(nn,level,sps)
+            call setPointers(nn,level,sps)
 
             ! Loop over location of output (R) cell of residual
             do kCell = 2, kl

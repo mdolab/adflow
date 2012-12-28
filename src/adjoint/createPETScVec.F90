@@ -21,11 +21,11 @@ subroutine createPETScVec
   !     ******************************************************************
   !
   use ADjointPETSc
-  use ADjointVars     ! nCellsLocal,
-  use communication   ! myID, nProc 
-  use inputTimeSpectral !nTimeIntervalsSpectral
-  use flowVarRefState ! 
-  use mdData          ! mdNSurfNodesCompact
+  use ADjointVars     
+  use communication   
+  use inputTimeSpectral
+  use flowVarRefState
+  use mdData         
   implicit none
   integer(kind=intType) :: ndimS, nTS
 

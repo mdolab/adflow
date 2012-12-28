@@ -102,7 +102,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD)
      spectralLoop: do sps=1,nTimeIntervalsSpectral
         ! Set pointers and derivative pointers
         call setPointers_d(nn,1,sps)
-        call setPointersAdj(nn,1,sps)
+        call setPointers(nn,1,sps)
 
         ! Do Coloring and perturb states
         colorLoop: do iColor = 1,nColor

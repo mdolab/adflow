@@ -168,7 +168,7 @@ subroutine verifyRNKPC
   spectralLoop: do sps=1,nTimeIntervalsSpectral
      domainResidualLoop: do nn=1,nDom
 
-        call setPointersAdj(nn,level,sps)
+        call setPointers(nn,level,sps)
 
         !===============================================================
         ! Compute the residual for each cell.

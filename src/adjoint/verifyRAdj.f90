@@ -209,7 +209,7 @@ subroutine verifyRAdj(level)
      domainResidualLoop: do nn=1,nDom
 
         ! Set some pointers to make the code more readable.
-        call setPointersAdj(nn,level,sps)
+        call setPointers(nn,level,sps)
 
         !===============================================================
         ! Compute the residual for each cell.

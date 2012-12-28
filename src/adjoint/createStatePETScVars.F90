@@ -11,11 +11,11 @@ subroutine createStatePETScVars
   !
   use ADjointPETSc, only: dRdwT, drdwPreT, dJdw, psi, adjointRes, adjointRHS,&
        PETScIerr, PETScBlockMatrix
-  use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
-  use communication   ! myID, nProc
-  use inputTimeSpectral !nTimeIntervalsSpectral
-  use flowVarRefState ! 
-  use inputADjoint    !ApproxPC
+  use ADjointVars   
+  use communication  
+  use inputTimeSpectral 
+  use flowVarRefState 
+  use inputADjoint    
   use stencils
   
   implicit none
@@ -44,8 +44,8 @@ subroutine createStatePETScVars
   ! number of Cells owned by the processor and the number of 
   ! equations.
 
-  nDimW = nw * nCellsLocal*nTimeIntervalsSpectral
-  nDimX = 3 * nNodesLocal*nTimeIntervalsSpectral
+  nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
+  nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
   !
   !     ******************************************************************
   !     *                                                                *
@@ -58,8 +58,8 @@ subroutine createStatePETScVars
 
   ! ------------------- Determine Preallocation for dRdw --------------
 
-  allocate( nnzDiagonal(nCellsLocal*nTimeIntervalsSpectral),&
-       nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
+  allocate( nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral),&
+       nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
 
   call initialize_stencils
   if (.not. viscous) then
@@ -105,7 +105,7 @@ subroutine createStatePETScVars
      ! The drdw prealloc function is done per block, which we can use
      ! to compute the correct preallocation for the non-block matrix:
 
-     do i=1,nCellsLocal*nTimeIntervalsSpectral
+     do i=1,nCellsLocal(1_intType)*nTimeIntervalsSpectral
         nnzDiagonal2((i-1)*nw+1:(i-1)*nw+nw) = nnzDiagonal(i)
         nnzOffDiag((i-1)*nw+1:(i-1)*nw+nw) = nnzOffDiag(i)
      end do
@@ -162,8 +162,8 @@ subroutine createStatePETScVars
 
      ! ------------------- Determine Preallocation for dRdwPre -------------
 
-     allocate( nnzDiagonal(nCellsLocal*nTimeIntervalsSpectral),&
-          nnzOffDiag(nCellsLocal*nTimeIntervalsSpectral) )
+     allocate( nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral),&
+          nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
 
      n_stencil = N_euler_PC
      allocate(stencil(n_stencil,3))
@@ -199,7 +199,7 @@ subroutine createStatePETScVars
         ! The drdwPC prealloc function is done per block, which we can use
         ! to compute the correct preallocation for the non-block matrix:
 
-        do i=1,nCellsLocal*nTimeIntervalsSpectral
+        do i=1,nCellsLocal(1_intType)*nTimeIntervalsSpectral
            nnzDiagonal2((i-1)*nw+1:(i-1)*nw+nw) = nnzDiagonal(i)
            nnzOffDiag((i-1)*nw+1:(i-1)*nw+nw) = nnzOffDiag(i)
         end do

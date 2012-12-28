@@ -27,19 +27,16 @@ subroutine setupAllResidualMatrices
   !     ******************************************************************
   !
   use ADjointPETSc
-  use ADjointVars ! nCellsGlobal, nCellsLocal, nOffsetLocal
-  use blockPointers       ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
-  use cgnsGrid            ! cgnsDoms
-  use communication       ! procHalo(currentLevel)%nProcSend
-  use inputDiscretization ! spaceDiscr
-  USE inputTimeSpectral   ! nTimeIntervalsSpectral
-  use iteration           ! overset, currentLevel
-  use flowVarRefState     ! nw
-  !      use inputTimeSpectral ! spaceDiscr
-  use inputADjoint        !lumpedDiss
-  use section             !sections
-  use monitor             !TimeUnsteady
-
+  use ADjointVars 
+  use blockPointers   
+  use communication    
+  use inputDiscretization
+  USE inputTimeSpectral 
+  use iteration         
+  use flowVarRefState   
+  use inputADjoint 
+  use section 
+  use monitor      
   implicit none
   !
   !     Local variables.
@@ -238,7 +235,7 @@ subroutine setupAllResidualMatrices
      ! Loop over the number of time instances for this block.
      spectralLoop: do sps=1,nTimeIntervalsSpectral
 
-        call setPointersAdj(nn,level,sps)
+        call setPointers(nn,level,sps)
 
         ! Loop over location of output (R) cell of residual
 
@@ -678,7 +675,7 @@ subroutine setupAllResidualMatrices
 
                     if( (iCell+1) <= ib ) then
                        idxngb = globalCell(iCell+1,jCell,kCell)!idxmgb
-                       if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
+                       if (idxngb<nCellsGlobal(1_intType)*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(Cad(:,:,sps)), ADD_VALUES,PETScIerr)
                           call EChk(PETScIerr,__FILE__,__LINE__)
@@ -688,7 +685,7 @@ subroutine setupAllResidualMatrices
                     ! >>> far east block CC < W(i+2,j,k)
                     if( (iCell+2) <= ib ) then
                        idxngb = globalCell(iCell+2,jCell,kCell)!idxmgb
-                       if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
+                       if (idxngb<nCellsGlobal(1_intType)*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(CCad(:,:,sps)),ADD_VALUES,PETScIerr)
                           call EChk(PETScIerr,__FILE__,__LINE__)
@@ -721,7 +718,7 @@ subroutine setupAllResidualMatrices
 
                     if( (jCell+1) <= jb ) then
                        idxngb = globalCell(iCell,jCell+1,kCell)!idxmgb
-                       if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
+                       if (idxngb<nCellsGlobal(1_intType)*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(Ead(:,:,sps)), ADD_VALUES,PETScIerr)
                           call EChk(PETScIerr,__FILE__,__LINE__)
@@ -732,7 +729,7 @@ subroutine setupAllResidualMatrices
 
                     if( (jCell+2) <= jb ) then
                        idxngb = globalCell(iCell,jCell+2,kCell)!idxmgb
-                       if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
+                       if (idxngb<nCellsGlobal(1_intType)*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(EEad(:,:,sps)),ADD_VALUES,PETScIerr)
                           call EChk(PETScIerr,__FILE__,__LINE__)
@@ -765,7 +762,7 @@ subroutine setupAllResidualMatrices
 
                     if( (kCell+1) <= kb ) then
                        idxngb = globalCell(iCell,jCell,kCell+1)!idxmgb
-                       if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
+                       if (idxngb<nCellsGlobal(1_intType)*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(Gad(:,:,sps)), ADD_VALUES,PETScIerr)
                           call EChk(PETScIerr,__FILE__,__LINE__)
@@ -776,7 +773,7 @@ subroutine setupAllResidualMatrices
 
                     if( (kCell+2) <= kb ) then
                        idxngb = globalCell(iCell,jCell,kCell+2)!idxmgb
-                       if (idxngb<nCellsGlobal*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
+                       if (idxngb<nCellsGlobal(1_intType)*nTimeIntervalsSpectral .and. idxngb.ne.-5) then
                           call MatSetValuesBlocked(dRdWt, 1, idxngb, 1, idxmgb, &
                                transpose(GGad(:,:,sps)),ADD_VALUES,PETScIerr)
                           call EChk(PETScIerr,__FILE__,__LINE__)
@@ -823,7 +820,7 @@ subroutine setupAllResidualMatrices
         ! Loop over the number of time instances for this block.
         do sps=1,nTimeIntervalsSpectral
            
-           call setPointersAdj(nn,level,sps)
+           call setPointers(nn,level,sps)
            
            ! Loop over location of output (R) cell of residual
            

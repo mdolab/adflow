@@ -143,7 +143,7 @@
          print *,'domain',nn
          groundLevel = 1
          sps = 1
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          allocate(flowDoms(nn,level,sps)%dwp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
          allocate(flowDoms(nn,level,sps)%dwm(0:ib,0:jb,0:kb,1:nw),stat=ierr)
          allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
@@ -275,7 +275,7 @@
          !Store current state values and residuals
          do nn=1,ndom
             !print *,'domains 1',nn
-            call setPointersAdj(nn,level,sps)
+            call setPointers(nn,level,sps)
             wtmp = w
             ptmp = p
             dwtmp = dw
@@ -315,7 +315,7 @@
 !!$     !print out x
 !!$       do sps = 1,nTimeIntervalsSpectral
 !!$          do nnnn=1,ndom
-!!$          call setPointersAdj(nnnn,1,sps)
+!!$          call setPointers(nnnn,1,sps)
 !!$          do iii = 2,il
 !!$             do jjj = 2,jl
 !!$                do kkk = 2,kl
@@ -336,7 +336,7 @@
 !!$                         do kkkk = kstart,kend
 !!$                            do n = 1,3
 !!$                               do sps2 = 1,nTimeIntervalsSpectral
-!!$                                  call setPointersAdj(nnnn,1,sps2)
+!!$                                  call setPointers(nnnn,1,sps2)
 !!$                                  i = iii+iiii
 !!$                                  j = jjj+jjjj
 !!$                                  k = kkk+kkkk
@@ -350,13 +350,13 @@
 !!$                enddo
 !!$             enddo
 !!$          enddo 
-!!$          call setPointersAdj(nn,1,sps)
+!!$          call setPointers(nn,1,sps)
 !!$       enddo
 !!$    end do
        call xhalo(level)
 !!$       do sps = 1,nTimeIntervalsSpectral
 !!$       do nnnn=1,ndom
-!!$          call setPointersAdj(nnnn,1,sps)
+!!$          call setPointers(nnnn,1,sps)
 !!$          do iii = 2,il
 !!$             do jjj = 2,jl
 !!$                do kkk = 2,kl
@@ -377,7 +377,7 @@
 !!$                         do kkkk = kstart,kend
 !!$                            do n = 1,3
 !!$                               do sps2 = 1,nTimeIntervalsSpectral
-!!$                                  call setPointersAdj(nnnn,1,sps2)
+!!$                                  call setPointers(nnnn,1,sps2)
 !!$                                  i = iii+iiii
 !!$                                  j = jjj+jjjj
 !!$                                  k = kkk+kkkk
@@ -391,7 +391,7 @@
 !!$                enddo
 !!$             enddo
 !!$          enddo
-!!$          call setPointersAdj(nn,1,sps)
+!!$          call setPointers(nn,1,sps)
 !!$       enddo
 !!$    end do
        call metric(level)
@@ -399,7 +399,7 @@
        !print out x
        do sps = 1,nTimeIntervalsSpectral
           do nnnn=1,1!ndom
-          call setPointersAdj(nnnn,1,sps)
+          call setPointers(nnnn,1,sps)
           do iii = 2,il
              do jjj = 2,jl
                 do kkk = 2,kl
@@ -424,14 +424,14 @@
                             do n = 1,3
                             !do n = 1,nw
                                do sps2 = 1,nTimeIntervalsSpectral
-                                  call setPointersAdj(nnnn,1,sps2)
+                                  call setPointers(nnnn,1,sps2)
                                   i = iii+iiii
                                   j = jjj+jjjj
                                   k = kkk+kkkk
                                   write(unitx,11) i,j,k,n,nnnn,sps,sps2,x(i,j,k,n)
                                   !write(unitx,11) i,j,k,n,nnnn,sps,sps2,w(i,j,k,n)
 11                                format(1x,'res',7I8,f20.14)
-                                  call setPointersAdj(nnnn,1,sps)
+                                  call setPointers(nnnn,1,sps)
                                end do
                             enddo
                          enddo
@@ -440,21 +440,21 @@
                 enddo
              enddo
           enddo
-          call setPointersAdj(nn,1,sps)
+          call setPointers(nn,1,sps)
        enddo
     end do
         do sps = 1,nTimeIntervalsSpectral
            do nnn=1,ndom
-              call setPointersAdj(nnn,1,sps)
+              call setPointers(nnn,1,sps)
               call computeForcesPressureAdj(w,p)
            end do
         end do
-       call setPointersAdj(nn,1,ssps)
+       call setPointers(nn,1,ssps)
   
 !!$     !print out w
 !!$       do sps = 1,nTimeIntervalsSpectral
 !!$          do nnnn=1,ndom
-!!$          call setPointersAdj(nnnn,1,sps)
+!!$          call setPointers(nnnn,1,sps)
 !!$          do iii = 2,il
 !!$             do jjj = 2,jl
 !!$                do kkk = 2,kl
@@ -478,7 +478,7 @@
 !!$                               !do n = 1,1!nw
 !!$                               do n = 1,nw
 !!$                               do sps2 = 1,nTimeIntervalsSpectral
-!!$                                  call setPointersAdj(nnnn,1,sps2)
+!!$                                  call setPointers(nnnn,1,sps2)
 !!$                                  i = iii+iiii
 !!$                                  j = jjj+jjjj
 !!$                                  k = kkk+kkkk
@@ -488,7 +488,7 @@
 !!$                                  !write(unitx,11) i,j,k,n,nnnn,sps,sps2,sFaceI(i,j,k)
 !!$                                  !write(unitx,11) i,j,k,n,nnnn,sps,sps2,s(i,j,k,n)
 !!$11                                format(1x,'wadj',7I8,f20.14)
-!!$                                  call setPointersAdj(nnnn,1,sps)
+!!$                                  call setPointers(nnnn,1,sps)
 !!$                               end do
 !!$                            enddo
 !!$                         enddo
@@ -498,7 +498,7 @@
 !!$                enddo
 !!$             enddo
 !!$          enddo
-!!$          call setPointersAdj(nn,1,sps)
+!!$          call setPointers(nn,1,sps)
 !!$       enddo
 !!$    end do
        ! Exchange the pressure if the pressure must be exchanged early.
@@ -514,7 +514,7 @@
 !!$      !print out w
 !!$       do sps = 1,nTimeIntervalsSpectral
 !!$          do nnnn=1,ndom
-!!$          call setPointersAdj(nnnn,1,sps)
+!!$          call setPointers(nnnn,1,sps)
 !!$          do iii = 2,il
 !!$             do jjj = 2,jl
 !!$                do kkk = 2,kl
@@ -529,14 +529,14 @@
 !!$                         do kkkk = kstart,kend
 !!$                            do n = 1,nw
 !!$                               do sps2 = 1,nTimeIntervalsSpectral
-!!$                                  call setPointersAdj(nnnn,1,sps2)
+!!$                                  call setPointers(nnnn,1,sps2)
 !!$                                  i = iii+iiii
 !!$                                  j = jjj+jjjj
 !!$                                  k = kkk+kkkk
 !!$                                 
 !!$                                  write(unitx,11) i,j,k,n,nnnn,sps,sps2,iii,jjj,kkk,w(i,j,k,n)
 !!$11                                format(1x,'wadj',10I8,f20.12)
-!!$                                  call setPointersAdj(nnnn,1,sps)
+!!$                                  call setPointers(nnnn,1,sps)
 !!$                               end do
 !!$                            enddo
 !!$                         enddo
@@ -545,7 +545,7 @@
 !!$                enddo
 !!$             enddo
 !!$          enddo
-!!$          call setPointersAdj(nn,1,sps)
+!!$          call setPointers(nn,1,sps)
 !!$       enddo
 !!$    end do      
        ! Exchange the solution. Either whalo1 or whalo2
@@ -564,7 +564,7 @@
        !print out x
 !!$       do sps = 1,nTimeIntervalsSpectral
 !!$          do nnnn=1,ndom
-!!$             call setPointersAdj(nnnn,1,sps)
+!!$             call setPointers(nnnn,1,sps)
 !!$             do iii = 2,il
 !!$                do jjj = 2,jl
 !!$                   do kkk = 2,kl
@@ -579,13 +579,13 @@
 !!$                            do kkkk = kstart,kend
 !!$                               do n = 1,nw
 !!$                                  do sps2 = 1,nTimeIntervalsSpectral
-!!$                                     call setPointersAdj(nnnn,1,sps2)
+!!$                                     call setPointers(nnnn,1,sps2)
 !!$                                     i = iii+iiii
 !!$                                     j = jjj+jjjj
 !!$                                     k = kkk+kkkk
 !!$                                     write(unitx,11) i,j,k,n,nnnn,sps,sps2,w(i,j,k,n)
 !!$11                                   format(1x,'res',7I8,f20.14)
-!!$                                     call setPointersAdj(nnnn,1,sps)
+!!$                                     call setPointers(nnnn,1,sps)
 !!$                                  end do
 !!$                               enddo
 !!$                            enddo
@@ -594,13 +594,13 @@
 !!$                   enddo
 !!$                enddo
 !!$             enddo
-!!$             call setPointersAdj(nn,1,sps)
+!!$             call setPointers(nn,1,sps)
 !!$          enddo
 !!$       end do    
   !print out w
 !!$       do sps = 1,nTimeIntervalsSpectral
 !!$          do nnnn=1,1!ndom
-!!$          call setPointersAdj(nnnn,1,sps)
+!!$          call setPointers(nnnn,1,sps)
 !!$          do iii = 2,il
 !!$             do jjj = 2,jl
 !!$                do kkk = 2,kl
@@ -615,14 +615,14 @@
 !!$                         do kkkk = kstart,kend
 !!$                            do n = 1,nw
 !!$                               do sps2 = 1,nTimeIntervalsSpectral
-!!$                                  call setPointersAdj(nnnn,1,sps2)
+!!$                                  call setPointers(nnnn,1,sps2)
 !!$                                  i = iii+iiii
 !!$                                  j = jjj+jjjj
 !!$                                  k = kkk+kkkk
 !!$                                 
 !!$                                  write(unitx,11) i,j,k,n,nnnn,sps,sps2,iii,jjj,kkk,w(i,j,k,n)
 !!$11                                format(1x,'wadj',10I8,f20.12)
-!!$                                  call setPointersAdj(nnnn,1,sps)
+!!$                                  call setPointers(nnnn,1,sps)
 !!$                               end do
 !!$                            enddo
 !!$                         enddo
@@ -631,7 +631,7 @@
 !!$                enddo
 !!$             enddo
 !!$          enddo
-!!$          call setPointersAdj(nn,1,sps)
+!!$          call setPointers(nn,1,sps)
 !!$       enddo
 !!$    end do      
        if( turbCoupled ) then
@@ -684,7 +684,7 @@
           
           do nnn=1,ndom
           !print *,'domains reset',nnn
-             call setPointersAdj(nnn,1,sps)
+             call setPointers(nnn,1,sps)
              w = wtmp
              p = ptmp
              dw = dwtmp
@@ -713,7 +713,7 @@
 !***********************************
 
       do nnn = 1,ndom
-         call setPointersAdj(nnn ,level,sps)
+         call setPointers(nnn ,level,sps)
          !print *,'in AD loop',nnn 
          !write(unitxAD,*) 'block Num',nnn
          do icell= 2, il
@@ -835,7 +835,7 @@
             end do
          end do
       end do
-      call setPointersAdj(nn ,level,ssps)
+      call setPointers(nn ,level,ssps)
       x(ii,jj,kk,:) = xref
    end do
       call cpu_time(time(2))
@@ -851,7 +851,7 @@
          print *,'domain',nn
          groundLevel = 1
          sps = 1
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          deallocate(flowDoms(nn,level,sps)%dwp)
          deallocate(flowDoms(nn,level,sps)%dwm)
          deallocate(flowDoms(nn,level,sps)%dwtemp)

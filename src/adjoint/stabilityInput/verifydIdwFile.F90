@@ -98,7 +98,7 @@ subroutine verifydIdwfile(level,costfunction,filename)
       !write solution to file....
       do sps = 1,nTimeIntervalsSpectral
          do nn = 1, nDom
-            call setPointersAdj(nn,level,sps)
+            call setPointers(nn,level,sps)
             do k = 2,kl!0,kb
                do j = 2,jl!0,jb
                   do i = 2,il!0,ib

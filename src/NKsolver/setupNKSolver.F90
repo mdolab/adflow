@@ -30,7 +30,7 @@ subroutine setupNKsolver
   external FormFunction_mf
   external mykspmonitor
   if (.not. NKSolverSetup) then
-     nDimW = nw * nCellsLocal * nTimeIntervalsSpectral
+     nDimW = nw * nCellsLocal(1_intTYpe) * nTimeIntervalsSpectral
 
      call VecCreate(SUMB_COMM_WORLD, wVec, ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -79,7 +79,7 @@ subroutine setupNKsolver
      end if
 
      ! Create Pre-Conditioning Matrix
-     totalCells = nCellsLocal*nTimeIntervalsSpectral
+     totalCells = nCellsLocal(1_intType)*nTimeIntervalsSpectral
      allocate( nnzDiagonal(totalCells),nnzOffDiag(totalCells))
 
      call initialize_stencils

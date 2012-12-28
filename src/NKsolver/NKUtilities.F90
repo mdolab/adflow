@@ -36,7 +36,7 @@ subroutine setWVec(wVec)
   ii = 1
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
         ! Copy off w to wVec
         do k=2,kl
            do j=2,jl
@@ -81,7 +81,7 @@ subroutine setWVec2(wVec)
   ii = 1
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
         ! Copy off w to wVec
         do l=1,nwf
            do k=2,kl
@@ -127,7 +127,7 @@ subroutine setRVec(rVec)
   ii = 1
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
         ! Copy off dw/vol to rVec
         do k=2,kl
            do j=2,jl
@@ -177,7 +177,7 @@ subroutine setRVec2(rVec)
   ii = 1
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
         ! Copy off dw/vol to rVec
         do l=1,nw
            do k=2,kl
@@ -222,7 +222,7 @@ subroutine setW(wVec)
   ii = 1
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
 
         do k=2,kl
            do j=2,jl
@@ -267,7 +267,7 @@ subroutine setW2(wVec)
   ii = 1
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
         do l=1,nw
            do k=2,kl
               do j=2,jl
@@ -422,7 +422,7 @@ subroutine calcScaling(scaleVec)
   resSum_l(:) = zero
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
         do l=1,nw
            do k=2,kl
               do j=2,jl
@@ -470,7 +470,7 @@ subroutine calcScaling(scaleVec)
   ii = 1
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
         ! Copy off dw/vol to rVec
         do k=2,kl
            do j=2,jl
@@ -582,7 +582,7 @@ subroutine setdtl(D)
   ii = 1
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
-        call setPointersAdj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
         ! Copy off w to wVec
         do k=2,kl
            do j=2,jl
