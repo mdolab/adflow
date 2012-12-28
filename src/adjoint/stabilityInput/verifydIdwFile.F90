@@ -49,7 +49,7 @@ subroutine verifydIdwfile(level,costfunction,filename)
 
       real(kind=realType), dimension(4) :: time
       real(kind=realType)               :: timeAdj, timeFD,timeAdjLocal
-
+      real(kind=realType) :: value
       ! > derivative output
 
 

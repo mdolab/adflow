@@ -790,7 +790,7 @@ python module sumb ! in
 
        module inputadjoint ! in :sumb:../modules/inputParam.f90
          use constants
-         character(len=maxstringlen) :: pcside
+         character(len=maxstringlen) :: adjointpcside
          character(len=maxstringlen) :: matrixordering
          character(len=maxstringlen) :: adjointsolvertype
          character(len=maxstringlen) :: localpctype

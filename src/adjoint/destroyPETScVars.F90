@@ -93,7 +93,7 @@ subroutine destroyPETScKSP
   implicit none
 #ifndef USE_NO_PETSC
   ! KSP Context
-  call KSPDestroy(ksp, PETScIerr)
+  call KSPDestroy(adjointKSP, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
 #endif

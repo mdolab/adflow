@@ -987,7 +987,7 @@
        character(maxStringLen) :: ADjointSolverType
        character(maxStringLen) :: PreCondType
        character(maxStringLen) :: matrixOrdering
-       character(maxStringLen) :: PCSide
+       character(maxStringLen) :: adjointPCSide
        character(maxStringLen) :: LocalPCType
 
        ! FillLevel     : Number of levels of fill for the ILU local PC

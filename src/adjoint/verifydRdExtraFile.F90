@@ -25,7 +25,8 @@
       use inputTimeSpectral ! spaceDiscr,nTimeIntervalsSpectral
       use inputIO
 
-      use ADjointPETSc, only: drda,petscone,insert_values,petscierr,mat_final_assembly,petsc_viewer_draw_world
+      use ADjointPETSc, only: drda,insert_values,petscierr,&
+           mat_final_assembly,petsc_viewer_draw_world
       use ADjointVars
       use precision
 

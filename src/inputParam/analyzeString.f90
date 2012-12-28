@@ -1364,7 +1364,7 @@
            ADjointSolverType = value
         case("preconditioner side")
            call convertToLowerCase(value)
-           PCSide = value
+           adjointPCSide = value
         case("adjoint relative tolerance")
            read(value,*) adjRelTol 
         case("adjoint absolute tolerance")

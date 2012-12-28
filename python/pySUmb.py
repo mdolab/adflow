@@ -568,7 +568,7 @@ class SUMB(AeroSolver):
                 'preconditionerside':{'left':'left',
                                       'right':'right',
                                       'location':
-                                          'inputadjoint.pcside',
+                                          'inputadjoint.adjointpcside',
                                       'len':self.sumb.constants.maxstringlen},
                 'matrixordering':{'natural':'natural',
                                   'rcm':'rcm',
