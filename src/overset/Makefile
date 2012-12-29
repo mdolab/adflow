@@ -66,6 +66,34 @@ FF90_OBJECTS_2 = addHalosToBoundary.o\
 		 transformCellIndices.o\
 		 updateOversetAllLevels.o
 
+FILES_TO_COMPLEXIFY =  boundaryList.f90\
+		 searchMod.f90\
+		 addHalosToBoundary.f90\
+		 badDonorQuality.f90\
+		 buildCoarseBoundaryList.f90\
+		 buildFineBoundaryList.f90\
+		 cellCentroid.f90\
+		 changeIblanks.f90\
+		 checkOverset.f90\
+		 checkSizeBoundaryList.f90\
+		 createCoarseBoundary.f90\
+		 determineOversetComm.f90\
+		 donorSearchCycle.f90\
+		 donorWeights.f90\
+		 estimateCoarseDonor.f90\
+		 exchangeIblanks.f90\
+		 fringeToField.f90\
+		 mergeComm.f90\
+		 numAdjacentField.f90\
+		 oversetComm.f90\
+		 releaseMemOverset.f90\
+		 scan1to1HalosForFringe.f90\
+		 setBlockOversetData.f90\
+		 stencilSearch.f90\
+		 transformCellIndices.f90\
+		 updateOversetAllLevels.f90
+
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -81,6 +109,24 @@ all:
 clean:
 	@echo "        Making clean in overset... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		echo Checking $$file; \
+		if [ $$file -nt ../../src_cs/overset/$$file -o ! -e ../../src_cs/overset/$$file ]; then \
+			python ../complexify.py $$file; \
+			mv c_$$file ../../src_cs/overset/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/overset/$$file -o ! -e ../../src_cs/overset/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/overset/$$file; \
+		fi;\
+		done
+
+	cp Makefile ../../src_cs/overset
+
 
 #      ******************************************************************
 #      *                                                                *

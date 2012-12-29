@@ -22,6 +22,9 @@
 !     ******************************************************************
 !
       use precision
+#ifdef USE_COMPLEX
+      use complexify
+#endif
       implicit none
       save
 !
@@ -96,8 +99,11 @@
         ! xMax(6):     The maximum coordinates of the leaf.
 
         integer(kind=intType), dimension(2) :: children
+#ifdef USE_COMPLEX
+        complex(kind=realType), dimension(6)  ::   xMin, xMax
+#else
         real(kind=realType),   dimension(6) :: xMin, xMax
-
+#endif
       end type adtLeafType
 !
 !     ******************************************************************
@@ -115,8 +121,11 @@
         !           coordinate.
 
         integer(kind=intType) :: ID
+#ifdef USE_COMPLEX
+        complex(kind=realType)   :: posDist2
+#else
         real(kind=realType)   :: posDist2
-
+#endif
       end type adtBBoxTargetType
 
       ! Interfaces for the extension of the operators <= and <.
@@ -171,9 +180,11 @@
         ! coor(3,nNodes): Nodal coordinates of the local grid.
         !                 To save memory this pointer is not
         !                 allocated, but set to the data given.
-
+#ifdef USE_COMPLEX
+        complex(kind=realType), dimension(:,:), pointer :: coor
+#else
         real(kind=realType), dimension(:,:), pointer :: coor
-
+#endif
         ! triaConn(3,nTria):     Local connectivity of the triangles.
         !                        To save memory this pointer is not
         !                        allocated, but set to the data given.
@@ -201,8 +212,11 @@
 
         integer :: nRootLeaves, myEntryInRootProcs
         integer, dimension(:), pointer :: rootLeavesProcs
-
+#ifdef USE_COMPLEX
+        complex(kind=realType), dimension(:,:,:), pointer :: rootBBoxes
+#else
         real(kind=realType), dimension(:,:,:), pointer :: rootBBoxes
+#endif
 
         ! nBBoxes:              Number of bounding boxes stored in
         !                       the ADT.
@@ -217,7 +231,11 @@
 
         integer(kind=adtElementType), dimension(:), pointer :: elementType
         integer(kind=intType),     dimension(:), pointer :: elementID
+#ifdef USE_COMPLEX
+        complex(kind=realType),     dimension(:,:), pointer :: xBBox
+#else
         real(kind=realType),     dimension(:,:), pointer :: xBBox
+#endif
 
         ! nLeaves:         Number of present in the ADT. Due to the
         !                  variable splitting the tree is optimally

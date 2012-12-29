@@ -102,6 +102,61 @@ FF90_OBJECTS_2 = allocCoorFineGrid.o\
 
 CC_OBJECTS     = metisInterface.o
 
+FILES_TO_COMPLEXIFY = allocCoorFineGrid.f90\
+		 blockDistribution.f90\
+		 cgnsBCForPlot3D.f90\
+		 check1to1Subfaces.f90\
+		 checkFaces.f90\
+		 checkLoadBalance.f90\
+		 checkPartitioning.f90\
+		 checkTransform.f90\
+		 countConnectivities.F90\
+		 determineBleedFlowRegions.f90\
+		 determineComputeBlocks.f90\
+		 determineGridFileNames.f90\
+		 determineInterfaceIDs.f90\
+		 determineNeighborIDs.f90\
+		 distributeOversetCells.f90\
+		 fineGridSpectralCoor.f90\
+		 graphPartitioning.f90\
+		 initFlowDoms.f90\
+		 initFineGridIblank.f90\
+		 internalBC.f90\
+		 loadBalance.f90\
+		 overwriteFamilyData.f90\
+		 overwriteWallBCData.f90\
+		 partitionAndReadGrid.f90\
+		 qsortSubblocksOfCGNSType.f90\
+		 qsortSubfaceNonMatchType.f90\
+		 read1to1Conn.F90\
+		 readBlockSizes.F90\
+		 readBlockSizesPlot3D.f90\
+		 readBocos.F90\
+		 readConnectivityPlot3D.f90\
+		 readFamilyInfo.F90\
+		 readGeneralConn.F90\
+		 readGrid.F90\
+		 readGridPlot3D.f90\
+		 readLevel0CoolingParameters.f90\
+		 readOversetHoles.F90\
+		 readOversetPlot3D.f90\
+		 readPeriodicSubface.F90\
+		 readZoneInfo.F90\
+		 reallocSubfaceMemory.f90\
+		 setChangingOverset.f90\
+		 sortSubfaces.f90\
+		 sortBadEntities.f90\
+		 splitBlock.f90\
+                 storeReferenceMesh.f90\
+		 timePeriodSpectral.f90\
+		 timeRotMatricesSpectral.f90\
+		 wallComponentsAssignments.f90
+
+
+FILES_TO_COPY = partitionMod.f90\
+		sortRangesSplitInfo.f90\
+		sortBadEntities.F90\
+		metisInterface.c
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -117,6 +172,24 @@ all:
 clean:
 	@echo "        Making clean in partitioning... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		echo Checking $$file; \
+		if [ $$file -nt ../../src_cs/partitioning/$$file -o ! -e ../../src_cs/partitioning/$$file ]; then \
+			python ../complexify.py $$file; \
+			mv c_$$file ../../src_cs/partitioning/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/partitioning/$$file -o ! -e ../../src_cs/partitioning/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/partitioning/$$file; \
+		fi;\
+		done
+
+	cp Makefile ../../src_cs/partitioning
+
 
 #      ******************************************************************
 #      *                                                                *

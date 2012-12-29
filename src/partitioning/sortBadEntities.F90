@@ -30,7 +30,11 @@
 
        type fourIntPlusRealType
          integer(kind=intType) :: n1, n2, n3, n4
+#ifdef USE_COMPLEX
+         complex(kind=realType)   :: dist
+#else
          real(kind=realType)   :: dist
+#endif
        end type fourIntPlusRealType
 
        ! Interfaces for the definitions of the operators <=, < and /=.
@@ -202,8 +206,11 @@
 !
        integer(kind=intType), intent(inout) :: nEntities
        integer(kind=intType), dimension(4,*), intent(inout) :: entities
-
+#ifdef USE_COMPLEX
+       complex(kind=realType),   dimension(*),   intent(inout) :: dist
+#else
        real(kind=realType),   dimension(*),   intent(inout) :: dist
+#endif
 
        logical, intent(in) :: sortDist
 !

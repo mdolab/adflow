@@ -37,8 +37,11 @@
          !              Regular means that the edge is in between
          !              opposite edges of the corresponding
          !              quadrilateral face.
-
-         real(kind=realType) :: rMin, rMax
+#ifdef USE_COMPLEX
+          complex(kind=realType) :: rMin, rMax
+#else
+          real(kind=realType) :: rMin, rMax
+#endif
 
          logical :: regularEdge
 
@@ -76,10 +79,13 @@
        !                    interpolation intervals.
 
        integer(kind=intType) :: nMixingPoints
-
+#ifdef USE_COMPLEX
+       complex(kind=realType), dimension(:), allocatable :: mixingPoints
+       complex(kind=realType), dimension(:), allocatable :: mixingCells
+#else
        real(kind=realType), dimension(:), allocatable :: mixingPoints
        real(kind=realType), dimension(:), allocatable :: mixingCells
-
+#endif
        !=================================================================
 
        contains

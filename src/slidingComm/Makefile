@@ -80,6 +80,50 @@ FF90_OBJECTS_2 = bsearchSortedDonorCommType.o\
 		 updateSlidingCommPattern.o\
 		 volumeInterpol.o
 
+FILES_TO_COMPLEXIFY =  \
+		 localSubfaces.f90\
+		 thisSlide.f90\
+		 tmpSliding.f90\
+		 cumulativeNSendReceives.f90\
+		 cylCoorNodesOnBlockFace.f90\
+		 determineNSlices.f90\
+		 determineRotationMatrices.f90\
+		 determineSections.f90\
+		 haloType.f90\
+		 initMemMixingPlane.f90\
+		 initMemSliding.f90\
+		 initThisSlide.f90\
+		 interpolateSlide.f90\
+		 localNodesAndQuads.f90\
+		 localSurfaceGrids.f90\
+		 mixingDonorInterpol.f90\
+		 mixingHaloInterpol.f90\
+		 mixingIntervals.f90\
+		 mixingPlaneComm.f90\
+		 mixingPlaneInterpol.f90\
+		 mySubfacesSlide.f90\
+		 nLocalNodesAndQuads.f90\
+		 procSliding.f90\
+		 qsortMixingIntervalType.f90\
+		 qsortSortedDonorCommType.f90\
+		 releaseMemSliding.f90\
+		 slidingComm.f90\
+		 slidingIntersections.f90\
+		 slidingMesh.f90\
+		 slidingMeshGroups.f90\
+		 updateExternalCommSlide.f90\
+		 updateInterpolSendBuf.f90\
+		 updateLocalCommSlide.f90\
+		 updateRotationInfo.f90\
+		 updateSlidingAllLevels.f90\
+		 updateSlidingCommPattern.f90\
+		 volumeInterpol.f90
+
+FILES_TO_COPY =  mixingData.F90\
+		 updateComm.F90\
+		 bsearchSortedDonorCommType.f90
+
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -95,6 +139,24 @@ all:
 clean:
 	@echo "        Making clean in slidingComm... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		echo Checking $$file; \
+		if [ $$file -nt ../../src_cs/slidingComm/$$file -o ! -e ../../src_cs/slidingComm/$$file ]; then \
+			python ../complexify.py $$file; \
+			mv c_$$file ../../src_cs/slidingComm/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/slidingComm/$$file -o ! -e ../../src_cs/slidingComm/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/slidingComm/$$file; \
+		fi;\
+		done
+
+	cp Makefile ../../src_cs/slidingComm
+
 
 #      ******************************************************************
 #      *                                                                *

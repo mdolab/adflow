@@ -44,6 +44,11 @@ FF90_OBJECTS = computeLeastSquaresRegression.o\
 
 CC_OBJECTS   = 
 
+FILES_TO_COMPLEXIFY = computeLeastSquaresRegression.f90\
+	       computeTSDerivatives.f90 \
+               stabilityDerivativeDriver.f90
+FILES_TO_COPY = 
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -60,6 +65,24 @@ all:
 clean:
 	@echo "        Making clean in adjoint... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		echo Checking $$file; \
+		if [ $$file -nt ../../src_cs/stabilityDerivatives/$$file -o ! -e ../../src_cs/stabilityDerivatives/$$file ]; then \
+			python ../complexify.py $$file; \
+			mv c_$$file ../../src_cs/stabilityDerivatives/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/stabilityDerivatives/$$file -o ! -e ../../src_cs/stabilityDerivatives/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/stabilityDerivatives/$$file; \
+		fi;\
+		done
+
+	cp Makefile ../../src_cs/stabilityDerivatives
+
 
 #      ******************************************************************
 #      *                                                                *
