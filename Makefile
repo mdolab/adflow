@@ -47,8 +47,6 @@ SUBDIR_SRC    = src/modules       \
 
 SUBDIR_ADJOINT = src/adjoint               \
                  src/adjoint/ADFirstAidKit \
-                 src/adjoint/residualInput \
-                 src/adjoint/residualOutput\
                  src/adjoint/stabilityInput\
                  src/adjoint/stabilityOutput\
                  src/adjoint/forcesInput\
@@ -61,6 +59,8 @@ SUBDIR_ADJOINT = src/adjoint               \
                  src/forwardAdjoint/residualOutput\
                  src/forwardAdjoint/residualOutputExtra\
                  src/forwardAdjoint/residualOutputSpatial
+#                  src/adjoint/residualInput \
+#                  src/adjoint/residualOutput\
 
 SUBDIR_EXEC   = src/exec
 SUBDIR_PV3    = src/pv3Interface

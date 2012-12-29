@@ -36,7 +36,7 @@ subroutine computeRootBendingMoment(sol,bendingMoment)
 
   !Begin execution
   !determine the liftIndex from the flow and liftdirection
-  call getDirAngle(velDirFreestream,LiftDirection,&
+  call getDirAngleTS(velDirFreestream,LiftDirection,&
        liftIndex,alpha,beta)
 
   !Set some basic variables from the solution, do the analysis based on

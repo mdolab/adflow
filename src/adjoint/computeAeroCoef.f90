@@ -54,7 +54,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   call getForcePoints(pts,npts,nTS)
   ii = 0
 
-  call getDirAngle(velDirFreestream,LiftDirection,&
+  call getDirAngleTS(velDirFreestream,LiftDirection,&
        liftIndex,alpha,beta)
   
   forcesTypeSave = forcesAsTractions

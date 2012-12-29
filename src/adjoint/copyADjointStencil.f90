@@ -169,11 +169,11 @@
       MachCoefAdj = MachCoef
       MachGridAdj = MachGrid
 
-      call getDirAngle(velDirFreestream,liftDirection,liftIndex,alphaAdj,betaAdj)
+      call getDirAngleTS(velDirFreestream,liftDirection,liftIndex,alphaAdj,betaAdj)
 
 
-!      call getDirAngle(velDirFreestream,velDirFreestream,liftIndex,alphaAdj,betaAdj)
-      !call getDirAngle(velDirFreestream(1), velDirFreestream(2),&
+!      call getDirAngleTS(velDirFreestream,velDirFreestream,liftIndex,alphaAdj,betaAdj)
+      !call getDirAngleTS(velDirFreestream(1), velDirFreestream(2),&
       !     velDirFreestream(3), alphaAdj, betaAdj)
 
       prefAdj = pRef

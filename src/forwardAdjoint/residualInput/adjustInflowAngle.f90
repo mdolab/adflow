@@ -31,7 +31,7 @@ subroutine adjustInflowAngle(alpha,beta,liftIndex)
 
   refDirection(:) = zero
   refDirection(1) = one
-  call getDirVector(refDirection, alpha, beta, velDirFreestream,&
+  call getDirVectorTS(refDirection, alpha, beta, velDirFreestream,&
        liftIndex)
 
 
@@ -43,7 +43,7 @@ subroutine adjustInflowAngle(alpha,beta,liftIndex)
 
   refDirection(:) = zero
   refDirection(1) = one
-  call getDirVector(refDirection, alpha, beta, dragDirection, &
+  call getDirVectorTS(refDirection, alpha, beta, dragDirection, &
        liftIndex)
 
 
@@ -56,7 +56,7 @@ subroutine adjustInflowAngle(alpha,beta,liftIndex)
   refDirection(:) = zero
   refDirection(liftIndex) = one
 
-  call getDirVector(refDirection, alpha, beta,liftDirection, &
+  call getDirVectorTS(refDirection, alpha, beta,liftDirection, &
        liftIndex)
 
   liftDirSpecified=.True.

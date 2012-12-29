@@ -75,7 +75,7 @@ subroutine farFieldInducedDrag(value)
   ffph2 = 1/(gammaConstant * Mach**2)
   ffsh2 = 1/(gammaConstant * Mach**2)
 
-  call getDirAngle(velDirFreeStream,liftDirection,liftIndex,alpha,beta)
+  call getDirAngleTS(velDirFreeStream,liftDirection,liftIndex,alpha,beta)
   
   drag = 0.0
   drag_local = 0.0
