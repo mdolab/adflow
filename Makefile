@@ -190,7 +190,8 @@ LINUX_INTEL_OPENMPI_SCINET:
 	make dirs
 	if [ ! -f "config/config.LINUX_INTEL_OPENMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_SCINET.mk" ./config; fi
 	ln -sf config/config.LINUX_INTEL_OPENMPI_SCINET.mk config.mk
-	(cd src/python/f2py && make)	make sumb
+	make sumb
+	(cd src/python/f2py && make)
 
 LINUX_INTEL_OPENMPI_SCINET_PYTHON:
 	make LINUX_INTEL_OPENMPI_SCINET
