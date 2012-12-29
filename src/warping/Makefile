@@ -37,14 +37,22 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 
 FF90_MODULES = 
-FF90_OBJECTS = getForces.o\
-	       getAreas.o\
-	       setGrid.o\
-	       initializeExternalWarping.o\
-	       blockLogicalFunctions.o\
+FF90_OBJECTS =	getForces.o\
+	        getAreas.o\
+	        setGrid.o\
+	        initializeExternalWarping.o\
+	        blockLogicalFunctions.o\
 		blockRelations.o
 
 CC_OBJECTS   = 
+
+FILES_TO_COMPLEXIFY = 	getForces.f90\
+	        getAreas.f90\
+	        setGrid.f90\
+	        initializeExternalWarping.f90\
+	        blockLogicalFunctions.f90\
+		blockRelations.f90
+FILES_TO_COPY = 
 
 #      ******************************************************************
 #      *                                                                *
@@ -61,6 +69,24 @@ all:
 clean:
 	@echo "        Making clean in adjoint... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		echo Checking $$file; \
+		if [ $$file -nt ../../src_cs/warping/$$file -o ! -e ../../src_cs/warping/$$file ]; then \
+			python ../complexify.py $$file; \
+			mv c_$$file ../../src_cs/warping/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/warping/$$file -o ! -e ../../src_cs/warping/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/warping/$$file; \
+		fi;\
+		done
+
+	cp Makefile ../../src_cs/warping
+
 
 #      ******************************************************************
 #      *                                                                *

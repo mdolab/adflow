@@ -87,6 +87,57 @@ FF90_OBJECTS_2 = copyDataBuf.o\
 		 writeSurfsolCGNSZone.o\
 		 writeUnsteadyFromSpectral.o
 
+FILES_TO_COMPLEXIFY = outputMod.f90\
+		 copyDataBuf.f90\
+		 describeScheme.f90\
+		 gridFileNamesWrite.f90\
+		 numberOfSurfSolVariables.f90\
+		 numberOfVolSolVariables.f90\
+		 openCGNSVolumeSol.F90\
+		 releaseHelpVariablesWriting.f90\
+		 resHalo1.f90\
+		 setHelpVariablesWriting.f90\
+		 storeOldSolInBuffer.f90\
+		 storeSolInBuffer.f90\
+		 storeSurfsolInBuffer.f90\
+		 surfSolFileNamesWrite.f90\
+		 surfSolNames.f90\
+		 updateParamfile.f90\
+		 volSolFileNamesWrite.f90\
+		 volSolNames.f90\
+		 writeCGNSBaldwinLomaxInfo.F90\
+		 writeCGNSConvInfo.F90\
+		 writeCGNSGridFile.F90\
+		 writeCGNSGridFrame.F90\
+		 writeCGNSHeader.F90\
+		 writeCGNSKomegaModifiedInfo.F90\
+		 writeCGNSKomegaWilcoxInfo.F90\
+		 writeCGNSKtauInfo.F90\
+		 writeCGNSMenterSSTInfo.F90\
+		 writeCGNSReferenceState.F90\
+		 writeCGNSSaInfo.F90\
+		 writeCGNSSaeInfo.F90\
+		 writeCGNSSurfaceSol.F90\
+		 writeCGNSTimeHistory.F90\
+		 writeCGNSV2fInfo.F90\
+		 writeCGNSVolumeSol.F90\
+		 writeCoorCGNSZone.F90\
+		 writeInterpolFromSpectral.f90\
+		 writeOversetCGNSZone.F90\
+		 writePlot3DConnFile.f90\
+		 writePlot3DConvInfo.f90\
+		 writePlot3DGridFile.f90\
+		 writePlot3DSurfaceSol.f90\
+		 writePlot3DTimeHistory.f90\
+		 writePlot3DVolumeSol.f90\
+		 writeSol.F90\
+		 writeSolCGNSZone.F90\
+		 writeSurfsolCGNSZone.F90\
+		 writeUnsteadyFromSpectral.f90
+
+FILES_TO_COPY = 
+
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -102,6 +153,24 @@ all:
 clean:
 	@echo "        Making clean in output... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		echo Checking $$file; \
+		if [ $$file -nt ../../src_cs/output/$$file -o ! -e ../../src_cs/output/$$file ]; then \
+			python ../complexify.py $$file; \
+			mv c_$$file ../../src_cs/output/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/output/$$file -o ! -e ../../src_cs/output/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/output/$$file; \
+		fi;\
+		done
+
+	cp Makefile ../../src_cs/output
+
 
 #      ******************************************************************
 #      *                                                                *

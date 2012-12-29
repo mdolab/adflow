@@ -286,8 +286,7 @@
 
        if(myID == 0 .and. noUnits) then
 
-         if(equations == NSEquations .or. equations == RANSEquations &
-            .or. equationMode == unsteady) then
+         if(equations==NSEquations.or.equations==RANSEquations.or.equationMode==unsteady)then
 
            print "(a)", "#"
            print "(a)", "#                      Warning"

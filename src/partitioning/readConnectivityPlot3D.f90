@@ -1124,7 +1124,7 @@
          ! Nonzero angle specified. Determine the number of sections for
          ! the full wheel, which is an integer.
 
-         jj = nint(two*pi/mult,intType)
+         jj = nint(two*pi/mult)!,intType)
 
          ! Store the correction factor for the angles in mult and correct
          ! the periodic angles accordingly.

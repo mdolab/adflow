@@ -71,6 +71,12 @@ LINKER_ALL_FLAGS =  -L$(ADT_DIR)/lib \
 CC_OBJECTS   = SUmb.o
 FF90_OBJECTS = SUmb_fortran.o
 
+FILES_TO_COMPLEXIFY = 
+
+FILES_TO_COPY = SUmb.c\
+		SUmb_fortran.f90\
+
+
 OBJECTS      = $(CC_OBJECTS) $(FF90_OBJECTS)
 
 #      ******************************************************************
@@ -88,6 +94,22 @@ all:
 clean:
 	@echo "        Making clean in exec... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		echo Checking $$file; \
+		if [ $$file -nt ../../src_cs/exec/$$file -o ! -e ../../src_cs/exec/$$file ]; then \
+			python ../complexify.py $$file; \
+			mv c_$$file ../../src_cs/exec/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/exec/$$file -o ! -e ../../src_cs/exec/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/exec/$$file; \
+		fi;\
+		done
+
 
 #      ******************************************************************
 #      *                                                                *

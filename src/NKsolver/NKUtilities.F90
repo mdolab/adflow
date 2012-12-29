@@ -489,9 +489,6 @@ subroutine calcScaling(scaleVec)
   call VecRestoreArrayF90(scaleVec,scale_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecNorm(scaleVec, NORM_2,norm,ierr)
-
-
 #endif
 end subroutine calcScaling
 

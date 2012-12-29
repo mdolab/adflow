@@ -62,6 +62,30 @@ FF90_OBJECTS_2 = analyzeString.o\
 		 volumeVariables.o\
 		 writeInputParam.o
 
+FILES_TO_COMPLEXIFY =localModules.f90\
+		 analyzeString.f90\
+		 checkInputParam.F90\
+		 checkMonitor.f90\
+		 checkOutput.f90\
+		 createTemplate.f90\
+		 defaultMonitor.f90\
+		 defaultSurfaceOut.f90\
+		 defaultVolumeOut.f90\
+		 extractMGInfo.f90\
+		 monitorVariables.f90\
+		 readCpTempCurveFits.f90\
+		 readParamFile.f90\
+		 dummyReadParamFile.f90\
+		 setDefaultValues.F90\
+		 setEquationParameters.f90\
+		 setIterationParam.f90\
+		 setStageCoeffExplicitRK.f90\
+		 setStageCoeffImplicitRK.f90\
+		 surfaceVariables.f90\
+		 volumeVariables.f90\
+		 writeInputParam.f90
+
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -78,6 +102,21 @@ clean:
 	@echo "        Making clean in inputParam... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
 
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		echo Checking $$file; \
+		if [ $$file -nt ../../src_cs/inputParam/$$file -o ! -e ../../src_cs/inputParam/$$file ]; then \
+			python ../complexify.py $$file; \
+			mv c_$$file ../../src_cs/inputParam/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/inputParam/$$file -o ! -e ../../src_cs/inputParam/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/inputParam/$$file; \
+		fi;\
+		done
+	cp Makefile ../../src_cs/inputParam
 #      ******************************************************************
 #      *                                                                *
 #      * Rules to make the individual parts; these are introduced to    *

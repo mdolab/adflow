@@ -95,9 +95,9 @@ subroutine NKBenchmark(NKRes,niter)
   call MPI_Gather (resTime,1,sumb_real,all_times,1,sumb_real,0,&
        SUMB_COMM_WORLD,ierr) 
   if (myid == 0) then
-     print *,'Min Res Time:',minval(all_times)/niter,minloc(all_times)-1
-     print *,'Max Res Time:',maxval(all_times)/niter,maxloc(all_times)-1
-     print *,'Average Res Time:',sum(all_times)/nproc/niter
+     !print *,'Min Res Time:',minval(all_times)/niter,minloc(all_times)-1
+     !print *,'Max Res Time:',maxval(all_times)/niter,maxloc(all_times)-1
+     !print *,'Average Res Time:',sum(all_times)/nproc/niter
   end if
   deallocate(all_times)
 
