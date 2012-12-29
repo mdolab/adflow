@@ -47,6 +47,19 @@ FF90_OBJECTS = determineBytesCommChunk.o\
 	       sendBufNonLocalIO.o\
 	       writePlot3DVar.o
 
+FILES_TO_COMPLEXIFY = determineBytesCommChunk.f90\
+	       determineCommSizesIO.f90\
+	       determineMyChunk.f90\
+	       determineVarLocalIO.f90\
+	       getIndices.f90\
+	       prepareReadPlot3D.f90\
+	       prepareWritePlot3D.f90\
+	       readPlot3DVar.f90\
+	       releaseMemIOPlot3D.f90\
+	       sendBufNonLocalIO.f90\
+	       writePlot3DVar.f90
+
+FILES_TO_COPY = 
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -61,6 +74,24 @@ all:
 clean:
 	@echo "        Making clean in parallelIO... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		echo Checking $$file; \
+		if [ $$file -nt ../../src_cs/parallelIO/$$file -o ! -e ../../src_cs/parallelIO/$$file ]; then \
+			python ../complexify.py $$file; \
+			mv c_$$file ../../src_cs/parallelIO/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/parallelIO/$$file -o ! -e ../../src_cs/parallelIO/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/parallelIO/$$file; \
+		fi;\
+		done
+
+	cp Makefile ../../src_cs/parallelIO
+
 
 #      ******************************************************************
 #      *                                                                *

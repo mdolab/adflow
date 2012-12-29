@@ -48,7 +48,20 @@ FF90_OBJECTS = applyPC.o\
 	       resetKSP.o\
 	       setupNKSolver.o\
 
+FILES_TO_COMPLEXIFY = applyPC.F90\
+	       computeResidualNK.F90\
+	       destroyNKSolver.F90\
+	       formFunction.F90\
+	       formJacobian.F90\
+	       getCurrentResidual.F90\
+	       getFreeStreamResidual.F90\
+	       NKBenchmark.F90\
+	       NKSolver.F90\
+	       NKUtilities.F90\
+	       resetKSP.F90\
+	       setupNKSolver.F90\
 
+FILES_TO_COPY = 
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -63,6 +76,23 @@ all:
 clean:
 	@echo "        Making clean in solver... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		echo Checking $$file; \
+		if [ $$file -nt ../../src_cs/NKsolver/$$file -o ! -e ../../src_cs/NKsolver/$$file ]; then \
+			python ../complexify.py $$file; \
+			mv c_$$file ../../src_cs/NKsolver/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/NKsolver/$$file -o ! -e ../../src_cs/NKsolver/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/NKsolver/$$file; \
+		fi;\
+		done
+
+	cp Makefile ../../src_cs/NKsolver
 
 #      ******************************************************************
 #      *                                                                *

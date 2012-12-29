@@ -50,6 +50,17 @@ FF90_OBJECTS_2 = allocExtraWallDistanceMemory.o\
 		 viscousSurfaceMesh.o\
 		 wallDistance.o
 
+FILES_TO_COMPLEXIFY = viscSurface.f90\
+		 allocExtraWallDistanceMemory.f90\
+		 computeNormalSpacing.f90\
+		 determineDistance.f90\
+		 determineDistanceQuickly.f90\
+		 initWallDistance.f90\
+		 localViscousSurfaceMesh.f90\
+		 updateWallDistanceAllLevels.f90\
+		 viscousSurfaceMesh.f90\
+		 wallDistance.f90
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -65,6 +76,24 @@ all:
 clean:
 	@echo "        Making clean in wallDistance... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		echo Checking $$file; \
+		if [ $$file -nt ../../src_cs/wallDistance/$$file -o ! -e ../../src_cs/wallDistance/$$file ]; then \
+			python ../complexify.py $$file; \
+			mv c_$$file ../../src_cs/wallDistance/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/wallDistance/$$file -o ! -e ../../src_cs/wallDistance/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/wallDistance/$$file; \
+		fi;\
+		done
+
+	cp Makefile ../../src_cs/wallDistance
+
 
 #      ******************************************************************
 #      *                                                                *

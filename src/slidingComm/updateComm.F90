@@ -46,8 +46,11 @@
          integer(kind=intType), pointer, dimension(:)   :: indBuf
          integer(kind=intType), pointer, dimension(:)   :: block
          integer(kind=intType), pointer, dimension(:,:) :: indices
+#ifdef USE_COMPLEX         
+         complex(kind=realType),   pointer, dimension(:)   :: weight
+#else
          real(kind=realType),   pointer, dimension(:)   :: weight
-
+#endif
        end type updateCommType
 
        ! Definition of the derived data type sortedDonorCommType

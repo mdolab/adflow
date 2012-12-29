@@ -24,12 +24,12 @@
 #      *                                                                *
 #      ******************************************************************
 
-SUBDIR_SRC    = src/modules       \
-		src/ADT           \
+REAL_SRC    =	src/modules       \
+	    	src/ADT           \
 		src/bcdata        \
 	        src/initFlow      \
 	        src/inputParam    \
-	        src/metis-4.0     \
+		src/metis-4.0     \
 	        src/output        \
 	        src/overset       \
 		src/parallelIO    \
@@ -43,34 +43,58 @@ SUBDIR_SRC    = src/modules       \
 	        src/utils         \
 	        src/wallDistance  \
 		src/warping       \
-		src/bendingMomentAnalysis 
+		src/exec          \
+#		src/bendingMomentAnalysis 
 
-SUBDIR_ADJOINT = src/adjoint               \
-                 src/adjoint/ADFirstAidKit \
-                 src/adjoint/residualInput \
-                 src/adjoint/residualOutput\
-                 src/adjoint/stabilityInput\
-                 src/adjoint/stabilityOutput\
-                 src/adjoint/forcesInput\
-                 src/adjoint/forcesOutput\
-                 src/adjoint/residualInputTS \
-                 src/adjoint/residualOutputTS\
-                 src/bendingMomentAnalysis/bendingOutput\
-                 src/forwardAdjoint \
-                 src/forwardAdjoint/residualInput \
-                 src/forwardAdjoint/residualOutput\
-                 src/forwardAdjoint/residualOutputExtra\
-                 src/forwardAdjoint/residualOutputSpatial
+SUBDIR_SRC    = src_cs/modules       \
+		src_cs/ADT           \
+		src_cs/bcdata        \
+	        src_cs/initFlow      \
+	        src_cs/metis-4.0     \
+	        src_cs/inputParam    \
+	        src_cs/output        \
+	        src_cs/overset       \
+		src_cs/parallelIO    \
+	        src_cs/partitioning  \
+	        src_cs/preprocessing \
+	        src_cs/slidingComm   \
+	        src_cs/solver        \
+		src_cs/NKsolver      \
+	        src_cs/stabilityDerivatives \
+	        src_cs/turbulence    \
+	        src_cs/utils         \
+	        src_cs/wallDistance  \
+		src_cs/warping       \
+#		src_cs/bendingMomentAnalysis 
 
-SUBDIR_EXEC   = src/exec
+
+
+SUBDIR_ADJOINT = # src/adjoint               \
+#                  src/adjoint/ADFirstAidKit \
+#                  src/adjoint/residualInput \
+#                  src/adjoint/residualOutput\
+#                  src/adjoint/stabilityInput\
+#                  src/adjoint/stabilityOutput\
+#                  src/adjoint/forcesInput\
+#                  src/adjoint/forcesOutput\
+#                  src/adjoint/residualInputTS \
+#                  src/adjoint/residualOutputTS\
+#                  src/bendingMomentAnalysis/bendingOutput\
+#                  src/forwardAdjoint \
+#                  src/forwardAdjoint/residualInput \
+#                  src/forwardAdjoint/residualOutput\
+#                  src/forwardAdjoint/residualOutputExtra\
+#                  src/forwardAdjoint/residualOutputSpatial
+
+SUBDIR_EXEC   = src_cs/exec
 SUBDIR_PV3    = src/pv3Interface
 CONFIG_DEFAULT_DIR = config/defaults
 CONFIG_DIR         = config
 
 SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR) $(SUBDIR_ADJOINT)
 
-SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)  $(SUBDIR_PV3) \
-		     $(SUBDIR_EXEC) $(SUBDIR_ADJOINT)
+SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)#  $(SUBDIR_PV3) \
+#		     $(SUBDIR_EXEC) $(SUBDIR_ADJOINT)
 
 #      ******************************************************************
 #      *                                                                *
@@ -127,21 +151,26 @@ all:	 default
 
 dirs:	
 	mkdir -p bin
-	mkdir -p obj
-	mkdir -p mod
+	mkdir -p obj_cs
+	mkdir -p mod_cs
+	@for subdir in $(SUMB_SUBDIRS) ; \
+	     do \
+	     	 echo "Creating Complex Directory $$subdir"; \
+	         (mkdir -p $$subdir) || exit 1;  \
+	     done
+	mkdir -p src_cs/exec
 
 clean:
-	ln -sf SUmb_Common_real.mk SUmb_Common.mk
+	ln -sf SUmb_Common_CS.mk SUmb_Common.mk
 	@echo " Making clean ... "
-	@for subdir in $(SUMB_CLEAN_SUBDIRS) ; \
-		do \
-			echo; \
-			echo "making $@ in $$subdir"; \
-			echo; \
-			(cd $$subdir && make $@) || exit 1; \
-		done
+	@for subdir in $(SUMB_SUBDIRS) ; \
+	     do \
+	     	 echo "Removing Complex Directory $$subdir"; \
+	         (rm -fr $$subdir) || exit 1;  \
+	     done
+
 	rm -f *~ config.mk;
-	rm -f lib/lib* mod/* obj/*
+	rm -f lib_cs/lib* mod_cs/* obj_cs/*
 
 #      ******************************************************************
 #      *                                                                *
@@ -151,13 +180,22 @@ clean:
 #      ******************************************************************
 
 sumb:
+
+	@for subdir in $(REAL_SRC) ; \
+		do \
+			echo "complexifying $@ in $$subdir"; \
+			echo; \
+			(cd $$subdir && make complexify) || exit 1; \
+		done
+
 	@for subdir in $(SUMB_SUBDIRS) ; \
 		do \
 			echo "making $@ in $$subdir"; \
 			echo; \
 			(cd $$subdir && make) || exit 1; \
 		done
-	(cd lib && make)
+
+	(cd lib_cs && make)
 	(cd $(SUBDIR_EXEC) && make)
 
 #      ******************************************************************
@@ -167,59 +205,60 @@ sumb:
 #      ******************************************************************
 
 LINUX_INTEL_OPENMPI:
-	make dirs
+	make -f Makefile_CS  dirs
 	if [ ! -f "config/config.LINUX_INTEL_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI.mk" ./config; fi
 	ln -sf config/config.LINUX_INTEL_OPENMPI.mk config.mk
-	ln -sf SUmb_Common_real.mk SUmb_Common.mk
-	make sumb
-	(cd src/python/f2py && make)
+	ln -sf SUmb_Common_CS.mk SUmb_Common.mk
+	make -f Makefile_CS sumb
+	(cd src_cs/python/f2py && make)
 
 LINUX_INTEL_OPENMPI_PYTHON:
 	@echo "Calling with _PYTHON is no longer necessary"
-	make LINUX_INTEL_OPENMPI
+	make -f Makefile_CS LINUX_INTEL_OPENMPI
 
 LINUX_GFORTRAN_OPENMPI:
 	make dirs
 	if [ ! -f "config/config.LINUX_GFORTRAN_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_GFORTRAN_OPENMPI.mk" ./config; fi
 	ln -sf config/config.LINUX_GFORTRAN_OPENMPI.mk config.mk
-	ln -sf SUmb_Common_real.mk SUmb_Common.mk
-	make sumb
-	(cd src/python/f2py &&  make)
+	ln -sf SUmb_Common_CS.mk SUmb_Common.mk
+	make -f Makefile_CS sumb
+	(cd src_cs/python/f2py &&  make)
 
 LINUX_GFORTRAN_OPENMPI_PYTHON:
-	make LINUX_GFORTRAN_OPENMPI
+	make -f Makefile_CS LINUX_GFORTRAN_OPENMPI
 
 LINUX_INTEL_OPENMPI_SCINET:
-	make dirs
+	make -f Makefile_CS dirs
 	if [ ! -f "config/config.LINUX_INTEL_OPENMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_SCINET.mk" ./config; fi
 	ln -sf config/config.LINUX_INTEL_OPENMPI_SCINET.mk config.mk
-	ln -sf SUmb_Common_real.mk SUmb_Common.mk
-	(cd src/python/f2py && make)	make sumb
+	ln -sf SUmb_Common_CS.mk SUmb_Common.mk
+	make -f Makefile_CS sumb  
+	(cd src_cs/python/f2py && make)	
 
 LINUX_INTEL_OPENMPI_SCINET_PYTHON:
-	make LINUX_INTEL_OPENMPI_SCINET
+	make -f Makefile_CS LINUX_INTEL_OPENMPI_SCINET
 
 LINUX_INTEL_INTELMPI_SCINET:
 	make dirs
 	if [ ! -f "config/config.LINUX_INTEL_INTELMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_INTELMPI_SCINET.mk" ./config; fi
 	ln -sf config/config.LINUX_INTEL_INTELMPI_SCINET.mk config.mk
-	ln -sf SUmb_Common_real.mk SUmb_Common.mk
-	make sumb
-	(cd src/python/f2py && make)
+	ln -sf SUmb_Common_CS.mk SUmb_Common.mk
+	make -f Makefile_CS sumb
+	(cd src_cs/python/f2py && make)
 
 LINUX_INTEL_INTELMPI_SCINET_PYTHON:
-	make LINUX_INTEL_INTELMPI_SCINET
+	make -f Makefile_CS LINUX_INTEL_INTELMPI_SCINET
 
 LINUX_INTEL_OPENMPI_NYX:
-	make dirs
+	make -f Makefile_CS dirs
 	if [ ! -f "config/config.LINUX_INTEL_OPENMPI_NYX.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_NYX.mk" ./config; fi
 	ln -sf config/config.LINUX_INTEL_OPENMPI_NYX.mk config.mk
-	ln -sf SUmb_Common_real.mk SUmb_Common.mk
-	make sumb
-	(cd src/python/f2py && make)
+	ln -sf SUmb_Common_CS.mk SUmb_Common.mk
+	make -f Makefile_CS sumb
+	(cd src_cs/python/f2py && make)
 
 LINUX_INTEL_OPENMPI_NYX_PYTHON:
-	make LINUX_INTEL_OPENMPI_NYX
+	make -f Makefile_CS LINUX_INTEL_OPENMPI_NYX
 
 
 #      ******************************************************************

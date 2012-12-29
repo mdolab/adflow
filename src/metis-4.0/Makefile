@@ -88,6 +88,68 @@ CC_OBJECTS = balance.o\
 	     timing.o\
 	     util.o
 
+FILES_TO_COMPLEXIFY = 
+
+FILES_TO_COPY = balance.c\
+	     bucketsort.c\
+	     ccgraph.c\
+	     coarsen.c\
+	     compress.c\
+	     debug.c\
+	     estmem.c\
+	     fm.c\
+	     fortran.c\
+	     frename.c\
+	     graph.c\
+	     initpart.c\
+	     kmetis.c\
+	     kvmetis.c\
+	     kwayfm.c\
+	     kwayrefine.c\
+	     kwayvolfm.c\
+	     kwayvolrefine.c\
+	     match.c\
+	     mbalance.c\
+	     mbalance2.c\
+	     mcoarsen.c\
+	     memory.c\
+	     mesh.c\
+	     meshpart.c\
+	     mfm.c\
+	     mfm2.c\
+	     mincover.c\
+	     minitpart.c\
+	     minitpart2.c\
+	     mkmetis.c\
+	     mkwayfmh.c\
+	     mkwayrefine.c\
+	     mmatch.c\
+	     mmd.c\
+	     mpmetis.c\
+	     mrefine.c\
+	     mrefine2.c\
+	     mutil.c\
+	     myqsort.c\
+	     ometis.c\
+	     parmetis.c\
+	     pmetis.c\
+	     pqueue.c\
+	     refine.c\
+	     separator.c\
+	     sfm.c\
+	     srefine.c\
+	     stat.c\
+	     subdomains.c\
+	     timing.c\
+	     util.c\
+	     metis.h\
+	     defs.h\
+	     struct.h\
+	     macros.h\
+	     rename.h\
+	     proto.h\
+
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -102,6 +164,22 @@ all:
 clean:
 	@echo "        Making clean in metis... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		echo Checking $$file; \
+		if [ $$file -nt ../../src_cs/metis-4.0/$$file -o ! -e ../../src_cs/metis-4.0/$$file ]; then \
+			python complexify.py $$file; \
+			mv c_$$file ../../src_cs/metis-4.0/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/metis-4.0/$$file -o ! -e ../../src_cs/metis-4.0/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/metis-4.0/$$file; \
+		fi;\
+		done
+	cp Makefile ../../src_cs/metis-4.0
 
 #      ******************************************************************
 #      *                                                                *

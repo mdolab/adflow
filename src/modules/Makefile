@@ -38,6 +38,9 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
+
+FF90_OBJECTS_0 = complexify.o\
+
 FF90_OBJECTS_1 = precision.o\
 		 su_cgns.o
 
@@ -74,6 +77,42 @@ FF90_OBJECTS_4 = ADjointVars.o\
 	         blockpointers_d.o\
 	         diffSizes.o\
 
+FILES_TO_COMPLEXIFY =  precision.F90\
+		 bleedFlows.f90\
+		 constants.F90\
+		 coolingModelLevel0.f90\
+		 killSignals.f90\
+		 communication.f90\
+		 NKsolverVars.F90\
+		 block.f90\
+		 IOModule.f90\
+		 costFunctions.F90\
+		 ADjointVars.F90\
+		 ADjointPETSc.F90\
+		 BCTypes.f90\
+		 blockPointers.f90\
+		 cgnsGrid.f90\
+		 cgnsNames.f90\
+		 commMixing.f90\
+		 commSliding.f90\
+		 couplerParam.f90\
+		 CpCurveFits.f90\
+		 extraOutput.f90\
+		 flowVarRefState.f90\
+		 inputParam.f90\
+		 interfaceGroups.f90\
+		 iteration.f90\
+		 monitor.f90\
+		 paramTurb.f90\
+		 section.f90\
+		 stencils.f90\
+	         blockpointers_d.f90\
+	         diffSizes.f90\
+
+FILES_TO_COPY = su_cgns.F90 \
+		complexify.f90 
+
+
 
 #      ******************************************************************
 #      *                                                                *
@@ -84,6 +123,7 @@ FF90_OBJECTS_4 = ADjointVars.o\
 default: all
 
 all:
+	$(PMAKE) src_0
 	$(PMAKE) src_1
 	$(PMAKE) src_2
 	$(PMAKE) src_3
@@ -94,6 +134,23 @@ clean:
 	@echo "        Making clean in modules... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
 
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		echo Checking $$file; \
+		if [ $$file -nt ../../src_cs/modules/$$file -o ! -e ../../src_cs/modules/$$file ]; then \
+			python ../complexify.py $$file; \
+			mv c_$$file ../../src_cs/modules/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/modules/$$file -o ! -e ../../src_cs/modules/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/modules/$$file; \
+		fi;\
+		done
+
+	cp Makefile ../../src_cs/modules
+
 #      ******************************************************************
 #      *                                                                *
 #      * Rules to make the individual parts; these are introduced to    *
@@ -102,6 +159,7 @@ clean:
 #      *                                                                *
 #      ******************************************************************
 
+src_0:	$(FF90_OBJECTS_0)
 src_1:	$(FF90_OBJECTS_1)
 src_2:	$(FF90_OBJECTS_2)
 src_3:	$(FF90_OBJECTS_3)
