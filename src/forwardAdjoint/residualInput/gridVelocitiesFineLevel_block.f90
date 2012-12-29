@@ -139,7 +139,7 @@
                   + rotationMatrix(3,3)*velzgrid0
           elseif(tsAlphaMode)then
              ! get the baseline alpha and determine the liftIndex
-             call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+             call getDirAngleTS(velDirFreestream,liftDirection,liftIndex,alpha,beta)
              !Determine the alpha for this time instance
              alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
                              degreeFourAlpha,  omegaFourAlpha,     &
@@ -147,7 +147,7 @@
 
              alphaTS = alpha+alphaIncrement
              !Determine the grid velocity for this alpha
-             call adjustInflowAngleAdj(alphaTS,beta,velDir,liftDir,dragDir,&
+             call adjustInflowAngleAdjTS(alphaTS,beta,velDir,liftDir,dragDir,&
                   liftIndex)
              !do I need to update the lift direction and drag direction as well?
              !set the effictive grid velocity for this time interval
@@ -158,7 +158,7 @@
 
           elseif(tsBetaMode)then
              ! get the baseline alpha and determine the liftIndex
-             call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+             call getDirAngleTS(velDirFreestream,liftDirection,liftIndex,alpha,beta)
              
              !Determine the alpha for this time instance
              betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
@@ -167,7 +167,7 @@
 
              betaTS = beta+betaIncrement
              !Determine the grid velocity for this alpha
-             call adjustInflowAngleAdj(alpha,betaTS,velDir,liftDir,dragDir,&
+             call adjustInflowAngleAdjTS(alpha,betaTS,velDir,liftDir,dragDir,&
                   liftIndex)
              !do I need to update the lift direction and drag direction as well?
              !set the effictive grid velocity for this time interval
@@ -425,7 +425,7 @@
 
              if (useWindAxis)then
                 !determine the current angles from the free stream velocity
-                call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+                call getDirAngleTS(velDirFreestream,liftDirection,liftIndex,alpha,beta)
 
                 if (liftIndex == 2) then
                    ! different coordinate system for aerosurf

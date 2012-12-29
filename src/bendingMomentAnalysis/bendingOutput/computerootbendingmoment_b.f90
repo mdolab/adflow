@@ -55,7 +55,7 @@
    INTRINSIC SQRT
    !Begin execution
    !determine the liftIndex from the flow and liftdirection
-   CALL GETDIRANGLE(veldirfreestream, liftdirection, liftindex, alpha&
+   CALL GETDIRANGLETS(veldirfreestream, liftdirection, liftindex, alpha&
    &                , beta)
    !Set some basic variables from the solution, do the analysis based on
    !the coefficients so that it is well scaled

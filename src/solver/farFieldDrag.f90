@@ -64,7 +64,7 @@ subroutine farFieldDrag(value)
   ffph2 = 1/(gammaConstant * Mach**2)
   ffsh2 = 1/(gammaConstant * Mach**2)
 
-  call getDirAngle(velDirFreeStream,liftDirection,liftIndex,alpha,beta)
+  call getDirAngleTS(velDirFreeStream,liftDirection,liftIndex,alpha,beta)
 
   level = 1
   gm1 = gammaConstant - 1.0_realType

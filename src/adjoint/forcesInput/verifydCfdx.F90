@@ -286,7 +286,7 @@ subroutine verifydCfdx(level,costFunction)
       lengthRefAdj = lengthRef
       SurfaceRefAdj = SurfaceRef
       
-      call getDirAngle(velDirFreestream,LiftDirection,liftIndex,alphaAdj,betaAdj)
+      call getDirAngleTS(velDirFreestream,LiftDirection,liftIndex,alphaAdj,betaAdj)
       pointRefAdj(1) = pointRef(1)
       pointRefAdj(2) = pointRef(2)
       pointRefAdj(3) = pointRef(3)
@@ -723,7 +723,7 @@ subroutine verifydCfdx(level,costFunction)
 !!$         enddo domainForcesLoopFDorig
 !!$      enddo
 !get reference conditions
-      call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+      call getDirAngleTS(velDirFreestream,liftDirection,liftIndex,alpha,beta)
       alpharef = alpha
       betaref = beta
       !if( myID==0 )print *,'machalpha',alpha
@@ -1101,7 +1101,7 @@ subroutine verifydCfdx(level,costFunction)
 
     if (nDesignAoA >= 0) then
       !get reference conditions
-      !call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+      !call getDirAngleTS(velDirFreestream,liftDirection,liftIndex,alpha,beta)
       
       
       print *,'starting alpha FD loop',nTimeIntervalsSpectral
@@ -1490,7 +1490,7 @@ subroutine verifydCfdx(level,costFunction)
 
             alpha = alpharef
 
-            call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+            call adjustinflowangleadjTS(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
             !print *,'cl',clp,clm
             !valuenew = (CLP-CLM)/(two*deltax) 
             !print *,'testderiv',nn,sps,valuenew,valueold,valuenew-valueold
@@ -1526,7 +1526,7 @@ subroutine verifydCfdx(level,costFunction)
 
    if (nDesignssA >= 0) then
       !get reference conditions
-      !call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+      !call getDirAngleTS(velDirFreestream,liftDirection,liftIndex,alpha,beta)
       !print *,'dirangle',liftDirection,beta
       
       print *,'starting beta FD loop',sps
@@ -1554,7 +1554,7 @@ subroutine verifydCfdx(level,costFunction)
             !     ******************************************************************
             !
             !print *,'betaplus', beta
-            call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+            call adjustinflowangleadjTS(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
 
             !call checkInputParam
             !print *,'adjflowangleplus',liftDirection
@@ -1737,7 +1737,7 @@ subroutine verifydCfdx(level,costFunction)
             !     ******************************************************************
             !
             !print *,'betaminus',beta
-            call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+            call adjustinflowangleadjTS(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
             !call checkInputParam
             !print *,'adjflowangleminus',liftDirection
             do mm=1,nTimeIntervalsSpectral
@@ -1908,7 +1908,7 @@ subroutine verifydCfdx(level,costFunction)
 
             beta = betaref
 
-            call adjustinflowangleadj(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
+            call adjustinflowangleadjTS(alpha,beta,veldirfreestream,liftdirection,dragdirection,liftindex)
             !call checkInputParam
           
 
