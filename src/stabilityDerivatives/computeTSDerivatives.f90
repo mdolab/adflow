@@ -187,7 +187,7 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
                   + rotationMatrix(3,3)*dragDirection(3)
      elseif(tsAlphaMode)then
         ! get the baseline alpha and determine the liftIndex
-        call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+        call getDirAngleTS(velDirFreestream,liftDirection,liftIndex,alpha,beta)
              !Determine the alpha for this time instance
         alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
              degreeFourAlpha,  omegaFourAlpha,     &
@@ -195,7 +195,7 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
         
         alphaTS = alpha+alphaIncrement
         !Determine the grid velocity for this alpha
-        call adjustInflowAngleAdj(alphaTS,beta,velDir,liftDirTS,dragDirTS,&
+        call adjustInflowAngleAdjTS(alphaTS,beta,velDir,liftDirTS,dragDirTS,&
                   liftIndex)
         !do I need to update the lift direction and drag direction as well? yes!!!
         !if (myID==0) print *,'LiftDirTS',liftDirTS
@@ -203,7 +203,7 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
         
      elseif(tsBetaMode)then
         ! get the baseline alpha and determine the liftIndex
-        call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+        call getDirAngleTS(velDirFreestream,liftDirection,liftIndex,alpha,beta)
         
         !Determine the alpha for this time instance
         betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
@@ -212,7 +212,7 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
         
         betaTS = beta+betaIncrement
         !Determine the grid velocity for this alpha
-        call adjustInflowAngleAdj(alpha,betaTS,velDir,liftDirTS,dragDirTS,&
+        call adjustInflowAngleAdjTS(alpha,betaTS,velDir,liftDirTS,dragDirTS,&
              liftIndex)
        
      elseif(TSMachMode)then

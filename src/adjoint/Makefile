@@ -69,11 +69,11 @@ FF90_OBJECTS = computeAeroCoef.o        \
 	       setupCouplingMatrixStruct.o\
 	       agumentRHS.o\
 	       matrixInfo.o\
-	       verifyRAdj.o\
                adjoint_stencils.o\
-               verifydRdwFile.o\
-               verifydRdxFile.o  \
-               verifydRdExtraFile.o    
+ #             verifydRdwFile.o\
+ #             verifydRdxFile.o  \
+ #             verifydRdExtraFile.o    
+#	       verifyRAdj.o\
 #	       verifyResiduals.o\
 #	       verifydRdw.o             \
 #              verifydRdwFile.o         \

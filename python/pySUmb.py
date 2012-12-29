@@ -774,7 +774,7 @@ class SUMB(AeroSolver):
         Set the alpha and beta fromthe desiggn variables
         '''
         
-        [velDir, liftDir, dragDir] = self.sumb.adjustinflowangleadj(\
+        [velDir, liftDir, dragDir] = self.sumb.adjustinflowangleadjts(\
             (aero_problem._flows.alpha*(numpy.pi/180.0)),
             (aero_problem._flows.beta*(numpy.pi/180.0)),
             aero_problem._flows.liftIndex)

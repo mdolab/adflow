@@ -74,7 +74,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
   call computeResidualNK
 
   ! call getDirAngle to get the baseline values for alpha and beta
-  call getDirAngle(velDirFreestream,LiftDirection,liftIndex,alpha,beta)
+  call getDirAngleTS(velDirFreestream,LiftDirection,liftIndex,alpha,beta)
 
   ! Set delta_x
   delta_x = 1e-8

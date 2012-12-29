@@ -69,7 +69,7 @@ python module sumb ! in
          real(kind=realtype) intent(in)::xrot,yrot,zrot
        end subroutine updaterotationrate
 
-       subroutine adjustinflowangleadj(alphaadj,betaadj,veldirfreestreamadj,liftdirectionadj,dragdirectionadj,liftindex) ! in :sumb :adjustInflowAngleAdj.f90
+       subroutine adjustinflowangleadjts(alphaadj,betaadj,veldirfreestreamadj,liftdirectionadj,dragdirectionadj,liftindex) ! in :sumb :adjustInflowAngleAdj.f90
          use constants
          real(kind=realtype) intent(in) :: alphaadj
          real(kind=realtype) intent(in):: betaadj
@@ -77,7 +77,7 @@ python module sumb ! in
          real(kind=realtype) dimension(3),intent(out) :: liftdirectionadj
          real(kind=realtype) dimension(3),intent(out) :: dragdirectionadj
          integer(kind=inttype) intent(in) :: liftindex
-       end subroutine adjustinflowangleadj
+       end subroutine adjustinflowangleadjts
 
        subroutine setuniformflow
        end subroutine setuniformflow
@@ -242,46 +242,46 @@ python module sumb ! in
          logical :: lumped 
        end subroutine determinestencil
        
-       subroutine writedrdx(file_name)
-         character*(*) :: file_name
-       end subroutine writedrdx
+!        subroutine writedrdx(file_name)
+!          character*(*) :: file_name
+!        end subroutine writedrdx
 
-       subroutine verifybendingderivatives()
-       end subroutine verifybendingderivatives
+!        subroutine verifybendingderivatives()
+!        end subroutine verifybendingderivatives
    
-       subroutine verifydcfdx(level,costfunction)
-         integer(kind=inttype) intent(in) :: level
-         integer(kind=inttype) intent(in) :: costfunction
-       end subroutine verifydcfdx
+!        subroutine verifydcfdx(level,costfunction)
+!          integer(kind=inttype) intent(in) :: level
+!          integer(kind=inttype) intent(in) :: costfunction
+!        end subroutine verifydcfdx
 
-       subroutine verifydidwfile(level,costfunction,filename)
-         integer(kind=inttype) intent(in) :: level
-         integer(kind=inttype) intent(in) :: costfunction
-         character(len = 64)   :: filename
-       end subroutine verifydidwfile
+!        subroutine verifydidwfile(level,costfunction,filename)
+!          integer(kind=inttype) intent(in) :: level
+!          integer(kind=inttype) intent(in) :: costfunction
+!          character(len = 64)   :: filename
+!        end subroutine verifydidwfile
 
-       subroutine verifydidxfile(level,costfunction,filename)
-         integer(kind=inttype) intent(in) :: level
-         integer(kind=inttype) intent(in) :: costfunction
-         character(len = 64)   :: filename
-       end subroutine verifydidxfile
+!        subroutine verifydidxfile(level,costfunction,filename)
+!          integer(kind=inttype) intent(in) :: level
+!          integer(kind=inttype) intent(in) :: costfunction
+!          character(len = 64)   :: filename
+!        end subroutine verifydidxfile
 
-       subroutine verifydrdwfile(level)
-         integer(kind=inttype), intent(in) :: level
-       end subroutine verifydrdwfile
+!        subroutine verifydrdwfile(level)
+!          integer(kind=inttype), intent(in) :: level
+!        end subroutine verifydrdwfile
 
 
-       subroutine verifydrdxfile(level)
-         integer(kind=inttype), intent(in) :: level
-       end subroutine verifydrdwfile
+!        subroutine verifydrdxfile(level)
+!          integer(kind=inttype), intent(in) :: level
+!        end subroutine verifydrdwfile
 
-       subroutine verifydrdextrafile(level)
-         integer(kind=inttype), intent(in) :: level
-       end subroutine verifydrdextrafile
+!        subroutine verifydrdextrafile(level)
+!          integer(kind=inttype), intent(in) :: level
+!        end subroutine verifydrdextrafile
 
-       subroutine verifyradj(level)
-         integer(kind=inttype) intent(in) :: level
-       end subroutine verifyradj
+!        subroutine verifyradj(level)
+!          integer(kind=inttype) intent(in) :: level
+!        end subroutine verifyradj
 
        ! ############################################################################
        ! SUmb ADjoint Core Routines

@@ -110,7 +110,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
   MachCoefAdj = MachCoef
   pointRefAdj = pointRef
 
-  call getDirAngle(velDirFreestream,LiftDirection,liftIndex,alphaAdj,betaAdj)
+  call getDirAngleTS(velDirFreestream,LiftDirection,liftIndex,alphaAdj,betaAdj)
   pointRefAdj(1) = pointRef(1)
   pointRefAdj(2) = pointRef(2)
   pointRefAdj(3) = pointRef(3)
