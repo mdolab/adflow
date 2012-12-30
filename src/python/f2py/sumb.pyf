@@ -72,7 +72,7 @@ python module sumb
        subroutine updaterotationrate(xrot,yrot,zrot)
          real(kind=realtype) intent(in)::xrot,yrot,zrot
        end subroutine updaterotationrate
-#ifndef USE_COMPLEX
+
        subroutine adjustinflowangleadjts(alphaadj,betaadj,veldirfreestreamadj,liftdirectionadj,dragdirectionadj,liftindex) ! in :sumb :adjustInflowAngleAdj.f90
          use constants
          real(kind=realtype) intent(in) :: alphaadj
@@ -82,7 +82,7 @@ python module sumb
          real(kind=realtype) dimension(3),intent(out) :: dragdirectionadj
          integer(kind=inttype) intent(in) :: liftindex
        end subroutine adjustinflowangleadjts
-#endif
+
        subroutine setuniformflow
        end subroutine setuniformflow
        subroutine allocconvarrays(nitertot) ! in :sumb:../../initFlow/allocConvArrays.f90
@@ -174,13 +174,13 @@ python module sumb
             real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: grid
             integer(kind=inttype) intent(in) :: ndof
         end subroutine getgrid
-#ifndef USE_COMPLEX
+
         subroutine verifyforces(pts,npts,nts) ! in :sumb:../../adjoint/forcesInput/verifyForces.F90
          real(kind=realtype) dimension(3,npts,nts),intent(inout) :: pts
          integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
          integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
        end subroutine verifyforces
-#endif
+
        subroutine getnpatches(npatches) ! in :test:getForces.f90
          integer(kind=inttype) intent(out) :: npatches
        end subroutine getnpatches
@@ -528,10 +528,10 @@ python module sumb
        ! ############################################################################
        ! Time Spectral Stability Routines
        ! ############################################################################
-#ifndef USE_COMPLEX
+
        subroutine stabilityderivativedriver
        end subroutine stabilityderivativedriver
-#endif
+
        ! ############################################################################
        ! SUmb Modules
        ! ############################################################################

@@ -42,7 +42,7 @@ import numpy
 from mdo_import_helper import import_modules
 exec(import_modules('pyAero_problem'))
 exec(import_modules('pySUMB'))
-import sumb
+import sumb_cs
 
 # =============================================================================
 # Misc Definitions
@@ -65,7 +65,7 @@ class SUMB_C(SUMB):
         Documentation last updated:  July. 03, 2008 - C.A.(Sandy) Mader
         '''
 
-        SUMB.__init__(self,sumb=sumb,*args,**kwargs)        
+        SUMB.__init__(self,sumb=sumb_cs,*args,**kwargs)        
         self.dtype = 'D'
         return
 
