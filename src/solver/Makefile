@@ -68,6 +68,8 @@ FF90_OBJECTS = applyAllBC.o\
 	       forcesAndMoments.o\
 	       forcesAndMomentsCBD.o\
 	       farFieldDrag.o\
+	       getDirAngle.o\
+	       getDirVector.o\
 	       gridVelocitiesCoarseLevels.o\
 	       gridVelocitiesFineLevel.o\
 	       initres.o\
@@ -106,6 +108,7 @@ FF90_OBJECTS = applyAllBC.o\
 	       transferToFineGrid.o\
 	       unsteadyHeader.o\
 	       utauWF.o\
+	       vectorRotation.o\
 	       viscousFlux.o\
 	       writeFamilyMassflow.o
 
@@ -143,6 +146,8 @@ FILES_TO_COMPLEXIFY = applyAllBC.f90\
 	       forcesAndMoments.f90\
 	       forcesAndMomentsCBD.f90\
 	       farFieldDrag.f90\
+	       getDirAngle.f90\
+	       getDirVector.f90\
 	       gridVelocitiesCoarseLevels.f90\
 	       gridVelocitiesFineLevel.f90\
 	       initres.f90\
@@ -181,6 +186,7 @@ FILES_TO_COMPLEXIFY = applyAllBC.f90\
 	       transferToFineGrid.f90\
 	       unsteadyHeader.f90\
 	       utauWF.f90\
+	       vectorRotation.f90\
 	       viscousFlux.f90\
 	       writeFamilyMassflow.f90
 

@@ -264,6 +264,10 @@
        bvtk1 => flowDoms(nn,1,1)%bvtk1
        bvtk2 => flowDoms(nn,1,1)%bvtk2
 
+       ! Pointers for globalCell/Node
+       globalCell =>flowDoms(nn,mm,ll)%globalCell
+       globalNode =>flowDoms(nn,mm,ll)%globalNode
+
        !Add warp_comm to pointers
        warp_comm  =>flowDoms(nn,1,1)%warp_comm
 

@@ -35,9 +35,9 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS = determineStencil.o\
-                setupAllResidualMatricesFwd.o\
-                setupExtraResidualMatrix.o\
+FF90_OBJECTS =	determineStencil.o\
+		setupAllResidualMatricesFwd.o\
+		setupExtraResidualMatrix.o\
 		setupStateResidualMatrix.o\
 		setupSpatialResidualMatrix.o\
 		setupAdjointMatrix.o\
@@ -50,6 +50,25 @@ FF90_OBJECTS = determineStencil.o\
 		setPointersOffTSInstance_d.o\
 		setPointers_d.o\
 		writeMatrices.o\
+
+FILES_TO_COMPLEXIFY = \
+		determineStencil.F90\
+		setupAllResidualMatricesFwd.F90\
+		setupExtraResidualMatrix.F90\
+		setupExtraMatrix.F90\
+		alloc_derivative_values.F90\
+		dealloc_derivative_values.F90\
+		setupColoring.F90\
+		setPointersOffTSInstance.f90\
+		setPointersOffTSInstance_d.f90\
+		setPointers_d.f90\
+		writeMatrices.F90
+
+FILES_TO_COPY = setupStateResidualMatrix.F90\
+		setupSpatialMatrix.F90\
+		setupSpatialResidualMatrix.F90\
+		setupAdjointMatrix.F90\
+
 
 #      ******************************************************************
 #      *                                                                *
@@ -65,6 +84,23 @@ all:
 clean:
 	@echo "        Making clean in solver... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		if [ $$file -nt ../../src_cs/forwardAdjoint/$$file -o ! -e ../../src_cs/forwardAdjoint/$$file ]; then \
+			python ../complexify.py $$file; \
+			mv c_$$file ../../src_cs/forwardAdjoint/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/forwardAdjoint/$$file -o ! -e ../../src_cs/forwardAdjoint/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/forwardAdjoint/$$file; \
+		fi;\
+		done
+
+	cp Makefile ../../src_cs/forwardAdjoint
+
 
 #      ******************************************************************
 #      *                                                                *

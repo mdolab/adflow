@@ -56,8 +56,30 @@ FF90_OBJECTS = adjustInflowAngle.o\
                turbResidual_block.o\
 	       xhalo_block.o\
 
+FILES_TO_COMPLEXIFY = \
+		adjustInflowAngle.f90\
+		applyAllBC_block.f90\
+		block_res.f90\
+		block_res_extra.f90\
+		block_res_spatial.f90\
+		checkInputParam_mod.f90\
+		computeUtau_block.f90\
+		gridVelocitiesFineLevel_block.f90\
+		initres_block.f90\
+		initres_block_mod.f90\
+		metric_block.f90\
+		normalVelocities_block.f90\
+		referenceState_mod.f90\
+		residual_block.f90\
+		sa_block.f90\
+		saSolve_mod.f90\
+		timeStep_block.f90\
+		turbResidual_block.f90\
+		xhalo_block.f90\
+
+FILES_TO_COPY = 
 #      ******************************************************************
-#      *                                                                *
+#      *                                                        *
 #      * Targets for make.                                              *
 #      *                                                                *
 #      ******************************************************************
@@ -70,6 +92,23 @@ all:
 clean:
 	@echo "        Making clean in solver... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		if [ $$file -nt ../../../src_cs/forwardAdjoint/residualInput/$$file -o ! -e ../../../src_cs/forwardAdjoint/residualInput/$$file ]; then \
+			python ../../complexify.py $$file; \
+			mv c_$$file ../../../src_cs/forwardAdjoint/residualInput/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../../src_cs/forwardAdjoint/residualInput/$$file -o ! -e ../../../src_cs/forwardAdjoint/residualInput/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../../src_cs/forwardAdjoint/residualInput/$$file; \
+		fi;\
+		done
+
+	cp Makefile ../../../src_cs/forwardAdjoint/residualInput
+
 
 #      ******************************************************************
 #      *                                                                *

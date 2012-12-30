@@ -145,7 +145,6 @@ FILES_TO_COMPLEXIFY = allocCoorFineGrid.f90\
 		 reallocSubfaceMemory.f90\
 		 setChangingOverset.f90\
 		 sortSubfaces.f90\
-		 sortBadEntities.f90\
 		 splitBlock.f90\
                  storeReferenceMesh.f90\
 		 timePeriodSpectral.f90\

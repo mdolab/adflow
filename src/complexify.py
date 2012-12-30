@@ -75,6 +75,7 @@ def main():
             '\tpython ' + sys.argv[0]
             + ' [-lucky_logic|-MIPS_logic|-fudge_format] file-pattern \n\n' )
 	sys.exit(2)
+
     for arg in sys.argv[1:]:
         if arg == "-lucky_logic":
             # don't attempt to fix .eq. and .ne. (works on PGF90)
@@ -168,7 +169,7 @@ def fix_file(file):
     except IOError, msg:
         err(file + ': cannot open: ' + `msg` + '\n')
         return 1
-    rep(file + ':\n')
+    #rep(file + ':\n')
     # Read file to memory
     lines = f.readlines()
     # Process lines
@@ -183,7 +184,7 @@ def fix_file(file):
             break
         i_line = i_line + 1
     if not routine_found: # include file
-	print i_line, 'Routine not found in file, must be include file'
+	#print i_line, 'Routine not found in file, must be include file'
         i_line = 0
         i_line, is_EOF = fix_routine(i_line, lines)
         if is_EOF:

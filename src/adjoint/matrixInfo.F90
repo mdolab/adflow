@@ -15,11 +15,11 @@ subroutine matrixInfo(pdRdwT,pdRdwPreT,pdRdx,pdRda,&
      pdFdw,pdFdx,pLocal,pSum,pMax)
 #ifndef USE_NO_PETSC
   use ADjointPETSc
-  use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
-  use communication   ! myID, nProc
-  use inputTimeSpectral !nTimeIntervalsSpectral
-  use flowVarRefState ! 
-  use inputADjoint    !ApproxPC
+  use ADjointVars
+  use communication 
+  use inputTimeSpectral 
+  use flowVarRefState 
+  use inputADjoint   
 
   implicit None
 

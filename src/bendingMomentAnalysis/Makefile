@@ -43,6 +43,10 @@ FF90_OBJECTS = rootBendingMomentAnalysis.o\
 
 CC_OBJECTS   = 
 
+FILES_TO_COMPLEXIFY =	rootBendingMomentAnalysis.f90\
+			verifyBendingDerivatives.f90
+
+FILES_TO_COPY = 
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -53,12 +57,28 @@ default: all
 
 all:
 	$(PMAKE) mod
-#	cp -f *.mod $(SUMB_MODDIR)
 	$(PMAKE) src
 
 clean:
 	@echo "        Making clean in adjoint... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		if [ $$file -nt ../../src_cs/bendingMomentAnalysis/$$file -o ! -e ../../src_cs/bendingMomentAnalysis/$$file ]; then \
+			python ../complexify.py $$file; \
+			mv c_$$file ../../src_cs/bendingMomentAnalysis/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/bendingMomentAnalysis/$$file -o ! -e ../../src_cs/bendingMomentAnalysis/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/bendingMomentAnalysis/$$file; \
+		fi;\
+		done
+
+	cp Makefile ../../src_cs/bendingMomentAnalysis
+
 
 #      ******************************************************************
 #      *                                                                *

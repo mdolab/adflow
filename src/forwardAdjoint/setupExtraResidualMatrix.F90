@@ -221,8 +221,13 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
         do sps = 1,nTimeIntervalsSpectral
            ! Block-based residual
            if (useAD) then
+#ifndef USE_COMPLEX              
               call block_res_extra_extra_d(nn,sps,alpha,alphad,beta,&
                    betad,liftIndex)
+#else
+                 print *,'Forward AD routines are not complexified'
+                 stop
+#endif
            else
               call block_res_extra(nn,sps,alpha,beta,liftIndex)
            end if
@@ -255,7 +260,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
         ! Set derivatives by block in "matrix" after we've peturbed
         ! all states in "color"
         do sps = 1,nTimeIntervalsSpectral
-           call setPointersAdj(nn,1,sps)
+           call setPointers(nn,1,sps)
            do k=0,kb
               do j=0,jb
                  do i=0,ib

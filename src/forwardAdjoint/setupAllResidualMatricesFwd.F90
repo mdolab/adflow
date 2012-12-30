@@ -9,6 +9,7 @@
 !     ******************************************************************
 !
 subroutine setupAllResidualMatricesfwd
+#ifndef USE_COMPLEX
   !
   !     ******************************************************************
   !     *                                                                *
@@ -27,18 +28,17 @@ subroutine setupAllResidualMatricesfwd
   !     ******************************************************************
   !
   use ADjointPETSc
-  use ADjointVars ! nCellsGlobal, nCellsLocal, nOffsetLocal
-  use blockPointers       ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
-  use cgnsGrid            ! cgnsDoms
-  use communication       ! procHalo(currentLevel)%nProcSend
-  use inputDiscretization ! spaceDiscr
-  USE inputTimeSpectral   ! nTimeIntervalsSpectral
-  use iteration           ! overset, currentLevel
-  use flowVarRefState     ! nw
-  !      use inputTimeSpectral ! spaceDiscr
-  use inputADjoint        !lumpedDiss
-  use section             !sections
-  use monitor             !TimeUnsteady
+  use ADjointVars 
+  use blockPointers
+  use cgnsGrid     
+  use communication    
+  use inputDiscretization 
+  USE inputTimeSpectral   
+  use iteration           
+  use flowVarRefState     
+  use inputADjoint       
+  use section            
+  use monitor            
 
   implicit none
   !
@@ -57,7 +57,7 @@ subroutine setupAllResidualMatricesfwd
   integer(kind=intType) :: sps
 
   !temporary storage for current dissipation coefficients. Used in error check
-  real(kind=realType)::vis2ref,vis4ref
+  real(kind=realType)::vis2ref, vis4ref
 
   !
   !     ******************************************************************
@@ -210,7 +210,7 @@ subroutine setupAllResidualMatricesfwd
         ! Loop over the number of time instances for this block.
         do sps=1,nTimeIntervalsSpectral
            
-           call setPointersAdj(nn,level,sps)
+           call setPointers(nn,level,sps)
            
            ! Loop over location of output (R) cell of residual
            
@@ -275,5 +275,5 @@ subroutine setupAllResidualMatricesfwd
 20 format(a,1x,f8.2)
 99 format(a,1x,i6)
  
-
+#endif
 end subroutine setupAllResidualMatricesfwd
