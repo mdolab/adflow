@@ -84,11 +84,11 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
   call EChk(ierr,__FILE__,__LINE__)
  
   ! This needs to be a bit better...
-  call KSPSetTolerances(ksp,1e-8,1e-16,10.0,applyAdjointPCSubSpaceSize,ierr)
+  call KSPSetTolerances(adjointKSP,1e-8,1e-16,10.0,applyAdjointPCSubSpaceSize,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Actually do the Linear Krylov Solve
-  call KSPSolve(ksp, w_like1, w_like2,ierr)
+  call KSPSolve(adjointKSP, w_like1, w_like2,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Reset the array pointers:

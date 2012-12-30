@@ -39,7 +39,7 @@ subroutine writedRdx(file_name)
 
   do nn=1,1
      do sps =1,nTimeIntervalsSpectral
-     call setPointersAdj(nn,1,sps)
+     call setPointers(nn,1,sps)
 
      write(13,10),nn,sps
      write(13,15),il,jl,kl

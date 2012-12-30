@@ -140,7 +140,7 @@
 
              alphaTS = alpha+alphaIncrement
              !Determine the grid velocity for this alpha
-             call adjustInflowAngleAdj(alphaTS,beta,velDir,liftDir,dragDir,&
+             call adjustInflowAngle(alphaTS,beta,velDir,liftDir,dragDir,&
                   liftIndex)
              !do I need to update the lift direction and drag direction as well?
              !set the effictive grid velocity for this time interval
@@ -159,7 +159,7 @@
 
              betaTS = beta+betaIncrement
              !Determine the grid velocity for this alpha
-             call adjustInflowAngleAdj(alpha,betaTS,velDir,liftDir,dragDir,&
+             call adjustInflowAngle(alpha,betaTS,velDir,liftDir,dragDir,&
                   liftIndex)
              !do I need to update the lift direction and drag direction as well?
              !set the effictive grid velocity for this time interval

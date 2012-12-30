@@ -10,6 +10,7 @@
 
 subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
 #ifndef USE_NO_PETSC
+#ifndef USE_COMPLEX
   !
   !     ******************************************************************
   !     *                                                                *
@@ -110,7 +111,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
   MachCoefAdj = MachCoef
   pointRefAdj = pointRef
 
-  call getDirAngle(velDirFreestream,LiftDirection,liftIndex,alphaAdj,betaAdj)
+  call getDirAngleTS(velDirFreestream,LiftDirection,liftIndex,alphaAdj,betaAdj)
   pointRefAdj(1) = pointRef(1)
   pointRefAdj(2) = pointRef(2)
   pointRefAdj(3) = pointRef(3)
@@ -304,7 +305,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
      endif
 
      domainLoopAD: do nn=1,nDom
-        call setPointersadj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
         bocos: do mm=1,nBocos
            rotpointxcorrection = 0.0
            rotpointycorrection = 0.0
@@ -514,6 +515,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
      call VecAssemblyEnd(dJdx,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
   end if
+#endif
 #endif
 end subroutine computeObjPartials
 

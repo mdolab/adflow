@@ -36,9 +36,7 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS = allocMemADjoint.o        \
-	       assertionsADjoint.o      \
-               computeAeroCoef.o        \
+FF90_OBJECTS = computeAeroCoef.o        \
 	       computeObjPartials.o\
 	       copyADjointStencil.o     \
 	       createPETScKsp.o         \
@@ -50,23 +48,16 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       destroyPETScVars.o       \
 	       preallocation.o          \
                finalizePETSc.o          \
-	       getGlobalNodes.o         \
 	       getSolution.o            \
 	       getADjoint.o             \
 	       getdRdXvPsi.o            \
 	       getdRdaPsi.o             \
 	       getdRdwTVec.o            \
 	       getdFdxVec.o             \
-	       haloIndexCommunication.o \
 	       initializePETSc.o        \
-	       indexHalo.o              \
-	       indexHalo1to1.o          \
-	       indexHaloNode1to1.o      \
 	       preprocessingADjoint.o   \
 	       releaseMemADjoint.o      \
 	       setADjoint.o             \
-	       setGlobalCellsAndNodes.o \
-	       setPointersAdj.o         \
 	       setupAllResidualMatrices.o\
                setupPETScKsp.o         \
                solveADjointTransposePETSc.o\
@@ -77,11 +68,11 @@ FF90_OBJECTS = allocMemADjoint.o        \
 	       setupCouplingMatrixStruct.o\
 	       agumentRHS.o\
 	       matrixInfo.o\
-	       verifyRAdj.o\
                adjoint_stencils.o\
-               verifydRdwFile.o\
-               verifydRdxFile.o  \
-               verifydRdExtraFile.o    
+ #             verifydRdwFile.o\
+ #             verifydRdxFile.o  \
+ #             verifydRdExtraFile.o    
+#	       verifyRAdj.o\
 #	       verifyResiduals.o\
 #	       verifydRdw.o             \
 #              verifydRdwFile.o         \
@@ -93,9 +84,45 @@ FF90_OBJECTS = allocMemADjoint.o        \
 #              verifydRdxsFile.o             \
 #	       verifydRdxFileFD.o             \
 
-
-
 CC_OBJECTS   = initPETScWrap.o
+
+FILES_TO_COMPLEXIFY = \
+		computeAeroCoef.f90        \
+		computeObjPartials.F90\
+		copyADjointStencil.f90     \
+		createPETScKsp.F90         \
+		createPETScVars.F90        \
+		destroyPETScVars.F90       \
+		preallocation.F90          \
+		finalizePETSc.F90          \
+		getSolution.f90            \
+		getADjoint.F90             \
+		getdRdXvPsi.F90            \
+		getdRdaPsi.F90             \
+		getdRdwTVec.F90            \
+		getdFdxVec.F90             \
+		initializePETSc.F90        \
+		preprocessingADjoint.F90   \
+		releaseMemADjoint.f90      \
+		setADjoint.F90             \
+		setupAllResidualMatrices.F90\
+		setupPETScKsp.F90         \
+		solverADjoint.F90         \
+		updateFlow.f90            \
+		updateReferencePoint.f90   \
+		updateRotationRate.f90     \
+		setupCouplingMatrixStruct.F90\
+		agumentRHS.F90\
+		matrixInfo.F90\
+		adjoint_stencils.f90\
+
+FILES_TO_COPY = \
+		solveADjointTransposePETSc.F90\
+		initPETScWrap.c\
+		createSpatialPETScVars.F90 \
+		createStatePETScVars.F90   \
+		createCouplingPETScVars.F90\
+		createExtraPETScVars.F90   \
 
 #      ******************************************************************
 #      *                                                                *
@@ -111,6 +138,23 @@ all:
 clean:
 	@echo "        Making clean in adjoint... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		if [ $$file -nt ../../src_cs/adjoint/$$file -o ! -e ../../src_cs/adjoint/$$file ]; then \
+			python ../complexify.py $$file; \
+			mv c_$$file ../../src_cs/adjoint/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../src_cs/adjoint/$$file -o ! -e ../../src_cs/adjoint/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../src_cs/adjoint/$$file; \
+		fi;\
+		done
+
+	cp Makefile ../../src_cs/adjoint
+
 
 #      ******************************************************************
 #      *                                                                *

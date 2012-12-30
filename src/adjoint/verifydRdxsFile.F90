@@ -102,7 +102,7 @@
             idxnode   = (nn-1)*3+m 
             do sps2 = 1,nTimeIntervalsSpectral
                do nnn = 1,ndom
-                  call setPointersAdj(nnn,1,sps2)
+                  call setPointers(nnn,1,sps2)
                   DO I=2,Il
                      DO J=2,Jl
                         DO K=2,Kl
@@ -124,7 +124,7 @@
                      END DO
                   END DO
                   !print *,'spsloop',sps
-                  call setPointersAdj(nnn,1,sps)
+                  call setPointers(nnn,1,sps)
                end do
             enddo
          end do

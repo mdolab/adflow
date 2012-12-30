@@ -87,7 +87,7 @@
      
 !stop
        if(TSStability)then
-          call stabilityDerivativeDriver
+          !call stabilityDerivativeDriver
           !call computeTSDerivatives
           
           if(myID==0)then

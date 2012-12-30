@@ -190,7 +190,7 @@
          print *,'domain',nn
          groundLevel = 1
          sps = 1
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          allocate(flowDoms(nn,level,sps)%dwp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
          allocate(flowDoms(nn,level,sps)%dwm(0:ib,0:jb,0:kb,1:nw),stat=ierr)
          allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
@@ -284,7 +284,7 @@
 
          spectralLoop: do sps=1,nTimeIntervalsSpectral
             print *,'Setting Pointers',nn,level,sps
-            call setPointersAdj(nn,level,sps)
+            call setPointers(nn,level,sps)
 
             ! Loop over location of output (R) cell of residual
             do kCell = 2, kl
@@ -521,7 +521,7 @@
                          
                          
                          !                   ival = 0
-                         call setPointersAdj(nn,level,sps)
+                         call setPointers(nn,level,sps)
                          
                          ! Loop over location of output (R) cell of residual
                          do kCell = 2, kl
@@ -554,8 +554,8 @@
                                            !if( istate ==1 .and. jstate==4 .and. kstate ==4 .and. n==3 .and. nn==1) then
                                            if(idxnode==flowdoms(1,1,1)%globalNode(1,4,4)*3+3) then
 !                                           if( istate ==1 .and. jstate==1 .and. kstate ==1 .and. n==3 .and. nn==1) then
-                                              if (  idxres<(nCellsGlobal*nw+nw)) then
-                                                 print *,'ncells global',nCellsGlobal,nCellsGlobal*nw+nw,idxres,globalCell(iCell,jCell,kCell)
+                                              if (  idxres<(nCellsGlobal(1_intType)*nw+nw)) then
+                                                 print *,'ncells global',nCellsGlobal,nCellsGlobal(1_intType)*nw+nw,idxres,globalCell(iCell,jCell,kCell)
                                                  call VecSetValue(pvr, idxres-1, xFD2(iCell-1, jCell-1, kCell-1, iRes) ,INSERT_VALUES, PETScIerr)
                                                  if( PETScIerr/=0 ) then
                                                     write(errorMessage,99) &
@@ -721,7 +721,7 @@
 !!$
 !!$         spectralLoop2: do sps=1,nTime
 !!$!            print *,'setting Pointers'
-!!$            call setPointersAdj(nn,level,sps)
+!!$            call setPointers(nn,level,sps)
 !!$
 !!$
 !!$               ! Loop over location of output (R) cell of residual
@@ -819,7 +819,7 @@
 
       print *, "Computing the the error..."
  outputDomainLoop: do nn = 1,1! nDom    
-    call setpointersAdj(nn,1,1)
+    call setpointers(nn,1,1)
     do m=1,nw
       do iCell=2,il
         do jCell=2,jl
@@ -868,7 +868,7 @@ enddo outputDomainLoop
          print *,'domain',nn
          groundLevel = 1
          sps = 1
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          deallocate(flowDoms(nn,level,sps)%dwp)
          deallocate(flowDoms(nn,level,sps)%dwm)
          deallocate(flowDoms(nn,level,sps)%dwtemp)

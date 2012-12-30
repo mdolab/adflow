@@ -349,7 +349,7 @@ subroutine alloc_derivative_values(nn)
 
   allocspectralLoop: do sps=1,nTimeIntervalsSpectral
 
-     call setPointersAdj(nn,1,sps)
+     call setPointers(nn,1,sps)
      call block_res(nn,sps,.False.,.False.)
 
      allocate(flowDomsd(nn,1,sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)

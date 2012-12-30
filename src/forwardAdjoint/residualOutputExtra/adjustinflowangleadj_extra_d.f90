@@ -48,7 +48,7 @@
    ! 2) rotate beta radians ccw about z or y-axis
    refdirection(:) = zero
    refdirection(1) = one
-   CALL GETDIRVECTOR(refdirection, alphaadj, betaadj, dragdirectionadj&
+   CALL GETDIRVECTORTS(refdirection, alphaadj, betaadj, dragdirectionadj&
    &                 (1), liftindex)
    ! Lift direction given by the rotation of a unit vector
    ! initially aligned along the positive z-direction (0,0,1)
@@ -56,6 +56,6 @@
    ! 2) rotate beta radians ccw about z or y-axis
    refdirection(:) = zero
    refdirection(liftindex) = one
-   CALL GETDIRVECTOR(refdirection, alphaadj, betaadj, liftdirectionadj&
+   CALL GETDIRVECTORTS(refdirection, alphaadj, betaadj, liftdirectionadj&
    &                 , liftindex)
    END SUBROUTINE ADJUSTINFLOWANGLEADJ_EXTRA_D

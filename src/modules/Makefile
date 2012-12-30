@@ -136,7 +136,6 @@ clean:
 
 complexify:
 	@for file in $(FILES_TO_COMPLEXIFY); do \
-		echo Checking $$file; \
 		if [ $$file -nt ../../src_cs/modules/$$file -o ! -e ../../src_cs/modules/$$file ]; then \
 			python ../complexify.py $$file; \
 			mv c_$$file ../../src_cs/modules/$$file; \

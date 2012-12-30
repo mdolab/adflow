@@ -9,17 +9,17 @@ subroutine createSpatialPETScVars
   !     ******************************************************************
 
   use ADjointPETSc, only : dRdx, PETScIerr, dJdx, Xvec
-  use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
-  use communication   ! myID, nProc
-  use inputTimeSpectral !nTimeIntervalsSpectral
-  use flowVarRefState ! 
-  use inputADjoint    !ApproxPC
+  use ADjointVars     
+  use communication   
+  use inputTimeSpectral
+  use flowVarRefState 
+  use inputADjoint  
 
   implicit none
 
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-
+#include "include/petscversion.h"
   !
   !     Local variables.
   !
@@ -35,8 +35,8 @@ subroutine createSpatialPETScVars
   !
 #ifndef USE_NO_PETSC
 
-  nDimW = nw * nCellsLocal*nTimeIntervalsSpectral
-  nDimX = 3 * nNodesLocal*nTimeIntervalsSpectral
+  nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
+  nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
 
   !     ******************************************************************
   !     *                                                                *

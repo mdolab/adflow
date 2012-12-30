@@ -31,10 +31,10 @@ subroutine setupSpatialResidualMatrix(matrix, useAD)
   ! Local variables.
   integer(kind=intType) :: ierr,nn,sps,sps2,i,j,k,l,ll,ii,jj,kk
   integer(kind=intType) :: irow,icol
-  real(kind=realType) :: delta_x,one_over_dx, val
   integer(kind=intType) :: n_stencil,i_stencil
   integer(kind=intType), dimension(:,:), pointer :: stencil
   integer(kind=intType) :: nColor,iColor
+  real(kind=realType) :: delta_x,one_over_dx, val
 
   rkStage = 0
   currentLevel =1 
@@ -50,7 +50,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD)
   ! Set a pointer to the correct set of stencil depending on if we are
   ! using the first order stencil or the full jacobian
 
-  if( viscous ) then
+  if(viscous) then
      !stencil => visc_drdx_stencil
      !n_stencil = N_visc_drdx
   else 
@@ -102,7 +102,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD)
      spectralLoop: do sps=1,nTimeIntervalsSpectral
         ! Set pointers and derivative pointers
         call setPointers_d(nn,1,sps)
-        call setPointersAdj(nn,1,sps)
+        call setPointers(nn,1,sps)
 
         ! Do Coloring and perturb states
         colorLoop: do iColor = 1,nColor
@@ -141,7 +141,12 @@ subroutine setupSpatialResidualMatrix(matrix, useAD)
 
               ! Block-based residual
               if (useAD) then
-                 call block_res_d(nn, sps, .True., .False.)
+#ifndef USE_COMPLEX
+                 call block_res_d(nn,sps,.True.,.False.)
+#else
+                 print *,'Forward AD routines are not complexified'
+                 stop
+#endif
               else
                  call block_res(nn, sps, .True., .False.)
               end if
@@ -276,7 +281,11 @@ contains
     ! should be ok, nw will always be greater than 3
 
     implicit none
+#ifdef USE_COMPLEX
+    complex(kind=realType), dimension(nw,nw) :: blk
+#else
     real(kind=realType), dimension(nw,nw) :: blk
+#endif
     integer(kind=intType) :: iii,jjj, nrows, ncols
 
     do jjj=1,3

@@ -46,7 +46,6 @@ FF90_OBJECTS = bsearchIntegers.o\
 	       convertToLowerCase.o\
 	       delta.o\
 	       derivativeRigidRotAngle.o\
-	       getBlockData.o\
 	       initExec.o\
 	       myIsNAN.o\
 	       nullifyCGNSDomPointers.o\
@@ -110,7 +109,6 @@ FILES_TO_COMPLEXIFY =  \
 	       convertToLowerCase.f90\
 	       delta.f90\
 	       derivativeRigidRotAngle.f90\
-	       getBlockData.f90\
 	       initExec.F90\
 	       myIsNAN.f90\
 	       nullifyCGNSDomPointers.f90\

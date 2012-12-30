@@ -94,6 +94,7 @@ FF90_OBJECTS_2 = allocConvArrays.o\
 		 scaleFactors.o\
 		 setFlowInfinityState.o\
 		 setIOVar.o\
+		 setGlobalCellsAndNodes.o\
 		 setPressureAndComputeEnergy.o\
 		 setUniformFlow.o\
 		 timeSpectralCoef.o\
@@ -154,6 +155,7 @@ FILES_TO_COMPLEXIFY= restartMod.f90\
 		 scaleFactors.F90\
 		 setFlowInfinityState.f90\
 		 setIOVar.f90\
+		 setGlobalCellsAndNodes.f90\
 		 setPressureAndComputeEnergy.f90\
 		 setUniformFlow.f90\
 		 timeSpectralCoef.f90\

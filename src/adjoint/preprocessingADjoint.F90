@@ -20,7 +20,6 @@ subroutine preprocessingADjoint
   !
   use communication
   use adjointVars
-  use precision
   use flowVarRefState
   use inputTimeSpectral
   use ADjointPETSc, only: w_like1, w_like2, fvec1, fvec2, PETScIerr
@@ -41,21 +40,6 @@ subroutine preprocessingADjoint
   !     *                                                                *
   !     ******************************************************************
   !
-
-  ! Test the discrete adjoint solver assertions.
-  level = 1_intType
-
-  call assertionsADjoint(level)
-  
-  ! Allocate the memory for the global cell indexing of the
-  ! computational mesh, later used to assemble the global
-  ! adjoint system of equations.
-
-  call allocMemADjoint(level)
-     
-  ! Determine the global cell and Node numbering.
-  call setGlobalCellsAndNodes(level)
-
   ! Create PETSc Vectors that are actually empty. These do NOT take
   ! any (substantial) memory. We want to keep these around inbetween
   ! creations/deletions of adjoint/NKsolver memory
@@ -65,7 +49,7 @@ subroutine preprocessingADjoint
   nDimS = nDimS * 3 *nTimeIntervalsSpectral! Multiply by 3 for each
                                            ! dof on each point
 
-  nDimW = nw * nCellsLocal*nTimeIntervalsSpectral
+  nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
 
   if (PETSC_VERSION_MINOR == 2) then
      call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimS,PETSC_DECIDE, &

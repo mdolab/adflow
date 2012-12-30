@@ -9,6 +9,7 @@
 !
 subroutine setupCouplingMatrixStruct(pts,npts,nTS)
 #ifndef USE_NO_PETSC
+#ifndef USE_COMPLEX
   !
   !     ******************************************************************
   !     *                                                                *
@@ -19,14 +20,14 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   !     ******************************************************************
   !
   use adjointpetsc        
-  use adjointVars         !nCellsGlobal
+  use adjointVars    
   use blockPointers
-  use communication       ! procHalo(currentLevel)%nProcSend, myID
-  use inputPhysics        ! equations
-  use flowVarRefState     ! nw
-  use inputDiscretization ! spaceDiscr, useCompactDiss
-  use bcTypes             !imin,imax,jmin,jmax,kmin,kmax
-  use inputTimeSpectral
+  use communication  
+  use inputPhysics   
+  use flowVarRefState 
+  use inputDiscretization 
+  use bcTypes         
+   use inputTimeSpectral
   implicit none
 
   ! Subroutine Arguments
@@ -70,7 +71,7 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   do sps = 1,nTimeIntervalsSpectral
      ii=0
      domains: do nn=1,nDom
-        call setPointersAdj(nn,1_intType,sps)
+        call setPointers(nn,1_intType,sps)
 
         rightHanded = flowDoms(nn,1_intType,sps)%rightHanded
 
@@ -303,7 +304,8 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   end if
 
 20 format(a,1x,f8.2)
-#endif
 
+#endif
+#endif
 end subroutine setupCouplingMatrixStruct
 

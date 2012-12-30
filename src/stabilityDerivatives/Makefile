@@ -59,7 +59,6 @@ default: all
 
 all:
 	$(PMAKE) mod
-#	cp -f *.mod $(SUMB_MODDIR)
 	$(PMAKE) src
 
 clean:

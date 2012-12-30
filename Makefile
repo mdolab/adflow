@@ -43,34 +43,28 @@ SUBDIR_SRC    = src/modules       \
 	        src/utils         \
 	        src/wallDistance  \
 		src/warping       \
-		src/bendingMomentAnalysis 
-
-SUBDIR_ADJOINT = src/adjoint               \
-                 src/adjoint/ADFirstAidKit \
-                 src/adjoint/residualInput \
-                 src/adjoint/residualOutput\
-                 src/adjoint/stabilityInput\
-                 src/adjoint/stabilityOutput\
-                 src/adjoint/forcesInput\
-                 src/adjoint/forcesOutput\
-                 src/adjoint/residualInputTS \
-                 src/adjoint/residualOutputTS\
-                 src/bendingMomentAnalysis/bendingOutput\
-                 src/forwardAdjoint \
-                 src/forwardAdjoint/residualInput \
-                 src/forwardAdjoint/residualOutput\
-                 src/forwardAdjoint/residualOutputExtra\
-                 src/forwardAdjoint/residualOutputSpatial
+		src/bendingMomentAnalysis \
+		src/adjoint               \
+                src/adjoint/ADFirstAidKit \
+                src/adjoint/stabilityInput\
+                src/adjoint/stabilityOutput\
+                src/adjoint/forcesInput\
+                src/adjoint/forcesOutput\
+                src/adjoint/residualInputTS \
+                src/adjoint/residualOutputTS\
+                src/bendingMomentAnalysis/bendingOutput\
+                src/forwardAdjoint \
+                src/forwardAdjoint/residualInput \
+                src/forwardAdjoint/residualOutput\
+                src/forwardAdjoint/residualOutputExtra\
+                src/forwardAdjoint/residualOutputSpatial
 
 SUBDIR_EXEC   = src/exec
 SUBDIR_PV3    = src/pv3Interface
 CONFIG_DEFAULT_DIR = config/defaults
 CONFIG_DIR         = config
-
-SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR) $(SUBDIR_ADJOINT)
-
-SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)  $(SUBDIR_PV3) \
-		     $(SUBDIR_EXEC) $(SUBDIR_ADJOINT)
+SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR)
+SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)  $(SUBDIR_PV3) $(SUBDIR_EXEC)
 
 #      ******************************************************************
 #      *                                                                *
@@ -174,10 +168,6 @@ LINUX_INTEL_OPENMPI:
 	make sumb
 	(cd src/python/f2py && make)
 
-LINUX_INTEL_OPENMPI_PYTHON:
-	@echo "Calling with _PYTHON is no longer necessary"
-	make LINUX_INTEL_OPENMPI
-
 LINUX_GFORTRAN_OPENMPI:
 	make dirs
 	if [ ! -f "config/config.LINUX_GFORTRAN_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_GFORTRAN_OPENMPI.mk" ./config; fi
@@ -186,18 +176,13 @@ LINUX_GFORTRAN_OPENMPI:
 	make sumb
 	(cd src/python/f2py &&  make)
 
-LINUX_GFORTRAN_OPENMPI_PYTHON:
-	make LINUX_GFORTRAN_OPENMPI
-
 LINUX_INTEL_OPENMPI_SCINET:
 	make dirs
 	if [ ! -f "config/config.LINUX_INTEL_OPENMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_SCINET.mk" ./config; fi
 	ln -sf config/config.LINUX_INTEL_OPENMPI_SCINET.mk config.mk
 	ln -sf SUmb_Common_real.mk SUmb_Common.mk
-	(cd src/python/f2py && make)	make sumb
-
-LINUX_INTEL_OPENMPI_SCINET_PYTHON:
-	make LINUX_INTEL_OPENMPI_SCINET
+	make sumb
+	(cd src/python/f2py && make)
 
 LINUX_INTEL_INTELMPI_SCINET:
 	make dirs
@@ -207,9 +192,6 @@ LINUX_INTEL_INTELMPI_SCINET:
 	make sumb
 	(cd src/python/f2py && make)
 
-LINUX_INTEL_INTELMPI_SCINET_PYTHON:
-	make LINUX_INTEL_INTELMPI_SCINET
-
 LINUX_INTEL_OPENMPI_NYX:
 	make dirs
 	if [ ! -f "config/config.LINUX_INTEL_OPENMPI_NYX.mk" ]; then cp "config/defaults/config.LINUX_INTEL_OPENMPI_NYX.mk" ./config; fi
@@ -218,9 +200,20 @@ LINUX_INTEL_OPENMPI_NYX:
 	make sumb
 	(cd src/python/f2py && make)
 
-LINUX_INTEL_OPENMPI_NYX_PYTHON:
-	make LINUX_INTEL_OPENMPI_NYX
+LINUX_INTEL_OPENMPI_PYTHON:
+	@echo "Calling with _PYTHON is no longer necessary."
 
+LINUX_GFORTRAN_OPENMPI_PYTHON:
+	@echo "Calling with _PYTHON is no longer necessary."
+
+LINUX_INTEL_OPENMPI_NYX_PYTHON:
+	@echo "Calling with _PYTHON is no longer necessary."
+
+LINUX_INTEL_OPENMPI_SCINET_PYTHON:
+	@echo "Calling with _PYTHON is no longer necessary."
+
+LINUX_INTEL_INTELMPI_SCINET_PYTHON:
+	@echo "Calling with _PYTHON is no longer necessary."
 
 #      ******************************************************************
 #      *                                                                *
@@ -228,75 +221,39 @@ LINUX_INTEL_OPENMPI_NYX_PYTHON:
 #      *                                                                *
 #      ******************************************************************
 
-
 ABLATION_INTEL_IB:
-
 ABLATION_PG_IB:
-
 ALC_INTEL:
-
 ALTIX:
-
 ALTIX_MPI:
-
 ALTIX_MPICH2:
-
 APPLE_MAC_NAG:
-
 APPLE_MAC_NAG_MPICH:
-
 APPLE_MAC_XLF:
-
 APPLE_MAC_XLF_MPICH:
-
 ASCI_QSC:
-
 FLASH_INTEL:
-
 FLASH_PG:
-
 IBM_BLUEGENE:
-
 IBM_DATASTAR:
-
 LINUX_ABSOFT:
-
 LINUX_G95:
-
 LINUX_G95_MPICH:
-
 LINUX_G95_OPENMPI:
-
 LINUX_G95_OPENMPI_PYTHON:
-
 LINUX_INTEL:
-
 LINUX_INTEL_MPICH:
-
 LINUX_PG:
-
 LINUX_PG_MPICH:
-
 REDHOT_IFC_ETHERNET:
-
 REDHOT_IFC_MYRINET:
-
 REDHOT_PG_ETHERNET:
-
 REDHOT_PG_MYRINET:
-
 REDSTORM:
-
 SGI:
-
 SGI_MPI_ORIGIN:
-
 SGI_N32:
-
 SGI_N32_MPICH:
-
 SGI_N32_MPI_ORIGIN:
-
 SICORTEX:
-
 SICORTEX_MPI:

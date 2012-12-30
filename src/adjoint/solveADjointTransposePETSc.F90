@@ -34,8 +34,7 @@
 !
       ! norm - Norm of error
 
-      real(kind=realType)   :: norm,temp
-
+      real(kind=realType)   :: norm
       real(kind=realType), dimension(2) :: time
       real(kind=realType)               :: timeAdjLocal, timeAdj,l2abs,curRes
 
@@ -63,9 +62,9 @@
       if (restartADjoint) then
          !The user wants to restart the adjoint from the last point. Set
          !initial guess non-zero to true instead of zeroing the vector
-         call KSPSetInitialGuessNonzero(ksp,PETSC_TRUE,PETScIerr)
+         call KSPSetInitialGuessNonzero(adjointKSP,PETSC_TRUE,PETScIerr)
       else
-         call VecSet(psi,PETScZero,PETScIerr)
+         call VecSet(psi, zero, PETScIerr)
          call EChk(PETScIerr,__FILE__,__LINE__)
       end if
 !
@@ -78,7 +77,7 @@
 
       adjResHist = 0.0_realType
 
-      call KSPSetResidualHistory(ksp, adjResHist, adjMaxIter, &
+      call KSPSetResidualHistory(adjointKSP, adjResHist, adjMaxIter, &
                                  PETSC_FALSE, PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
 
@@ -88,7 +87,7 @@
       ! problem this vector should be zero at this point. We compute:
       ! adjointRHS = -adjointRHS + dJdw
       
-      call VecAYPX(adjointRHS,-1.0,dJdw,PETScIerr)
+      call VecAYPX(adjointRHS,-one,dJdw,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
 
 
@@ -97,7 +96,7 @@
       call EChk(PETScIerr,__FILE__,__LINE__)
       
       ! AdjointRes = AdjointRes - adjointRHS
-      call VecAXPY(adjointRes,-1.0,adjointRHS,PETScIerr)
+      call VecAXPY(adjointRes,-one,adjointRHS,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
       
       ! Norm of adjoint Residual
@@ -114,11 +113,11 @@
       end if
 
       ! Set the tolerances
-      call KSPSetTolerances(ksp,adjRelTol,L2Abs,adjDivTol,adjMaxIter,PETScIerr)
+      call KSPSetTolerances(adjointKSP,adjRelTol,L2Abs,adjDivTol,adjMaxIter,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
 
       ! Solve the adjoint system of equations [dR/dW]T psi = adjointRHS
-      call KSPSolve(ksp,adjointRHS,psi,PETScIerr)
+      call KSPSolve(adjointKSP,adjointRHS,psi,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
 
       ! Get new time and compute the elapsed time.
@@ -140,7 +139,7 @@
       call MatMult(dRdWT,psi,adjointRes,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
       
-      call VecAXPY(adjointRes,-1.0,adjointRHS,PETScIerr)
+      call VecAXPY(adjointRes,-one,adjointRHS,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
       
       call VecNorm(adjointRes,NORM_2,norm,PETScIerr)
@@ -150,7 +149,7 @@
       call VecZeroEntries(adjointRHS,PETscIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
 
-      call KSPGetIterationNumber(ksp,adjConvIts,PETScIerr)
+      call KSPGetIterationNumber(adjointKSP,adjConvIts,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
       
       ! Use the root processor to display the output summary, such as
@@ -172,7 +171,7 @@
 
       ! Get the petsc converged reason and set the fail flag
 
-      call KSPGetConvergedReason(ksp, adjointConvergedReason,PETScIerr)
+      call KSPGetConvergedReason(adjointKSP, adjointConvergedReason,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
 
       if (adjointConvergedReason ==  KSP_CONVERGED_RTOL .or. &
