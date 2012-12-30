@@ -36,26 +36,6 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS = adjustInflowAngle.o\
-               applyAllBC_block.o\
-	       block_res.o\
-               block_res_extra.o\
-               block_res_spatial.o\
-               checkInputParam_mod.o\
-	       computeUtau_block.o\
-               gridVelocitiesFineLevel_block.o\
-	       initres_block.o\
-	       initres_block_mod.o\
-               metric_block.o\
-               normalVelocities_block.o\
-               referenceState_mod.o\
-	       residual_block.o\
-	       sa_block.o\
-	       saSolve_mod.o\
-	       timeStep_block.o\
-               turbResidual_block.o\
-	       xhalo_block.o\
-
 FILES_TO_COMPLEXIFY = \
 		adjustInflowAngle.f90\
 		applyAllBC_block.f90\
@@ -78,6 +58,10 @@ FILES_TO_COMPLEXIFY = \
 		xhalo_block.f90\
 
 FILES_TO_COPY = 
+
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
+
 #      ******************************************************************
 #      *                                                        *
 #      * Targets for make.                                              *
@@ -116,5 +100,5 @@ complexify:
 #      *                                                                *
 #      ******************************************************************
 
-src:   $(FF90_OBJECTS) 
+src:   $(OFILES)
 

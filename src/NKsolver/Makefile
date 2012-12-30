@@ -35,18 +35,6 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS = applyPC.o\
-	       computeResidualNK.o\
-	       destroyNKSolver.o\
-	       formFunction.o\
-	       formJacobian.o\
-	       getCurrentResidual.o\
-	       getFreeStreamResidual.o\
-	       NKBenchmark.o\
-	       NKSolver.o\
-	       NKUtilities.o\
-	       resetKSP.o\
-	       setupNKSolver.o\
 
 FILES_TO_COMPLEXIFY = applyPC.F90\
 	       computeResidualNK.F90\
@@ -62,6 +50,10 @@ FILES_TO_COMPLEXIFY = applyPC.F90\
 	       setupNKSolver.F90\
 
 FILES_TO_COPY = 
+
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -100,4 +92,4 @@ complexify:
 #      *                                                                *
 #      ******************************************************************
 
-src:   $(FF90_OBJECTS)
+src:   $(OFILES)

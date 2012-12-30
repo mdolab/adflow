@@ -41,31 +41,6 @@ vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = boundaryList.o\
 		 searchMod.o
 
-FF90_OBJECTS_2 = addHalosToBoundary.o\
-		 badDonorQuality.o\
-		 buildCoarseBoundaryList.o\
-		 buildFineBoundaryList.o\
-		 cellCentroid.o\
-		 changeIblanks.o\
-		 checkOverset.o\
-		 checkSizeBoundaryList.o\
-		 createCoarseBoundary.o\
-		 determineOversetComm.o\
-		 donorSearchCycle.o\
-		 donorWeights.o\
-		 estimateCoarseDonor.o\
-		 exchangeIblanks.o\
-		 fringeToField.o\
-		 mergeComm.o\
-		 numAdjacentField.o\
-		 oversetComm.o\
-		 releaseMemOverset.o\
-		 scan1to1HalosForFringe.o\
-		 setBlockOversetData.o\
-		 stencilSearch.o\
-		 transformCellIndices.o\
-		 updateOversetAllLevels.o
-
 FILES_TO_COMPLEXIFY =  boundaryList.f90\
 		 searchMod.f90\
 		 addHalosToBoundary.f90\
@@ -93,6 +68,8 @@ FILES_TO_COMPLEXIFY =  boundaryList.f90\
 		 transformCellIndices.f90\
 		 updateOversetAllLevels.f90
 
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 
 #      ******************************************************************
 #      *                                                                *
@@ -137,4 +114,4 @@ complexify:
 #      ******************************************************************
 
 src_1:  $(FF90_OBJECTS_1)
-src_2:  $(FF90_OBJECTS_2)
+src_2:  $(OFILES)
