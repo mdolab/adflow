@@ -29,11 +29,7 @@ subroutine setupAdjointMatrix
   usePC = .False.
   useTranspose = .True.
 
-
-
   call setupStateResidualMatrix(drdwt,useAD,usePC,useTranspose)
-
-
 
   if (approxPC) then ! If we need to assemble an approximate PC
      useAD = .False.

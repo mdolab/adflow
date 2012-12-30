@@ -9,6 +9,7 @@
 !     ******************************************************************
 !
 subroutine verifydIdxfile(level,costfunction,filename)
+#ifndef USE_COMPLEX
 !
 !     ******************************************************************
 !     *                                                                *
@@ -49,7 +50,7 @@ subroutine verifydIdxfile(level,costfunction,filename)
 
       real(kind=realType), dimension(4) :: time
       real(kind=realType)               :: timeAdj, timeFD,timeAdjLocal
-
+      real(kind=realType) :: value
       ! > derivative output
 
 
@@ -98,7 +99,7 @@ subroutine verifydIdxfile(level,costfunction,filename)
       !write solution to file....
       do sps = 1,nTimeIntervalsSpectral
          do nn = 1, nDom
-            call setPointersAdj(nn,level,sps)
+            call setPointers(nn,level,sps)
             do k = 1,ke!0,kb
                do j = 1,je!0,jb
                   do i = 1,ie!0,ib
@@ -193,6 +194,7 @@ subroutine verifydIdxfile(level,costfunction,filename)
 !20 format(1x,(e18.6),2x,(e18.6),2x,(e18.6))
   30  format(1x,a,1x,i3,2x,e13.6,1x,5(i2,1x),3x,e13.6,1x,5(i2,1x))
   99  format(a,1x,i6)
+#endif
 #endif
  end subroutine verifydIdxfile
     

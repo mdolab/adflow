@@ -24,6 +24,7 @@
 #      *                                                                *
 #      ******************************************************************
 
+# These are the directories that will be automatically complexified.
 REAL_SRC    =	src/modules       \
 	    	src/ADT           \
 		src/bcdata        \
@@ -38,14 +39,21 @@ REAL_SRC    =	src/modules       \
 	        src/slidingComm   \
 	        src/solver        \
 		src/NKsolver      \
-	        src/stabilityDerivatives \
 	        src/turbulence    \
 	        src/utils         \
 	        src/wallDistance  \
 		src/warping       \
 		src/exec          \
-#		src/bendingMomentAnalysis 
+		src/adjoint       \
+		src/adjoint/residualInputTS \
+		src/forwardAdjoint\
+		src/forwardAdjoint/residualInput\
+		src/bendingMomentAnalysis \
+	        src/stabilityDerivatives \
+		src/adjoint/forcesInput\
+		src/adjoint/stabilityInput\
 
+# These are the directories that will actually be compiled:
 SUBDIR_SRC    = src_cs/modules       \
 		src_cs/ADT           \
 		src_cs/bcdata        \
@@ -60,41 +68,34 @@ SUBDIR_SRC    = src_cs/modules       \
 	        src_cs/slidingComm   \
 	        src_cs/solver        \
 		src_cs/NKsolver      \
-	        src_cs/stabilityDerivatives \
 	        src_cs/turbulence    \
 	        src_cs/utils         \
 	        src_cs/wallDistance  \
 		src_cs/warping       \
-#		src_cs/bendingMomentAnalysis 
+		src_cs/adjoint               \
+		src_cs/forwardAdjoint \
+		src_cs/forwardAdjoint/residualInput \
+		src_cs/bendingMomentAnalysis \
+	        src_cs/stabilityDerivatives \
+		src_cs/adjoint/residualInputTS \
+		src_cs/adjoint/forcesInput\
+		src_cs/adjoint/stabilityInput\
+# 		src_cs/adjoint/ADFirstAidKit \
+# 		src_cs/adjoint/stabilityOutput\
+# 		src_cs/adjoint/forcesOutput\
+# 		src_cs/adjoint/residualOutputTS\
+# 		src_cs/forwardAdjoint/residualOutput\
+# 		src_cs/forwardAdjoint/residualOutputExtra\
+# 		src_cs/forwardAdjoint/residualOutputSpatial\
+# 		src_cs/bendingMomentAnalysis/bendingOutput\
 
-
-
-SUBDIR_ADJOINT = # src/adjoint               \
-#                  src/adjoint/ADFirstAidKit \
-#                  src/adjoint/residualInput \
-#                  src/adjoint/residualOutput\
-#                  src/adjoint/stabilityInput\
-#                  src/adjoint/stabilityOutput\
-#                  src/adjoint/forcesInput\
-#                  src/adjoint/forcesOutput\
-#                  src/adjoint/residualInputTS \
-#                  src/adjoint/residualOutputTS\
-#                  src/bendingMomentAnalysis/bendingOutput\
-#                  src/forwardAdjoint \
-#                  src/forwardAdjoint/residualInput \
-#                  src/forwardAdjoint/residualOutput\
-#                  src/forwardAdjoint/residualOutputExtra\
-#                  src/forwardAdjoint/residualOutputSpatial
 
 SUBDIR_EXEC   = src_cs/exec
-SUBDIR_PV3    = src/pv3Interface
+SUBDIR_PV3    = src_cs/pv3Interface
 CONFIG_DEFAULT_DIR = config/defaults
 CONFIG_DIR         = config
-
-SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR) $(SUBDIR_ADJOINT)
-
-SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)#  $(SUBDIR_PV3) \
-#		     $(SUBDIR_EXEC) $(SUBDIR_ADJOINT)
+SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR)
+SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)  $(SUBDIR_PV3) $(SUBDIR_EXEC)
 
 #      ******************************************************************
 #      *                                                                *
@@ -168,7 +169,8 @@ clean:
 	     	 echo "Removing Complex Directory $$subdir"; \
 	         (rm -fr $$subdir) || exit 1;  \
 	     done
-
+	(cd src_cs/exec && make clean)
+	(cd src_cs/python/f2py && make clean)
 	rm -f *~ config.mk;
 	rm -f lib_cs/lib* mod_cs/* obj_cs/*
 
@@ -210,11 +212,8 @@ LINUX_INTEL_OPENMPI:
 	ln -sf config/config.LINUX_INTEL_OPENMPI.mk config.mk
 	ln -sf SUmb_Common_CS.mk SUmb_Common.mk
 	make -f Makefile_CS sumb
+	(cd src/python/f2py && make complexify)
 	(cd src_cs/python/f2py && make)
-
-LINUX_INTEL_OPENMPI_PYTHON:
-	@echo "Calling with _PYTHON is no longer necessary"
-	make -f Makefile_CS LINUX_INTEL_OPENMPI
 
 LINUX_GFORTRAN_OPENMPI:
 	make dirs
@@ -222,10 +221,8 @@ LINUX_GFORTRAN_OPENMPI:
 	ln -sf config/config.LINUX_GFORTRAN_OPENMPI.mk config.mk
 	ln -sf SUmb_Common_CS.mk SUmb_Common.mk
 	make -f Makefile_CS sumb
+	(cd src/python/f2py && make complexify)
 	(cd src_cs/python/f2py &&  make)
-
-LINUX_GFORTRAN_OPENMPI_PYTHON:
-	make -f Makefile_CS LINUX_GFORTRAN_OPENMPI
 
 LINUX_INTEL_OPENMPI_SCINET:
 	make -f Makefile_CS dirs
@@ -233,10 +230,8 @@ LINUX_INTEL_OPENMPI_SCINET:
 	ln -sf config/config.LINUX_INTEL_OPENMPI_SCINET.mk config.mk
 	ln -sf SUmb_Common_CS.mk SUmb_Common.mk
 	make -f Makefile_CS sumb  
+	(cd src/python/f2py && make complexify)
 	(cd src_cs/python/f2py && make)	
-
-LINUX_INTEL_OPENMPI_SCINET_PYTHON:
-	make -f Makefile_CS LINUX_INTEL_OPENMPI_SCINET
 
 LINUX_INTEL_INTELMPI_SCINET:
 	make dirs
@@ -244,10 +239,8 @@ LINUX_INTEL_INTELMPI_SCINET:
 	ln -sf config/config.LINUX_INTEL_INTELMPI_SCINET.mk config.mk
 	ln -sf SUmb_Common_CS.mk SUmb_Common.mk
 	make -f Makefile_CS sumb
+	(cd src/python/f2py && make complexify)
 	(cd src_cs/python/f2py && make)
-
-LINUX_INTEL_INTELMPI_SCINET_PYTHON:
-	make -f Makefile_CS LINUX_INTEL_INTELMPI_SCINET
 
 LINUX_INTEL_OPENMPI_NYX:
 	make -f Makefile_CS dirs
@@ -255,11 +248,23 @@ LINUX_INTEL_OPENMPI_NYX:
 	ln -sf config/config.LINUX_INTEL_OPENMPI_NYX.mk config.mk
 	ln -sf SUmb_Common_CS.mk SUmb_Common.mk
 	make -f Makefile_CS sumb
+	(cd src/python/f2py && make complexify)	
 	(cd src_cs/python/f2py && make)
 
-LINUX_INTEL_OPENMPI_NYX_PYTHON:
-	make -f Makefile_CS LINUX_INTEL_OPENMPI_NYX
+LINUX_INTEL_OPENMPI_PYTHON:
+	@echo "Calling with _PYTHON is no longer necessary."
 
+LINUX_GFORTRAN_OPENMPI_PYTHON:
+	@echo "Calling with _PYTHON is no longer necessary."
+
+LINUX_INTEL_OPENMPI_NYX_PYTHON:
+	@echo "Calling with _PYTHON is no longer necessary."
+
+LINUX_INTEL_OPENMPI_SCINET_PYTHON:
+	@echo "Calling with _PYTHON is no longer necessary."
+
+LINUX_INTEL_INTELMPI_SCINET_PYTHON:
+	@echo "Calling with _PYTHON is no longer necessary."
 
 #      ******************************************************************
 #      *                                                                *
@@ -267,75 +272,39 @@ LINUX_INTEL_OPENMPI_NYX_PYTHON:
 #      *                                                                *
 #      ******************************************************************
 
-
 ABLATION_INTEL_IB:
-
 ABLATION_PG_IB:
-
 ALC_INTEL:
-
 ALTIX:
-
 ALTIX_MPI:
-
 ALTIX_MPICH2:
-
 APPLE_MAC_NAG:
-
 APPLE_MAC_NAG_MPICH:
-
 APPLE_MAC_XLF:
-
 APPLE_MAC_XLF_MPICH:
-
 ASCI_QSC:
-
 FLASH_INTEL:
-
 FLASH_PG:
-
 IBM_BLUEGENE:
-
 IBM_DATASTAR:
-
 LINUX_ABSOFT:
-
 LINUX_G95:
-
 LINUX_G95_MPICH:
-
 LINUX_G95_OPENMPI:
-
 LINUX_G95_OPENMPI_PYTHON:
-
 LINUX_INTEL:
-
 LINUX_INTEL_MPICH:
-
 LINUX_PG:
-
 LINUX_PG_MPICH:
-
 REDHOT_IFC_ETHERNET:
-
 REDHOT_IFC_MYRINET:
-
 REDHOT_PG_ETHERNET:
-
 REDHOT_PG_MYRINET:
-
 REDSTORM:
-
 SGI:
-
 SGI_MPI_ORIGIN:
-
 SGI_N32:
-
 SGI_N32_MPICH:
-
 SGI_N32_MPI_ORIGIN:
-
 SICORTEX:
-
 SICORTEX_MPI:

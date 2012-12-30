@@ -163,9 +163,6 @@
       call f77flush()
       call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
 
-      if( PETScRank==0 ) &
-        print "(a)", "# ... Krylov subspace created;"
-
 #endif
 
       end subroutine solverADjoint

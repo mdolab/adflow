@@ -8,9 +8,9 @@ subroutine createCouplingPETScVars
   !     ******************************************************************
   !
   use ADjointPETSc, only: dFdx, dFdw, PETScIerr
-  use ADjointVars     ! nCellsLocal,nNodesLocal, nDesignExtra
-  use communication   ! myID, nProc
-  use inputTimeSpectral !nTimeIntervalsSpectral
+  use ADjointVars   
+  use communication
+  use inputTimeSpectral
   use flowVarRefState
   implicit none
 
@@ -32,7 +32,7 @@ subroutine createCouplingPETScVars
   !
 
 
-  nDimW = nw * nCellsLocal*nTimeIntervalsSpectral
+  nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
 
   call getForceSize(nDimS,nTS)
   nDimS = nDimS * 3 *nTimeIntervalsSpectral! Multiply by 3 for each

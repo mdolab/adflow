@@ -143,7 +143,7 @@
    &        velygrid0 + rotationmatrix(3, 3)*velzgrid0
    ELSE IF (tsalphamode) THEN
    ! get the baseline alpha and determine the liftIndex
-   CALL GETDIRANGLE(veldirfreestream, liftdirection, liftindex, &
+   CALL GETDIRANGLETS(veldirfreestream, liftdirection, liftindex, &
    &                    alpha, beta)
    !Determine the alpha for this time instance
    alphaincrement = TSALPHA(degreepolalpha, coefpolalpha, &
@@ -151,7 +151,7 @@
    &        sincoeffouralpha, t(1))
    alphats = alpha + alphaincrement
    !Determine the grid velocity for this alpha
-   CALL ADJUSTINFLOWANGLEADJ(alphats, beta, veldir, liftdir, &
+   CALL ADJUSTINFLOWANGLEADJTS(alphats, beta, veldir, liftdir, &
    &                             dragdir, liftindex)
    !do I need to update the lift direction and drag direction as well?
    !set the effictive grid velocity for this time interval
@@ -161,7 +161,7 @@
    ! if (myid ==0) print *,'base velocity',machgrid, velxGrid0 , velyGrid0 , velzGrid0 
    ELSE IF (tsbetamode) THEN
    ! get the baseline alpha and determine the liftIndex
-   CALL GETDIRANGLE(veldirfreestream, liftdirection, liftindex, &
+   CALL GETDIRANGLETS(veldirfreestream, liftdirection, liftindex, &
    &                    alpha, beta)
    !Determine the alpha for this time instance
    betaincrement = TSBETA(degreepolbeta, coefpolbeta, &
@@ -169,7 +169,7 @@
    &        , t(1))
    betats = beta + betaincrement
    !Determine the grid velocity for this alpha
-   CALL ADJUSTINFLOWANGLEADJ(alpha, betats, veldir, liftdir, &
+   CALL ADJUSTINFLOWANGLEADJTS(alpha, betats, veldir, liftdir, &
    &                             dragdir, liftindex)
    !do I need to update the lift direction and drag direction as well?
    !set the effictive grid velocity for this time interval
@@ -420,7 +420,7 @@
    !if (myid==0) print *,'rotrate, gridvelocity',rotRate,cgnsDoms(j)%rotRate
    IF (usewindaxis) THEN
    !determine the current angles from the free stream velocity
-   CALL GETDIRANGLE(veldirfreestream, liftdirection, liftindex, &
+   CALL GETDIRANGLETS(veldirfreestream, liftdirection, liftindex, &
    &                      alpha, beta)
    IF (liftindex .EQ. 2) THEN
    ! different coordinate system for aerosurf
@@ -481,7 +481,7 @@
    ! endif
    !!$             if (useWindAxis)then
    !!$                !determine the current angles from the free stream velocity
-   !!$                call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+   !!$                call getDirAngleTS(velDirFreestream,liftDirection,liftIndex,alpha,beta)
    !!$                !Rotate the rotation rate from the wind axis back to the local body axis
    !!$                !checkt he relationship between the differnt degrees of freedom!
    !!$                rotRateTrans(1,1)=cos(alpha)*cos(beta)

@@ -1,4 +1,4 @@
-subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
+subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose)
 #ifndef USE_NO_PETSC
   !     ******************************************************************
   !     *                                                                *
@@ -133,7 +133,7 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
 
         ! Set pointers and derivative pointers
         call setPointers_d(nn,1,sps)
-        call setPointersAdj(nn,1,sps)
+        call setPointers(nn,1,sps)
 
 !         do k=0,kb
 !            do j=0,jb
@@ -181,7 +181,12 @@ subroutine setupStateResidualMatrix(matrix,useAD,usePC,useTranspose)
              
               ! Run Block-based residual 
               if (useAD) then
+#ifndef USE_COMPLEX
                  call block_res_d(nn,sps,.False.,.False.)
+#else
+                 print *,'Forward AD routines are not complexified'
+                 stop
+#endif
               else
                  call block_res(nn,sps,.False.,.False.)
               end if
@@ -345,11 +350,17 @@ contains
     ! Sets a block at icol,irow with transpose of blk if useTranspose is True
 
     implicit none
+#ifndef USE_COMPLEX
     real(kind=realType), dimension(nw,nw) :: blk
+#else
+    complex(kind=realType), dimension(nw,nw) :: blk
+#endif
  
+#ifndef USE_COMPLEX
     if (isnan(sum(blk))) then
        call EChk(1,__FILE__,__LINE__)
     end if
+#endif
 
     if (useTranspose) then
        call MatSetValuesBlocked(matrix,1,icol,1,irow,transpose(blk),&
@@ -363,6 +374,7 @@ contains
 
   end subroutine setBlock
 
+#ifndef USE_COMPLEX
   subroutine writeOutMatrix()
 
     integer(kind=intType) :: nrows,ncols,icell,jcell,kcell
@@ -372,7 +384,7 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
     do nn=1,nDom
-       call setPointersAdj(nn,1,1)
+       call setPointers(nn,1,1)
        do kcell=2,kl
           do jcell=2,jl
              do icell=2,il
@@ -416,6 +428,6 @@ contains
 
 30  format(1x,I4,' | ', I4,' ',I4,'  ',I4,' | ',I4,' ',I4,' ',I4,' | ',I4,'  ',I4,' ',f20.6)
   end subroutine writeOutMatrix
-
+#endif
 #endif
 end subroutine setupStateResidualMatrix

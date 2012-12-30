@@ -178,7 +178,7 @@
          print *,'domain',nn
          groundLevel = 1
          sps = 1
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          allocate(flowDoms(nn,level,sps)%dwp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
          allocate(flowDoms(nn,level,sps)%dwm(0:ib,0:jb,0:kb,1:nw),stat=ierr)
          allocate(flowDoms(nn,level,sps)%dwtemp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
@@ -270,7 +270,7 @@
 
          spectralLoop: do sps=1,nTimeIntervalsSpectral
             print *,'Setting Pointers',nn,level,sps
-            call setPointersAdj(nn,level,sps)
+            call setPointers(nn,level,sps)
 
             ! Loop over location of output (R) cell of residual
             do kCell = 2, kl
@@ -601,7 +601,7 @@
 
          spectralLoop2: do sps=1,nTime
 !            print *,'setting Pointers'
-            call setPointersAdj(nn,level,sps)
+            call setPointers(nn,level,sps)
 
 
                ! Loop over location of output (R) cell of residual
@@ -737,7 +737,7 @@
          print *,'domain',nn
          groundLevel = 1
          sps = 1
-         call setPointersAdj(nn,1,sps)
+         call setPointers(nn,1,sps)
          deallocate(flowDoms(nn,level,sps)%dwp)
          deallocate(flowDoms(nn,level,sps)%dwm)
          deallocate(flowDoms(nn,level,sps)%dwtemp)                  

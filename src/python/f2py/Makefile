@@ -41,6 +41,10 @@ PYTHON_OBJECTS = fortranobject.o \
 
 default: all
 
+complexify: 
+	cp get_f2py.py ../../../src_cs/python/f2py
+	python pyf_preprocessor.py complex sumb.pyf
+	cp sumb.pyf.autogen ../../../src_cs/python/f2py
 all:
 
 # Generate Python inlude directory
@@ -61,11 +65,11 @@ all:
 	@echo f2py root directory: $(F2PY_ROOT)
 	@echo "#------------------------------------------------------#"
 
-#       need to have f2py_f2cmap in this folder....
-	cp f2py_f2cmap.ref .f2py_f2cmap
+# Run the preprocessor on the pyf file:
+	python pyf_preprocessor.py real sumb.pyf 
 
 # Run f2py to get sumbmodule.c and sumb-f2pywrapper2.f90
-	f2py sumb.pyf
+	f2py sumb.pyf.autogen
 
 # Compile c wrapper
 	$(CC) $(CC_FLAGS) $(PYTHON_INCLUDES) -I$(NUMPY_INCLUDES) \

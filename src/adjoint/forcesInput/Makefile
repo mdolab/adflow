@@ -48,8 +48,22 @@ FF90_OBJECTS = 	computePressureForcesAdj.o\
 		getDirVectorForces.o\
 		vectorRotationForces.o\
                 verifydCfdx.o
-#                verifydCfdwFile.o
 
+FILES_TO_COMPLEXIFY  = \
+		computePressureForcesAdj.f90\
+	        computeForcesPressureAdj.f90\
+	        computeForcesAdj.f90\
+	        bcEulerWallForcesAdj.f90\
+	        getSurfaceNormalsForcesAdj.f90\
+	        forcesAdj.f90\
+	        verifyForces.F90\
+	        computeForceAndMomentAdj.f90\
+		adjustInflowAngleForcesAdj.f90\
+		getDirVectorForces.f90\
+		vectorRotationForces.f90\
+                verifydCfdx.F90
+
+FILES_TO_COPY = 
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -64,6 +78,22 @@ all:
 clean:
 	@echo "        Making clean in adjoint... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
+
+complexify:
+	@for file in $(FILES_TO_COMPLEXIFY); do \
+		if [ $$file -nt ../../../src_cs/adjoint/forcesInput/$$file -o ! -e ../../../src_cs/adjoint/forcesInput/$$file ]; then \
+			python ../../complexify.py $$file; \
+			mv c_$$file ../../../src_cs/adjoint/forcesInput/$$file; \
+		fi;\
+		done
+	@for file in $(FILES_TO_COPY); do \
+		if [ $$file -nt ../../../src_cs/adjoint/forcesInput/$$file -o ! -e ../../../src_cs/adjoint/forcesInput/$$file ]; then \
+			echo copying file $$file; \
+			cp $$file ../../../src_cs/adjoint/forcesInput/$$file; \
+		fi;\
+		done
+
+	cp Makefile ../../../src_cs/adjoint/forcesInput
 
 #      ******************************************************************
 #      *                                                                *
