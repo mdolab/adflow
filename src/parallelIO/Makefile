@@ -35,17 +35,6 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS = determineBytesCommChunk.o\
-	       determineCommSizesIO.o\
-	       determineMyChunk.o\
-	       determineVarLocalIO.o\
-	       getIndices.o\
-	       prepareReadPlot3D.o\
-	       prepareWritePlot3D.o\
-	       readPlot3DVar.o\
-	       releaseMemIOPlot3D.o\
-	       sendBufNonLocalIO.o\
-	       writePlot3DVar.o
 
 FILES_TO_COMPLEXIFY = determineBytesCommChunk.f90\
 	       determineCommSizesIO.f90\
@@ -60,6 +49,10 @@ FILES_TO_COMPLEXIFY = determineBytesCommChunk.f90\
 	       writePlot3DVar.f90
 
 FILES_TO_COPY = 
+
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -99,4 +92,4 @@ complexify:
 #      *                                                                *
 #      ******************************************************************
 
-src:	$(FF90_OBJECTS)
+src:	$(OFILES)

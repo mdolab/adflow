@@ -36,56 +36,6 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS = computeAeroCoef.o        \
-	       computeObjPartials.o\
-	       copyADjointStencil.o     \
-	       createPETScKsp.o         \
-	       createPETScVars.o        \
-	       createStatePETScVars.o   \
-	       createSpatialPETScVars.o \
-	       createCouplingPETScVars.o\
-	       createExtraPETScVars.o   \
-	       destroyPETScVars.o       \
-	       preallocation.o          \
-               finalizePETSc.o          \
-	       getSolution.o            \
-	       getADjoint.o             \
-	       getdRdXvPsi.o            \
-	       getdRdaPsi.o             \
-	       getdRdwTVec.o            \
-	       getdFdxVec.o             \
-	       initializePETSc.o        \
-	       preprocessingADjoint.o   \
-	       releaseMemADjoint.o      \
-	       setADjoint.o             \
-	       setupAllResidualMatrices.o\
-               setupPETScKsp.o         \
-               solveADjointTransposePETSc.o\
-               solverADjoint.o          \
-	       updateFlow.o             \
-	       updateReferencePoint.o   \
-	       updateRotationRate.o     \
-	       setupCouplingMatrixStruct.o\
-	       agumentRHS.o\
-	       matrixInfo.o\
-               adjoint_stencils.o\
- #             verifydRdwFile.o\
- #             verifydRdxFile.o  \
- #             verifydRdExtraFile.o    
-#	       verifyRAdj.o\
-#	       verifyResiduals.o\
-#	       verifydRdw.o             \
-#              verifydRdwFile.o         \
-#              verifydRdwFileFD.o       \
-#	       verifydRdx.o             \
-#	       verifydRdExtra.o         \
-#	       verifydRdExtraFDAD.o      \
-#	       verifydRdxFile.o             \
-#              verifydRdxsFile.o             \
-#	       verifydRdxFileFD.o             \
-
-CC_OBJECTS   = initPETScWrap.o
-
 FILES_TO_COMPLEXIFY = \
 		computeAeroCoef.f90        \
 		computeObjPartials.F90\
@@ -123,6 +73,9 @@ FILES_TO_COPY = \
 		createStatePETScVars.F90   \
 		createCouplingPETScVars.F90\
 		createExtraPETScVars.F90   \
+
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 
 #      ******************************************************************
 #      *                                                                *
@@ -162,4 +115,4 @@ complexify:
 #      *                                                                *
 #      ******************************************************************
 
-src:	$(FF90_OBJECTS) $(CC_OBJECTS)
+src:	$(OFILES)

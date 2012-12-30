@@ -40,66 +40,6 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = restartMod.o
 
-FF90_OBJECTS_2 = allocConvArrays.o\
-		 allocMemFlovar.o\
-		 allocTimeArrays.o\
-		 computePressure.o\
-		 copySpectralSolution.o\
-		 determineSolFileNames.o\
-		 getSortedVarNumbers.o\
-		 getSortedZoneNumbers.o\
-		 initBleedsFromHalos.o\
-		 initDepvarAndHalos.o\
-		 initFlow.o\
-		 initFlowfield.o\
-		 initializeHalos.o\
-		 interpolateSpectralSolution.o\
-		 readConvHistory.o\
-		 readConvHistoryPlot3D.o\
-		 readDensity.o\
-		 readDensityPlot3D.o\
-		 readEnergy.o\
-		 readEnergyPlot3D.o\
-		 readPressure.o\
-		 readPressurePlot3D.o\
-		 readRestartFile.o\
-		 readRestartFilePlot3D.o\
-		 readRestartVariable.o\
-		 readTimeHistory.o\
-		 readTimeHistoryPlot3D.o\
-		 readTurbEddyVis.o\
-		 readTurbEddyVisPlot3D.o\
-		 readTurbKwType.o\
-		 readTurbKwTypePlot3D.o\
-		 readTurbSA.o\
-		 readTurbSAPlot3D.o\
-		 readTurbV2f.o\
-		 readTurbV2fPlot3D.o\
-		 readTurbvar.o\
-		 readTurbvarPlot3D.o\
-		 readXmomentum.o\
-		 readXmomentumPlot3D.o\
-		 readXvelocity.o\
-		 readXvelocityPlot3D.o\
-		 readYmomentum.o\
-		 readYmomentumPlot3D.o\
-		 readYvelocity.o\
-		 readYvelocityPlot3D.o\
-		 readZmomentum.o\
-		 readZmomentumPlot3D.o\
-		 readZvelocity.o\
-		 readZvelocityPlot3D.o\
-		 referenceState.o\
-		 releaseExtraMemBCs.o\
-		 scaleFactors.o\
-		 setFlowInfinityState.o\
-		 setIOVar.o\
-		 setGlobalCellsAndNodes.o\
-		 setPressureAndComputeEnergy.o\
-		 setUniformFlow.o\
-		 timeSpectralCoef.o\
-		 timeSpectralMatrices.o
-
 FILES_TO_COMPLEXIFY= restartMod.f90\
 		 allocConvArrays.f90\
 		 allocMemFlovar.f90\
@@ -161,6 +101,8 @@ FILES_TO_COMPLEXIFY= restartMod.f90\
 		 timeSpectralCoef.f90\
 		 timeSpectralMatrices.f90
 
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 
 #      ******************************************************************
 #      *                                                                *
@@ -204,4 +146,4 @@ complexify:
 #      ******************************************************************
 
 src_1:  $(FF90_OBJECTS_1)
-src_2:  $(FF90_OBJECTS_2)
+src_2:  $(OFILES)

@@ -40,56 +40,6 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = turbMod.o
 
-FF90_OBJECTS_2 = applyAllTurbBC.o\
-		 bcEddyNoWall.o\
-		 bcEddyWall.o\
-		 bcTurbFarfield.o\
-		 bcTurbInflow.o\
-		 bcTurbInterface.o\
-		 bcTurbOutflow.o\
-		 bcTurbSymm.o\
-		 bcTurbTreatment.o\
-		 bcTurbWall.o\
-		 bl.o\
-		 computeEddyViscosity.o\
-		 curveFit.o\
-		 f1SST.o\
-		 initCurveFitDataKtau.o\
-		 initCurveFitDataKw.o\
-		 initCurveFitDataKwMod.o\
-		 initCurveFitDataSa.o\
-		 initCurveFitDataSae.o\
-		 initCurveFitDataSST.o\
-		 initCurveFitDataVf.o\
-		 initKOmega.o\
-		 keSolve.o\
-		 kt.o\
-		 ktCDterm.o\
-		 ktSolve.o\
-		 kw.o\
-		 kwCDterm.o\
-		 kwSolve.o\
-		 prodKatoLaunder.o\
-		 prodSmag2.o\
-		 prodWmag2.o\
-		 sa.o\
-		 saNuFromEddyRatio.o\
-		 saSolve.o\
-		 SST.o\
-		 SSTSolve.o\
-		 tdia3.o\
-		 turb2ndHalo.o\
-		 turbAdvection.o\
-		 turbBCNSWall.o\
-		 turbResidual.o\
-		 turbSolveSegregated.o\
-		 unsteadyTurbSpectral.o\
-		 unsteadyTurbTerm.o\
-		 vf.o\
-		 vfScale.o\
-		 vfSolve.o\
-		 writeLoglaw.o\
-
 FILES_TO_COMPLEXIFY = turbMod.f90\
 		 applyAllTurbBC.f90\
 		 bcEddyNoWall.f90\
@@ -142,6 +92,10 @@ FILES_TO_COMPLEXIFY = turbMod.f90\
 		 writeLoglaw.f90\
 
 FILES_TO_COPY = 
+
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -185,4 +139,4 @@ complexify:
 #      ******************************************************************
 
 src_1:  $(FF90_OBJECTS_1)
-src_2:  $(FF90_OBJECTS_2)
+src_2:  $(OFILES)

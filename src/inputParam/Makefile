@@ -40,28 +40,6 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = localModules.o
 
-FF90_OBJECTS_2 = analyzeString.o\
-		 checkInputParam.o\
-		 checkMonitor.o\
-		 checkOutput.o\
-		 createTemplate.o\
-		 defaultMonitor.o\
-		 defaultSurfaceOut.o\
-		 defaultVolumeOut.o\
-		 extractMGInfo.o\
-		 monitorVariables.o\
-		 readCpTempCurveFits.o\
-		 readParamFile.o\
-		 dummyReadParamFile.o\
-		 setDefaultValues.o\
-		 setEquationParameters.o\
-		 setIterationParam.o\
-		 setStageCoeffExplicitRK.o\
-		 setStageCoeffImplicitRK.o\
-		 surfaceVariables.o\
-		 volumeVariables.o\
-		 writeInputParam.o
-
 FILES_TO_COMPLEXIFY =localModules.f90\
 		 analyzeString.f90\
 		 checkInputParam.F90\
@@ -85,6 +63,8 @@ FILES_TO_COMPLEXIFY =localModules.f90\
 		 volumeVariables.f90\
 		 writeInputParam.f90
 
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 
 #      ******************************************************************
 #      *                                                                *
@@ -126,4 +106,4 @@ complexify:
 #      ******************************************************************
 
 src_1:  $(FF90_OBJECTS_1)
-src_2:  $(FF90_OBJECTS_2)
+src_2:  $(OFILES)

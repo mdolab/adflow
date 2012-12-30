@@ -35,84 +35,6 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS = applyAllBC.o\
-	       bcBleedInflow.o\
-	       bcDomainInterface.o\
-	       bcEulerWall.o\
-	       bcExtrap.o\
-	       bcFarfield.o\
-	       bcMdot.o\
-	       bcNSWallAdiabatic.o\
-	       bcNSWallIsothermal.o\
-	       bcSubsonicInflow.o\
-	       bcSubsonicOutflow.o\
-	       bcSupersonicInflow.o\
-	       bcSymm.o\
-	       bcSymmPolar.o\
-	       bcThrust.o\
-	       bleedFlowParameters.o\
-	       calMassFlux.o\
-	       coeffConvergenceCheck.o\
-	       computeInletMassFlowFullWheel.o\
-	       computeLamViscosity.o\
-	       computeUtau.o\
-	       convergenceHeader.o\
-	       convergenceInfo.o\
-	       componentsBreakDownPrintout.o\
-	       derivativeRotMatrixRigid.o\
-	       eulerWallsPresent.o\
-	       executeMGCycle.o\
-	       extrapolate2ndHalo.o\
-               farFieldDrag.o\
-	       farFieldInducedDrag.o\
-	       forcesAndMoments.o\
-	       forcesAndMomentsCBD.o\
-	       farFieldDrag.o\
-	       getDirAngle.o\
-	       getDirVector.o\
-	       gridVelocitiesCoarseLevels.o\
-	       gridVelocitiesFineLevel.o\
-	       initres.o\
-	       inviscidCentralFlux.o\
-	       inviscidDissFluxCusp.o\
-	       inviscidDissFluxCuspCoarse.o\
-	       inviscidDissFluxMatrix.o\
-	       inviscidDissFluxMatrixCoarse.o\
-	       inviscidDissFluxScalar.o\
-	       inviscidDissFluxScalarCoarse.o\
-	       inviscidUpwindFlux.o\
-	       killFunctions.o\
-	       level0CoolingModel.o\
-	       maxEddyv.o\
-	       maxHdiffMach.o\
-	       normalVelocities.o\
-	       residual.o\
-	       residual2.o\
-	       residualAveraging.o\
-	       rungeKuttaSmoother.o\
-	       setCoefTimeIntegrator.o\
-	       setCornerRowHalos.o\
-	       setCorrectionsCoarseHalos.o\
-	       setCycleStrategy.o\
-	       shiftSolution.o\
-	       slipVelocities.o\
-	       solveState.o\
-	       solver.o\
-	       solverSteady.o\
-               solverUnsteadyExplicitRK.o\
-               solverUnsteadyImplicitRK.o\
-	       solverUnsteadyBDF.o\
-	       solverUnsteadyMD.o\
-	       timeStep.o\
-	       transferToCoarseGrid.o\
-	       transferToFineGrid.o\
-	       unsteadyHeader.o\
-	       utauWF.o\
-	       vectorRotation.o\
-	       viscousFlux.o\
-	       writeFamilyMassflow.o
-
-CC_OBJECTS   = connect_signals.o
 
 FILES_TO_COMPLEXIFY = applyAllBC.f90\
 	       bcBleedInflow.f90\
@@ -193,6 +115,8 @@ FILES_TO_COMPLEXIFY = applyAllBC.f90\
 FILES_TO_COPY = connect_signals.c\
 		convergenceHeader.f90\
 
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 
 #      ******************************************************************
 #      *                                                                *
@@ -232,4 +156,4 @@ complexify:
 #      *                                                                *
 #      ******************************************************************
 
-src:   $(FF90_OBJECTS) $(CC_OBJECTS)
+src:	$(OFILES)

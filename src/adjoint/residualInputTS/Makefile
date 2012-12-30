@@ -36,48 +36,6 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_MODULES = 
-
-FF90_OBJECTS = adjustInflowAngleAdjTS.o   \
-               applyAllBCAdjTS.o          \
-	       bcSymmAdjTS.o              \
-	       bcEulerWallAdjTS.o         \
-	       bcFarfieldAdjTS.o          \
-	       checkInputParamAdjTS.o     \
-	       checkOverlapAdjTS.o        \
-               checkXOverlapAdjTS.o       \
-	       computeGammaAdjTS.o        \
-	       computePressureAdjTS.o     \
-	       computeRAdjTS.o            \
-	       computeVolAdjTS.o        \
-               derivativeRigidRotAngleAdjTS.o\
-	       derivativeRotMatrixRigidAdjTS.o\
-	       etotArrayAdjTS.o           \
-	       extractBCStatesAdjTS.o     \
-	       extrapolate2ndHaloAdjTS.o  \
-	       getDirAngleTS.o            \
-	       getDirVectorTS.o           \
-	       gridVelocitiesFineLevelAdjTS.o \
-	       initresAdjTS.o             \
-	       inviscidCentralFluxAdjTS.o \
-               inviscidDissFluxScalarAdjTS.o \
-	       inviscidUpwindFluxAdjTS.o  \
-	       leftRightStateAdjTS.o      \
-	       metricAdjTS.o              \
-	       normalVelocitiesAdjTS.o    \
-	       referenceStateAdjTS.o      \
-	       replaceBCStatesAdjTS.o     \
-	       residualAdjTS.o            \
-	       riemannFluxAdjTS.o         \
-	       rigidRotAngleAdjTS.o       \
-	       rotMatrixRigidBodyAdjTS.o     \
-	       setFlowInfinityStateAdjTS.o\
-	       timeStepAdjTS.o            \
-	       vectorRotationTS.o         \
-	       xhaloAdjTS.o
-
-CC_OBJECTS   = 
-
 FILES_TO_COMPLEXIFY = \
 		adjustInflowAngleAdjTS.f90   \
 		applyAllBCAdjTS.f90          \
@@ -118,6 +76,10 @@ FILES_TO_COMPLEXIFY = \
 		xhaloAdjTS.f90
 
 FILES_TO_COPY = 
+
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -127,8 +89,6 @@ FILES_TO_COPY =
 default: all
 
 all:
-	$(PMAKE) mod
-#	cp -f *.mod $(SUMB_MODDIR)
 	$(PMAKE) src
 
 clean:
@@ -158,5 +118,4 @@ complexify:
 #      *                                                                *
 #      ******************************************************************
 
-mod:	$(FF90_MODULES)
-src:	$(FF90_OBJECTS) $(CC_OBJECTS)
+src:	$(OFILES)

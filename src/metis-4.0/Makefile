@@ -35,58 +35,6 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-CC_OBJECTS = balance.o\
-	     bucketsort.o\
-	     ccgraph.o\
-	     coarsen.o\
-	     compress.o\
-	     debug.o\
-	     estmem.o\
-	     fm.o\
-	     fortran.o\
-	     frename.o\
-	     graph.o\
-	     initpart.o\
-	     kmetis.o\
-	     kvmetis.o\
-	     kwayfm.o\
-	     kwayrefine.o\
-	     kwayvolfm.o\
-	     kwayvolrefine.o\
-	     match.o\
-	     mbalance.o\
-	     mbalance2.o\
-	     mcoarsen.o\
-	     memory.o\
-	     mesh.o\
-	     meshpart.o\
-	     mfm.o\
-	     mfm2.o\
-	     mincover.o\
-	     minitpart.o\
-	     minitpart2.o\
-	     mkmetis.o\
-	     mkwayfmh.o\
-	     mkwayrefine.o\
-	     mmatch.o\
-	     mmd.o\
-	     mpmetis.o\
-	     mrefine.o\
-	     mrefine2.o\
-	     mutil.o\
-	     myqsort.o\
-	     ometis.o\
-	     parmetis.o\
-	     pmetis.o\
-	     pqueue.o\
-	     refine.o\
-	     separator.o\
-	     sfm.o\
-	     srefine.o\
-	     stat.o\
-	     subdomains.o\
-	     timing.o\
-	     util.o
 
 FILES_TO_COMPLEXIFY = 
 
@@ -149,6 +97,8 @@ FILES_TO_COPY = balance.c\
 	     rename.h\
 	     proto.h\
 
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 
 #      ******************************************************************
 #      *                                                                *
@@ -187,4 +137,4 @@ complexify:
 #      *                                                                *
 #      ******************************************************************
 
-src:	$(CC_OBJECTS)
+src:	$(OFILES)
