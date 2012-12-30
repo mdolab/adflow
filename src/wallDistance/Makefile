@@ -40,16 +40,6 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = viscSurface.o
 
-FF90_OBJECTS_2 = allocExtraWallDistanceMemory.o\
-		 computeNormalSpacing.o\
-		 determineDistance.o\
-		 determineDistanceQuickly.o\
-		 initWallDistance.o\
-		 localViscousSurfaceMesh.o\
-		 updateWallDistanceAllLevels.o\
-		 viscousSurfaceMesh.o\
-		 wallDistance.o
-
 FILES_TO_COMPLEXIFY = viscSurface.f90\
 		 allocExtraWallDistanceMemory.f90\
 		 computeNormalSpacing.f90\
@@ -60,6 +50,9 @@ FILES_TO_COMPLEXIFY = viscSurface.f90\
 		 updateWallDistanceAllLevels.f90\
 		 viscousSurfaceMesh.f90\
 		 wallDistance.f90
+
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 
 #      ******************************************************************
 #      *                                                                *
@@ -104,4 +97,4 @@ complexify:
 #      ******************************************************************
 
 src_1:  $(FF90_OBJECTS_1)
-src_2:  $(FF90_OBJECTS_2)
+src_2:  $(OFILES)

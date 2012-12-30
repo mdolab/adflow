@@ -40,29 +40,6 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = BCDataMod.o
 
-FF90_OBJECTS_2 = allocMemBCData.o\
-		 BCDataDomainInterface.o\
-		 BCDataIsothermalWall.o\
-		 BCDataMassBleedInflow.o\
-		 BCDataMassBleedOutflow.o\
-		 BCDataSubsonicInflow.o\
-		 BCDataSubsonicOutflow.o\
-		 BCDataSupersonicInflow.o\
-		 cart1D_InterpolSubface.o\
-		 computeHtot.o\
-		 extractFromDataSet.o\
-		 initBCData.o\
-		 initBCDataDomainInterfaces.o\
-		 nondimBoundData.o\
-		 radialInterpolSubface.o\
-		 setBCDataCoarseGrid.o\
-		 setBCDataFineGrid.o\
-		 setBCTurb.o\
-		 setInletFreestreamTurb.o\
-		 setSupersonicInletFreeStream.o\
-		 storeFreestreamSubface.o\
-		 unitVectorsCylSystem.o
-
 FILES_TO_COMPLEXIFY =  BCDataMod.f90\
 		allocMemBCData.f90\
 		BCDataDomainInterface.f90\
@@ -88,6 +65,9 @@ FILES_TO_COMPLEXIFY =  BCDataMod.f90\
 		unitVectorsCylSystem.f90
 
 FILES_TO_COPY = 
+
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 
 #      ******************************************************************
 #      *                                                                *
@@ -131,4 +111,4 @@ complexify:
 #      ******************************************************************
 
 src_1:  $(FF90_OBJECTS_1)
-src_2:  $(FF90_OBJECTS_2)
+src_2:  $(OFILES)

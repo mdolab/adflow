@@ -48,60 +48,6 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = partitionMod.o
 
-FF90_OBJECTS_2 = allocCoorFineGrid.o\
-		 blockDistribution.o\
-		 cgnsBCForPlot3D.o\
-		 check1to1Subfaces.o\
-		 checkFaces.o\
-		 checkLoadBalance.o\
-		 checkPartitioning.o\
-		 checkTransform.o\
-		 countConnectivities.o\
-		 determineBleedFlowRegions.o\
-		 determineComputeBlocks.o\
-		 determineGridFileNames.o\
-		 determineInterfaceIDs.o\
-		 determineNeighborIDs.o\
-		 distributeOversetCells.o\
-		 fineGridSpectralCoor.o\
-		 graphPartitioning.o\
-		 initFlowDoms.o\
-		 initFineGridIblank.o\
-		 internalBC.o\
-		 loadBalance.o\
-		 overwriteFamilyData.o\
-		 overwriteWallBCData.o\
-		 partitionAndReadGrid.o\
-		 qsortSubblocksOfCGNSType.o\
-		 qsortSubfaceNonMatchType.o\
-		 read1to1Conn.o\
-		 readBlockSizes.o\
-		 readBlockSizesPlot3D.o\
-		 readBocos.o\
-		 readConnectivityPlot3D.o\
-		 readFamilyInfo.o\
-		 readGeneralConn.o\
-		 readGrid.o\
-		 readGridPlot3D.o\
-		 readLevel0CoolingParameters.o\
-		 readOversetHoles.o\
-		 readOversetPlot3D.o\
-		 readPeriodicSubface.o\
-		 readZoneInfo.o\
-		 reallocSubfaceMemory.o\
-		 setChangingOverset.o\
-		 sortSubfaces.o\
-		 sortBadEntities.o\
-		 sortRangesSplitInfo.o\
-		 splitBlock.o\
-                 storeReferenceMesh.o\
-		 timePeriodSpectral.o\
-		 timeRotMatricesSpectral.o\
-		 wallComponentsAssignments.o
-
-
-CC_OBJECTS     = metisInterface.o
-
 FILES_TO_COMPLEXIFY = allocCoorFineGrid.f90\
 		 blockDistribution.f90\
 		 cgnsBCForPlot3D.f90\
@@ -157,6 +103,9 @@ FILES_TO_COPY = partitionMod.f90\
 		metisInterface.c\
 		readGrid.F90\
 
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -199,5 +148,5 @@ complexify:
 #      *                                                                *
 #      ******************************************************************
 
-src_1:  $(FF90_OBJECTS_1) $(CC_OBJECTS)
-src_2:  $(FF90_OBJECTS_2)
+src_1:  $(FF90_OBJECTS_1) 
+src_2:  $(OFILES)

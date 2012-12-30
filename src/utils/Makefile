@@ -35,67 +35,6 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS = bsearchIntegers.o\
-	       bsearchReals.o\
-	       bsearchStrings.o\
-	       byteswap.o\
-	       computeEtot.o\
-	       computeGamma.o\
-	       computePtot.o\
-	       computeTtot.o\
-	       convertToLowerCase.o\
-	       delta.o\
-	       derivativeRigidRotAngle.o\
-	       initExec.o\
-	       myIsNAN.o\
-	       nullifyCGNSDomPointers.o\
-	       nullifyFlowDomPointers.o\
-	       orphanAverage.o\
-	       qsortIntegers.o\
-	       qsortReals.o\
-	       qsortStrings.o\
-	       reallocateIntegers.o\
-	       reallocateReals.o\
-	       releaseMemory.o\
-	       releaseOversetCGNSGrid.o\
-	       removeTiesIntegers.o\
-	       removeTiesStrings.o\
-	       replaceTabsAndReturns.o\
-	       rigidRotAngle.o\
-	       rotMatrixRigidBody.o\
-               secondDerivativeRigidRotAngle.o\
-	       setBCPointers.o\
-               setBufferSizes.o\
-	       setCGNSRealType.o\
-	       setPointers.o\
-	       siAngle.o\
-	       siDensity.o\
-	       siLen.o\
-	       siPressure.o\
-	       siTemperature.o\
-	       siTurb.o\
-	       siVelocity.o\
-	       spectralInterpolCoef.o\
-	       SUmb_finalize.o\
-	       SUmb_init.o\
-	       tempMemory.o\
-	       terminate.o\
-               TSalpha.o\
-	       TSalphadot.o\
-               TSBeta.o\
-               TSBetadot.o\
-               TSMach.o\
-               TSMachdot.o\
-	       unique.o\
-	       whalo1to1.o\
-	       whalo.o\
-	       whaloMixing.o\
-	       whaloSliding.o\
-	       wOverset.o\
-	       writeVarsToBuffer.o
-
-CC_OBJECTS   = myIsNaNC.o\
-	       f77flush.o
 
 FILES_TO_COMPLEXIFY =  \
 	       bsearchIntegers.f90\
@@ -161,6 +100,9 @@ FILES_TO_COMPLEXIFY =  \
 FILES_TO_COPY = myIsNaNC.c\
 		f77flush.c\
 
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -199,4 +141,4 @@ complexify:
 #      *                                                                *
 #      ******************************************************************
 
-src:	$(FF90_OBJECTS) $(CC_OBJECTS)
+src:	$(OFILES)

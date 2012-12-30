@@ -36,16 +36,6 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_MODULES = 
-FF90_OBJECTS =	getForces.o\
-	        getAreas.o\
-	        setGrid.o\
-	        initializeExternalWarping.o\
-	        blockLogicalFunctions.o\
-		blockRelations.o
-
-CC_OBJECTS   = 
-
 FILES_TO_COMPLEXIFY = 	getForces.f90\
 	        getAreas.f90\
 	        setGrid.f90\
@@ -53,6 +43,9 @@ FILES_TO_COMPLEXIFY = 	getForces.f90\
 	        blockLogicalFunctions.f90\
 		blockRelations.f90
 FILES_TO_COPY = 
+
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 
 #      ******************************************************************
 #      *                                                                *
@@ -63,7 +56,6 @@ FILES_TO_COPY =
 default: all
 
 all:
-	$(PMAKE) mod
 	$(PMAKE) src
 
 clean:
@@ -94,5 +86,4 @@ complexify:
 #      *                                                                *
 #      ******************************************************************
 
-mod:	$(FF90_MODULES)
-src:	$(FF90_OBJECTS)
+src:	$(OFILES)

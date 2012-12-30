@@ -36,18 +36,13 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_MODULES = 
-
-FF90_OBJECTS = computeLeastSquaresRegression.o\
-	       computeTSDerivatives.o   \
-               stabilityDerivativeDriver.o
-
-CC_OBJECTS   = 
-
 FILES_TO_COMPLEXIFY = computeLeastSquaresRegression.f90\
 	       computeTSDerivatives.f90 \
                stabilityDerivativeDriver.f90
 FILES_TO_COPY = 
+
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 
 #      ******************************************************************
 #      *                                                                *
@@ -58,7 +53,6 @@ FILES_TO_COPY =
 default: all
 
 all:
-	$(PMAKE) mod
 	$(PMAKE) src
 
 clean:
@@ -89,5 +83,4 @@ complexify:
 #      *                                                                *
 #      ******************************************************************
 
-mod:	$(FF90_MODULES)
-src:	$(FF90_OBJECTS) $(CC_OBJECTS)
+src:	$(OFILES)

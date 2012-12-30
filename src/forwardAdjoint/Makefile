@@ -35,22 +35,6 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS =	determineStencil.o\
-		setupAllResidualMatricesFwd.o\
-		setupExtraResidualMatrix.o\
-		setupStateResidualMatrix.o\
-		setupSpatialResidualMatrix.o\
-		setupAdjointMatrix.o\
-		setupSpatialMatrix.o\
-		setupExtraMatrix.o\
-		alloc_derivative_values.o\
-		dealloc_derivative_values.o\
-		setupColoring.o\
-		setPointersOffTSInstance.o\
-		setPointersOffTSInstance_d.o\
-		setPointers_d.o\
-		writeMatrices.o\
-
 FILES_TO_COMPLEXIFY = \
 		determineStencil.F90\
 		setupAllResidualMatricesFwd.F90\
@@ -69,6 +53,8 @@ FILES_TO_COPY = setupStateResidualMatrix.F90\
 		setupSpatialResidualMatrix.F90\
 		setupAdjointMatrix.F90\
 
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 
 #      ******************************************************************
 #      *                                                                *
@@ -108,4 +94,4 @@ complexify:
 #      *                                                                *
 #      ******************************************************************
 
-src:   $(FF90_OBJECTS)
+src:   $(OFILES)

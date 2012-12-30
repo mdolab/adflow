@@ -44,43 +44,6 @@ FF90_OBJECTS_1 = bcHalo.o\
 		 indirectHalo.o\
 		 periodicInfo.o
 
-FF90_OBJECTS_2 = allocMemHaloList.o\
-		 bsearchCGNSPeriodicType.o\
-		 cellRangeSubface.o\
-		 checkCoarse1to1.o\
-		 checkSymmetry.o\
-		 closestDirectHalos.o\
-		 coarseDonorInfo.o\
-		 coarseLevel0CoolingParameters.o\
-		 createCoarseBlocks.o\
-		 determineAreaLevel0Cooling.o\
-		 determineCommPattern.o\
-		 determineFaceHalos.o\
-		 determineIndirectHalos.o\
-		 determineNumberOfHalos.o\
-		 determineNcellGlobal.o\
-		 determinePeriodicData.o\
-		 determinePeriodicFaces.o\
-		 exchangeCoor.o\
-		 faceRotationMatrices.o\
-		 finalCommStructures.o\
-		 indirectHalosPerLevel.o\
-		 init2ndLevelCellHalos.o\
-		 mdUpdateRoutines.o\
-		 metric.o\
-		 preprocessing.o\
-		 qsortHaloListType.o\
-		 qsortIndHaloType.o\
-		 qsortPeriodicSubfacesHaloType.o\
-		 setFamilyInfoFaces.o\
-		 setPorosities.o\
-		 shiftCoorAndVolumes.o\
-		 unitVectorsInAxialPlane.o\
-		 update1to1Coarse.o\
-		 updateCoorFineMesh.o\
-		 viscSubfaceInfo.o\
-		 xhalo.o
-
 FILES_TO_COMPLEXIFY = \
 		 coarse1to1Subface.f90\
 		 allocMemHaloList.f90\
@@ -125,6 +88,9 @@ FILES_TO_COPY = bcHalo.f90\
 		bsearchCGNSPeriodicType.f90\
 		determinePeriodicData.F90\
 
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -168,4 +134,4 @@ complexify:
 #      ******************************************************************
 
 src_1:  $(FF90_OBJECTS_1)
-src_2:  $(FF90_OBJECTS_2)
+src_2:  $(OFILES)

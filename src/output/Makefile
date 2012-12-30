@@ -40,52 +40,6 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = outputMod.o
 
-FF90_OBJECTS_2 = copyDataBuf.o\
-		 describeScheme.o\
-		 gridFileNamesWrite.o\
-		 numberOfSurfSolVariables.o\
-		 numberOfVolSolVariables.o\
-		 openCGNSVolumeSol.o\
-		 releaseHelpVariablesWriting.o\
-		 resHalo1.o\
-		 setHelpVariablesWriting.o\
-		 storeOldSolInBuffer.o\
-		 storeSolInBuffer.o\
-		 storeSurfsolInBuffer.o\
-		 surfSolFileNamesWrite.o\
-		 surfSolNames.o\
-		 updateParamfile.o\
-		 volSolFileNamesWrite.o\
-		 volSolNames.o\
-		 writeCGNSBaldwinLomaxInfo.o\
-		 writeCGNSConvInfo.o\
-		 writeCGNSGridFile.o\
-		 writeCGNSGridFrame.o\
-		 writeCGNSHeader.o\
-		 writeCGNSKomegaModifiedInfo.o\
-		 writeCGNSKomegaWilcoxInfo.o\
-		 writeCGNSKtauInfo.o\
-		 writeCGNSMenterSSTInfo.o\
-		 writeCGNSReferenceState.o\
-		 writeCGNSSaInfo.o\
-		 writeCGNSSaeInfo.o\
-		 writeCGNSSurfaceSol.o\
-		 writeCGNSTimeHistory.o\
-		 writeCGNSV2fInfo.o\
-		 writeCGNSVolumeSol.o\
-		 writeCoorCGNSZone.o\
-		 writeInterpolFromSpectral.o\
-		 writeOversetCGNSZone.o\
-		 writePlot3DConnFile.o\
-		 writePlot3DConvInfo.o\
-		 writePlot3DGridFile.o\
-		 writePlot3DSurfaceSol.o\
-		 writePlot3DTimeHistory.o\
-		 writePlot3DVolumeSol.o\
-		 writeSol.o\
-		 writeSolCGNSZone.o\
-		 writeSurfsolCGNSZone.o\
-		 writeUnsteadyFromSpectral.o
 
 FILES_TO_COMPLEXIFY = outputMod.f90\
 		 copyDataBuf.f90\
@@ -137,6 +91,8 @@ FILES_TO_COMPLEXIFY = outputMod.f90\
 
 FILES_TO_COPY = 
 
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 
 #      ******************************************************************
 #      *                                                                *
@@ -181,4 +137,4 @@ complexify:
 #      ******************************************************************
 
 src_1:	$(FF90_OBJECTS_1)
-src_2:	$(FF90_OBJECTS_2)
+src_2:	$(OFILES)

@@ -44,42 +44,6 @@ FF90_OBJECTS_1 = localSubfaces.o\
 		 tmpSliding.o\
 		 updateComm.o
 
-FF90_OBJECTS_2 = bsearchSortedDonorCommType.o\
-		 cumulativeNSendReceives.o\
-		 cylCoorNodesOnBlockFace.o\
-		 determineNSlices.o\
-		 determineRotationMatrices.o\
-		 determineSections.o\
-		 haloType.o\
-		 initMemMixingPlane.o\
-		 initMemSliding.o\
-		 initThisSlide.o\
-		 interpolateSlide.o\
-		 localNodesAndQuads.o\
-		 localSurfaceGrids.o\
-		 mixingDonorInterpol.o\
-		 mixingHaloInterpol.o\
-		 mixingIntervals.o\
-		 mixingPlaneComm.o\
-		 mixingPlaneInterpol.o\
-		 mySubfacesSlide.o\
-		 nLocalNodesAndQuads.o\
-		 procSliding.o\
-		 qsortMixingIntervalType.o\
-		 qsortSortedDonorCommType.o\
-		 releaseMemSliding.o\
-		 slidingComm.o\
-		 slidingIntersections.o\
-		 slidingMesh.o\
-		 slidingMeshGroups.o\
-		 updateExternalCommSlide.o\
-		 updateInterpolSendBuf.o\
-		 updateLocalCommSlide.o\
-		 updateRotationInfo.o\
-		 updateSlidingAllLevels.o\
-		 updateSlidingCommPattern.o\
-		 volumeInterpol.o
-
 FILES_TO_COMPLEXIFY =  \
 		 localSubfaces.f90\
 		 thisSlide.f90\
@@ -123,6 +87,8 @@ FILES_TO_COPY =  mixingData.F90\
 		 updateComm.F90\
 		 bsearchSortedDonorCommType.f90
 
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 
 #      ******************************************************************
 #      *                                                                *
@@ -167,4 +133,4 @@ complexify:
 #      ******************************************************************
 
 src_1:  $(FF90_OBJECTS_1)
-src_2:  $(FF90_OBJECTS_2)
+src_2:  $(OFILES)
