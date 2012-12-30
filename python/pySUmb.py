@@ -716,7 +716,6 @@ class SUMB(AeroSolver):
             print ' -> Partitioning and Reading Grid'
 
         self.sumb.partitionandreadgrid()
-
         if 'partitionOnly' in kwargs:
             if kwargs['partitionOnly']:
                 return
@@ -766,7 +765,7 @@ class SUMB(AeroSolver):
         # Solver is initialize
         self.allInitialized = True
         self.initAdjoint()
-
+        
         return
 
     def setInflowAngle(self, aero_problem):

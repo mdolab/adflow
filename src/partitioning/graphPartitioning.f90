@@ -28,8 +28,6 @@
 !      Subroutine arguments.
 !
        logical, intent(out) :: emptyPartitions, commNeglected
- 
-
 !
 !      Variables to store the graph in metis format.
 !
@@ -246,8 +244,6 @@
          enddo EdgesOverset
 
        enddo graphVertex
-
-       !if(myid==0) print *,'end graphvertex'
 
        ! Metis has problems when the total number of cells or faces
        ! used in the weights exceeds 2Gb. Therefore the sum of these

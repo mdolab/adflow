@@ -132,10 +132,10 @@ FILES_TO_COMPLEXIFY = applyAllBC.f90\
 	       bleedFlowParameters.f90\
 	       calMassFlux.f90\
 	       coeffConvergenceCheck.f90\
+	       convergenceInfo.F90\
 	       computeInletMassFlowFullWheel.f90\
 	       computeLamViscosity.f90\
 	       computeUtau.f90\
-	       convergenceInfo.f90\
 	       componentsBreakDownPrintout.f90\
 	       derivativeRotMatrixRigid.f90\
 	       eulerWallsPresent.f90\

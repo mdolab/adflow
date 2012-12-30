@@ -521,7 +521,7 @@ def skip_continuation(i, lines):
     return i
 
 
-use_module_line = "\tuse complexify \n"
+use_module_line = "       use complexify \n"
 implicit_complex_line = "\timplicit complex(a-h, o-z) \n"
 
 main()

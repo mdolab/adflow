@@ -347,7 +347,11 @@
 
              ! Write the convergence info to stdout.
              if ( printIterations) then
+#ifndef USE_COMPLEX
                 write(*,"(e24.16,1x)",advance="no") monGlob(mm)
+#else
+                write(*,"(2e20.12,1x)",advance="no") monGlob(mm)
+#endif
              end if
           enddo
 

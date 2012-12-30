@@ -118,7 +118,6 @@ FILES_TO_COMPLEXIFY = allocCoorFineGrid.f90\
 		 determineNeighborIDs.f90\
 		 distributeOversetCells.f90\
 		 fineGridSpectralCoor.f90\
-		 graphPartitioning.f90\
 		 initFlowDoms.f90\
 		 initFineGridIblank.f90\
 		 internalBC.f90\
@@ -135,7 +134,6 @@ FILES_TO_COMPLEXIFY = allocCoorFineGrid.f90\
 		 readConnectivityPlot3D.f90\
 		 readFamilyInfo.F90\
 		 readGeneralConn.F90\
-		 readGrid.F90\
 		 readGridPlot3D.f90\
 		 readLevel0CoolingParameters.f90\
 		 readOversetHoles.F90\
@@ -155,7 +153,10 @@ FILES_TO_COMPLEXIFY = allocCoorFineGrid.f90\
 FILES_TO_COPY = partitionMod.f90\
 		sortRangesSplitInfo.f90\
 		sortBadEntities.F90\
-		metisInterface.c
+		graphPartitioning.f90\
+		metisInterface.c\
+		readGrid.F90\
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
