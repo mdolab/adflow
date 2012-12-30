@@ -44,12 +44,11 @@ FILES_TO_COMPLEXIFY = applyPC.F90\
 	       getCurrentResidual.F90\
 	       getFreeStreamResidual.F90\
 	       NKBenchmark.F90\
-	       NKSolver.F90\
 	       NKUtilities.F90\
 	       resetKSP.F90\
 	       setupNKSolver.F90\
 
-FILES_TO_COPY = 
+FILES_TO_COPY = NKSolver.F90
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
 OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
