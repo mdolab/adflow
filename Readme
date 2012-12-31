@@ -162,3 +162,27 @@ This is the SUmb README. Please read this before trying to compile.
     will be printed, otherwise a diff window will appear hihglighting
     the differences between the reference case and the most recently
     completed verification run.
+
+---------------------
+     SUmb -- Complex
+---------------------
+	
+    SUmb contains scripts to automatically build a "complexified"
+    version of SUmb directly from the real version.
+
+    SUmb_CS REQUIRES a complex build of petsc to build and run. The
+    petsc configuration script must be re-run with the following
+    options:
+
+   $ ./configure --with-shared-libraries --download-superlu_dist=yes --download-parmetis=yes --download-metis=yes --with-fortran-interfaces=1 --with-debuggig=yes --with-scalar-type=complex --PETSC_ARCH=complex-debug
+
+   Follow instructions as before to complete complex build. 
+
+   Now, to build complex SUmb do:
+
+   $ export PETSC_ARCH=complex-debug
+   $ make -f Makefile_CS <ARCH>
+
+   where arch is the same architecture used for the real version. Note
+   that the correct, complex PETSC_ARCH MUST be set before the code is
+   compiled and also must be set when running in complex mode. 
