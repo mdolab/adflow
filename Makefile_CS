@@ -216,7 +216,7 @@ LINUX_INTEL_OPENMPI:
 	(cd src_cs/python/f2py && make)
 
 LINUX_GFORTRAN_OPENMPI:
-	make dirs
+	make -f Makefile_CS  dirs
 	if [ ! -f "config/config.LINUX_GFORTRAN_OPENMPI.mk" ]; then cp "config/defaults/config.LINUX_GFORTRAN_OPENMPI.mk" ./config; fi
 	ln -sf config/config.LINUX_GFORTRAN_OPENMPI.mk config.mk
 	ln -sf SUmb_Common_CS.mk SUmb_Common.mk
@@ -234,7 +234,7 @@ LINUX_INTEL_OPENMPI_SCINET:
 	(cd src_cs/python/f2py && make)	
 
 LINUX_INTEL_INTELMPI_SCINET:
-	make dirs
+	make -f Makefile_CS dirs
 	if [ ! -f "config/config.LINUX_INTEL_INTELMPI_SCINET.mk" ]; then cp "config/defaults/config.LINUX_INTEL_INTELMPI_SCINET.mk" ./config; fi
 	ln -sf config/config.LINUX_INTEL_INTELMPI_SCINET.mk config.mk
 	ln -sf SUmb_Common_CS.mk SUmb_Common.mk

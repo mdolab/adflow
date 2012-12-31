@@ -166,7 +166,7 @@ contains
     character*(*) :: matrixName
     ! Each Proc should print this info:
 
-    print *,'================================================================='
+    print *,'-----------------------------------------------------------------'
 900 format(A,A,A,I3)
 901 format(A,I2,A,F20.10)
 902 format(A,A)
@@ -182,7 +182,7 @@ contains
     write(*,901) "[",myid,"] Fill Ratio Given for ILU   : ",localInfo(8)
     write(*,901) "[",myid,"] Fill Ratio Required for ILU: ",localInfo(9)
     write(*,901) "[",myid,"] Mallocs for Factor         : ",localInfo(10)
-    print *,'================================================================='
+    print *,'-----------------------------------------------------------------'
 
   end subroutine printLocal
 
@@ -192,7 +192,7 @@ contains
     character*(*) :: matrixName
 
     if (myid == 0) then 
-       print *,'================================================================='
+       print *,'-----------------------------------------------------------------'
        write(*,902) "Max Matrix Information for ",matrixName
        write(*,901) "[",myid,"] Block Size: ",maxInfo(1)
        write(*,901) "[",myid,"] Non Zeros Allocated  : ",maxInfo(2)
@@ -204,7 +204,7 @@ contains
        write(*,901) "[",myid,"] Fill Ratio Given for ILU   : ",maxInfo(8)
        write(*,901) "[",myid,"] Fill Ratio Required for ILU: ",maxInfo(9)
        write(*,901) "[",myid,"] Mallocs for Factor         : ",maxInfo(10)
-       print *,'================================================================='
+       print *,'-----------------------------------------------------------------'
     end if
 
 900 format(A,A,A,I3)
@@ -217,7 +217,7 @@ contains
     implicit none
     character*(*) :: matrixName
     if (myid == 0) then 
-       print *,'================================================================='
+       print *,'-----------------------------------------------------------------'
        write(*,902) "Summed Matrix Information for ",matrixName
        write(*,901) "[",myid,"] Block Size: ",sumInfo(1)
        write(*,901) "[",myid,"] Non Zeros Allocated  : ",sumInfo(2)
@@ -229,7 +229,7 @@ contains
        write(*,901) "[",myid,"] Fill Ratio Given for ILU   : ",sumInfo(8)
        write(*,901) "[",myid,"] Fill Ratio Required for ILU: ",sumInfo(9)
        write(*,901) "[",myid,"] Mallocs for Factor         : ",sumInfo(10)
-       print *,'================================================================='
+       print *,'-----------------------------------------------------------------'
     end if
 
 900 format(A,A,A,I3)

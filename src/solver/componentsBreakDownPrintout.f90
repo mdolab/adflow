@@ -195,7 +195,7 @@ subroutine componentsBreakDownPrintout(writeToFile)
         !
         !----------------- Components Break Down printout
         !
-        write(outUnit,'("#     ======== COMPONENTS BREAK DOWN: @Iteration ",i5," ============")')&
+        write(outUnit,'("#     -------- COMPONENTS BREAK DOWN: @Iteration ",i5," ------------")')&
              nIterCur
         if(SymmetrySurExist ==1)then
            write(outUnit,'("    Symmetry surface : yes ")')
@@ -204,7 +204,7 @@ subroutine componentsBreakDownPrintout(writeToFile)
         end if
 
         write(outUnit,'("    convergenceQuality : ",i2)')convergenceQuality
-        write(outUnit,'("#====================================================================")') 
+        write(outUnit,'("#--------------------------------------------------------------------")') 
         write(outUnit,'("# ")')
 
         surfacesCounter3 : do i=1,cgnsNWallSurfaces
