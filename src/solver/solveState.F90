@@ -284,7 +284,11 @@ subroutine solveState
 
      if(equationMode == steady .or. &
           equationMode == timeSpectral) call writeFamilyMassflow
-     if(myID == 0 .and. printIterations) call convergenceHeader
+     if(myID == 0) then 
+        if (printIterations)  then
+           call convergenceHeader
+        end if
+     end if
   end if	notCDB2 !  eran-CBD
 
   ! Determine and write the initial convergence info.
@@ -366,7 +370,11 @@ subroutine solveState
         if(mod(iter,nWriteConvHeader) == 0) then
            if(equationMode == steady .or. &
                 equationMode == timeSpectral) call writeFamilyMassflow
-           if(myID == 0 .and. printIterations) call convergenceHeader
+           if(myID == 0) then
+              if (printIterations) then
+                 call convergenceHeader
+              end if
+           end if
         endif
 
         ! Update iterTot and call executeMGCycle.
