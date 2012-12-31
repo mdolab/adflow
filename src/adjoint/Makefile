@@ -37,24 +37,18 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 
 FILES_TO_COMPLEXIFY = \
+		adjointPythonInterfaceFunctions.F90\
 		computeAeroCoef.f90        \
 		computeObjPartials.F90\
 		copyADjointStencil.f90     \
-		createPETScKsp.F90         \
 		createPETScVars.F90        \
 		destroyPETScVars.F90       \
 		preallocation.F90          \
 		finalizePETSc.F90          \
 		getSolution.f90            \
-		getADjoint.F90             \
-		getdRdXvPsi.F90            \
-		getdRdaPsi.F90             \
-		getdRdwTVec.F90            \
-		getdFdxVec.F90             \
 		initializePETSc.F90        \
 		preprocessingADjoint.F90   \
 		releaseMemADjoint.f90      \
-		setADjoint.F90             \
 		setupAllResidualMatrices.F90\
 		setupPETScKsp.F90         \
 		solverADjoint.F90         \
@@ -62,17 +56,12 @@ FILES_TO_COMPLEXIFY = \
 		updateReferencePoint.f90   \
 		updateRotationRate.f90     \
 		setupCouplingMatrixStruct.F90\
-		agumentRHS.F90\
 		matrixInfo.F90\
 		adjoint_stencils.f90\
 
 FILES_TO_COPY = \
 		solveADjointTransposePETSc.F90\
 		initPETScWrap.c\
-		createSpatialPETScVars.F90 \
-		createStatePETScVars.F90   \
-		createCouplingPETScVars.F90\
-		createExtraPETScVars.F90   \
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
 OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)

@@ -147,10 +147,9 @@
       ! Initialize PETSc.
 
       call initializePETSc
-
-      call createPETScVars
+      call createStatePetscVars
+      call createSpatialPetscVars
       call setupAllResidualMatrices
-
 
       ! Reordered for ASM preconditioner
       ! Create the Krylov subspace linear solver context,

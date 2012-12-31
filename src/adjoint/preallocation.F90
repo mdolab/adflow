@@ -103,9 +103,7 @@ subroutine statePreAllocation(onProc , offProc, wSize, stencil, N_stencil)
                        if  (onAdd > 0) then
                           onProc(ii) = onProc(ii) + 1
                        end if
-                          
                     end if
-
                  end do ! Stencil Loop
               end do ! I loop
            end do ! J loop
@@ -179,7 +177,6 @@ subroutine drdxPreAllocation(onProc, offProc, xSize)
 
                           onProc(ii) = onProc(ii) + nw
                        else
-                          
                           ! Its a k Face
                           if (iCell >=2 .and. iCell <= il .and. &
                               jCell >=2 .and. jCell <= jl) then
@@ -222,7 +219,6 @@ subroutine drdxPreAllocation(onProc, offProc, xSize)
                           end if
                        end if
                     end do ! Stencil Loop
-
                  end do ! dof Loop
               end do ! I Node loop
            end do ! J Node loop
@@ -237,9 +233,9 @@ subroutine drdxPreAllocation(onProc, offProc, xSize)
   ! this doesn't appear necessary. However, this is so tiny, we leave
   ! it in anyway, just in case. 
 
- !  ! THIS MAY NOT WORK FOR SPS CASE!!! 
+  ! THIS MAY NOT WORK FOR SPS CASE!!! 
   ii = 0
- ! This is for the "Regular" drdx calculation.
+  ! This is for the "Regular" drdx calculation.
   do nn=1, nDom
      do sps=1, nTimeIntervalsSpectral
         call setPointers(nn, 1_intType, sps)
@@ -289,12 +285,11 @@ subroutine checkCell(iface, i, j, onProc, offProc, addVal)
   implicit None
 
   ! Subroutine Arguments
-
   integer(kind=intType), intent(in) :: iface, i, j
   integer(kind=intType), intent(inout) :: onProc, offProc
   integer(kind=intType), intent(in) :: addVal
 
-  !local Variables
+  !Local Variables
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, ll
 
   ! It is assumed blockPointers are already set for this block
@@ -304,7 +299,6 @@ subroutine checkCell(iface, i, j, onProc, offProc, addVal)
   ! 1. What block subface it is on.
   ! 2. Determine if this is a boundary condition or a block-match
   ! 3. If its a block-match is the connecting block on- or off-processor
-
 
   ! If its a BC condition, nothing is added onProc and offProc
   ! If its a block-match on-proc, addVal is added to onProc
@@ -392,109 +386,110 @@ subroutine checkCellSym(i, j, k, onProc, addVal)
   end do n1to1Loop
 end subroutine checkCellSym
 
-! This is the preallocation routine for the un-transposed dRdx. 
-subroutine drdxPreAllocation_old(onProc, offProc, wSize)
+! ! This is the preallocation routine for the un-transposed dRdx. It is
+! ! now unnecessary. 
+! subroutine drdxPreAllocation_old(onProc, offProc, wSize)
 
-  ! Get a good estimate of the number of non zero rows for the
-  ! on-diagonal and off-diagonal portions of the matrix
-  use blockPointers
-  use ADjointPETSc
-  use ADjointVars    
-  use communication   
-  use inputTimeSpectral 
-  use flowVarRefState 
-  use inputADjoint    
-  use BCTypes
+!   ! Get a good estimate of the number of non zero rows for the
+!   ! on-diagonal and off-diagonal portions of the matrix
+!   use blockPointers
+!   use ADjointPETSc
+!   use ADjointVars    
+!   use communication   
+!   use inputTimeSpectral 
+!   use flowVarRefState 
+!   use inputADjoint    
+!   use BCTypes
 
-  implicit none
+!   implicit none
 
-  ! Subroutine Arguments
-  integer(kind=intType), intent(in)  :: wSize
-  integer(kind=intType), intent(out) :: onProc(wSize), offProc(wSize)
+!   ! Subroutine Arguments
+!   integer(kind=intType), intent(in)  :: wSize
+!   integer(kind=intType), intent(out) :: onProc(wSize), offProc(wSize)
 
-  ! Local Variables
+!   ! Local Variables
 
-  integer(kind=intType) :: nn, i, j, k, l, sps, ii
+!   integer(kind=intType) :: nn, i, j, k, l, sps, ii
 
-  onProc(:) = 8*3+8*3*(nTimeIntervalsSpectral-1) ! ALWAYS have the center cell ON-PROCESSOR
-  offProc(:) = 0_intType 
+!   onProc(:) = 8*3+8*3*(nTimeIntervalsSpectral-1) ! ALWAYS have the center cell ON-PROCESSOR
+!   offProc(:) = 0_intType 
 
-  ii = 0 
+!   ii = 0 
 
-  ! This is for the "Regular" drdx calculation. i.e. xadjb
+!   ! This is for the "Regular" drdx calculation. i.e. xadjb
  
-  do nn=1, nDom
-     do sps=1, nTimeIntervalsSpectral
-        call setPointers(nn, 1_intType, sps)
-        ! Loop over each Cell
-        do k=2, kl
-           do j=2, jl
-              do i=2, il 
-                 do l=1, nw
-                    ii = ii + 1
-                    if (i-1 < 2) then 
-                       call checkCell(iMin, j, k, onProc(ii), offProc(ii), 12)
-                    else
-                       onProc(ii) = onProc(ii) + 12
-                    end if
+!   do nn=1, nDom
+!      do sps=1, nTimeIntervalsSpectral
+!         call setPointers(nn, 1_intType, sps)
+!         ! Loop over each Cell
+!         do k=2, kl
+!            do j=2, jl
+!               do i=2, il 
+!                  do l=1, nw
+!                     ii = ii + 1
+!                     if (i-1 < 2) then 
+!                        call checkCell(iMin, j, k, onProc(ii), offProc(ii), 12)
+!                     else
+!                        onProc(ii) = onProc(ii) + 12
+!                     end if
 
-                    if (i+1 > il) then 
-                       call checkCell(iMax, j, k, onProc(ii), offProc(ii), 12)
-                    else
-                       onProc(ii) = onProc(ii) + 12
-                    end if
+!                     if (i+1 > il) then 
+!                        call checkCell(iMax, j, k, onProc(ii), offProc(ii), 12)
+!                     else
+!                        onProc(ii) = onProc(ii) + 12
+!                     end if
 
-                    if (j-1 < 2) then 
-                       call checkCell(jMin, i, k, onProc(ii), offProc(ii), 12)
-                    else
-                       onProc(ii) = onProc(ii) + 12
-                    end if
+!                     if (j-1 < 2) then 
+!                        call checkCell(jMin, i, k, onProc(ii), offProc(ii), 12)
+!                     else
+!                        onProc(ii) = onProc(ii) + 12
+!                     end if
 
-                    if (j+1 > jl) then 
-                       call checkCell(jMax, i, k, onProc(ii), offProc(ii), 12)
-                    else
-                       onProc(ii) = onProc(ii) + 12
-                    end if
+!                     if (j+1 > jl) then 
+!                        call checkCell(jMax, i, k, onProc(ii), offProc(ii), 12)
+!                     else
+!                        onProc(ii) = onProc(ii) + 12
+!                     end if
 
-                    if (k-1 < 2) then 
-                       call checkCell(kMin, i, j, onProc(ii), offProc(ii), 12)
-                    else
-                       onProc(ii) = onProc(ii) + 12
-                    end if
+!                     if (k-1 < 2) then 
+!                        call checkCell(kMin, i, j, onProc(ii), offProc(ii), 12)
+!                     else
+!                        onProc(ii) = onProc(ii) + 12
+!                     end if
 
-                    if (k+1 > kl) then 
-                       call checkCell(kMax, i, j, onProc(ii), offProc(ii), 12)
-                    else
-                       onProc(ii) = onProc(ii) + 12
-                    end if
-                 end do ! l loop
-              end do ! I loop
-           end do ! J loop
-        end do ! K loop
-     end do ! sps loop
-  end do ! Domain Loop
+!                     if (k+1 > kl) then 
+!                        call checkCell(kMax, i, j, onProc(ii), offProc(ii), 12)
+!                     else
+!                        onProc(ii) = onProc(ii) + 12
+!                     end if
+!                  end do ! l loop
+!               end do ! I loop
+!            end do ! J loop
+!         end do ! K loop
+!      end do ! sps loop
+!   end do ! Domain Loop
 
-  ! However, drdx is more complex since we ALSO have
-  ! xblockcorners. These however, only show up for the cells that are
-  ! along a symmetry plane. Lets try to estimate those. 
+!   ! However, drdx is more complex since we ALSO have
+!   ! xblockcorners. These however, only show up for the cells that are
+!   ! along a symmetry plane. Lets try to estimate those. 
 
-  ! THIS MAY NOT WORK FOR SPS CASE!!! 
-  ii = 0
+!   ! THIS MAY NOT WORK FOR SPS CASE!!! 
+!   ii = 0
  
-  do nn=1, nDom
-     do sps=1, nTimeIntervalsSpectral
-        call setPointers(nn, 1_intType, sps)
-        ! Loop over each Cell
-        do k=2, kl
-           do j=2, jl
-              do i=2, il
-                 do l=1, nw
-                    ii = ii + 1
-                    call checkCellSym(i, j, k, onProc(ii), 24)
-                 end do
-              end do
-           end do
-        end do
-     end do
-  end do
-end subroutine drdxPreAllocation_old
+!   do nn=1, nDom
+!      do sps=1, nTimeIntervalsSpectral
+!         call setPointers(nn, 1_intType, sps)
+!         ! Loop over each Cell
+!         do k=2, kl
+!            do j=2, jl
+!               do i=2, il
+!                  do l=1, nw
+!                     ii = ii + 1
+!                     call checkCellSym(i, j, k, onProc(ii), 24)
+!                  end do
+!               end do
+!            end do
+!         end do
+!      end do
+!   end do
+! end subroutine drdxPreAllocation_old
