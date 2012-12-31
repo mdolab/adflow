@@ -57,8 +57,8 @@ subroutine terminate(routineName, errorMessage)
   ! also the processor id is printed.
 
   print "(a)", "#"
-  print "(a)", "#=========================== !!! Error !!! &
-       &============================"
+  print "(a)", "#--------------------------- !!! Error !!! &
+       &----------------------------"
 
   write(integerString,"(i8)") myID
   integerString = adjustl(integerString)
@@ -114,8 +114,8 @@ subroutine terminate(routineName, errorMessage)
 
   print "(a)", "#*"
   print "(a)", "#* Now exiting"
-  print "(a)", "#==========================================&
-       &============================"
+  print "(a)", "#------------------------------------------&
+       &----------------------------"
   print "(a)", "#"
 
   ! Call abort and stop the program. This stop should be done in
@@ -145,10 +145,10 @@ subroutine EChk(ierr,file,line)
   if (ierr == 0) then
      return ! No error, return immediately
   else
-     print *,'================================================================='
+     print *,'-----------------------------------------------------------------'
      write(*,900) "PETSc or MPI Error. Error Code ",ierr,". Detected on Proc ",myid
      write(*,901) "Error at line: ",line," in file: ",file
-     print *,'================================================================='
+     print *,'-----------------------------------------------------------------'
      call MPI_Abort(warp_comm_world,ierr)
      stop ! Just in case
   end if

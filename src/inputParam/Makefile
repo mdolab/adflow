@@ -45,7 +45,6 @@ FILES_TO_COMPLEXIFY =localModules.f90\
 		 checkInputParam.F90\
 		 checkMonitor.f90\
 		 checkOutput.f90\
-		 createTemplate.f90\
 		 defaultMonitor.f90\
 		 defaultSurfaceOut.f90\
 		 defaultVolumeOut.f90\
@@ -62,6 +61,9 @@ FILES_TO_COMPLEXIFY =localModules.f90\
 		 surfaceVariables.f90\
 		 volumeVariables.f90\
 		 writeInputParam.f90
+
+FILES_TO_COPY =	createTemplate.f90\
+
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
 OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
