@@ -4,8 +4,8 @@ subroutine five_pt_node_stencil_i(icell,jcell,kcell,ind,CellsToDo)
 
   use blockPointers
 
-  integer(kind=intType), intent(in) :: icell,jcell,kcell
-  integer(kind=intType), intent(out) :: ind(3,22),CellsToDo
+  integer(kind=intType), intent(in) :: icell, jcell, kcell
+  integer(kind=intType), intent(out) :: ind(3,22), CellsToDo
   integer(kind=intType) :: counter
 
   ! We want i: -3 -> 2
@@ -72,7 +72,7 @@ subroutine five_pt_node_stencil_i(icell,jcell,kcell,ind,CellsToDo)
 
 end subroutine five_pt_node_stencil_i
 
-subroutine five_pt_node_stencil_j(icell,jcell,kcell,ind,CellsToDo)
+subroutine five_pt_node_stencil_j(icell, jcell, kcell, ind, CellsToDo)
 
   ! Return The incdices you need for a 5-pt node stencil in i-direction 
 

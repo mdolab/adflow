@@ -134,23 +134,23 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
      dJdc(:) = 1.0/nTimeIntervalsSpectral
      !dJdc(:) = 0.0!1.0/nTimeIntervalsSpectral
      !dJdc(1) = 1.0!/nTimeIntervalsSpectral
-     
+
   case(costFuncCl0,costFuncCd0,costFuncCm0, &
        costFuncClAlpha,costFuncCdAlpha,costFuncCmzAlpha,&
        costFuncClAlphaDot,costFuncCdAlphaDot,costFuncCmzAlphaDot,&
        costFuncClq,costFuncCdq,costFuncCmzq,&
        costFuncClqDot,costFuncCdqDot,costFuncCmzqDot)
-     
+
      ! We have stability derivative cost functions, so there is a more
      ! complex dependance of J on the values computed at each time instance
 
      ! Get the (sumed) solution values by running getSolution
 
      do sps =1,nTimeIntervalsSpectral
-     
+
         level = 1
         call computeAeroCoef(globalCFVals,sps)
-        
+
         BaseCoef(sps,1) = globalCFVals(costFuncLiftCoef)
         BaseCoef(sps,2) = globalCFVals(costFuncDragCoef)
         BaseCoef(sps,3) = globalCFVals(costFuncForceXCoef)
@@ -159,7 +159,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
         BaseCoef(sps,6) = globalCFVals(costFuncMomXCoef)
         BaseCoef(sps,7) = globalCFVals(costFuncMomYCoef)
         BaseCoef(sps,8) = globalCFVals(costFuncMomZCoef)
-        
+
      end do
 
      lengthRefAdj = lengthRef
@@ -196,7 +196,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
      call COMPUTETSSTABILITYDERIVADJ_B(basecoef, basecoefb, coef0, &
           &  coef0b, dcdalpha, dcdalphab, dcdalphadot, dcdalphadotb, dcdq, dcdqb, &
           &  dcdqdot, dcdqdotb, lengthrefadj, lengthrefadjb)
-     
+
 
      do sps = 1,nTimeIntervalsSpectral
         select case(costFunction)
@@ -209,7 +209,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
         end select
 
         dJdc(sps) = dIdctemp
-       
+
      end do
      if (nDesignLengthRef >=0) then
         !Because the above calculation is based on globally reduced coef., 
@@ -230,11 +230,11 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
      call VecZeroEntries(dJdw,ierr)
      call EChk(ierr,__FILE__,__LINE__)
   end if
-  
+
   if (usedJdx) then
      call VecZeroEntries(dJdx,ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     
+
      call VecGetOwnershipRange(dJdx,row_start,row_end,ierr)
      call EChk(ierr,__FILE__,__LINE__)
   end if
@@ -244,7 +244,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
      dt(nn) = sections(nn)%timePeriod &
           / real(nTimeIntervalsSpectral,realType)
   enddo
-  
+
   timeUnsteady = zero
 
 
@@ -253,12 +253,12 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
      do nn=1,nSections
         t(nn) = (sps-1)*dt(nn)
      enddo
-     
+
      ! Compute the displacements due to the rigid motion of the mesh.
-     
+
      tNew = timeUnsteady + timeUnsteadyRestart
      tOld = tNew - t(1)
-     
+
      call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
      !r = (/-1,-1,-1/)
      !RpCorrection = matmul(rotationMatrix,r)
@@ -285,13 +285,13 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
               dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefb(1)*dJdc(sps)
            end if
         end if
-        
+
         if (nDesignPointRefY >=0) then
            if (myID==0)then
               dIda(nDesignPointRefY + 1) = dIda(nDesignPointRefY + 1) +pointrefb(2)*dJdc(sps)
            end if
         end if
-        
+
         if (nDesignPointRefZ >=0) then
            if (myID==0)then
               dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) +pointrefb(3)*dJdc(sps)
@@ -370,7 +370,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
                  cmomentb(2) = 1.0
               case (costFuncMomZCoef,costFuncCm0,costFuncCMzAlpha,costFuncCmzalphadot,&
                    costFuncCmzq,costFuncCmzqDot)
-                
+
                  cmomentb(3) = 1.0
               case(costFuncBendingCoef)
                  cforceb(1) = globalCFValsb(costFuncForceXCoef)
@@ -383,7 +383,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
 
               allocate(wblock(0:ib,0:jb,0:kb,nw),&
                    wblockb(0:ib,0:jb,0:kb,nw),stat=ierr)
-    
+
               wblock(:,:,:,:) = w(:,:,:,:)
               wblockb(:,:,:,:) = 0.0
               righthandedadj = righthanded
@@ -415,7 +415,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
                     enddo
                  enddo
               end if
-              
+
               if (usedJdx) then
                  ! Set the pt derivative values in dIdpt
                  do j=jBeg,jEnd
@@ -427,11 +427,11 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
                             
                             (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/)+(sps-1)*npts*3,&
                             ptsb(:,ii,sps)*dJdc(sps),ADD_VALUES,PETScIerr)
-                       
+
                        rotpointxcorrection = rotpointxcorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/1,0,0/)+RpXCorrection))
                        rotpointycorrection = rotpointycorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,1,0/)+RpYCorrection))
                        rotpointzcorrection = rotpointzcorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,0,1/)+RpZCorrection))
-                       
+
                        call EChk(PETScIerr,__FILE__,__LINE__)
                     end do
                  end do
@@ -456,11 +456,11 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
               if (nDesignMachGrid >= 0) then
                  dIda(nDesignMachGrid+1) = dIda(nDesignMachGrid+1) + machCoefAdjb*dJdc(sps)
               end if
-              
+
               if (nDesignPointRefX >=0) then
-                 
+
                  dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefAdjb(1)*dJdc(sps)
-                
+
               end if
 
               if (nDesignPointRefY >=0) then
@@ -474,18 +474,18 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
               if (nDesignRotCenX >= 0) then
                  dIda(nDesignRotCenX+1) = dIda(nDesignRotCenX+1)+rotpointxcorrection
               endif
-              
+
               if (nDesignRotCenY >= 0) then
-                  dIda(nDesignRotCenY+1) = dIda(nDesignRotCenY+1)+rotpointycorrection
+                 dIda(nDesignRotCenY+1) = dIda(nDesignRotCenY+1)+rotpointycorrection
               end if
               if (nDesignRotCenZ >= 0) then
-                  dIda(nDesignRotCenZ+1) = dIda(nDesignRotCenZ+1)+rotpointzcorrection
+                 dIda(nDesignRotCenZ+1) = dIda(nDesignRotCenZ+1)+rotpointzcorrection
               endif
 
               if (nDesignLengthRef >=0) then
 
                  dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + lengthRefAdjb*dJdc(sps)
-                 
+
               end if
               if (nDesignSurfaceRef >=0) then
                  dIda(nDesignSurfaceRef+1) = dIda(nDesignSurfaceRef+1) + SurfaceRefAdjb*dJdc(sps)
@@ -493,14 +493,14 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
               if (nDesignDissError >=0) then
                  dIda(nDesignDissError+1) = 0
               end if
-                  
+
            end if
            deallocate(wblock,wblockb,stat=ierr)
 
         end do bocos
      end do domainLoopAD
   end do spectralLoopAdj
-  
+
   ! Assemble the petsc vectors
   if (usedJdw) then
      call VecAssemblyBegin(dJdw,PETScIerr)
@@ -523,12 +523,11 @@ end subroutine computeObjPartials
 ! Add two functions to return dIdw and dIdx. dIda is available
 ! directly in python in dIda in the adjointVars module. 
 
-
 subroutine getdIdw(output,nstate)
 
 #ifndef USE_NO_PETSC	
-! #define PETSC_AVOID_MPIF_
-! #include "finclude/petscdef.h"
+  ! #define PETSC_AVOID_MPIF_
+  ! #include "finclude/petscdef.h"
 
   use ADjointPETSc, only : dJdw
   use constants
@@ -591,24 +590,24 @@ subroutine getdIdx(ndof,output)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
   ! Comput rotation from each time instance back to a single surface
-  
+
   do nn=1,nSections
      dt(nn) = sections(nn)%timePeriod &
           / real(nTimeIntervalsSpectral,realType)
   enddo
-  
+
   timeUnsteady = zero
-  
+
   do sps = 1,nTimeIntervalsSpectral
      do nn=1,nSections
         t(nn) = (sps-1)*dt(nn)
      enddo
-     
+
      ! Compute the displacements due to the rigid motion of the mesh.
-     
+
      tNew = timeUnsteady + timeUnsteadyRestart
      tOld = tNew - t(1)
-     
+
      call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
 
      ! Take rotation Matrix Transpose
@@ -617,8 +616,8 @@ subroutine getdIdx(ndof,output)
      do i=1,ndof/3
 
         idx = (/ilow+ndof*(sps-1)+(3*(i-1)),&
-                ilow+ndof*(sps-1)+(3*(i-1))+1,&
-                ilow+ndof*(sps-1)+(3*(i-1))+2/)
+             ilow+ndof*(sps-1)+(3*(i-1))+1,&
+             ilow+ndof*(sps-1)+(3*(i-1))+2/)
         call VecGetValues(dJdx,3,idx,temp,PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
 
@@ -643,7 +642,7 @@ subroutine zeroObjPartials(stateSetup,spatialSetup)
      call VecZeroEntries(dJdw,ierr)
      call EChk(ierr,__FILE__,__LINE__)
   end if
-  
+
   if (spatialSetup) then
      call VecZeroEntries(dJdx,ierr)
      call EChk(ierr,__FILE__,__LINE__)

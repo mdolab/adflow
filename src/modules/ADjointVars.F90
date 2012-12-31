@@ -14,14 +14,8 @@
       use costFunctions
       implicit none
 !
-!     ******************************************************************
-!     *                                                                *
-!     * Design variables.                                              *
-!     *                                                                *
-!     ******************************************************************
-!
-      ! nDesignExtra   Extra number of "extra" design variables 
-      !                (listed below)
+      ! nDesignExtra Extra number of "extra" design variables (listed
+      !                below)
 
       integer(kind=intType) :: nDesignAOA   
       integer(kind=intType) :: nDesignSSA    
@@ -51,5 +45,4 @@
       integer(kind=intType), parameter :: maxLevels = 20
       integer(kind=intType), dimension(maxLevels) :: nNodesGlobal, nNodesLocal, nNodeOffsetLocal
       integer(kind=intType), dimension(maxLevels) :: nCellsGlobal, nCellsLocal, nCellOffsetLocal
-
     end module ADjointVars

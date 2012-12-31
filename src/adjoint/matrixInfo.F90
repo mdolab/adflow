@@ -28,7 +28,6 @@ subroutine matrixInfo(pdRdwT,pdRdwPreT,pdRdx,pdRda,&
   logical , intent(in) :: pLocal,pSum,pMax
   integer(kind=intType) :: ierr
   if (pdRdwT) then
-
      if (pLocal) then 
         call MatGetInfo(dRdwT,MAT_LOCAL,localInfo,ierr)
         call EChk(ierr,__FILE__,__LINE__)
@@ -49,7 +48,6 @@ subroutine matrixInfo(pdRdwT,pdRdwPreT,pdRdx,pdRda,&
   end if
 
   if (pdRdwPreT .and. ApproxPC) then
-
      if (pLocal) then 
         call MatGetInfo(dRdwPreT,MAT_LOCAL,localInfo,ierr)
         call EChk(ierr,__FILE__,__LINE__)
@@ -71,7 +69,6 @@ subroutine matrixInfo(pdRdwT,pdRdwPreT,pdRdx,pdRda,&
   end if
 
   if (pdRdx) then
-
      if (pLocal) then 
         call MatGetInfo(dRdx,MAT_LOCAL,localInfo,ierr)
         call EChk(ierr,__FILE__,__LINE__)
@@ -93,7 +90,6 @@ subroutine matrixInfo(pdRdwT,pdRdwPreT,pdRdx,pdRda,&
   end if
 
   if (pdRda) then
-
      if (pLocal) then 
         call MatGetInfo(dRda,MAT_LOCAL,localInfo,ierr)
         call EChk(ierr,__FILE__,__LINE__)
@@ -111,12 +107,9 @@ subroutine matrixInfo(pdRdwT,pdRdwPreT,pdRdx,pdRda,&
         call EChk(ierr,__FILE__,__LINE__)
         call printSum("dRda")
      end if
-
   end if
 
-
   if (pdFdx) then
-
      if (pLocal) then 
         call MatGetInfo(dFdx,MAT_LOCAL,localInfo,ierr)
         call EChk(ierr,__FILE__,__LINE__)
@@ -134,11 +127,9 @@ subroutine matrixInfo(pdRdwT,pdRdwPreT,pdRdx,pdRda,&
         call EChk(ierr,__FILE__,__LINE__)
         call printSum("dFdx")
      end if
-
   end if
 
   if (pdFdw) then
-
      if (pLocal) then 
         call MatGetInfo(dFdw,MAT_LOCAL,localInfo,ierr)
         call EChk(ierr,__FILE__,__LINE__)
@@ -156,7 +147,6 @@ subroutine matrixInfo(pdRdwT,pdRdwPreT,pdRdx,pdRda,&
         call EChk(ierr,__FILE__,__LINE__)
         call printSum("dFdw")
      end if
-
   end if
 
 contains
