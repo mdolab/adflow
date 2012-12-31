@@ -8,56 +8,52 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine updateFlow
-!
-!     ******************************************************************
-!     *                                                                *
-!     *  reruns the initialization routines to update AOA and other    *
-!     *  flow variables after a design change                          *
-!     *                                                                *
-!     ******************************************************************
-!
-       
-        use inputTimeSpectral ! spaceDiscr,nTimeIntervalsSpectral
-        use section
-        use inputPhysics  !
-        use monitor
-        use iteration
-        implicit none
+subroutine updateFlow
+  !
+  !     ******************************************************************
+  !     *                                                                *
+  !     *  reruns the initialization routines to update AOA and other    *
+  !     *  flow variables after a design change                          *
+  !     *                                                                *
+  !     ******************************************************************
+  !
 
+  use inputTimeSpectral ! spaceDiscr,nTimeIntervalsSpectral
+  use section
+  use inputPhysics  !
+  use monitor
+  use iteration
+  implicit none
 
-        integer(kind=intType) ::mm,nnn
-        real(kind=realType), dimension(nSections) :: t
+  ! Local Variables
+  integer(kind=intType) ::mm,nnn
+  real(kind=realType), dimension(nSections) :: t
 
+  call referenceState
+  call setFlowInfinityState
 
-        !begin execution
+  groundlevel = 1
+  do mm=1,nTimeIntervalsSpectral
 
-        call referenceState
-        call setFlowInfinityState
+     ! Compute the time, which corresponds to this spectral solution.
+     ! For steady and unsteady mode this is simply the restart time;
+     ! for the spectral mode the periodic time must be taken into
+     ! account, which can be different for every section.
+     !print *,'sections'
+     t = timeUnsteadyRestart
 
-        groundlevel = 1
-        do mm=1,nTimeIntervalsSpectral
-           
-           ! Compute the time, which corresponds to this spectral solution.
-           ! For steady and unsteady mode this is simply the restart time;
-           ! for the spectral mode the periodic time must be taken into
-           ! account, which can be different for every section.
-           !print *,'sections'
-           t = timeUnsteadyRestart
-           
-           if(equationMode == timeSpectral) then
-              do nnn=1,nSections
-                 t(nnn) = t(nnn) + (mm-1)*sections(nnn)%timePeriod &
-                      /         real(nTimeIntervalsSpectral,realType)
-              enddo
-           endif
-
-           call gridVelocitiesFineLevel(.false., t, mm)
-           call gridVelocitiesCoarseLevels(mm)
-           call normalVelocitiesAllLevels(mm)
-           call slipVelocitiesFineLevel(.false., t, mm)
-           call slipVelocitiesCoarseLevels(mm)
-           
+     if(equationMode == timeSpectral) then
+        do nnn=1,nSections
+           t(nnn) = t(nnn) + (mm-1)*sections(nnn)%timePeriod &
+                /         real(nTimeIntervalsSpectral,realType)
         enddo
+     endif
 
-      end subroutine updateFlow
+     call gridVelocitiesFineLevel(.false., t, mm)
+     call gridVelocitiesCoarseLevels(mm)
+     call normalVelocitiesAllLevels(mm)
+     call slipVelocitiesFineLevel(.false., t, mm)
+     call slipVelocitiesCoarseLevels(mm)
+
+  enddo
+end subroutine updateFlow

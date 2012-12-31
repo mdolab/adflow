@@ -18,47 +18,47 @@ subroutine computeAeroCoef(globalCFVals,sps)
   !     ******************************************************************
   !
 
-  use blockPointers  ! nDom
-  use communication  ! my_ID SUmb_comm_world
-  use inputPhysics   ! liftDirection, dragDirection
-  use iteration      ! groundLevel
+  use blockPointers 
+  use communication 
+  use inputPhysics   
+  use iteration      
   use BCTypes
-  !use monitor        ! monLoc, monGlob, nMonSum
   use costFunctions
   use inputTimeSpectral
-  implicit none
-  !
-  !     Subroutine arguments.
-  integer(kind=intType) :: sps
-  real(kind=realType), dimension(nCostFunction)::globalCFVals
-  !      Local variables.
-  !
-  integer :: ierr, nn,mm
-  integer :: iBeg,iEnd,jBeg,jEnd,ii,npts,nTS
 
-  real(kind=realType) :: force(3),cforce(3),Lift,Drag,CL,CD
+  implicit none
+
+  ! Input/Ouput Variables
+  integer(kind=intType), intent(in) :: sps
+  real(kind=realType), intent(out), dimension(nCostFunction)::globalCFVals
+
+  !      Local variables.
+  integer(kind=intType) :: ierr, nn, mm
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, npts, nTS
+  real(kind=realType) :: force(3), cforce(3), Lift, Drag, CL, CD
   real(kind=realType) :: Moment(3),cMoment(3)
-  real(kind=realType) :: alpha,beta
+  real(kind=realType) :: alpha, beta
   integer(kind=intType) :: liftIndex
   real(kind=realType), dimension(nCostFunction)::localCFVals
-  real(kind=realType),dimension(:,:,:),allocatable :: pts
+  real(kind=realType), dimension(:,:,:), allocatable :: pts
   logical :: forcesTypeSave
+
   !     ******************************************************************
   !     *                                                                *
   !     * Begin execution.                                               *
   !     *                                                                *
   !     ******************************************************************
   !
-  call getForceSize(npts,nTS)
-  allocate(pts(3,npts,nTimeIntervalsSpectral))
-  call getForcePoints(pts,npts,nTS)
+  call getForceSize(npts, nTS)
+  allocate(pts(3, npts ,nTimeIntervalsSpectral))
+  call getForcePoints(pts, npts, nTS)
   ii = 0
 
-  call getDirAngle(velDirFreestream,LiftDirection,&
-       liftIndex,alpha,beta)
+  call getDirAngle(velDirFreestream, LiftDirection, liftIndex, alpha, beta)
   
   forcesTypeSave = forcesAsTractions
   forcesAsTractions = .False.
+
   !Zero the summing variable
   localCFVals(:) = 0.0
   globalCFVals(:) = 0.0
@@ -71,10 +71,10 @@ subroutine computeAeroCoef(globalCFVals,sps)
            jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
 
-           call computeForceAndMomentAdj(Force,cForce,Lift,Drag,Cl,Cd,&
-                moment,cMoment,alpha,beta,liftIndex,MachCoef,&
-                pointRef,lengthRef,surfaceRef,pts(:,:,sps),npts,w,&
-                rightHanded,bcfaceid(mm),iBeg,iEnd,jBeg,jEnd,ii,sps)
+           call computeForceAndMomentAdj(Force, cForce, Lift, Drag, Cl, Cd, &
+                moment, cMoment, alpha, beta, liftIndex, MachCoef, &
+                pointRef, lengthRef, surfaceRef, pts(:,:,sps), npts, w, &
+                rightHanded, bcfaceid(mm), iBeg, iEnd, jBeg, jEnd, ii, sps)
            ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
 
            localCFVals(costFuncLift) = localCFVals(costFuncLift) + Lift
@@ -93,17 +93,17 @@ subroutine computeAeroCoef(globalCFVals,sps)
            localCFVals(costFuncMomXCoef) = localCFVals(costFuncMomXCoef) + cmoment(1)
            localCFVals(costFuncMomYCoef) = localCFVals(costFuncMomYCoef) + cmoment(2)
            localCFVals(costFuncMomZCoef) = localCFVals(costFuncMomZCoef) + cmoment(3)
-
         end if
      end do bocos
   end do domains
 
   ! Now we will mpi_allReduce them into globalCFVals
- 
   call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, sumb_real, &
        mpi_sum, SUmb_comm_world, ierr)
 
+  ! Reset the forcesAsTractions variable
   forcesAsTractions = forcesTypeSave
 
+  ! Deallocate the points array
   deallocate(pts)
 end subroutine computeAeroCoef
