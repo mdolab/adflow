@@ -12,7 +12,7 @@ subroutine setupAdjointMatrix
   implicit none
 
   ! Local variables.
-  logical :: useAD,useTranspose,usePC
+  logical :: useAD, useTranspose, usePC
   integer(kind=intType) :: ierr
   real(kind=realType), dimension(2) :: time
   real(kind=realType)               :: timeAdjLocal, timeAdj
@@ -20,7 +20,7 @@ subroutine setupAdjointMatrix
 #ifndef USE_NO_PETSC
 
   if( myid ==0 ) &
-       write(*,10) "Assembling State Residual Matrices..."
+       write(*, 10) "Assembling State Residual Matrices..."
 
   call cpu_time(time(1))
 
@@ -29,14 +29,8 @@ subroutine setupAdjointMatrix
   usePC = .False.
   useTranspose = .True.
 
-  call setupStateResidualMatrix(drdwt,useAD,usePC,useTranspose)
-
-  if (approxPC) then ! If we need to assemble an approximate PC
-     useAD = .False.
-     usepC = .True.
-     useTranspose = .True.
-     call setupStateResidualMatrix(drdwPreT,useAD,usePC,useTranspose)
-  end if
+  call setupStateResidualMatrix(drdwt, useAD, usePC, useTranspose, &
+       1_intType)
 
   call cpu_time(time(2))
   timeAdjLocal = time(2)-time(1)
@@ -44,15 +38,15 @@ subroutine setupAdjointMatrix
   ! Reudce and display max
   call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
        mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
+  call EChk(PETScIerr, __FILE__, __LINE__)
 
   if(myid ==0)  then
-     write(*,20) "Assembling State Residual Matrices Time (s) = ", timeAdj
+     write(*, 20) "Assembling State Residual Matrices Time (s) = ", timeAdj
   end if
 
   ! Output formats.
 10 format(a)
-20 format(a,1x,f8.2)
+20 format(a, 1x, f8.2)
 
 #endif
 end subroutine setupAdjointMatrix

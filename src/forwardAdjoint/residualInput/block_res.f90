@@ -131,7 +131,7 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
   do sps2 = 1,nTimeIntervalsSpectral
      ! Set dw and vol to looping sps2 instance
      dw => flowDoms(nn,1,sps2)%dw
-     vol => flowDoms(nn,1,sps2)%vol
+     vol => flowDoms(nn,currentLevel,sps2)%vol
 
      do l=1,nw
         do k=2,kl
@@ -146,6 +146,6 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
   
   ! Reset dw and vol to sps instance
   dw => flowDoms(nn,1,sps)%dw
-  vol => flowDoms(nn,1,sps)%vol
+  vol => flowDoms(nn,currentLevel,sps)%vol
 
 end subroutine block_res

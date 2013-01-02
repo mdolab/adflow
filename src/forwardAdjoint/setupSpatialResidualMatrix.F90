@@ -30,12 +30,13 @@ subroutine setupSpatialResidualMatrix(matrix, useAD)
 
   ! Local variables.
   integer(kind=intType) :: ierr,nn,sps,sps2,i,j,k,l,ll,ii,jj,kk
-  integer(kind=intType) :: irow,icol
+  integer(kind=intType) :: irow,icol, level
   integer(kind=intType) :: n_stencil,i_stencil
   integer(kind=intType), dimension(:,:), pointer :: stencil
   integer(kind=intType) :: nColor,iColor
   real(kind=realType) :: delta_x,one_over_dx, val
 
+  level = 1
   rkStage = 0
   currentLevel =1 
   groundLevel = 1
@@ -84,19 +85,19 @@ subroutine setupSpatialResidualMatrix(matrix, useAD)
      ! drdw or a PC
 
      ! Debugging Colorings Below:
-     !call setup_3x3x3_coloring(nn,nColor)
-     !call setup_5x5x5_coloring(nn,nColor)
-     !call setup_BF_coloring(nn,nColor)
+     !call setup_3x3x3_coloring(nn, level, nColor)
+     !call setup_5x5x5_coloring(nn, level, nColor)
+     !call setup_BF_coloring(nn, level, nColor)
 
      if(viscous ) then
-        !call setup_dRdx_visc_coloring(nn,nColor)! Viscous/RANS
+        !call setup_dRdx_visc_coloring(nn, level, nColor)! Viscous/RANS
         print *,'not done yet'
         stop
      else 
-        !call setup_dRdx_euler_coloring(nn,nColor) ! Euler Colorings
-        call setup_4x4x4_coloring(nn,nColor)
-        !call setup_5x5x5_coloring(nn,nColor)
-        !call setup_BF_Node_coloring(nn,nColor)
+        !call setup_dRdx_euler_coloring(nn, level, nColor) ! Euler Colorings
+        call setup_4x4x4_coloring(nn, level, nColor)
+        !call setup_5x5x5_coloring(nn, level, nColor)
+        !call setup_BF_Node_coloring(nn, level, nColor)
      end if
 
      spectralLoop: do sps=1,nTimeIntervalsSpectral

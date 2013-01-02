@@ -150,6 +150,8 @@ class SUMB(AeroSolver):
             'rkreset':[bool, False],
             'nrkreset':[int, 5],
             'applypcsubspacesize':[int, 10],
+            'nkinnerpreconits':[int, 1],
+            'nkouterpreconits':[int, 1],
 
             # Load Balance Paramters
             'blocksplitting':[bool, False],
@@ -508,7 +510,7 @@ class SUMB(AeroSolver):
                 # Newton-Krylov Paramters
                 'usenksolver':{'location':'nksolvervars.usenksolver'},
                 'nklinearsolver':{'gmres':'gmres',
-                                  'fgmres':'fgmres',
+                                  'tfqmr':'tfqmr',
                                   'location':
                                       'nksolvervars.ksp_solver_type',
                                   'len':self.sumb.constants.maxstringlen},
@@ -516,9 +518,8 @@ class SUMB(AeroSolver):
                 'nkswitchtol':{'location':'nksolvervars.nk_switch_tol'},
                 'nksubspacesize':{'location':'nksolvervars.ksp_subspace'},
                 'nklinearsolvetol':{'location':'nksolvervars.ksp_rtol'},
-                'nkpc':{'blockjacobi':'bjacobi',
-                         'jacobi':'jacobi',
-                        'additive schwartz':'asm',
+                'nkpc':{'additive schwartz':'asm',
+                        'multigrid':'mg',
                         'location':
                             'nksolvervars.global_pc_type',
                         'len':self.sumb.constants.maxstringlen},
@@ -536,8 +537,10 @@ class SUMB(AeroSolver):
                 'nkjacobianlag':{'location':'nksolvervars.jacobian_lag'},
                 'rkreset':{'location':'nksolvervars.rkreset'},
                 'nrkreset':{'location':'nksolvervars.nrkreset'},
-                'Nnkfnitedifferencepc':{'location':'nksolvervars.nkfinitedifferencepc'},
+                'nnkfnitedifferencepc':{'location':'nksolvervars.nkfinitedifferencepc'},
                 'applypcsubspacesize':{'location':'nksolvervars.applypcsubspacesize'},
+                'nkinnerpreconits':{'location':'nksolvervars.innerpreconits'},
+                'nkouterpreconits':{'location':'nksolvervars.outerpreconits'},
 
                 # Load Balance Paramters
                 'blocksplitting':{'location':'inputparallel.splitblocks'},
@@ -558,6 +561,7 @@ class SUMB(AeroSolver):
                 'restartadjoint':{'location':'inputadjoint.restartadjoint'},
                 'adjointsolver':{'gmres':'gmres',
                                  'tfqmr':'tfqmr',
+                                  'richardson':'richardson',
                                  'location':
                                      'inputadjoint.adjointsolvertype',
                                  'len':self.sumb.constants.maxstringlen},
@@ -579,6 +583,7 @@ class SUMB(AeroSolver):
                                       'inputadjoint.matrixordering',
                                   'len':self.sumb.constants.maxstringlen},
                 'globalpreconditioner':{'additive schwartz':'asm',
+                                        'multigrid':'mg',
                                         'location':
                                             'inputadjoint.precondtype',
                                         'len':self.sumb.constants.maxstringlen},
@@ -1628,7 +1633,8 @@ class SUMB(AeroSolver):
                 self.stateSetup = True
             # end if
         # end if
-        
+        self.computeObjPartials('cl')
+
         # Finally setup the KSP object for the solve
         if not self.kspSetup:
             self.sumb.setuppetscksp()

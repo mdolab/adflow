@@ -15,7 +15,7 @@ subroutine NKsolver
   use inputTimeSpectral
   use flowVarRefState
   use NKSolverVars, only: dRdw, dRdwPre, jacobian_lag, &
-       totalR0, totalRStart, wVec, rVec, deltaW, global_ksp, &
+       totalR0, totalRStart, wVec, rVec, deltaW, newtonKrylovKSP, &
        ksp_rtol, ksp_atol, func_evals, ksp_max_it, ksp_subspace, ksp_div_tol, &
        nksolvecount, Mmax, iter_k, iter_m, NKLS, &
        nolinesearch, cubiclinesearch, nonmonotonelinesearch, rhores0, &
@@ -171,12 +171,12 @@ subroutine NKsolver
      ksp_max_it = min(ksp_subspace,ncycles-iterTot)
      ksp_max_it = max(ksp_max_it,1) ! At least one iteration!
     
-     call KSPSetTolerances(global_ksp, real(ksp_rtol), real(ksp_atol), real(ksp_div_tol), &
-          ksp_max_it, ierr)
+     call KSPSetTolerances(newtonKrylovKSP, real(ksp_rtol), &
+          real(ksp_atol), real(ksp_div_tol), ksp_max_it, ierr)
      call EChk(ierr, __FILE__, __LINE__)
 
      ! Actually do the Linear Krylov Solve
-     call KSPSolve(global_ksp, rVec, deltaW, ierr)
+     call KSPSolve(newtonKrylovKSP, rVec, deltaW, ierr)
 
      ! DON'T just check the error. We want to catch error code 72
      ! which is a floating point error. This is ok, we just reset and
@@ -221,7 +221,7 @@ subroutine NKsolver
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Get the number of iterations to use with Convergence Info
-     call KSPGetIterationNumber(global_ksp, ksp_iterations, ierr)
+     call KSPGetIterationNumber(newtonKrylovKSP, ksp_iterations, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
   end do NonLinearLoop

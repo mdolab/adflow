@@ -25,8 +25,8 @@ subroutine computeResidualNK()
   real(kind=realType) :: gm1,v2
 
   secondHalo = .True. 
-  currentLevel = 1_intType
-  groundLevel = 1_intTYpe
+  !currentLevel = 1_intType
+  !groundLevel = 1_intTYpe
   
   ! Next we need to compute the pressures
   gm1 = gammaConstant - one

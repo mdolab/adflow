@@ -1,7 +1,7 @@
 ! This is a special function that is sued to dealloc derivative values
 ! in blockpointers_d for use with the AD code.
 
-subroutine dealloc_derivative_values(nn)
+subroutine dealloc_derivative_values(nn, level)
 
   use blockPointers_d ! This modules includes blockPointers
   use inputtimespectral
@@ -10,16 +10,21 @@ subroutine dealloc_derivative_values(nn)
   use cgnsGrid
   use BCTypes
   implicit none
-  integer(kind=intType) :: nn,sps,ierr,i,mm
+
+  ! Input Parameters
+  integer(kind=intType) :: nn, level
+
+  ! Local variables
+  integer(kind=intType) :: sps,ierr,i,mm
 
   ! Reset w and dw -> Its like nothing happened...
   deallocatespectral: do sps=1,nTimeIntervalsSpectral
-     call setPointers(nn,1,sps)
+     call setPointers(nn,level,sps)
      ! Reset w 
-     flowDoms(nn,1,sps)%w = flowDomsd(nn,1,sps)%wtmp
+     flowDoms(nn,level,sps)%w = flowDomsd(nn,1,sps)%wtmp
 
      ! Set dw
-     flowDoms(nn,1,sps)%dw =flowDomsd(nn,1,sps)%dwtmp
+     flowDoms(nn,level,sps)%dw =flowDomsd(nn,1,sps)%dwtmp
      
      ! Deallocate memtory
      deallocate(&
@@ -32,7 +37,7 @@ subroutine dealloc_derivative_values(nn)
   end do deallocatespectral
 
   do sps=1,nTimeIntervalsSpectral
-     call setPointers(nn,1,sps)
+     call setPointers(nn,level,sps)
 
      ! Allocate the tempHalo locations in BOTH the normal and AD calcs
      deallocate(flowDoms (nn,1,sps)%tempHalo)
