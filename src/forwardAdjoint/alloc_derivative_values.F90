@@ -1,7 +1,7 @@
 ! This is a special function that is sued to alloc derivative values
 ! in blockpointers_d for use with the AD code.
 
-subroutine alloc_derivative_values(nn)
+subroutine alloc_derivative_values(nn, level)
 
   use blockPointers_d ! This modules includes blockPointers
 
@@ -12,8 +12,11 @@ subroutine alloc_derivative_values(nn)
   use cgnsGrid 
   implicit none
 
-  integer(kind=intType) :: nn,sps,ierr,i,j,k,l
-  integer(kind=intType) :: mm
+  ! Input parameters
+  integer(kind=intType) :: nn, level
+
+  ! Local variables
+  integer(kind=intType) :: sps,ierr,i,j,k,l, mm
   integer(kind=intType) :: iBeg, jBeg, iEnd, jEnd
   integer(kind=intType) :: massShape(2), max_face_size
   ! First create a flowdoms-like structure that is nominally the same
@@ -24,7 +27,7 @@ subroutine alloc_derivative_values(nn)
   call EChk(ierr,__FILE__,__LINE__)
 
   do sps=1,nTimeIntervalsSpectral
-     call setPointers(nn,1,sps)
+     call setPointers(nn,level,sps)
 
      ! Allocate the tempHalo locations in BOTH the normal and AD calcs
      ! Number of nodes including halos = ie+1 = ib, etc
@@ -110,7 +113,7 @@ subroutine alloc_derivative_values(nn)
      allocate(flowDomsd(nn,1,sps)%BCData(j), stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     flowdomsd(nn,1,sps)%nBocos = flowdoms(nn,1,sps)%nbocos   
+     flowdomsd(nn,1,sps)%nBocos = flowdoms(nn,level,sps)%nbocos   
      bcdatad =>flowDomsd(nn,1,sps)%BCData
 
      bocoLoop: do mm=1,nBocos
@@ -349,7 +352,7 @@ subroutine alloc_derivative_values(nn)
 
   allocspectralLoop: do sps=1,nTimeIntervalsSpectral
 
-     call setPointers(nn,1,sps)
+     call setPointers(nn,level,sps)
      call block_res(nn,sps,.False.,.False.)
 
      allocate(flowDomsd(nn,1,sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
@@ -388,8 +391,6 @@ subroutine alloc_derivative_values(nn)
            end do
         end do
      end do
-
-
   end do allocspectralLoop
 
 end subroutine alloc_derivative_values

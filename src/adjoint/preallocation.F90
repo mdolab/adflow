@@ -1,4 +1,5 @@
-subroutine statePreAllocation(onProc , offProc, wSize, stencil, N_stencil)
+subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
+     level)
 
   ! This is a generic function that determines the correct
   ! pre-allocation for on and off processor parts. It take in a
@@ -21,9 +22,9 @@ subroutine statePreAllocation(onProc , offProc, wSize, stencil, N_stencil)
   integer(kind=intType), intent(in)  :: N_stencil
   integer(kind=intType), intent(in)  :: stencil(N_stencil, 3)
   integer(kind=intType), intent(out) :: onProc(wSize), offProc(wSize)
+  integer(kind=intType), intent(in)  :: level
 
   ! Local Variables
-
   integer(kind=intType) :: nn, i, j, k, sps, ii, jj
   integer(kind=intType) :: cell(3)
   integer(kind=intTYpe) :: onAdd, offAdd
@@ -36,7 +37,7 @@ subroutine statePreAllocation(onProc , offProc, wSize, stencil, N_stencil)
   offProc(:) = 0_intType 
   do nn=1, nDom
      do sps=1, nTimeIntervalsSpectral
-        call setPointers(nn, 1_intType, sps)
+        call setPointers(nn, level, sps)
         ! Loop over each Cell
         do k=2, kl
            do j=2, jl
@@ -113,7 +114,7 @@ subroutine statePreAllocation(onProc , offProc, wSize, stencil, N_stencil)
   
 end subroutine statePreAllocation
 
-subroutine drdxPreAllocation(onProc, offProc, xSize)
+subroutine drdxPreAllocation(onProc, offProc, xSize, level)
 
   ! Get a good estimate of the number of non zero rows for the
   ! on-diagonal and off-diagonal portions of the matrix
@@ -131,9 +132,9 @@ subroutine drdxPreAllocation(onProc, offProc, xSize)
   ! Subroutine Arguments
   integer(kind=intType), intent(in)  :: xSize
   integer(kind=intType), intent(out) :: onProc(xSize), offProc(xSize)
+  integer(kind=intType), intent(in)  :: level
 
   ! Local Variables
-
   integer(kind=intType) :: nn, i, j, k, l, sps, ii, jj, mm
   integer(kind=intType) :: inode, jnode, knode, iDim
   integer(kind=intType) :: icell, jcell, kcell
@@ -156,7 +157,7 @@ subroutine drdxPreAllocation(onProc, offProc, xSize)
   ! This is for the "Regular" drdx calculation.
   do nn=1, nDom
      do sps=1, nTimeIntervalsSpectral
-        call setPointers(nn, 1_intType, sps)
+        call setPointers(nn, level, sps)
         ! Loop over each Node
         do kNode=1, kl
            do jNode=1, jl
@@ -238,7 +239,7 @@ subroutine drdxPreAllocation(onProc, offProc, xSize)
   ! This is for the "Regular" drdx calculation.
   do nn=1, nDom
      do sps=1, nTimeIntervalsSpectral
-        call setPointers(nn, 1_intType, sps)
+        call setPointers(nn, level, sps)
         ! Loop over each Node
         do kNode=1, kl
            do jNode=1, jl

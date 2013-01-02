@@ -26,7 +26,7 @@ subroutine NKBenchmark(NKRes,niter)
   use flowVarRefState
   use inputtimespectral
   use blockPointers
-  use nksolvervars, only :wVec,rVec,ctx,drdw,global_pc,deltaw
+  use nksolvervars, only :wVec, rVec, ctx, drdw, deltaw
   use inputPhysics
   use iteration
   use inputiteration
@@ -70,7 +70,7 @@ subroutine NKBenchmark(NKRes,niter)
         timeA = mpi_wtime()
 
         call formFunction_mf(ctx,wVec,rVec,ierr)
-        call PCApply(global_pc,rVec,deltaW,ierr)
+        !call PCApply(global_pc,rVec,deltaW,ierr)
         
         timeB = mpi_wtime()
 

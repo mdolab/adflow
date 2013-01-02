@@ -45,7 +45,7 @@ subroutine destroyNKsolver
      call VecDestroy(work,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     call KSPDestroy(global_ksp,ierr)
+     call KSPDestroy(newtonKrylovKSP, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      NKSolverSetup = .False.

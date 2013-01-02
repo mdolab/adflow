@@ -48,8 +48,11 @@
       !       of design variables.
       !
 
-      Mat     dRdWT, dRdWPreT, matTemp, matTemp2
+      Mat     dRdWT, dRdWPreT
       Mat     dRda, dRdx, dFdw, dFdx
+      Mat, allocatable, dimension(:) :: coarsedRdWPreT
+      Mat, allocatable, dimension(:) :: restrictionOperator
+      Mat, allocatable, dimension(:) :: prolongationOperator
       Vec     psi, dJdW, adjointRHS,adjointRes
       Vec     dJdx
       Vec     gridVec

@@ -5,8 +5,11 @@ subroutine destroyStatePETScVars
 
   use ADjointPETSc
   use inputADjoint    !ApproxPC
+  use blockPointers
   implicit none
 
+  integer(kind=intType) :: i, nLevels
+  
 #ifndef USE_NO_PETSC
 
   ! Matrices
@@ -16,6 +19,22 @@ subroutine destroyStatePETScVars
   if (ApproxPC) then
      call MatDestroy(dRdWPreT, PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
+  end if
+
+  nLevels = ubound(flowDoms, 2)
+  if (preCondType == 'mg') then
+     do i=2,nLevels
+        call MatDestroy(coarsedRdwPreT(i), PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+        
+        call MatDestroy(restrictionOperator(i), PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+
+        call MatDestroy(prolongationOperator(i), PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+
+     end do
+     deallocate(coarsedRdwPreT, restrictionOperator, prolongationOperator)
   end if
 
   ! Vectors

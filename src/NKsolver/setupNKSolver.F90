@@ -12,9 +12,9 @@ subroutine setupNKsolver
   use inputPhysics
   use stencils
   use ADjointVars , only: nCellsLocal
-  use NKSolverVars, only: dRdw,dRdwPre,dRdwPseudo, ctx, wVec,rVec,deltaW,&
-       NKsolvecount,nksolversetup,ksp_subspace,ksp_solver_type,global_ksp, &
-       work, g, w_like1, w_like2, scaleVec
+  use NKSolverVars, only: dRdw, dRdwPre,dRdwPseudo, ctx, wVec, rVec, deltaW,&
+       NKsolvecount, nksolversetup, work, g, w_like1, w_like2, scaleVec, &
+       newtonKrylovKSP
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -25,8 +25,7 @@ subroutine setupNKsolver
   integer(kind=intType) , dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
   integer(kind=intType) :: n_stencil
   integer(kind=intType), dimension(:,:), pointer :: stencil
-
-  integer(kind=intType) :: i,j,k,nn,i2,j2,k2,d2,l,sps
+  integer(kind=intType) :: i,j,k,nn,i2,j2,k2,d2,l,sps, level
   external FormFunction_mf
   external mykspmonitor
   if (.not. NKSolverSetup) then
@@ -80,7 +79,7 @@ subroutine setupNKsolver
 
      ! Create Pre-Conditioning Matrix
      totalCells = nCellsLocal(1_intType)*nTimeIntervalsSpectral
-     allocate( nnzDiagonal(totalCells),nnzOffDiag(totalCells))
+     allocate(nnzDiagonal(totalCells), nnzOffDiag(totalCells))
 
      call initialize_stencils
      if (viscous) then
@@ -93,8 +92,9 @@ subroutine setupNKsolver
 
      ! Note: Since we are using blocked matrices, we computed the
      ! non-zero BLOCKS as opposed to the non-zero values. 
-     call statePreAllocation(nnzDiagonal,nnzOffDiag,&
-          totalCells,stencil,n_stencil)
+     level = 1_intType
+     call statePreAllocation(nnzDiagonal, nnzOffDiag, &
+          totalCells, stencil ,n_stencil, level)
      if (PETSC_VERSION_MINOR == 2) then
         call MatCreateMPIBAIJ(SUMB_COMM_WORLD, nw, &
              nDimW, nDimW,                     &
@@ -131,16 +131,16 @@ subroutine setupNKsolver
      call EChk(ierr,__FILE__,__LINE__)
      
      !  Create the linear solver context
-     call KSPCreate(SUMB_COMM_WORLD,global_ksp,ierr)
+     call KSPCreate(SUMB_COMM_WORLD, newtonKrylovKSP, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! Set operators for the solver
-     call KSPSetOperators(global_ksp,dRdw,dRdWPre, &
+     call KSPSetOperators(newtonKrylovKSP,dRdw,dRdWPre, &
           DIFFERENT_NONZERO_PATTERN,ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! DEBUGGING ONLY!
-!      call KSPMonitorSet(global_ksp,MyKSPMonitor, PETSC_NULL_OBJECT, &
+!      call KSPMonitorSet(newtonKrylovKSP,MyKSPMonitor, PETSC_NULL_OBJECT, &
 !          PETSC_NULL_FUNCTION, ierr)
 !      call EChk(ierr,__FILE__,__LINE__)
     

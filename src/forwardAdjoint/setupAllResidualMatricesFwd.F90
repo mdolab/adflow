@@ -46,10 +46,10 @@ subroutine setupAllResidualMatricesfwd
   !
   integer(kind=intType) ::level
   integer(kind=intType) :: iCell, jCell, kCell
-  integer(kind=intType) :: nn, m,idxres
+  integer(kind=intType) :: nn, m, idxres
 
-  logical :: fineGrid, correctForK, exchangeTurb,secondhalo
-  logical :: useAD,useTranspose,usePC
+  logical :: fineGrid, correctForK, exchangeTurb, secondhalo
+  logical :: useAD, useTranspose, usePC
 
   real(kind=realType), dimension(2) :: time
   real(kind=realType)               :: timeAdjLocal, timeAdj
@@ -116,7 +116,7 @@ subroutine setupAllResidualMatricesfwd
   ! Only on the fine grid.
 
   if(exchangePressureEarly .and. currentLevel <= groundLevel) &
-       call whalo1(currentLevel, 1_intType, 0_intType, .true.,&
+       call whalo1(currentLevel, 1_intType, 0_intType, .true., &
        .false., .false.)
 
   ! Apply all boundary conditions to all blocks on this level.
@@ -156,34 +156,34 @@ subroutine setupAllResidualMatricesfwd
 
 
   if( myid ==0 ) &
-       write(*,10) "Assembling All Residual Matrices in Forward mode..."
+       write(*, 10) "Assembling All Residual Matrices in Forward mode..."
 
   call cpu_time(time(1))
 
   !zero the matrix for dRdW Insert call
-  call MatZeroEntries(dRdwt,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
+  call MatZeroEntries(dRdwt, PETScIerr)
+  call EChk(PETScIerr, __FILE__, __LINE__)
 
   !zero the matrix for dRdx ADD call
-  call MatZeroEntries(dRdx,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
+  call MatZeroEntries(dRdx, PETScIerr)
+  call EChk(PETScIerr, __FILE__, __LINE__)
 
   !zero the matrix for dRda  call
-  call MatZeroEntries(dRda,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
+  call MatZeroEntries(dRda, PETScIerr)
+  call EChk(PETScIerr, __FILE__, __LINE__)
 
   ! Compute dRdw with forward AD
   useAD = .True.!.False.
   usePC = .False.
   useTranspose = .True.
-  if( myid ==0 ) print *,'Computing Forward AD dRdw...'
-  call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
+  if( myid ==0 ) print *, 'Computing Forward AD dRdw...'
+  call setupStateResidualMatrix(drdwT, useAD, usePC, useTranspose, 1_intType)
   
-  if( myid ==0 ) print *,'Computing Forward AD dRdx'
-  call setupSpatialResidualMatrix(drdx,useAD)
-  if( myid ==0 ) print *,'Computing Forward AD dRda'
+  if( myid ==0 ) print *, 'Computing Forward AD dRdx'
+  call setupSpatialResidualMatrix(drdx, useAD)
+  if( myid ==0 ) print *, 'Computing Forward AD dRda'
   useAD = .True.!.False.!
-  call setupExtraResidualMatrix(drda,useAD)
+  call setupExtraResidualMatrix(drda, useAD)
 
 
   if (nDesignDissError >= 0) then
@@ -200,17 +200,17 @@ subroutine setupAllResidualMatricesfwd
      vis4 = 0.0
      
      !evaluate new residual
-     call whalo2(1_intType, 1_intType, nw, .True.,.True.,.True.)
+     call whalo2(1_intType, 1_intType, nw, .True., .True., .True.)
      call computeResidualNK ! This is the easiest way to do this
      
      !Store updated residual. This is an indication of how much error the dissipation scheme is causing
      
-     do nn=1,nDom
+     do nn=1, nDom
         
         ! Loop over the number of time instances for this block.
-        do sps=1,nTimeIntervalsSpectral
+        do sps=1, nTimeIntervalsSpectral
            
-           call setPointers(nn,level,sps)
+           call setPointers(nn, level, sps)
            
            ! Loop over location of output (R) cell of residual
            
@@ -218,13 +218,13 @@ subroutine setupAllResidualMatricesfwd
               do jCell = 2, jl
                  do iCell = 2, il
                     do m = 1, nw 
-                       idxres   = globalCell(iCell,jCell,kCell)*nw+ m - 1
+                       idxres   = globalCell(iCell, jCell, kCell)*nw+ m - 1
                        
-                       call MatSetValues(dRda, 1, idxres,1, nDesignDissError, &
-                            dw(icell,jcell,kcell,m), INSERT_VALUES,&
+                       call MatSetValues(dRda, 1, idxres, 1, nDesignDissError, &
+                            dw(icell, jcell, kcell, m), INSERT_VALUES, &
                             PETScIerr)
                        
-                       call EChk(PETScIerr,__FILE__,__LINE__)
+                       call EChk(PETScIerr, __FILE__, __LINE__)
 
                     end do
                  end do
@@ -240,16 +240,16 @@ subroutine setupAllResidualMatricesfwd
      vis4 = vis4ref
 
      !reevaluate residual
-     call whalo2(1_intType, 1_intType, nw, .True.,.True.,.True.)
+     call whalo2(1_intType, 1_intType, nw, .True., .True., .True.)
      call computeResidualNK
      
      !reassemble dRda with error term included  
-     call MatAssemblyBegin(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
+     call MatAssemblyBegin(dRda, MAT_FINAL_ASSEMBLY, PETScIerr)
+     call EChk(PETScIerr, __FILE__, __LINE__)
      
      
-     call MatAssemblyEnd(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
+     call MatAssemblyEnd(dRda, MAT_FINAL_ASSEMBLY, PETScIerr)
+     call EChk(PETScIerr, __FILE__, __LINE__)
   end if
 
   ! Get new time and compute the elapsed time.
@@ -262,9 +262,9 @@ subroutine setupAllResidualMatricesfwd
 
   call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
        mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
+  call EChk(PETScIerr, __FILE__, __LINE__)
   if(myid ==0) &
-       write(*,20) "Assembling All Residaul Matrices Fwd time (s) = ", timeAdj
+       write(*, 20) "Assembling All Residaul Matrices Fwd time (s) = ", timeAdj
 
   ! Output formats.
 #endif
@@ -272,8 +272,8 @@ subroutine setupAllResidualMatricesfwd
 
  
 10 format(a)
-20 format(a,1x,f8.2)
-99 format(a,1x,i6)
+20 format(a, 1x, f8.2)
+99 format(a, 1x, i6)
  
 #endif
 end subroutine setupAllResidualMatricesfwd

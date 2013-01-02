@@ -50,6 +50,8 @@ FILES_TO_COMPLEXIFY = \
 		preprocessingADjoint.F90   \
 		releaseMemADjoint.f90      \
 		setupAllResidualMatrices.F90\
+		setupRestrictionMatrices.F90\
+		setupProlongationMatrix.F90\
 		setupPETScKsp.F90         \
 		solverADjoint.F90         \
 		updateFlow.f90            \

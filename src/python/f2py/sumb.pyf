@@ -1062,6 +1062,8 @@ python module sumb
 
        module nksolvervars ! in :test:NKsolverVars.F90
          use constants
+         integer(kind=inttype) :: innerpreconits
+         integer(kind=inttype) :: outerpreconits
          integer(kind=inttype) :: jacobian_lag
          logical :: usenksolver
          logical :: nkfinitedifferencepc
@@ -1080,7 +1082,6 @@ python module sumb
          real(kind=realtype) :: snes_atol
          character(len=maxstringlen) :: local_pc_ordering
          real(kind=realtype) :: ksp_div_tol=10
-         character(len=maxstringlen) :: local_pc_type
          real(kind=realtype) :: nk_switch_tol
          real(kind=realtype) :: ksp_rtol
          real(kind=realtype) :: totalr0
