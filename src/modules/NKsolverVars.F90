@@ -50,14 +50,9 @@ module NKsolverVars
   Vec wVec, rVec, rvec2, deltaW, diagV, work, g, scaleVec, wBase, rBase, diag, rhs
   Vec w_like1, w_like2
   ! PETSc KSP/PC 
-  ! global_ksp: The ksp object for solving the newton udpate
-  ! global_pc : The preconditioner context for the above ksp
-  ! local_ksp:  The ksp object associated with the asm or block
-  !             jacobi sub blocks
-  ! local_pc:   THe pc object associated with the above ksp object
+  ! NK_KSP: The ksp object for solving the newton udpate
 
-  KSP                global_ksp,local_ksp
-  PC                 global_pc ,local_pc
+  KSP  newtonKrylovKSP
 
   ! PETSc Misc:
   SNESConvergedReason reason
@@ -98,9 +93,10 @@ module NKsolverVars
   integer(kind=intType) :: asm_overlap
   character(maxStringLen):: global_pc_type
   character(maxStringLen):: global_pc_side
-  character(maxStringLen) :: local_pc_type
   character(maxStringLen) :: local_pc_ordering
   integer(kind=intType)   :: local_pc_ilu_level
+  integer(kind=intType) :: innerPreConIts
+  integer(kind=intType) :: outerPreConIts
 
   ! Krylov-Solver Tolerances
   real(kind=realType) :: ksp_atol

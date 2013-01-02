@@ -10,14 +10,15 @@ subroutine createStatePETScVars
   !     ******************************************************************
   !
   use ADjointPETSc, only: dRdwT, drdwPreT, dJdw, psi, adjointRes, adjointRHS, &
-       PETScIerr, PETScBlockMatrix
+       PETScIerr, PETScBlockMatrix, coarsedRdwPreT, restrictionOperator, &
+       prolongationOperator
   use ADjointVars   
   use communication  
   use inputTimeSpectral 
   use flowVarRefState 
   use inputADjoint    
   use stencils
-  
+  use blockPointers
   implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -25,11 +26,12 @@ subroutine createStatePETScVars
 
 
   !     Local variables.
-  integer(kind=intType)  :: nDimW, nDimX
+  integer(kind=intType)  :: nDimW, nDimX, nDimw_fine, nDimw_coarse, l
   integer(kind=intType) :: i, n_stencil
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal2, nnzOffDiag2
   integer(kind=intType), dimension(:, :), allocatable :: stencil
+  integer(kind=intType) :: level, ierr, nlevels
 
   ! Define matrix dRdW local size, taking into account the total
   ! number of Cells owned by the processor and the number of 
@@ -49,8 +51,8 @@ subroutine createStatePETScVars
 
   ! ------------------- Determine Preallocation for dRdw --------------
 
-  allocate( nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
-       nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
+  allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
+            nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
 
   call initialize_stencils
   if (.not. viscous) then
@@ -63,7 +65,9 @@ subroutine createStatePETScVars
      stencil = visc_pc_stencil
   end if
 
-  call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nw, stencil, n_stencil)
+  level = 1
+  call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nw, stencil, n_stencil, &
+       level)
 
   if( nw <= 7 ) then
 
@@ -133,20 +137,18 @@ subroutine createStatePETScVars
   call MatSetOption(dRdWt, MAT_ROW_ORIENTED, PETSC_FALSE, PETScIerr)
   call EChk(PETScIerr, __FILE__, __LINE__)
 
-
   if (ApproxPC) then
-
      ! ------------------- Determine Preallocation for dRdwPre -------------
-
-     allocate( nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
-          nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
+     allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
+              nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
 
      n_stencil = N_euler_PC
      allocate(stencil(n_stencil, 3))
      stencil = euler_PC_stencil
 
-     call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nw, stencil, n_stencil)
-
+     level = 1
+     call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nw, stencil, &
+          n_stencil, level)
      ! --------------------------------------------------------------------
 
      if( nw <= 7 ) then
@@ -199,13 +201,11 @@ subroutine createStatePETScVars
         deallocate(nnzDiagonal2, nnzOffDiag2)
      endif
 
-     deallocate( nnzDiagonal, nnzOffDiag, stencil )
+     deallocate(nnzDiagonal, nnzOffDiag, stencil)
 
      ! Set the matrix dRdWPre options.
-
      call MatSetOption(dRdWPret, MAT_ROW_ORIENTED, PETSC_FALSE, PETScIerr)
      call EChk(PETScIerr, __FILE__, __LINE__)
-
   end if ! Approx PC
 
   ! Vectors:
@@ -219,8 +219,109 @@ subroutine createStatePETScVars
 
   call VecDuplicate(dJdW, adjointRHS, PETScIerr)
   call EChk(PETScIerr, __FILE__, __LINE__)
-#endif
 
+  ! If we are using the multigrind PC we alos have to assemble coarse
+  ! grid approximations to the Jacobian. 
+  nLevels = ubound(flowDoms, 2)
+
+  if (preCondType == 'mg') then
+
+     ! Allocate coarse grid 
+     allocate(coarsedRdwPreT(nlevels), stat=ierr)
+     call EChk(PETScIerr, __FILE__, __LINE__)
+
+     allocate(restrictionOperator(nlevels), stat=ierr)
+     call EChk(PETScIerr, __FILE__, __LINE__)
+
+     allocate(prolongationOperator(nlevels), stat=ierr)
+     call EChk(PETScIerr, __FILE__, __LINE__)
+
+     ! Loop over coarse levels:
+     do l=2, nLevels
+        
+        ! Compute the nDimw for this level
+        nDimW_coarse = nw * nCellsLocal(l  )*nTimeIntervalsSpectral
+        nDimW_fine   = nw * nCellsLocal(l-1)*nTimeIntervalsSpectral
+
+         ! Allocate sizes
+         allocate(nnzDiagonal(nCellsLocal(l)*nTimeIntervalsSpectral), &
+                   nnzOffDiag(nCellsLocal(l)*nTimeIntervalsSpectral), &
+                   nnzDiagonal2(nCellsLocal(l-1)*nTimeIntervalsSpectral), &
+                   nnzOffDiag2(nCellsLocal(l-1)*nTimeIntervalsSpectral))
+           nnzDiagonal2(:) = 8
+           nnzOffDiag2(:) = 0
+
+         call EChk(ierr, __FILE__, __LINE__)
+
+        n_stencil = N_euler_PC
+        allocate(stencil(n_stencil, 3))
+        stencil = euler_PC_stencil
+
+        call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW_coarse/nw, stencil, &
+          n_stencil, l)
+
+        PETScBlockMatrix = .true.
+        if (PETSC_VERSION_MINOR <  3) then
+           call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD,  nw, &
+                nDimW_coarse, nDimW_coarse, &
+                PETSC_DETERMINE, PETSC_DETERMINE, &
+                0, nnzDiagonal,         &
+                0, nnzOffDiag,            &
+                coarsedRdwPreT(l), PETScIerr)
+           call EChk(PETScIerr, __FILE__, __LINE__)
+        
+           nnzDiagonal = 8
+           nnzOffDiag = 0
+           call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw, &
+                nDimW_coarse, nDimW_fine, &
+                PETSC_DETERMINE, PETSC_DETERMINE, &
+                0, nnzDiagonal, &
+                0, nnzOffDiag, &
+                restrictionOperator(l), PETScIerr)
+           call EChk(PETScIerr, __FILE__, __LINE__)
+
+           nnzDiagonal2 = 8
+           nnzOffDiag = 0
+           call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw, &
+                nDimW_fine, nDimW_coarse, &
+                PETSC_DETERMINE, PETSC_DETERMINE, &
+                0, nnzDiagonal2, &
+                0, nnzOffDiag2, &
+                prolongationOperator(l), PETScIerr)
+           call EChk(PETScIerr, __FILE__, __LINE__)
+        else
+!            call MatCreateBAIJ(SUMB_PETSC_COMM_WORLD, nw, &
+!                 nDimW_coarse, nDimW_coarse,       &
+!                 PETSC_DETERMINE, PETSC_DETERMINE, &
+!                 0, nnzDiagonal,         &
+!                 0, nnzOffDiag,            &
+!                 coarsedRdwPreT(l), PETscIerr)
+!            call EChk(PETScIerr, __FILE__, __LINE__)
+
+           nnzDiagonal = 8
+           nnzOffDiag = 0
+           call MatCreateBAIJ(SUMB_PETSC_COMM_WORLD, nw, &
+                nDimW_coarse, nDimW_fine, &
+                PETSC_DETERMINE, PETSC_DETERMINE, &
+                0, nnzDiagonal, &
+                0, nnzOffDiag, &
+                restrictionOperator(l), PETScIerr)
+           call EChk(PETScIerr, __FILE__, __LINE__)
+
+           nnzDiagonal2 = 8
+           nnzOffDiag2 = 0
+           call MatCreateBAIJ(SUMB_PETSC_COMM_WORLD, nw, &
+                nDimW_fine, nDimW_coarse, &
+                PETSC_DETERMINE, PETSC_DETERMINE, &
+                0, nnzDiagonal2, &
+                0, nnzOffDiag2, &
+                prolongationOperator(l), PETScIerr)
+           call EChk(PETScIerr, __FILE__, __LINE__)
+         end if
+         deallocate(nnzDiagonal, nnzOffDiag, nnzDiagonal2, nnzOffDiag2, stencil)
+      end do
+  end if
+#endif
 end subroutine createStatePETScVars
 
 subroutine createSpatialPETScVars
@@ -249,7 +350,7 @@ subroutine createSpatialPETScVars
   ! Local variables.
   integer(kind=intType) :: nDimW, nDimX
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
-
+  integer(kind=intType) :: level
 #ifndef USE_NO_PETSC
 
   nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
@@ -272,7 +373,8 @@ subroutine createSpatialPETScVars
 
   allocate( nnzDiagonal(nDimX), nnzOffDiag(nDimX) )
   ! Create the matrix dRdx.
-  call drdxPreAllocation(nnzDiagonal, nnzOffDiag, nDimX)
+  level = 1_intType
+  call drdxPreAllocation(nnzDiagonal, nnzOffDiag, nDimX, level)
   
   ! Note we are creating the TRANPOSE of dRdx. It is size dDimX by nDimW
   if (PETSC_VERSION_MINOR <  3) then

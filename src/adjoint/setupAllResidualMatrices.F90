@@ -901,24 +901,6 @@ subroutine setupAllResidualMatrices
   ! Output formats.
 #endif
 
-
-!!$  ! Redo drdw with FD
-!!$  useAD = .True.!.False.
-!!$  usePC = .False.
-!!$  useTranspose = .True.
-!!$  print *,'Doing FD dRdx'
-!!$  !call setupStateResidualMatrix(drdwT,useAD,usePC,useTranspose)
-!!$  call setupSpatialResidualMatrix(drdx,useAD)
-!!$
-!!$ !print *,'doing FD dRdx'
-!!$
-!!$  !call setupSpatialResidualMatrix(drdx,useAD)
-!!$  print *,'doing FD dRda'
-!!$  useAD = .True.!.False.
-!!$  call setupExtraResidualMatrix(drda,useAD)
-!!$  
-
-
 10 format(a)
 20 format(a,1x,f8.2)
 99 format(a,1x,i6)

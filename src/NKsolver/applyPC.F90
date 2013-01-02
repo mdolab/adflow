@@ -40,11 +40,11 @@ subroutine applyPC(in_vec, out_vec, ndof)
   call EChk(ierr,__FILE__,__LINE__)
 
    ! This needs to be a bit better...
-  call KSPSetTolerances(global_ksp,1e-8,1e-16,10.0,applyPCSubSpaceSize,ierr)
+  call KSPSetTolerances(newtonKrylovKSP, 1e-8,1e-16,10.0,applyPCSubSpaceSize,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Actually do the Linear Krylov Solve
-  call KSPSolve(global_ksp, w_like1, w_like2, ierr)
+  call KSPSolve(newtonKrylovKSP, w_like1, w_like2, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Reset the array pointers:
