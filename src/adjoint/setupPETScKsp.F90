@@ -364,8 +364,6 @@ subroutine setupStandardKSP(kspObject, kspObjectType, gmresRestart, preConSide, 
   call PCFactorSetLevels(subpc, localFillLevel , ierr)
   call EChk(ierr, __FILE__, __LINE__) 
 
-  call KSPView(kspObject, PETSC_VIEWER_STDOUT_WORLD, ierr)
-  call EChk(ierr, __FILE__, __LINE__) 
 #endif
 end subroutine setupStandardKSP
 
