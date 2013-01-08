@@ -71,7 +71,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD)
   domainLoopAD: do nn=1,nDom
 
      ! Set pointers to the first timeInstance...just to getSizes
-     call setPointers(nn,1,1)
+     call setPointers(nn, level, 1)
 
      ! Set unknown sizes in diffSizes for AD routine
      ISIZE1OFDrfbcdata = nBocos
@@ -79,7 +79,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD)
 
      ! Allocate the memory we need for this block to do the forward
      ! mode derivatives and copy reference values
-     call alloc_derivative_values(nn)
+     call alloc_derivative_values(nn, level)
      
      ! Setup the coloring for this block depending on if its
      ! drdw or a PC
@@ -262,7 +262,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD)
      end do spectralLoop
 
      ! Deallocate and reset Values
-     call dealloc_derivative_values(nn)
+     call dealloc_derivative_values(nn, level)
   end do domainLoopAD
 
   ! PETSc Matrix Assembly and Options Set

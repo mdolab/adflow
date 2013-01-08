@@ -40,7 +40,9 @@ subroutine applyPC(in_vec, out_vec, ndof)
   call EChk(ierr,__FILE__,__LINE__)
 
    ! This needs to be a bit better...
-  call KSPSetTolerances(newtonKrylovKSP, 1e-8,1e-16,10.0,applyPCSubSpaceSize,ierr)
+  call KSPSetTolerances(newtonKrylovKSP, 1e-8, 1e-16, 10.0, &
+       applyPCSubSpaceSize, ierr)
+
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Actually do the Linear Krylov Solve
@@ -61,7 +63,7 @@ end subroutine applyPC
 subroutine applyAdjointPC(in_vec, out_vec, ndof)
 #ifndef USE_NO_PETSC
   ! Apply the Adjoint PC to the in_vec. This subroutine is ONLY used as a
-  ! preconditioner for a global Aero-Structural Newton-Krylov Method
+  ! preconditioner for a global Aero-Structural Krylov Method
 
   use communication
   use ADjointPETSc
@@ -83,12 +85,21 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
   call VecPlaceArray(w_like2, out_vec, ierr)
   call EChk(ierr,__FILE__,__LINE__)
  
+  ! Set KSP_NORM Type to none. Implictly turns off convergence
+  ! check. Since we just want to run a fixed number of iterations this
+  ! is fine. The should be set regardless of the KSPType.
+
+  call KSPSetNormType(adjointKSP, KSP_NORM_NONE, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
   ! This needs to be a bit better...
-  call KSPSetTolerances(adjointKSP,1e-8,1e-16,10.0,applyAdjointPCSubSpaceSize,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call KSPSetTolerances(adjointKSP, PETSC_DEFAULT_DOUBLE_PRECISION, &
+       PETSC_DEFAULT_DOUBLE_PRECISION, PETSC_DEFAULT_DOUBLE_PRECISION, &
+       applyAdjointPCSubSpaceSize, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! Actually do the Linear Krylov Solve
-  call KSPSolve(adjointKSP, w_like1, w_like2,ierr)
+  call KSPSolve(adjointKSP, w_like1, w_like2, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Reset the array pointers:
