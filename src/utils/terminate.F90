@@ -145,10 +145,18 @@ subroutine EChk(ierr,file,line)
   if (ierr == 0) then
      return ! No error, return immediately
   else
+#ifndef USE_COMPLEX
+     print *,'================================================================='
+     write(*,900) "PETSc or MPI Error. Error Code ",ierr,". Detected on Proc ",myid
+     write(*,901) "Error at line: ",line," in file: ",file
+     print *,'================================================================='
+#else
      print *,'-----------------------------------------------------------------'
      write(*,900) "PETSc or MPI Error. Error Code ",ierr,". Detected on Proc ",myid
      write(*,901) "Error at line: ",line," in file: ",file
      print *,'-----------------------------------------------------------------'
+#endif
+
      call MPI_Abort(warp_comm_world,ierr)
      stop ! Just in case
   end if

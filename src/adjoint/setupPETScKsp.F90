@@ -218,7 +218,9 @@ subroutine setupStandardKSP(kspObject, kspObjectType, gmresRestart, preConSide, 
   !                   --> subPC -->  PC type set to 'loclaPCType'.
   !                                  Usually ILU. 'localFillLevel' is 
   !                                  set and 'localMatrixOrder' is used.
-
+  !
+  ! Note that if globalPreConIts=1 then maser_PC_KSP is NOT created and master_PC=globalPC
+  ! and if localPreConIts=1 then subKSP is set to preOnly. 
   use constants
   
   implicit none
@@ -265,6 +267,11 @@ subroutine setupStandardKSP(kspObject, kspObjectType, gmresRestart, preConSide, 
      call KSPSetPCSide(kspObject, PC_LEFT, ierr)
   end if
   call EChk(ierr, __FILE__, __LINE__)
+
+  if (trim(kspObjectType) == 'richardson') then
+     call KSPSetPCSide(kspObject, PC_LEFT, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+  end if
 
   ! Since there is an extraneous matMult required when using the
   ! richardson precondtiter with only 1 iteration, only use it we need

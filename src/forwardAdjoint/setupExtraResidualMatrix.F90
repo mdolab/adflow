@@ -45,7 +45,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
 
   integer(kind=intType) :: n_stencil,i_stencil
   integer(kind=intType), dimension(:,:), pointer :: stencil
-  integer(kind=intType) :: nColor,iColor,idxblk
+  integer(kind=intType) :: nColor,iColor,idxblk, level
   logical :: secondHalo
   
   !Reference values for FD
@@ -82,16 +82,16 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
   rkStage = 0
   secondHalo = .True. 
   ! Master Domain Loop
-
+  level = 1_intType
   nColor = nDesignExtra
   domainLoopAD: do nn=1,nDom
 
      ! Set pointers to the first timeInstance...just to getSizes
-     call setPointers(nn,1,1)
+     call setPointers(nn,level,1)
      idxblk = nbkGlobal
      ! Allocate the memory we need for this block to do the forward
      ! mode derivatives and copy reference values
-     call alloc_derivative_values(nn)
+     call alloc_derivative_values(nn, level)
 
      ! Setup the coloring for this block depending on if its
      ! drdw or a PC
@@ -277,7 +277,7 @@ subroutine setupExtraResidualMatrix(matrix,useAD)
      end do !color loop
 
      ! Deallocate and reset Values
-     call dealloc_derivative_values(nn)
+     call dealloc_derivative_values(nn, level)
      
   end do domainLoopAD
   
