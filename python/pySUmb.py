@@ -186,7 +186,7 @@ class SUMB(AeroSolver):
             'adjointsubspacesize' : [int, 80],
             'adjointmonitorstep': [int, 10],
             'dissipationlumpingparameter':[float, 6.0],
-            'preconditionerside': [str, 'rght'],
+            'preconditionerside': [str, 'right'],
             'matrixordering': [str, 'rcm'],
             'globalpreconditioner': [str, 'additive schwartz'],
             'localpreconditioner' : [str, 'ilu'],
@@ -561,7 +561,9 @@ class SUMB(AeroSolver):
                 'restartadjoint':{'location':'inputadjoint.restartadjoint'},
                 'adjointsolver':{'gmres':'gmres',
                                  'tfqmr':'tfqmr',
-                                  'richardson':'richardson',
+                                 'richardson':'richardson',
+                                 'bcgs':'bcgs',
+                                 'ibcgs':'ibcgs',
                                  'location':
                                      'inputadjoint.adjointsolvertype',
                                  'len':self.sumb.constants.maxstringlen},
@@ -2080,7 +2082,7 @@ class SUMB(AeroSolver):
 
         return dIda
 
-    def getdRdwVec(self, in_vec, out_vec):
+    def getdRdwTVec(self, in_vec, out_vec):
         ''' Compute the result: out_vec = dRdw^T * in_vec'''
 
         out_vec = self.sumb.getdrdwtvec(in_vec, out_vec)
@@ -2249,8 +2251,8 @@ class SUMB(AeroSolver):
 
     def computedSdwTVec(self, in_vec, out_vec, group_name):
         '''This function computes: out_vec = out_vec + dFdw^T*in_vec'''
-
-        out_vec = self.sumb.getdfdwtvec(in_vec, out_vec)
+        phi = self.mesh.expandVectorByFamily(group_name, in_vec)
+        out_vec = self.sumb.getdfdwtvec(numpy.ravel(phi), out_vec)
 
         return out_vec
 

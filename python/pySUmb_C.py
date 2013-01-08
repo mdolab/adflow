@@ -145,6 +145,20 @@ class SUMB_C(SUMB):
 
         return
         
+    def writeMeshFile(self, filename=None):
+        mpiPrint('Output not supported with complex version.',comm=self.comm)
+        return
+
+    def writeVolumeSolutionFile(self, filename=None, writeGrid=True):
+        mpiPrint('Output not supported with complex version.',comm=self.comm)
+        return
+
+    def writeSurfaceSolutionFile(self, *filename):
+        mpiPrint('Output not supported with complex version.',comm=self.comm)
+        return
+
+
+
 #==============================================================================
 # SUmb Analysis Test
 #==============================================================================

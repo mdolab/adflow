@@ -81,7 +81,7 @@ FILES_TO_COMPLEXIFY =  \
 	       SUmb_finalize.f90\
 	       SUmb_init.f90\
 	       tempMemory.f90\
-	       terminate.f90\
+	       terminate.F90\
                TSalpha.f90\
 	       TSalphadot.f90\
                TSBeta.f90\
