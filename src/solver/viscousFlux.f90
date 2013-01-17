@@ -61,7 +61,8 @@
        ! and a return can be made.
 
        rFilv = rFil
-       if(rFilv == zero) return
+
+       if(abs(rFilv) < thresholdReal) return
 
        ! Determine whether or not the pressure must be corrected
        ! for the presence of the turbulent kinetic energy.

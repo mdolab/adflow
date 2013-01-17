@@ -52,7 +52,7 @@
        ! Check if rFil == 0. If so, the dissipative flux needs not to
        ! be computed.
 
-       if(rFil == zero) return
+       if(abs(rFil) < thresholdReal) return
 
        ! Determine the variables used to compute the switch.
        ! For the inviscid case this is the pressure; for the viscous
@@ -277,12 +277,12 @@
 
              fw(i+1,j,k,irho) = fw(i+1,j,k,irho) + fs
              fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
-
+#ifndef USE_TAPENADE
              ind = indFamilyI(i,j,k)
              massFlowFamilyDiss(ind,spectralSol) =       &
                      massFlowFamilyDiss(ind,spectralSol) &
                                                   - factFamilyI(i,j,k)*fs
-
+#endif
              ! X-momentum.
 
              ddw = w(i+1,j,k,ivx) - w(i,j,k,ivx)
@@ -378,12 +378,12 @@
 
              fw(i,j+1,k,irho) = fw(i,j+1,k,irho) + fs
              fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
-
+#ifndef USE_TAPENADE
              ind = indFamilyJ(i,j,k)
              massFlowFamilyDiss(ind,spectralSol) =       &
                      massFlowFamilyDiss(ind,spectralSol) &
                                                   - factFamilyJ(i,j,k)*fs
-
+#endif
              ! X-momentum.
 
              ddw = w(i,j+1,k,ivx) - w(i,j,k,ivx)
@@ -479,12 +479,12 @@
 
              fw(i,j,k+1,irho) = fw(i,j,k+1,irho) + fs
              fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
-
+#ifndef USE_TAPENADE
              ind = indFamilyK(i,j,k)
              massFlowFamilyDiss(ind,spectralSol) =       &
                      massFlowFamilyDiss(ind,spectralSol) &
                                                   - factFamilyK(i,j,k)*fs
-
+#endif
              ! X-momentum.
 
              ddw = w(i,j,k+1,ivx) - w(i,j,k,ivx)

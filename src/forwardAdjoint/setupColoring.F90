@@ -99,7 +99,6 @@ subroutine setup_dRdw_visc_coloring(nn, level, nColor)
 
 end subroutine setup_dRdw_visc_coloring
 
-
 subroutine setup_dRdx_euler_coloring(nn, level, nColor)
   use blockPointers
   use communication

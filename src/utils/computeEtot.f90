@@ -325,7 +325,7 @@
            t2 = t**cpTempFit(nn)%exponents(ii)
            cv = cv + cpTempFit(nn)%constants(ii)*t2
 
-           if(cpTempFit(nn)%exponents(ii) == -1_intType) then
+           if(cpTempFit(nn)%exponents(ii) == -1) then
              eint = eint + cpTempFit(nn)%constants(ii)*log(t)
            else
              mm   = cpTempFit(nn)%exponents(ii) + 1
@@ -557,7 +557,7 @@
 
                eint(i) = cpTempFit(nn)%eint0 - t
                do ii=1,cpTempFit(nn)%nterm
-                 if(cpTempFit(nn)%exponents(ii) == -1_intType) then
+                 if(cpTempFit(nn)%exponents(ii) == -1) then
                    eint(i) = eint(i) &
                            + cpTempFit(nn)%constants(ii)*log(t)
                  else

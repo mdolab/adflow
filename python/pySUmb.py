@@ -1,4 +1,5 @@
-#!/usr/local/bin/python
+#!/usr/bin/python
+from __future__ import print_function
 '''
 pySUmb - A Python interface to SUmb.
 
@@ -23,8 +24,6 @@ __version__ = '$Revision: $'
 To Do:
 - 
 '''
-
-
 # =============================================================================
 # Standard Python modules
 # =============================================================================
@@ -35,7 +34,6 @@ import copy
 # =============================================================================
 # External Python modules
 # =============================================================================
-
 import numpy
 
 # =============================================================================
@@ -52,9 +50,7 @@ class SUMB(AeroSolver):
     '''
     SUmb Aerodynamic Analysis Class - Inherited from Solver Abstract Class
     '''
-    
-    def __init__(self, *args, **kwargs):
-
+    def __init__(self, comm=None, options=None, mesh=None, **kwargs):
         '''
         SUMB Class Initialization
         
@@ -204,48 +200,26 @@ class SUMB(AeroSolver):
             }
 
         # Load the compiled module using MExt, which allow multiple imports
-        if 'sumb' in kwargs:
-            self.sumb = kwargs['sumb']
-        else:
-            sumb_mod = MExt('sumb')
-            self.sumb = sumb_mod._module
-        # end if
-        
-        # Next set the MPI Communicators
-        if 'comm' in kwargs:
-            self.sumb.communication.sumb_comm_world = kwargs['comm'].py2f()
-            self.sumb.communication.sumb_petsc_comm_world = \
-                kwargs['comm'].py2f()
-            self.sumb.communication.sumb_comm_self  = MPI.COMM_SELF.py2f()
-            self.sumb_comm_world = kwargs['comm']
-            self.comm = kwargs['comm']
-        else: # Set communicators to comm_woprld by default
-            self.sumb.communication.sumb_comm_world = MPI.COMM_WORLD.py2f()
-            self.sumb.communication.sumb_comm_self  = MPI.COMM_SELF.py2f()
-            self.sumb_comm_world = MPI.COMM_WORLD
-            self.comm = MPI.COMM_WORLD
-        # end if
-	
-        if 'init_petsc' in kwargs:
-            if kwargs['init_petsc']:
-                self.sumb.initializepetsc()
-        # end if
-
-        # Determine the rank sumb_comm_world size
-        self.myid = self.sumb.communication.myid = self.sumb_comm_world.rank
-        self.nproc = self.sumb.communication.nproc = self.sumb_comm_world.size
-
-        try:
-            self.sumb.communication.sendrequests = numpy.zeros(
-                (self.sumb_comm_world.size))
-            self.sumb.communication.recvrequests = numpy.zeros(
-                (self.sumb_comm_world.size))
+        try: 
+            self.sumb
         except:
-            print "Memory allocation failure for SENDREQUESTS " \
-                "and RECVREQUESTS."
-            sys.exit(1)
+            self.sumb = MExt('sumb')._module
         # end try
+        
+        # Next set the MPI Communicators and associated info
+        if comm is None:
+            comm = MPI.COMM_WORLD
 
+        self.comm = comm
+        self.sumb.communication.sumb_comm_world = self.comm.py2f()
+        self.sumb.communication.sumb_comm_self  = MPI.COMM_SELF.py2f()
+        self.sumb.communication.sendrequests = numpy.zeros(self.comm.size)
+        self.sumb.communication.recvrequests = numpy.zeros(self.comm.size)
+        self.myid = self.sumb.communication.myid = self.comm.rank
+        self.nproc = self.sumb.communication.nproc = self.comm.size
+	
+        # Initialize petec in case the user has not already
+        self.sumb.initializepetsc()
         self.callCounter = -1
                
         self.sumb.iteration.standalonemode = False
@@ -336,302 +310,293 @@ class SUMB(AeroSolver):
 
         self.aeroDVs = []
 
-        if 'optionMap' in kwargs:
-            self.optionMap = kwargs['optionMap']
-        else:
-            self.optionMap = {\
-                # Common Paramters
-                'gridfile':{'location':'inputio.gridfile',
-                            'len':self.sumb.constants.maxstringlen},
-                'restartfile':{'location':'inputio.restartfile',
-                               'len':self.sumb.constants.maxstringlen},
-                'solrestart':{'location':'inputio.restart'},
-                'storerindlayer':{'location':'inputio.storerindlayer'},
-                # Physics Paramters
-                'discretization':{'central plus scalar dissipation':
-                                      self.sumb.inputdiscretization.dissscalar,
-                                  'central plus matrix dissipation':
-                                      self.sumb.inputdiscretization.dissmatrix,
-                                  'central plus cusp dissipation':
-                                      self.sumb.inputdiscretization.disscusp,
-                                  'upwind':
-                                      self.sumb.inputdiscretization.upwind,
-                                  'location':
-                                      'inputdiscretization.spacediscr'},
-                'coarsediscretization':{'central plus scalar dissipation':
-                                            self.sumb.inputdiscretization.dissscalar,
-                                        'central plus matrix dissipation':
-                                            self.sumb.inputdiscretization.dissmatrix,
-                                        'central plus cusp dissipation':
-                                            self.sumb.inputdiscretization.disscusp,
-                                        'upwind':
-                                            self.sumb.inputdiscretization.upwind,
-                                        'location':
-                                            'inputdiscretization.spacediscrcoarse'},
-                'limiter':{'vanalbeda':
-                               self.sumb.inputdiscretization.vanalbeda,
-                           'minmod':
-                               self.sumb.inputdiscretization.minmod,
-                           'nolimiter':
-                               self.sumb.inputdiscretization.nolimiter,
-                           'location':
-                               'inputdiscretization.limiter'},
-                'smoother':{'runge kutta':
-                                self.sumb.inputiteration.rungekutta,
-                            'lu sgs':
-                                self.sumb.inputiteration.nllusgs,
-                            'lu sgs line':
-                                self.sumb.inputiteration.nllusgsline,
-                            'location':
-                                'inputiteration.smoother'},
-
-                'equationtype':{'euler':
-                                    self.sumb.inputphysics.eulerequations,
-                                'laminar ns':
-                                    self.sumb.inputphysics.nsequations,
-                                'rans':
-                                     self.sumb.inputphysics.ransequations,
-                                'location':
-                                    'inputphysics.equations'},
-                'equationmode':{'steady':
-                                   self.sumb.inputphysics.steady,
-                               'unsteady':
-                                   self.sumb.inputphysics.unsteady,
-                               'time spectral':
-                                   self.sumb.inputphysics.timespectral,
-                               'location':
-                                   'inputphysics.equationmode'},
-                'flowtype':{'internal':
-                                self.sumb.inputphysics.internalflow,
-                            'external':
-                                self.sumb.inputphysics.externalflow,
-                            'location':
-                                'inputphysics.flowtype'},
-                'turbulencemodel':{'baldwin lomax':
-                                      self.sumb.inputphysics.baldwinlomax,
-                                  'sa':
-                                      self.sumb.inputphysics.spalartallmaras,
-                                  'sae':
-                                      self.sumb.inputphysics.spalartallmarasedwards,
-                                  'k omega wilcox':
-                                      self.sumb.inputphysics.komegawilcox,
-                                  'k omega modified':
-                                      self.sumb.inputphysics.komegamodified,
-                                  'ktau':
-                                      self.sumb.inputphysics.ktau,
-                                  'menter sst':
-                                      self.sumb.inputphysics.mentersst,
-                                  'v2f':
-                                      self.sumb.inputphysics.v2f,
-                                  'location':
-                                      'inputphysics.turbmodel'},
-                'turbulenceorder':{'first order':1,
-                                   'second order':2,
-                                   'location':
-                                       'inputdiscretization.orderturb'},
-                'usewallfunctions':{'location':'inputphysics.wallfunctions'},
-                'useapproxwalldistance':{'location':'inputdiscretization.useapproxwalldistance'},
-                'reynoldsnumber':{'location':'inputphysics.reynolds'},
-                'reynoldslength':{'location':'inputphysics.reynoldslength'},
-                'walltreatment':{'linear pressure extrapolation':
-                                     self.sumb.inputdiscretization.linextrapolpressure,
-                                 'constant pressure extrapolation':
-                                     self.sumb.inputdiscretization.constantpressure,
-                                 'quadratic pressure extrapolation':
-                                     self.sumb.inputdiscretization.quadextrapolpressure,
-                                 'normal momentum':
-                                     self.sumb.inputdiscretization.normalmomentum,
-                                 'location':
-                                     'inputdiscretization.wallbctreatment'},
-                'dissipationscalingexponent':{'location':'inputdiscretization.adis'},
-                'vis4':{'location':'inputdiscretization.vis4'},
-                'vis2':{'location':'inputdiscretization.vis2'},
-                'vis2coarse':{'location':'inputdiscretization.vis2coarse'},
-                'restrictionrelaxation':{'location':'inputiteration.fcoll'},
-                'forcesastractions':{'location':'inputphysics.forcesastractions'},
-
-                # Common Paramters
-                'ncycles':{'location':'inputiteration.ncycles'},
-                'ncyclescoarse':{'location':'inputiteration.ncyclescoarse'},
-                'cfl':{'location':'inputiteration.cfl'},        
-                'cflcoarse':{'location':'inputiteration.cflcoarse'},        
-                'mgcycle':{'location':'localmg.mgdescription',
-                           'len':self.sumb.constants.maxstringlen},
-                'mgstartlevel':{'location':'inputiteration.mgstartlevel'},
-                'resaveraging':{'noresaveraging':
-                                   self.sumb.inputiteration.noresaveraging,
-                               'alwaysresaveraging':
-                                   self.sumb.inputiteration.alwaysresaveraging,
-                               'alternateresaveraging':
-                                   self.sumb.inputiteration.alternateresaveraging,
-                               'location':
-                                   'inputiteration.resaveraging'},
-                'smoothparameter':{'location':'inputiteration.smoop'},
-                'cfllimit':{'location':'inputiteration.cfllimit'},
-
-                # Unsteady Params
-                'timeintegrationscheme':{'bdf':
-                                             self.sumb.inputunsteady.bdf,
-                                         'explicitrk':
-                                             self.sumb.inputunsteady.explicitrk,
-                                         'inplicitrk':
-                                             self.sumb.inputunsteady.implicitrk,
-                                         'md':
-                                             self.sumb.inputunsteady.md,
-                                         'location':
-                                             'inputunsteady.timeintegrationscheme'},
-                'timeaccuracy':{'location':'inputunsteady.timeaccuracy'},
-                'ntimestepscoarse':{'location':'inputunsteady.ntimestepscoarse'},
-                'ntimestepsfine':{'location':'inputunsteady.ntimestepsfine'},
-                'deltat':{'location':'inputunsteady.deltat'},
-
-                # Time Spectral Paramters
-                'timeintervals':{'location':'inputtimespectral.ntimeintervalsspectral'},
-                'alphamode':{'location':'inputtsstabderiv.tsalphamode'},
-                'betamode':{'location':'inputtsstabderiv.tsbetamode'},
-                'machmode':{'location':'inputtsstabderiv.tsmachmode'},
-                'pmode':{'location':'inputtsstabderiv.tspmode'},
-                'qmode':{'location':'inputtsstabderiv.tsqmode'},
-                'rmode':{'location':'inputtsstabderiv.tsrmode'},
-                'altitudemode':{'location':'inputtsstabderiv.tsaltitudemode'},
-                'windaxis':{'location':'inputtsstabderiv.usewindaxis'},
-                'rotcenter':{'location':'inputmotion.rotpoint'},
-                'rotrate':{'location':'inputmotion.rotrate'},
-                'tsstability':{'location':'inputtsstabderiv.tsstability'},
-
-                # Convergence Paramters
-                'l2convergence':{'location':'inputiteration.l2conv'},
-                'l2convergencerel':{'location':'inputiteration.l2convrel'},
-                'l2convergencecoarse':{'location':'inputiteration.l2convcoarse'},
-                'maxl2deviationfactor':{'location':'inputiteration.maxl2deviationfactor'},
-                'coeffconvcheck':{'location':'monitor.coeffconvcheck'},
-                'miniterationnum':{'location':'inputiteration.miniternum'},
-            
-                # Newton-Krylov Paramters
-                'usenksolver':{'location':'nksolvervars.usenksolver'},
-                'nklinearsolver':{'gmres':'gmres',
-                                  'tfqmr':'tfqmr',
-                                  'location':
-                                      'nksolvervars.ksp_solver_type',
-                                  'len':self.sumb.constants.maxstringlen},
-
-                'nkswitchtol':{'location':'nksolvervars.nk_switch_tol'},
-                'nksubspacesize':{'location':'nksolvervars.ksp_subspace'},
-                'nklinearsolvetol':{'location':'nksolvervars.ksp_rtol'},
-                'nkpc':{'additive schwartz':'asm',
-                        'multigrid':'mg',
-                        'location':
-                            'nksolvervars.global_pc_type',
+        self.optionMap = {\
+            # Common Paramters
+            'gridfile':{'location':'inputio.gridfile',
                         'len':self.sumb.constants.maxstringlen},
-                'nkasmoverlap':{'location':'nksolvervars.asm_overlap'},
-                'nkpcilufill':{'location':'nksolvervars.local_pc_ilu_level'},               
-                'nklocalpcordering':{'natural':'natural',
-                                     'rcm':'rcm',
-                                     'nested dissection':'nd',
-                                     'one way dissection':'1wd',
-                                     'quotient minimum degree':'qmd',
+            'restartfile':{'location':'inputio.restartfile',
+                           'len':self.sumb.constants.maxstringlen},
+            'solrestart':{'location':'inputio.restart'},
+            'storerindlayer':{'location':'inputio.storerindlayer'},
+            # Physics Paramters
+            'discretization':{'central plus scalar dissipation':
+                                  self.sumb.inputdiscretization.dissscalar,
+                              'central plus matrix dissipation':
+                                  self.sumb.inputdiscretization.dissmatrix,
+                              'central plus cusp dissipation':
+                                  self.sumb.inputdiscretization.disscusp,
+                              'upwind':
+                                  self.sumb.inputdiscretization.upwind,
+                              'location':
+                                  'inputdiscretization.spacediscr'},
+            'coarsediscretization':{'central plus scalar dissipation':
+                                        self.sumb.inputdiscretization.dissscalar,
+                                    'central plus matrix dissipation':
+                                        self.sumb.inputdiscretization.dissmatrix,
+                                    'central plus cusp dissipation':
+                                        self.sumb.inputdiscretization.disscusp,
+                                    'upwind':
+                                        self.sumb.inputdiscretization.upwind,
+                                    'location':
+                                        'inputdiscretization.spacediscrcoarse'},
+            'limiter':{'vanalbeda':
+                           self.sumb.inputdiscretization.vanalbeda,
+                       'minmod':
+                           self.sumb.inputdiscretization.minmod,
+                       'nolimiter':
+                           self.sumb.inputdiscretization.nolimiter,
+                       'location':
+                           'inputdiscretization.limiter'},
+            'smoother':{'runge kutta':
+                            self.sumb.inputiteration.rungekutta,
+                        'lu sgs':
+                            self.sumb.inputiteration.nllusgs,
+                        'lu sgs line':
+                            self.sumb.inputiteration.nllusgsline,
+                        'location':
+                            'inputiteration.smoother'},
+            
+            'equationtype':{'euler':
+                                self.sumb.inputphysics.eulerequations,
+                            'laminar ns':
+                                self.sumb.inputphysics.nsequations,
+                            'rans':
+                                self.sumb.inputphysics.ransequations,
+                            'location':
+                                'inputphysics.equations'},
+            'equationmode':{'steady':
+                                self.sumb.inputphysics.steady,
+                            'unsteady':
+                                self.sumb.inputphysics.unsteady,
+                            'time spectral':
+                                self.sumb.inputphysics.timespectral,
+                            'location':
+                                'inputphysics.equationmode'},
+            'flowtype':{'internal':
+                            self.sumb.inputphysics.internalflow,
+                        'external':
+                            self.sumb.inputphysics.externalflow,
+                        'location':
+                            'inputphysics.flowtype'},
+            'turbulencemodel':{'baldwin lomax':
+                                   self.sumb.inputphysics.baldwinlomax,
+                               'sa':
+                                   self.sumb.inputphysics.spalartallmaras,
+                               'sae':
+                                   self.sumb.inputphysics.spalartallmarasedwards,
+                               'k omega wilcox':
+                                   self.sumb.inputphysics.komegawilcox,
+                               'k omega modified':
+                                   self.sumb.inputphysics.komegamodified,
+                               'ktau':
+                                   self.sumb.inputphysics.ktau,
+                               'menter sst':
+                                   self.sumb.inputphysics.mentersst,
+                               'v2f':
+                                   self.sumb.inputphysics.v2f,
+                               'location':
+                                   'inputphysics.turbmodel'},
+            'turbulenceorder':{'first order':1,
+                               'second order':2,
+                               'location':
+                                   'inputdiscretization.orderturb'},
+            'usewallfunctions':{'location':'inputphysics.wallfunctions'},
+            'useapproxwalldistance':{
+                'location':'inputdiscretization.useapproxwalldistance'},
+            'reynoldsnumber':{'location':'inputphysics.reynolds'},
+            'reynoldslength':{'location':'inputphysics.reynoldslength'},
+            'walltreatment':{'linear pressure extrapolation':
+                                 self.sumb.inputdiscretization.linextrapolpressure,
+                             'constant pressure extrapolation':
+                                 self.sumb.inputdiscretization.constantpressure,
+                             'quadratic pressure extrapolation':
+                                 self.sumb.inputdiscretization.quadextrapolpressure,
+                             'normal momentum':
+                                 self.sumb.inputdiscretization.normalmomentum,
+                             'location':
+                                 'inputdiscretization.wallbctreatment'},
+            'dissipationscalingexponent':{'location':'inputdiscretization.adis'},
+            'vis4':{'location':'inputdiscretization.vis4'},
+            'vis2':{'location':'inputdiscretization.vis2'},
+            'vis2coarse':{'location':'inputdiscretization.vis2coarse'},
+            'restrictionrelaxation':{'location':'inputiteration.fcoll'},
+            'forcesastractions':{'location':'inputphysics.forcesastractions'},
+            
+            # Common Paramters
+            'ncycles':{'location':'inputiteration.ncycles'},
+            'ncyclescoarse':{'location':'inputiteration.ncyclescoarse'},
+            'cfl':{'location':'inputiteration.cfl'},        
+            'cflcoarse':{'location':'inputiteration.cflcoarse'},        
+            'mgcycle':{'location':'localmg.mgdescription',
+                       'len':self.sumb.constants.maxstringlen},
+            'mgstartlevel':{'location':'inputiteration.mgstartlevel'},
+            'resaveraging':{'noresaveraging':
+                                self.sumb.inputiteration.noresaveraging,
+                            'alwaysresaveraging':
+                                self.sumb.inputiteration.alwaysresaveraging,
+                            'alternateresaveraging':
+                                self.sumb.inputiteration.alternateresaveraging,
+                            'location':
+                                'inputiteration.resaveraging'},
+            'smoothparameter':{'location':'inputiteration.smoop'},
+            'cfllimit':{'location':'inputiteration.cfllimit'},
+            
+            # Unsteady Params
+            'timeintegrationscheme':{'bdf':
+                                         self.sumb.inputunsteady.bdf,
+                                     'explicitrk':
+                                         self.sumb.inputunsteady.explicitrk,
+                                     'inplicitrk':
+                                         self.sumb.inputunsteady.implicitrk,
+                                     'md':
+                                         self.sumb.inputunsteady.md,
                                      'location':
-                                         'nksolvervars.local_pc_ordering',
-                                     'len':self.sumb.constants.maxstringlen},
-                'nkmaxlinearkspits':{'location':'nksolvervars.ksp_max_it'},
-                'nkjacobianlag':{'location':'nksolvervars.jacobian_lag'},
-                'rkreset':{'location':'nksolvervars.rkreset'},
-                'nrkreset':{'location':'nksolvervars.nrkreset'},
-                'nnkfnitedifferencepc':{'location':'nksolvervars.nkfinitedifferencepc'},
-                'applypcsubspacesize':{'location':'nksolvervars.applypcsubspacesize'},
-                'nkinnerpreconits':{'location':'nksolvervars.innerpreconits'},
-                'nkouterpreconits':{'location':'nksolvervars.outerpreconits'},
-
-                # Load Balance Paramters
-                'blocksplitting':{'location':'inputparallel.splitblocks'},
-                'loadimbalance':{'location':'inputparallel.loadimbalance'},
-
-                # Misc Paramters
-                'printiterations':{'location':'inputiteration.printiterations'},
-                'printtiming':{'location':'inputadjoint.printtiming'},
-                'setmonitor':{'location':'inputadjoint.setmonitor'},
-
-                # Adjoint Params
-                'adjointl2convergence':{'location':'inputadjoint.adjreltol'},
-                'adjointl2convergencerel':{'location':'inputadjoint.adjreltolrel'},
-                'adjointl2convergenceabs':{'location':'inputadjoint.adjabstol'},
-                'adjointdivtol':{'location':'inputadjoint.adjdivtol'},
-                'approxpc':{'location':'inputadjoint.approxpc'},
-                'usediagtspc':{'location':'inputadjoint.usediagtspc'},
-                'restartadjoint':{'location':'inputadjoint.restartadjoint'},
-                'adjointsolver':{'gmres':'gmres',
-                                 'tfqmr':'tfqmr',
-                                 'richardson':'richardson',
-                                 'bcgs':'bcgs',
-                                 'ibcgs':'ibcgs',
+                                         'inputunsteady.timeintegrationscheme'},
+            'timeaccuracy':{'location':'inputunsteady.timeaccuracy'},
+            'ntimestepscoarse':{'location':'inputunsteady.ntimestepscoarse'},
+            'ntimestepsfine':{'location':'inputunsteady.ntimestepsfine'},
+            'deltat':{'location':'inputunsteady.deltat'},
+            
+            # Time Spectral Paramters
+            'timeintervals':{'location':'inputtimespectral.ntimeintervalsspectral'},
+            'alphamode':{'location':'inputtsstabderiv.tsalphamode'},
+            'betamode':{'location':'inputtsstabderiv.tsbetamode'},
+            'machmode':{'location':'inputtsstabderiv.tsmachmode'},
+            'pmode':{'location':'inputtsstabderiv.tspmode'},
+            'qmode':{'location':'inputtsstabderiv.tsqmode'},
+            'rmode':{'location':'inputtsstabderiv.tsrmode'},
+            'altitudemode':{'location':'inputtsstabderiv.tsaltitudemode'},
+            'windaxis':{'location':'inputtsstabderiv.usewindaxis'},
+            'rotcenter':{'location':'inputmotion.rotpoint'},
+            'rotrate':{'location':'inputmotion.rotrate'},
+            'tsstability':{'location':'inputtsstabderiv.tsstability'},
+            
+            # Convergence Paramters
+            'l2convergence':{'location':'inputiteration.l2conv'},
+            'l2convergencerel':{'location':'inputiteration.l2convrel'},
+            'l2convergencecoarse':{'location':'inputiteration.l2convcoarse'},
+            'maxl2deviationfactor':{'location':'inputiteration.maxl2deviationfactor'},
+            'coeffconvcheck':{'location':'monitor.coeffconvcheck'},
+            'miniterationnum':{'location':'inputiteration.miniternum'},
+            
+            # Newton-Krylov Paramters
+            'usenksolver':{'location':'nksolvervars.usenksolver'},
+            'nklinearsolver':{'gmres':'gmres',
+                              'tfqmr':'tfqmr',
+                              'location':
+                                  'nksolvervars.ksp_solver_type',
+                              'len':self.sumb.constants.maxstringlen},
+            
+            'nkswitchtol':{'location':'nksolvervars.nk_switch_tol'},
+            'nksubspacesize':{'location':'nksolvervars.ksp_subspace'},
+            'nklinearsolvetol':{'location':'nksolvervars.ksp_rtol'},
+            'nkpc':{'additive schwartz':'asm',
+                    'multigrid':'mg',
+                    'location':
+                        'nksolvervars.global_pc_type',
+                    'len':self.sumb.constants.maxstringlen},
+            'nkasmoverlap':{'location':'nksolvervars.asm_overlap'},
+            'nkpcilufill':{'location':'nksolvervars.local_pc_ilu_level'},               
+            'nklocalpcordering':{'natural':'natural',
+                                 'rcm':'rcm',
+                                 'nested dissection':'nd',
+                                 'one way dissection':'1wd',
+                                 'quotient minimum degree':'qmd',
                                  'location':
-                                     'inputadjoint.adjointsolvertype',
+                                     'nksolvervars.local_pc_ordering',
                                  'len':self.sumb.constants.maxstringlen},
-                'adjointmaxiter':{'location':'inputadjoint.adjmaxiter'},
-                'adjointsubspacesize':{'location':'inputadjoint.adjrestart'},
-                'adjointmonitorstep':{'location':'inputadjoint.adjmonstep'},
-                'dissipationlumpingparameter':{'location':'inputdiscretization.sigma'},
-                'preconditionerside':{'left':'left',
-                                      'right':'right',
-                                      'location':
-                                          'inputadjoint.adjointpcside',
-                                      'len':self.sumb.constants.maxstringlen},
-                'matrixordering':{'natural':'natural',
-                                  'rcm':'rcm',
-                                  'nested dissection':'nd',
-                                  'one way dissection':'1wd',
-                                  'quotient minimum degree':'qmd',
+            'nkmaxlinearkspits':{'location':'nksolvervars.ksp_max_it'},
+            'nkjacobianlag':{'location':'nksolvervars.jacobian_lag'},
+            'rkreset':{'location':'nksolvervars.rkreset'},
+            'nrkreset':{'location':'nksolvervars.nrkreset'},
+            'nnkfnitedifferencepc':{'location':'nksolvervars.nkfinitedifferencepc'},
+            'applypcsubspacesize':{'location':'nksolvervars.applypcsubspacesize'},
+            'nkinnerpreconits':{'location':'nksolvervars.innerpreconits'},
+            'nkouterpreconits':{'location':'nksolvervars.outerpreconits'},
+
+            # Load Balance Paramters
+            'blocksplitting':{'location':'inputparallel.splitblocks'},
+            'loadimbalance':{'location':'inputparallel.loadimbalance'},
+
+            # Misc Paramters
+            'printiterations':{'location':'inputiteration.printiterations'},
+            'printtiming':{'location':'inputadjoint.printtiming'},
+            'setmonitor':{'location':'inputadjoint.setmonitor'},
+            
+            # Adjoint Params
+            'adjointl2convergence':{'location':'inputadjoint.adjreltol'},
+            'adjointl2convergencerel':{'location':'inputadjoint.adjreltolrel'},
+            'adjointl2convergenceabs':{'location':'inputadjoint.adjabstol'},
+            'adjointdivtol':{'location':'inputadjoint.adjdivtol'},
+            'approxpc':{'location':'inputadjoint.approxpc'},
+            'usediagtspc':{'location':'inputadjoint.usediagtspc'},
+            'restartadjoint':{'location':'inputadjoint.restartadjoint'},
+            'adjointsolver':{'gmres':'gmres',
+                             'tfqmr':'tfqmr',
+                             'richardson':'richardson',
+                             'bcgs':'bcgs',
+                             'ibcgs':'ibcgs',
+                             'location':
+                                 'inputadjoint.adjointsolvertype',
+                             'len':self.sumb.constants.maxstringlen},
+            'adjointmaxiter':{'location':'inputadjoint.adjmaxiter'},
+            'adjointsubspacesize':{'location':'inputadjoint.adjrestart'},
+            'adjointmonitorstep':{'location':'inputadjoint.adjmonstep'},
+            'dissipationlumpingparameter':{'location':'inputdiscretization.sigma'},
+            'preconditionerside':{'left':'left',
+                                  'right':'right',
                                   'location':
-                                      'inputadjoint.matrixordering',
+                                      'inputadjoint.adjointpcside',
                                   'len':self.sumb.constants.maxstringlen},
-                'globalpreconditioner':{'additive schwartz':'asm',
-                                        'multigrid':'mg',
-                                        'location':
-                                            'inputadjoint.precondtype',
-                                        'len':self.sumb.constants.maxstringlen},
-                'localpreconditioner':{'ilu':'ilu',
-                                       'location':
-                                           'inputadjoint.localpctype',
-                                       'len':self.sumb.constants.maxstringlen},
-                'ilufill':{'location':'inputadjoint.filllevel'},
-                'applyadjointpcsubspacesize':{'location':'inputadjoint.applyadjointpcsubspacesize'},
-                'asmoverlap':{'location':'inputadjoint.overlap'},
-                'innerpreconits':{'location':'inputadjoint.innerpreconits'},
-                'outerpreconits':{'location':'inputadjoint.outerpreconits'},
-                'finitedifferencepc':{'location':'inputadjoint.finitedifferencepc'},
-                }                
-        # end if
+            'matrixordering':{'natural':'natural',
+                              'rcm':'rcm',
+                              'nested dissection':'nd',
+                              'one way dissection':'1wd',
+                              'quotient minimum degree':'qmd',
+                              'location':
+                                  'inputadjoint.matrixordering',
+                              'len':self.sumb.constants.maxstringlen},
+            'globalpreconditioner':{'additive schwartz':'asm',
+                                    'multigrid':'mg',
+                                    'location':
+                                        'inputadjoint.precondtype',
+                                    'len':self.sumb.constants.maxstringlen},
+            'localpreconditioner':{'ilu':'ilu',
+                                   'location':
+                                       'inputadjoint.localpctype',
+                                   'len':self.sumb.constants.maxstringlen},
+            'ilufill':{'location':'inputadjoint.filllevel'},
+            'applyadjointpcsubspacesize':{
+                'location':'inputadjoint.applyadjointpcsubspacesize'},
+            'asmoverlap':{'location':'inputadjoint.overlap'},
+            'innerpreconits':{'location':'inputadjoint.innerpreconits'},
+            'outerpreconits':{'location':'inputadjoint.outerpreconits'},
+            'finitedifferencepc':{'location':'inputadjoint.finitedifferencepc'},
+            }                
 
         # These "ignore_options" are NOT actually, ignored, rather,
         # they DO NOT GET SET IN THE FORTRAN CODE. Rather, they are
         # used strictly in Python
-        if 'ignore_options' in kwargs:
-            self.ignore_options = kwargs['ignore_options']
-        else:
-            self.ignore_options = [
-                'defaults',
-                'storehistory',
-                'numbersolutions',
-                'writesolution',
-                'writemesh',
-                'familyrot',  # -> Not sure how to do
-                'lowmemory',
-                'autosolveretry',
-                'autoadjointretry',
-                'usereversemodead'
-                ]
-        # end if
-        
-        if 'special_options' in kwargs:
-            self.special_options = kwargs['special_options']
-        else:
-            self.special_options = ['surfacevariables',
-                                    'volumevariables',
-                                    'monitorvariables',
-                                    'metricconversion',
-                                    'outputdir',
-                                    'probname']
-        # end if
+
+        self.ignore_options = [
+            'defaults',
+            'storehistory',
+            'numbersolutions',
+            'writesolution',
+            'writemesh',
+            'familyrot',  # -> Not sure how to do
+            'lowmemory',
+            'autosolveretry',
+            'autoadjointretry',
+            'usereversemodead'
+            ]
+
+        self.special_options = ['surfacevariables',
+                                'volumevariables',
+                                'monitorvariables',
+                                'metricconversion',
+                                'outputdir',
+                                'probname']
 
         self.storedADjoints = {}
 
@@ -639,23 +604,26 @@ class SUMB(AeroSolver):
         # aero_solver is initialized
         self.sumb.setdefaultvalues()
 
-        # If 'options' is in kwargs, go through and make sure all keys
+        # If 'options' is not None, go through and make sure all keys
         # are lower case:
-        if 'options' in kwargs:
-            for key in kwargs['options'].keys():
-                kwargs['options'][key.lower()] = kwargs['options'].pop(key)
+        if options is not None:
+            for key in options.keys():
+                options[key.lower()] = options.pop(key)
+        else:
+            options = {}
+        # end if
 
         # Initialize the inherited aerosolver
         AeroSolver.__init__(\
-            self, name, category, def_opts, informs, *args, **kwargs)
+            self, name, category, def_opts, informs, options=options)
         self.sumb.inputio.autoparameterupdate = False
 
-        # Setup the external Mesh Warping
+        # Set the external Mesh Warping is provided
         self._update_geom_info = False
-        if 'mesh' in kwargs and kwargs['mesh']:
-            self.mesh = kwargs['mesh']
-        else:
+        if mesh is None:
             self.mesh = SUmbDummyMesh()
+        else:
+            self.mesh = mesh
         # end if
 
         # Set Flags that are used to keep of track of what is "done"
@@ -685,7 +653,7 @@ class SUMB(AeroSolver):
 
         return
 
-    def initialize(self, aero_problem, *args, **kwargs):
+    def initialize(self, aero_problem, partitionOnly=False):
         '''
         Run High Level Initialization 
         
@@ -719,24 +687,17 @@ class SUMB(AeroSolver):
         self.sumb.inputio.storeconvinneriter = \
             abs(self.sumb.inputio.storeconvinneriter)
 
-        if(self.myid ==0):
-            print ' -> Partitioning and Reading Grid'
-
+    
+        mpiPrint(' -> Partitioning and Reading Grid', comm=self.comm)
         self.sumb.partitionandreadgrid()
-        if 'partitionOnly' in kwargs:
-            if kwargs['partitionOnly']:
-                return
-            # end if
+        if partitionOnly:
+            return
         # end if
 
-        if(self.myid==0):
-            print ' -> Preprocessing'
+        mpiPrint(' -> Preprocessing', comm=self.comm)
         self.sumb.preprocessing()
 
-        if(self.myid==0):
-            print ' -> Initializing flow'
-
-        # Initialize Flow and set inflow angle
+        mpiPrint(' -> Initializing flow', comm=self.comm)
         self.sumb.initflow()
         self.setInflowAngle(aero_problem)
 
@@ -788,10 +749,10 @@ class SUMB(AeroSolver):
         self.sumb.inputphysics.liftdirection = liftDir
         self.sumb.inputphysics.dragdirection = dragDir
 
-        if self.sumb.inputiteration.printiterations and self.myid == 0:
-            print '-> Alpha...',
-            print aero_problem._flows.alpha*(numpy.pi/180.0),
-            print aero_problem._flows.alpha
+        if self.sumb.inputiteration.printiterations:
+            mpiPrint('-> Alpha... %f %f'%(
+                    aero_problem._flows.alpha*(numpy.pi/180.0),
+                    aero_problem._flows.alpha), comm=self.comm)
 
         #update the flow vars
         self.sumb.updateflow()
@@ -803,7 +764,6 @@ class SUMB(AeroSolver):
         '''
         set the value of pointRefEC for the bending moment calculation
         '''
-        #aero_problem._geometry.ListAttributes()
         
         self.sumb.inputphysics.pointrefec[0] = aero_problem._geometry.xRootec\
             *self.metricConversion
@@ -816,7 +776,6 @@ class SUMB(AeroSolver):
         '''
         Set the reference point for rotations and moment calculations
         '''
-        
         self.sumb.inputphysics.pointref[0] = aero_problem._refs.xref\
             *self.metricConversion
         self.sumb.inputphysics.pointref[1] = aero_problem._refs.yref\
@@ -832,6 +791,7 @@ class SUMB(AeroSolver):
         #update the flow vars
         self.sumb.updatereferencepoint()
         self._update_vel_info = True
+
         return
 
     def setRotationRate(self, aero_problem):
@@ -849,6 +809,7 @@ class SUMB(AeroSolver):
 
         self.sumb.updaterotationrate(p, r, q)
         self._update_vel_info = True
+
         return
     
     def setRefArea(self, aero_problem):
@@ -865,7 +826,6 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.degreepolalpha = int(aero_problem._flows.degreePol)
             self.sumb.inputmotion.coefpolalpha = aero_problem._flows.coefPol
             self.sumb.inputmotion.omegafouralpha   = aero_problem._flows.omegaFourier
-            #if self.myid==0: print 'omega', aero_problem._flows.omegaFourier, self.sumb.inputmotion.gridmotionspecified
             self.sumb.inputmotion.degreefouralpha  = aero_problem._flows.degreeFourier
             self.sumb.inputmotion.coscoeffouralpha = aero_problem._flows.cosCoefFourier
             self.sumb.inputmotion.sincoeffouralpha = aero_problem._flows.sinCoefFourier
@@ -911,7 +871,7 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.coscoeffouryrot = aero_problem._flows.cosCoefFourier
             self.sumb.inputmotion.sincoeffouryrot = aero_problem._flows.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
-        #endif
+        # end if
 
         self._update_period_info = True
         self._update_geom_info = True
@@ -923,12 +883,12 @@ class SUMB(AeroSolver):
         '''
         Set the mach number for the problem...
         '''
-        if self.getOption('familyRot')!='':
+        if self.getOption('familyRot') != '':
             Rotating = True
         else:
             Rotating = False
         #endif
-        #print 'Rotating', Rotating, self.getOption('familyRot'), self.getOption('equationMode').lower()
+
         if Rotating or self.getOption('equationMode').lower()=='time spectral':
             self.sumb.inputphysics.mach = 0.0
             self.sumb.inputphysics.machcoef = aero_problem._flows.mach
@@ -938,13 +898,13 @@ class SUMB(AeroSolver):
             self.sumb.inputphysics.mach = aero_problem._flows.mach 
             self.sumb.inputphysics.machcoef = aero_problem._flows.mach
             self.sumb.inputphysics.machgrid = 0.0
-        #end
+        # end if
 
         return
 
     def setRefState(self, aero_problem):
-        '''
-        Set the Pressure, density and viscosity/reynolds number from the aero_problem
+        ''' Set the Pressure, density and viscosity/reynolds number
+        from the aero_problem
         '''
         self.sumb.flowvarrefstate.pref = aero_problem._flows.P
         self.sumb.flowvarrefstate.rhoref = aero_problem._flows.rho
@@ -953,12 +913,13 @@ class SUMB(AeroSolver):
         # Reynolds number info not setup yet...
 
         return
+
     def resetAdjoint(self, obj):
         '''
         Reset a possible stored adjoint 'obj'
         '''
 
-        if  obj in self.storedADjoints.keys():
+        if obj in self.storedADjoints.keys():
             self.storedADjoints[obj][:] = 0.0
         # end if
 
@@ -1004,7 +965,7 @@ class SUMB(AeroSolver):
 
         return V
 
-    def __solve__(self, aero_problem, nIterations=500, *args, **kwargs):
+    def __solve__(self, aero_problem, nIterations=500, MDCallBack=None):
         
         '''
         Run Analyzer (Analyzer Specific Routine)
@@ -1014,13 +975,16 @@ class SUMB(AeroSolver):
         # As soon as we run more iterations, adjoint matrices and
         # objective partials (dIdw,dIdx,dIda) are not valid so set
         # their flag to False
-        self.spatialSetup = self.stateSetup = self.couplingSetup = self.extraSetup = False
+        self.spatialSetup = False
+        self.stateSetup = False
+        self.couplingSetup = False
+        self.extraSetup = False
         self.kspSetup = False
         self.adjointRHS         = None
         self.callCounter += 1
 
         # Run Initialize, if already run it just returns.
-        self.initialize(aero_problem, *args, **kwargs)
+        self.initialize(aero_problem)
 
         #set inflow angle, refpoint etc.
         self.setMachNumber(aero_problem)
@@ -1053,7 +1017,7 @@ class SUMB(AeroSolver):
             # with new size,  storing old values from previous runs
             if self.getOption('storeHistory'):
                 current_size = len(self.sumb.monitor.convarray)
-                desired_size = current_size + self.sumb.inputiteration.ncycles +1
+                desired_size = current_size + self.sumb.inputiteration.ncycles+1
                 self.sumb.monitor.niterold  = self.sumb.monitor.nitercur+1
             else:
                 self.sumb.monitor.nitercur  = 0
@@ -1073,11 +1037,13 @@ class SUMB(AeroSolver):
             self.sumb.alloctimearrays(self.getOption('nTimeStepsFine'))
 
         # Reset Fail Flags
-        self.sumb.killsignals.routinefailed =  self.sumb.killsignals.fatalfail = False
+        self.sumb.killsignals.routinefailed =  False
+        self.sumb.killsignals.fatalfail = False
         self.solve_failed =  self.fatalFail = False
 
         self._updatePeriodInfo()
-        if (self.getOption('equationMode') == 'steady' or self.getOption('equationMode') == 'time spectral'):
+        if (self.getOption('equationMode') == 'steady' or 
+            self.getOption('equationMode') == 'time spectral'):
             self._updateGeometryInfo()
         self._updateVelocityInfo()
 
@@ -1094,17 +1060,18 @@ class SUMB(AeroSolver):
      
         t1 = time.time()
         # Call the Solver
-        if ('MDCallBack' in kwargs):
-            self.sumb.solverunsteadymd(kwargs['MDCallBack'])
-        else:
+        if MDCallBack is None:
             self.sumb.solver()
+        else:
+            self.sumb.solverunsteadymd(MDCallBack)
         # end if
 
         # Assign Fail Flags
         self.solve_failed = self.sumb.killsignals.routinefailed
         self.fatalFail = self.sumb.killsignals.fatalfail
 
-        # Reset Flow if there's a fatal fail and return --> Do not write solution
+        # Reset Flow if there's a fatal fail reset and return;
+        # --> Do not write solution
         if self.fatalFail:
             self.resetFlow()
             return
@@ -1114,8 +1081,8 @@ class SUMB(AeroSolver):
         sol_time = t2 - t0
         self.update_time = t1 - t0
 
-        if self.getOption('printTiming') and self.myid == 0:
-            print 'Solution Time', sol_time
+        if self.getOption('printTiming'):
+            mpiPrint('Solution Time: %10.3f sec'%sol_time, comm=self.comm)
         # end if
 
         # Post-Processing -- Write Solutions
@@ -1134,7 +1101,7 @@ class SUMB(AeroSolver):
             
         if self.getOption('TSStability'):
             self.computeStabilityParameters()
-        #endif
+        # end if
         
         return
 
@@ -1153,7 +1120,6 @@ class SUMB(AeroSolver):
                 tol         -> Absolute tolerance for CL convergence
         Output: aeroProblem._flows.alpha is updated with correct alpha
         '''
-
         anm2 = alpha0
         anm1 = alpha0 + delta
 
@@ -1260,13 +1226,10 @@ class SUMB(AeroSolver):
         return
 
     def writeSurfaceSolutionFile(self, *filename):
-        """Write the current state of the surface flow solution to a CGNS file.
-        
+        '''Write the current state of the surface flow solution to a CGNS file.
         Keyword arguments:
-        
         filename -- the name of the file (optional)
-
-        """
+        '''
         if (filename):
             self.sumb.inputio.surfacesolfile[:] = ''
             self.sumb.inputio.surfacesolfile[0:len(filename[0])] = filename[0]
@@ -1282,7 +1245,7 @@ class SUMB(AeroSolver):
         '''This function collects all the forces and locations and
         writes them to a file with each line having: X Y Z Fx Fy Fz.
         This can then be used to set a set of structural loads in TACS
-        for structural only optimization'''
+        for structural only optimization '''
       
         if self.mesh is None:
             mpiPrint('Error: The mesh must be specified to use writeForceFile',
@@ -1418,7 +1381,7 @@ class SUMB(AeroSolver):
 
         return out_vec
 
-    def verifydCdx(self, objective, **kwargs):
+    def verifydCdx(self, objective):
         '''
         call the reouttine to compare the partial dIda
         against FD
@@ -1427,6 +1390,7 @@ class SUMB(AeroSolver):
         if not self.stateSetup:
             self.sumb.setupstatepetscvars()
         # end if
+
         # Short form of objective--easier code reading
         obj = self.possibleObjectives[objective.lower()]
         costFunc =  self.SUmbCostfunctions[obj]
@@ -1434,14 +1398,15 @@ class SUMB(AeroSolver):
         
         return
 
-    def verifydCdw(self, objective, **kwargs):
+    def verifydCdw(self, objective):
 	
 	self.sumb.verifydcdwfile(1)
 
 	return
-    def verifydIdw(self, objective, **kwargs):
+
+    def verifydIdw(self, objective):
         '''
-        run compute obj partials, then print to a file...
+        run compute obj partials, then write to a file...
         '''
         if not self.stateSetup:
             self.sumb.setupstatepetscvars()
@@ -1457,9 +1422,9 @@ class SUMB(AeroSolver):
         
         return
 
-    def verifydIdx(self, objective, **kwargs):
+    def verifydIdx(self, objective):
         '''
-        run compute obj partials, then print to a file...
+        run compute obj partials, then write to a file...
         '''
         if not self.stateSetup:
             self.sumb.createstatepetscvars()
@@ -1476,7 +1441,7 @@ class SUMB(AeroSolver):
 
         return
 
-    def verifydRdw(self, **kwargs):
+    def verifydRdw(self):
         ''' run the verify drdw scripts in fortran'''
         # Make sure adjoint is initialize
         self.initAdjoint()
@@ -1489,7 +1454,7 @@ class SUMB(AeroSolver):
 
 	return
 
-    def verifydRdx(self, **kwargs):
+    def verifydRdx(self):
         ''' run the verify drdw scripts in fortran'''
         # Make sure adjoint is initialize
         self.initAdjoint()
@@ -1503,7 +1468,7 @@ class SUMB(AeroSolver):
         
 	return
 
-    def verifydRda(self, **kwargs):
+    def verifydRda(self):
         ''' run the verify drdw scripts in fortran'''
         # Make sure adjoint is initialize
         self.initAdjoint()
@@ -1518,7 +1483,7 @@ class SUMB(AeroSolver):
 
 	return
     
-    def initAdjoint(self, *args, **kwargs):
+    def initAdjoint(self):
         '''
         Initialize the Ajoint problem for this test case
         in SUMB
@@ -1575,11 +1540,12 @@ class SUMB(AeroSolver):
             if dvs[i] in self.possibleAeroDVs and not dvs[i] in self.aeroDVs:
                 self.aeroDVs.append(dvs[i])
             else:
-                print 'Warning: %s was not one of the possible AeroDVs'%(dvs[i])
-                print 'Full AeroDV list is:'
-                print self.possibleAeroDVs
+                print('Warning: %s was not one of the possible AeroDVs'%(dvs[i]))
+                print('Full AeroDV list is:')
+                print(self.possibleAeroDVs)
             # end if
         # end for
+
         return
 
     def setupAdjoint(self):
@@ -1622,7 +1588,6 @@ class SUMB(AeroSolver):
                 self.spatialSetup = True
                 self.extraSetup = True
             # end if
-
         else:
             # Otherwise, we just setup the state variables to save
             # memory:
@@ -1652,9 +1617,7 @@ class SUMB(AeroSolver):
                 forcePoints = self.getForcePoints()
             # end if
             self.sumb.createcouplingpetscvars()
-
             self.sumb.setupcouplingmatrixstruct(forcePoints.T)
-
             self.couplingSetup = True
         # end if
 
@@ -1719,7 +1682,6 @@ class SUMB(AeroSolver):
         '''
         release the PETSc Memory that have been allocated
         '''
-        
         if self.stateSetup:
             self.sumb.destroystatepetscvars()
             self.sumb.destroypetscksp()
@@ -1743,7 +1705,8 @@ class SUMB(AeroSolver):
 
         return
 
-    def _on_adjoint(self, objective, forcePoints=None, *args, **kwargs):
+    def _on_adjoint(self, objective, forcePoints=None, structAdjoint=None, 
+                    group_name=None):
 
         # Try to see if obj is an aerodynamic objective. If it is, we
         # will have a non-zero RHS, otherwise its an objective with a
@@ -1761,10 +1724,9 @@ class SUMB(AeroSolver):
 
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
-        if 'structAdjoint' in kwargs and 'group_name' in kwargs:
+        if structAdjoint is not None and group_name is not None:
             self.setupCouplingMatrices(forcePoints)
-            phi = self.mesh.expandVectorByFamily(kwargs['group_name'],
-                                                 kwargs['structAdjoint'])
+            phi = self.mesh.expandVectorByFamily(group_name, structAdjoint)
             self.sumb.agumentrhs(numpy.ravel(phi))
         # end if
 
@@ -1794,7 +1756,8 @@ class SUMB(AeroSolver):
             # least once; that is we've already tried one solve
             
             if  obj in self.storedADjoints.keys():
-                self.storedADjoints[obj][:] = 0.0 # Always reset a stored adjoint 
+                self.storedADjoints[obj][:] = 0.0 # Always reset a
+                                                  # stored adjoint
 
                 if self.getOption('autoAdjointRetry'):
                     self.sumb.solveadjointtransposepetsc()
@@ -1840,7 +1803,6 @@ class SUMB(AeroSolver):
         dIdxs_1 = self.getdIdx(objective)
 
         # Total derivative of the obective with surface coordinates
-
         dIdXs = dIdxs_1 - dIdxs_2
 
         return dIdXs
@@ -1931,7 +1893,6 @@ class SUMB(AeroSolver):
         return 
 
     def _updateVelocityInfo(self):
-        
         if (self._update_vel_info):
             self.sumb.updategridvelocitiesalllevels()
             self._update_vel_info = False
@@ -1946,7 +1907,6 @@ class SUMB(AeroSolver):
         """
         return self.monnames.keys()
     
-
     def getConvergenceHistory(self, name):
         """Return an array of the convergence history for a particular
         quantity.
@@ -1959,7 +1919,7 @@ class SUMB(AeroSolver):
         try:
             index = self.monnames[name]
         except KeyError:
-            print "Error: No such quantity '%s'" % name
+            mpiPrint('Error: No such quantity %s'%name, comm=self.comm)
             return None
         if (self.myid == 0):
             if (self.sumb.monitor.niterold == 0 and
@@ -2225,22 +2185,7 @@ class SUMB(AeroSolver):
         
         return
 
-    def resetKSP(self): 
-        '''This function destroys the KSP solver and then immediately
-        reforms it. The reason this function exists is as follows: For
-        the coupled KSP solver, typically only a small number of
-        subspace vectors are requied. However, more vectors may have
-        already been allotated if the NKSolver was used in the
-        Gauss-Sidel startup. The extra vectors take up space that will
-        be needed on the outer KSP.  The net effect is simply to flush
-        the subspace vectors.'''
-
-        self.sumb.resetksp()
-
-        return
-
     def getResidual(self, res=None):
-
         '''Return the residual on this processor. Used in aerostructural
         analysis'''
         if res is None:
@@ -2266,58 +2211,57 @@ class SUMB(AeroSolver):
         self.sumb.getsolution(sps)
 
         funcVals = self.sumb.costfunctions.functionvalue
-        SUmbsolution =  \
-            {'lift':funcVals[self.sumb.costfunctions.costfunclift-1],
-             'drag':funcVals[self.sumb.costfunctions.costfuncdrag-1],
-             'cl'  :funcVals[self.sumb.costfunctions.costfuncliftcoef-1],
-             'cd'  :funcVals[self.sumb.costfunctions.costfuncdragcoef-1],
-             'fx'  :funcVals[self.sumb.costfunctions.costfuncforcex-1],
-             'fy'  :funcVals[self.sumb.costfunctions.costfuncforcey-1],
-             'fz'  :funcVals[self.sumb.costfunctions.costfuncforcez-1],
-             'cfx' :funcVals[self.sumb.costfunctions.costfuncforcexcoef-1],
-             'cfy' :funcVals[self.sumb.costfunctions.costfuncforceycoef-1],
-             'cfz' :funcVals[self.sumb.costfunctions.costfuncforcezcoef-1],
-             'mx'  :funcVals[self.sumb.costfunctions.costfuncmomx-1],
-             'my'  :funcVals[self.sumb.costfunctions.costfuncmomy-1],
-             'mz'  :funcVals[self.sumb.costfunctions.costfuncmomz-1],
-             'cmx' :funcVals[self.sumb.costfunctions.costfuncmomxcoef-1],
-             'cmy' :funcVals[self.sumb.costfunctions.costfuncmomycoef-1],
-             'cmz' :funcVals[self.sumb.costfunctions.costfuncmomzcoef-1],
-             'cmzalphadot':funcVals[self.sumb.costfunctions.costfunccmzalphadot-1],
-             'cmzalpha'   :funcVals[self.sumb.costfunctions.costfunccmzalpha-1],
-             'cm0'        :funcVals[self.sumb.costfunctions.costfunccm0-1],
-             'clalphadot' :funcVals[self.sumb.costfunctions.costfuncclalphadot-1],
-             'clalpha'    :funcVals[self.sumb.costfunctions.costfuncclalpha-1],
-             'cl0'        :funcVals[self.sumb.costfunctions.costfunccl0-1],
-             'cfyalphadot':funcVals[self.sumb.costfunctions.costfunccfyalphadot-1],
-             'cfyalpha'   :funcVals[self.sumb.costfunctions.costfunccfyalpha-1],
-             'cfy0'       :funcVals[self.sumb.costfunctions.costfunccfy0-1],
-             'cdalphadot' :funcVals[self.sumb.costfunctions.costfunccdalphadot-1],
-             'cdalpha'    :funcVals[self.sumb.costfunctions.costfunccdalpha-1],
-             'cd0'        :funcVals[self.sumb.costfunctions.costfunccd0-1],
-             'cmzqdot'    :funcVals[self.sumb.costfunctions.costfunccmzqdot-1],
-             'cmzq'       :funcVals[self.sumb.costfunctions.costfunccmzq-1],
-             'clqdot'     :funcVals[self.sumb.costfunctions.costfuncclqdot-1],
-             'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1],
-             'cbend'      :funcVals[self.sumb.costfunctions.costfuncbendingcoef-1]
-             }
-                                                 
+        SUmbsolution = {
+            'lift':funcVals[self.sumb.costfunctions.costfunclift-1],
+            'drag':funcVals[self.sumb.costfunctions.costfuncdrag-1],
+            'cl'  :funcVals[self.sumb.costfunctions.costfuncliftcoef-1],
+            'cd'  :funcVals[self.sumb.costfunctions.costfuncdragcoef-1],
+            'fx'  :funcVals[self.sumb.costfunctions.costfuncforcex-1],
+            'fy'  :funcVals[self.sumb.costfunctions.costfuncforcey-1],
+            'fz'  :funcVals[self.sumb.costfunctions.costfuncforcez-1],
+            'cfx' :funcVals[self.sumb.costfunctions.costfuncforcexcoef-1],
+            'cfy' :funcVals[self.sumb.costfunctions.costfuncforceycoef-1],
+            'cfz' :funcVals[self.sumb.costfunctions.costfuncforcezcoef-1],
+            'mx'  :funcVals[self.sumb.costfunctions.costfuncmomx-1],
+            'my'  :funcVals[self.sumb.costfunctions.costfuncmomy-1],
+            'mz'  :funcVals[self.sumb.costfunctions.costfuncmomz-1],
+            'cmx' :funcVals[self.sumb.costfunctions.costfuncmomxcoef-1],
+            'cmy' :funcVals[self.sumb.costfunctions.costfuncmomycoef-1],
+            'cmz' :funcVals[self.sumb.costfunctions.costfuncmomzcoef-1],
+            'cmzalphadot':funcVals[self.sumb.costfunctions.costfunccmzalphadot-1],
+            'cmzalpha'   :funcVals[self.sumb.costfunctions.costfunccmzalpha-1],
+            'cm0'        :funcVals[self.sumb.costfunctions.costfunccm0-1],
+            'clalphadot' :funcVals[self.sumb.costfunctions.costfuncclalphadot-1],
+            'clalpha'    :funcVals[self.sumb.costfunctions.costfuncclalpha-1],
+            'cl0'        :funcVals[self.sumb.costfunctions.costfunccl0-1],
+            'cfyalphadot':funcVals[self.sumb.costfunctions.costfunccfyalphadot-1],
+            'cfyalpha'   :funcVals[self.sumb.costfunctions.costfunccfyalpha-1],
+            'cfy0'       :funcVals[self.sumb.costfunctions.costfunccfy0-1],
+            'cdalphadot' :funcVals[self.sumb.costfunctions.costfunccdalphadot-1],
+            'cdalpha'    :funcVals[self.sumb.costfunctions.costfunccdalpha-1],
+            'cd0'        :funcVals[self.sumb.costfunctions.costfunccd0-1],
+            'cmzqdot'    :funcVals[self.sumb.costfunctions.costfunccmzqdot-1],
+            'cmzq'       :funcVals[self.sumb.costfunctions.costfunccmzq-1],
+            'clqdot'     :funcVals[self.sumb.costfunctions.costfuncclqdot-1],
+            'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1],
+            'cbend'      :funcVals[self.sumb.costfunctions.costfuncbendingcoef-1]
+            }
         
         return SUmbsolution
 
     def computeArea(self, axis, group_name=None, cfd_force_pts=None, TS=0):
-        """                                                                                                                                                                                                     
-        Compute the projected area of the surface mesh                                                                                                                                                          
-                                                                                                                                                                                                                
-        Input Arguments:                                                                                                                                                                                        
-           axis, numpy array, size(3): The projection vector                                                                                                                                                    
-               along which to determine the shadow area                                                                                                                                                         
-           group_name, str: The group from which to obtain the coordinates.                                                                                                                                     
-               This name must have been obtained from addFamilyGroup() or                                                                                                                                       
-               be the default 'all' which contains all surface coordiantes                                                                                                                                      
-                                                                                                                                                                                                                
-        Output Arguments:                                                                                                                                                                                       
-            Area: The resulting area                                                                                                                                                                            
+        """
+        Compute the projected area of the surface mesh
+
+        Input Arguments:
+           axis, numpy array, size(3): The projection vector
+               along which to determine the shadow area
+           group_name, str: The group from which to obtain the coordinates.
+               This name must have been obtained from addFamilyGroup() or 
+               be the default 'all' which contains all surface coordiantes 
+
+        Output Arguments: 
+            Area: The resulting area  
             """
 
         if cfd_force_pts is None:
@@ -2335,19 +2279,20 @@ class SUMB(AeroSolver):
         
         return area
 
-    def computeAreaSensitivity(self, axis, group_name=None, cfd_force_pts=None, TS=0):
-        """                                                                                                                                                                                                     
-        Compute the projected area of the surface mesh                                                                                                                                                          
-                                                                                                                                                                                                                
-        Input Arguments:                                                                                                                                                                                        
-           axis, numpy array, size(3): The projection vector                                                                                                                                                    
-               along which to determine the shadow area                                                                                                                                                         
-           group_name, str: The group from which to obtain the coordinates.                                                                                                                                     
-               This name must have been obtained from addFamilyGroup() or                                                                                                                                       
-               be the default 'all' which contains all surface coordiantes                                                                                                                                      
-                                                                                                                                                                                                                
-        Output Arguments:                                                                                                                                                                                       
-            Area: The resulting area                                                                                                                                                                            
+    def computeAreaSensitivity(self, axis, group_name=None, 
+                               cfd_force_pts=None, TS=0):
+        """ 
+        Compute the projected area of the surface mesh
+
+        Input Arguments:
+           axis, numpy array, size(3): The projection vector
+               along which to determine the shadow area  
+           group_name, str: The group from which to obtain the coordinates.
+               This name must have been obtained from addFamilyGroup() or 
+               be the default 'all' which contains all surface coordiantes 
+
+        Output Arguments:
+            Area: The resulting area    
             """
 
         if cfd_force_pts is None:
@@ -2361,7 +2306,6 @@ class SUMB(AeroSolver):
         # end if
 
         return da
-
 
     def _getObjective(self, objective):
         '''Check to see if objective is one of the possible
@@ -2379,7 +2323,6 @@ class SUMB(AeroSolver):
         return obj, aeroObj
 
     def _on_setOption(self, name, value):
-        
         '''
         Set Solver Option Value 
         '''
@@ -2389,7 +2332,9 @@ class SUMB(AeroSolver):
 
         # Do special Options individually
         if name in self.special_options:
-            if name in ['monitorvariables','surfacevariables','volumevariables']:
+            if name in ['monitorvariables',
+                        'surfacevariables',
+                        'volumevariables']:
                 varStr = ''
                 for i in xrange(len(value)):
                     varStr = varStr + value[i] + '_'
@@ -2432,7 +2377,6 @@ class SUMB(AeroSolver):
             #Convert the value to lower case:
             value = self.optionMap[name][value.lower()]
         # end if
-            
 
         # If value is a string, put quotes around it and make it
         # the correct length, otherwise convert to string
@@ -2463,23 +2407,7 @@ class SUMB(AeroSolver):
         #end
         
         return
-    
-        
-    def _on_getInform(self, infocode):
-        
-        '''
-        Get Optimizer Result Information (Optimizer Specific Routine)
-        
-        Keyword arguments:
-        -----------------
-        id -> STRING: Option Name
-        
-        Documentation last updated:  May. 07, 2008 - Ruben E. Perez
-        '''
-        
-        # 
-        return self.informs[infocode]
-
+  
 
 class SUmbDummyMesh(object):
     """
@@ -2565,15 +2493,13 @@ class SUmbDummyMesh(object):
 
         return
 
- 
-
 #==============================================================================
 # SUmb Analysis Test
 #==============================================================================
 if __name__ == '__main__':
     
     # Test SUmb
-    print 'Testing ...'
+    mpiPrint('Testing ...')
     sumb = SUMB()
-    print sumb
+    print(sumb)
 

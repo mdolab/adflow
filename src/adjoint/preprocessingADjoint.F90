@@ -52,37 +52,37 @@ subroutine preprocessingADjoint
   nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
 
   if (PETSC_VERSION_MINOR == 2) then
-     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimS,PETSC_DECIDE, &
+     call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimS,PETSC_DECIDE, &
           PETSC_NULL_SCALAR,fVec1,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
 
-     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimS,PETSC_DECIDE, &
+     call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimS,PETSC_DECIDE, &
           PETSC_NULL_SCALAR,fVec2,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
 
      ! Two w-like vectors. 
-     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimW,PETSC_DECIDE, &
+     call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimW,PETSC_DECIDE, &
           PETSC_NULL_SCALAR,w_like1,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
      
-     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,ndimW,PETSC_DECIDE, &
+     call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimW,PETSC_DECIDE, &
           PETSC_NULL_SCALAR,w_like2,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
   else
-     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,1,ndimS,PETSC_DECIDE, &
+     call VecCreateMPIWithArray(SUMB_COMM_WORLD,1,ndimS,PETSC_DECIDE, &
           PETSC_NULL_SCALAR,fVec1,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
 
-     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,1,ndimS,PETSC_DECIDE, &
+     call VecCreateMPIWithArray(SUMB_COMM_WORLD,1,ndimS,PETSC_DECIDE, &
           PETSC_NULL_SCALAR,fVec2,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
 
      ! Two w-like vectors. 
-     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
+     call VecCreateMPIWithArray(SUMB_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
           PETSC_NULL_SCALAR,w_like1,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
      
-     call VecCreateMPIWithArray(SUMB_PETSC_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
+     call VecCreateMPIWithArray(SUMB_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
           PETSC_NULL_SCALAR,w_like2,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
   end if

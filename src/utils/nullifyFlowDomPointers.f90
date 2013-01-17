@@ -170,6 +170,4 @@
        nullify(flowDoms(nn,level,sps)%globalCell)
        nullify(flowDoms(nn,level,sps)%globalNode)
 
-       nullify(flowDoms(nn,level,sps)%warp_comm)
-
        end subroutine nullifyFlowDomPointers

@@ -1,4 +1,5 @@
 #!/usr/local/bin/python
+from __future__ import print_function
 '''
 pySUmb - A Python interface to SUmb.
 
@@ -24,25 +25,21 @@ To Do:
     - 
 '''
 
-
 # =============================================================================
 # Standard Python modules
 # =============================================================================
-import os, sys, copy
+import copy
 
 # =============================================================================
 # External Python modules
 # =============================================================================
-import numpy
 
 # =============================================================================
 # Extension modules
 # =============================================================================
-
 from mdo_import_helper import import_modules
 exec(import_modules('pyAero_problem'))
 exec(import_modules('pySUMB'))
-import sumb_cs
 
 # =============================================================================
 # Misc Definitions
@@ -52,7 +49,6 @@ import sumb_cs
 # SUMB Class
 # =============================================================================
 class SUMB_C(SUMB):
-    
     '''
     SUmb Aerodynamic Analysis Class - Inherited from the SUMB Class
     '''
@@ -65,10 +61,11 @@ class SUMB_C(SUMB):
         Documentation last updated:  July. 03, 2008 - C.A.(Sandy) Mader
         '''
 
-        SUMB.__init__(self,sumb=sumb_cs,*args,**kwargs)        
+        self.sumb = MExt('sumb_cs')._module
+        SUMB.__init__(self, sumb=sumb_mod, *args, **kwargs)        
         self.dtype = 'D'
-        return
 
+        return
 
     def _on_setOption(self, name, value):
         
@@ -147,17 +144,18 @@ class SUMB_C(SUMB):
         
     def writeMeshFile(self, filename=None):
         mpiPrint('Output not supported with complex version.',comm=self.comm)
+
         return
 
     def writeVolumeSolutionFile(self, filename=None, writeGrid=True):
         mpiPrint('Output not supported with complex version.',comm=self.comm)
+
         return
 
     def writeSurfaceSolutionFile(self, *filename):
         mpiPrint('Output not supported with complex version.',comm=self.comm)
+
         return
-
-
 
 #==============================================================================
 # SUmb Analysis Test
@@ -165,7 +163,7 @@ class SUMB_C(SUMB):
 if __name__ == '__main__':
     
     # Test SUmb
-    print 'Testing ...'
+    print('Testing ...')
     sumb = SUMB_C()
-    print sumb
+    print(sumb)
     

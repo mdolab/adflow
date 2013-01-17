@@ -2,10 +2,15 @@
    !  Tapenade 3.6 (r4159) - 21 Sep 2011 10:11
    !
    !  Differentiation of bcnswalladiabatic in forward (tangent) mode:
-   !   variations   of useful results: *p *gamma *w *rlv
+   !   variations   of useful results: *bvtj1 *bvtj2 *p *gamma *bmtk1
+   !                *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1
+   !                *bvti2 *bmtj1 *bmtj2
    !   with respect to varying inputs: *p *w *rlv
-   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
-   !                bcdata:in *bcdata.uslip:in (global)cphint:in-out
+   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
+   !                gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
+   !                bvtk2:in d2wall:in bmti1:in bmti2:in bvti1:in
+   !                bvti2:in bmtj1:in bmtj2:in bcdata:in *bcdata.uslip:in
+   !                (global)cphint:in-out
    !
    !      ******************************************************************
    !      *                                                                *
@@ -51,7 +56,6 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   EXTERNAL TURBBCNSWALL
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d
    INTERFACE 
    SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
@@ -91,10 +95,34 @@
    ! No need to extrapolate the secondary halo's, because this
    ! is done in extrapolate2ndHalo.
    IF (turbcoupled) THEN
-   CALL TURBBCNSWALL(.false.)
+   bmtj2d = 0.0
+   bmtj1d = 0.0
+   bvti2d = 0.0
+   bvti1d = 0.0
+   bmti2d = 0.0
+   bmti1d = 0.0
+   bvtk2d = 0.0
+   bvtk1d = 0.0
+   bmtk2d = 0.0
+   bmtk1d = 0.0
+   bvtj2d = 0.0
+   bvtj1d = 0.0
+   CALL TURBBCNSWALL_D(.false.)
    gammad = 0.0
    ELSE
+   bvtj1d = 0.0
+   bvtj2d = 0.0
    gammad = 0.0
+   bmtk1d = 0.0
+   bmtk2d = 0.0
+   bvtk1d = 0.0
+   bvtk2d = 0.0
+   bmti1d = 0.0
+   bmti2d = 0.0
+   bvti1d = 0.0
+   bvti2d = 0.0
+   bmtj1d = 0.0
+   bmtj2d = 0.0
    END IF
    ! Loop over the viscous subfaces of this block. Note that
    ! these are numbered first.
@@ -108,8 +136,7 @@
    ! that.
    !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
    CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   &                     pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, &
-   &                     0_intType)
+   &                     pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, 0)
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero

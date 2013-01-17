@@ -1,3 +1,33 @@
+subroutine normalVelocitiesAllLevels(sps)
+  !
+  ! Shell function to call normalVelocities_block on all blocks/levels
+  !
+  use blockPointers
+  use constants
+  use inputTimeSpectral
+  use iteration
+  implicit none
+  !
+  !      Subroutine arguments.
+  !
+  integer(kind=intType), intent(in) :: sps
+  !      Local variables.
+  !
+  integer(kind=intType) :: nn, level, nLevels
+
+  nLevels = ubound(flowDoms,2)
+  levelLoop: do level=groundLevel, nLevels
+     domains: do nn=1,nDom
+
+        ! Set the pointers for this block.
+
+        call setPointers(nn, level, sps)
+
+        call normalVelocities_block(sps)
+
+     end do domains
+  end do levelLoop
+end subroutine normalVelocitiesAllLevels
 !
 !      ******************************************************************
 !      *                                                                *
@@ -8,144 +38,127 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine normalVelocitiesAllLevels(sps)
-!
-!      ******************************************************************
-!      *                                                                *
-!      * normalVelocitiesAllLevels computes the normal grid             *
-!      * velocities of some boundary faces of the moving blocks for     *
-!      * spectral mode sps. All grid levels from ground level to the    *
-!      * coarsest level are considered.                                 *
-!      *                                                                *
-!      ******************************************************************
-!
-       use BCTypes
-       use blockPointers
-       use iteration
-       implicit none
-!
-!      Subroutine arguments.
-!
-       integer(kind=intType), intent(in) :: sps
-!
-!      Local variables.
-!
-       integer(kind=intType) :: nLevels, level, nn, mm
-       integer(kind=intType) :: i, j
+subroutine normalVelocities_block(sps)
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * normalVelocitiesAllLevels computes the normal grid             *
+  !      * velocities of some boundary faces of the moving blocks for     *
+  !      * spectral mode sps. All grid levels from ground level to the    *
+  !      * coarsest level are considered.                                 *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  use BCTypes
+  use blockPointers
+  use iteration
+  implicit none
+  !
+  !      Subroutine arguments.
+  !
+  integer(kind=intType), intent(in) :: sps
+  !
+  !      Local variables.
+  !
+  integer(kind=intType) :: mm
+  integer(kind=intType) :: i, j
 
-       real(kind=realType) :: weight, mult
+  real(kind=realType) :: weight, mult
 
-       real(kind=realType), dimension(:,:),   pointer :: sFace
-       real(kind=realType), dimension(:,:,:), pointer :: ss
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Loop over the number of grid levels, starting at groundLevel,
-       ! the currently finest mesh.
+  real(kind=realType), dimension(:,:),   pointer :: sFace
+  real(kind=realType), dimension(:,:,:), pointer :: ss
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Begin execution                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  ! Check for a moving block. As it is possible that in a
+  ! multidisicplinary environment additional grid velocities
+  ! are set, the test should be done on addGridVelocities
+  ! and not on blockIsMoving.
 
-       nLevels = ubound(flowDoms,2)
-       levelLoop: do level=groundLevel,nLevels
+  testMoving: if( addGridVelocities ) then
+     !
+     !            ************************************************************
+     !            *                                                          *
+     !            * Determine the normal grid velocities of the boundaries.  *
+     !            * As these values are based on the unit normal. A division *
+     !            * by the length of the normal is needed.                   *
+     !            * Furthermore the boundary unit normals are per definition *
+     !            * outward pointing, while on the iMin, jMin and kMin       *
+     !            * boundaries the face normals are inward pointing. This    *
+     !            * is taken into account by the factor mult.                *
+     !            *                                                          *
+     !            ************************************************************
+     !
+     ! Loop over the boundary subfaces.
 
-         ! Loop over the number of local blocks.
+     bocoLoop: do mm=1,nBocos
 
-         domains: do nn=1,nDom
+        ! Check whether rFace is allocated.
 
-           ! Set the pointers for this block.
+        testAssoc: if( associated(BCData(mm)%rFace) ) then
 
-           call setPointers(nn, level, sps)
+           ! Determine the block face on which the subface is
+           ! located and set some variables accordingly.
 
-           ! Check for a moving block. As it is possible that in a
-           ! multidisicplinary environment additional grid velocities
-           ! are set, the test should be done on addGridVelocities
-           ! and not on blockIsMoving.
+           select case (BCFaceID(mm))
 
-           testMoving: if( addGridVelocities ) then
-!
-!            ************************************************************
-!            *                                                          *
-!            * Determine the normal grid velocities of the boundaries.  *
-!            * As these values are based on the unit normal. A division *
-!            * by the length of the normal is needed.                   *
-!            * Furthermore the boundary unit normals are per definition *
-!            * outward pointing, while on the iMin, jMin and kMin       *
-!            * boundaries the face normals are inward pointing. This    *
-!            * is taken into account by the factor mult.                *
-!            *                                                          *
-!            ************************************************************
-!
-             ! Loop over the boundary subfaces.
+           case (iMin)
+              mult = -one
+              ss => si(1,:,:,:);  sFace => sFaceI(1,:,:)
+           case (iMax)
+              mult = one
+              ss => si(il,:,:,:); sFace => sFaceI(il,:,:)
+           case (jMin)
+              mult = -one
+              ss => sj(:,1,:,:);  sFace => sFaceJ(:,1,:)
+           case (jMax)
+              mult = one
+              ss => sj(:,jl,:,:); sFace => sFaceJ(:,jl,:)
+           case (kMin)
+              mult = -one
+              ss => sk(:,:,1,:);  sFace => sFaceK(:,:,1)
+           case (kMax)
+              mult = one
+              ss => sk(:,:,kl,:); sFace => sFaceK(:,:,kl)
 
-             bocoLoop: do mm=1,nBocos
+           end select
 
-               ! Check whether rFace is allocated.
+           ! Loop over the faces of the subface.
 
-               testAssoc: if( associated(BCData(mm)%rFace) ) then
+           do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
+              do i=BCData(mm)%icBeg, BCData(mm)%icEnd
 
-                 ! Determine the block face on which the subface is
-                 ! located and set some variables accordingly.
+                 ! Compute the inverse of the length of the normal
+                 ! vector and possibly correct for inward pointing.
 
-                 select case (BCFaceID(mm))
+                 weight = sqrt(ss(i,j,1)**2 + ss(i,j,2)**2 &
+                      +      ss(i,j,3)**2)
+                 if(weight > zero) weight = mult/weight
 
-                   case (iMin)
-                     mult = -one
-                     ss => si(1,:,:,:);  sFace => sFaceI(1,:,:)
-                   case (iMax)
-                     mult = one
-                     ss => si(il,:,:,:); sFace => sFaceI(il,:,:)
-                   case (jMin)
-                     mult = -one
-                     ss => sj(:,1,:,:);  sFace => sFaceJ(:,1,:)
-                   case (jMax)
-                     mult = one
-                     ss => sj(:,jl,:,:); sFace => sFaceJ(:,jl,:)
-                   case (kMin)
-                     mult = -one
-                     ss => sk(:,:,1,:);  sFace => sFaceK(:,:,1)
-                   case (kMax)
-                     mult = one
-                     ss => sk(:,:,kl,:); sFace => sFaceK(:,:,kl)
+                 ! Compute the normal velocity based on the outward
+                 ! pointing unit normal.
 
-                 end select
+                 BCData(mm)%rFace(i,j) = weight*sFace(i,j)
+              enddo
+           enddo
 
-                 ! Loop over the faces of the subface.
+        endif testAssoc
+     enddo bocoLoop
 
-                 do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
-                   do i=BCData(mm)%icBeg, BCData(mm)%icEnd
+  else testMoving
 
-                     ! Compute the inverse of the length of the normal
-                     ! vector and possibly correct for inward pointing.
+     ! Block is not moving. Loop over the boundary faces and set
+     ! the normal grid velocity to zero if allocated.
 
-                     weight = sqrt(ss(i,j,1)**2 + ss(i,j,2)**2 &
-                            +      ss(i,j,3)**2)
-                     if(weight > zero) weight = mult/weight
+     do mm=1,nBocos
+        if( associated(BCData(mm)%rFace) ) &
+             BCData(mm)%rFace = zero
+     enddo
 
-                     ! Compute the normal velocity based on the outward
-                     ! pointing unit normal.
-                     
-                     BCData(mm)%rFace(i,j) = weight*sFace(i,j)
-                  enddo
-               enddo
- 
-               endif testAssoc
-             enddo bocoLoop
+  endif testMoving
 
-           else testMoving
-
-             ! Block is not moving. Loop over the boundary faces and set
-             ! the normal grid velocity to zero if allocated.
-
-             do mm=1,nBocos
-               if( associated(BCData(mm)%rFace) ) &
-                 BCData(mm)%rFace = zero
-             enddo
-
-           endif testMoving
-         enddo domains
-
-       enddo levelLoop
-     
-       end subroutine normalVelocitiesAllLevels
+end subroutine normalVelocities_block

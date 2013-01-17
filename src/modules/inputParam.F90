@@ -124,8 +124,22 @@
        ! radiiNeededCoarse: Idem for the coarse grid.
        ! lumpedDiss :       logical factor for determining whether or not
        !                    lumped dissipation is used for preconditioner
-       ! sigma    : Scaling parameter for dissipation lumping in approximate
-       !            precondtioner
+       ! sigma      :       Scaling parameter for dissipation lumping in
+       !                    approximateprecondtioner
+       ! useApproxWallDistance : logical to determine if the user wants to 
+       !                         use the fast approximate wall distance
+       !                         computations. Typically only used for 
+       !                         repeated calls when the wall distance would
+       !                         not have changed significantly
+       ! updateWallAssociation : Logical to determine if the full wall distance
+       !                         assocation is to be performed on the next
+       !                         wall distance calculation. This is only
+       !                         significant when useApproxWallDistance is 
+       !                         set to True. This allows the user to 
+       !                         reassociate the face a cell is associated
+       !                         with. 
+       !                      
+
 
        integer(kind=intType) :: spaceDiscr, spaceDiscrCoarse
        integer(kind=intType) :: orderTurb, limiter
@@ -143,6 +157,9 @@
 
        logical :: lumpedDiss
        real(kind=realType) :: sigma
+
+       logical :: useApproxWallDistance
+       logical :: updateWallAssociation
 
        end module inputDiscretization
 
@@ -332,6 +349,7 @@
        ! cycleStrategy:    Array which describes the mg cycle.
        ! cfl:              Cfl number on the fine grid.
        ! cflCoarse:        Idem, but on the coarse grids.
+       ! cfllimit          Limit used to determine how much residuals are smoothed
        ! alfaTurb:         Relaxation factor in turbulent dd-adi smoother.
        ! betaTurb:         Relaxation factor in vf dd-adi smoother.
        ! relaxBleeds:      Relaxation coefficient for the update
@@ -352,6 +370,7 @@
        integer(kind=intType) :: nsgStartup, smoother, nRKStages
        integer(kind=intType) :: nSubIterTurb, nUpdateBleeds
        integer(kind=intType) :: resAveraging
+       real(kind=realType) :: CFLLimit
        integer(kind=intType) :: turbTreatment, turbSmoother, turbRelax
        integer(kind=intType) :: mgBoundCorr, mgStartlevel
        integer(kind=intType) :: nMGSteps, nMGLevels
@@ -687,6 +706,9 @@
        real(kind=realType) :: Machd, MachCoefd,MachGridd
        real(kind=realType) :: Reynolds, ReynoldsLength
        real(kind=realType) :: tempFreestream, gammaConstant, RGasDim
+#ifndef USE_TAPENADE
+       real(kind=realType) :: gammaconstantb, gammaconstantd
+#endif
        real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset
        real(kind=realType) :: eddyVisInfRatio, turbIntensityInf
        real(kind=realType) :: surfaceRef, lengthRef
@@ -700,6 +722,9 @@
        !bending moment derivative
        real(kind=realType), dimension(3) :: pointRefb
        real(kind=realType), dimension(3) :: pointRefEC
+
+       ! Return forces as tractions instead of forces:
+       logical :: forcesAsTractions
 
        end module inputPhysics
 
@@ -936,44 +961,9 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use precision
+       use constants
        implicit none
        save
-
-       !definition of parameters for the ADjoint Linear Solver
-
-       integer(kind=intType), parameter :: PETSCBICGStab = 1, &
-                                           PETSCGMRES    = 2, &
-                                           PETSCCG       = 3, &
-                                           PETSCFGMRES   = 4
-       
-       !Definitions for Global Preconditioners
-       integer(kind=intType), parameter :: BlockJacobi      = 1, &
-                                           Jacobi           = 2, &
-                                           AdditiveSchwartz = 3
-
-       !Definitions for local Preconditioners
-       integer(kind=intType), parameter :: ILU       = 1, &
-                                           ICC       = 2, &
-                                           LU        = 3, &
-                                           Cholesky  = 4
-
-       !Definitions for matrix ordering method
-       integer(kind=intType), parameter :: Natural               = 1, &
-                                           ReverseCuthillMckee   = 2, &
-                                           NestedDissection      = 3, &
-                                           OnewayDissection      = 4, &
-                                           QuotientMinimumDegree = 5
-
-       !Definitions for Preconditioner Side
-       integer(kind=intType), parameter :: Left  = 1, &
-                                           Right = 2
-       
-       !Definitions for matrix ordering method
-       integer(kind=intType), parameter :: Normal = 1, &
-                                           RowMax = 2, &
-                                           RowSum = 3, &
-                                           RowAbs = 4
 !
 !      ******************************************************************
 !      *                                                                *
@@ -990,18 +980,17 @@
        !                 from the previous solution
        ! useDiagTSPC   : Whether or not the off time instance terms are
        !                 included in the TS preconditioner.
-       logical :: solveADjoint, setMonitor, ApproxPC,restartADjoint,useDiagTSPC
+       logical :: solveADjoint, setMonitor, ApproxPC, restartADjoint, useDiagTSPC
 
        ! ADjointSolverType: Type of linear solver for the ADjoint
        ! PreCondType      : Type of Preconditioner to use
-       ! ScaleType        : Type of Scaling to use in Jacobi Preconditioner
        ! Matrix Ordering  : Type of matrix ordering to use
-       integer(kind=intType)::ADjointSolverType,PreCondType,ScaleType,&
-            MatrixOrdering
-       
-       ! PCSide  : Right or Left Preconditioning
-       ! LocalPC : Local preconditioning type 
-       integer(kind=intType):: PCSide,LocalPCType
+       ! LocalPCType      : Type of preconditioner to use on subdomains
+       character(maxStringLen) :: ADjointSolverType
+       character(maxStringLen) :: PreCondType
+       character(maxStringLen) :: matrixOrdering
+       character(maxStringLen) :: adjointPCSide
+       character(maxStringLen) :: LocalPCType
 
        ! FillLevel     : Number of levels of fill for the ILU local PC
        ! Overlap       : Amount of overlap in the ASM PC
@@ -1023,11 +1012,17 @@
        integer(kind=intType)  :: adjRestart 
        integer(kind=intType)  :: adjMonStep 
 
-       
+       ! outerPCIts : Number of iterations to run for on (global) preconditioner
+       ! intterPCIts : Number of iterations to run on local preconditioner
+       integer(kind=intType) :: outerPreConIts
+       integer(kind=intType) :: innerPreConIts
+
        real(kind=realType)    :: sigmab
        logical :: printTiming
        logical :: finitedifferencepc
        integer(kind=intType) :: subKSPSubspaceSize
+       integer(kind=intType) :: applyAdjointPCSubSpaceSize
+
      end module inputADjoint
 
      module inputTSStabDeriv

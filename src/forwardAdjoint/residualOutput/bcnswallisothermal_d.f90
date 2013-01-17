@@ -3,9 +3,13 @@
    !
    !  Differentiation of bcnswallisothermal in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w *rlv
-   !   with respect to varying inputs: *p *gamma *w *rlv
-   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
-   !                bcdata:in (global)cphint:in-out
+   !   with respect to varying inputs: *bvtj1 *bvtj2 *p *gamma *bmtk1
+   !                *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1
+   !                *bvti2 *bmtj1 *bmtj2
+   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
+   !                gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
+   !                bvtk2:in d2wall:in bmti1:in bmti2:in bvti1:in
+   !                bvti2:in bmtj1:in bmtj2:in bcdata:in (global)cphint:in-out
    !
    !      ******************************************************************
    !      *                                                                *
@@ -52,7 +56,6 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   EXTERNAL TURBBCNSWALL
    INTRINSIC MAX
    INTRINSIC MIN
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d
@@ -93,7 +96,7 @@
    ! wall boundary conditions for the turbulent variables.
    ! No need to extrapolate the secondary halo's, because this
    ! is done in extrapolate2ndHalo.
-   IF (turbcoupled) CALL TURBBCNSWALL(.false.)
+   IF (turbcoupled) CALL TURBBCNSWALL_D(.false.)
    ! Loop over the viscous subfaces of this block. Note that
    ! these are numbered first.
    bocos:DO nn=1,nviscbocos
@@ -108,8 +111,7 @@
    ! that.
    !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
    CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   &                     pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, &
-   &                     0_intType)
+   &                     pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, 0)
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero

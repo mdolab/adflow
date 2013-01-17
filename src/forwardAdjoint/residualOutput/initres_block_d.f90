@@ -3,11 +3,10 @@
    !
    !  Differentiation of initres_block in forward (tangent) mode:
    !   variations   of useful results: *dw
-   !   with respect to varying inputs: flowdoms.w *dw *w *vol *coeftime
-   !                deltat
-   !   Plus diff mem management of: flowdoms.vol:in flowdoms.w1:in
-   !                volold:in wr:in dw:in w:in w1:in vol:in wold:in
-   !                wn:in coeftime:in dscalar:in dvector:in (global)sendbuffer:in
+   !   with respect to varying inputs: *dw *w deltat
+   !   Plus diff mem management of: flowdoms:in volold:in wr:in dw:in
+   !                w:in w1:in vol:in wold:in wn:in coeftime:in dscalar:in
+   !                dvector:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -40,15 +39,14 @@
    !
    !      Subroutine arguments.
    !
-   INTEGER(kind=inttype), INTENT(IN) :: varstart, varend
+   INTEGER(kind=inttype), INTENT(IN) :: varstart, varend, nn, sps
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: sps, nn, mm, ll, ii, jj, i, j, k, l, m
+   INTEGER(kind=inttype) :: mm, ll, ii, jj, i, j, k, l, m
    REAL(kind=realtype) :: oneoverdt, tmp
-   REAL(kind=realtype) :: tmpd
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: ww, wsp, wsp1
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wwd, wspd
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wwd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: volsp
    !
    !      ******************************************************************
@@ -144,10 +142,9 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   dwd(i, j, k, l) = coeftime(0)*((vold(i, j, k)*ww(i, &
-   &                      j, k, l)+vol(i, j, k)*wwd(i, j, k, l))*ww(i, j, k&
-   &                      , irho)+vol(i, j, k)*ww(i, j, k, l)*wwd(i, j, k, &
-   &                      irho))
+   dwd(i, j, k, l) = coeftime(0)*vol(i, j, k)*(wwd(i, j&
+   &                      , k, l)*ww(i, j, k, irho)+ww(i, j, k, l)*wwd(i, j&
+   &                      , k, irho))
    dw(i, j, k, l) = coeftime(0)*vol(i, j, k)*ww(i, j, k&
    &                      , l)*ww(i, j, k, irho)
    END DO
@@ -161,8 +158,8 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   dwd(i, j, k, l) = coeftime(0)*(vold(i, j, k)*ww(i, j&
-   &                      , k, l)+vol(i, j, k)*wwd(i, j, k, l))
+   dwd(i, j, k, l) = coeftime(0)*vol(i, j, k)*wwd(i, j&
+   &                      , k, l)
    dw(i, j, k, l) = coeftime(0)*vol(i, j, k)*ww(i, j, k&
    &                      , l)
    END DO
@@ -195,8 +192,6 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   dwd(i, j, k, l) = dwd(i, j, k, l) + coeftime(m)*&
-   &                        wold(m, i, j, k, l)*vold(i, j, k)
    dw(i, j, k, l) = dw(i, j, k, l) + coeftime(m)*vol(&
    &                        i, j, k)*wold(m, i, j, k, l)
    END DO
@@ -233,10 +228,9 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   dwd(i, j, k, l) = tmp*(vold(i, j, k)*(ww(i, j, k, l)&
-   &                      *ww(i, j, k, irho)-w1(i, j, k, l)*w1(i, j, k, irho&
-   &                      ))+vol(i, j, k)*(wwd(i, j, k, l)*ww(i, j, k, irho)&
-   &                      +ww(i, j, k, l)*wwd(i, j, k, irho)))
+   dwd(i, j, k, l) = tmp*vol(i, j, k)*(wwd(i, j, k, l)*&
+   &                      ww(i, j, k, irho)+ww(i, j, k, l)*wwd(i, j, k, irho&
+   &                      ))
    dw(i, j, k, l) = tmp*vol(i, j, k)*(ww(i, j, k, l)*ww&
    &                      (i, j, k, irho)-w1(i, j, k, l)*w1(i, j, k, irho))
    dw(i, j, k, l) = dw(i, j, k, l) + wr(i, j, k, l)
@@ -248,8 +242,7 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   dwd(i, j, k, l) = tmp*(vold(i, j, k)*(ww(i, j, k, l)&
-   &                      -w1(i, j, k, l))+vol(i, j, k)*wwd(i, j, k, l))
+   dwd(i, j, k, l) = tmp*vol(i, j, k)*wwd(i, j, k, l)
    dw(i, j, k, l) = tmp*vol(i, j, k)*(ww(i, j, k, l)-w1&
    &                      (i, j, k, l))
    dw(i, j, k, l) = dw(i, j, k, l) + wr(i, j, k, l)
@@ -290,12 +283,8 @@
    ! compute the unsteady source term and the volume.
    ! Also store in ii the offset needed for vector
    ! quantities.
-   wspd => flowdomsd(nn, currentlevel, mm)%w
    wsp => flowdoms(nn, currentlevel, mm)%w
-   IF (mm .NE. sps) THEN
    volsp => flowdoms(nn, currentlevel, mm)%vol
-   END IF
-   !vol => flowDoms(nn,currentLevel,mm)%vol
    ii = 3*(mm-1)
    ! Loop over the number of variables to be set.
    varloopfine:DO l=varstart,varend
@@ -316,9 +305,6 @@
    DO i=2,il
    ! Store the matrix vector product with the
    ! velocity in tmp.
-   tmpd = dvector(jj, ll, ii+1)*wspd(i, j, k, ivx) + &
-   &                      dvector(jj, ll, ii+2)*wspd(i, j, k, ivy) + dvector&
-   &                      (jj, ll, ii+3)*wspd(i, j, k, ivz)
    tmp = dvector(jj, ll, ii+1)*wsp(i, j, k, ivx) + &
    &                      dvector(jj, ll, ii+2)*wsp(i, j, k, ivy) + dvector(&
    &                      jj, ll, ii+3)*wsp(i, j, k, ivz)
@@ -326,19 +312,8 @@
    ! multiplication with the density to obtain
    ! the correct time derivative for the
    ! momentum variable.
-   IF (mm .EQ. sps) THEN
-   dwd(i, j, k, l) = dwd(i, j, k, l) + (tmpd*vol(i, j&
-   &                        , k)+tmp*vold(i, j, k))*wsp(i, j, k, irho) + tmp&
-   &                        *vol(i, j, k)*wspd(i, j, k, irho)
-   dw(i, j, k, l) = dw(i, j, k, l) + tmp*vol(i, j, k)&
-   &                        *wsp(i, j, k, irho)
-   ELSE
-   dwd(i, j, k, l) = dwd(i, j, k, l) + volsp(i, j, k)&
-   &                        *(tmpd*wsp(i, j, k, irho)+tmp*wspd(i, j, k, irho&
-   &                        ))
-   dw(i, j, k, l) = dw(i, j, k, l) + tmp*volsp(i, j, &
-   &                        k)*wsp(i, j, k, irho)
-   END IF
+   dw(i, j, k, l) = dw(i, j, k, l) + tmp*volsp(i, j, k)&
+   &                      *wsp(i, j, k, irho)
    END DO
    END DO
    END DO
@@ -349,18 +324,8 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   IF (mm .EQ. sps) THEN
-   dwd(i, j, k, l) = dwd(i, j, k, l) + dscalar(jj, &
-   &                        sps, mm)*(vold(i, j, k)*wsp(i, j, k, l)+vol(i, j&
-   &                        , k)*wspd(i, j, k, l))
-   dw(i, j, k, l) = dw(i, j, k, l) + dscalar(jj, sps&
-   &                        , mm)*vol(i, j, k)*wsp(i, j, k, l)
-   ELSE
-   dwd(i, j, k, l) = dwd(i, j, k, l) + dscalar(jj, &
-   &                        sps, mm)*volsp(i, j, k)*wspd(i, j, k, l)
-   dw(i, j, k, l) = dw(i, j, k, l) + dscalar(jj, sps&
-   &                        , mm)*volsp(i, j, k)*wsp(i, j, k, l)
-   END IF
+   dw(i, j, k, l) = dw(i, j, k, l) + dscalar(jj, sps, &
+   &                      mm)*volsp(i, j, k)*wsp(i, j, k, l)
    END DO
    END DO
    END DO
@@ -391,7 +356,6 @@
    ! and for the volume.
    ! Furthermore store in ii the offset needed for
    ! vector quantities.
-   wspd => flowdomsd(nn, currentlevel, mm)%w
    wsp => flowdoms(nn, currentlevel, mm)%w
    wsp1 => flowdoms(nn, currentlevel, mm)%w1
    volsp => flowdoms(nn, currentlevel, mm)%vol
@@ -419,13 +383,6 @@
    DO i=2,il
    ! Store the matrix vector product with the
    ! momentum in tmp.
-   tmpd = dvector(jj, ll, ii+1)*(wspd(i, j, k, irho)*&
-   &                      wsp(i, j, k, ivx)+wsp(i, j, k, irho)*wspd(i, j, k&
-   &                      , ivx)) + dvector(jj, ll, ii+2)*(wspd(i, j, k, &
-   &                      irho)*wsp(i, j, k, ivy)+wsp(i, j, k, irho)*wspd(i&
-   &                      , j, k, ivy)) + dvector(jj, ll, ii+3)*(wspd(i, j, &
-   &                      k, irho)*wsp(i, j, k, ivz)+wsp(i, j, k, irho)*wspd&
-   &                      (i, j, k, ivz))
    tmp = dvector(jj, ll, ii+1)*(wsp(i, j, k, irho)*wsp(&
    &                      i, j, k, ivx)-wsp1(i, j, k, irho)*wsp1(i, j, k, &
    &                      ivx)) + dvector(jj, ll, ii+2)*(wsp(i, j, k, irho)*&
@@ -437,8 +394,6 @@
    ! the volume to obtain the finite volume
    ! formulation of the  derivative of the
    ! momentum.
-   dwd(i, j, k, l) = dwd(i, j, k, l) + volsp(i, j, k)*&
-   &                      tmpd
    dw(i, j, k, l) = dw(i, j, k, l) + tmp*volsp(i, j, k)
    END DO
    END DO
@@ -450,8 +405,6 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   dwd(i, j, k, l) = dwd(i, j, k, l) + dscalar(jj, sps&
-   &                      , mm)*volsp(i, j, k)*wspd(i, j, k, l)
    dw(i, j, k, l) = dw(i, j, k, l) + dscalar(jj, sps, &
    &                      mm)*volsp(i, j, k)*(wsp(i, j, k, l)-wsp1(i, j, k, &
    &                      l))

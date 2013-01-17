@@ -2,21 +2,20 @@
 !  Tapenade 3.6 (r4159) - 21 Sep 2011 10:11
 !
 !  Differentiation of block_res in forward (tangent) mode:
-!   variations   of useful results: *(flowdoms.x) flowdoms.w flowdoms.dw
-!   with respect to varying inputs: *(flowdoms.x) flowdoms.w
-!   RW status of diff variables: *(flowdoms.x):in-out flowdoms.w:in-out
-!                flowdoms.dw:out
-!   Plus diff mem management of: winf:in flowdoms.x:in flowdoms.temphalo:in
-!                flowdoms.vol:in flowdoms.w1:in volold:in wr:in
-!                rev:in dtl:in p:in sfacei:in sfacej:in s:in gamma:in
-!                sfacek:in rlv:in w1:in vol:in wold:in d2wall:in
-!                si:in sj:in sk:in fw:in rotmatrixi:in rotmatrixj:in
-!                rotmatrixk:in viscsubface:in *viscsubface.tau:in
-!                *viscsubface.q:in *viscsubface.utau:in bcdata:in
+!   variations   of useful results: *(*flowdoms.w) *(*flowdoms.dw)
+!   with respect to varying inputs: *(*flowdoms.w)
+!   RW status of diff variables: *(*flowdoms.w):in-out *(*flowdoms.dw):out
+!   Plus diff mem management of: flowdoms:in *flowdoms.x:in *flowdoms.w:in
+!                *flowdoms.dw:in rev:in dtl:in bvtj1:in bvtj2:in
+!                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in
+!                bmtk1:in bmtk2:in rlv:in bvtk1:in bvtk2:in vol:in
+!                d2wall:in bmti1:in bmti2:in si:in sj:in sk:in
+!                bvti1:in bvti2:in fw:in rotmatrixi:in rotmatrixj:in
+!                rotmatrixk:in bmtj1:in bmtj2:in viscsubface:in
+!                *viscsubface.tau:in *viscsubface.q:in *viscsubface.utau:in
 !                *bcdata.norm:in *bcdata.rface:in *bcdata.uslip:in
-!                *bcdata.tns_wall:in radi:in radj:in radk:in wn:in
-!                dscalar:in dvector:in (global)sendbuffer:in (global)cphint:in
-!                (global)coeftime:in
+!                *bcdata.tns_wall:in radi:in radj:in radk:in winf:in
+!                (global)cphint:in
 ! This is a super-combined function that combines the original
 ! functionality of: 
 ! Pressure Computation
@@ -30,17 +29,18 @@
 ! for forward mode AD with Tapenade
 SUBROUTINE BLOCK_RES_D(nn, sps, usespatial, useextra)
   USE FLOWVARREFSTATE
-  USE MONITOR
   USE BLOCKPOINTERS_D
   USE SECTION
   USE INPUTTIMESPECTRAL
   USE INPUTPHYSICS
-  USE DIFFSIZES
-  !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
-  !  Hint: ISIZE1OFflowdoms should be the size of dimension 1 of array flowdoms
-  !  Hint: ISIZE2OFflowdoms should be the size of dimension 2 of array flowdoms
-  !  Hint: ISIZE3OFflowdoms should be the size of dimension 3 of array flowdoms
+  USE ITERATION
   IMPLICIT NONE
+  !      call adjustInflowAngle(alpha,beta,liftIndex)
+  !      call referenceState_mod()
+  !      call setFlowInfinityState()
+  ! ------------------------------------------------
+  !        Additional Spatial Components
+  ! ------------------------------------------------
   ! ------------------------------------------------
   !        Additional 'Extra' Components
   ! ------------------------------------------------
@@ -56,42 +56,24 @@ SUBROUTINE BLOCK_RES_D(nn, sps, usespatial, useextra)
   INTEGER(kind=inttype) :: i, j, k, sps2, mm, l
   REAL(kind=realtype), DIMENSION(nsections) :: t
   LOGICAL :: useoldcoor
-  REAL(realtype) :: result1
   INTRINSIC MAX
-  INTRINSIC REAL
-  INTEGER :: ii3
-  INTEGER :: ii2
-  INTEGER :: ii1
   useoldcoor = .false.
   ! Set pointers to input/output variables
-  wd => flowdomsd(nn, 1, sps)%w
-  w => flowdoms(nn, 1, sps)%w
+  wd => flowdomsd(nn, currentlevel, sps)%w
+  w => flowdoms(nn, currentlevel, sps)%w
+  dwd => flowdomsd(nn, 1, sps)%dw
   dw => flowdoms(nn, 1, sps)%dw
-  xd => flowdomsd(nn, 1, sps)%x
-  x => flowdoms(nn, 1, sps)%x
-  !      call adjustInflowAngle(alpha,beta,liftIndex)
-  !      call referenceState_mod()
-  !      call setFlowInfinityState()
-  ! ------------------------------------------------
-  !        Additional Spatial Components
-  ! ------------------------------------------------
-  IF (usespatial .OR. useextra) THEN
-     CALL XHALO_BLOCK_D(nn, 1, sps)
-     CALL METRIC_BLOCK_D(nn, 1, sps)
-     t = timeunsteadyrestart
-     IF (equationmode .EQ. timespectral) THEN
-        DO mm=1,nsections
-           result1 = REAL(ntimeintervalsspectral, realtype)
-           t(mm) = t(mm) + (sps-1)*sections(mm)%timeperiod/result1
-        END DO
-     END IF
-  ELSE
-     vold = 0.0
-     sid = 0.0
-     sjd = 0.0
-     skd = 0.0
-
-  END IF
+  xd => flowdomsd(nn, currentlevel, sps)%x
+  x => flowdoms(nn, currentlevel, sps)%x
+  !  call xhalo_block(nn,1,sps)
+  !      call metric_block(nn,1,sps)
+  !      t = timeUnsteadyRestart
+  !      if(equationMode == timeSpectral) then
+  !         do mm=1,nSections
+  !            t(mm) = t(mm) + (sps-1)*sections(mm)%timePeriod &
+  !                 /         real(nTimeIntervalsSpectral,realType)
+  !         enddo
+  !      endif
   !call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
   !call normalVelocities_block(sps) ! Required for TS
   !call slipVelocitiesFineLevel(.false., t, mm) !required for wall Functions
@@ -126,25 +108,25 @@ SUBROUTINE BLOCK_RES_D(nn, sps, usespatial, useextra)
   !call computeEddyViscosity # Required for turblence models
   !  Apply all BC's
   CALL APPLYALLBC_BLOCK_D(.true.)
-  ! Compute skin_friction Velocity
-  !call computeUtau_block ! Required for turblence
+  ! Compute skin_friction Velocity (only for wall Functions)
+  !call computeUtau_block
   ! Compute time step and spectral radius
   CALL TIMESTEP_BLOCK_D(.false.)
-  ! !   if( equations == RANSEquations ) then
-  ! !      ! Initialize only the Turblent Variables
-  ! !      call initres_block(nt1MG, nMGVar,nn,sps) 
-  ! !      call turbResidual_block
-  ! !   endif
+  !   if( equations == RANSEquations ) then
+  !      ! Initialize only the Turblent Variables
+  !      call initres_block(nt1MG, nMGVar,nn,sps) 
+  !      call turbResidual_block
+  !   endif
   ! Next initialize residual for flow variables. The is the only place
   ! where there is an n^2 dependance
-  DO sps2=1,ntimeintervalsspectral
-     dwd => flowdomsd(nn, 1, sps2)%dw
-     dw => flowdoms(nn, 1, sps2)%dw
-     CALL INITRES_BLOCK_D(1, nwf, nn, sps2)
-  END DO
-  ! Reset dw pointer to sps instance
-  dwd => flowdomsd(nn, 1, sps)%dw
-  dw => flowdoms(nn, 1, sps)%dw
+  !   do sps2 = 1,nTimeIntervalsSpectral
+  !      dw => flowDoms(nn, 1, sps2)%dw
+  !      call initRes_block(1, nwf, nn, sps2)
+  !   end do
+  !   ! Reset dw pointer to sps instance
+  !   dw => flowDoms(nn, 1, sps)%dw
+  dwd = 0.0
+  dw = zero
   !  Actual residual calc
   CALL RESIDUAL_BLOCK_D()
   ! Divide through by the volume
@@ -152,8 +134,8 @@ SUBROUTINE BLOCK_RES_D(nn, sps, usespatial, useextra)
      ! Set dw and vol to looping sps2 instance
      dwd => flowdomsd(nn, 1, sps2)%dw
      dw => flowdoms(nn, 1, sps2)%dw
-     vold => flowdomsd(nn, 1, sps2)%vol
-     vol => flowdoms(nn, 1, sps2)%vol
+     vold => flowdomsd(nn, currentlevel, sps2)%vol
+     vol => flowdoms(nn, currentlevel, sps2)%vol
      DO l=1,nw
         DO k=2,kl
            DO j=2,jl
@@ -168,6 +150,6 @@ SUBROUTINE BLOCK_RES_D(nn, sps, usespatial, useextra)
   ! Reset dw and vol to sps instance
   dwd => flowdomsd(nn, 1, sps)%dw
   dw => flowdoms(nn, 1, sps)%dw
-  vold => flowdomsd(nn, 1, sps)%vol
-  vol => flowdoms(nn, 1, sps)%vol
+  vold => flowdomsd(nn, currentlevel, sps)%vol
+  vol => flowdoms(nn, currentlevel, sps)%vol
 END SUBROUTINE BLOCK_RES_D

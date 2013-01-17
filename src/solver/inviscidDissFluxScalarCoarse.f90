@@ -41,7 +41,7 @@
        ! Check if rFil == 0. If so, the dissipative flux needs not to
        ! be computed.
 
-       if(rFil == zero) return
+       if(abs(rFil) < thresholdReal) return
 
        ! Set a couple of constants for the scheme.
 
