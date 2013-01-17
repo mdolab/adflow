@@ -115,12 +115,12 @@
              fs = rqsp + rqsm
              dw(i+1,j,k,irho) = dw(i+1,j,k,irho) - fs
              dw(i,  j,k,irho) = dw(i,  j,k,irho) + fs
-
+#ifndef USE_TAPENADE
              ind = indFamilyI(i,j,k)
              massFlowFamilyInv(ind,spectralSol) =       &
                      massFlowFamilyInv(ind,spectralSol) &
                                                  + factFamilyI(i,j,k)*fs
-
+#endif
              fs = rqsp*w(i+1,j,k,ivx) + rqsm*w(i,j,k,ivx) &
                 + pa*sI(i,j,k,1)
              dw(i+1,j,k,imx) = dw(i+1,j,k,imx) - fs
@@ -214,12 +214,12 @@
              fs = rqsp + rqsm
              dw(i,j+1,k,irho) = dw(i,j+1,k,irho) - fs
              dw(i,j,  k,irho) = dw(i,j,  k,irho) + fs
-
+#ifndef USE_TAPENADE
              ind = indFamilyJ(i,j,k)
              massFlowFamilyInv(ind,spectralSol) =       &
                      massFlowFamilyInv(ind,spectralSol) &
                                                  + factFamilyJ(i,j,k)*fs
-
+#endif
              fs = rqsp*w(i,j+1,k,ivx) + rqsm*w(i,j,k,ivx) &
                 + pa*sJ(i,j,k,1)
              dw(i,j+1,k,imx) = dw(i,j+1,k,imx) - fs
@@ -314,12 +314,12 @@
              fs = rqsp + rqsm
              dw(i,j,k+1,irho) = dw(i,j,k+1,irho) - fs
              dw(i,j,k,  irho) = dw(i,j,k,  irho) + fs
-
+#ifndef USE_TAPENADE
              ind = indFamilyK(i,j,k)
              massFlowFamilyInv(ind,spectralSol) =       &
                      massFlowFamilyInv(ind,spectralSol) &
                                                  + factFamilyK(i,j,k)*fs
-
+#endif
              fs = rqsp*w(i,j,k+1,ivx) + rqsm*w(i,j,k,ivx) &
                 + pa*sK(i,j,k,1)
              dw(i,j,k+1,imx) = dw(i,j,k+1,imx) - fs

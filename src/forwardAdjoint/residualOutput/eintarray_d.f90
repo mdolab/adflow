@@ -3,9 +3,9 @@
    !
    !  Differentiation of eintarray in forward (tangent) mode:
    !   variations   of useful results: eint
-   !   with respect to varying inputs: gammaconstant rgas tref cv0
-   !                *cptrange *cpeint *(*cptempfit.constants) *cptempfit.eint0
-   !                cvn k p rho
+   !   with respect to varying inputs: rgas tref cv0 *cptrange *cpeint
+   !                *(*cptempfit.constants) *cptempfit.eint0 cvn gammaconstant
+   !                k p rho
    !   Plus diff mem management of: cptrange:in cpeint:in cptempfit:in
    !      ==================================================================
    SUBROUTINE EINTARRAY_D(rho, rhod, p, pd, k, kd, eint, eintd, correctfork&
@@ -133,7 +133,7 @@
    100    eintd(i) = -td
    eint(i) = cptempfit(nn)%eint0 - t
    DO ii=1,cptempfit(nn)%nterm
-   IF (cptempfit(nn)%exponents(ii) .EQ. -1_intType) THEN
+   IF (cptempfit(nn)%exponents(ii) .EQ. -1) THEN
    eintd(i) = eintd(i) + cptempfit(nn)%constants(ii)*td/t
    eint(i) = eint(i) + cptempfit(nn)%constants(ii)*LOG(t)
    ELSE

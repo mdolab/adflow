@@ -3,7 +3,7 @@
    !
    !  Differentiation of invisciddissfluxmatrix in forward (tangent) mode:
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: *p *gamma *w *si *sj *sk
+   !   with respect to varying inputs: *p *gamma *w
    !   Plus diff mem management of: p:in gamma:in w:in si:in sj:in
    !                sk:in fw:in
    !
@@ -50,30 +50,27 @@
    !
    INTEGER(kind=inttype) :: i, j, k, ind
    REAL(kind=realtype) :: plim, sface
-   REAL(kind=realtype) :: sfaced
    REAL(kind=realtype) :: sfil, fis2, fis4
    REAL(kind=realtype) :: gammaavg, gm1, ovgm1, gm53
    REAL(kind=realtype) :: gammaavgd, gm1d, ovgm1d, gm53d
    REAL(kind=realtype) :: ppor, rrad, dis2, dis4
    REAL(kind=realtype) :: rradd, dis2d, dis4d
    REAL(kind=realtype) :: dp1, dp2, ddw, tmp, fs
-   REAL(kind=realtype) :: dp1d, dp2d, ddwd, tmpd, fsd
+   REAL(kind=realtype) :: dp1d, dp2d, ddwd, fsd
    REAL(kind=realtype) :: dr, dru, drv, drw, dre, drk, sx, sy, sz
-   REAL(kind=realtype) :: drd, drud, drvd, drwd, dred, drkd, sxd, syd, &
-   &  szd
+   REAL(kind=realtype) :: drd, drud, drvd, drwd, dred, drkd
    REAL(kind=realtype) :: uavg, vavg, wavg, a2avg, aavg, havg
    REAL(kind=realtype) :: uavgd, vavgd, wavgd, a2avgd, aavgd, havgd
    REAL(kind=realtype) :: alphaavg, unavg, ovaavg, ova2avg
    REAL(kind=realtype) :: alphaavgd, unavgd, ovaavgd, ova2avgd
    REAL(kind=realtype) :: kavg, lam1, lam2, lam3, area
-   REAL(kind=realtype) :: kavgd, lam1d, lam2d, lam3d, aread
+   REAL(kind=realtype) :: kavgd, lam1d, lam2d, lam3d
    REAL(kind=realtype) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
    REAL(kind=realtype) :: abv1d, abv2d, abv3d, abv4d, abv5d, abv6d, abv7d
    LOGICAL :: correctfork
    REAL(kind=realtype) :: DIM
    REAL(kind=realtype) :: DIM_D
    REAL(kind=realtype) :: arg1
-   REAL(kind=realtype) :: arg1d
    REAL(kind=realtype) :: min5d
    REAL(kind=realtype) :: x6d
    REAL(kind=realtype) :: y4d
@@ -81,7 +78,6 @@
    REAL(kind=realtype) :: min6
    REAL(kind=realtype) :: min5
    REAL(kind=realtype) :: min4
-   REAL(kind=realtype) :: max2d
    REAL(kind=realtype) :: min3
    REAL(kind=realtype) :: min2
    REAL(kind=realtype) :: min1
@@ -101,12 +97,11 @@
    REAL(kind=realtype) :: min4d
    REAL(kind=realtype) :: x5d
    REAL(kind=realtype) :: y3d
-   REAL(kind=realtype) :: abs0d
-   REAL(kind=realtype) :: max1d
    REAL(kind=realtype) :: y6d
    REAL(kind=realtype) :: abs3d
    REAL(kind=realtype) :: abs10d
    REAL(kind=realtype) :: abs6d
+   REAL(kind=realtype) :: abs12
    REAL(kind=realtype) :: x1d
    REAL(kind=realtype) :: abs11
    REAL(kind=realtype) :: abs10
@@ -127,9 +122,9 @@
    REAL(kind=realtype) :: abs2d
    REAL(kind=realtype) :: abs1
    REAL(kind=realtype) :: abs0
-   REAL(kind=realtype) :: max3d
    INTRINSIC MIN
    REAL(kind=realtype) :: abs5d
+   REAL(kind=realtype) :: abs12d
    INTRINSIC SQRT
    REAL(kind=realtype) :: max3
    REAL(kind=realtype) :: max2
@@ -144,6 +139,11 @@
    REAL(kind=realtype) :: x3d
    REAL(kind=realtype) :: y1
    REAL(kind=realtype) :: y1d
+   IF (rfil .GE. 0.) THEN
+   abs0 = rfil
+   ELSE
+   abs0 = -rfil
+   END IF
    !
    !      ******************************************************************
    !      *                                                                *
@@ -153,7 +153,7 @@
    !
    ! Check if rFil == 0. If so, the dissipative flux needs not to
    ! be computed.
-   IF (rfil .EQ. zero) THEN
+   IF (abs0 .LT. thresholdreal) THEN
    fwd = 0.0
    RETURN
    ELSE
@@ -199,7 +199,6 @@
    END DO
    END DO
    fwd = 0.0
-   sfaced = 0.0
    !
    !      ******************************************************************
    !      *                                                                *
@@ -210,27 +209,27 @@
    DO k=2,kl
    DO j=2,jl
    IF (p(2, j, k) - p(1, j, k) .GE. 0.) THEN
-   abs0d = pd(2, j, k) - pd(1, j, k)
-   abs0 = p(2, j, k) - p(1, j, k)
+   abs1d = pd(2, j, k) - pd(1, j, k)
+   abs1 = p(2, j, k) - p(1, j, k)
    ELSE
-   abs0d = -(pd(2, j, k)-pd(1, j, k))
-   abs0 = -(p(2, j, k)-p(1, j, k))
+   abs1d = -(pd(2, j, k)-pd(1, j, k))
+   abs1 = -(p(2, j, k)-p(1, j, k))
    END IF
    IF (p(1, j, k) - p(0, j, k) .GE. 0.) THEN
-   abs6d = pd(1, j, k) - pd(0, j, k)
-   abs6 = p(1, j, k) - p(0, j, k)
+   abs7d = pd(1, j, k) - pd(0, j, k)
+   abs7 = p(1, j, k) - p(0, j, k)
    ELSE
-   abs6d = -(pd(1, j, k)-pd(0, j, k))
-   abs6 = -(p(1, j, k)-p(0, j, k))
+   abs7d = -(pd(1, j, k)-pd(0, j, k))
+   abs7 = -(p(1, j, k)-p(0, j, k))
    END IF
    x1d = ((pd(2, j, k)-two*pd(1, j, k)+pd(0, j, k))*(omega*(p(2, j&
-   &          , k)+two*p(1, j, k)+p(0, j, k))+oneminomega*(abs0+abs6)+plim)-&
+   &          , k)+two*p(1, j, k)+p(0, j, k))+oneminomega*(abs1+abs7)+plim)-&
    &          (p(2, j, k)-two*p(1, j, k)+p(0, j, k))*(omega*(pd(2, j, k)+two&
-   &          *pd(1, j, k)+pd(0, j, k))+oneminomega*(abs0d+abs6d)))/(omega*(&
-   &          p(2, j, k)+two*p(1, j, k)+p(0, j, k))+oneminomega*(abs0+abs6)+&
+   &          *pd(1, j, k)+pd(0, j, k))+oneminomega*(abs1d+abs7d)))/(omega*(&
+   &          p(2, j, k)+two*p(1, j, k)+p(0, j, k))+oneminomega*(abs1+abs7)+&
    &          plim)**2
    x1 = (p(2, j, k)-two*p(1, j, k)+p(0, j, k))/(omega*(p(2, j, k)+&
-   &          two*p(1, j, k)+p(0, j, k))+oneminomega*(abs0+abs6)+plim)
+   &          two*p(1, j, k)+p(0, j, k))+oneminomega*(abs1+abs7)+plim)
    IF (x1 .GE. 0.) THEN
    dp1d = x1d
    dp1 = x1
@@ -241,27 +240,27 @@
    ! Loop in i-direction.
    DO i=1,il
    IF (p(i+2, j, k) - p(i+1, j, k) .GE. 0.) THEN
-   abs1d = pd(i+2, j, k) - pd(i+1, j, k)
-   abs1 = p(i+2, j, k) - p(i+1, j, k)
+   abs2d = pd(i+2, j, k) - pd(i+1, j, k)
+   abs2 = p(i+2, j, k) - p(i+1, j, k)
    ELSE
-   abs1d = -(pd(i+2, j, k)-pd(i+1, j, k))
-   abs1 = -(p(i+2, j, k)-p(i+1, j, k))
+   abs2d = -(pd(i+2, j, k)-pd(i+1, j, k))
+   abs2 = -(p(i+2, j, k)-p(i+1, j, k))
    END IF
    IF (p(i+1, j, k) - p(i, j, k) .GE. 0.) THEN
-   abs7d = pd(i+1, j, k) - pd(i, j, k)
-   abs7 = p(i+1, j, k) - p(i, j, k)
+   abs8d = pd(i+1, j, k) - pd(i, j, k)
+   abs8 = p(i+1, j, k) - p(i, j, k)
    ELSE
-   abs7d = -(pd(i+1, j, k)-pd(i, j, k))
-   abs7 = -(p(i+1, j, k)-p(i, j, k))
+   abs8d = -(pd(i+1, j, k)-pd(i, j, k))
+   abs8 = -(p(i+1, j, k)-p(i, j, k))
    END IF
    x2d = ((pd(i+2, j, k)-two*pd(i+1, j, k)+pd(i, j, k))*(omega*(p&
-   &            (i+2, j, k)+two*p(i+1, j, k)+p(i, j, k))+oneminomega*(abs1+&
-   &            abs7)+plim)-(p(i+2, j, k)-two*p(i+1, j, k)+p(i, j, k))*(&
+   &            (i+2, j, k)+two*p(i+1, j, k)+p(i, j, k))+oneminomega*(abs2+&
+   &            abs8)+plim)-(p(i+2, j, k)-two*p(i+1, j, k)+p(i, j, k))*(&
    &            omega*(pd(i+2, j, k)+two*pd(i+1, j, k)+pd(i, j, k))+&
-   &            oneminomega*(abs1d+abs7d)))/(omega*(p(i+2, j, k)+two*p(i+1, &
-   &            j, k)+p(i, j, k))+oneminomega*(abs1+abs7)+plim)**2
+   &            oneminomega*(abs2d+abs8d)))/(omega*(p(i+2, j, k)+two*p(i+1, &
+   &            j, k)+p(i, j, k))+oneminomega*(abs2+abs8)+plim)**2
    x2 = (p(i+2, j, k)-two*p(i+1, j, k)+p(i, j, k))/(omega*(p(i+2&
-   &            , j, k)+two*p(i+1, j, k)+p(i, j, k))+oneminomega*(abs1+abs7)&
+   &            , j, k)+two*p(i+1, j, k)+p(i, j, k))+oneminomega*(abs2+abs8)&
    &            +plim)
    IF (x2 .GE. 0.) THEN
    dp2d = x2d
@@ -414,34 +413,19 @@
    &            , irho)**2)
    a2avg = half*(gamma(i+1, j, k)*p(i+1, j, k)/w(i+1, j, k, irho)&
    &            +gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
-   sxd = sid(i, j, k, 1)
    sx = si(i, j, k, 1)
-   syd = sid(i, j, k, 2)
    sy = si(i, j, k, 2)
-   szd = sid(i, j, k, 3)
    sz = si(i, j, k, 3)
-   arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
    arg1 = sx**2 + sy**2 + sz**2
-   IF (arg1 .EQ. 0.0) THEN
-   aread = 0.0
-   ELSE
-   aread = arg1d/(2.0*SQRT(arg1))
-   END IF
    area = SQRT(arg1)
    IF (1.e-25_realType .LT. area) THEN
-   max1d = aread
    max1 = area
    ELSE
    max1 = 1.e-25_realType
-   max1d = 0.0
    END IF
-   tmpd = -(one*max1d/max1**2)
    tmp = one/max1
-   sxd = sxd*tmp + sx*tmpd
    sx = sx*tmp
-   syd = syd*tmp + sy*tmpd
    sy = sy*tmp
-   szd = szd*tmp + sz*tmpd
    sz = sz*tmp
    alphaavgd = half*(2*uavg*uavgd+2*vavg*vavgd+2*wavg*wavgd)
    alphaavg = half*(uavg**2+vavg**2+wavg**2)
@@ -454,8 +438,7 @@
    aavgd = a2avgd/(2.0*SQRT(a2avg))
    END IF
    aavg = SQRT(a2avg)
-   unavgd = uavgd*sx + uavg*sxd + vavgd*sy + vavg*syd + wavgd*sz &
-   &            + wavg*szd
+   unavgd = sx*uavgd + sy*vavgd + sz*wavgd
    unavg = uavg*sx + vavg*sy + wavg*sz
    ovaavgd = -(one*aavgd/aavg**2)
    ovaavg = one/aavg
@@ -463,29 +446,26 @@
    ova2avg = one/a2avg
    ! The mesh velocity if the face is moving. It must be
    ! divided by the area to obtain a true velocity.
-   IF (addgridvelocities) THEN
-   sfaced = sfacei(i, j, k)*tmpd
-   sface = sfacei(i, j, k)*tmp
-   END IF
+   IF (addgridvelocities) sface = sfacei(i, j, k)*tmp
    IF (unavg - sface + aavg .GE. 0.) THEN
-   lam1d = unavgd - sfaced + aavgd
+   lam1d = unavgd + aavgd
    lam1 = unavg - sface + aavg
    ELSE
-   lam1d = -(unavgd-sfaced+aavgd)
+   lam1d = -(unavgd+aavgd)
    lam1 = -(unavg-sface+aavg)
    END IF
    IF (unavg - sface - aavg .GE. 0.) THEN
-   lam2d = unavgd - sfaced - aavgd
+   lam2d = unavgd - aavgd
    lam2 = unavg - sface - aavg
    ELSE
-   lam2d = -(unavgd-sfaced-aavgd)
+   lam2d = -(unavgd-aavgd)
    lam2 = -(unavg-sface-aavg)
    END IF
    IF (unavg - sface .GE. 0.) THEN
-   lam3d = unavgd - sfaced
+   lam3d = unavgd
    lam3 = unavg - sface
    ELSE
-   lam3d = -(unavgd-sfaced)
+   lam3d = -unavgd
    lam3 = -(unavg-sface)
    END IF
    rradd = lam3d + aavgd
@@ -510,11 +490,11 @@
    END IF
    ! Multiply the eigenvalues by the area to obtain
    ! the correct values for the dissipation term.
-   lam1d = lam1d*area + lam1*aread
+   lam1d = area*lam1d
    lam1 = lam1*area
-   lam2d = lam2d*area + lam2*aread
+   lam2d = area*lam2d
    lam2 = lam2*area
-   lam3d = lam3d*area + lam3*aread
+   lam3d = area*lam3d
    lam3 = lam3*area
    ! Some abbreviations, which occur quite often in the
    ! dissipation terms.
@@ -529,8 +509,7 @@
    &            -vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53d*drk - gm53*drkd
    abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - gm53&
    &            *drk
-   abv5d = sxd*dru + sx*drud + syd*drv + sy*drvd + szd*drw + sz*&
-   &            drwd - unavgd*dr - unavg*drd
+   abv5d = sx*drud + sy*drvd + sz*drwd - unavgd*dr - unavg*drd
    abv5 = sx*dru + sy*drv + sz*drw - unavg*dr
    abv6d = (abv3d*abv4+abv3*abv4d)*ova2avg + abv3*abv4*ova2avgd +&
    &            (abv2d*abv5+abv2*abv5d)*ovaavg + abv2*abv5*ovaavgd
@@ -546,29 +525,25 @@
    fw(i+1, j, k, irho) = fw(i+1, j, k, irho) + fs
    fwd(i, j, k, irho) = fwd(i, j, k, irho) - fsd
    fw(i, j, k, irho) = fw(i, j, k, irho) - fs
-   ind = indfamilyi(i, j, k)
-   massflowfamilydissd(ind, spectralsol) = 0.0
-   massflowfamilydiss(ind, spectralsol) = massflowfamilydiss(ind&
-   &            , spectralsol) - factfamilyi(i, j, k)*fs
    ! X-momentum.
-   fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sxd*&
-   &            abv7 + sx*abv7d
+   fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sx*&
+   &            abv7d
    fs = lam3*dru + uavg*abv6 + sx*abv7
    fwd(i+1, j, k, imx) = fwd(i+1, j, k, imx) + fsd
    fw(i+1, j, k, imx) = fw(i+1, j, k, imx) + fs
    fwd(i, j, k, imx) = fwd(i, j, k, imx) - fsd
    fw(i, j, k, imx) = fw(i, j, k, imx) - fs
    ! Y-momentum.
-   fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + syd*&
-   &            abv7 + sy*abv7d
+   fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + sy*&
+   &            abv7d
    fs = lam3*drv + vavg*abv6 + sy*abv7
    fwd(i+1, j, k, imy) = fwd(i+1, j, k, imy) + fsd
    fw(i+1, j, k, imy) = fw(i+1, j, k, imy) + fs
    fwd(i, j, k, imy) = fwd(i, j, k, imy) - fsd
    fw(i, j, k, imy) = fw(i, j, k, imy) - fs
    ! Z-momentum.
-   fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + szd*&
-   &            abv7 + sz*abv7d
+   fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + sz*&
+   &            abv7d
    fs = lam3*drw + wavg*abv6 + sz*abv7
    fwd(i+1, j, k, imz) = fwd(i+1, j, k, imz) + fsd
    fw(i+1, j, k, imz) = fw(i+1, j, k, imz) + fs
@@ -598,27 +573,27 @@
    DO k=2,kl
    DO i=2,il
    IF (p(i, 2, k) - p(i, 1, k) .GE. 0.) THEN
-   abs2d = pd(i, 2, k) - pd(i, 1, k)
-   abs2 = p(i, 2, k) - p(i, 1, k)
+   abs3d = pd(i, 2, k) - pd(i, 1, k)
+   abs3 = p(i, 2, k) - p(i, 1, k)
    ELSE
-   abs2d = -(pd(i, 2, k)-pd(i, 1, k))
-   abs2 = -(p(i, 2, k)-p(i, 1, k))
+   abs3d = -(pd(i, 2, k)-pd(i, 1, k))
+   abs3 = -(p(i, 2, k)-p(i, 1, k))
    END IF
    IF (p(i, 1, k) - p(i, 0, k) .GE. 0.) THEN
-   abs8d = pd(i, 1, k) - pd(i, 0, k)
-   abs8 = p(i, 1, k) - p(i, 0, k)
+   abs9d = pd(i, 1, k) - pd(i, 0, k)
+   abs9 = p(i, 1, k) - p(i, 0, k)
    ELSE
-   abs8d = -(pd(i, 1, k)-pd(i, 0, k))
-   abs8 = -(p(i, 1, k)-p(i, 0, k))
+   abs9d = -(pd(i, 1, k)-pd(i, 0, k))
+   abs9 = -(p(i, 1, k)-p(i, 0, k))
    END IF
    x3d = ((pd(i, 2, k)-two*pd(i, 1, k)+pd(i, 0, k))*(omega*(p(i, 2&
-   &          , k)+two*p(i, 1, k)+p(i, 0, k))+oneminomega*(abs2+abs8)+plim)-&
+   &          , k)+two*p(i, 1, k)+p(i, 0, k))+oneminomega*(abs3+abs9)+plim)-&
    &          (p(i, 2, k)-two*p(i, 1, k)+p(i, 0, k))*(omega*(pd(i, 2, k)+two&
-   &          *pd(i, 1, k)+pd(i, 0, k))+oneminomega*(abs2d+abs8d)))/(omega*(&
-   &          p(i, 2, k)+two*p(i, 1, k)+p(i, 0, k))+oneminomega*(abs2+abs8)+&
+   &          *pd(i, 1, k)+pd(i, 0, k))+oneminomega*(abs3d+abs9d)))/(omega*(&
+   &          p(i, 2, k)+two*p(i, 1, k)+p(i, 0, k))+oneminomega*(abs3+abs9)+&
    &          plim)**2
    x3 = (p(i, 2, k)-two*p(i, 1, k)+p(i, 0, k))/(omega*(p(i, 2, k)+&
-   &          two*p(i, 1, k)+p(i, 0, k))+oneminomega*(abs2+abs8)+plim)
+   &          two*p(i, 1, k)+p(i, 0, k))+oneminomega*(abs3+abs9)+plim)
    IF (x3 .GE. 0.) THEN
    dp1d = x3d
    dp1 = x3
@@ -629,28 +604,28 @@
    ! Loop in j-direction.
    DO j=1,jl
    IF (p(i, j+2, k) - p(i, j+1, k) .GE. 0.) THEN
-   abs3d = pd(i, j+2, k) - pd(i, j+1, k)
-   abs3 = p(i, j+2, k) - p(i, j+1, k)
+   abs4d = pd(i, j+2, k) - pd(i, j+1, k)
+   abs4 = p(i, j+2, k) - p(i, j+1, k)
    ELSE
-   abs3d = -(pd(i, j+2, k)-pd(i, j+1, k))
-   abs3 = -(p(i, j+2, k)-p(i, j+1, k))
+   abs4d = -(pd(i, j+2, k)-pd(i, j+1, k))
+   abs4 = -(p(i, j+2, k)-p(i, j+1, k))
    END IF
    IF (p(i, j+1, k) - p(i, j, k) .GE. 0.) THEN
-   abs9d = pd(i, j+1, k) - pd(i, j, k)
-   abs9 = p(i, j+1, k) - p(i, j, k)
+   abs10d = pd(i, j+1, k) - pd(i, j, k)
+   abs10 = p(i, j+1, k) - p(i, j, k)
    ELSE
-   abs9d = -(pd(i, j+1, k)-pd(i, j, k))
-   abs9 = -(p(i, j+1, k)-p(i, j, k))
+   abs10d = -(pd(i, j+1, k)-pd(i, j, k))
+   abs10 = -(p(i, j+1, k)-p(i, j, k))
    END IF
    x4d = ((pd(i, j+2, k)-two*pd(i, j+1, k)+pd(i, j, k))*(omega*(p&
-   &            (i, j+2, k)+two*p(i, j+1, k)+p(i, j, k))+oneminomega*(abs3+&
-   &            abs9)+plim)-(p(i, j+2, k)-two*p(i, j+1, k)+p(i, j, k))*(&
+   &            (i, j+2, k)+two*p(i, j+1, k)+p(i, j, k))+oneminomega*(abs4+&
+   &            abs10)+plim)-(p(i, j+2, k)-two*p(i, j+1, k)+p(i, j, k))*(&
    &            omega*(pd(i, j+2, k)+two*pd(i, j+1, k)+pd(i, j, k))+&
-   &            oneminomega*(abs3d+abs9d)))/(omega*(p(i, j+2, k)+two*p(i, j+&
-   &            1, k)+p(i, j, k))+oneminomega*(abs3+abs9)+plim)**2
+   &            oneminomega*(abs4d+abs10d)))/(omega*(p(i, j+2, k)+two*p(i, j&
+   &            +1, k)+p(i, j, k))+oneminomega*(abs4+abs10)+plim)**2
    x4 = (p(i, j+2, k)-two*p(i, j+1, k)+p(i, j, k))/(omega*(p(i, j&
-   &            +2, k)+two*p(i, j+1, k)+p(i, j, k))+oneminomega*(abs3+abs9)+&
-   &            plim)
+   &            +2, k)+two*p(i, j+1, k)+p(i, j, k))+oneminomega*(abs4+abs10)&
+   &            +plim)
    IF (x4 .GE. 0.) THEN
    dp2d = x4d
    dp2 = x4
@@ -802,34 +777,19 @@
    &            , irho)**2)
    a2avg = half*(gamma(i, j+1, k)*p(i, j+1, k)/w(i, j+1, k, irho)&
    &            +gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
-   sxd = sjd(i, j, k, 1)
    sx = sj(i, j, k, 1)
-   syd = sjd(i, j, k, 2)
    sy = sj(i, j, k, 2)
-   szd = sjd(i, j, k, 3)
    sz = sj(i, j, k, 3)
-   arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
    arg1 = sx**2 + sy**2 + sz**2
-   IF (arg1 .EQ. 0.0) THEN
-   aread = 0.0
-   ELSE
-   aread = arg1d/(2.0*SQRT(arg1))
-   END IF
    area = SQRT(arg1)
    IF (1.e-25_realType .LT. area) THEN
-   max2d = aread
    max2 = area
    ELSE
    max2 = 1.e-25_realType
-   max2d = 0.0
    END IF
-   tmpd = -(one*max2d/max2**2)
    tmp = one/max2
-   sxd = sxd*tmp + sx*tmpd
    sx = sx*tmp
-   syd = syd*tmp + sy*tmpd
    sy = sy*tmp
-   szd = szd*tmp + sz*tmpd
    sz = sz*tmp
    alphaavgd = half*(2*uavg*uavgd+2*vavg*vavgd+2*wavg*wavgd)
    alphaavg = half*(uavg**2+vavg**2+wavg**2)
@@ -842,8 +802,7 @@
    aavgd = a2avgd/(2.0*SQRT(a2avg))
    END IF
    aavg = SQRT(a2avg)
-   unavgd = uavgd*sx + uavg*sxd + vavgd*sy + vavg*syd + wavgd*sz &
-   &            + wavg*szd
+   unavgd = sx*uavgd + sy*vavgd + sz*wavgd
    unavg = uavg*sx + vavg*sy + wavg*sz
    ovaavgd = -(one*aavgd/aavg**2)
    ovaavg = one/aavg
@@ -851,29 +810,26 @@
    ova2avg = one/a2avg
    ! The mesh velocity if the face is moving. It must be
    ! divided by the area to obtain a true velocity.
-   IF (addgridvelocities) THEN
-   sfaced = sfacej(i, j, k)*tmpd
-   sface = sfacej(i, j, k)*tmp
-   END IF
+   IF (addgridvelocities) sface = sfacej(i, j, k)*tmp
    IF (unavg - sface + aavg .GE. 0.) THEN
-   lam1d = unavgd - sfaced + aavgd
+   lam1d = unavgd + aavgd
    lam1 = unavg - sface + aavg
    ELSE
-   lam1d = -(unavgd-sfaced+aavgd)
+   lam1d = -(unavgd+aavgd)
    lam1 = -(unavg-sface+aavg)
    END IF
    IF (unavg - sface - aavg .GE. 0.) THEN
-   lam2d = unavgd - sfaced - aavgd
+   lam2d = unavgd - aavgd
    lam2 = unavg - sface - aavg
    ELSE
-   lam2d = -(unavgd-sfaced-aavgd)
+   lam2d = -(unavgd-aavgd)
    lam2 = -(unavg-sface-aavg)
    END IF
    IF (unavg - sface .GE. 0.) THEN
-   lam3d = unavgd - sfaced
+   lam3d = unavgd
    lam3 = unavg - sface
    ELSE
-   lam3d = -(unavgd-sfaced)
+   lam3d = -unavgd
    lam3 = -(unavg-sface)
    END IF
    rradd = lam3d + aavgd
@@ -898,11 +854,11 @@
    END IF
    ! Multiply the eigenvalues by the area to obtain
    ! the correct values for the dissipation term.
-   lam1d = lam1d*area + lam1*aread
+   lam1d = area*lam1d
    lam1 = lam1*area
-   lam2d = lam2d*area + lam2*aread
+   lam2d = area*lam2d
    lam2 = lam2*area
-   lam3d = lam3d*area + lam3*aread
+   lam3d = area*lam3d
    lam3 = lam3*area
    ! Some abbreviations, which occur quite often in the
    ! dissipation terms.
@@ -917,8 +873,7 @@
    &            -vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53d*drk - gm53*drkd
    abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - gm53&
    &            *drk
-   abv5d = sxd*dru + sx*drud + syd*drv + sy*drvd + szd*drw + sz*&
-   &            drwd - unavgd*dr - unavg*drd
+   abv5d = sx*drud + sy*drvd + sz*drwd - unavgd*dr - unavg*drd
    abv5 = sx*dru + sy*drv + sz*drw - unavg*dr
    abv6d = (abv3d*abv4+abv3*abv4d)*ova2avg + abv3*abv4*ova2avgd +&
    &            (abv2d*abv5+abv2*abv5d)*ovaavg + abv2*abv5*ovaavgd
@@ -934,29 +889,25 @@
    fw(i, j+1, k, irho) = fw(i, j+1, k, irho) + fs
    fwd(i, j, k, irho) = fwd(i, j, k, irho) - fsd
    fw(i, j, k, irho) = fw(i, j, k, irho) - fs
-   ind = indfamilyj(i, j, k)
-   massflowfamilydissd(ind, spectralsol) = 0.0
-   massflowfamilydiss(ind, spectralsol) = massflowfamilydiss(ind&
-   &            , spectralsol) - factfamilyj(i, j, k)*fs
    ! X-momentum.
-   fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sxd*&
-   &            abv7 + sx*abv7d
+   fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sx*&
+   &            abv7d
    fs = lam3*dru + uavg*abv6 + sx*abv7
    fwd(i, j+1, k, imx) = fwd(i, j+1, k, imx) + fsd
    fw(i, j+1, k, imx) = fw(i, j+1, k, imx) + fs
    fwd(i, j, k, imx) = fwd(i, j, k, imx) - fsd
    fw(i, j, k, imx) = fw(i, j, k, imx) - fs
    ! Y-momentum.
-   fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + syd*&
-   &            abv7 + sy*abv7d
+   fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + sy*&
+   &            abv7d
    fs = lam3*drv + vavg*abv6 + sy*abv7
    fwd(i, j+1, k, imy) = fwd(i, j+1, k, imy) + fsd
    fw(i, j+1, k, imy) = fw(i, j+1, k, imy) + fs
    fwd(i, j, k, imy) = fwd(i, j, k, imy) - fsd
    fw(i, j, k, imy) = fw(i, j, k, imy) - fs
    ! Z-momentum.
-   fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + szd*&
-   &            abv7 + sz*abv7d
+   fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + sz*&
+   &            abv7d
    fs = lam3*drw + wavg*abv6 + sz*abv7
    fwd(i, j+1, k, imz) = fwd(i, j+1, k, imz) + fsd
    fw(i, j+1, k, imz) = fw(i, j+1, k, imz) + fs
@@ -986,27 +937,27 @@
    DO j=2,jl
    DO i=2,il
    IF (p(i, j, 2) - p(i, j, 1) .GE. 0.) THEN
-   abs4d = pd(i, j, 2) - pd(i, j, 1)
-   abs4 = p(i, j, 2) - p(i, j, 1)
+   abs5d = pd(i, j, 2) - pd(i, j, 1)
+   abs5 = p(i, j, 2) - p(i, j, 1)
    ELSE
-   abs4d = -(pd(i, j, 2)-pd(i, j, 1))
-   abs4 = -(p(i, j, 2)-p(i, j, 1))
+   abs5d = -(pd(i, j, 2)-pd(i, j, 1))
+   abs5 = -(p(i, j, 2)-p(i, j, 1))
    END IF
    IF (p(i, j, 1) - p(i, j, 0) .GE. 0.) THEN
-   abs10d = pd(i, j, 1) - pd(i, j, 0)
-   abs10 = p(i, j, 1) - p(i, j, 0)
+   abs11d = pd(i, j, 1) - pd(i, j, 0)
+   abs11 = p(i, j, 1) - p(i, j, 0)
    ELSE
-   abs10d = -(pd(i, j, 1)-pd(i, j, 0))
-   abs10 = -(p(i, j, 1)-p(i, j, 0))
+   abs11d = -(pd(i, j, 1)-pd(i, j, 0))
+   abs11 = -(p(i, j, 1)-p(i, j, 0))
    END IF
    x5d = ((pd(i, j, 2)-two*pd(i, j, 1)+pd(i, j, 0))*(omega*(p(i, j&
-   &          , 2)+two*p(i, j, 1)+p(i, j, 0))+oneminomega*(abs4+abs10)+plim)&
+   &          , 2)+two*p(i, j, 1)+p(i, j, 0))+oneminomega*(abs5+abs11)+plim)&
    &          -(p(i, j, 2)-two*p(i, j, 1)+p(i, j, 0))*(omega*(pd(i, j, 2)+&
-   &          two*pd(i, j, 1)+pd(i, j, 0))+oneminomega*(abs4d+abs10d)))/(&
-   &          omega*(p(i, j, 2)+two*p(i, j, 1)+p(i, j, 0))+oneminomega*(abs4&
-   &          +abs10)+plim)**2
+   &          two*pd(i, j, 1)+pd(i, j, 0))+oneminomega*(abs5d+abs11d)))/(&
+   &          omega*(p(i, j, 2)+two*p(i, j, 1)+p(i, j, 0))+oneminomega*(abs5&
+   &          +abs11)+plim)**2
    x5 = (p(i, j, 2)-two*p(i, j, 1)+p(i, j, 0))/(omega*(p(i, j, 2)+&
-   &          two*p(i, j, 1)+p(i, j, 0))+oneminomega*(abs4+abs10)+plim)
+   &          two*p(i, j, 1)+p(i, j, 0))+oneminomega*(abs5+abs11)+plim)
    IF (x5 .GE. 0.) THEN
    dp1d = x5d
    dp1 = x5
@@ -1017,27 +968,27 @@
    ! Loop in k-direction.
    DO k=1,kl
    IF (p(i, j, k+2) - p(i, j, k+1) .GE. 0.) THEN
-   abs5d = pd(i, j, k+2) - pd(i, j, k+1)
-   abs5 = p(i, j, k+2) - p(i, j, k+1)
+   abs6d = pd(i, j, k+2) - pd(i, j, k+1)
+   abs6 = p(i, j, k+2) - p(i, j, k+1)
    ELSE
-   abs5d = -(pd(i, j, k+2)-pd(i, j, k+1))
-   abs5 = -(p(i, j, k+2)-p(i, j, k+1))
+   abs6d = -(pd(i, j, k+2)-pd(i, j, k+1))
+   abs6 = -(p(i, j, k+2)-p(i, j, k+1))
    END IF
    IF (p(i, j, k+1) - p(i, j, k) .GE. 0.) THEN
-   abs11d = pd(i, j, k+1) - pd(i, j, k)
-   abs11 = p(i, j, k+1) - p(i, j, k)
+   abs12d = pd(i, j, k+1) - pd(i, j, k)
+   abs12 = p(i, j, k+1) - p(i, j, k)
    ELSE
-   abs11d = -(pd(i, j, k+1)-pd(i, j, k))
-   abs11 = -(p(i, j, k+1)-p(i, j, k))
+   abs12d = -(pd(i, j, k+1)-pd(i, j, k))
+   abs12 = -(p(i, j, k+1)-p(i, j, k))
    END IF
    x6d = ((pd(i, j, k+2)-two*pd(i, j, k+1)+pd(i, j, k))*(omega*(p&
-   &            (i, j, k+2)+two*p(i, j, k+1)+p(i, j, k))+oneminomega*(abs5+&
-   &            abs11)+plim)-(p(i, j, k+2)-two*p(i, j, k+1)+p(i, j, k))*(&
+   &            (i, j, k+2)+two*p(i, j, k+1)+p(i, j, k))+oneminomega*(abs6+&
+   &            abs12)+plim)-(p(i, j, k+2)-two*p(i, j, k+1)+p(i, j, k))*(&
    &            omega*(pd(i, j, k+2)+two*pd(i, j, k+1)+pd(i, j, k))+&
-   &            oneminomega*(abs5d+abs11d)))/(omega*(p(i, j, k+2)+two*p(i, j&
-   &            , k+1)+p(i, j, k))+oneminomega*(abs5+abs11)+plim)**2
+   &            oneminomega*(abs6d+abs12d)))/(omega*(p(i, j, k+2)+two*p(i, j&
+   &            , k+1)+p(i, j, k))+oneminomega*(abs6+abs12)+plim)**2
    x6 = (p(i, j, k+2)-two*p(i, j, k+1)+p(i, j, k))/(omega*(p(i, j&
-   &            , k+2)+two*p(i, j, k+1)+p(i, j, k))+oneminomega*(abs5+abs11)&
+   &            , k+2)+two*p(i, j, k+1)+p(i, j, k))+oneminomega*(abs6+abs12)&
    &            +plim)
    IF (x6 .GE. 0.) THEN
    dp2d = x6d
@@ -1190,34 +1141,19 @@
    &            , irho)**2)
    a2avg = half*(gamma(i, j, k+1)*p(i, j, k+1)/w(i, j, k+1, irho)&
    &            +gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
-   sxd = skd(i, j, k, 1)
    sx = sk(i, j, k, 1)
-   syd = skd(i, j, k, 2)
    sy = sk(i, j, k, 2)
-   szd = skd(i, j, k, 3)
    sz = sk(i, j, k, 3)
-   arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
    arg1 = sx**2 + sy**2 + sz**2
-   IF (arg1 .EQ. 0.0) THEN
-   aread = 0.0
-   ELSE
-   aread = arg1d/(2.0*SQRT(arg1))
-   END IF
    area = SQRT(arg1)
    IF (1.e-25_realType .LT. area) THEN
-   max3d = aread
    max3 = area
    ELSE
    max3 = 1.e-25_realType
-   max3d = 0.0
    END IF
-   tmpd = -(one*max3d/max3**2)
    tmp = one/max3
-   sxd = sxd*tmp + sx*tmpd
    sx = sx*tmp
-   syd = syd*tmp + sy*tmpd
    sy = sy*tmp
-   szd = szd*tmp + sz*tmpd
    sz = sz*tmp
    alphaavgd = half*(2*uavg*uavgd+2*vavg*vavgd+2*wavg*wavgd)
    alphaavg = half*(uavg**2+vavg**2+wavg**2)
@@ -1230,8 +1166,7 @@
    aavgd = a2avgd/(2.0*SQRT(a2avg))
    END IF
    aavg = SQRT(a2avg)
-   unavgd = uavgd*sx + uavg*sxd + vavgd*sy + vavg*syd + wavgd*sz &
-   &            + wavg*szd
+   unavgd = sx*uavgd + sy*vavgd + sz*wavgd
    unavg = uavg*sx + vavg*sy + wavg*sz
    ovaavgd = -(one*aavgd/aavg**2)
    ovaavg = one/aavg
@@ -1239,29 +1174,26 @@
    ova2avg = one/a2avg
    ! The mesh velocity if the face is moving. It must be
    ! divided by the area to obtain a true velocity.
-   IF (addgridvelocities) THEN
-   sfaced = sfacek(i, j, k)*tmpd
-   sface = sfacek(i, j, k)*tmp
-   END IF
+   IF (addgridvelocities) sface = sfacek(i, j, k)*tmp
    IF (unavg - sface + aavg .GE. 0.) THEN
-   lam1d = unavgd - sfaced + aavgd
+   lam1d = unavgd + aavgd
    lam1 = unavg - sface + aavg
    ELSE
-   lam1d = -(unavgd-sfaced+aavgd)
+   lam1d = -(unavgd+aavgd)
    lam1 = -(unavg-sface+aavg)
    END IF
    IF (unavg - sface - aavg .GE. 0.) THEN
-   lam2d = unavgd - sfaced - aavgd
+   lam2d = unavgd - aavgd
    lam2 = unavg - sface - aavg
    ELSE
-   lam2d = -(unavgd-sfaced-aavgd)
+   lam2d = -(unavgd-aavgd)
    lam2 = -(unavg-sface-aavg)
    END IF
    IF (unavg - sface .GE. 0.) THEN
-   lam3d = unavgd - sfaced
+   lam3d = unavgd
    lam3 = unavg - sface
    ELSE
-   lam3d = -(unavgd-sfaced)
+   lam3d = -unavgd
    lam3 = -(unavg-sface)
    END IF
    rradd = lam3d + aavgd
@@ -1286,11 +1218,11 @@
    END IF
    ! Multiply the eigenvalues by the area to obtain
    ! the correct values for the dissipation term.
-   lam1d = lam1d*area + lam1*aread
+   lam1d = area*lam1d
    lam1 = lam1*area
-   lam2d = lam2d*area + lam2*aread
+   lam2d = area*lam2d
    lam2 = lam2*area
-   lam3d = lam3d*area + lam3*aread
+   lam3d = area*lam3d
    lam3 = lam3*area
    ! Some abbreviations, which occur quite often in the
    ! dissipation terms.
@@ -1305,8 +1237,7 @@
    &            -vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53d*drk - gm53*drkd
    abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - gm53&
    &            *drk
-   abv5d = sxd*dru + sx*drud + syd*drv + sy*drvd + szd*drw + sz*&
-   &            drwd - unavgd*dr - unavg*drd
+   abv5d = sx*drud + sy*drvd + sz*drwd - unavgd*dr - unavg*drd
    abv5 = sx*dru + sy*drv + sz*drw - unavg*dr
    abv6d = (abv3d*abv4+abv3*abv4d)*ova2avg + abv3*abv4*ova2avgd +&
    &            (abv2d*abv5+abv2*abv5d)*ovaavg + abv2*abv5*ovaavgd
@@ -1322,29 +1253,25 @@
    fw(i, j, k+1, irho) = fw(i, j, k+1, irho) + fs
    fwd(i, j, k, irho) = fwd(i, j, k, irho) - fsd
    fw(i, j, k, irho) = fw(i, j, k, irho) - fs
-   ind = indfamilyk(i, j, k)
-   massflowfamilydissd(ind, spectralsol) = 0.0
-   massflowfamilydiss(ind, spectralsol) = massflowfamilydiss(ind&
-   &            , spectralsol) - factfamilyk(i, j, k)*fs
    ! X-momentum.
-   fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sxd*&
-   &            abv7 + sx*abv7d
+   fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sx*&
+   &            abv7d
    fs = lam3*dru + uavg*abv6 + sx*abv7
    fwd(i, j, k+1, imx) = fwd(i, j, k+1, imx) + fsd
    fw(i, j, k+1, imx) = fw(i, j, k+1, imx) + fs
    fwd(i, j, k, imx) = fwd(i, j, k, imx) - fsd
    fw(i, j, k, imx) = fw(i, j, k, imx) - fs
    ! Y-momentum.
-   fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + syd*&
-   &            abv7 + sy*abv7d
+   fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + sy*&
+   &            abv7d
    fs = lam3*drv + vavg*abv6 + sy*abv7
    fwd(i, j, k+1, imy) = fwd(i, j, k+1, imy) + fsd
    fw(i, j, k+1, imy) = fw(i, j, k+1, imy) + fs
    fwd(i, j, k, imy) = fwd(i, j, k, imy) - fsd
    fw(i, j, k, imy) = fw(i, j, k, imy) - fs
    ! Z-momentum.
-   fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + szd*&
-   &            abv7 + sz*abv7d
+   fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + sz*&
+   &            abv7d
    fs = lam3*drw + wavg*abv6 + sz*abv7
    fwd(i, j, k+1, imz) = fwd(i, j, k+1, imz) + fsd
    fw(i, j, k+1, imz) = fw(i, j, k+1, imz) + fs

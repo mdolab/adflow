@@ -116,10 +116,10 @@
            ! an offset of -1 present in dd2Wall.
 
            do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
-             jj = max(2_intType,min(j,jjMax))
+             jj = max(2,min(j,jjMax))
 
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-               ii = max(2_intType,min(i,iiMax))
+               ii = max(2,min(i,iiMax))
 
                nu   = rlv2(i,j)/ww2(i,j,irho)
                tmpd = one/(rkwBeta1*(dd2Wall(ii-1,jj-1)**2))
@@ -154,10 +154,10 @@
            ! equations via the boundary conditions.
 
            do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
-             jj = max(2_intType,min(j,jjMax))
+             jj = max(2,min(j,jjMax))
 
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-               ii = max(2_intType,min(i,iiMax))
+               ii = max(2,min(i,iiMax))
 
                nu   = rlv2(i,j)/ww2(i,j,irho)
                tmpd = one/(dd2Wall(ii-1,jj-1)**2)

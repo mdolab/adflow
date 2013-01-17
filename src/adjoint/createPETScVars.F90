@@ -75,14 +75,14 @@ subroutine createStatePETScVars
 
      ! Create a Block AIJ Matrix with block size nw, (number of states)
      if (PETSC_VERSION_MINOR <  3) then
-        call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
+        call MatCreateMPIBAIJ(SUMB_COMM_WORLD, nw,             &
              nDimW, nDimW,                     &
              PETSC_DETERMINE, PETSC_DETERMINE, &
              0, nnzDiagonal,         &
              0, nnzOffDiag,            &
              dRdWT, PETScIerr)
      else
-        call MatCreateBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
+        call MatCreateBAIJ(SUMB_COMM_WORLD, nw,             &
              nDimW, nDimW,                     &
              PETSC_DETERMINE, PETSC_DETERMINE, &
              0, nnzDiagonal,         &
@@ -103,14 +103,14 @@ subroutine createStatePETScVars
         nnzOffDiag((i-1)*nw+1:(i-1)*nw+nw) = nnzOffDiag(i)
      end do
      if (PETSC_VERSION_MINOR <  3) then
-        call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
+        call MatCreateMPIAIJ(SUMB_COMM_WORLD,                 &
              nDimW, nDimW,                     &
              PETSC_DETERMINE, PETSC_DETERMINE, &
              8, nnzDiagonal2,         &
              8, nnzOffDiag2,            &
              dRdWT, PETScIerr)
      else
-        call MatCreateAIJ(SUMB_PETSC_COMM_WORLD,                 &
+        call MatCreateAIJ(SUMB_COMM_WORLD,                 &
              nDimW, nDimW,                     &
              PETSC_DETERMINE, PETSC_DETERMINE, &
              8, nnzDiagonal2,         &
@@ -155,14 +155,14 @@ subroutine createStatePETScVars
 
         PETScBlockMatrix = .true.
         if (PETSC_VERSION_MINOR <  3) then
-           call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
+           call MatCreateMPIBAIJ(SUMB_COMM_WORLD, nw,             &
                 nDimW, nDimW,                     &
                 PETSC_DETERMINE, PETSC_DETERMINE, &
                 0, nnzDiagonal,         &
                 0, nnzOffDiag,            &
                 dRdWPreT, PETScIerr)
         else
-           call MatCreateBAIJ(SUMB_PETSC_COMM_WORLD, nw,             &
+           call MatCreateBAIJ(SUMB_COMM_WORLD, nw,             &
                 nDimW, nDimW,                     &
                 PETSC_DETERMINE, PETSC_DETERMINE, &
                 0, nnzDiagonal,         &
@@ -182,14 +182,14 @@ subroutine createStatePETScVars
            nnzOffDiag((i-1)*nw+1:(i-1)*nw+nw) = nnzOffDiag(i)
         end do
         if (PETSC_VERSION_MINOR <  3) then
-           call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD,                 &
+           call MatCreateMPIAIJ(SUMB_COMM_WORLD,                 &
                 nDimW, nDimW,                     &
                 PETSC_DETERMINE, PETSC_DETERMINE, &
                 0, nnzDiagonal2,         &
                 0, nnzOffDiag2,            &
                 dRdWPret, PETScIerr)
         else
-           call MatCreateAIJ(SUMB_PETSC_COMM_WORLD,                 &
+           call MatCreateAIJ(SUMB_COMM_WORLD,                 &
                 nDimW, nDimW,                     &
                 PETSC_DETERMINE, PETSC_DETERMINE, &
                 0, nnzDiagonal2,         &
@@ -262,7 +262,7 @@ subroutine createStatePETScVars
 
         PETScBlockMatrix = .true.
         if (PETSC_VERSION_MINOR <  3) then
-           call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD,  nw, &
+           call MatCreateMPIBAIJ(SUMB_COMM_WORLD,  nw, &
                 nDimW_coarse, nDimW_coarse, &
                 PETSC_DETERMINE, PETSC_DETERMINE, &
                 0, nnzDiagonal,         &
@@ -272,7 +272,7 @@ subroutine createStatePETScVars
         
            nnzDiagonal = 8
            nnzOffDiag = 0
-           call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw, &
+           call MatCreateMPIBAIJ(SUMB_COMM_WORLD, nw, &
                 nDimW_coarse, nDimW_fine, &
                 PETSC_DETERMINE, PETSC_DETERMINE, &
                 0, nnzDiagonal, &
@@ -282,7 +282,7 @@ subroutine createStatePETScVars
 
            nnzDiagonal2 = 8
            nnzOffDiag = 0
-           call MatCreateMPIBAIJ(SUMB_PETSC_COMM_WORLD, nw, &
+           call MatCreateMPIBAIJ(SUMB_COMM_WORLD, nw, &
                 nDimW_fine, nDimW_coarse, &
                 PETSC_DETERMINE, PETSC_DETERMINE, &
                 0, nnzDiagonal2, &
@@ -290,7 +290,7 @@ subroutine createStatePETScVars
                 prolongationOperator(l), PETScIerr)
            call EChk(PETScIerr, __FILE__, __LINE__)
         else
-!            call MatCreateBAIJ(SUMB_PETSC_COMM_WORLD, nw, &
+!            call MatCreateBAIJ(SUMB_COMM_WORLD, nw, &
 !                 nDimW_coarse, nDimW_coarse,       &
 !                 PETSC_DETERMINE, PETSC_DETERMINE, &
 !                 0, nnzDiagonal,         &
@@ -300,7 +300,7 @@ subroutine createStatePETScVars
 
            nnzDiagonal = 8
            nnzOffDiag = 0
-           call MatCreateBAIJ(SUMB_PETSC_COMM_WORLD, nw, &
+           call MatCreateBAIJ(SUMB_COMM_WORLD, nw, &
                 nDimW_coarse, nDimW_fine, &
                 PETSC_DETERMINE, PETSC_DETERMINE, &
                 0, nnzDiagonal, &
@@ -310,7 +310,7 @@ subroutine createStatePETScVars
 
            nnzDiagonal2 = 8
            nnzOffDiag2 = 0
-           call MatCreateBAIJ(SUMB_PETSC_COMM_WORLD, nw, &
+           call MatCreateBAIJ(SUMB_COMM_WORLD, nw, &
                 nDimW_fine, nDimW_coarse, &
                 PETSC_DETERMINE, PETSC_DETERMINE, &
                 0, nnzDiagonal2, &
@@ -378,7 +378,7 @@ subroutine createSpatialPETScVars
   
   ! Note we are creating the TRANPOSE of dRdx. It is size dDimX by nDimW
   if (PETSC_VERSION_MINOR <  3) then
-     call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD, &
+     call MatCreateMPIAIJ(SUMB_COMM_WORLD, &
           nDimX, nDimW,                     &
           PETSC_DETERMINE, PETSC_DETERMINE, &
           8, nnzDiagonal,     &
@@ -386,7 +386,7 @@ subroutine createSpatialPETScVars
           dRdx, PETScIerr)
      call EChk(PETScIerr, __FILE__, __LINE__)
   else
-     call MatCreateAIJ(SUMB_PETSC_COMM_WORLD, &
+     call MatCreateAIJ(SUMB_COMM_WORLD, &
           nDimX, nDimW,                     &
           PETSC_DETERMINE, PETSC_DETERMINE, &
           8, nnzDiagonal,     &
@@ -428,7 +428,7 @@ subroutine createPETScKsp
   implicit none
   
 #ifndef USE_NO_PETSC
-  call KSPCreate(SUMB_PETSC_COMM_WORLD, adjointKSP, PETScIerr)
+  call KSPCreate(SUMB_COMM_WORLD, adjointKSP, PETScIerr)
   call EChk(PETScIerr, __FILE__, __LINE__)
 #endif
 
@@ -465,10 +465,10 @@ subroutine createExtraPETScVars
   allocate(dRda_data(nDimw, nDesignExtra))
 
   if (PETSC_VERSION_MINOR < 3 ) then
-     call MatCreateMPIDense(SUMB_PETSC_COMM_WORLD, nDimW, PETSC_DECIDE, &
+     call MatCreateMPIDense(SUMB_COMM_WORLD, nDimW, PETSC_DECIDE, &
           PETSC_DETERMINE, nDesignExtra, dRda_data, dRda, PETScIerr)
   else
-     call MatCreateDense(SUMB_PETSC_COMM_WORLD, nDimW, PETSC_DECIDE, &
+     call MatCreateDense(SUMB_COMM_WORLD, nDimW, PETSC_DECIDE, &
           PETSC_DETERMINE, nDesignExtra, dRda_data, dRda, PETScIerr)
   end if
   call EChk(PETScIerr, __FILE__, __LINE__)
@@ -517,14 +517,14 @@ subroutine createCouplingPETScVars
   nnzDiagonal = 8*nw
   nnzOffDiag  = 8*nw! Make the off diagonal the same, since we
   if (PETSC_VERSION_MINOR <  3) then
-     call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD, &
+     call MatCreateMPIAIJ(SUMB_COMM_WORLD, &
           nDimS, nDimW,                     &
           PETSC_DETERMINE, PETSC_DETERMINE, &
           0, nnzDiagonal,         &
           0, nnzOffDiag,            &
           dFdw, PETScIerr)
   else
-      call MatCreateAIJ(SUMB_PETSC_COMM_WORLD, &
+      call MatCreateAIJ(SUMB_COMM_WORLD, &
           nDimS, nDimW,                     &
           PETSC_DETERMINE, PETSC_DETERMINE, &
           0, nnzDiagonal,         &
@@ -537,14 +537,14 @@ subroutine createCouplingPETScVars
   nnzDiagonal = 27
   nnzOffDiag = 27
   if (PETSC_VERSION_MINOR <  3) then
-     call MatCreateMPIAIJ(SUMB_PETSC_COMM_WORLD, &
+     call MatCreateMPIAIJ(SUMB_COMM_WORLD, &
           nDimS, nDimS,                     &
           PETSC_DETERMINE, PETSC_DETERMINE, &
           0, nnzDiagonal,         &
           0, nnzOffDiag,            &
           dFdx, PETScIerr)
   else
-     call MatCreateAIJ(SUMB_PETSC_COMM_WORLD, &
+     call MatCreateAIJ(SUMB_COMM_WORLD, &
           nDimS, nDimS,                     &
           PETSC_DETERMINE, PETSC_DETERMINE, &
           0, nnzDiagonal,         &

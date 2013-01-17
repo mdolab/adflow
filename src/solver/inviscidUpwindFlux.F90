@@ -63,7 +63,7 @@
        ! Check if rFil == 0. If so, the dissipative flux needs not to
        ! be computed.
 
-       if(rFil == zero) return
+       if(abs(rFil) < thresholdReal) return
 
        ! Check if the formulation for rotational periodic problems
        ! must be used.
@@ -227,11 +227,12 @@
 
                ! Store the density flux in the mass flow of the
                ! appropriate sliding mesh interface.
-
+#ifndef USE_TAPENADE
                ind = indFamilyI(i,j,k)
                massFlowFamilyDiss(ind,spectralSol) =       &
                        massFlowFamilyDiss(ind,spectralSol) &
                                         + factFamilyI(i,j,k)*flux(irho)
+#endif
              enddo
            enddo
          enddo
@@ -290,11 +291,12 @@
 
                ! Store the density flux in the mass flow of the
                ! appropriate sliding mesh interface.
-
+#ifndef USE_TAPENADE
                ind = indFamilyJ(i,j,k)
                massFlowFamilyDiss(ind,spectralSol) =       &
                        massFlowFamilyDiss(ind,spectralSol) &
                                         + factFamilyJ(i,j,k)*flux(irho)
+#endif
              enddo
            enddo
          enddo
@@ -353,11 +355,12 @@
 
                ! Store the density flux in the mass flow of the
                ! appropriate sliding mesh interface.
-
+#ifndef USE_TAPENADE
                ind = indFamilyK(i,j,k)
                massFlowFamilyDiss(ind,spectralSol) =       &
                        massFlowFamilyDiss(ind,spectralSol) &
                                         + factFamilyK(i,j,k)*flux(irho)
+#endif
              enddo
            enddo
          enddo
@@ -472,11 +475,12 @@
 
                ! Store the density flux in the mass flow of the
                ! appropriate sliding mesh interface.
-
+#ifndef USE_TAPENADE
                ind = indFamilyI(i,j,k)
                massFlowFamilyDiss(ind,spectralSol) =       &
                        massFlowFamilyDiss(ind,spectralSol) &
                                         + factFamilyI(i,j,k)*flux(irho)
+#endif
              enddo
            enddo
          enddo
@@ -574,11 +578,12 @@
 
                ! Store the density flux in the mass flow of the
                ! appropriate sliding mesh interface.
-
+#ifndef USE_TAPENADE
                ind = indFamilyJ(i,j,k)
                massFlowFamilyDiss(ind,spectralSol) =       &
                        massFlowFamilyDiss(ind,spectralSol) &
                                         + factFamilyJ(i,j,k)*flux(irho)
+#endif
              enddo
            enddo
          enddo
@@ -676,11 +681,12 @@
 
                ! Store the density flux in the mass flow of the
                ! appropriate sliding mesh interface.
-
+#ifndef USE_TAPENADE
                ind = indFamilyK(i,j,k)
                massFlowFamilyDiss(ind,spectralSol) =       &
                        massFlowFamilyDiss(ind,spectralSol) &
                                         + factFamilyK(i,j,k)*flux(irho)
+#endif
              enddo
            enddo
          enddo
@@ -1014,7 +1020,7 @@
                  ptmp(2) = right(irhoE)
 
                  call etotArray(rhotmp, utmp, vtmp, wtmp, ptmp, ktmp, &
-                                Etmp, correctForK, 2_intType)
+                                Etmp, correctForK, 2)
 
                  Etl = Etmp(1)
                  Etr = Etmp(2)

@@ -268,9 +268,6 @@
        globalCell =>flowDoms(nn,mm,ll)%globalCell
        globalNode =>flowDoms(nn,mm,ll)%globalNode
 
-       !Add warp_comm to pointers
-       warp_comm  =>flowDoms(nn,1,1)%warp_comm
-
        ifaceptb  =>flowDoms(nn,1,1)%ifaceptb
        iedgeptb  =>flowDoms(nn,1,1)%iedgeptb
        end subroutine setPointers

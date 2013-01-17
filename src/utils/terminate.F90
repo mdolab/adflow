@@ -137,6 +137,7 @@ subroutine EChk(ierr,file,line)
   ! error. 
   use precision
   use communication
+  implicit none
 
   integer(kind=intType),intent(in) :: ierr
   character*(*),intent(in) :: file
@@ -157,7 +158,7 @@ subroutine EChk(ierr,file,line)
      print *,'-----------------------------------------------------------------'
 #endif
 
-     call MPI_Abort(warp_comm_world,ierr)
+     call MPI_Abort(sumb_comm_world,ierr)
      stop ! Just in case
   end if
 

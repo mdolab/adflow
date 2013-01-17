@@ -185,7 +185,6 @@
 
        type(viscSubfaceType), dimension(:), pointer :: viscSubface
        type(BCDataType),      dimension(:), pointer :: BCData
-       TYPE(warp_comm_type), DIMENSION(:),pointer :: warp_comm
 
        logical :: deallocationFailure
 !
@@ -300,21 +299,6 @@
          nullify(BCData(i)%ps)
          nullify(BCData(i)%turbInlet)
 
-       enddo
-
-
-       do i=1,flowDoms(nn,level,sps)%nSubface
-          warp_comm=>flowDoms(nn,level,sps)%warp_comm
-          if (associated(warp_comm))then
-             if( allocated(warp_comm(i)%sendbuffer) ) &
-                  deallocate(warp_comm(i)%sendbuffer, stat=ierr)
-             if(ierr /= 0) deallocationFailure = .true.
-             
-             if( allocated(warp_comm(i)%recvbuffer) ) &
-                  deallocate(warp_comm(i)%recvbuffer, stat=ierr)
-             if(ierr /= 0) deallocationFailure = .true.
-          endif
-          
        enddo
 
        if( associated(flowDoms(nn,level,sps)%BCType) ) &
@@ -759,10 +743,6 @@
 
        if( associated(flowDoms(nn,level,sps)%bvtk2) ) &
          deallocate(flowDoms(nn,level,sps)%bvtk2, stat=ierr)
-       if(ierr /= 0) deallocationFailure = .true.
-
-       if( associated(flowDoms(nn,level,sps)%warp_comm) ) &
-         deallocate(flowDoms(nn,level,sps)%warp_comm, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
        ! Check for errors in the deallocation.

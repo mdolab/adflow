@@ -39,6 +39,13 @@
    INTEGER(kind=inttype) :: i, j, k
    REAL(kind=realtype) :: sfil, fis0, dis0, ppor, fs, rhoi
    REAL(kind=realtype) :: dis0d, fsd, rhoid
+   INTRINSIC ABS
+   REAL(kind=realtype) :: abs0
+   IF (rfil .GE. 0.) THEN
+   abs0 = rfil
+   ELSE
+   abs0 = -rfil
+   END IF
    !
    !      ******************************************************************
    !      *                                                                *
@@ -48,7 +55,7 @@
    !
    ! Check if rFil == 0. If so, the dissipative flux needs not to
    ! be computed.
-   IF (rfil .EQ. zero) THEN
+   IF (abs0 .LT. thresholdreal) THEN
    fwd = 0.0
    RETURN
    ELSE

@@ -116,7 +116,7 @@
    t2 = t**cptempfit(nn)%exponents(ii)
    cvd = cvd + cptempfit(nn)%constants(ii)*t2d
    cv = cv + cptempfit(nn)%constants(ii)*t2
-   IF (cptempfit(nn)%exponents(ii) .EQ. -1_intType) THEN
+   IF (cptempfit(nn)%exponents(ii) .EQ. -1) THEN
    eintd = eintd + cptempfit(nn)%constants(ii)*td/t
    eint = eint + cptempfit(nn)%constants(ii)*LOG(t)
    ELSE

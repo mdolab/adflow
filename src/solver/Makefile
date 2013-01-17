@@ -36,7 +36,9 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FILES_TO_COMPLEXIFY = applyAllBC.f90\
+FILES_TO_COMPLEXIFY = \
+	       adjustInflowAngle.f90\
+	       applyAllBC.F90\
 	       bcBleedInflow.f90\
 	       bcDomainInterface.f90\
 	       bcEulerWall.f90\
@@ -73,20 +75,20 @@ FILES_TO_COMPLEXIFY = applyAllBC.f90\
 	       gridVelocitiesCoarseLevels.f90\
 	       gridVelocitiesFineLevel.f90\
 	       initres.f90\
-	       inviscidCentralFlux.f90\
+	       inviscidCentralFlux.F90\
 	       inviscidDissFluxCusp.f90\
 	       inviscidDissFluxCuspCoarse.f90\
-	       inviscidDissFluxMatrix.f90\
+	       inviscidDissFluxMatrix.F90\
 	       inviscidDissFluxMatrixCoarse.f90\
-	       inviscidDissFluxScalar.f90\
+	       inviscidDissFluxScalar.F90\
 	       inviscidDissFluxScalarCoarse.f90\
-	       inviscidUpwindFlux.f90\
+	       inviscidUpwindFlux.F90\
 	       killFunctions.F90\
 	       level0CoolingModel.f90\
 	       maxEddyv.f90\
 	       maxHdiffMach.f90\
 	       normalVelocities.f90\
-	       residual.f90\
+	       residual.F90\
 	       residual2.f90\
 	       residualAveraging.f90\
 	       rungeKuttaSmoother.f90\

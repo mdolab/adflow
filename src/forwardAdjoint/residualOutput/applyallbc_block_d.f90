@@ -3,21 +3,13 @@
    !
    !  Differentiation of applyallbc_block in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w *rlv
-   !   with respect to varying inputs: *p *w *rlv *x *si *sj *sk *(*bcdata.norm)
-   !   Plus diff mem management of: winf:in rev:in p:in s:in gamma:in
-   !                w:in rlv:in x:in si:in sj:in sk:in bcdata:in *bcdata.norm:in
-   !                *bcdata.rface:in *bcdata.uslip:in *bcdata.tns_wall:in
-   !                (global)cphint:in-out
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * File:          applyAllBC.f90                                  *
-   !      * Author:        Edwin van der Weide, Seonghyeon Hahn            *
-   !      * Starting date: 03-07-2003                                      *
-   !      * Last modified: 09-13-2007                                      *
-   !      *                                                                *
-   !      ******************************************************************
-   !
+   !   with respect to varying inputs: *p *w *rlv
+   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
+   !                s:in gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
+   !                bvtk2:in d2wall:in bmti1:in bmti2:in si:in sj:in
+   !                sk:in bvti1:in bvti2:in bmtj1:in bmtj2:in bcdata:in
+   !                *bcdata.norm:in *bcdata.rface:in *bcdata.uslip:in
+   !                *bcdata.tns_wall:in winf:in (global)cphint:in-out
    SUBROUTINE APPLYALLBC_BLOCK_D(secondhalo)
    USE FLOWVARREFSTATE
    USE BLOCKPOINTERS_D
@@ -25,19 +17,9 @@
    USE INPUTDISCRETIZATION
    USE ITERATION
    IMPLICIT NONE
-   !   ! Domain-interface boundary conditions,
-   !   ! when coupled with other solvers.
-   !   call bcDomainInterface(secondHalo, correctForK)
-   !   ! Supersonic inflow boundary conditions.
-   !   call bcSupersonicInflow(secondHalo, correctForK)
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * applyAllBC applies all boundary conditions for the all         *
-   !      * blocks on the grid level currentLevel.                         *
-   !      *                                                                *
-   !      ******************************************************************
-   !
+   ! Domain-interface boundary conditions,
+   ! when coupled with other solvers.
+   ! Apply BC's for a single block
    !
    !      Subroutine arguments.
    !
@@ -47,12 +29,6 @@
    !
    INTEGER(kind=inttype) :: nn, sps
    LOGICAL :: correctfork
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Begin execution                                                *
-   !      *                                                                *
-   !      ******************************************************************
    !
    ! Determine whether or not the total energy must be corrected
    ! for the presence of the turbulent kinetic energy.
@@ -68,7 +44,6 @@
    ! Apply all the boundary conditions. The order is important.
    ! The symmetry boundary conditions.
    CALL BCSYMM_D(secondhalo)
-   CALL BCSYMMPOLAR_D(secondhalo)
    !call bcEulerWall(secondHalo, correctForK)
    ! The viscous wall boundary conditions.
    CALL BCNSWALLADIABATIC_D(secondhalo, correctfork)
@@ -81,29 +56,13 @@
    CALL BCFARFIELD_D(secondhalo, correctfork)
    CASE (turkel) 
    CALL TERMINATE('applyAllBC', &
-   &'Farfield boundary conditions for Turkel preconditioner not implemented'&
-   &               )
+   &                'Farfield Turkel preconditioner not implemented')
    CASE (choimerkle) 
    CALL TERMINATE('applyAllBC', &
-   &        'Farfield BC for Choi and Merkle preconditioner not implemented'&
+   &               'Farfield Choi and Merkle preconditioner not implemented'&
    &               )
    END SELECT
-   !   ! Subsonic outflow and bleed outflow boundaries.
-   !   call bcSubsonicOutflow(secondHalo, correctForK)
-   !   ! Subsonic inflow boundary.
-   !   call bcSubsonicInflow(secondHalo, correctForK)
-   !   ! Bleed inflow regions.
-   !   call bcBleedInflow( secondHalo, correctForK)
-   !   ! Engine boundary conditions. Not implemented yet.
-   !   call bcMdot(secondHalo, correctForK)
-   !   call bcThrust(secondHalo, correctForK)
-   !   ! Extrapolation boundary conditions; this also includes
-   !   ! the supersonic outflow boundary conditions. The difference
-   !   ! between the two is that the extrap boundary conditions
-   !   ! correspond to singular lines and supersonic outflow
-   !   ! boundaries to physical boundaries. The treatment however
-   !   ! is identical.
-   !   call bcExtrap(secondHalo, correctForK)
+   ! Subsonic outflow and bleed outflow boundaries.
    ! Inviscid wall boundary conditions.
    CALL BCEULERWALL_D(secondhalo, correctfork)
    END SUBROUTINE APPLYALLBC_BLOCK_D

@@ -20,9 +20,7 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
   use inputPhysics 
   use inputTimeSpectral
   use section
-  use monitor
   use iteration
-  use NKSolverVars, only : resSUm
   implicit none
 
   ! Input Arguments:
@@ -32,17 +30,17 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
   logical, intent(in) :: useSpatial, useExtra
 
   ! Working Variables
-  real(kind=realType) :: gm1,v2
-  integer(kind=intType) :: i,j,k,sps2,mm,l
+  real(kind=realType) :: gm1, v2
+  integer(kind=intType) :: i, j, k, sps2, mm, l
   real(kind=realType), dimension(nSections) :: t
   logical :: useOldCoor
 
   useOldCoor = .False.
 
   ! Set pointers to input/output variables
-  w  => flowDoms(nn,1,sps)%w
-  dw => flowDoms(nn,1,sps)%dw
-  x  => flowDoms(nn,1,sps)%x
+  w  => flowDoms(nn, currentLevel, sps)%w
+  dw => flowDoms(nn, 1           , sps)%dw
+  x  => flowDoms(nn, currentLevel, sps)%x
 
   ! ------------------------------------------------
   !        Additional 'Extra' Components
@@ -60,17 +58,17 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
 
   if (useSpatial .or. useExtra) then
 
-     call xhalo_block(nn,1,sps)
-     call metric_block(nn,1,sps)
+    !  call xhalo_block(nn,1,sps)
+!      call metric_block(nn,1,sps)
 
-     t = timeUnsteadyRestart
+!      t = timeUnsteadyRestart
   
-     if(equationMode == timeSpectral) then
-        do mm=1,nSections
-           t(mm) = t(mm) + (sps-1)*sections(mm)%timePeriod &
-                /         real(nTimeIntervalsSpectral,realType)
-        enddo
-     endif
+!      if(equationMode == timeSpectral) then
+!         do mm=1,nSections
+!            t(mm) = t(mm) + (sps-1)*sections(mm)%timePeriod &
+!                 /         real(nTimeIntervalsSpectral,realType)
+!         enddo
+!      endif
 
      !call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
      !call normalVelocities_block(sps) ! Required for TS
@@ -85,12 +83,12 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
   gm1 = gammaConstant - one
 
   ! Compute P 
-  do k=0,kb
-     do j=0,jb
-        do i=0,ib
-           v2 = w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 + w(i,j,k,ivz)**2
-           p(i,j,k) = gm1*(w(i,j,k,irhoE) - half*w(i,j,k,irho)*v2)
-           p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
+  do k=0, kb
+     do j=0, jb
+        do i=0, ib
+           v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**2
+           p(i, j, k) = gm1*(w(i, j, k, irhoE) - half*w( i, j, k, irho)*v2)
+           p(i, j, k) = max(p(i, j, k), 1.e-4_realType*pInfCorr)
         enddo
      enddo
   enddo
@@ -102,27 +100,29 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
   !  Apply all BC's
   call applyAllBC_block(.True.)
   
-  ! Compute skin_friction Velocity
-  !call computeUtau_block ! Required for turblence
+  ! Compute skin_friction Velocity (only for wall Functions)
+  !call computeUtau_block
   
   ! Compute time step and spectral radius
   call timeStep_block(.false.)
   
-  if( equations == RANSEquations ) then
-     ! Initialize only the Turblent Variables
-     call initres_block(nt1MG, nMGVar,nn,sps) 
-     call turbResidual_block
-  endif
+!   if( equations == RANSEquations ) then
+!      ! Initialize only the Turblent Variables
+!      call initres_block(nt1MG, nMGVar,nn,sps) 
+!      call turbResidual_block
+!   endif
   
   ! Next initialize residual for flow variables. The is the only place
   ! where there is an n^2 dependance
-  do sps2 = 1,nTimeIntervalsSpectral
-     dw => flowDoms(nn,1,sps2)%dw
-     call initRes_block(1,nwf, nn, sps2)
-  end do
+!   do sps2 = 1,nTimeIntervalsSpectral
+!      dw => flowDoms(nn, 1, sps2)%dw
+!      call initRes_block(1, nwf, nn, sps2)
+!   end do
 
-  ! Reset dw pointer to sps instance
-  dw => flowDoms(nn,1,sps)%dw
+!   ! Reset dw pointer to sps instance
+!   dw => flowDoms(nn, 1, sps)%dw
+
+  dw = zero
 
   !  Actual residual calc
   call residual_block
@@ -130,14 +130,14 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
   ! Divide through by the volume
   do sps2 = 1,nTimeIntervalsSpectral
      ! Set dw and vol to looping sps2 instance
-     dw => flowDoms(nn,1,sps2)%dw
-     vol => flowDoms(nn,currentLevel,sps2)%vol
+     dw => flowDoms(nn, 1, sps2)%dw
+     vol => flowDoms(nn, currentLevel, sps2)%vol
 
-     do l=1,nw
-        do k=2,kl
-           do j=2,jl
-              do i=2,il
-                 dw(i,j,k,l) = dw(i,j,k,l) / vol(i,j,k) * resSum(l)
+     do l=1, nw
+        do k=2, kl
+           do j=2, jl
+              do i=2, il
+                 dw(i, j, k, l) = dw(i, j, k, l) / vol(i, j, k)
               end do
            end do
         end do

@@ -1,20 +1,9 @@
-subroutine metric_block(nn,level,sps)
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * metric computes the face normals and the volume for the given  *
-  !      * grid level for all spectral solutions. First the volumes are   *
-  !      * computed assuming that the block is right handed. Then the     *
-  !      * number of positive and negative volumes are determined. If all *
-  !      * volumes are positive the block is indeed right handed; if all  *
-  !      * volumes are negative the block is left handed and both the     *
-  !      * volumes and the normals must be negated (for the normals this  *
-  !      * is done by the introduction of fact, which is either -0.5 or   *
-  !      * 0.5); if there are both positive and negative volumes the mesh *
-  !      * is not valid.                                                  *
-  !      *                                                                *
-  !      ******************************************************************
-  !
+subroutine metric_block
+  
+  ! This is COPY of metric.f90. It was necessary to copy this file
+  ! since there is debugging stuff in the original that is not
+  ! necessary for AD.
+
   use BCTypes
   use blockPointers
   use cgnsGrid
@@ -22,10 +11,6 @@ subroutine metric_block(nn,level,sps)
   use inputTimeSpectral
 
   implicit none
-  !
-  !      Subroutine arguments.
-  !
-  integer(kind=intType), intent(in) :: level
   !
   !      Local parameter.
   !
@@ -191,7 +176,7 @@ subroutine metric_block(nn,level,sps)
   ! and fact is used to correct this for a left handed block,
   ! as well as the scaling factor of 0.5
 
-  if (rightHanded) then!( flowDoms(nn,level,sps)%rightHanded ) then
+  if (rightHanded) then
      fact =  half
   else
      fact = -half
