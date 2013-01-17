@@ -64,7 +64,7 @@
        ! Check if rFil == 0. If so, the dissipative flux needs not to
        ! be computed.
 
-       if(rFil == zero) return
+       if(abs(rFil) < thresholdReal) return
 
        ! Set the value of plim. To be fully consistent this must have
        ! the dimension of a pressure. Therefore a fraction of pInfCorr
@@ -276,12 +276,12 @@
              fs               = lam3*dr  + abv6
              fw(i+1,j,k,irho) = fw(i+1,j,k,irho) + fs
              fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
-
+#ifndef USE_TAPENADE
              ind = indFamilyI(i,j,k)
              massFlowFamilyDiss(ind,spectralSol) =       &
                      massFlowFamilyDiss(ind,spectralSol) &
                                                   - factFamilyI(i,j,k)*fs
-
+#endif
              ! X-momentum.
 
              fs              = lam3*dru + uAvg*abv6 + sx*abv7
@@ -479,12 +479,12 @@
              fs               = lam3*dr  + abv6
              fw(i,j+1,k,irho) = fw(i,j+1,k,irho) + fs
              fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
-
+#ifndef USE_TAPENADE
              ind = indFamilyJ(i,j,k)
              massFlowFamilyDiss(ind,spectralSol) =       &
                      massFlowFamilyDiss(ind,spectralSol) &
                                                   - factFamilyJ(i,j,k)*fs
-
+#endif
              ! X-momentum.
 
              fs              = lam3*dru + uAvg*abv6 + sx*abv7
@@ -682,12 +682,12 @@
              fs               = lam3*dr  + abv6
              fw(i,j,k+1,irho) = fw(i,j,k+1,irho) + fs
              fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
-
+#ifndef USE_TAPENADE
              ind = indFamilyK(i,j,k)
              massFlowFamilyDiss(ind,spectralSol) =       &
                      massFlowFamilyDiss(ind,spectralSol) &
                                                   - factFamilyK(i,j,k)*fs
-
+#endif
              ! X-momentum.
 
              fs              = lam3*dru + uAvg*abv6 + sx*abv7

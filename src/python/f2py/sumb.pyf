@@ -399,9 +399,6 @@ python module sumb
          integer(kind=inttype) optional,intent(in),check(len(res)>=ndimw),depend(res) :: ndimw=len(res)
        end subroutine getres
 
-       subroutine resetksp
-       end subroutine resetksp
-
        subroutine getdrdxvpsi(dxv,ndof,adjoint,nstate) ! in :test:getdRdXvPsi.F90
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
          integer(kind=inttype) intent(in) :: ndof
@@ -544,7 +541,6 @@ python module sumb
        module communication ! in :sumb:../../modules/communication.f90
          use precision
          integer :: sumb_comm_world
-         integer :: sumb_petsc_comm_world
          integer :: myid
          integer :: nproc
          integer(kind=inttype) :: sendbuffersize_1to1

@@ -37,25 +37,17 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 
 FILES_TO_COMPLEXIFY = \
-		adjustInflowAngle.f90\
-		applyAllBC_block.f90\
 		block_res.f90\
 		block_res_extra.f90\
 		block_res_spatial.f90\
-		checkInputParam_mod.f90\
-		computeUtau_block.f90\
-		gridVelocitiesFineLevel_block.f90\
-		initres_block.f90\
-		initres_block_mod.f90\
 		metric_block.f90\
-		normalVelocities_block.f90\
+		initres_block_mod.f90\
 		referenceState_mod.f90\
-		residual_block.f90\
-		sa_block.f90\
 		saSolve_mod.f90\
-		timeStep_block.f90\
 		turbResidual_block.f90\
 		xhalo_block.f90\
+		computeUtau_block.f90\
+		checkInputParam_mod.f90\
 
 FILES_TO_COPY = 
 

@@ -168,7 +168,7 @@ subroutine verifydIdxfile(level,costfunction,filename)
       ! with operation mpi_max.
       
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-           mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
+           mpi_max, 0, SUMB_COMM_WORLD, PETScIerr)
       
       if( myID==0 ) &
            write(*,20) "Printing ADjoint TS djdx vector time (s) = ", timeAdj

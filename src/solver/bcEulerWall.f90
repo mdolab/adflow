@@ -101,7 +101,7 @@
 
            !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
            call setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                              rev1, rev2, 0_intType)
+                              rev1, rev2, 0)
 !
 !          **************************************************************
 !          *                                                            *

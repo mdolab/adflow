@@ -143,7 +143,7 @@ subroutine getdRdaPsi(output, ndv, adjoint, nstate)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Create the result vector for dRda^T * psi
-  call VecCreateMPI(SUMB_PETSC_COMM_WORLD, PETSC_DECIDE, ndv, dRdaTPsi, ierr)
+  call VecCreateMPI(SUMB_COMM_WORLD, PETSC_DECIDE, ndv, dRdaTPsi, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Do the Multiplication

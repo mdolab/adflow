@@ -206,7 +206,6 @@
        ! nProc:           The number of processors in SUmb_comm_world.
 
        integer :: SUmb_comm_world, SUmb_comm_self, myID, nProc
-       integer :: SUmb_petsc_comm_world
 
        ! commPatternCell_1st(nLevel): The communication pattern for 1st
        !                              level cell halo's on the multiple

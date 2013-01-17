@@ -27,8 +27,6 @@ subroutine determineStencil(lumped)
   if (lumped) then
      lumpedDiss=.True.
   end if
-  
-
 
   stencil = 0
   call setPointers(1,1,1)
@@ -98,8 +96,6 @@ subroutine determineStencil(lumped)
         end do
      end do
   end do
-
-
 
   ! Now also do it for the spatial stencil
 
@@ -175,6 +171,5 @@ subroutine determineStencil(lumped)
   if (lumped) then
      lumpedDiss=.False.
   end if
-
 
 end subroutine determineStencil

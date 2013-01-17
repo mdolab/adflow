@@ -3,11 +3,9 @@
    !
    !  Differentiation of utauwf in forward (tangent) mode:
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: *w *rlv *si *sj *sk *fw *(*viscsubface.tau)
-   !                *(*bcdata.norm)
-   !   Plus diff mem management of: w:in rlv:in si:in sj:in sk:in
-   !                fw:in viscsubface:in *viscsubface.tau:in bcdata:in
-   !                *bcdata.norm:in
+   !   with respect to varying inputs: *w *rlv *fw *(*viscsubface.tau)
+   !   Plus diff mem management of: w:in rlv:in fw:in viscsubface:in
+   !                *viscsubface.tau:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -62,9 +60,8 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, rres
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, rresd
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rresd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: normd
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rrlv2, dd2wall2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rrlv2d
    !
@@ -100,7 +97,6 @@
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
    fact = -one
-   ssd => sid(1, :, :, :)
    ss => si(1, :, :, :)
    rresd => fwd(2, 1:, 1:, :)
    rres => fw(2, 1:, 1:, :)
@@ -114,7 +110,6 @@
    CASE (imax) 
    !===========================================================
    fact = one
-   ssd => sid(il, :, :, :)
    ss => si(il, :, :, :)
    rresd => fwd(il, 1:, 1:, :)
    rres => fw(il, 1:, 1:, :)
@@ -128,7 +123,6 @@
    CASE (jmin) 
    !===========================================================
    fact = -one
-   ssd => sjd(:, 1, :, :)
    ss => sj(:, 1, :, :)
    rresd => fwd(1:, 2, 1:, :)
    rres => fw(1:, 2, 1:, :)
@@ -142,7 +136,6 @@
    CASE (jmax) 
    !===========================================================
    fact = one
-   ssd => sjd(:, jl, :, :)
    ss => sj(:, jl, :, :)
    rresd => fwd(1:, jl, 1:, :)
    rres => fw(1:, jl, 1:, :)
@@ -156,7 +149,6 @@
    CASE (kmin) 
    !===========================================================
    fact = -one
-   ssd => skd(:, :, 1, :)
    ss => sk(:, :, 1, :)
    rresd => fwd(1:, 1:, 2, :)
    rres => fw(1:, 1:, 2, :)
@@ -170,7 +162,6 @@
    CASE (kmax) 
    !===========================================================
    fact = one
-   ssd => skd(:, :, kl, :)
    ss => sk(:, :, kl, :)
    rresd => fwd(1:, 1:, kl, :)
    rres => fw(1:, 1:, kl, :)
@@ -183,7 +174,6 @@
    rrlv2 => rlv(1:, 1:, kl)
    END SELECT
    ! Set the pointer for the unit outward normals.
-   normd => bcdatad(nn)%norm
    norm => bcdata(nn)%norm
    ! Loop over the quadrilateral faces of the subface. Note
    ! that the nodal range of BCData must be used and not the
@@ -226,15 +216,14 @@
    vzd = ww2d(i, j, ivz) - wbard
    vz = ww2(i, j, ivz) - wbar
    ! Compute the normal velocity of the internal cell.
-   velnd = vxd*norm(i, j, 1) + vx*normd(i, j, 1) + vyd*norm(i, j&
-   &            , 2) + vy*normd(i, j, 2) + vzd*norm(i, j, 3) + vz*normd(i, j&
-   &            , 3)
+   velnd = norm(i, j, 1)*vxd + norm(i, j, 2)*vyd + norm(i, j, 3)*&
+   &            vzd
    veln = vx*norm(i, j, 1) + vy*norm(i, j, 2) + vz*norm(i, j, 3)
-   velnxd = velnd*norm(i, j, 1) + veln*normd(i, j, 1)
+   velnxd = norm(i, j, 1)*velnd
    velnx = veln*norm(i, j, 1)
-   velnyd = velnd*norm(i, j, 2) + veln*normd(i, j, 2)
+   velnyd = norm(i, j, 2)*velnd
    velny = veln*norm(i, j, 2)
-   velnzd = velnd*norm(i, j, 3) + veln*normd(i, j, 3)
+   velnzd = norm(i, j, 3)*velnd
    velnz = veln*norm(i, j, 3)
    ! Compute the tangential velocity, its magnitude and its
    ! unit vector of the internal cell.
@@ -271,23 +260,23 @@
    ! The minus sign is present, because for this transformation
    ! the normal direction should be inward pointing and norm
    ! is outward pointing.
-   txnxd = -(txd*norm(i, j, 1)+tx*normd(i, j, 1))
+   txnxd = -(norm(i, j, 1)*txd)
    txnx = -(tx*norm(i, j, 1))
-   txnyd = -(txd*norm(i, j, 2)+tx*normd(i, j, 2))
+   txnyd = -(norm(i, j, 2)*txd)
    txny = -(tx*norm(i, j, 2))
-   txnzd = -(txd*norm(i, j, 3)+tx*normd(i, j, 3))
+   txnzd = -(norm(i, j, 3)*txd)
    txnz = -(tx*norm(i, j, 3))
-   tynxd = -(tyd*norm(i, j, 1)+ty*normd(i, j, 1))
+   tynxd = -(norm(i, j, 1)*tyd)
    tynx = -(ty*norm(i, j, 1))
-   tynyd = -(tyd*norm(i, j, 2)+ty*normd(i, j, 2))
+   tynyd = -(norm(i, j, 2)*tyd)
    tyny = -(ty*norm(i, j, 2))
-   tynzd = -(tyd*norm(i, j, 3)+ty*normd(i, j, 3))
+   tynzd = -(norm(i, j, 3)*tyd)
    tynz = -(ty*norm(i, j, 3))
-   tznxd = -(tzd*norm(i, j, 1)+tz*normd(i, j, 1))
+   tznxd = -(norm(i, j, 1)*tzd)
    tznx = -(tz*norm(i, j, 1))
-   tznyd = -(tzd*norm(i, j, 2)+tz*normd(i, j, 2))
+   tznyd = -(norm(i, j, 2)*tzd)
    tzny = -(tz*norm(i, j, 2))
-   tznzd = -(tzd*norm(i, j, 3)+tz*normd(i, j, 3))
+   tznzd = -(norm(i, j, 3)*tzd)
    tznz = -(tz*norm(i, j, 3))
    ! Compute the tn component of the wall shear stress
    ! tensor. Normally this is the only nonzero shear
@@ -339,29 +328,23 @@
    tauyzd = tautnd*(tynz+tzny) + tautn*(tynzd+tznyd)
    tauyz = tautn*(tynz+tzny)
    ! Compute the correction to the viscous flux at the wall.
-   fmxd = tauxxd*ss(i, j, 1) + tauxx*ssd(i, j, 1) + tauxyd*ss(i, &
-   &            j, 2) + tauxy*ssd(i, j, 2) + tauxzd*ss(i, j, 3) + tauxz*ssd(&
-   &            i, j, 3)
+   fmxd = ss(i, j, 1)*tauxxd + ss(i, j, 2)*tauxyd + ss(i, j, 3)*&
+   &            tauxzd
    fmx = tauxx*ss(i, j, 1) + tauxy*ss(i, j, 2) + tauxz*ss(i, j, 3&
    &            )
-   fmyd = tauxyd*ss(i, j, 1) + tauxy*ssd(i, j, 1) + tauyyd*ss(i, &
-   &            j, 2) + tauyy*ssd(i, j, 2) + tauyzd*ss(i, j, 3) + tauyz*ssd(&
-   &            i, j, 3)
+   fmyd = ss(i, j, 1)*tauxyd + ss(i, j, 2)*tauyyd + ss(i, j, 3)*&
+   &            tauyzd
    fmy = tauxy*ss(i, j, 1) + tauyy*ss(i, j, 2) + tauyz*ss(i, j, 3&
    &            )
-   fmzd = tauxzd*ss(i, j, 1) + tauxz*ssd(i, j, 1) + tauyzd*ss(i, &
-   &            j, 2) + tauyz*ssd(i, j, 2) + tauzzd*ss(i, j, 3) + tauzz*ssd(&
-   &            i, j, 3)
+   fmzd = ss(i, j, 1)*tauxzd + ss(i, j, 2)*tauyzd + ss(i, j, 3)*&
+   &            tauzzd
    fmz = tauxz*ss(i, j, 1) + tauyz*ss(i, j, 2) + tauzz*ss(i, j, 3&
    &            )
-   frhoed = (ubard*tauxx+ubar*tauxxd+vbard*tauxy+vbar*tauxyd+&
-   &            wbard*tauxz+wbar*tauxzd)*ss(i, j, 1) + (ubar*tauxx+vbar*&
-   &            tauxy+wbar*tauxz)*ssd(i, j, 1) + (ubard*tauxy+ubar*tauxyd+&
-   &            vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*tauyzd)*ss(i, j, 2)&
-   &            + (ubar*tauxy+vbar*tauyy+wbar*tauyz)*ssd(i, j, 2) + (ubard*&
-   &            tauxz+ubar*tauxzd+vbard*tauyz+vbar*tauyzd+wbard*tauzz+wbar*&
-   &            tauzzd)*ss(i, j, 3) + (ubar*tauxz+vbar*tauyz+wbar*tauzz)*ssd&
-   &            (i, j, 3)
+   frhoed = ss(i, j, 1)*(ubard*tauxx+ubar*tauxxd+vbard*tauxy+vbar&
+   &            *tauxyd+wbard*tauxz+wbar*tauxzd) + ss(i, j, 2)*(ubard*tauxy+&
+   &            ubar*tauxyd+vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*tauyzd)&
+   &            + ss(i, j, 3)*(ubard*tauxz+ubar*tauxzd+vbard*tauyz+vbar*&
+   &            tauyzd+wbard*tauzz+wbar*tauzzd)
    frhoe = (ubar*tauxx+vbar*tauxy+wbar*tauxz)*ss(i, j, 1) + (ubar&
    &            *tauxy+vbar*tauyy+wbar*tauyz)*ss(i, j, 2) + (ubar*tauxz+vbar&
    &            *tauyz+wbar*tauzz)*ss(i, j, 3)

@@ -1,24 +1,16 @@
 #     ******************************************************************
 #     *                                                                *
-#     * File:          MakefileResidualMetric                          *
-#     * Author:        Andre C. Marta, Sandy Mader                     *
+#     * File:          Makefile_tapenade                               *
+#     * Author:        Gaetan Kenway                                   *
 #     * Starting date: 08-02-2006                                      *
-#     * Last modified: 05-08-2008                                      *
+#     * Last modified: 01-10-2013                                      *
 #     *                                                                *
 #     ******************************************************************
 
-#     ==================================================================
-
-#     ******************************************************************
-#     *                                                                *
-#     * Set some environment variables that otherwise would have to be *
-#     * set at the command prompt with "setenv".                       *
-#     *                                                                *
-#     ******************************************************************
-
-SOLVER_DIRSRC = ../
-#SOLVER_DIRSRC = /nfs/tuff/home/mader/hg/SUmbADjoint/src
-#SOLVER_DIRSRC = /home/cody/hg/SUmbADjoint/src
+# Define the required directories
+SUMB_DIR = ../..
+SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
+SRC = ..
 
 #     ******************************************************************
 #     *                                                                *
@@ -29,38 +21,22 @@ SOLVER_DIRSRC = ../
 TAPENADE_PARSERFILESEPARATOR = "/"
 
 # Dependent output variables (separator: white space, default: all)
-
-TAPENADE_OUTVARS = "flowdoms%dw"
+TAPENADE_OUTVARS = "flowdoms%dw flowdoms%w"
 
 # Independent input variables (separator: white space, default: all)
-TAPENADE_VARS = "flowdoms%w flowdoms%x"
+TAPENADE_VARS = "flowdoms%w" # flowdoms%x"
 
 # Name of the top routine
-
 TAPENADE_HEADROUTINE = "block_res"
 
 # Differentiation mode
-
 TAPENADE_MODE = -forward
 
 # Output directory
-
-TAPENADE_OUTDIR = $(SOLVER_DIRSRC)/forwardAdjoint/residualTapenade
+TAPENADE_OUTDIR = $(SRC)/forwardAdjoint/residualTapenade
 
 # Integer, double and real precision (bytes)
 TAPENADE_PRECISION = -i4 -dr8 -r8
-
-#     ******************************************************************
-#     *                                                                *
-#     * The subdirectories where the sources are located.              *
-#     *                                                                *
-#     ******************************************************************
-
-TAPENADE_DIRSRC   = $(SOLVER_DIRSRC)/solver/
-TAPENADE_DIRMOD   = $(SOLVER_DIRSRC)/modules
-TAPENADE_DIRUTILS = $(SOLVER_DIRSRC)/utils
-
-TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
 
 #     ******************************************************************
 #     *                                                                *
@@ -68,69 +44,69 @@ TAPENADE_CLEAN_DIRS = $(TAPENADE_OUTDIR)
 #     *                                                                *
 #     ******************************************************************
 
-TAPENADE_SRC_SOLVER =  $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/block_res.f90\
-		       $(TAPENADE_DIRMOD)/blockPointers.f90 \
-		       $(TAPENADE_DIRMOD)/flowVarRefState.f90 \
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/block.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/inputParam.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/constants.f90 \
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/precision.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/iteration.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/section.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/communication.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/BCTypes.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/paramTurb.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/monitor.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/refModules/cgnsGrid.f90 \
-		       $(TAPENADE_DIRUTILS)/dummy_dim.f90\
-                       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/xhalo_block.f90\
-                       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/metric_block.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/gridVelocitiesFineLevel_block.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/normalVelocities_block.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/timeStep_block.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/terminate.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/residual_block.f90\
-		       $(SOLVER_DIRSRC)/solver/inviscidCentralFlux.f90\
-		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxCusp.f90\
-		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxCuspCoarse.f90\
-		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxMatrix.f90\
-		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxMatrixCoarse.f90\
-		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxScalar.f90\
-		       $(SOLVER_DIRSRC)/solver/inviscidDissFluxScalarCoarse.f90\
-		       $(SOLVER_DIRSRC)/solver/inviscidUpwindFlux.f90\
-		       $(SOLVER_DIRSRC)/solver/computeLamViscosity.f90\
-		       $(SOLVER_DIRSRC)/solver/setCoefTimeIntegrator.f90\
-		       $(SOLVER_DIRSRC)/solver/derivativeRotMatrixRigid.f90\
-		       $(SOLVER_DIRSRC)/adjoint/residualInput/getDirVector.f90\
-		       $(SOLVER_DIRSRC)/adjoint/residualInput/getDirAngle.f90\
-		       $(SOLVER_DIRSRC)/adjoint/residualInput/vectorRotation.f90\
-		       $(SOLVER_DIRSRC)/adjoint/residualInput/adjustInflowAngleAdj.f90\
-		       $(SOLVER_DIRSRC)/solver/bcEulerWall.f90\
-		       $(SOLVER_DIRSRC)/solver/bcSymmPolar.f90\
-		       $(SOLVER_DIRSRC)/solver/bcFarfield.f90\
-		       $(SOLVER_DIRSRC)/solver/extrapolate2ndHalo.f90\
-		       $(SOLVER_DIRSRC)/solver/bcSymm.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/applyAllBC_block.f90\
-		       $(TAPENADE_DIRUTILS)/setBCPointers.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/initres_block.f90\
-		       $(SOLVER_DIRSRC)/solver/viscousFlux.f90\
-		       $(SOLVER_DIRSRC)/solver/utauWF.f90\
-		       $(TAPENADE_DIRUTILS)/computeEtot.f90\
-		       $(SOLVER_DIRSRC)/forwardAdjoint/residualInput/computeUtau_block.f90\
-		       $(TAPENADE_DIRMOD)/CpCurveFits.f90\
-		       $(SOLVER_DIRSRC)/turbulence/curveFit.f90\
-		       $(SOLVER_DIRSRC)/solver/bcNSWallAdiabatic.f90\
-		       $(SOLVER_DIRSRC)/solver/bcNSWallIsothermal.f90\
-		       $(SOLVER_DIRSRC)/utils/rotMatrixRigidBody.f90\
-		       $(SOLVER_DIRSRC)/utils/TSalpha.f90\
-		       $(SOLVER_DIRSRC)/utils/TSalphadot.f90\
-		       $(SOLVER_DIRSRC)/utils/TSBeta.f90\
-		       $(SOLVER_DIRSRC)/utils/TSMach.f90\
-		       $(SOLVER_DIRSRC)/utils/rigidRotAngle.f90\
-		       $(SOLVER_DIRSRC)/utils/derivativeRigidRotAngle.f90\
+ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.f90\
+		$(SRC)/forwardAdjoint/residualInput/computeUtau_block.f90\
+		$(SRC)/forwardAdjoint/residualInput/xhalo_block.f90\
+		$(SRC)/forwardAdjoint/residualInput/metric_block.f90\
+		$(SRC)/forwardAdjoint/residualInput/terminate.f90\
+		$(SRC)/modules/monitor.f90\
+		$(SRC)/modules/block.F90\
+		$(SRC)/modules/inputParam.F90\
+		$(SRC)/modules/constants.F90 \
+		$(SRC)/modules/precision.F90\
+		$(SRC)/modules/iteration.f90\
+		$(SRC)/modules/section.f90\
+		$(SRC)/modules/communication.f90\
+		$(SRC)/modules/BCTypes.f90\
+		$(SRC)/modules/paramTurb.f90\
+		$(SRC)/modules/cgnsGrid.f90 \
+		$(SRC)/modules/CpCurveFits.f90\
+		$(SRC)/modules/blockPointers.f90 \
+		$(SRC)/modules/flowVarRefState.f90 \
+		$(SRC)/solver/inviscidCentralFlux.F90\
+		$(SRC)/solver/inviscidDissFluxCusp.f90\
+		$(SRC)/solver/inviscidDissFluxCuspCoarse.f90\
+		$(SRC)/solver/inviscidDissFluxMatrix.F90\
+		$(SRC)/solver/inviscidDissFluxMatrixCoarse.f90\
+		$(SRC)/solver/inviscidDissFluxScalar.F90\
+		$(SRC)/solver/inviscidDissFluxScalarCoarse.f90\
+		$(SRC)/solver/inviscidUpwindFlux.F90\
+		$(SRC)/solver/applyAllBC.F90\
+		$(SRC)/solver/initres.f90\
+		$(SRC)/solver/timeStep.f90\
+		$(SRC)/solver/residual.F90\
+		$(SRC)/solver/computeLamViscosity.f90\
+		$(SRC)/solver/setCoefTimeIntegrator.f90\
+		$(SRC)/solver/derivativeRotMatrixRigid.f90\
+		$(SRC)/solver/adjustInflowAngle.f90\
+		$(SRC)/solver/getDirVector.f90\
+		$(SRC)/solver/getDirAngle.f90\
+		$(SRC)/solver/vectorRotation.f90\
+		$(SRC)/solver/bcEulerWall.f90\
+		$(SRC)/solver/bcSymmPolar.f90\
+		$(SRC)/solver/bcFarfield.f90\
+		$(SRC)/solver/extrapolate2ndHalo.f90\
+		$(SRC)/solver/bcSymm.f90\
+		$(SRC)/solver/viscousFlux.f90\
+		$(SRC)/solver/utauWF.f90\
+		$(SRC)/solver/bcNSWallAdiabatic.f90\
+		$(SRC)/solver/bcNSWallIsothermal.f90\
+		$(SRC)/turbulence/curveFit.f90\
+		$(SRC)/turbulence/turbBCNSWall.f90\
+		$(SRC)/turbulence/bcTurbWall.f90\
+		$(SRC)/utils/rotMatrixRigidBody.f90\
+		$(SRC)/utils/TSalpha.f90\
+		$(SRC)/utils/TSalphadot.f90\
+		$(SRC)/utils/TSBeta.f90\
+		$(SRC)/utils/TSMach.f90\
+		$(SRC)/utils/rigidRotAngle.f90\
+		$(SRC)/utils/derivativeRigidRotAngle.f90\
+		$(SRC)/utils/dummy_dim.f90\
+		$(SRC)/utils/setBCPointers.f90\
+		$(SRC)/utils/computeEtot.f90\
+		$(SRC)/utils/setPointers.f90\
 
-TAPENADE_SRC_ALL = $(TAPENADE_SRC_SOLVER)
-
+IFILES := $(ALL_FILES:%=%.f90)
 #     ******************************************************************
 #     *                                                                *
 #     * General targets.                                               *
@@ -140,15 +116,37 @@ TAPENADE_SRC_ALL = $(TAPENADE_SRC_SOLVER)
 default:
 	@echo "Deleting tapenade html"
 	@rm -fr $(TAPENADE_OUTDIR)/tapenadehtml
-	@echo "TAPENADE - parsing and generating differentiated code"
-	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator $(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars $(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE) -msglevel 30 -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(TAPENADE_SRC_ALL)
 
+# Run preprocessor on all input files
+	make -f Makefile_tapenade preprocess
+
+# The following is the single command to run:
+	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator \
+	$(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars \
+	$(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE)\
+	 -msglevel 30 -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(IFILES)
+
+# Remove preprocessor files
+	make -f Makefile_tapenade cleanpreprocess
+
+preprocess:
+	@echo "Preprocessing all input files..."
+	@for file in $(ALL_FILES); do \
+		echo Preprocessing $$file; \
+		cpp -DUSE_TAPENADE -traditional -P $(FF90_ALL_FLAGS) $$file $$file.f90; \
+	done
+
+cleanpreprocess:
+	@echo "Cleaning up preprocessed files..."
+	@for file in $(ALL_FILES); do \
+		rm $$file.f90; \
+	done
 
 all:	 default
 
 clean:
 	@echo " Making clean ... "
-	@for subdir in $(TAPENADE_CLEAN_DIRS) ; \
+	@for subdir in $(TAPENADE_OUT_DIRS) ; \
 		do \
 			echo; \
 			echo "making $@ in $$subdir"; \

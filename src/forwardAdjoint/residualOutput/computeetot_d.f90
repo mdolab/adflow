@@ -3,7 +3,7 @@
    !
    !  Differentiation of computeetot in forward (tangent) mode:
    !   variations   of useful results: *gamma *w
-   !   with respect to varying inputs: gammaconstant *p *gamma *w
+   !   with respect to varying inputs: *p *gamma *w gammaconstant
    !   Plus diff mem management of: p:in gamma:in w:in
    !
    !      ******************************************************************
@@ -72,7 +72,6 @@
    END DO
    END DO
    END DO
-   !write(14,40),i,j,k,w(i,j,k,irhoe)
    ! Second step. Correct the energy in case a turbulent kinetic
    ! energy is present.
    IF (correctfork) THEN
@@ -90,7 +89,6 @@
    END DO
    END IF
    CASE (cptempcurvefits) 
-   !write(14,*),i,j,k,w(i,j,k,irhoE)
    !        ================================================================
    ! Cp as function of the temperature is given via curve fits.
    ! Store a scale factor to compute the nonDimensional

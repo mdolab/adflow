@@ -58,7 +58,7 @@
        ! Check if rFil == 0. If so, the dissipative flux needs not to
        ! be computed.
 
-       if(rFil == zero) return
+       if(abs(rFil) < thresholdReal) return
 
        ! Determine whether or not the total energy must be corrected
        ! for the presence of the turbulent kinetic energy.

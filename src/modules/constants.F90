@@ -39,9 +39,9 @@
 
        ! Constants to define the porosity values
 
-       integer(kind=porType), parameter :: noFlux     = -1_porType
-       integer(kind=porType), parameter :: boundFlux  =  0_porType
-       integer(kind=porType), parameter :: normalFlux =  1_porType
+       integer(kind=porType), parameter :: noFlux     = -1
+       integer(kind=porType), parameter :: boundFlux  =  0
+       integer(kind=porType), parameter :: normalFlux =  1
 
        ! Indices in the array of independent variables
 
@@ -106,8 +106,8 @@
 #endif
 
        ! Definition of the tab and carriage return character.
-
+#ifndef USE_TAPENADE
        character(len=1), parameter :: tabChar = achar(9)
        character(len=1), parameter :: retChar = achar(13)
-
+#endif
        end module constants

@@ -3,8 +3,7 @@
    !
    !  Differentiation of bcfarfield in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w *rlv
-   !   with respect to varying inputs: gammaconstant *p *gamma *w
-   !                *rlv *(*bcdata.norm)
+   !   with respect to varying inputs: *p *gamma *w *rlv gammaconstant
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !                bcdata:in *bcdata.norm:in *bcdata.rface:in (global)cphint:in-out
    !
@@ -44,11 +43,9 @@
    !
    INTEGER(kind=inttype) :: nn, i, j, l
    REAL(kind=realtype) :: nnx, nny, nnz
-   REAL(kind=realtype) :: nnxd, nnyd, nnzd
    REAL(kind=realtype) :: gm1, ovgm1, ac1, ac2
    REAL(kind=realtype) :: ac1d, ac2d
    REAL(kind=realtype) :: r0, u0, v0, w0, qn0, vn0, c0, s0
-   REAL(kind=realtype) :: qn0d
    REAL(kind=realtype) :: re, ue, ve, we, qne, ce
    REAL(kind=realtype) :: red, ued, ved, wed, qned, ced
    REAL(kind=realtype) :: qnf, cf, uf, vf, wf, sf, cc, qq
@@ -138,8 +135,7 @@
    ! that.
    !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
    CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   &                     pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, &
-   &                     0_intType)
+   &                     pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, 0)
    ! Set the additional pointer for gamma2.
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
@@ -167,11 +163,8 @@
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    ! Store the three components of the unit normal a
    ! bit easier.
-   nnxd = bcdatad(nn)%norm(i, j, 1)
    nnx = bcdata(nn)%norm(i, j, 1)
-   nnyd = bcdatad(nn)%norm(i, j, 2)
    nny = bcdata(nn)%norm(i, j, 2)
-   nnzd = bcdatad(nn)%norm(i, j, 3)
    nnz = bcdata(nn)%norm(i, j, 3)
    !!$       !print out pAdj
    !!$       istart2 = -1!2
@@ -209,7 +202,6 @@
    !!$          end do
    ! Compute the normal velocity of the free stream and
    ! substract the normal velocity of the mesh.
-   qn0d = u0*nnxd + v0*nnyd + w0*nnzd
    qn0 = u0*nnx + v0*nny + w0*nnz
    vn0 = qn0 - bcdata(nn)%rface(i, j)
    ! Compute the three velocity components, the normal
@@ -223,8 +215,7 @@
    ve = ww2(i, j, ivy)
    wed = ww2d(i, j, ivz)
    we = ww2(i, j, ivz)
-   qned = ued*nnx + ue*nnxd + ved*nny + ve*nnyd + wed*nnz + we*&
-   &            nnzd
+   qned = nnx*ued + nny*ved + nnz*wed
    qne = ue*nnx + ve*nny + we*nnz
    arg1d = (gamma2d(i, j)*re+gamma2(i, j)*red)*pp2(i, j) + gamma2&
    &            (i, j)*re*pp2d(i, j)
@@ -246,8 +237,8 @@
    ac1 = qne + two*ovgm1*ce
    ELSE
    ! Supersonic inflow.
-   ac1d = qn0d
    ac1 = qn0 + two*ovgm1*c0
+   ac1d = 0.0
    END IF
    IF (vn0 .GT. c0) THEN
    ! Supersonic outflow.
@@ -255,8 +246,8 @@
    ac2 = qne - two*ovgm1*ce
    ELSE
    ! Inflow or subsonic outflow.
-   ac2d = qn0d
    ac2 = qn0 - two*ovgm1*c0
+   ac2d = 0.0
    END IF
    qnfd = half*(ac1d+ac2d)
    qnf = half*(ac1+ac2)
@@ -264,11 +255,11 @@
    cf = fourth*(ac1-ac2)*gm1
    IF (vn0 .GT. zero) THEN
    ! Outflow.
-   ufd = ued + (qnfd-qned)*nnx + (qnf-qne)*nnxd
+   ufd = ued + nnx*(qnfd-qned)
    uf = ue + (qnf-qne)*nnx
-   vfd = ved + (qnfd-qned)*nny + (qnf-qne)*nnyd
+   vfd = ved + nny*(qnfd-qned)
    vf = ve + (qnf-qne)*nny
-   wfd = wed + (qnfd-qned)*nnz + (qnf-qne)*nnzd
+   wfd = wed + nnz*(qnfd-qned)
    wf = we + (qnf-qne)*nnz
    !Intermediate rho variable added to fix AD bug,ww2
    ! was not getting picked up here. Tapenade 3.6 Does
@@ -300,11 +291,11 @@
    END DO
    ELSE
    ! Inflow
-   ufd = (qnfd-qn0d)*nnx + (qnf-qn0)*nnxd
+   ufd = nnx*qnfd
    uf = u0 + (qnf-qn0)*nnx
-   vfd = (qnfd-qn0d)*nny + (qnf-qn0)*nnyd
+   vfd = nny*qnfd
    vf = v0 + (qnf-qn0)*nny
-   wfd = (qnfd-qn0d)*nnz + (qnf-qn0)*nnzd
+   wfd = nnz*qnfd
    wf = w0 + (qnf-qn0)*nnz
    sf = s0
    DO l=nt1mg,nt2mg

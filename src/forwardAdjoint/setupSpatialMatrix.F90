@@ -38,7 +38,7 @@ subroutine setupSpatialMatrix(useAD)
 
   ! MPI Reduce time
   call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-       mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
+       mpi_max, 0, SUMB_COMM_WORLD, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
   if(myid ==0) &

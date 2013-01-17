@@ -85,6 +85,7 @@
    REAL(kind=realtype) :: y2d
    REAL(kind=realtype) :: min6d
    REAL(kind=realtype) :: y5d
+   REAL(kind=realtype) :: abs0
    INTRINSIC MIN
    REAL(kind=realtype) :: y6
    REAL(kind=realtype) :: y5
@@ -95,6 +96,11 @@
    REAL(kind=realtype) :: x3d
    REAL(kind=realtype) :: y1
    REAL(kind=realtype) :: y1d
+   IF (rfil .GE. 0.) THEN
+   abs0 = rfil
+   ELSE
+   abs0 = -rfil
+   END IF
    !
    !      ******************************************************************
    !      *                                                                *
@@ -104,7 +110,7 @@
    !
    ! Check if rFil == 0. If so, the dissipative flux needs not to
    ! be computed.
-   IF (rfil .EQ. zero) THEN
+   IF (abs0 .LT. thresholdreal) THEN
    fwd = 0.0
    RETURN
    ELSE
@@ -595,10 +601,6 @@
    fw(i+1, j, k, irho) = fw(i+1, j, k, irho) + fs
    fwd(i, j, k, irho) = fwd(i, j, k, irho) - fsd
    fw(i, j, k, irho) = fw(i, j, k, irho) - fs
-   ind = indfamilyi(i, j, k)
-   massflowfamilydissd(ind, spectralsol) = 0.0
-   massflowfamilydiss(ind, spectralsol) = massflowfamilydiss(ind&
-   &            , spectralsol) - factfamilyi(i, j, k)*fs
    ! X-momentum.
    ddwd = wd(i+1, j, k, ivx) - wd(i, j, k, ivx)
    ddw = w(i+1, j, k, ivx) - w(i, j, k, ivx)
@@ -750,10 +752,6 @@
    fw(i, j+1, k, irho) = fw(i, j+1, k, irho) + fs
    fwd(i, j, k, irho) = fwd(i, j, k, irho) - fsd
    fw(i, j, k, irho) = fw(i, j, k, irho) - fs
-   ind = indfamilyj(i, j, k)
-   massflowfamilydissd(ind, spectralsol) = 0.0
-   massflowfamilydiss(ind, spectralsol) = massflowfamilydiss(ind&
-   &            , spectralsol) - factfamilyj(i, j, k)*fs
    ! X-momentum.
    ddwd = wd(i, j+1, k, ivx) - wd(i, j, k, ivx)
    ddw = w(i, j+1, k, ivx) - w(i, j, k, ivx)
@@ -905,10 +903,6 @@
    fw(i, j, k+1, irho) = fw(i, j, k+1, irho) + fs
    fwd(i, j, k, irho) = fwd(i, j, k, irho) - fsd
    fw(i, j, k, irho) = fw(i, j, k, irho) - fs
-   ind = indfamilyk(i, j, k)
-   massflowfamilydissd(ind, spectralsol) = 0.0
-   massflowfamilydiss(ind, spectralsol) = massflowfamilydiss(ind&
-   &            , spectralsol) - factfamilyk(i, j, k)*fs
    ! X-momentum.
    ddwd = wd(i, j, k+1, ivx) - wd(i, j, k, ivx)
    ddw = w(i, j, k+1, ivx) - w(i, j, k, ivx)

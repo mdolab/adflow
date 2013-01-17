@@ -57,7 +57,6 @@
        standAloneMode  = .true.
        deforming_Grid  = .false.
        SUmb_comm_world = mpi_comm_world
-       SUmb_petsc_comm_world = mpi_comm_world
        SUmb_comm_self = mpi_comm_self
 
        

@@ -28,7 +28,7 @@ module NKsolverVars
   ! PETSc Variables
 
   ! PETSc SNES: 
-  ! snes: Non-linear solver solution context for NK problem. Currently Unsued.
+  ! snes: Non-linear solver solution context for NK problem. Currently All Unsued.
 
   SNES  snes, psnes, outer_snes
 

@@ -427,7 +427,7 @@ end subroutine setupStandardKSP
 
 
 !   ! Need to setup the corase direct solve
-!   call KSPCreate(SUMB_PETSC_COMM_WORLD, coarseKSP, ierr)
+!   call KSPCreate(SUMB_COMM_WORLD, coarseKSP, ierr)
 !   call EChk(ierr, __FILE__, __LINE__)
 
 ! !   ! Convert coarse grid to aij

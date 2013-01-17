@@ -31,9 +31,6 @@
       implicit none
 !
 !     Local variables.
-!
-      ! norm - Norm of error
-
       real(kind=realType)   :: norm
       real(kind=realType), dimension(2) :: time
       real(kind=realType)               :: timeAdjLocal, timeAdj,l2abs,curRes
@@ -52,9 +49,10 @@
            write(*,10) "Solving ADjoint Transpose with PETSc..."
 
       ! Allocate resHist of not already done so
-      if (.not. allocated(adjResHist))then
-         allocate(adjResHist(adjMaxIter))
-      endif
+      if (allocated(adjResHist)) then
+         deallocate(adjResHist) 
+      end if
+      allocate(adjResHist(adjMaxIter))
 
       call cpu_time(time(1))
 
@@ -74,11 +72,9 @@
 !     * preconditioned GMRES.                                          *
 !     *                                                                *
 !     ******************************************************************
-
-      adjResHist = 0.0_realType
-
+      adjResHist = zero
       call KSPSetResidualHistory(adjointKSP, adjResHist, adjMaxIter, &
-                                 PETSC_FALSE, PETScIerr)
+           PETSC_FALSE, PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
 
       ! If the user is doing a MDO problem there may be an
@@ -89,7 +85,6 @@
       
       call VecAYPX(adjointRHS,-one,dJdw,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
-
 
       ! Get Current Residual
       call MatMult(dRdWT,psi,adjointRes,PETScIerr)
@@ -117,6 +112,7 @@
       call EChk(PETScIerr,__FILE__,__LINE__)
 
       ! Solve the adjoint system of equations [dR/dW]T psi = adjointRHS
+
       call KSPSolve(adjointKSP,adjointRHS,psi,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
 
@@ -128,7 +124,7 @@
       ! with operation mpi_max.
 
       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-                      mpi_max, 0, SUMB_PETSC_COMM_WORLD, PETScIerr)
+                      mpi_max, 0, SUMB_COMM_WORLD, PETScIerr)
 !
 !     ******************************************************************
 !     *                                                                *
@@ -181,8 +177,6 @@
       else
          adjointFailed = .True.
       end if
-
-
    
       ! Output formats.
 

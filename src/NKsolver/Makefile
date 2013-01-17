@@ -45,7 +45,6 @@ FILES_TO_COMPLEXIFY = applyPC.F90\
 	       getFreeStreamResidual.F90\
 	       NKBenchmark.F90\
 	       NKUtilities.F90\
-	       resetKSP.F90\
 	       setupNKSolver.F90\
 
 FILES_TO_COPY = NKSolver.F90

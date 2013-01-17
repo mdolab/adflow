@@ -3,8 +3,7 @@
    !
    !  Differentiation of inviscidupwindflux in forward (tangent) mode:
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: gammaconstant *p *gamma *w
-   !                *si *sj *sk
+   !   with respect to varying inputs: *p *gamma *w gammaconstant
    !   Plus diff mem management of: p:in gamma:in w:in si:in sj:in
    !                sk:in fw:in rotmatrixi:in rotmatrixj:in rotmatrixk:in
    !
@@ -53,7 +52,7 @@
    INTEGER(kind=inttype) :: i, j, k, ind
    INTEGER(kind=inttype) :: limused, riemannused
    REAL(kind=realtype) :: sx, sy, sz, omk, opk, sfil, gammaface
-   REAL(kind=realtype) :: sxd, syd, szd, gammafaced
+   REAL(kind=realtype) :: gammafaced
    REAL(kind=realtype) :: factminmod, sface
    REAL(kind=realtype), DIMENSION(nw) :: left, right
    REAL(kind=realtype), DIMENSION(nw) :: leftd, rightd
@@ -63,8 +62,15 @@
    REAL(kind=realtype), DIMENSION(nwf) :: fluxd
    LOGICAL :: firstorderk, correctfork, rotationalperiodic
    INTRINSIC MAX
+   INTRINSIC ABS
    INTRINSIC ASSOCIATED
+   REAL(kind=realtype) :: abs0
    REAL(kind=realtype) :: max1
+   IF (rfil .GE. 0.) THEN
+   abs0 = rfil
+   ELSE
+   abs0 = -rfil
+   END IF
    !
    !      ******************************************************************
    !      *                                                                *
@@ -74,7 +80,7 @@
    !
    ! Check if rFil == 0. If so, the dissipative flux needs not to
    ! be computed.
-   IF (rfil .EQ. zero) THEN
+   IF (abs0 .LT. thresholdreal) THEN
    fwd = 0.0
    RETURN
    ELSE
@@ -184,11 +190,8 @@
    DO i=1,il
    ! Store the normal vector, the porosity and the
    ! mesh velocity if present.
-   sxd = sid(i, j, k, 1)
    sx = si(i, j, k, 1)
-   syd = sid(i, j, k, 2)
    sy = si(i, j, k, 2)
-   szd = sid(i, j, k, 3)
    sz = si(i, j, k, 3)
    por = pori(i, j, k)
    IF (addgridvelocities) sface = sfacei(i, j, k)
@@ -248,26 +251,19 @@
    fw(i+1, j, k, imz) = fw(i+1, j, k, imz) - flux(imz)
    fwd(i+1, j, k, irhoe) = fwd(i+1, j, k, irhoe) - fluxd(irhoe)
    fw(i+1, j, k, irhoe) = fw(i+1, j, k, irhoe) - flux(irhoe)
+   END DO
+   END DO
+   END DO
    ! Store the density flux in the mass flow of the
    ! appropriate sliding mesh interface.
-   ind = indfamilyi(i, j, k)
-   massflowfamilydissd(ind, spectralsol) = 0.0
-   massflowfamilydiss(ind, spectralsol) = massflowfamilydiss(&
-   &              ind, spectralsol) + factfamilyi(i, j, k)*flux(irho)
-   END DO
-   END DO
-   END DO
    ! Fluxes in j-direction.
    DO k=2,kl
    DO j=1,jl
    DO i=2,il
    ! Store the normal vector, the porosity and the
    ! mesh velocity if present.
-   sxd = sjd(i, j, k, 1)
    sx = sj(i, j, k, 1)
-   syd = sjd(i, j, k, 2)
    sy = sj(i, j, k, 2)
-   szd = sjd(i, j, k, 3)
    sz = sj(i, j, k, 3)
    por = porj(i, j, k)
    IF (addgridvelocities) sface = sfacej(i, j, k)
@@ -327,26 +323,19 @@
    fw(i, j+1, k, imz) = fw(i, j+1, k, imz) - flux(imz)
    fwd(i, j+1, k, irhoe) = fwd(i, j+1, k, irhoe) - fluxd(irhoe)
    fw(i, j+1, k, irhoe) = fw(i, j+1, k, irhoe) - flux(irhoe)
+   END DO
+   END DO
+   END DO
    ! Store the density flux in the mass flow of the
    ! appropriate sliding mesh interface.
-   ind = indfamilyj(i, j, k)
-   massflowfamilydissd(ind, spectralsol) = 0.0
-   massflowfamilydiss(ind, spectralsol) = massflowfamilydiss(&
-   &              ind, spectralsol) + factfamilyj(i, j, k)*flux(irho)
-   END DO
-   END DO
-   END DO
    ! Fluxes in k-direction.
    DO k=1,kl
    DO j=2,jl
    DO i=2,il
    ! Store the normal vector, the porosity and the
    ! mesh velocity if present.
-   sxd = skd(i, j, k, 1)
    sx = sk(i, j, k, 1)
-   syd = skd(i, j, k, 2)
    sy = sk(i, j, k, 2)
-   szd = skd(i, j, k, 3)
    sz = sk(i, j, k, 3)
    por = pork(i, j, k)
    IF (addgridvelocities) sface = sfacek(i, j, k)
@@ -406,12 +395,6 @@
    fw(i, j, k+1, imz) = fw(i, j, k+1, imz) - flux(imz)
    fwd(i, j, k+1, irhoe) = fwd(i, j, k+1, irhoe) - fluxd(irhoe)
    fw(i, j, k+1, irhoe) = fw(i, j, k+1, irhoe) - flux(irhoe)
-   ! Store the density flux in the mass flow of the
-   ! appropriate sliding mesh interface.
-   ind = indfamilyk(i, j, k)
-   massflowfamilydissd(ind, spectralsol) = 0.0
-   massflowfamilydiss(ind, spectralsol) = massflowfamilydiss(&
-   &              ind, spectralsol) + factfamilyk(i, j, k)*flux(irho)
    END DO
    END DO
    END DO
@@ -423,6 +406,8 @@
    du1d = 0.0
    du2d = 0.0
    du3d = 0.0
+   ! Store the density flux in the mass flow of the
+   ! appropriate sliding mesh interface.
    !      ==================================================================
    !      ==================================================================
    !
@@ -516,11 +501,8 @@
    END IF
    ! Store the normal vector, the porosity and the
    ! mesh velocity if present.
-   sxd = sid(i, j, k, 1)
    sx = si(i, j, k, 1)
-   syd = sid(i, j, k, 2)
    sy = si(i, j, k, 2)
-   szd = sid(i, j, k, 3)
    sz = si(i, j, k, 3)
    por = pori(i, j, k)
    IF (addgridvelocities) sface = sfacei(i, j, k)
@@ -551,15 +533,11 @@
    fw(i+1, j, k, imz) = fw(i+1, j, k, imz) - flux(imz)
    fwd(i+1, j, k, irhoe) = fwd(i+1, j, k, irhoe) - fluxd(irhoe)
    fw(i+1, j, k, irhoe) = fw(i+1, j, k, irhoe) - flux(irhoe)
+   END DO
+   END DO
+   END DO
    ! Store the density flux in the mass flow of the
    ! appropriate sliding mesh interface.
-   ind = indfamilyi(i, j, k)
-   massflowfamilydissd(ind, spectralsol) = 0.0
-   massflowfamilydiss(ind, spectralsol) = massflowfamilydiss(&
-   &              ind, spectralsol) + factfamilyi(i, j, k)*flux(irho)
-   END DO
-   END DO
-   END DO
    ! Fluxes in the j-direction.
    DO k=2,kl
    DO j=1,jl
@@ -639,11 +617,8 @@
    END IF
    ! Store the normal vector, the porosity and the
    ! mesh velocity if present.
-   sxd = sjd(i, j, k, 1)
    sx = sj(i, j, k, 1)
-   syd = sjd(i, j, k, 2)
    sy = sj(i, j, k, 2)
-   szd = sjd(i, j, k, 3)
    sz = sj(i, j, k, 3)
    por = porj(i, j, k)
    IF (addgridvelocities) sface = sfacej(i, j, k)
@@ -674,15 +649,11 @@
    fw(i, j+1, k, imz) = fw(i, j+1, k, imz) - flux(imz)
    fwd(i, j+1, k, irhoe) = fwd(i, j+1, k, irhoe) - fluxd(irhoe)
    fw(i, j+1, k, irhoe) = fw(i, j+1, k, irhoe) - flux(irhoe)
+   END DO
+   END DO
+   END DO
    ! Store the density flux in the mass flow of the
    ! appropriate sliding mesh interface.
-   ind = indfamilyj(i, j, k)
-   massflowfamilydissd(ind, spectralsol) = 0.0
-   massflowfamilydiss(ind, spectralsol) = massflowfamilydiss(&
-   &              ind, spectralsol) + factfamilyj(i, j, k)*flux(irho)
-   END DO
-   END DO
-   END DO
    ! Fluxes in the k-direction.
    DO k=1,kl
    DO j=2,jl
@@ -762,11 +733,8 @@
    END IF
    ! Store the normal vector, the porosity and the
    ! mesh velocity if present.
-   sxd = skd(i, j, k, 1)
    sx = sk(i, j, k, 1)
-   syd = skd(i, j, k, 2)
    sy = sk(i, j, k, 2)
-   szd = skd(i, j, k, 3)
    sz = sk(i, j, k, 3)
    por = pork(i, j, k)
    IF (addgridvelocities) sface = sfacek(i, j, k)
@@ -797,12 +765,6 @@
    fw(i, j, k+1, imz) = fw(i, j, k+1, imz) - flux(imz)
    fwd(i, j, k+1, irhoe) = fwd(i, j, k+1, irhoe) - fluxd(irhoe)
    fw(i, j, k+1, irhoe) = fw(i, j, k+1, irhoe) - flux(irhoe)
-   ! Store the density flux in the mass flow of the
-   ! appropriate sliding mesh interface.
-   ind = indfamilyk(i, j, k)
-   massflowfamilydissd(ind, spectralsol) = 0.0
-   massflowfamilydiss(ind, spectralsol) = massflowfamilydiss(&
-   &              ind, spectralsol) + factfamilyk(i, j, k)*flux(irho)
    END DO
    END DO
    END DO
@@ -813,6 +775,8 @@
    !   variations   of useful results: left right du1 du2 du3
    !   with respect to varying inputs: left right du1 du2 du3
    !   Plus diff mem management of: rotmatrix:in
+   ! Store the density flux in the mass flow of the
+   ! appropriate sliding mesh interface.
    !      ==================================================================
    SUBROUTINE LEFTRIGHTSTATE_D(du1, du1d, du2, du2d, du3, du3d, rotmatrix&
    &    , rotmatrixd, left, leftd, right, rightd)
@@ -976,7 +940,7 @@
    END IF
    ! Compute the limiter argument rl1, rl2, rr1 and rr2.
    ! Note the cut off to 0.0.
-   tmpd = -(one*max2d*SIGN(1.0, max2*du2(l))/SIGN(max2, du2(l))**2&
+   tmpd = -(one*max2d*SIGN(1.d0, max2*du2(l))/SIGN(max2, du2(l))**2&
    &          )
    tmp = one/SIGN(max2, du2(l))
    IF (du1(l) .GE. 0.) THEN
@@ -993,7 +957,7 @@
    max4d = x3d
    max4 = x3
    END IF
-   y1d = (du2d(l)*SIGN(max4, du1(l))-du2(l)*max4d*SIGN(1.0, max4*&
+   y1d = (du2d(l)*SIGN(max4, du1(l))-du2(l)*max4d*SIGN(1.d0, max4*&
    &          du1(l)))/SIGN(max4, du1(l))**2
    y1 = du2(l)/SIGN(max4, du1(l))
    IF (zero .LT. y1) THEN
@@ -1031,7 +995,7 @@
    max5d = x4d
    max5 = x4
    END IF
-   y2d = (du2d(l)*SIGN(max5, du3(l))-du2(l)*max5d*SIGN(1.0, max5*&
+   y2d = (du2d(l)*SIGN(max5, du3(l))-du2(l)*max5d*SIGN(1.d0, max5*&
    &          du3(l)))/SIGN(max5, du3(l))**2
    y2 = du2(l)/SIGN(max5, du3(l))
    IF (zero .LT. y2) THEN
@@ -1084,7 +1048,7 @@
    END IF
    ! Compute the limiter argument rl1, rl2, rr1 and rr2.
    ! Note the cut off to 0.0.
-   tmpd = -(one*max3d*SIGN(1.0, max3*du2(l))/SIGN(max3, du2(l))**2&
+   tmpd = -(one*max3d*SIGN(1.d0, max3*du2(l))/SIGN(max3, du2(l))**2&
    &          )
    tmp = one/SIGN(max3, du2(l))
    IF (du1(l) .GE. 0.) THEN
@@ -1101,7 +1065,7 @@
    max6d = x5d
    max6 = x5
    END IF
-   y3d = (du2d(l)*SIGN(max6, du1(l))-du2(l)*max6d*SIGN(1.0, max6*&
+   y3d = (du2d(l)*SIGN(max6, du1(l))-du2(l)*max6d*SIGN(1.d0, max6*&
    &          du1(l)))/SIGN(max6, du1(l))**2
    y3 = du2(l)/SIGN(max6, du1(l))
    IF (zero .LT. y3) THEN
@@ -1139,7 +1103,7 @@
    max7d = x6d
    max7 = x6
    END IF
-   y4d = (du2d(l)*SIGN(max7, du3(l))-du2(l)*max7d*SIGN(1.0, max7*&
+   y4d = (du2d(l)*SIGN(max7, du3(l))-du2(l)*max7d*SIGN(1.d0, max7*&
    &          du3(l)))/SIGN(max7, du3(l))**2
    y4 = du2(l)/SIGN(max7, du3(l))
    IF (zero .LT. y4) THEN
@@ -1228,6 +1192,8 @@
    right(ivz) = rot(1, 3)*dvx + rot(2, 3)*dvy + rot(3, 3)*dvz
    END IF
    END SUBROUTINE LEFTRIGHTSTATE_D
+   ! Store the density flux in the mass flow of the
+   ! appropriate sliding mesh interface.
    !      ==================================================================
    SUBROUTINE LEFTRIGHTSTATE(du1, du2, du3, rotmatrix, left, right)
    IMPLICIT NONE
@@ -1503,8 +1469,7 @@
    END SUBROUTINE LEFTRIGHTSTATE
    !  Differentiation of riemannflux in forward (tangent) mode:
    !   variations   of useful results: flux
-   !   with respect to varying inputs: gammaface sx sy sz flux left
-   !                right
+   !   with respect to varying inputs: gammaface flux left right
    !        ================================================================
    SUBROUTINE RIEMANNFLUX_D(left, leftd, right, rightd, flux, fluxd)
    IMPLICIT NONE
@@ -1519,7 +1484,6 @@
    !        Local variables.
    !
    REAL(kind=realtype) :: porflux, rface
-   REAL(kind=realtype) :: rfaced
    REAL(kind=realtype) :: etl, etr, z1l, z1r, tmp
    REAL(kind=realtype) :: etld, etrd, z1ld, z1rd, tmpd
    REAL(kind=realtype) :: dr, dru, drv, drw, dre, drk
@@ -1529,7 +1493,7 @@
    REAL(kind=realtype) :: alphaavg, a2avg, aavg, unavg
    REAL(kind=realtype) :: alphaavgd, a2avgd, aavgd, unavgd
    REAL(kind=realtype) :: ovaavg, ova2avg, area, eta
-   REAL(kind=realtype) :: ovaavgd, ova2avgd, aread, etad
+   REAL(kind=realtype) :: ovaavgd, ova2avgd, etad
    REAL(kind=realtype) :: gm1, gm53
    REAL(kind=realtype) :: gm1d, gm53d
    REAL(kind=realtype) :: lam1, lam2, lam3
@@ -1550,16 +1514,15 @@
    REAL(kind=realtype) :: result2
    REAL(kind=realtype) :: result2d
    REAL(kind=realtype) :: abs1d
-   REAL(kind=realtype) :: max2d
    INTRINSIC MAX
    INTRINSIC ABS
    REAL(kind=realtype) :: x2
    REAL(kind=realtype) :: x2d
    REAL(kind=realtype) :: x1
-   REAL(kind=realtype) :: abs0d
    REAL(kind=realtype) :: x1d
+   REAL(kind=realtype) :: abs2
+   REAL(kind=realtype) :: abs2d
    REAL(kind=realtype) :: abs1
-   REAL(kind=realtype) :: abs0
    INTRINSIC SQRT
    REAL(kind=realtype) :: max2
    !
@@ -1660,7 +1623,7 @@
    ptmp(2) = right(irhoe)
    CALL ETOTARRAY_D(rhotmp, rhotmpd, utmp, utmpd, vtmp, vtmpd, wtmp&
    &                   , wtmpd, ptmp, ptmpd, ktmp, ktmpd, etmp, etmpd, &
-   &                   correctfork, 2_intType)
+   &                   correctfork, 2)
    etld = etmpd(1)
    etl = etmp(1)
    etrd = etmpd(2)
@@ -1698,30 +1661,17 @@
    havg = tmp*((etl+left(irhoe))/z1l+(etr+right(irhoe))/z1r)
    ! Compute the unit vector and store the area of the
    ! normal. Also compute the unit normal velocity of the face.
-   arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
    arg1 = sx**2 + sy**2 + sz**2
-   IF (arg1 .EQ. 0.0) THEN
-   aread = 0.0
-   ELSE
-   aread = arg1d/(2.0*SQRT(arg1))
-   END IF
    area = SQRT(arg1)
    IF (1.e-25_realType .LT. area) THEN
-   max2d = aread
    max2 = area
    ELSE
    max2 = 1.e-25_realType
-   max2d = 0.0
    END IF
-   tmpd = -(one*max2d/max2**2)
    tmp = one/max2
-   sxd = sxd*tmp + sx*tmpd
    sx = sx*tmp
-   syd = syd*tmp + sy*tmpd
    sy = sy*tmp
-   szd = szd*tmp + sz*tmpd
    sz = sz*tmp
-   rfaced = sface*tmpd
    rface = sface*tmp
    ! Compute some dependent variables at the Roe
    ! average state.
@@ -1742,8 +1692,7 @@
    aavgd = a2avgd/(2.0*SQRT(a2avg))
    END IF
    aavg = SQRT(a2avg)
-   unavgd = uavgd*sx + uavg*sxd + vavgd*sy + vavg*syd + wavgd*sz + &
-   &          wavg*szd
+   unavgd = sx*uavgd + sy*vavgd + sz*wavgd
    unavg = uavg*sx + vavg*sy + wavg*sz
    ovaavgd = -(one*aavgd/aavg**2)
    ovaavg = one/aavg
@@ -1752,20 +1701,19 @@
    ! Set for a boundary the normal velocity to rFace, the
    ! normal velocity of the boundary.
    IF (por .EQ. boundflux) THEN
-   unavgd = rfaced
    unavg = rface
+   unavgd = 0.0
    END IF
-   x1d = (leftd(ivx)-rightd(ivx))*sx + (left(ivx)-right(ivx))*sxd +&
-   &          (leftd(ivy)-rightd(ivy))*sy + (left(ivy)-right(ivy))*syd + (&
-   &          leftd(ivz)-rightd(ivz))*sz + (left(ivz)-right(ivz))*szd
+   x1d = sx*(leftd(ivx)-rightd(ivx)) + sy*(leftd(ivy)-rightd(ivy)) &
+   &          + sz*(leftd(ivz)-rightd(ivz))
    x1 = (left(ivx)-right(ivx))*sx + (left(ivy)-right(ivy))*sy + (&
    &          left(ivz)-right(ivz))*sz
    IF (x1 .GE. 0.) THEN
-   abs0d = x1d
-   abs0 = x1
+   abs1d = x1d
+   abs1 = x1
    ELSE
-   abs0d = -x1d
-   abs0 = -x1
+   abs1d = -x1d
+   abs1 = -x1
    END IF
    arg1d = ((gammafaced*left(irhoe)+gammaface*leftd(irhoe))*left(&
    &          irho)-gammaface*left(irhoe)*leftd(irho))/left(irho)**2
@@ -1788,11 +1736,11 @@
    x2d = result1d - result2d
    x2 = result1 - result2
    IF (x2 .GE. 0.) THEN
-   abs1d = x2d
-   abs1 = x2
+   abs2d = x2d
+   abs2 = x2
    ELSE
-   abs1d = -x2d
-   abs1 = -x2
+   abs2d = -x2d
+   abs2 = -x2
    END IF
    ! Compute the coefficient eta for the entropy correction.
    ! At the moment a 1D entropy correction is used, which
@@ -1804,27 +1752,27 @@
    ! an efficient implementation requires the storage of
    ! all the left and right states, which is rather
    ! expensive in terms of memory.
-   etad = half*(abs0d+abs1d)
-   eta = half*(abs0+abs1)
+   etad = half*(abs1d+abs2d)
+   eta = half*(abs1+abs2)
    IF (unavg - rface + aavg .GE. 0.) THEN
-   lam1d = unavgd - rfaced + aavgd
+   lam1d = unavgd + aavgd
    lam1 = unavg - rface + aavg
    ELSE
-   lam1d = -(unavgd-rfaced+aavgd)
+   lam1d = -(unavgd+aavgd)
    lam1 = -(unavg-rface+aavg)
    END IF
    IF (unavg - rface - aavg .GE. 0.) THEN
-   lam2d = unavgd - rfaced - aavgd
+   lam2d = unavgd - aavgd
    lam2 = unavg - rface - aavg
    ELSE
-   lam2d = -(unavgd-rfaced-aavgd)
+   lam2d = -(unavgd-aavgd)
    lam2 = -(unavg-rface-aavg)
    END IF
    IF (unavg - rface .GE. 0.) THEN
-   lam3d = unavgd - rfaced
+   lam3d = unavgd
    lam3 = unavg - rface
    ELSE
-   lam3d = -(unavgd-rfaced)
+   lam3d = -unavgd
    lam3 = -(unavg-rface)
    END IF
    ! Apply the entropy correction to the eigenvalues.
@@ -1846,11 +1794,11 @@
    END IF
    ! Multiply the eigenvalues by the area to obtain
    ! the correct values for the dissipation term.
-   lam1d = lam1d*area + lam1*aread
+   lam1d = area*lam1d
    lam1 = lam1*area
-   lam2d = lam2d*area + lam2*aread
+   lam2d = area*lam2d
    lam2 = lam2*area
-   lam3d = lam3d*area + lam3*aread
+   lam3d = area*lam3d
    lam3 = lam3*area
    ! Some abbreviations, which occur quite often in the
    ! dissipation terms.
@@ -1865,8 +1813,7 @@
    &          drvd-wavgd*drw-wavg*drwd+dred) - gm53d*drk - gm53*drkd
    abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - gm53*&
    &          drk
-   abv5d = sxd*dru + sx*drud + syd*drv + sy*drvd + szd*drw + sz*&
-   &          drwd - unavgd*dr - unavg*drd
+   abv5d = sx*drud + sy*drvd + sz*drwd - unavgd*dr - unavg*drd
    abv5 = sx*dru + sy*drv + sz*drw - unavg*dr
    abv6d = (abv3d*abv4+abv3*abv4d)*ova2avg + abv3*abv4*ova2avgd + (&
    &          abv2d*abv5+abv2*abv5d)*ovaavg + abv2*abv5*ovaavgd
@@ -1880,13 +1827,13 @@
    fluxd(irho) = -(porflux*(lam3d*dr+lam3*drd+abv6d))
    flux(irho) = -(porflux*(lam3*dr+abv6))
    fluxd(imx) = -(porflux*(lam3d*dru+lam3*drud+uavgd*abv6+uavg*&
-   &          abv6d+sxd*abv7+sx*abv7d))
+   &          abv6d+sx*abv7d))
    flux(imx) = -(porflux*(lam3*dru+uavg*abv6+sx*abv7))
    fluxd(imy) = -(porflux*(lam3d*drv+lam3*drvd+vavgd*abv6+vavg*&
-   &          abv6d+syd*abv7+sy*abv7d))
+   &          abv6d+sy*abv7d))
    flux(imy) = -(porflux*(lam3*drv+vavg*abv6+sy*abv7))
    fluxd(imz) = -(porflux*(lam3d*drw+lam3*drwd+wavgd*abv6+wavg*&
-   &          abv6d+szd*abv7+sz*abv7d))
+   &          abv6d+sz*abv7d))
    flux(imz) = -(porflux*(lam3*drw+wavg*abv6+sz*abv7))
    fluxd(irhoe) = -(porflux*(lam3d*dre+lam3*dred+havgd*abv6+havg*&
    &          abv6d+unavgd*abv7+unavg*abv7d))
@@ -1941,8 +1888,8 @@
    INTRINSIC ABS
    REAL(kind=realtype) :: x2
    REAL(kind=realtype) :: x1
+   REAL(kind=realtype) :: abs2
    REAL(kind=realtype) :: abs1
-   REAL(kind=realtype) :: abs0
    INTRINSIC SQRT
    REAL(kind=realtype) :: max2
    !
@@ -2004,7 +1951,7 @@
    ptmp(1) = left(irhoe)
    ptmp(2) = right(irhoe)
    CALL ETOTARRAY(rhotmp, utmp, vtmp, wtmp, ptmp, ktmp, etmp, &
-   &                    correctfork, 2_intType)
+   &                    correctfork, 2)
    etl = etmp(1)
    etr = etmp(2)
    ! Compute the difference of the conservative mean
@@ -2053,9 +2000,9 @@
    x1 = (left(ivx)-right(ivx))*sx + (left(ivy)-right(ivy))*sy + (&
    &          left(ivz)-right(ivz))*sz
    IF (x1 .GE. 0.) THEN
-   abs0 = x1
+   abs1 = x1
    ELSE
-   abs0 = -x1
+   abs1 = -x1
    END IF
    arg1 = gammaface*left(irhoe)/left(irho)
    result1 = SQRT(arg1)
@@ -2063,9 +2010,9 @@
    result2 = SQRT(arg2)
    x2 = result1 - result2
    IF (x2 .GE. 0.) THEN
-   abs1 = x2
+   abs2 = x2
    ELSE
-   abs1 = -x2
+   abs2 = -x2
    END IF
    ! Compute the coefficient eta for the entropy correction.
    ! At the moment a 1D entropy correction is used, which
@@ -2077,7 +2024,7 @@
    ! an efficient implementation requires the storage of
    ! all the left and right states, which is rather
    ! expensive in terms of memory.
-   eta = half*(abs0+abs1)
+   eta = half*(abs1+abs2)
    IF (unavg - rface + aavg .GE. 0.) THEN
    lam1 = unavg - rface + aavg
    ELSE

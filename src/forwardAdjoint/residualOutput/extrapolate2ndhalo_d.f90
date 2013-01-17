@@ -3,8 +3,7 @@
    !
    !  Differentiation of extrapolate2ndhalo in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w *rlv
-   !   with respect to varying inputs: gammaconstant *p *gamma *w
-   !                *rlv
+   !   with respect to varying inputs: *p *gamma *w *rlv gammaconstant
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !                bcdata:in (global)cphint:in-out
    !

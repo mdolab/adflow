@@ -3,8 +3,7 @@
    !
    !  Differentiation of bceulerwall in forward (tangent) mode:
    !   variations   of useful results: *p *gamma *w *rlv
-   !   with respect to varying inputs: gammaconstant *p *gamma *w
-   !                *rlv *si *sj *sk *(*bcdata.norm)
+   !   with respect to varying inputs: *p *gamma *w *rlv gammaconstant
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !                si:in sj:in sk:in bcdata:in *bcdata.norm:in (global)cphint:in-out
    !
@@ -46,13 +45,10 @@
    INTEGER(kind=inttype) :: jm1, jp1, km1, kp1
    INTEGER(kind=inttype) :: walltreatment
    REAL(kind=realtype) :: sixa, siya, siza, sjxa, sjya, sjza
-   REAL(kind=realtype) :: sixad, siyad, sizad, sjxad, sjyad, sjzad
    REAL(kind=realtype) :: skxa, skya, skza, a1, b1
-   REAL(kind=realtype) :: skxad, skyad, skzad
    REAL(kind=realtype) :: rxj, ryj, rzj, rxk, ryk, rzk
-   REAL(kind=realtype) :: rxjd, ryjd, rzjd, rxkd, rykd, rzkd
    REAL(kind=realtype) :: dpj, dpk, ri, rj, rk, qj, qk, vn
-   REAL(kind=realtype) :: dpjd, dpkd, rid, rjd, rkd, qjd, qkd, vnd
+   REAL(kind=realtype) :: dpjd, dpkd, qjd, qkd, vnd
    REAL(kind=realtype) :: ux, uy, uz
    REAL(kind=realtype) :: uxd, uyd, uzd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
@@ -65,9 +61,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssi, ssj, ssk
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssid, ssjd, sskd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: normd
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rface
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss
    REAL(kind=realtype) :: DIM
@@ -120,7 +114,6 @@
    IF (bctype(nn) .EQ. eulerwall) THEN
    ! Set the pointers for the unit normal and the normal
    ! velocity to make the code more readable.
-   normd => bcdatad(nn)%norm
    norm => bcdata(nn)%norm
    rface => bcdata(nn)%rface
    ! Nullify the pointers and set them to the correct subface.
@@ -128,8 +121,7 @@
    ! that.
    !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
    CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   &                     pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, &
-   &                     0_intType)
+   &                     pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, 0)
    !
    !          **************************************************************
    !          *                                                            *
@@ -236,66 +228,48 @@
    ! the 1st cell center from the wall is needed.
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
-   ssid => sid(1, :, :, :)
    ssi => si(1, :, :, :)
-   ssjd => sjd(2, :, :, :)
    ssj => sj(2, :, :, :)
-   sskd => skd(2, :, :, :)
    ssk => sk(2, :, :, :)
    IF (addgridvelocities) THEN
    ss => s(2, :, :, :)
    END IF
    CASE (imax) 
    !=======================================================
-   ssid => sid(il, :, :, :)
    ssi => si(il, :, :, :)
-   ssjd => sjd(il, :, :, :)
    ssj => sj(il, :, :, :)
-   sskd => skd(il, :, :, :)
    ssk => sk(il, :, :, :)
    IF (addgridvelocities) THEN
    ss => s(il, :, :, :)
    END IF
    CASE (jmin) 
    !=======================================================
-   ssid => sjd(:, 1, :, :)
    ssi => sj(:, 1, :, :)
-   ssjd => sid(:, 2, :, :)
    ssj => si(:, 2, :, :)
-   sskd => skd(:, 2, :, :)
    ssk => sk(:, 2, :, :)
    IF (addgridvelocities) THEN
    ss => s(:, 2, :, :)
    END IF
    CASE (jmax) 
    !=======================================================
-   ssid => sjd(:, jl, :, :)
    ssi => sj(:, jl, :, :)
-   ssjd => sid(:, jl, :, :)
    ssj => si(:, jl, :, :)
-   sskd => skd(:, jl, :, :)
    ssk => sk(:, jl, :, :)
    IF (addgridvelocities) THEN
    ss => s(:, jl, :, :)
    END IF
    CASE (kmin) 
    !=======================================================
-   ssid => skd(:, :, 1, :)
    ssi => sk(:, :, 1, :)
-   ssjd => sid(:, :, 2, :)
    ssj => si(:, :, 2, :)
-   sskd => sjd(:, :, 2, :)
    ssk => sj(:, :, 2, :)
    IF (addgridvelocities) THEN
    ss => s(:, :, 2, :)
    END IF
    CASE (kmax) 
    !=======================================================
-   ssid => skd(:, :, kl, :)
    ssi => sk(:, :, kl, :)
-   ssjd => sid(:, :, kl, :)
    ssj => si(:, :, kl, :)
-   sskd => sjd(:, :, kl, :)
    ssk => sj(:, :, kl, :)
    IF (addgridvelocities) THEN
    ss => s(:, :, kl, :)
@@ -357,23 +331,14 @@
    ! the indices of 1 and therefore now the correct
    ! average is obtained with the indices j and j+1
    ! (k and k+1).
-   sixad = two*ssid(j, k, 1)
    sixa = two*ssi(j, k, 1)
-   siyad = two*ssid(j, k, 2)
    siya = two*ssi(j, k, 2)
-   sizad = two*ssid(j, k, 3)
    siza = two*ssi(j, k, 3)
-   sjxad = ssjd(j, k, 1) + ssjd(j+1, k, 1)
    sjxa = ssj(j, k, 1) + ssj(j+1, k, 1)
-   sjyad = ssjd(j, k, 2) + ssjd(j+1, k, 2)
    sjya = ssj(j, k, 2) + ssj(j+1, k, 2)
-   sjzad = ssjd(j, k, 3) + ssjd(j+1, k, 3)
    sjza = ssj(j, k, 3) + ssj(j+1, k, 3)
-   skxad = sskd(j, k, 1) + sskd(j, k+1, 1)
    skxa = ssk(j, k, 1) + ssk(j, k+1, 1)
-   skyad = sskd(j, k, 2) + sskd(j, k+1, 2)
    skya = ssk(j, k, 2) + ssk(j, k+1, 2)
-   skzad = sskd(j, k, 3) + sskd(j, k+1, 3)
    skza = ssk(j, k, 3) + ssk(j, k+1, 3)
    ! Compute the difference of the normal vector and
    ! pressure in j and k-direction. As the indices are
@@ -381,37 +346,22 @@
    ! of the internal halo values is not consistent;
    ! however this is not really a problem, because these
    ! values are overwritten in the communication pattern.
-   rxjd = a1*(normd(jp1, k, 1)-normd(jm1, k, 1))
    rxj = a1*(norm(jp1, k, 1)-norm(jm1, k, 1))
-   ryjd = a1*(normd(jp1, k, 2)-normd(jm1, k, 2))
    ryj = a1*(norm(jp1, k, 2)-norm(jm1, k, 2))
-   rzjd = a1*(normd(jp1, k, 3)-normd(jm1, k, 3))
    rzj = a1*(norm(jp1, k, 3)-norm(jm1, k, 3))
    dpjd = a1*(pp2d(jp1, k)-pp2d(jm1, k))
    dpj = a1*(pp2(jp1, k)-pp2(jm1, k))
-   rxkd = b1*(normd(j, kp1, 1)-normd(j, km1, 1))
    rxk = b1*(norm(j, kp1, 1)-norm(j, km1, 1))
-   rykd = b1*(normd(j, kp1, 2)-normd(j, km1, 2))
    ryk = b1*(norm(j, kp1, 2)-norm(j, km1, 2))
-   rzkd = b1*(normd(j, kp1, 3)-normd(j, km1, 3))
    rzk = b1*(norm(j, kp1, 3)-norm(j, km1, 3))
    dpkd = b1*(pp2d(j, kp1)-pp2d(j, km1))
    dpk = b1*(pp2(j, kp1)-pp2(j, km1))
    ! Compute the dot product between the unit vector
    ! and the normal vectors in i, j and k-direction.
-   rid = normd(j, k, 1)*sixa + norm(j, k, 1)*sixad + normd(j, k&
-   &              , 2)*siya + norm(j, k, 2)*siyad + normd(j, k, 3)*siza + &
-   &              norm(j, k, 3)*sizad
    ri = norm(j, k, 1)*sixa + norm(j, k, 2)*siya + norm(j, k, 3)&
    &              *siza
-   rjd = normd(j, k, 1)*sjxa + norm(j, k, 1)*sjxad + normd(j, k&
-   &              , 2)*sjya + norm(j, k, 2)*sjyad + normd(j, k, 3)*sjza + &
-   &              norm(j, k, 3)*sjzad
    rj = norm(j, k, 1)*sjxa + norm(j, k, 2)*sjya + norm(j, k, 3)&
    &              *sjza
-   rkd = normd(j, k, 1)*skxa + norm(j, k, 1)*skxad + normd(j, k&
-   &              , 2)*skya + norm(j, k, 2)*skyad + normd(j, k, 3)*skza + &
-   &              norm(j, k, 3)*skzad
    rk = norm(j, k, 1)*skxa + norm(j, k, 2)*skya + norm(j, k, 3)&
    &              *skza
    ! Store the velocity components in ux, uy and uz and
@@ -429,23 +379,19 @@
    END IF
    ! Compute the velocity components in j and
    ! k-direction.
-   qjd = uxd*sjxa + ux*sjxad + uyd*sjya + uy*sjyad + uzd*sjza +&
-   &              uz*sjzad
+   qjd = sjxa*uxd + sjya*uyd + sjza*uzd
    qj = ux*sjxa + uy*sjya + uz*sjza
-   qkd = uxd*skxa + ux*skxad + uyd*skya + uy*skyad + uzd*skza +&
-   &              uz*skzad
+   qkd = skxa*uxd + skya*uyd + skza*uzd
    qk = ux*skxa + uy*skya + uz*skza
    ! Compute the pressure gradient, which is stored
    ! in pp1. I'm not entirely sure whether this
    ! formulation is correct for moving meshes. It could
    ! be that an additional term is needed there.
-   pp1d(j, k) = (((qjd*(ux*rxj+uy*ryj+uz*rzj)+qj*(uxd*rxj+ux*&
-   &              rxjd+uyd*ryj+uy*ryjd+uzd*rzj+uz*rzjd)+qkd*(ux*rxk+uy*ryk+&
-   &              uz*rzk)+qk*(uxd*rxk+ux*rxkd+uyd*ryk+uy*rykd+uzd*rzk+uz*&
-   &              rzkd))*ww2(j, k, irho)+(qj*(ux*rxj+uy*ryj+uz*rzj)+qk*(ux*&
-   &              rxk+uy*ryk+uz*rzk))*ww2d(j, k, irho)-rjd*dpj-rj*dpjd-rkd*&
-   &              dpk-rk*dpkd)*ri-((qj*(ux*rxj+uy*ryj+uz*rzj)+qk*(ux*rxk+uy*&
-   &              ryk+uz*rzk))*ww2(j, k, irho)-rj*dpj-rk*dpk)*rid)/ri**2
+   pp1d(j, k) = ((qjd*(ux*rxj+uy*ryj+uz*rzj)+qj*(rxj*uxd+ryj*&
+   &              uyd+rzj*uzd)+qkd*(ux*rxk+uy*ryk+uz*rzk)+qk*(rxk*uxd+ryk*&
+   &              uyd+rzk*uzd))*ww2(j, k, irho)+(qj*(ux*rxj+uy*ryj+uz*rzj)+&
+   &              qk*(ux*rxk+uy*ryk+uz*rzk))*ww2d(j, k, irho)-rj*dpjd-rk*&
+   &              dpkd)/ri
    pp1(j, k) = ((qj*(ux*rxj+uy*ryj+uz*rzj)+qk*(ux*rxk+uy*ryk+uz&
    &              *rzk))*ww2(j, k, irho)-rj*dpj-rk*dpk)/ri
    END DO
@@ -462,22 +408,17 @@
    pp1d(j, k) = DIM_D(pp2(j, k), pp2d(j, k), pp1(j, k), pp1d(j, k&
    &            ), tmpresult)
    pp1(j, k) = tmpresult
-   vnd = two*(-(ww2d(j, k, ivx)*norm(j, k, 1))-ww2(j, k, ivx)*&
-   &            normd(j, k, 1)-ww2d(j, k, ivy)*norm(j, k, 2)-ww2(j, k, ivy)*&
-   &            normd(j, k, 2)-ww2d(j, k, ivz)*norm(j, k, 3)-ww2(j, k, ivz)*&
-   &            normd(j, k, 3))
+   vnd = two*(-(norm(j, k, 1)*ww2d(j, k, ivx))-norm(j, k, 2)*ww2d&
+   &            (j, k, ivy)-norm(j, k, 3)*ww2d(j, k, ivz))
    vn = two*(rface(j, k)-ww2(j, k, ivx)*norm(j, k, 1)-ww2(j, k, &
    &            ivy)*norm(j, k, 2)-ww2(j, k, ivz)*norm(j, k, 3))
    ww1d(j, k, irho) = ww2d(j, k, irho)
    ww1(j, k, irho) = ww2(j, k, irho)
-   ww1d(j, k, ivx) = ww2d(j, k, ivx) + vnd*norm(j, k, 1) + vn*&
-   &            normd(j, k, 1)
+   ww1d(j, k, ivx) = ww2d(j, k, ivx) + norm(j, k, 1)*vnd
    ww1(j, k, ivx) = ww2(j, k, ivx) + vn*norm(j, k, 1)
-   ww1d(j, k, ivy) = ww2d(j, k, ivy) + vnd*norm(j, k, 2) + vn*&
-   &            normd(j, k, 2)
+   ww1d(j, k, ivy) = ww2d(j, k, ivy) + norm(j, k, 2)*vnd
    ww1(j, k, ivy) = ww2(j, k, ivy) + vn*norm(j, k, 2)
-   ww1d(j, k, ivz) = ww2d(j, k, ivz) + vnd*norm(j, k, 3) + vn*&
-   &            normd(j, k, 3)
+   ww1d(j, k, ivz) = ww2d(j, k, ivz) + norm(j, k, 3)*vnd
    ww1(j, k, ivz) = ww2(j, k, ivz) + vn*norm(j, k, 3)
    ! Just copy the turbulent variables.
    DO l=nt1mg,nt2mg

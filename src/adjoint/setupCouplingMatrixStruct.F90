@@ -297,7 +297,7 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
 
   localTime = time(2)-time(1)
   call mpi_reduce(localTime,globalTime, 1, sumb_real, &
-       mpi_max, 0, SUMB_PETSC_COMM_WORLD, ierr)
+       mpi_max, 0, SUMB_COMM_WORLD, ierr)
   call EChk(ierr,__FILE__,__LINE__)
   if(myid ==0)  then
      write(*,20) "Setup Coupling Matrix Time (s) = ", globalTime

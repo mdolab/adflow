@@ -148,22 +148,6 @@
 !        *                                                              *
 !        ****************************************************************
 !
-       type warp_comm_type
-           
-           ! sendBuffer:      array to hold face data for MPI send
-         ! recvBuffer:      array to receive face data for MPI recv
-           ! 
-           ! recvreq:         value to indicate that face recv is finished
-           ! sendreq:         value to indicate that face send is finished
-           
-          real(KIND=REALTYPE), DIMENSION(:)  :: sendBuffer,recvBuffer
-          integer(kind=inttype)::recvreq,sendreq
-           
-           
-       end type warp_comm_type
- 
-
-!
 !      ******************************************************************
 !      *                                                                *
 !      * The definition of the derived data type block_type, which      *

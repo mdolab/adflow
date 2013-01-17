@@ -84,7 +84,7 @@ FILES_TO_COMPLEXIFY =  precision.F90\
 		 killSignals.f90\
 		 communication.f90\
 		 NKsolverVars.F90\
-		 block.f90\
+		 block.F90\
 		 IOModule.f90\
 		 costFunctions.F90\
 		 ADjointVars.F90\
@@ -99,7 +99,7 @@ FILES_TO_COMPLEXIFY =  precision.F90\
 		 CpCurveFits.f90\
 		 extraOutput.f90\
 		 flowVarRefState.f90\
-		 inputParam.f90\
+		 inputParam.F90\
 		 interfaceGroups.f90\
 		 iteration.f90\
 		 monitor.f90\

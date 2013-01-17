@@ -29,7 +29,6 @@ subroutine initializePETSc
 
   call initPETScWrap()
 
-  SUMB_PETSC_COMM_WORLD = SUmb_comm_world
   PETSC_COMM_SELF = SUmb_comm_self
 
   ! Allocate memory for the convergence residual history.
@@ -39,6 +38,6 @@ subroutine initializePETSc
 
   ! Flush the output buffer and synchronize the processors.
   call f77flush()
-  call mpi_barrier(SUMB_PETSC_COMM_WORLD, PETScIerr)
+  call mpi_barrier(SUMB_COMM_WORLD, PETScIerr)
 #endif
 end subroutine initializePETSc

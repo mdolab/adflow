@@ -3,16 +3,14 @@
    !
    !  Differentiation of residual_block in forward (tangent) mode:
    !   variations   of useful results: *dw *w
-   !   with respect to varying inputs: *p *gamma *dw *w *rlv *x *vol
-   !                *si *sj *sk *(*bcdata.norm) *radi *radj *radk
-   !                *cdisrk vis4 kappacoef vis2 vis2coarse sigma
+   !   with respect to varying inputs: *p *gamma *w *rlv *radi *radj
+   !                *radk vis4 kappacoef vis2 vis2coarse sigma *cdisrk
    !   Plus diff mem management of: rev:in p:in sfacei:in sfacej:in
    !                gamma:in sfacek:in dw:in w:in rlv:in x:in vol:in
    !                d2wall:in si:in sj:in sk:in fw:in rotmatrixi:in
    !                rotmatrixj:in rotmatrixk:in viscsubface:in *viscsubface.tau:in
    !                *viscsubface.q:in *viscsubface.utau:in bcdata:in
-   !                *bcdata.norm:in radi:in radj:in radk:in massflowfamilyinv:in
-   !                massflowfamilydiss:in
+   !                *bcdata.norm:in radi:in radj:in radk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -48,19 +46,32 @@
    LOGICAL :: finegrid
    REAL(realtype) :: result1
    INTRINSIC REAL
+   !
+   !      ******************************************************************
+   !      *                                                                *
+   !      * Begin execution                                                *
+   !      *                                                                *
+   !      ******************************************************************
+   !
+   ! Add the source terms from the level 0 cooling model.
+   ! Set the value of rFil, which controls the fraction of the old
+   ! dissipation residual to be used. This is only for the runge-kutta
+   ! schemes; for other smoothers rFil is simply set to 1.0.
+   ! Note the index rkStage+1 for cdisRK. The reason is that the
+   ! residual computation is performed before rkStage is incremented.
    IF (smoother .EQ. rungekutta) THEN
    rfil = cdisrk(rkstage+1)
    ELSE
    rfil = one
    END IF
    ! Initialize the local arrays to monitor the massflows to zero.
-   massflowfamilyinvd = 0.0
-   massflowfamilyinv = zero
-   massflowfamilydissd = 0.0
-   massflowfamilydiss = zero
-   ! This routine is only called on fine grid:
-   discr = spacediscr
-   finegrid = .true.
+   ! Set the value of the discretization, depending on the grid level,
+   ! and the logical fineGrid, which indicates whether or not this
+   ! is the finest grid level of the current mg cycle.
+   discr = spacediscrcoarse
+   IF (currentlevel .EQ. 1) discr = spacediscr
+   finegrid = .false.
+   IF (currentlevel .EQ. groundlevel) finegrid = .true.
    CALL INVISCIDCENTRALFLUX_D()
    ! Compute the artificial dissipation fluxes.
    ! This depends on the parameter discr.
@@ -99,7 +110,7 @@
    END SELECT
    ! Compute the viscous flux in case of a viscous computation.
    IF (viscous) CALL VISCOUSFLUX_D()
-   ! add the dissipative and possibly viscous fluxes to the
+   ! Add the dissipative and possibly viscous fluxes to the
    ! Euler fluxes. Loop over the owned cells and add fw to dw.
    ! Also multiply by iblank so that no updates occur in holes
    ! or on the overset boundary.
@@ -114,19 +125,4 @@
    END DO
    END DO
    END DO
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Begin execution                                                *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   ! Add the source terms from the level 0 cooling model.
-   !call level0CoolingModel
-   ! Set the value of rFil, which controls the fraction of the old
-   ! dissipation residual to be used. This is only for the runge-kutta
-   ! schemes; for other smoothers rFil is simply set to 1.0.
-   ! Note the index rkStage+1 for cdisRK. The reason is that the
-   ! residual computation is performed before rkStage is incremented.
-   40 FORMAT(1x,i4,i4,i4,e20.6,e20.6)
    END SUBROUTINE RESIDUAL_BLOCK_D

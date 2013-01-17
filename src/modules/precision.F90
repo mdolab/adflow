@@ -32,7 +32,9 @@
 !
        implicit none
        save
+#ifndef USE_TAPENADE
 #include "mpif.h"
+#endif
 !
 !      ******************************************************************
 !      *                                                                *
@@ -52,7 +54,9 @@
        ! Long, i.e. 8 byte, integers are used as default integers
 
        integer(kind=8), private :: dummyInt
+#ifndef USE_TAPENADE
        integer, parameter       :: sumb_integer  = mpi_integer8
+#endif
        integer, parameter       :: sizeOfInteger = 8
 
 #else
@@ -60,7 +64,9 @@
        ! Standard 4 byte integer types are used as default integers.
 
        integer(kind=4), private :: dummyInt
+#ifndef USE_TAPENADE
        integer, parameter       :: sumb_integer  = mpi_integer4
+#endif
        integer, parameter       :: sizeOfInteger = 4
 
 #endif
@@ -80,7 +86,9 @@
        ! Single precision reals are used as default real types.
 
        real(kind=4), private :: dummyReal
+#ifndef USE_TAPENADE
        integer, parameter    :: sumb_real  = mpi_real4
+#endif
        integer, parameter    :: sizeOfReal = 4
 
        real(kind=4), private :: dummyCGNSReal
@@ -93,7 +101,9 @@
        ! precision is used instead.
 
        real(kind=16), private :: dummyReal
+#ifndef USE_TAPENADE
        integer, parameter     :: sumb_real  = mpi_real16
+#endif
        integer, parameter     :: sizeOfReal = 16
 
        real(kind=8), private :: dummyCGNSReal
@@ -103,7 +113,9 @@
        ! Double precision reals are used as default real types.
 
        real(kind=8), private :: dummyReal
+#ifndef USE_TAPENADE
        integer, parameter    :: sumb_real   = mpi_real8
+#endif
        integer, parameter    :: sizeOfReal = 8
 
        real(kind=8), private :: dummyCGNSReal
@@ -181,9 +193,10 @@
 
        integer(kind=intType), parameter :: nBytesPerIntPLOT3D       = 4
        integer(kind=intType), parameter :: nBytesPerRecordIntPLOT3D = 4
-
+#ifndef USE_TAPENADE
        integer, parameter :: sumb_integerPLOT3D       = mpi_integer4
        integer, parameter :: sumb_integerRecordPLOT3D = mpi_integer4
+#endif
 !
 !      ******************************************************************
 !      *                                                                *
