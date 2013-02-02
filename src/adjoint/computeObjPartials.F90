@@ -443,7 +443,6 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
            
               if (nDesignAoA >=0) then
                  dIda(nDesignAoA+1) = dIda(nDesignAoA+1) + alphaAdjb*dJdc(sps)
-                 print *,'alphaadjb:',alphaadjb
               end if
 
               if (nDesignSSA >= 0) then

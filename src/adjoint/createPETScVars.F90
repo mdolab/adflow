@@ -375,7 +375,8 @@ subroutine createSpatialPETScVars
   ! Create the matrix dRdx.
   level = 1_intType
   call drdxPreAllocation(nnzDiagonal, nnzOffDiag, nDimX, level)
-  
+  nnzDiagonal = int(nnzDiagonal * 1.2)
+  nnzOffDiag = int(nnzOffDIag * 1.2)
   ! Note we are creating the TRANPOSE of dRdx. It is size dDimX by nDimW
   if (PETSC_VERSION_MINOR <  3) then
      call MatCreateMPIAIJ(SUMB_COMM_WORLD, &
@@ -400,6 +401,10 @@ subroutine createSpatialPETScVars
   ! Set column major order for the matrix dRdx.
   call MatSetOption(dRdx, MAT_ROW_ORIENTED, PETSC_FALSE, PETScIerr)
   call EChk(PETScIerr, __FILE__, __LINE__)
+
+  call MatSetOption(dRdx, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE, PETScIerr)
+  call EChk(PETScIerr, __FILE__, __LINE__)
+
 
   ! Vectors
   call VecCreate(SUMB_COMM_WORLD, dJdx, PETScIerr)

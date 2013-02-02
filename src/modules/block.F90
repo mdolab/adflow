@@ -556,7 +556,7 @@ module block
      !                               at least for the flow variables.
 
      real(kind=realType), dimension(:,:,:),     pointer :: p1
-     real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw,
+     real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw
      real(kind=realType), dimension(:,:,:,:),   pointer :: dwtmp, dwtmp2
      real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
      real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
