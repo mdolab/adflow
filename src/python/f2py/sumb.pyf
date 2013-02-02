@@ -66,6 +66,12 @@ python module sumb
        subroutine updateflow
        end subroutine updateflow
 
+       subroutine referencestate
+       end subroutine referencestate
+
+       subroutine setflowinfinitystate
+       end subroutine setflowinfinitystate
+       
        subroutine updatereferencepoint
        end subroutine updatereferencepoint
 

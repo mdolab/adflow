@@ -118,7 +118,6 @@ subroutine setupAllResidualMatrices
   !
 #ifndef USE_NO_PETSC
 
-
   ! Set the grid level of the current MG cycle, the value of the
   ! discretization and the logical correctForK.
 
@@ -386,8 +385,7 @@ subroutine setupAllResidualMatrices
 
                                          call MatSetValues(dRdx, 3, ind_node, 1, idxres,  &
                                               xAdjb(ii,jj,kk,:,sps2), ADD_VALUES, PETScIerr)
-                                         ! NO error check here for speed purposes
-                                         ! call ECHk(PETScIerr,__FILE__,__LINE__)
+                                         call ECHk(PETScIerr,__FILE__,__LINE__)
                                          
                                          rotpointxcorrection = rotpointxcorrection+ &
                                               DOT_PRODUCT(xAdjb(ii,jj,kk,:,sps2),((/1,0,0/)+ RpXCorrection))
@@ -864,14 +862,15 @@ subroutine setupAllResidualMatrices
 
   call MatAssemblyBegin(dRdWT,MAT_FINAL_ASSEMBLY,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
-  call MatAssemblyBegin(dRdx,MAT_FINAL_ASSEMBLY,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-  call MatAssemblyBegin(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-
   call MatAssemblyEnd  (dRdWT,MAT_FINAL_ASSEMBLY,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
+
+  call MatAssemblyBegin(dRdx,MAT_FINAL_ASSEMBLY,PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
   call MatAssemblyEnd  (dRdx,MAT_FINAL_ASSEMBLY,PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
+  call MatAssemblyBegin(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
   call MatAssemblyEnd(dRda,MAT_FINAL_ASSEMBLY,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
@@ -879,10 +878,10 @@ subroutine setupAllResidualMatrices
   ! Let PETSc know that the dRdW matrix retains the same nonzero 
   ! pattern, in case the matrix is assembled again, as for a new
   ! point in the design space.
-  call MatSetOption(dRdWT,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-  call MatSetOption(dRdx,MAT_NEW_NONZERO_LOCATIONS,PETSC_TRUE,PETScIerr)    
-  call EChk(PETScIerr,__FILE__,__LINE__)
+  ! call MatSetOption(dRdWT,MAT_NEW_NONZERO_LOCATIONS,PETSC_FALSE,PETScIerr)
+  ! call EChk(PETScIerr,__FILE__,__LINE__)
+  ! call MatSetOption(dRdx,MAT_NEW_NONZERO_LOCATIONS,PETSC_TRUE,PETScIerr)    
+  ! call EChk(PETScIerr,__FILE__,__LINE__)
 
   ! Get new time and compute the elapsed time.
 
