@@ -406,8 +406,8 @@ subroutine setupAllResidualMatrices
                        do l = 1,3
                           if (xblockcorneradjb(1,1,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalNode(1,1,1)*3+l
-                             ! call MatSetValues(drdx, 1, idxnode-1, 1, idxres,  &
-                             !      xblockcorneradjb(1,1,1,l,sps), ADD_VALUES, PETScIerr)
+                             call MatSetValues(drdx, 1, idxnode-1, 1, idxres,  &
+                                  xblockcorneradjb(1,1,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)
                              rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(1,1,1,l,sps)*(r(l)+ RpXCorrection(l))
@@ -418,8 +418,8 @@ subroutine setupAllResidualMatrices
                           endif
                           if (xblockcorneradjb(2,1,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalNode(il,1,1)*3+l
-                             ! call MatSetValues(drdx, 1, idxnode-1 , 1,idxres,   &
-                             !      xblockcorneradjb(2,1,1,l,sps), ADD_VALUES, PETScIerr)
+                             call MatSetValues(drdx, 1, idxnode-1 , 1,idxres,   &
+                                  xblockcorneradjb(2,1,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)
                              rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(2,1,1,l,sps)*(r(l)+ RpXCorrection(l))
@@ -430,8 +430,8 @@ subroutine setupAllResidualMatrices
                           endif
                           if (xblockcorneradjb(1,2,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(1,jl,1)*3+l
-                             ! call MatSetValues(drdx, 1, idxnode-1, 1, idxres, &
-                             !      xblockcorneradjb(1,2,1,l,sps), ADD_VALUES, PETScIerr)
+                             call MatSetValues(drdx, 1, idxnode-1, 1, idxres, &
+                                  xblockcorneradjb(1,2,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)
                              rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(1,2,1,l,sps)*(r(l)+ RpXCorrection(l))
@@ -442,8 +442,8 @@ subroutine setupAllResidualMatrices
                           endif
                           if (xblockcorneradjb(2,2,1,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(il,jl,1)*3+l
-                             ! call MatSetValues(drdx, 1, idxnode-1 , 1,idxres, &
-                             !      xblockcorneradjb(2,2,1,l,sps), ADD_VALUES, PETScIerr)
+                             call MatSetValues(drdx, 1, idxnode-1 , 1,idxres, &
+                                  xblockcorneradjb(2,2,1,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)
                              rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(2,2,1,l,sps)*(r(l)+ RpXCorrection(l))
@@ -454,8 +454,8 @@ subroutine setupAllResidualMatrices
                           endif
                           if (xblockcorneradjb(1,1,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(1,1,kl)*3+l
-                             ! call MatSetValues(drdx, 1,idxnode-1, 1, idxres ,   &
-                             !      xblockcorneradjb(1,1,2,l,sps), ADD_VALUES, PETScIerr)
+                             call MatSetValues(drdx, 1,idxnode-1, 1, idxres ,   &
+                                  xblockcorneradjb(1,1,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)
                              rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(1,1,2,l,sps)*(r(l)+ RpXCorrection(l))
@@ -466,8 +466,8 @@ subroutine setupAllResidualMatrices
                           endif
                           if (xblockcorneradjb(1,2,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(1,jl,kl)*3+l
-                             ! call MatSetValues(drdx, 1, idxnode-1, 1, idxres,   &
-                             !      xblockcorneradjb(1,2,2,l,sps), ADD_VALUES, PETScIerr)
+                             call MatSetValues(drdx, 1, idxnode-1, 1, idxres,   &
+                                  xblockcorneradjb(1,2,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)
                              rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(1,2,2,l,sps)*(r(l)+ RpXCorrection(l))
@@ -478,8 +478,8 @@ subroutine setupAllResidualMatrices
                           endif
                           if (xblockcorneradjb(2,1,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(il,1,kl)*3+l
-                             ! call MatSetValues(drdx, 1, idxnode-1, 1, idxres,   &
-                             !      xblockcorneradjb(2,1,2,l,sps), ADD_VALUES, PETScIerr)
+                             call MatSetValues(drdx, 1, idxnode-1, 1, idxres,   &
+                                  xblockcorneradjb(2,1,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)
                              rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(2,1,2,l,sps)*(r(l)+ RpXCorrection(l))
@@ -490,8 +490,8 @@ subroutine setupAllResidualMatrices
                           endif
                           if (xblockcorneradjb(2,2,2,l,sps).ne.0.0)then
                              idxnode = flowDoms(nn,level,sps)%globalnode(il,jl,kl)*3+l
-                             ! call MatSetValues(drdx, 1,idxnode-1, 1, idxres,   &
-                             !      xblockcorneradjb(2,2,2,l,sps), ADD_VALUES, PETScIerr)
+                             call MatSetValues(drdx, 1,idxnode-1, 1, idxres,   &
+                                  xblockcorneradjb(2,2,2,l,sps), ADD_VALUES, PETScIerr)
                              call EChk(PETScIerr,__FILE__,__LINE__)
                              r = (/1,0,0/)
                              rotpointxcorrection = rotpointxcorrection+ xblockcorneradjb(2,2,2,l,sps)*(r(l)+ RpXCorrection(l))

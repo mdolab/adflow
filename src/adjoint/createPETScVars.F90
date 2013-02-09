@@ -310,11 +310,19 @@ subroutine createSpatialPETScVars
   ! Create the matrix dRdx.
   level = 1_intType
   call drdxPreAllocation(nnzDiagonal, nnzOffDiag, nDimX, level)
+  
+  ! Make the drdx preallocation slightly bigger since the reverse mode
+  ! AD complains sometimes
+  nnzDiagonal = int(nnzDiagonal * 1.2)
+  nnzOffDiag = int(nnzOffDIag * 1.2)
 
   ! Note we are creating the TRANPOSE of dRdx. It is size dDimX by nDimW
   call myMatCreate(dRdx, 1, nDimX, nDimW, nnzDiagonal, nnzOffDiag, &
        __FILE__, __LINE__)
   deallocate( nnzDiagonal, nnzOffDiag )
+  
+  call MatSetOption(dRdx, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE, PETScIerr)
+  call EChk(PETScIerr, __FILE__, __LINE__)
 
   call getForceSize(npts, ncells, nTS)
 
@@ -461,5 +469,5 @@ subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &
   
   call MatSetOption(matrix, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
   call EChk(ierr, __FILE__, __LINE__)
-  
+
 end subroutine myMatCreate
