@@ -924,10 +924,21 @@ class SUMB(AeroSolver):
 
         return
 
-    def resetFlow(self):
+    def resetFlow(self, aeroProblem=None):
         '''
         Reset the flow for the complex derivative calculation
         '''
+
+        if aeroProblem is not None:
+            self.setInflowAngle(aeroProblem)
+            self.setMachNumber(aeroProblem)
+            self.setRefState(aeroProblem)
+            self.sumb.referencestate()
+            self.sumb.setflowinfinitystate()
+            if self.myid == 0:
+                print ('alpha:',aeroProblem._flows.alpha*(numpy.pi/180))
+                print ('Mach:',aeroProblem._flows.mach)
+
         #mgLvlSave =  self.sumb.inputiteration.mgstartlevel
         #self.sumb.inputiteration.mgstartlevel = 1
         strLvl =  self.getOption('MGStartLevel')
@@ -942,7 +953,7 @@ class SUMB(AeroSolver):
         self.sumb.monitor.nitercur = 0
         self.sumb.iteration.itertot = 0
         self.sumb.setuniformflow()
-        
+        self.sumb.nksolvervars.nksolvecount = 0
         return
 
     def getDensity(self):
@@ -1040,8 +1051,8 @@ class SUMB(AeroSolver):
         self.solve_failed =  self.fatalFail = False
 
         self._updatePeriodInfo()
-        if (self.getOption('equationMode') == 'steady' or 
-            self.getOption('equationMode') == 'time spectral'):
+        if (self.getOption('equationMode').lower() == 'steady' or 
+            self.getOption('equationMode').lower() == 'time spectral'):
             self._updateGeometryInfo()
         self._updateVelocityInfo()
 
@@ -1171,7 +1182,7 @@ class SUMB(AeroSolver):
         ''' 
         See MultiBlockMesh.py for more info
         '''
-
+        self._update_geom_info = True
         self.mesh.setSurfaceCoordinates(group_name, coordinates)
 
         return 
@@ -1239,19 +1250,31 @@ class SUMB(AeroSolver):
 
         return
 
-    def writeForceFile(self, file_name, TS=0, group_name='all'):
+    def writeForceFile(self, file_name, TS=0, group_name='all', cfd_force_pts=None):
         '''This function collects all the forces and locations and
         writes them to a file with each line having: X Y Z Fx Fy Fz.
         This can then be used to set a set of structural loads in TACS
-        for structural only optimization '''
+        for structural only optimization 
+
+        Like the getForces() routine, an external set of forces may be
+        passed in on which to evaluate the forces. This is only
+        typically used in an aerostructural case. 
+
+        '''
       
         if self.mesh is None:
-            mpiPrint('Error: The mesh must be specified to use writeForceFile',
+            mpiPrint('Error: A pyWarp mesh be specified to use writeForceFile',
                      comm=self.comm)
             return
 
         # Now we need to gather the data:
-        pts    = self.comm.gather(self.getForcePoints(TS), root=0)
+        if cfd_force_pts is None:
+            pts = self.comm.gather(self.getForcePoints(TS), root=0)
+        else:
+            pts = self.comm.gather(cfd_force_pts)
+        # end if
+            
+        # Forces are still evaluated on the displaced surface so do NOT pass in pts.
         forces = self.comm.gather(self.getForces(group_name, TS=TS), root=0)
         conn   = self.comm.gather(self.mesh.getSurfaceConnectivity(group_name),
                                   root=0)
@@ -1845,6 +1868,8 @@ class SUMB(AeroSolver):
 
         if self._update_geom_info:
             self.mesh.warpMesh()
+            #self.mesh.writeVolumeGrid('/scratch/j/jmartins/kenway/warped_grid.cgns')
+            #self.mesh.writeSurfaceGrid('/scratch/j/jmartins/kenway/warped_surf.cgns')
             newGrid = self.mesh.getSolverGrid()
 
             if newGrid is not None:
@@ -2030,7 +2055,8 @@ class SUMB(AeroSolver):
     def getdFdxVec(self, group_name, vec):
         # Calculate dFdx * vec and return the result
         vec = self.mesh.expandVectorByFamily(group_name, vec)
-        vec = self.sumb.getdfdxvec(numpy.ravel(vec))
+        if len(vec) > 0:
+            vec = self.sumb.getdfdxvec(numpy.ravel(vec))
         vec = self.mesh.sectionVectorByFamily(group_name, vec)
 
         return vec
@@ -2038,7 +2064,8 @@ class SUMB(AeroSolver):
     def getdFdxTVec(self, group_name, vec):
         # Calculate dFdx^T * vec and return the result
         vec = self.mesh.expandVectorByFamily(group_name, vec)
-        vec = self.sumb.getdfdxtvec(numpy.ravel(vec))
+        if len(vec) > 0:
+            vec = self.sumb.getdfdxtvec(numpy.ravel(vec))
         vec = self.mesh.sectionVectorByFamily(group_name, vec)
 
         return vec
@@ -2243,8 +2270,11 @@ class SUMB(AeroSolver):
         if cfd_force_pts is None:
             cfd_force_pts = self.getForcePoints(TS)
         # end if
-            
-        areas = self.sumb.getareas(cfd_force_pts.T, TS, axis).T
+        if len(cfd_force_pts) > 0:
+            areas = self.sumb.getareas(cfd_force_pts.T, TS, axis).T
+        else:
+            areas = numpy.zeros((0,3), self.dtype)
+        # end if
 
         if group_name is not None:
             areas = self.mesh.sectionVectorByFamily(group_name, areas)
@@ -2274,8 +2304,11 @@ class SUMB(AeroSolver):
         if cfd_force_pts is None:
             cfd_force_pts = self.getForcePoints(TS)
         # end if
-            
-        da = self.sumb.getareasensitivity(cfd_force_pts.T, TS, axis).T
+        if len(cfd_force_pts) > 0:
+            da = self.sumb.getareasensitivity(cfd_force_pts.T, TS, axis).T
+        else:
+            da = numpy.zeros((0,3), self.dtype)
+        # end if
 
         if group_name is not None:
             da = self.mesh.sectionVectorByFamily(group_name, da)
