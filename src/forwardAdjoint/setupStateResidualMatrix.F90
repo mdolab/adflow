@@ -1,4 +1,5 @@
-subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, level)
+subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
+     useObjective, level)
 #ifndef USE_NO_PETSC
   !     ******************************************************************
   !     *                                                                *
@@ -12,13 +13,17 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, level)
   !     *        full stencil jacobian                                   *
   !     * useTranspose: If true, the transpose of dRdw is assembled.     *
   !     *               For use with the adjoint this must be true.      *
-  !     * level : What level to form the preconditioner on. Level 1 is   *
+  !     * useObjective: If true, the derivative of Fx,Fy,Fz and Mx, My,Mz*
+  !     *               are assembled into the size FMw vectors          *
+  !     * level : What level to use to form the matrix. Level 1 is       *
   !     *         always the finest level                                *         
   !     ******************************************************************
   !
+  use ADjointPetsc, only : FMw
   use blockPointers      
   use inputDiscretization 
   use inputTimeSpectral 
+  use inputPhysics
   use iteration         
   use flowVarRefState     
   use inputAdjoint       
@@ -33,16 +38,33 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, level)
   Mat matrix
 
   ! Input Variables
-  logical, intent(in) :: useAD, usePC, useTranspose
+  logical, intent(in) :: useAD, usePC, useTranspose, useObjective
   integer(kind=intType), intent(in) :: level
 
   ! Local variables.
   integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
-  integer(kind=intType) :: nColor, iColor, irow, icol
+  integer(kind=intType) :: nColor, iColor, jColor, irow, icol, fmDim
   integer(kind=intType) :: nTransfer
   integer(kind=intType) :: n_stencil, i_stencil
   integer(kind=intType), dimension(:, :), pointer :: stencil
   real(kind=realType) :: delta_x, one_over_dx
+
+  real(kind=realType) :: alpha, beta, Lift, Drag, CL, CD
+  real(kind=realType), dimension(3) :: Force, Moment, cForce, cMoment
+  real(kind=realType) :: alphad, betad, Liftd, Dragd, CLd, CDd
+  real(kind=realType), dimension(3) :: Forced, Momentd, cForced, cMomentd
+  integer(kind=intType) :: liftIndex
+
+  ! This routine will not use the extra variables to block_res or the
+  ! extra outputs, so we must zero them here
+  alphad = zero
+  betad  = zero
+  machd  = zero
+  machGridd = zero
+  lengthRefd = zero
+  pointRefd  = zero
+  surfaceRefd = zero
+  call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
   useDiagTSPC = .False.
   rkStage = 0
@@ -51,16 +73,11 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, level)
   call MatZeroEntries(matrix, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  ! Run the  initialize_stencils routine just in case
-  call initialize_stencils
-
   ! Set a pointer to the correct set of stencil depending on if we are
   ! using the first order stencil or the full jacobian
 
   if (usePC) then
      if (viscous) then
-        !stencil => visc_pc_stencil
-        !n_stencil = N_visc_pc
         stencil => euler_pc_stencil
         n_stencil = N_euler_pc
      else
@@ -80,17 +97,9 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, level)
   ! NKsolver was used an the coarse grid solutions are (very!) out of
   ! date. 
   
-  if (level == 1) then
-     currentLevel =1 
-     groundLevel = 1
-  else
-     nTransfer = level - 1
-     ! currentLevel is set in transferToCoarseGrid
-     do i=1,nTransfer
-        call transferToCoarseGrid()
-     end do
-     groundLevel = level
-  end if
+  ! Assembling matrix on coarser levels is not entirely implemented yet. 
+  currentLevel = level
+  groundLevel = level
 
   ! Exchange data and call the residual to make sure its up to date
   ! withe current w
@@ -101,13 +110,20 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, level)
   delta_x = 1e-6_realType
   one_over_dx = one/delta_x
   rkStage = 0
+  
+  if (useObjective .and. useAD) then
+     do fmDim=1,6
+        call VecZeroEntries(FMw(fmDim), ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+     end do
+  end if
 
   ! Master Domain Loop
   domainLoopAD: do nn=1, nDom
 
      ! Set pointers to the first timeInstance...just to getSizes
      call setPointers(nn, level, 1)
-
+     
      ! Set unknown sizes in diffSizes for AD routine
      ISIZE1OFDrfbcdata = nBocos
      ISIZE1OFDrfviscsubface = nViscBocos
@@ -149,7 +165,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, level)
      spectralLoop: do sps=1, nTimeIntervalsSpectral
         ! Set pointers and derivative pointers
         call setPointers_d(nn, level, sps)
-        call setPointers(nn, level, sps)
 
         ! Do Coloring and perturb states
         colorLoop: do iColor = 1, nColor
@@ -186,15 +201,43 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, level)
               ! Run Block-based residual 
               if (useAD) then
 #ifndef USE_COMPLEX
-                 call block_res_d(nn, sps, .False., .False.)
+                 call block_res_d(nn, sps, .False., .False., &
+                      alpha, alphad, beta, betad, liftIndex, Force, Forced, &
+                      Moment, Momentd, lift, liftd, drag, dragd, cForce, &
+                      cForced, cMoment, cMomentd, CL, CLD, CD, CDd)
 #else
                  print *, 'Forward AD routines are not complexified'
                  stop
 #endif
               else
-                 call block_res(nn, sps, .False., .False.)
+                 call block_res(nn, sps, .False., .False., &
+                      alpha, beta, liftIndex, Force, Moment, Lift, Drag, &
+                      cForce, cMoment, CL, CD)
               end if
 
+              ! If required, set values in the 6 vectors defined in
+              ! FMw. This is quite straight forward
+              if (useObjective .and. useAD) then
+                 kLoop_obj: do k=0, kb
+                    jLoop_obj: do j=0, jb
+                       iLoop_obj: do i=0, ib
+                          icol = flowDoms(nn, level, sps)%globalCell(i, j, k)
+                          jcolor = flowdomsd(nn, 1, 1)%color(i, j, k)
+                          colorCheck1: if (jColor == iColor .and. icol >=0) then
+                             do fmDim = 1,3
+                                call VecSetValues(FMw(fmDim), 1, iCol*nw + l-1, &
+                                     zero, ADD_VALUES, ierr)!Forced(fmDim), ADD_VALUES, ierr)
+                                call EChk(ierr, __FILE__, __LINE__)
+                    
+                                call VecSetValues(FMw(fmDim+3), 1, iCol*nw + l-1, &
+                                     zero, ADD_VALUES, ierr)!Momentd(fmDim), ADD_VALUES, ierr)
+                                call EChk(ierr, __FILE__, __LINE__)
+                             end do
+                          end if colorCheck1
+                       end do iLoop_obj
+                    end do jLoop_obj
+                 end do kLoop_obj
+              end if
               ! Set the computed residual in dw_deriv. If using FD, 
               ! actually do the FD calculation if AD, just copy out dw
               ! in flowdomsd
@@ -305,22 +348,21 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, level)
 
      ! Deallocate and reset values for block nn
      call dealloc_derivative_values(nn, level)
-
   end do domainLoopAD
-
-  ! Redo the complete residual to make sure all the halos/pressures
-  ! are up to date
-  call whalo2(1_intType, 1_intType, nw, .True., .True., .True.)
-  call computeResidualNK()
 
   !Return dissipation Parameters to normal -> VERY VERY IMPORTANT
   if (usePC) then
      lumpedDiss = .False.
   end if
 
-  ! Reset currentLevel and groundLevel to 1
-  currentLevel = 1_intType
-  groundLevel   = 1_intType
+  if (useObjective .and. useAD) then
+     do fmDim=1,6
+        call VecAssemblyBegin(FMw(fmDim), ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        call VecAssemblyEnd(FMw(fmDim), ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+     end do
+  end if
 
   ! PETSc Matrix Assembly and Options Set
   call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, ierr)

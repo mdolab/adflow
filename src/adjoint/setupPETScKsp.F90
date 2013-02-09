@@ -23,7 +23,7 @@ subroutine setupPETScKsp
 #include "finclude/petsc.h"
 
   !     Local variables.
-  logical :: useAD, usePC, useTranspose 
+  logical :: useAD, usePC, useTranspose, useObjective
   integer(kind=intType) :: ierr, nLevels, i, l
   integer(kind=intType) :: nlocal, first
   integer(kind=intType), allocatable, dimension(:) :: comms
@@ -37,8 +37,9 @@ subroutine setupPETScKsp
      useAD = .False.
      useTranspose = .True.
      usePC = .True.
+     useObjective = .False.
      call setupStateResidualMatrix(drdwpret, useAD, usePC, useTranspose, &
-          1_intType)
+          useObjective, 1_intType)
 
      !now set up KSP Context
      call KSPSetOperators(adjointKSP, dRdWT, dRdWPreT, &
@@ -250,7 +251,7 @@ subroutine setupStandardKSP(kspObject, kspObjectType, gmresRestart, preConSide, 
   ! Set the type of solver to use:
   call KSPSetType(kspObject, kspObjectType, ierr)
   call EChk(ierr, __FILE__, __LINE__)
-
+  
   ! If we're using GMRES set the possible gmres restart
   call KSPGMRESSetRestart(kspObject, gmresRestart, ierr)
   call EChk(ierr, __FILE__, __LINE__)

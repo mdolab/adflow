@@ -98,7 +98,7 @@ subroutine getPatchSize(iPatch, patchSize)
   end do domains
 end subroutine getPatchSize
 
-subroutine getForceSize(size, nTS)
+subroutine getForceSize(size, sizeCell, nTS)
   ! Compute the number of points that will be returned from getForces
   ! or getForcePoints
   use BCTypes
@@ -106,11 +106,12 @@ subroutine getForceSize(size, nTS)
   use inputTimeSpectral
   implicit none
 
-  integer(kind=intType),intent(out) :: size,nTS
+  integer(kind=intType),intent(out) :: size, sizeCell, nTS
   integer(kind=intType) :: nn,mm
   integer(kind=intType) :: iBeg,iEnd,jBeg,jEnd
 
   size = 0_intType
+  sizeCell = 0_intType
   nTS = nTimeIntervalsSpectral
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,1_intType)
@@ -121,6 +122,7 @@ subroutine getForceSize(size, nTS)
            jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
            size = size + (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
+           sizeCell = sizeCell + (iEnd - iBeg)*(jEnd - jBeg)
         end if
      end do bocos
   end do domains

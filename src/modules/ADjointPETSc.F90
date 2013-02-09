@@ -49,7 +49,11 @@
       !
 
       Mat     dRdWT, dRdWPreT
-      Mat     dRda, dRdx, dFdw, dFdx
+      Mat     dRda, dRdx
+      Mat     dFcdw, dFcdx, dFcdx2, dTcdw, dTcdx, dTcdx2, dFndFc
+      Mat     dFdx, dFdw
+      Vec, dimension(6) :: FMw
+      Vec, dimension(6) :: FMx
       Mat, allocatable, dimension(:) :: coarsedRdWPreT
       Mat, allocatable, dimension(:) :: restrictionOperator
       Mat, allocatable, dimension(:) :: prolongationOperator
@@ -70,9 +74,9 @@
       ! KSP Converged Reason
       KSPConvergedReason adjointConvergedReason
 
-      ! Data for dRda
+      ! Data for dRda and dFMdExtra
       real(kind=realType), allocatable, dimension(:,:) :: dRda_data
-
+      real(kind=realType), allocatable, dimension(:,:) :: dFMdExtra
        ! Logical identifying the type of PETSc matrix being used for dRdW
        logical :: PETScBlockMatrix
 

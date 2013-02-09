@@ -3,24 +3,25 @@
    !
    !  Differentiation of gridvelocitiesfinelevel_block in forward (tangent) mode:
    !   variations   of useful results: *sfacei *sfacej *s *sfacek
-   !   with respect to varying inputs: omegafourbeta *coscoeffourmach
+   !   with respect to varying inputs: *x *si *sj *sk rhoinf timeref
+   !                pinf machgrid veldirfreestream omegafourbeta *coscoeffourmach
    !                *coefpolbeta *coscoeffouralpha rotpoint *coscoeffourbeta
    !                omegafourxrot *sincoeffourmach *coefpolalpha omegafouryrot
    !                omegafourzrot omegafouralpha omegafourmach *coefpolmach
-   !                *sincoeffourbeta *sincoeffouralpha *x *si *sj
-   !                *sk *coeftime deltat *cgnsdoms.rotcenter *cgnsdoms.rotrate
-   !   Plus diff mem management of: coscoeffourzrot:in sincoeffourxrot:in
+   !                *sincoeffourbeta *sincoeffouralpha *cgnsdoms.rotcenter
+   !                *cgnsdoms.rotrate deltat
+   !   Plus diff mem management of: sfacei:in sfacej:in s:in sfacek:in
+   !                x:in si:in sj:in sk:in coscoeffourzrot:in sincoeffourxrot:in
    !                sincoeffouryrot:in sincoeffourzrot:in coefpolxrot:in
    !                coefpolyrot:in coefpolzrot:in coscoeffourxrot:in
-   !                coscoeffouryrot:in sfacei:in sfacej:in s:in sfacek:in
-   !                x:in si:in sj:in sk:in coeftime:in
+   !                coscoeffouryrot:in coeftime:in cgnsdoms:in
    !
    !      ******************************************************************
    !      *                                                                *
-   !      * File:          gridVelocities_block.f90                        *
-   !      * Author:        Edwin van der Weide,C.A.(Sandy) Mader           *
-   !      * Starting date: 07-15-2011                                      *
-   !      * Last modified: 07-15-2011                                      *
+   !      * File:          gridVelocities.f90                              *
+   !      * Author:        Edwin van der Weide                             *
+   !      * Starting date: 02-23-2004                                      *
+   !      * Last modified: 06-28-2005                                      *
    !      *                                                                *
    !      ******************************************************************
    !
@@ -46,8 +47,7 @@
    !      * spectral mode sps. If useOldCoor is .true. the velocities      *
    !      * are determined using the unsteady time integrator in           *
    !      * combination with the old coordinates; otherwise the analytic   *
-   !      * form is used. This routine is setup to operate on only a       *
-   !      * single block for the forward mode AD.                           *
+   !      * form is used.                                                  *
    !      *                                                                *
    !      ******************************************************************
    !
@@ -60,22 +60,27 @@
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: mm
+   INTEGER(kind=inttype) :: nn, mm
    INTEGER(kind=inttype) :: i, j, k, ii, iie, jje, kke
    REAL(kind=realtype) :: oneover4dt, oneover8dt
+   REAL(kind=realtype) :: oneover4dtd, oneover8dtd
    REAL(kind=realtype) :: velxgrid, velygrid, velzgrid, ainf
+   REAL(kind=realtype) :: velxgridd, velygridd, velzgridd, ainfd
    REAL(kind=realtype) :: velxgrid0, velygrid0, velzgrid0
+   REAL(kind=realtype) :: velxgrid0d, velygrid0d, velzgrid0d
    REAL(kind=realtype), DIMENSION(3) :: sc, xc, xxc
    REAL(kind=realtype), DIMENSION(3) :: scd, xcd, xxcd
    REAL(kind=realtype), DIMENSION(3) :: rotcenter, rotrate
    REAL(kind=realtype), DIMENSION(3) :: rotrated
    REAL(kind=realtype), DIMENSION(3) :: rotratetemp
+   REAL(kind=realtype), DIMENSION(3) :: rotratetempd
    REAL(kind=realtype), DIMENSION(3) :: offsetvector
    REAL(kind=realtype), DIMENSION(3, 3) :: rotratetrans
    REAL(kind=realtype), DIMENSION(3, 3) :: rotratetransd
    REAL(kind=realtype), DIMENSION(3) :: rotationpoint
    REAL(kind=realtype), DIMENSION(3, 3) :: rotationmatrix, &
    &  derivrotationmatrix
+   REAL(kind=realtype), DIMENSION(3, 3) :: derivrotationmatrixd
    REAL(kind=realtype) :: tnew, told
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: sface
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: sfaced
@@ -85,10 +90,15 @@
    INTEGER(kind=inttype) :: liftindex
    REAL(kind=realtype) :: alpha, beta, intervalmach, alphats, &
    &  alphaincrement, betats, betaincrement
+   REAL(kind=realtype) :: alphad, betad, alphatsd, betatsd
    REAL(kind=realtype), DIMENSION(3) :: veldir, liftdir, dragdir
+   REAL(kind=realtype), DIMENSION(3) :: veldird
+   REAL(kind=realtype), DIMENSION(3) :: refdirection
+   REAL(kind=realtype), DIMENSION(3) :: refdirectiond
    !Function Definitions
    REAL(kind=realtype) :: TSALPHA, TSBETA, TSMACH
    REAL(kind=realtype) :: arg1
+   REAL(kind=realtype) :: arg1d
    INTRINSIC COS
    INTRINSIC SIN
    INTRINSIC SQRT
@@ -104,23 +114,29 @@
    !  velxGrid = aInf*MachGrid(1)
    !  velyGrid = aInf*MachGrid(2)
    !  velzGrid = aInf*MachGrid(3)
-   !print *,'machgrid',machgrid
-   !stop
-   !velxGrid = zero
-   !velyGrid = zero
-   !velzGrid = zero
+   arg1d = (gammainf*pinfd*rhoinf-gammainf*pinf*rhoinfd)/rhoinf**2
    arg1 = gammainf*pinf/rhoinf
+   IF (arg1 .EQ. 0.0) THEN
+   ainfd = 0.0
+   ELSE
+   ainfd = arg1d/(2.0*SQRT(arg1))
+   END IF
    ainf = SQRT(arg1)
+   velxgrid0d = -((ainfd*machgrid+ainf*machgridd)*veldirfreestream(1)) - &
+   &    ainf*machgrid*veldirfreestreamd(1)
    velxgrid0 = ainf*machgrid*(-veldirfreestream(1))
+   velygrid0d = -((ainfd*machgrid+ainf*machgridd)*veldirfreestream(2)) - &
+   &    ainf*machgrid*veldirfreestreamd(2)
    velygrid0 = ainf*machgrid*(-veldirfreestream(2))
+   velzgrid0d = -((ainfd*machgrid+ainf*machgridd)*veldirfreestream(3)) - &
+   &    ainf*machgrid*veldirfreestreamd(3)
    velzgrid0 = ainf*machgrid*(-veldirfreestream(3))
    ! Compute the derivative of the rotation matrix and the rotation
    ! point; needed for velocity due to the rigid body rotation of
    ! the entire grid. It is assumed that the rigid body motion of
    ! the grid is only specified if there is only 1 section present.
-   CALL DERIVATIVEROTMATRIXRIGID(derivrotationmatrix, rotationpoint, t&
-   &                             (1))
-   !print *,'rotation Matrix'!,derivRotationMatrix, rotationPoint,'t', t(1)
+   CALL DERIVATIVEROTMATRIXRIGID_D(derivrotationmatrix, &
+   &                            derivrotationmatrixd, rotationpoint, t(1))
    !compute the rotation matrix to update the velocities for the time
    !spectral stability derivative case...
    IF (tsstability) THEN
@@ -135,46 +151,79 @@
    ! to rigid body translation.
    CALL ROTMATRIXRIGIDBODY(tnew, told, rotationmatrix, &
    &                           rotationpoint)
+   velxgrid0d = rotationmatrix(1, 1)*velxgrid0d + rotationmatrix(1, 2&
+   &        )*velygrid0d + rotationmatrix(1, 3)*velzgrid0d
    velxgrid0 = rotationmatrix(1, 1)*velxgrid0 + rotationmatrix(1, 2)*&
    &        velygrid0 + rotationmatrix(1, 3)*velzgrid0
+   velygrid0d = rotationmatrix(2, 1)*velxgrid0d + rotationmatrix(2, 2&
+   &        )*velygrid0d + rotationmatrix(2, 3)*velzgrid0d
    velygrid0 = rotationmatrix(2, 1)*velxgrid0 + rotationmatrix(2, 2)*&
    &        velygrid0 + rotationmatrix(2, 3)*velzgrid0
+   velzgrid0d = rotationmatrix(3, 1)*velxgrid0d + rotationmatrix(3, 2&
+   &        )*velygrid0d + rotationmatrix(3, 3)*velzgrid0d
    velzgrid0 = rotationmatrix(3, 1)*velxgrid0 + rotationmatrix(3, 2)*&
    &        velygrid0 + rotationmatrix(3, 3)*velzgrid0
+   alphad = 0.0
+   betad = 0.0
    ELSE IF (tsalphamode) THEN
    ! get the baseline alpha and determine the liftIndex
-   CALL GETDIRANGLETS(veldirfreestream, liftdirection, liftindex, &
-   &                    alpha, beta)
+   betad = 0.0
+   alphad = 0.0
+   CALL GETDIRANGLE_D(veldirfreestream, veldirfreestreamd, &
+   &                   liftdirection, liftindex, alpha, alphad, beta, betad)
    !Determine the alpha for this time instance
    alphaincrement = TSALPHA(degreepolalpha, coefpolalpha, &
    &        degreefouralpha, omegafouralpha, coscoeffouralpha, &
    &        sincoeffouralpha, t(1))
+   alphatsd = alphad
    alphats = alpha + alphaincrement
    !Determine the grid velocity for this alpha
-   CALL ADJUSTINFLOWANGLEADJTS(alphats, beta, veldir, liftdir, &
-   &                             dragdir, liftindex)
+   refdirection(:) = zero
+   refdirectiond(1) = 0.0
+   refdirection(1) = one
+   veldird = 0.0
+   CALL GETDIRVECTOR_D(refdirection, alphats, alphatsd, beta, betad, &
+   &                    veldir, veldird, liftindex)
    !do I need to update the lift direction and drag direction as well?
    !set the effictive grid velocity for this time interval
+   velxgrid0d = -((ainfd*machgrid+ainf*machgridd)*veldir(1)) - ainf*&
+   &        machgrid*veldird(1)
    velxgrid0 = ainf*machgrid*(-veldir(1))
+   velygrid0d = -((ainfd*machgrid+ainf*machgridd)*veldir(2)) - ainf*&
+   &        machgrid*veldird(2)
    velygrid0 = ainf*machgrid*(-veldir(2))
+   velzgrid0d = -((ainfd*machgrid+ainf*machgridd)*veldir(3)) - ainf*&
+   &        machgrid*veldird(3)
    velzgrid0 = ainf*machgrid*(-veldir(3))
-   ! if (myid ==0) print *,'base velocity',machgrid, velxGrid0 , velyGrid0 , velzGrid0 
    ELSE IF (tsbetamode) THEN
    ! get the baseline alpha and determine the liftIndex
-   CALL GETDIRANGLETS(veldirfreestream, liftdirection, liftindex, &
-   &                    alpha, beta)
+   betad = 0.0
+   alphad = 0.0
+   CALL GETDIRANGLE_D(veldirfreestream, veldirfreestreamd, &
+   &                   liftdirection, liftindex, alpha, alphad, beta, betad)
    !Determine the alpha for this time instance
    betaincrement = TSBETA(degreepolbeta, coefpolbeta, &
    &        degreefourbeta, omegafourbeta, coscoeffourbeta, sincoeffourbeta&
    &        , t(1))
+   betatsd = betad
    betats = beta + betaincrement
    !Determine the grid velocity for this alpha
-   CALL ADJUSTINFLOWANGLEADJTS(alpha, betats, veldir, liftdir, &
-   &                             dragdir, liftindex)
+   refdirection(:) = zero
+   refdirectiond(1) = 0.0
+   refdirection(1) = one
+   veldird = 0.0
+   CALL GETDIRVECTOR_D(refdirection, alpha, alphad, betats, betatsd, &
+   &                    veldir, veldird, liftindex)
    !do I need to update the lift direction and drag direction as well?
    !set the effictive grid velocity for this time interval
+   velxgrid0d = -((ainfd*machgrid+ainf*machgridd)*veldir(1)) - ainf*&
+   &        machgrid*veldird(1)
    velxgrid0 = ainf*machgrid*(-veldir(1))
+   velygrid0d = -((ainfd*machgrid+ainf*machgridd)*veldir(2)) - ainf*&
+   &        machgrid*veldird(2)
    velygrid0 = ainf*machgrid*(-veldir(2))
+   velzgrid0d = -((ainfd*machgrid+ainf*machgridd)*veldir(3)) - ainf*&
+   &        machgrid*veldird(3)
    velzgrid0 = ainf*machgrid*(-veldir(3))
    ELSE IF (tsmachmode) THEN
    !determine the mach number at this time interval
@@ -182,19 +231,36 @@
    &        degreefourmach, omegafourmach, coscoeffourmach, sincoeffourmach&
    &        , t(1))
    !set the effective grid velocity
+   velxgrid0d = -((ainfd*(intervalmach+machgrid)+ainf*machgridd)*&
+   &        veldirfreestream(1)) - ainf*(intervalmach+machgrid)*&
+   &        veldirfreestreamd(1)
    velxgrid0 = ainf*(intervalmach+machgrid)*(-veldirfreestream(1))
+   velygrid0d = -((ainfd*(intervalmach+machgrid)+ainf*machgridd)*&
+   &        veldirfreestream(2)) - ainf*(intervalmach+machgrid)*&
+   &        veldirfreestreamd(2)
    velygrid0 = ainf*(intervalmach+machgrid)*(-veldirfreestream(2))
+   velzgrid0d = -((ainfd*(intervalmach+machgrid)+ainf*machgridd)*&
+   &        veldirfreestream(3)) - ainf*(intervalmach+machgrid)*&
+   &        veldirfreestreamd(3)
    velzgrid0 = ainf*(intervalmach+machgrid)*(-veldirfreestream(3))
+   alphad = 0.0
+   betad = 0.0
    ELSE IF (tsaltitudemode) THEN
    CALL TERMINATE('gridVelocityFineLevel', &
    &                  'altitude motion not yet implemented...')
+   alphad = 0.0
+   betad = 0.0
    ELSE
    CALL TERMINATE('gridVelocityFineLevel', &
    &                  'Not a recognized Stability Motion')
+   alphad = 0.0
+   betad = 0.0
    END IF
+   ELSE
+   alphad = 0.0
+   betad = 0.0
    END IF
    IF (blockismoving) THEN
-   ! print *,'block is moving',blockIsMoving,useOldCoor 
    ! Determine the situation we are having here.
    IF (useoldcoor) THEN
    !
@@ -210,7 +276,9 @@
    ! the inverse of the physical nonDimensional time step,
    ! divided by 4 and 8, a bit easier.
    CALL SETCOEFTIMEINTEGRATOR()
+   oneover4dtd = fourth*timerefd/deltat
    oneover4dt = fourth*timeref/deltat
+   oneover8dtd = half*oneover4dtd
    oneover8dt = half*oneover4dt
    sd = 0.0
    scd = 0.0
@@ -266,11 +334,11 @@
    END DO
    ! Divide by 8 delta t to obtain the correct
    ! velocities.
-   sd(i, j, k, 1) = oneover8dt*scd(1)
+   sd(i, j, k, 1) = scd(1)*oneover8dt + sc(1)*oneover8dtd
    s(i, j, k, 1) = sc(1)*oneover8dt
-   sd(i, j, k, 2) = oneover8dt*scd(2)
+   sd(i, j, k, 2) = scd(2)*oneover8dt + sc(2)*oneover8dtd
    s(i, j, k, 2) = sc(2)*oneover8dt
-   sd(i, j, k, 3) = oneover8dt*scd(3)
+   sd(i, j, k, 3) = scd(3)*oneover8dt + sc(3)*oneover8dtd
    s(i, j, k, 3) = sc(3)*oneover8dt
    END DO
    END DO
@@ -392,7 +460,8 @@
    &                , 3) + sc(3)*ssd(j, k, 3)
    sface(j, k) = sc(1)*ss(j, k, 1) + sc(2)*ss(j, k, 2) + sc(3&
    &                )*ss(j, k, 3)
-   sfaced(j, k) = oneover4dt*sfaced(j, k)
+   sfaced(j, k) = sfaced(j, k)*oneover4dt + sface(j, k)*&
+   &                oneover4dtd
    sface(j, k) = sface(j, k)*oneover4dt
    END DO
    END DO
@@ -412,76 +481,85 @@
    ! the nonDimensional velocity is computed.
    j = nbkglobal
    rotcenter = cgnsdoms(j)%rotcenter
-   !if (myid==0)print *,'rotcenter',rotCenter,'rotpoint',rotpoint
-   !offSetVector= (rotCenter-pointRef)
    offsetvector = rotcenter - rotpoint
-   !if (myid==0)print *,'offset vector',offSetVector, rotCenter,pointRef
+   rotrated = cgnsdoms(j)%rotrate*timerefd
    rotrate = timeref*cgnsdoms(j)%rotrate
-   !if (myid==0) print *,'rotrate, gridvelocity',rotRate,cgnsDoms(j)%rotRate
    IF (usewindaxis) THEN
    !determine the current angles from the free stream velocity
-   CALL GETDIRANGLETS(veldirfreestream, liftdirection, liftindex, &
-   &                      alpha, beta)
+   CALL GETDIRANGLE_D(veldirfreestream, veldirfreestreamd, &
+   &                     liftdirection, liftindex, alpha, alphad, beta, &
+   &                     betad)
    IF (liftindex .EQ. 2) THEN
+   rotratetransd = 0.0
    ! different coordinate system for aerosurf
    ! Wing is in z- direction
-   rotratetransd(1, 1) = 0.0
+   rotratetransd(1, 1) = -(alphad*SIN(alpha)*COS(beta)) - COS(&
+   &            alpha)*betad*SIN(beta)
    rotratetrans(1, 1) = COS(alpha)*COS(beta)
-   rotratetransd(1, 2) = 0.0
+   rotratetransd(1, 2) = -(alphad*COS(alpha))
    rotratetrans(1, 2) = -SIN(alpha)
-   rotratetransd(1, 3) = 0.0
+   rotratetransd(1, 3) = -(COS(alpha)*betad*COS(beta)-alphad*SIN(&
+   &            alpha)*SIN(beta))
    rotratetrans(1, 3) = -(COS(alpha)*SIN(beta))
-   rotratetransd(2, 1) = 0.0
+   rotratetransd(2, 1) = alphad*COS(alpha)*COS(beta) - SIN(alpha)&
+   &            *betad*SIN(beta)
    rotratetrans(2, 1) = SIN(alpha)*COS(beta)
-   rotratetransd(2, 2) = 0.0
+   rotratetransd(2, 2) = -(alphad*SIN(alpha))
    rotratetrans(2, 2) = COS(alpha)
-   rotratetransd(2, 3) = 0.0
+   rotratetransd(2, 3) = -(alphad*COS(alpha)*SIN(beta)+SIN(alpha)&
+   &            *betad*COS(beta))
    rotratetrans(2, 3) = -(SIN(alpha)*SIN(beta))
-   rotratetransd(3, 1) = 0.0
+   rotratetransd(3, 1) = betad*COS(beta)
    rotratetrans(3, 1) = SIN(beta)
    rotratetransd(3, 2) = 0.0
    rotratetrans(3, 2) = 0.0
-   rotratetransd(3, 3) = 0.0
+   rotratetransd(3, 3) = -(betad*SIN(beta))
    rotratetrans(3, 3) = COS(beta)
    ELSE IF (liftindex .EQ. 3) THEN
+   rotratetransd = 0.0
    ! Wing is in y- direction
    !Rotate the rotation rate from the wind axis back to the local body axis
-   rotratetransd(1, 1) = 0.0
+   rotratetransd(1, 1) = -(alphad*SIN(alpha)*COS(beta)) - COS(&
+   &            alpha)*betad*SIN(beta)
    rotratetrans(1, 1) = COS(alpha)*COS(beta)
-   rotratetransd(1, 2) = 0.0
+   rotratetransd(1, 2) = -(COS(alpha)*betad*COS(beta)-alphad*SIN(&
+   &            alpha)*SIN(beta))
    rotratetrans(1, 2) = -(COS(alpha)*SIN(beta))
-   rotratetransd(1, 3) = 0.0
+   rotratetransd(1, 3) = -(alphad*COS(alpha))
    rotratetrans(1, 3) = -SIN(alpha)
-   rotratetransd(2, 1) = 0.0
+   rotratetransd(2, 1) = betad*COS(beta)
    rotratetrans(2, 1) = SIN(beta)
-   rotratetransd(2, 2) = 0.0
+   rotratetransd(2, 2) = -(betad*SIN(beta))
    rotratetrans(2, 2) = COS(beta)
    rotratetransd(2, 3) = 0.0
    rotratetrans(2, 3) = 0.0
-   rotratetransd(3, 1) = 0.0
+   rotratetransd(3, 1) = alphad*COS(alpha)*COS(beta) - SIN(alpha)&
+   &            *betad*SIN(beta)
    rotratetrans(3, 1) = SIN(alpha)*COS(beta)
-   rotratetransd(3, 2) = 0.0
+   rotratetransd(3, 2) = -(alphad*COS(alpha)*SIN(beta)+SIN(alpha)&
+   &            *betad*COS(beta))
    rotratetrans(3, 2) = -(SIN(alpha)*SIN(beta))
-   rotratetransd(3, 3) = 0.0
+   rotratetransd(3, 3) = -(alphad*SIN(alpha))
    rotratetrans(3, 3) = COS(alpha)
    ELSE
    CALL TERMINATE('getDirAngle', 'Invalid Lift Direction')
+   rotratetransd = 0.0
    END IF
+   rotratetempd = rotrated
    rotratetemp = rotrate
    rotrate = 0.0
+   rotrated = 0.0
    DO i=1,3
    DO j=1,3
-   rotrated(i) = 0.0
+   rotrated(i) = rotrated(i) + rotratetempd(j)*rotratetrans(i, &
+   &              j) + rotratetemp(j)*rotratetransd(i, j)
    rotrate(i) = rotrate(i) + rotratetemp(j)*rotratetrans(i, j)
    END DO
    END DO
    END IF
-   ! if (nn==1) then
-   !    print *,'rotRate',rotRate/timeref,'timeref',timeref
-   ! endif
    !!$             if (useWindAxis)then
    !!$                !determine the current angles from the free stream velocity
-   !!$                call getDirAngleTS(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+   !!$                call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
    !!$                !Rotate the rotation rate from the wind axis back to the local body axis
    !!$                !checkt he relationship between the differnt degrees of freedom!
    !!$                rotRateTrans(1,1)=cos(alpha)*cos(beta)
@@ -507,15 +585,29 @@
    !             velxGrid =velxgrid0+ 1*(rotRate(2)*rotCenter(3) - rotRate(3)*rotCenter(2))
    !             velyGrid =velygrid0+ 1*(rotRate(3)*rotCenter(1) - rotRate(1)*rotCenter(3))
    !             velzGrid =velzgrid0+ 1*(rotRate(1)*rotCenter(2) - rotRate(2)*rotCenter(1))
-   !if (myid==0) print *,'velocity update',offSetVector,rotPoint,'matrix',derivRotationMatrix
+   velxgridd = velxgrid0d + offsetvector(3)*rotrated(2) - &
+   &        offsetvector(2)*rotrated(3) + offsetvector(1)*&
+   &        derivrotationmatrixd(1, 1) + offsetvector(2)*&
+   &        derivrotationmatrixd(1, 2) + offsetvector(3)*&
+   &        derivrotationmatrixd(1, 3)
    velxgrid = velxgrid0 + 1*(rotrate(2)*offsetvector(3)-rotrate(3)*&
    &        offsetvector(2)) + derivrotationmatrix(1, 1)*offsetvector(1) + &
    &        derivrotationmatrix(1, 2)*offsetvector(2) + derivrotationmatrix(&
    &        1, 3)*offsetvector(3)
+   velygridd = velygrid0d + offsetvector(1)*rotrated(3) - &
+   &        offsetvector(3)*rotrated(1) + offsetvector(1)*&
+   &        derivrotationmatrixd(2, 1) + offsetvector(2)*&
+   &        derivrotationmatrixd(2, 2) + offsetvector(3)*&
+   &        derivrotationmatrixd(2, 3)
    velygrid = velygrid0 + 1*(rotrate(3)*offsetvector(1)-rotrate(1)*&
    &        offsetvector(3)) + derivrotationmatrix(2, 1)*offsetvector(1) + &
    &        derivrotationmatrix(2, 2)*offsetvector(2) + derivrotationmatrix(&
    &        2, 3)*offsetvector(3)
+   velzgridd = velzgrid0d + offsetvector(2)*rotrated(1) - &
+   &        offsetvector(1)*rotrated(2) + offsetvector(1)*&
+   &        derivrotationmatrixd(3, 1) + offsetvector(2)*&
+   &        derivrotationmatrixd(3, 2) + offsetvector(3)*&
+   &        derivrotationmatrixd(3, 3)
    velzgrid = velzgrid0 + 1*(rotrate(1)*offsetvector(2)-rotrate(2)*&
    &        offsetvector(1)) + derivrotationmatrix(3, 1)*offsetvector(1) + &
    &        derivrotationmatrix(3, 2)*offsetvector(2) + derivrotationmatrix(&
@@ -525,7 +617,6 @@
    xxcd = 0.0
    scd = 0.0
    !add in rotmatrix*rotpoint....
-   !print *,'velgrid',velxGrid,velyGrid , velzGrid
    !
    !            ************************************************************
    !            *                                                          *
@@ -566,16 +657,17 @@
    xxc(2) = xc(2) - rotcenter(2)
    xxcd(3) = xcd(3)
    xxc(3) = xc(3) - rotcenter(3)
-   !print *,'xxc1',- rotRate(3)+ derivRotationMatrix(1,2),xxc
    ! Determine the rotation speed of the cell center,
    ! which is omega*r.
-   scd(1) = rotrate(2)*xxcd(3) - rotrate(3)*xxcd(2)
+   scd(1) = rotrated(2)*xxc(3) + rotrate(2)*xxcd(3) - rotrated(&
+   &              3)*xxc(2) - rotrate(3)*xxcd(2)
    sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
-   scd(2) = rotrate(3)*xxcd(1) - rotrate(1)*xxcd(3)
+   scd(2) = rotrated(3)*xxc(1) + rotrate(3)*xxcd(1) - rotrated(&
+   &              1)*xxc(3) - rotrate(1)*xxcd(3)
    sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
-   scd(3) = rotrate(1)*xxcd(2) - rotrate(2)*xxcd(1)
+   scd(3) = rotrated(1)*xxc(2) + rotrate(1)*xxcd(2) - rotrated(&
+   &              2)*xxc(1) - rotrate(2)*xxcd(1)
    sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
-   !                   print *,'sc(1)',rotRate(2),xxc(3), -rotRate(3),xxc(2)
    ! Determine the coordinates relative to the
    ! rigid body rotation point.
    xxcd(1) = xcd(1)
@@ -584,26 +676,30 @@
    xxc(2) = xc(2) - rotationpoint(2)
    xxcd(3) = xcd(3)
    xxc(3) = xc(3) - rotationpoint(3)
-   !print *,'xxc2',- rotRate(3)+ derivRotationMatrix(1,2),xxc
    ! Determine the total velocity of the cell center.
    ! This is a combination of rotation speed of this
    ! block and the entire rigid body rotation.
-   !print *,'velgridx',velxGrid,rotRate(2)*xxc(3)+derivRotationMatrix(1,3)*xxc(3),- rotRate(3)+ derivRotationMatrix(1,2),xxc(2) 
-   sd(i, j, k, 1) = scd(1) + derivrotationmatrix(1, 1)*xxcd(1) &
-   &              + derivrotationmatrix(1, 2)*xxcd(2) + derivrotationmatrix(&
-   &              1, 3)*xxcd(3)
+   sd(i, j, k, 1) = scd(1) + velxgridd + derivrotationmatrixd(1&
+   &              , 1)*xxc(1) + derivrotationmatrix(1, 1)*xxcd(1) + &
+   &              derivrotationmatrixd(1, 2)*xxc(2) + derivrotationmatrix(1&
+   &              , 2)*xxcd(2) + derivrotationmatrixd(1, 3)*xxc(3) + &
+   &              derivrotationmatrix(1, 3)*xxcd(3)
    s(i, j, k, 1) = sc(1) + velxgrid + derivrotationmatrix(1, 1)&
    &              *xxc(1) + derivrotationmatrix(1, 2)*xxc(2) + &
    &              derivrotationmatrix(1, 3)*xxc(3)
-   sd(i, j, k, 2) = scd(2) + derivrotationmatrix(2, 1)*xxcd(1) &
-   &              + derivrotationmatrix(2, 2)*xxcd(2) + derivrotationmatrix(&
-   &              2, 3)*xxcd(3)
+   sd(i, j, k, 2) = scd(2) + velygridd + derivrotationmatrixd(2&
+   &              , 1)*xxc(1) + derivrotationmatrix(2, 1)*xxcd(1) + &
+   &              derivrotationmatrixd(2, 2)*xxc(2) + derivrotationmatrix(2&
+   &              , 2)*xxcd(2) + derivrotationmatrixd(2, 3)*xxc(3) + &
+   &              derivrotationmatrix(2, 3)*xxcd(3)
    s(i, j, k, 2) = sc(2) + velygrid + derivrotationmatrix(2, 1)&
    &              *xxc(1) + derivrotationmatrix(2, 2)*xxc(2) + &
    &              derivrotationmatrix(2, 3)*xxc(3)
-   sd(i, j, k, 3) = scd(3) + derivrotationmatrix(3, 1)*xxcd(1) &
-   &              + derivrotationmatrix(3, 2)*xxcd(2) + derivrotationmatrix(&
-   &              3, 3)*xxcd(3)
+   sd(i, j, k, 3) = scd(3) + velzgridd + derivrotationmatrixd(3&
+   &              , 1)*xxc(1) + derivrotationmatrix(3, 1)*xxcd(1) + &
+   &              derivrotationmatrixd(3, 2)*xxc(2) + derivrotationmatrix(3&
+   &              , 2)*xxcd(2) + derivrotationmatrixd(3, 3)*xxc(3) + &
+   &              derivrotationmatrix(3, 3)*xxcd(3)
    s(i, j, k, 3) = sc(3) + velzgrid + derivrotationmatrix(3, 1)&
    &              *xxc(1) + derivrotationmatrix(3, 2)*xxc(2) + &
    &              derivrotationmatrix(3, 3)*xxc(3)
@@ -613,12 +709,6 @@
    sfaceid = 0.0
    sfacejd = 0.0
    sfacekd = 0.0
-   !print *,'s1',i,j,k,s(i,j,k,1)!,sc(1), &
-   !                        derivRotationMatrix(1,1)*xxc(1) &
-   !                        + derivRotationMatrix(1,2)*xxc(2) &
-   !                        + derivRotationMatrix(1,3)*xxc(3)
-   !                   print *,'rm1',derivRotationMatrix(1,3),xxc(3),&
-   !                        derivRotationMatrix(1,2),xxc(2)
    !
    !            ************************************************************
    !            *                                                          *
@@ -717,11 +807,14 @@
    xxc(3) = xc(3) - rotcenter(3)
    ! Determine the rotation speed of the face center,
    ! which is omega*r.
-   scd(1) = rotrate(2)*xxcd(3) - rotrate(3)*xxcd(2)
+   scd(1) = rotrated(2)*xxc(3) + rotrate(2)*xxcd(3) - &
+   &                rotrated(3)*xxc(2) - rotrate(3)*xxcd(2)
    sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
-   scd(2) = rotrate(3)*xxcd(1) - rotrate(1)*xxcd(3)
+   scd(2) = rotrated(3)*xxc(1) + rotrate(3)*xxcd(1) - &
+   &                rotrated(1)*xxc(3) - rotrate(1)*xxcd(3)
    sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
-   scd(3) = rotrate(1)*xxcd(2) - rotrate(2)*xxcd(1)
+   scd(3) = rotrated(1)*xxc(2) + rotrate(1)*xxcd(2) - &
+   &                rotrated(2)*xxc(1) - rotrate(2)*xxcd(1)
    sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
    ! Determine the coordinates relative to the
    ! rigid body rotation point.
@@ -734,21 +827,27 @@
    ! Determine the total velocity of the cell face.
    ! This is a combination of rotation speed of this
    ! block and the entire rigid body rotation.
-   scd(1) = scd(1) + derivrotationmatrix(1, 1)*xxcd(1) + &
-   &                derivrotationmatrix(1, 2)*xxcd(2) + derivrotationmatrix(&
-   &                1, 3)*xxcd(3)
+   scd(1) = scd(1) + velxgridd + derivrotationmatrixd(1, 1)*&
+   &                xxc(1) + derivrotationmatrix(1, 1)*xxcd(1) + &
+   &                derivrotationmatrixd(1, 2)*xxc(2) + derivrotationmatrix(&
+   &                1, 2)*xxcd(2) + derivrotationmatrixd(1, 3)*xxc(3) + &
+   &                derivrotationmatrix(1, 3)*xxcd(3)
    sc(1) = sc(1) + velxgrid + derivrotationmatrix(1, 1)*xxc(1&
    &                ) + derivrotationmatrix(1, 2)*xxc(2) + &
    &                derivrotationmatrix(1, 3)*xxc(3)
-   scd(2) = scd(2) + derivrotationmatrix(2, 1)*xxcd(1) + &
-   &                derivrotationmatrix(2, 2)*xxcd(2) + derivrotationmatrix(&
-   &                2, 3)*xxcd(3)
+   scd(2) = scd(2) + velygridd + derivrotationmatrixd(2, 1)*&
+   &                xxc(1) + derivrotationmatrix(2, 1)*xxcd(1) + &
+   &                derivrotationmatrixd(2, 2)*xxc(2) + derivrotationmatrix(&
+   &                2, 2)*xxcd(2) + derivrotationmatrixd(2, 3)*xxc(3) + &
+   &                derivrotationmatrix(2, 3)*xxcd(3)
    sc(2) = sc(2) + velygrid + derivrotationmatrix(2, 1)*xxc(1&
    &                ) + derivrotationmatrix(2, 2)*xxc(2) + &
    &                derivrotationmatrix(2, 3)*xxc(3)
-   scd(3) = scd(3) + derivrotationmatrix(3, 1)*xxcd(1) + &
-   &                derivrotationmatrix(3, 2)*xxcd(2) + derivrotationmatrix(&
-   &                3, 3)*xxcd(3)
+   scd(3) = scd(3) + velzgridd + derivrotationmatrixd(3, 1)*&
+   &                xxc(1) + derivrotationmatrix(3, 1)*xxcd(1) + &
+   &                derivrotationmatrixd(3, 2)*xxc(2) + derivrotationmatrix(&
+   &                3, 2)*xxcd(2) + derivrotationmatrixd(3, 3)*xxc(3) + &
+   &                derivrotationmatrix(3, 3)*xxcd(3)
    sc(3) = sc(3) + velzgrid + derivrotationmatrix(3, 1)*xxc(1&
    &                ) + derivrotationmatrix(3, 2)*xxc(2) + &
    &                derivrotationmatrix(3, 3)*xxc(3)

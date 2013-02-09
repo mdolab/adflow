@@ -36,13 +36,13 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 FILES_TO_COMPLEXIFY = \
-		determineStencil.F90\
-		setupAllResidualMatricesFwd.F90\
-		setupExtraResidualMatrix.F90\
-		setupExtraMatrix.F90\
 		alloc_derivative_values.F90\
 		dealloc_derivative_values.F90\
+		determineStencil.F90\
+		setupAllResidualMatricesFwd.F90\
 		setupColoring.F90\
+		setupExtraResidualMatrix.F90\
+		setupExtraMatrix.F90\
 		setPointersOffTSInstance.f90\
 		setPointersOffTSInstance_d.f90\
 		setPointers_d.f90\

@@ -27,6 +27,8 @@ subroutine terminate(routineName, errorMessage)
   !
   character(len=*), intent(in) :: routineName
   character(len=*), intent(in) :: errorMessage
+#ifndef USE_TAPENADE
+
   !
   !      Local parameter
   !
@@ -128,10 +130,11 @@ subroutine terminate(routineName, errorMessage)
      call mpi_abort(SUmb_comm_world, 1, ierr)
      stop
   end if
+#endif
 
 end subroutine terminate
 
-subroutine EChk(ierr,file,line)
+subroutine EChk(ierr, file, line)
 
   ! Check if ierr that resulted from a petsc or MPI call is in fact an
   ! error. 
@@ -157,9 +160,12 @@ subroutine EChk(ierr,file,line)
      write(*,901) "Error at line: ",line," in file: ",file
      print *,'-----------------------------------------------------------------'
 #endif
-
+#ifndef USE_TAPENADE
      call MPI_Abort(sumb_comm_world,ierr)
      stop ! Just in case
+#else
+     stop
+#endif
   end if
 
 900 format(A,I2,A,I2)

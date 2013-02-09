@@ -4,8 +4,6 @@ subroutine setup_PC_coloring(nn, level, nColor)
   use blockPointers
   implicit none
 
-  ! We assume that setPointers has already been called for this block, nn
-
   ! Input parameters
   integer(kind=intType), intent(in) :: nn, level
 
@@ -21,10 +19,8 @@ subroutine setup_PC_coloring(nn, level, nColor)
      do j=0, jb
         do i=0, ib
            ! Add the extra one for 1-based numbering (as opposed to zero-based)
-
            flowDomsd(nn, 1, 1)%color(i, j, k) = &
-                mod( (i+1) + 5*(j+1) + 4*(k+1), 7) + 1
-
+                mod(i + 5*j + 4*k, 7) + 1
         end do
      end do
   end do
@@ -37,8 +33,6 @@ subroutine setup_dRdw_euler_coloring(nn, level, nColor)
   use blockPointers
   implicit none
 
-  ! We assume that setPointers has already been called for this block, nn
-
   ! Input parameters
   integer(kind=intType), intent(in) :: nn, level
 
@@ -53,16 +47,13 @@ subroutine setup_dRdw_euler_coloring(nn, level, nColor)
      do j=0, jb
         do i=0, ib
            ! Add the extra one for 1-based numbering (as opposed to zero-based)
-
-
            flowDomsd(nn, 1, 1)%color(i, j, k) = &
-                mod( i + 14*j + 4*k , 17) + 1
-
+                mod( i + 3*j + 4*k , 13) + 1
         end do
      end do
   end do
   
-  nColor = 17
+  nColor = 13
 
 end subroutine setup_dRdw_euler_coloring
 
@@ -70,8 +61,6 @@ subroutine setup_dRdw_visc_coloring(nn, level, nColor)
   use blockPointers
   implicit none
 
-  ! We assume that setPointers has already been called for this block, nn
-
   ! Input parameters
   integer(kind=intType), intent(in) :: nn, level
 
@@ -86,16 +75,13 @@ subroutine setup_dRdw_visc_coloring(nn, level, nColor)
      do j=0, jb
         do i=0, ib
            ! Add the extra one for 1-based numbering (as opposed to zero-based)
-
-           flowDomsd(nn, 1, 1)%color(i, j, k) = 0
-           print * , 'This coloring is not implemented yet'
-           stop
-
+           flowDomsd(nn, 1, 1)%color(i,j,k) = &
+                mod( i + 19*j + 11*k ,35) + 1
         end do
      end do
   end do
   
-  nColor = 13
+  nColor = 35
 
 end subroutine setup_dRdw_visc_coloring
 
@@ -103,8 +89,6 @@ subroutine setup_dRdx_euler_coloring(nn, level, nColor)
   use blockPointers
   use communication
   implicit none
-
-  ! We assume that setPointers has already been called for this block, nn
 
   ! Input parameters
   integer(kind=intType), intent(in) :: nn, level
@@ -116,45 +100,19 @@ subroutine setup_dRdx_euler_coloring(nn, level, nColor)
   integer(kind=intType) :: i, j, k, k_plane
 
   call setPointers(nn, level, 1) ! Just to get the correct sizes
-  do k=0, ke
-     ! Determine what k-plane we're on:
-     k_plane = mod(k, 4)
 
-     do j=0, je
-        do i=0, ie
-
-           if     (k_plane == 0) then
-              flowdomsd(nn, 1, 1)%color(i, j, k) = mod(i + mod(j/2, 2)*3    , 6) + 6*mod(j, 2) 
-           else if(k_plane == 1) then
-              flowdomsd(nn, 1, 1)%color(i, j, k) = mod(i + mod(j/2, 2)*3    , 6) + 6*mod(j, 2) +12
-           else if(k_plane == 2) then
-              flowdomsd(nn, 1, 1)%color(i, j, k) = mod(i + mod(j/2, 2)*3    , 6) + 6*mod(j, 2) +24
-           else if(k_plane == 3) then
-              flowdomsd(nn, 1, 1)%color(i, j, k) = mod(i + mod(j/2, 2)*3    , 6) + 6*mod(j, 2) +36
-           end if
-
-                      
-        !    if     (k_plane == 0) then
-!               flowDomsd(nn, 1, 1)%color(i, j, k) = mod(i + mod(j/3, 2)*3    , 6) + 6*mod(j, 3)
-!            else if(k_plane == 1) then
-!               flowdomsd(nn, 1, 1)%color(i, j, k) = mod(i + mod(j/2, 2)*3    , 6) + 6*mod(j, 2) +18
-!            else if(k_plane == 2) then
-!               flowdomsd(nn, 1, 1)%color(i, j, k) = mod(i + mod(j/2, 2)*3,    6) + 6*mod(j, 2) +30
-!            else if(k_plane == 3) then
-!               flowDomsd(nn, 1, 1)%color(i, j, k) = mod(i + mod(j/3, 2)*3 + 3, 6) + 6*mod(j, 3)
-!            end if
-           
-           ! Add the extra one for 1-based numbering (as opposed to zero-based)! 
-           flowDomsd(nn, 1, 1)%color(i, j, k) = flowDomsd(nn, 1, 1)%color(i, j, k) + 1
-!            if (myid == 0 .and. nn == 1) then
-!               print *, i, j, k, flowdomsd(nn, 1, 1)%color(i, j, k)-1
-!            end if
+  do k=0, kb
+     do j=0, jb
+        do i=0, ib
+           ! Add the extra one for 1-based numbering (as opposed to zero-based)
+           flowDomsd(nn, 1, 1)%color(i, j, k) = &
+                mod( i + 7*j + 27*k, 38) + 1
         end do
      end do
   end do
   
-  nColor = 48
-
+  nColor = 38
+ 
 end subroutine setup_dRdx_euler_coloring
 
 ! -------------------------------------------------------------
@@ -283,7 +241,6 @@ subroutine setup_BF_coloring(nn, level, nColor)
            ! Add the extra one for 1-based numbering (as opposed to zero-based)
 
            flowDomsd(nn, 1, 1)%color(i, j, k) = i + j*(ib+1) + k*((ib+1)*(jb+1)) + 1
-
         end do
      end do
   end do

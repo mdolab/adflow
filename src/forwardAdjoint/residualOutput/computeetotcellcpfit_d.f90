@@ -3,13 +3,13 @@
    !
    !  Differentiation of computeetotcellcpfit in forward (tangent) mode:
    !   variations   of useful results: *gamma *w
-   !   with respect to varying inputs: *p *gamma *w cv0 *cptrange
+   !   with respect to varying inputs: *p *gamma *w rgas cv0 *cptrange
    !                *cpeint *(*cptempfit.constants) *cptempfit.eint0
-   !                cvn
+   !                cvn scale
    !   Plus diff mem management of: p:in gamma:in w:in cptrange:in
    !                cpeint:in cptempfit:in
    !      ==================================================================
-   SUBROUTINE COMPUTEETOTCELLCPFIT_D(i, j, k, scale, correctfork)
+   SUBROUTINE COMPUTEETOTCELLCPFIT_D(i, j, k, scale, scaled, correctfork)
    USE FLOWVARREFSTATE
    USE BLOCKPOINTERS_D
    USE CPCURVEFITS
@@ -32,6 +32,7 @@
    !
    INTEGER(kind=inttype), INTENT(IN) :: i, j, k
    REAL(kind=realtype), INTENT(IN) :: scale
+   REAL(kind=realtype), INTENT(IN) :: scaled
    LOGICAL, INTENT(IN) :: correctfork
    !
    !      Local variables.
@@ -55,15 +56,15 @@
    &      irho)*wd(i, j, k, itu1))
    pp = pp - twothird*w(i, j, k, irho)*w(i, j, k, itu1)
    END IF
-   td = (tref*ppd*rgas*w(i, j, k, irho)-tref*pp*rgas*wd(i, j, k, irho))/(&
-   &    rgas*w(i, j, k, irho))**2
+   td = (tref*ppd*rgas*w(i, j, k, irho)-tref*pp*(rgasd*w(i, j, k, irho)+&
+   &    rgas*wd(i, j, k, irho)))/(rgas*w(i, j, k, irho))**2
    t = tref*pp/(rgas*w(i, j, k, irho))
    ! Determine the case we are having here.
    IF (t .LE. cptrange(0)) THEN
    ! Temperature is less than the smallest temperature
    ! in the curve fits. Use extrapolation using
    ! constant cv.
-   eintd = scale*cv0*td
+   eintd = scaled*(cpeint(0)+cv0*(t-cptrange(0))) + scale*cv0*td
    eint = scale*(cpeint(0)+cv0*(t-cptrange(0)))
    gammad(i, j, k) = 0.0
    gamma(i, j, k) = (cv0+one)/cv0
@@ -71,7 +72,8 @@
    ! Temperature is larger than the largest temperature
    ! in the curve fits. Use extrapolation using
    ! constant cv.
-   eintd = scale*cvn*td
+   eintd = scaled*(cpeint(cpnparts)+cvn*(t-cptrange(cpnparts))) + scale&
+   &      *cvn*td
    eint = scale*(cpeint(cpnparts)+cvn*(t-cptrange(cpnparts)))
    gammad(i, j, k) = 0.0
    gamma(i, j, k) = (cvn+one)/cvn
@@ -127,7 +129,7 @@
    eint = eint + cptempfit(nn)%constants(ii)*t2/mm
    END IF
    END DO
-   eintd = scale*eintd
+   eintd = scaled*eint + scale*eintd
    eint = scale*eint
    gammad(i, j, k) = (cvd*cv-(cv+one)*cvd)/cv**2
    gamma(i, j, k) = (cv+one)/cv

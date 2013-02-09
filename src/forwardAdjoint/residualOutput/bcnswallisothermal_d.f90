@@ -2,14 +2,15 @@
    !  Tapenade 3.6 (r4159) - 21 Sep 2011 10:11
    !
    !  Differentiation of bcnswallisothermal in forward (tangent) mode:
-   !   variations   of useful results: *p *gamma *w *rlv
-   !   with respect to varying inputs: *bvtj1 *bvtj2 *p *gamma *bmtk1
-   !                *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1
-   !                *bvti2 *bmtj1 *bmtj2
+   !   variations   of useful results: *rev *p *gamma *w *rlv
+   !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *p *gamma
+   !                *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2
+   !                *bvti1 *bvti2 *bmtj1 *bmtj2 rgas
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
    !                gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
    !                bvtk2:in d2wall:in bmti1:in bmti2:in bvti1:in
-   !                bvti2:in bmtj1:in bmtj2:in bcdata:in (global)cphint:in-out
+   !                bvti2:in bmtj1:in bmtj2:in bcdata:in *bcdata.uslip:in
+   !                (global)cphint:in-out
    !
    !      ******************************************************************
    !      *                                                                *
@@ -56,9 +57,9 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    INTRINSIC MAX
    INTRINSIC MIN
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d
    INTERFACE 
    SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &        rev1, rev2, offset)
@@ -72,7 +73,8 @@
    END INTERFACE
       INTERFACE 
    SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
-   &        pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, offset)
+   &        pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, &
+   &        offset)
    USE BLOCKPOINTERS_D
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
@@ -82,6 +84,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    END SUBROUTINE SETBCPOINTERS_D
    END INTERFACE
       !
@@ -111,7 +114,8 @@
    ! that.
    !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
    CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   &                     pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, 0)
+   &                     pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, &
+   &                     rev2d, 0)
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero
@@ -130,8 +134,8 @@
    END IF
    ! Compute the temperature in the internal cell and in the
    ! halo cell such that the average is the wall temperature.
-   t2d = (pp2d(i, j)*rgas*ww2(i, j, irho)-pp2(i, j)*rgas*ww2d(i, &
-   &            j, irho))/(rgas*ww2(i, j, irho))**2
+   t2d = (pp2d(i, j)*rgas*ww2(i, j, irho)-pp2(i, j)*(rgasd*ww2(i&
+   &            , j, irho)+rgas*ww2d(i, j, irho)))/(rgas*ww2(i, j, irho))**2
    t2 = pp2(i, j)/(rgas*ww2(i, j, irho))
    t1d = -t2d
    t1 = two*tns_wall(i, j) - t2
@@ -153,8 +157,8 @@
    ! velocity into account.
    pp1d(i, j) = pp2d(i, j) - four*third*rhokd
    pp1(i, j) = pp2(i, j) - four*third*rhok
-   ww1d(i, j, irho) = (pp1d(i, j)*rgas*t1-pp1(i, j)*rgas*t1d)/(&
-   &            rgas*t1)**2
+   ww1d(i, j, irho) = (pp1d(i, j)*rgas*t1-pp1(i, j)*(rgasd*t1+&
+   &            rgas*t1d))/(rgas*t1)**2
    ww1(i, j, irho) = pp1(i, j)/(rgas*t1)
    ww1d(i, j, ivx) = -ww2d(i, j, ivx)
    ww1(i, j, ivx) = -ww2(i, j, ivx) + two*uslip(i, j, 1)
@@ -169,7 +173,7 @@
    rlv1d(i, j) = rlv2d(i, j)
    rlv1(i, j) = rlv2(i, j)
    IF (eddymodel) THEN
-   rev1d(i, j) = 0.0
+   rev1d(i, j) = -rev2d(i, j)
    rev1(i, j) = -rev2(i, j)
    END IF
    END DO

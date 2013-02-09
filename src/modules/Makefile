@@ -98,7 +98,7 @@ FILES_TO_COMPLEXIFY =  precision.F90\
 		 couplerParam.f90\
 		 CpCurveFits.f90\
 		 extraOutput.f90\
-		 flowVarRefState.f90\
+		 flowVarRefState.F90\
 		 inputParam.F90\
 		 interfaceGroups.f90\
 		 iteration.f90\
