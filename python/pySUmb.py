@@ -635,7 +635,6 @@ class SUMB(AeroSolver):
         self.spatialSetup = False 
         self.stateSetup = False 
         self.extraSetup = False
-        self.couplingSetup = False
         self.kspSetup = False
         self.adjointRHS = None # When this is setup, it has
                                # the current objective
@@ -977,7 +976,6 @@ class SUMB(AeroSolver):
         # their flag to False
         self.spatialSetup = False
         self.stateSetup = False
-        self.couplingSetup = False
         self.extraSetup = False
         self.kspSetup = False
         self.adjointRHS         = None
@@ -1334,7 +1332,7 @@ class SUMB(AeroSolver):
         return forces
 
     def getForcePoints(self, TS=0):
-        [npts, nTS] = self.sumb.getforcesize()
+        [npts, ncell, nTS] = self.sumb.getforcesize()
         pts = numpy.zeros((nTS, npts, 3),self.dtype)
         self.sumb.getforcepoints(pts.T)
         
@@ -1559,7 +1557,7 @@ class SUMB(AeroSolver):
 
         # Run initAdjoint incase this is the first adjoint solve
         self.initAdjoint()
-        
+
         if self.getOption('useReverseModeAD'):
             # We must create the state, spatial and extra matrices
             # if we're using reverse mode:
@@ -1591,7 +1589,7 @@ class SUMB(AeroSolver):
         else:
             # Otherwise, we just setup the state variables to save
             # memory:
-            
+
             if not self.stateSetup:
                 self.sumb.createstatepetscvars()
                 self.sumb.createpetscksp()
@@ -1600,27 +1598,13 @@ class SUMB(AeroSolver):
                 self.stateSetup = True
             # end if
         # end if
-        self.computeObjPartials('cl')
 
         # Finally setup the KSP object for the solve
         if not self.kspSetup:
             self.sumb.setuppetscksp()
             self.kspSetup = True
-            
-        return
-
-    def setupCouplingMatrices(self, forcePoints=None):
-        '''Setup the coupling matrices if required:'''
-
-        if not self.couplingSetup:
-            if forcePoints is None:
-                forcePoints = self.getForcePoints()
-            # end if
-            self.sumb.createcouplingpetscvars()
-            self.sumb.setupcouplingmatrixstruct(forcePoints.T)
-            self.couplingSetup = True
         # end if
-
+            
         return
 
     def setupSpatialMatrices(self, useAD=True):
@@ -1698,11 +1682,6 @@ class SUMB(AeroSolver):
             self.extraSetup = False
         # end if
 
-        if self.couplingSetup:
-            self.sumb.destroycouplingpetscvars()
-            self.couplingSetup = False
-        # end if
-
         return
 
     def _on_adjoint(self, objective, forcePoints=None, structAdjoint=None, 
@@ -1713,7 +1692,7 @@ class SUMB(AeroSolver):
         # zero aerodynamic RHS
 
         obj, aeroObj = self._getObjective(objective)
-        
+
         # Setup adjoint matrices/vector as required
         self.setupAdjoint()
 
@@ -1725,7 +1704,6 @@ class SUMB(AeroSolver):
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
         if structAdjoint is not None and group_name is not None:
-            self.setupCouplingMatrices(forcePoints)
             phi = self.mesh.expandVectorByFamily(group_name, structAdjoint)
             self.sumb.agumentrhs(numpy.ravel(phi))
         # end if
@@ -2072,7 +2050,7 @@ class SUMB(AeroSolver):
         # Note: Computeobjective partials MUST be called with the full
         # force pt list.
         if forcePoints is None:
-            [npts, nTS] = self.sumb.getforcesize()
+            [npts, ncells, nTS] = self.sumb.getforcesize()
             forcePoints = numpy.zeros((nTS, npts, 3),self.dtype)
             self.sumb.getforcepoints(forcePoints.T)
         # end if
@@ -2098,9 +2076,7 @@ class SUMB(AeroSolver):
 
         # Compute the partials
         self.computeObjPartials(objective, forcePoints)
-
-
-        [npts, nTS] = self.sumb.getforcesize()
+        [npts, ncell, nTS] = self.sumb.getforcesize()
         dIdpts = numpy.zeros((nTS, npts, 3))
         self.sumb.getdidx(numpy.ravel(dIdpts))
         

@@ -46,7 +46,7 @@
    !
    INTEGER(kind=inttype) :: i, nn, mm, ii, start
    REAL(kind=realtype) :: ovgm1, factk, pp, t, t2, scale
-   REAL(kind=realtype) :: ppd, td, t2d
+   REAL(kind=realtype) :: ppd, td, t2d, scaled
    INTRINSIC LOG
    !
    !      ******************************************************************
@@ -81,6 +81,7 @@
    ! Cp as function of the temperature is given via curve fits.
    ! Store a scale factor to compute the nonDimensional
    ! internal energy.
+   scaled = rgasd/tref
    scale = rgas/tref
    eintd = 0.0
    ! Loop over the number of elements of the array
@@ -92,20 +93,22 @@
    ppd = ppd - twothird*(rhod(i)*k(i)+rho(i)*kd(i))
    pp = pp - twothird*rho(i)*k(i)
    END IF
-   td = (tref*ppd*rgas*rho(i)-tref*pp*rgas*rhod(i))/(rgas*rho(i))**2
+   td = (tref*ppd*rgas*rho(i)-tref*pp*(rgasd*rho(i)+rgas*rhod(i)))/(&
+   &        rgas*rho(i))**2
    t = tref*pp/(rgas*rho(i))
    ! Determine the case we are having here.
    IF (t .LE. cptrange(0)) THEN
    ! Temperature is less than the smallest temperature
    ! in the curve fits. Use extrapolation using
    ! constant cv.
-   eintd(i) = scale*cv0*td
+   eintd(i) = scaled*(cpeint(0)+cv0*(t-cptrange(0))) + scale*cv0*td
    eint(i) = scale*(cpeint(0)+cv0*(t-cptrange(0)))
    ELSE IF (t .GE. cptrange(cpnparts)) THEN
    ! Temperature is larger than the largest temperature
    ! in the curve fits. Use extrapolation using
    ! constant cv.
-   eintd(i) = scale*cvn*td
+   eintd(i) = scaled*(cpeint(cpnparts)+cvn*(t-cptrange(cpnparts))) &
+   &          + scale*cvn*td
    eint(i) = scale*(cpeint(cpnparts)+cvn*(t-cptrange(cpnparts)))
    ELSE
    ! Temperature is in the curve fit range.
@@ -150,7 +153,7 @@
    eint(i) = eint(i) + cptempfit(nn)%constants(ii)*t2/mm
    END IF
    END DO
-   eintd(i) = scale*eintd(i)
+   eintd(i) = scaled*eint(i) + scale*eintd(i)
    eint(i) = scale*eint(i)
    END IF
    ! Add the turbulent energy if needed.

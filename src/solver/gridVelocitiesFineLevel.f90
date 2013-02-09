@@ -103,7 +103,8 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
   real(kind=realType) :: alpha,beta,intervalMach,alphaTS,alphaIncrement,&
        betaTS,betaIncrement
   real(kind=realType), dimension(3) ::velDir,liftDir,dragDir
-
+  real(kind=realType), dimension(3) :: refDirection
+ 
   !Function Definitions
 
   real(kind=realType) :: TSAlpha,TSBeta,TSMach
@@ -170,8 +171,10 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
 
         alphaTS = alpha+alphaIncrement
         !Determine the grid velocity for this alpha
-        call adjustInflowAngle(alphaTS,beta,velDir,liftDir,dragDir,&
-             liftIndex)
+        refDirection(:) = zero
+        refDirection(1) = one
+        call getDirVector(refDirection, alphaTS, beta, velDir, liftIndex)
+
         !do I need to update the lift direction and drag direction as well?
         !set the effictive grid velocity for this time interval
         velxGrid0 = (aInf*machgrid)*(-velDir(1))
@@ -189,8 +192,10 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
 
         betaTS = beta+betaIncrement
         !Determine the grid velocity for this alpha
-        call adjustInflowAngle(alpha,betaTS,velDir,liftDir,dragDir,&
-             liftIndex)
+        refDirection(:) = zero
+        refDirection(1) = one
+        call getDirVector(refDirection, alpha, betaTS, velDir, liftIndex)
+
         !do I need to update the lift direction and drag direction as well?
         !set the effictive grid velocity for this time interval
         velxGrid0 = (aInf*machgrid)*(-velDir(1))

@@ -2,15 +2,17 @@
    !  Tapenade 3.6 (r4159) - 21 Sep 2011 10:11
    !
    !  Differentiation of residual_block in forward (tangent) mode:
-   !   variations   of useful results: *dw *w
-   !   with respect to varying inputs: *p *gamma *w *rlv *radi *radj
-   !                *radk vis4 kappacoef vis2 vis2coarse sigma *cdisrk
+   !   variations   of useful results: *p *dw *w *(*viscsubface.tau)
+   !   with respect to varying inputs: *rev *p *sfacei *sfacej *gamma
+   !                *sfacek *w *rlv *x *vol *si *sj *sk *(*bcdata.norm)
+   !                *radi *radj *radk rgas pinfcorr rhoinf timeref
+   !                vis4 kappacoef vis2 vis2coarse sigma *cdisrk
    !   Plus diff mem management of: rev:in p:in sfacei:in sfacej:in
    !                gamma:in sfacek:in dw:in w:in rlv:in x:in vol:in
    !                d2wall:in si:in sj:in sk:in fw:in rotmatrixi:in
    !                rotmatrixj:in rotmatrixk:in viscsubface:in *viscsubface.tau:in
    !                *viscsubface.q:in *viscsubface.utau:in bcdata:in
-   !                *bcdata.norm:in radi:in radj:in radk:in
+   !                *bcdata.norm:in radi:in radj:in radk:in cgnsdoms:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -29,6 +31,8 @@
    USE INPUTTIMESPECTRAL
    USE INPUTDISCRETIZATION
    USE ITERATION
+   USE DIFFSIZES
+   !  Hint: ISIZE1OFDrfviscsubface should be the size of dimension 1 of array *viscsubface
    IMPLICIT NONE
    !
    !      ******************************************************************
@@ -46,6 +50,7 @@
    LOGICAL :: finegrid
    REAL(realtype) :: result1
    INTRINSIC REAL
+   INTEGER :: ii1
    !
    !      ******************************************************************
    !      *                                                                *
@@ -109,7 +114,13 @@
    fwd = 0.0
    END SELECT
    ! Compute the viscous flux in case of a viscous computation.
-   IF (viscous) CALL VISCOUSFLUX_D()
+   IF (viscous) THEN
+   CALL VISCOUSFLUX_D()
+   ELSE
+   DO ii1=1,ISIZE1OFDrfviscsubface
+   viscsubfaced(ii1)%tau = 0.0
+   END DO
+   END IF
    ! Add the dissipative and possibly viscous fluxes to the
    ! Euler fluxes. Loop over the owned cells and add fw to dw.
    ! Also multiply by iblank so that no updates occur in holes

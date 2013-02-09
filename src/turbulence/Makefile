@@ -52,7 +52,7 @@ FILES_TO_COMPLEXIFY = turbMod.f90\
 		 bcTurbTreatment.f90\
 		 bcTurbWall.f90\
 		 bl.f90\
-		 computeEddyViscosity.f90\
+		 computeEddyViscosity.F90\
 		 curveFit.f90\
 		 f1SST.f90\
 		 initCurveFitDataKtau.f90\

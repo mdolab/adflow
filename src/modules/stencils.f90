@@ -23,7 +23,6 @@ module stencils
   
 end module stencils
        
-
 subroutine initialize_stencils
 
   use stencils

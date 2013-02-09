@@ -13,8 +13,7 @@ subroutine preprocessingADjoint
   !
   !     ******************************************************************
   !     *                                                                *
-  !     * Perform the preprocessing tasks for the adjoint solver, such   *
-  !     * as assertions testing, memory allocation and global indexing.  *
+  !     * Perform the preprocessing tasks for the adjoint solver         *
   !     *                                                                *
   !     ******************************************************************
   !
@@ -32,7 +31,7 @@ subroutine preprocessingADjoint
 
   !     Local variables.
   !
-  integer(kind=intType) :: ierr,level,ndimW,ndimS,nTS
+  integer(kind=intType) :: ierr, level, ndimW, ndimS, nTS, ncell
   !
   !     ******************************************************************
   !     *                                                                *
@@ -45,7 +44,7 @@ subroutine preprocessingADjoint
   ! creations/deletions of adjoint/NKsolver memory
 
   ! Create two (empty) Vectors for getdFdx(T)Vec operations
-  call getForceSize(nDimS,nTS)
+  call getForceSize(nDimS,ncell, nTS)
   nDimS = nDimS * 3 *nTimeIntervalsSpectral! Multiply by 3 for each
                                            ! dof on each point
 
@@ -86,5 +85,8 @@ subroutine preprocessingADjoint
           PETSC_NULL_SCALAR,w_like2,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
   end if
+
+  ! Need to initialize the stencils as well, only once:
+  call initialize_stencils
      
 end subroutine preprocessingADjoint

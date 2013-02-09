@@ -92,7 +92,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
 !!$  real(kind=realType) :: dcmzdqb,dcmzdq
 !!$  real(kind=realType) :: dcmzdalphadot,dcmzdalphadotb
   ! Working Variables
-  integer(kind=intTYpe) :: sps,ii,iInc,ierr,n
+  integer(kind=intTYpe) :: sps,ii,iInc,ierr,n,k,l
   integer(kind=intTYpe) :: i,j,icell,jcell,kcell,nn,mm,idxmgb,faceID,ibeg,iend,jbeg,jend
   real(kind=realType) :: dIdctemp,val
   real(kind=realType) :: dJdc(nTimeIntervalsSpectral)
@@ -306,6 +306,9 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
 
      domainLoopAD: do nn=1,nDom
         call setPointers(nn,1_intType,sps)
+        allocate(wblock(0:ib,0:jb,0:kb,nw),&
+             wblockb(0:ib,0:jb,0:kb,nw),stat=ierr)
+        call echk(ierr, __FILE__, __LINE__)
         bocos: do mm=1,nBocos
            rotpointxcorrection = 0.0
            rotpointycorrection = 0.0
@@ -381,15 +384,20 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
                  cmomentb(3) = globalCFValsb(costFuncMomZCoef)
               end select
 
-              allocate(wblock(0:ib,0:jb,0:kb,nw),&
-                   wblockb(0:ib,0:jb,0:kb,nw),stat=ierr)
+              do l=1,nw
+                 do k=0,kb
+                    do j=0,jb
+                       do i=0,ib
+                          wblock(i,j,k,l) = w(i,j,k,l)
+                          wblockb(i,j,k,l) = zero
+                       end do
+                    end do
+                 end do
+              end do
 
-              wblock(:,:,:,:) = w(:,:,:,:)
-              wblockb(:,:,:,:) = 0.0
               righthandedadj = righthanded
 
               faceID = bcfaceid(mm)
-
               forcesTypeSave = forcesAsTractions 
               forcesAsTractions = .False.
               call COMPUTEFORCEANDMOMENTADJ_B(force, forceb, cforce, cforceb, &
@@ -421,7 +429,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
                  do j=jBeg,jEnd
                     do i=iBeg,iEnd
                        ! This takes care of the ii increments -- 
-                       ! DO NOT NEED INCREMENT ON LINE BELOW
+                    
                        ii = ii + 1
                        call VecSetValues(dJdx,3,&
                             
@@ -435,15 +443,14 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
                        call EChk(PETScIerr,__FILE__,__LINE__)
                     end do
                  end do
+               else
+                  ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
               end if
-              !ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
-
               ! We also have the derivative of the Objective wrt the
               ! "AeroDVs" intrinsic aero design variables, alpha, beta etc
            
               if (nDesignAoA >=0) then
                  dIda(nDesignAoA+1) = dIda(nDesignAoA+1) + alphaAdjb*dJdc(sps)
-                 print *,'alphaadjb:',alphaadjb
               end if
 
               if (nDesignSSA >= 0) then
@@ -496,9 +503,11 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
               end if
 
            end if
-           deallocate(wblock,wblockb,stat=ierr)
-
         end do bocos
+
+        deallocate(wblock,wblockb,stat=ierr)
+        call echk(ierr, __FILE__, __LINE__)
+
      end do domainLoopAD
   end do spectralLoopAdj
 

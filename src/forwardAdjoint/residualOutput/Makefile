@@ -46,6 +46,7 @@ FF90_OBJECTS =  blockpointers_d.o\
 		timestep_block_d.o\
 		bceulerwall_d.o\
 	        bcsymmpolar_d.o\
+		getcostfuncmat_d.o\
 		curveupre_d.o\
 		invisciddissfluxscalar_d.o\
 		turbbcnswall_d.o\
@@ -66,7 +67,6 @@ FF90_OBJECTS =  blockpointers_d.o\
                 setbcpointers_d.o\
 	        turbresidual_block_d.o\
 		sa_block_d.o\
-		initres_block_d.o\
 	        inviscidcentralflux_d.o\
                 saeddyviscosity_d.o\
                 bcturbtreatment_d.o\
@@ -82,8 +82,17 @@ FF90_OBJECTS =  blockpointers_d.o\
 		metric_block_d.o\
 		gridvelocitiesfinelevel_block_d.o\
 		normalvelocities_block_d.o\
-#		inviscidcentralflux_mod_d.o \
-
+		adjustinflowangle_d.o\
+		referencestate_d.o\
+		setflowinfinitystate_d.o\
+		forcesandmoments_d.o\
+		derivativerotmatrixrigid_d.o\
+		getdirangle_d.o\
+		getdirvector_d.o\
+		vectorrotation_d.o\
+		derivativerigidrotangle_d.o\
+		computeeddyviscosity_d.o\
+		sanuknowneddyratio_d.o\
 
 #      ******************************************************************
 #      *                                                                *

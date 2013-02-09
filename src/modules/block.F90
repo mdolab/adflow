@@ -92,6 +92,8 @@ module block
 
      real(kind=realType), dimension(:,:,:), pointer :: norm
      real(kind=realType), dimension(:,:),   pointer :: rface
+     real(kind=realType), dimension(:,:,:), pointer :: F
+     integer(kind=intType), dimension(:,:), pointer :: FMIndex
 
      ! subsonicInletTreatment: which boundary condition treatment
      !                         to use for subsonic inlets; either
@@ -556,7 +558,7 @@ module block
      !                               at least for the flow variables.
 
      real(kind=realType), dimension(:,:,:),     pointer :: p1
-     real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw,
+     real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw
      real(kind=realType), dimension(:,:,:,:),   pointer :: dwtmp, dwtmp2
      real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
      real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr

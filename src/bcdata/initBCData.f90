@@ -70,7 +70,7 @@
 
                ! Determine the block face on which the subface is located
                ! and set the dimensions accordingly.
-
+           
                select case (BCFaceID(j))
 
                  case (iMin,iMax)

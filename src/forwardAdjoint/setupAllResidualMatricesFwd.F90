@@ -49,7 +49,7 @@ subroutine setupAllResidualMatricesfwd
   integer(kind=intType) :: nn, m, idxres
 
   logical :: fineGrid, correctForK, exchangeTurb, secondhalo
-  logical :: useAD, useTranspose, usePC
+  logical :: useAD, useTranspose, usePC, useObjective
 
   real(kind=realType), dimension(2) :: time
   real(kind=realType)               :: timeAdjLocal, timeAdj
@@ -176,8 +176,10 @@ subroutine setupAllResidualMatricesfwd
   useAD = .True.!.False.
   usePC = .False.
   useTranspose = .True.
+  useObjective = .True.
   if( myid ==0 ) print *, 'Computing Forward AD dRdw...'
-  call setupStateResidualMatrix(drdwT, useAD, usePC, useTranspose, 1_intType)
+  call setupStateResidualMatrix(drdwT, useAD, usePC, useTranspose, useObjective, &
+       1_intType)
   
   if( myid ==0 ) print *, 'Computing Forward AD dRdx'
   call setupSpatialResidualMatrix(drdx, useAD)

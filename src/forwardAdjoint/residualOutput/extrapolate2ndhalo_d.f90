@@ -2,8 +2,9 @@
    !  Tapenade 3.6 (r4159) - 21 Sep 2011 10:11
    !
    !  Differentiation of extrapolate2ndhalo in forward (tangent) mode:
-   !   variations   of useful results: *p *gamma *w *rlv
-   !   with respect to varying inputs: *p *gamma *w *rlv gammaconstant
+   !   variations   of useful results: *rev *p *gamma *w *rlv
+   !   with respect to varying inputs: *rev *p *gamma *w *rlv rgas
+   !                gammaconstant
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !                bcdata:in (global)cphint:in-out
    !
@@ -55,8 +56,8 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0, rlv1
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0d, rlv1d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0, rev1
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0d, rev1d
    INTRINSIC MAX
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0d
    INTERFACE 
    SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &        rev1, rev2, offset)
@@ -70,7 +71,8 @@
    END INTERFACE
       INTERFACE 
    SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
-   &        pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, offset)
+   &        pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, &
+   &        offset)
    USE BLOCKPOINTERS_D
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
@@ -80,6 +82,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    END SUBROUTINE SETBCPOINTERS_D
    END INTERFACE
       !
@@ -94,7 +97,7 @@
    ! Note that rlv0 and rev0 are used here as dummies.
    !nullify(ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, rev0)
    CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, pp2d, &
-   &                 rlv1, rlv1d, rlv0, rlv0d, rev1, rev0, 0)
+   &                 rlv1, rlv1d, rlv0, rlv0d, rev1, rev1d, rev0, rev0d, 0)
    !_intType)
    ! Set a couple of additional variables needed for the
    ! extrapolation. This depends on the block face on which the
@@ -110,6 +113,7 @@
    rlv0 => rlv(0, 1:, 1:)
    END IF
    IF (eddymodel) THEN
+   rev0d => revd(0, 1:, 1:)
    rev0 => rev(0, 1:, 1:)
    END IF
    idim = 1
@@ -124,6 +128,7 @@
    rlv0 => rlv(ib, 1:, 1:)
    END IF
    IF (eddymodel) THEN
+   rev0d => revd(ib, 1:, 1:)
    rev0 => rev(ib, 1:, 1:)
    END IF
    idim = 1
@@ -138,6 +143,7 @@
    rlv0 => rlv(1:, 0, 1:)
    END IF
    IF (eddymodel) THEN
+   rev0d => revd(1:, 0, 1:)
    rev0 => rev(1:, 0, 1:)
    END IF
    idim = 2
@@ -152,6 +158,7 @@
    rlv0 => rlv(1:, jb, 1:)
    END IF
    IF (eddymodel) THEN
+   rev0d => revd(1:, jb, 1:)
    rev0 => rev(1:, jb, 1:)
    END IF
    idim = 2
@@ -166,6 +173,7 @@
    rlv0 => rlv(1:, 1:, 0)
    END IF
    IF (eddymodel) THEN
+   rev0d => revd(1:, 1:, 0)
    rev0 => rev(1:, 1:, 0)
    END IF
    idim = 3
@@ -180,6 +188,7 @@
    rlv0 => rlv(1:, 1:, kb)
    END IF
    IF (eddymodel) THEN
+   rev0d => revd(1:, 1:, kb)
    rev0 => rev(1:, 1:, kb)
    END IF
    idim = 3
@@ -224,7 +233,7 @@
    rlv0(i, j) = rlv1(i, j)
    END IF
    IF (eddymodel) THEN
-   rev0d(i, j) = 0.0
+   rev0d(i, j) = rev1d(i, j)
    rev0(i, j) = rev1(i, j)
    END IF
    END DO

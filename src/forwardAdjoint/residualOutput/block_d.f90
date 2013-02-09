@@ -104,6 +104,8 @@
    INTEGER(kind=inttype) :: icbeg, icend, jcbeg, jcend
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rface
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: f
+   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: fmindex
    INTEGER(kind=inttype) :: subsonicinlettreatment
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslip
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: tns_wall
@@ -123,27 +125,10 @@
    TYPE BCDATATYPE_D
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rface
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: f
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslip
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: tns_wall
    END TYPE BCDATATYPE_D
-   ! sendBuffer:      array to hold face data for MPI send
-   ! recvBuffer:      array to receive face data for MPI recv
-   ! 
-   ! recvreq:         value to indicate that face recv is finished
-   ! sendreq:         value to indicate that face send is finished
-   !
-   !        ****************************************************************
-   !        *                                                              *
-   !        * Communication Data Type for the integrated warping algorithm *
-   !        * Located her because it contains data for each block locally  *
-   !        *                                                              *
-   !        ****************************************************************
-   !
-   TYPE WARP_COMM_TYPE
-   REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: sendbuffer, &
-   &      recvbuffer
-   INTEGER(kind=inttype) :: recvreq, sendreq
-   END TYPE WARP_COMM_TYPE
    !
    !        ****************************************************************
    !        *                                                              *
@@ -228,7 +213,18 @@
    !                         sliding mesh interface. One side of
    !                         the interface gets a positive number,
    !                         the other side a negative one.
-   !integer(kind=intType), dimension(:), allocatable :: nNodesSubface
+   !
+   !-- eran-CBD start
+   !
+   ! idWBC(:)                Wall family locator for components
+   !                         forces/moment contribution break-down
+   !  contributeToForce      Defines if a certain surfac family contributes to forces
+   !                         and moments
+   !
+   !-- eran-CBD ends
+   !
+   !-- eran-CBD
+   ! eran-cbd
    !
    !        ****************************************************************
    !        *                                                              *
@@ -299,10 +295,6 @@
    !  x(0:ie,0:je,0:ke,3)  - xyz locations of grid points in block.
    !  xInit(0:ie,0:je,0:ke,3) - initial xyz locations of grid points
    !                         in block. Used in mesh warping.
-   !  xplus(0:ie,0:je,0:ke,3) - temporary block arrays for warping FD
-   !                         Used in mesh warping.
-   !  xminus(0:ie,0:je,0:ke,3) - temporary block arrays for warping FD
-   !                         Used in mesh warping.
    !  xOld(nOld,:,:,:,:)   - Coordinates on older time levels;
    !                         only needed for unsteady problems on
    !                         deforming grids. Only allocated on
@@ -324,6 +316,9 @@
    !                         needed for unsteady problems on
    !                         deforming grids. Only allocated on
    !                         the finest grid level.
+   !  uv(2,2:il,2:jl,2:kl) - Parametric location on elemID for each cell. 
+   !                         Only used for fast wall distance calcs. 
+   ! elemID(2:il,2:jl,2:kl)- Element ID each face is attached it
    !  porI(1:il,2:jl,2:kl) - Porosity in the i direction.
    !  porJ(2:il,1:jl,2:kl) - Porosity in the j direction.
    !  porK(2:il,2:jl,1:kl) - Porosity in the k direction.
@@ -491,6 +486,7 @@
    !
    ! d2Wall(2:il,2:jl,2:kl) - Distance from the center of the cell
    !                          to the nearest viscous wall.
+   ! eran-des
    ! bmti1(je,ke,nt1:nt2,nt1:nt2): Matrix used for the implicit
    !                               boundary condition treatment of
    !                               the turbulence equations at the
@@ -540,24 +536,6 @@
    ! globalCell(0:ib,0:jb,0:kb):     Global cell numbering.
    ! color(0:ib,0:jb,0:kb)     :     Temporary coloring array used for 
    !                                 forward mode AD/FD calculations
-   !
-   !        ****************************************************************
-   !        *                                                              *
-   !        * Integrated warping variables                                 *
-   !        *                                                              *
-   !        ****************************************************************
-   !
-   !incrementI,J,K(nSubface): Indicator for the direction of indices
-   !                          for this subface
-   !incrementdI,dJ,dK(nSubface): Indicator for the direction of indices
-   !                          for the donor to this subface
-   ! warp_comm(nSubface):  Subface comm storage for warp
-   !INTEGER(KIND=INTTYPE),dimension(:),allocatable :: incrementI,&
-   !    IncrementJ,incrementK
-   !INTEGER(KIND=INTTYPE),dimension(:),allocatable :: incrementdI,&
-   !    IncrementdJ,incrementdK
-   !TYPE(warp_comm_type), ALLOCATABLE, DIMENSION(:) :: warp_comm
-   !
    !      ******************************************************************
    !      *                                                                *
    !      * The definition of the derived data type block_type, which      *
@@ -589,6 +567,8 @@
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: neighproc
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: l1, l2, l3
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: groupnum
+   INTEGER(kind=inttype), DIMENSION(:), POINTER :: idwbc
+   LOGICAL, DIMENSION(:), POINTER :: contributetoforce
    INTEGER(kind=inttype) :: ncellsoverset, ncellsoversetall
    INTEGER(kind=inttype) :: nholes, norphans
    INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: iblank
@@ -611,6 +591,8 @@
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: si, sj, sk
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vol
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: volold
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: uv
+   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: elemid
    INTEGER(kind=portype), DIMENSION(:, :, :), POINTER :: pori
    INTEGER(kind=portype), DIMENSION(:, :, :), POINTER :: porj
    INTEGER(kind=portype), DIMENSION(:, :, :), POINTER :: pork
@@ -630,14 +612,15 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacei
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacej
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacek
-   REAL(kind=realtype), DIMENSION(:, :, :, :) :: w, wtmp
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w, wtmp
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: dw_deriv
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: wold
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p, ptmp, gamma
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rlv, rev
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: s
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p1
-   REAL(kind=realtype), DIMENSION(:, :, :, :) :: dw, fw, dwtmp, &
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dw, fw
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dwtmp, &
    &      dwtmp2
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: dwoldrk
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w1, wr
@@ -659,6 +642,7 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radj
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radk
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: d2wall
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: filterdes
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmti1
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmti2
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtj1
@@ -674,135 +658,13 @@
    INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: globalnode
    INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: globalcell
    INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: color
-   TYPE(WARP_COMM_TYPE), DIMENSION(:), POINTER :: warp_comm
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: ifaceptb
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: iedgeptb
    END TYPE BLOCKTYPE
    TYPE BLOCKTYPE_D
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: bctype
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: bcfaceid
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: nnodessubface
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: cgnssubface
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: inbeg
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: inend
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: jnbeg
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: jnend
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: knbeg
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: knend
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: dinbeg
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: dinend
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: djnbeg
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: djnend
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: dknbeg
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: dknend
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: icbeg
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: icend
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: jcbeg
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: jcend
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: kcbeg
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: kcend
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: neighblock
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: neighproc
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: l1
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: l2
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: l3
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: groupnum
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: iblank
-   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: ibndry
-   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: idonor
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: overint
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: neighblockover
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: neighprocover
-   TYPE(BCDATATYPE_D), DIMENSION(:), POINTER :: bcdata
-   TYPE(VISCSUBFACETYPE), DIMENSION(:), POINTER :: viscsubface
-   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: visciminpointer
-   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: viscimaxpointer
-   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: viscjminpointer
-   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: viscjmaxpointer
-   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: visckminpointer
-   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: visckmaxpointer
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: x
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: xtmp
-   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: xold
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: temphalo
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: si
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sj
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sk
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vol
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: volold
-   INTEGER(kind=portype), DIMENSION(:, :, :), POINTER :: pori
-   INTEGER(kind=portype), DIMENSION(:, :, :), POINTER :: porj
-   INTEGER(kind=portype), DIMENSION(:, :, :), POINTER :: pork
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: indfamilyi
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: indfamilyj
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: indfamilyk
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: factfamilyi
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: factfamilyj
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: factfamilyk
-   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: &
-   &      rotmatrixi
-   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: &
-   &      rotmatrixj
-   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: &
-   &      rotmatrixk
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacei
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacej
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacek
-   REAL(kind=realtype), DIMENSION(:, :, :, :) :: w
-   REAL(kind=realtype), DIMENSION(:, :, :, :) :: wtmp
-   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: dw_deriv
-   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: wold
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ptmp
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: gamma
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rlv
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rev
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: s
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p1
-   REAL(kind=realtype), DIMENSION(:, :, :, :) :: dw
-   REAL(kind=realtype), DIMENSION(:, :, :, :) :: fw
-   REAL(kind=realtype), DIMENSION(:, :, :, :) :: dwtmp
-   REAL(kind=realtype), DIMENSION(:, :, :, :) :: dwtmp2
-   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: dwoldrk
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w1
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wr
-   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: mgifine
-   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: mgjfine
-   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: mgkfine
-   REAL(kind=realtype), DIMENSION(:), POINTER :: mgiweight
-   REAL(kind=realtype), DIMENSION(:), POINTER :: mgjweight
-   REAL(kind=realtype), DIMENSION(:), POINTER :: mgkweight
-   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: mgicoarse
-   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: mgjcoarse
-   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: mgkcoarse
-   LOGICAL, DIMENSION(:), POINTER :: ico
-   LOGICAL, DIMENSION(:), POINTER :: jco
-   LOGICAL, DIMENSION(:), POINTER :: kco
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wn
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: pn
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: dtl
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radi
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radj
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radk
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: d2wall
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmti1
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmti2
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtj1
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtj2
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtk1
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtk2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvti1
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvti2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtj1
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtj2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtk1
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtk2
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: globalnode
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: globalcell
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: color
-   TYPE(WARP_COMM_TYPE), DIMENSION(:), POINTER :: warp_comm
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: ifaceptb
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: iedgeptb
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dw
    END TYPE BLOCKTYPE_D
    !
    !      ******************************************************************
@@ -815,12 +677,8 @@
    ! flowDoms(:,:,:): array of blocks. Dimensions are
    !                  (nDom,nLevels,nTimeIntervalsSpectral)
    INTEGER(kind=inttype) :: ndom
-   ! This is a dummy statement to make Tapenade know what flowDoms
-   ! is. The actual sizes of (1,1,1)
-   TYPE(BLOCKTYPE), DIMENSION(:, :, :) :: flowdoms
-   TYPE(BLOCKTYPE_D), DIMENSION(:, :, :) :: flowdomsd
-   !type(blockType), allocatable, dimension(:,:,:) :: flowDoms
-   !type(blockType), allocatable, dimension(:)     :: flowDomsd
+   TYPE(BLOCKTYPE), DIMENSION(:, :, :), ALLOCATABLE :: flowdoms
+   TYPE(BLOCKTYPE_D), DIMENSION(:, :, :), ALLOCATABLE :: flowdomsd
    !
    !      ******************************************************************
    !      *                                                                *

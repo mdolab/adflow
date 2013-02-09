@@ -31,9 +31,14 @@ subroutine setGlobalCellsAndNodes(level)
   !     * These variables are the same for all spectral modes, therefore *
   !     * only the 1st mode needs to be communicated.                    * 
   !     *                                                                *
+  !     * This function will also set FMPointer which is only defined    *
+  !     * on wall boundary conditions and points to the correct index    *
+  !     * for the vectors that are of shape nsurface nodes               *
+  !     *                                                                *
   !     ******************************************************************
   !
   use ADjointVars 
+  use BCTypes
   use blockpointers
   use communication
   use inputTimeSpectral
@@ -45,11 +50,13 @@ subroutine setGlobalCellsAndNodes(level)
 
   ! Local variables
   integer(kind=intType) :: nn, i, j, k, sps
-  integer(kind=intType) :: ierr, istart, iend
+  integer(kind=intType) :: ierr, istart
   logical :: commPressure, commViscous, commGamma
   integer(kind=intType), dimension(nProc) :: nNodes, nCells, nCellOffset, nNodeOffset
   integer(kind=intType), dimension(nDom) :: nCellBLockOffset,nNodeBLockOffset
-
+  integer(kind=intType) :: npts, nts
+  integer(kind=intType), dimension(:), allocatable :: nNodesProc, cumNodesProc
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, mm
   ! Determine the number of nodes and cells owned by each processor
   ! by looping over the local block domains.
   nCellsLocal(level) = 0
@@ -260,4 +267,44 @@ subroutine setGlobalCellsAndNodes(level)
      end do
   end do
   
+  ! Now we will do indexing for FM. 
+  
+  ! First get the number of points on each proc and communicate
+  call getForceSize(npts, ncells, nTS)
+
+  allocate(nNodesProc(nProc), cumNodesProc(0:nProc))
+  nNodesProc(:) = 0_intType
+
+  call mpi_allgather(npts*nTS, 1, sumb_integer, nNodesProc, 1, sumb_integer, &
+       sumb_comm_world, ierr)
+
+  ! Sum and Allocate receive displ offsets
+  cumNodesProc(0) = 0_intType
+  do i=1, nProc
+     cumNodesProc(i) = cumNodesProc(i-1) +nNodesProc(i)
+  end do
+  
+  ! Now we know the offset for the start of each processor. We can
+  ! loop through in the desired order and just increment.
+  ii = 0
+  do sps=1,nTimeIntervalsSpectral
+     do nn=1,nDom
+        call setPointers(nn, 1_intType, sps)
+        bocos: do mm=1,nBocos
+           if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
+                BCType(mm) == NSWallIsothermal) then
+      
+              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
+              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
+              do j=jBeg, jEnd
+                 do i=iBeg, iEnd
+                    bcData(mm)%FMIndex(i,j) = ii
+                    ii = ii + 1
+                 end do
+              end do
+           end if
+        end do bocos
+     end do
+  end do
+  deallocate(nNodesProc, cumNodesProc)
 end subroutine setGlobalCellsAndNodes

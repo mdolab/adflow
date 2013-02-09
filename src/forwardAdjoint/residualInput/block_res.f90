@@ -11,30 +11,38 @@
 ! block/sps loop is outside the calculation. This routine is suitable
 ! for forward mode AD with Tapenade
 
-subroutine block_res(nn, sps, useSpatial, useExtra) 
-
-  !alpha, beta, liftIndex,
+subroutine block_res(nn, sps, useSpatial, useForces, &
+     alpha, beta, liftIndex, &
+     Force, Moment, Lift, Drag, cForce, cMoment, CL, CD)
 
   use blockPointers       
   use flowVarRefState     
   use inputPhysics 
   use inputTimeSpectral
   use section
+  use monitor
   use iteration
+  use costFunctions
   implicit none
 
   ! Input Arguments:
   integer(kind=intType), intent(in) :: nn, sps
-  !real(kind=realType), intent(in) :: alpha, beta
-  !integer(kind=intType), intent(in) :: liftIndex
-  logical, intent(in) :: useSpatial, useExtra
+  logical, intent(in) :: useSpatial, useForces
+  real(kind=realType), intent(in) :: alpha, beta
+  integer(kind=intType), intent(in) :: liftIndex
+
+  ! Output Arguments:
+  real(kind=realType), dimension(3), intent(out) :: Force, Moment, cForce, cMoment
+  real(kind=realType), intent(out) :: Lift, Drag, CL, CD
 
   ! Working Variables
-  real(kind=realType) :: gm1, v2
+  real(kind=realType) :: gm1, v2, fact
   integer(kind=intType) :: i, j, k, sps2, mm, l
   real(kind=realType), dimension(nSections) :: t
+  real(kind=realType), dimension(3) :: cFp, cFv, cMp, cMv
+  real(kind=realType) :: yplusMax
   logical :: useOldCoor
-
+  
   useOldCoor = .False.
 
   ! Set pointers to input/output variables
@@ -46,35 +54,34 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
   !        Additional 'Extra' Components
   ! ------------------------------------------------
 
-  if (useExtra) then
-!      call adjustInflowAngle(alpha,beta,liftIndex)
-!      call referenceState_mod()
-!      call setFlowInfinityState()
-  end if
+  call adjustInflowAngle(alpha, beta, liftIndex)
+  call referenceState
+  call setFlowInfinityState
 
   ! ------------------------------------------------
   !        Additional Spatial Components
   ! ------------------------------------------------
 
-  if (useSpatial .or. useExtra) then
+  if (useSpatial) then
 
-    !  call xhalo_block(nn,1,sps)
-!      call metric_block(nn,1,sps)
+     call xhalo_block
+     call metric_block
+     ! -------------------------------------
+     ! These functions are required for TS
+     ! --------------------------------------
 
-!      t = timeUnsteadyRestart
-  
-!      if(equationMode == timeSpectral) then
-!         do mm=1,nSections
-!            t(mm) = t(mm) + (sps-1)*sections(mm)%timePeriod &
-!                 /         real(nTimeIntervalsSpectral,realType)
-!         enddo
-!      endif
-
-     !call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
-     !call normalVelocities_block(sps) ! Required for TS
-     !call slipVelocitiesFineLevel(.false., t, mm) !required for wall Functions
+     t = timeUnsteadyRestart
+     if(equationMode == timeSpectral) then
+        do mm=1,nSections
+           t(mm) = t(mm) + (sps-1)*sections(mm)%timePeriod &
+                /         real(nTimeIntervalsSpectral,realType)
+        enddo
+     endif
+     
+     call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
+     call normalVelocities_block(sps) ! Required for TS
   end if
-
+  
   ! ------------------------------------------------
   !        Normal Residual Computation
   ! ------------------------------------------------
@@ -95,33 +102,41 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
 
   ! Compute Laminar/eddy viscosity if required
   call computeLamViscosity
-  !call computeEddyViscosity # Required for turblence models
+  call computeEddyViscosity 
 
   !  Apply all BC's
   call applyAllBC_block(.True.)
   
   ! Compute skin_friction Velocity (only for wall Functions)
-  !call computeUtau_block
+  call computeUtau_block
   
   ! Compute time step and spectral radius
   call timeStep_block(.false.)
-  
-!   if( equations == RANSEquations ) then
-!      ! Initialize only the Turblent Variables
-!      call initres_block(nt1MG, nMGVar,nn,sps) 
-!      call turbResidual_block
-!   endif
-  
+
+  ! -------------------------------
+  ! The forward ADjoint is NOT currently setup for RANS equations
+  !   if( equations == RANSEquations ) then
+  !      ! Initialize only the Turblent Variables
+  !      call initres_block(nt1MG, nMGVar,nn,sps) 
+  !      call turbResidual_block
+  !   endif
+  ! -------------------------------  
+
+  ! -------------------------------
+  ! The forward ADjoint is NOT currently setup for TS adjoint
   ! Next initialize residual for flow variables. The is the only place
   ! where there is an n^2 dependance
-!   do sps2 = 1,nTimeIntervalsSpectral
-!      dw => flowDoms(nn, 1, sps2)%dw
-!      call initRes_block(1, nwf, nn, sps2)
-!   end do
+  !   do sps2 = 1,nTimeIntervalsSpectral
+  !      dw => flowDoms(nn, 1, sps2)%dw
+  !      call initRes_block(1, nwf, nn, sps2)
+  !   end do
+  
+  !   ! Reset dw pointer to sps instance
+  !   dw => flowDoms(nn, 1, sps)%dw
 
-!   ! Reset dw pointer to sps instance
-!   dw => flowDoms(nn, 1, sps)%dw
+  ! ---------------------------------
 
+  ! This call replaces initRes for steady case. 
   dw = zero
 
   !  Actual residual calc
@@ -147,5 +162,42 @@ subroutine block_res(nn, sps, useSpatial, useExtra)
   ! Reset dw and vol to sps instance
   dw => flowDoms(nn,1,sps)%dw
   vol => flowDoms(nn,currentLevel,sps)%vol
+
+  ! We are now done with the residuals, we move on to the forces and moments
+
+  ! This routine compute Force, Moment, Lift, Drag, and the
+  ! coefficients of the values
+
+  if (useForces) then
+     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+
+     ! Sum pressure and viscous contributions
+     cForce = cFp + cFv
+     cMoment = cMp + cMv
+     
+     ! Get Lift coef and Drag coef
+     CD =  cForce(1)*dragDirection(1) &
+          + cForce(2)*dragDirection(2) &
+          + cForce(3)*dragDirection(3)
+     
+     CL =  cForce(1)*liftDirection(1) &
+          + cForce(2)*liftDirection(2) &
+          + cForce(3)*liftDirection(3)
+     
+     ! Divide by fact to get the forces, Lift and Drag back
+     
+     fact = two/(gammaInf*pInf*MachCoef*MachCoef &
+          *surfaceRef*LRef*LRef)
+     Force = cForce / fact
+     Lift  = CL / fact
+     Drag  = CD / fact
+     
+     ! Moment factor has an extra lengthRef
+     fact = fact/(lengthRef*LRef)
+     
+     Moment = cMoment / fact
+  end if
+
+  call getCostFuncMat(alpha, beta, liftIndex)
 
 end subroutine block_res

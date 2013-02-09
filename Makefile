@@ -56,8 +56,7 @@ SUBDIR_SRC    = src/modules       \
                 src/forwardAdjoint \
                 src/forwardAdjoint/residualInput \
                 src/forwardAdjoint/residualOutput\
-                src/forwardAdjoint/residualOutputExtra\
-                src/forwardAdjoint/residualOutputSpatial
+
 
 SUBDIR_EXEC   = src/exec
 SUBDIR_PV3    = src/pv3Interface

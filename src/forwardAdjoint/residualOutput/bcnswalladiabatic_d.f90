@@ -2,10 +2,10 @@
    !  Tapenade 3.6 (r4159) - 21 Sep 2011 10:11
    !
    !  Differentiation of bcnswalladiabatic in forward (tangent) mode:
-   !   variations   of useful results: *bvtj1 *bvtj2 *p *gamma *bmtk1
-   !                *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1
-   !                *bvti2 *bmtj1 *bmtj2
-   !   with respect to varying inputs: *p *w *rlv
+   !   variations   of useful results: *rev *bvtj1 *bvtj2 *p *gamma
+   !                *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2
+   !                *bvti1 *bvti2 *bmtj1 *bmtj2
+   !   with respect to varying inputs: *rev *p *w *rlv rgas
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
    !                gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
    !                bvtk2:in d2wall:in bmti1:in bmti2:in bvti1:in
@@ -56,7 +56,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    INTERFACE 
    SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &        rev1, rev2, offset)
@@ -70,7 +70,8 @@
    END INTERFACE
       INTERFACE 
    SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
-   &        pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, offset)
+   &        pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, &
+   &        offset)
    USE BLOCKPOINTERS_D
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
@@ -80,6 +81,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    END SUBROUTINE SETBCPOINTERS_D
    END INTERFACE
       !
@@ -136,7 +138,8 @@
    ! that.
    !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
    CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   &                     pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, 0)
+   &                     pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, &
+   &                     rev2d, 0)
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero
@@ -174,7 +177,7 @@
    rlv1d(i, j) = rlv2d(i, j)
    rlv1(i, j) = rlv2(i, j)
    IF (eddymodel) THEN
-   rev1d(i, j) = 0.0
+   rev1d(i, j) = -rev2d(i, j)
    rev1(i, j) = -rev2(i, j)
    END IF
    END DO

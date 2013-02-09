@@ -4,7 +4,7 @@
    !  Differentiation of xhalo_block in forward (tangent) mode:
    !   variations   of useful results: *x
    !   with respect to varying inputs: *x
-   !   Plus diff mem management of: flowdoms.temphalo:in x:in
+   !   Plus diff mem management of: x:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -15,15 +15,11 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE XHALO_BLOCK_D(nn, level, sps)
+   SUBROUTINE XHALO_BLOCK_D()
    USE BLOCKPOINTERS_D
    USE INPUTTIMESPECTRAL
    USE BCTYPES
    USE COMMUNICATION
-   USE DIFFSIZES
-   !  Hint: ISIZE1OFflowdoms should be the size of dimension 1 of array flowdoms
-   !  Hint: ISIZE2OFflowdoms should be the size of dimension 2 of array flowdoms
-   !  Hint: ISIZE3OFflowdoms should be the size of dimension 3 of array flowdoms
    IMPLICIT NONE
    !
    !      ******************************************************************
@@ -39,111 +35,31 @@
    !
    !      Subroutine arguments.
    !
-   INTEGER(kind=inttype) :: nn, level
+   INTEGER(kind=inttype) :: level
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: mm, sps, i, j, k, ii, jj
+   INTEGER(kind=inttype) :: nn, mm, sps, i, j, k, ii, jj, l
    INTEGER(kind=inttype) :: ibeg, iend, jbeg, jend, iimax, jjmax
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: x0, x1, x2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: x0d, x1d, x2d
+   LOGICAL :: err
    REAL(kind=realtype) :: length, dot
    REAL(kind=realtype) :: lengthd, dotd
+   LOGICAL :: imininternal, jmininternal, kmininternal
+   LOGICAL :: imaxinternal, jmaxinternal, kmaxinternal
    REAL(kind=realtype), DIMENSION(3) :: v1, v2, norm
    REAL(kind=realtype), DIMENSION(3) :: v1d, v2d, normd
-   INTEGER(kind=inttype) :: counter
    REAL(kind=realtype) :: arg1
    REAL(kind=realtype) :: arg1d
-   INTEGER :: ii3
-   INTEGER :: ii2
-   INTEGER :: ii1
    INTRINSIC SQRT
    !      ******************************************************************
    !      *                                                                *
    !      * Begin execution                                                *
    !      *                                                                *
    !      ******************************************************************
-   ! Copy the values from the halo nodes that are on block to block 
-   counter = 1
-
-   DO mm=1,nbocos
-   IF (bctype(mm) .EQ. b2bmatch) THEN
-   SELECT CASE  (bcfaceid(mm)) 
-   CASE (imin) 
-   ibeg = jnbeg(mm)
-   iend = jnend(mm)
-   iimax = jl
-   jbeg = knbeg(mm)
-   jend = knend(mm)
-   jjmax = kl
-   x0d => xd(0, :, :, :)
-   x0 => x(0, :, :, :)
-   CASE (imax) 
-   ibeg = jnbeg(mm)
-   iend = jnend(mm)
-   iimax = jl
-   jbeg = knbeg(mm)
-   jend = knend(mm)
-   jjmax = kl
-   x0d => xd(ie, :, :, :)
-   x0 => x(ie, :, :, :)
-   CASE (jmin) 
-   ibeg = inbeg(mm)
-   iend = inend(mm)
-   iimax = il
-   jbeg = knbeg(mm)
-   jend = knend(mm)
-   jjmax = kl
-   x0d => xd(:, 0, :, :)
-   x0 => x(:, 0, :, :)
-   CASE (jmax) 
-   ibeg = inbeg(mm)
-   iend = inend(mm)
-   iimax = il
-   jbeg = knbeg(mm)
-   jend = knend(mm)
-   jjmax = kl
-   x0d => xd(:, je, :, :)
-   x0 => x(:, je, :, :)
-   CASE (kmin) 
-   ibeg = inbeg(mm)
-   iend = inend(mm)
-   iimax = il
-   jbeg = jnbeg(mm)
-   jend = jnend(mm)
-   jjmax = jl
-   x0d => xd(:, :, 0, :)
-   x0 => x(:, :, 0, :)
-   CASE (kmax) 
-   ibeg = inbeg(mm)
-   iend = inend(mm)
-   iimax = il
-   jbeg = jnbeg(mm)
-   jend = jnend(mm)
-   jjmax = jl
-   x0d => xd(:, :, ke, :)
-   x0 => x(:, :, ke, :)
-   END SELECT
-   ! Plus 1 is due to the pointer offset
-   DO jj=jbeg,jend
-   DO ii=ibeg,iend
-   flowdomsd(nn, level, sps)%temphalo(1, counter) = x0d(ii+1, jj+&
-   &            1, 1)
-   flowdoms(nn, level, sps)%temphalo(1, counter) = x0(ii+1, jj+1&
-   &            , 1)
-   flowdomsd(nn, level, sps)%temphalo(2, counter) = x0d(ii+1, jj+&
-   &            1, 2)
-   flowdoms(nn, level, sps)%temphalo(2, counter) = x0(ii+1, jj+1&
-   &            , 2)
-   flowdomsd(nn, level, sps)%temphalo(3, counter) = x0d(ii+1, jj+&
-   &            1, 3)
-   flowdoms(nn, level, sps)%temphalo(3, counter) = x0(ii+1, jj+1&
-   &            , 3)
-   counter = counter + 1
-   END DO
-   END DO
-   END IF
-   END DO
+   !
+   !
    !          **************************************************************
    !          *                                                            *
    !          * Extrapolation of the coordinates. First extrapolation in   *
@@ -154,55 +70,120 @@
    !          *                                                            *
    !          **************************************************************
    !
+   imininternal = .false.
+   jmininternal = .false.
+   kmininternal = .false.
+   imaxinternal = .false.
+   jmaxinternal = .false.
+   kmaxinternal = .false.
+   ! Loop over all the subfaces to determine which ones do NOT need to be extrapolated.
+   loopsubface:DO mm=1,nsubface
+   IF (bctype(mm) .EQ. b2bmatch) THEN
+   SELECT CASE  (bcfaceid(mm)) 
+   CASE (imin) 
+   imininternal = .true.
+   CASE (imax) 
+   imaxinternal = .true.
+   CASE (jmin) 
+   jmininternal = .true.
+   CASE (jmax) 
+   jmaxinternal = .true.
+   CASE (kmin) 
+   kmininternal = .true.
+   CASE (kmax) 
+   kmaxinternal = .true.
+   END SELECT
+   END IF
+   END DO loopsubface
+   ! Re-loop back over and see if any subface that is NOT B2BMatch is
+   ! on the same logical face as a Block2Block. We cannot deal with
+   ! properly so will print an error and quit
+   err = .false.
+   loopsubface2:DO mm=1,nsubface
+   IF (bctype(mm) .NE. b2bmatch) THEN
+   SELECT CASE  (bcfaceid(mm)) 
+   CASE (imin) 
+   IF (imininternal) err = .true.
+   CASE (imax) 
+   IF (imaxinternal) err = .true.
+   CASE (jmin) 
+   IF (jmininternal) err = .true.
+   CASE (jmax) 
+   IF (jmaxinternal) err = .true.
+   CASE (kmin) 
+   IF (kmininternal) err = .true.
+   CASE (kmax) 
+   IF (kmaxinternal) err = .true.
+   END SELECT
+   END IF
+   END DO loopsubface2
+   IF (err) THEN
+   PRINT*, &
+   &    'Detected a block-to-block boundary condition on the same face'
+   PRINT*, 'as another boundary condition. This is not supported.'
+   STOP
+   ELSE
    ! Extrapolation in i-direction.
    DO k=1,kl
    DO j=1,jl
+   IF (.NOT.imininternal) THEN
    xd(0, j, k, 1) = two*xd(1, j, k, 1) - xd(2, j, k, 1)
    x(0, j, k, 1) = two*x(1, j, k, 1) - x(2, j, k, 1)
    xd(0, j, k, 2) = two*xd(1, j, k, 2) - xd(2, j, k, 2)
    x(0, j, k, 2) = two*x(1, j, k, 2) - x(2, j, k, 2)
    xd(0, j, k, 3) = two*xd(1, j, k, 3) - xd(2, j, k, 3)
    x(0, j, k, 3) = two*x(1, j, k, 3) - x(2, j, k, 3)
+   END IF
+   IF (.NOT.imaxinternal) THEN
    xd(ie, j, k, 1) = two*xd(il, j, k, 1) - xd(nx, j, k, 1)
    x(ie, j, k, 1) = two*x(il, j, k, 1) - x(nx, j, k, 1)
    xd(ie, j, k, 2) = two*xd(il, j, k, 2) - xd(nx, j, k, 2)
    x(ie, j, k, 2) = two*x(il, j, k, 2) - x(nx, j, k, 2)
    xd(ie, j, k, 3) = two*xd(il, j, k, 3) - xd(nx, j, k, 3)
    x(ie, j, k, 3) = two*x(il, j, k, 3) - x(nx, j, k, 3)
+   END IF
    END DO
    END DO
    ! Extrapolation in j-direction.
    DO k=1,kl
    DO i=0,ie
+   IF (.NOT.jmininternal) THEN
    xd(i, 0, k, 1) = two*xd(i, 1, k, 1) - xd(i, 2, k, 1)
    x(i, 0, k, 1) = two*x(i, 1, k, 1) - x(i, 2, k, 1)
    xd(i, 0, k, 2) = two*xd(i, 1, k, 2) - xd(i, 2, k, 2)
    x(i, 0, k, 2) = two*x(i, 1, k, 2) - x(i, 2, k, 2)
    xd(i, 0, k, 3) = two*xd(i, 1, k, 3) - xd(i, 2, k, 3)
    x(i, 0, k, 3) = two*x(i, 1, k, 3) - x(i, 2, k, 3)
+   END IF
+   IF (.NOT.jmaxinternal) THEN
    xd(i, je, k, 1) = two*xd(i, jl, k, 1) - xd(i, ny, k, 1)
    x(i, je, k, 1) = two*x(i, jl, k, 1) - x(i, ny, k, 1)
    xd(i, je, k, 2) = two*xd(i, jl, k, 2) - xd(i, ny, k, 2)
    x(i, je, k, 2) = two*x(i, jl, k, 2) - x(i, ny, k, 2)
    xd(i, je, k, 3) = two*xd(i, jl, k, 3) - xd(i, ny, k, 3)
    x(i, je, k, 3) = two*x(i, jl, k, 3) - x(i, ny, k, 3)
+   END IF
    END DO
    END DO
    ! Extrapolation in k-direction.
    DO j=0,je
    DO i=0,ie
+   IF (.NOT.kmininternal) THEN
    xd(i, j, 0, 1) = two*xd(i, j, 1, 1) - xd(i, j, 2, 1)
    x(i, j, 0, 1) = two*x(i, j, 1, 1) - x(i, j, 2, 1)
    xd(i, j, 0, 2) = two*xd(i, j, 1, 2) - xd(i, j, 2, 2)
    x(i, j, 0, 2) = two*x(i, j, 1, 2) - x(i, j, 2, 2)
    xd(i, j, 0, 3) = two*xd(i, j, 1, 3) - xd(i, j, 2, 3)
    x(i, j, 0, 3) = two*x(i, j, 1, 3) - x(i, j, 2, 3)
+   END IF
+   IF (.NOT.kmaxinternal) THEN
    xd(i, j, ke, 1) = two*xd(i, j, kl, 1) - xd(i, j, nz, 1)
    x(i, j, ke, 1) = two*x(i, j, kl, 1) - x(i, j, nz, 1)
    xd(i, j, ke, 2) = two*xd(i, j, kl, 2) - xd(i, j, nz, 2)
    x(i, j, ke, 2) = two*x(i, j, kl, 2) - x(i, j, nz, 2)
    xd(i, j, ke, 3) = two*xd(i, j, kl, 3) - xd(i, j, nz, 3)
    x(i, j, ke, 3) = two*x(i, j, kl, 3) - x(i, j, nz, 3)
+   END IF
    END DO
    END DO
    v1d = 0.0
@@ -323,21 +304,21 @@
    v2(3) = x1(iimax+1, 1+1, 3) - x1(1+1, jjmax+1, 3)
    ! Determine the normal of the face by taking the cross
    ! product of v1 and v2 and add it to norm.
-   normd(1) = v1d(2)*v2(3) + v1(2)*v2d(3) - v1d(3)*v2(2) - v1(3)*v2d(&
-   &        2)
+   normd(1) = v1d(2)*v2(3) + v1(2)*v2d(3) - v1d(3)*v2(2) - v1(3)*&
+   &          v2d(2)
    norm(1) = v1(2)*v2(3) - v1(3)*v2(2)
-   normd(2) = v1d(3)*v2(1) + v1(3)*v2d(1) - v1d(1)*v2(3) - v1(1)*v2d(&
-   &        3)
+   normd(2) = v1d(3)*v2(1) + v1(3)*v2d(1) - v1d(1)*v2(3) - v1(1)*&
+   &          v2d(3)
    norm(2) = v1(3)*v2(1) - v1(1)*v2(3)
-   normd(3) = v1d(1)*v2(2) + v1(1)*v2d(2) - v1d(2)*v2(1) - v1(2)*v2d(&
-   &        1)
+   normd(3) = v1d(1)*v2(2) + v1(1)*v2d(2) - v1d(2)*v2(1) - v1(2)*&
+   &          v2d(1)
    norm(3) = v1(1)*v2(2) - v1(2)*v2(1)
    ! Compute the length of the normal and test if this is
    ! larger than eps. If this is the case this means that
    ! it is a nonsingular subface and the coordinates are
    ! corrected.
-   arg1d = 2*norm(1)*normd(1) + 2*norm(2)*normd(2) + 2*norm(3)*normd(&
-   &        3)
+   arg1d = 2*norm(1)*normd(1) + 2*norm(2)*normd(2) + 2*norm(3)*&
+   &          normd(3)
    arg1 = norm(1)**2 + norm(2)**2 + norm(3)**2
    IF (arg1 .EQ. 0.0) THEN
    lengthd = 0.0
@@ -377,101 +358,22 @@
    ! vector; this vector must be added to the
    ! coordinates of the internal node to obtain the
    ! halo coordinates. Again the offset of +1.
-   dotd = two*(v1d(1)*norm(1)+v1(1)*normd(1)+v1d(2)*norm(2)+v1(&
-   &              2)*normd(2)+v1d(3)*norm(3)+v1(3)*normd(3))
+   dotd = two*(v1d(1)*norm(1)+v1(1)*normd(1)+v1d(2)*norm(2)+&
+   &                v1(2)*normd(2)+v1d(3)*norm(3)+v1(3)*normd(3))
    dot = two*(v1(1)*norm(1)+v1(2)*norm(2)+v1(3)*norm(3))
    x0d(i+1, j+1, 1) = x2d(i+1, j+1, 1) + dotd*norm(1) + dot*&
-   &              normd(1)
+   &                normd(1)
    x0(i+1, j+1, 1) = x2(i+1, j+1, 1) + dot*norm(1)
    x0d(i+1, j+1, 2) = x2d(i+1, j+1, 2) + dotd*norm(2) + dot*&
-   &              normd(2)
+   &                normd(2)
    x0(i+1, j+1, 2) = x2(i+1, j+1, 2) + dot*norm(2)
    x0d(i+1, j+1, 3) = x2d(i+1, j+1, 3) + dotd*norm(3) + dot*&
-   &              normd(3)
+   &                normd(3)
    x0(i+1, j+1, 3) = x2(i+1, j+1, 3) + dot*norm(3)
    END DO
    END DO
    END IF
    END IF
    END DO loopbocos
-   ! Copy the values from the saved halos back to the block
-   counter = 1
-   DO mm=1,nbocos
-   IF (bctype(mm) .EQ. b2bmatch) THEN
-   SELECT CASE  (bcfaceid(mm)) 
-   CASE (imin) 
-   ibeg = jnbeg(mm)
-   iend = jnend(mm)
-   iimax = jl
-   jbeg = knbeg(mm)
-   jend = knend(mm)
-   jjmax = kl
-   x0d => xd(0, :, :, :)
-   x0 => x(0, :, :, :)
-   CASE (imax) 
-   ibeg = jnbeg(mm)
-   iend = jnend(mm)
-   iimax = jl
-   jbeg = knbeg(mm)
-   jend = knend(mm)
-   jjmax = kl
-   x0d => xd(ie, :, :, :)
-   x0 => x(ie, :, :, :)
-   CASE (jmin) 
-   ibeg = inbeg(mm)
-   iend = inend(mm)
-   iimax = il
-   jbeg = knbeg(mm)
-   jend = knend(mm)
-   jjmax = kl
-   x0d => xd(:, 0, :, :)
-   x0 => x(:, 0, :, :)
-   CASE (jmax) 
-   ibeg = inbeg(mm)
-   iend = inend(mm)
-   iimax = il
-   jbeg = knbeg(mm)
-   jend = knend(mm)
-   jjmax = kl
-   x0d => xd(:, je, :, :)
-   x0 => x(:, je, :, :)
-   CASE (kmin) 
-   ibeg = inbeg(mm)
-   iend = inend(mm)
-   iimax = il
-   jbeg = jnbeg(mm)
-   jend = jnend(mm)
-   jjmax = jl
-   x0d => xd(:, :, 0, :)
-   x0 => x(:, :, 0, :)
-   CASE (kmax) 
-   ibeg = inbeg(mm)
-   iend = inend(mm)
-   iimax = il
-   jbeg = jnbeg(mm)
-   jend = jnend(mm)
-   jjmax = jl
-   x0d => xd(:, :, ke, :)
-   x0 => x(:, :, ke, :)
-   END SELECT
-   DO jj=jbeg,jend
-   DO ii=ibeg,iend
-   ! Plus 1 is due to the pointer offset
-   x0d(ii+1, jj+1, 1) = flowdomsd(nn, level, sps)%temphalo(1, &
-   &            counter)
-   x0(ii+1, jj+1, 1) = flowdoms(nn, level, sps)%temphalo(1, &
-   &            counter)
-   x0d(ii+1, jj+1, 2) = flowdomsd(nn, level, sps)%temphalo(2, &
-   &            counter)
-   x0(ii+1, jj+1, 2) = flowdoms(nn, level, sps)%temphalo(2, &
-   &            counter)
-   x0d(ii+1, jj+1, 3) = flowdomsd(nn, level, sps)%temphalo(3, &
-   &            counter)
-   x0(ii+1, jj+1, 3) = flowdoms(nn, level, sps)%temphalo(3, &
-   &            counter)
-   counter = counter + 1
-   END DO
-   END DO
    END IF
-   END DO
    END SUBROUTINE XHALO_BLOCK_D

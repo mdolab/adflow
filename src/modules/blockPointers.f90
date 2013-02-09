@@ -116,6 +116,7 @@ module blockPointers
 
   real(kind=realType), dimension(:,:,:,:),   pointer :: x
   real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
+  real(kind=realType), dimension(:,:)      , pointer :: tempHalo
 
   real(kind=realType), dimension(:,:,:,:), pointer :: sI, sJ, sK
   real(kind=realType), dimension(:,:,:),   pointer :: vol

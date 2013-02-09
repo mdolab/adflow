@@ -2,8 +2,10 @@
    !  Tapenade 3.6 (r4159) - 21 Sep 2011 10:11
    !
    !  Differentiation of applyallbc_block in forward (tangent) mode:
-   !   variations   of useful results: *p *gamma *w *rlv
-   !   with respect to varying inputs: *p *w *rlv
+   !   variations   of useful results: *rev *p *gamma *w *rlv (global)pointref[1:3]
+   !   with respect to varying inputs: *rev *p *s *w *rlv *si *sj
+   !                *sk *(*bcdata.norm) *(*bcdata.rface) rgas pinfcorr
+   !                (global)pointref[1:3]
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
    !                s:in gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
    !                bvtk2:in d2wall:in bmti1:in bmti2:in si:in sj:in

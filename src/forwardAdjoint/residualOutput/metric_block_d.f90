@@ -6,7 +6,7 @@
    !   with respect to varying inputs: *x
    !   Plus diff mem management of: x:in vol:in si:in sj:in sk:in
    !                bcdata:in *bcdata.norm:in
-   SUBROUTINE METRIC_BLOCK_D(nn, level, sps)
+   SUBROUTINE METRIC_BLOCK_D()
    USE CGNSGRID
    USE BLOCKPOINTERS_D
    USE INPUTTIMESPECTRAL
@@ -15,26 +15,9 @@
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
    IMPLICIT NONE
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * metric computes the face normals and the volume for the given  *
-   !      * grid level for all spectral solutions. First the volumes are   *
-   !      * computed assuming that the block is right handed. Then the     *
-   !      * number of positive and negative volumes are determined. If all *
-   !      * volumes are positive the block is indeed right handed; if all  *
-   !      * volumes are negative the block is left handed and both the     *
-   !      * volumes and the normals must be negated (for the normals this  *
-   !      * is done by the introduction of fact, which is either -0.5 or   *
-   !      * 0.5); if there are both positive and negative volumes the mesh *
-   !      * is not valid.                                                  *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   !
-   !      Subroutine arguments.
-   !
-   INTEGER(kind=inttype), INTENT(IN) :: level
+   ! This is COPY of metric.f90. It was necessary to copy this file
+   ! since there is debugging stuff in the original that is not
+   ! necessary for AD.
    !
    !      Local parameter.
    !
@@ -222,7 +205,6 @@
    ! and fact is used to correct this for a left handed block,
    ! as well as the scaling factor of 0.5
    IF (righthanded) THEN
-   !( flowDoms(nn,level,sps)%rightHanded ) then
    fact = half
    sid = 0.0
    v1d = 0.0

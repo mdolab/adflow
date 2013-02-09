@@ -3,7 +3,8 @@
    !
    !  Differentiation of timestep_block in forward (tangent) mode:
    !   variations   of useful results: *radi *radj *radk
-   !   with respect to varying inputs: *p *gamma *w adis
+   !   with respect to varying inputs: *p *sfacei *sfacej *gamma *sfacek
+   !                *w *si *sj *sk pinfcorr rhoinf adis
    !   Plus diff mem management of: rev:in p:in sfacei:in sfacej:in
    !                gamma:in sfacek:in w:in rlv:in vol:in si:in sj:in
    !                sk:in radi:in radj:in radk:in
@@ -53,12 +54,14 @@
    !
    INTEGER(kind=inttype) :: sps, nn, i, j, k
    REAL(kind=realtype) :: plim, rlim, clim2
+   REAL(kind=realtype) :: clim2d
    REAL(kind=realtype) :: ux, uy, uz, cc2, qs, sx, sy, sz, rmu
-   REAL(kind=realtype) :: uxd, uyd, uzd, cc2d, qsd
+   REAL(kind=realtype) :: uxd, uyd, uzd, cc2d, qsd, sxd, syd, szd
    REAL(kind=realtype) :: ri, rj, rk, rij, rjk, rki
    REAL(kind=realtype) :: rid, rjd, rkd, rijd, rjkd, rkid
    REAL(kind=realtype) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
    REAL(kind=realtype) :: sface, tmp
+   REAL(kind=realtype) :: sfaced
    LOGICAL :: radiineeded
    REAL(kind=realtype) :: arg1
    REAL(kind=realtype) :: arg1d
@@ -102,6 +105,8 @@
    ! is used. Idem for rlim; compute clim2 as well.
    plim = 0.001_realType*pinfcorr
    rlim = 0.001_realType*rhoinf
+   clim2d = (0.000001_realType*gammainf*pinfcorrd*rhoinf-&
+   &      0.000001_realType*gammainf*pinfcorr*rhoinfd)/rhoinf**2
    clim2 = 0.000001_realType*gammainf*pinfcorr/rhoinf
    ! Initialize sFace to zero. This value will be used if the
    ! block is not moving.
@@ -119,6 +124,7 @@
    radid = 0.0
    radjd = 0.0
    radkd = 0.0
+   sfaced = 0.0
    ! No preconditioner. Simply the standard spectral radius.
    ! Loop over the cells, including the first level halo.
    DO k=1,ke
@@ -136,8 +142,8 @@
    &              , irho))/w(i, j, k, irho)**2
    cc2 = gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho)
    IF (cc2 .LT. clim2) THEN
+   cc2d = clim2d
    cc2 = clim2
-   cc2d = 0.0
    ELSE
    cc2 = cc2
    END IF
@@ -145,13 +151,19 @@
    ! normal in i-direction for a moving face. To avoid
    ! a number of multiplications by 0.5 simply the sum
    ! is taken.
-   IF (addgridvelocities) sface = sfacei(i-1, j, k) + sfacei(i&
-   &                , j, k)
+   IF (addgridvelocities) THEN
+   sfaced = sfaceid(i-1, j, k) + sfaceid(i, j, k)
+   sface = sfacei(i-1, j, k) + sfacei(i, j, k)
+   END IF
    ! Spectral radius in i-direction.
+   sxd = sid(i-1, j, k, 1) + sid(i, j, k, 1)
    sx = si(i-1, j, k, 1) + si(i, j, k, 1)
+   syd = sid(i-1, j, k, 2) + sid(i, j, k, 2)
    sy = si(i-1, j, k, 2) + si(i, j, k, 2)
+   szd = sid(i-1, j, k, 3) + sid(i, j, k, 3)
    sz = si(i-1, j, k, 3) + si(i, j, k, 3)
-   qsd = sx*uxd + sy*uyd + sz*uzd
+   qsd = uxd*sx + ux*sxd + uyd*sy + uy*syd + uzd*sz + uz*szd - &
+   &              sfaced
    qs = ux*sx + uy*sy + uz*sz - sface
    IF (qs .GE. 0.) THEN
    abs0d = qsd
@@ -160,7 +172,8 @@
    abs0d = -qsd
    abs0 = -qs
    END IF
-   arg1d = (sx**2+sy**2+sz**2)*cc2d
+   arg1d = cc2d*(sx**2+sy**2+sz**2) + cc2*(2*sx*sxd+2*sy*syd+2*&
+   &              sz*szd)
    arg1 = cc2*(sx**2+sy**2+sz**2)
    IF (arg1 .EQ. 0.0) THEN
    result1d = 0.0
@@ -171,13 +184,19 @@
    radid(i, j, k) = half*(abs0d+result1d)
    radi(i, j, k) = half*(abs0+result1)
    ! The grid velocity in j-direction.
-   IF (addgridvelocities) sface = sfacej(i, j-1, k) + sfacej(i&
-   &                , j, k)
+   IF (addgridvelocities) THEN
+   sfaced = sfacejd(i, j-1, k) + sfacejd(i, j, k)
+   sface = sfacej(i, j-1, k) + sfacej(i, j, k)
+   END IF
    ! Spectral radius in j-direction.
+   sxd = sjd(i, j-1, k, 1) + sjd(i, j, k, 1)
    sx = sj(i, j-1, k, 1) + sj(i, j, k, 1)
+   syd = sjd(i, j-1, k, 2) + sjd(i, j, k, 2)
    sy = sj(i, j-1, k, 2) + sj(i, j, k, 2)
+   szd = sjd(i, j-1, k, 3) + sjd(i, j, k, 3)
    sz = sj(i, j-1, k, 3) + sj(i, j, k, 3)
-   qsd = sx*uxd + sy*uyd + sz*uzd
+   qsd = uxd*sx + ux*sxd + uyd*sy + uy*syd + uzd*sz + uz*szd - &
+   &              sfaced
    qs = ux*sx + uy*sy + uz*sz - sface
    IF (qs .GE. 0.) THEN
    abs1d = qsd
@@ -186,7 +205,8 @@
    abs1d = -qsd
    abs1 = -qs
    END IF
-   arg1d = (sx**2+sy**2+sz**2)*cc2d
+   arg1d = cc2d*(sx**2+sy**2+sz**2) + cc2*(2*sx*sxd+2*sy*syd+2*&
+   &              sz*szd)
    arg1 = cc2*(sx**2+sy**2+sz**2)
    IF (arg1 .EQ. 0.0) THEN
    result1d = 0.0
@@ -197,13 +217,19 @@
    radjd(i, j, k) = half*(abs1d+result1d)
    radj(i, j, k) = half*(abs1+result1)
    ! The grid velocity in k-direction.
-   IF (addgridvelocities) sface = sfacek(i, j, k-1) + sfacek(i&
-   &                , j, k)
+   IF (addgridvelocities) THEN
+   sfaced = sfacekd(i, j, k-1) + sfacekd(i, j, k)
+   sface = sfacek(i, j, k-1) + sfacek(i, j, k)
+   END IF
    ! Spectral radius in k-direction.
+   sxd = skd(i, j, k-1, 1) + skd(i, j, k, 1)
    sx = sk(i, j, k-1, 1) + sk(i, j, k, 1)
+   syd = skd(i, j, k-1, 2) + skd(i, j, k, 2)
    sy = sk(i, j, k-1, 2) + sk(i, j, k, 2)
+   szd = skd(i, j, k-1, 3) + skd(i, j, k, 3)
    sz = sk(i, j, k-1, 3) + sk(i, j, k, 3)
-   qsd = sx*uxd + sy*uyd + sz*uzd
+   qsd = uxd*sx + ux*sxd + uyd*sy + uy*syd + uzd*sz + uz*szd - &
+   &              sfaced
    qs = ux*sx + uy*sy + uz*sz - sface
    IF (qs .GE. 0.) THEN
    abs2d = qsd
@@ -212,7 +238,8 @@
    abs2d = -qsd
    abs2 = -qs
    END IF
-   arg1d = (sx**2+sy**2+sz**2)*cc2d
+   arg1d = cc2d*(sx**2+sy**2+sz**2) + cc2*(2*sx*sxd+2*sy*syd+2*&
+   &              sz*szd)
    arg1 = cc2*(sx**2+sy**2+sz**2)
    IF (arg1 .EQ. 0.0) THEN
    result1d = 0.0
