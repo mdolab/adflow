@@ -26,46 +26,50 @@ module costFunctions
   !     *                                                                *
   !     ******************************************************************
 
-  integer(kind=intType), parameter :: nCostFunction = 37_intType
-  integer(kind=intType), parameter :: costFuncLift       = 1_intType,&
-       costFuncDrag       = 2_intType,&
-       costFuncLiftCoef   = 3_intType,&
-       costFuncDragCoef   = 4_intType,&
-       costFuncForceX     = 5_intType,&
-       costFuncForceY     = 6_intType,&
-       costFuncForceZ     = 7_intType,&
-       costFuncForceXCoef = 8_intType,&
-       costFuncForceYCoef = 9_intType,&
-       costFuncForceZCoef = 10_intType,&
-       costFuncMomX       = 11_intType,&
-       costFuncMomY       = 12_intType,&
-       costFuncMomZ       = 13_intType,&
-       costFuncMomXCoef   = 14_intType,&
-       costFuncMomYCoef   = 15_intType,&
-       costFuncMomZCoef   = 16_intType,&
-       costFuncCm0        = 17_intType,&
-       costFuncCmzAlpha   = 18_intType,&
-       costFuncCmzAlphaDot= 19_intType,&
-       costFuncCmzq       = 20_intType,&
-       costFuncCmzqDot    = 21_intType,&
-       costFuncCl0        = 22_intType,&
-       costFuncClAlpha    = 23_intType,&
-       costFuncClAlphaDot = 24_intType,&
-       costFuncClq        = 25_intType,&
-       costFuncClqDot     = 26_intType,&
-       costFuncCd0        = 27_intType,&
-       costFuncCdAlpha    = 28_intType,& 
-       costFuncCdAlphadot = 29_intType,&
-       costFuncCdq        = 30_intType,&
-       costFuncCdqDot     = 31_intType,&
-       costFuncCfy0       = 32_intType,&	
-       costFuncCfyAlpha   = 33_intType,& 
-       costFuncCfyAlphadot= 34_intType,&
-       costFuncCfyq       = 35_intType,&
-       costFuncCfyqDot    = 36_intType,&
-       costFuncBendingCoef= 37_intType
+  integer(kind=intType), parameter :: nCostFunction = 37
+  integer(kind=intType), parameter :: costFuncLift       = 1,&
+       costFuncDrag       = 2,&
+       costFuncLiftCoef   = 3,&
+       costFuncDragCoef   = 4,&
+       costFuncForceX     = 5,&
+       costFuncForceY     = 6,&
+       costFuncForceZ     = 7,&
+       costFuncForceXCoef = 8,&
+       costFuncForceYCoef = 9,&
+       costFuncForceZCoef = 10,&
+       costFuncMomX       = 11,&
+       costFuncMomY       = 12,&
+       costFuncMomZ       = 13,&
+       costFuncMomXCoef   = 14,&
+       costFuncMomYCoef   = 15,&
+       costFuncMomZCoef   = 16,&
+       costFuncCm0        = 17,&
+       costFuncCmzAlpha   = 18,&
+       costFuncCmzAlphaDot= 19,&
+       costFuncCmzq       = 20,&
+       costFuncCmzqDot    = 21,&
+       costFuncCl0        = 22,&
+       costFuncClAlpha    = 23,&
+       costFuncClAlphaDot = 24,&
+       costFuncClq        = 25,&
+       costFuncClqDot     = 26,&
+       costFuncCd0        = 27,&
+       costFuncCdAlpha    = 28,& 
+       costFuncCdAlphadot = 29,&
+       costFuncCdq        = 30,&
+       costFuncCdqDot     = 31,&
+       costFuncCfy0       = 32,&	
+       costFuncCfyAlpha   = 33,& 
+       costFuncCfyAlphadot= 34,&
+       costFuncCfyq       = 35,&
+       costFuncCfyqDot    = 36,&
+       costFuncBendingCoef= 37
 
   real(kind=realType), allocatable, dimension(:)   :: functionValue
+  real(kind=realType), dimension(6, nCostFunction) :: costFuncMat
+#ifndef USE_TAPENADE
+  REAL(kind=realtype), DIMENSION(6, ncostfunction) :: costfuncmatd
+#endif
 end module costFunctions
 
 

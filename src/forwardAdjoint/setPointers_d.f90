@@ -1,29 +1,21 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setPointers_offTSInstance.f90                   *
-!      *                                                                *
-!      ******************************************************************
-!
-subroutine setPointers_d(nn,level,sps)
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * setPointers_offTSInstance calls the normal setPointers but also*
-  !      * sets w_offTimeInstance and vol_offTimeInstance which are       *
-  !      * required for the forward mode AD calculations                  *
-  !      *                                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !
+! Set the pointers for the derivative values AND the normal pointers
+subroutine setPointers_d(nn, level, sps)
+
   use blockPointers_d
   implicit none
   !
   !      Subroutine arguments
   !
   integer(kind=intType), intent(in) :: nn,level,sps
+
+  ! Set normal pointers
+  call setPointers(nn, level, sps)
   
   viscSubfaced => flowDomsd(nn,1,sps)%viscSubface
+
+  tempHalo => flowDoms(nn, 1, sps)%tempHalo
+  tempHalod => flowDomsd(nn, 1, sps)%tempHalo
 
   xd    => flowDomsd(nn,1,sps)%x
 

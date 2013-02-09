@@ -38,16 +38,9 @@ vpath %.o $(SUMB_OBJDIR)
 
 FILES_TO_COMPLEXIFY = \
 		block_res.f90\
-		block_res_extra.f90\
-		block_res_spatial.f90\
+		getCostFuncMat.f90\
 		metric_block.f90\
-		initres_block_mod.f90\
-		referenceState_mod.f90\
-		saSolve_mod.f90\
-		turbResidual_block.f90\
 		xhalo_block.f90\
-		computeUtau_block.f90\
-		checkInputParam_mod.f90\
 
 FILES_TO_COPY = 
 

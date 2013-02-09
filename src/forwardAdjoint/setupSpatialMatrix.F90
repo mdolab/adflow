@@ -15,6 +15,7 @@ subroutine setupSpatialMatrix(useAD)
 
   logical, intent(in) :: useAD
 
+  logical :: useObjective
   real(kind=realType), dimension(2) :: time
   real(kind=realType)               :: timeAdjLocal, timeAdj
 
@@ -31,7 +32,8 @@ subroutine setupSpatialMatrix(useAD)
 
   call cpu_time(time(1))
 
-  call setupSpatialResidualMatrix(drdx,useAD)
+  useObjective = .True.
+  call setupSpatialResidualMatrix(drdx, useAD, useObjective)
 
   call cpu_time(time(2))
   timeAdjLocal = time(2)-time(1)

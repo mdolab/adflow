@@ -30,6 +30,7 @@
 
        integer(kind=intType) :: mm, nn, sps, level, nLevels
        integer(kind=intType) :: iBeg, jBeg, iEnd, jEnd
+       integer(kind=intType) :: inodeBeg, jnodeBeg, inodeEnd, jnodeEnd
 !
 !      ******************************************************************
 !      *                                                                *
@@ -63,6 +64,10 @@
                iBeg = BCData(mm)%icbeg; iEnd = BCData(mm)%icend
                jBeg = BCData(mm)%jcbeg; jEnd = BCData(mm)%jcend
 
+               inodeBeg = BCData(mm)%inbeg; inodeEnd = BCData(mm)%inend
+               jnodeBeg = BCData(mm)%jnbeg; jnodeEnd = BCData(mm)%jnend
+
+
                ! Determine the boundary condition we are having here
                ! and allocate the memory accordingly.
 
@@ -70,9 +75,12 @@
 
                  case (NSWallAdiabatic)
 
-                   ! Adiabatic wall. Just allocate the memory for uSlip.
+                    ! Note the FMIndex is an INTEGER and Defined for
+                    ! the NODES
 
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%F(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%FMIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call terminate("allocMemBCData", &
@@ -83,11 +91,12 @@
 
                  case (NSWallIsothermal)
 
-                   ! Isothermal wall. Allocate the memory for uSlip
-                   ! and TNS_Wall.
-
+                    ! Note the FMIndex is an INTEGER and Defined for
+                    ! the NODES
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3),  &
                             BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
+                            BCData(mm)%F(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%FMIndex(inodeBeg:inodeEnd,jnodeBeg:jnodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call terminate("allocMemBCData", &
@@ -102,6 +111,8 @@
                    ! the normal mesh velocity.
 
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
+                            BCData(mm)%F(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%FMIndex(inodeBeg:inodeEnd,jnodeBeg:jnodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call terminate("allocMemBCData", &

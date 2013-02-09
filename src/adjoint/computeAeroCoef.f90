@@ -34,7 +34,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
 
   !      Local variables.
   integer(kind=intType) :: ierr, nn, mm
-  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, npts, nTS
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, npts, ncells, nTS
   real(kind=realType) :: force(3), cforce(3), Lift, Drag, CL, CD
   real(kind=realType) :: Moment(3),cMoment(3)
   real(kind=realType) :: alpha, beta
@@ -49,7 +49,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   !     *                                                                *
   !     ******************************************************************
   !
-  call getForceSize(npts, nTS)
+  call getForceSize(npts, ncells, nTS)
   allocate(pts(3, npts ,nTimeIntervalsSpectral))
   call getForcePoints(pts, npts, nTS)
   ii = 0

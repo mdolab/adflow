@@ -48,7 +48,7 @@
 !
       real(kind=realType) :: rnorm,x1,y1,z1,xbn,ybn,zbn,xw,yw,zw
       real(kind=realType),dimension (3)::refDirectionNorm
-!
+      real(kind=realType) :: tmp
 !     ******************************************************************
 !     *                                                                *
 !     * Begin execution.                                               *
@@ -80,13 +80,13 @@
          ! 1) rotate alpha radians cw about z-axis
          !    ( <=> rotate z-axis alpha radians ccw)
          
-         
-         call vectorRotation(x1, y1, z1, 3, -alpha, xbn, ybn, zbn)
+         tmp = -alpha
+         call vectorRotation(x1, y1, z1, 3, tmp, xbn, ybn, zbn)
          
          ! 2) rotate beta radians ccw about y-axis
          !    ( <=> rotate z-axis -beta radians ccw)
-         
-         call vectorRotation(xw, yw, zw, 2, -beta, x1, y1, z1)
+         tmp = -beta
+         call vectorRotation(xw, yw, zw, 2, tmp, x1, y1, z1)
 
       elseif(liftIndex==3)then
          ! Compute the wind direction vector.Aerosurf axes different!!

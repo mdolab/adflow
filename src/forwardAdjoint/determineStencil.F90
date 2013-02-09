@@ -49,7 +49,7 @@ subroutine determineStencil(lumped)
   groundLevel = 1
   currentLevel = 1
   ! Get current dw
-  call block_res(1,1)
+  !call block_res(1,1)
   
   ! Copy out dw
   do k=-3,3
@@ -67,7 +67,7 @@ subroutine determineStencil(lumped)
   end do
 
   ! Re-run dw
-  call block_res(1,1)
+  !call block_res(1,1)
 
   do i=-3,3
      do j=-3,3
@@ -121,7 +121,7 @@ subroutine determineStencil(lumped)
   currentLevel = 1
 
   ! Get current dw -> We can use the normal version here
-  call block_res(1,1)
+  !call block_res(1,1)
   
   ! Copy out dw
   do k=-3,3
@@ -138,7 +138,7 @@ subroutine determineStencil(lumped)
   end do
 
   ! Re-run dw
-  call block_res_spatial(1,1)
+  !call block_res_spatial(1,1)
 
   do i=-3,3
      do j=-3,3

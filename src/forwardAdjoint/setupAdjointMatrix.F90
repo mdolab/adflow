@@ -12,7 +12,7 @@ subroutine setupAdjointMatrix
   implicit none
 
   ! Local variables.
-  logical :: useAD, useTranspose, usePC
+  logical :: useAD, useTranspose, usePC, useObjective
   integer(kind=intType) :: ierr
   real(kind=realType), dimension(2) :: time
   real(kind=realType)               :: timeAdjLocal, timeAdj
@@ -28,8 +28,9 @@ subroutine setupAdjointMatrix
   useAD = .True.
   usePC = .False.
   useTranspose = .True.
+  useObjective = .True.
 
-  call setupStateResidualMatrix(drdwt, useAD, usePC, useTranspose, &
+  call setupStateResidualMatrix(drdwt, useAD, usePC, useTranspose, useObjective, &
        1_intType)
 
   call cpu_time(time(2))

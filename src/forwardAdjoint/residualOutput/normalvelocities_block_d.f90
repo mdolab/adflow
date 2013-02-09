@@ -11,9 +11,9 @@
    !      ******************************************************************
    !      *                                                                *
    !      * File:          normalVelocities.f90                            *
-   !      * Author:        Edwin van der Weide, C.A.(Sandy) Mader          *
-   !      * Starting date: 07-15-2011                                      *
-   !      * Last modified: 07-15-2011                                      *
+   !      * Author:        Edwin van der Weide                             *
+   !      * Starting date: 02-23-2004                                      *
+   !      * Last modified: 06-12-2005                                      *
    !      *                                                                *
    !      ******************************************************************
    !
@@ -27,11 +27,10 @@
    !
    !      ******************************************************************
    !      *                                                                *
-   !      * normalVelocities_block computes the normal grid                *
+   !      * normalVelocitiesAllLevels computes the normal grid             *
    !      * velocities of some boundary faces of the moving blocks for     *
-   !      * spectral mode sps. Just the current ground level is considered.*
-   !      * This is essentially a single level,single block version of     *
-   !      * normalVelocitiesAllLevels.                                     *
+   !      * spectral mode sps. All grid levels from ground level to the    *
+   !      * coarsest level are considered.                                 *
    !      *                                                                *
    !      ******************************************************************
    !
@@ -42,7 +41,7 @@
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: nlevels, level, nn, mm
+   INTEGER(kind=inttype) :: mm
    INTEGER(kind=inttype) :: i, j
    REAL(kind=realtype) :: weight, mult
    REAL(kind=realtype) :: weightd

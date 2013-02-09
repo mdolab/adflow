@@ -3,9 +3,10 @@
    !
    !  Differentiation of invisciddissfluxmatrix in forward (tangent) mode:
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: *p *gamma *w
-   !   Plus diff mem management of: p:in gamma:in w:in si:in sj:in
-   !                sk:in fw:in
+   !   with respect to varying inputs: *p *sfacei *sfacej *gamma *sfacek
+   !                *w *si *sj *sk pinfcorr
+   !   Plus diff mem management of: p:in sfacei:in sfacej:in gamma:in
+   !                sfacek:in w:in si:in sj:in sk:in fw:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -50,27 +51,30 @@
    !
    INTEGER(kind=inttype) :: i, j, k, ind
    REAL(kind=realtype) :: plim, sface
+   REAL(kind=realtype) :: plimd, sfaced
    REAL(kind=realtype) :: sfil, fis2, fis4
    REAL(kind=realtype) :: gammaavg, gm1, ovgm1, gm53
    REAL(kind=realtype) :: gammaavgd, gm1d, ovgm1d, gm53d
    REAL(kind=realtype) :: ppor, rrad, dis2, dis4
    REAL(kind=realtype) :: rradd, dis2d, dis4d
    REAL(kind=realtype) :: dp1, dp2, ddw, tmp, fs
-   REAL(kind=realtype) :: dp1d, dp2d, ddwd, fsd
+   REAL(kind=realtype) :: dp1d, dp2d, ddwd, tmpd, fsd
    REAL(kind=realtype) :: dr, dru, drv, drw, dre, drk, sx, sy, sz
-   REAL(kind=realtype) :: drd, drud, drvd, drwd, dred, drkd
+   REAL(kind=realtype) :: drd, drud, drvd, drwd, dred, drkd, sxd, syd, &
+   &  szd
    REAL(kind=realtype) :: uavg, vavg, wavg, a2avg, aavg, havg
    REAL(kind=realtype) :: uavgd, vavgd, wavgd, a2avgd, aavgd, havgd
    REAL(kind=realtype) :: alphaavg, unavg, ovaavg, ova2avg
    REAL(kind=realtype) :: alphaavgd, unavgd, ovaavgd, ova2avgd
    REAL(kind=realtype) :: kavg, lam1, lam2, lam3, area
-   REAL(kind=realtype) :: kavgd, lam1d, lam2d, lam3d
+   REAL(kind=realtype) :: kavgd, lam1d, lam2d, lam3d, aread
    REAL(kind=realtype) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
    REAL(kind=realtype) :: abv1d, abv2d, abv3d, abv4d, abv5d, abv6d, abv7d
    LOGICAL :: correctfork
    REAL(kind=realtype) :: DIM
    REAL(kind=realtype) :: DIM_D
    REAL(kind=realtype) :: arg1
+   REAL(kind=realtype) :: arg1d
    REAL(kind=realtype) :: min5d
    REAL(kind=realtype) :: x6d
    REAL(kind=realtype) :: y4d
@@ -78,6 +82,7 @@
    REAL(kind=realtype) :: min6
    REAL(kind=realtype) :: min5
    REAL(kind=realtype) :: min4
+   REAL(kind=realtype) :: max2d
    REAL(kind=realtype) :: min3
    REAL(kind=realtype) :: min2
    REAL(kind=realtype) :: min1
@@ -97,6 +102,7 @@
    REAL(kind=realtype) :: min4d
    REAL(kind=realtype) :: x5d
    REAL(kind=realtype) :: y3d
+   REAL(kind=realtype) :: max1d
    REAL(kind=realtype) :: y6d
    REAL(kind=realtype) :: abs3d
    REAL(kind=realtype) :: abs10d
@@ -122,6 +128,7 @@
    REAL(kind=realtype) :: abs2d
    REAL(kind=realtype) :: abs1
    REAL(kind=realtype) :: abs0
+   REAL(kind=realtype) :: max3d
    INTRINSIC MIN
    REAL(kind=realtype) :: abs5d
    REAL(kind=realtype) :: abs12d
@@ -160,6 +167,7 @@
    ! Set the value of plim. To be fully consistent this must have
    ! the dimension of a pressure. Therefore a fraction of pInfCorr
    ! is used.
+   plimd = 0.001_realType*pinfcorrd
    plim = 0.001_realType*pinfcorr
    ! Determine whether or not the total energy must be corrected
    ! for the presence of the turbulent kinetic energy.
@@ -199,6 +207,7 @@
    END DO
    END DO
    fwd = 0.0
+   sfaced = 0.0
    !
    !      ******************************************************************
    !      *                                                                *
@@ -225,9 +234,9 @@
    x1d = ((pd(2, j, k)-two*pd(1, j, k)+pd(0, j, k))*(omega*(p(2, j&
    &          , k)+two*p(1, j, k)+p(0, j, k))+oneminomega*(abs1+abs7)+plim)-&
    &          (p(2, j, k)-two*p(1, j, k)+p(0, j, k))*(omega*(pd(2, j, k)+two&
-   &          *pd(1, j, k)+pd(0, j, k))+oneminomega*(abs1d+abs7d)))/(omega*(&
-   &          p(2, j, k)+two*p(1, j, k)+p(0, j, k))+oneminomega*(abs1+abs7)+&
-   &          plim)**2
+   &          *pd(1, j, k)+pd(0, j, k))+oneminomega*(abs1d+abs7d)+plimd))/(&
+   &          omega*(p(2, j, k)+two*p(1, j, k)+p(0, j, k))+oneminomega*(abs1&
+   &          +abs7)+plim)**2
    x1 = (p(2, j, k)-two*p(1, j, k)+p(0, j, k))/(omega*(p(2, j, k)+&
    &          two*p(1, j, k)+p(0, j, k))+oneminomega*(abs1+abs7)+plim)
    IF (x1 .GE. 0.) THEN
@@ -257,8 +266,8 @@
    &            (i+2, j, k)+two*p(i+1, j, k)+p(i, j, k))+oneminomega*(abs2+&
    &            abs8)+plim)-(p(i+2, j, k)-two*p(i+1, j, k)+p(i, j, k))*(&
    &            omega*(pd(i+2, j, k)+two*pd(i+1, j, k)+pd(i, j, k))+&
-   &            oneminomega*(abs2d+abs8d)))/(omega*(p(i+2, j, k)+two*p(i+1, &
-   &            j, k)+p(i, j, k))+oneminomega*(abs2+abs8)+plim)**2
+   &            oneminomega*(abs2d+abs8d)+plimd))/(omega*(p(i+2, j, k)+two*p&
+   &            (i+1, j, k)+p(i, j, k))+oneminomega*(abs2+abs8)+plim)**2
    x2 = (p(i+2, j, k)-two*p(i+1, j, k)+p(i, j, k))/(omega*(p(i+2&
    &            , j, k)+two*p(i+1, j, k)+p(i, j, k))+oneminomega*(abs2+abs8)&
    &            +plim)
@@ -413,19 +422,34 @@
    &            , irho)**2)
    a2avg = half*(gamma(i+1, j, k)*p(i+1, j, k)/w(i+1, j, k, irho)&
    &            +gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
+   sxd = sid(i, j, k, 1)
    sx = si(i, j, k, 1)
+   syd = sid(i, j, k, 2)
    sy = si(i, j, k, 2)
+   szd = sid(i, j, k, 3)
    sz = si(i, j, k, 3)
+   arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
    arg1 = sx**2 + sy**2 + sz**2
+   IF (arg1 .EQ. 0.0) THEN
+   aread = 0.0
+   ELSE
+   aread = arg1d/(2.0*SQRT(arg1))
+   END IF
    area = SQRT(arg1)
    IF (1.e-25_realType .LT. area) THEN
+   max1d = aread
    max1 = area
    ELSE
    max1 = 1.e-25_realType
+   max1d = 0.0
    END IF
+   tmpd = -(one*max1d/max1**2)
    tmp = one/max1
+   sxd = sxd*tmp + sx*tmpd
    sx = sx*tmp
+   syd = syd*tmp + sy*tmpd
    sy = sy*tmp
+   szd = szd*tmp + sz*tmpd
    sz = sz*tmp
    alphaavgd = half*(2*uavg*uavgd+2*vavg*vavgd+2*wavg*wavgd)
    alphaavg = half*(uavg**2+vavg**2+wavg**2)
@@ -438,7 +462,8 @@
    aavgd = a2avgd/(2.0*SQRT(a2avg))
    END IF
    aavg = SQRT(a2avg)
-   unavgd = sx*uavgd + sy*vavgd + sz*wavgd
+   unavgd = uavgd*sx + uavg*sxd + vavgd*sy + vavg*syd + wavgd*sz &
+   &            + wavg*szd
    unavg = uavg*sx + vavg*sy + wavg*sz
    ovaavgd = -(one*aavgd/aavg**2)
    ovaavg = one/aavg
@@ -446,26 +471,29 @@
    ova2avg = one/a2avg
    ! The mesh velocity if the face is moving. It must be
    ! divided by the area to obtain a true velocity.
-   IF (addgridvelocities) sface = sfacei(i, j, k)*tmp
+   IF (addgridvelocities) THEN
+   sfaced = sfaceid(i, j, k)*tmp + sfacei(i, j, k)*tmpd
+   sface = sfacei(i, j, k)*tmp
+   END IF
    IF (unavg - sface + aavg .GE. 0.) THEN
-   lam1d = unavgd + aavgd
+   lam1d = unavgd - sfaced + aavgd
    lam1 = unavg - sface + aavg
    ELSE
-   lam1d = -(unavgd+aavgd)
+   lam1d = -(unavgd-sfaced+aavgd)
    lam1 = -(unavg-sface+aavg)
    END IF
    IF (unavg - sface - aavg .GE. 0.) THEN
-   lam2d = unavgd - aavgd
+   lam2d = unavgd - sfaced - aavgd
    lam2 = unavg - sface - aavg
    ELSE
-   lam2d = -(unavgd-aavgd)
+   lam2d = -(unavgd-sfaced-aavgd)
    lam2 = -(unavg-sface-aavg)
    END IF
    IF (unavg - sface .GE. 0.) THEN
-   lam3d = unavgd
+   lam3d = unavgd - sfaced
    lam3 = unavg - sface
    ELSE
-   lam3d = -unavgd
+   lam3d = -(unavgd-sfaced)
    lam3 = -(unavg-sface)
    END IF
    rradd = lam3d + aavgd
@@ -490,11 +518,11 @@
    END IF
    ! Multiply the eigenvalues by the area to obtain
    ! the correct values for the dissipation term.
-   lam1d = area*lam1d
+   lam1d = lam1d*area + lam1*aread
    lam1 = lam1*area
-   lam2d = area*lam2d
+   lam2d = lam2d*area + lam2*aread
    lam2 = lam2*area
-   lam3d = area*lam3d
+   lam3d = lam3d*area + lam3*aread
    lam3 = lam3*area
    ! Some abbreviations, which occur quite often in the
    ! dissipation terms.
@@ -509,7 +537,8 @@
    &            -vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53d*drk - gm53*drkd
    abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - gm53&
    &            *drk
-   abv5d = sx*drud + sy*drvd + sz*drwd - unavgd*dr - unavg*drd
+   abv5d = sxd*dru + sx*drud + syd*drv + sy*drvd + szd*drw + sz*&
+   &            drwd - unavgd*dr - unavg*drd
    abv5 = sx*dru + sy*drv + sz*drw - unavg*dr
    abv6d = (abv3d*abv4+abv3*abv4d)*ova2avg + abv3*abv4*ova2avgd +&
    &            (abv2d*abv5+abv2*abv5d)*ovaavg + abv2*abv5*ovaavgd
@@ -526,24 +555,24 @@
    fwd(i, j, k, irho) = fwd(i, j, k, irho) - fsd
    fw(i, j, k, irho) = fw(i, j, k, irho) - fs
    ! X-momentum.
-   fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sx*&
-   &            abv7d
+   fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sxd*&
+   &            abv7 + sx*abv7d
    fs = lam3*dru + uavg*abv6 + sx*abv7
    fwd(i+1, j, k, imx) = fwd(i+1, j, k, imx) + fsd
    fw(i+1, j, k, imx) = fw(i+1, j, k, imx) + fs
    fwd(i, j, k, imx) = fwd(i, j, k, imx) - fsd
    fw(i, j, k, imx) = fw(i, j, k, imx) - fs
    ! Y-momentum.
-   fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + sy*&
-   &            abv7d
+   fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + syd*&
+   &            abv7 + sy*abv7d
    fs = lam3*drv + vavg*abv6 + sy*abv7
    fwd(i+1, j, k, imy) = fwd(i+1, j, k, imy) + fsd
    fw(i+1, j, k, imy) = fw(i+1, j, k, imy) + fs
    fwd(i, j, k, imy) = fwd(i, j, k, imy) - fsd
    fw(i, j, k, imy) = fw(i, j, k, imy) - fs
    ! Z-momentum.
-   fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + sz*&
-   &            abv7d
+   fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + szd*&
+   &            abv7 + sz*abv7d
    fs = lam3*drw + wavg*abv6 + sz*abv7
    fwd(i+1, j, k, imz) = fwd(i+1, j, k, imz) + fsd
    fw(i+1, j, k, imz) = fw(i+1, j, k, imz) + fs
@@ -589,9 +618,9 @@
    x3d = ((pd(i, 2, k)-two*pd(i, 1, k)+pd(i, 0, k))*(omega*(p(i, 2&
    &          , k)+two*p(i, 1, k)+p(i, 0, k))+oneminomega*(abs3+abs9)+plim)-&
    &          (p(i, 2, k)-two*p(i, 1, k)+p(i, 0, k))*(omega*(pd(i, 2, k)+two&
-   &          *pd(i, 1, k)+pd(i, 0, k))+oneminomega*(abs3d+abs9d)))/(omega*(&
-   &          p(i, 2, k)+two*p(i, 1, k)+p(i, 0, k))+oneminomega*(abs3+abs9)+&
-   &          plim)**2
+   &          *pd(i, 1, k)+pd(i, 0, k))+oneminomega*(abs3d+abs9d)+plimd))/(&
+   &          omega*(p(i, 2, k)+two*p(i, 1, k)+p(i, 0, k))+oneminomega*(abs3&
+   &          +abs9)+plim)**2
    x3 = (p(i, 2, k)-two*p(i, 1, k)+p(i, 0, k))/(omega*(p(i, 2, k)+&
    &          two*p(i, 1, k)+p(i, 0, k))+oneminomega*(abs3+abs9)+plim)
    IF (x3 .GE. 0.) THEN
@@ -621,8 +650,8 @@
    &            (i, j+2, k)+two*p(i, j+1, k)+p(i, j, k))+oneminomega*(abs4+&
    &            abs10)+plim)-(p(i, j+2, k)-two*p(i, j+1, k)+p(i, j, k))*(&
    &            omega*(pd(i, j+2, k)+two*pd(i, j+1, k)+pd(i, j, k))+&
-   &            oneminomega*(abs4d+abs10d)))/(omega*(p(i, j+2, k)+two*p(i, j&
-   &            +1, k)+p(i, j, k))+oneminomega*(abs4+abs10)+plim)**2
+   &            oneminomega*(abs4d+abs10d)+plimd))/(omega*(p(i, j+2, k)+two*&
+   &            p(i, j+1, k)+p(i, j, k))+oneminomega*(abs4+abs10)+plim)**2
    x4 = (p(i, j+2, k)-two*p(i, j+1, k)+p(i, j, k))/(omega*(p(i, j&
    &            +2, k)+two*p(i, j+1, k)+p(i, j, k))+oneminomega*(abs4+abs10)&
    &            +plim)
@@ -777,19 +806,34 @@
    &            , irho)**2)
    a2avg = half*(gamma(i, j+1, k)*p(i, j+1, k)/w(i, j+1, k, irho)&
    &            +gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
+   sxd = sjd(i, j, k, 1)
    sx = sj(i, j, k, 1)
+   syd = sjd(i, j, k, 2)
    sy = sj(i, j, k, 2)
+   szd = sjd(i, j, k, 3)
    sz = sj(i, j, k, 3)
+   arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
    arg1 = sx**2 + sy**2 + sz**2
+   IF (arg1 .EQ. 0.0) THEN
+   aread = 0.0
+   ELSE
+   aread = arg1d/(2.0*SQRT(arg1))
+   END IF
    area = SQRT(arg1)
    IF (1.e-25_realType .LT. area) THEN
+   max2d = aread
    max2 = area
    ELSE
    max2 = 1.e-25_realType
+   max2d = 0.0
    END IF
+   tmpd = -(one*max2d/max2**2)
    tmp = one/max2
+   sxd = sxd*tmp + sx*tmpd
    sx = sx*tmp
+   syd = syd*tmp + sy*tmpd
    sy = sy*tmp
+   szd = szd*tmp + sz*tmpd
    sz = sz*tmp
    alphaavgd = half*(2*uavg*uavgd+2*vavg*vavgd+2*wavg*wavgd)
    alphaavg = half*(uavg**2+vavg**2+wavg**2)
@@ -802,7 +846,8 @@
    aavgd = a2avgd/(2.0*SQRT(a2avg))
    END IF
    aavg = SQRT(a2avg)
-   unavgd = sx*uavgd + sy*vavgd + sz*wavgd
+   unavgd = uavgd*sx + uavg*sxd + vavgd*sy + vavg*syd + wavgd*sz &
+   &            + wavg*szd
    unavg = uavg*sx + vavg*sy + wavg*sz
    ovaavgd = -(one*aavgd/aavg**2)
    ovaavg = one/aavg
@@ -810,26 +855,29 @@
    ova2avg = one/a2avg
    ! The mesh velocity if the face is moving. It must be
    ! divided by the area to obtain a true velocity.
-   IF (addgridvelocities) sface = sfacej(i, j, k)*tmp
+   IF (addgridvelocities) THEN
+   sfaced = sfacejd(i, j, k)*tmp + sfacej(i, j, k)*tmpd
+   sface = sfacej(i, j, k)*tmp
+   END IF
    IF (unavg - sface + aavg .GE. 0.) THEN
-   lam1d = unavgd + aavgd
+   lam1d = unavgd - sfaced + aavgd
    lam1 = unavg - sface + aavg
    ELSE
-   lam1d = -(unavgd+aavgd)
+   lam1d = -(unavgd-sfaced+aavgd)
    lam1 = -(unavg-sface+aavg)
    END IF
    IF (unavg - sface - aavg .GE. 0.) THEN
-   lam2d = unavgd - aavgd
+   lam2d = unavgd - sfaced - aavgd
    lam2 = unavg - sface - aavg
    ELSE
-   lam2d = -(unavgd-aavgd)
+   lam2d = -(unavgd-sfaced-aavgd)
    lam2 = -(unavg-sface-aavg)
    END IF
    IF (unavg - sface .GE. 0.) THEN
-   lam3d = unavgd
+   lam3d = unavgd - sfaced
    lam3 = unavg - sface
    ELSE
-   lam3d = -unavgd
+   lam3d = -(unavgd-sfaced)
    lam3 = -(unavg-sface)
    END IF
    rradd = lam3d + aavgd
@@ -854,11 +902,11 @@
    END IF
    ! Multiply the eigenvalues by the area to obtain
    ! the correct values for the dissipation term.
-   lam1d = area*lam1d
+   lam1d = lam1d*area + lam1*aread
    lam1 = lam1*area
-   lam2d = area*lam2d
+   lam2d = lam2d*area + lam2*aread
    lam2 = lam2*area
-   lam3d = area*lam3d
+   lam3d = lam3d*area + lam3*aread
    lam3 = lam3*area
    ! Some abbreviations, which occur quite often in the
    ! dissipation terms.
@@ -873,7 +921,8 @@
    &            -vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53d*drk - gm53*drkd
    abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - gm53&
    &            *drk
-   abv5d = sx*drud + sy*drvd + sz*drwd - unavgd*dr - unavg*drd
+   abv5d = sxd*dru + sx*drud + syd*drv + sy*drvd + szd*drw + sz*&
+   &            drwd - unavgd*dr - unavg*drd
    abv5 = sx*dru + sy*drv + sz*drw - unavg*dr
    abv6d = (abv3d*abv4+abv3*abv4d)*ova2avg + abv3*abv4*ova2avgd +&
    &            (abv2d*abv5+abv2*abv5d)*ovaavg + abv2*abv5*ovaavgd
@@ -890,24 +939,24 @@
    fwd(i, j, k, irho) = fwd(i, j, k, irho) - fsd
    fw(i, j, k, irho) = fw(i, j, k, irho) - fs
    ! X-momentum.
-   fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sx*&
-   &            abv7d
+   fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sxd*&
+   &            abv7 + sx*abv7d
    fs = lam3*dru + uavg*abv6 + sx*abv7
    fwd(i, j+1, k, imx) = fwd(i, j+1, k, imx) + fsd
    fw(i, j+1, k, imx) = fw(i, j+1, k, imx) + fs
    fwd(i, j, k, imx) = fwd(i, j, k, imx) - fsd
    fw(i, j, k, imx) = fw(i, j, k, imx) - fs
    ! Y-momentum.
-   fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + sy*&
-   &            abv7d
+   fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + syd*&
+   &            abv7 + sy*abv7d
    fs = lam3*drv + vavg*abv6 + sy*abv7
    fwd(i, j+1, k, imy) = fwd(i, j+1, k, imy) + fsd
    fw(i, j+1, k, imy) = fw(i, j+1, k, imy) + fs
    fwd(i, j, k, imy) = fwd(i, j, k, imy) - fsd
    fw(i, j, k, imy) = fw(i, j, k, imy) - fs
    ! Z-momentum.
-   fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + sz*&
-   &            abv7d
+   fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + szd*&
+   &            abv7 + sz*abv7d
    fs = lam3*drw + wavg*abv6 + sz*abv7
    fwd(i, j+1, k, imz) = fwd(i, j+1, k, imz) + fsd
    fw(i, j+1, k, imz) = fw(i, j+1, k, imz) + fs
@@ -953,9 +1002,9 @@
    x5d = ((pd(i, j, 2)-two*pd(i, j, 1)+pd(i, j, 0))*(omega*(p(i, j&
    &          , 2)+two*p(i, j, 1)+p(i, j, 0))+oneminomega*(abs5+abs11)+plim)&
    &          -(p(i, j, 2)-two*p(i, j, 1)+p(i, j, 0))*(omega*(pd(i, j, 2)+&
-   &          two*pd(i, j, 1)+pd(i, j, 0))+oneminomega*(abs5d+abs11d)))/(&
-   &          omega*(p(i, j, 2)+two*p(i, j, 1)+p(i, j, 0))+oneminomega*(abs5&
-   &          +abs11)+plim)**2
+   &          two*pd(i, j, 1)+pd(i, j, 0))+oneminomega*(abs5d+abs11d)+plimd)&
+   &          )/(omega*(p(i, j, 2)+two*p(i, j, 1)+p(i, j, 0))+oneminomega*(&
+   &          abs5+abs11)+plim)**2
    x5 = (p(i, j, 2)-two*p(i, j, 1)+p(i, j, 0))/(omega*(p(i, j, 2)+&
    &          two*p(i, j, 1)+p(i, j, 0))+oneminomega*(abs5+abs11)+plim)
    IF (x5 .GE. 0.) THEN
@@ -985,8 +1034,8 @@
    &            (i, j, k+2)+two*p(i, j, k+1)+p(i, j, k))+oneminomega*(abs6+&
    &            abs12)+plim)-(p(i, j, k+2)-two*p(i, j, k+1)+p(i, j, k))*(&
    &            omega*(pd(i, j, k+2)+two*pd(i, j, k+1)+pd(i, j, k))+&
-   &            oneminomega*(abs6d+abs12d)))/(omega*(p(i, j, k+2)+two*p(i, j&
-   &            , k+1)+p(i, j, k))+oneminomega*(abs6+abs12)+plim)**2
+   &            oneminomega*(abs6d+abs12d)+plimd))/(omega*(p(i, j, k+2)+two*&
+   &            p(i, j, k+1)+p(i, j, k))+oneminomega*(abs6+abs12)+plim)**2
    x6 = (p(i, j, k+2)-two*p(i, j, k+1)+p(i, j, k))/(omega*(p(i, j&
    &            , k+2)+two*p(i, j, k+1)+p(i, j, k))+oneminomega*(abs6+abs12)&
    &            +plim)
@@ -1141,19 +1190,34 @@
    &            , irho)**2)
    a2avg = half*(gamma(i, j, k+1)*p(i, j, k+1)/w(i, j, k+1, irho)&
    &            +gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
+   sxd = skd(i, j, k, 1)
    sx = sk(i, j, k, 1)
+   syd = skd(i, j, k, 2)
    sy = sk(i, j, k, 2)
+   szd = skd(i, j, k, 3)
    sz = sk(i, j, k, 3)
+   arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
    arg1 = sx**2 + sy**2 + sz**2
+   IF (arg1 .EQ. 0.0) THEN
+   aread = 0.0
+   ELSE
+   aread = arg1d/(2.0*SQRT(arg1))
+   END IF
    area = SQRT(arg1)
    IF (1.e-25_realType .LT. area) THEN
+   max3d = aread
    max3 = area
    ELSE
    max3 = 1.e-25_realType
+   max3d = 0.0
    END IF
+   tmpd = -(one*max3d/max3**2)
    tmp = one/max3
+   sxd = sxd*tmp + sx*tmpd
    sx = sx*tmp
+   syd = syd*tmp + sy*tmpd
    sy = sy*tmp
+   szd = szd*tmp + sz*tmpd
    sz = sz*tmp
    alphaavgd = half*(2*uavg*uavgd+2*vavg*vavgd+2*wavg*wavgd)
    alphaavg = half*(uavg**2+vavg**2+wavg**2)
@@ -1166,7 +1230,8 @@
    aavgd = a2avgd/(2.0*SQRT(a2avg))
    END IF
    aavg = SQRT(a2avg)
-   unavgd = sx*uavgd + sy*vavgd + sz*wavgd
+   unavgd = uavgd*sx + uavg*sxd + vavgd*sy + vavg*syd + wavgd*sz &
+   &            + wavg*szd
    unavg = uavg*sx + vavg*sy + wavg*sz
    ovaavgd = -(one*aavgd/aavg**2)
    ovaavg = one/aavg
@@ -1174,26 +1239,29 @@
    ova2avg = one/a2avg
    ! The mesh velocity if the face is moving. It must be
    ! divided by the area to obtain a true velocity.
-   IF (addgridvelocities) sface = sfacek(i, j, k)*tmp
+   IF (addgridvelocities) THEN
+   sfaced = sfacekd(i, j, k)*tmp + sfacek(i, j, k)*tmpd
+   sface = sfacek(i, j, k)*tmp
+   END IF
    IF (unavg - sface + aavg .GE. 0.) THEN
-   lam1d = unavgd + aavgd
+   lam1d = unavgd - sfaced + aavgd
    lam1 = unavg - sface + aavg
    ELSE
-   lam1d = -(unavgd+aavgd)
+   lam1d = -(unavgd-sfaced+aavgd)
    lam1 = -(unavg-sface+aavg)
    END IF
    IF (unavg - sface - aavg .GE. 0.) THEN
-   lam2d = unavgd - aavgd
+   lam2d = unavgd - sfaced - aavgd
    lam2 = unavg - sface - aavg
    ELSE
-   lam2d = -(unavgd-aavgd)
+   lam2d = -(unavgd-sfaced-aavgd)
    lam2 = -(unavg-sface-aavg)
    END IF
    IF (unavg - sface .GE. 0.) THEN
-   lam3d = unavgd
+   lam3d = unavgd - sfaced
    lam3 = unavg - sface
    ELSE
-   lam3d = -unavgd
+   lam3d = -(unavgd-sfaced)
    lam3 = -(unavg-sface)
    END IF
    rradd = lam3d + aavgd
@@ -1218,11 +1286,11 @@
    END IF
    ! Multiply the eigenvalues by the area to obtain
    ! the correct values for the dissipation term.
-   lam1d = area*lam1d
+   lam1d = lam1d*area + lam1*aread
    lam1 = lam1*area
-   lam2d = area*lam2d
+   lam2d = lam2d*area + lam2*aread
    lam2 = lam2*area
-   lam3d = area*lam3d
+   lam3d = lam3d*area + lam3*aread
    lam3 = lam3*area
    ! Some abbreviations, which occur quite often in the
    ! dissipation terms.
@@ -1237,7 +1305,8 @@
    &            -vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53d*drk - gm53*drkd
    abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - gm53&
    &            *drk
-   abv5d = sx*drud + sy*drvd + sz*drwd - unavgd*dr - unavg*drd
+   abv5d = sxd*dru + sx*drud + syd*drv + sy*drvd + szd*drw + sz*&
+   &            drwd - unavgd*dr - unavg*drd
    abv5 = sx*dru + sy*drv + sz*drw - unavg*dr
    abv6d = (abv3d*abv4+abv3*abv4d)*ova2avg + abv3*abv4*ova2avgd +&
    &            (abv2d*abv5+abv2*abv5d)*ovaavg + abv2*abv5*ovaavgd
@@ -1254,24 +1323,24 @@
    fwd(i, j, k, irho) = fwd(i, j, k, irho) - fsd
    fw(i, j, k, irho) = fw(i, j, k, irho) - fs
    ! X-momentum.
-   fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sx*&
-   &            abv7d
+   fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sxd*&
+   &            abv7 + sx*abv7d
    fs = lam3*dru + uavg*abv6 + sx*abv7
    fwd(i, j, k+1, imx) = fwd(i, j, k+1, imx) + fsd
    fw(i, j, k+1, imx) = fw(i, j, k+1, imx) + fs
    fwd(i, j, k, imx) = fwd(i, j, k, imx) - fsd
    fw(i, j, k, imx) = fw(i, j, k, imx) - fs
    ! Y-momentum.
-   fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + sy*&
-   &            abv7d
+   fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + syd*&
+   &            abv7 + sy*abv7d
    fs = lam3*drv + vavg*abv6 + sy*abv7
    fwd(i, j, k+1, imy) = fwd(i, j, k+1, imy) + fsd
    fw(i, j, k+1, imy) = fw(i, j, k+1, imy) + fs
    fwd(i, j, k, imy) = fwd(i, j, k, imy) - fsd
    fw(i, j, k, imy) = fw(i, j, k, imy) - fs
    ! Z-momentum.
-   fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + sz*&
-   &            abv7d
+   fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + szd*&
+   &            abv7 + sz*abv7d
    fs = lam3*drw + wavg*abv6 + sz*abv7
    fwd(i, j, k+1, imz) = fwd(i, j, k+1, imz) + fsd
    fw(i, j, k+1, imz) = fw(i, j, k+1, imz) + fs

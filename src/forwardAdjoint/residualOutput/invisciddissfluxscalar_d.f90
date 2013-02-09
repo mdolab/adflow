@@ -4,6 +4,7 @@
    !  Differentiation of invisciddissfluxscalar in forward (tangent) mode:
    !   variations   of useful results: *w *fw
    !   with respect to varying inputs: *p *gamma *w *radi *radj *radk
+   !                pinfcorr rhoinf
    !   Plus diff mem management of: p:in gamma:in w:in fw:in radi:in
    !                radj:in radk:in
    !
@@ -44,7 +45,7 @@
    !
    INTEGER(kind=inttype) :: i, j, k, ind
    REAL(kind=realtype) :: sslim, rhoi
-   REAL(kind=realtype) :: rhoid
+   REAL(kind=realtype) :: sslimd, rhoid
    REAL(kind=realtype) :: sfil, fis2, fis4
    REAL(kind=realtype) :: ppor, rrad, dis2, dis4
    REAL(kind=realtype) :: rradd, dis2d, dis4d
@@ -123,6 +124,7 @@
    ! Also set the value of sslim. To be fully consistent this
    ! must have the dimension of pressure and it is therefore
    ! set to a fraction of the free stream value.
+   sslimd = 0.001_realType*pinfcorrd
    sslim = 0.001_realType*pinfcorr
    ssd = 0.0
    ! Copy the pressure in ss. Only fill the entries used in
@@ -165,7 +167,17 @@
    ! Also set the value of sslim. To be fully consistent this
    ! must have the dimension of entropy and it is therefore
    ! set to a fraction of the free stream value.
+   IF (rhoinf .GT. 0.0 .OR. (rhoinf .LT. 0.0 .AND. gammainf .EQ. INT(&
+   &          gammainf))) THEN
+   pwr1d = gammainf*rhoinf**(gammainf-1)*rhoinfd
+   ELSE IF (rhoinf .EQ. 0.0 .AND. gammainf .EQ. 1.0) THEN
+   pwr1d = rhoinfd
+   ELSE
+   pwr1d = 0.0
+   END IF
    pwr1 = rhoinf**gammainf
+   sslimd = (0.001_realType*pinfcorrd*pwr1-0.001_realType*pinfcorr*&
+   &        pwr1d)/pwr1**2
    sslim = 0.001_realType*pinfcorr/pwr1
    ssd = 0.0
    ! Store the entropy in ss. Only fill the entries used in
@@ -356,6 +368,7 @@
    END DO
    END DO
    CASE DEFAULT
+   sslimd = 0.0
    ssd = 0.0
    END SELECT
    ! Set a couple of constants for the scheme.
@@ -511,8 +524,8 @@
    DO j=2,jl
    x1d = ((ssd(2, j, k)-two*ssd(1, j, k)+ssd(0, j, k))*(ss(2, j, k)&
    &          +two*ss(1, j, k)+ss(0, j, k)+sslim)-(ss(2, j, k)-two*ss(1, j, &
-   &          k)+ss(0, j, k))*(ssd(2, j, k)+two*ssd(1, j, k)+ssd(0, j, k)))/&
-   &          (ss(2, j, k)+two*ss(1, j, k)+ss(0, j, k)+sslim)**2
+   &          k)+ss(0, j, k))*(ssd(2, j, k)+two*ssd(1, j, k)+ssd(0, j, k)+&
+   &          sslimd))/(ss(2, j, k)+two*ss(1, j, k)+ss(0, j, k)+sslim)**2
    x1 = (ss(2, j, k)-two*ss(1, j, k)+ss(0, j, k))/(ss(2, j, k)+two*&
    &          ss(1, j, k)+ss(0, j, k)+sslim)
    IF (x1 .GE. 0.) THEN
@@ -527,8 +540,8 @@
    x2d = ((ssd(i+2, j, k)-two*ssd(i+1, j, k)+ssd(i, j, k))*(ss(i+&
    &            2, j, k)+two*ss(i+1, j, k)+ss(i, j, k)+sslim)-(ss(i+2, j, k)&
    &            -two*ss(i+1, j, k)+ss(i, j, k))*(ssd(i+2, j, k)+two*ssd(i+1&
-   &            , j, k)+ssd(i, j, k)))/(ss(i+2, j, k)+two*ss(i+1, j, k)+ss(i&
-   &            , j, k)+sslim)**2
+   &            , j, k)+ssd(i, j, k)+sslimd))/(ss(i+2, j, k)+two*ss(i+1, j, &
+   &            k)+ss(i, j, k)+sslim)**2
    x2 = (ss(i+2, j, k)-two*ss(i+1, j, k)+ss(i, j, k))/(ss(i+2, j&
    &            , k)+two*ss(i+1, j, k)+ss(i, j, k)+sslim)
    IF (x2 .GE. 0.) THEN
@@ -666,8 +679,8 @@
    DO i=2,il
    x3d = ((ssd(i, 2, k)-two*ssd(i, 1, k)+ssd(i, 0, k))*(ss(i, 2, k)&
    &          +two*ss(i, 1, k)+ss(i, 0, k)+sslim)-(ss(i, 2, k)-two*ss(i, 1, &
-   &          k)+ss(i, 0, k))*(ssd(i, 2, k)+two*ssd(i, 1, k)+ssd(i, 0, k)))/&
-   &          (ss(i, 2, k)+two*ss(i, 1, k)+ss(i, 0, k)+sslim)**2
+   &          k)+ss(i, 0, k))*(ssd(i, 2, k)+two*ssd(i, 1, k)+ssd(i, 0, k)+&
+   &          sslimd))/(ss(i, 2, k)+two*ss(i, 1, k)+ss(i, 0, k)+sslim)**2
    x3 = (ss(i, 2, k)-two*ss(i, 1, k)+ss(i, 0, k))/(ss(i, 2, k)+two*&
    &          ss(i, 1, k)+ss(i, 0, k)+sslim)
    IF (x3 .GE. 0.) THEN
@@ -682,8 +695,8 @@
    x4d = ((ssd(i, j+2, k)-two*ssd(i, j+1, k)+ssd(i, j, k))*(ss(i&
    &            , j+2, k)+two*ss(i, j+1, k)+ss(i, j, k)+sslim)-(ss(i, j+2, k&
    &            )-two*ss(i, j+1, k)+ss(i, j, k))*(ssd(i, j+2, k)+two*ssd(i, &
-   &            j+1, k)+ssd(i, j, k)))/(ss(i, j+2, k)+two*ss(i, j+1, k)+ss(i&
-   &            , j, k)+sslim)**2
+   &            j+1, k)+ssd(i, j, k)+sslimd))/(ss(i, j+2, k)+two*ss(i, j+1, &
+   &            k)+ss(i, j, k)+sslim)**2
    x4 = (ss(i, j+2, k)-two*ss(i, j+1, k)+ss(i, j, k))/(ss(i, j+2&
    &            , k)+two*ss(i, j+1, k)+ss(i, j, k)+sslim)
    IF (x4 .GE. 0.) THEN
@@ -817,8 +830,8 @@
    DO i=2,il
    x5d = ((ssd(i, j, 2)-two*ssd(i, j, 1)+ssd(i, j, 0))*(ss(i, j, 2)&
    &          +two*ss(i, j, 1)+ss(i, j, 0)+sslim)-(ss(i, j, 2)-two*ss(i, j, &
-   &          1)+ss(i, j, 0))*(ssd(i, j, 2)+two*ssd(i, j, 1)+ssd(i, j, 0)))/&
-   &          (ss(i, j, 2)+two*ss(i, j, 1)+ss(i, j, 0)+sslim)**2
+   &          1)+ss(i, j, 0))*(ssd(i, j, 2)+two*ssd(i, j, 1)+ssd(i, j, 0)+&
+   &          sslimd))/(ss(i, j, 2)+two*ss(i, j, 1)+ss(i, j, 0)+sslim)**2
    x5 = (ss(i, j, 2)-two*ss(i, j, 1)+ss(i, j, 0))/(ss(i, j, 2)+two*&
    &          ss(i, j, 1)+ss(i, j, 0)+sslim)
    IF (x5 .GE. 0.) THEN
@@ -833,8 +846,8 @@
    x6d = ((ssd(i, j, k+2)-two*ssd(i, j, k+1)+ssd(i, j, k))*(ss(i&
    &            , j, k+2)+two*ss(i, j, k+1)+ss(i, j, k)+sslim)-(ss(i, j, k+2&
    &            )-two*ss(i, j, k+1)+ss(i, j, k))*(ssd(i, j, k+2)+two*ssd(i, &
-   &            j, k+1)+ssd(i, j, k)))/(ss(i, j, k+2)+two*ss(i, j, k+1)+ss(i&
-   &            , j, k)+sslim)**2
+   &            j, k+1)+ssd(i, j, k)+sslimd))/(ss(i, j, k+2)+two*ss(i, j, k+&
+   &            1)+ss(i, j, k)+sslim)**2
    x6 = (ss(i, j, k+2)-two*ss(i, j, k+1)+ss(i, j, k))/(ss(i, j, k&
    &            +2)+two*ss(i, j, k+1)+ss(i, j, k)+sslim)
    IF (x6 .GE. 0.) THEN

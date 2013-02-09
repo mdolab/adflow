@@ -49,7 +49,29 @@ subroutine destroyStatePETScVars
   
   call VecDestroy(adjointRes, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
- 
+
+  call MatDestroy(dFcdw, PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
+  call MatDestroy(dFcdx, PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
+  call MatDestroy(dFcdx2, PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
+  call MatDestroy(dFndFc, PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
+  call MatDestroy(dFdx, PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
+  call MatDestroy(dFdw, PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
+  do i=1,6
+     call VecDestroy(FMw(i), PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
+  end do
 #endif
 
 end subroutine destroyStatePETScVars
@@ -58,6 +80,7 @@ subroutine destroySpatialPETScVars
 
   use ADjointPETSc
   implicit none
+  integer(kind=intType) :: i
 
 #ifndef USE_NO_PETSC
 
@@ -70,27 +93,14 @@ subroutine destroySpatialPETScVars
   call VecDestroy(xVec,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
+  do i=1,6
+     call VecDestroy(FMx(i), PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
+  end do
 
 #endif
 
 end subroutine destroySpatialPETScVars
-
-subroutine destroyCouplingPETScVars
-
-  use ADjointPETSc
-  implicit none
-  
-#ifndef USE_NO_PETSC
-
-  call MatDestroy(dFdw, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-
-  call MatDestroy(dFdx, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-
-#endif
-
-end subroutine destroyCouplingPETScVars
 
 subroutine destroyExtraPETScVars
   use ADjointPETSc

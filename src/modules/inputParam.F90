@@ -701,24 +701,27 @@
 
        logical :: wallFunctions, wallDistanceNeeded
 
-       real(kind=realType) :: Mach, MachCoef,MachGrid
-       !AD derivative values
-       real(kind=realType) :: Machd, MachCoefd,MachGridd
+       real(kind=realType) :: Mach, MachCoef, MachGrid
        real(kind=realType) :: Reynolds, ReynoldsLength
        real(kind=realType) :: tempFreestream, gammaConstant, RGasDim
-#ifndef USE_TAPENADE
-       real(kind=realType) :: gammaconstantb, gammaconstantd
-#endif
        real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset
        real(kind=realType) :: eddyVisInfRatio, turbIntensityInf
        real(kind=realType) :: surfaceRef, lengthRef
-       !bending moment derivative
-       real(kind=realType) :: lengthrefb
-
-       real(kind=realType), dimension(3) :: velDirFreestream,velDirFreestreamd
-       real(kind=realType), dimension(3) :: liftDirection,liftDirectiond
-       real(kind=realType), dimension(3) :: dragDirection,dragDirectiond
+       real(kind=realType), dimension(3) :: velDirFreestream
+       real(kind=realType), dimension(3) :: liftDirection
+       real(kind=realType), dimension(3) :: dragDirection
        real(kind=realType), dimension(3) :: pointRef
+
+#ifndef USE_TAPENADE
+       real(kind=realType), dimension(3) :: velDirFreestreamd
+       real(kind=realType), dimension(3) :: liftDirectiond
+       real(kind=realType), dimension(3) :: dragDirectiond
+       real(kind=realType), dimension(3) :: pointRefd
+       real(kind=realType) :: Machd, MachCoefd, MachGridd
+       real(kind=realType) :: gammaconstantb, gammaconstantd
+       real(kind=realType) :: surfaceRefd, lengthRefd, lengthRefb
+#endif
+
        !bending moment derivative
        real(kind=realType), dimension(3) :: pointRefb
        real(kind=realType), dimension(3) :: pointRefEC

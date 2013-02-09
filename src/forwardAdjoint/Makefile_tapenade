@@ -21,10 +21,10 @@ SRC = ..
 TAPENADE_PARSERFILESEPARATOR = "/"
 
 # Dependent output variables (separator: white space, default: all)
-TAPENADE_OUTVARS = "flowdoms%dw flowdoms%w"
+TAPENADE_OUTVARS = "flowdoms%dw flowdoms%w flowdoms%x Force Moment Lift Drag cForce cMoment CL CD BCData%F costFuncMat"
 
 # Independent input variables (separator: white space, default: all)
-TAPENADE_VARS = "flowdoms%w" # flowdoms%x"
+TAPENADE_VARS = "flowdoms%w  flowdoms%x alpha beta inputPhysics%mach inputPhysics%machGrid inputPhysics%lengthRef inputPhysics%pointRef inputPhysics%surfaceRef" 
 
 # Name of the top routine
 TAPENADE_HEADROUTINE = "block_res"
@@ -45,10 +45,9 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 #     ******************************************************************
 
 ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.f90\
-		$(SRC)/forwardAdjoint/residualInput/computeUtau_block.f90\
 		$(SRC)/forwardAdjoint/residualInput/xhalo_block.f90\
 		$(SRC)/forwardAdjoint/residualInput/metric_block.f90\
-		$(SRC)/forwardAdjoint/residualInput/terminate.f90\
+		$(SRC)/forwardAdjoint/residualInput/getCostFuncMat.f90\
 		$(SRC)/modules/monitor.f90\
 		$(SRC)/modules/block.F90\
 		$(SRC)/modules/inputParam.F90\
@@ -62,7 +61,9 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.f90\
 		$(SRC)/modules/cgnsGrid.f90 \
 		$(SRC)/modules/CpCurveFits.f90\
 		$(SRC)/modules/blockPointers.f90 \
-		$(SRC)/modules/flowVarRefState.f90 \
+		$(SRC)/modules/flowVarRefState.F90 \
+		$(SRC)/modules/killSignals.f90\
+		$(SRC)/modules/costFunctions.F90\
 		$(SRC)/solver/inviscidCentralFlux.F90\
 		$(SRC)/solver/inviscidDissFluxCusp.f90\
 		$(SRC)/solver/inviscidDissFluxCuspCoarse.f90\
@@ -71,6 +72,7 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.f90\
 		$(SRC)/solver/inviscidDissFluxScalar.F90\
 		$(SRC)/solver/inviscidDissFluxScalarCoarse.f90\
 		$(SRC)/solver/inviscidUpwindFlux.F90\
+		$(SRC)/solver/computeUtau.f90\
 		$(SRC)/solver/applyAllBC.F90\
 		$(SRC)/solver/initres.f90\
 		$(SRC)/solver/timeStep.f90\
@@ -91,10 +93,18 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.f90\
 		$(SRC)/solver/utauWF.f90\
 		$(SRC)/solver/bcNSWallAdiabatic.f90\
 		$(SRC)/solver/bcNSWallIsothermal.f90\
+		$(SRC)/solver/gridVelocitiesFineLevel.f90\
+		$(SRC)/solver/normalVelocities.f90\
+		$(SRC)/solver/forcesAndMoments.f90\
+		$(SRC)/initFlow/referenceState.F90\
+		$(SRC)/initFlow/setFlowInfinityState.F90\
+		$(SRC)/turbulence/computeEddyViscosity.F90\
 		$(SRC)/turbulence/curveFit.f90\
 		$(SRC)/turbulence/turbBCNSWall.f90\
 		$(SRC)/turbulence/bcTurbWall.f90\
+		$(SRC)/turbulence/saNuFromEddyRatio.f90\
 		$(SRC)/utils/rotMatrixRigidBody.f90\
+		$(SRC)/utils/computeGamma.f90\
 		$(SRC)/utils/TSalpha.f90\
 		$(SRC)/utils/TSalphadot.f90\
 		$(SRC)/utils/TSBeta.f90\
@@ -105,6 +115,7 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.f90\
 		$(SRC)/utils/setBCPointers.f90\
 		$(SRC)/utils/computeEtot.f90\
 		$(SRC)/utils/setPointers.f90\
+		$(SRC)/utils/terminate.F90
 
 IFILES := $(ALL_FILES:%=%.f90)
 #     ******************************************************************

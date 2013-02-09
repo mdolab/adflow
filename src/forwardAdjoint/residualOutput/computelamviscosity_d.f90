@@ -3,7 +3,7 @@
    !
    !  Differentiation of computelamviscosity in forward (tangent) mode:
    !   variations   of useful results: *p *rlv
-   !   with respect to varying inputs: *p *w
+   !   with respect to varying inputs: *p *w rgas muref
    !   Plus diff mem management of: p:in w:in rlv:in
    !
    !      ******************************************************************
@@ -41,7 +41,7 @@
    !
    INTEGER(kind=inttype) :: i, j, k
    REAL(kind=realtype) :: musuth, tsuth, ssuth, t
-   REAL(kind=realtype) :: td
+   REAL(kind=realtype) :: musuthd, td
    LOGICAL :: correctfork
    !
    !      ******************************************************************
@@ -67,6 +67,7 @@
    correctfork = .false.
    END IF
    ! Compute the nonDimensional constants in sutherland's law.
+   musuthd = -(musuthdim*murefd/muref**2)
    musuth = musuthdim/muref
    tsuth = tsuthdim/tref
    ssuth = ssuthdim/tref
@@ -94,12 +95,14 @@
    DO i=2,il
    ! Compute the nonDimensional temperature and the
    ! nonDimensional laminar viscosity.
-   td = (pd(i, j, k)*rgas*w(i, j, k, irho)-p(i, j, k)*rgas*wd(i, &
-   &            j, k, irho))/(rgas*w(i, j, k, irho))**2
+   td = (pd(i, j, k)*rgas*w(i, j, k, irho)-p(i, j, k)*(rgasd*w(i&
+   &            , j, k, irho)+rgas*wd(i, j, k, irho)))/(rgas*w(i, j, k, irho&
+   &            ))**2
    t = p(i, j, k)/(rgas*w(i, j, k, irho))
-   rlvd(i, j, k) = musuth*((tsuth+ssuth)*1.5_realType*(t/tsuth)**&
-   &            0.5*td/((t+ssuth)*tsuth)-(tsuth+ssuth)*td*(t/tsuth)**&
-   &            1.5_realType/(t+ssuth)**2)
+   rlvd(i, j, k) = (musuthd*(tsuth+ssuth)/(t+ssuth)-musuth*(tsuth&
+   &            +ssuth)*td/(t+ssuth)**2)*(t/tsuth)**1.5_realType + musuth*(&
+   &            tsuth+ssuth)*1.5_realType*(t/tsuth)**0.5*td/((t+ssuth)*tsuth&
+   &            )
    rlv(i, j, k) = musuth*((tsuth+ssuth)/(t+ssuth))*(t/tsuth)**&
    &            1.5_realType
    END DO

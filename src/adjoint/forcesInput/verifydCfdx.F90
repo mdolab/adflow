@@ -47,7 +47,7 @@ subroutine verifydCfdx(level,costFunction)
 !     Local variables.
 !
       integer(kind=intType) ::sps
-      integer(kind=intType) ::nn,mm,ii,npts,ll,nTS
+      integer(kind=intType) ::nn,mm,ii,npts,ncell,ll,nTS
 
       real(kind=realType), dimension(:,:,:),allocatable :: pts
       real(kind=realType), dimension(:,:,:),allocatable  :: ptsb
@@ -277,7 +277,7 @@ subroutine verifydCfdx(level,costFunction)
 !     * Compute the d(forces)/dx (partial) using the tapenade routines.*
 !     *                                                                *
 !     ******************************************************************
-      call getForceSize(npts,nTS)
+      call getForceSize(npts,ncell,nTS)
       allocate(pts(3,npts,nTimeIntervalsSpectral),ptsb(3,npts,nTimeIntervalsSpectral))
       call getForcePoints(pts,npts,nTS)   
 

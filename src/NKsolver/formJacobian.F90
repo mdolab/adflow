@@ -6,7 +6,7 @@ subroutine FormJacobian()
   ! Local Variables
   character(len=maxStringLen) :: preConSide, localPCType
   integer(kind=intType) ::ierr
-  logical :: useAD, usePC, useTranspose
+  logical :: useAD, usePC, useTranspose, useObjective
 
   ! Dummy assembly begin/end calls for the matrix-free Matrx
   call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
@@ -18,7 +18,9 @@ subroutine FormJacobian()
   useAD = .False.
   usePC = .True.
   useTranspose = .False.
-  call setupStateResidualMatrix(dRdwPre, useAD, usePC, useTranspose, 1_intType)
+  useObjective = .False.
+  call setupStateResidualMatrix(dRdwPre, useAD, usePC, useTranspose, &
+       useObjective, 1_intType)
 
   ! Setup KSP Options
   preConSide = 'right'

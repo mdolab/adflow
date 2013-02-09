@@ -90,10 +90,10 @@ FILES_TO_COMPLEXIFY= restartMod.f90\
 		 readZmomentumPlot3D.f90\
 		 readZvelocity.f90\
 		 readZvelocityPlot3D.f90\
-		 referenceState.f90\
+		 referenceState.F90\
 		 releaseExtraMemBCs.f90\
 		 scaleFactors.F90\
-		 setFlowInfinityState.f90\
+		 setFlowInfinityState.F90\
 		 setIOVar.f90\
 		 setGlobalCellsAndNodes.f90\
 		 setPressureAndComputeEnergy.f90\

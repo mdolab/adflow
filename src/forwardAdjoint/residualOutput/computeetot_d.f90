@@ -3,7 +3,7 @@
    !
    !  Differentiation of computeetot in forward (tangent) mode:
    !   variations   of useful results: *gamma *w
-   !   with respect to varying inputs: *p *gamma *w gammaconstant
+   !   with respect to varying inputs: *p *gamma *w rgas gammaconstant
    !   Plus diff mem management of: p:in gamma:in w:in
    !
    !      ******************************************************************
@@ -45,6 +45,7 @@
    !
    INTEGER(kind=inttype) :: i, j, k
    REAL(kind=realtype) :: ovgm1, factk, scale
+   REAL(kind=realtype) :: scaled
    !      ******************************************************************
    !      *                                                                *
    !      * Begin execution                                                *
@@ -93,12 +94,14 @@
    ! Cp as function of the temperature is given via curve fits.
    ! Store a scale factor to compute the nonDimensional
    ! internal energy.
+   scaled = rgasd/tref
    scale = rgas/tref
    ! Loop over the given range of the block.
    DO k=kstart,kend
    DO j=jstart,jend
    DO i=istart,iend
-   CALL COMPUTEETOTCELLCPFIT_D(i, j, k, scale, correctfork)
+   CALL COMPUTEETOTCELLCPFIT_D(i, j, k, scale, scaled, &
+   &                                correctfork)
    END DO
    END DO
    END DO

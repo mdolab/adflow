@@ -195,8 +195,9 @@ python module sumb
          integer(kind=inttype) dimension(2), intent(out) :: patchsize
        end subroutine getpatchsize
 
-       subroutine getforcesize(size_bn,nts) ! in :test:getForces.f90
-         integer(kind=inttype) intent(out) :: size_bn
+       subroutine getforcesize(npts, ncells, nts) ! in :test:getForces.f90
+         integer(kind=inttype) intent(out) :: npts
+         integer(kind=inttype) intent(out) :: ncells
          integer(kind=inttype) intent(out) :: nts
        end subroutine getforcesize
 
@@ -321,14 +322,6 @@ python module sumb
        subroutine destroyextrapetscvars
        end subroutine destroyextrapetscvars
        
-       ! Coupling Variables
-
-       subroutine createcouplingpetscvars
-       end subroutine createcouplingpetscvars
-       
-       subroutine destroycouplingpetscvars
-       end subroutine destroycouplingpetscvars
-
        ! KSP 
        subroutine createpetscksp 
        end subroutine createpetscksp

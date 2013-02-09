@@ -67,7 +67,6 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   call MatGetOwnershipRangeColumn(dFdx,colStart_x,colEnd_x,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-
   do sps = 1,nTimeIntervalsSpectral
      ii=0
      domains: do nn=1,nDom
