@@ -61,7 +61,7 @@
    arg1d = red/ret(0)
    arg1 = re/ret(0)
    IF (arg1 .EQ. 0.0) THEN
-   xd = 0.0
+   xd = 0.0_8
    ELSE
    xd = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -76,7 +76,7 @@
    x2 = x*x
    x3 = x*x2
    upre = up0(nn) + up1(nn)*x + up2(nn)*x2 + up3(nn)*x3
-   upred = 0.0
+   upred = 0.0_8
    ELSE
    ! Reynolds number is in the range of the curve fits.
    ! First find the correct interval.

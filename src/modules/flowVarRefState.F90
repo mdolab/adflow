@@ -79,7 +79,11 @@
 
        real(kind=realType) :: rhoInf, uInf, pInf, pInfCorr
        real(kind=realType) :: RGas, muInf, gammaInf
+#ifdef USE_TAPENADE
+       real(kind=realType), dimension(10) :: wInf
+#else
        real(kind=realType), dimension(:), allocatable :: wInf
+#endif
 
 #ifndef USE_TAPENADE
        REAL(kind=realtype) :: prefd, rhorefd, trefd

@@ -98,7 +98,7 @@
    END IF
    IF (abs0 .LT. thresholdreal) THEN
    DO ii1=1,ISIZE1OFDrfviscsubface
-   viscsubfaced(ii1)%tau = 0.0
+   viscsubfaced(ii1)%tau = 0.0_8
    END DO
    RETURN
    ELSE
@@ -145,18 +145,18 @@
    k = 1
    k1 = 1
    k2 = 2
-   qzd = 0.0
-   qyd = 0.0
-   qxd = 0.0
-   wzd = 0.0
-   wyd = 0.0
-   wxd = 0.0
-   vzd = 0.0
-   vyd = 0.0
-   vxd = 0.0
-   uzd = 0.0
-   uyd = 0.0
-   uxd = 0.0
+   qzd = 0.0_8
+   qyd = 0.0_8
+   qxd = 0.0_8
+   wzd = 0.0_8
+   wyd = 0.0_8
+   wxd = 0.0_8
+   vzd = 0.0_8
+   vyd = 0.0_8
+   vxd = 0.0_8
+   uzd = 0.0_8
+   uyd = 0.0_8
+   uxd = 0.0_8
    CALL NODALGRADIENTS_D(ux, uxd, uy, uyd, uz, uzd, vx, vxd, vy, vyd, &
    &                    vz, vzd, wx, wxd, wy, wyd, wz, wzd, qx, qxd, qy, qyd&
    &                    , qz, qzd)
@@ -164,9 +164,9 @@
    ! the residuals for the cells k == 2.
    mue = zero
    DO ii1=1,ISIZE1OFDrfviscsubface
-   viscsubfaced(ii1)%tau = 0.0
+   viscsubfaced(ii1)%tau = 0.0_8
    END DO
-   mued = 0.0
+   mued = 0.0_8
    DO j=2,jl
    DO i=2,il
    ! Set the value of the porosity. If not zero, it is set
@@ -273,7 +273,7 @@
    &          ssz*sszd
    arg1 = ssx*ssx + ssy*ssy + ssz*ssz
    IF (arg1 .EQ. 0.0) THEN
-   result1d = 0.0
+   result1d = 0.0_8
    ELSE
    result1d = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -415,11 +415,11 @@
    viscsubface(nn)%tau(i, j, 5) = tauxz
    viscsubfaced(nn)%tau(i, j, 6) = tauyzd
    viscsubface(nn)%tau(i, j, 6) = tauyz
-   viscsubfaced(nn)%q(i, j, 1) = 0.0
+   viscsubfaced(nn)%q(i, j, 1) = 0.0_8
    viscsubface(nn)%q(i, j, 1) = q_x
-   viscsubfaced(nn)%q(i, j, 2) = 0.0
+   viscsubfaced(nn)%q(i, j, 2) = 0.0_8
    viscsubface(nn)%q(i, j, 2) = q_y
-   viscsubfaced(nn)%q(i, j, 3) = 0.0
+   viscsubfaced(nn)%q(i, j, 3) = 0.0_8
    viscsubface(nn)%q(i, j, 3) = q_z
    END IF
    END DO
@@ -549,7 +549,7 @@
    &            ssz*sszd
    arg1 = ssx*ssx + ssy*ssy + ssz*ssz
    IF (arg1 .EQ. 0.0) THEN
-   result1d = 0.0
+   result1d = 0.0_8
    ELSE
    result1d = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -700,11 +700,11 @@
    viscsubface(nn)%tau(i, j, 5) = tauxz
    viscsubfaced(nn)%tau(i, j, 6) = tauyzd
    viscsubface(nn)%tau(i, j, 6) = tauyz
-   viscsubfaced(nn)%q(i, j, 1) = 0.0
+   viscsubfaced(nn)%q(i, j, 1) = 0.0_8
    viscsubface(nn)%q(i, j, 1) = q_x
-   viscsubfaced(nn)%q(i, j, 2) = 0.0
+   viscsubfaced(nn)%q(i, j, 2) = 0.0_8
    viscsubface(nn)%q(i, j, 2) = q_y
-   viscsubfaced(nn)%q(i, j, 3) = 0.0
+   viscsubfaced(nn)%q(i, j, 3) = 0.0_8
    viscsubface(nn)%q(i, j, 3) = q_z
    END IF
    END DO
@@ -822,7 +822,7 @@
    &            ssz*sszd
    arg1 = ssx*ssx + ssy*ssy + ssz*ssz
    IF (arg1 .EQ. 0.0) THEN
-   result1d = 0.0
+   result1d = 0.0_8
    ELSE
    result1d = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -974,11 +974,11 @@
    viscsubface(nn)%tau(i, k, 5) = tauxz
    viscsubfaced(nn)%tau(i, k, 6) = tauyzd
    viscsubface(nn)%tau(i, k, 6) = tauyz
-   viscsubfaced(nn)%q(i, k, 1) = 0.0
+   viscsubfaced(nn)%q(i, k, 1) = 0.0_8
    viscsubface(nn)%q(i, k, 1) = q_x
-   viscsubfaced(nn)%q(i, k, 2) = 0.0
+   viscsubfaced(nn)%q(i, k, 2) = 0.0_8
    viscsubface(nn)%q(i, k, 2) = q_y
-   viscsubfaced(nn)%q(i, k, 3) = 0.0
+   viscsubfaced(nn)%q(i, k, 3) = 0.0_8
    viscsubface(nn)%q(i, k, 3) = q_z
    END IF
    ! And the j == jl case.
@@ -997,11 +997,11 @@
    viscsubface(nn)%tau(i, k, 5) = tauxz
    viscsubfaced(nn)%tau(i, k, 6) = tauyzd
    viscsubface(nn)%tau(i, k, 6) = tauyz
-   viscsubfaced(nn)%q(i, k, 1) = 0.0
+   viscsubfaced(nn)%q(i, k, 1) = 0.0_8
    viscsubface(nn)%q(i, k, 1) = q_x
-   viscsubfaced(nn)%q(i, k, 2) = 0.0
+   viscsubfaced(nn)%q(i, k, 2) = 0.0_8
    viscsubface(nn)%q(i, k, 2) = q_y
-   viscsubfaced(nn)%q(i, k, 3) = 0.0
+   viscsubfaced(nn)%q(i, k, 3) = 0.0_8
    viscsubface(nn)%q(i, k, 3) = q_z
    END IF
    END DO
@@ -1119,7 +1119,7 @@
    &            ssz*sszd
    arg1 = ssx*ssx + ssy*ssy + ssz*ssz
    IF (arg1 .EQ. 0.0) THEN
-   result1d = 0.0
+   result1d = 0.0_8
    ELSE
    result1d = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -1271,11 +1271,11 @@
    viscsubface(nn)%tau(j, k, 5) = tauxz
    viscsubfaced(nn)%tau(j, k, 6) = tauyzd
    viscsubface(nn)%tau(j, k, 6) = tauyz
-   viscsubfaced(nn)%q(j, k, 1) = 0.0
+   viscsubfaced(nn)%q(j, k, 1) = 0.0_8
    viscsubface(nn)%q(j, k, 1) = q_x
-   viscsubfaced(nn)%q(j, k, 2) = 0.0
+   viscsubfaced(nn)%q(j, k, 2) = 0.0_8
    viscsubface(nn)%q(j, k, 2) = q_y
-   viscsubfaced(nn)%q(j, k, 3) = 0.0
+   viscsubfaced(nn)%q(j, k, 3) = 0.0_8
    viscsubface(nn)%q(j, k, 3) = q_z
    END IF
    ! And the i == il case.
@@ -1294,11 +1294,11 @@
    viscsubface(nn)%tau(j, k, 5) = tauxz
    viscsubfaced(nn)%tau(j, k, 6) = tauyzd
    viscsubface(nn)%tau(j, k, 6) = tauyz
-   viscsubfaced(nn)%q(j, k, 1) = 0.0
+   viscsubfaced(nn)%q(j, k, 1) = 0.0_8
    viscsubface(nn)%q(j, k, 1) = q_x
-   viscsubfaced(nn)%q(j, k, 2) = 0.0
+   viscsubfaced(nn)%q(j, k, 2) = 0.0_8
    viscsubface(nn)%q(j, k, 2) = q_y
-   viscsubfaced(nn)%q(j, k, 3) = 0.0
+   viscsubfaced(nn)%q(j, k, 3) = 0.0_8
    viscsubface(nn)%q(j, k, 3) = q_z
    END IF
    END DO

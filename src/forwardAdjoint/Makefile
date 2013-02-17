@@ -38,6 +38,7 @@ vpath %.o $(SUMB_OBJDIR)
 FILES_TO_COMPLEXIFY = \
 		alloc_derivative_values.F90\
 		dealloc_derivative_values.F90\
+		computeObjectivePartialsFwd.F90\
 		determineStencil.F90\
 		setupAllResidualMatricesFwd.F90\
 		setupColoring.F90\

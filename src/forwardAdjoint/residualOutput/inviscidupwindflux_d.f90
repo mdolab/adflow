@@ -84,7 +84,7 @@
    ! Check if rFil == 0. If so, the dissipative flux needs not to
    ! be computed.
    IF (abs0 .LT. thresholdreal) THEN
-   fwd = 0.0
+   fwd = 0.0_8
    RETURN
    ELSE
    ! Check if the formulation for rotational periodic problems
@@ -101,15 +101,15 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   fwd(i, j, k, irho) = 0.0
+   fwd(i, j, k, irho) = 0.0_8
    fw(i, j, k, irho) = sfil*fw(i, j, k, irho)
-   fwd(i, j, k, imx) = 0.0
+   fwd(i, j, k, imx) = 0.0_8
    fw(i, j, k, imx) = sfil*fw(i, j, k, imx)
-   fwd(i, j, k, imy) = 0.0
+   fwd(i, j, k, imy) = 0.0_8
    fw(i, j, k, imy) = sfil*fw(i, j, k, imy)
-   fwd(i, j, k, imz) = 0.0
+   fwd(i, j, k, imz) = 0.0_8
    fw(i, j, k, imz) = sfil*fw(i, j, k, imz)
-   fwd(i, j, k, irhoe) = 0.0
+   fwd(i, j, k, irhoe) = 0.0_8
    fw(i, j, k, irhoe) = sfil*fw(i, j, k, irhoe)
    END DO
    END DO
@@ -175,11 +175,11 @@
    !      ******************************************************************
    !
    IF (limused .EQ. firstorder) THEN
-   fwd = 0.0
-   fluxd = 0.0
-   leftd = 0.0
-   rightd = 0.0
-   sfaced = 0.0
+   fwd = 0.0_8
+   fluxd = 0.0_8
+   leftd = 0.0_8
+   rightd = 0.0_8
+   sfaced = 0.0_8
    !
    !        ****************************************************************
    !        *                                                              *
@@ -421,14 +421,14 @@
    END DO
    END DO
    ELSE
-   fwd = 0.0
-   fluxd = 0.0
-   leftd = 0.0
-   rightd = 0.0
-   du1d = 0.0
-   du2d = 0.0
-   du3d = 0.0
-   sfaced = 0.0
+   fwd = 0.0_8
+   fluxd = 0.0_8
+   leftd = 0.0_8
+   rightd = 0.0_8
+   du1d = 0.0_8
+   du2d = 0.0_8
+   du3d = 0.0_8
+   sfaced = 0.0_8
    ! Store the density flux in the mass flow of the
    ! appropriate sliding mesh interface.
    !      ==================================================================
@@ -892,23 +892,23 @@
    IF (rotationalperiodic) THEN
    ! Store the rotation matrix a bit easier. Note that the i,j,k
    ! come from the main subroutine.
-   rotd(1, 1) = 0.0
+   rotd(1, 1) = 0.0_8
    rot(1, 1) = rotmatrix(i, j, k, 1, 1)
-   rotd(1, 2) = 0.0
+   rotd(1, 2) = 0.0_8
    rot(1, 2) = rotmatrix(i, j, k, 1, 2)
-   rotd(1, 3) = 0.0
+   rotd(1, 3) = 0.0_8
    rot(1, 3) = rotmatrix(i, j, k, 1, 3)
-   rotd(2, 1) = 0.0
+   rotd(2, 1) = 0.0_8
    rot(2, 1) = rotmatrix(i, j, k, 2, 1)
-   rotd(2, 2) = 0.0
+   rotd(2, 2) = 0.0_8
    rot(2, 2) = rotmatrix(i, j, k, 2, 2)
-   rotd(2, 3) = 0.0
+   rotd(2, 3) = 0.0_8
    rot(2, 3) = rotmatrix(i, j, k, 2, 3)
-   rotd(3, 1) = 0.0
+   rotd(3, 1) = 0.0_8
    rot(3, 1) = rotmatrix(i, j, k, 3, 1)
-   rotd(3, 2) = 0.0
+   rotd(3, 2) = 0.0_8
    rot(3, 2) = rotmatrix(i, j, k, 3, 2)
-   rotd(3, 3) = 0.0
+   rotd(3, 3) = 0.0_8
    rot(3, 3) = rotmatrix(i, j, k, 3, 3)
    ! Apply the transformation to the velocity components
    ! of du1, du2 and du3.
@@ -974,7 +974,7 @@
    END IF
    IF (x1 .LT. epslim) THEN
    max2 = epslim
-   max2d = 0.0
+   max2d = 0.0_8
    ELSE
    max2d = x1d
    max2 = x1
@@ -993,7 +993,7 @@
    END IF
    IF (x3 .LT. epslim) THEN
    max4 = epslim
-   max4d = 0.0
+   max4d = 0.0_8
    ELSE
    max4d = x3d
    max4 = x3
@@ -1006,21 +1006,21 @@
    rl1 = y1
    ELSE
    rl1 = zero
-   rl1d = 0.0
+   rl1d = 0.0_8
    END IF
    IF (zero .LT. du1(l)*tmp) THEN
    rl2d = du1d(l)*tmp + du1(l)*tmpd
    rl2 = du1(l)*tmp
    ELSE
    rl2 = zero
-   rl2d = 0.0
+   rl2d = 0.0_8
    END IF
    IF (zero .LT. du3(l)*tmp) THEN
    rr1d = du3d(l)*tmp + du3(l)*tmpd
    rr1 = du3(l)*tmp
    ELSE
    rr1 = zero
-   rr1d = 0.0
+   rr1d = 0.0_8
    END IF
    IF (du3(l) .GE. 0.) THEN
    x4d = du3d(l)
@@ -1031,7 +1031,7 @@
    END IF
    IF (x4 .LT. epslim) THEN
    max5 = epslim
-   max5d = 0.0
+   max5d = 0.0_8
    ELSE
    max5d = x4d
    max5 = x4
@@ -1044,7 +1044,7 @@
    rr2 = y2
    ELSE
    rr2 = zero
-   rr2d = 0.0
+   rr2d = 0.0_8
    END IF
    ! Compute the corresponding limiter values.
    rl1d = ((rl1d*(rl1+one)+rl1*rl1d)*(rl1*rl1+one)-rl1*(rl1+one)*(&
@@ -1082,7 +1082,7 @@
    END IF
    IF (x2 .LT. epslim) THEN
    max3 = epslim
-   max3d = 0.0
+   max3d = 0.0_8
    ELSE
    max3d = x2d
    max3 = x2
@@ -1101,7 +1101,7 @@
    END IF
    IF (x5 .LT. epslim) THEN
    max6 = epslim
-   max6d = 0.0
+   max6d = 0.0_8
    ELSE
    max6d = x5d
    max6 = x5
@@ -1114,21 +1114,21 @@
    rl1 = y3
    ELSE
    rl1 = zero
-   rl1d = 0.0
+   rl1d = 0.0_8
    END IF
    IF (zero .LT. du1(l)*tmp) THEN
    rl2d = du1d(l)*tmp + du1(l)*tmpd
    rl2 = du1(l)*tmp
    ELSE
    rl2 = zero
-   rl2d = 0.0
+   rl2d = 0.0_8
    END IF
    IF (zero .LT. du3(l)*tmp) THEN
    rr1d = du3d(l)*tmp + du3(l)*tmpd
    rr1 = du3(l)*tmp
    ELSE
    rr1 = zero
-   rr1d = 0.0
+   rr1d = 0.0_8
    END IF
    IF (du3(l) .GE. 0.) THEN
    x6d = du3d(l)
@@ -1139,7 +1139,7 @@
    END IF
    IF (x6 .LT. epslim) THEN
    max7 = epslim
-   max7d = 0.0
+   max7d = 0.0_8
    ELSE
    max7d = x6d
    max7 = x6
@@ -1152,35 +1152,35 @@
    rr2 = y4
    ELSE
    rr2 = zero
-   rr2d = 0.0
+   rr2d = 0.0_8
    END IF
    IF (one .GT. factminmod*rl1) THEN
    rl1d = factminmod*rl1d
    rl1 = factminmod*rl1
    ELSE
    rl1 = one
-   rl1d = 0.0
+   rl1d = 0.0_8
    END IF
    IF (one .GT. factminmod*rl2) THEN
    rl2d = factminmod*rl2d
    rl2 = factminmod*rl2
    ELSE
    rl2 = one
-   rl2d = 0.0
+   rl2d = 0.0_8
    END IF
    IF (one .GT. factminmod*rr1) THEN
    rr1d = factminmod*rr1d
    rr1 = factminmod*rr1
    ELSE
    rr1 = one
-   rr1d = 0.0
+   rr1d = 0.0_8
    END IF
    IF (one .GT. factminmod*rr2) THEN
    rr2d = factminmod*rr2d
    rr2 = factminmod*rr2
    ELSE
    rr2 = one
-   rr2d = 0.0
+   rr2d = 0.0_8
    END IF
    ! Compute the nonlinear corrections to the first order
    ! scheme.
@@ -1196,9 +1196,9 @@
    ! turbulent transport equations, set the correction for the
    ! turbulent kinetic energy to 0.
    IF (firstorderk) THEN
-   leftd(itu1) = 0.0
+   leftd(itu1) = 0.0_8
    left(itu1) = zero
-   rightd(itu1) = 0.0
+   rightd(itu1) = 0.0_8
    right(itu1) = zero
    END IF
    ! For rotational periodic problems transform the velocity
@@ -1596,13 +1596,13 @@
    ! Compute the square root of the left and right densities
    ! and the inverse of the sum.
    IF (left(irho) .EQ. 0.0) THEN
-   z1ld = 0.0
+   z1ld = 0.0_8
    ELSE
    z1ld = leftd(irho)/(2.0*SQRT(left(irho)))
    END IF
    z1l = SQRT(left(irho))
    IF (right(irho) .EQ. 0.0) THEN
-   z1rd = 0.0
+   z1rd = 0.0_8
    ELSE
    z1rd = rightd(irho)/(2.0*SQRT(right(irho)))
    END IF
@@ -1612,7 +1612,7 @@
    ! Compute some variables depending whether or not a
    ! k-equation is present.
    IF (correctfork) THEN
-   ktmpd = 0.0
+   ktmpd = 0.0_8
    ! Store the left and right kinetic energy in ktmp,
    ! which is needed to compute the total energy.
    ktmpd(1) = leftd(itu1)
@@ -1635,36 +1635,37 @@
    ! unit mass to zero.
    drk = 0.0
    kavg = 0.0
-   ktmpd = 0.0
-   kavgd = 0.0
-   drkd = 0.0
+   ktmpd = 0.0_8
+   kavgd = 0.0_8
+   drkd = 0.0_8
    END IF
-   rhotmpd = 0.0
+   rhotmpd = 0.0_8
    ! Compute the total energy of the left and right state.
    rhotmpd(1) = leftd(irho)
    rhotmp(1) = left(irho)
    rhotmpd(2) = rightd(irho)
    rhotmp(2) = right(irho)
-   utmpd = 0.0
+   utmpd = 0.0_8
    utmpd(1) = leftd(ivx)
    utmp(1) = left(ivx)
    utmpd(2) = rightd(ivx)
    utmp(2) = right(ivx)
-   vtmpd = 0.0
+   vtmpd = 0.0_8
    vtmpd(1) = leftd(ivy)
    vtmp(1) = left(ivy)
    vtmpd(2) = rightd(ivy)
    vtmp(2) = right(ivy)
-   wtmpd = 0.0
+   wtmpd = 0.0_8
    wtmpd(1) = leftd(ivz)
    wtmp(1) = left(ivz)
    wtmpd(2) = rightd(ivz)
    wtmp(2) = right(ivz)
-   ptmpd = 0.0
+   ptmpd = 0.0_8
    ptmpd(1) = leftd(irhoe)
    ptmp(1) = left(irhoe)
    ptmpd(2) = rightd(irhoe)
    ptmp(2) = right(irhoe)
+   etmpd = 0.0_8
    CALL ETOTARRAY_D(rhotmp, rhotmpd, utmp, utmpd, vtmp, vtmpd, wtmp&
    &                   , wtmpd, ptmp, ptmpd, ktmp, ktmpd, etmp, etmpd, &
    &                   correctfork, 2)
@@ -1708,7 +1709,7 @@
    arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
    arg1 = sx**2 + sy**2 + sz**2
    IF (arg1 .EQ. 0.0) THEN
-   aread = 0.0
+   aread = 0.0_8
    ELSE
    aread = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -1718,7 +1719,7 @@
    max2 = area
    ELSE
    max2 = 1.e-25_realType
-   max2d = 0.0
+   max2d = 0.0_8
    END IF
    tmpd = -(one*max2d/max2**2)
    tmp = one/max2
@@ -1744,7 +1745,7 @@
    a2avg = -(gm1*(havg-alphaavg)-gm53*kavg)
    END IF
    IF (a2avg .EQ. 0.0) THEN
-   aavgd = 0.0
+   aavgd = 0.0_8
    ELSE
    aavgd = a2avgd/(2.0*SQRT(a2avg))
    END IF
@@ -1778,7 +1779,7 @@
    &          irho)-gammaface*left(irhoe)*leftd(irho))/left(irho)**2
    arg1 = gammaface*left(irhoe)/left(irho)
    IF (arg1 .EQ. 0.0) THEN
-   result1d = 0.0
+   result1d = 0.0_8
    ELSE
    result1d = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -1787,7 +1788,7 @@
    &          (irho)-gammaface*right(irhoe)*rightd(irho))/right(irho)**2
    arg2 = gammaface*right(irhoe)/right(irho)
    IF (arg2 .EQ. 0.0) THEN
-   result2d = 0.0
+   result2d = 0.0_8
    ELSE
    result2d = arg2d/(2.0*SQRT(arg2))
    END IF

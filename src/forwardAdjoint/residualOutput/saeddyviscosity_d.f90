@@ -37,7 +37,7 @@
    !
    ! Store the cv1^3; cv1 is a constant of the Spalart-Allmaras model.
    cv13 = rsacv1**3
-   revd = 0.0
+   revd = 0.0_8
    ! Loop over the cells of this block and compute the eddy viscosity.
    ! Do not include halo's.
    DO k=2,kl

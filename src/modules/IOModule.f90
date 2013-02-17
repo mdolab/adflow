@@ -61,6 +61,7 @@
          ! w:             The variable(s) to be read/written.
 
          integer(kind=intType) :: pointerOffset
+
          real(kind=realType), dimension(:,:,:,:), pointer :: w
 
        end type IOType

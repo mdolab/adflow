@@ -161,7 +161,7 @@
    ! Check if rFil == 0. If so, the dissipative flux needs not to
    ! be computed.
    IF (abs0 .LT. thresholdreal) THEN
-   fwd = 0.0
+   fwd = 0.0_8
    RETURN
    ELSE
    ! Set the value of plim. To be fully consistent this must have
@@ -193,21 +193,21 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   fwd(i, j, k, irho) = 0.0
+   fwd(i, j, k, irho) = 0.0_8
    fw(i, j, k, irho) = sfil*fw(i, j, k, irho)
-   fwd(i, j, k, imx) = 0.0
+   fwd(i, j, k, imx) = 0.0_8
    fw(i, j, k, imx) = sfil*fw(i, j, k, imx)
-   fwd(i, j, k, imy) = 0.0
+   fwd(i, j, k, imy) = 0.0_8
    fw(i, j, k, imy) = sfil*fw(i, j, k, imy)
-   fwd(i, j, k, imz) = 0.0
+   fwd(i, j, k, imz) = 0.0_8
    fw(i, j, k, imz) = sfil*fw(i, j, k, imz)
-   fwd(i, j, k, irhoe) = 0.0
+   fwd(i, j, k, irhoe) = 0.0_8
    fw(i, j, k, irhoe) = sfil*fw(i, j, k, irhoe)
    END DO
    END DO
    END DO
-   fwd = 0.0
-   sfaced = 0.0
+   fwd = 0.0_8
+   sfaced = 0.0_8
    !
    !      ******************************************************************
    !      *                                                                *
@@ -294,12 +294,12 @@
    min1 = y1
    ELSE
    min1 = dpmax
-   min1d = 0.0
+   min1d = 0.0_8
    END IF
    dis2d = fis2*ppor*min1d
    dis2 = fis2*ppor*min1 + sigma*fis4*ppor
    dis4 = 0.0
-   dis4d = 0.0
+   dis4d = 0.0_8
    ELSE
    IF (dp1 .LT. dp2) THEN
    y2d = dp2d
@@ -313,11 +313,11 @@
    min2 = y2
    ELSE
    min2 = dpmax
-   min2d = 0.0
+   min2d = 0.0_8
    END IF
    dis2d = ppor*fis2*min2d
    dis2 = ppor*fis2*min2
-   dis4d = DIM_D(ppor*fis4, 0.0, dis2, dis2d, dis4)
+   dis4d = DIM_D(ppor*fis4, 0.0_8, dis2, dis2d, dis4)
    END IF
    ! Construct the vector of the first and third differences
    ! multiplied by the appropriate constants.
@@ -394,8 +394,8 @@
    ELSE
    drk = zero
    kavg = zero
-   kavgd = 0.0
-   drkd = 0.0
+   kavgd = 0.0_8
+   drkd = 0.0_8
    END IF
    ! Compute the average value of gamma and compute some
    ! expressions in which it occurs.
@@ -431,7 +431,7 @@
    arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
    arg1 = sx**2 + sy**2 + sz**2
    IF (arg1 .EQ. 0.0) THEN
-   aread = 0.0
+   aread = 0.0_8
    ELSE
    aread = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -441,7 +441,7 @@
    max1 = area
    ELSE
    max1 = 1.e-25_realType
-   max1d = 0.0
+   max1d = 0.0_8
    END IF
    tmpd = -(one*max1d/max1**2)
    tmp = one/max1
@@ -457,7 +457,7 @@
    &            gm53d*kavg-gm53*kavgd)
    havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
    IF (a2avg .EQ. 0.0) THEN
-   aavgd = 0.0
+   aavgd = 0.0_8
    ELSE
    aavgd = a2avgd/(2.0*SQRT(a2avg))
    END IF
@@ -678,12 +678,12 @@
    min3 = y3
    ELSE
    min3 = dpmax
-   min3d = 0.0
+   min3d = 0.0_8
    END IF
    dis2d = fis2*ppor*min3d
    dis2 = fis2*ppor*min3 + sigma*fis4*ppor
    dis4 = 0.0
-   dis4d = 0.0
+   dis4d = 0.0_8
    ELSE
    IF (dp1 .LT. dp2) THEN
    y4d = dp2d
@@ -697,11 +697,11 @@
    min4 = y4
    ELSE
    min4 = dpmax
-   min4d = 0.0
+   min4d = 0.0_8
    END IF
    dis2d = ppor*fis2*min4d
    dis2 = ppor*fis2*min4
-   dis4d = DIM_D(ppor*fis4, 0.0, dis2, dis2d, dis4)
+   dis4d = DIM_D(ppor*fis4, 0.0_8, dis2, dis2d, dis4)
    END IF
    ! Construct the vector of the first and third differences
    ! multiplied by the appropriate constants.
@@ -778,8 +778,8 @@
    ELSE
    drk = zero
    kavg = zero
-   kavgd = 0.0
-   drkd = 0.0
+   kavgd = 0.0_8
+   drkd = 0.0_8
    END IF
    ! Compute the average value of gamma and compute some
    ! expressions in which it occurs.
@@ -815,7 +815,7 @@
    arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
    arg1 = sx**2 + sy**2 + sz**2
    IF (arg1 .EQ. 0.0) THEN
-   aread = 0.0
+   aread = 0.0_8
    ELSE
    aread = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -825,7 +825,7 @@
    max2 = area
    ELSE
    max2 = 1.e-25_realType
-   max2d = 0.0
+   max2d = 0.0_8
    END IF
    tmpd = -(one*max2d/max2**2)
    tmp = one/max2
@@ -841,7 +841,7 @@
    &            gm53d*kavg-gm53*kavgd)
    havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
    IF (a2avg .EQ. 0.0) THEN
-   aavgd = 0.0
+   aavgd = 0.0_8
    ELSE
    aavgd = a2avgd/(2.0*SQRT(a2avg))
    END IF
@@ -1062,12 +1062,12 @@
    min5 = y5
    ELSE
    min5 = dpmax
-   min5d = 0.0
+   min5d = 0.0_8
    END IF
    dis2d = fis2*ppor*min5d
    dis2 = fis2*ppor*min5 + sigma*fis4*ppor
    dis4 = 0.0
-   dis4d = 0.0
+   dis4d = 0.0_8
    ELSE
    IF (dp1 .LT. dp2) THEN
    y6d = dp2d
@@ -1081,11 +1081,11 @@
    min6 = y6
    ELSE
    min6 = dpmax
-   min6d = 0.0
+   min6d = 0.0_8
    END IF
    dis2d = ppor*fis2*min6d
    dis2 = ppor*fis2*min6
-   dis4d = DIM_D(ppor*fis4, 0.0, dis2, dis2d, dis4)
+   dis4d = DIM_D(ppor*fis4, 0.0_8, dis2, dis2d, dis4)
    END IF
    ! Construct the vector of the first and third differences
    ! multiplied by the appropriate constants.
@@ -1162,8 +1162,8 @@
    ELSE
    drk = zero
    kavg = zero
-   kavgd = 0.0
-   drkd = 0.0
+   kavgd = 0.0_8
+   drkd = 0.0_8
    END IF
    ! Compute the average value of gamma and compute some
    ! expressions in which it occurs.
@@ -1199,7 +1199,7 @@
    arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
    arg1 = sx**2 + sy**2 + sz**2
    IF (arg1 .EQ. 0.0) THEN
-   aread = 0.0
+   aread = 0.0_8
    ELSE
    aread = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -1209,7 +1209,7 @@
    max3 = area
    ELSE
    max3 = 1.e-25_realType
-   max3d = 0.0
+   max3d = 0.0_8
    END IF
    tmpd = -(one*max3d/max3**2)
    tmp = one/max3
@@ -1225,7 +1225,7 @@
    &            gm53d*kavg-gm53*kavgd)
    havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
    IF (a2avg .EQ. 0.0) THEN
-   aavgd = 0.0
+   aavgd = 0.0_8
    ELSE
    aavgd = a2avgd/(2.0*SQRT(a2avg))
    END IF

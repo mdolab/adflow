@@ -4,7 +4,7 @@
    !  Differentiation of residual_block in forward (tangent) mode:
    !   variations   of useful results: *p *dw *w *(*viscsubface.tau)
    !   with respect to varying inputs: *rev *p *sfacei *sfacej *gamma
-   !                *sfacek *w *rlv *x *vol *si *sj *sk *(*bcdata.norm)
+   !                *sfacek *dw *w *rlv *x *vol *si *sj *sk *(*bcdata.norm)
    !                *radi *radj *radk rgas pinfcorr rhoinf timeref
    !                vis4 kappacoef vis2 vis2coarse sigma *cdisrk
    !   Plus diff mem management of: rev:in p:in sfacei:in sfacej:in
@@ -101,24 +101,24 @@
    ! Cusp dissipation scheme.
    IF (finegrid) THEN
    CALL INVISCIDDISSFLUXCUSP()
-   fwd = 0.0
+   fwd = 0.0_8
    ELSE
    CALL INVISCIDDISSFLUXCUSPCOARSE()
-   fwd = 0.0
+   fwd = 0.0_8
    END IF
    CASE (upwind) 
    !===========================================================
    ! Dissipation via an upwind scheme.
    CALL INVISCIDUPWINDFLUX_D(finegrid)
    CASE DEFAULT
-   fwd = 0.0
+   fwd = 0.0_8
    END SELECT
    ! Compute the viscous flux in case of a viscous computation.
    IF (viscous) THEN
    CALL VISCOUSFLUX_D()
    ELSE
    DO ii1=1,ISIZE1OFDrfviscsubface
-   viscsubfaced(ii1)%tau = 0.0
+   viscsubfaced(ii1)%tau = 0.0_8
    END DO
    END IF
    ! Add the dissipative and possibly viscous fluxes to the

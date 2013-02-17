@@ -1,80 +1,78 @@
-Subroutine computeObjectivePartialsFwd(costFunction, usedJdw, usedJdx)
+Subroutine computeObjectivePartialsFwd(costFunction)
 
   !     ******************************************************************
   !     *                                                                *
-  !     * Compute the spatial derivative matrix using a forward mode calc*
-  !     * There is one flag to determine how this routine is run:        *
+  !     * Assemble the objective partials from the data precomputed      *
+  !     * from the forward mode computations. 
   !     *                                                                *
-  !     * useAD: if True, AD is used for derivative calculation, if      *
-  !     *        False, FD is used.                                      *
+  !     * costFunction: The index of the cost function to use.           *
   !     *                                                                *
   !     ******************************************************************
   !
   use ADjointVars
   use ADjointPETSc
-  use blockPointers       ! i/j/kl/b/e, i/j/k/Min/MaxBoundaryStencil
-  use communication       ! procHalo(currentLevel)%nProcSend
+  use blockPointers   
+  use communication  
   use costFunctions
   implicit none
 
   ! Input Variables
-  logical, intent(in) :: usedJdw, usedJdx
   integer(kind=intType), intent(in) :: costFunction
 
   ! Working Variables
-  integer(kind=intType) :: i
-  !******************************************!!
-  !**        dIdw CALCULATIONS            * *!!
-  !******************************************!!
-  if (usedJdw) then
-     ! Zero Entries and multiply through by costFuncVechen
+  integer(kind=intType) :: i, ierr
+  real(kind=realtype) :: val
+  !******************************************! 
+  !               dIdw                       ! 
+  !******************************************! 
+
+  ! Zero Entries and multiply through by costFuncMat
      
-     call VecZeroEntries(dJdw, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-     ! Write force and moment to dJdw
-     do i = 1,6
-        call VecAXPY(dJdw, FMw(i), costfuncvec(i), ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-     end do
-
-     ! Assemble dJdw
-     call VecAssemblyBegin(dJdw, ierr)
-     call EChk(ierr, __FILE__, __LINE__)
-     call VecAssemblyEnd(dJdw, ierr)
-     call EChk(ierr, __FILE__, __LINE__)
-
-  end if
-
-  !******************************************!!
-  !**        dIdx CALCULATIONS            * *!!
-  !******************************************!!
-
-  if (usedJdx) then
-     ! Zero Entries and multiply through by costFuncVec
-     call VecZeroEntriex(dJdx, ierr)
-     call EChk(ierr, __FILE__, __LINE__)
-
-     do i = 1,6
-        call VecAXPY(dJdx, FMx(i), costfuncvec(i), ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-     end do
-
-     ! Assemble dJdx
-     call VecAssemblyBegin(dJdx, ierr)
-     call EChk(ierr, __FILE__, __LINE__)
-     call VecAssemblyEnd(dJdx, ierr)
-     call EChk(ierr, __FILE__, __LINE__)
+  call VecZeroEntries(dJdw, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
   
-  end if
-
-  !******************************************!!
-  !**        dIda CALCULATIONS            * *!!
-  !******************************************!!
-
-  dIda = zero
+  ! Write force and moment to dJdw
   do i = 1,6
-     dIda(:) = dFMdExtra(i,:) * costFuncMat(i, costFunction)
+     call VecAXPY(dJdw, costfuncmat(i, costFunction), FMw(i), ierr)
+     call EChk(ierr, __FILE__, __LINE__)
   end do
+  
+  ! Assemble dJdw
+  call VecAssemblyBegin(dJdw, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+  call VecAssemblyEnd(dJdw, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  !******************************************!
+  !          dIdx CALCULATIONS               !
+  !******************************************!
+
+  ! Zero Entries and multiply through by costFuncMat
+  call VecZeroEntries(dJdx, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+  
+  do i = 1,6
+     call VecAXPY(dJdx, costfuncmat(i, costFunction), FMx(i), ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+  end do
+  
+  ! Assemble dJdx
+  call VecAssemblyBegin(dJdx, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+  call VecAssemblyEnd(dJdx, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  !******************************************!
+  !          dIda CALCULATIONS               !
+  !******************************************!
+  if (nDesignExtra > 0) then
+     dIda = zero
+     do i = 1,6
+        ! This is actually doing a product rule of :
+        ! I = sum(i=1,6): FMextra(i) * costFuncVec(i)
+        dIda(:) = dIda(:) + dFMdExtra(i,:) * costFuncMat(i, costFunction) + &
+             FMextra(i) * dCostFuncMatdExtra(i, costFunction, :)
+     end do
+  end if
 
 end subroutine computeObjectivePartialsFwd

@@ -53,7 +53,7 @@
    ! Take care of the exceptional cases.
    IF (eddyratio .LE. zero) THEN
    sanuknowneddyratio = zero
-   sanuknowneddyratio_d = 0.0
+   sanuknowneddyratio_d = 0.0_8
    RETURN
    ELSE
    ! Set the value of cv1^3, which is the constant appearing in the

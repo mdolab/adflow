@@ -227,10 +227,17 @@
               deallocate(BCData(i)%F, stat=ierr)
          if(ierr /= 0) deallocationFailure = .true.
 
-         if( associated(BCData(i)%FMIndex) ) &
-              deallocate(BCData(i)%FMIndex, stat=ierr)
+         if( associated(BCData(i)%M) ) &
+              deallocate(BCData(i)%M, stat=ierr)
          if(ierr /= 0) deallocationFailure = .true.
-         
+
+         if( associated(BCData(i)%FMNodeIndex) ) &
+              deallocate(BCData(i)%FMNodeIndex, stat=ierr)
+         if(ierr /= 0) deallocationFailure = .true.
+
+         if( associated(BCData(i)%FMCellIndex) ) &
+              deallocate(BCData(i)%FMCellIndex, stat=ierr)
+        
          if( associated(BCData(i)%rface) ) &
             deallocate(BCData(i)%rface, stat=ierr)
          if(ierr /= 0) deallocationFailure = .true.
@@ -752,6 +759,15 @@
        if( associated(flowDoms(nn,level,sps)%bvtk2) ) &
          deallocate(flowDoms(nn,level,sps)%bvtk2, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
+
+       if( associated(flowDoms(nn,level,sps)%globalCell) ) &
+            deallocate(flowDoms(nn,level,sps)%globalCell, stat=ierr)
+       if(ierr /= 0) deallocationFailure = .true.
+
+       if( associated(flowDoms(nn,level,sps)%globalNode) ) &
+            deallocate(flowDoms(nn,level,sps)%globalNode, stat=ierr)
+       if(ierr /= 0) deallocationFailure = .true.
+
 
        ! Check for errors in the deallocation.
 

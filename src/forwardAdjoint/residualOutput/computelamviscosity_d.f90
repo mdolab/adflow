@@ -52,7 +52,7 @@
    !
    ! Return immediately if no laminar viscosity needs to be computed.
    IF (.NOT.viscous) THEN
-   rlvd = 0.0
+   rlvd = 0.0_8
    RETURN
    ELSE
    ! Determine whether or not the pressure must be corrected
@@ -84,9 +84,9 @@
    END DO
    END DO
    END DO
-   rlvd = 0.0
+   rlvd = 0.0_8
    ELSE
-   rlvd = 0.0
+   rlvd = 0.0_8
    END IF
    ! Loop over the owned cells of this block and compute the
    ! laminar viscosity ratio.

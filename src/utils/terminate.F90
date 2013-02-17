@@ -20,7 +20,9 @@ subroutine terminate(routineName, errorMessage)
   use precision
   use communication
   use constants
+#ifndef USE_TAPENADE
   use killSignals
+#endif
   implicit none
   !
   !      Subroutine arguments
@@ -146,9 +148,12 @@ subroutine EChk(ierr, file, line)
   character*(*),intent(in) :: file
   integer(kind=intType),intent(in) :: line
   integer(kind=intType) :: jerr
+
+
   if (ierr == 0) then
      return ! No error, return immediately
   else
+#ifndef USE_TAPENADE
 #ifndef USE_COMPLEX
      print *,'================================================================='
      write(*,900) "PETSc or MPI Error. Error Code ",ierr,". Detected on Proc ",myid
@@ -160,7 +165,6 @@ subroutine EChk(ierr, file, line)
      write(*,901) "Error at line: ",line," in file: ",file
      print *,'-----------------------------------------------------------------'
 #endif
-#ifndef USE_TAPENADE
      call MPI_Abort(sumb_comm_world,ierr)
      stop ! Just in case
 #else

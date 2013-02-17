@@ -61,15 +61,15 @@
    ! Initialize the volumes to zero. The reasons is that the second
    ! level halo's must be initialized to zero and for convenience
    ! all the volumes are set to zero.
-   vold = 0.0
+   vold = 0.0_8
    vol = zero
-   vold = 0.0
-   vp1d = 0.0
-   vp2d = 0.0
-   vp3d = 0.0
-   vp4d = 0.0
-   vp5d = 0.0
-   vp6d = 0.0
+   vold = 0.0_8
+   vp1d = 0.0_8
+   vp2d = 0.0_8
+   vp3d = 0.0_8
+   vp4d = 0.0_8
+   vp5d = 0.0_8
+   vp6d = 0.0_8
    DO k=1,ke
    n = k - 1
    checkk = .true.
@@ -206,14 +206,14 @@
    ! as well as the scaling factor of 0.5
    IF (righthanded) THEN
    fact = half
-   sid = 0.0
-   v1d = 0.0
-   v2d = 0.0
+   sid = 0.0_8
+   v1d = 0.0_8
+   v2d = 0.0_8
    ELSE
    fact = -half
-   sid = 0.0
-   v1d = 0.0
-   v2d = 0.0
+   sid = 0.0_8
+   v1d = 0.0_8
+   v2d = 0.0_8
    END IF
    ! Check if both positive and negative volumes occur. If so,
    ! the block is bad and the counter nBlockBad is updated.
@@ -266,7 +266,7 @@
    END DO
    END DO
    END DO
-   sjd = 0.0
+   sjd = 0.0_8
    ! Projected areas of cell faces in the j direction.
    DO k=1,ke
    n = k - 1
@@ -301,7 +301,7 @@
    END DO
    END DO
    END DO
-   skd = 0.0
+   skd = 0.0_8
    ! Projected areas of cell faces in the k direction.
    DO k=0,ke
    DO j=1,je
@@ -337,7 +337,7 @@
    END DO
    END DO
    DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%norm = 0.0
+   bcdatad(ii1)%norm = 0.0_8
    END DO
    !
    !          **************************************************************
@@ -392,7 +392,7 @@
    arg1d = xpd*xp + xp*xpd + ypd*yp + yp*ypd + zpd*zp + zp*zpd
    arg1 = xp*xp + yp*yp + zp*zp
    IF (arg1 .EQ. 0.0) THEN
-   factd = 0.0
+   factd = 0.0_8
    ELSE
    factd = arg1d/(2.0*SQRT(arg1))
    END IF

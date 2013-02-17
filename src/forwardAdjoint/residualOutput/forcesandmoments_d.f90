@@ -2,11 +2,12 @@
    !  Tapenade 3.6 (r4159) - 21 Sep 2011 10:11
    !
    !  Differentiation of forcesandmoments in forward (tangent) mode:
-   !   variations   of useful results: *(*bcdata.f) cfp cfv cmp cmv
+   !   variations   of useful results: *(*bcdata.f) *(*bcdata.m) cfp
+   !                cfv cmp cmv
    !   with respect to varying inputs: *p *x *si *sj *sk *(*viscsubface.tau)
-   !                pinf pointref surfaceref lengthref
+   !                pref pinf pointref machcoef surfaceref lengthref
    !   Plus diff mem management of: p:in x:in si:in sj:in sk:in viscsubface:in
-   !                *viscsubface.tau:in bcdata:in *bcdata.f:in
+   !                *viscsubface.tau:in bcdata:in *bcdata.f:in *bcdata.m:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -56,6 +57,8 @@
    REAL(kind=realtype) :: xcd, ycd, zcd
    REAL(kind=realtype) :: fact, rho, mul, yplus, dwall
    REAL(kind=realtype) :: factd
+   REAL(kind=realtype) :: scaledim
+   REAL(kind=realtype) :: scaledimd
    REAL(kind=realtype) :: tauxx, tauyy, tauzz
    REAL(kind=realtype) :: tauxxd, tauyyd, tauzzd
    REAL(kind=realtype) :: tauxy, tauxz, tauyz
@@ -70,6 +73,8 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, xxd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
+   REAL(kind=realtype) :: mx, my, mz
+   REAL(kind=realtype) :: mxd, myd, mzd
    LOGICAL :: viscoussubface
    REAL(kind=realtype) :: arg1
    REAL(kind=realtype) :: result1
@@ -78,7 +83,6 @@
    INTRINSIC MAX
    INTEGER :: ii1
    INTRINSIC SQRT
-   refpointd = 0.0
    !
    !      ******************************************************************
    !      *                                                                *
@@ -86,6 +90,10 @@
    !      *                                                                *
    !      ******************************************************************
    !
+   ! Set the actual scaling factor such that ACTUAL forces are computed
+   scaledimd = (prefd*pinf-pref*pinfd)/pinf**2
+   scaledim = pref/pinf
+   refpointd = 0.0_8
    ! Determine the reference point for the moment computation in
    ! meters.
    refpointd(1) = lref*pointrefd(1)
@@ -96,38 +104,41 @@
    refpoint(3) = lref*pointref(3)
    ! Initialize the force and moment coefficients to 0 as well as
    ! yplusMax.
-   cfpd(1) = 0.0
+   cfpd(1) = 0.0_8
    cfp(1) = zero
-   cfpd(2) = 0.0
+   cfpd(2) = 0.0_8
    cfp(2) = zero
-   cfpd(3) = 0.0
+   cfpd(3) = 0.0_8
    cfp(3) = zero
-   cfvd(1) = 0.0
+   cfvd(1) = 0.0_8
    cfv(1) = zero
-   cfvd(2) = 0.0
+   cfvd(2) = 0.0_8
    cfv(2) = zero
-   cfvd(3) = 0.0
+   cfvd(3) = 0.0_8
    cfv(3) = zero
-   cmpd(1) = 0.0
+   cmpd(1) = 0.0_8
    cmp(1) = zero
-   cmpd(2) = 0.0
+   cmpd(2) = 0.0_8
    cmp(2) = zero
-   cmpd(3) = 0.0
+   cmpd(3) = 0.0_8
    cmp(3) = zero
-   cmvd(1) = 0.0
+   cmvd(1) = 0.0_8
    cmv(1) = zero
-   cmvd(2) = 0.0
+   cmvd(2) = 0.0_8
    cmv(2) = zero
-   cmvd(3) = 0.0
+   cmvd(3) = 0.0_8
    cmv(3) = zero
    yplusmax = zero
    DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%f = 0.0
+   bcdatad(ii1)%f = 0.0_8
    END DO
-   cfpd = 0.0
-   cfvd = 0.0
-   cmpd = 0.0
-   cmvd = 0.0
+   DO ii1=1,ISIZE1OFDrfbcdata
+   bcdatad(ii1)%m = 0.0_8
+   END DO
+   cfpd = 0.0_8
+   cfvd = 0.0_8
+   cmpd = 0.0_8
+   cmvd = 0.0_8
    ! Loop over the boundary subfaces of this block.
    bocos:DO nn=1,nbocos
    !
@@ -285,8 +296,9 @@
    ! offset of 1 must be used. The pressure is multipled by
    ! fact to account for the possibility of an inward or
    ! outward pointing normal.
-   pm1d = fact*(half*(pp2d(i, j)+pp1d(i, j))-pinfd)
-   pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)
+   pm1d = fact*((half*(pp2d(i, j)+pp1d(i, j))-pinfd)*scaledim+(&
+   &            half*(pp2(i, j)+pp1(i, j))-pinf)*scaledimd)
+   pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*scaledim
    xcd = fourth*(xxd(i, j, 1)+xxd(i+1, j, 1)+xxd(i, j+1, 1)+xxd(i&
    &            +1, j+1, 1)) - refpointd(1)
    xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j&
@@ -320,12 +332,25 @@
    cfp(2) = cfp(2) + fy
    cfpd(3) = cfpd(3) + fzd
    cfp(3) = cfp(3) + fz
-   cmpd(1) = cmpd(1) + ycd*fz + yc*fzd - zcd*fy - zc*fyd
-   cmp(1) = cmp(1) + yc*fz - zc*fy
-   cmpd(2) = cmpd(2) + zcd*fx + zc*fxd - xcd*fz - xc*fzd
-   cmp(2) = cmp(2) + zc*fx - xc*fz
-   cmpd(3) = cmpd(3) + xcd*fy + xc*fyd - ycd*fx - yc*fxd
-   cmp(3) = cmp(3) + xc*fy - yc*fx
+   mxd = ycd*fz + yc*fzd - zcd*fy - zc*fyd
+   mx = yc*fz - zc*fy
+   myd = zcd*fx + zc*fxd - xcd*fz - xc*fzd
+   my = zc*fx - xc*fz
+   mzd = xcd*fy + xc*fyd - ycd*fx - yc*fxd
+   mz = xc*fy - yc*fx
+   cmpd(1) = cmpd(1) + mxd
+   cmp(1) = cmp(1) + mx
+   cmpd(2) = cmpd(2) + myd
+   cmp(2) = cmp(2) + my
+   cmpd(3) = cmpd(3) + mzd
+   cmp(3) = cmp(3) + mz
+   ! Store Moment data on face
+   bcdatad(nn)%m(i, j, 1) = mxd
+   bcdata(nn)%m(i, j, 1) = mx
+   bcdatad(nn)%m(i, j, 2) = myd
+   bcdata(nn)%m(i, j, 2) = my
+   bcdatad(nn)%m(i, j, 3) = mzd
+   bcdata(nn)%m(i, j, 3) = mz
    END DO
    END DO
    !
@@ -406,12 +431,25 @@
    bcdata(nn)%f(i, j, 2) = bcdata(nn)%f(i, j, 2) + fy
    bcdatad(nn)%f(i, j, 3) = bcdatad(nn)%f(i, j, 3) + fzd
    bcdata(nn)%f(i, j, 3) = bcdata(nn)%f(i, j, 3) + fz
-   cmvd(1) = cmvd(1) + ycd*fz + yc*fzd - zcd*fy - zc*fyd
-   cmv(1) = cmv(1) + yc*fz - zc*fy
-   cmvd(2) = cmvd(2) + zcd*fx + zc*fxd - xcd*fz - xc*fzd
-   cmv(2) = cmv(2) + zc*fx - xc*fz
-   cmvd(3) = cmvd(3) + xcd*fy + xc*fyd - ycd*fx - yc*fxd
-   cmv(3) = cmv(3) + xc*fy - yc*fx
+   mxd = ycd*fz + yc*fzd - zcd*fy - zc*fyd
+   mx = yc*fz - zc*fy
+   myd = zcd*fx + zc*fxd - xcd*fz - xc*fzd
+   my = zc*fx - xc*fz
+   mzd = xcd*fy + xc*fyd - ycd*fx - yc*fxd
+   mz = xc*fy - yc*fx
+   cmvd(1) = cmvd(1) + mxd
+   cmv(1) = cmv(1) + mx
+   cmvd(2) = cmvd(2) + myd
+   cmv(2) = cmv(2) + my
+   cmvd(3) = cmvd(3) + mzd
+   cmv(3) = cmv(3) + mz
+   ! Store Moment data on face
+   bcdatad(nn)%m(i, j, 1) = bcdatad(nn)%m(i, j, 1) + mxd
+   bcdata(nn)%m(i, j, 1) = bcdata(nn)%m(i, j, 1) + mx
+   bcdatad(nn)%m(i, j, 2) = bcdatad(nn)%m(i, j, 2) + myd
+   bcdata(nn)%m(i, j, 2) = bcdata(nn)%m(i, j, 2) + my
+   bcdatad(nn)%m(i, j, 3) = bcdatad(nn)%m(i, j, 3) + mzd
+   bcdata(nn)%m(i, j, 3) = bcdata(nn)%m(i, j, 3) + mz
    ! Compute the tangential component of the stress tensor,
    ! which is needed to monitor y+. The result is stored
    ! in fx, fy, fz, although it is not really a force.
@@ -419,11 +457,11 @@
    ! component is important, there is no need to take the
    ! sign into account (it should be a minus sign).
    fx = tauxx*norm(i, j, 1) + tauxy*norm(i, j, 2) + tauxz*norm(&
-   &              i, j, 3)
+   &              i, j, 3)*scaledim
    fy = tauxy*norm(i, j, 1) + tauyy*norm(i, j, 2) + tauyz*norm(&
-   &              i, j, 3)
+   &              i, j, 3)*scaledim
    fz = tauxz*norm(i, j, 1) + tauyz*norm(i, j, 2) + tauzz*norm(&
-   &              i, j, 3)
+   &              i, j, 3)*scaledim
    fn = fx*norm(i, j, 1) + fy*norm(i, j, 2) + fz*norm(i, j, 3)
    fx = fx - fn*norm(i, j, 1)
    fy = fy - fn*norm(i, j, 2)
@@ -451,10 +489,12 @@
    ! Currently the coefficients only contain the surface integral
    ! of the pressure tensor. These values must be scaled to
    ! obtain the correct coefficients.
-   factd = -(two*gammainf*machcoef**2*lref**2*(pinfd*surfaceref+pinf*&
-   &    surfacerefd)/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref)&
-   &    **2)
-   fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref)
+   factd = -(two*gammainf*lref**2*(((pinfd*machcoef+pinf*machcoefd)*&
+   &    scaledim+pinf*machcoef*scaledimd)*machcoef*surfaceref+pinf*machcoef*&
+   &    scaledim*(machcoefd*surfaceref+machcoef*surfacerefd))/(gammainf*pinf&
+   &    *machcoef*machcoef*surfaceref*lref*lref*scaledim)**2)
+   fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
+   &    scaledim)
    cfpd(1) = cfpd(1)*fact + cfp(1)*factd
    cfp(1) = cfp(1)*fact
    cfpd(2) = cfpd(2)*fact + cfp(2)*factd

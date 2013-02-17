@@ -144,12 +144,12 @@
    arg1 = freestreamaxis(1)**2 + freestreamaxis(2)**2 + freestreamaxis(3)&
    &    **2
    IF (arg1 .EQ. 0.0) THEN
-   rnormd = 0.0
+   rnormd = 0.0_8
    ELSE
    rnormd = arg1d/(2.0*SQRT(arg1))
    END IF
    rnorm = SQRT(arg1)
-   freestreamaxisnormd = 0.0
+   freestreamaxisnormd = 0.0_8
    DO i=1,3
    freestreamaxisnormd(i) = (freestreamaxisd(i)*rnorm-freestreamaxis(i)&
    &      *rnormd)/rnorm**2

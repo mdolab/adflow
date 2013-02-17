@@ -10,16 +10,32 @@ module stencils
 
   use precision
   implicit none
-  ! First define the sizes of the stncils
+
+  ! Euler stencils
   integer(kind=intType), parameter :: N_euler_pc   = 7
   integer(kind=intType), parameter :: N_euler_drdw = 13
   integer(kind=intType), parameter :: N_euler_drdx = 32
-  integer(kind=intType), parameter :: N_visc_pc     = 21
+  integer(kind=intType), parameter :: N_euler_force_w = 2
+  integer(kind=intType), parameter :: N_euler_force_x = 4
 
-  integer(kind=intType), dimension(7 ,3),target :: euler_pc_stencil
-  integer(kind=intType), dimension(13,3),target :: euler_drdw_stencil
-  integer(kind=intType), dimension(32,3),target :: euler_drdx_stencil
-  integer(kind=intType), dimension(21,3),target :: visc_pc_stencil
+  integer(kind=intType), dimension(7 ,3), target :: euler_pc_stencil
+  integer(kind=intType), dimension(13,3), target :: euler_drdw_stencil
+  integer(kind=intType), dimension(32,3), target :: euler_drdx_stencil
+  integer(kind=intType), dimension(2, 3), target :: euler_force_w_stencil
+  integer(kind=intType), dimension(4, 3), target :: euler_force_x_stencil
+
+  ! Viscous stencils
+  integer(kind=intType), parameter :: N_visc_pc   = 21
+  integer(kind=intType), parameter :: N_visc_drdw = 33
+  integer(kind=intType), parameter :: N_visc_drdx = 64
+  integer(kind=intType), parameter :: N_visc_force_w = 18
+  integer(kind=intType), parameter :: N_visc_force_x = 32
+
+  integer(kind=intType), dimension(21,3), target :: visc_pc_stencil
+  integer(kind=intType), dimension(33,3), target :: visc_drdw_stencil
+  integer(kind=intType), dimension(64,3), target :: visc_drdx_stencil
+  integer(kind=intType), dimension(18, 3), target :: visc_force_w_stencil
+  integer(kind=intType), dimension(16, 3), target :: visc_force_x_stencil
   
 end module stencils
        
@@ -29,7 +45,6 @@ subroutine initialize_stencils
   integer(kind=intType) :: i,j,k,counter
 
   ! Euler PC Stencil
-
   euler_pc_stencil(1,:) = (/ 0, 0, 0 /)
   euler_pc_stencil(2,:) = (/-1, 0, 0 /)
   euler_pc_stencil(3,:) = (/ 1, 0, 0 /)
@@ -39,7 +54,6 @@ subroutine initialize_stencils
   euler_pc_stencil(7,:) = (/ 0, 0, 1 /)
 
  ! Euler drdw Stencil
-
   euler_drdw_stencil(1 ,:) = (/ 0, 0, 0 /)
   euler_drdw_stencil(2 ,:) = (/-2, 0, 0 /)
   euler_drdw_stencil(3 ,:) = (/-1, 0, 0 /)
@@ -88,18 +102,18 @@ subroutine initialize_stencils
   euler_drdx_stencil(31,:) = (/    2,  1,  0 /)
   euler_drdx_stencil(32,:) = (/    2,  1,  1 /)
 
-  ! Viscous 3x3x3 stencil:
-  counter = 0
-!   do i=-1,1
-!      do j=-1,1
-!         do k=-1,1
-!            counter = counter + 1
-!            visc_pc_stencil(counter,:) = (/i,j,k/)
-!         end do
-!      end do
-!   end do
+  ! Euler force stencil for w
+  euler_force_w_stencil(1, :) = (/0, 0, 0/)
+  euler_force_w_stencil(2, :) = (/0, 0, 1/)
+  
+  ! Euler force stencil for x
+  euler_force_x_stencil(1, :) = (/-1, -1, 0/)
+  euler_force_x_stencil(2, :) = (/-1,  0, 0/)
+  euler_force_x_stencil(3, :) = (/ 0, -1, 0/)
+  euler_force_x_stencil(4, :) = (/ 0,  0, 0/)
 
-  ! K = 0 plane
+  ! Visc PC Stencil --- 3x3x3 cube without the 8 corners
+  ! K = 0 plane (3x3)
   visc_pc_stencil(1,:) = (/-1,-1, 0/)
   visc_pc_stencil(2,:) = (/ 0,-1, 0/)
   visc_pc_stencil(3,:) = (/ 1,-1, 0/)
@@ -123,6 +137,62 @@ subroutine initialize_stencils
   visc_pc_stencil(17,:) = (/ 1, 0,-1/)
   visc_pc_stencil(18,:) = (/ 0,-1,-1/)
   visc_pc_stencil(19,:) = (/ 0, 1,-1/)
+
+  ! Visc drdw stencil
+  ! Dense 3x3x3 cube
+  ii = 1
+  do k=-1,1
+     do j=-1,1
+        do i=-1,1
+           visc_drdw_stencil(ii, :) =  (/i, j, k/)
+           ii = ii + 1
+        end do
+     end do
+  end do
+  
+  ! Plus the 6 double halos
+  visc_drdw_stencil(28, :) = (/-2, 0, 0 /)
+  visc_drdw_stencil(29, :) = (/ 2, 0, 0 /)
+  visc_drdw_stencil(30, :) = (/ 0,-2, 0 /)
+  visc_drdw_stencil(31, :) = (/ 0, 2, 0 /)
+  visc_drdw_stencil(32, :) = (/ 0, 0,-2 /)
+  visc_drdw_stencil(33, :) = (/ 0, 0, 2 /)
+
+  ! Visc drdx stencil
+  ! Dense 4x4x4 cube
+  ii = 1
+  do k=-2,1
+     do j=-2,1
+        do i=-2,1
+           visc_drdx_stencil(ii, :) =  (/i, j, k/)
+           ii = ii + 1
+        end do
+     end do
+  end do
+
+  ! visc force stencil for w
+  ! 3x3 on surface and two levels high
+  ii = 1
+  do k=0, 1
+     do j=-1,1
+        do i=-1,1
+           visc_force_w_stencil(ii, :) = (/i, j, k/)
+           ii = ii + 1
+        end do
+     end do
+  end do
+  
+  ! visc force stencil for x
+  ! 4x4 on surface and two levels high
+  ii = 1
+  do k=0,0
+     do j=-2,1
+        do i=-2,1
+           visc_force_x_stencil(ii, :) =  (/i, j, k/)
+           ii = ii + 1
+        end do
+     end do
+  end do
 
 end subroutine initialize_stencils
 

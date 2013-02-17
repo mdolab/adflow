@@ -61,7 +61,6 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   refPoint(:) = 0.0
   refPointb(:)= 0.0
 
-
   call MatGetOwnershipRange(dfdw,rowStart,rowEnd,ierr)
   call EChk(ierr,__FILE__,__LINE__)
   call MatGetOwnershipRangeColumn(dFdx,colStart_x,colEnd_x,ierr)

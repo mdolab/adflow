@@ -10,8 +10,8 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPetsc, only : FMx
-  use blockPointers      
+  use ADjointPetsc, only : FMx, dFcdx
+  use blockPointers_d
   use BCTypes
   use inputDiscretization 
   USE inputTimeSpectral 
@@ -33,10 +33,10 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
 
   ! Local variables.
   integer(kind=intType) :: ierr,nn,sps,sps2,i,j,k,l,ll,ii,jj,kk, mm
-  integer(kind=intType) :: irow,icol, level
-  integer(kind=intType) :: n_stencil,i_stencil
-  integer(kind=intType), dimension(:,:), pointer :: stencil
-  integer(kind=intType) :: nColor, iColor, jColor
+  integer(kind=intType) :: irow, icol, level, fdim
+  integer(kind=intType) :: n_stencil, i_stencil, n_force_stencil
+  integer(kind=intType), dimension(:,:), pointer :: stencil, force_stencil
+  integer(kind=intType) :: nColor, iColor, jColor, ind, fmInd
   real(kind=realType) :: delta_x,one_over_dx, val
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, fmDim
   real(kind=realType) :: alpha, beta, Lift, Drag, CL, CD
@@ -45,7 +45,8 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   real(kind=realType), dimension(3) :: Forced, Momentd, cForced, cMomentd
   integer(kind=intType) :: liftIndex
   integer(kind=intType), dimension(:,:), pointer ::  colorPtr
-
+  integer(kind=intType), dimension(:,:), pointer ::  globalNodePtr
+  integer(kind=intType) :: fRow
   ! This routine will not use the extra variables to block_res or the
   ! extra outputs, so we must zero them here
   alphad = zero
@@ -74,11 +75,15 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   ! using the first order stencil or the full jacobian
 
   if(viscous) then
-     !stencil => visc_drdx_stencil
-     !n_stencil = N_visc_drdx
+     stencil => visc_drdx_stencil
+     n_stencil = N_visc_drdx
+     force_stencil => visc_force_x_stencil
+     n_force_stencil = N_visc_force_x
   else 
      stencil => euler_drdx_stencil
      n_stencil = N_euler_drdx
+     force_stencil => euler_force_x_stencil
+     n_force_stencil = N_euler_force_x
   end if
 
   ! Call the residual to make sure its up to date withe current w
@@ -170,7 +175,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
               ! Block-based residual
               if (useAD) then
 #ifndef USE_COMPLEX
-                 call block_res_d(nn, sps, .True., .False., &
+                 call block_res_d(nn, sps, .True., useObjective, &
                       alpha, alphad, beta, betad, liftIndex, Force, Forced, &
                       Moment, Momentd, lift, liftd, drag, dragd, cForce, &
                       cForced, cMoment, cMomentd, CL, CLd, CD, CDd)
@@ -185,7 +190,8 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
               end if
 
               ! If required, set values in the 6 vectors defined in
-              ! FMx. 
+              ! FMx.
+
               if (useObjective .and. useAD) then
                  ! We need to loop over the faces on this block and
                  ! set values in FMx
@@ -201,41 +207,68 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                        select case (BCFaceID(mm))
                        case (iMin)
                           colorPtr => flowDomsd(nn, 1, 1)%color(1, :, :)
+                          globalNodePtr => globalNode(1, :, :)
                        case (iMax)
                           colorPtr => flowDomsd(nn, 1, 1)%color(il, :, :)
+                          globalNodePtr => globalNode(il, :, :)
                        case (jMin)
                           colorPtr => flowDomsd(nn, 1, 1)%color(:, 1, :)
+                          globalNodePtr => globalNode(:, 1, :)
                        case (jMax)
                           colorPtr => flowDomsd(nn, 1, 1)%color(:, jl, :)
+                          globalNodePtr => globalNode(:, jl, :)
                        case (kMin)
                           colorPtr => flowDomsd(nn, 1, 1)%color(:, :, 1)
+                          globalNodePtr => globalNode(:, :, 1)
                        case (kMax)
                           colorPtr => flowDomsd(nn, 1, 1)%color(:, :, kl)
+                          globalNodePtr => globalNode(:, :, kl)
                        end select
 
-                       ! These are the indices for the NODES!
-                       jBeg = BCData(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
-                       iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd
-                 
-                       do j=jBeg, jEnd ! This is a node loop
-                          do i=iBeg, iEnd ! This is a node loop
+                       ! These are the indices for the INTERNAL CELLS!
+                       jBeg = BCData(mm)%jnBeg+1; jEnd = BCData(mm)%jnEnd
+                       iBeg = BCData(mm)%inBeg+1; iEnd = BCData(mm)%inEnd
+                       
+                       do j=jBeg, jEnd ! This is a cell loop
+                          do i=iBeg, iEnd ! This is a cell loop
+                             ! Basically what we are doing is
+                             ! searching the force x stencil for this
+                             ! face to see if one of them has been
+                             ! petrubed. If one has, then we set the
+                             ! values appropriately
+                           
+                             forceStencilLoop: do i_stencil=1, n_force_stencil
+                                ii = force_stencil(i_stencil, 1)
+                                jj = force_stencil(i_stencil, 2)
 
-                             ! The +1 in the indices are due to the
-                             ! offset from the globalNodePtr
-                             jcolor = colorPtr(i+1, j+1)
-                             if (jColor == iColor) then
-                                do fmDim = 1,3
-                                   call VecSetValues(FMx(fmDim), 1, &
-                                        BCData(mm)%FMIndex(i,j)*3 + l -1, &
-                                        Forced(fmDim), ADD_VALUES, ierr) 
-                                   call EChk(ierr, __FILE__, __LINE__)
+                                ! The +1 in the colorPtr is due to the
+                                ! pointer offset effect
+                                ind = globalNodePtr(i+1+ii, j+1+jj)*3 + l - 1
+                                if (colorPtr(i+1+ii, j+1+jj) == iColor .and.  &
+                                     ind >=0) then
+                                   ! This real node has been peturbed
+                                   do fmDim = 1,3
+                                      call VecSetValues(FMx(fmDim), 1, ind, &
+                                           bcDatad(mm)%F(i,j,fmDim), &
+                                           ADD_VALUES, ierr) 
+                                      call EChk(ierr, __FILE__, __LINE__)
 
-                                   call VecSetValues(FMx(fmDim+3), 1, &
-                                        BCData(mm)%FMIndex(i,j)*3 + l -1, &
-                                        Momentd(fmDim), ADD_VALUES, ierr) 
-                                   call EChk(ierr, __FILE__, __LINE__)
-                                end do
-                             end if
+                                      call VecSetValues(FMx(fmDim+3), 1, ind, &
+                                           bcDatad(mm)%M(i,j,fmDim), &
+                                           ADD_VALUES, ierr) 
+                                      call EChk(ierr, __FILE__, __LINE__)
+                                      
+                                      ! While we are at it, we have
+                                      ! all the info we need for dFcdx
+                                      fRow = BCData(mm)%FMCellIndex(i,j)*3 + fmDim - 1
+                                      
+                                      call MatSetValues(dFcdx, 1, fRow, &
+                                           1, ind, bcData(mm)%F(i, j, fmDim), &
+                                           ADD_VALUES, ierr)
+                                      call EChk(ierr, __FILE__, __LINE__)
+                                   end do
+                                end if
+                             end do forceStencilLoop
                           end do
                        end do
                     end if
@@ -351,6 +384,9 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
         call VecAssemblyEnd(FMx(fmDim), ierr)
         call EChk(ierr, __FILE__, __LINE__)
      end do
+
+     call MatAssemblyBegin(dFcdx, MAT_FINAL_ASSEMBLY, ierr)
+     call MatAssemblyEnd(dFcdx, MAT_FINAL_ASSEMBLY, ierr)
   end if
 
   ! PETSc Matrix Assembly and Options Set

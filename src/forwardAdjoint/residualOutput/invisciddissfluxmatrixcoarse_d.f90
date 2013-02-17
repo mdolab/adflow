@@ -90,7 +90,7 @@
    ! Check if rFil == 0. If so, the dissipative flux needs not to
    ! be computed.
    IF (abs0 .LT. thresholdreal) THEN
-   fwd = 0.0
+   fwd = 0.0_8
    RETURN
    ELSE
    ! Determine whether or not the total energy must be corrected
@@ -116,21 +116,21 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   fwd(i, j, k, irho) = 0.0
+   fwd(i, j, k, irho) = 0.0_8
    fw(i, j, k, irho) = sfil*fw(i, j, k, irho)
-   fwd(i, j, k, imx) = 0.0
+   fwd(i, j, k, imx) = 0.0_8
    fw(i, j, k, imx) = sfil*fw(i, j, k, imx)
-   fwd(i, j, k, imy) = 0.0
+   fwd(i, j, k, imy) = 0.0_8
    fw(i, j, k, imy) = sfil*fw(i, j, k, imy)
-   fwd(i, j, k, imz) = 0.0
+   fwd(i, j, k, imz) = 0.0_8
    fw(i, j, k, imz) = sfil*fw(i, j, k, imz)
-   fwd(i, j, k, irhoe) = 0.0
+   fwd(i, j, k, irhoe) = 0.0_8
    fw(i, j, k, irhoe) = sfil*fw(i, j, k, irhoe)
    END DO
    END DO
    END DO
-   fwd = 0.0
-   sfaced = 0.0
+   fwd = 0.0_8
+   sfaced = 0.0_8
    !
    !      ******************************************************************
    !      *                                                                *
@@ -181,8 +181,8 @@
    ELSE
    drk = zero
    kavg = zero
-   kavgd = 0.0
-   drkd = 0.0
+   kavgd = 0.0_8
+   drkd = 0.0_8
    END IF
    ! Compute the average value of gamma and compute some
    ! expressions in which it occurs.
@@ -218,7 +218,7 @@
    arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
    arg1 = sx**2 + sy**2 + sz**2
    IF (arg1 .EQ. 0.0) THEN
-   aread = 0.0
+   aread = 0.0_8
    ELSE
    aread = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -228,7 +228,7 @@
    max1 = area
    ELSE
    max1 = 1.e-25_realType
-   max1d = 0.0
+   max1d = 0.0_8
    END IF
    tmpd = -(one*max1d/max1**2)
    tmp = one/max1
@@ -244,7 +244,7 @@
    &            gm53d*kavg-gm53*kavgd)
    havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
    IF (a2avg .EQ. 0.0) THEN
-   aavgd = 0.0
+   aavgd = 0.0_8
    ELSE
    aavgd = a2avgd/(2.0*SQRT(a2avg))
    END IF
@@ -426,8 +426,8 @@
    ELSE
    drk = zero
    kavg = zero
-   kavgd = 0.0
-   drkd = 0.0
+   kavgd = 0.0_8
+   drkd = 0.0_8
    END IF
    ! Compute the average value of gamma and compute some
    ! expressions in which it occurs.
@@ -463,7 +463,7 @@
    arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
    arg1 = sx**2 + sy**2 + sz**2
    IF (arg1 .EQ. 0.0) THEN
-   aread = 0.0
+   aread = 0.0_8
    ELSE
    aread = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -473,7 +473,7 @@
    max2 = area
    ELSE
    max2 = 1.e-25_realType
-   max2d = 0.0
+   max2d = 0.0_8
    END IF
    tmpd = -(one*max2d/max2**2)
    tmp = one/max2
@@ -489,7 +489,7 @@
    &            gm53d*kavg-gm53*kavgd)
    havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
    IF (a2avg .EQ. 0.0) THEN
-   aavgd = 0.0
+   aavgd = 0.0_8
    ELSE
    aavgd = a2avgd/(2.0*SQRT(a2avg))
    END IF
@@ -671,8 +671,8 @@
    ELSE
    drk = zero
    kavg = zero
-   kavgd = 0.0
-   drkd = 0.0
+   kavgd = 0.0_8
+   drkd = 0.0_8
    END IF
    ! Compute the average value of gamma and compute some
    ! expressions in which it occurs.
@@ -708,7 +708,7 @@
    arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
    arg1 = sx**2 + sy**2 + sz**2
    IF (arg1 .EQ. 0.0) THEN
-   aread = 0.0
+   aread = 0.0_8
    ELSE
    aread = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -718,7 +718,7 @@
    max3 = area
    ELSE
    max3 = 1.e-25_realType
-   max3d = 0.0
+   max3d = 0.0_8
    END IF
    tmpd = -(one*max3d/max3**2)
    tmp = one/max3
@@ -734,7 +734,7 @@
    &            gm53d*kavg-gm53*kavgd)
    havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
    IF (a2avg .EQ. 0.0) THEN
-   aavgd = 0.0
+   aavgd = 0.0_8
    ELSE
    aavgd = a2avgd/(2.0*SQRT(a2avg))
    END IF

@@ -119,7 +119,7 @@
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero
-   rhokd = 0.0
+   rhokd = 0.0_8
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
@@ -143,13 +143,13 @@
    t1 = t1
    ELSE
    t1 = half*tns_wall(i, j)
-   t1d = 0.0
+   t1d = 0.0_8
    END IF
    IF (two*tns_wall(i, j) .GT. t1) THEN
    t1 = t1
    ELSE
    t1 = two*tns_wall(i, j)
-   t1d = 0.0
+   t1d = 0.0_8
    END IF
    ! Determine the variables in the halo. As the spacing
    ! is very small a constant pressure boundary condition

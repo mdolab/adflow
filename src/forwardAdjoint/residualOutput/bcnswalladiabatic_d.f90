@@ -97,34 +97,34 @@
    ! No need to extrapolate the secondary halo's, because this
    ! is done in extrapolate2ndHalo.
    IF (turbcoupled) THEN
-   bmtj2d = 0.0
-   bmtj1d = 0.0
-   bvti2d = 0.0
-   bvti1d = 0.0
-   bmti2d = 0.0
-   bmti1d = 0.0
-   bvtk2d = 0.0
-   bvtk1d = 0.0
-   bmtk2d = 0.0
-   bmtk1d = 0.0
-   bvtj2d = 0.0
-   bvtj1d = 0.0
+   bmtj2d = 0.0_8
+   bmtj1d = 0.0_8
+   bvti2d = 0.0_8
+   bvti1d = 0.0_8
+   bmti2d = 0.0_8
+   bmti1d = 0.0_8
+   bvtk2d = 0.0_8
+   bvtk1d = 0.0_8
+   bmtk2d = 0.0_8
+   bmtk1d = 0.0_8
+   bvtj2d = 0.0_8
+   bvtj1d = 0.0_8
    CALL TURBBCNSWALL_D(.false.)
-   gammad = 0.0
+   gammad = 0.0_8
    ELSE
-   bvtj1d = 0.0
-   bvtj2d = 0.0
-   gammad = 0.0
-   bmtk1d = 0.0
-   bmtk2d = 0.0
-   bvtk1d = 0.0
-   bvtk2d = 0.0
-   bmti1d = 0.0
-   bmti2d = 0.0
-   bvti1d = 0.0
-   bvti2d = 0.0
-   bmtj1d = 0.0
-   bmtj2d = 0.0
+   bvtj1d = 0.0_8
+   bvtj2d = 0.0_8
+   gammad = 0.0_8
+   bmtk1d = 0.0_8
+   bmtk2d = 0.0_8
+   bvtk1d = 0.0_8
+   bvtk2d = 0.0_8
+   bmti1d = 0.0_8
+   bmti2d = 0.0_8
+   bvti1d = 0.0_8
+   bvti2d = 0.0_8
+   bmtj1d = 0.0_8
+   bmtj2d = 0.0_8
    END IF
    ! Loop over the viscous subfaces of this block. Note that
    ! these are numbered first.
@@ -143,7 +143,7 @@
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero
-   rhokd = 0.0
+   rhokd = 0.0_8
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend

@@ -56,7 +56,7 @@
    ! Check if rFil == 0. If so, the dissipative flux needs not to
    ! be computed.
    IF (abs0 .LT. thresholdreal) THEN
-   fwd = 0.0
+   fwd = 0.0_8
    RETURN
    ELSE
    ! Set a couple of constants for the scheme.
@@ -90,20 +90,20 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   fwd(i, j, k, irho) = 0.0
+   fwd(i, j, k, irho) = 0.0_8
    fw(i, j, k, irho) = sfil*fw(i, j, k, irho)
-   fwd(i, j, k, imx) = 0.0
+   fwd(i, j, k, imx) = 0.0_8
    fw(i, j, k, imx) = sfil*fw(i, j, k, imx)
-   fwd(i, j, k, imy) = 0.0
+   fwd(i, j, k, imy) = 0.0_8
    fw(i, j, k, imy) = sfil*fw(i, j, k, imy)
-   fwd(i, j, k, imz) = 0.0
+   fwd(i, j, k, imz) = 0.0_8
    fw(i, j, k, imz) = sfil*fw(i, j, k, imz)
-   fwd(i, j, k, irhoe) = 0.0
+   fwd(i, j, k, irhoe) = 0.0_8
    fw(i, j, k, irhoe) = sfil*fw(i, j, k, irhoe)
    END DO
    END DO
    END DO
-   fwd = 0.0
+   fwd = 0.0_8
    !
    !      ******************************************************************
    !      *                                                                *
