@@ -99,6 +99,7 @@ module blockPointers
 
   integer(kind=intType), dimension(:,:), pointer :: ibndry
   integer(kind=intType), dimension(:,:), pointer :: idonor
+
   real(kind=realType),   dimension(:,:), pointer :: overint
 
   integer(kind=intType), dimension(:), pointer :: neighBlockOver
@@ -115,16 +116,16 @@ module blockPointers
   integer(kind=intType), dimension(:,:), pointer :: viscKMaxPointer
 
   real(kind=realType), dimension(:,:,:,:),   pointer :: x
+
   real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
-  real(kind=realType), dimension(:,:)      , pointer :: tempHalo
 
   real(kind=realType), dimension(:,:,:,:), pointer :: sI, sJ, sK
+
   real(kind=realType), dimension(:,:,:),   pointer :: vol
+
   real(kind=realType), dimension(:,:,:,:), pointer :: volOld
 
-  integer(kind=porType), dimension(:,:,:), pointer :: porI
-  integer(kind=porType), dimension(:,:,:), pointer :: porJ
-  integer(kind=porType), dimension(:,:,:), pointer :: porK
+  integer(kind=porType), dimension(:,:,:), pointer :: porI, porJ, porK
 
   integer(kind=intType), dimension(:,:,:), pointer :: indFamilyI
   integer(kind=intType), dimension(:,:,:), pointer :: indFamilyJ
@@ -135,26 +136,31 @@ module blockPointers
   integer(kind=intType), dimension(:,:,:), pointer :: factFamilyK
 
   real(kind=realType), dimension(:,:,:,:,:), pointer :: rotMatrixI
+
   real(kind=realType), dimension(:,:,:,:,:), pointer :: rotMatrixJ
+
   real(kind=realType), dimension(:,:,:,:,:), pointer :: rotMatrixK
 
   logical :: blockIsMoving, addGridVelocities
 
-  real(kind=realType), dimension(:,:,:), pointer :: sFaceI
-  real(kind=realType), dimension(:,:,:), pointer :: sFaceJ
-  real(kind=realType), dimension(:,:,:), pointer :: sFaceK
+  real(kind=realType), dimension(:,:,:), pointer :: sFaceI, sFaceJ, sfaceK
 
   real(kind=realType), dimension(:,:,:,:),   pointer :: w
+
   real(kind=realType), dimension(:,:,:,:,:), pointer :: wOld
 
   real(kind=realType), dimension(:,:,:),     pointer :: p, gamma
 
   real(kind=realType), dimension(:,:,:),     pointer :: rlv, rev
+
   real(kind=realType), dimension(:,:,:,:),   pointer :: s
 
   real(kind=realType), dimension(:,:,:),     pointer :: p1
+
   real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw
+
   real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
+
   real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
 
   integer(kind=intType), dimension(:,:), pointer :: mgIFine
@@ -162,7 +168,9 @@ module blockPointers
   integer(kind=intType), dimension(:,:), pointer :: mgKFine
 
   real(kind=realType),   dimension(:),   pointer :: mgIWeight
+
   real(kind=realType),   dimension(:),   pointer :: mgJWeight
+
   real(kind=realType),   dimension(:),   pointer :: mgKWeight
 
   integer(kind=intType), dimension(:,:), pointer :: mgICoarse
@@ -170,24 +178,33 @@ module blockPointers
   integer(kind=intType), dimension(:,:), pointer :: mgKCoarse
 
   real(kind=realType), dimension(:,:,:,:), pointer :: wn
+
   real(kind=realType), dimension(:,:,:),   pointer :: pn
+
   real(kind=realType), dimension(:,:,:),   pointer :: dtl
-  real(kind=realType), dimension(:,:,:),   pointer :: radI
-  real(kind=realType), dimension(:,:,:),   pointer :: radJ
-  real(kind=realType), dimension(:,:,:),   pointer :: radK
+
+  real(kind=realType), dimension(:,:,:),   pointer :: radI, radJ, radK
 
   real(kind=realType), dimension(:,:,:), pointer :: d2Wall
 
   real(kind=realType), dimension(:,:,:),   pointer :: filterDES  ! eran-des
+
   real(kind=realType), dimension(:,:,:,:), pointer :: bmti1
+
   real(kind=realType), dimension(:,:,:,:), pointer :: bmti2
+
   real(kind=realType), dimension(:,:,:,:), pointer :: bmtj1
+
   real(kind=realType), dimension(:,:,:,:), pointer :: bmtj2
+
   real(kind=realType), dimension(:,:,:,:), pointer :: bmtk1
+
   real(kind=realType), dimension(:,:,:,:), pointer :: bmtk2
 
   real(kind=realType), dimension(:,:,:), pointer :: bvti1, bvti2
+
   real(kind=realType), dimension(:,:,:), pointer :: bvtj1, bvtj2
+
   real(kind=realType), dimension(:,:,:), pointer :: bvtk1, bvtk2
 
   integer(kind=intType), dimension(:,:,:), pointer :: globalNode
@@ -196,6 +213,7 @@ module blockPointers
   integer(kind=intType), dimension(:), pointer ::ifaceptb,iedgeptb
 
   real(kind=realType), dimension(:,:,:,:), pointer :: w_offTimeInstance
+
   real(kind=realType), dimension(:,:,:), pointer :: vol_offTimeInstance
 
 end module blockPointers

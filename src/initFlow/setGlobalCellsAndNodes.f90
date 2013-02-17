@@ -56,7 +56,7 @@ subroutine setGlobalCellsAndNodes(level)
   integer(kind=intType), dimension(nDom) :: nCellBLockOffset,nNodeBLockOffset
   integer(kind=intType) :: npts, nts
   integer(kind=intType), dimension(:), allocatable :: nNodesProc, cumNodesProc
-  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, mm
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, jj,mm
   ! Determine the number of nodes and cells owned by each processor
   ! by looping over the local block domains.
   nCellsLocal(level) = 0
@@ -287,6 +287,7 @@ subroutine setGlobalCellsAndNodes(level)
   ! Now we know the offset for the start of each processor. We can
   ! loop through in the desired order and just increment.
   ii = 0
+  jj = 0
   do sps=1,nTimeIntervalsSpectral
      do nn=1,nDom
         call setPointers(nn, 1_intType, sps)
@@ -298,8 +299,14 @@ subroutine setGlobalCellsAndNodes(level)
               iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
               do j=jBeg, jEnd
                  do i=iBeg, iEnd
-                    bcData(mm)%FMIndex(i,j) = ii
+                    bcData(mm)%FMNodeIndex(i,j) = ii
                     ii = ii + 1
+                 end do
+              end do
+              do j=jBeg+1, jEnd
+                 do i=iBeg+1, iEnd
+                    bcData(mm)%FMCellIndex(i,j) = jj
+                    jj = jj + 1
                  end do
               end do
            end if

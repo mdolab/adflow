@@ -37,7 +37,7 @@ import copy
 # =============================================================================
 # Extension modules
 # =============================================================================
-from mdo_import_helper import import_modules
+from mdo_import_helper import import_modules, MExt
 exec(import_modules('pyAero_problem'))
 exec(import_modules('pySUMB'))
 
@@ -62,7 +62,7 @@ class SUMB_C(SUMB):
         '''
 
         self.sumb = MExt('sumb_cs')._module
-        SUMB.__init__(self, sumb=sumb_mod, *args, **kwargs)        
+        SUMB.__init__(self, *args, **kwargs)        
         self.dtype = 'D'
 
         return

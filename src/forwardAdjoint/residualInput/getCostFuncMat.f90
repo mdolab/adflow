@@ -19,12 +19,13 @@ subroutine getCostFuncMat(alpha, beta, liftIndex)
   integer(kind=intType), intent(in) ::liftIndex
 
   ! Working vars
-  real(kind=realtype) :: fact
+  real(kind=realtype) :: fact, scaleDim
 
   call adjustInflowAngle(alpha, beta, liftIndex)
+  scaleDim = pRef/pInf
 
   fact = two/(gammaInf*pInf*MachCoef**2 &
-       *surfaceRef*LRef**2)
+       *surfaceRef*LRef**2*scaleDim)
 
   costFuncMat = zero
 

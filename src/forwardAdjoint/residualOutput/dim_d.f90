@@ -15,6 +15,6 @@
    dim = x - y
    IF (dim .LT. 0.0) THEN
    dim = 0.0
-   dim_d = 0.0
+   dim_d = 0.0_8
    END IF
    END FUNCTION DIM_D

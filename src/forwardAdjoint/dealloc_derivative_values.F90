@@ -100,6 +100,9 @@ subroutine dealloc_derivative_values(nn, level)
         deallocate(BCDatad(mm)%F, stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
+        deallocate(BCDatad(mm)%M, stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
         select case (BCType(mm))
 
         case (NSWallAdiabatic)

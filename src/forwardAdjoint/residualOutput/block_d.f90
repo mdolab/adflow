@@ -104,14 +104,14 @@
    INTEGER(kind=inttype) :: icbeg, icend, jcbeg, jcend
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rface
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: f
-   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: fmindex
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: f, m
+   INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: fmnodeindex, &
+   &      fmcellindex
    INTEGER(kind=inttype) :: subsonicinlettreatment
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslip
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: tns_wall
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: ptinlet
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: ttinlet
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: htinlet
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: ptinlet, ttinlet&
+   &      , htinlet
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: flowxdirinlet
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: flowydirinlet
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: flowzdirinlet
@@ -126,6 +126,7 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rface
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: f
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: m
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslip
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: tns_wall
    END TYPE BCDATATYPE_D
@@ -486,7 +487,6 @@
    !
    ! d2Wall(2:il,2:jl,2:kl) - Distance from the center of the cell
    !                          to the nearest viscous wall.
-   ! eran-des
    ! bmti1(je,ke,nt1:nt2,nt1:nt2): Matrix used for the implicit
    !                               boundary condition treatment of
    !                               the turbulence equations at the
@@ -587,31 +587,22 @@
    INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: visckmaxpointer
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: x, xtmp
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: xold
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: temphalo
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: si, sj, sk
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vol
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: volold
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: uv
    INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: elemid
-   INTEGER(kind=portype), DIMENSION(:, :, :), POINTER :: pori
-   INTEGER(kind=portype), DIMENSION(:, :, :), POINTER :: porj
-   INTEGER(kind=portype), DIMENSION(:, :, :), POINTER :: pork
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: indfamilyi
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: indfamilyj
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: indfamilyk
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: factfamilyi
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: factfamilyj
-   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: factfamilyk
+   INTEGER(kind=portype), DIMENSION(:, :, :), POINTER :: pori, porj, &
+   &      pork
+   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: indfamilyi, &
+   &      indfamilyj, indfamilyk
+   INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: factfamilyi&
+   &      , factfamilyj, factfamilyk
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: &
-   &      rotmatrixi
-   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: &
-   &      rotmatrixj
-   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: &
-   &      rotmatrixk
+   &      rotmatrixi, rotmatrixj, rotmatrixk
    LOGICAL :: blockismoving, addgridvelocities
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacei
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacej
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacek
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacei, sfacej&
+   &      , sfacek
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w, wtmp
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: dw_deriv
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: wold
@@ -638,17 +629,16 @@
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wn
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: pn
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: dtl
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radi
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radj
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radk
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: d2wall
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: filterdes
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmti1
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmti2
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtj1
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtj2
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtk1
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtk2
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radi, radj, &
+   &      radk
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: d2wall, &
+   &      filterdes
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmti1, &
+   &      bmti2
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtj1, &
+   &      bmtj2
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtk1, &
+   &      bmtk2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvti1, bvti2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtj1, bvtj2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtk1, bvtk2

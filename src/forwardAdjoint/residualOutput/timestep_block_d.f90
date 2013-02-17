@@ -95,9 +95,9 @@
    ! Return immediately if only the spectral radii must be computed
    ! and these are not needed for the flux computation.
    IF (onlyradii .AND. (.NOT.radiineeded)) THEN
-   radid = 0.0
-   radjd = 0.0
-   radkd = 0.0
+   radid = 0.0_8
+   radjd = 0.0_8
+   radkd = 0.0_8
    RETURN
    ELSE
    ! Set the value of plim. To be fully consistent this must have
@@ -121,10 +121,10 @@
    !
    SELECT CASE  (precond) 
    CASE (noprecond) 
-   radid = 0.0
-   radjd = 0.0
-   radkd = 0.0
-   sfaced = 0.0
+   radid = 0.0_8
+   radjd = 0.0_8
+   radkd = 0.0_8
+   sfaced = 0.0_8
    ! No preconditioner. Simply the standard spectral radius.
    ! Loop over the cells, including the first level halo.
    DO k=1,ke
@@ -176,7 +176,7 @@
    &              sz*szd)
    arg1 = cc2*(sx**2+sy**2+sz**2)
    IF (arg1 .EQ. 0.0) THEN
-   result1d = 0.0
+   result1d = 0.0_8
    ELSE
    result1d = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -209,7 +209,7 @@
    &              sz*szd)
    arg1 = cc2*(sx**2+sy**2+sz**2)
    IF (arg1 .EQ. 0.0) THEN
-   result1d = 0.0
+   result1d = 0.0_8
    ELSE
    result1d = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -242,7 +242,7 @@
    &              sz*szd)
    arg1 = cc2*(sx**2+sy**2+sz**2)
    IF (arg1 .EQ. 0.0) THEN
-   result1d = 0.0
+   result1d = 0.0_8
    ELSE
    result1d = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -250,7 +250,7 @@
    radkd(i, j, k) = half*(abs2d+result1d)
    radk(i, j, k) = half*(abs2+result1)
    ! Compute the inviscid contribution to the time step.
-   dtld(i, j, k) = 0.0
+   dtld(i, j, k) = 0.0_8
    dtl(i, j, k) = radi(i, j, k) + radj(i, j, k) + radk(i, j, k)
    END DO
    END DO
@@ -258,19 +258,19 @@
    CASE (turkel) 
    CALL TERMINATE('timeStep', &
    &                  'Turkel preconditioner not implemented yet')
-   radid = 0.0
-   radjd = 0.0
-   radkd = 0.0
+   radid = 0.0_8
+   radjd = 0.0_8
+   radkd = 0.0_8
    CASE (choimerkle) 
    CALL TERMINATE('timeStep', &
    &                  'choi merkle preconditioner not implemented yet')
-   radid = 0.0
-   radjd = 0.0
-   radkd = 0.0
+   radid = 0.0_8
+   radjd = 0.0_8
+   radkd = 0.0_8
    CASE DEFAULT
-   radid = 0.0
-   radjd = 0.0
-   radkd = 0.0
+   radid = 0.0_8
+   radjd = 0.0_8
+   radkd = 0.0_8
    END SELECT
    !
    !          **************************************************************
@@ -287,21 +287,21 @@
    DO i=1,ie
    IF (radi(i, j, k) .LT. eps) THEN
    ri = eps
-   rid = 0.0
+   rid = 0.0_8
    ELSE
    rid = radid(i, j, k)
    ri = radi(i, j, k)
    END IF
    IF (radj(i, j, k) .LT. eps) THEN
    rj = eps
-   rjd = 0.0
+   rjd = 0.0_8
    ELSE
    rjd = radjd(i, j, k)
    rj = radj(i, j, k)
    END IF
    IF (radk(i, j, k) .LT. eps) THEN
    rk = eps
-   rkd = 0.0
+   rkd = 0.0_8
    ELSE
    rkd = radkd(i, j, k)
    rk = radk(i, j, k)
@@ -390,7 +390,7 @@
    sy = si(i, j, k, 2) + si(i-1, j, k, 2)
    sz = si(i, j, k, 3) + si(i-1, j, k, 3)
    vsi = rmu*(sx*sx+sy*sy+sz*sz)
-   dtld(i, j, k) = 0.0
+   dtld(i, j, k) = 0.0_8
    dtl(i, j, k) = dtl(i, j, k) + vsi
    ! Add the viscous contribution in j-direction to the
    ! (inverse) of the time step.
@@ -398,7 +398,7 @@
    sy = sj(i, j, k, 2) + sj(i, j-1, k, 2)
    sz = sj(i, j, k, 3) + sj(i, j-1, k, 3)
    vsj = rmu*(sx*sx+sy*sy+sz*sz)
-   dtld(i, j, k) = 0.0
+   dtld(i, j, k) = 0.0_8
    dtl(i, j, k) = dtl(i, j, k) + vsj
    ! Add the viscous contribution in k-direction to the
    ! (inverse) of the time step.
@@ -406,7 +406,7 @@
    sy = sk(i, j, k, 2) + sk(i, j, k-1, 2)
    sz = sk(i, j, k, 3) + sk(i, j, k-1, 3)
    vsk = rmu*(sx*sx+sy*sy+sz*sz)
-   dtld(i, j, k) = 0.0
+   dtld(i, j, k) = 0.0_8
    dtl(i, j, k) = dtl(i, j, k) + vsk
    END DO
    END DO
@@ -422,7 +422,7 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   dtld(i, j, k) = 0.0
+   dtld(i, j, k) = 0.0_8
    dtl(i, j, k) = dtl(i, j, k) + tmp*vol(i, j, k)
    END DO
    END DO
@@ -456,7 +456,7 @@
    END IF
    dpk = abs5/(p(i, j, k+1)+two*p(i, j, k)+p(i, j, k-1)+plim)
    rfl = one/(one+b*(dpi+dpj+dpk))
-   dtld(i, j, k) = 0.0
+   dtld(i, j, k) = 0.0_8
    dtl(i, j, k) = rfl/dtl(i, j, k)
    END DO
    END DO

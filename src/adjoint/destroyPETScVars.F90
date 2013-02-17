@@ -1,10 +1,10 @@
 ! there are a number of differenet functions in destroyPETScVars. They
 ! coorespond to the different creation functions:
 
-subroutine destroyStatePETScVars
+subroutine destroyPETScVars
 
   use ADjointPETSc
-  use inputADjoint    !ApproxPC
+  use inputADjoint    
   use blockPointers
   implicit none
 
@@ -56,9 +56,6 @@ subroutine destroyStatePETScVars
   call MatDestroy(dFcdx, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
-  call MatDestroy(dFcdx2, PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
-
   call MatDestroy(dFndFc, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
@@ -72,17 +69,6 @@ subroutine destroyStatePETScVars
      call VecDestroy(FMw(i), PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
   end do
-#endif
-
-end subroutine destroyStatePETScVars
-
-subroutine destroySpatialPETScVars
-
-  use ADjointPETSc
-  implicit none
-  integer(kind=intType) :: i
-
-#ifndef USE_NO_PETSC
 
   call MatDestroy(dRdx, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
@@ -98,34 +84,13 @@ subroutine destroySpatialPETScVars
      call EChk(PETScIerr,__FILE__,__LINE__)
   end do
 
-#endif
-
-end subroutine destroySpatialPETScVars
-
-subroutine destroyExtraPETScVars
-  use ADjointPETSc
-  implicit none
-#ifndef USE_NO_PETSC
-
   call MatDestroy(dRda, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
   deallocate(drda_data)
 
-#endif
-  
-end subroutine destroyExtraPETScVars
-
-subroutine destroyPETScKSP
-
-  use ADjointPETSc
-  implicit none
-#ifndef USE_NO_PETSC
-  ! KSP Context
   call KSPDestroy(adjointKSP, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
-
 #endif
-
-end subroutine destroyPETScKSP
+end subroutine destroyPETScVars
 

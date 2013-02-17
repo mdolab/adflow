@@ -147,8 +147,7 @@
       ! Initialize PETSc.
 
       call initializePETSc
-      call createStatePetscVars
-      call createSpatialPetscVars
+      call createPetscVars
       call setupAllResidualMatrices
 
       ! Reordered for ASM preconditioner

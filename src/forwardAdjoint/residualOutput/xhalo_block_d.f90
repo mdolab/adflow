@@ -186,9 +186,9 @@
    END IF
    END DO
    END DO
-   v1d = 0.0
-   v2d = 0.0
-   normd = 0.0
+   v1d = 0.0_8
+   v2d = 0.0_8
+   normd = 0.0_8
    !
    !          **************************************************************
    !          *                                                            *
@@ -321,7 +321,7 @@
    &          normd(3)
    arg1 = norm(1)**2 + norm(2)**2 + norm(3)**2
    IF (arg1 .EQ. 0.0) THEN
-   lengthd = 0.0
+   lengthd = 0.0_8
    ELSE
    lengthd = arg1d/(2.0*SQRT(arg1))
    END IF

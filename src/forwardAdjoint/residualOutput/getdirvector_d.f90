@@ -90,9 +90,9 @@
    !    ( <=> rotate z-axis alpha radians ccw)
    tmpd = -alphad
    tmp = -alpha
-   zbnd = 0.0
-   ybnd = 0.0
-   xbnd = 0.0
+   zbnd = 0.0_8
+   ybnd = 0.0_8
+   xbnd = 0.0_8
    CALL VECTORROTATION_D(x1, x1d, y1, y1d, z1, z1d, 3, tmp, tmpd, xbn, &
    &                    xbnd, ybn, ybnd, zbn, zbnd)
    ! 2) rotate beta radians ccw about y-axis
@@ -105,9 +105,9 @@
    ! Compute the wind direction vector.Aerosurf axes different!!
    ! 1) rotate alpha radians cw about z-axis
    !    ( <=> rotate z-axis alpha radians ccw)
-   zbnd = 0.0
-   ybnd = 0.0
-   xbnd = 0.0
+   zbnd = 0.0_8
+   ybnd = 0.0_8
+   xbnd = 0.0_8
    CALL VECTORROTATION_D(x1, x1d, y1, y1d, z1, z1d, 2, alpha, alphad, &
    &                    xbn, xbnd, ybn, ybnd, zbn, zbnd)
    ! 2) rotate beta radians ccw about y-axis
@@ -116,9 +116,9 @@
    &                    , x1d, y1, y1d, z1, z1d)
    ELSE
    CALL TERMINATE('getDirVector', 'Invalid Lift Direction')
-   zwd = 0.0
-   xwd = 0.0
-   ywd = 0.0
+   zwd = 0.0_8
+   xwd = 0.0_8
+   ywd = 0.0_8
    END IF
    winddirectiond(1) = xwd
    winddirection(1) = xw

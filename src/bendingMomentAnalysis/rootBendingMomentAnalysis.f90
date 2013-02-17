@@ -55,14 +55,14 @@ subroutine computeRootBendingMoment(sol,bendingMoment)
      elasticMomentz = cmz - cfy*(pointRefEC(1)-pointref(1))/lengthref+cfx*(pointRefEC(2)-pointRef(2))/lengthref
     
      BendingMoment = sqrt(elasticMomentx**2+elasticMomentz**2)
-     
+     elasticMomenty = zero
   elseif (liftIndex == 3) then
      !y out wing sum momentx,momenty
      elasticMomentx = cmx + cfz*(pointrefEC(2)-pointRef(2))/lengthref+cfy*(pointrefEC(3)-pointref(3))/lengthref
      elasticMomenty = cmy + cfz*(pointRefEC(1)-pointRef(1))/lengthref+cfx*(pointrefEC(3)-pointRef(3))/lengthref
      
      BendingMoment = sqrt(elasticMomentx**2+elasticMomenty**2)
-     
+     elasticMomentz = zero
   end if
   if( myid==0 .and. printIterations) then
      print *,'Bending moment components',elasticMomentx,elasticMomenty,elasticMomentz

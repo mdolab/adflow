@@ -66,7 +66,7 @@
    ! constant cv.
    eintd = scaled*(cpeint(0)+cv0*(t-cptrange(0))) + scale*cv0*td
    eint = scale*(cpeint(0)+cv0*(t-cptrange(0)))
-   gammad(i, j, k) = 0.0
+   gammad(i, j, k) = 0.0_8
    gamma(i, j, k) = (cv0+one)/cv0
    ELSE IF (t .GE. cptrange(cpnparts)) THEN
    ! Temperature is larger than the largest temperature
@@ -75,7 +75,7 @@
    eintd = scaled*(cpeint(cpnparts)+cvn*(t-cptrange(cpnparts))) + scale&
    &      *cvn*td
    eint = scale*(cpeint(cpnparts)+cvn*(t-cptrange(cpnparts)))
-   gammad(i, j, k) = 0.0
+   gammad(i, j, k) = 0.0_8
    gamma(i, j, k) = (cvn+one)/cvn
    ELSE
    ! Temperature is in the curve fit range.
@@ -103,7 +103,7 @@
    100 eintd = -td
    eint = cptempfit(nn)%eint0 - t
    cv = -one
-   cvd = 0.0
+   cvd = 0.0_8
    DO ii=1,cptempfit(nn)%nterm
    IF (t .GT. 0.0 .OR. (t .LT. 0.0 .AND. cptempfit(nn)%exponents(ii) &
    &          .EQ. INT(cptempfit(nn)%exponents(ii)))) THEN

@@ -99,7 +99,7 @@
    dphizd = DERIVATIVERIGIDROTANGLE_D(degreepolzrot, coefpolzrot, &
    &    degreefourzrot, omegafourzrot, coscoeffourzrot, sincoeffourzrot, t, &
    &    dphiz)
-   dmd = 0.0
+   dmd = 0.0_8
    !print *,'dphiz',dphiz
    ! Compute the time derivative of the rotation matrix applied to
    ! the coordinates at t == 0.
@@ -117,11 +117,11 @@
    dm(2, 2) = (sinx*siny*cosz-cosx*sinz)*dphiz
    dmd(2, 3) = (cosx*siny*cosz+sinx*sinz)*dphizd
    dm(2, 3) = (cosx*siny*cosz+sinx*sinz)*dphiz
-   dmd(3, 1) = 0.0
+   dmd(3, 1) = 0.0_8
    dm(3, 1) = zero
-   dmd(3, 2) = 0.0
+   dmd(3, 2) = 0.0_8
    dm(3, 2) = zero
-   dmd(3, 3) = 0.0
+   dmd(3, 3) = 0.0_8
    dm(3, 3) = zero
    ! Part 2: mz * dmy * mx.
    dmd(1, 1) = dmd(1, 1) - siny*cosz*dphiyd
@@ -156,25 +156,25 @@
    dmd(3, 3) = dmd(3, 3) - sinx*cosy*dphixd
    dm(3, 3) = dm(3, 3) - sinx*cosy*dphix
    ! Determine the rotation matrix at t == t.
-   md(1, 1) = 0.0
+   md(1, 1) = 0.0_8
    m(1, 1) = cosy*cosz
-   md(2, 1) = 0.0
+   md(2, 1) = 0.0_8
    m(2, 1) = cosy*sinz
-   md(3, 1) = 0.0
+   md(3, 1) = 0.0_8
    m(3, 1) = -siny
-   md(1, 2) = 0.0
+   md(1, 2) = 0.0_8
    m(1, 2) = sinx*siny*cosz - cosx*sinz
-   md(2, 2) = 0.0
+   md(2, 2) = 0.0_8
    m(2, 2) = sinx*siny*sinz + cosx*cosz
-   md(3, 2) = 0.0
+   md(3, 2) = 0.0_8
    m(3, 2) = sinx*cosy
-   md(1, 3) = 0.0
+   md(1, 3) = 0.0_8
    m(1, 3) = cosx*siny*cosz + sinx*sinz
-   md(2, 3) = 0.0
+   md(2, 3) = 0.0_8
    m(2, 3) = cosx*siny*sinz - sinx*cosz
-   md(3, 3) = 0.0
+   md(3, 3) = 0.0_8
    m(3, 3) = cosx*cosy
-   rotationmatrixd = 0.0
+   rotationmatrixd = 0.0_8
    ! Determine the matrix product dm * inverse(m), which will give
    ! the derivative of the rotation matrix when applied to the
    ! current coordinates. Note that inverse(m) == transpose(m).

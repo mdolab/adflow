@@ -37,6 +37,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+#ifndef USE_TAPENADE
        type sendCommListType
 
          ! block(..):     Local block id to which the cell/node belongs.
@@ -204,8 +205,9 @@
        ! SUmb_comm_world: The communicator of this processor group.
        ! myID:            My processor number in SUmb_comm_world.
        ! nProc:           The number of processors in SUmb_comm_world.
+       integer :: SUmb_comm_world, SUmb_comm_self
 
-       integer :: SUmb_comm_world, SUmb_comm_self, myID, nProc
+       integer :: myID, nProc
 
        ! commPatternCell_1st(nLevel): The communication pattern for 1st
        !                              level cell halo's on the multiple
@@ -219,7 +221,7 @@
        ! CommPatternOverset(nLevel,   the communication pattern for
        !                      nsps):  Overset halos on the multiple
        !                              grids.
-
+ 
        type(commType), allocatable, dimension(:)   :: commPatternCell_1st
        type(commType), allocatable, dimension(:)   :: commPatternCell_2nd
        type(commType), allocatable, dimension(:)   :: commPatternNode_1st
@@ -264,5 +266,5 @@
        real(kind=realType), allocatable, dimension(:) :: recvBuffer
 
        integer, allocatable, dimension(:) :: sendRequests, recvRequests
-
+#endif
        end module communication

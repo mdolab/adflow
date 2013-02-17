@@ -41,7 +41,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
   real(kind=realType) :: pm1, fx, fy, fz, fn
   real(kind=realType) :: xc, yc, zc
   real(kind=realType) :: fact, rho, mul, yplus, dwall
-
+  real(kind=realType) :: scaleDim
   real(kind=realType) :: tauXx, tauYy, tauZz
   real(kind=realType) :: tauXy, tauXz, tauYz
 
@@ -53,7 +53,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
   real(kind=realType), dimension(:,:),   pointer :: dd2Wall
   real(kind=realType), dimension(:,:,:), pointer :: ss, xx
   real(kind=realType), dimension(:,:,:), pointer :: norm
-
+  real(kind=realType) :: mx, my, mz
   logical :: viscousSubface
   !
   !      ******************************************************************
@@ -62,6 +62,9 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
   !      *                                                                *
   !      ******************************************************************
   !
+  ! Set the actual scaling factor such that ACTUAL forces are computed
+  scaleDim = pRef/pInf
+
   ! Determine the reference point for the moment computation in
   ! meters.
 
@@ -205,7 +208,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
               ! fact to account for the possibility of an inward or
               ! outward pointing normal.
 
-              pm1 = fact*(half*(pp2(i,j) + pp1(i,j)) - pInf)
+              pm1 = fact*(half*(pp2(i,j) + pp1(i,j)) - pInf)*scaleDim
 
               xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
                    +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
@@ -229,9 +232,19 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
               cFp(2) = cFp(2) + fy
               cFp(3) = cFp(3) + fz
 
-              cMp(1) = cMp(1) + yc*fz - zc*fy
-              cMp(2) = cMp(2) + zc*fx - xc*fz
-              cMp(3) = cMp(3) + xc*fy - yc*fx
+              mx = yc*fz - zc*fy
+              my = zc*fx - xc*fz
+              mz = xc*fy - yc*fx
+
+              cMp(1) = cMp(1) + mx
+              cMp(2) = cMp(2) + my
+              cMp(3) = cMp(3) + mz
+
+              ! Store Moment data on face
+              BCData(nn)%M(i,j,1) = mx
+              BCData(nn)%M(i,j,2) = my
+              BCData(nn)%M(i,j,3) = mz
+              
            enddo
         enddo
         !
@@ -299,9 +312,18 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
                  BCData(nn)%F(i,j,2) = BCData(nn)%F(i,j,2) + fy
                  BCData(nn)%F(i,j,3) = BCData(nn)%F(i,j,3) + fz
 
-                 cMv(1) = cMv(1) + yc*fz - zc*fy
-                 cMv(2) = cMv(2) + zc*fx - xc*fz
-                 cMv(3) = cMv(3) + xc*fy - yc*fx
+                 mx = yc*fz - zc*fy
+                 my = zc*fx - xc*fz
+                 mz = xc*fy - yc*fx
+                 
+                 cMv(1) = cMv(1) + mx
+                 cMv(2) = cMv(2) + my
+                 cMv(3) = cMv(3) + mz
+
+                 ! Store Moment data on face
+                 BCData(nn)%M(i,j,1) = BCData(nn)%M(i,j,1) + mx
+                 BCData(nn)%M(i,j,2) = BCData(nn)%M(i,j,2) + my
+                 BCData(nn)%M(i,j,3) = BCData(nn)%M(i,j,3) + mz
 
                  ! Compute the tangential component of the stress tensor,
                  ! which is needed to monitor y+. The result is stored
@@ -311,11 +333,11 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
                  ! sign into account (it should be a minus sign).
 
                  fx = tauXx*norm(i,j,1) + tauXy*norm(i,j,2) &
-                      + tauXz*norm(i,j,3)
+                      + tauXz*norm(i,j,3)*scaleDim
                  fy = tauXy*norm(i,j,1) + tauYy*norm(i,j,2) &
-                      + tauYz*norm(i,j,3)
+                      + tauYz*norm(i,j,3)*scaleDim
                  fz = tauXz*norm(i,j,1) + tauYz*norm(i,j,2) &
-                      + tauZz*norm(i,j,3)
+                      + tauZz*norm(i,j,3)*scaleDim
 
                  fn = fx*norm(i,j,1) + fy*norm(i,j,2) + fz*norm(i,j,3)
 
@@ -350,7 +372,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
   ! obtain the correct coefficients.
 
   fact = two/(gammaInf*pInf*MachCoef*MachCoef &
-       *surfaceRef*LRef*LRef)
+       *surfaceRef*LRef*LRef*scaleDim)
 
   cFp(1) = cFp(1)*fact; cFp(2) = cFp(2)*fact; cFp(3) = cFp(3)*fact
   cFv(1) = cFv(1)*fact; cFv(2) = cFv(2)*fact; cFv(3) = cFv(3)*fact

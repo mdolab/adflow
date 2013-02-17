@@ -14,9 +14,6 @@ subroutine setPointers_d(nn, level, sps)
   
   viscSubfaced => flowDomsd(nn,1,sps)%viscSubface
 
-  tempHalo => flowDoms(nn, 1, sps)%tempHalo
-  tempHalod => flowDomsd(nn, 1, sps)%tempHalo
-
   xd    => flowDomsd(nn,1,sps)%x
 
   sid     => flowDomsd(nn,1,sps)%si

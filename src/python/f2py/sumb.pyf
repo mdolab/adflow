@@ -298,49 +298,32 @@ python module sumb
        ! SUmb ADjoint Core Routines
        ! ############################################################################
 
-       subroutine initializepetsc ! in :sumb:../../adjoint/initializePETSc.F90
+       subroutine initializepetsc 
        end subroutine initializepetsc
 
-       subroutine preprocessingadjoint ! in :sumb:../../adjoint/preprocessingADjoint.f90
+       subroutine preprocessingadjoint 
        end subroutine preprocessingadjoint
     
        subroutine solveradjoint
        end subroutine solveradjoint
 
        ! State Variables
-       subroutine createstatepetscvars
-       end subroutine createstatepetscvars
+       subroutine createpetscvars
+       end subroutine createpetscvars
 
-       subroutine destroystatepetscvars
-       end subroutine destroystatepetscvars
+       subroutine destroypetscvars
+       end subroutine destroypetscvars
 
-       ! Spatial Variables
-       subroutine createspatialpetscvars
-       end subroutine createspatialpetscvars
-
-       subroutine destroyspatialpetscvars
-       end subroutine destroyspatialpetscvars
-       
-       ! Extra Variables
-       subroutine createextrapetscvars
-       end subroutine createextrapetscvars
-
-       subroutine destroyextrapetscvars
-       end subroutine destroyextrapetscvars
-       
-       ! KSP 
-       subroutine createpetscksp 
-       end subroutine createpetscksp
-
+       ! KSP Setup
        subroutine setuppetscksp 
        end subroutine setuppetscksp
-       
-       subroutine destroypetscksp
-       end subroutine destroypetscksp
 
        ! Residual Assembly Functions
        subroutine setupallresidualmatrices 
        end subroutine setupallresidualmatrices
+
+       subroutine setupallresidualmatricesfwd
+       end subroutine setupallresidualmatricesfwd
 
        subroutine setupadjointmatrix
        end subroutine setupadjointmatrix
@@ -372,14 +355,18 @@ python module sumb
          logical :: usedjdx
        end subroutine computeobjpartials
 
+       subroutine computeobjectivepartialsfwd(costfunction) ! in :sumb:../../adjoint/computeObjPartials.F90
+         integer(kind=inttype) intent(in) :: costfunction
+       end subroutine computeobjectivepartialsfwd
+
         subroutine getdidw(output,nstate) ! in :test:computeObjPartials.F90
             real(kind=realtype) dimension(nstate),intent(inout) :: output
             integer(kind=inttype) optional,intent(in,out),check(len(output)>=nstate),depend(output) :: nstate=len(output)
         end subroutine getdidw
 
-        subroutine getdidx(ndof,output) ! in :test:computeObjPartials.F90
-          integer(kind=inttype) optional,intent(in),check(len(output)>=ndof),depend(output) :: ndof=len(output)
+        subroutine getdidx(output,ndof) ! in :test:computeObjPartials.F90
           real(kind=realtype) dimension(ndof),intent(inout) :: output
+          integer(kind=inttype) optional,intent(in),check(len(output)>=ndof),depend(output) :: ndof=len(output)
         end subroutine getdidx
 
        ! -------- Get/Set Functions --------------------
@@ -405,6 +392,13 @@ python module sumb
          integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
        end subroutine getdrdxvpsi
        
+       subroutine spectralprecscribedmotion(input,nin,dxv,nout)
+         real(kind=realtype) dimension(nin),intent(in) :: input
+         integer(kind=inttype), optional,intent(in),check(len(input)>=nin),depend(input) :: nin=len(input)
+         real(kind=realtype) dimension(nout),intent(out),depend(nout) :: dxv
+         integer(kind=inttype) intent(in) :: nout
+       end subroutine spectralprecscribedmotion
+  
         subroutine getdrdapsi(output,ndv,adjoint,nstate) ! in :test:getdRdaPsi.F90
             real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
             integer(kind=inttype) intent(in) :: ndv

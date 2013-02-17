@@ -21,10 +21,10 @@ SRC = ..
 TAPENADE_PARSERFILESEPARATOR = "/"
 
 # Dependent output variables (separator: white space, default: all)
-TAPENADE_OUTVARS = "flowdoms%dw flowdoms%w flowdoms%x Force Moment Lift Drag cForce cMoment CL CD BCData%F costFuncMat"
+TAPENADE_OUTVARS = "flowdoms%dw flowdoms%w flowdoms%x Force Moment Lift Drag cForce cMoment CL CD BCData%F BCData%M costFuncMat"
 
 # Independent input variables (separator: white space, default: all)
-TAPENADE_VARS = "flowdoms%w  flowdoms%x alpha beta inputPhysics%mach inputPhysics%machGrid inputPhysics%lengthRef inputPhysics%pointRef inputPhysics%surfaceRef" 
+TAPENADE_VARS = "flowdoms%w  flowdoms%x alpha beta inputPhysics%mach inputPhysics%machGrid inputPhysics%machCoef inputPhysics%lengthRef inputPhysics%pointRef inputPhysics%surfaceRef" 
 
 # Name of the top routine
 TAPENADE_HEADROUTINE = "block_res"
@@ -37,7 +37,7 @@ TAPENADE_OUTDIR = $(SRC)/forwardAdjoint/residualTapenade
 
 # Integer, double and real precision (bytes)
 TAPENADE_PRECISION = -i4 -dr8 -r8
-
+		   
 #     ******************************************************************
 #     *                                                                *
 #     * Routines to be differentiated (and dependencies).              *
@@ -52,7 +52,7 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.f90\
 		$(SRC)/modules/block.F90\
 		$(SRC)/modules/inputParam.F90\
 		$(SRC)/modules/constants.F90 \
-		$(SRC)/modules/precision.F90\
+		$(SRC)/modules/precision_tapenade.f90\
 		$(SRC)/modules/iteration.f90\
 		$(SRC)/modules/section.f90\
 		$(SRC)/modules/communication.f90\
@@ -62,7 +62,6 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.f90\
 		$(SRC)/modules/CpCurveFits.f90\
 		$(SRC)/modules/blockPointers.f90 \
 		$(SRC)/modules/flowVarRefState.F90 \
-		$(SRC)/modules/killSignals.f90\
 		$(SRC)/modules/costFunctions.F90\
 		$(SRC)/solver/inviscidCentralFlux.F90\
 		$(SRC)/solver/inviscidDissFluxCusp.f90\
@@ -138,7 +137,7 @@ default:
 	 -msglevel 30 -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(IFILES)
 
 # Remove preprocessor files
-	make -f Makefile_tapenade cleanpreprocess
+#	make -f Makefile_tapenade cleanpreprocess
 
 preprocess:
 	@echo "Preprocessing all input files..."

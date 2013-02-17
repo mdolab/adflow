@@ -15,28 +15,35 @@ subroutine determineStencil(lumped)
   integer(kind=intType) :: ncellx,ncelly,ncellz
   integer(kind=intType) :: nnodex,nnodey,nnodez
 
-  integer(kind=intType) :: i,j,k,l
+  integer(kind=intType) :: i,j,k,l, nn
   integer(kind=intType) :: icell,jcell,kcell,inode,jnode,knode
   real(kind=realType) :: delta_x
   real(kind=realType) :: dw_0(-3:3,-3:3,-3:3,nw)
   real(kind=realType) :: fw_0(-3:3,-3:3,-3:3,nw)
   integer(kind=intType) :: stencil(-3:3,-3:3,-3:3)
+  real(kind=realType) :: deriv(-3:3,-3:3,-3:3,nw,2)
   logical :: different
-  delta_x = 1.0
+  real(kind=realType) :: alpha, beta, Lift, Drag, CL, CD
+  real(kind=realType), dimension(3) :: Force, Moment, cForce, cMoment
+  integer(kind=intType) :: liftIndex
+  call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
+
+  delta_x = one
  
   if (lumped) then
      lumpedDiss=.True.
   end if
 
   stencil = 0
-  call setPointers(1,1,1)
+  nn = 1
+  call setPointers(nn,1,1)
   ! Make sure the first block is big enough
   ncellx = il-2+1
   ncelly = jl-2+1
   ncellz = kl-2+1
   lumpedDiss = .True.
-
-  if (ncellx < 5 .or. ncelly < 5 .or. ncellz < 5) then
+  print *,'Block size:',il, jl, kl
+  if (ncellx < 7 .or. ncelly < 7 .or. ncellz < 7) then
      print *,'Block 1 is too small'
      stop
   end if
@@ -49,12 +56,14 @@ subroutine determineStencil(lumped)
   groundLevel = 1
   currentLevel = 1
   ! Get current dw
-  !call block_res(1,1)
+  call block_res(nn, 1, .False., .False., &
+       alpha, beta, liftIndex, Force, Moment, Lift, Drag, &
+       cForce, cMoment, CL, CD)
   
-  ! Copy out dw
-  do k=-3,3
-     do j=-3,3
-        do i=-3,3
+! Copy out dw
+  do k=3,3
+     do j=3,3
+        do i=3,3
            dw_0(i,j,k,:) = dw(icell+i,jcell+j,kcell+k,:)
            fw_0(i,j,k,:) = fw(icell+i,jcell+j,kcell+k,:)
         end do
@@ -67,15 +76,17 @@ subroutine determineStencil(lumped)
   end do
 
   ! Re-run dw
-  !call block_res(1,1)
-
-  do i=-3,3
-     do j=-3,3
+  call block_res(nn, 1, .False., .False., &
+       alpha, beta, liftIndex, Force, Moment, Lift, Drag, &
+       cForce, cMoment, CL, CD)
+ 
+  do i=3,3
+     do j=3,3
         do k=-3,3
            different = .False.
            do l=1,nw
 
-              if (abs(dw(icell+i,jcell+j,kcell+k,l) - dw_0(i,j,k,l)) > 1e-12) then
+              if (abs(dw(icell+i,jcell+j,kcell+k,l) - dw_0(i,j,k,l)) > 1e-13)then
                  different = .true. 
               end if
            end do
@@ -100,7 +111,7 @@ subroutine determineStencil(lumped)
   ! Now also do it for the spatial stencil
 
   stencil = 0
-  delta_x = .001
+  delta_x = 1.0
   ! Make sure the first block is big enough
   nnodex = il
   nnodey = jl
@@ -114,15 +125,20 @@ subroutine determineStencil(lumped)
   
   ! Get the center cell
   inode = int((il + 1)/2)
-  jnode = int((il + 1)/2)
-  knode = int((il + 1)/2)
+  jnode = int((jl + 1)/2)
+  knode = int((kl + 1)/2)
 
   groundLevel = 1
   currentLevel = 1
 
   ! Get current dw -> We can use the normal version here
-  !call block_res(1,1)
-  
+  call block_res(nn, 1, .True., .False., &
+       alpha, beta, liftIndex, Force, Moment, Lift, Drag, &
+       cForce, cMoment, CL, CD)
+  call block_res(nn, 1, .False., .False., &
+       alpha, beta, liftIndex, Force, Moment, Lift, Drag, &
+       cForce, cMoment, CL, CD)
+  dw_0=zero
   ! Copy out dw
   do k=-3,3
      do j=-3,3
@@ -133,25 +149,39 @@ subroutine determineStencil(lumped)
   end do
 
   ! Set a peturbation in all DOF at coordinate inode,jnode,knode
-  do l=1,3
-     x(inode,jnode,knode,l) = x(inode,jnode,knode,l) + delta_x
-  end do
+  x(inode,jnode,knode,1) = x(inode,jnode,knode,1) + delta_x
+  x(inode,jnode,knode,2) = x(inode,jnode,knode,2) + delta_x
+  x(inode,jnode,knode,3) = x(inode,jnode,knode,3) + delta_x
+  
 
   ! Re-run dw
-  !call block_res_spatial(1,1)
-
-  do i=-3,3
+  call block_res(nn, 1, .True., .False., &
+       alpha, beta, liftIndex, Force, Moment, Lift, Drag, &
+       cForce, cMoment, CL, CD)
+  do k=-3,3
      do j=-3,3
-        do k=-3,3
+        do i=-3,3
+
+           if (inode+i > il .or. inode + i < 2 .or. &
+                jnode+j > jl .or. jnode + j < 2 .or. &
+                knode+k > kl .or. knode +k < 2) then
+              print *,'Block too small'
+              stop
+           end if
+    
            different = .False.
            do l=1,nw
 
               if (abs(dw(inode+i,jnode+j,knode+k,l) - dw_0(i,j,k,l)) > 1e-12) then
                  different = .true. 
+                 print *,'diff becuase of:'
+                 print *, dw(inode+i,jnode+j,knode+k,l)
+                 print *, dw_0(i,j,k,l)
               end if
            end do
            if (different) then
               stencil(i,j,k) = 1
+              deriv(i,j,k,1,1) = sum((abs(dw(inode+i, jnode+j,knode+k,:) - dw_0(i,j,k,:)))/delta_x)
            end if
         end do
      end do
@@ -162,7 +192,7 @@ subroutine determineStencil(lumped)
      do j=-3,3
         do k=-3,3
            if (stencil(i,j,k) == 1) then
-              print *,i,j,k
+              print *,i,j,k,deriv(i,j,k,1,1)
            end if
         end do
      end do
