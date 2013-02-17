@@ -2,9 +2,9 @@
    !  Tapenade 3.6 (r4159) - 21 Sep 2011 10:11
    !
    !  Differentiation of setflowinfinitystate in forward (tangent) mode:
-   !   variations   of useful results: pinfcorr
-   !   with respect to varying inputs: uinf muinf rhoinf pinf veldirfreestream
-   !   Plus diff mem management of: winf:in
+   !   variations   of useful results: pinfcorr winf
+   !   with respect to varying inputs: rgas uinf muinf rhoinf pinf
+   !                machcoef veldirfreestream
    !
    !      ******************************************************************
    !      *                                                                *
@@ -36,12 +36,15 @@
    !
    INTEGER(kind=inttype) :: ierr
    REAL(kind=realtype) :: nuinf, ktmp, uinf2
-   REAL(kind=realtype) :: nuinfd, uinf2d
+   REAL(kind=realtype) :: nuinfd, ktmpd, uinf2d
    !
    !      Function definition
    !
    REAL(kind=realtype) :: SANUKNOWNEDDYRATIO
    REAL(kind=realtype) :: SANUKNOWNEDDYRATIO_D
+   ! Dummy parameters
+   REAL(kind=realtype) :: vinf, zinf
+   REAL(kind=realtype) :: vinfd, zinfd
    !
    !      ******************************************************************
    !      *                                                                *
@@ -52,10 +55,11 @@
    ! Compute the velocity squared based on MachCoef;
    ! needed for the initialization of the turbulent energy,
    ! especially for moving geometries.
-   uinf2d = (machcoef**2*gammainf*pinfd*rhoinf-machcoef**2*gammainf*pinf*&
-   &    rhoinfd)/rhoinf**2
+   uinf2d = (gammainf*((machcoefd*machcoef+machcoef*machcoefd)*pinf+&
+   &    machcoef**2*pinfd)*rhoinf-machcoef**2*gammainf*pinf*rhoinfd)/rhoinf&
+   &    **2
    uinf2 = machcoef*machcoef*gammainf*pinf/rhoinf
-   winfd = 0.0
+   winfd = 0.0_8
    ! Allocate the memory for wInf.
    ! Set the reference value of the flow variables, except the total
    ! energy. This will be computed at the end of this routine.
@@ -101,7 +105,7 @@
    winf(itu2) = 0.09_realType*winf(itu1)**2/(eddyvisinfratio*nuinf)
    winfd(itu3) = 0.666666_realType*winfd(itu1)
    winf(itu3) = 0.666666_realType*winf(itu1)
-   winfd(itu4) = 0.0
+   winfd(itu4) = 0.0_8
    winf(itu4) = 0.0_realType
    END SELECT
    END IF
@@ -116,7 +120,17 @@
    END IF
    ! Compute the free stream total energy.
    ktmp = zero
-   IF (kpresent) ktmp = winf(itu1)
-   CALL ETOTARRAY(rhoinf, uinf, zero, zero, pinfcorr, ktmp, winf(irhoe&
-   &              ), kpresent, 1)
+   IF (kpresent) THEN
+   ktmpd = winfd(itu1)
+   ktmp = winf(itu1)
+   ELSE
+   ktmpd = 0.0_8
+   END IF
+   vinf = zero
+   zinf = zero
+   zinfd = 0.0_8
+   vinfd = 0.0_8
+   CALL ETOTARRAY_D(rhoinf, rhoinfd, uinf, uinfd, vinf, vinfd, zinf, &
+   &             zinfd, pinfcorr, pinfcorrd, ktmp, ktmpd, winf(irhoe), winfd&
+   &             (irhoe), kpresent, 1)
    END SUBROUTINE SETFLOWINFINITYSTATE_D

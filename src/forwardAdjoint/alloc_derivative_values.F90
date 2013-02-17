@@ -148,6 +148,10 @@ subroutine alloc_derivative_values(nn, level)
         call EChk(ierr,__FILE__,__LINE__)
         bcDatad(mm)%F = zero
 
+        allocate(BCDatad(mm)%M(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        bcDatad(mm)%M = zero
+
         ! Determine the boundary condition we are having here
         ! and allocate the memory accordingly.
 
@@ -216,6 +220,7 @@ subroutine alloc_derivative_values(nn, level)
   allocspectralLoop: do sps=1,nTimeIntervalsSpectral
 
      call setPointers(nn,level,sps)
+
      call block_res(nn, sps, .False., .False., &
           alpha, beta, liftIndex, Force, Moment, Lift, Drag, &
           cForce, cMoment, CL, CD)
@@ -242,7 +247,7 @@ subroutine alloc_derivative_values(nn, level)
      flowdomsd(nn,1,sps)%dwtmp = dw
      flowdomsd(nn,1,sps)%xtmp  = x
    
-     !call initRes_block(1,nwf,nn,sps)
+     call initRes_block(1, nwf, nn, sps)
 
      ! Note: we have to divide by the volume for dwtmp2 since
      ! normally, dw would have been mulitpiled by 1/Vol in block_res 

@@ -34,6 +34,9 @@
 !      Function definition
 !
        real(kind=realType) :: saNuKnownEddyRatio
+
+       ! Dummy parameters
+       real(kind=realType) :: vinf, zinf
 !
 !      ******************************************************************
 !      *                                                                *
@@ -116,7 +119,9 @@
        
        ktmp = zero
        if( kPresent ) ktmp = wInf(itu1)
-       call etotArray(rhoInf, uInf, zero, zero, pInfCorr, ktmp, &
+       vInf = zero
+       zInf = zero
+       call etotArray(rhoInf, uInf, vInf, zInf, pInfCorr, ktmp, &
                        wInf(irhoE), kPresent, 1)
        
        end subroutine setFlowInfinityState

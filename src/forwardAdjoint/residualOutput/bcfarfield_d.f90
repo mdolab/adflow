@@ -4,7 +4,7 @@
    !  Differentiation of bcfarfield in forward (tangent) mode:
    !   variations   of useful results: *rev *p *gamma *w *rlv
    !   with respect to varying inputs: *rev *p *gamma *w *rlv *(*bcdata.norm)
-   !                rgas pinfcorr gammaconstant
+   !                rgas pinfcorr winf gammaconstant
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !                bcdata:in *bcdata.norm:in *bcdata.rface:in (global)cphint:in-out
    !
@@ -48,7 +48,7 @@
    REAL(kind=realtype) :: gm1, ovgm1, ac1, ac2
    REAL(kind=realtype) :: ac1d, ac2d
    REAL(kind=realtype) :: r0, u0, v0, w0, qn0, vn0, c0, s0
-   REAL(kind=realtype) :: qn0d, c0d, s0d
+   REAL(kind=realtype) :: r0d, u0d, v0d, w0d, qn0d, c0d, s0d
    REAL(kind=realtype) :: re, ue, ve, we, qne, ce
    REAL(kind=realtype) :: red, ued, ved, wed, qned, ced
    REAL(kind=realtype) :: qnf, cf, uf, vf, wf, sf, cc, qq
@@ -99,19 +99,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    END SUBROUTINE SETBCPOINTERS_D
    END INTERFACE
-      !!$       !File Parameters remove for AD
-   !!$       integer :: unitx = 12,ierror
-   !!$      integer ::iii,iiii,jjj,jjjj,kkk,kkkk,nnnn,istart2,jstart2,kstart2,iend2,jend2,kend2,n,ii,jj
-   !!$      character(len = 16)::outfile
-   !!$      
-   !!$      outfile = "xoriginal.txt"
-   !!$      
-   !!$      open (UNIT=unitx,File=outfile,status='old',position='append',action='write',iostat=ierror)
-   !!$      if(ierror /= 0)                        &
-   !!$           call terminate("verifyResiduals", &
-   !!$           "Something wrong when &
-   !!$           &calling open")
-   !
+      !
    !      ******************************************************************
    !      *                                                                *
    !      * Begin execution                                                *
@@ -123,20 +111,32 @@
    ovgm1 = one/gm1
    ! Compute the three velocity components, the speed of sound and
    ! the entropy of the free stream.
+   r0d = -(one*winfd(irho)/winf(irho)**2)
    r0 = one/winf(irho)
+   u0d = winfd(ivx)
    u0 = winf(ivx)
+   v0d = winfd(ivy)
    v0 = winf(ivy)
+   w0d = winfd(ivz)
    w0 = winf(ivz)
-   arg1d = gammainf*r0*pinfcorrd
+   arg1d = gammainf*(pinfcorrd*r0+pinfcorr*r0d)
    arg1 = gammainf*pinfcorr*r0
    IF (arg1 .EQ. 0.0) THEN
-   c0d = 0.0
+   c0d = 0.0_8
    ELSE
    c0d = arg1d/(2.0*SQRT(arg1))
    END IF
    c0 = SQRT(arg1)
+   IF (winf(irho) .GT. 0.0 .OR. (winf(irho) .LT. 0.0 .AND. gammainf .EQ. &
+   &      INT(gammainf))) THEN
+   pwr1d = gammainf*winf(irho)**(gammainf-1)*winfd(irho)
+   ELSE IF (winf(irho) .EQ. 0.0 .AND. gammainf .EQ. 1.0) THEN
+   pwr1d = winfd(irho)
+   ELSE
+   pwr1d = 0.0
+   END IF
    pwr1 = winf(irho)**gammainf
-   s0d = -(pwr1*pinfcorrd/pinfcorr**2)
+   s0d = (pwr1d*pinfcorr-pwr1*pinfcorrd)/pinfcorr**2
    s0 = pwr1/pinfcorr
    ! Loop over the boundary condition subfaces of this block.
    bocos:DO nn=1,nbocos
@@ -182,43 +182,10 @@
    nny = bcdata(nn)%norm(i, j, 2)
    nnzd = bcdatad(nn)%norm(i, j, 3)
    nnz = bcdata(nn)%norm(i, j, 3)
-   !!$       !print out pAdj
-   !!$       istart2 = -1!2
-   !!$       jstart2 = -1!2
-   !!$       kstart2 = -1!2
-   !!$       iend2 = 1!2
-   !!$       jend2 = 1!2
-   !!$       kend2 = 1!2 
-   !!$       if(i==BCData(nn)%icBeg) istart2=0
-   !!$       if(j==BCData(nn)%jcBeg) jstart2= 0
-   !!$       !if(i==BCData(nn)%icBeg+1) istart2=-1
-   !!$       !if(j==BCData(nn)%jcBeg+1) jstart2=-1
-   !!$!       if(kcell==2) kstart2=-1
-   !!$       !if(i==BCData(nn)%icEnd-1) iend2=1
-   !!$       !if(j==BCData(nn)%jcEnd-1) jend2=1
-   !!$       if(i==BCData(nn)%icEnd) iend2=0
-   !!$       if(j==BCData(nn)%jcEnd) jend2=0
-   !!$!       if(kcell==kl) kend2=1
-   !!$       do jjjj = jstart2,jend2
-   !!$          do iiii = istart2,iend2
-   !!$             !do kkkk = kstart2,kend2
-   !!$               ! do n = 1,3!nw
-   !!$                   !do n = 1,1!nw
-   !!$                   !do n = 1,nw 
-   !!$                   !do sps2 = 1,nTimeIntervalsSpectral
-   !!$                   ii = i+iiii
-   !!$                   jj = j+jjjj
-   !!$                   !k = kcell+kkkk
-   !!$                   !print *,'indices',i,j,iiii,jjjj,ii,jj,BCData(nn)%jcEnd, BCData(nn)%icEnd
-   !!$
-   !!$                   write(unitx,11)i,j,ii,jj,nn,BCData(nn)%norm(ii,jj,1), BCData(nn)%rface(ii,jj)
-   !!$11               format(1x,'wadj',5I8,2f20.14) 
-   !!$               ! end do
-   !!$             end do
-   !!$          end do
    ! Compute the normal velocity of the free stream and
    ! substract the normal velocity of the mesh.
-   qn0d = u0*nnxd + v0*nnyd + w0*nnzd
+   qn0d = u0d*nnx + u0*nnxd + v0d*nny + v0*nnyd + w0d*nnz + w0*&
+   &            nnzd
    qn0 = u0*nnx + v0*nny + w0*nnz
    vn0 = qn0 - bcdata(nn)%rface(i, j)
    ! Compute the three velocity components, the normal
@@ -239,7 +206,7 @@
    &            (i, j)*re*pp2d(i, j)
    arg1 = gamma2(i, j)*pp2(i, j)*re
    IF (arg1 .EQ. 0.0) THEN
-   ced = 0.0
+   ced = 0.0_8
    ELSE
    ced = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -309,16 +276,16 @@
    END DO
    ELSE
    ! Inflow
-   ufd = (qnfd-qn0d)*nnx + (qnf-qn0)*nnxd
+   ufd = u0d + (qnfd-qn0d)*nnx + (qnf-qn0)*nnxd
    uf = u0 + (qnf-qn0)*nnx
-   vfd = (qnfd-qn0d)*nny + (qnf-qn0)*nnyd
+   vfd = v0d + (qnfd-qn0d)*nny + (qnf-qn0)*nnyd
    vf = v0 + (qnf-qn0)*nny
-   wfd = (qnfd-qn0d)*nnz + (qnf-qn0)*nnzd
+   wfd = w0d + (qnfd-qn0d)*nnz + (qnf-qn0)*nnzd
    wf = w0 + (qnf-qn0)*nnz
    sfd = s0d
    sf = s0
    DO l=nt1mg,nt2mg
-   ww1d(i, j, l) = 0.0
+   ww1d(i, j, l) = winfd(l)
    ww1(i, j, l) = winf(l)
    END DO
    END IF
@@ -361,13 +328,13 @@
    END DO
    END DO
    ! Compute the energy for these halo's.
-   gammaconstantd = 0.0
+   gammaconstantd = 0.0_8
    CALL COMPUTEETOT_D(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                   kcbeg(nn), kcend(nn), correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
    IF (secondhalo) THEN
-   gammaconstantd = 0.0
+   gammaconstantd = 0.0_8
    CALL EXTRAPOLATE2NDHALO_D(nn, correctfork)
    END IF
    END IF

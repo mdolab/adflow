@@ -3,27 +3,31 @@
    !
    !  Differentiation of block_res in forward (tangent) mode:
    !   variations   of useful results: *(*flowdoms.x) *(*flowdoms.w)
-   !                *(*flowdoms.dw) *(*bcdata.f) pointref costfuncmat
-   !                moment lift cforce drag force cd cl cmoment
+   !                *(*flowdoms.dw) *(*bcdata.f) *(*bcdata.m) pointref
+   !                costfuncmat moment lift cforce drag force cd cl
+   !                cmoment
    !   with respect to varying inputs: *(*flowdoms.x) *(*flowdoms.w)
-   !                pointref surfaceref lengthref machgrid mach alpha
-   !                beta
+   !                pointref machcoef surfaceref lengthref machgrid
+   !                mach alpha beta
    !   RW status of diff variables: *(*flowdoms.x):in-out *(*flowdoms.w):in-out
-   !                *(*flowdoms.dw):out *(*bcdata.f):out pointref:in-out
-   !                surfaceref:in lengthref:in machgrid:in mach:in
-   !                costfuncmat:out moment:out lift:out alpha:in cforce:out
-   !                drag:out force:out cd:out beta:in cl:out cmoment:out
+   !                *(*flowdoms.dw):out *(*bcdata.f):out *(*bcdata.m):out
+   !                pointref:in-out machcoef:in surfaceref:in lengthref:in
+   !                machgrid:in mach:in costfuncmat:out moment:out
+   !                lift:out alpha:in cforce:out drag:out force:out
+   !                cd:out beta:in cl:out cmoment:out
    !   Plus diff mem management of: flowdoms:in *flowdoms.x:in *flowdoms.w:in
-   !                *flowdoms.dw:in rev:in dtl:in bvtj1:in bvtj2:in
-   !                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in
-   !                bmtk1:in bmtk2:in rlv:in bvtk1:in bvtk2:in xold:in
-   !                vol:in d2wall:in bmti1:in bmti2:in si:in sj:in
-   !                sk:in bvti1:in bvti2:in fw:in rotmatrixi:in rotmatrixj:in
-   !                rotmatrixk:in bmtj1:in bmtj2:in viscsubface:in
-   !                *viscsubface.tau:in *viscsubface.q:in *viscsubface.utau:in
-   !                bcdata:in *bcdata.norm:in *bcdata.rface:in *bcdata.f:in
-   !                *bcdata.uslip:in *bcdata.tns_wall:in radi:in radj:in
-   !                radk:in winf:in coeftime:in (global)cphint:in
+   !                *flowdoms.dw:in volold:in wr:in rev:in dtl:in
+   !                bvtj1:in bvtj2:in p:in sfacei:in sfacej:in s:in
+   !                gamma:in sfacek:in bmtk1:in bmtk2:in rlv:in bvtk1:in
+   !                w1:in bvtk2:in xold:in vol:in wold:in d2wall:in
+   !                bmti1:in bmti2:in si:in sj:in sk:in bvti1:in bvti2:in
+   !                fw:in rotmatrixi:in rotmatrixj:in rotmatrixk:in
+   !                bmtj1:in bmtj2:in viscsubface:in *viscsubface.tau:in
+   !                *viscsubface.q:in *viscsubface.utau:in bcdata:in
+   !                *bcdata.norm:in *bcdata.rface:in *bcdata.f:in
+   !                *bcdata.m:in *bcdata.uslip:in *bcdata.tns_wall:in
+   !                radi:in radj:in radk:in wn:in coeftime:in dscalar:in
+   !                dvector:in (global)cphint:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -70,7 +74,8 @@
    REAL(kind=realtype), DIMENSION(nsections) :: td
    REAL(kind=realtype), DIMENSION(3) :: cfp, cfv, cmp, cmv
    REAL(kind=realtype), DIMENSION(3) :: cfpd, cfvd, cmpd, cmvd
-   REAL(kind=realtype) :: yplusmax
+   REAL(kind=realtype) :: yplusmax, scaledim
+   REAL(kind=realtype) :: scaledimd
    LOGICAL :: useoldcoor
    REAL(realtype) :: result1
    INTRINSIC MAX
@@ -86,9 +91,9 @@
    x => flowdoms(nn, currentlevel, sps)%x
    ! ------------------------------------------------
    !        Additional 'Extra' Components
-   ! ------------------------------------------------
-   dragdirectiond = 0.0
-   liftdirectiond = 0.0
+   ! ------------------------------------------------ 
+   dragdirectiond = 0.0_8
+   liftdirectiond = 0.0_8
    CALL ADJUSTINFLOWANGLE_D(alpha, alphad, beta, betad, liftindex)
    CALL REFERENCESTATE_D()
    CALL SETFLOWINFINITYSTATE_D()
@@ -105,7 +110,7 @@
    IF (equationmode .EQ. timespectral) THEN
    DO mm=1,nsections
    result1 = REAL(ntimeintervalsspectral, realtype)
-   td(mm) = 0.0
+   td(mm) = 0.0_8
    t(mm) = t(mm) + (sps-1)*sections(mm)%timeperiod/result1
    END DO
    END IF
@@ -114,19 +119,19 @@
    CALL NORMALVELOCITIES_BLOCK_D(sps)
    ! Required for TS
    ELSE
-   sfaceid = 0.0
-   sfacejd = 0.0
-   sd = 0.0
-   sfacekd = 0.0
-   vold = 0.0
-   sid = 0.0
-   sjd = 0.0
-   skd = 0.0
+   sfaceid = 0.0_8
+   sfacejd = 0.0_8
+   sd = 0.0_8
+   sfacekd = 0.0_8
+   vold = 0.0_8
+   sid = 0.0_8
+   sjd = 0.0_8
+   skd = 0.0_8
    DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%norm = 0.0
+   bcdatad(ii1)%norm = 0.0_8
    END DO
    DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%rface = 0.0
+   bcdatad(ii1)%rface = 0.0_8
    END DO
    END IF
    ! ------------------------------------------------
@@ -134,7 +139,7 @@
    ! ------------------------------------------------
    ! Compute the pressures
    gm1 = gammaconstant - one
-   pd = 0.0
+   pd = 0.0_8
    ! Compute P 
    DO k=0,kb
    DO j=0,jb
@@ -173,19 +178,10 @@
    !   endif
    ! -------------------------------  
    ! -------------------------------
-   ! The forward ADjoint is NOT currently setup for TS adjoint
    ! Next initialize residual for flow variables. The is the only place
    ! where there is an n^2 dependance
-   !   do sps2 = 1,nTimeIntervalsSpectral
-   !      dw => flowDoms(nn, 1, sps2)%dw
-   !      call initRes_block(1, nwf, nn, sps2)
-   !   end do
-   !   ! Reset dw pointer to sps instance
-   !   dw => flowDoms(nn, 1, sps)%dw
-   ! ---------------------------------
-   ! This call replaces initRes for steady case. 
-   dwd = 0.0
-   dw = zero
+   ! sps here is the on-spectral instance
+   CALL INITRES_BLOCK_D(1, nwf, nn, sps)
    !  Actual residual calc
    CALL RESIDUAL_BLOCK_D()
    ! Divide through by the volume
@@ -217,6 +213,8 @@
    IF (useforces) THEN
    CALL FORCESANDMOMENTS_D(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd, &
    &                      yplusmax)
+   scaledimd = (prefd*pinf-pref*pinfd)/pinf**2
+   scaledim = pref/pinf
    ! Sum pressure and viscous contributions
    cforced = cfpd + cfvd
    cforce = cfp + cfv
@@ -234,10 +232,12 @@
    cl = cforce(1)*liftdirection(1) + cforce(2)*liftdirection(2) + &
    &      cforce(3)*liftdirection(3)
    ! Divide by fact to get the forces, Lift and Drag back
-   factd = -(two*gammainf*machcoef**2*lref**2*(pinfd*surfaceref+pinf*&
-   &      surfacerefd)/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref&
-   &      )**2)
-   fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref)
+   factd = -(two*gammainf*lref**2*(((pinfd*machcoef+pinf*machcoefd)*&
+   &      scaledim+pinf*machcoef*scaledimd)*machcoef*surfaceref+pinf*&
+   &      machcoef*scaledim*(machcoefd*surfaceref+machcoef*surfacerefd))/(&
+   &      gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*scaledim)**2)
+   fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
+   &      scaledim)
    forced = (cforced*fact-cforce*factd)/fact**2
    force = cforce/fact
    liftd = (cld*fact-cl*factd)/fact**2
@@ -252,16 +252,19 @@
    moment = cmoment/fact
    ELSE
    DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%f = 0.0
+   bcdatad(ii1)%f = 0.0_8
    END DO
-   momentd = 0.0
-   liftd = 0.0
-   cforced = 0.0
-   dragd = 0.0
-   forced = 0.0
-   cdd = 0.0
-   cld = 0.0
-   cmomentd = 0.0
+   DO ii1=1,ISIZE1OFDrfbcdata
+   bcdatad(ii1)%m = 0.0_8
+   END DO
+   momentd = 0.0_8
+   liftd = 0.0_8
+   cforced = 0.0_8
+   dragd = 0.0_8
+   forced = 0.0_8
+   cdd = 0.0_8
+   cld = 0.0_8
+   cmomentd = 0.0_8
    END IF
    CALL GETCOSTFUNCMAT_D(alpha, alphad, beta, betad, liftindex)
    END SUBROUTINE BLOCK_RES_D

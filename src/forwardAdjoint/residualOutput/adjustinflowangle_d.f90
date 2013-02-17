@@ -32,9 +32,9 @@
    ! 1) rotate alpha radians cw about y or z-axis
    ! 2) rotate beta radians ccw about z or y-axis
    refdirection(:) = zero
-   refdirectiond(1) = 0.0
+   refdirectiond(1) = 0.0_8
    refdirection(1) = one
-   veldirfreestreamd = 0.0
+   veldirfreestreamd = 0.0_8
    CALL GETDIRVECTOR_D(refdirection, alpha, alphad, beta, betad, &
    &                veldirfreestream, veldirfreestreamd, liftindex)
    ! Drag direction given by the rotation of a unit vector
@@ -42,7 +42,7 @@
    ! 1) rotate alpha radians cw about y or z-axis
    ! 2) rotate beta radians ccw about z or y-axis
    refdirection(:) = zero
-   refdirectiond(1) = 0.0
+   refdirectiond(1) = 0.0_8
    refdirection(1) = one
    CALL GETDIRVECTOR_D(refdirection, alpha, alphad, beta, betad, &
    &                dragdirection, dragdirectiond, liftindex)
@@ -51,7 +51,7 @@
    ! 1) rotate alpha radians cw about y or z-axis
    ! 2) rotate beta radians ccw about z or y-axis
    refdirection(:) = zero
-   refdirectiond(liftindex) = 0.0
+   refdirectiond(liftindex) = 0.0_8
    refdirection(liftindex) = one
    CALL GETDIRVECTOR_D(refdirection, alpha, alphad, beta, betad, &
    &                liftdirection, liftdirectiond, liftindex)

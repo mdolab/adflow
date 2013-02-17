@@ -67,7 +67,7 @@
    ! and not on blockIsMoving.
    IF (addgridvelocities) THEN
    DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%rface = 0.0
+   bcdatad(ii1)%rface = 0.0_8
    END DO
    !
    !            ************************************************************
@@ -135,7 +135,7 @@
    &              , 2) + 2*ss(i, j, 3)*ssd(i, j, 3)
    arg1 = ss(i, j, 1)**2 + ss(i, j, 2)**2 + ss(i, j, 3)**2
    IF (arg1 .EQ. 0.0) THEN
-   weightd = 0.0
+   weightd = 0.0_8
    ELSE
    weightd = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -158,12 +158,12 @@
    ! the normal grid velocity to zero if allocated.
    DO mm=1,nbocos
    IF (ASSOCIATED(bcdata(mm)%rface)) THEN
-   bcdatad(mm)%rface = 0.0
+   bcdatad(mm)%rface = 0.0_8
    bcdata(mm)%rface = zero
    END IF
    END DO
    DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%rface = 0.0
+   bcdatad(ii1)%rface = 0.0_8
    END DO
    END IF
    END SUBROUTINE NORMALVELOCITIES_BLOCK_D

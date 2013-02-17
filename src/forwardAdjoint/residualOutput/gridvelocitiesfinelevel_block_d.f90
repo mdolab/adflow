@@ -117,7 +117,7 @@
    arg1d = (gammainf*pinfd*rhoinf-gammainf*pinf*rhoinfd)/rhoinf**2
    arg1 = gammainf*pinf/rhoinf
    IF (arg1 .EQ. 0.0) THEN
-   ainfd = 0.0
+   ainfd = 0.0_8
    ELSE
    ainfd = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -163,12 +163,12 @@
    &        )*velygrid0d + rotationmatrix(3, 3)*velzgrid0d
    velzgrid0 = rotationmatrix(3, 1)*velxgrid0 + rotationmatrix(3, 2)*&
    &        velygrid0 + rotationmatrix(3, 3)*velzgrid0
-   alphad = 0.0
-   betad = 0.0
+   alphad = 0.0_8
+   betad = 0.0_8
    ELSE IF (tsalphamode) THEN
    ! get the baseline alpha and determine the liftIndex
-   betad = 0.0
-   alphad = 0.0
+   betad = 0.0_8
+   alphad = 0.0_8
    CALL GETDIRANGLE_D(veldirfreestream, veldirfreestreamd, &
    &                   liftdirection, liftindex, alpha, alphad, beta, betad)
    !Determine the alpha for this time instance
@@ -179,9 +179,9 @@
    alphats = alpha + alphaincrement
    !Determine the grid velocity for this alpha
    refdirection(:) = zero
-   refdirectiond(1) = 0.0
+   refdirectiond(1) = 0.0_8
    refdirection(1) = one
-   veldird = 0.0
+   veldird = 0.0_8
    CALL GETDIRVECTOR_D(refdirection, alphats, alphatsd, beta, betad, &
    &                    veldir, veldird, liftindex)
    !do I need to update the lift direction and drag direction as well?
@@ -197,8 +197,8 @@
    velzgrid0 = ainf*machgrid*(-veldir(3))
    ELSE IF (tsbetamode) THEN
    ! get the baseline alpha and determine the liftIndex
-   betad = 0.0
-   alphad = 0.0
+   betad = 0.0_8
+   alphad = 0.0_8
    CALL GETDIRANGLE_D(veldirfreestream, veldirfreestreamd, &
    &                   liftdirection, liftindex, alpha, alphad, beta, betad)
    !Determine the alpha for this time instance
@@ -209,9 +209,9 @@
    betats = beta + betaincrement
    !Determine the grid velocity for this alpha
    refdirection(:) = zero
-   refdirectiond(1) = 0.0
+   refdirectiond(1) = 0.0_8
    refdirection(1) = one
-   veldird = 0.0
+   veldird = 0.0_8
    CALL GETDIRVECTOR_D(refdirection, alpha, alphad, betats, betatsd, &
    &                    veldir, veldird, liftindex)
    !do I need to update the lift direction and drag direction as well?
@@ -243,22 +243,22 @@
    &        veldirfreestream(3)) - ainf*(intervalmach+machgrid)*&
    &        veldirfreestreamd(3)
    velzgrid0 = ainf*(intervalmach+machgrid)*(-veldirfreestream(3))
-   alphad = 0.0
-   betad = 0.0
+   alphad = 0.0_8
+   betad = 0.0_8
    ELSE IF (tsaltitudemode) THEN
    CALL TERMINATE('gridVelocityFineLevel', &
    &                  'altitude motion not yet implemented...')
-   alphad = 0.0
-   betad = 0.0
+   alphad = 0.0_8
+   betad = 0.0_8
    ELSE
    CALL TERMINATE('gridVelocityFineLevel', &
    &                  'Not a recognized Stability Motion')
-   alphad = 0.0
-   betad = 0.0
+   alphad = 0.0_8
+   betad = 0.0_8
    END IF
    ELSE
-   alphad = 0.0
-   betad = 0.0
+   alphad = 0.0_8
+   betad = 0.0_8
    END IF
    IF (blockismoving) THEN
    ! Determine the situation we are having here.
@@ -280,8 +280,8 @@
    oneover4dt = fourth*timeref/deltat
    oneover8dtd = half*oneover4dtd
    oneover8dt = half*oneover4dt
-   sd = 0.0
-   scd = 0.0
+   sd = 0.0_8
+   scd = 0.0_8
    !
    !            ************************************************************
    !            *                                                          *
@@ -343,9 +343,9 @@
    END DO
    END DO
    END DO
-   sfaceid = 0.0
-   sfacejd = 0.0
-   sfacekd = 0.0
+   sfaceid = 0.0_8
+   sfacejd = 0.0_8
+   sfacekd = 0.0_8
    !
    !            ************************************************************
    !            *                                                          *
@@ -490,7 +490,7 @@
    &                     liftdirection, liftindex, alpha, alphad, beta, &
    &                     betad)
    IF (liftindex .EQ. 2) THEN
-   rotratetransd = 0.0
+   rotratetransd = 0.0_8
    ! different coordinate system for aerosurf
    ! Wing is in z- direction
    rotratetransd(1, 1) = -(alphad*SIN(alpha)*COS(beta)) - COS(&
@@ -511,12 +511,12 @@
    rotratetrans(2, 3) = -(SIN(alpha)*SIN(beta))
    rotratetransd(3, 1) = betad*COS(beta)
    rotratetrans(3, 1) = SIN(beta)
-   rotratetransd(3, 2) = 0.0
+   rotratetransd(3, 2) = 0.0_8
    rotratetrans(3, 2) = 0.0
    rotratetransd(3, 3) = -(betad*SIN(beta))
    rotratetrans(3, 3) = COS(beta)
    ELSE IF (liftindex .EQ. 3) THEN
-   rotratetransd = 0.0
+   rotratetransd = 0.0_8
    ! Wing is in y- direction
    !Rotate the rotation rate from the wind axis back to the local body axis
    rotratetransd(1, 1) = -(alphad*SIN(alpha)*COS(beta)) - COS(&
@@ -531,7 +531,7 @@
    rotratetrans(2, 1) = SIN(beta)
    rotratetransd(2, 2) = -(betad*SIN(beta))
    rotratetrans(2, 2) = COS(beta)
-   rotratetransd(2, 3) = 0.0
+   rotratetransd(2, 3) = 0.0_8
    rotratetrans(2, 3) = 0.0
    rotratetransd(3, 1) = alphad*COS(alpha)*COS(beta) - SIN(alpha)&
    &            *betad*SIN(beta)
@@ -543,12 +543,12 @@
    rotratetrans(3, 3) = COS(alpha)
    ELSE
    CALL TERMINATE('getDirAngle', 'Invalid Lift Direction')
-   rotratetransd = 0.0
+   rotratetransd = 0.0_8
    END IF
    rotratetempd = rotrated
    rotratetemp = rotrate
    rotrate = 0.0
-   rotrated = 0.0
+   rotrated = 0.0_8
    DO i=1,3
    DO j=1,3
    rotrated(i) = rotrated(i) + rotratetempd(j)*rotratetrans(i, &
@@ -612,10 +612,10 @@
    &        offsetvector(1)) + derivrotationmatrix(3, 1)*offsetvector(1) + &
    &        derivrotationmatrix(3, 2)*offsetvector(2) + derivrotationmatrix(&
    &        3, 3)*offsetvector(3)
-   sd = 0.0
-   xcd = 0.0
-   xxcd = 0.0
-   scd = 0.0
+   sd = 0.0_8
+   xcd = 0.0_8
+   xxcd = 0.0_8
+   scd = 0.0_8
    !add in rotmatrix*rotpoint....
    !
    !            ************************************************************
@@ -706,9 +706,9 @@
    END DO
    END DO
    END DO
-   sfaceid = 0.0
-   sfacejd = 0.0
-   sfacekd = 0.0
+   sfaceid = 0.0_8
+   sfacejd = 0.0_8
+   sfacekd = 0.0_8
    !
    !            ************************************************************
    !            *                                                          *
@@ -864,9 +864,9 @@
    END DO loopdirection
    END IF
    ELSE
-   sfaceid = 0.0
-   sfacejd = 0.0
-   sd = 0.0
-   sfacekd = 0.0
+   sfaceid = 0.0_8
+   sfacejd = 0.0_8
+   sd = 0.0_8
+   sfacekd = 0.0_8
    END IF
    END SUBROUTINE GRIDVELOCITIESFINELEVEL_BLOCK_D

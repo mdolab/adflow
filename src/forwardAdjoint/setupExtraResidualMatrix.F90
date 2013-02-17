@@ -53,7 +53,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   integer(kind=intType) :: liftIndex
   
   !Reference values for FD
-  real(kind=realType) :: alpharef, betaref, machref, machGridRef
+  real(kind=realType) :: alpharef, betaref, machref, machGridRef, machCoefRef
   real(kind=realType), dimension(3) :: rotRateRef,rotcenterRef
   real(kind=realType), dimension(3) :: rotPointRef,pointRefRef
 
@@ -62,15 +62,18 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   groundLevel = 1
 
   ! Zero out the matrix before we start
-  call MatZeroEntries(matrix,ierr)
+  call MatZeroEntries(matrix, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  ! Call the residual to make sure its up to date withe current w
-  call whalo2(1_intType, 1_intType, nw, .True.,.True.,.True.)
-  call computeResidualNK
+  if (allocated(dCostFuncMatdExtra)) then
+     deallocate(dCostFuncMatdExtra)
+  end if
+
+  allocate(dCostFuncMatdExtra(6, nCostFunction, nDesignExtra))
+  dCostFuncmatdextra = zero
 
   ! call getDirAngle to get the baseline values for alpha and beta
-  call getDirAngle(velDirFreestream,LiftDirection,liftIndex,alpha,beta)
+  call getDirAngle(velDirFreestream, LiftDirection, liftIndex, alpha, beta)
 
   ! Set delta_x
   delta_x = 1e-8
@@ -80,10 +83,12 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   ! Master Domain Loop
   level = 1_intType
   nColor = nDesignExtra
+  FMExtra = zero
+  dFMdextra = zero
   domainLoopAD: do nn=1,nDom
 
      ! Set pointers to the first timeInstance...just to getSizes
-     call setPointers(nn,level,1)
+     call setPointers(nn, level, 1)
      idxblk = nbkGlobal
      ! Allocate the memory we need for this block to do the forward
      ! mode derivatives and copy reference values
@@ -94,6 +99,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
      betaref = beta
      machref = mach
      machGridRef = machGrid
+     machCoefRef = machCoef
      rotRateRef = cgnsDoms(idxblk)%rotRate
      rotcenterRef = cgnsDoms(idxblk)%rotCenter
      rotPointRef = rotPoint
@@ -111,6 +117,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
         betad = 0.0
         machd = 0.0
         machGridd = 0.0
+        machCoefd = 0.0
         cgnsDomsd(idxblk)%rotrate(:) = 0.0
         cgnsDomsd(idxblk)%rotcenter(:) = 0.0
         rotpointd(:) = 0.0
@@ -118,31 +125,33 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
 
         if (useAD) then
            if (nDesignAoA ==icolor-1) then
-              alphad = 1.0
+              alphad = one
            elseif (nDesignSSA==icolor-1) then
-              betad = 1.0
+              betad = one
            elseif (nDesignMach ==icolor-1) then
-              machd = 1.0
+              machd = one
+              machCoefd = one
            elseif (nDesignMachGrid==icolor-1) then
-              machGridd = 1.0
+              machGridd = one
+              machCoefd = one
            elseif(nDesignRotX==icolor-1) then
-              cgnsDomsd(idxblk)%rotrate(1) = 1.0
+              cgnsDomsd(idxblk)%rotrate(1) = one
            elseif(nDesignRotY==icolor-1) then
-              cgnsDomsd(idxblk)%rotrate(2) = 1.0
+              cgnsDomsd(idxblk)%rotrate(2) = one
            elseif(nDesignRotZ==icolor-1) then
-              cgnsDomsd(idxblk)%rotrate(3) = 1.0 
+              cgnsDomsd(idxblk)%rotrate(3) = one 
            elseif(nDesignRotCenX==icolor-1) then
-              cgnsDomsd(idxblk)%rotcenter(1) = 1.0
-              rotpointd(1) = 1.0
+              cgnsDomsd(idxblk)%rotcenter(1) = one
+              rotpointd(1) = one
               !consider this!
               !+rotpointxcorrection
            elseif(nDesignRotCenY==icolor-1)then
-              cgnsDomsd(idxblk)%rotcenter(2) = 1.0
-              rotpointd(2) = 1.0
+              cgnsDomsd(idxblk)%rotcenter(2) = one
+              rotpointd(2) = one
               !consider this!+rotpointxcorrection
            elseif(nDesignRotCenZ==icolor-1)then      
-              cgnsDomsd(idxblk)%rotcenter(3)=1.0
-              rotpointd(3) = 1.0
+              cgnsDomsd(idxblk)%rotcenter(3) = one
+              rotpointd(3) = one
               !+rotpointzcorrection
            end if
         else
@@ -152,8 +161,10 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
               beta = betaRef+delta_x
            elseif (nDesignMach ==icolor-1) then
               mach = machRef +delta_x
+              machCoef = machCoefRef + delta_x
            elseif (nDesignMachGrid==icolor-1) then
               machGrid = machGridRef+delta_x
+              machCoef = machCoefRef + delta_x
            elseif(nDesignRotX==icolor-1) then
               cgnsDoms(idxblk)%rotrate(1) = rotrateref(1)+delta_x
            elseif(nDesignRotY==icolor-1) then
@@ -183,26 +194,34 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
 
            ! Block-based residual
            if (useAD) then
-#ifndef USE_COMPLEX         
-              call block_res_d(nn, sps, .True., .False., &
+#ifndef USE_COMPLEX       
+              call block_res_d(nn, sps, .True., .True., &
                    alpha, alphad, beta, betad, liftIndex, Force, Forced, &
                    Moment, Momentd, lift, liftd, drag, dragd, cForce, &
                    cForced, cMoment, cMomentd, CL, CLd, CD, CDd)
-
 #else
               print *,'Forward AD routines are not complexified'
               stop
 #endif
            else
-              call block_res(nn, sps, .True., .False., &
+              call block_res(nn, sps, .True., .True., &
                    alpha, beta, liftIndex, Force, Moment, Lift, Drag, &
                    cForce, cMoment, CL, CD)
            end if
-           
+
+           ! Save the values of FMExtra and the derivatives
            do FMDim=1,3
-              dFMdExtra(FMDim, iColor) = Forced(FMDim)
-              dFMdExtra(FMDim+3, iColor) = Momentd(FMDim)
+              dFMdExtra(FMDim, iColor) = dFMdExtra(FMDim, iColor) + Forced(FMDim)
+              dFMdExtra(FMDim+3, iColor) = dFMdExtra(FMDim+3, iColor) + Momentd(FMDim)
+              ! Only add on color=1 or we will sum too much:
+              if (icolor == 1) then
+                 FMExtra(fmDim) = FMExtra(fmDim) + Force(FMDim)
+                 FMExtra(fmDim+3) = FMExtra(fmDim+3) + Moment(FMDim)
+              end if
            end do
+           
+           ! Save the costfuncmatd for this peturbation
+           dCostFuncMatdExtra(:, :, iColor) = costFuncMatd(:, :)
 
            ! Set the computed residual in dw_deriv. If using FD,
            ! actually do the FD calculation if AD, just copy out dw
@@ -253,6 +272,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
      beta = betaref
      mach = machref
      machGrid = machGridRef
+     machCoef = machCoefRef
      cgnsDoms(idxblk)%rotRate = rotRateRef
      cgnsDoms(idxblk)%rotcenter = rotCenterRef
      rotPoint = rotPointRef

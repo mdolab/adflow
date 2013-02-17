@@ -629,6 +629,7 @@ subroutine setupAllResidualMatrices
                        call EChk(PETScIerr,__FILE__,__LINE__)
                     end if
                  enddo mLoop
+                 PETScBlockMatrix=.True.
                  if(PETScBlockMatrix) then
 
                     ! Global matrix block row mgb function of node indices.

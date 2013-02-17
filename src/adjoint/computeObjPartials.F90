@@ -61,7 +61,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
   real(kind=realType) :: pointrefadj(3),pointrefadjb(3)
   logical :: righthandedadj
   logical :: forcesTypeSave
-
+  integer(kind=intType), dimension(:,:), pointer ::  globalNodePtr
   real(kind=realType), dimension(:,:,:,:),allocatable :: wblock,wblockb
 
   ! Variables for TimeSptectral Derivatives
@@ -87,10 +87,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
 
   real(kind=realType) :: lengthRefAdj,lengthRefAdjb
   real(kind=realType) :: surfaceRefAdj,surfaceRefAdjb
-!!$  real(kind=realType) :: cl0,cd0,cmz0,dcldalpha,dcddalpha,dcmzdalpha
-!!$  real(kind=realType) :: cl0b,cd0b,cmz0b,dcldalphab,dcddalphab,dcmzdalphab
-!!$  real(kind=realType) :: dcmzdqb,dcmzdq
-!!$  real(kind=realType) :: dcmzdalphadot,dcmzdalphadotb
+
   ! Working Variables
   integer(kind=intTYpe) :: sps,ii,iInc,ierr,n,k,l
   integer(kind=intTYpe) :: i,j,icell,jcell,kcell,nn,mm,idxmgb,faceID,ibeg,iend,jbeg,jend
@@ -101,7 +98,6 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
   !rotation matrix variables
   real(kind=realType),dimension(3):: RpXCorrection,RpYCorrection,RpZCorrection
   real(kind=realType)::rotpointxcorrection,rotpointycorrection,rotpointzcorrection
-  !real(kind=realType), dimension(3)   :: RpCorrection, rotPointCorrection
   real(kind=realType), dimension(3)   :: rotationPoint,r
   real(kind=realType), dimension(3,3) :: rotationMatrix  
   real(kind=realType) :: t(nSections),dt(nSections)
@@ -132,9 +128,7 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
      ! objectives
 
      dJdc(:) = 1.0/nTimeIntervalsSpectral
-     !dJdc(:) = 0.0!1.0/nTimeIntervalsSpectral
-     !dJdc(1) = 1.0!/nTimeIntervalsSpectral
-
+  
   case(costFuncCl0,costFuncCd0,costFuncCm0, &
        costFuncClAlpha,costFuncCdAlpha,costFuncCmzAlpha,&
        costFuncClAlphaDot,costFuncCdAlphaDot,costFuncCmzAlphaDot,&
@@ -313,8 +307,24 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
            rotpointxcorrection = 0.0
            rotpointycorrection = 0.0
            rotpointzcorrection = 0.0
+
            if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
                 BCType(mm) == NSWallIsothermal) then
+
+              select case (BCFaceID(mm))
+              case (iMin)
+                 globalNodePtr => globalNode(1, :, :)
+              case (iMax)
+                 globalNodePtr => globalNode(il, :, :)
+              case (jMin)
+                 globalNodePtr => globalNode(:, 1, :)
+              case (jMax)
+                 globalNodePtr => globalNode(:, jl, :)
+              case (kMin)
+                 globalNodePtr => globalNode(:, :, 1)
+              case (kMax)
+                 globalNodePtr => globalNode(:, :, kl)
+              end select
 
               jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
               iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -373,7 +383,6 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
                  cmomentb(2) = 1.0
               case (costFuncMomZCoef,costFuncCm0,costFuncCMzAlpha,costFuncCmzalphadot,&
                    costFuncCmzq,costFuncCmzqDot)
-
                  cmomentb(3) = 1.0
               case(costFuncBendingCoef)
                  cforceb(1) = globalCFValsb(costFuncForceXCoef)
@@ -431,16 +440,18 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
                        ! This takes care of the ii increments -- 
                     
                        ii = ii + 1
+          
                        call VecSetValues(dJdx,3,&
-                            
-                            (/row_start+3*ii-3,row_start+3*ii-2,row_start+3*ii-1/)+(sps-1)*npts*3,&
-                            ptsb(:,ii,sps)*dJdc(sps),ADD_VALUES,PETScIerr)
-
+                            (/globalNodePtr(i+1,j+1)*3, &
+                              globalNodePtr(i+1,j+1)*3 + 1, &
+                              globalNodePtr(i+1,j+1)*3 + 2/), &
+                              ptsb(:,ii,sps)*dJdc(sps),ADD_VALUES,PETScIerr)
+                       call EChk(PETScIerr,__FILE__,__LINE__)
                        rotpointxcorrection = rotpointxcorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/1,0,0/)+RpXCorrection))
                        rotpointycorrection = rotpointycorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,1,0/)+RpYCorrection))
                        rotpointzcorrection = rotpointzcorrection+DOT_PRODUCT((ptsb(:,ii,sps)*dJdc(sps)),((/0,0,1/)+RpZCorrection))
 
-                       call EChk(PETScIerr,__FILE__,__LINE__)
+
                     end do
                  end do
                else
@@ -529,7 +540,6 @@ subroutine computeObjPartials(costFunction,pts,npts,nTS,usedJdw,usedJdx)
 #endif
 end subroutine computeObjPartials
 
-
 ! Add two functions to return dIdw and dIdx. dIda is available
 ! directly in python in dIda in the adjointVars module. 
 
@@ -547,8 +557,6 @@ subroutine getdIdw(output,nstate)
 #include "finclude/petscsys.h"
 #include "finclude/petscvec.h"
 #include "finclude/petscvec.h90"
-
-
   !
   !     Subroutine arguments.
   !
@@ -574,69 +582,43 @@ subroutine getdIdw(output,nstate)
 
 end subroutine getdIdw
 
-subroutine getdIdx(ndof,output)
-#ifndef USE_NO_PETSC
-  use ADjointPETSc
-  use ADjointVars
-  use inputTimeSpectral
-  use section
-  use monitor
+subroutine getdIdx(output, ndof)
+
+#ifndef USE_NO_PETSC	
+  ! #define PETSC_AVOID_MPIF_
+  ! #include "finclude/petscdef.h"
+
+  use ADjointPETSc, only : dJdx
+  use constants
 
   implicit none
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petscsys.h"
+#include "finclude/petscvec.h"
+#include "finclude/petscvec.h90"
+  !
+  !     Subroutine arguments.
+  !
+  integer(kind=intType),intent(in):: ndof
+  real(kind=realType),dimension(ndof), intent(inout) :: output
+  real(kind=realType),pointer :: dJdx_pointer(:)
 
-  integer(kind=intType),intent(in) :: ndof
-  real(kind=realType),intent(inout)  :: output(ndof)
-  integer(kind=intType),dimension(3) :: idx
-  real(kind=realType),dimension(3) ::temp
-  !rotation matrix variables
-  real(kind=realType), dimension(3)   :: rotationPoint,r
-  real(kind=realType), dimension(3,3) :: rotationMatrix  
-  real(kind=realType) :: t(nSections),dt(nSections)
-  real(kind=realType) :: tOld,tNew
-  integer(kind=intType) :: ilow,ihigh,i,sps,nn
-  output(:) = 0.0
+  ! Local Variables
+  integer(kind=intType) :: i, ierr
 
-  call VecGetOwnershipRange(dJdx,ilow,ihigh,PETScIerr)
-  call EChk(PETScIerr,__FILE__,__LINE__)
+  ! Copy out adjoint vector:
+  call VecGetArrayF90(dJdx, dJdx_pointer, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
-  ! Comput rotation from each time instance back to a single surface
-
-  do nn=1,nSections
-     dt(nn) = sections(nn)%timePeriod &
-          / real(nTimeIntervalsSpectral,realType)
-  enddo
-
-  timeUnsteady = zero
-
-  do sps = 1,nTimeIntervalsSpectral
-     do nn=1,nSections
-        t(nn) = (sps-1)*dt(nn)
-     enddo
-
-     ! Compute the displacements due to the rigid motion of the mesh.
-
-     tNew = timeUnsteady + timeUnsteadyRestart
-     tOld = tNew - t(1)
-
-     call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
-
-     ! Take rotation Matrix Transpose
-     rotationMatrix = transpose(rotationMatrix)
-
-     do i=1,ndof/3
-
-        idx = (/ilow+ndof*(sps-1)+(3*(i-1)),&
-             ilow+ndof*(sps-1)+(3*(i-1))+1,&
-             ilow+ndof*(sps-1)+(3*(i-1))+2/)
-        call VecGetValues(dJdx,3,idx,temp,PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-
-        output((i-1)*3+1:(i-1)*3+3) = output((i-1)*3+1:(i-1)*3+3)+ &
-             matmul(rotationMatrix,temp)
-
-     end do
+  ! Do a straight copy:
+  do i=1, ndof
+     output(i) = dJdx_pointer(i)
   end do
+  
+  call VecRestoreArrayF90(dJdx, dJdx_pointer, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 #endif
+
 end subroutine getdIdx
 
 subroutine zeroObjPartials(stateSetup,spatialSetup)

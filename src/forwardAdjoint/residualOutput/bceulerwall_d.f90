@@ -151,7 +151,7 @@
    ! Constant pressure. Set the gradient to zero.
    DO k=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO j=bcdata(nn)%icbeg,bcdata(nn)%icend
-   pp1d(j, k) = 0.0
+   pp1d(j, k) = 0.0_8
    pp1(j, k) = zero
    END DO
    END DO
@@ -512,13 +512,13 @@
    END DO
    END DO
    ! Compute the energy for these halo's.
-   gammaconstantd = 0.0
+   gammaconstantd = 0.0_8
    CALL COMPUTEETOT_D(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                   kcbeg(nn), kcend(nn), correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
    IF (secondhalo) THEN
-   gammaconstantd = 0.0
+   gammaconstantd = 0.0_8
    CALL EXTRAPOLATE2NDHALO_D(nn, correctfork)
    END IF
    END IF

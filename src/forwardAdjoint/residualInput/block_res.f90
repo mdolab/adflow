@@ -34,13 +34,12 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
   ! Output Arguments:
   real(kind=realType), dimension(3), intent(out) :: Force, Moment, cForce, cMoment
   real(kind=realType), intent(out) :: Lift, Drag, CL, CD
-
   ! Working Variables
   real(kind=realType) :: gm1, v2, fact
   integer(kind=intType) :: i, j, k, sps2, mm, l
   real(kind=realType), dimension(nSections) :: t
   real(kind=realType), dimension(3) :: cFp, cFv, cMp, cMv
-  real(kind=realType) :: yplusMax
+  real(kind=realType) :: yplusMax, scaleDim
   logical :: useOldCoor
   
   useOldCoor = .False.
@@ -52,7 +51,7 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
 
   ! ------------------------------------------------
   !        Additional 'Extra' Components
-  ! ------------------------------------------------
+  ! ------------------------------------------------ 
 
   call adjustInflowAngle(alpha, beta, liftIndex)
   call referenceState
@@ -61,7 +60,6 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
   ! ------------------------------------------------
   !        Additional Spatial Components
   ! ------------------------------------------------
-
   if (useSpatial) then
 
      call xhalo_block
@@ -123,22 +121,13 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
   ! -------------------------------  
 
   ! -------------------------------
-  ! The forward ADjoint is NOT currently setup for TS adjoint
+
   ! Next initialize residual for flow variables. The is the only place
   ! where there is an n^2 dependance
-  !   do sps2 = 1,nTimeIntervalsSpectral
-  !      dw => flowDoms(nn, 1, sps2)%dw
-  !      call initRes_block(1, nwf, nn, sps2)
-  !   end do
+
+  ! sps here is the on-spectral instance
+  call initRes_block(1, nwf, nn, sps)
   
-  !   ! Reset dw pointer to sps instance
-  !   dw => flowDoms(nn, 1, sps)%dw
-
-  ! ---------------------------------
-
-  ! This call replaces initRes for steady case. 
-  dw = zero
-
   !  Actual residual calc
   call residual_block
 
@@ -152,7 +141,7 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
         do k=2, kl
            do j=2, jl
               do i=2, il
-                 dw(i, j, k, l) = dw(i, j, k, l) / vol(i, j, k)
+                 dw(i, j, k, l) = dw(i, j, k, l) / vol(i, j, k) 
               end do
            end do
         end do
@@ -170,6 +159,7 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
 
   if (useForces) then
      call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+     scaleDim = pRef/pInf
 
      ! Sum pressure and viscous contributions
      cForce = cFp + cFv
@@ -187,7 +177,7 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
      ! Divide by fact to get the forces, Lift and Drag back
      
      fact = two/(gammaInf*pInf*MachCoef*MachCoef &
-          *surfaceRef*LRef*LRef)
+          *surfaceRef*LRef*LRef*scaleDim)
      Force = cForce / fact
      Lift  = CL / fact
      Drag  = CD / fact

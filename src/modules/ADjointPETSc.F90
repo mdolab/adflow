@@ -50,7 +50,7 @@
 
       Mat     dRdWT, dRdWPreT
       Mat     dRda, dRdx
-      Mat     dFcdw, dFcdx, dFcdx2, dTcdw, dTcdx, dTcdx2, dFndFc
+      Mat     dFcdw, dFcdx, dFndFc
       Mat     dFdx, dFdw
       Vec, dimension(6) :: FMw
       Vec, dimension(6) :: FMx
@@ -58,7 +58,7 @@
       Mat, allocatable, dimension(:) :: restrictionOperator
       Mat, allocatable, dimension(:) :: prolongationOperator
       Vec     psi, dJdW, adjointRHS,adjointRes
-      Vec     dJdx
+      Vec     dJdx, dJdxv
       Vec     gridVec
       Vec     dRdaTPsi, dRdaTPsi_local
       Vec     xVec

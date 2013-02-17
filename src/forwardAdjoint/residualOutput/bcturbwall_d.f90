@@ -157,7 +157,7 @@
    ! so simply negate the internal value.
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
-   bmtd(i, j, itu1, itu1) = 0.0
+   bmtd(i, j, itu1, itu1) = 0.0_8
    bmt(i, j, itu1, itu1) = one
    END DO
    END DO
@@ -199,9 +199,9 @@
    &          ww2(i, j, irho)**2
    nu = rlv2(i, j)/ww2(i, j, irho)
    tmpd = one/(rkwbeta1*dd2wall(ii-1, jj-1)**2)
-   bmtd(i, j, itu1, itu1) = 0.0
+   bmtd(i, j, itu1, itu1) = 0.0_8
    bmt(i, j, itu1, itu1) = one
-   bmtd(i, j, itu2, itu2) = 0.0
+   bmtd(i, j, itu2, itu2) = 0.0_8
    bmt(i, j, itu2, itu2) = one
    bvtd(i, j, itu2) = two*60.0_realType*tmpd*nud
    bvt(i, j, itu2) = two*60.0_realType*nu*tmpd
@@ -213,9 +213,9 @@
    ! negative value of the internal cell is taken for the halo.
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
-   bmtd(i, j, itu1, itu1) = 0.0
+   bmtd(i, j, itu1, itu1) = 0.0_8
    bmt(i, j, itu1, itu1) = one
-   bmtd(i, j, itu2, itu2) = 0.0
+   bmtd(i, j, itu2, itu2) = 0.0_8
    bmt(i, j, itu2, itu2) = one
    END DO
    END DO
@@ -264,15 +264,15 @@
    tmpf = -(20.0_realType*(nu*tmpd)**2/abs0)
    IF (rvfn .EQ. 6) THEN
    tmpf = zero
-   tmpfd = 0.0
+   tmpfd = 0.0_8
    END IF
-   bmtd(i, j, itu1, itu1) = 0.0
+   bmtd(i, j, itu1, itu1) = 0.0_8
    bmt(i, j, itu1, itu1) = one
-   bmtd(i, j, itu2, itu2) = 0.0
+   bmtd(i, j, itu2, itu2) = 0.0_8
    bmt(i, j, itu2, itu2) = one
-   bmtd(i, j, itu3, itu3) = 0.0
+   bmtd(i, j, itu3, itu3) = 0.0_8
    bmt(i, j, itu3, itu3) = one
-   bmtd(i, j, itu4, itu4) = 0.0
+   bmtd(i, j, itu4, itu4) = 0.0_8
    bmt(i, j, itu4, itu4) = one
    bmtd(i, j, itu2, itu1) = -(two*tmped)
    bmt(i, j, itu2, itu1) = -(two*tmpe)

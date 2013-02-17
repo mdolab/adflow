@@ -632,10 +632,7 @@ class SUMB(AeroSolver):
         self.adjointPreprocessed = False
 
         # Matrix Setup Flags
-        self.spatialSetup = False 
-        self.stateSetup = False 
-        self.extraSetup = False
-        self.kspSetup = False
+        self.adjointSetup = False
         self.adjointRHS = None # When this is setup, it has
                                # the current objective
         
@@ -750,8 +747,8 @@ class SUMB(AeroSolver):
 
         if self.sumb.inputiteration.printiterations:
             mpiPrint('-> Alpha... %f %f'%(
-                    aero_problem._flows.alpha*(numpy.pi/180.0),
-                    aero_problem._flows.alpha), comm=self.comm)
+                    numpy.real(aero_problem._flows.alpha*(numpy.pi/180.0)),
+                    numpy.real(aero_problem._flows.alpha)), comm=self.comm)
 
         #update the flow vars
         self.sumb.updateflow()
@@ -982,13 +979,8 @@ class SUMB(AeroSolver):
         
         Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
         '''
-        # As soon as we run more iterations, adjoint matrices and
-        # objective partials (dIdw,dIdx,dIda) are not valid so set
-        # their flag to False
-        self.spatialSetup = False
-        self.stateSetup = False
-        self.extraSetup = False
-        self.kspSetup = False
+        # Release adjoint memory in case an adjoint was previously solved
+        self.releaseAdjointMemory()
         self.adjointRHS         = None
         self.callCounter += 1
 
@@ -1383,8 +1375,8 @@ class SUMB(AeroSolver):
 
     def verifyBendingPartial(self):
         self.sumb.verifybendingderivatives()
-        #end
-
+        
+        return
 
     def globalNKPreCon(self, in_vec, out_vec):
         '''This function is ONLY used as a preconditioner to the
@@ -1407,10 +1399,8 @@ class SUMB(AeroSolver):
         call the reouttine to compare the partial dIda
         against FD
         '''
-        # Check to see if the adjoint Matrix is setup:
-        if not self.stateSetup:
-            self.sumb.setupstatepetscvars()
-        # end if
+
+        self.setupAdjoint()
 
         # Short form of objective--easier code reading
         obj = self.possibleObjectives[objective.lower()]
@@ -1429,10 +1419,7 @@ class SUMB(AeroSolver):
         '''
         run compute obj partials, then write to a file...
         '''
-        if not self.stateSetup:
-            self.sumb.setupstatepetscvars()
-        # end if
-
+        self.setupAdjoint()
         self.computeObjPartials(objective)
         obj = self.possibleObjectives[objective.lower()]
         filename= self.getOption('outputDir') + '/' +'ADw%s'%(obj)
@@ -1447,10 +1434,7 @@ class SUMB(AeroSolver):
         '''
         run compute obj partials, then write to a file...
         '''
-        if not self.stateSetup:
-            self.sumb.createstatepetscvars()
-        # end if
-
+        self.setupAdjoint()
         self.computeObjPartials(objective)
         obj = self.possibleObjectives[objective.lower()]
         filename= self.getOption('outputDir') + '/' +'ADx%s'%(obj)
@@ -1479,9 +1463,6 @@ class SUMB(AeroSolver):
         ''' run the verify drdw scripts in fortran'''
         # Make sure adjoint is initialize
         self.initAdjoint()
-        if not self.dRdxSetup:
-            self.setupAdjoint(None)#(forcePoints)
-        # end if
 	level = 1
         self.sumb.iteration.currentlevel=level
         self.sumb.iteration.groundlevel=level
@@ -1569,97 +1550,35 @@ class SUMB(AeroSolver):
 
         return
 
-    def setupAdjoint(self):
+    def setupAdjoint(self, reform=False):
         '''
         Setup the data structures required to solve the adjoint problem
         '''
-        
         # Destroy the NKsolver to free memory -- Call this even if the
         # solver is not used...a safeguard check is done in Fortran
         self.sumb.destroynksolver()
 
-        # Run initAdjoint incase this is the first adjoint solve
+        # Run initAdjoint in case this is the first adjoint solve
         self.initAdjoint()
 
-        if self.getOption('useReverseModeAD'):
-            # We must create the state, spatial and extra matrices
-            # if we're using reverse mode:
-            compute = False
-            if not self.stateSetup:
-                self.sumb.createstatepetscvars()
-                self.sumb.createpetscksp()
-                compute = True
-            # end fi
+        # For now, just create all the petsc variables
+        if not self.adjointSetup or reform:
+            self.sumb.createpetscvars()
 
-            if not self.spatialSetup:
-                self.sumb.createspatialpetscvars()
-                compute = True
-            # end if
-
-            if not self.extraSetup:
-                self.sumb.createextrapetscvars()
-                compute = True
-            # end if
-
-            if compute:
+            if self.getOption('useReverseModeAD'):
                 self.sumb.setupallresidualmatrices()
-
-                # Set the flags as true
-                self.stateSetup = True
-                self.spatialSetup = True
-                self.extraSetup = True
+            else:
+                self.sumb.setupallresidualmatricesfwd()
             # end if
-        else:
-            # Otherwise, we just setup the state variables to save
-            # memory:
-
-            if not self.stateSetup:
-                self.sumb.createstatepetscvars()
-                self.sumb.createpetscksp()
-
-                self.sumb.setupadjointmatrix()
-                self.stateSetup = True
-            # end if
-        # end if
-
-        # Finally setup the KSP object for the solve
-        if not self.kspSetup:
-            self.sumb.setuppetscksp()
-            self.kspSetup = True
-        # end if
+                
+            # Create coupling matrix struct whether we need it or not
+            self.sumb.setupcouplingmatrixstruct(self.getForcePoints().T)
             
-        return
+            # Setup the KSP object
+            self.sumb.setuppetscksp()
 
-    def setupSpatialMatrices(self, useAD=True):
-
-        if not self.spatialSetup:
-            if self.getOption('lowMemory'):
-                # If we're using the low memory option we will destroy
-                # the KSP object and residual matrices BEFORE
-                # assemblng the spatial residual matrices:
-
-                self.sumb.destroystatepetscvars()
-                self.sumb.destroypetscksp()
-                self.stateSetup = False
-            # end if
-
-            self.sumb.createspatialpetscvars()
-            self.sumb.setupspatialmatrix(useAD)
-            self.spatialSetup = True
-        # end if
-
-        return
-
-    def setupExtraMatrices(self):
-
-        if self.extraSetup:
-            self.sumb.destroyextrapetscvars()
-            self.extraSetup = False
-
-        if not self.extraSetup:
-            self.sumb.createextrapetscvars()
-            self.sumb.setupextramatrix()
-            self.extraSetup = True
+            # Set the flag
+            self.adjointSetup = True
         # end if
 
         return
@@ -1689,20 +1608,8 @@ class SUMB(AeroSolver):
         '''
         release the PETSc Memory that have been allocated
         '''
-        if self.stateSetup:
-            self.sumb.destroystatepetscvars()
-            self.sumb.destroypetscksp()
-            self.stateSetup = False
-        # end if
-
-        if self.spatialSetup:
-            self.sumb.destroyspatialpetscvars()
-            self.spatialSetup = False
-        # end if
-
-        if self.extraSetup:
-            self.sumb.destroyextrapetscvars()
-            self.extraSetup = False
+        if self.adjointSetup:
+            self.sumb.destroypetscvars()
         # end if
 
         return
@@ -1991,8 +1898,7 @@ class SUMB(AeroSolver):
 
     def getdRdXvPsi(self, group_name=None, objective=None):
 
-        # Setup spatial matrices if required:
-        self.setupSpatialMatrices()
+        self.setupAdjoint()
 
         # Get objective
         obj, aeroObj = self._getObjective(objective)
@@ -2008,10 +1914,16 @@ class SUMB(AeroSolver):
             psi = self.sumb.getadjoint(self.getStateSize())
         # end if
 
-        ndof = self.sumb.adjointvars.nnodeslocal[0]*3
-
         # Now call getdrdxvpsi WITH the psi vector:
-        dxv_solver = self.sumb.getdrdxvpsi(ndof, psi)
+        dxv_solver = self.sumb.getdrdxvpsi(self.getSpatialSize(), psi)
+
+        # If we are doing a prescribed motion TS motion, we need to
+        # convert this back to a single instance 
+        if self._prescribedTSMotion():
+            ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
+            dxv_solver = self.sumb.spectralprecscribedmotion(
+                dxv_solver, ndof_1_instance)
+        # end if
 
         if group_name is not None:
             self.mesh.warpDeriv(dxv_solver)
@@ -2019,6 +1931,18 @@ class SUMB(AeroSolver):
             return dxs
         else:
             return dxv_solver
+        # end if
+
+    def _prescribedTSMotion(self):
+    
+        if self.getOption('alphamode') or self.getOption('betamode') or \
+                self.getOption('machmode') or self.getOption('pmode') or \
+                self.getOption('qmode') or self.getOption('rmode') or \
+                self.getOption('altitudemode'):
+
+            return True
+        else:
+            return False
         # end if
 
     def getdRdXvVec(self, in_vec, group_name):
@@ -2033,9 +1957,6 @@ class SUMB(AeroSolver):
         return dxs
 
     def getdRdaPsi(self,  psi):
-
-        # Setup extra matrices if required
-        self.setupExtraMatrices()
 
         if self.nDVAero > 0:
             dIda = self.sumb.getdrdapsi(self.nDVAero, psi)
@@ -2085,11 +2006,18 @@ class SUMB(AeroSolver):
         if aeroObj:
             obj_num = self.SUmbCostfunctions[obj]
 
-            self.sumb.computeobjpartials(
-                obj_num, forcePoints.T, self.stateSetup, self.spatialSetup)
+            if self.getOption('useReverseModeAD'):
+                self.sumb.computeobjpartials(
+                    obj_num, forcePoints.T, True, True)
+            else:
+                self.sumb.computeobjectivepartialsfwd(obj_num)
+                
+
             self.adjointRHS = obj
+
+
         else:
-            self.sumb.zeroobjpartials(self.stateSetup, self.spatialSetup)
+            self.sumb.zeroobjpartials(True, True)
         # end if
 
         return 
@@ -2098,20 +2026,35 @@ class SUMB(AeroSolver):
 
         obj, aeroObj = self._getObjective(objective)
 
-        if not self.spatialSetup:
-            self.setupSpatialMatrices()
-
         # Compute the partials
         self.computeObjPartials(objective, forcePoints)
-        [npts, ncell, nTS] = self.sumb.getforcesize()
-        dIdpts = numpy.zeros((nTS, npts, 3))
-        self.sumb.getdidx(numpy.ravel(dIdpts))
-        
-        if group_name is not None:
-            return self.mesh.sectionVectorByFamily(group_name,dIdpts[TS])
-            
-        return dIdpts[TS]
+        dXv = numpy.zeros(self.getSpatialSize())
+        self.sumb.getdidx(dXv)
 
+        # If we are doing a prescribed motion TS motion, we need to
+        # convert this back to a single instance 
+        if self._prescribedTSMotion():
+            ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
+            dXv = self.sumb.spectralprecscribedmotion(dXv, ndof_1_instance)
+        # end if
+
+        if group_name is not None:
+            # We have a decision to make here: If we have euler
+            # analysis, we can do a "surfOnly" meshDerivative since
+            # there is no information on the interior anyway. However,
+            # if we have a viscous analysis, then we DO have to do a
+            # proper mesh warp, its fairly costly, but worth it.
+
+            if self.getOption('equationType') == 'euler':
+                self.mesh.warpDeriv(dXv, surfOnly=True)
+            else:
+                self.mesh.warpDeriv(dXv, surfOnly=False)
+            dxs = self.mesh.getdXs(group_name)
+            return dxs
+        else:
+            return dXv
+        # end if
+        
     def getdIda(self, objective, forcePoints=None):
 
         obj, aeroObj = self._getObjective(objective)
@@ -2162,6 +2105,14 @@ class SUMB(AeroSolver):
         ntime  = self.sumb.inputtimespectral.ntimeintervalsspectral
 
         return nw*ncells*ntime
+
+    def getSpatialSize(self):
+        '''Return the number of degrees of spatial degrees of freedom on this processor.'''
+
+        nnodes = self.sumb.adjointvars.nnodeslocal[0]
+        ntime  = self.sumb.inputtimespectral.ntimeintervalsspectral
+
+        return 3*nnodes*ntime
 
     def getStates(self):
         '''Return the states on this processor. Used in aerostructural

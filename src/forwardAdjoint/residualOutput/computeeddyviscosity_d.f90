@@ -53,7 +53,7 @@
    returnimmediately = .true.
    END IF
    IF (returnimmediately) THEN
-   revd = 0.0
+   revd = 0.0_8
    RETURN
    ELSE
    ! Determine the turbulence model and call the appropriate
@@ -62,7 +62,7 @@
    CASE (spalartallmaras, spalartallmarasedwards) 
    CALL SAEDDYVISCOSITY_D()
    CASE DEFAULT
-   revd = 0.0
+   revd = 0.0_8
    END SELECT
    END IF
    END SUBROUTINE COMPUTEEDDYVISCOSITY_D

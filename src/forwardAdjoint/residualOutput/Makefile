@@ -53,6 +53,7 @@ FF90_OBJECTS =  blockpointers_d.o\
 		bcfarfield_d.o\
 		bcturbwall_d.o\
 		dim_d.o\
+		initres_block_d.o\
 		inviscidupwindflux_d.o  \
 		utauwf_d.o \
 		bcnswalladiabatic_d.o \

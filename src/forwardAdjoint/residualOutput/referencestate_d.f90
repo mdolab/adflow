@@ -2,9 +2,9 @@
    !  Tapenade 3.6 (r4159) - 21 Sep 2011 10:11
    !
    !  Differentiation of referencestate in forward (tangent) mode:
-   !   variations   of useful results: rgas uinf muinf muref rhoinf
-   !                timeref pinf
-   !   with respect to varying inputs: veldirfreestream mach
+   !   variations   of useful results: pref rgas uinf muinf muref
+   !                rhoinf timeref pinf
+   !   with respect to varying inputs: machcoef veldirfreestream mach
    !
    !      ******************************************************************
    !      *                                                                *
@@ -85,10 +85,10 @@
    &    tsuthdim)**1.5_realType
    ! Check the flow type we are having here.
    IF (flowtype .EQ. internalflow) THEN
-   rhorefd = 0.0
-   prefd = 0.0
-   pinfdimd = 0.0
-   rhoinfdimd = 0.0
+   rhorefd = 0.0_8
+   prefd = 0.0_8
+   pinfdimd = 0.0_8
+   rhoinfdimd = 0.0_8
    ELSE
    ! External flow. Compute the value of gammaInf.
    CALL COMPUTEGAMMA(tempfreestream, gammainf, 1)
@@ -99,11 +99,14 @@
    ! Compute the x, y, and z-components of the Mach number
    ! relative to the body; i.e. the mesh velocity must be
    ! taken into account here.
-   mxd = machcoef*veldirfreestreamd(1)
+   mxd = machcoefd*veldirfreestream(1) + machcoef*veldirfreestreamd(1&
+   &        )
    mx = machcoef*veldirfreestream(1)
-   myd = machcoef*veldirfreestreamd(2)
+   myd = machcoefd*veldirfreestream(2) + machcoef*veldirfreestreamd(2&
+   &        )
    my = machcoef*veldirfreestream(2)
-   mzd = machcoef*veldirfreestreamd(3)
+   mzd = machcoefd*veldirfreestream(3) + machcoef*veldirfreestreamd(3&
+   &        )
    mz = machcoef*veldirfreestream(3)
    ! Reynolds number per meter, the viscosity using sutherland's
    ! law and the free stream velocity relative to the body.
@@ -114,7 +117,7 @@
    &        myd+mzd*mz+mz*mzd)
    arg1 = (mx*mx+my*my+mz*mz)*gammainf*rgasdim*tempfreestream
    IF (arg1 .EQ. 0.0) THEN
-   vd = 0.0
+   vd = 0.0_8
    ELSE
    vd = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -127,8 +130,8 @@
    pinfdim = rhoinfdim*rgasdim*tempfreestream
    tinfdim = tempfreestream
    ELSE
-   pinfdimd = 0.0
-   rhoinfdimd = 0.0
+   pinfdimd = 0.0_8
+   rhoinfdimd = 0.0_8
    END IF
    ! In case the reference pressure, density and temperature were
    ! not specified, set them to the infinity values.
@@ -136,13 +139,13 @@
    prefd = pinfdimd
    pref = pinfdim
    ELSE
-   prefd = 0.0
+   prefd = 0.0_8
    END IF
    IF (rhoref .LE. zero) THEN
    rhorefd = rhoinfdimd
    rhoref = rhoinfdim
    ELSE
-   rhorefd = 0.0
+   rhorefd = 0.0_8
    END IF
    IF (tref .LE. zero) tref = tinfdim
    END IF
@@ -153,7 +156,7 @@
    ! in this code, because the coordinates are converted to
    ! meters.
    IF (pref*rhoref .EQ. 0.0) THEN
-   murefd = 0.0
+   murefd = 0.0_8
    ELSE
    murefd = (prefd*rhoref+pref*rhorefd)/(2.0*SQRT(pref*rhoref))
    END IF
@@ -162,7 +165,7 @@
    ! unsteady equations. Some story as for the reference viscosity
    ! concerning the reference length.
    IF (rhoref/pref .EQ. 0.0) THEN
-   timerefd = 0.0
+   timerefd = 0.0_8
    ELSE
    timerefd = (rhorefd*pref-rhoref*prefd)/(pref**2*2.0*SQRT(rhoref/pref&
    &      ))
@@ -177,7 +180,7 @@
    arg1d = (gammainf*pinfd*rhoinf-gammainf*pinf*rhoinfd)/rhoinf**2
    arg1 = gammainf*pinf/rhoinf
    IF (arg1 .EQ. 0.0) THEN
-   result1d = 0.0
+   result1d = 0.0_8
    ELSE
    result1d = arg1d/(2.0*SQRT(arg1))
    END IF

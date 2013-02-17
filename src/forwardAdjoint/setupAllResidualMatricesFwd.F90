@@ -59,105 +59,11 @@ subroutine setupAllResidualMatricesfwd
   !temporary storage for current dissipation coefficients. Used in error check
   real(kind=realType)::vis2ref, vis4ref
 
-  !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Begin execution.                                               *
-  !     *                                                                *
-  !     ******************************************************************
-  !
 #ifndef USE_NO_PETSC
-
-  ! Set the grid level of the current MG cycle, the value of the
-  ! discretization and the logical correctForK.
-
-  level = 1_intType
-  currentLevel = level
-  !discr        = spaceDiscr
-  fineGrid     = .true.
-
-  ! Determine whether or not the total energy must be corrected
-  ! for the presence of the turbulent kinetic energy and whether
-  ! or not turbulence variables should be exchanged.
-
-  if( kPresent ) then
-     if((currentLevel <= groundLevel) .or. turbCoupled) then
-        correctForK = .true.
-     else
-        correctForK = .false.
-     endif
-  else
-     correctForK = .false.
-  endif
-
-  exchangeTurb = .false.
-
-  ! Set the value of secondHalo, depending on the situation.
-  ! In the full MG (currentLevel < groundLevel) the second halo is
-  ! always set; otherwise only on the finest mesh in the current mg
-  ! cycle.
-
-  if(currentLevel <= groundLevel) then
-     secondHalo = .true.
-  else
-     secondHalo = .false.
-  endif
-
-  !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Exchange halo data to make sure it is up-to-date.              *
-  !     * (originally called inside "rungeKuttaSmoother" subroutine).    *
-  !     *                                                                *
-  !     ******************************************************************
-  !
-  ! Exchange the pressure if the pressure must be exchanged early.
-  ! Only the first halo's are needed, thus whalo1 is called.
-  ! Only on the fine grid.
-
-  if(exchangePressureEarly .and. currentLevel <= groundLevel) &
-       call whalo1(currentLevel, 1_intType, 0_intType, .true., &
-       .false., .false.)
-
-  ! Apply all boundary conditions to all blocks on this level.
-
-  call applyAllBC(secondHalo)
-
-  ! Exchange the solution. Either whalo1 or whalo2
-  ! must be called.
-
-  if( secondHalo ) then
-     call whalo2(currentLevel, 1_intType, nMGVar, .true., &
-          .true., .true.)
-  else
-     call whalo1(currentLevel, 1_intType, nMGVar, .true., &
-          .true., .true.)
-  endif
-
-  ! Reset the values of rkStage and currentLevel, such that
-  ! they correspond to a new iteration.
-
-  rkStage = 0
-  currentLevel = groundLevel
-  lumpedDiss=.False.
-  !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Compute the ADjoint matrix dR/dW using Tapenade's reverse mode *
-  !     * of Automatic Differentiation.  NOTE: This is the reason I have *
-  !     * been writing the word "ADjoint" with A and D capitalized. A    *
-  !     * simple play with letter so that:                               *
-  !     *                                                                *
-  !     * ADjoint = Automatically Differentiated adjoint                 *
-  !     *                                                                *
-  !     ******************************************************************
-  !
-  ! Send some feedback to screen.
-
 
   if( myid ==0 ) &
        write(*, 10) "Assembling All Residual Matrices in Forward mode..."
-
+  
   call cpu_time(time(1))
 
   !zero the matrix for dRdW Insert call
@@ -167,26 +73,21 @@ subroutine setupAllResidualMatricesfwd
   !zero the matrix for dRdx ADD call
   call MatZeroEntries(dRdx, PETScIerr)
   call EChk(PETScIerr, __FILE__, __LINE__)
-
+  
   !zero the matrix for dRda  call
   call MatZeroEntries(dRda, PETScIerr)
   call EChk(PETScIerr, __FILE__, __LINE__)
 
   ! Compute dRdw with forward AD
-  useAD = .True.!.False.
+  useAD = .True.
   usePC = .False.
   useTranspose = .True.
   useObjective = .True.
-  if( myid ==0 ) print *, 'Computing Forward AD dRdw...'
+
   call setupStateResidualMatrix(drdwT, useAD, usePC, useTranspose, useObjective, &
        1_intType)
-  
-  if( myid ==0 ) print *, 'Computing Forward AD dRdx'
-  call setupSpatialResidualMatrix(drdx, useAD)
-  if( myid ==0 ) print *, 'Computing Forward AD dRda'
-  useAD = .True.!.False.!
+  call setupSpatialResidualMatrix(drdx, useAD, useObjective)
   call setupExtraResidualMatrix(drda, useAD)
-
 
   if (nDesignDissError >= 0) then
      !==================================
@@ -205,7 +106,8 @@ subroutine setupAllResidualMatricesfwd
      call whalo2(1_intType, 1_intType, nw, .True., .True., .True.)
      call computeResidualNK ! This is the easiest way to do this
      
-     !Store updated residual. This is an indication of how much error the dissipation scheme is causing
+     !Store updated residual. This is an indication of how much error
+     !the dissipation scheme is causing
      
      do nn=1, nDom
         
@@ -248,8 +150,7 @@ subroutine setupAllResidualMatricesfwd
      !reassemble dRda with error term included  
      call MatAssemblyBegin(dRda, MAT_FINAL_ASSEMBLY, PETScIerr)
      call EChk(PETScIerr, __FILE__, __LINE__)
-     
-     
+          
      call MatAssemblyEnd(dRda, MAT_FINAL_ASSEMBLY, PETScIerr)
      call EChk(PETScIerr, __FILE__, __LINE__)
   end if
@@ -270,8 +171,6 @@ subroutine setupAllResidualMatricesfwd
 
   ! Output formats.
 #endif
-
-
  
 10 format(a)
 20 format(a, 1x, f8.2)

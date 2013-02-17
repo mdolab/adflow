@@ -1,4 +1,4 @@
-subroutine createStatePETScVars
+subroutine createPETScVars
 
 #ifndef USE_NO_PETSC
   !
@@ -8,7 +8,9 @@ subroutine createStatePETScVars
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPETSc
+  use ADjointPETSc, only: dRdwT, dRdwPreT, dJdw, psi, adjointRHS, adjointRes, &
+       FMw, dFcdw, dFcdx, dFndFc, dFdx, dFdw, dRdx, xVec, dJdx, FMx, dRda, &
+       adjointKSP, dFMdExtra, dRda_data
   use ADjointVars   
   use BCTypes
   use communication  
@@ -19,20 +21,27 @@ subroutine createStatePETScVars
   use blockPointers
   implicit none
 
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+#include "include/petscversion.h"
+
   !     Local variables.
-  integer(kind=intType)  :: nDimW, nDimPt, nDimCell
+  integer(kind=intType)  :: nDimW, nDimX, nDimPt, nDimCell
   integer(kind=intType) :: i, n_stencil
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal2, nnzOffDiag2
   integer(kind=intType), dimension(:, :), allocatable :: stencil
   integer(kind=intType) :: level, ierr, nlevels
-  real(kind=realType) :: vals_to_set(4)
   integer(kind=intType) :: rows(4), iCol, iCellCount, iNodeCount, nn, sps, ii
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iDim, iStride, j, mm
   integer(kind=intType) :: npts, ncells, nTS
 
-  ! Size of W on ths proc:
+  ! DETERMINE ALL SIZES HERE!
   nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
+  nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
+  call getForceSize(npts, ncells, nTS)
+  nDimPt = npts * 3 * nTS
+  nDimCell = nCells * 3 * nTS
 
   ! ------------------- Determine Preallocation for dRdw --------------
 
@@ -55,12 +64,10 @@ subroutine createStatePETScVars
        level)
 
   if( nw <= 7 ) then
-     PETScBlockMatrix = .true.
      call myMatCreate(dRdwT, nw, nDimw, nDimw, nnzDiagonal, nnzOffDiag, &
           __FILE__, __LINE__)
   else
 
-     PETScBlockMatrix = .false.
      allocate(nnzDiagonal2(nDimw), nnzOffDiag2(nDimw))
      ! The drdw prealloc function is done per block, which we can use
      ! to compute the correct preallocation for the non-block matrix:
@@ -71,7 +78,7 @@ subroutine createStatePETScVars
      end do
      call myMatCreate(dRdwT, 1, nDimw, nDimw, nnzDiagonal2, nnzOffDiag2, &
           __FILE__, __LINE__)
-     call EChk(PETScIerr, __FILE__, __LINE__)
+     call EChk(ierr, __FILE__, __LINE__)
      deallocate(nnzDiagonal2, nnzOffDiag2)
   endif
   deallocate(nnzDiagonal, nnzOffDiag, stencil)
@@ -113,20 +120,20 @@ subroutine createStatePETScVars
 
   ! Vectors:
   ! Get dJdw and psi from one MatGetVecs Call
-  call MatGetVecs(dRdwT, dJdW, psi, PETScIerr)
-  call EChk(PETScIerr, __FILE__, __LINE__)
+  call MatGetVecs(dRdwT, dJdW, psi, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! adjointRes is the same size as dJdw, psi
-  call VecDuplicate(dJdW, adjointRes, PETScIerr)
-  call EChk(PETScIerr, __FILE__, __LINE__)
+  call VecDuplicate(dJdW, adjointRes, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  call VecDuplicate(dJdW, adjointRHS, PETScIerr)
-  call EChk(PETScIerr, __FILE__, __LINE__)
+  call VecDuplicate(dJdW, adjointRHS, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! Create the 6 vectors for d{F,M}/dw
   do i=1,6
-     call VecDuplicate(dJdw, FMw(i), PETScIerr)
-     call EChk(PETScIerr, __FILE__, __LINE__)
+     call VecDuplicate(dJdw, FMw(i), ierr)
+     call EChk(ierr, __FILE__, __LINE__)
   end do
 
   ! Create dFcdw, dFcdx, dFcdx2, dFcdFn
@@ -141,18 +148,10 @@ subroutine createStatePETScVars
   ! nodes lying on the face. Euler has a stencil of 3x3 (face
   ! only). For viscous forces, the stencil is also 3x3.
 
-  ! dFcdx2: Derivative of the face centered forces with respect to the
-  ! SECOND layer of nodes off the face. This is only necessary for
-  ! viscous calcs that have this extra dependance. 
-
   ! dFndFc: Derivative of the nodal forces with respect to the face
   ! centered forces. This matrix will consist entirely of rows with 4
   ! values each of which is exactly 1/4 
 
-  ! Setup all the force matrices
-  call getForceSize(npts, ncells, nTS)
-  nDimPt = npts * 3 * nTS
-  nDimCell = nCells * 3 * nTS
 
   ! dFcdw
   allocate( nnzDiagonal(nDimCell), nnzOffDiag(nDimCell))
@@ -176,15 +175,13 @@ subroutine createStatePETScVars
   ! dFcdx
   if (.not. viscous) then
      nnzDiagonal = 4 * 3
-     nnzOffDiag  = 0
+     nnzOffDiag  = 1
   else
      nnzDiagonal = 9 * 3
      nnzOffDiag = 6*nw
   end if
 
-  call myMatCreate(dFcdx, 1, nDimCell, nDimPt, nnzDiagonal, nnzOffDiag, &
-       __FILE__, __LINE__)
-  call myMatCreate(dFcdx2, 1, nDimCell, nDimPt, nnzDiagonal, nnzOffDiag, &
+  call myMatCreate(dFcdx, 1, nDimCell, nDimX, nnzDiagonal, nnzOffDiag, &
        __FILE__, __LINE__)
 
   deallocate(nnzDiagonal, nnzOffDiag)
@@ -201,8 +198,7 @@ subroutine createStatePETScVars
   ! We will also take this opportunity to assemble dFndFc. 
   iCellCount = 0
   iNodeCount = 0
-  vals_to_set = fourth
-
+ 
   spectral: do sps=1,nTimeIntervalsSpectral
      domains: do nn=1,nDom
         call setPointers(nn,1_intType,sps)
@@ -227,8 +223,8 @@ subroutine createStatePETScVars
                        rows(4) = 3*iNodeCount + 3*(j-1)*iStride + 3*(i-1) + iDim
                        do ii=1,4
                           call MatSetValues(dFndFc, 1, rows(ii), 1, iCol, &
-                               fourth, INSERT_VALUES, PETScIerr) 
-                          call EChk(PETScIerr, __FILE__, __LINE__)
+                               fourth, INSERT_VALUES, ierr) 
+                          call EChk(ierr, __FILE__, __LINE__)
                        end do
 
                     end do
@@ -241,10 +237,14 @@ subroutine createStatePETScVars
     end do domains
  end do spectral
 
- call MatAssemblyBegin(dFndFc, MAT_FINAL_ASSEMBLY, PETScierr)
- call EChk(petscierr, __FILE__, __LINE__)
- call MatAssemblyEnd  (dFndFc, MAT_FINAL_ASSEMBLY, PETScIerr)
- call EChk(petscierr, __FILE__, __LINE__)
+ call MatAssemblyBegin(dFndFc, MAT_FINAL_ASSEMBLY, ierr)
+ call EChk(ierr, __FILE__, __LINE__)
+ call MatAssemblyEnd  (dFndFc, MAT_FINAL_ASSEMBLY, ierr)
+ call EChk(ierr,  __FILE__, __LINE__)
+
+ ! For the tractions we also need dAdx. This is done in a similar fashion.
+
+
 
  ! For now, leave dFdw, and dFdx in.
  allocate( nnzDiagonal(nDimPt), nnzOffDiag(nDimPt) )
@@ -252,7 +252,7 @@ subroutine createStatePETScVars
  nnzOffDiag  = 8*nw! Make the off diagonal the same
 
  call myMatCreate(dFdw, 1, nDimPt, nDimW, nnzDiagonal, nnzOffDiag, &
-      __FILE__, __LINE__)
+     __FILE__, __LINE__)
  
  ! Create the matrix dFdx
  nnzDiagonal = 27
@@ -260,36 +260,8 @@ subroutine createStatePETScVars
  
  call myMatCreate(dFdx, 1, nDimPt, nDimPt, nnzDiagonal, nnzOffDiag, &
       __FILE__, __LINE__)
-#endif
-end subroutine createStatePETScVars
 
-subroutine createSpatialPETScVars
-  !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Create the matrices/vectors that are required for the total    *
-  !     * derivative: Matrices: dRdx                                     *
-  !     *              Vectors: dJdx                                     *
-  !     *                                                                *
-  !     ******************************************************************
-
-  use ADjointPETSc
-  use ADjointVars     
-  use communication   
-  use inputTimeSpectral
-  use flowVarRefState 
-  use inputADjoint  
-
-  implicit none
-
-  ! Local variables.
-  integer(kind=intType) :: nDimW, nDimX
-  integer(kind=intType), dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
-  integer(kind=intType) :: level, i, npts, ncells, nts
-#ifndef USE_NO_PETSC
-
-  nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
-  nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
+ deallocate(nnzDiagonal, nnzOffDiag)
 
   !     ******************************************************************
   !     *                                                                *
@@ -306,7 +278,7 @@ subroutine createSpatialPETScVars
   !     *                                                                *
   !     ******************************************************************
 
-  allocate( nnzDiagonal(nDimX), nnzOffDiag(nDimX) )
+ allocate( nnzDiagonal(nDimX), nnzOffDiag(nDimX) )
   ! Create the matrix dRdx.
   level = 1_intType
   call drdxPreAllocation(nnzDiagonal, nnzOffDiag, nDimX, level)
@@ -321,79 +293,47 @@ subroutine createSpatialPETScVars
        __FILE__, __LINE__)
   deallocate( nnzDiagonal, nnzOffDiag )
   
-  call MatSetOption(dRdx, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE, PETScIerr)
-  call EChk(PETScIerr, __FILE__, __LINE__)
+  call MatSetOption(dRdx, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
   call getForceSize(npts, ncells, nTS)
 
   ! xVec
-  call VecCreate(SUMB_COMM_WORLD, xVec, PETScIerr)
-  call EChk(PETScIerr, __FILE__, __LINE__)
+  call VecCreate(SUMB_COMM_WORLD, xVec, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  call VecSetSizes(xVec, nDimX, PETSC_DECIDE, PETScIerr)
-  call EChk(PETScIerr, __FILE__, __LINE__)
+  call VecSetSizes(xVec, nDimX, PETSC_DECIDE, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  call VecSetBlockSize(xVec, 3, PETScIerr)
-  call EChk(PETScIerr, __FILE__, __LINE__)
+  call VecSetBlockSize(xVec, 3, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  call VecSetType(xVec, "mpi", PETScIerr) 
-  call EChk(PETScIerr, __FILE__, __LINE__)
+  call VecSetType(xVec, "mpi", ierr) 
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! Vectors
-  call VecCreate(SUMB_COMM_WORLD, dJdx, PETScIerr)
-  call EChk(PETScIerr, __FILE__, __LINE__)
+  call VecCreate(SUMB_COMM_WORLD, dJdx, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  call VecSetSizes(dJdx, npts*3*nTS, PETSC_DECIDE, PETScIerr)
-  call EChk(PETScIerr, __FILE__, __LINE__)
+  call VecSetSizes(dJdx, nDimX, PETSC_DECIDE, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  call VecSetBlockSize(dJdx, 3, PETScIerr)
-  call EChk(PETScIerr, __FILE__, __LINE__)
+  call VecSetBlockSize(dJdx, 3, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  call VecSetType(dJdx, "mpi", PETScIerr) 
-  call EChk(PETScIerr, __FILE__, __LINE__)
+  call VecSetType(dJdx, "mpi", ierr) 
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! Create the vectors for the FMx
   do i=1,6
-     call VecDuplicate(dJDx, FMx(i), PETScIerr)
-     call EChk(PETScIerr, __FILE__, __LINE__)
+     call VecDuplicate(dJdx, FMx(i), ierr)
+     call EChk(ierr, __FILE__, __LINE__)
   end do
-#endif
-end subroutine createSpatialPETScVars
 
-subroutine createPETScKsp
 
-  use ADjointPETSc
-  use communication
-  implicit none
-
-#ifndef USE_NO_PETSC
-  call KSPCreate(SUMB_COMM_WORLD, adjointKSP, PETScIerr)
-  call EChk(PETScIerr, __FILE__, __LINE__)
-#endif
-
-end subroutine createPETScKsp
-
-subroutine createExtraPETScVars
-
-  use ADjointPETSc, only : dRda, dRda_data, PETScIerr, dFMdExtra
-  use ADjointVars     
-  use communication   
-  use inputTimeSpectral
-  use flowvarrefstate
-  implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "include/finclude/petsc.h"
-#include "include/petscversion.h"
-
-  !     Local variables.
-  integer(kind=intType) :: nDimW
-  !
-#ifndef USE_NO_PETSC
-
-  nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
-
-  ! dRda
+  ! Create the KSP Object
+  call KSPCreate(SUMB_COMM_WORLD, adjointKSP, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! Once again, PETSC is royally screwed up. You CANNOT use PETSC_NULL
   ! arguments. They simply do NOT work in Fortran. The PETSc
@@ -410,14 +350,14 @@ subroutine createExtraPETScVars
 
   if (PETSC_VERSION_MINOR < 3 ) then
      call MatCreateMPIDense(SUMB_COMM_WORLD, nDimW, PETSC_DECIDE, &
-          PETSC_DETERMINE, nDesignExtra, dRda_data, dRda, PETScIerr)
+          PETSC_DETERMINE, nDesignExtra, dRda_data, dRda, ierr)
   else
      call MatCreateDense(SUMB_COMM_WORLD, nDimW, PETSC_DECIDE, &
-          PETSC_DETERMINE, nDesignExtra, dRda_data, dRda, PETScIerr)
+          PETSC_DETERMINE, nDesignExtra, dRda_data, dRda, ierr)
   end if
-  call EChk(PETScIerr, __FILE__, __LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 #endif
-end subroutine createExtraPETScVars
+end subroutine createPETScVars
 
 subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &
      file, line)
@@ -459,6 +399,7 @@ subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &
      end if
      call EChk(ierr, file, line)
   end if
+
   ! Warning: The array values is logically two-dimensional, 
   ! containing the values that are to be inserted. By default the
   ! values are given in row major order, which is the opposite of

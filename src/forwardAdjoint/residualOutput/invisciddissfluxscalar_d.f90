@@ -112,7 +112,7 @@
    ! Check if rFil == 0. If so, the dissipative flux needs not to
    ! be computed.
    IF (abs0 .LT. thresholdreal) THEN
-   fwd = 0.0
+   fwd = 0.0_8
    RETURN
    ELSE
    ! Determine the variables used to compute the switch.
@@ -126,7 +126,7 @@
    ! set to a fraction of the free stream value.
    sslimd = 0.001_realType*pinfcorrd
    sslim = 0.001_realType*pinfcorr
-   ssd = 0.0
+   ssd = 0.0_8
    ! Copy the pressure in ss. Only fill the entries used in
    ! the discretization, i.e. ignore the corner halo's.
    DO k=0,kb
@@ -179,7 +179,7 @@
    sslimd = (0.001_realType*pinfcorrd*pwr1-0.001_realType*pinfcorr*&
    &        pwr1d)/pwr1**2
    sslim = 0.001_realType*pinfcorr/pwr1
-   ssd = 0.0
+   ssd = 0.0_8
    ! Store the entropy in ss. Only fill the entries used in
    ! the discretization, i.e. ignore the corner halo's.
    DO k=0,kb
@@ -368,8 +368,8 @@
    END DO
    END DO
    CASE DEFAULT
-   sslimd = 0.0
-   ssd = 0.0
+   sslimd = 0.0_8
+   ssd = 0.0_8
    END SELECT
    ! Set a couple of constants for the scheme.
    fis2 = rfil*vis2
@@ -499,20 +499,20 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   fwd(i, j, k, irho) = 0.0
+   fwd(i, j, k, irho) = 0.0_8
    fw(i, j, k, irho) = sfil*fw(i, j, k, irho)
-   fwd(i, j, k, imx) = 0.0
+   fwd(i, j, k, imx) = 0.0_8
    fw(i, j, k, imx) = sfil*fw(i, j, k, imx)
-   fwd(i, j, k, imy) = 0.0
+   fwd(i, j, k, imy) = 0.0_8
    fw(i, j, k, imy) = sfil*fw(i, j, k, imy)
-   fwd(i, j, k, imz) = 0.0
+   fwd(i, j, k, imz) = 0.0_8
    fw(i, j, k, imz) = sfil*fw(i, j, k, imz)
-   fwd(i, j, k, irhoe) = 0.0
+   fwd(i, j, k, irhoe) = 0.0_8
    fw(i, j, k, irhoe) = sfil*fw(i, j, k, irhoe)
    END DO
    END DO
    END DO
-   fwd = 0.0
+   fwd = 0.0_8
    !
    !      ******************************************************************
    !      *                                                                *
@@ -574,13 +574,13 @@
    min1 = y1
    ELSE
    min1 = dssmax
-   min1d = 0.0
+   min1d = 0.0_8
    END IF
    dis2d = fis2*(rradd*min1+rrad*min1d) + sigma*fis4*rradd
    dis2 = fis2*rrad*min1 + sigma*fis4*rrad
    !dis2 = sigma*fis4*rrad 
    dis4 = 0.0
-   dis4d = 0.0
+   dis4d = 0.0_8
    ELSE
    IF (dss1 .LT. dss2) THEN
    y2d = dss2d
@@ -594,7 +594,7 @@
    min2 = y2
    ELSE
    min2 = dssmax
-   min2d = 0.0
+   min2d = 0.0_8
    END IF
    dis2d = fis2*(rradd*min2+rrad*min2d)
    dis2 = fis2*rrad*min2
@@ -725,13 +725,13 @@
    min3 = y3
    ELSE
    min3 = dssmax
-   min3d = 0.0
+   min3d = 0.0_8
    END IF
    dis2d = fis2*(rradd*min3+rrad*min3d) + sigma*fis4*rradd
    dis2 = fis2*rrad*min3 + sigma*fis4*rrad
    !dis2 = sigma*fis4*rrad 
    dis4 = 0.0
-   dis4d = 0.0
+   dis4d = 0.0_8
    ELSE
    IF (dss1 .LT. dss2) THEN
    y4d = dss2d
@@ -745,7 +745,7 @@
    min4 = y4
    ELSE
    min4 = dssmax
-   min4d = 0.0
+   min4d = 0.0_8
    END IF
    dis2d = fis2*(rradd*min4+rrad*min4d)
    dis2 = fis2*rrad*min4
@@ -876,13 +876,13 @@
    min5 = y5
    ELSE
    min5 = dssmax
-   min5d = 0.0
+   min5d = 0.0_8
    END IF
    dis2d = fis2*(rradd*min5+rrad*min5d) + sigma*fis4*rradd
    dis2 = fis2*rrad*min5 + sigma*fis4*rrad
    !dis2 = sigma*fis4*rrad 
    dis4 = 0.0
-   dis4d = 0.0
+   dis4d = 0.0_8
    ELSE
    IF (dss1 .LT. dss2) THEN
    y6d = dss2d
@@ -896,7 +896,7 @@
    min6 = y6
    ELSE
    min6 = dssmax
-   min6d = 0.0
+   min6d = 0.0_8
    END IF
    dis2d = fis2*(rradd*min6+rrad*min6d)
    dis2 = fis2*rrad*min6

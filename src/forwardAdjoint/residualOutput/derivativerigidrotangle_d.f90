@@ -63,7 +63,7 @@
    ! Return immediately if this is a steady computation.
    IF (equationmode .EQ. steady) THEN
    derivativerigidrotangle = zero
-   derivativerigidrotangle_d = 0.0
+   derivativerigidrotangle_d = 0.0_8
    RETURN
    ELSE
    ! Compute the polynomial contribution.

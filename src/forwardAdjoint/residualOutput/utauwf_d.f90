@@ -247,7 +247,7 @@
    arg1d = 2*veltx*veltxd + 2*velty*veltyd + 2*veltz*veltzd
    arg1 = veltx**2 + velty**2 + veltz**2
    IF (arg1 .EQ. 0.0) THEN
-   y1d = 0.0
+   y1d = 0.0_8
    ELSE
    y1d = arg1d/(2.0*SQRT(arg1))
    END IF
@@ -257,7 +257,7 @@
    veltmag = y1
    ELSE
    veltmag = eps
-   veltmagd = 0.0
+   veltmagd = 0.0_8
    END IF
    txd = (veltxd*veltmag-veltx*veltmagd)/veltmag**2
    tx = veltx/veltmag
@@ -309,7 +309,7 @@
    x1d = CURVEUPRE_D(re, red, x1)
    IF (x1 .LT. eps) THEN
    max1 = eps
-   max1d = 0.0
+   max1d = 0.0_8
    ELSE
    max1d = x1d
    max1 = x1
@@ -377,7 +377,7 @@
    rresd(i, j, irhoe) = rresd(i, j, irhoe) - fact*frhoed
    rres(i, j, irhoe) = rres(i, j, irhoe) - fact*frhoe
    ! Store the friction velocity for later use.
-   viscsubfaced(nn)%utau(i, j) = 0.0
+   viscsubfaced(nn)%utau(i, j) = 0.0_8
    viscsubface(nn)%utau(i, j) = utau
    ! Also add the correction to the wall stress tensor.
    viscsubfaced(nn)%tau(i, j, 1) = viscsubfaced(nn)%tau(i, j, 1) &
