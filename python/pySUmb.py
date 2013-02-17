@@ -1708,7 +1708,7 @@ class SUMB(AeroSolver):
         dIdxs_2 = self.getdRdXvPsi('all', objective)
           
         # Direct partial derivative contibution 
-        dIdxs_1 = self.getdIdx(objective)
+        dIdxs_1 = self.getdIdx(objective, group_name='all')
 
         # Total derivative of the obective with surface coordinates
         dIdXs = dIdxs_1 - dIdxs_2
@@ -2046,9 +2046,11 @@ class SUMB(AeroSolver):
             # proper mesh warp, its fairly costly, but worth it.
 
             if self.getOption('equationType') == 'euler':
-                self.mesh.warpDeriv(dXv, surfOnly=True)
+               self.mesh.warpDeriv(dXv, surfOnly=True)
             else:
                 self.mesh.warpDeriv(dXv, surfOnly=False)
+            # end if
+
             dxs = self.mesh.getdXs(group_name)
             return dxs
         else:
