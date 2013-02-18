@@ -56,6 +56,7 @@ SUBDIR_SRC    = src/modules       \
                 src/forwardAdjoint \
                 src/forwardAdjoint/residualInput \
                 src/forwardAdjoint/residualOutput\
+#                src/forwardAdjoint/residualOutputReverse\
 
 
 SUBDIR_EXEC   = src/exec

@@ -31,9 +31,11 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
   real(kind=realType), intent(in) :: alpha, beta
   integer(kind=intType), intent(in) :: liftIndex
 
-  ! Output Arguments:
-  real(kind=realType), dimension(3), intent(out) :: Force, Moment, cForce, cMoment
-  real(kind=realType), intent(out) :: Lift, Drag, CL, CD
+  ! Output Arguments: Note: Cannot put intent(out) since reverse mode
+  ! may NOT compute these values and then compilation will fail
+  real(kind=realType), dimension(3) :: Force, Moment, cForce, cMoment
+  real(kind=realType) :: Lift, Drag, CL, CD
+
   ! Working Variables
   real(kind=realType) :: gm1, v2, fact
   integer(kind=intType) :: i, j, k, sps2, mm, l
@@ -103,11 +105,13 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
   call computeEddyViscosity 
 
   !  Apply all BC's
+#ifndef TAPENADE_REVERSE
   call applyAllBC_block(.True.)
-  
+#endif  
   ! Compute skin_friction Velocity (only for wall Functions)
+#ifndef TAPENADE_REVERSE
   call computeUtau_block
-  
+#endif
   ! Compute time step and spectral radius
   call timeStep_block(.false.)
 
@@ -186,6 +190,15 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
      fact = fact/(lengthRef*LRef)
      
      Moment = cMoment / fact
+  else
+     Force = zero
+     Moment = zero
+     cForce = zero
+     cMoment = zero
+     Lift = zero
+     Drag = zero
+     CD = zero
+     CD = zero
   end if
 
   call getCostFuncMat(alpha, beta, liftIndex)

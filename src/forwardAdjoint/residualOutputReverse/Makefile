@@ -22,7 +22,7 @@
 #      *                                                                *
 #      ******************************************************************
 
-SUMB_DIR = ../../..
+SUMB_DIR = ../../../
 SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
 SUMB_RULES_FILE  = $(SUMB_DIR)/rulesSources.mk
 include ${SUMB_COMMON_FILE}
@@ -35,20 +35,39 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
+FF90_OBJECTS =  diffSizes.o\
+		applyallbc_block_b.o\
+		computelamviscosity_b.o\
+		extrapolate2ndhalo_b.o\
+	        invisciddissfluxscalarcoarse_b.o\
+		timestep_block_b.o\
+		curveupre_b.o\
+		invisciddissfluxscalar_b.o\
+		dim_b.o\
+		initres_block_b.o\
+		inviscidupwindflux_b.o  \
+		block_res_b.o  \
+		invisciddissfluxmatrixcoarse_b.o \
+		residual_block_b.o \
+		viscousflux_b.o \
+		invisciddissfluxmatrix_b.o \
+	        inviscidcentralflux_b.o\
+                saeddyviscosity_b.o\
+		computeeddyviscosity_b.o\
 
-FILES_TO_COMPLEXIFY = \
-		block_res.F90\
-		getCostFuncMat.f90\
-		metric_block.f90\
-		xhalo_block.f90\
+#		normalvelocities_block_b.o\
+#		metric_block_b.o\
+#		xhalo_block_b.o\
+		gridvelocitiesfinelevel_block_b.o\
 
-FILES_TO_COPY = 
 
-ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
-OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
+#		computeetotcellcpfit_b.o \
+                computeetot_b.o\
+		etotarray_b.o \
+		eintarray_b.o  \
 
 #      ******************************************************************
-#      *                                                        *
+#      *                                                                *
 #      * Targets for make.                                              *
 #      *                                                                *
 #      ******************************************************************
@@ -62,28 +81,10 @@ clean:
 	@echo "        Making clean in solver... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
 
-complexify:
-	@for file in $(FILES_TO_COMPLEXIFY); do \
-		if [ $$file -nt ../../../src_cs/forwardAdjoint/residualInput/$$file -o ! -e ../../../src_cs/forwardAdjoint/residualInput/$$file ]; then \
-			python ../../complexify.py $$file; \
-			mv c_$$file ../../../src_cs/forwardAdjoint/residualInput/$$file; \
-		fi;\
-		done
-	@for file in $(FILES_TO_COPY); do \
-		if [ $$file -nt ../../../src_cs/forwardAdjoint/residualInput/$$file -o ! -e ../../../src_cs/forwardAdjoint/residualInput/$$file ]; then \
-			echo copying file $$file; \
-			cp $$file ../../../src_cs/forwardAdjoint/residualInput/$$file; \
-		fi;\
-		done
-
-	cp Makefile ../../../src_cs/forwardAdjoint/residualInput
-
-
 #      ******************************************************************
 #      *                                                                *
 #      * Rule to make the src part.                                     *
 #      *                                                                *
 #      ******************************************************************
 
-src:   $(OFILES)
-
+src:   $(FF90_OBJECTS) 

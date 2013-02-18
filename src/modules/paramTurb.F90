@@ -153,6 +153,11 @@
 
        real(kind=realType), dimension(:,:), allocatable :: tup0, tup1
        real(kind=realType), dimension(:,:), allocatable :: tup2, tup3
+#ifndef USE_TAPENADE
+       real(kind=realType), dimension(:), allocatable :: ypTb, reTb
+       real(kind=realType), dimension(:), allocatable :: up0b, up1b
+       real(kind=realType), dimension(:), allocatable :: up2b, up3b
+#endif
 
        logical, dimension(:), allocatable :: tuLogFit
 

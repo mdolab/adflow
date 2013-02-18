@@ -140,8 +140,8 @@ subroutine getForceConnectivitySize(size)
   integer(kind=intType), intent(out) :: size
 
   ! Working
-  integer(kind=intType) :: nn,mm
-  integer(kind=intType) :: iBeg,iEnd,jBeg,jEnd
+  integer(kind=intType) :: nn, mm
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
 
   size = 0_intType
   domains: do nn=1,nDom
@@ -189,7 +189,8 @@ subroutine getForceConnectivity(conn, ncell)
            ni = iEnd - iBeg + 1
            nj = jEnd - jBeg + 1
            
-           ! Loop over generic face size...Note we are doing zero based ordering!
+           ! Loop over generic face size...Note we are doing zero
+           ! based ordering!
            do j=0,nj-2
               do i=0,ni-2
                  conn(4*cellCount+1) = nodeCount + (j  )*ni + i
@@ -199,7 +200,6 @@ subroutine getForceConnectivity(conn, ncell)
                  cellCount = cellCount + 1
               end do
            end do
-           
            nodeCount = nodeCount + ni*nj
         end if
      end do bocos
@@ -288,27 +288,21 @@ subroutine getForces(forces, pts, npts, sps_in)
            case (iMin)
               pp2 => p( 2,1:,1:); pp1 => p( 1,1:,1:)
               fact = -one 
-              
            case (iMax)
               pp2 => p(il,1:,1:); pp1 => p(ie,1:,1:)
               fact = one
-              
            case (jMin)
               pp2 => p(1:, 2,1:); pp1 => p(1:, 1,1:)
               fact = one
-              
            case (jMax)
               pp2 => p(1:,jl,1:); pp1 => p(1:,je,1:)
               fact = -one
-              
            case (kMin)
               pp2 => p(1:,1:, 2); pp1 => p(1:,1:, 1)
               fact = -one
-              
            case (kMax)
               pp2 => p(1:,1:,kl); pp1 => p(1:,1:,ke)
               fact = one
-              
            end select
            
            ! Store the cell range of the subfaces a bit easier.
@@ -381,7 +375,6 @@ subroutine getForces(forces, pts, npts, sps_in)
                     
                     fz = fz -fact*(tauXz*sss(1) + tauYz*sss(2) &
                          +        tauZz*sss(3))*scaleDim*fourth
-                    
                  end if
                  
                  ! Assign the quarter of the forces to each node

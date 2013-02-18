@@ -1881,21 +1881,11 @@ class SUMB(AeroSolver):
         return 
     
     def getMeshIndices(self):
-        ndof = self.sumb.getnumberlocalnodes()
-        indices = self.sumb.getcgnsmeshindices(ndof)
+        ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
+        indices = self.sumb.getcgnsmeshindices(ndof_1_instance)
 
         return indices
     
-    def getForceIndices(self):
-        ndof = self.sumb.getnumberlocalforcenodes()
-        if ndof > 0:
-            indices = self.sumb.getcgnsforceindices(ndof)
-        else:
-            indices = numpy.zeros(0, 'intc')
-        # end if
-
-        return indices
-
     def getdRdXvPsi(self, group_name=None, objective=None):
 
         self.setupAdjoint()

@@ -75,6 +75,7 @@ FF90_OBJECTS_4 = ADjointVars.o\
 		 section.o\
 		 stencils.o\
 	         blockpointers_d.o\
+		 blockpointers_b.o\
 	         diffSizes.o\
 
 FILES_TO_COMPLEXIFY =  precision.F90\
@@ -103,10 +104,11 @@ FILES_TO_COMPLEXIFY =  precision.F90\
 		 interfaceGroups.f90\
 		 iteration.f90\
 		 monitor.f90\
-		 paramTurb.f90\
+		 paramTurb.F90\
 		 section.f90\
 		 stencils.f90\
 	         blockpointers_d.f90\
+	         blockpointers_b.f90\
 	         diffSizes.f90\
 
 FILES_TO_COPY = su_cgns.F90 \

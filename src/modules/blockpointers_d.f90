@@ -22,7 +22,7 @@ MODULE BLOCKPOINTERS_D
 
   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: xd
   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sid, sjd, skd
-  real(kind=realType), dimension(:,:)      , pointer :: tempHalod
+
   real(kind=realType), dimension(:,:,:),   pointer ::vold
   
   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: rotmatrixid
