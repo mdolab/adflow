@@ -236,24 +236,23 @@ subroutine getAreaSensitivity(darea, pts, npts, sps_in, axis)
 end subroutine getAreaSensitivity
 
 subroutine quad_area(p1, p2, p3, p4, axis, area)
-  ! Kernel-level function to get area of quad defined by 4 points                                                                                                                                               
-  ! projected onto plane defined by axis. Only +ve areas are computed.                                                                                                                                          
-
+  ! Kernel-level function to get area of quad defined by 4 points
+  ! projected onto plane defined by axis. Only +ve areas are computed.
   use constants
   implicit none
 
-  ! I/O                                                                                                                                                                                                         
+  ! I/O
   real(kind=realType), intent(in) :: p1(3), p2(3), p3(3), p4(3), axis(3)
   real(kind=realType), intent(out) :: area
 
-  ! Working                                                                                                                                                                                                     
+  ! Working
   real(kind=realType) :: v1(3), v2(3), sss(3)
-  ! Vectors for Cross Product                                                                                                                                                                                   
+  ! Vectors for Cross Product
 
   v1(:) = p4 - p1
   v2(:) = p3 - p2
 
-  ! Cross Product                                                                                                                                                                                               
+  ! Cross Product
   sss(1) = half*(v1(2)*v2(3) - v1(3)*v2(2))
   sss(2) = half*(v1(3)*v2(1) - v1(1)*v2(3))
   sss(3) = half*(v1(1)*v2(2) - v1(2)*v2(1))

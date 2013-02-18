@@ -74,7 +74,7 @@ FILES_TO_COMPLEXIFY = \
 	       getDirVector.f90\
 	       gridVelocitiesCoarseLevels.f90\
 	       gridVelocitiesFineLevel.f90\
-	       initres.f90\
+	       initres.F90\
 	       inviscidCentralFlux.F90\
 	       inviscidDissFluxCusp.f90\
 	       inviscidDissFluxCuspCoarse.f90\

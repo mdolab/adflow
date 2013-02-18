@@ -21,23 +21,23 @@ SRC = ..
 TAPENADE_PARSERFILESEPARATOR = "/"
 
 # Dependent output variables (separator: white space, default: all)
-TAPENADE_OUTVARS = "flowdoms%dw flowdoms%w flowdoms%x Force Moment Lift Drag cForce cMoment CL CD BCData%F BCData%M costFuncMat"
+TAPENADE_OUTVARS = "flowdoms%dw flowdoms%w flowdoms%x"
 
 # Independent input variables (separator: white space, default: all)
-TAPENADE_VARS = "flowdoms%w  flowdoms%x alpha beta inputPhysics%mach inputPhysics%machGrid inputPhysics%machCoef inputPhysics%lengthRef inputPhysics%pointRef inputPhysics%surfaceRef" 
+TAPENADE_VARS = "flowdoms%w  flowdoms%x" 
 
 # Name of the top routine
 TAPENADE_HEADROUTINE = "block_res"
 
 # Differentiation mode
-TAPENADE_MODE = -forward
+TAPENADE_MODE = -reverse
 
 # Output directory
-TAPENADE_OUTDIR = $(SRC)/forwardAdjoint/residualTapenade
+TAPENADE_OUTDIR = $(SRC)/forwardAdjoint/residualTapenadeReverse
 
 # Integer, double and real precision (bytes)
 TAPENADE_PRECISION = -i4 -dr8 -r8
-		   
+
 #     ******************************************************************
 #     *                                                                *
 #     * Routines to be differentiated (and dependencies).              *
@@ -62,6 +62,7 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/modules/CpCurveFits.f90\
 		$(SRC)/modules/blockPointers.f90 \
 		$(SRC)/modules/flowVarRefState.F90 \
+		$(SRC)/modules/killSignals.f90\
 		$(SRC)/modules/costFunctions.F90\
 		$(SRC)/solver/inviscidCentralFlux.F90\
 		$(SRC)/solver/inviscidDissFluxCusp.f90\
@@ -124,11 +125,11 @@ IFILES := $(ALL_FILES:%=%.f90)
 #     ******************************************************************
 
 default:
-	@echo "Deleting tapenade html"
+	@echo "Deleting tapenade html"	
 	@rm -fr $(TAPENADE_OUTDIR)/tapenadehtml
 
 # Run preprocessor on all input files
-	make -f Makefile_tapenade preprocess
+	make -f Makefile_tapenade_reverse preprocess
 
 # The following is the single command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator \
@@ -143,7 +144,7 @@ preprocess:
 	@echo "Preprocessing all input files..."
 	@for file in $(ALL_FILES); do \
 		echo Preprocessing $$file; \
-		cpp -DUSE_TAPENADE -traditional -P $(FF90_ALL_FLAGS) $$file $$file.f90; \
+		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE -traditional -P $(FF90_ALL_FLAGS) $$file $$file.f90; \
 	done
 
 cleanpreprocess:

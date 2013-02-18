@@ -149,14 +149,17 @@
 
        real(kind=realType) :: vis2, vis4, vis2Coarse, adis
        real(kind=realType) :: kappaCoef
+       logical :: lumpedDiss
+       real(kind=realType) :: sigma
 
-       real(kind=realType) :: vis2b, vis4b, kappaCoefb,adisb
-
+#ifndef USE_TAPENADE
+       real(kind=realType) :: vis2b, vis4b, vis2Coarseb, adisb
+       real(kind=realType) :: kappaCoefb
+       real(kind=realType) :: sigmab
+#endif
        logical :: vortexCorr, dirScaling, hScalingInlet
        logical :: radiiNeededFine, radiiNeededCoarse
 
-       logical :: lumpedDiss
-       real(kind=realType) :: sigma
 
        logical :: useApproxWallDistance
        logical :: updateWallAssociation
@@ -386,7 +389,11 @@
        real(kind=realtype) :: epscoefconv
        integer(kind=inttype) :: convcheckwindowsize
 
-       real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK,cdisrkb
+       real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK
+
+#ifndef USE_TAPENADE
+       real(kind=realType), allocatable, dimension(:) :: etaRKb, cdisRKb
+#endif
 
        logical :: freezeTurbSource
        logical :: printIterations
@@ -720,6 +727,8 @@
        real(kind=realType) :: Machd, MachCoefd, MachGridd
        real(kind=realType) :: gammaconstantb, gammaconstantd
        real(kind=realType) :: surfaceRefd, lengthRefd, lengthRefb
+
+       real(kind=realType) :: Prandtlb, PrandtlTurbb
 #endif
 
        !bending moment derivative
@@ -1020,7 +1029,6 @@
        integer(kind=intType) :: outerPreConIts
        integer(kind=intType) :: innerPreConIts
 
-       real(kind=realType)    :: sigmab
        logical :: printTiming
        logical :: finitedifferencepc
        integer(kind=intType) :: subKSPSubspaceSize
