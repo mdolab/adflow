@@ -109,7 +109,7 @@ subroutine initres_block(varStart, varEnd, nn, sps)
               enddo
            enddo
         enddo
-
+#ifndef USE_TAPENADE
      else steadyLevelTest
 
         ! Coarse grid level. Initialize the owned cells to the
@@ -124,11 +124,11 @@ subroutine initres_block(varStart, varEnd, nn, sps)
               enddo
            enddo
         enddo
-
+#endif
      endif steadyLevelTest
 
      !===========================================================
-
+#ifndef USE_TAPENADE
   case (unsteady)
 
      ! Unsteady computation.
@@ -332,7 +332,7 @@ subroutine initres_block(varStart, varEnd, nn, sps)
      end select
 
      !===========================================================
-
+#endif
   case (timeSpectral)
 
      ! Time spectral computation. The time derivative of the
@@ -443,7 +443,7 @@ subroutine initres_block(varStart, varEnd, nn, sps)
            enddo varLoopFine
 
         enddo timeLoopFine
-
+#ifndef USE_TAPENADE
      else spectralLevelTest
 
         ! Coarse grid level. Initialize the owned cells to the
@@ -554,7 +554,7 @@ subroutine initres_block(varStart, varEnd, nn, sps)
            enddo varLoopCoarse
 
         enddo timeLoopCoarse
-
+#endif
      endif spectralLevelTest
 
   end select

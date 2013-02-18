@@ -162,7 +162,6 @@ function ON_EDGE(IJK)
   return !ON_EDGE
 end function ON_EDGE
 
-
 subroutine ON_WHICH_FACE(Ijk,which_face)
   use blockPointers
   use BCTypes

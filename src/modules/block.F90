@@ -751,6 +751,8 @@ module block
   type(blockType), allocatable, dimension(:,:,:) :: flowDoms
 #ifndef USE_TAPENADE
   type(blockType), allocatable, dimension(:,:,:) :: flowDomsd
+  type(blockType), allocatable, dimension(:,:,:) :: flowDomsb
+
 #endif
   !
   !      ******************************************************************
