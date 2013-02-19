@@ -208,9 +208,8 @@ subroutine alloc_derivative_values(nn, level)
         
         allocate(flowDomsd(nn,1,sps)%viscSubface(nviscBocos), &
              stat=ierr)
-        if(ierr /= 0)                     &
-             call terminate("allocate_derivative_values", &
-             "Memory allocation failure for viscSubface in flowDomsd")
+        call EChk(ierr,__FILE__,__LINE__)
+       
         viscsubfaced => flowDomsd(nn,1,sps)%viscSubface
         
         viscbocoLoop: do mm=1,nviscBocos
@@ -223,13 +222,12 @@ subroutine alloc_derivative_values(nn, level)
         
            allocate(viscSubfaced(mm)%tau(iBeg:iEnd,jBeg:jEnd,6), &
                 stat=ierr)
-        
+           call EChk(ierr,__FILE__,__LINE__)
+       
            allocate(viscSubfaced(mm)%q(iBeg:iEnd,jBeg:jEnd,6), &
                 stat=ierr)
-           
-           if(ierr /= 0)                     &
-                call terminate("allocate_derivative_values", &
-                "Memory allocation failure for tau")
+           call EChk(ierr,__FILE__,__LINE__)
+
         enddo viscbocoLoop
      end if
   end do
