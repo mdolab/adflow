@@ -115,6 +115,39 @@ subroutine setup_dRdx_euler_coloring(nn, level, nColor)
  
 end subroutine setup_dRdx_euler_coloring
 
+subroutine setup_dRdx_visc_coloring(nn, level, nColor)
+  use blockPointers
+  use communication
+  implicit none
+
+  ! Input parameters
+  integer(kind=intType), intent(in) :: nn, level
+
+  ! Output parameters
+  integer(kind=intTYpe), intent(out) :: nColor
+
+  ! Working 
+  integer(kind=intType) :: i, j, k, modi, modj, modk
+
+  call setPointers(nn, level, 1) ! Just to get the correct sizes
+
+  do k=0, ke
+     do j=0, je
+        do i=0, ie
+           ! Add the extra one for 1-based numbering (as opposed to zero-based)
+           modi = mod(i, 4)
+           modj = mod(j, 4)
+           modk = mod(k, 4)
+
+           flowDomsd(nn, 1, 1)%color(i, j, k) = &
+                modi + 4*modj + 16*modk + 1
+        end do
+     end do
+  end do
+  
+  nColor = 64
+end subroutine setup_dRdx_visc_coloring
+
 ! -------------------------------------------------------------
 !                   Debugging Color Colorings
 ! -------------------------------------------------------------
@@ -156,7 +189,7 @@ subroutine setup_4x4x4_coloring(nn, level, nColor)
   use blockPointers
   implicit none
 
-  ! This is a dense 3x3x3 cube for debugging drdx only
+  ! This is a dense 4x4x4 cube for debugging drdx only
   ! Input parameters
   integer(kind=intType), intent(in) :: nn, level
 

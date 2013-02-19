@@ -205,9 +205,35 @@ subroutine alloc_derivative_values(nn, level)
         allocate(flowDomsd(nn,1,sps)%d2Wall(2:il,2:jl,2:kl), &
              stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
+        
+        allocate(flowDomsd(nn,1,sps)%viscSubface(nviscBocos), &
+             stat=ierr)
+        if(ierr /= 0)                     &
+             call terminate("allocate_derivative_values", &
+             "Memory allocation failure for viscSubface in flowDomsd")
+        viscsubfaced => flowDomsd(nn,1,sps)%viscSubface
+        
+        viscbocoLoop: do mm=1,nviscBocos
+           
+           iBeg = BCData(mm)%inBeg + 1
+           iEnd = BCData(mm)%inEnd
+           
+           jBeg = BCData(mm)%jnBeg + 1
+           jEnd = BCData(mm)%jnEnd
+        
+           allocate(viscSubfaced(mm)%tau(iBeg:iEnd,jBeg:jEnd,6), &
+                stat=ierr)
+        
+           allocate(viscSubfaced(mm)%q(iBeg:iEnd,jBeg:jEnd,6), &
+                stat=ierr)
+           
+           if(ierr /= 0)                     &
+                call terminate("allocate_derivative_values", &
+                "Memory allocation failure for tau")
+        enddo viscbocoLoop
      end if
   end do
-
+  
   ! Also allocate a "color" array for the derivative calcs. Only do
   ! this on flowDomsd, only on the 1st timeInstance
   

@@ -80,6 +80,7 @@
    INTRINSIC ABS
    REAL(kind=realtype) :: abs0
    INTRINSIC SQRT
+
    !
    !      ******************************************************************
    !      *                                                                *
