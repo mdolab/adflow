@@ -140,15 +140,15 @@ subroutine dealloc_derivative_values(nn, level)
         call EChk(ierr,__FILE__,__LINE__)
 
         viscSubfaced => flowDomsd(nn,1,sps)%viscSubface
-        do i=1,flowDomsd(nn,1,sps)%nviscBocos
         
-           if (associated(viscSubfaced(i)%tau)) then
-              deallocate(viscSubfaced(i)%tau, stat=ierr)
-           endif
-           if (associated(viscSubfaced(i)%q)) then
-              deallocate(viscSubfaced(i)%q, stat=ierr)
-              call EChk(ierr,__FILE__,__LINE__)
-           endif
+        do i=1,nviscBocos
+        
+           deallocate(viscSubfaced(i)%tau, stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+           
+           deallocate(viscSubfaced(i)%q, stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+           
         end do
      end if
   end do
