@@ -122,10 +122,10 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
      !call setup_5x5x5_coloring(nn, level, nColor)
      !call setup_BF_coloring(nn, level, nColor)
 
-     if(viscous ) then
-        !call setup_dRdx_visc_coloring(nn, level, nColor)! Viscous/RANS
-        print *,'not done yet'
-        stop
+     if (viscous) then
+        call setup_dRdx_visc_coloring(nn, level, nColor)! Viscous/RANS
+        !call setup_5x5x5_coloring(nn, level, nColor)! Viscous/RANS
+        !call setup_BF_coloring(nn, level, nColor)! Viscous/RANS
      else 
         call setup_dRdx_euler_coloring(nn, level, nColor)
         !call setup_4x4x4_coloring(nn, level, nColor)
