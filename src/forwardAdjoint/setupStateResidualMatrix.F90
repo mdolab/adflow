@@ -176,7 +176,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
            call setup_PC_coloring(nn, level,  nColor) ! Euler Colorings
         end if
      else
-        if(viscous ) then
+        if (viscous) then
            call setup_dRdw_visc_coloring(nn, level,  nColor)! Viscous/RANS
         else 
            call setup_dRdw_euler_coloring(nn, level,  nColor) ! Euler Colorings
