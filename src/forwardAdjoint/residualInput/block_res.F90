@@ -38,18 +38,20 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
 
   ! Working Variables
   real(kind=realType) :: gm1, v2, fact
-  integer(kind=intType) :: i, j, k, sps2, mm, l
+  integer(kind=intType) :: i, j, k, sps2, mm, l, ii, ll, jj, lEnd
   real(kind=realType), dimension(nSections) :: t
   real(kind=realType), dimension(3) :: cFp, cFv, cMp, cMv
-  real(kind=realType) :: yplusMax, scaleDim
+  real(kind=realType) :: yplusMax, scaleDim, tmp
   logical :: useOldCoor
-  
+  real(kind=realType), pointer, dimension(:,:,:,:) :: wsp
+  real(kind=realType), pointer, dimension(:,:,:) :: volsp
   useOldCoor = .False.
 
   ! Set pointers to input/output variables
   w  => flowDoms(nn, currentLevel, sps)%w
   dw => flowDoms(nn, 1           , sps)%dw
   x  => flowDoms(nn, currentLevel, sps)%x
+  vol=> flowDoms(nn, currentLevel, sps)%vol 
 
   ! ------------------------------------------------
   !        Additional 'Extra' Components
@@ -77,11 +79,11 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
                 /         real(nTimeIntervalsSpectral,realType)
         enddo
      endif
-     
+
      call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
      call normalVelocities_block(sps) ! Required for TS
   end if
-  
+
   ! ------------------------------------------------
   !        Normal Residual Computation
   ! ------------------------------------------------
@@ -105,13 +107,12 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
   call computeEddyViscosity 
 
   !  Apply all BC's
-#ifndef TAPENADE_REVERSE
   call applyAllBC_block(.True.)
-#endif  
+
   ! Compute skin_friction Velocity (only for wall Functions)
-#ifndef TAPENADE_REVERSE
-  call computeUtau_block
-#endif
+! #ifndef TAPENADE_REVERSE
+!   call computeUtau_block
+! #endif
   ! Compute time step and spectral radius
   call timeStep_block(.false.)
 
@@ -124,42 +125,82 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
   !   endif
   ! -------------------------------  
 
-  ! -------------------------------
-
   ! Next initialize residual for flow variables. The is the only place
-  ! where there is an n^2 dependance
+  ! where there is an n^2 dependance. There are issues with
+  ! initRes. So only the necesary timespectral code has been copied
+  ! here. See initres for more information and comments.
 
   ! sps here is the on-spectral instance
-  call initRes_block(1, nwf, nn, sps)
-  
+  if (nTimeIntervalsSpectral == 1) then
+     dw = zero
+  else
+     ! Zero dw on all spectral instances
+     spectralLoop1: do sps2=1,nTimeIntervalsSpectral
+        flowDoms(nn, 1, sps2)%dw = zero
+     end do spectralLoop1
+
+     spectralLoop2: do sps2=1,nTimeIntervalsSpectral
+        jj = sectionID    
+
+        timeLoopFine: do mm=1,nTimeIntervalsSpectral
+           ii    =  3*(mm-1)
+
+           varLoopFine: do l=1,nwf
+              if(l == ivx .or. l == ivy .or. l == ivz) then
+                 if(l == ivx) ll = 3*sps2 - 2
+                 if(l == ivy) ll = 3*sps2 - 1
+                 if(l == ivz) ll = 3*sps2
+                 do k=2,kl
+                    do j=2,jl
+                       do i=2,il
+                          tmp = dvector(jj,ll,ii+1)*flowDoms(nn,1,mm)%w(i,j,k,ivx) &
+                               + dvector(jj,ll,ii+2)*flowDoms(nn,1,mm)%w(i,j,k,ivy) &
+                               + dvector(jj,ll,ii+3)*flowDoms(nn,1,mm)%w(i,j,k,ivz)
+                          flowDoms(nn, 1, sps2)%dw(i,j,k,l) = &
+                               flowDoms(nn, 1, sps2)%dw(i,j,k,l) + &
+                               tmp*flowDoms(nn,1,mm)%vol(i,j,k)*&
+                               flowDoms(nn,1,mm)%w(i,j,k,irho)
+                       enddo
+                    enddo
+                 enddo
+              else
+                 do k=2,kl
+                    do j=2,jl
+                       do i=2,il
+                          ! This is: dw = dw + dscalar*vol*w
+                          flowDoms(nn, 1, sps2)%dw(i,j,k,l) = &
+                               flowDoms(nn, 1, sps2)%dw(i,j,k,l) + &
+                               dscalar(jj,sps2,mm)*flowDoms(nn,1,mm)%vol(i,j,k)*&
+                               flowDoms(nn,1,mm)%w(i,j,k,l) 
+                       enddo
+                    enddo
+                 enddo
+              endif
+           end do varLoopFine
+        end do timeLoopFine
+     end do spectralLoop2
+  end if
+
   !  Actual residual calc
   call residual_block
 
   ! Divide through by the volume
   do sps2 = 1,nTimeIntervalsSpectral
-     ! Set dw and vol to looping sps2 instance
-     dw => flowDoms(nn, 1, sps2)%dw
-     vol => flowDoms(nn, currentLevel, sps2)%vol
-
      do l=1, nw
         do k=2, kl
            do j=2, jl
               do i=2, il
-                 dw(i, j, k, l) = dw(i, j, k, l) / vol(i, j, k) 
+                 flowDoms(nn, 1, sps2)%dw(i, j, k, l)  = & 
+                      flowDoms(nn, 1, sps2)%dw(i, j, k, l)  / &
+                      flowDoms(nn, currentLevel, sps2)%vol(i, j, k)
               end do
            end do
         end do
      end do
   end do
-  
-  ! Reset dw and vol to sps instance
-  dw => flowDoms(nn,1,sps)%dw
-  vol => flowDoms(nn,currentLevel,sps)%vol
 
-  ! We are now done with the residuals, we move on to the forces and moments
-
-  ! This routine compute Force, Moment, Lift, Drag, and the
-  ! coefficients of the values
+  ! We are now done with the residuals, we move on to the forces and
+  ! moments
 
   if (useForces) then
      call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
@@ -168,27 +209,26 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
      ! Sum pressure and viscous contributions
      cForce = cFp + cFv
      cMoment = cMp + cMv
-     
+
      ! Get Lift coef and Drag coef
      CD =  cForce(1)*dragDirection(1) &
           + cForce(2)*dragDirection(2) &
           + cForce(3)*dragDirection(3)
-     
+
      CL =  cForce(1)*liftDirection(1) &
           + cForce(2)*liftDirection(2) &
           + cForce(3)*liftDirection(3)
-     
+
      ! Divide by fact to get the forces, Lift and Drag back
-     
      fact = two/(gammaInf*pInf*MachCoef*MachCoef &
           *surfaceRef*LRef*LRef*scaleDim)
      Force = cForce / fact
      Lift  = CL / fact
      Drag  = CD / fact
-     
+
      ! Moment factor has an extra lengthRef
      fact = fact/(lengthRef*LRef)
-     
+
      Moment = cMoment / fact
   else
      Force = zero

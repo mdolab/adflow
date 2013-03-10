@@ -91,7 +91,7 @@ FILES_TO_COMPLEXIFY =  precision.F90\
 		 ADjointVars.F90\
 		 ADjointPETSc.F90\
 		 BCTypes.f90\
-		 blockPointers.f90\
+		 blockPointers.F90\
 		 cgnsGrid.f90\
 		 cgnsNames.f90\
 		 commMixing.f90\
