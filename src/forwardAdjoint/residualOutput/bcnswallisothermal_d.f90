@@ -3,14 +3,9 @@
    !
    !  Differentiation of bcnswallisothermal in forward (tangent) mode:
    !   variations   of useful results: *rev *p *gamma *w *rlv
-   !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *p *gamma
-   !                *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2
-   !                *bvti1 *bvti2 *bmtj1 *bmtj2 rgas
-   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
-   !                gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
-   !                bvtk2:in d2wall:in bmti1:in bmti2:in bvti1:in
-   !                bvti2:in bmtj1:in bmtj2:in bcdata:in *bcdata.uslip:in
-   !                (global)cphint:in-out
+   !   with respect to varying inputs: *rev *p *gamma *w *rlv rgas
+   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
+   !                bcdata:in *bcdata.uslip:in (global)cphint:in-out
    !
    !      ******************************************************************
    !      *                                                                *
@@ -99,7 +94,6 @@
    ! wall boundary conditions for the turbulent variables.
    ! No need to extrapolate the secondary halo's, because this
    ! is done in extrapolate2ndHalo.
-   IF (turbcoupled) CALL TURBBCNSWALL_D(.false.)
    ! Loop over the viscous subfaces of this block. Note that
    ! these are numbered first.
    bocos:DO nn=1,nviscbocos
