@@ -41,16 +41,16 @@ FILES_TO_COMPLEXIFY = \
 	       applyAllBC.F90\
 	       bcBleedInflow.f90\
 	       bcDomainInterface.f90\
-	       bcEulerWall.f90\
+	       bcEulerWall.F90\
 	       bcExtrap.f90\
-	       bcFarfield.f90\
+	       bcFarfield.F90\
 	       bcMdot.f90\
-	       bcNSWallAdiabatic.f90\
-	       bcNSWallIsothermal.f90\
+	       bcNSWallAdiabatic.F90\
+	       bcNSWallIsothermal.F90\
 	       bcSubsonicInflow.f90\
 	       bcSubsonicOutflow.f90\
 	       bcSupersonicInflow.f90\
-	       bcSymm.f90\
+	       bcSymm.F90\
 	       bcSymmPolar.f90\
 	       bcThrust.f90\
 	       bleedFlowParameters.f90\
@@ -64,16 +64,16 @@ FILES_TO_COMPLEXIFY = \
 	       derivativeRotMatrixRigid.f90\
 	       eulerWallsPresent.f90\
 	       executeMGCycle.f90\
-	       extrapolate2ndHalo.f90\
+	       extrapolate2ndHalo.F90\
                farFieldDrag.f90\
 	       farFieldInducedDrag.f90\
-	       forcesAndMoments.f90\
+	       forcesAndMoments.F90\
 	       forcesAndMomentsCBD.f90\
 	       farFieldDrag.f90\
 	       getDirAngle.f90\
 	       getDirVector.f90\
 	       gridVelocitiesCoarseLevels.f90\
-	       gridVelocitiesFineLevel.f90\
+	       gridVelocitiesFineLevel.F90\
 	       initres.F90\
 	       inviscidCentralFlux.F90\
 	       inviscidDissFluxCusp.f90\
@@ -87,7 +87,7 @@ FILES_TO_COMPLEXIFY = \
 	       level0CoolingModel.f90\
 	       maxEddyv.f90\
 	       maxHdiffMach.f90\
-	       normalVelocities.f90\
+	       normalVelocities.F90\
 	       residual.F90\
 	       residual2.f90\
 	       residualAveraging.f90\
@@ -109,9 +109,9 @@ FILES_TO_COMPLEXIFY = \
 	       transferToCoarseGrid.f90\
 	       transferToFineGrid.f90\
 	       unsteadyHeader.f90\
-	       utauWF.f90\
+	       utauWF.F90\
 	       vectorRotation.f90\
-	       viscousFlux.f90\
+	       viscousFlux.F90\
 	       writeFamilyMassflow.f90
 
 FILES_TO_COPY = connect_signals.c\

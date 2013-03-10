@@ -16,17 +16,14 @@
    !                lift:out alpha:in cforce:out drag:out force:out
    !                cd:out beta:in cl:out cmoment:out
    !   Plus diff mem management of: flowdoms:in *flowdoms.x:in *flowdoms.w:in
-   !                *flowdoms.dw:in volold:in wr:in rev:in dtl:in
-   !                bvtj1:in bvtj2:in p:in sfacei:in sfacej:in s:in
-   !                gamma:in sfacek:in bmtk1:in bmtk2:in rlv:in bvtk1:in
-   !                w1:in bvtk2:in xold:in vol:in wold:in d2wall:in
-   !                bmti1:in bmti2:in si:in sj:in sk:in bvti1:in bvti2:in
-   !                fw:in rotmatrixi:in rotmatrixj:in rotmatrixk:in
-   !                bmtj1:in bmtj2:in viscsubface:in *viscsubface.tau:in
+   !                *flowdoms.dw:in rev:in dtl:in p:in sfacei:in sfacej:in
+   !                s:in gamma:in sfacek:in rlv:in xold:in vol:in
+   !                d2wall:in si:in sj:in sk:in fw:in rotmatrixi:in
+   !                rotmatrixj:in rotmatrixk:in viscsubface:in *viscsubface.tau:in
    !                *viscsubface.q:in *viscsubface.utau:in bcdata:in
    !                *bcdata.norm:in *bcdata.rface:in *bcdata.f:in
    !                *bcdata.m:in *bcdata.uslip:in *bcdata.tns_wall:in
-   !                radi:in radj:in radk:in wn:in coeftime:in dscalar:in
+   !                radi:in radj:in radk:in coeftime:in dscalar:in
    !                dvector:in (global)cphint:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
@@ -59,13 +56,13 @@
    REAL(kind=realtype), INTENT(IN) :: alpha, beta
    REAL(kind=realtype), INTENT(IN) :: alphad, betad
    INTEGER(kind=inttype), INTENT(IN) :: liftindex
-   ! Output Arguments:
-   REAL(kind=realtype), DIMENSION(3), INTENT(OUT) :: force, moment, &
-   &  cforce, cmoment
-   REAL(kind=realtype), DIMENSION(3), INTENT(OUT) :: forced, momentd, &
-   &  cforced, cmomentd
-   REAL(kind=realtype), INTENT(OUT) :: lift, drag, cl, cd
-   REAL(kind=realtype), INTENT(OUT) :: liftd, dragd, cld, cdd
+   ! Output Arguments: Note: Cannot put intent(out) since reverse mode
+   ! may NOT compute these values and then compilation will fail
+   REAL(kind=realtype), DIMENSION(3) :: force, moment, cforce, cmoment
+   REAL(kind=realtype), DIMENSION(3) :: forced, momentd, cforced, &
+   &  cmomentd
+   REAL(kind=realtype) :: lift, drag, cl, cd
+   REAL(kind=realtype) :: liftd, dragd, cld, cdd
    ! Working Variables
    REAL(kind=realtype) :: gm1, v2, fact
    REAL(kind=realtype) :: v2d, factd
@@ -181,7 +178,7 @@
    ! Next initialize residual for flow variables. The is the only place
    ! where there is an n^2 dependance
    ! sps here is the on-spectral instance
-   CALL INITRES_BLOCK_D(1, nwf, nn, sps)
+   CALL INITRES_BLOCK(1, nwf, nn, sps)
    !  Actual residual calc
    CALL RESIDUAL_BLOCK_D()
    ! Divide through by the volume
@@ -251,6 +248,14 @@
    momentd = (cmomentd*fact-cmoment*factd)/fact**2
    moment = cmoment/fact
    ELSE
+   force = zero
+   moment = zero
+   cforce = zero
+   cmoment = zero
+   lift = zero
+   drag = zero
+   cd = zero
+   cd = zero
    DO ii1=1,ISIZE1OFDrfbcdata
    bcdatad(ii1)%f = 0.0_8
    END DO
