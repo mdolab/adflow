@@ -83,24 +83,21 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/solver/getDirVector.f90\
 		$(SRC)/solver/getDirAngle.f90\
 		$(SRC)/solver/vectorRotation.f90\
-		$(SRC)/solver/bcEulerWall.f90\
-		$(SRC)/solver/bcSymmPolar.f90\
-		$(SRC)/solver/bcFarfield.f90\
-		$(SRC)/solver/extrapolate2ndHalo.f90\
-		$(SRC)/solver/bcSymm.f90\
-		$(SRC)/solver/viscousFlux.f90\
-		$(SRC)/solver/utauWF.f90\
-		$(SRC)/solver/bcNSWallAdiabatic.f90\
-		$(SRC)/solver/bcNSWallIsothermal.f90\
-		$(SRC)/solver/gridVelocitiesFineLevel.f90\
-		$(SRC)/solver/normalVelocities.f90\
-		$(SRC)/solver/forcesAndMoments.f90\
+		$(SRC)/solver/bcEulerWall.F90\
+		$(SRC)/solver/bcFarfield.F90\
+		$(SRC)/solver/extrapolate2ndHalo.F90\
+		$(SRC)/solver/bcSymm.F90\
+		$(SRC)/solver/viscousFlux.F90\
+		$(SRC)/solver/utauWF.F90\
+		$(SRC)/solver/bcNSWallAdiabatic.F90\
+		$(SRC)/solver/bcNSWallIsothermal.F90\
+		$(SRC)/solver/gridVelocitiesFineLevel.F90\
+		$(SRC)/solver/normalVelocities.F90\
+		$(SRC)/solver/forcesAndMoments.F90\
 		$(SRC)/initFlow/referenceState.F90\
 		$(SRC)/initFlow/setFlowInfinityState.F90\
 		$(SRC)/turbulence/computeEddyViscosity.F90\
 		$(SRC)/turbulence/curveFit.f90\
-		$(SRC)/turbulence/turbBCNSWall.f90\
-		$(SRC)/turbulence/bcTurbWall.f90\
 		$(SRC)/turbulence/saNuFromEddyRatio.f90\
 		$(SRC)/utils/rotMatrixRigidBody.f90\
 		$(SRC)/utils/computeGamma.f90\

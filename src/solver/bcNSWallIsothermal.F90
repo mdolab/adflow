@@ -1,18 +1,18 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * File:          bcNsWallAdiabatic.f90                           *
+!      * File:          bcNSWallIsothermal.f90                          *
 !      * Author:        Edwin van der Weide                             *
 !      * Starting date: 03-10-2003                                      *
 !      * Last modified: 06-12-2005                                      *
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine bcNSWallAdiabatic(secondHalo, correctForK)
+       subroutine bcNSWallIsothermal(secondHalo, correctForK)
 !
 !      ******************************************************************
 !      *                                                                *
-!      * bcNSWallAdiabatic applies the viscous adiabatic wall           *
+!      * bcNSWallAdiabatic applies the viscous isothermal wall          *
 !      * boundary condition to a block. It is assumed that the pointers *
 !      * in blockPointers are already set to the correct block on the   *
 !      * correct grid level.                                            *
@@ -34,9 +34,11 @@
 !
        integer(kind=intType) :: nn, i, j
 
-       real(kind=realType) :: rhok
+       real(kind=realType) :: rhok, t2, t1
 
        real(kind=realType), dimension(:,:,:), pointer :: uSlip
+       real(kind=realType), dimension(:,:),   pointer :: TNS_Wall
+
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
        real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
        real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
@@ -69,21 +71,23 @@
        ! wall boundary conditions for the turbulent variables.
        ! No need to extrapolate the secondary halo's, because this
        ! is done in extrapolate2ndHalo.
-
+#ifndef USE_TAPENADE
        if( turbCoupled ) call turbBCNSWall(.false.)
-
+#endif
        ! Loop over the viscous subfaces of this block. Note that
        ! these are numbered first.
 
        bocos: do nn=1,nViscBocos
 
-         ! Check for adiabatic viscous wall boundary conditions.
+         ! Check for isothermal viscous wall boundary conditions.
 
-         adiabaticWall: if(BCType(nn) == NSWallAdiabatic) then
+         viscWall: if(BCType(nn) == NSWallIsothermal) then
 
-           ! Set the pointer for uSlip to make the code more readable.
+           ! Set the pointers for uSlip and TNSWall to make
+           ! the code more readable.
 
-           uSlip => BCData(nn)%uSlip
+           uSlip    => BCData(nn)%uSlip
+           TNS_Wall => BCData(nn)%TNS_Wall
 
            ! Nullify the pointers and set them to the correct subface.
            ! They are nullified first, because some compilers require
@@ -110,16 +114,30 @@
 
                if( correctForK ) rhok = ww2(i,j,irho)*ww2(i,j,itu1)
 
+               ! Compute the temperature in the internal cell and in the
+               ! halo cell such that the average is the wall temperature.
+
+               t2 = pp2(i,j)/(RGas*ww2(i,j,irho))
+               t1 = two*TNS_Wall(i,j) - t2
+
+               ! Make sure that t1 is within reasonable bounds. These
+               ! bounds are such that the clipping is never active in the
+               ! converged solution; it is only to avoid instabilities
+               ! during the convergence.
+
+               t1 = max(half*TNS_Wall(i,j), t1)
+               t1 = min(two *TNS_Wall(i,j), t1)
+
                ! Determine the variables in the halo. As the spacing
                ! is very small a constant pressure boundary condition
                ! (except for the k correction) is okay. Take the slip
                ! velocity into account.
 
-               ww1(i,j,irho) =  ww2(i,j,irho)
+               pp1(i,j)      =  pp2(i,j) - four*third*rhok
+               ww1(i,j,irho) =  pp1(i,j)/(RGas*t1)
                ww1(i,j,ivx)  = -ww2(i,j,ivx) + two*uSlip(i,j,1)
                ww1(i,j,ivy)  = -ww2(i,j,ivy) + two*uSlip(i,j,2)
                ww1(i,j,ivz)  = -ww2(i,j,ivz) + two*uSlip(i,j,3)
-               pp1(i,j)      =  pp2(i,j) - four*third*rhok
 
                ! Set the viscosities. There is no need to test for a
                ! viscous problem of course. The eddy viscosity is
@@ -142,7 +160,7 @@
 
            if( secondHalo ) call extrapolate2ndHalo(nn, correctForK)
 
-         endif adiabaticWall
+         endif viscWall
        enddo bocos
 
-       end subroutine bcNSWallAdiabatic
+       end subroutine bcNSWallIsothermal
