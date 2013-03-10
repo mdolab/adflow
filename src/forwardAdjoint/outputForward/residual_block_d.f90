@@ -4,7 +4,7 @@
    !  Differentiation of residual_block in forward (tangent) mode:
    !   variations   of useful results: *p *dw *w *(*viscsubface.tau)
    !   with respect to varying inputs: *rev *p *sfacei *sfacej *gamma
-   !                *sfacek *w *rlv *x *vol *si *sj *sk *(*bcdata.norm)
+   !                *sfacek *dw *w *rlv *x *vol *si *sj *sk *(*bcdata.norm)
    !                *radi *radj *radk rgas pinfcorr rhoinf timeref
    !                vis4 kappacoef vis2 vis2coarse sigma *cdisrk
    !   Plus diff mem management of: rev:in p:in sfacei:in sfacej:in

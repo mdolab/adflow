@@ -15,16 +15,15 @@
    !                machgrid:in mach:in costfuncmat:out moment:out
    !                lift:out alpha:in cforce:out drag:out force:out
    !                cd:out beta:in cl:out cmoment:out
-   !   Plus diff mem management of: flowdoms:in *flowdoms.x:in *flowdoms.w:in
-   !                *flowdoms.dw:in rev:in dtl:in p:in sfacei:in sfacej:in
-   !                s:in gamma:in sfacek:in rlv:in xold:in vol:in
-   !                d2wall:in si:in sj:in sk:in fw:in rotmatrixi:in
+   !   Plus diff mem management of: flowdoms:in *flowdoms.x:in *flowdoms.vol:in
+   !                *flowdoms.w:in *flowdoms.dw:in rev:in dtl:in p:in
+   !                sfacei:in sfacej:in s:in gamma:in sfacek:in rlv:in
+   !                xold:in d2wall:in si:in sj:in sk:in fw:in rotmatrixi:in
    !                rotmatrixj:in rotmatrixk:in viscsubface:in *viscsubface.tau:in
    !                *viscsubface.q:in *viscsubface.utau:in bcdata:in
    !                *bcdata.norm:in *bcdata.rface:in *bcdata.f:in
    !                *bcdata.m:in *bcdata.uslip:in *bcdata.tns_wall:in
-   !                radi:in radj:in radk:in coeftime:in dscalar:in
-   !                dvector:in (global)cphint:in
+   !                radi:in radj:in radk:in coeftime:in (global)cphint:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -49,6 +48,9 @@
    USE ITERATION
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
+   !  Hint: ISIZE1OFDrfflowdoms should be the size of dimension 1 of array *flowdoms
+   !  Hint: ISIZE2OFDrfflowdoms should be the size of dimension 2 of array *flowdoms
+   !  Hint: ISIZE3OFDrfflowdoms should be the size of dimension 3 of array *flowdoms
    IMPLICIT NONE
    ! Input Arguments:
    INTEGER(kind=inttype), INTENT(IN) :: nn, sps
@@ -66,17 +68,21 @@
    ! Working Variables
    REAL(kind=realtype) :: gm1, v2, fact
    REAL(kind=realtype) :: v2d, factd
-   INTEGER(kind=inttype) :: i, j, k, sps2, mm, l
+   INTEGER(kind=inttype) :: i, j, k, sps2, mm, l, ii, ll, jj, lend
    REAL(kind=realtype), DIMENSION(nsections) :: t
    REAL(kind=realtype), DIMENSION(nsections) :: td
    REAL(kind=realtype), DIMENSION(3) :: cfp, cfv, cmp, cmv
    REAL(kind=realtype), DIMENSION(3) :: cfpd, cfvd, cmpd, cmvd
-   REAL(kind=realtype) :: yplusmax, scaledim
-   REAL(kind=realtype) :: scaledimd
+   REAL(kind=realtype) :: yplusmax, scaledim, tmp
+   REAL(kind=realtype) :: scaledimd, tmpd
    LOGICAL :: useoldcoor
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wsp
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: volsp
    REAL(realtype) :: result1
    INTRINSIC MAX
    INTRINSIC REAL
+   INTEGER :: ii3
+   INTEGER :: ii2
    INTEGER :: ii1
    useoldcoor = .false.
    ! Set pointers to input/output variables
@@ -86,6 +92,8 @@
    dw => flowdoms(nn, 1, sps)%dw
    xd => flowdomsd(nn, currentlevel, sps)%x
    x => flowdoms(nn, currentlevel, sps)%x
+   vold => flowdomsd(nn, currentlevel, sps)%vol
+   vol => flowdoms(nn, currentlevel, sps)%vol
    ! ------------------------------------------------
    !        Additional 'Extra' Components
    ! ------------------------------------------------ 
@@ -116,11 +124,17 @@
    CALL NORMALVELOCITIES_BLOCK_D(sps)
    ! Required for TS
    ELSE
+   DO ii1=1,ISIZE3OFDrfflowdoms
+   DO ii2=1,ISIZE2OFDrfflowdoms
+   DO ii3=1,ISIZE1OFDrfflowdoms
+   flowdomsd(ii3, ii2, ii1)%vol = 0.0_8
+   END DO
+   END DO
+   END DO
    sfaceid = 0.0_8
    sfacejd = 0.0_8
    sd = 0.0_8
    sfacekd = 0.0_8
-   vold = 0.0_8
    sid = 0.0_8
    sjd = 0.0_8
    skd = 0.0_8
@@ -163,7 +177,9 @@
    !  Apply all BC's
    CALL APPLYALLBC_BLOCK_D(.true.)
    ! Compute skin_friction Velocity (only for wall Functions)
-   CALL COMPUTEUTAU_BLOCK()
+   ! #ifndef TAPENADE_REVERSE
+   !   call computeUtau_block
+   ! #endif
    ! Compute time step and spectral radius
    CALL TIMESTEP_BLOCK_D(.false.)
    ! -------------------------------
@@ -174,39 +190,111 @@
    !      call turbResidual_block
    !   endif
    ! -------------------------------  
-   ! -------------------------------
    ! Next initialize residual for flow variables. The is the only place
-   ! where there is an n^2 dependance
+   ! where there is an n^2 dependance. There are issues with
+   ! initRes. So only the necesary timespectral code has been copied
+   ! here. See initres for more information and comments.
    ! sps here is the on-spectral instance
-   CALL INITRES_BLOCK(1, nwf, nn, sps)
+   IF (ntimeintervalsspectral .EQ. 1) THEN
+   dwd = 0.0_8
+   dw = zero
+   DO ii1=1,ISIZE3OFDrfflowdoms
+   DO ii2=1,ISIZE2OFDrfflowdoms
+   DO ii3=1,ISIZE1OFDrfflowdoms
+   flowdomsd(ii3, ii2, ii1)%dw = 0.0_8
+   END DO
+   END DO
+   END DO
+   ELSE
+   ! Zero dw on all spectral instances
+   spectralloop1:DO sps2=1,ntimeintervalsspectral
+   flowdomsd(nn, 1, sps2)%dw = 0.0_8
+   flowdoms(nn, 1, sps2)%dw = zero
+   END DO spectralloop1
+   DO ii1=1,ISIZE3OFDrfflowdoms
+   DO ii2=1,ISIZE2OFDrfflowdoms
+   DO ii3=1,ISIZE1OFDrfflowdoms
+   flowdomsd(ii3, ii2, ii1)%dw = 0.0_8
+   END DO
+   END DO
+   END DO
+   spectralloop2:DO sps2=1,ntimeintervalsspectral
+   jj = sectionid
+   timeloopfine:DO mm=1,ntimeintervalsspectral
+   ii = 3*(mm-1)
+   varloopfine:DO l=1,nwf
+   IF ((l .EQ. ivx .OR. l .EQ. ivy) .OR. l .EQ. ivz) THEN
+   IF (l .EQ. ivx) ll = 3*sps2 - 2
+   IF (l .EQ. ivy) ll = 3*sps2 - 1
+   IF (l .EQ. ivz) ll = 3*sps2
+   DO k=2,kl
+   DO j=2,jl
+   DO i=2,il
+   tmpd = dvector(jj, ll, ii+1)*flowdomsd(nn, 1, mm)%w(i&
+   &                    , j, k, ivx) + dvector(jj, ll, ii+2)*flowdomsd(nn, 1&
+   &                    , mm)%w(i, j, k, ivy) + dvector(jj, ll, ii+3)*&
+   &                    flowdomsd(nn, 1, mm)%w(i, j, k, ivz)
+   tmp = dvector(jj, ll, ii+1)*flowdoms(nn, 1, mm)%w(i, j&
+   &                    , k, ivx) + dvector(jj, ll, ii+2)*flowdoms(nn, 1, mm&
+   &                    )%w(i, j, k, ivy) + dvector(jj, ll, ii+3)*flowdoms(&
+   &                    nn, 1, mm)%w(i, j, k, ivz)
+   flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = flowdomsd(nn, &
+   &                    1, sps2)%dw(i, j, k, l) + (tmpd*flowdoms(nn, 1, mm)%&
+   &                    vol(i, j, k)+tmp*flowdomsd(nn, 1, mm)%vol(i, j, k))*&
+   &                    flowdoms(nn, 1, mm)%w(i, j, k, irho) + tmp*flowdoms(&
+   &                    nn, 1, mm)%vol(i, j, k)*flowdomsd(nn, 1, mm)%w(i, j&
+   &                    , k, irho)
+   flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1&
+   &                    , sps2)%dw(i, j, k, l) + tmp*flowdoms(nn, 1, mm)%vol&
+   &                    (i, j, k)*flowdoms(nn, 1, mm)%w(i, j, k, irho)
+   END DO
+   END DO
+   END DO
+   ELSE
+   DO k=2,kl
+   DO j=2,jl
+   DO i=2,il
+   ! This is: dw = dw + dscalar*vol*w
+   flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = flowdomsd(nn, &
+   &                    1, sps2)%dw(i, j, k, l) + dscalar(jj, sps2, mm)*(&
+   &                    flowdomsd(nn, 1, mm)%vol(i, j, k)*flowdoms(nn, 1, mm&
+   &                    )%w(i, j, k, l)+flowdoms(nn, 1, mm)%vol(i, j, k)*&
+   &                    flowdomsd(nn, 1, mm)%w(i, j, k, l))
+   flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1&
+   &                    , sps2)%dw(i, j, k, l) + dscalar(jj, sps2, mm)*&
+   &                    flowdoms(nn, 1, mm)%vol(i, j, k)*flowdoms(nn, 1, mm)&
+   &                    %w(i, j, k, l)
+   END DO
+   END DO
+   END DO
+   END IF
+   END DO varloopfine
+   END DO timeloopfine
+   END DO spectralloop2
+   END IF
    !  Actual residual calc
    CALL RESIDUAL_BLOCK_D()
    ! Divide through by the volume
    DO sps2=1,ntimeintervalsspectral
-   ! Set dw and vol to looping sps2 instance
-   dwd => flowdomsd(nn, 1, sps2)%dw
-   dw => flowdoms(nn, 1, sps2)%dw
-   vold => flowdomsd(nn, currentlevel, sps2)%vol
-   vol => flowdoms(nn, currentlevel, sps2)%vol
    DO l=1,nw
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   dwd(i, j, k, l) = dwd(i, j, k, l)/vol(i, j, k)
-   dw(i, j, k, l) = dw(i, j, k, l)/vol(i, j, k)
+   flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = (flowdomsd(nn, 1, &
+   &              sps2)%dw(i, j, k, l)*flowdoms(nn, currentlevel, sps2)%vol(&
+   &              i, j, k)-flowdoms(nn, 1, sps2)%dw(i, j, k, l)*flowdomsd(nn&
+   &              , currentlevel, sps2)%vol(i, j, k))/flowdoms(nn, &
+   &              currentlevel, sps2)%vol(i, j, k)**2
+   flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1, sps2)&
+   &              %dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%vol(i, j&
+   &              , k)
    END DO
    END DO
    END DO
    END DO
    END DO
-   ! Reset dw and vol to sps instance
-   dwd => flowdomsd(nn, 1, sps)%dw
-   dw => flowdoms(nn, 1, sps)%dw
-   vold => flowdomsd(nn, currentlevel, sps)%vol
-   vol => flowdoms(nn, currentlevel, sps)%vol
-   ! We are now done with the residuals, we move on to the forces and moments
-   ! This routine compute Force, Moment, Lift, Drag, and the
-   ! coefficients of the values
+   ! We are now done with the residuals, we move on to the forces and
+   ! moments
    IF (useforces) THEN
    CALL FORCESANDMOMENTS_D(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd, &
    &                      yplusmax)

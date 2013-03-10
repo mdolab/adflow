@@ -13,47 +13,38 @@ Written by Andre C. Marta          Last updated: Apr 6, 2007
 
 # Import modules
 
-import os
+import os, sys
 import string
 
 # Specify file extension
 
-EXT = '_b.f90' 
+EXT = '_dv.f90' 
 
-# Specify directory containing the original source files
-# and the output directory for edited files
-DIR_ORI = os.getcwd()
-DIR_MOD = DIR_ORI + '/../residualOutputReverse'
-# Specify line identifier
+DIR_ORI = sys.argv[1]
+DIR_MOD = sys.argv[2]
 
 # Specifiy the list of LINE ID's to find, what to replace and with what
 
-LINE_ID = ['USE','USE']
-STR_OLD = ['_B' ,'_b' ]
-STR_NEW = [''   ,''   ]
+# First set: Find line with 'USE' and replace "_D" with ''
+LINE_ID = ['USE']
+STR_OLD = ['_DV' ]
+STR_NEW = [''   ]
 
-STR_REPLACE_ALL = {'_CB':''}
-
+STR_REPLACE_ALL = {'_CD':''}
 # Also, entirely ignore lines with these strings:
-LINE_IGNORE = ['USE BLOCKPOINTERS_B']
+LINE_IGNORE = ['USE BLOCKPOINTERS_DV']
 
-FILE_IGNORE = ['blockpointers_b.f90']
-
+FILE_IGNORE = ['blockpointers_dv.f90']
 # Some feedback
 
 print "Directory of input source files  :", DIR_ORI
 print "Directory of output source files :", DIR_MOD
 
-# Create a list with all the files to be parsed
-
 for f in os.listdir(DIR_ORI):
     if not f in FILE_IGNORE:
         if f.endswith(EXT):
-
-            # go to original directory
-            os.chdir(DIR_ORI)
             # open original file in read mode
-            file_object_ori = open(f,'r')
+            file_object_ori = open(DIR_ORI + '/' + f,'r')
             print "\nParsing input file", file_object_ori.name
 
             # read to whole file to string and reposition the pointer
@@ -61,10 +52,8 @@ for f in os.listdir(DIR_ORI):
             all_src = file_object_ori.read()
             file_object_ori.seek(0)
 
-            # go to modified directory
-            os.chdir(DIR_MOD)
             # open modified file in write mode
-            file_object_mod = open(f,'w')
+            file_object_mod = open(DIR_MOD + '/' + f,'w')
 
             # read the original file, line-by-line
             nEdits = len(LINE_ID)
@@ -102,5 +91,6 @@ for f in os.listdir(DIR_ORI):
             # close the files
             file_object_ori.close()
             file_object_mod.close()
+
             # success message
             print " Modified file saved", file_object_mod.name
