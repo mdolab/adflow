@@ -285,8 +285,8 @@ subroutine createPETScVars
   
   ! Make the drdx preallocation slightly bigger since the reverse mode
   ! AD complains sometimes
-  nnzDiagonal = int(nnzDiagonal * 1.2)
-  nnzOffDiag = int(nnzOffDIag * 1.2)
+  nnzDiagonal = int(nnzDiagonal * 1.5)
+  nnzOffDiag = int(nnzOffDIag * 1.5)
 
   ! Note we are creating the TRANPOSE of dRdx. It is size dDimX by nDimW
   call myMatCreate(dRdx, 1, nDimX, nDimW, nnzDiagonal, nnzOffDiag, &
