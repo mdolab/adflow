@@ -138,6 +138,18 @@ subroutine dealloc_derivative_values(nn, level)
         deallocate(flowDomsd(nn,1,sps)%d2Wall, &
              stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
+
+        viscSubfaced => flowDomsd(nn,1,sps)%viscSubface
+        
+        do i=1,nviscBocos
+        
+           deallocate(viscSubfaced(i)%tau, stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+           
+           deallocate(viscSubfaced(i)%q, stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+           
+        end do
      end if
   end do
 

@@ -86,9 +86,11 @@ subroutine destroyPETScVars
 
   call MatDestroy(dRda, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
-
-  deallocate(drda_data)
-
+  
+  if (allocated(dRda_data)) then
+     deallocate(dRda_data)
+  end if
+  
   call KSPDestroy(adjointKSP, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 #endif
