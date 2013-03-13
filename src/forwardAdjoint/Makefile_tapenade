@@ -57,7 +57,7 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 #     ******************************************************************
 
 ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
-		$(SRC)/forwardAdjoint/residualInput/xhalo_block.f90\
+		$(SRC)/forwardAdjoint/residualInput/xhalo_block.F90\
 		$(SRC)/forwardAdjoint/residualInput/metric_block.F90\
 		$(SRC)/forwardAdjoint/residualInput/getCostFuncMat.f90\
 		$(SRC)/modules/monitor.f90\

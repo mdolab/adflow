@@ -2,21 +2,21 @@
    !  Tapenade 3.6 (r4159) - 21 Sep 2011 10:11
    !
    !  Differentiation of block_res in forward (tangent) mode:
-   !   variations   of useful results: *(*flowdoms.x) *(*flowdoms.w)
-   !                *(*flowdoms.dw) *(*bcdata.f) *(*bcdata.m) pointref
+   !   variations   of useful results: *(flowdoms.x) *(flowdoms.w)
+   !                *(flowdoms.dw) *(*bcdata.f) *(*bcdata.m) pointref
    !                costfuncmat moment lift cforce drag force cd cl
    !                cmoment
-   !   with respect to varying inputs: *(*flowdoms.x) *(*flowdoms.w)
+   !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
    !                pointref machcoef surfaceref lengthref machgrid
    !                mach alpha beta
-   !   RW status of diff variables: *(*flowdoms.x):in-out *(*flowdoms.w):in-out
-   !                *(*flowdoms.dw):out *(*bcdata.f):out *(*bcdata.m):out
+   !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.w):in-out
+   !                *(flowdoms.dw):out *(*bcdata.f):out *(*bcdata.m):out
    !                pointref:in-out machcoef:in surfaceref:in lengthref:in
    !                machgrid:in mach:in costfuncmat:out moment:out
    !                lift:out alpha:in cforce:out drag:out force:out
    !                cd:out beta:in cl:out cmoment:out
-   !   Plus diff mem management of: flowdoms:in *flowdoms.x:in *flowdoms.vol:in
-   !                *flowdoms.w:in *flowdoms.dw:in rev:in dtl:in p:in
+   !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
+   !                flowdoms.w:in flowdoms.dw:in rev:in dtl:in p:in
    !                sfacei:in sfacej:in s:in gamma:in sfacek:in rlv:in
    !                xold:in d2wall:in si:in sj:in sk:in fw:in rotmatrixi:in
    !                rotmatrixj:in rotmatrixk:in viscsubface:in *viscsubface.tau:in
@@ -48,9 +48,6 @@
    USE ITERATION
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
-   !  Hint: ISIZE1OFDrfflowdoms should be the size of dimension 1 of array *flowdoms
-   !  Hint: ISIZE2OFDrfflowdoms should be the size of dimension 2 of array *flowdoms
-   !  Hint: ISIZE3OFDrfflowdoms should be the size of dimension 3 of array *flowdoms
    IMPLICIT NONE
    ! Input Arguments:
    INTEGER(kind=inttype), INTENT(IN) :: nn, sps
@@ -124,9 +121,9 @@
    CALL NORMALVELOCITIES_BLOCK_D(sps)
    ! Required for TS
    ELSE
-   DO ii1=1,ISIZE3OFDrfflowdoms
-   DO ii2=1,ISIZE2OFDrfflowdoms
-   DO ii3=1,ISIZE1OFDrfflowdoms
+   DO ii1=1,ntimeintervalsspectral
+   DO ii2=1,1
+   DO ii3=nn,nn
    flowdomsd(ii3, ii2, ii1)%vol = 0.0_8
    END DO
    END DO
@@ -198,9 +195,9 @@
    IF (ntimeintervalsspectral .EQ. 1) THEN
    dwd = 0.0_8
    dw = zero
-   DO ii1=1,ISIZE3OFDrfflowdoms
-   DO ii2=1,ISIZE2OFDrfflowdoms
-   DO ii3=1,ISIZE1OFDrfflowdoms
+   DO ii1=1,ntimeintervalsspectral
+   DO ii2=1,1
+   DO ii3=nn,nn
    flowdomsd(ii3, ii2, ii1)%dw = 0.0_8
    END DO
    END DO
@@ -211,9 +208,9 @@
    flowdomsd(nn, 1, sps2)%dw = 0.0_8
    flowdoms(nn, 1, sps2)%dw = zero
    END DO spectralloop1
-   DO ii1=1,ISIZE3OFDrfflowdoms
-   DO ii2=1,ISIZE2OFDrfflowdoms
-   DO ii3=1,ISIZE1OFDrfflowdoms
+   DO ii1=1,ntimeintervalsspectral
+   DO ii2=1,1
+   DO ii3=nn,nn
    flowdomsd(ii3, ii2, ii1)%dw = 0.0_8
    END DO
    END DO
