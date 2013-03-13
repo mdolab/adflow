@@ -2278,6 +2278,7 @@ class SUMB(AeroSolver):
         '''
         Set Solver Option Value 
         '''
+        name = name.lower()
         # Ignored options do NOT get set in solver
         if name in self.ignore_options:
             return

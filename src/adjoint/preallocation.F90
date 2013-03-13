@@ -150,9 +150,14 @@ subroutine drdxPreAllocation(onProc, offProc, xSize, level)
   ii = 0  
   call initialize_stencils
   
-  stencil => euler_drdx_stencil
-  n_stencil = N_euler_drdx
- 
+  if (viscous) then
+     stencil => visc_drdx_stencil
+     n_stencil = N_visc_drdx
+  else
+     stencil => visc_drdx_stencil
+     n_stencil = N_visc_drdx
+  endif
+
   ! This is for the "Regular" drdx calculation.
   do nn=1, nDom
      do sps=1, nTimeIntervalsSpectral
