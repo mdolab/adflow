@@ -94,6 +94,16 @@ FF90_OBJECTS =  blockpointers_d.o\
 		derivativerigidrotangle_d.o\
 		computeeddyviscosity_d.o\
 		sanuknowneddyratio_d.o\
+		unsteadyturbspectral_block_d.o\
+		turb2ndhalo_d.o\
+		sasolve_d.o\
+		prodkatolaunder_d.o\
+		prodwmag2_d.o\
+		prodsmag2_d.o\
+		turbadvection_d.o\
+		unsteadyturbterm_d.o\
+		curvetupyp_d.o\
+
 
 #      ******************************************************************
 #      *                                                                *

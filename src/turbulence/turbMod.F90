@@ -54,4 +54,16 @@
        real(kind=realType), dimension(:,:,:),   pointer :: scl2
        real(kind=realType), dimension(:,:,:),   pointer :: strain2
 
+#ifndef USE_TAPENADE
+       real(kind=realType), dimension(:,:,:,:), pointer :: dvtd
+       real(kind=realType), dimension(:,:,:),   pointer :: vortd
+       real(kind=realType), dimension(:,:,:),   pointer :: prodd
+       real(kind=realType), dimension(:,:,:),   pointer :: f1d
+       real(kind=realType), dimension(:,:,:),   pointer :: kwCDd
+       real(kind=realType), dimension(:,:,:),   pointer :: ktCDd
+       real(kind=realType), dimension(:,:,:),   pointer :: sctd
+       real(kind=realType), dimension(:,:,:),   pointer :: scl2d
+       real(kind=realType), dimension(:,:,:),   pointer :: strain2d
+#endif
+
        end module turbMod

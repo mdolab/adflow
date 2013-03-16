@@ -63,9 +63,8 @@
 
        select case (equationMode)
 
-       ! case (steady)
-         case (steady, timeSpectral)
-
+        case (steady)
+       
            ! Steady computation. No time derivative present.
 
            return
@@ -155,9 +154,8 @@
 
          !===============================================================
 
-       ! case (timeSpectral)
-         case default
-
+        case (timeSpectral)
+       
            ! Time spectral method.
 
            ! Loop over the number of turbulent transport equations.

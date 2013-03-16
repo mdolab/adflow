@@ -109,7 +109,25 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/initFlow/setFlowInfinityState.F90\
 		$(SRC)/turbulence/computeEddyViscosity.F90\
 		$(SRC)/turbulence/curveFit.f90\
+		$(SRC)/turbulence/turbBCNSWall.f90\
+		$(SRC)/turbulence/turbMod.F90\
 		$(SRC)/turbulence/saNuFromEddyRatio.f90\
+		$(SRC)/turbulence/sa.f90\
+		$(SRC)/turbulence/saSolve.f90\
+		$(SRC)/turbulence/prodKatoLaunder.f90\
+		$(SRC)/turbulence/prodSmag2.f90\
+		$(SRC)/turbulence/prodWmag2.f90\
+		$(SRC)/turbulence/turbAdvection.f90\
+		$(SRC)/turbulence/unsteadyTurbTerm.f90\
+		$(SRC)/turbulence/bcTurbSymm.f90\
+		$(SRC)/turbulence/bcTurbWall.f90\
+		$(SRC)/turbulence/bcTurbFarfield.f90\
+		$(SRC)/turbulence/unsteadyTurbSpectral.f90\
+		$(SRC)/turbulence/bcTurbTreatment.F90\
+		$(SRC)/turbulence/applyAllTurbBC.f90\
+		$(SRC)/turbulence/bcEddyWall.f90\
+		$(SRC)/turbulence/bcEddyNoWall.f90\
+		$(SRC)/turbulence/turb2ndHalo.f90\
 		$(SRC)/utils/rotMatrixRigidBody.f90\
 		$(SRC)/utils/computeGamma.f90\
 		$(SRC)/utils/TSalpha.f90\
