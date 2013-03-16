@@ -102,7 +102,7 @@
              call bcTurbWall(nn)
 
            !=============================================================
-
+#ifndef USE_TAPENADE
            case (SubsonicInflow, SupersonicInflow, MassBleedInflow)
 
              ! Inflow. Subsonic, supersonic or mass bleed inflow is
@@ -120,7 +120,7 @@
              ! extrapolation boundary is also an outflow.
 
              call bcTurbOutflow(nn)
-
+#endif
            !=============================================================
 
            case (Symm, SymmPolar, EulerWall)
@@ -140,7 +140,7 @@
              call bcTurbFarfield(nn)
 
            !=============================================================
-
+#ifndef USE_TAPENADE
            case (SlidingInterface,   OversetOuterBound,     &
                  DomainInterfaceAll, DomainInterfaceRhoUVW, &
                  DomainInterfaceP,   DomainInterfaceRho,    &
@@ -151,7 +151,7 @@
              ! condition and therefore the values are kept.
 
              call bcTurbInterface(nn)
-
+#endif
            !=============================================================
 
            case default

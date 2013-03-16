@@ -193,7 +193,8 @@ class SUMB(AeroSolver):
             'finitedifferencepc':[bool, True],
             'usereversemodead':[bool, True],
             'lowmemory':[bool, True],
-            'applyadjointpcsubspacesize':[int, 20]
+            'applyadjointpcsubspacesize':[int, 20],
+            'forzenturbulence':[bool, True]
             }
 
         informs = {
@@ -529,6 +530,7 @@ class SUMB(AeroSolver):
             'adjointl2convergenceabs':{'location':'inputadjoint.adjabstol'},
             'adjointdivtol':{'location':'inputadjoint.adjdivtol'},
             'approxpc':{'location':'inputadjoint.approxpc'},
+            'forzenturbulence':{'location':'inputadjoint.forzenturbulence'},
             'usediagtspc':{'location':'inputadjoint.usediagtspc'},
             'restartadjoint':{'location':'inputadjoint.restartadjoint'},
             'adjointsolver':{'gmres':'gmres',

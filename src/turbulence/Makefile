@@ -40,7 +40,7 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = turbMod.o
 
-FILES_TO_COMPLEXIFY = turbMod.f90\
+FILES_TO_COMPLEXIFY = turbMod.F90\
 		 applyAllTurbBC.f90\
 		 bcEddyNoWall.f90\
 		 bcEddyWall.f90\
@@ -49,7 +49,7 @@ FILES_TO_COMPLEXIFY = turbMod.f90\
 		 bcTurbInterface.f90\
 		 bcTurbOutflow.f90\
 		 bcTurbSymm.f90\
-		 bcTurbTreatment.f90\
+		 bcTurbTreatment.F90\
 		 bcTurbWall.f90\
 		 bl.f90\
 		 computeEddyViscosity.F90\

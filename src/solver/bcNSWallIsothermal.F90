@@ -71,9 +71,9 @@
        ! wall boundary conditions for the turbulent variables.
        ! No need to extrapolate the secondary halo's, because this
        ! is done in extrapolate2ndHalo.
-#ifndef USE_TAPENADE
+
        if( turbCoupled ) call turbBCNSWall(.false.)
-#endif
+
        ! Loop over the viscous subfaces of this block. Note that
        ! these are numbered first.
 

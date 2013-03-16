@@ -11,16 +11,16 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   !     ******************************************************************
   !
   use ADjointPetsc, only : FMx, dFcdx
-  use blockPointers_d
   use BCTypes
+  use blockPointers_d      
   use inputDiscretization 
-  USE inputTimeSpectral 
+  use inputTimeSpectral 
   use inputPhysics
   use iteration         
-  use flowVarRefState    
+  use flowVarRefState     
+  use inputAdjoint       
   use stencils
   use diffSizes
-
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -34,7 +34,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   ! Local variables.
   integer(kind=intType) :: ierr,nn,sps,sps2,i,j,k,l,ll,ii,jj,kk, mm
   integer(kind=intType) :: irow, icol, level, fdim
-  integer(kind=intType) :: n_stencil, i_stencil, n_force_stencil
+  integer(kind=intType) :: n_stencil, i_stencil, n_force_stencil, nState
   integer(kind=intType), dimension(:,:), pointer :: stencil, force_stencil
   integer(kind=intType) :: nColor, iColor, jColor, ind, fmInd
   real(kind=realType) :: delta_x,one_over_dx, val
@@ -47,6 +47,8 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   integer(kind=intType), dimension(:,:), pointer ::  colorPtr
   integer(kind=intType), dimension(:,:), pointer ::  globalNodePtr
   integer(kind=intType) :: fRow
+  logical :: resetToRANS
+
   ! This routine will not use the extra variables to block_res or the
   ! extra outputs, so we must zero them here
   alphad = zero
@@ -57,6 +59,13 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   pointRefd  = zero
   surfaceRefd = zero
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
+
+! Setup number of state variable based on turbulence assumption
+  if ( frozenTurbulence ) then
+     nState = nwf
+  else
+     nState = nw
+  endif
 
   ! Hardcode levels since assembling on coarser levels is not working
   level = 1
@@ -98,6 +107,27 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
         call VecZeroEntries(FMx(fmDim), ierr)
         call EChk(ierr, __FILE__, __LINE__)
      end do
+  end if
+
+  ! If we are computing the jacobian for the RANS equations, we need
+  ! to make block_res think that we are evauluating the residual in a
+  ! fully coupled sense.  This is reset after this routine is
+  ! finished.
+  if (equations == RANSEquations) then
+     nMGVar = nw
+     nt1MG = nt1
+     nt2MG = nt2
+
+     turbSegregated = .False.
+     turbCoupled = .True.
+  end if
+
+  ! Determine if we want to use frozenTurbulent Adjoint
+  resetToRANS = .False. 
+  if (frozenTurbulence .and. equations == RANSEquations) then
+     equations = NSEquations 
+     call setEquationParameters
+     resetToRANS = .True.
   end if
 
   ! Master Domain Loop
@@ -280,7 +310,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
 
               ! Take all Derivatives
               do sps2 = 1,nTimeIntervalsSpectral
-                 do ll=1,nw
+                 do ll=1,nState
                     do k=2,kl 
                        do j=2,jl
                           do i=2,il
@@ -398,28 +428,47 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   call MatSetOption(matrix, MAT_NEW_NONZERO_LOCATIONS, PETSC_FALSE, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
+  ! Reset the correct equation parameters if we were useing the frozen
+  ! Turbulent 
+  if (resetToRANS) then
+     equations = RANSEquations
+     call setEquationParameters
+  end if
+
+  ! Reset the paraters to use segrated turbulence solve. 
+  if (equations == RANSEquations) then
+     nMGVar = nw
+     nt1MG = nt1
+     nt2MG = nt2
+
+     turbSegregated = .False.
+     turbCoupled = .True.
+  end if
+
+
 contains
 
   subroutine setBlock(blk)
-    ! Sets a block at irow,icol. Note that blk is actually (nw,nw) but
-    ! since this is drdx, we're only using (nw,3) chunk of it. This
-    ! should be ok, nw will always be greater than 3
+    ! Sets a block at irow,icol. Note that blk is actually
+    ! (nState,nState) but since this is drdx, we're only using
+    ! (nState,3) chunk of it. This should be ok, nState will always be
+    ! greater than 3
 
     implicit none
 #ifdef USE_COMPLEX
-    complex(kind=realType), dimension(nw,nw) :: blk
+    complex(kind=realType), dimension(nState,nState) :: blk
 #else
-    real(kind=realType), dimension(nw,nw) :: blk
+    real(kind=realType), dimension(nState,nState) :: blk
 #endif
     integer(kind=intType) :: iii,jjj, nrows, ncols
 
     do jjj=1,3
-       do iii=1,nw
+       do iii=1,nState
          
           ! NOTE: We are setting the values in the tranpose
           ! sense. That's why icol is followed by irow. 
 
-          call MatSetValues(matrix,1,icol*3+jjj-1,1,irow*nw+iii-1,&
+          call MatSetValues(matrix,1,icol*3+jjj-1,1,irow*nState+iii-1,&
                blk(iii,jjj),ADD_VALUES,ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
