@@ -39,6 +39,7 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
   ! Working Variables
   real(kind=realType) :: gm1, v2, fact
   integer(kind=intType) :: i, j, k, sps2, mm, l, ii, ll, jj, lEnd
+  integer(kind=intType) :: nState
   real(kind=realType), dimension(nSections) :: t
   real(kind=realType), dimension(3) :: cFp, cFv, cMp, cMv
   real(kind=realType) :: yplusMax, scaleDim, tmp
@@ -46,6 +47,13 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
   real(kind=realType), pointer, dimension(:,:,:,:) :: wsp
   real(kind=realType), pointer, dimension(:,:,:) :: volsp
   useOldCoor = .False.
+
+  ! Setup number of state variable based on turbulence assumption
+  if ( frozenTurbulence ) then
+     nState = nwf
+  else
+     nState = nw
+  endif
 
   ! Set pointers to input/output variables
   w  => flowDoms(nn, currentLevel, sps)%w
@@ -117,12 +125,25 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
   call timeStep_block(.false.)
 
   ! -------------------------------
-  ! The forward ADjoint is NOT currently setup for RANS equations
-  !   if( equations == RANSEquations ) then
-  !      ! Initialize only the Turblent Variables
-  !      call initres_block(nt1MG, nMGVar,nn,sps) 
-  !      call turbResidual_block
-  !   endif
+  ! Compute turbulence residual for RANS equations
+  if( equations == RANSEquations) then
+     ! Initialize only the Turblent Variables
+     call unsteadyTurbSpectral_block(itu1, itu2, nn, sps)
+     
+     select case (turbModel)
+        
+     case (spalartAllmaras)
+        !call determineDistance2(1, sps)
+        call sa_block(.true.)
+        
+     case default
+        call terminate("turbResidual", & 
+             "Only SA turbulence adjoint implemented")
+        
+     end select
+     
+  endif
+
   ! -------------------------------  
 
   ! Next initialize residual for flow variables. The is the only place
@@ -132,11 +153,11 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
 
   ! sps here is the on-spectral instance
   if (nTimeIntervalsSpectral == 1) then
-     dw = zero
+     dw(:,:,:,1:nwf) = zero
   else
      ! Zero dw on all spectral instances
      spectralLoop1: do sps2=1,nTimeIntervalsSpectral
-        flowDoms(nn, 1, sps2)%dw = zero
+        flowDoms(nn, 1, sps2)%dw(:,:,:,1:nwf) = zero
      end do spectralLoop1
 
      spectralLoop2: do sps2=1,nTimeIntervalsSpectral
@@ -186,7 +207,7 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
 
   ! Divide through by the volume
   do sps2 = 1,nTimeIntervalsSpectral
-     do l=1, nw
+     do l=1, nState
         do k=2, kl
            do j=2, jl
               do i=2, il

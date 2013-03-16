@@ -10,20 +10,30 @@ subroutine alloc_derivative_values(nn, level)
   use inputPhysics
   use BCTypes
   use cgnsGrid 
+  use paramTurb
+  use turbMod
+  use inputADjoint
   implicit none
 
   ! Input parameters
   integer(kind=intType) :: nn, level
 
   ! Local variables
-  integer(kind=intType) :: sps,ierr,i,j,k,l, mm
+  integer(kind=intType) :: sps,ierr,i,j,k,l, mm, nState
   integer(kind=intType) :: iBeg, jBeg, iEnd, jEnd
   integer(kind=intType) :: massShape(2), max_face_size
 
   real(kind=realType) :: alpha, beta, Lift, Drag, CL, CD
   real(kind=realType), dimension(3) :: Force, Moment, cForce, cMoment
   integer(kind=intType) :: liftIndex
-
+  
+  ! Setup number of state variable based on turbulence assumption
+  if ( frozenTurbulence ) then
+     nState = nwf
+  else
+     nState = nw
+  endif
+  
   ! This routine will not use the extra variables to block_res or the
   ! extra outputs, so we must zero them here
 
@@ -108,6 +118,15 @@ subroutine alloc_derivative_values(nn, level)
      allocate(flowDomsd(nn,1,sps)%rev(0:ib,0:jb,0:kb),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
      flowDomsd(nn,1,sps)%rev = zero
+
+     ! Allocate memory for dvt, prod in SaSolve
+     allocate(flowDomsd(nn,1,sps)%tdvt(0:ib,0:jb,0:kb,1:nw), stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     flowDomsd(nn,1,sps)%tdvt = zero
+
+     allocate(flowDomsd(nn,1,sps)%tprod(1:ib,1:jb,1:kb,iprod), stat=ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     flowDomsd(nn,1,sps)%tprod = zero
 
      allocate(&
           flowDomsd(nn,1,sps)%dtl (1:ie,1:je,1:ke), &
@@ -261,7 +280,7 @@ subroutine alloc_derivative_values(nn, level)
      allocate(flowDomsd(nn,1,sps)%xtmp(0:ie,0:je,0:ke,3),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     allocate(flowDomsd(nn,1,sps)%dw_deriv(0:ib,0:jb,0:kb,1:nw,1:nw),stat=ierr)
+     allocate(flowDomsd(nn,1,sps)%dw_deriv(0:ib,0:jb,0:kb,1:nState,1:nState),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      flowDomsd(nn,1,sps)%dw_deriv(:,:,:,:,:) = 0.0

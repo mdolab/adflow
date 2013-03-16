@@ -788,6 +788,7 @@ python module sumb
          integer(kind=inttype) :: innerpreconits
          integer(kind=inttype) :: outerpreconits
          logical :: approxpc
+         logical :: frozenturbulence
          logical :: usediagtspc
          logical :: finitedifferencepc
          logical :: restartadjoint
