@@ -119,15 +119,6 @@ subroutine alloc_derivative_values(nn, level)
      call EChk(ierr,__FILE__,__LINE__)
      flowDomsd(nn,1,sps)%rev = zero
 
-     ! Allocate memory for dvt, prod in SaSolve
-     allocate(flowDomsd(nn,1,sps)%tdvt(0:ib,0:jb,0:kb,1:nw), stat=ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-     flowDomsd(nn,1,sps)%tdvt = zero
-
-     allocate(flowDomsd(nn,1,sps)%tprod(1:ib,1:jb,1:kb,iprod), stat=ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-     flowDomsd(nn,1,sps)%tprod = zero
-
      allocate(&
           flowDomsd(nn,1,sps)%dtl (1:ie,1:je,1:ke), &
           flowDomsd(nn,1,sps)%radI(1:ie,1:je,1:ke),     &
