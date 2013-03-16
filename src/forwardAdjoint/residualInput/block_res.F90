@@ -23,6 +23,7 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
   use monitor
   use iteration
   use costFunctions
+  use inputADjoint
   implicit none
 
   ! Input Arguments:

@@ -58,6 +58,7 @@
    USE FLOWVARREFSTATE
    USE MONITOR
    USE BLOCKPOINTERS_D
+   USE INPUTADJOINT
    USE SECTION
    USE INPUTTIMESPECTRAL
    USE COSTFUNCTIONS
@@ -95,7 +96,6 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: volsp
    REAL(realtype) :: result1
    INTRINSIC MAX
-   LOGICAL :: frozenturbulence
    INTRINSIC REAL
    INTEGER :: ii3
    INTEGER :: ii2
