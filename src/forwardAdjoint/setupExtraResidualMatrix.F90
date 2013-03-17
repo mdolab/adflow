@@ -24,7 +24,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   use stencils
   use cgnsGrid
   use inputADjoint
-
+  use diffSizes
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -111,7 +111,6 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   resetToRANS = .False. 
   if (frozenTurbulence .and. equations == RANSEquations) then
      equations = NSEquations 
-     call setEquationParameters
      resetToRANS = .True.
   end if
 
@@ -123,6 +122,8 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
      ! Allocate the memory we need for this block to do the forward
      ! mode derivatives and copy reference values
      call alloc_derivative_values(nn, level)
+     ISIZE1OFDrfbcdata = nBocos
+     ISIZE1OFDrfviscsubface = nViscBocos
 
      ! Save the reference values in case we are doing finite differencing
      alpharef = alpha
@@ -323,7 +324,6 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   ! Turbulent 
   if (resetToRANS) then
      equations = RANSEquations
-     call setEquationParameters
   end if
 
   ! Reset the paraters to use segrated turbulence solve. 

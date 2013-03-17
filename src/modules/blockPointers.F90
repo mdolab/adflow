@@ -57,6 +57,7 @@ module blockPointers
   !
   integer(kind=intType) :: nx, ny, nz, il, jl, kl
   integer(kind=intType) :: ie, je, ke, ib, jb, kb
+  integer(kind=intType) :: maxDim
 
   logical :: rightHanded
 

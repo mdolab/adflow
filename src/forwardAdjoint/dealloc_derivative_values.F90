@@ -39,10 +39,6 @@ subroutine dealloc_derivative_values(nn, level)
   do sps=1,nTimeIntervalsSpectral
      call setPointers(nn,level,sps)
 
-     ! Allocate the tempHalo locations in BOTH the normal and AD calcs
-     !deallocate(flowDoms (nn,1,sps)%tempHalo)
-     !deallocate(flowDomsd(nn,1,sps)%tempHalo)
-
      deallocate(flowDomsd(nn,1,sps)%x, stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
@@ -103,15 +99,11 @@ subroutine dealloc_derivative_values(nn, level)
         deallocate(BCDatad(mm)%M, stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
-        select case (BCType(mm))
+        deallocate(BCDatad(mm)%uSlip, stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
 
-        case (NSWallAdiabatic)
-           deallocate(BCDatad(mm)%uSlip, stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
-        case (NSWallIsothermal)
-           deallocate(BCDatad(mm)%uSlip,BCDatad(mm)%TNS_Wall,stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
-        end select
+        deallocate(BCDatad(mm)%TNS_Wall,stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
      enddo
 
      deallocate(flowDomsd(nn,1,sps)%BCData, stat=ierr)
@@ -138,18 +130,19 @@ subroutine dealloc_derivative_values(nn, level)
         deallocate(flowDomsd(nn,1,sps)%d2Wall, &
              stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
+        
+        viscbocoLoop: do mm=1,nviscBocos
+           deallocate(flowDomsd(nn,1,sps)%viscSubface(mm)%tau, stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+           
+           deallocate(flowDomsd(nn,1,sps)%viscSubface(mm)%q, stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+           
+        end do viscbocoLoop
 
-        viscSubfaced => flowDomsd(nn,1,sps)%viscSubface
-        
-        do i=1,nviscBocos
-        
-           deallocate(viscSubfaced(i)%tau, stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
-           
-           deallocate(viscSubfaced(i)%q, stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
-           
-        end do
+        deallocate(flowDomsd(nn,1,sps)%viscSubFace, stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
      end if
   end do
 
