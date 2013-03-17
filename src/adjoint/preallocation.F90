@@ -154,8 +154,8 @@ subroutine drdxPreAllocation(onProc, offProc, xSize, level)
      stencil => visc_drdx_stencil
      n_stencil = N_visc_drdx
   else
-     stencil => visc_drdx_stencil
-     n_stencil = N_visc_drdx
+     stencil => euler_drdx_stencil
+     n_stencil = N_euler_drdx
   endif
 
   ! This is for the "Regular" drdx calculation.
@@ -220,7 +220,10 @@ subroutine drdxPreAllocation(onProc, offProc, xSize, level)
                           else
                              ! Its one of the funny corner cells, 
                              ! which doesn't count
-                             
+                             onProc(ii) = onProc(ii) + nw
+                             offProc(ii) = offProc(ii) + nw
+
+
                           end if
                        end if
                     end do ! Stencil Loop

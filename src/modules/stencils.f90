@@ -161,9 +161,9 @@ subroutine initialize_stencils
   ! Visc drdx stencil
   ! Dense 4x4x4 cube
   ii = 1
-  do k=-2,1
-     do j=-2,1
-        do i=-2,1
+  do k=-1,2
+     do j=-1,2
+        do i=-1,2
            visc_drdx_stencil(ii, :) =  (/i, j, k/)
            ii = ii + 1
         end do
@@ -186,8 +186,8 @@ subroutine initialize_stencils
   ! 4x4 on surface and two levels high
   ii = 1
   do k=0,0
-     do j=-2,1
-        do i=-2,1
+     do j=-1,2
+        do i=-1,2
            visc_force_x_stencil(ii, :) =  (/i, j, k/)
            ii = ii + 1
         end do
