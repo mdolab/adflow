@@ -48,7 +48,7 @@ subroutine createPETScVars
   nDimPt = npts * 3 * nTS
   nDimCell = nCells * 3 * nTS
 
-  ! ------------------- Determine Preallocation for dRdwf --------------
+  ! ------------------- Determine Preallocation for dRdw --------------
 
   allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
        nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
@@ -59,9 +59,9 @@ subroutine createPETScVars
      allocate(stencil(n_stencil, 3))
      stencil = euler_drdw_stencil
   else
-     n_stencil = N_visc_pc
+     n_stencil = N_visc_drdw
      allocate(stencil(n_stencil, 3))
-     stencil = visc_pc_stencil
+     stencil = visc_drdw_stencil
   end if
 
   level = 1
@@ -269,12 +269,7 @@ subroutine createPETScVars
   ! Create the matrix dRdx.
   level = 1_intType
   call drdxPreAllocation(nnzDiagonal, nnzOffDiag, nDimX, level)
-  
-  ! Make the drdx preallocation slightly bigger since the reverse mode
-  ! AD complains sometimes
-  nnzDiagonal = int(nnzDiagonal * 1.5)
-  nnzOffDiag = int(nnzOffDIag * 1.5)
-
+ 
   ! Note we are creating the TRANPOSE of dRdx. It is size dDimX by nDimW
   call myMatCreate(dRdx, 1, nDimX, nDimW, nnzDiagonal, nnzOffDiag, &
        __FILE__, __LINE__)

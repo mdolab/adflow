@@ -39,7 +39,7 @@ subroutine setupAllResidualMatricesfwd
   use inputADjoint       
   use section            
   use monitor            
-
+  use diffsizes
   implicit none
   !
   !     Local variables.
@@ -87,7 +87,7 @@ subroutine setupAllResidualMatricesfwd
   call setupStateResidualMatrix(drdwT, useAD, usePC, useTranspose, useObjective, &
        1_intType)
   call setupSpatialResidualMatrix(drdx, useAD, useObjective)
-  call setupExtraResidualMatrix(drda, useAD)
+    call setupExtraResidualMatrix(drda, useAD)
 
   if (nDesignDissError >= 0) then
      !==================================
@@ -116,8 +116,11 @@ subroutine setupAllResidualMatricesfwd
            
            call setPointers(nn, level, sps)
            
+           ! Set unknown sizes in diffSizes for AD routine
+           ISIZE1OFDrfbcdata = nBocos
+           ISIZE1OFDrfviscsubface = nViscBocos
+
            ! Loop over location of output (R) cell of residual
-           
            do kCell = 2, kl
               do jCell = 2, jl
                  do iCell = 2, il

@@ -166,7 +166,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   resetToRANS = .False. 
   if (frozenTurbulence .and. equations == RANSEquations) then
      equations = NSEquations 
-     call setEquationParameters
      resetToRANS = .True.
   end if
 
@@ -515,7 +514,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! Turbulent 
   if (resetToRANS) then
      equations = RANSEquations
-     call setEquationParameters
   end if
 
   ! Reset the paraters to use segrated turbulence solve. 

@@ -162,33 +162,13 @@ subroutine alloc_derivative_values(nn, level)
         call EChk(ierr,__FILE__,__LINE__)
         bcDatad(mm)%M = zero
 
-        ! Determine the boundary condition we are having here
-        ! and allocate the memory accordingly.
+        allocate(BCDatad(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        BCDatad(mm)%uSlip = zero
 
-        select case (BCType(mm))
-
-        case (NSWallAdiabatic)
-
-           ! Adiabatic wall. Just allocate the memory for uSlip.
-
-           allocate(BCDatad(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
-           BCData(mm)%uSlip = zero
-
-           !=======================================================
-
-        case (NSWallIsothermal)
-
-           ! Isothermal wall. Allocate the memory for uSlip
-           ! and TNS_Wall.
-
-           allocate(BCDatad(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3),  &
-                BCDatad(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
-                stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
-           BCData(mm)%uSlip = zero
-           !=======================================================
-        end select
+        allocate(BCDatad(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        BCDatad(mm)%TNS_Wall = zero
      end do bocoLoop
 
      ! It appears these values only require 1 sps instance

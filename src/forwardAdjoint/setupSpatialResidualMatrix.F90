@@ -21,6 +21,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   use inputAdjoint       
   use stencils
   use diffSizes
+  use communication
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -126,7 +127,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   resetToRANS = .False. 
   if (frozenTurbulence .and. equations == RANSEquations) then
      equations = NSEquations 
-     call setEquationParameters
      resetToRANS = .True.
   end if
 
@@ -136,9 +136,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
      ! Set pointers to the first timeInstance...just to getSizes
      call setPointers(nn, level, 1)
 
-     ! Set unknown sizes in diffSizes for AD routine
-     ISIZE1OFDrfbcdata = nBocos
-     ISIZE1OFDrfviscsubface = nViscBocos
      
      ! Allocate the memory we need for this block to do the forward
      ! mode derivatives and copy reference values
@@ -167,6 +164,10 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
         ! Set pointers and derivative pointers
         call setPointers_d(nn, 1, sps)
 
+        ! Set unknown sizes in diffSizes for AD routine
+        ISIZE1OFDrfbcdata = nBocos
+        ISIZE1OFDrfviscsubface = nViscBocos
+   
         ! Do Coloring and perturb states
         colorLoop: do iColor = 1,nColor
            do sps2 = 1,nTimeIntervalsSpectral
@@ -432,7 +433,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   ! Turbulent 
   if (resetToRANS) then
      equations = RANSEquations
-     call setEquationParameters
   end if
 
   ! Reset the paraters to use segrated turbulence solve. 
