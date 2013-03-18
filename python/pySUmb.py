@@ -175,6 +175,7 @@ class SUMB(AeroSolver):
             'adjointl2convergenceabs':[float, 1e-16],
             'adjointdivtol':[float, 1e5],
             'approxpc': [bool, False],
+            'viscpc':[bool,False],
             'usediagtspc':[bool, False],
             'restartadjoint':[bool, False],
             'adjointsolver': [str, 'gmres'],
@@ -193,7 +194,8 @@ class SUMB(AeroSolver):
             'finitedifferencepc':[bool, True],
             'usereversemodead':[bool, True],
             'lowmemory':[bool, True],
-            'applyadjointpcsubspacesize':[int, 20]
+            'applyadjointpcsubspacesize':[int, 20],
+            'frozenturbulence':[bool, True]
             }
 
         informs = {
@@ -529,6 +531,8 @@ class SUMB(AeroSolver):
             'adjointl2convergenceabs':{'location':'inputadjoint.adjabstol'},
             'adjointdivtol':{'location':'inputadjoint.adjdivtol'},
             'approxpc':{'location':'inputadjoint.approxpc'},
+            'viscpc':{'location':'inputadjoint.viscpc'},
+            'frozenturbulence':{'location':'inputadjoint.frozenturbulence'},
             'usediagtspc':{'location':'inputadjoint.usediagtspc'},
             'restartadjoint':{'location':'inputadjoint.restartadjoint'},
             'adjointsolver':{'gmres':'gmres',
@@ -1775,8 +1779,6 @@ class SUMB(AeroSolver):
 
         if self._update_geom_info:
             self.mesh.warpMesh()
-            #self.mesh.writeVolumeGrid('/scratch/j/jmartins/kenway/warped_grid.cgns')
-            #self.mesh.writeSurfaceGrid('/scratch/j/jmartins/kenway/warped_surf.cgns')
             newGrid = self.mesh.getSolverGrid()
 
             if newGrid is not None:
@@ -2091,12 +2093,16 @@ class SUMB(AeroSolver):
     def getStateSize(self):
         '''Return the number of degrees of freedom (states) that are
         on this processor'''
+        if self.getOption('frozenTurbulence'):
+            nstate = self.sumb.flowvarrefstate.nwf
+        else:
+            nstate = self.sumb.flowvarrefstate.nw
+        #end if
 
-        nw     = self.sumb.flowvarrefstate.nw
         ncells = self.sumb.adjointvars.ncellslocal[0]
         ntime  = self.sumb.inputtimespectral.ntimeintervalsspectral
 
-        return nw*ncells*ntime
+        return nstate*ncells*ntime
 
     def getSpatialSize(self):
         '''Return the number of degrees of spatial degrees of freedom on this processor.'''
@@ -2278,6 +2284,7 @@ class SUMB(AeroSolver):
         '''
         Set Solver Option Value 
         '''
+        name = name.lower()
         # Ignored options do NOT get set in solver
         if name in self.ignore_options:
             return

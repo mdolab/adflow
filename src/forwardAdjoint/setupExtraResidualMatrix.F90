@@ -23,7 +23,8 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   use inputMotion     
   use stencils
   use cgnsGrid
-
+  use inputADjoint
+  use diffSizes
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -42,8 +43,8 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   integer(kind=intType) :: n_stencil,i_stencil
   integer(kind=intType), dimension(:,:), pointer :: stencil
   integer(kind=intType) :: nColor, iColor, idxblk, level
-  logical :: secondHalo
-  integer(kind=intType) :: FMDim
+  logical :: secondHalo, resetToRANS
+  integer(kind=intType) :: FMDim, nState
 
   ! Values for block_res
   real(kind=realType) :: alpha, beta, Lift, Drag, CL, CD
@@ -56,6 +57,13 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   real(kind=realType) :: alpharef, betaref, machref, machGridRef, machCoefRef
   real(kind=realType), dimension(3) :: rotRateRef,rotcenterRef
   real(kind=realType), dimension(3) :: rotPointRef,pointRefRef
+
+  ! Setup number of state variable based on turbulence assumption
+  if ( frozenTurbulence ) then
+     nState = nwf
+  else
+     nState = nw
+  endif
 
   rkStage = 0
   currentLevel =1 
@@ -85,6 +93,27 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   nColor = nDesignExtra
   FMExtra = zero
   dFMdextra = zero
+
+  ! If we are computing the jacobian for the RANS equations, we need
+  ! to make block_res think that we are evauluating the residual in a
+  ! fully coupled sense.  This is reset after this routine is
+  ! finished.
+  if (equations == RANSEquations) then
+     nMGVar = nw
+     nt1MG = nt1
+     nt2MG = nt2
+
+     turbSegregated = .False.
+     turbCoupled = .True.
+  end if
+
+  ! Determine if we want to use forzenTurbulent Adjiont
+  resetToRANS = .False. 
+  if (frozenTurbulence .and. equations == RANSEquations) then
+     equations = NSEquations 
+     resetToRANS = .True.
+  end if
+
   domainLoopAD: do nn=1,nDom
 
      ! Set pointers to the first timeInstance...just to getSizes
@@ -93,6 +122,8 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
      ! Allocate the memory we need for this block to do the forward
      ! mode derivatives and copy reference values
      call alloc_derivative_values(nn, level)
+     ISIZE1OFDrfbcdata = nBocos
+     ISIZE1OFDrfviscsubface = nViscBocos
 
      ! Save the reference values in case we are doing finite differencing
      alpharef = alpha
@@ -227,7 +258,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
            ! actually do the FD calculation if AD, just copy out dw
            ! in flowdomsd
         
-           do ll=1,nw
+           do ll=1,nState
               do k=2,kl 
                  do j=2,jl
                     do i=2,il
@@ -289,6 +320,22 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   call MatSetOption(matrix, MAT_NEW_NONZERO_LOCATIONS, PETSC_FALSE, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
+  ! Reset the correct equation parameters if we were useing the frozen
+  ! Turbulent 
+  if (resetToRANS) then
+     equations = RANSEquations
+  end if
+
+  ! Reset the paraters to use segrated turbulence solve. 
+  if (equations == RANSEquations) then
+     nMGVar = nw
+     nt1MG = nt1
+     nt2MG = nt2
+
+     turbSegregated = .False.
+     turbCoupled = .True.
+  end if
+
 contains
 
   subroutine setBlock(blk)
@@ -296,11 +343,11 @@ contains
     ! Sets a block at icol,irow with transpose of blk if useTranspose is True
 
     implicit none
-    real(kind=realType), dimension(nw,1) :: blk
+    real(kind=realType), dimension(nState,1) :: blk
     integer(kind=intType) :: iii
        
-    do iii=1, nw
-       call MatSetValues(matrix, 1, irow*nw+iii-1, 1, icol,blk(iii,1), &
+    do iii=1, nState
+       call MatSetValues(matrix, 1, irow*nState+iii-1, 1, icol,blk(iii,1), &
             ADD_VALUES, ierr)
        call EChk(ierr, __FILE__, __LINE__)
     end do

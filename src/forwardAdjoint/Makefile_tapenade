@@ -5,6 +5,32 @@
 #     * Starting date: 08-02-2006                                      *
 #     * Last modified: 01-10-2013                                      *
 #     *                                                                *
+#     * This makefile is used to create automatically differentated    *
+#     * residual code that can be used to constuct the aerodynamic     *
+#     * jacobian. There are three main commands:                       *
+#     *                                                                *
+#     * ad_forward: Run in forward mode. Preprocessed output is in     *
+#     *             'foward' directory                                 *
+#     *                                                                *
+#     * ad_multi: Run in foward multi-directional mode. Preprocessed   *
+#     *           output is in the 'fowardMulti'directory               *
+#     *                                                                *
+#     * ad_reverse: Run in reverse mode. Preprocessed output is in the *
+#     *             'reverse' directory                                *
+#     *                                                                *
+#     * The following are commands that are used to produce tangent/   *
+#     * adjoint debug code.                                            *
+#     *                                                                *
+#     * ad_forward_debugTGT: Run in forward with debug commands        *
+#     *                      for debugging the FORWARD mode code.      *
+#     *                                                                *
+#     * ad_forward_debugADJ: Run in forward with debug commands        *
+#     *                      for debugging the REVERSE mode code.      *
+#     *                                                                *
+#     * ad_reverse_debugADJ: Run in reverse with debug commands        *
+#     *                      for debugging the REVERSE mode code.      *
+#     *                                                                *
+#     *                                                                *
 #     ******************************************************************
 
 # Define the required directories
@@ -12,32 +38,18 @@ SUMB_DIR = ../..
 SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
 SRC = ..
 
-#     ******************************************************************
-#     *                                                                *
-#     * Set Tapenade options.                                          *
-#     *                                                                *
-#     ******************************************************************
-
-TAPENADE_PARSERFILESEPARATOR = "/"
-
 # Dependent output variables (separator: white space, default: all)
-TAPENADE_OUTVARS = "flowdoms%dw flowdoms%w flowdoms%x Force Moment Lift Drag cForce cMoment CL CD BCData%F BCData%M costFuncMat"
+TAPENADE_OUTVARS = "flowdoms%dw  Force Moment Lift Drag cForce cMoment CL CD BCData%F BCData%M costFuncMat flowdoms%w flowdoms%x"
 
 # Independent input variables (separator: white space, default: all)
-TAPENADE_VARS = "flowdoms%w  flowdoms%x alpha beta inputPhysics%mach inputPhysics%machGrid inputPhysics%machCoef inputPhysics%lengthRef inputPhysics%pointRef inputPhysics%surfaceRef" 
+TAPENADE_VARS = "flowdoms%w flowdoms%x alpha beta mach machgrid machcoef lengthref pointref surfaceref"
 
 # Name of the top routine
 TAPENADE_HEADROUTINE = "block_res"
 
-# Differentiation mode
-TAPENADE_MODE = -forward
-
-# Output directory
-TAPENADE_OUTDIR = $(SRC)/forwardAdjoint/residualTapenade
-
 # Integer, double and real precision (bytes)
 TAPENADE_PRECISION = -i4 -dr8 -r8
-		   
+
 #     ******************************************************************
 #     *                                                                *
 #     * Routines to be differentiated (and dependencies).              *
@@ -45,8 +57,8 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 #     ******************************************************************
 
 ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
-		$(SRC)/forwardAdjoint/residualInput/xhalo_block.f90\
-		$(SRC)/forwardAdjoint/residualInput/metric_block.f90\
+		$(SRC)/forwardAdjoint/residualInput/xhalo_block.F90\
+		$(SRC)/forwardAdjoint/residualInput/metric_block.F90\
 		$(SRC)/forwardAdjoint/residualInput/getCostFuncMat.f90\
 		$(SRC)/modules/monitor.f90\
 		$(SRC)/modules/block.F90\
@@ -60,7 +72,7 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/modules/paramTurb.F90\
 		$(SRC)/modules/cgnsGrid.f90 \
 		$(SRC)/modules/CpCurveFits.f90\
-		$(SRC)/modules/blockPointers.f90 \
+		$(SRC)/modules/blockPointers.F90 \
 		$(SRC)/modules/flowVarRefState.F90 \
 		$(SRC)/modules/costFunctions.F90\
 		$(SRC)/solver/inviscidCentralFlux.F90\
@@ -73,7 +85,6 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/solver/inviscidUpwindFlux.F90\
 		$(SRC)/solver/computeUtau.f90\
 		$(SRC)/solver/applyAllBC.F90\
-		$(SRC)/solver/initres.F90\
 		$(SRC)/solver/timeStep.f90\
 		$(SRC)/solver/residual.F90\
 		$(SRC)/solver/computeLamViscosity.f90\
@@ -83,25 +94,40 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/solver/getDirVector.f90\
 		$(SRC)/solver/getDirAngle.f90\
 		$(SRC)/solver/vectorRotation.f90\
-		$(SRC)/solver/bcEulerWall.f90\
-		$(SRC)/solver/bcSymmPolar.f90\
-		$(SRC)/solver/bcFarfield.f90\
-		$(SRC)/solver/extrapolate2ndHalo.f90\
-		$(SRC)/solver/bcSymm.f90\
-		$(SRC)/solver/viscousFlux.f90\
-		$(SRC)/solver/utauWF.f90\
-		$(SRC)/solver/bcNSWallAdiabatic.f90\
-		$(SRC)/solver/bcNSWallIsothermal.f90\
-		$(SRC)/solver/gridVelocitiesFineLevel.f90\
-		$(SRC)/solver/normalVelocities.f90\
-		$(SRC)/solver/forcesAndMoments.f90\
+		$(SRC)/solver/bcEulerWall.F90\
+		$(SRC)/solver/bcFarfield.F90\
+		$(SRC)/solver/bcSymm.F90\
+		$(SRC)/solver/bcNSWallAdiabatic.F90\
+		$(SRC)/solver/bcNSWallIsothermal.F90\
+		$(SRC)/solver/extrapolate2ndHalo.F90\
+		$(SRC)/solver/viscousFlux.F90\
+		$(SRC)/solver/utauWF.F90\
+		$(SRC)/solver/gridVelocitiesFineLevel.F90\
+		$(SRC)/solver/normalVelocities.F90\
+		$(SRC)/solver/forcesAndMoments.F90\
 		$(SRC)/initFlow/referenceState.F90\
 		$(SRC)/initFlow/setFlowInfinityState.F90\
 		$(SRC)/turbulence/computeEddyViscosity.F90\
 		$(SRC)/turbulence/curveFit.f90\
 		$(SRC)/turbulence/turbBCNSWall.f90\
-		$(SRC)/turbulence/bcTurbWall.f90\
+		$(SRC)/turbulence/turbMod.F90\
 		$(SRC)/turbulence/saNuFromEddyRatio.f90\
+		$(SRC)/turbulence/sa.f90\
+		$(SRC)/turbulence/saSolve.f90\
+		$(SRC)/turbulence/prodKatoLaunder.f90\
+		$(SRC)/turbulence/prodSmag2.f90\
+		$(SRC)/turbulence/prodWmag2.f90\
+		$(SRC)/turbulence/turbAdvection.f90\
+		$(SRC)/turbulence/unsteadyTurbTerm.f90\
+		$(SRC)/turbulence/bcTurbSymm.f90\
+		$(SRC)/turbulence/bcTurbWall.f90\
+		$(SRC)/turbulence/bcTurbFarfield.f90\
+		$(SRC)/turbulence/unsteadyTurbSpectral.f90\
+		$(SRC)/turbulence/bcTurbTreatment.F90\
+		$(SRC)/turbulence/applyAllTurbBC.f90\
+		$(SRC)/turbulence/bcEddyWall.f90\
+		$(SRC)/turbulence/bcEddyNoWall.f90\
+		$(SRC)/turbulence/turb2ndHalo.f90\
 		$(SRC)/utils/rotMatrixRigidBody.f90\
 		$(SRC)/utils/computeGamma.f90\
 		$(SRC)/utils/TSalpha.f90\
@@ -111,7 +137,7 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/utils/rigidRotAngle.f90\
 		$(SRC)/utils/derivativeRigidRotAngle.f90\
 		$(SRC)/utils/dummy_dim.f90\
-		$(SRC)/utils/setBCPointers.f90\
+		$(SRC)/utils/setBCPointers.F90\
 		$(SRC)/utils/computeEtot.f90\
 		$(SRC)/utils/setPointers.f90\
 		$(SRC)/utils/terminate.F90
@@ -123,27 +149,102 @@ IFILES := $(ALL_FILES:%=%.f90)
 #     *                                                                *
 #     ******************************************************************
 
-default:
-	@echo "Deleting tapenade html"
-	@rm -fr $(TAPENADE_OUTDIR)/tapenadehtml
+default: ad_forward
+
+ad_forward:
+# First delete the holding directory if it exists
+	rm -fr temp_forward
+
+# Next create the holidng directory:
+	mkdir -p temp_forward
 
 # Run preprocessor on all input files
-	make -f Makefile_tapenade preprocess
+	make -f Makefile_tapenade preprocess_forward
 
-# The following is the single command to run:
-	$(TAPENADE_HOME)/bin/tapenade -html -parserfileseparator \
-	$(TAPENADE_PARSERFILESEPARATOR) -outvars $(TAPENADE_OUTVARS) -vars \
-	$(TAPENADE_VARS) -head $(TAPENADE_HEADROUTINE) $(TAPENADE_MODE)\
-	 -msglevel 30 -O $(TAPENADE_OUTDIR) $(TAPENADE_PRECISION) $(IFILES)
+# The following is the single Tapenade command to run:
+	$(TAPENADE_HOME)/bin/tapenade -html \
+	-outvars $(TAPENADE_OUTVARS) \
+	-vars $(TAPENADE_VARS) \
+	-head $(TAPENADE_HEADROUTINE)  \
+	-forward $(TAPENADE_PRECISION) \
+	-O temp_forward $(IFILES)
+
+# Run the auto-edit file:
+	python autoEdit/autoEditForward.py temp_forward outputForward
 
 # Remove preprocessor files
-#	make -f Makefile_tapenade cleanpreprocess
+	make -f Makefile_tapenade cleanpreprocess
 
-preprocess:
-	@echo "Preprocessing all input files..."
+ad_forward_multi:
+# First delete the holding directory if it exists
+	rm -fr temp_forward_multi
+
+# Next create the holidng directory:
+	mkdir -p temp_forward_multi
+
+# Run preprocessor on all input files
+	make -f Makefile_tapenade preprocess_forward
+
+# The following is the single Tapenade command to run:
+	$(TAPENADE_HOME)/bin/tapenade -html \
+	-outvars $(TAPENADE_OUTVARS) \
+	-vars $(TAPENADE_VARS) \
+	-head $(TAPENADE_HEADROUTINE)  \
+	-diffvarname dv \
+	-forward -multi $(TAPENADE_PRECISION) \
+	-O temp_forward_multi $(IFILES)
+
+# Run the auto-edit file:
+	python autoEdit/autoEditMulti.py temp_forward_multi outputForwardMulti
+
+# Remove preprocessor files
+	make -f Makefile_tapenade cleanpreprocess
+
+ad_reverse:
+# First delete the holding directory if it exists
+	rm -fr temp_reverse
+
+# Next create the holidng directory:
+	mkdir -p temp_reverse
+
+# Run preprocessor on all input files
+	make -f Makefile_tapenade preprocess_reverse
+
+# The following is the single Tapenade command to run:
+	$(TAPENADE_HOME)/bin/tapenade -html \
+	-outvars $(TAPENADE_OUTVARS) \
+	-vars $(TAPENADE_VARS) \
+	-head $(TAPENADE_HEADROUTINE)  \
+	-reverse 	 -msglevel 30 $(TAPENADE_PRECISION) \
+	-O temp_reverse $(IFILES)
+
+# Run the auto-edit file:
+	python autoEdit/autoEditReverse.py temp_reverse outputReverse
+
+# Remove preprocessor files
+	make -f Makefile_tapenade cleanpreprocess
+
+ad_forward_debugTGT:	
+	@echo "Not implemented yet"
+
+ad_forward_debugADJ:
+	@echo "Not implemented yet"
+
+ad_reverse_debugADJ:
+	@echo "Not implemented yet"
+
+preprocess_forward:
+	@echo "Preprocessing all input files for forward mode AD..."
 	@for file in $(ALL_FILES); do \
 		echo Preprocessing $$file; \
-		cpp -DUSE_TAPENADE -traditional -P $(FF90_ALL_FLAGS) $$file $$file.f90; \
+		cpp -DUSE_TAPENADE -traditional -P  $$file $$file.f90; \
+	done
+
+preprocess_reverse:
+	@echo "Preprocessing all input files for reverse mode AD..."
+	@for file in $(ALL_FILES); do \
+		echo Preprocessing $$file; \
+		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE -traditional -P $(FF90_ALL_FLAGS) $$file $$file.f90; \
 	done
 
 cleanpreprocess:
