@@ -1779,8 +1779,6 @@ class SUMB(AeroSolver):
 
         if self._update_geom_info:
             self.mesh.warpMesh()
-            #self.mesh.writeVolumeGrid('/scratch/j/jmartins/kenway/warped_grid.cgns')
-            #self.mesh.writeSurfaceGrid('/scratch/j/jmartins/kenway/warped_surf.cgns')
             newGrid = self.mesh.getSolverGrid()
 
             if newGrid is not None:
@@ -2095,12 +2093,16 @@ class SUMB(AeroSolver):
     def getStateSize(self):
         '''Return the number of degrees of freedom (states) that are
         on this processor'''
+        if self.getOption('frozenTurbulence'):
+            nstate = self.sumb.flowvarrefstate.nwf
+        else:
+            nstate = self.sumb.flowvarrefstate.nw
+        #end if
 
-        nw     = self.sumb.flowvarrefstate.nw
         ncells = self.sumb.adjointvars.ncellslocal[0]
         ntime  = self.sumb.inputtimespectral.ntimeintervalsspectral
 
-        return nw*ncells*ntime
+        return nstate*ncells*ntime
 
     def getSpatialSize(self):
         '''Return the number of degrees of spatial degrees of freedom on this processor.'''

@@ -48,7 +48,8 @@ subroutine dealloc_derivative_values(nn, level)
           flowDomsd(nn,1,sps)%vol, stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     deallocate(flowDomsd(nn,1,sps)%rotMatrixI, &
+     deallocate(&
+          flowDomsd(nn,1,sps)%rotMatrixI, &
           flowDomsd(nn,1,sps)%rotMatrixJ, &
           flowDomsd(nn,1,sps)%rotMatrixK,stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -81,28 +82,24 @@ subroutine dealloc_derivative_values(nn, level)
           flowDomsd(nn,1,sps)%radK,stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     ! Set the pointer for BCData and deallocate the memory stored 
-
-     BCDatad => flowDomsd(nn,1,sps)%BCData
-     do mm=1,nBocos
-        
-        ! Norm is always allocated
-        deallocate(BCDatad(mm)%norm,stat=ierr)
+     ! Deallocate allocated boundayr data
+      do mm=1,nBocos
+        deallocate(flowDomsd(nn,1,sps)%BCData(mm)%norm,stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
-        deallocate(BCDatad(mm)%rface, stat=ierr)
+        deallocate(flowDomsd(nn,1,sps)%BCData(mm)%rface, stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
-        deallocate(BCDatad(mm)%F, stat=ierr)
+        deallocate(flowDomsd(nn,1,sps)%BCData(mm)%F, stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
-        deallocate(BCDatad(mm)%M, stat=ierr)
+        deallocate(flowDomsd(nn,1,sps)%BCData(mm)%M, stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
-        deallocate(BCDatad(mm)%uSlip, stat=ierr)
+        deallocate(flowDomsd(nn,1,sps)%BCData(mm)%uSlip, stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
-        deallocate(BCDatad(mm)%TNS_Wall,stat=ierr)
+        deallocate(flowDomsd(nn,1,sps)%BCData(mm)%TNS_Wall,stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
      enddo
 
@@ -110,21 +107,22 @@ subroutine dealloc_derivative_values(nn, level)
      call EChk(ierr,__FILE__,__LINE__)
   
       if (sps==1) then
-        deallocate(flowDomsd(nn,1,sps)%bmti1,&
-             flowDomsd(nn,1,sps)%bmti2,&
-             flowDomsd(nn,1,sps)%bmtj1,&
-             flowDomsd(nn,1,sps)%bmtj2,&
-             flowDomsd(nn,1,sps)%bmtk1,&
-             flowDomsd(nn,1,sps)%bmtk2,&
-             flowDomsd(nn,1,sps)%bvti1,&
-             flowDomsd(nn,1,sps)%bvti2,&
-             flowDomsd(nn,1,sps)%bvtj1,&
-             flowDomsd(nn,1,sps)%bvtj2,&
-             flowDomsd(nn,1,sps)%bvtk1,&
-             flowDomsd(nn,1,sps)%bvtk2,&
-             stat=ierr)
-        call EChk(ierr,__FILE__,__LINE__)
-     end if
+         deallocate(&
+              flowDomsd(nn,1,sps)%bmti1,&
+              flowDomsd(nn,1,sps)%bmti2,&
+              flowDomsd(nn,1,sps)%bmtj1,&
+              flowDomsd(nn,1,sps)%bmtj2,&
+              flowDomsd(nn,1,sps)%bmtk1,&
+              flowDomsd(nn,1,sps)%bmtk2,&
+              flowDomsd(nn,1,sps)%bvti1,&
+              flowDomsd(nn,1,sps)%bvti2,&
+              flowDomsd(nn,1,sps)%bvtj1,&
+              flowDomsd(nn,1,sps)%bvtj2,&
+              flowDomsd(nn,1,sps)%bvtk1,&
+              flowDomsd(nn,1,sps)%bvtk2,&
+              stat=ierr)
+         call EChk(ierr,__FILE__,__LINE__)
+      end if
      
      if (viscous) then
         deallocate(flowDomsd(nn,1,sps)%d2Wall, &
@@ -150,12 +148,12 @@ subroutine dealloc_derivative_values(nn, level)
   deallocate(flowDomsd(nn,1,1)%color,stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
   
-  ! Finally deallocate flowdomsd
-  deallocate(flowdomsd,stat=ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
   ! Also dealloc winfd
   deallocate(winfd, stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
  
+  ! Finally deallocate flowdomsd
+  deallocate(flowdomsd,stat=ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
 end subroutine dealloc_derivative_values
