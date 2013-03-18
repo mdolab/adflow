@@ -37,7 +37,7 @@ import copy
 # =============================================================================
 # Extension modules
 # =============================================================================
-from mdo_import_helper import import_modules, MExt
+from mdo_import_helper import import_modules, MExt, mpiPrint
 exec(import_modules('pyAero_problem'))
 exec(import_modules('pySUMB'))
 

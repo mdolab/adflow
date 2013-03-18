@@ -1610,7 +1610,7 @@ class SUMB(AeroSolver):
         '''
         if self.adjointSetup:
             self.sumb.destroypetscvars()
-        # end if
+            self.adjointSetup = False
 
         return
 
