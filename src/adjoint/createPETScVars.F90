@@ -30,7 +30,7 @@ subroutine createPETScVars
   integer(kind=intType) :: i, n_stencil
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal2, nnzOffDiag2
-  integer(kind=intType), dimension(:, :), allocatable :: stencil
+  integer(kind=intType), dimension(:, :), pointer :: stencil
   integer(kind=intType) :: level, ierr, nlevels
   integer(kind=intType) :: rows(4), iCol, iCellCount, iNodeCount, nn, sps, ii
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iDim, iStride, j, mm
@@ -56,12 +56,10 @@ subroutine createPETScVars
   call initialize_stencils
   if (.not. viscous) then
      n_stencil = N_euler_drdw
-     allocate(stencil(n_stencil, 3))
-     stencil = euler_drdw_stencil
+     stencil => euler_drdw_stencil 
   else
      n_stencil = N_visc_drdw
-     allocate(stencil(n_stencil, 3))
-     stencil = visc_drdw_stencil
+     stencil => visc_drdw_stencil
   end if
 
   level = 1
@@ -77,16 +75,20 @@ subroutine createPETScVars
           __FILE__, __LINE__)
   endif
      
-  deallocate(nnzDiagonal, nnzOffDiag, stencil)
+  deallocate(nnzDiagonal, nnzOffDiag)
 
   if (ApproxPC) then
      ! ------------------- Determine Preallocation for dRdwPre -------------
      allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
           nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
 
-     n_stencil = N_euler_PC
-     allocate(stencil(n_stencil, 3))
-     stencil = euler_PC_stencil
+     if (viscous .and. viscPC) then
+        stencil => visc_pc_stencil
+        n_stencil = N_visc_pc
+     else
+        stencil => euler_pc_stencil
+        n_stencil = N_euler_pc
+     end if
 
      level = 1
      if ( frozenTurbulence ) then
@@ -101,7 +103,7 @@ subroutine createPETScVars
             __FILE__, __LINE__)
     endif
 
-     deallocate(nnzDiagonal, nnzOffDiag, stencil)
+     deallocate(nnzDiagonal, nnzOffDiag)
      ! --------------------------------------------------------------------
   end if ! Approx PC
 

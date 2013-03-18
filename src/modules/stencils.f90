@@ -25,13 +25,13 @@ module stencils
   integer(kind=intType), dimension(4, 3), target :: euler_force_x_stencil
 
   ! Viscous stencils
-  integer(kind=intType), parameter :: N_visc_pc   = 21
+  integer(kind=intType), parameter :: N_visc_pc   = 19
   integer(kind=intType), parameter :: N_visc_drdw = 33
   integer(kind=intType), parameter :: N_visc_drdx = 64
   integer(kind=intType), parameter :: N_visc_force_w = 18
   integer(kind=intType), parameter :: N_visc_force_x = 32
 
-  integer(kind=intType), dimension(21,3), target :: visc_pc_stencil
+  integer(kind=intType), dimension(19,3), target :: visc_pc_stencil
   integer(kind=intType), dimension(33,3), target :: visc_drdw_stencil
   integer(kind=intType), dimension(64,3), target :: visc_drdx_stencil
   integer(kind=intType), dimension(18, 3), target :: visc_force_w_stencil

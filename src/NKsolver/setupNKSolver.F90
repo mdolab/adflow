@@ -11,6 +11,7 @@ subroutine setupNKsolver
   use iteration
   use inputPhysics
   use stencils
+  use InputAdjoint, only: viscPC
   use ADjointVars , only: nCellsLocal
   use NKSolverVars, only: dRdw, dRdwPre,dRdwPseudo, ctx, wVec, rVec, deltaW,&
        NKsolvecount, nksolversetup, work, g, w_like1, w_like2, scaleVec, &
@@ -82,7 +83,7 @@ subroutine setupNKsolver
      allocate(nnzDiagonal(totalCells), nnzOffDiag(totalCells))
 
      call initialize_stencils
-     if (viscous) then
+     if (viscous .and. viscPC) then
         n_stencil = N_visc_pc
         stencil => visc_pc_stencil
      else
