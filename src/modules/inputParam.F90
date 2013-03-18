@@ -988,11 +988,15 @@
        !                contexts.
        ! ApproxPC     : Whether or not to use the approximate jacobian 
        !                preconditioner
+       ! viscPC       : Whether or not to keep cross derivative terms 
+       !                in viscous preconditioner. 
+       ! FrozenTurbulence: Whether to use frozen turbulence assumption
        ! restartADjoint: Whether or not we want to restart the adjoint 
        !                 from the previous solution
        ! useDiagTSPC   : Whether or not the off time instance terms are
        !                 included in the TS preconditioner.
        logical :: solveADjoint, setMonitor, ApproxPC, restartADjoint, useDiagTSPC
+       logical :: frozenTurbulence, viscPC
 
        ! ADjointSolverType: Type of linear solver for the ADjoint
        ! PreCondType      : Type of Preconditioner to use

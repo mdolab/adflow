@@ -30,15 +30,20 @@ subroutine createPETScVars
   integer(kind=intType) :: i, n_stencil
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal2, nnzOffDiag2
-  integer(kind=intType), dimension(:, :), allocatable :: stencil
+  integer(kind=intType), dimension(:, :), pointer :: stencil
   integer(kind=intType) :: level, ierr, nlevels
   integer(kind=intType) :: rows(4), iCol, iCellCount, iNodeCount, nn, sps, ii
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iDim, iStride, j, mm
   integer(kind=intType) :: npts, ncells, nTS
 
   ! DETERMINE ALL SIZES HERE!
-  nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
+  if ( frozenTurbulence ) then
+     nDimW = nwf * nCellsLocal(1_intType)*nTimeIntervalsSpectral
+  else
+     nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
+  endif
   nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
+
   call getForceSize(npts, ncells, nTS)
   nDimPt = npts * 3 * nTS
   nDimCell = nCells * 3 * nTS
@@ -51,71 +56,55 @@ subroutine createPETScVars
   call initialize_stencils
   if (.not. viscous) then
      n_stencil = N_euler_drdw
-     allocate(stencil(n_stencil, 3))
-     stencil = euler_drdw_stencil
+     stencil => euler_drdw_stencil 
   else
-     n_stencil = N_visc_pc
-     allocate(stencil(n_stencil, 3))
-     stencil = visc_pc_stencil
+     n_stencil = N_visc_drdw
+     stencil => visc_drdw_stencil
   end if
 
   level = 1
-  call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nw, stencil, n_stencil, &
-       level)
-
-  if( nw <= 7 ) then
-     call myMatCreate(dRdwT, nw, nDimw, nDimw, nnzDiagonal, nnzOffDiag, &
-          __FILE__, __LINE__)
+  if ( frozenTurbulence ) then
+     call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nwf, stencil, n_stencil, &
+          level)
+       call myMatCreate(dRdwT, nwf, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
+            __FILE__, __LINE__)
   else
-
-     allocate(nnzDiagonal2(nDimw), nnzOffDiag2(nDimw))
-     ! The drdw prealloc function is done per block, which we can use
-     ! to compute the correct preallocation for the non-block matrix:
-
-     do i=1, nCellsLocal(1_intType)*nTimeIntervalsSpectral
-        nnzDiagonal2((i-1)*nw+1:(i-1)*nw+nw) = nnzDiagonal(i)
-        nnzOffDiag((i-1)*nw+1:(i-1)*nw+nw) = nnzOffDiag(i)
-     end do
-     call myMatCreate(dRdwT, 1, nDimw, nDimw, nnzDiagonal2, nnzOffDiag2, &
+     call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nw, stencil, n_stencil, &
+          level)
+     call myMatCreate(dRdwT, nw, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
           __FILE__, __LINE__)
-     call EChk(ierr, __FILE__, __LINE__)
-     deallocate(nnzDiagonal2, nnzOffDiag2)
   endif
-  deallocate(nnzDiagonal, nnzOffDiag, stencil)
+     
+  deallocate(nnzDiagonal, nnzOffDiag)
 
   if (ApproxPC) then
      ! ------------------- Determine Preallocation for dRdwPre -------------
      allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
           nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
 
-     n_stencil = N_euler_PC
-     allocate(stencil(n_stencil, 3))
-     stencil = euler_PC_stencil
+     if (viscous .and. viscPC) then
+        stencil => visc_pc_stencil
+        n_stencil = N_visc_pc
+     else
+        stencil => euler_pc_stencil
+        n_stencil = N_euler_pc
+     end if
 
      level = 1
-     call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nw, stencil, &
-          n_stencil, level)
+     if ( frozenTurbulence ) then
+        call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nwf, stencil, n_stencil, &
+             level)
+        call myMatCreate(dRdwPreT, nwf, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
+             __FILE__, __LINE__)
+    else
+       call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nw, stencil, n_stencil, &
+            level)
+       call myMatCreate(dRdwPreT, nw, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
+            __FILE__, __LINE__)
+    endif
+
+     deallocate(nnzDiagonal, nnzOffDiag)
      ! --------------------------------------------------------------------
-
-     if( nw <= 7 ) then
-        call myMatCreate(dRdwPreT, nw, nDimw, nDimw, nnzDiagonal, nnzOffDiag, &
-             __FILE__, __LINE__)
-     else
-        allocate(nnzDiagonal2(nDimw), nnzOffDiag2(nDimw))
-        ! The drdwPC prealloc function is done per block, which we can use
-        ! to compute the correct preallocation for the non-block matrix:
-
-        do i=1, nCellsLocal(1_intType)*nTimeIntervalsSpectral
-           nnzDiagonal2((i-1)*nw+1:(i-1)*nw+nw) = nnzDiagonal(i)
-           nnzOffDiag((i-1)*nw+1:(i-1)*nw+nw) = nnzOffDiag(i)
-        end do
-
-        call myMatCreate(dRdwPreT, 1, nDimw, nDimw, nnzDiagonal2, nnzOffDiag2, &
-             __FILE__, __LINE__)
-        deallocate(nnzDiagonal2, nnzOffDiag2)
-     endif
-
-     deallocate(nnzDiagonal, nnzOffDiag, stencil)
   end if ! Approx PC
 
   ! Vectors:
@@ -282,12 +271,7 @@ subroutine createPETScVars
   ! Create the matrix dRdx.
   level = 1_intType
   call drdxPreAllocation(nnzDiagonal, nnzOffDiag, nDimX, level)
-  
-  ! Make the drdx preallocation slightly bigger since the reverse mode
-  ! AD complains sometimes
-  nnzDiagonal = int(nnzDiagonal * 1.5)
-  nnzOffDiag = int(nnzOffDIag * 1.5)
-
+ 
   ! Note we are creating the TRANPOSE of dRdx. It is size dDimX by nDimW
   call myMatCreate(dRdx, 1, nDimX, nDimW, nnzDiagonal, nnzOffDiag, &
        __FILE__, __LINE__)

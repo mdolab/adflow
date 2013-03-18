@@ -131,9 +131,9 @@ subroutine setup_dRdx_visc_coloring(nn, level, nColor)
 
   call setPointers(nn, level, 1) ! Just to get the correct sizes
 
-  do k=0, ke
-     do j=0, je
-        do i=0, ie
+  do k=0, kb
+     do j=0, jb
+        do i=0, ib
            ! Add the extra one for 1-based numbering (as opposed to zero-based)
            modi = mod(i, 4)
            modj = mod(j, 4)
@@ -201,9 +201,9 @@ subroutine setup_4x4x4_coloring(nn, level, nColor)
 
   call setPointers(nn, level, 1) ! Just to get the correct sizes
 
-  do k=0, ke
-     do j=0, je
-        do i=0, ie
+  do k=0, kb
+     do j=0, jb
+        do i=0, ib
            ! Add the extra one for 1-based numbering (as opposed to zero-based)
            modi = mod(i, 4)
            modj = mod(j, 4)
