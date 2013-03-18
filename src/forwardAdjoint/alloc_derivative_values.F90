@@ -55,11 +55,6 @@ subroutine alloc_derivative_values(nn, level)
 
      ! Allocate the tempHalo locations in BOTH the normal and AD calcs
      ! Number of nodes including halos = ie+1 = ib, etc
-     ! max_face_size = 2*(ib*jb + ib*kb + jb*kb)
-     ! allocate(flowDoms (nn,1,sps)%tempHalo(3,max_face_size))
-     ! allocate(flowDomsd(nn,1,sps)%tempHalo(3,max_face_size))
-     ! flowDoms (nn,1,sps)%tempHalo = zero
-     ! flowDomsd(nn,1,sps)%tempHalo = zero
      
      allocate(flowDomsd(nn,1,sps)%x(0:ie,0:je,0:ke,3), stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -75,7 +70,8 @@ subroutine alloc_derivative_values(nn, level)
      flowDomsd(nn,1,sps)%sk = zero
      flowDomsd(nn,1,sps)%vol = zero
 
-     allocate(flowDomsd(nn,1,sps)%rotMatrixI(il,2:jl,2:kl,3,3), &
+     allocate(&
+          flowDomsd(nn,1,sps)%rotMatrixI(il,2:jl,2:kl,3,3), &
           flowDomsd(nn,1,sps)%rotMatrixJ(2:il,jl,2:kl,3,3), &
           flowDomsd(nn,1,sps)%rotMatrixK(2:il,2:jl,kl,3,3),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -136,8 +132,7 @@ subroutine alloc_derivative_values(nn, level)
      call EChk(ierr,__FILE__,__LINE__)
 
      flowdomsd(nn,1,sps)%nBocos = flowdoms(nn,level,sps)%nbocos   
-     bcdatad =>flowDomsd(nn,1,sps)%BCData
-
+  
      bocoLoop: do mm=1,nBocos
         
         ! Store the cell range of the boundary subface
@@ -146,34 +141,31 @@ subroutine alloc_derivative_values(nn, level)
         iBeg = BCData(mm)%icbeg; iEnd = BCData(mm)%icend
         jBeg = BCData(mm)%jcbeg; jEnd = BCData(mm)%jcend
 
-        allocate(BCDatad(mm)%norm(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
+        allocate(flowDomsd(nn,1,sps)%BCData(mm)%norm(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        bcDatad(mm)%norm = zero
+        flowDomsd(nn,1,sps)%BCData(mm)%norm = zero
 
-        allocate(BCDatad(mm)%rface(iBeg:iEnd,jBeg:jEnd), stat=ierr)
+        allocate(flowDomsd(nn,1,sps)%BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        bcDatad(mm)%rface = zero
+         flowDomsd(nn,1,sps)%bcData(mm)%rface = zero
 
-        allocate(BCDatad(mm)%F(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
+        allocate(flowDomsd(nn,1,sps)%BCData(mm)%F(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        bcDatad(mm)%F = zero
+        flowDomsd(nn,1,sps)%bcData(mm)%F = zero
 
-        allocate(BCDatad(mm)%M(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
+        allocate(flowDomsd(nn,1,sps)%BCData(mm)%M(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        bcDatad(mm)%M = zero
+         flowDomsd(nn,1,sps)%bcData(mm)%M = zero
 
-        allocate(BCDatad(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
+        allocate(flowDomsd(nn,1,sps)%BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        BCDatad(mm)%uSlip = zero
+        flowDomsd(nn,1,sps)%BCData(mm)%uSlip = zero
 
-        allocate(BCDatad(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), stat=ierr)
+        allocate(flowDomsd(nn,1,sps)%BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        BCDatad(mm)%TNS_Wall = zero
+         flowDomsd(nn,1,sps)%BCData(mm)%TNS_Wall = zero
      end do bocoLoop
 
-     ! It appears these values only require 1 sps instance
-     !    sps1RansTest: if(sps == 1 .and. &
-     !           equations == RANSEquations) then
      if (sps == 1) then
         allocate(flowDomsd(nn,1,sps)%bmti1(je,ke,nt1:nt2,nt1:nt2), &
              flowDomsd(nn,1,sps)%bmti2(je,ke,nt1:nt2,nt1:nt2), &
@@ -200,8 +192,6 @@ subroutine alloc_derivative_values(nn, level)
              stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
        
-        viscsubfaced => flowDomsd(nn,1,sps)%viscSubface
-        
         viscbocoLoop: do mm=1,nviscBocos
            
            iBeg = BCData(mm)%inBeg + 1
@@ -210,14 +200,14 @@ subroutine alloc_derivative_values(nn, level)
            jBeg = BCData(mm)%jnBeg + 1
            jEnd = BCData(mm)%jnEnd
         
-           allocate(viscSubfaced(mm)%tau(iBeg:iEnd,jBeg:jEnd,6), &
+           allocate(flowDomsd(nn,1,sps)%viscSubface(mm)%tau(iBeg:iEnd,jBeg:jEnd,6), &
                 stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
-       
-           allocate(viscSubfaced(mm)%q(iBeg:iEnd,jBeg:jEnd,6), &
+           flowDomsd(nn,1,sps)%viscSubface(mm)%tau = zero
+           allocate(flowDomsd(nn,1,sps)%viscSubface(mm)%q(iBeg:iEnd,jBeg:jEnd,6), &
                 stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
-
+           flowDomsd(nn,1,sps)%viscSubface(mm)%q = zero
         enddo viscbocoLoop
      end if
   end do
