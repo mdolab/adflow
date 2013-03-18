@@ -96,9 +96,9 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! using the first order stencil or the full jacobian
 
   if (usePC) then
-     if (viscous) then
-        stencil => euler_pc_stencil
-        n_stencil = N_euler_pc
+     if (viscous .and. viscPC) then
+        stencil => visc_pc_stencil
+        n_stencil = N_visc_pc
      else
         stencil => euler_pc_stencil
         n_stencil = N_euler_pc
