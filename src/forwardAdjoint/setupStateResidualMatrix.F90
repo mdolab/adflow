@@ -45,7 +45,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! Local variables.
   integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
   integer(kind=intType) :: nColor, iColor, jColor, irow, icol, fmDim, frow
-  integer(kind=intType) :: nTransfer
+  integer(kind=intType) :: nTransfer, nState
   integer(kind=intType) :: n_stencil, i_stencil, n_force_stencil
   integer(kind=intType), dimension(:, :), pointer :: stencil, force_stencil
   real(kind=realType) :: delta_x, one_over_dx
@@ -66,6 +66,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr1, globalCellPtr2
   integer(kind=intType), dimension(:,:), pointer ::  colorPtr, globalCellPtr
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
+  logical :: resetToRANS
+
+  ! Setup number of state variable based on turbulence assumption
+  if ( frozenTurbulence ) then
+     nState = nwf
+  else
+     nState = nw
+  endif
 
   ! This routine will not use the extra variables to block_res or the
   ! extra outputs, so we must zero them here
@@ -78,7 +86,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   surfaceRefd = zero
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
-  useDiagTSPC = .true.
   rkStage = 0
 
   ! Zero out the matrix before we start
@@ -89,9 +96,9 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! using the first order stencil or the full jacobian
 
   if (usePC) then
-     if (viscous) then
-        stencil => euler_pc_stencil
-        n_stencil = N_euler_pc
+     if (viscous .and. viscPC) then
+        stencil => visc_pc_stencil
+        n_stencil = N_visc_pc
      else
         stencil => euler_pc_stencil
         n_stencil = N_euler_pc
@@ -112,6 +119,9 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
         n_force_stencil = N_euler_force_w
      end if
   end if
+
+  ! Need to trick the residual evalution to use coupled (mean flow and
+  ! turbulent) together.
 
   ! If we want to do the matrix on a coarser level, we must first
   ! restrict the fine grid solutions, since it is possible the
@@ -137,6 +147,26 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
         call VecZeroEntries(FMw(fmDim), ierr)
         call EChk(ierr, __FILE__, __LINE__)
      end do
+  end if
+
+  ! If we are computing the jacobian for the RANS equations, we need
+  ! to make block_res think that we are evauluating the residual in a
+  ! fully coupled sense.  This is reset after this routine is
+  ! finished.
+  if (equations == RANSEquations) then
+     nMGVar = nw
+     nt1MG = nt1
+     nt2MG = nt2
+
+     turbSegregated = .False.
+     turbCoupled = .True.
+  end if
+
+  ! Determine if we want to use frozenTurbulent Adjoint
+  resetToRANS = .False. 
+  if (frozenTurbulence .and. equations == RANSEquations) then
+     equations = NSEquations 
+     resetToRANS = .True.
   end if
 
   ! Master Domain Loop
@@ -194,7 +224,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
            end do
 
            ! Master State Loop
-           stateLoop: do l=1, nw
+           stateLoop: do l=1, nState
 
               ! Reset All States and possibe AD seeds
               do sps2 = 1, nTimeIntervalsSpectral
@@ -310,7 +340,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                    globalCellPtr => globalCellPtr2
                                 end if
 
-                                colInd = globalCellPtr(i+1+ii, j+1+jj)*nw + l -1
+                                colInd = globalCellPtr(i+1+ii, j+1+jj)*nState + l -1
                                 ! The extra + 1 is due to the pointer offset       
                                 if (colorPtr(i+1+ii, j+1+jj) == iColor .and. &
                                      colInd >= 0) then
@@ -348,7 +378,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 
               ! Compute/Copy all derivatives
               do sps2 = 1, nTimeIntervalsSpectral
-                 do ll=1, nw
+                 do ll=1, nState
                     do k=2, kl 
                        do j=2, jl
                           do i=2, il
@@ -454,11 +484,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      call dealloc_derivative_values(nn, level)
   end do domainLoopAD
 
-  !Return dissipation Parameters to normal -> VERY VERY IMPORTANT
-  if (usePC) then
-     lumpedDiss = .False.
-  end if
-
   if (useObjective .and. useAD) then
      do fmDim=1,6
         call VecAssemblyBegin(FMw(fmDim), ierr) 
@@ -480,6 +505,29 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   call MatSetOption(matrix, MAT_NEW_NONZERO_LOCATIONS, PETSC_FALSE, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
+  !Return dissipation Parameters to normal -> VERY VERY IMPORTANT
+  if (usePC) then
+     lumpedDiss = .False.
+  end if
+
+  ! Reset the correct equation parameters if we were useing the frozen
+  ! Turbulent 
+  if (resetToRANS) then
+     equations = RANSEquations
+  end if
+
+  ! Reset the paraters to use segrated turbulence solve. 
+  if (equations == RANSEquations) then
+     nMGVar = nw
+     nt1MG = nt1
+     nt2MG = nt2
+
+     turbSegregated = .False.
+     turbCoupled = .True.
+  end if
+
+
+
 contains
 
   subroutine setBlock(blk)
@@ -488,9 +536,9 @@ contains
 
     implicit none
 #ifndef USE_COMPLEX
-    real(kind=realType), dimension(nw, nw) :: blk
+    real(kind=realType), dimension(nState, nState) :: blk
 #else
-    complex(kind=realType), dimension(nw, nw) :: blk
+    complex(kind=realType), dimension(nState, nState) :: blk
 #endif
  
 #ifndef USE_COMPLEX
@@ -511,61 +559,5 @@ contains
     end if
 
   end subroutine setBlock
-
-#ifndef USE_COMPLEX
-  subroutine writeOutMatrix()
-
-    integer(kind=intType) :: nrows, ncols, icell, jcell, kcell
-    real(kind=realType) :: val1(nw, nw), val2(nw, nw), err, avgval
-
-    call MatGetOwnershipRange(matrix, nrows, ncols, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-    do nn=1, nDom
-       call setPointers(nn, level, 1)
-       do kcell=2, kl
-          do jcell=2, jl
-             do icell=2, il
-                
-                irow = globalCell(icell, jcell, kcell)
-               
-                do i_stencil=1, n_stencil
-                   ii = stencil(i_stencil, 1)
-                   jj = stencil(i_stencil, 2)
-                   kk = stencil(i_stencil, 3)
-
-                   
-                   if ( icell+ii >= 2 .and. icell+ii <= il .and. &
-                        jcell+jj >= 2 .and. jcell+jj <= jl .and. &
-                        kcell+kk >= 2 .and. kcell+kk <= kl) then 
-
-                      icol = globalCell(icell+ii, jcell+jj, kcell+kk)
-
-                      do i=1, nw
-                         do j=1, nw
-
-                            call MatGetValues(matrix  , 1, icol*nw+j-1, 1, irow*nw+i-1, val1(i, j), ierr)
-                            call EChk(ierr, __FILE__, __LINE__)
-!                            call MatGetValues(mat_copy, 1, irow*nw+i-1, 1, icol*nw+j-1, val2(i, j), ierr)
-!                            call EChk(ierr, __FILE__, __LINE__)
-
-                            if (useAD) then
-                               write(18, 30), nn, icell, jcell, kcell, icell+ii, jcell+jj, kcell+kk, i, j, val1(i, j)
-                            else 
-                               write(16, 30), nn, icell, jcell, kcell, icell+ii, jcell+jj, kcell+kk, i, j, val1(i, j)
-                            end if
-                            write(17, 30), nn, icell, jcell, kcell, icell+ii, jcell+jj, kcell+kk, i, j, val2(i, j)
-                         end do
-                      end do
-                   end if
-                end do
-             end do
-          end do
-       end do
-    end do
-
-30  format(1x, I4, ' | ', I4, ' ', I4, '  ', I4, ' | ', I4, ' ', I4, ' ', I4, ' | ', I4, '  ', I4, ' ', f20.6)
-  end subroutine writeOutMatrix
-#endif
 #endif
 end subroutine setupStateResidualMatrix
