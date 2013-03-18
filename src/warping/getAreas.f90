@@ -217,10 +217,10 @@ subroutine getAreaSensitivity(darea, pts, npts, sps_in, axis)
                          pts(:, upper_right), pt4b, &
                          axis, area, areab)
 
-                    darea(:,lower_left)  = darea(:, lower_left)  + pt1b*fourth*fact*fact2
-                    darea(:,lower_right) = darea(:, lower_right) + pt2b*fourth*fact*fact2
-                    darea(:,upper_left)  = darea(:, upper_left)  + pt3b*fourth*fact*fact2
-                    darea(:,upper_right) = darea(:, upper_right) + pt4b*fourth*fact*fact2
+                    darea(:,lower_left)  = darea(:, lower_left)  + pt1b*fact*fact2
+                    darea(:,lower_right) = darea(:, lower_right) + pt2b*fact*fact2
+                    darea(:,upper_left)  = darea(:, upper_left)  + pt3b*fact*fact2
+                    darea(:,upper_right) = darea(:, upper_right) + pt4b*fact*fact2
                  end if
               end do
            end do
