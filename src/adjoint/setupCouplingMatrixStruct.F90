@@ -27,7 +27,8 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   use flowVarRefState 
   use inputDiscretization 
   use bcTypes         
-   use inputTimeSpectral
+  use inputTimeSpectral
+  use inputAdjoint
   implicit none
 
   ! Subroutine Arguments
