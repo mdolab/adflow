@@ -37,7 +37,7 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
 
   integer(kind=intType) :: i,j,k,ii,jj,kk,iii,jjj,kkk,idim,l,irow
   integer(kind=intType) :: rowStart,rowEnd
-  integer(kind=intType) :: nn,mm,sps
+  integer(kind=intType) :: nn,mm,sps,nState
   real(kind=realType)   :: force(3),forceb(3)
   real(kind=realType)   :: moment(3),momentb(3)
   real(kind=realType)   :: refPoint(3),refPointb(3)
@@ -51,6 +51,13 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   integer(kind=intType) :: ierr,ind
   real(kind=realType), dimension(2) :: time
   real(kind=realType) :: localTime, globalTime
+
+  ! Setup number of state variable based on turbulence assumption
+  if ( frozenTurbulence ) then
+     nState = nwf
+  else
+     nState = nw
+  endif
 
   call cpu_time(time(1))
 
@@ -242,7 +249,7 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
                        ! Set dFdw first
                        irow = rowStart + ii*3+idim-1+(sps-1)*npts*3
 
-                       do l=1,nw                   
+                       do l=1,nState                   
                           do kkk=1,2
                              do iii=1,2
                                 do jjj=1,2
@@ -250,7 +257,7 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
                                         j+jjj-2 < jBeg .or. j+jjj-1 > jEnd)) then
 
                                       call MatSetValue(dFdw,irow,&
-                                           w_ind(kkk,iii,jjj)*nw+l-1,&
+                                           w_ind(kkk,iii,jjj)*nState+l-1,&
                                            wadjb(kkk,iii,jjj,l),&
                                            INSERT_VALUES, ierr)
                                       call EChk(ierr,__FILE__,__LINE__)
