@@ -140,11 +140,17 @@ subroutine drdxPreAllocation(onProc, offProc, xSize, level)
 
   integer(kind=intType), dimension(:, :), pointer :: stencil
   integer(kind=intType) :: n_stencil, i_stencil
-  integer(kind=intType) :: ijk(3), cells_on_face
+  integer(kind=intType) :: ijk(3), cells_on_face, nState
   logical :: faces(6)
   logical :: is_corner, is_a_corner
 
-  onProc(:) = 8_intType*nw*(nTimeIntervalsSpectral-1)
+  if (frozenTurbulence) then
+     nState = nwf
+  else
+     nState = nw
+  end if
+
+  onProc(:) = 8_intType*nState*(nTimeIntervalsSpectral-1)
   offProc(:) = 0_intType 
 
   ii = 0  
@@ -180,7 +186,7 @@ subroutine drdxPreAllocation(onProc, offProc, xSize, level)
                            jCell >= 2 .and. jCell <= jl .and. &
                            kCell >= 2 .and. kCell <= kl) then
 
-                          onProc(ii) = onProc(ii) + nw
+                          onProc(ii) = onProc(ii) + nState
                        else
                           ! Its a k Face
                           if (iCell >=2 .and. iCell <= il .and. &
@@ -188,10 +194,10 @@ subroutine drdxPreAllocation(onProc, offProc, xSize, level)
 
                              if (kCell < 2) then
                                 call checkCell(kMin, iCell, jCell, onProc(ii), &
-                                     offProc(ii), nw)
+                                     offProc(ii), nState)
                              else
                                 call checkCell(kMax, iCell, jCell, onProc(ii), &
-                                     offProc(ii), nw)
+                                     offProc(ii), nState)
                              end if
 
                           ! Its a j Face
@@ -200,10 +206,10 @@ subroutine drdxPreAllocation(onProc, offProc, xSize, level)
 
                              if (jCell < 2) then
                                 call checkCell(jMin, iCell, kCell, onProc(ii), &
-                                     offProc(ii), nw)
+                                     offProc(ii), nState)
                              else
                                 call checkCell(jMax, iCell, kCell, onProc(ii), &
-                                     offProc(ii), nw)
+                                     offProc(ii), nState)
                              end if
 
                           ! Its a i Face
@@ -212,16 +218,16 @@ subroutine drdxPreAllocation(onProc, offProc, xSize, level)
 
                              if (iCell < 2) then
                                 call checkCell(iMin, jCell, kCell, onProc(ii), &
-                                     offProc(ii), nw)
+                                     offProc(ii), nState)
                              else
                                 call checkCell(iMax, jCell, kCell, onProc(ii), &
-                                     offProc(ii), nw)
+                                     offProc(ii), nState)
                              end if
                           else
                              ! Its one of the funny corner cells, 
                              ! which doesn't count
-                             onProc(ii) = onProc(ii) + nw
-                             offProc(ii) = offProc(ii) + nw
+                             onProc(ii) = onProc(ii) + nState
+                             offProc(ii) = offProc(ii) + nState
 
 
                           end if
@@ -272,7 +278,7 @@ subroutine drdxPreAllocation(onProc, offProc, xSize, level)
                                      (jcEnd(mm)-jcBeg(mm) + 1) * &
                                      (kcEnd(mm)-kcBeg(mm) + 1)
 
-                                onProc(ii) = onProc(ii) + nw*cells_on_face
+                                onProc(ii) = onProc(ii) + nState*cells_on_face
                              end if
                           end if
                        end do symLoop
