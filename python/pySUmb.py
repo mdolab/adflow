@@ -94,6 +94,7 @@ class SUMB(AeroSolver):
             # Common Paramters
             'ncycles':[int, 500],
             'ncyclescoarse':[int, 500],
+            'nsubiterturb':[int, 1],
             'cfl':[float, 1.7],
             'cflcoarse':[float, 1.0],
             'mgcycle':[str, '3w'],
@@ -427,6 +428,7 @@ class SUMB(AeroSolver):
             # Common Paramters
             'ncycles':{'location':'inputiteration.ncycles'},
             'ncyclescoarse':{'location':'inputiteration.ncyclescoarse'},
+            'nsubiterturb':{'location':'inputiteration.nsubiterturb'},
             'cfl':{'location':'inputiteration.cfl'},        
             'cflcoarse':{'location':'inputiteration.cflcoarse'},        
             'mgcycle':{'location':'localmg.mgdescription',
