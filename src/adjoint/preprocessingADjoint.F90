@@ -21,6 +21,7 @@ subroutine preprocessingADjoint
   use adjointVars
   use flowVarRefState
   use inputTimeSpectral
+  use inputAdjoint
   use ADjointPETSc, only: w_like1, w_like2, fvec1, fvec2, PETScIerr
   implicit none
 
@@ -31,7 +32,7 @@ subroutine preprocessingADjoint
 
   !     Local variables.
   !
-  integer(kind=intType) :: ierr, level, ndimW, ndimS, nTS, ncell
+  integer(kind=intType) :: ierr, level, ndimW, ndimS, nTS, ncell, nState
   !
   !     ******************************************************************
   !     *                                                                *
@@ -43,12 +44,19 @@ subroutine preprocessingADjoint
   ! any (substantial) memory. We want to keep these around inbetween
   ! creations/deletions of adjoint/NKsolver memory
 
+  ! Setup number of state variable based on turbulence assumption
+  if ( frozenTurbulence ) then
+     nState = nwf
+  else
+     nState = nw
+  endif
+
   ! Create two (empty) Vectors for getdFdx(T)Vec operations
   call getForceSize(nDimS,ncell, nTS)
   nDimS = nDimS * 3 *nTimeIntervalsSpectral! Multiply by 3 for each
                                            ! dof on each point
 
-  nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
+  nDimW = nState * nCellsLocal(1_intType)*nTimeIntervalsSpectral
 
   if (PETSC_VERSION_MINOR == 2) then
      call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimS,PETSC_DECIDE, &
