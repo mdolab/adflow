@@ -437,13 +437,16 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
 
   ! Reset the paraters to use segrated turbulence solve. 
   if (equations == RANSEquations) then
-     nMGVar = nw
-     nt1MG = nt1
-     nt2MG = nt2
+     nMGVar = nwf
+     nt1MG = nwf + 1
+     nt2MG = nwf
 
-     turbSegregated = .False.
-     turbCoupled = .True.
+     turbSegregated = .True.
+     turbCoupled = .False.
+     restrictEddyVis = .false.
+     if( eddyModel ) restrictEddyVis = .true.
   end if
+
 
 
 contains
