@@ -27,7 +27,7 @@ subroutine createPETScVars
 
   !     Local variables.
   integer(kind=intType)  :: nDimW, nDimX, nDimPt, nDimCell
-  integer(kind=intType) :: i, n_stencil
+  integer(kind=intType) :: i, n_stencil, nState
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal2, nnzOffDiag2
   integer(kind=intType), dimension(:, :), pointer :: stencil
@@ -38,10 +38,12 @@ subroutine createPETScVars
 
   ! DETERMINE ALL SIZES HERE!
   if ( frozenTurbulence ) then
-     nDimW = nwf * nCellsLocal(1_intType)*nTimeIntervalsSpectral
+     nState = nwf
   else
-     nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
+     nState = nw
   endif
+
+  nDimW = nState * nCellsLocal(1_intType)*nTimeIntervalsSpectral
   nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
 
   call getForceSize(npts, ncells, nTS)
@@ -63,18 +65,15 @@ subroutine createPETScVars
   end if
 
   level = 1
-  if ( frozenTurbulence ) then
-     call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nwf, stencil, n_stencil, &
-          level)
-       call myMatCreate(dRdwT, nwf, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
-            __FILE__, __LINE__)
-  else
-     call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nw, stencil, n_stencil, &
-          level)
-     call myMatCreate(dRdwT, nw, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
-          __FILE__, __LINE__)
-  endif
-     
+
+  call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nState, stencil, n_stencil, &
+       level)
+  call myMatCreate(dRdwT, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
+       __FILE__, __LINE__)
+  
+  call matSetOption(dRdwT, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
   deallocate(nnzDiagonal, nnzOffDiag)
 
   if (ApproxPC) then
@@ -91,19 +90,15 @@ subroutine createPETScVars
      end if
 
      level = 1
-     if ( frozenTurbulence ) then
-        call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nwf, stencil, n_stencil, &
-             level)
-        call myMatCreate(dRdwPreT, nwf, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
-             __FILE__, __LINE__)
-    else
-       call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nw, stencil, n_stencil, &
-            level)
-       call myMatCreate(dRdwPreT, nw, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
-            __FILE__, __LINE__)
-    endif
+     call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nState, stencil, n_stencil, &
+          level)
+     call myMatCreate(dRdwPreT, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
+          __FILE__, __LINE__)
 
-     deallocate(nnzDiagonal, nnzOffDiag)
+    call matSetOption(dRdwPreT, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+    
+    deallocate(nnzDiagonal, nnzOffDiag)
      ! --------------------------------------------------------------------
   end if ! Approx PC
 
@@ -145,17 +140,17 @@ subroutine createPETScVars
   ! dFcdw
   allocate( nnzDiagonal(nDimCell), nnzOffDiag(nDimCell))
   if (.not. viscous) then
-     nnzDiagonal = 2 * nw
+     nnzDiagonal = 2 * nState
 
      ! OffDiag is an overestimate...at most one cell is from neighbour
      ! proc
-     nnzOffDiag  = 1 * nw 
+     nnzOffDiag  = 1 * nState 
   else
-     nnzDiagonal = 3*3*2*nw
+     nnzDiagonal = 3*3*2*nState
 
      ! In general should not have much more than 6 cells on off
      ! proc. If there is a malloc or two that isn't the end of the world
-     nnzOffDiag = 6*nw
+     nnzOffDiag = 6*nState
   end if
 
   call myMatCreate(dFcdw, 1, nDimCell, nDimw, nnzDiagonal, nnzOffDiag, &
@@ -167,7 +162,7 @@ subroutine createPETScVars
      nnzOffDiag  = 1
   else
      nnzDiagonal = 9 * 3
-     nnzOffDiag = 6*nw
+     nnzOffDiag = 6*nState
   end if
 
   call myMatCreate(dFcdx, 1, nDimCell, nDimX, nnzDiagonal, nnzOffDiag, &
@@ -237,8 +232,8 @@ subroutine createPETScVars
 
  ! For now, leave dFdw, and dFdx in.
  allocate( nnzDiagonal(nDimPt), nnzOffDiag(nDimPt) )
- nnzDiagonal = 8*nw
- nnzOffDiag  = 8*nw! Make the off diagonal the same
+ nnzDiagonal = 8*nState
+ nnzOffDiag  = 8*nState! Make the off diagonal the same
 
  call myMatCreate(dFdw, 1, nDimPt, nDimW, nnzDiagonal, nnzOffDiag, &
      __FILE__, __LINE__)
