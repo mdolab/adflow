@@ -25,16 +25,24 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
   integer(kind=intType), intent(in)  :: level
 
   ! Local Variables
-  integer(kind=intType) :: nn, i, j, k, sps, ii, jj
-  integer(kind=intType) :: cell(3)
+  integer(kind=intType) :: nn, i, j, k, sps, ii, jj, iii, jjj, kkk
+  integer(kind=intType) :: iRowStart, iRowEnd
   integer(kind=intTYpe) :: onAdd, offAdd
+  
+  ! Zero the cell movement counter
   ii = 0
+  
   ! Set the onProc values for each cell to the number of "OFF" time
   ! spectral instances. The "on" spectral instances are accounted for
-  ! in the stencil
-
+  ! in the stencil  
   onProc(:) = nTimeIntervalsSpectral-1
   offProc(:) = 0_intType 
+
+  ! Determine the range of onProc in dRdwT
+  iRowStart = flowDoms(1, 1, 1)%globalCell(2,2,2)
+  call SetPointers(nDom, 1, nTimeIntervalsSpectral)
+  iRowEnd   = flowDoms(nDom, 1, nTimeIntervalsSpectral)%globalCell(il, jl, kl)
+
   do nn=1, nDom
      do sps=1, nTimeIntervalsSpectral
         call setPointers(nn, level, sps)
@@ -42,67 +50,28 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
         do k=2, kl
            do j=2, jl
               do i=2, il 
-                 
+
                  ! Increment ii ONLY for each each movement of center cell
                  ii = ii + 1
 
                  ! Loop over the cells in the provided stencil:
                  do jj=1, N_stencil
-                                  
+                    
                     ! Determine the cell we are dealing with 
-                    cell = (/i, j, k/) + stencil(jj, :)
-
-                    ! Fully inside:
-                    if (cell(1) >=2 .and. cell(1) <= il .and. &
-                        cell(2) >=2 .and. cell(2) <= jl .and. &
-                        cell(3) >=2 .and. cell(3) <= kl) then
-                       
-                       onProc(ii) = onProc(ii) + 1
-
-                    else ! BC or B2B
-
-                       onAdd = 0
-                       offAdd = 0
-                  
-                       ! Basically what we need to determine if
-                       ! "cell_to_check" is on this proc or an off proc
-
-                       ! Low I check
-                       if (cell(1) < 2) then
-                          call checkCell(iMin, j, k, onAdd, offAdd, 1)
-                       end if
-
-                       ! High I Check
-                       if (cell(1) > il) then
-                          call checkCell(iMax, j, k, onAdd, offAdd, 1)
-                       end if
-
-                       ! Low J check
-                       if (cell(2) < 2) then
-                          call checkCell(jMin, i, k, onAdd, offAdd, 1)
-                       end if
+                    iii = stencil(jj, 1)
+                    jjj = stencil(jj, 2)
+                    kkk = stencil(jj, 3)
                     
-                       ! High J Check
-                       if (cell(2) > jl) then
-                          call checkCell(jMax, i, k, onAdd, offAdd, 1)
-                       end if
-                    
-                       ! Low K check
-                       if (cell(3) < 2) then
-                          call checkCell(kMin, i, j, onAdd, offAdd, 1)
-                       end if
-
-                       ! High K check
-                       if (cell(3) > kl) then
-                          call checkCell(kMax, i, j, onAdd, offAdd, 1)
-                       end if
-
-                       if (offAdd > 0) then
-                          offProc(ii) = offProc(ii) + 1
-                       end if
-
-                       if  (onAdd > 0) then
+                    ! Check if it is onProc
+                    if (globalCell(i + iii, j + jjj, k + kkk) >= 0) then ! Real cell
+                       if (globalCell(i + iii, j + jjj, k+kkk) >= irowStart .and. &
+                            globalCell(i + iii, j + jjj, k+kkk) <= irowEnd) then
+                          
+                          ! Increase onProc
                           onProc(ii) = onProc(ii) + 1
+                       else
+                          ! Increase offProc
+                          offProc(ii) = offProc(ii) + 1
                        end if
                     end if
                  end do ! Stencil Loop
@@ -111,6 +80,7 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
         end do ! K loop
      end do ! sps loop
   end do ! Domain Loop
+
 end subroutine statePreAllocation
 
 subroutine drdxPreAllocation(onProc, offProc, xSize, level)
@@ -134,8 +104,8 @@ subroutine drdxPreAllocation(onProc, offProc, xSize, level)
   integer(kind=intType), intent(in)  :: level
 
   ! Local Variables
-  integer(kind=intType) :: nn, i, j, k, l, sps, ii, jj, mm
-  integer(kind=intType) :: inode, jnode, knode, iDim
+  integer(kind=intType) :: nn, sps, ii, jj, mm, iii, jjj, kkk
+  integer(kind=intType) :: inode, jnode, knode, iDim, irowStart, irowEnd
   integer(kind=intType) :: icell, jcell, kcell
 
   integer(kind=intType), dimension(:, :), pointer :: stencil
@@ -164,81 +134,126 @@ subroutine drdxPreAllocation(onProc, offProc, xSize, level)
      n_stencil = N_euler_drdx
   endif
 
-  ! This is for the "Regular" drdx calculation.
+  ! Determine the range of onProc in dRdx
+  iRowStart = flowDoms(1, 1, 1)%globalCell(2,2,2)
+  call SetPointers(nDom, 1, nTimeIntervalsSpectral)
+  iRowEnd   = flowDoms(nDom, 1, nTimeIntervalsSpectral)%globalCell(il, jl, kl)
+
   do nn=1, nDom
      do sps=1, nTimeIntervalsSpectral
         call setPointers(nn, level, sps)
-        ! Loop over each Node
+        ! Loop over each Cell
         do kNode=1, kl
            do jNode=1, jl
               do iNode=1, il 
-                 do iDim=1, 3
-                    ii = ii + 1 ! Continuous counter
-
-                    ! Loop Over each Cell in this node's stencil
-                    do i_stencil=1, n_stencil
-                       iCell = iNode + stencil(i_stencil, 1)
-                       jCell = jNode + stencil(i_stencil, 2)
-                       kCell = kNode + stencil(i_stencil, 3)
+                 do iDim = 1, 3
+                    
+                    ! Increment ii ONLY for each each movement of center cell
+                    ii = ii + 1
+                    
+                    ! Loop over the cells in the provided stencil:
+                    do jj=1, n_stencil
                        
-                       ! ---------- I Direction ----------
-                       if (iCell >= 2 .and. iCell <= il .and. &
-                           jCell >= 2 .and. jCell <= jl .and. &
-                           kCell >= 2 .and. kCell <= kl) then
-
-                          onProc(ii) = onProc(ii) + nState
-                       else
-                          ! Its a k Face
-                          if (iCell >=2 .and. iCell <= il .and. &
-                              jCell >=2 .and. jCell <= jl) then
-
-                             if (kCell < 2) then
-                                call checkCell(kMin, iCell, jCell, onProc(ii), &
-                                     offProc(ii), nState)
-                             else
-                                call checkCell(kMax, iCell, jCell, onProc(ii), &
-                                     offProc(ii), nState)
-                             end if
-
-                          ! Its a j Face
-                          else if (iCell >=2 .and. iCell <= il .and. &
-                                   kCell >=2 .and. kCell <= kl) then
-
-                             if (jCell < 2) then
-                                call checkCell(jMin, iCell, kCell, onProc(ii), &
-                                     offProc(ii), nState)
-                             else
-                                call checkCell(jMax, iCell, kCell, onProc(ii), &
-                                     offProc(ii), nState)
-                             end if
-
-                          ! Its a i Face
-                          else if (jCell >=2 .and. jCell <= jl .and. &
-                                   kCell >=2 .and. kCell <= kl) then
-
-                             if (iCell < 2) then
-                                call checkCell(iMin, jCell, kCell, onProc(ii), &
-                                     offProc(ii), nState)
-                             else
-                                call checkCell(iMax, jCell, kCell, onProc(ii), &
-                                     offProc(ii), nState)
-                             end if
-                          else
-                             ! Its one of the funny corner cells, 
-                             ! which doesn't count
+                       ! Determine the cell we are dealing with 
+                       iii = stencil(jj, 1)
+                       jjj = stencil(jj, 2)
+                       kkk = stencil(jj, 3)
+                       
+                       ! Check if it is onProc
+                       if (globalCell(iNode + iii, jNode + jjj, kNode + kkk) >= 0) then ! Real cell
+                          if (globalCell(iNode + iii, jNode + jjj, kNode+kkk) >= irowStart .and. &
+                               globalCell(iNode + iii, jNode + jjj, kNode+kkk) <= irowEnd) then
+                          
+                             ! Increase onProc
                              onProc(ii) = onProc(ii) + nState
+                          else
+                             ! Increase offProc
                              offProc(ii) = offProc(ii) + nState
-
-
                           end if
                        end if
                     end do ! Stencil Loop
-                 end do ! dof Loop
-              end do ! I Node loop
-           end do ! J Node loop
-        end do ! K Node loop
+                 end do ! Dim loop
+              end do ! I loop
+           end do ! J loop
+        end do ! K loop
      end do ! sps loop
   end do ! Domain Loop
+!!$
+!!$  ! This is for the "Regular" drdx calculation.
+!!$  do nn=1, nDom
+!!$     do sps=1, nTimeIntervalsSpectral
+!!$        call setPointers(nn, level, sps)
+!!$        ! Loop over each Node
+!!$        do kNode=1, kl
+!!$           do jNode=1, jl
+!!$              do iNode=1, il 
+!!$                 do iDim=1, 3
+!!$                    ii = ii + 1 ! Continuous counter
+!!$
+!!$                    ! Loop Over each Cell in this node's stencil
+!!$                    do i_stencil=1, n_stencil
+!!$                       iCell = iNode + stencil(i_stencil, 1)
+!!$                       jCell = jNode + stencil(i_stencil, 2)
+!!$                       kCell = kNode + stencil(i_stencil, 3)
+!!$                       
+!!$                       ! ---------- I Direction ----------
+!!$                       if (iCell >= 2 .and. iCell <= il .and. &
+!!$                           jCell >= 2 .and. jCell <= jl .and. &
+!!$                           kCell >= 2 .and. kCell <= kl) then
+!!$
+!!$                          onProc(ii) = onProc(ii) + nState
+!!$                       else
+!!$                          ! Its a k Face
+!!$                          if (iCell >=2 .and. iCell <= il .and. &
+!!$                              jCell >=2 .and. jCell <= jl) then
+!!$
+!!$                             if (kCell < 2) then
+!!$                                call checkCell(kMin, iCell, jCell, onProc(ii), &
+!!$                                     offProc(ii), nState)
+!!$                             else
+!!$                                call checkCell(kMax, iCell, jCell, onProc(ii), &
+!!$                                     offProc(ii), nState)
+!!$                             end if
+!!$
+!!$                          ! Its a j Face
+!!$                          else if (iCell >=2 .and. iCell <= il .and. &
+!!$                                   kCell >=2 .and. kCell <= kl) then
+!!$
+!!$                             if (jCell < 2) then
+!!$                                call checkCell(jMin, iCell, kCell, onProc(ii), &
+!!$                                     offProc(ii), nState)
+!!$                             else
+!!$                                call checkCell(jMax, iCell, kCell, onProc(ii), &
+!!$                                     offProc(ii), nState)
+!!$                             end if
+!!$
+!!$                          ! Its a i Face
+!!$                          else if (jCell >=2 .and. jCell <= jl .and. &
+!!$                                   kCell >=2 .and. kCell <= kl) then
+!!$
+!!$                             if (iCell < 2) then
+!!$                                call checkCell(iMin, jCell, kCell, onProc(ii), &
+!!$                                     offProc(ii), nState)
+!!$                             else
+!!$                                call checkCell(iMax, jCell, kCell, onProc(ii), &
+!!$                                     offProc(ii), nState)
+!!$                             end if
+!!$                          else
+!!$                             ! Its one of the funny corner cells, 
+!!$                             ! which doesn't count
+!!$                             onProc(ii) = onProc(ii) + nState
+!!$                             offProc(ii) = offProc(ii) + nState
+!!$
+!!$
+!!$                          end if
+!!$                       end if
+!!$                    end do ! Stencil Loop
+!!$                 end do ! dof Loop
+!!$              end do ! I Node loop
+!!$           end do ! J Node loop
+!!$        end do ! K Node loop
+!!$     end do ! sps loop
+!!$  end do ! Domain Loop
 
   ! However, drdx is more complex since we ALSO have
   ! xblockcorners. These however, only show up for the cells that are
@@ -337,7 +352,7 @@ subroutine checkCell(iface, i, j, onProc, offProc, addVal)
 
         ! Check to make sure cell is on this (possible) sub-face
         if (i>=iBeg .and. i<=iEnd .and. j>=jBeg .and. j<= jEnd) then
-
+           
            if (neighproc(mm) == myid) then
               onProc = onProc + addVal
            else
