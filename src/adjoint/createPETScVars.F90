@@ -150,7 +150,7 @@ subroutine createPETScVars
 
      ! In general should not have much more than 6 cells on off
      ! proc. If there is a malloc or two that isn't the end of the world
-     nnzOffDiag = 6*nState
+     nnzOffDiag = 3*3*2*nState
   end if
 
   call myMatCreate(dFcdw, 1, nDimCell, nDimw, nnzDiagonal, nnzOffDiag, &

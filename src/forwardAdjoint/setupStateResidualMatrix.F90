@@ -542,22 +542,38 @@ contains
 #else
     complex(kind=realType), dimension(nState, nState) :: blk
 #endif
- 
+    ! local variables
+    integer(kind=intType) :: i, j
+    logical :: zeroFlag
+
 #ifndef USE_COMPLEX
+    ! Check if the blk is all zeros
+    zeroFlag = .True.
+    do i = 1, nState
+       do j = 1, nState
+          if ( .not. blk(i,j) == zero) then
+             zeroFlag = .False.
+          end if
+       end do
+    end do
+    
+    ! Check if the blk has nan
     if (isnan(sum(blk))) then
        print *,'Bad Block:',blk
        call EChk(1, __FILE__, __LINE__)
     end if
 #endif
-
-    if (useTranspose) then
-       call MatSetValuesBlocked(matrix, 1, icol, 1, irow, transpose(blk), &
-            ADD_VALUES, ierr)
-       call EChk(ierr, __FILE__, __LINE__)
-    else
-       call MatSetValuesBlocked(matrix, 1, irow, 1, icol, blk, &
-            ADD_VALUES, ierr)
-       call EChk(ierr, __FILE__, __LINE__)
+    
+    if (zeroFlag == .False.) then
+       if (useTranspose) then
+          call MatSetValuesBlocked(matrix, 1, icol, 1, irow, transpose(blk), &
+               ADD_VALUES, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+       else
+          call MatSetValuesBlocked(matrix, 1, irow, 1, icol, blk, &
+               ADD_VALUES, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+       end if
     end if
 
   end subroutine setBlock
