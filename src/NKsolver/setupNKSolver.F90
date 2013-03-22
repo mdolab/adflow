@@ -147,10 +147,10 @@ subroutine setupNKsolver
     
      NKSolverSetup = .True.
      NKSolveCount = 0
-     if(equations == RANSEquations)  then
-        turbCoupled = .True.
-        turbSegregated = .False.
-     end if
+     !if(equations == RANSEquations)  then
+     !   turbCoupled = .True.
+     !   turbSegregated = .False.
+     !end if
 
   end if
 #endif

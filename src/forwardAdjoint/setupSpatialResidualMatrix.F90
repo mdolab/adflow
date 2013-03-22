@@ -443,8 +443,8 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
 
      turbSegregated = .True.
      turbCoupled = .False.
-     restrictEddyVis = .false.
-     if( eddyModel ) restrictEddyVis = .true.
+     restrictEddyVis = .False.
+     if( eddyModel ) restrictEddyVis = .True.
   end if
 
 
@@ -470,11 +470,11 @@ contains
          
           ! NOTE: We are setting the values in the tranpose
           ! sense. That's why icol is followed by irow. 
-
-          call MatSetValues(matrix,1,icol*3+jjj-1,1,irow*nState+iii-1,&
-               blk(iii,jjj),ADD_VALUES,ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-
+          if ( .not. blk(iii,jjj) == zero) then
+             call MatSetValues(matrix,1,icol*3+jjj-1,1,irow*nState+iii-1,&
+                  blk(iii,jjj),ADD_VALUES,ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+          end if
        end do
     end do
 
