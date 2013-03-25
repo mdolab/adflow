@@ -564,7 +564,7 @@ contains
     end if
 #endif
     
-    if (zeroFlag == .False.) then
+    if (.not. zeroFlag) then
        if (useTranspose) then
           call MatSetValuesBlocked(matrix, 1, icol, 1, irow, transpose(blk), &
                ADD_VALUES, ierr)
