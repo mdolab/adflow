@@ -386,21 +386,24 @@
    tauyz = viscsubface(nn)%tau(i, j, 6)
    ! Compute the viscous force on the face. A minus sign
    ! is now present, due to the definition of this force.
-   fxd = -(fact*(tauxxd*ss(i, j, 1)+tauxx*ssd(i, j, 1)+tauxyd*&
+   fxd = -(fact*((tauxxd*ss(i, j, 1)+tauxx*ssd(i, j, 1)+tauxyd*&
    &              ss(i, j, 2)+tauxy*ssd(i, j, 2)+tauxzd*ss(i, j, 3)+tauxz*&
-   &              ssd(i, j, 3)))
+   &              ssd(i, j, 3))*scaledim+(tauxx*ss(i, j, 1)+tauxy*ss(i, j, 2&
+   &              )+tauxz*ss(i, j, 3))*scaledimd))
    fx = -(fact*(tauxx*ss(i, j, 1)+tauxy*ss(i, j, 2)+tauxz*ss(i&
-   &              , j, 3)))
-   fyd = -(fact*(tauxyd*ss(i, j, 1)+tauxy*ssd(i, j, 1)+tauyyd*&
+   &              , j, 3))*scaledim)
+   fyd = -(fact*((tauxyd*ss(i, j, 1)+tauxy*ssd(i, j, 1)+tauyyd*&
    &              ss(i, j, 2)+tauyy*ssd(i, j, 2)+tauyzd*ss(i, j, 3)+tauyz*&
-   &              ssd(i, j, 3)))
+   &              ssd(i, j, 3))*scaledim+(tauxy*ss(i, j, 1)+tauyy*ss(i, j, 2&
+   &              )+tauyz*ss(i, j, 3))*scaledimd))
    fy = -(fact*(tauxy*ss(i, j, 1)+tauyy*ss(i, j, 2)+tauyz*ss(i&
-   &              , j, 3)))
-   fzd = -(fact*(tauxzd*ss(i, j, 1)+tauxz*ssd(i, j, 1)+tauyzd*&
+   &              , j, 3))*scaledim)
+   fzd = -(fact*((tauxzd*ss(i, j, 1)+tauxz*ssd(i, j, 1)+tauyzd*&
    &              ss(i, j, 2)+tauyz*ssd(i, j, 2)+tauzzd*ss(i, j, 3)+tauzz*&
-   &              ssd(i, j, 3)))
+   &              ssd(i, j, 3))*scaledim+(tauxz*ss(i, j, 1)+tauyz*ss(i, j, 2&
+   &              )+tauzz*ss(i, j, 3))*scaledimd))
    fz = -(fact*(tauxz*ss(i, j, 1)+tauyz*ss(i, j, 2)+tauzz*ss(i&
-   &              , j, 3)))
+   &              , j, 3))*scaledim)
    ! Compute the coordinates of the centroid of the face
    ! relative from the moment reference point. Due to the
    ! usage of pointers for xx and offset of 1 is present,
@@ -457,11 +460,11 @@
    ! component is important, there is no need to take the
    ! sign into account (it should be a minus sign).
    fx = tauxx*norm(i, j, 1) + tauxy*norm(i, j, 2) + tauxz*norm(&
-   &              i, j, 3)*scaledim
+   &              i, j, 3)
    fy = tauxy*norm(i, j, 1) + tauyy*norm(i, j, 2) + tauyz*norm(&
-   &              i, j, 3)*scaledim
+   &              i, j, 3)
    fz = tauxz*norm(i, j, 1) + tauyz*norm(i, j, 2) + tauzz*norm(&
-   &              i, j, 3)*scaledim
+   &              i, j, 3)
    fn = fx*norm(i, j, 1) + fy*norm(i, j, 2) + fz*norm(i, j, 3)
    fx = fx - fn*norm(i, j, 1)
    fy = fy - fn*norm(i, j, 2)
