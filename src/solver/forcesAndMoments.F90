@@ -283,11 +283,11 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
                  ! is now present, due to the definition of this force.
 
                  fx = -fact*(tauXx*ss(i,j,1) + tauXy*ss(i,j,2) &
-                      +        tauXz*ss(i,j,3))
+                      +        tauXz*ss(i,j,3))*scaleDim
                  fy = -fact*(tauXy*ss(i,j,1) + tauYy*ss(i,j,2) &
-                      +        tauYz*ss(i,j,3))
+                      +        tauYz*ss(i,j,3))*scaleDim
                  fz = -fact*(tauXz*ss(i,j,1) + tauYz*ss(i,j,2) &
-                      +        tauZz*ss(i,j,3))
+                      +        tauZz*ss(i,j,3))*scaleDim
 
                  ! Compute the coordinates of the centroid of the face
                  ! relative from the moment reference point. Due to the
@@ -333,11 +333,11 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
                  ! sign into account (it should be a minus sign).
 
                  fx = tauXx*norm(i,j,1) + tauXy*norm(i,j,2) &
-                      + tauXz*norm(i,j,3)*scaleDim
+                      + tauXz*norm(i,j,3)
                  fy = tauXy*norm(i,j,1) + tauYy*norm(i,j,2) &
-                      + tauYz*norm(i,j,3)*scaleDim
+                      + tauYz*norm(i,j,3)
                  fz = tauXz*norm(i,j,1) + tauYz*norm(i,j,2) &
-                      + tauZz*norm(i,j,3)*scaleDim
+                      + tauZz*norm(i,j,3)
 
                  fn = fx*norm(i,j,1) + fy*norm(i,j,2) + fz*norm(i,j,3)
 
