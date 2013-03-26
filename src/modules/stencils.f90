@@ -25,13 +25,13 @@ module stencils
   integer(kind=intType), dimension(4, 3), target :: euler_force_x_stencil
 
   ! Viscous stencils
-  integer(kind=intType), parameter :: N_visc_pc   = 19
+  integer(kind=intType), parameter :: N_visc_pc   = 27
   integer(kind=intType), parameter :: N_visc_drdw = 33
   integer(kind=intType), parameter :: N_visc_drdx = 64
   integer(kind=intType), parameter :: N_visc_force_w = 18
   integer(kind=intType), parameter :: N_visc_force_x = 32
 
-  integer(kind=intType), dimension(19,3), target :: visc_pc_stencil
+  integer(kind=intType), dimension(27,3), target :: visc_pc_stencil
   integer(kind=intType), dimension(33,3), target :: visc_drdw_stencil
   integer(kind=intType), dimension(64,3), target :: visc_drdx_stencil
   integer(kind=intType), dimension(18, 3), target :: visc_force_w_stencil
@@ -112,31 +112,17 @@ subroutine initialize_stencils
   euler_force_x_stencil(3, :) = (/ 0, -1, 0/)
   euler_force_x_stencil(4, :) = (/ 0,  0, 0/)
 
-  ! Visc PC Stencil --- 3x3x3 cube without the 8 corners
-  ! K = 0 plane (3x3)
-  visc_pc_stencil(1,:) = (/-1,-1, 0/)
-  visc_pc_stencil(2,:) = (/ 0,-1, 0/)
-  visc_pc_stencil(3,:) = (/ 1,-1, 0/)
-  visc_pc_stencil(4,:) = (/-1, 0, 0/)
-  visc_pc_stencil(5,:) = (/ 0, 0, 0/)
-  visc_pc_stencil(6,:) = (/ 1, 0, 0/)
-  visc_pc_stencil(7,:) = (/-1, 1, 0/)
-  visc_pc_stencil(8,:) = (/ 0, 1, 0/)
-  visc_pc_stencil(9,:) = (/ 1, 1, 0/)
-
-  ! K=1 top star
-  visc_pc_stencil(10,:) = (/-1, 0, 1/)
-  visc_pc_stencil(11,:) = (/ 0, 0, 1/)
-  visc_pc_stencil(12,:) = (/ 1, 0, 1/)
-  visc_pc_stencil(13,:) = (/ 0,-1, 1/)
-  visc_pc_stencil(14,:) = (/ 0, 1, 1/)
-
-  ! K=-1 bottom star
-  visc_pc_stencil(15,:) = (/-1, 0,-1/)
-  visc_pc_stencil(16,:) = (/ 0, 0,-1/)
-  visc_pc_stencil(17,:) = (/ 1, 0,-1/)
-  visc_pc_stencil(18,:) = (/ 0,-1,-1/)
-  visc_pc_stencil(19,:) = (/ 0, 1,-1/)
+  ! Visc PC Stencil --- 3x3x3 cube 
+  ii = 1
+  do k=-1,1
+     do j=-1,1
+        do i=-1,1
+           visc_pc_stencil(ii, :) =  (/i, j, k/)
+           ii = ii + 1
+        end do
+     end do
+  end do
+  
 
   ! Visc drdw stencil
   ! Dense 3x3x3 cube
