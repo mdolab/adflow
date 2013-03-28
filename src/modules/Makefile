@@ -75,6 +75,7 @@ FF90_OBJECTS_4 = ADjointVars.o\
 		 section.o\
 		 stencils.o\
 	         blockpointers_d.o\
+	         blockpointers_t.o\
 		 blockpointers_b.o\
 	         diffSizes.o\
 
@@ -108,6 +109,7 @@ FILES_TO_COMPLEXIFY =  precision.F90\
 		 section.f90\
 		 stencils.f90\
 	         blockpointers_d.f90\
+	         blockpointers_t.f90\
 	         blockpointers_b.f90\
 	         diffSizes.f90\
 

@@ -24,6 +24,7 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
   use iteration
   use costFunctions
   use inputADjoint
+  use diffSizes
   implicit none
 
   ! Input Arguments:

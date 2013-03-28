@@ -240,6 +240,9 @@ python module sumb
          logical :: lumped 
        end subroutine determinestencil
        
+       subroutine verifyad
+       end subroutine verifyad
+
 !        subroutine writedrdx(file_name)
 !          character*(*) :: file_name
 !        end subroutine writedrdx
@@ -796,6 +799,10 @@ python module sumb
          logical :: solveadjoint
          logical :: setmonitor
          logical :: printtiming
+         logical :: firstrun
+         logical :: verifystate
+         logical :: verifyspatial
+         logical :: verifyextra
          integer(kind=inttype) :: applyadjointpcsubspacesize
        end module inputadjoint
 

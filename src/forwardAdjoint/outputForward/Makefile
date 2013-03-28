@@ -45,15 +45,13 @@ FF90_OBJECTS =  blockpointers_d.o\
 	        invisciddissfluxscalarcoarse_d.o\
 		timestep_block_d.o\
 		bceulerwall_d.o\
-	        bcsymmpolar_d.o\
-		getcostfuncmat_d.o\
+	  	getcostfuncmat_d.o\
 		curveupre_d.o\
 		invisciddissfluxscalar_d.o\
 		turbbcnswall_d.o\
 		bcfarfield_d.o\
 		bcturbwall_d.o\
 		dim_d.o\
-		initres_block_d.o\
 		inviscidupwindflux_d.o  \
 		utauwf_d.o \
 		bcnswalladiabatic_d.o \
@@ -66,8 +64,7 @@ FF90_OBJECTS =  blockpointers_d.o\
 		etotarray_d.o \
 		invisciddissfluxmatrix_d.o \
                 setbcpointers_d.o\
-	        turbresidual_block_d.o\
-		sa_block_d.o\
+	        sa_block_d.o\
 	        inviscidcentralflux_d.o\
                 saeddyviscosity_d.o\
                 bcturbtreatment_d.o\
@@ -75,9 +72,7 @@ FF90_OBJECTS =  blockpointers_d.o\
                 bceddynowall_d.o\
                 bceddywall_d.o\
                 bcturbfarfield_d.o\
-                bcturbinflow_d.o\
-                bcturboutflow_d.o\
-                bcturbsymm_d.o\
+               	bcturbsymm_d.o\
 		eintarray_d.o  \
 		xhalo_block_d.o\
 		metric_block_d.o\
