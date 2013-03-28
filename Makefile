@@ -55,7 +55,8 @@ SUBDIR_SRC    = src/modules       \
                 src/bendingMomentAnalysis/bendingOutput\
                 src/forwardAdjoint \
                 src/forwardAdjoint/residualInput \
-                src/forwardAdjoint/outputForward\
+                src/forwardAdjoint/outputForwardTGT \
+                src/forwardAdjoint/outputForward \
 #                src/forwardAdjoint/residualOutputReverse\
 
 

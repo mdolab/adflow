@@ -1037,6 +1037,15 @@
        logical :: finitedifferencepc
        integer(kind=intType) :: subKSPSubspaceSize
        integer(kind=intType) :: applyAdjointPCSubSpaceSize
+       
+       ! firstRun     :  Whether this is the first run of the TGT debugger
+       ! verifyState  :  Whether to verify state
+       ! verifySpatial:  Whether to verify spatial
+       ! verifyExtra  :  Whether to verify extra
+       logical :: firstRun
+       logical :: verifyState
+       logical :: verifySpatial
+       logical :: verifyExtra
 
      end module inputADjoint
 

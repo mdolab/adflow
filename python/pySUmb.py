@@ -196,7 +196,13 @@ class SUMB(AeroSolver):
             'usereversemodead':[bool, True],
             'lowmemory':[bool, True],
             'applyadjointpcsubspacesize':[int, 20],
-            'frozenturbulence':[bool, True]
+            'frozenturbulence':[bool, True],
+
+            # ADjoint debugger
+            'firstrun':[bool, True],
+            'verifystate':[bool, True],
+            'verifyspatial':[bool, True],
+            'verifyextra':[bool, True],
             }
 
         informs = {
@@ -578,6 +584,10 @@ class SUMB(AeroSolver):
             'innerpreconits':{'location':'inputadjoint.innerpreconits'},
             'outerpreconits':{'location':'inputadjoint.outerpreconits'},
             'finitedifferencepc':{'location':'inputadjoint.finitedifferencepc'},
+            'firstrun':{'location':'inputadjoint.firstrun'},
+            'verifystate':{'location':'inputadjoint.verifystate'},
+            'verifyspatial':{'location':'inputadjoint.verifyspatial'},
+            'verifyextra':{'location':'inputadjoint.verifyextra'},
             }                
 
         # These "ignore_options" are NOT actually, ignored, rather,
@@ -1491,6 +1501,14 @@ class SUMB(AeroSolver):
 
 	return
     
+    def verifyAD(self):
+        '''
+        Use Tapenade TGT debugger to verify AD
+        '''
+        self.sumb.verifyad()
+
+        return
+
     def initAdjoint(self):
         '''
         Initialize the Ajoint problem for this test case
