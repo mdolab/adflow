@@ -35,8 +35,7 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS =  blockpointers_t.o\
-		applyallbc_block_t.o\
+FF90_OBJECTS =  applyallbc_block_t.o\
 		bcsymm_t.o\
                 computeetot_t.o\
 		computelamviscosity_t.o\
@@ -71,7 +70,7 @@ FF90_OBJECTS =  blockpointers_t.o\
                 bceddynowall_t.o\
                 bceddywall_t.o\
                 bcturbfarfield_t.o\
-               	bcturbsymm_t.o\
+		bcturbsymm_t.o\
 		eintarray_t.o  \
 		xhalo_block_t.o\
 		metric_block_t.o\
