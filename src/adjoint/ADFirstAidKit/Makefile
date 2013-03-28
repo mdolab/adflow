@@ -44,7 +44,8 @@ vpath %.o $(SUMB_OBJDIR)
 
 ADKIT_OBJECTS = adBuffer.o \
                 adStack.o  \
-                dpStack.o
+                dpStack.o  \
+		debugAD.o
 
 #      ******************************************************************
 #      *                                                                *

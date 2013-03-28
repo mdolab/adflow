@@ -6,14 +6,18 @@
     ! These are the diff sizes reqruied for the forward mode AD
     integer(kind=intType), parameter :: ISIZE3ofviscsubface = 3
     integer(kind=intType) :: ISIZE1OFDrfbcdata
+    
+
     integer(kind=intType) :: ISIZE1OFDrfviscsubface
     integer(kind=intType) :: ISIZE1OFDrfflowdoms
-    integer(kind=intType) :: ISIZE2OFDrfflowdoms
+    integer(kind=intType) :: ISIZE2OFDrfflowdoms 
     integer(kind=intType) :: ISIZE3OFDrfflowdoms
 
     ! These are the diff sizes reqruied for the reverse mode AD
     integer(kind=intType) :: ISIZE3OFDrfrlv, ISIZE2OFDrfrlv, ISIZE1OFDrfrlv
     integer(kind=intType) :: ISIZE4OFDrfw, ISIZE3OFDrfw, ISIZE2OFDrfw, ISIZE1OFDrfw
+    integer(kind=intType) :: ISIZE4OFDrffw, ISIZE3OFDrffw, ISIZE2OFDrffw, ISIZE1OFDrffw
+    integer(kind=intType) :: ISIZE4OFDrfdw, ISIZE3OFDrfdw, ISIZE2OFDrfdw, ISIZE1OFDrfdw
     integer(kind=intType) :: ISIZE3OFDrfgamma, ISIZE2OFDrfgamma, ISIZE1OFDrfgamma
     integer(kind=intType) :: ISIZE3OFDrfp, ISIZE2OFDrfp, ISIZE1OFDrfp
     integer(kind=intType) :: ISIZE3OFDrfrev, ISIZE2OFDrfrev, ISIZE1OFDrfrev
@@ -24,14 +28,15 @@
     integer(kind=intType) :: ISIZE3OFDrfradJ, ISIZE2OFDrfradJ, ISIZE1OFDrfradJ
     integer(kind=intType) :: ISIZE3OFDrfradK, ISIZE2OFDrfradK, ISIZE1OFDrfradK
 
-    integer(kind=intType) :: ISIZE1OFDrfcoeftime
-
     integer(kind=intType) :: ISIZE4OFDRFsI, ISIZE3OFDRFsI, ISIZE2OFDRFsI, ISIZE1OFDRFsI
     integer(kind=intType) :: ISIZE4OFDRFsJ, ISIZE3OFDRFsJ, ISIZE2OFDRFsJ, ISIZE1OFDRFsJ
     integer(kind=intType) :: ISIZE4OFDRFsK, ISIZE3OFDRFsK, ISIZE2OFDRFsK, ISIZE1OFDRFsK
 
-    integer(kind=intType) :: ISIZE4OFDRFDRFFLOWDOMS_X, ISIZE3OFDRFDRFFLOWDOMS_X
-    integer(kind=intType) :: ISIZE2OFDRFDRFFLOWDOMS_X, ISIZE1OFDRFDRFFLOWDOMS_X
+    integer(kind=intType) :: ISIZE4OFDRFFLOWDOMS_X, ISIZE3OFDRFFLOWDOMS_X
+    integer(kind=intType) :: ISIZE2OFDRFFLOWDOMS_X, ISIZE1OFDRFFLOWDOMS_X
+
+    integer(kind=intType) :: ISIZE4OFDRFFLOWDOMS_W, ISIZE3OFDRFFLOWDOMS_W
+    integer(kind=intType) :: ISIZE2OFDRFFLOWDOMS_W, ISIZE1OFDRFFLOWDOMS_W
 
     integer(kind=intType) :: ISIZE4OFDrfbmtj2
     integer(kind=intType) :: ISIZE3OFDrfbmtj2, ISIZE3OFDrfbvtj2
@@ -63,4 +68,35 @@
     integer(kind=intType) :: ISIZE2OFDrfbmtk1, ISIZE2OFDrfbvtk1
     integer(kind=intType) :: ISIZE1OFDrfbmtk1, ISIZE1OFDrfbvtk1
 
+    ! These are the diff sizes reqruied for the forward mode debug
+    integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_m, ISIZE2OFDrfDrfbcdata_m, ISIZE3OFDrfDrfbcdata_m
+    integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_f, ISIZE2OFDrfDrfbcdata_f, ISIZE3OFDrfDrfbcdata_f
+    integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_norm, ISIZE2OFDrfDrfbcdata_norm, ISIZE3OFDrfDrfbcdata_norm
+
+    integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_rface, ISIZE2OFDrfDrfbcdata_rface, ISIZE3OFDrfDrfbcdata_rface
+    integer(kind=intType) :: ISIZE1OFDrfprod, ISIZE2OFDrfprod, ISIZE3OFDrfprod
+    integer(kind=intType) :: ISIZE1OFDrfdvt, ISIZE2OFDrfdvt, ISIZE3OFDrfdvt, ISIZE4OFDrfdvt
+    integer(kind=intType) :: ISIZE1OfDrfvort, ISIZE2OFDrfvort, ISIZE3OFDrfvort
+    integer(kind=intType) :: ISIZE1OFDrfvol, ISIZE2OFDrfvol, ISIZE3OFDrfvol
+
+    integer(kind=intType) :: ISIZE1OFDrfDrfviscsubface_tau, ISIZE2OFDrfDrfviscsubface_tau
+    integer(kind=intType) :: ISIZE3OFDrfDrfviscsubface_tau
+
+    integer(kind=intType) :: ISIZE1OFDRFFLOWDOMS_dw, ISIZE2OFDRFFLOWDOMS_dw
+    integer(kind=intType) :: ISIZE3OFDRFFLOWDOMS_dw, ISIZE4OFDRFFLOWDOMS_dw
+
+    integer(kind=intType) :: ISIZE1OFDRFFLOWDOMS_vol, ISIZE2OFDRFFLOWDOMS_vol
+    integer(kind=intType) :: ISIZE3OFDRFFLOWDOMS_vol, ISIZE4OFDRFFLOWDOMS_vol
+
+    integer(kind=intType) :: ISIZE4OFDRFX, ISIZE3OFDRFX
+    integer(kind=intType) :: ISIZE2OFDRFX, ISIZE1OFDRFX
+
+    integer(kind=intType) :: ISIZE4OFDRFS, ISIZE3OFDRFS
+    integer(kind=intType) :: ISIZE2OFDRFS, ISIZE1OFDRFS
+
+    integer(kind=intType) :: ISIZE1OFrho, ISIZE1OFetot, ISIZE1OFu, ISIZE1OFv
+    integer(kind=intType) :: ISIZE1OFw, ISIZE1OFp, ISIZE1OFk
+
+    integer(kind=intType) :: ISIZE1OFDu1, ISIZE1OFDu2, ISIZE1OFDu3
+    integer(kind=intType) :: ISIZE1OFLeft, ISIZE1OFRight, ISIZE1OFFlux
   end module diffSizes

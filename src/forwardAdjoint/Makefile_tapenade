@@ -61,6 +61,7 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/forwardAdjoint/residualInput/metric_block.F90\
 		$(SRC)/forwardAdjoint/residualInput/getCostFuncMat.f90\
 		$(SRC)/modules/monitor.f90\
+		$(SRC)/modules/diffSizes.f90\
 		$(SRC)/modules/block.F90\
 		$(SRC)/modules/inputParam.F90\
 		$(SRC)/modules/constants.F90 \
@@ -224,8 +225,30 @@ ad_reverse:
 # Remove preprocessor files
 	make -f Makefile_tapenade cleanpreprocess
 
-ad_forward_debugTGT:	
-	@echo "Not implemented yet"
+ad_forward_debugTGT:
+# First delete the holding directory if it exists
+	rm -fr temp_forward_debugTGT
+
+# Next create the holidng directory:
+	mkdir -p temp_forward_debugTGT
+
+# Run preprocessor on all input files
+	make -f Makefile_tapenade preprocess_forward
+
+# The following is the single Tapenade command to run:
+	$(TAPENADE_HOME)/bin/tapenade -html \
+	-difffuncname "%_T"  -debugTGT \
+	-outvars $(TAPENADE_OUTVARS) \
+	-vars $(TAPENADE_VARS) \
+	-head $(TAPENADE_HEADROUTINE)  \
+	-forward $(TAPENADE_PRECISION) \
+	-O temp_forward_debugTGT $(IFILES)
+
+# Run the auto-edit file:
+	python autoEdit/autoEditForwardDebug.py temp_forward_debugTGT outputForwardTGT
+
+# Remove preprocessor files
+	make -f Makefile_tapenade cleanpreprocess	
 
 ad_forward_debugADJ:
 	@echo "Not implemented yet"

@@ -47,12 +47,14 @@ FILES_TO_COMPLEXIFY = \
 		setPointersOffTSInstance.f90\
 		setPointersOffTSInstance_d.f90\
 		setPointers_d.f90\
+		setDiffSizes.F90\
 		writeMatrices.F90
 
 FILES_TO_COPY = setupStateResidualMatrix.F90\
 		setupSpatialMatrix.F90\
 		setupSpatialResidualMatrix.F90\
 		setupAdjointMatrix.F90\
+		verifyAD.F90
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
 OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
