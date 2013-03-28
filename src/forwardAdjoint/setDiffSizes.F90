@@ -22,6 +22,7 @@ subroutine setDiffSizes
   use constants
   use flowVarRefState
   use inputTimeSpectral
+  use inputPhysics
   implicit none
 
   ! local variables
@@ -95,32 +96,38 @@ subroutine setDiffSizes
   ISIZE1OFRight = 0
   ISIZE1OFFlux = 0
 
+  ! bcdata
+  ISIZE1OFDrfbcdata = 0!nbocos
+
+  ! s
+  ISIZE1OFDrfs = 0!ie
+  ISIZE2OFDrfs = je
+  ISIZE3OFDrfs = ke
+  ISIZE4OFDrfs = 3
+
+  ! sfacei
+  ISIZE3OFDrfsfaceI = 0!ie + 1
+  ISIZE2OFDrfsfaceI = je
+  ISIZE1OFDrfsfaceI = ke
+
+  ! sfacej
+  ISIZE3OFDrfsfaceJ = 0!ie
+  ISIZE2OFDrfsfaceJ = je + 1
+  ISIZE1OFDrfsfaceJ = ke
+
+  ! sfacek
+  ISIZE3OFDrfsfaceK = 0!ie 
+  ISIZE2OFDrfsfaceK = je
+  ISIZE1OFDrfsfaceK = ke + 1
+
   ! Define size for the pointers
   ! flowdoms
   ISIZE1OFDrfflowdoms = nDom
   ISIZE2OFDrfflowdoms = nLevels
   ISIZE3OFDrfflowdoms = nTimeIntervalsSpectral
-
-  ! bcdata
-  ISIZE1OFDrfbcdata = 0!nbocos
   
   !viscSubface
   ISIZE1OFDrfviscsubface = nViscBocos
-
-  ! sfacei
-  ISIZE3OFDrfsfaceI = ie + 1
-  ISIZE2OFDrfsfaceI = je
-  ISIZE1OFDrfsfaceI = ke
-
-  ! sfacej
-  ISIZE3OFDrfsfaceJ = ie
-  ISIZE2OFDrfsfaceJ = je + 1
-  ISIZE1OFDrfsfaceJ = ke
-
-  ! sfacek
-  ISIZE3OFDrfsfaceK = ie 
-  ISIZE2OFDrfsfaceK = je
-  ISIZE1OFDrfsfaceK = ke + 1
 
   ! x
   ISIZE4OFDrfx = 3
@@ -134,15 +141,22 @@ subroutine setDiffSizes
   ISIZE2OFDRFFLOWDOMS_X = je + 1
   ISIZE3OFDRFFLOWDOMS_X = ke + 1
 
+  if ( equations == RANSEquations ) then
+     ! rev
+     ISIZE1OFDrfrev = ib + 1
+     ISIZE2OFDrfrev = jb + 1
+     ISIZE3OFDrfrev = kb + 1
+  else
+     ! rev
+     ISIZE1OFDrfrev = 0
+     ISIZE2OFDrfrev = 0
+     ISIZE3OFDrfrev = 0
+  end if
+
   ! rlv
   ISIZE1OFDrfrlv = ib + 1
   ISIZE2OFDrfrlv = jb + 1
   ISIZE3OFDrfrlv = kb + 1
-
-  ! rev
-  ISIZE1OFDrfrev = ib + 1
-  ISIZE2OFDrfrev = jb + 1
-  ISIZE3OFDrfrev = kb + 1
 
   ! w
   ISIZE4OFDrfw = nw
@@ -183,12 +197,6 @@ subroutine setDiffSizes
   ISIZE1OFDrfp = ib + 1
   ISIZE2OFDrfp = jb + 1
   ISIZE3OFDrfp = kb + 1
-
-  ! s
-  ISIZE1OFDrfs = ie
-  ISIZE2OFDrfs = je
-  ISIZE3OFDrfs = ke
-  ISIZE4OFDrfs = 3
 
   ! gamma
   ISIZE1OFDrfgamma = ib + 1
