@@ -75,7 +75,6 @@ FF90_OBJECTS_4 = ADjointVars.o\
 		 section.o\
 		 stencils.o\
 	         blockpointers_d.o\
-	         blockpointers_t.o\
 		 blockpointers_b.o\
 	         diffSizes.o\
 
