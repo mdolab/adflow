@@ -56,6 +56,20 @@
 !      *                                                                *
 !      ******************************************************************
 ! 
+       ! Initialize the nodal graident variables to zero
+       qx = zero
+       qy = zero
+       qz = zero
+       ux = zero
+       uy = zero
+       uz = zero
+       vx = zero
+       vy = zero
+       vz = zero
+       wx = zero
+       wy = zero
+       wz = zero
+
        ! Set rFilv to rFil to indicate that this is the viscous part.
        ! If rFilv == 0 the viscous residuals need not to be computed
        ! and a return can be made.
