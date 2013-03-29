@@ -41,6 +41,8 @@ subroutine verifyAD
   integer(kind=intType) :: liftIndex
   logical :: resetToRANS
 
+#ifndef USE_COMPLEX
+
   ! Setup number of state variable based on turbulence assumption
   if ( frozenTurbulence ) then
      nState = nwf
@@ -150,15 +152,15 @@ subroutine verifyAD
                     ! conclude debugger
                     call DEBUG_TGT_EXIT()
                     call DEBUG_TGT_CONCLUDEREAL8('CL',CL,CLD)
-               
-                    end do
-                 end do
+                    
+                 end do stateLoop
               end do
-           end do stateLoop
+           end do
+        end do
 
-           call dealloc_derivative_values(nn, level)
-        end do domainLoopAD1
-     end if logicCheck1
+        call dealloc_derivative_values(nn, level)
+     end do domainLoopAD1
+  end if logicCheck1
       
 
 
@@ -313,4 +315,6 @@ subroutine verifyAD
      restrictEddyVis = .false.
      if( eddyModel ) restrictEddyVis = .true.
   end if
+
+#endif
 end subroutine verifyAD  
