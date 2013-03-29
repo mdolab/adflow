@@ -114,26 +114,26 @@ subroutine verifyAD
         ! Set pointers and derivative pointers
         call setPointers_d(nn, level, 1)
                   
-        flowDomsd(nn, 1, 1)%dw_deriv(:, :, :, :, :) = zero
-        
-        ! Master State Loop
-        stateLoop: do l=1, nState
-           ! Reset All States and possibe AD seeds
-           flowDoms(nn, level, 1)%w(:, :, :, :) =  flowDomsd(nn, 1, 1)%wtmp
-           flowdomsd(nn, 1, 1)%w = zero ! This is actually w seed
-
-           ! verify block_res
-           do k=0, kb
-              do j=0, jb
-                 do i=0, ib
+        ! verify block_res
+        do k=0, kb
+           do j=0, jb
+              do i=0, ib
+                 ! Master State Loop            
+                 stateLoop: do l=1, nState
+                    
+                    flowDomsd(nn, 1, 1)%dw_deriv(:, :, :, :, :) = zero
+                    ! Reset All States and possibe AD seeds
+                    flowDoms(nn, level, 1)%w(:, :, :, :) =  flowDomsd(nn, 1, 1)%wtmp
+                    flowdomsd(nn, 1, 1)%w = zero ! This is actually w seed
+                    
                     ! Set the tagent direction
                     flowDomsd(nn, 1, 1)%w(i, j, k, l) = 1.d0
                     
                     ! initialize TGT debug
                     if ( firstRun ) then
-                       call DEBUG_TGT_INIT1(1.d-8,1.d-18,.001d0)
+                       call DEBUG_TGT_INIT1(1.d-6,1.d-18,.1d0)
                     else
-                       call DEBUG_TGT_INIT2(1.d-8,1.d-18,.001d0)
+                       call DEBUG_TGT_INIT2(1.d-6,1.d-18,.1d0)
                     end if
                     
                     ! let debugger know which one are purturbed
@@ -197,9 +197,9 @@ subroutine verifyAD
                     
                     ! initialize TGT debug
                     if ( firstRun ) then
-                       call DEBUG_TGT_INIT1(1.d-8,1.d-18,.001d0)
+                       call DEBUG_TGT_INIT1(1.d-6,1.d-18,.1d0)
                     else
-                       call DEBUG_TGT_INIT2(1.d-8,1.d-18,.001d0)
+                       call DEBUG_TGT_INIT2(1.d-6,1.d-18,.1d0)
                     end if
                     
                     ! let debugger know which one are purturbed
@@ -270,9 +270,9 @@ subroutine verifyAD
         ! verify block_res
         ! initialize TGT debug
         if ( firstRun ) then
-           call DEBUG_TGT_INIT1(1.d-8,1.d-18,.001d0)
+           call DEBUG_TGT_INIT1(1.d-6,1.d-18,.1d0)
         else
-           call DEBUG_TGT_INIT2(1.d-8,1.d-18,.001d0)
+           call DEBUG_TGT_INIT2(1.d-6,1.d-18,.1d0)
         end if
                     
         ! let debugger know which one are purturbed
