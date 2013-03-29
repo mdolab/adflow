@@ -182,18 +182,20 @@ subroutine verifyAD
         ! Set pointers and derivative pointers
         call setPointers_d(nn, level, 1)
                     
-        flowDomsd(nn, 1, 1)%dw_deriv(:, :, :, :, :) = zero
-        
-        ! Master State Loop
-        dofLoop: do l=1, 3
-           ! Reset All States and possibe AD seeds
-           flowDoms(nn, level, 1)%x(:, :, :, :) =  flowDomsd(nn, 1, 1)%xtmp
-           flowdomsd(nn, 1, 1)%x = zero ! This is actually w seed
-
-           ! verify block_res
-           do k=0, ke
-              do j=0, je
-                 do i=0, ie
+        ! verify block_res
+        do k=0, ke
+           do j=0, je
+              do i=0, ie
+                 
+                 ! Master State Loop
+                 dofLoop: do l=1, 3
+                    
+                    flowDomsd(nn, 1, 1)%dw_deriv(:, :, :, :, :) = zero
+                    
+                    ! Reset All States and possibe AD seeds
+                    flowDoms(nn, level, 1)%x(:, :, :, :) =  flowDomsd(nn, 1, 1)%xtmp
+                    flowdomsd(nn, 1, 1)%x = zero ! This is actually w seed
+                    
                     ! Set the tagent direction
                     flowDomsd(nn, 1, 1)%x(i, j, k, l) = 1.d0
                     
@@ -219,16 +221,16 @@ subroutine verifyAD
                     call DEBUG_TGT_EXIT()
                     call DEBUG_TGT_CONCLUDEREAL8('CL',CL,CLD)
                
-                    end do
-                 end do
+                 end do dofLoop
               end do
-           end do dofLoop
-
-           call dealloc_derivative_values(nn, level)
-        end do domainLoopAD2
-     end if logicCheck2
-
-
+           end do
+        end do
+        
+        call dealloc_derivative_values(nn, level)
+     end do domainLoopAD2
+  end if logicCheck2
+  
+  
 
 
 
