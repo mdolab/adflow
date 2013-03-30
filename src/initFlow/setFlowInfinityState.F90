@@ -44,9 +44,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       ! zero out the winf first
-       wInf = zero
-
        ! Compute the velocity squared based on MachCoef;
        ! needed for the initialization of the turbulent energy,
        ! especially for moving geometries.
@@ -61,6 +58,9 @@
        if(ierr /= 0)                             &
          call terminate("setFlowReferenceState", &
                         "Memory allocation failure for wInf")
+
+       ! zero out the winf first
+       wInf = zero
 #endif
        ! Set the reference value of the flow variables, except the total
        ! energy. This will be computed at the end of this routine.
