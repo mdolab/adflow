@@ -35,7 +35,7 @@ module stencils
   integer(kind=intType), dimension(33,3), target :: visc_drdw_stencil
   integer(kind=intType), dimension(64,3), target :: visc_drdx_stencil
   integer(kind=intType), dimension(18, 3), target :: visc_force_w_stencil
-  integer(kind=intType), dimension(16, 3), target :: visc_force_x_stencil
+  integer(kind=intType), dimension(32, 3), target :: visc_force_x_stencil
   
 end module stencils
        
@@ -171,7 +171,7 @@ subroutine initialize_stencils
   ! visc force stencil for x
   ! 4x4 on surface and two levels high
   ii = 1
-  do k=0,0
+  do k=0,1
      do j=-1,2
         do i=-1,2
            visc_force_x_stencil(ii, :) =  (/i, j, k/)
