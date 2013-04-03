@@ -45,8 +45,9 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   real(kind=realType) :: alphad, betad, Liftd, Dragd, CLd, CDd
   real(kind=realType), dimension(3) :: Forced, Momentd, cForced, cMomentd
   integer(kind=intType) :: liftIndex
-  integer(kind=intType), dimension(:,:), pointer ::  colorPtr
+  integer(kind=intType), dimension(:,:), pointer ::  colorPtr, colorPtr1, colorPtr2
   integer(kind=intType), dimension(:,:), pointer ::  globalNodePtr
+  integer(kind=intType), dimension(:,:), pointer ::  globalNodePtr1, globalNodePtr2
   integer(kind=intType) :: fRow
   logical :: resetToRANS
 
@@ -180,9 +181,11 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
               ! Reset All Coordinates and possibe AD seeds
               do sps2 = 1,nTimeIntervalsSpectral
                  flowDoms(nn,1,sps2)%x = flowDomsd(nn,1,sps2)%xtmp
+                 flowDoms(nn,1,sps2)%w = flowDomsd(nn,1,sps2)%wtmp
 
                  if (useAD) then
                     flowdomsd(nn,1,sps2)%x = zero ! This is actually
+                    flowdomsd(nn,1,sps2)%w = zero ! This is actually
                     ! the x seed
                  end if
               end do
@@ -237,23 +240,35 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
 
                        select case (BCFaceID(mm))
                        case (iMin)
-                          colorPtr => flowDomsd(nn, 1, 1)%color(1, :, :)
-                          globalNodePtr => globalNode(1, :, :)
+                          colorPtr1 => flowDomsd(nn, 1, 1)%color(1, :, :)
+                          globalNodePtr1 => globalNode(1, :, :)
+                          colorPtr2 => flowDomsd(nn, 1, 1)%color(2, :, :)
+                          globalNodePtr2 => globalNode(2, :, :)
                        case (iMax)
-                          colorPtr => flowDomsd(nn, 1, 1)%color(il, :, :)
-                          globalNodePtr => globalNode(il, :, :)
+                          colorPtr1 => flowDomsd(nn, 1, 1)%color(il, :, :)
+                          globalNodePtr1 => globalNode(il, :, :)
+                          colorPtr2 => flowDomsd(nn, 1, 1)%color(il-1, :, :)
+                          globalNodePtr2 => globalNode(il-1, :, :)
                        case (jMin)
-                          colorPtr => flowDomsd(nn, 1, 1)%color(:, 1, :)
-                          globalNodePtr => globalNode(:, 1, :)
+                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, 1, :)
+                          globalNodePtr1 => globalNode(:, 1, :)
+                          colorPtr2 => flowDomsd(nn, 1, 1)%color(:, 2, :)
+                          globalNodePtr2 => globalNode(:, 2, :)
                        case (jMax)
-                          colorPtr => flowDomsd(nn, 1, 1)%color(:, jl, :)
-                          globalNodePtr => globalNode(:, jl, :)
+                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, jl, :)
+                          globalNodePtr1 => globalNode(:, jl, :)
+                          colorPtr2 => flowDomsd(nn, 1, 1)%color(:, jl-1, :)
+                          globalNodePtr2 => globalNode(:, jl-1, :)
                        case (kMin)
-                          colorPtr => flowDomsd(nn, 1, 1)%color(:, :, 1)
-                          globalNodePtr => globalNode(:, :, 1)
+                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, :, 1)
+                          globalNodePtr1 => globalNode(:, :, 1)
+                          colorPtr2 => flowDomsd(nn, 1, 1)%color(:, :, 2)
+                          globalNodePtr2 => globalNode(:, :, 2)
                        case (kMax)
-                          colorPtr => flowDomsd(nn, 1, 1)%color(:, :, kl)
-                          globalNodePtr => globalNode(:, :, kl)
+                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, :, kl)
+                          globalNodePtr1 => globalNode(:, :, kl)
+                          colorPtr2 => flowDomsd(nn, 1, 1)%color(:, :, kl-1)
+                          globalNodePtr2 => globalNode(:, :, kl-1)
                        end select
 
                        ! These are the indices for the INTERNAL CELLS!
@@ -271,6 +286,16 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                              forceStencilLoop: do i_stencil=1, n_force_stencil
                                 ii = force_stencil(i_stencil, 1)
                                 jj = force_stencil(i_stencil, 2)
+                                kk = force_stencil(i_stencil, 3)
+
+                                ! check which k level and set pointers
+                                if (kk == 0) then
+                                   colorPtr => colorPtr1
+                                   globalNodePtr => globalNodePtr1
+                                else if (kk==1) then
+                                   colorPtr => colorPtr2
+                                   globalNodePtr => globalNodePtr2
+                                end if
 
                                 ! The +1 in the colorPtr is due to the
                                 ! pointer offset effect
