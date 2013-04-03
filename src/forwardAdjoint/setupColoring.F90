@@ -135,17 +135,17 @@ subroutine setup_dRdx_visc_coloring(nn, level, nColor)
      do j=0, jb
         do i=0, ib
            ! Add the extra one for 1-based numbering (as opposed to zero-based)
-           modi = mod(i, 4)
-           modj = mod(j, 4)
-           modk = mod(k, 4)
-
-           flowDomsd(nn, 1, 1)%color(i, j, k) = &
-                modi + 4*modj + 16*modk + 1
+           modi = mod(i, 5)
+           modj = mod(j, 5)
+           modk = mod(k, 5)
+           
+           flowDomsd(nn, 1, 1)%color(i, j, k) = modi + 5*modj + 25*modk + 1
+           
         end do
      end do
   end do
   
-  nColor = 64
+  nColor = 125
 end subroutine setup_dRdx_visc_coloring
 
 ! -------------------------------------------------------------
