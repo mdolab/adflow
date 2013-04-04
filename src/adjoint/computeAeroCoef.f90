@@ -25,7 +25,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   use BCTypes
   use costFunctions
   use inputTimeSpectral
-
+  use flowVarRefState
   implicit none
 
   ! Input/Ouput Variables
@@ -33,15 +33,11 @@ subroutine computeAeroCoef(globalCFVals,sps)
   real(kind=realType), intent(out), dimension(nCostFunction)::globalCFVals
 
   !      Local variables.
-  integer(kind=intType) :: ierr, nn, mm
-  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, npts, ncells, nTS
+  integer(kind=intType) :: nn, ierr
   real(kind=realType) :: force(3), cforce(3), Lift, Drag, CL, CD
-  real(kind=realType) :: Moment(3),cMoment(3)
-  real(kind=realType) :: alpha, beta
-  integer(kind=intType) :: liftIndex
+  real(kind=realType) :: Moment(3),cMoment(3), fact, scaleDim
+  real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yPlusMax
   real(kind=realType), dimension(nCostFunction)::localCFVals
-  real(kind=realType), dimension(:,:,:), allocatable :: pts
-  logical :: forcesTypeSave
 
   !     ******************************************************************
   !     *                                                                *
@@ -49,61 +45,59 @@ subroutine computeAeroCoef(globalCFVals,sps)
   !     *                                                                *
   !     ******************************************************************
   !
-  call getForceSize(npts, ncells, nTS)
-  allocate(pts(3, npts ,nTimeIntervalsSpectral))
-  call getForcePoints(pts, npts, nTS)
-  ii = 0
-
-  call getDirAngle(velDirFreestream, LiftDirection, liftIndex, alpha, beta)
-  
-  forcesTypeSave = forcesAsTractions
-  forcesAsTractions = .False.
-
   !Zero the summing variable
   localCFVals(:) = 0.0
   globalCFVals(:) = 0.0
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
-     bocos: do mm=1,nBocos
-        if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
-             BCType(mm) == NSWallIsothermal) then
+     
+     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+     scaleDim = pRef/pInf
 
-           jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
-           iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
+     ! Sum pressure and viscous contributions
+     cForce = cFp + cFv
+     cMoment = cMp + cMv
 
-           call computeForceAndMomentAdj(Force, cForce, Lift, Drag, Cl, Cd, &
-                moment, cMoment, alpha, beta, liftIndex, MachCoef, &
-                pointRef, lengthRef, surfaceRef, pts(:,:,sps), npts, w, &
-                rightHanded, bcfaceid(mm), iBeg, iEnd, jBeg, jEnd, ii, sps)
-           ii = ii + (iEnd-iBeg+1)*(jEnd-jBeg+1)
+     ! Get Lift coef and Drag coef
+     CD =  cForce(1)*dragDirection(1) &
+          + cForce(2)*dragDirection(2) &
+          + cForce(3)*dragDirection(3)
+     
+     CL =  cForce(1)*liftDirection(1) &
+          + cForce(2)*liftDirection(2) &
+          + cForce(3)*liftDirection(3)
 
-           localCFVals(costFuncLift) = localCFVals(costFuncLift) + Lift
-           localCFVals(costFuncDrag) = localCFVals(costFuncDrag) + Drag
-           localCFVals(costFuncLiftCoef) = localCFVals(costFuncLiftCoef) + Cl
-           localCFVals(costFuncDragCoef) = localCFVals(costFuncDragCoef) + Cd
-           localCFVals(costFuncForceX) = localCFVals(costFuncForceX) + Force(1)
-           localCFVals(costFuncForceY) = localCFVals(costFuncForceY) + Force(2)
-           localCFVals(costFuncForceZ) = localCFVals(costFuncForceZ) + Force(3)
-           localCFVals(costFuncForceXCoef) = localCFVals(costFuncForceXCoef) + cForce(1)
-           localCFVals(costFuncForceYCoef) = localCFVals(costFuncForceYCoef) + cForce(2)
-           localCFVals(costFuncForceZCoef) = localCFVals(costFuncForceZCoef) + cForce(3)
-           localCFVals(costFuncMomX) = localCFVals(costFuncMomX) + moment(1)
-           localCFVals(costFuncMomY) = localCFVals(costFuncMomY) + moment(2)
-           localCFVals(costFuncMomZ) = localCFVals(costFuncMomZ) + moment(3)
-           localCFVals(costFuncMomXCoef) = localCFVals(costFuncMomXCoef) + cmoment(1)
-           localCFVals(costFuncMomYCoef) = localCFVals(costFuncMomYCoef) + cmoment(2)
-           localCFVals(costFuncMomZCoef) = localCFVals(costFuncMomZCoef) + cmoment(3)
-        end if
-     end do bocos
+     ! Divide by fact to get the forces, Lift and Drag back
+     fact = two/(gammaInf*pInf*MachCoef*MachCoef &
+          *surfaceRef*LRef*LRef*scaleDim)
+     Force = cForce / fact
+     Lift  = CL / fact
+     Drag  = CD / fact
+
+     ! Moment factor has an extra lengthRef
+     fact = fact/(lengthRef*LRef)
+     Moment = cMoment / fact
+
+     localCFVals(costFuncLift) = localCFVals(costFuncLift) + Lift
+     localCFVals(costFuncDrag) = localCFVals(costFuncDrag) + Drag
+     localCFVals(costFuncLiftCoef) = localCFVals(costFuncLiftCoef) + Cl
+     localCFVals(costFuncDragCoef) = localCFVals(costFuncDragCoef) + Cd
+     localCFVals(costFuncForceX) = localCFVals(costFuncForceX) + Force(1)
+     localCFVals(costFuncForceY) = localCFVals(costFuncForceY) + Force(2)
+     localCFVals(costFuncForceZ) = localCFVals(costFuncForceZ) + Force(3)
+     localCFVals(costFuncForceXCoef) = localCFVals(costFuncForceXCoef) + cForce(1)
+     localCFVals(costFuncForceYCoef) = localCFVals(costFuncForceYCoef) + cForce(2)
+     localCFVals(costFuncForceZCoef) = localCFVals(costFuncForceZCoef) + cForce(3)
+     localCFVals(costFuncMomX) = localCFVals(costFuncMomX) + moment(1)
+     localCFVals(costFuncMomY) = localCFVals(costFuncMomY) + moment(2)
+     localCFVals(costFuncMomZ) = localCFVals(costFuncMomZ) + moment(3)
+     localCFVals(costFuncMomXCoef) = localCFVals(costFuncMomXCoef) + cmoment(1)
+     localCFVals(costFuncMomYCoef) = localCFVals(costFuncMomYCoef) + cmoment(2)
+     localCFVals(costFuncMomZCoef) = localCFVals(costFuncMomZCoef) + cmoment(3)
   end do domains
 
   ! Now we will mpi_allReduce them into globalCFVals
   call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, sumb_real, &
        mpi_sum, SUmb_comm_world, ierr)
 
-  ! Reset the forcesAsTractions variable
-  forcesAsTractions = forcesTypeSave
-
-  ! Deallocate the points array
-  deallocate(pts)
 end subroutine computeAeroCoef
