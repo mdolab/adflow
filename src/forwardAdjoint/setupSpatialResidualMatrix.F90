@@ -318,10 +318,10 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                                       ! all the info we need for dFcdx
                                       fRow = BCData(mm)%FMCellIndex(i,j)*3 + fmDim - 1
                                       
-                                      call MatSetValues(dFcdx, 1, fRow, &
-                                           1, ind, bcData(mm)%F(i, j, fmDim), &
-                                           ADD_VALUES, ierr)
-                                      call EChk(ierr, __FILE__, __LINE__)
+                                      !call MatSetValues(dFcdx, 1, fRow, &
+                                      !     1, ind, bcData(mm)%F(i, j, fmDim), &
+                                      !     ADD_VALUES, ierr)
+                                      !call EChk(ierr, __FILE__, __LINE__)
                                    end do
                                 end if
                              end do forceStencilLoop
