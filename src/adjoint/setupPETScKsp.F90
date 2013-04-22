@@ -34,7 +34,7 @@ subroutine setupPETScKsp
 
   if (ApproxPC)then
      !setup the approximate PC Matrix
-     useAD = .False.
+     useAD = .True.!.False.
      useTranspose = .True.
      usePC = .True.
      useObjective = .False.
