@@ -791,6 +791,7 @@ python module sumb
          integer(kind=inttype) :: innerpreconits
          integer(kind=inttype) :: outerpreconits
          logical :: approxpc
+         logical :: adpc
          logical :: viscpc
          logical :: frozenturbulence
          logical :: usediagtspc
