@@ -3,8 +3,8 @@
    !
    !  Differentiation of getcostfuncmat in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: costfuncmat
-   !   with respect to varying inputs: pinf pref surfaceref machcoef
-   !                dragdirection liftdirection alpha beta
+   !   with respect to varying inputs: pinf pref lengthref surfaceref
+   !                machcoef dragdirection liftdirection alpha beta
    SUBROUTINE GETCOSTFUNCMAT_D(alpha, alphad, beta, betad, liftindex)
    USE FLOWVARREFSTATE
    USE COSTFUNCTIONS
@@ -81,6 +81,10 @@
    costfuncmat(:, costfuncmomy) = (/zero, zero, zero, zero, one, zero/)
    costfuncmatd(:, costfuncmomz) = 0.0_8
    costfuncmat(:, costfuncmomz) = (/zero, zero, zero, zero, zero, one/)
+   ! update fact to get the moment
+   factd = (factd*lengthref*lref-fact*lref*lengthrefd)/(lengthref*lref)**&
+   &    2
+   fact = fact/(lengthref*lref)
    costfuncmatd(:, costfuncmomxcoef) = (/0.0_8, 0.0_8, 0.0_8, factd, &
    &    0.0_8, 0.0_8/)
    costfuncmat(:, costfuncmomxcoef) = (/zero, zero, zero, fact, zero, &
