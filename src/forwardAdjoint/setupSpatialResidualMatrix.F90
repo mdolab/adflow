@@ -310,7 +310,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                                       call EChk(ierr, __FILE__, __LINE__)
 
                                       call VecSetValues(FMx(fmDim+3), 1, ind, &
-                                           bcDatad(mm)%M(i,j,fmDim)/(lengthref*lref), &
+                                           bcDatad(mm)%M(i,j,fmDim), &
                                            ADD_VALUES, ierr) 
                                       call EChk(ierr, __FILE__, __LINE__)
                                       

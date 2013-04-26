@@ -54,6 +54,9 @@ subroutine getCostFuncMat(alpha, beta, liftIndex)
   costFuncMat(:, costFuncMomY) = (/zero, zero, zero, zero, one, zero/)
   costFuncMat(:, costFuncMomZ) = (/zero, zero, zero, zero, zero, one/)
 
+  ! update fact to get the moment
+  fact = fact/(lengthRef*LRef)
+
   costFuncMat(:, costFuncMomXCoef) = (/zero, zero, zero, fact, zero, zero/)
   costFuncMat(:, costFuncMomYCoef) = (/zero, zero, zero, zero, fact, zero/)
   costFuncMat(:, costFuncMomZCoef) = (/zero, zero, zero, zero, zero, fact/)
