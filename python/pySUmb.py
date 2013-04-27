@@ -617,7 +617,7 @@ class SUMB(AeroSolver):
                                 'probname']
 
         self.storedADjoints = {}
-
+        self.update_time = 0.0
         # Set default values --- actual options will be set when
         # aero_solver is initialized
         self.sumb.setdefaultvalues()
