@@ -60,8 +60,8 @@
        real(kind=realType) :: fx, fy, fz, fn, a2Tot, a2, qw
        real(kind=realType) :: tauxx, tauyy, tauzz
        real(kind=realType) :: tauxy, tauxz, tauyz
-       real(kind=realType) :: cp
-       real(kind=realType), dimension(3) :: norm, v1,v2
+       real(kind=realType) :: pm1, scaleDim, a
+       real(kind=realType), dimension(3) :: norm
 
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
        real(kind=realType), dimension(:,:,:), pointer :: ss1, ss2, ss
@@ -773,7 +773,7 @@
         case (cgnsLift) 
 
            fact2 = fact2*two/(gammaInf*pInf*MachCoef*MachCoef)
-
+           scaleDim = pRef/pInf
            do j=rangeFace(2,1), rangeFace(2,2)
               if(j == rangeFace(2,1)) then
                  jj = j + offVis
@@ -798,14 +798,44 @@
                  norm(2) = ss(ii,jj,2)
                  norm(3) = ss(ii,jj,3)
 
-                 ! Make unit
-                 norm = norm/sqrt(norm(1)*norm(1) + norm(2)*norm(2) + norm(3)*norm(3))
+                 ! Compute inviscid force
+                 pm1 = fact*fact2*(half*(pp2(i,j) + pp1(i,j)) - pInf)*scaleDim
+                 fx = pm1*norm(1)
+                 fy = pm1*norm(2)
+                 fz = pm1*norm(3)
+ 
+                 ! Compute possible viscous force
+                 if (viscousSubface) then
+
+                    ! Determine the viscous subface on which this
+                    ! face is located.
+                    
+                    mm = viscPointer(ii,jj)
+                    
+                    ! Store the 6 components of the viscous stress tensor
+                    ! a bit easier.
+
+                    tauxx = viscSubface(mm)%tau(ii,jj,1)
+                    tauyy = viscSubface(mm)%tau(ii,jj,2)
+                    tauzz = viscSubface(mm)%tau(ii,jj,3)
+                    tauxy = viscSubface(mm)%tau(ii,jj,4)
+                    tauxz = viscSubface(mm)%tau(ii,jj,5)
+                    tauyz = viscSubface(mm)%tau(ii,jj,6)
+
+                    fx = fx -(tauxx*norm(1) + tauxy*norm(2) + tauxz*norm(3))*fact*fact2*scaleDim
+                    fy = fy -(tauxy*norm(1) + tauyy*norm(2) + tauyz*norm(3))*fact*fact2*scaleDim
+                    fz = fz -(tauxz*norm(1) + tauyz*norm(2) + tauzz*norm(3))*fact*fact2*scaleDim
+                    
+                 end if
+
+                 ! Next we get the traction by dividing by the area
+                 a =  sqrt(norm(1)**2 + norm(2)**2 + norm(3)**2)
+                 fx = fx / a
+                 fy = fy / a
+                 fz = fz / a
 
                  ! Take dot-product with lift vector
-                 cp = fact*fact2*(half*(pp1(ii,jj) + pp2(ii,jj)) - pInf)
-           
-                 buffer(nn) = dot_product(liftDirection,norm)*cp
-                 
+                 buffer(nn) = fx*liftDirection(1) +fy*liftDirection(2) + fz*liftDirection(3)
               end do
            end do
            
