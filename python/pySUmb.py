@@ -1125,7 +1125,7 @@ class SUMB(AeroSolver):
         return
 
     def solveCL(self, aeroProblem, CL_star, nIterations=500, alpha0=0, 
-                delta=0.5, tol=1e-3):
+                delta=0.5, tol=1e-3, autoReset=True):
         '''This is a simple secant method search for solving for a
         fixed CL. This really should only be used to determine the
         starting alpha for a lift constraint in an optimization.
@@ -1151,7 +1151,8 @@ class SUMB(AeroSolver):
         for iIter in xrange(20):
             # We need to reset the flow since changing the alpha leads
             # to problems with the NK solver
-            self.resetFlow()
+            if autoReset:
+                self.resetFlow()
 
             # Set current alpha
             aeroProblem._flows.alpha = anm1
