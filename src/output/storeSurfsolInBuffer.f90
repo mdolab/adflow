@@ -55,7 +55,7 @@
        integer(kind=intType), dimension(:,:), pointer :: viscPointer
        integer(kind=intType), dimension(:,:), pointer :: iblank2
 
-       real(kind=realType) :: fact, fact2, gm1, ptotInf, ptot, psurf, rsurf
+       real(kind=realType) :: fact, gm1, ptotInf, ptot, psurf, rsurf
        real(kind=realType) :: usurf, vsurf, wsurf, m2surf, musurf
        real(kind=realType) :: fx, fy, fz, fn, a2Tot, a2, qw
        real(kind=realType) :: tauxx, tauyy, tauzz
@@ -82,11 +82,6 @@
        ! Set the pointers to this block.
 
        call setPointers(blockID, 1_intType, sps)
-       if (flowDoms(blockID, 1_intType,sps)%rightHanded) then
-          fact2 = one
-       else
-          fact2 = -one
-       end if
 
        ! Set the offset for the viscous data, such that the range is
        ! limited to the actual physical face. Viscous data, like skin
@@ -772,7 +767,7 @@
 
         case (cgnsLift) 
 
-           fact2 = fact2*two/(gammaInf*pInf*MachCoef*MachCoef)
+           fact = fact*two/(gammaInf*pInf*MachCoef*MachCoef)
            scaleDim = pRef/pInf
            do j=rangeFace(2,1), rangeFace(2,2)
               if(j == rangeFace(2,1)) then
@@ -799,7 +794,7 @@
                  norm(3) = ss(ii,jj,3)
 
                  ! Compute inviscid force
-                 pm1 = fact*fact2*(half*(pp2(i,j) + pp1(i,j)) - pInf)*scaleDim
+                 pm1 = fact*(half*(pp2(i,j) + pp1(i,j)) - pInf)*scaleDim
                  fx = pm1*norm(1)
                  fy = pm1*norm(2)
                  fz = pm1*norm(3)
@@ -822,9 +817,9 @@
                     tauxz = viscSubface(mm)%tau(ii,jj,5)
                     tauyz = viscSubface(mm)%tau(ii,jj,6)
 
-                    fx = fx -(tauxx*norm(1) + tauxy*norm(2) + tauxz*norm(3))*fact*fact2*scaleDim
-                    fy = fy -(tauxy*norm(1) + tauyy*norm(2) + tauyz*norm(3))*fact*fact2*scaleDim
-                    fz = fz -(tauxz*norm(1) + tauyz*norm(2) + tauzz*norm(3))*fact*fact2*scaleDim
+                    fx = fx -(tauxx*norm(1) + tauxy*norm(2) + tauxz*norm(3))*fact*scaleDim
+                    fy = fy -(tauxy*norm(1) + tauyy*norm(2) + tauyz*norm(3))*fact*scaleDim
+                    fz = fz -(tauxz*norm(1) + tauyz*norm(2) + tauzz*norm(3))*fact*scaleDim
                     
                  end if
 
