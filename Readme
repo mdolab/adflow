@@ -29,7 +29,7 @@ This is the SUmb README. Please read this before trying to compile.
 
    Enter cgnslib_2.5 and run the following:
 
-   $ ./configure --enabled-shared 
+   $ ./configure --enable-shared 
 
    Then build the library using:
 
