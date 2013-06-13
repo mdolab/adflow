@@ -536,14 +536,14 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
 
         !add in rotmatrix*rotpoint....
 
-        !
-        !            ************************************************************
-        !            *                                                          *
-        !            * Grid velocities of the cell centers, including the       *
-        !            * 1st level halo cells.                                    *
-        !            *                                                          *
-        !            ************************************************************
-        !
+!
+!            ************************************************************
+!            *                                                          *
+!            * Grid velocities of the cell centers, including the       *
+!            * 1st level halo cells.                                    *
+!            *                                                          *
+!            ************************************************************
+!
         ! Loop over the cells, including the 1st level halo's.
 
         do k=1,ke
@@ -606,13 +606,13 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
               enddo
            enddo
         enddo
-        !
-        !            ************************************************************
-        !            *                                                          *
-        !            * Normal grid velocities of the faces.                     *
-        !            *                                                          *
-        !            ************************************************************
-        !
+!
+!            ************************************************************
+!            *                                                          *
+!            * Normal grid velocities of the faces.                     *
+!            *                                                          *
+!            ************************************************************
+!
         ! Loop over the three directions.
 
         loopDirection: do mm=1,3
@@ -629,16 +629,16 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
            case (3_intType)       ! Normals in k-direction
               iie = ke; jje = ie; kke = je
            end select
-           !
-           !              **********************************************************
-           !              *                                                        *
-           !              * Normal grid velocities in generalized i-direction.     *
-           !              * mm == 1: i-direction                                   *
-           !              * mm == 2: j-direction                                   *
-           !              * mm == 3: k-direction                                   *
-           !              *                                                        *
-           !              **********************************************************
-           !
+!
+!              **********************************************************
+!              *                                                        *
+!              * Normal grid velocities in generalized i-direction.     *
+!              * mm == 1: i-direction                                   *
+!              * mm == 2: j-direction                                   *
+!              * mm == 3: k-direction                                   *
+!              *                                                        *
+!              **********************************************************
+!
            do i=0,iie
 
               ! Set the pointers for the coordinates, normals and

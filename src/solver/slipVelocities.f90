@@ -1,3 +1,37 @@
+subroutine slipVelocitiesFineLevel(useOldCoor, t, sps)
+  !
+  ! Shell function to call gridVelocitiesFineLevel on all blocks
+  !
+  use blockPointers
+  use constants
+  use inputTimeSpectral
+  use iteration
+  implicit none
+  !
+  !      Subroutine arguments.
+  !
+  integer(kind=intType), intent(in) :: sps
+  logical,               intent(in) :: useOldCoor
+  real(kind=realType), dimension(*), intent(in) :: t  !
+  !      Local variables.
+  !
+  integer(kind=intType) :: nn
+
+  ! Loop over the number of blocks.
+
+  domains: do nn=1,nDom
+
+     ! Set the pointers for this block.
+
+     call setPointers(nn, currentLevel, sps)
+
+     call slipVelocitiesFineLevel_block(useOldCoor, t, sps)
+
+  end do domains
+
+end subroutine slipVelocitiesFineLevel
+
+
 !
 !      ******************************************************************
 !      *                                                                *
@@ -8,7 +42,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine slipVelocitiesFineLevel(useOldCoor, t, sps)
+       subroutine slipVelocitiesFineLevel_block(useOldCoor, t, sps)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -27,6 +61,10 @@
        use inputMotion
        use inputUnsteady
        use iteration
+       use inputPhysics
+       use inputTSStabDeriv
+       use monitor
+       use communication
        implicit none
 !
 !      Subroutine arguments.
@@ -41,17 +79,34 @@
        integer(kind=intType) :: nn, mm, i, j, level
 
        real(kind=realType) :: oneOver4dt
-       real(kind=realType) :: velxGrid, velyGrid, velzGrid
+       real(kind=realType) :: velxGrid, velyGrid, velzGrid,ainf
+       real(kind=realType) :: velxGrid0, velyGrid0, velzGrid0
 
        real(kind=realType), dimension(3) :: xc, xxc
        real(kind=realType), dimension(3) :: rotCenter, rotRate
+       real(kind=realType), dimension(3) :: rotRateTemp
+       real(kind=realType), dimension(3) :: offsetVector
+       real(kind=realType), dimension(3,3) :: rotRateTrans
 
        real(kind=realType), dimension(3)   :: rotationPoint
-       real(kind=realType), dimension(3,3) :: rotationMatrix
+       real(kind=realType), dimension(3,3) :: rotationMatrix,&
+            derivRotationMatrix
+       
+       real(kind=realType) :: tNew, tOld
 
        real(kind=realType), dimension(:,:,:),   pointer :: uSlip
        real(kind=realType), dimension(:,:,:),   pointer :: xFace
        real(kind=realType), dimension(:,:,:,:), pointer :: xFaceOld
+
+       integer(kind=intType) :: liftIndex
+       real(kind=realType) :: alpha,beta,intervalMach,alphaTS,alphaIncrement,&
+            betaTS,betaIncrement
+       real(kind=realType), dimension(3) ::velDir,liftDir,dragDir
+       real(kind=realType), dimension(3) :: refDirection
+       
+       !Function Definitions
+       
+       real(kind=realType) :: TSAlpha,TSBeta,TSMach
 !
 !      ******************************************************************
 !      *                                                                *
@@ -232,25 +287,111 @@
       !  velyGrid = aInf*MachGrid(2)
       !  velzGrid = aInf*MachGrid(3)
 
-         velxGrid = zero
-         velyGrid = zero
-         velzGrid = zero
+         aInf = sqrt(gammaInf*pInf/rhoInf)
+         velxGrid0 = (aInf*machgrid)*(-velDirFreestream(1))
+         velyGrid0 = (aInf*machgrid)*(-velDirFreestream(2))
+         velzGrid0 = (aInf*machgrid)*(-velDirFreestream(3))
 
          ! Compute the derivative of the rotation matrix and the rotation
          ! point; needed for velocity due to the rigid body rotation of
          ! the entire grid. It is assumed that the rigid body motion of
          ! the grid is only specified if there is only 1 section present.
 
-         call derivativeRotMatrixRigid(rotationMatrix, rotationPoint, &
+         call derivativeRotMatrixRigid(derivRotationMatrix, rotationPoint, &
                                        t(1))
+         
+         !compute the rotation matrix to update the velocities for the time
+         !spectral stability derivative case...
+         
+         if(TSStability)then
+            ! Determine the time values of the old and new time level.
+            ! It is assumed that the rigid body rotation of the mesh is only
+            ! used when only 1 section is present.
 
-         ! Loop over the number of local blocks.
+            tNew = timeUnsteady + timeUnsteadyRestart
+            tOld = tNew - t(1)
 
-         domains2: do nn=1,nDom
+            if(TSpMode.or. TSqMode .or.TSrMode) then
+               ! Compute the rotation matrix of the rigid body rotation as
+               ! well as the rotation point; the latter may vary in time due
+               ! to rigid body translation.
 
-           ! Set the pointers for this block.
+               call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
 
-           call setPointers(nn, groundLevel, sps)
+               velxgrid0 = rotationMatrix(1,1)*velxgrid0 &
+                    + rotationMatrix(1,2)*velygrid0 &
+                    + rotationMatrix(1,3)*velzgrid0
+               velygrid0 = rotationMatrix(2,1)*velxgrid0 &
+                    + rotationMatrix(2,2)*velygrid0 &
+                    + rotationMatrix(2,3)*velzgrid0
+               velzgrid0 = rotationMatrix(3,1)*velxgrid0 &
+                    + rotationMatrix(3,2)*velygrid0 &
+                    + rotationMatrix(3,3)*velzgrid0
+            elseif(tsAlphaMode)then
+               ! get the baseline alpha and determine the liftIndex
+               call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+               !Determine the alpha for this time instance
+               alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+                    degreeFourAlpha,  omegaFourAlpha,     &
+                    cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+
+               alphaTS = alpha+alphaIncrement
+               !Determine the grid velocity for this alpha
+               refDirection(:) = zero
+               refDirection(1) = one
+               call getDirVector(refDirection, alphaTS, beta, velDir, liftIndex)
+
+               !do I need to update the lift direction and drag direction as well?
+               !set the effictive grid velocity for this time interval
+               velxGrid0 = (aInf*machgrid)*(-velDir(1))
+               velyGrid0 = (aInf*machgrid)*(-velDir(2))
+               velzGrid0 = (aInf*machgrid)*(-velDir(3))
+
+            elseif(tsBetaMode)then
+               ! get the baseline alpha and determine the liftIndex
+               call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+
+               !Determine the alpha for this time instance
+               betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
+                    degreeFourBeta,  omegaFourBeta,     &
+                    cosCoefFourBeta, sinCoefFourBeta, t(1))
+
+               betaTS = beta+betaIncrement
+               !Determine the grid velocity for this alpha
+               refDirection(:) = zero
+               refDirection(1) = one
+               call getDirVector(refDirection, alpha, betaTS, velDir, liftIndex)
+
+               !do I need to update the lift direction and drag direction as well?
+               !set the effictive grid velocity for this time interval
+               velxGrid0 = (aInf*machgrid)*(-velDir(1))
+               velyGrid0 = (aInf*machgrid)*(-velDir(2))
+               velzGrid0 = (aInf*machgrid)*(-velDir(3))
+            elseif(TSMachMode)then
+               !determine the mach number at this time interval
+               IntervalMach = TSMach(degreePolMach,   coefPolMach,       &
+                    degreeFourMach,  omegaFourMach,     &
+                    cosCoefFourMach, sinCoefFourMach, t(1))
+               !set the effective grid velocity
+               velxGrid0 = (aInf*(IntervalMach+machgrid))*(-velDirFreestream(1))
+               velyGrid0 = (aInf*(IntervalMach+machgrid))*(-velDirFreestream(2))
+               velzGrid0 = (aInf*(IntervalMach+machgrid))*(-velDirFreestream(3))
+
+            elseif(TSAltitudeMode)then
+               call terminate('gridVelocityFineLevel','altitude motion not yet implemented...')
+            else
+               call terminate('gridVelocityFineLevel','Not a recognized Stability Motion')
+            end if
+         endif
+
+
+         ! ! Loop over the number of local blocks.
+
+         ! domains2: do nn=1,nDom
+
+         !   ! Set the pointers for this block.
+
+         !   call setPointers(nn, groundLevel, sps)
 
            ! Loop over the number of viscous subfaces.
 
@@ -293,7 +434,67 @@
              i = cgnsSubface(mm)
 
              rotCenter = cgnsDoms(j)%bocoInfo(i)%rotCenter
+             offSetVector= (rotCenter-rotPoint)
              rotRate   = timeRef*cgnsDoms(j)%bocoInfo(i)%rotRate
+
+             if (useWindAxis)then
+                !determine the current angles from the free stream velocity
+                call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+
+                if (liftIndex == 2) then
+                   ! different coordinate system for aerosurf
+                   ! Wing is in z- direction
+                   rotRateTrans(1,1)=cos(alpha)*cos(beta)
+                   rotRateTrans(1,2)=-sin(alpha)
+                   rotRateTrans(1,3)=-cos(alpha)*sin(beta)
+                   rotRateTrans(2,1)=sin(alpha)*cos(beta)
+                   rotRateTrans(2,2)=cos(alpha)
+                   rotRateTrans(2,3)=-sin(alpha)*sin(beta)
+                   rotRateTrans(3,1)=sin(beta)
+                   rotRateTrans(3,2)=0.0
+                   rotRateTrans(3,3)=cos(beta)
+
+                elseif(liftIndex ==3) then
+                   ! Wing is in y- direction
+                   !Rotate the rotation rate from the wind axis back to the local body axis
+                   rotRateTrans(1,1)=cos(alpha)*cos(beta)
+                   rotRateTrans(1,2)=-cos(alpha)*sin(beta)
+                   rotRateTrans(1,3)=-sin(alpha)
+                   rotRateTrans(2,1)=sin(beta)
+                   rotRateTrans(2,2)=cos(beta)
+                   rotRateTrans(2,3)=0.0
+                   rotRateTrans(3,1)=sin(alpha)*cos(beta)
+                   rotRateTrans(3,2)=-sin(alpha)*sin(beta)
+                   rotRateTrans(3,3)=cos(alpha)
+                else
+                   call terminate('getDirAngle', 'Invalid Lift Direction')
+                endif
+
+                rotRateTemp = rotRate
+                rotRate=0.0
+                do i=1,3
+                   do j=1,3
+                      rotRate(i)=rotRate(i)+rotRateTemp(j)*rotRateTrans(i,j)
+                   end do
+                end do
+             end if
+
+             velxGrid =velxgrid0+ 1*(rotRate(2)*offSetVector(3) &
+                  - rotRate(3)*offSetVector(2)) &
+                  + derivRotationMatrix(1,1)*offSetVector(1) &
+                  + derivRotationMatrix(1,2)*offSetVector(2) &
+                  + derivRotationMatrix(1,3)*offSetVector(3)
+             velyGrid =velygrid0+ 1*(rotRate(3)*offSetVector(1)&
+                  - rotRate(1)*offSetVector(3))&
+                  + derivRotationMatrix(2,1)*offSetVector(1) &
+                  + derivRotationMatrix(2,2)*offSetVector(2) &
+                  + derivRotationMatrix(2,3)*offSetVector(3)
+             velzGrid =velzgrid0+ 1*(rotRate(1)*offSetVector(2) &
+                  - rotRate(2)*offSetVector(1)) &
+                  + derivRotationMatrix(3,1)*offSetVector(1) &
+                  + derivRotationMatrix(3,2)*offSetVector(2) &
+                  + derivRotationMatrix(3,3)*offSetVector(3)
+
 
              ! Loop over the quadrilateral faces of the viscous
              ! subface.
@@ -339,26 +540,26 @@
                  ! block and the entire rigid body rotation.
 
                  uSlip(i,j,1) = uSlip(i,j,1) + velxGrid    &
-                              + rotationMatrix(1,1)*xxc(1) &
-                              + rotationMatrix(1,2)*xxc(2) &
-                              + rotationMatrix(1,3)*xxc(3)
+                              + derivRotationMatrix(1,1)*xxc(1) &
+                              + derivRotationMatrix(1,2)*xxc(2) &
+                              + derivRotationMatrix(1,3)*xxc(3)
                  uSlip(i,j,2) = uSlip(i,j,2) + velyGrid    &
-                              + rotationMatrix(2,1)*xxc(1) &
-                              + rotationMatrix(2,2)*xxc(2) &
-                              + rotationMatrix(2,3)*xxc(3)
+                              + derivRotationMatrix(2,1)*xxc(1) &
+                              + derivRotationMatrix(2,2)*xxc(2) &
+                              + derivRotationMatrix(2,3)*xxc(3)
                  uSlip(i,j,3) = uSlip(i,j,3) + velzGrid    &
-                              + rotationMatrix(3,1)*xxc(1) &
-                              + rotationMatrix(3,2)*xxc(2) &
-                              + rotationMatrix(3,3)*xxc(3)
+                              + derivRotationMatrix(3,1)*xxc(1) &
+                              + derivRotationMatrix(3,2)*xxc(2) &
+                              + derivRotationMatrix(3,3)*xxc(3)
                enddo
              enddo
 
            enddo bocoLoop2
-         enddo domains2
+
 
        endif testUseOldCoor
 
-       end subroutine slipVelocitiesFineLevel
+     end subroutine slipVelocitiesFineLevel_block
 
 !      ==================================================================
 
