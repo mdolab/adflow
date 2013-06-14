@@ -23,7 +23,7 @@ subroutine gridVelocitiesFineLevel(useOldCoor, t, sps)
 
      ! Set the pointers for this block.
 
-     call setPointers(nn, currentLevel, sps)
+     call setPointers(nn, groundLevel, sps)
 
      call gridVelocitiesFineLevel_block(useOldCoor, t, sps)
 

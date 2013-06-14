@@ -963,7 +963,7 @@ class SUMB(AeroSolver):
         # end if
         self.sumb.inputiteration.mgstartlevel = strLvl
         self.sumb.inputiteration.groundlevel = strLvl
-        self.sumb.inputiteration.currentlevle = strLvl
+        self.sumb.inputiteration.currentlevel = strLvl
         self.sumb.monitor.niterold = 0
         self.sumb.monitor.nitercur = 0
         self.sumb.iteration.itertot = 0
