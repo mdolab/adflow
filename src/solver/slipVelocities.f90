@@ -1,6 +1,6 @@
 subroutine slipVelocitiesFineLevel(useOldCoor, t, sps)
   !
-  ! Shell function to call gridVelocitiesFineLevel on all blocks
+  ! Shell function to call slipVelocitiesFineLevel on all blocks
   !
   use blockPointers
   use constants
@@ -23,7 +23,7 @@ subroutine slipVelocitiesFineLevel(useOldCoor, t, sps)
 
      ! Set the pointers for this block.
 
-     call setPointers(nn, currentLevel, sps)
+     call setPointers(nn, groundLevel, sps)
 
      call slipVelocitiesFineLevel_block(useOldCoor, t, sps)
 
