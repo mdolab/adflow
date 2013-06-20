@@ -126,6 +126,7 @@ subroutine computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
   if(myID==0) print *,'in compute TS deriv...',nTimeintervalsSpectral
   !Compute and store the aero coef. Values for each TS level
 
+  storeAlpha(:)=0.0
 
   do sps =1,nTimeIntervalsSpectral
      
