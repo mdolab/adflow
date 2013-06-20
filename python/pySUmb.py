@@ -796,12 +796,12 @@ class SUMB(AeroSolver):
             *self.metricConversion
         self.sumb.inputphysics.pointref[2] = aero_problem._refs.zref\
             *self.metricConversion
-#         self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xrot\
-#             *self.metricConversion
-#         self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yrot\
-#             *self.metricConversion
-#         self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zrot\
-#             *self.metricConversion
+        self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xrot\
+            *self.metricConversion
+        self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yrot\
+            *self.metricConversion
+        self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zrot\
+            *self.metricConversion
         #update the flow vars
         self.sumb.updatereferencepoint()
         self._update_vel_info = True
