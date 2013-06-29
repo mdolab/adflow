@@ -98,6 +98,16 @@ module block
      real(kind=realType), dimension(:,:,:), pointer :: F, M
      integer(kind=intType), dimension(:,:), pointer :: FMNodeIndex, FMCellIndex
 
+     ! symNorm is the normal for (symmertry) boundary conditions.
+     ! symNormSet is set to false until symNorm is computed at the
+     ! beginning of a simulation. symNorm then remains constant for
+     ! the remainder of the simulation. This is ok, since if the
+     ! normal of the symmetry plane is changing, your results are
+     ! invalid anyway.  These values are only used on symmetry
+     ! plane. They are undefined for other BC's.
+     real(kind=realType), dimension(3) :: symNorm
+     logical :: symNormSet 
+
      ! subsonicInletTreatment: which boundary condition treatment
      !                         to use for subsonic inlets; either
      !                         totalConditions or massFlow.

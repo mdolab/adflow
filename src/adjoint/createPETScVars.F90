@@ -183,48 +183,48 @@ subroutine createPETScVars
   iCellCount = 0
   iNodeCount = 0
  
-  spectral: do sps=1,nTimeIntervalsSpectral
-     domains: do nn=1,nDom
-        call setPointers(nn,1_intType,sps)
+ !  spectral: do sps=1,nTimeIntervalsSpectral
+ !     domains: do nn=1,nDom
+ !        call setPointers(nn,1_intType,sps)
         
-        ! Loop over the number of boundary subfaces of this block.
-        bocos: do mm=1,nBocos
-           if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
-                BCType(mm) == NSWallIsothermal) then
+ !        ! Loop over the number of boundary subfaces of this block.
+ !        bocos: do mm=1,nBocos
+ !           if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
+ !                BCType(mm) == NSWallIsothermal) then
               
-              jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
-              iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
+ !              jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
+ !              iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
        
-              iStride = iEnd-iBeg+2
-              do j=jBeg, jEnd ! Face Loop
-                 do i=iBeg, iEnd ! Face Loop
-                    do iDim = 0,2
+ !              iStride = iEnd-iBeg+2
+ !              do j=jBeg, jEnd ! Face Loop
+ !                 do i=iBeg, iEnd ! Face Loop
+ !                    do iDim = 0,2
                        
-                       iCol = iCellCount*3 + iDim
-                       rows(1) = 3*iNodeCount + 3*(j-2)*iStride + 3*(i-2) + iDim
-                       rows(2) = 3*iNodeCount + 3*(j-1)*iStride + 3*(i-2) + iDim
-                       rows(3) = 3*iNodeCount + 3*(j-2)*iStride + 3*(i-1) + iDim
-                       rows(4) = 3*iNodeCount + 3*(j-1)*iStride + 3*(i-1) + iDim
-                       do ii=1,4
-                          call MatSetValues(dFndFc, 1, rows(ii), 1, iCol, &
-                               fourth, INSERT_VALUES, ierr) 
-                          call EChk(ierr, __FILE__, __LINE__)
-                       end do
+ !                       iCol = iCellCount*3 + iDim
+ !                       rows(1) = 3*iNodeCount + 3*(j-2)*iStride + 3*(i-2) + iDim
+ !                       rows(2) = 3*iNodeCount + 3*(j-1)*iStride + 3*(i-2) + iDim
+ !                       rows(3) = 3*iNodeCount + 3*(j-2)*iStride + 3*(i-1) + iDim
+ !                       rows(4) = 3*iNodeCount + 3*(j-1)*iStride + 3*(i-1) + iDim
+ !                       do ii=1,4
+ !                          call MatSetValues(dFndFc, 1, rows(ii), 1, iCol, &
+ !                               fourth, INSERT_VALUES, ierr) 
+ !                          call EChk(ierr, __FILE__, __LINE__)
+ !                       end do
 
-                    end do
-                    iCellCount = iCellCount + 1
-                 end do
-              end do
-             iNodeCount = iNodeCount + (iEnd-iBeg+2)*(jEnd-jBeg+2)
-          end if
-       end do bocos
-    end do domains
- end do spectral
+ !                    end do
+ !                    iCellCount = iCellCount + 1
+ !                 end do
+ !              end do
+ !             iNodeCount = iNodeCount + (iEnd-iBeg+2)*(jEnd-jBeg+2)
+ !          end if
+ !       end do bocos
+ !    end do domains
+ ! end do spectral
 
- call MatAssemblyBegin(dFndFc, MAT_FINAL_ASSEMBLY, ierr)
- call EChk(ierr, __FILE__, __LINE__)
- call MatAssemblyEnd  (dFndFc, MAT_FINAL_ASSEMBLY, ierr)
- call EChk(ierr,  __FILE__, __LINE__)
+ ! call MatAssemblyBegin(dFndFc, MAT_FINAL_ASSEMBLY, ierr)
+ ! call EChk(ierr, __FILE__, __LINE__)
+ ! call MatAssemblyEnd  (dFndFc, MAT_FINAL_ASSEMBLY, ierr)
+ ! call EChk(ierr,  __FILE__, __LINE__)
 
  ! For the tractions we also need dAdx. This is done in a similar fashion.
 
