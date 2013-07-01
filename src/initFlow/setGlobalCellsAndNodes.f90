@@ -56,6 +56,7 @@ subroutine setGlobalCellsAndNodes(level)
   integer(kind=intType), dimension(nDom) :: nCellBLockOffset,nNodeBLockOffset
   integer(kind=intType) :: npts, nts
   integer(kind=intType), dimension(:), allocatable :: nNodesProc, cumNodesProc
+  integer(kind=intTYpe), dimension(:), allocatable :: nCellsProc, cumCellsProc
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, jj,mm
   ! Determine the number of nodes and cells owned by each processor
   ! by looping over the local block domains.
@@ -273,21 +274,29 @@ subroutine setGlobalCellsAndNodes(level)
   call getForceSize(npts, ncells, nTS)
 
   allocate(nNodesProc(nProc), cumNodesProc(0:nProc))
+  allocate(nCellsProc(nProc), cumCellsProc(0:nProc))
   nNodesProc(:) = 0_intType
+  nCellsProc(:) = 0_intType
 
   call mpi_allgather(npts*nTS, 1, sumb_integer, nNodesProc, 1, sumb_integer, &
        sumb_comm_world, ierr)
 
+  call mpi_allgather(ncells*nTS, 1, sumb_integer, nCellsProc, 1, sumb_integer, &
+       sumb_comm_world, ierr)
+
   ! Sum and Allocate receive displ offsets
   cumNodesProc(0) = 0_intType
+  cumCellsProc(0) = 0_intType
   do i=1, nProc
-     cumNodesProc(i) = cumNodesProc(i-1) +nNodesProc(i)
+     cumNodesProc(i) = cumNodesProc(i-1) + nNodesProc(i)
+     cumCellsProc(i) = cumCellsProc(i-1) + nCellsProc(i)
   end do
   
   ! Now we know the offset for the start of each processor. We can
   ! loop through in the desired order and just increment.
-  ii = 0
-  jj = 0
+  ii = cumNodesProc(myid)
+  jj = cumCellsProc(myid)
+
   do sps=1,nTimeIntervalsSpectral
      do nn=1,nDom
         call setPointers(nn, 1_intType, sps)
@@ -314,4 +323,5 @@ subroutine setGlobalCellsAndNodes(level)
      end do
   end do
   deallocate(nNodesProc, cumNodesProc)
+  deallocate(nCellsProc, cumCellsProc)
 end subroutine setGlobalCellsAndNodes

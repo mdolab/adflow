@@ -54,7 +54,7 @@ subroutine setupAllResidualMatricesfwd
   real(kind=realType), dimension(2) :: time
   real(kind=realType)               :: timeAdjLocal, timeAdj
 
-  integer(kind=intType) :: sps
+  integer(kind=intType) :: sps,i, ierr
 
   !temporary storage for current dissipation coefficients. Used in error check
   real(kind=realType)::vis2ref, vis4ref
@@ -87,7 +87,7 @@ subroutine setupAllResidualMatricesfwd
   call setupStateResidualMatrix(drdwT, useAD, usePC, useTranspose, useObjective, &
        1_intType)
   call setupSpatialResidualMatrix(drdx, useAD, useObjective)
-    call setupExtraResidualMatrix(drda, useAD)
+  call setupExtraResidualMatrix(drda, useAD)
 
   if (nDesignDissError >= 0) then
      !==================================
