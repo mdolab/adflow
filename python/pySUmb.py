@@ -1772,6 +1772,44 @@ class SUMB(AeroSolver):
         dIda = dIda_1 - dIda_2
 
         return dIda
+
+    def saveAdjointMatrix(self, fileName):
+        ''' Save the adjoint matrix to a binary petsc file for
+        possible future resue'''
+        if self.adjointSetup:
+            self.sumb.saveadjointmatrix(fileName)
+        else:
+            mpiPrint('Cannot save matrix since adjoint not setup.',
+                     comm=self.comm)
+        # end if
+
+        return
+
+    def saveAdjointPC(self, fileName):
+        ''' Save the adjoint preconditioning matrix to a binary petsc
+        file for possible future resue'''
+        if self.adjointSetup and self.getOption('approxpc'):
+            self.sumb.saveadjointpc(fileName)
+        else:
+            mpiPrint('Cannot save PC matrix since adjoint not setup.',
+                     comm=self.comm)
+        # end if
+
+        return
+
+    def saveAdjointRHS(self, fileName):
+        ''' Save the current adjoint RHS to a binary petsc file for
+        possible future resue'''
+        ''' Save the adjoint matrix to a binary petsc file for
+        possible future resue'''
+        if self.adjointSetup:
+            self.sumb.saveadjointrhs(fileName)
+        else:
+            mpiPrint('Cannot save RHS since adjoint not setup.',
+                     comm=self.comm)
+        # end if
+
+        return    
         
     def verifyPartials(self):
         ''' Run verifyResiduals to verify that dRdw,dRdx and dRda are

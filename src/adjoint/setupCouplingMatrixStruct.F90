@@ -311,6 +311,33 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
 
 20 format(a,1x,f8.2)
 
+
+  ! Assemble the overArea Vector
+  do nn=1,nDom
+     call setPointers(nn, 1, 1)
+     bocos2: do mm=1,nBocos
+        wall: if(BCType(mm) == EulerWall        .or. &
+          BCType(mm) == NSWallAdiabatic .or. &
+          BCType(mm) == NSWallIsothermal) then
+           do j=BCData(mm)%jnBeg,BCData(mm)%jnEnd
+              do i=BCData(mm)%inBeg,BCData(mm)%inEnd
+                 do idim=1,3
+                    call VecSetValue(overArea, BCData(mm)%FMNodeIndex(i,j)*3+idim-1, &
+                         BCData(mm)%oArea(i,j), INSERT_VALUES, ierr)
+                    call EChk(ierr, __FILE__, __LINE__)
+                 end do
+              end do
+           end do
+        end if wall
+     end do bocos2
+  end do
+  call VecAssemblyBegin(overArea, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  call VecAssemblyEnd(overArea, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+
 #endif
 #endif
 end subroutine setupCouplingMatrixStruct

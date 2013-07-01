@@ -84,6 +84,15 @@ subroutine destroyPETScVars
      call EChk(PETScIerr,__FILE__,__LINE__)
   end do
 
+  call vecDestroy(overArea, PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
+  call vecDestroy(fCell, PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
+  call vecDestroy(fNode, PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
   call MatDestroy(dRda, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
   

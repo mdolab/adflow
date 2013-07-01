@@ -96,6 +96,7 @@ module block
      real(kind=realType), dimension(:,:),   pointer :: rface
 
      real(kind=realType), dimension(:,:,:), pointer :: F, M
+     real(kind=realType), dimension(:,:), pointer :: oArea
      integer(kind=intType), dimension(:,:), pointer :: FMNodeIndex, FMCellIndex
 
      ! symNorm is the normal for (symmertry) boundary conditions.
@@ -391,8 +392,6 @@ module block
      !        ****************************************************************
      !
      !  x(0:ie,0:je,0:ke,3)  - xyz locations of grid points in block.
-     !  xInit(0:ie,0:je,0:ke,3) - initial xyz locations of grid points
-     !                         in block. Used in mesh warping.
      !  xOld(nOld,:,:,:,:)   - Coordinates on older time levels;
      !                         only needed for unsteady problems on
      !                         deforming grids. Only allocated on
