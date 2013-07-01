@@ -116,7 +116,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   ! fully coupled sense.  This is reset after this routine is
   ! finished.
   if (equations == RANSEquations) then
-     nMGVar = nw
+     nMGVar = nwf
      nt1MG = nt1
      nt2MG = nt2
 
@@ -318,10 +318,10 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                                       ! all the info we need for dFcdx
                                       fRow = BCData(mm)%FMCellIndex(i,j)*3 + fmDim - 1
                                       
-                                      !call MatSetValues(dFcdx, 1, fRow, &
-                                      !     1, ind, bcData(mm)%F(i, j, fmDim), &
-                                      !     ADD_VALUES, ierr)
-                                      !call EChk(ierr, __FILE__, __LINE__)
+                                      call MatSetValues(dFcdx, 1, fRow, &
+                                          1, ind, bcData(mm)%F(i, j, fmDim), &
+                                          ADD_VALUES, ierr)
+                                      call EChk(ierr, __FILE__, __LINE__)
                                    end do
                                 end if
                              end do forceStencilLoop
@@ -440,7 +440,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
         call VecAssemblyEnd(FMx(fmDim), ierr)
         call EChk(ierr, __FILE__, __LINE__)
      end do
-
      call MatAssemblyBegin(dFcdx, MAT_FINAL_ASSEMBLY, ierr)
      call MatAssemblyEnd(dFcdx, MAT_FINAL_ASSEMBLY, ierr)
   end if

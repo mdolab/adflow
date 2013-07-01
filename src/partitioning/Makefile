@@ -90,7 +90,6 @@ FILES_TO_COMPLEXIFY = allocCoorFineGrid.f90\
 		 setChangingOverset.f90\
 		 sortSubfaces.f90\
 		 splitBlock.f90\
-                 storeReferenceMesh.f90\
 		 timePeriodSpectral.f90\
 		 timeRotMatricesSpectral.f90\
 		 wallComponentsAssignments.f90
