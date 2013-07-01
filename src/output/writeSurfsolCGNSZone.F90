@@ -1111,13 +1111,14 @@
                                    solNames(mm), writeBuffer,   &
                                    source, ierr)
              if(ierr /= 0)           then
-                  print *,'STOP'
-                  print *,'solNames(mm):',solNames(mm)
-                  print *,'write buffer:',writeBuffer
-                  stop
-               call terminate("writeSolCGNSZone", &
-                              "Something wrong when &
-                              &calling cg_field_write_f")
+
+               !    print *,'STOP'
+               !    print *,'solNames(mm):',solNames(mm)
+               !    print *,'write buffer:',writeBuffer
+               !    stop
+               ! call terminate("writeSolCGNSZone", &
+               !                "Something wrong when &
+               !                &calling cg_field_write_f")
             end if
 
            else rootproc

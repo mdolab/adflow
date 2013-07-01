@@ -64,9 +64,5 @@ subroutine computeRootBendingMoment(sol,bendingMoment)
      BendingMoment = sqrt(elasticMomentx**2+elasticMomenty**2)
      elasticMomentz = zero
   end if
-  if( myid==0 .and. printIterations) then
-     print *,'Bending moment components',elasticMomentx,elasticMomenty,elasticMomentz
-  end if
-
 end subroutine computeRootBendingMoment
 

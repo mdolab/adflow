@@ -62,7 +62,6 @@
                            cosCoefFourXRot, sinCoefFourXRot, t)
        sinX = sin(phi)
        cosX = cos(phi)
-       !print *,'phix',phi
        ! Idem for the y-axis.
 
        phi = rigidRotAngle(degreePolYRot,   coefPolYRot,      &
@@ -70,7 +69,6 @@
                            cosCoefFourYRot, sinCoefFourYRot, t)
        sinY = sin(phi)
        cosY = cos(phi)
-       !print *,'phiY',phi
        ! Idem for the z-axis.
 
        phi = rigidRotAngle(degreePolZRot,   coefPolZRot,      &
@@ -78,7 +76,6 @@
                            cosCoefFourZRot, sinCoefFourZRot, t)
        sinZ = sin(phi)
        cosZ = cos(phi)
-       !print *,'phiz',phi
        ! Compute the time derivative of the rotation angles around the
        ! x-axis, y-axis and z-axis.
 
@@ -88,7 +85,6 @@
                                        omegaFourXRot,   &
                                        cosCoefFourXRot, &
                                        sinCoefFourXRot, t)
-       !print *,'dphix',dphix
 
        dphiY = derivativeRigidRotAngle(degreePolYRot,   &
                                        coefPolYRot,     &
@@ -97,14 +93,13 @@
                                        cosCoefFourYRot, &
                                        sinCoefFourYRot, t)
 
-       !print *,'dphiy',dphiy
        dphiZ = derivativeRigidRotAngle(degreePolZRot,   &
                                        coefPolZRot,     &
                                        degreeFourZRot,  &
                                        omegaFourZRot,   &
                                        cosCoefFourZRot, &
                                        sinCoefFourZRot, t)
-       !print *,'dphiz',dphiz
+
        ! Compute the time derivative of the rotation matrix applied to
        ! the coordinates at t == 0.
 

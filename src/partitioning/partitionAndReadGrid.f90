@@ -131,11 +131,6 @@
        call timeRotMatricesSpectral
        call fineGridSpectralCoor
 
-       !Store the initial mesh as required for the integrated meshwarping
-       !routine. Called after fineGridSpectralCoor to capture all time
-       !spectral intervals.
-       call storeReferenceMesh
-
        ! Release the memory of fileIDs, gridFiles and IOVar.
        ! They are not needed anymore.
 
