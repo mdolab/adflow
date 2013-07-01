@@ -10,7 +10,7 @@ subroutine createPETScVars
   !
   use ADjointPETSc, only: dRdwT, dRdwPreT, dJdw, psi, adjointRHS, adjointRes, &
        FMw, dFcdw, dFcdx, dFndFc, dFdx, dFdw, dRdx, xVec, dJdx, FMx, dRda, &
-       adjointKSP, dFMdExtra, dRda_data
+       adjointKSP, dFMdExtra, dRda_data, overArea, fCell, fNode
   use ADjointVars   
   use BCTypes
   use communication  
@@ -32,7 +32,7 @@ subroutine createPETScVars
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal2, nnzOffDiag2
   integer(kind=intType), dimension(:, :), pointer :: stencil
   integer(kind=intType) :: level, ierr, nlevels
-  integer(kind=intType) :: rows(4), iCol, iCellCount, iNodeCount, nn, sps, ii
+  integer(kind=intType) :: rows(4), iCol, nn, sps, ii
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iDim, iStride, j, mm
   integer(kind=intType) :: npts, ncells, nTS
 
@@ -70,7 +70,7 @@ subroutine createPETScVars
        level)
   call myMatCreate(dRdwT, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
        __FILE__, __LINE__)
-  
+
   call matSetOption(dRdwT, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
@@ -95,10 +95,10 @@ subroutine createPETScVars
      call myMatCreate(dRdwPreT, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
           __FILE__, __LINE__)
 
-    call matSetOption(dRdwPreT, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-    
-    deallocate(nnzDiagonal, nnzOffDiag)
+     call matSetOption(dRdwPreT, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+
+     deallocate(nnzDiagonal, nnzOffDiag)
      ! --------------------------------------------------------------------
   end if ! Approx PC
 
@@ -119,6 +119,10 @@ subroutine createPETScVars
      call VecDuplicate(dJdw, FMw(i), ierr)
      call EChk(ierr, __FILE__, __LINE__)
   end do
+
+  call VecZeroEntries(dJdw, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
 
   ! Create dFcdw, dFcdx, dFcdx2, dFcdFn
 
@@ -150,7 +154,7 @@ subroutine createPETScVars
 
      ! In general should not have much more than 6 cells on off
      ! proc. If there is a malloc or two that isn't the end of the world
-     nnzOffDiag = 3*3*2*nState
+     nnzOffDiag = 5*2*nState
   end if
 
   call myMatCreate(dFcdw, 1, nDimCell, nDimw, nnzDiagonal, nnzOffDiag, &
@@ -161,91 +165,90 @@ subroutine createPETScVars
      nnzDiagonal = 4 * 3
      nnzOffDiag  = 1
   else
-     nnzDiagonal = 9 * 3
-     nnzOffDiag = 6*nState
+     nnzDiagonal = 4*4*2*3
+     nnzOffDiag = 7*2*3
   end if
 
   call myMatCreate(dFcdx, 1, nDimCell, nDimX, nnzDiagonal, nnzOffDiag, &
        __FILE__, __LINE__)
 
   deallocate(nnzDiagonal, nnzOffDiag)
-  
+
   ! Finally we need dFndFc
   allocate( nnzDiagonal(nDimPt), nnzOffDiag(nDimPt))
 
   nnzDiagonal = 4
-  nnzOffDiag  = 1 ! This should be enough...might get a couple of mallocs
+  nnzOffDiag  = 4 ! This should be enough...might get a couple of mallocs
   call myMatCreate(dFndFc, 1, nDimPt, nDimCell, nnzDiagonal, nnzOffDiag, &
        __FILE__, __LINE__)
   deallocate(nnzDiagonal, nnzOffDiag)
 
-  ! We will also take this opportunity to assemble dFndFc. 
-  iCellCount = 0
-  iNodeCount = 0
- 
- !  spectral: do sps=1,nTimeIntervalsSpectral
- !     domains: do nn=1,nDom
- !        call setPointers(nn,1_intType,sps)
-        
- !        ! Loop over the number of boundary subfaces of this block.
- !        bocos: do mm=1,nBocos
- !           if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
- !                BCType(mm) == NSWallIsothermal) then
-              
- !              jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
- !              iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
-       
- !              iStride = iEnd-iBeg+2
- !              do j=jBeg, jEnd ! Face Loop
- !                 do i=iBeg, iEnd ! Face Loop
- !                    do iDim = 0,2
-                       
- !                       iCol = iCellCount*3 + iDim
- !                       rows(1) = 3*iNodeCount + 3*(j-2)*iStride + 3*(i-2) + iDim
- !                       rows(2) = 3*iNodeCount + 3*(j-1)*iStride + 3*(i-2) + iDim
- !                       rows(3) = 3*iNodeCount + 3*(j-2)*iStride + 3*(i-1) + iDim
- !                       rows(4) = 3*iNodeCount + 3*(j-1)*iStride + 3*(i-1) + iDim
- !                       do ii=1,4
- !                          call MatSetValues(dFndFc, 1, rows(ii), 1, iCol, &
- !                               fourth, INSERT_VALUES, ierr) 
- !                          call EChk(ierr, __FILE__, __LINE__)
- !                       end do
+  ! Get a right hand and left hand vec. We need both:
+  call MatGetVecs(dFndFc, fCell, fNode, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
- !                    end do
- !                    iCellCount = iCellCount + 1
- !                 end do
- !              end do
- !             iNodeCount = iNodeCount + (iEnd-iBeg+2)*(jEnd-jBeg+2)
- !          end if
- !       end do bocos
- !    end do domains
- ! end do spectral
-
- ! call MatAssemblyBegin(dFndFc, MAT_FINAL_ASSEMBLY, ierr)
- ! call EChk(ierr, __FILE__, __LINE__)
- ! call MatAssemblyEnd  (dFndFc, MAT_FINAL_ASSEMBLY, ierr)
- ! call EChk(ierr,  __FILE__, __LINE__)
-
- ! For the tractions we also need dAdx. This is done in a similar fashion.
+  call VecDuplicate(fNode, overArea, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
 
+  ! ! We will also take this opportunity to assemble dFndFc. 
+  ! spectral: do sps=1,nTimeIntervalsSpectral
+  !    domains: do nn=1,nDom
+  !       call setPointers(nn,1_intType,sps)
 
- ! For now, leave dFdw, and dFdx in.
- allocate( nnzDiagonal(nDimPt), nnzOffDiag(nDimPt) )
- nnzDiagonal = 8*nState
- nnzOffDiag  = 8*nState! Make the off diagonal the same
+  !       ! Loop over the number of boundary subfaces of this block.
+  !       bocos: do mm=1,nBocos
+  !          if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
+  !               BCType(mm) == NSWallIsothermal) then
 
- call myMatCreate(dFdw, 1, nDimPt, nDimW, nnzDiagonal, nnzOffDiag, &
-     __FILE__, __LINE__)
- 
- ! Create the matrix dFdx
- nnzDiagonal = 27
- nnzOffDiag = 27
- 
- call myMatCreate(dFdx, 1, nDimPt, nDimPt, nnzDiagonal, nnzOffDiag, &
-      __FILE__, __LINE__)
+  !             jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
+  !             iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
 
- deallocate(nnzDiagonal, nnzOffDiag)
+  !             do j=jBeg, jEnd ! Face Loop
+  !                do i=iBeg, iEnd ! Face Loop
+  !                   do iDim = 0,2
+  !                      iCol = bcData(mm)%FMCellIndex(i,j)*3 + iDim 
+  !                      rows(1) = bcData(mm)%FMNodeIndex(i-1, j-1)*3 + iDim 
+  !                      rows(2) = bcData(mm)%FMNodeIndex(i  , j-1)*3 + iDim 
+  !                      rows(3) = bcData(mm)%FMNodeIndex(i-1, j  )*3 + iDim 
+  !                      rows(4) = bcData(mm)%FMNodeIndex(i  , j  )*3 + iDim 
+
+  !                      do ii=1,4
+  !                         call MatSetValues(dFndFc, 1, rows(ii), 1, iCol, &
+  !                              fourth, INSERT_VALUES, ierr) 
+  !                         call EChk(ierr, __FILE__, __LINE__)
+  !                      end do
+
+  !                   end do
+  !                end do
+  !             end do
+  !          end if
+  !       end do bocos
+  !    end do domains
+  ! end do spectral
+
+  ! call MatAssemblyBegin(dFndFc, MAT_FINAL_ASSEMBLY, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
+  ! call MatAssemblyEnd  (dFndFc, MAT_FINAL_ASSEMBLY, ierr)
+  ! call EChk(ierr,  __FILE__, __LINE__)
+
+  ! For now, leave dFdw, and dFdx in.
+  allocate( nnzDiagonal(nDimPt), nnzOffDiag(nDimPt) )
+  nnzDiagonal = 8*nState
+  nnzOffDiag  = 8*nState! Make the off diagonal the same
+
+  call myMatCreate(dFdw, 1, nDimPt, nDimW, nnzDiagonal, nnzOffDiag, &
+       __FILE__, __LINE__)
+
+  ! Create the matrix dFdx
+  nnzDiagonal = 27
+  nnzOffDiag = 27
+
+  call myMatCreate(dFdx, 1, nDimPt, nDimPt, nnzDiagonal, nnzOffDiag, &
+       __FILE__, __LINE__)
+
+
+  deallocate(nnzDiagonal, nnzOffDiag)
 
   !     ******************************************************************
   !     *                                                                *
@@ -262,16 +265,16 @@ subroutine createPETScVars
   !     *                                                                *
   !     ******************************************************************
 
- allocate( nnzDiagonal(nDimX), nnzOffDiag(nDimX) )
+  allocate( nnzDiagonal(nDimX), nnzOffDiag(nDimX) )
   ! Create the matrix dRdx.
   level = 1_intType
   call drdxPreAllocation(nnzDiagonal, nnzOffDiag, nDimX, level)
- 
+
   ! Note we are creating the TRANPOSE of dRdx. It is size dDimX by nDimW
   call myMatCreate(dRdx, 1, nDimX, nDimW, nnzDiagonal, nnzOffDiag, &
        __FILE__, __LINE__)
   deallocate( nnzDiagonal, nnzOffDiag )
-  
+
   call MatSetOption(dRdx, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
@@ -308,6 +311,9 @@ subroutine createPETScVars
      call VecDuplicate(dJdx, FMx(i), ierr)
      call EChk(ierr, __FILE__, __LINE__)
   end do
+
+
+  
 
 
   ! Create the KSP Object
@@ -350,7 +356,7 @@ subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &
 
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-  
+
   Mat matrix
   integer(kind=intType), intent(in) :: blockSize, m, n
   integer(kind=intType), intent(in), dimension(*) :: nnzDiagonal, nnzOffDiag
@@ -386,7 +392,7 @@ subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &
   ! idxm[i] and column idxn[j] is located in values[i*n+j]. To allow
   ! the insertion of values in column major order, one can call the
   ! command MatSetOption(Mat A, MAT COLUMN ORIENTED);
-  
+
   call MatSetOption(matrix, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
