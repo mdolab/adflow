@@ -205,11 +205,6 @@ subroutine updatePeriodicInfoAllLevels
   call timeRotMatricesSpectral
   call fineGridSpectralCoor
 
-  !Store the initial mesh as required for the integrated meshwarping
-  !routine. Called after fineGridSpectralCoor to capture all time
-  !spectral intervals.
-  call storeReferenceMesh
-
   !From initFlow.f90
   ! Determine for the time spectral mode the matrices for the
   ! time derivatives.
