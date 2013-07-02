@@ -23,6 +23,7 @@ subroutine NKsolver
 
   use InputIO ! L2conv,l2convrel
   use inputIteration
+  use inputPhysics
   use monitor
   use killSignals
   use iteration
@@ -59,7 +60,7 @@ subroutine NKsolver
 
   call calcScaling(scaleVec)
 
-  Mmax = 10
+  Mmax = 5
   iter_k = 1
   iter_m = 0
 
@@ -111,7 +112,7 @@ subroutine NKsolver
      ! the number of time the solver was called. So on first
      ! iteration, we check the variable NKsolveCount. If THIS is a
      ! multiple of jacobian lag, we then reform the preconditioner. 
-     !print *,'doing jac'
+
      if (mod(iter-1,jacobian_lag) == 0) then
         if (iter == 1) then ! Special case check:
            if (mod(NKsolveCount,jacobian_lag) == 0) then
@@ -134,7 +135,7 @@ subroutine NKsolver
         call MatAssemblyEnd(dRdw,MAT_FINAL_ASSEMBLY,ierr)
         call EChk(ierr,__FILE__,__LINE__)
      end if
-     !print *,'Done jac'
+
      ! Set the BaseVector of the matrix-free matrix:
      call MatMFFDSetBase(dRdW,wVec,PETSC_NULL_OBJECT,ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -147,15 +148,23 @@ subroutine NKsolver
 
      ! Check to see if we're converged: We need to check if we've meet
      ! L2Conv or L2ConvRel
-     if (norm / totalR0 < L2Conv) then
-        routineFailed = .False.
-        exit NonLinearLoop
+     if (equationMode == Steady .or. equationMode == TimeSpectral) then
+        if (norm / totalR0 < L2Conv) then
+           routineFailed = .False.
+           exit NonLinearLoop
+        end if
+        
+        if (norm / totalRStart < L2ConvRel) then
+           routineFailed = .False.
+           exit NonLinearLoop
+        end if
+     else ! Unsteady
+        if (norm / totalRStart < L2ConvRel) then
+           routineFailed = .False.
+           exit NonLinearLoop
+        end if
      end if
 
-     if (norm / totalRStart < L2ConvRel) then
-        routineFailed = .False.
-        exit NonLinearLoop
-     end if
 
      ! Check to see if we've done too many function Evals:
      if (iterTot >= ncycles) then

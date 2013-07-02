@@ -81,6 +81,7 @@
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%F(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%M(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%FMNodeIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &
                             BCData(mm)%FMCellIndex(iBeg:iEnd, jBeg:jEnd), &
                             stat=ierr)
@@ -99,6 +100,7 @@
                             BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%F(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%M(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%FMNodeIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &
                             BCData(mm)%FMCellIndex(iBeg:iEnd, jBeg:jEnd), &
                             stat=ierr)
@@ -117,6 +119,7 @@
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%F(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%M(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%FMNodeIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &
                             BCData(mm)%FMCellIndex(iBeg:iEnd, jBeg:jEnd), &
                             stat=ierr)

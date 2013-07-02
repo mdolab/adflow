@@ -136,7 +136,8 @@
                nullify(BCData(j)%vely)
                nullify(BCData(j)%velz)
                nullify(BCData(j)%ps)
-
+               bcData(j)%symNormSet = .False.
+               bcData(j)%symNorm = zero
              enddo bocoLoop
            enddo domainsLoop
          enddo spectralLoop

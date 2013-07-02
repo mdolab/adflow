@@ -32,16 +32,16 @@ subroutine setADjoint(nstate, adjoint)
   real(kind=realType),pointer :: psi_pointer(:)
 
   ! Copy out adjoint vector:
-  call VecGetArrayF90(psi,psi_pointer,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call VecGetArrayF90(psi, psi_pointer, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! Do a straight copy:
   do i=1,nstate
      psi_pointer(i) = adjoint(i)
   end do
 
-  call VecRestoreArrayF90(psi,psi_pointer,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call VecRestoreArrayF90(psi, psi_pointer, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 #endif
 
 end subroutine setADjoint
@@ -429,12 +429,28 @@ subroutine agumentRHS(ndof, phi)
   call VecPlaceArray(fVec1, phi, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  ! Dump the result into adjointRHS
-  call MatMultTranspose(dFdw, fVec1, adjointRHS, ierr)
+  ! ------------- OLD Code using explit dFdw ---------
+  ! ! Dump the result into adjointRHS
+  ! call MatMultTranspose(dFdw, fVec1, adjointRHS, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
+  ! -------------------------------------------------
+
+  ! New code using dFcdw computation from forward mode Assembly. This
+  ! function requires the use of forward mode AD
+
+  !w = x * y : VecPointwiseMult(Vec w, Vec x,Vec y)
+  call VecPointwiseMult(fNode, fVec1, overArea, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  call MatMultTranspose(dFndFc, fNode, fCell, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  call MatMultTranspose(dFcdw, fCell, adjointRHS, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   call vecResetArray(fVec1, ierr)
   call EChk(ierr, __FILE__, __LINE__)
+
 #endif
 
 end subroutine agumentRHS

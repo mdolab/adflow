@@ -19,7 +19,7 @@ subroutine setGrid(grid,ndof)
   use section
   use inputTimeSpectral
   use monitor 
-
+  use inputPhysics
   implicit none
 
   integer(kind=intType),intent(in) :: ndof
@@ -35,46 +35,63 @@ subroutine setGrid(grid,ndof)
   real(kind=realType), dimension(3)   :: rotationPoint,r
   real(kind=realType), dimension(3,3) :: rotationMatrix
 
-  do nn=1,nSections
-     dt(nn) = sections(nn)%timePeriod &
-          / real(nTimeIntervalsSpectral,realType)
-  enddo
-  
-  timeUnsteady = zero
-  
-  ! This is very straight forward...loop over all domains and set all elements
+ 
+  if (equationMode == steady .or. equationMode == TimeSpectral) then
+     timeUnsteady = zero
 
-  do sps = 1,nTimeIntervalsSpectral
+     ! This is very straight forward...loop over all domains and set all elements
      do nn=1,nSections
-        t(nn) = (sps-1)*dt(nn)
+        dt(nn) = sections(nn)%timePeriod &
+             / real(nTimeIntervalsSpectral,realType)
      enddo
      
-     ! Compute the displacements due to the rigid motion of the mesh.
-     
-     displ(:) = zero
+     do sps = 1,nTimeIntervalsSpectral
+        do nn=1,nSections
+           t(nn) = (sps-1)*dt(nn)
+        enddo
 
-     tNew = timeUnsteady + timeUnsteadyRestart
-     tOld = tNew - t(1)
+        ! Compute the displacements due to the rigid motion of the mesh.
 
-     call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+        displ(:) = zero
+
+        tNew = timeUnsteady + timeUnsteadyRestart
+        tOld = tNew - t(1)
+
+        call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
+        counter = 0
+        do nn=1,nDom
+           call setPointers(nn,1_intType,sps)
+           do k=1,kl
+              do j=1,jl
+                 do i=1,il
+                    ! r is distance from grid point to rotationPoint
+                    r = grid(3*counter+1:3*counter+3) - rotationPoint
+
+                    X(i,j,k,:) = rotationPoint + matmul(rotationMatrix,r) + displ
+                    counter = counter + 1
+
+                 end do
+              end do
+           end do
+        end do
+        call xhalo(1_intType)
+     end do
+  else
      counter = 0
+     sps = 1
      do nn=1,nDom
         call setPointers(nn,1_intType,sps)
         do k=1,kl
            do j=1,jl
               do i=1,il
-                 ! r is distance from grid point to rotationPoint
-                 r = grid(3*counter+1:3*counter+3) - rotationPoint
-                    
-                 X(i,j,k,:) = rotationPoint + matmul(rotationMatrix,r) + displ
+                 X(i,j,k,:) = grid(3*counter+1:3*counter+3)
                  counter = counter + 1
-
               end do
            end do
         end do
      end do
      call xhalo(1_intType)
-  end do
+  end if
 
 end subroutine setGrid
 
@@ -93,7 +110,7 @@ subroutine getGrid(grid,ndof)
 
   ! Local Variables
   integer(kind=intType) :: nn,i,j,k,l,counter,sps
-  
+
   ! This is very straight forward...loop over all domains and copy out
   counter = 1
   do sps = 1,nTimeIntervalsSpectral

@@ -96,7 +96,18 @@ module block
      real(kind=realType), dimension(:,:),   pointer :: rface
 
      real(kind=realType), dimension(:,:,:), pointer :: F, M
+     real(kind=realType), dimension(:,:), pointer :: oArea
      integer(kind=intType), dimension(:,:), pointer :: FMNodeIndex, FMCellIndex
+
+     ! symNorm is the normal for (symmertry) boundary conditions.
+     ! symNormSet is set to false until symNorm is computed at the
+     ! beginning of a simulation. symNorm then remains constant for
+     ! the remainder of the simulation. This is ok, since if the
+     ! normal of the symmetry plane is changing, your results are
+     ! invalid anyway.  These values are only used on symmetry
+     ! plane. They are undefined for other BC's.
+     real(kind=realType), dimension(3) :: symNorm
+     logical :: symNormSet 
 
      ! subsonicInletTreatment: which boundary condition treatment
      !                         to use for subsonic inlets; either
@@ -381,8 +392,6 @@ module block
      !        ****************************************************************
      !
      !  x(0:ie,0:je,0:ke,3)  - xyz locations of grid points in block.
-     !  xInit(0:ie,0:je,0:ke,3) - initial xyz locations of grid points
-     !                         in block. Used in mesh warping.
      !  xOld(nOld,:,:,:,:)   - Coordinates on older time levels;
      !                         only needed for unsteady problems on
      !                         deforming grids. Only allocated on

@@ -328,6 +328,16 @@ python module sumb
        subroutine solveadjointtransposepetsc ! in :sumb:../../adjoint/solveADjointPETSc.F90
        end subroutine solveadjointtransposepetsc
 
+        subroutine saveadjointmatrix(filename) ! in :test:saveAdjoint.F90
+            character*(*) intent(in) :: filename
+        end subroutine saveadjointmatrix
+        subroutine saveadjointpc(filename) ! in :test:saveAdjoint.F90
+            character*(*) intent(in) :: filename
+          end subroutine saveadjointpc
+          subroutine saveadjointrhs(filename) ! in :test:saveAdjoint.F90
+            character*(*) intent(in) :: filename
+          end subroutine saveadjointrhs
+
        ! -------- Partial Derivative Functions -----------
        
        subroutine zeroobjpartials(statesetup,spatialsetup)
