@@ -58,6 +58,12 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   real(kind=realType), dimension(3) :: rotRateRef,rotcenterRef
   real(kind=realType), dimension(3) :: rotPointRef,pointRefRef
 
+  if (ndesignextra < 1) then
+     ! No need to do anything here
+     return
+  end if
+  
+
   ! Setup number of state variable based on turbulence assumption
   if ( frozenTurbulence ) then
      nState = nwf
@@ -99,7 +105,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   ! fully coupled sense.  This is reset after this routine is
   ! finished.
   if (equations == RANSEquations) then
-     nMGVar = nw
+     nMGVar = nwf
      nt1MG = nt1
      nt2MG = nt2
 
@@ -337,8 +343,6 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
      restrictEddyVis = .false.
      if( eddyModel ) restrictEddyVis = .true.
   end if
-
-
 contains
 
   subroutine setBlock(blk)

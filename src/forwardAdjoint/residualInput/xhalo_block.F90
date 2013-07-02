@@ -236,29 +236,44 @@ subroutine xhalo_block
         end select
 
 
-        ! Determine the vector from the lower left corner to
-        ! the upper right corner. Due to the usage of pointers
-        ! an offset of +1 must be used, because the original
-        ! array x start at 0.
+        if (.not. bcData(mm)%symNormSet) then
+           ! This code technically should not run. symNormSet should
+           ! already be set from the regular Xhao on the
+           ! first call.
 
-        v1(1) = x1(iimax+1,jjmax+1,1) - x1(1+1,1+1,1)
-        v1(2) = x1(iimax+1,jjmax+1,2) - x1(1+1,1+1,2)
-        v1(3) = x1(iimax+1,jjmax+1,3) - x1(1+1,1+1,3)
+           ! Determine the vector from the lower left corner to
+           ! the upper right corner. Due to the usage of pointers an
+           ! offset of +1 must be used, because the original array x
+           ! start at 0.
 
-        ! And the vector from the upper left corner to the
-        ! lower right corner.
+           v1(1) = x1(iimax+1,jjmax+1,1) - x1(1+1,1+1,1)
+           v1(2) = x1(iimax+1,jjmax+1,2) - x1(1+1,1+1,2)
+           v1(3) = x1(iimax+1,jjmax+1,3) - x1(1+1,1+1,3)
 
-        v2(1) = x1(iimax+1,1+1,1) - x1(1+1,jjmax+1,1)
-        v2(2) = x1(iimax+1,1+1,2) - x1(1+1,jjmax+1,2)
-        v2(3) = x1(iimax+1,1+1,3) - x1(1+1,jjmax+1,3)
-
-        ! Determine the normal of the face by taking the cross
-        ! product of v1 and v2 and add it to norm.
-
-        norm(1) = v1(2)*v2(3) - v1(3)*v2(2)
-        norm(2) = v1(3)*v2(1) - v1(1)*v2(3)
-        norm(3) = v1(1)*v2(2) - v1(2)*v2(1)
-
+           ! And the vector from the upper left corner to the
+           ! lower right corner.
+           
+           v2(1) = x1(iimax+1,1+1,1) - x1(1+1,jjmax+1,1)
+           v2(2) = x1(iimax+1,1+1,2) - x1(1+1,jjmax+1,2)
+           v2(3) = x1(iimax+1,1+1,3) - x1(1+1,jjmax+1,3)
+           
+           ! Determine the normal of the face by taking the cross
+           ! product of v1 and v2 and add it to norm.
+           
+           norm(1) = v1(2)*v2(3) - v1(3)*v2(2)
+           norm(2) = v1(3)*v2(1) - v1(1)*v2(3)
+           norm(3) = v1(1)*v2(2) - v1(2)*v2(1)
+           
+           bcData(mm)%symNorm(1) = norm(1)
+           bcData(mm)%symNorm(2) = norm(2)
+           bcData(mm)%symNorm(3) = norm(3)
+        else
+           ! Copy out the saved symNorm
+           norm(1) = bcData(mm)%symNorm(1)
+           norm(2) = bcData(mm)%symNorm(2)
+           norm(3) = bcData(mm)%symNorm(3)
+        end if
+           
         ! Compute the length of the normal and test if this is
         ! larger than eps. If this is the case this means that
         ! it is a nonsingular subface and the coordinates are

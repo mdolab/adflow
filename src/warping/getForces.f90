@@ -235,7 +235,7 @@ subroutine getForces(forces, pts, npts, sps_in)
   logical :: viscousSubFace
   real(kind=realType) :: tauXx, tauYy, tauZz
   real(kind=realType) :: tauXy, tauXz, tauYz
-
+  real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yplusmax, qf(3)
   !      ******************************************************************
   !      *                                                                *
   !      * Begin execution                                                *
@@ -259,56 +259,14 @@ subroutine getForces(forces, pts, npts, sps_in)
   ii = 0 
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
-     if (flowDoms(nn,1_intType,sps)%rightHanded) then
-        fact2 = half
-     else
-        fact2 = -half
-     end if
+     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
      
      ! Loop over the number of boundary subfaces of this block.
      bocos: do mm=1,nBocos
         
         if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
              BCType(mm) == NSWallIsothermal) then
-           
-           viscousSubface = .true.
-           if(BCType(mm) == EulerWall) viscousSubface = .false.
-           
-           select case (BCFaceID(mm))
-              
-              
-              ! NOTE: The 'fact' here are NOT the same as you will
-              ! find in ForcesAndMoment.f90. The reason is that, we
-              ! are not using points to si, sj, sk. Those have teh
-              ! normals pointing in the direction of increasing
-              ! {i,j,k}. Here we are evaluating the normal from
-              ! directly from the coordinates on the faces. As it
-              ! happens, the normals for the jMin and jMax faces are
-              ! flipped. 
-           case (iMin)
-              pp2 => p( 2,1:,1:); pp1 => p( 1,1:,1:)
-              fact = -one 
-           case (iMax)
-              pp2 => p(il,1:,1:); pp1 => p(ie,1:,1:)
-              fact = one
-           case (jMin)
-              pp2 => p(1:, 2,1:); pp1 => p(1:, 1,1:)
-              fact = one
-           case (jMax)
-              pp2 => p(1:,jl,1:); pp1 => p(1:,je,1:)
-              fact = -one
-           case (kMin)
-              pp2 => p(1:,1:, 2); pp1 => p(1:,1:, 1)
-              fact = -one
-           case (kMax)
-              pp2 => p(1:,1:,kl); pp1 => p(1:,1:,ke)
-              fact = one
-           end select
-           
-           ! Store the cell range of the subfaces a bit easier.
-           ! As only owned faces must be considered the nodal range
-           ! in BCData must be used to obtain this data.
-           
+
            jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
            
@@ -318,90 +276,31 @@ subroutine getForces(forces, pts, npts, sps_in)
            do j=jBeg, jEnd ! This is a face loop
               do i=iBeg, iEnd ! This is a face loop 
                  
-                 ! Compute the pressure in the center of the boundary
-                 ! face, which is an average between pp2 and pp1. The
-                 ! value of pp is multiplied by 1/4 (the factor to
-                 ! scatter to its 4 nodes, by scaleDim (to obtain the
-                 ! correct dimensional value) and by fact (which takes
-                 ! the possibility of inward or outward pointing normal
-                 ! into account).
-                 
-                 pp = half*(pp2(i,j) + pp1(i,j))-Pinf
-                 pp = fourth*fact*scaleDim*pp
-                 
-                 ! Compute Normal
-                 
                  lower_left  = ii + (j-jBeg)*(iEnd-iBeg+2) + i-iBeg + 1
                  lower_right = lower_left + 1
                  upper_left  = lower_right + iend - ibeg + 1
                  upper_right = upper_left + 1
 
-                 v1(:) = pts(:,upper_right)-pts(:,lower_left)
-                 v2(:) = pts(:,upper_left)-pts(:,lower_right)
-                 ! The face normal, which is the cross product of the two
-                 ! diagonal vectors times fact; remember that fact2 is
-                 ! either -0.5 or 0.5.
-                 
-                 sss(1) = fact2*(v1(2)*v2(3) - v1(3)*v2(2))
-                 sss(2) = fact2*(v1(3)*v2(1) - v1(1)*v2(3))
-                 sss(3) = fact2*(v1(1)*v2(2) - v1(2)*v2(1))
-                 
-                 ! Compute 1/4 of the area of the cell:
-                 qa = fourth*sqrt(sss(1)*sss(1) + sss(2)*sss(2) + sss(3)*sss(3))
-                 
-                 fx = pp*sss(1)
-                 fy = pp*sss(2)
-                 fz = pp*sss(3)
-                 
-                 ! If we have viscous forces, add these:
-                 if (viscousSubface) then
-                    
-                    ! Store the viscous stress tensor a bit easier.
-                    tauXx = viscSubface(mm)%tau(i,j,1)
-                    tauYy = viscSubface(mm)%tau(i,j,2)
-                    tauZz = viscSubface(mm)%tau(i,j,3)
-                    tauXy = viscSubface(mm)%tau(i,j,4)
-                    tauXz = viscSubface(mm)%tau(i,j,5)
-                    tauYz = viscSubface(mm)%tau(i,j,6)
-                    
-                    ! Compute the viscous force on the face. A minus sign
-                    ! is now present, due to the definition of this force.
-                    ! Also must multiply by scattering factor of 1/4
-                    fx = fx -fact*(tauXx*sss(1) + tauXy*sss(2) &
-                         +        tauXz*sss(3))*scaleDim*fourth
-                    
-                    fy = fy -fact*(tauXy*sss(1) + tauYy*sss(2) &
-                         +        tauYz*sss(3))*scaleDim*fourth
-                    
-                    fz = fz -fact*(tauXz*sss(1) + tauYz*sss(2) &
-                         +        tauZz*sss(3))*scaleDim*fourth
-                 end if
-                 
                  ! Assign the quarter of the forces to each node
-                 forces(1,lower_left)  = forces(1,lower_left)  + fx
-                 forces(2,lower_left)  = forces(2,lower_left)  + fy
-                 forces(3,lower_left)  = forces(3,lower_left)  + fz
-                 
-                 forces(1,lower_right) = forces(1,lower_right) + fx
-                 forces(2,lower_right) = forces(2,lower_right) + fy
-                 forces(3,lower_right) = forces(3,lower_right) + fz
-                 
-                 forces(1,upper_left)  = forces(1,upper_left)  + fx
-                 forces(2,upper_left)  = forces(2,upper_left)  + fy
-                 forces(3,upper_left)  = forces(3,upper_left)  + fz
-                 
-                 forces(1,upper_right) = forces(1,upper_right) + fx
-                 forces(2,upper_right) = forces(2,upper_right) + fy
-                 forces(3,upper_right) = forces(3,upper_right) + fz
-                    
-                 area(lower_left ) = area(lower_left ) + qa
-                 area(lower_right) = area(lower_right) + qa
-                 area(upper_left ) = area(upper_left ) + qa
-                 area(upper_right) = area(upper_right) + qa
+                 qf = bcData(mm)%F(i, j, :)*fourth
 
+                 forces(:, lower_left)  = forces(:, lower_left)  + qf
+                 forces(:, lower_right) = forces(:, lower_right) + qf
+                 forces(:, upper_left)  = forces(:, upper_left)  + qf
+                 forces(:, upper_right) = forces(:, upper_right) + qf
               end do
            end do
            
+           if (forcesAsTractions) then
+              jj = 1
+              do j=jBeg-1, jEnd ! This is a NODE loop
+                 do i=iBeg-1, iEnd ! This is a NODE loop 
+                    forces(:, ii + jj) = forces(:, ii + jj) * bcData(mm)%oArea(i, j)
+                    jj = jj + 1
+                 end do
+              end do
+           end if
+
            ! Note how iBeg,iBeg is defined above... it is one MORE
            ! then the starting node (used for looping over faces, not
            ! nodes)
@@ -410,14 +309,6 @@ subroutine getForces(forces, pts, npts, sps_in)
         end if
      end do bocos
   end do domains
-  
-  ! If we want tractions...simply divide the forces by the dual areas
-  if (forcesAsTractions) then
-     do i=1,npts
-        forces(:, i) = forces(:, i) / area(i)
-     end do
-  end if
-
 end subroutine getForces
 
 subroutine getForcePoints(points,npts,nTS)

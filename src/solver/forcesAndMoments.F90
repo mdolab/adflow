@@ -53,7 +53,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
   real(kind=realType), dimension(:,:),   pointer :: dd2Wall
   real(kind=realType), dimension(:,:,:), pointer :: ss, xx
   real(kind=realType), dimension(:,:,:), pointer :: norm
-  real(kind=realType) :: mx, my, mz
+  real(kind=realType) :: mx, my, mz, qa
   logical :: viscousSubface
   !
   !      ******************************************************************
@@ -197,6 +197,8 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
         ! and j-direction. The offset +1 is there, because inBeg and
         ! jnBeg refer to nodal ranges and not to cell ranges.
 
+        bcData(nn)%oArea(:,:) = zero
+
         do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
            do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
 
@@ -227,6 +229,13 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
               BCData(nn)%F(i,j,2) = fy
               BCData(nn)%F(i,j,3) = fz
 
+              ! Scatter a quarter of the area to each node:
+              qA = fourth*sqrt(ss(i, j, 1)**2 + ss(i, j, 2)**2 + ss(i, j, 3)**2)
+              BCData(nn)%oArea(i-1, j-1) = BCData(nn)%oArea(i-1, j-1) + qA
+              BCData(nn)%oArea(i  , j-1) = BCData(nn)%oArea(i  , j-1) + qA
+              BCData(nn)%oArea(i-1, j  ) = BCData(nn)%oArea(i-1, j  ) + qA
+              BCData(nn)%oArea(i  , j  ) = BCData(nn)%oArea(i  , j  ) + qA
+              
               ! Update the inviscid force and moment coefficients.
               cFp(1) = cFp(1) + fx
               cFp(2) = cFp(2) + fy
@@ -361,8 +370,15 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
 
               enddo
            enddo
-
         endif visForce
+
+        ! We have to inverse the nodal areas
+        do j=(BCData(nn)%jnBeg),BCData(nn)%jnEnd
+           do i=(BCData(nn)%inBeg),BCData(nn)%inEnd
+              bcData(nn)%oArea(i,j) = one/bcData(nn)%oArea(i,j)
+           end do
+        end do
+
      endif invForce
 
   enddo bocos

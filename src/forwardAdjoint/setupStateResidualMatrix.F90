@@ -154,7 +154,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! fully coupled sense.  This is reset after this routine is
   ! finished.
   if (equations == RANSEquations) then
-     nMGVar = nw
+     nMGVar = nwf
      nt1MG = nt1
      nt2MG = nt2
 
@@ -359,11 +359,11 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                       ! While we are at it, we have
                                       ! all the info we need for dFcdw
                                       fRow = BCData(mm)%FMCellIndex(i,j)*3 + fmDim - 1
-                                      !call MatSetValues(dFcdw, 1, &
-                                      !     fRow, 1, colInd, &
-                                      !     bcDatad(mm)%F(i,j,fmDim), &
-                                      !     ADD_VALUES, ierr)
-                                      !call EChk(ierr, __FILE__, __LINE__)
+                                      call MatSetValues(dFcdw, 1, &
+                                          fRow, 1, colInd, &
+                                          bcDatad(mm)%F(i,j,fmDim), &
+                                          ADD_VALUES, ierr)
+                                      call EChk(ierr, __FILE__, __LINE__)
                                    end do
                                 end if
                              end do forceStencilLoop
