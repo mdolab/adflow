@@ -70,6 +70,13 @@
    ! rface(:,:):   Velocity of the face in the direction of the
    !               outward pointing normal. only allocated for
    !               the boundary conditions that need this info.
+   ! symNorm is the normal for (symmertry) boundary conditions.
+   ! symNormSet is set to false until symNorm is computed at the
+   ! beginning of a simulation. symNorm then remains constant for
+   ! the remainder of the simulation. This is ok, since if the
+   ! normal of the symmetry plane is changing, your results are
+   ! invalid anyway.  These values are only used on symmetry
+   ! plane. They are undefined for other BC's.
    ! subsonicInletTreatment: which boundary condition treatment
    !                         to use for subsonic inlets; either
    !                         totalConditions or massFlow.
@@ -110,6 +117,8 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: f, m
    INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: fmnodeindex, &
    &      fmcellindex
+   REAL(kind=realtype), DIMENSION(3) :: symnorm
+   LOGICAL :: symnormset
    INTEGER(kind=inttype) :: subsonicinlettreatment
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslip
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: tns_wall
@@ -130,6 +139,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rface
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: f
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: m
+   REAL(kind=realtype), DIMENSION(3) :: symnorm
    END TYPE BCDATATYPE_D
    !
    !        ****************************************************************

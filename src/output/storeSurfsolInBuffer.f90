@@ -395,22 +395,18 @@
 
          case (cgnsPressure)
 
-            !  eran-avf starts
+            !  eran-avf modification was bad....wold is not the same
+            !  size as w. This has been removed. 
 
-            if(equationMode == unsteady)then
-               
-           ! set here mean(Cp) actually
+            ! if(equationMode == unsteady)then
+            !    do j=rangeFace(2,1), rangeFace(2,2)
+            !       do i=rangeFace(1,1), rangeFace(1,2)
+            !          nn = nn + 1
+            !          buffer(nn) = fact*(half*(avpp1(i,j) + avpp2(i,j)) - pInf)
+            !       enddo
+            !    enddo
 
-               fact = two/(gammaInf*pInf*MachCoef*MachCoef)
-
-               do j=rangeFace(2,1), rangeFace(2,2)
-                  do i=rangeFace(1,1), rangeFace(1,2)
-                     nn = nn + 1
-                     buffer(nn) = fact*(half*(avpp1(i,j) + avpp2(i,j)) - pInf)
-                  enddo
-               enddo
-
-            else
+            ! else
 
                ! ------ this is indeed P for SS solution
 
@@ -421,7 +417,7 @@
                   enddo
                enddo
 
-            end if ! equationMode
+!            end if ! equationMode
 
 ! --------- eran-avf ends ---
 
