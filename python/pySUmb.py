@@ -1661,6 +1661,12 @@ class SUMB(AeroSolver):
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
         if structAdjoint is not None and group_name is not None:
+            if self.getOption('userevresead') is True:
+                print('Reverse mode AD no longer supported with \
+aerostructural analysis. Use Forward mode AD for the adjoint')
+                sys.exit(0)
+            # end if
+
             phi = self.mesh.expandVectorByFamily(group_name, structAdjoint)
             self.sumb.agumentrhs(numpy.ravel(phi))
         # end if
