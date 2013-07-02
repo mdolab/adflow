@@ -236,7 +236,7 @@ subroutine xhalo_block
         end select
 
 
-        if (.not. bcData(mm).symNormSet) then
+        if (.not. bcData(mm)%symNormSet) then
            ! This code technically should not run. symNormSet should
            ! already be set from the regular Xhao on the
            ! first call.
