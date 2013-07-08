@@ -275,7 +275,7 @@ def join_lines(i, lines):
         if is_routine(lines[i]):
             break
         if(patt_amperend.match(lines[i-1]) or \
-           patt_char6col.match(lines[i]) or \
+           #patt_char6col.match(lines[i]) or \
            patt_tabno.match(lines[i])):
             lines[i-1] = lines[i-1] + lines[i];
             del lines[i]
