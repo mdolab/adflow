@@ -313,6 +313,7 @@ subroutine solveState
      if (groundLevel == 1 .and. fromPython) then
         if (.not. freeStreamResSet)  then
            call getFreeStreamResidual(rhoRes0,totalR0)
+           freeStreamResSet = .True.
         end if
         call getCurrentResidual(rhoResStart,totalRStart)
      end if
@@ -326,6 +327,7 @@ subroutine solveState
      ! Get Frestream and starting residuals
      if (.not. freeStreamResSet) then
         call getFreeStreamResidual(rhoRes0,totalR0)
+        freeStreamResSet = .True.
      end if
      call getCurrentResidual(rhoResStart,totalRStart)
 

@@ -1148,11 +1148,18 @@ class SUMB(AeroSolver):
         sol = self.getSolution()
         fnm2 =  sol['cl'] - CL_star
 
+        L2ConvSave = self.getOption('l2convergence')
         for iIter in xrange(20):
             # We need to reset the flow since changing the alpha leads
             # to problems with the NK solver
             if autoReset:
                 self.resetFlow()
+
+            # Sometimes with the RKSolver, the residual doesn't spike
+            # immediately due to the alpha, and the solver will
+            # convergnce after 2 iterations. We slightly lower the
+            # tolerance at each iteration to prevent this. 
+            self.setOption('l2convergence', 0.95*self.getOption('l2convergence'))
 
             # Set current alpha
             aeroProblem._flows.alpha = anm1
@@ -1180,7 +1187,9 @@ class SUMB(AeroSolver):
 
         # Set the new alpha in the aeroProblem
         aeroProblem._flows.alpha = anew
-      
+        
+        # Restore the initial tolerance so the user isn't confused
+        self.setOption('l2convergence', L2ConvSave)
         return
 
     def getSurfaceCoordinates(self, group_name):
