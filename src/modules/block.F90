@@ -96,7 +96,9 @@ module block
      real(kind=realType), dimension(:,:),   pointer :: rface
 
      real(kind=realType), dimension(:,:,:), pointer :: F, M
+
      real(kind=realType), dimension(:,:), pointer :: oArea
+
      integer(kind=intType), dimension(:,:), pointer :: FMNodeIndex, FMCellIndex
 
      ! symNorm is the normal for (symmertry) boundary conditions.
@@ -107,6 +109,7 @@ module block
      ! invalid anyway.  These values are only used on symmetry
      ! plane. They are undefined for other BC's.
      real(kind=realType), dimension(3) :: symNorm
+
      logical :: symNormSet 
 
      ! subsonicInletTreatment: which boundary condition treatment
