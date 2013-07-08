@@ -60,7 +60,6 @@ module block
      ! uTau(:,:):  And for the friction velocity.
 
      real(kind=realType), dimension(:,:,:), pointer :: tau, q
-
      real(kind=realType), dimension(:,:),   pointer :: uTau
 
   end type viscSubfaceType
@@ -92,13 +91,9 @@ module block
      !               the boundary conditions that need this info.
 
      real(kind=realType), dimension(:,:,:), pointer :: norm
-
      real(kind=realType), dimension(:,:),   pointer :: rface
-
      real(kind=realType), dimension(:,:,:), pointer :: F, M
-
      real(kind=realType), dimension(:,:), pointer :: oArea
-
      integer(kind=intType), dimension(:,:), pointer :: FMNodeIndex, FMCellIndex
 
      ! symNorm is the normal for (symmertry) boundary conditions.
@@ -123,7 +118,6 @@ module block
      ! TNS_Wall(:,:): Wall temperature for isothermal walls.
 
      real(kind=realType), dimension(:,:,:), pointer :: uSlip
-
      real(kind=realType), dimension(:,:),   pointer :: TNS_Wall
 
      ! ptInlet(:,:):       Total pressure at subsonic inlets.
@@ -135,11 +129,8 @@ module block
      ! flowZDirInlet(:,:): Idem in z-direction.
 
      real(kind=realType), dimension(:,:), pointer :: ptInlet, ttInlet, htInlet
-
      real(kind=realType), dimension(:,:), pointer :: flowXDirInlet
-
      real(kind=realType), dimension(:,:), pointer :: flowYDirInlet
-
      real(kind=realType), dimension(:,:), pointer :: flowZDirInlet
 
      ! turbInlet(:,:,nt1:nt2): Turbulence variables at inlets,
@@ -154,13 +145,9 @@ module block
      ! ps(:,:):   static pressure; used for multiple bc's.
 
      real(kind=realType), dimension(:,:), pointer :: rho
-
      real(kind=realType), dimension(:,:), pointer :: velX
-
      real(kind=realType), dimension(:,:), pointer :: velY
-
      real(kind=realType), dimension(:,:), pointer :: velZ
-
      real(kind=realType), dimension(:,:), pointer :: ps
 
   end type BCDataType
@@ -463,26 +450,19 @@ module block
      !  sFaceK(ie,je,0:ke) - Idem in k-direction.
 
      real(kind=realType), dimension(:,:,:,:),   pointer :: x, xtmp
-
      real(kind=realType), dimension(:,:,:,:,:),   pointer :: Xold
-
      real(kind=realType), dimension(:,:,:,:), pointer :: sI, sJ, sK
-
      real(kind=realType), dimension(:,:,:),   pointer :: vol
-     
      real(kind=realType), dimension(:,:,:,:), pointer :: volOld
 
      real(kind=realType), dimension(:,:,:,:), pointer :: uv
      integer(kind=intType), dimension(:,:,:), pointer :: elemID
 
      integer(kind=porType), dimension(:,:,:), pointer :: porI, porJ, porK
-
      integer(kind=intType), dimension(:,:,:), pointer :: indFamilyI, indFamilyJ, indFamilyK
-
      integer(kind=intType), dimension(:,:,:), pointer :: factFamilyI, factFamilyJ, factFamilyK
-
      real(kind=realType), dimension(:,:,:,:,:), pointer :: rotMatrixI, rotMatrixJ, rotMatrixK
- 
+
      logical :: blockIsMoving, addGridVelocities
 
      real(kind=realType), dimension(:,:,:), pointer :: sFaceI, sFaceJ, sFaceK
@@ -526,15 +506,10 @@ module block
      !                                problems.
 
      real(kind=realType), dimension(:,:,:,:),   pointer :: w, wtmp
-
      real(kind=realType), dimension(:,:,:,:,:), pointer :: dw_deriv
-
      real(kind=realType), dimension(:,:,:,:,:), pointer :: wOld
-
      real(kind=realType), dimension(:,:,:),     pointer :: p, ptmp, gamma
-
      real(kind=realType), dimension(:,:,:),     pointer :: rlv, rev
-
      real(kind=realType), dimension(:,:,:,:),   pointer :: s
      !
      !        ****************************************************************
@@ -577,13 +552,9 @@ module block
      !                               at least for the flow variables.
 
      real(kind=realType), dimension(:,:,:),     pointer :: p1
-
      real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw
-
      real(kind=realType), dimension(:,:,:,:),   pointer :: dwtmp, dwtmp2
-
      real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
-
      real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
 
      ! mgIFine(2:il,2) - The two fine grid i-cells used for the
@@ -610,9 +581,7 @@ module block
      integer(kind=intType), dimension(:,:), pointer :: mgKFine
 
      real(kind=realType),   dimension(:),   pointer :: mgIWeight
-
      real(kind=realType),   dimension(:),   pointer :: mgJWeight
-
      real(kind=realType),   dimension(:),   pointer :: mgKWeight
 
      integer(kind=intType), dimension(:,:), pointer :: mgICoarse
@@ -651,11 +620,8 @@ module block
      ! radK(1:ie,1:je,1:ke)        - Spectral radius in k-direction.
 
      real(kind=realType), dimension(:,:,:,:), pointer :: wn
-
      real(kind=realType), dimension(:,:,:),   pointer :: pn
-
      real(kind=realType), dimension(:,:,:),   pointer :: dtl
-
      real(kind=realType), dimension(:,:,:),   pointer :: radI, radJ, radK
      !
      !        ****************************************************************
@@ -683,9 +649,7 @@ module block
      ! bmtk2(ie,je,nt1:nt2,nt1:nt2): Idem for the kMax boundary.
 
      real(kind=realType), dimension(:,:,:,:), pointer :: bmti1, bmti2
-
      real(kind=realType), dimension(:,:,:,:), pointer :: bmtj1, bmtj2
-
      real(kind=realType), dimension(:,:,:,:), pointer :: bmtk1, bmtk2
 
 
@@ -702,9 +666,7 @@ module block
      ! bvtk2(ie,ke,nt1:nt2): idem for the kMax boundary.
 
      real(kind=realType), dimension(:,:,:), pointer :: bvti1, bvti2
-
      real(kind=realType), dimension(:,:,:), pointer :: bvtj1, bvtj2
-
      real(kind=realType), dimension(:,:,:), pointer :: bvtk1, bvtk2
      !
      !        ****************************************************************
