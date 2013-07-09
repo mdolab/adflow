@@ -616,7 +616,11 @@ class SUMB(AeroSolver):
                                 'outputdir',
                                 'probname']
 
-        self.storedADjoints = {}
+
+        # Info for flowCases
+        self.curFlowCase = None
+        self.flowCases = {}
+
         self.update_time = 0.0
         # Set default values --- actual options will be set when
         # aero_solver is initialized
@@ -678,7 +682,7 @@ class SUMB(AeroSolver):
             return
         
         # Set periodic paramters
-        self.setPeriodicParams(aero_problem)
+        self._setPeriodicParams(aero_problem)
   
         # Make sure all the params are ok
         for option in self.options:
@@ -691,9 +695,9 @@ class SUMB(AeroSolver):
         # had we read in a param file
         self.sumb.iteration.deforming_grid = True
 
-        self.setMachNumber(aero_problem)
-        self.setRefState(aero_problem)
-        self.setPeriodicParams(aero_problem)
+        self._setMachNumber(aero_problem)
+        self._setRefState(aero_problem)
+        self._setPeriodicParams(aero_problem)
 
         self.sumb.dummyreadparamfile()
 
@@ -713,7 +717,7 @@ class SUMB(AeroSolver):
 
         mpiPrint(' -> Initializing flow', comm=self.comm)
         self.sumb.initflow()
-        self.setInflowAngle(aero_problem)
+        self._setInflowAngle(aero_problem)
 
         # Create dictionary of variables we are monitoring
         nmon = self.sumb.monitor.nmon
@@ -747,10 +751,114 @@ class SUMB(AeroSolver):
         # Solver is initialize
         self.allInitialized = True
         self.initAdjoint()
-        
+
+        # Setup a default flowCase 
+        self.addFlowCase('default')
+        self.curFlowCase = 'default'
+
         return
 
-    def setInflowAngle(self, aero_problem):
+    def addFlowCase(self, flowCaseName):
+        '''Add a flowCase called 'flowCaseName' to SUmb. These flow
+        cases should be setup after the problem has been initialized'''
+
+        # First check that the problem is initialized:
+        if not self.allInitialized:
+            mpiPrint('Error: SUmb must be initialized before\
+ flowCases can be added', comm=self.comm)
+            return 
+        # end if
+
+        # Special treatment of first user-supplied flowCase; overwrite
+        # the default case that was automatically added:
+        if self.flowCases.keys() == ['default']:
+            del self.flowCases['default']
+
+        # Add the new case
+        self.flowCases[flowCaseName] = {}
+        self.sumb.setuniformflow()
+        self.flowCases[flowCaseName]['states'] = None
+        self.flowCases[flowCaseName]['adjoints'] = {}
+        self.flowCases[flowCaseName]['surfMesh'] = \
+            self.getSurfaceCoordinates('all')
+        self.flowCases[flowCaseName]['aeroProblem'] = None
+
+        # Only set the current flowCase name IF it is the first case
+        # added. 
+
+        if len(self.flowCases.keys()) == 1:
+            self.curFlowCase = flowCaseName
+
+        return
+    
+    def getFlowCase(self):
+        '''Return to the user the current flowCaseName'''
+        return self.curFlowCase
+
+    def setFlowCase(self, flowCaseName, doNotSwitch=False, funcName=None):
+        '''Set 'flowCaseName' in SUmb'''
+
+        # Do nothing if the name is None. or it is the same. 
+        if flowCaseName in [None, self.curFlowCase]:
+            return
+
+        # Next make sure that flowCaseName exists:
+        if not flowCaseName in self.flowCases.keys():
+            mpiPrint('Error: %s has not been added using \
+\'addFlowCase()\''%flowCaseName, comm=self.comm)
+            return 
+        # end if
+
+        # We now know the flowCaseName exists. Check that doNotSwitch
+        # is not True since this is not allow. Print an error message
+        # including where it happened
+        if doNotSwitch:
+            if funcName is not None:
+                mpiPrint('Error: Trying to switch to flowCase %s from a \
+function where this operation is not allowed. The offending function \
+is %s'%(flowCaseName, funcName), comm=self.comm)
+                sys.exit(1)
+            else:
+                mpiPrint('Error: Trying to switch to flowCase %s from a \
+function where this operation is not allowed. The offending function \
+name is unavailable.'%(flowCase), comm=self.comm)
+                sys.exit(1)
+            # end if
+        # end if
+
+        mpiPrint('+'+'-'*70+'+',comm=self.comm)
+        mpiPrint('|  Switching to flowCase: %-45s|'%flowCaseName,comm=self.comm)
+        mpiPrint('+'+'-'*70+'+',comm=self.comm)
+
+        # Now, store the data for the current flowCase:
+        self.flowCases[self.curFlowCase]['states'] = \
+            self.getStates()
+        self.flowCases[self.curFlowCase]['surfMesh'] = \
+            self.getSurfaceCoordinates('all')
+
+        # Set the stored data for the new flowCase:
+        if self.flowCases[flowCaseName]['states'] is not None:
+            self.setStates(self.flowCases[flowCaseName]['states'])
+        coords = self.flowCases[flowCaseName]['surfMesh']
+        if coords is not None:
+            self.setSurfaceCoordinates('all', coords)
+        # end if
+    
+        # Now we have to do a bunch of updates. This is fairly
+        # expensive and flow cases should only be switched when
+        # required.
+        self._update_geom_info = True
+        self._updateGeometryInfo
+        
+        self.curFlowCase = flowCaseName
+        self.adjointRHS = None
+        # Destroy the NK solver and the adjoint memory
+        self.sumb.destroynksolver()
+        self.releaseAdjointMemory()
+
+        return
+
+    def _setInflowAngle(self, aero_problem):
         '''
         Set the alpha and beta fromthe desiggn variables
         '''
@@ -774,7 +882,7 @@ class SUMB(AeroSolver):
 
         return
 
-    def setElasticCenter(self, aero_problem):
+    def _setElasticCenter(self, aero_problem):
         '''
         set the value of pointRefEC for the bending moment calculation
         '''
@@ -786,7 +894,7 @@ class SUMB(AeroSolver):
         self.sumb.inputphysics.pointrefec[2] = aero_problem._geometry.zRootec\
             *self.metricConversion
     
-    def setReferencePoint(self, aero_problem):
+    def _setReferencePoint(self, aero_problem):
         '''
         Set the reference point for rotations and moment calculations
         '''
@@ -808,7 +916,7 @@ class SUMB(AeroSolver):
 
         return
 
-    def setRotationRate(self, aero_problem):
+    def _setRotationRate(self, aero_problem):
         '''
         Set the rotational rate for the grid
         '''
@@ -826,13 +934,13 @@ class SUMB(AeroSolver):
 
         return
     
-    def setRefArea(self, aero_problem):
+    def _setRefArea(self, aero_problem):
         self.sumb.inputphysics.surfaceref = aero_problem._refs.sref*self.metricConversion**2
         self.sumb.inputphysics.lengthref = aero_problem._refs.cref*self.metricConversion
         
         return
 
-    def setPeriodicParams(self, aero_problem):
+    def _setPeriodicParams(self, aero_problem):
         '''
         Set the frequecy and amplitude of the oscillations
         '''
@@ -893,7 +1001,7 @@ class SUMB(AeroSolver):
  
         return
 
-    def setMachNumber(self, aero_problem):
+    def _setMachNumber(self, aero_problem):
         '''
         Set the mach number for the problem...
         '''
@@ -916,7 +1024,7 @@ class SUMB(AeroSolver):
 
         return
 
-    def setRefState(self, aero_problem):
+    def _setRefState(self, aero_problem):
         ''' Set the Pressure, density and viscosity/reynolds number
         from the aero_problem
         '''
@@ -928,26 +1036,45 @@ class SUMB(AeroSolver):
 
         return
 
-    def resetAdjoint(self, obj):
+    def _updatePeriodInfo(self):
+        """Update the SUmb TS period info"""
+        if (self._update_period_info):
+            self.sumb.updateperiodicinfoalllevels()
+            self._update_period_info = False
+        # end if
+
+        return 
+
+    def _updateVelocityInfo(self):
+        if (self._update_vel_info):
+            self.sumb.updategridvelocitiesalllevels()
+            self._update_vel_info = False
+        # end if
+        
+        return 
+    
+    def resetAdjoint(self, obj, flowCase=None):
         '''
         Reset a possible stored adjoint 'obj'
         '''
+        self.setFlowCase(flowCase)
 
-        if obj in self.storedADjoints.keys():
-            self.storedADjoints[obj][:] = 0.0
+        if obj in self.flowCases[self.curFlowCase]['adjoints'].keys():
+            self.flowCases[self.curFlowCase]['adjoints'][obj][:] = 0.0
         # end if
 
         return
 
-    def resetFlow(self, aeroProblem=None):
+    def resetFlow(self, aeroProblem=None, flowCase=None):
         '''
         Reset the flow for the complex derivative calculation
         '''
+        self.setFlowCase(flowCase)
 
         if aeroProblem is not None:
-            self.setInflowAngle(aeroProblem)
-            self.setMachNumber(aeroProblem)
-            self.setRefState(aeroProblem)
+            self._setInflowAngle(aeroProblem)
+            self._setMachNumber(aeroProblem)
+            self._setRefState(aeroProblem)
             self.sumb.referencestate()
             self.sumb.setflowinfinitystate()
             if self.myid == 0:
@@ -990,7 +1117,8 @@ class SUMB(AeroSolver):
 
         return V
 
-    def __solve__(self, aero_problem, nIterations=500, MDCallBack=None):
+    def __solve__(self, aero_problem, nIterations=500, flowCase=None, 
+                  MDCallBack=None):
         
         '''
         Run Analyzer (Analyzer Specific Routine)
@@ -998,6 +1126,11 @@ class SUMB(AeroSolver):
         Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
         '''
         # Release adjoint memory in case an adjoint was previously solved
+        self.setFlowCase(flowCase)
+
+        # Save the aero_problem into the flowCase:
+        self.flowCases[self.curFlowCase]['aeroProblem'] = aero_problem
+
         self.releaseAdjointMemory()
         self.adjointRHS         = None
         self.callCounter += 1
@@ -1006,14 +1139,14 @@ class SUMB(AeroSolver):
         self.initialize(aero_problem)
 
         #set inflow angle, refpoint etc.
-        self.setMachNumber(aero_problem)
-        self.setPeriodicParams(aero_problem)
-        self.setInflowAngle(aero_problem)
-        self.setReferencePoint(aero_problem)
-        #self.setElasticCenter(aero_problem)
-        self.setRotationRate(aero_problem)
-        self.setRefArea(aero_problem)
-        self.setRefState(aero_problem)
+        self._setMachNumber(aero_problem)
+        self._setPeriodicParams(aero_problem)
+        self._setInflowAngle(aero_problem)
+        self._setReferencePoint(aero_problem)
+        #self._setElasticCenter(aero_problem)
+        self._setRotationRate(aero_problem)
+        self._setRefArea(aero_problem)
+        self._setRefState(aero_problem)
 
         # Run Solver
         t0 = time.time()
@@ -1085,6 +1218,10 @@ class SUMB(AeroSolver):
             self.sumb.solverunsteadymd(MDCallBack)
         # end if
 
+        # Save the states
+        self.flowCases[self.curFlowCase]['states'] = \
+            self.getStates()
+            
         # Assign Fail Flags
         self.solve_failed = self.sumb.killsignals.routinefailed
         self.fatalFail = self.sumb.killsignals.fatalfail
@@ -1107,6 +1244,10 @@ class SUMB(AeroSolver):
         # Post-Processing -- Write Solutions
         if self.getOption('writeSolution'):
             base = self.getOption('outputDir') + '/' + self.getOption('probName')
+            if self.curFlowCase <> "default":
+                base = base + '_%s'%self.curFlowCase
+            # end if
+
             volname = base + '_vol.cgns'
             surfname = base + '_surf.cgns'
 
@@ -1125,7 +1266,7 @@ class SUMB(AeroSolver):
         return
 
     def solveCL(self, aeroProblem, CL_star, nIterations=500, alpha0=0, 
-                delta=0.5, tol=1e-3, autoReset=True):
+                delta=0.5, tol=1e-3, autoReset=True, flowCase=None):
         '''This is a simple secant method search for solving for a
         fixed CL. This really should only be used to determine the
         starting alpha for a lift constraint in an optimization.
@@ -1139,6 +1280,8 @@ class SUMB(AeroSolver):
                 tol         -> Absolute tolerance for CL convergence
         Output: aeroProblem._flows.alpha is updated with correct alpha
         '''
+        self.setFlowCase(flowCase)
+
         anm2 = alpha0
         anm1 = alpha0 + delta
 
@@ -1187,12 +1330,14 @@ class SUMB(AeroSolver):
         ''' 
         See MultiBlockMesh.py for more info
         '''
+
         return self.mesh.getSurfaceCoordinates(group_name)
 
     def setSurfaceCoordinates(self, group_name, coordinates):
         ''' 
         See MultiBlockMesh.py for more info
         '''
+
         self._update_geom_info = True
         self.mesh.setSurfaceCoordinates(group_name, coordinates)
 
@@ -1261,7 +1406,8 @@ class SUMB(AeroSolver):
 
         return
 
-    def writeForceFile(self, file_name, TS=0, group_name='all', cfd_force_pts=None):
+    def writeForceFile(self, file_name, TS=0, group_name='all', 
+                       cfd_force_pts=None, flowCase=None):
         '''This function collects all the forces and locations and
         writes them to a file with each line having: X Y Z Fx Fy Fz.
         This can then be used to set a set of structural loads in TACS
@@ -1272,7 +1418,8 @@ class SUMB(AeroSolver):
         typically used in an aerostructural case. 
 
         '''
-      
+        self.setFlowCase(flowCase, True, 'writeForceFile')
+
         if self.mesh is None:
             mpiPrint('Error: A pyWarp mesh be specified to use writeForceFile',
                      comm=self.comm)
@@ -1345,11 +1492,12 @@ class SUMB(AeroSolver):
 
         return 
 
-    def getForces(self, group_name=None, cfd_force_pts=None, TS=0):
+    def getForces(self, group_name=None, cfd_force_pts=None, TS=0,
+                  flowCase=None):
         ''' Return the forces on this processor. Use
         cfd_force_pts to compute the forces if given
         '''
-
+        self.setFlowCase(flowCase, True, 'getForces')
         if cfd_force_pts is None:
             cfd_force_pts = self.getForcePoints(TS)
         # end if
@@ -1365,7 +1513,9 @@ class SUMB(AeroSolver):
 
         return forces
 
-    def getForcePoints(self, TS=0):
+    def getForcePoints(self, TS=0, flowCase=None):
+        self.setFlowCase(flowCase, True, 'getForcePoints')
+
         [npts, ncell, nTS] = self.sumb.getforcesize()
         pts = numpy.zeros((nTS, npts, 3),self.dtype)
         self.sumb.getforcepoints(pts.T)
@@ -1397,113 +1547,23 @@ class SUMB(AeroSolver):
         
         return
 
-    def globalNKPreCon(self, in_vec, out_vec):
+    def globalNKPreCon(self, in_vec, out_vec, flowCase=None):
         '''This function is ONLY used as a preconditioner to the
         global Aero-Structural system'''
-
+        self.setFlowCase(flowCase, True, 'globalNKPreCon')
         out_vec = self.sumb.applypc(in_vec, out_vec)
         
         return out_vec
 
-    def globalAdjointPreCon(self, in_vec, out_vec):
+    def globalAdjointPreCon(self, in_vec, out_vec, flowCase=None):
         ''' This function is ONLY used as a preconditioner for the
         global Aero-Structural Adjoint system'''
+        self.setFlowCase(flowCase, True, 'globalAdjointPreCon')
 
         out_vec = self.sumb.applyadjointpc(in_vec, out_vec)
 
         return out_vec
 
-    def verifydCdx(self, objective):
-        '''
-        call the reouttine to compare the partial dIda
-        against FD
-        '''
-
-        self.setupAdjoint()
-
-        # Short form of objective--easier code reading
-        obj = self.possibleObjectives[objective.lower()]
-        costFunc =  self.SUmbCostfunctions[obj]
-        self.sumb.verifydcfdx(1, costFunc)
-        
-        return
-
-    def verifydCdw(self, objective):
-	
-	self.sumb.verifydcdwfile(1)
-
-	return
-
-    def verifydIdw(self, objective):
-        '''
-        run compute obj partials, then write to a file...
-        '''
-        self.setupAdjoint()
-        self.computeObjPartials(objective)
-        obj = self.possibleObjectives[objective.lower()]
-        filename= self.getOption('outputDir') + '/' +'ADw%s'%(obj)
-        costFunc =  self.SUmbCostfunctions[obj]
-        level = 1
-
-        self.sumb.verifydidwfile(level, costFunc, filename)
-        
-        return
-
-    def verifydIdx(self, objective):
-        '''
-        run compute obj partials, then write to a file...
-        '''
-        self.setupAdjoint()
-        self.computeObjPartials(objective)
-        obj = self.possibleObjectives[objective.lower()]
-        filename= self.getOption('outputDir') + '/' +'ADx%s'%(obj)
-
-        costFunc =  self.SUmbCostfunctions[obj]
-        level = 1
-
-        self.sumb.verifydidxfile(level, costFunc, filename)
-
-        return
-
-    def verifydRdw(self):
-        ''' run the verify drdw scripts in fortran'''
-        # Make sure adjoint is initialize
-        self.initAdjoint()
-        self.setupAdjoint()
-        # end if
-	level = 1
-        self.sumb.iteration.currentlevel=level
-        self.sumb.iteration.groundlevel=level
-	self.sumb.verifydrdwfile(1)
-
-	return
-
-    def verifydRdx(self):
-        ''' run the verify drdw scripts in fortran'''
-        # Make sure adjoint is initialize
-        self.initAdjoint()
-	level = 1
-        self.sumb.iteration.currentlevel=level
-        self.sumb.iteration.groundlevel=level
-	self.sumb.verifydrdxfile(1)
-        
-	return
-
-    def verifydRda(self):
-        ''' run the verify drdw scripts in fortran'''
-        # Make sure adjoint is initialize
-        self.initAdjoint()
-        #if not self.adjointMatrixSetup:
-        #    #self.sumb.createpetscvars()
-        #    self.setupAdjoint(None)#(forcePoints)
-        # end if
-        level = 1
-        self.sumb.iteration.currentlevel=level
-        self.sumb.iteration.groundlevel=level
-	self.sumb.verifydrdextrafile(1)
-
-	return
-    
     def verifyAD(self):
         '''
         Use Tapenade TGT debugger to verify AD
@@ -1577,10 +1637,14 @@ class SUMB(AeroSolver):
 
         return
 
-    def setupAdjoint(self, reform=False):
+    def setupAdjoint(self, reform=False, flowCase=None):
         '''
         Setup the data structures required to solve the adjoint problem
         '''
+
+        # Set the flow Case
+        self.setFlowCase(flowCase)
+
         # Destroy the NKsolver to free memory -- Call this even if the
         # solver is not used...a safeguard check is done in Fortran
         self.sumb.destroynksolver()
@@ -1642,11 +1706,23 @@ class SUMB(AeroSolver):
         return
 
     def _on_adjoint(self, objective, forcePoints=None, structAdjoint=None, 
-                    group_name=None):
+                    group_name=None, flowCase=None):
 
         # Try to see if obj is an aerodynamic objective. If it is, we
         # will have a non-zero RHS, otherwise its an objective with a
         # zero aerodynamic RHS
+       
+        self.setFlowCase(flowCase)
+
+        # We need to reset some of the flow conditions:
+        aero_problem = self.flowCases[self.curFlowCase]['aeroProblem']
+        self._setMachNumber(aero_problem)
+        self._setPeriodicParams(aero_problem)
+        self._setInflowAngle(aero_problem)
+        self._setReferencePoint(aero_problem)
+        self._setRotationRate(aero_problem)
+        self._setRefArea(aero_problem)
+        self._setRefState(aero_problem)
 
         obj, aeroObj = self._getObjective(objective)
 
@@ -1671,17 +1747,11 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             self.sumb.agumentrhs(numpy.ravel(phi))
         # end if
 
-        # If we have saved adjoints, 
-        if self.getOption('restartAdjoint') or self.getOption('lowMemory'):
-            # Objective is already stored, so just set it
-            if obj in self.storedADjoints.keys():
-                self.sumb.setadjoint(self.storedADjoints[obj])
-            else:
-                # Objective is not yet run,  allocated zeros and set
-                self.storedADjoints[obj]= numpy.zeros(self.getStateSize(),float)
-                self.sumb.setadjoint(self.storedADjoints[obj])
-            # end if
-        # end if
+        # Check if objective is allocated:
+        if obj not in self.flowCases[self.curFlowCase]['adjoints'].keys():
+            self.flowCases[self.curFlowCase]['adjoints'][obj] = \
+                numpy.zeros(self.getStateSize(), float)
+        self.sumb.setadjoint(self.flowCases[self.curFlowCase]['adjoints'][obj])
 
         # Actually Solve the adjoint system
         self.sumb.solveadjointtransposepetsc()
@@ -1696,35 +1766,27 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             # 2. The stored adjoint must have been already set at
             # least once; that is we've already tried one solve
             
-            if  obj in self.storedADjoints.keys():
-                self.storedADjoints[obj][:] = 0.0 # Always reset a
-                                                  # stored adjoint
-
-                if self.getOption('autoAdjointRetry'):
-                    self.sumb.solveadjointtransposepetsc()
-                # end if
+            self.flowCases[self.curFlowCase]['adjoints'][obj][:] = 0.0
+            if self.getOption('autoAdjointRetry'):
+                self.sumb.solveadjointtransposepetsc()
             # end if
         # end if
 
         # Now set the flags and possibly reset adjoint
         if self.sumb.killsignals.adjointfailed == False:
+            self.flowCases[self.curFlowCase]['adjoints'][obj] = \
+                self.sumb.getadjoint(self.getStateSize())
             self.adjoint_failed = False
-            # Copy out the adjoint to store
-            if self.getOption('restartAdjoint') or self.getOption('lowMemory'):
-                self.storedADjoints[obj] =  \
-                    self.sumb.getadjoint(self.getStateSize())
-            # end if
         else:
             self.adjoint_failed = True
+
             # Reset stored adjoint
-            if self.getOption('restartAdjoint') or self.getOption('lowMemory'):
-                self.storedADjoints[obj][:] = 0.0
-            # end if
+            self.flowCases[self.curFlowCase]['adjoints'][obj][:] = 0.0
         # end if
        
         return
 
-    def totalSurfaceDerivative(self, objective):
+    def totalSurfaceDerivative(self, objective, flowCase=None):
         # The adjoint vector is now calculated so perform the
         # following operation to produce dI/dX_surf:
         # (p represents partial, d total)
@@ -1733,6 +1795,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         # The derivative wrt the surface captures the effect of ALL
         # GLOBAL Multidisciplinary variables -- any DV that changes
         # the surface. 
+        self.setFlowCase(flowCase, True, 'totalSurfaceDerivative')
 
         obj, aeroObj = self._getObjective(objective)
 
@@ -1748,24 +1811,22 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return dIdXs
 
-    def totalAeroDerivative(self, objective):
+    def totalAeroDerivative(self, objective, flowCase=None):
         # The adjoint vector is now calculated. This function as above
         # computes dI/dX_aero = pI/pX_aero - dR/dX_aero^T * psi. The
         # "aero" variables are intrinsic ONLY to the aero
         # discipline. Nothing in the structural process should depend
         # on these functions directly. 
+        self.setFlowCase(flowCase, True, 'totalAeroDerivative')
 
         obj, aeroObj = self._getObjective(objective)
 
-        if self.getOption('lowMemory') or self.getOption('restartAdjoint'):
-            if obj in self.storedADjoints.keys():
-                psi = self.storedADjoints[obj]
-            else:
-                mpiPrint('%s adjoint is not computed.'%(obj), comm=self.comm)
-                sys.exit(1)
-            # end if
+        if obj in self.flowCases[self.curFlowCase]['adjoints'].keys():
+            psi = self.flowCases[self.curFlowCase]['adjoints'][obj]
         else:
-            psi = self.sumb.getadjoint(self.getStateSize())
+            mpiPrint('%s adjoint for flowCase %s is not computed.'%(
+                    obj, self.curFlowCase), comm=self.comm)
+            sys.exit(1)
         # end if
 
         # Direct partial derivative contibution 
@@ -1817,22 +1878,6 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return    
         
-    def verifyPartials(self):
-        ''' Run verifyResiduals to verify that dRdw,dRdx and dRda are
-        computed correctly
-        '''
-        self.sumb.verifypartials()
-
-        return
-    
-    def verifyResidual(self):
-        ''' Run verifyRAdjoint to make sure the node-based-stencil
-        routine gives the same results as the original routine
-        '''
-        self.sumb.verifyradj(1)
-
-        return 
-
     def computeStabilityParameters(self):
         '''
         run the stability derivative driver to compute the stability parameters
@@ -1861,24 +1906,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         # end if
 
         return 
-
-    def _updatePeriodInfo(self):
-        """Update the SUmb TS period info"""
-        if (self._update_period_info):
-            self.sumb.updateperiodicinfoalllevels()
-            self._update_period_info = False
-        # end if
-
-        return 
-
-    def _updateVelocityInfo(self):
-        if (self._update_vel_info):
-            self.sumb.updategridvelocitiesalllevels()
-            self._update_vel_info = False
-        # end if
         
-        return 
-            
     def getMonitoringVariables(self):
         """Return a list of the text strings describing the variables being
         monitored.
@@ -1955,22 +1983,21 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return indices
     
-    def getdRdXvPsi(self, group_name=None, objective=None):
+    def getdRdXvPsi(self, group_name=None, objective=None, flowCase=None):
+
+        self.setFlowCase(flowCase)
 
         self.setupAdjoint()
 
         # Get objective
         obj, aeroObj = self._getObjective(objective)
 
-        if self.getOption('lowMemory') or self.getOption('restartAdjoint'):
-            if obj in self.storedADjoints.keys():
-                psi = self.storedADjoints[obj]
-            else:
-                mpiPrint('%s adjoint is not computed.'%(obj), comm=self.comm)
-                sys.exit(1)
-            # end if
+        if obj in self.flowCases[self.curFlowCase]['adjoints'].keys():
+            psi = self.flowCases[self.curFlowCase]['adjoints'][obj]
         else:
-            psi = self.sumb.getadjoint(self.getStateSize())
+            mpiPrint('%s adjoint for flowCase %s is not computed.'%(
+                    obj, self.curFlowCase), comm=self.comm)
+            sys.exit(1)
         # end if
 
         # Now call getdrdxvpsi WITH the psi vector:
@@ -2004,7 +2031,8 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             return False
         # end if
 
-    def getdRdXvVec(self, in_vec, group_name):
+    def getdRdXvVec(self, in_vec, group_name, flowCase=None):
+        self.setFlowCase(flowCase, True, 'getdRdXvVec')
 
         ndof = self.sumb.adjointvars.nnodeslocal[0]*3
 
@@ -2025,15 +2053,18 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return dIda
 
-    def getdRdwTVec(self, in_vec, out_vec):
+    def getdRdwTVec(self, in_vec, out_vec, flowCase=None):
         ''' Compute the result: out_vec = dRdw^T * in_vec'''
+        self.setFlowCase(flowCase, True, 'getdRdwTVec')
 
         out_vec = self.sumb.getdrdwtvec(in_vec, out_vec)
         
         return out_vec
 
-    def getdFdxVec(self, group_name, vec):
+    def getdFdxVec(self, group_name, vec, flowCase=None):
         # Calculate dFdx * vec and return the result
+        self.setFlowCase(flowCase, True, 'getdFdxVec')
+
         vec = self.mesh.expandVectorByFamily(group_name, vec)
         if len(vec) > 0:
             vec = self.sumb.getdfdxvec(numpy.ravel(vec))
@@ -2041,8 +2072,10 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return vec
 
-    def getdFdxTVec(self, group_name, vec):
+    def getdFdxTVec(self, group_name, vec, flowCase=None):
         # Calculate dFdx^T * vec and return the result
+        self.setFlowCase(flowCase, True, 'getdFdxTVec')
+
         vec = self.mesh.expandVectorByFamily(group_name, vec)
         if len(vec) > 0:
             vec = self.sumb.getdfdxtvec(numpy.ravel(vec))
@@ -2050,8 +2083,8 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return vec
 
-    def computeObjPartials(self, objective, forcePoints=None):
-
+    def computeObjPartials(self, objective, forcePoints=None, flowCase=None):
+        self.setFlowCase(flowCase)
         obj, aeroObj = self._getObjective(objective)
 
         # Note: Computeobjective partials MUST be called with the full
@@ -2081,8 +2114,9 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return 
 
-    def getdIdx(self, objective, forcePoints=None, TS=0, group_name=None):
-
+    def getdIdx(self, objective, forcePoints=None, TS=0, group_name=None,
+                flowCase=None):
+        self.setFlowCase(flowCase, True, 'getdIdx')
         obj, aeroObj = self._getObjective(objective)
 
         # Compute the partials
@@ -2116,7 +2150,9 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             return dXv
         # end if
         
-    def getdIda(self, objective, forcePoints=None):
+    def getdIda(self, objective, forcePoints=None, flowCase=None):
+
+        self.setFlowCase(flowCase, True, 'getdIda')
 
         obj, aeroObj = self._getObjective(objective)
 
@@ -2137,8 +2173,8 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return dIda
         
-    def getdIdw(self, dIdw, objective, forcePoints=None):
-
+    def getdIdw(self, dIdw, objective, forcePoints=None, flowCase=None):
+        self.setFlowCase(flowCase, True, 'getdIdw')
         obj, aeroObj = self._getObjective(objective)
 
         if aeroObj:
@@ -2182,6 +2218,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
     def getStates(self):
         '''Return the states on this processor. Used in aerostructural
         analysis'''
+
         states = self.sumb.getstates(self.getStateSize())
 
         return states
@@ -2194,37 +2231,41 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return 
 
-    def setAdjoint(self, adjoint, objective=None):
+    def setAdjoint(self, adjoint, objective=None, flowCase=None):
         '''Sets the adjoint vector externally. Used in coupled solver'''
-        self.sumb.setadjoint(adjoint)
+        self.setFlowCase(flowCase)
 
+        self.sumb.setadjoint(adjoint)
         if objective is not None:
             obj, aeroObj = self._getObjective(objective)
-            self.storedADjoints[obj]= adjoint.copy()
-        
+            self.flowCases[self.curFlowCase]['adjoints'][obj] = adjoint.copy()
+        # end if
+
         return
 
-    def getResidual(self, res=None):
+    def getResidual(self, res=None, flowCase=None):
         '''Return the residual on this processor. Used in aerostructural
         analysis'''
+        self.setFlowCase(flowCase)
         if res is None:
             res = numpy.zeros(self.getStateSize())
         res = self.sumb.getres(res)
         
         return res
 
-    def computedSdwTVec(self, in_vec, out_vec, group_name):
+    def computedSdwTVec(self, in_vec, out_vec, group_name, flowCase=None):
         '''This function computes: out_vec = out_vec + dFdw^T*in_vec'''
+        self.setFlowCase(flowCase, True, 'computedSdwTVec')
         phi = self.mesh.expandVectorByFamily(group_name, in_vec)
         out_vec = self.sumb.getdfdwtvec(numpy.ravel(phi), out_vec)
 
         return out_vec
 
-    def getSolution(self, sps=1):
+    def getSolution(self, sps=1, flowCase=None):
         ''' Retrieve the solution variables from the solver. Note this
         is a collective function and must be called on all processors
         '''
-
+        self.setFlowCase(flowCase, True, 'getSolution')
         # We should return the list of results that is the same as the
         # possibleObjectives list
         self.sumb.getsolution(sps)
@@ -2268,7 +2309,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         
         return SUmbsolution
 
-    def computeArea(self, axis, group_name=None, cfd_force_pts=None, TS=0):
+    def computeArea(self, axis, group_name=None, cfd_force_pts=None, TS=0, flowCase=None):
         """
         Compute the projected area of the surface mesh
 
@@ -2282,7 +2323,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         Output Arguments: 
             Area: The resulting area  
             """
-
+        self.setFlowCase(flowCase)
         if cfd_force_pts is None:
             cfd_force_pts = self.getForcePoints(TS)
         # end if
@@ -2302,7 +2343,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         return area
 
     def computeAreaSensitivity(self, axis, group_name=None, 
-                               cfd_force_pts=None, TS=0):
+                               cfd_force_pts=None, TS=0, flowCase=None):
         """ 
         Compute the projected area of the surface mesh
 
@@ -2316,7 +2357,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         Output Arguments:
             Area: The resulting area    
             """
-
+        self.setFlowCase(flowCase)
         if cfd_force_pts is None:
             cfd_force_pts = self.getForcePoints(TS)
         # end if
@@ -2433,7 +2474,6 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         #end
         
         return
-  
 
 class SUmbDummyMesh(object):
     """
