@@ -776,7 +776,6 @@ class SUMB(AeroSolver):
 
         # Add the new case
         self.flowCases[flowCaseName] = {}
-        self.sumb.setuniformflow()
         self.flowCases[flowCaseName]['states'] = None
         self.flowCases[flowCaseName]['adjoints'] = {}
         self.flowCases[flowCaseName]['surfMesh'] = \
