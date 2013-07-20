@@ -595,7 +595,7 @@ class SUMB(AeroSolver):
         # they DO NOT GET SET IN THE FORTRAN CODE. Rather, they are
         # used strictly in Python
 
-        self.ignore_options = [
+        self.ignoreOptions = [
             'defaults',
             'storehistory',
             'numbersolutions',
@@ -610,7 +610,7 @@ class SUMB(AeroSolver):
         # scripts can continue to run
         self.deprecatedOptions = ['finitedifferencepc']
 
-        self.special_options = ['surfacevariables',
+        self.specialOptions = ['surfacevariables',
                                 'volumevariables',
                                 'monitorvariables',
                                 'metricconversion',
@@ -2397,6 +2397,15 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         '''
         name = name.lower()
 
+        # Check to see if we have a deprecated option. Print a useful
+        # warning that this is deprecated.
+        if name in self.deprecatedOptions:
+            mpiPrint('+'+'-'*78+'+',comm=self.comm)
+            mpiPrint('| WARNING: Option: \'%-29s\' is a deprecated SUmb Option |'%name,comm=self.comm)
+            mpiPrint('+'+'-'*78+'+',comm=self.comm)
+            return
+        # end if
+
         # Try to the option in the option dictionary
         def_options = self.options['defaults']
         try: 
@@ -2419,13 +2428,14 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             mpiPrint('|        Received data type is %-47s |'%type(value),comm=self.comm)
             mpiPrint('+'+'-'*78+'+',comm=self.comm)
             sys.exit(1)
-  
-      # Ignored options do NOT get set in solver
-        if name in self.ignore_options or name in self.deprecatedOptions:
+        # end if
+            
+        # If the option is in the ignoredOption list, we just return. 
+        if name in self.ignoreOptions:
             return
         
         # Do special Options individually
-        if name in self.special_options:
+        if name in self.specialOptions:
             if name in ['monitorvariables',
                         'surfacevariables',
                         'volumevariables']:
