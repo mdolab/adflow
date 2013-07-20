@@ -105,7 +105,7 @@
          if(myID == 0) then
            do nn=1,nGridsToWrite
              call cg_close_f(fileIDs(nn), ierr)
-             if(ierr /= all_ok)                    &
+             if(ierr /= CG_OK)                    &
                call terminate("writeCGNSGridFile", &
                               "Something wrong when calling cg_close_f")
            enddo

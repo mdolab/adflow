@@ -77,7 +77,7 @@
 
        call cg_zone_read_f(cgnsInd, cgnsBase, nZone, &
                            cgnsDoms(nZone)%zoneName, sizesBlock, ierr)
-       if(ierr /= all_ok)               &
+       if(ierr /= CG_OK)               &
          call terminate("readZoneInfo", &
                         "Something wrong when calling cg_nZones_f")
 
@@ -85,7 +85,7 @@
 
        call cg_zone_type_f(cgnsInd, cgnsBase, nZone, &
                            cgnsDoms(nZone)%zonetype, ierr)
-       if(ierr /= all_ok)               &
+       if(ierr /= CG_OK)               &
          call terminate("readZoneInfo", &
                         "Something wrong when calling cg_zone_type_f")
 
@@ -115,7 +115,7 @@
        do nn=2,nGridsRead
          call cg_zone_read_f(fileIDs(nn), cgnsBase, nZone, &
                              familyName, sizesBlock, ierr)
-         if(ierr /= all_ok)               &
+         if(ierr /= CG_OK)               &
            call terminate("readZoneInfo", &
                           "Something wrong when calling cg_nZones_f")
 
@@ -135,7 +135,7 @@
        ! Goto this zone.
 
        call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, "end")
-       if(ierr /= all_ok)               &
+       if(ierr /= CG_OK)               &
          call terminate("readZoneInfo", &
                         "Something wrong when calling cg_goto_f")
 !
@@ -154,7 +154,7 @@
        ! corresponding id.
 
        cgnsDoms(nZone)%familyID = 0
-       if(ierr == all_ok) then
+       if(ierr == CG_OK) then
 
          ! Search the family name in the sorted names. For a valid
          ! grid this name must be found.
@@ -186,7 +186,7 @@
        ! Determine the number of coordinates in this zone.
 
        call cg_ncoords_f(cgnsInd, cgnsBase, nZone, nCoords, ierr)
-       if(ierr /= all_ok)               &
+       if(ierr /= CG_OK)               &
          call terminate("readZoneInfo", &
                         "Something wrong when calling cg_ncoords_f")
 
@@ -212,7 +212,7 @@
          call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, &
                         "GridCoordinates_t", 1, "DataArray_t", i, &
                         "end")
-         if(ierr /= all_ok)               &
+         if(ierr /= CG_OK)               &
            call terminate("readZoneInfo", &
                           "Something wrong when calling cg_goto_f")
 
@@ -223,7 +223,7 @@
 
          ! Check if units were specified.
 
-         if(ierr == all_ok .and. len /= Null) then
+         if(ierr == CG_OK .and. len /= Null) then
 
            ! Copy the units and set gridUnitsSpecified to .true.
 
@@ -327,7 +327,7 @@
 
          call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, &
                         "end")
-         if(ierr /= all_ok)               &
+         if(ierr /= CG_OK)               &
            call terminate("readZoneInfo", &
                           "Something wrong when calling cg_goto_f")
 
@@ -342,7 +342,7 @@
 
          ! Check if a rotating frame is specified.
 
-         if(ierr == all_ok) then
+         if(ierr == CG_OK) then
 
            ! Set changingGrid to .true.
 
@@ -362,7 +362,7 @@
            call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, &
                           "RotatingCoordinates_t", 1, "DataArray_t", 2, &
                           "end")
-           if(ierr /= all_ok)               &
+           if(ierr /= CG_OK)               &
              call terminate("readZoneInfo", &
                             "Something wrong when calling cg_goto_f")
 
@@ -374,7 +374,7 @@
 
            ! Check if units were specified. If not assume radians.
 
-           if(ierr == all_ok .and. angle /= Null) then
+           if(ierr == CG_OK .and. angle /= Null) then
 
              ! Determine the conversion factor to radIans.
 

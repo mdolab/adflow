@@ -80,7 +80,7 @@
          do nn=1,nVolSolToWrite
            call cg_open_f(volSolFileNames(nn), mode_write, &
                           fileIDs(nn), ierr)
-           if(ierr /= all_ok) then
+           if(ierr /= CG_OK) then
              write(errorMessage,*) "File ", trim(volSolFileNames(nn)), &
                                    " could not be opened by CGNS&
                                    & for writing"
@@ -91,7 +91,7 @@
 
            call cg_base_write_f(fileIDs(nn), cgnsBaseName, cgnsCelldim, &
                                 cgnsPhysdim, cgnsBases(nn), ierr)
-           if(ierr /= all_ok)                    &
+           if(ierr /= CG_OK)                    &
              call terminate("openCGNSVolumeSol", &
                             "Something wrong when calling &
                             &cg_base_write_f")
@@ -107,7 +107,7 @@
          do nn=1,nVolSolToWrite
            call cg_open_f(volSolFileNames(nn), mode_modify, &
                           fileIDs(nn), ierr)
-           if(ierr /= all_ok) then
+           if(ierr /= CG_OK) then
              write(errorMessage,*) "File ", trim(volSolFileNames(nn)), &
                                    " could not be opened by CGNS&
                                    & for writing"

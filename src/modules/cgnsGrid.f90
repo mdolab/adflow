@@ -319,7 +319,7 @@
          ! Index vector indicating the computational coordinate
          ! direction of the boundary condition patch normal.
 
-         integer :: normalIndex
+         integer :: normalIndex(3)
 
          ! A flag indicating whether or not boundary normals are defined.
          ! normalListFlag == 0: normals are not defined.

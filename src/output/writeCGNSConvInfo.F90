@@ -101,7 +101,7 @@
          ! Go to the correct position in the CGNS file.
 
          call cg_goto_f(cgnsInd, base, ierr, "end")
-         if(ierr /= all_ok)                    &
+         if(ierr /= CG_OK)                    &
            call terminate("writeCGNSConvInfo", &
                           "Something wrong when calling cg_goto_f")
 
@@ -112,7 +112,7 @@
                                         &the sum of the square of the &
                                         &residuals and the total number &
                                         &of cells in the grid.", ierr)
-         if(ierr /= all_ok)                    &
+         if(ierr /= CG_OK)                    &
            call terminate("writeCGNSConvInfo", &
                           "Something wrong when calling &
                           &cg_convergence_write_f")
@@ -122,7 +122,7 @@
 
          call cg_goto_f(cgnsInd, base, ierr, &
                         "ConvergenceHistory_t", 1, "end")
-         if(ierr /= all_ok)                    &
+         if(ierr /= CG_OK)                    &
            call terminate("writeCGNSConvInfo", &
                           "Something wrong when calling cg_goto_f")
 
@@ -153,7 +153,7 @@
                                      buf8, ierr)
            end select
 
-           if(ierr /= all_ok)                    &
+           if(ierr /= CG_OK)                    &
              call terminate("writeCGNSConvInfo", &
                             "Something wrong when calling &
                             &cg_array_write_f")

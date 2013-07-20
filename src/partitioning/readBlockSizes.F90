@@ -70,7 +70,7 @@
 
        do nn=1,nGridsRead
          call cg_open_f(gridFiles(nn), mode_read, fileIDs(nn), ierr)
-         if(ierr /= all_ok) then
+         if(ierr /= CG_OK) then
            write(errorMessage,*) "File ", trim(gridFiles(nn)), &
                                 " could not be opened for reading"
            call terminate("readBlockSizes", errorMessage)
@@ -83,7 +83,7 @@
        ! This must be at least 1.
 
        call cg_nBases_f(cgnsInd, cgnsNbases, ierr)
-       if(ierr /= all_ok)                 &
+       if(ierr /= CG_OK)                 &
          call terminate("readBlockSizes", &
                         "Something wrong when calling cg_nBases_f")
 
@@ -105,7 +105,7 @@
 
        call cg_base_read_f(cgnsInd, cgnsBase, cgnsBasename, &
                            cgnsCelldim, cgnsPhysdim, ierr)
-       if(ierr /= all_ok)                 &
+       if(ierr /= CG_OK)                 &
          call terminate("readBlockSizes", &
                         "Something wrong when calling cg_base_read_f")
 
@@ -179,7 +179,7 @@
        ! occur.
 
        call cg_nZones_f(cgnsInd, cgnsBase, cgnsNzones, ierr)
-       if(ierr /= all_ok)                 &
+       if(ierr /= CG_OK)                 &
          call terminate("readBlockSizes", &
                         "Something wrong when calling cg_nZones_f")
        cgnsNDom = cgnsNzones
@@ -189,7 +189,7 @@
 
        do nn=2,nGridsRead
          call cg_nZones_f(fileIDs(nn), cgnsBase, cgnsNzones, ierr)
-         if(ierr /= all_ok)                 &
+         if(ierr /= CG_OK)                 &
            call terminate("readBlockSizes", &
                           "Something wrong when calling cg_nZones_f")
 

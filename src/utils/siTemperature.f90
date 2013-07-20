@@ -46,7 +46,7 @@
            mult  = one
            trans = zero
 
-         case (Celcius)      ! is it Celcius or Celsius?
+         case (Celsius)      ! is it Celcius or Celsius?
 
            ! Temperature is in Celsius. Only an offset must be applied.
 

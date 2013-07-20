@@ -51,7 +51,7 @@
        ! Determine the number of hole sets.
 
        call cg_nholes_f(cgnsInd, cgnsBase, nZone, nholes, ierr)
-       if(ierr /= all_ok)                   &
+       if(ierr /= CG_OK)                   &
          call terminate("readOversetHoles", &
                         "Something wrong when calling cg_nholes_f")
 
@@ -75,7 +75,7 @@
 
          call cg_hole_info_f(cgnsInd, cgnsBase, nZone, i, holeName,  &
                              location, ptsetType, npntsets, npnts, ierr)
-         if(ierr /= all_ok)                   &
+         if(ierr /= CG_OK)                   &
            call terminate("readOversetHoles", &
                           "Something wrong when calling cg_hole_info_f")
 
@@ -102,7 +102,7 @@
 
            call cg_hole_read_f(cgnsInd, cgnsBase, nZone, i, myData, &
                                ierr)
-           if(ierr /= all_ok)                   &
+           if(ierr /= CG_OK)                   &
              call terminate("readOversetHoles", &
                           "Something wrong when calling cg_hole_read_f")
 
