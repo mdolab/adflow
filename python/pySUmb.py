@@ -63,13 +63,14 @@ class SUMB(AeroSolver):
             # Common Paramters
             'gridfile':[str, 'default.cgns'],
             'restartfile':[str, 'default_restart.cgns'],
-            'probname':[str, ''],
-            'outputdir':[str, './'],
             'solrestart':[bool, False],
-            'writesolution':[bool, True],
-            'writemesh':[bool, False],
-            'storerindlayer':[bool, True],
 
+            # Output Parameters
+            'writesolution':[bool, True],
+            'storerindlayer':[bool, True],
+            'probname':[str, 'defaultName'],
+            'outputdir':[str, './'],
+            
             # Physics Paramters
             'discretization':[str, 'central plus scalar dissipation'],
             'coarsediscretization':[str, 'central plus scalar dissipation'],
@@ -193,9 +194,7 @@ class SUMB(AeroSolver):
             'asmoverlap' : [int, 1],
             'innerpreconits':[int,1],
             'outerpreconits':[int,1],
-            'finitedifferencepc':[bool, True],
             'usereversemodead':[bool, True],
-            'lowmemory':[bool, True],
             'applyadjointpcsubspacesize':[int, 20],
             'frozenturbulence':[bool, True],
 
@@ -226,16 +225,17 @@ class SUMB(AeroSolver):
         self.sumb.communication.sendrequests = numpy.zeros(self.comm.size)
         self.sumb.communication.recvrequests = numpy.zeros(self.comm.size)
         self.myid = self.sumb.communication.myid = self.comm.rank
-        self.nproc = self.sumb.communication.nproc = self.comm.size
-	
+	self.nproc = self.sumb.communication.nproc = self.comm.size
+
         # Initialize petec in case the user has not already
         self.sumb.initializepetsc()
-        self.callCounter = -1
-               
-        self.sumb.iteration.standalonemode = False
-        self.sumb.iteration.deforming_grid = False
 
-        # Set the frompython flag to true
+        # Set the stand-alone sumb flag to flase...this changes how
+        # terminate calls are handled. 
+        self.sumb.iteration.standalonemode = False
+
+        # Set the frompython flag to true... this also changes how
+        # terminate calls are handled
         self.sumb.killsignals.frompython = True
 
         # This is SUmb's internal mapping for cost functions
@@ -585,7 +585,6 @@ class SUMB(AeroSolver):
             'asmoverlap':{'location':'inputadjoint.overlap'},
             'innerpreconits':{'location':'inputadjoint.innerpreconits'},
             'outerpreconits':{'location':'inputadjoint.outerpreconits'},
-            'finitedifferencepc':{'location':'inputadjoint.finitedifferencepc'},
             'firstrun':{'location':'inputadjoint.firstrun'},
             'verifystate':{'location':'inputadjoint.verifystate'},
             'verifyspatial':{'location':'inputadjoint.verifyspatial'},
@@ -601,13 +600,15 @@ class SUMB(AeroSolver):
             'storehistory',
             'numbersolutions',
             'writesolution',
-            'writemesh',
             'familyrot',  # -> Not sure how to do
-            'lowmemory',
             'autosolveretry',
             'autoadjointretry',
             'usereversemodead'
             ]
+
+        # Deprecated options. These should not be used, but old
+        # scripts can continue to run
+        self.deprecatedOptions = ['finitedifferencepc']
 
         self.special_options = ['surfacevariables',
                                 'volumevariables',
@@ -615,7 +616,6 @@ class SUMB(AeroSolver):
                                 'metricconversion',
                                 'outputdir',
                                 'probname']
-
 
         # Info for flowCases
         self.curFlowCase = None
@@ -642,6 +642,9 @@ class SUMB(AeroSolver):
 
         # Set the external Mesh Warping is provided
         self._update_geom_info = False
+
+        # Sumb can be used without a external mesh warping
+        # object, however, geometric sensitivities cannot be computed. 
         if mesh is None:
             self.mesh = SUmbDummyMesh()
         else:
@@ -651,13 +654,9 @@ class SUMB(AeroSolver):
         # Set Flags that are used to keep of track of what is "done"
         # in fortran
         self.allInitialized = False    # All flow solver initialization   
-        self.adjointPreprocessed = False
 
         # Matrix Setup Flags
         self.adjointSetup = False
-        self.adjointRHS = None # When this is setup, it has
-                               # the current objective
-        
         self._update_geom_info = False
         self._update_period_info = True
         self._update_vel_info = True
@@ -694,18 +693,11 @@ class SUMB(AeroSolver):
         # Do the remainder of the operations that would have been done
         # had we read in a param file
         self.sumb.iteration.deforming_grid = True
-
         self._setMachNumber(aero_problem)
         self._setRefState(aero_problem)
         self._setPeriodicParams(aero_problem)
-
         self.sumb.dummyreadparamfile()
 
-        #This is just to flip the -1 to 1 possibly a memory issue?
-        self.sumb.inputio.storeconvinneriter = \
-            abs(self.sumb.inputio.storeconvinneriter)
-
-    
         mpiPrint(' -> Partitioning and Reading Grid', comm=self.comm)
         self.sumb.partitionandreadgrid()
         if partitionOnly:
@@ -750,6 +742,8 @@ class SUMB(AeroSolver):
         
         # Solver is initialize
         self.allInitialized = True
+
+        # 
         self.initAdjoint()
 
         # Setup a default flowCase 
@@ -781,7 +775,7 @@ class SUMB(AeroSolver):
         self.flowCases[flowCaseName]['surfMesh'] = \
             self.getSurfaceCoordinates('all')
         self.flowCases[flowCaseName]['aeroProblem'] = None
-
+        self.flowCases[flowCaseName]['callCounter'] = -1
         # Only set the current flowCase name IF it is the first case
         # added. 
 
@@ -850,7 +844,8 @@ name is unavailable.'%(flowCase), comm=self.comm)
         self._updateGeometryInfo
         
         self.curFlowCase = flowCaseName
-        self.adjointRHS = None
+        self.flowCases[self.curFlowCase]['adjointRHS'] = None
+
         # Destroy the NK solver and the adjoint memory
         self.sumb.destroynksolver()
         self.releaseAdjointMemory()
@@ -1124,20 +1119,22 @@ name is unavailable.'%(flowCase), comm=self.comm)
         
         Documentation last updated:  July. 3, 2008 - C.A.(Sandy) Mader
         '''
-        # Release adjoint memory in case an adjoint was previously solved
+        # Set the desired flow Case
         self.setFlowCase(flowCase)
-
-        # Save the aero_problem into the flowCase:
-        self.flowCases[self.curFlowCase]['aeroProblem'] = aero_problem
-
+        
+        # Possibly release adjoint memory (if flowCase is unchanged,
+        # this would not have been  done in the above caall
         self.releaseAdjointMemory()
-        self.adjointRHS         = None
-        self.callCounter += 1
+
+        # Save aeroProblem, and other information into the current flow case
+        self.flowCases[self.curFlowCase]['aeroProblem'] = aero_problem
+        self.flowCases[self.curFlowCase]['adjointRHS'] = None
+        self.flowCases[self.curFlowCase]['callCounter'] += 1
 
         # Run Initialize, if already run it just returns.
         self.initialize(aero_problem)
 
-        #set inflow angle, refpoint etc.
+        # Set all the infor contained in the aeroProblem object
         self._setMachNumber(aero_problem)
         self._setPeriodicParams(aero_problem)
         self._setInflowAngle(aero_problem)
@@ -1210,14 +1207,15 @@ name is unavailable.'%(flowCase), comm=self.comm)
             return
      
         t1 = time.time()
-        # Call the Solver
+
+        # Call the Solver or the MD callback solver
         if MDCallBack is None:
             self.sumb.solver()
         else:
             self.sumb.solverunsteadymd(MDCallBack)
         # end if
 
-        # Save the states
+        # Save the states into the flowCase
         self.flowCases[self.curFlowCase]['states'] = \
             self.getStates()
             
@@ -1243,6 +1241,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
         # Post-Processing -- Write Solutions
         if self.getOption('writeSolution'):
             base = self.getOption('outputDir') + '/' + self.getOption('probName')
+            print('base:',self.getOption('outputDir'), self.getOption('probName'))
             if self.curFlowCase <> "default":
                 base = base + '_%s'%self.curFlowCase
             # end if
@@ -1251,9 +1250,11 @@ name is unavailable.'%(flowCase), comm=self.comm)
             surfname = base + '_surf.cgns'
 
             if self.getOption('numberSolutions'):
-                volname = base + '_vol%d.cgns'%(self.callCounter)
-                surfname = base + '_surf%d.cgns'%(self.callCounter)
-            #endif
+                counter = self.flowCases[self.flowCaseName]['callCounter']
+                volname = base + '_c%3.3d_vol.cgns'%(counter)
+                surfname = base + '_c%3.3d_surf.cgns'%(counter)
+            #end if
+            print('surface name:',surfname)
             self.writeVolumeSolutionFile(volname)
             self.writeSurfaceSolutionFile(surfname)
         # end if
@@ -1377,7 +1378,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
         self.sumb.monitor.writevolume = True
         self.sumb.monitor.writesurface = False
 
-        if (filename):
+        if filename is not None:
             self.sumb.inputio.solfile[:] = ''
             self.sumb.inputio.solfile[0:len(filename)] = filename
 
@@ -1389,15 +1390,16 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         return
 
-    def writeSurfaceSolutionFile(self, *filename):
+    def writeSurfaceSolutionFile(self, filename=None):
         '''Write the current state of the surface flow solution to a CGNS file.
         Keyword arguments:
         filename -- the name of the file (optional)
         '''
-        if (filename):
+        if filename is not None:
             self.sumb.inputio.surfacesolfile[:] = ''
-            self.sumb.inputio.surfacesolfile[0:len(filename[0])] = filename[0]
+            self.sumb.inputio.surfacesolfile[0:len(filename)] = filename
         # end if
+        print ('filename:',self.sumb.inputio.surfacesolfile)
         self.sumb.monitor.writegrid=False
         self.sumb.monitor.writevolume=False
         self.sumb.monitor.writesurface=True
@@ -1532,7 +1534,6 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         # Adjoint must be initialized for force verification
 
-        self.initAdjoint()
         if cfd_force_pts is None:
             cfd_force_pts = self.getForcePoints()
         # end if
@@ -1611,13 +1612,8 @@ name is unavailable.'%(flowCase), comm=self.comm)
             # end for
         # end if
 
-        #Set the mesh level and timespectral instance for this
-        #computation
-                
-        if not self.adjointPreprocessed:
-            self.sumb.preprocessingadjoint()
-            self.adjointPreprocessed = True
-        # end if
+        # Run the small amount of fortran code for adjoint initialization
+        self.sumb.preprocessingadjoint()
 
         return
 
@@ -1634,6 +1630,9 @@ name is unavailable.'%(flowCase), comm=self.comm)
             # end if
         # end for
 
+        # Need to run initAdjoint() to update the aeroDVs in fortran
+        self.initAdjoint()
+
         return
 
     def setupAdjoint(self, reform=False, flowCase=None):
@@ -1647,9 +1646,6 @@ name is unavailable.'%(flowCase), comm=self.comm)
         # Destroy the NKsolver to free memory -- Call this even if the
         # solver is not used...a safeguard check is done in Fortran
         self.sumb.destroynksolver()
-
-        # Run initAdjoint in case this is the first adjoint solve
-        self.initAdjoint()
 
         # For now, just create all the petsc variables
         if not self.adjointSetup or reform:
@@ -1713,7 +1709,8 @@ name is unavailable.'%(flowCase), comm=self.comm)
        
         self.setFlowCase(flowCase)
 
-        # We need to reset some of the flow conditions:
+        # We need to reset some of the flow condition because the flow
+        # case may have changed.
         aero_problem = self.flowCases[self.curFlowCase]['aeroProblem']
         self._setMachNumber(aero_problem)
         self._setPeriodicParams(aero_problem)
@@ -1729,7 +1726,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
         self.setupAdjoint()
 
         # Check to see if the RHS Partials have been computed
-        if not self.adjointRHS == obj:
+        if not self.flowCases[self.curFlowCase]['adjointRHS'] == obj:
             self.computeObjPartials(objective, forcePoints)
         # end if
 
@@ -1749,7 +1746,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         # Check if objective is allocated:
         if obj not in self.flowCases[self.curFlowCase]['adjoints'].keys():
             self.flowCases[self.curFlowCase]['adjoints'][obj] = \
-                numpy.zeros(self.getStateSize(), float)
+                numpy.zeros(self.getAdjointStateSize(), float)
         self.sumb.setadjoint(self.flowCases[self.curFlowCase]['adjoints'][obj])
 
         # Actually Solve the adjoint system
@@ -1774,7 +1771,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         # Now set the flags and possibly reset adjoint
         if self.sumb.killsignals.adjointfailed == False:
             self.flowCases[self.curFlowCase]['adjoints'][obj] = \
-                self.sumb.getadjoint(self.getStateSize())
+                self.sumb.getadjoint(self.getAdjointStateSize())
             self.adjoint_failed = False
         else:
             self.adjoint_failed = True
@@ -1984,9 +1981,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
     
     def getdRdXvPsi(self, group_name=None, objective=None, flowCase=None):
 
-        self.setFlowCase(flowCase)
-
-        self.setupAdjoint()
+        self.setFlowCase(flowCase, True, 'getdRdXvpsi') 
 
         # Get objective
         obj, aeroObj = self._getObjective(objective)
@@ -2036,7 +2031,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         ndof = self.sumb.adjointvars.nnodeslocal[0]*3
 
         # Now call getdrdxvpsi WITH the psi vector:
-        dxv_solver = self.sumb.getdrdxvpsi(ndof, in_vec)
+        dxv_solver = self.sumb.getdrdxvpsi(self.getSpatialSize(), in_vec)
         self.mesh.warpDeriv(dxv_solver)
         dxs = self.mesh.getdXs(group_name)
 
@@ -2102,11 +2097,10 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
                     obj_num, forcePoints.T, True, True)
             else:
                 self.sumb.computeobjectivepartialsfwd(obj_num)
-                
+            # end if
 
-            self.adjointRHS = obj
-
-
+            # Store the current RHS
+                self.flowCases[self.curFlowCase]['adjointRHS'] = obj
         else:
             self.sumb.zeroobjpartials(True, True)
         # end if
@@ -2193,6 +2187,16 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         return
 
     def getStateSize(self):
+        '''Return the number of degrees of freedom (states) that are
+        on this processor'''
+
+        nstate = self.sumb.flowvarrefstate.nw
+        ncells = self.sumb.adjointvars.ncellslocal[0]
+        ntime  = self.sumb.inputtimespectral.ntimeintervalsspectral
+
+        return nstate*ncells*ntime
+
+    def getAdjointStateSize(self):
         '''Return the number of degrees of freedom (states) that are
         on this processor'''
         if self.getOption('frozenTurbulence'):
@@ -2387,15 +2391,39 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return obj, aeroObj
 
-    def _on_setOption(self, name, value):
+    def setOption(self, name, value):
         '''
         Set Solver Option Value 
         '''
         name = name.lower()
-        # Ignored options do NOT get set in solver
-        if name in self.ignore_options:
-            return
 
+        # Try to the option in the option dictionary
+        def_options = self.options['defaults']
+        try: 
+            def_options[name]
+        except: 
+            mpiPrint('+'+'-'*78+'+',comm=self.comm)
+            mpiPrint('| WARNING: Option: \'%-30s\' is not a valid SUmb Option |'%name,comm=self.comm)
+            mpiPrint('+'+'-'*78+'+',comm=self.comm)
+            return
+        # end try
+        
+        # Now we know the option exists, lets check if the type is ok:
+        if type(value) == self.options[name][0]:
+            # Just set:
+            self.options[name] = [type(value),value]
+        else:
+            mpiPrint('+'+'-'*78+'+',comm=self.comm)
+            mpiPrint('| ERROR: Datatype for Option %-35s was not valid |'%name,comm=self.comm)
+            mpiPrint('|        Expected data type is %-47s |'%self.options[name][0],comm=self.comm)
+            mpiPrint('|        Received data type is %-47s |'%type(value),comm=self.comm)
+            mpiPrint('+'+'-'*78+'+',comm=self.comm)
+            sys.exit(1)
+  
+      # Ignored options do NOT get set in solver
+        if name in self.ignore_options or name in self.deprecatedOptions:
+            return
+        
         # Do special Options individually
         if name in self.special_options:
             if name in ['monitorvariables',
