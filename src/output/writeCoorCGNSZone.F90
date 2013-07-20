@@ -293,7 +293,7 @@
              call cg_coord_write_f(fileInd, cgnsBase, cgnsZone, &
                                    realTypeCGNS, coorNames(nn), &
                                    coor, tmp, ierr)
-             if(ierr /= all_ok)                    &
+             if(ierr /= CG_OK)                    &
                call terminate("writeCoorCGNSZone", &
                               "Something wrong when calling &
                               &cg_coord_write_f")
@@ -308,7 +308,7 @@
                               "Zone_t", cgnsZone,      &
                               "GridCoordinates_t", 1,  &
                               "DataArray_t", tmp, "end")
-               if(ierr /= all_ok)                    &
+               if(ierr /= CG_OK)                    &
                  call terminate("writeCoorCGNSZone", &
                                 "Something wrong when calling cg_goto_f")
 
@@ -319,7 +319,7 @@
                                      cgnsDoms(zone)%time, &
                                      cgnsDoms(zone)%temp, &
                                      cgnsDoms(zone)%angle, ierr)
-               if(ierr /= all_ok)                    &
+               if(ierr /= CG_OK)                    &
                  call terminate("writeCoorCGNSZone", &
                                 "Something wrong when calling &
                                 &cg_units_write_f")

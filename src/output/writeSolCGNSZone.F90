@@ -235,7 +235,7 @@
              call cg_zone_write_f(cgnsInd, cgnsBase,              &
                                   cgnsDoms(zone)%zonename, sizes, &
                                   Structured, cgnsZone, ierr)
-             if(ierr /= all_ok)                 then
+             if(ierr /= CG_OK)                 then
             
              call terminate("writeSolCGNSZone", &
                   "Something wrong when calling &
@@ -250,7 +250,7 @@
 
                call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", &
                               cgnsZone, "end")
-               if(ierr /= all_ok)                   &
+               if(ierr /= CG_OK)                   &
                  call terminate("writeSolCGNSZone", &
                                 "Something wrong when calling cg_goto_f")
 
@@ -263,7 +263,7 @@
 
                call cg_link_write_f("GridCoordinates", &
                                     gridFileNames(ind), linkName, ierr)
-               if(ierr /= all_ok)                   &
+               if(ierr /= CG_OK)                   &
                  call terminate("writeSolCGNSZone", &
                                 "Something wrong when calling &
                                 &cg_link_write_f")
@@ -279,7 +279,7 @@
 
                  call cg_link_write_f("Nodal Blanks", &
                                       gridFileNames(ind), linkName, ierr)
-                 if(ierr /= all_ok)                   &
+                 if(ierr /= CG_OK)                   &
                    call terminate("writeSolCGNSZone", &
                                   "Something wrong when calling &
                                   &cg_link_write_f")
@@ -300,7 +300,7 @@
            call cg_sol_write_f(cgnsInd, cgnsBase, cgnsZone,          &
                                "Flow solution", CellCenter, cgnsSol, &
                                ierr)
-           if(ierr /= all_ok)                   &
+           if(ierr /= CG_OK)                   &
              call terminate("writeSolCGNSZone", &
                             "Something wrong when calling &
                             &cg_sol_write_f")
@@ -312,7 +312,7 @@
 
            call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", &
                           cgnsZone, "FlowSolution_t", cgnsSol, "end")
-           if(ierr /= all_ok)                   &
+           if(ierr /= CG_OK)                   &
              call terminate("writeSolCGNSZone", &
                             "Something wrong when calling cg_goto_f")
 
@@ -325,7 +325,7 @@
            endif
 
            call cg_rind_write_f(sizes, ierr)
-           if(ierr /= all_ok)                   &
+           if(ierr /= CG_OK)                   &
              call terminate("writeSolCGNSZone", &
                             "Something wrong when calling &
                             &cg_rind_write_f")
@@ -488,7 +488,7 @@
                                    cgnsSol, realTypeCGNS,       &
                                    solName, sol, source, ierr)
 
-             if(ierr /= all_ok)    &
+             if(ierr /= CG_OK)    &
                   call terminate("writeSolCGNSZone", &
                   "Something wrong when calling &
                   &cg_field_write_f")

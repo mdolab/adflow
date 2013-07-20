@@ -111,7 +111,7 @@ subroutine readGrid
 
         call cg_ncoords_f(cgnsInd, cgnsBase, cgnsZone, &
              nCoords, ierr)
-        if(ierr /= all_ok)           &
+        if(ierr /= CG_OK)           &
              call terminate("readGrid", &
              "Something wrong when calling cg_ncoords_f")
 
@@ -128,7 +128,7 @@ subroutine readGrid
 
               call cg_coord_info_f(cgnsInd, cgnsBase, cgnsZone, j, &
                    datatype, coordname, ierr)
-              if(ierr /= all_ok)           &
+              if(ierr /= CG_OK)           &
                    call terminate("readGrid", &
                    "Something wrong when calling &
                    &cg_coord_info_f")
@@ -166,7 +166,7 @@ subroutine readGrid
               call cg_coord_read_f(cgnsInd, cgnsBase, cgnsZone, &
                    coordname, realTypeCGNS,     &
                    rangeMin, rangeMax, buffer, ierr)
-              if(ierr /= all_ok)           &
+              if(ierr /= CG_OK)           &
                    call terminate("readGrid", &
                    "Something wrong when calling &
                    &cg_coord_read_f")
@@ -213,7 +213,7 @@ subroutine readGrid
 
   do nn=1,nGridsRead
      call cg_close_f(fileIDs(nn), ierr)
-     if(ierr /= all_ok)           &
+     if(ierr /= CG_OK)           &
           call terminate("readGrid", &
           "Something wrong when calling cg_close_f")
   enddo

@@ -91,7 +91,7 @@
            ! Store the file index for later purposes.
            call cg_open_f(surfSolFileNames(nn), mode_write, cgnsInd, &
                           ierr)
-           if(ierr /= all_ok) then
+           if(ierr /= CG_OK) then
              write(errorMessage,101) trim(surfSolFileNames(nn))
  101         format("File",1X,A,1X,"could not be opened by cgns for &
                     &writing")
@@ -105,7 +105,7 @@
 
            call cg_base_write_f(cgnsInd, "BaseSurfaceSol", celldim, &
                                 cgnsPhysdim, cgnsBases(nn), ierr)
-           if(ierr /= all_ok)                      &
+           if(ierr /= CG_OK)                      &
              call terminate("writeCGNSSurfaceSol", &
                             "Something wrong when calling &
                             &cg_base_write_f")
@@ -171,7 +171,7 @@
        if(myID == 0) then
          do nn=1,nSurfSolToWrite
            call cg_close_f(fileIDs(nn), ierr)
-           if(ierr /= all_ok)                      &
+           if(ierr /= CG_OK)                      &
              call terminate("writeCGNSSurfaceSol", &
                             "Something wrong when calling cg_close_f")
          enddo

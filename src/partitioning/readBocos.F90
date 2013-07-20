@@ -74,7 +74,7 @@
        ! Again the reading takes place via an integer.
 
        call cg_nbocos_f(cgnsInd, cgnsBase, nZone, cgnsNBocos, ierr)
-       if(ierr /= all_ok)            &
+       if(ierr /= CG_OK)            &
          call terminate("readBocos", &
                         "Something wrong when calling cg_nbocos_f")
        cgnsDoms(nZone)%nBocos = cgnsNBocos
@@ -108,7 +108,7 @@
                              cgnsDoms(nZone)%bocoInfo(i)%normalDataType, &
                              cgnsNDataSet, ierr)
 
-         if(ierr /= all_ok)            &
+         if(ierr /= CG_OK)           &
            call terminate("readBocos", &
                           "Something wrong when calling cg_boco_info_f")
 
@@ -119,8 +119,7 @@
          nullify(cgnsDoms(nZone)%bocoInfo(i)%dataSet)
 
          ! Perform some checks.
-
-         if(cgnsDoms(nZone)%bocoInfo(i)%normalListFlag /= 0) &
+         if(cgnsDoms(nZone)%bocoInfo(i)%normalListFlag > 0) &
            call terminate("readBocos", &
                           "Currently not possible to read &
                           &boundary normals")
@@ -137,7 +136,7 @@
 
            call cg_boco_read_f(cgnsInd, cgnsBase, nZone, i, bcRange, &
                                dummy, ierr)
-           if(ierr /= all_ok)             &
+           if(ierr /= CG_OK)             &
              call terminate("readBocos", &
                             "Something wrong when calling &
                             &cg_boco_read_f")
@@ -159,7 +158,7 @@
 
            call cg_boco_read_f(cgnsInd, cgnsBase, nZone, i, bcRange, &
                                dummy, ierr)
-           if(ierr /= all_ok)             &
+           if(ierr /= CG_OK)             &
              call terminate("readBocos", &
                            "Something wrong when calling cg_boco_read_f")
 
@@ -246,13 +245,13 @@
 
                call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, &
                               "ZoneBC_t", 1, "BC_t", i, "end")
-               if(ierr /= all_ok)             &
+               if(ierr /= CG_OK)             &
                  call terminate("readBocos", &
                                 "Something wrong when calling cg_goto_f")
 
                call cg_famname_read_f(familyName, ierr)
 
-               if(ierr /= all_ok) then
+               if(ierr /= CG_OK) then
 
                  write(errorMessage,101) trim(cgnsDoms(nZone)%zoneName), &
                              trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName)
@@ -293,12 +292,12 @@
 
                call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, &
                               "ZoneBC_t", 1, "BC_t", i, "end")
-               if(ierr /= all_ok)             &
+               if(ierr /= CG_OK)             &
                  call terminate("readBocos", &
                                 "Something wrong when calling cg_goto_f")
 
                call cg_nuser_data_f(nUserData, ierr)
-               if(ierr /= all_ok)            &
+               if(ierr /= CG_OK)            &
                  call terminate("readBocos", &
                                 "Something wrong when calling &
                                 &cg_nuser_data_f")
@@ -317,7 +316,7 @@
                call cg_user_data_read_f(nUserData,                      &
                            cgnsDoms(nZone)%bocoInfo(i)%userDefinedName, &
                            ierr)
-               if(ierr /= all_ok)            &
+               if(ierr /= CG_OK)            &
                  call terminate("readBocos", &
                                 "Something wrong when calling &
                                 &cg_user_data_read_f")
@@ -613,14 +612,14 @@
          call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, &
                         "ZoneBC_t", 1, "BC_t", i, "BCDataSet_t", j, &
                         "BCData_t", DirNeu, "end")
-         if(ierr /= all_ok)                     &
+         if(ierr /= CG_OK)                     &
            call terminate("readBCDataArrays", &
                           "Something wrong when calling cg_goto_f")
 
          ! Determine the amount of data arrays present for this node.
 
          call cg_narrays_f(nArrays, ierr)
-         if(ierr /= all_ok)                   &
+         if(ierr /= CG_OK)                   &
            call terminate("readBCDataArrays", &
                           "Something wrong when calling cg_narrays_f")
          nArr = nArrays
@@ -651,7 +650,7 @@
            call terminate("readBCDataArrays", &
                           "Something wrong when calling cg_units_read_f")
 
-         if(ierr == all_ok) then
+         if(ierr == CG_OK) then
            globalUnits = .true.
 
            do k=1,nArrays
@@ -672,7 +671,7 @@
            call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, &
                           "ZoneBC_t", 1, "BC_t", i, "BCDataSet_t", j, &
                           "BCData_t", DirNeu, "end")
-           if(ierr /= all_ok)                     &
+           if(ierr /= CG_OK)                     &
              call terminate("readBCDataArrays", &
                             "Something wrong when calling cg_goto_f")
 
@@ -681,7 +680,7 @@
            call cg_array_info_f(k, arr(k)%arrayName, dataType,     &
                                 arr(k)%nDimensions, arr(k)%dataDim, &
                                 ierr)
-           if(ierr /= all_ok)                     &
+           if(ierr /= CG_OK)                     &
              call terminate("readBCDataArrays", &
                             "Something wrong when calling &
                             &cg_array_info_f")
@@ -705,7 +704,7 @@
            ! deallocate tmp again.
 
            call cg_array_read_as_f(k, realTypeCGNS, tmp, ierr)
-           if(ierr /= all_ok)                     &
+           if(ierr /= CG_OK)                     &
              call terminate("readBCDataArrays", &
                             "Something wrong when calling &
                             &cg_array_read_as_f")
@@ -722,7 +721,7 @@
            call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, &
                           "ZoneBC_t", 1, "BC_t", i, "BCDataSet_t", j, &
                           "BCData_t", DirNeu, "DataArray_t", k, "end")
-           if(ierr /= all_ok)                     &
+           if(ierr /= CG_OK)                     &
              call terminate("readBCDataArrays", &
                             "Something wrong when calling cg_goto_f")
 
@@ -737,7 +736,7 @@
            ! If the units are specified overwrite the currently
            ! stored units .
 
-           if(ierr == all_ok) then
+           if(ierr == CG_OK) then
 
              arr(k)%mass  = mass
              arr(k)%len   = len

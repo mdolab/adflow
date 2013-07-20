@@ -99,7 +99,7 @@
        if(myID == 0) then
          do nn=1,nVolSolToWrite
            call cg_close_f(fileIDs(nn), ierr)
-           if(ierr /= all_ok)                     &
+           if(ierr /= CG_OK)                     &
              call terminate("writeCGNSVolumeSol", &
                             "Something wrong when calling cg_close_f")
          enddo

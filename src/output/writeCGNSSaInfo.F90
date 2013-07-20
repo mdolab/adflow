@@ -58,7 +58,7 @@
 
        call cg_goto_f(cgnsInd, cgnsBase, ierr, &
                       "FlowEquationSet_t", 1, "end")
-       if(ierr /= all_ok)                  &
+       if(ierr /= CG_OK)                  &
          call terminate("writeCGNSSaInfo", &
                         "Something wrong when calling cg_goto_f")
 
@@ -66,14 +66,14 @@
 
        call cg_model_write_f("TurbulenceModel_t", &
                              OneEquation_SpalartAllmaras, ierr)
-       if(ierr /= all_ok)                  &
+       if(ierr /= CG_OK)                  &
          call terminate("writeCGNSSaInfo", &
                         "Something wrong when calling cg_model_write_f")
 
        ! Write the turbulent closure type.
 
        call cg_model_write_f("TurbulenceClosure_t", EddyViscosity, ierr)
-       if(ierr /= all_ok)                  &
+       if(ierr /= CG_OK)                  &
          call terminate("writeCGNSSaInfo", &
                         "Something wrong when calling cg_model_write_f")
 
@@ -82,7 +82,7 @@
 
        call cg_goto_f(cgnsInd, cgnsBase, ierr, "FlowEquationSet_t", 1,&
                       "TurbulenceClosure_t", 1, "end")
-       if(ierr /= all_ok)                  &
+       if(ierr /= CG_OK)                  &
          call terminate("writeCGNSSaInfo", &
                         "Something wrong when calling cg_goto_f")
 
@@ -91,7 +91,7 @@
        val = prandtlTurb
        call cg_array_write_f(cgnsPrandtlTurb, realTypeCGNS, &
                              1, 1, val, ierr)
-       if(ierr /= all_ok)                  &
+       if(ierr /= CG_OK)                  &
          call terminate("writeCGNSSaInfo", &
                         "Something wrong when calling cg_array_write_f")
 
@@ -99,12 +99,12 @@
 
        call cg_goto_f(cgnsInd, cgnsBase, ierr, "FlowEquationSet_t", 1,&
                       "TurbulenceClosure_t", 1, "DataArray_t", 1,"end")
-       if(ierr /= all_ok)                  &
+       if(ierr /= CG_OK)                  &
          call terminate("writeCGNSSaInfo", &
                         "Something wrong when calling cg_goto_f")
 
        call cg_dataclass_write_f(NonDimensionalParameter,ierr)
-       if(ierr /= all_ok)                  &
+       if(ierr /= CG_OK)                  &
          call terminate("writeCGNSSaInfo", &
                         "Something wrong when calling &
                         &cg_dataclass_write_f")

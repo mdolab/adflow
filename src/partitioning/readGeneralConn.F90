@@ -97,7 +97,7 @@
        ! Determine the number of general connectivities.
 
        call cg_nconns_f(cgnsInd, cgnsBase, nZone, ngeneral, ierr)
-       if(ierr /= all_ok)                  &
+       if(ierr /= CG_OK)                  &
          call terminate("readGeneralConn", &
                         "Something wrong when calling cg_nconns_f")
 
@@ -111,7 +111,7 @@
        ! in connNonMatch(i)%donorBlocks.
 
        allocate(map2NonMatch(ngeneral,2), stat=ierr)
-       if(ierr /= all_ok)                  &
+       if(ierr /= CG_OK)                  &
          call terminate("readGeneralConn", &
                         "Memory allocation failure for map2NonMatch")
 
@@ -137,7 +137,7 @@
                              location, connectType, ptsetType, npnts,   &
                              donorName, donorZoneType, donorPtsetType,  &
                              donorDatatype, ndataDonor, ierr)
-         if(ierr /= all_ok)                  &
+         if(ierr /= CG_OK)                  &
            call terminate("readGeneralConn", &
                           "Something wrong when calling cg_conn_info_f")
 
@@ -173,7 +173,7 @@
 
              call cg_conn_read_f(cgnsInd, cgnsBase, nZone, nn, &
                                  myRange, Integer, donorData, ierr)
-             if(ierr /= all_ok)                  &
+             if(ierr /= CG_OK)                  &
                call terminate("readGeneralConn", &
                               "Something wrong when calling &
                               &cg_conn_read_f")
@@ -303,7 +303,7 @@
 
              call cg_conn_read_f(cgnsInd, cgnsBase, nZone, nn, &
                                  myRange, Integer, donorData, ierr)
-             if(ierr /= all_ok)                  &
+             if(ierr /= CG_OK)                  &
                call terminate("readGeneralConn", &
                               "Something wrong when calling &
                               &cg_conn_read_f")
@@ -473,7 +473,7 @@
 
              call cg_conn_read_f(cgnsInd, cgnsBase, nZone, nn, &
                                  myData, Integer, donorData, ierr)
-             if(ierr /= all_ok)                  &
+             if(ierr /= CG_OK)                  &
                call terminate("readGeneralConn", &
                               "Something wrong when calling &
                               &cg_conn_read_f")
@@ -511,12 +511,12 @@
                call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t",  &
                               nZone, "ZoneGridConnectivity_t", 1, &
                               "GridConnectivity_t", nn, "end")
-               if(ierr /= all_ok)                  &
+               if(ierr /= CG_OK)                  &
                  call terminate("readGeneralConn", &
                                 "Something wrong when calling cg_goto_f")
 
                call cg_narrays_f(nArrays, ierr)
-               if(ierr /= all_ok)                  &
+               if(ierr /= CG_OK)                  &
                  call terminate("readGeneralConn", &
                                 "Something wrong when calling &
                                 &cg_narrays_f")
@@ -560,7 +560,7 @@
 
                  call cg_array_read_as_f(j, realTypeCGNS, &
                                          connOver(nover)%interp, ierr)
-                 if(ierr /= all_ok)                  &
+                 if(ierr /= CG_OK)                  &
                    call terminate("readGeneralConn", &
                                   "Something wrong when calling &
                                   &cg_array_read_as")
@@ -580,7 +580,7 @@
        ! Release the memory of map2NonMatch again.
 
        deallocate(map2NonMatch, stat=ierr)
-       if(ierr /= all_ok)                  &
+       if(ierr /= CG_OK)                  &
          call terminate("readGeneralConn", &
                         "Deallocation failure for map2NonMatch")
 

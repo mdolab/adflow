@@ -1241,7 +1241,6 @@ name is unavailable.'%(flowCase), comm=self.comm)
         # Post-Processing -- Write Solutions
         if self.getOption('writeSolution'):
             base = self.getOption('outputDir') + '/' + self.getOption('probName')
-            print('base:',self.getOption('outputDir'), self.getOption('probName'))
             if self.curFlowCase <> "default":
                 base = base + '_%s'%self.curFlowCase
             # end if
@@ -1254,7 +1253,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
                 volname = base + '_c%3.3d_vol.cgns'%(counter)
                 surfname = base + '_c%3.3d_surf.cgns'%(counter)
             #end if
-            print('surface name:',surfname)
+
             self.writeVolumeSolutionFile(volname)
             self.writeSurfaceSolutionFile(surfname)
         # end if
@@ -1399,7 +1398,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
             self.sumb.inputio.surfacesolfile[:] = ''
             self.sumb.inputio.surfacesolfile[0:len(filename)] = filename
         # end if
-        print ('filename:',self.sumb.inputio.surfacesolfile)
+
         self.sumb.monitor.writegrid=False
         self.sumb.monitor.writevolume=False
         self.sumb.monitor.writesurface=True

@@ -64,7 +64,7 @@
        call cg_conn_periodic_read_f(cgnsInd, cgnsBase, zone, conn, &
                                     rotCenter, rotAngles, tlation, ierr)
 
-       testPeriodic: if(ierr == all_ok) then
+       testPeriodic: if(ierr == CG_OK) then
 
          ! Subface is a periodic boundary. Check if the unit for
          ! the rotation angles is specified.
@@ -74,7 +74,7 @@
                         "GridConnectivity_t", conn,              &
                         "GridConnectivityProperty_t", 1,         &
                         "Periodic_t", 1, "DataArray_t", 2, "end")
-         if(ierr /= all_ok)                      &
+         if(ierr /= CG_OK)                      &
            call terminate("readPeriodicSubface", &
                           "Something wrong when calling cg_goto_f")
 
@@ -85,7 +85,7 @@
 
          ! Check if the angle dimensions were specified.
 
-         if(ierr == all_ok .and. angle /= Null) then
+         if(ierr == CG_OK .and. angle /= Null) then
 
            ! Determine the conversion factor to radians.
 
