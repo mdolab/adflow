@@ -56,7 +56,7 @@
        ! Determine the number of families in the given base.
 
        call cg_nfamilies_f(cgnsInd, cgnsBase, nn, ierr)
-       if(ierr /= all_ok)                 &
+       if(ierr /= CG_OK)                 &
          call terminate("readFamilyInfo", &
                         "Something wrong when calling cg_nfamilies_f")
        cgnsNFamilies = nn
@@ -94,7 +94,7 @@
                                cgnsFamilies(nn)%familyName, &
                                nFamBC, nGeo, ierr)
 	
-         if(ierr /= all_ok)               &
+         if(ierr /= CG_OK)               &
          call terminate("readFamilyInfo", &
                         "Something wrong when calling cg_family_read_f")
 
@@ -114,7 +114,7 @@
              call cg_fambc_read_f(cgnsInd, cgnsBase, nn, bc, &
                                   cgnsFamilies(nn)%bcName,   &
                                   cgnsFamilies(nn)%BCTypeCGNS, ierr)
-             if(ierr /= all_ok)                 &
+             if(ierr /= CG_OK)                 &
                call terminate("readFamilyInfo", &
                               "Something wrong when calling &
                               &cg_fambc_read_f")
@@ -131,12 +131,12 @@
 
                call cg_goto_f(cgnsInd, cgnsBase, ierr, &
                               "Family_t", nn, "end")
-               if(ierr /= all_ok)                 &
+               if(ierr /= CG_OK)                 &
                  call terminate("readFamilyInfo", &
                                 "Something wrong when calling cg_goto_f")
 
                call cg_nuser_data_f(nUserData, ierr)
-               if(ierr /= all_ok)                 &
+               if(ierr /= CG_OK)                 &
                  call terminate("readFamilyInfo", &
                                 "Something wrong when calling &
                                 &cg_nuser_data_f")
@@ -155,7 +155,7 @@
                call cg_user_data_read_f(nUserData,                        &
                                         cgnsFamilies(nn)%userDefinedName, &
                                         ierr)
-               if(ierr /= all_ok)                 &
+               if(ierr /= CG_OK)                 &
                  call terminate("readFamilyInfo", &
                                 "Something wrong when calling &
                                 &cg_user_data_read_f")

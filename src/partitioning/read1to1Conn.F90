@@ -64,7 +64,7 @@
                              cgnsDoms(nZone)%conn1to1(i)%connectName, &
                              cgnsDoms(nZone)%conn1to1(i)%donorName,   &
                              zoneRange, donorRange, transform, ierr)
-         if(ierr /= all_ok)                 &
+         if(ierr /= CG_OK)                 &
            call terminate("read1to1Conn", &
                           "Something wrong when calling cg_1to1_read_f")
 

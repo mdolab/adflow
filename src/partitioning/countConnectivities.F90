@@ -71,7 +71,7 @@
        ! Note that the reading takes place via an integer type.
 
        call cg_n1to1_f(cgnsInd, cgnsBase, nZone, i, ierr)
-       if(ierr /= all_ok)                      &
+       if(ierr /= CG_OK)                      &
          call terminate("countConnectivities", &
                         "Something wrong when calling cg_n1to1_f")
 
@@ -81,7 +81,7 @@
        ! zone.
 
        call cg_nconns_f(cgnsInd, cgnsBase, nZone, ngeneral, ierr)
-       if(ierr /= all_ok)                      &
+       if(ierr /= CG_OK)                      &
          call terminate("countConnectivities", &
                         "Something wrong when calling cg_nconns_f")
 
@@ -91,7 +91,7 @@
 
        allocate(connIDNonMatch(ngeneral), &
                 myRangeNonMatch(3,2,ngeneral),stat=ierr)
-       if(ierr /= all_ok)                      &
+       if(ierr /= CG_OK)                      &
          call terminate("countConnectivities", &
                         "Memory allocation failure for connIDNonMatch &
                         &and myRangeNonMatch")
@@ -111,7 +111,7 @@
                              location, connectType, ptsetType, npnts,  &
                              donorName, donorZoneType, donorPtsetType, &
                              donorDatatype, ndataDonor, ierr)
-         if(ierr /= all_ok)                      &
+         if(ierr /= CG_OK)                      &
            call terminate("countConnectivities", &
                           "Something wrong when calling cg_conn_info_f")
 
@@ -166,7 +166,7 @@
                 call cg_conn_read_f(cgnsInd, cgnsBase, nZone, i,    &
                                     myRangeNonMatch(1,1,nNonMatch), &
                                     Integer, donorData, ierr)
-                if(ierr /= all_ok)                      &
+                if(ierr /= CG_OK)                      &
                   call terminate("countConnectivities", &
                                  "Something wrong when calling &
                                  &cg_conn_read_f")

@@ -559,7 +559,7 @@
                               cgnsDoms(nn)%connOver(mm)%donorName,   &
                               Structured, CellListDonor, Integer,    &
                               ii, donorData, jj, ierr)
-         if(ierr /= all_ok)                       &
+         if(ierr /= CG_OK)                       &
            call terminate("writeCGNSOversetConn", &
                           "Something wrong when calling cg_conn_write_f")
 
@@ -576,7 +576,7 @@
          call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t",      &
                         cgnsZone, "ZoneGridConnectivity_t", 1,  &
                         "GridConnectivity_t", jj, "end")
-         if(ierr /= all_ok)                       &
+         if(ierr /= CG_OK)                       &
            call terminate("writeCGNSOversetConn", &
                           "Something wrong when calling cg_goto_f")
 
@@ -586,7 +586,7 @@
          call cg_array_write_f("InterpolantsDonor", realTypeCGNS, &
                                2, dimVector,                      &
                                cgnsDoms(nn)%connOver(mm)%interp, ierr)
-         if(ierr /= all_ok)                     &
+         if(ierr /= CG_OK)                     &
            call terminate("writeCGNSOversetConn", &
                          "Something wrong when calling cg_array_write_f")
 
@@ -614,7 +614,7 @@
                               cgnsDoms(nn)%hole(mm)%holename,  &
                               CellCenter, PointList, 1,        &
                               ii, myData, jj, ierr)
-         if(ierr /= all_ok)                       &
+         if(ierr /= CG_OK)                       &
            call terminate("writeCGNSOversetConn", &
                           "Something wrong when calling cg_hole_write_f")
 
@@ -717,13 +717,13 @@
 
        call cg_sol_write_f(cgnsInd, cgnsBase, cgnsZone, &
                            "Nodal Blanks", Vertex, cgnsSol, ierr)
-       if(ierr /= all_ok)                       &
+       if(ierr /= CG_OK)                       &
          call terminate("writeCGNSNodalIblank", &
                         "Something wrong when calling cg_sol_write_f")
 
        call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, cgnsSol, &
                              Integer, cgnsBlank, iblank, ii, ierr)
-       if(ierr /= all_ok)                       &
+       if(ierr /= CG_OK)                       &
          call terminate("writeCGNSNodalIblank", &
                         "Something wrong when calling cg_field_write_f")
 

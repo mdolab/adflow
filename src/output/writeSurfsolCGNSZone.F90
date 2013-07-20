@@ -641,7 +641,7 @@
 
          call cg_zone_write_f(cgnsInd, cgnsBase, zonename, sizes, &
                               Structured, cgnsZone, ierr)
-         if(ierr /= all_ok)                    &
+         if(ierr /= CG_OK)                    &
            call terminate("createSurfaceZone", &
                           "Something wrong when calling cg_zone_write_f")
 
@@ -649,7 +649,7 @@
 
          call cg_sol_write_f(cgnsInd, cgnsBase, cgnsZone, &
                              "Flow solution", CellCenter, cgnsSol, ierr)
-         if(ierr /= all_ok)                    &
+         if(ierr /= CG_OK)                    &
            call terminate("createSurfaceZone", &
                           "Something wrong when calling cg_sol_write_f")
 
@@ -660,7 +660,7 @@
 
          call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", &
                         cgnsZone, "FlowSolution_t", cgnsSol, "end")
-         if(ierr /= all_ok)                    &
+         if(ierr /= CG_OK)                    &
            call terminate("createSurfaceZone", &
                           "Something wrong when calling cg_goto_f")
 
@@ -673,7 +673,7 @@
          endif
 
          call cg_rind_write_f(sizes, ierr)
-         if(ierr /= all_ok)                    &
+         if(ierr /= CG_OK)                    &
            call terminate("createSurfaceZone", &
                           "Something wrong when calling cg_rind_write_f")
 
@@ -875,7 +875,7 @@
                                        writeBuffer, source, ierr)
              end select
 
-             if(ierr /= all_ok)                    &
+             if(ierr /= CG_OK)                    &
                call terminate("writeSurfaceCoord", &
                               "Something wrong when calling &
                               &cg_coord_write_f")
@@ -890,7 +890,7 @@
                               "Zone_t", cgnsZone,      &
                               "GridCoordinates_t", 1,  &
                               "DataArray_t", source, "end")
-               if(ierr /= all_ok)                      &
+               if(ierr /= CG_OK)                      &
                  call terminate("writeSurfaceCoord", &
                                 "Something wrong when calling cg_goto_f")
 
@@ -901,7 +901,7 @@
                                      cgnsDoms(zone)%time, &
                                      cgnsDoms(zone)%temp, &
                                      cgnsDoms(zone)%angle, ierr)
-               if(ierr /= all_ok)                    &
+               if(ierr /= CG_OK)                    &
                  call terminate("writeSurfaceCoord", &
                                 "Something wrong when calling &
                                 &cg_units_write_f")

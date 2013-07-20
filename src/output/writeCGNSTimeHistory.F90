@@ -81,7 +81,7 @@
        ! Go to the correct position in the cgns file.
 
        call cg_goto_f(cgnsInd, base, ierr, "end")
-       if(ierr /= all_ok)                       &
+       if(ierr /= CG_OK)                       &
          call terminate("writeCGNSTimeHistory", &
                         "Something wrong when calling cg_goto_f")
 
@@ -93,7 +93,7 @@
        ! went okay.
 
        call cg_biter_write_f(cgnsInd, base, cgnsName, nn, ierr)
-       if(ierr /= all_ok)                       &
+       if(ierr /= CG_OK)                       &
          call terminate("writeCGNSTimeHistory", &
                         "Something wrong when calling cg_biter_write_f")
 
@@ -102,7 +102,7 @@
 
        call cg_goto_f(cgnsInd, base, ierr, &
                       "BaseIterativeData_t" , 1, "end")
-       if(ierr /= all_ok)                          &
+       if(ierr /= CG_OK)                          &
          call terminate("writeCGNSTimeHistory", &
                         "Something wrong when calling cg_goto_f")
 
@@ -111,7 +111,7 @@
        cgnsName = cgnsTimeValue
        call cg_array_write_f(cgnsName, realTypeCGNS, 1, nn, &
                              timeArray, ierr)
-       if(ierr /= all_ok)                       &
+       if(ierr /= CG_OK)                       &
          call terminate("writeCGNSTimeHistory", &
                         "Something wrong when calling cg_array_write_f")
 
@@ -143,7 +143,7 @@
                                    buf8, ierr)
          end select
 
-         if(ierr /= all_ok)                       &
+         if(ierr /= CG_OK)                       &
            call terminate("writeCGNSTimeHistory", &
                           "Something wrong when calling &
                           &cg_array_write_f")
