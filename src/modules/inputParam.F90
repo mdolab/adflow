@@ -1035,7 +1035,6 @@
        integer(kind=intType) :: innerPreConIts
 
        logical :: printTiming
-       logical :: finitedifferencepc
        integer(kind=intType) :: subKSPSubspaceSize
        integer(kind=intType) :: applyAdjointPCSubSpaceSize
        
@@ -1048,6 +1047,8 @@
        logical :: verifySpatial
        logical :: verifyExtra
 
+       ! Logical to remember if (empty) petsc arrays are allocated
+       logical :: adjointInitialized
      end module inputADjoint
 
      module inputTSStabDeriv

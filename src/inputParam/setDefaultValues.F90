@@ -421,4 +421,5 @@
        NKFiniteDifferencePC = .True.
        useApproxWallDistance = .False.
        updateWallAssociation = .False.
+       adjointInitialized = .False.
        end subroutine setDefaultValues
