@@ -805,7 +805,6 @@ python module sumb
          logical :: viscpc
          logical :: frozenturbulence
          logical :: usediagtspc
-         logical :: finitedifferencepc
          logical :: restartadjoint
          logical :: solveadjoint
          logical :: setmonitor
