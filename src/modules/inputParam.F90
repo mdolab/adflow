@@ -263,6 +263,11 @@
 
        logical :: firstWrite = .true.
 
+       ! writeSymmetry        Flag to turn off writing of symmetry planes
+       ! writeFarfield        Flag to turn off writing of farfield surfaces
+       logical :: writeSymmetry = .True. 
+       logical :: writeFarfield = .False. 
+
        end module inputIO
 
 !      ==================================================================
