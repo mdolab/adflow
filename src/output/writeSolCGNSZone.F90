@@ -434,7 +434,7 @@
                ! And store it in sol. The routine called depends on
                ! the desired precision.
 
-               select case (precisionGrid)
+               select case (precisionSol)
                  case (precisionSingle)
                    call copyDataBufSinglePrecision(sol, buffer,        &
                                                    iBegCGNS, jBegCGNS, &
@@ -497,7 +497,6 @@
          enddo solLoopRoot
 
          ! Release some memory only allocated on the root processor.
-
          deallocate(sol, subRanges, proc, stat=ierr)
          if(ierr /= 0) call terminate("writeSolCGNSZone", &
                                       "Deallocation error on root proc")

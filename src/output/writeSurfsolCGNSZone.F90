@@ -119,6 +119,17 @@
 
          if(cgnsDoms(zone)%bocoInfo(subface)%BCType == Extrap) return
 
+         ! Possibly do to write symmetry and farfield conditions
+         if (.not. writeSymmetry) then
+            if(cgnsDoms(zone)%bocoInfo(subface)%BCType == Symm) then
+               return
+            end if
+         end if
+         if (.not. writeFarfield) then
+            if(cgnsDoms(zone)%bocoInfo(subface)%BCType == Farfield) then
+               return
+            end if
+         end if
          ! Store the nodal range of the cgns subface a bit easier.
          ! Make sure that iBeg, jBeg and kBeg contain the lowest values
          ! and iEnd, jEnd and kEnd the highest.
@@ -1075,7 +1086,7 @@
 
              ii = 1
              do kk=1,nSubfaces
-               select case (precisionGrid)
+               select case (precisionSol)
                  case (precisionSingle)
                    call copyDataBufSinglePrecision(writeBuffer,         &
                                                    buffer(ii),          &

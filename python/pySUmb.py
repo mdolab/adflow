@@ -70,7 +70,10 @@ class SUMB(AeroSolver):
             'storerindlayer':[bool, True],
             'probname':[str, 'defaultName'],
             'outputdir':[str, './'],
-            
+            'writesymmetry':[bool, True],
+            'writefarfield':[bool, False],
+            'solutionprecision':[str,'single'],
+
             # Physics Paramters
             'discretization':[str, 'central plus scalar dissipation'],
             'coarsediscretization':[str, 'central plus scalar dissipation'],
@@ -328,6 +331,14 @@ class SUMB(AeroSolver):
                            'len':self.sumb.constants.maxstringlen},
             'solrestart':{'location':'inputio.restart'},
             'storerindlayer':{'location':'inputio.storerindlayer'},
+            'writesymmetry':{'location':'inputio.writesymmetry'},
+            'writefarfield':{'location':'inputio.writefarfield'},
+            'solutionprecision':{'single':
+                                     self.sumb.inputio.precisionsingle,
+                                 'double':
+                                     self.sumb.inputio.precisiondouble,
+                                 'location':
+                                     'inputio.precisionsol'},            
             # Physics Paramters
             'discretization':{'central plus scalar dissipation':
                                   self.sumb.inputdiscretization.dissscalar,
