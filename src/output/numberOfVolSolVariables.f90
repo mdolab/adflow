@@ -64,6 +64,8 @@
        if( volWriteVorty )        nVolSolvar = nVolSolvar + 1
        if( volWriteVortz )        nVolSolvar = nVolSolvar + 1
        if( volWritePtotloss )     nVolSolvar = nVolSolvar + 1
+       if( volWriteShock )        nVolSolvar = nVolSolvar + 1
+       if( volWriteFilteredShock) nVolSolvar = nVolSolvar + 1
 
        ! Check the discrete variables.
 

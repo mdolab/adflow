@@ -1,19 +1,19 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * File:          volumeVariables.f90                             *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 03-26-2003                                      *
-!      * Last modified: 07-14-2005                                      *
+!      * File:          isoVariables.f90                                *
+!      * Author:        Gaetan Kenway                                   *
+!      * Starting date: 07-21-2013                                      *
+!      * Last modified: 07-21-2013                                      *
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine volumeVariables(variables)
+       subroutine isoVariables(variables)
 !
 !      ******************************************************************
 !      *                                                                *
-!      * volumeVariables extracts from the given string the extra       *
-!      * volume variables to be written to the solution file.           *
+!      * isoVariables extracts from the given string the extra          *
+!      * iso surface variables to be written to the solution file.      *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -43,39 +43,43 @@
        ! Convert the string variables to lower case.
 
        call convertToLowerCase(variables)
+ 
+       ! Initialize all the iso output variables to .False.
+       isoWriteRho   = .false.
+       isoWriteVx    = .false.
+       isoWriteVy    = .false.
+       isoWriteVz    = .false.
+       isoWriteP     = .false.
+       isoWriteTurb  = .false.
 
-       ! Initialize all the volume output variables to .False.
+       isoWriteMx    = .false.
+       isoWriteMy    = .false.
+       isoWriteMz    = .false.
+       isoWriteRhoe  = .false.
+       isoWriteTemp  = .false.
+       isoWriteVort  = .false.
+       isoWriteVortx = .false.
+       isoWriteVorty = .false.
+       isoWriteVortz = .false.
 
-       volWriteMx    = .false.
-       volWriteMy    = .false.
-       volWriteMz    = .false.
-       volWriteRhoe  = .false.
-       volWriteTemp  = .false.
-       volWriteVort  = .false.
-       volWriteVortx = .false.
-       volWriteVorty = .false.
-       volWriteVortz = .false.
+       isoWriteCp       = .false.
+       isoWriteMach     = .false.
+       isoWriteMachTurb = .false.
+       isoWritePtotloss = .false.
 
-       volWriteCp       = .false.
-       volWriteMach     = .false.
-       volWriteMachTurb = .false.
-       volWritePtotloss = .false.
+       isoWriteEddyVis      = .false.
+       isoWriteRatioEddyVis = .false.
+       isoWriteDist         = .false.
 
-       volWriteEddyVis      = .false.
-       volWriteRatioEddyVis = .false.
-       volWriteDist         = .false.
+       isoWriteResRho  = .false.
+       isoWriteResMom  = .false.
+       isoWriteResRhoe = .false.
+       isoWriteResTurb = .false.
 
-       volWriteResRho  = .false.
-       volWriteResMom  = .false.
-       volWriteResRhoe = .false.
-       volWriteResTurb = .false.
-
-       volWriteShock   = .false.
-       volWriteFilteredShock = .false.
+       isoWriteShock = .false.
+       isoWriteFilteredShock = .false.
        
-       volWriteBlank = .false.
-
-       
+       isoWriteBlank = .false.
 
        ! Initialize nVarSpecified to 0. This serves as a test
        ! later on.
@@ -107,130 +111,154 @@
            case ("")
              ! Multiple occurence of "_". Just ignore it.
 
+           case("rho")
+              isoWriteRho   = .true.
+              nVarSpecified = nVarSpecified + 1
+                 
+           case("vx")
+              isoWriteVx   = .true.
+              nVarSpecified = nVarSpecified + 1
+
+           case("vy")
+              isoWriteVy   = .true.
+              nVarSpecified = nVarSpecified + 1
+              
+           case("vz")
+              isoWriteVz   = .true.
+              nVarSpecified = nVarSpecified + 1
+              
+           case("P")
+              isoWriteP   = .true.
+              nVarSpecified = nVarSpecified + 1
+
+           case("turb")
+              isoWriteTurb = .true.
+              nVarSpecified = nVarSpecified + 1
+
            case ("mx")
-             volWriteMx = .true.
+             isoWriteMx = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("my")
-             volWriteMy = .true.
+             isoWriteMy = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("mz")
-             volWriteMz = .true.
+             isoWriteMz = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("rvx")
-             volWriteRVx = .true.
+             isoWriteRVx = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("rvy")
-             volWriteRVy = .true.
+             isoWriteRVy = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("rvz")
-             volWriteRVz = .true.
+             isoWriteRVz = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("rhoe")
-             volWriteRhoe = .true.
+             isoWriteRhoe = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("temp")
-             volWriteTemp = .true.
+             isoWriteTemp = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("vort")
-             volWriteVort = .true.
+             isoWriteVort = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("vortx")
-             volWriteVortx = .true.
+             isoWriteVortx = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("vorty")
-             volWriteVorty = .true.
+             isoWriteVorty = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("vortz")
-             volWriteVortz = .true.
+             isoWriteVortz = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("cp")
-             volWriteCp = .true.
+             isoWriteCp = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("mach")
-             volWriteMach = .true.
+             isoWriteMach = .true.
              nVarSpecified = nVarSpecified + 1
           
            case ("rmach")
-             volWriteRMach = .true.
+             isoWriteRMach = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("macht")
-             volWriteMachTurb = .true.
+             isoWriteMachTurb = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("ptloss")
-             volWritePtotloss = .true.
+             isoWritePtotloss = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("eddy")
-             volWriteEddyVis = .true.
+             isoWriteEddyVis = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("eddyratio")
-             volWriteRatioEddyVis = .true.
+             isoWriteRatioEddyVis = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("dist")
-             volWriteDist = .true.
+             isoWriteDist = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("resrho")
-             volWriteResRho = .true.
+             isoWriteResRho = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("resmom")
-             volWriteResMom = .true.
+             isoWriteResMom = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("resrhoe")
-             volWriteResRhoe = .true.
+             isoWriteResRhoe = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("resturb")
-             volWriteResTurb = .true.
-             nVarSpecified = nVarSpecified + 1
-
-          case ("shock")
-             volWriteShock = .true.
-             nVarSpecified = nVarSpecified + 1
-
-          case ("filteredshock")
-             volWriteFilteredShock = .true.
+             isoWriteResTurb = .true.
              nVarSpecified = nVarSpecified + 1
 
            case ("blank")
-             volWriteBlank = .true.
+             isoWriteBlank = .true.
              nVarSpecified = nVarSpecified + 1
 
+          case("shock")
+             isoWriteShock = .true.
+             nVarSpecified = nVarSpecified + 1
+             
+          case("filteredshock")
+             isoWriteFilteredShock = .true.
+             nVarSpecified = nVarSpecified + 1
+
+             
            case default
              pos = len_trim(keyword)
-             write(errorMessage,"(3a)" ) "Unknown extra volume output &
+             write(errorMessage,"(3a)" ) "Unknown extra iso output &
                                          &variable, ", trim(keyword), &
                                          ", specified"
              if(myID == 0) &
-               call terminate("volumeVariables", errorMessage)
+               call terminate("isoVariables", errorMessage)
              call mpi_barrier(SUmb_comm_world, pos)
 
          end select
 
        enddo
 
-       ! Set volumeOutSpecified to .true. if variables were specified.
-       ! If not, later on the defaults will be set.
+       ! Set this to true regardless...it is possible no varibles were
+       ! specified
+       isoOutSpecified = .true.
 
-       if(nVarSpecified > 0) volumeOutSpecified = .true.
-
-       end subroutine volumeVariables
+     end subroutine isoVariables

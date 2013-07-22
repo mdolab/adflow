@@ -19,6 +19,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+        use constants
        implicit none
        save
 !
@@ -53,5 +54,38 @@
        logical :: volWritevorty,        volWritevortz,    volWriteVort
        logical :: volWritePtotLoss,     volWriteResRho,   volWriteresMom
        logical :: volWriteResRhoE,      volWriteResTurb,  volWriteBlank
+       logical :: volWriteShock,        volWriteFilteredShock
+!
+!      ******************************************************************
+!      *                                                                *
+!      * The logical variables, which define the isosurface variables   *
+!      * to be written.                                                 *
+!      *                                                                *
+!      ******************************************************************
+!
+       logical :: isoWriteRho,          isoWriteVx,       isoWriteVy
+       logical :: isoWriteVz,           isoWriteP,        isoWriteTurb
+       logical :: isoWriteMx,           isoWriteMy,       isoWriteMz
+       logical :: isoWriteRVx,          isoWriteRVy,      isoWriteRVz
+       logical :: isoWriteRhoE,         isoWriteTemp,     isoWriteCp
+       logical :: isoWriteMach,         isoWriteMachTurb, isoWriteEddyVis
+       logical :: isoWriteRMach
+       logical :: isoWriteRatioEddyVis, isoWriteDist,     isoWriteVortx
+       logical :: isoWritevorty,        isoWritevortz,    isoWriteVort
+       logical :: isoWritePtotLoss,     isoWriteResRho,   isoWriteresMom
+       logical :: isoWriteResRhoE,      isoWriteResTurb,  isoWriteBlank
+       logical :: isoWriteShock,        isoWriteFilteredShock
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Extra variables defining the type and number of iso surfaces   *
+!      * to be written.                                                 *
+!      *                                                                *
+!      ******************************************************************
+!
+       integer(kind=intType) :: nIsoSurface = 0
+       real(kind=realType), dimension(:), allocatable :: isoValues
+       character(len=maxCGNSNameLen), dimension(:), allocatable :: isoSurfaceNames
+
 
        end module extraOutput

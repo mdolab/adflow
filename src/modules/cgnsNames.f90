@@ -181,6 +181,12 @@
 
        character(len=maxCGNSNameLen), parameter :: &
                            cgnsMassFlow = "MassFlow"
+
+       character(len=maxCGNSNameLen), parameter :: &
+                           cgnsShock = "Shock"
+
+       character(len=maxCGNSNameLen), parameter :: &
+                           cgnsFilteredShock = "FilteredShock"
 !
 !      ******************************************************************
 !      *                                                                *

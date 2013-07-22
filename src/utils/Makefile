@@ -53,6 +53,7 @@ FILES_TO_COMPLEXIFY =  \
 	       nullifyCGNSDomPointers.f90\
 	       nullifyFlowDomPointers.f90\
 	       orphanAverage.f90\
+		   pointReduce.F90\
 	       qsortIntegers.f90\
 	       qsortReals.f90\
 	       qsortStrings.f90\
@@ -64,10 +65,10 @@ FILES_TO_COMPLEXIFY =  \
 	       removeTiesStrings.f90\
 	       replaceTabsAndReturns.f90\
 	       rigidRotAngle.f90\
-	       rotMatrixRigidBody.f90\
-               secondDerivativeRigidRotAngle.f90\
+		   rotMatrixRigidBody.f90\
+           secondDerivativeRigidRotAngle.f90\
 	       setBCPointers.F90\
-               setBufferSizes.f90\
+           setBufferSizes.f90\
 	       setCGNSRealType.F90\
 	       setPointers.f90\
 	       siAngle.f90\
