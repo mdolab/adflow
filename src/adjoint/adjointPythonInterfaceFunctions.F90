@@ -9,7 +9,7 @@
 ! 6. getdFdxVec: Multiply vec_in by dFdx to produce vec_out
 ! 7. getdFdxTVec: Multiple vec_in by dFdx^T to produce vec_out
 ! 8. agumentRHS: Agument RHS of adjoint by dRdw^T*phi, where phi is supplied
-! 9. getdFdxTVec: Return out_vec = dFdw^T*in_vec. 
+! 9. getdFdwTVec: Return out_vec = dFdw^T*in_vec. 
 
 subroutine setADjoint(nstate, adjoint)
 
@@ -470,7 +470,7 @@ subroutine getdFdwTVec(in_vec, in_dof, out_vec, out_dof)
 
   ! Working
   integer(kind=intType) :: ierr
-  
+
   ! Put petsc wrapper around arrays
   call VecPlaceArray(fVec1, in_vec, ierr)
   call EChk(ierr, __FILE__, __LINE__)
@@ -480,7 +480,19 @@ subroutine getdFdwTVec(in_vec, in_dof, out_vec, out_dof)
 
   ! Dump the result into adjointRHS since the we want to ADD this
   ! result to w_like1 below
-  call MatMultTranspose(dFdw, fVec1, adjointRHS, ierr)
+
+  ! ------------ OldMethod
+  ! call MatMultTranspose(dFdw, fVec1, adjointRHS, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
+
+  ! ------------ New Method
+  call VecPointwiseMult(fNode, fVec1, overArea, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  call MatMultTranspose(dFndFc, fNode, fCell, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  call MatMultTranspose(dFcdw, fCell, adjointRHS, ierr)
   call EChk(ierr, __FILE__, __LINE__)
  
   ! do: w_like1 = w_like1 + adjointRHS
