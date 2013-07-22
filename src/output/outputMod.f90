@@ -66,6 +66,7 @@
 
        integer, dimension(:), allocatable :: fileIDs
        integer, dimension(:), allocatable :: cgnsBases
+       integer, dimension(:), allocatable :: cgnsIsoSurfBases
 
        ! useLinksInCGNS:     Whether or not to use links in CGNS between
        !                     the grid and volume solution files. If not,

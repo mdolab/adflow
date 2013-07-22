@@ -50,6 +50,7 @@
        monitorSpecified    = .false.
        surfaceOutSpecified = .false.
        volumeOutSpecified  = .false.
+       isoOutSpecified     = .false.
 !
 !      ******************************************************************
 !      *                                                                *

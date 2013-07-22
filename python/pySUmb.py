@@ -73,6 +73,9 @@ class SUMB(AeroSolver):
             'writesymmetry':[bool, True],
             'writefarfield':[bool, False],
             'solutionprecision':[str,'single'],
+            'gridprecision':[str,'double'],
+            'isosurface':[dict, {}],
+            'isovariables':[list, []],
 
             # Physics Paramters
             'discretization':[str, 'central plus scalar dissipation'],
@@ -339,6 +342,13 @@ class SUMB(AeroSolver):
                                      self.sumb.inputio.precisiondouble,
                                  'location':
                                      'inputio.precisionsol'},            
+            'gridprecision':{'single':
+                                 self.sumb.inputio.precisionsingle,
+                             'double':
+                                 self.sumb.inputio.precisiondouble,
+                             'location':
+                                 'inputio.precisiongrid'},            
+
             # Physics Paramters
             'discretization':{'central plus scalar dissipation':
                                   self.sumb.inputdiscretization.dissscalar,
@@ -622,11 +632,14 @@ class SUMB(AeroSolver):
         self.deprecatedOptions = ['finitedifferencepc']
 
         self.specialOptions = ['surfacevariables',
-                                'volumevariables',
-                                'monitorvariables',
-                                'metricconversion',
-                                'outputdir',
-                                'probname']
+                               'volumevariables',
+                               'monitorvariables',
+                               'metricconversion',
+                               'outputdir',
+                               'probname',
+                               'isovariables',
+                               'isosurface',
+                               ]
 
         # Info for flowCases
         self.curFlowCase = None
@@ -2448,7 +2461,8 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         if name in self.specialOptions:
             if name in ['monitorvariables',
                         'surfacevariables',
-                        'volumevariables']:
+                        'volumevariables',
+                        'isovariables']:
                 varStr = ''
                 for i in xrange(len(value)):
                     varStr = varStr + value[i] + '_'
@@ -2460,6 +2474,30 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
                     self.sumb.surfacevariables(varStr)
                 if name == 'volumevariables':
                     self.sumb.volumevariables(varStr)
+                if name == 'isovariables':
+                    self.sumb.isovariables(varStr)
+
+            if name == 'isosurface':
+                # We have a bit of work to do...extract out the
+                # names, and there can be more than 1 value per variables
+                var = []
+                val = []
+                isoDict = value
+                for key in isoDict.keys():
+                    
+                    isoVals = numpy.atleast_1d(isoDict[key])
+                    for i in xrange(len(isoVals)):
+                        var.append(key)
+                        val.append(isoVals[i])
+                    # end for
+                # end for
+                val = numpy.array(val)
+
+                self.sumb.initializeisosurfacevariables(val)
+                for i in xrange(len(val)):
+                    self.sumb.setisosurfacevariable(var[i], i+1)
+                # end for
+
             # end if
             if name == 'metricconversion':
                 self.sumb.flowvarrefstate.lref = value

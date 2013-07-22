@@ -623,6 +623,22 @@ module block
      real(kind=realType), dimension(:,:,:),   pointer :: pn
      real(kind=realType), dimension(:,:,:),   pointer :: dtl
      real(kind=realType), dimension(:,:,:),   pointer :: radI, radJ, radK
+
+     !
+     !        ****************************************************************
+     !        *                                                              *
+     !        * Variables for Iso/Surface Slice generation                   *
+     !        *                                                              *
+     !        ****************************************************************
+     ! fc(1:ie,1:je,1:ke) - cell center values of the function to be iso-valued
+     ! fn(1:il,1:jl,1:kl) - node values of the function to be iso-valued
+     ! Note these are are only allocated temporaily during solution writing.
+
+     real(kind=realType), dimension(:, :, :), pointer :: fc
+     real(kind=realType), dimension(:, :, :), pointer :: fn
+     
+
+
      !
      !        ****************************************************************
      !        *                                                              *

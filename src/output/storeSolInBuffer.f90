@@ -50,6 +50,7 @@
 
        real(kind=realType) :: uy, uz, vx, vz, wx, wy, tmp
        real(kind=realType) :: vortx, vorty, vortz, a2, ptotInf, ptot
+       real(kind=realType) :: a, UovA(3), gradP(3)
 
        real(kind=realType), dimension(:,:,:,:), pointer :: wIO
 !
@@ -562,6 +563,52 @@
                enddo
              enddo
            enddo
+
+        case (cgnsShock)
+           
+           do k=kBeg,kEnd
+              do j=jBeg,jEnd
+                 do i=iBeg,iEnd
+
+                    ! Here we compute U/a <dot> grad P / ||grad P||
+                    ! Whre U is the velocity vector, a is the speed of
+                    ! sound and P is the pressure. 
+
+                    ! U / a
+                    a  = sqrt(gamma(i,j,k)*max(p(i,j,k),plim) &
+                         / max(w(i,j,k,irho),rholim))
+                    UovA = (/w(i,j,k,ivx), w(i,j,k,ivy), w(i,j,k,ivz)/)/a
+
+                    ! grad P / ||grad P||
+
+                    gradP(1) = si(i,  j,k,1)*P(i+1,j,k) &
+                         - si(i-1,j,k,1)*P(i-1,j,k) &
+                         + sj(i,j,  k,1)*P(i,j+1,k) &
+                         - sj(i,j-1,k,1)*P(i,j-1,k) &
+                         + sk(i,j,k,  1)*P(i,j,k+1) &
+                         - sk(i,j,k-1,1)*P(i,j,k-1)
+
+                    gradP(2) = si(i,  j,k,2)*P(i+1,j,k) &
+                         - si(i-1,j,k,2)*P(i-1,j,k) &
+                         + sj(i,j,  k,2)*P(i,j+1,k) &
+                         - sj(i,j-1,k,2)*P(i,j-1,k) &
+                         + sk(i,j,k,  2)*P(i,j,k+1) &
+                         - sk(i,j,k-1,2)*P(i,j,k-1)
+
+                    gradP(3) = si(i,  j,k,3)*P(i+1,j,k) &
+                         - si(i-1,j,k,3)*P(i-1,j,k) &
+                         + sj(i,j,  k,3)*P(i,j+1,k) &
+                         - sj(i,j-1,k,3)*P(i,j-1,k) &
+                         + sk(i,j,k,  3)*P(i,j,k+1) &
+                         - sk(i,j,k-1,3)*P(i,j,k-1)
+
+                    gradP = gradP / sqrt(gradP(1)**2 + gradP(2)**2 + gradP(3)**2 )
+                    ! Dot product
+                    wIO(i,j,k,1) = UovA(1)*gradP(1) + UovA(2)*gradP(2) + UovA(3)*gradP(3)
+                 end do
+              end do
+           end do
+           
 
          case default
            call terminate("storeSolInBuffer", &

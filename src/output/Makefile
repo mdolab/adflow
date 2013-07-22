@@ -43,10 +43,14 @@ FF90_OBJECTS_1 = outputMod.o
 
 FILES_TO_COMPLEXIFY = outputMod.f90\
 		 copyDataBuf.f90\
+		 computeIsoVariable.F90\
 		 describeScheme.f90\
 		 gridFileNamesWrite.f90\
+		 isoSurfNames.f90\
+		 marchingCubesData.F90\
 		 numberOfSurfSolVariables.f90\
 		 numberOfVolSolVariables.f90\
+		 numberOfIsoVariables.f90\
 		 openCGNSVolumeSol.F90\
 		 releaseHelpVariablesWriting.f90\
 		 resHalo1.f90\
@@ -77,6 +81,7 @@ FILES_TO_COMPLEXIFY = outputMod.f90\
 		 writeCGNSVolumeSol.F90\
 		 writeCoorCGNSZone.F90\
 		 writeInterpolFromSpectral.f90\
+		 writeIsoSurface.F90\
 		 writeOversetCGNSZone.F90\
 		 writePlot3DConnFile.f90\
 		 writePlot3DConvInfo.f90\
