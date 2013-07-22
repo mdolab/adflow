@@ -464,7 +464,7 @@
 
                ! And store it in sol.
 
-               select case (precisionGrid)
+               select case (precisionSol)
                  case (precisionSingle)
                    call copyDataBufSinglePrecision(sol, buffer,        &
                                                    iBegCGNS, jBegCGNS, &

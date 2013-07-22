@@ -2,18 +2,18 @@
 !      ******************************************************************
 !      *                                                                *
 !      * File:          volSolNames.f90                                 *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 04-14-2003                                      *
-!      * Last modified: 07-14-2005                                      *
+!      * Author:        Gaetan Kenway                                   *
+!      * Starting date: 07-21-2013                                      *
+!      * Last modified: 07-21-2013                                      *
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine volSolNames(solNames)
+       subroutine isoSurfNames(solNames)
 !
 !      ******************************************************************
 !      *                                                                *
-!      * volSolNames sets the names for the volume variables to be      *
-!      * written to the volume solution file. Sids convention names are *
+!      * isoNames sets the names for the volume variables to be         *
+!      * written to the isosurfaces. Sids convention names are          *
 !      * used as much as possible.                                      *
 !      *                                                                *
 !      ******************************************************************
@@ -38,156 +38,175 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       ! First store the names of the independent flow variables.
 
-       solNames(1) = cgnsDensity
-       solNames(2) = cgnsVelx
-       solNames(3) = cgnsVely
-       solNames(4) = cgnsVelz
-       solNames(5) = cgnsPressure
+       ! Check the additional variables to be written -- there are no
+       ! default variables already written
+       nn = 0
+       if (isoWriteRho) then
+          nn = nn + 1
+          solNames(nn) = cgnsDensity
+       end if
 
-       ! The turbulent variables if the RANS equations are solved.
-       ! Note that these are the primitive variables and not the
-       ! conservative ones. The reason is that the sids conventions only
-       ! defines these names and not the conservative ones.
+       if (isoWriteVx) then
+          nn = nn + 1
+          solNames(nn) = cgnsVelx
+       end if
 
-       if(equations == RANSEquations) then
+       if (isoWriteVy) then
+          nn = nn + 1
+          solNames(nn) = cgnsVely
+       end if
+
+       if (isoWriteVz) then
+          nn = nn + 1
+          solNames(nn) = cgnsVelz
+       end if
+
+       if (isoWriteP) then
+          nn = nn + 1
+          solNames(nn) = cgnsPressure
+       end if
+
+       if( isoWriteTurb ) then
 
          select case(turbModel)
 
            case(spalartAllmaras, spalartAllmarasEdwards)
-             solNames(itu1) = cgnsTurbSaNu
+              nn = nn + 1
+             solNames(nn) = cgnsTurbSaNu
 
            case(komegaWilcox, komegaModified, menterSST)
-             solNames(itu1) = cgnsTurbK
-             solNames(itu2) = cgnsTurbOmega
-
+              nn = nn + 1
+              solNames(nn) = cgnsTurbK
+              nn = nn + 1
+              solNames(nn) = cgnsTurbOmega
+              
            case(ktau)
-             solNames(itu1) = cgnsTurbK
-             solNames(itu2) = cgnsTurbTau
+              nn = nn + 1
+              solNames(nn) = cgnsTurbK
+              nn = nn + 1
+              solNames(nn) = cgnsTurbTau
 
            case(v2f)
-             solNames(itu1) = cgnsTurbK
-             solNames(itu2) = cgnsTurbEpsilon
-             solNames(itu3) = cgnsTurbV2
-             solNames(itu4) = cgnsTurbF
+              nn = nn + 1
+             solNames(nn) = cgnsTurbK
+             nn = nn + 1
+             solNames(nn) = cgnsTurbEpsilon
+             nn = nn + 1
+             solNames(nn) = cgnsTurbV2
+             nn = nn + 1
+             solNames(nn) = cgnsTurbF
 
          end select
 
        endif
-
-       ! Initialize nn to the number of independent variables.
-
-       nn = nw
-
-       ! Check the additional variables to be written.
-
-       if( volWriteMx )  then
+          
+       if( isoWriteMx )  then
          nn = nn + 1
          solNames(nn) = cgnsMomx
        endif
 
-       if( volWriteMy )  then
+       if( isoWriteMy )  then
          nn = nn + 1
          solNames(nn) = cgnsMomy
        endif
 
-       if( volWriteMz )  then
+       if( isoWriteMz )  then
          nn = nn + 1
          solNames(nn) = cgnsMomz
        endif
 
-       if( volWriteRVx )  then
+       if( isoWriteRVx )  then
          nn = nn + 1
          solNames(nn) = cgnsRelVelx
        endif
 
-       if( volWriteRVy )  then
+       if( isoWriteRVy )  then
          nn = nn + 1
          solNames(nn) = cgnsRelVely
        endif
 
-       if( volWriteRVz )  then
+       if( isoWriteRVz )  then
          nn = nn + 1
          solNames(nn) = cgnsRelVelz
        endif
 
-       if( volWriteRhoe ) then
+       if( isoWriteRhoe ) then
          nn = nn + 1
          solNames(nn) = cgnsEnergy
        endif
 
-       if( volWriteTemp ) then
+       if( isoWriteTemp ) then
          nn = nn + 1
          solNames(nn) = cgnsTemp
        endif
 
-       if( volWriteCp ) then
+       if( isoWriteCp ) then
          nn = nn + 1
          solNames(nn) = cgnsCp
        endif
 
-       if( volWriteMach ) then
+       if( isoWriteMach ) then
          nn = nn + 1
          solNames(nn) = cgnsMach
        endif
 
-       if( volWriteRMach ) then
+       if( isoWriteRMach ) then
          nn = nn + 1
          solNames(nn) = cgnsRelMach
        endif
 
-       if( volWriteMachTurb ) then
+       if( isoWriteMachTurb ) then
          nn = nn + 1
          solNames(nn) = cgnsMachTurb
        endif
 
-       if( volWriteEddyVis ) then
+       if( isoWriteEddyVis ) then
          nn = nn + 1
          solNames(nn) = cgnsEddy
        endif
 
-       if( volWriteRatioEddyVis ) then
+       if( isoWriteRatioEddyVis ) then
          nn = nn + 1
          solNames(nn) = cgnsEddyRatio
        endif
 
-       if( volWriteDist ) then
+       if( isoWriteDist ) then
          nn = nn + 1
          solNames(nn) = cgNSWallDist
        endif
 
-       if( volWriteVort ) then
+       if( isoWriteVort ) then
          nn = nn + 1
          solNames(nn) = cgnsVortMagn
        endif
 
-       if( volWriteVortx ) then
+       if( isoWriteVortx ) then
          nn = nn + 1
          solNames(nn) = cgnsVortx
        endif
 
-       if( volWriteVorty ) then
+       if( isoWriteVorty ) then
          nn = nn + 1
          solNames(nn) = cgnsVorty
        endif
 
-       if( volWriteVortz ) then
+       if( isoWriteVortz ) then
          nn = nn + 1
          solNames(nn) = cgnsVortz
        endif
 
-       if( volWritePtotloss ) then
+       if( isoWritePtotloss ) then
          nn = nn + 1
          solNames(nn) = cgnsPtotloss
        endif
 
-       if( volWriteResRho ) then
+       if( isoWriteResRho ) then
          nn = nn + 1
          solNames(nn) = cgnsResRho
        endif
 
-       if( volWriteResMom ) then
+       if( isoWriteResMom ) then
          nn = nn + 1
          solNames(nn) = cgnsResMomx
 
@@ -198,12 +217,12 @@
          solNames(nn) = cgnsResMomz
        endif
 
-       if( volWriteResRhoe) then
+       if( isoWriteResRhoe) then
          nn = nn + 1
          solNames(nn) = cgnsResRhoe
        endif
 
-       if( volWriteResTurb ) then
+       if( isoWriteResTurb ) then
 
          select case(turbModel)
 
@@ -242,19 +261,20 @@
 
        endif
 
-       if ( volWriteShock) then
+       if (isoWriteShock) then
           nn = nn + 1
           solNames(nn) = cgnsShock
        end if
 
-       if ( volWriteFilteredShock) then
+       if (isoWriteFilteredShock) then
           nn = nn + 1
           solNames(nn) = cgnsFilteredShock
        end if
 
-       if( volWriteBlank) then
+       if( isoWriteBlank) then
          nn = nn + 1
          solNames(nn) = cgnsBlank
        endif
 
-       end subroutine volSolNames
+     end subroutine isoSurfNames
+       

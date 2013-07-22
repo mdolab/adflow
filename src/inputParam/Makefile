@@ -48,13 +48,16 @@ FILES_TO_COMPLEXIFY =localModules.f90\
 		 defaultMonitor.f90\
 		 defaultSurfaceOut.f90\
 		 defaultVolumeOut.f90\
+		 defaultIsoOut.f90\
 		 extractMGInfo.f90\
+		 isoVariables.f90\
 		 monitorVariables.f90\
 		 readCpTempCurveFits.f90\
 		 readParamFile.f90\
 		 dummyReadParamFile.f90\
 		 setDefaultValues.F90\
 		 setEquationParameters.f90\
+		 setIsoSurfaceValues.F90\
 		 setIterationParam.f90\
 		 setStageCoeffExplicitRK.f90\
 		 setStageCoeffImplicitRK.f90\

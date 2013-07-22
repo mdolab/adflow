@@ -60,6 +60,7 @@
        if(.not. monitorSpecified)    call defaultMonitor
        if(.not. surfaceOutSpecified) call defaultSurfaceOut
        if(.not. volumeOutSpecified)  call defaultVolumeOut
+       if(.not. isoOutSpecified)     call defaultIsoOut
 
        ! Check the monitoring and output variables.
 

@@ -79,11 +79,13 @@
        !                        variables were specified.
        ! volumeOutSpecified:  Whether or not the volume output
        !                        variables were specified.
-
+       ! isoOutSpecified:      Wheter or not the isosurface output 
+       !                        variables were specified 
        logical :: monDturb
        logical :: monitorSpecified
        logical :: surfaceOutSpecified
        logical :: volumeOutSpecified
+       logical :: isoOutSpecified
 
        ! liftDirSpecified: Whether or not the lift direction was
        !                     specified.

@@ -28,6 +28,11 @@
        use su_cgns
        use outputMod
        use inputIteration
+       use block
+       use blockPointers
+       use cgnsNames
+       use extraOutput
+
        implicit none
 !
 !      Local parameter, the cell dimension.
@@ -40,11 +45,11 @@
 
        integer(kind=intType) :: nn, mm, ll
        integer(kind=intType) :: nSolVar, nZonesWritten
-
        character(len=maxStringLen) :: errorMessage
-
+       integer(kind=intType) :: iSurf, nisoSurfVar
        character(len=maxCGNSNameLen), dimension(:), allocatable :: &
-                                                                solNames
+                                                                solNames, isoSurfSolNames
+       character(len=maxCGNSNameLen) :: contourName
 !
 !      ******************************************************************
 !      *                                                                *
@@ -163,8 +168,87 @@
              call writeSurfsolCGNSZone(nn, mm, ll, nSolVar, solNames, &
                                        nZonesWritten, .true.)
          enddo
-
        enddo zoneLoop
+
+      
+       ! Check if isosurface will be written. These will be written to
+       ! a new base
+
+       testIsoSurafce: if (nIsoSurface > 0)  then
+
+          allocate (cgnsIsoSurfBases(nSurfSolToWrite), stat=ierr)
+          testRootProc2: if (myID == 0) then
+             
+             ! Loop over the number of surface solution files
+
+             solLoop2: do nn=1,nSurfSolToWrite
+                
+                ! Create the new base
+
+                cgnsInd = fileIDs(nn)
+                call cg_base_write_f(cgnsInd, "IsoSurfaces", celldim, &
+                     cgnsPhysDim, cgnsIsoSurfBases(nn), ierr)
+                if (ierr /= CG_OK) &
+                     call terminate("WriteCGNSSurfaceSol", &
+                     "Something wrong when calling cg_base_write_f for &
+                     isoSurface")
+             end do solLoop2
+          end if testRootProc2
+          
+          ! Determine the number of variables to be written to the
+          ! isosurface itself well as the cgns names. 
+       
+          call numberOfIsoSurfVariables(nIsoSurfVar)
+
+          if (nIsoSurfVar > 0) then
+             allocate(isoSurfSolNames(nIsoSurfVar), stat=ierr)
+             if(ierr /= 0)                           &
+                  call terminate("writeCGNSSurfaceSol", &
+                  "Memory allocation failure for isoNames")
+             call isoSurfNames(isoSurfSolNames)
+          end if
+
+          solLoop3: do ll=1,nSurfSolToWrite ! Numer of spectral instances!
+             ! Allocate fn and fc for each domain:
+             do nn=1,nDom
+                call setPointers(nn, 1, ll)
+                allocate(flowDoms(nn, 1, ll)%fn(il, jl, kl))
+                allocate(flowDoms(nn, 1, ll)%fc(1:ie, 1:je, 1:ke))
+             end do
+
+             ! Finally loop over the required isoSurfaces
+             do iSurf=1,nIsoSurface
+                call computeIsoVariable(isoSurfaceNames(iSurf), ll, isoValues(iSurf))
+
+11              format(A,A,A,F7.4)
+                write(contourName, 11), "Contour ", trim(isoSurfaceNames(iSurf)), "=", isoValues(iSurf)
+                call writeIsoSurface(contourName, ll, nIsoSurfVar, isoSurfSolNames)
+             end do
+
+             ! deAllocate fn and fc for each domain:
+             do nn=1,nDom
+                deallocate(flowDoms(nn, 1, 1)%fn, flowDoms(nn, 1, 1)%fc)
+             end do
+          end do solLoop3
+          
+          ! Free memory for bases
+          deallocate(cgnsIsoSurfBases, stat=ierr)
+          if (nIsoSurfVar > 0) then
+             deallocate(isoSurfSolNames)
+          end if
+       end if testIsoSurafce
+       
+
+       ! ! Next we will process any slices that the user has
+       ! ! defined. Again, these will be placed in a new base
+       ! testSlices: if (nSlices > 0) then
+       !    testRootProc3: if (myID == 0) then
+                
+       !       ! Create base for the slices
+             
+       !    end If testRootProc3
+       ! end if testSlices
+
 
        ! Close the cgns file(s). Only processor 0 does this.
 
@@ -175,7 +259,7 @@
              call terminate("writeCGNSSurfaceSol", &
                             "Something wrong when calling cg_close_f")
          enddo
-       endif
+      end if
 
        ! Deallocate the memory of solNames, fileIDs and cgnsBases.
 
