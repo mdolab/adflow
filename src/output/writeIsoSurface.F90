@@ -212,13 +212,15 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
        sumb_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  if (myid == 0) then ! Root proc does the writing
-     
-     ! Write a new zone:
-     cgnsInd = fileIDs(1) ! indexed by sps!
-     cgnsBase = cgnsIsoSurfBases(1) ! index by sps!
 
-     if (sum(nPtsProc) > 0) then 
+  if (sum(nPtsProc) > 0) then 
+     
+     if (myid == 0) then ! Root proc does the writing
+     
+        ! Write a new zone:
+        cgnsInd = fileIDs(1) ! indexed by sps!
+        cgnsBase = cgnsIsoSurfBases(1) ! index by sps!
+
         ! Write the unstructured zone
         call cg_zone_write_f(cgnsInd, cgnsBase, isoName, (/sum(nPtsProc), sum(nConnProc), 0/), &
              Unstructured, cgnsZone, ierr)
@@ -227,16 +229,26 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
         if(ierr /= CG_OK)                    &
              call terminate("writeIsoSurface", &
              "Something wrong when calling cg_zone_write_f")
-     else 
+     end if
+
+  else
+     if (myid == 0) then
         ! We don't actually have an isosurface. We will create a zone
         ! that the same structure, but contains only a single triangle
         ! with all the coordinates at zero. This way the zone still
         ! exists and yields a uniform structure which can make
         ! processing easier
 
+        ! Write a new zone:
+        cgnsInd = fileIDs(1) ! indexed by sps!
+        cgnsBase = cgnsIsoSurfBases(1) ! index by sps!
+
         call writeEmptyZone
-        return
+
      end if
+     ! Don't forget to deallocate the stuff allocated so far:
+     deallocate(nPtsProc, nConnProc, link, uniqueCoords, coords, weights, indices)
+     return
   end if
 
   ! We need to keep track of the cumulative number of nodes since each
@@ -481,24 +493,34 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
 contains
 
   subroutine writeEmptyZone
-
+    
     call cg_zone_write_f(cgnsInd, cgnsBase, isoName, (/3, 1, 0/), &
          Unstructured, cgnsZone, ierr)
+    if (ierr .eq. CG_ERROR) call cg_error_exit_f
 
     call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, realDouble, &
          'CoordinateX', (/zero, zero, zero/), coordID, ierr)
+    if (ierr .eq. CG_ERROR) call cg_error_exit_f
+
     call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, realDouble, &
-         'CoordinateY', (/zero, zero, zero/), coordID, ierr)
+         'CoordinateY', (/zero, zero, zero /), coordID, ierr)
+    if (ierr .eq. CG_ERROR) call cg_error_exit_f
+
     call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, realDouble, &
          'CoordinateZ', (/zero, zero, zero/), coordID, ierr)
+    if (ierr .eq. CG_ERROR) call cg_error_exit_f
+
     call cg_section_write_f(cgnsInd, cgnsBase, cgnsZone, "ELEM", TRI_3, &
          1, 1, 0, (/1, 2, 3/), secID, ierr)
-
+    if (ierr .eq. CG_ERROR) call cg_error_exit_f
+    
     call cg_sol_write_f(cgnsInd, cgnsBase, cgnsZone, "isoSurfSolution", Vertex, solID, ierr)
-
+    if (ierr .eq. CG_ERROR) call cg_error_exit_f
+    
     do iVar = 1, nIsoSurfVar
        call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, solID, realDouble, isoSurfSolNames(iVar), &
             (/zero, zero, zero/), fieldID, ierr)
+       if (ierr .eq. CG_ERROR) call cg_error_exit_f
     end do
   end subroutine writeEmptyZone
 
