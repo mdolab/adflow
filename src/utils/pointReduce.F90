@@ -192,9 +192,13 @@ recursive subroutine ArgQSort(A, nA, ind)
 
   if (nA > 1) then
 
-     call random_number(random)
-     i = int(random*real(nA-1))+1
-     pivot = A(i)    ! random pivot (not best performance, but avoids worst-case)
+     !call random_number(random)
+     !i = int(random*real(nA-1))+1
+     ! random pivot (not best performance, but avoids worst-case)
+
+     ! Just take mid point...complex code doesn't like random_number
+     i = nA/2 + 1
+     pivot = A(i) 
      left = 0
      right = nA + 1
 
