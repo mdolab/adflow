@@ -227,7 +227,7 @@
 
              ! deAllocate fn and fc for each domain:
              do nn=1,nDom
-                deallocate(flowDoms(nn, 1, 1)%fn, flowDoms(nn, 1, 1)%fc)
+                deallocate(flowDoms(nn, 1, ll)%fn, flowDoms(nn, 1, ll)%fc)
              end do
           end do solLoop3
           

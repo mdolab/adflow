@@ -547,7 +547,11 @@ subroutine computeIsoVariable(solName, sps, isoVal)
                     ! U / a
                     a  = sqrt(gamma(i,j,k)*max(p(i,j,k),plim) &
                          / max(w(i,j,k,irho),rholim))
-                    UovA = (/w(i,j,k,ivx), w(i,j,k,ivy), w(i,j,k,ivz)/)/a
+                    UovA = (/w(i,j,k,ivx)-s(i,j,k,1), &
+                         w(i,j,k,ivy)-s(i,j,k,2), &
+                         w(i,j,k,ivz)-s(i,j,k,3)/)/a
+
+                    UovA = (/w(i,j,k,ivx),w(i,j,k,ivy), w(i,j,k,ivz)/)/a
 
                     ! grad P / ||grad P||
 
@@ -572,7 +576,9 @@ subroutine computeIsoVariable(solName, sps, isoVal)
                          + sk(i,j,k,  3)*P(i,j,k+1) &
                          - sk(i,j,k-1,3)*P(i,j,k-1)
 
-                    gradP = gradP / sqrt(gradP(1)**2 + gradP(2)**2 + gradP(3)**2 )
+                    ! Protect against divide by zero
+                    gradP = gradP / sqrt(gradP(1)**2 + gradP(2)**2 + gradP(3)**2 + 1e-12)
+
                     ! Dot product
                     fc(i,j,k) = UovA(1)*gradP(1) + UovA(2)*gradP(2) + UovA(3)*gradP(3)
                  end do
