@@ -24,7 +24,7 @@ subroutine computeUtau
 
         call setPointers(nn, groundLevel, sps)
 
-        call residual_block
+        call computeUtau_block
 
      end do domains
 

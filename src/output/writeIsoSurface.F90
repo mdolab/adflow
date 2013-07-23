@@ -23,18 +23,19 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
   character(len=*), dimension(*), intent(in) :: isoSurfSolNames
   ! Working param
   integer(kind=intType) :: i, j, k, nn, kk, nMax, icon, iCoor, indexCube, num1, num2
-  real(kind=realType), dimension(:, :), pointer :: coords, uniqueCoords
-  integer(kind=intType), dimension(:, :), pointer :: indices
-  real(kind=realType), dimension(:, :), pointer :: weights
-  integer(kind=intType), dimension(:), allocatable :: link
+  real(kind=realType), dimension(:, :, :), pointer :: fn
+  real(kind=realType), dimension(:, :), pointer :: coords, uniqueCoords, weights
   real(kind=realType), dimension(:), allocatable :: buffer
+
+  integer(kind=intType), dimension(:, :), pointer :: indices
   integer(kind=intType), dimension(:, :), allocatable :: connBuffer, allConn
-  integer(kind=intType), dimension(:), allocatable :: nPtsProc, nConnProc
+  integer(kind=intType), dimension(:), allocatable :: link, nPtsProc, nConnProc
+
   integer(kind=intType) :: ccwOrdering(3, 8), n1(3), n2(3)
   integer(kind=intType) :: matCon1(256, 16), matCon2(12,2), nUnique, ivar
   integer(kind=intType) :: ierr, iProc, tag, cumNodes, cumConn, iCorner, curBlock, idim
   real(kind=realType) :: f(8)
-  real(kind=realType), dimension(:, :, :), pointer :: fn
+
   logical :: logic1
   integer, dimension(mpi_status_size) :: status
   integer(kind=intType) :: cgnsInd, cgnsBase, cgnsZOne, coordID, secID, solID, fieldID
