@@ -149,12 +149,18 @@ subroutine pointReduceBruteForce(pts, N, tol, uniquePts, link, nUnique)
   link(1) = 1
   nUnique = 1
 
+  ! Loop over remainder of points
   do i=2,N
      found_it = .False.
+     ! Loop over found unique points (this is where the n^2 comes from)
+
      uniqueLoop: do j=1,nUnique
         dist = sqrt((pts(1, i)-uniquePts(1, j))**2 + &
              (pts(2, i) - uniquePts(2, j))**2 + &
              (pts(3, i) - uniquePts(3, j))**2)
+
+        ! If pt(i) is within tolerance of the jth unique point, set
+        ! link for ith point to the jth unique element and break loop
         if (dist < tol) then
            link(i) = j
            found_it = .True. 
@@ -162,12 +168,21 @@ subroutine pointReduceBruteForce(pts, N, tol, uniquePts, link, nUnique)
         end if
      end do uniqueLoop
 
+     ! If we never found the point, it is unique so add it it to the
+     ! unique list list:
      if (.not. found_it) then
         nUnique = nUnique + 1
         uniquePts(:, nUnique) = pts(:, i)
         link(i) = j
      end if
   end do
+
+  ! Agorithm observations: It would appear this algorithm runs in
+  ! linear time if all the points are the same, and quadratic time if
+  ! all the points are unique, and somewhere inbetween
+  ! otherwise. Since this is called from pointReduce, it is most
+  ! likely that there are going to be more duplicates than the unique
+  ! points. 
 
 end subroutine pointReduceBruteForce
 
@@ -177,7 +192,7 @@ recursive subroutine ArgQSort(A, nA, ind)
   ! http://rosettacode.org/wiki/Sorting_algorithms/Quicksort#FPr. Thw
   ! index 'ind' is initialzed inside the algorithm
 
-  use precision
+  use constants
   implicit none
 
   ! DUMMY ARGUMENTS
@@ -192,12 +207,13 @@ recursive subroutine ArgQSort(A, nA, ind)
 
   if (nA > 1) then
 
-     !call random_number(random)
-     !i = int(random*real(nA-1))+1
      ! random pivot (not best performance, but avoids worst-case)
+     ! call random_number(random)
 
      ! Just take mid point...complex code doesn't like random_number
-     i = nA/2 + 1
+     random = half
+     i = int(random*real(nA-1))+1
+   
      pivot = A(i) 
      left = 0
      right = nA + 1
