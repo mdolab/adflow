@@ -212,7 +212,7 @@
 
              ! It is not needed to write the grid files.
 
-             nGridsToWrite = nTimeIntervalsSpectral! 0
+             nGridsToWrite = 0 
 
            endif
 

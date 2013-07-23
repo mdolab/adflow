@@ -220,8 +220,8 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
      if (myid == 0) then ! Root proc does the writing
      
         ! Write a new zone:
-        cgnsInd = fileIDs(1) ! indexed by sps!
-        cgnsBase = cgnsIsoSurfBases(1) ! index by sps!
+        cgnsInd = fileIDs(sps) 
+        cgnsBase = cgnsIsoSurfBases(sps) 
 
         ! Write the unstructured zone
         call cg_zone_write_f(cgnsInd, cgnsBase, isoName, (/sum(nPtsProc), sum(nConnProc), 0/), &
@@ -242,8 +242,8 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
         ! processing easier
 
         ! Write a new zone:
-        cgnsInd = fileIDs(1) ! indexed by sps!
-        cgnsBase = cgnsIsoSurfBases(1) ! index by sps!
+        cgnsInd = fileIDs(sps) 
+        cgnsBase = cgnsIsoSurfBases(sps) 
 
         call writeEmptyZone
 
