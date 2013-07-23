@@ -38,6 +38,7 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
   logical :: logic1
   integer, dimension(mpi_status_size) :: status
   integer(kind=intType) :: cgnsInd, cgnsBase, cgnsZOne, coordID, secID, solID, fieldID
+  real(kind=realType) :: tol=1e-8 ! Node tol for isosurf pointReduce
   interface
      subroutine pointReduce(pts, N, tol, uniquePts, link, nUnique)
        use precision
@@ -194,7 +195,7 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
   ! is to reduce the filesize. This will typicaly reduce the number of
   ! coordinates by about a factor of 4. 
 
-  call pointReduce(coords, iCoor, 1e-8, uniqueCoords, link, nUnique)
+  call pointReduce(coords, iCoor, tol, uniqueCoords, link, nUnique)
   
   ! Now that we have produced the desired isosurface on each
   ! processor. Communicate the number of number of coordinates and the
