@@ -46,9 +46,9 @@ subroutine createPETScVars
   nDimW = nState * nCellsLocal(1_intType)*nTimeIntervalsSpectral
   nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
 
-  call getForceSize(npts, ncells, nTS)
-  nDimPt = npts * 3 * nTS
-  nDimCell = nCells * 3 * nTS
+  call getForceSize(npts, ncells)
+  nDimPt = npts * 3 * nTimeIntervalsSpectral
+  nDimCell = nCells * 3 * nTimeIntervalsSpectral
 
   ! ------------------- Determine Preallocation for dRdw --------------
 
@@ -278,7 +278,7 @@ subroutine createPETScVars
   call MatSetOption(dRdx, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call getForceSize(npts, ncells, nTS)
+  call getForceSize(npts, ncells)
 
   ! xVec
   call VecCreate(SUMB_COMM_WORLD, xVec, ierr)

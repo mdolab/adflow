@@ -223,8 +223,12 @@
             deallocate(BCData(i)%norm, stat=ierr)
          if(ierr /= 0) deallocationFailure = .true.
 
-         if( associated(BCData(i)%F) ) &
-              deallocate(BCData(i)%F, stat=ierr)
+         if( associated(BCData(i)%Fp) ) &
+              deallocate(BCData(i)%Fp, stat=ierr)
+         if(ierr /= 0) deallocationFailure = .true.
+
+         if( associated(BCData(i)%Fv) ) &
+              deallocate(BCData(i)%Fv, stat=ierr)
          if(ierr /= 0) deallocationFailure = .true.
 
          if( associated(BCData(i)%M) ) &

@@ -4,7 +4,7 @@
    !  Differentiation of xhalo_block in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: *x
    !   with respect to varying inputs: *x
-   !   Plus diff mem management of: x:in
+   !   Plus diff mem management of: x:in bcdata:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -21,6 +21,7 @@
    USE BCTYPES
    USE COMMUNICATION
    USE DIFFSIZES
+   !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
    !  Hint: ISIZE4OFDrfx should be the size of dimension 4 of array *x
    !  Hint: ISIZE3OFDrfx should be the size of dimension 3 of array *x
    !  Hint: ISIZE2OFDrfx should be the size of dimension 2 of array *x
@@ -59,6 +60,7 @@
    REAL(kind=realtype) :: arg1d
    EXTERNAL DEBUG_TGT_HERE
    LOGICAL :: DEBUG_TGT_HERE
+   INTEGER :: ii1
    INTRINSIC SQRT
    IF (.TRUE. .AND. DEBUG_TGT_HERE('entry', .FALSE.)) THEN
    CALL DEBUG_TGT_REAL8ARRAY('x', x, xd, ISIZE1OFDrfx*ISIZE2OFDrfx*&
@@ -147,11 +149,6 @@
    x(0, j, k, 3) = two*x(1, j, k, 3) - x(2, j, k, 3)
    END IF
    IF (.NOT.imaxinternal) THEN
-   IF (.TRUE. .AND. DEBUG_TGT_HERE('middle', .FALSE.)) THEN
-   CALL DEBUG_TGT_REAL8ARRAY('x', x, xd, ISIZE1OFDrfx*&
-   &                                ISIZE2OFDrfx*ISIZE3OFDrfx*ISIZE4OFDrfx)
-   CALL DEBUG_TGT_DISPLAY('middle')
-   END IF
    xd(ie, j, k, 1) = two*xd(il, j, k, 1) - xd(nx, j, k, 1)
    x(ie, j, k, 1) = two*x(il, j, k, 1) - x(nx, j, k, 1)
    xd(ie, j, k, 2) = two*xd(il, j, k, 2) - xd(nx, j, k, 2)
@@ -164,6 +161,11 @@
    ! Extrapolation in j-direction.
    DO k=1,kl
    DO i=0,ie
+   IF (.TRUE. .AND. DEBUG_TGT_HERE('middle', .FALSE.)) THEN
+   CALL DEBUG_TGT_REAL8ARRAY('x', x, xd, ISIZE1OFDrfx*&
+   &                              ISIZE2OFDrfx*ISIZE3OFDrfx*ISIZE4OFDrfx)
+   CALL DEBUG_TGT_DISPLAY('middle')
+   END IF
    IF (.NOT.jmininternal) THEN
    xd(i, 0, k, 1) = two*xd(i, 1, k, 1) - xd(i, 2, k, 1)
    x(i, 0, k, 1) = two*x(i, 1, k, 1) - x(i, 2, k, 1)
@@ -202,6 +204,9 @@
    x(i, j, ke, 3) = two*x(i, j, kl, 3) - x(i, j, nz, 3)
    END IF
    END DO
+   END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   bcdatad(ii1)%symnorm = 0.0_8
    END DO
    v1d = 0.0_8
    v2d = 0.0_8
@@ -301,10 +306,14 @@
    x2d => xd(:, :, nz, :)
    x2 => x(:, :, nz, :)
    END SELECT
+   IF (.NOT.bcdata(mm)%symnormset) THEN
+   ! This code technically should not run. symNormSet should
+   ! already be set from the regular Xhao on the
+   ! first call.
    ! Determine the vector from the lower left corner to
-   ! the upper right corner. Due to the usage of pointers
-   ! an offset of +1 must be used, because the original
-   ! array x start at 0.
+   ! the upper right corner. Due to the usage of pointers an
+   ! offset of +1 must be used, because the original array x
+   ! start at 0.
    v1d(1) = x1d(iimax+1, jjmax+1, 1) - x1d(1+1, 1+1, 1)
    v1(1) = x1(iimax+1, jjmax+1, 1) - x1(1+1, 1+1, 1)
    v1d(2) = x1d(iimax+1, jjmax+1, 2) - x1d(1+1, 1+1, 2)
@@ -322,14 +331,29 @@
    ! Determine the normal of the face by taking the cross
    ! product of v1 and v2 and add it to norm.
    normd(1) = v1d(2)*v2(3) + v1(2)*v2d(3) - v1d(3)*v2(2) - v1(3)*&
-   &          v2d(2)
+   &            v2d(2)
    norm(1) = v1(2)*v2(3) - v1(3)*v2(2)
    normd(2) = v1d(3)*v2(1) + v1(3)*v2d(1) - v1d(1)*v2(3) - v1(1)*&
-   &          v2d(3)
+   &            v2d(3)
    norm(2) = v1(3)*v2(1) - v1(1)*v2(3)
    normd(3) = v1d(1)*v2(2) + v1(1)*v2d(2) - v1d(2)*v2(1) - v1(2)*&
-   &          v2d(1)
+   &            v2d(1)
    norm(3) = v1(1)*v2(2) - v1(2)*v2(1)
+   bcdatad(mm)%symnorm(1) = normd(1)
+   bcdata(mm)%symnorm(1) = norm(1)
+   bcdatad(mm)%symnorm(2) = normd(2)
+   bcdata(mm)%symnorm(2) = norm(2)
+   bcdatad(mm)%symnorm(3) = normd(3)
+   bcdata(mm)%symnorm(3) = norm(3)
+   ELSE
+   ! Copy out the saved symNorm
+   normd(1) = bcdatad(mm)%symnorm(1)
+   norm(1) = bcdata(mm)%symnorm(1)
+   normd(2) = bcdatad(mm)%symnorm(2)
+   norm(2) = bcdata(mm)%symnorm(2)
+   normd(3) = bcdatad(mm)%symnorm(3)
+   norm(3) = bcdata(mm)%symnorm(3)
+   END IF
    ! Compute the length of the normal and test if this is
    ! larger than eps. If this is the case this means that
    ! it is a nonsingular subface and the coordinates are

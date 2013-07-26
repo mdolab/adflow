@@ -92,7 +92,7 @@ module block
 
      real(kind=realType), dimension(:,:,:), pointer :: norm
      real(kind=realType), dimension(:,:),   pointer :: rface
-     real(kind=realType), dimension(:,:,:), pointer :: F, M
+     real(kind=realType), dimension(:,:,:), pointer :: Fp, Fv, M
      real(kind=realType), dimension(:,:), pointer :: oArea
      integer(kind=intType), dimension(:,:), pointer :: FMNodeIndex, FMCellIndex
 

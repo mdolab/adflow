@@ -149,9 +149,13 @@ subroutine alloc_derivative_values(nn, level)
         call EChk(ierr,__FILE__,__LINE__)
          flowDomsd(nn,1,sps)%bcData(mm)%rface = zero
 
-        allocate(flowDomsd(nn,1,sps)%BCData(mm)%F(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
+        allocate(flowDomsd(nn,1,sps)%BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        flowDomsd(nn,1,sps)%bcData(mm)%F = zero
+        flowDomsd(nn,1,sps)%bcData(mm)%Fp = zero
+
+        allocate(flowDomsd(nn,1,sps)%BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        flowDomsd(nn,1,sps)%bcData(mm)%Fv = zero
 
         allocate(flowDomsd(nn,1,sps)%BCData(mm)%M(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)

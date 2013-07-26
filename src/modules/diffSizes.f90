@@ -70,7 +70,8 @@
 
     ! These are the diff sizes reqruied for the forward mode debug
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_m, ISIZE2OFDrfDrfbcdata_m, ISIZE3OFDrfDrfbcdata_m
-    integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_f, ISIZE2OFDrfDrfbcdata_f, ISIZE3OFDrfDrfbcdata_f
+    integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_fp, ISIZE2OFDrfDrfbcdata_fp, ISIZE3OFDrfDrfbcdata_fp
+    integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_fv, ISIZE2OFDrfDrfbcdata_fv, ISIZE3OFDrfDrfbcdata_fv
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_norm, ISIZE2OFDrfDrfbcdata_norm, ISIZE3OFDrfDrfbcdata_norm
 
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_rface, ISIZE2OFDrfDrfbcdata_rface, ISIZE3OFDrfDrfbcdata_rface

@@ -79,7 +79,8 @@
                     ! the NODES
 
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), &
-                            BCData(mm)%F(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%M(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%FMNodeIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &
@@ -98,7 +99,8 @@
                     ! the NODES
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3),  &
                             BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
-                            BCData(mm)%F(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%M(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%FMNodeIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &
@@ -117,7 +119,8 @@
                    ! the normal mesh velocity.
 
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
-                            BCData(mm)%F(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%M(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%FMNodeIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &

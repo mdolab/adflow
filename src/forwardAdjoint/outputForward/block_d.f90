@@ -114,7 +114,8 @@
    INTEGER(kind=inttype) :: icbeg, icend, jcbeg, jcend
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rface
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: f, m
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: fp, fv, m
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: oarea
    INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: fmnodeindex, &
    &      fmcellindex
    REAL(kind=realtype), DIMENSION(3) :: symnorm
@@ -137,7 +138,8 @@
    TYPE BCDATATYPE_D
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rface
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: f
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: fp
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: fv
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: m
    REAL(kind=realtype), DIMENSION(3) :: symnorm
    END TYPE BCDATATYPE_D
@@ -305,8 +307,6 @@
    !        ****************************************************************
    !
    !  x(0:ie,0:je,0:ke,3)  - xyz locations of grid points in block.
-   !  xInit(0:ie,0:je,0:ke,3) - initial xyz locations of grid points
-   !                         in block. Used in mesh warping.
    !  xOld(nOld,:,:,:,:)   - Coordinates on older time levels;
    !                         only needed for unsteady problems on
    !                         deforming grids. Only allocated on
@@ -492,6 +492,15 @@
    !
    !        ****************************************************************
    !        *                                                              *
+   !        * Variables for Iso/Surface Slice generation                   *
+   !        *                                                              *
+   !        ****************************************************************
+   ! fc(1:ie,1:je,1:ke) - cell center values of the function to be iso-valued
+   ! fn(1:il,1:jl,1:kl) - node values of the function to be iso-valued
+   ! Note these are are only allocated temporaily during solution writing.
+   !
+   !        ****************************************************************
+   !        *                                                              *
    !        * Turbulence model variables.                                  *
    !        *                                                              *
    !        ****************************************************************
@@ -642,6 +651,8 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: dtl
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radi, radj, &
    &      radk
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: fc
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: fn
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: d2wall, &
    &      filterdes
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmti1, &

@@ -42,7 +42,6 @@ FF90_OBJECTS = 	computePressureForcesAdj.o\
 	        bcEulerWallForcesAdj.o\
 	        getSurfaceNormalsForcesAdj.o\
 	        forcesAdj.o\
-	        verifyForces.o\
 	        computeForceAndMomentAdj.o\
 		adjustInflowAngleForcesAdj.o\
 		getDirVectorForces.o\

@@ -347,12 +347,13 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                    ! This real cell has been peturbed!
                                    do fmDim = 1,3
                                       call VecSetValues(FMw(fmDim), 1, colInd, &
-                                           bcDatad(mm)%F(i,j,fmDim), &
+                                           bcDatad(mm)%Fp(i, j, fmDim) + &
+                                           bcDatad(mm)%Fv(i, j, fmDim), &
                                            ADD_VALUES, ierr) 
                                       call EChk(ierr, __FILE__, __LINE__)
 
                                       call VecSetValues(FMw(fmDim+3), 1, Colind, &
-                                           bcDatad(mm)%M(i,j,fmDim), &
+                                           bcDatad(mm)%M(i, j, fmDim), &
                                            ADD_VALUES, ierr) 
                                       call EChk(ierr, __FILE__, __LINE__)
                                       
@@ -361,7 +362,8 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                       fRow = BCData(mm)%FMCellIndex(i,j)*3 + fmDim - 1
                                       call MatSetValues(dFcdw, 1, &
                                           fRow, 1, colInd, &
-                                          bcDatad(mm)%F(i,j,fmDim), &
+                                          bcDatad(mm)%Fp(i, j, fmDim) + &
+                                          bcDatad(mm)%Fv(i, j, fmDim), &
                                           ADD_VALUES, ierr)
                                       call EChk(ierr, __FILE__, __LINE__)
                                    end do

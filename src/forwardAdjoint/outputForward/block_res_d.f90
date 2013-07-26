@@ -3,26 +3,26 @@
    !
    !  Differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *(flowdoms.x) *(flowdoms.w)
-   !                *(flowdoms.dw) *(*bcdata.f) *(*bcdata.m) pointref
-   !                costfuncmat moment lift cforce drag force cd cl
-   !                cmoment
+   !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
+   !                pointref costfuncmat moment lift cforce drag force
+   !                cd cl cmoment
    !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
    !                mach machgrid lengthref surfaceref machcoef pointref
    !                alpha beta
    !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.w):in-out
-   !                *(flowdoms.dw):out *(*bcdata.f):out *(*bcdata.m):out
-   !                mach:in machgrid:in lengthref:in surfaceref:in
-   !                machcoef:in pointref:in-out costfuncmat:out moment:out
-   !                lift:out alpha:in cforce:out drag:out force:out
-   !                cd:out beta:in cl:out cmoment:out
+   !                *(flowdoms.dw):out *(*bcdata.fp):out *(*bcdata.fv):out
+   !                *(*bcdata.m):out mach:in machgrid:in lengthref:in
+   !                surfaceref:in machcoef:in pointref:in-out costfuncmat:out
+   !                moment:out lift:out alpha:in cforce:out drag:out
+   !                force:out cd:out beta:in cl:out cmoment:out
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
    !                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in
    !                bmtk1:in bmtk2:in rlv:in bvtk1:in bvtk2:in bmti1:in
    !                bmti2:in si:in sj:in sk:in bvti1:in bvti2:in fw:in
    !                bmtj1:in bmtj2:in viscsubface:in *viscsubface.tau:in
-   !                bcdata:in *bcdata.norm:in *bcdata.rface:in *bcdata.f:in
-   !                *bcdata.m:in radi:in radj:in radk:in
+   !                bcdata:in *bcdata.norm:in *bcdata.rface:in *bcdata.fp:in
+   !                *bcdata.fv:in *bcdata.m:in radi:in radj:in radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -351,7 +351,10 @@
    cd = zero
    cd = zero
    DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%f = 0.0_8
+   bcdatad(ii1)%fp = 0.0_8
+   END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   bcdatad(ii1)%fv = 0.0_8
    END DO
    DO ii1=1,ISIZE1OFDrfbcdata
    bcdatad(ii1)%m = 0.0_8
